@@ -341,8 +341,9 @@ DupCheckRecord *scheme_begin_dup_symbol_check(DupCheckRecord *r)
   if (r && r->scheck_size > 50)
     r->scheck_size = 0;    
   else {
-    for (i = r->scheck_size; i--; )
+    for (i = r->scheck_size; i--; ) {
       r->scheck_hash[i] = NULL;
+    }
   }
 
   if (!r) {
@@ -382,9 +383,10 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
     memset(r->scheck_hash, 0, i);
 
     r->scheck_count = 0;
-    for (i = 0; i < oldsize; i++)
+    for (i = 0; i < oldsize; i++) {
       if (old[i])
 	scheme_dup_symbol_check(r, where, old[i], what, form, 0);
+    }
   }
 
   pos = (scheme_hash_key(symbol) >> 2) % r->scheck_size;
@@ -923,9 +925,10 @@ static void InsureNamesReady(ClassVariable *ivars, int count, Scheme_Object ***n
   if (count && !*names) {
     *names = MALLOC_N(Scheme_Object*, count);
 
-    for (i = 0, cvar = ivars; cvar; cvar = cvar->next)
+    for (i = 0, cvar = ivars; cvar; cvar = cvar->next) {
       if (ispublic(cvar))
 	(*names)[i++] = _IVAR_EXT_NAME(cvar);
+    }
 
     qsort((char *)*names, count,
 	  sizeof(Scheme_Object *), 
@@ -943,8 +946,9 @@ static void InstallHeritage(Scheme_Class *sclass, Scheme_Class *superclass)
     ca = MALLOC_N(Scheme_Class*, (sclass->pos + 1));
     sclass->heritage = ca;
   }
-  for (i = 0; i < sclass->pos; i++)
+  for (i = 0; i < sclass->pos; i++) {
     sclass->heritage[i] = superclass->heritage[i];
+  }
   sclass->heritage[sclass->pos] = sclass;
   sclass->superclass = sclass->heritage[sclass->pos - 1];
 }
@@ -1021,8 +1025,9 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     int total, mode = 1, newcount, offset;
 
     total = 0;
-    for (i = num_supers; i--; )
+    for (i = num_supers; i--; ) {
       total += supers[i]->num_names; 
+    }
     
     nbanka = MALLOC_N(Scheme_Object*, total);
     nbankb = MALLOC_N(Scheme_Object*, total);
@@ -1044,8 +1049,9 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
 
       count = supers[i]->num_names;
       mbank = mode ? mbanka : mbankb;
-      for (j = 0; j < num_names; j++)
+      for (j = 0; j < num_names; j++) {
 	mbank[j] += count;
+      }
 
       MergeArray(num_names, mode ? nbanka : nbankb, mode ? nbanka : nbankb, NULL,
 		 count, supers[i]->names, supers[i]->names, NULL,
@@ -1070,11 +1076,13 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     
     mbankb = MALLOC_N_ATOMIC(short, data->num_names);
     /* init to -1; we'll go back and set the numbers later */
-    for (i = data->num_names; i--; )
+    for (i = data->num_names; i--; ) {
       mbankb[i] = -1;
+    }
     /* offset by number of names to be added */
-    for (i = num_names; i--; )
+    for (i = num_names; i--; ) {
       mbanka[i] += newcount;
+    }
 
     in->num_names = total;
     {
@@ -1099,15 +1107,17 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     {
       int j;
       j = 0;
-      for (i = total; i--; )
+      for (i = total; i--; ) {
 	if (in->name_map[i] < 0)
 	  in->name_map[i] = j++;
+      }
     }
 
     /* Count total supers: */
     total = 0;
-    for (i = num_supers; i--; )
+    for (i = num_supers; i--; ) {
       total += supers[i]->num_supers + 1;
+    }
     in->num_supers = total;
     {
       Scheme_Interface **ia;
@@ -1145,8 +1155,9 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
       sa = MALLOC_N_ATOMIC(short, in->num_names);
       in->name_map = sa;
     }
-    for (i = num_names; i--; )
+    for (i = num_names; i--; ) {
       in->name_map[i] = i;
+    }
     in->num_supers = 0;
     in->supers = NULL;
     in->super_offsets = NULL;
@@ -1202,8 +1213,9 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
 
   supers = MALLOC_N(Scheme_Object*,num_supers);
   sl = SCHEME_CAR(l);
-  for (i = 0; i < num_supers; i++, sl = SCHEME_CDR(sl))
+  for (i = 0; i < num_supers; i++, sl = SCHEME_CDR(sl)) {
     supers[i] = SCHEME_CAR(sl);
+  }
 
   l = SCHEME_CDR(l);
   nl = l;
@@ -1234,8 +1246,9 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
       supers[i] = ee;
     }
     l = scheme_null;
-    for (i = num_supers; i--; )
+    for (i = num_supers; i--; ) {
       l = cons(supers[i], l);
+    }
 
     return cons(interface_symbol, cons(l, nl));
   } else {
@@ -1256,8 +1269,9 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
       data->names = sa;
     }
     l = nl;
-    for (i = 0; i < num_names; i++, nl = SCHEME_CDR(nl))
+    for (i = 0; i < num_names; i++, nl = SCHEME_CDR(nl)) {
       data->names[i] = SCHEME_CAR(nl);
+    }
 
     /* Sort names: */
     qsort((char *)data->names, num_names,
@@ -1391,8 +1405,9 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
       }
       il = SCHEME_CDR(il);
     }
-    for (i = superclass->num_interfaces; i--; )
+    for (i = superclass->num_interfaces; i--; ) {
       interfaces[i + num_local_interfaces] = superclass->interfaces[i];
+    }
   } else
     interfaces = NULL;
   sclass->num_interfaces = num_interfaces;
@@ -1599,8 +1614,9 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
       imaps[i] = sa;
     }
     for (j = 0; j < in->num_names; j++) {
-      while ((k < num_public) && SLESSTHAN(public_names[k], in->names[j]))
+      while ((k < num_public) && SLESSTHAN(public_names[k], in->names[j])) {
 	k++;
+      }
       if ((k >= num_public) || !SEQUALS(public_names[k], in->names[j])) {
 	const char *cl, *inn;
 	char buffer[20], *bf;
@@ -1646,8 +1662,9 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     saved = MALLOC_N(Scheme_Object *, i);
     sclass->closure_saved = saved;
     stack = MZ_RUNSTACK;
-    while (i--)
+    while (i--) {
       saved[i] = stack[map[i]];
+    }
   }
 
   install_class_interface(sclass);
@@ -1691,23 +1708,27 @@ static Scheme_Object *DefineClass_Link(Scheme_Object *form, Link_Info *info)
 
   i = data->num_private;
   info = scheme_link_info_extend(info, i, i, i);
-  while (i--)
+  while (i--) {
     scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
+  }
 
   i = data->num_ref;
   info = scheme_link_info_extend(info, i, i, i);
-  while (i--)
+  while (i--) {
     scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
+  }
 
   i = data->num_ivar;
   info = scheme_link_info_extend(info, i, i, i);
-  while (i--)
+  while (i--) {
     scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
+  }
 
   i = data->num_arg_vars + 2;
   info = scheme_link_info_extend(info, i, i, i);
-  while (i--)
+  while (i--) {
     scheme_link_info_add_mapping(info, i, i, SCHEME_INFO_BOXED);
+  }
 
   for (ivar = data->ivars; ivar; ivar = ivar->next) {
     switch(ivar->vartype) {
@@ -1849,8 +1870,9 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
       int i;
       interfaces = MALLOC_N(Scheme_Object*, num_interfaces);
       il = SCHEME_CAR(l);
-      for (i = 0; i < num_interfaces; i++, il = SCHEME_CDR(il))
+      for (i = 0; i < num_interfaces; i++, il = SCHEME_CDR(il)) {
 	interfaces[i] = SCHEME_CAR(il);
+      }
     } else
       interfaces = NULL;
   }
@@ -1918,8 +1940,9 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
 
     if (SAME_OBJ(tag, seq_symbol)) {
       Scheme_Object *l = vars;
-      while (SCHEME_PAIRP(l))
+      while (SCHEME_PAIRP(l)) {
 	l = SCHEME_CDR(l);
+      }
       if (!SCHEME_NULLP(l))
 	scheme_wrong_syntax(CLASS_STAR, l, form, 
 			    "bad syntax in sequence clause"
@@ -2013,8 +2036,9 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
       }
       
       il = scheme_null;
-      for (i = num_interfaces; i--; )
+      for (i = num_interfaces; i--; ) {
 	il = cons(interfaces[i], il);
+      }
     }
 
     l = make_args;
@@ -2221,8 +2245,9 @@ static Scheme_Object *write_Class_Data(Scheme_Object *obj)
 
   data = (Class_Data *)obj;
   
-  for (i = 0; i < data->num_interfaces; i++)
+  for (i = 0; i < data->num_interfaces; i++) {
     l = cons(data->interface_exprs[i], l);
+  }
 
   return cons(CV_Bundle(data->ivars),
 	      cons(data->super_expr,
@@ -2316,8 +2341,9 @@ static Scheme_Object *write_Interface_Data(Scheme_Object *obj)
 
   data = (Interface_Data *)obj;
   
-  for (i = 0; i < data->num_supers; i++)
+  for (i = 0; i < data->num_supers; i++) {
     l = cons(data->super_exprs[i], l);
+  }
 
   /* The names were alreadyed sort by pointer value. We re-sort by
      string val so that the output is consistent across runs and
@@ -2328,8 +2354,9 @@ static Scheme_Object *write_Interface_Data(Scheme_Object *obj)
 	sizeof(Scheme_Object *), 
 	(Compare_Proc)CompareSymbolNames); 
 
-  for (i = 0; i < data->num_names; i++)
+  for (i = 0; i < data->num_names; i++) {
     l = cons(sortednames[i], l);
+  }
   
   return cons(scheme_make_integer(data->num_names),
 	      cons(scheme_make_integer(data->num_supers),
@@ -2366,11 +2393,13 @@ static Scheme_Object *read_Interface_Data(Scheme_Object *obj)
     data->super_exprs = sa;
   }
 
-  for (i = data->num_names; i--; obj = SCHEME_CDR(obj))
+  for (i = data->num_names; i--; obj = SCHEME_CDR(obj)) {
     data->names[i] = SCHEME_CAR(obj);
+  }
 
-  for (i = data->num_supers; i--; obj = SCHEME_CDR(obj))
+  for (i = data->num_supers; i--; obj = SCHEME_CDR(obj)) {
     data->super_exprs[i] = SCHEME_CAR(obj);
+  }
 
   /* Sort names: */
   qsort((char *)data->names, data->num_names,
@@ -2646,16 +2675,18 @@ static void InstallInterface(Scheme_Class *sclass, Scheme_Interface *in)
     sa = MALLOC_N(short*, (c+1));
     sclass->interface_maps = sa;
   }
-  for (j = 0; j < c; j++)
+  for (j = 0; j < c; j++) {
     sclass->interface_maps[j] = save[j];
+  }
   isave = sclass->interfaces;
   {
     Scheme_Interface **ia;
     ia = MALLOC_N(Scheme_Interface*, (c+1));
     sclass->interfaces = ia;
   }
-  for (j = 0; j < c; j++)
+  for (j = 0; j < c; j++) {
     sclass->interfaces[j] = isave[j];
+  }
   sclass->interfaces[c] = in;
   imap = MALLOC_N_ATOMIC(short, in->num_names);
   sclass->interface_maps[c] = imap;
@@ -2663,8 +2694,9 @@ static void InstallInterface(Scheme_Class *sclass, Scheme_Interface *in)
   num_public = sclass->num_public;
 
   for (j = 0; j < in->num_names; j++) {
-    while ((k < num_public) && SLESSTHAN(sclass->public_names[k], in->names[j]))
+    while ((k < num_public) && SLESSTHAN(sclass->public_names[k], in->names[j])) {
       k++;
+    }
     imap[in->name_map[j]] = sclass->public_map[k];
   }
 }
@@ -2697,8 +2729,9 @@ void scheme_made_class(Scheme_Object *c)
   }
 
   if (sclass->superclass && sclass->superclass->num_interfaces) {
-    for (i = 0; i < sclass->superclass->num_interfaces; i++)
+    for (i = 0; i < sclass->superclass->num_interfaces; i++) {
       InstallInterface(sclass, sclass->superclass->interfaces[i]);
+    }
   }
 }
 
@@ -2869,8 +2902,9 @@ scheme_make_interface_assembly(const char *name, int n_supers, int n_names, Sche
     na = MALLOC_N(Scheme_Object *, n_names);
     a->data.names = na;
   }
-  for (i = n_names; i--; )
+  for (i = n_names; i--; ) {
     a->data.names[i] = names[i];
+  }
 
   a->data.num_supers = n_supers;
   if (name) {
@@ -3061,8 +3095,9 @@ static Init_Object_Rec *CreateObjectFrames(Internal_Object *obj, Scheme_Class *s
 
   irec->init_level = sclass->pos + 1;
 
-  for (i = 0; i <= sclass->pos; i++)
+  for (i = 0; i <= sclass->pos; i++) {
     BuildObjectFrame(obj, irec, sclass, sclass->heritage[i], frames + i, slots);
+  }
 
   return irec;
 }
@@ -3249,8 +3284,9 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
       p->ku.k.i2 = argc;
       p->ku.k.p2 = p2;
       p->ku.k.p3 = irec;
-      for (i = argc; i--; )
+      for (i = argc; i--; ) {
 	((Scheme_Object **)p2)[i] = argv[i];
+      }
 
       (void)scheme_enlarge_runstack(total, init_obj_frame_k);
       return;
@@ -3258,8 +3294,9 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 
     saved = sclass->closure_saved;
     stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, i);
-    while (i--)
+    while (i--) {
       stack[i] = saved[i];
+    }
 
     PushFrameVariables(o, irec, sclass, frame, scheme_current_process,
 		       &priv_stack, &obj_stack);
@@ -3272,8 +3309,9 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 	  int k;
 	  Scheme_Object *l = scheme_null, *bx;
 	  
-	  for (k = argc; k-- > i; )
+	  for (k = argc; k-- > i; ) {
 	    l = cons(argv[k], l);
+	  }
 	  
 	  bx = scheme_make_envunbox(l);
 	  obj_stack[j] = bx;
@@ -3853,9 +3891,10 @@ int scheme_is_interface_extension(Scheme_Object *exn, Scheme_Object *basen)
   base = (Scheme_Interface *)basen;
 
   ins = ex->supers;
-  for (i = ex->num_supers; i--; )
+  for (i = ex->num_supers; i--; ) {
     if (SAME_OBJ(base, ins[i]))
       return 1;
+  }
 
   /* Maybe it's implicit inthe class... */
   return find_implementation((Scheme_Object *)ex->supclass, (Scheme_Object *)base, &offset) ? 1 : 0;
@@ -4277,12 +4316,13 @@ START_XFORM_SKIP;
 static int mark_object_val(void *p, Mark_Proc mark)
 {
   Internal_Object *obj = (Internal_Object *)p;
-  Scheme_Class *sclass = (Scheme_Class *)obj->o.sclass;
+  Scheme_Class *sclass = (Scheme_Class *)GC_resolve(obj->o.sclass);
   
   if (mark) {
     int i;
-    for (i = sclass->num_slots; i--; )
+    for (i = sclass->num_slots; i--; ) {
       gcMARK(obj->slots[i]);
+    }
 
     gcMARK(obj->o.sclass);
   }

@@ -348,8 +348,9 @@ scheme_alloc_string(int size, char fill)
   str = scheme_alloc_stubborn_object();
   str->type = scheme_string_type;
   s = (char *)scheme_malloc_fail_ok(scheme_malloc_atomic, sizeof(char)*(size + 1));
-  for (i = size; i--; )
+  for (i = size; i--; ) {
     s[i] = fill;
+  }
   s[size] = '\0';
   SCHEME_STR_VAL(str) = s;
   SCHEME_STRTAG_VAL(str) = size;
@@ -587,8 +588,9 @@ substring (int argc, Scheme_Object *argv[])
 
   str = scheme_alloc_string(finish-start, 0);
   dchars = SCHEME_STR_VAL(str);
-  for (i = 0; i < finish-start; i++)
+  for (i = 0; i < finish-start; i++) {
     dchars[i] = chars[i+start];
+  }
 
   return (str);
 }
@@ -655,11 +657,13 @@ scheme_append_string(Scheme_Object *str1, Scheme_Object *str2)
   naya = scheme_alloc_string(len1 + len2, 0);
 
   r = SCHEME_STR_VAL(naya);
-  for (i = 0; i < len1; i++, r++)
+  for (i = 0; i < len1; i++, r++) {
     *r = chars1[i];
+  }
 
-  for (i = 0; i < len2; i++, r++)
+  for (i = 0; i < len2; i++, r++) {
     *r = chars2[i];
+  }
 
   *r = '\0';
 
@@ -748,8 +752,9 @@ string_fill (int argc, Scheme_Object *argv[])
   chars = SCHEME_STR_VAL (argv[0]);
   ch = SCHEME_CHAR_VAL (argv[1]);
   len = SCHEME_STRTAG_VAL (argv[0]);
-  for (i = 0; i < len; i++)
+  for (i = 0; i < len; i++) {
     chars[i] = ch;
+  }
 
   return scheme_void;
 }
@@ -985,8 +990,9 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 	      i++; /* Windows-style CR-NL */
 	    i++;
 	    while (isspace(format[i]) 
-		   && !((format[i] == '\n') || (format[i] == '\r')))
+		   && !((format[i] == '\n') || (format[i] == '\r'))) {
 	      i++;
+	    }
 	    break;
 	  } else
 	    i++;
@@ -1168,9 +1174,10 @@ int scheme_string_has_null(Scheme_Object *o)
 {
   const char *s = SCHEME_STR_VAL(o);
   int i = SCHEME_STRTAG_VAL(o);
-  while (i--)
+  while (i--) {
     if (!s[i])
       return 1;
+  }
   return 0;
 }
 

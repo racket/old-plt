@@ -107,7 +107,7 @@ static void push_copied_stacks(int init)
 
   do {
     pushed_one = 0;
-    for (cs = *first_copied_stack; cs; cs = *cs->next)
+    for (cs = *first_copied_stack; cs; cs = *cs->next) {
       if (!cs->pushed && GC_is_marked(get_copy(cs))) {
 	pushed_one = 1;
 	cs->pushed = 1;
@@ -123,6 +123,7 @@ static void push_copied_stacks(int init)
 	  }
 	}
       }
+    }
   } while (pushed_one);
 #endif
 }
@@ -210,7 +211,7 @@ void set_copy(void *s_c, void *c)
 #define memcpy(dd, ss, ll) \
 {  stack_val *d, *s; long l; \
    l = ll / sizeof(stack_val); d = (stack_val *)dd; s = (stack_val *)ss; \
-   while (l--) *(d++) = *(s++); }
+   while (l--) { *(d++) = *(s++);} }
 
 static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
 {
@@ -260,8 +261,9 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
 
   {
     int i;
-    for (i = 0; i < 200; i++)
+    for (i = 0; i < 200; i++) {
       prev[i] = 0;
+    }
   }
 
   FLUSH_REGISTER_WINDOWS;

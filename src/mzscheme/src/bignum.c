@@ -245,9 +245,10 @@ int scheme_bignum_eq(const Scheme_Object *a, const Scheme_Object *b)
   if (al < 0)
     al = -al;
 
-  while (al--)
+  while (al--) {
     if (*(aa++) != *(ba++))
       return 0;
+  }
 
   return 1;
 }
@@ -378,11 +379,12 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
 
     if (al == bl) {
       reverse = 0;
-      for (i = al; i--; )
+      for (i = al; i--; ) {
 	if (aa[i] != ba[i]) {
 	  reverse = (aa[i] < ba[i]);
 	  break;
 	}
+      }
     } else
       reverse = (al < bl);
     
@@ -431,9 +433,10 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
   }
 
   /* Get rid of leading zeros: */
-  for (i = vl; i--; )
+  for (i = vl; i--; ) {
     if (va[i])
       break;
+  }
   vl = i + 1;
 
   vp = ap;
@@ -501,8 +504,9 @@ static void bignum_double_inplace(Scheme_Object *n, int bs)
     if (bs < nl + 1) {
       /* expand */
       naya = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * (nl + 1));
-      for (i = 0; i < nl; i++)
+      for (i = 0; i < nl; i++) {
 	naya[i] = na[i];
+      }
       SCHEME_BIGDIG(n) = naya;
     } else
       naya = na;
@@ -631,8 +635,9 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
     }
   }
 
-  while (size && !buffer[size - 1])
+  while (size && !buffer[size - 1]) {
     --size;
+  }
 
   if (rsmall)
     r = (Scheme_Object *)rsmall;
@@ -830,8 +835,9 @@ Scheme_Object *scheme_bignum_and(const Scheme_Object *a, const Scheme_Object *b)
 
   l = setup_binop(a, b, &nr, &no, &r);
   SCHEME_BIGPOS(r) = !(!SCHEME_BIGPOS(a) && !SCHEME_BIGPOS(b));
-  for (i = l; i--; )
+  for (i = l; i--; ) {
     nr[i] &= no[i];
+  }
 
   return done_binop(r, nr, l);
 }
@@ -844,8 +850,9 @@ Scheme_Object *scheme_bignum_or(const Scheme_Object *a, const Scheme_Object *b)
 
   l = setup_binop(a, b, &nr, &no, &r);
   SCHEME_BIGPOS(r) = !(!SCHEME_BIGPOS(a) || !SCHEME_BIGPOS(b));
-  for (i = 0; i < l; i++)
+  for (i = 0; i < l; i++) {
     nr[i] |= no[i];
+  }
 
   return done_binop(r, nr, l);
 }
@@ -858,8 +865,9 @@ Scheme_Object *scheme_bignum_xor(const Scheme_Object *a, const Scheme_Object *b)
 
   l = setup_binop(a, b, &nr, &no, &r);
   SCHEME_BIGPOS(r) = !(!SCHEME_BIGPOS(a) ^ !SCHEME_BIGPOS(b));
-  for (i = l; i--; )
+  for (i = l; i--; ) {
     nr[i] ^= no[i];
+  }
 
   return done_binop(r, nr, l);
 }
@@ -933,8 +941,9 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     rl = nl - offset;
     ra = MALLOC_N_ATOMIC(bigdig, rl);
     
-    for (i = rl - 1; i--; )
+    for (i = rl - 1; i--; ) {
       ra[i] = (na[i + offset] >> loshift) | ((na[i + offset + 1] << hishift) & BIG_MAX);
+    }
     ra[rl - 1] = (na[rl - 1 + offset] >> loshift);
 
     /* If n is negative and we dropped any bits, sub one from result (2's complement!): */
@@ -959,16 +968,19 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     ra = MALLOC_N_ATOMIC(bigdig, rl);
     
     top = rl - 1;
-    for (i = 0; i < offset; i++)
+    for (i = 0; i < offset; i++) {
       ra[0] = 0;
-    for (i = offset + 1; i < top; i++)
+    }
+    for (i = offset + 1; i < top; i++) {
       ra[i] = ((na[i - offset] << hishift) & BIG_MAX) | (na[i - offset - 1] >> loshift);
+    }
     ra[rl - 1] = (na[rl - offset - 2] >> loshift);
     ra[offset] = ((na[0] << hishift) & BIG_MAX);
   }
 
-  while (rl && !ra[rl - 1])
+  while (rl && !ra[rl - 1]) {
     --rl;
+  }
 
   r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   r->type = scheme_bignum_type;
@@ -1016,8 +1028,9 @@ bignum_small_divide_in_place(Scheme_Object *n, bigdig d, bigdig *rp)
     na[i] = (hi << LOG_BIG_LO) + lo;
   }
 
-  while (nl && !na[nl - 1])
+  while (nl && !na[nl - 1]) {
     --nl;
+  }
 
   SCHEME_BIGLEN(n) = nl;
 
@@ -1048,8 +1061,9 @@ static char *scheme_bignum_to_string_10(const Scheme_Object *b)
     }
   }
 
-  while (s[p - 1] == '0')
+  while (s[p - 1] == '0') {
     --p;
+  }
 
   if (!SCHEME_BIGPOS(r))
     s[p++] = '-';
@@ -1127,7 +1141,7 @@ char *scheme_bignum_to_string(const Scheme_Object *b, int radix)
   else
     n[p] = '0' + dig;
 
-  for (i = p; i && (n[i] == '0'); --i);
+  for (i = p; i && (n[i] == '0'); --i) {}
   p = i + 1;
 
   if (!SCHEME_BIGPOS(b))
@@ -1157,8 +1171,9 @@ Scheme_Object *scheme_read_bignum(const char *str, int radix)
     return scheme_false;
 
   if (!decimal_digits[0])
-    for (i = 0; i < 17; i++)
+    for (i = 0; i < 17; i++) {
       decimal_digits[i] = scheme_make_bignum(i);
+    }
 
   negate = 0;
   /* Why would we skip spaces? */

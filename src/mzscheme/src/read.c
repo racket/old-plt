@@ -332,8 +332,9 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
  start_over:
 
   ch = scheme_getc(port);
-  while (isspace(ch))
+  while (isspace(ch)) {
     ch = scheme_getc(port);
+  }
 
   switch ( ch )
     {
@@ -923,8 +924,9 @@ read_vector (Scheme_Object *port, char closer,
       obj = els[len - 1];
     else
       obj = scheme_make_integer(0);
-    for (; i < requestLength; i++)
+    for (; i < requestLength; i++) {
       els[i] = obj;
+    }
   }
   return (vec);
 }
@@ -1244,7 +1246,7 @@ skip_whitespace_comments(Scheme_Object *port)
 
  start_over:
 
-  while ((ch = scheme_getc(port), isspace(ch)));
+  while ((ch = scheme_getc(port), isspace(ch))) {}
 
   if (ch == ';') {
     do {
@@ -1353,12 +1355,14 @@ static char *read_compact_chars(CPort *port,
 
 #if USE_BUFFERING_CPORT
   src = (char *)port->s;
-  for (i = 0; i < l; i++)
+  for (i = 0; i < l; i++) {
     s[i] = src[i];
+  }
   port->s += l;
 #else
-  for (i = 0; i < l; i++)
+  for (i = 0; i < l; i++) {
     s[i] = CP_GETC(port);
+  }
 #endif
 
   s[l] = 0;
@@ -1542,7 +1546,11 @@ static Scheme_Object *read_compact(CPort *port,
 	l = read_compact_list(c, 1, 1, port, ht CURRENTPROCARG);
 	STACK_END(r);
   
-	v = ((scheme_type_readers)[scheme_application_type])(l);
+	{
+	  Scheme_Type_Reader reader;
+	  reader = scheme_type_readers[scheme_application_type];
+	  v = reader(l);
+	}
       }
       break;
     case CPT_SMALL_LOCAL_START:
@@ -1623,7 +1631,12 @@ static Scheme_Object *read_compact(CPort *port,
 	STACK_START(r);
 	l = read_compact_list(c, 1, 1, port, ht CURRENTPROCARG);
 	STACK_END(r);
-	v = ((scheme_type_readers)[scheme_application_type])(l);
+
+	{
+	  Scheme_Type_Reader reader;
+	  reader = scheme_type_readers[scheme_application_type];
+	  v = reader(l);
+	}
       }
       break;
     case CPT_SYM_VECTOR_REMEMBER:
@@ -1655,8 +1668,9 @@ static Scheme_Object *read_compact(CPort *port,
 	v = scheme_make_vector(i, scheme_null);
 	oels = SCHEME_VEC_ELS(oldv);
 	els = SCHEME_VEC_ELS(v);
-	while (i--)
+	while (i--) {
 	  els[i] = oels[i];
+	}
       }
       break;
     default:
@@ -1788,6 +1802,7 @@ static Scheme_Object *read_marshalled(int type,
 {
   Scheme_Object *l;
   ListStackRec r;
+  Scheme_Type_Reader reader;
 
   STACK_START(r);
   l = read_compact(port, ht, 1 CURRENTPROCARG);
@@ -1799,7 +1814,8 @@ static Scheme_Object *read_marshalled(int type,
 		       "read (compiled): bad #` type number: %d at %ld",
 		       type, CP_TELL(port));
 
-  return scheme_type_readers[type](l);
+  reader = scheme_type_readers[type];
+  return reader(l);
 }
 
 #if USE_BUFFERING_CPORT
@@ -1854,12 +1870,14 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   if (!cpt_branch[1]) {
     int i;
 
-    for (i = 0; i < 256; i++)
+    for (i = 0; i < 256; i++) {
       cpt_branch[i] = i;
+    }
 
 #define FILL_IN(v) \
-    for (i = CPT_ ## v ## _START; i < CPT_ ## v ## _END; i++) \
-      cpt_branch[i] = CPT_ ## v ## _START;
+    for (i = CPT_ ## v ## _START; i < CPT_ ## v ## _END; i++) { \
+      cpt_branch[i] = CPT_ ## v ## _START; \
+    }
     FILL_IN(SMALL_NUMBER);
     FILL_IN(SMALL_SYMBOL);
     FILL_IN(SMALL_MARSHALLED);
@@ -1895,6 +1913,12 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   result = read_marshalled(scheme_compilation_top_type, rp, ht CURRENTPROCARG);
 
   local_vector_memory = NULL;
+
+#if USE_BUFFERING_CPORT
+# ifdef MZ_PRECISE_GC
+  rp = &cp; /* Ensures that cp is known to be alive. */
+# endif
+#endif
 
   return result;
 }

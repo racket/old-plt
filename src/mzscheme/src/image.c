@@ -148,11 +148,12 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
     int i;
 
     a = SCHEME_VEC_ELS(argv[1]);
-    for (i = SCHEME_VEC_SIZE(argv[1]); i--; )
+    for (i = SCHEME_VEC_SIZE(argv[1]); i--; ) {
       if (!SCHEME_STRINGP(a[i])) {
 	bad = 1;
 	break;
       }
+    }
   } else
     bad = 1;
       
@@ -325,8 +326,9 @@ static Scheme_Object *dump_image(char *filename)
       write(fd, (char *)&orig_brk, sizeof(unsigned long));
       write(fd, (char *)&stack_base, sizeof(unsigned long));
       
-      for (i = 0; i < data_count; i++)
+      for (i = 0; i < data_count; i++) {
 	write(fd, (char *)data_starts[i], data_ends[i] - data_starts[i]);
+      }
 
       write(fd, (char *)&current_brk, sizeof(unsigned long));
       write(fd, (char *)orig_brk, current_brk - orig_brk);
@@ -459,7 +461,7 @@ static void do_restore_image(char *file, int argc, char **argv,
      env_space1 = env_space2;
 
   save_environ = (char **)env_space1;
-  for (i = 0; environ[i]; i++);
+  for (i = 0; environ[i]; i++) {}
   env_space1 += i * sizeof(char *);
   for (i = 0; environ[i]; i++) {
     int l;
@@ -488,8 +490,9 @@ static void do_restore_image(char *file, int argc, char **argv,
      in a tricky way. */
 
   argv_len = sizeof(long);
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     argv_len += strlen(argv[i]) + 1;
+  }
 
   env_len += sizeof(long);
 
@@ -542,8 +545,9 @@ static void restore_image(char *file, int argc, char **argv,
   int i;
   long len = 0;
 
-  for (i = 0; environ[i]; i++)
+  for (i = 0; environ[i]; i++) {
     len += strlen(environ[i]) + 1;
+  }
 
   len += sizeof(char **) * (i + 1);
 
@@ -576,8 +580,9 @@ static Scheme_Object *load_image(char *filename, Scheme_Object *argvec)
   l = 0;
 
   a = SCHEME_VEC_ELS(argvec);
-  for (i = count; i--; )
+  for (i = count; i--; ) {
     l += SCHEME_STRTAG_VAL(a[i]);
+  }
 
   if (l > MAX_ARGLEN)
     scheme_raise_exn(MZEXN_MISC,
@@ -677,8 +682,9 @@ int scheme_image_main(int argc, char **argv)
     ds = data_starts[0];
 
     if (!scheme_setjmp(goback)) {
-      for (current_value = data_ends[0]; (current_value -= sizeof(long)) > ds; )
+      for (current_value = data_ends[0]; (current_value -= sizeof(long)) > ds; ) {
 	*(unsigned long *)current_value = *(unsigned long *)current_value;
+      }
     }
     data_starts[0] = current_value + sizeof(long);
     MZ_SIGSET(SIGBUS, SIG_DFL);
@@ -725,8 +731,9 @@ int scheme_image_main(int argc, char **argv)
     int i;
     
     naya_argv = scheme_malloc(argc * sizeof(char *));
-    for (i = 0; i < argc; i++)
+    for (i = 0; i < argc; i++) {
       naya_argv[i] = scheme_strdup(argv[i]);
+    }
 
     /* doesn't support atexit(): */
     _exit(scheme_actual_main(argc, naya_argv));

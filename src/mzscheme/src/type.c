@@ -308,7 +308,7 @@ static int app_rec(void *p, Mark_Proc mark)
 
   if (mark) {
     int i = r->num_args + 1;
-    while (i--)
+    while (i--) 
       gcMARK(r->args[i]);
   }
 

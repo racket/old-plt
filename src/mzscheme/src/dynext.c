@@ -188,6 +188,11 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
   void *handle;
   int comppath;
 
+#ifdef MZ_PRECISE_GC
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "load-extension: not yet supported in MzScheme2k");
+#endif
+
   comppath = scheme_is_complete_path(filename, strlen(filename));
 
   reload_f = NULL;

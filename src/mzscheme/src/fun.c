@@ -570,8 +570,9 @@ scheme_make_linked_closure(Scheme_Process *p,
   dest = closure->vals;
   map = data->closure_map;
 
-  while (i--) 
+  while (i--) {
     dest[i] = runstack[map[i]];
+  }
 
   return (Scheme_Object *)closure;
 }
@@ -614,9 +615,10 @@ scheme_link_closure_compilation(Scheme_Object *_data, Link_Info *info)
   
   new_info = scheme_link_info_extend(info, data->num_params, data->num_params,
 				     data->closure_size + data->num_params);
-  for (i = 0; i < data->num_params; i++)
+  for (i = 0; i < data->num_params; i++) {
     scheme_link_info_add_mapping(new_info, i, i + data->closure_size, 
 				 cl->local_flags[i]);
+  }
   for (i = 0; i < data->closure_size; i++) {
     int p = oldpos[i];
 
@@ -677,8 +679,9 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   params = allparams = SCHEME_CAR(SCHEME_CDR(code));
 
   data->num_params = 0;
-  for (; SCHEME_PAIRP(params); params = SCHEME_CDR(params))
+  for (; SCHEME_PAIRP(params); params = SCHEME_CDR(params)) {
     data->num_params++;
+  }
   data->flags = 0;
   if (!SCHEME_NULLP(params)) {
     data->flags |= CLOS_HAS_REST;
@@ -990,8 +993,9 @@ scheme_tail_apply (Scheme_Object *rator, int num_rands, Scheme_Object **rands)
     }
     a = p->tail_buffer;
     p->ku.apply.tail_rands = a;
-    for (i = num_rands; i--; )
+    for (i = num_rands; i--; ) {
       a[i] = rands[i];
+    }
 
 #ifdef AGRESSIVE_ZERO_TB
     p->tail_buffer_set = num_rands;
@@ -1294,8 +1298,9 @@ Scheme_Object *scheme_make_arity(short mina, short maxa)
     int i;
     Scheme_Object *l = scheme_null;
 
-    for (i = maxa; i >= mina; --i)
+    for (i = maxa; i >= mina; --i) {
       l = scheme_make_pair(scheme_make_integer(i), l);
+    }
 
     return l;
   }
@@ -1335,9 +1340,10 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
       }
 
       if (a == -2) {
-	for (i = 0; i < count; i++)
+	for (i = 0; i < count; i++) {
 	  if (cases[(2 * i) + 1] < 0)
 	    return scheme_true;
+	}
 
 	return scheme_false;
       }
@@ -1487,11 +1493,13 @@ apply(int argc, Scheme_Object *argv[])
   }
   rand_vec = MALLOC_N(Scheme_Object *, num_rands);
 
-  for (i = argc - 2; i--; )
+  for (i = argc - 2; i--; ) {
     rand_vec[i] = argv[i + 1];
-  
-  for (i = argc - 2; SCHEME_PAIRP(rands); i++, rands = SCHEME_CDR(rands))
+  }
+
+  for (i = argc - 2; SCHEME_PAIRP(rands); i++, rands = SCHEME_CDR(rands)) {
     rand_vec[i] = SCHEME_CAR(rands);
+  }
 
   p->ku.apply.tail_rator = argv[0];
   p->ku.apply.tail_rands = rand_vec;
@@ -1557,8 +1565,9 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
   }
 
   /* Copy argc into working array */
-  for (i = 1; i < argc ; i++)
+  for (i = 1; i < argc ; i++) {
     working[i-1] = argv[i];
+  }
 
   --argc;
 
@@ -1673,8 +1682,9 @@ Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
     a = NULL;
   p->ku.multiple.array = a;
   
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     a[i] = argv[i];
+  }
 
   return SCHEME_MULTIPLE_VALUES;
 }
@@ -1868,11 +1878,12 @@ call_cc (int argc, Scheme_Object *argv[])
 	cell->next = dwl;
 	dwl = cell;
       }
-      for (; dwl; dwl = dwl->next)
+      for (; dwl; dwl = dwl->next) {
 	if (dwl->dw->pre) {
 	  p->dw = dwl->dw->prev;
 	  dwl->dw->pre(dwl->dw->data);
 	}
+      }
     }
     p->dw = cont->dw;
 

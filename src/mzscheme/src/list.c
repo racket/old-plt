@@ -808,8 +808,9 @@ append_prim (int argc, Scheme_Object *argv[])
     return scheme_null;
 
   res = argv[argc - 1];
-  for (i = argc - 1; i--;  )
+  for (i = argc - 1; i--;  ) {
     res = scheme_append(argv[i], res);
+  }
 
   return res;
 }
@@ -824,8 +825,9 @@ append_bang_prim (int argc, Scheme_Object *argv[])
     return scheme_null;
 
   res = argv[argc - 1];
-  for (i = argc - 1; i--; )
+  for (i = argc - 1; i--; ) {
     res = scheme_append_bang(argv[i], res);
+  }
 
   return res;
 }

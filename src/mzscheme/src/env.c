@@ -192,7 +192,7 @@ Scheme_Env *scheme_basic_env ()
 # endif    
 #endif
 
-    for (i = 0; i < MAX_CONST_LOCAL_POS; i++)
+    for (i = 0; i < MAX_CONST_LOCAL_POS; i++) {
       for (k = 0; k < 2; k++) {
 	Scheme_Object *v;
 	
@@ -206,6 +206,7 @@ Scheme_Env *scheme_basic_env ()
 	
 	scheme_local[i][k] = v;
       }
+    }
   }
 
   scheme_init_true_false();
@@ -889,8 +890,9 @@ static void init_compile_data(Scheme_Comp_Env *env)
   c = env->num_bindings;
   use = MALLOC_N_ATOMIC(int, c);
   data->use = use;
-  for (i = 0; i < c; i++)
+  for (i = 0; i < c; i++) {
     use[i] = 0;
+  }
 
   data->constants = NULL;
 }
@@ -1005,13 +1007,14 @@ scheme_add_compilation_frame(Scheme_Object *vals, Scheme_Comp_Env *env, int flag
 
   frame = scheme_new_compilation_frame(count, flags, env);
 
-  for (i = 0; i < len ; i++)
+  for (i = 0; i < len ; i++) {
     if (SCHEME_SYMBOLP(vals))
       frame->values[i] = vals;
     else {
       frame->values[i] = SCHEME_CAR (vals);
       vals = SCHEME_CDR (vals);
     }
+  }
   
   init_compile_data(frame);
 
@@ -1080,8 +1083,9 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
     data->stat_dists = ca;
     ia = MALLOC_N_ATOMIC(int, frame->num_bindings);
     data->sd_depths = ia;
-    for (k = frame->num_bindings; k--; )
+    for (k = frame->num_bindings; k--; ) {
       data->sd_depths[k] = 0;
+    }
   }
   
   if (data->sd_depths[i] <= j) {
@@ -1089,11 +1093,13 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
     int k;
     
     naya = MALLOC_N_ATOMIC(char, (j + 1));
-    for (k = j + 1; k--; )
+    for (k = j + 1; k--; ) {
       naya[k] = 0;
+    }
     a = data->stat_dists[i];
-    for (k = data->sd_depths[i]; k--; )
+    for (k = data->sd_depths[i]; k--; ) {
       naya[k] = a[k];
+    }
     
     data->stat_dists[i] = naya;
     data->sd_depths[i] = j + 1;

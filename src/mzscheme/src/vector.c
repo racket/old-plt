@@ -113,8 +113,9 @@ scheme_make_vector (int size, Scheme_Object *fill)
   vec->type = scheme_vector_type;
   SCHEME_VEC_SIZE(vec) = size;
 
-  for (i = 0; i < size; i++)
+  for (i = 0; i < size; i++) {
     SCHEME_VEC_ELS(vec)[i] = fill;
+  }
 
   return vec;
 }
@@ -157,8 +158,9 @@ vector (int argc, Scheme_Object *argv[])
   int i;
 
   vec = scheme_make_vector (argc, 0);
-  for ( i=0 ; i<argc ; ++i )
+  for ( i=0 ; i<argc ; ++i ) {
     SCHEME_VEC_ELS(vec)[i] = argv[i];
+  }
 
   return (vec);
 }
@@ -303,8 +305,9 @@ vector_fill (int argc, Scheme_Object *argv[])
   if (!SCHEME_VECTORP(argv[0]))
     scheme_wrong_type("vector-fill!", "vector", 0, argc, argv);
 
-  for ( i=0 ; i<SCHEME_VEC_SIZE (argv[0]) ; ++i )
+  for ( i=0 ; i<SCHEME_VEC_SIZE (argv[0]) ; ++i ) {
     SCHEME_VEC_ELS(argv[0])[i] = argv[1];
+  }
 
   return argv[0];
 }

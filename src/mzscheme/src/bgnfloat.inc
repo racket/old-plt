@@ -79,8 +79,9 @@ Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
   if (log > USE_FLOAT_BITS) {
     times = log - USE_FLOAT_BITS;
     log = USE_FLOAT_BITS;
-    for (i = 0; i < times; i++)
+    for (i = 0; i < times; i++) {
       d /= 2;
+    }
   } else
     times = 0;
 
@@ -101,8 +102,9 @@ Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
 
   if (times) {
     m = scheme_make_bignum(1);
-    while (times--)
+    while (times--) {
       bignum_double_inplace(m, 0);      
+    }
     n = bignum_multiply(toggle ? &s1 : &s2, n, m, 0);
     toggle = !toggle;
   }

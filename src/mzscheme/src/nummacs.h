@@ -55,9 +55,10 @@ name (int argc, Scheme_Object *argv[]) \
       return NULL; \
     } \
     if (!bin_name(p, o)) { \
-        for (i++; i < argc; i++) \
+        for (i++; i < argc; i++) { \
           if (!TYPEP(argv[i])) \
            scheme_wrong_type(scheme_name, type, i, argc, argv); \
+        } \
         return scheme_false; \
     } \
     p = o; \

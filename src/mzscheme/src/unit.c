@@ -136,8 +136,9 @@ static int count_ids(UnitId *id)
 {
   int c;
 
-  for (c = 0; id; id = id->next)
+  for (c = 0; id; id = id->next) {
     c++;
+  }
 
   return c;
 }
@@ -153,8 +154,9 @@ static void check_ext_ids_unique(DupCheckRecord *r, UnitIds *m,
   
   r->scheck_size = 0;
   r = scheme_begin_dup_symbol_check(r);
-  for (id = m->first; id; id = id->next)
+  for (id = m->first; id; id = id->next) {
     scheme_dup_symbol_check(r, where, id->ext_id, "external", form, 0);
+  }
 }
 
 static void check_int_ids_unique(UnitIds *m, 
@@ -171,8 +173,9 @@ static void check_int_ids_unique(UnitIds *m,
  
   if (!r || !continuing)
     r = scheme_begin_dup_symbol_check(r);
-  for (id = m->first; id; id = id->next)
+  for (id = m->first; id; id = id->next) {
     scheme_dup_symbol_check(r, where, id->int_id, kind, form, inverted);
+  }
 }
 
 static void check_tags_unique(UnitIds *m, 
@@ -365,8 +368,9 @@ static Scheme_Object *unit_varlist(BodyExpr *e,
   if (!SCHEME_NULLP(base)) {
     first = base;
     last = base;
-    while (!SCHEME_NULLP(SCHEME_CDR(last)))
+    while (!SCHEME_NULLP(SCHEME_CDR(last))) {
       last = SCHEME_CDR(last);
+    }
   }
 
   for (; e; e = e->next) {
@@ -465,8 +469,9 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
     /* Make list of internal names for exported variables, then extend the
        expansion environment. */
     Scheme_Object *el = scheme_null;
-    for (id = exports->first; id; id = id->next)
+    for (id = exports->first; id; id = id->next) {
       el = cons(id->int_id, el);
+    }
     expand_env = scheme_add_compilation_frame(el, expand_env, 0);
   }
 
@@ -501,7 +506,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	l = expr;
 
 	/* Check for good begin syntax: */
-	for (cl = l; SCHEME_PAIRP(cl); cl = SCHEME_CDR(cl));
+	for (cl = l; SCHEME_PAIRP(cl); cl = SCHEME_CDR(cl)) {}
 	if (!SCHEME_NULLP(cl)) {
 	  scheme_wrong_syntax(MAKE_UNIT, 
 			      expr, form,
@@ -653,8 +658,9 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
       int i, c = e->u.def.count;
       BodyVar *vs = e->u.def.vars;
 
-      for (i = 0; i < c; i++)
+      for (i = 0; i < c; i++) {
 	scheme_dup_symbol_check(&drec, MAKE_UNIT, vs[i].id, "internal", form, 0);
+      }
     }
   }
   
@@ -667,8 +673,9 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 				     | SCHEME_PRIM_GLOBALS_ONLY);
   indirect_env = env;
 
-  for (c = 0; c < import_count; c++)
+  for (c = 0; c < import_count; c++) {
     scheme_unsettable_variable(env, c);
+  }
 
   l = unit_varlist(body->first, scheme_null, 0);
   count = scheme_list_length(l);
@@ -695,9 +702,10 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
       int i, c = e->u.def.count;
       BodyVar *vs = e->u.def.vars;
 
-      for (i = 0; i < c; i++)
+      for (i = 0; i < c; i++) {
 	if (!vs[i].exported)
 	  vs[i].pos = dpos++;
+      }
 
       expr = e->u.def.expr;
     } else
@@ -820,11 +828,12 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	Scheme_Object *l = params;
 	int c;
 	
-	for (c = 0; SCHEME_PAIRP(l); l = SCHEME_CDR(l), c++)
+	for (c = 0; SCHEME_PAIRP(l); l = SCHEME_CDR(l), c++) {
 	  if (SAME_OBJ(SCHEME_CAR(l), sub->int_id)) {
 	    sub->int_id = (Scheme_Object *)(long)c;
 	    break;
 	  }
+	}
 
 	if (SCHEME_NULLP(l))
 	  scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
@@ -920,8 +929,9 @@ static Scheme_Unit *InitCompiledUnitRec(UnitId *exports, int num_imports,
   m->type = scheme_compiled_unit_type;
 
   m->num_imports = num_imports;
-  for (i = 0, id = exports; id; id = id->next)
+  for (i = 0, id = exports; id; id = id->next) {
     i++;
+  }
   m->num_exports = i;
 
   if (m->num_exports) {
@@ -974,13 +984,14 @@ static Scheme_Object *link_unit(Scheme_Object *o, Link_Info *info)
 
     info = scheme_link_info_extend(info, 2 * c, c, c);
     scheme_link_info_set_anchor_offset(info, c);
-    for (i = 0; i < c; i++)
+    for (i = 0; i < c; i++) {
       scheme_link_info_add_mapping(info, i, i, 
 				   SCHEME_INFO_BOXED 
 #ifndef MZ_PRECISE_GC 
 				   | SCHEME_INFO_ANCHORED
 #endif
 				   );
+    }
   }
 
   for (e = label->body; e; e = e->next) {
@@ -1192,8 +1203,9 @@ make_compound_unit_record(int count, /* subunits */
 #ifdef MZTAG_REQUIRED
       {
 	int k;
-	for (k = 0; k < j; k++)
+	for (k = 0; k < j; k++) {
 	  pms[k].type = scheme_rt_param_map;
+	}
       }
 #endif
     }
@@ -1208,10 +1220,12 @@ make_compound_unit_record(int count, /* subunits */
 	int k;
 	if (SCHEME_INTP(sub->tag))
 	  k = SCHEME_INT_VAL(sub->tag);
-	else
-	  for (k = 0; k < count; k++)
+	else {
+	  for (k = 0; k < count; k++) {
 	    if (SAME_OBJ(sub->tag, tags[k]))
 	      break;
+	  }
+	}
 
 	param_maps[i][j].index = k;
 	param_maps[i][j].u.ext_id = sub->int_id;
@@ -1226,8 +1240,9 @@ make_compound_unit_record(int count, /* subunits */
 	    pos = SCHEME_INT_VAL(n);
 	  else {
 	    pos = 0;
-	    for (l = imports; !SAME_OBJ(n, SCHEME_CAR(l)); l = SCHEME_CDR(l))
+	    for (l = imports; !SAME_OBJ(n, SCHEME_CAR(l)); l = SCHEME_CDR(l)) {
 	      pos++;
+	    }
 	  }
 	} else
 	  pos = (long)sub->int_id;
@@ -1250,9 +1265,10 @@ make_compound_unit_record(int count, /* subunits */
     if (SCHEME_INTP(tag)) 
       j = SCHEME_INT_VAL(tag);
     else {
-      for (j = data->num_subunits; j--; )
+      for (j = data->num_subunits; j--; ) {
 	if (SAME_OBJ(tag, tags[j]))
 	  break;
+      }
     }
 #ifdef MZTAG_REQUIRED
     export_srcs[i].type = scheme_rt_export_source;
@@ -1266,15 +1282,15 @@ make_compound_unit_record(int count, /* subunits */
     for (i = data->num_exports; i--; ) {
       Scheme_Object *id = export_srcs[i].ext_id;
       int which = export_srcs[i].submod_index, j;
-      for (j = i; j--; )
+      for (j = i; j--; ) {
 	if ((export_srcs[j].submod_index == which)
 	    && SAME_OBJ(export_srcs[j].ext_id, id)) {
 	  scheme_wrong_syntax(MAKE_COMPOUND_UNIT, NULL, form,
 			      "\"%s\" of sub-unit tagged \"%s\" is exported twice",
 			      scheme_symbol_name(id),
 			      scheme_symbol_name(tags[which]));
-	  
 	}
+      }
     }
   }
 
@@ -1478,9 +1494,10 @@ static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
 
   data = (InvokeUnitData *)o;
 
-  for (i = 0; i < data->num_exports; i++)
+  for (i = 0; i < data->num_exports; i++) {
     if (SAME_TYPE(SCHEME_TYPE(data->exports[i]), scheme_local_type))
       num_local++;
+  }
 
   data->num_local_exports = num_local;
   if (num_local) {
@@ -1661,8 +1678,9 @@ static Scheme_Object *CloseUnit(Scheme_Object *data)
     cl->closure_saved = saved;
     map = data->closure_map;
     stack = MZ_RUNSTACK;
-    while (i--)
+    while (i--) {
       saved[i] = stack[map[i]];
+    }
     
     m->data = (Scheme_Object *)cl;
 
@@ -1768,8 +1786,9 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 
     i = m->num_exports;
     naya = MALLOC_N(Scheme_Object *, i);
-    while (i--)
+    while (i--) {
       naya[i] = orig[i];
+    }
 
     m->export_debug_names = naya;
   }
@@ -1812,8 +1831,9 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
     boxesList[i] = boxes;
 
     k = sm->num_imports;
-    for (j = sm->num_exports; j--;)
+    for (j = sm->num_exports; j--;) {
       boxes[j + k].source = -1;
+    }
   }
 
   /* Resolve sub-exported with locally exported */
@@ -2115,8 +2135,9 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
 
   stack = PUSH_RUNSTACK(p, MZ_RUNSTACK, i);
   direct = cl->closure_saved;
-  while (i--)
+  while (i--) {
     stack[i] = direct[i];
+  }
   
   indirect = PUSH_RUNSTACK(p, MZ_RUNSTACK, (2 * c));
   direct = PUSH_RUNSTACK(p, MZ_RUNSTACK, (2 * data->num_locals));
@@ -2346,8 +2367,9 @@ static Scheme_Object *array_to_list(Scheme_Object **a, int c, Scheme_Object *bas
 {
   Scheme_Object *l = base;
 
-  while (c--)
+  while (c--) {
     l = cons(a[c], l);
+  }
   
   return l;
 }
@@ -2362,8 +2384,9 @@ static Scheme_Object **list_to_array(Scheme_Object *l, int c, Scheme_Object **l_
     return NULL;
 
   a = MALLOC_N(Scheme_Object *, c);
-  for (i = 0; i < c; i++, l = SCHEME_CDR(l))
+  for (i = 0; i < c; i++, l = SCHEME_CDR(l)) {
     a[i] = SCHEME_CAR(l);
+  }
 
   if (l_back)
     *l_back = l;
@@ -2445,11 +2468,12 @@ static Scheme_Object *write_body_data(Scheme_Object *o)
 	int i, count = body->u.def.count;
 	BodyVar *vs = body->u.def.vars;
 	
-	for (i = count; i--; )
+	for (i = count; i--; ) {
 	  l = cons(vs[i].id,
 		   cons(scheme_make_integer(vs[i].pos),
 			cons(vs[i].exported ? scheme_true : scheme_false,
 			     l)));
+	}
 
 	l = cons(body->u.def.expr,
 		 cons(scheme_make_integer(body->u.def.count),
@@ -2566,17 +2590,19 @@ static Scheme_Object *write_compound_data(Scheme_Object *o)
   data = (CompoundData *)o;
   
   exs = scheme_null;
-  for (i = data->num_exports; i--; )
+  for (i = data->num_exports; i--; ) {
     exs = cons(scheme_make_integer(data->exports[i].submod_index),
 	       cons(data->exports[i].ext_id, exs));
+  }
 
   subs = array_to_list(data->subunit_exprs, data->num_subunits, scheme_null);
 
   tags = array_to_list(data->tags, data->num_subunits, scheme_null);
 
   counts = scheme_null;
-  for (i = data->num_subunits; i--; )
+  for (i = data->num_subunits; i--; ) {
     counts = cons(scheme_make_integer(data->param_counts[i]), counts);
+  }
 
   maps = scheme_null;
   for (i = data->num_subunits; i--; ) {
@@ -2674,8 +2700,9 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
     sa = MALLOC_N_ATOMIC(short, n);
     data->param_counts = sa;
   }
-  for (i = 0; i < n; i++, counts = SCHEME_CDR(counts))
+  for (i = 0; i < n; i++, counts = SCHEME_CDR(counts)) {
     data->param_counts[i] = SCHEME_INT_VAL(SCHEME_CAR(counts));
+  }
 
   {
     ParamMap **pms;
@@ -2966,7 +2993,7 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
   if (exact) {
     Scheme_Bucket **v = table->buckets;
     int i;
-    for (i = table->size; i--; )
+    for (i = table->size; i--; ) {
       if (v[i]) {
 	Scheme_Bucket *b = v[i];
 	if (SCHEME_TRUEP((Scheme_Object *)b->val)) {
@@ -2983,6 +3010,7 @@ static int check_sig_match(Scheme_Hash_Table *table, Scheme_Object *sig, Scheme_
 			   SCHEME_STR_VAL(dest_context));
 	}
       }
+    }
   }
 
   return 1;

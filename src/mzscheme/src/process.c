@@ -502,7 +502,6 @@ void scheme_init_process(Scheme_Env *env)
 			     env);
 
   if (scheme_starting_up) {
-    REGISTER_SO(config_map);
     REGISTER_SO(namespace_options);
     REGISTER_SO(param_ext_recs);
 
@@ -809,7 +808,7 @@ static void remove_managed(Scheme_Manager_Reference *mr, Scheme_Object *o,
     return;
   }
 
-  for (i = m->count; i--; )
+  for (i = m->count; i--; ) {
     if (m->boxes[i] && SAME_OBJ((*(m->boxes[i])),  o)) {
       *(m->boxes[i]) = 0;
       m->boxes[i] = NULL;
@@ -822,9 +821,11 @@ static void remove_managed(Scheme_Manager_Reference *mr, Scheme_Object *o,
       m->data[i] = NULL;
       break;
     }
+  }
 
-  while (m->count && !m->boxes[m->count - 1])
+  while (m->count && !m->boxes[m->count - 1]) {
     --m->count;
+  }
 
   RELEASE_CUST_LOCK();
 }
@@ -849,8 +850,9 @@ static void adjust_manager_family(void *mgr, void *ignored)
       *parent->children = *(r->sibling);
     } else {
       m = *parent->children;
-      while (m && *m->sibling != r)
+      while (m && *m->sibling != r) {
 	m = *m->sibling;
+      }
       if (m)
 	*m->sibling = *r->sibling;
     }
@@ -1070,13 +1072,14 @@ void scheme_set_tail_buffer_size(int s)
 
     buffer_init_size = s;
 
-    for (p = scheme_first_process; p; p = p->next)
+    for (p = scheme_first_process; p; p = p->next) {
       if (p->tail_buffer_size < s) {
 	Scheme_Object **tb;
 	tb = MALLOC_N(Scheme_Object *, buffer_init_size);
 	p->tail_buffer = tb;
 	p->tail_buffer_size = buffer_init_size;
       }
+    }
   }
   SCHEME_RELEASE_LOCK();  
 }
@@ -1145,8 +1148,9 @@ void scheme_select_process(Scheme_Process *start_process)
       new_process = scheme_first_process;
     
     /* Can't swap in processes with a nestee: */
-    while (new_process && new_process->nestee)
+    while (new_process && new_process->nestee) {
       new_process = new_process->next;
+    }
 
     if (!new_process && !start_process) {
       /* The main thread must blocked on a nestee, and
@@ -1457,8 +1461,9 @@ void scheme_break_thread(Scheme_Process *p)
   }
 
   /* Propagate breaks: */
-  while (p->nestee && scheme_can_break(p, p->config))
+  while (p->nestee && scheme_can_break(p, p->config)) {
     p = p->nestee;
+  }
 
 #ifdef MZ_REAL_THREADS
   /* Avoid signals to wrapping thread when nested already has died: */
@@ -1535,11 +1540,12 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
       empty = 1;
     else {
       int j;
-      for (j = 0; j < num_nsos; j++)
+      for (j = 0; j < num_nsos; j++) {
 	if (namespace_options[j].key == v) {
 	  with_nso = 1;
 	  break;
 	}
+      }
       
       if (j >= num_nsos)
 	scheme_wrong_type("make-namespace", "symbol-flag", i, argc, argv);
@@ -1560,11 +1566,12 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
 
     for (i = 0; i < argc; i++) {
       v = argv[i];
-      for (j = 0; j < num_nsos; j++)
+      for (j = 0; j < num_nsos; j++) {
 	if (namespace_options[j].key == v) {
 	  namespace_options[j].f(env);
 	  break;
 	}
+      }
     }
   }
 
@@ -1744,8 +1751,9 @@ static void get_ready_for_GC()
 	e = p->runstack;
 	e2 = p->runstack_tmp_keep;
 
-	while (o < e && (o != e2))
+	while (o < e && (o != e2)) {
 	  *(o++) = NULL;
+	}
 
 	RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
 
@@ -1753,8 +1761,9 @@ static void get_ready_for_GC()
 	  o = saved->runstack_start;
 	  e = saved->runstack_start;
 	  RUNSTACK_TUNE( size += saved->runstack_size; );
-	  while (o < e)
+	  while (o < e) {
 	    *(o++) = NULL;
+	  }
 	}
 
 	RUNSTACK_TUNE( printf("%ld\n", size); );
@@ -1762,8 +1771,9 @@ static void get_ready_for_GC()
 # ifdef AGRESSIVE_ZERO_TB
 	{
 	  int i;
-	  for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++)
+	  for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++) {
 	    p->tail_buffer[i] = NULL;
+	  }
 	}
 # endif
       }
@@ -1775,8 +1785,9 @@ static void get_ready_for_GC()
 	  segcount = ((long)(p->cont_mark_stack - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
 	else
 	  segcount = 0;
-	for (i = segcount; i < p->cont_mark_seg_count; i++)
+	for (i = segcount; i < p->cont_mark_seg_count; i++) {
 	  p->cont_mark_stack_segments[i] = NULL;
+	}
 	if (segcount < p->cont_mark_seg_count)
 	  p->cont_mark_seg_count = segcount;
       }
@@ -1833,9 +1844,9 @@ int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,vo
   p->blocker = (Scheme_Object *)data;
   p->block_check = f;
   p->block_needs_wakeup = fdf;
-  do
+  do {
     scheme_process_block(delay);
-  while (!(result = f((Scheme_Object *)data)));
+  } while (!(result = f((Scheme_Object *)data)));
   p->block_descriptor = NOT_BLOCKED;
   p->blocker = NULL;
   p->block_check = NULL;
@@ -2415,8 +2426,9 @@ void scheme_tls_set(int pos, void *v)
     p->user_tls_size = tls_pos;
     va = MALLOC_N(void*, tls_pos);
     p->user_tls = va;
-    while (oldc--)
+    while (oldc--) {
       p->user_tls[oldc] = old_tls[oldc];
+    }
   }
 
   p->user_tls[pos] = v;
@@ -2856,8 +2868,9 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
   config->type = scheme_config_type;
   config->extensions = NULL;
   
-  for (i = 0; i < max_configs; i++)
+  for (i = 0; i < max_configs; i++) {
     config->configs[i] = base->configs[i];
+  }
 
   if (base->extensions) {
     Scheme_Bucket **bs = base->extensions->buckets;
@@ -2882,8 +2895,10 @@ Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int 
 {
   Scheme_Object *o;
 
-  if (!config_map)
+  if (!config_map) {
+    REGISTER_SO(config_map);
     config_map = MALLOC_N(Scheme_Object*, max_configs);
+  }
 
   if (config_map[which])
     return config_map[which];
@@ -3278,16 +3293,18 @@ static void print_lock_info(void *ignored)
       sleep(5);
     } while ((scheme_get_milliseconds() - start) < 5000);
     
-    for (p = scheme_first_process; p; p = p->next)
+    for (p = scheme_first_process; p; p = p->next) {
       c++;
+    }
     
     printf("gl: %d cl: %d wl: %d fnl: %d pl: %d sw: %d  tc: %d fpb: %d\n", 
 	   scheme_global_lock_c,
 	   cust_lock_c, will_lock_c, scheme_fin_lock_c,
 	   scheme_port_lock_c, sem_wait_c, c,
 	   scheme_first_process->block_descriptor);
-    for (p = scheme_first_process; p; p = p->next)
+    for (p = scheme_first_process; p; p = p->next) {
       printf("[%d] ", p->block_descriptor);
+    }
     printf("\n");
   }
 }
@@ -4013,8 +4030,9 @@ static int mark_config_val(void *p, Mark_Proc mark)
     Scheme_Config *c = (Scheme_Config *)p;
     int i;
     
-    for (i = max_configs; i--; )
+    for (i = max_configs; i--; ) {
       c->configs[i] = mark(c->configs[i]);
+    }
     c->extensions = mark(c->extensions);
   }
 

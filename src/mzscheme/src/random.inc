@@ -176,8 +176,9 @@ static void sch_srand(long x, Scheme_Random_State *rs)
   }
   rs->fpos = SEP;
   rs->rpos = 0;
-  for (i = 0; i < 10 * DEG; i++)
+  for (i = 0; i < 10 * DEG; i++) {
     (void)sch_rand(rs);
+}
 }
 
 Scheme_Object *scheme_make_random_state(long seed)

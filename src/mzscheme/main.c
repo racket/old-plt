@@ -359,10 +359,12 @@ int actual_main(int argc, char *argv[])
 	    if (argc2 > 1) {
 	      int i, j;
 	      char **both = (char **)malloc(sizeof(char *) * (argc + argc2 - 1));
-	      for (i = 0; i < argc; i++)
+	      for (i = 0; i < argc; i++) {
 	        both[i] = argv[i];
-	      for (j = 1; j < argc2; j++, i++)
+	      }
+	      for (j = 1; j < argc2; j++, i++) {
 	        both[i] = argv2[j];
+	      }
 	        
 	      argv = both;
 	      argc += argc2 - 1;

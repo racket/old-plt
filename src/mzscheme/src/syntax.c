@@ -409,8 +409,9 @@ static int check_form(char *name, Scheme_Object *form)
   int i;
   Scheme_Object *all = form;
 
-  for (i = 0; SCHEME_PAIRP(form); i++)
+  for (i = 0; SCHEME_PAIRP(form); i++) {
     form = SCHEME_CDR(form);
+  }
 
   if (!SCHEME_NULLP(form))
     scheme_wrong_syntax(name, form, all, "bad syntax (" IMPROPER_LIST_FORM ")");
@@ -440,10 +441,11 @@ static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *for
   Scheme_Object *v;
 
   if (!SCHEME_SYMBOLP(args)) {
-    for (v = args; SCHEME_PAIRP(v); v = SCHEME_CDR(v))
+    for (v = args; SCHEME_PAIRP(v); v = SCHEME_CDR(v)) {
       if (!SCHEME_SYMBOLP(SCHEME_CAR(v)))
 	scheme_wrong_syntax(who, SCHEME_CAR(v), form, "bad identifier");
-    
+    }
+
     if (!SCHEME_NULLP(v))
       if (!SCHEME_SYMBOLP(v))
 	scheme_wrong_syntax(who, v, form, "bad identifier");
@@ -536,14 +538,15 @@ define_values_execute(Scheme_Object *data)
   if (SAME_OBJ(vals, SCHEME_MULTIPLE_VALUES)) {
     Scheme_Object *v, **values;
 
-    for (v = vars, i = 0; SCHEME_PAIRP(v); i++, v = SCHEME_CDR(v));
+    for (v = vars, i = 0; SCHEME_PAIRP(v); i++, v = SCHEME_CDR(v)) {}
     
     g = scheme_current_process->ku.multiple.count;
     if (i == g) {
       values = scheme_current_process->ku.multiple.array;
-      for (i = 0; i < g; i++, vars = SCHEME_CDR(vars))
+      for (i = 0; i < g; i++, vars = SCHEME_CDR(vars)) {
 	scheme_set_global_bucket("define-values", (Scheme_Bucket *)SCHEME_CAR(vars), 
 				 values[i], 1);
+      }
 	
       return scheme_void;
     }
@@ -556,7 +559,7 @@ define_values_execute(Scheme_Object *data)
     g = 1;
   
   l = vars;
-  for (i = 0; SCHEME_PAIRP(l); i++, l = SCHEME_CDR(l));
+  for (i = 0; SCHEME_PAIRP(l); i++, l = SCHEME_CDR(l)) {}
 
   show_any = i;
 
@@ -1219,8 +1222,9 @@ bangboxvalue_execute(Scheme_Object *data)
       naya = MALLOC_N(Scheme_Object *, p->ku.multiple.count);
       a = p->ku.multiple.array;
 
-      for (i = p->ku.multiple.count; i--; )
+      for (i = p->ku.multiple.count; i--; ) {
 	naya[i] = a[i];
+      }
       {
 	Scheme_Object *eb;
 	eb = scheme_make_envunbox(naya[pos]);
@@ -1308,8 +1312,9 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
 	/* The mapping is complicated because we now push in the order of 
 	   the variables, but it was compiled using the inverse order. */
 	linfo = scheme_link_info_extend(info, i + 1, head->count, i + 1);
-	for (j = 0; j <= i; j++)
+	for (j = 0; j <= i; j++) {
 	  scheme_link_info_add_mapping(linfo, j, i - j, 0);
+	}
 
 	{
 	  Scheme_Object *le;
@@ -1330,8 +1335,9 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
       }
 
       linfo = scheme_link_info_extend(info, head->count, head->count, head->count);
-      for (i = head->count; i--; )
+      for (i = head->count; i--; ) {
 	scheme_link_info_add_mapping(linfo, i, head->count - 1 - i, 0);
+      }
       
       body = scheme_link_expr(body, linfo);
       if (last)
@@ -1431,7 +1437,7 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
       lv->count = clv->count;
       lv->autobox = recbox;
 
-      for (j = lv->count; j--; )
+      for (j = lv->count; j--; ) {
 	if (!recbox
 	    && (scheme_link_info_flags(linfo, opos + j) & SCHEME_INFO_BOXED)) {
 	  Scheme_Object *sl;
@@ -1440,6 +1446,7 @@ scheme_link_lets(Scheme_Object *form, Link_Info *info)
 					    lv->value));
 	  lv->value = sl;
 	}
+      }
     }
     opos += clv->count;
   }
@@ -1560,21 +1567,23 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 	name = SCHEME_CDR(name);
       }
 
-      for (j = pre_k; j < k; j++)
-	for (m = j + 1; m < k; m++)
+      for (j = pre_k; j < k; j++) {
+	for (m = j + 1; m < k; m++) {
 	  if (SAME_OBJ(names[m], names[j]))
 	    scheme_wrong_syntax(formname, NULL, form,
 				"multiple bindings of \"%s\" in the same clause", 
 				scheme_symbol_name(names[m]));
-
+	}
+      }
     } else {
       scheme_check_identifier(formname, name, NULL, env, form);
       names[k++] = name;
     }
     
     if (!star) {
-      for (m = pre_k; m < k; m++)
+      for (m = pre_k; m < k; m++) {
 	scheme_dup_symbol_check(&r, formname, names[m], "binding", form, 0);
+      }
     }
 
     lv = MALLOC_ONE_TAGGED(Scheme_Compiled_Let_Value);
@@ -1598,16 +1607,18 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
       lv->value = SCHEME_CADR(binding);
     
     if (star || recursive) {
-      for (m = pre_k; m < k; m++)
+      for (m = pre_k; m < k; m++) {
 	scheme_add_compilation_binding(m, names[m], frame);
+      }
     }
     
     bindings = SCHEME_CDR (bindings);
   }
   
   if (!star && !recursive) {
-    for (i = 0; i < num_bindings; i++)
+    for (i = 0; i < num_bindings; i++) {
       scheme_add_compilation_binding(i, names[i], frame);
+    }
   }
 
   if (recursive) {
@@ -1998,8 +2009,9 @@ begin0_execute(Scheme_Object *obj)
   } else
     mv = NULL;
 
-  while (i--)
+  while (i--) {
     (void)_scheme_eval_compiled_expr_multi_wp(*(array++), p);
+  }
 
   if (mv) {
     p->ku.multiple.array = mv;
@@ -2537,9 +2549,10 @@ Scheme_Object *scheme_find_linker_name(Scheme_Syntax_Registered *f)
 {
   int i;
 
-  for (i = 0; i < num_link_names; i++)
+  for (i = 0; i < num_link_names; i++) {
     if (SAME_PTR(linker_names[i].f, f))
       return linker_names[i].sym;
+  }
 
   return NULL;
 }
@@ -2548,9 +2561,10 @@ Scheme_Syntax_Registered *scheme_find_linker(Scheme_Object *sym)
 {
   int i;
 
-  for (i = 0; i < num_link_names; i++)
+  for (i = 0; i < num_link_names; i++) {
     if (SAME_OBJ(linker_names[i].sym, sym))
       return linker_names[i].f;
+  }
 
   return NULL;
 }
@@ -2651,8 +2665,9 @@ static Scheme_Object *write_letrec(Scheme_Object *obj)
   Scheme_Object *l = scheme_null;
   int i = lr->count;
   
-  while (i--)
+  while (i--) {
     l = cons(lr->procs[i], l);
+  }
 
   return cons(scheme_make_integer(lr->count), 
 	      cons(lr->body, l));
@@ -2714,8 +2729,9 @@ static Scheme_Object *write_case_lambda(Scheme_Object *obj)
   a = cl->array;
 
   l = scheme_null;
-  for (; i--; )
+  for (; i--; ) {
     l = cons(a[i], l);
+  }
   
   return cons((cl->name ? cl->name : scheme_null),
 	      l);
@@ -2728,8 +2744,9 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
   Scheme_Case_Lambda *cl;
 
   s = SCHEME_CDR(obj);
-  for (count = 0; SCHEME_PAIRP(s); s = SCHEME_CDR(s))
+  for (count = 0; SCHEME_PAIRP(s); s = SCHEME_CDR(s)) {
     count++;
+  }
 
   cl = (Scheme_Case_Lambda *)
     scheme_malloc_stubborn_tagged(sizeof(Scheme_Case_Lambda)
@@ -2742,8 +2759,9 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
     cl->name = NULL;
 
   s = SCHEME_CDR(obj);
-  for (i = 0; i < count; i++, s = SCHEME_CDR(s))
+  for (i = 0; i < count; i++, s = SCHEME_CDR(s)) {
     cl->array[i] = SCHEME_CAR(s);
+  }
   
   return (Scheme_Object *)cl;
 }

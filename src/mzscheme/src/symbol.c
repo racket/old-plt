@@ -131,10 +131,11 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     memset((char *)table->buckets, 0, asize);
 
     table->count = 0;
-    for (i = 0; i < oldsize; i++)
+    for (i = 0; i < oldsize; i++) {
       if (old[i] && !SAME_OBJ((Scheme_Object *)old[i], scheme_false))
 	symbol_bucket(table, SCHEME_SYM_VAL(old[i]), SCHEME_SYM_LEN(old[i]),
 		      (Scheme_Object *)old[i]);
+    }
     
     goto rehash_key;
   }

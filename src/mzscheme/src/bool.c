@@ -142,7 +142,7 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
     int i;
     char *a = (char *)&((Scheme_Float *)obj1)->float_val;
     char *b = (char *)&((Scheme_Float *)obj2)->float_val;
-    for (i = sizeof(float); i--; )
+    for (i = sizeof(float); i--; ) {
       if (a[i] != b[i]) {
 	/* Double-check for NANs with different signs: */
 	float f = SCHEME_FLT_VAL(obj1);
@@ -153,6 +153,7 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
 	}
 	return 0;
       }
+    }
     return 1;
   }
 #endif
@@ -160,7 +161,7 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
     int i;
     char *a = (char *)&((Scheme_Double *)obj1)->double_val;
     char *b = (char *)&((Scheme_Double *)obj2)->double_val;
-    for (i = sizeof(double); i--; )
+    for (i = sizeof(double); i--; ) {
       if (a[i] != b[i]) {
 	/* Double-check for NANs with different signs: */
 	double d = SCHEME_DBL_VAL(obj1);
@@ -171,6 +172,7 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
 	}
 	return 0;
       }
+    }
     return 1;
   } else if (t1 == scheme_bignum_type)
     return scheme_bignum_eq(obj1, obj2);
@@ -253,9 +255,10 @@ static int vector_equal(Scheme_Object *vec1, Scheme_Object *vec2)
   vl1 = SCHEME_VEC_ELS(vec1);
   vl2 = SCHEME_VEC_ELS(vec2);  
 
-  for (i = 0; i < len; i++)
+  for (i = 0; i < len; i++) {
     if (!scheme_equal(vl1[i], vl2[i]))
       return 0;
+  }
 
   return 1;
 }

@@ -230,20 +230,23 @@ scheme_init_struct (Scheme_Env *env)
 			    env);
   
   /* Add arity structure */
-  for (i = 0; i < as_count; i++)
+  for (i = 0; i < as_count; i++) {
     scheme_add_global_constant(SCHEME_SYM_VAL(as_names[i]), as_values[i],
 			       env);
+  }
 
 #ifdef TIME_SYNTAX
-  for (i = 0; i < ts_count; i++)
+  for (i = 0; i < ts_count; i++) {
     scheme_add_global_constant(SCHEME_SYM_VAL(ts_names[i]), ts_values[i], 
 			       env);
+  }
 #endif
 
 #ifndef NO_UNIT_SYSTEM
-  for (i = 0; i < us_count; i++)
+  for (i = 0; i < us_count; i++) {
     scheme_add_global_constant(SCHEME_SYM_VAL(us_names[i]), us_values[i], 
 			       env);  
+  }
 #endif
 }
 
@@ -297,8 +300,9 @@ scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **arg
   inst->type = scheme_structure_type;
   inst->stype = stype;
 
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     inst->slots[i] = args[i];
+  }
   
   return (Scheme_Object *)inst;
 }
@@ -367,9 +371,10 @@ int scheme_equal_structs (Scheme_Object *obj1, Scheme_Object *obj2)
   if (SCHEME_STRUCT_TYPE(s1) != SCHEME_STRUCT_TYPE(s2))
     return 0;
 
-  for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; )
+  for (i = SCHEME_STRUCT_NUM_SLOTS(s1); i--; ) {
     if (!scheme_equal(s1->slots[i], s2->slots[i]))
       return 0;
+  }
 
   return 1;
 }
@@ -444,8 +449,9 @@ static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
   array = SCHEME_VEC_ELS(v);
   array[0] = SCHEME_STRUCT_NAME_SYM(s);
   array++;
-  for (i = m; i--; )
+  for (i = m; i--; ) {
     array[i] = s->slots[i];
+  }
 
   return v;
 }
@@ -693,8 +699,9 @@ static Scheme_Object *_make_struct_type(const char *base, int blen,
   struct_type->type = scheme_struct_type_type;
   struct_type->name_pos = depth;
   struct_type->parent_types[depth] = struct_type;
-  for (j = depth; j--; )
+  for (j = depth; j--; ) {
     struct_type->parent_types[j] = parent_type->parent_types[j];
+  }
 
   {
     Scheme_Object *tn;
@@ -1061,17 +1068,19 @@ START_XFORM_SKIP;
 static int mark_struct_val(void *p, Mark_Proc mark)
 {
   Scheme_Structure *s = (Scheme_Structure *)p;
+  Scheme_Struct_Type *stype = (Scheme_Struct_Type *)GC_resolve(s->stype);
 
   if (mark) {
     int i;
-    for(i = s->stype->num_slots; i--; )
+
+    for(i = stype->num_slots; i--; )
       gcMARK(s->slots[i]);
 
     gcMARK(s->stype);
   } 
 
   return gcBYTES_TO_WORDS((sizeof(Scheme_Structure) 
-			   + ((s->stype->num_slots - 1) * sizeof(Scheme_Object *))));
+			   + ((stype->num_slots - 1) * sizeof(Scheme_Object *))));
 }
 
 static int mark_struct_type_val(void *p, Mark_Proc mark)
@@ -1080,8 +1089,9 @@ static int mark_struct_type_val(void *p, Mark_Proc mark)
 
   if (mark) {
     int i;
-    for (i = t->name_pos + 1; i--; )
+    for (i = t->name_pos + 1; i--; ) {
       gcMARK(t->parent_types[i]);
+    }
     gcMARK(t->type_name);
   }
 

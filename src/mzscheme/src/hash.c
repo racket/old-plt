@@ -85,8 +85,9 @@ scheme_hash_table (int size, int type, int has_const, int forever)
   table = MALLOC_ONE_TAGGED(Scheme_Hash_Table);
 
   table->step = 0;
-  while (scheme_hash_primes[table->step] < size)
+  while (scheme_hash_primes[table->step] < size) {
     table->step++;
+  }
   table->size = scheme_hash_primes[table->step];
 
   table->count = 0;
@@ -208,13 +209,15 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
 
     table->count = 0;
     if (table->weak) {
-      for (i = 0; i < oldsize; i++)
+      for (i = 0; i < oldsize; i++) {
 	if (old[i] && old[i]->key && *(void **)old[i]->key)
 	  get_bucket(table, *(char **)old[i]->key, 1, old[i]);
+      }
     } else {
-      for (i = 0; i < oldsize; i++)
+      for (i = 0; i < oldsize; i++) {
 	if (old[i] && old[i]->key)
 	  get_bucket(table, old[i]->key, 1, old[i]);
+      }
     }
 
     goto rehash_key;
@@ -412,8 +415,9 @@ static long hash_bignum(Scheme_Object *o)
   bigdig *d = SCHEME_BIGDIG(o);
   long k = 0;
   
-  while (i--)
+  while (i--) {
     k += d[i];
+  }
   
   return k;
 }

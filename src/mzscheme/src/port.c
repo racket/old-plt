@@ -1411,8 +1411,9 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
     i = ip->ungotten_count;
     s = (unsigned char *)ip->ungotten;
     size -= l;
-    while (l--)
+    while (l--) {
       buffer[got++] = s[--i];
+    }
     
     ip->ungotten_count = i;
   }
@@ -1461,9 +1462,10 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
   if (i >= 0) {
     int n = 0;
     ip->charsSinceNewline = c + 1;
-    while (i--)
+    while (i--) {
       if (buffer[i] == '\n' || buffer[i] == '\r')
 	n++;
+    }
     ip->lineNumber += n;
   } else
     ip->charsSinceNewline += c;
@@ -1862,9 +1864,9 @@ static int file_getc(Scheme_Input_Port *port)
 #else
 # define FILE_BLOCK_TIME (float)0.5
 #endif
-    do
+    do {
       scheme_process_block(FILE_BLOCK_TIME);
-    while (!file_char_ready(port));
+    } while (!file_char_ready(port));
 #if defined(FILES_HAVE_FDS) || defined(WIN32_FD_HANDLES)
     scheme_current_process->block_descriptor = NOT_BLOCKED;
     scheme_current_process->blocker = NULL;
@@ -2011,9 +2013,9 @@ static int fd_getc(Scheme_Input_Port *port)
     if (!fd_char_ready(port)) {
       scheme_current_process->block_descriptor = PORT_BLOCKED;
       scheme_current_process->blocker = (Scheme_Object *)port;
-      do
+      do {
 	scheme_process_block(0.0);
-      while (!fd_char_ready(port));
+      } while (!fd_char_ready(port));
       scheme_current_process->block_descriptor = NOT_BLOCKED;
       scheme_current_process->blocker = NULL;
       scheme_current_process->ran_some = 1;
@@ -2184,9 +2186,9 @@ static int osk_getc(Scheme_Input_Port *port)
   if (!osk_char_ready(port)) {
     scheme_current_process->block_descriptor = PORT_BLOCKED;
     scheme_current_process->blocker = (Scheme_Object *)port;
-    do
+    do {
       scheme_process_block(0.0);
-    while (!osk_char_ready(port));
+    } while (!osk_char_ready(port));
     scheme_current_process->block_descriptor = NOT_BLOCKED;
     scheme_current_process->blocker = NULL;
     scheme_current_process->ran_some = 1;
@@ -2357,9 +2359,9 @@ static int tested_file_getc(Scheme_Input_Port *p)
   if (!tested_file_char_ready(p)) {
     scheme_current_process->block_descriptor = PORT_BLOCKED;
     scheme_current_process->blocker = (Scheme_Object *)p;
-    do
+    do {
       scheme_process_block((float)0.0);
-    while (!tested_file_char_ready(p));
+    } while (!tested_file_char_ready(p));
     scheme_current_process->block_descriptor = NOT_BLOCKED;
     scheme_current_process->blocker = NULL;
     scheme_current_process->ran_some = 1;
@@ -2537,8 +2539,9 @@ static long read_for_tested_file(void *data)
 		tip->stupid_eof_check_going = MAKE_SEMAPHORE();
 
 	      /* Perhaps unlikely: parent thread is memorized, yet: */
-	      while (!tip->thread_memory)
+	      while (!tip->thread_memory) {
 		Sleep(1);
+	      }
 
 	      tip->stupid_eof_check = 0;
 	      th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StupidEofCheck, tip, 0, &id);
@@ -4658,8 +4661,9 @@ static int pipe_getc(Scheme_Input_Port *p)
 #else
   scheme_current_process->block_descriptor = PIPE_BLOCKED;
   scheme_current_process->blocker = (Scheme_Object *)p;
-  while (pipe->bufstart == pipe->bufend && !pipe->eof)
+  while (pipe->bufstart == pipe->bufend && !pipe->eof) {
     scheme_process_block((float)0.0);
+  }
   scheme_current_process->block_descriptor = NOT_BLOCKED;
   scheme_current_process->ran_some = 1;
 #endif
@@ -5107,8 +5111,9 @@ static char *cmdline_protect(char *s)
     naya[0] = '"';
     for (p = naya + 1; *s; s++) {
       if (*s == '"') {
-	while (wrote_slash--)
+	while (wrote_slash--) {
 	  *(p++) = '\\';
+	}
 	*(p++) = '"'; /* endquote */
 	*(p++) = '\\';
 	*(p++) = '"'; /* protected */
@@ -6401,9 +6406,9 @@ static int tcp_getc(Scheme_Input_Port *port)
     scheme_current_process->block_descriptor = PORT_BLOCKED;
     scheme_current_process->blocker = (Scheme_Object *)port;
 #endif
-    do
+    do {
       scheme_process_block((float)0.0);
-    while (!tcp_char_ready(port));
+    } while (!tcp_char_ready(port));
 #ifdef USE_SOCKETS_TCP
     scheme_current_process->block_descriptor = NOT_BLOCKED;
     scheme_current_process->blocker = NULL;

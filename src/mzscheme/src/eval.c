@@ -393,8 +393,9 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 	  f = linked[0];
 	  if (n > 20) {
 	    /* Have to copy to keep ptr at front for GC */
-	    for (i = 1; i < n; i++)
+	    for (i = 1; i < n; i++) {
 	      linked[i - 1] = linked[i];
+	    }
 	  } else
 	    linked++;
 	  f = _scheme_apply(f, n - 1, linked);
@@ -425,11 +426,13 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 	   + (app->num_args * sizeof(Scheme_Object *)));
 
   if (linked) {
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; i++) {
       app->args[i] = linked[i];
+    }
   } else {
-    for (i = 0; i < n; i++, v = SCHEME_CDR(v))
+    for (i = 0; i < n; i++, v = SCHEME_CDR(v)) {
       app->args[i] = SCHEME_CAR(v);
+    }
   }
 
   if (final) {
@@ -521,8 +524,9 @@ static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
 	  naya->count = nsize;
 	  nv = (Scheme_Object *)naya;
 
-	  for (i = 0; i < nsize; i++)
+	  for (i = 0; i < nsize; i++) {
 	    naya->array[i] = s->array[i];
+	  }
 	} else
 	  nv = (Scheme_Object *)lv;
 
@@ -532,8 +536,9 @@ static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
 	  e->type = scheme_sequence_type;
 	  e->count = esize;
 
-	  for (i = 0; i < esize; i++)
+	  for (i = 0; i < esize; i++) {
 	    e->array[i] = s->array[i + nsize];
+	  }
 
 	  ev = (Scheme_Object *)look_for_letv_change(e);
 	} else
@@ -1660,8 +1665,9 @@ static Scheme_Object *build_sequence(Scheme_Object *seq,
 
       c = ((Scheme_Sequence *)v)->count;
       a = ((Scheme_Sequence *)v)->array;
-      for (j = 0; j < c; j++)
+      for (j = 0; j < c; j++) {
 	array[i++] = a[j];
+      }
     } else if (opt 
 	       && ((opt > 0 && (k < total))
 		   || ((opt < 0) && k))
@@ -2044,8 +2050,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       p->ku.k.p2 = ra;
       {
 	int i;
-	for (i = num_rands; i--; )
+	for (i = num_rands; i--; ) {
 	  ((Scheme_Object **)p->ku.k.p2)[i] = rands[i];
+	}
       }
     } else
       p->ku.k.p2 = (void *)rands;
@@ -2117,8 +2124,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  quick_rands = PUSH_RUNSTACK(p, RUNSTACK, num_rands);
 	  RUNSTACK_CHANGED();
 
-	  for (i = num_rands; i--; )
+	  for (i = num_rands; i--; ) {
 	    quick_rands[i] = rands[i];
+	  }
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
@@ -2215,19 +2223,22 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    p->runstack_tmp_keep = NULL;
 
 	    stack[n] = rest_vals;
-	    while (n--)
+	    while (n--) {
 	      stack[n] = rands[n];
+	    }
 	  } else {
 	    /* Possibly, but not necessarily, rands > stack: */
 	    if ((unsigned long)rands > (unsigned long)stack) {
 	      int i;
-	      for (i = 0; i < n; i++)
+	      for (i = 0; i < n; i++) {
 		stack[i] = rands[i];
+	      }
 	      stack[n] = scheme_null;
 	    } else {
 	      stack[n] = scheme_null;
-	      while (n--)
+	      while (n--) {
 		stack[n] = rands[n];
+	      }
 	    }
 	  }
 	} else {
@@ -2253,8 +2264,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	  if (rands != stack) {
 	    int n = num_params; 
-	    while (n--)
+	    while (n--) {
 	      stack[n] = rands[n];
+	    }
 	  }
 	}
 #ifdef AGRESSIVE_ZERO_TB
@@ -2280,8 +2292,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  stack = PUSH_RUNSTACK(p, RUNSTACK, n);
 	  RUNSTACK_CHANGED();
 
-	  while (n--)
+	  while (n--) {
 	    stack[n] = src[n];
+	  }
 	}
       }
 
@@ -2301,8 +2314,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  quick_rands = PUSH_RUNSTACK(p, RUNSTACK, num_rands);
 	  RUNSTACK_CHANGED();
 
-	  for (i = num_rands; i--; )
+	  for (i = num_rands; i--; ) {
 	    quick_rands[i] = rands[i];
+	  }
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
@@ -2364,8 +2378,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	UPDATE_THREAD_RSPTR_FOR_GC();
 	vals = MALLOC_N(Scheme_Object *, num_rands);
-	for (i = num_rands; i--; )
+	for (i = num_rands; i--; ) {
 	  vals[i] = rands[i];
+	}
 
 	value = (Scheme_Object *)vals;
       } else
@@ -2400,8 +2415,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       common = p->dw;
       while (common) {
 	dw = c->dw;
-	while (dw && dw != common)
+	while (dw && dw != common) {
 	  dw = dw->prev;
+	}
 	if (dw)
 	  break;
 	common = common->prev;
@@ -2410,11 +2426,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       c->common = common;
       /* For dynamaic-winds after `common' in this
 	 continuation, execute the post-thunks */
-      for (dw = p->dw; dw != common; dw = dw->prev)
+      for (dw = p->dw; dw != common; dw = dw->prev) {
 	if (dw->post) {
 	  p->dw = dw->prev;
 	  dw->post(dw->data);
 	}
+      }
       
       if (num_rands == 1)
 	c->value = value;
@@ -2435,8 +2452,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	UPDATE_THREAD_RSPTR_FOR_GC();
 	vals = MALLOC_N(Scheme_Object *, num_rands);
-	for (i = num_rands; i--; )
+	for (i = num_rands; i--; ) {
 	  vals[i] = rands[i];
+	}
 	
 	value = (Scheme_Object *)vals;
 	p->cjs.num_vals = num_rands;
@@ -2608,8 +2626,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  array = ((Scheme_Sequence *)obj)->array;
 	  
 	  UPDATE_THREAD_RSPTR();
-	  while (--i)
+	  while (--i) {
 	    (void)_scheme_eval_compiled_expr_multi_wp(*(array++), p);
+	  }
 
 	  obj = *array;
 	  goto eval_top;
@@ -2750,8 +2769,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    j = data->closure_size;
 	    dest = closure->vals;
 
-	    while (j--) 
+	    while (j--) {
 	      dest[j] = stack[map[j]];
+	    }
 	  }
 
 	  obj = l->body;
@@ -3249,8 +3269,9 @@ static Scheme_Object *write_application(Scheme_Object *obj)
   app = (Scheme_App_Rec *)obj;
 
   l = scheme_null;
-  for (i = app->num_args + 1; i--; )
+  for (i = app->num_args + 1; i--; ) {
     l = cons(app->args[i], l);
+  }
   
   return l;
 }
@@ -3274,8 +3295,9 @@ static Scheme_Object *write_sequence(Scheme_Object *obj)
   a = ((Scheme_Sequence *)obj)->array;
 
   l = scheme_null;
-  for (; i--; )
+  for (; i--; ) {
     l = cons(a[i], l);
+  }
   
   return l;
 }

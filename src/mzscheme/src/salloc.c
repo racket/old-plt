@@ -64,19 +64,21 @@ void scheme_dont_gc_ptr(void *p)
   int *nayac;
 
   /* look for existing: */
-  for (i = 0; i < dgc_size; i++)
+  for (i = 0; i < dgc_size; i++) {
     if (dgc_array[i] == p) {
       dgc_count[i]++;
       return;
     }
+  }
 
   /* look for empty slot: */
-  for (i = 0; i < dgc_size; i++)
+  for (i = 0; i < dgc_size; i++) {
     if (!dgc_array[i]) {
       dgc_array[i] = p;
       dgc_count[i] = 1;
       return;
     }
+  }
 
   /* Make more room: */
   oldsize = dgc_size;
@@ -111,12 +113,13 @@ void scheme_gc_ptr_ok(void *p)
 {
   int i;
   
-  for (i = 0; i < dgc_size; i++)
+  for (i = 0; i < dgc_size; i++) {
     if (dgc_array[i] == p) {
       if (!(--dgc_count[i]))
 	dgc_array[i] = NULL;
       break;
     }
+  }
 }
 
 #ifdef NO_GC
@@ -371,8 +374,9 @@ static void do_next_finalization(void *o, void *data)
   if (fns->ext_f)
     fns->ext_f(o, fns->ext_data);
 
-  for (fn = fns->prim_first; fn; fn = fn->next)
+  for (fn = fns->prim_first; fn; fn = fn->next) {
     fn->f(o, fn->data);
+  }
 }
 
 /* Makes gc2 xformer happy: */
@@ -680,7 +684,7 @@ static void count_managed(Scheme_Manager *m, int *c, int *a, int *u, int *t,
   *t += 1;
   *c += m->count;
   *a += m->alloc;
-  for (i = m->count; i--; )
+  for (i = m->count; i--; ) {
     if (m->boxes[i]) {
       Scheme_Object *o = (*(m->boxes[i]));
       (*u)++;
@@ -691,6 +695,7 @@ static void count_managed(Scheme_Manager *m, int *c, int *a, int *u, int *t,
       else if (SCHEME_OUTPORTP(o))
 	(*opt)++;
     }
+  }
 
   if (*m->sibling)
     count_managed(*m->sibling, c, a, u, t, ipt, opt, th);
@@ -1065,8 +1070,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
       need_align = 1;
 #if FORCE_KNOWN_SUBPARTS
       e = COUNT(app->args[0]);
-      for (i = 1; i <= app->num_args; i++)
+      for (i = 1; i <= app->num_args; i++) {
 	e += COUNT(app->args[i]);
+      }
 #endif
     }
     break;
@@ -1081,8 +1087,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
       s = sizeof(Scheme_Sequence) + (seq->count - 1) * sizeof(Scheme_Object *);
 
 #if FORCE_KNOWN_SUBPARTS
-      for (i = e = 0; i < seq->count; i++)
+      for (i = e = 0; i < seq->count; i++) {
 	e += COUNT(seq->array[i]);
+      }
 #endif
     }
     break;
@@ -1158,8 +1165,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
       s += let->count * sizeof(Scheme_Object *);
 #if FORCE_KNOWN_SUBPARTS
       e = COUNT(let->body);
-      for (i = 0; i < let->count; i++)
+      for (i = 0; i < let->count; i++) {
 	e += COUNT(let->procs[i]);
+      }
 #endif
     }
     break;
@@ -1203,8 +1211,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
       s += count * sizeof(Scheme_Object*);
 
 #if FORCE_KNOWN_SUBPARTS
-      for (i = e = 0; i < count; i++)
+      for (i = e = 0; i < count; i++) {
 	e += COUNT(array[i]);
+      }
 #endif
     }
     break;
@@ -1372,8 +1381,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 
 	e = COUNT(c->extensions) + COUNT(c->base);
 
-	for (i = 0; i < __MZCONFIG_BUILTIN_COUNT__; i++)
+	for (i = 0; i < __MZCONFIG_BUILTIN_COUNT__; i++) {
 	  e += COUNT(*c->configs[i]);
+	}
       }
 #endif
     }
@@ -1407,8 +1417,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 
       s = sizeof(Scheme_Structure) + (count - 1) * sizeof(Scheme_Object *);
 #if FORCE_KNOWN_SUBPARTS
-      for (i = e = 0; i < count; i++)
+      for (i = e = 0; i < count; i++) {
 	e += COUNT(slots[i]);
+      }
       e += COUNT(((Scheme_Structure *)root)->stype);
 #endif
     }
@@ -1445,13 +1456,14 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #if FORCE_SUBPARTS
       {
 	int i;
-	for (i = e = 0; i < ht->size; i++)
+	for (i = e = 0; i < ht->size; i++) {
 	  if (ht->buckets[i]) {
 	    if (ht->by_address)
 	      e += COUNT(ht->buckets[i]);
 	    else
 	      e += COUNT(ht->buckets[i]->val);
 	  }
+	}
       }
 #endif
     }

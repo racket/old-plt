@@ -1659,12 +1659,11 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
     }
     
     r = 1;
-    while ((b > 0) && (r > 0))
-      {
-	r = a % b;
-	a = b;
-	b = r;
-      }
+    while ((b > 0) && (r > 0)) {
+      r = a % b;
+      a = b;
+      b = r;
+    }
     return (scheme_make_integer(a));
   } else if (SCHEME_FLOATP(n1) || SCHEME_FLOATP(n2)) {
     double i1, i2, a, b, r;
@@ -2723,9 +2722,10 @@ static char *double_to_string (double d)
   }
 
   l = strlen(buffer);
-  for (i = 0; i < l; i++)
+  for (i = 0; i < l; i++) {
     if (buffer[i] == '.' || isalpha((unsigned char)buffer[i]))
       break;
+  }
   if (i == l) {
     buffer[i] = '.';
     buffer[i + 1] = '0';
@@ -3561,12 +3561,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '+' || str[i] == '-')
 	digits[dcp++] = str[i++];
 
-      for (; isdigit((unsigned char)str[i]) || ((radix == 16) && isbase16digit(str[i])); i++)
+      for (; isdigit((unsigned char)str[i]) || ((radix == 16) && isbase16digit(str[i])); i++) {
 	digits[dcp++] = str[i];
+      }
 
       if (str[i] == '#') {
-	for (; str[i] == '#'; i++)
+	for (; str[i] == '#'; i++) {
 	  digits[dcp++] = '0';
+	}
 	num_ok = 0;
       } else
 	num_ok = 1;

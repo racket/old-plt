@@ -42,7 +42,7 @@ typedef struct regexp {
   long regsize;
   char regstart;		/* Internal use only. */
   char reganch;			/* Internal use only. */
-  char *regmust;		/* Internal use only: relative to self */
+  long regmust;                 /* Internal use only: => pointer relative to self */
   long regmlen;			/* Internal use only. */
   char program[1];		/* Unwarranted chumminess with compiler. */
 } regexp;
@@ -271,7 +271,7 @@ regcomp(char *exp)
   /* Dig out information for optimizations. */
   r->regstart = '\0';	/* Worst-case defaults. */
   r->reganch = 0;
-  r->regmust = NULL;
+  r->regmust = 0;
   r->regmlen = 0;
   scan = r->program+1;			/* First BRANCH. */
   if (OP(regnext(scan)) == END) {	/* Only one top-level choice. */
@@ -294,12 +294,14 @@ regcomp(char *exp)
     if (flags&SPSTART) {
       longest = NULL;
       len = 0;
-      for (; scan != NULL; scan = regnext(scan))
+      for (; scan != NULL; scan = regnext(scan)) {
 	if (OP(scan) == EXACTLY && strlen(OPERAND(scan)) >= len) {
 	  longest = OPERAND(scan);
 	  len = strlen(OPERAND(scan));
 	}
-      r->regmust = longest;
+      }
+      if (longest)
+	r->regmust = longest - (char *)r;
       r->regmlen = len;
     }
   }
@@ -364,8 +366,9 @@ reg(int paren, int *flagp)
   regtail(ret, ender);
 
   /* Hook the tails of the branches to the closing node. */
-  for (br = ret; br != NULL; br = regnext(br))
+  for (br = ret; br != NULL; br = regnext(br)) {
     regoptail(br, ender);
+  }
 
   /* Check for proper termination. */
   if (paren && *regparse++ != ')') {
@@ -527,8 +530,9 @@ regatom(int *flagp)
 		classend = UCHARAT(regparse);
 		if (xclass > classend+1)
 		  FAIL("invalid [] range");
-		for (; xclass <= classend; xclass++)
+		for (; xclass <= classend; xclass++) {
 		  regc(xclass);
+		}
 		regparse++;
 	      }
 	    } else
@@ -648,8 +652,9 @@ reginsert(char op, char *opnd)
   src = regcode;
   regcode += 3;
   dst = regcode;
-  while (src > opnd)
+  while (src > opnd) {
     *--dst = *--src;
+  }
 
   place = opnd;			/* Op node, where operand used to be. */
   *place++ = op;
@@ -745,10 +750,10 @@ regexec(regexp *prog, char *string, char **startp, char **endp)
   }
 
   /* If there is a "must appear" string, look for it. */
-  if (prog->regmust != NULL) {
+  if (prog->regmust) {
     s = string;
-    while ((s = strchr(s, prog->regmust[0])) != NULL) {
-      if (strncmp(s, prog->regmust, prog->regmlen) == 0)
+    while ((s = strchr(s, ((char *)prog + prog->regmust)[0])) != NULL) {
+      if (strncmp(s, ((char *)prog + prog->regmust), prog->regmlen) == 0)
 	break;			/* Found it. */
       s++;
     }
@@ -1092,8 +1097,8 @@ regdump(r)
     printf("start `%c' ", r->regstart);
   if (r->reganch)
     printf("anchored ");
-  if (r->regmust != NULL)
-    printf("must have \"%s\"", r->regmust);
+  if (r->regmust)
+    printf("must have \"%s\"", (char *)r + r->regmust);
   printf("\n");
 }
 
@@ -1194,9 +1199,10 @@ regstrcspn(char *s1, char *s2)
 
   count = 0;
   for (scan1 = s1; *scan1 != '\0'; scan1++) {
-    for (scan2 = s2; *scan2 != '\0';) /* ++ moved down. */
+    for (scan2 = s2; *scan2 != '\0';) { /* ++ moved down. */
       if (*scan1 == *scan2++)
 	return(count);
+    }
     count++;
   }
   return(count);
@@ -1243,8 +1249,9 @@ char *regsub(regexp *prog, char *source, long *lenout, char *insrc, unsigned lon
 	src++;
       } else {
 	no = 0;
-	while ('0' <= *src && *src <= '9')
+	while ('0' <= *src && *src <= '9') {
 	  no = (no * 10) + (*src++ - '0');
+	}
       }
     } else
       no = -1;
@@ -1502,7 +1509,6 @@ static int mark_regexp(void *p, Mark_Proc mark)
   regexp *r = (regexp *)p;
 
   if (mark) {
-    r->regmust = (char *)p + ((char *)r->regmust - (char *)p);
   }
 
   return gcBYTES_TO_WORDS((sizeof(regexp) + r->regsize));

@@ -564,7 +564,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
     const char *p;
     int has_colon;
     
-    for (p = filename; *p && (*p != ':'); p++);
+    for (p = filename; *p && (*p != ':'); p++) {}
     has_colon = (*p == ':');
     
     p = filename;    
@@ -772,8 +772,9 @@ char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
 
   s = qbuf;
   if (!given_dir) {
-    for (i = spec->name[0]; i; i--)
+    for (i = spec->name[0]; i; i--) {
       s[size++] = spec->name[i];
+    }
   }
 
   while (1)  {
@@ -793,26 +794,28 @@ char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
 	}
 
     s[size++] = ':';
-    for (i = buf[0]; i; i--)
+    for (i = buf[0]; i; i--) {
       s[size++] = buf[i];
+    }
 	  
-	dirID = pbrec.dirInfo.ioDrParID;
-	if (dirID == 1)
-	  break;
+    dirID = pbrec.dirInfo.ioDrParID;
+    if (dirID == 1)
+      break;
   }
   
   if (alloced < QUICK_BUF_SIZE) {
     s = (char *)scheme_malloc_atomic(size + 1);
-    for (j = 0, i = size; i--; j++)
+    for (j = 0, i = size; i--; j++) {
       s[j] = qbuf[i];
+    }
   } else {
-  	int save;
-  	
-  	for (i = 0, j = size - 1; i < j; i++, j--) {
-  	  save = s[i];
-  	  s[i] = s[j];
-  	  s[j] = save;
-  	}
+    int save;
+    
+    for (i = 0, j = size - 1; i < j; i++, j--) {
+      save = s[i];
+      s[i] = s[j];
+      s[j] = save;
+    }
   }
   
   s[size] = 0;
@@ -841,9 +844,10 @@ int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type)
 
 static int has_null(const char *s, long l)
 {
-  while (l--)
+  while (l--) {
     if (!s[l])
       return 1;
+  }
 
   return 0;
 }
@@ -868,7 +872,7 @@ static int check_dos_slashslash_drive(const char *next, int len,
 
   if (IS_A_SEP(next[1])) {
     /* Check for a drive form: //x/y */
-    for (j = 2; j < len; j++)
+    for (j = 2; j < len; j++) {
       if (!IS_A_SEP(next[j])) {
 	/* Found non-sep */
 	for (; j < len; j++)
@@ -901,6 +905,7 @@ static int check_dos_slashslash_drive(const char *next, int len,
 	  }
 	break;
       }
+    }
   }
 
   return is_drive;
@@ -962,8 +967,9 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
     
     for (u = 0, f = 1; 
 	 u < 255 && filename[f] && filename[f] != '/'; 
-	 u++, f++)
+	 u++, f++) {
       user[u] = filename[f];
+    }
 
     if (filename[f] && filename[f] != '/') {
       if (errorin && report_bad_user)
@@ -1054,7 +1060,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
       /* Allow // at start? */
       allow_leading = 0;
       if (IS_A_SEP(filename[0]) && IS_A_SEP(filename[1])) {
-	for (i = 2; i < ilen; i++)
+	for (i = 2; i < ilen; i++) {
 	  if (!IS_A_SEP(filename[i])) {
 	    /* Found non-sep */
 	    for (; i < ilen; i++)
@@ -1070,6 +1076,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 	      }
 	    break;
 	  }
+	}
       }
 
       pos = i = 0;
@@ -1521,9 +1528,10 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 		   && (next[1] == ':')) {
 	  int j;
 	  rel = 0;
-	  for (j = 2; j < len; j++)
+	  for (j = 2; j < len; j++) {
 	    if (!IS_A_SEP(next[j]))
 	      break;
+	  }
 	  is_drive = (j >= len);
 	} else {
 	  rel = 1;
@@ -1574,7 +1582,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	/* Except for first, ignore a colon at the end. */
 	int last = i ? len - 1 : len, j;
 	rel = 1;
-	for (j = 0; j < last; j++)
+	for (j = 0; j < last; j++) {
 	  if (next[j] == ':') {
 	    if (i) {
 	      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -1588,6 +1596,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	      break;
 	    }
 	  }
+	}
       }
 #endif
 
@@ -1689,8 +1698,9 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
 	s = (char *)scheme_malloc_atomic(len);
 	--len;
 
-	for (p = 0, q = 0; p < ALLOW_DOUBLE_BEFORE; p++)
+	for (p = 0, q = 0; p < ALLOW_DOUBLE_BEFORE; p++) {
 	  s[q++] = old[p];
+	}
 
 	for (; p < len; p++) {
 	  if (!IS_A_SEP(old[p]) || !IS_A_SEP(old[p + 1]))
@@ -1866,9 +1876,10 @@ int scheme_is_relative_path(const char *s, long len)
 #endif
 #ifdef MAC_FILE_SYSTEM
   if (s[0] != ':')
-    for (i = 1; i < len; i++)
+    for (i = 1; i < len; i++) {
       if (s[i] == ':')
 	return 0;
+    }
 
   return 1;
 #endif
@@ -2978,9 +2989,10 @@ static int user_in_group(gid_t gid)
   struct passwd *pw;
   int i, in;
 
-  for (i = 0; i < GROUP_CACHE_SIZE; i++)
+  for (i = 0; i < GROUP_CACHE_SIZE; i++) {
     if (group_mem_cache[i].set && (group_mem_cache[i].gid == gid))
       return group_mem_cache[i].in;
+  }
 
   pw = getpwuid(getuid());
   if (!pw)
@@ -2990,18 +3002,20 @@ static int user_in_group(gid_t gid)
   if (!g)
     return 0;
 
-  for (i = 0; g->gr_mem[i]; i++)
+  for (i = 0; g->gr_mem[i]; i++) {
     if (!strcmp(g->gr_mem[i], pw->pw_name))
       break;
+  }
 
   in = !!(g->gr_mem[i]);
 
-  for (i = 0; i < GROUP_CACHE_SIZE; i++)
+  for (i = 0; i < GROUP_CACHE_SIZE; i++) {
     if (!group_mem_cache[i].set) {
       group_mem_cache[i].set = 1;
       group_mem_cache[i].gid = gid;
       group_mem_cache[i].in = in;
     }
+  }
 
   return in;
 }
@@ -3365,8 +3379,9 @@ find_system_path(int argc, Scheme_Object **argv)
 	
 	i = strlen(s) - 1;
 	
-	while (i && (s[i] != '\\'))
+	while (i && (s[i] != '\\')) {
 	  --i;
+	}
 	s[i] = 0;
 	home = scheme_make_string(s);
       }

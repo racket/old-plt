@@ -900,15 +900,15 @@
 			   (values e live-vars (cdr e-) #f))]
 			[while?
 			 ;; Run test part. We don't filter live-vars, but maybe we should:
-			 (let-values ([(v test-live-vars)
+			 (let-values ([(v live-vars)
 				       (convert-seq-interior (cadr e-) #t vars 
 							     (restore-new-vars live-vars)
 							     #f)])
-			   ;; Now run body again, unioning live vars:
+			   ;; Now run body again:
 			   (let-values ([(e live-vars)
 					 (convert-brace-body (restore-new-vars live-vars))])
 			     ;; Finally, run test again:
-			     (let-values ([(v test-live-vars)
+			     (let-values ([(v live-vars)
 					   (convert-seq-interior (cadr e-) #t vars 
 								 live-vars
 								 #f)])

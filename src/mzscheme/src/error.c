@@ -1092,8 +1092,9 @@ scheme_raise_exn(int id, ...)
   else
     c = exn_table[id].args;
 
-  for (i = 2; i < c; i++)
+  for (i = 2; i < c; i++) {
     eargs[i] = va_arg(args, Scheme_Object*);
+  }
 
   msg = va_arg(args, char*);
 
@@ -1311,10 +1312,11 @@ void scheme_init_exn(Scheme_Env *env)
 					 exn_table[i].names,
 					 exn_table[i].count,
 					 EXN_FLAGS);
-      for (j = exn_table[i].count; j--; )
+      for (j = exn_table[i].count; j--; ) {
 	scheme_add_global_constant_symbol(exn_table[i].names[j],
 					  values[j],
 					  env);
+      }
     }
   }
 

@@ -87,8 +87,9 @@ void scheme_init_print(Scheme_Env *env)
 
     quote_link_symbol = scheme_intern_symbol("-q");
 
-    for (i = 0; i < _CPT_COUNT_; i++)
+    for (i = 0; i < _CPT_COUNT_; i++) {
       compacts[i] = i;
+    }
   }
 }
 
@@ -132,9 +133,10 @@ static int compare_sym_vec(void *v1, void *v2)
   elems1 = SCHEME_VEC_ELS(vec1);
   elems2 = SCHEME_VEC_ELS(vec2);
 
-  while (s--)
+  while (s--) {
     if (!SAME_OBJ(elems1[s], elems2[s]))
       return 1;
+  }
 
   return 0;
 }
@@ -358,22 +360,24 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p)
     obj->type = -t;
     len = SCHEME_VEC_SIZE(obj);
     array = SCHEME_VEC_ELS(obj);
-    for (i = 0; i < len; i++)
+    for (i = 0; i < len; i++) {
       if (check_cycles(array[i], p)) {
 	cycle = 1;
 	break;
       }
+    }
     obj->type = t;
   } else if (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type)) {
     Scheme_Object **slots = ((Scheme_Structure *)obj)->slots;
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     obj->type = -t;
-    while (i--)
+    while (i--) {
       if (check_cycles(slots[i], p)) {
 	cycle = 1;
 	break;
       }
+    }
     obj->type = t;
   }  else
     cycle = 0;
@@ -410,15 +414,17 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
 
     len = SCHEME_VEC_SIZE(obj);
     array = SCHEME_VEC_ELS(obj);
-    for (i = 0; i < len; i++)
+    for (i = 0; i < len; i++) {
       setup_graph_table(array[i], ht, counter, p);
+    }
   } else if (p->quick_print_struct 
 	   && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) {
     Scheme_Object **slots = ((Scheme_Structure *)obj)->slots;
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
-    while (i--)
+    while (i--) {
       setup_graph_table(slots[i], ht, counter, p);
+    }
   }
 }
 
@@ -1055,8 +1061,9 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	print_compact_number(p, app->num_args);
       }
 
-      for (i = 0; i < app->num_args + 1; i++)
+      for (i = 0; i < app->num_args + 1; i++) {
 	closed = print(app->args[i], escaped, 1, NULL, vht, p);
+      }
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_quote_compilation_type))
     {
@@ -1161,7 +1168,11 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 #endif
       }
 
-      v = (scheme_type_writers[t])(obj);
+      {
+	Scheme_Type_Writer writer;
+	writer = scheme_type_writers[t];
+	v = writer(obj);
+      }
 
       if (compact)
 	closed = print(v, escaped, 1, NULL, vht, p);
@@ -1226,11 +1237,12 @@ print_string(Scheme_Object *string, int escaped, Scheme_Process *p)
   if (len) {
     if (escaped) {
       str = SCHEME_STR_VAL(string);
-      for (i = 0; i < len; i++, str++)
+      for (i = 0; i < len; i++, str++) {
 	if ((*str == '"') || (*str == '\\')) {
 	  simple = 0;
 	  break;
 	}
+      }
     }
     
     if (simple)
@@ -1341,9 +1353,10 @@ print_vector(Scheme_Object *vec, int escaped, int compact,
 
   if (compact) {
     if (vht) {
-      for (i = size; i--; )
+      for (i = size; i--; ) {
 	if (!SCHEME_INTP(elems[i]) && !SCHEME_SYMBOLP(elems[i]))
 	  break;
+      }
       if (i < 0) {
 	/* It's a symbol vector */
 	Scheme_Object *o;
@@ -1366,9 +1379,10 @@ print_vector(Scheme_Object *vec, int escaped, int compact,
     print_compact(p, CPT_VECTOR);
     print_compact_number(p, size);
   } else {
-    for (i = size; i--; common++)
+    for (i = size; i--; common++) {
       if (!i || (elems[i] != elems[i - 1]))
 	break;
+    }
     
     if (escaped && p->quick_print_vec_shorthand) {
       char buffer[100];

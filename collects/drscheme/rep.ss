@@ -403,7 +403,7 @@
 		(queue/skip-after-execute
 		 (lambda ()
 		   (generic-write this
-				  s 
+				  s
 				  (lambda (start end)
 				    (change-style result-delta
 						  start end))))

@@ -479,7 +479,7 @@
 	(let ([value (if (r4rs-style-printing? (current-setting))
 			 v
 			 (mzlib:print-convert:print-convert v))])
-	  (mzlib:pretty-print:pretty-print-handler value))))
+	  (mzlib:pretty-print:pretty-print value))))
 
   ;; drscheme-port-print-handler : TST port -> void
   ;; effect: prints the value on the port

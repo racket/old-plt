@@ -11,6 +11,7 @@
 (define graphical-debug? #t)
 (define textual-debug? #f)
 
+(define drscheme-namespace (current-namespace))
 (define drscheme-custodian #f)
 (define drscheme-eventspace #f)
 
@@ -34,10 +35,11 @@
      (parameterize ([current-eventspace (make-eventspace)])
        (start-help-desk)))))
 
-(define (T)
+(define (U)
   (when drscheme-custodian (custodian-shutdown-all drscheme-custodian))
   (set! drscheme-custodian (make-custodian))
-  (parameterize ([current-custodian drscheme-custodian])
+  (parameterize ([current-custodian drscheme-custodian]
+		 [current-namespace drscheme-namespace])
     (set! drscheme-eventspace (make-eventspace))
     (parameterize ([current-eventspace drscheme-eventspace])
       (start-drscheme))))
@@ -49,5 +51,5 @@
    (require-library "rep.ss" "readline")
    (read-eval-print-loop)]
   [else
-   (T)
+   (U)
    (yield (make-semaphore 0))])

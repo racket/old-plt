@@ -1917,7 +1917,6 @@
                           ()
                           enable
                           get-parent
-                          is-checked?
                           check
                           delete
                           command
@@ -1932,7 +1931,8 @@
                           get-shortcut
                           restore
                           is-deleted?
-                          is-enabled?))
+                          is-enabled?
+                          is-checked?))
                       ($$check-box<%>
                         (interface
                           ()

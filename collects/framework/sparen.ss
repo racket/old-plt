@@ -19,23 +19,25 @@
   (define (get-comments) comments)
   
   (define forward-match
-    (opt-lambda (edit start end [cache #f])
+    (case-lambda
+     [(edit start end) (forward-match edit start end #f)]
+     [(edit start end cache)
       (paren:forward-match edit start end
 			   paren-pairs
 			   quote-pairs
 			   comments
-			   cache)))
+			   cache)]))
 
   (define backward-match
     (case-lambda
+     [(edit start end) (backward-match edit start end #f)]
      [(edit start end cache)
       (paren:backward-match edit start end
 			    paren-pairs
 			    quote-pairs
 			    comments
 			    #f
-			    cache)]
-     [(edit start end) (backward-match edit start end #f)]))
+			    cache)]))
 
   (define balanced?
     (lambda (edit start end)

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.17 1999/02/15 22:18:00 robby Exp $
+;; $Id: testr.ss,v 1.18 1999/03/02 02:57:14 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -203,15 +203,19 @@
   ;;
   ;; Return list of window's ancestors from root down to window
   ;; (including window).  Used for on-subwindow-char and on-subwindow-event.
-  ;; get-parent returns () for no parent.
+  ;; get-parent returns #f for no parent.
+  ;; If stop-at-top-level-window? is #t, then the ancestors up to the
+  ;; first top-level-window are returned.
   ;;
 
   (define ancestor-list
-    (lambda (window)
+    (lambda (window stop-at-top-level-window?)
       (let loop ([w window] [l null])
-	(if w
-	    (loop (send w get-parent) (cons w l))
-	    l))))
+	(if (or (not w)
+		(and stop-at-top-level-window?
+		     (is-a? w mred:top-level-window<%>)))
+	    l
+	    (loop (send w get-parent) (cons w l))))))
   
   ;;
   ;; Returns #t if window is in active-frame, else #f.
@@ -398,7 +402,7 @@
   
   ;; delay test for on-char until all ancestors decline on-subwindow-char.
   (define (send-key-event window event)
-    (let loop ([l (ancestor-list window)])
+    (let loop ([l (ancestor-list window #t)])
       (cond [(null? l)
 	     (cond
 	      [(ivar-in-class? 'on-char (object-class window))
@@ -590,7 +594,7 @@
   
   (define send-mouse-event
     (lambda (window event)
-      (let loop ([l  (ancestor-list window)])
+      (let loop ([l  (ancestor-list window #t)])
 	(cond
 	  [(null? l)
 	   (if (ivar-in-class? 'on-event (object-class window))
@@ -693,7 +697,7 @@
 		  ([old-window  (get-focused-window)]
 		   [leave   (make-object mred:mouse-event% 'leave)]
 		   [enter   (make-object mred:mouse-event% 'enter)]
-		   [root    (car (ancestor-list new-window))])
+		   [root    (car (ancestor-list new-window #t))])
 		(send leave  set-x 0)   (send leave  set-y 0)
 		(send enter  set-x 0)   (send enter  set-y 0)
 		

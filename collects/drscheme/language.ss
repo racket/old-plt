@@ -174,7 +174,8 @@
 		      (lambda (button evt) 
 			(send f show #f)
 			(when (procedure? unregister-callback)
-			  (unregister-callback))))]
+			  (unregister-callback)))
+		      '(border))]
 	 [compare-setting-to-gui
 	  (lambda (setting)
 	    (let* ([compare-check-box
@@ -274,7 +275,8 @@
     (make-object mred:menu-item%
       "Configure Language..."
       language-menu
-      (lambda (_1 _2) (language-dialog)))
+      (lambda (_1 _2) (language-dialog))
+      #\l)
     (make-object mred:separator-menu-item% language-menu)
     (make-object mred:menu-item%
       "Set Library To..."

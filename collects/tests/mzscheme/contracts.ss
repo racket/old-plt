@@ -9,11 +9,13 @@
   ;; test/spec-passed : symbol sexp -> void
   ;; tests a passing specification
   (define (test/spec-passed name expression)
+    (printf "testing: ~s\n" name)
     (test (void)
           (let ([for-each-eval (lambda (l) (for-each eval l))]) for-each-eval)
           (list expression '(void))))
   
   (define (test/spec-passed/result name expression result)
+    (printf "testing: ~s\n" name)
     (test result
           eval
           expression))
@@ -21,18 +23,21 @@
   ;; test/spec-failed : symbol sexp string -> void
   ;; tests a failing specification with blame assigned to `blame'
   (define (test/spec-failed name expression blame)
-    (define (failed-contract x)
-      (and (string? x)
-	   (cond
-             [(regexp-match ": ([^ ]*) broke" x) => cadr]
-             [(regexp-match "([^ ]+): .* does not imply" x) => cadr]
-             [else #f])))
+    (define (ensure-contract-failed x)
+      (let ([result (with-handlers ([(lambda (x) (and (not-break-exn? x) (exn? x)))
+                                     exn-message])
+                      (list 'normal-termination
+                            (eval x)))])
+        (if (string? result)
+            (cond
+              [(regexp-match ": ([^ ]*) broke" result) => cadr]
+              [(regexp-match "([^ ]+): .* does not imply" result) => cadr]
+              [else "no blame in error message"])
+            result)))
+    (printf "testing: ~s\n" name)
     (test blame
-          failed-contract
-          (with-handlers ([(lambda (x) (and (not-break-exn? x) (exn? x)))
-                           exn-message])
-            (eval expression)
-            'failed/expected-exn-got-normal-termination)))
+          ensure-contract-failed
+          expression))
   
   (test/spec-passed
    'contract-flat1 
@@ -550,18 +555,143 @@
   
   
   (test/spec-passed/result
-   'contract-=>1
+   'contract-=>flat1
    '(contract-=> (>=/c 5) (>=/c 10) 1 'badguy)
    1)
   (test/spec-passed/result
-   'contract-=>2
+   'contract-=>flat2
    '(contract-=> (>=/c 5) (>=/c 10) 12 'badguy)
    12)
   (test/spec-failed
-   'contract-=>3
+   'contract-=>flat3
    '(contract-=> (>=/c 5) (>=/c 10) 6 'badguy)
    "badguy")
+
+  (test/spec-passed
+   'contract-=>->1
+   '(contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) (lambda (x) x) 'badguy))
   
+  (test/spec-failed
+   'contract-=>->2
+   '(contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) 'not-a-proc 'badguy)
+   "badguy")
+  
+  (test/spec-passed/result
+   'contract-=>->3
+   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) (lambda (x) x) 'badguy)
+     1)
+   1)
+  
+  (test/spec-passed/result
+   'contract-=>->4
+   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) (lambda (x) x) 'badguy)
+     12)
+   12)
+  
+  (test/spec-failed
+   'contract-=>->5
+   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 5)) (lambda (x) x) 'badguy)
+     7)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>->6
+   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 10) . -> . (>=/c 10)) (lambda (x) 7) 'badguy)
+     7)
+   "badguy")
+
+  (test/spec-passed
+   'contract-=>->*1
+   '(contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                 (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                 (lambda (x y) (values x y))
+                 'badguy))
+  
+  (test/spec-failed
+   'contract-=>->*2
+   '(contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                 (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                 'not-a-proc
+                 'badguy)
+   "badguy")
+  
+  (test/spec-passed/result
+   'contract-=>->*3
+   '(let-values ([(r1 r2)
+                  ((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                                (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                                (lambda (x y) (values x y))
+                                'badguy)
+                   1 7)])
+      r1)
+   1)
+  
+  (test/spec-passed/result
+   'contract-=>->*4
+   '(let-values ([(r1 r2)
+                  ((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                                (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                                (lambda (x y) (values x y))
+                                'badguy)
+                   11 21)])
+      r1)
+   11)
+  
+  (test/spec-failed
+   'contract-=>->*5
+   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                  (lambda (x y) (values x y))
+                  'badguy)
+     5 21)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>->*6
+   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                  (lambda (x y) (values x y))
+                  'badguy)
+     11 10)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>->*7
+   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                  (lambda (x y) (values 8 25))
+                  'badguy)
+     11 21)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>->*8
+   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
+                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
+                  (lambda (x y) (values 15 10))
+                  'badguy)
+     11 21)
+   "badguy")
+  
+  (test/spec-passed/result
+   'contract-=>->*9
+   '(let-values ([(a b)
+                  ((contract-=> (->* ((>=/c 10) (>=/c 20) (>=/c 30)) ((>=/c 3) (>=/c 8)))
+                                (->* ((>=/c 3) (>=/c 8) (>=/c 30)) ((>=/c 10) (>=/c 20)))
+                                (lambda (x y z) (values x z))
+                                'badguy)
+                   101 102 103)])
+      b)
+   103)
+  
+  (test/spec-failed
+   'contract-=>mismatch
+   '(contract-=> (>=/c 5)
+                 (-> (>=/c 3) (>=/c 8))
+                 1
+                 'badguy)
+   "badguy")
+
   ))
 
 (report-errs)

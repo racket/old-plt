@@ -457,7 +457,8 @@
 	     (unless (and (string? name)
 			  (procedure? contract)
 			  (procedure-arity-includes? contract 1))
-	       (error 'flat-named-contract "expected string and procedure of one argument as arguments, given: ~e and ~e"
+	       (error 'flat-named-contract
+                      "expected string and procedure of one argument as arguments, given: ~e and ~e"
 		      name contract))
 	     (make-flat-named-contract name contract))])
       flat-named-contract))
@@ -495,7 +496,8 @@
                       src-info))
              (unless (and (symbol? neg-blame)
                           (symbol? pos-blame))
-               (error 'contract "expected symbols as names for assigning blame, given: ~e and ~e, other args ~e ~e ~e"
+               (error 'contract
+                      "expected symbols as names for assigning blame, given: ~e and ~e, other args ~e ~e ~e"
                       neg-blame pos-blame
                       a-contract 
                       name
@@ -509,7 +511,7 @@
                       name))
              (check-contract a-contract name pos-blame neg-blame src-info)))])))
 
-  ;; check-contract : contract any symbol symbol syntax -> ...
+  ;; check-contract : contract any symbol symbol syntax -> any
   (define (check-contract contract val pos neg src-info)
     (cond
       [(contract? contract)
@@ -563,7 +565,8 @@
                     tbb
                     src-loc))
            (unless (symbol? tbb)
-             (error 'contract-=> "expected symbol as names for assigning blame, given: ~e, other args ~e ~e ~e ~e"
+             (error 'contract-=> 
+                    "expected symbol as names for assigning blame, given: ~e, other args ~e ~e ~e ~e"
                     tbb
                     c1
                     c2
@@ -902,6 +905,7 @@
                        
                        [(rng-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(rng-length rng-index ...) (generate-indicies (syntax (rng ...)))]
+                       [(rng-ant-x ...) (generate-temporaries (syntax (rng ...)))]
                        [(res-x ...) (generate-temporaries (syntax (rng ...)))]
                        [arity (length (syntax->list (syntax (dom ...))))])
            (values
@@ -944,18 +948,32 @@
                             ...))))))
             (syntax
              (lambda (ant conq val tbb src-info)
-               (let* ([ant-info (contract-impl-info conq)]
-                      [dom-ant-info (ant-info dom-length)])
-                 (if dom-ant-info
-                     (let ([dom-ant-x (vector-ref dom-ant-info dom-index)] ...)
-                       (lambda (arg-x ...)
-                         (val (check-implication dom-x dom-ant-x arg-x tbb src-info) ...)))
-                     (raise-contract-implication-error ant conq val tbb src-info)))))
+               (if (and (procedure? val)
+                        (procedure-arity-includes? val dom-length))
+                   (let* ([ant-info (contract-impl-info ant)]
+                          [dom-ant-info (ant-info dom-length #t #f)]
+                          [rng-ant-info (ant-info rng-length #f #f)])
+                     (if (and rng-ant-info dom-ant-info)
+                         (let ([dom-ant-x (vector-ref dom-ant-info dom-index)] ...
+                               [rng-ant-x (vector-ref rng-ant-info rng-index)] ...)
+                           (lambda (arg-x ...)
+                             (let-values ([(res-x ...)
+                                           (val (check-implication dom-x dom-ant-x arg-x tbb src-info) ...)])
+                               (values 
+                                (check-implication rng-ant-x rng-x res-x tbb src-info) ...))))
+                         (raise-contract-implication-error ant conq val tbb src-info)))
+                   (raise-contract-implication-error ant conq val tbb src-info))))
             (syntax 
-             (lambda (len)
-               (cond
-                 [(= len dom-length) (vector dom-x ...)]
-                 [else #f])))))]
+             (lambda (len dom? and-more?)
+               (if and-more?
+                   #f
+                   (if dom?
+                       (cond
+                         [(= len dom-length) (vector dom-x ...)]
+                         [else #f])
+                       (cond
+                         [(= len rng-length) (vector rng-x ...)]
+                         [else #f])))))))]
         [(_ (dom ...) rest (rng ...))
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
                        [(arg-x ...) (generate-temporaries (syntax (dom ...)))]

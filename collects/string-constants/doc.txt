@@ -19,7 +19,7 @@ syntactic forms and procedures:
   
 > (all-languages) : (listof symbol)
 
-  This form returns a list of strings (in the same order as
+  This form returns a list of symbols (in the same order as
   those returned from string-constants) naming each
   language.
 

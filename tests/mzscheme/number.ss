@@ -1389,6 +1389,8 @@
 (test 1.0 expt 0 -0.0)
 (test 1.0 expt 0.0 0.0)
 (test 1.0 expt 0.0 0.0)
+(test 1 expt 0.0 0)
+(test 1 expt -0.0 0)
 (test -0.0 expt -0.0 1)
 (test-nan.0 expt +nan.0 10)
 (test-nan.0 expt 2 +nan.0)

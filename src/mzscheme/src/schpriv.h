@@ -401,7 +401,8 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src, 
-				      Scheme_Object *stx_wraps, int cangraph);
+				      Scheme_Object *stx_wraps, 
+				      int cangraph, int copyprops);
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks,
 				      Scheme_Hash_Table *renames);
 

@@ -1012,7 +1012,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     return scheme_datum_to_syntax(icons(rest,
 					icons(base,
 					      icons(field_symbols, scheme_null))),
-				  forms, forms, 0);
+				  forms, forms, 0, 1);
   }
 }
 

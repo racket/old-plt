@@ -215,7 +215,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   Scheme_Object *ne, *oe, *e1, *e2;
   Scheme_Object *wraps;
   long lazy_prefix;
-  
+
   if (nstx->props) {
     if (SAME_OBJ(nstx->props, STX_SRCTAG)) {
       /* Retain 'source tag. */
@@ -1833,12 +1833,15 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, 
 				      Scheme_Object *stx_src,
 				      Scheme_Object *stx_wraps,
-				      int can_graph)
+				      int can_graph, int copy_props)
 {
   Scheme_Hash_Table *ht;
   Scheme_Object *v;
 
   if (!SCHEME_FALSEP(stx_src) && !SCHEME_STXP(stx_src))
+    return o;
+
+  if (SCHEME_STXP(o))
     return o;
 
   if (can_graph && HAS_SUBSTX(o))
@@ -1853,6 +1856,9 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
 
   if (ht)
     v = scheme_resolve_placeholders(v, 1);
+
+  if (copy_props)
+    ((Scheme_Stx *)v)->props = ((Scheme_Stx *)stx_src)->props;
 
   return v;
 }
@@ -1902,7 +1908,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
   if (!SCHEME_FALSEP(argv[2]) && !SCHEME_STXP(argv[2]))
     scheme_wrong_type("datum->syntax", "syntax or #f", 2, argc, argv);
     
-  return scheme_datum_to_syntax(argv[0], argv[1], argv[2], 1);
+  return scheme_datum_to_syntax(argv[0], argv[1], argv[2], 1, 0);
 }
 
 

@@ -643,7 +643,7 @@
 	(parameterize ([error-print-width 40])
 	  (format "~e" (make-string 200 #\v))))
   
-  (let()
+  '(let()
     (define bads
       (let loop ([i badc-range-end])
 	(cond
@@ -724,5 +724,47 @@
 					  void
 					  void)])
 	   (read-eval-print-loop)))
+
+
+
+(define (cust-test open)
+  (let ([try
+	 (lambda ()
+	   (let ([c (make-custodian)])
+	     (parameterize ([current-custodian c])
+	       (let ([n
+		      (let loop ([n 0])
+			(with-handlers ([exn:i/o?
+					 (lambda (exn) 
+					   (printf "expected open failure: ~a~n"
+						   (exn-message exn))
+					   n)])
+			  ;; leave the port open:
+			  (open)
+			  (if (= n 5000)
+			      n
+			      (loop (add1 n)))))])
+		 ;; should close all the ports
+		 (custodian-shutdown-all c)
+		 (printf "got ~a ports~n" n)
+		 n))))])
+    (let ([n (try)])
+      (test n try))))
+
+(cust-test (lambda ()
+	     (open-input-file 
+	      (build-path (current-load-relative-directory)
+			  "file.ss"))))
+
+(let* ([pn 40001]
+       [l (tcp-listen pn)])
+  (cust-test (lambda ()
+	       (let-values ([(r1 w1) (tcp-connect "localhost" pn)]
+			    [(r2 w2) (tcp-accept l)])
+		 '(close-input-port r1)
+		 '(close-output-port w1)
+		 '(close-output-port w2)
+		 '(close-input-port r2))))
+  (tcp-close l))
 
 (report-errs)

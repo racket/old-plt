@@ -1690,7 +1690,7 @@ Bool wxTimer::Start(int millisec, Bool _one_shot)
     return FALSE;
 
   if (((MrEdContext *)context)->killed)
-    scheme_signal_error("start in timer%: the current eventspace has been shutdown");
+    scheme_signal_error("start in timer%%: the current eventspace has been shutdown");
   
   interval = millisec;
   if (interval <= 0)

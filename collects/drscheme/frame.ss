@@ -5,6 +5,7 @@
 	    [drscheme:basis : drscheme:basis^]
 	    [drscheme:setup : drscheme:setup^]
 	    [drscheme:unit : drscheme:unit^]
+	    [drscheme:parameters : drscheme:parameters^]
 	    [drscheme:compound-unit : drscheme:compound-unit^]
 	    [zodiac : zodiac:system^])
     
@@ -81,7 +82,7 @@
 	       (append-separator)))]
 	  [file-menu:new
 	   (lambda ()
-	     (let ([f (make-object drscheme:unit:frame% #f #f)])
+	     (let ([f (make-object (drscheme:parameters:current-frame%) #f #f)])
 	       (send f show #t)
 	       f))]
 	  [file-menu:between-new-and-open

@@ -52,7 +52,7 @@ void wxGDIShutdown(void)
     wxGShutdown();
 }
 
-static is_nt()
+static int is_nt()
 {
   static int nt = -1;
   if (nt < 0) {
@@ -1730,7 +1730,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
 
     (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
     
-    if (alen == 1) {
+    if ((alen == 1) && is_nt()) {
       ABCFLOAT cw;
       GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
       w += (cw.abcfA + cw.abcfB + cw.abcfC) * ws;
@@ -2039,7 +2039,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
     alen = substitute_font(ustring, d, alen, theFont, dc, screen_font, 0.0, &reset);
 
-    if (alen == 1) {
+    if ((alen == 1) && is_nt()) {
       ABCFLOAT cw;
       GetCharABCWidthsFloatW(dc, ustring[d], ustring[d], &cw);
       tx += cw.abcfA + cw.abcfB + cw.abcfC;

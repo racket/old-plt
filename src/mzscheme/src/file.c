@@ -124,7 +124,7 @@ long scheme_creator_id = 'MzSc';
 
 #define TO_PATH(x) (SCHEME_PATHP(x) ? x : scheme_char_string_to_path(x))
 
-#ifdef WINDOWS_FILE_SYSTEM
+#ifdef DOS_FILE_SYSTEM
 extern int scheme_stupid_windows_machine;
 #endif
 

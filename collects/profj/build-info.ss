@@ -790,7 +790,8 @@
           ((iface-extend-class) iface-extend-class)
           ((class-extend-iface) class-extend-iface)
           ((class-implement-iface) class-imp-iface)
-          ((method-not-implemented) method-not-impl)))))
+          ((method-not-implemented) method-not-impl)
+          ((conflicting-method) conflict-method)))))
   
   ;raise-error ast symbol -> void
   ;raises syntax error to indicate erroneous types

@@ -85,6 +85,7 @@
                (list "<font color=\"red\">"
                      "Please create a doc collection."
                      "You will not be able to install any manuals until you do."
+		     "Installing help-doc.plt will create doc collection automaically."
                      "</font>")]
               [else
                (list*

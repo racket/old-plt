@@ -32,8 +32,8 @@
    invalidate-all-bitmap-caches ; gui-view-state -> void
    
    label-has-snips-of-this-type? ; gui-view-state label symbol -> boolean
-   add-snips ; gui-view-state label symbol (listof top) -> void
-   remove-inserted-snips ; gui-view-state label symbol -> void
+   add-snips ; gui-view-state label symbol top (listof top) -> void
+   remove-inserted-snips ; gui-view-state label symbol top -> void
    remove-all-snips-in-source ; gui-view-state top -> void
    remove-all-snips-and-arrows-and-colors ; gui-view-state -> void
    for-each-snip-type ; gui-view-state (symbol -> void) -> void
@@ -113,6 +113,10 @@
   ; an argument and extract gui-view-state from it, because we need the gui-state-gui-view-state
   ; function to do that which means this module would depend on the snips-and-arrows one, thereby
   ; creating a loop in the module dependencies...
+  ; Note that we could color the label as we go, thereby having incremental coloring as we
+  ; analyze terms, but that turns out to be *very* slow, because the editor has to be unlocked
+  ; (because of disable-evalution), the style changed, the editor re-lock and the bitmap cache
+  ; invalidated for each label in turn...
   (define (register-label-with-gui gui-view-state label gui-state)
     (let ([source
            (saam:register-label-with-gui (gui-view-state-gui-model-state gui-view-state) label)])
@@ -156,7 +160,6 @@
            ; (i.e. the user doesn't start changing stuff while we color). If that's not
            ; true, then we'll need to lock the editor during coloring
            [get-span-from-label (saam:make-get-span-from-label-from-model-state gui-model-state)]
-           [get-source-from-label (gui-view-state-get-source-from-label gui-view-state)]
            [get-style-delta-from-label (gui-view-state-get-style-delta-from-label gui-view-state)])
       (saam:for-each-source
        gui-model-state
@@ -165,8 +168,7 @@
          (saam:for-each-label-in-source
           gui-model-state source
           (lambda (label)
-            (let ([label-left-pos (saam:get-position-from-label gui-model-state label)]
-                  [source (get-source-from-label label)])
+            (let ([label-left-pos (saam:get-position-from-label gui-model-state label)])
               (send source change-style (get-style-delta-from-label label)
                     label-left-pos (+ label-left-pos (get-span-from-label label)) #f))))
          (send source end-edit-sequence)))
@@ -194,7 +196,8 @@
       (invalidate-all-bitmap-caches gui-view-state)
       (saam:for-each-source gui-model-state
                             (lambda (source)
-                              (remove-all-snips-in-source gui-view-state source)))))
+                              (remove-all-snips-in-source gui-view-state source)))
+      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))
   
   ; gui-view-state top -> void
   ; remove all snips in a given editor.
@@ -204,7 +207,7 @@
      (gui-view-state-gui-model-state gui-view-state)
      source
      (lambda (label)
-       (remove-inserted-snips gui-view-state label 'all)))
+       (remove-inserted-snips gui-view-state label 'all source)))
     (send source end-edit-sequence))
   
   ; gui-view-state -> void
@@ -270,6 +273,9 @@
   ; TEXT
   ; gui-view-state label string -> void
   ; resize and re-color one label
+  ; the caller of user-resize-label can't tell us what the source of label
+  ; is, because the label to resize might be in a different editor than the one
+  ; where the resize menu was used, so we have to use get-source-from-label
   (define (user-resize-label gui-view-state label new-string)
     (let ([gui-model-state (gui-view-state-gui-model-state gui-view-state)]
           [source ((gui-view-state-get-source-from-label gui-view-state) label)])
@@ -289,67 +295,44 @@
   
   
   ; SNIPS
-  ; lockable text% for snip content
-  (define snip-text%
-    (class text%
-      (define unlocked? #t)
-      
-      (define/public (lock-content)
-        (set! unlocked? #f))
-      
-      (rename [super-can-insert? can-insert?])
-      ; exact-non-negative-integer exact-non-negative-integer -> boolean
-      (define/override (can-insert? start len)
-        (and unlocked?
-             (super-can-insert? start len)))
-      
-      (rename [super-can-delete? can-delete?])
-      ; exact-non-negative-integer exact-non-negative-integer -> boolean
-      (define/override (can-delete? start len)
-        (and unlocked?
-             (super-can-delete? start len)))
-      
-      (super-instantiate ())))
-  
-  ; gui-view-state label symbol (listof top) -> void
+  ; gui-view-state label symbol top (listof top) -> void
   ; adds snips of given type to given label
-  (define (add-snips gui-view-state label type snips-content)
-    (let ([source ((gui-view-state-get-source-from-label gui-view-state) label)])
-      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
-      (let ([get-box-style-delta-from-snip-type
-             (gui-view-state-get-box-style-delta-from-snip-type gui-view-state)]
-            [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
-                                          label type (length snips-content))])
-        (send source begin-edit-sequence #f)
-        (for-each (lambda (snip-content)
-                    (let* ([snip-text (make-object snip-text%)]
-                           [snip (make-object editor-snip% snip-text)])
-                      (send snip-text insert snip-content)
-                      (send snip-text lock-content)
-                      (send source insert snip starting-pos starting-pos)
-                      (send source change-style
-                            (get-box-style-delta-from-snip-type type)
-                            starting-pos (add1 starting-pos) #f)))
-                  snips-content)
-        (send source end-edit-sequence))
-      (invalidate-all-bitmap-caches gui-view-state)
-      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))
+  (define (add-snips gui-view-state label type source snips-content)
+    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
+    (let ([get-box-style-delta-from-snip-type
+           (gui-view-state-get-box-style-delta-from-snip-type gui-view-state)]
+          [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
+                                        label type source (length snips-content))])
+      (send source begin-edit-sequence #f)
+      (for-each (lambda (snip-content)
+                  (let* ([snip-text (make-object text%)]
+                         [snip (make-object editor-snip% snip-text)])
+                    (send snip-text insert snip-content)
+                    (send snip-text lock #t)
+                    (send source insert snip starting-pos starting-pos)
+                    (send source change-style
+                          (get-box-style-delta-from-snip-type type)
+                          starting-pos (add1 starting-pos) #f)))
+                snips-content)
+      (send source end-edit-sequence))
+    (invalidate-all-bitmap-caches gui-view-state)
+    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))
   
-  ; gui-view-state label symbol -> void
+  ; gui-view-state label symbol top -> void
   ; remove snips for a given label and type
-  (define (remove-inserted-snips gui-view-state label type)
-    (let ([source ((gui-view-state-get-source-from-label gui-view-state) label)])
-      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
-      (let-values ([(starting-pos ending-pos)
-                    (saam:remove-inserted-snips (gui-view-state-gui-model-state gui-view-state) label type)])
-        ; all the snips for a given label and type are contiguous and deleted at once.
-        ; starting-pos is #f when type is 'all and the label has no snips displayed.
-        (when starting-pos
-          (send source begin-edit-sequence #f)
-          (send source delete starting-pos ending-pos #f)
-          (send source end-edit-sequence)))
-      (invalidate-all-bitmap-caches gui-view-state)
-      (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f)))
+  (define (remove-inserted-snips gui-view-state label type source)
+    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
+    (let-values ([(starting-pos ending-pos)
+                  (saam:remove-inserted-snips (gui-view-state-gui-model-state gui-view-state)
+                                              label type source)])
+      ; all the snips for a given label and type are contiguous and deleted at once.
+      ; starting-pos is #f when type is 'all and the label has no snips displayed.
+      (when starting-pos
+        (send source begin-edit-sequence #f)
+        (send source delete starting-pos ending-pos #f)
+        (send source end-edit-sequence)))
+    (invalidate-all-bitmap-caches gui-view-state)
+    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))
   
   
   ; ARROWS

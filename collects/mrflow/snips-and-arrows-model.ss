@@ -47,8 +47,8 @@
    for-each-snip-type ; gui-model-state (symbol -> void) -> void
    label-has-snips-of-this-type? ; gui-model-state label symbol -> boolean
    snips-currently-displayed-in-source? ; gui-model-state top -> boolean
-   add-snips ; gui-model-state label symbol non-negative-exact-integer -> non-negative-exact-integer
-   remove-inserted-snips ; gui-model-state label symbol -> (value non-negative-exact-integer non-negative-exact-integer)
+   add-snips ; gui-model-state label symbol top non-negative-exact-integer -> non-negative-exact-integer
+   remove-inserted-snips ; gui-model-state label symbol top -> (value non-negative-exact-integer non-negative-exact-integer)
    )
   
   ; DATA STRUCTURES
@@ -695,12 +695,11 @@
                            (snip-group-size snip-group)
                            0))))))))
   
-  ; gui-model-state label symbol non-negative-exact-integer -> non-negative-exact-integer
+  ; gui-model-state label symbol top non-negative-exact-integer -> non-negative-exact-integer
   ; updates state (move existing snips and add new ones) and returns the position where
   ; the snips should be inserted in the text
-  (define (add-snips gui-model-state label type number-of-snips)
-    (let* ([source ((gui-model-state-get-source-from-label gui-model-state) label)]
-           [source-gui-data
+  (define (add-snips gui-model-state label type source number-of-snips)
+    (let* ([source-gui-data
             (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state)
                            source cst:thunk-false)]
            [label-gui-data-by-label (source-gui-data-label-gui-data-by-label source-gui-data)]
@@ -744,12 +743,11 @@
                                                 (set-make)))
             label-starting-pos))))
   
-  ; gui-model-state label symbol -> (value non-negative-exact-integer non-negative-exact-integer)
+  ; gui-model-state label symbol top -> (value non-negative-exact-integer non-negative-exact-integer)
   ; removes all snips for a given label and type, move remaining snips, and returns the interval
   ; to delete in the editor
-  (define (remove-inserted-snips gui-model-state label type)
-    (let* ([source ((gui-model-state-get-source-from-label gui-model-state) label)]
-           [source-gui-data
+  (define (remove-inserted-snips gui-model-state label type source)
+    (let* ([source-gui-data
             (assoc-set-get (gui-model-state-source-gui-data-by-source gui-model-state)
                            source cst:thunk-false)]
            [label-gui-data

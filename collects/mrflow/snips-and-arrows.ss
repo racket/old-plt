@@ -36,12 +36,16 @@
                             get-snip-text-thunk-from-snip-type-and-label
                             ; (union #f label)
                             previous-label
+                            ; boolean
+                            ; we need this one to prevent arrows and menus to show up
+                            ; before the real analysis part is over
+                            term-analysis-done?
                             ))
   
   ; MENUS
-  ; gui-state menu% label symbol -> menu-item%
+  ; gui-state menu% label symbol top -> menu-item%
   ; creates a menu entry for a given snip type
-  (define (create-snips-menu-item-by-type gui-state menu label type)
+  (define (create-snips-menu-item-by-type gui-state menu label type source)
     (let ([gui-view-state (gui-state-gui-view-state gui-state)]
           [get-menu-text-from-snip-type (gui-state-get-menu-text-from-snip-type gui-state)]
           [get-snip-strings
@@ -52,7 +56,7 @@
             (get-menu-text-from-snip-type type 'hide)
             menu
             (lambda (item event)
-              (saav:remove-inserted-snips gui-view-state label type)))
+              (saav:remove-inserted-snips gui-view-state label type source)))
           ; show menu entry
           (let ([snip-strings (get-snip-strings)])
             (unless (null? snip-strings)
@@ -60,7 +64,7 @@
                 (get-menu-text-from-snip-type type 'show)
                 menu
                 (lambda (item event)
-                  (saav:add-snips gui-view-state label type snip-strings))))))))
+                  (saav:add-snips gui-view-state label type source snip-strings))))))))
   
   ; gui-state menu% label -> menu-item%
   ; create menu entries for arrows
@@ -186,22 +190,24 @@
         (rename [super-can-insert? can-insert?])
         ; exact-non-negative-integer exact-non-negative-integer -> boolean
         (define/override (can-insert? start len)
-          (and (or (symbol? gui-view-state)
-                   (is-action-allowed? gui-view-state this))
+          (and (or (symbol? gui-state)
+                   (and (gui-state-term-analysis-done? gui-state)
+                        (is-action-allowed? gui-view-state this)))
                (super-can-insert? start len)))
         
         (rename [super-can-delete? can-delete?])
         ; exact-non-negative-integer exact-non-negative-integer -> boolean
         (define/override (can-delete? start len)
-          (and (or (symbol? gui-view-state)
-                   (is-action-allowed? gui-view-state this))
+          (and (or (symbol? gui-state)
+                   (and (gui-state-term-analysis-done? gui-state)
+                        (is-action-allowed? gui-view-state this)))
                (super-can-delete? start len)))
         
         (rename [super-after-insert after-insert])
         ; exact-non-negative-integer exact-non-negative-integer -> void
         (define/override (after-insert start len)
           (super-after-insert start len)
-          (unless (or (symbol? gui-view-state)
+          (unless (or (symbol? gui-state)
                       (saav:analysis-currently-modifying? gui-view-state))
             (saav:after-user-action gui-view-state)))
         
@@ -209,7 +215,7 @@
         ; exact-non-negative-integer exact-non-negative-integer -> void
         (define/override (after-delete start len)
           (super-after-delete start len)
-          (unless (or (symbol? gui-view-state)
+          (unless (or (symbol? gui-state)
                       (saav:analysis-currently-modifying? gui-view-state))
             (saav:after-user-action gui-view-state)))
         
@@ -250,6 +256,7 @@
         ; -> void
         ; colors all registered labels
         (define/public (color-all-labels)
+          (set-gui-state-term-analysis-done?! gui-state #t)
           (saav:color-all-labels gui-view-state))
         
         ; -> void
@@ -262,7 +269,8 @@
         ; boolean dc% real real real real real real symbol -> void
         (define/override (on-paint before? dc left top right bottom dx dy draw-caret)
           (super-on-paint before? dc left top right bottom dx dy draw-caret)
-          (when (and (not (symbol? gui-view-state))
+          (when (and (not (symbol? gui-state))
+                     (gui-state-term-analysis-done? gui-state)
                      (not before?))
             (saav:redraw-arrows gui-view-state this dc dx dy)))
         
@@ -289,7 +297,9 @@
         ; mouse-event% -> void
         (define/override (on-event event)
           (cond
-            [(symbol? gui-view-state) (super-on-event event)]
+            [(or (symbol? gui-state)
+                 (not (gui-state-term-analysis-done? gui-state)))
+             (super-on-event event)]
             [(and (send event button-down? 'right)
                   (let-values ([(pos editor) (get-drscheme-pos-and-editor event this)])
                     (if pos
@@ -307,7 +317,7 @@
                  ; SNIPS
                  (let ([create-snips-menu-item
                         (lambda (snip-type)
-                          (create-snips-menu-item-by-type gui-state menu label snip-type))])
+                          (create-snips-menu-item-by-type gui-state menu label snip-type editor))])
                    (saav:for-each-snip-type gui-view-state create-snips-menu-item))
                  ; ARROWS
                  (create-arrow-menu-items gui-state menu label)
@@ -325,6 +335,8 @@
                                         #f
                                         old-name)))])
                                (for-each (lambda (label)
+                                           ; the label might not be in the same editor, so passing
+                                           ; editor as an argument to user-resize-label is useless
                                            (saav:user-resize-label gui-view-state label new-name))
                                          ((gui-state-get-labels-to-rename-from-label gui-state) label))))])
                      (make-object menu-item%
@@ -434,6 +446,7 @@
                        get-labels-to-rename-from-label
                        get-menu-text-from-snip-type
                        get-snip-text-thunk-from-snip-type-and-label
+                       #f
                        #f)])
       (lambda (label)
         (saav:register-label-with-gui gui-view-state label gui-state))))

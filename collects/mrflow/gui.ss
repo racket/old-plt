@@ -108,21 +108,21 @@
       
       
       ; INTERFACE FOR COLORING TEXT AND SNIPS
-      ; label -> exact-non-negative-integer
+      ; sba-state label -> exact-non-negative-integer
       ; span conversation: for all graphical purposes, the span of a compound expression is 1,
       ; to highlight only the opening parenthesis. Otherwise we might highlight subexpressions
       ; with the wrong color.
-      (define (get-span-from-label label)
+      (define (get-span-from-label sba-state label)
         (if (or (sba:is-label-atom? label)
-                (not (null? (sba:get-errors-from-label label))))
+                (not (null? (sba:get-errors-from-label sba-state label))))
             (sba:get-span-from-label label)
             1))
       
-      ; label -> style-delta%
+      ; sba-state  label -> style-delta%
       ; If the label has errors associated with it, we color the term with the color
       ; of the worst error, otherwise we color it with the normal clickable style-delta.
-      (define (get-style-delta-from-label label)
-        (let ([errors (sba:get-errors-from-label label)])
+      (define (get-style-delta-from-label sba-state label)
+        (let ([errors (sba:get-errors-from-label sba-state label)])
           (if (null? errors)
               can-click-style-delta
               (foldl (lambda (sba-error current-max-style-delta)
@@ -163,17 +163,17 @@
              [else (error 'get-menu-text-from-type "MrFlow internal error; unknown error action: ~a" action)])]
           [else (error 'get-menu-text-from-type "MrFlow internal error; unknown type: ~a" type)]))
       
-      ; symbol label -> (-> (listof string))
+      ; sba-state symbol label -> (-> (listof string))
       ; given a snip type and a lable, returns a thunk that, when applied, will
       ; give the content of the snips to be added for that type and label.
-      (define (get-snip-text-from-snip-type type label)
+      (define (get-snip-text-from-snip-type sba-state type label)
         (case type
           [(type)
            (lambda ()
-             (list (sba:pp-type (sba:get-type-from-label label) 'gui)))]
+             (list (sba:pp-type (sba:get-type-from-label sba-state label) 'gui)))]
           [(error)
            (lambda ()
-             (map err:sba-error-message (sba:get-errors-from-label label)))]))
+             (map err:sba-error-message (sba:get-errors-from-label sba-state label)))]))
       
       ; DEFINITION WINDOW MIXIN
       (drscheme:get/extend:extend-definitions-text
@@ -217,79 +217,81 @@
                         [interactions-text (get-interactions-text)]
                         [language-settings
                          (fw:preferences:get
-                          (drscheme:language-configuration:get-settings-preferences-symbol))]
-                        [register-label-with-gui
-                         (saa:make-register-label-with-gui
-                          sba:get-source-from-label
-                          sba:get-mzscheme-position-from-label
-                          get-span-from-label
-                          sba:get-parents-from-label
-                          sba:get-children-from-label
-                          (lambda (label) #f)
-                          (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
-                          (lambda (label) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
-                          get-style-delta-from-label
-                          get-box-style-delta-from-snip-type
-                          get-menu-text-from-snip-type
-                          get-snip-text-from-snip-type
-                          snip-type-list
-                          #t
-                          tacked-arrow-brush
-                          untacked-arrow-brush
-                          arrow-pen
-                          )])
-                    (disable-evaluation)
-                    (clear-annotations)
-                    (sba:reset-all)
-                    
-                    ; note: we have to do this each time, because the user might have changed
-                    ; the language between analyses.
-                    (let* ([language-object (drscheme:language-configuration:language-settings-language
-                                             language-settings)]
-                           [primitive-table-file (send language-object get-mrflow-primitives-filename)])
-                      (if (file-exists? primitive-table-file)
-                          (begin
-                            (sba:initialize-primitive-type-schemes primitive-table-file)
-                            (drscheme:eval:expand-program
-                             (drscheme:language:make-text/pos definitions-text
-                                                              0
-                                                              (send definitions-text last-position))
-                             language-settings
-                             #t
-                             ; set current-directory and current-load-relative-directory before expansion
-                             (lambda ()
-                               (let* ([tmp-b (box #f)]
-                                      [fn (send definitions-text get-filename tmp-b)])
-                                 (unless (unbox tmp-b)
-                                   (when fn
-                                     (let-values ([(base name dir?) (split-path fn)])
-                                       (current-directory base)
-                                       (current-load-relative-directory base))))))
-                             void
-                             (lambda (syntax-object-or-eof iter)
-                               (if (eof-object? syntax-object-or-eof)
-                                   (begin
-                                     (let ([sba-end-time (current-milliseconds)])
-                                       ;(printf "sba time: ~a ms~n" (- (current-milliseconds) start-time))
-                                       (sba:check-primitive-types)
-                                       ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
+                          (drscheme:language-configuration:get-settings-preferences-symbol))])
+                    (letrec ([register-label-with-gui
+                              (saa:make-register-label-with-gui
+                               sba:get-source-from-label
+                               sba:get-mzscheme-position-from-label
+                               (lambda (label) (get-span-from-label sba-state label))
+                               sba:get-parents-from-label
+                               sba:get-children-from-label
+                               (lambda (label) #f)
+                               (lambda (label) (error 'get-name-from-label "MrFlow internal error; renaming forbidden"))
+                               (lambda (label) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
+                               (lambda (label) (get-style-delta-from-label sba-state label))
+                               get-box-style-delta-from-snip-type
+                               get-menu-text-from-snip-type
+                               (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
+                               snip-type-list
+                               #t
+                               tacked-arrow-brush
+                               untacked-arrow-brush
+                               arrow-pen
+                               )]
+                             [sba-state (sba:make-sba-state register-label-with-gui)])
+                      ; disable-evaluation will lock the editor, so we need to clear all
+                      ; the snips before that.
+                      (clear-annotations)
+                      (disable-evaluation)
+                      
+                      ; note: we have to do this each time, because the user might have changed
+                      ; the language between analyses.
+                      (let* ([language-object (drscheme:language-configuration:language-settings-language
+                                               language-settings)]
+                             [primitive-table-file (send language-object get-mrflow-primitives-filename)])
+                        (if (file-exists? primitive-table-file)
+                            (begin
+                              (sba:initialize-primitive-type-schemes sba-state primitive-table-file)
+                              (drscheme:eval:expand-program
+                               (drscheme:language:make-text/pos definitions-text
+                                                                0
+                                                                (send definitions-text last-position))
+                               language-settings
+                               #t
+                               ; set current-directory and current-load-relative-directory before expansion
+                               (lambda ()
+                                 (let* ([tmp-b (box #f)]
+                                        [fn (send definitions-text get-filename tmp-b)])
+                                   (unless (unbox tmp-b)
+                                     (when fn
+                                       (let-values ([(base name dir?) (split-path fn)])
+                                         (current-directory base)
+                                         (current-load-relative-directory base))))))
+                               void
+                               (lambda (syntax-object-or-eof iter)
+                                 (if (eof-object? syntax-object-or-eof)
+                                     (begin
+                                       (let ([sba-end-time (current-milliseconds)])
+                                         ;(printf "sba time: ~a ms~n" (- (current-milliseconds) start-time))
+                                         (sba:check-primitive-types sba-state)
+                                         ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
+                                         )
+                                       (enable-evaluation) ; definition window has been locked until now
+                                       (send definitions-text color-all-labels)
                                        )
-                                     (enable-evaluation) ; definition window has been locked until now
-                                     (send definitions-text color-all-labels)
-                                     )
-                                   (begin
-                                     ;(printf "~a~n" (syntax-object->datum syntax-object-or-eof))
-                                     (sba:create-label-from-term syntax-object-or-eof '() #f register-label-with-gui)
-                                     (iter))))))
-                          ; get-mrflow-primitives-filename defaults to R5RS
-                          ; (see mrflow-default-implementation-mixin above), so if we arrive here,
-                          ; we know we are in trouble, because it means no primitive table is
-                          ; defined for the current language and we couldn't even find the table
-                          ; for the R5RS primitives.
-                          (error 'analyze-button-callback
-                                 "MrFlow internal error; R5RS primitive types file ~a doesn't exist."
-                                 primitive-table-file))))))))
-           
+                                     (begin
+                                       ;(printf "~a~n" (syntax-object->datum syntax-object-or-eof))
+                                       (sba:create-label-from-term sba-state syntax-object-or-eof '() #f)
+                                       (iter))))))
+                            ; get-mrflow-primitives-filename defaults to R5RS
+                            ; (see mrflow-default-implementation-mixin above), so if we arrive here,
+                            ; we know we are in trouble, because it means no primitive table is
+                            ; defined for the current language and we couldn't even find the table
+                            ; for the R5RS primitives.
+                            (error 'analyze-button-callback
+                                   "MrFlow internal error; R5RS primitive types file ~a doesn't exist."
+                                   primitive-table-file)))))))))
+             
            (send (get-button-panel) change-children
                  (lambda (button-list)
                    (cons analyze-button (remq analyze-button button-list))))

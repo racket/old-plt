@@ -815,4 +815,15 @@
             exn:application:mismatch?)
 (test #t zero? (get-field x (new (class object% (field [x 0]) (super-new)))))
 
+(syntax-test #'(field-bound?))
+(syntax-test #'(field-bound? a))
+(syntax-test #'(field-bound? 1 b))
+(syntax-test #'(field-bound? a b c))
+
+(error-test #'(field-bound? x 1) exn:application:mismatch?)
+(test #t (lambda (x) x) (field-bound? x (new (class object% (field [x 0]) (super-new)))))
+(test #f (lambda (x) x) (field-bound? y (new (class object% (field [x 0]) (super-new)))))
+(test #f (lambda (x) x) (field-bound? y (new object%)))
+
+
 (report-errs)

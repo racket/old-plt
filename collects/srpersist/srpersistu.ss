@@ -13,7 +13,8 @@
 		(case (system-type)
 		  [(unix) "srpmain.so"]
 		  [(windows) "srpmain.dll"]
-		  [else (error "Only UNIX and Windows supported")]))))])
+		  [(macos) "srpmain.so"]
+		  [else (error "Unknown platform")]))))])
     
 	(cond
 	 

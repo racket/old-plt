@@ -2039,6 +2039,8 @@ void wxWindow::DoScroll(wxScrollEvent *event)
   
     InvalidateRect(hWnd, NULL, FALSE);
   }
+
+  wxYield();
 }
 
 

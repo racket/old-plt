@@ -48,7 +48,7 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 typedef struct Module_Renames {
   Scheme_Type type; /* = scheme_rename_table_type */
   char plus_kernel, nonmodule;
-  Scheme_Hash_Table *ht;
+  Scheme_Hash_Table *ht; /* localname -> (cons modidx exportname) */
   long phase;
 } Module_Renames;
 
@@ -66,8 +66,9 @@ static Module_Renames *krn;
                                          #f => not yet computed
    - A wrap-elem <rename-table> is a module rename set
          the hash table maps renamed syms to modname-srcname pairs
-   - A wrap-elem (box (cons <num> <env>)) is a phase shift by <num>
-         with phase-2 imports acessible via <env>
+   - A wrap-elem (box (vector <num> <env> <midx> <midx>)) is a phase shift
+         by <num> with phase-2 imports acessible via <env>,
+         remapping the first <midx> to the second <midx>
 
    For object with sub-syntax:
 
@@ -368,10 +369,18 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   return (Scheme_Object *)stx;
 }
 
-Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift, Scheme_Env *home)
+Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift, Scheme_Env *home,
+				      Scheme_Object *old_midx, Scheme_Object *new_midx)
 {
-  return scheme_add_rename(stx, scheme_box(scheme_make_pair(scheme_make_integer(shift),
-							    (Scheme_Object *)home)));
+  Scheme_Object *vec;
+  
+  vec = scheme_make_vector(4, NULL);
+  SCHEME_VEC_ELS(vec)[0] = scheme_make_integer(shift);
+  SCHEME_VEC_ELS(vec)[1] = (Scheme_Object *)home;
+  SCHEME_VEC_ELS(vec)[2] = (new_midx ? old_midx : scheme_false);
+  SCHEME_VEC_ELS(vec)[3] = (new_midx ? new_midx : scheme_false);
+
+  return scheme_add_rename(stx, scheme_box(vec));
 }
 
 static Scheme_Object *propagate_wraps(Scheme_Object *o, Scheme_Object *wl, Scheme_Object *owner_wraps)
@@ -543,6 +552,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
   Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
   Scheme_Object *rename_stack = scheme_null;
   Scheme_Object *result, *mresult = scheme_false;
+  Scheme_Object *modidx_shift_to = NULL, *modidx_shift_from = NULL;
   int is_in_module = 0;
 
   if (home)
@@ -577,19 +587,34 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase, Scheme_Object **
 	  if (rename) {
 	    /* Match: set mresult for the case of no lexical capture: */
 	    mresult = SCHEME_CAR(rename);
+	    if (SAME_OBJ(modidx_shift_from, mresult))
+	      mresult = modidx_shift_to;
 	  }
 	}
       }
     } else if (SCHEME_BOXP(SCHEME_CAR(wraps)) && home) {
-      Scheme_Object *p, *n;
-      p = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
-      n = SCHEME_CAR(p);
+      Scheme_Object *vec, *n;
+      vec = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
+      n = SCHEME_VEC_ELS(vec)[0];
       phase -= SCHEME_INT_VAL(n);
+      
+      if (!modidx_shift_to)
+	modidx_shift_to = SCHEME_VEC_ELS(vec)[3];
+      modidx_shift_from = SCHEME_VEC_ELS(vec)[2];
+
       if (phase == 1) {
-	*home = SCHEME_CDR(p);
+	/* If we resolve the id before another phase shift, then the
+	   id was phase 1 in its original source.  Since the phase 1
+	   boundary is where the global space of instantiated modules
+	   splits into module-specific instantiations, we need to
+	   track the specific module. Ids at phase 0 in the original
+	   source need no such tracking. Ids at phase 2 in the
+	   original source are never mapped. */
+	*home = SCHEME_VEC_ELS(vec)[1];
 	if (SCHEME_FALSEP(*home))
 	  scheme_signal_error("broken compiled code: bad variable home");
-      }
+      } else
+	*home = NULL;
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
       Scheme_Object *rename, *renamed;
@@ -664,8 +689,9 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always, long pha
 	}
       }
     } else if (SCHEME_BOXP(SCHEME_CAR(wraps))) {
-      Scheme_Object *n;
-      n = SCHEME_CAR(SCHEME_PTR_VAL(SCHEME_CAR(wraps)));
+      Scheme_Object *n, *vec;
+      vec = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
+      n = SCHEME_VEC_ELS(vec)[0];
       phase -= SCHEME_INT_VAL(n);
     }
     
@@ -1091,11 +1117,13 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, int subs,
       }
     } else {
       a = SCHEME_PTR_VAL(a);
-      /* Forget any module that might be in the shift. Linking
-         the bytecodes seems to install a correct module. 
-         --- I'm not entirely convinced of this! */
-      a = scheme_box(SCHEME_CAR(a));
-      stack = scheme_make_pair(a, stack);
+      /* Forget any module/dest-modidx that might be in the shift. 
+	 Linking the bytecodes installs correct values.  */
+      if (!SCHEME_FALSEP(SCHEME_VEC_ELS(a)[2]))
+	a = scheme_make_pair(SCHEME_VEC_ELS(a)[0], SCHEME_VEC_ELS(a)[2]);
+      else
+	a = SCHEME_VEC_ELS(a)[0];
+      stack = scheme_make_pair(scheme_box(a), stack);
     }
 
     w = SCHEME_CDR(w);
@@ -1411,8 +1439,14 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
       stack = scheme_make_pair(env->exp_env->rename, stack);
     } else {
       /* Must be a phase-shift box. */
+      Scheme_Object *vec;
       a = SCHEME_PTR_VAL(a);
-      a = scheme_box(scheme_make_pair(a, scheme_false));
+      vec = scheme_make_vector(4, NULL);
+      SCHEME_VEC_ELS(vec)[0] = SCHEME_PAIRP(a) ? SCHEME_CAR(a) : a;
+      SCHEME_VEC_ELS(vec)[1] = scheme_false;
+      SCHEME_VEC_ELS(vec)[2] = SCHEME_PAIRP(a) ? SCHEME_CDR(a) : scheme_false;
+      SCHEME_VEC_ELS(vec)[3] = scheme_false;
+      a = scheme_box(vec);
       stack = scheme_make_pair(a, stack);
     }
 

@@ -2500,8 +2500,9 @@ lexical_syntax_link(Scheme_Object *obj, Link_Info *info)
   phse = SCHEME_CAR(obj);
   stx = SCHEME_CDR(obj);
 
-  if (info && info->phase)
-    return scheme_stx_phase_shift(stx, info->phase - SCHEME_INT_VAL(phse), info);
+  if (info && info->phase && info->module)
+    return scheme_stx_phase_shift(stx, info->phase - SCHEME_INT_VAL(phse), info,
+				  info->module->self_modidx, info->link_midx);
   else
     return stx;
 }

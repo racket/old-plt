@@ -1019,15 +1019,21 @@ Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data)
 
 static Scheme_Object *link_module_variable(Scheme_Object *modidx,
 					   Scheme_Object *varname,
+					   Scheme_Object *rootname,
 					   Link_Info *info)
 {
   Scheme_Object *modname;
-  Scheme_Env *menv;
+  Scheme_Env *menv, *root;
 
   /* If it's a name id, resolve the name. */
   modname = scheme_module_resolve(modidx);
 
-  menv = scheme_module_access(modname, info);
+  if (rootname && info->val_env)
+    root = (Scheme_Env *)scheme_module_syntax(rootname, info->val_env, NULL);
+  else 
+    root = NULL;
+
+  menv = scheme_module_access(modname, root ? root : info);
   
   if (!menv) {
     scheme_wrong_syntax("link", NULL, varname,
@@ -1056,12 +1062,19 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
       else
 	return link_module_variable(b->home->module->modname,
 				    (Scheme_Object *)b->bucket.bucket.key,
+				    (b->home->for_syntax_of
+				     ? b->home->for_syntax_of->module->modname
+				     : NULL),
 				    info);
     }
   case scheme_module_variable_type:
     {
-      return link_module_variable(SCHEME_PTR1_VAL(expr),
+      Scheme_Object *mod;
+
+      mod = SCHEME_PTR1_VAL(expr);
+      return link_module_variable(SCHEME_PAIRP(mod) ? SCHEME_CAR(mod) : mod,
 				  SCHEME_PTR2_VAL(expr),
+				  SCHEME_PAIRP(mod) ? SCHEME_CDR(mod) : NULL,
 				  info);
     }
   case scheme_syntax_type:

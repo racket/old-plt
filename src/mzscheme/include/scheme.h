@@ -500,13 +500,17 @@ typedef struct Scheme_Env
   
   Scheme_Hash_Table *syntax;
   struct Scheme_Env *exp_env;
+  struct Scheme_Env *val_env;
   Scheme_Hash_Table *module_syntax; /* modname -> syntax table */
 
   Scheme_Hash_Table *shadowed_syntax; /* top level only */
 
   /* Per-instance: */
   long phase;
+  Scheme_Object *link_midx;
   int running;  
+  struct Scheme_Env *for_syntax_of;
+
   Scheme_Hash_Table *toplevel;
   Scheme_Hash_Table *modules; /* symbol -> env ; running modules, 
 				 shared with instances in same phase */

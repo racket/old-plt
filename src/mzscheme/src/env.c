@@ -448,7 +448,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
   Scheme_Hash_Table *module_registry, *modules;
   Scheme_Env *env;
 
-  toplevel = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 1, 0);
+  toplevel = scheme_hash_table(7, SCHEME_hash_ptr, 1, 0);
   toplevel->with_home = 1;
 
   if (semi > 0) {
@@ -456,16 +456,16 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
     modules = NULL;
     module_registry = NULL;
   } else {
-    syntax = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+    syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
     if (base) {
       modules = base->modules;
       module_registry = base->module_registry;
     } else {
-      modules = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+      modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
       if (semi < 0)
 	module_registry = NULL;
       else
-	module_registry = scheme_hash_table(GLOBAL_TABLE_SIZE, SCHEME_hash_ptr, 0, 0);
+	module_registry = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
     }
   }
 
@@ -516,6 +516,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     Scheme_Env *eenv;
     eenv = make_env(NULL, -1);
     eenv->phase = env->phase + 1;
+    eenv->val_env = env;
 
     eenv->module = env->module;
 
@@ -1605,15 +1606,23 @@ id_macro(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *write_variable(Scheme_Object *obj)
 {
+  Scheme_Env *home;
   Scheme_Object *sym;
   Scheme_Module *m;
 
   sym = (Scheme_Object *)(SCHEME_VAR_BUCKET(obj))->key;
 
-  m = ((Scheme_Bucket_With_Home *)obj)->home->module;
+  home = ((Scheme_Bucket_With_Home *)obj)->home;
+  m = home->module;
 
-  if (m)
-    sym = scheme_make_pair(m->modname, sym);
+  if (m) {
+    if (home->for_syntax_of)
+      sym = scheme_make_pair(scheme_make_pair(m->modname, 
+					      home->for_syntax_of->module->modname),
+			     sym);
+    else
+      sym = scheme_make_pair(m->modname, sym);
+  }
 
   return sym;
 }

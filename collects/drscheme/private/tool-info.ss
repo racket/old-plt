@@ -285,7 +285,21 @@
  "@flink drscheme:debug:get-cm-key %"
  ".")
 
-;(drscheme:debug:show-backtrace-window )
+(drscheme:debug:show-backtrace-window
+ (string?
+  (listof (cons/p (union symbol? (is-a?/c editor<%>))
+		  (cons/p number? number?)))
+  . -> .
+  void?)
+ (error-message dis)
+ "Shows the backtrace window you get when clicking on the bug in"
+ "DrScheme's REPL."
+ ""
+ "The \\var{error-message} argument is the text of the error,"
+ "and \\var{dis} is the debug information, extracted from the"
+ "continuation mark in the exception record, using"
+ "@flink drscheme:debug:get-cm-key %"
+ ".")
 
 (drscheme:debug:get-cm-key
  (-> any)

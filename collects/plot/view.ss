@@ -72,7 +72,11 @@
        (x-label "X axis")
        (y-label "Y axis")
        (title "")
-       (device 'png))   
+       (device 'png)
+       (fgcolor '( 0 0 0))
+       (bgcolor '(255 255 255))
+       (lncolor '(255 0 0 ))
+       )   
      
       (define bitmap #f)
       (define x-size 800)
@@ -91,9 +95,9 @@
       ; changes the *initial* colormap to match the colors
       ; this should probably be done dynamically
       (define (init-colors)
-        (pl-set-colormap0-index 0 255 255 255) ; 0 to white
-        (pl-set-colormap0-index 1 0 0 0) ; 1 to black
-        (pl-set-colormap0-index 15 255 0 0)) ; 15 to red
+        (apply pl-set-colormap0-index 0 bgcolor) ; 0 to white
+        (apply pl-set-colormap0-index 1 fgcolor) ; 1 to black
+        (apply pl-set-colormap0-index 15 lncolor)) ; 15 to red
       
       ; these are the colors to whitch the plot will be initialzed
       (define colors '((white 0) (black 1) (yellow 2) (green 3) 
@@ -152,13 +156,13 @@
           [else
            (error "Incorrect device specified")]))
       
-      (define (bits->bitmap-dc% bitmap)
-        (let ((bmdc (instantiate bitmap-dc% () (bitmap (make-object bitmap% x-size y-size #f))))
-              (result-string (u8vec->scheme-string bitmap)))
-          (send bmdc set-argb-pixels 0 0  x-size y-size result-string)
-          (begin0
-            (send bmdc get-bitmap)
-            (send bmdc set-bitmap #f))))
+      ;(define (bits->bitmap-dc% bitmap)
+      ;  (let ((bmdc (instantiate bitmap-dc% () (bitmap (make-object bitmap% x-size y-size #f))))
+      ;        (result-string (u8vec->scheme-string bitmap)))
+      ;    (send bmdc set-argb-pixels 0 0  x-size y-size result-string)
+      ;    (begin0
+      ;      (send bmdc get-bitmap)
+      ;      (send bmdc set-bitmap #f))))
            
       (super-instantiate ())))
         
@@ -174,6 +178,7 @@
         plot-line
         plot-contours
         plot-shades
+        fill
                 )
       
       ; set-labels : string string string -> nothing
@@ -228,10 +233,16 @@
                              (vector x4 y4) 
                              (vector x2 y2))))))
       
+      ; fill : (list-of number) (list-of number) -> void
+      (define (fill xs ys)
+        (pl-fill (length xs) xs ys))
+      
       ; plot-y-errors (listof (vector x y-min y-max)) ->nothing
       ; plots y error bars given a vector containing the x y and z (error magnitude) points
       (define (plot-y-errors errlist)
         (pl-y-error-bars (length errlist) (map vector-x errlist) (map vector-y errlist) (map vector-z errlist)))
+      
+      
       
       (inherit start-plot set-plot-environment finish-plot get-x-min get-x-max get-y-min get-y-max get-renderer)
       (define (plot)
@@ -250,10 +261,11 @@
   
   (define 3d-view%
     (class* plot-view% ()
-      (public 
+      (public         
         plot-polygon        
         plot-line
         plot-surface
+        plot-3dmesh
         get-z-min
         get-z-max
         get-alt
@@ -280,9 +292,13 @@
                  yopts ylabel yticks nysub
                  zopts zlabel zticks nzsub))
       
-      ; draw a 3d plot
+      ; draw a simple 3d surface plot
       (define (plot-surface x y z)
         (pl-plot3d x y z))
+      
+      ; plot-3dmesh
+      (define (plot-3dmesh x y z lines? colored? contours? sides? levels)
+        (pl-mesh3dc x y z lines? colored? contours? sides? levels))
       
       (inherit start-plot set-plot-environment finish-plot get-x-min 
                get-x-max get-y-min get-y-max get-renderer get-x-label get-y-label)

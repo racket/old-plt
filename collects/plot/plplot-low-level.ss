@@ -4,33 +4,7 @@
    (lib "cffi.ss" "compiler"))
   
   (c-declare "#include \"plplot.h\"")
-  (c-declare "
 
-#ifdef _WIN32 
-/* Windows isn't C99 in this regard */
-#include <wtypes.h>
-typedef UINT32 uint32_t;
-typedef UINT16 uint16_t;
-typedef UINT8 uint8_t;
-typedef INT32 int32_t;
-typedef INT16 int16_t;
-typedef INT8 int8_t;  
-#else
-#include <inttypes.h>
-#endif
-
-
-typedef struct 
-{
-  Scheme_Type type;
-  short keyex; /* 1 in low bit indicates immutable */
-  int length;
-  uint8_t els[1];
-} homo_u8_vector;
-")
-
-
-; (c-declare "#include \"../srfi/4/c-generation/homo-u8-vector-prims.h\"")
   
   ; makes an array of double from a scheme list
   (c-declare 
@@ -111,25 +85,26 @@ typedef struct
   ; sets the memory output device
   ; number number scheme-object -> void 
   ; sets up the bitmap to be a homogenous 8 bit vector
-  (define pl-setup-memory
-    (c-lambda (int int scheme-object) int "
-    homo_u8_vector * vec = (homo_u8_vector *) ___arg3;
-    plsmem(___arg1,___arg2,(char *) vec->els);    
-    "))
+  ;(define pl-setup-memory
+  ;  (c-lambda (int int scheme-object) int "
+  ;  homo_u8_vector * vec = (homo_u8_vector *) ___arg3;
+  ;  plsmem(___arg1,___arg2,(char *) vec->els);    
+  ;  "))
   
   ; convers a u8vector to a scheme string
-  (define u8vec->scheme-string
-    (c-lambda (scheme-object) scheme-object 
+  ;(define u8vec->scheme-string
+  ;  (c-lambda (scheme-object) scheme-object 
               "
-  homo_u8_vector * vec = (homo_u8_vector *) ___arg1;
-  ___result = scheme_make_sized_string((char *) vec->els, vec->length, 0);
-"))
+  ;homo_u8_vector * vec = (homo_u8_vector *) ___arg1;
+ ; ___result = scheme_make_sized_string((char *) vec->els, vec->length, 0); ;"
 
   
   
   ; initialize the plot
   (define pl-init-plot
-    (c-lambda () void "plinit"))
+    (c-lambda () void "plinit();
+
+  "))
   
   ; finish the plot
   (define pl-finish-plot
@@ -248,7 +223,49 @@ typedef struct
               "plot3d(list_to_array(___arg1),list_to_array(___arg2),list_of_list_to_array(___arg3),
                                    scheme_list_length(___arg1),scheme_list_length(___arg2),DRAW_LINEXY,0);
               "))
-              
+  
+
+  ; no coloring
+  (define pl-mesh3d
+    (c-lambda (scheme-object scheme-object scheme-object) void
+              "plmesh(list_to_array(___arg1),list_to_array(___arg2),list_of_list_to_array(___arg3),
+                                   scheme_list_length(___arg1),scheme_list_length(___arg2),DRAW_LINEXY);
+  "))
+  
+  ;mesh + colors
+  ; x y z x Contours? x Lines? x Colored? Sides? levels
+  (define pl-mesh3dc
+    (c-lambda (scheme-object scheme-object scheme-object bool bool bool bool scheme-object) void
+              "
+  
+    
+    PLFLT i[2], h[2], l[2], s[2];
+
+  i[0] = 0.0;		/* left boundary */
+  i[1] = 1.0;		/* right boundary */
+
+  h[0] = 240; /* blue -> green -> yellow -> */
+  h[1] = 0;   /* -> red */
+
+  l[0] = 0.6;
+  l[1] = 0.6;
+
+  s[0] = 0.8;
+  s[1] = 0.8;
+
+  plscmap1n(256);
+  plscmap1l(0, 2, i, h, l, s, NULL);
+  
+  int opts = (___arg4 ? DRAW_LINEXY : 0) |
+                         (___arg5 ? MAG_COLOR : 0) |
+                         (___arg6 ? BASE_CONT : 0) |
+                         (___arg7 ? DRAW_SIDES : 0) ;
+              plmeshc(list_to_array(___arg1),list_to_array(___arg2),list_of_list_to_array(___arg3),
+                                    scheme_list_length(___arg1),scheme_list_length(___arg2),opts,
+                                    list_to_array(___arg8),scheme_list_length(___arg8));
+  "))
+                         
+                         
   ; set up a 3d box with labels + ticks
   ; args are (repeated each time for x y and z)
   ; "options", title , major tick spacing, number of minor ticks
@@ -279,6 +296,19 @@ typedef struct
                        list_to_array(___arg3),
                        list_to_array(___arg4));
   "))
+  
+  
+  ; pl-fil
+  ; fills a polygon
+  ; args n , x list ylist
+  (define pl-fill
+    (c-lambda (int scheme-object scheme-object) void
+              "plfill(___arg1,
+               list_to_array(___arg2),
+               list_to_array(___arg3));
+  "))
+             
+  
   
   
 

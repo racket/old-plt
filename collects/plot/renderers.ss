@@ -123,6 +123,17 @@
             (set-line-color color) (set-line-width width) 
             (plot-surface x-vals y-vals grid))))
   
+  (define-plot-type mesh3d
+     fun3d 3dplotview (x-min x-max y-min y-max z-min z-max) ((samples 50)  (width '1) 
+                                                 (levels 10) (color #t) (lines #t) (contours #t) (sides #f))
+      (let* ((x-vals (x-values samples x-min x-max))
+             (y-vals (x-values samples y-min y-max))
+             (grid (zgrid fun3d x-vals y-vals samples))
+             (c-levels (if (list? levels) levels (x-values levels z-min z-max))))
+          (send* 3dplotview 
+            (set-line-width width) 
+            (plot-3dmesh x-vals y-vals grid lines color contours sides c-levels))))
+  
   (provide (all-defined)))
 
   

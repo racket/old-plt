@@ -60,6 +60,13 @@
    
    ;fitting
    fit
+   (struct fit-result (rms
+                             variance
+                             names
+                             final-params                             
+                             std-error
+                             std-error-percent
+                             function))
    
    ; to make plots
    plot
@@ -79,13 +86,14 @@
    
    ; 3d-rendereres
    surface
+   mesh3d
    
    ; from math-tools
    derivative
    gradient
    make-vec
    
-   ; curve-fitter
-   (all-from (lib "fit.ss" "plot"))))
+
+))
 
 

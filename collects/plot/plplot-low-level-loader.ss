@@ -16,10 +16,9 @@
   
   ; dynamic require is used because putenv does not change values in current module
   (require-and-provide
-   '(lib "plplot-low-level.ss" "plot")
-   u8vec->scheme-string
+   '(lib "plplot-low-level.ss" "plot")  
    pl-setup-page
-   pl-setup-memory
+   ;pl-setup-memory
    pl-set-device 
    pl-set-output-file 
    pl-init-plot                
@@ -40,8 +39,11 @@
    pl-y-error-bars
    pl-world-3d
    pl-plot3d
+   pl-mesh3d
+   pl-mesh3dc
    pl-box3
    pl-poly3
-   pl-line3))
+   pl-line3
+   pl-fill))
   
     

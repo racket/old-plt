@@ -33,7 +33,8 @@
     [else (error 'foreign "unknown system type: ~s" (system-type))]))
 (define lib-suffix-re (regexp (string-append "\\." lib-suffix "$")))
 
-(provide (rename get-ffi-lib ffi-lib))
+(provide (rename get-ffi-lib ffi-lib)
+         ffi-lib? ffi-lib-name)
 (define (get-ffi-lib name . version)
   (let ([version (if (pair? version) (string-append "." (car version)) "")]
         [fullpath (lambda (p) (path->complete-path (expand-path p)))])
@@ -55,14 +56,22 @@
                    ;; give up: call ffi-lib so it will raise an error
                    (ffi-lib name)))]))))
 
+;; These internal functions provide the functionality to be used by get-ffi-obj,
+;; set-ffi-obj! and define-c below
+(define (ffi-get ffi-obj type)
+  (ptr-ref ffi-obj type))
+(define (ffi-set! ffi-obj type new)
+  (let-values ([(new type) (get-lowlevel-object new type)])
+    (hash-table-put! ffi-objects-ref-table ffi-obj new)
+    (ptr-set! ffi-obj type new)))
+
 ;; get-ffi-obj is implemented as a syntax only to be able to propagate the
 ;; foreign name into the type syntax, which allows generated wrappers to have a
 ;; proper name.
 (provide get-ffi-obj)
 (define (get-ffi-obj* name lib type)
-  (let ([lib  (get-ffi-lib lib)]
-        [name (get-ffi-obj-name 'get-ffi-obj name)])
-    (ptr-ref (ffi-obj name lib) type)))
+  (ffi-get (ffi-obj (get-ffi-obj-name 'get-ffi-obj name) (get-ffi-lib lib))
+           type))
 (define-syntax (get-ffi-obj stx)
   (syntax-case stx (get-ffi-obj)
     [(get-ffi-obj name lib type)
@@ -73,12 +82,29 @@
 ;; keeping a handle on the object -- otherwise, setting a callback hook will
 ;; crash when the Scheme function is gone.
 (define* (set-ffi-obj! name lib type new)
-  (let* ([lib  (get-ffi-lib lib)]
-         [name (get-ffi-obj-name 'set-ffi-obj! name)]
-         [obj  (ffi-obj name lib)])
-    (let-values ([(new type) (get-lowlevel-object new type)])
-      (hash-table-put! ffi-objects-ref-table obj new)
-      (ptr-set! obj type new))))
+  (ffi-set! (ffi-obj (get-ffi-obj-name 'set-ffi-obj! name) (get-ffi-lib lib))
+            type new))
+
+;; Combining the above two in a `define-c' special form which makes a Scheme
+;; `binding':
+(provide make-c-parameter)
+(define (make-c-parameter name lib type)
+  (let ([obj (ffi-obj (get-ffi-obj-name 'make-c-parameter name)
+                      (get-ffi-lib lib))])
+    (case-lambda [()    (ffi-get  obj type)]
+                 [(new) (ffi-set! obj type new)])))
+(provide define-c)
+(define-syntax (define-c stx)
+  (syntax-case stx ()
+    [(_ var-name lib-name type-expr)
+     (with-syntax ([(p) (generate-temporaries (list #'var-name))])
+       (namespace-syntax-introduce
+        #'(begin (define p (make-c-parameter 'var-name lib-name type-expr))
+                 (define-syntax var-name
+                   (syntax-id-rules (set!)
+                     [(set! var val) (p val)]
+                     [(var . xs) ((p) . xs)]
+                     [var (p)])))))]))
 
 ;; Used to convert strings and symbols to a byte-string that names an object
 (define (get-ffi-obj-name name objname)
@@ -558,7 +584,7 @@
 (provide (rename _bytes* _bytes))
 (define-syntax _bytes*
   (syntax-id-rules (_bytes* o)
-    [_bytes*  (type: _bytes)]
+    [_bytes* _bytes]
     [(_ o n) (type: _bytes
               pre:  (make-sized-byte-string (malloc n) n)
               ;; post is needed when this is used as a function output type

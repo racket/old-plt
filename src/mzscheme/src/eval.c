@@ -120,7 +120,15 @@ static Scheme_Object *app_symbol;
 static Scheme_Object *datum_symbol;
 static Scheme_Object *top_symbol;
 
+static Scheme_Object *app_expander;
+static Scheme_Object *datum_expander;
+static Scheme_Object *top_expander;
+
 static Scheme_Object *stop_expander;
+
+static Scheme_Object *quick_stx;
+static int quick_stx_in_use;
+static int taking_shortcut;
 
 /* locals */
 static Scheme_Object *eval(int argc, Scheme_Object *argv[]);
@@ -311,18 +319,30 @@ scheme_init_eval (Scheme_Env *env)
   datum_symbol = scheme_intern_symbol("#%datum");
   top_symbol = scheme_intern_symbol("#%top");
 
+  REGISTER_SO(app_expander);
+  REGISTER_SO(datum_expander);
+  REGISTER_SO(top_expander);
+
+  app_expander = scheme_make_compiled_syntax(app_syntax,
+					     app_expand);
   scheme_add_global_keyword("#%app", 
-			    scheme_make_compiled_syntax(app_syntax,
-							app_expand), 
+			    app_expander, 
 			    env);
+
+  datum_expander = scheme_make_compiled_syntax(datum_syntax,
+					       datum_expand);
   scheme_add_global_keyword("#%datum", 
-			    scheme_make_compiled_syntax(datum_syntax,
-							datum_expand), 
+			    datum_expander, 
 			    env);
+
+  top_expander = scheme_make_compiled_syntax(top_syntax,
+					     top_expand);
   scheme_add_global_keyword("#%top", 
-			    scheme_make_compiled_syntax(top_syntax,
-							top_expand), 
+			    top_expander, 
 			    env);
+
+  REGISTER_SO(quick_stx);
+  quick_stx = scheme_datum_to_syntax(app_symbol, scheme_false, scheme_false, 0, 0);
 }
 
 /*========================================================================*/
@@ -1572,7 +1592,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			   int depth, Scheme_Object *boundname,
 			   int app_position)
 {
-  Scheme_Object *name, *var, *rest, *stx;
+  Scheme_Object *name, *var, *rest, *stx, *normal;
   GC_CAN_IGNORE char *not_allowed;
 
 #ifdef DO_STACK_CHECK
@@ -1603,6 +1623,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   if (SCHEME_STX_NULLP(form)) {
     stx = app_symbol;
     not_allowed = "function application";
+    normal = app_expander;
   } else if (!SCHEME_STX_PAIRP(form)) {
     if (SCHEME_STX_SYMBOLP(form)) {
       var = scheme_static_distance(form, env, 
@@ -1625,6 +1646,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	/* Top variable */
 	stx = top_symbol;
 	not_allowed = "reference to top-level identifiers";
+	normal = top_expander;
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	  if (var == stop_expander)
@@ -1645,6 +1667,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     } else {
       stx = datum_symbol;
       not_allowed = "literal data";
+      normal = datum_expander;
     }
   } else {
     name = SCHEME_STX_CAR(form);
@@ -1690,19 +1713,37 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 
     stx = app_symbol;
     not_allowed = "function application";
+    normal = app_expander;
   }
 
   /* Compile/expand as application, datum, or top: */
-  stx = scheme_datum_to_syntax(stx, scheme_false, form, 0, 0);
+  if (!quick_stx_in_use) {
+    quick_stx_in_use = 1;
+    ((Scheme_Stx *)quick_stx)->val = stx;
+    ((Scheme_Stx *)quick_stx)->wraps = ((Scheme_Stx *)form)->wraps;
+    stx = quick_stx;
+  } else
+    stx = scheme_datum_to_syntax(stx, scheme_false, form, 0, 0);
+
   var = scheme_static_distance(stx, env,
 			       SCHEME_NULL_FOR_UNBOUND
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			       + SCHEME_DONT_MARK_USE);
+
+  if (SAME_OBJ(stx, quick_stx))
+    quick_stx_in_use = 0;
+
   if (var && (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	      || SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))) {
     if (SAME_OBJ(var, stop_expander)) {
       /* Return original: */
       return form;
+    } else if (rec && SAME_OBJ(var, normal)) {
+      /* Skip creation of intermediate form */
+      Scheme_Syntax *f;
+      taking_shortcut = 1;
+      f = (Scheme_Syntax *)SCHEME_SYNTAX(var);
+      return f(form, env, rec, drec);
     } else {
       form = scheme_datum_to_syntax(scheme_make_pair(stx, form), form, form, 0, 1);
       
@@ -1738,8 +1779,13 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 {
   Scheme_Object *form, *naya;
 
-  form = SCHEME_STX_CDR(forms);
-  form = scheme_datum_to_syntax(form, forms, forms, 0, 0);
+  if (taking_shortcut) {
+    form = forms;
+    taking_shortcut = 0;
+  } else {
+    form = SCHEME_STX_CDR(forms);
+    form = scheme_datum_to_syntax(form, forms, forms, 0, 0);
+  }
   
   if (SCHEME_STX_NULLP(form)) {
     /* Compile/expand empty application to null list: */
@@ -1872,10 +1918,14 @@ datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec
 {
   Scheme_Object *c;
 
-  c = SCHEME_STX_CDR(form);
-
-  if (SCHEME_NULLP(c))
-    scheme_wrong_syntax("#%datum", NULL, form, NULL);
+  if (taking_shortcut) {
+    c = form;
+    taking_shortcut = 0;
+  } else {
+    c = SCHEME_STX_CDR(form);
+    if (SCHEME_NULLP(c))
+      scheme_wrong_syntax("#%datum", NULL, form, NULL);
+  }
 
   return scheme_syntax_to_datum(c, 0, NULL);
 }
@@ -1926,9 +1976,14 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
 {
   Scheme_Object *c;
 
-  check_top("compile", form, env);
+  if (taking_shortcut) {
+    c = form;
+    taking_shortcut = 0;
+  } else {
+    check_top("compile", form, env);
 
-  c = SCHEME_STX_CDR(form);
+    c = SCHEME_STX_CDR(form);
+  }
 
   if (env->genv->module && !rec[drec].resolve_module_ids) {
     /* Self-reference in a module; need to remember the modidx */

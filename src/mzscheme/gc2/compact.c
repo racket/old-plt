@@ -58,16 +58,16 @@ typedef short Type_Tag;
 
 #include "gc2.h"
 
+#define BYTEPTR(x) ((char *)x)
+
+/* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define SAFETY 0
+#define CHECKS 0
 #define NOISY 0
 #define MARK_STATS 0
-
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
-
-#define BYTEPTR(x) ((char *)x)
 
 #if TIME
 # include <sys/time.h>
@@ -93,7 +93,7 @@ void (*GC_fixup_xtagged)(void *obj);
 void **GC_variable_stack;
 
 /********************* Type tags *********************/
-Type_Tag weak_box_tag;
+Type_Tag weak_box_tag = 42; /* set by client */
 
 #define gc_finalization_tag 256
 #define gc_finalization_weak_link_tag 257
@@ -311,10 +311,8 @@ static void *park[2];
 static int during_gc;
 
 static MPage *find_page(void *p);
-static void set_ending_tags(void);
-static void init(void);
 
-#if SAFETY
+#if CHECKS
 static void CRASH()
 {
   fprintf(stderr, "crash\n");
@@ -349,6 +347,7 @@ void *malloc_pages(size_t len, size_t alignment)
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
+  /* May need to try twice to get a desired alignment: */
  try_again:
 
   my_call = 1;
@@ -515,9 +514,9 @@ void GC_set_stack_base(void *base)
   stack_base = (unsigned long)base;
 }
 
-unsigned long GC_get_stack_base(void)
+void GC_init_type_tags(int count, int weakbox)
 {
-  return stack_base;
+  weak_box_tag = weakbox;
 }
 
 void GC_register_traversers(Type_Tag tag, Size_Proc size, Mark_Proc mark, Fixup_Proc fixup)
@@ -550,7 +549,6 @@ static int compare_roots(const void *a, const void *b)
 
 static void sort_and_merge_roots()
 {
-  static int counter = 0;
   int i, offset, top;
 
   if (nothing_new)
@@ -558,11 +556,6 @@ static void sort_and_merge_roots()
 
   if (roots_count < 4)
     return;
-
-  /* Only try this every 5 collections or so: */
-  if (counter--)
-    return;
-  counter = 5;
 
   qsort(roots, roots_count >> 1, 2 * sizeof(unsigned long), compare_roots);
   offset = 0;
@@ -669,7 +662,7 @@ static int size_on_free_list(void *p)
 #endif
 
 /******************************************************************************/
-/*                             weak arrays                                    */
+/*                           weak arrays and boxes                            */
 /******************************************************************************/
 
 typedef struct GC_Weak_Array {
@@ -700,7 +693,7 @@ static int mark_weak_array(void *p)
   a->next = weak_arrays;
   weak_arrays = a;
 
-#if SAFETY
+#if CHECKS
   /* For now, weak arrays only used for symbols and falses: */
   {
     void **data;
@@ -995,277 +988,6 @@ void GC_finalization_weak_ptr(void **p, int offset)
 }
 
 /******************************************************************************/
-/*                             GC stat dump                                   */
-/******************************************************************************/
-
-static long dump_info_array[BIGBLOCK_MIN_SIZE];
-
-static void scan_tagged_mpage(void **p, MPage *page)
-{
-  void **top;
-
-  top = p + MPAGE_WORDS;
-  
-  while (p < top) {
-    Type_Tag tag;
-    long size;
-
-    tag = *(Type_Tag *)p;
-
-    if (tag == TAGGED_EOM) {
-      break;
-    }
-
-#if ALIGN_DOUBLES
-    if (tag == SKIP) {
-      offset++;
-      p++;
-    } else {
-#endif
-      size = size_table[tag](p);
-
-      dump_info_array[tag]++;
-      dump_info_array[tag + _num_tags_] += size;
-
-      p += size;
-#if ALIGN_DOUBLES
-    }
-#endif
-  }
-}
-
-static void scan_untagged_mpage(void **p, MPage *page)
-{
-  void **top;
-
-  top = p + MPAGE_WORDS;
-
-  while (p < top) {
-    long size;
-
-    size = *(long *)p + 1;
-
-    if (size == UNTAGGED_EOM) {
-      break;
-    }
-
-    dump_info_array[size - 1] += 1;
-
-    p += size;
-  } 
-}
-
-/* HACK! */
-extern char *scheme_get_type_name(Type_Tag t);
-
-void GC_dump(void)
-{
-  int i;
-
-  fprintf(stderr, "t=tagged a=atomic v=array x=xtagged g=tagarray\n");
-  fprintf(stderr, "pagesize=%d  mpagesize=%d  opagesize=%d\n", page_size, MPAGE_SIZE, OPAGE_SIZE);
-  fprintf(stderr, "[");
-  for (i = 0; i < MAPS_SIZE; i++) {
-    if (i && !(i & 63))
-      fprintf(stderr, "\n ");
-
-    if (mpage_maps[i])
-      fprintf(stderr, "*");
-    else
-      fprintf(stderr, "-");
-  }
-  fprintf(stderr, "]\n");
-  for (i = 0; i < MAPS_SIZE; i++) {
-    MPage *maps = mpage_maps[i];
-    if (maps) {
-      int j;
-      fprintf(stderr, "%.2x:\n ", i);
-      for (j = 0; j < MAP_SIZE; j++) {
-	if (j && !(j & 63))
-	  fprintf(stderr, "\n ");
-
-	if (maps[j].type) {
-	  int c;
-
-	  if (maps[j].flags & MFLAG_CONTINUED) 
-	    c = '.';
-	  else {
-	    if (maps[j].type <= MTYPE_TAGGED)
-	      c = 't';
-	    else if (maps[j].type == MTYPE_TAGGED_ARRAY)
-	      c = 'g';
-	    else if (maps[j].type == MTYPE_ATOMIC)
-	      c = 'a';
-	    else if (maps[j].type == MTYPE_XTAGGED)
-	      c = 'x';
-	    else
-	      c = 'v';
-	    
-	    if (maps[j].flags & MFLAG_BIGBLOCK)
-	      c = c - ('a' - 'A');
-	  }
-
-	  fprintf(stderr, "%c", c);
-	} else {
-	  fprintf(stderr, "-");
-	}
-      }
-      fprintf(stderr, "\n");
-    }
-  }
-
-  {
-    MPage *page;
-
-    fprintf(stderr, "Block info: [type][modified?][age][refs-age]\n");
-    for (page = first, i = 0; page; page = page->next, i++) {
-       int c;
-
-       if (page->flags & MFLAG_CONTINUED) 
-	 c = '.';
-       else {
-	 if (page->type <= MTYPE_TAGGED)
-	   c = 't';
-	 else if (page->type == MTYPE_TAGGED_ARRAY)
-	   c = 'g';
-	 else if (page->type == MTYPE_ATOMIC)
-	   c = 'a';
-	 else if (page->type == MTYPE_XTAGGED)
-	   c = 'x';
-	 else
-	   c = 'v';
-	 
-	 if (page->flags & MFLAG_BIGBLOCK)
-	   c = c - ('a' - 'A');
-       }
-       
-       fprintf(stderr, " %c%c%c%c",
-	       c,
-	       ((page->flags & MFLAG_MODIFIED)
-		? 'M'
-		: '_'),
-	       ((page->age < 10)
-		? (page->age + '0')
-		: (page->age + 'a' - 10)),
-	       ((page->type == MTYPE_ATOMIC)
-		? '-'
-		: ((page->refs_age < 10)
-		   ? (page->refs_age + '0')
-		   : (page->refs_age + 'a' - 10))));
-      if ((i % 10) == 9)
-	fprintf(stderr, "\n");
-    }
-    fprintf(stderr, "\n");
-  }
-
-  {
-    int j;
-
-    init();
-    set_ending_tags();
-
-    for (j = 0; j < NUM_SETS; j++) {
-      int kind, i;
-      char *name;
-      MPage *page;
-
-      switch (j) {
-      case 1: kind = MTYPE_ARRAY; name = "array"; break;
-      case 2: kind = MTYPE_ATOMIC; name = "atomic"; break;
-      case 3: kind = MTYPE_XTAGGED; name = "xtagged"; break;
-      case 4: kind = MTYPE_TAGGED_ARRAY; name = "tagarray"; break;
-      default: kind = MTYPE_TAGGED; name = "tagged"; break;
-      }
-
-      for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++)
-	dump_info_array[i] = 0;
-
-      for (page = first; page; page = page->next) {
-	if ((page->type == kind) && !(page->flags & MFLAG_BIGBLOCK)) {
-	  if (j >= NUM_TAGGED_SETS)
-	    scan_untagged_mpage(page->block_start, page); /* gets size counts */
-	  else
-	    scan_tagged_mpage(page->block_start, page); /* gets tag counts */
-	}
-      }
-
-      if (j >= NUM_TAGGED_SETS) {
-	int k = 0;
-	fprintf(stderr, "%s counts: ", name);
-	for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++) {
-	  if (dump_info_array[i]) {
-	    k++;
-	    if (k == 10) {
-	      fprintf(stderr, "\n    ");
-	      k = 0;
-	    }
-	    fprintf(stderr, " [%d:%ld]", i << LOG_WORD_SIZE, dump_info_array[i]);
-	  }
-	}
-	fprintf(stderr, "\n");
-      } else {
-	fprintf(stderr, "Tag counts and sizes:\n");
-	for (i = 0; i < _num_tags_; i++) {
-	  if (dump_info_array[i]) {
-	    char *tn;
-	    switch(i) {
-	    case gc_finalization_tag: tn = "finalization"; break;
-	    case gc_finalization_weak_link_tag: tn = "finalization-weak-link"; break;
-	    case gc_weak_array_tag: tn = "weak-array"; break;
-	    case gc_on_free_list_tag: tn = "freelist-elem"; break;
-	    default:
-	      tn = scheme_get_type_name((Type_Tag)i);
-	      if (!tn) tn = "unknown";
-	      break;
-	    }
-	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << LOG_WORD_SIZE);
-	  }
-	}
-      }
-    }
-  }
-
-  fprintf(stderr, "Active fnl weak links: %d\n", fnl_weak_link_count);
-
-  if (memory_in_use > max_memory_use)
-    max_memory_use = memory_in_use;
-  
-  fprintf(stderr, "Number of collections: %d  (%d compacting)\n", cycle_count, compact_count);
-  fprintf(stderr, "Memory high point: %ld\n", max_memory_use);
-
-  fprintf(stderr, "Memory use: %ld\n", memory_in_use - FREE_LIST_DELTA);
-  fprintf(stderr, "Memory overhead: %ld (%.2f%%)   %ld (%.2f%%) on free list\n", 
-	  page_allocations - memory_in_use + FREE_LIST_DELTA,
-	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use,
-	  (long)FREE_LIST_DELTA,
-	  (100.0 * FREE_LIST_DELTA) / memory_in_use);
-}
-
-long GC_get_memory_use()
-{
-  return memory_in_use;
-}
-
-void GC_init_type_tags(int count, int weakbox)
-{
-  weak_box_tag = weakbox;
-}
-
-#if SEARCH
-void *search_for, *search_mark;
-long search_size;
-int detail_cycle;
-int atomic_detail_cycle;
-#endif
-
-#if SEARCH
-void stop()
-{
-  printf("stopped\n");
-}
-#endif
-
-/******************************************************************************/
 /*                             alloc state info                               */
 /******************************************************************************/
 
@@ -1318,6 +1040,16 @@ static int is_marked(void *p)
   return 1;
 }
 
+#if SEARCH
+void *search_for, *search_mark;
+long search_size;
+
+void stop()
+{
+  printf("stopped\n");
+}
+#endif
+
 /******************************************************************************/
 /*                               init phase                                   */
 /******************************************************************************/
@@ -1325,7 +1057,7 @@ static int is_marked(void *p)
 /* Init: set color to white and install offsets (to indicate the
    offset to the start of and allocation block) for marking. */
 
-#if SAFETY
+#if CHECKS
 static void **prev_ptr;
 static void **prev_var_stack;
 #endif
@@ -1362,7 +1094,7 @@ static void init_tagged_mpage(void **p, MPage *page)
     } else {
 #endif
 
-#if SAFETY
+#if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	fflush(NULL);
 	CRASH();
@@ -1376,7 +1108,7 @@ static void init_tagged_mpage(void **p, MPage *page)
       OFFSET_SET_SIZE_UNMASKED(offsets, offset, size);
       offset += size;
 
-#if SAFETY
+#if CHECKS
       if (prev_var_stack != GC_variable_stack) {
 	CRASH();
       }
@@ -1391,7 +1123,7 @@ static void init_tagged_mpage(void **p, MPage *page)
   inited_pages++;
 }
 
-#ifdef SAFETY
+#ifdef CHECKS
 static long the_size;
 #endif
 
@@ -1419,7 +1151,7 @@ static void init_untagged_mpage(void **p, MPage *page)
       break;
     }
 
-#ifdef SAFETY
+#ifdef CHECKS
     the_size = size;
 #endif
 
@@ -1595,7 +1327,7 @@ void GC_mark(const void *p)
 	  page->flags = flags;
 	}
 
-#if SAFETY
+#if CHECKS
 	if (type > MTYPE_TAGGED) {
 	  if (!((long)p & MPAGE_MASK)) {
 	    /* Can't point to beginning of non-tagged block! */
@@ -1606,7 +1338,7 @@ void GC_mark(const void *p)
 
 	offset = ((long)p & MPAGE_MASK) >> LOG_WORD_SIZE;
 
-#if SAFETY
+#if CHECKS
 	if (offset >= page->alloc_boundary) {
 	  /* Past allocation region. */
 	  CRASH();
@@ -1628,7 +1360,7 @@ void GC_mark(const void *p)
 	    }
 	    break;
 	  case MTYPE_TAGGED:
-#if SAFETY
+#if CHECKS
 	    {
 	      Type_Tag tag = *(Type_Tag *)p;
 	      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
@@ -1666,7 +1398,7 @@ void GC_mark(const void *p)
 	    }
 	  }
 	} else {
-#if SAFETY
+#if CHECKS
 	  if (!(flags & COLOR_MASK)) {
 	    CRASH();
 	  }
@@ -1968,7 +1700,7 @@ static void do_bigblock(void **p, MPage *page, int fixup)
 
       tag = *(Type_Tag *)p;
 
-#if SAFETY
+#if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
 	CRASH();
       }
@@ -1980,7 +1712,7 @@ static void do_bigblock(void **p, MPage *page, int fixup)
       else
 	mark_table[tag](p);
 
-#if SAFETY
+#if CHECKS
       if (prev_var_stack != GC_variable_stack) {
 	CRASH();
       }
@@ -2065,7 +1797,7 @@ static void propagate_all_mpages()
 	  if (tag != SKIP) {
 #endif
 	  
-#if SAFETY
+#if CHECKS
 	    if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
 	      CRASH();
 	    }
@@ -2297,7 +2029,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
     if (size == UNTAGGED_EOM)
       break;
 
-#if SAFETY
+#if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
       CRASH();
     }
@@ -2517,7 +2249,7 @@ static void freelist_untagged_mpage(void **p, MPage *page)
     if (size == UNTAGGED_EOM)
       break;
 
-#if SAFETY
+#if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
       CRASH();
     }
@@ -2605,7 +2337,7 @@ void GC_fixup(void *pp)
 	OffsetTy v;
 	void *r;
 
-#if SAFETY
+#if CHECKS
 	if (page->type > MTYPE_TAGGED) {
 	  if (!offset) {
 	    /* Can't point to beginning of non-tagged block! */
@@ -2625,7 +2357,7 @@ void GC_fixup(void *pp)
 	  stop();
 #endif
 
-#if SAFETY
+#if CHECKS
 	if (!(find_page(r)->flags & COLOR_MASK)) {
 	  CRASH();
 	}
@@ -2687,7 +2419,7 @@ static void fixup_tagged_mpage(void **p, MPage *page)
     } else {
 #endif
 
-#if SAFETY
+#if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !fixup_table[tag]) {
 	fflush(NULL);
 	CRASH();
@@ -2720,7 +2452,7 @@ static void fixup_array_mpage(void **p, MPage *page)
     if (size == UNTAGGED_EOM)
       break;
 
-#if SAFETY
+#if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
       CRASH();
     }
@@ -2784,7 +2516,7 @@ static void fixup_xtagged_mpage(void **p, MPage *page)
     if (size == UNTAGGED_EOM)
       break;
 
-#if SAFETY
+#if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
       CRASH();
     }
@@ -3049,7 +2781,7 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 /*                              stack walking                                 */
 /******************************************************************************/
 
-#if SAFETY
+#if CHECKS
 static void **o_var_stack, **oo_var_stack;
 #endif
 #ifdef TIME
@@ -3074,7 +2806,7 @@ void GC_mark_variable_stack(void **var_stack,
 
     size = *(long *)(var_stack + 1);
 
-#if SAFETY
+#if CHECKS
     oo_var_stack = o_var_stack;
     o_var_stack = var_stack;
 #endif
@@ -3163,7 +2895,7 @@ void GC_fixup_variable_stack(void **var_stack,
   }
 }
 
-#if SAFETY
+#if CHECKS
 void check_variable_stack()
 {
   void **limit, **var_stack;
@@ -3525,7 +3257,7 @@ static void gcollect(int full)
 	      /* Not yet marked. Mark content. */
 	      if (f->tagged) {
 		Type_Tag tag = *(Type_Tag *)f->p;
-#if SAFETY
+#if CHECKS
 		if ((tag < 0) || (tag >= _num_tags_) || !mark_table[tag]) {
 		  CRASH();
 		}
@@ -3987,13 +3719,13 @@ void *GC_malloc_one_tagged(size_t size_in_bytes)
   size_t size_in_words;
   void **m, **naya;
 
-#if SAFETY
+#if CHECKS
   check_variable_stack();
 #endif
 
   size_in_words = ((size_in_bytes + 3) >> LOG_WORD_SIZE);
 
-#if SAFETY
+#if CHECKS
   if (size_in_words < 2)
     CRASH();
 #endif
@@ -4061,7 +3793,7 @@ static void *malloc_untagged(size_t size_in_bytes, mtype_t mtype, MSet *set)
   size_t size_in_words;
   void **m, **naya;
 
-#if SAFETY
+#if CHECKS
   check_variable_stack();
 #endif
 
@@ -4214,4 +3946,261 @@ void GC_free(void *p)
 void GC_gcollect()
 {
   gcollect(1);
+}
+
+long GC_get_memory_use()
+{
+  return memory_in_use;
+}
+
+unsigned long GC_get_stack_base(void)
+{
+  return stack_base;
+}
+
+/******************************************************************************/
+/*                             GC stat dump                                   */
+/******************************************************************************/
+
+static long dump_info_array[BIGBLOCK_MIN_SIZE];
+
+static void scan_tagged_mpage(void **p, MPage *page)
+{
+  void **top;
+
+  top = p + MPAGE_WORDS;
+  
+  while (p < top) {
+    Type_Tag tag;
+    long size;
+
+    tag = *(Type_Tag *)p;
+
+    if (tag == TAGGED_EOM) {
+      break;
+    }
+
+#if ALIGN_DOUBLES
+    if (tag == SKIP) {
+      offset++;
+      p++;
+    } else {
+#endif
+      size = size_table[tag](p);
+
+      dump_info_array[tag]++;
+      dump_info_array[tag + _num_tags_] += size;
+
+      p += size;
+#if ALIGN_DOUBLES
+    }
+#endif
+  }
+}
+
+static void scan_untagged_mpage(void **p, MPage *page)
+{
+  void **top;
+
+  top = p + MPAGE_WORDS;
+
+  while (p < top) {
+    long size;
+
+    size = *(long *)p + 1;
+
+    if (size == UNTAGGED_EOM) {
+      break;
+    }
+
+    dump_info_array[size - 1] += 1;
+
+    p += size;
+  } 
+}
+
+/* HACK! */
+extern char *scheme_get_type_name(Type_Tag t);
+
+void GC_dump(void)
+{
+  int i;
+
+  fprintf(stderr, "t=tagged a=atomic v=array x=xtagged g=tagarray\n");
+  fprintf(stderr, "pagesize=%d  mpagesize=%d  opagesize=%d\n", page_size, MPAGE_SIZE, OPAGE_SIZE);
+  fprintf(stderr, "[");
+  for (i = 0; i < MAPS_SIZE; i++) {
+    if (i && !(i & 63))
+      fprintf(stderr, "\n ");
+
+    if (mpage_maps[i])
+      fprintf(stderr, "*");
+    else
+      fprintf(stderr, "-");
+  }
+  fprintf(stderr, "]\n");
+  for (i = 0; i < MAPS_SIZE; i++) {
+    MPage *maps = mpage_maps[i];
+    if (maps) {
+      int j;
+      fprintf(stderr, "%.2x:\n ", i);
+      for (j = 0; j < MAP_SIZE; j++) {
+	if (j && !(j & 63))
+	  fprintf(stderr, "\n ");
+
+	if (maps[j].type) {
+	  int c;
+
+	  if (maps[j].flags & MFLAG_CONTINUED) 
+	    c = '.';
+	  else {
+	    if (maps[j].type <= MTYPE_TAGGED)
+	      c = 't';
+	    else if (maps[j].type == MTYPE_TAGGED_ARRAY)
+	      c = 'g';
+	    else if (maps[j].type == MTYPE_ATOMIC)
+	      c = 'a';
+	    else if (maps[j].type == MTYPE_XTAGGED)
+	      c = 'x';
+	    else
+	      c = 'v';
+	    
+	    if (maps[j].flags & MFLAG_BIGBLOCK)
+	      c = c - ('a' - 'A');
+	  }
+
+	  fprintf(stderr, "%c", c);
+	} else {
+	  fprintf(stderr, "-");
+	}
+      }
+      fprintf(stderr, "\n");
+    }
+  }
+
+  {
+    MPage *page;
+
+    fprintf(stderr, "Block info: [type][modified?][age][refs-age]\n");
+    for (page = first, i = 0; page; page = page->next, i++) {
+       int c;
+
+       if (page->flags & MFLAG_CONTINUED) 
+	 c = '.';
+       else {
+	 if (page->type <= MTYPE_TAGGED)
+	   c = 't';
+	 else if (page->type == MTYPE_TAGGED_ARRAY)
+	   c = 'g';
+	 else if (page->type == MTYPE_ATOMIC)
+	   c = 'a';
+	 else if (page->type == MTYPE_XTAGGED)
+	   c = 'x';
+	 else
+	   c = 'v';
+	 
+	 if (page->flags & MFLAG_BIGBLOCK)
+	   c = c - ('a' - 'A');
+       }
+       
+       fprintf(stderr, " %c%c%c%c",
+	       c,
+	       ((page->flags & MFLAG_MODIFIED)
+		? 'M'
+		: '_'),
+	       ((page->age < 10)
+		? (page->age + '0')
+		: (page->age + 'a' - 10)),
+	       ((page->type == MTYPE_ATOMIC)
+		? '-'
+		: ((page->refs_age < 10)
+		   ? (page->refs_age + '0')
+		   : (page->refs_age + 'a' - 10))));
+      if ((i % 10) == 9)
+	fprintf(stderr, "\n");
+    }
+    fprintf(stderr, "\n");
+  }
+
+  {
+    int j;
+
+    init();
+    set_ending_tags();
+
+    for (j = 0; j < NUM_SETS; j++) {
+      int kind, i;
+      char *name;
+      MPage *page;
+
+      switch (j) {
+      case 1: kind = MTYPE_ARRAY; name = "array"; break;
+      case 2: kind = MTYPE_ATOMIC; name = "atomic"; break;
+      case 3: kind = MTYPE_XTAGGED; name = "xtagged"; break;
+      case 4: kind = MTYPE_TAGGED_ARRAY; name = "tagarray"; break;
+      default: kind = MTYPE_TAGGED; name = "tagged"; break;
+      }
+
+      for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++)
+	dump_info_array[i] = 0;
+
+      for (page = first; page; page = page->next) {
+	if ((page->type == kind) && !(page->flags & MFLAG_BIGBLOCK)) {
+	  if (j >= NUM_TAGGED_SETS)
+	    scan_untagged_mpage(page->block_start, page); /* gets size counts */
+	  else
+	    scan_tagged_mpage(page->block_start, page); /* gets tag counts */
+	}
+      }
+
+      if (j >= NUM_TAGGED_SETS) {
+	int k = 0;
+	fprintf(stderr, "%s counts: ", name);
+	for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++) {
+	  if (dump_info_array[i]) {
+	    k++;
+	    if (k == 10) {
+	      fprintf(stderr, "\n    ");
+	      k = 0;
+	    }
+	    fprintf(stderr, " [%d:%ld]", i << LOG_WORD_SIZE, dump_info_array[i]);
+	  }
+	}
+	fprintf(stderr, "\n");
+      } else {
+	fprintf(stderr, "Tag counts and sizes:\n");
+	for (i = 0; i < _num_tags_; i++) {
+	  if (dump_info_array[i]) {
+	    char *tn;
+	    switch(i) {
+	    case gc_finalization_tag: tn = "finalization"; break;
+	    case gc_finalization_weak_link_tag: tn = "finalization-weak-link"; break;
+	    case gc_weak_array_tag: tn = "weak-array"; break;
+	    case gc_on_free_list_tag: tn = "freelist-elem"; break;
+	    default:
+	      tn = scheme_get_type_name((Type_Tag)i);
+	      if (!tn) tn = "unknown";
+	      break;
+	    }
+	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << LOG_WORD_SIZE);
+	  }
+	}
+      }
+    }
+  }
+
+  fprintf(stderr, "Active fnl weak links: %d\n", fnl_weak_link_count);
+
+  if (memory_in_use > max_memory_use)
+    max_memory_use = memory_in_use;
+  
+  fprintf(stderr, "Number of collections: %d  (%d compacting)\n", cycle_count, compact_count);
+  fprintf(stderr, "Memory high point: %ld\n", max_memory_use);
+
+  fprintf(stderr, "Memory use: %ld\n", memory_in_use - FREE_LIST_DELTA);
+  fprintf(stderr, "Memory overhead: %ld (%.2f%%)   %ld (%.2f%%) on free list\n", 
+	  page_allocations - memory_in_use + FREE_LIST_DELTA,
+	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use,
+	  (long)FREE_LIST_DELTA,
+	  (100.0 * FREE_LIST_DELTA) / memory_in_use);
 }

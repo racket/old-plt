@@ -7,9 +7,9 @@ GC Architecture
 
 The GC interface for MzScheme (and MrEd) is designed to support
 precise collection with both moving and non-moving
-collectors. Generational and intecremental collectors must rely on
+collectors. Generational and incremental collectors must rely on
 hardware-based memory protection for their implementation (to detect
-writes onto old objects, etc.).
+writes into old objects, etc.).
 
 As a general rule, all pointers to collectable objects reference the
 beginning of the object (i.e., the pointer is never into the interior
@@ -28,7 +28,7 @@ hold pointers to non-collectable memory. They may also contain a
 "fixnum" integer, where the lowest bit is set (so it could never be
 confused with a longword-aligned pointer). Thus, the collector must
 distinguish between longword-aligned pointers into collected memory
-regions, and all other pointers.
+regions and all other pointers.
 
 At any point when the allocator/collector is invoked, MzScheme will
 have set the GC_variable_stack variable to indicate a chain of local
@@ -43,11 +43,16 @@ global points to a value of the form
      }
 
 where the size of `pointers' is indicated by `frame_size'. Each
-element of `pointers' is the address of a pointer of the stack.  The
-`next_frame' field in the structure gives the address of the next
+element of `pointers' is usually the address of a pointer of the
+stack. It can also be 0, in which case the next `pointers' element is
+an integer, and the following `pointers' element is a pointer to an
+array of the indicated size. (The three `pointers' slots contribute 3
+towards the value of `frame_size'.)
+
+The `next_frame' field in the structure gives the address of the next
 frame on the stack, and so on. The garbage collector should follow the
 chain of frames, adjusting pointers for copying collection, until it
-reaches a frame that is deeper than the value returned by
+reaches a frame that is the same as the value returned by
 GC_get_thread_stack_base() (which is supplied by MzScheme).
 
 More generally, GC_mark_variable_stack() can be used to GC a stack
@@ -91,12 +96,12 @@ MzScheme allocates the following kinds of memory objects:
  * Tagged Array - The allocated object is an array of tagged
    objects. Every tagged object in the array is the same size and has
    the same effective tag. After allocating the memory, MzScheme sets
-   the tag on the initial array element, but may not set the tag of
-   other elements untail later. (Even if tags are not set for all
-   objects, the mark and fixup operations can be applied to all of
+   the tag on the initial array element, but might not set the tag of
+   other elements until later. (Even if tags are not set for all
+   objects, the mark and fixup operations might be applied to all of
    them.)
 
- * Xtagged - The object is somehow tagged, but but with a leading
+ * Xtagged - The object is somehow tagged, but not with a leading
    `short'. MzScheme provides a single mark and fixup operation (no
    size operation) for all xtagged objects.
 
@@ -104,7 +109,10 @@ MzScheme allocates the following kinds of memory objects:
    reference its interior, rather than just the start of the object.
    Such pointers will always be longword-aligned. MzScheme allocates
    interior objects infrequently, and only as relatively large
-   objects.
+   objects. Furthermore, if GC_INTERIORABLES_NEVER_MOVE is #defined as
+   1 in gc2.h, MzScheme will assume that such objects never move
+   (useful for skipping certain stack variables that do not need to be
+   updated).
 
  * Weak Box - The object has the following initial structure:
 
@@ -189,7 +197,7 @@ finalizers can prevent finalization and collection. (But it's also
 possible that other finalizers will break a finalization cycle among a
 set of level 3 finalizers.)
 
-The `f' and `data' arguments define the finalizer clsoure to be called
+The `f' and `data' arguments define the finalizer closure to be called
 for `p'. If a finalizer is already installed for `p', it is replaced,
 and `oldf' and `olddata' are filled with the old closure. If `f' is
 NULL, any existing finalizer is removed and no new one is

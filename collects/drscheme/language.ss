@@ -195,6 +195,8 @@
 	  (lambda (v)
 	    (let ([zodiac? (basis:zodiac-vocabulary? v)])
 
+	      (send language-choice set-string-selection (basis:setting-name v))
+	      
 	      (send printing set-selection
 		    (get-printer-style-number (basis:setting-printing v)))
 	      (let ([r4rs-style? (eq? 'r4rs-style (basis:setting-printing v))])

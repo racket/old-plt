@@ -372,7 +372,7 @@
 	       (send edit begin-edit-sequence)
 	       (send edit lock #f)
 	       (send edit insert
-		     (if (is-a? s mred:snip%)
+		     (if (is-a? s mred:original:snip%)
 			 (send s copy)
 			 s)
 		     start
@@ -480,7 +480,7 @@
 					 (symbol? v))
 				     (original v p)
 				     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-						     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+						     (lambda (x _ port) (and (is-a? x mred:original:snip%) 1))]
 						    [mzlib:pretty-print:pretty-print-print-hook
 						     (lambda (x _ port) (port-out-write x))])
 				       (pretty v p 'infinity)))))))])
@@ -943,7 +943,7 @@
 			  (eq? port this-out)
 			  (eq? port this-err))
 		      (parameterize ([mzlib:pretty-print:pretty-print-size-hook
-				      (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+				      (lambda (x _ port) (and (is-a? x mred:original:snip%) 1))]
 				     [mzlib:pretty-print:pretty-print-print-hook
 				      (lambda (x _ port)
 					(evcase port

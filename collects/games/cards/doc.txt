@@ -59,9 +59,9 @@ plus a structure:
   affect whether the region is hilited as cards are dragged).
 
 
-Table methods:
+Table methods: [in addition to standard frame% methods]
 --------------
-   
+
 > add-card :: (send t add-card card x y) - adds `card' to the table
         with its top-left corner at (`x',`y') in table pixels.
 

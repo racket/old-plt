@@ -42,6 +42,8 @@
 						   base)))))
 
   (define (unmztar p filter plthome print-status)
+    (define bufsize 4096)
+    (define buffer (make-bytes bufsize))
     (let loop ()
       (let ([kind (read p)])
 	(unless (eof-object? kind)
@@ -90,18 +92,18 @@
 				  path)
 				 c)])))
 		     ;; Copy file data
-		     (let loop ([n len])
-		       (unless (zero? n)
-			 (let ([c (read-char p)])
-			   (when (eof-object? c)
-			     (error (format 
-				     "unexpected end-of-file while ~a ~a (at ~a of ~a)"
-				     (if out "unpacking" "skipping")
-				     path
-				     (- len n -1) len)))
-			   (when out
-			     (write-char c out)))
-			 (loop (sub1 n))))
+                     (let loop ([n len])
+                       (unless (zero? n)
+                         (let ([l (read-bytes! buffer p 0 (min n bufsize))])
+                           (when (eof-object? l)
+                             (error (format
+                                     "unexpected end-of-file while ~a ~a (at ~a of ~a)"
+                                     (if out "unpacking" "skipping")
+                                     path
+                                     (- len n -1) len)))
+                           (when out
+                             (write-bytes buffer out 0 l))
+                           (loop (- n l)))))
 		     (when out
 		       (close-output-port out))))))]
 	    [else (error "unknown file tag" kind)])

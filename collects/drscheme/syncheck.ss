@@ -731,80 +731,20 @@
           (public syncheck:button-callback)
           (define (syncheck:button-callback)
             (let* ([definitions (get-definitions-text)]
-                   [locked? (send definitions is-locked?)])
+                   [locked? (send definitions is-locked?)]
+		   [error-termination
+		    (lambda (sexp)
+		      (syncheck:clear-highlighting)
+		      (report-error (car sexp) (cdr sexp)))])
               (send definitions begin-edit-sequence #f)
               (send definitions lock #f)
               (clear-annotations)
-              (send definitions syncheck:init-arrows)            
+              (send definitions syncheck:init-arrows)
               (color-range definitions
                            0
                            (send (get-definitions-text) last-position)
                            base-style-str)
-              (let ([tl-binders null]
-                    [tl-varrefs null]
-                    [tl-requires null]
-                    [tl-require-for-syntaxes null]
-                    [tl-tops null]
-                    [tl-referenced-macros null]
-                    [tl-bound-in-sources null]
-                    [users-namespace #f]
-                    [err-termination? #f])
-                (send (get-interactions-text)
-                      expand-program
-                      (drscheme:language:make-text/pos (get-definitions-text) 
-                                                       0
-                                                       (send (get-definitions-text)
-                                                             last-position))
-                      (send (get-definitions-text) get-next-settings)
-                      (lambda (err? sexp run-in-expansion-thread loop)
-                        (unless users-namespace
-                          (set! users-namespace (run-in-expansion-thread current-namespace)))
-                        (cond
-                          [err?
-                           (begin
-                             (set! err-termination? #t)
-                             (syncheck:clear-highlighting)
-                             (report-error (car sexp) (cdr sexp)))]
-                          [(eof-object? sexp)
-                           (custodian-shutdown-all (run-in-expansion-thread current-custodian))]
-                          [else
-                           (let-values ([(new-binders
-                                          new-varrefs
-                                          new-tops
-                                          new-requires
-                                          new-require-for-syntaxes
-                                          new-referenced-macros
-                                          new-bound-in-sources
-                                          has-module?)
-                                         (annotate-basic sexp run-in-expansion-thread)])
-
-                             (if has-module?
-                                 (annotate-complete users-namespace
-                                                    new-binders
-                                                    new-varrefs
-                                                    new-tops
-                                                    new-requires
-                                                    new-require-for-syntaxes
-                                                    new-referenced-macros
-                                                    new-bound-in-sources)
-                                 (begin
-                                   (set! tl-binders (append new-binders tl-binders))
-                                   (set! tl-varrefs (append new-varrefs tl-varrefs))
-                                   (set! tl-requires (append new-requires tl-requires))
-                                   (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
-                                   (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
-                                   (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
-                                   (set! tl-tops (append new-tops tl-tops)))))
-                           (loop)])))
-                (unless err-termination? 
-                  (annotate-complete users-namespace
-                                     tl-binders
-                                     tl-varrefs
-                                     tl-tops
-                                     tl-requires
-                                     tl-require-for-syntaxes
-                                     tl-referenced-macros
-                                     tl-bound-in-sources)))
+	      (check-syntax (get-interactions-text) (get-definitions-text) error-termination)
               (send definitions lock locked?)
               (send definitions end-edit-sequence)))
 
@@ -857,6 +797,72 @@
                                                                       
                                                                       
                                                                       
+
+      (define (check-syntax interactions-text definitions-text error-termination)
+	(let ([tl-binders null]
+	      [tl-varrefs null]
+	      [tl-requires null]
+	      [tl-require-for-syntaxes null]
+	      [tl-tops null]
+	      [tl-referenced-macros null]
+	      [tl-bound-in-sources null]
+	      [users-namespace #f]
+	      [users-custodian #f]
+	      [err-termination? #f])
+	  (send interactions-text
+		expand-program
+		(drscheme:language:make-text/pos definitions-text
+						 0
+						 (send definitions-text last-position))
+		(send definitions-text get-next-settings)
+		(lambda (err? sexp run-in-expansion-thread loop)
+		  (unless users-namespace
+		    (set! users-custodian (run-in-expansion-thread current-custodian))
+		    (set! users-namespace (run-in-expansion-thread current-namespace)))
+		  (cond
+		    [err?
+		     (set! err-termination? #t)
+		     (error-termination sexp)]
+		    [(eof-object? sexp)
+		     (custodian-shutdown-all users-custodian)]
+		    [else
+		     (let-values ([(new-binders
+				    new-varrefs
+				    new-tops
+				    new-requires
+				    new-require-for-syntaxes
+				    new-referenced-macros
+				    new-bound-in-sources
+				    has-module?)
+				   (annotate-basic sexp run-in-expansion-thread)])
+
+		       (if has-module?
+			   (annotate-complete users-namespace
+					      new-binders
+					      new-varrefs
+					      new-tops
+					      new-requires
+					      new-require-for-syntaxes
+					      new-referenced-macros
+					      new-bound-in-sources)
+			   (begin
+			     (set! tl-binders (append new-binders tl-binders))
+			     (set! tl-varrefs (append new-varrefs tl-varrefs))
+			     (set! tl-requires (append new-requires tl-requires))
+			     (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
+			     (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
+			     (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
+			     (set! tl-tops (append new-tops tl-tops)))))
+		     (loop)])))
+	  (unless err-termination? 
+	    (annotate-complete users-namespace
+			       tl-binders
+			       tl-varrefs
+			       tl-tops
+			       tl-requires
+			       tl-require-for-syntaxes
+			       tl-referenced-macros
+			       tl-bound-in-sources))))
 
       
       ;; type req/tag = (make-req/tag syntax sexp boolean)

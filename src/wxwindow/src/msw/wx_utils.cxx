@@ -139,9 +139,28 @@ void wxBell(void)
 #if USE_RESOURCES
 Bool wxWriteResource(const char *section, const char *entry, char *value, const char *file)
 {
-  if (file)
+  if (file) {
+    char *naya;
+    int len, i;
+    len = strlen(file);
+
+    naya = new char[len + 1];
+
+    memcpy(naya, file, len + 1);
+
+    for (i = 0; i < len; i++) {
+      naya[i] = tolower(naya[i]);
+      if (naya[i] == '/')
+	naya[i] = '\\';
+    }
+    while (len && naya[len - 1] == ' ') {
+      --len;
+      naya[len] = 0;
+    }
+
+    file = naya;
     return WritePrivateProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value, (LPCSTR)file);
-  else
+  } else
     return WriteProfileString((LPCSTR)section, (LPCSTR)entry, (LPCSTR)value);
 }
 

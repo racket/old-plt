@@ -662,13 +662,16 @@
 				       (if (regexp-match re:mred name)
                                            (list 'mred)
                                            (list)))]
+		  ;; 
                   [(namespace)
 		   (apply make-namespace
-			  (cons
-			   'no-keywords
+			  ;;(cons
+			  ;;'no-keywords
 			   (if (zodiac-vocabulary? setting)
 			       (cons 'hash-percent-syntax namespace-flags)
-			       namespace-flags)))])
+			       namespace-flags))
+		   ;;)
+		  ])
       
       (when (zodiac-vocabulary? setting)
         (use-compiled-file-kinds 'non-elaboration))

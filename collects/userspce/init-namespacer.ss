@@ -6,7 +6,10 @@
 
   (define (init-namespace)
     (teachpack-thunk)
-    (setup-primitives))
+
+    ; leave all of the primitivies in, for now.
+    ;;(setup-primitives)
+    )
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;

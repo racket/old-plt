@@ -14,13 +14,16 @@
 #include "wx_area.h"
 #include "wx_panel.h"
 
+static int OS_103 = -1;
+
 /* constants from Aqua interface guidelines */
-#define TAB_TOP_SPACE 12
-#define TAB_CONTROL_HEIGHT 30
+#define TAB_TOP_SPACE (OS_103 ? 7 : 12)
+#define TAB_CONTROL_HEIGHT (OS_103 ? 25 : 30)
 #define TAB_CONTENT_MARGIN 2
 #define TAB_BOTTOM_EXTRA_MARGIN 3
 #define TAB_TITLE_SPACE 20
-#define TAB_PANE_OVERLAP 7
+#define TAB_PANE_OVERLAP (OS_103 ? 6 : 7)
+#define TAB_PANE_CLIP_OVERLAP (OS_103 ? 9 : 3)
 
 static pascal void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart);
 static ControlUserPaneDrawUPP userPaneDrawFunctionUPP = NewControlUserPaneDrawUPP(userPaneDrawFunction); 
@@ -30,6 +33,12 @@ static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Re
   ControlTabEntry *array;
   ControlHandle cMacControl;
   int i;
+
+  if (OS_103 < 0) { 
+    long r;
+    Gestalt(gestaltSystemVersion, &r);
+    OS_103 = (((r >> 4) & 0xF) > 2);
+  }
 
 #ifdef MZ_PRECISE_GC
   array = (ControlTabEntry *)GC_malloc_atomic(sizeof(ControlTabEntry) * N);
@@ -92,7 +101,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   } else
     pane = NULL;
 
-  SetControlData(pane, kControlEntireControl, kControlUserPaneDrawProcTag, 
+  SetControlData(pane, kControlEntireControl, kControlUserPaneDrawProcTag | kControlSupportsEmbedding, 
 		 sizeof(userPaneDrawFunctionUPP), (Ptr)&userPaneDrawFunctionUPP);
 
   cMacControl = MakeTabs(theMacGrafPort, N, Choices, &boundsRect);
@@ -280,9 +289,12 @@ static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart)
   Rect itemRect;
 
   GetControlBounds(controlRef, &itemRect);
-  DrawThemeTabPane(&itemRect, (IsControlEnabled(controlRef) 
-			       && IsControlActive(controlRef)));
-		   
+  if (OS_103)
+    DrawThemePrimaryGroup(&itemRect, (IsControlEnabled(controlRef) 
+				      && IsControlActive(controlRef)));
+  else
+    DrawThemeTabPane(&itemRect, (IsControlEnabled(controlRef) 
+				 && IsControlActive(controlRef)));
 } 
 
 #ifdef MZ_PRECISE_GC
@@ -311,15 +323,15 @@ void wxTabChoice::Paint(void)
          the tab, and clip out the inside to avoid
          drawing on contained items. */
       GetControlBounds(pane, &itemRect);
-      itemRect.top += (TAB_PANE_OVERLAP >> 1);
+      itemRect.top += TAB_PANE_CLIP_OVERLAP;
       itemRect.left -= 2;
       itemRect.right += 2;
       itemRect.bottom += 3;
       RectRgn(clipRgn, &itemRect);
-      itemRect.top += 11;
-      itemRect.left += 3;
-      itemRect.right -= 2;
-      itemRect.bottom -= 2;
+      itemRect.top += 11 - 3;
+      itemRect.left += 3 + 2;
+      itemRect.right -= 2 + 3;
+      itemRect.bottom -= 2 + 3;
       RectRgn(innerRgn, &itemRect);
       DiffRgn(clipRgn, innerRgn, clipRgn);
       SetClip(clipRgn);

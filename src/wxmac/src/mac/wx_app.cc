@@ -206,7 +206,7 @@ void wxApp::doMacPreEvent()
     /* If this is the root frame, try to move it behind everything
        else.  If there is any other window, the root frame shouldn't
        be frontmost. */
-    if (macWxFrame == wxRootFrame) {
+    if (macWxFrame && (macWxFrame == wxRootFrame)) {
       wxMacDC *dc;
       CGrafPtr graf;
       dc = wxRootFrame->MacDC();
@@ -987,15 +987,16 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
   } else if (macMenuId == 128) {
     if (macMenuItemNum == 1) {
       // This will Help/About selection
-      if ((theWxMenu = theWxMenuBar->wxHelpHackMenu)
-	  && theWxMenuBar->iHelpMenuHackNum) {
+      theWxMenu = theWxMenuBar->wxHelpHackMenu;
+      if (theWxMenu && theWxMenuBar->iHelpMenuHackNum) {
 	macMenuItemNum = theWxMenuBar->iHelpMenuHackNum;
       } else {
 	wxDo_About();
 	UnhiliteMenu();
 	return TRUE;
       }
-    }
+    } else
+      return FALSE;
   } else {
     theWxMenu = theWxMenuBar->wxMacFindMenu(macMenuId);
   }

@@ -184,9 +184,9 @@ void wxGroupBox::Paint(void)
     GetControlBounds(cMacControl, &itemRect);
     RectRgn(clipRgn, &itemRect);
     itemRect.top += (orig_height - GBOX_EXTRA_SPACE);
-    itemRect.left += 3;
-    itemRect.right -= 3;
-    itemRect.bottom -= 3;
+    itemRect.left += 4;
+    itemRect.right -= 4;
+    itemRect.bottom -= 4;
     RectRgn(innerRgn, &itemRect);
     DiffRgn(clipRgn, innerRgn, clipRgn);
     SetClip(clipRgn);

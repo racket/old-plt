@@ -593,10 +593,12 @@ static Scheme_Object *bignum_multiply(const Scheme_Object *a, const Scheme_Objec
   for (j = 0; (b_digs[j] == 0) && j < b_size; j++) {
     o_digs[i + j] = 0;
   }
+
   if ((a_size - i) > (b_size - j))
     mpn_mul(o_digs + i + j, a_digs + i, a_size - i, b_digs + j, b_size - j);
   else
     mpn_mul(o_digs + i + j, b_digs + j, b_size - j, a_digs + i, a_size - i);
+
   RELEASE(a_digs);
   RELEASE(b_digs);
 
@@ -926,7 +928,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     else
       res_digs = allocate_bigdig_array(res_alloc);
 
-    for(i = 0, j = shift_words; i < SCHEME_BIGLEN(n); ++i, ++j) {
+    for (i = 0, j = shift_words; i < SCHEME_BIGLEN(n); ++i, ++j) {
       res_digs[j] = n_digs[i];
     }
 

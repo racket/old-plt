@@ -402,15 +402,21 @@ abstract out the `hole and `(hole name) patterns.
 
   ;; memoize2 : (x y -> w) -> x y -> w
   ;; memoizes a function of two arguments
+  ;; limits cache size to fixed size
   (define (memoize2 f)
-    (let ([ht (make-hash-table 'equal)])
+    (let ([ht (make-hash-table 'equal)]
+	  [entries 0])
       (lambda (x y)
         (let* ([key (cons x y)]
                [compute/cache
                 (lambda ()
+		  (set! entries (+ entries 1))
                   (let ([res (f x y)])
                     (hash-table-put! ht key res)
                     res))])
+	  (unless (< entries 10000)
+	    ;(printf "clearing cache\n")
+	    (set! ht (make-hash-table 'equal)))
           (hash-table-get ht key compute/cache)))))
 
   ;; match-hole : (union #f symbol) -> compiled-pattern

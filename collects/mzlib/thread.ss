@@ -12,6 +12,7 @@
 
 	  merge-input
 	  copy-port
+	  wrap-input-ports
 
 	  run-server
 	  make-limited-input-port)
@@ -189,6 +190,31 @@
 				      (custodian-shutdown-all c)))))))))
 		(loop)))
 	    (lambda () (tcp-close l))))))
+
+  (define wrap-input-ports
+    (opt-lambda (ports [close-orig? #t])
+      (let ([go (lambda (op)
+		  (if (null? ports)
+		      eof
+		      (let ([n (op (car ports))])
+			(cond
+			 [(eq? n 0) (car ports)]
+			 [(eof-object? n)
+			  (when close-orig?
+			    (close-input-port (car ports)))
+			  (set! ports (cdr ports))
+			  0]
+			 [else n]))))])
+	(make-custom-input-port
+	 (lambda (str)
+	   (go (lambda (p)
+		 (read-string-avail!* str p))))
+	 (lambda (str skip)
+	   (go (lambda (p)
+		 (peek-string-avail!* str skip p))))
+	 (lambda ()
+	   (when close-orig?
+	     (map close-input-port ports)))))))
 
   (define make-limited-input-port
     (opt-lambda (port limit [close-orig? #t])

@@ -5,7 +5,8 @@
            (lib "url.ss" "net")
            (lib "mred.ss" "mred")
            (lib "string-constant.ss" "string-constants")
-           (lib "contract.ss"))
+           (lib "contract.ss")
+	   (lib "thread.ss"))
   
   (define doc-prs (listof (cons/p string? string?)))
   
@@ -102,11 +103,7 @@
           (lambda (out-port)
             (call/input-url (string->url url) get-pure-port 
                             (lambda (in-port)
-                              (let loop ()
-                                (let ([s (read-string 1024 in-port)])
-                                  (unless (eof-object? s)
-                                    (display s out-port)
-                                    (loop))))))))
+			      (copy-port in-port out-port)))))
         (void))))
       
       

@@ -45,8 +45,8 @@
     (define const-default-spacing 10)
     
     ; minimum sizes for buttons.
-    (define min-button-height 20)
-    (define min-button-width 60)
+    (define min-button-height (if (eq? wx:platform 'macintosh) 20 0))
+    (define min-button-width (if (eq? wx:platform 'macintosh) 58 0))
 
     (define counter 0)
     

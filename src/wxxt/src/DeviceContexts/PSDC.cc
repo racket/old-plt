@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.22 1999/02/05 04:30:17 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.23 1999/07/14 00:20:00 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -498,7 +498,8 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 
   if (r) {
     *pstream << "newpath\n";
-    *pstream << r->ps->GetString();
+    if (r->ps) /* => non-empty region */
+      *pstream << r->ps->Lift()->GetString();
     *pstream << "clip\n";
 
     clipping = r;

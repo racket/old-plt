@@ -58,7 +58,9 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
   height = dc->LogicalToDeviceY(yh) - y;
 
   if (is_ps) {
-    ps = new wxPSRgn_Atomic("");
+    height = -height;
+
+    ps = new wxPSRgn_Atomic("", "rect");
     *this << x << " " << y << " moveto\n";
     *this << (x + width) << " " << y << " lineto\n";
     *this << (x + width) << " " << (y - height) << " lineto\n";
@@ -149,6 +151,8 @@ void wxRegion::SetRoundedRectangle(float x, float y, float width, float height, 
 #endif
 
   if (is_ps) {
+    height = -height;
+
     /* So bitmap-based region is right */
     y = -y;
   }
@@ -177,7 +181,9 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
   height = dc->LogicalToDeviceY(yh) - y;
 
   if (is_ps) {
-    ps = new wxPSRgn_Atomic("");
+    height = -height;
+
+    ps = new wxPSRgn_Atomic("", "ellipse");
     *this << (x + width / 2) << " " << (y - height / 2) << " moveto\n";
     *this << (x + width / 2) << " " << (y - height / 2) << " ";
     *this << (width / 2) << " " << (height / 2) << " 0 360 ellipse\n";
@@ -249,7 +255,7 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
   }
 
   if (is_ps) {
-    ps = new wxPSRgn_Atomic("");
+    ps = new wxPSRgn_Atomic("", "poly");
     *this << cpoints[0].x << " " << cpoints[0].y  << " moveto\n";
     for (i = 1; i < n; i++)
       *this << cpoints[i].x << " " << cpoints[i].y  << " lineto\n";
@@ -452,6 +458,7 @@ void wxRegion::Intersect(wxRegion *r)
   if (r->dc != dc) return;
   if (r->Empty()) {
     Cleanup();
+    ps = NULL;
     return;
   }
 
@@ -471,7 +478,7 @@ void wxRegion::Intersect(wxRegion *r)
   if (Empty()) {
     Cleanup();
     ps = NULL;
-  } else
+  } else if (is_ps)
     ps = new wxPSRgn_Intersect(ps, r->ps);
 }
 
@@ -496,8 +503,8 @@ void wxRegion::Subtract(wxRegion *r)
   if (Empty()) {
     Cleanup();
     ps = NULL;
-  } else {
-    /* wxPSRgn_Diff is only half a diff; the result must be intersected with the first part */
+  } else if (is_ps) {
+    /* wxPSRgn_Diff is only half a subtract; the result must be intersected with the first part */
     ps = new wxPSRgn_Intersect(ps, new wxPSRgn_Diff(ps, r->ps));
   }
 }
@@ -638,12 +645,16 @@ wxPSRgn *wxPSRgn_Union::Lift()
       && (a == la) && (b == lb))
     return this;
 
+  /* (A n B) U (C n D) = (A U C) n (A U D) n (B U C) n (B U D) */
+
+  /* count: */
   na = FlattenIntersects(NULL, la, 0);
   nb = FlattenIntersects(NULL, lb, 0);
 
   al = new wxPSRgn*[na];
   bl = new wxPSRgn*[nb];
 
+  /* flatten: */
   FlattenIntersects(al, la, 0);
   FlattenIntersects(bl, lb, 0);
 
@@ -712,7 +723,7 @@ wxPSRgn *wxPSRgn_Diff::Lift()
 
     return r->Lift(); /* Handles intersections in la */
   } else {
-    /* (A n B) \ C = (A \ C) n (B \ C)   [note: C has no intersections] */
+    /* (A n B) - C = (A - C) n (B - C)   [note: C has no intersections] */
     na = FlattenIntersects(NULL, la, 0);
     al = new wxPSRgn*[na];
     FlattenIntersects(al, la, 0);

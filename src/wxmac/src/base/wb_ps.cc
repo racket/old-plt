@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.22 1999/02/05 04:30:17 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.24 1999/09/22 20:58:55 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -244,27 +244,11 @@ class PSStream : public wxObject {
     fwrite(s, strlen(s), 1, f);
     return *this;
   }
-  PSStream& operator<<(float n) {
-    if (int_width > 0) {
-      if ((float)(long)n == n)
-	return *this << (long)n;
-    }
-    fprintf(f, "%f", n);
-    return *this;
-  }
+  PSStream& operator<<(float n);
   PSStream& operator<<(double d) {
     return *this << (float)d;
   }
-  PSStream& operator<<(long l) {
-    if (int_width > 0) {
-      char buffer[50];
-      sprintf(buffer, "%%%d.%dld", int_width, int_width);
-      fprintf(f, buffer, l);
-      int_width = 0;
-    } else
-      fprintf(f, "%ld", l);
-    return *this;
-  }
+  PSStream& operator<<(long l);
   PSStream& operator<<(int i) {
     return *this << (long)i;
   }
@@ -280,6 +264,26 @@ class PSStream : public wxObject {
     int_width = w;
   }
 };
+
+PSStream& PSStream::operator<<(float n) {
+  if (int_width > 0) {
+    if ((float)(long)n == n)
+      return *this << (long)n;
+  }
+  fprintf(f, "%f", n);
+  return *this;
+}
+
+PSStream& PSStream::operator<<(long l) {
+  if (int_width > 0) {
+    char buffer[50];
+    sprintf(buffer, "%%%d.%dld", int_width, int_width);
+    fprintf(f, buffer, l);
+    int_width = 0;
+  } else
+    fprintf(f, "%ld", l);
+  return *this;
+}
 
 IMPLEMENT_DYNAMIC_CLASS(wxPostScriptDC, wxDC)
 
@@ -494,7 +498,8 @@ void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 
   if (r) {
     *pstream << "newpath\n";
-    *pstream << r->ps->GetString();
+    if (r->ps) /* => non-empty region */
+      *pstream << r->ps->Lift()->GetString();
     *pstream << "clip\n";
 
     clipping = r;

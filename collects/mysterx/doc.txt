@@ -88,11 +88,10 @@ _MysterX_
   browser window on the desktop, with defaults
   provided by Windows if omitted.  `style-list'
   may contain any of the symbols 'iconize,
-  'maximize, 'no-caption, 'no-system-menu, 
-  'no-thick-border, and 'scrollbars.  The vertical 
-  scrollbar is disabled if scrolling is unnecessary; 
-  the horizontal scrollbar disappears if scrolling 
-  is unnecessary.
+  'maximize, 'no-system-menu, 'no-thick-border, and 
+  'scrollbars.  The vertical   scrollbar is disabled 
+  if scrolling is unnecessary; the horizontal scrollbar 
+  disappears if scrolling is unnecessary.
 
 > current-document :: (send an-mx-browser current-document)
 
@@ -839,8 +838,8 @@ _Remote COM servers_
 > replace-html :: (send an-mx-element replace-html html)
 
   Replaces the HTML in the element with the string `html'.  You must 
-  use the `find-element' method of mx-document% to retrieve the
-  updated element.
+  use the `find-element' or `find-element-by-id-or-name' methods of 
+  mx-document% to retrieve the updated element.
   
 > insert-text :: (send an-mx-element insert-text txt)
 

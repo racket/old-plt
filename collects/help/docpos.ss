@@ -4,6 +4,7 @@
  ;; Order-assigning procedure:
  (lambda (d)
   (case (string->symbol d)
+    [(help) -10]
     [(drscheme) -1]
     [(r5rs) 0]
     [(mzscheme) 1]

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.215 2000/06/10 13:10:27 mflatt Exp $
+; $Id: scm-main.ss,v 1.216 2000/06/15 03:39:48 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -2139,8 +2139,6 @@
 	      "define-macro" 'kwd:define-macro
 	      expr "malformed definition"))))))
 
-  ;; >> Broken by current embedded define hacks! <<
-  ;; e.g., (let ([a 7]) (let-macro a void (a))
   (add-primitivized-micro-form 'let-macro common-vocabulary
     (let* ((kwd '())
 	    (in-pattern `(_ macro-name macro-handler b0 b1 ...))
@@ -2180,11 +2178,14 @@
 			    (cdr (sexp->raw m-expr cache-table)))
 			  m-expr '() cache-table
 			  (make-origin 'macro expr))))
-		    (expand-expr
-		      (structurize-syntax body expr
-					  '() 
-					  #f (make-origin 'micro expr))
-		      env attributes extended-vocab))))))
+		    (as-nested 
+		     attributes
+		     (lambda ()
+		       (expand-expr
+			(structurize-syntax body expr
+					    '() 
+					    #f (make-origin 'micro expr))
+			env attributes extended-vocab))))))))
 	  (else
 	    (static-error
 	      "let-macro" 'kwd:let-macro

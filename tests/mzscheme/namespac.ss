@@ -4,6 +4,15 @@
 
 (SECTION 'namespaces)
 
+(arity-test eval 1 2)
+(arity-test compile 1 1)
+(arity-test compiled-expression? 1 1)
+
+(test #f compiled-expression? 1)
+(test #t compiled-expression? (compile 1))
+
+(test `,void eval `',void)
+
 (define flag-map
   (list (list 'keywords 
 	      'no-keywords

@@ -298,7 +298,7 @@
   (let ([p (open-output-string)]
 	[filter (lambda (v)
 		  (if (procedure? v)
-		      `(proc: ,(object-name v))
+		      `(proc: ,(syntax-e (object-name v)))
 		      v))])
     (invoke-unit/sig
      (compound-unit/sig

@@ -420,6 +420,8 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 			       Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
+Scheme_Object *scheme_make_stx_for_source(Scheme_Object *sym, 
+					  Scheme_Object *modidx);
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src, 
 				      Scheme_Object *stx_wraps, 
@@ -1784,7 +1786,7 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
 #define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)
-#define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: " kind " port is closed", who);
+#define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, scheme_kernel_symbol, port, "%s: " kind " port is closed", who);
 
 #ifdef USE_FCNTL_O_NONBLOCK
 # define MZ_NONBLOCKING O_NONBLOCK

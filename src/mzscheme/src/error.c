@@ -1371,9 +1371,9 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
   }
 
 #ifndef NO_SCHEME_EXNS
-  newargs[1] = scheme_void;
-  newargs[2] = who;
-  newargs[3] = modidx;
+  newargs[1] = who;
+  newargs[2] = modidx;
+  newargs[3] = scheme_void;
   do_raise(scheme_make_struct_instance(exn_table[MZEXN_USER].type, 
 				       4, newargs), 
 	   0, 1);
@@ -1709,15 +1709,15 @@ scheme_raise_exn(int id, Scheme_Object *modidx, ...)
 
 #ifndef NO_SCHEME_EXNS
   eargs[0] = scheme_make_immutable_sized_string(buffer, alen, 1);
-  eargs[1] = scheme_void;
-  eargs[2] = extract_function_name(buffer, alen);
+  eargs[1] = extract_function_name(buffer, alen);
   if (!modidx)
     modidx = scheme_false;
   else if (SAME_TYPE(SCHEME_TYPE(modidx), scheme_module_index_type))
     modidx = scheme_module_resolve(modidx);
   else if (!SCHEME_SYMBOLP(modidx))
     modidx = scheme_false;
-  eargs[3] = modidx;
+  eargs[2] = modidx;
+  eargs[3] = scheme_void;
 
   do_raise(scheme_make_struct_instance(exn_table[id].type, 
 				       c, eargs),
@@ -1858,7 +1858,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
  if (need_debug) {
    Scheme_Object *marks;
    marks = scheme_current_continuation_marks();
-   ((Scheme_Structure *)arg)->slots[1] = marks;
+   ((Scheme_Structure *)arg)->slots[3] = marks;
  }
 
  v = scheme_dynamic_wind(pre_raise, now_do_raise,

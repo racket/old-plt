@@ -367,6 +367,7 @@ scheme_make_prim_w_everything(Scheme_Prim *fun,
   prim->type = scheme_prim_type;
   SCHEME_PRIM(prim) = fun;
   prim->name = name;
+  prim->srcmod = modidx;
   prim->mina = mina;
   prim->maxa = maxa;
   prim->flags = ((folding ? SCHEME_PRIM_IS_FOLDING : 0)
@@ -421,6 +422,7 @@ scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun,
   SCHEME_CLSD_PRIM(prim) = fun;
   SCHEME_CLSD_PRIM_DATA(prim) = data;
   prim->name = name;
+  prim->srcmod = modidx;
   prim->mina = mina;
   prim->maxa = maxa;
   prim->flags = ((folding ? SCHEME_PRIM_IS_FOLDING : 0)
@@ -1290,22 +1292,33 @@ static Scheme_Object *primitive_result_arity(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *object_name(int argc, Scheme_Object **argv)
 {
+  Scheme_Object *sym = scheme_false, *modname = scheme_false;
+
   if (SCHEME_PROCP(argv[0])) {
     const char *s;
     int len;
 
-    s = scheme_get_proc_name(argv[0], &len, 0, NULL);
-    if (s) 
-      return scheme_intern_exact_symbol(s, len);
+    s = scheme_get_proc_name(argv[0], &len, 0, &modname);
+    if (s)
+      sym = scheme_intern_exact_symbol(s, len);
   } else if (SCHEME_STRUCTP(argv[0])) {
-    return SCHEME_STRUCT_NAME_SYM(argv[0]);
+    sym = SCHEME_STRUCT_NAME_SYM(argv[0]);
   } else if (SCHEME_STRUCT_TYPEP(argv[0])) {
-    return ((Scheme_Struct_Type *)argv[0])->name;
+    sym = ((Scheme_Struct_Type *)argv[0])->name;
   } else if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)) {
-    return ((Scheme_Struct_Property *)argv[0])->name;
+    sym = ((Scheme_Struct_Property *)argv[0])->name;
+  }
+  
+  if (!SCHEME_FALSEP(sym)) {
+    if (modname && !SCHEME_FALSEP(modname)) {
+      /* Construct an identifier that encapsulates the modidx: */
+      modname = scheme_make_modidx(scheme_false, scheme_false, modname);
+      sym = scheme_make_stx_for_source(sym, modname);
+    } else
+      sym = scheme_datum_to_syntax(sym, scheme_false, scheme_false, 0, 0);
   }
 
-  return scheme_false;
+  return sym;
 }
 
 Scheme_Object *scheme_make_arity(short mina, short maxa)

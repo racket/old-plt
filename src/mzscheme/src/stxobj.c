@@ -94,6 +94,7 @@ static Module_Renames *krn;
    - A wrap-elem '* is a mark barrier, which is applied to the
          result of an expansion so that top-level marks do not
          break re-expansions
+   - A wrap-elem <module-index> is a module path for syntax-source-module
 
   The lazy_prefix field of a syntax object keeps track of how many of the
   first wraps need to be propagated to sub-syntax.
@@ -253,6 +254,17 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
   ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
 
   return stx;
+}
+
+Scheme_Object *scheme_make_stx_for_source(Scheme_Object *sym, Scheme_Object *modidx)
+{
+  Scheme_Stx *stx;
+
+  stx = (Scheme_Stx *)scheme_make_stx(sym, -1, -1, NULL, scheme_null);
+  modidx = scheme_make_pair(modidx, scheme_null);
+  stx->wraps = modidx;
+  
+  return (Scheme_Object *)stx;
 }
 
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
@@ -1149,16 +1161,17 @@ int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 Scheme_Object *scheme_stx_source_module(Scheme_Object *stx, int resolve)
 {
   /* Inspect the wraps to look for a self-modidx shift: */
-  Scheme_Object *w, *srcmod = scheme_false, *chain_from = NULL;
+  Scheme_Object *w, *a, *srcmod = scheme_false, *chain_from = NULL;
 
   w = ((Scheme_Stx *)stx)->wraps;
 
   while (!SCHEME_NULLP(w)) {
-    if (SCHEME_BOXP(SCHEME_CAR(w))) {
+    a = SCHEME_CAR(w);
+    if (SCHEME_BOXP(a)) {
       /* Phase shift:  */
       Scheme_Object *vec, *dest, *src;
 
-      vec = SCHEME_PTR_VAL(SCHEME_CAR(w));
+      vec = SCHEME_PTR_VAL(a);
       
       src = SCHEME_VEC_ELS(vec)[1];
       dest = SCHEME_VEC_ELS(vec)[2];
@@ -1172,6 +1185,9 @@ Scheme_Object *scheme_stx_source_module(Scheme_Object *stx, int resolve)
       }
 
       chain_from = src;
+    } else if (SAME_TYPE(SCHEME_TYPE(a), scheme_module_index_type)) {
+      srcmod = a;
+      /* Nothing else should be in w... */
     }
 
     w = SCHEME_CDR(w);
@@ -1562,8 +1578,8 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */
       stack = scheme_make_pair(a, stack);
-    } else {
-      /* box, a phase shift */
+    } else if (SCHEME_BOXP(a)) {
+      /* a phase shift */
       /* Any more rename tables? */
       Scheme_Object *l = SCHEME_CDR(w);
       while (!SCHEME_NULLP(l)) {
@@ -1575,6 +1591,9 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       if (SCHEME_PAIRP(l)) {
 	stack = scheme_make_pair(a, stack);
       }
+    } else {
+      /* Must be a module index for syntax-module-source */
+      stack = scheme_make_pair(a, stack);
     }
 
     w = SCHEME_CDR(w);
@@ -1932,8 +1951,11 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */
       stack = scheme_make_pair(a, stack);
+    } else if (SCHEME_BOXP(a)) {
+      /* a box for a phase shift */
+      stack = scheme_make_pair(a, stack);
     } else {
-      /* must be a box for a phase shift */
+      /* Must be a module index for syntax-module-source */
       stack = scheme_make_pair(a, stack);
     }
 

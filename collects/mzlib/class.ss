@@ -1332,7 +1332,7 @@
 
 		   (lambda (this super-init args) 
 		     (unless (null? args)
-		       (obj-error "make-object" "unused initialization arguments: ~e" args))
+		       (obj-error 'make-object "unused initialization arguments: ~e" args))
 		     (void))
 
 		   #t)) ; no super-init
@@ -1402,7 +1402,7 @@
 	  (when by-pos-only?
 	    (unless (null? named-args)
 	      (obj-error 
-	       "make-object" 
+	       'make-object
 	       "class has only by-position initializers, but given keyword-based arguments: ~e~a" 
 	       named-args
 	       (for-class (class-name c)))))
@@ -1412,7 +1412,7 @@
 				(let loop ([al by-pos-args][nl (class-init-args c)])
 				  (cond
 				   [(null? al) named-args]
-				   [(null? nl) (obj-error "make-object" "too many initialization arguments: ~e~a" 
+				   [(null? nl) (obj-error 'make-object "too many initialization arguments: ~e~a" 
 							  by-pos-args
 							  (for-class (class-name c)))]
 				   [else (cons (cons (car nl) (car al))
@@ -1425,7 +1425,7 @@
 		(let loop ([l named-args])
 		  (unless (null? (cdr l))
 		    (if (assq (caar l) (cdr l))
-			(obj-error "make-object" "duplicate initialization argument: ~a in: ~e~a"
+			(obj-error 'make-object "duplicate initialization argument: ~a in: ~e~a"
 				   (caar l)
 				   named-args
 				   (for-class (class-name c)))
@@ -1436,7 +1436,7 @@
 	       ;; ----- This is the super-init function -----
 	       (lambda (ignore-false by-pos-args new-named-args)
 		 (when inited?
-		   (obj-error "make-object" "superclass already initialized by class initialization~a"
+		   (obj-error 'make-object "superclass already initialized by class initialization~a"
 			      (for-class (class-name c))))
 		 (set! inited? #t)
 		 (let ([named-args (if by-pos-only?
@@ -1452,7 +1452,7 @@
 		   (loop (vector-ref (class-supers c) (sub1 (class-pos c))) by-pos-args named-args)))
 	       named-args)
 	      (unless inited?
-		(obj-error "make-object" "superclass initialization not invoked by initialization~a"
+		(obj-error 'make-object "superclass initialization not invoked by initialization~a"
 			   (for-class (class-name c))))))))
       o))
 
@@ -1463,14 +1463,14 @@
 	  (cond
 	   [a (cdr a)]
 	   [default (default)]
-	   [else (obj-error "make-object" "no argument for required init variable: ~a~a" name
+	   [else (obj-error 'make-object "no argument for required init variable: ~a~a" name
 			    (if class-name (format " in class: ~a" class-name) ""))]))
 	;; By-position mode
 	(cond
 	 [(< name (length arguments))
 	  (list-ref arguments name)]
 	 [default (default)]
-	 [else (obj-error "make-object" "too few initialization arguments")])))
+	 [else (obj-error 'make-object "too few initialization arguments")])))
 
   (define (extract-rest-args skip arguments)
     (if (< skip (length arguments))

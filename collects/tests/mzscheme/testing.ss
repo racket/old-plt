@@ -53,6 +53,8 @@
 
 (define exn-table
   (list (cons exn? (cons exn-message string?))
+	(cons exn? (cons exn-agent (lambda (x) (or (eq? x #f) (symbol? x)))))
+	(cons exn? (cons exn-module (lambda (x) (or (eq? x #f) (symbol? x)))))
 	(cons exn? (cons exn-continuation-marks continuation-mark-set?))
 	(cons exn:variable? (cons exn:variable-id symbol?))
 	(cons exn:application:arity? (cons exn:application-value integer?))
@@ -117,7 +119,7 @@
 				    (let ([sel (cadr row)]
 					  [pred? (cddr row)])
 				      (unless (pred? (sel e))
-					      (printf " WRONG EXN ELEM: ~s " e)
+					      (printf " WRONG EXN ELEM ~s: ~s " sel e)
 					      (record-error (list e 'exn-elem expr)))))))
 			  exn-table)
 						 

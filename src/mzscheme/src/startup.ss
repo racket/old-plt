@@ -1518,8 +1518,18 @@
 	((_ ((out in)) e1 e2 ...)
 	 (syntax/loc x (syntax-case in () (out (begin e1 e2 ...)))))
 	((_ ((out in) ...) e1 e2 ...)
-	 (syntax/loc x (syntax-case (list in ...) ()
-			 ((out ...) (begin e1 e2 ...))))))))
+	 (syntax-case (map (lambda (x)
+			       (datum->syntax-object
+				x
+				'here
+				x))
+			   (syntax->list (syntax (in ...)))) ()
+	   [(here ...)
+	    (syntax/loc x (syntax-case (list (datum->syntax-object 
+					      (quote-syntax here) 
+					      in) 
+					     ...) ()
+			    ((out ...) (begin e1 e2 ...))))])))))
 
   (define (generate-temporaries sl)
     (unless (stx-list? sl)

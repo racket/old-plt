@@ -410,7 +410,8 @@ executable.
               use for the executable's desktop icon
 
       _'ico_ (Windows) - an icon file path (suffix ".ico") to
-              use for the executable's desktop icon
+              use for the executable's desktop icon, with 16-color
+              32x32, 16-color 16x16, and mono 32x32 variants
 
    See also `build-aux-from-path' in the "launcher" collection. The
    default `aux' is `null'.

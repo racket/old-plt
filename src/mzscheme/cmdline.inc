@@ -406,7 +406,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
     char **argv2;
 
 #ifdef DOS_FILE_SYSTEM
-    if (cmdline_exe_hack[0] == '?') {
+    if ((cmdline_exe_hack[0] == '?')
+	|| (cmdline_exe_hack[0] == '*')) {
       /* This is how we make launchers in Windows.
 	 The cmdline is appended to the end of the binary.
 	 The long integer at cmdline_exe_hack[4] says
@@ -436,6 +437,15 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	CloseHandle(fd);
 	if (got != len)
 	  p = (unsigned char *)"\0\0\0";
+	else if (cmdline_exe_hack[0] == '*') {
+	  /* "*" means that the first item is argv[0] replacement: */
+	  prog = (char *)p + 4;
+	  p += (p[0]
+		+ (((long)p[1]) << 8)
+		+ (((long)p[2]) << 16)
+		+ (((long)p[3]) << 24)
+		+ 4);
+	}
       }
     } else
 #endif

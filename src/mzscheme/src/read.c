@@ -1307,17 +1307,22 @@ read_vector (Scheme_Object *port,
   }
   STACK_END(r);
   if (i < requestLength) {
-    if (len) {
+    if (len)
       obj = els[len - 1];
-      if (stxsrc) {
-	/* Set the graph flag if obj sharing is visible: */
-	Scheme_Object *v;
-	v = SCHEME_STX_VAL(obj);
-	if (SCHEME_PAIRP(v) || SCHEME_VECTORP(v) || SCHEME_BOXP(v))
-	  obj = scheme_make_graph_stx(obj, -1, -1, -1);
-      }
-    } else
+    else {
       obj = scheme_make_integer(0);
+      if (stxsrc)
+	obj = scheme_make_stx_w_offset(obj, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
+    }
+
+    if (stxsrc && (requestLength > 1)) {
+      /* Set the graph flag if obj sharing is visible: */
+      Scheme_Object *v;
+      v = SCHEME_STX_VAL(obj);
+      if (SCHEME_PAIRP(v) || SCHEME_VECTORP(v) || SCHEME_BOXP(v))
+	obj = scheme_make_graph_stx(obj, -1, -1, -1);
+    }
+
     for (; i < requestLength; i++) {
       els[i] = obj;
     }

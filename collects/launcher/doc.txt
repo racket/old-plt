@@ -26,7 +26,8 @@ executables:
               use for the executable's desktop icon
 
       _'ico_ (Windows) - an icon file path (suffix ".ico") to
-              use for the executable's desktop icon
+              use for the executable's desktop icon, with 16-color
+              32x32, 16-color 16x16, and mono 32x32 variants
  
       _'independent?_  (Windows) - a boolean; #t creates an old-style
               launcher that is independent of the MzScheme or MrEd

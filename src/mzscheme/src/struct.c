@@ -1772,14 +1772,14 @@ static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
       sets = scheme_null;
     }
     
-    for (i = count - 1; i > 3; ) {
-      n = names[--i];
-      n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
-      sets = scheme_make_immutable_pair(n, sets);
-      
-      n = names[--i];
+    for (i = 3; i < count - 1; i++) {
+      n = names[i++];
       n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
       gets = scheme_make_immutable_pair(n, gets);
+
+      n = names[i];
+      n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
+      sets = scheme_make_immutable_pair(n, sets);
     }
 
     l = scheme_make_pair(gets, scheme_make_immutable_pair(sets, scheme_null));

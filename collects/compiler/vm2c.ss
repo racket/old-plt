@@ -152,7 +152,7 @@
 			     (rep:struct-field-name field)))) 
 		 (rep:struct-fields struct))
 		(fprintf port "};~n"))
-	      (reverse! (set->list structs)))
+	      (reverse structs))
     (newline port)))
 
 (define (compiler:any-statics?)

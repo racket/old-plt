@@ -36,9 +36,6 @@
   (define (fold-sets sets) ; fold union over a list of sets
     (foldl set-union empty-set sets))
 
-  (define (set:big-union sets) ; union over set of sets
-    (fold-sets (set->list sets)))
-
   ; Zodiac annotations
 
   (define (add-annotation name init-fn) 
@@ -545,8 +542,7 @@
 
     (let ([add-binders-to-scope
 	   (lambda (old-bindings new-bindings)
-	     (list->set (append new-bindings 
-				(set->list old-bindings))))])
+	     (set-union (list->set new-bindings) old-bindings))])
       (let do-traverse
 	  ([ast ast]
 	   [binders empty-set])
@@ -1278,17 +1274,17 @@
 		    [inst-clause-varrefs
 		     (fold-sets (map cdr inst-clause-pairs))]
 		    [class-code (get-annotation a)]
-		    [binders (list->set 
-			      (append 
-			       (set->list this-fvs)
-			       (set->list super-init-fvs)
-			       (class-code-public-lookup-bindings class-code)
-			       (class-code-public-define-bindings class-code)
-			       (class-code-override-lookup-bindings class-code)
-			       (class-code-override-define-bindings class-code)
-			       (class-code-private-bindings class-code)
-			       (class-code-inherit-bindings class-code)
-			       (class-code-rename-bindings class-code)))])
+		    [binders (set-union this-fvs
+					super-init-fvs
+					(list->set
+					 (append
+					  (class-code-public-lookup-bindings class-code)
+					  (class-code-public-define-bindings class-code)
+					  (class-code-override-lookup-bindings class-code)
+					  (class-code-override-define-bindings class-code)
+					  (class-code-private-bindings class-code)
+					  (class-code-inherit-bindings class-code)
+					  (class-code-rename-bindings class-code))))])
 
 	       (binder-set-minus
 		     (fold-sets 
@@ -1368,6 +1364,7 @@
 
 (define fv-zolder%
   (class var-zolder% ()
+         (inherit binder-set-minus)
 	 (override
 
 	  [varref-folder 
@@ -1390,7 +1387,7 @@
 		    [arg-setss       ; lexical-binding set list
 		     (map list->set argss)]
 		    [cases-fvs 
-		     (map (ivar this binder-set-minus)
+		     (map binder-set-minus
 			  bodies-fvs arg-setss)])
 
 	       (fold-sets cases-fvs)))])
@@ -1415,13 +1412,14 @@
 
      (let ([the-tvar (mrspidey:FlowType->Tvar fo-ftype)])
 
-       (set:big-union
-	(set-map 
+       (fold-sets
+	(map 
 	 mrspidey:AV->AVs
-	 (set:big-union
-	  (set-map
-	   mrspidey:AV->AVs
-	   (list->set (mrspidey:Tvar-objs the-tvar))))))))))
+	 (set->list
+	  (fold-sets
+	   (map
+	    mrspidey:AV->AVs
+	    (mrspidey:Tvar-objs the-tvar))))))))))
 
 (define (make-global-tables-and-set-scopes ast)
   (let* ([add-entries-zactor 
@@ -2829,7 +2827,7 @@
 			     [arg-setss       ; lexical-binding set list
 			      (map list->set argss)]
 			     [cases-fvs 
-			      (map (ivar this binder-set-minus) bodies-fvs arg-setss)]
+			      (map binder-set-minus bodies-fvs arg-setss)]
 			     [code (get-annotation a)]
 			     [case-codes (procedure-code-case-codes code)]
 			     [all-cases-fvs (fold-sets cases-fvs)])

@@ -281,7 +281,7 @@
 	  size
 	  (cond
 	   [(zodiac:quote-form? body) (k size)]
-	   [(zodiac:bound-varref? body) 
+	   [(zodiac:bound-varref? body)
 	    (if (memq (zodiac:bound-varref-binding body) env)
 		(k size)
 		; Out of scope - no inling
@@ -307,7 +307,7 @@
 						 (+ size 3)
 						 (lambda (size)
 						   (loop (zodiac:let-values-form-body body)
-							 (append (zodiac:let-values-form-vars body) env)
+							 (append (car (zodiac:let-values-form-vars body)) env)
 							 size k)))]
 	   [(zodiac:begin-form? body) (let bloop ([size size][exprs (zodiac:begin-form-bodies body)])
 					(if (null? exprs)

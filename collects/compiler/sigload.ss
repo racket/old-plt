@@ -35,9 +35,6 @@
    list->set
    set->list
    improper-list->set
-   set-list-predicate
-   set-member?
-   set-memv?
    set-memq?
    set-empty?
    set-find

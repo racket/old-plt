@@ -85,37 +85,100 @@
 	      (loop b (cdr b)))))))
 
 ;; Set operations
+
+;; -----> Begin bit-vector implementation <-----
+#|
+(define set-next-index 0)
+(define index-vector (make-vector 100))
+(define singleton-vector (make-vector 100))
+(define index-table (make-hash-table))
+
+(define (index->object i) (vector-ref index-vector i))
+(define (object->index o) 
+  (let ([i (hash-table-get index-table o (lambda () #f))])
+    (or i
+	(let ([i set-next-index])
+	  (set! set-next-index (add1 set-next-index))
+	  (unless (< i (vector-length index-vector))
+	    (printf "grow ~a~n" i)
+	    (let* ([old-iv index-vector]
+		   [old-sv singleton-vector]
+		   [old-size (vector-length index-vector)]
+		   [new-size (* 2 old-size)])
+	      (set! index-vector (make-vector new-size))
+	      (set! singleton-vector (make-vector new-size))
+	      (let loop ([n 0])
+		(unless (= n old-size)
+		  (vector-set! index-vector n (vector-ref old-iv n))
+		  (vector-set! singleton-vector n (vector-ref old-sv n))
+		  (loop (add1 n))))))
+	  (vector-set! index-vector i o)
+	  (vector-set! singleton-vector i (arithmetic-shift 1 i))
+	  (hash-table-put! index-table o i)
+	  i))))
+(define (object->singleton o) 
+  (let ([i (object->index o)])
+    (vector-ref singleton-vector i)))
+(define (set->objects s)
+  (letrec ([dloop ; double-search
+	    (lambda (s i n d)
+	      (if (zero? s)
+		  null
+		  (if (positive? (bitwise-and s i))
+		      (if (= n 1)
+			  (cons (index->object d)
+				(dloop (arithmetic-shift s -1) 1 1 (add1 d)))		
+			  (let ([n/2 (quotient n 2)])
+			    ; It's in d+n/2...d+n
+			    (bloop (arithmetic-shift s (- n/2)) (arithmetic-shift i (- n/2)) n/2 (+ d n/2))))
+		      (dloop s (bitwise-ior i (arithmetic-shift i n)) (* n 2) d))))]
+	   [bloop 
+	    (lambda (s i n d)
+	      (if (= n 1)
+		  (cons (index->object d)
+			(dloop (arithmetic-shift s -1) 1 1 (add1 d)))		
+		  (let* ([n/2 (quotient n 2)]
+			 [low_i (arithmetic-shift i (- n/2))])
+		    (if (positive? (bitwise-and s low_i))
+			(bloop s low_i n/2 d)
+			(bloop (arithmetic-shift s (- n/2)) low_i n/2 (+ d n/2))))))])
+    (dloop s 1 1 0)))
+
+(define (set->list s) (reverse! (set->objects s))) ; something relies on the order
+(define empty-set 0)
+(define make-singleton-set object->singleton)
+(define (list->set l)
+  (let loop ([l l][s 0])
+    (if (null? l)
+	s
+	(loop (cdr l) (set-union s (object->singleton (car l)))))))
+(define (set-memq? o s)
+  (positive? (bitwise-and s (object->singleton o))))
+
+(define set-union bitwise-ior)
+(define set-intersect bitwise-and)
+(define (set-union-singleton s o) (set-union s (object->singleton o)))
+(define (set-minus s1 s2) (bitwise-and s1 (bitwise-not s2)))
+(define (set-subset? s1 s2) (zero? (bitwise-xor s1 (bitwise-and s1 s2))))
+(define set-empty? zero?)
+(define set? integer?) ; cheat
+|#
+;; -----> End bit-vector implementation <------
+
+;; -----> Begin list implementation <------
+
 (define-struct set (%m))
 (define empty-set (make-set null))
 (define make-singleton-set (compose make-set list))
 (define list->set
   (lambda (l)
-    (unless (list? l) (error 'list->set "~a not a list" l))
+    ; (unless (list? l) (error 'list->set "~a not a list" l))
     (make-set l)))
 (define set->list set-%m)
-(define improper-list->set
-  (lambda (l)
-    (let loop ([l l] [acc null])
-      (cond
-	[(null? l) (list->set acc)]
-	[(pair? l) (loop (cdr l) (cons (car l) acc))]
-	[else (list->set (cons l acc))]))))
-(define set-list-predicate
-  (lambda (pred)
-    (lambda (obj set)
-      (pred obj (set->list set)))))
-(define set-member? (set-list-predicate member))
-(define set-memv? (set-list-predicate memv))
-(define set-memq? (set-list-predicate memq))
+(define set-memq?
+  (lambda (obj set)
+    (memq obj (set->list set))))
 (define set-empty? (compose null? set->list))
-
-(define set-find
-  (lambda (p s)
-    (let ([lst (set->list s)])
-      (let loop ([l lst])
-	(cond [(null? l) #f]
-	      [(p (car l)) (car l)]
-	      [else (loop (cdr l))])))))
 
 (define set-union ; O(|a|*|b|)
   (lambda (a b)
@@ -142,18 +205,6 @@
        [(memq (car a) b) (minus (cdr a) b acc)]
        [else (minus (cdr a) b (cons (car a) acc))]))))
 
-(define set-remove 
-  (lambda (e s)
-    (set-minus s (make-singleton-set e))))
-
-(define set-remove-if 
-  (lambda (p s)
-    (let ([lst (set->list s)])
-      (list->set 
-       (filter 
-	(lambda (elt) (not (p elt)))
-	lst)))))
-
 (define set-intersect ; O(|a|*|b|)
   (lambda (a b)
     (let intersect ([a (set->list a)]
@@ -167,6 +218,28 @@
   (let ([l1 (set->list s1)]
 	[l2 (set->list s2)])
     (andmap (lambda (elt) (memq elt l2)) l1)))
+
+;; -----> End list implementation <-----
+
+(define set-remove 
+  (lambda (e s)
+    (set-minus s (make-singleton-set e))))
+
+(define improper-list->set
+  (lambda (l)
+    (let loop ([l l][acc null])
+      (cond
+	[(null? l) (list->set acc)]
+	[(pair? l) (loop (cdr l) (cons (car l) acc))]
+	[else (list->set (cons l acc))]))))
+
+(define set-find
+  (lambda (p s)
+    (let ([lst (set->list s)])
+      (let loop ([l lst])
+	(cond [(null? l) #f]
+	      [(p (car l)) (car l)]
+	      [else (loop (cdr l))])))))
 
 (define set-map
   (lambda (f s)

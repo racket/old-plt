@@ -62,12 +62,12 @@
 		 al bl))))
 
 (define compiler:struct-index 0)
-(define compiler:structs empty-set)
+(define compiler:structs null)
 (define (compiler:init-structs!)
-  (set! compiler:structs empty-set))
+  (set! compiler:structs null))
 (define compiler:add-struct!
   (lambda (struct)
-    (let loop ([l (set->list compiler:structs)])
+    (let loop ([l compiler:structs])
       (cond
        [(null? l)
 	(let ([name (string->symbol (format "mergedStructs~a" compiler:struct-index))])
@@ -80,8 +80,7 @@
 					      (string->symbol
 					       (format "f~a" n))))
 	      (loop (cdr l) (add1 n)))))
-	(set! compiler:structs
-	      (set-union (list->set (list struct)) compiler:structs))]
+	(set! compiler:structs (cons struct compiler:structs))]
        [(rep:same-shape? struct (car l))
 	(set-rep:struct-name! struct (rep:struct-name (car l)))
 	(let loop ([nl (rep:struct-fields struct)]

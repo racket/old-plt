@@ -290,11 +290,16 @@
 			   (lambda () (zodiac:interface:set-zodiac-phase 'expander))
 			   (lambda () (aries:annotate term))
 			   (lambda () (zodiac:interface:set-zodiac-phase #f))))]
+		       ; Always read with zodiac
 		       [zodiac-read
 			(dynamic-wind
 			 (lambda () (zodiac:interface:set-zodiac-phase 'reader))
 			 (lambda () (reader))
-			 (lambda () (zodiac:interface:set-zodiac-phase #f)))])
+			 (lambda () (zodiac:interface:set-zodiac-phase #f)))]
+		       ; Sometimes, we throw away source information and
+		       ;  expand with MzScheme
+		       [use-z-exp? (and (setting-use-zodiac? (current-setting))
+					(eq? (current-namespace) (current-zodiac-namespace)))])
 		   (if (zodiac:eof? zodiac-read)
 		       (lambda () (cleanup #f))
 		       (let* ([evaluator
@@ -304,16 +309,18 @@
 			       (lambda (x . args)
 				 (primitive-eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
 			      [exp
-			       (dynamic-wind
-				(lambda () (zodiac:interface:set-zodiac-phase 'expander))
-				(lambda () (parameterize ([zodiac:user-macro-body-evaluator user-macro-body-evaluator]
-							  [zodiac:elaboration-evaluator evaluator])
-					     (zodiac:scheme-expand
-					      zodiac-read
-					      'previous
-					      vocab)))
-				(lambda () (zodiac:interface:set-zodiac-phase #f)))]
-			      [heading-out (if annotate? 
+			       (if use-z-exp?
+				   (dynamic-wind
+				    (lambda () (zodiac:interface:set-zodiac-phase 'expander))
+				    (lambda () (parameterize ([zodiac:user-macro-body-evaluator user-macro-body-evaluator]
+							      [zodiac:elaboration-evaluator evaluator])
+						 (zodiac:scheme-expand
+						  zodiac-read
+						  'previous
+						  vocab)))
+				    (lambda () (zodiac:interface:set-zodiac-phase #f)))
+				   (zodiac:sexp->raw zodiac-read))]
+			      [heading-out (if (and annotate? use-z-exp?)
 					       (annotate exp)
 					       exp)])
 			 (lambda () (f heading-out loop))))))])
@@ -495,11 +502,10 @@
 	    (require-library-use-compiled #f)
 	    (error-value->string-handler drscheme-error-value->string-handler)
 	    (debug-info-handler (let ([drscheme-debug-info-handler
-				       ; the current-continuation-marks version is for use with
-				       ; the aries which wraps all expressions in a w-c-m expression.
-				       (lambda () (car (current-continuation-marks aries:w-c-m-key)))
-				       ;(lambda () (unbox aries:error-box))
-				       ])
+				       (lambda () (let ([x (current-continuation-marks aries:w-c-m-key)])
+						    (if (null? x)
+							#f ; no debugging info available
+							(car x))))])
 				  drscheme-debug-info-handler))
 	    (current-exception-handler drscheme-exception-handler)
 	    (current-namespace n)

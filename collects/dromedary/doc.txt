@@ -45,3 +45,16 @@ sequence are not unit.
 in a let or match.
 
 Please submit any poor error messages as bugs so I can make sure I have nice error messages with appropriate syntax highlighting.
+
+---
+
+Adding Libraries:
+If you would like to add an additional library to Dromedary (such that it can be accessed in the standard Library.function format), the procedure is the following:
+
+Create a file in libs for your new library. 
+This file will need to require basic.ss (which is in the libs directory).
+This file should provide a hash table that contains all the functions you wish to export. The keys of the hash table should be the name of the function as a string while the values should be pairs with the first element being the type of the function and the second element being the function itself.
+
+Modify prims.ss
+Add your file to the files required by prims.ss
+Add your exported hash tble to the <library-names> hash table. The key should be the name of the library while the value is the hash table.

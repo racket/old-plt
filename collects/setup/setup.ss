@@ -10,6 +10,9 @@
 
 (module setup mzscheme
 
+  (when (file-stream-port? (current-output-port))
+    (file-stream-buffer-mode (current-output-port) 'line))
+
   (define-values (flags specific-collections archives)
     ;; Load the command-line parser without using .zos, 
     ;;  and in its own namespace to avoid poluuting the cm-managed

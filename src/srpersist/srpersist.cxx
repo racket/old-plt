@@ -8,6 +8,7 @@
 #include <ctype.h>
 
 #ifdef WIN32
+#include <io.h>
 #include <windows.h>
 #else
 #define FALSE (0)
@@ -26,7 +27,7 @@ typedef int GUID;
 
 // Microsoft ODBC SDK include files
 // obtainable as part of Data Access SDK
-//  at http://www.microsoft.com/data/
+// at http://www.microsoft.com/data/
 
 #include <sql.h>
 #include <sqlext.h>
@@ -255,6 +256,12 @@ int sizeofCDataType(SQLSMALLINT type) {
     return sizeof(signed char);
   case SQL_C_UTINYINT :
     return sizeof(unsigned char);
+  case SQL_C_DATE :
+    return sizeof(DATE_STRUCT);
+  case SQL_C_TIME :
+    return sizeof(TIME_STRUCT);
+  case SQL_C_TIMESTAMP :
+    return sizeof(TIMESTAMP_STRUCT);
 
 #ifdef WIN32
   case SQL_C_SBIGINT :
@@ -820,7 +827,7 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
   unsigned long numElts;
 
   if (SQL_BUFFERP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-read-buffer","int",0,argc,argv);
+    scheme_wrong_type("read-buffer","<sql-buffer>",0,argc,argv);
   } 
 
   CDataType = SQL_BUFFER_CTYPE(argv[0]);
@@ -1006,7 +1013,7 @@ BOOL checkIsPredList(Scheme_Object *o,BOOL (*p)(Scheme_Object *),long numElts) {
     currVal = SCHEME_CAR(currList);
 
     if (++count > numElts) {
-      scheme_signal_error("sql-write-buffer: too many elements to fit in buffer");
+      scheme_signal_error("write-buffer: too many elements to fit in buffer");
     }
 
     if ((*p)(currVal) == FALSE) {
@@ -1607,10 +1614,13 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
   case SQL_NEED_DATA :
     return need_data;
 
-#if (ODBCVER >= 0x0300)
+#if (ODBCVER < 0x0300)
+  case SQL_NO_DATA_FOUND :
+    sprintf(buff,"SQL_NO_DATA_FOUND error in %s",f);
+#else 
   case SQL_NO_DATA :
-
     sprintf(buff,"SQL_NO_DATA error in %s",f);
+#endif
 
     argv[0] = scheme_make_string(buff);
     argv[1] = scheme_current_continuation_marks();
@@ -1620,7 +1630,6 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
     scheme_apply(scheme_raise,1,&exn_object);
 
     break;
-#endif
 
   case SQL_INVALID_HANDLE :
 
@@ -6830,8 +6839,10 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
     }
   }
 
-  puts("SisterPersist extension for MzScheme, "
-       "Copyright (c) 1999 Rice PLT (Paul Steckler)");
+  if (isatty(fileno(stdin))) {
+    fputs("SisterPersist extension for MzScheme, "
+	  "Copyright (c) 1999 Rice PLT (Paul Steckler)\n",stderr);
+  }
 
   return (Scheme_Object *)srp_unit;
 }

@@ -347,17 +347,19 @@ SRP_NAMED_CONSTANT SQLDescParameterTypes[] = {
 };
 #endif
 
-#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT SQLDescSearchable[] = {
-  { "sql-searchable", SQL_SEARCHABLE },
+#if (ODBCVER >= 0x0300)
   { "sql-pred-char", SQL_PRED_CHAR },
-  { "sql-like-only", SQL_LIKE_ONLY },
   { "sql-pred-basic", SQL_PRED_BASIC },
-  { "sql-all-except-like", SQL_ALL_EXCEPT_LIKE },
+  { "sql-pred-searchable", SQL_PRED_SEARCHABLE },
   { "sql-pred-none", SQL_PRED_NONE },
+#else
+  { "sql-like-only", SQL_LIKE_ONLY },
+  { "sql-searchable", SQL_SEARCHABLE },
+  { "sql-all-except-like", SQL_ALL_EXCEPT_LIKE },
   { "sql-unsearchable", SQL_UNSEARCHABLE },
-};
 #endif
+};
 
 #if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT SQLDescUnnamed[] = {
@@ -446,10 +448,12 @@ SRP_NAMED_CONSTANT traceBits[] = {
   { "sql-opt-trace-on", SQL_OPT_TRACE_ON },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT connectionDeadBits[] = {
   { "sql-cd-true", SQL_CD_TRUE },
   { "sql-cd-false", SQL_CD_FALSE },
 };
+#endif
 
 SRP_NAMED_CONSTANT txnIsolationBits[] = {
   { "sql-txn-read-uncommitted", SQL_TXN_READ_UNCOMMITTED },
@@ -547,6 +551,8 @@ SRP_NAMED_SMALL_CONSTANT CDataTypes[] = {
   { "sql-c-float", SQL_C_FLOAT },
   { "sql-c-double", SQL_C_DOUBLE },
   { "sql-c-date", SQL_C_DATE },
+  { "sql-c-time", SQL_C_TIME },
+  { "sql-c-timestamp", SQL_C_TIMESTAMP },
   { "sql-c-binary", SQL_C_BINARY },
   { "sql-c-bit", SQL_C_BIT },
   { "sql-c-tinyint", SQL_C_TINYINT },
@@ -574,6 +580,9 @@ SRP_NAMED_SMALL_CONSTANT SQLDataTypes[] = {
   { "sql-wchar", SQL_WCHAR },
   { "sql-wvarchar", SQL_WVARCHAR },
   { "sql-wlongvarchar", SQL_WLONGVARCHAR }, 
+  { "sql-date", SQL_DATE },
+  { "sql-time", SQL_TIME },
+  { "sql-timestamp", SQL_TIMESTAMP },
   { "sql-decimal", SQL_DECIMAL },
   { "sql-numeric", SQL_NUMERIC },
   { "sql-smallint", SQL_SMALLINT },
@@ -728,8 +737,13 @@ SRP_NAMED_CONSTANT descSearchableBits[] = {
   { "sql-pred-none", SQL_PRED_NONE },
   { "sql-pred-char", SQL_PRED_CHAR },
   { "sql-pred-basic", SQL_PRED_BASIC },
-#endif
   { "sql-pred-searchable", SQL_PRED_SEARCHABLE },
+#else 
+  { "sql-unsearchable", SQL_UNSEARCHABLE },
+  { "sql-like-only", SQL_LIKE_ONLY },
+  { "sql-all-except-like", SQL_ALL_EXCEPT_LIKE },
+  { "sql-searchable", SQL_SEARCHABLE },
+#endif
 };
 
 #if (ODBCVER >= 0x0300)

@@ -217,6 +217,7 @@ SRP_NAMED_CONSTANT catalogUsageBits[] = {
 };
 #endif
 
+#if (ODBCVER < 0x0300)
 SRP_NAMED_CONSTANT qualifierUsageBits[] = {
   { "sql-qu-dml-statements", SQL_QU_DML_STATEMENTS },
   { "sql-qu-procedure-invocation", SQL_QU_PROCEDURE_INVOCATION },
@@ -224,6 +225,7 @@ SRP_NAMED_CONSTANT qualifierUsageBits[] = {
   { "sql-qu-index-definition", SQL_QU_INDEX_DEFINITION },
   { "sql-qu-privilege-definition", SQL_QU_PRIVILEGE_DEFINITION },
 };
+#endif
 
 #if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT insertStatementBits[] = {
@@ -243,12 +245,16 @@ SRP_NAMED_CONSTANT createAssertionBits[] = {
 };
 #endif
 
+
+#if (ODBCVER >= 0x0300)
+/* NB: not marked in SQLEXT.H as ODBC 3.0 */
 SRP_NAMED_CONSTANT createViewBits[] = {
   { "sql-cv-create-view", SQL_CV_CREATE_VIEW },
   { "sql-cv-check-option", SQL_CV_CHECK_OPTION },
   { "sql-cv-cascaded", SQL_CV_CASCADED },
   { "sql-cv-local", SQL_CV_LOCAL },
 };
+#endif
 
 #if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT createCharSetBits[] = {
@@ -345,6 +351,7 @@ SRP_NAMED_CONSTANT schemaUsageBits[] = {
 };
 #endif
 
+#if (ODBCVER < 0x0300)
 SRP_NAMED_CONSTANT ownerUsageBits[] = {
   { "sql-ou-dml-statements", SQL_OU_DML_STATEMENTS },
   { "sql-ou-procedure-invocation", SQL_OU_PROCEDURE_INVOCATION },
@@ -352,6 +359,7 @@ SRP_NAMED_CONSTANT ownerUsageBits[] = {
   { "sql-ou-index-definition", SQL_OU_INDEX_DEFINITION },
   { "sql-ou-privilege-definition", SQL_OU_PRIVILEGE_DEFINITION },
 };
+#endif
 
 #if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT dropCharSetBits[] = {
@@ -758,6 +766,7 @@ SRP_NAMED_BITS_DICT bitMaskTable[] = {
   { "sql-create-schema",createSchemaBits,sizeray(createSchemaBits) },
   { "sql-create-table",createTableBits,sizeray(createTableBits) },
   { "sql-create-translation",createTranslationBits,sizeray(createTranslationBits) },
+  { "sql-create-view",createViewBits,sizeray(createViewBits) },
   { "sql-drop-assertion",dropAssertionBits,sizeray(dropAssertionBits) },
   { "sql-drop-translation",dropTranslationBits,sizeray(dropTranslationBits) },
   { "sql-schema-usage",schemaUsageBits,sizeray(schemaUsageBits) },
@@ -786,13 +795,16 @@ SRP_NAMED_BITS_DICT bitMaskTable[] = {
   { "sql-static-cursor-attributes1",cursorAttributes1Bits,sizeray(cursorAttributes1Bits) },
   { "sql-static-cursor-attributes2",cursorAttributes2Bits,sizeray(cursorAttributes2Bits) },
 #endif
+#if (ODBCVER < 0x0300)
+  { "sql-owner-usage",ownerUsageBits,sizeray(ownerUsageBits) },
+  { "sql-qualifier-usage",qualifierUsageBits,sizeray(qualifierUsageBits) },
+#endif
   { "sql-string-functions",stringFunctionsBits,sizeray(stringFunctionsBits) },
   { "sql-getdata-extensions",getdataExtensionsBits,sizeray(getdataExtensionsBits) },
   { "sql-bookmark-persistence",bookmarkPersistenceBits,sizeray(bookmarkPersistenceBits) },
   { "sql-scroll-options",scrollOptionsBits,sizeray(scrollOptionsBits) },
   { "sql-txn-isolation-option",txnIsolationOptionBits,sizeray(txnIsolationOptionBits) },
   { "sql-attr-txn-isolation",txnIsolationOptionBits,sizeray(txnIsolationOptionBits) },
-  { "sql-create-view",createViewBits,sizeray(createViewBits) },
 #if ODBCVER >= 0x0201
   { "sql-oj-capabilities",ojCapabilitiesBits,sizeray(ojCapabilitiesBits) },
 #endif
@@ -823,8 +835,6 @@ SRP_NAMED_BITS_DICT bitMaskTable[] = {
   { "sql-convert-varchar",convertBits,sizeray(convertBits) },
   { "sql-convert-interval-year-month",convertBits,sizeray(convertBits) },
   { "sql-convert-interval-day-time",convertBits,sizeray(convertBits) },
-  { "sql-owner-usage",ownerUsageBits,sizeray(ownerUsageBits) },
-  { "sql-qualifier-usage",qualifierUsageBits,sizeray(qualifierUsageBits) },
   { "sql-fetch-direction",fetchDirectionBits,sizeray(fetchDirectionBits) },
   { "sql-pos-operations",posOperationsBits,sizeray(posOperationsBits) },
   { "sql-lock-types",lockTypesBits,sizeray(lockTypesBits) },

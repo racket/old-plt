@@ -1,16 +1,11 @@
 // srpinfo.tbl -- SQLGetInfo-related arrays
 
 SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
-#if (ODBCVER >= 0x0200) 
-  { "sql-bookmark-persistence", SQL_BOOKMARK_PERSISTENCE, bitmask },
-#endif
-
 #if (ODBCVER >= 0x0300) 
   { "sql-active-environments", SQL_ACTIVE_ENVIRONMENTS, sqlusmallint },
   { "sql-async-mode", SQL_ASYNC_MODE, nameduinteger },
   { "sql-info-schema-views", SQL_INFO_SCHEMA_VIEWS, bitmask },
   { "sql-batch-row-count", SQL_BATCH_ROW_COUNT, bitmask },
-  { "sql-catalog-location", SQL_CATALOG_LOCATION, namedusmallint },
   { "sql-keyset-cursor-attributes1", SQL_KEYSET_CURSOR_ATTRIBUTES1, bitmask },
   { "sql-batch-support", SQL_BATCH_SUPPORT, bitmask },
   { "sql-max-async-concurrent-statements", SQL_MAX_ASYNC_CONCURRENT_STATEMENTS, sqluinteger },
@@ -26,6 +21,7 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-static-cursor-attributes1", SQL_STATIC_CURSOR_ATTRIBUTES1, bitmask },
   { "sql-forward-only-cursor-attributes2", SQL_FORWARD_ONLY_CURSOR_ATTRIBUTES2, bitmask },
   { "sql-static-cursor-attributes2", SQL_STATIC_CURSOR_ATTRIBUTES2, bitmask },
+  { "sql-catalog-location", SQL_CATALOG_LOCATION, namedusmallint },
   { "sql-catalog-term", SQL_CATALOG_TERM, string },
   { "sql-catalog-usage", SQL_CATALOG_USAGE, bitmask },
   { "sql-collation-seq", SQL_COLLATION_SEQ, string },
@@ -34,7 +30,6 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-aggregate-functions", SQL_AGGREGATE_FUNCTIONS, bitmask },
   { "sql-drop-table", SQL_DROP_TABLE, bitmask },
   { "sql-alter-domain", SQL_ALTER_DOMAIN, bitmask },
-  // !!! missing alter-table !!!
   { "sql-drop-translation", SQL_DROP_TRANSLATION, bitmask },
   { "sql-drop-view", SQL_DROP_VIEW, bitmask },
   { "sql-datetime-literals", SQL_DATETIME_LITERALS, bitmask },
@@ -52,7 +47,6 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-create-translation", SQL_CREATE_TRANSLATION, bitmask },
   { "sql-ddl-index", SQL_DDL_INDEX, nameduinteger },
   { "sql-drop-assertion", SQL_DROP_ASSERTION, bitmask },
-  { "sql-schema-usage", SQL_SCHEMA_USAGE, bitmask },
   { "sql-drop-character-set", SQL_DROP_CHARACTER_SET, bitmask },
   { "sql-drop-collation", SQL_DROP_COLLATION, bitmask },
   { "sql-drop-schema", SQL_DROP_SCHEMA, bitmask },
@@ -78,22 +72,60 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-convert-interval-year-month", SQL_CONVERT_INTERVAL_YEAR_MONTH, bitmask },
   { "sql-cursor-sensitivity", SQL_CURSOR_SENSITIVITY, nameduinteger },
   { "sql-dm-ver", SQL_DM_VER, string },
+  { "sql-schema-usage", SQL_SCHEMA_USAGE, bitmask },
   { "sql-xopen-cli-year", SQL_XOPEN_CLI_YEAR, string },
 #endif
+#if ODBCVER < 0x0300
+  { "sql-qualifier-location", SQL_QUALIFIER_LOCATION, namedusmallint },
+  { "sql-qualifier-usage", SQL_QUALIFIER_USAGE, bitmask },
+#endif
+#if (ODBCVER >= 0x0201)
+  { "sql-oj-capabilities", SQL_OJ_CAPABILITIES, bitmask },
+#endif
+#if (ODBCVER >= 0x0200)  
+  { "sql-alter-table", SQL_ALTER_TABLE, bitmask },
+  { "sql-bookmark-persistence", SQL_BOOKMARK_PERSISTENCE, bitmask },
+  { "sql-column-alias", SQL_COLUMN_ALIAS, boolstring },
+  { "sql-driver-hlib", SQL_DRIVER_HLIB, sqluinteger },
+  { "sql-driver-odbc-ver", SQL_DRIVER_ODBC_VER, string },
+  { "sql-file-usage", SQL_FILE_USAGE, namedusmallint },
   { "sql-getdata-extensions", SQL_GETDATA_EXTENSIONS, bitmask  },
+  { "sql-group-by", SQL_GROUP_BY, namedusmallint },
+  { "sql-keywords", SQL_KEYWORDS, string },
+  { "sql-like-escape-clause", SQL_LIKE_ESCAPE_CLAUSE, boolstring },
+  { "sql-max-binary-literal-len", SQL_MAX_BINARY_LITERAL_LEN, sqluinteger },
+  { "sql-max-char-literal-len", SQL_MAX_CHAR_LITERAL_LEN, sqluinteger },
+  { "sql-max-columns-in-group-by", SQL_MAX_COLUMNS_IN_GROUP_BY, sqlusmallint },
+  { "sql-max-columns-in-index", SQL_MAX_COLUMNS_IN_INDEX, sqlusmallint },
+  { "sql-max-columns-in-order-by", SQL_MAX_COLUMNS_IN_ORDER_BY, sqlusmallint },
+  { "sql-max-columns-in-select", SQL_MAX_COLUMNS_IN_SELECT, sqlusmallint },
+  { "sql-max-columns-in-table", SQL_MAX_COLUMNS_IN_TABLE, sqlusmallint },
+  { "sql-max-index-size", SQL_MAX_INDEX_SIZE, sqluinteger },
+  { "sql-max-row-size", SQL_MAX_ROW_SIZE, sqluinteger },
+  { "sql-max-statement-len", SQL_MAX_STATEMENT_LEN, sqluinteger },
+  { "sql-max-tables-in-select", SQL_MAX_TABLES_IN_SELECT, sqlusmallint },
+  { "sql-max-user-name-len", SQL_MAX_USER_NAME_LEN, sqlusmallint },
+  { "sql-need-long-data-len", SQL_NEED_LONG_DATA_LEN, boolstring },
+  { "sql-null-collation", SQL_NULL_COLLATION, namedusmallint },
+  { "sql-order-by-columns-in-select", SQL_ORDER_BY_COLUMNS_IN_SELECT, boolstring },
+  { "sql-pos-operations", SQL_POS_OPERATIONS, bitmask },
+  { "sql-quoted-identifier-case", SQL_QUOTED_IDENTIFIER_CASE, namedusmallint },
+  { "sql-special-characters", SQL_SPECIAL_CHARACTERS, string },
+  { "sql-subqueries", SQL_SUBQUERIES, bitmask },
+  { "sql-timedate-add-intervals", SQL_TIMEDATE_ADD_INTERVALS, bitmask },
+  { "sql-timedate-diff-intervals", SQL_TIMEDATE_DIFF_INTERVALS, bitmask },
+  { "sql-union", SQL_UNION, bitmask },
+#endif
   { "sql-data-source-name", SQL_DATA_SOURCE_NAME, string },
   { "sql-driver-hdbc", SQL_DRIVER_HDBC, hdbc },
   { "sql-driver-henv", SQL_DRIVER_HENV, henv },
-  { "sql-driver-hlib", SQL_DRIVER_HLIB, sqluinteger },
   { "sql-driver-hstmt", SQL_DRIVER_HSTMT, hstmt },
   { "sql-odbc-ver", SQL_ODBC_VER, string },
   { "sql-driver-name", SQL_DRIVER_NAME, string },
-  { "sql-driver-odbc-ver", SQL_DRIVER_ODBC_VER, string },
   { "sql-driver-ver", SQL_DRIVER_VER, string },
   { "sql-row-updates", SQL_ROW_UPDATES, boolstring },
   { "sql-search-pattern-escape", SQL_SEARCH_PATTERN_ESCAPE, string },
   { "sql-server-name", SQL_SERVER_NAME, string },
-  { "sql-file-usage", SQL_FILE_USAGE, namedusmallint },
   { "sql-database-name", SQL_DATABASE_NAME, string },
   { "sql-dbms-name", SQL_DBMS_NAME, string },
   { "sql-dbms-ver", SQL_DBMS_VER, string },
@@ -101,8 +133,6 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-mult-result-sets", SQL_MULT_RESULT_SETS, boolstring },
   { "sql-accessible-tables", SQL_ACCESSIBLE_TABLES, boolstring },
   { "sql-multiple-active-txn", SQL_MULTIPLE_ACTIVE_TXN, boolstring },
-  { "sql-need-long-data-len", SQL_NEED_LONG_DATA_LEN, boolstring },
-  { "sql-null-collation", SQL_NULL_COLLATION, namedusmallint },
   { "sql-procedure-term", SQL_PROCEDURE_TERM, string },
   { "sql-concat-null-behavior", SQL_CONCAT_NULL_BEHAVIOR, namedusmallint },
   { "sql-cursor-commit-behavior", SQL_CURSOR_COMMIT_BEHAVIOR, namedusmallint },
@@ -114,50 +144,23 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-txn-isolation-option", SQL_TXN_ISOLATION_OPTION, nameduinteger },
   { "sql-default-txn-isolation", SQL_DEFAULT_TXN_ISOLATION, nameduinteger },
   { "sql-user-name", SQL_USER_NAME, string },
-  { "sql-alter-table", SQL_ALTER_TABLE, bitmask },
   { "sql-expressions-in-orderby", SQL_EXPRESSIONS_IN_ORDERBY, boolstring },
-  { "sql-group-by", SQL_GROUP_BY, namedusmallint },
   { "sql-identifier-case", SQL_IDENTIFIER_CASE, namedusmallint },
   { "sql-identifier-quote-char", SQL_IDENTIFIER_QUOTE_CHAR, string },
-  { "sql-column-alias", SQL_COLUMN_ALIAS, boolstring },
   { "sql-integrity", SQL_INTEGRITY, boolstring },
   { "sql-correlation-name", SQL_CORRELATION_NAME, namedusmallint },
-  { "sql-keywords", SQL_KEYWORDS, string },
-  { "sql-like-escape-clause", SQL_LIKE_ESCAPE_CLAUSE, boolstring },
   { "sql-non-nullable-columns", SQL_NON_NULLABLE_COLUMNS, namedusmallint },
-#if ODBCVER >= 0x0201
-  { "sql-oj-capabilities", SQL_OJ_CAPABILITIES, bitmask },
-#endif
-  { "sql-order-by-columns-in-select", SQL_ORDER_BY_COLUMNS_IN_SELECT, boolstring },
   { "sql-outer-joins", SQL_OUTER_JOINS, boolstring },
   { "sql-procedures", SQL_PROCEDURES, boolstring },
-  { "sql-quoted-identifier-case", SQL_QUOTED_IDENTIFIER_CASE, namedusmallint },
-  { "sql-special-characters", SQL_SPECIAL_CHARACTERS, string },
-  { "sql-subqueries", SQL_SUBQUERIES, bitmask },
-  { "sql-union", SQL_UNION, bitmask },
-  { "sql-max-binary-literal-len", SQL_MAX_BINARY_LITERAL_LEN, sqluinteger },
   { "sql-max-catalog-name-len", SQL_MAX_CATALOG_NAME_LEN, sqlusmallint },
-  { "sql-max-index-size", SQL_MAX_INDEX_SIZE, sqluinteger },
-  { "sql-max-char-literal-len", SQL_MAX_CHAR_LITERAL_LEN, sqluinteger },
   { "sql-max-procedure-name-len", SQL_MAX_PROCEDURE_NAME_LEN, sqlusmallint },
   { "sql-max-column-name-len", SQL_MAX_COLUMN_NAME_LEN, sqlusmallint },
-  { "sql-max-row-size", SQL_MAX_ROW_SIZE, sqluinteger },
-  { "sql-max-columns-in-group-by", SQL_MAX_COLUMNS_IN_GROUP_BY, sqlusmallint },
   { "sql-max-row-size-includes-long", SQL_MAX_ROW_SIZE_INCLUDES_LONG, boolstring },
-  { "sql-max-columns-in-index", SQL_MAX_COLUMNS_IN_INDEX, sqlusmallint },
   { "sql-max-schema-name-len", SQL_MAX_SCHEMA_NAME_LEN, sqlusmallint },
-  { "sql-max-columns-in-order-by", SQL_MAX_COLUMNS_IN_ORDER_BY, sqlusmallint },
-  { "sql-max-statement-len", SQL_MAX_STATEMENT_LEN, sqluinteger },
-  { "sql-max-columns-in-select", SQL_MAX_COLUMNS_IN_SELECT, sqlusmallint },
   { "sql-max-table-name-len", SQL_MAX_TABLE_NAME_LEN, sqlusmallint },
-  { "sql-max-columns-in-table", SQL_MAX_COLUMNS_IN_TABLE, sqlusmallint },
-  { "sql-max-tables-in-select", SQL_MAX_TABLES_IN_SELECT, sqlusmallint },
   { "sql-max-cursor-name-len", SQL_MAX_CURSOR_NAME_LEN, sqlusmallint },
-  { "sql-max-user-name-len", SQL_MAX_USER_NAME_LEN, sqlusmallint },
   { "sql-convert-functions", SQL_CONVERT_FUNCTIONS, bitmask },
-  { "sql-timedate-add-intervals", SQL_TIMEDATE_ADD_INTERVALS, bitmask },
   { "sql-numeric-functions", SQL_NUMERIC_FUNCTIONS, bitmask },
-  { "sql-timedate-diff-intervals", SQL_TIMEDATE_DIFF_INTERVALS, bitmask },
   { "sql-string-functions", SQL_STRING_FUNCTIONS, bitmask },
   { "sql-timedate-functions", SQL_TIMEDATE_FUNCTIONS, bitmask },
   { "sql-system-functions", SQL_SYSTEM_FUNCTIONS, bitmask },
@@ -187,12 +190,9 @@ SRP_NAMED_TYPED_CONSTANT sqlInfo[] = {
   { "sql-odbc-sql-opt-ief", SQL_ODBC_SQL_OPT_IEF, boolstring },
   { "sql-owner-term", SQL_OWNER_TERM, string },
   { "sql-owner-usage", SQL_OWNER_USAGE, bitmask },
-  { "sql-qualifier-location", SQL_QUALIFIER_LOCATION, namedusmallint },
   { "sql-qualifier-name-separator", SQL_QUALIFIER_NAME_SEPARATOR, string },
   { "sql-qualifier-term", SQL_QUALIFIER_TERM, string },
-  { "sql-qualifier-usage", SQL_QUALIFIER_USAGE, bitmask },
   { "sql-fetch-direction", SQL_FETCH_DIRECTION, bitmask },
-  { "sql-pos-operations", SQL_POS_OPERATIONS, bitmask },
   { "sql-lock-types", SQL_LOCK_TYPES, bitmask },
   { "sql-positioned-statements", SQL_POSITIONED_STATEMENTS, bitmask },
   { "sql-odbc-api-conformance", SQL_ODBC_API_CONFORMANCE, namedusmallint },
@@ -250,10 +250,12 @@ SRP_NAMED_CONSTANT catalogLocationBits[] = {
 };
 #endif
 
+#if (ODBCVER < 0x0300)
 SRP_NAMED_CONSTANT qualifierLocationBits[] = {
   { "sql-ql-start", SQL_QL_START },
   { "sql-ql-end", SQL_QL_END },
 };
+#endif
 
 SRP_NAMED_CONSTANT identifierCaseBits[] = {
   { "sql-ic-upper", SQL_IC_UPPER },
@@ -293,21 +295,25 @@ SRP_NAMED_CONSTANT odbcSqlConformanceBits[] = {
 };
 
 SRP_NAMED_BITS_DICT namedInfoSmallInts[] = {
+#if (ODBCVER >= 0x0300)
+  { "sql-catalog-location", catalogLocationBits, sizeray(catalogLocationBits) }, 
+#endif
+#if (ODBCVER < 0x0300)
+  { "sql-qualifier-location", qualifierLocationBits, sizeray(qualifierLocationBits) },
+#endif
+#if (ODBCVER >= 0x0200)
   { "sql-file-usage", fileUsageBits, sizeray(fileUsageBits) },
+  { "sql-group-by", groupByBits, sizeray(groupByBits) }, 
   { "sql-null-collation", nullCollationBits, sizeray(nullCollationBits) },
+  { "sql-quoted-identifier-case", quotedIdentifierCaseBits, sizeray(quotedIdentifierCaseBits) },
+#endif
   { "sql-concat-null-behavior", concatNullBehaviorBits, sizeray(concatNullBehaviorBits) }, 
   { "sql-cursor-commit-behavior", cursorBehaviorBits, sizeray(cursorBehaviorBits) }, 
   { "sql-cursor-rollback-behavior", cursorBehaviorBits, sizeray(cursorBehaviorBits) }, 
   { "sql-txn-capable", txnCapableBits, sizeray(txnCapableBits) }, 
-  { "sql-group-by", groupByBits, sizeray(groupByBits) }, 
-#if (ODBCVER >= 0x0300)
-  { "sql-catalog-location", catalogLocationBits, sizeray(catalogLocationBits) }, 
-#endif
   { "sql-identifier-case", identifierCaseBits, sizeray(identifierCaseBits) },
   { "sql-correlation-name", correlationNameBits, sizeray(correlationNameBits) },
   { "sql-non-nullable-columns", nonNullableColumnsBits, sizeray(nonNullableColumnsBits) },
-  { "sql-quoted-identifier-case", quotedIdentifierCaseBits, sizeray(quotedIdentifierCaseBits) },
-  { "sql-qualifier-location", qualifierLocationBits, sizeray(qualifierLocationBits) },
   { "sql-odbc-api-conformance", odbcApiConformanceBits, sizeray(odbcApiConformanceBits) },
   { "sql-odbc-sql-conformance", odbcSqlConformanceBits, sizeray(odbcSqlConformanceBits) },
 };

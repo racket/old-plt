@@ -59,7 +59,7 @@ indicated using C-style hexadecimal numbers.  Thus, ODBC 1.0 is
 indicated by 0x0100, ODBC 2.0 is 0x0200, ODBC 3.5 is 0x0350, and so on.
 To compile for ODBC 2.0, for instance, you'd have
 
-	ODBCVER=2.0
+	ODBCVER=0x0200
 
 in the Makefile.  Finally, you may want to change the 
 of the SrPersist dynamic library.  The variable LIBDIR indicates that

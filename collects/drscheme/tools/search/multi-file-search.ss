@@ -83,8 +83,8 @@
 ;; opens a window and creates the thread that does the search
 (define (open-search-window search-info)
   (define frame (make-object search-size-frame% "Search"))
-  (define panel (make-object saved-vertical-resizable% frame))
-  (define button-panel (make-object horizontal-panel% frame))
+  (define panel (make-object saved-vertical-resizable% (send frame get-area-container)))
+  (define button-panel (make-object horizontal-panel% (send frame get-area-container)))
   (define open-button (make-object button% "Open File" button-panel (lambda (x y) (open-file-callback))))
   (define stop-button (make-object button% "Stop Search" button-panel (lambda (x y) (stop-callback))))
   (define grow-box-pane (make-object grow-box-spacer-pane% button-panel))
@@ -304,7 +304,7 @@
 ;; remembers the frame size in the preferences
 ;; thread: eventspace main thread
 (define search-size-frame%
-  (class frame% (name)
+  (class frame:basic% (name)
     (override
       [on-size
        (lambda (w h)

@@ -194,7 +194,7 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
       if (height <= 0)
 	control_height = defheight;
       else
-	control_height = height - (control_y - label_y -3);
+	control_height = height - (label_height + 3);
     }
 
     MoveWindow(static_label, (int)label_x, (int)label_y,

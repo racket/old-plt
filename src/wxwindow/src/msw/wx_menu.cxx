@@ -485,11 +485,8 @@ Bool wxMenuBar::OnDelete(wxMenu *a_menu, int pos)
     menus[pos]->ms_handle = menus[pos]->save_ms_handle;
     menus[pos]->save_ms_handle = NULL;
     
-    if (menu_bar_frame) {
-      wxWnd *cframe = (wxWnd*)menu_bar_frame->handle;
-      HWND hand = (HWND)cframe->handle;
-      DrawMenuBar(hand);
-    }
+    if (menu_bar_frame)
+      menu_bar_frame->DrawMenuBar();
     
     return TRUE;
   }
@@ -508,11 +505,13 @@ Bool wxMenuBar::OnAppend(wxMenu *a_menu, char *title)
   a_menu->save_ms_handle = a_menu->ms_handle;
   a_menu->ms_handle = NULL;
 
-  AppendMenu((HMENU)ms_handle, MF_POPUP | MF_STRING, (UINT)a_menu->save_ms_handle, title);
+  InsertMenu((HMENU)ms_handle,
+	     n,
+	     MF_BYPOSITION | MF_POPUP | MF_STRING, 
+	     (UINT)a_menu->save_ms_handle,
+	     title);
 
-  wxWnd *cframe = (wxWnd*)menu_bar_frame->handle;
-  HWND hand = (HWND)cframe->handle;
-  DrawMenuBar(hand);
+  menu_bar_frame->DrawMenuBar();
 
   return TRUE;
 }
@@ -539,9 +538,7 @@ void wxMenuBar::EnableTop(int pos,Bool flag)
     ms_flag = MF_GRAYED;
   
   EnableMenuItem((HMENU)ms_handle, pos, MF_BYPOSITION | ms_flag);
-  wxWnd *cframe = (wxWnd*)menu_bar_frame->handle;
-  HWND hand = (HWND)cframe->handle;
-  DrawMenuBar(hand);
+  menu_bar_frame->DrawMenuBar();
 }
 
 void wxMenuBar::Check(long Id, Bool Flag)
@@ -602,9 +599,7 @@ void wxMenuBar::SetLabelTop(int pos,char *label)
     ModifyMenu((HMENU)ms_handle,pos,MF_BYPOSITION|MF_STRING|was_flag,pos,label);
 
   if (menu_bar_frame) {
-    wxWnd *cframe = (wxWnd*)menu_bar_frame->handle;
-    HWND hand = (HWND)cframe->handle;
-    DrawMenuBar(hand);
+    menu_bar_frame->DrawMenuBar();
   }
 }
 
@@ -642,90 +637,43 @@ void wxFrame::SetMenuBar(wxMenuBar *menu_bar)
   wxWnd *cframe = (wxWnd *)handle;
   cframe->hMenu = menu;
 
-  switch (frame_type)
-  {
-    case wxMDI_PARENT:
-	 {
+  switch (frame_type) {
+  case wxMDI_PARENT:
+    {
       wxMDIFrame *mdi_frame = (wxMDIFrame *)cframe;
-      HMENU subMenu = GetSubMenu(mdi_frame->window_menu, 0);
 
-		// Try to insert Window menu in front of Help, otherwise append it.
-      int N = GetMenuItemCount(menu);
-      Bool success = FALSE;
-      for (i = 0; i < N; i++)
-      {
-        char buf[100];
-        int chars = GetMenuString(menu, i, buf, 100, MF_BYPOSITION);
-		  if ((chars > 0) && (strcmp(buf, "&Help") == 0 ||
-                            strcmp(buf, "Help") == 0))
-        {
-           success = TRUE;
-           InsertMenu(menu, i, MF_BYPOSITION | MF_POPUP | MF_STRING,
-                      (UINT)subMenu, "&Window");
-           break;
-        }
+      if (mdi_frame->parent_frame_active) {
+	SendMessage(mdi_frame->client_hwnd, WM_MDISETMENU,
+		    (WPARAM)menu,
+		    (LPARAM)NULL);
+	
+	::DrawMenuBar(mdi_frame->handle);
       }
-      if (!success)
-        AppendMenu(menu, MF_POPUP,
-								 (UINT)subMenu,
-                         "&Window");
-		mdi_frame->parent_frame_active = TRUE;
-#ifdef WIN32
-      SendMessage(mdi_frame->client_hwnd, WM_MDISETMENU,
-                  (WPARAM)menu,
-						(LPARAM)subMenu);
-#else
-      SendMessage(mdi_frame->client_hwnd, WM_MDISETMENU, 0,
-                  MAKELPARAM(menu, subMenu));
-#endif
-      DrawMenuBar(mdi_frame->handle);
       break;
-	 }
-    case wxMDI_CHILD:
+    }
+  case wxMDI_CHILD:
     {
       wxMDIFrame *parent = (wxMDIFrame *)GetParent()->handle;
-      parent->parent_frame_active = FALSE;
-      HMENU subMenu = GetSubMenu(parent->window_menu, 0);
 
-      // Try to insert Window menu in front of Help, otherwise append it.
-      int N = GetMenuItemCount(menu);
-      Bool success = FALSE;
-      for (i = 0; i < N; i++)
-		{
-        char buf[100];
-		  int chars = GetMenuString(menu, i, buf, 100, MF_BYPOSITION);
-        if ((chars > 0) && (strcmp(buf, "&Help") == 0 ||
-                            strcmp(buf, "Help") == 0))
-        {
-			  success = TRUE;
-           InsertMenu(menu, i, MF_BYPOSITION | MF_POPUP | MF_STRING,
-                      (UINT)subMenu, "&Window");
-           break;
-        }
+      if (((wxMDIChild *)cframe)->active) {
+	parent->parent_frame_active = FALSE;
+
+	SendMessage(parent->client_hwnd, WM_MDISETMENU,
+		    (WPARAM)menu,
+		    (LPARAM)NULL);
+	
+	::DrawMenuBar(parent->handle);
+	break;
       }
-      if (!success)
-		  AppendMenu(menu, MF_POPUP,
-                         (UINT)subMenu,
-                         "&Window");
-#ifdef WIN32
-      SendMessage(parent->client_hwnd, WM_MDISETMENU,
-                  (WPARAM)menu,
-                  (LPARAM)subMenu);
-#else
-      SendMessage(parent->client_hwnd, WM_MDISETMENU, 0,
-                  MAKELPARAM(menu, subMenu));
-#endif
-
-      DrawMenuBar(parent->handle);
-		break;
     }
-    default:
-    case wxSDI:
-	 {
+  default:
+  case wxSDI:
+    {
       SetMenu(cframe->handle, menu);
       break;
     }
   }
+
   wx_menu_bar = menu_bar;
   menu_bar->menu_bar_frame = this;
 }

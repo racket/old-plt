@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.27 1999/04/07 17:38:35 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.28 1999/04/20 12:26:49 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -257,7 +257,7 @@ wxWindow::~wxWindow(void)
     case wxTYPE_HWND:
     {
       if (ms_handle)
-		  wxwmDestroyWindow((HWND)ms_handle);
+	wxwmDestroyWindow((HWND)ms_handle);
       handle = NULL;
       
       if (wxControlHandleList)

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.13 1999/04/11 15:55:28 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.14 1999/04/20 12:26:49 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -33,6 +33,7 @@
 # include "..\..\contrib\itsybits\itsybits.h"
 #endif
 
+static HMENU emptyMenu;
 
 extern wxList wxModelessWindows;
 
@@ -189,22 +190,33 @@ HMENU wxFrame::GetWinMenu(void)
 {
   if (handle)
     return ((wxWnd *)handle)->hMenu;
-  else return 0;
+  else
+    return 0;
 }
 
+void wxFrame::DrawMenuBar(void)
+{
+  wxFrame *frame;
+
+  switch (frame_type) {
+  case wxMDI_CHILD:
+    frame = (wxFrame *)GetParent();
+    break;
+  default:
+    frame = this;
+    break;
+  }
+
+  wxWnd *cframe = (wxWnd*)frame->handle;
+  HWND hand = (HWND)cframe->handle;
+  ::DrawMenuBar(hand);
+}
 
 void wxFrame::ChangeToGray(Bool gray)
-
 {
-
   wxWindow::ChangeToGray(gray);
-
   InternalGrayChildren(gray);
-
 }
-
-
-
 
 // Get size *available for subwindows* i.e. excluding menu bar etc.
 // For XView, this is the same as GetSize
@@ -419,6 +431,30 @@ Bool wxFrame::Show(Bool show)
   if (show) {
     wxwmBringWindowToTop(GetHWND());
     /* OnActivate(TRUE); */
+  }
+
+  if (!skipShow) {
+    if (frame_type == wxMDI_CHILD) {
+      wxMDIFrame *cparent = (wxMDIFrame *)GetParent()->handle;
+      if (cparent->current_child == (wxFrameWnd *)handle) {
+	if (cshow == SW_HIDE) {
+	  cparent->parent_frame_active = TRUE;
+	  HMENU new_menu = ((wxFrame *)GetParent())->GetWinMenu();
+	  
+	  if (!new_menu) {
+	    if (!emptyMenu)
+	      emptyMenu = wxwmCreateMenu();
+	    new_menu = emptyMenu;
+	  }
+	  
+	  ::SendMessage(cparent->client_hwnd, WM_MDISETMENU,
+			(WPARAM)new_menu,
+			(LPARAM)NULL);
+	  
+	  ::DrawMenuBar(cparent->handle);
+	}
+      }
+    }
   }
 
   return TRUE;
@@ -962,16 +998,15 @@ BOOL wxFrameWnd::ProcessMessage(MSG* pMsg)
 wxMDIFrame::wxMDIFrame(wxWnd *parent, wxWindow *wx_win, char *title,
                    int x, int y, int width, int height, long style)
 {
-  defaultIcon = (wxSTD_MDIPARENTFRAME_ICON ? wxSTD_MDIPARENTFRAME_ICON : wxDEFAULT_MDIPARENTFRAME_ICON);
+  defaultIcon = (wxSTD_MDIPARENTFRAME_ICON 
+		 ? wxSTD_MDIPARENTFRAME_ICON
+		 : wxDEFAULT_MDIPARENTFRAME_ICON);
   icon = NULL;
   iconized = FALSE;
   parent_frame_active = TRUE;
   current_child = NULL;
 
   window_menu = ::LoadMenu(wxhInstance, "wxDefaultMenu");
-#if DEBUG > 1
-  wxDebugMsg("Loaded window_menu %d\n", window_menu);
-#endif
   
   DWORD msflags = WS_OVERLAPPED;
   if (!(style & wxNO_RESIZE_BORDER)) {
@@ -998,9 +1033,6 @@ wxMDIFrame::wxMDIFrame(wxWnd *parent, wxWindow *wx_win, char *title,
 
 wxMDIFrame::~wxMDIFrame(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIFrame::~wxMDIFrame %d\n", handle);
-#endif
   wxwmDestroyMenu(window_menu); // Destroy dummy "Window" menu
 }
 
@@ -1074,9 +1106,15 @@ void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
 
 BOOL wxMDIFrame::OnCommand(WORD id, WORD cmd, HWND control)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIFrame::OnCommand %d, id = %d\n", handle, id);
-#endif
+  if (parent_frame_active) {
+    return wxFrameWnd::OnCommand(id, cmd, control);
+  } else if (current_child) {
+    return current_child->OnCommand(id, cmd, control);
+  }
+  
+  return FALSE;
+
+#if 0
   if (cmd == 0)
   {
     switch (id)
@@ -1099,9 +1137,6 @@ BOOL wxMDIFrame::OnCommand(WORD id, WORD cmd, HWND control)
      }
     if (id >= 0xF000)
     {
-#if DEBUG > 1
-      wxDebugMsg("wxMDIFrame::OnCommand %d: system command: calling default window proc\n", handle);
-#endif
       return FALSE; // Get WndProc to call default proc
     }
     
@@ -1116,27 +1151,19 @@ BOOL wxMDIFrame::OnCommand(WORD id, WORD cmd, HWND control)
       ((wxFrame *)(current_child->wx_window))->Command(id);
       return TRUE;
 */
-#if DEBUG > 1
-      wxDebugMsg("wxMDIFrame::OnCommand %d: calling child OnCommand\n", handle);
-#endif
       return current_child->OnCommand(id, cmd, control);
     }
   }
+#endif
+
   return FALSE;
 }
 
 void wxMDIFrame::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 {
-  if (parent_frame_active)
-  {
-    wxFrame *frame = (wxFrame *)wx_window;
-    if (nFlags == 0xFFFF && hSysMenu == NULL)
-      frame->GetEventHandler()->OnMenuSelect(-1);
-    else if (nFlags != MF_SEPARATOR)
-      frame->GetEventHandler()->OnMenuSelect(nItem);
-  }
-  else if (current_child)
-  {
+  if (parent_frame_active) {
+    wxFrameWnd::OnMenuSelect(nItem, nFlags, hSysMenu);
+  } else if (current_child) {
     current_child->OnMenuSelect(nItem, nFlags, hSysMenu);
   }
 }
@@ -1151,11 +1178,10 @@ long wxMDIFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 
 BOOL wxMDIFrame::ProcessMessage(MSG* pMsg)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIFrame::ProcessMessage %d\n", handle);
-#endif
-  if ((current_child != NULL) && (current_child->handle != NULL) && current_child->ProcessMessage(pMsg))
-     return TRUE;
+  if ((current_child != NULL) 
+      && (current_child->handle != NULL)
+      && current_child->ProcessMessage(pMsg))
+    return TRUE;
 	
   if (accelerator_table != NULL &&
       ::TranslateAccelerator(handle, (HACCEL)accelerator_table, pMsg))
@@ -1176,11 +1202,7 @@ BOOL wxMDIFrame::OnEraseBkgnd(HDC WXUNUSED(pDC))
 }
 
 extern wxWnd *wxWndHook;
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-extern wxList *wxWinHandleList;
-#else
 extern wxNonlockingHashTable *wxWinHandleList;
-#endif
 
 wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
                    int x, int y, int width, int height, long style)
@@ -1299,13 +1321,9 @@ BOOL wxMDIChild::OnClose(void)
   return FALSE;
 }
 
-BOOL wxMDIChild::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
+BOOL wxMDIChild::OnCommand(WORD id, WORD cmd, HWND control)
 {
-  if ((cmd == 0) && handle) {
-    ((wxFrame *)wx_window)->Command(id);
-    return TRUE;
-  } else
-    return FALSE;
+  return wxFrameWnd::OnCommand(id, cmd, control);
 }
 
 long wxMDIChild::DefWindowProc(UINT message, UINT wParam, LONG lParam)
@@ -1330,69 +1348,47 @@ BOOL wxMDIChild::OnMDIActivate(BOOL bActivate, HWND WXUNUSED(one), HWND WXUNUSED
 {
   wxFrame *parent = (wxFrame *)wx_window->GetParent();
   wxFrame *child = (wxFrame *)wx_window;
-  HMENU parent_menu = parent->GetWinMenu();
 
-  HMENU child_menu = child->GetWinMenu();
+  HMENU new_menu, child_menu;
 
   wxMDIFrame *cparent = (wxMDIFrame *)parent->handle;
-  if (bActivate)
-  {
+  if (bActivate) {
     active = TRUE;
     cparent->current_child = this;
-    if (child_menu)
-    {
-      cparent->parent_frame_active = FALSE;
-      HMENU subMenu = GetSubMenu(cparent->window_menu, 0);
-#if DEBUG > 1
-      wxDebugMsg("Window submenu is %d\n", subMenu);
-#endif
-//      HMENU subMenu = 0;
-#ifdef WIN32
-      ::SendMessage(cparent->client_hwnd, WM_MDISETMENU,
-                    (WPARAM)child_menu,
-                    (LPARAM)subMenu);
-#else
-      ::SendMessage(cparent->client_hwnd, WM_MDISETMENU, 0,
-                  MAKELONG(child_menu, subMenu));
-#endif
-
-      ::DrawMenuBar(cparent->handle);
-    }
     if (child)
-      child->GetEventHandler()->OnActivate(TRUE);
-  }
-  else
-  {
+      child_menu = child->GetWinMenu();
+    else
+      child_menu = NULL;
+  } else {
     if (cparent->current_child == this)
       cparent->current_child = NULL;
-    if (child)
-      child->GetEventHandler()->OnActivate(FALSE);
-
     active = FALSE;
-    if (parent_menu)
-    {
-      cparent->parent_frame_active = TRUE;
-      HMENU subMenu = GetSubMenu(cparent->window_menu, 0);
-#if DEBUG > 1
-      wxDebugMsg("Window submenu is %d\n", subMenu);
-#endif
-//      HMENU subMenu = 0;
-#ifdef WIN32
-      ::SendMessage(cparent->client_hwnd, WM_MDISETMENU,
-                    (WPARAM)parent_menu,
-                    (LPARAM)subMenu);
-#else
-      ::SendMessage(cparent->client_hwnd, WM_MDISETMENU, 0,
-                  MAKELONG(parent_menu, subMenu));
-#endif
+    child_menu = NULL;
+  }
 
-      ::DrawMenuBar(cparent->handle);
+  if (child_menu) {
+    cparent->parent_frame_active = FALSE;
+    new_menu = child_menu;
+  } else {
+    cparent->parent_frame_active = TRUE;
+    new_menu = parent->GetWinMenu();
+
+    if (!new_menu) {
+      if (!emptyMenu)
+	emptyMenu = wxwmCreateMenu();
+      new_menu = emptyMenu;
     }
   }
-  wx_window->GetEventHandler()->OnActivate(bActivate);
-#if DEBUG > 1
-  wxDebugMsg("Finished (de)activating\n");
-#endif
+
+  ::SendMessage(cparent->client_hwnd, WM_MDISETMENU,
+		(WPARAM)new_menu,
+		(LPARAM)NULL);
+
+  ::DrawMenuBar(cparent->handle);
+  
+  if (child)
+    child->GetEventHandler()->OnActivate(bActivate);
+
   return 0;
 }
 
@@ -1402,9 +1398,6 @@ wxMDIChild::~wxMDIChild(void)
 
 void wxMDIChild::DestroyWindow(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("Start of wxMDIChild::DestroyWindow %d\n", handle);
-#endif
   DetachWindowMenu();
   invalidHandle = handle;
 
@@ -1417,23 +1410,13 @@ void wxMDIChild::DestroyWindow(void)
   // destroyed.
 
   HWND oldHandle = (HWND)handle;
-#if DEBUG > 1
-  wxDebugMsg("*** About to DestroyWindow MDI child %d\n", oldHandle);
-#endif
-#ifdef WIN32
   SendMessage(cparent->client_hwnd, WM_MDIDESTROY, (WPARAM)oldHandle, (LPARAM)0);
-#else
-  SendMessage(cparent->client_hwnd, WM_MDIDESTROY, (HWND)oldHandle, 0);
-#endif
-#if DEBUG > 1
-  wxDebugMsg("*** Finished DestroyWindow MDI child %d\n", oldHandle);
-#endif
+
   invalidHandle = 0;
 
-  if (hMenu)
-  {
-	 wxwmDestroyMenu(hMenu);
-	 hMenu = 0;
+  if (hMenu) {
+    wxwmDestroyMenu(hMenu);
+    hMenu = 0;
   }
 }
 

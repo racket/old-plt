@@ -353,7 +353,9 @@
   ;is-eq-subclass: type type type-records -> boolean
   (define (is-eq-subclass? class1 class2 type-recs)
     (or (type=? class1 class2)
-        (is-subclass? class1 class2 type-recs)))
+        (and (reference-type? class1)
+             (reference-type? class2)
+             (is-subclass? class1 class2 type-recs))))
   
   ;; get-field-record: string class-record (-> 'a) -> field-record
   (define (get-field-record fname c fail)

@@ -825,17 +825,19 @@
   (define (check-gtequal-access mods name parms class over src)
     (let ((old-mods (method-record-modifiers over))
           (old-class (method-record-class over)))
-    (cond
-      ((memq 'public old-mods) 
-       (unless (memq 'public (map modifier-kind mods))
-         (override-access-error 'public 'full name parms class (method-record-class over) src)))
-      ((memq 'protected old-mods) 
-       (unless (or (memq 'public (map modifier-kind mods))
-                   (memq 'protected (map modifier-kind mods)))
-         (override-access-error 'protected 'full name parms class (method-record-class over) src)))
-      (else 
-       (unless (memq 'public (map modifier-kind mods))
-         (override-access-error 'package 'full name parms class (method-record-class over) src))))))
+      (cond
+        ((memq 'public old-mods)
+         (unless (memq 'public (map modifier-kind mods))
+           (override-access-error 'public 'full name parms class (method-record-class over) src)))
+        ((memq 'protected old-mods) 
+         (unless (or (memq 'public (map modifier-kind mods))
+                     (memq 'protected (map modifier-kind mods)))
+           (override-access-error 'protected 'full name parms class (method-record-class over) src)))
+        (else 
+         (unless (or (memq 'public (map modifier-kind mods))
+                     (not (memq 'private (map modifier-kind mods)))
+                     (not (memq 'protected (map modifier-kind mods))))
+           (override-access-error 'package 'full name parms class (method-record-class over) src))))))
 
   ;check-throws-same: (list type) method (list string) method-record type-records -> void
   (define (check-throws-match throws method cname over type-recs)

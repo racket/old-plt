@@ -142,7 +142,7 @@
                                       (format "Array index out of bounds. Range is 0 to ~a, given ~a"
                                               (sub1 (vector-length array)) i)
                                       (lambda (obj msg)
-                                        (send obj ArrayIndexOutOfBoundsException-constructor_java.lang.String msg))
+                                        (send obj ArrayIndexOutOfBoundsException-constructor-java.lang.String msg))
                                       (current-continuation-marks))))
       
       (define/public (access index) 
@@ -158,10 +158,16 @@
             (raise (create-java-exception ArrayStoreException
                                           "Array given incompatible type"
                                           (lambda (obj msg) 
-                                            (send obj ArrayStoreException-constructor_java.lang.String msg))
+                                            (send obj ArrayStoreException-constructor-java.lang.String msg))
                                           (current-continuation-marks)))))
                                         
       (define/public (make-uninitialized size type)
+        (when (< size 0)
+          (raise (create-java-exception NegativeArraySizeException
+                                        (format "Size for the array must be greater than 0, given ~a" size)
+                                        (lambda (obj msg)
+                                          (send obj NegativeArraySizeException-constructor-java.lang.String msg))
+                                        (current-continuation-marks))))
         (set! rt type)
         (set! array (make-vector size (default-val))))
       

@@ -4,14 +4,15 @@
 
 ;This module provides functions needed at runtime for compiled Java code
 
-#cs(module runtime mzscheme
+#cs
+(module runtime mzscheme
   
   (require (lib "class.ss")
            (lib "Object.ss" "profj" "libs" "java" "lang")
            (lib "String.ss" "profj" "libs" "java" "lang"))
-
+  
   (provide convert-to-string shift not-equal bitwise remainder and or quotient)
-
+  
   ;convert-to-string: (U string int real bool char Object) -> string
   (define convert-to-string
     (lambda (data)
@@ -54,12 +55,6 @@
             ((&) (and left right))
             ((^) (and (not (and left right))
                       (or left right)))
-            ((or) (or left right)))))))
-
-        
-  
-
-
-
-
-       
+            ((or) (or left right))))))
+     
+  )     

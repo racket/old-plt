@@ -185,14 +185,15 @@
   ;-------------------------------------------------------------------------------------------------------------------------
   ;Translation
   
-  (define (translate-interactions prog type-recs)
+  (define (translate-interactions prog location type-recs)
+    (loc location)
     (let ((reqs (send type-recs get-class-reqs))
           (syn (cond 
                  ((pair? prog)
                   (send type-recs set-class-reqs null)
                   (make-syntax #f 
                                `(begin ,@(map (lambda (f)
-                                                (translate-interactions f type-recs))
+                                                (translate-interactions f location type-recs))
                                               prog))
                                #f))
                  ((field? prog) 
@@ -719,10 +720,14 @@
         null
         (if (memq (car methods) minus-methods)
             (make-method-names (cdr methods) minus-methods type-recs)
-            (cons (build-identifier (build-method-name (id-string (method-name (car methods)))
-                                                       (map (lambda (t) (type-spec-to-type t 'full type-recs))
-                                                            (map field-type (method-parms (car methods))))))
-                  (make-method-names (cdr methods) minus-methods type-recs)))))
+            (cons 
+             (build-identifier ((if (constructor? (id-string (method-name (car methods))))
+                                    build-constructor-name
+                                    build-method-name)
+                                (id-string (method-name (car methods)))
+                                (map (lambda (t) (type-spec-to-type t 'full type-recs))
+                                     (map field-type (method-parms (car methods))))))
+             (make-method-names (cdr methods) minus-methods type-recs)))))
   
   ;translate-method: type-spec (list symbol) id (list parm) statement src type-records -> syntax
   (define (translate-method type modifiers id parms block src type-recs)
@@ -785,6 +790,8 @@
                       `(lambda ,parms
                          (let/ec return-k
                            ,(translate-statement block type-recs))))
+                     ((and (not block) (memq 'abstract modifiers))
+                      `(lambda ,parms (void)))
                      ((and (not block) native? void? (not static?))
                       `(lambda ,parms
                          (,(build-identifier (string-append method-name "-native")) this ,@parms)
@@ -991,7 +998,7 @@
     (lambda (expr key src)
       (create-syntax #f `(let* ((obj ,expr)
                                 (exn (make-java:exception (send obj |getMessage|) (current-continuation-marks) obj)))
-                           (send obj set-exception exn)
+                           (send obj set-exception! exn)
                            (,(create-syntax #f 'raise (build-src key)) exn)) 
                      (build-src src))))
   

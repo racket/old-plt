@@ -131,7 +131,7 @@
     (let ((ast (parse-interactions port location level)))
       (build-interactions-info ast level location type-recs)
       (check-interactions-types ast level location type-recs)
-      (translate-interactions ast type-recs)))
+      (translate-interactions ast location type-recs)))
       
   (define-struct elt (prev val next))
   

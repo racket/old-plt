@@ -294,7 +294,7 @@
       (FieldAccess
        [(Primary PERIOD IDENTIFIER) 
         (make-access #f (build-src 3) (make-field-access $1 
-                                                                 (make-id $3 (build-src 3 3)) #f))])
+                                                         (make-id $3 (build-src 3 3)) #f))])
       
       (PostfixExpression
        [(Primary) $1]

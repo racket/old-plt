@@ -635,6 +635,7 @@
          (check-throw (check-e-no-change (throw-expr statement))
                       (expr-src (throw-expr statement))
                       env
+                      interactions?
                       type-recs))
         ((return? statement)
          (check-return (return-expr statement)
@@ -717,14 +718,14 @@
   ;check-ifS: type src -> void
   (define check-ifS (check-cond 'if))
 
-  ;check-throw: type src env type-records -> void
-  (define (check-throw exp-type src env type-recs)
+  ;check-throw: type src env bool type-records -> void
+  (define (check-throw exp-type src env interact? type-recs)
     (cond
       ((or (not (ref-type? exp-type))
            (not (is-eq-subclass? exp-type throw-type type-recs)))
        (throw-error 'not-throwable exp-type src))
       ((not (is-eq-subclass? exp-type runtime-exn-type type-recs))
-       (unless (lookup-exn exp-type env type-recs 'full)
+       (unless (or interact? (lookup-exn exp-type env type-recs 'full))
          (throw-error 'not-declared exp-type src)))
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
@@ -877,7 +878,7 @@
                    (case kind
                      ((not-throwable)
                       (format "Expression for throw must be a subtype of Throwable: given ~a" t))
-                     ((not-caught)
+                     ((not-declared)
                       (format "Thrown type ~a must be declared as thrown or caught" t)))
                    'throw src)))
   

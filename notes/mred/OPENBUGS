@@ -1,9 +1,19 @@
 
 MrEd Engine:
 
+* Motif: pre-on-char doesn't work for sliders
+
+* Windows: pre-on-char doesn't work for input that moves
+   the focus between controls (e.g., cursor keys)
+
+* MacOS: busy-cursor state is wrong for new windows when the
+   busy cursor is active
+
 * MacOS needs way to control the 0-window menu bar
 
-* MacOS: bitmaps' don't print with platform-specific printing
+* MacOS: bitmaps don't print with platform-specific printing
+
+* set-button-font is inconsistently supported
 
 * X Windows and drawing into b & w bitmaps: black and white
    are reversed when using certain kinds of displays
@@ -12,9 +22,6 @@ MrEd Engine:
    consistent with a circle
 
 * Windows: set-user-scale with wx:memory-dc% doesn't work right
-
-* MacOS: busy-cursor state is wrong for new windows when the
-   busy cursor is active
 
 * need to penalize the current thread more for certain primitive
    operations that can take a long time (e.g., loading a bitmap
@@ -41,13 +48,13 @@ MrEd Engine:
 
 * Xt: out-of-colours - widgets use too much black
 
-* hidden files cause problems - add a MzScheme predicate?
+* hidden files in Windows cause problems? Add a MzScheme predicate?
 
 * optimization: dragging selection shouldn't keep changing the auto-X-selection
 
 * Xt: busy cursor not shown in the menu bar
 
-* blinking caret
+* a blinking caret would be nice
 
 * Motif: menus don't work with multiple displays
 

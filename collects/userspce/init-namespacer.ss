@@ -6,10 +6,7 @@
 
   (define (init-namespace)
     (teachpack-thunk)
-
-    ; leave all of the primitivies in, for now.
-    ;;(setup-primitives)
-    )
+    (setup-primitives))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;
@@ -217,6 +214,7 @@
 	    [(advanced)
 	     to-remove-from-advanced]
 	    [else
+             ;; must be null -- these namespaces have keywords
 	     null])])
       (for-each undefine to-remove)
       (for-each (lambda (x)

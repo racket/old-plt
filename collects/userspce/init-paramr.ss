@@ -686,20 +686,21 @@
   ;;                       -> void
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
-    (let*-values ([(namespace-flags) (let ([name (setting-name setting)])
-				       (if (regexp-match re:mred name)
-                                           (list 'mred)
-                                           (list)))]
-		  ;; 
-                  [(namespace)
-		   (apply make-namespace
-			  ;;(cons
-			  ;;'no-keywords
-			   (if (zodiac-vocabulary? setting)
-			       (cons 'hash-percent-syntax namespace-flags)
-			       namespace-flags))
-		   ;;)
-		  ])
+    (let* ([namespace-flags (let* ([flag-l1
+                                    (let ([name (setting-name setting)])
+                                      (if (regexp-match re:mred name)
+                                          (list 'mred)
+                                          (list)))]
+                                   [flag-l2
+                                    (if (teaching-level? setting)
+                                        (cons 'no-keywords flag-l1)
+                                        flag-l1)]
+                                   [flag-l3
+                                    (if (zodiac-vocabulary? setting)
+                                        (cons 'hash-percent-syntax flag-l2)
+                                        flag-l2)])
+                              flag-l3)]
+           [namespace (apply make-namespace namespace-flags)])
       
       (when (zodiac-vocabulary? setting)
         (use-compiled-file-kinds 'non-elaboration))

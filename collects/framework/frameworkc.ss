@@ -12,8 +12,12 @@
                                        core:string core:function)]
         [color-model : framework:color-model^ ((require-relative-library "color-model.ss") 
                                                core:function)]
+        
 	[exn : framework:exn^ ((require-relative-library "exn.ss"))]
 	[exit : framework:exit^ ((require-relative-library "exit.ss") mred preferences gui-utils)]
+        
+        [menu : framework:menu^ ((require-relative-library "menu.ss") mred preferences)]
+        
 	[preferences : framework:preferences^
 		     ((require-relative-library "prefs.ss")
 		      mred
@@ -73,9 +77,9 @@
 	       ((require-relative-library "frame.ss")
 		mred
 		group preferences icon handler application panel
-		gui-utils exit finder keymap text pasteboard editor canvas
-		core:function
-		core:file)]
+		gui-utils exit finder keymap 
+                text pasteboard editor canvas menu
+		core:function core:file)]
 	[scheme : framework:scheme^ 
 		((require-relative-library "scheme.ss")
 		 mred preferences match-cache paren
@@ -86,6 +90,7 @@
 				 mred
 				 preferences exit group)])
   (export
+   (unit menu)
    (unit application)
    (unit version)
    (unit color-model)

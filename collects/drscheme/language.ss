@@ -337,7 +337,7 @@
 	  #f)))
 
   (define (fill-language-menu frame language-menu)
-    (make-object mred:menu-item%
+    (make-object fw:menu:can-restore-menu-item%
       "Choose Language..."
       language-menu
       (lambda (_1 _2)
@@ -348,11 +348,9 @@
 	    (fw:preferences:set
 	     settings-preferences-symbol
 	     new-settings))))
-      (and
-       (fw:preferences:get 'framework:menu-bindings)
-       #\l))
+      #\l)
     (make-object mred:separator-menu-item% language-menu)
-    (make-object mred:menu-item%
+    (make-object fw:menu:can-restore-menu-item%
       "Add Teachpack..."
       language-menu
       (lambda (_1 _2)
@@ -376,7 +374,7 @@
 		       'drscheme:teachpack-file
 		       (append old-pref (list lib-file)))))))
 	    (set! teachpack-directory (path-only lib-file))))))
-    (make-object (class mred:menu-item% args
+    (make-object (class fw:menu:can-restore-menu-item% args
                    (inherit enable)
                    (rename [super-on-demand on-demand])
                    (override

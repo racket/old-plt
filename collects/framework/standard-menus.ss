@@ -131,18 +131,30 @@
    (standard-menus<%>)
    args
    (inherit on-menu-char on-traverse-char)
-   (rename (super-on-subwindow-char on-subwindow-char))
-   (override
-     (on-subwindow-char
-       (lambda (receiver event)
-         (if (preferences:get 'framework:menu-bindings)
-           (super-on-subwindow-char receiver event)
-           (on-traverse-char event)))))
-   (inherit get-menu-bar can-close? on-close show get-edit-target-object)
+   (rename (super-on-close on-close))
+   (private
+    (remove-prefs-callback
+     (preferences:add-callback
+       'framework:menu-bindings
+       (lambda (p v)
+         (let ((mb (get-menu-bar)))
+           (let loop ((menu (get-menu-bar)))
+             (cond
+              ((is-a? menu menu-item-container<%>)
+               (for-each loop (send menu get-items)))
+              ((is-a? menu selectable-menu-item<%>)
+               (when (is-a? menu menu:can-restore<%>)
+                 (if v
+                   (send menu restore-keybinding)
+                   (send menu set-shortcut #f)))))))))))
+   (override (on-close (lambda () (remove-prefs-callback) (super-on-close))))
+   (inherit get-menu-bar show can-close? get-edit-target-object)
    (sequence (apply super-init args))
    (public (get-menu% (lambda () menu%)))
-   (public (get-menu-item% (lambda () menu-item%)))
-   (public (get-checkable-menu-item% (lambda () checkable-menu-item%)))
+   (public (get-menu-item% (lambda () menu:can-restore-menu-item%)))
+   (public
+    (get-checkable-menu-item%
+     (lambda () menu:can-restore-checkable-menu-item%)))
    (public
     (get-file-menu
      (let ((m
@@ -444,7 +456,7 @@
             (let
              ((file-menu:new (lambda (item evt) (file-menu:new item evt))))
              file-menu:new)
-            (if (preferences:get 'framework:menu-bindings) #\n #f)
+            #\n
             (file-menu:new-help-string)))))
    (sequence (file-menu:between-new-and-open (get-file-menu)))
    (private
@@ -469,7 +481,7 @@
             (let
              ((file-menu:open (lambda (item evt) (file-menu:open item evt))))
              file-menu:open)
-            (if (preferences:get 'framework:menu-bindings) #\o #f)
+            #\o
             (file-menu:open-help-string)))))
    (sequence (file-menu:between-open-and-revert (get-file-menu)))
    (private
@@ -495,7 +507,7 @@
              ((file-menu:revert
                 (lambda (item evt) (file-menu:revert item evt))))
              file-menu:revert)
-            (if (preferences:get 'framework:menu-bindings) #f #f)
+            #f
             (file-menu:revert-help-string)))))
    (sequence (file-menu:between-revert-and-save (get-file-menu)))
    (private
@@ -520,7 +532,7 @@
             (let
              ((file-menu:save (lambda (item evt) (file-menu:save item evt))))
              file-menu:save)
-            (if (preferences:get 'framework:menu-bindings) #\s #f)
+            #\s
             (file-menu:save-help-string)))))
    (private
     (file-menu:save-as-item
@@ -547,7 +559,7 @@
              ((file-menu:save-as
                 (lambda (item evt) (file-menu:save-as item evt))))
              file-menu:save-as)
-            (if (preferences:get 'framework:menu-bindings) #f #f)
+            #f
             (file-menu:save-as-help-string)))))
    (sequence (file-menu:between-save-as-and-print (get-file-menu)))
    (private
@@ -574,7 +586,7 @@
             (let
              ((file-menu:print (lambda (item evt) (file-menu:print item evt))))
              file-menu:print)
-            (if (preferences:get 'framework:menu-bindings) #\p #f)
+            #\p
             (file-menu:print-help-string)))))
    (sequence (file-menu:between-print-and-close (get-file-menu)))
    (private
@@ -599,7 +611,7 @@
             (let
              ((file-menu:close (lambda (item evt) (file-menu:close item evt))))
              file-menu:close)
-            (if (preferences:get 'framework:menu-bindings) #\w #f)
+            #\w
             (file-menu:close-help-string)))))
    (sequence (file-menu:between-close-and-quit (get-file-menu)))
    (private
@@ -626,7 +638,7 @@
             (let
              ((file-menu:quit (lambda (item evt) (file-menu:quit item evt))))
              file-menu:quit)
-            (if (preferences:get 'framework:menu-bindings) #\q #f)
+            #\q
             (file-menu:quit-help-string)))))
    (sequence (file-menu:after-quit (get-file-menu)))
    (private
@@ -651,7 +663,7 @@
             (let
              ((edit-menu:undo (lambda (item evt) (edit-menu:undo item evt))))
              edit-menu:undo)
-            (if (preferences:get 'framework:menu-bindings) #\z #f)
+            #\z
             (edit-menu:undo-help-string)))))
    (private
     (edit-menu:redo-item
@@ -675,7 +687,7 @@
             (let
              ((edit-menu:redo (lambda (item evt) (edit-menu:redo item evt))))
              edit-menu:redo)
-            (if (preferences:get 'framework:menu-bindings) #\y #f)
+            #\y
             (edit-menu:redo-help-string)))))
    (sequence (edit-menu:between-redo-and-cut (get-edit-menu)))
    (private
@@ -698,7 +710,7 @@
             (let
              ((edit-menu:cut (lambda (item evt) (edit-menu:cut item evt))))
              edit-menu:cut)
-            (if (preferences:get 'framework:menu-bindings) #\x #f)
+            #\x
             (edit-menu:cut-help-string)))))
    (sequence (edit-menu:between-cut-and-copy (get-edit-menu)))
    (private
@@ -723,7 +735,7 @@
             (let
              ((edit-menu:copy (lambda (item evt) (edit-menu:copy item evt))))
              edit-menu:copy)
-            (if (preferences:get 'framework:menu-bindings) #\c #f)
+            #\c
             (edit-menu:copy-help-string)))))
    (sequence (edit-menu:between-copy-and-paste (get-edit-menu)))
    (private
@@ -748,7 +760,7 @@
             (let
              ((edit-menu:paste (lambda (item evt) (edit-menu:paste item evt))))
              edit-menu:paste)
-            (if (preferences:get 'framework:menu-bindings) #\v #f)
+            #\v
             (edit-menu:paste-help-string)))))
    (sequence (edit-menu:between-paste-and-clear (get-edit-menu)))
    (private
@@ -775,7 +787,7 @@
             (let
              ((edit-menu:clear (lambda (item evt) (edit-menu:clear item evt))))
              edit-menu:clear)
-            (if (preferences:get 'framework:menu-bindings) #f #f)
+            #f
             (edit-menu:clear-help-string)))))
    (sequence (edit-menu:between-clear-and-select-all (get-edit-menu)))
    (private
@@ -803,7 +815,7 @@
              ((edit-menu:select-all
                 (lambda (item evt) (edit-menu:select-all item evt))))
              edit-menu:select-all)
-            (if (preferences:get 'framework:menu-bindings) #\a #f)
+            #\a
             (edit-menu:select-all-help-string)))))
    (sequence (edit-menu:between-select-all-and-find (get-edit-menu)))
    (private
@@ -828,7 +840,7 @@
             (let
              ((edit-menu:find (lambda (item evt) (edit-menu:find item evt))))
              edit-menu:find)
-            (if (preferences:get 'framework:menu-bindings) #\f #f)
+            #\f
             (edit-menu:find-help-string)))))
    (private
     (edit-menu:find-again-item
@@ -855,7 +867,7 @@
              ((edit-menu:find-again
                 (lambda (item evt) (edit-menu:find-again item evt))))
              edit-menu:find-again)
-            (if (preferences:get 'framework:menu-bindings) #\g #f)
+            #\g
             (edit-menu:find-again-help-string)))))
    (private
     (edit-menu:replace-and-find-again-item
@@ -883,7 +895,7 @@
                 (lambda (item evt)
                   (edit-menu:replace-and-find-again item evt))))
              edit-menu:replace-and-find-again)
-            (if (preferences:get 'framework:menu-bindings) #\h #f)
+            #\h
             (edit-menu:replace-and-find-again-help-string)))))
    (sequence (edit-menu:between-find-and-preferences (get-edit-menu)))
    (private
@@ -911,7 +923,7 @@
              ((edit-menu:preferences
                 (lambda (item evt) (edit-menu:preferences item evt))))
              edit-menu:preferences)
-            (if (preferences:get 'framework:menu-bindings) #f #f)
+            #f
             (edit-menu:preferences-help-string)))))
    (sequence (edit-menu:after-preferences (get-edit-menu)))
    (sequence (help-menu:before-about (get-help-menu)))
@@ -939,7 +951,7 @@
             (let
              ((help-menu:about (lambda (item evt) (help-menu:about item evt))))
              help-menu:about)
-            (if (preferences:get 'framework:menu-bindings) #f #f)
+            #f
             (help-menu:about-help-string)))))
    (sequence (help-menu:after-about (get-help-menu)))
    (sequence (reorder-menus this))))

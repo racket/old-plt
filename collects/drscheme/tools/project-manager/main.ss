@@ -1294,7 +1294,7 @@
         (send spacer stretchable-height #f)
         (send spacer min-height 16))
 
-      (define open-button (make-object button% "Open" to-load-button-panel (lambda x (open-file))))
+      (define open-button (make-object button% "Open" to-load-button-panel (lambda x (open-file)) '(border)))
       (define remove-button (make-object button% "Remove" to-load-button-panel (lambda x (remove-file))))
       (define pathize-button (make-object button% "Make Abs" to-load-button-panel (lambda x (swap-abs/rel-file))))
       

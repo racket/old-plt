@@ -123,16 +123,17 @@
             (let ((len (- new-token-end new-token-start)))
               (set! current-pos (+ len current-pos))
               (sync-invalid)
-              (set! colors (cons
-                            (lambda ()
-                              (change-style
-                               (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
-                                                                        prefix
-                                                                        type)))
-                               (sub1 (+ in-start-pos new-token-start))
-                               (sub1 (+ in-start-pos new-token-end))
-                               #f))
-                            colors))
+              (unless (eq? 'white-space type)
+                (set! colors (cons
+                              (lambda ()
+                                (change-style
+                                 (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
+                                                                          prefix
+                                                                          type)))
+                                 (sub1 (+ in-start-pos new-token-start))
+                                 (sub1 (+ in-start-pos new-token-end))
+                                 #f))
+                              colors)))
               (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
               (cond
                 ((and invalid-tokens (= invalid-tokens-start current-pos))
@@ -258,7 +259,7 @@
       ;; Data to be kept with the token
       ;; The token's starting offset
       ;; The token's ending offset
-      (init-field get-token prefix port-wrapper)
+      (init-field get-token prefix)
             
       (rename (super-on-disable-surrogate on-disable-surrogate))
       (define/override (on-disable-surrogate text)

@@ -650,4 +650,10 @@
    (waiting-for-pref-lock "Esperando por el candado para las preferencias...")
    (web-materials "Sitios de Web Relacionados")
    (you-have-selected-an-installable-package "Ha seleccionado un paquete instalable.")
+
+   (vc-current-format "~a v.~a (iteración ~a) está actualizada")
+   (vc-details-format "~a~nDetalles:~n~a")
+   (vc-details-text "Detalles:~n")
+   (vc-error-format "Error: ~a")
+
  )

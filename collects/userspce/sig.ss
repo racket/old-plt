@@ -12,9 +12,11 @@
    intermediate
    advanced))
 
+;; the extras signatures don't include core-flat anymore --
+;; they are now added differently.
 (define-signature plt:beginner-extras^
-  ((struct posn (x y) -setters)
-   (open mzlib:core-flat^)))
+  ((open mzlib:core-flat^)
+   (struct posn (x y) -setters)))
 
 (define-signature plt:intermediate-extras^
   plt:beginner-extras^)
@@ -138,7 +140,9 @@
 		    whole/fractional-exact-numbers
                     print-booleans-as-true/false
 		    printing
-		    use-pretty-printer?))
+		    use-pretty-printer?
+		    teaching-primitives?
+		    ))
    make-setting/parse
 
    teaching-level?

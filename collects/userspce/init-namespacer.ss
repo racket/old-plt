@@ -155,9 +155,10 @@
 			   ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
 			  [(,init-params:intermediate-language? (,init-params:current-setting))
 			   ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
-			  [(,init-params:advanced-language? (,init-params:current-setting))
+			  [(or (,init-params:advanced-language? (,init-params:current-setting))
+			       (,init-params:setting-teaching-primitives? (,init-params:current-setting)))
 			   ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
-			  [(,init-params:full-language? (,init-params:current-setting)) (void)]))
+			  [else (void)]))
 		       userspace)]
 
 		    link-clauses))
@@ -241,7 +242,9 @@
         (params:<=-at-least-two-args (init-params:setting-<=-at-least-two-args setting))
         (params:error-sym/string-only (init-params:setting-error-sym/string-only setting))
         (when (init-params:teaching-level? setting)
-          (global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^))))))
+          (global-define-values/invoke-unit/sig
+	   ricedefs^ ricedefs@
+	   #f (params : plt:userspace:params^))))))
   
   
   

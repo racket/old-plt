@@ -21,6 +21,8 @@
       [else (error 'drscheme:language:update-to "got: ~a as printing style"
 		   printing-setting)]))
 
+  (define re:mred (regexp "MrEd"))
+
   (define language-dialog
     (case-lambda
      [(original-settings) (language-dialog original-settings #f)]
@@ -54,7 +56,7 @@
 		     [message (make-object mred:message% name p)])
 		(make-object mred:vertical-panel% p '(border))))]
 	   [input-syntax-panel (make-sub-panel "Input Syntax" customization-left-panel)]
-	   [dynamic-panel (make-sub-panel "Safety Properties" customization-left-panel)]
+	   [dynamic-panel (make-sub-panel "Dynamic Properties" customization-left-panel)]
 	   [output-syntax-panel (make-sub-panel "Output Syntax" customization-right-panel)]
 	   
 	   [specifics-shown? #f]
@@ -71,7 +73,6 @@
 		      (if bool
 			  (list language-panel customization-panel when-message ok-panel)
 			  (list language-panel when-message ok-panel)))))]
-           [full-scheme-check-box (make-object mred:check-box% "Compatible with student languages?" language-choice-panel void)]
 	   [full-scheme-panel (let ([p (make-object mred:pane% language-panel)])
 				(send p stretchable-width #f)
 				(send p stretchable-height #t)
@@ -111,7 +112,7 @@
 	       [else
 		(set! full-scheme-radio-box
 		      (make-object mred:radio-box% 
-			#f
+			"Full Scheme Variant"
 			(map car full-scheme-radio-box-label-map)
 			full-scheme-panel
 			(lambda x (full-scheme-radio-box-callback))))
@@ -124,6 +125,7 @@
 					  (second language-levels)
 					  (third language-levels)
 					  full-scheme)]
+	   [compatible-space1 (make-object mred:vertical-panel% language-choice-panel)]
 	   [language-choice
 	    (make-object mred:choice%
 	      "Language"
@@ -141,6 +143,19 @@
 			 (basis:number->setting
 			  (send choice get-selection))))
 		  (update-to settings)])))]
+	   [compatible-space2 (make-object mred:vertical-panel% language-choice-panel)]
+           [compatible-with-student-languages
+	    (make-object mred:check-box%
+	      "Compatible with student languages?" language-choice-panel
+	      (lambda xxx
+		(let ([v (send compatible-with-student-languages get-value)])
+		  (basis:set-setting-teaching-primitives?! settings v)
+		  (basis:set-setting-case-sensitive?! settings v)
+		  (basis:set-setting-unmatched-cond/case-is-error?! settings v)
+		  (basis:set-setting-signal-undefined! settings v)
+		  (update-to settings))))]
+	   [compatible-space3 (make-object mred:vertical-panel% language-choice-panel)]
+
 	   [custom-message (make-object mred:message% "Custom" language-panel)]
 	   [right-align
 	    (opt-lambda (mo panel)
@@ -176,6 +191,11 @@
 	    (make-check-box basis:set-setting-signal-undefined!
 			    basis:setting-signal-undefined
 			    "Signal undefined variables when first referenced"
+			    dynamic-panel)]
+	   [teaching-primitives?
+	    (make-check-box basis:set-setting-teaching-primitives?!
+			    basis:setting-teaching-primitives?
+			    "Teaching language primitives"
 			    dynamic-panel)]
 	   [printer-number->symbol
 	    (lambda (which)
@@ -241,7 +261,6 @@
 			(lambda (button evt) 
 			  (send f show #f))
 			'(border))]
-					;[spacer (make-object mred:grow-box-spacer-pane% ok-panel)]
 	   [compare-setting-to-gui
 	    (lambda (setting)
 	      (let* ([compare-check-box
@@ -253,6 +272,7 @@
 		(and (compare-check-box case-sensitive? basis:setting-case-sensitive?)
 		     (compare-check-box unmatched-cond/case-is-error? basis:setting-unmatched-cond/case-is-error?)
 		     (compare-check-box signal-undefined basis:setting-signal-undefined)
+		     (compare-check-box teaching-primitives? basis:setting-teaching-primitives?)
 		     (compare-check-box sharing-printing? basis:setting-sharing-printing?)
 		     (compare-check-box whole/fractional-exact-numbers basis:setting-whole/fractional-exact-numbers)
 		     (compare-check-box booleans-as-true/false basis:setting-print-booleans-as-true/false)
@@ -276,10 +296,35 @@
 
 		(cond
 		 [(member (basis:setting-name v) language-choice-choices)
+		  (send teaching-primitives? enable #f)
+		  (send language-choice-panel change-children
+			(lambda (l) (list language-choice)))
 		  (send language-choice set-string-selection (basis:setting-name v))
 		  (close-full-scheme-radio-box)]
 		 [else
 		  (send language-choice set-string-selection full-scheme)
+
+		  (let ([teaching-primitives-ok?
+			 (regexp-match re:mred (basis:setting-name v))])
+		    (send teaching-primitives? enable teaching-primitives-ok?)
+		    (send compatible-with-student-languages
+			  set-value
+			  (and zodiac?
+			       teaching-primitives-ok?
+			       (basis:setting-case-sensitive? v)
+			       (basis:setting-unmatched-cond/case-is-error? v)
+			       (basis:setting-signal-undefined v)
+			       (basis:setting-teaching-primitives? v)))
+		    (send compatible-with-student-languages enable
+			  (and teaching-primitives-ok? zodiac?)))
+		  
+		  (send language-choice-panel change-children
+			(lambda (l)
+			  (list compatible-space1
+				language-choice
+				compatible-space2
+				compatible-with-student-languages
+				compatible-space3)))
 		  (open-full-scheme-radio-box v)
 		  (let ([map (assoc (basis:setting-name v)
 				    full-scheme-radio-box-label-map)])
@@ -300,13 +345,15 @@
 		       basis:setting-whole/fractional-exact-numbers
 		       basis:setting-print-booleans-as-true/false
 		       basis:setting-unmatched-cond/case-is-error?
-		       basis:setting-signal-undefined)
+		       basis:setting-signal-undefined
+		       basis:setting-teaching-primitives?)
 		 (list case-sensitive? 
 		       sharing-printing?
 		       whole/fractional-exact-numbers
 		       booleans-as-true/false
 		       unmatched-cond/case-is-error?
-		       signal-undefined))
+		       signal-undefined
+		       teaching-primitives?))
 
 		(send printing enable 1
 		      (not (eq? (basis:setting-vocabulary-symbol v) 'beginner)))
@@ -314,8 +361,6 @@
 
 		(reset-choice)))])
         (send language-choice-panel stretchable-width #f)
-        (send language-choice-panel stretchable-height #f)
-        (send language-choice-panel change-children reverse)
 	(send f stretchable-width #f)
 	(send f stretchable-height #f)
 	(send language-choice stretchable-width #f)

@@ -17,13 +17,12 @@
 
   (error-display-handler
    (lambda (msg)
-     (parameterize ([mred:current-eventspace system-eventspace]
-		    [current-custodian system-custodian])
-       (let ([t 
-	      (lambda ()
-		(display msg)
-		(newline)
-		(mred:message-box "DrScheme Internal Error" msg))])
-	 (when (eq? (current-thread) system-thread)
-	   (t)
-	   (mred:queue-callback t)))))))
+     (display msg)
+     (newline)
+     (if (eq? (mred:current-eventspace) system-eventspace)
+	 (mred:message-box "DrScheme Internal Error" msg)
+	 (parameterize ([mred:current-eventspace system-eventspace]
+			[current-custodian system-custodian])
+	   (mred:queue-callback
+	    (lambda ()
+	      (mred:message-box "DrScheme Internal Error" msg))))))))

@@ -209,8 +209,7 @@
        [get-text
 	(case-lambda
 	 [(offset num) (get-text offset num #f)]
-	 [(offset num flattened?)
-	  (format "~a ~a/~a" wholes nums dens)])])
+	 [(offset num flattened?) (number->string number)])])
       (public
         [expand
          (lambda (obj)

@@ -6,6 +6,7 @@
   (fprintf (current-error-port) "~a~n" s)
   (system s))
 
+(define accounting-gc? #f)
 (define opt-flags "/O2")
 (define re:only #f)
 
@@ -145,7 +146,10 @@
 		"sighand.c"
 		"msgprint.c"))
 	 (string-append
-	  "/D GC2_AS_EXPORT /D NEWGC_BTC_ACCOUNT "
+	  "/D GC2_AS_EXPORT "
+	  (if accounting-gc?
+	      "/D NEWGC_BTC_ACCOUNT "
+	      "")
 	  mz-inc))
 (compile "../../mzscheme/src/mzsj86.c" "xsrc/mzsj86.obj" '() mz-inc)
 

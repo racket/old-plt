@@ -1817,15 +1817,14 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
   Bool v;
   wxMemoryDC *mask_dc = NULL, *main_dc = NULL;
 
-  if (!temp_mdc) {
-    wxREGGLOB(temp_mdc);
-    temp_mdc = new wxMemoryDC(1);
-  }
-
 #ifdef wx_msw
-  main_dc = (wxMemoryDC *)source->selectedInto;
+  main_dc = (wxMemoryDC *)bm->selectedInto;
 #endif
   if (!main_dc) {
+    if (!temp_mdc) {
+      wxREGGLOB(temp_mdc);
+      temp_mdc = new wxMemoryDC(1);
+    }
     temp_mdc->SelectObject(bm);
     /* Might fail, so we double-check: */
     if (temp_mdc->GetObject())
@@ -1833,14 +1832,14 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
   }
 
   if (mask) {
-   if (!temp_mask_mdc) {
-     wxREGGLOB(temp_mask_mdc);
-     temp_mask_mdc = new wxMemoryDC(1);
-   } 
 #ifdef wx_msw
    mask_dc = (wxMemoryDC *)mask->selectedInto;
 #endif
    if (!mask_dc) {
+     if (!temp_mask_mdc) {
+       wxREGGLOB(temp_mask_mdc);
+       temp_mask_mdc = new wxMemoryDC(1);
+     } 
      temp_mask_mdc->SelectObject(mask);
      if (temp_mask_mdc->GetObject()) {
        mask_dc = temp_mask_mdc;
@@ -1856,7 +1855,7 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
   } else
     v = FALSE;
 
-  if (mask_dc == temp_mask_mdc) {
+  if (mask_dc && (mask_dc == temp_mask_mdc)) {
     mask_dc->SelectObject(NULL);
   }
 

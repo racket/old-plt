@@ -5,8 +5,7 @@
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))
 
-; Should be named "function" instead:
-(load-relative "fold.ss")
+(load-relative "function.ss")
 
 (load-relative "date.ss")
 

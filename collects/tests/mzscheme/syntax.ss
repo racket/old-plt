@@ -714,6 +714,14 @@
 		    (define x 5))
 		5))
 
+; Can't shadow syntax/macros with embedded defines
+(syntax-test '(let ()
+		(define lambda 5)
+		lambda))
+(syntax-test '(let ()
+		(define define 5)
+		define))
+
 (SECTION 4 2 4)
 (test '#(0 1 2 3 4) 'do (do ((vec (make-vector 5))
 			    (i 0 (+ i 1)))

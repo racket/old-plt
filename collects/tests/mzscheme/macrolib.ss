@@ -53,8 +53,8 @@
 (test-values '(4 6) (lambda () (local ((define y 6) (define x 4)) (values x y))))
 (test 10 'local (let ([x 10]) (local ((define y (lambda () x))) (define x 5) (y))))
 (test 5 'local (let ([x 10]) (local ((define y (lambda () x))) (define x 5) x)))
-(test 8 'local (local [(define lambda 8)] lambda))
-(test 9 'local (local [(define lambda 9) (define lambda2 lambda)] lambda2))
+(test 8 'local (let ([lambda 9]) (local [(define lambda 8)] lambda)))
+(test 9 'local (let ([lambda 10]) (local [(define lambda 9) (define lambda2 lambda)] lambda2)))
 (test 1 'local (local ((define-values (a b c) (values 1 2 3))) a))
 (test 1 (lambda () (local ((define-values (a b c) (values 1 2 3))) a)))
 (syntax-test '(local))
@@ -68,5 +68,6 @@
 (syntax-test '(local ((define x)) 1))
 (syntax-test '(local ((define x 4) (+ 1 2)) 1))
 (syntax-test '(local ((define x 4) (+ 1 2) (define y 10)) 1))
+(syntax-test '(local [(define lambda 8)] lambda))
 
 (report-errs)

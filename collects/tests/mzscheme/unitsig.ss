@@ -432,10 +432,40 @@
 	 [B : (b) ((unit/sig (b) (import) (define b 2)))])
    (export (unit A) (unit B A))))
 
-; Shadowed syntax definitions:
+; Can't shadow syntax/macros in unit
+(syntax-test '(unit/sig ()
+	       (import) 
+	       (define define 10)))
+(syntax-test '(unit/sig ()
+	       (import) 
+	       (define lambda 11)))
 
-(test 8 'unit/sig (invoke-unit/sig (unit/sig () (import) (define lambda 8) lambda)))
-(test 9 'unit/sig (invoke-unit/sig (unit/sig () (import) (begin (define lambda 9) (define lambda2 lambda)) lambda2)))
+; Shadowing ok if it's in the export list:
+(test #t unit/sig? (unit/sig (define-values)
+		    (import) 
+		    (define define-values 12)))
+(test #t unit/sig? (unit/sig (lambda)
+		    (import) 
+		    (define lambda 13)))
+(test #t unit/sig? (unit/sig (l)
+		    (import) 
+		    (rename (lambda l))
+		    (define lambda 14)))
+
+; These are ok, too:
+(test #t unit/sig? (unit/sig ()
+		    (import (define))
+		    (define define 15)))
+(test #t unit/sig? (let ([define-values 5])
+		     (unit/sig ()
+		      (import)
+		      (define define-values 16))))
+
+; Not ok if defining an imported name, but error should be about
+; redefining an imported name. (This behavior is not actually tested.)
+(syntax-test '(unit/sig ()
+	       (import (define-values) )
+	       (define define-values 17)))
 
 (report-errs)
 

@@ -324,10 +324,6 @@
 		   (set! x 2)
 		   (f)))))))
 
-; Shadowed syntax definitions:
-
-(test 8 'unit (invoke-unit (unit (import) (export) (define lambda 8) lambda)))
-(test 9 'unit (invoke-unit (unit (import) (export) (begin (define lambda 9) (define lambda2 lambda)) lambda2)))
 
 ; Multiple values
 (test '(1 2 3) 
@@ -379,5 +375,47 @@
 
 (test (letrec* ([x y][y 0]) x) 'invoke 
       (invoke-unit (unit (import) (export) (define x y) (define y 7) x)))
+
+; Can't shadow syntax/macros in unit
+(syntax-test '(unit 
+	       (import) 
+	       (export)
+	       (define define 10)))
+(syntax-test '(unit 
+	       (import) 
+	       (export)
+	       (define lambda 10)))
+
+; Shadowing ok if it's in the export list:
+(test #t unit? (unit 
+		(import) 
+		(export define-values)
+		(define define-values 10)))
+(test #t unit? (unit 
+		(import) 
+		(export lambda)
+		(define lambda 10)))
+(test #t unit? (unit 
+		(import) 
+		(export [lambda l])
+		(define lambda 10)))
+
+; These are ok, too:
+(test #t unit? (unit
+		(import define)
+		(export)
+		(define define 10)))
+(test #t unit? (let ([define-values 5])
+		 (unit
+		  (import)
+		  (export)
+		  (define define-values 10))))
+
+; Not ok if defining an imported name, but error should be about
+; redefining an imported name. (This behavior is not actually tested.)
+(syntax-test '(unit 
+	       (import define-values) 
+	       (export)
+	       (define define-values 10)))
 
 (report-errs)

@@ -1013,31 +1013,22 @@ Scheme_Object *scheme_make_syntax_compiled(int idx, Scheme_Object *data)
 
 static Scheme_Object *link_module_variable(Scheme_Object *modidx,
 					   Scheme_Object *varname,
-					   Scheme_Object *rootname,
 					   Link_Info *info)
 {
   Scheme_Object *modname;
-  Scheme_Env *menv, *root;
+  Scheme_Env *menv;
 
   /* If it's a name id, resolve the name. */
   modname = scheme_module_resolve(modidx);
-  if (rootname)
-    rootname = scheme_module_resolve(rootname);
 
-  if (rootname && info->val_env)
-    root = (Scheme_Env *)scheme_module_syntax(rootname, info->val_env, NULL);
-  else 
-    root = NULL;
-
-  menv = scheme_module_access(modname, root ? root : info);
+  menv = scheme_module_access(modname, info);
   
   if (!menv) {
     scheme_wrong_syntax("link", NULL, varname,
-			"broken compiled code (phase %d, in %V, relto %V), no declaration for module"
+			"broken compiled code (phase %d, in %V), no declaration for module"
 			": %S", 
 			info->phase, 
 			info->module ? info->module->modname : scheme_false,
-			rootname ? rootname : scheme_false,
 			modname);
     return NULL;
   }
@@ -1062,19 +1053,12 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
       else
 	return link_module_variable(b->home->module->modname,
 				    (Scheme_Object *)b->bucket.bucket.key,
-				    (b->home->for_syntax_of
-				     ? b->home->for_syntax_of->module->modname
-				     : NULL),
 				    info);
     }
   case scheme_module_variable_type:
     {
-      Scheme_Object *mod;
-
-      mod = SCHEME_PTR1_VAL(expr);
-      return link_module_variable(SCHEME_PAIRP(mod) ? SCHEME_CAR(mod) : mod,
+      return link_module_variable(SCHEME_PTR1_VAL(expr),
 				  SCHEME_PTR2_VAL(expr),
-				  SCHEME_PAIRP(mod) ? SCHEME_CDR(mod) : NULL,
 				  info);
     }
   case scheme_syntax_type:
@@ -1881,9 +1865,8 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 
   if (env->genv->module) {
     Scheme_Object *modidx, *symbol = c;
-    Scheme_Env *home;
 
-    modidx = scheme_stx_module_name(&symbol, env->genv->phase, &home);
+    modidx = scheme_stx_module_name(&symbol, env->genv->phase);
     if (modidx) {
       /* If it's an access path, resolve it: */
       if (env->genv->module

@@ -428,13 +428,13 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_module_eq(Scheme_Object *a, Scheme_Object *b, long phase);
-Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase, Scheme_Env **home);
+Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
 
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
 int scheme_stx_has_binder(Scheme_Object *a, long phase);
 
-Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift, Scheme_Env *home,
+Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 				      Scheme_Object *old_midx, Scheme_Object *new_midx);
 
 int scheme_stx_list_length(Scheme_Object *list);
@@ -1474,7 +1474,7 @@ typedef struct Scheme_Modix {
 
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 
-Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m);
+Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree);
 int scheme_is_module_env(Scheme_Comp_Env *env);
 
 Scheme_Object *scheme_module_resolve(Scheme_Object *modidx);

@@ -429,7 +429,8 @@ Scheme_Env *scheme_make_empty_env(void)
 static Scheme_Env *make_env(Scheme_Env *base, int semi)
 {
   Scheme_Hash_Table *toplevel, *syntax;
-  Scheme_Hash_Table *module_registry, *modules;
+  Scheme_Hash_Table *module_registry;
+  Scheme_Object *modpair;
   Scheme_Env *env;
 
   toplevel = scheme_hash_table(7, SCHEME_hash_ptr, 1, 0);
@@ -437,19 +438,23 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
 
   if (semi > 0) {
     syntax = NULL;
-    modules = NULL;
+    modpair = NULL;
     module_registry = NULL;
   } else {
     syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
     if (base) {
-      modules = base->modules;
+      modpair = base->modpair;
       module_registry = base->module_registry;
     } else {
-      modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-      if (semi < 0)
+      if (semi < 0) {
 	module_registry = NULL;
-      else
+	modpair = NULL;
+      } else {
+	Scheme_Hash_Table *modules;
+	modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+	modpair = scheme_make_pair((Scheme_Object *)modules, scheme_false);
 	module_registry = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      }
     }
   }
 
@@ -460,7 +465,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
 
   if (semi < 1) {
     env->syntax = syntax;
-    env->modules = modules;
+    env->modpair = modpair;
     env->module_registry = module_registry;
 
     {
@@ -481,15 +486,24 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
 }
 
 Scheme_Env *
-scheme_new_module_env(Scheme_Env *env, Scheme_Module *m)
+scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree)
 {
   Scheme_Env *menv;
 
-  menv = make_env(env, !m->modname); /* no name => just for read */
+  menv = make_env(env, 0);
 
   menv->module = m;
   if (menv->init)
     menv->init->flags |= SCHEME_MODULE_FRAME;
+
+  if (new_exp_module_tree) {
+    Scheme_Object *p;
+    Scheme_Hash_Table *modules;
+
+    modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+    p = scheme_make_pair((Scheme_Object *)modules, scheme_false);
+    menv->modpair = p;
+  }
 
   return menv;
 }
@@ -498,13 +512,23 @@ void scheme_prepare_exp_env(Scheme_Env *env)
 {
   if (!env->exp_env) {
     Scheme_Env *eenv;
+    Scheme_Object *modpair;
+
     eenv = make_env(NULL, -1);
     eenv->phase = env->phase + 1;
-    eenv->val_env = env;
 
     eenv->module = env->module;
-
     eenv->module_registry = env->module_registry;
+
+    modpair = SCHEME_CDR(env->modpair);
+    if (SCHEME_FALSEP(modpair)) {
+      Scheme_Hash_Table *next_modules;
+
+      next_modules = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      modpair = scheme_make_pair((Scheme_Object *)next_modules, scheme_false);
+      SCHEME_CDR(env->modpair) = modpair;
+    }
+    eenv->modpair = modpair;
 
     env->exp_env = eenv;
   }
@@ -1006,7 +1030,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   int j = 0, p = 0;
   Scheme_Bucket *b;
   Scheme_Object *val, *modidx, *modname, *srcsym;
-  Scheme_Env *genv, *home_env;
+  Scheme_Env *genv;
   long phase;
 
   phase = env->genv->phase;
@@ -1074,7 +1098,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   }
 
   srcsym = symbol;
-  modidx = scheme_stx_module_name(&symbol, phase, &home_env);
+  modidx = scheme_stx_module_name(&symbol, phase);
   if (modidx) {
     /* If it's an access path, resolve it: */
     modname = scheme_module_resolve(modidx);
@@ -1084,7 +1108,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       modname = NULL;
       genv = env->genv;
     } else {
-      genv = scheme_module_access(modname, home_env ? home_env : env->genv);
+      genv = scheme_module_access(modname, env->genv);
 
       if (!genv) {
 	scheme_wrong_syntax("import", NULL, srcsym, 
@@ -1101,14 +1125,9 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
   if (!(flags & SCHEME_GLOB_ALWAYS_REFERENCE)) {
     /* Try syntax table: */
-    if (modname) {
-      Scheme_Env *hm;
-      if (home_env && home_env->module_syntax)
-	hm = home_env;
-      else
-	hm = NULL;
-      val = scheme_module_syntax(modname, hm ? hm : env->genv, SCHEME_STX_SYM(symbol));
-    } else {
+    if (modname)
+      val = scheme_module_syntax(modname, env->genv, SCHEME_STX_SYM(symbol));
+    else {
       /* Only try syntax table if there's not an explicit (later)
 	 variable mapping: */
       if (genv->shadowed_syntax 
@@ -1136,17 +1155,10 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, modname)) {
     /* Create a module variable reference, so that idx is preserved: */
-    Scheme_Object *mrel;
-
     val = scheme_alloc_object();
     val->type = scheme_module_variable_type;
 
-    if (home_env && home_env->link_midx)
-      mrel = scheme_make_pair(modidx, home_env->link_midx);
-    else
-      mrel = modidx;
-
-    SCHEME_PTR1_VAL(val) = mrel;
+    SCHEME_PTR1_VAL(val) = modidx;
     SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(symbol);
 
     return val;
@@ -1660,14 +1672,8 @@ static Scheme_Object *write_variable(Scheme_Object *obj)
      it must be a reference to a module referenced directly by its
      a symbolic name (i.e., no path). */
 
-  if (m) {
-    if (home->for_syntax_of && home->for_syntax_of->link_midx)
-      sym = scheme_make_pair(scheme_make_pair(m->modname, 
-					      home->for_syntax_of->link_midx),
-			     sym);
-    else
-      sym = scheme_make_pair(m->modname, sym);
-  }
+  if (m)
+    sym = scheme_make_pair(m->modname, sym);
 
   return sym;
 }

@@ -87,17 +87,17 @@ typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname,
 			   int isval, void *data, Scheme_Object *e);
 static Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *l, 
 				    Scheme_Object *base_modidx,
-				    Scheme_Env *env, Scheme_Env *for_syntax_of,
+				    Scheme_Env *env,
 				    Scheme_Object *rn,
 				    Check_Func ck, void *data,
 				    int start, Scheme_Object *redef_modname,
 				    int unpack_kern);
-static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, 
-			 Scheme_Env *for_syntax_of, Scheme_Object *syntax_idx);
+static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx);
 static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
+#define MODPAIR_TABLE(p) ((Scheme_Hash_Table *)SCHEME_CAR(p))
 
 /**********************************************************************/
 /*                           initialization                           */
@@ -461,7 +461,7 @@ static Scheme_Object *dynamic_import(int argc, Scheme_Object *argv[])
     }
   }
 
-  start_module(m, env, 0, NULL, modidx);
+  start_module(m, env, 0, modidx);
 
   if (SCHEME_SYMBOLP(name)) {
     menv = scheme_module_access(modname, env);
@@ -612,7 +612,7 @@ Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
   if (name == kernel_symbol)
     return scheme_initial_env;
   else
-    return scheme_lookup_in_table(env->modules, (const char *)name);
+    return scheme_lookup_in_table(MODPAIR_TABLE(env->modpair), (const char *)name);
 }
 
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx)
@@ -640,46 +640,16 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
   if (modname == kernel_symbol)
     return scheme_lookup_in_table(scheme_initial_env->syntax, (char *)name);
   else {
+    Scheme_Env *menv;
     Scheme_Hash_Table *ht;
     Scheme_Object *val;
-    int get_env;
 
-    if (!env->module_syntax && !name)
-      return NULL;
+    menv = scheme_lookup_in_table(MODPAIR_TABLE(env->modpair), (const char *)modname);
     
-    ht = (Scheme_Hash_Table *)scheme_lookup_in_table(env->module_syntax, (char *)modname);
-
-    if (!ht) {
-      if (name)
-	scheme_wrong_syntax("import", NULL, modname, 
-			    "broken compiled code: cannot find prepared module's syntax");
+    if (!menv)
       return NULL;
-    }
 
-    if (!name) {
-      val = (Scheme_Object *)scheme_lookup_in_table(ht, (char *)scheme_void);
-      if (!val) {
-	/* Find a name, so force finish of expstart. */
-	int i;
-	Scheme_Bucket **bs, *b;
-	
-	bs = ht->buckets;
-	for (i = ht->size; i--; ) {
-	  b = bs[i];
-	  if (b && b->val) {
-	    name = (Scheme_Object *)b->key;
-	    break;
-	  }
-	}
-	
-	if (!name)
-	  return NULL;
-	
-	get_env = 1;
-      } else
-	return val;
-    } else
-      get_env = 0;
+    ht = menv->syntax;
 
     val = scheme_lookup_in_table(ht, (char *)name);
     if (val && !SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
@@ -688,55 +658,40 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
       val = scheme_lookup_in_table(ht, (char *)name);
     }
 
-    if (get_env)
-      return (Scheme_Object *)scheme_lookup_in_table(ht, (char *)scheme_void);
-
     return val;
   }
 }
 
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, 
-			    Scheme_Env *for_syntax_of, Scheme_Object *syntax_idx)
+			    Scheme_Object *syntax_idx)
 {
   Scheme_Env *menv;
   Scheme_Object *body, *l;
-  Scheme_Hash_Table *syntax;
 
   if (SAME_OBJ(m, kernel))
     return;
 
-  if (!env->module_syntax) {
-    syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-    env->module_syntax = syntax;
+  if (!restart) {
+    menv = scheme_lookup_in_table(MODPAIR_TABLE(env->modpair), (const char *)m->modname);
+    if (menv)
+      return;
   }
 
-  if (!restart) {
-    syntax = scheme_lookup_in_table(env->module_syntax, (const char *)m->modname);
-    if (syntax)
-      return;
-  } else
-    syntax = NULL;
-
   if (m->primitive) {
-    menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
+    menv = scheme_lookup_in_table(MODPAIR_TABLE(env->modpair), (const char *)m->modname);
     if (!menv)
-      scheme_add_to_table(env->modules, (const char *)m->modname, m->primitive, 0);
-    if (!syntax) {
-      syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-      scheme_add_to_table(env->module_syntax, (const char *)m->modname, syntax, 0);      
-    }
+      scheme_add_to_table(MODPAIR_TABLE(env->modpair), (const char *)m->modname, m->primitive, 0);
     return;
   }
 
-  menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
+  menv = scheme_lookup_in_table(MODPAIR_TABLE(env->modpair), (const char *)m->modname);
   if (!menv || restart) {
     if (!menv) {
-      menv = scheme_new_module_env(env, m);
-      scheme_add_to_table(env->modules, (const char *)m->modname, menv, 0);
+      menv = scheme_new_module_env(env, m, 0);
+      scheme_add_to_table(MODPAIR_TABLE(env->modpair), (const char *)m->modname, menv, 0);
       
       menv->phase = env->phase;
       menv->link_midx = syntax_idx;
-      menv->for_syntax_of = for_syntax_of;
     } else
       menv->module = m;
 
@@ -784,18 +739,13 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   for (l = m->imports; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     expstart_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
 		    env, 0, 
-		    NULL, SCHEME_CAR(l));
+		    SCHEME_CAR(l));
   }
 
-  if (!syntax) {
-    syntax = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
-    scheme_add_to_table(env->module_syntax, (const char *)m->modname, syntax, 0);
-  }
-    
   /* Lazily start the module. Map all syntax names to a lazy marker: */
   body = m->et_body;
   for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
-    scheme_add_to_table(syntax, 
+    scheme_add_to_table(menv->syntax, 
 			(const char *)SCHEME_VEC_ELS(SCHEME_CAR(body))[0],
 			menv, 0);
   }
@@ -815,17 +765,13 @@ static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *synta
   scheme_prepare_exp_env(menv);
   exp_env = menv->exp_env;
   menv->exp_env = NULL;
-  exp_env->val_env = env;
 
   exp_env->link_midx = menv->link_midx;
 
   for (l = menv->module->et_imports; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     start_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
-		 exp_env, 0, 
-		 menv, SCHEME_CAR(l));
+		 exp_env, 0, SCHEME_CAR(l));
   }
-
-  scheme_add_to_table(syntax, (const char *)scheme_void, exp_env, 0);
 
   body = menv->module->et_body;
 
@@ -849,7 +795,7 @@ static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *synta
 }
 
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, 
-			 Scheme_Env *for_syntax_of, Scheme_Object *syntax_idx)
+			 Scheme_Object *syntax_idx)
 {
   Scheme_Env *menv;
   Scheme_Object *body, *e, *l;
@@ -857,12 +803,12 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
   if (SAME_OBJ(m, kernel))
     return;
 
-  expstart_module(m, env, restart, for_syntax_of, syntax_idx);
+  expstart_module(m, env, restart, syntax_idx);
 
   if (m->primitive)
     return;
 
-  menv = (Scheme_Env *)scheme_lookup_in_table(env->modules, (const char *)m->modname);
+  menv = (Scheme_Env *)scheme_lookup_in_table(MODPAIR_TABLE(env->modpair), (const char *)m->modname);
 
   if (restart)
     menv->running = 0;
@@ -872,8 +818,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
   
   for (l = m->imports; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     start_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
-		 env, 0, 
-		 NULL, SCHEME_CAR(l));
+		 env, 0, SCHEME_CAR(l));
   }
 
   menv->running = 1;
@@ -916,7 +861,7 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
   
-  env = scheme_new_module_env(for_env, m);
+  env = scheme_new_module_env(for_env, m, 0);
 
   m->modname = name;
   m->imports = scheme_null;
@@ -992,12 +937,12 @@ module_execute(Scheme_Object *data)
   scheme_add_to_table(env->module_registry, (const char *)m->modname, m, 0);
 
   /* Replaced an already-running or already-syntaxing module? */
-  menv = scheme_lookup_in_table(env->modules, (const char *)m->modname);
+  menv = scheme_lookup_in_table(MODPAIR_TABLE(env->modpair), (const char *)m->modname);
   if (menv) {
     if (menv->running)
-      start_module(m, env, 1, NULL, NULL);
+      start_module(m, env, 1, NULL);
     else
-      expstart_module(m, env, 1, NULL, NULL);
+      expstart_module(m, env, 1, NULL);
   }
 
   return scheme_void;
@@ -1065,7 +1010,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     m->modname = modname; /* must set before calling new_module_env */
   }
 
-  menv = scheme_new_module_env(env->genv, m);
+  menv = scheme_new_module_env(env->genv, m, 1);
 
   self_modidx = scheme_make_modidx(scheme_false, scheme_false, m->modname);
   m->self_modidx = self_modidx;
@@ -1082,7 +1027,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   iim = scheme_module_load(scheme_module_resolve(iidx), menv); /* load the module for the initial import */
-  expstart_module(iim, menv, 0, NULL, iidx);
+  expstart_module(iim, menv, 0, iidx);
 
   if (scheme_lookup_in_table(menv->module_registry, (char *)m->modname)) {
     /* Redefinition: cycles are possible. */
@@ -1497,7 +1442,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  /* Add imports to renaming: */
 	  tables[3] = e;
-	  imods = parse_imports(form, e, self_modidx, env->genv, NULL, 
+	  imods = parse_imports(form, e, self_modidx, env->genv, 
 				rn, check_import_name, tables, 0,
 				redef_modname, 0);
 	
@@ -1529,7 +1474,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	  /* Add imports to renaming: */
 	  et_tables[3] = e;
-	  imods = parse_imports(form, e, self_modidx, env->genv->exp_env, env->genv,
+	  imods = parse_imports(form, e, self_modidx, env->genv->exp_env,
 				et_rn, check_import_name, et_tables, 1,
 				redef_modname, 0);
 
@@ -2038,7 +1983,7 @@ module_begin_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme
 
 Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll, 
 			     Scheme_Object *base_modidx,
-			     Scheme_Env *env, Scheme_Env *for_syntax_of,
+			     Scheme_Env *env,
 			     Scheme_Object *rn,
 			     Check_Func ck, void *data,
 			     int start, Scheme_Object *redef_modname,
@@ -2169,9 +2114,9 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       prevent_cyclic_imports(m, redef_modname, env);
 
     if (start)
-      start_module(m, env, 0, for_syntax_of, idx);
+      start_module(m, env, 0, idx);
     else
-      expstart_module(m, env, 0, for_syntax_of, idx);
+      expstart_module(m, env, 0, idx);
 
     is_kern = (SAME_OBJ(idx, kernel_symbol)
 	       && !exns
@@ -2305,7 +2250,7 @@ top_level_import_execute(Scheme_Object *data)
   ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
   rn = scheme_make_module_rename(for_exp, 1);
 
-  (void)parse_imports(form, form, scheme_false, env, NULL, rn, 
+  (void)parse_imports(form, form, scheme_false, env, rn, 
 		      check_dup_import, ht, 1, NULL,
 		      !env->module);
 
@@ -2360,7 +2305,7 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
     genv = genv->exp_env;
   }
 
-  (void)parse_imports(form, form, scheme_false, genv, NULL, rn, 
+  (void)parse_imports(form, form, scheme_false, genv, rn, 
 		      check_dup_import, ht, 1, 
 		      NULL, 0);
 

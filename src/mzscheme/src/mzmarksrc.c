@@ -569,16 +569,14 @@ namespace_val {
 
   gcMARK(e->syntax);
   gcMARK(e->exp_env);
-  gcMARK(e->val_env);
   gcMARK(e->module_syntax);
 
   gcMARK(e->shadowed_syntax);
 
   gcMARK(e->link_midx);
-  gcMARK(e->for_syntax_of);
 
   gcMARK(e->toplevel);
-  gcMARK(e->modules);
+  gcMARK(e->modpair);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Env));

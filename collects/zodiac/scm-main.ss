@@ -1072,7 +1072,7 @@
 	    (in-pattern-3 '(_))
 	    (out-pattern-3-signal-error
 	      '(#%raise (#%make-exn:else
-			  "no matching clause"
+			  "no matching else clause"
 			  ((debug-info-handler)))))
 	    (out-pattern-3-no-error
 	      '(#%void))
@@ -1132,10 +1132,10 @@
 	    (in-pattern-2 '(_ val))
 	    (out-pattern-2-signal-error
 	      '(#%raise (#%make-exn:else
-			  "no matching clause"
+			  "no matching else clause"
 			  ((debug-info-handler)))))
 	    (out-pattern-2-no-error
-	      '(#%void))
+	      '(begin val (#%void)))
 	    (in-pattern-3 (if (language<=? 'structured)
 			    '(_ val ((keys ...) b) rest ...)
 			    '(_ val ((keys ...) b ...) rest ...)))

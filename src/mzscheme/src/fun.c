@@ -1008,9 +1008,7 @@ scheme_tail_apply (Scheme_Object *rator, int num_rands, Scheme_Object **rands)
       a[i] = rands[i];
     }
 
-#ifdef AGRESSIVE_ZERO_TB
     p->tail_buffer_set = num_rands;
-#endif
   } else
     p->ku.apply.tail_rands = NULL;
 
@@ -1670,9 +1668,7 @@ static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[])
     p->ku.apply.tail_num_rands = 1;
     p->ku.apply.tail_rands = p->tail_buffer;
     p->ku.apply.tail_rands[0] = v;
-#ifdef AGRESSIVE_ZERO_TB
     p->tail_buffer_set = 1;
-#endif
   }
   
   p->ku.apply.tail_rator = argv[1];

@@ -1073,9 +1073,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     process->tail_buffer = tb;
   }
   process->tail_buffer_size = buffer_init_size;
-#ifdef AGRESSIVE_ZERO_TB
   process->tail_buffer_set = 0;
-#endif
   SCHEME_RELEASE_LOCK();
 
   process->runstack_size = INIT_SCHEME_STACK_SIZE;
@@ -3248,14 +3246,12 @@ static void get_ready_for_GC()
 
 	RUNSTACK_TUNE( printf("%ld\n", size); );
 
-# ifdef AGRESSIVE_ZERO_TB
 	{
 	  int i;
 	  for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++) {
 	    p->tail_buffer[i] = NULL;
 	  }
 	}
-# endif
       }
       
       /* release unused cont mark stack segments */

@@ -1023,8 +1023,7 @@ static int tcp_getc(Scheme_Input_Port *port)
   }
   
   if (data->activeRcv 
-      || (data->tcp.state == SOCK_STATE_CONNECTED)
-      || (data->tcp.state == SOCK_STATE_EOF_FROM_OTHER)) {
+      || (data->tcp.state == SOCK_STATE_CONNECTED)) {
     /* socket is connected or an old recv is unfinished */
     TCPiopb *pb;    
 

@@ -21,11 +21,60 @@
   All rights reserved.
 */
 
-/* This file contains the main evaluation loop, in the
-   scheme_do_eval() function. 
+/* This file contains 
 
-   This file also contains the core of the macro-expander and bytecode
-   compiler, which is why it's so big. */
+        * the main eval-apply loop, in scheme_do_eval()
+
+        * the main compile loop, int scheme_compile_expand_expr()
+
+        * compilation and bytecode [un]marshaling for
+             - applications
+             - sequences (along with code in syntax.c)
+             - branches (along with code in syntax.c)
+             - with-continuation-mark
+           [These are here instead of syntax.c because they are
+            tightly integrated into the evaluation loop.]
+
+        * C and Scheme stack management routines
+
+   Evaluation:
+
+   The bytecode evaluator uses the C stack for continuations, and a
+   separate Scheme stack for activation-frame variables and collecting
+   application arguments. Closures are flat, so mutable variables are
+   boxed. A third stack is used for continuation marks, only as
+   needed.
+
+   Tail calls are, for the most part, gotos within scheme_do_eval(). A
+   C function called y the main evaluation loop can perform a
+   trampoling tail call via scheme_tail_apply.
+
+   The apply half of the eval-apply loop branches on all possible
+   application types. All primitive functions (including cons) are
+   implemented by C functions outside the loop. Continuation
+   applications are handled directly in scheme_do_eval(). That leaves
+   calls to closures, which are also performed within scheme_do_eval()
+   (so that most tail calls avoid the trampoline).
+
+   The eval half of the loop detects a limited set of core syntactic
+   forms, such as application and letrecs. Otherwise, it dispatches to
+   external functions to implement elaborate syntactic forms, such as
+   class and unit expressions.
+
+   When collecting the arguments for an application, scheme_do_eval()
+   avoids recursive C calls to evaluate arguments by recogzining
+   easily-evaluated expressions, such as constrants and variable
+   lookups. This can be viewed as a kind of half-way A-normalization.
+
+   Bytecodes are not linear, but actually trees of expression nodes.
+
+   Compilation:
+
+   Compilation works in two passes. The first pass, called "compile",
+   performs most of the work and tracks variable usage (including
+   whether a variable is mutated or not). The second pass, unhelpfully
+   called "link", finishes compilation by computing variable offsets
+   and indirections. */
 
 #include "schpriv.h"
 #include "schrunst.h"
@@ -96,24 +145,17 @@ static Scheme_Object *let_id_macro_symbol;
 static Scheme_Object *let_exp_time_symbol;
 static Scheme_Object *let_symbol;
 
+static Scheme_Object *zero_rands_ptr; /* &zero_rands_ptr is dummy rands pointer */
+
+static Scheme_Object *scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env, 
+						 Scheme_Compile_Info *rec, int drec, int depth,
+						 int app_position);
+
 #define cons(x,y) scheme_make_pair(x,y)
 
 typedef void (*DW_PrePost_Proc)(void *);
 
 #define TAIL_COPY_THRESHOLD 5
-
-#ifndef MZ_REAL_THREADS
-# define DO_CHECK_FOR_BREAK(p, e) \
-	if ((scheme_fuel_counter--) <= 0) { \
-	  e scheme_process_block(0); \
-          (p)->ran_some = 1; \
-	}
-#else
-# define DO_CHECK_FOR_BREAK(p, e) \
-	if (((p)->fuel_counter--) <= 0) { \
-	  e scheme_process_block_w_process(0, p); \
-	}
-#endif
 
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \
     || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
@@ -129,6 +171,20 @@ unsigned long scheme_stack_boundary;
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
+
+/* Lookahead types for evaluating application arguments. */
+/* 4 cases + else => magic number for some compilers doing a switch */
+enum {
+  SCHEME_EVAL_CONSTANT = 0,
+  SCHEME_EVAL_GLOBAL,
+  SCHEME_EVAL_LOCAL,
+  SCHEME_EVAL_LOCAL_UNBOX,
+  SCHEME_EVAL_GENERAL
+};
+
+/*========================================================================*/
+/*                             initialization                             */
+/*========================================================================*/
 
 void
 scheme_init_eval (Scheme_Env *env)
@@ -259,6 +315,23 @@ scheme_init_eval (Scheme_Env *env)
 			     env);
 }
 
+/*========================================================================*/
+/*                   C stack and Scheme stack handling                    */
+/*========================================================================*/
+
+#ifndef MZ_REAL_THREADS
+# define DO_CHECK_FOR_BREAK(p, e) \
+	if ((scheme_fuel_counter--) <= 0) { \
+	  e scheme_process_block(0); \
+          (p)->ran_some = 1; \
+	}
+#else
+# define DO_CHECK_FOR_BREAK(p, e) \
+	if (((p)->fuel_counter--) <= 0) { \
+	  e scheme_process_block_w_process(0, p); \
+	}
+#endif
+
 Scheme_Object *
 scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
 {
@@ -277,14 +350,187 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
   return NULL; /* never gets here */
 }
 
-/* 4 cases => magic number for some compilers doing a switch */
-enum {
-  SCHEME_EVAL_CONSTANT = 0,
-  SCHEME_EVAL_GLOBAL,
-  SCHEME_EVAL_LOCAL,
-  SCHEME_EVAL_LOCAL_UNBOX,
-  SCHEME_EVAL_GENERAL
-};
+#if defined(UNIX_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
+extern unsigned long GC_get_stack_base();
+#endif
+
+void scheme_init_stack_check()
+{
+  int *v;
+  unsigned long deeper;
+#ifdef UNIX_FIND_STACK_BOUNDS
+  struct rlimit rl;
+#endif
+  
+  deeper = scheme_get_deeper_address();
+  scheme_stack_grows_up = (deeper > (unsigned long)&v);
+
+#ifdef STACK_GROWS_UP
+  if (!scheme_stack_grows_up) {
+    if (scheme_console_printf)
+      scheme_console_printf("Stack grows DOWN, not UP.\n");
+    else
+      printf("Stack grows DOWN, not UP.\n");
+    exit(1);
+  }
+#endif
+#ifdef STACK_GROWS_DOWN
+  if (scheme_stack_grows_up) {
+    if (scheme_console_printf)
+      scheme_console_printf("Stack grows UP, not DOWN.\n");
+    else
+      printf("Stack grows UP, not DOWN.\n");
+    exit(1);
+  }
+#endif
+
+#ifdef ASSUME_FIXED_STACK_SIZE
+  scheme_stack_boundary = GC_get_stack_base();
+  if (scheme_stack_grows_up)
+    scheme_stack_boundary += (FIXED_STACK_SIZE - STACK_SAFETY_MARGIN);
+  else
+    scheme_stack_boundary += (STACK_SAFETY_MARGIN - FIXED_STACK_SIZE);
+#endif
+
+#ifdef WINDOWS_FIND_STACK_BOUNDS
+  scheme_stack_boundary = GC_get_stack_base();
+  scheme_stack_boundary += (STACK_SAFETY_MARGIN - 0x100000);
+#endif
+
+#ifdef MACOS_FIND_STACK_BOUNDS
+  scheme_stack_boundary = (unsigned long)&v +  STACK_SAFETY_MARGIN - StackSpace();
+#endif
+
+#ifdef PALMOS_FIND_STACK_BOUNDS
+  {
+    Ptr s, e;
+    SysGetStackInfo(Ptr &s, &e);
+    scheme_stack_boundary = (unsigned long)e + STACK_SAFETY_MARGIN;
+  }
+#endif
+
+#ifdef BEOS_FIND_STACK_BOUNDS
+  {
+    thread_info info;
+    get_thread_info(find_thread(NULL), &info);
+    scheme_stack_boundary = (unsigned long)info.stack_base + STACK_SAFETY_MARGIN;
+  }
+#endif
+
+#ifdef OSKIT_FIXED_STACK_BOUNDS
+  scheme_stack_boundary = (unsigned long)base_stack_start + STACK_SAFETY_MARGIN;
+#endif
+
+#ifdef UNIX_FIND_STACK_BOUNDS
+  getrlimit(RLIMIT_STACK, &rl);
+
+  {
+    unsigned long bnd;
+    bnd = (unsigned long)GC_get_stack_base();
+
+    if (scheme_stack_grows_up)
+      bnd += ((unsigned long)rl.rlim_cur - STACK_SAFETY_MARGIN);
+    else
+      bnd += (STACK_SAFETY_MARGIN - (unsigned long)rl.rlim_cur);
+
+# ifndef MZ_REAL_THREADS
+    scheme_stack_boundary = bnd;
+# else
+    scheme_current_process->stack_end = (void *)bnd;
+# endif
+  }
+#endif
+}
+
+
+int scheme_check_runstack(long size)
+{
+#ifndef RUNSTACK_IS_GLOBAL
+  Scheme_Process *p = scheme_current_process;
+#endif
+
+  return ((MZ_RUNSTACK - MZ_RUNSTACK_START) >= (size + TAIL_COPY_THRESHOLD));
+}
+
+void *scheme_enlarge_runstack(long size, void *(*k)())
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Saved_Stack *saved;
+  void *v;
+
+  saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
+
+#ifdef MZTAG_REQUIRED
+  saved->type = scheme_rt_saved_stack;
+#endif
+  saved->prev = p->runstack_saved;
+  saved->runstack = MZ_RUNSTACK;
+  saved->runstack_start = MZ_RUNSTACK_START;
+  saved->runstack_size = p->runstack_size;
+  
+  size += TAIL_COPY_THRESHOLD;
+  if (size < SCHEME_STACK_SIZE)
+    size = SCHEME_STACK_SIZE;
+
+  p->runstack_saved = saved;
+  p->runstack_size = size;
+  MZ_RUNSTACK_START = scheme_malloc_allow_interior(sizeof(Scheme_Object*) * size);
+  MZ_RUNSTACK = MZ_RUNSTACK_START + size;
+  
+  v = k();
+  
+  p->runstack_saved = saved->prev;
+  MZ_RUNSTACK = saved->runstack;
+  MZ_RUNSTACK_START = saved->runstack_start;
+  p->runstack_size = saved->runstack_size;
+
+  return v;
+}
+
+/*========================================================================*/
+/*           compiling applications, sequences, and branches              */
+/*========================================================================*/
+
+int scheme_omittable_expr(Scheme_Object *o)
+{
+  Scheme_Type vtype;
+
+  if (SAME_OBJ(o, scheme_compiled_void_code))
+    return 1;
+
+  vtype = SCHEME_TYPE(o);
+
+  if ((vtype > _scheme_compiled_values_types_) 
+      || (vtype == scheme_local_type)
+      || (vtype == scheme_local_unbox_type)
+      || (vtype == scheme_unclosed_procedure_type)
+      || (vtype == scheme_compiled_unclosed_procedure_type))
+    return 1;
+
+  if ((vtype == scheme_branch_type)) {
+    Scheme_Branch_Rec *b;
+    b = (Scheme_Branch_Rec *)o;
+    return (scheme_omittable_expr(b->test)
+	    && scheme_omittable_expr(b->tbranch)
+	    && scheme_omittable_expr(b->fbranch));
+  }
+
+  return 0;
+}
+
+int scheme_is_compiled_procedure(Scheme_Object *o, int can_be_closed)
+{
+  if (SAME_TYPE(SCHEME_TYPE(o), scheme_compiled_unclosed_procedure_type)) {
+    if (!can_be_closed) {
+      Scheme_Closure_Compilation_Data *data;
+      data = (Scheme_Closure_Compilation_Data *)o;
+      /* Because == 0 is like a constant */
+      return (data->closure_size > 0);
+    } else
+      return 1;
+  } else
+    return 0;
+}
 
 int scheme_get_eval_type(Scheme_Object *obj)
 {
@@ -454,6 +700,46 @@ static Scheme_Object *link_application(Scheme_Object *o, Link_Info *info)
   return o;
 }
 
+Scheme_Object *
+scheme_make_branch(Scheme_Object *test, Scheme_Object *thenp,
+		   Scheme_Object *elsep)
+{
+  Scheme_Branch_Rec *b;
+
+  if (SCHEME_TYPE(test) > _scheme_compiled_values_types_) {
+    if (SCHEME_FALSEP(test))
+      return elsep;
+    else
+      return thenp;
+  }
+
+  b = (Scheme_Branch_Rec *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Branch_Rec));
+  b->type = scheme_branch_type;
+
+#if 0
+  /* Try optimize: (if (not x) y z) => (if x z y) */
+  if (SAME_TYPE(SCHEME_TYPE(test), scheme_application_type)) {
+    Scheme_App_Rec *app;
+
+    app = (Scheme_App_Rec *)test;
+    if ((app->num_args == 1) && SAME_PTR(scheme_not_prim, app->args[0])) {
+      test = thenp;
+      thenp = elsep;
+      elsep = test;
+      test = app->args[1];
+    }
+  }
+#endif
+
+  b->test = test;
+  b->tbranch = thenp;
+  b->fbranch = elsep;
+
+  scheme_end_stubborn_change((void *)b);
+
+  return (Scheme_Object *)b;
+}
+
 static Scheme_Object *link_branch(Scheme_Object *o, Link_Info *info)
 {
   Scheme_Branch_Rec *b;
@@ -476,6 +762,104 @@ static Scheme_Sequence *malloc_sequence(int count)
   return (Scheme_Sequence *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Sequence)
 							  + (count - 1) 
 							  * sizeof(Scheme_Object *));
+}
+
+Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, 
+						int to_linked, 
+						int opt)
+{
+  Scheme_Object **array, *list, *v, *good, **linked;
+  Scheme_Sequence *o;
+  int count, i, k, total, last, first, setgood, addconst;
+  Scheme_Type type;
+
+  type = scheme_sequence_type;
+
+  linked = NULL;
+
+  list = seq;
+  count = i = 0;
+  good = NULL;
+  total = 0;
+  first = 1;
+  setgood = 1;
+  while (!SCHEME_NULLP(list)) {
+    v = SCHEME_CAR(list);
+    list = SCHEME_CDR(list);
+    last = SCHEME_NULLP(list);
+
+    if (((opt > 0) || !first) && SAME_TYPE(SCHEME_TYPE(v), type)) {
+      /* "Inline" nested begins */
+      count += ((Scheme_Sequence *)v)->count;
+      total++;
+    } else if (opt 
+	       && (((opt > 0) && !last) || ((opt < 0) && !first))
+	       && scheme_omittable_expr(v)) {
+      /* A value that is not the result. We'll drop it. */
+      total++;
+    } else {
+      if (setgood)
+	good = v;
+      count++;
+      total++;
+    }
+    i++;
+    if (first) {
+      if (opt < 0)
+	setgood = 0;
+      first = 0;
+    }
+  }
+
+  if (!count)
+    return scheme_compiled_void(to_linked);
+  
+  if (count == 1) {
+    if ((opt < 0) && !scheme_omittable_expr(SCHEME_CAR(seq))) {
+      /* We can't optimize (begin expr cont) to expr because
+	 exp is not in tail position in the original (so we'd mess
+	 up continuation marks. */
+      addconst = 1;
+    } else
+      return good;
+  } else
+    addconst = 0;
+
+  o = malloc_sequence(count + addconst);
+
+  o->type = ((opt < 0) ? scheme_begin0_sequence_type : scheme_sequence_type);
+  o->count = count + addconst;
+  array = o->array;
+  
+  --total;
+  for (i = k = 0; i < count; k++) {
+    v = SCHEME_CAR(seq);
+    seq = SCHEME_CDR(seq);
+
+    if (((opt > 0) || k) && SAME_TYPE(SCHEME_TYPE(v), type)) {
+      int c, j;
+      Scheme_Object **a;
+
+      c = ((Scheme_Sequence *)v)->count;
+      a = ((Scheme_Sequence *)v)->array;
+      for (j = 0; j < c; j++) {
+	array[i++] = a[j];
+      }
+    } else if (opt 
+	       && ((opt > 0 && (k < total))
+		   || ((opt < 0) && k))
+	       && scheme_omittable_expr(v)) {
+      /* Value not the result. Do nothing. */
+    } else
+      array[i++] = v;
+  }
+
+  if (addconst)
+    array[i] = scheme_make_integer(0);
+  
+  scheme_end_stubborn_change(o);
+
+  return (Scheme_Object *)o;
 }
 
 static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
@@ -643,6 +1027,10 @@ Scheme_Object *scheme_link_list(Scheme_Object *expr, Link_Info *info)
   return first;
 }
 
+/*========================================================================*/
+/*                       compilation info management                      */
+/*========================================================================*/
+
 void scheme_default_compile_rec(Scheme_Compile_Info *rec, int drec)
 {
   rec[drec].max_let_depth = 0;
@@ -701,11 +1089,9 @@ void scheme_compile_rec_done_local(Scheme_Compile_Info *rec, int drec)
   rec[drec].value_name = NULL;
 }
 
-/* Forward declaration... */
-static Scheme_Object *
-scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env, 
-			   Scheme_Compile_Info *rec, int drec, int depth,
-			   int app_position);
+/*========================================================================*/
+/*                         compilation dispatcher                         */
+/*========================================================================*/
 
 static Scheme_Object *
 scheme_inner_compile_list(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -1460,284 +1846,9 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 			  scheme_expand_list(SCHEME_CDR(form), env, depth));
 }
 
-Scheme_Object *
-scheme_make_branch(Scheme_Object *test, Scheme_Object *thenp,
-		   Scheme_Object *elsep)
-{
-  Scheme_Branch_Rec *b;
-
-  if (SCHEME_TYPE(test) > _scheme_compiled_values_types_) {
-    if (SCHEME_FALSEP(test))
-      return elsep;
-    else
-      return thenp;
-  }
-
-  b = (Scheme_Branch_Rec *)scheme_malloc_stubborn_tagged(sizeof(Scheme_Branch_Rec));
-  b->type = scheme_branch_type;
-
-#if 0
-  /* Try optimize: (if (not x) y z) => (if x z y) */
-  if (SAME_TYPE(SCHEME_TYPE(test), scheme_application_type)) {
-    Scheme_App_Rec *app;
-
-    app = (Scheme_App_Rec *)test;
-    if ((app->num_args == 1) && SAME_PTR(scheme_not_prim, app->args[0])) {
-      test = thenp;
-      thenp = elsep;
-      elsep = test;
-      test = app->args[1];
-    }
-  }
-#endif
-
-  b->test = test;
-  b->tbranch = thenp;
-  b->fbranch = elsep;
-
-  scheme_end_stubborn_change((void *)b);
-
-  return (Scheme_Object *)b;
-}
-
-extern Scheme_Object *scheme_compiled_void_code;
-
-int scheme_omittable_expr(Scheme_Object *o)
-{
-  Scheme_Type vtype;
-
-  if (SAME_OBJ(o, scheme_compiled_void_code))
-    return 1;
-
-  vtype = SCHEME_TYPE(o);
-
-  if ((vtype > _scheme_compiled_values_types_) 
-      || (vtype == scheme_local_type)
-      || (vtype == scheme_local_unbox_type)
-      || (vtype == scheme_unclosed_procedure_type)
-      || (vtype == scheme_compiled_unclosed_procedure_type))
-    return 1;
-
-  if ((vtype == scheme_branch_type)) {
-    Scheme_Branch_Rec *b;
-    b = (Scheme_Branch_Rec *)o;
-    return (scheme_omittable_expr(b->test)
-	    && scheme_omittable_expr(b->tbranch)
-	    && scheme_omittable_expr(b->fbranch));
-  }
-
-  return 0;
-}
-
-int scheme_is_compiled_procedure(Scheme_Object *o, int can_be_closed)
-{
-  if (SAME_TYPE(SCHEME_TYPE(o), scheme_compiled_unclosed_procedure_type)) {
-    if (!can_be_closed) {
-      Scheme_Closure_Compilation_Data *data;
-      data = (Scheme_Closure_Compilation_Data *)o;
-      /* Because == 0 is like a constant */
-      return (data->closure_size > 0);
-    } else
-      return 1;
-  } else
-    return 0;
-}
-
-static Scheme_Object *build_sequence(Scheme_Object *seq, 
-				     int to_linked, 
-				     int opt)
-{
-  Scheme_Object **array, *list, *v, *good, **linked;
-  Scheme_Sequence *o;
-  int count, i, k, total, last, first, setgood, addconst;
-  Scheme_Type type;
-
-  type = scheme_sequence_type;
-
-  linked = NULL;
-
-  list = seq;
-  count = i = 0;
-  good = NULL;
-  total = 0;
-  first = 1;
-  setgood = 1;
-  while (!SCHEME_NULLP(list)) {
-    v = SCHEME_CAR(list);
-    list = SCHEME_CDR(list);
-    last = SCHEME_NULLP(list);
-
-    if (((opt > 0) || !first) && SAME_TYPE(SCHEME_TYPE(v), type)) {
-      /* "Inline" nested begins */
-      count += ((Scheme_Sequence *)v)->count;
-      total++;
-    } else if (opt 
-	       && (((opt > 0) && !last) || ((opt < 0) && !first))
-	       && scheme_omittable_expr(v)) {
-      /* A value that is not the result. We'll drop it. */
-      total++;
-    } else {
-      if (setgood)
-	good = v;
-      count++;
-      total++;
-    }
-    i++;
-    if (first) {
-      if (opt < 0)
-	setgood = 0;
-      first = 0;
-    }
-  }
-
-  if (!count)
-    return scheme_compiled_void(to_linked);
-  
-  if (count == 1) {
-    if ((opt < 0) && !scheme_omittable_expr(SCHEME_CAR(seq))) {
-      /* We can't optimize (begin expr cont) to expr because
-	 exp is not in tail position in the original (so we'd mess
-	 up continuation marks. */
-      addconst = 1;
-    } else
-      return good;
-  } else
-    addconst = 0;
-
-  o = malloc_sequence(count + addconst);
-
-  o->type = ((opt < 0) ? scheme_begin0_sequence_type : scheme_sequence_type);
-  o->count = count + addconst;
-  array = o->array;
-  
-  --total;
-  for (i = k = 0; i < count; k++) {
-    v = SCHEME_CAR(seq);
-    seq = SCHEME_CDR(seq);
-
-    if (((opt > 0) || k) && SAME_TYPE(SCHEME_TYPE(v), type)) {
-      int c, j;
-      Scheme_Object **a;
-
-      c = ((Scheme_Sequence *)v)->count;
-      a = ((Scheme_Sequence *)v)->array;
-      for (j = 0; j < c; j++) {
-	array[i++] = a[j];
-      }
-    } else if (opt 
-	       && ((opt > 0 && (k < total))
-		   || ((opt < 0) && k))
-	       && scheme_omittable_expr(v)) {
-      /* Value not the result. Do nothing. */
-    } else
-      array[i++] = v;
-  }
-
-  if (addconst)
-    array[i] = scheme_make_integer(0);
-  
-  scheme_end_stubborn_change(o);
-
-  return (Scheme_Object *)o;
-}
-
-Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, 
-						int to_linked, int opt)
-{
-  return build_sequence(seq, to_linked, opt);
-}
-
-#if defined(UNIX_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
-extern unsigned long GC_get_stack_base();
-#endif
-
-void scheme_init_stack_check()
-{
-  int *v;
-  unsigned long deeper;
-#ifdef UNIX_FIND_STACK_BOUNDS
-  struct rlimit rl;
-#endif
-  
-  deeper = scheme_get_deeper_address();
-  scheme_stack_grows_up = (deeper > (unsigned long)&v);
-
-#ifdef STACK_GROWS_UP
-  if (!scheme_stack_grows_up) {
-    if (scheme_console_printf)
-      scheme_console_printf("Stack grows DOWN, not UP.\n");
-    else
-      printf("Stack grows DOWN, not UP.\n");
-    exit(1);
-  }
-#endif
-#ifdef STACK_GROWS_DOWN
-  if (scheme_stack_grows_up) {
-    if (scheme_console_printf)
-      scheme_console_printf("Stack grows UP, not DOWN.\n");
-    else
-      printf("Stack grows UP, not DOWN.\n");
-    exit(1);
-  }
-#endif
-
-#ifdef ASSUME_FIXED_STACK_SIZE
-  scheme_stack_boundary = GC_get_stack_base();
-  if (scheme_stack_grows_up)
-    scheme_stack_boundary += (FIXED_STACK_SIZE - STACK_SAFETY_MARGIN);
-  else
-    scheme_stack_boundary += (STACK_SAFETY_MARGIN - FIXED_STACK_SIZE);
-#endif
-
-#ifdef WINDOWS_FIND_STACK_BOUNDS
-  scheme_stack_boundary = GC_get_stack_base();
-  scheme_stack_boundary += (STACK_SAFETY_MARGIN - 0x100000);
-#endif
-
-#ifdef MACOS_FIND_STACK_BOUNDS
-  scheme_stack_boundary = (unsigned long)&v +  STACK_SAFETY_MARGIN - StackSpace();
-#endif
-
-#ifdef PALMOS_FIND_STACK_BOUNDS
-  {
-    Ptr s, e;
-    SysGetStackInfo(Ptr &s, &e);
-    scheme_stack_boundary = (unsigned long)e + STACK_SAFETY_MARGIN;
-  }
-#endif
-
-#ifdef BEOS_FIND_STACK_BOUNDS
-  {
-    thread_info info;
-    get_thread_info(find_thread(NULL), &info);
-    scheme_stack_boundary = (unsigned long)info.stack_base + STACK_SAFETY_MARGIN;
-  }
-#endif
-
-#ifdef OSKIT_FIXED_STACK_BOUNDS
-  scheme_stack_boundary = (unsigned long)base_stack_start + STACK_SAFETY_MARGIN;
-#endif
-
-#ifdef UNIX_FIND_STACK_BOUNDS
-  getrlimit(RLIMIT_STACK, &rl);
-
-  {
-    unsigned long bnd;
-    bnd = (unsigned long)GC_get_stack_base();
-
-    if (scheme_stack_grows_up)
-      bnd += ((unsigned long)rl.rlim_cur - STACK_SAFETY_MARGIN);
-    else
-      bnd += (STACK_SAFETY_MARGIN - (unsigned long)rl.rlim_cur);
-
-# ifndef MZ_REAL_THREADS
-    scheme_stack_boundary = bnd;
-# else
-    scheme_current_process->stack_end = (void *)bnd;
-# endif
-  }
-#endif
-}
+/*========================================================================*/
+/*                          continuation marks                            */
+/*========================================================================*/
 
 void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
 {
@@ -1837,6 +1948,12 @@ void scheme_temp_inc_mark_depth()
   MZ_CONT_MARK_POS += 2;
 }
 
+/*========================================================================*/
+/*                         eval-apply helpers                             */
+/*========================================================================*/
+
+/* called in schapp.h */
+
 static Scheme_Object *do_apply_known_k(void)
 {
   Scheme_Process *p = scheme_current_process;
@@ -1905,8 +2022,6 @@ Scheme_Object *scheme_check_one_value(Scheme_Object *v)
   return v;
 }
 
-static Scheme_Object *zero_rands_ptr;
-
 static Scheme_Object *do_eval_k(void)
 {
   Scheme_Process *p = scheme_current_process;
@@ -1922,50 +2037,6 @@ static Scheme_Object *do_eval_k(void)
 			p->ku.k.i2);
 }
 
-int scheme_check_runstack(long size)
-{
-#ifndef RUNSTACK_IS_GLOBAL
-  Scheme_Process *p = scheme_current_process;
-#endif
-
-  return ((MZ_RUNSTACK - MZ_RUNSTACK_START) >= (size + TAIL_COPY_THRESHOLD));
-}
-
-void *scheme_enlarge_runstack(long size, void *(*k)())
-{
-  Scheme_Process *p = scheme_current_process;
-  Scheme_Saved_Stack *saved;
-  void *v;
-
-  saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
-
-#ifdef MZTAG_REQUIRED
-  saved->type = scheme_rt_saved_stack;
-#endif
-  saved->prev = p->runstack_saved;
-  saved->runstack = MZ_RUNSTACK;
-  saved->runstack_start = MZ_RUNSTACK_START;
-  saved->runstack_size = p->runstack_size;
-  
-  size += TAIL_COPY_THRESHOLD;
-  if (size < SCHEME_STACK_SIZE)
-    size = SCHEME_STACK_SIZE;
-
-  p->runstack_saved = saved;
-  p->runstack_size = size;
-  MZ_RUNSTACK_START = scheme_malloc_allow_interior(sizeof(Scheme_Object*) * size);
-  MZ_RUNSTACK = MZ_RUNSTACK_START + size;
-  
-  v = k();
-  
-  p->runstack_saved = saved->prev;
-  MZ_RUNSTACK = saved->runstack;
-  MZ_RUNSTACK_START = saved->runstack_start;
-  p->runstack_size = saved->runstack_size;
-
-  return v;
-}
-
 #ifdef REGISTER_POOR_MACHINE
 # define USE_LOCAL_RUNSTACK 0
 # define DELAY_THREAD_RUNSTACK_UPDATE 0
@@ -1973,6 +2044,36 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 # define USE_LOCAL_RUNSTACK 1
 # define DELAY_THREAD_RUNSTACK_UPDATE 1
 #endif
+
+/*========================================================================*/
+/*                        main eval-apply loop                            */
+/*========================================================================*/
+
+/* This is the main evaluator loop. It's roughly of the form:
+
+   while (1) {
+     if (now-applying) {
+       if (apply-type-1)
+         ...
+       else if (apply-type-2)
+         ...
+       else ...
+     } else {
+       switch (eval-type) {
+         case eval-type-1:
+           ...
+         case eval-type-2:
+           ...
+         ...
+       }
+     }
+   }
+
+   The main use of #ifdefs is whether to use global variables for the
+   Scheme stack pointer or to use local variables. Different
+   architectures work best with different choices.
+
+ */
 
 #ifdef MZ_REAL_THREADS
 Scheme_Object *
@@ -2096,9 +2197,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    p->tail_buffer = tb;
 	  }
 	}
-#ifdef AGRESSIVE_ZERO_TB
 	p->tail_buffer_set = 0;
-#endif
       } 
 
       UPDATE_THREAD_RSPTR();
@@ -2228,10 +2327,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    }
 	  }
 	}
-#ifdef AGRESSIVE_ZERO_TB
 	if (rands == p->tail_buffer)
 	  p->tail_buffer_set = 0;
-#endif
       } else {
 	if (num_rands) {
 	  UPDATE_THREAD_RSPTR_FOR_ERROR();
@@ -2285,9 +2382,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    p->tail_buffer = tb;
 	  }
 	}
-#ifdef AGRESSIVE_ZERO_TB
 	p->tail_buffer_set = 0;
-#endif
       }
 
       UPDATE_THREAD_RSPTR();
@@ -2344,10 +2439,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	value = (Scheme_Object *)vals;
       } else
 	value = rands[0];
-#ifdef AGRESSIVE_ZERO_TB
       if (rands == p->tail_buffer)
 	p->tail_buffer_set = 0;
-#endif
       
       c = (Scheme_Cont *)obj;
       
@@ -2423,10 +2516,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	p->cjs.num_vals = 1;
       }
 
-#ifdef AGRESSIVE_ZERO_TB
       if (rands == p->tail_buffer)
 	p->tail_buffer_set = 0;
-#endif
 
       if (!SCHEME_CONT_HOME(obj)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
@@ -2668,9 +2759,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	       before any GC can happen. */
 
 	    values = p->ku.multiple.array;
-#ifdef AGRESSIVE_ZERO_FOR_GC
 	    p->ku.multiple.array = NULL;
-#endif
 	    stack = RUNSTACK;
 	    if (ab) {
 	      while (c--) {
@@ -2828,9 +2917,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     obj = p->ku.apply.tail_rator;
     num_rands = p->ku.apply.tail_num_rands;
     rands = p->ku.apply.tail_rands;
-#ifdef AGRESSIVE_ZERO_FOR_GC
     p->ku.apply.tail_rands = NULL;
-#endif
     RUNSTACK = old_runstack;
     RUNSTACK_CHANGED();
     goto apply_top;
@@ -2839,9 +2926,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   if (SAME_OBJ(v, SCHEME_EVAL_WAITING)) {
     RESET_LOCAL_RUNSTACK();
     obj = p->ku.eval.wait_expr;
-#ifdef AGRESSIVE_ZERO_FOR_GC
     p->ku.eval.wait_expr = NULL;
-#endif
     goto eval_top;
   }
 
@@ -2863,6 +2948,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   return v;
 }
+
+/*========================================================================*/
+/*                  eval/compile/expand starting points                   */
+/*========================================================================*/
 
 Scheme_Object *scheme_eval(Scheme_Object *obj, Scheme_Env *env)
 {
@@ -3236,7 +3325,9 @@ enable_break(int argc, Scheme_Object *argv[])
   return v;
 }
 
-/****************************************************/
+/*========================================================================*/
+/*       [un]marshalling application, branch, sequence, wcm bytecode      */
+/*========================================================================*/
 
 #define BOOL(x) (x ? scheme_true : scheme_false)
 
@@ -3303,8 +3394,6 @@ static Scheme_Object *write_branch(Scheme_Object *obj)
 		   scheme_protect_quote(b->fbranch)));
 }
 
-#define MAKE_BRANCH scheme_make_branch
-
 static Scheme_Object *read_branch(Scheme_Object *obj)
 {
 #if 0
@@ -3312,9 +3401,9 @@ static Scheme_Object *read_branch(Scheme_Object *obj)
     scheme_signal_error("bad compiled branch");
 #endif
 
-  return MAKE_BRANCH(SCHEME_CAR(obj), 
-		     SCHEME_CAR(SCHEME_CDR(obj)),
-		     SCHEME_CDR(SCHEME_CDR(obj)));
+  return scheme_make_branch(SCHEME_CAR(obj), 
+			    SCHEME_CAR(SCHEME_CDR(obj)),
+			    SCHEME_CDR(SCHEME_CDR(obj)));
 }
 
 static Scheme_Object *write_with_cont_mark(Scheme_Object *obj)
@@ -3432,7 +3521,9 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
   return scheme_make_syntax_link(f, first);
 }
 
-/**********************************************************************/
+/*========================================================================*/
+/*                         precise GC traversers                          */
+/*========================================================================*/
 
 #ifdef MZ_PRECISE_GC
 

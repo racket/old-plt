@@ -1,0 +1,53 @@
+
+_Version_ or _version_: PLT software online version checking
+==========================================================
+
+The version collection allows online version checking of 
+PLT software.  The user-side software sends version 
+information about installed software to a server that
+compares that information against the latest released
+versions.
+
+In particular, the user-side software sends to the server
+
+ - the binary version as reported by (version), a 
+   MzScheme primitive, and
+ - the values of the release-version and release-iteration  
+    fields in the info.ss file for collections, if 
+    those fields exist
+
+If the binary version is out of date, that information is
+reported to the user.  Otherwise, the status of each 
+package is reported.  The determination of whether a 
+package is up-to-date is made on the server side.
+
+Two files are used to support launchers that obtain 
+version information:
+
+> check-gui.ss
+  creates a MrEd launcher `Check version' for version-checking
+
+> check-text.ss
+  creates a MzScheme launcher `Check version-nw' for version-checking
+
+These files contain modules, so they can be run with
+
+ (require (lib "check-gui.ss" "version"))
+
+and
+
+ (require (lib "check-text.ss" "version"))
+
+The launchers created from these files accept one or more 
+collection arguments on the command-line, using the `-l' flag.  
+If no collections are specified, all collections with version 
+information are checked.  Otherwise, only the specified collections 
+are checked.
+
+Another file 
+
+> version.ss
+
+works like check-gui.ss, except that it is meant to be 
+invoked with load, and always checks all collections with
+release information.

@@ -1,0 +1,17 @@
+16 + 18;; (* 34 *)
+2*8 + 3*6;; (* 34 *)
+(2 * 8) + (3 * 6);; (* 34 *)
+2 * (8 + 3) * 6;; (* 132 *)
+((2 * 8) + 3) * 6;; (* 114 *)
+2 < 3;; (* true *)
+2 > 3;; (* false *)
+2.0 ** 0.5;; (* 1.41421356237 *)
+let inchesPerMile = 12 * 3 * 1760;; (* val inchesPerMile : int = 63360 *)
+let a = 8 * 16 * 127;; (* val a : int = 16256 *)
+a * a + 2 * a;; (* int = 264290048 *)
+let cube (x:int) = x * x * x;; (* val cube : int -> int = <fun> *)
+cube 9;; (* int = 729 *)
+let sumsq (x:int) (y:int) = x*x + y*y;; (* val sumsq : int -> int -> int = <fun> *)
+sumsq 3 4;; (* int = 25 *)
+
+

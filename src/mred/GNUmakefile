@@ -21,7 +21,7 @@ WXMELDFLAGS = -Lwxme/$(OBJDIR)
 WXMELDLIBS = -lwxme
 
 MREDLDFLAGS = $(LDFLAGS) $(MZSCHEMELDFLAGS) $(WXSCHEMELDFLAGS) $(WXMELDFLAGS)
-MREDLDLIBS = $(MZSCHEMELDLIBS) $(WXSCHEMELDLIBS) $(WXMELDLIBS) $(LDLIBS) $(LDNONSTATICLIBS)
+MREDLDLIBS = $(MZSCHEMELDLIBS) $(WXSCHEMELDLIBS) $(WXMELDLIBS) -lwx_xt -lXpm -limage_xt $(LDLIBS) $(LDNONSTATICLIBS)
 
 MREDOBJECTS = $(OBJDIR)/mred.o $(OBJDIR)/mredx.o
 
@@ -94,7 +94,7 @@ $(OBJDIR)/checkm.o: misc/checkm.c
 	$(CC) $(CFLAGS) $(LOCALFLAGS) -c misc/checkm.c -o $(OBJDIR)/checkm.o
 
 wx:
-	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx
+	cd $(WXDIR)/src/x; $(MAKE)
 
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
                    ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP) $(WXDIR)/src/Windows/Frame.h \
@@ -128,7 +128,7 @@ depend:
 TILDES=*~ ../collects/mrdemo/*~ demo/turtles/*~ demo/morph/*~ system/*~ collects/mred/*~ tests/*~ misc/*~ windows/*~ ../*~
 
 clean-mred:
-	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx clean
+	cd $(WXDIR)/src/x; $(MAKE) clean
 	rm -rf objects/*/*.o $(TILDES) core
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean

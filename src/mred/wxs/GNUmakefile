@@ -31,7 +31,7 @@ objects:
 	mkdir objects
 
 $(OBJDIR)/libwxscheme.a : $(OBJECTS) 
-	$(AR) ruv $(OBJDIR)/libwxscheme.a $(OBJECTS)
+	$(AR) $(ARFLAGS) $(OBJDIR)/libwxscheme.a $(OBJECTS)
 	$(RANLIB) $(OBJDIR)/libwxscheme.a
 
 names:

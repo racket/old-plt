@@ -24,7 +24,7 @@ HEADERS = wx_media.h wx_medad.h wx_cgrec.h wx_medio.h wx_style.h \
 HIDEDIR = /home/mflatt/mredhide
 
 $(OBJDIR)/libwxme.a: objects $(OBJDIR) $(OBJECTS)
-	$(AR) ruv $(OBJDIR)/libwxme.a $(OBJECTS)
+	$(AR) $(ARFLAGS) $(OBJDIR)/libwxme.a $(OBJECTS)
 	$(RANLIB) $(OBJDIR)/libwxme.a
 
 $(OBJDIR): 

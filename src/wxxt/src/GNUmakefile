@@ -16,7 +16,7 @@ include xtmake.env
 #
 # Motif Release 1.2
 #
-#   $RCSfile: Makefile,v $ $Revision: 1.3 $ $Date: 1999/11/04 17:25:31 $
+#   $RCSfile: Makefile,v $ $Revision: 1.4 $ $Date: 1999/11/12 17:27:43 $
 
 # -------------------------------------------------------------------------
 # Makefile generated from "Imake.tmpl" and </tmp/IIf.a07519>
@@ -47,229 +47,17 @@ include xtmake.env
 #
 # Motif Release 1.2.2
 #
-#   $RCSfile: Makefile,v $ $Revision: 1.3 $ $Date: 1999/11/04 17:25:31 $
+#   $RCSfile: Makefile,v $ $Revision: 1.4 $ $Date: 1999/11/12 17:27:43 $
 # platform:  $XConsortium: sun.cf,v 1.72.1.1 92/03/18 13:13:37 rws Exp $
 
 # operating system:  SunOS 4.1.3
 
 # $XConsortium: sunLib.rules,v 1.7 91/12/20 11:19:47 rws Exp $
 
-# -------------------------------------------------------------------------
-# site-specific configuration parameters that go after
-# the platform-specific parameters - edit site.def to change
-
-# site:  $XConsortium: site.def,v 1.2 91/07/30 20:26:44 rws Exp $
-
 WXDIR = ..
 
 OBJDIR = objects/sys$(MZPLATFORMSUFFIX)
 WXLIBDIR = $(WXDIR)/lib/sys$(MZPLATFORMSUFFIX)
-
-              TOP = .
-      CURRENT_DIR = .
-
-               AR = ar clq
-
-              CPP = /lib/cpp $(STD_CPP_DEFINES)
-    PREPROCESSCMD = cc -E $(STD_CPP_DEFINES)
-          INSTALL = install
-               LD = ld
-               LN = ln -s
-               MV = mv
-               CP = cp
-
-  RANLIBINSTFLAGS =
-
-               RM = rm -f
-            TROFF = psroff
-         MSMACROS = -ms
-              TBL = tbl
-              EQN = eqn
-     STD_INCLUDES =
-  STD_CPP_DEFINES =
-      STD_DEFINES =
- EXTRA_LOAD_FLAGS =
-  EXTRA_LIBRARIES =
-             TAGS = ctags
-
-    SHAREDCODEDEF = -DSHAREDCODE
-         SHLIBDEF = -DSUNSHLIB
-
-    PROTO_DEFINES =
-
-     INSTPGMFLAGS =
-
-     INSTBINFLAGS = -m 0755
-     INSTUIDFLAGS = -m 4755
-     INSTLIBFLAGS = -m 0644
-     INSTINCFLAGS = -m 0444
-     INSTMANFLAGS = -m 0444
-     INSTDATFLAGS = -m 0444
-    INSTKMEMFLAGS = -g kmem -m 2755
-
-      PROJECTROOT = /usr/local/X11R5
-
-     TOP_INCLUDES = -I$(INCROOT)
-
-      CDEBUGFLAGS = -O
-        CCOPTIONS = 
-
-      ALLINCLUDES = $(INCLUDES) $(EXTRA_INCLUDES) $(TOP_INCLUDES) $(STD_INCLUDES)
-       ALLDEFINES = $(ALLINCLUDES) $(STD_DEFINES) $(EXTRA_DEFINES) $(PROTO_DEFINES) $(DEFINES)
-
-           LDLIBS = $(SYS_LIBRARIES) $(EXTRA_LIBRARIES)
-
-        LDOPTIONS = $(CDEBUGFLAGS) $(CCOPTIONS) $(LOCAL_LDFLAGS) -L$(USRLIBDIR)
-
-   LDCOMBINEFLAGS = -X -r
-      DEPENDFLAGS =
-
-        MACROFILE = sun.cf
-           RM_CMD = $(RM) *.CKP *.ln *.BAK *.bak *.o core errs ,* *~ *.a .emacs_* tags TAGS make.log MakeOut
-
-    IMAKE_DEFINES =
-
-         IRULESRC = $(CONFIGDIR)
-        IMAKE_CMD = $(IMAKE) -DUseInstalled -I$(IRULESRC) $(IMAKE_DEFINES)
-
-     ICONFIGFILES = $(IRULESRC)/Imake.tmpl $(IRULESRC)/Imake.rules \
-			$(IRULESRC)/Project.tmpl $(IRULESRC)/site.def \
-			$(IRULESRC)/$(MACROFILE) $(EXTRA_ICONFIGFILES)
-
-# -------------------------------------------------------------------------
-# X Window System Build Parameters
-# $XConsortium: Project.tmpl,v 1.138.1.1 92/11/11 09:49:19 rws Exp $
-
-# -------------------------------------------------------------------------
-# X Window System make variables; this need to be coordinated with rules
-
-          PATHSEP = /
-        USRLIBDIR = /usr/local/X11R5/lib
-           BINDIR = /usr/local/X11R5/bin
-          INCROOT = /usr/local/X11R5/include
-     BUILDINCROOT = $(TOP)
-      BUILDINCDIR = $(BUILDINCROOT)/X11
-      BUILDINCTOP = ..
-           INCDIR = $(INCROOT)/X11
-           ADMDIR = /usr/adm
-           LIBDIR = $(USRLIBDIR)/X11
-        CONFIGDIR = $(LIBDIR)/config
-
-          FONTDIR = $(LIBDIR)/fonts
-         XINITDIR = $(LIBDIR)/xinit
-           XDMDIR = $(LIBDIR)/xdm
-           TWMDIR = $(LIBDIR)/twm
-          MANPATH = /usr/local/X11R5/man
-    MANSOURCEPATH = $(MANPATH)/man
-        MANSUFFIX = n
-     LIBMANSUFFIX = 3
-           MANDIR = $(MANSOURCEPATH)$(MANSUFFIX)
-        LIBMANDIR = $(MANSOURCEPATH)$(LIBMANSUFFIX)
-           NLSDIR = $(LIBDIR)/nls
-        PEXAPIDIR = $(LIBDIR)/PEX
-      XAPPLOADDIR = $(LIBDIR)/app-defaults
-       FONTCFLAGS = -t
-
-     INSTAPPFLAGS = $(INSTDATFLAGS)
-
-            IMAKE = imake
-           DEPEND = makedepend
-              RGB = rgb
-
-            FONTC = bdftopcf
-
-        MKFONTDIR = mkfontdir
-        MKDIRHIER = /bin/sh $(BINDIR)/mkdirhier
-
-        CONFIGSRC = $(TOP)/config
-       DOCUTILSRC = $(TOP)/doc/util
-        CLIENTSRC = $(TOP)/clients
-          DEMOSRC = $(TOP)/demos
-           LIBSRC = $(TOP)/lib
-          FONTSRC = $(TOP)/fonts
-       INCLUDESRC = $(TOP)/X11
-        SERVERSRC = $(TOP)/server
-          UTILSRC = $(TOP)/util
-        SCRIPTSRC = $(UTILSRC)/scripts
-       EXAMPLESRC = $(TOP)/examples
-       CONTRIBSRC = $(TOP)/../contrib
-           DOCSRC = $(TOP)/doc
-           RGBSRC = $(TOP)/rgb
-        DEPENDSRC = $(UTILSRC)/makedepend
-         IMAKESRC = $(CONFIGSRC)
-         XAUTHSRC = $(LIBSRC)/Xau
-          XLIBSRC = $(LIBSRC)/X
-           XMUSRC = $(LIBSRC)/Xmu
-       TOOLKITSRC = $(LIBSRC)/Xt
-       AWIDGETSRC = $(LIBSRC)/Xaw
-       OLDXLIBSRC = $(LIBSRC)/oldX
-      XDMCPLIBSRC = $(LIBSRC)/Xdmcp
-      BDFTOSNFSRC = $(FONTSRC)/bdftosnf
-      BDFTOSNFSRC = $(FONTSRC)/clients/bdftosnf
-      BDFTOPCFSRC = $(FONTSRC)/clients/bdftopcf
-     MKFONTDIRSRC = $(FONTSRC)/clients/mkfontdir
-         FSLIBSRC = $(FONTSRC)/lib/fs
-    FONTSERVERSRC = $(FONTSRC)/server
-     EXTENSIONSRC = $(TOP)/extensions
-         XILIBSRC = $(EXTENSIONSRC)/lib/xinput
-        PEXLIBSRC = $(EXTENSIONSRC)/lib/PEXlib
-      PHIGSLIBSRC = $(EXTENSIONSRC)/lib/PEX
-
-# $XConsortium: sunLib.tmpl,v 1.14.1.2 92/11/11 09:55:02 rws Exp $
-
-SHLIBLDFLAGS = -assert pure-text
-PICFLAGS = -pic
-
-  DEPEXTENSIONLIB =
-     EXTENSIONLIB = -lXext
-
-          DEPXLIB = $(DEPEXTENSIONLIB)
-             XLIB = $(EXTENSIONLIB) -lX11
-
-        DEPXMULIB = $(USRLIBDIR)/libXmu.sa.$(SOXMUREV)
-       XMULIBONLY = -lXmu
-           XMULIB = -lXmu
-
-       DEPOLDXLIB =
-          OLDXLIB = -loldX
-
-      DEPXTOOLLIB = $(USRLIBDIR)/libXt.sa.$(SOXTREV)
-         XTOOLLIB = -lXt
-
-        DEPXAWLIB = $(USRLIBDIR)/libXaw.sa.$(SOXAWREV)
-           XAWLIB = -lXaw
-
-        DEPXILIB =
-           XILIB = -lXi
-
-        DEPPEXLIB =
-           PEXLIB = -lPEX5
-
-        SOXLIBREV = 4.10
-          SOXTREV = 4.10
-         SOXAWREV = 5.0
-        SOOLDXREV = 4.10
-         SOXMUREV = 4.10
-        SOXEXTREV = 4.10
-      SOXINPUTREV = 4.10
-         SOPEXREV = 1.0
-
-      DEPXAUTHLIB = $(USRLIBDIR)/libXau.a
-         XAUTHLIB =  -lXau
-      DEPXDMCPLIB = $(USRLIBDIR)/libXdmcp.a
-         XDMCPLIB =  -lXdmcp
-
-        DEPPHIGSLIB = $(USRLIBDIR)/libphigs.a
-           PHIGSLIB =  -lphigs
-
-       DEPXBSDLIB = $(USRLIBDIR)/libXbsd.a
-          XBSDLIB =  -lXbsd
-
-          DEPLIBS = $(DEPXAWLIB) $(DEPXMULIB) $(DEPXTOOLLIB) $(DEPXLIB)
-
-         DEPLIBS1 = $(DEPLIBS)
-         DEPLIBS2 = $(DEPLIBS)
-         DEPLIBS3 = $(DEPLIBS)
 
 #------------------------------------------------------------------------------
 # libraryname
@@ -335,7 +123,7 @@ CCOBJS =\
  Windows/$(OBJDIR)/CheckBox.o\
  Windows/$(OBJDIR)/Choice.o\
  Windows/$(OBJDIR)/DialogBox.o\
- ${ENHDIALOGBOX}\
+ \
  Windows/$(OBJDIR)/Frame.o\
  Windows/$(OBJDIR)/Gauge.o\
  Windows/$(OBJDIR)/Item.o\
@@ -490,7 +278,7 @@ all:: $(WXLIBDIR)/lib$(LIBNAME).a
 
 $(WXLIBDIR)/lib$(LIBNAME).a: $(OBJS)
 	$(RM) $@
-	$(AR) $@ $(OBJS)
+	$(AR) $(ARFLAGS) $@ $(OBJS)
 	$(RANLIB) $@
 
 clean::

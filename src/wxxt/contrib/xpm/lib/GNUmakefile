@@ -48,7 +48,7 @@ clean:
 	$(RM) $(OBJDIR)/*.o $(LIBDIR)/libXpm.a
 
 $(LIBDIR)/libXpm.a: $(OBJS)
-	$(AR) ruv $(LIBDIR)/libXpm.a $(OBJS)
+	$(AR) $(ARFLAGS) $(LIBDIR)/libXpm.a $(OBJS)
 	$(RANLIB) $(LIBDIR)/libXpm.a
 
 # Other dependencies.

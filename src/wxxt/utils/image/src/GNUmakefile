@@ -60,7 +60,7 @@ $(OBJDIR):
 
 $(IMAGELIB): $(OBJECTS)	
 	rm -f $@
-	ar rv $@ $(OBJECTS)
+	$(AR) $(ARFLAGS) $@ $(OBJECTS)
 	$(RANLIB) $@
 
 $(OBJDIR)/wx_image.$(OBJSUFF):	wx_image.$(SRCSUFF) wx_image.h wx_imgx.h

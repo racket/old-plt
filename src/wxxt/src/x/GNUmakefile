@@ -1,5 +1,6 @@
 
-# This file simply provides some compatibility with wxWindows/Motif
+# Builds the wxWindows library proper, plus the wxImage and XPM
+# libraries.
 
 PLTSRCDIR = ../../..
 include ../xtmake.env
@@ -44,14 +45,14 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
      ../Windows/$(WXOBJS) \
      ../XWidgets/$(WXOBJS)
 	cd ..; $(MAKE)
-	cd ../../utils/image/src/; $(MAKE) -f makefile.unx
+	cd ../../utils/image/src/; $(MAKE)
 	cd ../../contrib/xpm/lib/; $(MAKE)
 
 clean:
 	cd ..; $(MAKE) clean
 	cd ../../contrib/xpm/lib; $(MAKE) clean
 	rm -f $(XPMLIBDIR)/libXpm.a
-	cd ../../utils/image/src; $(MAKE) -f makefile.unx cleaneach
+	cd ../../utils/image/src; $(MAKE) cleaneach
 
 $(XPMOBJMAINDIR):
 	mkdir $(XPMOBJMAINDIR)

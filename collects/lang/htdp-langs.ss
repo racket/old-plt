@@ -246,7 +246,7 @@
           (define/override (front-end/complete-program input settings teachpacks)
             (let-values ([(port source offset line col) (drscheme:language:open-program-for-reading input)])
               (let ([state 'init]
-                    ;; state : init -> require -> done
+                    ;; state : 'init => 'require => 'done
                     [reader (get-reader)])
                 
                 (lambda ()
@@ -356,25 +356,25 @@
                       (cadr ib)))))
          (syntax->list ids)))
                  
+      
+      ;                                                                                              
+      ;                                                                                              
+      ;                                                                                              
+      ;   ;                                                             ;                     ;      
+      ;   ;                                                             ;                     ;      
+      ;   ;                                                             ;                     ;      
+      ;   ; ;;    ;;;    ; ;;     ;; ;   ; ;;  ;;    ;;;    ; ;;        ; ;;    ;;;     ;;;   ;   ;  
+      ;   ;;  ;  ;   ;   ;;  ;   ;  ;;   ;;  ;;  ;  ;   ;   ;;  ;       ;;  ;  ;   ;   ;   ;  ;  ;   
+      ;   ;   ;      ;   ;   ;  ;    ;   ;   ;   ;      ;   ;   ;       ;   ;      ;  ;       ; ;    
+      ;   ;   ;   ;;;;   ;   ;  ;    ;   ;   ;   ;   ;;;;   ;   ;       ;   ;   ;;;;  ;       ;;;    
+      ;   ;   ;  ;   ;   ;   ;  ;    ;   ;   ;   ;  ;   ;   ;   ;       ;   ;  ;   ;  ;       ;  ;   
+      ;   ;   ;  ;   ;   ;   ;   ;  ;;   ;   ;   ;  ;   ;   ;   ;       ;   ;  ;   ;   ;   ;  ;   ;  
+      ;   ;   ;   ;;;;;  ;   ;    ;; ;   ;   ;   ;   ;;;;;  ;   ;       ;   ;   ;;;;;   ;;;   ;    ; 
+      ;                              ;                                                               
+      ;                         ;    ;                                                               
+      ;                          ;;;;                                                                
+      
 
-;                                                                                              
-;                                                                                              
-;                                                                                              
-;   ;                                                             ;                     ;      
-;   ;                                                             ;                     ;      
-;   ;                                                             ;                     ;      
-;   ; ;;    ;;;    ; ;;     ;; ;   ; ;;  ;;    ;;;    ; ;;        ; ;;    ;;;     ;;;   ;   ;  
-;   ;;  ;  ;   ;   ;;  ;   ;  ;;   ;;  ;;  ;  ;   ;   ;;  ;       ;;  ;  ;   ;   ;   ;  ;  ;   
-;   ;   ;      ;   ;   ;  ;    ;   ;   ;   ;      ;   ;   ;       ;   ;      ;  ;       ; ;    
-;   ;   ;   ;;;;   ;   ;  ;    ;   ;   ;   ;   ;;;;   ;   ;       ;   ;   ;;;;  ;       ;;;    
-;   ;   ;  ;   ;   ;   ;  ;    ;   ;   ;   ;  ;   ;   ;   ;       ;   ;  ;   ;  ;       ;  ;   
-;   ;   ;  ;   ;   ;   ;   ;  ;;   ;   ;   ;  ;   ;   ;   ;       ;   ;  ;   ;   ;   ;  ;   ;  
-;   ;   ;   ;;;;;  ;   ;    ;; ;   ;   ;   ;   ;;;;;  ;   ;       ;   ;   ;;;;;   ;;;   ;    ; 
-;                              ;                                                               
-;                         ;    ;                                                               
-;                          ;;;;                                                                
-                 
-                 
       ;; this inspector should be powerful enough to see
       ;; any structure defined in the user's namespace
       (define drscheme-inspector (current-inspector))

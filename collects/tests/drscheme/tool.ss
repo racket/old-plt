@@ -44,4 +44,5 @@
                     (cons button (remq button l)))))))
       
       (when (getenv "PLTDRTESTS")
+        (printf "PLTDRTESTS: installing unit frame mixin\n")
         (drscheme:get/extend:extend-unit-frame tool-mixin)))))

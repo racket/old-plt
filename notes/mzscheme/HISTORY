@@ -1,4 +1,14 @@
 
+Version 103.5:
+
+ * Fixed a memory bug in the run-time support for mzc-compiled code.
+
+ * Added syntax objects and `read-syntax', in preparation for hygienic
+   macros. (Not yet documented.)
+
+ * Added `port-count-lines!', which enables line-couting for a port.
+   Will be useful for `read-syntax'. (Not yet documented.)
+
 Version 103.4:
 
  * Upgraded to gc 6.0alpha4
@@ -43,6 +53,8 @@ Fixed `lambda' and `case-lambda' to signal an error when a keyword
  is used as an argument name
 Fixed leaks (file descriptors, etc.) that could happend with
  thread kills
+Fixed memory bug in the run-time support for mzc-compiled code
+Added `port-count-lines!', which enables line-couting for a port
 Upgraded to gc 6.0alpha4
 
 Version 103, August 28, 2000

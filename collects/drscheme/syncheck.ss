@@ -877,7 +877,7 @@
           (field
            [report-error-parent-panel 'uninitialized-report-error-parent-panel]
            [report-error-panel 'uninitialized-report-error-panel]
-           [report-error-text (new scheme:text%)])
+           [report-error-text (new fw:scheme:text%)])
           (send report-error-text auto-wrap #t)
           (send report-error-text set-autowrap-bitmap #f)
           (send report-error-text lock #t)

@@ -5,6 +5,7 @@
 # For certain platforms and installations, adds extra
 #  directory links (to reach non-standard binaries
 #  through the platform's standard path)
+# Creates .zo files if the user assents
 
 didnothing=" (nothing to do)"
 
@@ -120,6 +121,18 @@ checklink "MrEd/DrScheme" "mred/.bin/sparc-solaris-motif" "mred/.bin/sparc-solar
 if [ `bin/archsys` = "sparc-solaris" ] ; then
   checklink "MrEd/DrScheme" "mred/.bin/sparc-sunos4" "mred/.bin/sparc-solaris" "sparc-sunos4" "SunOS4" "Solaris"
   checklink "MzScheme" "mzscheme/.bin/sparc-sunos4" "mzscheme/.bin/sparc-solaris" "sparc-sunos4" "SunOS4" "Solaris"
+fi
+
+echo 'DrScheme starts up much faster with ".zo" files, but creating ".zo"'
+echo 'files now takes a few minutes and requires about 5MB of additional'
+echo 'disk space. Create ".zo" files later by running the bin/setup-plt.'
+echo -n ' Create ".zo" files now (y/n)? [y] '
+read response
+if [ "$response" != 'n' ] ; then
+  if [ "$response" != 'N' ] ; then
+    didnothing=""
+    bin/setup-plt
+ fi
 fi
 
 echo "PLT installation done" $didnothing

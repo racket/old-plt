@@ -43,9 +43,9 @@
 					    (if (list? (car ttlist))
 						(append (ucvert (car ttlist)) (ucvert (cdr ttlist)))
 						(cons (car (unconvert-tvars (car ttlist) null)) (ucvert (cdr ttlist))))))])
-		       (ucvert progtype))
+		       (<flatten> (ucvert progtype)))
 ;		     (map car (map unconvert-tvars progtype (repeat null (length progtype))))
-		     (list (car (unconvert-tvars progtype null))))))))
+		     (<flatten> (list (car (unconvert-tvars progtype null)))))))))
 
 	   (define (typecheck-ml stmt context)
 ;	     (pretty-print (format "typecheck-ml ~a" stmt))

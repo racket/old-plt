@@ -63,13 +63,13 @@
 
      (define (compile-all stmt location)
        (set! loc location)
-       (list
+       (<flatten> (list
 ;	(datum->syntax-object
 ;	 #f
 	 (let ([result (compile-ml stmt (empty-context))])
 ;	   (pretty-print "Compile successful")
 	   ;(pretty-print (format "initial progval: ~a" result))
-	   result)))
+	    result))))
 ;	 #f)))
 
      (define current-compile-context (make-parameter #f))

@@ -2,7 +2,7 @@
 	(require (lib "list.ss")
 		 (lib "match.ss")
 		 (lib "pretty.ss"))
-	(provide <library-names> user-types built-in-and-user-funcs <constructors>
+	(provide <library-names> user-types built-in-and-user-funcs <constructors> <flatten>
 		 (struct <tuple> (list))
 		 (struct arrow (arglist result))
 		 (struct tvar (tbox))
@@ -260,6 +260,10 @@
 	(hash-table-put! built-in-and-user-funcs "print_newline" (cons (make-arrow (list "unit") "unit") print_newline))
 
 	
-
-	
-)
+	(define (<flatten> a-list)
+	  (if (null? a-list)
+	      null
+	      (if (list? (car a-list))
+		  (append (<flatten> (car a-list)) (<flatten> (cdr a-list)))
+		  (cons (car a-list) (<flatten> (cdr a-list))))))
+	)

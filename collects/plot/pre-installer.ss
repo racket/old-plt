@@ -85,8 +85,6 @@
    pre-installer)
   
   (define (pre-installer plthome)
-    (display plthome)
-    (newline)
     (let*
         [(fit-src-dir
           (build-path here "src" "fit"))
@@ -132,4 +130,32 @@
                         (file-name-from-path plot-scheme-file)
                         f))))
                    (directory-list  plot-src-dir)))))]
-            (make-ext plot-scheme-file plot-c-files plot-src-dir)))))))
+            (make-ext plot-scheme-file plot-c-files plot-src-dir)
+
+	    ;; copy plot docs from src here
+
+	    (let ((docs-dir
+		   (build-path (collection-path "doc") "plot")))
+	      (unless (directory-exists? docs-dir)
+		      (make-directory* docs-dir))
+	      (for-each
+	       (lambda (file)
+                 (let ((new-file (build-path docs-dir (file-name-from-path file))))
+                   (if (file-exists? new-file)
+                       (delete-file new-file))
+                   (copy-file file new-file)))
+	       (find-files
+		(lambda (file)
+		  (or
+		   (regexp-match
+		    #rx"hdindex$"
+		    file)
+		   (and
+		    (not
+		     (regexp-match
+		      #rx".tex" file))
+		    (regexp-match
+		     #rx"plot-docs"
+		     file))))
+		(build-path (collection-path "plot") "src" "docs")))
+	      )))))))

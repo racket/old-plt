@@ -99,7 +99,7 @@ $(WXDIR)/libwx_xt.a:
 	$(MAKE) wx
 
 clean:
-	cd $(WXDIR)/src/x; $(MAKE) clean
+	cd ../wxxt/src/x; $(MAKE) clean
 	rm -f *.o core
 	rm -f gc2/*.o gc2/xsrc/*.c gc2/xsrc/*.cc
 	cd wxme; $(MAKE) clean

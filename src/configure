@@ -2182,14 +2182,15 @@ else
 #ifdef __cplusplus
 extern "C" void exit(int);
 #endif
-inline void *operator new(long size) { return (void *)0x1; }
-  inline void *operator new[](long size) { return (void *)0x2; }  
+  #include <stddef.h> 
+   inline void *operator new(size_t size) { return (void *)0x1; }
+  inline void *operator new[](size_t size) { return (void *)0x2; }  
    class C { int x; };
    int main() {
     return (new C) == (new C[10]);       
    }
 EOF
-if { (eval echo configure:2193: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2194: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   different=yes
 else
@@ -2210,16 +2211,16 @@ fi
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
     echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
-echo "configure:2214: checking whether need to use -fpermissive" >&5
+echo "configure:2215: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2216 "configure"
+#line 2217 "configure"
 #include "confdefs.h"
 #include "X11/Intrinsic.h"
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2223: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2224: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   addperm=no
 else

@@ -31,7 +31,11 @@
     (move-file-in path "String.jinfo")
     (move-file-in path "Throwable.jinfo")
     (for-each (lambda (file)
-                (delete-file (build-path path "compiled" file)))
+                (let ((fp (build-path path "compiled" file)))
+                  (when (file-exists? fp)
+                    (when (< (file-or-directory-modify-seconds fp) 
+                             (file-or-directory-modify-seconds (build-path path "compiled" "Object.jinfo")))                  
+                      (delete-file (build-path path "compiled" file))))))
               (filter (lambda (file)
                         (and
                          (equal? "jinfo" (filename-extension file))

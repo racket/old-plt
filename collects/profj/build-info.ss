@@ -71,27 +71,10 @@
           (loop (cdr cur-defs))))
                         
       ;Add all defs in this file to environment
-      (for-each (lambda (def)
-                  (let ((defname (cons (id-string (def-name def)) pname))
-                        (native-name (cons (string-append (id-string (def-name def)) "-native-methods") pname)))
-                    (send type-recs add-to-env (car defname) pname current-loc)
-                    (when (execution?)
-                      (send type-recs add-to-env (car defname) pname 'interactions))
-                    (send type-recs add-class-req defname #f current-loc)
-                    (send type-recs add-require-syntax defname
-                          (build-require-syntax (car defname) 
-                                                pname 
-                                                (find-directory pname (lambda () (list (build-path 'same))))
-                                                #t))
-                    (send type-recs add-class-req native-name #f current-loc)
-                    (send type-recs add-require-syntax native-name
-                          (build-require-syntax (car native-name)
-                                                pname
-                                                (find-directory pname (lambda () (list (build-path 'same))))
-                                                #f))
-                    (send type-recs add-to-records defname
-                          (lambda () (process-class/iface def pname type-recs (null? args) level)))))
-                  (package-defs prog))
+      (for-each (lambda (def) (add-def-info def pname type-recs current-loc (null? args) level)) 
+                (package-defs prog))
+
+      ;All further definitions do not come from the execution window
       (execution? #f)
       
       ;Add package information to environment
@@ -112,11 +95,38 @@
   (define (build-interactions-info prog level loc type-recs)
     (build-info-location loc)
     (if (list? prog)
-        (for-each (lambda (f) (build-interactions-info f level loc type-recs))
-                  prog)
+        (for-each (lambda (f) (build-interactions-info f level loc type-recs)) prog)
         (when (field? prog)
           (send type-recs add-interactions-field 
                 (process-field prog '("scheme-interactions") type-recs level)))))
+
+  
+  ;add-def-info: def (list string) type-records loc bool symbol -> void
+  (define (add-def-info def pname type-recs current-loc look-in-table level)
+    (let* ((name (id-string (def-name def)))
+           (defname (cons name pname))
+           (native-name (cons (string-append name "-native-methods") pname))
+           (dir (find-directory pname (lambda () (list (build-path 'same))))))
+      (unless (memq 'private (map modifier-kind (header-modifiers (def-header def))))
+        (send type-recs add-to-env name pname current-loc)
+        (when (execution?) (send type-recs add-to-env name pname 'interactions)))
+      (send type-recs add-class-req defname #f current-loc)
+      (send type-recs add-require-syntax defname (build-require-syntax name pname dir #t))
+      (send type-recs add-class-req native-name #f current-loc)
+      (send type-recs add-require-syntax native-name 
+            (build-require-syntax (car native-name) pname dir #f))
+      (send type-recs add-to-records defname
+            (lambda () (process-class/iface def pname type-recs look-in-table level)))
+      
+      ;;get info for Inner member classes
+      (let ([prefix (format "~a." name)])
+	(for-each (lambda (member)
+		    (when (class-def? member)
+		      ;; Adjust id to attach the prefix:
+		      (let ([id (def-name member)])
+			(set-id-string! id (string-append prefix (id-string id))))
+		      (add-def-info member pname level type-recs current-loc #f #t)))
+		  (def-members def)))))
   
   ;add-to-queue: (list definition) -> void
   (define (add-to-queue defs)

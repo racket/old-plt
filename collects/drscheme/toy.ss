@@ -34,10 +34,6 @@
 				      (lambda (button evt) (callback))
 				      "Toy")])
 
-	    ;; this moves the button to the right place in the panel.
-	    ;; this needs to be better.
-	    (printf "-- ~a~n" mzlib:function@:remove)
-
 	    (send panel change-children
 		  (lambda (l)
 		    (cons button
@@ -45,6 +41,12 @@
 
     ;; apply the function to every frame in the group
     (send group for-each-frame to-each-frame)
+
+    (for-each (lambda (x)
+		(printf "checking: ~a against ~a" x (eval x)))
+	      (list 'mred:make-child-info
+		    'zodiac:make-zodiac))
+
     
     (printf "invoked toy@~n")))
 

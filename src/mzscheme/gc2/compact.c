@@ -27,13 +27,15 @@
 #endif
 
 #ifdef OS_X
-# undef GENERATIONS
-# define GENERATIONS 1
+# if GENERATIONS
+#  undef GENERATIONS
+#  define GENERATIONS 0
 /* Under OS, the SIGBUS handler seems not to receive the right
    information about the fault. We figured out where the relevant
    information is on the stack --- as an offset from the last argument
    to the handler --- but it's quite a hack.  So we make it easy to
    disable above. */
+# endif
 #endif
 
 #define USE_FREELIST 0

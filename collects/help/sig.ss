@@ -1,3 +1,5 @@
+(require-library "classd.ss")
+
 (begin-elaboration-time
  (require-library "sig.ss" "mred")
  (require-library "frameworks.ss" "framework"))

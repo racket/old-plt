@@ -33,13 +33,13 @@ Rough BNF
     (eval x)
     (error 'synerr "not a syntax error: ~s" x)))
 
-(define (test tag ans t)
-  (unless (equal?
-	   ans
-	   (parameterize ([(lambda (x) #t)
-			   (lambda (x) x)])
-	     (eval t)))
-    (error 'test "~a: expected ~s got ~s" tag ans t)))
+(define (test tag expected t)
+  (let ([got 
+	 (with-handlers ([(lambda (x) #t)
+			  (lambda (x) x)])
+	   (eval t))])
+    (unless (equal? expected got)
+      (error 'test "~a: expected ~s got ~s" tag expected got))))
 
 (synerr '(class/d object% ((public x)) (define (x) 1)))
 (synerr '(class/d object% () ((public x))))

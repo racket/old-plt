@@ -34,7 +34,7 @@
       (define current-launcher-variant
 	(make-parameter 'normal
 			(lambda (v)
-			  (unless (memq v '(normal 3m))
+			  (unless (memq v '(normal 3m script))
 			    (raise-type-error
 			     'current-launcher-variant
 			     "variant symbol"
@@ -42,27 +42,32 @@
 			  v)))
 
       (define (available-variants kind)
-	(let ([3m (if (eq? 'unix (system-type))
-		      (if (and plthome
-			       (file-exists? (build-path plthome "bin" (format "~a3m" kind))))
-			  '(3m)
-			  null)
-		      ;; 3m launchers not yet supported for other platforms:
-		      null)]
-	      [normal (if (eq? kind 'mzscheme)
-			  '(normal) ; MzScheme is always available
-			  (if (and plthome
-				   (cond
-				    [(eq? 'unix (system-type))
-				     (file-exists? (build-path plthome "bin" (format "~a" kind)))]
-				    [(eq? 'macosx (system-type))
-				     (directory-exists? (build-path plthome "MrEd.app"))]
-				    [(eq? 'windows (system-type))
-				     (file-exists? (build-path plthome (format "~a.exe" kind)))]
-				    [else #t]))
-			      '(normal)
-			      null))])
-	  (append 3m normal)))
+	(let* ([3m (if (eq? 'unix (system-type))
+		       (if (and plthome
+				(file-exists? (build-path plthome "bin" (format "~a3m" kind))))
+			   '(3m)
+			   null)
+		       ;; 3m launchers not yet supported for other platforms:
+		       null)]
+	       [normal (if (eq? kind 'mzscheme)
+			   '(normal) ; MzScheme is always available
+			   (if (and plthome
+				    (cond
+				     [(eq? 'unix (system-type))
+				      (file-exists? (build-path plthome "bin" (format "~a" kind)))]
+				     [(eq? 'macosx (system-type))
+				      (directory-exists? (build-path plthome "MrEd.app"))]
+				     [(eq? 'windows (system-type))
+				      (file-exists? (build-path plthome (format "~a.exe" kind)))]
+				     [else #t]))
+			       '(normal)
+			       null))]
+	       [script (if (and (eq? 'macosx (system-type))
+				(eq? kind 'mred)
+				(pair? normal))
+			   '(script)
+			   null)])
+	  (append 3m normal script)))
 
       (define (available-mred-variants)
 	(available-variants 'mred))
@@ -80,7 +85,7 @@
 
       (define (variant-suffix variant)
 	(case variant
-	  [(normal) ""]
+	  [(normal script) ""]
 	  [(3m) "3m"]))
 
       (define (add-file-suffix path variant)
@@ -223,15 +228,23 @@
       (define (make-unix-launcher kind variant flags dest aux)
 	(install-template dest kind "sh" "sh") ; just for something that's executable
 	(let* ([newline (string #\newline)]
-	       [post-flags (if (eq? kind 'mred)
+	       [alt-exe (let ([m (and (eq? kind 'mred)
+				      (eq? variant 'script)
+				      (assq 'exe-name aux))])
+			  (and m
+			       (format "~a.app/Contents/MacOS/~a" (cdr m) (cdr m))))]
+	       [post-flags (if (and (eq? kind 'mred)
+				    (not (eq? variant 'script)))
 			       (skip-x-flags flags)
 			       null)]
-	       [pre-flags (if (null? post-flags)
-			      flags
-			      (let loop ([f flags])
-				(if (eq? f post-flags)
-				    null
-				    (cons (car f) (loop (cdr f))))))]
+	       [pre-flags (cond
+			   [alt-exe null]
+			   [(null? post-flags) flags]
+			   [else
+			    (let loop ([f flags])
+			      (if (eq? f post-flags)
+				  null
+				  (cons (car f) (loop (cdr f)))))])]
 	       [pre-str (str-list->sh-str pre-flags)]
 	       [post-str (str-list->sh-str post-flags)]
 	       [header (format
@@ -246,12 +259,15 @@
 			 newline)
 			kind (regexp-replace* "\"" plthome "\\\\\""))]
 	       [exec (format
-		      "exec \"${PLTHOME}/bin/~a~a\" ~a"
-		      kind (variant-suffix variant) pre-str)]
+		      "exec \"${PLTHOME}/~a~a~a\" ~a"
+		      (if alt-exe "" "bin/")
+		      (or alt-exe kind)
+		      (variant-suffix variant) pre-str)]
 	       [args (format
 		      " ~a ${1+\"$@\"}~n"
 		      post-str)]
 	       [assemble-exec (if (and (eq? kind 'mred)
+				       (not (eq? variant 'script))
 				       (not (null? post-flags)))
 				  output-x-arg-getter
 				  string-append)])
@@ -329,8 +345,9 @@
      
       ; make-macosx-launcher : symbol (listof str) pathname ->  
       (define (make-macosx-launcher kind variant flags dest aux)
-	(if (eq? kind 'mzscheme) 
-	    ;; MzScheme launcher is the same as for Unix
+	(if (or (eq? kind 'mzscheme) 
+		(eq? variant 'script))
+	    ;; MzScheme or script launcher is the same as for Unix
 	    (make-unix-launcher kind variant flags dest aux)
 	    ;; MrEd "launcher" is a stand-alone executable
 	    (make-embedding-executable dest (eq? kind 'mred) #f
@@ -431,13 +448,21 @@
 			   [else file]))
 
       (define (mred-program-launcher-path name)
-	(string-append
-	 (add-file-suffix 
-	  (build-path l-home (sfx name))
-	  (current-launcher-variant))
-	 (if (eq? (system-type) 'macosx) 
-	     ".app" 
-	     "")))
+	(let* ([variant (current-launcher-variant)]
+	       [mac-script? (and (eq? (system-type) 'macosx) 
+				 (eq? variant 'script))])
+	  (string-append
+	   (add-file-suffix 
+	    (build-path 
+	     (if mac-script?
+		 l-home-macosx-mzscheme
+		 l-home)
+	     ((if mac-script? unix-sfx sfx) name))
+	    variant)
+	   (if (and (eq? (system-type) 'macosx) 
+		    (not (eq? variant 'script)))
+	       ".app" 
+	       ""))))
       
       (define (mzscheme-program-launcher-path name)
 	(case (system-type)
@@ -447,7 +472,8 @@
 	  [else (mred-program-launcher-path name)]))
       
       (define (mred-launcher-is-directory?)
-	(eq? 'macosx (system-type)))
+	(and (eq? 'macosx (system-type))
+	     (not (eq? 'script (current-launcher-variant)))))
       (define (mzscheme-launcher-is-directory?)
 	#f)
 
@@ -459,7 +485,11 @@
 	  [else (values #f null null)]))
 
       (define (mred-launcher-put-file-extension+style+filters)
-	(put-file-extension+style+filters (system-type)))
+	(put-file-extension+style+filters 
+	 (if (and (eq? 'macosx (system-type))
+		  (eq? 'script (current-launcher-variant)))
+	     'unix
+	     (system-type))))
 
       (define (mzscheme-launcher-put-file-extension+style+filters)
 	(put-file-extension+style+filters 

@@ -1,0 +1,3 @@
+- no documentation for seekable element of info structure
+- docs for 'command' say that 'command' argument should be int ... no, wait, a string.
+- in sndfile.h, references to sf_open_read and sf_open_write should be eliminated.

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.9 1998/10/16 15:37:29 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.10 1998/10/16 15:47:32 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -327,25 +327,25 @@ void wxColourDatabase::Initialize (void)
   APPEND("CORAL", new wxColour(255, 127, 80));
   APPEND("CORNFLOWER BLUE", new wxColour(68, 64, 108));
   APPEND("CYAN", new wxColour(0, 255, 255));
-  APPEND("DARK GREY", new wxColour(169, 169, 169));
+  APPEND("DARK GRAY", new wxColour(169, 169, 169));
   APPEND("DARK GREEN", new wxColour(0, 100, 0));
   APPEND("DARK OLIVE GREEN", new wxColour(85, 107, 47));
   APPEND("DARK ORCHID", new wxColour(153, 50, 204));
   APPEND("DARK SLATE BLUE", new wxColour(72, 61, 139));
-  APPEND("DARK SLATE GREY", new wxColour(47, 79, 79));
+  APPEND("DARK SLATE GRAY", new wxColour(47, 79, 79));
   APPEND("DARK TURQUOISE", new wxColour(0, 206, 209));
-  APPEND("DIM GREY", new wxColour(105, 105, 105));
+  APPEND("DIM GRAY", new wxColour(105, 105, 105));
   APPEND("FIREBRICK", new wxColour(178, 34, 34));
   APPEND("FOREST GREEN", new wxColour(34, 139, 34));
   APPEND("GOLD", new wxColour(255, 215, 0));
   APPEND("GOLDENROD", new wxColour(218, 165, 32));
-  APPEND("GREY", new wxColour(190, 190, 190));
+  APPEND("GRAY", new wxColour(190, 190, 190));
   APPEND("GREEN", new wxColour(60, 248, 52));
   APPEND("GREEN YELLOW", new wxColour(173, 255, 47));
   APPEND("INDIAN RED", new wxColour(205, 92, 92));
   APPEND("KHAKI", new wxColour(240, 230, 140));
   APPEND("LIGHT BLUE", new wxColour(173, 216, 230));
-  APPEND("LIGHT GREY", new wxColour(211, 211, 211));
+  APPEND("LIGHT GRAY", new wxColour(211, 211, 211));
   APPEND("LIGHT STEEL BLUE", new wxColour(176, 196, 222));
   APPEND("LIME GREEN", new wxColour(50, 205, 50));
   APPEND("MAGENTA", new wxColour(255, 0, 255));
@@ -508,9 +508,9 @@ wxInitializeStockObjects (void)
   wxWHITE_PEN = new wxPen ("WHITE", 0, wxSOLID);
   wxTRANSPARENT_PEN = new wxPen ("BLACK", 0, wxTRANSPARENT);
   wxBLACK_DASHED_PEN = new wxPen ("BLACK", 0, wxSHORT_DASH);
-  wxGREY_PEN = new wxPen ("GREY", 0, wxSOLID);
-  wxMEDIUM_GREY_PEN = new wxPen ("MEDIUM GREY", 0, wxSOLID);
-  wxLIGHT_GREY_PEN = new wxPen ("LIGHT GREY", 0, wxSOLID);
+  wxGREY_PEN = new wxPen ("GRAY", 0, wxSOLID);
+  wxMEDIUM_GREY_PEN = new wxPen ("MEDIUM GRAY", 0, wxSOLID);
+  wxLIGHT_GREY_PEN = new wxPen ("LIGHT GRAY", 0, wxSOLID);
 
   wxWHITE_PEN->Lock(1);
   wxBLACK_PEN->Lock(1);
@@ -522,9 +522,9 @@ wxInitializeStockObjects (void)
   wxTRANSPARENT_BRUSH = new wxBrush ("BLACK", wxTRANSPARENT);
   wxCYAN_BRUSH = new wxBrush ("CYAN", wxSOLID);
   wxRED_BRUSH = new wxBrush ("RED", wxSOLID);
-  wxGREY_BRUSH = new wxBrush ("GREY", wxSOLID);
-  wxMEDIUM_GREY_BRUSH = new wxBrush ("MEDIUM GREY", wxSOLID);
-  wxLIGHT_GREY_BRUSH = new wxBrush ("LIGHT GREY", wxSOLID);
+  wxGREY_BRUSH = new wxBrush ("GRAY", wxSOLID);
+  wxMEDIUM_GREY_BRUSH = new wxBrush ("MEDIUM GRAY", wxSOLID);
+  wxLIGHT_GREY_BRUSH = new wxBrush ("LIGHT GRAY", wxSOLID);
   
   wxWHITE_BRUSH->Lock(1);
   wxBLACK_BRUSH->Lock(1);
@@ -539,7 +539,7 @@ wxInitializeStockObjects (void)
   wxBLUE = new wxColour ("BLUE");
   wxGREEN = new wxColour ("GREEN");
   wxCYAN = new wxColour ("CYAN");
-  wxLIGHT_GREY = new wxColour ("LIGHT GREY");
+  wxLIGHT_GREY = new wxColour ("LIGHT GRAY");
 
   wxSTANDARD_CURSOR = new wxCursor (wxCURSOR_ARROW);
   wxHOURGLASS_CURSOR = new wxCursor (wxCURSOR_WAIT);

@@ -87,11 +87,19 @@ sproc.o: @GCDIR@/sproc.o
 mzscheme@NOT_OSX@: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o $(SPECIALIZINGOBJECTS)
 	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
 
-PLT_MzScheme.framework: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
-	if [ ! -d PLT_MzScheme.framework ] ; then mkdir PLT_MzScheme.framework ; fi
-	$(CC) -o PLT_MzScheme.framework/PLT_MzScheme -dynamiclib -all_load $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
+@INCLUDDEP@ @srcdir@/../mac/version.mak
 
-mzscheme@OSX@: PLT_MzScheme.framework main.o
+MZFW = PLT_MzScheme.framework/Versions/$(FWVERSION)/PLT_MzScheme
+
+$(MZFW): libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
+	if [ ! -d PLT_MzScheme.framework ] ; then mkdir PLT_MzScheme.framework ; fi
+	if [ ! -d PLT_MzScheme.framework/Versions ] ; then mkdir PLT_MzScheme.framework/Versions ; fi
+	if [ ! -d PLT_MzScheme.framework/Versions/$(FWVERSION) ] ; then mkdir PLT_MzScheme.framework/Versions/$(FWVERSION) ; fi
+	$(CC) -o $(MZFW) -dynamiclib -all_load $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@
+	rm -f PLT_MzScheme.framework/PLT_MzScheme
+	ln -s Versions/$(FWVERSION)/PLT_MzScheme PLT_MzScheme.framework/PLT_MzScheme
+
+mzscheme@OSX@: $(MZFW) main.o
 	$(CC) -o mzscheme main.o -F. -framework PLT_MzScheme
 
 # OSKit-based MzScheme

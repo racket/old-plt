@@ -363,12 +363,44 @@ Bool wxMediaBuffer::DoSetCaretOwner(wxSnip *snip, int dist)
   return refresh;
 }
 
-void wxMediaBuffer::GlobalToLocal(float *x, float *y)
+static void ConvertCoords(wxMediaAdmin *admin, float *x, float *y, int toLocal)
 {
-  float lx, ly;
+  float lx = 0, ly = 0;
 
   if (admin) {
-    admin->GetDC(&lx, &ly);
+    if (admin->__type == wxTYPE_MEDIA_SNIP_MEDIA_ADMIN) {
+      wxMediaSnip *snip = ((wxMediaSnipMediaAdmin *)admin)->GetSnip();
+
+      wxSnipAdmin *sa = snip->GetAdmin();
+
+      if (sa) {
+	wxMediaBuffer *mbuf = sa->GetMedia();
+	if (mbuf) {
+	  float bx = 0, by = 0;
+	  mbuf->LocalToGlobal(&bx, &by);
+	  mbuf->GetSnipLocation(snip, &lx, &ly, 0);
+	  lx += bx;
+	  ly += by;
+
+	  int l, t, r, b;
+	  snip->GetMargin(&l, &t, &r, &b);
+	  lx += l;
+	  ly += t;
+	}
+      }
+    } else {
+      admin->GetDC(&lx, &ly);
+      lx = -lx;
+      ly = -ly;
+    }
+  }
+
+  if (toLocal) {
+    if (x)
+      *x -= lx;
+    if (y)
+      *y -= ly;
+  } else {
     if (x)
       *x += lx;
     if (y)
@@ -376,17 +408,14 @@ void wxMediaBuffer::GlobalToLocal(float *x, float *y)
   }
 }
 
+void wxMediaBuffer::GlobalToLocal(float *x, float *y)
+{
+  ConvertCoords(admin, x, y, 1);
+}
+
 void wxMediaBuffer::LocalToGlobal(float *x, float *y)
 {
-  float lx, ly;
-
-  if (admin) {
-    admin->GetDC(&lx, &ly);
-    if (x)
-      *x -= lx;
-    if (y)
-      *y -= ly;
-  }
+  ConvertCoords(admin, x, y, 0);
 }
 
 void wxMediaBuffer::SetCursor(wxCursor *c, Bool override)

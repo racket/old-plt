@@ -7,42 +7,28 @@
 
 @HEADER
 
-static void *cconvert(wxMediaBuffer *b, double x, double y, int todc)
+static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
 {
-  double dcx, dcy;
-  wxMediaAdmin *admin;
   Scheme_Object *a[2];
 
-  admin = b->GetAdmin();
-  if (admin) {
-    float dx, dy;
-    admin->GetDC(&dx, &dy);
-    if (!todc) {
-      dcx = dx + x;
-      dcy = dy + y;
-    } else {
-      dcx = x - dx;
-      dcy = y - dy;
-    }
-  } else {
-    dcx = x;
-    dcy = y;
-  }
+  b->LocalToGlobal(&x, &y);
 
-  a[0] = objscheme_bundle_double(dcx);
-  a[1] = objscheme_bundle_double(dcy);
+  a[0] = objscheme_bundle_double(x);
+  a[1] = objscheme_bundle_double(y);
 
   return scheme_values(2, a);
 }
 
-static void *wxbBufferToDC(wxMediaBuffer *b, double x, double y)
+static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 {
-  return cconvert(b, x, y, 1);
-}
+  Scheme_Object *a[2];
 
-static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
-{
-  return cconvert(b, x, y, 0);
+  b->GlobalToLocal(&x, &y);
+
+  a[0] = objscheme_bundle_double(x);
+  a[1] = objscheme_bundle_double(y);
+
+  return scheme_values(2, a);
 }
 
 @MACRO rNULL = return NULL;

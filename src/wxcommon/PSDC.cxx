@@ -332,6 +332,8 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
   if (paper_h <= 0)
     paper_h = 1;
 
+  anti_alias = 1;
+
   return ok;
 }
 

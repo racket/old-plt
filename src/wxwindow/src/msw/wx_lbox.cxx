@@ -268,6 +268,11 @@ int wxListBox::NumberOfVisibleItems(void)
   return max(ch, 1);
 }
 
+int wxListBox::GetFirstItem(void)
+{
+  return SendMessage((HWND)ms_handle,LB_GETTOPINDEX,(WPARAM)0,(LPARAM)0);
+}
+
 void wxListBox::Delete(int N)
 {
   int i;

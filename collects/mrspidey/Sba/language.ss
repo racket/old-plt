@@ -1238,6 +1238,19 @@
 			  (num iport -> (union str eof))
 			  (num -> (union str eof))))
        (read-string-all (str -> (listof sexp)))
+       (read-string-avail!
+	(case->
+	 (str iport num num -> (union num eof))
+	 (str iport num -> (union num eof))
+	 (str iport -> (union num eof))
+	 (str -> (union num eof))))
+       (read-string-avail!/enable-break
+	(case->
+	 (str iport num num -> (union num eof))
+	 (str iport num -> (union num eof))
+	 (str iport -> (union num eof))
+	 (str -> (union num eof))))
+
        ;;(regexp-match    ((union str regexp) str -> bool))
        (string-lowercase! (str -> str))
        (string-uppercase! (str -> str))

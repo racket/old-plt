@@ -9,7 +9,7 @@
 <p>The teachpack <code>arrow.ss</code> implements controller for moving
 shapes across a canvass. It provides three operations: 
 <menu>
-  <li> <code>control-left-right : shape number move draw -> true <code>:
+  <li> <code>control-left-right : shape number move draw -> true </code>:
 
   <br> It consumes a shape, a number, a <code>move</code> function and a
   <code>draw</code> function.  The
@@ -18,13 +18,13 @@ shapes across a canvass. It provides three operations:
   right. 
   <br><br>
 
-  <li> <code>control-up-down : shape number move -> true <code>:
+  <li> <code>control-up-down : shape number move -> true </code>:
 
   <br> It is like <code>control-left-right</code> but controls movements by
   N pixels up or down. 
   <br><br>
 
-  <li> <code>control : shape number move-lr move-ud -> true <code>:
+  <li> <code>control : shape number move-lr move-ud -> true </code>:
 
   <br> It consumes a shape, a number, two <code>move</code> functions, and a
   draw function.  The <code>move</code> functions consume a number and a

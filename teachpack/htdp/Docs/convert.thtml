@@ -17,7 +17,7 @@
        number according to the given temperature conversion function. 
        A user can exit the loop by entering <code>x</code>.
 
-  <li> <code>convert-file<code>; it consumes a file name <code>in</code>, a
+  <li> <code>convert-file</code>; it consumes a file name <code>in</code>, a
        conversion function from Fahrenheit to Celsius, and a string
        <code>out</code>. The program then reads a number from
        <code>in</code>, converts it according to the given temperature

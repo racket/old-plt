@@ -14,7 +14,6 @@ operation:
   <li> <code> create-dir<code> which consumes a directory path (a string) 
        and produces a directory. 
 </menu>
-For data definitions, see section 15. 
 
 <p>The teachpack relies on two data definitions: 
 <menu> 
@@ -22,7 +21,7 @@ For data definitions, see section 15.
    A directory is 
    <code> (make-dir string[path] (listof directory) (listof file)) </code>
 <li>
-   A file is <code> (make-fil string[file name]) </code>
+   A file is <code> (make-file string[file name]) </code>
 </menu>
 
 Sample: Set teachpack to <code>dir.ss</code> and execute. Then evaluate 

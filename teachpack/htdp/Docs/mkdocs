@@ -113,7 +113,6 @@ string=? ; exec mzscheme -qr $0 "$@"
     (printf "<TITLE>Teachpacks for How to Design Programs</TITLE>~n")
     (printf "</HEAD>~n")
     (printf "<BODY bgcolor=\"#ffffff\" text=\"#000000\" link=\"#009900\" vlink=\"#007700\" alink=\"#cc0000\">~n")
-    (printf "<a href=\"../help/howtoprogram.html\"><img src=\"../icons/up.gif\"></a> <a href=\"../help/howtoprogram.html\">Up</a>~n")
     (printf "<h1>Teachpacks for How to Design Programs</h1>~n")
     (printf "~n")
     (printf "<UL>~n")

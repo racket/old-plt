@@ -27,12 +27,14 @@ is a quasi-constructor for posns)
 suspends evaluation for the given number of seconds 
 <br>
 <li>The following symbols are recognized as colors: 
+<blockquote>
 <code> 'white</code>
 <code> 'yellow</code>
 <code> 'red</code>
 <code> 'blue</code>
 <code> 'green</code>
 <code> 'black</code>
+</blockquote>
 Applying the functions to any other symbol triggers an error. 
 </menu>
 <br>
@@ -51,13 +53,14 @@ The color argument for all functions are optional.
 <br> <code> true </code>
 <br> <code> > (clear-solid-disk (make-posn 100 100) 3 'red) </code>
 <br> <code> true </code>
-<br> <code> > (sleep-for-a-while 1)
+<br> <code> > (sleep-for-a-while 1) </code>
 <br> <code> > (draw-solid-disk (make-posn 100 100) 3 'red) </code>
 <br> <code> true </code>
 <br> <code> > (clear-solid-disk (make-posn 100 100) 3) </code>
 <br> <code> true </code>
 <br> <code> > (stop) </code>
 <br> <code> > </code>
+<br>
 This session opens a window, draws a red disk, clears it, sleeps for a second, 
 and then repeats. The last expression closes the canvas. 
 

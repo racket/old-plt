@@ -30,7 +30,7 @@ The teachpack <code>docs.ss</code> provides three operations:
 <pre>
 > (annotation? 0)
 #f
-> (annotation? '<bold>)
+> (annotation? '&lt;bold&gt;)
 #t
 > (end-annotation 0)
 end-annotation: not an annotation: 0

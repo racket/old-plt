@@ -156,13 +156,15 @@
 		  (let ((r (resolve app-pos env vocab)))
 		    (cond
 		      ((macro-resolution? r)
-			(with-handlers (((lambda (e)
-					   (and (exn? e)
-					     (not (exn:user? e))))
+			(with-handlers ((exn:user?
 					  (lambda (exn)
-					    (internal-error expr
-					      "Macro expansion error: ~a"
-					      exn))))
+					    (static-error expr
+					      (exn-message exn))))
+					 (exn?
+					   (lambda (exn)
+					     (internal-error expr
+					       "Macro expansion error: ~a"
+					       exn))))
 			  (let* ((rewriter (macro-resolution-rewriter r))
 				  (m (new-mark))
 				  (marker (mark-expression m))

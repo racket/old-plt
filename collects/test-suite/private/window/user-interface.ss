@@ -58,7 +58,7 @@
           (label "Delete Test Case")
           (parent test-menu)
           (callback delete-callback)
-          (shortcut #\d)
+          (shortcut #\d))
         (instantiate menu-item% ()
           (label "Execute")
           (parent test-menu)

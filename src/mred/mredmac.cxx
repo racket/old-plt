@@ -23,10 +23,6 @@
 
 static int dispatched = 1;
 
-static RgnHandle quickUpdateRgn;
-static UInt32 quickUpdateTimeout;
-static UInt32 quickUpdateWait;
-
 extern "C" {
   typedef void (*HANDLE_AE)(EventRecord *e);
 }
@@ -738,47 +734,6 @@ static int CheckForActivate(EventRecord *evt, MrQueueRef q, int check_only,
   return FALSE;
 }
 
-static int CheckForUpdate(EventRecord *evt, MrQueueRef q, int check_only, 
-			  MrEdContext *c, MrEdContext *keyOk, 
-			  EventRecord *event, MrEdContext **which)
-{
-  WindowPtr window;
-
-  switch (evt->what) {
-  case updateEvt:
-    window = (WindowPtr)evt->message;
-    if (WindowStillHere(window)) {
-      wxFrame *fr;
-      MrEdContext *fc;
-
-      fr = wxWindowPtrToFrame(window, c);
-      fc = fr ? (MrEdContext *)fr->context : NULL;
-      if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
-	if (which)
-	  *which = fc;
-
-#ifdef RECORD_HISTORY
-	fprintf(history, "update\n");
-	fflush(history);
-#endif
-
-	if (check_only)
-	  return TRUE;
-	
-	memcpy(event, evt, sizeof(EventRecord));
-	/* don't dequeue... done in the dispatcher */
-	return TRUE;
-      }
-    } else if (q) {
-      DisposeRgn(q->rgn);
-      MrDequeue(q);
-    }
-    break;
-  }
-
-  return FALSE;
-}
-
 /***************************************************************************/
 /*                             get next event                              */
 /***************************************************************************/
@@ -793,7 +748,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
   EventRecord ebuf;
   MrEdContext *c, *keyOk, *foundc;
   int found = 0;
-  int skip_transfer = 0;
 
   saw_mdown = 0; saw_kdown = 0;
 
@@ -810,12 +764,16 @@ int MrEdGetNextEvent(int check_only, int current_only,
   	  c, keyOk, cont_event_context);
 #endif
 
+#if 0
   /* Update events are supposed to happen after mouse events, etc.
      However, OS X refreshes window displays when WNE is called.  In
      particular, it looks nicer to update the frontmost window before
      calling WNE. We must do this infrequenty, though, to avoid
      dispatching only update events when other sorts of events should
      get handled. */
+  static RgnHandle quickUpdateRgn;
+  static UInt32 quickUpdateTimeout;
+  static UInt32 quickUpdateWait;
   if (!quickUpdateWait || (quickUpdateWait <= TickCount())) {
     WindowPtr front;
 
@@ -828,35 +786,15 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	  
       GetWindowRegion(front, kWindowUpdateRgn, quickUpdateRgn);	
       if (!EmptyRgn(quickUpdateRgn)) {
-	EventRecord ue;
-	ue.what = updateEvt;
-	ue.message = (long)front;
-	if (CheckForUpdate(&ue, NULL, check_only, c, NULL, event, which)) {
-	  if (!check_only) {
-	    quickUpdateWait = TickCount() + 15;
-	    quickUpdateTimeout = 0;
-	  }
-	  return TRUE;
-	} else {
-	  UInt32 now;
-	  now = TickCount();
-	  if (quickUpdateTimeout && (quickUpdateTimeout <= now)) {
-	    quickUpdateWait = TickCount() + 15;
-	    quickUpdateTimeout = 0;
-	    /* TransferEvent will turn off front's update region,
-	       so we won't keep trying this window. */
-	  } else {
-	    skip_transfer = 1;
-	    if (!quickUpdateTimeout)
-	      quickUpdateTimeout = now + 15;
-	  }
-	}
+	/* Setup a trampoline and call WNE if the current thread
+	   if the handler thread for the front window? */
+	quickUpdateWait = TickCount() + 15;
       }
     }
   }
+#endif
 
-  if (!skip_transfer)
-    TransferQueue(0);
+  TransferQueue(0);
     
   if (cont_mouse_context)
     if (!WindowStillHere(cont_mouse_context_window))
@@ -924,11 +862,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
   if (Find(&closure))
     return TRUE; 
   
-  /* Update events: */
-  closure.checker = CheckForUpdate;
-  if (Find(&closure))
-    return TRUE; 
-
   /* Generate a motion event? */
   if (keyOk) {
     WindowPtr front;

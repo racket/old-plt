@@ -504,7 +504,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   CGrafPtr qdp;
   CGContextRef cgctx;
   Rect portRect;
-  RGBColor eraseColor;
+  RGBColor eraseColor, textColor;
   ATSUStyle style;
   Point start;
   RgnHandle clipRgn;
@@ -695,16 +695,6 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     val = scheme_hash_get(style_table, table_key);
     if (val) {
       style = *(ATSUStyle *)val;
-      /* set style color */
-      if (!just_meas) {
-	GC_CAN_IGNORE ATSUAttributeTag theTags[] = { kATSUColorTag };
-	GC_CAN_IGNORE ByteCount theSizes[] = { sizeof(RGBColor) };
-	ATSUAttributeValuePtr theValues[1];
-	RGBColor textColor;
-	GetForeColor(&textColor);
-	theValues[0] = &textColor;
-	ATSUSetAttributes(style, 1, theTags, theSizes, theValues);
-      }
     } else {
       Scheme_Object *new_key;
       ATSUCreateAndCopyStyle((qd_spacing ? theATSUqdstyle : theATSUstyle), &style);
@@ -729,6 +719,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   if (!just_meas) {
     GetPortBounds(qdp, &portRect); 
     GetBackColor(&eraseColor);
+    GetForeColor(&textColor);
     textMode = GetPortTextMode(qdp);
 
     if (!with_start) {
@@ -782,6 +773,13 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       ddy = 0;
     }
     CGContextScaleCTM(cgctx, scale_x, scale_y);
+
+    /* set color */
+    CGContextSetRGBFillColor(cgctx, 
+			     (double)textColor.red / 65535.0,
+			     (double)textColor.green / 65535.0,
+			     (double)textColor.blue / 65535.0,
+			     1.0);
   }
 
   END_TIME(ctx);
@@ -974,6 +972,11 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 				   (double)eraseColor.blue / 65535.0,
 				   1.0);
 	  CGContextFillRect(cgctx, cgr);
+	  CGContextSetRGBFillColor(cgctx, 
+				   (double)textColor.red / 65535.0,
+				   (double)textColor.green / 65535.0,
+				   (double)textColor.blue / 65535.0,
+				   1.0);
 	} else {
 	  Rect theRect;
 	  double rt, rl, rr, rb;
@@ -1051,12 +1054,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
   if (!just_meas) {
     if (use_cgctx) {
-      /* I don't think this flush is supposed to be
-	 necessary. However, sometimes text gets lost in the draw.ss
-	 test without it. (Notably, text gets lost only when drawing
-	 directly to the screen, and not when drawing to a bitmap. */
       CGContextSynchronize(cgctx);
-
       QDEndCGContext(qdp, &cgctx);
     }
 
@@ -1198,7 +1196,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 {
  OSStatus status = noErr;
 
-#define xNUM_TAGS 9
+#define xNUM_TAGS 8
  
  GC_CAN_IGNORE ATSUAttributeTag  theTags[] = { kATSUFontTag,
 					       kATSUSizeTag,
@@ -1207,7 +1205,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					       kATSUQDUnderlineTag,
 					       kATSUQDCondensedTag,
 					       kATSUQDExtendedTag,
-					       kATSUColorTag,
 					       kATSUStyleRenderingOptionsTag,
                                                };
  GC_CAN_IGNORE ByteCount    theSizes[] = { sizeof(ATSUFontID),
@@ -1217,7 +1214,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					   sizeof(Boolean),
 					   sizeof(Boolean),
 					   sizeof(Boolean),
-					   sizeof(RGBColor),
 					   sizeof(ATSStyleRenderingOptions),
                                            };
  ATSUAttributeValuePtr theValues[ xNUM_TAGS /* = sizeof(theTags) / sizeof(ATSUAttributeTag) */ ];
@@ -1225,7 +1221,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 
  ATSUFontID   atsuFont;
  Fixed    atsuSize;
- RGBColor   textColor;
  Boolean    isBold, isItalic, isUnderline, isCondensed, isExtended;
  SInt16    intrinsicStyle;
  ATSStyleRenderingOptions options = kATSStyleNoOptions;
@@ -1251,8 +1246,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  }
  atsuSize = Long2Fix( txSize );
  
- GetForeColor( &textColor );
-
  if (smoothing == wxSMOOTHING_OFF)
    options = kATSStyleNoAntiAliasing;
  else if (smoothing == wxSMOOTHING_ON)
@@ -1266,8 +1259,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  theValues[4] = &isUnderline;
  theValues[5] = &isCondensed;
  theValues[6] = &isExtended;
- theValues[7] = &textColor;
- theValues[8] = &options;
+ theValues[7] = &options;
 
  tag_count = xNUM_TAGS;
 

@@ -43,6 +43,8 @@ class wxCanvasDC: public wxbCanvasDC
   char* current_pen_dash;
   wxBitmap* current_stipple;
 
+  wxRegion *clippingCached;
+
   wxBitmap* selected_pixmap;
 
   int gdx, gdy;

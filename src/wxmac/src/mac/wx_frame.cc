@@ -335,8 +335,8 @@ void wxCallDoPaintOrQueue(wxCanvas *win)
 
   f = win->GetRootFrame();
 
-  /* we can all OnPaint only when we've set up a trampoline around the
-     ShowWindow call.  The trampoline is necessary because OnPaint()
+  /* we can all OnPaint only when we've set up a trampoline around whatever
+     triggers the update.  The trampoline is necessary because OnPaint()
      might invoke arbitrary Scheme code, and because the system called
      us, we can't allow thread swaps (which would copy a part of the
      stack that the system owns). See the use of wxHETShowWindow

@@ -933,11 +933,17 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   Create(the_width, the_height, 1);
   if (ok) {
     int i, j, p = 0;
+    Rect bounds;
     char rbyte;
     RGBColor	cpix;
     
     GetGWorld(&saveport, &savegd);
     SetGWorld(x_pixmap, 0);
+  
+    bounds.left = bounds.top = 0;
+    bounds.right = the_width;
+    bounds.bottom = the_height;
+    ::EraseRect(&bounds);
     
     GetForeColor(&cpix);
     for (i = 0; i < the_height; i++) {
@@ -982,6 +988,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags, wxColour *bg)
       Create(width, height, depth);
       GetGWorld(&saveport, &savegd);
       SetGWorld(x_pixmap, 0);
+      ::EraseRect(&bounds);
       DrawPicture( h, &bounds);
       ::ReleaseResource((Handle)h);
       ::SetGWorld(saveport, savegd);
@@ -1054,7 +1061,6 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
     if (depth < 1) {
       depth = wxDisplayDepth();
     }
-    ::EraseRect(&bounds);
     ok = TRUE;
     x_pixmap = newGWorld;
     SetGWorld(saveport, savegw);

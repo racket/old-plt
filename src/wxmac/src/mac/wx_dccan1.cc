@@ -375,7 +375,12 @@ void wxCanvasDC::SetClippingRect(double cx, double cy, double cw, double ch)
   //-----------------------------------------------------------------------------
 {
   wxRegion *r;
-  r = new wxRegion(this);
+  if (clippingCached)
+    r = clippingCached;
+  else {
+    r = new wxRegion(this);
+    clippingCached = r;
+  }
   r->SetRectangle(cx, cy, cw, ch);
   SetClippingRegion(r);
 }
@@ -399,6 +404,8 @@ void wxCanvasDC::SetClippingRegion(wxRegion *r)
 wxRegion* wxCanvasDC::GetClippingRegion()
   //-----------------------------------------------------------------------------
 {
+  if (clipping == clippingCached)
+    clippingCached = NULL;
   return clipping;
 }
 

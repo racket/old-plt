@@ -25,10 +25,6 @@
 #include "wx_timer.h"
 #include "wx_main.h"
 
-#ifdef wx_motif
-# define MEDIA_CANVAS_COMBAT_CLIP_BUG
-#endif
-
 static wxMemoryDC *wx_canvasless_offscreen;
 
 extern void *MrEdGetWindowContext(wxWindow *w);
@@ -39,45 +35,16 @@ class SimpleScroll
 
   int count, pageStep, value;
 
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  wxMediaCanvas *canvas;
-
-  int h, w;
-  int arrow_w, bar_w, thumb_w, thumb_x;
-
-  int wherex, wherey;
-
-  int thumb_drag_offset;
-  
-#endif
  public:
   SimpleScroll(wxMediaCanvas *, long style = 0,
 	      int length = 0, int stepsPerPage = 4,
 	      int position = 0);
   ~SimpleScroll();
 
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  void DoCallback(void);
-
-  void Event(int x, int y, int w, int h, wxMouseEvent *);
-  void Paint(int x, int y, int w, int h);
-
-  void IntDrawLine(int x1, int y1, int x2, int y2);
-  void DrawRectangle(double x, double y, double w, double h);
-
-  void Click(int x);
-  int trackState;
-  Bool scrolling;
-#endif
-
   void SetValue(int);
   int GetValue(void);
   void SetScroll(int len = -1, int page = -1, int position = -1);  
 };
-
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-# define SB_WIDTH 14
-#endif
 
 class wxUpdateCursorTimer : public wxTimer 
 {
@@ -234,11 +201,6 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
   fakeXScroll = !allowXScroll || (style & wxMCANVAS_HIDE_H_SCROLL);
   fakeYScroll = !allowYScroll || (style & wxMCANVAS_HIDE_V_SCROLL);
 
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  hscroll = new SimpleScroll(this, wxHORIZONTAL, 0, 1, 0);
-  vscroll = new SimpleScroll(this, wxVERTICAL, 0, 1, 0);
-  scrollWidth = scrollHeight = 0;
-#else
   auto_x = (!fakeXScroll && ((style & wxMCANVAS_AUTO_H_SCROLL) ? 1 : 0));
   auto_y = (!fakeYScroll && ((style & wxMCANVAS_AUTO_V_SCROLL) ? 1 : 0));
   xscroll_on = (!fakeXScroll && !auto_x);
@@ -266,7 +228,6 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
     vscroll = (SimpleScroll *)NULL;
   scrollWidth = fakeXScroll ? 0 : 1;
   scrollHeight = fakeYScroll ? 0 : 1;
-#endif
 
   vscrollsPerPage = hscrollsPerPage = 1;
   hpixelsPerScroll = 0;
@@ -373,10 +334,7 @@ void wxMediaCanvas::ResetSize()
 {
   ResetVisual(FALSE);
 
-#if defined(MEDIA_CANVAS_INTERNAL_SCROLLS) || defined(wx_mac)
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  DestroyClippingRegion();
-#endif
+#if defined(wx_mac)
   {
     wxDC *adc;
     wxColor *bg;
@@ -387,15 +345,6 @@ void wxMediaCanvas::ResetSize()
       adc->Clear();
     }
   }
-#endif
-
-#ifdef NO_GET_CLIPPING_REGION
-#ifndef MEDIA_CANVAS_INTERNAL_SCROLLS
-  int cliph, clipw;
-  GetClientSize(&clipw, &cliph);
-  SetClippingRegion(xmargin, ymargin,
-		    clipw - 2 * xmargin, cliph - 2 * ymargin);
-#endif
 #endif
 
   Refresh();
@@ -598,43 +547,6 @@ void wxMediaCanvas::OnEvent(wxMouseEvent *event)
 #endif
   
   if (media && !media->printing) {
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-    if ((!event->Dragging() 
-	 || (vscroll && vscroll->scrolling) 
-	 || (hscroll && hscroll->scrolling))
-	// Dragging into/outof window gives enter/leave events
-	&& !(event->ButtonIsDown(-1) && (event->Leaving() || event->Entering()))) {
-      int h, w;
-      GetClientSize(&w, &h);
-      if (!fakeYScroll) {
-	if (vscroll->scrolling
-	    || ((fakeXScroll || !hscroll->scrolling)
-		&& (event->x > w - SB_WIDTH) 
-		&& (event->y < h - (fakeXScroll ? 0 : SB_WIDTH)))) {
-	  NoCustomCursor();
-	  vscroll->Event(w - SB_WIDTH, 0, SB_WIDTH, h - SB_WIDTH, event);
-	  return;
-	}
-      }
-      if (!fakeXScroll) {
-	if (hscroll->scrolling
-	    || ((event->y > h - SB_WIDTH) 
-		&& (event->x < w - (fakeYScroll ? SB_WIDTH : 0)))) {
-	  NoCustomCursor();
-	  hscroll->Event(0, h - SB_WIDTH, w - SB_WIDTH, SB_WIDTH, event);
-	  return;
-	}
-      }
-      if (!fakeXScroll && !fakeYScroll)
-	if ((event->y > h - SB_WIDTH) || (event->x > w - SB_WIDTH)) {
-	  NoCustomCursor();
-	  return;
-	}
-
-      if (customCursor && !customCursorOn)
-	SetCustomCursor(customCursor);
-    }
-#endif
     wxCanvasMediaAdmin *oldadmin;
     
     if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin)) {
@@ -747,9 +659,6 @@ void wxMediaCanvas::OnPaint(void)
   if (media) {
     if (!media->printing) {
       double w, h, x, y;
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-      PaintScrolls();
-#endif
       GetView(&x, &y, &w, &h);
       Redraw(x, y, w, h);
     }
@@ -781,22 +690,6 @@ void wxMediaCanvas::Repaint(void)
 
 void wxMediaCanvas::PaintScrolls(void)
 {
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  int h, w;
-
-  DestroyClippingRegion();
-  GetClientSize(&w, &h);
-  if (!fakeXScroll)
-    hscroll->Paint(0, h - (fakeYScroll ? 0 : SB_WIDTH), 
-		   w - SB_WIDTH, SB_WIDTH);
-  if (!fakeYScroll)
-    vscroll->Paint(w - SB_WIDTH, 0, 
-		   SB_WIDTH, h - (fakeXScroll ? 0 : SB_WIDTH));
-  
-  SetClippingRegion(xmargin, ymargin,
-		    w - 2 * xmargin - (fakeYScroll ? 0 : SB_WIDTH),
-		    h - 2 * ymargin - (fakeXScroll ? 0 : SB_WIDTH));
-#endif
 }
 
 void wxMediaCanvas::SetLazyRefresh(Bool on)
@@ -850,10 +743,6 @@ wxDC *wxMediaCanvas::GetDCAndOffset(double *fx, double *fy)
 	int h, w;
 	GetClientSize(&w, &h);
 	h -= 2 * ymargin;
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-	if (!fakeXScroll)
-	  h -= SB_WIDTH;
-#endif
 	if (h < 0)
 	  h = 0;
 	{
@@ -884,16 +773,6 @@ void wxMediaCanvas::GetView(double *fx, double *fy, double *fw, double *fh,
     if (fy)
       *fy += ymargin;
   }
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  if (!fakeXScroll)
-    h -= SB_WIDTH;
-  if (!fakeYScroll)
-    w -= SB_WIDTH;
-  if (h < 0)
-    h = 0;
-  if (w < 0)
-    w = 0;
-#endif
   if (0 /* full */) {
     if (fh)
       *fh = h;
@@ -922,23 +801,6 @@ void wxMediaCanvas::Redraw(double localx, double localy, double fw, double fh)
   if (!media || media->printing)
     return;
 
-#ifdef MEDIA_CANVAS_COMBAT_CLIP_BUG
-  int cliph, clipw;
-  GetClientSize(&clipw, &cliph);
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  if (!fakeXScroll)
-    cliph -= SB_WIDTH;
-  if (!fakeYScroll)
-    clipw -= SB_WIDTH;
-#endif
-  {
-    wxDC *adc;
-    adc = GetDC();
-    adc->SetClippingRect(xmargin, ymargin,
-			 clipw - 2 * xmargin, cliph - 2 * ymargin);
-  }
-#endif
-  
   GetView(&x, &y, &w, &h);
 
   right = x + w;
@@ -1055,14 +917,7 @@ Bool wxMediaCanvas::ScrollTo(double localx, double localy, double fw, double fh,
       hscroll->SetValue(sx);
     if (vscroll)
       vscroll->SetValue(sy);
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-    if (refresh)
-      Repaint();
-    else
-      PaintScrolls();      
-#else
     Scroll(sx, sy, refresh);
-#endif
     return TRUE;
   } else
     return FALSE;
@@ -1183,9 +1038,6 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       if (vscroll)
 	vscroll->SetScroll(vnumScrolls, vspp, y);
       
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-      PaintScrolls();
-#else
       savenoloop = noloop;
       saveHSPP = givenHScrollsPerPage;
       
@@ -1239,38 +1091,25 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       givenHScrollsPerPage = saveHSPP;
       
       noloop = savenoloop;
-#endif
       hscrollsPerPage = hspp;
       vscrollsPerPage = vspp;
       scrollWidth = hnumScrolls;
       scrollHeight = vnumScrolls;
 
-#ifndef MEDIA_CANVAS_INTERNAL_SCROLLS
       if (!goAgain)
 	return TRUE;
       else
 	retval = TRUE;
-#else
-      return TRUE;
-#endif
     } else
       return retval;
   }
 }
 
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-#define MCIS_UNUSED(x) 
-#else
-#define MCIS_UNUSED(x) x
-#endif
-
-void wxMediaCanvas::Scroll(int MCIS_UNUSED(x), int MCIS_UNUSED(y), 
-			   Bool MCIS_UNUSED(refresh))
+void wxMediaCanvas::Scroll(int x, int y, Bool refresh)
 {
-#ifndef MEDIA_CANVAS_INTERNAL_SCROLLS
   int savenoloop = noloop;
   noloop = TRUE;
-  
+
   if (x > -1 && !fakeXScroll) {
     if (scrollWidth) {
       if (x > scrollWidth)
@@ -1291,7 +1130,6 @@ void wxMediaCanvas::Scroll(int MCIS_UNUSED(x), int MCIS_UNUSED(y),
 
   if (refresh)
     Repaint();
-#endif
 }
 
 void wxMediaCanvas::Scroll(int, int)
@@ -1320,7 +1158,6 @@ void wxMediaCanvas::GetScroll(int *x, int *y)
     *y = v;
   }
 
-#ifndef MEDIA_CANVAS_INTERNAL_SCROLLS
   if (!hscroll) {
     int v;
     v = GetScrollPos(wxHORIZONTAL);
@@ -1331,7 +1168,6 @@ void wxMediaCanvas::GetScroll(int *x, int *y)
     v = GetScrollPos(wxVERTICAL);
     *y = v;
   }
-#endif
 }
 
 #if defined(wx_msw) || defined(wx_mac)
@@ -1727,33 +1563,13 @@ Bool wxMediaAdmin::DelayRefresh()
 
 /*************************************************************/
 
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-static wxBrush *scrollBrush = NULL;
-static wxBrush *scrollEraseBrush = NULL;
-static wxPen *scrollErasePen = NULL;
-#endif
-
 #define MIN_THUMB_WIDTH 8
 
-SimpleScroll::SimpleScroll(wxMediaCanvas *
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-			   inside
-#endif
-			   ,
+SimpleScroll::SimpleScroll(wxMediaCanvas *,
 			   long style,
 			   int length, int stepsPerPage,
 			   int position)
 {
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-  canvas = inside;
-
-  if (!scrollBrush) {
-    scrollBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxSOLID);
-    scrollEraseBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
-    scrollErasePen = wxThePenList->FindOrCreatePen("WHITE", 1, wxTRANSPARENT);
-  }
-#endif
-
   count = length;
   pageStep = stepsPerPage;
   value = position;
@@ -1795,226 +1611,3 @@ int SimpleScroll::GetValue(void)
 {
   return value;
 }
-
-#ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-
-void SimpleScroll::IntDrawLine(int x1, int y1, int x2, int y2)
-{
-  if (horizontal)
-    canvas->IntDrawLine(wherex + x1, wherey + y1, wherex + x2, wherey + y2);
-  else
-    canvas->IntDrawLine(wherex + y1, wherey + x1, wherex + y2, wherey + x2);
-}
-
-void SimpleScroll::DrawRectangle(double x, double y, double w, double h)
-{
-  if (horizontal)
-    canvas->DrawRectangle(wherex + x, wherey + y, w, h);
-  else
-    canvas->DrawRectangle(wherex + y, wherey + x, h, w);
-}
-
-void SimpleScroll::Paint(int x, int y, int w, int h)
-{
-  int oldvalue;
-  wxDC *dc;
-  wxBrush *save;
-  wxPen *savePen;
-  int seg, half;
-
-  if (!horizontal) {
-    oldvalue = w;
-    w = h;
-    h = oldvalue;
-  }
-
-  h -= 2;
-
-  wherex = x + (horizontal ? 0 : 1);
-  wherey = y + (horizontal ? 1 : 0);
-
-  if (w < 2 * h)
-    arrow_w = w / 2;
-  else
-    arrow_w = h;
-
-  bar_w = w - 2 * arrow_w;
-  if (bar_w <= 0) {
-    thumb_w = bar_w = 0;
-    thumb_x = arrow_w;
-  } else {
-    if (!count) {
-      thumb_w = bar_w;
-      thumb_x = arrow_w;
-    } else {
-      thumb_w = (long)(((double)pageStep * bar_w) / (count + pageStep));
-      if ((thumb_w < MIN_THUMB_WIDTH) && (bar_w > MIN_THUMB_WIDTH))
-	thumb_w = MIN_THUMB_WIDTH;
-      thumb_x = arrow_w + (long)(((double)value * (bar_w - thumb_w - 1)) / count);
-    }
-  }
-
-  dc = canvas->GetDC();
-  
-  save = dc->GetBrush();
-  savePen = dc->GetPen();
-  dc->SetBrush(scrollBrush);
-
-  IntDrawLine(arrow_w, 0, arrow_w, h);
-  IntDrawLine(w - arrow_w, 0, w - arrow_w, h);
-  IntDrawLine(w + 1, 0, w + 1, h);
-  IntDrawLine(0, 0, w + 1, 0);
-  IntDrawLine(0, h, w + 1, h);
-
-  half = h / 2;
-  seg = arrow_w / 4;
-
-  IntDrawLine(3 * seg, 0, seg, half);
-  IntDrawLine(3 * seg, h, seg + 1, half + 1);
-  IntDrawLine(w - 3 * seg, 0, w - seg, half);
-  IntDrawLine(w - 3 * seg, h, w - seg - 1, half + 1);
-
-  if (bar_w) {
-    if (thumb_w < bar_w) {
-      if (thumb_x > arrow_w)
-	DrawRectangle(arrow_w + 1, 1, thumb_x - arrow_w, h - 1);
-      if (value < count)
-	DrawRectangle(thumb_x + thumb_w, 1, 
-		      w - arrow_w - (thumb_x + thumb_w), h - 1);
-    } else
-      --thumb_w;
-  }
-
-  if (thumb_w > 0) {
-    dc->SetBrush(scrollEraseBrush);
-    dc->SetPen(scrollErasePen);
-    DrawRectangle(thumb_x + 1, 1, thumb_w, h - 1);
-  }
-
-  dc->SetBrush(save);
-  dc->SetPen(savePen);
-}
-
-enum {
-  ss_CLICK = 1,
-  ss_PAGE_DOWN,
-  ss_PAGE_UP,
-  ss_THUMB
-};
-
-void SimpleScroll::Click(int x)
-{
-  int oldvalue = value;
-
-  if (trackState == ss_CLICK) {
-    if (x < arrow_w)
-      SetValue(value - 1);
-    else if (x > w - arrow_w)
-      SetValue(value + 1);
-  } else if (trackState == ss_PAGE_DOWN) {
-    if (x > thumb_x + thumb_w)
-      SetValue(value + pageStep);
-  } else if (trackState == ss_PAGE_UP) {
-    if (x < thumb_x)
-      SetValue(value - pageStep);
-  } else if (trackState == ss_THUMB) {
-    x = (x - arrow_w - thumb_drag_offset);
-    int w = bar_w - thumb_w;
-    if (x < 0)
-      x = 0;
-    if (x > w)
-      x = w;
-    SetValue((int)(((double)(x * count) / w) + 0.5));
-  }
-
-  if (value != oldvalue)
-    canvas->Repaint();
-}
-
-#include "wx_timer.h"
-
-#define SS_TIMER_FIRST_DELAY 500
-#define SS_TIMER_DELAY 80
-
-class SSTimer : public wxTimer
-{
-  int x;
-  Bool restarted;
-  SimpleScroll *ss;
-public:
-  SSTimer(int _x, SimpleScroll *_ss) { x = _x; ss = _ss; restarted = FALSE;}
-  void Notify(void) 
-  {
-    if (ss->trackState) {
-      /* See note above about wxYield */
-      // wxYield(); /* timer can take over: check for events */
-
-      ss->Click(x);
-      if (!restarted) {
-	restarted = 1;
-	Start(SS_TIMER_DELAY);
-      }
-    } else if (restarted)
-      Stop();
-  }
-};
-
-#define SS_USE_TIMER(trackState) \
- (trackState == ss_CLICK \
-  || trackState == ss_PAGE_UP \
-  || trackState == ss_PAGE_DOWN)
-
-void SimpleScroll::Event(int x, int y, int w, int h, wxMouseEvent *event)
-{
-  x = (long)event->x - x;
-  y = (long)event->y - y;
-
-  if (!horizontal) {
-    int oldvalue = x;
-    x = y;
-    y = oldvalue;
-    oldvalue = w;
-    w = h;
-    h = oldvalue;
-  }
-
-  if (event->ButtonDown() && !scrolling) {
-    if (x < arrow_w || x > w - arrow_w)
-      trackState = ss_CLICK;
-    else if (event->MiddleDown()) {
-      thumb_drag_offset = (thumb_w / 2);
-      trackState = ss_THUMB;
-    } else {
-      if (x < thumb_x)
-	trackState = ss_PAGE_UP;
-      else if (x > thumb_x + thumb_w)
-	trackState = ss_PAGE_DOWN;
-      else {
-	thumb_drag_offset = x - thumb_x;
-	trackState = ss_THUMB;
-      }
-    }
-
-    if (SS_USE_TIMER(trackState))
-      (new SSTimer(x, this))->Start(SS_TIMER_FIRST_DELAY, TRUE);
-    scrolling = TRUE;
-  } else if (event->Dragging()) {
-    if (SS_USE_TIMER(trackState))
-      return;
-  } else if (event->ButtonUp()) {
-    trackState = 0;
-    scrolling = FALSE;
-  } else
-    return;
-
-  /* In case mouse-up gets lost: */
-  if (scrolling && !event->leftDown && !event->rightDown && !event->middleDown) {
-    trackState = 0;
-    scrolling = FALSE;
-  }
-
-  if (trackState)
-    Click(x);
-}
-
-#endif

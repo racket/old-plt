@@ -20,7 +20,7 @@
 			  signal-undefined
 			  signal-not-boolean
 			  eq?-only-compares-symbols?
-			  read-exact-numbers
+			  disallow-untagged-inexact-numbers
 			  printing))
   
   (define settings
@@ -96,7 +96,7 @@
 	
 	(eq?-only-compares-symbols (setting-eq?-only-compares-symbols? pref))
 	
-	(zodiac:read-exact-numbers (setting-read-exact-numbers pref))
+	(zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers pref))
 
 	(aries:signal-undefined (setting-signal-undefined pref))
 	(aries:signal-not-boolean (setting-signal-not-boolean pref))
@@ -246,10 +246,10 @@
 			    setting-eq?-only-compares-symbols?
 			    "Eq? only compares symbols"
 			    dynamic-panel)]
-	   [read-exact-numbers
-	    (make-check-box set-setting-read-exact-numbers!
-			    setting-read-exact-numbers
-			    "Decimal numbers are read as exact numbers"
+	   [disallow-untagged-inexact-numbers
+	    (make-check-box set-setting-disallow-untagged-inexact-numbers!
+			    setting-disallow-untagged-inexact-numbers
+			    "Inexact numbers require #i"
 			    input-syntax-panel)]
 	   [printer-number->symbol
 	    (lambda (which)
@@ -312,7 +312,7 @@
 		     (compare-check-box signal-undefined setting-signal-undefined)
 		     (compare-check-box signal-not-boolean setting-signal-not-boolean)
 		     (compare-check-box eq?-only-compares-symbols? setting-eq?-only-compares-symbols?)
-		     (compare-check-box read-exact-numbers setting-read-exact-numbers)
+		     (compare-check-box disallow-untagged-inexact-numbers setting-disallow-untagged-inexact-numbers)
 		     (compare-check-box allow-improper-lists? setting-allow-improper-lists?)
 		     (compare-check-box sharing-printing? setting-sharing-printing?)
 		     (compare-check-box abbreviate-cons-as-list? setting-abbreviate-cons-as-list?)
@@ -357,7 +357,7 @@
 			 setting-unmatched-cond/case-is-error?
 			 setting-signal-undefined
 			 setting-signal-not-boolean
-			 setting-read-exact-numbers
+			 setting-disallow-untagged-inexact-numbers
 			 setting-eq?-only-compares-symbols?
 			 setting-allow-improper-lists?
 			 setting-sharing-printing?
@@ -367,7 +367,7 @@
 			 unmatched-cond/case-is-error?
 			 signal-undefined
 			 signal-not-boolean
-			 read-exact-numbers
+			 disallow-untagged-inexact-numbers
 			 eq?-only-compares-symbols?
 			 allow-improper-lists?
 			 sharing-printing?

@@ -24,29 +24,27 @@
       (define interactions-box%
         (class* editor-snip% (readable-snip<%>)
           
-          #;((integer? any?)
-             ((union integer? false?) (union integer? false?) (union integer? false?))
-             . opt-> .
-             (values any? integer? false?))
+          #;(any? (union integer? false?) (union integer? false?) (union integer? false?)
+                  . -> .
+                  any?)
           
-          (define/public read-one-special
+          (define/public read-special
             (opt-lambda (index source (line false) (column false) (position false))
-              (values
-               ;(lambda (level class-loc box-pos input-spec)
-               (let ([level 'beginner] [class-loc #f] [box-pos #f] [input-spec #f])
-                 #`(begin
-                     #,@(map (lambda (interaction)
-                               (with-syntax ([display-output
-                                              (lambda (value)
-                                                (send interaction display-output value))])
-                                 #`(display-output
-                                    #,(parse-interactions
-                                       (open-input-text-editor (send interaction get-input))
-                                       (send interaction get-input)
-                                       level))))
-                             (send interactions get-children))))
-               1
-               true)))
+              ;(lambda (level class-loc box-pos input-spec)
+              (let ([level 'beginner] [class-loc #f] [box-pos #f] [input-spec #f])
+                #`(begin
+                    #,@(map (lambda (interaction)
+                              (with-syntax ([display-output
+                                             (lambda (value)
+                                               (send interaction display-output value))])
+                                #`(display-output
+                                   #,(parse-interactions
+                                      (open-input-text-editor (send interaction get-input))
+                                      (send interaction get-input)
+                                      level))))
+                            (filter
+                             (lambda (x) (is-a? x interaction%))
+                             (send interactions get-children)))))))
           
           (field
            [pb (new aligned-pasteboard%)]
@@ -68,8 +66,12 @@
           (define/public add-new
             (opt-lambda ((after false))
               (send (get-pasteboard) lock-alignment true)
-              (let ([i (new interaction% (parent this))])
-                (when after (void) #;(move-after i after))
+              (let (#;[l (new hline% (parent this))]
+                    [i (new interaction% (parent this))])
+                (when after
+                  (move-after i after)
+                  #;(move-after l after)
+                  #;(move-after i l))
                 (send (get-pasteboard) lock-alignment false)
                 (send (send i get-input) set-caret-owner false 'global))))
           (super-new)))
@@ -85,7 +87,6 @@
           
           (field [input-text (new program-editor%)]
                  [output-text (new text%)])
-          
           #;(-> (is-a?/c text%))
           ;; The input of this interaction
           (define/public (get-input) input-text)
@@ -102,33 +103,40 @@
           #;(string? . -> . void?)
           ;; Sets the output to the given value
           (define/public (display-output val)
-            (send* output-text
-              (lock false)
-              (erase)
-              (insert (format "~s" val))
+            (let ([blue-text (new style-delta%)])
+              (send blue-text set-delta-foreground "blue")
+              (send* output-text
+                (lock false)
+                (erase)
+                (change-style blue-text 'start 'end #f)
+                (insert (format "~s" val))
               (lock true))
-            (send output show true))
+              (send output show true)))
           
           (super-new)
           
-          (new embedded-message% (label " > ") (parent this))
           (field [io (new vertical-alignment% (parent this))]
-                 [input (new vertical-alignment% (parent io))]
-                 [output (new vertical-alignment% (parent io) (show? false))])
+                 [input (new horizontal-alignment% (parent io))])
+          (new embedded-message% (label " > ") (parent input))
           (new snip-wrapper%
                (snip (new stretchable-editor-snip%
                           (editor input-text)
-                          (stretchable-height false)))
+                          (stretchable-height false)
+                          (with-border? false)
+                          (min-width 100)))
                (parent input))
+          (new embedded-text-button%
+               (parent input)
+               (label "Ctrl + Enter")
+               (callback (lambda (b e) (send (get-parent) add-new this))))
+          
+          (field [output (new vertical-alignment% (parent io) (show? false))])
           (new snip-wrapper%
                (snip (new stretchable-editor-snip%
                           (editor output-text)
-                          (stretchable-height false)))
+                          (stretchable-height false)
+                          (with-border? false)))
                (parent output))
-          (new embedded-text-button%
-               (parent this)
-               (label "Ctrl + Enter")
-               (callback (lambda (b e) (send (get-parent) add-new this))))
           ))
       ))
   )

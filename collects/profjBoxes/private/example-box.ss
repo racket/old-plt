@@ -16,6 +16,7 @@
   (provide example-box@
            example-box^)
   
+  ;; This is wrong but it's a good enough prototype
   (define re:java-id (regexp "[A-Za-z_]+"))
   (define min-field-width 50)
 
@@ -28,13 +29,12 @@
       (define example-box%
         (class* editor-snip% (readable-snip<%>)
           
-          #;((integer? any?)
-             ((union integer? false?) (union integer? false?) (union integer? false?))
-             . opt-> .
-             (values any? integer? false?))
+          #;(any? (union integer? false?) (union integer? false?) (union integer? false?)
+                  . -> .
+                  any?)
           
-          (define/public read-one-special
-            (opt-lambda (index source (line false) (column false) (position false))
+          (define/public read-special
+            (opt-lambda (source (line false) (column false) (position false))
               #;(((is-a?/c text%))
                  (natural-number? (union natural-number? false?))
                  . opt-> .
@@ -56,22 +56,19 @@
                            m-start
                            (add1 m-start)
                            (- m-end m-start))))))
-              (values
-               ;(lambda (level class-loc box-pos input-spec)
-               (let ([level 'beginner] [class-loc #f] [box-pos #f] [input-spec #f])
-                 #`(begin #,@(map
-                              (lambda (example)
-                                (with-syntax ([name (text->java-id
-                                                     (send example get-name))]
-                                              [value (parse-interactions
-                                                      (open-input-text-editor
-                                                       (send example get-value))
-                                                      (send example get-value)
-                                                      level)])
-                                  #'(define name value)))
-                              (send examples get-children))))
-               1
-               true)))
+              ;(lambda (level class-loc box-pos input-spec)
+              (let ([level 'beginner] [class-loc #f] [box-pos #f] [input-spec #f])
+                #`(begin #,@(map
+                             (lambda (example)
+                               (with-syntax ([name (text->java-id
+                                                    (send example get-name))]
+                                             [value (parse-interactions
+                                                     (open-input-text-editor
+                                                      (send example get-value))
+                                                     (send example get-value)
+                                                     level)])
+                                 #'(define name value)))
+                             (send examples get-children))))))
           
           (field
            [pb (new aligned-pasteboard%)]

@@ -97,19 +97,48 @@
 	     (m (gen x '() plist (cdr eb-errf) length>= (gensym)))
 	     (gs (map (lambda (_) (gensym)) bv)))
 	(unreachable plist match-expr)
-	`(begin
-	   ,@(map (lambda (v) `(define ,v #f)) bv)
-	   ,(inline-let
-	     `(let ((,length>=
-		     (lambda (n) (lambda (l) (>= (length l) n))))
-		    (,x ,exp)
-		    (,code
-		     (lambda ,gs
-		       ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
-		       (cond (#f #f))))
-		    ,@bindings
-		    ,@(car eb-errf))
-		,m))))))
+        `(define-values ,bv
+           (let ,(map (lambda (v) `(,v #f)) bv)
+             ,(inline-let
+               `(let ((,length>=
+                       (lambda (n) (lambda (l) (>= (length l) n))))
+                      (,x ,exp)
+                      (,code
+                       (lambda ,gs
+                         ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
+                         (cond (#f #f))))
+                      ,@bindings
+                      ,@(car eb-errf))
+                  ,m))
+             (values ,@bv))))))
+
+;  (define gendefine
+;    (lambda (pat exp match-expr)
+;      (let* ((length>= (gensym))
+;	     (eb-errf (error-maker match-expr))
+;	     (x (bound (validate-pattern pat) match-expr))
+;	     (p (car x))
+;	     (bv (cadr x))
+;	     (bindings (caddr x))
+;	     (code (gensym))
+;	     (plist (list (list p code bv #f #f)))
+;	     (x (gensym))
+;	     (m (gen x '() plist (cdr eb-errf) length>= (gensym)))
+;	     (gs (map (lambda (_) (gensym)) bv)))
+;	(unreachable plist match-expr)
+;	`(begin
+;	   ,@(map (lambda (v) `(define ,v #f)) bv)
+;	   ,(inline-let
+;	     `(let ((,length>=
+;		     (lambda (n) (lambda (l) (>= (length l) n))))
+;		    (,x ,exp)
+;		    (,code
+;		     (lambda ,gs
+;		       ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)
+;		       (cond (#f #f))))
+;		    ,@bindings
+;		    ,@(car eb-errf))
+;		,m))))))
 
   (define pattern-var?
     (lambda (x)

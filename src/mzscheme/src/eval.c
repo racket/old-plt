@@ -2869,11 +2869,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #if USE_LOCAL_RUNSTACK
   GC_MAYBE_IGNORE_INTERIOR Scheme_Object **runstack;
 #endif
-#ifdef REGISTER_POOR_MACHINE
 # define p scheme_current_thread
-#else
-  Scheme_Thread *p = scheme_current_thread;
-#endif
 
 #ifdef DO_STACK_CHECK
 # define SCHEME_CURRENT_PROCESS p
@@ -3898,7 +3894,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   return v;
 
-#ifdef REGISTER_POOR_MACHINE
+#ifdef p
 # undef p
 #endif
 }

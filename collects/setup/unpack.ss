@@ -50,7 +50,7 @@
 				  (apply build-path v)))])
 		     (unless (or (eq? s 'same) (relative-path? s))
 		       (error "expected a directory name relative path string, got" s))
-		     (when (filter 'dir s plthome)
+		     (when (or (eq? s 'same) (filter 'dir s plthome))
 		       (let ([d (build-path plthome s)])
 			 (unless (directory-exists? d)
 			   (print-status
@@ -149,11 +149,13 @@
 		  ;; Stop if no target directory:
 		  (when target-dir
 
-		    ;; Check declared dependencies
+		    ;; Check declared dependencies (none means v103)
 		    (call-info info 'requires (lambda () null)
 			       (lambda (l) 
 				 (define (bad)
 				   (error "`requires' info is corrupt:" l))
+				 (when (void? l)
+				   (error "cannot install; archive is for an older version of PLT Scheme"))
 				 (unless (list? l) (bad))
 				 ;; Check each dependency:
 				 (for-each

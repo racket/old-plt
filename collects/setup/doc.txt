@@ -119,9 +119,9 @@ The raw format is
 
  * "PLT" are the first three characters.
 
- * An "info.ss"-like procedure that takes a symbol and a failure thunk
-   and returns information about archive for recognized symbols. The
-   two required info fields are:
+ * An like procedure that takes a symbol and a failure thunk and
+   returns information about archive for recognized symbols. The
+   information symbols are:
 
      + 'name - a human-readable string describing the archive's
        contents. This name is used only for printing messages to the
@@ -130,8 +130,18 @@ The raw format is
      + 'unpacker - a symbol indicating the expected unpacking
        environment. Currently, the only allowed value is 'mzscheme.
 
-   The procedure is extracted from the archive using MzScheme's
-   `read' and `eval' procedures.
+     + 'requires - collections required to be installed before
+       unpacking the archive, which associated versions; see the
+       documentation of `pack' for details.
+
+     + 'conflicts - collections required *not* to be installed before
+       unpacking the archive
+
+     + 'plt-relative? - a boolean; if true, then the archive's content
+       should be unpacked relative to the plt installation directory.
+
+   The procedure is extracted from the archive using MzScheme's `read'
+   and `eval' procedures (in a fresh namespace).
 
  * An unsigned unit that drives the unpacking process. The unit accepts two
    imports: a path string for the plt directory and an `unmztar'
@@ -208,7 +218,8 @@ mzc supports the creation of simple .plt files (see the mzc manual for
 details) but the setup collection's _pack.ss_ library provides more
 general functions to help make .plt archives:
 
-> (pack dest name paths collections [filter encode? file-mode]) -
+> (pack dest name paths collections [filter encode? file-mode plt-relative? requires conflicts])
+
   Creates the .plt file specified by the pathname `dest', using the
   string `name' as the name reported to Setup PLT as the archive's
   description, and `collections' as the list of collection paths (to
@@ -231,6 +242,24 @@ general functions to help make .plt archives:
   The `file-mode' argument must be 'file or 'file-replace, indicating
   the default mode for a file in the archive. The default value is
   'file.
+
+  If `plt-relative?', the archive's files and directores are to be
+  unpacked relative to the plt installation directory.
+
+  The `requires' argument should have the shape
+      (list (list <coll-path> <version>) ...)
+  where each <coll-path> is a non-empty list of relative-path strings,
+  and each <version> is a (possiblyempty) list of exact integers. The
+  indicated collections must be installed at unpacking time, with
+  version sequences that match as much of the version sequence
+  specified n the corresponding <version>. A collection's version is
+  inidcated by the `version' field of it's info.ss file.
+
+  The `conflicts' argument should have the shape
+       (list <coll-path> ...)
+  where each <coll-path> is a non-empty list of relative-path
+  strings. The inidicated collections must *not* be installed at
+  unpacking time.
 
 > (std-filter p) - returns #t unless `p' matches one of the following
   regular expressions: "CVS$", "compiled$", "~$", or "^#.*#$".

@@ -1,4 +1,4 @@
 
 (module info (lib "infotab.ss" "setup")
-  (define name "MrEd")
+  (define name "MzScheme")
   (define version '(200)))

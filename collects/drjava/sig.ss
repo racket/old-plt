@@ -1,37 +1,12 @@
+(define-signature tokens^
+  (jEOF jIDENTIFIER jIMPORT jPACKAGE jSEMI jLBRACE jRBRACE jLBRACKET jRBRACKET jLPAREN
+        jRPAREN jINTLITERAL jLONGLITERAL jFLOATLITERAL jDOUBLELITERAL jCHARLITERAL
+        jSTRINGLITERAL jBOOLEAN jBYTE jCHAR jSHORT jINT jLONG jFLOAT jDOUBLE jDOT))
 
-(define-signature gjc^
-  (name->string
-   compile-gjlist
-   gjc-version
-   gjc-class
-   gjc-output-dir
-   set-gjc-output-dir!
-   jEOF
-   jIDENTIFIER
-   jIMPORT
-   jPACKAGE
-   jSEMI
-   jLBRACE
-   jRBRACE
-   jLBRACKET
-   jRBRACKET
-   jLPAREN
-   jRPAREN
-   jINTLITERAL
-   jLONGLITERAL
-   jFLOATLITERAL
-   jDOUBLELITERAL
-   jCHARLITERAL
-   jSTRINGLITERAL
-   jBOOLEAN
-   jBYTE
-   jCHAR
-   jSHORT
-   jINT
-   jLONG
-   jFLOAT
-   jDOUBLE
-   jDOT))
+(define-signature gjc-core^
+  (name->string compile-gjlist gjc-version gjc-class gjc-output-dir set-gjc-output-dir!))
+
+(define-signature gjc^ ((open gjc-core^) (open tokens^)))
 
 (define-signature queue^
   (enq! deq! dupq quick-dupq mtq mtq? last-q first-q q-length))

@@ -10,11 +10,11 @@
         (forwarding-mess (make-object forwarding-message this))
         (defs (make-object defs% forwarding-mess)))
       (override
-       (make-editor (lambda () defs))
-       (edit-menu:between-find-and-preferences void)
-       (file-menu:new
-	(lambda (item evt) (handler:edit-file #f (lambda _ (new-document #f)))))
-       (file-menu:between-print-and-close void))
+        (make-editor (lambda () defs))
+        (edit-menu:between-find-and-preferences void)
+        (file-menu:new
+         (lambda (item evt) (handler:edit-file #f (lambda _ (new-document #f)))))
+        (file-menu:between-print-and-close void))
       (sequence (super-init (or filename "Untitled")))
       (private
         (can% (get-canvas%))
@@ -29,20 +29,20 @@
 	   (let ([can (send editor get-canvas)]
 		 [hide-str (format "Hide ~a" name)]
 		 [show-str (format "Show ~a" name)])
-	   (make-object menu-item% hide-str show
-			(lambda (item cntl)
-			  (send (get-area-container)
-				change-children
-				(lambda (kids)
-				  (if (memq can kids)
-				      (begin
-					(send item set-label show-str)
-					(remq can kids))
-				      (begin 
-					(send item set-label hide-str)
-					(cons (car kids) (pos can (cdr kids)))
-					(cons (car kids) (pos can (cdr kids))))))))
-			key)))))
+             (make-object menu-item% hide-str show
+                          (lambda (item cntl)
+                            (send (get-area-container)
+                                  change-children
+                                  (lambda (kids)
+                                    (if (memq can kids)
+                                        (begin
+                                          (send item set-label show-str)
+                                          (remq can kids))
+                                        (begin 
+                                          (send item set-label hide-str)
+                                          (cons (car kids) (pos can (cdr kids)))
+                                          (cons (car kids) (pos can (cdr kids))))))))
+                          key)))))
       (sequence
         (send defs set-file-format 'text)
         (add-parts
@@ -62,7 +62,6 @@
 	  (build-show-item show defs "Definitions" #\d cons)
 	  (build-show-item show repl "Interactions" #\e
 			   (lambda (can tail) (cons (car tail) (cons can (cdr tail)))))))))
-  
   
   
   (define forwarding-message

@@ -18,7 +18,7 @@
    (SPLIT : split^ ((load-relative "split.ss") JVM Q GJC SCAN F FILE))
    (REPL : repl^ ((load-relative "repl.ss") JVM SCAN Q GJC SPLIT F))
    (GOOBER : goober^ ((load-relative "goober.ss") (MRED : mred^)))
-   (GT : gui-text^ ((load-relative "gui-text.ss") (MRED : mred^) REPL JVM SCAN SPLIT GJC GOOBER))
+   (GT : gui-text^ ((load-relative "gui-text.ss") (MRED : mred^) REPL JVM SCAN SPLIT GJC GOOBER FILE))
    (GUI : gui^ ((load-relative "gui-frame.ss") FRAME GT (MRED : mred^) F))
    (CH : channel^ ((load-relative "channel.ss") Q))
    ;;(IN : () ((load-relative "input-gui.ss") JVM (MRED : mred^) (FRAME : input-base^)))

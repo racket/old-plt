@@ -1,6 +1,6 @@
 (load-relative "sig.ss")
 (unit/sig gui-text^
-  (import mred^ repl^ jvm^ scanner^ split^ gjc^ goober^)
+  (import mred^ repl^ jvm^ scanner^ split^ gjc^ goober^ mzlib:file^)
   
   ;; This doesn't work for argument lists that span lines,
   ;; nor does it work when } are not at the front of the line.
@@ -206,7 +206,7 @@
                             (lambda ()
                               (with-handlers ([(lambda (x) (eq? x 'bad-squiglies))
                                                (lambda _ (insert #\newline))]
-                                              [void (lambda _ (print-red-char (format "Oh, no!~n")) (new-prompt))])
+                                              [void (lambda _ (print-red-char (format "Runtime Error.~n")) (new-prompt))])
                                 (insert (repl-format (eval-str repl text)))
                                 (hist-add! text)
                                 (new-prompt))))
@@ -216,9 +216,9 @@
          ; -> jobject(Env)
          (lambda ()
            (set! prompt-pos 0)
-           (set! repl (new-repl))
            (erase)
            (init)
+           (set! repl (new-repl))
            (repl-env repl)))
         (print-char
          (make-printer (make-color-style "black")))
@@ -228,7 +228,10 @@
       (private
         (prompt-pos 0)
         (repl (new-repl))
-        (init (lambda () (insert banner) (new-prompt)))
+        (class-dir ".")
+        (init (lambda () (insert banner) (new-prompt)
+                (set! class-dir (make-tmp-directory))
+                (set-gjc-output-dir! class-dir)))
         (print-stream
          (lambda (f)
            (let* ([w-class (jfind-class "edu/rice/cs/drj/WriteToScheme")]
@@ -387,4 +390,27 @@
     (let ([str (jstring->string str)])
       (if current-goobers
 	  (send current-goobers warning pos str)
-	  (printf "Warning: ~a : ~a ~n" pos str)))))
+	  (printf "Warning: ~a : ~a ~n" pos str))))
+  
+  (define directories-to-delete null)
+  
+  ;; make-tmp-directory : -> String
+  (define (make-tmp-directory)
+    (let ([tmp-dir (find-system-path 'temp-dir)])
+      (let loop ([n 0])
+        (let ([my-dir (build-path tmp-dir (format "drjava-~a.~a" (current-seconds) n))])
+          (if (or (directory-exists? my-dir) (file-exists? my-dir) (link-exists? my-dir))
+              (loop (add1 n))
+              (begin
+                (make-directory my-dir)
+                (set! directories-to-delete (cons my-dir directories-to-delete))
+                my-dir))))))
+  
+  (exit-handler
+   (let ([super (exit-handler)])
+     (lambda (arg)
+       (for-each (lambda (d)
+                   (when (directory-exists? d)
+                     (delete-directory/files d)))
+                 directories-to-delete)
+       (super arg)))))

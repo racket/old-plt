@@ -888,7 +888,7 @@ void *scheme_init_fdset_array(void *fdarray, int count)
 
 void *scheme_get_fdset(void *fdarray, int pos)
 {
-#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP)
+#if defined(FILES_HAVE_FDS) || defined(USE_SOCKETS_TCP) || defined(WIN32_FD_HANDLES)
   return ((fdset_type *)fdarray) + pos;
 #else
   return NULL;

@@ -38,7 +38,7 @@
 	       [(string=? footer children-footer-string)
 		(let* ([s (send stream get-string)]
 		       [ht (make-hash-table)]
-		       [info (mzlib:string:read-string s)])
+		       [info (mzlib:string:read-from-string s)])
 		  (let loop ([snip (find-first-snip)])
 		    (unless (null? snip)
 		      (hash-table-put! ht (string->symbol (ivar snip name)) snip)
@@ -70,7 +70,7 @@
 			    info))]
 	       [(string=? footer size-footer-string)
 		(let* ([s (send stream get-string)]
-		       [l (mzlib:string:read-string s)])
+		       [l (mzlib:string:read-from-string s)])
 		  '(send (get-frame) set-size -1 -1 (car l) (cadr l))
 		  #t)]
 	       [else (super-read-footer-from-file stream footer)]))]
@@ -388,7 +388,7 @@
 	   (send p get-string (box 0)))]
 	[read
 	 (lambda (p)
-	   (let ([l (mzlib:string:read-string (send p get-string null))])
+	   (let ([l (mzlib:string:read-from-string (send p get-string null))])
 	     (make-object snip% (car l) (cadr l))))])
       (sequence
 	(apply super-init args)

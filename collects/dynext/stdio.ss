@@ -25,7 +25,7 @@
 	   (lambda (in dest box)
 	     (thread (lambda () 
 		       (let loop ()
-			 (let ([t (read-line in)])
+			 (let ([t (read-line in 'any)])
 			   (unless (eof-object? t)
 				   (unless quiet? (fprintf (dest) "~a~n" t))
 				   (set-box! box (string-append (unbox box) 

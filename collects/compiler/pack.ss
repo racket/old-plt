@@ -18,7 +18,7 @@
 		   (thread
 		    (lambda ()
 		      (let loop ()
-			(let ([l (read-line p)])
+			(let ([l (read-line p 'any)])
 			  (unless (eof-object? l)
 			    (printf "~a~n" l)
 			    (loop)))))))]

@@ -3,7 +3,7 @@
 (module mysterx mzscheme
 
   ; private mysterx modules
- 
+
   (require (prefix mxprims: "private/mxmain.ss"))
   (require (prefix style: "private/style.ss"))
   (require "private/filter.ss")
@@ -38,8 +38,8 @@
     com-set-property-type
     com-event-type
     com-object-type
-    com-add-ref	
-    com-ref-count	
+    com-add-ref
+    com-ref-count
     com-is-a?
     com-help
     com-register-event-handler
@@ -75,7 +75,8 @@
     com-scode->number
     number->com-scode
     com-object?
-    com-iunknown?)
+    com-iunknown?
+    %%initialize-dotnet-runtime)
 
   (define mx-version mxprims:mx-version)
   (define block-while-browsers mxprims:block-while-browsers)
@@ -115,6 +116,8 @@
   (define com-object-eq? mxprims:com-object-eq?)
   (define com-omit mxprims:com-omit)
 
+  (define %%initialize-dotnet-runtime mxprims:%%initialize-dotnet-runtime)
+
   ;; sort results of "reflection" results
 
   (define (alphabetize lst)
@@ -133,9 +136,9 @@
     (lambda ()
       (alphabetize (f))))
 
-  (define com-all-coclasses 
-    (make-sorted-thunk mxprims:com-all-coclasses)) 
-  (define com-all-controls 
+  (define com-all-coclasses
+    (make-sorted-thunk mxprims:com-all-coclasses))
+  (define com-all-controls
     (make-sorted-thunk mxprims:com-all-controls))
 
   ;; property getter/setter
@@ -151,8 +154,8 @@
       (error "For COM property, expected a string or a list with a string a the first element")]))
 
   (define (com-get-property obj . path)
-    (cond 
-     [(null? path) 
+    (cond
+     [(null? path)
       (error 'com-get-property
 	     "Expected one or more properties (strings or lists with a string as the first element)")]
      [(null? (cdr path))
@@ -162,8 +165,8 @@
 		  (cdr path))]))
 
   (define (com-set-property! obj . path-and-value)
-    (cond 
-     [(or (null? path-and-value) 
+    (cond
+     [(or (null? path-and-value)
 	  (null? (cdr path-and-value)))
       (error 'com-set-property!
 	     "Expected one or more properties (strings or lists with a string as the first element) and a value")]
@@ -172,19 +175,19 @@
 	    [val (cadr path-and-value)])
 	(if (pair? ppty)
 	    (if (string? (car ppty))
-		(apply mxprims:com-set-property! obj 
+		(apply mxprims:com-set-property! obj
 		       (append ppty (list val)))
-		(error 'com-set-property! 
+		(error 'com-set-property!
 		       "Indexed property must be a list with a string (property name) as the first element"))
 	    (mxprims:com-set-property! obj ppty val)))]
      [else (apply com-set-property!
 		  (get-item-property obj (car path-and-value))
 		  (cdr path-and-value))]))
 
-  ;; style-related procedures 
+  ;; style-related procedures
 
   (define make-css-percentage style:make-css-percentage)
-  (define css-percentage? style:css-percentage?) 
+  (define css-percentage? style:css-percentage?)
   (define css-percentage-num style:css-percentage-num)
   (define make-css-length style:make-css-length)
   (define css-length? style:css-length?)
@@ -522,7 +525,7 @@
 	left-native
 	set-left!
 	set-left-native!
-	z-index 
+	z-index
 	z-index-native
 	set-z-index!
 	set-z-index-native!)
@@ -535,15 +538,15 @@
        (define get-string-as-symbol
 	(lambda (f name)
 	  (let ([s (f elt)])
-	    (if (empty-string? s)	
+	    (if (empty-string? s)
 		(empty-property-error name)
 		(string->symbol s)))))
 
        (define set-symbol-as-string
-	 (lambda (sym vals f name)	
+	 (lambda (sym vals f name)
 	   (unless (member sym vals)
-		   (error 
-		    (format "~a: Expected value in '~a, got ~a" 
+		   (error
+		    (format "~a: Expected value in '~a, got ~a"
 			    name vals sym)))
 	   (f elt (symbol->string sym))))
 
@@ -555,16 +558,16 @@
 		 (lambda () (f elt s))
 		 html-post))))
 
-       (define insert-object-maker 
+       (define insert-object-maker
 	 (lambda (name->html)
-	   (opt-lambda 
+	   (opt-lambda
 	    (object width height [size 'pixels])
 	    (dynamic-wind
 		html-wait
-		(lambda () 
+		(lambda ()
 		  (let ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-insert-html 
-		     elt 
+		    (mxprims:element-insert-html
+		     elt
 		     (name->html object width height size))
 		    (let* ([new-objects (mxprims:document-objects doc)]
 			   [obj (car (mzlib:remove* old-objects new-objects
@@ -573,16 +576,16 @@
 		      obj)))
 		html-post))))
 
-       (define append-object-maker 
+       (define append-object-maker
 	 (lambda (name->html)
-	   (opt-lambda 
+	   (opt-lambda
 	    (object width height [size 'pixels])
 	    (dynamic-wind
 		html-wait
 		(lambda ()
 		  (let* ([old-objects (mxprims:document-objects doc)])
-		    (mxprims:element-append-html 
-		     elt 
+		    (mxprims:element-append-html
+		     elt
 		     (name->html object width height size))
 		    (let* ([new-objects (mxprims:document-objects doc)]
 			   [obj (car (mzlib:remove* old-objects
@@ -600,7 +603,7 @@
 	(insert-object-maker progid->html))
        (define append-object-from-progid-raw
 	(append-object-maker progid->html))
-       (define insert-html 
+       (define insert-html
 	 (lambda (s)
 	   (dynamic-wind
 	       html-wait
@@ -610,7 +613,7 @@
 	 (lambda () (mxprims:element-get-html elt)))
        (define get-text
 	 (lambda () (mxprims:element-get-text elt)))
-       (define insert-text 
+       (define insert-text
 	 (lambda (s)
 	   (dynamic-wind
 	       html-wait
@@ -634,10 +637,10 @@
 	       html-wait
 	       (lambda () (mxprims:element-replace-html elt s))
 	       html-post)))
-       (define insert-object-from-coclass 
+       (define insert-object-from-coclass
 	 (lambda args
 	   (apply insert-object-from-coclass-raw args)))
-       (define append-object-from-coclass 
+       (define append-object-from-coclass
 	 (lambda args
 	   (apply append-object-from-coclass-raw args)))
        (define insert-object-from-progid
@@ -682,22 +685,22 @@
 			(andmap string? ff))
 		   (error "set-font-family!: Expected list of strings, got"
 			  ff))
-	   (mxprims:element-set-font-family! 
-	    elt 
+	   (mxprims:element-set-font-family!
+	    elt
 	    (style:font-families->string ff))))
        (define set-font-family-native!
 	 (lambda (s)
 	   (mxprims:element-set-font-family! elt s)))
        (define font-style
 	 (lambda ()
-	   (get-string-as-symbol 
+	   (get-string-as-symbol
 	    mxprims:element-font-style "font-style")))
 	(define font-style-native
 	 (lambda ()
 	   (mxprims:element-font-style elt)))
 	(define set-font-style!
 	 (lambda (sym)
-	   (set-symbol-as-string sym *font-styles* 
+	   (set-symbol-as-string sym *font-styles*
 				 mxprims:element-set-font-style!
 				 "set-font-style!")))
 	(define set-font-style-native!
@@ -713,7 +716,7 @@
 	(define set-font-variant!
 	 (lambda (sym)
 	   (set-symbol-as-string
-	    sym *font-variants* mxprims:element-set-font-variant! 
+	    sym *font-variants* mxprims:element-set-font-variant!
 	    "set-font-variant!")))
 	(define set-font-variant-native!
 	 (lambda (s)
@@ -732,11 +735,11 @@
 	   (mxprims:element-font-weight elt)))
 	(define set-font-weight!
 	 (lambda (w)
-	   (unless (member w 
+	   (unless (member w
 			   '(bold bolder lighter normal
 				  100 200 300 400 500 600 700 800 900))
-		   (error 
-		    (string-append 
+		   (error
+		    (string-append
 		     "Expected value in "
 		     "'(bold bolder lighter normal "
 		     "100 200 300 400 500 600 700 800 900),"
@@ -774,7 +777,7 @@
 	 (lambda (sym)
 	   (set-symbol-as-string
 	    sym *background-attachments*
-	    mxprims:element-set-background-attachment! 
+	    mxprims:element-set-background-attachment!
 	    "set-background-attachment!")))
 	(define set-background-attachment-native!
 	 (lambda (s)
@@ -790,7 +793,7 @@
 	       (list->string
 		(mzlib:filter (lambda (c)
 				(not (member c '(#\( #\)))))
-			      (string->list 
+			      (string->list
 			       (substring s 3 (string-length s)))))]
 	      [else (error "Unknown background-image value: ~a"
 			   s)]))))
@@ -803,8 +806,8 @@
 	    [(eq? image 'none)
 	     (mxprims:element-set-background-image! elt "none")]
 	    [(string? image)
-	     (mxprims:element-set-background-image! 
-	      elt 
+	     (mxprims:element-set-background-image!
+	      elt
 	      (string-append "url(" image ")"))]
 	    [else
 	     (error "Expected 'none or string, got: ~a" image)])))
@@ -847,46 +850,46 @@
 				(vertical? elt-2))
 			   (and (vertical? elt-1)
 				(horizontal? elt-2)))
-		       (mxprims:element-set-background-position! 
-			elt 
+		       (mxprims:element-set-background-position!
+			elt
 			(string-append (symbol->string elt-1)
 				       " "
 				       (symbol->string elt-2)))
-		       (error 
-			(format 
-			 (string-append 
+		       (error
+			(format
+			 (string-append
 			  "One symbol must be from "
 			  "'~a, other from "
-			  "'~a, got: ~a") 
+			  "'~a, got: ~a")
 			 *horizontals* *verticals* pos))))
 		 (if (andmap style:percentage-or-length? pos)
-		     (mxprims:element-set-background-position! 
-		      elt 
+		     (mxprims:element-set-background-position!
+		      elt
 		      (string-append
 		       (style:percentage-or-length->string (car pos))
 		       " "
 		       (style:percentage-or-length->string (cadr pos))))
-		     (error 
-		      (format 
-		       (string-append 
+		     (error
+		      (format
+		       (string-append
 			"Two elements of list "
 			" must be either a percentage or "
 			" CSS length, got: ~a") pos))))]
 	    [(style:percentage-or-length? pos)
-	     (mxprims:element-set-background-position! 
-	      elt 
+	     (mxprims:element-set-background-position!
+	      elt
 	      (style:percentage-or-length->string pos))]
 	    [else
-	     (error 
-	      (format 
-	       (string-append 
+	     (error
+	      (format
+	       (string-append
 		"Expected any of "
 		"1) a list of two symbols, one "
 		"from '~a, the other from '~a, or "
 		"2) a two element list, where each element is a "
 		"percentage or CSS length, or "
 		"3) a percentage, or "
-		"4) a CSS length.  Got: ~a") 
+		"4) a CSS length.  Got: ~a")
 	       *horizontals* *verticals* pos))])))
 	(define set-background-position-native!
 	 (lambda (s)
@@ -901,12 +904,12 @@
 	   (mxprims:element-text-decoration elt)))
 	(define set-text-decoration!
 	 (lambda (decs)
-	   (unless 
+	   (unless
 	    (andmap decoration? decs)
-	    (error 
+	    (error
 	     (format "Expected text decorations from ~a, got: ~a"
 		     *decorations* decs)))
-	   (mxprims:element-set-text-decoration! elt 
+	   (mxprims:element-set-text-decoration! elt
 						 (symbols->string decs))))
 	(define set-text-decoration-native!
 	 (lambda (s)
@@ -928,7 +931,7 @@
 	   (mxprims:element-set-text-transform! elt s)))
 	(define text-align
 	 (lambda ()
-	   (get-string-as-symbol 
+	   (get-string-as-symbol
 	    mxprims:element-text-align
 	    "text-align")))
 	(define text-align-native
@@ -956,7 +959,7 @@
 	 (lambda (lst)
 	   (let ([len (length lst)])
 	     (when (or (< len 1) (> len 4))
-		   (error 
+		   (error
 		    "Expected one to four margin values, got"
 		    lst)))
 	   (mxprims:element-set-margin! elt (style:margin->string lst))))
@@ -976,14 +979,14 @@
 	 (lambda (pads)
 	   (unless (and (pair? pads)
 			(let ([len (length pads)])
-			  (and (>= len 1) (<= len 4))) 
+			  (and (>= len 1) (<= len 4)))
 			(andmap style:percentage-or-length? pads))
-		   (error (string-append 
+		   (error (string-append
 			   "set-padding: expected list of "
 			   "1 to 4 css-percentages or "
 			   "css-lengths, got") pads))
-	   (mxprims:element-set-padding! 
-	    elt 
+	   (mxprims:element-set-padding!
+	    elt
 	    (style:padding->string pads))))
 	(define set-padding-native!
 	 (lambda (s)
@@ -998,13 +1001,13 @@
 	   (mxprims:element-border elt s)))
 	(define set-border!
 	 (lambda (cs)
-	   (style:set-border-with-fun 
+	   (style:set-border-with-fun
 	    elt cs mxprims:element-set-border!)))
 	(define set-border-native!
 	 (lambda (s)
 	   (mxprims:element-set-border! elt s)))
 	(define border-top-raw
-	 (style:make-border-getter 
+	 (style:make-border-getter
 	  elt mxprims:element-border-top "border-top"))
 	(define border-top
 	 (lambda args
@@ -1014,13 +1017,13 @@
 	   (mxprims:element-border-top elt)))
 	(define set-border-top!
 	 (lambda (cs)
-	   (style:set-border-with-fun 
+	   (style:set-border-with-fun
 	    elt cs mxprims:element-set-border-top!)))
 	(define set-border-top-native!
 	 (lambda (s)
 	   (mxprims:element-set-border-top! elt s)))
 	(define border-bottom-raw
-	 (style:make-border-getter 
+	 (style:make-border-getter
 	  elt mxprims:element-border-bottom "border-bottom"))
 	(define border-bottom
 	  (lambda args
@@ -1030,13 +1033,13 @@
 	   (mxprims:element-border-bottom elt)))
 	(define set-border-bottom!
 	 (lambda (cs)
-	   (style:set-border-with-fun 
+	   (style:set-border-with-fun
 	    elt cs mxprims:element-set-border-bottom!)))
 	(define set-border-bottom-native!
 	 (lambda (s)
 	   (mxprims:element-set-border-bottom! elt s)))
 	(define border-left-raw
-	 (style:make-border-getter 
+	 (style:make-border-getter
 	  elt mxprims:element-border-left "border-left"))
 	(define border-left
 	  (lambda args
@@ -1046,13 +1049,13 @@
 	   (mxprims:element-border-left elt)))
 	(define set-border-left!
 	 (lambda (cs)
-	   (style:set-border-with-fun 
+	   (style:set-border-with-fun
 	    elt cs mxprims:element-set-border-left!)))
 	(define set-border-left-native!
 	 (lambda (s)
 	   (mxprims:element-set-border-left! elt s)))
 	(define border-right-raw
-	 (style:make-border-getter 
+	 (style:make-border-getter
 	  elt mxprims:element-border-right "border-right"))
 	(define border-right
 	  (lambda args
@@ -1062,14 +1065,14 @@
 	   (mxprims:element-border-right elt)))
 	(define set-border-right!
 	 (lambda (cs)
-	   (style:set-border-with-fun 
+	   (style:set-border-with-fun
 	    elt cs mxprims:element-set-border-right!)))
 	(define set-border-right-native!
 	 (lambda (s)
 	   (mxprims:element-set-border-right! elt s)))
 	(define border-color-raw
-	 (style:make-color-getter 
-	  elt 
+	 (style:make-color-getter
+	  elt
 	  mxprims:element-border-color
 	  "border-color"))
 	(define border-color
@@ -1079,7 +1082,7 @@
 	 (lambda ()
 	   (mxprims:element-border-color elt)))
 	(define set-border-color-raw!
-	 (style:make-color-setter 
+	 (style:make-color-setter
 	  elt mxprims:element-set-border-color!
 	  "set-border-color!"))
 	(define set-border-color!
@@ -1089,7 +1092,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-color! elt s)))
 	(define border-width-raw
-	 (style:make-border-width-getter 
+	 (style:make-border-width-getter
 	  elt mxprims:element-border-width "border-width"))
 	(define border-width
 	  (lambda args
@@ -1100,18 +1103,18 @@
 	(define set-border-width!
 	 (lambda (s)
 	   (unless (style:border-width? s)
-		   (error 
+		   (error
 		    (format "border-width: Expected element of ~a or CSS length, got: ~a"
 			    *border-widths* s)))
-	   (mxprims:element-set-border-width! 
-	    elt 
+	   (mxprims:element-set-border-width!
+	    elt
 	    (style:border-width->string s))))
 	(define set-border-width-native!
 	 (lambda (s)
 	   (mxprims:element-set-border-width! elt s)))
 	(define border-style-raw
-	 (style:make-border-style-getter 
-	  elt mxprims:element-border-style 
+	 (style:make-border-style-getter
+	  elt mxprims:element-border-style
 	  "border-style"))
 	(define border-style
 	  (lambda args
@@ -1120,8 +1123,8 @@
 	 (lambda ()
 	   (mxprims:element-border-style elt)))
 	(define set-border-style-raw!
-	 (style:make-border-style-setter 
-	  elt mxprims:element-set-border-style! 
+	 (style:make-border-style-setter
+	  elt mxprims:element-set-border-style!
 	  "set-border-style!"))
 	(define set-border-style!
 	  (lambda args
@@ -1130,8 +1133,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-style! elt s)))
 	(define border-top-style-raw
-	 (style:make-border-style-getter 
-	  elt mxprims:element-border-top-style 
+	 (style:make-border-style-getter
+	  elt mxprims:element-border-top-style
 	  "border-top-style"))
 	(define border-top-style
 	  (lambda args
@@ -1140,8 +1143,8 @@
 	 (lambda ()
 	   (mxprims:element-border-top-style elt)))
 	(define set-border-top-style-raw!
-	 (style:make-border-style-setter 
-	  elt mxprims:element-set-border-top-style! 
+	 (style:make-border-style-setter
+	  elt mxprims:element-set-border-top-style!
 	  "set-border-top-style!"))
 	(define set-border-top-style!
 	  (lambda args
@@ -1150,8 +1153,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-top-style! elt s)))
 	(define border-bottom-style-raw
-	 (style:make-border-style-getter 
-	  elt mxprims:element-border-bottom-style 
+	 (style:make-border-style-getter
+	  elt mxprims:element-border-bottom-style
 	  "border-bottom-style"))
 	(define border-bottom-style
 	  (lambda args
@@ -1160,8 +1163,8 @@
 	 (lambda ()
 	   (mxprims:element-border-bottom-style elt)))
 	(define set-border-bottom-style-raw!
-	 (style:make-border-style-setter 
-	  elt mxprims:element-set-border-bottom-style! 
+	 (style:make-border-style-setter
+	  elt mxprims:element-set-border-bottom-style!
 	  "set-border-bottom-style!"))
 	(define set-border-bottom-style!
 	  (lambda args
@@ -1170,8 +1173,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-bottom-style! elt s)))
 	(define border-left-style-raw
-	 (style:make-border-style-getter 
-	  elt mxprims:element-border-left-style 
+	 (style:make-border-style-getter
+	  elt mxprims:element-border-left-style
 	  "border-left-style"))
 	(define border-left-style
 	  (lambda args
@@ -1180,8 +1183,8 @@
 	 (lambda ()
 	   (mxprims:element-border-left-style elt)))
 	(define set-border-left-style-raw!
-	 (style:make-border-style-setter 
-	  elt mxprims:element-set-border-left-style! 
+	 (style:make-border-style-setter
+	  elt mxprims:element-set-border-left-style!
 	  "set-border-left-style!"))
 	(define set-border-left-style!
 	  (lambda args
@@ -1190,8 +1193,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-left-style! elt s)))
 	(define border-right-style-raw
-	 (style:make-border-style-getter 
-	  elt mxprims:element-border-right-style 
+	 (style:make-border-style-getter
+	  elt mxprims:element-border-right-style
 	  "border-right-style"))
 	(define border-right-style
 	  (lambda args
@@ -1201,7 +1204,7 @@
 	   (mxprims:element-border-right-style elt)))
 	(define set-border-right-style-raw!
 	 (style:make-border-style-setter elt
-					 mxprims:element-set-border-right-style! 
+					 mxprims:element-set-border-right-style!
 					 "set-border-right-style!"))
 	(define set-border-right-style!
 	  (lambda args
@@ -1210,7 +1213,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-right-style! elt s)))
 	(define border-top-color-raw
-	 (style:make-color-getter 
+	 (style:make-color-getter
 	  elt mxprims:element-border-top-color
 	  "border-top-color"))
 	(define border-top-color
@@ -1220,7 +1223,7 @@
 	 (lambda ()
 	   (mxprims:element-border-top-color elt)))
 	(define set-border-top-color-raw!
-	 (style:make-color-setter 
+	 (style:make-color-setter
 	  elt mxprims:element-set-border-top-color!
 	  "set-border-top-color!"))
 	(define set-border-top-color!
@@ -1230,7 +1233,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-top-color! elt s)))
 	(define border-bottom-color-raw
-	 (style:make-color-getter 
+	 (style:make-color-getter
 	  elt mxprims:element-border-bottom-color
 	  "border-bottom-color"))
 	(define border-bottom-color
@@ -1240,7 +1243,7 @@
 	 (lambda ()
 	   (mxprims:element-border-bottom-color elt)))
 	(define set-border-bottom-color-raw!
-	 (style:make-color-setter 
+	 (style:make-color-setter
 	  elt mxprims:element-set-border-bottom-color!
 	  "set-border-bottom-color!"))
 	(define set-border-bottom-color!
@@ -1250,7 +1253,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-bottom-color! elt s)))
 	(define border-left-color-raw
-	 (style:make-color-getter 
+	 (style:make-color-getter
 	  elt mxprims:element-border-left-color
 	  "border-left-color"))
 	(define border-left-color
@@ -1260,7 +1263,7 @@
 	 (lambda ()
 	   (mxprims:element-border-left-color elt)))
 	(define set-border-left-color-raw!
-	 (style:make-color-setter 
+	 (style:make-color-setter
 	  elt mxprims:element-set-border-left-color!
 	  "set-border-left-color!"))
 	(define set-border-left-color!
@@ -1270,7 +1273,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-left-color! elt s)))
 	(define border-right-color-raw
-	 (style:make-color-getter 
+	 (style:make-color-getter
 	  elt mxprims:element-border-right-color
 	  "border-right-color"))
 	(define border-right-color
@@ -1280,7 +1283,7 @@
 	 (lambda ()
 	   (mxprims:element-border-right-color elt)))
 	(define set-border-right-color-raw!
-	 (style:make-color-setter 
+	 (style:make-color-setter
 	  elt mxprims:element-set-border-right-color!
 	  "set-border-right-color!"))
 	(define set-border-right-color!
@@ -1290,7 +1293,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-right-color! elt s)))
 	(define border-top-width-raw
-	 (style:make-border-width-getter 
+	 (style:make-border-width-getter
 	  elt mxprims:element-border-top-width "border-top-width"))
 	(define border-top-width
 	  (lambda args
@@ -1299,7 +1302,7 @@
 	 (lambda ()
 	   (mxprims:element-border-top-width elt)))
 	(define set-border-top-width-raw!
-	 (style:make-border-width-setter 
+	 (style:make-border-width-setter
 	  elt mxprims:element-set-border-top-width!
 	  "set-border-top-width!"))
 	(define set-border-top-width!
@@ -1309,7 +1312,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-top-width! elt s)))
 	(define border-bottom-width-raw
-	 (style:make-border-width-getter 
+	 (style:make-border-width-getter
 	  elt mxprims:element-border-bottom-width "border-bottom-width"))
 	(define border-bottom-width
 	  (lambda args
@@ -1318,7 +1321,7 @@
 	 (lambda ()
 	   (mxprims:element-border-bottom-width elt)))
 	(define set-border-bottom-width-raw!
-	 (style:make-border-width-setter 
+	 (style:make-border-width-setter
 	  elt mxprims:element-set-border-bottom-width!
 	  "set-border-bottom-width!"))
 	(define set-border-bottom-width!
@@ -1328,7 +1331,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-bottom-width! elt s)))
 	(define border-left-width-raw
-	 (style:make-border-width-getter 
+	 (style:make-border-width-getter
 	  elt mxprims:element-border-left-width "border-left-width"))
 	(define border-left-width
 	  (lambda args
@@ -1337,7 +1340,7 @@
 	 (lambda ()
 	   (mxprims:element-border-left-width elt)))
 	(define set-border-left-width-raw!
-	 (style:make-border-width-setter 
+	 (style:make-border-width-setter
 	  elt mxprims:element-set-border-left-width!
 	  "set-border-left-width!"))
 	(define set-border-left-width!
@@ -1347,7 +1350,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-left-width! elt s)))
 	(define border-right-width-raw
-	 (style:make-border-width-getter 
+	 (style:make-border-width-getter
 	  elt mxprims:element-border-right-width "border-right-width"))
 	(define border-right-width
 	  (lambda args
@@ -1356,7 +1359,7 @@
 	 (lambda ()
 	   (mxprims:element-border-right-width elt)))
 	(define set-border-right-width-raw!
-	 (style:make-border-width-setter 
+	 (style:make-border-width-setter
 	  elt mxprims:element-set-border-right-width!
 	  "set-border-right-width!"))
 	(define set-border-right-width!
@@ -1366,8 +1369,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-border-right-width! elt s)))
 	(define style-float-raw
-	 (style:make-element-getter 
-	  elt 
+	 (style:make-element-getter
+	  elt
 	  mxprims:element-style-float "style-float" ))
 	(define style-float
 	  (lambda args
@@ -1376,9 +1379,9 @@
 	 (lambda ()
 	   (mxprims:element-style-float elt)))
 	(define set-style-float-raw!
-	 (style:make-element-setter elt 
-				    style-float? 
-				    *style-floats* 
+	 (style:make-element-setter elt
+				    style-float?
+				    *style-floats*
 				    mxprims:element-set-style-float!))
 	(define set-style-float!
 	  (lambda args
@@ -1387,7 +1390,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-style-float! elt s)))
 	(define clear-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-clear "clear"))
 	(define clear
 	  (lambda args
@@ -1397,8 +1400,8 @@
 	   (mxprims:element-clear elt)))
 	(define set-clear-raw!
 	 (style:make-element-setter elt
-				    clear? 
-				    *clears* 
+				    clear?
+				    *clears*
 				    mxprims:element-set-clear!))
 	(define set-clear!
 	  (lambda args
@@ -1407,7 +1410,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-clear! elt s)))
 	(define display-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-display "display"))
 	(define display
 	  (lambda args
@@ -1416,9 +1419,9 @@
 	 (lambda ()
 	   (mxprims:element-display elt)))
 	(define set-display-raw!
-	 (style:make-element-setter elt 
-				    display? 
-				    *displays* 
+	 (style:make-element-setter elt
+				    display?
+				    *displays*
 				    mxprims:element-set-display!))
 	(define set-display!
 	  (lambda args
@@ -1427,7 +1430,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-display! elt s)))
 	(define visibility-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-visibility
 	  "visibility"))
 	(define visibility
@@ -1438,8 +1441,8 @@
 	   (mxprims:element-visibility elt)))
 	(define set-visibility-raw!
 	 (style:make-element-setter elt
-				    visibility? 
-				    *visibilities* 
+				    visibility?
+				    *visibilities*
 				    mxprims:element-set-visibility!))
 	(define set-visibility!
 	  (lambda args
@@ -1448,7 +1451,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-visibility! elt s)))
 	(define list-style-type-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-list-style-type
 	  "list-style-type"))
 	(define list-style-type
@@ -1461,7 +1464,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-list-style-type! elt s)))
 	(define list-style-position-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-list-style-position
 	  "list-style-position"))
 	(define list-style-position
@@ -1482,9 +1485,9 @@
 	      [(string-ci=? s "none") 'none]
 	      [(string-ci=? (substring s 0 4) "url(")
 	       (style:url->string s)]
-	      [else 
-	       (error 
-		(format 
+	      [else
+	       (error
+		(format
 		 "list-style-image: Expected 'none or URL, got: ~a" s))]))))
 	(define list-style-image-native
 	 (lambda ()
@@ -1508,15 +1511,15 @@
 	   (mxprims:element-list-style elt)))
 	(define set-list-style!
 	 (lambda (items)
-	   (mxprims:element-set-list-style! 
+	   (mxprims:element-set-list-style!
 	    elt
-	    (fold-strings-with-spaces 
+	    (fold-strings-with-spaces
 	     (map style:list-style-item->string items)))))
 	(define set-list-style-native!
 	 (lambda (s)
 	   (mxprims:element-set-list-style! elt s)))
 	(define position-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-position
 	  "position"))
 	(define position
@@ -1526,7 +1529,7 @@
 	 (lambda ()
 	   (mxprims:element-position elt)))
 	(define overflow-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-overflow "overflow"))
 	(define overflow
 	  (lambda args
@@ -1535,9 +1538,9 @@
 	 (lambda ()
 	   (mxprims:element-overflow elt)))
 	(define set-overflow-raw!
-	 (style:make-element-setter elt 
+	 (style:make-element-setter elt
 				    overflow?
-				    *overflows* 
+				    *overflows*
 				    mxprims:element-set-overflow!))
 	(define set-overflow!
 	  (lambda args
@@ -1546,8 +1549,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-overflow! elt s)))
 	(define pagebreak-before-raw
-	 (style:make-pagebreak-getter 
-	  elt 
+	 (style:make-pagebreak-getter
+	  elt
 	  mxprims:element-pagebreak-before))
 	(define pagebreak-before
 	  (lambda args
@@ -1566,7 +1569,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-pagebreak-before! elt s)))
 	(define pagebreak-after-raw
-	 (style:make-pagebreak-getter 
+	 (style:make-pagebreak-getter
 	  elt mxprims:element-pagebreak-after))
 	(define pagebreak-after
 	  (lambda args
@@ -1575,7 +1578,7 @@
 	 (lambda ()
 	   (mxprims:element-pagebreak-after elt)))
 	(define set-pagebreak-after-raw!
-	 (style:make-pagebreak-setter elt 
+	 (style:make-pagebreak-setter elt
 				      mxprims:element-set-pagebreak-after!
 				      "set-pagebreak-after!"))
 	(define set-pagebreak-after!
@@ -1588,7 +1591,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-css-text! elt s)))
 	(define cursor-raw
-	 (style:make-element-getter 
+	 (style:make-element-getter
 	  elt mxprims:element-cursor "cursor"))
 	(define cursor
 	  (lambda args
@@ -1597,9 +1600,9 @@
 	 (lambda ()
 	   (mxprims:element-cursor elt)))
 	(define set-cursor-raw!
-	 (style:make-element-setter elt 
+	 (style:make-element-setter elt
 				    cursor?
-				    *cursors* 
+				    *cursors*
 				    mxprims:element-set-cursor!))
 	(define set-cursor!
 	  (lambda args
@@ -1617,8 +1620,8 @@
 	       'auto]
 	      [(style:clip-rect? s)
 	       (style:clip-rect->symbols s)]
-	      [else 
-	       (error 
+	      [else
+	       (error
 		(format "clip: Expected clip string, got: ~a" s))]))))
 	(define clip-native
 	 (lambda ()
@@ -1627,8 +1630,8 @@
 	 (lambda (s)
 	   (let ([str (cond
 		       [(eq? s 'auto) "auto"]
-		       [(and (pair? s) 
-			     (= (length s) 4) 
+		       [(and (pair? s)
+			     (= (length s) 4)
 			     (andmap
 			      (lambda (elt)
 				(or (eq? elt 'auto)
@@ -1637,8 +1640,8 @@
 			(string-append
 			 "rect("
 			 (fold-strings-with-spaces
-			  (map 
-			   (lambda (elt) 
+			  (map
+			   (lambda (elt)
 			     (if (eq? elt 'auto)
 				 "auto"
 				 (style:css-length->string elt)))
@@ -1646,8 +1649,8 @@
 			 ")")]
 		       [else
 			(error
-			 (format 
-			  (string-append 
+			 (format
+			  (string-append
 			   "Expected 'auto or 4-element list of "
 			   "CSS lengths, with elements "
 			   "possibly replaced by 'auto. Got ~a")
@@ -1667,7 +1670,7 @@
 	   (mxprims:element-filter elt)))
 	(define set-filter!
 	 (lambda (flt . options)
-	   (let ([s (filter->string flt options)])		 
+	   (let ([s (filter->string flt options)])
 	     (mxprims:element-set-filter! elt s))))
 	(define set-filter-native!
 	 (lambda (s)
@@ -1776,7 +1779,7 @@
 		     [(style:percentage-or-length? sz)
 		      (style:percentage-or-length->string sz)]
 		     [else
-		      (error 
+		      (error
 		       (format (string-append
 				"set-font-size!: Expected element of ~a, "
 				"a CSS length, or CSS percentage. Got: ~a")
@@ -1797,7 +1800,7 @@
 	  (lambda args
 	    (apply color-native-raw args)))
 	(define set-color-raw!
-	 (style:make-color-setter 
+	 (style:make-color-setter
 	  elt mxprims:element-set-color! "set-color!"))
 	(define set-color!
 	  (lambda args
@@ -1806,8 +1809,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-color! elt s)))
 	(define background-color-raw
-	 (style:make-color-getter 
-	  elt mxprims:element-background-color 
+	 (style:make-color-getter
+	  elt mxprims:element-background-color
 	  "background-color"))
 	(define background-color
 	  (lambda args
@@ -1816,8 +1819,8 @@
 	 (lambda ()
 	   (mxprims:element-background-color elt)))
 	(define set-background-color-raw!
-	 (style:make-color-setter 
-	  elt mxprims:element-set-background-color! 
+	 (style:make-color-setter
+	  elt mxprims:element-set-background-color!
 	  "set-background-color!"))
 	(define set-background-color!
 	  (lambda args
@@ -1826,8 +1829,8 @@
 	 (lambda (s)
 	   (mxprims:element-set-background-color! elt s)))
 	(define background-position-x-raw
-	 (style:make-bg-pos-getter 
-	  elt 
+	 (style:make-bg-pos-getter
+	  elt
 	  mxprims:element-background-position-x
 	  "background-position-x"))
 	(define background-position-x
@@ -1837,9 +1840,9 @@
 	 (lambda ()
 	   (mxprims:element-background-position-x elt)))
 	(define set-background-position-x-raw!
-	 (style:make-bg-pos-setter 
+	 (style:make-bg-pos-setter
 	  elt
-	  mxprims:element-set-background-position-x! 
+	  mxprims:element-set-background-position-x!
 	  horizontal? *horizontals*
 	  "x"))
 	(define set-background-position-x!
@@ -1849,8 +1852,8 @@
 	 (lambda (n)
 	   (mxprims:element-set-background-position-x! elt n)))
 	(define background-position-y-raw
-	 (style:make-bg-pos-getter 
-	  elt 
+	 (style:make-bg-pos-getter
+	  elt
 	  mxprims:element-background-position-y
 	  "background-position-y"))
 	(define background-position-y
@@ -1860,9 +1863,9 @@
 	 (lambda ()
 	   (mxprims:element-background-position-y elt)))
 	(define set-background-position-y-raw!
-	 (style:make-bg-pos-setter 
+	 (style:make-bg-pos-setter
 	  elt
-	  mxprims:element-set-background-position-y! 
+	  mxprims:element-set-background-position-y!
 	  vertical? *verticals*
 	  "y"))
 	(define set-background-position-y!
@@ -1896,20 +1899,20 @@
 	   (let ([s (mxprims:element-vertical-align elt)])
 	     (when (empty-string? s)
 		   (empty-property-error "vertical-align"))
-	     (string->symbol s))))   
+	     (string->symbol s))))
 	(define vertical-align-native
 	 (lambda ()
 	   (mxprims:element-vertical-align elt)))
 	(define set-vertical-align!
 	 (lambda (sym)
 	   (unless (vertical-align? sym)
-		   (error 
-		    (format 
+		   (error
+		    (format
 		     (string-append "set-vertical-align!: "
 				    "Expected element of ~a, got ~a")
 		     *vertical-aligns* sym)))
-	   (mxprims:element-set-vertical-align! 
-	    elt 
+	   (mxprims:element-set-vertical-align!
+	    elt
 	    (symbol->string sym))))
 	(define set-vertical-align-native!
 	 (lambda (s)
@@ -1925,7 +1928,7 @@
 	   (mxprims:element-text-indent elt)))
 	(define set-text-indent-raw!
 	 (style:make-css-setter elt
-				mxprims:element-set-text-indent! 
+				mxprims:element-set-text-indent!
                                "set-text-indent!"))
 	(define set-text-indent!
 	  (lambda args
@@ -2106,7 +2109,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-padding-right! elt s)))
 	(define width-raw
-	 (style:make-auto-or-css-getter 
+	 (style:make-auto-or-css-getter
 	  elt mxprims:element-width "width"))
 	(define width
 	  (lambda args
@@ -2115,7 +2118,7 @@
 	 (lambda ()
 	   (mxprims:element-width elt)))
 	(define set-width-raw!
-	 (style:make-auto-or-css-setter 
+	 (style:make-auto-or-css-setter
 	  elt mxprims:element-set-width!
 	  "set-width!"))
 	(define set-width!
@@ -2125,7 +2128,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-width! elt s)))
 	(define height-raw
-	 (style:make-auto-or-css-getter 
+	 (style:make-auto-or-css-getter
 	  elt mxprims:element-height "height"))
 	(define height
 	  (lambda args
@@ -2134,7 +2137,7 @@
 	 (lambda ()
 	   (mxprims:element-height elt)))
 	(define set-height-raw!
-	 (style:make-auto-or-css-setter 
+	 (style:make-auto-or-css-setter
 	  elt mxprims:element-set-height!
 	  "set-height!"))
 	(define set-height!
@@ -2144,7 +2147,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-height! elt s)))
 	(define top-raw
-	 (style:make-auto-or-css-getter 
+	 (style:make-auto-or-css-getter
 	  elt mxprims:element-top "top"))
 	(define top
 	  (lambda args
@@ -2153,7 +2156,7 @@
 	 (lambda ()
 	   (mxprims:element-top elt)))
 	(define set-top-raw!
-	 (style:make-auto-or-css-setter 
+	 (style:make-auto-or-css-setter
 	  elt mxprims:element-set-top!
 	  "set-top!"))
 	(define set-top!
@@ -2163,7 +2166,7 @@
 	 (lambda (s)
 	   (mxprims:element-set-top! elt s)))
 	(define left-raw
-	 (style:make-auto-or-css-getter 
+	 (style:make-auto-or-css-getter
 	  elt mxprims:element-left "left"))
 	(define left
 	  (lambda args
@@ -2172,7 +2175,7 @@
 	 (lambda ()
 	   (mxprims:element-left elt)))
 	(define set-left-raw!
-	 (style:make-auto-or-css-setter 
+	 (style:make-auto-or-css-setter
 	  elt
 	  mxprims:element-set-left!
 	  "set-left!"))
@@ -2182,7 +2185,7 @@
 	(define set-left-native!
 	 (lambda (s)
 	   (mxprims:element-set-left! elt s)))
-	(define z-index 
+	(define z-index
 	 (lambda ()
 	   (let ([s (mxprims:element-z-index elt)])
 	     (when (empty-string? s)
@@ -2200,7 +2203,7 @@
 		     [(and (number? zi)
 			   (exact? zi)) zi]
 		     [else
-		      (error 
+		      (error
 		       (string-append "set-z-index!: "
 				      "Expected 'auto or exact integer, "
 				      "got")
@@ -2210,17 +2213,17 @@
 	 (lambda (s)
 	   (mxprims:element-set-z-index! elt s)))
 	(define set-list-style-position-raw!
-	  (style:make-element-setter elt 
-				     list-style-position? 
-				     *list-style-positions* 
+	  (style:make-element-setter elt
+				     list-style-position?
+				     *list-style-positions*
 				     mxprims:element-set-list-style-position!))
 	(define set-list-style-position!
 	  (lambda args
 	    (apply set-list-style-position-raw! args)))
 	(define set-list-style-type-raw!
 	  (style:make-element-setter elt
-				     list-style-type? 
-				     *list-style-types* 
+				     list-style-type?
+				     *list-style-types*
 				     mxprims:element-set-list-style-type!))
 	(define set-list-style-type!
 	  (lambda args
@@ -2263,16 +2266,16 @@
 
 	(define keypress? (lambda () (mxprims:event-keypress? event)))
 	(define keydown? (lambda () (mxprims:event-keydown? event)))
-	(define keyup? (lambda () (mxprims:event-keyup? event))) 
-	(define mousedown? (lambda () (mxprims:event-mousedown? event))) 
-	(define mousemove? (lambda () (mxprims:event-mousemove? event))) 
-	(define mouseover? (lambda () (mxprims:event-mouseover? event))) 
-	(define mouseout? (lambda () (mxprims:event-mouseout? event))) 
-	(define mouseup? (lambda () (mxprims:event-mouseup? event))) 
-	(define click? (lambda () (mxprims:event-click? event))) 
-	(define dblclick? (lambda () (mxprims:event-dblclick? event))) 
+	(define keyup? (lambda () (mxprims:event-keyup? event)))
+	(define mousedown? (lambda () (mxprims:event-mousedown? event)))
+	(define mousemove? (lambda () (mxprims:event-mousemove? event)))
+	(define mouseover? (lambda () (mxprims:event-mouseover? event)))
+	(define mouseout? (lambda () (mxprims:event-mouseout? event)))
+	(define mouseup? (lambda () (mxprims:event-mouseup? event)))
+	(define click? (lambda () (mxprims:event-click? event)))
+	(define dblclick? (lambda () (mxprims:event-dblclick? event)))
 	(define error? (lambda () (mxprims:event-error? event)))
-	    
+
 	; attributes
 
 	(define tag (lambda () (mxprims:event-tag event)))
@@ -2310,7 +2313,7 @@
 	    (define handler-post (lambda () (semaphore-post handler-sem)))
 	    (define handler-table (make-hash-table))
 	    (define handler-thread #f)
-	    (define make-navigator 
+	    (define make-navigator
 	     (lambda (navigate-fun name)
 	       (lambda url
 		 (let ([actual-url #f])
@@ -2323,9 +2326,9 @@
 			      (error name "Error navigating browser")))
                    (semaphore-post navigate-mutex)
 		   actual-url))))
-	    (define block-until-event 
+	    (define block-until-event
 	     (lambda () (mxprims:block-until-event browser)))
-	    (define make-event-key 
+	    (define make-event-key
 	     (lambda (tag id) ; string x string -> symbol
 	       (let ([new-tag (string-copy tag)]
 		     [new-id (string-copy id)])
@@ -2334,25 +2337,25 @@
 		    (string->symbol
 		     (string-append new-tag "@" new-id)))))
 
-	   (public 
-	    show 
+	   (public
+	    show
 	    navigate
-	    navigate/status 
+	    navigate/status
 	    go-back
 	    go-forward
 	    refresh
 	    iconize
 	    restore
 	    current-url
-	    current-document 
+	    current-document
 	    print-document
 	    register-event-handler
 	    unregister-event-handler
-	    handle-events 
-	    stop-handling-events) 
+	    handle-events
+	    stop-handling-events)
 
-	    (define show 
-	     (lambda (b) 
+	    (define show
+	     (lambda (b)
 	       (mxprims:browser-show browser b)))
 	    (define navigate/status
 	     (lambda (url)
@@ -2362,11 +2365,11 @@
 				    "http://"))
 		     (let* ([p (get-impure-port (string->url actual))]
 			    [response (read-line p)]
-			    [raw-status 
+			    [raw-status
 			     (regexp-match "[0-9][0-9][0-9]" response)])
 		       (close-input-port p)
-		       (list actual 
-			     (if raw-status 
+		       (list actual
+			     (if raw-status
 				 (string->number (car raw-status))
 				 #f)))
 		     (list actual 'no-status)))))
@@ -2394,9 +2397,9 @@
 	    (define current-url
 	     (lambda ()
 	       (mxprims:current-url browser)))
-	    (define current-document 
-	     (lambda () 
-	       (make-object mx-document% 
+	    (define current-document
+	     (lambda ()
+	       (make-object mx-document%
 			    (mxprims:current-document browser))))
 	    (define print-document
 	     (lambda ()
@@ -2405,9 +2408,9 @@
 	     (lambda (elt fn)
 	       (dynamic-wind
 		handler-wait
-		(lambda () 
+		(lambda ()
 		  (let* ([tag (send elt tag)]
-			 [id (send elt attribute "id")]) 
+			 [id (send elt attribute "id")])
 		    (let ([key (make-event-key tag id)])
 		      (hash-table-remove! handler-table key)
 			 (hash-table-put! handler-table key fn))))
@@ -2416,16 +2419,16 @@
 	     (lambda (elt)
 	       (dynamic-wind
 		handler-wait
-		(lambda () 
+		(lambda ()
 		  (let* ([tag (send elt tag)]
 			 [id (send elt attribute "id")])
 		    (let ([key (make-event-key tag id)])
 		      (hash-table-remove! handler-table key))))
 		handler-post)))
-	    (define handle-events 
+	    (define handle-events
 	     (lambda ()
 	       (dynamic-wind
-		thread-wait 
+		thread-wait
                 (lambda ()	; no-op if existing handler-thread
 		  (unless handler-thread
 			  (dynamic-wind
@@ -2437,8 +2440,8 @@
 					 (block-until-event)
 				         (let* ([prim-event
 						 (with-handlers
-						  ([void 
-						    (lambda (e) 
+						  ([void
+						    (lambda (e)
 						      (printf "~a~n" (exn-message e))
 						      (loop))])
 						    (mxprims:get-event browser))]
@@ -2453,11 +2456,11 @@
 			       (set! handler-thread (thread handler-thunk))))
 			   handler-post)))
 		thread-post)))
-	    (define stop-handling-events 
+	    (define stop-handling-events
 	     (lambda ()
 	       (dynamic-wind
 		thread-wait
-		(lambda () 
+		(lambda ()
 		  (when handler-thread
 			(kill-thread handler-thread))
 		  (set! handler-thread #f))
@@ -2470,36 +2473,36 @@
 	       (set! navigate-url (current-url))
 	       (semaphore-post navigate-sem)))))
 
-  (define mx-document%	
-    (class object% 
+  (define mx-document%
+    (class object%
 	   (init the-doc)
 
      ; private fields
 
      (define doc the-doc)
 
-     (define insert-object-maker 
+     (define insert-object-maker
        (lambda (name->html)
-	 (opt-lambda 
-	  (object width height [size 'pixels])
-	  (dynamic-wind 
-	      html-wait
-	      (lambda ()
-		(mxprims:document-insert-html 
-		 doc 
-		 (name->html object width height size))
-		(car (mxprims:document-objects doc)))
-	      html-post))))
-
-     (define append-object-maker 
-       (lambda (name->html)
-	 (opt-lambda 
+	 (opt-lambda
 	  (object width height [size 'pixels])
 	  (dynamic-wind
 	      html-wait
 	      (lambda ()
-		(mxprims:document-append-html 
-		    doc 
+		(mxprims:document-insert-html
+		 doc
+		 (name->html object width height size))
+		(car (mxprims:document-objects doc)))
+	      html-post))))
+
+     (define append-object-maker
+       (lambda (name->html)
+	 (opt-lambda
+	  (object width height [size 'pixels])
+	  (dynamic-wind
+	      html-wait
+	      (lambda ()
+		(mxprims:document-append-html
+		    doc
 		    (name->html object width height size))
 		(car (mzlib:last-pair (mxprims:document-objects doc))))
 	      html-post))))
@@ -2512,16 +2515,16 @@
 	       (lambda () (f doc s))
 	       html-post))))
 
-     (public  
+     (public
       title
       find-element
       find-element-by-id-or-name
       elements-with-tag
       objects
-      insert-html 
-      append-html 
-      replace-html 
-      insert-object-from-coclass 
+      insert-html
+      append-html
+      replace-html
+      insert-object-from-coclass
       append-object-from-coclass
       insert-object-from-progid
       append-object-from-progid)
@@ -2531,14 +2534,14 @@
 	(mxprims:document-title doc)))
      (define find-element
        (lambda (tag id . n)
-	 (make-object mx-element% doc 
-		      (apply mxprims:document-find-element 
+	 (make-object mx-element% doc
+		      (apply mxprims:document-find-element
 			     doc tag id n))))
      (define find-element-by-id-or-name
        (lambda (id . n)
-	 (make-object 
-	  mx-element% doc 
-	  (apply mxprims:document-find-element-by-id-or-name 
+	 (make-object
+	  mx-element% doc
+	  (apply mxprims:document-find-element-by-id-or-name
 		 doc id n))))
      (define elements-with-tag
        (lambda (tag)
@@ -2547,16 +2550,16 @@
 	    (make-object mx-element% doc elt))
 	  (mxprims:document-elements-with-tag doc tag))))
      (define objects
-       (lambda () 
+       (lambda ()
 	 (mxprims:document-objects doc)))
-     (define insert-html-raw 
+     (define insert-html-raw
        (html-insertion-maker mxprims:document-insert-html))
-     (define insert-html 
+     (define insert-html
        (lambda args
 	 (apply insert-html-raw args)))
-     (define append-html-raw 
+     (define append-html-raw
        (html-insertion-maker mxprims:document-append-html))
-     (define append-html 
+     (define append-html
        (lambda args
 	 (apply append-html-raw args)))
      (define replace-html-raw
@@ -2564,9 +2567,9 @@
      (define replace-html
        (lambda args
 	 (apply replace-html-raw args)))
-     (define insert-object-from-coclass-raw 
+     (define insert-object-from-coclass-raw
        (insert-object-maker coclass->html))
-     (define insert-object-from-coclass 
+     (define insert-object-from-coclass
        (lambda args
 	 (apply insert-object-from-coclass-raw args)))
      (define append-object-from-coclass-raw
@@ -2584,11 +2587,11 @@
      (define append-object-from-progid
        (lambda args
 	 (apply append-object-from-progid-raw args)))
-     
+
      (super-make-object)))
 
-  (thread	
-   (lambda () 
+  (thread
+   (lambda ()
      (let loop ()
        (mxprims:process-win-events)
        (sleep 0.01)

@@ -285,7 +285,8 @@
    block-until-event
    process-win-events
    release-type-table
-   com-omit)
+   com-omit
+   %%initialize-dotnet-runtime)
 
   (define mx-version #f)
   (define block-while-browsers #f)
@@ -567,6 +568,5 @@
   (define block-until-event #f)
   (define process-win-events #f)
   (define release-type-table #f)
-  (define com-omit #f))
-
-
+  (define com-omit #f)
+  (define %%initialize-dotnet-runtime #f))

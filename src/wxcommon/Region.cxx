@@ -6,7 +6,8 @@ wxRegion::wxRegion(wxDC *_dc, wxRegion *r)
 {
   dc = _dc;
   is_ps = wxSubType(dc->__type, wxTYPE_DC_POSTSCRIPT);
-  
+  locked = 0;
+ 
 #ifdef wx_msw
   rgn = NULL;
 #endif

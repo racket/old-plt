@@ -133,6 +133,7 @@ wxWindowDC::~wxWindowDC(void)
 {
     if (current_pen) current_pen->Lock(-1);
     if (current_brush) current_brush->Lock(-1);
+    if (clipping) --clipping->locked;
 
     Destroy();
 }
@@ -1482,7 +1483,14 @@ void wxWindowDC::SetClippingRect(float x, float y, float w, float h)
 
 void wxWindowDC::SetClippingRegion(wxRegion *r)
 {
+  if (clipping)
+    --clipping->locked;
+
   clipping = r;
+
+  if (clipping)
+    clipping->locked++;
+
   if (r) {
     if (r->rgn) {
       USER_REG = r->rgn;

@@ -82,6 +82,7 @@ wxDC::~wxDC(void)
 {
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
+  if (clipping) --clipping->locked;
 
   if (filename)
     delete[] filename;
@@ -204,22 +205,31 @@ void wxDC::SetClippingRegion(wxRegion *c)
 
   if (c && (c->dc != this)) return;
 
-  if (clipping) delete clipping;
+  if (clipping)
+    --clipping->locked;
 
-  if (c) {
-    clipping = new wxRegion(this, c);
-  } else
-    clipping = NULL;
+  clipping = c;
+
+  if (clipping)
+    clipping->locked++;
 
   dc = ThisDC();
   if (dc) DoClipping(dc);
   DoneDC(dc);
 }
 
+static HRGN empty_rgn;
+
 void wxDC::DoClipping(HDC dc)
 {
   if (clipping) {
-    SelectClipRgn(dc, clipping->rgn);
+    if (clipping->rgn)
+      SelectClipRgn(dc, clipping->rgn);
+    else {
+      if (!empty_rgn)
+	empty_rgn = CreateRectRgn(0, 0, 0, 0);
+      SelectClipRgn(dc, empty_rgn);
+    }
   } else {
     HRGN rgn;
     rgn = CreateRectRgn(0, 0, 32000, 32000);

@@ -297,6 +297,7 @@ static void *RgnBoundingBox(wxRegion *r)
 @INCLUDE wxs_drws.xci
 
 @MACRO CheckRgn[p.who] = if (x<p>->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>",<who>), "provided region's dc does not match this region's dc: ", p[POFFSET+<p>]);
+@MACRO CheckRgnLock[who] = if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>",<who>), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
 
 @CLASSBASE wxRegion "region" : "object"
 
@@ -304,16 +305,16 @@ static void *RgnBoundingBox(wxRegion *r)
 @ARGNAMES dc
 
 @ "get-dc" : wxDC! GetDC()
-  
-@ "set-rectangle" : void SetRectangle(float, float, nnfloat, nnfloat);
-@ "set-rounded-rectangle" : void SetRoundedRectangle(float, float, nnfloat, nnfloat, float=20.0);
-@ "set-ellipse" : void SetEllipse(float, float, nnfloat, nnfloat);
-@ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
-@ "set-arc" : void SetArc(float, float, nnfloat, nnfloat, float, float);
 
-@ "union" : void Union(wxRegion!);  : : /CheckRgn[0."union"]
-@ "intersect" : void Intersect(wxRegion!);  : : /CheckRgn[0."intersect"]
-@ "subtract" : void Subtract(wxRegion!);  : : /CheckRgn[0."subtract"]
+@ "set-rectangle" : void SetRectangle(float, float, nnfloat, nnfloat); : : /CheckRgnLock["set-rectangle"]
+@ "set-rounded-rectangle" : void SetRoundedRectangle(float, float, nnfloat, nnfloat, float=20.0); : : /CheckRgnLock["set-rounded-rectangle"]
+@ "set-ellipse" : void SetEllipse(float, float, nnfloat, nnfloat); : : /CheckRgnLock["set-ellipse"]
+@ "set-polygon" : void SetPolygon(-int,wxPoint!/bList/ubList/cList,float=0,float=0,SYM[fillKind]=wxODDEVEN_RULE); : / methListSet[wxPoint.0.1.0]// : /CheckRgnLock["set-polygon"]|glueListSet[wxPoint.0.1.0.METHODNAME("region%","set-polygon")]//
+@ "set-arc" : void SetArc(float, float, nnfloat, nnfloat, float, float); : : /CheckRgnLock["set-arc"]
+
+@ "union" : void Union(wxRegion!);  : : /CheckRgnLock["union"]|CheckRgn[0."union"]
+@ "intersect" : void Intersect(wxRegion!);  : : /CheckRgnLock["intersect"]|CheckRgn[0."intersect"]
+@ "subtract" : void Subtract(wxRegion!);  : : /CheckRgnLock["subtract"]|CheckRgn[0."subtract"]
 
 @MACRO bundleAny = ((Scheme_Object *){x})
  

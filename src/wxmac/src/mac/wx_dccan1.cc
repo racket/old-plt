@@ -57,7 +57,7 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
 
   cMacDoingDrawing = FALSE;
 
-  clipping = FALSE;
+  clipping = NULL;
   selected_pixmap = NULL;
 
   pixmapWidth = 0;
@@ -113,6 +113,7 @@ wxCanvasDC::~wxCanvasDC(void)
 {
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
+  if (clipping) --clipping->locked;
   
   if (current_reg) {
     ::DisposeRgn(current_reg);
@@ -212,7 +213,13 @@ void wxCanvasDC::SetCanvasClipping(void)
   } else
     current_reg = NULL;
   
-  if (onpaint_reg && clipping) {
+  if (clipping && !clipping->rgn) {
+    /* NULL rgn pointer means the empty region */
+    if (!current_reg) {
+      current_reg = ::NewRgn();
+      CheckMemOK(current_reg);
+    }
+  } else if (onpaint_reg && clipping) {
     ::SectRgn(clipping->rgn, onpaint_reg, current_reg) ;
   } else if (clipping) {
     ::CopyRgn(clipping->rgn, current_reg) ;
@@ -298,16 +305,21 @@ void wxCanvasDC::SetPaintRegion(Rect* paintRect)
 void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
   //-----------------------------------------------------------------------------
 {
-  clipping = new wxRegion(this);
-  clipping->SetRectangle(cx, cy, cw, ch);
-  SetCanvasClipping();
+  wxRegion *r;
+  r = new wxRegion(this);
+  r->SetRectangle(cx, cy, cw, ch);
+  SetClippingRegion(r);
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetClippingRegion(wxRegion *r)
   //-----------------------------------------------------------------------------
 {
+  if (clipping)
+    --clipping->locked;
   clipping = r;
+  if (clipping)
+    clipping->locked++;
   SetCanvasClipping();
 }
 

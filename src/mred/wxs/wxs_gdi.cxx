@@ -3650,7 +3650,7 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
 
 
 
-  
+
 
 
  
@@ -3744,7 +3744,7 @@ static Scheme_Object *os_wxRegionSubtract(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxRegion(p[POFFSET+0], "subtract in region%", 0));
 
-  if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","subtract"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","subtract"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","subtract"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->Subtract(x0));
 
   
@@ -3767,7 +3767,7 @@ static Scheme_Object *os_wxRegionIntersect(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxRegion(p[POFFSET+0], "intersect in region%", 0));
 
-  if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","intersect"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","intersect"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","intersect"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->Intersect(x0));
 
   
@@ -3790,7 +3790,7 @@ static Scheme_Object *os_wxRegionUnion(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxRegion(p[POFFSET+0], "union in region%", 0));
 
-  if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","union"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","union"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);if (x0->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>","union"), "provided region's dc does not match this region's dc: ", p[POFFSET+0]);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->Union(x0));
 
   
@@ -3822,7 +3822,7 @@ static Scheme_Object *os_wxRegionSetArc(int n,  Scheme_Object *p[])
   x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "set-arc in region%"));
   x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "set-arc in region%"));
 
-  
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-arc"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetArc(x0, x1, x2, x3, x4, x5));
 
   
@@ -3861,7 +3861,7 @@ static Scheme_Object *os_wxRegionSetPolygon(int n,  Scheme_Object *p[])
   } else
     x4 = wxODDEVEN_RULE;
 
-  x1 = WITH_VAR_STACK(__MakewxPointArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("region%","set-polygon")));
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-polygon"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);x1 = WITH_VAR_STACK(__MakewxPointArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("region%","set-polygon")));
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetPolygon(x0, x1, x2, x3, x4));
 
   
@@ -3889,7 +3889,7 @@ static Scheme_Object *os_wxRegionSetEllipse(int n,  Scheme_Object *p[])
   x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "set-ellipse in region%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "set-ellipse in region%"));
 
-  
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-ellipse"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetEllipse(x0, x1, x2, x3));
 
   
@@ -3922,7 +3922,7 @@ static Scheme_Object *os_wxRegionSetRoundedRectangle(int n,  Scheme_Object *p[])
   } else
     x4 = 20.0;
 
-  
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-rounded-rectangle"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetRoundedRectangle(x0, x1, x2, x3, x4));
 
   
@@ -3950,7 +3950,7 @@ static Scheme_Object *os_wxRegionSetRectangle(int n,  Scheme_Object *p[])
   x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "set-rectangle in region%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "set-rectangle in region%"));
 
-  
+  if (((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->locked) scheme_arg_mismatch(METHODNAME("region<%>","set-rectangle"), "cannot mutate region, because it is currently installed as its dc's clipping region: ", THEOBJ);
   WITH_VAR_STACK(((wxRegion *)((Scheme_Class_Object *)p[0])->primdata)->SetRectangle(x0, x1, x2, x3));
 
   

@@ -69,7 +69,6 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c, wxBitmap* mask)
 {
-  Bool r;
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
     return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c, mask));

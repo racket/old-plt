@@ -26,7 +26,7 @@ class wxRegion : public wxObject
 #endif
   wxDC *dc;
   wxPSRgn *ps;
-  int is_ps;
+  short is_ps, locked;
 
   wxRegion(wxDC *dc, wxRegion *r = NULL);
   ~wxRegion();

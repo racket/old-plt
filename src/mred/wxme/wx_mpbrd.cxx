@@ -1694,6 +1694,9 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     wxBrush *brush;
     wxFont *font;
     wxColour *fg, *bg;
+#ifndef NO_GET_CLIPPING_REGION
+    wxRegion *rgn;
+#endif
 
     pen = dc->GetPen();
     brush = dc->GetBrush();
@@ -1707,7 +1710,6 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     }
 
 #ifndef NO_GET_CLIPPING_REGION
-    wxRegion *rgn;
     rgn = dc->GetClippingRegion();
     dc->SetClippingRect(localx - dx, localy - dy, w, h);
 #endif

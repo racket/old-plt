@@ -648,7 +648,7 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 Don't forget to apply Py_INCREF() when returning this value!!!
 */
 PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
-//#define Py_None (&_Py_NoneStruct)
+#define Py_None (&_Py_NoneStruct)
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is

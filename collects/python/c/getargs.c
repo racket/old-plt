@@ -160,6 +160,7 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
         int retval;
         va_list va;
 
+        /*
 		printf("PyArg_ParseTupleAndKeywords: checking params\n");
 		if ( args ) sapply1("display", sapply1("py-object%->string", args));
 		else printf ("args are null");
@@ -172,6 +173,7 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
 		printf("the tuple's ok\n");
 		PyDict_Check(keywords);
 		printf("so are the keywords\n");
+            */
 
         if ((args == NULL || !PyTuple_Check(args)) ||
             (keywords != NULL && !PyDict_Check(keywords)) ||

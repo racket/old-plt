@@ -133,10 +133,11 @@ PyObject* py_number_to_hex_py_string(PyObject* num);
 PyObject* alloc_py_type(PYTYPEOBJECT * type, int size);
 PyObject* generic_repr(PyObject* obj);
 
-#define PyObject_TypeCheck(obj, type) ((obj) && sapply2("py-is-a?", obj, type))
+//#define PyObject_TypeCheck(obj, type) ((obj) && sapply2("py-is-a?", obj, type))
 
 
-
+#define SPY_CODE_GET_LAMBDA(code_obj) (((PyCodeObject*)(code_obj))->co_code)
+#define SPY_CODE_SET_LAMBDA(code_obj, lam) (((PyCodeObject*)(code_obj))->co_code = (lam))
 
 
 #define Py_GCC_ATTRIBUTE(stuff)
@@ -151,7 +152,7 @@ PyObject* generic_repr(PyObject* obj);
 
 #define DL_IMPORT(type) type
 
-#define Py_None (slookup("py-none"))
+//#define Py_None (slookup("py-none"))
 
 #define PyAPI_FUNC(RTYPE) RTYPE
 #define PyAPI_DATA(RTYPE) extern RTYPE
@@ -199,6 +200,7 @@ void Py_FatalError (const char * message);
         } while(0)
 
 
+//#define PyMem_Malloc(count) (scheme_malloc_eternal(count))
 #define PyMem_Malloc(count) (scheme_malloc(count))
 #define PyMem_MALLOC(count) PyMem_Malloc(count)
 #define PyMem_NEW(type, count) ((type *) PyMem_MALLOC(count))

@@ -1,5 +1,7 @@
 #include "Python.h"
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 #define SPY_LIST
 #define SPY_STRING
 #define SPY_COBJ
@@ -59,8 +61,10 @@ PyObject _Py_NotImplementedStruct; /* Don't use this directly */
 PyIntObject _Py_TrueStruct;
 PyIntObject _Py_ZeroStruct;
 
+//PyObject* Py_None;
+
 PyTypeObject PyCode_Type;
-PyTypeObject PyInt_Type;
+//PyTypeObject PyInt_Type;
 PyTypeObject PyBool_Type;
 PyTypeObject PyTuple_Type;
 PyTypeObject PyModule_Type;
@@ -73,17 +77,27 @@ PyTypeObject PyList_Type;
 #endif
 
 //PyTypeObject PyDict_Type;
-PyTypeObject PyBaseObject_Type;
-PyTypeObject PySlice_Type;
+//PyTypeObject PyBaseObject_Type;
+//PyTypeObject PySlice_Type;
 
 PyObject* sapply3(const char* func_name, PyObject* arg1, PyObject* arg2, PyObject* arg3);
 PyObject* sapply2(const char* func_name, PyObject* arg1, PyObject* arg2);
 PyObject* sapply1(const char* func_name, PyObject* arg);
 
+// Scheme <-> Python
+#define DECL_GETSET(name) \
+  PyObject* make_py_##name (int argc, Scheme_Object* argv[]); \
+  Scheme_Object* get_py_##name (int argc, Scheme_Object* argv[]);
+
+DECL_GETSET(string);
+DECL_GETSET(number);
+DECL_GETSET(list);
+DECL_GETSET(tuple);
+DECL_GETSET(dict);
+DECL_GETSET(code);
+  PyObject* make_py_function (int argc, Scheme_Object* argv[]);
 
 Scheme_Object* scheme_python_dispatch_method( int argc, Scheme_Object* argv[] );
-PyObject* make_py_string(int argc, Scheme_Object* argv[]);
-Scheme_Object* get_py_string(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn_unary(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn_binary(int argc, Scheme_Object* argv[]);
@@ -112,12 +126,14 @@ static const PyMethodDef empty_method_table[] = {
 
 inline void spy_copy_dictionary_from(PyObject* dest, Scheme_Object* src)
 {
+  printf ("spy_copy_dictionary_from: entry\n");
     sapply2("set-python-node-dict!", dest, sapply1("copy-hash-table", sapply1("python-node-dict", (PyObject*) src)));
 }
 
 
 PyObject* spy_ext_new_class(const char* name)
 {
+  printf ("spy_ext_new_class: entry\n");
   sapply2("py-call", (PyObject*) seval("py-type%"),
           cons( sapply1("symbol->py-string%", (PyObject*) sym(name)),  /* name */
                 cons( sapply1("list->py-tuple%", (PyObject*) cons( seval("py-object%"), scheme_null )), /* parents */
@@ -126,15 +142,93 @@ PyObject* spy_ext_new_class(const char* name)
 
 PyObject* spy_ext_new_instance(PyTypeObject* type)
 {
+  printf ("spy_ext_new_instance: entry\n");
   PyObject* obj = PyMem_MALLOC(type->tp_basicsize);
   spy_init_obj(obj, type);
   return obj;
 //  sapply1("python-new-object", (PyObject*) type);
 }
 
-
-Scheme_Env* spy_global_env;
 extern Scheme_Env* spy_global_env;
+Scheme_Env* spy_global_env;
+
+
+PyObject* EMPTY_TUPLE;
+PyObject* EMPTY_DICT;
+
+PyObject* _spy_new_cpython_instance(PyTypeObject* type, PyObject* argtup)
+{
+  printf("_spy_new_cpython_instance_alloc: %s\n", type->tp_name);
+  if ( type->tp_new )
+    {
+    printf("_spy_new_cpython_instance_alloc: found tp_new\n");
+    return type->tp_new(type, argtup, NULL);
+    }
+  else
+    {
+    PyObject* bases = type->tp_bases;
+    int nbases = PyTuple_GET_SIZE(bases);
+    int i;
+    printf("_spy_new_cpython_instance_alloc: did not find tp_new, trying bases\n");
+    for ( i = 0; i < nbases; i++ )
+      {
+      PyObject* obj = _spy_new_cpython_instance((PyTypeObject*) PyTuple_GET_ITEM(bases, i), argtup);
+      if ( obj )
+        return obj;
+      }
+    return NULL;
+    }
+}
+
+PyObject* spy_cpython_instantiate(int argc, Scheme_Object* argv[])
+{
+  int i;
+  PyObject* argtup;
+  PyTypeObject* type;
+  printf("spy_new_cpython_instance: entry\n");
+  type = (PyTypeObject*) argv[0];
+  argtup = PyTuple_New(argc - 1);
+  for ( i = 1; i < argc; i++ )
+    PyTuple_SET_ITEM(argtup, i - 1, argv[i]);
+  PyObject* obj = _spy_new_cpython_instance(type, argtup);
+  printf("spy_new_cpython_instance: allocated\n");
+  return obj;
+}
+
+
+void spy_init_cpython_type(PyTypeObject* tobj)
+{
+  dScheme_Structure* pnode = PyExc_IndexError;
+  printf ("spy_init_cpython_type: entry\n");
+  SCHEME_SET_TYPE((dScheme_Structure*)tobj, SPY_SCHEME_TYPE(pnode));
+  tobj->stype = SCHEME_STRUCT_TYPE(pnode);
+  sapply2("set-python-node-type!", (PyObject*) tobj,
+          sapply1("python-node-type", pnode));
+  sapply2("set-python-node-mutable?!", (PyObject*) tobj, scheme_false);
+  sapply2("set-python-node-dict!", (PyObject*) tobj, seval("(make-hash-table)"));
+  scheme_register_extension_global((void*) tobj, sizeof(*tobj));
+  sapply2("spy-add-cpython-type", sym(tobj->tp_name), tobj);
+//  scheme_add_global(tobj->tp_name, tobj, spy_global_env);
+}
+
+PyObject* spy_cpython_call(int argc, Scheme_Object* argv[])
+{
+  PyObject* callable = argv[0];
+  PyTypeObject* type;
+  assert(SCHEME_STRUCTP((Scheme_Object*)callable));
+  type = PY_GET_TYPE(callable);
+  argv++; argc--;
+  if ( type->tp_call )
+    {
+    PyObject* ret = type->tp_call(callable, scheme_argv_to_python_tuple(argc, argv), NULL);
+    if ( ret == NULL )
+      printf("spy_cpython_call: NULL?!?\n");
+    return ret;
+    }
+  printf("spy_cpython_call got a non-callable argument!\n");
+  return NULL;
+}
+
 
 Scheme_Object* scheme_initialize(Scheme_Env* env)
 {
@@ -160,12 +254,73 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
   PyExc_StopIteration = slookup("py-key-error%"); // fixme
   PyExc_ReferenceError = slookup("py-key-error%");
 
-
-
-
   // set up globals
   _spy_g_scheme_struct = SPY_SCHEME_TYPE(PyExc_IndexError); // scheme object type: STRUCT
   _spy_g_python_node = SCHEME_STRUCT_TYPE(PyExc_IndexError);  // struct type: PYTHON-NODE
+
+
+#if 0
+  #define INITTYPE(tobj, class_name) do { \
+      printf("SPY now adding " #tobj "\n"); \
+      PyObject* tobj##_class = spy_ext_new_class(class_name); \
+      SCHEME_SET_TYPE((dScheme_Structure*)&tobj, SPY_SCHEME_TYPE(tobj##_class)); \
+      tobj.stype = SCHEME_STRUCT_TYPE(tobj##_class); \
+      sapply2("set-python-node-type!", (PyObject*) & tobj, \
+          sapply1("python-node-type", tobj##_class)); \
+      sapply2("set-python-node-mutable?!", (PyObject*) & tobj, scheme_false); \
+      spy_copy_dictionary_from((PyObject*) & tobj, tobj##_class); \
+      scheme_register_extension_global((void*) & tobj, sizeof(tobj)); \
+      if ( tobj.tp_methods ) \
+        printf("methods are fine.\n"); \
+      else \
+        printf("methods are null.\n"); \
+      /*PyModule_AddObject(m, class_name, & tobj);*/ \
+    } while(0);
+
+	  /*
+  #define INITSTYPE(tobj, sname) do { \
+      PyObject* cls =
+	  */
+#else
+  #define INITTYPE(tobj, sname) spy_init_cpython_type(&tobj)
+#endif
+
+  INITTYPE(PyBaseObject_Type, "pobj");
+
+//  sapply1("set-py-dict!", &PyDict_Type);
+  INITTYPE(PyDict_Type, "pdict");
+
+//  INITSTYPE(PyDict_Type, "py-dict%");
+#ifdef SPY_STRING
+  INITTYPE(PyString_Type, "pstr");
+#endif
+#ifdef SPY_LIST
+  INITTYPE(PyList_Type, "plist");
+#endif
+#ifdef SPY_COBJ
+  INITTYPE(PyCObject_Type, "pcobj");
+#endif
+  INITTYPE(PyTuple_Type, "ptuple");
+  INITTYPE(PyInt_Type, "pint");
+  if ( !_PyInt_Init() )
+    printf("WARNING: Spy could not initialize the PyInt module.\n");
+  INITTYPE(PyLong_Type, "plong");
+  INITTYPE(PyFloat_Type, "pfloat");
+  INITTYPE(PyType_Type, "ptype");
+  INITTYPE(PySlice_Type, "pslice");
+  INITTYPE(PyFunction_Type, "pfunc");
+
+
+  EMPTY_TUPLE = PyTuple_New(0);
+  EMPTY_DICT = PyDict_New();
+  scheme_register_extension_global((void*)EMPTY_TUPLE, sizeof(*EMPTY_TUPLE));
+  scheme_register_extension_global((void*)EMPTY_DICT, sizeof(*EMPTY_DICT));
+  printf("scheme_initialize: empty-tuple is at 0x%x and empty-dict is at 0x%x\n", EMPTY_TUPLE, EMPTY_DICT);
+  assert(PyTuple_Check(EMPTY_TUPLE));
+  assert(PyDict_Check(EMPTY_DICT));
+
+//  Py_None = PyDict_New();
+//  scheme_register_extension_global((void*) Py_None, sizeof(*Py_None));
 
 #if 0
   // BLAH!
@@ -187,23 +342,49 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
   /*  register global Spy variables that contain pointers to Scheme values */
 //  scheme_register_extension_global((void*) &PyString_Type, sizeof(PyString_Type));
 //  scheme_register_extension_global((void*) &PyList_Type, sizeof(PyList_Type));
-  scheme_register_extension_global((void*) spy_global_env, sizeof(spy_global_env));
-  scheme_register_extension_global((void*) _spy_g_python_node, sizeof(_spy_g_python_node));
+
+//  scheme_register_extension_global((void*) spy_global_env, sizeof(*spy_global_env));
+  scheme_register_extension_global((void*) _spy_g_python_node, sizeof(*_spy_g_python_node));
 
   pns = (Scheme_Env*) seval("(python-ns)");
   //pns = env;
+
+  scheme_add_global( "spy-cpython-instantiate",
+                     scheme_make_prim_w_arity(spy_cpython_instantiate, "spy-cpython-instantiate", 1, 99),
+                     pns );
+
+  scheme_add_global( "spy-cpython-call",
+                     scheme_make_prim_w_arity(spy_cpython_call, "spy-cpython-call", 1, 99),
+                     pns );
+
 
   scheme_add_global( "scheme-python-dispatch-method",
                      scheme_make_prim_w_arity(scheme_python_dispatch_method, "scheme-python-dispatch-method", 1, 99),
                      pns );
 
-  scheme_add_global( "make-py-string",
-                     scheme_make_prim_w_arity(make_py_string, "make-py-string", 1, 1),
+#define ADD_GET(name) \
+  scheme_add_global( "get-py-"#name, \
+                     scheme_make_prim_w_arity(get_py_##name, "get-py-"#name, 1, 1), \
                      pns );
 
-  scheme_add_global( "get-py-string",
-                     scheme_make_prim_w_arity(get_py_string, "get-py-string", 1, 1),
+#define ADD_SET(name) \
+  scheme_add_global( "make-py-"#name, \
+                     scheme_make_prim_w_arity(make_py_##name, "make-py-"#name, 1, 1), \
                      pns );
+
+#define ADD_GETSET(name) do { ADD_GET(name); ADD_SET(name); } while (0)
+
+ADD_GETSET(string);
+ADD_GETSET(number);
+ADD_GETSET(list);
+ADD_GETSET(tuple);
+ADD_GETSET(dict);
+
+  scheme_add_global( "make-py-code",
+                     scheme_make_prim_w_arity(make_py_code, "make-py-code", 4, 4),
+                     pns );
+ADD_GET(code);
+ADD_SET(function);
 
   scheme_add_global( "spy-ext-call-fn",
                      scheme_make_prim_w_arity(spy_ext_call_fn, "spy-ext-call-fn", 1, -1),
@@ -279,56 +460,86 @@ ADD_CALL_GLOBAL(objobjarg, 4);
                      pns );
 
   //initspam();
-  printf("SPY now initializing the CPY module\n");
-  m = Py_InitModule("cpy", empty_method_table);
+//  printf("SPY now initializing the CPY module\n");
+//  m = Py_InitModule("cpy", empty_method_table);
 
-  #define INITTYPE(tobj, class_name) do { \
-      printf("SPY now adding " #tobj "\n"); \
-      PyObject* tobj##_class = spy_ext_new_class(class_name); \
-      SCHEME_SET_TYPE((dScheme_Structure*)&tobj, SPY_SCHEME_TYPE(tobj##_class)); \
-      tobj.stype = SCHEME_STRUCT_TYPE(tobj##_class); \
-      sapply2("set-python-node-type!", (PyObject*) & tobj, \
-          sapply1("python-node-type", tobj##_class)); \
-      sapply2("set-python-node-mutable?!", (PyObject*) & tobj, scheme_false); \
-      spy_copy_dictionary_from((PyObject*) & tobj, tobj##_class); \
-      scheme_register_extension_global((void*) & tobj, sizeof(tobj)); \
-      if ( tobj.tp_methods ) \
-        printf("methods are fine.\n"); \
-      else \
-        printf("methods are null.\n"); \
-      PyModule_AddObject(m, class_name, & tobj); \
-      } while(0);
-
-	  /*
-  #define INITSTYPE(tobj, sname) do { \
-      PyObject* cls =
-	  */
-
-  INITTYPE(PyBaseObject_Type, "pobj");
-
-  sapply1("set-py-dict!", &PyDict_Type);
-  INITTYPE(PyDict_Type, "pdict");
-
-//  INITSTYPE(PyDict_Type, "py-dict%");
-#ifdef SPY_STRING
-  INITTYPE(PyString_Type, "pstr");
-#endif
-#ifdef SPY_LIST
-  INITTYPE(PyList_Type, "plist");
-#endif
-#ifdef SPY_COBJ
-  INITTYPE(PyCObject_Type, "pcobj");
-#endif
 
 
   return scheme_void;
 }
+
+#if 0  // maybe this should be a CPython thing?
+PyObject* Py_InitModule(const char* name, PyMethodDef methods[])
+{
+  //PyObject* m;
+/*  int i;
+  method_def_array = methods;
+  for ( i = 0; methods[i].ml_meth; i++ )
+    {
+    printf( "about to add extension method %s\n", methods[i].ml_name );
+    sapply1( "python-add-extension-method", scheme_make_string(methods[i].ml_name) );
+    printf( "added extension method\n" );
+//    scheme_add_global( methods[i].ml_name,
+//                       scheme_make_prim_w_arity(methods[i].ml_meth, methods[i].ml_name, 0, 99),
+//                       scheme_get_env(scheme_config) );
+
+    } */
+
+ return sapply1("py-ext-init-module", sym(name));
+}
+#endif
 
 int PyModule_AddObject(PyObject* module, char* name, PyObject* obj)
 {
   sapply3("py-ext-module-add-object", module, sym(name), obj);
   return 0;
 }
+
+int PyObject_TypeCheck(PyObject* obj, PyTypeObject* type)
+{
+  PyTypeObject* obtype;
+  printf("PyObject_TypeCheck: entry\n");
+  assert(obj);
+  assert(type);
+  assert(SCHEME_STRUCTP((Scheme_Object*)obj));
+  assert(SCHEME_STRUCTP((Scheme_Object*)type));
+//  assert(PyType_Check(type));
+  printf("PyObject_TypeCheck: checking obj at %x\n", obj);
+  printf("PyObject_TypeCheck: looking for %s\n", type->tp_name);
+  obtype = PY_GET_TYPE(obj);
+  printf("PyObject_TypeCheck: obtype is %s\n", obtype->tp_name);
+  if ( obtype == type )
+    {
+    printf("PyObject_TypeCheck: success\n");
+    return 1;
+    }
+  else
+    {
+    PyObject* bases;// = obtype->tp_bases;
+    int nbases;
+    int i;
+    bases = obtype->tp_bases;
+    if ( bases )
+      {
+      assert(PyTuple_Check(bases));
+      nbases = PyTuple_GET_SIZE(bases);
+      printf("PyObject_TypeCheck: did not match ob_type, trying ob_type's bases\n");
+      for ( i = 0; i < nbases; i++ )
+        {
+        if ( PyObject_TypeCheck(obj, (PyTypeObject*) PyTuple_GET_ITEM(bases, i)) )
+          {
+          printf("PyObject_TypeCheck: success\n");
+          return 1;
+          }
+        }
+      }
+    printf("PyObject_TypeCheck: failure\n");
+    return 0;
+    }
+
+//  return ((obj) && sapply2("py-is-a?", obj, type));
+}
+
 
 Scheme_Object* scheme_reload(Scheme_Env* env){ return scheme_initialize(env); }
 
@@ -382,11 +593,175 @@ Scheme_Object* scheme_python_dispatch_method( int argc, Scheme_Object* argv[] )
 Scheme_Object *
 scheme_make_struct_instance_plus(Scheme_Object *_stype, int argc, Scheme_Object **args, int extra_mem);
 
+PyObject* make_py_number_last_resort(Scheme_Object* n)
+{
+  printf("make_py_number_last_resort: entry\n");
+  sapply1("display", scheme_make_string("make_py_number_last_resort: "));
+  sapply1("display", n);
+  seval("(newline)");
+  return PyLong_FromString(SCHEME_STR_VAL((Scheme_Object*)sapply1("number->string", n)), NULL, 10);
+}
+
+/*
+PyObject* chk_mpn(PyObject* n)
+{
+  printf("chk_mpn: entry\n");
+  printf("chk_mpn: n is at %x\n", n);
+  return n;
+}*/
+#define chk_mpn(n) n
+
+// make-py-number: number -> (U PyInt PyLong PyFloat)
+PyObject* make_py_number(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* n = argv[0];
+  assert(SCHEME_NUMBERP(n));
+//  printf("make_py_number: entry\n");
+//  printf("make_py_number: n is %san int\n", (SCHEME_INTP(n) ? "" : "not"));
+  return
+      SCHEME_INTP(n) ? chk_mpn(PyInt_FromLong(SCHEME_INT_VAL(n)))
+    : SCHEME_DBLP(n) ? PyFloat_FromDouble(SCHEME_DBL_VAL(n))
+    : make_py_number_last_resort(n);
+}
+
+// get-py-number: (U PyInt PyLong PyFloat) -> number
+Scheme_Object* get_py_number(int argc, Scheme_Object* argv[])
+{
+  PyObject* n = argv[0];
+  /*printf("get_py_number: entry\n");
+  printf("get_py_number: n address: %x\n", n);
+  printf("get_py_number: n->ob_type: %x\n", n->ob_type);
+  printf("get_py_number: type of n is %s\n", n->ob_type->tp_name);*/
+  assert(PyNumber_Check(n));
+  return
+      PyInt_Check(n) ? scheme_make_integer(PyInt_AsLong(n))
+    : PyLong_Check(n) ? scheme_make_integer(PyLong_AsLong(n))
+    : PyFloat_Check(n) ? scheme_make_double(PyFloat_AsDouble(n))
+    : sapply1("string->number", scheme_make_string(PyString_AsString(PyObject_Str(n))));
+}
+
+// make-py-list: list -> PyList
+PyObject* make_py_list(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* slist = argv[0];
+  int len;
+  int i = 0;
+  PyObject* plist;
+  assert(sapply1("list?", slist) != scheme_false);
+  len = scheme_proper_list_length(slist);
+  plist = PyList_New(len);
+  while ( slist != scheme_null )
+    {
+    PyList_SET_ITEM(plist, i, SCHEME_CAR(slist));
+    i++;
+    slist = SCHEME_CDR(slist);
+    }
+  return plist;
+}
+
+// get-py-list: PyList -> list
+Scheme_Object* get_py_list(int argc, Scheme_Object* argv[])
+{
+  PyObject* plist = argv[0];
+  assert(PyList_Check(plist));
+  return py_list_to_scheme_list_unsafe(plist, 0, PyList_GET_SIZE(plist));
+}
+
+Scheme_Object* py_list_to_scheme_list_unsafe(PyObject* plist, int pos, int len)
+{
+  return pos == len ?
+          scheme_null :
+          scheme_make_pair(PyList_GET_ITEM(plist, pos),
+                           py_list_to_scheme_list_unsafe(plist, pos + 1, len));
+}
+
+// make-py-tuple: list -> PyTuple
+PyObject* make_py_tuple(int argc, Scheme_Object* argv[])
+{
+  return PyList_AsTuple(make_py_list(argc, argv));
+}
+
+Scheme_Object* py_tuple_to_scheme_list_unsafe(PyObject* ptup, int pos, int len)
+{
+  return pos == len ?
+          scheme_null :
+          scheme_make_pair(PyTuple_GET_ITEM(ptup, pos),
+                           py_tuple_to_scheme_list_unsafe(ptup, pos + 1, len));
+}
+
+// get-py-tuple: PyTuple -> list
+Scheme_Object* get_py_tuple(int argc, Scheme_Object* argv[])
+{
+  PyObject* ptuple = argv[0];
+  printf("get_py_tuple: entry\n");
+  assert(PyTuple_Check(ptuple));
+  return py_tuple_to_scheme_list_unsafe(ptuple, 0, PyTuple_GET_SIZE(ptuple));
+}
+
+// make-py-dict: assoc-list -> PyDict
+PyObject* make_py_dict(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* al = argv[0];
+  int len;
+  int i = 0;
+  PyObject* dict;
+  assert(sapply1("list?", al) != scheme_false);
+  len = scheme_proper_list_length(al);
+  dict = PyDict_New();
+  while ( al != scheme_null )
+    {
+    Scheme_Object* pair = SCHEME_CAR(al);
+    PyObject* key = SCHEME_CAR(pair);
+    PyObject* value = SCHEME_CDR(pair);
+    //printf("make_py_dict: key is %s\n", PyString_AsString(key));
+    //printf("make_py_dict: value is %d\n", PyInt_AsLong(value));
+    PyDict_SetItem(dict, key, value);
+    i++;
+    al = SCHEME_CDR(al);
+    }
+  return dict;
+}
+
+Scheme_Object* py_dict_to_scheme_assoc_list_unsafe_entry(PyObject* dict, PyObject* keys, int pos)
+{
+  PyObject* key = PyList_GET_ITEM(keys, pos);
+  //printf("py_dict_to_scheme_assoc_list_unsafe_entry: pos = %d\n", pos);
+  //printf("py_dict_to_scheme_assoc_list_unsafe_entry: key = %s\n", PyString_AsString(key));
+  return scheme_make_pair(key, PyDict_GetItem(dict, key));
+}
+
+Scheme_Object* py_dict_to_scheme_assoc_list_unsafe(PyObject* dict, PyObject* keys, int pos, int len)
+{
+  return pos == len ?
+          scheme_null :
+          scheme_make_pair(py_dict_to_scheme_assoc_list_unsafe_entry(dict, keys, pos),
+                           py_dict_to_scheme_assoc_list_unsafe(dict, keys, pos + 1, len));
+}
+
+// get-py-dict: PyDict -> assoc-list
+Scheme_Object* get_py_dict(int argc, Scheme_Object* argv[])
+{
+  PyObject* dict = argv[0];
+  PyObject* keys;
+  //Scheme_Object* lst;
+  assert(PyDict_Check(dict));
+  keys = PyDict_Keys(dict);
+  //printf("get_py_dict: got keys (at address %x)\n", keys);
+  assert(PyList_Check(keys));
+  //lst = sapply1("get-py-list", keys);
+  //printf("get_py_dict: got keys as list\n");
+  //sapply1("display", scheme_make_string("get_py_dict: keys = "));
+  //sapply1("display", sapply1("get-py-list", keys));
+  //seval("(newline)");
+  return py_dict_to_scheme_assoc_list_unsafe(dict, keys, 0, PyList_GET_SIZE(keys));
+}
 
 
 // make-py-string: string -> PyString
 PyObject* make_py_string(int argc, Scheme_Object* argv[])
 {
+  return PyString_FromString(SCHEME_STR_VAL(argv[0]));
+#if 0
     PyObject *type, *dict, *mutable;
 	PyStringObject *str;
 	Scheme_Object* fields[3];
@@ -406,12 +781,91 @@ PyObject* make_py_string(int argc, Scheme_Object* argv[])
     strcpy(str->ob_sval, SCHEME_STR_VAL(argv[0]));
     str->ob_size = strlen(SCHEME_STR_VAL(argv[0]));
     return (PyObject*) str;
+#endif
+}
+
+// get-py-string: PyString -> string
+Scheme_Object* get_py_string(int argc, Scheme_Object* argv[])
+{
+    return scheme_make_string( ((PyStringObject*) argv[0])->ob_sval );
+}
+
+// a CodeFlag is one of:
+//   'new-locals
+//   'var-args
+//   'var-keywords
+//   'nested
+//   'generator
+
+// make-py-code: procedure number (listof CodeFlag) -> PyCode
+PyObject* make_py_code(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* name = argv[0];
+  Scheme_Object* proc = argv[1];
+  Scheme_Object* nargs = argv[2];
+  Scheme_Object* flags = argv[3];
+  PyCodeObject* code;
+  assert(SCHEME_SYMBOLP(name));
+  assert(SCHEME_PROCP(proc));
+  assert(SCHEME_INTP(nargs));
+  assert(sapply1("list?", flags) != scheme_false);
+  code = PyObject_NEW(PyCodeObject, &PyCode_Type);
+  code->co_argcount = SCHEME_INT_VAL(nargs);
+  code->co_nlocals = 0;
+  code->co_stacksize = 0;
+  code->co_flags = 0;
+  while ( flags != scheme_null )
+    {
+    Scheme_Object* flag = SCHEME_CAR(flags);
+    if ( scheme_eq(flag, sym("new-locals")) ) code->co_flags |= CO_NEWLOCALS;
+    if ( scheme_eq(flag, sym("var-args")) ) code->co_flags |= CO_VARARGS;
+    if ( scheme_eq(flag, sym("var-keywords")) ) code->co_flags |= CO_VARKEYWORDS;
+    if ( scheme_eq(flag, sym("nested")) ) code->co_flags |= CO_NESTED;
+    if ( scheme_eq(flag, sym("generator")) ) code->co_flags |= CO_GENERATOR;
+    flags = SCHEME_CDR(flags);
+    }
+  code->co_code = NULL;
+  code->co_consts = PyTuple_New(0);//EMPTY_TUPLE;
+  code->co_names = NULL;
+  code->co_varnames = NULL;
+  code->co_freevars = NULL;
+  code->co_cellvars = NULL;
+  code->co_filename = NULL;
+  code->co_name = PyString_FromString(SCHEME_SYM_VAL(name));
+  code->co_firstlineno = -1;
+  code->co_lnotab = NULL;
+  printf("make_py_code: checking co_consts\n");
+  assert(PyTuple_Check(code->co_consts));
+  printf("make_py_code: ok.\n");
+  SPY_CODE_SET_LAMBDA(code, proc); // TADA! we'll hide the Scheme lambda here
+  return code;
+}
+
+// get-py-code: PyCode -> procedure
+Scheme_Object* get_py_code(int argc, Scheme_Object* argv[])
+{
+  PyObject* code = argv[0];
+  assert(PyCode_Check(code));
+  return SPY_CODE_GET_LAMBDA(code);
+}
+
+// make-py-function: PyCode -> PyFunction
+PyObject* make_py_function (int argc, Scheme_Object* argv[])
+{
+  PyObject* code = argv[0];
+  printf("make_py_function: entry\n");
+  assert(PyCode_Check(code));
+  assert(((PyCodeObject *)code)->co_consts != NULL);
+  assert(PyTuple_Check(((PyCodeObject *)code)->co_consts));
+  return PyFunction_New(code, PyDict_New());//EMPTY_DICT);
 }
 
 
 /* TODO: use this in make_py_string */
 PyObject* spy_init_obj(PyObject* obj, PyTypeObject* py_type)
 {
+  printf ("spy_init_obj: entry\n");
+  assert(obj != NULL);
   /*Scheme_Object* sobj = spy_ext_new_instance(py_type);*/
   SCHEME_SET_TYPE(obj, SPY_GLOBALS_SCHEME_STRUCT()); // sobj->type; /* STRUCT */
   obj->stype = SPY_GLOBALS_PYTHON_NODE(); //SCHEME_STRUCT_TYPE(sobj); /* PYTHON-NODE */
@@ -420,15 +874,11 @@ PyObject* spy_init_obj(PyObject* obj, PyTypeObject* py_type)
   sapply2("set-python-node-type!", obj, (PyObject*) py_type);
   sapply2("set-python-node-mutable?!", obj, scheme_true);
   sapply2("set-python-node-dict!", obj, seval("(make-hash-table)"));
+  assert(obj != NULL);
   return obj;
 /*  spy_copy_dictionary_from(obj, sobj);*/
 }
 
-// get-py-string: PyString -> string
-Scheme_Object* get_py_string(int argc, Scheme_Object* argv[])
-{
-    return scheme_make_string( ((PyStringObject*) argv[0])->ob_sval );
-}
 
 PyObject* spy_ext_call_fn_unary(int argc, Scheme_Object* argv[])
 {
@@ -1079,24 +1529,6 @@ PyObject* SPY_GET_ATTR(PyObject* obj, const char* attr)
 
 
 
-PyObject* Py_InitModule(const char* name, PyMethodDef methods[])
-{
-  //PyObject* m;
-/*  int i;
-  method_def_array = methods;
-  for ( i = 0; methods[i].ml_meth; i++ )
-    {
-    printf( "about to add extension method %s\n", methods[i].ml_name );
-    sapply1( "python-add-extension-method", scheme_make_string(methods[i].ml_name) );
-    printf( "added extension method\n" );
-//    scheme_add_global( methods[i].ml_name,
-//                       scheme_make_prim_w_arity(methods[i].ml_meth, methods[i].ml_name, 0, 99),
-//                       scheme_get_env(scheme_config) );
-
-    } */
-
- return sapply1("py-ext-init-module", sym(name));
-}
 
 
 PyObject* PyErr_NewException(char *name, PyObject *base, PyObject *dict)
@@ -1256,13 +1688,22 @@ int PyObject_HasAttrString(	PyObject *o, char *attr_name)
 
 PyObject * _PyObject_New(PyTypeObject *type)
 {
-  return sapply1("python-new-object", type);
+  printf ("_PyObject_New: %s\n", type->tp_name);
+  return sapply3("make-python-node", type, seval("(make-hash-table)"), scheme_true);
+//  return sapply1("python-new-object", type);
 }
 
 PyVarObject *
 _PyObject_NewVar(PyTypeObject *tp, int nitems)
 {
-  return PyObject_InitVar(_PyObject_New(tp), tp, nitems);
+        const size_t size = _PyObject_VAR_SIZE(tp, nitems);
+        PyVarObject *op = (PyVarObject *) _PyObject_GC_Malloc(size + sizeof(Scheme_Object));
+        printf("_PyObject_NewVar: size = %d, new var is at 0x%x\n", size, op);
+        /*if (op != NULL)
+                op =*/ PyObject_INIT_VAR(op, tp, nitems);
+        return op;
+
+//  return PyObject_InitVar(_PyObject_New(tp), tp, nitems);
 }
 
 PyVarObject *
@@ -1290,6 +1731,7 @@ PyObject * PyEval_CallMethod(PyObject *obj, char *methodname, char *format, ...)
 }
 
 
+/*
 PyObject * PyEval_EvalCodeEx(PyCodeObject *co,
                                         PyObject *globals,
                                         PyObject *locals,
@@ -1297,9 +1739,280 @@ PyObject * PyEval_EvalCodeEx(PyCodeObject *co,
                                         PyObject **kwds, int kwdc,
                                         PyObject **defs, int defc,
                                         PyObject *closure)
+{*/
+PyObject *
+PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
+           PyObject **args, int argcount, PyObject **kws, int kwcount,
+           PyObject **defs, int defcount, PyObject *closure)
 {
-  // TODO: implement me
-  return NULL;
+
+  Scheme_Object** scm_argv = NULL;
+  int scm_argc;
+#define SETLOCAL(idx, val) (scm_argv[idx] = val)
+#define GETLOCAL(idx) scm_argv[idx]
+#define INIT_SCM_ARGV(len) \
+         if (!scm_argv) \
+           { \
+           scm_argv = PyMem_Malloc(len * sizeof(Scheme_Object*)); \
+           scm_argc = len; \
+           }
+
+#if 0
+        register PyFrameObject *f;
+        register PyObject *retval = NULL;
+        register PyObject **fastlocals, **freevars;
+        PyThreadState *tstate = PyThreadState_GET();
+#endif
+        PyObject *x, *u;
+
+#if 0 // mzscheme takes care of it, baybeh
+        if (globals == NULL) {
+                PyErr_SetString(PyExc_SystemError,
+                                "PyEval_EvalCodeEx: NULL globals");
+                return NULL;
+        }
+
+        assert(globals != NULL);
+        f = PyFrame_New(tstate, co, globals, locals);
+        if (f == NULL)
+                return NULL;
+
+        fastlocals = f->f_localsplus;
+        freevars = f->f_localsplus + f->f_nlocals;
+#endif
+
+        if (co->co_argcount > 0 ||
+            co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
+                int i;
+                int n = argcount;
+                PyObject *kwdict = NULL;
+                if (co->co_flags & CO_VARKEYWORDS) {
+                        kwdict = PyDict_New();
+                        if (kwdict == NULL)
+                                goto fail;
+                        i = co->co_argcount;
+                        if (co->co_flags & CO_VARARGS)
+                                i++;
+                       INIT_SCM_ARGV(i + 1); // daniel-code spliced in!
+                        SETLOCAL(i, kwdict);
+                }
+                if (argcount > co->co_argcount) {
+                        if (!(co->co_flags & CO_VARARGS)) {
+                                PyErr_Format(PyExc_TypeError,
+                                    "%.200s() takes %s %d "
+                                    "%sargument%s (%d given)",
+                                    PyString_AsString(co->co_name),
+                                    defcount ? "at most" : "exactly",
+                                    co->co_argcount,
+                                    kwcount ? "non-keyword " : "",
+                                    co->co_argcount == 1 ? "" : "s",
+                                    argcount);
+                                goto fail;
+                        }
+                        n = co->co_argcount;
+                }
+              INIT_SCM_ARGV(MAX(co->co_argcount, n)); // daniel-code spliced in!
+                for (i = 0; i < n; i++) {
+                        x = args[i];
+                        Py_INCREF(x);
+                        SETLOCAL(i, x);
+                }
+                if (co->co_flags & CO_VARARGS) {
+                        u = PyTuple_New(argcount - n);
+                        if (u == NULL)
+                                goto fail;
+                        SETLOCAL(co->co_argcount, u);
+                        for (i = n; i < argcount; i++) {
+                                x = args[i];
+                                Py_INCREF(x);
+                                PyTuple_SET_ITEM(u, i-n, x);
+                        }
+                }
+                for (i = 0; i < kwcount; i++) {
+                        PyObject *keyword = kws[2*i];
+                        PyObject *value = kws[2*i + 1];
+                        int j;
+                        if (keyword == NULL || !PyString_Check(keyword)) {
+                                PyErr_Format(PyExc_TypeError,
+                                    "%.200s() keywords must be strings",
+                                    PyString_AsString(co->co_name));
+                                goto fail;
+                        }
+                        /* XXX slow -- speed up using dictionary? */
+                        for (j = 0; j < co->co_argcount; j++) {
+                                PyObject *nm = PyTuple_GET_ITEM(
+                                        co->co_varnames, j);
+                                int cmp = PyObject_RichCompareBool(
+                                        keyword, nm, Py_EQ);
+                                if (cmp > 0)
+                                        break;
+                                else if (cmp < 0)
+                                        goto fail;
+                        }
+                        /* Check errors from Compare */
+                        if (PyErr_Occurred())
+                                goto fail;
+                        if (j >= co->co_argcount) {
+                                if (kwdict == NULL) {
+                                        PyErr_Format(PyExc_TypeError,
+                                            "%.200s() got an unexpected "
+                                            "keyword argument '%.400s'",
+                                            PyString_AsString(co->co_name),
+                                            PyString_AsString(keyword));
+                                        goto fail;
+                                }
+                                PyDict_SetItem(kwdict, keyword, value);
+                        }
+                        else {
+                                if (GETLOCAL(j) != NULL) {
+                                        PyErr_Format(PyExc_TypeError,
+                                             "%.200s() got multiple "
+                                             "values for keyword "
+                                             "argument '%.400s'",
+                                             PyString_AsString(co->co_name),
+                                             PyString_AsString(keyword));
+                                        goto fail;
+                                }
+                                Py_INCREF(value);
+                                SETLOCAL(j, value);
+                        }
+                }
+                if (argcount < co->co_argcount) {
+                        int m = co->co_argcount - defcount;
+                        for (i = argcount; i < m; i++) {
+                                if (GETLOCAL(i) == NULL) {
+                                        PyErr_Format(PyExc_TypeError,
+                                            "%.200s() takes %s %d "
+                                            "%sargument%s (%d given)",
+                                            PyString_AsString(co->co_name),
+                                            ((co->co_flags & CO_VARARGS) ||
+                                             defcount) ? "at least"
+                                                       : "exactly",
+                                            m, kwcount ? "non-keyword " : "",
+                                            m == 1 ? "" : "s", i);
+                                        goto fail;
+                                }
+                        }
+                        if (n > m)
+                                i = n - m;
+                        else
+                                i = 0;
+                        for (; i < defcount; i++) {
+                                if (GETLOCAL(m+i) == NULL) {
+                                        PyObject *def = defs[i];
+                                        Py_INCREF(def);
+                                        SETLOCAL(m+i, def);
+                                }
+                        }
+                }
+        }
+        else {
+                if (argcount > 0 || kwcount > 0) {
+                        PyErr_Format(PyExc_TypeError,
+                                     "%.200s() takes no arguments (%d given)",
+                                     PyString_AsString(co->co_name),
+                                     argcount + kwcount);
+                        goto fail;
+                }
+        }
+
+#if 0 // not sure what this does right now -- d
+        /* Allocate and initialize storage for cell vars, and copy free
+           vars into frame.  This isn't too efficient right now. */
+        if (f->f_ncells) {
+                int i = 0, j = 0, nargs, found;
+                char *cellname, *argname;
+                PyObject *c;
+
+                nargs = co->co_argcount;
+                if (co->co_flags & CO_VARARGS)
+                        nargs++;
+                if (co->co_flags & CO_VARKEYWORDS)
+                        nargs++;
+
+                /* Check for cells that shadow args */
+                for (i = 0; i < f->f_ncells && j < nargs; ++i) {
+                        cellname = PyString_AS_STRING(
+                                PyTuple_GET_ITEM(co->co_cellvars, i));
+                        found = 0;
+                        while (j < nargs) {
+                                argname = PyString_AS_STRING(
+                                        PyTuple_GET_ITEM(co->co_varnames, j));
+                                if (strcmp(cellname, argname) == 0) {
+                                        c = PyCell_New(GETLOCAL(j));
+                                        if (c == NULL)
+                                                goto fail;
+                                        GETLOCAL(f->f_nlocals + i) = c;
+                                        found = 1;
+                                        break;
+                                }
+                                j++;
+                        }
+                        if (found == 0) {
+                                c = PyCell_New(NULL);
+                                if (c == NULL)
+                                        goto fail;
+                                SETLOCAL(f->f_nlocals + i, c);
+                        }
+                }
+                /* Initialize any that are left */
+                while (i < f->f_ncells) {
+                        c = PyCell_New(NULL);
+                        if (c == NULL)
+                                goto fail;
+                        SETLOCAL(f->f_nlocals + i, c);
+                        i++;
+                }
+        }
+#endif
+#if 0 // mzscheme should handle this
+        if (f->f_nfreevars) {
+                int i;
+                for (i = 0; i < f->f_nfreevars; ++i) {
+                        PyObject *o = PyTuple_GET_ITEM(closure, i);
+                        Py_INCREF(o);
+                        freevars[f->f_ncells + i] = o;
+                }
+        }
+#endif
+
+#if 0 // yield is evil.
+        if (co->co_flags & CO_GENERATOR) {
+                /* Don't need to keep the reference to f_back, it will be set
+                 * when the generator is resumed. */
+                Py_XDECREF(f->f_back);
+                f->f_back = NULL;
+
+                PCALL(PCALL_GENERATOR);
+
+                /* Create a new generator that owns the ready to run frame
+                 * and return that as the value. */
+                return gen_new(f);
+        }
+#endif
+
+#if 0 // No.
+        retval = eval_frame(f);
+
+  fail: /* Jump here from prelude on failure */
+
+        /* decref'ing the frame can cause __del__ methods to get invoked,
+           which can call back into Python.  While we're done with the
+           current Python frame (f), the associated C stack is still in use,
+           so recursion_depth must be boosted for the duration.
+        */
+        assert(tstate != NULL);
+        ++tstate->recursion_depth;
+        Py_DECREF(f);
+        --tstate->recursion_depth;
+        return retval;
+#endif
+
+  goto succeed;
+  fail:
+    return NULL; // kaboom?
+  succeed:
+    return scheme_apply(SPY_CODE_GET_LAMBDA(co), scm_argc, scm_argv);
 }
 
 void PyObject_GC_Track(void *ptr)
@@ -1468,11 +2181,25 @@ PyObject * PyExc_OverflowError = 0;
 PyObject * PyExc_ValueError = 0;
 PyObject * PyExc_TypeError = 0;
 
-PyObject * PyErr_Format(PyObject *o, const char *format, ...)
-			//Py_GCC_ATTRIBUTE((format(printf, 2, 3)))
+PyObject *
+PyErr_Format(PyObject *exception, const char *format, ...)
 {
-return 0;
+        va_list vargs;
+        PyObject* string;
+
+#ifdef HAVE_STDARG_PROTOTYPES
+        va_start(vargs, format);
+#else
+        va_start(vargs);
+#endif
+
+        string = PyString_FromFormatV(format, vargs);
+        PyErr_SetObject(exception, string);
+        Py_XDECREF(string);
+        va_end(vargs);
+        return NULL;
 }
+
 
 void PyErr_SetNone(PyObject *o)
 {
@@ -1490,6 +2217,13 @@ PyObject * PyErr_NoMemory(void)
 
 void PyErr_SetString(PyObject * o, const char * c)
 {
+  scheme_signal_error("%s: %s\n", (o && o->ob_type && o->ob_type->tp_name ? o->ob_type->tp_name : "(null)"),
+                                (c ? c : "(null)"));
+}
+
+void PyErr_SetObject(PyObject *cls, PyObject *obj)
+{
+  PyErr_SetString(cls, PyString_AsString(PyObject_Str(obj)));
 }
 
 PyObject * PyEval_CallObjectWithKeywords(
@@ -1520,9 +2254,6 @@ PyObject* _PyObject_GC_New(PyTypeObject* type)
   //return sapply1("python-new-object", type);
 }
 
-void PyErr_SetObject(PyObject *cls, PyObject *obj)
-{
-}
 
 void PyObject_GC_UnTrack(void *obj)
 {
@@ -1811,6 +2542,7 @@ int PySequence_Check(PyObject *o)
 
 int PyFloat_Check(PyObject *o)
 {
+  printf("PyFloat_Check: entry\n");
   return o && sapply2("py-is-a?", o, seval("py-number%")) != scheme_false;
 }
 

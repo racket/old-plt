@@ -1,0 +1,24 @@
+AC_INIT(src/bignum.c)
+
+# checks for programs
+# checks for libraries
+# checks for header files
+# checks for typedefs
+# checks for structures
+# checks for compiler characteristics
+# checks for library functions
+# checks for system services
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_CXX
+AC_PROG_RANLIB
+
+AC_PATH_PROG(PERL,perl)
+
+AC_SUBST(CC)
+AC_SUBST(CFLAGS)
+AC_SUBST(CPP)
+AC_SUBST(PERL)
+
+AC_OUTPUT(Makefile src/Makefile gc/Makefile)

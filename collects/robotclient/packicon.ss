@@ -97,6 +97,26 @@
 
   (define pi (atan 0 -1))
   
+  (define (flip-bitmap dc bm mono?)
+    (send dc set-bitmap bm)
+    (let ([w (send bm get-width)]
+          [h (send bm get-height)]
+          [c (make-object color%)])
+      (define flipped-bm (make-object bitmap% w h mono?))
+      (define flipped-dc (make-object bitmap-dc% flipped-bm))
+      (send flipped-dc clear)
+      (let iloop ([i 0])
+        (unless (= i w)
+          (let jloop ([j 0])
+            (if (= j h)
+                (iloop (add1 i))
+                (begin
+                  (send dc get-pixel i j c)
+                  (send flipped-dc set-pixel i (- h j 1) c)
+                  (jloop (add1 j)))))))
+      (send flipped-dc set-bitmap #f)
+      flipped-bm))
+  
   (define (mk-robot color size)
     (define half-size (quotient size 2))
     (define 3/4-size (quotient (* 3 size) 4))
@@ -138,7 +158,9 @@
     (draw-once #f)
     
     (send dc set-bitmap #f)
-    (cons robot-bm robot-mask))
+    (cons (cons robot-bm robot-mask)
+          (cons (flip-bitmap dc robot-bm #f)
+                (flip-bitmap dc robot-mask #t))))
 
   (define (make-robot-icons size colors)
     (map (lambda (color)

@@ -26,13 +26,36 @@
   
   (define num-pack-icons 11)
   (define pack-colors (make-package-colors num-pack-icons))
+  
+  (define-struct thing (x y))
 
-  (define-struct pack (icon pen id dest-x dest-y weight x y owner))
-  (define-struct robot (icon id x y packages motion drop grab dead? moving?))
+  (define-struct (pack thing) (icon pen id dest-x dest-y weight owner home?))
+  (define-struct (robot thing) (icon dead-icon id packages money max-lift motion drop grab dead? moving? 
+                                     bid bid-index score pos))
 
+  (define robot-x thing-x)
+  (define robot-y thing-y)
+  (define pack-x thing-x)
+  (define pack-y thing-y)
+  (define set-robot-x! set-thing-x!)
+  (define set-robot-y! set-thing-y!)
+  (define set-pack-x! set-thing-x!)
+  (define set-pack-y! set-thing-y!)
+  
   (define max-width 800)
   (define max-height 600)
+  
+  (define (fill item label value)
+    (let ([e (send item get-editor)])
+      (send e erase)
+      (send e insert (format "~a: ~a" label value))))
 
+  (define (set-robot-info r item)
+    (let ([sub-items (send item get-items)])
+      (fill (car sub-items) "Score" (robot-score r))
+      (fill (cadr sub-items) "Money" (robot-money r))
+      (fill (caddr sub-items) "Bid" (robot-bid r))))
+  
   (define board-panel%
     (class horizontal-panel%
       (init frame width height 
@@ -40,13 +63,13 @@
             board)
       
       (define/public (install-robots&packages orig-robots orig-pkgs)
-        ;; Each robot is (list id x y (list pkg-id ...))
+        ;; Each robot is (list id x y money max-lift (list pkg-id ...))
         ;; Each package is (list id x y dest-x dext-y weight)
         (send canvas install-packages orig-pkgs package-list)
         (send canvas install-robots orig-robots robot-list))
       
       (define/public (queue-robot-actions actions)
-        ;; Each robot action is (list id (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
+        ;; Each robot action is (list id bid (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
         (send canvas queue-robot-actions actions))
       
       (define/public (apply-queued-actions)
@@ -56,20 +79,19 @@
       (define canvas (make-object board-canvas% this width height board
                        (lambda () (list robot-list package-list))))
       
+      (define hier% (class hierarchical-list% 
+                      (define/override (on-click i)
+                        (send canvas set-active 
+                              (thing-x (send i user-data))
+                              (thing-y (send i user-data))))
+                      (super-instantiate ())))
+      
       (define vpanel (make-object vertical-pane% this))
       (make-object message% "Robots" vpanel)
-      (define robot-list (make-object (class hierarchical-list% 
-                                        (define/override (on-click i)
-                                          (send canvas set-active (send i user-data)))
-                                        (super-instantiate ()))
-                           vpanel))
+      (define robot-list (make-object hier% vpanel))
       (send robot-list selectable #f)
       (make-object message% "Packages" vpanel)
-      (define package-list (make-object (class hierarchical-list% 
-                                        (define/override (on-click i)
-                                          (send canvas set-active (send i user-data)))
-                                        (super-instantiate ()))
-                             vpanel))
+      (define package-list (make-object hier% vpanel))
       (send package-list selectable #f)))
     
   (define arrow-inset 1)
@@ -122,27 +144,35 @@
                                  (make-object point% (- cell-paint-size arrow-inset) (* 2 arrow-inset))))
       
       (define/public (install-robots orig-robots hlist)
-        ;; robot is (list id x y (list pkg-id ...))
+        ;; Each robot is (list id x y money max-lift (list pkg-id ...))
+        (define rpos 0)
         (set! robots
-              (map (lambda (orig icon)
+              (map (lambda (orig icons)
                      (let ([pkgs (map (lambda (pid)
                                         (or (ormap (lambda (pkg)
                                                      (and (= (pack-id pkg) pid)
                                                           pkg))
                                                    packages)
                                             (error 'install "robot package not found: ~a" pid)))
-                                      (cadddr orig))])
-                       (let ([r (make-robot icon
-                                            (car orig)
-                                            ;; sub1 for 0-indexed
-                                            (sub1 (cadr orig))
+                                      (cadddr (cddr orig)))])
+                       (let ([r (make-robot (sub1 (cadr orig)) ; sub1 for 0-indexed
                                             (sub1 (caddr orig))
+                                            (car icons)
+                                            (cdr icons)
+                                            (car orig)
                                             pkgs
+                                            (cadddr orig) ; money
+                                            (cadddr (cdr orig)) ; max-lift
                                             #f
                                             #f
                                             #f
                                             #f
-                                            #f)])
+                                            #f
+                                            0    ; pending bid
+                                            #f   ; bid index
+                                            0    ; score
+                                            rpos)]) ; pos
+                         (set! rpos (add1 rpos))
                          (for-each (lambda (pkg) 
                                      (when (pack-owner pkg) 
                                        (error 'install
@@ -163,7 +193,11 @@
                                 [e (send i get-editor)])
                            (send e insert (make-object image-snip% (car (robot-icon r))))
                            (send e insert (format " ~a" (robot-id r)))
-                           (send i user-data (cons (robot-x r) (robot-y r)))))
+                           (send i user-data r)
+                           (send i new-item)
+                           (send i new-item)
+                           (send i new-item)
+                           (set-robot-info r i)))
              robots))
       
       (define packages null)
@@ -187,15 +221,15 @@
                                                                     min)
                                                                  (- max min))
                                                               (sub1 num-pack-icons)))))])
-                               (make-pack (vector-ref pack-icons rel-weight)
+                               (make-pack (sub1 (cadr pkg)) ; sub1 for 0-indexed
+                                          (sub1 (caddr pkg))
+                                          (vector-ref pack-icons rel-weight)
                                           (vector-ref pack-arrow-pens rel-weight)
                                           (car pkg)
-                                          ;; sub1 for 0-indexed
                                           (sub1 (cadr (cddr pkg)))
                                           (sub1 (caddr (cddr pkg)))
                                           (cadddr (cddr pkg))
-                                          (sub1 (cadr pkg))
-                                          (sub1 (caddr pkg))
+                                          #f
                                           #f)))
                            pkgs)))))
         (map (lambda (i) (send hlist delete-item i)) (send hlist get-items))
@@ -203,10 +237,12 @@
                                 [e (send i get-editor)])
                            (send e insert (make-object image-snip% (car (pack-icon p))))
                            (send e insert (format " ~a" (pack-id p)))
-                           (send i user-data (cons (pack-x p) (pack-y p)))))
+                           (send i user-data p)))
              packages))
       
       (define/public (queue-robot-actions orig-actions)
+        ;; Each robot action is (list id bid (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
+        (define bid-index 0)
         (set! actions
               (map (lambda (act)
                      (let ([id (car act)])
@@ -216,7 +252,7 @@
                                                        (andmap number? l))
                                             (error 'queue-robot-actions
                                                    "bad action ~e"
-                                                   (cadr act)))
+                                                   (cadddr act)))
                                           (map (lambda (pid)
                                                  (let ([pkg (ormap (lambda (pkg)
                                                                      (and (= (pack-id pkg) pid)
@@ -227,7 +263,8 @@
                                                             "can't find package ~e"
                                                             pid))
                                                    pkg))
-                                               l))])
+                                               l))]
+                              [mot (caddr act)])
                          (unless r
                            (error 'queue-robot-actions "cannot find robot ~e" id))
                          (when (robot-dead? r)
@@ -236,53 +273,65 @@
                                    (robot-grab r)
                                    (robot-drop r))
                            (error 'queue-robot-actions "robot ~e has an action already" id))
+                         (set-robot-bid-index! r bid-index)
+                         (set! bid-index (add1 bid-index))
+                         (set-robot-bid! r (abs (cadr act)))
                          (cond
-                           [(and (pair? (cadr act)) (eq? (caadr act) 'pick))
+                           [(and (pair? mot) (eq? (car mot) 'pick))
                             (set-robot-motion! r pickup-arrow)
-                            (set-robot-grab! r (get-pkgs (cdadr act)))]
-                           [(and (pair? (cadr act)) (eq? (caadr act) 'drop))
+                            (set-robot-grab! r (get-pkgs (cdr mot)))]
+                           [(and (pair? mot) (eq? (car mot) 'drop))
                             (set-robot-motion! r drop-arrow)
-                            (set-robot-drop! r (get-pkgs (cdadr act)))]
+                            (set-robot-drop! r (get-pkgs (cdr mot)))]
                            [else
                             (set-robot-motion! r
-                                               (case (cadr act)
+                                               (case mot
                                                  [(e) right-arrow]
                                                  [(w) left-arrow]
                                                  [(n) up-arrow]
                                                  [(s) down-arrow]
                                                  [else (error 'queue-robot-actions
                                                               "bad action ~e"
-                                                              (cadr act))]))])
+                                                              mot)]))])
                          r)))
                    orig-actions))
-        (on-paint))
+        (update))
       
       (define/private (find-robot x y)
         (ormap (lambda (r)
                  (and (= x (robot-x r))
                       (= y (robot-y r))
                       (not (robot-moving? r))
+                      (not (robot-dead? r))
                       r))
                robots))
       
       (define animate-steps 5)
       (define/private (animate f)
-        (let loop ([i 1])
-          (unless (> i animate-steps)
-            (let ([continue? (f i)])
-              (sleep/yield 0.1)
-              (on-paint)
-              (when continue?
-                (loop (add1 i)))))))
+        (when f
+          (let loop ([i 1])
+            (unless (> i animate-steps)
+              (let ([continue? (f i)])
+                (sleep/yield 0.1)
+                (update)
+                (when continue?
+                  (loop (add1 i))))))))
       
       (define/public (apply-queued-actions)
+        ;; Clear dead robots and home packages, first:
+        (when (ormap robot-dead? robots)
+          (set! robots (filter (lambda (r) (not (robot-dead? r))) robots)))
+        (when (ormap pack-home? packages)
+          (set! packages (filter (lambda (r) (not (pack-home? r))) packages)))
+        ;; Run actions:
         (for-each (lambda (r)
                     (animate
-                     (let loop ([r r][motion (robot-motion r)])
+                     (let loop ([r r][motion (robot-motion r)][pushed? #f])
                        (set-robot-motion! r #f)
                        (set-robot-moving?! r #t)
                        (let-values ([(dx dy)
                                      (cond
+                                       [(and (not pushed?) (> (robot-bid r) (robot-money r))) (values 0 0)]
                                        [(eq? motion left-arrow) (values -1 0)]
                                        [(eq? motion right-arrow) (values 1 0)]
                                        [(eq? motion up-arrow) (values 0 1)]
@@ -301,7 +350,7 @@
                                          (set-robot-motion! r #f)
                                          (set-robot-drop! r #f)
                                          (set-robot-grab! r #f)
-                                         (loop push-r motion)) ;; returns an animation step
+                                         (loop push-r motion #t)) ;; returns an animation step
                                        (lambda (i) #f))]) ;; #f "means nothing to animate"
                              (let* ([on-board? (and (< -1 nx width)
                                                     (< -1 ny height))]
@@ -310,50 +359,75 @@
                                               (if on-board?
                                                   (pos->cell nx ny)
                                                   'wall))]
-                                    [drop/grab (lambda (r)
+                                    [bid (lambda (r)
+                                           (unless pushed?
+                                             (when (> (robot-bid r) (robot-money r))
+                                               (set-robot-dead?! r #t))
+                                             (set-robot-money! r (max 0 (- (robot-money r) (robot-bid r))))
+                                             (set-robot-bid! r 0)))]
+                                    [drop/grab (lambda (r random-drop)
                                                  (when (robot-grab r)
                                                    (for-each (lambda (pkg)
                                                                (when (and (not (pack-owner pkg))
+                                                                          (not (pack-home? pkg))
                                                                           (= (pack-x pkg) (robot-x r))
-                                                                          (= (pack-y pkg) (robot-y r)))
+                                                                          (= (pack-y pkg) (robot-y r))
+                                                                          (>= (robot-max-lift r) (pack-weight pkg)))
                                                                  (set-pack-owner! pkg r)
                                                                  (set-robot-packages! r (cons pkg (robot-packages r)))))
                                                              (robot-grab r))
                                                    (set-robot-grab! r #f))
-                                                 (when (robot-drop r)
+                                                 (when (or (robot-drop r) random-drop)
                                                    (for-each (lambda (pkg)
                                                                (when (eq? r (pack-owner pkg))
+                                                                 (when (and (= (pack-x pkg) (pack-dest-x pkg))
+                                                                            (= (pack-y pkg) (pack-dest-y pkg)))
+                                                                   (set-pack-home?! pkg #t)
+                                                                   (set-robot-score! r (+ (robot-score r)
+                                                                                          (pack-weight pkg))))
                                                                  (set-pack-owner! pkg #f)
                                                                  (set-robot-packages! r (remq pkg (robot-packages r)))))
-                                                             (robot-drop r))
-                                                   (set-robot-drop! r #f)))])
-                            (if (or (and (zero? dx) (zero? dy)) (eq? cell 'wall))
-                                (begin
-                                  (set-robot-moving?! r #f)
-                                  (lambda (i)
-                                    (drop/grab r)
-                                    (sub-animate i)))
-                                (begin
-                                  (when (eq? cell 'water)
-                                    (set-robot-dead?! r #t))
-                                  (let ([x (robot-x r)]
-                                        [y (robot-y r)])
-                                    (lambda (i)
-                                      (drop/grab r)
-                                      (sub-animate i)
-                                      (set-robot-moving?! r #f)
-                                      (let ([nx (+ x (* (- nx x) (/ i animate-steps)))]
-                                            [ny (+ y (* (- ny y) (/ i animate-steps)))])
-                                        (set-robot-x! r nx)
-                                        (set-robot-y! r ny)
-                                        (for-each (lambda (pkg)
-                                                    (set-pack-x! pkg nx)
-                                                    (set-pack-y! pkg ny))
-                                                  (robot-packages r)))
-                                      #t)))))))))))
+                                                             (append (or (robot-drop r) null)
+                                                                     (or random-drop null)))
+                                                   (set-robot-drop! r #f)))]
+                                    [random-drop (and pushed?
+                                                      (not (null? (robot-packages r)))
+                                                      (list (list-ref (robot-packages r) 
+                                                                      (random (length (robot-packages r))))))])
+                               (if (or (and (zero? dx) (zero? dy)) (eq? cell 'wall))
+                                   (begin
+                                     (set-robot-moving?! r #f)
+                                     (if (or (positive? (robot-bid r))
+                                             (robot-grab r)
+                                             (robot-drop r))
+                                         (lambda (i)
+                                           (bid r)
+                                           (drop/grab r random-drop)
+                                           (sub-animate i))
+                                         #f)) ;; nothing at all to do
+                                   (begin
+                                     (when (eq? cell 'water)
+                                       (set-robot-dead?! r #t))
+                                     (let ([x (robot-x r)]
+                                           [y (robot-y r)])
+                                       (lambda (i)
+                                         (bid r)
+                                         (drop/grab r random-drop)
+                                         (sub-animate i)
+                                         (set-robot-moving?! r #f)
+                                         (let ([nx (+ x (* (- nx x) (/ i animate-steps)))]
+                                               [ny (+ y (* (- ny y) (/ i animate-steps)))])
+                                           (set-robot-x! r nx)
+                                           (set-robot-y! r ny)
+                                           (for-each (lambda (pkg)
+                                                       (set-pack-x! pkg nx)
+                                                       (set-pack-y! pkg ny))
+                                                     (robot-packages r)))
+                                         #t)))))))))))
                   actions)
         (set! actions null)
-        (on-paint))
+        (map (lambda (r) (set-robot-bid-index! r #f)) robots)
+        (update))
 
       (define display-w (add1 (* scale width)))
       (define display-h (add1 (* scale height)))
@@ -369,26 +443,27 @@
       (define/override (on-event e)
         (when (send e button-down?)
           (let-values ([(i j) (location->pos (send e get-x) (send e get-y))])
-            (set-active (cons i j)))))
+            (set-active i j))))
       
-      (define/public (set-active ij-pair)
-        (set! active-i (car ij-pair))
-        (set! active-j (cdr ij-pair))
-        (on-paint)
+      (define/public (set-active i j)
+        (set! active-i i)
+        (set! active-j j)
+        (update)
         (map (lambda (list)
                (map (lambda (i)
-                      (let ([ij-pair (send i user-data)])
+                      (let ([thing (send i user-data)])
                         (send (send i get-editor)
                               change-style
-                              (if (and (= active-i (car ij-pair))
-                                       (= active-j (cdr ij-pair)))
+                              (if (and (= active-i (thing-x thing))
+                                       (= active-j (thing-y thing)))
                                   bold-style
                                   plain-style)
                               0 'end)))
                       (send list get-items)))
              (get-status-lists)))
       
-      (define/override (on-paint)
+      (define/private (update)
+        ;; Update diplay:
         (let ([non-water-rgn (make-object region% offscreen)])
           (send non-water-rgn set-rectangle 0 0 display-w display-h)
           (send offscreen clear)
@@ -412,9 +487,55 @@
               (send offscreen set-pen red-pen)
               (send offscreen set-brush transparent-brush)
               (send offscreen draw-rectangle (- x 1) (- y 1) (+ cell-paint-size 2) (+ cell-paint-size 2))
-              (send offscreen set-pen transparent-pen)))
+              (send offscreen set-pen transparent-pen))))
+        (on-paint)
         
-          (send (get-dc) draw-bitmap offscreen-bm 0 0)))
+        ;; Update lists:
+        (let-values ([(robot-list pack-list) (apply values (get-status-lists))])
+          (send (send robot-list get-editor) begin-edit-sequence)
+          (send robot-list sort (lambda (a b)
+                                  ;; Put dead robots at end, in score order.
+                                  ;; Put active robots at beginning, in bid order
+                                  ;; Put other robots in between, in score order
+                                  (let ([a (send a user-data)]
+                                        [b (send b user-data)]
+                                        [by-score/pos (lambda (a b)
+                                                        (if (= (robot-score a) (robot-score b))
+                                                            (< (robot-pos a) (robot-pos b))
+                                                            (> (robot-score a) (robot-score b))))])
+                                    (cond
+                                      [(or (not a) (not b)) #t]
+                                      [(and (robot-dead? a) (robot-dead? b))
+                                       (by-score/pos a b)]
+                                      [(robot-dead? a)
+                                       #f]
+                                      [(robot-dead? b)
+                                       #t]
+                                      [(and (robot-bid-index a) (robot-bid-index b))
+                                       (< (robot-bid-index a) (robot-bid-index b))]
+                                      [(robot-bid-index a)
+                                       #t]
+                                      [(robot-bid-index b)
+                                       #f]
+                                      [else (by-score/pos a b)]))))
+          (let loop ([items (send robot-list get-items)]
+                     [pos 0])
+            (unless (null? items)
+              (let ([r (send (car items) user-data)])
+                (when (and (robot-dead? r)
+                           (not (eq? 'really (robot-dead? r))))
+                  (let ([e (send (car items) get-editor)])
+                    (send e delete 0 1)
+                    (send e set-position 0)
+                    (send e insert (make-object image-snip% (car (robot-dead-icon r)))))
+                  (set-robot-dead?! r 'really))
+                (set-robot-pos! r pos)
+                (set-robot-info r (car items)))
+              (loop (cdr items) (add1 pos))))
+          (send (send robot-list get-editor) end-edit-sequence)))
+      
+      (define/override (on-paint)
+        (send (get-dc) draw-bitmap offscreen-bm 0 0))
       
       (define/private (pos->location i j)
         (values (add1 (* i scale)) (add1 (* (- height j 1) scale))))
@@ -446,7 +567,9 @@
       (define/private (draw-package dc pack)
         (let*-values ([(x y) (pos->location (pack-x pack) (pack-y pack))]
                       [(icon) (car (pack-icon pack))]
-                      [(dy) (- cell-paint-size (send icon get-height) margin)]
+                      [(dy) (if (pack-home? pack)
+                                margin
+                                (- cell-paint-size (send icon get-height) margin))]
                       [(dx) (if (pack-owner pack)
                                 margin
                                 (- cell-paint-size (send icon get-width) margin))])
@@ -467,9 +590,12 @@
             (send dc set-pen black-pen)
             (send dc draw-polygon (robot-motion robot) x y)
             (send dc set-pen transparent-pen))
-          (send dc draw-bitmap (car (robot-icon robot)) (+ 1 x) y 
-                'solid black 
-                (cdr (robot-icon robot)))))
+          (let ([icons (if (robot-dead? robot)
+                           (robot-dead-icon robot)
+                           (robot-icon robot))])
+            (send dc draw-bitmap (car icons) (+ 1 x) y 
+                  'solid black 
+                  (cdr icons)))))
             
       (super-instantiate (frame))
       (stretchable-width #f)

@@ -627,7 +627,7 @@
 	(if (memq c members)
 	    (if (memq c amembers)
 	      (test (cdr (assq c memassoc)) case c)
-	      (test (case c) case c)) ; BOGUS! Could twea kMac testing here
+	      (test (case c) case c)) ; BOGUS! Could tweak Mac testing here
 	    (test n `(char->integer (,case-name (integer->char ,n))) (char->integer (case c)))))
       (loop (add1 n))))
   (arity-test case 1 1)
@@ -635,6 +635,30 @@
 
 (test-up/down char-upcase 'char-upcase lowers basic-lowers (map cons basic-lowers basic-uppers))
 (test-up/down char-downcase 'char-downcase uppers basic-uppers (map cons basic-uppers basic-lowers))
+
+((load-relative "censor.ss")
+ (lambda ()
+   (let loop ([n 0])
+     (unless (= n 256)
+       (let ([c (integer->char n)])
+	 (if (or (char<=? #\a c #\z)
+		 (char<=? #\A c #\Z)
+		 (char<=? #\0 c #\9))
+	     (begin
+	       (test c latin-1-integer->char n)
+	       (test n char->latin-1-integer c))
+	     (when (latin-1-integer->char n)
+	       (test n char->latin-1-integer (latin-1-integer->char n)))))
+       (loop (add1 n))))))
+
+(arity-test latin-1-integer->char 1 1)
+(arity-test char->latin-1-integer 1 1)
+(error-test '(latin-1-integer->char 5.0))
+(error-test '(latin-1-integer->char 'a))
+(error-test '(latin-1-integer->char -1))
+(error-test '(latin-1-integer->char 256))
+(error-test '(latin-1-integer->char 10000000000000000))
+(error-test '(char->latin-1-integer 5))
 
 (SECTION 6 7)
 (test #t string? "The word \"recursion\\\" has many meanings.")

@@ -1,5 +1,22 @@
+101/5:
+
+ * Added latin-1-integer->char and char->latin-1-integer.
+
+   Characters in MzScheme are characters in the platform-specific
+   extension of ASCII, and the integer->char and char->integer
+   procedures map characters to numbers according to the
+   platform-specific extension of ASCII.
+
+   The Latin-1 character set is platform-indepedent, and the X
+   character set matches Latin-1. Not all of the Latin-1 characters
+   are in the Mac character set, and the Windows and MacOS characters
+   sets contain characters that are not in Latin-1. So
+   latin-1-integer->char and char->latin-1-integer return #f for some
+   values on some platforms.
+
 Version 101, ??
 Added 'sys-dir to find-system-path
+Added latin-1-integer->char and char->latin-1-integer
 Windows: all network sockets are closed on exit
 Fixed (acos 0)
 

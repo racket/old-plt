@@ -510,29 +510,44 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	default:
 	  {
 	    int vector_length = -1;
-	    int i = 0, overflow = 0, digits = 0;
-	    char buffer[100]; /* just for errors */
+	    int i = 0, j = 0, overflow = 0, digits = 0;
+	    char tagbuf[64], vecbuf[64]; /* just for errors */
 	    
 	    while (isdigit(ch)) {
 	      if (digits <= MAX_GRAPH_ID_DIGITS)
 		digits++;
 
+	      /* For vector error msgs, want to drop leading zeros: */
+	      if (j || (ch != '0')) {
+		if (j < 60) {
+		  vecbuf[j++] = ch;
+		} else if (j == 60) {
+		  vecbuf[j++] = '.';
+		  vecbuf[j++] = '.';
+		  vecbuf[j++] = '.';
+		  vecbuf[j] = 0;
+		}
+	      }
+
+	      /* For tag error msgs, want to keep zeros: */
+	      if (i < 60) {
+		tagbuf[i++] = ch;
+	      } else if (i == 60) {
+		tagbuf[i++] = '.';
+		tagbuf[i++] = '.';
+		tagbuf[i++] = '.';
+		tagbuf[i] = 0;
+	      }
+		
 	      if (!overflow) {
 		long old_len;
-
-		if (i || (ch != '0') || (digits < MAX_GRAPH_ID_DIGITS))
-		  buffer[i++] = ch;
 
 		if (vector_length < 0)
 		  vector_length = 0;
 	      
 		old_len = vector_length;
 		vector_length = (vector_length * 10) + (ch - 48);
-		if ((vector_length / 10) != old_len) {
-		  buffer[i++] = '.';
-		  buffer[i++] = '.';
-		  buffer[i++] = '.';
-		  buffer[i] = 0;
+		if ((vector_length < 0)|| ((vector_length / 10) != old_len)) {
 		  overflow = 1;
 		}
 	      }
@@ -541,17 +556,17 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 
 	    if (overflow)
 	      vector_length = -2;
-	    else
-	      buffer[i] = 0;
+	    vecbuf[j] = 0;
+	    tagbuf[i] = 0;
 
 	    if (ch == '(')
-	      return read_vector(port, ')', vector_length, buffer, ht CURRENTPROCARG);
+	      return read_vector(port, ')', vector_length, vecbuf, ht CURRENTPROCARG);
 	    if (ch == '[' && local_square_brackets_are_parens)
-	      return read_vector(port, ']', vector_length, buffer, ht CURRENTPROCARG);
+	      return read_vector(port, ']', vector_length, vecbuf, ht CURRENTPROCARG);
 	    if (ch == '{' && local_curly_braces_are_parens)
-	      return read_vector(port, '}', vector_length, buffer, ht CURRENTPROCARG);
+	      return read_vector(port, '}', vector_length, vecbuf, ht CURRENTPROCARG);
 	    
-	    if (ch == '#' && (vector_length >= 0)) {
+	    if (ch == '#' && (vector_length != -1)) {
 	      /* Not a vector after all: a graph reference */
 	      Scheme_Object *ph;
 	      
@@ -564,7 +579,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 		scheme_raise_exn(MZEXN_READ,
 				 port,
 				 "read: graph id too long in #%s#",
-				 buffer);
+				 tagbuf);
 	    
 	      if (*ht)
 		ph = (Scheme_Object *)scheme_lookup_in_table(*ht, 
@@ -581,7 +596,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      }
 	      return ph;
 	    }
-	    if (ch == '=' && (vector_length >= 0)) {
+	    if (ch == '=' && (vector_length != -1)) {
 	      /* Not a vector after all: a graph definition */
 	      Scheme_Object *v, *ph;
 	      
@@ -594,7 +609,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 		scheme_raise_exn(MZEXN_READ,
 				 port,
 				 "read: graph id too long in #%s=",
-				 buffer);
+				 tagbuf);
 	      
 	      if (*ht) {
 		if (scheme_lookup_in_table(*ht, (const char *)scheme_make_integer(vector_length))) {
@@ -627,11 +642,7 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 	      if (ch == EOF)
 		ch = 0;
 	      
-	      if (vector_length < 0) {
-		lbuffer[0] = ch;
-		lbuffer[1] = 0;
-	      } else
-		sprintf(lbuffer, "%s%c", buffer, ch);
+	      sprintf(lbuffer, "%s%c", tagbuf, ch);
 	      
 	      scheme_raise_exn(MZEXN_READ,
 			       port,

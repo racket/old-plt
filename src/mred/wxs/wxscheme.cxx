@@ -877,7 +877,7 @@ static int IsFinished(void *r)
 }
 
 extern "C" {
- 	 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
+ 	 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
 };
 
 void wxCheckFinishedSounds(void)
@@ -1005,11 +1005,8 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
     MovieInitialize();
   }
   
-#ifdef OS_X
-  osErr = wxPathToFSSpec(f,&spec);
-#else    
-  osErr = scheme_mac_path_to_spec(f,&spec,FALSE);
-#endif  
+  osErr = scheme_mac_path_to_spec(f,&spec);
+
   if (! osErr) 
     scheme_signal_error("cannot find file: \"%s\"", SCHEME_STR_VAL(argv[0]));
   
@@ -1050,7 +1047,7 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   AsyncSoundRec *r;
   FSSpec spec;
   
-  if (!scheme_mac_path_to_spec(f, &spec, FALSE))
+  if (!scheme_mac_path_to_spec(f, &spec))
     return scheme_false;
   
   if (FSpOpenDF(&spec, fsRdPerm, &file))
@@ -1438,11 +1435,9 @@ static Scheme_Object *wxInAtomicRegion(int, Scheme_Object **argv)
 }
 
 #ifdef wx_mac
-#ifndef OS_X
 extern "C" {
- extern char *scheme_build_mac_filename(FSSpec *spec, int given_dir);
+ extern char *scheme_mac_spec_to_path(FSSpec *spec);
 };
-#endif
 extern char *wxmac_startup_directory;
 #endif
 
@@ -1554,11 +1549,7 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
   if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID) == noErr) {
     FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
-#ifdef OS_X  
-    home = scheme_make_string(wxFSSpecToPath(&spec));
-#else    
-    home = scheme_make_string(scheme_build_mac_filename(&spec, 0));
-#endif    
+    home = scheme_make_string(scheme_mac_spec_to_path(&spec));
   } else if (wxmac_startup_directory) {
     home = scheme_make_string(wxmac_startup_directory);
   } else {

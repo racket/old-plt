@@ -1,4 +1,4 @@
-/* $Id: plbox.c,v 1.1 2003/11/24 04:50:20 cozmic Exp $
+/* $Id: plbox.c,v 1.1 2004/03/01 20:54:50 cozmic Exp $
 
 	Routines for drawing axes & box around the current viewport.
 */
@@ -424,6 +424,7 @@ c_plaxes(PLFLT x0, PLFLT y0,
  * This is the 3-d analogue of plbox().
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plbox3(const char *xopt, const char *xlabel, PLFLT xtick, PLINT nsubx,
 	 const char *yopt, const char *ylabel, PLFLT ytick, PLINT nsuby,

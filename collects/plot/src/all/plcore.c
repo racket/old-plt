@@ -1,4 +1,4 @@
-/* $Id: plcore.c,v 1.1 2003/11/24 04:50:20 cozmic Exp $
+/* $Id: plcore.c,v 1.1 2004/03/01 20:54:51 cozmic Exp $
 
 	Central dispatch facility for PLplot.
 	Also contains the PLplot main data structures, external access
@@ -1154,6 +1154,7 @@ c_plstart(const char *devname, PLINT nx, PLINT ny)
  * Initializes PLplot, using preset or default options.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plinit(void)
 {
@@ -1273,6 +1274,7 @@ c_plinit(void)
  * End a plotting session for all open streams.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plend(void)
 {
@@ -2083,6 +2085,7 @@ c_plgpage(PLFLT *p_xp, PLFLT *p_yp,
 
 /* Set output device parameters.  Usually ignored by the driver. */
 
+MZ_DLLEXPORT
 void
 c_plspage(PLFLT xp, PLFLT yp, PLINT xleng, PLINT yleng, PLINT xoff, PLINT yoff)
 {
@@ -2125,6 +2128,7 @@ c_plssub(PLINT nx, PLINT ny)
 
 /* Set the device (keyword) name */
 
+MZ_DLLEXPORT
 void
 c_plsdev(const char *devname)
 {
@@ -2249,6 +2253,7 @@ c_plsori(PLINT ori)
  * If width < 0 or is unchanged by the call, nothing is done.
  */
 
+MZ_DLLEXPORT
 void
 c_plwid(PLINT width)
 {
@@ -2298,6 +2303,7 @@ c_plgfnam(char *fnam)
 
 /* Set the output file name. */
 
+MZ_DLLEXPORT
 void
 c_plsfnam(const char *fnam)
 {

@@ -1,4 +1,4 @@
-/* $Id: plsym.c,v 1.1 2003/11/24 04:50:23 cozmic Exp $
+/* $Id: plsym.c,v 1.1 2004/03/01 20:54:53 cozmic Exp $
 
 	Point, symbol, and string plotting routines.
 	Also font management code.  See the description of plLibOpen() for
@@ -83,6 +83,7 @@ c_plsym(PLINT n, PLFLT *x, PLFLT *y, PLINT code)
  * therefore takes 4 strokes to draw).
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plpoin(PLINT n, PLFLT *x, PLFLT *y, PLINT code)
 {
@@ -342,6 +343,7 @@ plarrows(PLFLT *u, PLFLT *v, PLFLT *x, PLFLT *y, PLINT n,
  * Simple routine for labelling graphs.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_pllab(const char *xlabel, const char *ylabel, const char *tlabel)
 {
@@ -513,6 +515,7 @@ c_plmtex(const char *side, PLFLT disp, PLFLT pos, PLFLT just,
  *	just = 0.5 => center of string is at (wx,wy) etc.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plptex(PLFLT wx, PLFLT wy, PLFLT dx, PLFLT dy, PLFLT just, const char *text)
 {

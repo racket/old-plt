@@ -1,4 +1,4 @@
-/* $Id: plvpor.c,v 1.1 2003/11/24 04:50:23 cozmic Exp $
+/* $Id: plvpor.c,v 1.1 2004/03/01 20:54:53 cozmic Exp $
 
 	Functions dealing with viewports.
 */
@@ -53,6 +53,7 @@ c_plenvi(PLFLT xmin, PLFLT xmax, PLFLT ymin, PLFLT ymax,
  *      axis=33 : Same as 32, but the grid will be also at the minor ticks.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plenv(PLFLT xmin, PLFLT xmax, PLFLT ymin, PLFLT ymax,
 	PLINT just, PLINT axis)

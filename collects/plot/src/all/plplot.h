@@ -1,4 +1,4 @@
-/* $Id: plplot.h,v 1.1 2003/11/24 04:50:22 cozmic Exp $
+/* $Id: plplot.h,v 1.1 2004/03/01 20:54:52 cozmic Exp $
 
     Copyright (C) 1992 by 
     Maurice J. LeBrun, Geoff Furnish, Tony Richardson.
@@ -23,6 +23,8 @@
 
 #ifndef __PLPLOT_H__
 #define __PLPLOT_H__
+
+#include "scheme.h"
 
 #include "plConfig.h"
 
@@ -755,6 +757,7 @@ c_plbox(const char *xopt, PLFLT xtick, PLINT nxsub,
 
 /* This is the 3-d analogue of plbox(). */
 
+MZ_DLLEXPORT
 void
 c_plbox3(const char *xopt, const char *xlabel, PLFLT xtick, PLINT nsubx,
 	 const char *yopt, const char *ylabel, PLFLT ytick, PLINT nsuby,
@@ -772,6 +775,7 @@ c_plclear(void);
 
 /* Set color, map 0.  Argument is integer between 0 and 15. */
 
+MZ_DLLEXPORT
 void
 c_plcol0(PLINT icol0);
 
@@ -784,6 +788,7 @@ c_plcol1(PLFLT col1);
  * plfcont, with a particular choice for f2eval and f2eval_data. 
  */
 
+ MZ_DLLEXPORT
 void
 c_plcont(PLFLT **f, PLINT nx, PLINT ny, PLINT kx, PLINT lx,
 	 PLINT ky, PLINT ly, PLFLT *clevel, PLINT nlevel,
@@ -822,6 +827,7 @@ pldip2dc(PLFLT *xmin, PLFLT *ymin, PLFLT *xmax, PLFLT *ymax);
 
 /* End a plotting session for all open streams. */
 
+MZ_DLLEXPORT
 void
 c_plend(void);
 
@@ -832,6 +838,7 @@ c_plend1(void);
 
 /* Simple interface for defining viewport and window. */
 
+MZ_DLLEXPORT
 void
 c_plenv(PLFLT xmin, PLFLT xmax, PLFLT ymin, PLFLT ymax,
 	PLINT just, PLINT axis);
@@ -851,11 +858,13 @@ c_pleop(void);
 
 /* Plot horizontal error bars (xmin(i),y(i)) to (xmax(i),y(i)) */
 
+MZ_DLLEXPORT
 void
 c_plerrx(PLINT n, PLFLT *xmin, PLFLT *xmax, PLFLT *y);
 
 /* Plot vertical error bars (x,ymin(i)) to (x(i),ymax(i)) */
 
+MZ_DLLEXPORT
 void
 c_plerry(PLINT n, PLFLT *x, PLFLT *ymin, PLFLT *ymax);
 
@@ -866,6 +875,8 @@ c_plfamadv(void);
 
 /* Pattern fills the polygon bounded by the input points. */
 
+
+MZ_DLLEXPORT
 void
 c_plfill(PLINT n, PLFLT *x, PLFLT *y);
 
@@ -1024,16 +1035,19 @@ c_plhls(PLFLT h, PLFLT l, PLFLT s);
 
 /* Initializes PLplot, using preset or default options */
 
+MZ_DLLEXPORT
 void
 c_plinit(void);
 
 /* Draws a line segment from (x1, y1) to (x2, y2). */
 
+MZ_DLLEXPORT
 void
 c_pljoin(PLFLT x1, PLFLT y1, PLFLT x2, PLFLT y2);
 
 /* Simple routine for labelling graphs. */
 
+MZ_DLLEXPORT
 void
 c_pllab(const char *xlabel, const char *ylabel, const char *tlabel);
 
@@ -1043,11 +1057,13 @@ c_pllightsource(PLFLT x, PLFLT y, PLFLT z);
 
 /* Draws line segments connecting a series of points. */
 
+MZ_DLLEXPORT
 void
 c_plline(PLINT n, PLFLT *x, PLFLT *y);
 
 /* Draws a line in 3 space.  */
 
+MZ_DLLEXPORT
 void
 c_plline3(PLINT n, PLFLT *x, PLFLT *y, PLFLT *z);
 
@@ -1076,6 +1092,7 @@ c_plmesh(PLFLT *x, PLFLT *y, PLFLT **z, PLINT nx, PLINT ny, PLINT opt);
 
 /* Plots a mesh representation of the function z[x][y] with contour */
 
+MZ_DLLEXPORT
 void
 c_plmeshc(PLFLT *x, PLFLT *y, PLFLT **z, PLINT nx, PLINT ny, PLINT opt,
 	  PLFLT *clevel, PLINT nlevel);
@@ -1093,6 +1110,7 @@ c_plmtex(const char *side, PLFLT disp, PLFLT pos, PLFLT just,
 
 /* Plots a 3-d representation of the function z[x][y]. */
 
+MZ_DLLEXPORT
 void
 c_plot3d(PLFLT *x, PLFLT *y, PLFLT **z,
 	 PLINT nx, PLINT ny, PLINT opt, PLINT side);
@@ -1145,6 +1163,7 @@ c_plpat(PLINT nlin, PLINT *inc, PLINT *del);
 
 /* Plots array y against x for n points using ASCII code "code".*/
 
+MZ_DLLEXPORT
 void
 c_plpoin(PLINT n, PLFLT *x, PLFLT *y, PLINT code);
 
@@ -1155,6 +1174,7 @@ c_plpoin3(PLINT n, PLFLT *x, PLFLT *y, PLFLT *z, PLINT code);
 
 /* Draws a polygon in 3 space.  */
 
+MZ_DLLEXPORT
 void
 c_plpoly3(PLINT n, PLFLT *x, PLFLT *y, PLFLT *z, PLINT *draw, PLINT ifcc);
 
@@ -1170,6 +1190,7 @@ c_plpsty(PLINT patt);
 
 /* Prints out "text" at world cooordinate (x,y). */
 
+MZ_DLLEXPORT
 void
 c_plptex(PLFLT x, PLFLT y, PLFLT dx, PLFLT dy, PLFLT just, const char *text);
 
@@ -1200,6 +1221,7 @@ c_plscmap0n(PLINT ncol0);
 
 /* Set number of colors in cmap 1 */
 
+MZ_DLLEXPORT
 void
 c_plscmap1n(PLINT ncol1);
 
@@ -1216,17 +1238,20 @@ c_plscmap1(PLINT *r, PLINT *g, PLINT *b, PLINT ncol1);
 /* Set color map 1 colors using a piece-wise linear relationship between */
 /* intensity [0,1] (cmap 1 index) and position in HLS or RGB color space. */
 
+MZ_DLLEXPORT
 void
 c_plscmap1l(PLINT itype, PLINT npts, PLFLT *intensity,
 	    PLFLT *coord1, PLFLT *coord2, PLFLT *coord3, PLINT *rev);
 
 /* Set a given color from color map 0 by 8 bit RGB value */
 
+MZ_DLLEXPORT
 void
 c_plscol0(PLINT icol0, PLINT r, PLINT g, PLINT b);
 
 /* Set the background color by 8 bit RGB value */
 
+MZ_DLLEXPORT
 void
 c_plscolbg(PLINT r, PLINT g, PLINT b);
 
@@ -1242,6 +1267,7 @@ c_plscompression(PLINT compression);
 
 /* Set the device (keyword) name */
 
+MZ_DLLEXPORT
 void
 c_plsdev(const char *devname);
 
@@ -1284,11 +1310,14 @@ c_plsfam(PLINT fam, PLINT num, PLINT bmax);
 
 /* Set the output file name. */
 
+MZ_DLLEXPORT
 void
 c_plsfnam(const char *fnam);
 
+
 /* Shade region. */
-void 
+MZ_DLLEXPORT
+void
 c_plshades( PLFLT **a, PLINT nx, PLINT ny, PLINT (*defined) (PLFLT, PLFLT),
 	  PLFLT xmin, PLFLT xmax, PLFLT ymin, PLFLT ymax,
 	  PLFLT *clevel, PLINT nlevel, PLINT fill_width,
@@ -1357,6 +1386,7 @@ c_plsori(PLINT ori);
 
 /* Set output device parameters.  Usually ignored by the driver. */
 
+MZ_DLLEXPORT
 void
 c_plspage(PLFLT xp, PLFLT yp, PLINT xleng, PLINT yleng,
 	  PLINT xoff, PLINT yoff);
@@ -1484,6 +1514,7 @@ c_plvsta(void);
 
 /* Set up a window for three-dimensional plotting. */
 
+MZ_DLLEXPORT
 void
 c_plw3d(PLFLT basex, PLFLT basey, PLFLT height, PLFLT xmin0,
 	PLFLT xmax0, PLFLT ymin0, PLFLT ymax0, PLFLT zmin0,
@@ -1491,6 +1522,7 @@ c_plw3d(PLFLT basex, PLFLT basey, PLFLT height, PLFLT xmin0,
 
 /* Set pen width. */
 
+MZ_DLLEXPORT
 void
 c_plwid(PLINT width);
 
@@ -1558,6 +1590,7 @@ pltr0(PLFLT x, PLFLT y, PLFLT *tx, PLFLT *ty, PLPointer pltr_data);
 
 /* Does linear interpolation from singly dimensioned coord arrays. */
 
+MZ_DLLEXPORT
 void
 pltr1(PLFLT x, PLFLT y, PLFLT *tx, PLFLT *ty, PLPointer pltr_data);
 

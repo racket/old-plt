@@ -1,4 +1,4 @@
-/* $Id: plline.c,v 1.1 2003/11/24 04:50:22 cozmic Exp $
+/* $Id: plline.c,v 1.1 2004/03/01 20:54:52 cozmic Exp $
 
 	Routines dealing with line generation.
 */
@@ -40,6 +40,7 @@ grdashline(short *x, short *y);
  * Draws a line segment from (x1, y1) to (x2, y2).
 \*----------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_pljoin(PLFLT x1, PLFLT y1, PLFLT x2, PLFLT y2)
 {
@@ -53,6 +54,7 @@ c_pljoin(PLFLT x1, PLFLT y1, PLFLT x2, PLFLT y2)
  * Draws line segments connecting a series of points.
 \*----------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plline(PLINT n, PLFLT *x, PLFLT *y)
 {
@@ -71,7 +73,8 @@ c_plline(PLINT n, PLFLT *x, PLFLT *y)
  * coordinate box.  See x18c.c for more info.
  *
  * This version adds clipping against the 3d bounding box specified in plw3d
-\*----------------------------------------------------------------------*/
+
+ MZ_DLLEXPORT\*----------------------------------------------------------------------*/
 void
 c_plline3(PLINT n, PLFLT *x, PLFLT *y, PLFLT *z)
 {
@@ -187,6 +190,7 @@ c_plline3(PLINT n, PLFLT *x, PLFLT *y, PLFLT *z)
  * example of this problem.  (Search for "20.1").
 \*----------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plpoly3(PLINT n, PLFLT *x, PLFLT *y, PLFLT *z, PLINT *draw, PLINT ifcc)
 {

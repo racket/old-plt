@@ -1,4 +1,4 @@
-/* $Id: plshade.c,v 1.1 2003/11/24 04:50:23 cozmic Exp $
+/* $Id: plshade.c,v 1.1 2004/03/01 20:54:53 cozmic Exp $
 
 	Functions to shade regions on the basis of value.
 	Can be used to shade contour plots or alone.
@@ -185,8 +185,10 @@ plshade_int(PLFLT (*f2eval) (PLINT, PLINT, PLPointer),
  * fill_width is the pattern fill width, and cont_color and cont_width
  * are the color and width of the contour drawn at each shade edge.
  * (if cont_color <= 0 or cont_width <=0, no such contours are drawn).
+
 \*----------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void c_plshades( PLFLT **a, PLINT nx, PLINT ny, PLINT (*defined) (PLFLT, PLFLT),
 		PLFLT xmin, PLFLT xmax, PLFLT ymin, PLFLT ymax,
 		PLFLT *clevel, PLINT nlevel, PLINT fill_width,

@@ -1,4 +1,4 @@
-/* $Id: plwind.c,v 1.1 2003/11/24 04:50:23 cozmic Exp $
+/* $Id: plwind.c,v 1.1 2004/03/01 20:54:53 cozmic Exp $
 
 	Routines for setting up world coordinates of the current viewport.
 */
@@ -114,6 +114,7 @@ c_plwind(PLFLT xmin, PLFLT xmax, PLFLT ymin, PLFLT ymax)
  * but az can be any value.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plw3d(PLFLT basex, PLFLT basey, PLFLT height, PLFLT xmin0,
 	PLFLT xmax0, PLFLT ymin0, PLFLT ymax0, PLFLT zmin0,

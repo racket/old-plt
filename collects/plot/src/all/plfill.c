@@ -1,4 +1,4 @@
-/* $Id: plfill.c,v 1.1 2003/11/24 04:50:21 cozmic Exp $
+/* $Id: plfill.c,v 1.1 2004/03/01 20:54:51 cozmic Exp $
 
 	Polygon pattern fill.
 */
@@ -32,6 +32,7 @@ static void  buildlist	(PLINT, PLINT, PLINT, PLINT, PLINT, PLINT, PLINT);
  * to prevent clipping problems.
 \*----------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plfill(PLINT n, PLFLT *x, PLFLT *y)
 {

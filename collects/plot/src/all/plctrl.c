@@ -1,4 +1,4 @@
-/* $Id: plctrl.c,v 1.2 2004/01/05 05:15:58 cozmic Exp $
+/* $Id: plctrl.c,v 1.1 2004/03/01 20:54:51 cozmic Exp $
 
 	Misc. control routines, like begin, end, exit, change graphics/text
 	mode, change color.  Includes some spillage from plcore.c.  If you
@@ -85,6 +85,7 @@ value(double n1, double n2, double hue);
  * Set color, map 0.  Argument is integer between 0 and plsc->ncol0.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plcol0(PLINT icol0)
 {
@@ -148,6 +149,7 @@ c_plcol1(PLFLT col1)
  * Set the background color (cmap0[0]) by 8 bit RGB value
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plscolbg(PLINT r, PLINT g, PLINT b)
 {
@@ -173,6 +175,7 @@ c_plgcolbg(PLINT *r, PLINT *g, PLINT *b)
  * Does not result in any additional cells to be allocated.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plscol0(PLINT icol0, PLINT r, PLINT g, PLINT b)
 {
@@ -352,6 +355,7 @@ c_plscmap1(PLINT *r, PLINT *g, PLINT *b, PLINT ncol1)
  *	rev[]		reverse flag for each control point
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plscmap1l(PLINT itype, PLINT npts, PLFLT *pos,
 	    PLFLT *coord1, PLFLT *coord2, PLFLT *coord3, PLINT *rev)
@@ -542,6 +546,7 @@ c_plscmap0n(PLINT ncol0)
  * In particular, most use fewer than we use internally.
 \*--------------------------------------------------------------------------*/
 
+MZ_DLLEXPORT
 void
 c_plscmap1n(PLINT ncol1)
 {

@@ -1,27 +1,34 @@
 
 (module helpwin mzscheme
   (require (lib "unitsig.ss")
+           (lib "unit.ss")
+           (lib "class100.ss")
+           (lib "class.ss")
+
            "sig.ss"
+           (lib "browser-sig.ss" "browser")
+           (lib "mred-sig.ss" "mred")
+           (lib "framework-sig.ss" "framework")
+           (lib "plt-installer-sig.ss" "setup")
+           
+           "notthere.ss"
+           "../startup-url.ss"
            (lib "getinfo.ss" "setup")
            (lib "list.ss")
            (lib "string.ss")
            (lib "file.ss")
-           (lib "url.ss" "net")
-           (lib "mred-sig.ss" "mred")
-           (lib "framework-sig.ss" "framework"))
+           (lib "url.ss" "net"))
   
   (provide helpwin@)
   
   (define helpwin@
     (unit/sig help-window^
-      (import help:search^
+      (import search^
               browser^
               setup:plt-installer^
               mred^
               (framework : framework^)
               (frame-mixin))
-      
-      (include "startup-url.ss")
       
       (define-values (screen-w screen-h) (get-display-size))
       (framework:preferences:add-general-panel)
@@ -133,7 +140,7 @@
               
               (define collecting-thread #f)
               
-              (define results-editor% (class hyper-text% ()
+              (define results-editor% (class100 hyper-text% ()
                                         (inherit set-title)
                                         (sequence 
                                           (super-init #f #f)
@@ -148,7 +155,7 @@
                         name))))
               
               (define (help-desk-window-generic-mixin super%)
-                (class super% args
+                (class100 super% args
                   (rename [super-on-size on-size])
                   (override
                     [on-size
@@ -230,14 +237,14 @@
                   (sequence (apply super-init args))))
               
               (define (help-desk-window-essential-menus-mixin super%)
-                (class super% args
+                (class100 super% args
                   (rename [super-edit-menu:between-find-and-preferences
                            edit-menu:between-find-and-preferences])
                   (override
                     [edit-menu:between-find-and-preferences
                      (lambda (menu)
                        (let ([find-again-menu-item%
-                              (class menu-item% args
+                              (class100 menu-item% args
                                 (inherit enable)
                                 (override
                                   [on-demand
@@ -255,14 +262,14 @@
                   (sequence (apply super-init args))))
               
               (define (help-desk-window-standalone-menus-mixin super%)
-                (class super% args
+                (class100 super% args
                   (inherit get-edit-target-object goto-url)
                   (private
-                    [edit-menu:do (lambda (const)
-                                    (lambda (menu evt)
-                                      (let ([edit (get-edit-target-object)])
-                                        (when (and edit (is-a? edit editor<%>))
-                                          (send edit do-edit-operation const)))))])
+                    [edit-menu:do
+                     (lambda (const)
+                       (let ([edit (get-edit-target-object)])
+                         (when (and edit (is-a? edit editor<%>))
+                           (send edit do-edit-operation const))))])
                   
                   (override
                     [file-menu:new-string (lambda () "Help Desk")]
@@ -271,7 +278,7 @@
                     [file-menu:open-string (lambda () "URL")]
                     [file-menu:open
                      (lambda (i e)
-                       (open-url-from-user this goto-url))]
+                       (open-url-from-user this (lambda (x) (goto-url x))))]
                     
                     [file-menu:print (lambda (i e) (send (send results get-editor) print))]
                     
@@ -281,13 +288,13 @@
                          (lambda xxx (send html-panel reload))
                          #\r))]
                     
-                    [edit-menu:undo (edit-menu:do 'undo)]
-                    [edit-menu:redo (edit-menu:do 'redo)]
-                    [edit-menu:cut (edit-menu:do 'cut)]
-                    [edit-menu:clear (edit-menu:do 'clear)]
-                    [edit-menu:copy (edit-menu:do 'copy)]
-                    [edit-menu:paste (edit-menu:do 'paste)]
-                    [edit-menu:select-all (edit-menu:do 'select-all)]
+                    [edit-menu:undo (lambda (menu evt) (edit-menu:do 'undo))]
+                    [edit-menu:redo (lambda (menu evt) (edit-menu:do 'redo))]
+                    [edit-menu:cut (lambda (menu evt) (edit-menu:do 'cut))]
+                    [edit-menu:clear (lambda (menu evt) (edit-menu:do 'clear))]
+                    [edit-menu:copy (lambda (menu evt) (edit-menu:do 'copy))]
+                    [edit-menu:paste (lambda (menu evt) (edit-menu:do 'paste))]
+                    [edit-menu:select-all (lambda (menu evt) (edit-menu:do 'select-all))]
                     
                     [edit-menu:find-string (lambda () "in Page")]
                     [edit-menu:find-on-demand (lambda x (void))]
@@ -369,7 +376,7 @@
               
               (define html-panel
                 (make-object
-                    (class hyper-panel% ()
+                    (class100 hyper-panel% ()
                       (inherit get-canvas)
                       (rename [super-leaving-page leaving-page])
                       (public
@@ -383,10 +390,10 @@
                       (override
                         [on-url-click
                          (lambda (k url)
-		       ;; Watch for clicks from docs to undownloaded docs
+		       ; Watch for clicks from docs to undownloaded docs
                            ((let/ec escape
-			  ;; Try to see if this is a link to missing documentation.
-			  ;; Many things can go wrong; give up if anything does...
+			  ; Try to see if this is a link to missing documentation.
+			  ; Many things can go wrong; give up if anything does...
                               (with-handlers ([(lambda (x) #t)
                                                (lambda (x) (void))])
                                 (let ([start (send (send (get-canvas) get-editor) get-url)])
@@ -399,9 +406,9 @@
                                                    url)])
                                       (when (string=? "file" (url-scheme url))
                                         (when (not (file-exists? (url-path url)))
-				      ;; Try comparing the base-of-base-of-url to
-				      ;;  the collection directory. Many things can go wrong,
-				      ;;  in which case we let the normal error happen.
+				      ; Try comparing the base-of-base-of-url to
+				      ;  the collection directory. Many things can go wrong,
+				      ;  in which case we let the normal error happen.
                                           (let-values ([(doc-dir)
                                                         (normalize-path (collection-path "doc"))]
                                                        [(dest-dir dest-doc dest-file)
@@ -416,19 +423,13 @@
                                                                     filename)))])
                                             (when (and (string=? doc-dir dest-dir)
                                                        (not (string=? dest-doc "help")))
-					  ;; Looks like the user needs to download some docs,
-					  ;;  rather than a generic file-not-found error.
-					  ;; Redirect to information about missing docs:
+					  ; Looks like the user needs to download some docs,
+					  ;  rather than a generic file-not-found error.
+					  ; Redirect to information about missing docs:
                                               (escape
                                                (lambda ()
-                                                 (global-defined-value 'missing-doc-name dest-doc)
-                                                 (global-defined-value 'missing-html-file dest-file)
-                                                 (global-defined-value 'missing-html-url
-                                                                       (url->string url))
                                                  (send (get-canvas) goto-url 
-                                                       (string-append
-                                                        "file:"
-                                                        (build-path (collection-path "help") "notthere.htm"))
+                                                       (build-notthere-page dest-doc dest-file (url->string url))
                                                        #f)))))))))))
                               (k url)
                               void)))]
@@ -495,7 +496,7 @@
                                                                  "")))
                                                          ""))
                                                    "")))))))))]
-                        [on-navigate stop-search])
+                        [on-navigate (lambda () (stop-search))])
                       (sequence (super-init #t (send help-desk-frame get-area-container))))))
               
               (send html-panel set-init-page startup-url)
@@ -597,9 +598,9 @@
                 [(equal? initial-url startup-url)
                  (send html-panel goto-init-page)]
                 [else
-             ;; if the initial-url is bad, goto the default
-             ;; initial page and re-raise the exception to
-             ;; be reported to the user.
+             ; if the initial-url is bad, goto the default
+             ; initial page and re-raise the exception to
+             ; be reported to the user.
                  (with-handlers ([(lambda (x) #t)
                                   (lambda (x)
                                     (send html-panel goto-init-page)

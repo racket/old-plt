@@ -161,6 +161,7 @@ during the evaluation of the mzscheme code (in both examples)
      Changes to the given url, loading it by calling the `make-editor'
      method. If `relative-to-url' is not #f, it must be a URL for
      resolving `url' as a relative URL.
+     `url' may also be a port. If it is, relative-to-url must be #f.
 
 >   set-page :: (send o goto-page page notify?)
      Changes to the given page. If `notify?' is not #f, the canvas's

@@ -1,8 +1,8 @@
 (module docpos mzscheme
-  (provide docpos known-docs)
+  (provide standard-html-doc-position known-docs)
   
   ; Define an order on the standard docs:
-  (define (docpos d)
+  (define (standard-html-doc-position d)
     (case (string->symbol d)
       [(help) -10]
       

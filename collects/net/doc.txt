@@ -676,6 +676,8 @@ PROCEDURES -----------------------------------------------------------
   mailbox and the number of recent messages (i.e., messages received
   since the mailbox was last selected), respectively.
 
+  See also `imap-port-number', below.
+
   A user's primary mailbox is always called "INBOX".
 
 > (imap-disconnect imap) -> void
@@ -746,19 +748,24 @@ PROCEDURES -----------------------------------------------------------
   `imap-flag->symbol' and `symbol->imap-flag' procedures convert IMAP
   flags to convenient symbols and vice-versa:
 
-      symbol    imap flag
-      ------    ----------
-     'seen      '|\Seen|
-     'answered  '|\Answered|
-     'flagged   '|\Flagged|
-     'deleted   '|\Deleted|
-     'draft     '|\Draft|
-     'recent    '|\Recent|
+      symbol       imap flag
+      ------       ----------
+     'seen         '|\Seen|            \
+     'answered     '|\Answered|        |
+     'flagged      '|\Flagged|          > message flags
+     'deleted      '|\Deleted|         |
+     'draft        '|\Draft|           |
+     'recent       '|\Recent|          /
+
+     'noinferiors  '|\Noinferiors|     \
+     'noselect     '|\Noselect|         > mailbox flags
+     'marked       '|\Marked|          |
+     'unmarked     '|\Unmarked|        /
 
   `imap-flag->symbol' and `symbol->imap-flag' act like the identity
   function when any other symbol/flag is provided.
 
-> (imap-store imap mode msg-num-list flags) -> void
+> (imap-store imap mode msg-num-list imap-flags) -> void
 
   Sets flags for a set of messages. The mode argument specifies how
   flags are set:
@@ -783,18 +790,37 @@ PROCEDURES -----------------------------------------------------------
   Purges every message currently marked with the '|\Deleted| flag from
   the mailbox.
 
-> (imap-copy imap msg-num-list dest-mailbox-string)
+> (imap-copy imap msg-num-list dest-mailbox-string) -> void
 
   Copies the specified messages from the currently selected mailbox to
   the specified mailbox.
 
-> (imap-mailbox-exists? imap mailbox-string)
+> (imap-mailbox-exists? imap mailbox-string) -> bool
 
   Returns #t if the specified mailbox exists, #f otherwise.
 
-> (imap-create-mailbox imap mailbox-string)
+> (imap-create-mailbox imap mailbox-string) -> void
 
   Creates the specified mailbox. (It must not exist already.)
+
+> (imap-list-child-mailboxes imap mailbox-string [delimiter-string])
+  -> list of mailbox-info lists
+
+  Returns information about sub-mailboxes of the given mailbox.  If
+  mailbox-string is #f, information about all top-level mailboxes is
+  returned. The optional `delimiter-string' is determined
+  automatically (via `imap-get-hierarchy-delimiter') if it is not
+  provided.
+
+  The return value is a list of mailbox-information lists. Each
+  mailbox-information list contains two items:
+    * a list of imap flags for the mailbox
+    * the mailbox's name
+
+> (imap-get-hierarchy-delimiter imap) -> string
+
+  Returns the server-specific string that is used as a separator in
+  mailbox path names.
 
 > (imap-port-number [k])
 

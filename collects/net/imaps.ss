@@ -16,5 +16,5 @@
    imap-mailbox-exists?
    imap-create-mailbox
 
-   imap-root-mailbox
-   imap-list-child-mailboxes))
+   imap-list-child-mailboxes
+   imap-get-hierarchy-delimiter))

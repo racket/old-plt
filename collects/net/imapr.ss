@@ -32,7 +32,12 @@
      (list 'flagged (string->symbol "\\Flagged"))
      (list 'deleted (string->symbol "\\Deleted"))
      (list 'draft (string->symbol "\\Draft"))
-     (list 'recent (string->symbol "\\Recent"))))
+     (list 'recent (string->symbol "\\Recent"))
+
+     (list 'noinferiors (string->symbol "\\Noinferiors"))
+     (list 'noselect (string->symbol "\\Noselect"))
+     (list 'marked (string->symbol "\\Marked"))
+     (list 'unmarked (string->symbol "\\Unmarked"))))
 
   (define (imap-flag->symbol f)
     (or (ormap (lambda (a) (and (tag-eq? f (cadr a)) (car a)))
@@ -46,7 +51,7 @@
 	  s)))
 
   (define (log-warning . args)
-    '(apply printf args)
+    (apply printf args)
     (void))
   (define log log-warning)
 
@@ -89,7 +94,7 @@
 	(loop (skip s 1) r accum eol-k eop-k)]
        [else
 	(case (string-ref s 0)
-	  [(#\") (let ([m (regexp-match "([^\"]*)\"(.*)" (skip s 1))])
+	  [(#\") (let ([m (regexp-match "\"([^\"]*)\"(.*)" s)])
 		   (if m
 		       (loop (caddr m) r (cons (cadr m) accum) eol-k eop-k)
 		       (error 'imap-read "didn't find end of quoted string in: ~a" s)))]
@@ -148,6 +153,12 @@
 	    (log-warning "warning: unexpected response for ~a: ~a" id l)
 	    (loop)])))))
 
+  (define (str->arg s)
+    (if (or (regexp-match " " s)
+	    (string=? s ""))
+	(format "\"~a\"" s)
+	s))
+
   (define (check-ok reply)
     (unless (and (pair? reply)
 		 (tag-eq? (car reply) 'OK))
@@ -171,7 +182,10 @@
 			 (raise x))])
 
 	(check-ok (imap-send r w "NOOP" void))
-	(let ([reply (imap-send r w (format "LOGIN ~a ~a" username password) void)])
+	(let ([reply (imap-send r w (format "LOGIN ~a ~a" 
+					    (str->arg username) 
+					    (str->arg password)) 
+				void)])
 	  (if (and (pair? reply) (tag-eq? 'NO (car reply)))
 	      (error "username or password rejected by server")
 	      (check-ok reply)))
@@ -188,7 +202,7 @@
 	  [w (imap-connection-w imap)])
       (let ([init-count 0]
 	    [init-recent 0])
-	(check-ok (imap-send r w (format "SELECT ~a" inbox)
+	(check-ok (imap-send r w (format "SELECT ~a" (str->arg inbox))
 			     (lambda (i)
 			       (when (and (list? i) (= 2 (length i)))
 				 (cond
@@ -207,7 +221,7 @@
     (let ([r (imap-connection-r imap)]
 	  [w (imap-connection-w imap)])
       (let ([results null])
-	(check-ok (imap-send r w (format "STATUS ~a ~a" inbox flags)
+	(check-ok (imap-send r w (format "STATUS ~a ~a" (str->arg inbox) flags)
 			     (lambda (i)
 			       (when (and (list? i) (= 3 (length i))
 					  (tag-eq? (car i) 'STATUS))
@@ -297,7 +311,7 @@
        (imap-send r w
 		  (format "COPY ~a ~a"
 			  (splice msgs ",")
-			  dest-mailbox)
+			  (str->arg dest-mailbox))
 		  void))))
   
   (define (imap-expunge imap)
@@ -311,7 +325,7 @@
 	  [w (imap-connection-w imap)]
 	  [exists? #f])
       (check-ok (imap-send r w 
-			   (format "LIST \"\" ~s" mailbox)
+			   (format "LIST \"\" ~s" (str->arg mailbox))
 			   (lambda (i)
 			     (when (and (pair? i)
 					(tag-eq? (car i) 'LIST))
@@ -323,24 +337,43 @@
 	  [w (imap-connection-w imap)])
       (check-ok 
        (imap-send r w 
-		  (format "CREATE ~a" mailbox) void))))
-
-
-  (define imap-root-mailbox (make-parameter "~/IMAP/"))
-  (define (imap-list-child-mailboxes imap mailbox)
+		  (format "CREATE ~a" (str->arg mailbox))
+		  void))))
+  
+  (define (imap-get-hierarchy-delimiter imap)
     (let* ([r (imap-connection-r imap)]
 	   [w (imap-connection-w imap)]
-	   [mailbox-name (format "~a/" mailbox)]
-	   [mailbox-name-sym (string->symbol mailbox-name)]
-	   [sub-folders null])
+	   [result #f])
       (check-ok
-       (imap-send r w (format "LIST \"~a\" %" mailbox-name)
-	 (lambda (x)
-	   (let ([flags (cadr x)]
-		 [name (cadddr x)])
-	     (unless (eq? name mailbox-name-sym)
-		     (set! sub-folders 
-			   (cons 
-			    (list flags name)
-			    sub-folders)))))))
-      (reverse sub-folders))))
+       (imap-send r w "LIST \"\" \"\""
+		  (lambda (x)
+		    (set! result (caddr x)))))
+      result))
+
+  (define imap-list-child-mailboxes 
+    (case-lambda
+     [(imap mailbox)
+      (imap-list-child-mailboxes imap mailbox (imap-get-hierarchy-delimiter imap))]
+     [(imap mailbox delimiter)
+      (let* ([r (imap-connection-r imap)]
+	     [w (imap-connection-w imap)]
+	     [mailbox-name (and mailbox (format "~a~a" mailbox delimiter))]
+	     [pattern (if mailbox
+			  (format "~a%" mailbox-name)
+			  "%")]
+	     [sub-folders null])
+	(check-ok
+	 (imap-send r w (format "LIST \"\" ~a" (str->arg pattern))
+		    (lambda (x)
+		      (let ([flags (cadr x)]
+			    [name (let ([s (cadddr x)])
+				    (if (symbol? s)
+					(symbol->string s)
+					s))])
+			(unless (and mailbox-name
+				     (string=? name mailbox-name))
+			  (set! sub-folders 
+				(cons 
+				 (list flags name)
+				 sub-folders)))))))
+	(reverse sub-folders))])))

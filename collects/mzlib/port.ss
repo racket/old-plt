@@ -488,21 +488,21 @@
 		 eof
 		 (let ([n (read-bytes-avail!* str port 0 count)])
 		   (cond
-		    [(eq? n 0) port]
+		    [(eq? n 0) (wrap-evt port (lambda (x) 0))]
 		    [(number? n) (set! got (+ got n)) n]
 		    [else n])))))
-	 (lambda (str skip)
+	 (lambda (str skip progress-evt)
 	   (let ([count (max 0 (min (- limit got skip) (bytes-length str)))])
 	     (if (zero? count)
 		 eof
-		 (let ([n (peek-bytes-avail!* str skip #f port 0 count)])
+		 (let ([n (peek-bytes-avail!* str skip progress-evt port 0 count)])
 		   (if (eq? n 0)
-		       port
+		       (wrap-evt port (lambda (x) 0))
 		       n)))))
 	 (lambda ()
 	   (when close-orig?
 	     (close-input-port port)))))))
-
+	      
   ;; ----------------------------------------
 
   (define (poll-or-spawn go)

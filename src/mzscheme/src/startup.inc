@@ -2729,7 +2729,7 @@
 "(provide quasiquote unquote unquote-splicing "
 " if let and or cond case define delay do"
 " letrec let* begin lambda quote set!"
-" define-syntax"
+" define-syntax let-syntax letrec-syntax"
 " #%app #%datum #%top))"
 );
   EVAL_ONE_STR(

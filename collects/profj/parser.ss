@@ -3,9 +3,10 @@
   (require "parsers/full-parser.ss"
            "parsers/advanced-parser.ss"
            "parsers/intermediate-parser.ss"
-           "parsers/intermediate-error.ss"
+;           "parsers/intermediate-error.ss"
            "parsers/beginner-parser.ss"
-           "parsers/beginner-error.ss"
+;           "parsers/beginner-error.ss"
+           "parsers/parse-error.ss"
            "parsers/lexer.ss"
            "parameters.ss")
   

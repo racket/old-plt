@@ -93,12 +93,12 @@
       
       (define (phase1) (void))
       (define (phase2) 
-        ;(drscheme:language-configuration:add-language
-        ; (make-object ((drscheme:language:get-default-mixin) 
-        ;               full-lang%)))
-        ;(drscheme:language-configuration:add-language
-        ; (make-object ((drscheme:language:get-default-mixin) 
-        ;               advanced-lang%)))
+        (drscheme:language-configuration:add-language
+         (make-object ((drscheme:language:get-default-mixin) 
+                       full-lang%)))
+        (drscheme:language-configuration:add-language
+         (make-object ((drscheme:language:get-default-mixin) 
+                       advanced-lang%)))
         (drscheme:language-configuration:add-language
          (make-object ((drscheme:language:get-default-mixin) 
                        intermediate-lang%)))
@@ -524,7 +524,7 @@
 
       
       (define full-lang% 
-        (java-lang-mixin 'full "ProfessorJ: Java" (list "ProfessorJ" "ProfessofJ : Full") (list 1000 10 4) "Like Java 1.0 (some 1.1)"))
+        (java-lang-mixin 'full "ProfessorJ: Full" (list "ProfessorJ" "Full") (list 1000 10 4) "Like Java 1.0 (some 1.1)"))
       (define advanced-lang% 
         (java-lang-mixin 'advanced "ProfessorJ: Advanced" 
                          (list "ProfessorJ" "Advanced") (list 1000 10 3) "Java-like Advanced teaching language"))

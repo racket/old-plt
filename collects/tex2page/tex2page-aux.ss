@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2004-09-11")
+(define *tex2page-version* "2005-02-22")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -106,6 +106,8 @@
 (define *imgdef-file-suffix* "D-")
 
 (define *index-file-suffix* "--h")
+
+(define *js-file-suffix* "-Z-J.js")
 
 (define *label-file-suffix* "-Z-L")
 
@@ -278,6 +280,8 @@
 
 (define *html-page-count* #f)
 
+(define *html-presentation?* #f)
+
 (define *ignore-timestamp?* #f)
 
 (define *img-magnification* 1)
@@ -323,6 +327,8 @@
 (define *inside-appendix?* #f)
 
 (define *jobname* "texput")
+
+(define *js-port* #f)
 
 (define *label-port* #f)
 
@@ -525,12 +531,12 @@
                 (loop2 (- q 1) r (cons char s))))))))))
 
 (define list-index
-  (lambda (l o)
-    (let loop ((l l) (i 0))
+  (lambda (L o)
+    (let loop ((L L) (i 0))
       (cond
-       ((null? l) #f)
-       ((eqv? (car l) o) i)
-       (else (loop (cdr l) (+ i 1)))))))
+       ((null? L) #f)
+       ((eqv? (car L) o) i)
+       (else (loop (cdr L) (+ i 1)))))))
 
 (define string-index
   (lambda (s c)
@@ -772,11 +778,11 @@
                   *current-tex-file*
                   (lambda (ip)
                     (let loop ((i 1) (ll '()))
-                      (let ((l (read-line ip)))
+                      (let ((L (read-line ip)))
                         (cond
-                         ((eof-object? l) ll)
+                         ((eof-object? L) ll)
                          ((< i n1) (loop (+ i 1) ll))
-                         ((<= i nf) (loop (+ i 1) (cons (cons i l) ll)))
+                         ((<= i nf) (loop (+ i 1) (cons (cons i L) ll)))
                          (else ll))))))))
           (unless (null? ll)
             (let* ((border "__________________________...")
@@ -797,9 +803,9 @@
               (write-log border)
               (write-log #\newline)
               (for-each
-                (lambda (l)
+                (lambda (L)
                   (write-log " | ")
-                  (write-log (cdr l))
+                  (write-log (cdr L))
                   (write-log #\newline))
                 ll)
               (write-log " |")
@@ -1831,7 +1837,9 @@
 
 (define output-title
   (lambda (title)
-    (emit "<h1 class=title align=center><br><br>")
+    (emit "<h1")
+    (unless *html-presentation?* (emit " class=title align=center><br><br"))
+    (emit ">")
     (bgroup)
     (tex2page-string (string-append "\\let\\\\\\break " title))
     (egroup)
@@ -2170,7 +2178,9 @@
                      (char-whitespace? c)
                      (char=? c #\newline)))))))))
       (do-end-para)
-      (emit "<h1 class=beginsection>")
+      (emit "<h1")
+      (unless *html-presentation?* (emit " class=beginsection"))
+      (emit ">")
       (bgroup)
       (fluid-let ((*tabular-stack* (list 'header))) (tex2page-string header))
       (egroup)
@@ -3703,99 +3713,123 @@
 
 (define output-navigation-bar
   (lambda (top-or-bottom)
-    (let* ((first-page? (= *html-page-count* 0))
-           (last-page-not-determined? (< *last-page-number* 0))
-           (last-page? (= *html-page-count* *last-page-number*))
-           (toc-page? (and *toc-page* (= *html-page-count* *toc-page*)))
-           (index-page? (and *index-page* (= *html-page-count* *index-page*)))
-           (first-page *zeroth-html-page*)
-           (prev-page
-             (cond
-              (first-page? #f)
-              ((= *html-page-count* 1) first-page)
-              (else
-               (string-append
-                 *jobname*
-                 *html-page-suffix*
-                 (number->string (- *html-page-count* 1))
-                 *output-extension*))))
-           (next-page
-             (cond
-              (last-page? #f)
-              (else
-               (string-append
-                 *jobname*
-                 *html-page-suffix*
-                 (number->string (+ *html-page-count* 1))
-                 *output-extension*)))))
-      (unless (and
-               first-page?
-               (or last-page?
-                   (and (eq? top-or-bottom 'top) last-page-not-determined?)))
-        (do-end-para)
-        (emit "<div align=right class=navigation><i>[")
-        (emit *navigation-sentence-begin*)
-        (emit "<span")
-        (when first-page? (emit " class=disable"))
-        (emit ">")
-        (unless first-page? (emit-link-start first-page))
-        (emit *navigation-first-name*)
-        (unless first-page? (emit-link-stop))
-        (emit ", ")
-        (unless first-page? (emit-link-start prev-page))
-        (emit *navigation-previous-name*)
-        (unless first-page? (emit-link-stop))
-        (emit "</span>")
-        (emit "<span")
-        (when last-page? (emit " class=disable"))
-        (emit ">")
-        (when first-page? (emit "<span class=disable>"))
-        (emit ", ")
-        (when first-page? (emit "</span>"))
-        (unless last-page? (emit-link-start next-page))
-        (emit *navigation-next-name*)
-        (unless last-page? (emit-link-stop))
-        (emit "</span>")
-        (emit *navigation-page-name*)
-        (when (or *toc-page* *index-page*)
-          (emit "<span")
-          (when (or
-                 (and toc-page? (not *index-page*) (not index-page?))
-                 (and index-page? (not *toc-page*) (not toc-page?)))
-            (emit " class=disable"))
-          (emit ">; ")
-          (emit-nbsp 2)
-          (emit "</span>")
-          (when *toc-page*
+    (let ((first-page? (= *html-page-count* 0))
+          (last-page? (= *html-page-count* *last-page-number*)))
+      (cond
+       (*html-presentation?*
+        (cond
+         ((eqv? top-or-bottom 'top)
+          (emit "<div id=")
+          (cond
+           ((and first-page? *title*) (emit "title"))
+           (else (display "," *js-port*) (emit "content")))
+          (emit ">")
+          (newline *js-port*)
+          (display "     " *js-port*)
+          (display #\' *js-port*)
+          (display *html-page* *js-port*)
+          (display #\' *js-port*)
+          (when last-page?
+            (newline *js-port*)
+            (display ");" *js-port*)
+            (newline *js-port*)))
+         (else (emit "</div>")))
+        (emit-newline))
+       (else
+        (let* ((last-page-not-determined? (< *last-page-number* 0))
+               (toc-page? (and *toc-page* (= *html-page-count* *toc-page*)))
+               (index-page?
+                 (and *index-page* (= *html-page-count* *index-page*)))
+               (first-page *zeroth-html-page*)
+               (prev-page
+                 (cond
+                  (first-page? #f)
+                  ((= *html-page-count* 1) first-page)
+                  (else
+                   (string-append
+                     *jobname*
+                     *html-page-suffix*
+                     (number->string (- *html-page-count* 1))
+                     *output-extension*))))
+               (next-page
+                 (cond
+                  (last-page? #f)
+                  (else
+                   (string-append
+                     *jobname*
+                     *html-page-suffix*
+                     (number->string (+ *html-page-count* 1))
+                     *output-extension*)))))
+          (unless (and
+                   first-page?
+                   (or last-page?
+                       (and (eq? top-or-bottom 'top)
+                            last-page-not-determined?)))
+            (do-end-para)
+            (emit "<div align=right class=navigation><i>[")
+            (emit *navigation-sentence-begin*)
             (emit "<span")
-            (when toc-page? (emit " class=disable"))
+            (when first-page? (emit " class=disable"))
             (emit ">")
-            (unless toc-page?
-              (emit-page-node-link-start
-                *toc-page*
-                (string-append *html-node-prefix* "toc_start")))
-            (emit *navigation-contents-name*)
-            (unless toc-page? (emit-link-stop))
-            (emit "</span>"))
-          (when *index-page*
-            (emit "<span")
-            (when index-page? (emit " class=disable"))
-            (emit ">")
-            (emit "<span")
-            (unless (and *toc-page* (not toc-page?)) (emit " class=disable"))
-            (emit ">")
-            (when *toc-page* (emit "; ") (emit-nbsp 2))
+            (unless first-page? (emit-link-start first-page))
+            (emit *navigation-first-name*)
+            (unless first-page? (emit-link-stop))
+            (emit ", ")
+            (unless first-page? (emit-link-start prev-page))
+            (emit *navigation-previous-name*)
+            (unless first-page? (emit-link-stop))
             (emit "</span>")
-            (unless index-page?
-              (emit-page-node-link-start
-                *index-page*
-                (string-append *html-node-prefix* "index_start")))
-            (emit *navigation-index-name*)
-            (unless index-page? (emit-link-stop))
-            (emit "</span>")))
-        (emit *navigation-sentence-end*)
-        (emit "]</i></div>")
-        (do-para)))))
+            (emit "<span")
+            (when last-page? (emit " class=disable"))
+            (emit ">")
+            (when first-page? (emit "<span class=disable>"))
+            (emit ", ")
+            (when first-page? (emit "</span>"))
+            (unless last-page? (emit-link-start next-page))
+            (emit *navigation-next-name*)
+            (unless last-page? (emit-link-stop))
+            (emit "</span>")
+            (emit *navigation-page-name*)
+            (when (or *toc-page* *index-page*)
+              (emit "<span")
+              (when (or
+                     (and toc-page? (not *index-page*) (not index-page?))
+                     (and index-page? (not *toc-page*) (not toc-page?)))
+                (emit " class=disable"))
+              (emit ">; ")
+              (emit-nbsp 2)
+              (emit "</span>")
+              (when *toc-page*
+                (emit "<span")
+                (when toc-page? (emit " class=disable"))
+                (emit ">")
+                (unless toc-page?
+                  (emit-page-node-link-start
+                    *toc-page*
+                    (string-append *html-node-prefix* "toc_start")))
+                (emit *navigation-contents-name*)
+                (unless toc-page? (emit-link-stop))
+                (emit "</span>"))
+              (when *index-page*
+                (emit "<span")
+                (when index-page? (emit " class=disable"))
+                (emit ">")
+                (emit "<span")
+                (unless (and *toc-page* (not toc-page?))
+                  (emit " class=disable"))
+                (emit ">")
+                (when *toc-page* (emit "; ") (emit-nbsp 2))
+                (emit "</span>")
+                (unless index-page?
+                  (emit-page-node-link-start
+                    *index-page*
+                    (string-append *html-node-prefix* "index_start")))
+                (emit *navigation-index-name*)
+                (unless index-page? (emit-link-stop))
+                (emit "</span>")))
+            (emit *navigation-sentence-end*)
+            (emit "]</i></div>")
+            (do-para))))))))
 
 (define do-eject
   (lambda ()
@@ -3819,10 +3853,11 @@
 
 (define output-html-preamble
   (lambda (top-level-page?)
-    (emit "<!doctype html public ")
-    (emit "\"-//W3C//DTD HTML 4.01 Transitional//EN\" ")
-    (emit "\"http://www.w3.org/TR/html4/loose.dtd\">")
-    (emit-newline)
+    (unless *html-presentation?*
+      (emit "<!doctype html public ")
+      (emit "\"-//W3C//DTD HTML 4.01 Transitional//EN\" ")
+      (emit "\"http://www.w3.org/TR/html4/loose.dtd\">")
+      (emit-newline))
     (emit "<html>")
     (emit-newline)
     (emit "<!--")
@@ -3855,10 +3890,20 @@
     (unless (and top-level-page? (= *html-page-count* 0)) (emit "no"))
     (emit "index,follow\">")
     (emit-newline)
+    (when *html-presentation?*
+      (emit "<script language=\"javascript\" src=\"")
+      (emit *jobname*)
+      (emit *js-file-suffix*)
+      (emit "\"></script>")
+      (emit-newline)
+      (emit "<script language=\"javascript\" src=\"mozpoint.js\"></script>")
+      (emit-newline))
     (for-each emit *html-head*)
     (emit "</head>")
     (emit-newline)
-    (emit "<body>")
+    (emit "<body")
+    (when *html-presentation?* (emit " onLoad=\"init_all();\""))
+    (emit ">")
     (emit-newline)))
 
 (define output-html-postamble
@@ -3874,13 +3919,14 @@
   (lambda ()
     (output-footnotes)
     (output-navigation-bar 'bottom)
-    (when (and *colophon-on-first-page?* (= *html-page-count* 0))
-      (output-colophon))
-    (do-end-para)
-    (when (and
-           (not *colophon-on-first-page?*)
-           (= *html-page-count* *last-page-number*))
-      (output-colophon))
+    (unless *html-presentation?*
+      (when (and *colophon-on-first-page?* (= *html-page-count* 0))
+        (output-colophon))
+      (do-end-para)
+      (when (and
+             (not *colophon-on-first-page?*)
+             (= *html-page-count* *last-page-number*))
+        (output-colophon)))
     (output-html-postamble)
     (write-log #\[)
     (write-log *html-page-count*)
@@ -3892,6 +3938,7 @@
   (lambda ()
     (when *aux-port* (close-output-port *aux-port*))
     (when *css-port* (close-output-port *css-port*))
+    (when *js-port* (close-output-port *js-port*))
     (when *index-port* (close-output-port *index-port*))
     (when *label-port* (close-output-port *label-port*))
     (when *bib-aux-port* (close-output-port *bib-aux-port*))
@@ -4509,11 +4556,11 @@
       (write-log 'separation-newline)
       (write-log (or ctlseq "\\@typein"))
       (write-log #\=)
-      (let ((l (read-tex-line p)))
-        (when (eof-object? l) (set! l ""))
+      (let ((L (read-tex-line p)))
+        (when (eof-object? L) (set! L ""))
         (cond
-         (ctlseq (tex-def-0arg ctlseq l #f))
-         (else (tex2page-string l)))))))
+         (ctlseq (tex-def-0arg ctlseq L #f))
+         (else (tex2page-string L)))))))
 
 (define do-ifeof
   (lambda ()
@@ -7287,13 +7334,24 @@
                 (file-exists? (string-append f ".scm")))
            (system (string-append "del " f ".*"))))))))
 
-(define start-off-css-file
+(define start-css-file
   (lambda ()
     (let ((css-file (string-append *aux-dir/* *jobname* *css-file-suffix*)))
       (ensure-file-deleted css-file)
       (set! *css-port* (open-output-file css-file))
       (display
         "\n               body {\n               color: black;\n               /*   background-color: #e5e5e5;*/\n               background-color: #ffffff;\n               /*background-color: beige;*/\n               margin-top: 2em;\n               margin-left: 8%;\n               margin-right: 8%;\n               }\n\n               h1,h2,h3,h4,h5,h6 {\n               margin-top: .5em;\n               }\n\n               .title {\n               font-size: 200%;\n               font-weight: normal;\n               }\n\n               .partheading {\n               font-size: 100%;\n               }\n\n               .chapterheading {\n               font-size: 100%;\n               }\n\n               .beginsection {\n               font-size: 110%;\n               }\n\n               .tiny {\n               font-size: 40%;\n               }\n\n               .scriptsize {\n               font-size: 60%;\n               }\n\n               .footnotesize {\n               font-size: 75%;\n               }\n\n               .small {\n               font-size: 90%;\n               }\n\n               .normalsize {\n               font-size: 100%;\n               }\n\n               .large {\n               font-size: 120%;\n               }\n\n               .largecap {\n               font-size: 150%;\n               }\n\n               .largeup {\n               font-size: 200%;\n               }\n\n               .huge {\n               font-size: 300%;\n               }\n\n               .hugecap {\n               font-size: 350%;\n               }\n\n               pre {\n               margin-left: 2em;\n               }\n\n               blockquote {\n               margin-left: 2em;\n               }\n\n               ol {\n               list-style-type: decimal;\n               }\n\n               ol ol {\n               list-style-type: lower-alpha;\n               }\n\n               ol ol ol {\n               list-style-type: lower-roman;\n               }\n\n               ol ol ol ol {\n               list-style-type: upper-alpha;\n               }\n\n               /*\n               .verbatim {\n               color: #4d0000;\n               }\n               */\n\n               tt i {\n               font-family: serif;\n               }\n\n               .verbatim em {\n               font-family: serif;\n               }\n\n               .scheme em {\n               font-family: serif;\n               color: black;\n               }\n\n               .scheme {\n               color: brown;\n               }\n\n               .scheme .keyword {\n               color: #990000;\n               font-weight: bold;\n               }\n\n               .scheme .builtin {\n               color: #990000;\n               }\n\n               .scheme .variable {\n               color: navy;\n               }\n\n               .scheme .global {\n               color: purple;\n               }\n\n               .scheme .selfeval {\n               color: green;\n               }\n\n               .scheme .comment {\n               color:  teal;\n               }\n\n               .schemeresponse {\n               color: green;\n               }\n\n               .navigation {\n               color: red;\n               text-align: right;\n               font-size: medium;\n               font-style: italic;\n               }\n\n               .disable {\n               /* color: #e5e5e5; */\n               color: gray;\n               }\n\n               .smallcaps {\n               font-size: 75%;\n               }\n\n               .smallprint {\n               color: gray;\n               font-size: 75%;\n               text-align: right;\n               }\n\n               /*\n               .smallprint hr {\n               text-align: left;\n               width: 40%;\n               }\n               */\n\n               .footnoterule {\n               text-align: left;\n               width: 40%;\n               }\n\n               .colophon {\n               color: gray;\n               font-size: 80%;\n               text-align: right;\n               }\n\n               .colophon a {\n               color: gray;\n               }\n\n               "
+        *css-port*))))
+
+(define start-js-file
+  (lambda ()
+    (when *html-presentation?*
+      (let ((js-file (string-append *aux-dir/* *jobname* *js-file-suffix*)))
+        (ensure-file-deleted js-file)
+        (set! *js-port* (open-output-file js-file))
+        (display "var toc = new Array(" *js-port*))
+      (display
+        "\n              body {\n              background: white;\n              font-size: 22;\n              font-weight: bold;\n              font-family: Verdana, Arial, Lucida;\n              }\n\n              div#content {\n              position: absolute;\n              top: 10px;\n              left: 150px;\n              }\n              \n              div#title {\n              position: absolute;\n              top: 150px;\n              left: 250px;\n              }\n\n              h1 {\n              color: darkblue;\n              font-size: 1.5em;\n              padding-bottom: 20px;\n              border-bottom: thick solid blue;\n              }\n              "
         *css-port*))))
 
 (define load-aux-file
@@ -7312,7 +7370,8 @@
         (load-tex2page-data-file aux-file)
         (delete-file aux-file))
       (set! *aux-port* (open-output-file aux-file)))
-    (start-off-css-file)
+    (start-css-file)
+    (start-js-file)
     (when (eqv? *tex-format* 'latex)
       (!definitely-latex)
       (write-aux `(!definitely-latex)))
@@ -7345,6 +7404,8 @@
     (unless (eqv? *tex-format* 'latex)
       (!definitely-latex)
       (write-aux `(!definitely-latex)))))
+
+(define html-presentation (lambda () (write-aux `(!html-presentation))))
 
 (define !toc-page (lambda (p) (set! *toc-page* p)))
 
@@ -7401,6 +7462,8 @@
 (define !using-external-program (lambda (x) #f))
 
 (define !external-labels (lambda (f) #f))
+
+(define !html-presentation (lambda () (set! *html-presentation?* #t)))
 
 (define fully-qualified-url?
   (lambda (u) (or (substring? "//" u) (char=? (string-ref u 0) #\/))))
@@ -7468,6 +7531,7 @@
                    ((!label) !label)
                    ((!last-modification-time) !last-modification-time)
                    ((!last-page-number) !last-page-number)
+                   ((!html-presentation) !html-presentation)
                    ((!preferred-title) !preferred-title)
                    ((!stylesheet) !stylesheet)
                    ((!toc-entry) !toc-entry)

@@ -381,7 +381,7 @@ scheme_force_value(Scheme_Object *obj)
     return v;
   } else if (SAME_OBJ(obj, SCHEME_EVAL_WAITING)) {
     Scheme_Process *p = scheme_current_process;
-    return _scheme_eval_compiled_expr(p->ku.eval.wait_expr);
+    return _scheme_eval_compiled_expr_multi(p->ku.eval.wait_expr);
   } else if (obj)
     return obj;
   else

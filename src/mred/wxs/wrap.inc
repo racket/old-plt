@@ -11760,6 +11760,7 @@
 " sleep/yield"
 " get-window-text-extent))))"
 "(lambda()"
+"(global-defined-value 'mred@ mred@)"
 "(global-defined-value 'button%(vector-ref ex 0))"
 "(global-defined-value 'canvas%(vector-ref ex 1))"
 "(global-defined-value 'check-box%(vector-ref ex 2))"

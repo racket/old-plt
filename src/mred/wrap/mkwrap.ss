@@ -106,6 +106,7 @@
 			    (export (wx ,@propagate) (mred mred@ ,@mred-exports)))
 			   () ,sig)])
 		  (lambda ()
+		    (global-defined-value 'mred@ mred@)
 		    ,@(let loop ([l (append mred-exports propagate)][n 0])
 			(if (null? l)
 			    null

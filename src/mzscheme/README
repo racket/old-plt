@@ -43,8 +43,8 @@ following platforms:
   Sparc Solaris [see note below]
   Sparc SunOS4    
 
-[Solaris Note: To ensure that dynamic extensions work right, use the
- native Solaris `ld' rather than GNU's `ld'.]
+[Solaris Note: To ensure that dynamic extensions work right, make sure
+ your compiler uses the native Solaris `ld' rather than GNU's `ld'.]
 
 To compile the `mzscheme' executable for other Unix platforms:
 

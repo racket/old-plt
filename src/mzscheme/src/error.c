@@ -691,7 +691,7 @@ void scheme_wrong_return_arity(const char *where,
       len = 3;
     }
 
-    for (i = 0; i < got; i++) {
+    for (i = 0; i < maxpos; i++) {
       char *o = error_write_to_string_w_max(array[i], len, NULL);
       strcat(v, " ");
       strcat(v, o);

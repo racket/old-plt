@@ -3,6 +3,42 @@ X Windows: window manager close-frame request is ignored
  when a modal dialog is in control
 Added security so that wx:snip% methods cannot be overridden 
  to crash MrEd
+Fixed wx:canvas% scrolling on all platforms; the style flags
+ wx:const-hscroll and wx:const-vscroll must be used at
+ canvas-creation to set up for scrolling. Removed the
+ enable-scrolling method from wx:canvas%. Renamed the method
+ get-scroll-page-units to get-scroll-units. Added methods
+ get-scroll-pos, get-scroll-range, and get-scroll-page.
+The wx:canvas% wx:const-backingstore and wx:const-retained
+ style flags have been removed.
+Removed wx:key-event%'s position method and added get-x,
+ get-y, set-x, and set-y
+Changed default pen in DC to width 0 instead of 1
+Added get-max-view method to wx:media-admin%
+Revised wx:media-buffer%'s cursor system for better 
+ cooperation with embedded buffers; instead of handling
+ the cursor in on-default-event, added a method adjust-cursor
+ to buffers and snips, and replaced admin's set-cursor with
+ update-cursor
+Added refresh-delayed? predicate to wx:media-buffer%, useful
+ for deciding whether a buffer (or one of its enclosing 
+ buffers) is in an edit-sequence
+Added a --pre flag for evaluating an expression in a 
+ MzScheme-only namespace at startup. This flag is intended
+ for use with image dumps (see the MzScheme manual)
+Removed wx:copy-file; MzScheme now has copy-file
+Fixed wx:media-stream-in%'s get-string (it was adding an
+ extra nul character)
+Removed error dialogs when wx:media-buffer%'s load-file or
+ save-file fails
+Windows: fixed canvas mouse events; button-down event grabs
+ the mouse until the next button-up event
+Windows: fixed initial setting of DC text mode: transparent
+ instead of opaque
+X Windows: fixed wx:frame's iconize and iconized? methods,
+ ignoring the X idea of not de-iconifying windows that were 
+ iconified by the user
+Removed wx:exit
 
 Version 50: August 26, 1997
 Changed wx:dc%'s get-size method to return size of

@@ -1,12 +1,13 @@
 MrEd
 Copyright (c) 1995-96 PLT, Rice University
 
-MrEd is distributed under the GNU Library General Public License. This
-means that you can link to and use MrEd in any application (including
-commercial applications with private source code) but all derivatives
-of MrEd itself must be distributed with a license consistent with the
-GNU LGPL (i.e., the derivative and its source code must be freely
-distributed). See COPYING.LIB for more information.
+MrEd is distributed under the GNU Library General Public License
+(LGPL).  This means you can link MrEd into proprietary applications,
+provided you follow the specific rules stated in the LGPL.  You can
+also modify MrEd; if you distribute a modified version, you must
+distribute it under the terms of the LGPL, which in particular means
+that you must release the source code for the modified MrEd. See
+COPYING.LIB for more information.
 
 MrEd is based on:
 
@@ -29,7 +30,7 @@ and/or
 and
 
   MzScheme
-  Copyright (c) 1995 Matthew Flatt
+  Copyright (c) 1995-97 PLT (Matthew Flatt)
   All rights reserved.
 
 and

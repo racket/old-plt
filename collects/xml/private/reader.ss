@@ -194,12 +194,12 @@
       (define (lex-tag-cdata-pi-comment in pos)
         (let ([start (pos)])
           (read-char in)
-          (case (non-eof peek-char in pos)
+          (case (non-eof peek-char-or-special in pos)
             [(#\!)
              (read-char in)
              (case (non-eof peek-char in pos)
                [(#\-) (read-char in)
-                (unless (eq? (read-char in) #\-)
+                (unless (eq? (read-char-or-special in) #\-)
                   (lex-error in pos "expected second - after <!-"))
                 (let ([data (lex-comment-contents in pos)])
                   (unless (eq? (read-char in) #\>)
@@ -213,7 +213,7 @@
                   (make-pcdata start (pos) data))]
                [else (skip-dtd in pos)
                      (skip-space in)
-                     (unless (eq? (peek-char in) #\<)
+                     (unless (eq? (peek-char-or-special in) #\<)
                        (lex-error in pos "expected pi, comment, or element after doctype"))
                      (lex-tag-cdata-pi-comment in pos)])]
             [(#\?) (read-char in)
@@ -224,14 +224,14 @@
             [(#\/) (read-char in)
              (let ([name (lex-name in pos)])
                (skip-space in)
-               (unless (eq? (read-char in) #\>)
+               (unless (eq? (read-char-or-special in) #\>)
                  (lex-error in pos "expected > to close ~a's end tag" name))
                (make-end-tag start (pos) name))]
-            [else
+            [else ; includes 'special, but lex-name will fail in that case
              (let ([name (lex-name in pos)]
                    [attrs (lex-attributes in pos)])
                (skip-space in)
-               (case (read-char in)
+               (case (read-char-or-special in)
                  [(#\/)
                   (unless (eq? (read-char in) #\>)
                     (lex-error in pos "expected > to close empty element ~a" name))
@@ -244,7 +244,7 @@
         (quicksort (let loop ()
                      (skip-space in)
                      (cond
-                       [(name-start? (peek-char in))
+                       [(name-start? (peek-char-or-special in))
                         (cons (lex-attribute in pos) (loop))]
                        [else null]))
                    (lambda (a b)
@@ -268,8 +268,10 @@
                           [(#\' #\")
                            (list->string
                             (let read-more ()
-                              (let ([c (non-eof peek-char in pos)])
+                              (let ([c (non-eof peek-char-or-special in pos)])
                                 (cond
+                                  [(eq? c 'special)
+                                   (lex-error in pos "attribute values cannot contain non-text values")]
                                   [(eq? c delimiter) (read-char in) null]
                                   [(eq? c #\&)
                                    (let ([entity (expand-entity (lex-entity in pos))])
@@ -315,16 +317,19 @@
       
       ;; lex-name : Input-port (-> Location) -> Symbol
       (define (lex-name in pos)
-        (let ([c (non-eof read-char in pos)])
+        (let ([c (non-eof read-char-or-special in pos)])
           (unless (name-start? c)
             (lex-error in pos "expected name, received ~s" c))
           (string->symbol
            (list->string
             (cons c (let lex-rest ()
-                      (cond
-                        [(name-char? (non-eof peek-char in pos))
-                         (cons (read-char in) (lex-rest))]
-                        [else null])))))))
+                      (let ([c (non-eof peek-char-or-special in pos)])
+                        (cond
+                         [(eq? c 'special)
+                          (lex-error in pos "names cannot contain non-text values")]
+                         [(name-char? c)
+                          (cons (read-char in) (lex-rest))]
+                         [else null]))))))))
       
       ;; skip-dtd : Input-port (-> Location) -> Void
       (define (skip-dtd in pos)
@@ -344,16 +349,18 @@
       
       ;; name-start? : Char -> Bool
       (define (name-start? ch)
-        (or (char-alphabetic? ch) 
-            (eq? ch #\_)
-            (eq? ch #\:)))
+        (and (char? ch)
+             (or (char-alphabetic? ch)
+                 (eq? ch #\_)
+                 (eq? ch #\:))))
       
       ;; name-char? : Char -> Bool
       (define (name-char? ch)
-        (or (name-start? ch)
-            (char-numeric? ch)
-            (eq? ch #\.)
-            (eq? ch #\-)))
+        (and (char? ch)
+             (or (name-start? ch)
+                 (char-numeric? ch)
+                 (eq? ch #\.)
+                 (eq? ch #\-))))
       
       ;; read-until : Char Input-port (-> Location) -> String
       ;; discards the stop character, too

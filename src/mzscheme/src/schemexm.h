@@ -37,6 +37,8 @@
 #else
 #define scheme_process_block_w_process (scheme_extension_table->scheme_process_block_w_process)
 #endif
+#define scheme_weak_suspend_thread (scheme_extension_table->scheme_weak_suspend_thread)
+#define scheme_weak_resume_thread (scheme_extension_table->scheme_weak_resume_thread)
 #define scheme_block_until (scheme_extension_table->scheme_block_until)
 #define scheme_in_main_thread (scheme_extension_table->scheme_in_main_thread)
 #define scheme_tls_allocate (scheme_extension_table->scheme_tls_allocate)

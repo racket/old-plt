@@ -50,6 +50,7 @@ static int *dgc_count;
 static int dgc_size;
 
 extern void (*GC_out_of_memory)(void);
+extern void GC_register_late_disappearing_link(void **link, void *obj);
 
 void scheme_dont_gc_ptr(void *p)
 {
@@ -333,7 +334,8 @@ static void do_next_finalization(void *o, void *data)
   if (fns->scheme_first) {
     if (fns->scheme_first->next || fns->ext_f || fns->prim_first) {
       /* Re-install low-level finalizer and run a scheme finalizer */
-      GC_register_eager_finalizer(o, do_next_finalization, data, NULL, NULL);
+      GC_register_eager_finalizer(o, fns->scheme_first->next ? 1 : 2, 
+				  do_next_finalization, data, NULL, NULL);
     }
 
     fn = fns->scheme_first;
@@ -386,7 +388,7 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
 
   GET_FIN_LOCK();
 
-  GC_register_eager_finalizer(v, do_next_finalization, fns_ptr, &oldf, &olddata);
+  GC_register_eager_finalizer(v, prim ? 2 : 1, do_next_finalization, fns_ptr, &oldf, &olddata);
 
   if (oldf) {
     if (oldf != do_next_finalization) {
@@ -447,50 +449,6 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   RELEASE_FIN_LOCK();
 }
 
-static void remove_finalizer(Finalizations *fns, Finalization *fn, int prim)
-{
-  GET_FIN_LOCK();
-
-  if (fn->prev)
-    fn->prev->next = fn->next;
-  else {
-    if (prim)
-      fns->prim_first = fn->next;
-    else
-      fns->scheme_first = fn->next;
-  }
-  
-  if (fn->next)
-    fn->next->prev = fn->prev;
-  else {
-    if (prim)
-      fns->prim_last = fn->prev;
-    else
-      fns->scheme_last = fn->prev;
-  }
-
-  RELEASE_FIN_LOCK();
-}
-
-static void z_rmve_finalizers(void *ignore, void *p)
-{
-  ZeroingRecord *z = (ZeroingRecord *)p;
-
-  if (z->src_fn)
-    remove_finalizer(z->src_fns, z->src_fn, 1);
-  if (z->dest_fn)
-    remove_finalizer(z->dest_fns, z->dest_fn, 1);
-}
-
-static void zero_out(void *ignore, void *p)
-{
-  ZeroingRecord *z = (ZeroingRecord *)p;
-
-  *z->p = NULL;
-
-  z_rmve_finalizers(ignore, p);
-}
-
 void scheme_weak_reference(void **p)
 {
   scheme_weak_reference_indirect(p, *p);
@@ -498,22 +456,8 @@ void scheme_weak_reference(void **p)
 
 void scheme_weak_reference_indirect(void **p, void *v)
 {
-  if (GC_base(v) == v) {
-    ZeroingRecord *z;
-    void *base;
-
-    z = MALLOC_ONE_ATOMIC(ZeroingRecord);
-
-    z->p = p;
-    add_finalizer(v, zero_out, z, 1, 0, NULL, NULL, &z->src_fns, &z->src_fn, 0);
-
-    if ((base = GC_base(p)))
-      add_finalizer(base, z_rmve_finalizers, z, 1, 0, NULL, NULL, &z->dest_fns, &z->dest_fn, 0);
-    else {
-      z->dest_fn = NULL;
-      z->dest_fns = NULL;
-    }
-  }
+  if (GC_base(v) == v)
+    GC_register_late_disappearing_link(p, v);
 }
 
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data)
@@ -592,7 +536,7 @@ extern "C"
  
 
 #ifdef USE_TAGGED_ALLOCATION
-#define NUM_TYPE_SLOTS (_scheme_last_type_ + 1)
+#define NUM_TYPE_SLOTS (_scheme_last_type_ + 5) /* extra space for externally defined */
 
 static long scheme_memory_count[NUM_TYPE_SLOTS];
 static long scheme_memory_actual_count[NUM_TYPE_SLOTS];
@@ -613,8 +557,10 @@ void count_tagged(void *p, int size, void *data)
   } else if (which >= scheme_num_types())
     bad_seeds++;
   else {
-    scheme_memory_count[_scheme_last_type_]++;
-    scheme_memory_size[_scheme_last_type_] += size;
+    if (which >= NUM_TYPE_SLOTS)
+      which = NUM_TYPE_SLOTS - 1;
+    scheme_memory_count[which]++;
+    scheme_memory_size[which] += size;
   }
 }
 
@@ -628,6 +574,17 @@ static void trace_count(void *p, int size)
 {
   int which = SCHEME_TYPE((Scheme_Object *)p);
   if ((which >= 0) && (which <= _scheme_last_type_)) {
+   /* fall through to below */ 
+  } else if (which >= scheme_num_types()) {
+    bad_seeds++;
+    return;
+  } else {
+    if (which >= NUM_TYPE_SLOTS)
+      which = NUM_TYPE_SLOTS - 1;
+   /* fall through to below */ 
+  }
+
+  {
     unsigned long s = (unsigned long)p;
     scheme_memory_actual_count[which]++;
     scheme_memory_actual_size[which] += size;
@@ -635,8 +592,7 @@ static void trace_count(void *p, int size)
       scheme_memory_lo[which] = s;
     if (!scheme_memory_hi[which] || (s > scheme_memory_hi[which]))
       scheme_memory_hi[which] = s;
-  } else if (which >= scheme_num_types())
-    bad_seeds++;
+  }
 }
 
 static void trace_path(void *p, unsigned long src, void *path_data)
@@ -704,9 +660,13 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
   trace_path_type = -1;
   if (c && SCHEME_SYMBOLP(p[0])) {
     char *s = SCHEME_SYM_VAL(p[0]);
-    int i;
+    int i, maxpos;
 
-    for (i = 0; i < _scheme_last_type_; i++) {
+    maxpos = scheme_num_types();
+    if (maxpos > NUM_TYPE_SLOTS-1)
+      maxpos = NUM_TYPE_SLOTS-1;
+
+    for (i = 0; i < maxpos; i++) {
       void *tn = scheme_get_type_name(i);
       if (tn && !strcmp(tn, s)) {
 	trace_path_type = i;
@@ -763,7 +723,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     for (i = 0; i < NUM_TYPE_SLOTS; i++) {
       if (scheme_memory_count[i] || scheme_memory_actual_count[i]) {
 	scheme_console_printf("%30.30s %10ld %10ld %10ld %8lx - %8lx\n",
-			      (i < _scheme_last_type_)
+			      (i < NUM_TYPE_SLOTS-1)
 			      ? scheme_get_type_name(i)
 			      : "other",
 			      scheme_memory_count[i],
@@ -1470,7 +1430,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_listener_type:
     s = sizeof(Scheme_Small_Object);
     break;
-  case scheme_reserved_1_type:
+  case scheme_random_state_type:
+    s = 130; /* wild guess */
+    break;
   case scheme_reserved_2_type:
   case scheme_reserved_3_type:
     s = 0; /* Not yet used */
@@ -1524,58 +1486,5 @@ long scheme_count_envbox(Scheme_Object *root, Scheme_Hash_Table *ht)
   else
     return 4;
 }
-
-#if 0
-Scheme_Object *scheme_dump_memory_count(int c, Scheme_Object **a)
-{
-  int i, special = 0;
-  Scheme_Object *root;
-  Scheme_Hash_Table *ht;
-  long total_count = 0, total_local = 0, total_extended = 0;
-
-  ht = scheme_hash_table(1000, SCHEME_hash_ptr, 0, 0);
-
-  if (c) {
-    if (SCHEME_FALSEP(a[0])) {
-      special = 1;
-      root = (Scheme_Object *)scheme_symbol_table;
-    } else
-      root = a[0];
-  } else {
-    root = (Scheme_Object *)scheme_first_process;
-  }
-
-  scheme_count_memory(root, ht);
-
-  for (i = 0; i < _scheme_last_type_; i++) {
-    if (scheme_memory_count[i]) {
-      scheme_console_printf("%30.30s %10ld %10ld %10ld\n",
-			    scheme_get_type_name(i),
-			    scheme_memory_count[i],
-			    scheme_memory_local[i],
-			    scheme_memory_extended[i]);
-      total_count += scheme_memory_count[i];
-      total_local += scheme_memory_local[i];
-      total_extended += scheme_memory_extended[i];
-    }
-  }
-
-  scheme_console_printf("%30.30s %10ld %10ld %10ld\n",
-			"total", 
-			total_count,
-			total_local,
-			total_extended);
-  if (special) {
-    scheme_console_printf("%30.30s %10ld\n",
-			  "type tables", 
-			  scheme_type_table_count);
-    scheme_console_printf("%30.30s %10ld\n",
-			  "miscellaneous", 
-			  scheme_misc_count);
-  }
-
-  return scheme_void;
-}
-#endif
 
 #endif

@@ -98,6 +98,9 @@ void scheme_swap_process(Scheme_Process *process);
 void scheme_process_block_w_process(float sleep_time, Scheme_Process *p);
 #endif
 
+void scheme_weak_suspend_thread(Scheme_Process *p);
+void scheme_weak_resume_thread(Scheme_Process *p);
+
 int scheme_block_until(int (*f)(Scheme_Object *), void (*fdfd)(Scheme_Object *, void *), void *, float);
 
 int scheme_in_main_thread(void);

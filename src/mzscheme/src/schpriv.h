@@ -359,6 +359,30 @@ typedef struct Scheme_Escaping_Cont {
 #define q_scheme_eval_compiled(obj) _scheme_do_eval(obj, 1)
 #define q_scheme_tail_eval(obj) scheme_tail_eval(obj)
 
+#define SEMAPHORE_WAITING_IS_COLLECTABLE 1
+
+#ifndef MZ_REAL_THREADS
+# if SEMAPHORE_WAITING_IS_COLLECTABLE
+typedef struct Scheme_Sema_Waiter {
+  Scheme_Process *p;
+  int in_line;
+  struct Scheme_Sema_Waiter *prev, *next;
+} Scheme_Sema_Waiter;
+# endif
+#endif
+
+typedef struct Scheme_Sema {
+  Scheme_Type type;
+#ifdef MZ_REAL_THREADS
+  void *sema;
+#else
+  long value;  
+#if SEMAPHORE_WAITING_IS_COLLECTABLE
+  Scheme_Sema_Waiter *first, *last;
+#endif
+#endif
+} Scheme_Sema;
+
 typedef struct Scheme_Sema_Callback {
   Scheme_Sema *sema;
   int ready;

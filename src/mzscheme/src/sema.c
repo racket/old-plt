@@ -88,7 +88,12 @@ Scheme_Object *scheme_make_sema(long v)
   sema->sema = SCHEME_MAKE_SEMA(v);
   scheme_add_finalizer(sema, free_sema, NULL);
 #else
-  sema = (Scheme_Sema *)scheme_malloc_atomic_tagged(sizeof(Scheme_Sema));
+# if SEMAPHORE_WAITING_IS_COLLECTABLE
+#  define MALLOC_SEMA scheme_malloc_tagged
+# else
+#  define MALLOC_SEMA scheme_malloc_atomic_tagged
+# endif
+  sema = (Scheme_Sema *)MALLOC_SEMA(sizeof(Scheme_Sema));
   sema->value = v;
 #endif
 
@@ -137,6 +142,25 @@ void scheme_post_sema(Scheme_Object *o)
   v = t->value + 1;
   if (v > t->value) {
     t->value = v;
+
+#if SEMAPHORE_WAITING_IS_COLLECTABLE
+    if (t->first) {
+      Scheme_Sema_Waiter *w;
+
+      w = t->first;
+
+      t->first = w->next;
+      if (!w->next)
+	t->last = NULL;
+      else
+	t->first->prev = NULL;
+      
+      w->in_line = 0;
+      w->next = NULL;
+      scheme_weak_resume_thread(w->p);
+    }
+#endif
+
     return;
   }
 #endif
@@ -182,6 +206,13 @@ static void post_breakable_wait(void *data)
   scheme_set_param(bw->config, MZCONFIG_ENABLE_BREAK, bw->orig_param_val);
 }
 
+#if SEMAPHORE_WAITING_IS_COLLECTABLE
+static int out_of_line(Scheme_Object *w)
+{
+  return !((Scheme_Sema_Waiter *)w)->in_line;
+}
+#endif
+
 int scheme_wait_sema(Scheme_Object *o, int just_try)
 {
   Scheme_Sema *sema = (Scheme_Sema *)o;
@@ -218,16 +249,60 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
     if (sema->value)
       --sema->value;
     else {
+# if SEMAPHORE_WAITING_IS_COLLECTABLE
+      Scheme_Sema_Waiter *w = MALLOC_ONE(Scheme_Sema_Waiter);
+      
+      w->p = scheme_current_process;
+      w->in_line = 1;
+      
+      while (1) {
+	/* Get into line */
+	w->prev = sema->last;
+	if (sema->last)
+	  sema->last->next = w;
+	else
+	  sema->first = sema->last = w;
+	w->next = NULL;
+
+	if (!scheme_current_process->next) {
+	  /* We're not allowed to suspend the main thread. */
+	  scheme_block_until(out_of_line, NULL, w, (float)0.0);
+	} else
+	  scheme_weak_suspend_thread(scheme_current_process);
+
+	/* We've been resumed. But was it for the semaphore, or a signal? */
+	if (w->in_line) {
+	  /* We weren't woken by the semaphore. Get out of line, block once 
+	     (to handle breaks) and then loop to get back into line. */
+	  if (w->prev)
+	    w->prev->next = w->next;
+	  else
+	    sema->first = w->next;
+	  if (w->next)
+	    w->next->prev = w->prev;
+	  else
+	    sema->last = w->prev;
+	  
+	  scheme_process_block(0);
+	} else {
+	  /* The semaphore picked us to go */
+	  --sema->value;
+	  break;
+	}
+      }
+# else
       scheme_current_process->block_descriptor = SEMA_BLOCKED;
       scheme_current_process->blocker = (Scheme_Object *)sema;
       
-      while (!sema->value)
+      while (!sema->value) {	
 	scheme_process_block(0);
+      }
       --sema->value;
       
       scheme_current_process->block_descriptor = NOT_BLOCKED;
       scheme_current_process->blocker = NULL;
       scheme_current_process->ran_some = 1;
+# endif
     }
     v = 1;
 #endif

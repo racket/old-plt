@@ -73,7 +73,9 @@
 /* Never treat allocated data as atomic */
 
 #define KEEP_BLOCKS_FOREVER 0
-/* Keep small-chunk assignment of a block forever */
+/* Number of block sector assignments to keep indefinitely, rather
+   than recycling them immediately. This speeds up collection
+   and allocation, but it also costs memory via fragmentation. */
 
 #define NO_STACK_OFFBYONE 0
 /* Don't notice a stack-based pointer just past the end of an object */
@@ -81,8 +83,17 @@
 #define WATCH_FOR_FINALIZATION_CYCLES 0
 /* Report cycles in finalizable chunks */
 
+#define USE_GC_FREE_SPACE_DIVISOR 1
+/* Grow stack in a way similar to Boehm's GC using the global
+   GC_free_space_divisor. 0 => GC after allocating twice the
+   active size from the last GC. */
+
 #define PROVIDE_GC_FREE 0
 /* Provide GC_free; automatically implies DISTINGUISH_FREE_FROM_UNMARKED */
+
+#define PROVIDE_CHUNK_GC_FREE 1
+/* Provide GC_free that only works on chunks (i.e., large allocation
+   blocks); frees on small blacks are ignored */
 
 #define PROVIDE_MALLOC_AND_FREE SGC_STD_DEBUGGING_UNIX
 /* Defines malloc(), realloc(), calloc(), and  free() in terms of 
@@ -118,11 +129,11 @@
 /* Automatically implies ALLOW_TRACE_COUNT, ALLOW_TRACE_PATH,
    ALLOW_SET_FINALIZER, and CHECK_WATCH_FOR_PTR_ALLOC */
 
-#define STD_MEMORY_TRACING 0
+#define STD_MEMORY_TRACING SGC_STD_DEBUGGING
 /* Automatically implies TERSE_MEMORY_TRACING, DUMP_BLOCK_COUNTS,
    and DUMP_SECTOR_MAP */
 
-#define DETAIL_MEMORY_TRACING SGC_STD_DEBUGGING
+#define DETAIL_MEMORY_TRACING 0
 /* Automatically implies STD_MEMORY_TRACING, DUMP_BLOCK_MAPS, 
    STAMP_AND_REMEMBER_SOURCE, and KEEP_DETAIL_PATH */
 
@@ -381,15 +392,21 @@
 #if PROVIDE_GC_FREE
 # undef DISTINGUISH_FREE_FROM_UNMARKED
 # define DISTINGUISH_FREE_FROM_UNMARKED 1
+# undef PROVIDE_CHUNK_GC_FREE
+# define PROVIDE_CHUNK_GC_FREE 1
 #endif
 
 #if ALLOW_TRACE_COUNT || ALLOW_TRACE_PATH || PROVIDE_GC_FREE
 # define KEEP_SET_NO 1
+# define KEEP_CHUNK_SET_NO 1
 #else
 # define KEEP_SET_NO 0
+# if PROVIDE_CHUNK_GC_FREE
+#  define KEEP_CHUNK_SET_NO 1
+# endif
 #endif
 
-#if PROVIDE_GC_FREE
+#if PROVIDE_CHUNK_GC_FREE
 # define KEEP_PREV_PTR 1
 #else
 # define KEEP_PREV_PTR 0
@@ -437,6 +454,7 @@ typedef struct MemoryBlock {
   short size;
   short atomic;
   short elem_per_block;
+  short free_search_start, free_search_bit, free_search_offset;
   int *positions; /* maps displacement in ptrs => position in objects */
 #if KEEP_SET_NO
   short set_no;
@@ -512,7 +530,7 @@ typedef struct MemoryChunk {
   long make_time;
   unsigned long marker;
 #endif
-#if KEEP_SET_NO
+#if KEEP_CHUNK_SET_NO
   int set_no;
 #endif
   char data[1];
@@ -627,7 +645,7 @@ typedef struct GC_Set {
   GC_trace_init trace_init;
   GC_trace_done trace_done;
 #endif
-#if KEEP_SET_NO
+#if KEEP_SET_NO || KEEP_CHUNK_SET_NO
   int no;
 #endif
 #if ALLOW_SET_FINALIZER
@@ -643,31 +661,42 @@ typedef struct GC_SetWithOthers {
 static GC_Set **common_sets;
 static int num_common_sets;
 
-static MemoryBlock *common[NUM_COMMON_SIZE];
-static MemoryBlock *common_ends[NUM_COMMON_SIZE];
-static MemoryBlock *atomic_common[NUM_COMMON_SIZE];
-static MemoryBlock *atomic_common_ends[NUM_COMMON_SIZE];
-static MemoryBlock *uncollectable_common[NUM_COMMON_SIZE];
-static MemoryBlock *uncollectable_common_ends[NUM_COMMON_SIZE];
-static MemoryBlock *uncollectable_atomic_common[NUM_COMMON_SIZE];
-static MemoryBlock *uncollectable_atomic_common_ends[NUM_COMMON_SIZE];
+static MemoryBlock *common[2 * NUM_COMMON_SIZE]; /* second half is `ends' array */
+static MemoryBlock *atomic_common[2 * NUM_COMMON_SIZE];
+static MemoryBlock *uncollectable_common[2 * NUM_COMMON_SIZE];
+static MemoryBlock *uncollectable_atomic_common[2 * NUM_COMMON_SIZE];
 static MemoryChunk *others, *atomic_others;
 static MemoryChunk *uncollectable_others, *uncollectable_atomic_others;
 
 static int *common_positionses[NUM_COMMON_SIZE];
 
 #if PROVIDE_MALLOC_AND_FREE
-static MemoryBlock *sys_malloc[NUM_COMMON_SIZE];
-static MemoryBlock *sys_malloc_ends[NUM_COMMON_SIZE];
+static MemoryBlock *sys_malloc[2 * NUM_COMMON_SIZE];
 static MemoryChunk *sys_malloc_others;
+#endif
+
+#define do_malloc_ATOMIC 0x1
+#define do_malloc_UNCOLLECTABLE 0x2
+#if NO_ATOMIC
+# define do_malloc_ATOMIC_UNLESS_DISABLED 0
+#else
+# define do_malloc_ATOMIC_UNLESS_DISABLED do_malloc_ATOMIC
 #endif
 
 int GC_dl_entries;
 int GC_fo_entries;
 
 void (*GC_push_last_roots)(void);
+void (*GC_push_last_roots_again)(void);
+
+enum {
+  dl_normal,
+  dl_restored,
+  dl_late
+};
 
 typedef struct DisappearingLink {
+  short kind;
   void *watch;
   void **disappear;
   void *saved_value;
@@ -679,15 +708,16 @@ typedef struct Finalizer {
     void *watch; /* pointer to finalized block; used after queued */
     int pos;     /* position within common block; used before queued */
   } u;
-  short eager;
+  short eager_level;
   short ignore_self;
   void *data;
   void (*f)(void *p, void *data);
   struct Finalizer *prev, *next; /* also not needed for chunks */
 } Finalizer;
 
-static DisappearingLink *disappearing;
+static DisappearingLink *disappearing, *late_disappearing;
 static Finalizer *queued_finalizers, *last_queued_finalizer;
+static int num_queued_finalizers;
 
 static unsigned long sector_low_plausible, sector_high_plausible;
 static unsigned long low_plausible, high_plausible;
@@ -695,6 +725,9 @@ static unsigned long low_plausible, high_plausible;
 void *GC_stackbottom;
 
 static long mem_use, mem_limit = FIRST_GC_LIMIT;
+#if USE_GC_FREE_SPACE_DIVISOR
+int GC_free_space_divisor = 4;
+#endif
 
 static long mem_real_use, mem_uncollectable_use;
 
@@ -1424,251 +1457,8 @@ void GC_add_roots(void *start, void *end)
 }
 
 #if AUTO_STATIC_ROOTS_IF_POSSIBLE
-
-#if defined(_IBMR2)
-  extern int end;
-# define DATASTART ((void *)0x20000000)
-# define DATAEND ((void *)(&end))
-# define USE_DATASTARTEND 1
+# include "autostat.inc"
 #endif
-
-#if defined(__FreeBSD__) && defined(i386)
-  extern char etext;
-  extern int end;
-# define DATASTART ((void *)(&etext))
-# define DATAEND ((void *)(&end))
-# define USE_DATASTARTEND 1
-#endif
-
-#if defined(linux) && defined(i386) && defined(__ELF__)
-# include <linux/version.h>
-# include <features.h>
-# if LINUX_VERSION_CODE >= 0x20000 && defined(__GLIBC__) && __GLIBC__ >= 2
-  extern int __data_start;
-#  define DATASTART ((void *)(&__data_start))
-# else
-   extern int _etext;
-#  define DATASTART ((void *)((((unsigned long) (&_etext)) + 0xfff) & ~0xfff))
-# endif
-  extern int _end;
-# define DATAEND (&_end)
-# define USE_DATASTARTEND 1
-#endif
-
-#if defined(sun)
-# include <errno.h>
-# ifdef ECHRNG
-/* Solaris */
-  extern char _etext;
-  extern int _end;
-#  define DATASTART sysv_GetDataStart(0x10000, (int)&_etext)
-#  define DATAEND (void *)(&_end)
-#  define NEED_SYSV_GET_START
-# else
-#  define TEXTSTART 0x2000
-#  define DATASTART ((ptr_t)(*(int *)(TEXTSTART+0x4)+TEXTSTART))
-# endif
-# define USE_DATASTARTEND 1
-#endif
-
-#ifndef USE_DATASTARTEND
-# define USE_DATASTARTEND 0
-#endif
-
-#ifdef WIN32
-/* Mostly borrowed from conservative GC, Boehm et al. */
-static void cond_add_roots(char *base, char * limit, long allocation_granularity)
-{
-  char dummy;
-  char * stack_top;
-  
-  if (base == limit) return;
-  
-  stack_top = (char *) ((long)(&dummy) & ~(allocation_granularity-1));
-  
-  if (limit > stack_top && base < (char *)GC_stackbottom) {
-    /* Part of the stack; ignore it. */
-    return;
-  }
-  GC_add_roots(base, limit);
-}
-  
-void register_static_variables()
-{
-  MEMORY_BASIC_INFORMATION buf;
-  SYSTEM_INFO sysinfo;
-  DWORD result;
-  DWORD protect;
-  LPVOID p;
-  char * base;
-  char * limit, * new_limit;
-  long allocation_granularity;
-  
-  GetSystemInfo(&sysinfo);
-  base = limit = p = sysinfo.lpMinimumApplicationAddress;
-  allocation_granularity = sysinfo.dwAllocationGranularity;
-  while (p < sysinfo.lpMaximumApplicationAddress) {
-    result = VirtualQuery(p, &buf, sizeof(buf));
-    new_limit = (char *)p + buf.RegionSize;
-    protect = buf.Protect;
-    if (buf.State == MEM_COMMIT
-	&& (protect == PAGE_EXECUTE_READWRITE
-	    || protect == PAGE_READWRITE
-	    || protect == PAGE_WRITECOPY
-	    || protect == PAGE_EXECUTE_WRITECOPY)
-	&& !is_sector_segment(buf.AllocationBase)) {
-      if ((char *)p == limit) {
-	limit = new_limit;
-      } else {
-	cond_add_roots(base, limit, allocation_granularity);
-	base = p;
-	limit = new_limit;
-      }
-    }
-    if (p > (LPVOID)new_limit /* overflow */) break;
-    p = (LPVOID)new_limit;
-  }
-  cond_add_roots(base, limit, allocation_granularity);
-}
-
-long total_memory_use()
-{
-  /* Try to count total used bytes in the heap. */
-  MEMORY_BASIC_INFORMATION buf;
-  SYSTEM_INFO sysinfo;
-  LPVOID p;
-  char * new_limit;
-  long allocation_granularity;
-  long total = 0;
-    
-  GetSystemInfo(&sysinfo);
-  p = sysinfo.lpMinimumApplicationAddress;
-  allocation_granularity = sysinfo.dwAllocationGranularity;
-  while (p < sysinfo.lpMaximumApplicationAddress) {
-    VirtualQuery(p, &buf, sizeof(buf));
-    new_limit = (char *)p + buf.RegionSize;
-    if (buf.State != MEM_FREE)
-      total += buf.RegionSize;
-    if (p > (LPVOID)new_limit /* overflow */) break;
-    p = (LPVOID)new_limit;
-  }
-  
-  return total;
-}
-#endif /* Win32 */
-
-#ifdef NEED_SYSV_GET_START
-/* Also borrowed conservative GC, Boehm et al. */
-#include <signal.h>
-# define MIN_PAGE_SIZE 256	/* Smallest conceivable page size, bytes */
-static jmp_buf sysv_jb;
-    
-void sysv_fault_handler(int sig)
-{
-  longjmp(sysv_jb, 1);
-}
-
-typedef void (*handler)(int);
-# ifdef sun
-static struct sigaction oldact;
-# else
-static handler old_segv_handler, old_bus_handler;
-# endif
-
-static void sysv_setup_temporary_fault_handler()
-{
-# ifdef sun
-  struct sigaction act;
-
-  act.sa_handler = sysv_fault_handler;
-  act.sa_flags = SA_RESTART | SA_SIGINFO | SA_NODEFER;
-  /* The presence of SA_NODEFER represents yet another gross    */
-  /* hack.  Under Solaris 2.3, siglongjmp doesn't appear to     */
-  /* interact correctly with -lthread.  We hide the confusion   */
-  /* by making sure that signal handling doesn't affect the     */
-  /* signal mask.                                               */
-
-  (void) sigemptyset(&act.sa_mask);
-  (void) sigaction(SIGSEGV, &act, &oldact);
-# else
-  old_segv_handler = signal(SIGSEGV, sysv_fault_handler);
-# ifdef SIGBUS
- old_bus_handler = signal(SIGBUS, sysv_fault_handler);
-# endif
-# endif
-}
-    
-void sysv_reset_fault_handler()
-{
-# ifdef sun
-  (void) sigaction(SIGSEGV, &oldact, 0);
-# else
-  (void) signal(SIGSEGV, old_segv_handler);
-# ifdef SIGBUS
-  (void) signal(SIGBUS, old_bus_handler);
-# endif
-# endif
-}
-
-/* Return the first nonaddressible location > p (up) or 	*/
-/* the smallest location q s.t. [q,p] is addressible (!up).	*/
-void *sysv_find_limit(void *p, int up)
-{
-  static void *result;
-  static char dummy;
-  /* Needs to be static, since otherwise it may not be	*/
-  /* preserved across the longjmp.  Can safely be 	*/
-  /* static since it's only called once, with the       */
-  /* allocation lock held.				*/
-  
-  sysv_setup_temporary_fault_handler();
-  if (setjmp(sysv_jb) == 0) {
-    result = (void *)(((unsigned long)(p)) & ~(MIN_PAGE_SIZE-1));
-    while(1) {
-      if (up)
-	result += MIN_PAGE_SIZE;
-      else
-	result -= MIN_PAGE_SIZE;
-
-      dummy = *(char *)result;
-    }
-  }
-  sysv_reset_fault_handler();
-  if (!up)
-    result += MIN_PAGE_SIZE;
-  return result;
-}
-
-void *sysv_GetDataStart(int max_page_size, int etext_addr)
-{
-  unsigned long text_end = (((unsigned long)(etext_addr) + sizeof(unsigned long) - 1)
-			    & ~(sizeof(unsigned long) - 1));
-  /* etext rounded to word boundary	*/
-  unsigned long next_page = ((text_end + (unsigned long)max_page_size - 1)
-			     & ~((unsigned long)max_page_size - 1));
-  unsigned long page_offset = (text_end & ((unsigned long)max_page_size - 1));
-  char * result = (char *)(next_page + page_offset);
-  /* Note that this isnt equivalent to just adding		*/
-  /* max_page_size to &etext if &etext is at a page boundary	*/
-  
-  sysv_setup_temporary_fault_handler();
-  if (setjmp(sysv_jb) == 0) {
-    /* Try writing to the address.	*/
-    *result = *result;
-  } else {
-    /* We got here via a longjmp.  The address is not readable.	*/
-    /* This is known to happen under Solaris 2.4 + gcc, which place	*/
-    /* string constants in the text segment, but after etext.	*/
-    /* Use plan B.  Note that we now know there is a gap between	*/
-    /* text and data segments, so plan A bought us something.	*/
-    result = (char *)sysv_find_limit((void *)(DATAEND) - MIN_PAGE_SIZE, 0);
-  }
-  sysv_reset_fault_handler();
-  return (void *)result;
-}
-#endif /* SysV */
-
-#endif  /* AUTO_STATIC_ROOTS_IF_POSSIBLE */
 
 static int statics_setup = 0;
 
@@ -1703,28 +1493,28 @@ void GC_initialize(void)
   common_sets[0]->atomic = 0;
   common_sets[0]->uncollectable = 0;
   common_sets[0]->blocks = common;
-  common_sets[0]->block_ends = common_ends;
+  common_sets[0]->block_ends = common + NUM_COMMON_SIZE;
   common_sets[0]->othersptr = &others;
 
   common_sets[1] = (GC_Set *)malloc_managed(sizeof(GC_Set));
-  common_sets[1]->atomic = 1;
+  common_sets[1]->atomic = !NO_ATOMIC;
   common_sets[1]->uncollectable = 0;
   common_sets[1]->blocks = atomic_common;
-  common_sets[1]->block_ends = atomic_common_ends;
+  common_sets[1]->block_ends = atomic_common + NUM_COMMON_SIZE;
   common_sets[1]->othersptr = &atomic_others;
 
   common_sets[2] = (GC_Set *)malloc_managed(sizeof(GC_Set));
   common_sets[2]->atomic = 0;
   common_sets[2]->uncollectable = 1;
   common_sets[2]->blocks = uncollectable_common;
-  common_sets[2]->block_ends = uncollectable_common_ends;
+  common_sets[2]->block_ends = uncollectable_common + NUM_COMMON_SIZE;
   common_sets[2]->othersptr = &uncollectable_others;
 
   common_sets[3] = (GC_Set *)malloc_managed(sizeof(GC_Set));
-  common_sets[3]->atomic = 1;
+  common_sets[3]->atomic = !NO_ATOMIC;
   common_sets[3]->uncollectable = 1;
   common_sets[3]->blocks = uncollectable_atomic_common;
-  common_sets[3]->block_ends = uncollectable_atomic_common_ends;
+  common_sets[3]->block_ends = uncollectable_atomic_common + NUM_COMMON_SIZE;
   common_sets[3]->othersptr = &uncollectable_atomic_others;
 
 #if PROVIDE_MALLOC_AND_FREE
@@ -1732,7 +1522,7 @@ void GC_initialize(void)
   common_sets[4]->atomic = 1;
   common_sets[4]->uncollectable = 1;
   common_sets[4]->blocks = sys_malloc;
-  common_sets[4]->block_ends = sys_malloc_ends;
+  common_sets[4]->block_ends = sys_malloc + NUM_COMMON_SIZE;
   common_sets[4]->othersptr = &sys_malloc_others;
 #endif
 
@@ -1741,7 +1531,7 @@ void GC_initialize(void)
 #if ALLOW_SET_LOCKING
     common_sets[i]->locked = 0;
 #endif
-#if KEEP_SET_NO
+#if KEEP_SET_NO || KEEP_CHUNK_SET_NO
     common_sets[i]->no = i;
 #endif
 #if ALLOW_TRACE_COUNT
@@ -2004,7 +1794,7 @@ void GC_dump(void)
 	  "sector used: %ld  sector free: %ld  sector total: %ld\n"
 	  "sector range: %ld  sector administration: %ld\n"
 	  "num sector allocs: %ld  num sector frees: %ld\n"
-	  "num disappearing links: %d  num finalizations: %d\n"
+	  "num disappearing links: %d  num finalizations: %d  queued: %d\n"
 #if STAMP_AND_REMEMBER_SOURCE
 	  "current clock: %ld\n"
 #endif
@@ -2015,7 +1805,7 @@ void GC_dump(void)
 	  sector_high_plausible - sector_low_plausible,
 	  sector_admin_mem_use,
 	  num_sector_allocs, num_sector_frees,
-	  GC_dl_entries, GC_fo_entries
+	  GC_dl_entries, GC_fo_entries, num_queued_finalizers
 #if STAMP_AND_REMEMBER_SOURCE
 	  , stamp_clock
 #endif
@@ -2278,7 +2068,7 @@ static int num_newblock_allocs_stat;
 # define ALLOC_STATISTIC(x)
 #endif
 
-#if KEEP_SET_NO
+#if KEEP_SET_NO || KEEP_CHUNK_SET_NO
 #define SET_NO_BACKINFO int set_no,
 #define KEEP_SET_INFO_ARG(x) x, 
 #else
@@ -2288,11 +2078,12 @@ static int num_newblock_allocs_stat;
 
 void *do_malloc(SET_NO_BACKINFO
 		unsigned long size, 
-		MemoryBlock **common, MemoryBlock **common_ends,
+		MemoryBlock **common,
 		MemoryChunk **othersptr,
-		int atomic, int uncollectable)
+		int flags)
 {
   MemoryBlock **find, *block;
+  MemoryBlock **common_ends;
   void *s;
   long c;
   unsigned long p;
@@ -2315,22 +2106,18 @@ void *do_malloc(SET_NO_BACKINFO
 
   ALLOC_STATISTIC(num_nonzero_allocs_stat++);
 
-  if (!size_map)
-    init_size_map();
-
 #if PAD_BOUNDARY_BYTES
   origsize = size;
   size += PAD_START_SIZE + PAD_END_SIZE;
 #endif
 
-  /* Round up to ptr-aligned size: */
-  if (size & (PTR_SIZE-1))
-    size += PTR_SIZE - (size & (PTR_SIZE-1));
-
-  if (size < MAX_COMMON_SIZE) {
+  if (size < (MAX_COMMON_SIZE - PTR_SIZE + 1)) {
     ALLOC_STATISTIC(num_common_allocs_stat++);
 
-    cpos = size_index_map[(size >> LOG_PTR_SIZE) - 1];
+    if (!size_map)
+      init_size_map();
+
+    cpos = size_index_map[((size + PTR_SIZE - 1) >> LOG_PTR_SIZE) - 1];
 #if 0
     if (size > size_map[cpos]) {
       FPRINTF(STDERR, "map error: %d < %d\n", size_map[cpos], size);
@@ -2338,29 +2125,37 @@ void *do_malloc(SET_NO_BACKINFO
 #endif
     size = size_map[cpos];
 
-    block = common_ends[cpos];
+    block = common[cpos + NUM_COMMON_SIZE];
     find = NULL;
 
     while (block) {
+      int search_bit, search_offset;
+
       if (block->top < block->end)
 	goto block_top;
 
       ALLOC_STATISTIC(num_block_alloc_checks_stat++);
 
-      for (i = block->elem_per_block; i-- ; )
+      search_bit = block->free_search_bit;
+      search_offset = block->free_search_offset;
+
+      for (i = block->free_search_start; i >= 0; i--)
 	if (block->free[i]) {
 	  char *zp;
-	  int v = block->free[i], n;
+	  int v = block->free[i];
 	  
-	  c = i * FREE_BIT_PER_ELEM;
-	  n = (FREE_BIT_START | UNMARK_BIT_START);
-	  while (IS_MARKED(v & n)) {
-	    n = n << FREE_BIT_SIZE;
-	    c++;
+	  while (IS_MARKED(v & search_bit)) {
+	    search_bit = search_bit << FREE_BIT_SIZE;
+	    search_offset++;
 	  }
-	  block->free[i] -= n;
+	  block->free[i] -= search_bit;
+	  block->free_search_start = i;
+	  block->free_search_bit = search_bit << FREE_BIT_SIZE;
+	  block->free_search_offset = search_offset + 1;
+
+	  c = (i << LOG_FREE_BIT_PER_ELEM) + search_offset;
 	  
-	  if (uncollectable)
+	  if (flags & do_malloc_UNCOLLECTABLE)
 	    mem_uncollectable_use += size;
 	  else
 	    mem_use += size;
@@ -2369,7 +2164,7 @@ void *do_malloc(SET_NO_BACKINFO
 
 	  zp = INT_TO_PTR(p);
 
-	  if (!atomic) {
+	  if (!(flags & do_malloc_ATOMIC)) {
 	    void **p = (void **)zp;
 	    unsigned long sz = size >> LOG_PTR_SIZE;
 	    for (; sz--; p++)
@@ -2392,17 +2187,24 @@ void *do_malloc(SET_NO_BACKINFO
 #endif
 
 	  return zp;
+	} else {
+	  search_bit = (FREE_BIT_START | UNMARK_BIT_START);
+	  search_offset = 0;
 	}
       
       find = &block->next;
 
       block = block->next;
-      common_ends[cpos] = block;
+      common[cpos + NUM_COMMON_SIZE] = block;
     }
 
   } else {
     void *a;
     MemoryChunk *c;
+
+    /* Round up to ptr-aligned size: */
+    if (size & (PTR_SIZE-1))
+      size += PTR_SIZE - (size & (PTR_SIZE-1));
 
     ALLOC_STATISTIC(num_chunk_allocs_stat++);
 
@@ -2424,7 +2226,7 @@ void *do_malloc(SET_NO_BACKINFO
 #if STAMP_AND_REMEMBER_SOURCE
     c->make_time = stamp_clock;
 #endif
-#if KEEP_SET_NO
+#if KEEP_CHUNK_SET_NO
     c->set_no = set_no;
 #endif
 
@@ -2442,9 +2244,9 @@ void *do_malloc(SET_NO_BACKINFO
     
     c->start = PTR_TO_INT(&c->data);
     c->end = c->start + size;
-    c->atomic = atomic;
+    c->atomic = flags & do_malloc_ATOMIC;
 
-    if (uncollectable)
+    if (flags & do_malloc_UNCOLLECTABLE)
       mem_uncollectable_use += size;
     else
       mem_use += size;
@@ -2456,7 +2258,7 @@ void *do_malloc(SET_NO_BACKINFO
     if (!high_plausible || (c->end > high_plausible))
       high_plausible = c->end;	
 
-    if (!atomic) {
+    if (!(flags & do_malloc_ATOMIC)) {
       void **p = (void **)&c->data;
       unsigned long sz = size >> LOG_PTR_SIZE;
       for (; sz--; p++)
@@ -2505,8 +2307,7 @@ void *do_malloc(SET_NO_BACKINFO
     if (mem_use >= mem_limit) {
       GC_gcollect();
       return do_malloc(KEEP_SET_INFO_ARG(set_no)
-		       size, common, common_ends, othersptr, 
-		       atomic, uncollectable);
+		       size, common, othersptr, flags);
     } else
       block = (MemoryBlock *)malloc_sector(c, sector_kind_block, 0);
   }
@@ -2529,6 +2330,8 @@ void *do_malloc(SET_NO_BACKINFO
     c += (PTR_SIZE - (c & (PTR_SIZE - 1)));
   p = PTR_TO_INT(block) + c;
 
+  common_ends = common + NUM_COMMON_SIZE;
+
   if (common_ends[cpos] || (find && !common[cpos])) {
     /* hey! - GC happened and reset stuff. find may not be alive anymore,
        so find it again. */
@@ -2549,12 +2352,13 @@ void *do_malloc(SET_NO_BACKINFO
 
   for (i = ELEM_PER_BLOCK(block); i-- ; )
     block->free[i] = 0;
+  block->free_search_start = -1; /* a free search will not yield results until a GC */
 
   block->start = block->top = p;
   block->end = block->start + (elem_per_block * sizeElemBit);
   block->size = (short)size;
   block->next = NULL;
-  block->atomic = atomic;
+  block->atomic = flags & do_malloc_ATOMIC;
   if (!common_positionses[cpos])
     init_positions(cpos, size, elem_per_block);
   block->positions = common_positionses[cpos];
@@ -2584,12 +2388,12 @@ void *do_malloc(SET_NO_BACKINFO
   s = INT_TO_PTR(block->top);
   block->top = block->top + size;
 
-  if (uncollectable)
+  if (flags & do_malloc_UNCOLLECTABLE)
     mem_uncollectable_use += size;
   else
     mem_use += size;
 
-  if (!atomic) {
+  if (!(flags & do_malloc_ATOMIC)) {
     void **p = (void **)s;
     unsigned long sz = size >> LOG_PTR_SIZE;
     for (; sz--; p++)
@@ -2634,7 +2438,7 @@ struct GC_Set *GC_new_set(char *name,
   for (i = 0; i < num_common_sets; i++)
     naya[i] = common_sets[i];
   
-#if KEEP_SET_NO
+#if KEEP_SET_NO || KEEP_CHUNK_SET_NO
   c->no = num_common_sets;
 #endif
 #if ALLOW_TRACE_COUNT
@@ -2658,9 +2462,9 @@ struct GC_Set *GC_new_set(char *name,
   c->locked = 0;
 #endif
   c->name = name;
-  c->blocks = (MemoryBlock **)malloc_managed(sizeof(MemoryBlock*) * NUM_COMMON_SIZE);
+  c->blocks = (MemoryBlock **)malloc_managed(sizeof(MemoryBlock*) * 2 * NUM_COMMON_SIZE);
   memset(c->blocks, 0, sizeof(MemoryBlock*) * NUM_COMMON_SIZE);
-  c->block_ends = (MemoryBlock **)malloc_managed(sizeof(MemoryBlock*) * NUM_COMMON_SIZE);
+  c->block_ends = c->blocks + NUM_COMMON_SIZE;
   memset(c->block_ends, 0, sizeof(MemoryBlock*) * NUM_COMMON_SIZE);
 
   ((GC_SetWithOthers *)c)->others = NULL;
@@ -2675,35 +2479,40 @@ struct GC_Set *GC_new_set(char *name,
 void *GC_malloc(size_t size)
 {
   return do_malloc(KEEP_SET_INFO_ARG(0)
-		   size, common, common_ends, &others, 0, 0);
+		   size, common, &others, 
+		   0);
 }
 
 void *GC_malloc_atomic(size_t size)
 {
   return do_malloc(KEEP_SET_INFO_ARG(1)
-		   size, atomic_common, atomic_common_ends, 
-		   &atomic_others, !NO_ATOMIC, 0);
+		   size, atomic_common, 
+		   &atomic_others, 
+		   do_malloc_ATOMIC_UNLESS_DISABLED);
 }
 
 void *GC_malloc_uncollectable(size_t size)
 {
   return do_malloc(KEEP_SET_INFO_ARG(2)
-		   size, uncollectable_common, uncollectable_common_ends, 
-		   &uncollectable_others, 0, 1);
+		   size, uncollectable_common, 
+		   &uncollectable_others, 
+		   do_malloc_UNCOLLECTABLE);
 }
 
 void *GC_malloc_atomic_uncollectable(size_t size)
 {
   return do_malloc(KEEP_SET_INFO_ARG(3)
-		   size, uncollectable_atomic_common, uncollectable_atomic_common_ends, 
-		   &uncollectable_atomic_others, !NO_ATOMIC, 1);
+		   size, uncollectable_atomic_common, 
+		   &uncollectable_atomic_others, 
+		   do_malloc_ATOMIC_UNLESS_DISABLED | do_malloc_UNCOLLECTABLE);
 }
 
 void *GC_malloc_specific(size_t size, struct GC_Set *set)
 {
   return do_malloc(KEEP_SET_INFO_ARG(set->no)
-		   size, set->blocks, set->block_ends, set->othersptr, 
-		   set->atomic, set->uncollectable);
+		   size, set->blocks, set->othersptr,
+		   ((set->atomic ? do_malloc_ATOMIC_UNLESS_DISABLED : 0)
+		    | (set->uncollectable ? do_malloc_UNCOLLECTABLE : 0)));
 }
 
 void *GC_malloc_stubborn(size_t size)
@@ -2715,8 +2524,9 @@ void *GC_malloc_stubborn(size_t size)
 void *malloc(size_t size)
 {
   return do_malloc(KEEP_SET_INFO_ARG(4)
-		   size, sys_malloc, sys_malloc_ends, 
-		   &sys_malloc_others, 1, 1);
+		   size, sys_malloc, 
+		   &sys_malloc_others, 
+		   do_malloc_ATOMIC | do_malloc_UNCOLLECTABLE);
 }
 
 void *realloc(void *p, size_t size)
@@ -2765,23 +2575,37 @@ size_t _msize(void *p)
 # endif
 #endif
 
-void GC_general_register_disappearing_link(void **p, void *a)
+static void register_disappearing_link(void **p, void *a, int late)
 {
   DisappearingLink *dl;
     
   dl = (DisappearingLink *)malloc_managed(sizeof(DisappearingLink));
+  dl->kind = late ? dl_late : (a ? dl_normal : dl_restored);
   dl->watch = a;
   dl->disappear = p;
   dl->saved_value = NULL;
   dl->prev = NULL;
-  dl->next = disappearing;
+  dl->next = late ? late_disappearing : disappearing;
   if (dl->next)
     dl->next->prev = dl;
-  disappearing = dl;
+  if (late)
+    late_disappearing = dl;
+  else
+    disappearing = dl;
 
   GC_dl_entries++;
 
   mem_real_use += sizeof(DisappearingLink);
+}
+
+void GC_general_register_disappearing_link(void **p, void *a)
+{
+  register_disappearing_link(p, a, 0);
+}
+
+void GC_register_late_disappearing_link(void **p, void *a)
+{
+  register_disappearing_link(p, a, 1);
 }
 
 DisappearingLink *GC_find_dl(void *p)
@@ -2792,12 +2616,16 @@ DisappearingLink *GC_find_dl(void *p)
     if ((dl->watch == p) || (!dl->watch && (*dl->disappear == p)))
       return dl;
 
+  for (dl = late_disappearing; dl; dl = dl->next)
+    if ((dl->watch == p) || (!dl->watch && (*dl->disappear == p)))
+      return dl;
+
   return NULL;
 }
 
 static void register_finalizer(void *p, void (*f)(void *p, void *data), 
 			       void *data, void (**oldf)(void *p, void *data), 
-			       void **olddata, int eager, int ignore_self)
+			       void **olddata, int eager_level, int ignore_self)
 {
   MemoryBlock *block = NULL;
   MemoryChunk *chunk = NULL;
@@ -2841,7 +2669,7 @@ static void register_finalizer(void *p, void (*f)(void *p, void *data),
       fn->u.pos = pos;
       fn->f = f;
       fn->data = data;
-      fn->eager = eager;
+      fn->eager_level = eager_level;
       fn->ignore_self = ignore_self;
       
       if (isnaya) {
@@ -2871,11 +2699,11 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
   register_finalizer(PAD_BACKWARD(p), f, data, oldf, olddata, 0, 0);
 }
 
-void GC_register_eager_finalizer(void *p, void (*f)(void *p, void *data), 
+void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
 				 void *data, void (**oldf)(void *p, void *data), 
 				 void **olddata)
 {
-  register_finalizer(PAD_BACKWARD(p), f, data, oldf, olddata, 1, 0);
+  register_finalizer(PAD_BACKWARD(p), f, data, oldf, olddata, level, 0);
 }
 
 void GC_register_finalizer_ignore_self(void *p, void (*f)(void *p, void *data), 
@@ -2991,52 +2819,53 @@ static void free_chunk(MemoryChunk *k, MemoryChunk **prev, struct GC_Set *set)
   --num_chunks;
 }
 
-#if PROVIDE_GC_FREE
 void GC_free(void *p) 
 {
+#if PROVIDE_GC_FREE || PROVIDE_CHUNK_GC_FREE
   MemoryBlock *block = NULL;
   MemoryChunk *chunk = NULL;
   int fpos;
   void *found;
   struct GC_Set *set;
 
-#if CHECK_COLLECTING && CHECK_FREES
+# if CHECK_COLLECTING && CHECK_FREES
   if (collecting_now)
     free_error("GC_free during collection\n");
-#endif
+# endif
 
   found = find_ptr(p, NULL, &block, &fpos, &chunk, 1);
   if (!found) {
-#if CHECK_FREES
+# if CHECK_FREES
     char b[256];
     sprintf(b, "GC_free failed! %lx\n", (long)p);
     free_error(b);
-#endif
+# endif
     return;
   }
 
   if (PAD_FORWARD(found) == p) {
     if (block) {
+# if PROVIDE_GC_FREE
       int i;
       int pos = POS_TO_FREE_INDEX(fpos);
       int fbit = POS_TO_FREE_BIT(fpos);
       int ubit = POS_TO_UNMARK_BIT(fpos);
 
-#if CHECK_FREES
+# if CHECK_FREES
       if (block->free[pos] & fbit) {
 	char b[256];
 	sprintf(b, "Block element already free! %lx\n", (long)p);
 	return;
       }
-# if EXTRA_FREE_CHECKS
+#   if EXTRA_FREE_CHECKS
       if (block->set_no != 4) {
 	char b[256];
 	sprintf(b, "GC_free on ptr from wrong block! %lx\n", (long)p);
 	free_error(b);
 	return;
       }
-# endif
-#endif
+#   endif
+#  endif
 
       block->free[pos] |= (fbit | ubit);
 
@@ -3045,19 +2874,19 @@ void GC_free(void *p)
 
       set = common_sets[block->set_no];
       
-#if ALLOW_SET_FINALIZER
+#  if ALLOW_SET_FINALIZER
       if (set->finalizer)
 	set->finalizer(p);
-#endif
+#  endif
 
       {
 	int size;
-#if PAD_BOUNDARY_BYTES
+#  if PAD_BOUNDARY_BYTES
 	size = block->size - PAD_START_SIZE - PAD_END_SIZE;
 	((long *)found)[1] = 0; /* 0 extra */
-#else
+#  else
 	size = block->size;
-#endif
+#  endif
 
 	/* Clear, since collection scans whole block. */
 	memset(p, 0, size);
@@ -3070,35 +2899,35 @@ void GC_free(void *p)
 
       if (set->uncollectable)
 	mem_uncollectable_use -= block->size;
+# endif
     } else {
       if (!initialized)
 	GC_initialize();
 
-#if CHECK_FREES && EXTRA_FREE_CHECKS
+# if CHECK_FREES && EXTRA_FREE_CHECKS
       if (chunk->set_no != 4) {
 	char b[256];
 	sprintf(b, "GC_free on ptr from wrong block! %lx\n", (long)p);
 	free_error(b);
 	return;
       }
-#endif
+# endif
       set = common_sets[chunk->set_no];
       if (set->uncollectable)
 	mem_uncollectable_use -= (chunk->end - chunk->start);
       free_chunk(chunk, chunk->prev_ptr, set);
     }
   }
-#if CHECK_FREES
+# if CHECK_FREES
   else {
     char b[256];
     sprintf(b, "GC_free on block interior! %lx != %lx\n", 
 	    (long)p, (long)PAD_FORWARD(found));
     free_error(b);
   }
+# endif
 #endif
-
 }
-#endif
 
 /******************************************************************/
 
@@ -3315,6 +3144,9 @@ static void collect_finish_common(MemoryBlock **blocks,
 				  struct GC_Set *set)
 {
   int i;
+#if KEEP_BLOCKS_FOREVER
+  int kept;
+#endif
   unsigned long local_low_plausible;
   unsigned long local_high_plausible;
 
@@ -3326,6 +3158,10 @@ static void collect_finish_common(MemoryBlock **blocks,
     MemoryBlock *block = *prev;
 #if CHECK
     long size = size_map[i];
+#endif
+
+#if KEEP_BLOCKS_FOREVER
+    kept = 0;
 #endif
 
     while (block) {
@@ -3374,11 +3210,12 @@ static void collect_finish_common(MemoryBlock **blocks,
       }
 
 #if KEEP_BLOCKS_FOREVER
-      if (allfree) {
+      if (allfree && (kept < KEEP_BLOCKS_FOREVER)) {
 	int j;
 	block->top = block->start;
 	for (j = ELEM_PER_BLOCK(block); j-- ; )
 	  block->free[j] = 0;
+	kept++;
 	allfree = 0;
       }
 #endif
@@ -3400,6 +3237,10 @@ static void collect_finish_common(MemoryBlock **blocks,
 	for (j = ELEM_PER_BLOCK(block); j-- ; )
 	  block->free[j] |= SHIFT_UNMARK_TO_FREE(block->free[j]);
 #endif
+
+	block->free_search_start = ELEM_PER_BLOCK(block) - 1;
+	block->free_search_bit = (FREE_BIT_START | UNMARK_BIT_START);
+	block->free_search_offset = 0;
 
 	FINISH_STATISTIC(num_finish_blockkeep_stat++);
 
@@ -3870,7 +3711,7 @@ static void mark_chunks_for_finalizations(MemoryChunk *c)
       PUSH_COLLECT(p, p + PTR_SIZE, 0);
 
       /* If not eager, mark data reachable from finalized block: */
-      if (!fn->eager && !c->marked && !c->atomic) {
+      if (!fn->eager_level && !c->marked && !c->atomic) {
 	if (fn->ignore_self)
 	  push_collect_ignore(c->start, c->end, c->start);
 	else {
@@ -3899,7 +3740,7 @@ static void mark_common_for_finalizations(MemoryBlock **blocks, int atomic)
 	PUSH_COLLECT(p, p + PTR_SIZE, 0);
 
 	/* If not eager, mark data reachable from finalized block: */
-	if (!fn->eager) {
+	if (!fn->eager_level) {
 	  int pos, apos;
 	  int bit, fbit;
 
@@ -3941,6 +3782,8 @@ static void enqueue_fn(Finalizer *fn)
 
   unsigned long p;
 
+  num_queued_finalizers++;
+
   if (last_queued_finalizer) {
     fn->prev = last_queued_finalizer;
     fn->prev->next = fn;
@@ -3959,7 +3802,7 @@ static void enqueue_fn(Finalizer *fn)
   PUSH_COLLECT(p, p + PTR_SIZE, 0);
 }
 
-static void queue_chunk_finalizeable(MemoryChunk *c, int eager)
+static void queue_chunk_finalizeable(MemoryChunk *c, int eager_level)
 {
   /* DO NOT COLLECT FROM collect_stack DURING THIS PROCEDURE */
 
@@ -3967,13 +3810,13 @@ static void queue_chunk_finalizeable(MemoryChunk *c, int eager)
     if (c->finalizers && !c->marked) {
       Finalizer *fn = c->finalizers;
 
-      if (fn->eager == eager) {
+      if (fn->eager_level == eager_level) {
 	c->finalizers = NULL;
 
 	fn->u.watch = INT_TO_PTR(c->start);
 	enqueue_fn(fn);
 
-	if (eager) {
+	if (eager_level) {
 	  /* Always mark data associated with finalization: */
 	  unsigned long p = PTR_TO_INT(&fn->data);
 	  PUSH_COLLECT(p, p + PTR_SIZE, 0);
@@ -3983,7 +3826,7 @@ static void queue_chunk_finalizeable(MemoryChunk *c, int eager)
   }
 }
 
-static void queue_common_finalizeable(MemoryBlock **blocks, int eager)
+static void queue_common_finalizeable(MemoryBlock **blocks, int eager_level)
 {
   /* DO NOT COLLECT FROM collect_stack DURING THIS PROCEDURE */
 
@@ -4007,7 +3850,7 @@ static void queue_common_finalizeable(MemoryBlock **blocks, int eager)
 	if (NOT_MARKED(block->free[apos] & bit)) {
 	  unsigned long p;
 	
-	  if (fn->eager == eager) {
+	  if (fn->eager_level == eager_level) {
 	    if (fn->prev)
 	      fn->prev->next = fn->next;
 	    else
@@ -4019,7 +3862,7 @@ static void queue_common_finalizeable(MemoryBlock **blocks, int eager)
 	    fn->u.watch = INT_TO_PTR(p);
 	    enqueue_fn(fn);
 
-	    if (eager) {
+	    if (eager_level) {
 	      /* Always mark data associated with finalization: */
 	      p = PTR_TO_INT(&fn->data);
 	      PUSH_COLLECT(p, p + PTR_SIZE, 0);
@@ -4031,40 +3874,25 @@ static void queue_common_finalizeable(MemoryBlock **blocks, int eager)
   }
 }
 
-static void do_disappear_and_finals()
+static void do_disappearing(DisappearingLink **disappearing_ptr)
 {
-  DisappearingLink *dl, *next;
-  Finalizer *fn;
-  int j;
+  DisappearingLink *dl, *next, *disappearing;
+  void *watch;
+  int size;
 
-  /* Mark data in (not-yet-finalized) queued finalizable */
-  for (fn = queued_finalizers; fn; fn = fn->next) {
-    unsigned long p;
+  disappearing = *disappearing_ptr;
 
-    p = PTR_TO_INT(&fn->u.watch);
-    PUSH_COLLECT(p, p + PTR_SIZE, 0);
-
-    p = PTR_TO_INT(&fn->data);
-    PUSH_COLLECT(p, p + PTR_SIZE, 0);
-  }
-  collect();
-
-#if !NO_DISAPPEARING
-  /* Do disappearing: */
   for (dl = disappearing; dl; dl = next) {
-    void *watch;
-    int size;
-
     next = dl->next;
-
+      
     watch = (dl->watch ? dl->watch : *dl->disappear);
-
+    
     size = 0;
     if (watch && !find_ptr(watch, &size, NULL, NULL, NULL, 0)) {
       /* was the pointer allocated at all? */
       if (size) {
 	/* It's gone: */
-	if (dl->watch) {
+	if (dl->kind != dl_restored) {
 	  /* disappear is done. */
 	  if (dl->prev)
 	    dl->prev->next = dl->next;
@@ -4073,7 +3901,7 @@ static void do_disappear_and_finals()
 	  if (dl->next)
 	    dl->next->prev = dl->prev;
 	  *dl->disappear = NULL;
-
+	  
 	  mem_real_use -= sizeof(DisappearingLink);
 	  free_managed(dl);
 	  --GC_dl_entries;
@@ -4085,41 +3913,16 @@ static void do_disappear_and_finals()
       }
     }
   }
-#endif
 
-  /* Queue unreachable eager finalizable: */  
-  /* DO NOT COLLECT FROM collect_stack UNTIL AFTER THIS LOOP */
-  /* (Otherwise, some ready eager finalizations may not be queued.) */
-  for (j = 0; j < num_common_sets; j++) {
-    queue_chunk_finalizeable(*(common_sets[j]->othersptr), 1);
-    queue_common_finalizeable(common_sets[j]->blocks, 1);
-  }
-  collect();
+  *disappearing_ptr = disappearing;
+}
 
-  /* Mark reachable from (non-eager) finalized blocks: */
-  for (j = 0; j < num_common_sets; j++) {
-    mark_chunks_for_finalizations(*(common_sets[j]->othersptr));
-    mark_common_for_finalizations(common_sets[j]->blocks, common_sets[j]->atomic);
-  }
+static void trim_disappearing(DisappearingLink **disappearing_ptr)
+{
+  DisappearingLink *dl, *next, *disappearing;
 
-  /* Queue unreachable (non-eager) finalizable: */  
-  for (j = 0; j < num_common_sets; j++) {
-    queue_chunk_finalizeable(*(common_sets[j]->othersptr), 0);
-    queue_common_finalizeable(common_sets[j]->blocks, 0);
-  }
-  collect();
+  disappearing = *disappearing_ptr;
 
-  /* Restore disappeared links where watch value is NULL: */
-  for (dl = disappearing; dl; dl = next) {
-    next = dl->next;
-    if (!dl->watch && dl->saved_value) {
-      /* Restore disappearing value and deregister */
-      *dl->disappear = dl->saved_value;
-      dl->saved_value = NULL;
-    }
-  }
-  
-  /* Deregister dangling disappearings: */
   for (dl = disappearing; dl; dl = next) {
     int size;
 
@@ -4140,6 +3943,84 @@ static void do_disappear_and_finals()
       --GC_dl_entries;
     }
   }
+
+  *disappearing_ptr = disappearing;
+}
+
+static void do_disappear_and_finals()
+{
+  DisappearingLink *dl, *next;
+  Finalizer *fn;
+  int j;
+
+  /* Mark data in (not-yet-finalized) queued finalizable */
+  for (fn = queued_finalizers; fn; fn = fn->next) {
+    unsigned long p;
+
+    p = PTR_TO_INT(&fn->u.watch);
+    PUSH_COLLECT(p, p + PTR_SIZE, 0);
+
+    p = PTR_TO_INT(&fn->data);
+    PUSH_COLLECT(p, p + PTR_SIZE, 0);
+  }
+  collect();
+  if (GC_push_last_roots_again) { GC_push_last_roots_again(); collect(); }
+
+#if !NO_DISAPPEARING
+  /* Do disappearing: */
+  do_disappearing(&disappearing);
+#endif
+
+  /* Queue unreachable eager finalizable, level 1: */  
+  /* DO NOT COLLECT FROM collect_stack UNTIL AFTER THIS LOOP */
+  /* (Otherwise, some ready eager finalizations may not be queued.) */
+  for (j = 0; j < num_common_sets; j++) {
+    queue_chunk_finalizeable(*(common_sets[j]->othersptr), 1);
+    queue_common_finalizeable(common_sets[j]->blocks, 1);
+  }
+  collect();
+  if (GC_push_last_roots_again) { GC_push_last_roots_again(); collect(); }
+
+  /* Queue unreachable eager finalizable, level 2: */  
+  /* DO NOT COLLECT FROM collect_stack UNTIL AFTER THIS LOOP */
+  for (j = 0; j < num_common_sets; j++) {
+    queue_chunk_finalizeable(*(common_sets[j]->othersptr), 2);
+    queue_common_finalizeable(common_sets[j]->blocks, 2);
+  }
+  collect();
+  if (GC_push_last_roots_again) { GC_push_last_roots_again(); collect(); }
+
+  /* Mark reachable from (non-eager) finalized blocks: */
+  for (j = 0; j < num_common_sets; j++) {
+    mark_chunks_for_finalizations(*(common_sets[j]->othersptr));
+    mark_common_for_finalizations(common_sets[j]->blocks, common_sets[j]->atomic);
+  }
+
+  /* Queue unreachable (non-eager) finalizable: */  
+  for (j = 0; j < num_common_sets; j++) {
+    queue_chunk_finalizeable(*(common_sets[j]->othersptr), 0);
+    queue_common_finalizeable(common_sets[j]->blocks, 0);
+  }
+  collect();
+
+  /* Restore disappeared links where watch value is NULL: */
+  for (dl = disappearing; dl; dl = next) {
+    next = dl->next;
+    if (!(dl->kind == dl_restored) && dl->saved_value) {
+      /* Restore disappearing value and deregister */
+      *dl->disappear = dl->saved_value;
+      dl->saved_value = NULL;
+    }
+  }
+
+  /* Deregister dangling disappearings: */
+  trim_disappearing(&disappearing);
+  trim_disappearing(&late_disappearing);
+
+#if !NO_DISAPPEARING
+  /* Do late disappearing: */
+  do_disappearing(&late_disappearing);
+#endif
 
   if (GC_custom_finalize)
     GC_custom_finalize();
@@ -4203,6 +4084,8 @@ static void run_finalizers(void)
     if (!fn->next)
       last_queued_finalizer = NULL;
 
+    --num_queued_finalizers;
+
     s = fn->u.watch;
     
 #if PAD_BOUNDARY_BYTES
@@ -4224,9 +4107,19 @@ static void run_finalizers(void)
 static int traced_from_roots, traced_from_stack, traced_from_uncollectable, traced_from_finals;
 #endif
 
+#if 1
+# define GETTIME() ((long)scheme_get_milliseconds())
+#else
+# define GETTIME() ((long)scheme_get_process_milliseconds())
+#endif
+
 #if TIME
 # define PRINTTIME(x) FPRINTF x
+static long started, rightnow, old;
+# define INITTIME() (started = GETTIME())
+# define GETTIMEREL() (rightnow = GETTIME(), old = started, started = rightnow, rightnow - old)
 #else
+# define INITTIME() /* empty */
 # define PRINTTIME(x) /* empty */
 #endif
 
@@ -4255,7 +4148,8 @@ void do_GC_gcollect(void *stack_now)
 
 #if PRINT_INFO_PER_GC
   long orig_mem_use = mem_use;
-  long start_time = scheme_get_process_milliseconds();
+  long start_time;
+  start_time = GETTIME();
   FPRINTF(STDERR, "gc at %ld (%ld): %ld\n",
 	  mem_use, sector_mem_use, 
 # if GET_MEM_VIA_SBRK
@@ -4272,7 +4166,7 @@ void do_GC_gcollect(void *stack_now)
 #endif
 
   if (!GC_stackbottom) {
-    /* Stack position not yet initialize; delay collection */
+    /* Stack position not yet initialized; delay collection */
     if (mem_use)
       mem_limit = MEM_USE_FACTOR * mem_use;
     return;
@@ -4301,7 +4195,8 @@ void do_GC_gcollect(void *stack_now)
   cmn_count = chk_count = 0;
 # endif
 
-  PRINTTIME((STDERR, "gc: init start: %ld\n", scheme_get_process_milliseconds()));
+  INITTIME();
+  PRINTTIME((STDERR, "gc: init start: %ld\n", GETTIMEREL()));
 
   for (j = 0; j < num_common_sets; j++) {
 # if ALLOW_SET_LOCKING
@@ -4350,6 +4245,7 @@ void do_GC_gcollect(void *stack_now)
 
   prepare_collect_temp();
 
+  /*** Mark from roots ***/
   collect_stack_size = roots_count ? COLLECT_STACK_FRAME_SIZE * roots_count : 10;
   if (collect_stack_size < INITIAL_COLLECT_STACK_SIZE)
     collect_stack_size = INITIAL_COLLECT_STACK_SIZE;
@@ -4361,12 +4257,12 @@ void do_GC_gcollect(void *stack_now)
   for (j = 0; j < roots_count; j += 2) {
     collect_stack[collect_stack_count++] = roots[j];
     collect_stack[collect_stack_count++] = roots[j + 1];
-#if KEEP_DETAIL_PATH
+# if KEEP_DETAIL_PATH
     collect_stack[collect_stack_count++] = 0;
-#endif
+# endif
   }
 
-  PRINTTIME((STDERR, "gc: root collect start: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: root collect start: %ld\n", GETTIMEREL()));
 
 # if ALLOW_TRACE_COUNT
   collect_trace_count = 0;
@@ -4398,8 +4294,9 @@ void do_GC_gcollect(void *stack_now)
 
   root_marked = mem_use;
 
-  PRINTTIME((STDERR, "gc: stack push start: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: stack push start: %ld\n", GETTIMEREL()));
 
+  /*** Mark from stack ***/
   push_stack(stack_now);
   
 # if PRINT && 0
@@ -4410,19 +4307,7 @@ void do_GC_gcollect(void *stack_now)
   current_trace_source = "stack";
 # endif
 
-  PRINTTIME((STDERR, "gc: stack collect start: %ld\n", scheme_get_process_milliseconds()));
-
-  collect();
-
-  if (GC_push_last_roots) {
-    PRINTTIME((STDERR, "gc: last roots push start: %ld\n", scheme_get_process_milliseconds()));
-    GC_push_last_roots();
-    PRINTTIME((STDERR, "gc: last roots start: %ld\n", scheme_get_process_milliseconds()));
-  }
-
-# if ALLOW_TRACE_PATH
-  current_trace_source = "xstack";
-# endif
+  PRINTTIME((STDERR, "gc: stack collect start: %ld\n", GETTIMEREL()));
 
   collect();
 
@@ -4431,8 +4316,9 @@ void do_GC_gcollect(void *stack_now)
   collect_trace_count = 0;
 # endif
 
-  PRINTTIME((STDERR, "gc: uncollectable start: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: uncollectable start: %ld\n", GETTIMEREL()));
 
+  /*** Uncollectable and pointerful ***/
   for (j = 0; j < num_common_sets; j++)
     if (common_sets[j]->uncollectable)
       if (!common_sets[j]->atomic
@@ -4454,20 +4340,40 @@ void do_GC_gcollect(void *stack_now)
   traced_from_uncollectable = collect_trace_count;
   collect_trace_count = 0;
 # endif
+
+  if (GC_push_last_roots) {
+    PRINTTIME((STDERR, "gc: last roots push start: %ld\n", GETTIMEREL()));
+    /*** ``Last'' roots external hook ***/
+    GC_push_last_roots();
+    PRINTTIME((STDERR, "gc: last roots start: %ld\n", GETTIMEREL()));
+  }
+
+# if ALLOW_TRACE_PATH
+  current_trace_source = "xstack";
+# endif
+
+  collect();
   
-  PRINTTIME((STDERR, "gc: queue finalize start: %ld\n", scheme_get_process_milliseconds()));
+# if ALLOW_TRACE_COUNT
+  /* Count this as stack tracing */
+  traced_from_stack += collect_trace_count;
+  collect_trace_count = 0;
+# endif
+  
+  PRINTTIME((STDERR, "gc: queue finalize start: %ld\n", GETTIMEREL()));
 
 # if ALLOW_TRACE_PATH
   current_trace_source = "finalization";
 # endif
 
+  /*** Disappearing Links and Finalization ***/
   do_disappear_and_finals();
 
 # if ALLOW_TRACE_COUNT
   traced_from_finals = collect_trace_count;
 # endif
 
-  PRINTTIME((STDERR, "gc: finish start: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: finish start: %ld\n", GETTIMEREL()));
 
   low_plausible = high_plausible = 0;
 
@@ -4479,7 +4385,7 @@ void do_GC_gcollect(void *stack_now)
 			  common_sets[j]);
   }
 
-  PRINTTIME((STDERR, "gc: all done: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: all done: %ld\n", GETTIMEREL()));
 
 # if PRINT
   FPRINTF(STDERR,
@@ -4487,8 +4393,20 @@ void do_GC_gcollect(void *stack_now)
 	  mem_use - root_marked);
 # endif
 
-  if (mem_use)
+  if (mem_use) {
+# if USE_GC_FREE_SPACE_DIVISOR
+    long root_size;
+
+    if (roots_count)
+      root_size = roots[1] - roots[0];
+    else
+      root_size = 0;
+
+    mem_limit = mem_use + ((sector_mem_use + root_size) / GC_free_space_divisor);
+# else
     mem_limit = MEM_USE_FACTOR * mem_use;
+# endif
+  }
 
   free_collect_temp(collect_stack, sizeof(unsigned long) * (collect_stack_size + 1));
 
@@ -4508,7 +4426,7 @@ void do_GC_gcollect(void *stack_now)
 #if PRINT_INFO_PER_GC
   FPRINTF(STDERR, "done  %ld (%ld); recovered %ld in %ld msecs\n",
 	  mem_use, sector_mem_use, orig_mem_use - mem_use,
-	  (long)scheme_get_process_milliseconds() - start_time);
+	  (long)GETTIME() - start_time);
 # if SHOW_SECTOR_MAPS_AT_GC
   dump_sector_map("                            ");
 # endif
@@ -4526,9 +4444,9 @@ void do_GC_gcollect(void *stack_now)
     GC_collect_end_callback();
 
   /* Run queued finalizers. Garbage collections may happen: */
-  PRINTTIME((STDERR, "gc: finalize start: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: finalize start: %ld\n", GETTIMEREL()));
   run_finalizers();
-  PRINTTIME((STDERR, "gc: finalize end: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: finalize end: %ld\n", GETTIMEREL()));
 
 #if MARK_STATS
   fprintf(STDERR, 

@@ -423,7 +423,7 @@ GC_API void GC_debug_register_finalizer_ignore_self
    some action needed to be triggered by the object's (possibly
    temporary) unreachableness. */
 GC_API void GC_register_eager_finalizer
-    	GC_PROTO((GC_PTR obj, GC_finalization_proc fn, GC_PTR cd,
+    	GC_PROTO((GC_PTR obj, int eager_level, GC_finalization_proc fn, GC_PTR cd,
 		  GC_finalization_proc *ofn, GC_PTR *ocd));
 
 /* The following routine may be used to break cycles between	*/

@@ -45,13 +45,19 @@
 extern void GC_push_all_stack(void *, void *);
 extern void GC_flush_mark_stack(void);
 extern void (*GC_push_last_roots)(void);
+extern void (*GC_push_last_roots_again)(void);
+/* GC_push_last_roots_again is called after marking eager
+   finalizations (once at each stage). We rely on the fact that no
+   copied stack will be referenced by (or affected the ordering of)
+   anything non-eagerly finalized.*/
+
 #ifdef USE_SENORA_GC
 #define GC_is_marked(p) GC_base(p)
 #else
 extern int GC_is_marked(void *);
 #endif
 
-#define get_copy(s_c) ((CopiedStack *)s_c)->stack_copy
+#define get_copy(s_c) (((CopiedStack *)s_c)->stack_copy)
 
 #define MALLOC_LINK() MALLOC_ONE_ATOMIC(CopiedStack*)
 
@@ -65,7 +71,7 @@ typedef struct CopiedStack {
 static CopiedStack **first_copied_stack;
 int scheme_num_copied_stacks = 0;
 
-static void push_copied_stacks(void)
+static void push_copied_stacks(int init)
 {
   /* This is called after everything else is marked.
      Mark from those stacks that are still reachable. If
@@ -74,11 +80,13 @@ static void push_copied_stacks(void)
   CopiedStack *cs;
   int pushed_one;
 
-  for (cs = *first_copied_stack; cs; cs = *cs->next) {
-    if (cs->stack_copy)
-      cs->pushed = 0;
-    else
-      cs->pushed = 1;
+  if (init) {
+    for (cs = *first_copied_stack; cs; cs = *cs->next) {
+      if (get_copy(cs))
+	cs->pushed = 0;
+      else
+	cs->pushed = 1;
+    }
   }
 
   GC_flush_mark_stack();
@@ -86,13 +94,23 @@ static void push_copied_stacks(void)
   do {
     pushed_one = 0;
     for (cs = *first_copied_stack; cs; cs = *cs->next)
-      if (!cs->pushed && GC_is_marked(cs->stack_copy)) {
+      if (!cs->pushed && GC_is_marked(get_copy(cs))) {
 	pushed_one = 1;
 	cs->pushed = 1;
-	GC_push_all_stack(cs->stack_copy, (char *)cs->stack_copy + cs->size);
+	GC_push_all_stack(get_copy(cs), (char *)get_copy(cs) + cs->size);
 	GC_flush_mark_stack();
       }
   } while (pushed_one);
+}
+
+static void init_push_copied_stacks(void)
+{
+  push_copied_stacks(1);
+}
+
+static void update_push_copied_stacks(void)
+{
+  push_copied_stacks(0);
 }
 
 void scheme_init_setjumpup(void)
@@ -100,7 +118,8 @@ void scheme_init_setjumpup(void)
   REGISTER_SO(first_copied_stack);
   first_copied_stack = MALLOC_LINK();
 
-  GC_push_last_roots = push_copied_stacks;
+  GC_push_last_roots = init_push_copied_stacks;
+  GC_push_last_roots_again = update_push_copied_stacks;
 }
 
 static void remove_cs(void *_cs, void *unused)
@@ -116,7 +135,7 @@ static void remove_cs(void *_cs, void *unused)
     *(*cs->next)->prev = *cs->prev;
 
   if (cs->stack_copy) {
-#ifndef USE_SENORA_GC
+#ifndef SGC_STD_DEBUGGING
     GC_free(cs->stack_copy);
 #endif
     cs->stack_copy = NULL;
@@ -147,6 +166,13 @@ void *make_stack_copy_rec(long size)
   return (void *)cs;
 }
 
+void set_copy(void *s_c, void *c)
+{
+  CopiedStack *cs = (CopiedStack *)s_c;
+
+  cs->stack_copy = c;
+}
+
 /**********************************************************************/
 
 #define memcpy(dd, ss, ll) \
@@ -175,7 +201,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
   if (b->stack_max_size < size) {
     /* printf("Stack size: %d\n", size); */
     b->stack_copy = make_stack_copy_rec(size);
-    get_copy(b->stack_copy) = scheme_malloc_atomic(size);
+    set_copy(b->stack_copy, scheme_malloc_atomic(size));
     b->stack_max_size = size;
   }
   b->stack_size = size;
@@ -275,13 +301,9 @@ void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b)
 void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b)
 {
   if (b->stack_copy) {
-    /* Drop the copy of the stack */
-#ifndef USE_SENORA_GC
-    GC_free(get_copy(b->stack_copy));
-#endif
-    get_copy(b->stack_copy) = NULL;
-
-    /* Remove the finalizer, and explicitly call the finalization proc */
+    /* Drop the copy of the stack, */
+    /* remove the finalizer, */
+    /* and explicitly call the finalization proc */
     GC_register_finalizer(b->stack_copy, NULL, NULL, NULL, NULL);
     remove_cs(b->stack_copy, NULL);
 

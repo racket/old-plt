@@ -34,6 +34,7 @@ struct GC_Set;
 void *GC_malloc_specific(size_t size, struct GC_Set *set);
 
 void GC_general_register_disappearing_link(void **p, void *a);
+void GC_register_late_disappearing_link(void **p, void *a);
 
 void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
 			   void *data, void (**oldf)(void *p, void *data), 
@@ -41,7 +42,7 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
 void GC_register_finalizer_ignore_self(void *p, void (*f)(void *p, void *data), 
 				       void *data, void (**oldf)(void *p, void *data), 
 				       void **olddata);
-void GC_register_eager_finalizer(void *p, void (*f)(void *p, void *data), 
+void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
 				 void *data, void (**oldf)(void *p, void *data), 
 				 void **olddata);
 

@@ -32,6 +32,7 @@
 #endif
 
 #include "schpriv.h"
+#include "schgc.h"
 #include <time.h>
 #ifdef FILES_HAVE_FDS
 # include <sys/types.h>
@@ -58,7 +59,6 @@
 #ifdef MZ_USE_SOLARIS_THREADS
 # include <thread.h>
 # include <synch.h>
-# include "../gc/gc.h"
 #endif
 #ifdef WIN32_THREADS
 # include <process.h>
@@ -81,6 +81,10 @@ extern HANDLE scheme_break_semaphore;
 #endif
 
 #include "schfd.h"
+
+#ifdef SGC_STD_DEBUGGING
+# define SENORA_GC_NO_FREE
+#endif
 
 typedef struct ActiveWill {
   Scheme_Object *o;
@@ -221,6 +225,11 @@ enum {
   CONFIG_DIRECT,
   CONFIG_INDIRECT
 };
+
+typedef struct Scheme_Process_Manager_Hop {
+  Scheme_Type type;
+  Scheme_Process *p;
+} Scheme_Process_Manager_Hop;
 
 typedef struct {
   Scheme_Object *key;
@@ -620,10 +629,20 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
   process->user_tls = NULL;
   process->user_tls_size = 0;
 
+  /* A thread points to a lot of stuff, so it's bad to put a finalization
+     on it, which is what registering with a manager does. So, instead, we
+     register a weak indirection with the manager. That way, the thread
+     (and anything it poitns to) can be collected a GC cycle earlier. */
+  process->mr_hop = MALLOC_ONE_ATOMIC(Scheme_Process_Manager_Hop);
+  process->mr_hop->type = scheme_process_type;
+  process->mr_hop->p = process;
+
   process->mref = scheme_add_managed(mgr
 				     ? mgr
 				     : (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER),
-				     (Scheme_Object *)process, NULL, NULL, 0);
+				     (Scheme_Object *)process->mr_hop, NULL, NULL, 0);
+
+  scheme_weak_reference((void **)&process->mr_hop->p);
 
   return process;
 }
@@ -918,10 +937,12 @@ static Scheme_Process *do_close_managed(Scheme_Manager *m)
 
       if (SCHEME_PROCESSP(o)) {
 #ifndef NO_SCHEME_THREADS
-	Scheme_Process *p = (Scheme_Process *)o;
+	/* We've added an indirection and made it weak. See mr_hop note above. */
+	Scheme_Process *p = ((Scheme_Process_Manager_Hop *)o)->p;
 
-	if (do_kill_thread(p))
-	  kill_self = p;
+	if (p)
+	  if (do_kill_thread(p))
+	    kill_self = p;
 #endif
       } else {
 	f(o, data);
@@ -1023,14 +1044,14 @@ static void remove_process(Scheme_Process *r)
       p->next = r->next;
   }
 
-#ifdef USE_SENORA_GC
+#ifdef SENORA_GC_NO_FREE
   memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
 #else
   GC_free(r->runstack_start);
 #endif
   r->runstack_start = NULL;
   for (saved = r->runstack_saved; saved; saved = saved->prev) {
-#ifdef USE_SENORA_GC
+#ifdef SENORA_GC_NO_FREE
     memset(saved->runstack_start, 0, saved->runstack_size * sizeof(Scheme_Object*));
 #else
     GC_free(saved->runstack_start);
@@ -1038,13 +1059,11 @@ static void remove_process(Scheme_Process *r)
     saved->runstack_start = NULL;
   }
 
-#ifndef USE_SENORA_GC
   if (r->list_stack)
     GC_free(r->list_stack);
-#endif
   r->list_stack = NULL;
 
-  scheme_remove_managed(r->mref, (Scheme_Object *)r);
+  scheme_remove_managed(r->mref, (Scheme_Object *)r->mr_hop);
 }
 
 static void start_child(Scheme_Process *child,
@@ -1209,6 +1228,7 @@ void scheme_break_thread(Scheme_Process *p)
 #ifndef MZ_REAL_THREADS
   if (p == scheme_current_process)
     scheme_fuel_counter = 0;
+  scheme_weak_resume_thread(p);
 # if defined(WINDOWS_PROCESSES) || defined(DETECT_WIN32_CONSOLE_STDIN)
 #  ifndef NO_STDIO_THREADS
   if (!p->next)
@@ -1917,6 +1937,42 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;
 }
 
+void scheme_weak_suspend_thread(Scheme_Process *r)
+{
+  Scheme_Process *swap_to = r->next;
+
+  if (r == scheme_first_process) {
+    scheme_first_process = r->next;
+  } else {
+    Scheme_Process *p = scheme_first_process;
+    while (p && p->next != r)
+      p = p->next;
+    if (p)
+      p->next = r->next;
+  }
+
+  r->next = NULL;
+
+  r->running = 2; /* 2 => running, but weakly suspended */
+
+  if (r == scheme_current_process) {
+    if (!swap_to)
+      swap_to = scheme_first_process;
+    
+    scheme_swap_process(swap_to);
+  }
+}
+
+void scheme_weak_resume_thread(Scheme_Process *r)
+{
+  if (r->running == 2) {
+    r->running = 1;
+    r->next = scheme_first_process;
+    scheme_first_process = r;
+    r->ran_some = 1;
+  }
+}
+
 Scheme_Object *scheme_branch_config(void)
 {
   Scheme_Object *o;
@@ -1993,6 +2049,8 @@ static int do_kill_thread(Scheme_Process *p)
 {
   int kill_self = 0;
 
+  scheme_weak_resume_thread(p);
+
   if (!p->next) {
     if (scheme_exit)
       scheme_exit(0);
@@ -2007,7 +2065,7 @@ static int do_kill_thread(Scheme_Process *p)
   if (p->on_kill)
     p->on_kill(p);
 
-  scheme_remove_managed(p->mref, (Scheme_Object *)p);
+  scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
 
 #ifdef MZ_REAL_THREADS
   SCHEME_GET_LOCK();
@@ -2732,9 +2790,10 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
     *config->sibling = *d->child;
     *d->child = config;
     *config->parent = d;
-  }
 
-  scheme_add_finalizer(config, adjust_config_family, NULL);
+    scheme_add_finalizer_once(config, adjust_config_family, NULL);
+    scheme_add_finalizer_once(d, adjust_config_family, NULL);
+  }
 
   return (Scheme_Object *)config;
 }

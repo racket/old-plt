@@ -21,6 +21,8 @@ EXPORTS
  scheme_break_thread
  scheme_process_block
  scheme_swap_process
+ scheme_weak_suspend_thread
+ scheme_weak_resume_thread
  scheme_block_until
  scheme_in_main_thread
  scheme_tls_allocate

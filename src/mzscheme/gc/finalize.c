@@ -36,6 +36,7 @@ unsigned GC_finalization_failures = 0;
 
 /* MATTHEW: */
 void (*GC_custom_finalize)(void);
+void (*GC_push_last_roots_again)(void);
 
 static struct disappearing_link {
     struct hash_chain_entry prolog;
@@ -47,7 +48,13 @@ static struct disappearing_link {
     word dl_hidden_obj;		/* Pointer to object base	*/
 
     /* MATTHEW: for restoring: */
-    word dl_value; /* old value when zeroed */
+    union {
+      short kind;
+#           define NORMAL_DL  0
+#           define RESTORE_DL 1
+#           define LATE_DL    2
+      word value; /* old value when zeroed */
+    } dl_special;
     struct disappearing_link *restore_next;
 } **dl_head = 0;
 
@@ -71,7 +78,7 @@ static struct finalizable_object {
     ptr_t fo_client_data;
     word fo_object_size;	/* In bytes.			*/
     finalization_mark_proc * fo_mark_proc;	/* Mark-through procedure */
-    int eager; /* MATTHEW: eager finalizers don't care about cycles */
+    int eager_level; /* MATTHEW: eager finalizers don't care about cycles */
 } **fo_head = 0;
 
 struct finalizable_object * GC_finalize_now = 0;
@@ -146,6 +153,16 @@ signed_word * log_size_ptr;
     return(GC_general_register_disappearing_link(link, base));
 }
 
+/* MATTHEW: GC_register_late_disappearing_link */
+static int late_dl; /* a stupid way to pass arguments (to minimize my changes). */
+void GC_register_late_disappearing_link(void **link, void *obj)
+{
+  late_dl= 1;
+  GC_general_register_disappearing_link((GC_PTR *)link, (GC_PTR)obj);
+  late_dl = 0;
+}
+
+
 # if defined(__STDC__) || defined(__cplusplus)
     int GC_general_register_disappearing_link(GC_PTR * link,
     					      GC_PTR obj)
@@ -212,7 +229,7 @@ signed_word * log_size_ptr;
     if (new_dl != 0) {
         new_dl -> dl_hidden_obj = HIDE_POINTER(obj);
         new_dl -> dl_hidden_link = HIDE_POINTER(link);
-	new_dl -> dl_value = obj ? (word)0 : (word)1; /* MATTHEW: Set flag */
+	new_dl -> dl_special.kind = late_dl ? LATE_DL : (obj ? NORMAL_DL : RESTORE_DL); /* MATTHEW: Set flag */
         dl_set_next(new_dl, dl_head[index]);
         dl_head[index] = new_dl;
         GC_dl_entries++;
@@ -312,14 +329,14 @@ ptr_t p;
 /* in the nonthreads case, we try to avoid disabling signals,	*/
 /* since it can be expensive.  Threads packages typically	*/
 /* make it cheaper.						*/
-void GC_register_finalizer_inner(obj, fn, cd, ofn, ocd, mp, eager) /* MATTHEW: eager */
+void GC_register_finalizer_inner(obj, fn, cd, ofn, ocd, mp, eager_level) /* MATTHEW: eager_level */
 GC_PTR obj;
 GC_finalization_proc fn;
 GC_PTR cd;
 GC_finalization_proc * ofn;
 GC_PTR * ocd;
 finalization_mark_proc * mp;
-int eager; /* MATTHEW */
+int eager_level; /* MATTHEW */
 {
     ptr_t base;
     struct finalizable_object * curr_fo, * prev_fo;
@@ -377,7 +394,7 @@ int eager; /* MATTHEW */
                 curr_fo -> fo_fn = fn;
                 curr_fo -> fo_client_data = (ptr_t)cd;
                 curr_fo -> fo_mark_proc = mp;
-		curr_fo -> eager = eager; /* MATTHEW */
+		curr_fo -> eager_level = eager_level; /* MATTHEW */
 		/* Reinsert it.  We deleted it first to maintain	*/
 		/* consistency in the event of a signal.		*/
 		if (prev_fo == 0) {
@@ -443,7 +460,7 @@ int eager; /* MATTHEW */
 	new_fo -> fo_client_data = (ptr_t)cd;
 	new_fo -> fo_object_size = GC_size(base);
 	new_fo -> fo_mark_proc = mp;
-	new_fo -> eager = eager; /* MATTHEW */
+	new_fo -> eager_level = eager_level; /* MATTHEW */
 	fo_set_next(new_fo, fo_head[index]);
 	GC_fo_entries++;
 	fo_head[index] = new_fo;
@@ -476,7 +493,7 @@ int eager; /* MATTHEW */
 
 /* MATTHEW: eager finalizers */
 # if defined(__STDC__)
-    void GC_register_eager_finalizer(void * obj,
+    void GC_register_eager_finalizer(void * obj, int eager_level,
 			            GC_finalization_proc fn, void * cd,
 			            GC_finalization_proc *ofn, void ** ocd)
 # else
@@ -489,7 +506,8 @@ int eager; /* MATTHEW */
 # endif
 {
     GC_register_finalizer_inner(obj, fn, cd, ofn,
-    				ocd, GC_normal_finalize_mark_proc, 1);
+    				ocd, GC_normal_finalize_mark_proc, 
+				eager_level);
 }
 
 # if defined(__STDC__)
@@ -528,6 +546,80 @@ int eager; /* MATTHEW */
 				0); /* MATTHEW */
 }
 
+/* MATTHEW: eager finalization: */
+static void finalize_eagers(int eager_level)
+{
+  struct finalizable_object * curr_fo, * prev_fo, * next_fo;
+  struct finalizable_object * end_eager_mark;
+  ptr_t real_ptr, real_link;
+  register int i;
+  int fo_size = (log_fo_table_size == -1 ) ? 0 : (1 << log_fo_table_size);
+
+  end_eager_mark = GC_finalize_now; /* MATTHEW */
+  for (i = 0; i < fo_size; i++) {
+    curr_fo = fo_head[i];
+    prev_fo = 0;
+    while (curr_fo != 0) {
+      if (curr_fo -> eager_level == eager_level) {
+	real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
+	if (!GC_is_marked(real_ptr)) {
+	  /* We assume that (non-eager) finalization orders do not
+	     need to take into account connections through memory
+	     with eager finalizations. Otherwise, this mark bit
+	     could break the chain from one (non-eager) finalizeable
+	     to another. */
+	  GC_set_mark_bit(real_ptr);
+	  
+	  /* Delete from hash table */
+	  next_fo = fo_next(curr_fo);
+	  if (prev_fo == 0) {
+	    fo_head[i] = next_fo;
+	  } else {
+	    fo_set_next(prev_fo, next_fo);
+	  }
+	  GC_fo_entries--;
+	  /* Add to list of objects awaiting finalization.	*/
+	  fo_set_next(curr_fo, GC_finalize_now);
+	  GC_finalize_now = curr_fo;
+	  /* unhide object pointer so any future collections will	*/
+	  /* see it.						*/
+	  curr_fo -> fo_hidden_base = 
+	    (word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
+	  GC_words_finalized +=
+	    ALIGNED_WORDS(curr_fo -> fo_object_size)
+	      + ALIGNED_WORDS(sizeof(struct finalizable_object));
+#	    ifdef PRINTSTATS
+	  if (!GC_is_marked((ptr_t)curr_fo)) {
+	    ABORT("GC_finalize: found accessible unmarked object\n");
+	  }
+#	    endif
+	  curr_fo = next_fo;
+	} else {
+	  prev_fo = curr_fo;
+	  curr_fo = fo_next(curr_fo);
+	}
+      } else {
+	prev_fo = curr_fo;
+	curr_fo = fo_next(curr_fo);
+      }
+    }
+  }
+  
+  /* MATTHEW: Mark from queued eagers: */
+  for (curr_fo = GC_finalize_now; curr_fo != end_eager_mark; curr_fo = fo_next(curr_fo)) {
+    /* MATTHEW: if this is an eager finalization, then objects
+       accessible from real_ptr need to be marked */
+    if (curr_fo -> eager_level == eager_level) {
+      (*(curr_fo -> fo_mark_proc))(curr_fo -> fo_hidden_base);
+      while (!GC_mark_stack_empty()) GC_mark_from_mark_stack();
+      if (GC_mark_state != MS_NONE) {
+	/* Mark stack overflowed. Very unlikely. 
+	   Everything's ok, though. Just mark from scratch. */
+	while (!GC_mark_some());
+      }
+    }
+  }
+}
 
 /* Called with world stopped.  Cause disappearing links to disappear,	*/
 /* and invoke finalizers.						*/
@@ -535,7 +627,6 @@ void GC_finalize()
 {
     struct disappearing_link * curr_dl, * prev_dl, * next_dl;
     struct finalizable_object * curr_fo, * prev_fo, * next_fo;
-    struct finalizable_object * end_eager_mark; /* MATTHEW */
     ptr_t real_ptr, real_link;
     register int i;
     int dl_size = (log_dl_table_size == -1 ) ? 0 : (1 << log_dl_table_size);
@@ -543,26 +634,33 @@ void GC_finalize()
     /* MATTHEW: for resetting the disapearing link */
     struct disappearing_link *done_dl = NULL, *last_done_dl = NULL;
 
-  /* Make disappearing links disappear */
+    /* Make disappearing links disappear */
     /* MATTHEW: handle NULL real_link and remember old values */
     for (i = 0; i < dl_size; i++) {
       curr_dl = dl_head[i];
       prev_dl = 0;
       while (curr_dl != 0) {
+	/* MATTHEW: skip late dls: */
+	if (curr_dl->dl_special.kind == LATE_DL) {
+	  prev_dl = curr_dl;
+	  curr_dl = dl_next(curr_dl);
+	  continue;
+	}
 	/* MATTHEW: reorder and set real_ptr based on real_link: */
         real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
         real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
 	if (!real_ptr)
 	  real_ptr = (ptr_t)GC_base(*(GC_PTR *)real_link);
-	/* MATTHEW: keep the dl entry if dl_value: */
+	/* MATTHEW: keep the dl entry if dl_special.kind = 1: */
         if (real_ptr && !GC_is_marked(real_ptr)) {
-	  if (curr_dl->dl_value)
-  	    curr_dl->dl_value = *(word *)real_link;
+	  int needs_restore = (curr_dl->dl_special.kind == RESTORE_DL);
+	  if (needs_restore)
+  	    curr_dl->dl_special.value = *(word *)real_link;
 	  *(word *)real_link = 0;
 
 	  next_dl = dl_next(curr_dl);
 
-          if (curr_dl->dl_value) {
+          if (needs_restore && curr_dl->dl_special.value) {
 	    if (!last_done_dl)
 	      done_dl = curr_dl;
 	    else
@@ -593,56 +691,10 @@ void GC_finalize()
   /* Enqueue for finalization all EAGER objects that are still		*/
   /* unreachable.							*/
     GC_words_finalized = 0;
-    end_eager_mark = GC_finalize_now; /* MATTHEW */
-    for (i = 0; i < fo_size; i++) {
-      curr_fo = fo_head[i];
-      prev_fo = 0;
-      while (curr_fo != 0) {
-	if (curr_fo -> eager) {
-	  real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
-	  if (!GC_is_marked(real_ptr)) {
-	    /* We assume that (non-eager) finalization orders do not
-	       need to take into account connections through memory
-	       with eager finalizations. Otherwise, this mark bit
-	       could break the chain from one (non-eager) finalizeable
-	       to another. */
-            GC_set_mark_bit(real_ptr);
-
-            /* Delete from hash table */
-	    next_fo = fo_next(curr_fo);
-	    if (prev_fo == 0) {
-	      fo_head[i] = next_fo;
-	    } else {
-	      fo_set_next(prev_fo, next_fo);
-	    }
-	    GC_fo_entries--;
-            /* Add to list of objects awaiting finalization.	*/
-	    fo_set_next(curr_fo, GC_finalize_now);
-	    GC_finalize_now = curr_fo;
-	    /* unhide object pointer so any future collections will	*/
-	    /* see it.						*/
-	    curr_fo -> fo_hidden_base = 
-	      (word) REVEAL_POINTER(curr_fo -> fo_hidden_base);
-	    GC_words_finalized +=
-	      ALIGNED_WORDS(curr_fo -> fo_object_size)
-	      + ALIGNED_WORDS(sizeof(struct finalizable_object));
-#	    ifdef PRINTSTATS
-	    if (!GC_is_marked((ptr_t)curr_fo)) {
-	      ABORT("GC_finalize: found accessible unmarked object\n");
-	    }
-#	    endif
-            curr_fo = next_fo;
-	  } else {
-            prev_fo = curr_fo;
-            curr_fo = fo_next(curr_fo);
-	  }
-	} else {
-	  prev_fo = curr_fo;
-	  curr_fo = fo_next(curr_fo);
-	}
-      }
-    }
-
+    finalize_eagers(1);
+    if (GC_push_last_roots_again) GC_push_last_roots_again();
+    finalize_eagers(2);
+    if (GC_push_last_roots_again) GC_push_last_roots_again();
 
   /* Mark all objects reachable via chains of 1 or more pointers	*/
   /* from finalizable objects.						*/
@@ -652,7 +704,7 @@ void GC_finalize()
 #   endif
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
-	if (!(curr_fo -> eager)) { /* MATTHEW */
+	if (!(curr_fo -> eager_level)) { /* MATTHEW */
 	  real_ptr = (ptr_t)REVEAL_POINTER(curr_fo -> fo_hidden_base);
 	  if (!GC_is_marked(real_ptr)) {
             (*(curr_fo -> fo_mark_proc))(real_ptr);
@@ -720,27 +772,12 @@ void GC_finalize()
       }
     }
 
-    /* MATTHEW: Mark from queued eagers: */
-    for (curr_fo = GC_finalize_now; curr_fo != end_eager_mark; curr_fo = fo_next(curr_fo)) {
-      /* MATTHEW: if this is an eager finalization, then objects
-	 accessible from real_ptr need to be marked */
-      if (curr_fo -> eager) {
-	(*(curr_fo -> fo_mark_proc))(curr_fo -> fo_hidden_base);
-	while (!GC_mark_stack_empty()) GC_mark_from_mark_stack();
-	if (GC_mark_state != MS_NONE) {
-	  /* Mark stack overflowed. Very unlikely. 
-	     Everything's ok, though. Just mark from scratch. */
-	  while (!GC_mark_some());
-	}
-      }
-    }
-
     /* MATTHEW: Restore disappeared links. */
     curr_dl = done_dl;
     while (curr_dl != 0) {
       real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
-      *(word *)real_link = curr_dl->dl_value;
-      curr_dl->dl_value = (word)1;
+      *(word *)real_link = curr_dl->dl_special.value;
+      curr_dl->dl_special.kind = RESTORE_DL;
       prev_dl = curr_dl;
       curr_dl = curr_dl->restore_next;
       prev_dl->restore_next = NULL;
@@ -765,6 +802,42 @@ void GC_finalize()
         } else {
             prev_dl = curr_dl;
             curr_dl = dl_next(curr_dl);
+        }
+      }
+    }
+
+    /* MATTHEW: late disappearing links */
+    for (i = 0; i < dl_size; i++) {
+      curr_dl = dl_head[i];
+      prev_dl = 0;
+      while (curr_dl != 0) {
+	if (curr_dl -> dl_special.kind == LATE_DL) {
+	  /* MATTHEW: reorder and set real_ptr based on real_link: */
+	  real_link = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_link);
+	  real_ptr = (ptr_t)REVEAL_POINTER(curr_dl -> dl_hidden_obj);
+	  if (!real_ptr)
+	    real_ptr = (ptr_t)GC_base(*(GC_PTR *)real_link);
+	  if (real_ptr && !GC_is_marked(real_ptr)) {
+	    *(word *)real_link = 0;
+
+	    next_dl = dl_next(curr_dl);
+
+	    if (prev_dl == 0)
+	      dl_head[i] = next_dl;
+	    else
+	      dl_set_next(prev_dl, next_dl);
+
+	    GC_clear_mark_bit((ptr_t)curr_dl);
+ 	    GC_dl_entries--;
+
+	    curr_dl = next_dl;
+	  } else {
+	    prev_dl = curr_dl;
+	    curr_dl = dl_next(curr_dl);
+	  }
+	} else {
+	  prev_dl = curr_dl;
+	  curr_dl = dl_next(curr_dl);
         }
       }
     }

@@ -232,15 +232,6 @@ typedef struct Scheme_Debugging_Info {
   Scheme_Object *src;
 } Scheme_Debugging_Info;
 
-typedef struct Scheme_Sema {
-  Scheme_Type type;
-#ifdef MZ_REAL_THREADS
-  void *sema;
-#else
-  long value;  
-#endif
-} Scheme_Sema;
-
 typedef struct Scheme_Symbol {
   Scheme_Type type;
   short len;
@@ -583,6 +574,8 @@ typedef struct Scheme_Process {
 
   void **user_tls;
   int user_tls_size;
+
+  struct Scheme_Process_Manager_Hop *mr_hop;
 
   Scheme_Manager_Reference *mref;
 } Scheme_Process;

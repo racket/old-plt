@@ -7,7 +7,8 @@
           [z : zodiac:system^]
           [e : zodiac:interface^]
           [fw : framework^]
-          [d : drscheme:export^])
+          [d : drscheme:export^]
+          [utils : stepper:utils^])
   
   (define debugger-text%
     (class f:text:basic% args
@@ -24,26 +25,17 @@
       
       (override
         [on-local-event
-         (let ([get-pos
-                (lambda (event)
-                  (let*-values ([(event-x event-y)
-                                 (values (send event get-x)
-                                         (send event get-y))]
-                                [(x y) (dc-location-to-editor-location
-                                        event-x event-y)])
-                    (find-position x y)))])
-           (lambda (event)
-             (when (send event button-down? 'left)
-               (when click-callback
-                 (let*-values ([(event-x) (send event get-x)]
-                               [(event-y) (send event get-y)]
-                               [(x y) (dc-location-to-editor-location
-                                       event-x event-y)]
-                               [position (find-position x y)])
-                   (click-callback x y position))))))])
+         (lambda (event)
+           (when (send event button-down? 'left)
+             (when click-callback
+               (let*-values ([(event-x) (send event get-x)]
+                             [(event-y) (send event get-y)]
+                             [(x y) (dc-location-to-editor-location
+                                     event-x event-y)]
+                             [position (find-position x y)])
+                 (click-callback x y position)))))])
       
-      (private clickable-table (make-hash-table)
-               (sequence (apply super-init args))))
+      (sequence (apply super-init args))))
   
   (fw:preferences:set-default 'debugger-width 400 number?)
   (fw:preferences:set-default 'debugger-height 800 number?)
@@ -125,25 +117,30 @@
                               values)
                     (send f popup-menu 0 0)))]
                
-               
-               
                ; highlight-vars 
                   
                [highlight-vars
                 (lambda (mark)
                   (let* ([src (mark-source mark)]
                          [mark-bindings (map mark-binding-binding (mark-bindings mark))]
-                         [maybe-highlight-var
-                          (lambda (ref binding) ; ref = (varref | binding), binding = binding
+                         [highlight-var ; (parsed [binding | slot | top-level-varref] -> (void))
+                          (lambda (ref binding)
+                            (let* ([start (z:location-offset (z:zodiac-start ref))]
+                                   [finish (z:location-offset (z:zodiac-finish ref))])
+                              (send defns-text change-style var-style start finish)
+                              (set! text-region-table (cons (list start finish binding) text-region-table))))]
+                         [maybe-highlight-bound-var
+                          (lambda (ref binding)
                             (when (memq binding mark-bindings)
-                              (let* ([start (z:location-offset (z:zodiac-start ref))]
-                                     [finish (z:location-offset (z:zodiac-finish ref))])
-                                (send defns-text change-style var-style start finish)
-                                (set! text-region-table (cons (list start finish binding) text-region-table)))))])
+                              (highlight-var ref binding)))])
                     (let recur ([src src])
                       (cond ; we need a z:parsed iterator...
                         [(z:varref? src)
-                         (maybe-highlight-var src (z:varref-binding src))]
+                         (if (z:top-level-varref? src)
+                             (if (utils:unit-bound-varref? src)
+                                 (maybe-highlight-bound-var src (z:top-level-varrref-slot src))
+                                 (highlight-var src src))
+                             (maybe-highlight-bound-var src (z:varref-binding src)))]
                         [(z:app? src)
                          (map recur (cons (z:app-fun src) (z:app-args src)))]
                         [(z:struct-form? src)
@@ -162,7 +159,7 @@
                         [(z:let-values-form? src)
                          (for-each (lambda (binding-list)
                                      (for-each (lambda (binding)
-                                                 (maybe-highlight-var binding binding))
+                                                 (maybe-highlight-bound-var binding binding))
                                                binding-list))
                                    (z:let-values-form-vars src))
                          (for-each recur (z:let-values-form-vals src))
@@ -170,12 +167,17 @@
                         [(z:letrec-values-form? src)
                          (for-each (lambda (binding-list)
                                      (for-each (lambda (binding)
-                                                 (maybe-highlight-var binding binding))
+                                                 (maybe-highlight-bound-var binding binding))
                                                binding-list))
                                    (z:letrec-values-form-vars src))
                          (for-each recur (z:let-values-form-vals src))
                          (recur (z:let-values-form-body src))]
                         [(z:define-values-form? src)
+                         (for-each recur (z:define-values-form-vars src))
+                         (recur (z:define-values-form-val src))]
+                        [(z:set!-form? src)
+                         (recur (z:define-values-form-var src))
+                         (recur (z:define-values-form-val src))]
                         
 )
       (public [set-zodiac!

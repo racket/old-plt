@@ -200,17 +200,26 @@
 			(binding-var (cdr a))
 			(cdr a))
 		       ;; Top-level (or module) reference:
-		       (let ([b ((if trans?
-				     identifier-transformer-binding
-				     identifier-binding)
-				 stx)])
+		       (let ([b (let ([b ((if trans?
+					      identifier-transformer-binding
+					      identifier-binding)
+					  stx)])
+				  ;; If b, is it imported? (Might not be imported
+				  ;; if this is the RHS of set!)
+				  (and (pair? b)
+				       (let ([modname (and (pair? b) (car b))])
+					 (and (or (symbol? modname)
+						  (and (module-path-index? modname)
+						       (let-values ([(name base) (module-path-index-split modname)])
+							 (or name base))))
+					      b))))])
 			 (make-top-level-varref
 			  stx
 			  (mk-back)
-			  (if (pair? b)
+			  (if b
 			      (cadr b)
 			      (syntax-e stx))
-			  (let ([modname (and (pair? b) (car b))])
+			  (let ([modname (and b (car b))])
 			    modname)
 			  (get-slot stx (if trans? trans-slot-table slot-table))
 			  trans?

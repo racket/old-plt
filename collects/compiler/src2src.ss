@@ -91,6 +91,11 @@
       (define/public (set-known-values)
         (for-each (lambda (e) (send e set-known-values)) (nonbind-sub-exprs)))
 
+      ;; sets `mutable?' flags; set-known-values does that, too,
+      ;; but this one only sets mutable flags
+      (define/public (set-mutability)
+        (for-each (lambda (e) (send e set-mutability)) (nonbind-sub-exprs)))
+
       ;; for each reference of a binding in the exp, drop one use
       (define/public (drop-uses)
         (for-each (lambda (e) (send e drop-uses)) (nonbind-sub-exprs)))
@@ -1080,7 +1085,7 @@
       (init-field var val)
       (super-instantiate ())
       (inherit-field src-stx)
-      
+      (rename (super-set-mutability set-mutability))
       
       (define/override (nonbind-sub-exprs) (list var val))
       (define/override (set-nonbind-sub-exprs s) 
@@ -1095,6 +1100,10 @@
         (send var set-mutated)
         (send var set-known-values) ; increments use
         (send val set-known-values))
+	
+      (define/override (set-mutability)
+        (send var set-mutated)
+	(super-set-mutability))
 	
       (define/override (clone env)
         (make-object set!% 
@@ -1664,6 +1673,7 @@
   (define optimize 
     (opt-lambda (e [for-mzc? #f])
       (let ([p (parse-top e null #f #f (create-tables))])
+	(send p set-mutability)
 	(send p reorganize)
 	(send p set-known-values)
 	(let ([p (send p simplify (make-context 'all null))])
@@ -1672,6 +1682,3 @@
 			 (send p deorganize)))))))
 
   (provide optimize))
-;(require src2src)
-;(optimize (expand (call-with-input-file "/home/sowens/sgl/test.ss"
-;                    (lambda (x) (read-syntax "test.ss" x)))))

@@ -440,14 +440,15 @@ typedef struct SOCKADDR_IN tcp_address;
 static int parse_numerical(const char *address, unsigned long *addr)
 {
   unsigned char *s = (unsigned char *)address, n[4];
-  int p = 0, v = 0;
+  int p = 0, v = 0, vs[4];
   while (*s) {
     if (isdigit(*s)) {
       if (v < 256)
 	v = (v * 10) + (*s - '0');
     } else if (*s == '.') {
       if (p < 4) {
-	n[p] = v;
+	vs[p] = v;
+	n[p] = (unsigned char)v;
 	p++;
       }
       v = 0;
@@ -462,8 +463,8 @@ static int parse_numerical(const char *address, unsigned long *addr)
   }
      
   if (!*s && (p == 4)
-      && (s[0] < 256) && (s[1] < 256)
-      && (s[2] < 256) && (s[3] < 256)) {
+      && (vs[0] < 256) && (vs[1] < 256)
+      && (vs[2] < 256) && (vs[3] < 256)) {
     /* Numerical address */
     *addr = *(unsigned long *)n;
     return 1;

@@ -2104,16 +2104,24 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 	      Scheme_Object *bindings = scheme_null, *last = NULL;
 	      Scheme_Object *rest;
 	      int al;
+	      
 	      rest = SCHEME_STX_CDR(form);
 	      al = scheme_stx_proper_list_length(rest);
 	      
 	      if (al == pl) {	      
+		DupCheckRecord r;
+
+		scheme_begin_dup_symbol_check(&r, env);
+	      
 		while (!SCHEME_STX_NULLP(args)) {
 		  Scheme_Object *v, *n;
 		  
 		  n = SCHEME_STX_CAR(args);
-		  scheme_check_identifier("lambda", n, NULL, env, form);
-		  
+		  scheme_check_identifier("lambda", n, NULL, env, name);
+
+		  /* If we don't check here, the error is in terms of `let': */
+		  scheme_dup_symbol_check(&r, NULL, n, "argument", name);
+  
 		  v = SCHEME_STX_CAR(rest);
 		  v = cons(cons(n, cons(v, scheme_null)), scheme_null);
 		  if (last)

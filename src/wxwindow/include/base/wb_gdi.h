@@ -238,6 +238,7 @@ class wxbBrush: public wxObject
 #define wxBITMAP_TYPE_TIF               0x800
 #define wxBITMAP_TYPE_GIF               0x1000
 #define wxBITMAP_TYPE_JPEG              0x4000
+#define wxBITMAP_TYPE_PNG               0x8000
 #define wxBITMAP_TYPE_ANY               0x2000
 #define wxBITMAP_TYPE_MASK              0x10000
 

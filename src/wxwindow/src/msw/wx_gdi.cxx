@@ -35,6 +35,9 @@ Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo, HPALETTE * phPal, HBITMAP
 extern int read_JPEG_file(char *filename, wxBitmap *bm);
 extern int write_JPEG_file(char *filename, wxBitmap *bm, int quality_val);
 
+extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg);
+extern int wx_write_png(char *file_name, wxBitmap *bm);
+
 wxFont::wxFont(void)
 {
   COUNT_P(font_count);
@@ -1109,7 +1112,7 @@ wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
   WXGC_IGNORE(this, selectedInto);
 }
 
-wxBitmap::wxBitmap(char *bitmap_file, long flags)
+wxBitmap::wxBitmap(char *bitmap_file, long flags, wxColour *bg)
 {
   COUNT_P(bitmap_count);
 
@@ -1122,7 +1125,7 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
   numColors = 0;
   bitmapColourMap = NULL;
 
-  LoadFile(bitmap_file, (int)flags);
+  LoadFile(bitmap_file, (int)flags, bg);
   WXGC_IGNORE(this, selectedInto);
 }
 
@@ -1208,7 +1211,7 @@ Bool wxBitmap::Create(int w, int h, int d)
 
 extern int wxsGetImageType(char *fn);
 
-Bool wxBitmap::LoadFile(char *bitmap_file, long flags)  
+Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)  
 {
   Bool getMask;
   wxMemoryDC *oldSel;
@@ -1375,6 +1378,18 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
       ok = FALSE;
     }
   }
+  else if (flags & wxBITMAP_TYPE_PNG)
+  {
+    Bool success;
+    success = wx_read_png(bitmap_file, this, getMask, bg);
+    if (!success) {
+      if (ms_bitmap) {
+	DeleteRegisteredGDIObject(ms_bitmap);
+	ms_bitmap = NULL;
+      }
+      ok = FALSE;
+    }
+  }
   
   if (oldSel && ok)
     oldSel->SelectObject(this);
@@ -1498,6 +1513,9 @@ Bool wxBitmap::SaveFile(char *filename, int typ, wxColourMap *cmap)
       }
     case wxBITMAP_TYPE_JPEG:
       return write_JPEG_file(filename, this, 75);
+      break;
+    case wxBITMAP_TYPE_PNG:
+      return wx_write_png(filename, this);
       break;
     default:
       break;

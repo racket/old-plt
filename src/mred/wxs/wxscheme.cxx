@@ -2074,7 +2074,7 @@ int wxsGetImageType(char *fn)
 #endif
   GC_CAN_IGNORE unsigned char *expect = NULL;
 
-  f = fopen(fn, "r");
+  f = fopen(fn, "rb");
   if (f) {
     switch ((unsigned)fgetc(f)) {
     case 'B':

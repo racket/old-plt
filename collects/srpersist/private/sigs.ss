@@ -18,6 +18,9 @@
      make-length
      free-length!
      read-length
+     make-boxed-uint	
+     read-boxed-uint	
+     free-boxed-uint!
      make-indicator
      free-indicator!
      read-indicator

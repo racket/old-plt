@@ -541,6 +541,39 @@ Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
 #endif
 }
 
+Scheme_Object *srp_make_boxed_uint(int argc,Scheme_Object **argv) {
+  SQLUINTEGER *pint;
+  SRP_SQL_BOXED_UINT *retval;
+
+  if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE) {
+    scheme_wrong_type("make-boxed-uint","exact nonnegative number",0,argc,argv);
+  }
+
+  pint = (SQLUINTEGER *)scheme_malloc(sizeof(SQLUINTEGER));
+
+  if (scheme_get_unsigned_int_val(argv[0],pint) == 0) {
+    scheme_signal_error("make-boxed-int: number too large");
+  }
+
+  retval = (SRP_SQL_BOXED_UINT *)scheme_malloc(sizeof(SRP_SQL_BOXED_UINT));
+  scheme_dont_gc_ptr((Scheme_Object *)retval);
+
+  retval->type = sql_boxed_uint_type;
+  retval->pointer = pint;
+
+  return (Scheme_Object *)retval;
+}
+
+Scheme_Object *srp_free_boxed_uint(int argc,Scheme_Object **argv) {
+  if (SQL_BOXED_UINTP(argv[0]) == FALSE) {
+    scheme_wrong_type("free-boxed-uint!","sql-boxed-uint",0,argc,argv);
+  }
+
+  scheme_gc_ptr_ok(argv[0]);
+
+  return scheme_void;
+}
+
 Scheme_Object *srp_read_boxed_uint(int argc,Scheme_Object **argv) {
   if (SQL_BOXED_UINTP(argv[0]) == FALSE) {
     scheme_wrong_type("read-boxed-uint","sql-boxed-uint",0,argc,argv);
@@ -3987,7 +4020,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
 
     sql_return(retval,retcode,"get-functions");
   }
-#if (ODBVER >= 0x0300)
+#if (ODBCVER >= 0x0300)
   else if (function == SQL_API_ODBC3_ALL_FUNCTIONS) {
     Scheme_Object *value;
     Scheme_Object *retval;

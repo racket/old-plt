@@ -25,7 +25,9 @@ static SRP_PRIM srpPrims[] = {
   { srp_free_buffer,"free-buffer!",1,1 },        
   { srp_read_buffer,"read-buffer",1,2 },        
   { srp_write_buffer,"write-buffer!",2,3 },      
+  { srp_make_boxed_uint,"make-boxed-uint",1,1 },      
   { srp_read_boxed_uint,"read-boxed-uint",1,1 },      
+  { srp_free_boxed_uint,"free-boxed-uint!",1,1 },      
 	
   // from SQL.H
 

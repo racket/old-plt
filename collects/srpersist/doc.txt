@@ -1955,15 +1955,17 @@
    'sql-fetch-next               next rowset
    'sql-fetch-prior              previous rowset
    'sql-fetch-last               last rowset 
-   'sql-fetch-absolute           rowset starting at `rownum'
-   'sql-fetch-relative           rowset relative to current,
+   'sql-fetch-absolute   *       rowset starting at `rownum'
+   'sql-fetch-relative   *       rowset relative to current,
                                   using `rownum' (may be negative)
-   'sql-fetch-bookmark           rowset relative to 
+   'sql-fetch-bookmark   *       rowset relative to 
                                   'sql-attr-fetch-bookmark-ptr
                                   statement attribute
 
- fetch-scroll returns the value of `hstmt'.  The size of rowsets is 
- specified by the 'sql-attr-rowset-size statement attribute (see 
+ The `rownum' parameter must be supplied when `orient' is one
+ of those marked with `*' above.  fetch-scroll returns the value of 
+ `hstmt'.  The size of rowsets is specified by the 
+ 'sql-attr-row-array-size statement attribute (see 
  `get-stmt-attr' and `set-stmt-attr').  See an ODBC reference for more 
  information on using rowsets.
 
@@ -2002,17 +2004,16 @@
    'sql-fetch-next       next rowset in the data set
    'sql-fetch-prior      prior rowset in the data set
    'sql-fetch-last       last rowset in the data set
-   'sql-fetch-absolute   fetches the rowset starting at the row
+   'sql-fetch-absolute * fetches the rowset starting at the row
                            given by `rownum'
-   'sql-fetch-relative   fetches the rowset `rownum' rows from
+   'sql-fetch-relative * fetches the rowset `rownum' rows from
                            the start row of the current rowset
-   'sql-fetch-bookmark   fetches the rowset, interpreting 
+   'sql-fetch-bookmark * fetches the rowset, interpreting 
                            `rownum' as a bookmark
 
  The `rownum' argument is an integer, which may be negative.  
- It must be provided if `orientation' is in 'sql-fetch-absolute, 
- 'sql-fetch-relative, or 'sql-fetch-bookmark, and must be omitted
- otherwise.
+ It must be provided if `orientation' is one of those marked
+ with `*' above.
 
 > (more-results hstmt)
 
@@ -2485,9 +2486,18 @@
  Given an sql-op-parms value, returns a list, each element of which 
  is either 'sql-param-proceed or 'sql-param-ignore.
 
+> (make-boxed-uint unum)
+
+ Given an exact nonnegative number, returns an sql-boxed-uint.
+
 > (read-boxed-uint an-sql-boxed-uint)
 
  Given an sql-boxed-uint, returns an unsigned integer value.
+
+> (free-boxed-uint an-sql-boxed-uint)
+
+ Allows the Scheme garbage collector to reclaim the memory used by 
+ an sql-boxed-uint.
 
  SQL data types
  --------------

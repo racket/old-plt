@@ -2443,7 +2443,9 @@ MrEdApp::MrEdApp()
 #endif
 }
 
-extern "C" MZ_EXTERN void (*GC_out_of_memory)(void);
+extern "C" {
+  MZ_EXTERN void (*GC_out_of_memory)(void);
+};
 
 static void MrEdOutOfMemory(void)
 {

@@ -2,7 +2,8 @@
 (module compile-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "include.ss")
-	   (lib "process.ss"))
+	   (lib "process.ss")
+	   "private/dirs.ss")
 
   (require "compile-sig.ss")
 
@@ -11,8 +12,6 @@
   (define dynext:compile@
     (unit/sig dynext:compile^ 
       (import)
-      
-      (define include-dir (collection-path "mzscheme" "include"))
       
       (define (get-unix-compile)
 	(or (getenv "MZSCHEME_DYNEXT_COMPILER")

@@ -209,16 +209,17 @@ normal-install:
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
-WLIBIDIR=$(srcdir)/../../collects/mzscheme/lib/win32/i386
+WLIBIDIR=$(srcdir)/../../lib
 WBUILDINFO=$(WLIBIDIR)/buildinfo
 
 cygwin-install:
 	rm -f $(srcdir)/../../mzscheme.exe
 	cp mzscheme.exe $(srcdir)/../../mzscheme.exe
 	cd dynsrc; $(MAKE) cygwin-install
-	cp mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
-	cp libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
-	cp libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
+	($ICP) mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
+	if [ ! -d $(WLIBIDIR) ] ; then mkdir $(WLIBIDIR) ; fi
+	($ICP) libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
+	($ICP) libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
 	echo 'CC=gcc' > $(WBUILDINFO)
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
 	echo 'LIBS=-lm  -lm  gmzwin.exp' >> $(WBUILDINFO)

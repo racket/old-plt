@@ -2,7 +2,8 @@
 (module link-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "include.ss")
-	   (lib "process.ss"))
+	   (lib "process.ss")
+	   "private/dirs.ss")
 
   (require "link-sig.ss")
 
@@ -12,8 +13,6 @@
     (unit/sig dynext:link^
       (import)
       
-      (define include-dir (collection-path "mzscheme" "include"))
-
       (define (get-windows-linker)
 	(or (find-executable-path "cl.exe" #f)
 	    (find-executable-path "ld.exe" #f)
@@ -84,9 +83,6 @@
 	   (unless (and (list? l) (andmap string? l))
 	     (raise-type-error 'current-extension-link-flags "list of strings" l))
 	   l)))
-      
-      (define std-library-dir (build-path (collection-path "mzscheme" "lib") 
-					  (system-library-subpath)))
       
       (define-values (my-process* stdio-link)
 	(let-values ([(p* do-stdio) (include (build-path "private" "stdio.ss"))])

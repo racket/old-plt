@@ -1,4 +1,8 @@
 
+#ifndef MRED_EXTERN
+# define MRED_EXTERN extern
+#endif
+
 extern int mred_eventspace_param;
 extern int mred_event_dispatch_param;
 extern int mred_ps_setup_param;

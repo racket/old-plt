@@ -1,6 +1,10 @@
 
 #define BREAKING_REQUIRES_SHIFT 1
 
+#ifndef MRED_EXTERN
+# define MRED_EXTERN extern
+#endif
+
 #ifdef wx_x
 typedef XEvent MrEdEvent;
 #else

@@ -23,6 +23,7 @@
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP
 #define Uses_XLib
+#define Uses_wxApp
 
 #define IS_MRMAIN
 

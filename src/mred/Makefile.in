@@ -42,7 +42,7 @@ MREDLDLIBS = ../mzscheme/libmzscheme.@LIBSFX@ ../mzscheme/libmzgc.@LIBSFX@ $(@WX
 
 MREDOBJECTS = mrmain.o
 
-MZSCHEME = ../mzscheme/libmzscheme.a ../mzscheme/libgc.a
+MZSCHEME = ../mzscheme/libmzscheme.@LIBSFX@ ../mzscheme/libmzgc.@LIBSFX@
 WXSCHEME = wxs/libwxscheme.a
 WXME = wxme/libwxme.a
 

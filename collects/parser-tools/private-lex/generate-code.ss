@@ -7,37 +7,7 @@
 	   "sexp-to-re.ss"
 	   (lib "list.ss"))
   
-  (provide generate-table build-lexer)
-  
-  
-  ;; build-lexer : syntax-object * s-expr -> syntax-object
-  ;; has the lexer's runtime code as well as the initial compile-time driver
-  (define (build-lexer runtime wrap)
-    (lambda (stx)
-      (syntax-case stx ()
-        ((_)
-         (raise-syntax-error #f "empty lexer is not allowed" stx))
-        ((_ re-act ...)
-         (begin
-           (for-each
-            (lambda (x)
-              (syntax-case x ()
-                ((re act) (void))
-                (_ (raise-syntax-error 'lexer 
-                                       "expects regular expression / action pairs"
-                                       x))))
-            (syntax->list (syntax (re-act ...))))
-           (let* ((table (generate-table (syntax (re-act ...)) stx))
-                  (code
-                   `(let ((start-state ,(table-start table))
-                          (trans-table ,(table-trans table))
-                          (eof-table ,(table-eof table))
-                          (no-lookahead ,(table-no-lookahead table))
-                          (actions (vector ,@(vector->list (table-actions table)))))
-                      code)))
-             (datum->syntax-object runtime code #f)))))))
-    
-  
+  (provide generate-table)
   
   ;; generate-table : syntax-object -> lexer-table
   ;; Creates the lexer's tables from a list of sexp-regex, action pairs.

@@ -78,10 +78,11 @@
 	(let ((current (get-attribute attributes 'unresolved-unit-vars
 			 (lambda () '(()))))) ; List of lists to accomodate
 					; nested units
-	  (put-attribute attributes 'unresolved-unit-vars
-	    (cons
-	      (cons new-value (car current))
-	      (cdr current))))))
+	  (unless (null? current)
+	    (put-attribute attributes 'unresolved-unit-vars
+	      (cons
+		(cons new-value (car current))
+		(cdr current)))))))
 
     (define remove-unresolved-attribute
       (lambda (attributes)

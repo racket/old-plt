@@ -123,10 +123,10 @@
   (ffi-get (ffi-obj (get-ffi-obj-name 'get-ffi-obj name) (get-ffi-lib lib))
            type))
 (define-syntax (get-ffi-obj stx)
-  (syntax-case stx (get-ffi-obj)
-    [(get-ffi-obj name lib type)
+  (syntax-case stx ()
+    [(_ name lib type)
      #`(get-ffi-obj* name lib #,(syntax-property #`type 'ffi-name #'name))]
-    [get-ffi-obj #'get-ffi-obj*]))
+    [x (identifier? #'x) #'get-ffi-obj*]))
 
 ;; It is important to use the set-ffi-obj! wrapper because it takes care of
 ;; keeping a handle on the object -- otherwise, setting a callback hook will

@@ -497,7 +497,11 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
 	
 	  if (p == this) {
 	    /* Grabbing panel uses this cursor */
-	    XChangeActivePointerGrab(wxAPP_DISPLAY, 0,
+	    XChangeActivePointerGrab(wxAPP_DISPLAY, 
+				     (ButtonPressMask | ButtonReleaseMask
+				      | ButtonMotionMask | PointerMotionMask
+				      | PointerMotionHintMask 
+				      | EnterWindowMask | LeaveWindowMask),
 				     GETCURSOR(cursor), 
 				     grabbing_panel_time);
 	  }
@@ -1630,7 +1634,11 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
 	
 	if (p && p->cursor->Ok()) {
-	  XChangeActivePointerGrab(wxAPP_DISPLAY, 0,
+	  XChangeActivePointerGrab(wxAPP_DISPLAY, 
+				   (ButtonPressMask | ButtonReleaseMask
+				    | ButtonMotionMask | PointerMotionMask
+				    | PointerMotionHintMask 
+				    | EnterWindowMask | LeaveWindowMask),
 				   GETCURSOR(p->cursor), 
 				   xev->xbutton.time);
 	  if (!grabbing_panel_regsitered) {

@@ -17,7 +17,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_mgstr.h"
 #include "wx_utils.h"
 #include "wx_gauge.h"
-
+#include "wx_messg.h"
 
 #define MEANING_CHARACTER	'0'
 

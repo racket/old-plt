@@ -153,13 +153,13 @@ wxPrintData::~wxPrintData(void)
 #endif
 }
 
-#ifndef OS_X
-// can't implement this function under OS X
 void wxPrintData::SetAbortFlag()
 {
+#ifndef OS_X
+// can't implement this function under OS X
 	  (**macPrData).prJob.fFromUsr=TRUE;
-}
 #endif
+}
 
 int wxPrintData::GetFromPage(void)
 {

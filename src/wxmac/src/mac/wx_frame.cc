@@ -20,6 +20,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_area.h"
 #include "wx_screen.h"
 #include "wx_mac_utils.h"
+#include "wx_main.h"
+#include "wx_messg.h"
+#include "wx_utils.h"
 #ifndef OS_X
   #include <QuickDraw.h>
   #include <TextEdit.h>

@@ -14,6 +14,7 @@ static const char sccsid[] = "%W% %G%";
 #include <stdio.h>
 #include <stdlib.h>
 #include "common.h"
+#include "wx_messg.h"
 #include "wx_mgstr.h"
 #include "wx_utils.h"
 #include "wx_slidr.h"

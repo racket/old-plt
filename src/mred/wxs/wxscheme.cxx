@@ -8,10 +8,7 @@
 #include "wx_media.h"
 #include "wx_win.h"
 #include "wxscheme.h"
-#ifdef wx_msw
-#include "wx_pdf.h"
 #include "wx_main.h"
-#endif
 #include "wx_dcps.h"
 #include "wxsmred.h"
 

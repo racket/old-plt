@@ -13,11 +13,13 @@ static const char sccsid[] = "%W% %G%";
 #endif
 #include <stdlib.h>
 
+#include "wx_item.h"
 #include "wx_main.h"
 #include "wx_list.h"
 #include "wx_utils.h"
 #include "wx_frame.h"
 #include "wxMacDC.h"
+#include "PSDC.h"
 
 void wxCleanUp(void);
 

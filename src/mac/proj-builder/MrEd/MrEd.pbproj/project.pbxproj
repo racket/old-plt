@@ -149,6 +149,22 @@
 				0E7DA8BA00ECA7E27F000001,
 				0E7DA8BC00ED19637F000001,
 				0E7DA8BE00ED20E77F000001,
+				5E42210600FC48FC7F000001,
+				5E42210800FC48FC7F000001,
+				5E42210A00FC48FC7F000001,
+				5E42210B00FC48FC7F000001,
+				5E42210C00FC48FC7F000001,
+				5E42210F00FC48FC7F000001,
+				5E42211000FC48FC7F000001,
+				5E42211100FC48FC7F000001,
+				5E42211200FC48FC7F000001,
+				5E42211300FC48FC7F000001,
+				5E42211400FC48FC7F000001,
+				5E42211600FC48FC7F000001,
+				5E42211700FC48FC7F000001,
+				5E42211800FC48FC7F000001,
+				5E42211900FC48FC7F000001,
+				5E42211A00FC48FC7F000001,
 			);
 			isa = PBXSourcesBuildPhase;
 			name = Sources;
@@ -169,7 +185,7 @@
 		};
 		00F450E500EC649B7F000001 = {
 			isa = PBXLibraryReference;
-			path = "A-LIST";
+			path = libalist.a;
 			refType = 3;
 		};
 		00F450E600EC649B7F000001 = {
@@ -189,7 +205,7 @@
 				OTHER_LDFLAGS = "";
 				OTHER_LIBTOOL_FLAGS = "";
 				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = "A-LIST";
+				PRODUCT_NAME = libalist.a;
 				REZ_EXECUTABLE = YES;
 				SECTORDER_FLAGS = "";
 				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
@@ -463,6 +479,7 @@
 		};
 		00F4511500EC74EF7F000001 = {
 			children = (
+				5E4220EF00FC48B37F000001,
 				0E7DA83F00ECA4DD7F000001,
 				0E7DA84000ECA5667F000001,
 			);
@@ -735,7 +752,6 @@
 		};
 		03172A8F00BAB02E7F000001 = {
 			children = (
-				1D95027100FA93997F000001,
 				0366420A00EBD2D97F000001,
 			);
 			isa = PBXGroup;
@@ -756,18 +772,6 @@
 		};
 		03172A9300BAB0A57F000001 = {
 			fileRef = 03172A9100BAB0A57F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		03172A9500BAB1077F000001 = {
-			isa = PBXFileReference;
-			name = simpledrop.c;
-			path = /Users/clements/plt/src/mac/mzscheme/simpledrop.c;
-			refType = 0;
-		};
-		03172A9700BAB1077F000001 = {
-			fileRef = 03172A9500BAB1077F000001;
 			isa = PBXBuildFile;
 			settings = {
 			};
@@ -2209,7 +2213,6 @@
 			children = (
 				0E7DA8C300ED24437F000001,
 				00F450F200EC676F7F000001,
-				1D95027000FA93997F000001,
 			);
 			isa = PBXGroup;
 			name = wxWindows;
@@ -2283,30 +2286,6 @@
 			settings = {
 			};
 		};
-		1D95027000FA93997F000001 = {
-			isa = PBXFileReference;
-			name = WXMAC;
-			path = build/WXMAC;
-			refType = 4;
-		};
-		1D95027100FA93997F000001 = {
-			isa = PBXFileReference;
-			name = WXS;
-			path = build/WXS;
-			refType = 4;
-		};
-		1D95027200FA93997F000001 = {
-			fileRef = 1D95027000FA93997F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		1D95027300FA93997F000001 = {
-			fileRef = 1D95027100FA93997F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
 		20286C28FDCF999611CA2CEA = {
 			buildStyles = (
 				05952DFCFFF02D1B11CA0E50,
@@ -2344,7 +2323,7 @@
 			children = (
 				03172A9000BAB0A57F000001,
 				03172A9100BAB0A57F000001,
-				03172A9500BAB1077F000001,
+				5E4220ED00FC401E7F000001,
 				0E7DA8BF00ED23787F000001,
 				0E7DA8C000ED23787F000001,
 				03172A9800BAB1697F000001,
@@ -2458,8 +2437,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				0867D6ACFE840B52C02AAC07,
-				1D95027200FA93997F000001,
-				1D95027300FA93997F000001,
 			);
 			isa = PBXResourcesBuildPhase;
 			name = "Bundle Resources";
@@ -2468,7 +2445,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				03172A9300BAB0A57F000001,
-				03172A9700BAB1077F000001,
 				03172AA500BAB1E77F000001,
 				03172AA600BAB1E77F000001,
 				03172AA700BAB1E77F000001,
@@ -2485,6 +2461,7 @@
 				0366420B00EBD2D97F000001,
 				0E7DA8C200ED23FA7F000001,
 				0E7DA8C400ED24437F000001,
+				5E4220EE00FC401E7F000001,
 			);
 			isa = PBXSourcesBuildPhase;
 			name = Sources;
@@ -2515,6 +2492,234 @@
 		};
 		20286C3CFDCF999611CA2CEA = {
 			fileRef = 20286C33FDCF999611CA2CEA;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E4220ED00FC401E7F000001 = {
+			isa = PBXFileReference;
+			name = simpledrop.cpp;
+			path = /Users/clements/plt/src/mac/mzscheme/simpledrop.cpp;
+			refType = 0;
+		};
+		5E4220EE00FC401E7F000001 = {
+			fileRef = 5E4220ED00FC401E7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E4220EF00FC48B37F000001 = {
+			children = (
+				5E4220F000FC48FC7F000001,
+				5E4220F200FC48FC7F000001,
+				5E4220F400FC48FC7F000001,
+				5E4220F500FC48FC7F000001,
+				5E4220F600FC48FC7F000001,
+				5E4220F900FC48FC7F000001,
+				5E4220FA00FC48FC7F000001,
+				5E4220FB00FC48FC7F000001,
+				5E4220FC00FC48FC7F000001,
+				5E4220FD00FC48FC7F000001,
+				5E4220FE00FC48FC7F000001,
+				5E42210000FC48FC7F000001,
+				5E42210100FC48FC7F000001,
+				5E42210200FC48FC7F000001,
+				5E42210300FC48FC7F000001,
+				5E42210400FC48FC7F000001,
+			);
+			isa = PBXGroup;
+			name = libxpm;
+			path = "";
+			refType = 4;
+		};
+		5E4220F000FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = crbuffri.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crbuffri.c;
+			refType = 0;
+		};
+		5E4220F200FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = crdatfri.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crdatfri.c;
+			refType = 0;
+		};
+		5E4220F400FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = create.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/create.c;
+			refType = 0;
+		};
+		5E4220F500FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = crifrbuf.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crifrbuf.c;
+			refType = 0;
+		};
+		5E4220F600FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = crifrdat.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crifrdat.c;
+			refType = 0;
+		};
+		5E4220F900FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = data.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/data.c;
+			refType = 0;
+		};
+		5E4220FA00FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = hashtab.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/hashtab.c;
+			refType = 0;
+		};
+		5E4220FB00FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = miscellaneous.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/miscellaneous.c;
+			refType = 0;
+		};
+		5E4220FC00FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = parse.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/parse.c;
+			refType = 0;
+		};
+		5E4220FD00FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = rdftodat.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rdftodat.c;
+			refType = 0;
+		};
+		5E4220FE00FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = rdftoi.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rdftoi.c;
+			refType = 0;
+		};
+		5E42210000FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = rgb.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rgb.c;
+			refType = 0;
+		};
+		5E42210100FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = scan.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/scan.c;
+			refType = 0;
+		};
+		5E42210200FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = simx.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/simx.c;
+			refType = 0;
+		};
+		5E42210300FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = wrffrdat.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/wrffrdat.c;
+			refType = 0;
+		};
+		5E42210400FC48FC7F000001 = {
+			isa = PBXFileReference;
+			name = wrffri.c;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/wrffri.c;
+			refType = 0;
+		};
+		5E42210600FC48FC7F000001 = {
+			fileRef = 5E4220F000FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42210800FC48FC7F000001 = {
+			fileRef = 5E4220F200FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42210A00FC48FC7F000001 = {
+			fileRef = 5E4220F400FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42210B00FC48FC7F000001 = {
+			fileRef = 5E4220F500FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42210C00FC48FC7F000001 = {
+			fileRef = 5E4220F600FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42210F00FC48FC7F000001 = {
+			fileRef = 5E4220F900FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211000FC48FC7F000001 = {
+			fileRef = 5E4220FA00FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211100FC48FC7F000001 = {
+			fileRef = 5E4220FB00FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211200FC48FC7F000001 = {
+			fileRef = 5E4220FC00FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211300FC48FC7F000001 = {
+			fileRef = 5E4220FD00FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211400FC48FC7F000001 = {
+			fileRef = 5E4220FE00FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211600FC48FC7F000001 = {
+			fileRef = 5E42210000FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211700FC48FC7F000001 = {
+			fileRef = 5E42210100FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211800FC48FC7F000001 = {
+			fileRef = 5E42210200FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211900FC48FC7F000001 = {
+			fileRef = 5E42210300FC48FC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		5E42211A00FC48FC7F000001 = {
+			fileRef = 5E42210400FC48FC7F000001;
 			isa = PBXBuildFile;
 			settings = {
 			};

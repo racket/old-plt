@@ -9,6 +9,7 @@
 
 static const char sccsid[] = "%W% %G%";
 
+#include "wx_item.h"
 #include "wx_sbar.h"
 #include "wxScroll.h"
 #include "wx_utils.h"

@@ -6,11 +6,7 @@
   (provide scheme-lexer)
    
   (define-lex-abbrevs
-      
-   [any-string (&)]
-   [any-char (^)]
-   [alphabetic (: (- "a" "z") (- "A" "Z"))]
-   
+         
    ;; For case insensitivity
    [a (: "a" "A")]
    [b (: "b" "B")]
@@ -50,7 +46,7 @@
 
    
    ;; What about char->integer constraint?
-   #;[unicode  (: (@ (: "U" "u") digit16)
+   [unicode  (: (@ (: "U" "u") digit16)
                 (@ (: "U" "u") digit16 digit16)
                 (@ (: "U" "u") digit16 digit16 digit16)
                 (@ (: "U" "u") digit16 digit16 digit16 digit16)
@@ -62,7 +58,7 @@
    [character (: (@ "#\\" any-char)
                  (@ "#\\" character-name)
                  (@ "#\\" (- "0" "3") digit8 digit8)
-                 #;(@ "#\\" unicode))]
+                 (@ "#\\" unicode))]
    
    [character-name (: (@ s p a c e)
                       (@ n e w l i n e)
@@ -80,7 +76,7 @@
                 (@ "#\\" (- "0" "3") digit8))]
        
    ;; What about byte string regexp strings
-   [str (: (@ (? "#rx") "\"" (* (: string-element #;unicode)) "\"")
+   [str (: (@ (? "#rx") "\"" (* (: string-element unicode)) "\"")
            byte-str)]
    [byte-str (@ (? "#rx") "#\"" (* string-element) "\"")]
    [string-element (: (^ "\"" "\\")

@@ -58,11 +58,10 @@ Mac OS X:
  command line as `MrEd.app/Contents/MacOS/MrEd'.
 
  To build an X11-based MrEd, run `configure' with the --enable-xonx
- flag. This flag also affects the MzScheme build in two ways:
- `system-type' reports 'unix, and character valus are treated as
- Latin-1 encodings instead of MacRoman encodings.
+ flag. This flag also affects the MzScheme build in one way:
+ `system-type' reports 'unix.
 
-Mac OS Classic:
+Mac OS Classic (PowerPC only):
 
  MrEd compiles for Mac OS Classic using MPW.  Stand-alone MzScheme is
  not suported for Classic.

@@ -687,7 +687,7 @@
 
 			init           ; initializer
 
-			no-super-init?)    ; #t => no super-init needed
+			no-super-init?); #t => no super-init needed
                     insp)
 
   (define (compose-class name               ; symbol
@@ -719,7 +719,14 @@
 			   (not (eq? super object%))
 			   (if (symbol? s)
 			       (format "derived-from-~a" s)
-			       s))))])
+			       s))))]
+	  ;; Mis utilities
+	  [no-new-methods? (null? public-names)]
+	  [no-method-changes? (and (null? public-names)
+				   (null? override-names))]
+	  [no-new-fields? (zero? num-fields)]
+	  [xappend (lambda (a b) (if (null? b) a (append a b)))])
+
       ;; -- Check interfaces ---
       (for-each
        (lambda (intf)
@@ -730,39 +737,47 @@
        interfaces)
 
       ;; -- Match method and field names to indices --
-      (let ([method-ht (make-hash-table)]
-	    [field-ht (make-hash-table)]
+      (let ([method-ht (if no-new-methods?
+			   (class-method-ht super)
+			   (make-hash-table))]
+	    [field-ht (if no-new-fields?
+			  (class-field-ht super)
+			  (make-hash-table))]
 	    [super-method-ids (class-method-ids super)]
 	    [super-field-ids (class-field-ids super)]
 	    [super-field-ht (class-field-ht super)])
 
 	;; Put superclass ids in tables, with pos
-	(let loop ([ids super-method-ids][p 0])
-	  (unless (null? ids)
-	    (hash-table-put! method-ht (car ids) p)
-	    (loop (cdr ids) (add1 p))))
-	(let loop ([ids super-field-ids])
-	  (unless (null? ids)
-	    (hash-table-put! field-ht (car ids) (hash-table-get super-field-ht (car ids)))
-	    (loop (cdr ids))))
+	(unless no-new-methods?
+	  (let loop ([ids super-method-ids][p 0])
+	    (unless (null? ids)
+	      (hash-table-put! method-ht (car ids) p)
+	      (loop (cdr ids) (add1 p)))))
+	(unless no-new-fields?
+	  (let loop ([ids super-field-ids])
+	    (unless (null? ids)
+	      (hash-table-put! field-ht (car ids) (hash-table-get super-field-ht (car ids)))
+	      (loop (cdr ids)))))
 
 	;; Put new ids in table, with pos (replace field pos with accessor later)
-	(let loop ([ids public-names][p (class-method-width super)])
-	  (unless (null? ids)
-	    (when (hash-table-get method-ht (car ids) (lambda () #f))
-	      (obj-error 'class*/names "superclass already contains method: ~a~a" 
-			 (car ids)
-			 (for-class name)))
-	    (hash-table-put! method-ht (car ids) p)
-	    (loop (cdr ids) (add1 p))))
-	(let loop ([ids public-field-names][p (class-field-width super)])
-	  (unless (null? ids)
-	    (when (hash-table-get field-ht (car ids) (lambda () #f))
-	      (obj-error 'class*/names "superclass already contains field: ~a~a" 
-			 (car ids)
-			 (for-class name)))
-	    (hash-table-put! field-ht (car ids) p)
-	    (loop (cdr ids) (add1 p))))
+	(unless no-new-methods?
+	  (let loop ([ids public-names][p (class-method-width super)])
+	    (unless (null? ids)
+	      (when (hash-table-get method-ht (car ids) (lambda () #f))
+		(obj-error 'class*/names "superclass already contains method: ~a~a" 
+			   (car ids)
+			   (for-class name)))
+	      (hash-table-put! method-ht (car ids) p)
+	      (loop (cdr ids) (add1 p)))))
+	(unless no-new-fields?
+	  (let loop ([ids public-field-names][p (class-field-width super)])
+	    (unless (null? ids)
+	      (when (hash-table-get field-ht (car ids) (lambda () #f))
+		(obj-error 'class*/names "superclass already contains field: ~a~a" 
+			   (car ids)
+			   (for-class name)))
+	      (hash-table-put! field-ht (car ids) p)
+	      (loop (cdr ids) (add1 p)))))
 
 	;; Check that superclass has expected methods, and get indices
 	(let ([get-indices
@@ -818,12 +833,16 @@
 					struct:interface
 					(string->symbol (format "interface:~a" name)))
 				       make-interface)]
-		   [method-names (append super-method-ids public-names)]
-		   [field-names (append super-field-ids public-field-names)]
+		   [method-names (xappend super-method-ids public-names)]
+		   [field-names (xappend super-field-ids public-field-names)]
 		   [super-interfaces (cons (class->interface super) interfaces)]
 		   [i (interface-make name super-interfaces method-names #f)]
-		   [methods (make-vector method-width)]
-		   [prim-flags (make-vector method-width)]
+		   [methods (if no-method-changes?
+				(class-methods super)
+				(make-vector method-width))]
+		   [prim-flags (if no-method-changes?
+				   (class-prim-flags super)
+				   (make-vector method-width))]
 		   [c (class-make name
 				  (add1 (class-pos super))
 				  (list->vector (append (vector->list (class-supers super)) (list #f)))
@@ -939,11 +958,12 @@
 						   method-accessors))])
 			;; -- Fill in method tables --
 			;;  First copy old methods
-			(hash-table-for-each
-			 (class-method-ht super)
-			 (lambda (name index)
-			   (vector-set! methods index (vector-ref (class-methods super) index))
-			   (vector-set! prim-flags index (vector-ref (class-prim-flags super) index))))
+			(unless no-method-changes?
+			  (hash-table-for-each
+			   (class-method-ht super)
+			   (lambda (name index)
+			     (vector-set! methods index (vector-ref (class-methods super) index))
+			     (vector-set! prim-flags index (vector-ref (class-prim-flags super) index)))))
 			;; Add new methods:
 			(for-each (lambda (index method)
 				    (vector-set! methods index method)

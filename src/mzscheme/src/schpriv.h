@@ -1090,6 +1090,10 @@ Scheme_Env *scheme_make_empty_env(void);
 
 const char *scheme_number_suffix(int);
 
+Scheme_Object *
+scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env, 
+			    int bucket_ok, int can_opt, int signal);
+
 void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b);
 Scheme_Bucket *scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int add);
 

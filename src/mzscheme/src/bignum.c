@@ -1328,41 +1328,68 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 
 Scheme_Object *scheme_integer_sqrt(const Scheme_Object *n)
 {
-  Scheme_Object *base, *range, *pos, *prev_half;
-  Scheme_Object *zero = scheme_make_integer(0), *one = scheme_make_integer(1);
+  int len;
+  Scheme_Object *a, *b, *a_sq, *twice_a;
+  Scheme_Object *zero = scheme_make_integer(0);
   Scheme_Object *two = scheme_make_integer(2);
-  double v;
 
-  if (n == zero)
-    return zero;
+  /* First, find inital guess (too high, if anything): */
 
-  base = zero;
-  range = (Scheme_Object *)n;
-  pos = prev_half = scheme_bin_quotient(range, two);
-  while (1) {
-    Scheme_Object *attempt;
+  /* Get length of binary number: */
+  {
+    bigdig v;
 
-    if (SCHEME_TRUEP(scheme_odd_p(1, &range)))
-      pos = scheme_bin_plus(pos, one);
-
-    attempt = scheme_bin_mult(pos, pos);
-    if (scheme_bin_lt(n, attempt)) {
-      /* Do nothing; range gets cut in half */
-    } else if (scheme_bin_eq(n, attempt)) {
-      return pos;
+    if (SCHEME_INTP(n)) {
+      len = 0;
+      v = SCHEME_INT_VAL(n);
     } else {
-      base = pos;
+      Scheme_Bignum *b = (Scheme_Bignum *)n;
+      len = (b->len - 1) * LOG_BIG_RADIX;
+      v = b->digits[b->len - 1];
     }
-    if (range == zero)
-      break;
-    range = prev_half;
-    pos = scheme_bin_plus(base, prev_half = scheme_bin_quotient(range, two));
-  } 
+    
+    while (v) {
+      v = v >> 1;
+      len++;
+    }
 
-  if (SCHEME_INTP(n))
-    v = (double)SCHEME_INT_VAL(n);
-  else
-    v = scheme_bignum_to_float(n);
+    if (!len)
+      return zero;
+  }
 
-  return scheme_make_double(sqrt(v));
+  /* We know that the square root is no bigger than
+     2^((len+1)/2). Pick that number as a. */
+  a = scheme_bignum_shift(scheme_make_bignum(1), (len + 1) >> 1);
+  
+  while (1) {
+    /* Add a*a to x, divide by 2a: */
+    a_sq = scheme_bin_mult(a, a);
+    twice_a = scheme_bin_mult(two, a);
+
+    b = scheme_bin_quotient(scheme_bin_plus(n, a_sq), twice_a);
+
+    /* If b = a, we're done: */
+    if (scheme_bin_eq(b, a)) {
+      return a;
+    }
+
+    /* If b is bigger, there's no exact root: */
+    if (scheme_bin_gt(b, a)) {
+      double v;
+      
+      if (SCHEME_INTP(n))
+	v = (double)SCHEME_INT_VAL(n);
+      else {
+	v = scheme_bignum_to_float(n);
+	
+	if (MZ_IS_POS_INFINITY(v))
+	  return scheme_make_double(v);
+      }
+      
+      return scheme_make_double(sqrt(v));
+    }
+    
+    /* Otherwise, b is a better guess: */
+    a = b;
+  }
 }

@@ -19,6 +19,7 @@
 
 #include "schpriv.h"
 #include "schrunst.h"
+#include "schmach.h"
 #include "schminc.h"
 
 #ifndef NO_UNIT_SYSTEM
@@ -924,10 +925,8 @@ static int check_invoke_unit(char *where, Scheme_Object *form, Scheme_Comp_Env *
 
     l = SCHEME_CDR(l);
     
-    if (!SCHEME_SYMBOLP(first))
-      scheme_wrong_syntax(where, first, form,
-			  "bad syntax (not an identifier)");
-      
+    scheme_check_identifier(where, first, "", env, form);
+    
     count++;
   }
   
@@ -1535,6 +1534,15 @@ static Scheme_Object *do_invoke_unit_syntax(char *where,
 			       + (rec->dont_mark_local_use 
 				  ? SCHEME_DONT_MARK_USE 
 				  : 0));
+
+    if (ENV_PRIM_GLOBALS_ONLY(env)
+	&& SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)) {
+      v = scheme_get_primitive_global(v, scheme_min_env(env), 0, 0, 0);
+
+      if (!v)
+	scheme_wrong_syntax("invoke", s, form,
+			    "cannot access a global from within a unit");
+    }
     
     data->exports[i] = v;
   }
@@ -1932,6 +1940,15 @@ static Scheme_Object *debug_bind(Scheme_Debug_Request *request,
   return (Scheme_Object *)&b->val;
 }
 
+static Scheme_Object *do_invoke_k(void)
+{
+  Scheme_Process *p = scheme_current_process;
+  Scheme_Object *data_in = (Scheme_Object *)p->ku.k.p1;
+
+  p->ku.k.p1 = NULL;
+
+  return InvokeUnit(data_in);
+}
 
 static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 {
@@ -1944,6 +1961,17 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
 #ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
 #endif
+
+#ifdef DO_STACK_CHECK  
+# include "mzstkchk.h"
+  {
+    Scheme_Process *p = scheme_current_process;
+    p->ku.k.p1 = (void *)data_in;
+
+    return scheme_handle_stack_overflow(do_invoke_k);
+  }
+#endif
+  SCHEME_USE_FUEL(1);
 
   data = (InvokeUnitData *)data_in;
 
@@ -2097,7 +2125,7 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
   BodyData *data;
   Scheme_Object **indirect, **direct, **stack;
   int i, c, total;
-  Scheme_Object *v, *result = scheme_void;
+  Scheme_Object *v, *result_expr = NULL;
   Scheme_Process *p = scheme_current_process;
 
   cl = (UnitDataClosure *)m->data;
@@ -2143,6 +2171,9 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
   }
 
   for (e = data->body; e; e = e->next) {
+    if (result_expr)
+      _scheme_eval_compiled_expr_multi(result_expr);
+
     switch(e->type) {
     case mm_body_def:
       {
@@ -2182,17 +2213,19 @@ static Scheme_Object *do_unit(Scheme_Object **boxes, Scheme_Object **anchors,
 	  else
 	    SCHEME_ENVBOX_VAL(direct[vs[i].pos]) = v;
 	}
-	result = scheme_void;
+	result_expr = NULL;
       }
       break;
     case mm_body_seq:
-      result = e->u.seq.expr;
-      result = _scheme_eval_compiled_expr_multi(result);
+      result_expr = e->u.seq.expr;
       break;
     }
   }
 
-  return result;
+  if (result_expr)
+    return _scheme_tail_eval(result_expr);
+  else
+    return scheme_void;
 }
 
 static void *sub_debug(CompoundLinkedData *data,
@@ -2331,7 +2364,7 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
     v = subunits[i]->init_func(boxesList[i], anchorsList[i], 
 			       subunits[i], sub_debug_request);
     if (i + 1 < num_mods) {
-      /* could be a tail-call (currently only for foreign init_funcs) */
+      /* could be a tail-call */
       v = _scheme_force_value(v);
     }
   }

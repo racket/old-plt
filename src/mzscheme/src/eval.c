@@ -76,7 +76,6 @@ static Scheme_Object *local_expand(int argc, Scheme_Object **argv);
 static Scheme_Object *local_expand_body_expression(int argc, Scheme_Object **argv);
 static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
-static Scheme_Object *exn_enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 
 static Scheme_Object *built_in_name(int argc, Scheme_Object **argv);
@@ -922,9 +921,9 @@ scheme_compile_expand_macro_app(Scheme_Object *macro,
   }
 }
 
-static Scheme_Object *
-get_primitive_global(Scheme_Object *var, Scheme_Env *env, 
-		     int bucket_ok, int can_opt, int signal)
+Scheme_Object *
+scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env, 
+			    int bucket_ok, int can_opt, int signal)
 {
   Scheme_Object *sym, *orig, *gvar;
   Scheme_Bucket *b;
@@ -970,7 +969,7 @@ built_in_name(int argc, Scheme_Object **argv)
 
   o = (Scheme_Object *)scheme_global_bucket(argv[0], env);
   if (o) {
-    if ((o = get_primitive_global(o, env, 1, 0, 0)))
+    if ((o = scheme_get_primitive_global(o, env, 1, 0, 0)))
       return (Scheme_Object *)((Scheme_Bucket *)o)->key;
   }
 
@@ -1065,7 +1064,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       /* Check for global use within unit: */
       if (ENV_PRIM_GLOBALS_ONLY(env)
 	  && (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)))
-	var = get_primitive_global(var, scheme_min_env(env), 0, rec && rec->can_optimize_constants, 1);
+	var = scheme_get_primitive_global(var, scheme_min_env(env), 0, 
+					  rec && rec->can_optimize_constants, 1);
 
       if (rec) {
 	scheme_compile_rec_done_local(rec);
@@ -1126,7 +1126,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       /* Check for global use within unit: */
       if (ENV_PRIM_GLOBALS_ONLY(env)
 	  && (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)))
-	var = get_primitive_global(var, scheme_min_env(env), 0, rec && rec->can_optimize_constants, 1);
+	var = scheme_get_primitive_global(var, scheme_min_env(env), 0, 
+					  rec && rec->can_optimize_constants, 1);
 
       /* Optimize (void) to just the value void */
       if (rec && rec->can_optimize_constants && SAME_OBJ(var, scheme_void_func)

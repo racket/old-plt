@@ -105,6 +105,7 @@ static Scheme_Object *initial_renames;
 static Scheme_Bucket_Table *initial_toplevel;
 
 static Scheme_Object *empty_self_modidx;
+static Scheme_Object *empty_self_symbol;
 
 typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname, 
 			   Scheme_Object *modname, Scheme_Object *srcname, 
@@ -949,7 +950,7 @@ static Scheme_Object *_module_resolve(Scheme_Object *modidx, Scheme_Object *stx)
     return modidx;
 
   if (SAME_OBJ(modidx, empty_self_modidx))
-    return scheme_false;
+    return empty_self_symbol;
 
   if (SCHEME_FALSEP(((Scheme_Modidx *)modidx)->resolved)) {
     /* Need to resolve access path to a module name: */
@@ -1676,7 +1677,9 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (!empty_self_modidx) {
     REGISTER_SO(empty_self_modidx);
+    REGISTER_SO(empty_self_symbol);
     empty_self_modidx = scheme_make_modidx(scheme_false, scheme_false, scheme_false);
+    empty_self_symbol = scheme_make_symbol("module-local"); /* uninterned */
   }
 
   /* phase shift to replace self_modidx of previous expansion (if any): */

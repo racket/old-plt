@@ -1519,7 +1519,17 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       stack = scheme_make_pair(a, stack);
     } else {
       /* box, a phase shift */
-      stack = scheme_make_pair(a, stack);
+      /* Any more rename tables? */
+      Scheme_Object *l = SCHEME_CDR(w);
+      while (!SCHEME_NULLP(l)) {
+	if (SCHEME_RENAMESP(SCHEME_CAR(l)))
+	  break;
+	l = SCHEME_CDR(l);
+      }
+      /* If l is scheme_null, don't need the phase shift */
+      if (SCHEME_PAIRP(l)) {
+	stack = scheme_make_pair(a, stack);
+      }
     }
 
     w = SCHEME_CDR(w);

@@ -279,21 +279,14 @@ scheme_list_to_vector (Scheme_Object *list)
   int len, i;
   Scheme_Object *vec, *orig = list;
 
-  /* Technically, we need to worry about the size of the input
-     list. However, we've chosen the vector size limit so that it's
-     unreasonable to expect a list to be too large - we expect to run
-     out of memory, first! */
-
   len = scheme_proper_list_length(list);
   if (len < 0)
     scheme_wrong_type("list->vector", "proper list", -1, 0, &orig);
 
-  vec = scheme_make_vector (len, 0);
-  i = 0;
-  while (SCHEME_PAIRP(list)) {
+  vec = scheme_make_vector(len, NULL);
+  for (i = 0; i < len; i++) {
     SCHEME_VEC_ELS(vec)[i] = SCHEME_CAR(list);
-    i++;
-    list = SCHEME_CDR (list);
+    list = SCHEME_CDR(list);
   }
 
   return vec;
@@ -307,7 +300,7 @@ vector_fill (int argc, Scheme_Object *argv[])
   if (!SCHEME_MUTABLE_VECTORP(argv[0]))
     scheme_wrong_type("vector-fill!", "mutable vector", 0, argc, argv);
 
-  for (i = 0; i < SCHEME_VEC_SIZE(argv[0]) ; i++) {
+  for (i = 0; i < SCHEME_VEC_SIZE(argv[0]); i++) {
     SCHEME_VEC_ELS(argv[0])[i] = argv[1];
   }
 

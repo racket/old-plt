@@ -720,30 +720,19 @@ static Scheme_Object *
 list_exec (int argc, Scheme_Object *argv[], int star)
 {
   int i;
-  Scheme_Object *first, *last, *pair;
-
-  if (star)
-    --argc;
-
-  first = last = scheme_null;
-  for (i = 0; i < argc ; i++) {
-    pair = scheme_make_pair (argv[i], scheme_null);
-    if (SCHEME_NULLP(last))
-      first = last = pair;
-    else {
-      SCHEME_CDR (last) = pair;
-      last = pair;
-    }
-  }
+  Scheme_Object *l;
 
   if (star) {
-    if (SCHEME_NULLP(last))
-      first = argv[argc];
-    else
-      SCHEME_CDR (last) = argv[argc];
+    --argc;
+    l = argv[argc];
+  } else
+    l = scheme_null;
+
+  for (i = argc ; i--; ) {
+    l = scheme_make_pair(argv[i], l);
   }
 
-  return first;
+  return l;
 }
 
 static Scheme_Object *

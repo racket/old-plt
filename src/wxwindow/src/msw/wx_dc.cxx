@@ -356,16 +356,49 @@ void wxDC::Clear(void)
 {
   HDC dc;
   RECT rect;
+  XFORM orig_xform;
+  int use_xform;
 
   dc = ThisDC();
 
   if (!dc) return;
 
-  rect.left = -200000;
-  rect.top = -200000;
-  rect.right = 200000;
-  rect.bottom = 200000;
-  
+  /* Get the DC's width and height */
+  if (canvas)
+    GetClientRect(((wxWnd *)canvas->handle)->handle, &rect);
+  else if (selected_bitmap) {
+    rect.left = 0; rect.top = 0;
+    rect.right = selected_bitmap->GetWidth();
+    rect.bottom = selected_bitmap->GetHeight();
+  } else {
+    rect.left = 0;
+    rect.top = 0;
+    rect.right = ::GetDeviceCaps(dc, HORZRES);
+    rect.bottom = ::GetDeviceCaps(dc, VERTRES);
+  }
+
+  /* Make sure the mapping mode is 1:1 */
+  if (::GetGraphicsMode(dc) == GM_ADVANCED) {
+    XFORM xform;
+
+    GetWorldTransform(dc, &orig_xform);
+    use_xform = 1;
+
+    xform.eM11 = 1;
+    xform.eM21 = 0;
+    xform.eM12 = 0;
+    xform.eM22 = 1;
+    xform.eDx = 0;
+    xform.eDy = 0;
+    ::SetWorldTransform(dc, &xform);
+  } else {
+    (void) ::SetMapMode(dc, MM_TEXT);
+    ::SetViewportOrgEx(dc, 0, 0, NULL);
+    ::SetWindowOrgEx(dc, 0, 0, NULL);
+    use_xform = 1;
+  }
+
+  /* Here's the actual clear operation */
   {
     HBRUSH brush;
     brush = CreateSolidBrush(GetBkColor(dc));
@@ -373,7 +406,14 @@ void wxDC::Clear(void)
     DeleteObject(brush);
   }
 
-  DoneDC(dc);
+  /* Restore the mapping mode and release the DC */
+  if (use_xform) {
+    ::SetWorldTransform(dc, &orig_xform);
+    DoneDC(dc);
+  } else {
+    DoneDC(dc);
+    SetMapMode(mapping_mode);
+  }
 }
 
 void wxDC::BeginDrawing(void)

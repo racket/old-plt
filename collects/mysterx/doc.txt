@@ -72,6 +72,15 @@ _MysterX_
  browsers, which are instances of the class
  mx-browser%.
 
+> mx-browser% :: (make-object mx-browser% label width height x y style-list)
+
+  Creates an instance of a MysterX document.  `label' is a string for the 
+  document caption, with default "MysterX".  `width', `height', `x', and 
+  `y' give the size and placement of the document on the desktop, 
+  with defaults provided by Windows if omitted.  `style-list' may contain 
+  any of the symbols 'iconize, 'maximize, 'no-caption, 'no-system-menu, 
+  and 'no-thick-border.
+
 > current-document :: (send an-mx-browser current-document)
 
  Returns the current document in the browser, an instance
@@ -81,6 +90,28 @@ _MysterX_
 
   If `b' is #f, the browser window is hidden.
   Otherwise, the window is shown.
+
+> navigate :: (send an-mx-browser navigate url)
+
+  Navigates the browser to the URL given by `url', a string.
+  Any DHTML changes to the page associated with the URL 
+  are not shown.
+
+> go-back :: (send an-mx-browser go-back)
+
+  Navigates the browser back to a URL within its history list.
+  Any DHTML changes to the page associated with the URL 
+  are not shown.
+
+> go-forward :: (send an-mx-browser go-forward)
+
+  Navigates the browser forward to a URL within its history list.  
+  Any DHTML changes to the page associated with the URL are 
+  not shown.
+
+> current-url :: (send an-mx-browser current-url)
+
+  Returns a string indicating the currently displayed URL. 
 
 > register-navigate-handler :: (send an-mx-browser register-navigate-handler f)
 

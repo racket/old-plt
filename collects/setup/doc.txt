@@ -348,7 +348,7 @@ mzc supports the creation of simple .plt files (see the mzc manual for
 details) but the setup collection's _pack.ss_ library provides more
 general functions to help make .plt archives:
 
-> (pack-collections dest name collections replace? extra-setup-collections)
+> (pack-collections dest name collections replace? extra-setup-collections [filter])
 
   Creates the .plt file specified by the pathname `dest', using the
   string `name' as the name reported to Setup PLT as the archive's
@@ -365,6 +365,9 @@ general functions to help make .plt archives:
   The `extra-setup-collections' argument is a list of collection paths
   that are not included in the archive, but are set-up when the
   archive is unpacked.
+
+  The optional `filter' argument is the same as for `pack' (see
+  below).
 
 > (pack dest name paths collections [filter encode? file-mode unpack-unit plt-relative? requires conflicts])
 

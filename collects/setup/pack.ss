@@ -161,102 +161,103 @@
        (or files (directory-list dir)))))
   
   (define (std-filter path)
-    (not (or (regexp-match "CVS$" path)
-             (regexp-match "compiled$" path)
-             (regexp-match "~$" path)
-             (regexp-match "^#.*#$" path))))
+    (not (or (regexp-match #rx"CVS$" path)
+             (regexp-match #rx"compiled$" path)
+             (regexp-match #rx"~$" path)
+             (regexp-match #rx"^#.*#$" path))))
 
-  (define (pack-collections output name collections replace? extra-setup-collections)
-    (let-values ([(dir source-files requires conflicts name)
-		  (let ([dirs (map (lambda (cp) (apply collection-path cp)) collections)])
-		    ;; Figure out the base path:
-		    (let* ([base-path #f]
-			   [base-path-setter #f]
-			   [rel-paths 
-			    (map (lambda (dir coll)
-				   (let-values ([(base c-name dir?) (split-path dir)])
-				     (let-values ([(base subdir)
-						   (let loop ([l (cdr coll)][base base])
-						     (let-values ([(base x-name dir?) (split-path base)])
-						       (if (null? l)
-							   (values base x-name)
-							   (let-values ([(base subdir) (loop (cdr l) base)])
-							     (values base (build-path subdir x-name))))))])
-				       (if base-path
-					   (unless (equal? base base-path)
-					     (error
-					      'mzc
-					      "cannot combine collections that live in different directories: \"~a\" and: \"~a\""
-					      base-path-setter
-					      dir))
-					   (begin
-					     (set! base-path-setter dir)
-					     (set! base-path base)))
-				       (build-path 'same subdir c-name))))
-				 dirs collections)]
-			   [infos (map (lambda (cp) (get-info cp))
-				       collections)]
-			   [coll-list? (lambda (cl)
-					 (and (list? cl)
-					      (andmap (lambda (c) 
-							(and (list? c)
-							     (andmap string? c)
-							     (andmap relative-path? c)))
-						      cl)))]
-			   [get-dep-coll (lambda (which)
-					   (apply append (map (lambda (i src-cp)
-								(let ([rl (if i
-									      (i which (lambda () null))
-									      null)])
-								  (unless (coll-list? rl)
-								    (error
-								     'mzc
-								     "bad ~a specification in info.ss for collection ~s"
-								     which
-								     src-cp))
-								  rl))
-							      infos collections)))])
-		      (values base-path
-			      rel-paths
-			      (get-dep-coll 'requires)
-			      (append
-			       (if replace? null collections)
-			       (get-dep-coll 'conflicts))
-			      (or name
-				  ((or (car infos)
-				       (lambda (n f) (caar collections)))
-				   'name
-				   (lambda () (caar collections)))))))])
-      (let ([output (path->complete-path output)])
-	(parameterize ([current-directory dir])
-	  (pack output name
-		source-files
-		(append
-		 extra-setup-collections
-		 (filter get-info collections))
-		std-filter #t 
-		(if replace?
-		    'file-replace
-		    'file)
-		#f
-		#t ; plt-relative
-		;; For each require, get current version
-		(map (lambda (r)
-		       (let ([i (get-info r)])
-			 (let ([v (and i (i 'version (lambda () #f)))])
-			   (if v
-			       (begin
-				 (unless (and (list? v)
-					      (andmap number? v)
-					      (andmap exact? v)
-					      (andmap integer? v))
-				   (error
-				    'mzc
-				    "bad version specification in info.ss for collection ~s"
-				    r))
-				 (list r v))
-			       (list r null)))))
-		     (cons
-		      '("mzscheme")
-		      requires))
-		conflicts))))))
+  (define pack-collections
+    (opt-lambda (output name collections replace? extra-setup-collections [file-filter std-filter])
+      (let-values ([(dir source-files requires conflicts name)
+		    (let ([dirs (map (lambda (cp) (apply collection-path cp)) collections)])
+		      ;; Figure out the base path:
+		      (let* ([base-path #f]
+			     [base-path-setter #f]
+			     [rel-paths 
+			      (map (lambda (dir coll)
+				     (let-values ([(base c-name dir?) (split-path dir)])
+				       (let-values ([(base subdir)
+						     (let loop ([l (cdr coll)][base base])
+						       (let-values ([(base x-name dir?) (split-path base)])
+							 (if (null? l)
+							     (values base x-name)
+							     (let-values ([(base subdir) (loop (cdr l) base)])
+							       (values base (build-path subdir x-name))))))])
+					 (if base-path
+					     (unless (equal? base base-path)
+					       (error
+						'mzc
+						"cannot combine collections that live in different directories: \"~a\" and: \"~a\""
+						base-path-setter
+						dir))
+					     (begin
+					       (set! base-path-setter dir)
+					       (set! base-path base)))
+					 (build-path 'same subdir c-name))))
+				   dirs collections)]
+			     [infos (map (lambda (cp) (get-info cp))
+					 collections)]
+			     [coll-list? (lambda (cl)
+					   (and (list? cl)
+						(andmap (lambda (c) 
+							  (and (list? c)
+							       (andmap string? c)
+							       (andmap relative-path? c)))
+							cl)))]
+			     [get-dep-coll (lambda (which)
+					     (apply append (map (lambda (i src-cp)
+								  (let ([rl (if i
+										(i which (lambda () null))
+										null)])
+								    (unless (coll-list? rl)
+								      (error
+								       'mzc
+								       "bad ~a specification in info.ss for collection ~s"
+								       which
+								       src-cp))
+								    rl))
+								infos collections)))])
+			(values base-path
+				rel-paths
+				(get-dep-coll 'requires)
+				(append
+				 (if replace? null collections)
+				 (get-dep-coll 'conflicts))
+				(or name
+				    ((or (car infos)
+					 (lambda (n f) (caar collections)))
+				     'name
+				     (lambda () (caar collections)))))))])
+	(let ([output (path->complete-path output)])
+	  (parameterize ([current-directory dir])
+	    (pack output name
+		  source-files
+		  (append
+		   extra-setup-collections
+		   (filter get-info collections))
+		  file-filter #t 
+		  (if replace?
+		      'file-replace
+		      'file)
+		  #f
+		  #t ; plt-relative
+		  ;; For each require, get current version
+		  (map (lambda (r)
+			 (let ([i (get-info r)])
+			   (let ([v (and i (i 'version (lambda () #f)))])
+			     (if v
+				 (begin
+				   (unless (and (list? v)
+						(andmap number? v)
+						(andmap exact? v)
+						(andmap integer? v))
+				     (error
+				      'mzc
+				      "bad version specification in info.ss for collection ~s"
+				      r))
+				   (list r v))
+				 (list r null)))))
+		       (cons
+			'("mzscheme")
+			requires))
+		  conflicts)))))))

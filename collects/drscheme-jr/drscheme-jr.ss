@@ -576,7 +576,7 @@
 				  t)))])
 		  (let loop ([old-vals null])
 		    (let ([this (read)])
-		      (when (or #t print-values?)
+		      (when print-values?
 			(for-each (lambda (val)
 				    (unless (void? val)
 				      (drscheme-jr-print val)))

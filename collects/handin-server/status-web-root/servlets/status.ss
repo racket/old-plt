@@ -98,6 +98,18 @@
 		      l))))
 	      (list (format "No handins accepted so far for user ~s, assignment ~s" user hi)))))
 
+      (define (solution-link k hi)
+	(let* ([soln (build-path (if (directory-exists? (build-path "active" hi))
+				     "active"
+				     "inactive")
+				 hi
+				"solution"
+				(format "~asol.scm" hi))])
+	  (if (file-exists? soln)
+	      `((a ((href ,(make-k k soln)))
+		   "Solution"))
+	      `((i "Solution not available")))))
+
       (define (handin-grade user hi)
 	(let* ([dir (build-path (if (directory-exists? (build-path "active" hi))
 				    "active"
@@ -121,6 +133,7 @@
 		     (format "User: ~a, Handin: ~a" user for-handin)
 		     `(p ,@(handin-link k user for-handin))
 		     `(p "Grade: " ,(handin-grade user for-handin))
+		     `(p ,@(solution-link k for-handin))
 		     `(p (a ((href ,(make-k k "allofthem")))
 			    ,(format "All handins for ~a" user))))))])
 	    (let ([tag (select-k next)])
@@ -145,7 +158,8 @@
 		       ,@(map (lambda (hi)
 				`(tr (td ((bgcolor "white")) ,hi)
 				     (td ((bgcolor "white")) ,@(handin-link k user hi))
-				     (td ((bgcolor "white")) ,(handin-grade user hi))))
+				     (td ((bgcolor "white")) ,(handin-grade user hi))
+				     (td ((bgcolor "white")) ,@(solution-link k hi))))
 			      l)))))])
 	    (let ([tag (select-k next)])
 	      (download tag)))))

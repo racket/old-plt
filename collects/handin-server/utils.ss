@@ -104,7 +104,8 @@
 	  [posn-module ((current-module-name-resolver) '(lib "posn.ss" "lang") #f #f)])
       (parameterize ([current-namespace ns]
 		     [read-case-sensitive #t]
-		     [read-decimal-as-inexact #f])
+		     [read-decimal-as-inexact #f]
+		     [current-inspector (make-inspector)])
 	(namespace-attach-module orig-ns posn-module)
 	(parameterize ([current-eventspace (make-eventspace)])
 	  (namespace-require `(lib ,(case language

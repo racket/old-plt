@@ -321,7 +321,8 @@ mark_overflow {
   Scheme_Overflow *o = (Scheme_Overflow *)p;
 
   gcMARK(o->prev);
-  MARK_jmpup(&o->cont);
+  gcMARK(o->cont);
+  MARK_jmpup(&o->savebuf);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Overflow));

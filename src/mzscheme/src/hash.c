@@ -137,8 +137,6 @@ Scheme_Hash_Table *scheme_make_hash_table(int type)
   return table;
 }
 
-static int hash_stage, rehashing;
-
 static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int set, Scheme_Object *val)
 {
   Scheme_Object *tkey, **keys;
@@ -146,8 +144,6 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
   long size = table->size;
 
  rehash_key:
-
-  hash_stage = 0;
 
   if (table->make_hash_indices) {
     table->make_hash_indices((void *)key, &h, &h2);
@@ -170,8 +166,6 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
 
   keys = table->keys;
   
-  hash_stage = 1;
-
   if (table->compare) {
     while ((tkey = keys[h])) {
       if (SAME_PTR(tkey, GONE)) {
@@ -209,8 +203,6 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
     }
   }
 
-  hash_stage = 2;
-
   if (!set || !val)
     return NULL;
 
@@ -223,8 +215,6 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
     Scheme_Object **oldkeys = table->keys;
     Scheme_Object **oldvals = table->vals;
 
-    rehashing = 1;
-
     table->size = scheme_hash_primes[++table->step];
     size = table->size;
     
@@ -236,20 +226,14 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
       table->keys = ba;
     }
 
-    rehashing = 2;
-
     table->count = 0;
     for (i = 0; i < oldsize; i++) {
       if (oldkeys[i] && !SAME_PTR(oldkeys[i], GONE))
 	do_hash(table, oldkeys[i], 2, oldvals[i]);
     }
 
-    rehashing = 0;
-
     goto rehash_key;
   }
-
-  hash_stage = 3;
 
   table->keys[h] = key;
   table->vals[h] = val;

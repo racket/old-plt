@@ -314,6 +314,10 @@ static void MARK_jmpup(Scheme_Jumpup_Buf *buf)
   gcMARK(buf->cont);
   gcMARK(buf->external_stack);
 
+  /* IMPORTANT: the buf->stack_copy pointer must be the only instance
+     of this stack to be traversed. If you copy a jmpup buffer (as in
+     fun.c), don't let a GC happen until the old copy is zeroed
+     out. */
   if (buf->stack_copy)
     GC_mark_variable_stack(buf->gc_var_stack,
 			   (long)buf->stack_copy - (long)buf->stack_from,

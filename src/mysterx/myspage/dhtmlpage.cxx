@@ -118,13 +118,15 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 
     if (pSrcElement) {
 
-      hr = pSrcElement->get_tagName(&eltName);
+      pSrcElement->get_tagName(&eltName);
 
       pEvent->put_srcTag(eltName);
 
-      hr = pSrcElement->getAttribute(idAttr,FALSE,&variant);
+      pSrcElement->getAttribute(idAttr,FALSE,&variant);
 
-      pEvent->put_srcId(variant.bstrVal);
+      if (variant.vt == VT_BSTR) {
+	pEvent->put_srcId(variant.bstrVal);
+      }
 
       pSrcElement->Release();
 
@@ -155,7 +157,9 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 
         pFromElement->getAttribute(idAttr,FALSE,&variant);
 
-        pEvent->put_fromId(variant.bstrVal);
+	if (variant.vt == VT_BSTR) {
+	  pEvent->put_fromId(variant.bstrVal);
+	}
 
         pFromElement->Release();
       }
@@ -170,7 +174,9 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 
         pToElement->getAttribute(idAttr,FALSE,&variant);
 
-        pEvent->put_toId(variant.bstrVal);
+	if (variant.vt == VT_BSTR) {
+	  pEvent->put_toId(variant.bstrVal);
+	}
 
         pToElement->Release();
       }

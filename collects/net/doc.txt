@@ -1503,12 +1503,12 @@ PROCEDURES -----------------------------------------------------------
    library.  It returns a `message' structure, having the following
    fields: version, entity, and fields.
 
-   > (message-version message-struct)
+> (message-version message-struct)
 
    the value of the MIME-version header.  It has a default 1.0 value
    when message does not contain a MIME-version header.
 
-   > (message-entity message-struct)
+> (message-entity message-struct)
 
    another structure, `entity'.  According to rfc2045, and entity
    refers to the MIME-defined header fields and contents of either a
@@ -1518,7 +1518,7 @@ PROCEDURES -----------------------------------------------------------
    MIME-headers, parts (sub-entities), and/or contents of message are
    stored into this structure.
 
-   > (message-fields message-struct)
+> (message-fields message-struct)
 
    a list of all non-MIME headers in message.  If message is an
    rfc822, for instance, this list could contain 'From', 'Subject',
@@ -1640,16 +1640,16 @@ struct entity
    creation, modification, read, size, and params.  Only type is
    required.
 
-   > (disposition-type disposition-struct)
+> (disposition-type disposition-struct)
 
    disposition-type := 'inline / 'attachment  / extension-token
 
-   > (disposition-filename disposition-struct)
+> (disposition-filename disposition-struct)
 
    string representing the `filename' parameter of the
    Content-Disposition header.
 
-   > (disposition-creation disposition-struct)
+> (disposition-creation disposition-struct)
 
    string representing the `creation-date' parameter, which must
    follow this BNF grammar:
@@ -1683,21 +1683,21 @@ struct entity
                                    ;  M:-12; N:+1; Y:+12
             / ( ("+" / "-") 4DIGIT )        ; Local differential
 
-   > (disposition-modification disposition-struct)
+> (disposition-modification disposition-struct)
 
    String representing the `modification-date' parameter, it has the
    same syntax as `disposition-creation'.
 
-   > (disposition-read disposition-struct)
+> (disposition-read disposition-struct)
 
    String representing the `read-date' parameter, it has the same
    syntax as `disposition-creation'.
 
-   > (disposition-size disposition-struct)
+> (disposition-size disposition-struct)
 
    Number representing the `size' parameter (the size of the file).
 
-   > (disposition-params disposition-struct)
+> (disposition-params disposition-struct)
 
    List of extra parameters (non-standard) following the
    Content-Disposition header.

@@ -277,7 +277,8 @@
 	       (process/zodiac
 		(zodiac:read port (zodiac:make-location 0 0 0 filename))
 		(lambda (x r)
-		  (unless x (close-input-port port))
+		  (when (process/zodiac-finish? x)
+		    (close-input-port port))
 		  (f x r))
 		annotate?)))]
 	  [process/zodiac
@@ -566,7 +567,7 @@
 			(user-load-relative-directory base)))
 		    (lambda ()
 		      (let ([process-sexps
-			     (let ([last (void)])
+			     (let ([last (list (void))])
 			       (lambda (sexp recur)
 				 (cond
 				   [(process/zodiac-finish? sexp)
@@ -575,20 +576,24 @@
 					last)]
 				   [else
 				    (set! last
-					  (with-handlers ([(lambda (x) #t)
-							   (lambda (exn)
-							     (report-exception-error exn this))])
-					    (with-parameterization param
-					      (lambda ()
-					(primitive-eval sexp)))))
+					  (call-with-values
+					   (lambda ()
+					     (with-handlers ([(lambda (x) #t)
+							      (lambda (exn)
+								(report-exception-error exn this))])
+					       (with-parameterization param
+						 (lambda ()
+						   (primitive-eval sexp)))))
+					   (lambda x x)))
 				    (recur)])))])
-			(if (equal? chars (list #\W #\X #\M #\E))
-			    (let ([edit (make-object drscheme:edit:edit%)])
-			      (send edit load-file filename)
-			      (process-edit/zodiac edit process-sexps
-						   0 (send edit last-position)
-						   #t))
-			    (process-file/zodiac filename process-sexps #t))))
+			(apply values 
+			      (if (equal? chars (list #\W #\X #\M #\E))
+				  (let ([edit (make-object drscheme:edit:edit%)])
+				    (send edit load-file filename)
+				    (process-edit/zodiac edit process-sexps
+							 0 (send edit last-position)
+							 #t))
+				  (process-file/zodiac filename process-sexps #t)))))
 		    (lambda ()
 		      (user-load-relative-directory old-load-relative-directory)))))))])
 	(public

@@ -1,4 +1,4 @@
-; $Id: link.ss,v 1.15 1998/11/04 19:52:53 mflatt Exp $
+; $Id: link.ss,v 1.16 1999/02/02 19:33:14 mflatt Exp $
 
 (compound-unit/sig 
   (import
@@ -29,7 +29,8 @@
 	SCAN-PARMS INTERFACE SCAN-CODE)]
     [SEXP : zodiac:sexp^
       ((require-relative-library-unit/sig "sexp.ss")
-	MISC TOP-STRUCTS READ-STRUCTS INTERFACE)]
+	MISC TOP-STRUCTS READ-STRUCTS INTERFACE
+	SCHEME-MAIN)]
     [PATTERN : zodiac:pattern^
       ((require-relative-library-unit/sig "pattern.ss")
 	MISC SEXP READ-STRUCTS SCHEME-CORE)]

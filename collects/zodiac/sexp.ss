@@ -1,10 +1,11 @@
-; $Id: sexp.ss,v 1.23 1999/05/20 22:36:52 mflatt Exp $
+; $Id: sexp.ss,v 1.24 1999/06/02 11:29:38 mflatt Exp $
 
 (unit/sig zodiac:sexp^
   (import zodiac:misc^
     zodiac:structures^
     (z : zodiac:reader-structs^)
-    zodiac:interface^)
+    zodiac:interface^
+    zodiac:scheme-main^)
 
   (define identity (lambda (x) x))
 
@@ -58,6 +59,9 @@
 		     (z:make-boolean origin start finish expr))
 		   ((char? expr)
 		     (z:make-char origin start finish expr))
+		   [(and (object? expr)
+			 (is-a? expr expands<%>))
+		    (z:make-external origin start finish expr)]
 		   (else
 		     (z:make-list origin start finish
 		       (list

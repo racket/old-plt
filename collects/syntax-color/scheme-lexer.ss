@@ -233,17 +233,17 @@
     (lexer
      [(+ whitespace) (ret 'white-space start-pos end-pos)]
      [(: "#t" "#f" "#T" "#F" num2 num8 num10 num16 character)
-      (ret 'literal start-pos end-pos)]
+      (ret 'constant start-pos end-pos)]
      [str (ret 'string start-pos end-pos)]
      [(: "#;" line-comment) 
       (ret 'comment start-pos end-pos)]
      ["#|" (read-nested-comment 1 start-pos input-port)]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "(")
-      (values 'other '|(| (position-offset start-pos) (position-offset end-pos))]
+      (values 'base '|(| (position-offset start-pos) (position-offset end-pos))]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "[")
-      (values 'other '|[| (position-offset start-pos) (position-offset end-pos))]
+      (values 'base '|[| (position-offset start-pos) (position-offset end-pos))]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "{")
-      (values 'other '|{| (position-offset start-pos) (position-offset end-pos))]
+      (values 'base '|{| (position-offset start-pos) (position-offset end-pos))]
      [(: ")" "]" "}"
          "'" "`" "," ",@"
          "#'" "#`" "#," "#,@"
@@ -251,8 +251,8 @@
          reader-command
          script
          sharing)
-      (values 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
-     [identifier (values 'identifier lexeme (position-offset start-pos) (position-offset end-pos))]
+      (values 'base (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
+     [identifier (values 'symbol lexeme (position-offset start-pos) (position-offset end-pos))]
      [(special)
       (ret 'white-space start-pos end-pos)]
      [(special-comment)

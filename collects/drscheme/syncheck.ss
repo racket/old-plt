@@ -10,7 +10,6 @@
   (require (lib "string-constant.ss" "string-constants")
            (lib "unitsig.ss")
            "tool.ss"
-           "default-code-style.ss"
            (lib "class.ss")
            (lib "list.ss")
            (lib "toplevel.ss" "syntax")
@@ -57,135 +56,18 @@
                       ;;;    ;;;   ;;;;; 
                      
                      
-      (define add/mult-set
-        (lambda (m v)
-          (send m set (car v) (cadr v) (caddr v))))
-      
-      (define add/mult-get
-        (lambda (m)
-          (let ([b1 (box 0)]
-                [b2 (box 0)]
-                [b3 (box 0)])
-            (send m get b1 b2 b3)
-            (map unbox (list b1 b2 b3)))))
-      
-      (define style-delta-get/set
-        (list (cons (lambda (x) (send x get-alignment-off))
-                    (lambda (x v) (send x set-alignment-off v)))
-              (cons (lambda (x) (send x get-alignment-on))
-                    (lambda (x v) (send x set-alignment-on v)))
-              (cons (lambda (x) (add/mult-get (send x get-background-add)))
-                    (lambda (x v) (add/mult-set (send x get-background-add) v)))
-              (cons (lambda (x) (add/mult-get (send x get-background-mult)))
-                    (lambda (x v) (add/mult-set (send x get-background-mult) v)))
-              (cons (lambda (x) (send x get-face))
-                    (lambda (x v) (send x set-face v)))
-              (cons (lambda (x) (send x get-family))
-                    (lambda (x v) (send x set-family v)))
-              (cons (lambda (x) (add/mult-get (send x get-foreground-add)))
-                    (lambda (x v) (add/mult-set (send x get-foreground-add) v)))
-              (cons (lambda (x) (add/mult-get (send x get-foreground-mult)))
-                    (lambda (x v) (add/mult-set (send x get-foreground-mult) v)))
-              (cons (lambda (x) (send x get-size-add))
-                    (lambda (x v) (send x set-size-add v)))
-              (cons (lambda (x) (send x get-size-mult))
-                    (lambda (x v) (send x set-size-mult v)))
-              (cons (lambda (x) (send x get-style-off))
-                    (lambda (x v) (send x set-style-off v)))
-              (cons (lambda (x) (send x get-style-on))
-                    (lambda (x v) (send x set-style-on v)))
-              (cons (lambda (x) (send x get-underlined-off))
-                    (lambda (x v) (send x set-underlined-off v)))
-              (cons (lambda (x) (send x get-underlined-on))
-                    (lambda (x v) (send x set-underlined-on v)))
-              (cons (lambda (x) (send x get-weight-off))
-                    (lambda (x v) (send x set-weight-off v)))
-              (cons (lambda (x) (send x get-weight-on))
-                    (lambda (x v) (send x set-weight-on v)))))
-      
-      (define marshall-style
-        (lambda (style)
-          (map (lambda (fs) ((car fs) style)) style-delta-get/set)))
-      
-      (define unmarshall-style
-        (lambda (info)
-          (let ([style (make-object style-delta%)])
-            (for-each (lambda (fs v) ((cdr fs) style v)) style-delta-get/set info)
-            style)))
-      
+
       ;; prefix-style : (union symbol string) -> string
-      (define (prefix-style x) (format "drscheme:check-syntax:~a" x))
+      (define (prefix-style x) (format "syntax-coloring:Scheme Color:~a" x))
       
-      (define (prefix-style/check x)
-        (unless (and (assq x color-default-code-styles)
-                     (assq x bw-default-code-styles))
-          (error 'prefix-style/check "unknown style: ~e" x))
-        (prefix-style x))
-      
-      (define prefixed-code-styles 
-        (map (lambda (x) 
-               (cons
-                (string->symbol (prefix-style (car x)))
-                (cdr x)))
-             (if ((get-display-depth) . < . 8)
-                 bw-default-code-styles
-                 color-default-code-styles)))
-      
-      (define delta-symbols (map car prefixed-code-styles))
-      
+            
       ;; all strings naming styles
-      (define keyword-style-str (prefix-style/check 'keyword))
-      (define unbound-variable-style-str (prefix-style/check 'unbound-variable))
-      (define bound-variable-style-str (prefix-style/check 'bound-variable))
-      (define primitive-style-str (prefix-style/check 'primitive))
-      (define constant-style-str (prefix-style/check 'constant))
-      (define tail-call-style-str (prefix-style/check 'tail-call))
-      (define base-style-str (prefix-style/check 'base))
-      
-      (let ([set-default
-             (lambda (default)
-               (let* ([sym (car default)]
-                      [code-style (cadr default)]
-                      [color (code-style-color code-style)])
-                 (fw:preferences:set-default
-                  sym
-                  (let ([s (make-object style-delta%)])
-                    (send s set-delta-foreground (if (string? color)
-                                                     color
-                                                     (make-object color%
-                                                       (car color)
-                                                       (cadr color)
-                                                       (caddr color))))
-                    (when (code-style-bold? code-style)
-                      (send s set-delta 'change-bold))
-                    (when (code-style-underline? code-style)
-                      (send s set-delta 'change-underline #t))
-                    (when (code-style-slant? code-style)
-                      (send s set-delta 'change-italic))
-                    s)
-                  (lambda (x)
-                    (is-a? x style-delta%)))))])
-        (for-each set-default prefixed-code-styles))
-      
-      (for-each 
-       (lambda (s) 
-         (fw:preferences:set-un/marshall s marshall-style unmarshall-style))
-       delta-symbols)
-      
-      ; a symbol naming the style  and a delta to set it to
-      (define set-slatex-style
-        (lambda (sym delta)
-          (let* ([style-list (fw:editor:get-standard-style-list)]
-                 [name (symbol->string sym)]
-                 [style (send style-list find-named-style name)])
-            (if style
-                (send style set-delta delta)
-                (send style-list new-named-style name
-                      (send style-list find-or-create-style
-                            (send style-list find-named-style "Standard")
-                            delta))))))
-      
-      (for-each set-slatex-style delta-symbols (map fw:preferences:get delta-symbols))
+      (define keyword-style-str (prefix-style 'keyword))
+      (define unbound-variable-style-str (prefix-style 'unbound-variable))
+      (define bound-variable-style-str (prefix-style 'bound-variable))
+      (define constant-style-str (prefix-style 'constant))
+      (define string-style-str (prefix-style 'string))
+      (define base-style-str (prefix-style 'base))
       
       ;; used for quicker debugging of the preference panel
       '(define test-preference-panel
@@ -194,109 +76,6 @@
              (f frame)
              (send frame show #t))))
       
-      (define standard-style-list-text% (fw:editor:standard-style-list-mixin text%))
-      
-      (fw:preferences:add-panel
-       (string-constant check-syntax)
-       (let ([delta-panel
-              (lambda (sym parent)
-                (let* ([delta (fw:preferences:get sym)]
-                       [style-name (symbol->string sym)]
-                       [h (make-object horizontal-panel% parent '(border))]
-                       [c (make-object editor-canvas% h
-                            #f
-                            (list 'hide-hscroll
-                                  'hide-vscroll))]
-                       [_ (send c set-line-count 1)]
-                       [_ (send c allow-tab-exit #t)]
-                       [e (new (class standard-style-list-text%
-                                 (inherit change-style get-style-list)
-                                 (rename [super-after-insert after-insert])
-                                 (override after-insert)
-                                 (define (after-insert pos offset)
-                                   (super-after-insert pos offset)
-                                   (let ([style (send (get-style-list)
-                                                      find-named-style
-                                                      style-name)])
-                                     (change-style style pos (+ pos offset) #f)))
-                                 (super-instantiate ())))]
-                       [_ (fw:preferences:add-callback sym
-                                                       (lambda (sym v)
-                                                         (set-slatex-style sym v)
-                                                         #t))]
-                       [_ (set-slatex-style sym delta)]
-                       [make-check
-                        (lambda (name on off)
-                          (let* ([c (lambda (check command)
-                                      (if (send check get-value)
-                                          (on)
-                                          (off))
-                                      (fw:preferences:set sym delta))]
-                                 [check (make-object check-box% name h c)])
-                            check))]
-                       [_ (send c set-editor e)]
-                       [short-style-name (substring style-name
-                                                    (string-length "drscheme:check-syntax:")
-                                                    (string-length style-name))]
-                       [_ (send* e
-                            (insert short-style-name)
-                            (set-position 0))]
-                       [slant-check
-                        (make-check (string-constant cs-italic)
-                                    (lambda ()
-                                      (send delta set-style-on 'slant)
-                                      (send delta set-style-off 'base))
-                                    (lambda ()
-                                      (send delta set-style-on 'base)
-                                      (send delta set-style-off 'slant)))]
-                       [bold-check
-                        (make-check (string-constant cs-bold)
-                                    (lambda ()
-                                      (send delta set-weight-on 'bold)
-                                      (send delta set-weight-off 'base))
-                                    (lambda ()
-                                      (send delta set-weight-on 'base)
-                                      (send delta set-weight-off 'bold)))]
-                       [underline-check
-                        (make-check (string-constant cs-underline)
-                                    (lambda ()
-                                      (send delta set-underlined-on #t)
-                                      (send delta set-underlined-off #f))
-                                    (lambda ()
-                                      (send delta set-underlined-off #t)
-                                      (send delta set-underlined-on #f)))]
-                       [color-button
-                        (and (>= (get-display-depth) 8)
-                             (make-object button%
-                               (string-constant cs-change-color)
-                               h
-                               (lambda (color-button evt)
-                                 (let* ([add (send delta get-foreground-add)]
-                                        [color (make-object color%
-                                                 (send add get-r)
-                                                 (send add get-g)
-                                                 (send add get-b))]
-                                        [users-choice
-                                         (get-color-from-user
-                                          (format "Choose a color for ~a~a"
-                                                  short-style-name
-                                                  (if (string=? "syntax" short-style-name)
-                                                      ""
-                                                      "s"))
-                                          (send color-button get-top-level-window)
-                                          color)])
-                                   (when users-choice
-                                     (send delta set-delta-foreground users-choice)
-                                     (fw:preferences:set sym delta))))))]
-                       [style (send (send e get-style-list) find-named-style style-name)])
-                  (send slant-check set-value (eq? (send style get-style) 'slant))
-                  (send bold-check set-value (eq? (send style get-weight) 'bold))
-                  (send underline-check set-value (send style get-underlined))))])
-         (lambda (parent)
-           (let ([v (make-object vertical-panel% parent)])
-             (for-each (lambda (sym) (delta-panel sym v))
-                       delta-symbols)
-             v))))
       
       (define-struct graphic (pos* locs->thunks draw-fn click-fn))
       
@@ -1236,10 +1015,11 @@
                       (clear-annotations)
                       (reset-offer-kill)
                       (send definitions-text syncheck:init-arrows)
-                      (color-range definitions-text
-                                   0
-                                   (send definitions-text last-position)
-                                   base-style-str)
+                      (unless (send definitions-text coloring-active?)
+                        (color-range definitions-text
+                                     0
+                                     (send definitions-text last-position)
+                                     base-style-str))
                       (drscheme:eval:expand-program
                        (drscheme:language:make-text/pos definitions-text
                                                         0

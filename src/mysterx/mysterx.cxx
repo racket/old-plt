@@ -656,7 +656,7 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
   pEntry->next = NULL;
 
   hashVal = getHashValue(pIDispatch,invKind,name);
-  
+
   p = typeTable[hashVal];
   
   if (p == NULL) {
@@ -697,7 +697,7 @@ Scheme_Object *mx_release_type_table(int argc,Scheme_Object **argv) {
 
   for (i = 0; i < sizeray(typeTable); i++) {
     p = typeTable[i];
-  
+
     while (p) {
       scheme_release_typedesc((void *)p->pTypeDesc,NULL);
       psave = p;
@@ -4413,14 +4413,19 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
   int i;
 
-  scheme_date_type = 
-    scheme_lookup_global(scheme_intern_symbol("#%struct:date"),env);
+  // should not be necessary, but sometimes
+  // this variable is not 0'd out - bug in VC++ or MzScheme?
+
+  memset(typeTable,0,sizeof(typeTable)); 
 
   // globals in mysterx.cxx
 
   scheme_register_extension_global(&mx_unit,sizeof(mx_unit));
   scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
   scheme_register_extension_global(&scheme_date_type,sizeof(scheme_date_type));
+
+  scheme_date_type = 
+    scheme_lookup_global(scheme_intern_symbol("#%struct:date"),env);
 
   mx_com_object_type = scheme_make_type("<com-object>");
   mx_com_type_type = scheme_make_type("<com-type>");
@@ -4436,7 +4441,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   mx_com_typedesc_type = scheme_make_type("<com-typedesc>");
 
   hr = CoInitialize(NULL);
-  
+
   // S_OK means success, S_FALSE means COM already loaded
   
   if (hr != S_OK && hr != S_FALSE) {

@@ -466,7 +466,7 @@ void MrEdDispatchEvent(XEvent *event)
 int MrEdCheckForBreak(void)
 {
   int br;
-  XEvent e;
+  GC_CAN_IGNORE XEvent e;
   Display *d;
 
   if (!orig_top_level)

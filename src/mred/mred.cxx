@@ -1016,7 +1016,7 @@ static void GoAhead(MrEdContext *c)
     c->timer = NULL;
     DoTimer(timer);
   } else {
-    MrEdEvent e;
+    GC_CAN_IGNORE MrEdEvent e;
     mz_jmp_buf savebuf;
 
     memcpy(&e, &c->event, sizeof(MrEdEvent));
@@ -1087,7 +1087,7 @@ static void reset_nested_wait(MrEdContext *c)
 static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, void *altdata, Scheme_Object *alt_wait)
 {
   wxTimer *timer;
-  MrEdEvent evt;
+  GC_CAN_IGNORE MrEdEvent evt;
   int restricted = 0;
 
 #ifdef NEED_HET_PARAM
@@ -1373,7 +1373,7 @@ static int try_q_callback(Scheme_Object *do_it, int hi)
 static int try_dispatch(Scheme_Object *do_it)
 {
   MrEdContext *c;
-  MrEdEvent e;
+  GC_CAN_IGNORE MrEdEvent e;
   wxTimer *timer;
   int got_one;
 

@@ -145,7 +145,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     Widget wgt;
     Position x, y, new_root_x, new_root_y;
     int rx, ry;
-    XEvent xevent;
+    GC_CAN_IGNORE XEvent xevent;
     String a[1];
     Bool forChoice = wxPopupForChoice;
     void *saferef;

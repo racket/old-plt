@@ -939,7 +939,7 @@ _XFUNCPROTOEND
 
 void wxWindow::OnChar(wxKeyEvent* wxevent)
 {
-    XEvent onstack;
+    GC_CAN_IGNORE XEvent onstack;
     XEvent *xev = (XEvent*)wxevent->eventHandle; // X event
     if (!xev) {
      xev = &onstack;

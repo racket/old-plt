@@ -1128,7 +1128,9 @@
 						 (and base-is-ptr?
 						      (struct-type? (cdr base-is-ptr?))
 						      (struct-type-struct (cdr base-is-ptr?))))]
-				[union? (eq? base 'union)]
+				[union? (or (eq? base 'union)
+					    (and base-is-ptr?
+						 (union-type? (cdr base-is-ptr?))))]
 				[struct-array? (or (and base-struct (not pointer?) (number? array-size))
 						   (and base-is-ptr? (struct-array-type? (cdr base-is-ptr?))))]
 				[array-size (if (number? array-size)

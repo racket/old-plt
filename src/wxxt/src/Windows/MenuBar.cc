@@ -494,7 +494,7 @@ int wxMenuBar::InProgress(void)
 
 void wxMenuBar::SelectAMenu()
 {
-  XEvent xevent;
+  GC_CAN_IGNORE XEvent xevent;
   Position x, y, new_root_x, new_root_y;
 
   if (xwMenuIsPoppedUp(X->handle)) {

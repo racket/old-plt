@@ -70,6 +70,10 @@ void scheme_set_stack_base(void *base, int no_auto_statics)
     GC_no_dls = 1;
     GC_init();
     GC_clear_roots();
+  } else {
+# if defined(__APPLE__) && defined(__MACH__)
+    GC_init(); /* For Darwin, CGC requires GC_init() always */
+# endif
   }
 #endif
   use_registered_statics = no_auto_statics;

@@ -1168,7 +1168,7 @@ void GC_init_dyld() {
   if(initialized) return;
 
   /* PLTSCHEME: not if dls are disabled */
-  if (!GC_no_dls) {
+  if (GC_no_dls) {
     initialized = TRUE;
     return;
   }

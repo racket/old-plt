@@ -230,12 +230,7 @@ int MAIN(int argc, MAIN_char **MAIN_argv)
   GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
 #endif
 
-  /* Set stack base and turn off auto-finding of static variables ---
-     unless this is MacOS, where something (?) is apparently not
-     registered correctly. */
-#ifndef MACOS_FIND_STACK_BOUNDS
   scheme_set_stack_base(stack_start, 1);
-#endif
 
 #if defined(OSKIT) && !defined(OSKIT_TEST) && !KNIT
   oskit_prepare(&argc, &argv);

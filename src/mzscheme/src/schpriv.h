@@ -1201,7 +1201,7 @@ extern Scheme_Object *scheme_zerod, *scheme_nzerod, *scheme_pi, *scheme_half_pi,
 extern Scheme_Object *scheme_inf_object, *scheme_minus_inf_object, *scheme_nan_object;
 #ifdef MZ_USE_SINGLE_FLOATS
 extern Scheme_Object *scheme_zerof, *scheme_nzerof, *scheme_single_scheme_pi;
-Scheme_Object *scheme_single_inf_object, *scheme_single_minus_inf_object, *scheme_single_nan_object;
+extern Scheme_Object *scheme_single_inf_object, *scheme_single_minus_inf_object, *scheme_single_nan_object;
 #endif
 
 /****** General numeric ******/

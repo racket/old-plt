@@ -128,10 +128,17 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
   t1 = SCHEME_TYPE(obj1);
   t2 = SCHEME_TYPE(obj2);
 
-  if (NOT_SAME_TYPE(t1, t2))
+  if (NOT_SAME_TYPE(t1, t2)) {
+#ifdef MZ_USE_SINGLE_FLOATS
+    /* If one is a float and the other is a double, corce to double */
+    if ((t1 == scheme_float_type) && (t2 == scheme_double_type))
+      return scheme_eqv(scheme_make_double(SCHEME_FLT_VAL(obj1)), obj2);
+    else if ((t2 == scheme_float_type) && (t1 == scheme_double_type))
+      return scheme_eqv(scheme_make_double(SCHEME_FLT_VAL(obj2)), obj1);
+#endif
     return 0;
 #ifdef MZ_USE_SINGLE_FLOATS
-  else if (t1 == scheme_float_type) {
+  } else if (t1 == scheme_float_type) {
     float a, b;
     a = SCHEME_FLT_VAL(obj1);
     b = SCHEME_FLT_VAL(obj2);
@@ -156,9 +163,8 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
     }
     return 1;
 # endif
-  }
 #endif
-  else if (t1 == scheme_double_type) {
+  } else if (t1 == scheme_double_type) {
     double a, b;
     a = SCHEME_DBL_VAL(obj1);
     b = SCHEME_DBL_VAL(obj2);

@@ -680,7 +680,7 @@ Scheme_Object *scheme_make_float(float f)
   Scheme_Float *sf;
 
   sf = (Scheme_Float *)scheme_malloc_atomic_tagged(sizeof(Scheme_Float));
-  sf->type = scheme_float_type;
+  sf->so.type = scheme_float_type;
   SCHEME_FLT_VAL(sf) = f;
   return (Scheme_Object *)sf;
 }

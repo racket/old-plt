@@ -46,10 +46,14 @@
                            annotate)]
         [break : (break)
                ((require-library-unit/sig "break-graphical.ss" "stepper-graphical")
+                core
                 mred
                 marks
                 annotate
-                print-convert)]
+                print-convert
+                zodiac
+                utils
+                error)]
         [mred-extensions : stepper:mred-extensions^
                  ((require-library-unit/sig "mred-extensions.ss" "stepper-graphical")
                   mred

@@ -1,8 +1,12 @@
 (unit/sig (break)
-  (import [mred : mred^]
+  (import mzlib:core^
+          [mred : mred^]
           [marks : stepper:marks^]
           [annotate : stepper:annotate^]
-          [print-convert : mzlib:print-convert^])
+          [print-convert : mzlib:print-convert^]
+          [zodiac : zodiac:system^]
+          [utils : stepper:cogen-utils^]
+          [e : zodiac:interface^])
   
   (define drscheme-eventspace (mred:current-eventspace))
 
@@ -17,40 +21,64 @@
 ;          (case-lambda
 ;           (() debugger-frm)
 ;           ((new-frame) (set! debugger-frm new-frame)))]))))
-; ^ not sure how to do this, insead we'll just have one debugging frame for the application
+; ^ not sure how to do this, instead we'll just have one debugging frame for the application
   
   (define break-semaphore (make-semaphore))
   (define break-resume-value #f)
   (define (continue val)
     (set! break-resume-value val)
+    (disable-debugger)
     (semaphore-post break-semaphore))
   
-  (define debugger-frame #f)
-  (define level-listbox #f)
-  (define binding-listbox #f)
-  (define interaction-panel #f)
+  (define (enable-debugger)
+    (send button-panel enable #t))
   
-  (define (create-debugger-frame)
-    (let* ([f (make-object frame% "debugger" #f 300 300)]
-           [bp (make-object frame% horizontal-pane% f)]
-           [step (make-object button% "continue" bp (lambda () 
-                                                      (continue (void))))]
-           [lp (make-object horizontal-panel% f)]
-           [level-lb (make-object list-box% "level" () lp void)]
-           [binding-lb (make-object list-box% "bindings" () lp void)]
-           [interaction (make-object canvas% f)])
-      (set! debugger-frame f)
-      (set! level-listbox level-lb)
-      (set! binding-listbox binding-lb)
-      (set! interaction-panel interaction)))
-   
+  (define (disable-debugger)
+    (send button-panel enable #f))
+  
   (define-struct frame-info (source full? bindings))
   
   (define (parse-break-info mark)
-    (if (cheap-mark? mark)
-        (make-frame-info (cheap-mark-source mark) #f ())
-        (make-frame-info (mark-source mark) #t (mark-bindings mark))))
-     
+    (if (marks:cheap-mark? mark)
+        (make-frame-info (marks:cheap-mark-source mark) #f ())
+        (make-frame-info (marks:mark-source mark) #t (marks:mark-bindings mark))))
+  
+  (define (level-listbox-callback listbox event)
+    (case (send event get-event-type) 
+      ((list-box) 
+       (let ([selections (send listbox get-selections)])
+         (when (not (null? selections))
+           (display-bindings (send listbox get-data (car selections))))))))
+  
+  (define (display-bindings frame-info)
+    (send binding-listbox clear)
+    (if (frame-info-full? frame-info)
+        (let ([binding-names (map (compose
+                                   (lambda (binding)
+                                     (ccond [(zodiac:binding? binding)
+                                             (utils:binding-orig-name binding)]
+                                            [(box? binding)
+                                             (if (null? (unbox binding))
+                                                 (e:internal-error #f "empty slot in binding list")
+                                                 (zodiac:varref-var (car (unbox binding))))]))
+                                   marks:mark-binding-binding)
+                                  (frame-info-bindings frame-info))])
+          (send binding-listbox enable #t)
+          (for-each (lambda (name data)
+                      (send binding-listbox append name data))
+                    binding-names
+                    (map marks:mark-binding-value (frame-info-bindings frame-info))))
+        (send binding-listbox enable #f)))
+  
+  (define debugger-frame (make-object mred:frame% "debugger" #f 300 300))
+  (define button-panel (make-object mred:horizontal-panel% f))
+  (send button-panel stretchable-height #f)
+  (make-object mred:button% "continue" bp (lambda (a b) (continue (void))))
+  (define listbox-panel (make-object mred:horizontal-panel% f))
+  (define level-listbox (make-object mred:list-box% "level" () lp level-listbox-callback '(single)))
+  (define binding-listbox (make-object mred:list-box% "bindings" () lp (lambda (a b) (void)) '(single)))
+  (define interaction-canvas (make-object mred:canvas% f))
+  
   (define (break)
     (let ([break-info-list (continuation-mark-set->list (current-continuation-marks) 
                                                         annotate:debug-key)])
@@ -58,30 +86,24 @@
           ([mred:current-eventspace drscheme-eventspace])
         (mred:queue-callback 
          (lambda ()
-           (when (not (debugger-frame))
-             (create-debugger-frame))
+           (when (not debugger-frame)
+             (create-debugger-frame)
+             (send debugger-frame show #t))
+           (enable-debugger)
            (let* ([frame-info-list (map parse-break-info break-info-list)]
-                  [location-list (map (compose
+                  [location-list (map (function:compose
                                        (lambda (v) (let ([sp (open-output-string)])
                                                      (write v sp)
                                                      (get-output-string sp)))
-                                       (compose print-convert
-                                                (compose zodiac:source
-                                                         frame-info-source)))
-                                      frame-info-list)])
+                                       (function:compose print-convert:print-convert
+                                                         (function:compose zodiac:zodiac-start
+                                                                           frame-info-source)))
+                                      frame-info-list)]
+                  )
              (send level-listbox clear)
              (for-each (lambda (name data)
                          (send level-listbox append name data))
                        location-list
-                       frame-info-list)
-           
-           (current-namespace (make-namespace))
-           (global-defined-value 'break-info break-info)
-           (global-defined-value 'break-resume (lambda (val) 
-                                                 (set! break-resume-value val)
-                                                 (semaphore-post break-semaphore)))
-           (global-defined-value 'expose-mark marks:expose-mark)
-           (global-defined-value 'display-mark marks:display-mark)
-           (mred:graphical-read-eval-print-loop)))
+                       frame-info-list))))
         (semaphore-wait break-semaphore)
         break-resume-value))))

@@ -2073,7 +2073,8 @@
   (define (bin-op-prim-error side op expect left right src)
     (let ((ext-out (get-expected expect))
           (rt (type->ext-name right))
-          (lt (type->ext-name left)))
+          (lt (type->ext-name left))
+          (op (if (eq? op 'oror) (string->symbol "||") op)))
       (raise-error
        op
        (case side
@@ -2109,7 +2110,8 @@
   (define (bin-op-bitwise-error op left right src)
     (let ((lt (type->ext-name left))
           (rt (type->ext-name right))
-          (prim-list "double, float, long, int, short, byte or char"))
+          (prim-list "double, float, long, int, short, byte or char")
+          (op (if (eq? op 'or) (symbol->string "|") op)))
       (raise-error 
        op 
        (cond

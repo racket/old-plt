@@ -25,19 +25,19 @@
          (with-syntax ([(_ (struct: make pred? selectors/mutators ...) exp) defn]
                        [->vector
                         (datum->syntax-object
-                         stx
+			 (syntax str)
                          (string->symbol 
                           (string-append
                            (symbol->string (syntax-e (syntax str)))
                            "->vector")))]
                        [unparse (datum->syntax-object
-				 stx
+				 (syntax str)
 				 (string->symbol 
 				  (string-append
 				   (symbol->string (syntax-e (syntax str)))
 				   "/unparse")))]
 		       [make/parse (datum->syntax-object
-				    stx
+				    (syntax str)
 				    (string->symbol
 				     (string-append
 				      "make-"

@@ -9,8 +9,6 @@
  (quasiquote-printing-style "Quasiquote")
  (write-printing-style "write")
  (sharing-printing-label "Show sharing in values")
- (whole/fractional-exact-numbers-label "Print rationals in whole/part notation")
- (booleans-as-true/false-label "Print booleans as true and false") 
  (use-pretty-printer-label "Insert newlines in printed values")
  (input-syntax "Input Syntax")
  (output-syntax "Output Syntax")

@@ -1,4 +1,10 @@
 
+Version 200.3
+
+Added exn:special-comment, expected to be used by custom input ports
+ that contain non-character-based comments (e.g., the comment boxes
+ soon to appear in DrScheme)
+
 Version 200.1
 
 Fixed bug in port reading (especially variants of read-string)

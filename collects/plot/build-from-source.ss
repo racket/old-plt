@@ -131,7 +131,7 @@ c-files-string
   mzc 
   " -d " tmp-dir 
   " "
-  "++ccf " flag "DWITH_PNG " 
+  "++ccf " flag "DHAVE_LIBPNG " 
   "++ccf " flag "DPLD_png " 
   "++ccf " flag "DPLD_mem "
   "++ccf " flag "I" tmp-dir " "

@@ -132,6 +132,9 @@ void (*scheme_case_lambda_wrong_count)(const char *name, int argc,
 void (*scheme_wrong_type)(const char *name, const char *expected,
 				 int which, int argc,
 				 Scheme_Object **argv);
+void (*scheme_wrong_field_type)(Scheme_Object *c_name,
+				       const char *expected,
+				       Scheme_Object *o);
 void (*scheme_arg_mismatch)(const char *name, const char *msg, Scheme_Object *o);
 void (*scheme_wrong_return_arity)(const char *where,
 					 int expected, int got,
@@ -611,14 +614,15 @@ Scheme_Object **(*scheme_make_struct_names)(Scheme_Object *base,
 					 Scheme_Object *field_names,
 					 int flags, int *count_out);
 Scheme_Object *(*scheme_make_struct_type)(Scheme_Object *base,
-				       Scheme_Object *parent,
-				       Scheme_Object *inspector,
-				       int num_fields, int num_uninit_fields,
-				       Scheme_Object *uninit_val,
-				       Scheme_Object *properties);
+						 Scheme_Object *parent,
+						 Scheme_Object *inspector,
+						 int num_fields, int num_uninit_fields,
+						 Scheme_Object *uninit_val,
+						 Scheme_Object *properties,
+						 Scheme_Object *guard);
 Scheme_Object *(*scheme_make_struct_instance)(Scheme_Object *stype,
-					   int argc,
-					   Scheme_Object **argv);
+						     int argc,
+						     Scheme_Object **argv);
 Scheme_Object *(*scheme_make_struct_exptime)(Scheme_Object **names, int count,
 						    Scheme_Object *super_sym,
 						    Scheme_Object *super_exptime,
@@ -629,6 +633,12 @@ void (*scheme_struct_set)(Scheme_Object *s, int pos, Scheme_Object *v);
 Scheme_Object *(*scheme_make_struct_type_property)(Scheme_Object *name);
 Scheme_Object *(*scheme_make_struct_type_property_w_guard)(Scheme_Object *name, Scheme_Object *guard);
 Scheme_Object *(*scheme_struct_type_property_ref)(Scheme_Object *prop, Scheme_Object *s);
+Scheme_Object *(*scheme_make_location)(Scheme_Object *src,
+					      Scheme_Object *line,
+					      Scheme_Object *col,
+					      Scheme_Object *pos,
+					      Scheme_Object *span);
+int (*scheme_is_location)(Scheme_Object *o);
 /*========================================================================*/
 /*                              utilities                                 */
 /*========================================================================*/

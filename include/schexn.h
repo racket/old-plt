@@ -4,33 +4,23 @@
 
 enum {
   MZEXN,
-  MZEXN_USER,
-  MZEXN_VARIABLE,
-  MZEXN_APPLICATION,
-  MZEXN_APPLICATION_ARITY,
-  MZEXN_APPLICATION_TYPE,
-  MZEXN_APPLICATION_MISMATCH,
-  MZEXN_APPLICATION_DIVIDE_BY_ZERO,
-  MZEXN_APPLICATION_CONTINUATION,
-  MZEXN_SYNTAX,
-  MZEXN_READ,
-  MZEXN_READ_EOF,
-  MZEXN_READ_NON_CHAR,
-  MZEXN_I_O,
-  MZEXN_I_O_PORT,
-  MZEXN_I_O_PORT_READ,
-  MZEXN_I_O_PORT_WRITE,
-  MZEXN_I_O_PORT_CLOSED,
-  MZEXN_I_O_FILESYSTEM,
-  MZEXN_I_O_TCP,
-  MZEXN_I_O_UDP,
-  MZEXN_THREAD,
-  MZEXN_MODULE,
+  MZEXN_FAIL,
+  MZEXN_FAIL_CONTRACT,
+  MZEXN_FAIL_CONTRACT_ARITY,
+  MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO,
+  MZEXN_FAIL_CONTRACT_CONTINUATION,
+  MZEXN_FAIL_CONTRACT_VARIABLE,
+  MZEXN_FAIL_SYNTAX,
+  MZEXN_FAIL_READ,
+  MZEXN_FAIL_READ_EOF,
+  MZEXN_FAIL_READ_NON_CHAR,
+  MZEXN_FAIL_FILESYSTEM,
+  MZEXN_FAIL_FILESYSTEM_EXISTS,
+  MZEXN_FAIL_FILESYSTEM_VERSION,
+  MZEXN_FAIL_NETWORK,
+  MZEXN_FAIL_OUT_OF_MEMORY,
+  MZEXN_FAIL_UNSUPPORTED,
   MZEXN_BREAK,
-  MZEXN_SPECIAL_COMMENT,
-  MZEXN_MISC,
-  MZEXN_MISC_UNSUPPORTED,
-  MZEXN_MISC_OUT_OF_MEMORY,
   MZEXN_OTHER
 };
 
@@ -38,38 +28,28 @@ enum {
 
 #ifdef _MZEXN_TABLE
 
-#define MZEXN_MAXARGS 7
+#define MZEXN_MAXARGS 3
 
 #ifdef GLOBAL_EXN_ARRAY
 static exn_rec exn_table[] = {
   { 2, NULL, NULL, 0, NULL, -1 },
   { 2, NULL, NULL, 0, NULL, 0 },
-  { 3, NULL, NULL, 0, NULL, 0 },
-  { 3, NULL, NULL, 0, NULL, 0 },
-  { 4, NULL, NULL, 0, NULL, 3 },
-  { 4, NULL, NULL, 0, NULL, 3 },
-  { 3, NULL, NULL, 0, NULL, 3 },
-  { 3, NULL, NULL, 0, NULL, 3 },
-  { 3, NULL, NULL, 0, NULL, 3 },
-  { 5, NULL, NULL, 0, NULL, 0 },
-  { 7, NULL, NULL, 0, NULL, 0 },
-  { 7, NULL, NULL, 0, NULL, 10 },
-  { 7, NULL, NULL, 0, NULL, 10 },
-  { 2, NULL, NULL, 0, NULL, 0 },
-  { 3, NULL, NULL, 0, NULL, 13 },
-  { 3, NULL, NULL, 0, NULL, 14 },
-  { 3, NULL, NULL, 0, NULL, 14 },
-  { 3, NULL, NULL, 0, NULL, 14 },
-  { 4, NULL, NULL, 0, NULL, 13 },
-  { 2, NULL, NULL, 0, NULL, 13 },
-  { 2, NULL, NULL, 0, NULL, 13 },
-  { 2, NULL, NULL, 0, NULL, 0 },
-  { 2, NULL, NULL, 0, NULL, 0 },
-  { 3, NULL, NULL, 0, NULL, 0 },
-  { 3, NULL, NULL, 0, NULL, 0 },
-  { 2, NULL, NULL, 0, NULL, 0 },
-  { 2, NULL, NULL, 0, NULL, 25 },
-  { 2, NULL, NULL, 0, NULL, 25 }
+  { 2, NULL, NULL, 0, NULL, 1 },
+  { 2, NULL, NULL, 0, NULL, 2 },
+  { 2, NULL, NULL, 0, NULL, 2 },
+  { 2, NULL, NULL, 0, NULL, 2 },
+  { 3, NULL, NULL, 0, NULL, 2 },
+  { 3, NULL, NULL, 0, NULL, 1 },
+  { 3, NULL, NULL, 0, NULL, 1 },
+  { 3, NULL, NULL, 0, NULL, 8 },
+  { 3, NULL, NULL, 0, NULL, 8 },
+  { 2, NULL, NULL, 0, NULL, 1 },
+  { 2, NULL, NULL, 0, NULL, 11 },
+  { 2, NULL, NULL, 0, NULL, 11 },
+  { 2, NULL, NULL, 0, NULL, 1 },
+  { 2, NULL, NULL, 0, NULL, 1 },
+  { 2, NULL, NULL, 0, NULL, 1 },
+  { 3, NULL, NULL, 0, NULL, 0 }
 };
 #else
 static exn_rec *exn_table;
@@ -82,33 +62,23 @@ static exn_rec *exn_table;
 #ifndef GLOBAL_EXN_ARRAY
   exn_table = (exn_rec *)scheme_malloc(sizeof(exn_rec) * MZEXN_OTHER);
   exn_table[MZEXN].args = 2;
-  exn_table[MZEXN_USER].args = 2;
-  exn_table[MZEXN_VARIABLE].args = 3;
-  exn_table[MZEXN_APPLICATION].args = 3;
-  exn_table[MZEXN_APPLICATION_ARITY].args = 4;
-  exn_table[MZEXN_APPLICATION_TYPE].args = 4;
-  exn_table[MZEXN_APPLICATION_MISMATCH].args = 3;
-  exn_table[MZEXN_APPLICATION_DIVIDE_BY_ZERO].args = 3;
-  exn_table[MZEXN_APPLICATION_CONTINUATION].args = 3;
-  exn_table[MZEXN_SYNTAX].args = 5;
-  exn_table[MZEXN_READ].args = 7;
-  exn_table[MZEXN_READ_EOF].args = 7;
-  exn_table[MZEXN_READ_NON_CHAR].args = 7;
-  exn_table[MZEXN_I_O].args = 2;
-  exn_table[MZEXN_I_O_PORT].args = 3;
-  exn_table[MZEXN_I_O_PORT_READ].args = 3;
-  exn_table[MZEXN_I_O_PORT_WRITE].args = 3;
-  exn_table[MZEXN_I_O_PORT_CLOSED].args = 3;
-  exn_table[MZEXN_I_O_FILESYSTEM].args = 4;
-  exn_table[MZEXN_I_O_TCP].args = 2;
-  exn_table[MZEXN_I_O_UDP].args = 2;
-  exn_table[MZEXN_THREAD].args = 2;
-  exn_table[MZEXN_MODULE].args = 2;
+  exn_table[MZEXN_FAIL].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_ARITY].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_CONTINUATION].args = 2;
+  exn_table[MZEXN_FAIL_CONTRACT_VARIABLE].args = 3;
+  exn_table[MZEXN_FAIL_SYNTAX].args = 3;
+  exn_table[MZEXN_FAIL_READ].args = 3;
+  exn_table[MZEXN_FAIL_READ_EOF].args = 3;
+  exn_table[MZEXN_FAIL_READ_NON_CHAR].args = 3;
+  exn_table[MZEXN_FAIL_FILESYSTEM].args = 2;
+  exn_table[MZEXN_FAIL_FILESYSTEM_EXISTS].args = 2;
+  exn_table[MZEXN_FAIL_FILESYSTEM_VERSION].args = 2;
+  exn_table[MZEXN_FAIL_NETWORK].args = 2;
+  exn_table[MZEXN_FAIL_OUT_OF_MEMORY].args = 2;
+  exn_table[MZEXN_FAIL_UNSUPPORTED].args = 2;
   exn_table[MZEXN_BREAK].args = 3;
-  exn_table[MZEXN_SPECIAL_COMMENT].args = 3;
-  exn_table[MZEXN_MISC].args = 2;
-  exn_table[MZEXN_MISC_UNSUPPORTED].args = 2;
-  exn_table[MZEXN_MISC_OUT_OF_MEMORY].args = 2;
 #endif
 
 #endif
@@ -116,48 +86,39 @@ static exn_rec *exn_table;
 #ifdef _MZEXN_DECL_FIELDS
 
 static const char *MZEXN_FIELDS[2] = { "message", "continuation-marks" };
-static const char *MZEXN_VARIABLE_FIELDS[1] = { "id" };
-static const char *MZEXN_APPLICATION_FIELDS[1] = { "value" };
-static const char *MZEXN_APPLICATION_ARITY_FIELDS[1] = { "expected" };
-static const char *MZEXN_APPLICATION_TYPE_FIELDS[1] = { "expected" };
-static const char *MZEXN_SYNTAX_FIELDS[3] = { "expr", "form", "module" };
-static const char *MZEXN_READ_FIELDS[5] = { "source", "line", "column", "position", "span" };
-static const char *MZEXN_I_O_PORT_FIELDS[1] = { "port" };
-static const char *MZEXN_I_O_FILESYSTEM_FIELDS[2] = { "pathname", "detail" };
+static const char *MZEXN_FAIL_CONTRACT_VARIABLE_FIELDS[1] = { "id" };
+static const char *MZEXN_FAIL_SYNTAX_FIELDS[1] = { "expr" };
+static const char *MZEXN_FAIL_READ_FIELDS[1] = { "srclocs" };
 static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
-static const char *MZEXN_SPECIAL_COMMENT_FIELDS[1] = { "width" };
+
+#endif
+
+#ifdef _MZEXN_DECL_PROPS
+
+#define MZEXN_FAIL_SYNTAX_PROPS scheme_make_pair(scheme_make_pair(scheme_source_property, scheme_make_prim(extract_syntax_locations)), scheme_null)
+#define MZEXN_FAIL_READ_PROPS scheme_make_pair(scheme_make_pair(scheme_source_property, scheme_make_prim(extract_read_locations)), scheme_null)
 
 #endif
 
 #ifdef _MZEXN_SETUP
 
-  SETUP_STRUCT(MZEXN, NULL, "exn", 2, MZEXN_FIELDS)
-  SETUP_STRUCT(MZEXN_USER, EXN_PARENT(MZEXN), "exn:user", 0, NULL)
-  SETUP_STRUCT(MZEXN_VARIABLE, EXN_PARENT(MZEXN), "exn:variable", 1, MZEXN_VARIABLE_FIELDS)
-  SETUP_STRUCT(MZEXN_APPLICATION, EXN_PARENT(MZEXN), "exn:application", 1, MZEXN_APPLICATION_FIELDS)
-  SETUP_STRUCT(MZEXN_APPLICATION_ARITY, EXN_PARENT(MZEXN_APPLICATION), "exn:application:arity", 1, MZEXN_APPLICATION_ARITY_FIELDS)
-  SETUP_STRUCT(MZEXN_APPLICATION_TYPE, EXN_PARENT(MZEXN_APPLICATION), "exn:application:type", 1, MZEXN_APPLICATION_TYPE_FIELDS)
-  SETUP_STRUCT(MZEXN_APPLICATION_MISMATCH, EXN_PARENT(MZEXN_APPLICATION), "exn:application:mismatch", 0, NULL)
-  SETUP_STRUCT(MZEXN_APPLICATION_DIVIDE_BY_ZERO, EXN_PARENT(MZEXN_APPLICATION), "exn:application:divide-by-zero", 0, NULL)
-  SETUP_STRUCT(MZEXN_APPLICATION_CONTINUATION, EXN_PARENT(MZEXN_APPLICATION), "exn:application:continuation", 0, NULL)
-  SETUP_STRUCT(MZEXN_SYNTAX, EXN_PARENT(MZEXN), "exn:syntax", 3, MZEXN_SYNTAX_FIELDS)
-  SETUP_STRUCT(MZEXN_READ, EXN_PARENT(MZEXN), "exn:read", 5, MZEXN_READ_FIELDS)
-  SETUP_STRUCT(MZEXN_READ_EOF, EXN_PARENT(MZEXN_READ), "exn:read:eof", 0, NULL)
-  SETUP_STRUCT(MZEXN_READ_NON_CHAR, EXN_PARENT(MZEXN_READ), "exn:read:non-char", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O, EXN_PARENT(MZEXN), "exn:i/o", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O_PORT, EXN_PARENT(MZEXN_I_O), "exn:i/o:port", 1, MZEXN_I_O_PORT_FIELDS)
-  SETUP_STRUCT(MZEXN_I_O_PORT_READ, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:read", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O_PORT_WRITE, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:write", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O_PORT_CLOSED, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:closed", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O_FILESYSTEM, EXN_PARENT(MZEXN_I_O), "exn:i/o:filesystem", 2, MZEXN_I_O_FILESYSTEM_FIELDS)
-  SETUP_STRUCT(MZEXN_I_O_TCP, EXN_PARENT(MZEXN_I_O), "exn:i/o:tcp", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O_UDP, EXN_PARENT(MZEXN_I_O), "exn:i/o:udp", 0, NULL)
-  SETUP_STRUCT(MZEXN_THREAD, EXN_PARENT(MZEXN), "exn:thread", 0, NULL)
-  SETUP_STRUCT(MZEXN_MODULE, EXN_PARENT(MZEXN), "exn:module", 0, NULL)
-  SETUP_STRUCT(MZEXN_BREAK, EXN_PARENT(MZEXN), "exn:break", 1, MZEXN_BREAK_FIELDS)
-  SETUP_STRUCT(MZEXN_SPECIAL_COMMENT, EXN_PARENT(MZEXN), "exn:special-comment", 1, MZEXN_SPECIAL_COMMENT_FIELDS)
-  SETUP_STRUCT(MZEXN_MISC, EXN_PARENT(MZEXN), "exn:misc", 0, NULL)
-  SETUP_STRUCT(MZEXN_MISC_UNSUPPORTED, EXN_PARENT(MZEXN_MISC), "exn:misc:unsupported", 0, NULL)
-  SETUP_STRUCT(MZEXN_MISC_OUT_OF_MEMORY, EXN_PARENT(MZEXN_MISC), "exn:misc:out-of-memory", 0, NULL)
+  SETUP_STRUCT(MZEXN, NULL, "exn", 2, MZEXN_FIELDS, scheme_null, scheme_make_prim(exn_field_check))
+  SETUP_STRUCT(MZEXN_FAIL, EXN_PARENT(MZEXN), "exn:fail", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT, EXN_PARENT(MZEXN_FAIL), "exn:fail:contract", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_ARITY, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:arity", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_DIVIDE_BY_ZERO, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:divide-by-zero", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_CONTINUATION, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:continuation", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_CONTRACT_VARIABLE, EXN_PARENT(MZEXN_FAIL_CONTRACT), "exn:fail:contract:variable", 1, MZEXN_FAIL_CONTRACT_VARIABLE_FIELDS, scheme_null, scheme_make_prim(variable_field_check))
+  SETUP_STRUCT(MZEXN_FAIL_SYNTAX, EXN_PARENT(MZEXN_FAIL), "exn:fail:syntax", 1, MZEXN_FAIL_SYNTAX_FIELDS, MZEXN_FAIL_SYNTAX_PROPS, scheme_make_prim(syntax_field_check))
+  SETUP_STRUCT(MZEXN_FAIL_READ, EXN_PARENT(MZEXN_FAIL), "exn:fail:read", 1, MZEXN_FAIL_READ_FIELDS, MZEXN_FAIL_READ_PROPS, scheme_make_prim(read_field_check))
+  SETUP_STRUCT(MZEXN_FAIL_READ_EOF, EXN_PARENT(MZEXN_FAIL_READ), "exn:fail:read:eof", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_READ_NON_CHAR, EXN_PARENT(MZEXN_FAIL_READ), "exn:fail:read:non-char", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_FILESYSTEM, EXN_PARENT(MZEXN_FAIL), "exn:fail:filesystem", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_FILESYSTEM_EXISTS, EXN_PARENT(MZEXN_FAIL_FILESYSTEM), "exn:fail:filesystem:exists", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_FILESYSTEM_VERSION, EXN_PARENT(MZEXN_FAIL_FILESYSTEM), "exn:fail:filesystem:version", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_NETWORK, EXN_PARENT(MZEXN_FAIL), "exn:fail:network", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_OUT_OF_MEMORY, EXN_PARENT(MZEXN_FAIL), "exn:fail:out-of-memory", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_FAIL_UNSUPPORTED, EXN_PARENT(MZEXN_FAIL), "exn:fail:unsupported", 0, NULL, scheme_null, NULL)
+  SETUP_STRUCT(MZEXN_BREAK, EXN_PARENT(MZEXN), "exn:break", 1, MZEXN_BREAK_FIELDS, scheme_null, scheme_make_prim(break_field_check))
 
 #endif

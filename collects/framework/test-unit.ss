@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-unit.ss,v 1.2 2001/02/27 01:46:49 robby Exp $
+;; $Id: test-unit.ss,v 1.3 2001/03/06 02:27:31 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -29,7 +29,7 @@
 (unit/sig framework:test^
   (import [mred : mred^])
 
-  (define initial-run-interval 100)  ;; milliseconds
+  (define initial-run-interval 0)  ;; milliseconds
 
   ;;
   ;; The minimum time an action is allowed to run before returning from

@@ -24,7 +24,7 @@
 			      (syntax->list (syntax (clauses ...)))))]
 
 		       ;; new syntax system mumbo jumbo to bind super-init and this
-		       [class* (datum->syntax 'class* stx (stx-car stx))])
+		       [class* (datum->syntax-object (stx-car stx) 'class* stx)])
 	   (syntax
 	    (let ([from-ids from] ...)
 	      (let ([to-ids to] ...)

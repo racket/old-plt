@@ -1,5 +1,6 @@
 (module framework-unit mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "mred-sig.ss" "mred"))
 
   (require "gui-utils-sig.ss"
 	   "gui-utils-unit.ss"
@@ -11,6 +12,7 @@
 	   "prefs-file-sig.ss"
            
            "sig.ss"
+	   "private/sig.ss"
 
            "private/application.ss"
 	   "private/version.ss"
@@ -43,65 +45,47 @@
 	   framework-prefs@
 	   framework-small-part@)
 
-  (define framework@
-    (compound-unit/sig
-      (import)
-      (link
-       [prefs-file : framework:prefs-file^ (framework:prefs-file@)]
-       [f : framework^ (framework-prefs@ prefs-file)])
-      (export
-       (unit prefs-file)
-       (open f))))
-
-
-  (define framework-prefs@
-    (compound-unit/sig
-      (import [pref-file : framework:prefs-file^])
-      (link [test : framework:test^ (framework:test@)]
-	    [f : frameworkc^ (framework-small-part@ test pref-file)])
-      (export
-       (unit test)
-       (open f))))
-
   (define framework-small-part@
     (compound-unit/sig
-      (import [test : framework:test^]
-	      [pref-file : framework:prefs-file^])
-      (link [application : framework:application^ (app@)]
+      (import [mred : mred^]
+	      [test : framework:test^]
+	      [pref-file : framework:prefs-file^]
+	      [gui-utils : framework:gui-utils^])
+      (link [application : framework:application^ (application@)]
 	    [version : framework:version^ (version@)]
 	    [color-model : framework:color-model^ (color-model@ )]
 	    [exn : framework:exn^ (exn@)]
-	    [exit : framework:exit^ (exit@ preferences gui-utils)]
-	    [menu : framework:menu^ (menu@ preferences)]
-	    [preferences : framework:preferences^ (prefs@ pref-file exn exit panel)]
-	    [autosave : framework:autosave^ (autosave@ exit preferences)]
+	    [exit : framework:exit^ (exit@ mred preferences gui-utils)]
+	    [menu : framework:menu^ (menu@ mred preferences)]
+	    [preferences : framework:preferences^
+			 (preferences@ mred pref-file exn exit panel)]
+	    [autosave : framework:autosave^ (autosave@ mred exit preferences)]
 	    [handler : framework:handler^
-		     (handler@ gui-utils finder group  text preferences frame)] 
+		     (handler@ mred gui-utils finder group text preferences frame)] 
 	    [keymap : framework:keymap^
-		    (keymap@ preferences finder handler scheme-paren frame)]
-	    [match-cache : framework:match-cache^ (mcache@)]
+		    (keymap@ mred preferences finder handler scheme-paren frame)]
+	    [match-cache : framework:match-cache^ (match-cache@)]
 	    [paren : framework:paren^ (paren@)]
-	    [scheme-paren : framework:scheme-paren^ (sparen@ paren)]
-	    [path-utils : framework:path-utils^ (fileutil@)]
-	    [icon : framework:icon^ (icon@)]
+	    [scheme-paren : framework:scheme-paren^ (scheme-paren@ paren)]
+	    [path-utils : framework:path-utils^ (path-utils@)]
+	    [icon : framework:icon^ (icon@ mred)]
 	    [editor : framework:editor^
-		    (editor@ autosave finder path-utils keymap icon
+		    (editor@ mred autosave finder path-utils keymap icon
 			     preferences text pasteboard frame gui-utils)]
-	    [pasteboard : framework:pasteboard^ (pasteboard@ editor)]
+	    [pasteboard : framework:pasteboard^ (pasteboard@ mred editor)]
 	    [text : framework:text^
-		  (text@ icon editor preferences keymap gui-utils color-model frame)]
-	    [gui-utils : framework:gui-utils^ (gui-utils@)]
+		  (text@ mred icon editor preferences keymap gui-utils color-model frame)]
 	    [finder : framework:finder^ (finder@ mred preferences gui-utils keymap)]
-	    [group : framework:group^ (group@ application frame preferences)]
-	    [canvas : framework:canvas^ (canvas@ preferences frame)]
-	    [panel : framework:panel^ (panel@)]
+	    [group : framework:group^ (group@ mred application frame preferences)]
+	    [canvas : framework:canvas^ (canvas@ mred preferences frame)]
+	    [panel : framework:panel^ (panel@ mred)]
 	    [frame : framework:frame^ 
-		   (frame@ group preferences icon handler application panel gui-utils
+		   (frame@ mred group preferences icon handler application panel gui-utils
 			   exit finder keymap text pasteboard editor canvas menu)]
 	    [scheme : framework:scheme^ 
-		    (scheme@ preferences match-cache paren
+		    (scheme@ mred preferences match-cache paren
 			     scheme-paren icon keymap text frame)]
-	    [main : framework:main^ (main@ preferences exit group)])
+	    [main : framework:main^ (main@ mred preferences exit group)])
       (export
        (unit menu)
        (unit application)
@@ -121,11 +105,32 @@
        (unit editor)
        (unit pasteboard)
        (unit text)
-       (unit gui-utils)
        (unit finder)
        (unit group)
        (unit canvas)
        (unit panel)
        (unit frame)
        (unit scheme)
-       (unit main)))))
+       (unit main))))
+
+  (define framework-prefs@
+    (compound-unit/sig
+      (import [mred : mred^]
+	      [pref-file : framework:prefs-file^])
+      (link [test : framework:test^ (framework:test@ mred)]
+	    [gui-utils : framework:gui-utils^ (gui-utils@ mred)]
+	    [f : frameworkc^ (framework-small-part@ mred test pref-file gui-utils)])
+      (export
+       (unit test)
+       (unit gui-utils)
+       (open f))))
+
+  (define framework@
+    (compound-unit/sig
+      (import [mred : mred^])
+      (link
+       [prefs-file : framework:prefs-file^ (framework:prefs-file@)]
+       [f : framework^ (framework-prefs@ mred prefs-file)])
+      (export
+       (unit prefs-file)
+       (open f)))))

@@ -1,14 +1,6 @@
-(lambda (request response)
-  (case request
-    [(name) "Framework"]
-    [(install-collection)
-     (lambda (_)
-       (require-library "launcher.ss" "launcher")
-       (make-mred-launcher
-	(list "-qe-"
-	      "(require-library \"framework-test-engine.ss\" \"tests\" \"framework\")")
-	(mred-program-launcher-path "Framework Test Engine"))
-       (make-mzscheme-launcher
-	(list "-mqve-" "(require-library \"main.ss\" \"tests\" \"framework\")")
-	(mred-program-launcher-path
-	 "Framework Test")))]))
+(module info (lib "infotab.ss" "setup")
+  (define name "Framework Test Suite")
+  (define mred-launcher-libraries (list "framework-test-engine.ss"))
+  (define mred-launcher-names (list "Framework Test Engine"))
+  (define mzscheme-launcher-libraries (list "main.ss"))
+  (define mzscheme-launcher-names (list "Framework Test")))

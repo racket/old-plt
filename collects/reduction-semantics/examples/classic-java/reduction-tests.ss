@@ -2,7 +2,7 @@
 ;;
 ;; reduction-tests.ss
 ;; Richard Cobbe
-;; $Id: reduction-tests.ss,v 1.3 2004/09/21 19:39:34 cobbe Exp $
+;; $Id: reduction-tests.ss,v 1.4 2004/12/31 22:19:29 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -47,10 +47,12 @@
 
   (define-syntax assert-functional-small-step
     (syntax-rules ()
-      [(_ program store exp result)
-       (assert-equal?
-        (small-step cj-reductions `(,program ,store exp))
-        `(,program ,store result))]))
+      [(_ program-exp store-exp exp result)
+       (let ([program program-exp]
+             [store store-exp])
+         (assert-equal?
+          (small-step cj-reductions `(,program ,store exp))
+          `(,program ,store result)))]))
 
   (define reduction-tests
    (make-test-suite "ClassicJava Reduction Tests"
@@ -440,6 +442,65 @@
        (assert-functional-small-step test-program empty-store
                                      (if false (+ 3 4) (* 5 6))
                                      (* 5 6)))
+
+     (make-test-case "reduction [call]"
+       (assert-functional-small-step
+        test-program
+        (let ([numerics (make-class-type 'numerics)])
+          (store [0 (make-instance numerics
+                                   (list (make-ivar numerics 'i 0)
+                                         (make-ivar numerics 'b 'false)))]))
+        (send 0 factorial 3)
+        (if (zero? 3) 1 (* 3 (send 0 factorial (- 3 1))))))
+
+     (make-test-case "reduction [ncall]"
+       (assert-functional-small-step
+        test-program
+        empty-store
+        (send null factorial 3)
+        "error: dereferenced null"))
+
+     (make-test-case "reduction [super]"
+       (assert-functional-small-step
+        test-program
+        (let ([base (make-class-type 'base)]
+              [derived (make-class-type 'derived)])
+          (store [0 (make-instance
+                     derived
+                     (list (make-ivar base 'base-field 0)
+                           (make-ivar base 'shadowed-field 1)
+                           (make-ivar derived 'shadowed-field 'false)
+                           (make-ivar derived 'derived-field 'true)))]))
+        (super 0 base f)
+        3))
+
+     (make-test-case "reduction [cast]"
+       (let ([store (store [0 (make-instance (make-class-type 'bempty)
+                                             null)])])
+       (assert-functional-small-step test-program store (cast blist 0) 0)
+       (assert-functional-small-step test-program store (cast bempty 0) 0)))
+
+     (make-test-case "reduction [ncast]"
+       (assert-functional-small-step test-program empty-store
+                                     (cast dag-node null)
+                                     null))
+
+     (make-test-case "reduction [xcast]"
+       (assert-functional-small-step
+        test-program
+        (store [0 (make-instance (make-class-type 'bempty) null)])
+        (cast derived 0)
+        "error: bad cast"))
+
+     (make-test-case "reduction [let]"
+       (assert-functional-small-step
+        test-program
+        empty-store
+        (let x 3
+          (+ (- (send 42 x x) x)
+             (let x 56 x)))
+        (+ (- (send 42 x 3) 3)
+           (let x 56 x))))
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

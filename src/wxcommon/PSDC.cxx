@@ -1980,6 +1980,9 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 
     afmFile = (afmName ? scheme_open_input_file(afmName, "post-script-dc%") : (Scheme_Object *)NULL);
 
+    lastDescender = INT_MIN;
+    capHeight = -1;
+
     if (afmFile==NULL) {
       int i;
       if (!complained_afm) {
@@ -2000,6 +2003,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
       char line[256];
       int ascii, cWidth;
       int i;
+      int bbox_down = INT_MIN;
 
       // init the widths array
       for (i = 0; i < 256; i++) {
@@ -2013,6 +2017,14 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
           if ((sscanf(line, "%s%d", descString, &lastDescender) != 2)
 	      || strcmp(descString,"Descender")) {
 	    wxDebugMsg("AFM-file '%s': line '%s' has error (bad descender)\n",
+		       afmName, line);
+          }
+        } else if (!strncmp(line, "FontBBox ", 8)) {
+	  // bbox
+	  int l, t, r;
+          if ((sscanf(line, "%s%d%d%d%d", descString, &l, &bbox_down, &r, &t) != 5)
+	      || strcmp(descString,"FontBBox")) {
+	    wxDebugMsg("AFM-file '%s': line '%s' has error (bad bbox)\n",
 		       afmName, line);
           }
         } else if (!strncmp(line, "CapHeight ", 10)) {
@@ -2044,6 +2056,9 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
         }
       }
       scheme_close_input_port(afmFile);
+
+      if (lastDescender == INT_MIN)
+	lastDescender = bbox_down;
     }
   }
   

@@ -170,441 +170,98 @@ val))]
 ((debug-info-handler))
 val))]))
 
-(define match:syntax-err (lambda (obj msg) (error 'match (string-append msg " ~a") obj)))
-(define match:set-error (lambda (v) (set! match:error v)))
-(define match:error-control-param
-(case-lambda
-[() match:error-control]
-[(v) (match:set-error-control v)]))
-(define match:error-control 'error)
-(define match:set-error-control
-(lambda (v) 
-(if (memq v '(unspecified fail error match))
-(set! match:error-control v)
-(error 'match:set-error-control "invalid setting: ~s" v))))
-(define match:disjoint-predicates
-(cons 'null
-'(pair?
-symbol?
-boolean?
-number?
-string?
-char?
-procedure?
-vector?
-box?)))
-(define match:vector-structures '())
-(define match:expanders
-(letrec ((genmatch (lambda (x clauses match-expr)
-(let* ((length>= (gensym))
-(eb-errf (error-maker match-expr))
-(blist (car eb-errf))
-(plist (map (lambda (c)
-(let* ((x (bound
-(validate-pattern
-(car c))))
-(p (car x))
-(bv (cadr x))
-(bindings (caddr x))
-(code (gensym))
-(fail (and (pair?
-(cdr c))
-(pair?
-(cadr c))
-(eq? (caadr
-c)
-'=>)
-(symbol?
-(cadadr
-c))
-(pair?
-(cdadr
-c))
-(null?
-(cddadr
-c))
-(pair?
-(cddr c))
-(cadadr
-c)))
-(bv2 (if fail
-(cons fail
-bv)
-bv))
-(body (if fail
-(cddr c)
-(cdr c))))
-(set! blist
-(cons `(,code
-(lambda ,bv2
-,@body))
-(append
-bindings
-blist)))
-(list p
-code
-bv
-(and fail
-(gensym))
-#f)))
-clauses))
-(code (gen x
-'()
-plist
-(cdr eb-errf)
-length>=
-(gensym))))
-(unreachable plist match-expr)
-(inline-let
-`(let ((,length>= (lambda (n)
-(lambda (l)
-(>= (length l) n))))
-,@blist)
-,code)))))
-(genletrec (lambda (pat exp body match-expr)
-(let* ((length>= (gensym))
-(eb-errf (error-maker match-expr))
-(x (bound (validate-pattern pat)))
-(p (car x))
-(bv (cadr x))
-(bindings (caddr x))
-(code (gensym))
-(plist (list (list p code bv #f #f)))
-(x (gensym))
-(m (gen x
-'()
-plist
-(cdr eb-errf)
-length>=
-(gensym)))
-(gs (map (lambda (_) (gensym)) bv)))
-(unreachable plist match-expr)
-`(letrec ((,length>= (lambda (n)
-(lambda (l)
-(>= (length l) n))))
-,@(map (lambda (v) `(,v #f)) bv)
-(,x ,exp)
-(,code (lambda ,gs
-,@(map (lambda (v g)
-`(set! ,v ,g))
-bv
-gs)
-,@body))
-,@bindings
-,@(car eb-errf))
-,m))))
-(gendefine (lambda (pat exp match-expr)
-(let* ((length>= (gensym))
-(eb-errf (error-maker match-expr))
-(x (bound (validate-pattern pat)))
-(p (car x))
-(bv (cadr x))
-(bindings (caddr x))
-(code (gensym))
-(plist (list (list p code bv #f #f)))
-(x (gensym))
-(m (gen x
-'()
-plist
-(cdr eb-errf)
-length>=
-(gensym)))
-(gs (map (lambda (_) (gensym)) bv)))
-(unreachable plist match-expr)
-`(begin ,@(map (lambda (v) `(define ,v #f))
-bv)
-,(inline-let
-`(let ((,length>= (lambda (n)
-(lambda (l)
-(>= (length
-l)
-n))))
-(,x ,exp)
-(,code (lambda ,gs
-,@(map (lambda (v
-g)
-`(set! ,v
-,g))
-bv
-gs)
-(cond (#f #f))))
-,@bindings
-,@(car eb-errf))
-,m))))))
-(pattern-var? (lambda (x)
-(and (symbol? x)
-(not (dot-dot-k? x))
-(not (memq x
-'(quasiquote
-quote
-unquote
-unquote-splicing
-?
-_
-$
-and
-or
-not
-set!
-get!
-...
-___))))))
-(dot-dot-k? (lambda (s)
-(and (symbol? s)
-(if (memq s '(... ___))
-0
-(let* ((s (symbol->string s))
-(n (string-length s)))
-(and (<= 3 n)
-(memq (string-ref s 0)
-'(#\. #\_))
-(memq (string-ref s 1)
-'(#\. #\_))
-(andmap
-char-numeric?
-(string->list
-(substring s 2 n)))
-(string->number
-(substring s 2 n))))))))
-(error-maker (lambda (match-expr)
-(cond
-((eq? match:error-control 'unspecified) (cons '()
-(lambda (x)
-`(cond
-(#f #f)))))
-((memq match:error-control '(error fail)) (cons '()
-(lambda (x)
-`((#%global-defined-value 'match:error)
-,x))))
-((eq? match:error-control 'match) (let ((errf (gensym))
-(arg (gensym)))
-(cons `((,errf
-(lambda (,arg)
-((#%global-defined-value 'match:error)
-,arg
-',match-expr))))
-(lambda (x)
-`(,errf
-,x)))))
-(else (match:syntax-err
-'(unspecified error fail match)
-"invalid value for match:error-control, legal values are")))))
-(unreachable (lambda (plist match-expr)
-(for-each
-(lambda (x)
-(if (not (car (cddddr x)))
-(begin (display
-"Warning: unreachable pattern ")
-(display (car x))
-(display " in ")
-(display match-expr)
-(newline))))
-plist)))
-(validate-pattern (lambda (pattern)
-(letrec ((simple? (lambda (x)
-(or (string? x)
-(boolean? x)
-(char? x)
-(number? x)
-(null? x))))
-(ordinary (lambda (p)
-(let ((g204 (lambda (x
-y)
-(cons (ordinary
-x)
-(ordinary
-y)))))
-(if (simple? p)
-((lambda (p)
-p)
-p)
-(if (equal?
-p
-'_)
-((lambda ()
-'_))
-(if (pattern-var?
-p)
-((lambda (p)
-p)
-p)
-(if (pair?
-p)
-(if (equal?
-(car p)
-'quasiquote)
-(if (and (pair?
-(cdr p))
-(null?
-(cddr p)))
-((lambda (p)
-(quasi
-p))
-(cadr p))
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'quote)
-(if (and (pair?
-(cdr p))
-(null?
-(cddr p)))
-((lambda (p)
-p)
-p)
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'?)
-(if (and (pair?
-(cdr p))
-(list?
-(cddr p)))
-((lambda (pred
-ps)
-`(? ,pred
-,@(map ordinary
-ps)))
-(cadr p)
-(cddr p))
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'and)
-(if (and (list?
-(cdr p))
-(pair?
-(cdr p)))
-((lambda (ps)
-`(and ,@(map ordinary
-ps)))
-(cdr p))
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'or)
-(if (and (list?
-(cdr p))
-(pair?
-(cdr p)))
-((lambda (ps)
-`(or ,@(map ordinary
-ps)))
-(cdr p))
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'not)
-(if (and (list?
-(cdr p))
-(pair?
-(cdr p)))
-((lambda (ps)
-`(not ,@(map ordinary
-ps)))
-(cdr p))
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'$)
-(if (and (pair?
-(cdr p))
-(symbol?
-(cadr p))
-(list?
-(cddr p)))
-((lambda (r
-ps)
-`($ ,r
-,@(map ordinary
-ps)))
-(cadr p)
-(cddr p))
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'set!)
-(if (and (pair?
-(cdr p))
-(pattern-var?
-(cadr p))
-(null?
-(cddr p)))
-((lambda (p)
-p)
-p)
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'get!)
-(if (and (pair?
-(cdr p))
-(pattern-var?
-(cadr p))
-(null?
-(cddr p)))
-((lambda (p)
-p)
-p)
-(g204 (car p)
-(cdr p)))
-(if (equal?
-(car p)
-'unquote)
-(g204 (car p)
-(cdr p))
-(if (equal?
-(car p)
-'unquote-splicing)
-(g204 (car p)
-(cdr p))
-(if (and (pair?
-(cdr p))
-(dot-dot-k?
-(cadr p))
-(null?
-(cddr p)))
-((lambda (p
-ddk)
-`(,(ordinary
-p)
-,ddk))
-(car p)
-(cadr p))
-(g204 (car p)
-(cdr p))))))))))))))
-(if (vector?
-p)
-((lambda (p)
-(let* ((pl (vector->list
-p))
-(rpl (reverse
-pl)))
-(apply
-vector
-(if (dot-dot-k?
-(car rpl))
-(reverse
-(cons (car rpl)
-(map ordinary
-(cdr rpl))))
-(map ordinary
-pl)))))
-p)
-(if (box? p)
-((lambda (p)
-(box (ordinary
-(unbox
-p))))
-p)
+(define match:syntax-err (lambda (obj msg) (error 'match
+(string-append msg " ~a") obj))) (define match:set-error (lambda (v)
+(set! match:error v))) (define match:error-control-param (case-lambda
+[() match:error-control] [(v) (match:set-error-control v)])) (define
+match:error-control 'error) (define match:set-error-control (lambda
+(v) (if (memq v '(unspecified fail error match)) (set!
+match:error-control v) (error 'match:set-error-control "invalid
+setting: ~s" v)))) (define match:disjoint-predicates (cons 'null
+'(pair?  symbol?  boolean?  number?  string?  char?  procedure?
+vector?  box?)))  (define match:vector-structures '()) (define
+match:expanders (letrec ((genmatch (lambda (x clauses match-expr)
+(let* ((length>= (gensym)) (eb-errf (error-maker match-expr)) (blist
+(car eb-errf)) (plist (map (lambda (c) (let* ((x (bound
+(validate-pattern (car c)))) (p (car x)) (bv (cadr x)) (bindings
+(caddr x)) (code (gensym)) (fail (and (pair?  (cdr c)) (pair?  (cadr
+c)) (eq? (caadr c) '=>) (symbol?  (cadadr c)) (pair?  (cdadr c))
+(null?  (cddadr c)) (pair?  (cddr c)) (cadadr c))) (bv2 (if fail (cons
+fail bv) bv)) (body (if fail (cddr c) (cdr c)))) (set! blist (cons
+`(,code (lambda ,bv2 ,@body)) (append bindings blist))) (list p code
+bv (and fail (gensym)) #f))) clauses)) (code (gen x '() plist (cdr
+eb-errf) length>= (gensym)))) (unreachable plist match-expr)
+(inline-let `(let ((,length>= (lambda (n) (lambda (l) (>= (length l)
+n)))) ,@blist) ,code))))) (genletrec (lambda (pat exp body match-expr)
+(let* ((length>= (gensym)) (eb-errf (error-maker match-expr)) (x
+(bound (validate-pattern pat))) (p (car x)) (bv (cadr x)) (bindings
+(caddr x)) (code (gensym)) (plist (list (list p code bv #f #f))) (x
+(gensym)) (m (gen x '() plist (cdr eb-errf) length>= (gensym))) (gs
+(map (lambda (_) (gensym)) bv))) (unreachable plist match-expr)
+`(letrec ((,length>= (lambda (n) (lambda (l) (>= (length l) n))))
+,@(map (lambda (v) `(,v #f)) bv) (,x ,exp) (,code (lambda ,gs ,@(map
+(lambda (v g) `(set! ,v ,g)) bv gs) ,@body)) ,@bindings ,@(car
+eb-errf)) ,m)))) (gendefine (lambda (pat exp match-expr) (let*
+((length>= (gensym)) (eb-errf (error-maker match-expr)) (x (bound
+(validate-pattern pat))) (p (car x)) (bv (cadr x)) (bindings (caddr
+x)) (code (gensym)) (plist (list (list p code bv #f #f))) (x (gensym))
+(m (gen x '() plist (cdr eb-errf) length>= (gensym))) (gs (map (lambda
+(_) (gensym)) bv))) (unreachable plist match-expr) `(begin ,@(map
+(lambda (v) `(define ,v #f)) bv) ,(inline-let `(let ((,length>=
+(lambda (n) (lambda (l) (>= (length l) n)))) (,x ,exp) (,code (lambda
+,gs ,@(map (lambda (v g) `(set! ,v ,g)) bv gs) (cond (#f #f))))
+,@bindings ,@(car eb-errf)) ,m)))))) (pattern-var? (lambda (x) (and
+(symbol? x) (not (dot-dot-k? x)) (not (memq x '(quasiquote quote
+unquote unquote-splicing ?  _ $ and or not set!  get!  ...  ___))))))
+(dot-dot-k? (lambda (s) (and (symbol? s) (if (memq s '(... ___)) 0
+(let* ((s (symbol->string s)) (n (string-length s))) (and (<= 3 n)
+(memq (string-ref s 0) '(#\. #\_)) (memq (string-ref s 1) '(#\. #\_))
+(andmap char-numeric?  (string->list (substring s 2 n)))
+(string->number (substring s 2 n)))))))) (error-maker (lambda
+(match-expr) (cond ((eq? match:error-control 'unspecified) (cons '()
+(lambda (x) `(cond (#f #f))))) ((memq match:error-control '(error
+fail)) (cons '() (lambda (x) `((#%global-defined-value 'match:error)
+,x)))) ((eq? match:error-control 'match) (let ((errf (gensym)) (arg
+(gensym))) (cons `((,errf (lambda (,arg) ((#%global-defined-value
+'match:error) ,arg ',match-expr)))) (lambda (x) `(,errf ,x))))) (else
+(match:syntax-err '(unspecified error fail match) "invalid value for
+match:error-control, legal values are"))))) (unreachable (lambda
+(plist match-expr) (for-each (lambda (x) (if (not (car (cddddr x)))
+(begin (display "Warning: unreachable pattern ") (display (car x))
+(display " in ") (display match-expr) (newline)))) plist)))
+(validate-pattern (lambda (pattern) (letrec ((simple? (lambda (x) (or
+(string? x) (boolean? x) (char? x) (number? x) (null? x)))) (ordinary
+(lambda (p) (let ((g204 (lambda (x y) (cons (ordinary x) (ordinary
+y))))) (if (simple? p) ((lambda (p) p) p) (if (equal?  p '_) ((lambda
+() '_)) (if (pattern-var?  p) ((lambda (p) p) p) (if (pair?  p) (if
+(equal?  (car p) 'quasiquote) (if (and (pair?  (cdr p)) (null?  (cddr
+p))) ((lambda (p) (quasi p)) (cadr p)) (g204 (car p) (cdr p))) (if
+(equal?  (car p) 'quote) (if (and (pair?  (cdr p)) (null?  (cddr p)))
+((lambda (p) p) p) (g204 (car p) (cdr p))) (if (equal?  (car p) '?)
+(if (and (pair?  (cdr p)) (list?  (cddr p))) ((lambda (pred ps) `(?
+,pred ,@(map ordinary ps))) (cadr p) (cddr p)) (g204 (car p) (cdr p)))
+(if (equal?  (car p) 'and) (if (and (list?  (cdr p)) (pair?  (cdr p)))
+((lambda (ps) `(and ,@(map ordinary ps))) (cdr p)) (g204 (car p) (cdr
+p))) (if (equal?  (car p) 'or) (if (and (list?  (cdr p)) (pair?  (cdr
+p))) ((lambda (ps) `(or ,@(map ordinary ps))) (cdr p)) (g204 (car p)
+(cdr p))) (if (equal?  (car p) 'not) (if (and (list?  (cdr p)) (pair?
+(cdr p))) ((lambda (ps) `(not ,@(map ordinary ps))) (cdr p)) (g204
+(car p) (cdr p))) (if (equal?  (car p) '$) (if (and (pair?  (cdr p))
+(symbol?  (cadr p)) (list?  (cddr p))) ((lambda (r ps) `($ ,r ,@(map
+ordinary ps))) (cadr p) (cddr p)) (g204 (car p) (cdr p))) (if (equal?
+(car p) 'set!)  (if (and (pair?  (cdr p)) (pattern-var?  (cadr p))
+(null?  (cddr p))) ((lambda (p) p) p) (g204 (car p) (cdr p))) (if
+(equal?  (car p) 'get!)  (if (and (pair?  (cdr p)) (pattern-var?
+(cadr p)) (null?  (cddr p))) ((lambda (p) p) p) (g204 (car p) (cdr
+p))) (if (equal?  (car p) 'unquote) (g204 (car p) (cdr p)) (if (equal?
+(car p) 'unquote-splicing) (g204 (car p) (cdr p)) (if (and (pair?
+(cdr p)) (dot-dot-k?  (cadr p)) (null?  (cddr p))) ((lambda (p ddk)
+`(,(ordinary p) ,ddk)) (car p) (cadr p)) (g204 (car p) (cdr
+p)))))))))))))) (if (vector?  p) ((lambda (p) (let* ((pl (vector->list
+p)) (rpl (reverse pl))) (apply vector (if (and (not (null? rpl))
+(dot-dot-k?  (car rpl))) (reverse (cons (car rpl) (map ordinary (cdr
+rpl)))) (map ordinary pl))))) p) (if (box? p) ((lambda (p) (box
+(ordinary (unbox p)))) p)
 
 ((lambda ()
 (match:syntax-err

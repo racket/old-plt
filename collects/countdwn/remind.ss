@@ -241,6 +241,18 @@
 	      (lock #t)
 	      (end-edit-sequence))))])
       (public
+	[clear-events
+	 (lambda ()
+	   (with-semaphore 
+	    sema
+	    (lambda ()
+	      (begin-edit-sequence)
+	      (lock #f)
+	      (delete 0 (last-position) #f)
+	      (set! counters null)
+	      (set! lines null)
+	      (lock #t)	   
+	      (end-edit-sequence))))]
 	[shutdown
 	 (lambda ()
 	   (kill-thread thread-id))]

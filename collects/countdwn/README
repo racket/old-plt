@@ -36,4 +36,8 @@ After creating that file, run Countdown like this:
 (note the missing "o" in countdwn... thank you 8.3)
 It will open a window on your screen and your troubles will be over! 
 
+Countdown will periodically check to see if any changes have been
+made to the .countdownrc file. If so, it will reload it.
+
 Act now!
+

@@ -29,5 +29,4 @@
 
   (send canvas set-media edit)
   (let ([size-list (mred:get-preference 'countdwn:frame-size)]) 
-    (send frame set-size 0 0 (car size-list) (cadr size-list)))
-  (send edit begin-edit-sequence))
+    (send frame set-size 0 0 (car size-list) (cadr size-list))))

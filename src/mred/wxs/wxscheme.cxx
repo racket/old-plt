@@ -1240,6 +1240,12 @@ wxPrintSetupData *wxsUnbundlePSSetup(Scheme_Object *o)
 
 static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
 {
+  if (!argc) {
+    wxPrintSetupData *ps;
+    ps = wxGetThePrintSetupData();
+    return wxsBundlePSSetup(ps);
+  }
+
   return scheme_param_config("current-ps-setup", 
 			     scheme_make_integer(mred_ps_setup_param),
 			     argc, argv,

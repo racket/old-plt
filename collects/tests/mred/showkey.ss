@@ -8,7 +8,7 @@
 	 (override
 	   [on-event
 	    (lambda (ev)
-	      (printf "~aMOUSE ~a (~a,~a)  meta: ~a  control: ~a  alt: ~a  shift: ~a buttons: ~a ~a ~a~n" 
+	      (printf "~aMOUSE ~a (~a,~a)  meta: ~a  control: ~a  alt: ~a  shift: ~a buttons: ~a ~a ~a~a~n" 
 		      (es-check)
 		      (send ev get-event-type)
 		      (send ev get-x)
@@ -19,7 +19,10 @@
 		      (send ev get-shift-down)
 		      (send ev get-left-down)
 		      (send ev get-middle-down)
-		      (send ev get-right-down)))]
+		      (send ev get-right-down)
+		      (if (send ev dragging?)
+			  " dragging"
+			  "")))]
 	   [on-char
 	    (lambda (ev)
 	      (printf "~aKEY code: ~a  rel-code: ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a~n" 

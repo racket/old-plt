@@ -537,9 +537,11 @@
 				  name))
 			    pos))))]
 	    [get-filename
-	     (lambda ()
-	       (let ([fn (super-get-filename)])
-		 (if (string? fn)(mzlib:file:normalize-path fn)())))]
+	     (opt-lambda ([tmp? null])
+	       (let ([fn (super-get-filename tmp?)])
+		 (if (string? fn)
+		     (mzlib:file:normalize-path fn)
+		     ())))]
 	    [update-directory
 	     (opt-lambda ([new-dir 
 			   (if (string? (get-filename))

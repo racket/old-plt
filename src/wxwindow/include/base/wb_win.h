@@ -201,6 +201,7 @@ class wxbWindow: public wxEvtHandler
 
   Bool IsShown();
   void SetShown(Bool s);
+  Bool IsShownTree();
 
   void ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
 

@@ -246,6 +246,9 @@ wxWindow *wxWindow::GetTopLevel()
 
 void wxWindow::SetFocus(void)
 {
+  if (!IsShownTree())
+    return;
+
   wxWindow *p = GetTopLevel();
   
   if (p && wxSubType(p->__type, wxTYPE_FRAME)
@@ -258,7 +261,7 @@ void wxWindow::SetFocus(void)
     else
       r = ::SendMessage(((wxMDIFrame *)mdip->handle)->client_hwnd, WM_MDIGETACTIVE,
 			(WPARAM)NULL, (LPARAM)NULL);
-
+ 
     if ((HWND)r != p->GetHWND()) {
       /* This frame not active within parent; remember local focus */
       p->focusWindow = this;
@@ -269,14 +272,15 @@ void wxWindow::SetFocus(void)
   
   // If the frame/dialog is not active, just set the focus
   //  locally.
-  if (p && (GetActiveWindow() != p->GetHWND())) {
+  if (p) {
     p->focusWindow = this;
-    return;
+    
+    if (GetActiveWindow() == p->GetHWND()) {
+      HWND hWnd = GetHWND();
+      if (hWnd)
+	wxwmSetFocus(hWnd);
+    }
   }
-
-  HWND hWnd = GetHWND();
-  if (hWnd)
-    wxwmSetFocus(hWnd);
 }
 
 void wxWindow::ChangeToGray(Bool gray)
@@ -638,6 +642,13 @@ Bool wxWindow::Show(Bool show)
   ShowWindow(hWnd, (BOOL)cshow);
   if (show)
     BringWindowToTop(hWnd);
+
+  {
+    wxWindow *p = GetTopLevel();
+    if (p->focusWindow == this)
+      p->focusWindow = NULL;
+  }
+
   return TRUE;
 }
 
@@ -1698,10 +1709,12 @@ BOOL wxWnd::OnActivate(BOOL state, BOOL minimized, HWND WXUNUSED(activate))
 BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
 {
   if (wx_window) {
-    wxWindow *p = wx_window->GetTopLevel();
-    p->focusWindow = wx_window;
-    
-    wx_window->GetEventHandler()->OnSetFocus();
+    if (wx_window->IsShownTree()) {
+      wxWindow *p = wx_window->GetTopLevel();
+      p->focusWindow = wx_window;
+      
+      wx_window->GetEventHandler()->OnSetFocus();
+    }
     
     return TRUE;
   } else 

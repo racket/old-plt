@@ -96,6 +96,20 @@ void wxbWindow::SetShown(Bool s)
   is_shown = s;
 }
 
+Bool wxbWindow::IsShownTree()
+{
+  if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME))
+    return TRUE;
+  else {
+    wxWindow *p = GetParent();
+
+    if (IsShown())
+      return p->IsShownTree();
+    else
+      return FALSE;
+  }
+}
+
 void wxbWindow::MakeModal(Bool modal)
 {
   // Disable all other windows

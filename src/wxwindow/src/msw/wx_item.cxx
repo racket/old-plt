@@ -272,10 +272,12 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
       break;
     case WM_SETFOCUS:
       {
-	wxWindow *p = item->GetTopLevel();
-	p->focusWindow = item;
-
-	item->OnSetFocus();
+	if (item->IsShownTree()) {
+	  wxWindow *p = item->GetTopLevel();
+	  p->focusWindow = item;
+	  
+	  item->OnSetFocus();
+	}
       }
       break;
     case WM_KILLFOCUS:

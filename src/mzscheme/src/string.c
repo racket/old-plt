@@ -56,7 +56,7 @@ static char *nl_langinfo(int which) {
 }
 static int get_iconv_errno(void)
 {
-  return 0
+  return 0;
 }
 static size_t (*iconv)(iconv_t cd,
 		       char **inbuf, size_t *inbytesleft,

@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwSlider2.w,v 1.4 1999/07/21 17:34:57 mflatt Exp $
+# $Id: xwSlider2.w,v 1.5 1999/08/28 16:14:52 mflatt Exp $
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
@@ -469,6 +469,9 @@ mouse button.
 @trans <Btn1Down>: start()
 @trans <Btn1Motion>: drag()
 @trans <Btn1Up>: finish()
+@trans <Btn2Down>: start()
+@trans <Btn2Motion>: drag()
+@trans <Btn2Up>: finish()
 
 
 @actions
@@ -489,38 +492,48 @@ well as below the thumb, causing the callbacks to be called twice.
 	&& event->type != MotionNotify)
 	XtError("The start action must be bound to a mouse event");
     $compute_thumb($, &x, &y, &w, &h);
-    if (event->xbutton.x < x) {			/* Left of thumb */
+    if (event->xbutton.button == Button2) {
+      /* Pretend mouse was clicked on the middle of the thumb... */
+      $drag_in_progress = True;
+      $m_delta_x = - (w / 2);
+      $m_delta_y = - (h / 2);
+      /* and dragged to here: */
+      drag(self,event,params,num_params);
+    } else {
+      if (event->xbutton.x < x) {			/* Left of thumb */
 	info.reason = XfwfSPageLeft;
 	info.flags = XFWF_HPOS;			/* Suggest a value: */
 	info.hpos = max(0.0, $thumb_x - $thumb_wd);
 	outside = True;
 	XtCallCallbackList($, $scrollCallback, &info);
-    }
-    if (event->xbutton.x >= x + w) {		/* Right of thumb */
+      }
+      if (event->xbutton.x >= x + w) {		/* Right of thumb */
 	info.reason = XfwfSPageRight;
 	info.flags = XFWF_HPOS;			/* Suggest a value: */
 	info.hpos = min(1.0, $thumb_x + $thumb_wd);
 	outside = True;
 	XtCallCallbackList($, $scrollCallback, &info);
-    }
-    if (event->xbutton.y < y) {			/* Above thumb */
+      }
+      if (event->xbutton.y < y) {			/* Above thumb */
 	info.reason = XfwfSPageUp;
 	info.flags = XFWF_VPOS;			/* Suggest a value: */
 	info.vpos = max(0.0, $thumb_y - $thumb_ht);
 	outside = True;
 	XtCallCallbackList($, $scrollCallback, &info);
-    }
-    if (event->xbutton.y >= y + h) {		/* Below thumb */
+      }
+      if (event->xbutton.y >= y + h) {		/* Below thumb */
 	info.reason = XfwfSPageDown;
 	info.flags = XFWF_VPOS;			/* Suggest a value: */
 	info.vpos = min(1.0, $thumb_y + $thumb_ht);
 	outside = True;
 	XtCallCallbackList($, $scrollCallback, &info);
-    }
-    if (! outside) {				/* Inside the thumb */
+      }
+
+      if (! outside) {				/* Inside the thumb */
 	$drag_in_progress = True;
 	$m_delta_x = x - event->xbutton.x;
 	$m_delta_y = y - event->xbutton.y;
+      }
     }
 }
 

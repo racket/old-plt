@@ -914,6 +914,7 @@ void scheme_close_managed(Scheme_Custodian *m)
 # ifndef MZ_REAL_THREADS
   /* Give killed threads time to die: */
   scheme_thread_block(0);
+  scheme_current_thread->ran_some = 1;
 # endif
 #endif
 }
@@ -1924,6 +1925,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     /* Check for external break again after swap or sleep */
   if (p->external_break && !p->suspend_break && scheme_can_break(p, p->config)) {
     scheme_thread_block(0.0);
+    p->ran_some = 1;
   }
 
   return v;
@@ -2468,6 +2470,11 @@ void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p)
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;
 }
 
+void scheme_making_progress()
+{
+  scheme_current_thread->ran_some = 1;
+}
+
 int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,void*), 
 		       void *data, float delay)
 {
@@ -2584,8 +2591,10 @@ static Scheme_Object *break_thread(int argc, Scheme_Object *args[])
 
 #ifndef MZ_REAL_THREADS
   /* In case p == scheme_current_thread */
-  if (!scheme_fuel_counter)
+  if (!scheme_fuel_counter) {
     scheme_thread_block(0.0);
+    scheme_current_thread->ran_some = 1;
+  }
 #endif
 
   return scheme_void;
@@ -2670,6 +2679,7 @@ void scheme_kill_thread(Scheme_Thread *p)
 #ifndef MZ_REAL_THREADS
   /* Give killed threads time to die: */
   scheme_thread_block(0.0);
+  scheme_current_thread->ran_some = 1;
 #endif
 }
 
@@ -3521,6 +3531,7 @@ void scheme_real_sema_down(void *sema)
   do {
     scheme_thread_block_w_thread(0, p);
   } while (!SCHEME_SEMA_DOWN_BREAKABLE(sema));
+  p->ran_some = 1;
 }
 
 #endif

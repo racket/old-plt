@@ -852,62 +852,70 @@ static int tcp_check_read(Scheme_Object *pb)
 }
 #endif
 
-static int tcp_check_write(Scheme_Object *conn)
+static int tcp_check_write(Scheme_Object *port)
 {
-  Scheme_Tcp *data = (Scheme_Tcp *)conn;
+  Scheme_Tcp *data = (Scheme_Tcp *)((Scheme_Output_Port *)port)->port_data;
+
+  if (((Scheme_Output_Port *)port)->closed)
+    return 1;
 
 #ifdef USE_SOCKETS_TCP
-  tcp_t s;
-  DECL_FDSET(writefds, 1);
-  DECL_FDSET(exnfds, 1);
-  struct timeval time = {0, 0};
-  int sr;
-
-  INIT_DECL_FDSET(writefds, 1);
-  INIT_DECL_FDSET(exnfds, 1);
-
-  s = data->tcp;
-
-  MZ_FD_ZERO(writefds);
-  MZ_FD_SET(s, writefds);
-  MZ_FD_ZERO(exnfds);
-  MZ_FD_SET(s, exnfds);
-  
-  do {
-    sr = select(s + 1, NULL, writefds, exnfds, &time);
-  } while ((sr == -1) && (NOT_WINSOCK(errno) == EINTR));
-
-  return sr;
-#else
-  TCPiopbX *xpb;
-  TCPiopb *pb;
-  int bytes;
-
-  xpb = mac_make_xpb(data);
-  pb = (TCPiopb *)xpb;
+  {
+    tcp_t s;
+    DECL_FDSET(writefds, 1);
+    DECL_FDSET(exnfds, 1);
+    struct timeval time = {0, 0};
+    int sr;
     
-  pb->csCode = TCPStatus;
-  if (PBControlSync((ParamBlockRec*)pb))
-    bytes = -1;
-  else {
-    bytes = pb->csParam.status.sendWindow - pb->csParam.status.amtUnackedData;
-    if (bytes < 0)
-      bytes = 0;
+    INIT_DECL_FDSET(writefds, 1);
+    INIT_DECL_FDSET(exnfds, 1);
+    
+    s = data->tcp;
+    
+    MZ_FD_ZERO(writefds);
+    MZ_FD_SET(s, writefds);
+    MZ_FD_ZERO(exnfds);
+    MZ_FD_SET(s, exnfds);
+    
+    do {
+      sr = select(s + 1, NULL, writefds, exnfds, &time);
+    } while ((sr == -1) && (NOT_WINSOCK(errno) == EINTR));
+    
+    return sr;
   }
-  
-  return !!bytes;
+#else
+  {
+    TCPiopbX *xpb;
+    TCPiopb *pb;
+    int bytes;
+    
+    xpb = mac_make_xpb(data);
+    pb = (TCPiopb *)xpb;
+    
+    pb->csCode = TCPStatus;
+    if (PBControlSync((ParamBlockRec*)pb))
+      bytes = -1;
+    else {
+      bytes = pb->csParam.status.sendWindow - pb->csParam.status.amtUnackedData;
+      if (bytes < 0)
+	bytes = 0;
+    }
+    
+    return !!bytes;
+  }
 #endif
 }
 
-static void tcp_write_needs_wakeup(Scheme_Object *conn, void *fds)
+static void tcp_write_needs_wakeup(Scheme_Object *port, void *fds)
 {
 #ifdef USE_SOCKETS_TCP
+  Scheme_Object *conn = ((Scheme_Output_Port *)port)->port_data;
   void *fds1, *fds2;
   tcp_t s = ((Scheme_Tcp *)conn)->tcp;
   
   fds1 = MZ_GET_FDSET(fds, 1);
   fds2 = MZ_GET_FDSET(fds, 2);
-
+  
   MZ_FD_SET(s, (fd_set *)fds1);
   MZ_FD_SET(s, (fd_set *)fds2);
 #endif
@@ -1344,7 +1352,14 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 
   if (would_block) {
     /* Block for writing: */
-    scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, data, (float)0.0);
+    scheme_block_until(tcp_check_write, tcp_write_needs_wakeup, port, (float)0.0);
+
+    /* Closed while blocking? */
+    if (((Scheme_Output_Port *)port)->closed) {
+      /* Call write again to signal the error: */
+      scheme_write_offset_string(s, offset, len, (Scheme_Object *)port);
+      return sent + len; /* shouldn't get here */
+    }
 
     /* Ok - try again! */
     would_block = 0;

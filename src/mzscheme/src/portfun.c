@@ -1825,8 +1825,10 @@ static Scheme_Object *do_breakable(void *data)
   {
     Scheme_Thread *p = scheme_current_thread;
     if (p->external_break)
-      if (scheme_can_break(p, p->config))
+      if (scheme_can_break(p, p->config)) {
 	scheme_thread_block_w_thread(0.0, p);
+	p->ran_some = 1;
+      }
   }
 
   k = b->k;

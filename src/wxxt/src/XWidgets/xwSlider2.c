@@ -32,6 +32,9 @@ static char defaultTranslations[] = "\
 <Btn1Down>: start() \n\
 <Btn1Motion>: drag() \n\
 <Btn1Up>: finish() \n\
+<Btn2Down>: start() \n\
+<Btn2Motion>: drag() \n\
+<Btn2Up>: finish() \n\
 ";
 static void _resolve_inheritance(
 #if NeedFunctionPrototypes
@@ -359,38 +362,48 @@ static void start(self,event,params,num_params)Widget self;XEvent*event;String*p
 	&& event->type != MotionNotify)
 	XtError("The start action must be bound to a mouse event");
     ((XfwfSlider2WidgetClass)self->core.widget_class)->xfwfSlider2_class.compute_thumb(self, &x, &y, &w, &h);
-    if (event->xbutton.x < x) {			/* Left of thumb */
+    if (event->xbutton.button == Button2) {
+      /* Pretend mouse was clicked on the middle of the thumb... */
+      ((XfwfSlider2Widget)self)->xfwfSlider2.drag_in_progress = True;
+      ((XfwfSlider2Widget)self)->xfwfSlider2.m_delta_x = - (w / 2);
+      ((XfwfSlider2Widget)self)->xfwfSlider2.m_delta_y = - (h / 2);
+      /* and dragged to here: */
+      drag(self,event,params,num_params);
+    } else {
+      if (event->xbutton.x < x) {			/* Left of thumb */
 	info.reason = XfwfSPageLeft;
 	info.flags = XFWF_HPOS;			/* Suggest a value: */
 	info.hpos = max(0.0, ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_x - ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_wd);
 	outside = True;
 	XtCallCallbackList(self, ((XfwfSlider2Widget)self)->xfwfSlider2.scrollCallback, &info);
-    }
-    if (event->xbutton.x >= x + w) {		/* Right of thumb */
+      }
+      if (event->xbutton.x >= x + w) {		/* Right of thumb */
 	info.reason = XfwfSPageRight;
 	info.flags = XFWF_HPOS;			/* Suggest a value: */
 	info.hpos = min(1.0, ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_x + ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_wd);
 	outside = True;
 	XtCallCallbackList(self, ((XfwfSlider2Widget)self)->xfwfSlider2.scrollCallback, &info);
-    }
-    if (event->xbutton.y < y) {			/* Above thumb */
+      }
+      if (event->xbutton.y < y) {			/* Above thumb */
 	info.reason = XfwfSPageUp;
 	info.flags = XFWF_VPOS;			/* Suggest a value: */
 	info.vpos = max(0.0, ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_y - ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_ht);
 	outside = True;
 	XtCallCallbackList(self, ((XfwfSlider2Widget)self)->xfwfSlider2.scrollCallback, &info);
-    }
-    if (event->xbutton.y >= y + h) {		/* Below thumb */
+      }
+      if (event->xbutton.y >= y + h) {		/* Below thumb */
 	info.reason = XfwfSPageDown;
 	info.flags = XFWF_VPOS;			/* Suggest a value: */
 	info.vpos = min(1.0, ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_y + ((XfwfSlider2Widget)self)->xfwfSlider2.thumb_ht);
 	outside = True;
 	XtCallCallbackList(self, ((XfwfSlider2Widget)self)->xfwfSlider2.scrollCallback, &info);
-    }
-    if (! outside) {				/* Inside the thumb */
+      }
+
+      if (! outside) {				/* Inside the thumb */
 	((XfwfSlider2Widget)self)->xfwfSlider2.drag_in_progress = True;
 	((XfwfSlider2Widget)self)->xfwfSlider2.m_delta_x = x - event->xbutton.x;
 	((XfwfSlider2Widget)self)->xfwfSlider2.m_delta_y = y - event->xbutton.y;
+      }
     }
 }
 

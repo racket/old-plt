@@ -3887,9 +3887,12 @@ enable_break(int argc, Scheme_Object *argv[])
 			  argc, argv,
 			  -1, NULL, NULL, 1);
 
-  if (argc == 1) /* might have turned on breaking... */
-    if (p->external_break && scheme_can_break(p, p->config))
+  if (argc == 1) { /* might have turned on breaking... */
+    if (p->external_break && scheme_can_break(p, p->config)) {
       scheme_thread_block_w_thread(0.0, p);
+      p->ran_some = 1;
+    }
+  }
 
   return v;
 }

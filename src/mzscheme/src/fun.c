@@ -880,7 +880,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	
 	  /* stack overflow is a lot of work; force a sleep */
 	  scheme_thread_block(0);
-	
+	  pp->ran_some = 1;
+
 	  pp->ku.k.p1 = p1;
 	  pp->ku.k.p2 = p2;
 	  pp->ku.k.p3 = p3;
@@ -1969,8 +1970,10 @@ call_cc (int argc, Scheme_Object *argv[])
     }
 
     /* We may have just re-activated breaking: */
-    if (p->external_break && scheme_can_break(p, p->config))
+    if (p->external_break && scheme_can_break(p, p->config)) {
       scheme_thread_block_w_thread(0.0, p);
+      p->ran_some = 1;
+    }
 
     return result;
   } else {
@@ -2266,8 +2269,10 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   memcpy(&p->error_buf, &dw->saveerr, sizeof(mz_jmp_buf));
 
   /* We may have just re-activated breaking: */
-  if (p->external_break && scheme_can_break(p, p->config))
+  if (p->external_break && scheme_can_break(p, p->config)) {
     scheme_thread_block_w_thread(0.0, p);
+    p->ran_some = 1;
+  }
   
   if (save_values) {
     p->ku.multiple.count = save_count;

@@ -36,6 +36,7 @@
 #else
   scheme_extension_table->scheme_thread_block_w_thread = scheme_thread_block_w_thread;
 #endif
+  scheme_extension_table->scheme_making_progress = scheme_making_progress;
   scheme_extension_table->scheme_weak_suspend_thread = scheme_weak_suspend_thread;
   scheme_extension_table->scheme_weak_resume_thread = scheme_weak_resume_thread;
   scheme_extension_table->scheme_block_until = scheme_block_until;

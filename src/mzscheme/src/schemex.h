@@ -75,6 +75,7 @@ void (*scheme_swap_thread)(Scheme_Thread *process);
 #else
 void (*scheme_thread_block_w_thread)(float sleep_time, Scheme_Thread *p);
 #endif
+void (*scheme_making_progress)();
 void (*scheme_weak_suspend_thread)(Scheme_Thread *p);
 void (*scheme_weak_resume_thread)(Scheme_Thread *p);
 int (*scheme_block_until)(int (*f)(Scheme_Object *), void (*fdfd)(Scheme_Object *, void *), void *, float);

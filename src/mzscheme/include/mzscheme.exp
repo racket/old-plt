@@ -18,6 +18,7 @@ scheme_kill_thread
 scheme_break_thread
 scheme_thread_block
 scheme_swap_thread
+scheme_making_progress
 scheme_weak_suspend_thread
 scheme_weak_resume_thread
 scheme_block_until

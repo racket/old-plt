@@ -44,22 +44,22 @@
        (case-lambda
         [(message object)
 	 (unless (zodiac:zodiac? object)
-		 (printf "Bad object in mrspidey:error-handler ~s~n" object)
+		 (error "Bad object in mrspidey:error-handler" object)
 		 ((mrspidey:error-handler) message))
 	 (let* ([loc (zodiac:zodiac-start object)])
 	   (unless (zodiac:location? loc)
-		   (printf "Bad location in mrspidey:error-handler ~s~n" loc)
+		   (error "Bad location in mrspidey:error-handler" loc)
 		   ((mrspidey:error-handler) message))
 	   ((mrspidey:error-handler)
-	    (format "~a at ~s line ~s, column ~s~n"
+	    (format "~a in ~s, line ~s, column ~s~n"
 		    message
 		    (file-name-from-path (zodiac:location-file loc))
 		    (zodiac:location-line loc)
 		    (zodiac:location-column loc))))]
         [(message) 
-	 (printf "MrSpidey error: ~a~n" message)]
+	 (error message)]
 	[else
-	 (printf "Unknown MrSpidey error~n")])))))
+	 (error "Unknown MrSpidey error")])))))
 
 ;; ----------------------------------------------------------------------
 
@@ -97,7 +97,7 @@
 			     (lambda (x) (void))])
               (let*-values ([(filename) (send edit get-filename)]
 			    [(dir name is-dir) (split-path (path->complete-path filename))])
-		(parameterize ([current-load-relative-directory dir])
+                  (parameterize ([current-load-relative-directory dir])
 		  (send spidey run-mrspidey filename)))))
           (message-box
 	   "MrSpidey Error"
@@ -115,22 +115,10 @@
             keyword fmt-spec args))))
     (define internal-error
       (lambda (where fmt-spec . args)
-        (let ([msg 
-                (parameterize ([print-struct #t])
-                  (string-append "Syntax error: " 
-                    (apply format fmt-spec args)))])
-          (if #t                        ;(zodiac:zodiac? where)
-            (mrspidey:error msg where)                    
-            (mrspidey:error msg)))))
-    (define static-error
-      (lambda (where fmt-spec . args)
-        (let ([msg
-                (parameterize ([print-struct #t])
-                  (string-append "Syntax error: " 
-                    (apply format fmt-spec args)))])
-          (if #t                        ;(zodiac:zodiac? where)
-            (mrspidey:error msg where)                    
-            (mrspidey:error msg)))))
+        (let ([msg (parameterize ([print-struct #t])
+				 (apply format fmt-spec args))])
+	  (mrspidey:error msg where))))
+    (define static-error internal-error) 
     (define dynamic-error
       (default-error-handler 'zodiac-run-time))))
 

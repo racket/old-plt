@@ -1212,13 +1212,11 @@
                 [(quote datum)
                  (begin 
                    (annotate-raw-keyword sexp)
-                   (when (syntax-original? (syntax datum))
-                     (color (syntax datum) constant-style-str)))]
+                   (color-internal-structure (syntax datum) constant-style-str))]
                 [(quote-syntax datum)
                  (begin 
                    (annotate-raw-keyword sexp)
-                   (when (syntax-original? (syntax datum))
-                     (color (syntax datum) constant-style-str)))]
+                   (color-internal-structure (syntax datum) constant-style-str))]
                 [(with-continuation-mark a b c)
                  (begin
                    (annotate-raw-keyword sexp)
@@ -1230,9 +1228,7 @@
                    (annotate-raw-keyword sexp)
                    (for-each loop (syntax->list (syntax (pieces ...)))))]
                 [(#%datum . datum)
-                 (begin
-                   (when (syntax-original? sexp)
-                     (color sexp constant-style-str)))]
+                 (color-internal-structure (syntax datum) constant-style-str)]
                 [(#%top . var)
                  (begin
                    (set! tops (cons (syntax var) tops)))]
@@ -1300,7 +1296,7 @@
                   referenced-macros
                   bound-in-sources
                   has-module?)))
-
+      
       ;; annotate-bound-in-sources : (listof (cons syntax[orig] syntax[orig])) -> void
       ;; adds arrows and colors between pairs found in the 'bound-in-source syntax property.
       (define (annotate-bound-in-sources biss)
@@ -1538,6 +1534,36 @@
                     (when (syntax-original? stx)
                       (color stx bound-variable-style-str)))
                   (syntax->list stx)))
+      
+      
+      ;; color-internal-structure : syntax str -> void
+      (define (color-internal-structure stx style-name)
+        (let ([ht (make-hash-table)]) 
+          ;; ht : stx -o> true
+          ;; indicates if we've seen this syntax object before
+          
+          (let loop ([stx stx]
+                     [datum (syntax-object->datum stx)])
+            (when (syntax? stx)
+              (unless (hash-table-get ht datum (lambda () #f))
+                (hash-table-put! ht datum #t)
+                (when (syntax-original? stx)
+                  (color stx style-name))
+                (let ([stx-e (syntax-e stx)])
+                  (cond
+                    [(cons? stx-e)
+                     (loop (car stx-e) (car datum))
+                     (loop (cdr stx-e) (cdr datum))]
+                    [(null? stx-e)
+                     (void)]
+                    [(vector? stx-e)
+                     (for-each loop
+                               (vector->list stx-e)
+                               (vector->list datum))]
+                    [(box? stx-e)
+                     (loop (unbox stx-e) (unbox datum))]
+                    [else (void)])))))))
+
       
       ;; color : syntax[original] str -> void
       ;; colors the syntax with style-name's style

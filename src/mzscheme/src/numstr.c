@@ -161,7 +161,7 @@ static int u_strcmp(mzchar *s, char *t)
 {
   int i;
 
-  for (i = 0; s[i] && (s[i] == t[i]); i++) {
+  for (i = 0; s[i] && (s[i] == ((unsigned char *)t)[i]); i++) {
   }
   if (s[i] || t[i])
     return 1;

@@ -135,29 +135,53 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
     float a, b;
     a = SCHEME_FLT_VAL(obj1);
     b = SCHEME_FLT_VAL(obj2);
+# ifndef NAN_EQUALS_ANYTHING
     if (a != b) {
+#  endif
       /* Double-check for NANs: */
       if (MZ_IS_NAN(a)) {
 	if (MZ_IS_NAN(b))
 	  return 1;
+# ifdef NAN_EQUALS_ANYTHING
+	return 0;
+# endif
       }
+# ifdef NAN_EQUALS_ANYTHING
+      if (MZ_IS_NAN(b))
+	return 0;
+      else
+	return (a == b);
+# else
       return 0;
     }
     return 1;
+# endif
   }
 #endif
   else if (t1 == scheme_double_type) {
     double a, b;
     a = SCHEME_DBL_VAL(obj1);
     b = SCHEME_DBL_VAL(obj2);
+# ifndef NAN_EQUALS_ANYTHING
     if (a != b) {
+# endif
       /* Double-check for NANs: */
       if (MZ_IS_NAN(a)) {
 	if (MZ_IS_NAN(b))
 	  return 1;
+# ifdef NAN_EQUALS_ANYTHING
+	return 0;
+# endif
       }
+# ifdef NAN_EQUALS_ANYTHING
+      if (MZ_IS_NAN(b))
+	return 0;
+      else
+	return (a == b);
+# else
       return 0;
     }
+# endif
     return 1;
   } else if (t1 == scheme_bignum_type)
     return scheme_bignum_eq(obj1, obj2);

@@ -121,7 +121,7 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
 	--table->count;
 	break;
       }
-    } else if ((length == SCHEME_SYM_LEN(bucket))
+    } else if (((int)length == SCHEME_SYM_LEN(bucket))
 	       && !memcmp(key, SCHEME_SYM_VAL(bucket), length))
       return (Scheme_Object *)bucket;
     h = (h + h2) % table->size;

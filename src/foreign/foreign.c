@@ -14,14 +14,14 @@
 #else
 # include <windows.h>
 # include <wtypes.h>
-  typedef INT8    int8_t;
-  typedef UINT8  uint8_t;
-  typedef INT16   int16_t;
-  typedef UINT16 uint16_t;
-  typedef INT32   int32_t;
-  typedef UINT32 uint32_t;
-  typedef INT64   int64_t;
-  typedef UINT64 uint64_t;
+  typedef _int8    int8_t;
+  typedef unsigned _int8  uint8_t;
+  typedef _int16   int16_t;
+  typedef unsigned _int16 uint16_t;
+  typedef _int32   int32_t;
+  typedef unsigned _int32 uint32_t;
+  typedef _int64   int64_t;
+  typedef unsigned _int64 uint64_t;
 #endif
 #include <ffi.h>
 

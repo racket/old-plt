@@ -887,7 +887,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 
 	    do {
 	      ch = scheme_getc_special_ok(port);
-	      if (ch == str[scanpos]) {
+	      if ((mzchar)ch == str[scanpos]) {
 		scanpos++;
 	      } else {
 		if (scanpos == 3) {
@@ -2056,7 +2056,7 @@ static int u_strcmp(mzchar *s, const char *_t)
   int i;
   unsigned char *t = (unsigned char *)_t;
 
-  for (i = 0; s[i] && (scheme_tolower(s[i]) == scheme_tolower(t[i])); i++) {
+  for (i = 0; s[i] && (scheme_tolower(s[i]) == scheme_tolower(((unsigned char *)t)[i])); i++) {
   }
   if (s[i] || t[i])
     return 1;
@@ -2664,7 +2664,7 @@ static Scheme_Object *read_compact(CPort *port,
     switch(cpt_branch[ch]) {
     case CPT_ESCAPE:
       {
-	unsigned int len;
+	int len;
 	Scheme_Object *ep;
 	char *s;
 	ReadParams params;

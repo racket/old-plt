@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.5 1998/02/14 15:04:24 mflatt Exp $
+ * $Id: Window.cc,v 1.6 1998/03/03 16:26:13 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -647,7 +647,8 @@ void wxWindow::CaptureMouse(void)
 
 void wxWindow::ChangeToGray(Bool gray)
 {
-  XtSetSensitive(X->handle, !gray);
+  if (!wxSubType(__type, wxTYPE_FRAME))
+    XtSetSensitive(X->handle, !gray);
   if (XtIsSubclass(X->frame, xfwfEnforcerWidgetClass))
     XtVaSetValues(X->frame, XtNdrawgray, (Boolean)gray, NULL);
 }

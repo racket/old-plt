@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.2 1998/01/27 17:03:40 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.3 1998/02/10 02:50:15 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -623,6 +623,10 @@ Bool wxFrame::Show(Bool show)
     XRaiseWindow(XtDisplay(frameShell), XtWindow(frameShell));
     FrameForceFocus(frameShell);
   } else {
+    /* XWithdrawWindow does the right thing for iconified windows */
+    XWithdrawWindow(XtDisplay(frameShell), XtWindow(frameShell), 
+		    XScreenNumberOfScreen(XtScreen(frameShell)));
+
     XtUnmapWidget(frameShell);
 //    XmUpdateDisplay(wxTheApp->topLevel); // Experimental: may be responsible for crashes
   }

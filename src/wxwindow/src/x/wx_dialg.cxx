@@ -4,11 +4,14 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.1.1.1 1997/12/22 16:12:04 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.2 1998/02/10 02:50:15 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
 // $Log: wx_dialg.cxx,v $
+// Revision 1.2  1998/02/10 02:50:15  mflatt
+// dialog fixes
+//
 // Revision 1.1.1.1  1997/12/22 16:12:04  mflatt
 // import
 //
@@ -190,7 +193,7 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 
   if (Parent) {
     if (wxSubType(Parent->__type, wxTYPE_FRAME))
-      parentShell = ((wxFrame *)Parent)->frameShell;
+      parentShell = ((wxFrame *)Parent)->frameWidget;
     else if (wxSubType(Parent->__type, wxTYPE_DIALOG_BOX))
       parentShell = ((wxDialogBox *)Parent)->dialogShell;
     else
@@ -721,6 +724,10 @@ Bool wxDialogBox::Show(Bool show)
     else
       modal_showing = FALSE;
   } else {
+    /* XWithdrawWindow does the right thing for iconified windows */
+    XWithdrawWindow(XtDisplay(dialogShell), XtWindow(dialogShell), 
+		    XScreenNumberOfScreen(XtScreen(dialogShell)));
+
     if (!invisibleResize)
       XtUnmapWidget(XtParent(dialogShell));
     else

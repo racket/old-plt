@@ -3131,13 +3131,11 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
 
   if (!((sclass->priminit == pi_NOT) || (sclass->priminit == pi_NOT_OVER_CPP))) {
     if (irec->init_level && (irec->init_level >= level)) {
-      if (sclass->superclass->pos) {
-	const char *cl = get_class_name((Scheme_Object *)sclass, " for class: ");
-	
-	scheme_raise_exn(MZEXN_OBJECT,
-			 CREATE_OBJECT ": superclass never initialized%s",
-			 cl);
-      }
+      const char *cl = get_class_name((Scheme_Object *)sclass, " for class: ");
+      
+      scheme_raise_exn(MZEXN_OBJECT,
+		       CREATE_OBJECT ": superclass never initialized%s",
+		       cl);
     }
   }
 }

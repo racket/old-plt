@@ -1,13 +1,13 @@
 (module servlet-primitives mzscheme
   (require "channel.ss"
            "configuration.ss"
-           "configuration-structures.ss"
+           ;"configuration-structures.ss"
            "web-server-unit.ss"
            "servlet-sig.ss"
-           "servlet.ss"
+           ;"servlet.ss"
 	   "servlet-tables.ss"
            "internal-structs.ss"
-           (lib "xml.ss" "xml")
+           ;(lib "xml.ss" "xml")
            (lib "url.ss" "net")
            (lib "external.ss" "browser")
            ; more here - use contracts when they support suitable error messages

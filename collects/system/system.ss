@@ -163,9 +163,10 @@
 	      (wx:yield) (wx:yield) (wx:yield)
 
 	      (when output-spidey-file
-		((load-relative "spidey.ss") output-spidey-file
-					     app-collection
-					     info))
+		((require-library "spidey.ss" "system")
+		 output-spidey-file
+		 app-collection
+		 info))
 	      (begin0
 	       (mred:startup-application app-collection
 					 info

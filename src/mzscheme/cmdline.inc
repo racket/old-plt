@@ -63,16 +63,20 @@ static char *make_embedded_load(const char *start, const char *end)
 {
   char *s;
 
-  s = (char *)malloc(strlen(start) + strlen(end) + 512);
+  s = (char *)malloc((2 * strlen(start)) + strlen(end) + 512);
   
-  sprintf(s,
-	  "(let* ([sp (find-system-path 'exec-file)] [exe (find-executable-path sp #f)]"
-                 "[s (with-input-from-file exe (lambda () "
-	              "(file-position (current-input-port) %s) (read-string (- %s %s))))]"
-                 "[p (open-input-string s)])"
-	     "(let loop () (let ([e (parameterize ([read-accept-compiled #t]) (read p))])"
- 			    "(unless (eof-object? e) (eval e) (loop)))))",
-	  start, end, start);
+  sprintf(s, "%s %s %s %s %s %s",
+	  "(#%let* ([sp (#%find-system-path 'exec-file)] [exe (#%find-executable-path sp #f)]"
+                   "[s (#%with-input-from-file exe (#%lambda () "
+	                "(#%file-position (#%current-input-port)", start, ") "
+                                         "(#%read-string (- ", end, start, "))))]"
+                   "[p (#%open-input-string s)])"
+	    "(#%when (#%and (#%> (#%string-length s) 2)"
+                           "(#%char=? (#%string-ref s 0) #\\#)"
+                           "(#%char=? (#%string-ref s 1) #\\!))"
+               "(#%read-line p))"
+	    "(#%let loop () (#%let ([e (#%parameterize ([#%read-accept-compiled #t]) (#%read p))])"
+ 			     "(#%unless (#%eof-object? e) (#%eval e) (loop)))))");
 
   return s;
 }

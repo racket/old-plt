@@ -1080,9 +1080,11 @@
 
 (#%define find-executable-path
   (#%lambda (program libpath)
-    (#%unless (#%string? program)
-      (#%raise-type-error 'find-executable-path "string" program))
-    (#%unless (#%or (#%not libpath) (#%relative-path? libpath))
+    (#%unless (#%and (#%string? program) 
+		     (#%or (#%relative-path? program)
+			   (#%absolute-path? program)))
+      (#%raise-type-error 'find-executable-path "path string" program))
+    (#%unless (#%or (#%not libpath) (#%and (#%string? libpath) (#%relative-path? libpath)))
       (#%raise-type-error 'find-executable-path "relative-path string or #f" libpath))
     (#%letrec ([found-exec
 		(#%lambda (exec-name)
@@ -1101,7 +1103,9 @@
 			             [else (found-exec resolved)]))))
 		             #f))
 			exec-name))])
-      (#%if (#%relative-path? program)
+      (#%if (#%and (#%relative-path? program)
+		   (#%let-values ([(base name dir?) (#%split-path program)])
+			(#%eq? base 'relative)))
 	  (#%let ([paths-str (#%getenv "PATH")]
 		  [win-add (#%lambda (s) (#%if (#%eq? (#%system-type) 'windows) (#%cons "." s) s))])
 	    (#%let loop ([paths (#%if paths-str 
@@ -1114,7 +1118,8 @@
 				(#%if (#%file-exists? name)
 				      (found-exec name)
 				      (loop (#%cdr paths)))))))
-	  (found-exec program)))))
+	  (#%let ([p (#%path->complete-path program)])
+	     (#%and (#%file-exists? p) (found-exec p)))))))
 
 > fstop find-executable-path <
 

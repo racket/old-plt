@@ -1884,8 +1884,10 @@
                            [rst (cdr ids)])
                   (cond
                     [(null? rst) (list fst)]
-                    [else (if (= (syntax-position fst)
-                                 (syntax-position (car rst)))
+                    [else (if (and (eq? (syntax-source fst)
+                                        (syntax-source (car rst)))
+                                   (= (syntax-position fst)
+                                      (syntax-position (car rst))))
                               (loop fst (cdr rst))
                               (cons fst (loop (car rst) (cdr rst))))]))]))
       

@@ -67,11 +67,21 @@
 	    null
 	    (cons (send stream get-string) (loop (sub1 n)))))))
 
+  (define cached-region #f)
+  (define cached-region-dc #f)
+
   (define (with-clipping-region dc x y w h thunk)
-    (let ([r (send dc get-clipping-region)])
-      (send dc set-clipping-rect x y w h)
+    (let ([r (send dc get-clipping-region)]
+	  [r2 (if (eq? dc cached-region-dc)
+		  cached-region
+		  (make-object mred:region% dc))])
+      (send r2 set-rectangle x y w h)
+      (send r2 intersect r)
+      (send dc set-clipping-region r2)
       (thunk)
-      (send dc set-clipping-region r)))
+      (send dc set-clipping-region r)
+      (set! cached-region r2)
+      (set! cached-region-dc dc)))
   
   (provide private
 	   make-one-line/callback-edit

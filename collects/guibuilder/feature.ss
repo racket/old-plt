@@ -6,6 +6,7 @@
 	   (lib "pretty.ss")
 	   (lib "etc.ss")
 	   (lib "list.ss")
+	   "base.ss"
 	   "utils.ss")
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -98,10 +99,17 @@
 	     `(,@(super-gb-instantiate-arguments)
 	       [callback ,(gb-get-unified-callback)]))]
 	  [gb-aux-instantiate
-	   (lambda ()
+	   (lambda (mode)
 	     (append
-	      (map (lambda (n c) `(public* [,n ,c])) (get-callback-names) (get-callback-code))
-	      (super-gb-aux-instantiate)))])
+	      (if (or (output-mode-as-class? mode)
+		      (output-mode-no-free-vars? mode))
+		  (map (lambda (n c) 
+			 (if (output-mode-as-class? mode)
+			     `(public* [,n ,c])
+			     `(define ,n ,c)))
+		       (get-callback-names) (get-callback-code))
+		  null)
+	      (super-gb-aux-instantiate mode)))])
 	(super-new))))
   
   (define gb:make-text-labelled-snip%

@@ -10,6 +10,9 @@
 
   (define GB:SNIP-VERSION 4)
   (define MINOR-VERSION 0)
+
+  ;; Info about the output mode:
+  (define-struct output-mode (as-class? no-free-vars?))
   
   (define gb:snip%
     (class mred:snip% 
@@ -347,7 +350,7 @@
 	      #f)))
        (gb-forget-original-id
 	(lambda ()
-					; Make unique name
+	  ;; Make unique name
 	  (let ([orig-name name])
 	    (set! name #f)
 	    (let loop ([new-name orig-name])
@@ -366,8 +369,10 @@
 	      '(border)
 	      null)))
        (gb-local-instantiate
-	(lambda (parent)
-	  `(new ,(gb-get-instantiate-class-getter)
+	(lambda (parent mode)
+	  `(new ,(if (output-mode-as-class? mode)
+		     (gb-get-instantiate-class-getter)
+		     (gb-get-default-class))
 		[parent ,parent]
 		,@(gb-instantiate-arguments))))
        (gb-instantiate-arguments
@@ -375,17 +380,21 @@
 
        (gb-get-default-class (lambda () 'vertical-panel%))
        (gb-aux-instantiate
-	(lambda ()
-	  `((public* [,(string->symbol (string-append "get-" name "%"))
-		      (lambda () ,(gb-get-default-class))]))))
+	(lambda (mode)
+	  (if (output-mode-as-class? mode)
+	      `((public* [,(string->symbol (string-append "get-" name "%"))
+			  (lambda () ,(gb-get-default-class))]))
+	      null)))
        (gb-instantiate
-	(lambda (parent)
-	  (let ([v (gb-local-instantiate parent)]
+	(lambda (parent mode)
+	  (let ([v (gb-local-instantiate parent mode)]
 		[name (string->symbol name)])
-	    `(,@(gb-aux-instantiate)
-	      (field [,name ,v])
+	    `(,@(gb-aux-instantiate mode)
+	      ,(if (output-mode-as-class? mode)
+		   `(field [,name ,v])
+		   `(define ,name ,v))
 	      ,@(apply append
-		       (map (lambda (c) (send c gb-instantiate name)) children))))))
+		       (map (lambda (c) (send c gb-instantiate name mode)) children))))))
 
        (draw-box
 	(lambda (dc x y w h)
@@ -562,6 +571,8 @@
 	   gb-original-id
 	   gb-parent
 	   gb-name
+
+	   (struct output-mode (as-class? no-free-vars?))
 	   
 	   interface->class-table
 	   

@@ -316,11 +316,13 @@ XDestroyImage(XImage *img)
 	   What we should do here is destroy the GWorld
 	*/
 		GWorldPtr x_pixmap;
+                PixMapHandle pixMap;
 		if (x_pixmap = img->bitmap) {
-			::DisposeCTable((*x_pixmap->portPixMap)->pmTable);
-			(*x_pixmap->portPixMap)->pmTable = 0;
-			::DisposePtr((Ptr) (*x_pixmap->portPixMap)->baseAddr);
-			(*x_pixmap->portPixMap)->baseAddr = 0;
+                        pixMap = GetPortPixMap(x_pixmap);
+			::DisposeCTable((*pixMap)->pmTable);
+			(*pixMap)->pmTable = 0;
+			::DisposePtr((Ptr) (*pixMap)->baseAddr);
+			(*pixMap)->baseAddr = 0;
 			DisposeGWorld(x_pixmap);
 		}
 #else

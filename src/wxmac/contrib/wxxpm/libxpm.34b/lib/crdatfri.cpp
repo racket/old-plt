@@ -39,7 +39,9 @@
 #if defined(SYSV) || defined(SVR4)
 #include <string.h>
 #else
-#include <strings.h>
+# ifndef OS_X
+#  include <strings.h>
+# endif
 #endif
 #endif
 

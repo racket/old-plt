@@ -70,7 +70,9 @@ extern FILE *popen();
 #endif
 
 #else  /* defined(SYSV) || defined(SVR4) */
-#include <strings.h>
+# ifndef OS_X
+#  include <strings.h>
+# endif
 #endif
 
 #endif /* VMS */

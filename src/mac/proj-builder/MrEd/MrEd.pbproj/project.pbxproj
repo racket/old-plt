@@ -149,22 +149,21 @@
 				0E7DA8BA00ECA7E27F000001,
 				0E7DA8BC00ED19637F000001,
 				0E7DA8BE00ED20E77F000001,
-				5E42210600FC48FC7F000001,
-				5E42210800FC48FC7F000001,
-				5E42210A00FC48FC7F000001,
-				5E42210B00FC48FC7F000001,
-				5E42210C00FC48FC7F000001,
-				5E42210F00FC48FC7F000001,
-				5E42211000FC48FC7F000001,
-				5E42211100FC48FC7F000001,
-				5E42211200FC48FC7F000001,
-				5E42211300FC48FC7F000001,
-				5E42211400FC48FC7F000001,
-				5E42211600FC48FC7F000001,
-				5E42211700FC48FC7F000001,
-				5E42211800FC48FC7F000001,
-				5E42211900FC48FC7F000001,
-				5E42211A00FC48FC7F000001,
+				03F4D38100FCFCF07F000001,
+				03F4D38200FCFCF07F000001,
+				03F4D38300FCFCF07F000001,
+				03F4D38400FCFCF07F000001,
+				03F4D38500FCFCF07F000001,
+				03F4D38600FCFCF07F000001,
+				03F4D38700FCFCF07F000001,
+				03F4D38800FCFCF07F000001,
+				03F4D38900FCFCF07F000001,
+				03F4D38A00FCFCF07F000001,
+				03F4D38B00FCFCF07F000001,
+				03F4D38C00FCFCF07F000001,
+				03F4D38D00FCFCF07F000001,
+				03F4D38E00FCFCF07F000001,
+				03F4D38F00FCFCF07F000001,
 			);
 			isa = PBXSourcesBuildPhase;
 			name = Sources;
@@ -479,7 +478,6 @@
 		};
 		00F4511500EC74EF7F000001 = {
 			children = (
-				5E4220EF00FC48B37F000001,
 				0E7DA83F00ECA4DD7F000001,
 				0E7DA84000ECA5667F000001,
 			);
@@ -1417,6 +1415,222 @@
 			settings = {
 			};
 		};
+		03F4D33C00FCD6B27F000001 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			generatedFileNames = (
+			);
+			isa = PBXShellScriptBuildPhase;
+			name = "Shell Script";
+			neededFileNames = (
+			);
+			shellPath = /bin/sh;
+			shellScript = "/Users/clements/plt/src/mac/pre-make";
+		};
+		03F4D33D00FCF5877F000001 = {
+			children = (
+				03F4D37200FCFCF07F000001,
+				03F4D37300FCFCF07F000001,
+				03F4D37400FCFCF07F000001,
+				03F4D37500FCFCF07F000001,
+				03F4D37600FCFCF07F000001,
+				03F4D37700FCFCF07F000001,
+				03F4D37800FCFCF07F000001,
+				03F4D37900FCFCF07F000001,
+				03F4D37A00FCFCF07F000001,
+				03F4D37B00FCFCF07F000001,
+				03F4D37C00FCFCF07F000001,
+				03F4D37D00FCFCF07F000001,
+				03F4D37E00FCFCF07F000001,
+				03F4D37F00FCFCF07F000001,
+				03F4D38000FCFCF07F000001,
+			);
+			isa = PBXGroup;
+			name = "xpm Sources";
+			path = "";
+			refType = 4;
+		};
+		03F4D37200FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = crbuffri.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crbuffri.cpp;
+			refType = 0;
+		};
+		03F4D37300FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = crdatfri.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crdatfri.cpp;
+			refType = 0;
+		};
+		03F4D37400FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = create.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/create.cpp;
+			refType = 0;
+		};
+		03F4D37500FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = crifrdat.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crifrdat.cpp;
+			refType = 0;
+		};
+		03F4D37600FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = data.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/data.cpp;
+			refType = 0;
+		};
+		03F4D37700FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = hashtab.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/hashtab.cpp;
+			refType = 0;
+		};
+		03F4D37800FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = miscellaneous.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/miscellaneous.cpp;
+			refType = 0;
+		};
+		03F4D37900FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = parse.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/parse.cpp;
+			refType = 0;
+		};
+		03F4D37A00FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = rdftodat.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rdftodat.cpp;
+			refType = 0;
+		};
+		03F4D37B00FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = rdftoi.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rdftoi.cpp;
+			refType = 0;
+		};
+		03F4D37C00FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = rgb.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rgb.cpp;
+			refType = 0;
+		};
+		03F4D37D00FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = scan.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/scan.cpp;
+			refType = 0;
+		};
+		03F4D37E00FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = simx.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/simx.cpp;
+			refType = 0;
+		};
+		03F4D37F00FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = wrffrdat.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/wrffrdat.cpp;
+			refType = 0;
+		};
+		03F4D38000FCFCF07F000001 = {
+			isa = PBXFileReference;
+			name = wrffri.cpp;
+			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/wrffri.cpp;
+			refType = 0;
+		};
+		03F4D38100FCFCF07F000001 = {
+			fileRef = 03F4D37200FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38200FCFCF07F000001 = {
+			fileRef = 03F4D37300FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38300FCFCF07F000001 = {
+			fileRef = 03F4D37400FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38400FCFCF07F000001 = {
+			fileRef = 03F4D37500FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38500FCFCF07F000001 = {
+			fileRef = 03F4D37600FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38600FCFCF07F000001 = {
+			fileRef = 03F4D37700FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38700FCFCF07F000001 = {
+			fileRef = 03F4D37800FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38800FCFCF07F000001 = {
+			fileRef = 03F4D37900FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38900FCFCF07F000001 = {
+			fileRef = 03F4D37A00FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38A00FCFCF07F000001 = {
+			fileRef = 03F4D37B00FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38B00FCFCF07F000001 = {
+			fileRef = 03F4D37C00FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38C00FCFCF07F000001 = {
+			fileRef = 03F4D37D00FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38D00FCFCF07F000001 = {
+			fileRef = 03F4D37E00FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38E00FCFCF07F000001 = {
+			fileRef = 03F4D37F00FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03F4D38F00FCFCF07F000001 = {
+			fileRef = 03F4D38000FCFCF07F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		04313892FE3035C9C02AAC07 = {
 			buildActionMask = 2147483647;
 			files = (
@@ -2327,6 +2541,7 @@
 				0E7DA8BF00ED23787F000001,
 				0E7DA8C000ED23787F000001,
 				03172A9800BAB1697F000001,
+				03F4D33D00FCF5877F000001,
 				03172A8F00BAB02E7F000001,
 			);
 			isa = PBXGroup;
@@ -2371,6 +2586,7 @@
 		20286C34FDCF999611CA2CEA = {
 			buildPhases = (
 				20286C35FDCF999611CA2CEA,
+				03F4D33C00FCD6B27F000001,
 				20286C36FDCF999611CA2CEA,
 				20286C38FDCF999611CA2CEA,
 				20286C3BFDCF999611CA2CEA,
@@ -2504,222 +2720,6 @@
 		};
 		5E4220EE00FC401E7F000001 = {
 			fileRef = 5E4220ED00FC401E7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E4220EF00FC48B37F000001 = {
-			children = (
-				5E4220F000FC48FC7F000001,
-				5E4220F200FC48FC7F000001,
-				5E4220F400FC48FC7F000001,
-				5E4220F500FC48FC7F000001,
-				5E4220F600FC48FC7F000001,
-				5E4220F900FC48FC7F000001,
-				5E4220FA00FC48FC7F000001,
-				5E4220FB00FC48FC7F000001,
-				5E4220FC00FC48FC7F000001,
-				5E4220FD00FC48FC7F000001,
-				5E4220FE00FC48FC7F000001,
-				5E42210000FC48FC7F000001,
-				5E42210100FC48FC7F000001,
-				5E42210200FC48FC7F000001,
-				5E42210300FC48FC7F000001,
-				5E42210400FC48FC7F000001,
-			);
-			isa = PBXGroup;
-			name = libxpm;
-			path = "";
-			refType = 4;
-		};
-		5E4220F000FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = crbuffri.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crbuffri.c;
-			refType = 0;
-		};
-		5E4220F200FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = crdatfri.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crdatfri.c;
-			refType = 0;
-		};
-		5E4220F400FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = create.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/create.c;
-			refType = 0;
-		};
-		5E4220F500FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = crifrbuf.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crifrbuf.c;
-			refType = 0;
-		};
-		5E4220F600FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = crifrdat.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/crifrdat.c;
-			refType = 0;
-		};
-		5E4220F900FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = data.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/data.c;
-			refType = 0;
-		};
-		5E4220FA00FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = hashtab.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/hashtab.c;
-			refType = 0;
-		};
-		5E4220FB00FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = miscellaneous.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/miscellaneous.c;
-			refType = 0;
-		};
-		5E4220FC00FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = parse.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/parse.c;
-			refType = 0;
-		};
-		5E4220FD00FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = rdftodat.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rdftodat.c;
-			refType = 0;
-		};
-		5E4220FE00FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = rdftoi.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rdftoi.c;
-			refType = 0;
-		};
-		5E42210000FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = rgb.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/rgb.c;
-			refType = 0;
-		};
-		5E42210100FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = scan.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/scan.c;
-			refType = 0;
-		};
-		5E42210200FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = simx.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/simx.c;
-			refType = 0;
-		};
-		5E42210300FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = wrffrdat.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/wrffrdat.c;
-			refType = 0;
-		};
-		5E42210400FC48FC7F000001 = {
-			isa = PBXFileReference;
-			name = wrffri.c;
-			path = /Users/clements/plt/src/wxmac/contrib/wxxpm/libxpm.34b/lib/wrffri.c;
-			refType = 0;
-		};
-		5E42210600FC48FC7F000001 = {
-			fileRef = 5E4220F000FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42210800FC48FC7F000001 = {
-			fileRef = 5E4220F200FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42210A00FC48FC7F000001 = {
-			fileRef = 5E4220F400FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42210B00FC48FC7F000001 = {
-			fileRef = 5E4220F500FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42210C00FC48FC7F000001 = {
-			fileRef = 5E4220F600FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42210F00FC48FC7F000001 = {
-			fileRef = 5E4220F900FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211000FC48FC7F000001 = {
-			fileRef = 5E4220FA00FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211100FC48FC7F000001 = {
-			fileRef = 5E4220FB00FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211200FC48FC7F000001 = {
-			fileRef = 5E4220FC00FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211300FC48FC7F000001 = {
-			fileRef = 5E4220FD00FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211400FC48FC7F000001 = {
-			fileRef = 5E4220FE00FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211600FC48FC7F000001 = {
-			fileRef = 5E42210000FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211700FC48FC7F000001 = {
-			fileRef = 5E42210100FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211800FC48FC7F000001 = {
-			fileRef = 5E42210200FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211900FC48FC7F000001 = {
-			fileRef = 5E42210300FC48FC7F000001;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		5E42211A00FC48FC7F000001 = {
-			fileRef = 5E42210400FC48FC7F000001;
 			isa = PBXBuildFile;
 			settings = {
 			};

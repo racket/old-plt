@@ -69,7 +69,7 @@
    (theta set-theta!)
    (add-annotation 'theta (lambda () #f)))
 
- ; pi is a sequence of variables (list of Scheme symbols) that represent 
+ ; pi is a sequence of variables (list of Zodiac lexical-bindings) that represent 
  ; an application protocol.  If in (e1 e2), e1 has the 
  ; protocol (x1 ... xn), we'll transform this to (clos-app e1 x1 ... xn e2)
 
@@ -143,20 +143,6 @@
 					  (equiv-pi ast2))])
      (set-equiv-pi! ast1 merged-class)
      (set-equiv-pi! ast2 merged-class)))
-
- ; operations on sets of binders
-
- (define (binding-name b)
-   (if (zodiac:top-level-varref/bind? b)
-       (zodiac:varref-var b)
-       (zodiac:binding-var b)))
- 
- (define (find-binder the-name) 
-   (lambda (binders)
-     (set-find
-      (lambda (b) 
-	(eq? the-name (binding-name b)))
-      binders)))
 
  ; zactor% is the class of objects that knows how to do things at 
  ; different kinds of Zodiac nodes
@@ -481,18 +467,15 @@
       [(zodiac:unit-form? ast)
 
        (let* ([imports (zodiac:unit-form-imports ast)]
-	      [exports (zodiac:unit-form-exports ast)]
 	      [clauses (zodiac:unit-form-clauses ast)]
 	      [unit-code (get-annotation ast)]
 	      [defines (unit-code-defines unit-code)]
-	      [export-vs (unit-code-exports unit-code)]
 	      [unit-traverse do-traverse])
 
 	 ((generic-unit-form-action zactor) ast)
 
 	 (for-each unit-traverse defines)
 	 (for-each unit-traverse imports)
-	 (for-each do-traverse (map car exports))
 	 (for-each unit-traverse clauses))]
 
       [(zodiac:compound-unit-form? ast)
@@ -814,12 +797,10 @@
 	  [(zodiac:unit-form? ast)
 
 	   (let* ([imports (zodiac:unit-form-imports ast)]
-		  [exports (zodiac:unit-form-exports ast)]
 		  [clauses (zodiac:unit-form-clauses ast)]
 		  [unit-code (get-annotation ast)]
 		  [defines (unit-code-defines unit-code)]
-		  [export-vs (unit-code-exports unit-code)]
-		  [clause-binders (remove-duplicates (append defines imports export-vs))]
+		  [clause-binders (append defines imports)]
 		  [new-binders (add-binders-to-scope binders clause-binders)]
 		  [unit-traverse
 		   (lambda (t)
@@ -831,7 +812,6 @@
 
 	     (for-each unit-traverse defines)
 	     (for-each unit-traverse imports)
-	     (for-each rec-traverse (map car exports))
 	     (for-each unit-traverse clauses))]
 
 	  [(zodiac:compound-unit-form? ast)
@@ -1148,7 +1128,7 @@
        ((generic-unit-form-folder zolder)
 	ast
 	(map do-zolder-traverse (zodiac:unit-form-imports ast))
-	(map do-zolder-traverse (map car (zodiac:unit-form-exports ast)))
+	(map do-zolder-traverse (unit-code-defines (get-annotation ast)))
 	(map do-zolder-traverse (zodiac:unit-form-clauses ast)))]
 
       [(zodiac:compound-unit-form? ast)
@@ -1340,7 +1320,7 @@
 	   ; units
 
 	   [unit-form-folder
-	    (lambda (a imports-fv exports-fv clauses-fv)
+	    (lambda (a imports-fv defines-fv clauses-fv)
 	      (let* ([unit-code (get-annotation a)]
 		     [binders ; lexical-binding set list
 		      (cons (list->set (unit-code-defines unit-code))
@@ -1679,22 +1659,22 @@
 		     (override
 		      [default-folder void]
 		      [if-form-folder
-		       (lambda (a . args)
+		       (lambda (a _ __ ___)
 			 (prop-unknown (zodiac:if-form-then a) a)
 			 (prop-unknown (zodiac:if-form-else a) a))]
 		      [set!-form-folder
-		       (lambda (a . args)
+		       (lambda (a _ __)
 			 (prop-unknown (zodiac:set!-form-val a) 
 				       (zodiac:set!-form-var a)))]
 		      [define-values-form-folder
-			(lambda (a . args)
+			(lambda (a _ __)
 			  (let ([val (zodiac:define-values-form-val a)]) 
 			    (for-each
 			     (lambda (var)
 			       (prop-unknown val var))
 			     (zodiac:define-values-form-vars a))))]
 		      [let-values-form-folder
-		       (lambda (a . args)
+		       (lambda (a _ __ ___)
 			 (let ([binderss (zodiac:let-values-form-vars a)]
 			       [vals (zodiac:let-values-form-vals a)]) 
 			   (for-each
@@ -1710,7 +1690,7 @@
 			   (prop-unknown (zodiac:let-values-form-body a)
 					 a)))]
 		      [letrec*-values-form-folder
-		       (lambda (a . args)
+		       (lambda (a _ __ ___)
 			 (let ([binderss (zodiac:letrec*-values-form-vars a)]
 			       [vals (zodiac:letrec*-values-form-vals a)]) 
 			   (for-each
@@ -1726,11 +1706,11 @@
 			   (prop-unknown (zodiac:letrec*-values-form-body a)
 					 a)))]
 		      [top-level-varref/bind-folder
-		       (lambda (a . args)
+		       (lambda (a)
 			 (when (varref:has-attribute? a varref:primitive)
 			       (set-unknown-and-set-flag! a)))]
 		      [varref-folder 
-		       (lambda (a . args)
+		       (lambda (a)
 			 (when (zodiac:bound-varref? a)
 			       (let ([binder (zodiac:bound-varref-binding a)])
 				 (when binder 
@@ -1740,7 +1720,7 @@
 					      mark-as-escaping! 
 					      (set->list (get-phi a))))))))]
 		      [case-lambda-form-folder
-		       (lambda (a . args)
+		       (lambda (a _ __)
 			 (when (escape? a)
 			       (for-each
 				(lambda (body)
@@ -1751,7 +1731,7 @@
 					     phi-cs))))
 				(zodiac:case-lambda-form-bodies a))))]
 		      [app-folder
-		       (lambda (a . args)
+		       (lambda (a _ __)
 			 (let ([rator (zodiac:app-fun a)]
 			       [rands (zodiac:app-args a)])
 
@@ -1781,17 +1761,17 @@
 			    (map zodiac:case-lambda-form-bodies 
 				 (set->list (get-phi rator))))))]
 		      [begin0-form-folder
-		       (lambda (a . args)
+		       (lambda (a _)
 			 (prop-unknown (car (zodiac:begin0-form-bodies a))
 				       a))]
 		      [begin-form-folder
-		       (lambda (a . args)
+		       (lambda (a _)
 			 (prop-unknown (car (last-pair 
 					     (zodiac:begin-form-bodies a)))
 				       a))]
 
 		      [unit-form-folder
-		       (lambda (a . args)
+		       (lambda (a _ __ ___)
 			 (unless unit-init
 				 (let* ([imports (zodiac:unit-form-imports a)]
 					[unit-code (get-annotation a)]
@@ -1852,7 +1832,6 @@
 			 (and (binding-unit-i/e? anno)
 			      (not (binding-known? anno)))))))
 	       (set->list binder-set))))]
-	  [known-only (lambda (vset) vset)]
 	  [init-theta-zactor
 	   (make-object
 	    (class zactor% ()
@@ -1863,7 +1842,7 @@
 		      (lambda (a)
 			(when (zodiac:parsed? a)
 			      (unless (theta a) ; may have been already set 
-				      (set-theta! a (known-only (scope-binders a))))))]
+				      (set-theta! a (scope-binders a)))))]
 
 		    [varref-action
 		     (lambda (a)
@@ -1874,7 +1853,7 @@
 
 			 (if (and binder (theta binder))
 			     (set-theta! a (theta binder))
-			     (set-theta! a (known-only (scope-binders a))))))]
+			     (set-theta! a (scope-binders a)))))]
 		    
 		    [case-lambda-form-action
 
@@ -1890,7 +1869,7 @@
 
 			      [code (get-annotation a)]
 			      [fvs (code-free-vars code)]
-			      [sbs (known-only (scope-binders a))])
+			      [sbs (scope-binders a)])
 
 			 ; rule proc-inv
 			 ; also, exclude mutable variables as possible parameters
@@ -1929,7 +1908,7 @@
 			      [init-vars-vars (zodiac:paroptarglist-vars init-vars)]
 			      [init-vars-binders 
 			       (map (lambda (v) (if (pair? v) (car v) v)) init-vars-vars)]
-			      [sbs (known-only (scope-binders a))])
+			      [sbs (scope-binders a)])
 
 			 ; by analogy with letrec*
 
@@ -1943,7 +1922,7 @@
 		     (lambda (a)
 		       (let* ([unit-code (get-annotation a)]
 			      [exports (unit-code-exports unit-code)]
-			      [sbs (known-only (scope-binders a))])
+			      [sbs (scope-binders a)])
 
 			 (set-theta! a sbs)
 
@@ -1957,7 +1936,7 @@
 		    [compound-unit-form-action
 		     (lambda (a)
 		       (let* ([imports (zodiac:compound-unit-form-imports a)]
-			      [sbs (known-only (scope-binders a))])
+			      [sbs (scope-binders a)])
 
 			 (set-theta! a sbs)
 
@@ -2374,8 +2353,7 @@
 
 		      (unless (equiv-pi a)
 
-			      (let* ([binder ((find-binder (zodiac:varref-var a))
-					      (scope-binders a))])
+			      (let* ([binder (zodiac:bound-varref-binding a)])
 				
 				; snarf equiv-pi from binder
 
@@ -2662,17 +2640,14 @@
 					  (set->list 
 					   (set-intersect 
 					    (list->set class-rep-pi) 
-					    (set-map
-					     zodiac:binding-var
-					     (theta a)))))]
+					    (theta a))))]
 				[else
 				 (set-pi! class-rep 
-					  (map zodiac:binding-var 
-					       (set->list 
-						(set-intersect
-						 (theta class-rep)
-						 (theta a)))))]))))]
-
+					  (set->list 
+					   (set-intersect
+					    (theta class-rep)
+					    (theta a))))]))))]
+		   
 		   [app-action
 		    (lambda (a) 
 		      (let* ([rator (zodiac:app-fun a)]
@@ -2693,17 +2668,14 @@
 				   (set->list ; maintain pi as list
 				    (set-intersect 
 				     (list->set class-rep-pi) 
-				     (set-map
-				      zodiac:binding-var
-				      (set-intersect rator-theta
-						     (candidate-vars class-rep))))))]
+				     (set-intersect rator-theta
+						    (candidate-vars class-rep)))))]
 			 [else
 
 			  (set-pi! class-rep 
-				   (map zodiac:binding-var 
-					(set->list 
-					 (set-intersect rator-theta
-							(candidate-vars class-rep)))))])))])
+				   (set->list 
+				    (set-intersect rator-theta
+						   (candidate-vars class-rep))))])))])
 		  (sequence (super-init))))]
 
 	 [eliminate-light-nonempty-closures-zactor
@@ -2713,8 +2685,7 @@
 		   [case-lambda-form-action
 		    (lambda (a) 
 		      (let* ([code (get-annotation a)]
-			     [fvs (set-map zodiac:binding-var 
-					   (code-free-vars code))]
+			     [fvs (code-free-vars code)]
 			     [class-rep (equiv-pi-rep a)]
 			     [class-rep-pi (pi class-rep)])
 			(unless (and class-rep-pi 
@@ -2754,10 +2725,12 @@
      (traverse-ast-with-zactor ast 
 			       assign-equiv-pis-zactor)))
 
- (define (make-fresh-binder-at s ast)
+ (define (make-fresh-binder-at binding ast)
    (let ([binder (car (zodiac:create-lexical-binding+marks
-		       (zodiac:structurize-syntax s ast)))])
-     (zodiac:set-binding-var! binder s) ; override gensym
+		       (zodiac:structurize-syntax 
+			(zodiac:binding-var binding)
+			ast)))])
+     ; (zodiac:set-binding-var! binder (zodiac:binding-var binding)) ; override gensym
      binder))
 
  ; compute set of fv's (without reliance on code-free-vars)
@@ -2841,11 +2814,11 @@
 			 super-result))]
 
 		    [unit-form-folder
-		     (lambda (a imports-fv exports-fv clauses-fv)
+		     (lambda (a imports-fv defines-fv clauses-fv)
 		       (let ([super-result
 			      (super-unit-form-folder
 			       a
-			       imports-fv exports-fv clauses-fv)]
+			       imports-fv defines-fv clauses-fv)]
 			     [code (get-annotation a)])
 			 (set-code-free-vars! code super-result)
 			 super-result))])
@@ -3085,12 +3058,13 @@
 	   (lambda (a)
 	     (length (zodiac:arglist-vars
 		      (car (zodiac:case-lambda-form-args a)))))]
-	  [transform-zactor
+	  [transform-zolder
 	   (make-object
-	    (class zactor% ()
+	    (class zolder% ()
 		   (override
-		    [case-lambda-form-action 
-		     (lambda (a _)
+		    [default-folder void]
+		    [case-lambda-form-folder 
+		     (lambda (a _ __)
 		       (let* ([old-arg-rep-len (get-arg-rep-len a)]
 			      [code (get-annotation a)]
 			      [class-rep (equiv-pi-rep a)]
@@ -3128,27 +3102,29 @@
 						    (zodiac:arglist-vars arglist))))
 				   
 				   ; wire varrefs to new parameters
-				   
+				   ; Note: applications within this body have already been
+				   ;  transformed, adding varrefs wired to the old bindings;
+				   ;  The following re-wiring adjust those varrefs, too.
+
 				   (for-each
 				    (lambda (v) 
-				      (let ([v-name (zodiac:varref-var v)])
+				      (let ([old-binder (zodiac:bound-varref-binding v)])
 					(ormap (lambda (pi-elt new-binder)
 
-						 (if (eq? v-name pi-elt)
+						 (if (eq? old-binder pi-elt)
 						     
 						     (begin
 
-						       (let ([old-binder (zodiac:bound-varref-binding v)])
-							 
-							 ; grab annotation from old binder, copy bits to new
+						       ; grab annotation from old binder, copy bits to new
 
-							 (set-annotation! new-binder
-									  (copy-binding-for-light-closures
-									   (get-annotation old-binder)))
-							 
-							 ; wire in new binder
-							 
-							 (zodiac:set-bound-varref-binding! v new-binder)))
+						       (set-annotation! new-binder
+									(copy-binding-for-light-closures
+									 (get-annotation old-binder)))
+						       
+						       ; wire in new binder
+						       
+						       (zodiac:set-bound-varref-binding! v new-binder)
+						       (zodiac:set-varref-var! v (zodiac:binding-var new-binder)))
 
 						     ; else
 						     
@@ -3182,7 +3158,11 @@
 					a 
 					(format 
 					 "added formal arguments (~a) to procedure"
-					 (- new-arg-rep-len old-arg-rep-len))))))
+					 (- new-arg-rep-len old-arg-rep-len)
+					 ; " ~n   free: ~a~n   added: ~a"
+					 ; (map zodiac:binding-var (set->list (code-free-vars code)))
+					 ; (map zodiac:binding-var (car new-binder-lists))
+					 )))))
 			 
 			 ; update local var information
 
@@ -3198,23 +3178,21 @@
 			  case-codes
 			  new-binder-lists)))]
 
-		    [app-action
-		     (lambda (a sbs)
-		       (let* ([old-app (zodiac:parsed->raw a)]
-			      [rator (zodiac:app-fun a)]
+		    [app-folder
+		     (lambda (a _ __)
+		       (let* ([rator (zodiac:app-fun a)]
 			      [rands (zodiac:app-args a)]
 			      [class-rep (equiv-pi-rep rator)]
 			      [pi-list (pi class-rep)]
 			      [new-vars
 			       (map 
-				(lambda (v)
-				  (let* ([binder ((find-binder v) sbs)]
-					 [new-v (zodiac:make-lexical-varref
+				(lambda (binder)
+				  (let* ([new-v (zodiac:make-lexical-varref
 						 (zodiac:zodiac-origin a)
 						 (zodiac:zodiac-start a)
 						 (zodiac:zodiac-finish a)
 						 (make-empty-box)
-						 v
+						 (zodiac:binding-var binder)
 						 binder)])
 
 				    (set-annotation! new-v 
@@ -3236,7 +3214,7 @@
 		   (sequence 
 		     (super-init))))])
 
-     (traverse-ast-with-scope-zactor ast transform-zactor)
+     (traverse-ast-with-zolder ast transform-zolder)
      (update-max-arities! ast)
      (update-variable-sets! ast)))
 

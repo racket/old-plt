@@ -99,7 +99,7 @@
 		   [binding (get-annotation (zodiac:bound-varref-binding var))])
 	      (unless (binding-mutable? binding)
 		(set-binding-known?! binding #t)
-		(let ([val (extract-value (zodiac:set!-form-val v))])
+		(let ([val (extract-ast-known-value (zodiac:set!-form-val v))])
 		  (set-binding-val! binding val)))
 	      #t)
 	    #f)]
@@ -201,8 +201,8 @@
 
        [else #f])))
 
-  ;; extract-value tries to extract a useful value from a known-value AST
-  (define (extract-value v)
+  ;; extract-ast-known-value tries to extract a useful value from a known-value AST
+  (define (extract-ast-known-value v)
     (let extract-value ([v v])
       (cond
        [(zodiac:set!-form? v) (zodiac:make-special-constant 'void)]
@@ -230,6 +230,7 @@
 	      v))]
        [else v])))
 
+  ;; extract-varref-known-val works for bindings, too.
   (define (extract-varref-known-val v)
     (if (top-level-varref/bind-from-lift? v)
 	(top-level-varref/bind-from-lift-lambda v)
@@ -239,9 +240,13 @@
 			       (zodiac:bound-varref-binding v))]
 		 [binding (get-annotation zbinding)]
 		 [result (lambda (v)
-			   (if (zodiac:bound-varref? v)
-			       (loop v)
-			       v))])
+			   (cond
+			    [(top-level-varref/bind-from-lift? v)
+			     (extract-varref-known-val v)]
+			    [(or (zodiac:bound-varref? v)
+				 (zodiac:binding? v))
+			     (loop v)]
+			    [else v]))])
 	    (and binding
 		 (cond
 		  [(binding? binding)
@@ -306,7 +311,7 @@
 			 [vars (car (zodiac:let-values-form-vars ast))]
 			 [bindings (map 
 				    (lambda (var)
-				      (make-known-binding var (extract-value val)))
+				      (make-known-binding var (extract-ast-known-value val)))
 				    vars)])
 		   
 		    (for-each set-annotation! vars bindings)

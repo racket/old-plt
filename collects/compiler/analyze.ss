@@ -289,6 +289,7 @@
 					   (loop (zodiac:if-form-else body) env size
 						 (lambda (size)
 						   (loop (zodiac:if-form-then body) env size k)))))]
+	   [(zodiac:set!-form? body) (loop (zodiac:set!-form-val body) env (+ size 3) k)]
 	   [(zodiac:let-values-form? body) (loop (car (zodiac:let-values-form-vals body)) 
 						 env
 						 (+ size 3)
@@ -312,7 +313,7 @@
   ;  the quote form in all its instantiations. We also don't
   ;  know whether it's been analyzed in this phase, yet.
   (define (copy-inlined-binding ast)
-    (let ([b (zodiac:make-binding
+    (let ([b (zodiac:make-lexical-binding
 	      (zodiac:zodiac-origin ast)
 	      (zodiac:zodiac-start ast)
 	      (zodiac:zodiac-finish ast)
@@ -405,11 +406,40 @@
 	 (copy-inlined-body (zodiac:if-form-then ast) binding-map)
 	 (copy-inlined-body (zodiac:if-form-else ast) binding-map))
 	ast)]
+      [(zodiac:set!-form? ast)
+       (mrspidey:copy-annotations! 
+	(zodiac:make-set!-form
+	 (zodiac:zodiac-origin ast)
+	 (zodiac:zodiac-start ast)
+	 (zodiac:zodiac-finish ast)
+	 (make-empty-box)
+	 (copy-inlined-body (zodiac:set!-form-var ast) binding-map)
+	 (copy-inlined-body (zodiac:set!-form-val ast) binding-map))
+	ast)]
       [(zodiac:let-values-form? ast)
        (let* ([vars (car (zodiac:let-values-form-vars ast))]
 	      [val (car (zodiac:let-values-form-vals ast))]
+	      [new-val (copy-inlined-body val binding-map)]
 	      [new-vars (map copy-inlined-binding vars)]
-	      [new-binding-map (append (map cons vars new-vars) binding-map)])
+	      [new-binding-map (append (map cons vars new-vars) binding-map)]
+	      [new-body (copy-inlined-body (zodiac:let-values-form-body ast) new-binding-map)])
+	 
+	 ;; Update known-value information; if it was known to be = to a varref or binding,
+	 ;; we may have replaced it with a new varref or binding.
+	 (when (= 1 (length new-vars))
+	   (let ([binding (get-annotation (car new-vars))])
+	     (when (binding-known? binding)
+	       (let ([known (binding-val binding)])
+		 (when (or (zodiac:bound-varref? known)
+			   (zodiac:binding? known))
+		   (let* ([known-zbinding (if (zodiac:binding? known)
+					      known
+					      (zodiac:bound-varref-binding known))]
+			  [found (assq known-zbinding binding-map)])
+		     (when found
+		       ;; Yep - that varref/binding was replaced
+		       (set-binding-val! binding (cdr found)))))))))
+	 
 	 (mrspidey:copy-annotations! 
 	  (zodiac:make-let-values-form
 	   (zodiac:zodiac-origin ast)
@@ -417,8 +447,8 @@
 	   (zodiac:zodiac-finish ast)
 	   (make-empty-box)
 	   (list new-vars)
-	   (list (copy-inlined-body val binding-map))
-	   (copy-inlined-body (zodiac:let-values-form-body ast) new-binding-map))
+	   (list new-val)
+	   new-body)
 	  ast))]
       [(zodiac:begin-form? ast)
        (mrspidey:copy-annotations! 
@@ -479,6 +509,15 @@
 						(list (car vals))
 						(loop (cdr vars) (cdr vals))))
 					   ast))])
+				;; Unless mutable, the new bindings have known
+				;;  value expressions
+				(for-each
+				 (lambda (var val)
+				   (let ([binding (get-annotation var)])
+				     (unless (binding-mutable? binding)
+				       (set-binding-known?! binding #t)
+				       (set-binding-val! binding val))))
+				 vars (extract-ast-known-value vals))
 				(inline v new-size))
 			      (dont-inline "too complex")))]
 		       [else (loop (cdr argses) (cdr bodies))]))))))))

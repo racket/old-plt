@@ -242,6 +242,7 @@
 (define-signature compiler:known^
   (make-unknown-letbound-binding
    extract-varref-known-val
+   extract-ast-known-value
    analyze-knowns!))
 
 (define-signature compiler:analyze^

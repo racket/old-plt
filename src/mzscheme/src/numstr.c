@@ -921,6 +921,9 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     const char *cpy;
     char *ptr;
 
+    if (has_expt && !(str[has_expt + 1]))
+      return scheme_false;
+
     if (has_expt && (str[has_expt] != 'e' && str[has_expt] != 'E')) {
       char *str2;
       str2 = (char *)scheme_malloc_atomic(len + 1);

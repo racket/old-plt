@@ -2680,7 +2680,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       }
 # endif
 # ifdef USE_TIMEZONE_VAR_W_DLS
-      tzoffset = -(MSC_IZE(timezone) - (dst ? 3600 : 0));
+      tzoffset = -(MSCBOR_IZE(timezone) - (dst ? 3600 : 0));
 # endif
 # ifdef USE_TIMEZONE_AND_ALTZONE_VAR
       if (dst)

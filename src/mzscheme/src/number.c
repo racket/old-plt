@@ -144,7 +144,7 @@ scheme_init_number (Scheme_Env *env)
 #endif
 #ifdef IGNORE_BY_CONTROL_387
   {
-    int bits = 0x3F + _RC_NEAR + _PC_64;
+    int bits = 0x3F + RC_NEAR + PC_64;
     _control87(bits, 0xFFFF);
   }
 #endif
@@ -1376,7 +1376,7 @@ double SCH_LOG(double d) { if (d == 0.0) return scheme_minus_infinity_val; else 
 #endif
 
 GEN_UNARY_OP(exp_prim, exp, exp, scheme_inf_object, scheme_single_inf_object, scheme_zerod, scheme_zerof, scheme_nan_object, scheme_single_nan_object, complex_exp, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
-GEN_UNARY_OP(log_prim, log, log, scheme_inf_object, scheme_single_inf_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
+GEN_UNARY_OP(log_prim, log, SCH_LOG, scheme_inf_object, scheme_single_inf_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_log, GEN_ONE_IS_ZERO_AND_ZERO_IS_ERR, NEGATIVE_USES_COMPLEX)
 GEN_UNARY_OP(sin_prim, sin, SCH_SIN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_sin, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(cos_prim, cos, cos, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_cos, GEN_ZERO_IS_ONE, NEVER_RESORT_TO_COMPLEX)
 GEN_UNARY_OP(tan_prim, tan, SCH_TAN, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, scheme_nan_object, scheme_single_nan_object, complex_tan, GEN_ZERO_IS_ZERO, NEVER_RESORT_TO_COMPLEX)
@@ -1479,11 +1479,15 @@ atan_prim (int argc, Scheme_Object *argv[])
     }
 
 #ifdef ATAN2_DOESNT_WORK_WITH_INFINITIES
-	if ((MZ_IS_POS_INFINITY(v) || MZ_IS_NEG_INFINITY(v))
-		&& (MZ_IS_POS_INFINITY(v2) || MZ_IS_NEG_INFINITY(v2))) {
-	  v = MZ_IS_POS_INFINITY(v) ? 1.0 : -1.0;
-	  v2 = MZ_IS_POS_INFINITY(v2) ? 1.0 : -1.0;
-	}
+    if ((MZ_IS_POS_INFINITY(v) || MZ_IS_NEG_INFINITY(v))
+	&& (MZ_IS_POS_INFINITY(v2) || MZ_IS_NEG_INFINITY(v2))) {
+      v = MZ_IS_POS_INFINITY(v) ? 1.0 : -1.0;
+      v2 = MZ_IS_POS_INFINITY(v2) ? 1.0 : -1.0;
+    }
+#endif
+#ifdef ATAN2_DOESNT_WORK_WITH_NAN
+    if (MZ_IS_NAN(v) || MZ_IS_NAN(v2))
+      return scheme_nan_object;
 #endif
 
     v = atan2(v, v2);
@@ -1514,6 +1518,14 @@ atan_prim (int argc, Scheme_Object *argv[])
 
 #undef MZ_USE_SINGLE
 }
+
+#ifdef NEED_TO_DEFINE_MATHERR
+int _RTLENTRY _EXPFUNC _matherr(struct exception* e)
+{
+   e->retval=1.0;
+   return 1;
+}
+#endif
 
 Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
 {

@@ -3693,7 +3693,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 #  define _beginthreadex CreateThread
 # endif
 # ifdef __BORLANDC__
-#  define MZ_LPTHREAD_START_ROUTINE (unsigned int (__stdcall*)(void*))
+#  define MZ_LPTHREAD_START_ROUTINE unsigned int (__stdcall*)(void*)
 # else
 #  define MZ_LPTHREAD_START_ROUTINE LPTHREAD_START_ROUTINE
 # endif
@@ -5383,9 +5383,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   out = (out ? out : make_fd_output_port(to_subprocess[1], 0));
   err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0));
 #else
-  in = (in ? in : make_tested_file_input_port(MSC_IZE(BOR_IZE(fdopen))(from_subprocess[0], "r"), "subprocess-stdout", 1));
-  out = (out ? out : make_tested_file_output_port(MSC_IZE(BOR_IZE(fdopen))(to_subprocess[1], "w"), 1));
-  err = (err ? err : make_tested_file_input_port(MSC_IZE(BOR_IZE(fdopen))(err_subprocess[0], "r"), "subprocess-stderr", 1));
+  in = (in ? in : make_tested_file_input_port(MSCBOR_IZE(fdopen)(from_subprocess[0], "r"), "subprocess-stdout", 1));
+  out = (out ? out : make_tested_file_output_port(MSCBOR_IZE(fdopen)(to_subprocess[1], "w"), 1));
+  err = (err ? err : make_tested_file_input_port(MSCBOR_IZE(fdopen)(err_subprocess[0], "r"), "subprocess-stderr", 1));
 #endif
 
   /*--------------------------------------*/

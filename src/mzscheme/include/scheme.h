@@ -95,6 +95,9 @@ typedef long FILE;
 #ifndef MSC_IZE
 # define MSC_IZE(x) x
 #endif
+#ifndef MSCBOR_IZE
+# define MSCBOR_IZE(x) MSC_IZE(x)
+#endif
 
 #ifdef SIGSET_IS_SIGNAL
 # define MZ_SIGSET(s, f) signal(s, f)

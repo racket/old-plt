@@ -352,7 +352,7 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 @END
 
-@MACRO STRINGENOUGH[who] = if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%",<who>), "byte string too short: ", p[4+POFFSET]));
+@MACRO STRINGENOUGH[who] = if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%",<who>), "byte string too short: ", p[4+POFFSET]));
 
 @CLASSBASE wxMemoryDC "bitmap-dc":"dc"
 
@@ -361,13 +361,13 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 @CREATOR ()
 @ARGNAMES
 
-@ "get-pixel" : bool GetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","get-pixel")]
-@ "set-pixel" : void SetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","set-pixel")]
+@ "get-pixel" : bool GetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","get-pixel")]
+@ "set-pixel" : void SetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("bitmap-dc%","set-pixel")]
 
-@ m "get-argb-pixels" : void dcGetARGBPixels(float,float,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("memory-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
-@ m "set-argb-pixels" : void dcSetARGBPixels(float,float,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("memory-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
+@ m "get-argb-pixels" : void dcGetARGBPixels(float,float,rint[0|10000],rint[0|10000],wbstring) : : /CheckOk[METHODNAME("bitmap-dc%","get-argb-pixels")]|STRINGENOUGH["get-argb-pixels"]
+@ m "set-argb-pixels" : void dcSetARGBPixels(float,float,rint[0|10000],rint[0|10000],bstring) : : /CheckOk[METHODNAME("bitmap-dc%","set-argb-pixels")]|STRINGENOUGH["set-argb-pixels"]
 
-@ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("memory-dc%","set-bitmap")]
+@ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("bitmap-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();
 
 @END

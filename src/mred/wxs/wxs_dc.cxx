@@ -1948,7 +1948,7 @@ static Scheme_Object *os_wxMemoryDCSelectObject(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-bitmap in bitmap-dc%", 1));
 
-  if (x0) { if (!x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bad bitmap: ", p[POFFSET+0])); if (BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[POFFSET+0])); if (BM_IN_USE(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[POFFSET+0])); }
+  if (x0) { if (!x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","set-bitmap"), "bad bitmap: ", p[POFFSET+0])); if (BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[POFFSET+0])); if (BM_IN_USE(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[POFFSET+0])); }
   WITH_VAR_STACK(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata)->SelectObject(x0));
 
   
@@ -1979,7 +1979,7 @@ static Scheme_Object *os_wxMemoryDCdcSetARGBPixels(int n,  Scheme_Object *p[])
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "set-argb-pixels in bitmap-dc%"));
   x4 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+4], "set-argb-pixels in bitmap-dc%"));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","set-argb-pixels"))if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-argb-pixels"), "byte string too short: ", p[4+POFFSET]));
+  DO_OK_CHECK(METHODNAME("bitmap-dc%","set-argb-pixels"))if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","set-argb-pixels"), "byte string too short: ", p[4+POFFSET]));
   WITH_VAR_STACK(dcSetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   
@@ -2010,7 +2010,7 @@ static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "get-argb-pixels in bitmap-dc%"));
   x4 = (wbstring)WITH_VAR_STACK(objscheme_unbundle_mutable_bstring(p[POFFSET+4], "get-argb-pixels in bitmap-dc%"));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","get-argb-pixels"))if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","get-argb-pixels"), "byte string too short: ", p[4+POFFSET]));
+  DO_OK_CHECK(METHODNAME("bitmap-dc%","get-argb-pixels"))if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap-dc%","get-argb-pixels"), "byte string too short: ", p[4+POFFSET]));
   WITH_VAR_STACK(dcGetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   
@@ -2037,7 +2037,7 @@ static Scheme_Object *os_wxMemoryDCSetPixel(int n,  Scheme_Object *p[])
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "set-pixel in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+2], "set-pixel in bitmap-dc%", 1));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","set-pixel"))
+  DO_OK_CHECK(METHODNAME("bitmap-dc%","set-pixel"))
   WITH_VAR_STACK(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata)->SetPixel(x0, x1, x2));
 
   
@@ -2065,7 +2065,7 @@ static Scheme_Object *os_wxMemoryDCGetPixel(int n,  Scheme_Object *p[])
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "get-pixel in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+2], "get-pixel in bitmap-dc%", 1));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","get-pixel"))
+  DO_OK_CHECK(METHODNAME("bitmap-dc%","get-pixel"))
   r = WITH_VAR_STACK(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata)->GetPixel(x0, x1, x2));
 
   

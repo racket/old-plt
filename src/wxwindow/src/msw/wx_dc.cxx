@@ -1148,6 +1148,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
     h += XDEV2LOGREL(sizeRect.cy);
 
     len -= alen;
+	d += alen;
   }
 
   if (current_text_background->Ok())
@@ -1384,8 +1385,9 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
   HDC dc;
   SIZE sizeRect;
   TEXTMETRIC tm;
-  long len;
+  long len, alen, tx, ty;
   wchar_t *ustring;
+  int once = 1;
 
   if (theFont) {
     oldFont = font;
@@ -1405,14 +1407,36 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
 
   ustring = convert_to_drawable_format(string, d, ucs4, &len);
 
-  GetTextExtentPointW(dc, ustring, len, &sizeRect);
+  d = 0;
+  tx = 0;
+  ty = 0;
+
+  while (len || once) {
+    if (!len)
+      alen = 0;
+    else if (combine)
+      alen = len;
+    else
+      alen = 1;
+
+    GetTextExtentPointW(dc, ustring XFORM_OK_PLUS d, alen, &sizeRect);
+
+    if (len)
+      tx += sizeRect.cx;
+    ty += sizeRect.cy;
+
+    len -= alen;
+    d += alen;
+    once = 0;
+  }
+
   if (descent || topSpace)
     GetTextMetrics(dc, &tm);
 
   DoneDC(dc);
 
-  *x = (len ? (float)XDEV2LOGREL(sizeRect.cx) : (float)0.0);
-  *y = (float)YDEV2LOGREL(sizeRect.cy);
+  *x = (float)XDEV2LOGREL(tx);
+  *y = (float)YDEV2LOGREL(ty);
   if (descent) *descent = (float)tm.tmDescent;
   if (topSpace) *topSpace = (float)tm.tmInternalLeading;
   

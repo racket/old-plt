@@ -38,10 +38,13 @@ typedef short Type_Tag;
 #define SAFETY 1
 #define RECYCLE_HEAP 0
 #define KEEP_FROM_PTR 0
+#define NOISY 0
 
 #define GC_EVERY_ALLOC 0
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
+
+#define GENERATION_CYCLE 5
 
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
@@ -128,6 +131,11 @@ void **tagged_array_low = STARTING_PLACE, **tagged_array_high = STARTING_PLACE;
 #define MTYPE_BIGBLOCK     0x10
 #define MTYPE_CONTINUED    0x20
 
+#define MTYPE_OLD          0x40
+#define MTYPE_MODIFIED     0x80
+
+#define UNMODIFIED_OLD(page) ((page->type & (MTYPE_OLD | MTYPE_MODIFIED)) == MTYPE_OLD)
+
 typedef unsigned short mtype_t;
 
 #define UNTAGGED_EOM   (MPAGE_SIZE + 1)
@@ -142,6 +150,7 @@ static int cycle_count = 0;
 static int alloc_cycle = ALLOC_GC_PHASE;
 static int skipped_first = !SKIP_FORCED_GC;
 #endif
+static int skipped_pages;
 
 #if KEEP_FROM_PTR
 static void *mark_source;
@@ -861,7 +870,7 @@ static void init_untagged_mpage(void **p, MPage *page)
   } 
 }
 
-static void init_all_mpages()
+static void init_all_mpages(int clearOld)
 {
   int i;
 
@@ -878,10 +887,18 @@ static void init_all_mpages()
 
       for (j = 0; j < MAP_SIZE; j++) {
 	page = map + j;
-	if (page->type) {
+
+	if (page->type && (clearOld || !UNMODIFIED_OLD(page))) {
 	  long p;
 
 	  p = (i << MAPS_SHIFT) | (j << MAP_SHIFT);
+
+	  if (clearOld) {
+	    if (UNMODIFIED_OLD(page))
+	      mprotect((void *)p, MPAGE_SIZE, PROT_READ | PROT_WRITE);
+	    page->type -= (page->type & (MTYPE_OLD | MTYPE_MODIFIED));
+	  }
+	
 	  if ((void *)p < GC_alloc_space)
 	    GC_alloc_space = (void *)p;
 	  
@@ -900,6 +917,9 @@ static void init_all_mpages()
 	    else
 	      init_untagged_mpage((void **)p, page);
 	  }
+	} else if (UNMODIFIED_OLD(page)) {
+	  skipped_pages++;
+	  page->type &= TYPE_MASK;
 	}
       }
     }
@@ -921,7 +941,7 @@ static void *mark(void *p)
     MPage *page;
 
     page = map + addr;
-    if (page->type) {
+    if (page->type && !UNMODIFIED_OLD(page)) {
       if (page->type & MTYPE_BIGBLOCK) {
 	if (!(page->type & COLOR_MASK))
 	  page->type |= GRAY_BIT;
@@ -1233,10 +1253,12 @@ static void compact_tagged_mpage(void **p, MPage *page)
 	if (dest_offset < MPAGE_WORDS)
 	  *(Type_Tag *)(dest + dest_offset) = TAGGED_EOM;
 	
+#if NOISY
 	printf("t: %lx [0,%d] -> %lx [%d,%d]\n", 
 	       (long)startp, offset,
 	       (long)dest, dest_start_offset, dest_offset);
-	
+#endif
+
 	dest_offset = 0;
 	dest = startp;
 	page->compact_boundary = offset;
@@ -1266,9 +1288,11 @@ static void compact_tagged_mpage(void **p, MPage *page)
   if (!to_near) {
     /* Nothing left in here. Reset color to white: */
     page->type = (page->type & TYPE_MASK);
+#if NOISY
     printf("t: %lx [all=%d] -> %lx [%d,%d]\n", 
 	   (long)startp, offset,
 	   (long)dest, dest_start_offset, dest_offset);
+#endif
   }
 }
 
@@ -1319,7 +1343,9 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	if (dest_offset < MPAGE_WORDS)
 	  *(long *)(dest + dest_offset) = UNTAGGED_EOM - 1;
 	
+#if NOISY
 	printf("u: %lx -> %lx [%d]\n", (long)startp, (long)dest, offset);
+#endif
 
 	dest_offset = 0;
 	dest = startp;
@@ -1358,7 +1384,9 @@ static void compact_untagged_mpage(void **p, MPage *page)
   if (!to_near) {
     /* Nothing left in here. Reset color to white: */
     page->type = (page->type & TYPE_MASK);
+#if NOISY
     printf("u: %lx -> %lx [all]\n", (long)startp, (long)dest);
+#endif
   }
 }
 
@@ -1381,7 +1409,7 @@ static void compact_all_mpages()
 
       for (j = 0; j < MAP_SIZE; j++) {
 	page = map + j;
-	if (page->type) {
+	if (page->type && !UNMODIFIED_OLD(page)) {
 	  if (!(page->type & MTYPE_BIGBLOCK)) {
 	    long p;
 
@@ -1602,7 +1630,8 @@ static void free_unused_mpages()
       for (j = 0; j < MAP_SIZE; j++) {
 	page = map + j;
 	if (page->type) {
-	  if (!(page->type & COLOR_MASK)) {
+	  if (!(page->type & (COLOR_MASK | MTYPE_CONTINUED))
+	      && !UNMODIFIED_OLD(page)) {
 	    long p;
 	    p = (i << MAPS_SHIFT) | (j << MAP_SHIFT);
 	    if (page->type & MTYPE_BIGBLOCK) {
@@ -1641,6 +1670,75 @@ static void free_unused_mpages()
     }
   }
 }
+
+void designate_generations()
+{
+  int i;
+
+  for (i = 0; i < MAPS_SIZE; i++) {
+    MPage *map;
+
+    map = mpage_maps[i];
+    if (map) {
+      MPage *page;
+      int j;
+
+      for (j = 0; j < MAP_SIZE; j++) {
+	page = map + j;
+	if (page->type && !(page->type & MTYPE_BIGBLOCK)) {
+	  long p;
+	  
+	  page->type |= MTYPE_OLD;
+	  if (page->type & MTYPE_MODIFIED)
+	    page->type -= MTYPE_MODIFIED;
+	  
+	  p = (i << MAPS_SHIFT) | (j << MAP_SHIFT);
+	  mprotect((void *)p, MPAGE_SIZE, PROT_READ);
+	}
+      }
+    }
+  }
+}
+
+
+static int designate_modified(void *p)
+{
+  unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
+  MPage *map;
+
+  map = mpage_maps[g];
+  if (map) {
+    unsigned long addr = (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
+    MPage *page;
+
+    page = map + addr;
+    if (page->type) {
+      if (page->type & MTYPE_OLD) {
+	page->type |= MTYPE_MODIFIED;
+	mprotect((void *)((long)p & MPAGE_START), MPAGE_SIZE, PROT_READ | PROT_WRITE);
+	return 1;
+      }
+    }
+  }
+  
+  return 0;
+}
+
+#if defined(linux)
+
+#include <signal.h>
+#include <sigcontext.h>
+
+void sigsegv_handler(int sn, struct sigcontext sc)
+{
+  if (!designate_modified((void *)sc.cr2)) {
+    fprintf(stderr, "segmentation violation\n");
+    _exit(-1);
+  }
+  signal(SIGSEGV, sigsegv_handler);
+}
+
+#endif
 
 /**********************************************************************/
 
@@ -1817,6 +1915,8 @@ static void gcollect()
     GC_add_roots(&last_in_queue, (char *)&last_in_queue + sizeof(last_in_queue) + 1);
     GC_add_roots(&park, (char *)&park + sizeof(park) + 1);
     initialized = 1;
+
+    signal(SIGSEGV, sigsegv_handler);
   }
 
   weak_boxes = NULL;
@@ -1831,13 +1931,15 @@ static void gcollect()
 
   /******************** Init ****************************/
 
-  init_all_mpages();
+  skipped_pages = 0;
+
+  init_all_mpages(!(cycle_count % GENERATION_CYCLE));
 
   /************* Mark and Propagate *********************/
 
   mark_roots(mark);
 
-  PRINTTIME((STDERR, "gc: roots: %ld\n", GETTIMEREL()));
+  PRINTTIME((STDERR, "gc: roots (%d): %ld\n", skipped_pages, GETTIMEREL()));
 
   iterations = 0;
 
@@ -2052,8 +2154,46 @@ static void gcollect()
 
   PRINTTIME((STDERR, "gc: compact: %ld\n", GETTIMEREL()));
 
+  weak_boxes = NULL;
+  weak_arrays = NULL;
+
   mark_roots(move);
   fixup_all_mpages();
+
+  /* Fixup weak boxes: */
+  wb = weak_boxes;
+  while (wb) {
+    gcMARK_HERE(move, void*, wb->val);
+    wb = wb->next;
+  }
+
+  /* Fixup weak arrays: */
+  wa = weak_arrays;
+  while (wa) {
+    int i;
+    for (i = wa->count; i--; ) {
+      gcMARK_HERE(move, void*, wa->data[i]);
+    }
+    wa = wa->next;
+  }
+
+  /* Fixup weak finalization links: */
+  {
+    Fnl_Weak_Link *wl;
+
+    for (wl = fnl_weaks; wl; wl = wl->next) {
+      gcMARK_HERE(move, void*, wl->p);
+    }
+  }
+
+  /* Fixup finalizers: */
+  {
+    Fnl *f;
+
+    for (f = fnls; f; f = f->next) {
+      gcMARK_HERE(move, void*, f->p);
+    }
+  }
 
   PRINTTIME((STDERR, "gc: fixup: %ld\n", GETTIMEREL()));
 
@@ -2077,6 +2217,9 @@ static void gcollect()
   tagged_array_high = tagged_array_compact_to + MPAGE_WORDS;
   if (tagged_array_compact_to_offset < MPAGE_WORDS)
     memset(tagged_array_low, 0, (tagged_array_high - tagged_array_low) << 2);
+
+  if (!(cycle_count % GENERATION_CYCLE))
+    designate_generations();
 
   PRINTTIME((STDERR, "gc: done: %ld\n", GETTIMEREL()));
 
@@ -2136,6 +2279,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype)
 
   addr = (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
 
+#if NOISY
   {
     int c;
     if (!mtype)
@@ -2155,6 +2299,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype)
     }
     printf("%c p = %lx, g = %lx, addr = %lx\n", c, (long)p, g, addr);
   }
+#endif
 
   return map + addr;
 }

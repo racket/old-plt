@@ -2495,6 +2495,7 @@
 				0366420C00EBD39D7F000001,
 				00F450DF00EC642C7F000001,
 				00F450E500EC649B7F000001,
+				3750263701526C8F810A736F,
 			);
 			isa = PBXGroup;
 			name = Products;
@@ -2524,6 +2525,7 @@
 				0366420D00EBD39D7F000001,
 				00F450E000EC642C7F000001,
 				00F450E600EC649B7F000001,
+				3750263801526C8F810A736F,
 			);
 		};
 		20286C29FDCF999611CA2CEA = {
@@ -2541,6 +2543,7 @@
 				0CBB185300FBA5A97F000001,
 				0CBB185400FBA5A97F000001,
 				2A904A23014FE0D8810A736F,
+				3750266201529AB2810A736F,
 			);
 			isa = PBXGroup;
 			name = MrEd;
@@ -2553,6 +2556,7 @@
 				0518BA90013ED35D810A736F,
 				03172A9100BAB0A57F000001,
 				5E4220ED00FC401E7F000001,
+				3750265C01527E2E810A736F,
 				0E7DA8BF00ED23787F000001,
 				0E7DA8C000ED23787F000001,
 				03172A9800BAB1697F000001,
@@ -2585,6 +2589,7 @@
 				0640BAA4FFF0323A11CA0E50,
 				0640BAA5FFF0323A11CA0E50,
 				1D95026D00F6259E7F000001,
+				375026600152844E810A736F,
 			);
 			isa = PBXGroup;
 			name = "External Frameworks and Libraries";
@@ -2743,6 +2748,151 @@
 		};
 		2A904A24014FE0D8810A736F = {
 			fileRef = 2A904A23014FE0D8810A736F;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		3750263701526C8F810A736F = {
+			isa = PBXApplicationReference;
+			path = Starter.app;
+			refType = 3;
+		};
+		3750263801526C8F810A736F = {
+			buildPhases = (
+				3750263901526C8F810A736F,
+				3750263A01526C8F810A736F,
+				3750263B01526C8F810A736F,
+				3750263F01526C8F810A736F,
+				3750264001526C8F810A736F,
+			);
+			buildSettings = {
+				INSTALL_PATH = /Users/clements/plt;
+				OPTIMIZATION_CFLAGS = "";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = Starter;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = app;
+			};
+			conditionalBuildSettings = {
+			};
+			dependencies = (
+			);
+			isa = PBXApplicationTarget;
+			name = Starter;
+			productInstallPath = /Users/clements/plt;
+			productName = Starter;
+			productReference = 3750263701526C8F810A736F;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist SYSTEM \"file://localhost/System/Library/DTDs/PropertyList.dtd\">
+<plist version=\"0.9\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string></string>
+	<key>CFBundleGetInfoString</key>
+	<string></string>
+	<key>CFBundleIconFile</key>
+	<string>mred</string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string></string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		3750263901526C8F810A736F = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXHeadersBuildPhase;
+			name = Headers;
+		};
+		3750263A01526C8F810A736F = {
+			buildActionMask = 2147483647;
+			files = (
+				3750265E01528103810A736F,
+				3750266301529AB2810A736F,
+			);
+			isa = PBXResourcesBuildPhase;
+			name = "Bundle Resources";
+		};
+		3750263B01526C8F810A736F = {
+			buildActionMask = 2147483647;
+			files = (
+				3750265D01527E2E810A736F,
+			);
+			isa = PBXSourcesBuildPhase;
+			name = Sources;
+		};
+		3750263F01526C8F810A736F = {
+			buildActionMask = 2147483647;
+			files = (
+				375026610152844E810A736F,
+			);
+			isa = PBXFrameworksBuildPhase;
+			name = "Frameworks & Libraries";
+		};
+		3750264001526C8F810A736F = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			name = "ResourceManager Resources";
+		};
+		3750265C01527E2E810A736F = {
+			isa = PBXFileReference;
+			name = "X-starter.cpp";
+			path = "/Users/clements/plt/src/mac/starter/X-starter.cpp";
+			refType = 0;
+		};
+		3750265D01527E2E810A736F = {
+			fileRef = 3750265C01527E2E810A736F;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		3750265E01528103810A736F = {
+			fileRef = 2A904A23014FE0D8810A736F;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		375026600152844E810A736F = {
+			isa = PBXFrameworkReference;
+			name = CoreFoundation.framework;
+			path = /System/Library/Frameworks/CoreFoundation.framework;
+			refType = 0;
+		};
+		375026610152844E810A736F = {
+			fileRef = 375026600152844E810A736F;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		3750266201529AB2810A736F = {
+			isa = PBXFileReference;
+			name = "starter-info";
+			path = "/Users/clements/plt/src/mac/starter/starter-info";
+			refType = 0;
+		};
+		3750266301529AB2810A736F = {
+			fileRef = 3750266201529AB2810A736F;
 			isa = PBXBuildFile;
 			settings = {
 			};

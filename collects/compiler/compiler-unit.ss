@@ -19,7 +19,8 @@
 	   (lib "make-sig.ss" "make")
 	   (lib "collection-sig.ss" "make")
 
-	   (lib "toplevel.ss" "syntax"))
+	   (lib "toplevel.ss" "syntax")
+	   (lib "moddep.ss" "syntax"))
 
   (require (lib "list.ss")
 	   (lib "file.ss")
@@ -128,14 +129,16 @@
 	(link/glue-extension-parts #f source-files destination-directory))
 
       (define (compile-to-zo src dest namespace eval?)
-	(parameterize ([current-namespace namespace])
-	  (compile-file src dest
-			(if eval?
-			    (lambda (expr)
-			      (let ([e (expand expr)])
-				(eval-compile-time-part-of-top-level e)
-				e))
-			    values)))
+	((if eval? (lambda (t) (t)) with-module-reading-parameterization)
+	 (lambda ()
+	   (parameterize ([current-namespace namespace])
+	     (compile-file src dest
+			   (if eval?
+			       (lambda (expr)
+				 (let ([e (expand expr)])
+				   (eval-compile-time-part-of-top-level e)
+				   e))
+			       values)))))
 	(printf " [output to \"~a\"]~n" dest))
 
       (define (compile-zos prefix)

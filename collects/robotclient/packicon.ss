@@ -7,6 +7,8 @@
            make-robot-colors
            make-robot-icons)
   
+  (define black-brush (make-object brush% "black" 'solid))
+  
   (define (rel-color rel-weight)
     (make-object color% 
       (inexact->exact (floor (* rel-weight 255)))
@@ -52,14 +54,13 @@
     
     (send dc set-bitmap pack-mask)
     (send dc clear)
+    (send dc set-brush black-brush)
     (send dc draw-polygon top dx dy)
     (send dc draw-polygon left dx dy)
     (send dc draw-polygon right dx dy)
     
     (send dc set-bitmap #f)
-    (send pack-bm set-loaded-mask pack-mask)
-    
-    pack-bm)
+    (cons pack-bm pack-mask))
   
   (define (make-package-icons size colors)
     (map (lambda (color)
@@ -106,12 +107,11 @@
     
     (send dc set-bitmap robot-mask)
     (send dc clear)
+    (send dc set-brush black-brush)
     (draw-once)
     
     (send dc set-bitmap #f)
-    (send robot-bm set-loaded-mask robot-mask)
-    
-    robot-bm)
+    (cons robot-bm robot-mask))
 
   (define (make-robot-icons size colors)
     (map (lambda (color)

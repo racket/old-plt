@@ -5,7 +5,7 @@
            (lib "list.ss")
            "packicon.ss")
 
-  (provide board-canvas%)
+  (provide board-panel%)
   
   (define black (make-object color% 0 0 0))
   
@@ -25,6 +25,20 @@
   (define max-width 800)
   (define max-height 600)
 
+  (define board-panel%
+    (class horizontal-panel%
+      (init frame width height 
+            ;; board is a vector of row vectors
+            board)
+      
+      (define/public (install-robots orig-robots)
+        (send canvas install-robots orig-robots))
+      (define/public (install-packages orig-pkgs)
+        (send canvas install-packages orig-pkgs))
+      
+      (super-instantiate (frame))
+      (define canvas (make-object board-canvas% this width height board))))
+    
   (define board-canvas%
     (class canvas%
       (init frame)
@@ -87,10 +101,11 @@
                                           (caddr pkg))))
                            pkgs))))))
             
-      (define display-w (* scale width))
-      (define display-h (* scale height))
+      (define display-w (add1 (* scale width)))
+      (define display-h (add1 (* scale height)))
 
-      (inherit get-dc min-client-width min-client-height)
+      (inherit get-dc min-client-width min-client-height
+               stretchable-width stretchable-height)
 	     
       (define offscreen-bm (make-object bitmap% display-w display-h))
       (define offscreen (make-object bitmap-dc% offscreen-bm))
@@ -115,7 +130,7 @@
         (send (get-dc) draw-bitmap offscreen-bm 0 0))
       
       (define/private (pos->location i j)
-        (values (* i scale) (* (- height j 1) scale)))
+        (values (add1 (* i scale)) (add1 (* (- height j 1) scale))))
   
       (define/private (draw-board-pos dc i j)
         (let-values ([(cell) (vector-ref (vector-ref board j) i)]
@@ -130,9 +145,9 @@
   
       (define/private (draw-package dc pack)
         (let-values ([(x y) (pos->location (pack-x pack) (pack-y pack))])
-          (send dc draw-bitmap (pack-icon pack) x y 
+          (send dc draw-bitmap (car (pack-icon pack)) x y 
                 'solid black 
-                (send (pack-icon pack) get-loaded-mask))
+                (cdr (pack-icon pack)))
           (let-values ([(dest-x dest-y) (pos->location (pack-dest-x pack) (pack-dest-y pack))]
                        [(d) (* scale 7/10)])
             (send dc set-pen (pack-pen pack))
@@ -141,10 +156,12 @@
       
       (define/private (draw-robot dc robot)
         (let-values ([(x y) (pos->location (robot-x robot) (robot-y robot))])
-          (send dc draw-bitmap (robot-icon robot) x y 
+          (send dc draw-bitmap (car (robot-icon robot)) x y 
                 'solid black 
-                (send (robot-icon robot) get-loaded-mask))))
+                (cdr (robot-icon robot)))))
     
       (super-instantiate (frame))
+      (stretchable-width #f)
+      (stretchable-height #f)
       (min-client-width display-w)
       (min-client-height display-h))))

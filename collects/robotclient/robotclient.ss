@@ -20,12 +20,12 @@
                    #(plain plain plain plain plain plain plain plain plain plain)
                    #(plain plain plain plain plain plain plain plain plain plain)))
                
-  (define f (instantiate frame% ("Robot") [style '(no-resize-border)]))
-  (define canvas (instantiate board-canvas% (f width height board)))
+  (define f (instantiate frame% ("Robot")))
+  (define drawn (instantiate board-panel% (f width height board)))
   
-  (send canvas install-packages '((3 8 8 7 7 20)
-                                  (1 5 5 4 4 100)))
-  (send canvas install-robots '((1 2 2)
+  (send drawn install-packages '((3 8 8 7 7 20)
+                                 (1 5 5 4 4 100)))
+  (send drawn install-robots '((1 2 2)
                                 (2 7 4)
                                 (3 4 4)
                                 (4 2 1)

@@ -6,6 +6,7 @@
            (lib "framework.ss" "framework")
            "unitsig.ss"
            "class.ss"
+           (lib "basis.ss" "userspce")
            (prefix pretty-print: (lib "pretty.ss"))
            (prefix print-convert: (lib "pconvert.ss"))
            (lib "list.ss")
@@ -19,8 +20,7 @@
       (import (drscheme:app : drscheme:app^)
               (drscheme:unit : drscheme:unit^)
               (drscheme:get/extend : drscheme:get/extend^)
-              (drscheme:language : drscheme:language^)
-              (basis : userspace:basis^))
+              (drscheme:language : drscheme:language^))
       
       (finder:default-extension "scm")
       

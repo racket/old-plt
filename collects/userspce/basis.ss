@@ -65,6 +65,7 @@
                     print-booleans-as-true/false
                     print-exact-as-decimal?
                     print-.-symbols-without-bars
+                    print-whole/part-fractions
                     
                     define-argv?))
    make-setting/parse
@@ -113,7 +114,8 @@
                                 print-booleans-as-true/false
 				print-exact-as-decimal?
 				print-.-symbols-without-bars
-				
+				print-whole/part-fractions
+                                
 				define-argv?))
 
   ;(define _make-setting/parse make-setting/parse)
@@ -138,6 +140,7 @@
 	     (read-decimal-as-exact? #t)
 	     (define-argv? #f)
 	     (print-.-symbols-without-bars #t)
+             (print-whole/part-fractions #t)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key intermediate)
@@ -155,7 +158,8 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (print-.-symbols-without-bars #f)
-	     (define-argv? #f)
+	     (print-whole/part-fractions #t)
+             (define-argv? #f)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
 	   `((key advanced)
@@ -173,6 +177,7 @@
 	     (print-exact-as-decimal? #t)
 	     (read-decimal-as-exact? #t)
 	     (print-.-symbols-without-bars #f)
+	     (print-whole/part-fractions #t)
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
@@ -191,6 +196,7 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (print-.-symbols-without-bars #f)
+	     (print-whole/part-fractions #t)
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
@@ -209,6 +215,7 @@
 	     (print-exact-as-decimal? #f)
 	     (read-decimal-as-exact? #f)
 	     (print-.-symbols-without-bars #f)
+	     (print-whole/part-fractions #t)
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)))))
   

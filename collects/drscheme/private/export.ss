@@ -20,22 +20,19 @@
               [aries : plt:aries^])
       (link [snip : drscheme:snip^ (snip@)]
             [interface : drscheme:interface^ (interface@ aries zodiac)]
-            [basis : plt:basis^ (basis@ basis-import params interface aries)]
-            [load-handler : drscheme:load-handler^ (load-handler@ basis)]
+            [load-handler : drscheme:load-handler^ (load-handler@)]
             [rep : drscheme:rep^
-                 (rep@ interface init snip language app frame unit
-                  basis text load-handler help-interface)]
+                 (rep@ interface init snip language app frame unit text load-handler help-interface)]
             [frame : drscheme:frame^
                    (frame@ unit app help-interface)]
             [unit : drscheme:unit^
-                  (unit@ launcher basis help-interface app frame text rep language get/extend snip)]
+                  (unit@ launcher help-interface app frame text rep language get/extend snip)]
             [get/extend : drscheme:get/extend^ (get-extend@ frame rep)]
-            [language : drscheme:language^ (language@ unit basis)]            
-            [help-info : help:get-info^ (help-info@ basis language)]
-            [help-interface : help:drscheme-interface^ (help-interface@ frame language basis)])
+            [language : drscheme:language^ (language@ unit)]            
+            [help-info : help:get-info^ (help-info@ language)]
+            [help-interface : help:drscheme-interface^ (help-interface@ frame language)])
       (export (unit snip)
               (unit interface)
-              (unit basis)
               (unit frame)
               (unit unit)
               (unit get/extend)

@@ -70,7 +70,7 @@ float wxCanvasDC::GetCharHeight(void)
 //-----------------------------------------------------------------------------
 {
 	int theCharHeight;
-	if (!font)
+	if (font)
   		theCharHeight = font->GetCharHeight();
   	else
   		theCharHeight = 12;
@@ -83,7 +83,7 @@ float wxCanvasDC::GetCharWidth(void)
 //-----------------------------------------------------------------------------
 {
 	int theCharWidth;
-	if (!font)
+	if (font)
   		theCharWidth = font->GetCharWidth();
   	else
   		theCharWidth = 12;

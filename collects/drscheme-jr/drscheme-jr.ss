@@ -163,7 +163,10 @@
 
     (define language-levels 
       (mzlib:function:filter (lambda (x) (not (member (car x) omit-languages)))
-			     (map list basis:level-strings basis:level-symbols)))
+			     (map (lambda (x)
+				    (list (basis:setting-name x)
+					  (basis:setting-vocabulary-symbol x)))
+				  basis:settings)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                 Setting the Flags                      ;;;
@@ -237,26 +240,28 @@
 	  (if (or (eof-object? v)
 		  (and (number? v)
 		       (<= 1 v len)))
-	      (set-level (string->symbol
-			  (car (list-ref language-levels
-					 (if (eof-object? v)
-					     (sub1 len)
-					     (sub1 v))))))
+	      (set-level (car (list-ref language-levels
+					(if (eof-object? v)
+					    (sub1 len)
+					    (sub1 v)))))
 	      (begin
 		(printf "Please answer 1, 2, 3, or 4~n")
 		(choose-mode))))))
 
     (define (set-level level)
-      (let ([p (assoc level (map vector->list basis:settings))])
-	(if (and p
-		 (not (member (symbol->string level) omit-languages)))
+      (let ([p (assoc level (map (lambda (s)
+				   (list (basis:setting-name s)
+					 s))
+				 basis:settings))])
+	(if (and p (not (member level omit-languages)))
 	    (set! setting (basis:copy-setting (cadr p)))
 	    (bad-arguments "bad language name: ~s" level))))
 
     (define (make-implies-string vocab-symbol)
       (let ([impl-setting (if vocab-symbol
-			      (let ([a (assoc vocab-symbol (map (lambda (x y) (list (string->symbol x) y))
-								basis:level-strings
+			      (let ([a (assoc vocab-symbol (map (lambda (x) 
+								  (list (string->symbol (basis:setting-name x))
+									x))
 								basis:settings))])
 				(unless a
 				  (error 'DrScheme\ Jr "unknown level: ~a~n" vocab-symbol))
@@ -291,7 +296,7 @@
        `([once-each
 	  [("-l" "--language")
 	   ,(lambda (_ level)
-	      (set-level (string->symbol level)))
+	      (set-level level))
 	   (,(format "Set the language, one of:~n          ~a"
 		     (apply string-append
 			    (map (lambda (l)
@@ -450,8 +455,8 @@
 	       (printf "Language: ~a~n"
 		       (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
 				    (map (lambda (s)
-					   (list (basis:setting-vocabulary-symbol (vector-ref s 1))
-						 (vector-ref s 0)))
+					   (list (basis:setting-vocabulary-symbol s)
+						 (basis:setting-name s)))
 					 basis:settings))))
 	       
 	       (let ([repl-thread (thread

@@ -1723,7 +1723,7 @@
 "(let((p(cadr prefix)))"
 "(cond"
 " ((string=? p \".\") 'same)"
-" ((string=? p \".\") 'up)"
+" ((string=? p \"..\") 'up)"
 "(else p))))"
 "(caddr prefix))"
 "(build-path path s)))))"

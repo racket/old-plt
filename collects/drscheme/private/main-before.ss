@@ -269,13 +269,12 @@
 	       (make-object drscheme:language-tower:module-based-language->language%
 		 (make-object drscheme:language-tower:simple-module-based-language->module-based-language%
 		   (make-object drscheme:language-tower:simple-module-based-language%
-		     `(lib ,lang "langs")
+		     lang
 		     ps))))])
 	(drscheme:language:add-language
-	 (make-simple "full-mred.ss" '("Full1" "Graphical (MrEd)")))
+	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical (MrEd)")))
 	(drscheme:language:add-language
-	 (make-simple "full-mzscheme.ss" '("Full2" "Textual (MzScheme)"))))
-
+	 (make-simple 'mzscheme '("Full" "Textual (MzScheme)"))))
 
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 

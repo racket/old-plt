@@ -91,16 +91,14 @@
       ;;  insert-newlines : boolean
       (define-struct/parse simple-settings
 	(case-sensitive printing-style show-sharing insert-newlines))
-      
 
       ;; simple-module-based-language-config-panel : parent settings -> (-> settings)
       (define (simple-module-based-language-config-panel _parent settings)
 	(let* ([parent (make-object vertical-panel% _parent)]
-	       [_gap1 (make-object vertical-panel% parent)]
+	       ;[_gap1 (make-object vertical-panel% parent)]
 	       [input-parent-panel (make-object vertical-panel% parent)]
-	       [_gap2 (make-object vertical-panel% parent)]
 	       [output-parent-panel (make-object vertical-panel% parent)]
-	       [_gap3 (make-object vertical-panel% parent)]
+	       ;[_gap3 (make-object vertical-panel% parent)]
 
 	       [input-msg (make-object message% (string-constant input-syntax)
 				       input-parent-panel)]
@@ -135,13 +133,16 @@
 	  (send input-panel stretchable-width #f)
 	  (send output-parent-panel stretchable-height #f)
 	  (send output-panel stretchable-width #f)
-	  (send output-panel set-alignment 'right 'center)
+	  (send output-panel set-alignment 'left 'center)
+          
+          (send parent set-alignment 'center 'center)
 
-	  (let ([w (max (send input-panel min-width)
-			(send output-panel min-width))])
-	    (send input-panel min-width w)
-	    (send output-panel min-width w))
-
+          (send parent reflow-container)
+	  (let*-values ([(iw) (send input-panel get-width)]
+                        [(ow) (send output-panel get-width)]
+                        [(w) (max iw ow)])
+            (send input-panel min-width w)
+            (send output-panel min-width w))
 
 	  ;; update the GUI to the input settings
 	  (send case-sensitive set-value (simple-settings-case-sensitive settings))
@@ -151,19 +152,31 @@
 		  [(quasiquote) 1]
 		  [(write) 2]))
 	  (send show-sharing set-value (simple-settings-show-sharing settings))
-	  (send insert-newlines set-value (simple-settings-insert-newlines settings))
-
+	  (send insert-newlines set-value (simple-settings-insert-newlines settings))          
+          
 	  ;; procedure to extract the settings from the GUI
 	  (lambda ()
 	    (make-simple-settings
 	     (send case-sensitive get-value)
-	     (case (send output-style get-value)
+	     (case (send output-style get-selection)
 	       [(0) 'constructor]
 	       [(1) 'quasiquote]
 	       [(2) 'write])
 	     (send show-sharing get-value)
 	     (send insert-newlines get-value)))))
 
+      ;; initialize-simple-module-based-language : setting module-spec ((-> void) -> void)
+      (define (initialize-module-based-language settings module-spec run-in-user-thread)
+        ;; must call the resolver before setting the namespace
+        (dynamic-require module-spec #f)
+        (let ([orig-namespace (current-namespace)]
+              [lang-name ((current-module-name-resolver) module-spec #f #f)])
+          (run-in-user-thread
+           (lambda ()
+             (namespace-attach-module orig-namespace lang-name)
+             (namespace-require lang-name)
+             (read-case-sensitive (simple-settings-case-sensitive settings))))))
+      
       ;; module-based-language->language : language<%>
       ;; given a module-based-language, implements a language
       (define module-based-language->language%
@@ -191,16 +204,4 @@
 	    (send module-based-language get-language-position))
           (define (render-value value port put-snip)
             (send module-based-language render-value value port put-snip))
-	  (super-instantiate ())))
-      
-      (define (initialize-module-based-language setting module-spec run-in-user-thread)
-      ;; must call the resolver before setting the namespace
-        (let ([namespace (make-namespace 'empty)])
-          (let ([lang-module-spec module-spec])
-            (dynamic-require lang-module-spec #f)
-            (let ([orig-namespace (current-namespace)]
-                  [lang-name ((current-module-name-resolver)
-                              lang-module-spec #f #f)])
-              (current-namespace namespace)
-              (namespace-attach-module orig-namespace lang-name)
-              (namespace-require lang-name))))))))
+	  (super-instantiate ()))))))

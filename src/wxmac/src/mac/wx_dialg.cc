@@ -28,8 +28,10 @@ extern "C" {
 }
 #endif
 
+#if 0
 #ifdef powerc
 # define USE_NAVIGATION
+#endif
 #endif
 
 #ifdef USE_NAVIGATION

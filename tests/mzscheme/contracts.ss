@@ -460,6 +460,17 @@
    "<<unknown>>")
   
   (test/spec-passed
+   'define/contract6
+   '(let ()
+      (define/contract contracted-func
+                       (string?  string? . -> . string?)
+                       (lambda (label t)
+                         t))
+      (contracted-func
+       "I'm a string constant with side effects"
+       "ans")))
+  
+  (test/spec-passed
    'provide/contract1
    '(let ()
       (eval '(module contract-test-suite1 mzscheme

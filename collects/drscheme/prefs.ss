@@ -11,19 +11,22 @@
 
   (include "various-programs.ss")
 
-  (define fixed-faces
+  (define (get-fixed-faces)
     (let* ([canvas (make-object canvas% (make-object frame% "bogus"))]
-	   [dc (send canvas get-dc)])
-      (let loop ([faces (get-face-list)])
-	(cond
-	 [(null? faces) null]
-	 [else (let* ([face (car faces)]
-		      [font (make-object font% 12 face 'default 'normal 'normal #f)])
-		 (let*-values ([(wi _1 _2 _3) (send dc get-text-extent "i" font)]
-			       [(ww _1 _2 _3) (send dc get-text-extent "w" font)])
-		   (if (= ww wi)
-		       (cons face (loop (cdr faces)))
-		       (loop (cdr faces)))))]))))
+	   [dc (send canvas get-dc)]
+	   [ans
+	    (let loop ([faces (get-face-list)])
+	      (cond
+	       [(null? faces) null]
+	       [else (let* ([face (car faces)]
+			    [font (make-object font% 12 face 'default 'normal 'normal #f)])
+		       (let*-values ([(wi _1 _2 _3) (send dc get-text-extent "i" font)]
+				     [(ww _1 _2 _3) (send dc get-text-extent "w" font)])
+			 (if (= ww wi)
+			     (cons face (loop (cdr faces)))
+			     (loop (cdr faces)))))]))])
+      (set! get-fixed-faces (lambda () ans))
+      ans))
 
   (framework:preferences:set-default
    'drscheme:font-name
@@ -31,9 +34,10 @@
 	     (send the-font-name-directory
 		   find-family-default-font-id
 		   'modern))
-       (if (null? (car fixed-faces))
-	   #f
-	   (car fixed-faces)))
+       (let ([fixed-faces (get-fixed-faces)])
+	 (if (null? fixed-faces)
+	     #f
+	     (car fixed-faces))))
    (lambda (x) (or (string? x) (not x))))
 
   (framework:preferences:set-default
@@ -76,12 +80,26 @@
 				 (set-font-size (send size get-value)))
 			       (framework:preferences:get 'drscheme:font-size))]
 
-	    [font-name (make-object choice% "Font Name"
-				    fixed-faces
-				    options-panel
-				    (lambda (font-name evt)
-				      (set-font-name
-				       (send font-name get-string-selection))))]
+	    [font-name-control
+	     (case (system-type)
+	       [(windows macos)
+		(make-object choice% "Font Name"
+			     (get-fixed-faces)
+			     options-panel
+			     (lambda (font-name evt)
+			       (set-font-name
+				(send font-name get-string-selection))))]
+	       [else
+		(make-object button%
+		  "Font Name"
+		  options-panel
+		  (lambda xxx
+		    (let ([choice (get-choices-from-user
+				   "Select Font Name"
+				   "Select Font Name"
+				   (get-fixed-faces))])
+		      (when choice
+			(set-font-name (list-ref (get-fixed-faces) (car choice)))))))])]
 				      
 	    [text (make-object text%)]
 	    [ex-panel (make-object horizontal-panel% main)]

@@ -1,6 +1,7 @@
 (module read-python mzscheme
   (require "parser.ss"
            "compiler.ss"
+           "base.ss"
            (lib "mred.ss" "mred")
            (lib "contracts.ss")
            (lib "class.ss"))

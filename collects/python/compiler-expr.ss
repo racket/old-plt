@@ -2,7 +2,10 @@
   (require (lib "class.ss")
            (lib "list.ss")
 	   "compiler.ss"
-	   "compiler-target.ss")
+	   "compiler-target.ss"
+           "empty-context.ss"
+           "primitives.ss"
+           "runtime-context.ss")
   
   (provide (all-defined))
   
@@ -111,9 +114,11 @@
         (make-object tidentifier% name start-pos end-pos))
       
       ;;daniel
-      (inherit ->orig-so)
+      (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
-        (->orig-so (get-symbol)))
+        (let ([namespace (make-namespace 'empty)])
+          (parameterize ([current-namespace namespace])
+            (->lex-so (get-symbol) empty-context))))
       
       (super-instantiate ())))
   
@@ -127,7 +132,9 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so value))
+        (->orig-so (if (string? value)
+                       (list (py-so 'py-create) (py-so 'py-string%) value)
+                       (list (py-so 'py-create) (py-so 'py-number%) value))))
       
       (super-instantiate ())))
   
@@ -151,9 +158,10 @@
       (define/override (to-scheme)
         (->orig-so (if (= (length expressions) 1)
                        (send (car expressions) to-scheme)
-                       `(make-tuple (list ,@(map (lambda (e)
-                                                   (send e to-scheme))
-                                                 expressions))))))
+                       `(,(py-so 'py-create) ,(py-so 'py-tuple%)
+                                             (list ,@(map (lambda (e)
+                                                            (send e to-scheme))
+                                                          expressions))))))
       
       (super-instantiate ())))
   
@@ -174,8 +182,9 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(list ,@(map (lambda (e) (send e to-scheme))
-                                 expressions))))
+        (->orig-so `(,(py-so 'py-create) ,(py-so 'py-list%)
+                                         (list ,@(map (lambda (e) (send e to-scheme))
+                                                      expressions)))))
       
       (super-instantiate ())))
   
@@ -428,7 +437,13 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (list op (send lhs to-scheme) (send rhs to-scheme))))
+        (->orig-so (list (py-so 'python-method-call) (send lhs to-scheme)
+                                                     (case op
+                                                       [(+) ''__add__]
+                                                       [(-) ''__sub__]
+                                                       [else '(raise (format "binary% parser error: op ~a" 
+                                                                             op))])
+                                                     (send rhs to-scheme))))
       
       (super-instantiate ())))
   

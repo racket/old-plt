@@ -2,7 +2,7 @@
   (require (lib "class.ss")
 	   "compiler.ss"
 	   "compiler-expr.ss"
-           "runtime-support.ss")
+           "runtime-context.ss")
 
   (provide (all-defined-except bindings-mixin))
 
@@ -65,9 +65,21 @@
       ;; targets: (listof (is-a?/c target%))
       (define targets (map (lambda (e) (send e to-target)) targ-exps))
       
+      ;;daniel
+      (define scope #f)
+      
       (define/override (set-bindings! enclosing-scope)
+        (set! scope enclosing-scope)
         (send expression set-bindings! enclosing-scope)
         (for-each (lambda (e) (send e set-bindings! enclosing-scope)) targets))
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(define-values ,(map (lambda (t)
+                                           (send t to-scheme))
+                                         targets)
+                      ,(send expression to-scheme))))
       
       (super-instantiate ())))
   
@@ -118,11 +130,11 @@
         (for-each (lambda (e) (send e set-bindings! enclosing-scope)) expressions))
       
       ;;daniel
-      (inherit ->orig-so)
+      (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
         (->orig-so (if to-file?
                        `(print-to-file blah)
-                       `(py-print (list ,@(map (lambda (e)
+                       `(,(py-so 'py-print) (list ,@(map (lambda (e)
                                               (send e to-scheme))
                                             expressions))))))
       
@@ -267,16 +279,13 @@
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so (let ([py-return (gensym)])
-                     `(call/cc (lambda (,py-return)
-                               ,@(sub-stmt-map (lambda (s)
-                                                 (if (is-a? s return%)
-                                                     (send s to-scheme py-return)
-                                                     (send s to-scheme)))))))))
+                     `(call-with-current-continuation
+                       (lambda (,py-return)
+                         ,@(sub-stmt-map (lambda (s)
+                                           (if (is-a? s return%)
+                                               (send s to-scheme py-return)
+                                               (send s to-scheme)))))))))
          
-         
-         ;`(py-suite (list ,@(sub-stmt-map (lambda (s)
-         ;                                    (send s to-scheme)))))))
-     ; 
       (super-instantiate ())))
   
   ;; 7.1

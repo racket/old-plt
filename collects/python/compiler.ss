@@ -1,7 +1,6 @@
 (module compiler mzscheme
   (require (lib "class.ss")
            (lib "lex.ss" "parser-tools")
-           "runtime-support.ss"
            (lib "readerr.ss" "syntax"))
            
   (provide (all-defined-except stx-orig-prop))
@@ -10,6 +9,10 @@
     (read-syntax #f (open-input-string "orig")))
   
   (define mycontext #'here)
+  
+  (define new-context null)
+  (define (set-context! ctx)
+    (set! new-context ctx))
   
   (define ast-node%
     (class object%

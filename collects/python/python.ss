@@ -1,7 +1,8 @@
 (module python mzscheme
   (require (lib "class.ss")
+           "compiler.ss"
            "read-python.ss"
-           "runtime-support.ss")
+           "base.ss")
   
   ;;;; temporary Python Evaluation module by Daniel ;;;;;;;
   
@@ -17,10 +18,10 @@
     (compile-python (read-python path)))
 
   (define (compile-python ast-list)
-       #`(begin
-           #,@(map (lambda (ast)
-                     (send ast to-scheme))
-                   ast-list)))
+;    (set-context! #'here)
+         (map (lambda (ast)
+                (send ast to-scheme))
+              ast-list))
   
   (define (compile-python-ast ast)
     (send ast to-scheme))
@@ -30,12 +31,14 @@
   (define parse-python-file read-python)
   
   (define (python path)
-    (eval (python-to-scheme path)))
-;    (let ([results (map eval (python-to-scheme path))])
-;      (begin
-;        (for-each (lambda (x)
-;                    (display x) (newline))
-;                  results)
-;        (list-ref results (sub1 (length results))))))
+      (let ([m-path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
+            [empty-namespace (make-namespace 'empty)]
+            [n (current-namespace)])
+        (dynamic-require m-path #f)
+        (parameterize ([current-namespace empty-namespace])
+                          (namespace-attach-module n m-path)
+                          (namespace-require m-path)
+                          (map eval
+                               (python-to-scheme path)))))
   
   )

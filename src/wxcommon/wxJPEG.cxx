@@ -729,29 +729,37 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
      }
    }
 
-   if (bg) {
-     double gamma, screen_gamma;
-     char *gamma_str;
-     char buf[30];
+   /* Gamma correction --- only if the file has a gamma.
+      This gamma correction messes with the ability of
+      PNGs to keep exact RGB information, for the many
+      cases where that could make sense. So no gamma
+      data in the file means we won't try to correct it. */
+   {
+     double gamma;
 
-
-     if (wxGetPreference("gamma", buf, 30)) {
-       screen_gamma = (double)atof(buf);
-     } else if ((gamma_str = getenv("SCREEN_GAMMA"))) {
-       screen_gamma = (double)atof(gamma_str);
-     } else {
-       /* Guess */
+     if (png_get_gAMA(png_ptr, info_ptr, &gamma)) {
+       double screen_gamma;
+       char *gamma_str;
+       char buf[30];
+       
+       if (wxGetPreference("gamma", buf, 30)) {
+	 screen_gamma = (double)atof(buf);
+       } else if ((gamma_str = getenv("SCREEN_GAMMA"))) {
+	 screen_gamma = (double)atof(gamma_str);
+       } else
+	 screen_gamma = 0;
+       
+       if (!(screen_gamma > 0.0) || !(screen_gamma < 10.0)) {
+	 /* Guess */
 #ifdef wx_mac
-      screen_gamma = 1.7;  /* A good guess for Mac systems */
+	 screen_gamma = 1.7;  /* A good guess for Mac systems */
 #else
-      screen_gamma = 2.0; /* A good guess for a PC monitor */
+	 screen_gamma = 2.0; /* A good guess for a PC monitor */
 #endif
-    }
+       }
 
-     if (png_get_gAMA(png_ptr, info_ptr, &gamma))
        png_set_gamma(png_ptr, screen_gamma, gamma);
-     else
-       png_set_gamma(png_ptr, screen_gamma, 0.45455);
+     }
    }
 
    if (w_mask && !is_mono) {

@@ -22,6 +22,7 @@
 <LI> <A HREF="elevator.html">Elevator</A>
 <LI> <A HREF="servlet2.html">Simplified Scheme Web Servlets</A>
 <LI> <A HREF="servlet.html">Scheme Web Servlets</A>
+<LI> <A HREF="show-queen.html">N Queens Visualization</A>
 </UL>
 
 #include foot.tinc

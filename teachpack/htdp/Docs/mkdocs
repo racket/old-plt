@@ -21,7 +21,7 @@ string=? ; exec mzscheme -qr $0 "$@"
     "Elevator"
     "Simplified Scheme Web Servlets"
     "Scheme Web Servlets"
-    ))
+    "Show Queen"))
 
 ; Defines go to be the go from thtml2html
 (define go

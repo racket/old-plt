@@ -114,7 +114,7 @@ Scheme_Object *scheme_default_global_print_handler;
 
 Scheme_Object *scheme_write_proc, *scheme_display_proc, *scheme_print_proc;
 
-static short drh_cases[4] = { 1, 1, 3, 3};
+static mzshort drh_cases[4] = { 1, 1, 3, 3};
 
 #define fail_err_symbol scheme_false
 

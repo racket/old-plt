@@ -3313,7 +3313,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	{
 	  Scheme_Letrec *l = (Scheme_Letrec *)obj;
 	  Scheme_Object **a, **dest, **stack;
-	  GC_CAN_IGNORE short *map;
+	  GC_CAN_IGNORE mzshort *map;
 	  int i;
 
 	  stack = RUNSTACK;
@@ -4164,7 +4164,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
     {
       Scheme_Closure_Compilation_Data *data = (Scheme_Closure_Compilation_Data *)expr;
       int i, cnt, p, sz, base;
-      short *map;
+      mzshort *map;
       char *new_stack;
       
       sz = data->max_let_depth + data->num_params;

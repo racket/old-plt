@@ -2110,20 +2110,20 @@ static char *read_compact_chars(CPort *port,
 static Scheme_Object *read_compact_svector(CPort *port, int l)
 {
   Scheme_Object *o;
-  short *v;
+  mzshort *v;
 
   o = scheme_alloc_object();
   o->type = scheme_svector_type;
 
   SCHEME_SVEC_LEN(o) = l;
   if (l)
-    v = MALLOC_N_ATOMIC(short, l);
+    v = MALLOC_N_ATOMIC(mzshort, l);
   else
     v = NULL;
   SCHEME_SVEC_VEC(o) = v;
 
   while (l--) {
-    short cn;
+    mzshort cn;
     cn = read_compact_number(port);
     v[l] = cn;
   }
@@ -2362,16 +2362,13 @@ static Scheme_Object *read_compact(CPort *port,
 	Scheme_App_Rec *a;
 
 	c = read_compact_number(port) + 1;
+
 	a = scheme_malloc_application(c);
 	for (i = 0; i < c; i++) {
 	  v = read_compact(port, ht, symtab, 1);
 	  a->args[i] = v;
 	}
-
-	if (c < 3) {
-	  
-	}
-
+	
 	scheme_finish_application(a);
 	v = (Scheme_Object *)a;
       }
@@ -2519,14 +2516,15 @@ static Scheme_Object *read_compact(CPort *port,
 	Scheme_App_Rec *a;
 
 	c = (ch - CPT_SMALL_APPLICATION_START) + 1;
+
 	a = scheme_malloc_application(c);
 	for (i = 0; i < c; i++) {
 	  v = read_compact(port, ht, symtab, 1);
 	  a->args[i] = v;
 	}
-
+	  
 	scheme_finish_application(a);
-
+	
 	v = (Scheme_Object *)a;
       }
       break;

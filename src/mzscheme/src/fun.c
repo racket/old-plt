@@ -351,9 +351,9 @@ scheme_init_fun (Scheme_Env *env)
 Scheme_Object *
 scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
 			      const char *name,
-			      short mina, short maxa,
+			      mzshort mina, mzshort maxa,
 			      short folding,
-			      short minr, short maxr)
+			      mzshort minr, mzshort maxr)
 {
   Scheme_Primitive_Proc *prim;
   int hasr, size;
@@ -395,14 +395,14 @@ scheme_make_noneternal_prim (Scheme_Prim *fun)
 
 Scheme_Object *
 scheme_make_prim_w_arity(Scheme_Prim *fun, const char *name, 
-			 short mina, short maxa)
+			 mzshort mina, mzshort maxa)
 {
   return scheme_make_prim_w_everything(fun, 1, name, mina, maxa, 0, 1, 1);
 }
 
 Scheme_Object *
 scheme_make_folding_prim(Scheme_Prim *fun, const char *name, 
-			 short mina, short maxa,
+			 mzshort mina, mzshort maxa,
 			 short folding)
 {
   return scheme_make_prim_w_everything(fun, 1, name, mina, maxa, 
@@ -411,7 +411,7 @@ scheme_make_folding_prim(Scheme_Prim *fun, const char *name,
 
 Scheme_Object *
 scheme_make_noneternal_prim_w_arity(Scheme_Prim *fun, const char *name,
-				    short mina, short maxa)
+				    mzshort mina, mzshort maxa)
 {
   return scheme_make_prim_w_everything(fun, 0, name, mina, maxa, 0, 1, 1);
 }
@@ -420,9 +420,9 @@ Scheme_Object *
 scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun, 
 				     void *data,
 				     const char *name, 
-				     short mina, short maxa,
+				     mzshort mina, mzshort maxa,
 				     short folding,
-				     short minr, short maxr)
+				     mzshort minr, mzshort maxr)
 {
   Scheme_Closed_Primitive_Proc *prim;
   int hasr, size;
@@ -454,7 +454,7 @@ Scheme_Object *
 scheme_make_folding_closed_prim(Scheme_Closed_Prim *fun, 
 				void *data,
 				const char *name, 
-				short mina, short maxa,
+				mzshort mina, mzshort maxa,
 				short folding)
 {
   return scheme_make_closed_prim_w_everything(fun, data, name, mina, maxa, folding, 1, 1);
@@ -462,7 +462,7 @@ scheme_make_folding_closed_prim(Scheme_Closed_Prim *fun,
 
 Scheme_Object *
 scheme_make_closed_prim_w_arity(Scheme_Closed_Prim *fun, void *data,
-				const char *name, short mina, short maxa)
+				const char *name, mzshort mina, mzshort maxa)
 {
   return scheme_make_closed_prim_w_everything(fun, data, name, mina, maxa, 0, 1, 1);
 }
@@ -499,7 +499,7 @@ scheme_make_closure(Scheme_Thread *p, Scheme_Object *code, int close)
   Scheme_Closure_Compilation_Data *data;
   Scheme_Closed_Compiled_Procedure *closure;
   Scheme_Object **runstack, **dest;
-  short *map;
+  mzshort *map;
   int i;
 
   data = (Scheme_Closure_Compilation_Data *)code;
@@ -539,10 +539,10 @@ scheme_make_closure(Scheme_Thread *p, Scheme_Object *code, int close)
 typedef struct {
   MZTAG_IF_REQUIRED
   int *local_flags;
-  short base_closure_size;
-  short *base_closure_map;
-  short stx_closure_size;
-  short *stx_closure_map;
+  mzshort base_closure_size;
+  mzshort *base_closure_map;
+  mzshort stx_closure_size;
+  mzshort *stx_closure_map;
   short has_tl;
 } Closure_Info;
 
@@ -551,7 +551,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 {
   Scheme_Closure_Compilation_Data *data;
   int i, closure_size, offset;
-  short *oldpos, *stx_oldpos, *closure_map;
+  mzshort *oldpos, *stx_oldpos, *closure_map;
   Closure_Info *cl;
   Resolve_Info *new_info;
 
@@ -568,7 +568,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
   }
 
   closure_size = data->closure_size;
-  closure_map = (short *)scheme_malloc_atomic(sizeof(short) * closure_size);
+  closure_map = (mzshort *)scheme_malloc_atomic(sizeof(mzshort) * closure_size);
 
   /* Locals in closure are first: */
   oldpos = cl->base_closure_map;
@@ -701,7 +701,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   Closure_Info *cl;
   int i;
   long num_params;
-  short dcs, *dcm;
+  mzshort dcs, *dcm;
 
   data  = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
 
@@ -797,7 +797,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   data->closure_size = (cl->base_closure_size
 			+ cl->stx_closure_size
 			+ (cl->has_tl ? 1 : 0));
-  data->closure_map = (short *)cl;
+  data->closure_map = (mzshort *)cl;
 
   data->max_let_depth = lam.max_let_depth + data->num_params + data->closure_size;
   
@@ -1240,7 +1240,7 @@ scheme_apply_macro(Scheme_Object *name,
 /*                                   arity                                */
 /*========================================================================*/
 
-Scheme_Object *scheme_make_arity(short mina, short maxa)
+Scheme_Object *scheme_make_arity(mzshort mina, mzshort maxa)
 {
   if (mina == maxa)
     return scheme_make_integer(mina);
@@ -1265,7 +1265,7 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
    a == -2 => check for allowing varargs */
 {
   Scheme_Type type;
-  short mina, maxa;
+  mzshort mina, maxa;
   int drop = 0;
 
  top:
@@ -1279,7 +1279,7 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
     maxa = ((Scheme_Closed_Primitive_Proc *)p)->maxa;
 
     if (mina == -2) {
-      short *cases = ((Scheme_Closed_Case_Primitive_Proc *)p)->cases;
+      mzshort *cases = ((Scheme_Closed_Case_Primitive_Proc *)p)->cases;
       int count = -maxa, i;
 
       if (a == -1) {

@@ -165,6 +165,12 @@ extern "C"
 
 typedef short Scheme_Type;
 
+/* Used to use `short' for app arg counts, etc., but adding limit
+   checks is difficult, and seems arbitrary. We can switch back
+   to short if the expense turns out to be noticable; in that case
+   also define MZSHORT_IS_SHORT. */
+typedef int mzshort;
+
 /* MzScheme values have the type `Scheme_Object *'.
    The actual Scheme_Object structure only defines a few variants.
    The important thing is that all `Scheme_Object *'s start with
@@ -194,7 +200,7 @@ typedef struct Scheme_Object
       struct { void *ptr; int pint; } ptr_int_val;
       struct { void *ptr; long pint; } ptr_long_val;
       struct { struct Scheme_Object *car, *cdr; } pair_val;
-      struct { short len; short *vec; } svector_val;
+      struct { mzshort len; mzshort *vec; } svector_val;
     } u;
 } Scheme_Object;
 
@@ -436,12 +442,12 @@ typedef struct {
   short flags; /* keep flags at same place as in closed */
   Scheme_Prim *prim_val;
   const char *name;
-  short mina, maxa;
+  mzshort mina, maxa;
 } Scheme_Primitive_Proc;
 
 typedef struct {
   Scheme_Primitive_Proc p;
-  short minr, maxr;
+  mzshort minr, maxr;
 } Scheme_Prim_W_Result_Arity;
 
 typedef struct {
@@ -451,18 +457,18 @@ typedef struct {
   Scheme_Closed_Prim *prim_val;
   void *data;
   const char *name;
-  short mina, maxa; /* mina == -2 => maxa is negated case count and
+  mzshort mina, maxa; /* mina == -2 => maxa is negated case count and
 		       record is a Scheme_Closed_Case_Primitive_Proc */
 } Scheme_Closed_Primitive_Proc;
 
 typedef struct {
   Scheme_Closed_Primitive_Proc p;
-  short minr, maxr;
+  mzshort minr, maxr;
 } Scheme_Closed_Prim_W_Result_Arity;
 
 typedef struct {
   Scheme_Closed_Primitive_Proc p;
-  short *cases;
+  mzshort *cases;
 } Scheme_Closed_Case_Primitive_Proc;
 
 #define _scheme_fill_prim_closure(rec, cfunc, dt, nm, amin, amax, flgs) \
@@ -591,7 +597,7 @@ typedef struct Scheme_Continuation_Jump_State {
     Scheme_Object **vals;
     Scheme_Object *val;
   } u;
-  short num_vals;
+  mzshort num_vals;
   short is_kill;
 } Scheme_Continuation_Jump_State;
 

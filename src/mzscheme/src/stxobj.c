@@ -58,6 +58,8 @@ static Scheme_Object *share_symbol; /* uninterned! */
 static Scheme_Object *origin_symbol;
 static Scheme_Object *lexical_symbol;
 
+static Scheme_Object *nominal_ipair_cache;
+
 static Scheme_Object *mark_id = scheme_make_integer(0);
 
 static Scheme_Stx_Srcloc *empty_srcloc;
@@ -375,6 +377,8 @@ void scheme_init_stx(Scheme_Env *env)
 
   REGISTER_SO(empty_simplified);
   empty_simplified = scheme_make_vector(2, scheme_false);
+
+  REGISTER_SO(nominal_ipair_cache);
 }
 
 /*========================================================================*/
@@ -770,7 +774,16 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
       elem = CONS(modname, exname);
   } else if (SAME_OBJ(exname, nominal_ex)
 	     && SAME_OBJ(localname, exname)) {
-    elem = ICONS(modname, nominal_mod);
+    /* It's common that a sequence of similar mappings shows up,
+       e.g., '(#%kernel . mzscheme) */
+    if (nominal_ipair_cache
+	&& SAME_OBJ(SCHEME_CAR(nominal_ipair_cache), modname)
+	&& SAME_OBJ(SCHEME_CDR(nominal_ipair_cache), nominal_mod))
+      elem = nominal_ipair_cache;
+    else {
+      elem = ICONS(modname, nominal_mod);
+      nominal_ipair_cache = elem;
+    }
   } else {
     elem = CONS(modname, CONS(exname, CONS(nominal_mod, nominal_ex)));
   }

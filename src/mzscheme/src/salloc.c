@@ -1254,7 +1254,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 
 #ifdef MEMORY_COUNTING_ON
 
-long scheme_count_closure(Scheme_Object **o, short len, Scheme_Hash_Table *ht)
+long scheme_count_closure(Scheme_Object **o, mzshort len, Scheme_Hash_Table *ht)
 {
 #if 0
   int i;
@@ -1404,7 +1404,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 	(Scheme_Closure_Compilation_Data *)root;
 
       s = sizeof(Scheme_Closure_Compilation_Data);
-      s += data->closure_size * sizeof(short);
+      s += data->closure_size * sizeof(mzshort);
 #if FORCE_KNOWN_SUBPARTS
       e = COUNT(data->code);
 #endif

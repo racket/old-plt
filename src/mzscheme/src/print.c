@@ -110,7 +110,7 @@ void scheme_init_print(Scheme_Env *env)
   }
 }
 
-Scheme_Object *scheme_make_svector(short c, short *a)
+Scheme_Object *scheme_make_svector(mzshort c, mzshort *a)
 {
   Scheme_Object *o;
   o = scheme_alloc_object();
@@ -1397,9 +1397,9 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 #endif
 	   SAME_TYPE(SCHEME_TYPE(obj), scheme_svector_type))
     {
-      short l, *v;
+      mzshort l, *v;
       l = SCHEME_SVEC_LEN(obj);
-      v = (short *)SCHEME_SVEC_VEC(obj);
+      v = (mzshort *)SCHEME_SVEC_VEC(obj);
       
 #if NO_COMPACT
       print_this_string(p, "[", 0, 1);

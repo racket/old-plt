@@ -836,7 +836,7 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
   s = make_arity_expect_string(name, -1, minc, maxc, argc, argv, &len, is_method);
 
   if (minc >= 0)
-    arity = scheme_make_arity((short)(minc - (is_method ? 1 : 0)), (short)(maxc - (is_method ? 1 : 0)));
+    arity = scheme_make_arity((mzshort)(minc - (is_method ? 1 : 0)), (mzshort)(maxc - (is_method ? 1 : 0)));
   else if (minc == -1) {
     arity = scheme_arity((Scheme_Object *)name);
     if (is_method) {
@@ -887,7 +887,7 @@ void scheme_case_lambda_wrong_count(const char *name,
 
   va_start(args, count);
   for (i = 0, a = arity; i < count; i++, a = SCHEME_CDR(a)) {
-    short mina, maxa;
+    mzshort mina, maxa;
     Scheme_Object *av;
 
     mina = mzVA_ARG(args, int);

@@ -360,8 +360,8 @@ int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos);
 typedef struct Scheme_Struct_Type {
   Scheme_Type type; /* scheme_structure_type or scheme_proc_struct_type */
   MZ_HASH_KEY_EX
-  short num_slots, num_islots;
-  short name_pos;
+  mzshort num_slots, num_islots;
+  mzshort name_pos;
 
   Scheme_Object *name;
 
@@ -530,7 +530,7 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code);
 
 typedef struct {
   Scheme_Type type;
-  short num_args;
+  mzshort num_args;
   Scheme_Object *args[1];
   /* After array of f & args, array of chars for eval type */
 } Scheme_App_Rec;
@@ -545,15 +545,15 @@ typedef struct {
 typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  short max_let_depth;
+  mzshort max_let_depth;
   Scheme_Object *code;
   struct Resolve_Prefix *prefix;
 } Scheme_Compilation_Top;
 
 typedef struct Scheme_Compiled_Let_Value {
   Scheme_Type type;
-  short count;
-  short position;
+  mzshort count;
+  mzshort position;
   int *flags;
   Scheme_Object *value;
   Scheme_Object *body;
@@ -561,9 +561,9 @@ typedef struct Scheme_Compiled_Let_Value {
 
 typedef struct Scheme_Let_Header {
   Scheme_Type type;
-  short count;
   short recursive;
-  short num_clauses;
+  mzshort count;
+  mzshort num_clauses;
   Scheme_Object *body;
 } Scheme_Let_Header;
 
@@ -576,10 +576,12 @@ typedef struct {
 
 typedef struct Scheme_Local {
   Scheme_Type type;
-  short position;
+  mzshort position;
 #ifdef MZ_PRECISE_GC
+# ifdef MZSHORT_IS_SHORT
   /* Everything has to be at least 2 words in size. */
   int x;
+# endif
 #endif
 } Scheme_Local;
 
@@ -587,7 +589,7 @@ typedef struct Scheme_Local {
 
 typedef struct Scheme_Toplevel {
   Scheme_Type type;
-  short depth;
+  mzshort depth;
   int position;
 } Scheme_Toplevel;
 
@@ -596,9 +598,9 @@ typedef struct Scheme_Toplevel {
 
 typedef struct Scheme_Let_Value {
   Scheme_Type type;
-  short count;
-  short position;
   short autobox;
+  mzshort count;
+  mzshort position;
   Scheme_Object *value;
   Scheme_Object *body;
 } Scheme_Let_Value;
@@ -612,34 +614,34 @@ typedef struct Scheme_Let_One {
 
 typedef struct Scheme_Let_Void {
   Scheme_Type type;
-  short count;
   short autobox;
+  mzshort count;
   Scheme_Object *body;
 } Scheme_Let_Void;
 
 typedef struct Scheme_Letrec {
   Scheme_Type type;
-  short count;
+  mzshort count;
   Scheme_Object **procs;
   Scheme_Object *body;
 } Scheme_Letrec;
 
 typedef struct {
   Scheme_Type type;
-  short num_bindings;
+  mzshort num_bindings;
   Scheme_Object *body;
 } Scheme_Let_Frame_Data;
 
 typedef struct {
   Scheme_Type type;
-  short count;
+  mzshort count;
   Scheme_Object *array[1];
 } Scheme_Sequence;
 
 typedef struct {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  short count;
+  mzshort count;
   Scheme_Object *name; /* see note below */
   Scheme_Object *array[1];
 } Scheme_Case_Lambda;
@@ -649,16 +651,16 @@ typedef struct {
 Scheme_Object *
 scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
 			      const char *name,
-			      short mina, short maxa,
+			      mzshort mina, mzshort maxa,
 			      short folding,
-			      short minr, short maxr);
+			      mzshort minr, mzshort maxr);
 Scheme_Object *
 scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun, 
 				     void *data,
 				     const char *name, 
-				     short mina, short maxa,
+				     mzshort mina, mzshort maxa,
 				     short folding,
-				     short minr, short maxr);
+				     mzshort minr, mzshort maxr);
 
 #define scheme_make_prim_w_arity2(f, n, mina, maxa, minr, maxr) \
   scheme_make_prim_w_everything(f, 0, n, mina, maxa, 0, minr, maxr)
@@ -1209,8 +1211,8 @@ typedef struct Comp_Prefix
 typedef struct Scheme_Comp_Env
 {
   MZTAG_IF_REQUIRED
-  short num_bindings;   /* number of `values' slots */
   short flags;          /* used for expanding/compiling */
+  mzshort num_bindings; /* number of `values' slots */
   Scheme_Env *genv;     /* top-level environment */
   Comp_Prefix *prefix;  /* stack base info: globals and stxes */
 
@@ -1221,8 +1223,8 @@ typedef struct Scheme_Comp_Env
 
   struct Scheme_Object *renames; /* an stx lexical rename or an improper list of them */
 
-  short rename_var_count;        /* number of non-NULL `values' when `renames' was computed */
-  short rename_rstart;           /* leftover rstart from previous round; see env.c */
+  mzshort rename_var_count;      /* number of non-NULL `values' when `renames' was computed */
+  mzshort rename_rstart;         /* leftover rstart from previous round; see env.c */
   Scheme_Hash_Table *dup_check;  /* table for finding colliding symbols in `values' */
 
   struct Scheme_Comp_Env *next;
@@ -1256,11 +1258,11 @@ typedef struct Resolve_Info
   MZTAG_IF_REQUIRED
   int size, oldsize, count, pos;
   Resolve_Prefix *prefix;
-  short toplevel_pos; /* -1 mean consult next */
-  short *old_pos;
-  short *new_pos;
+  mzshort toplevel_pos; /* -1 mean consult next */
+  mzshort *old_pos;
+  mzshort *new_pos;
   int stx_count;
-  short *old_stx_pos; /* NULL => consult next; new pos is index in array */
+  mzshort *old_stx_pos; /* NULL => consult next; new pos is index in array */
   int *flags;
   struct Resolve_Info *next;
 } Resolve_Info;
@@ -1287,10 +1289,10 @@ typedef struct Scheme_Closure_Compilation_Data
   Scheme_Type type;
   /* Scheme_Object *src; */
   short flags;
-  short num_params; /* includes collecting arg if has_rest */
-  short max_let_depth;
-  short closure_size;
-  short *closure_map; /* Actually a Closure_Info* until resolved! */
+  mzshort num_params; /* includes collecting arg if has_rest */
+  mzshort max_let_depth;
+  mzshort closure_size;
+  mzshort *closure_map; /* Actually a Closure_Info* until resolved! */
   Scheme_Object *code;
   Scheme_Object *name;
 } Scheme_Closure_Compilation_Data;
@@ -1312,7 +1314,7 @@ typedef struct {
 #define SCHEME_COMPILED_CLOS_CODE(c) ((Scheme_Closed_Compiled_Procedure *)c)->code
 #define SCHEME_COMPILED_CLOS_ENV(c) ((Scheme_Closed_Compiled_Procedure *)c)->vals
 
-#define MAX_CONST_LOCAL_POS 20
+#define MAX_CONST_LOCAL_POS 64
 extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 
 #define scheme_new_frame(n) scheme_new_special_frame(n, 0)
@@ -1359,8 +1361,8 @@ void scheme_add_local_syntax(int cnt, Scheme_Comp_Env *env);
 void scheme_set_local_syntax(int pos, Scheme_Object *name, Scheme_Object *val,
 			     Scheme_Comp_Env *env);
 
-void scheme_env_make_closure_map(Scheme_Comp_Env *frame, short *size, short **map);
-void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, short *size, short **map);
+void scheme_env_make_closure_map(Scheme_Comp_Env *frame, mzshort *size, mzshort **map);
+void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, mzshort *size, mzshort **map);
 int scheme_env_uses_toplevel(Scheme_Comp_Env *frame);
 
 Scheme_Object *scheme_make_closure(Scheme_Thread *p, 
@@ -1504,7 +1506,7 @@ Scheme_Object *scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env,
 Scheme_Object *scheme_expand_block(Scheme_Object *form, Scheme_Comp_Env *env,
 				   int depth, Scheme_Object *boundname);
 
-Scheme_Object *scheme_make_svector(short v, short *a);
+Scheme_Object *scheme_make_svector(mzshort v, mzshort *a);
 
 #define SCHEME_SVEC_LEN(obj) ((obj)->u.svector_val.len)
 #define SCHEME_SVEC_VEC(obj) ((obj)->u.svector_val.vec)
@@ -1771,7 +1773,7 @@ int scheme_string_has_null(Scheme_Object *o);
 
 Scheme_Object *scheme_do_exit(int argc, Scheme_Object *argv[]);
 
-Scheme_Object *scheme_make_arity(short minc, short maxc);
+Scheme_Object *scheme_make_arity(mzshort minc, mzshort maxc);
 Scheme_Object *scheme_arity(Scheme_Object *p);
 
 typedef struct {
@@ -1945,7 +1947,7 @@ extern long scheme_misc_count;
 
 Scheme_Object *scheme_dump_memory_count(int c, Scheme_Object *a[]);
 
-long scheme_count_closure(Scheme_Object **o, short len, Scheme_Hash_Table *ht);
+long scheme_count_closure(Scheme_Object **o, mzshort len, Scheme_Hash_Table *ht);
 
 long scheme_count_envbox(Scheme_Object *root, Scheme_Hash_Table *ht);
 long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht);

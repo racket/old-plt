@@ -34,7 +34,7 @@ typedef struct {
   MZTAG_IF_REQUIRED
   Scheme_Struct_Type *struct_type;
   char *func_name;
-  short field;
+  mzshort field;
 } Struct_Proc_Info;
 
 /* globals */

@@ -1742,7 +1742,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   return (Scheme_Object *)b;
 }
 
-void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_map)
+void scheme_env_make_closure_map(Scheme_Comp_Env *env, mzshort *_size, mzshort **_map)
 {
   /* A closure map lists the captured variables for a closure; the
      indices are resolved two new indicies in the second phase of
@@ -1750,7 +1750,7 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
   Compile_Data *data;
   Scheme_Comp_Env *frame;
   int i, j, pos = 0, lpos = 0;
-  short *map, size;
+  mzshort *map, size;
 
   /* Count vars used by this closure (skip args): */
   j = 1;
@@ -1775,7 +1775,7 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 
   size = pos;
   *_size = size;
-  map = MALLOC_N_ATOMIC(short, size);
+  map = MALLOC_N_ATOMIC(mzshort, size);
   *_map = map;
 
   /* Build map, unmarking locals and marking deeper in parent prame */
@@ -1802,14 +1802,14 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
   }
 }
 
-void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, short *size, short **_map)
+void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, mzshort *size, mzshort **_map)
 {
   char *used;
 
   used = COMPILE_DATA(frame)->stxes_used;
 
   if (used) {
-    short *map;
+    mzshort *map;
     int i, max_stx_used, count = 0;
     
     max_stx_used = COMPILE_DATA(frame)->max_stx_used;
@@ -1820,7 +1820,7 @@ void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, short *size, short 
     }
 
     *size = count;
-    map = MALLOC_N_ATOMIC(short, count);
+    map = MALLOC_N_ATOMIC(mzshort, count);
     *_map = map;
 
     count = 0;
@@ -2053,11 +2053,11 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
 
   if (mapc) {
     int i, *ia;
-    short *sa;
+    mzshort *sa;
 
-    sa = MALLOC_N_ATOMIC(short, mapc);
+    sa = MALLOC_N_ATOMIC(mzshort, mapc);
     naya->old_pos = sa;
-    sa = MALLOC_N_ATOMIC(short, mapc);
+    sa = MALLOC_N_ATOMIC(mzshort, mapc);
     naya->new_pos = sa;
     ia = MALLOC_N_ATOMIC(int, mapc);
     naya->flags = ia;
@@ -2071,9 +2071,9 @@ Resolve_Info *scheme_resolve_info_extend(Resolve_Info *info, int size, int oldsi
   }
 
   if (stxc) {
-    short *sa;
+    mzshort *sa;
 
-    sa = MALLOC_N_ATOMIC(short, stxc);
+    sa = MALLOC_N_ATOMIC(mzshort, stxc);
     naya->old_stx_pos = sa;
   }
 

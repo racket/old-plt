@@ -17,6 +17,12 @@
     (let ((r (reverse path)))
       (values (reverse (cdr r)) (car r))))
 
+  (define (get-renames id err)
+    (let ((x (syntax-local-value id (err id))))
+      (unless (str? x)
+        ((err id)))
+      (str-renames x)))
+  
   (define (open path type)
     (unless (identifier? (car path))
       (raise-syntax-error type "Path component must be an identifier" (car path)))
@@ -24,9 +30,7 @@
                  (lambda ()
                    (raise-syntax-error type "Unknown structure" name)))))
       (let loop ((path (cdr path))
-                 (env (str-renames (syntax-local-value 
-                                    (car path)
-                                    (err (car path))))))
+                 (env (get-renames (car path) err)))
         (cond
           ((null? path) env)
           (else
@@ -35,10 +39,7 @@
            (let ((bind (assq (syntax-object->datum (car path)) env)))
              (unless bind
                ((err (car path))))
-             (let ((new-env
-                    (str-renames
-                     (syntax-local-value (cdr bind) (err (cdr bind))))))
-               (loop (cdr path) new-env))))))))
+             (loop (cdr path) (get-renames (cdr bind) err))))))))
 
   (define (open-as-helper path field)
     (unless (identifier? field)

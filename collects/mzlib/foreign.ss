@@ -71,81 +71,6 @@
      (begin (provide name) (define name expr))]))
 
 ;; ----------------------------------------------------------------------------
-;; Compile-time support for fun-expanders
-
-;; The `_fun' macro tears its input apart and reassemble it using pieces from
-;; custom function types (macros).  This whole deal needs some work to make it
-;; play nicely with code certificates, so Matthew wrote the following code.
-;; The idea is to create a define-fun-syntax which is not really a new kind of
-;; a syntax transformer which should always be expanded with
-;; `expand-fun-syntax'.
-
-(begin-for-syntax
-  (define fun-cert-key (gensym))
-  (define-values (make-fun-syntax fun-syntax?
-                  fun-syntax-proc fun-syntax-certifier)
-    (let-values ([(desc make pred? get set!)
-                  (make-struct-type
-                   'fun-syntax #f 2 0 #f '() (current-inspector) 0)])
-      (values make pred?
-              (make-struct-field-accessor get 0 'proc)
-              (make-struct-field-accessor get 1 'certifier))))
-  (define (expand-fun-syntax stx)
-    (let loop ([stx stx])
-      (define (do-expand id id?) ; id? == are we expanding an identifier?
-        (define v           (syntax-local-value id (lambda () #f)))
-        (define set!-trans? (set!-transformer? v))
-        (define proc        (if set!-trans? (set!-transformer-procedure v) v))
-        (if (and (fun-syntax? proc) (or (not id?) set!-trans?))
-          ;; Do essentially the same thing that `local-expand' does.
-          ;;  First, create an "introducer" to mark introduced identifiers:
-          (let* ([introduce (make-syntax-introducer)]
-                 [expanded
-                  ;; Re-introduce mark related to expansion of `_fun':
-                  (syntax-local-introduce
-                   ;; Re-add mark specific to this expansion, cancelling
-                   ;;  some marks applied before expanding (leaving only
-                   ;;  introuced syntax marked)
-                   (introduce
-                    ;; Actually expand:
-                    (proc
-                     ;; Add mark specific to this expansion:
-                     (introduce
-                      ;; Remove mark related to expansion of `_fun':
-                      (syntax-local-introduce stx)))))])
-            ;; Certify based on definition of expander, then loop
-            ;;  to continue expanding:
-            (loop ((fun-syntax-certifier proc)
-                   expanded fun-cert-key introduce)))
-          stx))
-      (syntax-case stx ()
-        [(id . rest) (identifier? #'id) (do-expand #'id #f)]
-        [id          (identifier? #'id) (do-expand #'id #t)]
-        [_else stx]))))
-
-;; Use define-fun-syntax instead of define-syntax for forms that
-;;  are to be expanded by `_fun':
-(provide define-fun-syntax)
-(define-syntax define-fun-syntax
-  (syntax-rules ()
-    [(_ id trans)
-     (define-syntax id
-       (let* ([xformer trans]
-              [set!-trans? (set!-transformer? xformer)])
-         (unless (or (and (procedure? xformer)
-                          (procedure-arity-includes? xformer 1))
-                     set!-trans?)
-           (raise-type-error 'define-fun-syntax
-                             "procedure (arity 1) or set!-transformer"
-                             xformer))
-         (let ([f (make-fun-syntax (if set!-trans?
-                                     (set!-transformer-procedure xformer)
-                                     xformer)
-                                   ;; Capture definition-time certificates:
-                                   (syntax-local-certifier))])
-           (if set!-trans? (make-set!-transformer f) f))))]))
-
-;; ----------------------------------------------------------------------------
 ;; Getting and setting library objects
 
 (define lib-suffix
@@ -245,6 +170,138 @@
 (define ffi-objects-ref-table (make-hash-table))
 
 ;; ----------------------------------------------------------------------------
+;; Compile-time support for fun-expanders
+
+(begin-for-syntax
+
+  ;; The `_fun' macro tears its input apart and reassemble it using pieces from
+  ;; custom function types (macros).  This whole deal needs some work to make
+  ;; it play nicely with code certificates, so Matthew wrote the following
+  ;; code.  The idea is to create a define-fun-syntax which is not really a new
+  ;; kind of a syntax transformer which should always be expanded with
+  ;; `expand-fun-syntax'.
+
+ (define fun-cert-key (gensym))
+ (define-values (make-fun-syntax fun-syntax?
+                  fun-syntax-proc fun-syntax-certifier)
+    (let-values ([(desc make pred? get set!)
+                  (make-struct-type
+                   'fun-syntax #f 2 0 #f '() (current-inspector) 0)])
+      (values make pred?
+              (make-struct-field-accessor get 0 'proc)
+              (make-struct-field-accessor get 1 'certifier))))
+  (define (expand-fun-syntax stx)
+    (let loop ([stx stx])
+      (define (do-expand id id?) ; id? == are we expanding an identifier?
+        (define v           (syntax-local-value id (lambda () #f)))
+        (define set!-trans? (set!-transformer? v))
+        (define proc        (if set!-trans? (set!-transformer-procedure v) v))
+        (if (and (fun-syntax? proc) (or (not id?) set!-trans?))
+          ;; Do essentially the same thing that `local-expand' does.
+          ;;  First, create an "introducer" to mark introduced identifiers:
+          (let* ([introduce (make-syntax-introducer)]
+                 [expanded
+                  ;; Re-introduce mark related to expansion of `_fun':
+                  (syntax-local-introduce
+                   ;; Re-add mark specific to this expansion, cancelling
+                   ;;  some marks applied before expanding (leaving only
+                   ;;  introuced syntax marked)
+                   (introduce
+                    ;; Actually expand:
+                    (proc
+                     ;; Add mark specific to this expansion:
+                     (introduce
+                      ;; Remove mark related to expansion of `_fun':
+                      (syntax-local-introduce stx)))))])
+            ;; Certify based on definition of expander, then loop
+            ;;  to continue expanding:
+            (loop ((fun-syntax-certifier proc)
+                   expanded fun-cert-key introduce)))
+          stx))
+      (syntax-case stx ()
+        [(id . rest) (identifier? #'id) (do-expand #'id #f)]
+        [id          (identifier? #'id) (do-expand #'id #t)]
+        [_else stx])))
+
+  ;; use module-or-top-identifier=? because we use keywords like `=' and want
+  ;; to make it possible to play with it at the toplevel
+  (define id=? module-or-top-identifier=?)
+
+  (define (split-by key args)
+    (let loop ([args args] [r (list '())])
+      (cond [(null? args) (reverse! (map reverse! r))]
+            [(eq? key (car args)) (loop (cdr args) (cons '() r))]
+            [else (set-car! r (cons (car args) (car r)))
+                  (loop (cdr args) r)])))
+
+  (define (filtmap f l)
+    (let loop ([l l] [r '()])
+      (if (null? l)
+        (reverse! r)
+        (let ([x (f (car l))]) (loop (cdr l) (if x (cons x r) r))))))
+
+  (define (add-renamer body from to)
+    (with-syntax ([body body] [from from] [to to])
+      #'(let-syntax ([to (syntax-id-rules ()
+                           [(_?_ . _rest_) (from . _rest_)] [_?_ from])])
+          body)))
+  (define (custom-type->keys type err)
+    (define stops (map (lambda (s) (datum->syntax-object type s #f))
+                       '(#%app #%top #%datum)))
+    ;; Expand `type' using expand-fun-syntax
+    (define orig (expand-fun-syntax type))
+    (define (with-arg x)
+      (syntax-case* x (=>) id=?
+        [(id => body) (identifier? #'id)
+         ;; Extract #'body from its context, use a key it needs certification:
+         (list #'id (syntax-recertify #'body orig #f fun-cert-key))]
+        [_else x]))
+   (let ([keys '()])
+     (define (setkey! key val . id?)
+       (cond
+        [(assq key keys)
+         (err "bad expansion of custom type (two `~a:'s)" key type)]
+        [(and (pair? id?) (car id?) (not (identifier? val)))
+         (err "bad expansion of custom type (`~a:' expects an identifier)"
+              key type)]
+        [else (set! keys (cons (cons key val) keys))]))
+     (let loop ([t orig])
+       (define (next rest . args) (apply setkey! args) (loop rest))
+       (syntax-case* t (type: expr: bind: pre: post: 1st-arg: prev-arg:) id=?
+         [(type: t x ...)      (next #'(x ...) 'type #'t)]
+         [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
+         [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
+         [(1st-arg:  id x ...) (next #'(x ...) '1st  #'id #t)]
+         [(prev-arg: id x ...) (next #'(x ...) 'prev #'id #t)]
+         ;; in the following two cases pass along orig for recertifying
+         [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
+         [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]
+         [() (and (pair? keys) keys)]
+         [_else #f])))))
+
+;; Use define-fun-syntax instead of define-syntax for forms that
+;;  are to be expanded by `_fun':
+(provide define-fun-syntax)
+(define-syntax define-fun-syntax
+  (syntax-rules ()
+    [(_ id trans)
+     (define-syntax id
+       (let* ([xformer trans]
+              [set!-trans? (set!-transformer? xformer)])
+         (unless (or (and (procedure? xformer)
+                          (procedure-arity-includes? xformer 1))
+                     set!-trans?)
+           (raise-type-error 'define-fun-syntax
+                             "procedure (arity 1) or set!-transformer"
+                             xformer))
+         (let ([f (make-fun-syntax (if set!-trans?
+                                     (set!-transformer-procedure xformer)
+                                     xformer)
+                                   ;; Capture definition-time certificates:
+                                   (syntax-local-certifier))])
+           (if set!-trans? (make-set!-transformer f) f))))]))
+
+;; ----------------------------------------------------------------------------
 ;; Function type
 
 ;; Creates a simple function type that can be used for callouts and callbacks,
@@ -273,60 +330,6 @@
 ;; `-> type'               output type (possibly with name)
 ;; `-> expr'               specify different output, can use previous names
 ;; Also, see below for custom function types.
-
-(begin-for-syntax ; utilities for _fun
- ;; use module-or-top-identifier=? because we use keywords like `=' and want to
- ;; make it possible to play with it at the toplevel
- (define id=? module-or-top-identifier=?)
- (define (split-by key args)
-    (let loop ([args args] [r (list '())])
-      (cond [(null? args) (reverse! (map reverse! r))]
-            [(eq? key (car args)) (loop (cdr args) (cons '() r))]
-            [else (set-car! r (cons (car args) (car r)))
-                  (loop (cdr args) r)])))
-  (define (filtmap f l)
-    (let loop ([l l] [r '()])
-      (if (null? l)
-        (reverse! r)
-        (let ([x (f (car l))]) (loop (cdr l) (if x (cons x r) r))))))
-  (define (add-renamer body from to)
-   (with-syntax ([body body] [from from] [to to])
-     #'(let-syntax ([to (syntax-id-rules ()
-                          [(_?_ . _rest_) (from . _rest_)] [_?_ from])])
-         body)))
- (define (custom-type->keys type err)
-   (define stops (map (lambda (s) (datum->syntax-object type s #f))
-                      '(#%app #%top #%datum)))
-   ;; Expand `type' using expand-fun-syntax
-   (define orig (expand-fun-syntax type))
-   (define (with-arg x)
-     (syntax-case* x (=>) id=?
-       [(id => body) (identifier? #'id)
-        ;; Extract #'body from its context, use a key it needs certification:
-        (list #'id (syntax-recertify #'body orig #f fun-cert-key))]
-       [_else x]))
-   (let ([keys '()])
-     (define (setkey! key val . id?)
-       (cond
-        [(assq key keys)
-         (err "bad expansion of custom type (two `~a:'s)" key type)]
-        [(and (pair? id?) (car id?) (not (identifier? val)))
-         (err "bad expansion of custom type (`~a:' expects an identifier)"
-              key type)]
-        [else (set! keys (cons (cons key val) keys))]))
-     (let loop ([t orig])
-       (define (next rest . args) (apply setkey! args) (loop rest))
-       (syntax-case* t (type: expr: bind: pre: post: 1st-arg: prev-arg:) id=?
-         [(type: t x ...)      (next #'(x ...) 'type #'t)]
-         [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
-         [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
-         [(1st-arg:  id x ...) (next #'(x ...) '1st  #'id #t)]
-         [(prev-arg: id x ...) (next #'(x ...) 'prev #'id #t)]
-         ;; in the following two cases pass along orig for recertifying
-         [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
-         [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]
-         [() (and (pair? keys) keys)]
-         [_else #f])))))
 
 (provide _fun)
 (define-syntax (_fun stx)

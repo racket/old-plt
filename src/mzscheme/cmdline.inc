@@ -120,7 +120,6 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
   if (!fa->no_rep && !fa->script_mode) {
     /* enter read-eval-print loop */
     repl();
-    PRINTF("\n");
     exit_val = 0;
   }
 #endif /* DONT_PARSE_COMMAND_LINE */

@@ -100,16 +100,16 @@
    the collector. Platform-specific allocation routines (e.g., sbrk())
    must then be used for low-level allocations by the collector;
    turn on one of: GET_MEM_VIA_SBRK or GET_MEM_VIA_MMAP.
-   This will not work if fprintf uses malloc of free. Turing on
+   This will not work if fprintf uses malloc of free. Turning on
    FPRINTF_USE_PRIM_STRINGOUT can solve this problem.
    Automatically implies PROVIDE_GC_FREE, but adds extra checks to
    CHECK_FREES if PROVIDE_GC_FREE was not otherwise on */
 
-#define GET_MEM_VIA_SBRK 0
+#define GET_MEM_VIA_SBRK 1
 /* Instead of calling malloc() to get low-level memory, use
    sbrk() directly. (Unix) */
 
-#define GET_MEM_VIA_MMAP SGC_STD_DEBUGGING_UNIX
+#define GET_MEM_VIA_MMAP (00 && SGC_STD_DEBUGGING_UNIX)
 /* Instead of calling malloc() to get low-level memory, use
    mmap() directly. (Unix) */
 
@@ -163,7 +163,7 @@
 #define USE_WATCH_FOUND_FUNC SGC_STD_DEBUGGING
 /* Calls GC_found_watch when the watch-for ptr is found. */
 
-#define PAD_BOUNDARY_BYTES (0 && SGC_STD_DEBUGGING)
+#define PAD_BOUNDARY_BYTES (1 && SGC_STD_DEBUGGING)
 /* Put a known padding pattern around every allocated
    block to test for array overflow/underflow.
    Pad-testing is performed at the beginning of every GC.
@@ -275,6 +275,8 @@
 #define PTR_ALIGNMENT 4
 #define LOG_PTR_SIZE 2
 #define PTR_SIZE (1 << LOG_PTR_SIZE)
+
+#define DOUBLE_SIZE sizeof(double)
 
 /* SECTOR_SEGMENT_SIZE determines the alignment of collector blocks.
    Since it should be a power of 2, LOG_SECTOR_SEGMENT_SIZE is
@@ -417,8 +419,9 @@
 #endif
 
 #if PAD_BOUNDARY_BYTES
+/* Pad start & end must be a multiple of DOUBLE_SIZE */
 # define PAD_START_SIZE (2 * sizeof(long))
-# define PAD_END_SIZE sizeof(long)
+# define PAD_END_SIZE PAD_START_SIZE
 # define PAD_PATTERN 0x7c8c9cAc
 # define PAD_FILL_PATTERN 0xc7
 # define SET_PAD(p, s, os) set_pad(p, s, os)
@@ -455,10 +458,10 @@ typedef struct MemoryBlock {
   short atomic;
   short elem_per_block;
   short free_search_start, free_search_bit, free_search_offset;
-  int *positions; /* maps displacement in ptrs => position in objects */
 #if KEEP_SET_NO
   short set_no;
 #endif
+  int *positions; /* maps displacement in ptrs => position in objects */
   struct MemoryBlock *next;
 #if STAMP_AND_REMEMBER_SOURCE
   long make_time;
@@ -2021,6 +2024,7 @@ static void set_pad(void *p, long s, long os)
   /* Set start & end pad: */
   *(long*)p = PAD_PATTERN;
   *(long*)(((char *)p) + s - PAD_END_SIZE) = PAD_PATTERN;
+  *(long*)(((char *)p) + s - PAD_END_SIZE + sizeof(long)) = PAD_PATTERN;
   
   /* Keep difference of given - requested: */
   diff = (s - os - PAD_START_SIZE - PAD_END_SIZE);
@@ -2088,7 +2092,7 @@ void *do_malloc(SET_NO_BACKINFO
   long c;
   unsigned long p;
   long sizeElemBit;
-  int i, cpos, elem_per_block;
+  int i, cpos, elem_per_block, extra_alignment;
 #if PAD_BOUNDARY_BYTES
   long origsize;
 #endif
@@ -2288,11 +2292,22 @@ void *do_malloc(SET_NO_BACKINFO
   ALLOC_STATISTIC(num_newblock_allocs_stat++);
 
   sizeElemBit = size << LOG_FREE_BIT_PER_ELEM;
+  
+#if PAD_BOUNDARY_BYTES
+  /* Assume alignment */
+  extra_alignment = (DOUBLE_SIZE - PTR_SIZE);
+#else
+  extra_alignment = (size & (DOUBLE_SIZE - 1)) ? 0 : (DOUBLE_SIZE - PTR_SIZE);
+#endif
 
   /* upper bound: */
-  elem_per_block = (SECTOR_SEGMENT_SIZE - sizeof(MemoryBlock) - (PTR_SIZE - 2)) / sizeElemBit;
+  elem_per_block = (SECTOR_SEGMENT_SIZE - sizeof(MemoryBlock)) / sizeElemBit;
+  /*                ^- mem area size      ^- block record */
   /* use this one: */
-  elem_per_block = (SECTOR_SEGMENT_SIZE - sizeof(MemoryBlock) - (PTR_SIZE - 2) - elem_per_block) / sizeElemBit;
+  elem_per_block = ((SECTOR_SEGMENT_SIZE - sizeof(MemoryBlock) - elem_per_block
+  /*                ^- mem area size      ^- block record       ^- elems     */
+		     - (extra_alignment + PTR_SIZE - 2)) / sizeElemBit);
+  /*                     ^- possible elem padding, -2 since MemoryBlock has free[1] */
   if (elem_per_block) {
     /* Small enough to fit into one segment */
     c = SECTOR_SEGMENT_SIZE;
@@ -2328,6 +2343,13 @@ void *do_malloc(SET_NO_BACKINFO
   c = sizeof(MemoryBlock) + (elem_per_block - 1);
   if (c & (PTR_SIZE - 1))
     c += (PTR_SIZE - (c & (PTR_SIZE - 1)));
+#if !PAD_BOUNDARY_BYTES
+  if (!(ORIGSIZE & (DOUBLE_SIZE - 1))) /* Even more alignment for doubles: */
+#else
+    /* Assume alignment */
+#endif
+    if (c & (DOUBLE_SIZE - 1))
+      c += (DOUBLE_SIZE - (c & (DOUBLE_SIZE - 1)));
   p = PTR_TO_INT(block) + c;
 
   common_ends = common + NUM_COMMON_SIZE;
@@ -2868,6 +2890,11 @@ void GC_free(void *p)
 #  endif
 
       block->free[pos] |= (fbit | ubit);
+      if (block->free_search_start <= pos) {
+	block->free_search_start = pos;
+	block->free_search_bit = (FREE_BIT_START | UNMARK_BIT_START);
+	block->free_search_offset = 0;
+      }
 
       if (!initialized)
 	GC_initialize();
@@ -2983,7 +3010,10 @@ static void collect_init_chunk(MemoryChunk *c, int uncollectable)
 	bad_pad("start", s, sz, diff, 0, pd, PAD_PATTERN);
       pd = *(long *)INT_TO_PTR(c->end - PAD_END_SIZE);
       if (pd != PAD_PATTERN)
-	bad_pad("end", s, sz, diff, 0, pd, PAD_PATTERN);
+	bad_pad("end1", s, sz, diff, 0, pd, PAD_PATTERN);
+      pd = *(long *)INT_TO_PTR(c->end - PAD_END_SIZE + sizeof(long));
+      if (pd != PAD_PATTERN)
+	bad_pad("end2", s, sz, diff, 0, pd, PAD_PATTERN);
       if (diff) {
 	/* Given was bigger than requested; check extra bytes: */
 	unsigned char *ps = ((unsigned char *)s) + sz - PAD_END_SIZE - diff;
@@ -3090,7 +3120,10 @@ static void collect_init_common(MemoryBlock **blocks, int uncollectable)
 	    bad_pad("start", s, size, diff, 0, pd, PAD_PATTERN);
 	  pd = *(long *)INT_TO_PTR(p + size - PAD_END_SIZE);
 	  if (pd != PAD_PATTERN)
-	    bad_pad("end", s, size, diff, 0, pd, PAD_PATTERN);
+	    bad_pad("end1", s, size, diff, 0, pd, PAD_PATTERN);
+	  pd = *(long *)INT_TO_PTR(p + size - PAD_END_SIZE + sizeof(long));
+	  if (pd != PAD_PATTERN)
+	    bad_pad("end2", s, size, diff, 0, pd, PAD_PATTERN);
 	  if (diff) {
 	    /* Given was bigger than requested; check extra bytes: */
 	    unsigned char *ps = ((unsigned char *)s) + size - PAD_END_SIZE - diff;
@@ -3321,7 +3354,7 @@ static void push_collect(unsigned long start, unsigned long end, unsigned long s
     local_collect_stack_size = collect_stack_size; \
   }
 
-#if ALLOW_TRACE_COUNT
+#if ALLOW_TRACE_COUNT || ALLOW_TRACE_PATH
 
 typedef struct {
   int count, size;

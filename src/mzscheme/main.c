@@ -229,6 +229,7 @@ static void do_scheme_rep(void)
   
   /* enter read-eval-print loop */
   scheme_rep();
+  printf("\n");
 }
 
 int cont_run(FinishArgs *f)

@@ -22,7 +22,8 @@
  editor-snip%
  text-editor%
  pasteboard-editor%
- play-sound)
+ play-sound
+ application-file-handler)
 
 
 

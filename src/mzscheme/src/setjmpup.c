@@ -117,6 +117,7 @@ void scheme_init_setjumpup(void)
 {
   REGISTER_SO(first_copied_stack);
   first_copied_stack = MALLOC_LINK();
+  *first_copied_stack = NULL;
 
   GC_push_last_roots = init_push_copied_stacks;
   GC_push_last_roots_again = update_push_copied_stacks;

@@ -1961,6 +1961,9 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
       swap_to = scheme_first_process;
     
     scheme_swap_process(swap_to);
+
+    if (r->running < 1)
+      scheme_process_block(0);
   }
 }
 

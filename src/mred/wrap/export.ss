@@ -48,4 +48,5 @@
  get-choice-from-user
  get-text-from-user
  get-ps-setup-from-user
- play-sound)
+ play-sound
+ application-file-handler)

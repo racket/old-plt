@@ -6279,7 +6279,7 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
     *s += (sizeof(Scheme_Indexed_String)
 	   + is->size);
   } else if (ip->sub_type == tcp_input_port_type) {
-    if (!scheme_lookup_in_table(ht, (const char *)ip->port_data)) {
+    if (ht && !scheme_lookup_in_table(ht, (const char *)ip->port_data)) {
       scheme_add_to_table(ht, (const char *)ip->port_data, scheme_true, 0);
       *s += sizeof(Scheme_Tcp);
     }
@@ -6291,7 +6291,7 @@ void scheme_count_input_port(Scheme_Object *port, long *s, long *e,
 	   + scheme_count_memory(d[1], ht)
 	   + scheme_count_memory(d[2], ht));
   } else if (ip->sub_type == pipe_read_port_type) {
-    if (!scheme_lookup_in_table(ht, (const char *)ip->port_data)) {
+    if (ht && !scheme_lookup_in_table(ht, (const char *)ip->port_data)) {
       Scheme_Pipe *p = (Scheme_Pipe *)ip->port_data;
       scheme_add_to_table(ht, (const char *)ip->port_data, scheme_true, 0);
       *s += (sizeof(Scheme_Pipe) + p->buflen);

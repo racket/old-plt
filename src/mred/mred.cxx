@@ -6,6 +6,8 @@
  * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
+#define WINDOW_STDIO 1
+
 /* wx_xt: */
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP
@@ -30,7 +32,6 @@
 #ifdef USE_SENORA_GC
 # include "wx_types.h"
 #endif
-#include "edjr.h"
 #ifdef wx_mac
 # include "simpledrop.h"
 #endif
@@ -118,7 +119,6 @@ class MrEdApp: public wxApp
 {
 public:
   Bool initialized;
-  Bool edjrMode;
   int xargc;
   char **xargv;
 
@@ -1117,6 +1117,9 @@ static void MrEdSchemeMessages(char *, ...);
 
 #if WINDOW_STDIO
 
+static int have_stdio = 0;
+static int stdio_kills_prog = 0;
+
 class IOFrame : public wxFrame
 {
 public:
@@ -1159,6 +1162,7 @@ public:
       mb->Append(m, "Edit");
       SetMenuBar(mb);
       
+      have_stdio = 1;
       Show(TRUE);
 
       beginEditSeq = 0;
@@ -1174,6 +1178,10 @@ public:
   Bool OnClose(void) 
     { 
       hidden = TRUE;
+      if (stdio_kills_prog)
+	exit(0);
+      else
+	have_stdio = 0;
       return TRUE; 
     }
 
@@ -1214,11 +1222,20 @@ static void MrEdSchemeMessages(char *msg, ...)
   if (opening)
 	return;
   opening = 1;
-  if (!ioFrame)
-    ioFrame = new IOFrame;
+  if (!ioFrame) {
+    if (mred_only_context)
+      ioFrame = new IOFrame;
+    else {
+      /* Set eventspace ... */
+      mred_only_context = mred_main_context;
+      ioFrame = new IOFrame;
+      mred_only_context = NULL;
+    }
+  }
   opening = 0;
   if (ioFrame->hidden) {
     ioFrame->hidden = FALSE;
+    have_stdio = 1;
     ioFrame->Show(TRUE);
   }
 #endif
@@ -1296,6 +1313,13 @@ static void MrEdSchemeMessages(char *msg, ...)
 
 static int stdin_getc(Scheme_Input_Port*)
 {
+#ifdef WINDOW_STDIO
+  static int printed_input_warning = 0;
+  if (!printed_input_warning) {
+    printed_input_warning = 1;
+    MrEdSchemeMessages("WARNING: no standard input on this platform\n");
+  }
+#endif
   return EOF;
 }
 
@@ -1718,17 +1742,6 @@ static Scheme_Env *setup_basic_env()
 
   wxmeExpandFilename = CallSchemeExpand;
 
-  mred_main_context = new MrEdContext;
-  mred_main_context->topLevelWindowList = new wxChildList();
-  mred_main_context->snipClassList = wxMakeTheSnipClassList();
-  mred_main_context->bufferDataClassList = wxMakeTheBufferDataClassList();
-
-  mred_main_context->finalized = new MrEdFinalizedContext;
-
-  mred_only_context = mred_main_context;
-
-  MrEdInitFirstContext(mred_main_context);
-
 #ifdef DANGER_ALARM
   {
     DangerThreadTimer *t = new DangerThreadTimer();
@@ -1736,16 +1749,11 @@ static Scheme_Env *setup_basic_env()
   }
 #endif
 
-  wxInitMedia();
-
-  mred_real_main_frame = new wxFrame(NULL, "MrEd"); /* Just in case wxWindows needs an initial frame */
-
   wxsScheme_setup(global_env);
 
   mred_eventspace_type = scheme_make_type("<eventspace>");
 
   scheme_set_param(scheme_config, mred_eventspace_param, (Scheme_Object *)mred_main_context);
-  // scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_false);
 
   def_dispatch = scheme_make_prim_w_arity(def_event_dispatch_handler,
 					  "default-event-dispatch-handler",
@@ -1773,8 +1781,14 @@ static Scheme_Env *setup_basic_env()
   return global_env;
 }
 
-static int mred_init(int argc, char **argv)
+wxFrame *MrEdApp::OnInit(void)
 {
+  initialized = 0;
+
+#ifdef LIBGPP_REGEX_HACK
+  new Regex("a", 0);
+#endif
+
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
   scheme_make_stdin = MrEdMakeStdIn;
   scheme_make_stdout = MrEdMakeStdOut;
@@ -1803,19 +1817,22 @@ static int mred_init(int argc, char **argv)
   mred_event_dispatch_param = scheme_new_param();
   mred_ps_setup_param = scheme_new_param();
 
-  return run_from_cmd_line(argc, argv, setup_basic_env, do_main_loop);
-}
+  mred_main_context = new MrEdContext;
+  mred_main_context->topLevelWindowList = new wxChildList();
+  mred_main_context->snipClassList = wxMakeTheSnipClassList();
+  mred_main_context->bufferDataClassList = wxMakeTheBufferDataClassList();
 
-wxFrame *MrEdApp::OnInit(void)
-{
-  initialized = 0;
-  edjrMode = FALSE;
+  mred_main_context->finalized = new MrEdFinalizedContext;
 
-#ifdef LIBGPP_REGEX_HACK
-  new Regex("a", 0);
-#endif
+  mred_only_context = mred_main_context;
 
-  mred_init(argc, argv);
+  MrEdInitFirstContext(mred_main_context);
+
+  mred_real_main_frame = new wxFrame(NULL, "MrEd"); /* Just in case wxWindows needs an initial frame */
+
+  wxInitMedia();
+
+  run_from_cmd_line(argc, argv, setup_basic_env, do_main_loop);
 
   return NULL;
 }
@@ -1825,8 +1842,18 @@ static void do_graph_repl(void)
   scheme_eval_string("(graphical-read-eval-print-loop)", global_env);
 }
 
-static void on_main_killed(Scheme_Process *)
+static void on_main_killed(Scheme_Process *p)
 {
+  on_handler_killed(p);
+  
+#ifdef WINDOW_STDIO
+  if (have_stdio) {
+    
+    stdio_kills_prog = 1;
+    return;
+  }
+#endif
+
   exit(0);
 }
 
@@ -1840,13 +1867,13 @@ void MrEdApp::RealInit(void)
   
   finish_cmd_line_run(xfa, do_graph_repl);
 
-  exit(0);
+  scheme_kill_thread(scheme_current_process);
 }
 
 #ifdef wx_mac
 char *MrEdApp::GetDefaultAboutItemName()
 {
-  return edjrMode ? "About EdJr..." : "About MrEd...";
+  return "About MrEd...";
 }
 
 void MrEdApp::DoDefaultAboutItem()
@@ -1855,7 +1882,7 @@ void MrEdApp::DoDefaultAboutItem()
   short hit;
   GrafPtr port;
  
-  dial = GetNewDialog(edjrMode ? 130 : 129, NULL, (WindowRef)-1);
+  dial = GetNewDialog(129, NULL, (WindowRef)-1);
   GetPort(&port);
   SetPort(dial);
   TextFont(kFontIDGeneva);
@@ -1941,6 +1968,8 @@ static void dangerdanger(int)
 extern short wxMacDisableMods;
 extern long wxMediaCreatorId;
 #endif
+
+extern int wxEntry(int, char **);
 
 extern "C" {
 int actual_main(int argc, char **argv)

@@ -3,7 +3,6 @@
  add-editor-functions
  add-text-editor-functions
  add-pasteboard-editor-functions
- application-file-handler
  begin-busy-cursor
  bell
  bitmap%

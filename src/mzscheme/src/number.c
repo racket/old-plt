@@ -618,11 +618,6 @@ Scheme_Object *scheme_make_double(double d)
 {
   Scheme_Double *sd;
 
-#if 0
-  if (!d && zerod)
-    return zerod;
-#endif
-
   sd = (Scheme_Double *)scheme_malloc_atomic_tagged(sizeof(Scheme_Double));
   sd->type = scheme_double_type;
   SCHEME_DBL_VAL(sd) = d;
@@ -634,14 +629,10 @@ Scheme_Object *scheme_make_float(float f)
 {
   Scheme_Float *sf;
 
-  if (!f && zerof)
-    return zerof;
-  else {
-    sf = (Scheme_Float *)scheme_malloc_atomic_tagged(sizeof(Scheme_Float));
-    sf->type = scheme_float_type;
-    SCHEME_FLT_VAL(sf) = f;
-    return (Scheme_Object *)sf;
-  }
+  sf = (Scheme_Float *)scheme_malloc_atomic_tagged(sizeof(Scheme_Float));
+  sf->type = scheme_float_type;
+  SCHEME_FLT_VAL(sf) = f;
+  return (Scheme_Object *)sf;
 }
 #endif
 

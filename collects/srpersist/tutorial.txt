@@ -12,6 +12,10 @@ This tutorial does not address issues of compiling and
 installing SrPersist.  See the README file in the
 SrPersist source directory for such information.
 
+See the section "Loading" in doc.txt to learn how to load
+SrPersist into MzScheme or DrScheme.  From Help Desk,
+search for "SrPersist" and scroll down to that section.
+
 Allocating handles
 ------------------
 

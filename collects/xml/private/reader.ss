@@ -69,9 +69,11 @@
                         name
                         (format-source a)
                         (format-source b))]
-                [(start-tag? x) (read-content (lambda (body end-loc)
-                                                (k (cons (read-element x in pos) body)
-                                                   end-loc)))]
+                [(start-tag? x)
+                 (let ([next-el (read-element x in pos)])
+                   (read-content (lambda (body end-loc)
+                                   (k (cons next-el body)
+                                      end-loc))))]
                 [(end-tag? x)
                  (let ([end-loc (source-stop x)])
                    (unless (eq? name (end-tag-name x))

@@ -113,6 +113,35 @@
                   (lambda () ; =drscheme-eventspace=
                     (next value)))))))
           
+          ;; eval-syntax/values (syntax? (any? . -> . void?) . -> . void?)
+          ;; evaluate the syntax in the users eventspace, expecting multiple values
+          ;; also accepts two ports
+          (define/public (eval-syntax/values syntax-object next) ; =drscheme-eventspace=
+            (queue-to-user
+             (lambda () ; =user-eventspace=
+               (call-with-values
+                (lambda () (eval syntax-object))
+                (lambda values
+                  (queue-to-drscheme
+                   (lambda () ; =drscheme-eventspace=
+                     (next values))))))))
+          
+          ;; eval-syntax/values/ports (syntax? (any? . -> . void?) output-port? output-port? . -> . void?)
+          ;; evaluate the syntax in the users eventspace, expecting multiple values
+          ;; and setting the std error and std output ports
+          (define/public (eval-syntax/values/ports syntax-object next out-port err-port) ; =drscheme-eventspace=
+            (queue-to-user
+             (lambda () ; =user-eventspace=
+               (call-with-values
+                (lambda () 
+                  (parameterize ([current-output-port out-port]
+                                 [current-error-port err-port])
+                    (eval syntax-object)))
+                (lambda values
+                  (queue-to-drscheme
+                   (lambda () ; =drscheme-eventspace=
+                     (next values))))))))
+          
           ;; get-language (-> language?)
           ;; the language being used by the execution
           (define/public (get-language)

@@ -16,7 +16,7 @@
   (provide
    case@
    case-snipclass@)
-  
+
   (define *unknown* (build-path (collection-path "test-suite") "private" "icons" "question-mark.jpeg"))
   (define *success* (build-path (collection-path "test-suite") "private" "icons" "check-mark.jpeg"))
   (define *failure* (build-path (collection-path "test-suite") "private" "icons" "cross.jpeg"))
@@ -149,37 +149,38 @@
                               (lambda (expected-syntax) ; =drscheme-eventspace=
                                 (call-with-test
                                  (lambda (test-syntax) ; =drscheme-eventspace=
-                                   (send expander eval-syntax
-                                         (with-syntax ([call call-syntax]
-                                                       [expected expected-syntax]
-                                                       [test test-syntax]
-                                                       [call-output-port call-output-port]
-                                                       [call-error-port call-error-port]
-                                                       [expected-output-port expected-output-port]
-                                                       [expected-error-port expected-error-port])
-                                                       
-                                           (syntax
-                                            (let ([call-values
-                                                   (parameterize ([current-output-port call-output-port]
-                                                                  [current-error-port call-error-port])
-                                                     (call-with-values (lambda () call) list))]
-                                                  [expected-values
-                                                   (parameterize ([current-output-port expected-output-port]
-                                                                  [current-error-port expected-error-port])
-                                                     (call-with-values (lambda () expected) list))])
-                                              (cons call-values
-                                                    (if (= (length call-values) (length expected-values))
-                                                        (#%app andmap test call-values expected-values)
-                                                        #f)))))
-                                         (lambda (call/test-value) ; =drscheme-eventspace=
-                                           (set-actuals expander (car call/test-value))
-                                           (set-icon (and (cdr call/test-value)
-                                                          (equal? (get-string/style-desc call-io)
-                                                                  (get-string/style-desc expected-io))))
-                                           (let ([next-case (next)])
-                                             (if next-case
-                                                 (send next-case execute expander continue)
-                                                 (continue))))))))))))))
+                                   (send expander eval-syntax/values/ports call-syntax
+                                         (lambda (call-values) ; =drscheme-eventspace=
+                                           (set-actuals expander call-values)
+                                           (send expander eval-syntax/values/ports expected-syntax
+                                                 (lambda (expected-values) ; =drscheme-eventspace=
+                                                   (send expander eval-syntax/values test-syntax
+                                                         (lambda (test-values) ; =drscheme-eventspace=
+                                                           (if (and (pair? test-values)
+                                                                    (null? (cdr test-values))
+                                                                    (= (length call-values)
+                                                                       (length expected-values)))
+                                                               (send expander eval-syntax
+                                                                     (with-syntax ([test-value (car test-values)]
+                                                                                   [call-values call-values]
+                                                                                   [expected-values expected-values])
+                                                                       (syntax (#%app andmap
+                                                                                      test-value 
+                                                                                      'call-values
+                                                                                      'expected-values)))
+                                                                     (lambda (result) ; =drscheme-eventspace=
+                                                                       (set-icon (and result
+                                                                                      (equal? (get-string/style-desc call-io)
+                                                                                              (get-string/style-desc expected-io))))))
+                                                               (set-icon #f))
+                                                           (let ([next-case (next)])
+                                                             (if next-case
+                                                                 (send next-case execute expander continue)
+                                                                 (continue))))))
+                                                 expected-output-port
+                                                 expected-error-port))
+                                         call-output-port
+                                         call-error-port))))))))))
 
           ;; show-test (boolean? . -> . void?)
           ;; show/hide the test in the display

@@ -8,6 +8,38 @@ Version 199.18:
    even when symbols are read without case-sensitivity. (Quoting
    should have always worked this way, but I didn't know better.)
 
+ * Added an optional third argument to `tcp-listen'. A true value for
+   the argument causes a listener to be created even when the port is
+   still involved with a TIME_WAITed connection.
+
+   This defeats certain guarantees of the TCP protocol, which is why I
+   never implemented it before. (Also, most everything I read on the
+   topic recommended not defeating the protocol.) But many
+   applications --- notably web servers --- can live without the
+   guarantees.
+
+ * In "unit.ss" and "unitsig.ss", changed
+  `global-define-values/invoke-unit' and
+  `global-define-values/invoke-unit/sig' to
+  `namespace-variable-bind/invoke-unit' and
+  `namespace-variable-bind/invoke-unit/sig', to match the new name for
+  `global-defined-value'.
+
+ * Changed the default error value conversion handler to print values
+   using the current global port print handler.
+
+ * Re-renamed "2k" to "3m" (for "moving memory manager").
+
+   Garbage collection is inherently imprecise, making "precise garbage
+   collection" an awkward term. "Moving memory manager" more clearly
+   explains the difference as it affects extension/embedding
+   programmers. Also, the number--letter combination looks
+   better. Finally, unlike "2k", we have another 2,997,999 years to
+   get the conversion right before the name goes out of date.
+
+ * Added a -M <coll> flag to MzScheme and MrEd as a shothand for
+   -L <coll>.ss <coll>.
+
 Version 199.17:
 
  * Added `read-accept-quasiquote' to control whether the reader
@@ -221,10 +253,13 @@ Changed the error display handler to take a raised value (usually
 Added port-count-lines!, which enables line-couting for a port
 Quoted portions of a symbol (using | or \) preserve their case,
 Added read-dot-as-symbol and read-accept-quasiquote parameters
+Changed quoted parts of a symbol (with | or \) to always preserve case
+Added an optional third argument to tcp-listen to reuse addresses
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
 Default for pconvert.ss's whole/fractional-exact-numbers parameter
  changed to #f
+Renamed "2k" to "3m" (for "moving memory manager")
 Upgraded to gc 6.0alpha9
 
 Version 103, August 28, 2000

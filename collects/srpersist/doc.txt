@@ -1,0 +1,885 @@
+
+_SrPersist_
+===========
+
+ SrPersist is an ODBC library for MzScheme and DrScheme.
+ Any database management system with an ODBC driver should 
+ be usable with SrPersist.
+
+ SrPersist provides a one-to-one mapping of ODBC procedures to 
+ Scheme procedures, with some additional utility procedures in Scheme.
+ Procedures from ODBC versions 1.0 through 3.5 are supported.   
+ Where ODBC expects symbolic constants created through C #define's,
+ SrPersist uses Scheme constants, which are checked for validity.
+ In many cases, redundant arguments are eliminated.
+
+ ODBC procedure names are mapped to Scheme names straightforwardly.
+ The initial "SQL" in the name is removed, and uppercase letters,
+ other than the first, are made lowercase and preceded by a 
+ hyphen.  For example, the hypothetical ODBC name SQLProcedureName would 
+ be mapped to the Scheme name procedure-name.  
+
+ The documentation here should be sufficient to get started with
+ SrPersist.  You will likely need to consult an ODBC reference for 
+ more information.
+
+ Loading
+ -------
+
+ There are two ways to load Srpersist.  The first is to treat
+ it as a library:  
+
+  (require-library "srpersist.ss" "srpersist")
+
+ makes available the procedures listed here.  The other way
+ to load SrPersist uses a signed unit: 
+
+  (require-library "srpersistu.ss" "srpersist")
+
+ binds `srpersist@' to the unit, with signature `srpersist^',
+ which is defined in the file `sigs.ss' in the srpersist collection.
+ This unit can be invoked or imported into other units as needed.
+
+ Overview of ODBC procedures
+ ---------------------------
+
+ In the documentation below, we group SrPersist ODBC procedures 
+ by topics.  The topics are "Handles", "Connections", "Diagnostics".  
+ SrPersist also has its own utility procedures, listed 
+ under the heading "Utility" below.
+
+ Exceptions
+ ----------
+
+ Any SrPersist ODBC procedure may raise an exception.  
+ SrPersist exceptions correspond to the ODBC SQLRESULT codes, 
+ as follows:
+
+  exn-no-data           SQL_NO_DATA
+  exn-invalid-handle    SQL_INVALID_HANDLE
+  exn-error             SQL_ERROR
+  exn-still-executing   SQL_STILL_EXECUTING
+  exn-need-data         SQL_NEED_DATA
+  exn-with-info         SQL_SUCCESS_WITH_INFO
+
+ Each of these exceptions is an ordinary Scheme structure
+ derived from `struct:exn'.  Only `exn-need-data` and `exn-with-info' 
+ contain an extra field, `val' in both cases.  The names of the 
+ exception indicate the nature of the problem that has occurred.  
+ Each of these exceptions, other than `exn-with-info', indicate an error.
+ The exception `exn-error' is a catchall, indicating an unspecified error.
+ The exception `exn-with-info' does not indicate an error, rather it 
+ indicates that additional information is available about the procedure 
+ that generated the exception.  The `val' field of `exn-need-data` or 
+ `exn-with-info' instances contains the value returned by the procedure 
+ that generated the exception.  In the case of `exn-need-data', depending
+ on the ODBC procedure, the contained value may not be meaningful.
+
+ `with-handlers' can be used to handle SrPersist exceptions:
+
+   (with-handlers ([(lambda (exn)
+                      (exn-with-info? exn))
+                    (lambda (exn) 
+                      (printf "Got exn-with-info exception~n")
+                      (printf "Value: ~a~n" (exn-with-info-val exn)))])
+     ...)		      
+
+ Applications can call sql-error, sql-get-diag-rec, or sql-get-diag-field
+ to obtain additional information about an exception that
+ has occurred (see the heading "Diagnostics", below).  No additional 
+ information is available when the exception is `exn-invalid-handle'.
+
+ Besides these SrPersist-particular exceptions, other kinds of errors 
+ may raise exceptions.  For example, passing a value of the
+ wrong type to a SrPersis procedure will raise an exception.
+
+ Handles
+ -------
+
+ ODBC and SrPersist support four kinds of handles.  
+ In ODBC itself, all handles are represented as integers,
+ making it possible for handle types to be confused.  
+ In SrPersist, each handle type has a distinct Scheme 
+ type.  An `environment handle' has type `sql-henv'; a
+ `connection handle' has type `sql-hdbc'; a `statement handle' has 
+ type `sql-hstmt'; a `descriptor handle' has type `sql-hdesc'.
+
+ Further, descriptor handles have an attribute which divides 
+ them into subtypes, though this does not show up in their
+ Scheme type.  Ordinarily, a descriptor handle is either an 
+ Application Parameter Descriptor (attribute APD), an Application 
+ Row Descriptor (ARD), an Implementation Parameter Descriptor (IPD), 
+ or an Implementation Row Descriptor (IRD).  Most descriptor 
+ handles are created by an ODBC driver.  When a descriptor 
+ handle is explicitly allocated, it receives the attribute
+ EXPLICIT, rather than one of the four attribute values just 
+ mentioned.
+  
+ There are several procedures to allocate fresh handles.
+
+> (alloc-env)
+
+ ODBC 1.0.
+
+ Returns a fresh `environment handle'. 
+
+> (alloc-connect henv) 
+
+ ODBC 1.0, deprecated in favor of `alloc-handle'.
+
+ Returns a fresh `connection handle', given `henv', an
+ environment handle.
+
+> (alloc-stmt hdbc) 
+
+ ODBC 1.0, deprecated in favor of `alloc-handle'.
+
+ Returns a fresh `statement handle', given `hdbc', a 
+ connection handle
+
+> (alloc-handle htype [handle])
+
+ ODBC 3.0.
+
+ Returns a fresh handle whose type depends on `htype',
+ a Scheme symbol.  If `htype' is 'sql-handle-env, 
+ then `handle' must be omitted, and a fresh `environment
+ handle' is returned.  If `htype' is 'sql-handle-dbc, 
+ then `handle' must be an environment handle, and a fresh 
+ `connection handle' is returned.  If `htype' is 'sql-handle-stmt, 
+ then `handle' must be a connection handle, and a fresh 
+ `statement handle' is returned.  If `htype' is 'sql-handle-desc, 
+ then `handle' must be a connection handle, and a fresh 
+ `descriptor handle' with attribute EXPLICIT is returned.  
+ Any other value of `htype' causes an error.
+
+> (free-connect hdbc)
+
+ ODBC 1.0, deprecated in favor of free-handle.
+
+ Frees a connection handle `hdbc'.
+
+> (free-env henv)
+
+ ODBC 1.0, deprecated in favor of free-handle.
+
+ Frees an environment handle `henv'.
+
+> (free-handle handle)
+
+ ODBC 3.0.
+
+ Frees `handle', which may be an environment, connection, statment,
+ or descriptor handle.
+
+> (free-stmt hstmt option)
+
+ ODBC 1.0.
+
+ Frees or releases resources for the statement handle `hstmt'.
+ The `option' argument may be any of the following symbols, with
+ the indicated effects:
+
+  'sql-close        closes the statement cursors, discards pending results  
+                    (does not actually free `hstmt')
+  'sql-drop         deprecated, effectively (free-handle hstmt) 
+  'sql-unbind       releases all column buffers for the statement
+  'sql-reset-parms  releases all parameter buffers for the statement
+
+ Environments
+ ------------
+
+> (get-env-attr henv attr)
+
+ Given an environment handle `henv', returns the value of the
+ attribute `attr'.  The possible values for `attr' and the
+ resulting return values are:
+
+  attr                           returns
+  ----                           -------
+  'sql-attr-connection-pooling   'sql-cp-off, or                
+                                 'sql-cp-one-per-driver, or
+                                 'sql-cp-one-per-henv
+
+  'sql-attr-cp-match             'sql-cp-strict-match, or 
+                                 'sql-cp-relaxed-match
+
+  'sql-attr-odbc-version         'sql-ov-odbc3, or
+                                 'sql-ov-odbc2
+
+  'sql-attr-output-nts           boolean
+
+ Please see an ODBC reference for more information about the 
+ significance of these attributes.
+
+> (set-env-attr henv attr val)
+
+ Given an environment handle `henv', sets the value of its associated 
+ attribute `attr' to the value `val'.  See `get-env-attr' for the
+ available attributes and their valid values.
+
+ Connections
+ -----------
+
+ Before an ODBC database may be used, a `connection' between 
+ the ODBC driver and database management system needs to be
+ established.  Here are the procedures for establishing and 
+ managing connections.
+
+> (connect hdbc dbms name password) 
+
+ ODBC 1.0.
+
+ Establishes a connection, given a connection handle `hdbc', and 
+ strings for a database server `dbms', a `name' and `password'.
+
+> (get-connect-attr hdbc attr)
+
+ ODBC 3.0. 
+
+ For the connection handle `hdbc', returns the value of an attribute 
+ given by the symbol `attr'.  The permissible values of `attr' and
+ the corresponding ranges of return values are:
+
+  'sql-attr-access-mode        'sql-mode-read-only, 'sql-mode-read-write
+  'sql-attr-async-enable       'sql-async-enable-off, 'sql-async-enable-on
+  'sql-attr-autocommit         'sql-autocommit-off, 'sql-autocommit-on
+  'sql-attr-auto-ipd           boolean
+  'sql-attr-connection-dead    'sql-cd-true, 'sql-cd-false
+  'sql-attr-connection-timeout exact integer
+  'sql-attr-current-catalog    string
+  'sql-attr-login-timeout      exact integer
+  'sql-attr-metadata-id        boolean
+  'sql-attr-odbc-cursors       'sql-cur-use-if-needed, 
+                               'sql-cur-use-odbc, 
+                               'sql-cur-use-driver
+  'sql-attr-packet-size        exact integer
+  'sql-attr-quiet-mode         exact integer
+  'sql-attr-trace              exact integer  
+  'sql-attr-tracefile          string 
+  'sql-attr-translate-lib      string
+  'sql-attr-translate-option   exact intger
+  'sql-attr-txn-isolation      'sql-txn-read-uncommitted, 
+                               'sql-txn-read-committed, 
+                               'sql-txn-repeatable-read, 
+			       'sql-txn-serializable
+
+ See an ODBC reference for the significance of these connection attributes.
+ Driver-specific attributes are not supported.
+
+> (get-connect-option hdbc option) 
+
+ ODBC 1.0, deprecated in favor of get-connect-attr. 
+
+ For a connection handle `hdbc', returns the value of the 
+ connection option specified by the symbol `option'.  
+ The permisible values of `option' are the same as for `attr' in 
+ `get-connect-attr'.  See `get-connect-attr' for more information.
+
+> (set-connect-attr hdbc attr val)
+
+ For a connection handle `hdbc', sets the attribute indicated by the 
+ symbol `attr' to be `val'.  The type of `val' depends on `attr', 
+ as follows:
+
+  'sql-attr-access-mode        'sql-mode-read-only, 'sql-mode-read-write
+  'sql-attr-async-enable       'sql-async-enable-off, 'sql-async-enable-on
+  'sql-attr-autocommit         'sql-autocommit-off, 'sql-autocommit-on
+  'sql-attr-connection-timeout exact integer
+  'sql-attr-current-catalog    string
+  'sql-attr-login-timeout      exact integer
+  'sql-attr-metadata-id        boolean
+  'sql-attr-odbc-cursors       'sql-cur-use-if-needed, 
+                               'sql-cur-use-odbc, 
+                               'sql-cur-use-driver
+  'sql-attr-packet-size        exact integer
+  'sql-attr-quiet-mode         exact integer
+  'sql-attr-trace              exact integer  
+  'sql-attr-tracefile          string 
+  'sql-attr-translate-lib      string
+  'sql-attr-translate-option   exact intger
+  'sql-attr-txn-isolation      'sql-txn-read-uncommitted, 
+                               'sql-txn-read-committed, 
+                               'sql-txn-repeatable-read, 
+			       'sql-txn-serializable
+
+ Note that some connection attributes listed in the documentation
+ for `get-connect-attr' are not settable.  The type boolean 
+ above indicates that any Scheme value other than #f is
+ interpreted as true.
+
+ See an ODBC reference for the significance of these connection attributes.
+ Driver-specific attributes are not supported.
+
+> (set-connect-option hdbc option val) 
+
+ ODBC 1.0, deprecated in favor of set-connect-attr. 
+
+ For a connection handle `hdbc', sets the option indicated by the 
+ symbol `option' to be `val'.  The type of `val' depends on `attr'.
+ The permisible values of `option' are the same as for `attr' in 
+ `set-connect-attr'.  See `set-connect-attr' for more information.
+
+> (driver-connect hdbc connect-string prompt)
+
+ Connects to an ODBC driver, given a connection handle `hdbc',
+ the string `connect-string', and the symbol `prompt'.
+ The connect-string is a possibly-empty sequence of 
+ keyword, attribute pairs:
+
+   keyword=attribute;... 
+
+ where `keyword' is any of 
+
+   DSN       data source
+   UID       user id
+   PWD       password
+   FILEDSN   name of a .dsn file containing a connection string
+   DRIVER    driver description
+   SAVEFILE  a .dsn file for saving the connection attributes
+
+ or a driver-specific keyword.  DSN and DRIVER are mutually-exclusive.  
+ DRIVER is ODBC 2.0, while FILEDSN and SAVEFILE are ODBC 3.0.
+ For DRIVER only, the attribute may be surrounded by 
+ curly braces {}, useful if the attribute contains a semicolon.
+ `prompt' is one of the symbols 
+
+   'sql-driver-prompt              prompt for required information
+   'sql-driver-complete            prompt if DSN not in connect-string
+   'sql-driver-complete-required   prompt if DSN not in connect-string
+   'sql-driver-noprompt            do not prompt for information
+ 
+ driver-connect returns a connection string indicating all the
+ keywords and values that were passed to the data source.
+
+> (browse-connect hdbc connect-string)
+
+ Connects to a data source, given a connection handle `hdbc'
+ and connection string `connect-string'.  The connection string
+ consists of keyword and value pairs.  See `driver-connect'
+ for the format of such pairs.  The first time `browse-connect' 
+ is called, the connection string must contain either the
+ DSN or DRIVER keywords.  `browse-connect' returns a connection string 
+ with a sequence of keywords and value pairs.  Those pairs not
+ preceded by an asterisk are mandatory in the next call to
+ browse-connect.  If the supplied connection string does not 
+ contain all needed attributes to make a connection, a `exn-need-data'
+ exception is raised, which contains a connection string indicating 
+ which attributes are missing. 
+ 
+ Statements
+ ----------
+
+> (get-stmt-attr hstmt attr)
+
+ ODBC 3.0.
+
+ For the statement handle `hstmt', returns the value of its 
+ associated attribute `attr'.  The statement handle attributes 
+ and their possible values are:
+
+   attr                               returns      
+   ----                               ------- 
+   'sql-attr-app-param-desc           an APD descriptor handle
+   'sql-attr-app-row-desc             an ARD descriptor handle
+   'sql-attr-async-enable             'sql-async-enable-off, or
+                                      'sql-async-enable-on
+   'sql-attr-concurrency              'sql-concur-read-only, or
+                                      'sql-concur-lock, or
+                                      'sql-concur-rowver, or
+                                      'sql-concur-values
+   'sql-attr-cursor-scrollable        'sql-nonscrollable, or
+                                      'sql-scrollable
+   'sql-attr-cursor-sensitivity       'sql-insensitive, or
+                                      'sql-sensitive, or
+                                      'sql-unspecified
+   'sql-attr-cursor-type              'sql-cursor-forward-only, or
+                                      'sql-cursor-static, or
+                                      'sql-cursor-keyset-driven, or
+                                      'sql-cursor-dynamic
+   'sql-attr-enable-auto-ipd          boolean
+   'sql-attr-fetch-bookmark-ptr       unsigned integer
+   'sql-attr-imp-param-desc           an IPD descriptor handle
+   'sql-attr-imp-row-desc             an IRD descriptor handle
+   'sql-attr-keyset-size              unsigned integer
+   'sql-attr-max-length               unsigned integer
+   'sql-attr-max-rows                 unsigned integer
+   'sql-attr-metadata-id              boolean
+   'sql-attr-noscan                   'sql-noscan-off, or
+                                      'sql-noscan-on
+   'sql-attr-param-bind-offset-ptr    sql-boxed-uint (see below)
+   'sql-attr-param-bind-type          'sql-param-bind-by-column, or
+                                      unsigned integer
+   'sql-attr-param-operation-ptr      op-parms (see below)
+   'sql-attr-param-status-ptr         row-status (see below)
+   'sql-attr-params-processed-ptr     sql-boxed-uint (see below)
+   'sql-attr-paramset-size            unsigned integer
+   'sql-attr-query-timeout            unsigned integer  
+   'sql-attr-retrieve-data            'sql-rd-on, or
+                                      'sql-rd-off
+   'sql-attr-row-array-size           unsigned integer
+   'sql-attr-row-bind-offset-ptr      sql-boxed-uint (see below)
+   'sql-attr-row-bind-type            'sql-bind-by-column, or
+                                      unsigned integer
+   'sql-attr-row-number               unsigned integer
+   'sql-attr-row-operation-ptr        op-parms (see below)
+   'sql-attr-row-status-ptr           row-status (see below)
+   'sql-attr-rows-fetched-ptr         sql-boxed-uint (see below)
+   'sql-attr-simulate-cursor          'sql-sc-non-unique, or
+                                      'sql-sc-try-unique, or
+                                      'sql-sc-unique
+   'sql-attr-use-bookmarks            'sql-ub-off, or
+                                      'sql-ub-variable, or
+                                      'sql-ub-on 
+
+ See an ODBC reference for information about the significance of
+ these attributes.  The type `sql-boxed-uint' is a Scheme representation
+ of a pointer value.  See `read-boxed-uint' and 'set-boxed-uint', below.
+ An instance of the type `op-parms' is a value that encapsulates an 
+ array whose elements are either 'sql-param-proceed or
+ 'sql-param-ignore.  See `read-op-parms', below.  An instance
+ of the type `row-status' encapsulates an array, one element for 
+ each parameter in the statement, each with one of the values:
+
+     'sql-param-success 
+     'sql-param-success-with-info
+     'sql-param-error
+     'sql-param-unused
+     'sql-param-diag-unavilable
+
+> (get-stmt-option hstmt option)
+
+ ODBC 1.0, deprecated in favor of get-stmt-attr.
+
+ For the statement handle `hstmt', returns the value of its 
+ associated `option'.  The statement handle options 
+ and their return values are:
+
+   option                             returns      
+   ------                             ------- 
+   'sql-async-enable                  'sql-async-enable-off, or
+                                      'sql-async-enable-on
+   'sql-bind-type                     'sql-param-bind-by-column, or
+                                      unsigned integer
+   'sql-concurrency                   'sql-concur-read-only, or
+                                      'sql-concur-lock, or
+                                      'sql-concur-rowver, or
+                                      'sql-concur-values
+   'sql-cursor-type                   'sql-cursor-forward-only, or
+                                      'sql-cursor-static, or
+                                      'sql-cursor-keyset-driven, or
+                                      'sql-cursor-dynamic
+   'sql-keyset-size                   unsigned integer
+   'sql-max-length                    unsigned integer
+   'sql-max-rows                      unsigned integer
+   'sql-noscan                        'sql-noscan-off, or
+                                      'sql-noscan-on
+   'sql-query-timeout                 unsigned integer  
+   'sql-retrieve-data                 'sql-rd-on, or
+                                      'sql-rd-off
+   'sql-rowset-size                   unsigned integer
+   'sql-simulate-cursor               'sql-sc-non-unique, or
+                                      'sql-sc-try-unique, or
+                                      'sql-sc-unique
+   'sql-use-bookmarks                 'sql-ub-off, or
+                                      'sql-ub-variable, or
+                                      'sql-ub-on 
+
+ See an ODBC reference for the significance of these options.
+
+> (set-stmt-attr hstmt attr val)
+  
+ ODBC 3.0.
+
+ For the statement handle `hstmt', sets its associated attribute `attr'
+ to the value `val'.  See `get-stmt-attr' for attributes and 
+ their possible values. 
+
+> (set-stmt-option hstmt attr val)
+  
+ ODBC 1.0, deprecated in favor of set-stmt-attr.
+
+ For the statement handle `hstmt', sets its associated `option'
+ to the value `val'.  See `get-stmt-option' for options and 
+ their possible values. 
+
+ Cursors
+ -------
+
+> (get-cursor-name hstmt)
+
+  ODBC 1.0.
+
+  Returns a string naming the cursor associated with the statement 
+  handle `hstmt'.
+
+> (set-cursor-name hstmt name)
+
+  ODBC 1.0.
+
+  Assigns the string `name' as the name of the cursor associated with 
+  the statement handle `hstmt'. 
+
+> (close-cursor hstmt)
+
+  ODBC 3.0.
+
+  Closes the cursor associated with the statement handle `hstmt',
+  discarding any pending results.
+
+ SQL statements
+ --------------
+
+> (prepare hstmt sql)
+
+ ODBC 1.0.
+
+ Compiles the SQL statement given by the string `sql' for the 
+ statement handle `hstmt'.  Once an SQL statement has been compiled
+ for a statement handle, `sql-execute' can be called as many times 
+ as desired using that handle.
+ 
+> (execute hstmt)
+
+ ODBC 1.0.
+
+ Executes the SQL statement associated with the statement handle 
+ `hstmt'.  The SQL statement must have been compiled using
+ `sql-prepare'.  When a statement executes, its parameters,
+ indicated by ?'s in the SQL text, are replaced by the values
+ bound to those parameters.  See `bind-parameter' and `bind-param'.
+
+> (exec-direct hstmt sql)
+
+ ODBC 1.0.
+
+ Compiles and executes the SQL statement `sql', a string, and 
+ associates that statement with the statement handle `hstmt'.  
+ When a statement executes, its parameters, indicated by ?'s in 
+ the SQL text, are replaced by the values bound to those parameters. 
+ See `bind-parameter' and `bind-param'.
+
+> (sql-native-sql hdbc sql)
+
+ ODBC 1.0.
+
+ Given a connection handle `hdbc' and an SQL statement `sql', returns 
+ a string indicating the SQL that would be passed to the
+ data source associated with the handle.
+
+> (param-data hstmt)
+
+ ODBC 1.0.
+
+ Returns the sql-buffer that is bound to the statement handle 
+ `hstmt'.  If no such buffer exists, an error occurs.
+
+> (put-data hstmt buff)
+
+ ODBC 1.0.
+
+ Given the statement handle `hstmt' and an sql-buffer `buff',
+ sends the buffer data to either 1) the parameter associated
+ with the statement, or 2) the column associated with the
+ statement, for use with bulk-operations or set-pos.
+
+> (sql-cancel hstmt)
+
+ ODBC 1.0.
+
+ Terminates processing of the statement given by the statement handle
+ `hstmt'.
+
+> (sql-end-tran handle action)
+
+ ODBC 3.0.
+
+ Requests a commit or rollback for all transactions associated with 
+ `handle', which may be either an environment handle or a 
+ connection handle.  `action' is one of the symbols 
+ 'sql-commit or 'sql-rollback.
+
+> (transact henv hdbc action)
+
+ ODBC 1.0, deprecated in favor of end-tran.
+
+ Requests a commit or rollback for all transactions associated with 
+ either the environment handle `henv' or the connection handle `hdbc'. 
+ `action' is one of the symbols 'sql-commit or 'sql-rollback.
+ If `hdbc' is the symbol 'sql-null-hdbc, the action is performed
+ for the environment handle; otherwise, it is performed for the
+ connection handle.
+
+ Data columns and data retrieval
+ -------------------------------
+
+ Data in a relational database is organized into tables consisting
+ of rows and columns.  A column corresponds to a field in the
+ database.  A row is an individual data record. 
+
+> (num-result-cols hstmt)
+
+ ODBC 1.0.
+
+ Returns the number of data columns in the data set associated with
+ the statement handle `hstmt'.
+
+> (describe-col hstmt colnum)
+
+ ODBC 1.0.
+
+ Given the statement handle `hstmt' and the exact integer `colnum', 
+ indicating a column number, returns a list of information describing
+ a column in a data set.  The first element in the list is a 
+ string giving the name of the column; the second element is a 
+ symbol indicating its SQL data type (see SQL Data Types, below);
+ the third element is the maximum byte length of data for the 
+ column; the fourth element is either the number of digits to the right
+ of the decimal point, for relevant data types (see SQL Data Types), 
+ otherwise 0; the fifth element is a symbol indicating whether the column 
+ accepts NULL entries, either 'sql-no-nulls, 'sql-nullable, or
+ 'sql-nullable-unknown.
+
+> (col-attribute hstmt colnum attr)
+
+ ODBC 3.0.
+
+ Given the statement handle `hstmt', an exact integer `colnum', 
+ indicating a column number, and the symbol `attr', indicating a
+ column attribute, returns the value of the column attribute.
+ Columns are numbered starting at 1.  The attributes and their 
+ associated types are
+
+   attr                             returns
+   ----                             -------
+   'sql-desc-count                  integer
+   'sql-desc-auto-unique-value      boolean
+   'sql-desc-base-column-name       string
+   'sql-desc-base-table-name        string
+   'sql-desc-case-sensitive         boolean
+   'sql-desc-catalog-name           string
+   'sql-desc-concise-type           SQL data type 
+   'sql-desc-data-ptr               sql-buffer
+   'sql-desc-display-size           integer
+   'sql-desc-fixed-prec-scale       boolean
+   'sql-desc-label                  string
+   'sql-desc-length                 integer
+   'sql-desc-literal-prefix         string
+   'sql-desc-literal-suffix         string
+   'sql-desc-local-type-name        string
+   'sql-desc-name                   string
+   'sql-desc-nullable               'sql-nullable, or
+                                    'sql-no-nulls, or
+                                    'sql-nullable-unknown 
+   'sql-desc-num-prec-radix         integer
+   'sql-desc-octet-length           integer
+   'sql-desc-precision              integer
+   'sql-desc-scale                  integer 
+   'sql-desc-schema-name            string
+   'sql-desc-searchable             'sql-searchable, or 
+                                    'sql-pred-char, or
+                                    'sql-like-only, or
+                                    'sql-pred-basic, or
+                                    'sql-all-except-like, or
+                                    'sql-pred-none, or
+                                    'sql-unsearchable
+   'sql-desc-table-name             string
+   'sql-desc-type                   concise SQL data type 
+   'sql-desc-type-name              string
+   'sql-desc-unnamed                'sql-named, or
+                                    'sql-unnamed  
+   'sql-desc-unsigned               boolean 
+   'sql-desc-updatable              'sql-attr-readonly, or
+                                    'sql-attr-write, or
+                                    'sql-attr-readwrite-unknown
+
+> (col-attributes hstmt colnum attr)
+
+ ODBC 1.0, deprecated in favor of col-attribute.
+
+ Given the statement handle `hstmt', an exact integer `colnum', 
+ indicating a column number, and the symbol `attr', indicating a
+ column attribute, returns the value of the column attribute.
+ Columns are numbered starting at 1.  The attributes and their 
+ associated types are
+
+   attr                             returns
+   ----                             -------
+   'sql-column-count                integer
+   'sql-column-name                 string
+   'sql-column-type                 SQL data type 
+   'sql-column-length               integer 
+   'sql-column-precision            integer
+   'sql-column-scale                integer
+   'sql-column-display-size         integer
+   'sql-column-nullable             'sql-no-nulls, or
+                                    'sql-nullable
+   'sql-column-unsigned             boolean
+   'sql-column-money                boolean
+   'sql-column-updatable            'sql-attr-readonly, or
+                                    'sql-attr-write, or
+                                    'sql-attr-readwrite-unknown 
+   'sql-column-auto-increment       boolean
+   'sql-column-case-sensitive       boolean
+   'sql-column-searchable           'sql-searchable, or
+                                    'sql-like-only, or
+                                    'sql-all-except-like, or
+                                    'sql-unsearchable   
+   'sql-column-type-name            string 
+   'sql-column-table-name           string
+   'sql-column-owner-name           string
+   'sql-column-qualifier-name       string 
+   'sql-column-label                string
+
+> (bind-col hstmt colnum buff ind)
+
+ ODBC 1.0.
+
+ Associates the sql-buffer `buff' and sql-indicator `ind' 
+ with a column of data denoted by the statement handle `hstmt'
+ and column numer `colnum', an integer.  
+ 
+> (fetch hstmt)
+
+ ODBC 1.0.
+
+ Retrieves data in the current row of the data set for 
+ the statement handle `hstmt' into the sql-buffers
+ bound to the data set's columns, and sets the columns' 
+ associated sql-indicator's.  For columns without bound
+ sql-buffers, `get-data' can be used to retrieve data
+ following a `fetch'.
+
+> (get-data hstmt colnum buff ind)
+
+ Retrieves data in the current row of the data set for 
+ the column denoted by the statement handle `hstmt' 
+ and column number `colnum', an integer, into the sql-buffer 
+ `buff' and sets the sql-indicator `ind'.  `get-data' allows 
+ column data to be retrieved without binding columns to buffers.
+
+> (fetch-scroll hstmt orient [rownum])
+
+ ODBC 3.0.
+
+ Fetches multiple rows of data in a data set associated with
+ the statement handle `hstmt'.  `orient' indicates which rows
+ to fetch, and may be one of the symbols 
+
+   'sql-fetch-first              first rowset 
+   'sql-fetch-next               next rowset
+   'sql-fetch-prior              previous rowset
+   'sql-fetch-last               last rowset 
+   'sql-fetch-absolute           rowset starting at `rownum'
+   'sql-fetch-relative           rowset relative to current,
+                                  using `rownum' (may be negative)
+   'sql-fetch-bookmark           rowset relative to 
+                                  'sql-attr-fetch-bookmark-ptr
+                                  statement attribute
+
+ The size of rowsets is specified by the 'sql-attr-rowset-size
+ statement attribute (see `get-stmt-attr' and `set-stmt-attr').
+ See an ODBC reference for more information on using rowsets.
+
+> (get-scroll-options hstmt concurrency keyset size)
+
+ ODBC 1.0, deprecated in favor of get-info and set-stmt-attr.
+
+ Sets cursor scrolling options for the statement handle 
+ `hstmt'.  `concurrency' is one of
+
+   'sql-concur-read-only      updates and deletes not permitted
+   'sql-concur-lock           updates and deletes permitted
+   'sql-concur-rowver         compares row versions for concurrency 
+                                control
+   'sql-concur-values         compares values for concurrency control
+
+ `keyset' is one of
+
+   'sql-scroll-forward-only   only forward scrolling
+   'sql-scroll-static         no scrolling
+   'sql-scroll-keyset-driven  cursor uses keys for scrolling
+   'sql-scroll-dynamic        use `size' parameter for keyset size
+
+ `size', a nonnegative exact integer, gives the size of 
+ rowsets when using `extended-fetch'.
+
+> (extended-fetch hstmt orientation [rownum])
+
+ ODBC 1.0, deprecated in favor of fetch-scroll.
+
+ Retrieves a rowset from a result data set for the statement handle
+ `hstmt' and returns a row-status value (see Row Status, below).
+ `orientation' indicates which rowset is to be retrieved, one of
+
+   'sql-fetch-first      first rowset in the data set
+   'sql-fetch-next       next rowset in the data set
+   'sql-fetch-prior      prior rowset in the data set
+   'sql-fetch-last       last rowset in the data set
+   'sql-fetch-absolute   fetches the rowset starting at the row
+                           given by `rownum'
+   'sql-fetch-relative   fetches the rowset `rownum' rows from
+                           the start row of the current rowset
+   'sql-fetch-bookmark   fetches the rowset, interpreting 
+                           `rownum' as a bookmark
+
+ The `rownum' argument is an integer, which may be negative.  
+ It must be provided if `orientation' is in 'sql-fetch-absolute, 
+ 'sql-fetch-relative, or 'sql-fetch-bookmark, and must be omitted
+ otherwise.
+
+> (more-results hstmt)
+
+ ODBC 1.0.
+
+ Retrieves next data set for the statement handle `hstmt'.
+ `more-results', which moves between data sets, is distinguished 
+ from procedures such as `fetch', which return results within
+ data sets.
+
+> (set-pos hstmt rownum operation lock)
+
+ ODBC 1.0.
+
+ Sets a cursor position for the statement handle `hstmt'
+ and updates the data source.  `rownum', a nonnegative exact 
+ integer, specifies the ordinal position of the row within the 
+ current rowset where `operation' is to occur.  A value of 0 
+ indicates that the operation is to occur on every row in the
+ rowset.
+ 
+`operation' is one of 
+
+   'sql-position   positions the cursor at the indicated row
+   'sql-refresh    refreshes data in buffers associated with
+                     the rowset indicated by `rownum'
+   'sql-add        a new row is added to the data source (but see below)
+   'sql-update     data in buffers is used to update the rowset
+   'sql-delete     deletes the indicated row from the data source
+
+ `set-pos' with 'sql-add is deprecated in favor of `bulk-operations' 
+ with 'sql-add.
+ 
+ `lock' indicates the lock status for the row or rows after the
+ operation is performed, one of
+
+   'sql-lock-no-change   use lock status before operation performed
+   'sql-lock-exclusive   no other application or connection can
+                           access
+   'sql-lock-unlock      no lock restrictions on access 
+
+> (bulk-operations hstmt operation)
+
+ ODBC 3.0.
+
+ Performs bulk inserts and bulk bookmark operations on the data source
+ associated with the statement handle `hstmt'. `operation' may
+ be one of
+
+   'sql-add                  adds new rows
+   'sql-update-by-bookmark   updates rows identified by a bookmark
+   'sql-delete-by-bookmark   deletes rows identified by a bookmark
+   'sql-fetch-by-bookmark    retrieves rows identified by a bookmark
+
+
+

@@ -8,6 +8,8 @@ binding structures, instead of expressions. The
 reduction (And other) macros do this transformation
 before the pattern compiler is invoked.
 
+abstract out the `hole and `(hole name) patterns.
+
 |#
 (module matcher mzscheme
   (require (lib "list.ss")
@@ -55,20 +57,20 @@ before the pattern compiler is invoked.
               bindings?)))
   (define-struct rib (name exp) (make-inspector)) ;; for testing, add inspector
 
-  ;; hole-binding = (make-hole sexp hole-path)
+  ;; hole-binding = (make-hole sexp (listof (union 'car 'cdr)))
   (define-struct hole-binding (exp path id) (make-inspector))
   
   ;; repeat = (make-repeat compiled-pattern (listof rib))
   (define-struct repeat (pat empty-bindings) (make-inspector)) ;; inspector for tests below
   
-  ;; compiled-pattern : exp hole-path symbol -> (union #f (listof bindings))
+  ;; compiled-pattern : exp (listof hole-path) -> (union #f (listof bindings))
   ;; compiled-lang : (make-compiled-lang (listof nt) 
   ;;                                     hash-table[sym -o> compiled-pattern]
   ;;                                     hash-table[sym -o> compiled-pattern])
-  ;; hole-path = (listof (union 'car 'cdr))
+  ;; hole-path = (make-hole-path (union #f symbol) symbol (listof (union 'car 'cdr)))
+  (define-struct hole-path (name id path))
   
-  (define hole-path? (listof (symbols 'car 'cdr)))
-  (define compiled-pattern (any? hole-path? symbol? . -> . (union false? (listof bindings?))))
+  (define compiled-pattern (any? (listof hole-path?) symbol? . -> . (union false? (listof bindings?))))
   
   (define-struct compiled-lang (lang ht across-ht))
   
@@ -155,8 +157,8 @@ before the pattern compiler is invoked.
                                    (loop (- i 1))))]))))
              (nt-rhs nt)))))
     
-    (define (symbol-append . args)
-      (string->symbol (apply string-append (map symbol->string args))))
+  (define (symbol-append . args)
+    (string->symbol (apply string-append (map symbol->string args))))
   
   ;; build-across-nts : symbol number number -> (listof pattern)
   (define (build-across-nts nt count i)
@@ -250,7 +252,7 @@ before the pattern compiler is invoked.
   
   ;; match-pattern : compiled-pattern exp -> (union #f (listof bindings))
   (define (match-pattern compiled-pattern exp)
-    (let ([results (compiled-pattern exp empty 'hole)])
+    (let ([results (compiled-pattern exp empty)])
       (and results
            (let ([filtered (filter-multiples results)])
              (and (not (null? filtered))
@@ -268,28 +270,33 @@ before the pattern compiler is invoked.
                (loop (cdr bindingss) (cons merged acc))
                (loop (cdr bindingss) acc)))])))
   
-  ;; merge-multiplpes/remove : bindings -> (union #f bindings)
+  ;; merge-multiples/remove : bindings -> (union #f bindings)
   ;; returns #f if all duplicate bindings don't bind the same thing
   ;; returns a new bindings 
   (define (merge-multiples/remove bindings)
     (let/ec fail
       (let ([ht (make-hash-table)]
+            [hole-ribs null]
             [ribs (bindings-table bindings)])
         (for-each
          (lambda (rib)
            (let/ec new
-             (let* ([name (rib-name rib)]
-                    [exp (rib-exp rib)]
-                    [previous-exp
-                     (hash-table-get ht 
-                                     name
-                                     (lambda ()
-                                       (hash-table-put! ht name exp)
-                                       (new (void))))])
-               (unless (equal? exp previous-exp)
-                 (fail #f)))))
+             (let ([name (rib-name rib)]
+                   [exp (rib-exp rib)])
+               (if (hole-binding? exp)
+                   (set! hole-ribs (cons rib hole-ribs))
+                   (let ([previous-exp
+                          (hash-table-get 
+                           ht 
+                           name
+                           (lambda ()
+                             (hash-table-put! ht name exp)
+                             (new (void))))])
+                     (unless (equal? exp previous-exp)
+                       (fail #f)))))))
          ribs)
-        (make-bindings (hash-table-map ht make-rib)))))
+        (make-bindings (append hole-ribs
+                               (hash-table-map ht make-rib))))))
   
   (define (compile-pattern clang pattern) (compile-pattern/cross? clang pattern #t))
   
@@ -302,59 +309,39 @@ before the pattern compiler is invoked.
     (let ([clang-ht (compiled-lang-ht clang)]
           [across-ht (compiled-lang-across-ht clang)])
       (let loop ([pattern pattern])
-        (memoize3
+        (memoize2
          (match pattern
            [`any
-            (lambda (exp hole-path hole-name)
+            (lambda (exp hole-paths)
               (list (make-bindings null)))]
            [`number 
-            (lambda (exp hole-path hole-name)
+            (lambda (exp hole-paths)
               (and (number? exp) (list (make-bindings null))))]
            [`string
-            (lambda (exp hole-path hole-name)
+            (lambda (exp hole-paths)
               (and (string? exp) (list (make-bindings null))))]
            [`variable 
-            (lambda (exp hole-path hole-name)
+            (lambda (exp hole-paths)
               (and (symbol? exp) (list (make-bindings null))))]
            [`(variable-except ,@(vars ...))
-            (lambda (exp hole-path hole-name)
+            (lambda (exp hole-paths)
               (and (symbol? exp)
                    (not (memq exp vars))
                    (list (make-bindings null))))]
-           [`hole 
-            (lambda (exp hole-path hole-name)
-              (list 
-               (make-bindings 
-                (list 
-                 (make-rib 
-                  hole-name
-                  (make-hole-binding 
-                   exp
-                   (reverse hole-path)
-                   #f))))))]
-           [`(hole ,hole-id)
-            (lambda (exp hole-path hole-name)
-              (list 
-               (make-bindings 
-                (list 
-                 (make-rib 
-                  hole-name
-                  (make-hole-binding
-                   exp
-                   (reverse hole-path)
-                   hole-id))))))]
+           [`hole (match-hole #f)]
+           [`(hole ,hole-id) (match-hole hole-id)]
            [(? string?) 
-            (lambda (exp hole-path hole-name)
+            (lambda (exp hole-paths)
               (and (string? exp)
                    (string=? exp pattern)
                    (list (make-bindings null))))]
            [(? symbol?) 
             (cond
               [(hash-table-get clang-ht pattern (lambda () #f))
-               (lambda (exp hole-path hole-name)
-                 (match-nt clang-ht pattern exp hole-path hole-name))]
+               (lambda (exp hole-paths)
+                 (match-nt clang-ht pattern exp hole-paths))]
               [else
-               (lambda (exp hole-path hole-name)
+               (lambda (exp hole-paths)
                  (and (eq? exp pattern)
                       (list (make-bindings null))))])]
            [`(cross ,(and pre-id (? symbol?)))
@@ -363,14 +350,14 @@ before the pattern compiler is invoked.
                           pre-id)])
               (cond
                 [(hash-table-get across-ht id (lambda () #f))
-                 (lambda (exp hole-path hole-name)
-                   (match-nt across-ht id exp hole-path hole-name))]
+                 (lambda (exp hole-paths)
+                   (match-nt across-ht id exp hole-paths))]
                 [else
                  (error 'compile-pattern "unknown cross reference ~a" id)]))]
            [`(name ,name ,pat)
             (let ([match-pat (loop pat)])
-              (lambda (exp hole-path hole-name)
-                (let ([matches (match-pat exp hole-path hole-name)])
+              (lambda (exp hole-paths)
+                (let ([matches (match-pat exp hole-paths)])
                   (and matches 
                        (map (lambda (bindings)
                               (make-bindings (cons (make-rib name exp)
@@ -395,8 +382,8 @@ before the pattern compiler is invoked.
               (match-in-hole context contractum exp match-context match-contractum 'hole+ #f hole-id))]
            [`(side-condition ,pat ,condition)
             (let ([match-pat (loop pat)])
-              (lambda (exp hole-path hole-name)
-                (let ([matches (match-pat exp hole-path hole-name)])
+              (lambda (exp hole-paths)
+                (let ([matches (match-pat exp hole-paths)])
                   (and matches
                        (let ([filtered (filter condition matches)])
                          (if (null? filtered)
@@ -404,54 +391,77 @@ before the pattern compiler is invoked.
                              filtered))))))]
            [(? list?)
             (let ([rewritten (rewrite-ellipses pattern loop)])
-              (lambda (exp hole-path hole-name)
-                (match-list rewritten exp hole-path hole-name)))]
+              (lambda (exp hole-paths)
+                (match-list rewritten exp hole-paths)))]
            [(? procedure?)
             pattern]
            [else 
-            (lambda (exp hole-path hole-name)
+            (lambda (exp hole-paths)
               (and (eq? pattern exp)
                    (list (make-bindings null))))])))))
 
-  ;; memoize3 : (x y z -> w) -> x y z -> w
+  ;; memoize2 : (x y -> w) -> x y -> w
   ;; memoizes a function of two arguments
-  (define (memoize3 f)
+  (define (memoize2 f)
     (let ([ht (make-hash-table 'equal)])
-      (lambda (x y z)
-        (let* ([key (cons x (cons y z))]
+      (lambda (x y)
+        (let* ([key (cons x y)]
                [compute/cache
                 (lambda ()
-                  (let ([res (f x y z)])
+                  (let ([res (f x y)])
                     (hash-table-put! ht key res)
                     res))])
           (hash-table-get ht key compute/cache)))))
+
+  ;; match-hole : (union #f symbol) -> compiled-pattern
+  (define (match-hole hole-id)
+    (lambda (exp hole-paths)
+      (let ([relevant-hole-paths
+             (filter (lambda (x) (eq? (hole-path-id x) hole-id))
+                     hole-paths)])
+        (if (null? relevant-hole-paths)
+            #f
+            (begin
+              (unless (null? (cdr relevant-hole-paths))
+                (when (null? relevant-hole-paths)
+                  (error 'match "too many hole paths, ~e" relevant-hole-paths)))
+              (let ([the-hole-path (car relevant-hole-paths)])
+                (list 
+                 (make-bindings 
+                  (list 
+                   (make-rib 
+                    (hole-path-name the-hole-path)
+                    (make-hole-binding
+                     exp
+                     (reverse (hole-path-path the-hole-path))
+                     hole-id)))))))))))
   
   ;; match-in-hole : sexp sexp sexp compiled-pattern compiled-pattern symbol boolean (union symbol #f) -> compiled-pattern
   (define (match-in-hole context contractum exp match-context match-contractum this-hole-name bind-hole? hole-id)
-    (lambda (exp hole-path hole-name)
-      (let ([bindingss (match-context exp '() this-hole-name)])
+    (lambda (exp hole-paths)
+      (when (this-hole-id-used? hole-id hole-paths)
+        (if hole-id
+            (error 'match "multiple hole interference for hole-id ~s" hole-id)
+            (error 'match "multiple hole interference")))
+      (let ([bindingss (match-context exp (cons (make-hole-path this-hole-name hole-id '()) hole-paths))])
         (and bindingss
              (apply
               append
               (filter
                (lambda (x) x)
                (map (lambda (pre-bindings)
-                      (let ([bindings
-                             (if bind-hole?
-                                 pre-bindings
-                                 (make-bindings
-                                  (filter (lambda (x) (not (eq? this-hole-name (rib-name x))))
-                                          (bindings-table pre-bindings))))]
-                            ;[_ (printf "start\n")]
-                            [holes (filter (lambda (x) 
-                                             '(printf "rib: ~s ~s\n" x
-                                                     (list (eq? this-hole-name (rib-name x))
-                                                           (hole-binding? (rib-exp x))
-                                                           (eq? hole-id (hole-binding-id (rib-exp x)))))
-                                             (and (eq? this-hole-name (rib-name x))
-                                                  (hole-binding? (rib-exp x))
-                                                  (eq? hole-id (hole-binding-id (rib-exp x)))))
-                                           (bindings-table pre-bindings))])
+                      (let* ([same-hole?
+                              (lambda (x) 
+                                (and (hole-binding? (rib-exp x))
+                                     (eq? this-hole-name (rib-name x))
+                                     (eq? hole-id (hole-binding-id (rib-exp x)))))]
+                             [bindings
+                              (if bind-hole?
+                                  pre-bindings
+                                  (make-bindings
+                                   (filter (lambda (x) (not (same-hole? x)))
+                                           (bindings-table pre-bindings))))]
+                             [holes (filter same-hole? (bindings-table pre-bindings))])
                         (when (null? holes)
                           (error 'match-pattern "no hole~a in ~e for ~e" 
                                  (if hole-id
@@ -466,10 +476,7 @@ before the pattern compiler is invoked.
                                [a-hole (rib-exp hole-rib)]
                                [a-hole-exp (hole-binding-exp a-hole)]
                                [a-hole-path (hole-binding-path a-hole)]
-                               [contractum-bindingss (match-contractum 
-                                                      a-hole-exp 
-                                                      a-hole-path
-                                                      hole-name)]
+                               [contractum-bindingss (match-contractum a-hole-exp hole-paths)]
                                [ans 
                                 (and contractum-bindingss
                                      (map (lambda (contractum-bindings)
@@ -482,11 +489,19 @@ before the pattern compiler is invoked.
                                   context contractum a-hole-exp contractum-bindingss ans)
                           ans)))
                     bindingss)))))))
-  
-  ;; match-list : (listof (union repeat compiled-pattern)) sexp hole-path symbol -> (union #f (listof bindings))
-  (define (match-list patterns exp hole-path hole-name)
+
+  ;; this-hole-id-used? : (union #f symbol) (listof hole-path) -> boolean
+  (define (this-hole-id-used? hole-id hole-paths)
+    (let loop ([hole-paths hole-paths])
+      (cond
+        [(null? hole-paths) #f]
+        [else (or (eq? hole-id (hole-path-id (car hole-paths)))
+                  (loop (cdr hole-paths)))])))
+      
+  ;; match-list : (listof (union repeat compiled-pattern)) sexp (listof hole-path) -> (union #f (listof bindings))
+  (define (match-list patterns exp hole-paths)
     (let (;; raw-match : (listof (listof (listof bindings)))
-          [raw-match (match-list/raw patterns exp hole-path hole-name)])
+          [raw-match (match-list/raw patterns exp hole-paths)])
       
       ;(printf "ml.1: ~s\n" raw-match)
       
@@ -508,8 +523,7 @@ before the pattern compiler is invoked.
   
   ;; match-list/raw : (listof (union repeat compiled-pattern)) 
   ;;                  sexp
-  ;;                  hole-path
-  ;;                  symbol
+  ;;                  (listof hole-path)
   ;;               -> (listof (listof (listof bindings)))
   ;; the result is the raw accumulation of the matches for each subpattern, as follows:
   ;;  (listof (listof (listof bindings)))
@@ -518,11 +532,11 @@ before the pattern compiler is invoked.
   ;;    \----------------------------/    one element for different expansions of the ellipses
   ;; the failures to match are just removed from the outer list before this function finishes
   ;; via the `fail' argument to `loop'.
-  (define (match-list/raw patterns exp hole-path hole-name)
+  (define (match-list/raw patterns exp hole-paths)
     (let/ec k
       (let loop ([patterns patterns]
                  [exp exp]
-                 [hole-path hole-path]
+                 [hole-paths hole-paths]
                  ;; fail : -> alpha
                  ;; causes one possible expansion of ellipses to fail
                  ;; initially there is only one possible expansion, so
@@ -541,16 +555,16 @@ before the pattern compiler is invoked.
                        (cons (let/ec k
                                (let ([mt-fail (lambda () (k null))])
                                  (map (lambda (pat-ele) (cons (list r-mt) pat-ele))
-                                      (loop (cdr patterns) exp hole-path mt-fail))))
+                                      (loop (cdr patterns) exp hole-paths mt-fail))))
                              (let r-loop ([exp exp]
-                                          [hole-path hole-path]
+                                          [hole-paths hole-paths]
                                           ;; past-matches is in reverse order
                                           ;; it gets reversed before put into final list
                                           [past-matches (list r-mt)])
                                (cond
                                  [(pair? exp)
                                   (let* ([fst (car exp)]
-                                         [m (r-pat fst (cons 'car hole-path) hole-name)])
+                                         [m (r-pat fst (add-to-hole-paths 'car hole-paths))])
                                     (if m
                                         (let* ([combined-matches (collapse-single-multiples m past-matches)]
                                                [reversed (reverse-multiples combined-matches)])
@@ -558,8 +572,11 @@ before the pattern compiler is invoked.
                                            (let/ec fail-k
                                              (let ([multi-fail (lambda () (fail-k null))])
                                                (map (lambda (x) (cons reversed x))
-                                                    (loop (cdr patterns) (cdr exp) (cons 'cdr hole-path) multi-fail))))
-                                           (r-loop (cdr exp) (cons 'cdr hole-path) combined-matches)))
+                                                    (loop (cdr patterns) 
+                                                          (cdr exp)
+                                                          (add-to-hole-paths 'cdr hole-paths)
+                                                          multi-fail))))
+                                           (r-loop (cdr exp) (add-to-hole-paths 'cdr hole-paths) combined-matches)))
                                         (list null)))]
                                  ;; what about dotted things?
                                  [else (list null)])))))
@@ -568,10 +585,10 @@ before the pattern compiler is invoked.
                 (cond
                   [(pair? exp)
                    (let* ([fst-exp (car exp)]
-                          [match (fst-pat fst-exp (cons 'car hole-path) hole-name)])
+                          [match (fst-pat fst-exp (add-to-hole-paths 'car hole-paths))])
                      (if match
                          (map (lambda (x) (cons match x))
-                              (loop (cdr patterns) (cdr exp) (cons 'cdr hole-path) fail))
+                              (loop (cdr patterns) (cdr exp) (add-to-hole-paths 'cdr hole-paths) fail))
                          (fail)))]
                   [else
                    (fail)])]))]
@@ -579,6 +596,14 @@ before the pattern compiler is invoked.
            (if (null? exp)
                (list null)
                (fail))]))))
+  
+  ;; add-to-hole-paths : symbol (listof hole-path) -> (listof hole-path)
+  (define (add-to-hole-paths sym hole-paths)
+    (map (lambda (hole-path)
+           (make-hole-path (hole-path-name hole-path)
+                           (hole-path-id hole-path)
+                           (cons sym (hole-path-path hole-path))))
+         hole-paths))
   
   ;; collapse-single-multiples : (listof bindings) (listof bindings[to-lists]) -> (listof bindings[to-lists])
   (define (collapse-single-multiples bindingss multiple-bindingss)
@@ -615,15 +640,15 @@ before the pattern compiler is invoked.
                  (bindings-table bindings))))
          bindingss))
   
-  ;; match-nt : hash-table[from compiled-lang] sym exp hole-path symbol -> (union #f (listof bindings))
-  (define (match-nt clang-ht nt term hole-path hole-name)
+  ;; match-nt : hash-table[from compiled-lang] sym exp (listof hole-path) -> (union #f (listof bindings))
+  (define (match-nt clang-ht nt term hole-paths)
     (let ([compiled-rhss (hash-table-get clang-ht nt)])
       (let loop ([rhss compiled-rhss]
                  [anss null])
         (cond
           [(null? rhss) (if (null? anss) #f (apply append anss))]
           [else
-           (let ([mth ((car rhss) term hole-path hole-name)])
+           (let ([mth ((car rhss) term hole-paths)])
              (if mth
                  (loop (cdr rhss) (cons (remove-non-hole-bindings mth) anss))
                  (loop (cdr rhss) anss)))]))))
@@ -765,8 +790,8 @@ before the pattern compiler is invoked.
     (test-empty '(variable-except x) 1 #f)
     (test-empty '(variable-except x) 'x #f)
     (test-empty '(variable-except x) 'y (list (make-bindings null)))
-    (test-empty 'hole 1 (list (make-bindings (list (make-rib 'hole (make-hole-binding 1 '() #f))))))
-    (test-empty '(hole hole-name) 1 (list (make-bindings (list (make-rib 'hole (make-hole-binding 1 '() 'hole-name))))))
+    (test-empty 'hole 1 #f)
+    (test-empty '(hole hole-name) 1 #f)
     (test-empty '(name x number) 1 (list (make-bindings (list (make-rib 'x 1)))))
     
     (test-ellipses '(a) '(a))
@@ -816,18 +841,13 @@ before the pattern compiler is invoked.
                 '(z a)
                 (list (make-bindings (list (make-rib 'eloh (make-hole-binding 'a '(cdr car) 'h1))))))
     
-    (test-empty '(in-named-hole+ h1 (z (hole h1)) a) 
-                '(z a)
-                (list (make-bindings (list))))
-    
-    (test-empty '(in-named-hole+ e ((hole e) (hole c)) x)
+    (test-empty '(in-named-hole+ h1 (z (hole h1)) a) '(z a) (list (make-bindings (list))))
+    (test-empty '(in-named-hole+ e ((hole e) (hole c)) x) '(x y) #f)
+    (test-empty '(in-named-hole+ e (in-hole+ c ((hole e) (hole c)) y) x) '(x y) #f)
+    (test-empty '(in-named-hole+ c (in-hole+ e ((hole e) (hole c)) x) y) '(x y) #f)
+    (test-empty '(in-named-hole c eloh (any (hole c)) y)
                 '(x y)
-                (list (make-bindings (list))))
-    
-    (test-empty '(in-named-hole+ c ((hole e) (hole c)) y)
-                '(x y)
-                (list (make-bindings (list))))
-    
+                (list (make-bindings (list (make-rib 'eloh (make-hole-binding 'y '(cdr car) 'c))))))
     (test-empty '(in-named-hole+ c (in-named-hole+ e ((hole e) (hole c)) x) y)
                 '(x y)
                 (list (make-bindings (list))))
@@ -889,24 +909,28 @@ before the pattern compiler is invoked.
     
     (test-xab 'exp 1 (list (make-bindings null)))
     (test-xab 'exp '(+ 1 2) (list (make-bindings null)))
-    (test-xab 'ctxt '1 (list (make-bindings (list (make-rib 'hole (make-hole-binding 1 '() #f))))))
-    (test-xab 'ctxt '(+ 1 2) (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '() #f))))
-                                   (make-bindings (list (make-rib 'hole (make-hole-binding 2 '(cdr cdr car) #f))))
-                                   (make-bindings (list (make-rib 'hole (make-hole-binding 1 '(cdr car) #f))))))
+    (test-xab '(in-hole ctxt any)
+              '1
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding 1 '() #f))))))
+    (test-xab '(in-hole ctxt any) 
+              '(+ 1 2)
+              (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '() #f))))
+                    (make-bindings (list (make-rib 'hole (make-hole-binding 2 '(cdr cdr car) #f))))
+                    (make-bindings (list (make-rib 'hole (make-hole-binding 1 '(cdr car) #f))))))
     (test-xab '(in-hole ctxt (+ number number))
               '(+ (+ 1 2) (+ 3 4))
               (list (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 3 4) '(cdr cdr car) #f))))
                     (make-bindings (list (make-rib 'hole (make-hole-binding '(+ 1 2) '(cdr car) #f))))))
     
-    (test-empty '((z hole))
+    (test-empty '(in-hole ((z hole)) any)
                 '((z a))
                 (list (make-bindings (list (make-rib 'hole (make-hole-binding 'a '(car cdr car) #f))))))
-    (test-empty '(z ... hole z ...)
+    (test-empty '(in-hole (z ... hole z ...) any)
                 '(z z)
                 (list 
                  (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(cdr car) #f))))
                  (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(car) #f))))))
-    (test-empty '(z ... hole z ...)
+    (test-empty '(in-hole (z ... hole z ...) any)
                 '(z z z)
                 (list 
                  (make-bindings (list (make-rib 'hole (make-hole-binding 'z '(cdr cdr car) #f))))

@@ -76,11 +76,12 @@ listed in its argument. This is useful for ensuring that
 keywords in the language are not accidentally captured by
 variables.
 
-The _hole_ pattern matches any thing and colludes with the
-various in-hole patterns to provide the path into the term
-from in-hole to the hole. The (hole <symbol>) variation on
-that pattern is used in conjuction with in-named-hole to
-support languages that require multiple patterns in a hole.
+The _hole_ pattern matches anything when inside a matching
+in-hole pattern and colludes with that in-hole patterns to
+provide the path into the term from in-hole to the hole. The
+(hole <symbol>) variation on that pattern is used in
+conjuction with in-named-hole to support languages that
+require multiple patterns in a hole. 
 
 The _<symbol>_ pattern stands for a literal symbol that must
 match exactly (except, of course, for any, number, string,

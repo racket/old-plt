@@ -78,7 +78,7 @@ enum {
   scheme_listener_type,
   scheme_namespace_type, 
   scheme_config_type,
-  scheme_defaulting_config_type, 
+  scheme_reserved_1_type, 
   scheme_will_executor_type,
   scheme_interface_type,
   scheme_manager_type,  /* 70 */
@@ -105,7 +105,7 @@ enum {
 
   scheme_compiled_unit_type,
   scheme_unit_body_data_type,
-  scheme_unit_body_closure_data_type,
+  scheme_reserved_5_type,
   scheme_unit_compound_data_type,
   scheme_invoke_unit_data_type,
 

@@ -38,17 +38,15 @@
 typedef struct regexp {
   Scheme_Type type;
   long nsubexp;
-  char **startp;
-  char **endp;
   char regstart;		/* Internal use only. */
   char reganch;			/* Internal use only. */
-  char *regmust;		/* Internal use only. */
+  char *regmust;		/* Internal use only: relative to self */
   long regmlen;			/* Internal use only. */
   char program[1];		/* Unwarranted chumminess with compiler. */
 } regexp;
 
 static regexp *regcomp(char *);
-static int regexec(regexp *, char *);
+static int regexec(regexp *, char *, char **, char **);
 
 /* 156 is octal 234: */
 #define MAGIC   156
@@ -257,8 +255,6 @@ regcomp(char *exp)
   r->type = scheme_regexp_type;
   
   r->nsubexp = regnpar;
-  r->startp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
-  r->endp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
   
   /* Second pass: emit code. */
   regparse = exp;
@@ -714,7 +710,7 @@ static char **regendp;		/* Ditto for endp. */
 /*
  * Forwards.
  */
-STATIC int regtry(regexp *, char *);
+STATIC int regtry(regexp *, char *, char **, char **);
 STATIC int regmatch(char *);
 STATIC int regrepeat(char *);
 
@@ -728,7 +724,7 @@ STATIC char *regprop();
    - regexec - match a regexp against a string
    */
 static int
-regexec(regexp *prog, char *string)
+regexec(regexp *prog, char *string, char **startp, char **endp)
 {
   MZREGISTER char *s;
  
@@ -761,21 +757,21 @@ regexec(regexp *prog, char *string)
 
   /* Simplest case:  anchored match need be tried only once. */
   if (prog->reganch)
-    return(regtry(prog, string));
+    return(regtry(prog, string, startp, endp));
 
   /* Messy cases:  unanchored match. */
   s = string;
   if (prog->regstart != '\0')
     /* We know what char it must start with. */
     while ((s = strchr(s, prog->regstart)) != NULL) {
-      if (regtry(prog, s))
+      if (regtry(prog, s, startp, endp))
 	return(1);
       s++;
     }
   else
     /* We don't -- general case. */
     do {
-      if (regtry(prog, s))
+      if (regtry(prog, s, startp, endp))
 	return(1);
     } while (*s++ != '\0');
 
@@ -787,25 +783,25 @@ regexec(regexp *prog, char *string)
    - regtry - try match at specific point
    */
 static int			/* 0 failure, 1 success */
-regtry(regexp *prog, char *string)
+regtry(regexp *prog, char *string, char **startp, char **endp)
 {
   MZREGISTER int i;
   MZREGISTER char **sp;
   MZREGISTER char **ep;
 
   reginput = string;
-  regstartp = prog->startp;
-  regendp = prog->endp;
+  regstartp = startp;
+  regendp = endp;
 
-  sp = prog->startp;
-  ep = prog->endp;
+  sp = startp;
+  ep = endp;
   for (i = prog->nsubexp; i > 0; i--) {
     *sp++ = NULL;
     *ep++ = NULL;
   }
   if (regmatch(prog->program + 1)) {
-    prog->startp[0] = string;
-    prog->endp[0] = reginput;
+    startp[0] = string;
+    endp[0] = reginput;
     return(1);
   } else
     return(0);
@@ -1210,7 +1206,7 @@ regstrcspn(char *s1, char *s2)
    - regsub - perform substitutions after a regexp match
    */
 static 
-char *regsub(regexp *prog, char *source, long *lenout)
+char *regsub(regexp *prog, char *source, long *lenout, unsigned long srcbase, char **startp, char **endp)
 {
   char *dest;
   MZREGISTER char *src;
@@ -1264,8 +1260,8 @@ char *regsub(regexp *prog, char *source, long *lenout)
       destlen++;
     } else if (no >= prog->nsubexp) {
       /* Number too big; prentend it's the empty string */
-    } else if (prog->startp[no] != NULL && prog->endp[no] != NULL) {
-      len = prog->endp[no] - prog->startp[no];
+    } else if (startp[no] != NULL && endp[no] != NULL) {
+      len = endp[no] - startp[no];
       if (len + destlen >= destalloc) {
 	char *old = dest;
 	destalloc = 2 * destalloc + len + destlen;
@@ -1273,7 +1269,7 @@ char *regsub(regexp *prog, char *source, long *lenout)
 	memcpy(dest, old, destlen);
 	dst = dest + destlen;
       }
-      memcpy(dst, prog->startp[no], len);
+      memcpy(dst, source + ((unsigned long)startp[no] - srcbase), len);
       dst += len;
       destlen += len;
     }
@@ -1298,7 +1294,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
 				  int argc, Scheme_Object *argv[])
 {
   regexp *r;
-  char *s, *full_s, save;
+  char *s, *full_s, save, **startp, **endp;
+  unsigned long srcbase;
   int offset = 0, endset;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
@@ -1335,26 +1332,32 @@ static Scheme_Object *gen_compare(char *name, int pos,
     full_s[endset] = 0;
   s = full_s + offset;
 
+  startp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
+  endp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
 
-  if (regexec(r, s)) {
+  srcbase = (unsigned long)s; /* precise gc: srcbase isn't moved */
+  /* No GCs during regexc... */
+
+  if (regexec(r, s, startp, endp)) {
     int i;
     Scheme_Object *l = scheme_null;
 
-    for (i = r->nsubexp; i--; ) {
-      if (r->startp[i]) {
-	if (pos) {
-	  long startp, endp;
+    /* GC may happen now. But startp[*], endp[*], and srcbase are atomic */
 
-	  startp = (r->startp[i] - s) + offset;
-	  endp = (r->endp[i] - s) + offset;
+    for (i = r->nsubexp; i--; ) {
+      if (startp[i]) {
+	if (pos) {
+	  long startpd, endpd;
+
+	  startpd = ((unsigned long)startp[i] - srcbase) + offset;
+	  endpd = ((unsigned long)endp[i] - srcbase) + offset;
 	
-	  l = scheme_make_pair(scheme_make_pair(scheme_make_integer(startp),
-						scheme_make_integer(endp)),
+	  l = scheme_make_pair(scheme_make_pair(scheme_make_integer(startpd),
+						scheme_make_integer(endpd)),
 			       l);
 	} else
-	  l = scheme_make_pair(scheme_make_sized_string(r->startp[i],
-							(r->endp[i] 
-							 - r->startp[i]),
+	  l = scheme_make_pair(scheme_make_sized_string(s + ((unsigned long)startp[i] - srcbase),
+							(endp[i] - startp[i]),
 							1),
 			       l);
       } else
@@ -1384,7 +1387,8 @@ static Scheme_Object *positions(int argc, Scheme_Object *argv[])
 static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 {
   regexp *r;
-  char *source, *prefix = NULL;
+  char *source, *prefix = NULL, **startp, **endp;
+  unsigned long srcbase;
   int prefix_len = 0;
 
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
@@ -1402,47 +1406,54 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
 
   source = SCHEME_STR_VAL(argv[1]);
 
+  startp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
+  endp = (char **)scheme_malloc_atomic(regnpar * sizeof(char *));
+
   while (1) {
-    if (regexec(r, source)) {
+    srcbase = (unsigned long)source; /* precise gc: srcbase isn't moved */
+    /* No GCs during regexc... */
+    if (regexec(r, source, startp, endp)) {
       char *insert;
-      long len, end, startp, endp;
+      long len, end, startpd, endpd;
       
-      insert = regsub(r, SCHEME_STR_VAL(argv[2]), &len);
+      /* GC may happen now. But startp[*], endp[*], and srcbase are atomic */
+
+      insert = regsub(r, SCHEME_STR_VAL(argv[2]), &len, srcbase, startp, endp);
       
       end = SCHEME_STRTAG_VAL(argv[1]);
       
-      startp = (r->startp[0] - source);
-      endp = (r->endp[0] - source);
+      startpd = ((unsigned long)startp[0] - srcbase);
+      endpd = ((unsigned long)endp[0] - srcbase);
       
-      if (!startp && (endp == end) && !prefix)
+      if (!startpd && (endpd == end) && !prefix)
 	return scheme_make_sized_string(insert, len, 0);
       else if (!all) {
 	char *result;
 	long total;
 	
-	total = len + startp + (end - endp);
+	total = len + startpd + (end - endpd);
 	
 	result = (char *)scheme_malloc_atomic(total + 1);
-	memcpy(result, source, startp);
-	memcpy(result + startp, insert, len);
-	memcpy(result + startp + len, source + endp, (end - endp) + 1);
+	memcpy(result, source, startpd);
+	memcpy(result + startpd, insert, len);
+	memcpy(result + startpd + len, source + endpd, (end - endpd) + 1);
 	
 	return scheme_make_sized_string(result, total, 0);
       } else {
 	char *naya;
 	long total;
 	
-	total = len + prefix_len + startp;
+	total = len + prefix_len + startpd;
 	
 	naya = (char *)scheme_malloc_atomic(total + 1);
 	memcpy(naya, prefix, prefix_len);
-	memcpy(naya + prefix_len, source, startp);
-	memcpy(naya + prefix_len + startp, insert, len);
+	memcpy(naya + prefix_len, source, startpd);
+	memcpy(naya + prefix_len + startpd, insert, len);
 
 	prefix = naya;
 	prefix_len = total;
 
-	source = source + endp;
+	source = source + endpd;
       }
     } else if (!prefix)
       return argv[1];
@@ -1479,6 +1490,19 @@ static Scheme_Object *regexp_p(int argc, Scheme_Object *argv[])
 {
   return (SCHEME_TYPE(argv[0]) == scheme_regexp_type) ? scheme_true : scheme_false;
 }
+
+#ifdef MZ_PRECISE_GC
+static int mark_regexp_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    regexp *r = (regexp *)p;
+
+    r->regmust = (char *)p + ((char *)r->regmust - (char *)p);
+  }
+
+  return sizeof(regexp);
+}
+#endif
 
 void scheme_regexp_initialize(Scheme_Env *env)
 {

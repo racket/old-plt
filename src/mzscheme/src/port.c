@@ -373,6 +373,9 @@ static Scheme_Object *sch_default_print_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *sch_default_global_port_print_handler(int argc, Scheme_Object *argv[]);
 
 static void default_sleep(float v, void *fds);
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
 
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int tested);
@@ -418,6 +421,10 @@ scheme_init_port (Scheme_Env *env)
 {
   if (scheme_starting_up) {
     Scheme_Config *config = scheme_config;
+
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
 
 #ifdef WINDOWS_PROCESSES
     init_thread_memory();
@@ -7646,4 +7653,25 @@ void scheme_count_output_port(Scheme_Object *port, long *s, long *e,
     }
   }
 }
+#endif
+
+#ifdef MZ_PRECISE_GC
+
+static int mark_listener_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    p->mref = mark(p->mref);
+#ifdef USE_MAC_TCP
+    p->datas = mark(p->datas);
+#endif
+  }
+
+  return sizeof(listener_t);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_listener_type, listener_val);  
+}
+
 #endif

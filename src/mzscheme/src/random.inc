@@ -82,7 +82,7 @@
  * the separation between the two lower order coefficients of the trinomial.
  */
 /* x**31 + x**3 + 1 */
-#define	DEG		31
+#define	DEG		MZ_RANDOM_STATE_DEG
 #define	SEP		3
 
 /*
@@ -99,11 +99,14 @@
  * in the initialization of randtbl) because the state table pointer is set
  * to point to randtbl[1] (as explained below).
  */
+#if 0
+/* In schpriv.h: */
 typedef struct {
   Scheme_Type type;
   short fpos, rpos;
   long state[DEG];
 } Scheme_Random_State;
+#endif
 
 /*
  * sch_rand:

@@ -195,6 +195,10 @@ static Scheme_Object *hash_percent_syntax_symbol, *all_syntax_symbol, *empty_sym
 
 static Scheme_Object *nested_exn_handler;
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 static Scheme_Object *collect_garbage(int argc, Scheme_Object *args[]);
 static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[]);
 
@@ -552,6 +556,9 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->stack_start = 0;
 
   if (!scheme_main_process) {
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
 #ifndef MZ_REAL_THREADS
     REGISTER_SO(scheme_current_process);
 #endif
@@ -3926,3 +3933,62 @@ int scheme_sproc_mutex_try_down(void *s)
 
 #endif /* MZ_USE_IRIX_SPROCS */
 
+
+/**********************************************************************/
+
+#ifdef MZ_PRCISE_GC
+
+static int mark_config_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Config *c = (Scheme_Config *)p;
+    int i;
+    
+    for (i = max_configs; i--; )
+      c->configs[i] = mark(c->configs[i]);
+    c->extensions = mark(c->extensions);
+  }
+
+  return (sizeof(Scheme_Config)
+	  + ((max_configs - 1) * sizeof(Scheme_Object*)));
+}
+
+static int mark_will_executor_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    WillExecutor *e = (WillExecutor *)p;
+
+    e->sema = mark(e->sema);
+    e->first = mark(e->first);
+    e->last = mark(e->last);
+  } 
+
+  return sizeof(WillExecutor);
+}
+
+static int mark_manager_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Manager *m = (Scheme_Manager *)p;
+
+    m->boxes = mark(m->boxes);
+    m->mrefs = mark(m->mrefs);
+    m->closers = mark(m->closers);
+    m->data = mark(m->data);
+
+    m->parent = mark(m->parent);
+    m->sibling = mark(m->sibling);
+    m->children = mark(m->children);
+  }
+
+  return sizeof(Scheme_Manager);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_config_type, mark_config_val);
+  GC_register_traverser(scheme_will_executor_type, mark_will_executor_val);
+  GC_register_traverser(scheme_manager_type, mark_manager_val);
+}
+
+#endif

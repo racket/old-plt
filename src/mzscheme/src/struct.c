@@ -71,6 +71,10 @@ static Scheme_Object *struct_execute(Scheme_Object *form);
 static Scheme_Object *write_struct_info(Scheme_Object *obj);
 static Scheme_Object *read_struct_info(Scheme_Object *obj);
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 #define cons scheme_make_pair
 #define _intern scheme_intern_symbol
 
@@ -107,6 +111,10 @@ scheme_init_struct (Scheme_Env *env)
 #endif
 #ifndef NO_UNIT_SYSTEM
     static const char *unit_fields[3] = { "unit", "imports", "exports" };
+#endif
+
+#ifdef MZ_PRECISE_GC
+    register_traversers();
 #endif
 
     REGISTER_SO(scheme_arity_at_least);
@@ -1000,4 +1008,60 @@ void scheme_count_struct_info(Scheme_Object *o, long *s, long *e,
      + scheme_count_memory(info->parent_type_expr, ht)
      + scheme_count_memory(info->fields, ht);
 }
+#endif
+
+#if MZ_PRECISE_GC
+
+static int mark_struct_val(void *p, Mark_Proc mark)
+{
+  Scheme_Structure *s = (Scheme_Structure *)p;
+
+  if (mark) {
+    int i;
+    for(i = s->stype->num_slots; i--; )
+      s->slots[i] = mark(s->slots[i]);
+
+    s->stype = mark(s->stype);
+  } 
+
+  return (sizeof(Scheme_Structure) 
+	  + ((s->stype->num_slots - 1) * sizeof(Scheme_Object *)));
+}
+
+static int mark_struct_type_val(void *p, Mark_Proc mark)
+{
+  Scheme_Struct_Type *t = (Scheme_Struct_Type *)p;
+
+  if (mark) {
+    int i;
+    for (i = t->name_pos + 1; i--; )
+      t->parent_types[i] = t->parent_types[i];
+    t->type_name = mark(t->type_name);
+  }
+
+  return (sizeof(Scheme_Struct_Type)
+	  + (t->name_pos * sizeof(Scheme_Struct_Type *)));
+}
+
+static int mark_struct_info_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Struct_Info *i = (Struct_Info *)p;
+
+    i->name = mark(i->name);
+    i->fields = mark(i->fields);
+    i->parent_type_expr = mark(i->parent_type_expr);
+    i->memo_names = mark(i->memo_names);
+  } 
+
+  return sizeof(Struct_Info);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_structure_type, mark_struct_val);
+  GC_register_traverser(scheme_struct_type_type, mark_struct_type_val);
+  GC_register_traverser(scheme_struct_info_type, mark_struct_info_val);
+}
+
 #endif

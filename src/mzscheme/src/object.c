@@ -297,6 +297,10 @@ static short *find_implementation(Scheme_Object *c, Scheme_Object *n, int *offse
 
 #define FindName(c, s) DoFindName(c->num_public, c->public_names, s)
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 /* Stack for object initailization (all boxed, currently):
 
    last private ivar
@@ -3792,6 +3796,10 @@ static Scheme_Object *PSubObjectDetail(Scheme_Object *obj, int argc, Scheme_Obje
 void scheme_init_object(Scheme_Env *env)
 {
   if (scheme_starting_up) {
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
+
     REGISTER_SO(null_class);
 
     REGISTER_SO(seq_symbol);
@@ -4018,6 +4026,139 @@ void scheme_count_class_data(Scheme_Object *o, long *s, long *e, Scheme_Hash_Tab
   *e += scheme_count_memory(data->super_expr, ht);
 
   *e = 0;
+}
+
+#endif
+
+#ifdef MZ_PRECISE_GC
+
+static int mark_object_val(void *p, Mark_Proc mark)
+{
+  Internal_Object *obj = (Internal_Object *)p;
+  Scheme_Class *sclass = (Scheme_Class *)obj.o.sclass;
+  
+  if (mark) {
+    int i;
+    for (i = sclass->num_slots; i--; )
+      obj->slots[i] = mark(obj->slots[i]);
+
+    obj->o.sclass = mark(obj->o.sclass);
+    obj->o.primdata = mark(obj->o.primdata);
+  }
+
+  return (sizeof(Internal_Object) 
+	  + (sizeof(Scheme_Object *) * (sclass->num_slots - 1)));
+}
+
+static int mark_class_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Class *c = (Scheme_Class *)p;
+
+    
+    c->ivars = mark(c->ivars);
+    c->piu.insti.data = mark(c->piu.insti.data);
+
+    c->heritage = mark(c->heritage);
+    c->superclass = mark(c->superclass);
+    c->super_init_name = mark(c->super_init_name);
+    c->equiv_intf = mark(c->equiv_intf);
+
+    c->public_names = mark(c->public_names);
+    c->public_map = mark(c->public_map);
+    c->vslot_map = mark(c->vslot_map);
+    c->vslot_kind = mark(c->vslot_kind);
+
+    c->ivar_map = mark(c->ivar_map);
+    c->ref_map = mark(c->ref_map);
+
+    c->cmethods = mark(c->cmethods);
+    c->cmethod_ready_level = mark(c->cmethod_ready_level);
+    c->cmethod_source_map = mark(c->cmethod_source_map);
+    c->closure_saved = mark(c->closure_saved);
+
+    c->defname = mark(c->defname);
+
+    c->interfaces = mark(c->interfaces);
+    c->interface_maps = mark(c->interface_maps);
+  }
+
+  return sizeof(Scheme_Class);
+}
+
+static int mark_generic_data_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Generic_Data *g = (Generic_Data *)p;
+    
+    g->clori = mark(g->clori);
+    g->ivar_name = mark(g->ivar_name);
+  }
+
+  return sizeof(Generic_Data);
+}
+
+static int mark_interface_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Interface *i = (Scheme_Interface *)p;
+
+    i->names = mark(i->names);
+    i->name_map = mark(i->name_map);
+    i->supers = mark(i->supers);
+    i->supclass = mark(i->supclass);
+    i->super_offsets = mark(i->super_offsets);
+    i->defname = mark(i->defname);
+  }
+  
+  return sizeof(Scheme_Interface);
+}
+
+static int mark_class_data_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Class_Data *d = (Class_Data *)p;
+
+    d->ivars = mark(d->ivars);
+    d->ivar_names = mark(d->ivar_names);
+    d->cmethod_names = mark(d->cmethod_names);
+    d->cmethods = mark(d->cmethods);
+
+    d->closure_map = mark(d->closure_map);
+
+    d->super_init_name = mark(d->super_init_name);
+    d->super_expr = mark(d->super_expr);
+
+    d->interface_exprs = mark(d->interface_exprs);
+
+    d->defname = mark(d->defname);
+  }
+
+  return sizeof(Class_Data);
+}
+
+static int mark_mark_interface_data_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Interface_Data *d = (Interface_Data *)p;
+
+    d->names = mark(d->names);
+    d->super_exprs = mark(d->super_exprs);
+    d->defname = mark(d->defname);
+  }
+  
+  return sizeof(Interface_Data);
+}
+
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_object_type, mark_object_val);
+  GC_register_traverser(scheme_class_type, mark_class_val);
+  GC_register_traverser(scheme_generic_data_type, mark_generic_data_val);
+  GC_register_traverser(scheme_interface_type, mark_interface_val);
+  GC_register_traverser(scheme_class_data_type, mark_class_data_val);
+  GC_register_traverser(scheme_interface_data_type, mark_interface_data_val);
 }
 
 #endif

@@ -261,7 +261,7 @@ typedef struct Scheme_Manager {
   Scheme_Close_Manager_Client **closers;
   void **data;
 
-  /* atomic indirections: */
+  /* weak indirections: */
   struct Scheme_Manager **parent;
   struct Scheme_Manager **sibling;
   struct Scheme_Manager **children;

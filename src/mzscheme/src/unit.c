@@ -53,6 +53,10 @@ static Scheme_Object *invoke_unit_symbol;
 
 static Scheme_Object *unitsig_macros;
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 /**********************************************************************/
 /* Parsing tools                                                      */
 /**********************************************************************/
@@ -2894,6 +2898,10 @@ void scheme_init_unit(Scheme_Env *env)
   Scheme_Object *v;
 
   if (scheme_starting_up) {
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
+
     REGISTER_SO(unitsig_macros);
 
     REGISTER_SO(import_symbol);
@@ -3086,6 +3094,75 @@ void scheme_count_unit(Scheme_Type type, Scheme_Object *o, long *s, long *e,
     break;
   }
 }
+#endif
+
+#ifdef MZ_PRECISE_GC
+
+static int mark_unit_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Scheme_Unit *u = (Scheme_Unit *)p;
+
+    u->exports = mark(u->exports);
+    u->export_debug_names = mark(u->export_debug_names);
+    u->data = mark(u->data);
+  }
+
+  return sizeof(Scheme_Unit);
+}
+
+static int mark_unit_body_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    BodyData *b = (BodyData *)p;
+
+    b->body = mark(b->body);
+    b->closure_map = mark(b->closure_map);
+    b->defname = mark(b->defname);
+  } 
+  
+  return sizeof(BodyData);
+}
+
+static int compound_unit_data_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    CompoundData *d = (CompoundData *)p;
+
+    d->export = mark(d->exports);
+    d->subunit_exprs = mark(d->subunit_exprs);
+    d->tags = mark(d->tags);
+    d->param_counts = mark(d->param_counts);
+    d->param_maps = mark(d->param_maps);
+    d->defname = mark(d->defname);
+  } 
+
+  return sizeof(CompoundData);
+}
+
+static int invoke_unit_data_val(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    InvokeUnitData *d = (InvokeUnitData *)p;
+
+    d->anchor_positions = mark(d->anchor_positions);
+    d->exports = mark(d->exports);
+    d->anchors = mark(d->anchors);
+    d->expr = mark(d->expr);
+  }
+  
+  return sizeof(InvokeUnitData);
+}
+
+static void register_traversers(void)
+{
+  GC_register_traverser(scheme_unit_type, mark_unit_val);
+  GC_register_traverser(scheme_compiled_unit_type, mark_unit_val);
+  GC_register_traverser(scheme_unit_body_data_type, unit_body_val);
+  GC_register_traverser(scheme_unit_compound_data_type, compound_unit_data_val);
+  GC_register_traverser(scheme_invoke_unit_data_type, invoke_unit_data_val);
+}
+
 #endif
 
 #endif /* NO_UNIT_SYSTEM */

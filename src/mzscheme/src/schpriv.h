@@ -432,9 +432,9 @@ typedef struct Scheme_Sema {
   void *sema;
 #else
   long value;  
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
+# if SEMAPHORE_WAITING_IS_COLLECTABLE
   Scheme_Sema_Waiter *first, *last;
-#endif
+# endif
 #endif
 } Scheme_Sema;
 
@@ -1174,6 +1174,13 @@ void scheme_resume_remembered_threads(void);
 #endif
 
 Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
+
+#define	MZ_RANDOM_STATE_DEG 31
+typedef struct {
+  Scheme_Type type;
+  short fpos, rpos;
+  long state[MZ_RANDOM_STATE_DEG];
+} Scheme_Random_State;
 
 # define BEGIN_ESCAPEABLE(onbreak) \
     { mz_jmp_buf savebuf; \

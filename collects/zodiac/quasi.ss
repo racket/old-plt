@@ -1,4 +1,4 @@
-; $Id: quasi.ss,v 1.4 1997/08/23 00:58:04 shriram Exp $
+; $Id: quasi.ss,v 1.5 1997/08/23 00:59:47 shriram Exp $
 
 ; Fix the null? in qq-normalize.
 
@@ -6,7 +6,7 @@
   (lambda (new old)
     (if (eq? new old)
       (if (and (z:list? new) (zero? (z:sequence-length new)))
-	new
+	'null
 	(list '#%quote new))
       new)))
 

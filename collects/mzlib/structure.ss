@@ -173,7 +173,9 @@
   (define-syntax (open stx)
     (syntax-case stx ()
       ((_ top-name path ...)
-       #'(open-in-context top-name top-name path ...))))
+       (datum->syntax-object #'here
+         `(open-in-context ,#'top-name ,#'top-name ,@(syntax->list #'(path ...)))
+         stx))))
   
   (define-syntax (open-in-context stx)
     (syntax-case stx ()
@@ -181,7 +183,7 @@
        (let ((env (open (cons #'top-name (syntax->list #'(path ...))) 'open)))
          (with-syntax ((((pub . hid) ...)
                         (map (lambda (x)
-                               (cons (datum->syntax-object #'context (car x))
+                               (cons (datum->syntax-object #'context (car x) stx)
                                      (cdr x)))
                              env)))
            #`(define-syntaxes-ml (pub ...)

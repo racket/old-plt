@@ -170,6 +170,18 @@
   (define (assoc-list->py-dict% al)
     (hash-table->py-dict% (assoc-list->hash-table al)))
 
+  (define (py-object%->bool x)
+    (cond
+      [(py-is-a? x py-number%) (not (zero? (py-number%->number x)))]
+      [(py-is? x py-none) #f]
+      [else (with-handlers ([exn:not-found? (lambda (exn) #t)])
+              (py-object%->bool (python-method-call x '__len__)))]))
+  
+  
+  (define (bool->py-number% x)
+    (number->py-number% (if x 1 0)))
+  
+
   (define (py-sequence%->list s)
     (cond
       [(py-is-a? s py-list%) (py-list%->list s)]
@@ -304,6 +316,7 @@
     (cond
       [(procedure? functor) (dprintf "DEBUG: py-call got a procedure~n")
        (with-handlers ([exn:application:arity? (lambda (exn)
+                                                 (printf "function: ~a" functor)
                                                  (error "Incorrect number of arguments:"
                                                         (map py-object%->string arg-list)))])
          (apply functor arg-list))]
@@ -570,18 +583,41 @@
   (define (apply-bin-op op lhs rhs)
     (let ([check (lambda (obj)
                    (unless (py-is-a? obj py-number%)
-                     (error (py-object%->string obj) "is not a number.")))])
+                     (py-raise py-type-error%
+                               (format "~a is not a number."
+                                       (py-object%->string obj)))))])
       (check lhs)
       (check rhs))
     (op (py-number%->number lhs)
         (py-number%->number rhs)))
+  
+  (define (py-mult-num lhs rhs)
+    (cond
+      [(and (py-is-a? lhs py-number%)
+            (py-is-a? rhs py-number%) (number->py-number% (* (py-number%->number lhs)
+                                                             (py-number%->number rhs))))]
+      [(and (py-is-a? lhs py-string%)
+            (py-is-a? rhs py-number%)) (string->py-string% (repeat-string (py-string%->string lhs)
+                                                                          (py-number%->number rhs)))]
+      [(and (py-is-a? rhs py-string%)
+            (py-is-a? lhs py-number%)) (string->py-string% (repeat-string (py-string%->string rhs)
+                                                                          (py-number%->number lhs)))]
+      [else (py-raise py-type-error%
+                      (format "cannot multiply ~a and ~a"
+                              (py-object%->string lhs)
+                              (py-object%->string rhs)))]))
+  
+  (define (repeat-string s n)
+    (if (zero? n)
+        ""
+        (string-append s (repeat-string s (sub1 n)))))
   
   (python-add-members py-number%
                       `((__init__ ,(lambda (this v)
                                      (python-set-member! this scheme-number-key v)))
                         (__add__ ,(py-bin-op +))
                         (__sub__ ,(py-bin-op -))
-                        (__mul__ ,(py-bin-op *))
+                        (__mul__ ,py-mult-num)
                         (__div__ ,(py-bin-op /))
                         (__mod__ ,(py-bin-op modulo))
                         (__neg__ ,(lambda (this)
@@ -592,7 +628,8 @@
                       `((__init__ ,(procedure->py-function% py-string%-init))
                         (__add__ ,(py-lambda '+ (this s)
                                           (string->py-string% (string-append (py-string%->string this)
-                                                                               (py-string%->string s)))))))
+                                                                               (py-string%->string s)))))
+                        (__mul__ ,py-mult-num)))
   
   (python-add-members py-none%
                       `((__init__ ,(lambda (this)
@@ -746,6 +783,45 @@
   
   (define py-true (py-create py-int% 1))
   (define py-false (py-create py-int% 0))
+  
+ 
+  ;;; convert python objects to scheme objects through dynamic dispatch
+  (define python-to-scheme-method (gensym 'python-to-scheme-method))
+  (for-each (lambda (t&fn)
+              (python-set-member! (car t&fn) python-to-scheme-method
+                                  (py-lambda python-to-scheme-method (this)
+                                             ((cadr t&fn) this))))
+            `((,py-number% ,py-number%->number)
+              (,py-string% ,py-string%->string)
+              (,py-tuple% ,py-tuple%->list)
+              (,py-list% ,(lambda (pl)
+                            (map ->scheme (py-list%->list pl))))
+              (,py-dict% ,py-dict%->hash-table)
+              (,py-function% ,py-function%->procedure)))
+  
+  (define (->scheme py-obj)
+    (python-method-call py-obj python-to-scheme-method))
+  
+  (define (->python sxp)
+    (cond
+      [(number? sxp) (number->py-number% sxp)]
+      [(string? sxp) (string->py-string% sxp)]
+      [(list? sxp) (list->py-list% (map ->python sxp))]
+      [(hash-table? sxp) (hash-table->py-dict% sxp)]
+      [(boolean? sxp) (bool->py-number% sxp)]
+      [(procedure? sxp) (procedure->py-function% sxp)]
+      [else (error (format "Don't know how to make this a python object: ~a"
+                           sxp))]))
+  
+  (define-syntax (define-pfn stx)
+    (syntax-case stx ()
+      [(_ pfn (arg ...) sfn) (let ([args (syntax->list (syntax (arg ...)))])
+                               #`(define pfn
+                                 (py-lambda '#,(syntax pfn) (#,@args)
+                                   (->python (apply sfn
+                                                    (map ->scheme
+                                                         (list #,@args)))))))]))
+                                                         
   
   
   )

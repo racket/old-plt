@@ -412,14 +412,14 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override to-scheme
-        (opt-lambda ([escape-continuation-symbol (gensym 'unusable)])
-            (->orig-so ;(let ([py-return (gensym 'return)])
-                         `(call-with-escape-continuation
-                           (lambda (,escape-continuation-symbol) ;py-return)
-                             ,@(sub-stmt-map (lambda (s) (send s to-scheme))))))))
-;                                               (if (is-a? s return%)
-;                                                   (send s to-scheme py-return)
-;                                                   (send s to-scheme)))))))))
+        (opt-lambda ([escape-continuation-symbol #f])
+          (let ([[body (sub-stmt-map (lambda (s) (send s to-scheme)))]])
+            (->orig-so (if escape-continuation-symbol
+                           `(call-with-escape-continuation
+                             (lambda (,escape-continuation-symbol)
+                               ,@body))
+                           `(begin ,@body))))))
+
          
       (super-instantiate ())))
   

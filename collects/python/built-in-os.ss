@@ -8,15 +8,19 @@
            isfile
            sort)
 
-  (define (listdir path)
-     (list->py-list%
-      (map string->py-string%
-           (directory-list (py-string%->string path)))))
+;  (define (listdir path)
+;     (list->py-list%
+;      (map string->py-string%
+;           (directory-list (py-string%->string path)))))
+ 
+  (define-pfn listdir (path) directory-list)
      
   ;; these are not standard
+
+  (define-pfn isdir (path) directory-exists?)
      
-  (define (isdir path)
-    (bool->py-number% (directory-exists? (py-string%->string path))))
+;  (define (isdir path)
+;    (bool->py-number% (directory-exists? (py-string%->string path))))
      
   (define (isfile path)
     (bool->py-number% (file-exists? (py-string%->string path))))

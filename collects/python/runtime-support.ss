@@ -36,17 +36,6 @@
     (and (not (== a b))
          (not (py> a b))))
   
-  (define (py-object%->bool x)
-    (cond
-      [(py-is-a? x py-number%) (not (zero? (py-number%->number x)))]
-      [(py-is? x py-none) #f]
-      [else (with-handlers ([exn:not-found? (lambda (exn) #t)])
-              (py-object%->bool (python-method-call x '__len__)))]))
-  
-  
-  (define (bool->py-number% x)
-    (number->py-number% (if x 1 0)))
-  
   (define (py-compare x op y comp-lst)
     (bool->py-number%
     (and (op x y)

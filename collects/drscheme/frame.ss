@@ -99,7 +99,9 @@
   
   (define name-message%
     (class/d mred:canvas% (parent)
-      ((inherit popup-menu get-dc get-size get-client-size min-width min-height stretchable-width stretchable-height)
+      ((inherit popup-menu get-dc get-size get-client-size min-width min-height
+                stretchable-width stretchable-height
+                get-top-level-window)
        (public set-message) ;; set-message : boolean (union #f string) -> void
        (override on-event on-paint))
       
@@ -119,7 +121,7 @@
       (define mouse-grabbed? #f)
       (define (on-event evt)
 	(cond
-          [paths
+          [(and paths (not (null? paths))) 
            (cond
              [(send evt button-down?)
               (let-values ([(width height) (get-client-size)])
@@ -130,17 +132,19 @@
                               (lambda x
                                 (set! inverted? #f)
                                 (on-paint)))])
-                  (let loop ([paths paths])
+                  (let loop ([paths (cdr (reverse paths))])
                     (cond
                       [(null? paths) (void)]
                       [else 
-                       (loop (cdr paths))
                        (make-object mred:menu-item% (car paths) menu
                          (lambda (evt item)
-                           (parameterize ([finder:dialog-parent-parameter
-                                           (get-top-level-focus-window)])
-                             (finder:get-file
-                              (apply build-path paths)))))]))
+                           (parameterize ([fw:finder:dialog-parent-parameter
+                                           (get-top-level-window)])
+                             (let ([file (fw:finder:get-file
+                                          (apply build-path (reverse paths)))])
+                               (when file
+                                 (fw:handler:edit-file file))))))
+                       (loop (cdr paths))]))
                   (popup-menu menu
                               0
                               height)))]

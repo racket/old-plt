@@ -368,14 +368,14 @@
     (when (memq (init-params:setting-primitives (init-params:current-setting))
                 keyword-languages)
       
-      ;; currently, we are opting for the second of these two options:
+      ;; currently, we are opting for the first of these two options:
       
-      ;; 1. this makes all names keywords (better error checking)
-      '(for-each (lambda (x) (keyword-name (car x))) (make-global-value-list))
+      ;; 1. this makes all names keywords (matches the stepper)
+      (for-each (lambda (x) (keyword-name (car x))) (make-global-value-list))
       
       ;; 2. this only make #% names and syntax names 
       ;; be keywords (the minimum -- more freedom with ids)
-      (for-each (lambda (x)
+      '(for-each (lambda (x)
                   (let ([name (car x)]
                         [str-name (symbol->string (car x))])
                     (when (or (syntax? (global-defined-value name))
@@ -383,4 +383,5 @@
                                    (string=? (substring str-name 0 2)
                                              "#%")))
                       (keyword-name name))))
-                (make-global-value-list)))))
+                (make-global-value-list))
+      (void))))

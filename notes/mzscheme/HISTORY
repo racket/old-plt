@@ -2,6 +2,15 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.7:
+
+ * Added an "infix" conversion in the reader; input of the form
+      (left ...1  .  mid  .  right ...1)
+   is read as
+      (mid left ...1 right ...1)
+   In other words, a pair of dots between a pair of parens triggers
+   the reader's "infix" conversion.
+
 Version 199.1:
 
  * Fixed bug in `quotient' when first argument is 0 and the second
@@ -75,6 +84,8 @@ A set of internal definitions can start anywhere within a sequence
 Changed all comparison precedures to require at least two
  operands, including =, <, ..., char=?, char<?, ...,
  string=?, string<?, ...
+Added an "infix" conversion in the reader, triggered by a pair of dots
+ between a pair of parens
 Fixed leaks (file descriptors, etc.) that could happend with
  thread kills
 Fixed memory bug in the run-time support for mzc-compiled code

@@ -1438,7 +1438,6 @@
 ;; MagickReadImage reads an image or image sequence.
 ;; Extended: the wand argument is optional -- will be made and returned if not
 ;; given.
-(provide defmagick)
 (defmagick* MagickReadImage :
   (arg . args) ::
   (w : _MagickWand = (if (null? args) (NewMagickWand) arg))

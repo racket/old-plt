@@ -243,9 +243,13 @@ int wxChoice::FindString(char *s)
 char *wxChoice::GetString(int n)
 {
   if (!no_strings) return NULL;
+  if (n < 0 || n > Number())
+    return NULL;
+
   int len = (int)SendMessage((HWND)ms_handle, CB_GETLBTEXT, n, (long)wxBuffer);
   wxBuffer[len] = 0;
-  return wxBuffer;
+
+  return copystring(wxBuffer);
 }
 
 void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)

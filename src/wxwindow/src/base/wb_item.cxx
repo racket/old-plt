@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	March 1995
- * RCS_ID:      $Id: wb_item.cxx,v 1.2 1998/04/08 00:09:09 mflatt Exp $
+ * RCS_ID:      $Id: wb_item.cxx,v 1.3 1998/04/23 20:40:06 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -800,8 +800,9 @@ Bool wxbChoice::SetStringSelection (char *s)
 
 void wxbChoice::Command (wxCommandEvent & event)
 {
-  SetSelection (event.commandInt);
-  ProcessCommand (event);
+  if (event.commandInt >= 0 && event.commandInt < Number())
+    SetSelection(event.commandInt);
+  ProcessCommand(event);
 }
 
 void wxbChoice::ProcessCommand (wxCommandEvent & event)
@@ -890,21 +891,18 @@ Bool wxbListBox::SetStringSelection (char *s)
     return FALSE;
 }
 
-// Is this the right thing? Won't setselection generate a command
-// event too? No! It'll just generate a setselection event.
-// But we still can't have this being called whenever a real command
-// is generated, because it sets the selection, which will already
-// have been done! (Unless we have an optional argument for calling
-// by the actual window system, or a separate function, ProcessCommand)
 void wxbListBox::Command (wxCommandEvent & event)
 {
-  if (event.extraLong)
-    SetSelection (event.commandInt);
-  else
-    {
-      Deselect (event.commandInt);
-      return;
+  if (event.extraLong < 2) {
+    if (event.commandInt >= 0 && event.commandInt < Number()) {
+      if (event.extraLong)
+	SetSelection(event.commandInt);
+      else {
+	Deselect(event.commandInt);
+	return;
+      }
     }
+  }
   ProcessCommand (event);
 }
 

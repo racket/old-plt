@@ -25,57 +25,30 @@ BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
   wxCommandEvent *_event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
   wxCommandEvent &event = *_event;
 
-/*
-  if (param == LBN_SELCANCEL)
-  {
-    event.extraLong = FALSE;
-  }
-*/
-  if (param == LBN_SELCHANGE)
-  {
-/*
-    if (multiple != wxMULTIPLE)
-    {
+  if (param == LBN_SELCHANGE) {
+    if (multiple == wxSINGLE) {
       event.commandInt = GetSelection();
       event.clientData = GetClientData(event.commandInt);
-      event.commandString = copystring(GetStringSelection());
-    }
-*/
-    int *liste = NULL;
-    int count = GetSelections(&liste) ;
-    if (count && liste)
-    {
-      event.commandInt = liste[0] ;
-      event.clientData = GetClientData(event.commandInt);
-	  event.extraLong = 1;
-      char *s = GetString(event.commandInt);
-      if (s)
-        event.commandString = copystring(s);
-    }
-    else
-    {
-      event.commandInt = -1 ;
-	  event.extraLong = 0;
-      event.commandString = copystring("") ;
+      event.commandString = GetString(event.commandInt);
+      event.extraLong = 1;
+    } else {
+      event.commandInt = -1;
+      event.clientData = NULL;
+      event.commandString = NULL;
+      event.extraLong = 0;
     }
 
     event.eventObject = this;
     ProcessCommand(event);
-    if (event.commandString)
-      delete[] event.commandString ;
-/*
-    if (multiple != wxMULTIPLE)
-      delete[] event.commandString;
-*/
+
     return TRUE;
-  }
-  else if (param == LBN_DBLCLK)
-  {
+  } else if (param == LBN_DBLCLK) {
     wxPanel *parent = (wxPanel *)GetParent();
     if (parent)
       parent->GetEventHandler()->OnDefaultAction(this);
     return TRUE;
   }
+
   return FALSE;
 }
 
@@ -161,9 +134,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
 
   DWORD wstyle;
-  if (multiple == wxMULTIPLE)
+  // Windows sense of MULTIPLE & EXTENDED is backwards from ours.
+  if (multiple == wxEXTENDED)
     wstyle = WS_VSCROLL | WS_BORDER | LBS_MULTIPLESEL | LBS_NOTIFY | WS_TABSTOP;
-  else if (multiple == wxEXTENDED)
+  else if (multiple == wxMULTIPLE)
     wstyle = WS_VSCROLL | WS_BORDER | LBS_EXTENDEDSEL | LBS_NOTIFY | WS_TABSTOP ;
   else
     wstyle = WS_VSCROLL | WS_BORDER | LBS_NOTIFY | WS_TABSTOP;
@@ -213,9 +187,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   if (Title) {
     if (style&wxFIXED_LENGTH)
-      SetLabel(Title) ;
-    if (the_label)
-      delete [] the_label ;
+      SetLabel(Title);
   }
 
   return TRUE;
@@ -225,10 +197,8 @@ wxListBox::~wxListBox(void)
 {
   isBeingDeleted = TRUE;
   
-  if (selections)
-    delete[] selections;
   if (static_label)
-	 wxwmDestroyWindow(static_label);
+    wxwmDestroyWindow(static_label);
   static_label = NULL;
 }
 
@@ -251,10 +221,10 @@ void wxListBox::SetFirstItem(int N)
 
 void wxListBox::SetFirstItem(char *s)
 {
-  int N = FindString(s) ;
+  int N = FindString(s);
 
   if (N>=0)
-    SetFirstItem(N) ;
+    SetFirstItem(N);
 }
 
 int wxListBox::NumberOfVisibleItems(void)
@@ -279,8 +249,9 @@ void wxListBox::Delete(int N)
 
   SendMessage((HWND)ms_handle, LB_DELETESTRING, N, 0);
   no_items --;
-  for (i = N; i < no_items; i++)
+  for (i = N; i < no_items; i++) {
     user_data[i] = user_data[i + 1];
+  }
   SetHorizontalExtent(NULL);
 }
 
@@ -322,11 +293,11 @@ void wxListBox::Set(int n, char *choices[])
 
 int wxListBox::FindString(char *s)
 {
- int pos = (int)SendMessage((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)s);
- if (pos == LB_ERR)
-   return -1;
- else
-   return pos;
+  int pos = (int)SendMessage((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)s);
+  if (pos == LB_ERR)
+    return -1;
+  else
+    return pos;
 }
 
 void wxListBox::Clear(void)
@@ -340,11 +311,13 @@ void wxListBox::Clear(void)
 
 void wxListBox::SetSelection(int N, Bool select)
 {
-  if (multiple != wxSINGLE)
+  if ((N < 0) || (N >= Number()))
+    return;
+
+  if (multiple != wxSINGLE) {
     SendMessage((HWND)ms_handle, LB_SETSEL, select, N);
-  else
-  {
-    if (!select) N = -N;
+  } else {
+    N = -1;
     SendMessage((HWND)ms_handle, LB_SETCURSEL, N, 0);
   }
 }
@@ -356,10 +329,7 @@ Bool wxListBox::Selected(int N)
 
 void wxListBox::Deselect(int N)
 {
-  if (multiple != wxSINGLE)
-    SendMessage((HWND)ms_handle, LB_SETSEL, FALSE, N);
-//  else
-//    SendMessage((HWND)ms_handle, LB_SETCURSEL, -N, 0);
+  SetSelection(N, 0);
 }
 
 char *wxListBox::GetClientData(int N)
@@ -373,15 +343,11 @@ void wxListBox::SetClientData(int N, char *Client_data)
 }
 
 // Return number of selections and an array of selected integers
-// Use selections field to store data, which will be cleaned up
-// by destructor if necessary.
 int wxListBox::GetSelections(int **list_selections)
 {
   HWND listbox = (HWND)ms_handle;
-  if (selections)
-    { delete[] selections; selections = NULL; };
-  if (multiple == wxSINGLE)
-  {
+
+  if (multiple == wxSINGLE) {
     int sel = (int)SendMessage(listbox, LB_GETCURSEL, 0, 0);
     if (sel == LB_ERR)
       return 0;
@@ -389,9 +355,7 @@ int wxListBox::GetSelections(int **list_selections)
     selections[0] = sel;
     *list_selections = selections;
     return 1;
-  }
-  else
-  {
+  } else {
     int no_sel = (int)SendMessage(listbox, LB_GETSELCOUNT, 0, 0);
     if (no_sel == 0)
       return 0;
@@ -405,36 +369,28 @@ int wxListBox::GetSelections(int **list_selections)
 // Get single selection, for single choice list items
 int wxListBox::GetSelection(void)
 {
-  HWND listbox = (HWND)ms_handle;
-  if (selections)
-    { delete[] selections; selections = NULL; };
-  if (multiple == wxSINGLE)
-  {
-    int sel = (int)SendMessage(listbox, LB_GETCURSEL, 0, 0);
-    if (sel == LB_ERR)
-      return -1;
-    else
-    {
-      return sel;
-    }
-  }
-  else return -1;
+  int c, *l;
+  c = GetSelections(&l);
+  if (!c)
+    return -1;
+  else
+    return l[0];
 }
 
 // Find string for position
 char *wxListBox::GetString(int N)
 {
-	/* MATTHEW: [6] Check bounds */
+  /* MATTHEW: [6] Check bounds */
   int len;
 
-  if (N < 0 || N > no_items)
-	len = 0;
+  if (N < 0 || N >= no_items)
+    return NULL;
   else
-	len = (int)SendMessage((HWND)ms_handle, LB_GETTEXT, N, (LONG)wxBuffer);
+    len = (int)SendMessage((HWND)ms_handle, LB_GETTEXT, N, (LONG)wxBuffer);
 
   wxBuffer[len] = 0;
 
-  return wxBuffer;
+  return copystring(wxBuffer);
 }
 
 void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
@@ -680,52 +636,30 @@ void wxListBox::SetString(int N, char *s)
 
 
 Bool wxListBox::Show(Bool show)
-
 {
-
   HWND wnd = (HWND)ms_handle;
-
   int cshow;
 
-
   SetShown(show);
-
   window_parent->GetChildren()->Show(this, show);
-
   if (show)
-
     cshow = SW_SHOW;
-
   else
-
     cshow = SW_HIDE;
-
- 
 
   ShowWindow(wnd, cshow);
 
- 
-
   if (static_label)
-
 	ShowWindow(static_label, cshow);
 
-
-
   return TRUE;
-
 }
 
-
 void wxListBox::ChangeToGray(Bool gray)
-
 {
-
   wxWindow::ChangeToGray(gray);
 
   if (static_label)
-
     ::EnableWindow(static_label, !gray);
-
 }
 

@@ -41,6 +41,8 @@
 (compile-allow-set!-undefined #t)
 (compile-allow-cond-fallthrough #f)
 
+(define no-arguments-given? #t)
+
 (define simple-args
   (list
    (list '--print-convert (lambda () (set! use-print-convert? #t)))
@@ -62,7 +64,8 @@
     (if (null? l)
 	#()
 	(case (car l)
-	  [(--level) (if (null? (cdr l))
+	  [(--level) (set! no-arguments-given? #f)
+		     (if (null? (cdr l))
 			 (bad-arguments "--level flag expects level name")
 			 (let ([level (cadr l)])
 			   (case level
@@ -71,7 +74,7 @@
 			      (loop (cddr l))]
 			     [else
 			      (bad-arguments "bad level name: ~s" level)])))]
-	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a"
+	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a~n--~n"
 			    '(core structured  side-effecting advanced)
 			    (let loop ([l simple-args])
 			      (if (null? l)
@@ -80,12 +83,17 @@
 				   (format "  ~s~n" (caar l))
 				   (loop (cdr l))))))
 		    (exit 0)]
+	  [(--) (list->vector (cdr l))]
 	  [else (let ([f (assq (car l) simple-args)])
 		  (if f
 		      (begin
+			(set! no-arguments-given? #f)
 			(apply (cadr f) (cddr f))
 			(loop (cdr l)))
-		      (bad-arguments "bad flag: ~s" (car l))))]))))	   
+		      (let ([s (symbol->string (car l))])
+			(if (char=? (string-ref s 0) #\-)
+			    (bad-arguments "bad flag: ~s" (car l))
+			    (list->vector l)))))]))))
 
 (reference-library "mzlib.ss")
 (reference-library "pretty.ss")
@@ -367,7 +375,7 @@
       (current-eval mzrice-eval))))
 
 (define (go)
-  (when (equal? user-argv #())
+  (when no-arguments-given?
     (with-handlers ([void void]) ; If it fails, no matter
       (unless (directory-exists? image-dir)
         (make-directory image-dir))
@@ -375,8 +383,13 @@
         (unless (directory-exists? dir)
 	  (make-directory dir))
 	(let ([file (build-path dir "mzrice")])
-	  (write-image-to-file file)))))
-    
+	  (with-parameterization parameterization
+	    (lambda ()
+             (eval `(#%define argv 
+			      ,(write-image-to-file 
+				file 
+				(lambda () user-argv))))))))))
+  
   (printf "Welcome to MzRice version ~a, Copyright (c) 1995-97 PLT~n"
 	  (version))
   (printf "Language: ~a~nImproper lists: ~a~n"

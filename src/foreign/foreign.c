@@ -833,6 +833,13 @@ static Scheme_Object *foreign_make_ctype(int argc, Scheme_Object *argv[])
   return NULL; /* shush the compiler */
 }
 
+/* see below */
+void free_libffi_type(void *ignored, void *p)
+{
+  free(((ffi_type*)p)->elements);
+  free(p);
+}
+
 /* (make-cstruct-type types) -> ctype */
 /* This creates a new primitive type that is a struct.  This type can be used
  * with cpointer objects, except that the contents is used rather than the
@@ -842,7 +849,10 @@ static Scheme_Object *foreign_make_ctype(int argc, Scheme_Object *argv[])
 static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *p, *base;
-  ffi_type **elements, *libffi_type, **dummy;
+  /* since ffi_type objects can be used in callbacks, they are allocated using
+   * malloc so they don't move, and they are freed when the Scheme object is
+   * GCed. */
+  GC_CAN_IGNORE ffi_type **elements, *libffi_type, **dummy;
   ctype_struct *type;
   ffi_cif cif;
   int i, nargs;
@@ -850,7 +860,7 @@ static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
   if (nargs < 0)
     scheme_wrong_type(MYNAME, "proper list", 0, argc, argv);
   /* allocate the type elements */
-  elements = scheme_malloc((nargs+1) * sizeof(ffi_type*));
+  elements = malloc((nargs+1) * sizeof(ffi_type*));
   elements[nargs] = NULL;
   for (i=0, p=argv[0]; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
@@ -859,8 +869,8 @@ static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
       scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 0, argc, argv);
     elements[i] = CTYPE_PRIMTYPE(base);
   }
-  /* allocate the new libffi type object */
-  libffi_type = scheme_malloc(sizeof(ffi_type));
+  /* allocate the new libffi type object: use malloc so it is not movable */
+  libffi_type = malloc(sizeof(ffi_type));
   libffi_type->size      = 0;
   libffi_type->alignment = 0;
   libffi_type->type      = FFI_TYPE_STRUCT;
@@ -874,6 +884,7 @@ static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
   type->basetype = (NULL);
   type->scheme_to_c = ((Scheme_Object*)libffi_type);
   type->c_to_scheme = ((Scheme_Object*)FOREIGN_struct);
+  scheme_register_finalizer(type, free_libffi_type, libffi_type, NULL, NULL);
   return (Scheme_Object*)type;
 }
 
@@ -1576,6 +1587,7 @@ static Scheme_Object *foreign_register_finalizer(int argc, Scheme_Object *argv[]
   }
   if (!(SCHEME_FALSEP(argv[1]) || SCHEME_PROCP(argv[1])))
     scheme_wrong_type(MYNAME, "procedure-or-false", 1, argc, argv);
+  /* !!! throw an error if the old finalizer is not ours */
   scheme_register_finalizer
     (argv[0], (ptrsym ? do_ptr_finalizer : do_scm_finalizer),
      argv[1], NULL, &old);
@@ -1743,9 +1755,14 @@ static Scheme_Object *foreign_ffi_call(int argc, Scheme_Object *argv[])
 
 void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
 {
-  ffi_callback_struct *data = (ffi_callback_struct*)userdata;
+  ffi_callback_struct *data;
   Scheme_Object *argv_stack[MAX_QUICK_ARGS];
   int argc = cif->nargs, i;
+#ifdef MZ_PRECISE_GC
+  data = GC_weak_box_val(((struct immobile_box*)userdata)->p);
+#else
+  data = (ffi_callback_struct*)userdata;
+#endif
   Scheme_Object **argv, *p, *v;
   if (argc <= MAX_QUICK_ARGS)
     argv = argv_stack;
@@ -1757,6 +1774,21 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
   }
   p = _scheme_apply(data->proc, argc, argv);
   scheme_to_c(data->otype, resultp, p, NULL);
+}
+
+/* see below */
+typedef struct closure_and_cif_struct {
+  ffi_closure          closure;
+  ffi_cif              cif;
+  struct immobile_box *im;
+} closure_and_cif;
+/* free the above */
+void free_cl_cif_args(void *ignored, void *p)
+{
+#ifdef MZ_PRECISE_GC
+  GC_free_immobile_box(((closure_and_cif*)p)->im);
+#endif
+  free(p);
 }
 
 /* (ffi-callback scheme-proc in-types out-type) -> ffi-callback */
@@ -1771,9 +1803,39 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   Scheme_Object *otype = argv[2];
   Scheme_Object *p, *base;
   int nargs, i;
-  ffi_type *rtype, **atypes;
-  ffi_cif *cif;
-  ffi_closure *cl;
+  /* ffi_closure objects are problematic when used with a moving GC.  The
+   * problem is that memory that is GC-visible can move at any time.  The
+   * solution is to use an immobile-box, which an immobile pointer (in a simple
+   * malloced block), which points to the ffi_callback_struct that contains the
+   * relevant Scheme call details.  Another minor complexity is that an
+   * immobile box serves as a reference for the GC, which means that nothing
+   * will ever get collected: and the solution for this is to stick a weak-box
+   * in the chain.  Users need to be aware of GC issues, and need to keep a
+   * reference to the callback object to avoid releasing the whole thing --
+   * when that reference is lost, the ffi_callback_struct will be GCed, and a
+   * finalizer will free() the malloced memory.  Everything on the malloced
+   * part is allocated in one block, to make it easy to free.  The final layout
+   * of the various objects is:
+   *
+   * <<======malloc======>> : <<===========scheme_malloc===============>>
+   *                        :
+   *    ffi_closure <------------------------\
+   *      |  |              :                |
+   *      |  |              :                |
+   *      |  \--> immobile ----> weak        |
+   *      |         box     :    box         |
+   *      |                 :     |          |
+   *      |                 :     |          |
+   *      |                 :     \--> ffi_callback_struct
+   *      |                 :               |  |
+   *      V                 :               |  \-----> Scheme Closure
+   *     cif ---> atypes    :               |
+   *                        :               \--------> input/output types
+   */
+  GC_CAN_IGNORE ffi_type *rtype, **atypes;
+  GC_CAN_IGNORE ffi_cif *cif;
+  GC_CAN_IGNORE ffi_closure *cl;
+  GC_CAN_IGNORE closure_and_cif *cl_cif_args;
   if (!SCHEME_PROCP(argv[0]))
     scheme_wrong_type(MYNAME, "procedure", 0, argc, argv);
   nargs = scheme_proper_list_length(itypes);
@@ -1782,7 +1844,11 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   if (NULL == (base = get_ctype_base(otype)))
     scheme_wrong_type(MYNAME, "C-type", 2, argc, argv);
   rtype = CTYPE_PRIMTYPE(base);
-  atypes = scheme_malloc(nargs * sizeof(ffi_cif));
+  /* malloc space for everything needed, so a single free gets rid of this */
+  cl_cif_args = malloc(sizeof(closure_and_cif) + nargs*sizeof(ffi_cif*));
+  cl = &(cl_cif_args->closure); /* cl is the same as cl_cif_args */
+  cif = &(cl_cif_args->cif);
+  atypes = ((void*)cl_cif_args) + sizeof(closure_and_cif);
   for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
       scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);
@@ -1790,20 +1856,25 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
       scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 1, argc, argv);
     atypes[i] = CTYPE_PRIMTYPE(base);
   }
-  cif = scheme_malloc(sizeof(ffi_cif));
   if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
-  cl = scheme_malloc(sizeof(ffi_closure)); /*!!!*/
   data = (ffi_callback_struct*)scheme_malloc_tagged(sizeof(ffi_callback_struct));
   data->so.type = ffi_callback_tag;
-  data->callback = (cl);
+  data->callback = (cl_cif_args);
   data->proc = (argv[0]);
   data->itypes = (argv[1]);
   data->otype = (argv[2]);
-  /* put data in immobile box */
-  if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)data) != FFI_OK)
+#ifdef MZ_PRECISE_GC
+  /* put data in immobile, weak box */
+  cl_cif_args->im = GC_malloc_immobile_box(GC_malloc_weak_box(data, NULL, 0));
+#else
+  cl_cif_args->im = (void*)data;
+#endif
+  if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)(cl_cif_args->im))
+      != FFI_OK)
     scheme_signal_error
       ("internal error: ffi_prep_closure did not return FFI_OK");
+  scheme_register_finalizer(data, free_cl_cif_args, cl_cif_args, NULL, NULL);
   return (Scheme_Object*)data;
 }
 
@@ -2065,7 +2136,3 @@ void scheme_init_foreign(Scheme_Env *env)
 }
 
 /*****************************************************************************/
-/*
-access to raw malloc + free
-imobile box used a lot in mred
-*/

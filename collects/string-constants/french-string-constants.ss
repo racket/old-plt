@@ -107,7 +107,7 @@
  (welcome-to-drscheme-version/language "Bienvenue dans DrScheme, version ~a, ~a.")
  
  ; these appear on subsequent lines in the `Help|Welcome to DrScheme' dialog.
- (welcome-to-drscheme "Bienvenue dans DrScheme.")
+ (welcome-to-drscheme "Bienvenue dans DrScheme")
  (version/language "version ~a, ~a.")
  
  (goto-line "Aller à la ligne")

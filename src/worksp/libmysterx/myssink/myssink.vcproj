@@ -16,7 +16,7 @@
 			IntermediateDirectory="Debug"
 			ConfigurationType="2"
 			UseOfATL="1"
-			ATLMinimizesCRunTimeLibraryUsage="TRUE"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
@@ -33,26 +33,29 @@
 				DebugInformationFormat="4"/>
 			<Tool
 				Name="VCCustomBuildTool"
-				Description="Copying $(TargetPath) to  ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName)"
-				CommandLine="copy /y $(OutDir)\$(TargetFileName) ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName) &amp; regsvr32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName)
-"
-				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\$(TargetFileName)"/>
+				Description="Register myssink.dll"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\myssink.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\mysc\$(ConfigurationName)\mysc.lib ..\..\..\..\lib\msvc\mzdyn.obj corguids.lib ..\..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\..\lib\msvc\libmzschxxxxxxx.lib"
-				OutputFile="$(OutDir)/myssink.dll"
-				LinkIncremental="2"
-				ModuleDefinitionFile="..\..\..\mysterx\myssink\myssink.def"
+				AdditionalDependencies="..\..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\..\lib\msvc\libmzschxxxxxxx.lib"
+				OutputFile="$(OutDir)\myssink.dll"
+				LinkIncremental="1"
+				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/myssink.pdb"
+				ProgramDatabaseFile="$(OutDir)\myssink.pdb"
 				SubSystem="2"
-				ImportLibrary="$(OutDir)/myssink.lib"
+				ImportLibrary="$(OutDir)\myssink.lib"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"
+				GenerateStublessProxies="TRUE"
+				TypeLibraryName="$(InputDir)$(InputName).tlb"
 				HeaderFileName="$(InputName).h"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Register myssink.dll"
+				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\myssink.dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
@@ -69,37 +72,54 @@
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"
 			ConfigurationType="2"
+			UseOfATL="1"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				InlineFunctionExpansion="1"
-				OmitFramePointers="TRUE"
+				InlineFunctionExpansion="0"
+				OmitFramePointers="FALSE"
 				AdditionalIncludeDirectories="..\..\..\mysterx\mysc;..\..\..\..\include"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MYSSINK_EXPORTS"
-				StringPooling="TRUE"
+				StringPooling="FALSE"
 				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="0"
+				ObjectFile=""
+				ProgramDataBaseFileName=""
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
-				DebugInformationFormat="3"/>
+				SuppressStartupBanner="FALSE"
+				Detect64BitPortabilityProblems="FALSE"
+				DebugInformationFormat="0"
+				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+				Description="Copy library to collects"
+				CommandLine="copy /y $(OutDir)\$(InputName).dll ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386"
+				Outputs="..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\myssink.dll"/>
 			<Tool
 				Name="VCLinkerTool"
-				OutputFile="$(OutDir)/myssink.dll"
+				AdditionalDependencies="..\..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\..\lib\msvc\libmzschxxxxxxx.lib"
+				OutputFile="$(OutDir)\myssink.dll"
 				LinkIncremental="1"
 				GenerateDebugInformation="TRUE"
+				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				ImportLibrary="$(OutDir)/myssink.lib"
+				ImportLibrary="$(OutDir)\myssink.lib"
 				TargetMachine="1"/>
 			<Tool
-				Name="VCMIDLTool"/>
+				Name="VCMIDLTool"
+				GenerateStublessProxies="TRUE"
+				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				HeaderFileName="$(InputName).h"/>
 			<Tool
-				Name="VCPostBuildEventTool"/>
+				Name="VCPostBuildEventTool"
+				Description="Register myssink.dll"
+				CommandLine="REGSVR32 /s ..\..\..\..\collects\mysterx\private\compiled\native\win32\i386\myssink.dll"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool

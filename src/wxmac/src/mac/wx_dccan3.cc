@@ -449,6 +449,16 @@ Bool wxGetUnicodeGlyphAvailable(int c,
 #define QUICK_UBUF_SIZE 512
 static UniChar u_buf[QUICK_UBUF_SIZE];
 
+#if 0
+static long time_preprocess, time_ctx, time_style, time_layout, time_measure, time_draw;
+static long time_counter, time_start;
+#define START_TIME time_start = scheme_get_process_milliseconds()
+#define END_TIME(x) time_ ## x += (scheme_get_process_milliseconds() - time_start)
+#else
+#define START_TIME /* empty */
+#define END_TIME(x) /* empty */
+#endif
+
 static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
 				  int just_meas, int given_font, 
 				  short txFont, short txSize, short txFace,
@@ -484,6 +494,8 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
   style = (qd_spacing ? theATSUqdstyle : theATSUstyle);
 
+  START_TIME;
+
   if (ucs4) {
     int i, extra;
     unsigned int v;
@@ -497,7 +509,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
     ulen = theStrlen + extra;
     if (qd_spacing)
-      alloc_ulen = 2 * (ulen + 1);
+      alloc_ulen = ulen + 1;
     else
       alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)
@@ -523,7 +535,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			      theStrlen, NULL, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
     if (qd_spacing)
-      alloc_ulen = 2 * (ulen + 1);
+      alloc_ulen = ulen + 1; 
     else
       alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)
@@ -550,15 +562,12 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       }
     }
     ulen -= j;
-    /* Add ZWNJ to prevent other combinations */
-    /*  I think is this redundant, because other attributes
-	(in t estyle or layout) disable combinations. But just
-	in case... */
-    for (i = ulen; i--; ) {
-      unicode[(2 * i) + 1] = 0x200C;
-      unicode[(2 * i)] = unicode[i];
-    }
-    ulen *= 2;
+
+    /* On other platforms, we add ZWNJ to prevent other
+       combinations. But I think it would be redundant here, because
+       other attributes (in the style or layout) disable
+       combinations, and adding ZWNJ seems to slow
+       text measuring by a factor of 3 or 4. */
   }
   
 
@@ -573,6 +582,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       }
     }
   }
+
+  END_TIME(preprocess);
+  START_TIME;
 
 #ifdef OS_X
   GetPort(&qdp);
@@ -624,6 +636,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   }
 #endif
 
+  END_TIME(ctx);
+  START_TIME;
+
   if (!again) {
     if (given_font)
       atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
@@ -634,6 +649,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			      (use_cgctx || just_meas) ? 1.0 : scale_y,
 			      qd_spacing);
   }
+
+  END_TIME(style);
+  START_TIME;
 
   /********************* BEGIN NO-GC RANGE **********************/
   /* Don't GC until the text layout is destroyed, otherwise the */
@@ -697,6 +715,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     ATSUSetLayoutControls(layout, 1, r_theTags, r_theSizes, r_theValues); 
   }
 
+  END_TIME(layout);
+  START_TIME;
+
 
   {
     ATSTrapezoid bounds;
@@ -718,6 +739,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       result = result / scale_y;
     }
   }
+
+  END_TIME(measure);
+  START_TIME;
 
   if (!just_meas) {
     GrafPtr iGrafPtr;
@@ -845,6 +869,16 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
 #ifdef OS_X
   if (use_cgctx) {
+  }
+#endif
+
+  END_TIME(draw);
+  
+#if 0
+  if (!((time_counter++) & 0xFF)) {
+    printf("---%ld\npre %ld\nctx %ld\nstyle %ld\nlayout %ld\nmeasure %ld\ndraw %ld\n",
+	   time_counter,
+	   time_preprocess, time_ctx, time_style, time_layout, time_measure, time_draw);
   }
 #endif
 

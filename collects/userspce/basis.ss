@@ -533,7 +533,7 @@
 	(current-will-executor (make-will-executor))
 	(read-curly-brace-as-paren #t)
 	(read-square-bracket-as-paren #t)
-	(print-struct #t)
+	(print-struct (not (eq? 'r4rs-style (setting-printing setting))))
 
 	(error-print-width 250)
 	(current-print drscheme-print)

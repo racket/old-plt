@@ -480,69 +480,15 @@
 	 (lambda (c-kwd)
 	   (add-micro-form c-kwd scheme-vocabulary
 	     (let* ((kwd '())
-		     (in-pattern-1 `(,c-kwd ()
-				      super-expr
-				      interfaces
-				      paroptarglist
-				      inst-vars ...))
-		     (out-pattern-1 `(,c-kwd (this super-init)
-				       super-expr
-				       interfaces
-				       paroptarglist
-				       inst-vars ...))
-		     (in-pattern-2 `(,c-kwd (this)
-				      super-expr
-				      interfaces
-				      paroptarglist
-				      inst-vars ...))
-		     (out-pattern-2 `(,c-kwd (this super-init)
-				       super-expr
-				       interfaces
-				       paroptarglist
-				       inst-vars ...))
-		     (in-pattern-3 `(,c-kwd (this super-init)
-				      super-expr
-				      (interface ...)
-				      ,paroptarglist-pattern
-				      inst-vars ...))
-		     (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-		     (m&e-2 (pat:make-match&env in-pattern-2 kwd))
-		     (m&e-3 (pat:make-match&env in-pattern-3 kwd)))
+		     (in-pattern `(,c-kwd (this super-init)
+				    super-expr
+				    (interface ...)
+				    ,paroptarglist-pattern
+				    inst-vars ...))
+		     (m&e (pat:make-match&env in-pattern kwd)))
 	       (lambda (expr env attributes vocab)
 		 (cond
-		   ((pat:match-against m&e-1 expr env)
-		     =>
-		     (lambda (p-env)
-		       (let* ((kwd-pos (pat:pexpand c-kwd p-env kwd))
-			       (captured-this
-				 (introduce-identifier 'this kwd-pos))
-			       (captured-super-init
-				 (introduce-identifier 'super-init kwd-pos))
-			       (new-p-env (pat:extend-penv
-					    'this captured-this
-					    (pat:extend-penv
-					      'super-init captured-super-init
-					      p-env))))
-			 (expand-expr
-			   (structurize-syntax
-			     (pat:pexpand out-pattern-1 new-p-env kwd)
-			     expr '(-1))
-			   env attributes vocab))))
-		   ((pat:match-against m&e-2 expr env)
-		     =>
-		     (lambda (p-env)
-		       (let* ((kwd-pos (pat:pexpand c-kwd p-env kwd))
-			       (captured-super-init
-				 (introduce-identifier 'super-init kwd-pos))
-			       (new-p-env (pat:extend-penv
-					    'super-init captured-super-init
-					    p-env)))
-			 (expand-expr
-			   (structurize-syntax
-			     (pat:pexpand out-pattern-2 new-p-env kwd)
-			     expr '(-1))
-			   env attributes vocab))))
-		   ((pat:match-against m&e-3 expr env)
+		   ((pat:match-against m&e expr env)
 		     =>
 		     (lambda (p-env)
 		       (let ((in:this (pat:pexpand 'this p-env kwd))

@@ -965,7 +965,14 @@
 	(list e de)))
 
 
-  (define syntax-case-stxsrc '(syntax-case syntax-case mzscheme))
+  (define (who->name id)
+    (let ([b (identifier-binding id)])
+      (if (pair? b)
+	  (list (syntax-e id)
+		(caddr b)
+		(cadddr b))
+	  (syntax-e id))))
+
   (define syntax-stxsrc '(syntax syntax mzscheme))
 
   ;;----------------------------------------------------------------------
@@ -993,8 +1000,7 @@
   ;; does not contain the pattern variables as "keys", since the positions
   ;; can also be determined by the prototype.
   ;;
-  (define (make-match&env/extract-vars p k just-vars? phase-param?)
-    (define top p)
+  (define (make-match&env/extract-vars who top p k just-vars? phase-param?)
     (define (m&e p local-top use-ellipses? last? id-is-rest?)
       (cond
        [(and use-ellipses? (ellipsis? p))
@@ -1039,7 +1045,7 @@
 				      (begin
 					(when (...? (stx-car rest))
 					  (raise-syntax-error 
-					   syntax-case-stxsrc
+					   (who->name who)
 					   "misplaced ellipses in pattern (follows other ellipses)"
 					   top
 					   (stx-car rest)))
@@ -1079,7 +1085,7 @@
 		  (let ([dp (stx-car (stx-cdr p))])
 		    (m&e dp dp #f last? #f))
 		  (raise-syntax-error 
-		   syntax-case-stxsrc
+		   (who->name who)
 		   "misplaced ellipses in pattern"
 		   top
 		   hd))
@@ -1129,7 +1135,7 @@
 	    (if (and use-ellipses?
 		     (...? p))
 		(raise-syntax-error 
-		 syntax-case-stxsrc
+		 (who->name who)
 		 "misplaced ellipses in pattern"
 		 top
 		 p)
@@ -1200,7 +1206,7 @@
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
 		  (when (ormap (lambda (i) (bound-identifier=? i r)) l)
 		    (raise-syntax-error 
-		     syntax-case-stxsrc
+		     (who->name who)
 		     "variable used twice in pattern"
 		     top
 		     r))
@@ -1220,11 +1226,11 @@
 				null))
 		 ,(app-e r))))))
 
-  (define (make-match&env p k phase-param?)
-    (make-match&env/extract-vars p k #f phase-param?))
+  (define (make-match&env who top p k phase-param?)
+    (make-match&env/extract-vars who top p k #f phase-param?))
   
-  (define (get-match-vars p k)
-    (make-match&env/extract-vars p k #t #f))
+  (define (get-match-vars who top p k)
+    (make-match&env/extract-vars who top p k #t #f))
 
   ;; Create an S-expression that applies
   ;; rest to `e'. Optimize ((lambda (e) E) e) to E.
@@ -1719,16 +1725,17 @@
   (require #%stx #%small-scheme)
   (require-for-syntax #%stx #%small-scheme #%sc #%kernel)
 
-  (define-syntax syntax-case*
+  (define-syntax syntax-case**
     (lambda (x)
-      (define l (and (stx-list? x) (stx->list x)))
+      (define l (and (stx-list? x) (cdr (stx->list x))))
       (unless (and (stx-list? x)
 		   (> (length l) 3))
 	(raise-syntax-error
 	 #f
 	 "bad form"
 	 x))
-      (let ([expr (cadr l)]
+      (let ([who (car l)]
+	    [expr (cadr l)]
 	    [kws (caddr l)]
 	    [lit-comp (cadddr l)]
 	    [clauses (cddddr l)])
@@ -1772,7 +1779,7 @@
 		 [rslt (quote-syntax rslt)]
 		 [pattern-varss (map
 				 (lambda (pattern)
-				   (get-match-vars pattern (stx->list kws)))
+				   (get-match-vars who pattern pattern (stx->list kws)))
 				 (stx->list patterns))]
 		 [lit-comp-is-mod? (and (identifier? lit-comp)
 					(module-identifier=? 
@@ -1829,6 +1836,8 @@
 						(list* (datum->syntax-object
 							(quote-syntax here)
 							(make-match&env
+							 who
+							 pattern
 							 pattern
 							 (stx->list kws)
 							 (not lit-comp-is-mod?))
@@ -2000,7 +2009,7 @@
 				     (datum->syntax-object #f 'srctag x))))))))))
        x)))
 
-  (provide syntax-case* syntax))
+  (provide syntax-case** syntax))
 
 ;;----------------------------------------------------------------------
 ;; syntax/loc
@@ -2010,18 +2019,25 @@
   (require-for-syntax #%kernel #%stxcase)
 
   ;; Regular syntax-case
+  (define-syntax syntax-case*
+    (lambda (stx)
+      (syntax-case** #f stx () module-identifier=?
+	[(_ stxe kl id=? clause ...)
+	 (syntax (syntax-case** _ stxe kl id=? clause ...))])))
+
+  ;; Regular syntax-case
   (define-syntax syntax-case
     (lambda (stx)
-      (syntax-case* stx () module-identifier=?
+      (syntax-case** #f stx () module-identifier=?
 	[(_ stxe kl clause ...)
-	 (syntax (syntax-case* stxe kl module-identifier=? clause ...))])))
+	 (syntax (syntax-case** _ stxe kl module-identifier=? clause ...))])))
 
   ;; Like syntax, but also takes a syntax object
   ;; that supplies a source location for the
   ;; resulting syntax object.
   (define-syntax syntax/loc
     (lambda (stx)
-      (syntax-case* stx () module-identifier=?
+      (syntax-case** #f stx () module-identifier=?
 	[(_ loc pattern)
 	 (syntax (let ([stx (syntax pattern)])
 		   (datum->syntax-object
@@ -2029,36 +2045,58 @@
 		    (syntax-e stx)
 		    loc)))])))
 
-  (provide syntax/loc syntax-case))
+  (provide syntax/loc syntax-case* syntax-case))
 
 ;;----------------------------------------------------------------------
 ;; with-syntax, generate-temporaries
 
 (module #%with-stx #%kernel
   (require #%stx #%stxloc #%small-scheme)
-  (require-for-syntax #%kernel #%stxcase #%stxloc)
+  (require-for-syntax #%kernel #%stxcase #%stxloc #%sc #%qq-and-or #%cond)
 
-  ;; From Dybvig
+  ;; Partly from Dybvig
   (define-syntax with-syntax
     (lambda (x)
       (syntax-case x ()
 	((_ () e1 e2 ...)
 	 (syntax/loc x (begin e1 e2 ...)))
-	((_ ((out in)) e1 e2 ...)
-	 (syntax/loc x (syntax-case in () (out (begin e1 e2 ...)))))
 	((_ ((out in) ...) e1 e2 ...)
-	 (syntax-case (map (lambda (x)
+	 (let ([ins (syntax->list (syntax (in ...)))])
+	   ;; Check for duplicates or other syntax errors:
+	   (get-match-vars (syntax _) x (syntax (out ...)) null)
+	   ;; Generate temps and contexts:
+	   (let ([tmps (map (lambda (x) (gensym 'wstmp)) ins)]
+		 [heres (map (lambda (x)
 			       (datum->syntax-object
 				x
 				'here
 				x))
-			   (syntax->list (syntax (in ...)))) ()
-	   [(here ...)
-	    (syntax/loc x (syntax-case (vector (datum->syntax-object 
-						(quote-syntax here) 
-						in) 
-					       ...) ()
-			    (#(out ...) (begin e1 e2 ...))))])))))
+			     ins)]
+		 [outs (syntax->list (syntax (out ...)))])
+	     ;; Let-bind RHSs, then build up nested syntax-cases:
+	     (datum->syntax-object
+	      #'here
+	      `(let ,(map (lambda (tmp here in)
+			    `[,tmp (datum->syntax-object 
+				    (quote-syntax ,here) 
+				    ,in)])
+			  tmps heres ins)
+		 ,(let loop ([tmps tmps][outs outs])
+		    (cond
+		     [(null? tmps)
+		      (syntax (begin e1 e2 ...))]
+		     [else `(syntax-case ,(car tmps) ()
+			      [,(car outs) ,(loop (cdr tmps)
+						  (cdr outs))]
+			      [_else (raise-syntax-error
+				      '(with-syntax with-syntax mzscheme)
+				      "binding match failed"
+				      ;; Minimize the syntax structure we keep:
+				      (quote-syntax ,(datum->syntax-object 
+						      #f 
+						      (syntax-object->datum (car outs))
+						      (car outs))))])])))
+	      x)))))))
 
   (define counter 0)
   (define (append-number s)
@@ -2156,17 +2194,20 @@
   ;; From Dybvig, mostly:
   (define-syntax syntax-rules
     (lambda (x)
-      (syntax-case x ()
+      (syntax-case** syntax-rules x () module-identifier=?
 	((_ (k ...) ((keyword . pattern) template) ...)
 	 (andmap identifier? (syntax->list (syntax (k ...))))
 	 (with-syntax (((dummy ...)
-			(generate-temporaries (syntax (keyword ...)))))
+			(map (lambda (x)
+			       ;; Preserve the name, in case it's printed out
+			       (string->uninterned-symbol (symbol->string (syntax-e x))))
+			     (syntax->list (syntax (keyword ...))))))
 	   (syntax (lambda (x)
 		     (syntax-case x (k ...)
 		       ((dummy . pattern) (syntax/loc x template))
 		       ...))))))))
 
-  (provide (all-from #%stxcase) (all-from #%small-scheme)
+  (provide syntax (all-from #%small-scheme)
 	   (all-from #%with-stx) (all-from #%stxloc) check-duplicate-identifier
 	   letrec-syntaxes letrec-syntax let-syntaxes let-syntax syntax-rules))
 

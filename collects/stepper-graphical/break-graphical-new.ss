@@ -127,7 +127,7 @@
                               (send defns-text highlight-range source-start source-end debug-highlight-color))
                         (m:message-box "source text is not in this buffer" '(ok)))
                     (clear-var-highlights)
-                    (highlight-vars
+                    (highlight-vars mark)
                   )]
                
                

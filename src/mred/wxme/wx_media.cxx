@@ -704,8 +704,13 @@ void wxMediaEdit::BlinkCaret()
 	caretSnip->BlinkCaret(dc, x - dx, y - dy);
     }
   } else {
+    /* This test needs to be the same as in Refresh(): */
+    if (graphicMaybeInvalid || flowLocked || delayRefresh) {
+      /* We're busy. Go away. */
+      return;
+    }
+
     if ((startpos == endpos) 
-	&& !delayRefresh 
 	&& !flash 
 	&& hiliteOn) {
       caretBlinked  = !caretBlinked;
@@ -1353,7 +1358,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, wxchar *str, wxList *snips
       if (!delayRefresh)
 	needXCopy = TRUE;
 #endif	
-      if (isnip || strlen)
+      if (isnip || strlen || snipsl)
 	BeginEditSequence();
       Delete(start, end, scrollOk);
       deleted = TRUE;

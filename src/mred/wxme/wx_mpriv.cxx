@@ -2523,6 +2523,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
   if ((width <= 0) || (height <= 0))
     return;
 
+  /* BEwARE - this same test is in BlinkCaret(): */
   if (graphicMaybeInvalid || flowLocked || delayRefresh) {
     /* This Refresh command was not requested by us and we're busy. 
        (Probably in the middle of a begin-/end-edit-sequnce.)

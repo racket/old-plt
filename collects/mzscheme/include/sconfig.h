@@ -158,7 +158,7 @@ int scheme_solaris_semaphore_try_down(void *);
 
   /************** x86/Linux with gcc ****************/
 
-#if defined(linux)
+#if defined(linux) && defined(i386)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "i386-linux"
 
@@ -176,6 +176,31 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define USE_IEEE_FP_PREDS
 # define LINUX_CONTROL_387
+# define USE_EXPLICT_FP_FORM_CHECK
+
+# define SIGSET_IS_SIGNAL
+# define SIGSET_NEEDS_REINSTALL
+
+# define FLAGS_ALREADY_SET
+
+#endif
+
+  /************** PowerPC/Linux with gcc ****************/
+
+#if defined(linux) && defined(powerpc)
+
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-linux"
+
+# include "uconfig.h"
+# undef HAS_STANDARD_IOB
+
+# define DIRENT_NO_NAMLEN
+
+# define HAS_LINUX_IOB
+
+# define STACK_GROWS_DOWN
+
+# define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
 
 # define SIGSET_IS_SIGNAL

@@ -45,6 +45,8 @@
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.
   
+  ; varref-remove* removes the varrefs in a-set from the varrefs in b-set
+  
   (define (varref-remove* a-set b-set)
     (remove* a-set 
              b-set 
@@ -85,9 +87,16 @@
   ; translate-varref : returns the name the varref will get in the final output
   
   (define (translate-varref expr)
-    (if (or (z:top-level-varref? expr) (not (z:parsed-back expr))) ; top level or bogus varrefs
+    (if (or (z:top-level-varref? expr) (not (z:parsed-back expr))) ; top level or extra-bogus varrefs
         (z:varref-var expr)
         (utils:get-binding-name (z:bound-varref-binding expr))))
+  
+  ; bindings->varrefs : turn a list of bindings into a list of bogus varrefs
+  
+  (define (bindings->varrefs bindings)
+    (map create-bogus-bound-varref
+         (map z:binding-var bindings)
+         bindings))
   
   ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
   ; a source expression (in the parsed zodiac format) and a set of z:varref/value pairs.
@@ -97,8 +106,9 @@
   (define (make-debug-info source tail-bound free-vars label)
     (let* ([kept-vars (if (eq? tail-bound 'all)
                           free-vars
-                          (var-set-intersect free-vars
-                                             tail-bound))]
+                          (var-set-intersect tail-bound    ; the order of these arguments is important if
+                                                           ; the tail-bound varrefs don't have bindings
+                                             free-vars))]
             [var-clauses (map (lambda (x) 
                                (let ([var (translate-varref x)])
                                  `(cons (#%lambda () ,var)
@@ -111,7 +121,7 @@
   ; wrap-struct-form 
   
   (define (wrap-struct-form names annotated)
-    (let* ([arg-temps (build-list (length names) get-arg-symbol)]
+    (let* ([arg-temps (build-list (length names) get-arg-varref)]
            [arg-temp-syms (map z:varref-var arg-temps)]
            [struct-proc-names (cdr names)]
            [closure-records (map (lambda (proc-name) `(,make-closure-record
@@ -254,6 +264,7 @@
                   [define-values-recur (lambda (expr) (annotate/inner expr tail-bound #f #f))]
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f))]
                   [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f))]
+                  [let-body-recur (lambda (expr vars) (annotate/inner expr (var-set-union tail-bound vars) #t #f))]
                   [make-debug-info-normal (lambda (free-vars)
                                             (make-debug-info expr tail-bound free-vars 'none))]
                   [make-debug-info-app (lambda (tail-bound free-vars label)
@@ -300,7 +311,7 @@
                [(z:app? expr)
 		(let+
 		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
-		  [val arg-temps (build-list (length sub-exprs) get-arg-symbol)]
+		  [val arg-temps (build-list (length sub-exprs) get-arg-varref)]
                   [val arg-temp-syms (map z:varref-var arg-temps)] 
 		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-temp-syms)]
 		  [val pile-of-values
@@ -366,7 +377,7 @@
                                                   ,if-temp)
                                                  (#%current-continuation-marks)
                                                  ,if-temp)))))]
-                  [val if-temp-varref-list (list (create-bogus-bound-varref if-temp))]
+                  [val if-temp-varref-list (list (create-bogus-bound-varref if-temp #f))]
 		  [val free-vars (var-set-union if-temp-varref-list
                                                 free-vars-test 
                                                 free-vars-then 
@@ -384,7 +395,7 @@
                         null)]
                
                [(z:begin-form? expr)
-                (if top-level?
+                (if top-level? 
                     (let+ ([val bodies (z:begin-form-bodies expr)]
                            [val (values annotated-bodies free-vars)
                                 (dual-map (lambda (expr)
@@ -393,8 +404,9 @@
                        (values `(#%begin ,@annotated-bodies)
                                (apply var-set-union free-vars)))
                     (let+ ([val bodies (z:begin-form-bodies expr)]
-                           [val (values all-but-last-body last-body) 
+                           [val (values all-but-last-body last-body-list) 
                                 (list-partition bodies (- (length bodies) 1))]
+                           [val last-body (car last-body-list)]
                            [val (values annotated-a free-vars-a)
                                 (dual-map non-tail-recur all-but-last-body)]
                            [val (values annotated-final free-vars-final)
@@ -444,31 +456,36 @@
                               (map (lambda (var-set)
                                      (map (lambda (var) 
                                             (begin0 
-                                              (get-arg-symbol counter)
+                                              (get-arg-varref counter)
                                               (set! counter (+ counter 1))))
                                           var-set))
                                    var-sets))]
                        [val dummy-var-list (apply append dummy-var-sets)]
                        [val outer-dummy-initialization
-                            `([,dummy-var-list (#%values ,@(build-list (length dummy-var-list) 
-                                                                       (lambda (_) '(#%quote *undefined*))))])]
+                            `([,(map z:varref-var dummy-var-list)
+                               (#%values ,@(build-list (length dummy-var-list) 
+                                                       (lambda (_) '(#%quote *undefined*))))])]
                        [val (values annotated-vals free-vars-vals)
                             (dual-map non-tail-recur vals)]
                        [val set!-clauses
                             (map (lambda (dummy-var-set val)
-                                   `(#%set!-values ,dummy-var-set ,val))
+                                   `(#%set!-values ,(map z:varref-var dummy-var-set) ,val))
                                  dummy-var-sets
                                  annotated-vals)]
                        [val inner-transference
-                            `([,var-set-list (values ,@dummy-var-list)])]
+                            `([,(map utils:get-binding-name var-set-list) 
+                               (values ,@(map z:varref-var dummy-var-list))])]
+                       [_ (printf "body: ~a~n" (z:let-values-form-body expr))]
                        [val (values annotated-body free-vars-body)
-                            (tail-recur (z:let-values-form-body expr))]
+                            (let-body-recur (z:let-values-form-body expr) 
+                                            (bindings->varrefs var-set-list))]
                        ; time to work from the inside out again
                        [val inner-let-values
                             `(#%let-values ,inner-transference ,annotated-body)]
                        [val middle-begin
                             `(#%begin ,@set!-clauses ,inner-let-values)]
-                       [val free-vars (apply var-set-union free-vars-body free-vars-vals)]
+                       [val free-vars (apply var-set-union (varref-remove* (bindings->varrefs var-set-list) free-vars-body)
+                                             free-vars-vals)]
                        [val wrapped-begin
                             (wcm-wrap (make-debug-info-app (var-set-union tail-bound dummy-var-list)
                                                            (var-set-union free-vars dummy-var-list)
@@ -502,7 +519,8 @@
                                  var-sets
                                  annotated-bodies)]
                        [val (values annotated-body free-vars-body)
-                            (tail-recur (z:letrec-values-form-body expr))]
+                            (let-body-recur (z:letrec-values-form-body expr) 
+                                            (bindings->varrefs var-set-list))]
                        [val middle-begin
                             `(#%begin ,@set!-clauses ,annotated-body)]
                        [val free-vars (apply var-set-union free-vars-body free-vars-vals)]
@@ -555,9 +573,7 @@
 	       [(z:case-lambda-form? expr)
 		(let* ([annotate-case
 			(lambda (arglist body)
-			  (let ([var-list (map create-bogus-bound-varref 
-                                               (map z:binding-var
-                                                    (z:arglist-vars arglist)))]
+			  (let ([var-list (bindings->varrefs (z:arglist-vars arglist))]
                                 [args (utils:arglist->ilist arglist)])
                             (utils:improper-foreach utils:check-for-keyword args)
                             (utils:improper-foreach mark-never-undefined args)

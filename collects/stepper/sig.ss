@@ -83,7 +83,7 @@
    if-temp
    struct-flag
    highlight-placeholder
-   get-arg-symbol
+   get-arg-varref
    top-level-exp-gensym-source
    expr-read
    set-expr-read!

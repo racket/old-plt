@@ -1,4 +1,4 @@
-(unit/sig cogen-utils^
+(unit/sig stepper:cogen-utils^
   (import [z : zodiac:system^]
           [e : zodiac:interface^])
   
@@ -17,7 +17,7 @@
 	    name))))
 
   (define-values (lookup-new-binding-name set-new-binding-name!)
-    (let-values ([(getter setter) (z:register-client 'aries:new-name (lambda () #f))])
+    (let-values ([(getter setter) (z:register-client 'new-name (lambda () #f))])
       (values
        (lambda (parsed) (getter (z:parsed-back parsed)))
        (lambda (parsed n) (setter (z:parsed-back parsed) n)))))

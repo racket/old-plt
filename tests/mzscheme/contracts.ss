@@ -881,6 +881,22 @@
       (send (make-object d%) m 100))
    "pos-d")
   
+  (test/spec-failed
+   'not/f1
+   '(contract (not/f integer?)
+              1
+              'pos
+              'neg)
+   "pos-d")
+  
+  (test/spec-passed/result
+   'not/f2
+   '(contract (not/f integer?)
+              'not-integer
+              'pos
+              'neg)
+   'not-integer)
+  
   ))
 
 (report-errs)

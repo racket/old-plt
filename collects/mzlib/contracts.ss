@@ -822,75 +822,74 @@
          (and 
           (andmap method-specifier? (syntax->list (syntax (method-specifier ...))))
           (andmap identifier? (syntax->list (syntax (meth-name ...)))))
-         (match-let ([(`(,make-outer-checks ,xxx ,build-pieces) ...)
-                      (map (lambda (meth-contract-stx)
-                             (let ([/h (select/h meth-contract-stx 'class-contract stx)])
-                               (let-values ([(make-outer-check xxx build-pieces impl-wrap impl-builder impl-info)
-                                             (/h meth-contract-stx)])
-                                 (list make-outer-check xxx build-pieces))))
-                           (syntax->list (syntax (meth-contract ...))))])
-           (let* ([outer-args (syntax (val pos-blame neg-blame src-info))]
-                  [val-meth-names (syntax->list (syntax (meth-name ...)))]
-                  [val-publics? (map (lambda (x) (eq? 'public (syntax-e x)))
-                                     (syntax->list (syntax (method-specifier ...))))]
-                  [super-meth-names (map prefix-super val-meth-names)]
-                  [val-meth-contracts (syntax->list (syntax (meth-contract ...)))]
-                  [val-meth-contract-vars (generate-temporaries val-meth-contracts)])
-             (with-syntax ([outer-args outer-args]
-                           [(super-meth-name ...) super-meth-names]
-                           [(get-meth-contract ...) (map method-name->contract-method-name val-meth-names)]
-                           [(method ...) (map (lambda (meth-name meth-contract-var contract-stx public?) 
-                                                (if public?
-                                                    (make-wrapper-method outer-args meth-name meth-contract-var contract-stx)
-                                                    (make-wrapper-method/impl outer-args meth-name meth-contract-var contract-stx)))
-                                              val-meth-names
-                                              val-meth-contract-vars
-                                              val-meth-contracts
-                                              val-publics?)]
-                           [(meth-contract-var ...) val-meth-contract-vars]
-                           [(method-contract-declarations ...) (map (lambda (meth-name meth-contract-var public?)
-                                                                      (if public?
-                                                                          (make-public-method-contract-declaration meth-name meth-contract-var)
-                                                                          (make-override-method-contract-declaration meth-name meth-contract-var)))
-                                                                    val-meth-names
-                                                                    val-meth-contract-vars
-                                                                    val-publics?)])
-               (foldr
-                (lambda (f stx) (f stx))
-                (syntax/loc stx
-                  (let ([meth-contract-var meth-contract] ...)
-                    (make-contract
-                     (lambda outer-args
-                       (unless (class? val)
-                         (raise-contract-error src-info pos-blame neg-blame "expected a class, got: ~e" val))
-                       (let ([class-i (class->interface val)])
-                         (void)
-                         (unless (method-in-interface? 'meth-name class-i)
-                           (raise-contract-error src-info
-                                                 pos-blame 
-                                                 neg-blame
-                                                 "expected class to have method ~a, got: ~e"
-                                                 'meth-name
-                                                 val))
-                         ...
-                         
-                         (let ([override-spec? (eq? 'override 'method-specifier)]
-                               [override? (method-in-interface? 'get-meth-contract class-i)])
-                           (unless (boolean=? override-spec? override?)
-                             (if override-spec?
-                                 (error 'class-contract "method ~a is declared as an overriding method in ~e, but isn't" 'meth-name val)
-                                 (error 'class-contract "method ~a is declared as a public method in ~e, but isn't" 'meth-name val))))
-                         ...)
-                       
-                       (class val
-                         
-                         method-contract-declarations ...
-                         
-                         (rename [super-meth-name meth-name] ...)
-                         method ...
-                         (super-instantiate ())))
-                     (lambda x (error 'impl-contract "unimplemented")))))
-                make-outer-checks))))]
+         (let* ([outer-args (syntax (val pos-blame neg-blame src-info))]
+                [val-meth-names (syntax->list (syntax (meth-name ...)))]
+                [val-publics? (map (lambda (x) (eq? 'public (syntax-e x)))
+                                   (syntax->list (syntax (method-specifier ...))))]
+                [super-meth-names (map prefix-super val-meth-names)]
+                [val-meth-contracts (syntax->list (syntax (meth-contract ...)))]
+                [val-meth-contract-vars (generate-temporaries val-meth-contracts)])
+
+           (let ([ht (make-hash-table)])
+             (for-each (lambda (name)
+                         (let ([key (syntax-e name)])
+                           (when (hash-table-get ht key (lambda () #f))
+                             (raise-syntax-error 'class/contract "duplicate method name in contract" stx name))
+                           (hash-table-put! ht key #t)))
+                       val-meth-names))
+           
+           (with-syntax ([outer-args outer-args]
+                         [(super-meth-name ...) super-meth-names]
+                         [(get-meth-contract ...) (map method-name->contract-method-name val-meth-names)]
+                         [(method ...) (map (lambda (meth-name meth-contract-var contract-stx public?) 
+                                              (if public?
+                                                  (make-wrapper-method outer-args meth-name meth-contract-var contract-stx)
+                                                  (make-wrapper-method/impl outer-args meth-name meth-contract-var contract-stx)))
+                                            val-meth-names
+                                            val-meth-contract-vars
+                                            val-meth-contracts
+                                            val-publics?)]
+                         [(meth-contract-var ...) val-meth-contract-vars]
+                         [(method-contract-declarations ...) (map (lambda (meth-name meth-contract-var public?)
+                                                                    (if public?
+                                                                        (make-public-method-contract-declaration meth-name meth-contract-var)
+                                                                        (make-override-method-contract-declaration meth-name meth-contract-var)))
+                                                                  val-meth-names
+                                                                  val-meth-contract-vars
+                                                                  val-publics?)])
+             (syntax/loc stx
+               (let ([meth-contract-var meth-contract] ...)
+                 (make-contract
+                  (lambda outer-args
+                    (unless (class? val)
+                      (raise-contract-error src-info pos-blame neg-blame "expected a class, got: ~e" val))
+                    (let ([class-i (class->interface val)])
+                      (void)
+                      (unless (method-in-interface? 'meth-name class-i)
+                        (raise-contract-error src-info
+                                              pos-blame 
+                                              neg-blame
+                                              "expected class to have method ~a, got: ~e"
+                                              'meth-name
+                                              val))
+                      ...
+                      
+                      (let ([override-spec? (eq? 'override 'method-specifier)]
+                            [override? (method-in-interface? 'get-meth-contract class-i)])
+                        (unless (boolean=? override-spec? override?)
+                          (if override-spec?
+                              (error 'class-contract "method ~a is declared as an overriding method in ~e, but isn't" 'meth-name val)
+                              (error 'class-contract "method ~a is declared as a public method in ~e, but isn't" 'meth-name val))))
+                      ...)
+                    
+                    (class val
+                      
+                      method-contract-declarations ...
+                      
+                      (rename [super-meth-name meth-name] ...)
+                      method ...
+                      (super-instantiate ())))
+                  (lambda x (error 'impl-contract "unimplemented")))))))]
         [(_ (meth-specifier meth-name meth-contract) ...)
          (for-each (lambda (specifier name)
                      (unless (method-specifier? name)
@@ -1570,8 +1569,10 @@
                ((contract-wrap (car contracts)) val pos neg src-info)]))
           (lambda x (error 'impl-contract "unimplemented")))])))
 
-  (provide and/f or/f 
+  (provide and/f or/f not/f
            >=/c <=/c </c >/c 
+           integer-in real-in
+           string/len
 	   natural-number?
            false? any? 
 	   printable?
@@ -1607,6 +1608,15 @@
                          [else (cons " "
                                      (cons (car strs)
                                            (loop (cdr strs))))]))))))
+  
+  (define (string/len n)
+    (unless (number? n)
+      (error 'string/len "expected a number as argument, got ~e" n))
+    (make-flat-named-contract 
+     (format "string (up to ~a characters)" n)
+     (lambda (x)
+       (and (string? x)
+            ((string-length x) . < . n)))))
   
   (define (symbols . ss)
     (unless ((length ss) . >= . 1)
@@ -1653,7 +1663,7 @@
      (lambda (x)
        (andmap (lambda (f) (test-flat-contract f x))
                fs))))
-
+  
   (define (or/f . fs)
     (for-each
      (lambda (x) 
@@ -1667,6 +1677,16 @@
      (lambda (x)
        (ormap (lambda (f) (test-flat-contract f x))
               fs))))
+
+  (define (not/f f)
+    (unless (or (flat-named-contract? f)
+                (and (procedure? f)
+                     (procedure-arity-includes? f 1)))
+      (error 'not/f "expected a procedure of arity 1 or <flat-named-contract>, given: ~e" f))
+    (make-flat-named-contract
+     (build-compound-type-name "not/f" f)
+     (lambda (x)
+       (not (f x)))))
   
   (define (>=/c x)
     (make-flat-named-contract
@@ -1728,7 +1748,7 @@
     (make-flat-named-contract
      "false"
      (lambda (x) (not x))))
-
+  
   (define any?
     (make-flat-named-contract
      "any"
@@ -1772,6 +1792,26 @@
             (andmap test-flat-contract
                     args
                     (vector->list v))))))
+  
+  (define (integer-in start end)
+    (unless (and (integer? start)
+                 (integer? end))
+      (error 'integer-in "expected two integers as arguments, got ~e and ~e" start end))
+    (make-flat-named-contract 
+     (format "integer between ~a and ~a, inclusive" start end)
+     (lambda (x)
+       (and (integer? x)
+            (<= start x end)))))
+  
+  (define (real-in start end)
+    (unless (and (real? start)
+                 (real? end))
+      (error 'real-in "expected two real numbers as arguments, got ~e and ~e" start end))
+    (make-flat-named-contract 
+     (format "real between ~a and ~a, inclusive" start end)
+     (lambda (x)
+       (and (real? x)
+            (<= start x end)))))
   
   (define (box/p pred)
     (unless (flat-contract? pred)

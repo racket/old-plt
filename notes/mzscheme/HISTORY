@@ -44,7 +44,7 @@ Version 199.27:
    value and tries again.
 
  * Changed `syntax-source-module' to produce module path indices
-   instead of the resolved module name.
+   instead of resolved module names.
 
 Version 199.26:
 

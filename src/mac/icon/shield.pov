@@ -8,7 +8,8 @@
 #include "PatchDancePrefix.inc"
 
 camera {
-   location< 0.0, 15, -5>
+   location< 0.0, 9.5, -2.5>
+   //location <-0, 2, 6>
    //direction z *  1.5609
    //right <1,0,0>
    //sky<-0.3746,  0.9272,  0>
@@ -2427,17 +2428,18 @@ union   {
 	  // create a texture that lays an image's colors onto a surface
 	  // image maps into X-Y plane from <0,0,0> to <1,1,0>
 	  image_map {
-	    gif "plt.300x300.gif"
+	    png "plt.500x500.png"
 	    // gif "plt-icon.gif" // the file to read (iff/gif/tga/png/sys)
 	    map_type 0 // 0=planar, 1=spherical, 2=cylindrical, 5=torus
 	    interpolate 2 // 0=none, 1=linear, 2=bilinear, 4=normalized distance
+	    // filter all 0.9
 	  //  // [filter N V] // N=all or color index # (0...N), V= value (0.0...1.0)
 	  //  // [transmit N V] // N=all or color index # (0...N), V= value (0.0...1.0)
 	  //  // [use_color | use_index]
-	  //  once
+	    once
 	  } // image_map
-	  scale 8.0
-	  translate < -4.0, 4.0, 0.0 >
+	  scale 7.9
+	  translate < -3.95, -3.95, 0.0 >
 	  rotate 90.0 * x
 	} // pigment
 	finish {
@@ -2445,7 +2447,7 @@ union   {
 	diffuse 0.6
 	specular 1.0
 	//phong 1
-	roughness 0.5
+	// roughness 0.5
 	metallic
 	} // finish
    }   // texture
@@ -2491,8 +2493,8 @@ union   {
 -0.1564> , < 33.8757,  2.5938, -33.8182> , <-0.0689, -0.9853, 
 -0.1564> , < 0.1887,  4.9495, -33.8182> , <-0.0689, -0.9853, -0.1564> 
 }
-   texture { pigment {color rgb <0.9,0.9,0.9> }
-             finish { ambient 0.3}
+   texture { pigment {color rgb <1.0,1.0,1.0> }
+             finish { ambient 0.4}
            }
    }   // mesh: Square
 

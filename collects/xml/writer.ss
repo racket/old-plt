@@ -3,13 +3,15 @@
   
   (define empty-tag-shorthand (make-parameter #t))
   
-  ;; gen-write/display-xml : (Nat Output-port -> Void) -> Content [Output-Port]-> Void
-  (define (gen-write/display-xml dent)
-    (lambda (c . out)
-      (let ([port (cond
-                    [(null? out) (current-output-port)]
-                    [else (car out)])])
-        (write-xml-content c 0 dent port))))
+  ;; var-argify : (a Output-port -> b) -> (a [Output-port] -> b)
+  (define (var-argify f)
+    (case-lambda
+     [(x out) (f x out)]
+     [(x) (f x (current-output-port))]))
+  
+  ;; gen-write/display-xml/content : (Nat Output-port -> Void) -> Content [Output-Port]-> Void
+  (define (gen-write/display-xml/content dent)
+    (var-argify (lambda (c out) (write-xml-content c 0 dent out))))
   
   ;; indent : Nat Output-port -> Void
   (define (indent n out)
@@ -20,21 +22,33 @@
         (loop (sub1 n)))))
   
   ;; write-xml/content : Content [Output-port] -> Void
-  (define write-xml/content (gen-write/display-xml void))
+  (define write-xml/content (gen-write/display-xml/content void))
   
   ;; display-xml/content : Content [Output-port] -> Void
-  (define display-xml/content (gen-write/display-xml indent))
+  (define display-xml/content (gen-write/display-xml/content indent))
+  
+  ;; gen-write/display-xml : (Content [Output-port] -> Void) -> Document [Output-port] -> Void
+  (define (gen-write/display-xml output-content)
+    (var-argify (lambda (doc out)
+                  (display-outside-misc (prolog-misc (document-prolog doc)) out)
+                  (output-content (document-element doc))
+                  (display-outside-misc (document-misc doc) out))))
   
   ;; write-xml : Document [Output-port] -> Void
-  (define (write-xml doc . out)
-    ;; more-here - write out header junk
-    (apply write-xml/content (document-element doc) out))
+  (define write-xml (gen-write/display-xml write-xml/content))
   
   ;; display-xml : Document [Output-port] -> Void
-  (define (display-xml doc . out)
-    ;; more-here - display the header
-    (apply display-xml/content (document-element doc) out))
-  
+  (define display-xml (gen-write/display-xml display-xml/content))
+
+  ;; display-outside-misc : (listof Misc) Output-port -> Void
+  (define (display-outside-misc misc out)
+    (for-each (lambda (x)
+                ((cond
+                   [(comment? x) write-xml-comment]
+                   [(pi? x) write-xml-pi]) x 0 void out)
+                (newline out))
+              misc))
+    
   ;; write-xml-content : Content Nat (Nat Output-Stream -> Void) Output-Stream -> Void
   (define (write-xml-content el over dent out)
     ((cond
@@ -82,7 +96,8 @@
   
   ;; write-xml-entity : Entity Nat (Nat Output-stream -> Void) Output-stream -> Void
   (define (write-xml-entity entity over dent out)
-    (fprintf out "&~a;" (entity-text entity)))
+    (let ([n (entity-text entity)])
+      (fprintf out (if (number? n) "&#~a;" "&~a;") n)))
     
   (define escape-table
     (map (lambda (x y) (cons (regexp (symbol->string x)) y))

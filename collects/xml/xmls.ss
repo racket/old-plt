@@ -1,28 +1,10 @@
-(require-library "core.ss")
-(define-signature xml-lex^ 
-  (port->fstream build-fstream
-   (struct tokstream (token rest))
-   (struct token ())
-   (struct begin-tag (name contents start stop))
-   (struct pi-tag (type contents start stop))
-   (struct doc-tag (root contents start stop))
-   (struct cdata-tag (contents start stop))
-   (struct empty-tag (name contents start stop))
-   (struct end-tag (contents start stop))
-   (struct text (contents start stop))
-   (struct entity-ref (contents start stop))
-   (struct lex:error ())
-   (struct internal ())
-   build-tokstream))
+(require-library "functios.ss")
+(require-library "invoke.ss")
 
 (define-signature xml-structs^
   ((struct document (prolog element misc))
    (struct comment (text))
-   (struct prolog (xml before-dtd dtd before-element))
-   (struct xmlD (version encoding standalone))
-   (struct doctype (root ext-id dtd))
-   (struct int (content))
-   (struct ext (location file-name))
+   (struct prolog (misc dtd))
    (struct element (name attributes content))
    (struct attribute (name value))
    (struct pi (target-name instruction))
@@ -31,7 +13,7 @@
    (struct entity (text))))
 
 (define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand))
-(define-signature reader^ ((struct xml-read:error ()) read-xml))
+(define-signature reader^ (read-xml read-comments trim-whitespace))
 
 (define-signature xexpr^ (xml->xexpr xexpr->xml))
 (define-signature extra-xexpr^ ((open xexpr^) assoc-sort bcompose attribute->srep))

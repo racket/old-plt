@@ -9,6 +9,8 @@
   ;;        |  Processing-instruction
   ;; Attribute-srep ::= (list Symbol String)
   
+  ;; sorting is no longer necessary, since xt3d uses xml->zxexpr, which sorts.
+  
   ;; assoc-sort : (listof (list Symbol a)) -> (listof (list Symbol a))
   (define (assoc-sort to-sort)
     (quicksort to-sort (bcompose string<? (compose symbol->string car))))

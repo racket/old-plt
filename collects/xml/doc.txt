@@ -60,11 +60,17 @@ Parameters
        preferred XML notation.  However, it's not part of HTML, so this
        parameter provides backward compatability.
 
-Exceptions
-==========
+> trim-whitespace : Bool
+       Default: #f
+       All whitespace at the beginning at the beginning and end of each
+       pcdata structure is removed.  All other consecutive whitespace is
+       replaced by a single space.  CDATA sections are not affected.
 
-> xml-read:error is thrown by read-xml if the document is not well formed.
-  (define-struct (xml-read:error struct:exn) ())
+> read-comments : Bool
+       Default: #f
+       Comments, by definition, should be ignored by programs.  However,
+       interoperating with ad hoc extentions to other languages sometimes
+       requires processing comments anyway.
 
 Examples
 ========
@@ -82,11 +88,9 @@ What this Library Doesn't Provide
 =================================
 
        Document Type Declaration (DTD) processing
-       Reading documents with internal DTDs will raise an error
-       Writing or displaying document headers
        Validation
-       Proper reading of white space
-       Reading user-defined entites
+       Expanding user-defined entites
+       Reading user-defined entites in attributes
        Unicode support
 
 XML Datatype Details
@@ -102,14 +106,13 @@ Note: Xexpr is the only important one to understand.  Even then,
          |  (cons Symbol (listof Xexpr)) ;; an element with no attributes
          |  Symbol ;; symbolic entities such as &nbsp;
          |  Number ;; numeric entities like &20;
-         |  Comment
-         |  Processing-instruction
-
-> Processing-instruction ::= (make-pi Location Location String (list String))
-  (define-struct (pi struct:source) (target-name instruction))
+         |  Misc
 
 > Document ::= (make-document Prolog Element (listof Processing-instruction))
   (define-struct document (prolog element misc))
+
+> Prolog ::= (make-prolog (listof Misc) #f)
+  (define-struct prolog (misc dtd))
 
 > Element ::= (make-element Location Location
 			    Symbol
@@ -123,8 +126,10 @@ Note: Xexpr is the only important one to understand.  Even then,
 > Content ::= Pcdata
            |  Element
            |  Entity
-           |  Comment
-           |  Processing-instruction
+           |  Misc
+
+  Misc ::= Comment
+        |  Processing-instruction
 
 > Pcdata ::= (make-pcdata Location Location String)
   (define-struct (pcdata struct:source) (string))
@@ -132,33 +137,14 @@ Note: Xexpr is the only important one to understand.  Even then,
 > Entity ::= (make-entity (U Nat Symbol))
   (define-struct entity (text))
 
+> Processing-instruction ::= (make-pi Location Location String (list String))
+  (define-struct (pi struct:source) (target-name instruction))
+
 > Comment ::= (make-comment String)
   (define-struct comment (text))
 
-> Source ::= (make-source Location Location)
+  Source ::= (make-source Location Location)
   (define-struct source (start stop))
 
-> Location ::= Nat
+  Location ::= Nat
             |  Symbol
-
-Note: The following structures are neither fully supported nor very useful:
-
-> Prolog ::= (make-prolog XMLDeclare (listof Processing-instruction) DocType
-			  (listof Processing-instruction))
-  (define-struct prolog (xml before-dtd dtd before-element))
-
-> XMLDeclare ::= (make-xmlD String (U String #f) (U String #f))
-              |  #f
-  (define-struct xmlD (version encoding standalone))
-
-> DocType ::= (make-doctype String ExtID Dtd)
-           |  #f
-  (define-struct doctype (root ext-id dtd))
-
-> ExtID ::= (make-ext String String)
-         |  #f
-  (define-struct ext (location file-name))
-
-> Dtd ::= (make-int (listof Char))
-       |  #f
-  (define-struct int (content))

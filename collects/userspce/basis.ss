@@ -478,11 +478,10 @@
 	      short-string)))))
   
   ;; intermediate-values-during-load : (parameter (TST *-> void))
+  ;; probably obsolete
   (define intermediate-values-during-load (make-parameter (lambda x (void))))
   
   ;; drscheme-load-handler : string ->* TST
-  ;;   It should call intermediate-values-during-load in all 3 branches.
-  ;;   It only calls it in one, currently.
   (define (drscheme-load-handler filename)
     (unless (string? filename)
       (raise (make-exn:application:arity

@@ -47,6 +47,8 @@
    get-default-setting
    get-default-setting-name
 
+   drscheme-load-handler
+
    zodiac-vocabulary?
    
    error-display/debug-handler

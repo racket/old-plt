@@ -91,7 +91,7 @@
                         (this-thunk)))
                 #f))]))))
   
-  (define exception-reporting-rep (make-parameter #f))
+  (define current-rep-text (make-parameter #f))
   
   (define (process-text/zodiac text f start end annotate? text-is-file?)
     (let ([setting (basis:current-setting)]
@@ -221,6 +221,66 @@
     (printf "WARNING: could not make busy cursor~n")
     (set! busy-cursor #f))
 
+  (define process-text ; =User=, =Handler=, =No-Breaks=
+    (lambda (text fn start end annotate? text-is-file?)
+      (if (basis:zodiac-vocabulary? (ivar (current-rep-text) user-setting))
+	  (process-text/zodiac text fn start end annotate? text-is-file?)
+	  (process-text/no-zodiac text fn start end))))
+  (define process-file
+    (lambda (filename fn annotate?)
+      (if (basis:zodiac-vocabulary? (ivar (current-rep-text) user-setting))
+	  (basis:process-file/zodiac filename fn annotate?)
+	  (basis:process-file/no-zodiac filename fn))))
+  (define process-sexp
+    (lambda (sexp z fn annotate?)
+      (if (basis:zodiac-vocabulary? (ivar (current-rep-text) user-setting))
+	  (basis:process-sexp/zodiac sexp z fn annotate?)
+	  (basis:process-sexp/no-zodiac sexp fn))))
+        
+  (define (drscheme-load-handler filename)
+    (unless (string? filename)
+      (raise (raise-type-error
+	      'drscheme-load-handler
+	      "string"
+	      filename)))
+    (let* ([p (open-input-file filename)]
+	   [loc (zodiac:make-location basis:initial-line
+				      basis:initial-column
+				      basis:initial-offset
+				      filename)]
+	   [chars (begin0
+		   (list (read-char p)
+			 (read-char p)
+			 (read-char p)
+			 (read-char p))
+		   (close-input-port p))])
+      (if (equal? chars (string->list "WXME"))
+	  (let ([process-sexps
+		 (let ([last (list (void))])
+		   (lambda (sexp recur)
+		     (cond
+		      [(basis:process-finish? sexp) last]
+		      [else
+		       (set! last
+			     (call-with-values
+			      (lambda () (basis:syntax-checking-primitive-eval sexp))
+			      (lambda x x)))
+		       (recur)])))])
+	    (apply values 
+		   (let ([text (make-object drscheme:text:text%)])
+		     (parameterize ([mred:current-eventspace
+				     ;; to get the right snipclasses
+				     drscheme:init:system-eventspace])
+		       (send text load-file filename))
+		     (begin0
+		      (process-text text process-sexps
+				    0 
+				    (send text last-position)
+				    #t
+				    #f)
+		      (send text on-close)))))
+	  (basis:drscheme-load-handler filename))))
+
   (define (make-text% super%)
     (rec rep-text%
       (class/d super% (context)
@@ -292,10 +352,6 @@
            format-source-loc
            highlight-error
            report-error
-           
-           process-text
-           process-file
-           process-sexp
            
            get-user-setting
            user-setting
@@ -913,23 +969,6 @@
             (reset-highlighting)
             (super-on-delete x y)))
         
-        (define process-text ; =User=, =Handler=, =No-Breaks=
-          (lambda (text fn start end annotate? text-is-file?)
-            (if (basis:zodiac-vocabulary? user-setting)
-                (process-text/zodiac text fn start end annotate? text-is-file?)
-                (process-text/no-zodiac text fn start end))))
-        (define process-file
-          (lambda (filename fn annotate?)
-            (if (basis:zodiac-vocabulary? user-setting)
-                (basis:process-file/zodiac filename fn annotate?)
-                (basis:process-file/no-zodiac filename fn))))
-        (define process-sexp
-          (lambda (sexp z fn annotate?)
-            (if (basis:zodiac-vocabulary? user-setting)
-                (basis:process-sexp/zodiac sexp z fn annotate?)
-                (basis:process-sexp/no-zodiac sexp fn))))
-        
-        
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;;                                            ;;;
       ;;;                Evaluation                  ;;;
@@ -1294,7 +1333,7 @@
 	     user-custodian
 	     setting)
 	    
-	    (exception-reporting-rep this)
+	    (current-rep-text this)
 	    (current-output-port this-out)
 	    (current-error-port this-err)
 	    (current-input-port this-in)
@@ -1323,53 +1362,7 @@
 			      (basic-convert expr))])
 		 ans)))
 	    
-	    (current-load
-	     (let ([userspace-load (current-load)])
-	       (rec drscheme-load-handler
-		    (lambda (filename)
-		      (unless (string? filename)
-			(raise (raise-type-error
-				'drscheme-load-handler
-				"string"
-				filename)))
-		      (if (and (basis:zodiac-vocabulary? user-setting)
-			       (let* ([p (open-input-file filename)]
-				      [loc (zodiac:make-location basis:initial-line
-								 basis:initial-column
-								 basis:initial-offset
-								 filename)]
-				      [chars (begin0
-                                              (list (read-char p)
-						    (read-char p)
-						    (read-char p)
-						    (read-char p))
-                                              (close-input-port p))])
-				 (equal? chars (string->list "WXME"))))
-			  (let ([process-sexps
-				 (let ([last (list (void))])
-				   (lambda (sexp recur)
-				     (cond
-                                      [(basis:process-finish? sexp) last]
-                                      [else
-                                       (set! last
-                                             (call-with-values
-                                              (lambda () (basis:syntax-checking-primitive-eval sexp))
-                                              (lambda x x)))
-                                       (recur)])))])
-			    (apply values 
-				   (let ([text (make-object drscheme:text:text%)])
-				     (parameterize ([mred:current-eventspace
-						     ;; to get the right snipclasses
-						     drscheme:init:system-eventspace])
-				       (send text load-file filename))
-				     (begin0
-                                      (process-text text process-sexps
-                                                    0 
-                                                    (send text last-position)
-                                                    #t
-                                                    #f)
-                                      (send text on-close)))))
-			  (userspace-load filename))))))
+	    (current-load drscheme-load-handler)
 	    
 	    
 	    (basis:error-display/debug-handler
@@ -1382,7 +1375,7 @@
 	    (error-display-handler
 	     (rec drscheme-error-display-handler
 		  (lambda (msg)
-		    (let ([rep (exception-reporting-rep)])
+		    (let ([rep (current-rep-text)])
 		      (if rep
 			  (send rep report-unlocated-error msg #f)
 			  (mred:message-box "Uncaught Error" msg))))))

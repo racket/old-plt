@@ -4984,7 +4984,7 @@ Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited)
 {
   Scheme_Object *c;
 
-  c = MALLOC_ONE(Scheme_Object);
+  c = MALLOC_ONE_TAGGED(Scheme_Object);
   c->type = scheme_thread_cell_type;
   SCHEME_IPTR_VAL(c) = def_val;
   SCHEME_PINT_VAL(c) = inherited;

@@ -1,15 +1,12 @@
 #ifndef _MZCOMCP_H_
 #define _MZCOMCP_H_
 
-
-
-
 template <class T>
 class CProxy_IMzObjEvents : public IConnectionPointImpl<T, &DIID__IMzObjEvents, CComDynamicUnkArray>
 {
 	//Warning this class may be recreated by the wizard.
 public:
-	VOID Fire_Error(BSTR description)
+	VOID Fire_SchemeError(BSTR description)
 	{
 		T* pT = static_cast<T*>(this);
 		int nConnectionIndex;
@@ -30,7 +27,6 @@ public:
 			}
 		}
 		delete[] pvars;
-	
 	}
 };
 #endif

@@ -8,19 +8,19 @@ import "oaidl.idl";
 import "ocidl.idl";
 	[
 		object,
-		uuid(990CF3CD-1AF3-11D4-B6C1-0060089002FE),
+		uuid(A604CBA8-2AB5-11D4-B6D3-0060089002FE),
 		dual,
 		helpstring("IMzObj Interface"),
 		pointer_default(unique)
 	]
 	interface IMzObj : IDispatch
 	{
-		[id(1), helpstring("method Eval")] HRESULT Eval(BSTR input,[out,retval]LPBSTR output);
+		[id(1), helpstring("method Eval")] HRESULT Eval(BSTR input,[out,retval]BSTR *output);
 		[id(2), helpstring("method About")] HRESULT About();
 	};
 
 [
-	uuid(990CF3C0-1AF3-11D4-B6C1-0060089002FE),
+	uuid(A604CB9C-2AB5-11D4-B6D3-0060089002FE),
 	version(1.0),
 	helpstring("MzCOM 1.0 Type Library")
 ]
@@ -30,18 +30,18 @@ library MZCOMLib
 	importlib("stdole2.tlb");
 
 	[
-		uuid(990CF3D0-1AF3-11D4-B6C1-0060089002FE),
+		uuid(A604CBA9-2AB5-11D4-B6D3-0060089002FE),
 		helpstring("_IMzObjEvents Interface")
 	]
 	dispinterface _IMzObjEvents
 	{
 		properties:
 		methods:
-		[id(1), helpstring("method Error")] void Error(BSTR description);
+		[id(1), helpstring("method SchemeError")] HRESULT SchemeError(BSTR description);
 	};
 
 	[
-		uuid(990CF3CF-1AF3-11D4-B6C1-0060089002FE),
+		uuid(A3B0AF9E-2AB0-11D4-B6D2-0060089002FE),
 		helpstring("MzObj Class")
 	]
 	coclass MzObj

@@ -1,13 +1,10 @@
 // mzobj.cxx : Implementation of CMzObj
 
-#include <resource.h>
+#include "resource.h"
 
 #include "stdafx.h"
 #include "mzcom.h"
 #include "mzobj.h"
-
-/////////////////////////////////////////////////////////////////////////////
-// CMzObj
 
 static Scheme_Env *env;
 
@@ -281,7 +278,7 @@ CMzObj::~CMzObj(void) {
 void CMzObj::RaiseError(const OLECHAR *msg) {
   BSTR bstr;
   bstr = SysAllocString(msg);
-  Fire_Error(bstr);
+  Fire_SchemeError(bstr);
   SysFreeString(bstr);
 }
 
@@ -305,7 +302,11 @@ BOOL CMzObj::testThread(void) {
   return TRUE;
 }
 
-STDMETHODIMP CMzObj::Eval(BSTR input, LPBSTR output) {
+/////////////////////////////////////////////////////////////////////////////
+// CMzObj
+
+
+STDMETHODIMP CMzObj::Eval(BSTR input, BSTR *output) {
   if (!testThread()) {
     return E_ABORT;
   }
@@ -348,9 +349,7 @@ BOOL WINAPI dlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM) {
   }
 }
 
-STDMETHODIMP CMzObj::About(void) {
-  DialogBox(globHinst,MAKEINTRESOURCE(ABOUTBOX),
-	    NULL,dlgProc);
+STDMETHODIMP CMzObj::About() {
+  DialogBox(globHinst,MAKEINTRESOURCE(ABOUTBOX),NULL,dlgProc);
   return S_OK;
 }
-

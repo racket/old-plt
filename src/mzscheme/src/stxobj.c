@@ -2368,7 +2368,12 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 		    if (SCHEME_IMMUTABLEP(idi))
 		      idi = SCHEME_CAR(idi);
 		    else if (SCHEME_PAIRP(SCHEME_CDR(idi))) {
-		      idi = CONS(SCHEME_CAR(idi), SCHEME_CADR(idi));
+		      if (SCHEME_INTP(SCHEME_CADR(idi))) {
+			idi = CONS(SCHEME_CAR(idi), 
+				   CONS(SCHEME_CADR(idi),
+					SCHEME_CADR(SCHEME_CDR(idi))));
+		      } else
+			idi = CONS(SCHEME_CAR(idi), SCHEME_CADR(idi));
 		    }
 		  }
 		  SCHEME_VEC_ELS(l)[j++] = idi;
@@ -2846,7 +2851,40 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	key = SCHEME_VEC_ELS(a)[i];
 	p = SCHEME_VEC_ELS(a)[i+1];
 	
-	/* FIXME: need to check key & p */
+	if (!SCHEME_SYMBOLP(key)) return NULL;
+
+	if (SCHEME_SYMBOLP(p)
+	    || SAME_TYPE(SCHEME_TYPE(p), scheme_module_index_type)) {
+	  /* Ok */
+	} else if (SCHEME_PAIRP(p)) {
+	  Scheme_Object *midx;
+
+	  midx = SCHEME_CAR(p);
+	  if (!SCHEME_SYMBOLP(midx)
+	      && !SAME_TYPE(SCHEME_TYPE(midx), scheme_module_index_type))
+	    return NULL;
+
+	  if (SCHEME_SYMBOLP(SCHEME_CDR(p))) {
+	    /* Ok */
+	  } else {
+	    if (!SCHEME_PAIRP(SCHEME_CDR(p))) {
+	      printf("ack1 %p\n", p);
+	      return NULL;
+	    }
+	    if (!SCHEME_INTP(SCHEME_CADR(p))) {
+	      printf("ack2\n");
+	      return NULL;
+	    }
+	    if (!SCHEME_SYMBOLP(SCHEME_CDDR(p))) {
+	      printf("ack3\n");
+	      return NULL;
+	    }
+	    p = CONS(midx, CONS(SCHEME_CADR(p),
+				CONS(SCHEME_CDDR(p),
+				     CONS(midx, SCHEME_CDDR(p)))));
+	  }
+	} else
+	  return NULL;
 	
 	scheme_hash_set(mrn->ht, key, p);
       }

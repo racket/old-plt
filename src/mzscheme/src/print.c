@@ -1571,7 +1571,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print(((Scheme_Modidx *)obj)->base, notdisplay, 1, ht, symtab, rnht, pp);
       }
     }
-  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_module_variable_type)) 
+  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_module_variable_type)
+	   && !((Module_Variable *)obj)->mod_phase)
     {
       int l;
       Scheme_Object *idx;

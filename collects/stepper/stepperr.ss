@@ -3,7 +3,7 @@
 (require-library "letplsrc.ss")
 
 (unit/sig stepper^
-  (import [e : zodiac:interface^]
+  (import [e : stepper:error^]
 	  mzlib:function^
 	  [z : zodiac:system^])
   

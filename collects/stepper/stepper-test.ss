@@ -4,11 +4,8 @@
 (require-library "zsigs.ss" "zodiac")
 (require-library "sigs.ss" "zodiac")
 
-; zodiac:default-interface@ is COPIED (gasp!) from
-; zodiac/invoke.ss
-
-(define zodiac:default-interface@
-  (unit/sig zodiac:interface^
+(define stepper:default-error@
+  (unit/sig stepper:error^
     (import)
     (define default-error-handler
       (lambda (keyword)
@@ -18,26 +15,39 @@
     (define internal-error
       (default-error-handler 'internal-error))
     (define static-error
-      (default-error-handler 'syntax-error))))
+      (default-error-handler 'syntax-error))
+    (define dynamic-error
+      (default-error-handler 'runtime-syntax-error))))
+
     
 (define stepper-test@
   (compound-unit/sig
     (import)
     (link [FUNCTION : mzlib:function^ ((require-library-unit/sig "functior.ss"))]
-	  [ZODIAC-INTERFACE : zodiac:interface^ (zodiac:default-interface@)]
+	  [ERROR : stepper:error^ (stepper:default-error@)]
 	  [PRETTY : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
 	  [MZLIB-STRING : mzlib:string^ ((require-library-unit/sig "stringr.ss"))]
 	  [MZLIB-FILE : mzlib:file^ ((require-library-unit/sig "filer.ss")
 				     MZLIB-STRING
 				     FUNCTION)]
 	  [ZODIAC : zodiac:system^ ((require-library-unit/sig "link.ss" "zodiac")
-				    ZODIAC-INTERFACE
+				    (ERROR : zodiac:interface^)
 				    PRETTY
 				    MZLIB-FILE)]
-	  [STEPPER : stepper^ ((require-library-unit/sig "stepperr.ss" "stepper")
-			       ZODIAC-INTERFACE
-			       FUNCTION
-			       ZODIAC)])
+	  [UNPARSE : stepper:unparse^ ((require-library-unit/sig "unparser.ss" "stepper")
+				       ERROR
+				       ZODIAC)]
+	  [ANNOTATE : stepper:annotate^
+		    ((require-library-unit/sig "stepper-annotater.ss" "stepper")
+		     ZODIAC
+		     ERROR
+		     UNPARSE
+		     RECONSTRUCT)]
+	  [RECONSTRUCT : stepper:reconstruct^ 
+		       ((require-library-unit/sig "stepper-reconstructr.ss" "stepper")
+			ZODIAC
+			ERROR
+			UNPARSE)])
     (export (unit STEPPER))))
 
 (invoke-open-unit/sig stepper-test@)

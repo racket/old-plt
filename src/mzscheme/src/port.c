@@ -170,9 +170,11 @@ typedef struct {
 #ifdef USE_MAC_TCP
 typedef struct {
   void *create_pb;
+  void *current_pb; /* prevents GC during async call */
   StreamPtr stream;
   int state;
   int async_errid;
+  Scheme_Object *lock; /* read lock */
 } tcp_t;
 
 typedef struct {
@@ -4926,11 +4928,9 @@ static short tcpDriverId;
 #define	SOCK_STATE_NO_STREAM 0 /* Socket doesn't have a MacTCP stream yet */
 #define	SOCK_STATE_UNCONNECTED 1 /* Socket is unconnected. */
 #define	SOCK_STATE_LISTENING 2 /* Socket is listening for connection. */
-#define	SOCK_STATE_LIS_CON 3 /* Socket is in transition from listen to connected. */
 #define	SOCK_STATE_CONNECTING 4 /* Socket is initiating a connection. */
 #define	SOCK_STATE_CONNECTED 5 /* Socket is connected. */
 #define	SOCK_STATE_CLOSING 6 /* Socket is closing */
-#define	SOCK_STATE_LIS_CLOSE 7 /* Socket closed while listening */
 #define	SOCK_STATE_CLOSED 8 /* Socket closed nicely */
 
 typedef struct TCPiopbX {
@@ -4961,21 +4961,16 @@ static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
 
   switch (eventCode) {
   case TCPClosing:
-    if (t->state == SOCK_STATE_LISTENING || t->state == SOCK_STATE_LIS_CON)
-      t->state = SOCK_STATE_LIS_CLOSE;
-    else
-      t->state = SOCK_STATE_CLOSING;
+    t->state = SOCK_STATE_CLOSING;
     break;
     
   case TCPTerminate:
-    if (t->state != SOCK_STATE_LIS_CLOSE) {
-      if (t->state == SOCK_STATE_LISTENING || t->state == SOCK_STATE_LIS_CON)
-	t->state = SOCK_STATE_LIS_CLOSE;
-      else if (t->state == SOCK_STATE_CLOSING)
-        t->state == SOCK_STATE_CLOSED;
-      else
-	t->state = SOCK_STATE_UNCONNECTED;
-    }
+    if (t->state == SOCK_STATE_LISTENING)
+      t->state = SOCK_STATE_CLOSED;
+    else if (t->state == SOCK_STATE_CLOSING)
+      t->state == SOCK_STATE_CLOSED;
+    else
+      t->state = SOCK_STATE_UNCONNECTED;
     break;
   }
 }
@@ -4997,7 +4992,7 @@ static void tcp_listen_done(TCPiopbX *pbx)
 
   switch(pb->ioResult) {
   case noErr:
-    data->tcp.state = SOCK_STATE_LIS_CON;
+    data->tcp.state = SOCK_STATE_CONNECTED;
     break;
     
   case openFailed:
@@ -5006,7 +5001,7 @@ static void tcp_listen_done(TCPiopbX *pbx)
   case duplicateSocket:
   case commandTimeout:
   default:
-    data->tcp.state = SOCK_STATE_LIS_CLOSE;
+    data->tcp.state = SOCK_STATE_UNCONNECTED;
     data->tcp.async_errid = -pb->ioResult;
     break;
   }
@@ -5124,6 +5119,8 @@ static TCPiopbX *mac_make_xpb(Scheme_Tcp *data)
   memcpy(xpb, data->tcp.create_pb, sizeof(TCPiopb));
 
   xpb->data = data;
+  
+  data->tcp.current_pb = xpb;
 
   return xpb;
 }
@@ -5298,7 +5295,7 @@ static int tcp_check_accept(Scheme_Object *listener)
     return 1;
 
   for (i = 0; i < count; i++)
-    if (datas[i]->tcp.state == SOCK_STATE_LIS_CON)
+    if (datas[i] && (datas[i]->tcp.state != SOCK_STATE_LISTENING))
       return 1;
 
   return 0;
@@ -5519,6 +5516,10 @@ static int tcp_getc(Scheme_Input_Port *port)
 
   data = (Scheme_Tcp *)port->port_data;
 
+#ifdef USE_MAC_TCP
+ top:
+#endif
+
   if (data->hiteof)
     return EOF;
 
@@ -5545,6 +5546,18 @@ static int tcp_getc(Scheme_Input_Port *port)
   errid = errno;
 #endif
 #ifdef USE_MAC_TCP
+  /* Allow only one read at a time: */
+  if (!data->tcp.lock)
+    data->tcp.lock = scheme_make_sema(0);
+  else {
+    if (scheme_wait_sema(data->tcp.lock, 1)) {
+      /* Do it the hard way: */
+      scheme_wait_sema(data->tcp.lock, 0);
+      scheme_post_sema(data->tcp.lock);
+      goto top;
+    }
+  }
+  
   if (data->tcp.state == SOCK_STATE_CONNECTED) {
     /* socket is connected */
     TCPiopbX *xpb;
@@ -5586,6 +5599,8 @@ static int tcp_getc(Scheme_Input_Port *port)
   
   if (errid)
     data->bufmax = -1;
+    
+   scheme_post_sema(data->tcp.lock);
 #endif
   
   if (data->bufmax == -1) {
@@ -6152,8 +6167,13 @@ tcp_listen(int argc, Scheme_Object *argv[])
     datas = (Scheme_Tcp **)scheme_malloc(sizeof(Scheme_Tcp *) * backlog);
 
     for (i = 0; i < backlog; i++) {
-      if ((errid = mac_tcp_listen(id, &data)))
+      if ((errid = mac_tcp_listen(id, &data))) {
+        /* Close listeners that had succeeded: */
+        int j;
+        for (j = 0; j < i; j++)
+          mac_tcp_close(datas[i]);
 	break;
+      }
       datas[i] = data;
     }
 
@@ -6247,7 +6267,8 @@ static int stop_listener(Scheme_Object *o)
     else {
       l->count = 0;
       for (i = 0; i < count; i++)
-	mac_tcp_close(datas[i]);
+	if (datas[i])
+	  mac_tcp_close(datas[i]);
     }
  }
 #endif
@@ -6402,24 +6423,24 @@ tcp_accept(int argc, Scheme_Object *argv[])
 
   errid = 0;
   for (i = 0; i < count; i++) {
-    if (datas[i]->tcp.state == SOCK_STATE_LIS_CON) {
+    if (datas[i] && (datas[i]->tcp.state != SOCK_STATE_LISTENING)) {
       Scheme_Object *v[2];
       Scheme_Tcp *data;
-      
-      datas[i]->tcp.state = SOCK_STATE_CONNECTED;
       
       v[0] = make_named_tcp_input_port(datas[i], "TCP");
       v[1] = make_tcp_output_port(datas[i]);
       
       if (!(errid = mac_tcp_listen(l->portid, &data))) {
-	/* new listener at the end of the queue: */
-	memcpy(datas + i, datas + i + 1, count - i - 1);
+        /* new listener at the end of the queue: */
+	memcpy(datas + i, datas + i + 1, sizeof(Scheme_Tcp *) * (count - i - 1));
 	datas[count - 1] = data;
 
 	scheme_file_open_count++;
-    
-	return scheme_values(2, v);
+      } else {
+      	/* catastophic error; we permanently decrement the listener count */
+        datas[i] = NULL;
       }
+      return scheme_values(2, v);
     }
   }
 # endif

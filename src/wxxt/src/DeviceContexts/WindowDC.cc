@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.7 1998/09/20 21:48:48 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.8 1998/09/23 00:11:57 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -33,6 +33,7 @@
 #define  Uses_wxList
 #include "wx.h"
 
+#define  UseXtRegions
 #include "wx_rgn.h"
 
 #include <math.h>
@@ -166,7 +167,7 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     saveBack = current_background_color;
     if (src->GetDepth() == 1) {
       /* Pen GC used for blit: */
-      SetPen(wxThePenList->FindOrCreatePen(dcolor, 0, rop));
+      SetPen(wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop));
     } else {
       SetBackground(wxWHITE);
       SetPen(wxBLACK_PEN);
@@ -182,10 +183,23 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	// Check if we're copying from a mono bitmap
         retval = TRUE;
 	if (src->GetDepth() == 1) {
+	  if (rop == wxSOLID) {
+	    /* Seems like the easiest way to implement transparent backgrounds is to
+	       use a stipple. */
+	    XGCValues values;
+	    unsigned long mask = GCFillStyle | GCStipple | GCTileStipXOrigin | GCTileStipYOrigin;
+	    values.stipple = GETPIXMAP(src);
+	    values.fill_style = FillStippled;
+	    values.ts_x_origin = ((XLOG2DEV(xdest) - (long)xsrc) % src->GetWidth());
+	    values.ts_y_origin = ((YLOG2DEV(ydest) - (long)ysrc) % src->GetHeight());
+	    XChangeGC(DPY, PEN_GC, mask, &values);
+	    XFillRectangle(DPY, DRAWABLE, PEN_GC, XLOG2DEV(xdest), YLOG2DEV(ydest), scaled_width, scaled_height);
+	  } else {
 	    XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
 		       (long)xsrc, (long)ysrc,
 		       scaled_width, scaled_height,
 		       XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
+	  }
 	} else if (src->GetDepth() == (int)DEPTH) {
 	    XCopyArea(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
 		      (long)xsrc, (long)ysrc,

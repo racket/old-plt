@@ -408,7 +408,7 @@
 						 desc (cc-name cc))]
 				 [(p where)
 				  ;; Doing something specifically in "where"
-				  (setup-fprintf p "  compiling in ~a" where)])
+				  (setup-fprintf p "  in ~a" where)])
 				compile-collection
 				(cc-collection cc))
 			 (setup-printf "No more ~a to compile for ~a" 

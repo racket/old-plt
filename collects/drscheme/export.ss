@@ -21,12 +21,12 @@
 	       ((reference-relative-library-unit/sig "frame.ss")
 		wx mred mzlib basis
 		setup unit
-		compound-unit app zodiac)]
+		compound-unit* app zodiac)]
 	[unit : drscheme:unit^
 	  ((reference-relative-library-unit/sig "unit.ss")
-	   wx mred mzlib app setup compound-unit frame edit rep
+	   wx mred mzlib app setup compound-unit* frame edit rep
 	   language get/extend face)]
-	[compound-unit : drscheme:compound-unit^
+	[compound-unit* : drscheme:compound-unit^
 	  ((reference-relative-library-unit/sig "cunit.ss")
 	   wx mred mzlib unit frame face)]
 	[signature : drscheme:signature^ ((reference-relative-library-unit/sig "sig.ss")
@@ -37,7 +37,7 @@
 		     wx mred unit frame rep mzlib)])
   (export (unit frame)
 	  (unit unit)
-	  (unit compound-unit)
+	  (unit compound-unit* compound-unit)
 	  (unit signature)
 	  (unit program)
 	  (unit get/extend)

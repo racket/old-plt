@@ -1,0 +1,271 @@
+                     Functions and top level variables
+
+
+1 Basic solutions
+=================
+
+1.1 Basic solution with use after definition only
+=================================================
+
+We want this to work:
+
+(define k0 (lambda () 0))
+(k0)
+
+so the first idea is to have a simple top level environment where,
+when we see the definition of k0, we associate the name k0 with the
+label for (lambda () 0). Then when we see a use of k0, we just do a
+lookup in the environment to get the right label.
+
+If this top level environment is a hash table, then redefining
+variables works fine as well:
+
+(define k1 (lambda () 0))
+(k1)
+(define k1 (lambda () 1))
+(k1)
+
+1.2 Basic wrong solution that allows definition after use
+=========================================================
+
+But we also want to be able to refer to top level variables before
+they are defined:
+
+(define k2 (lambda () (k3)))
+(define k3 (lambda () 0))
+(k2)
+
+So the first approach is, when we analyze k2, to create a label for k3
+that's not yet associated with any term. Then associate this label
+with the term k3 when we see the definition of k3. And it works.
+
+The problem is then that this also works:
+
+(k4)
+(define k4 (lambda () 0))
+
+when it shouldn't. It works because when we see a use of a top level
+name, we just assume that it's going to be defined later and create a
+label for it, regardless of whether the use appears inside a lambda or
+not. In this case, the side effect is that it makes values flow
+backward in time.
+
+
+2 Solutions with delaying
+=========================
+
+2.1 Delaying the lookup of nested top level variables
+=====================================================
+
+So the second approach to make
+
+(define k2 (lambda () (k3)))
+(define k3 (lambda () 0))
+(k2)
+
+work is to detect that k3 is a reference to a top level variable
+nested inside a lambda, create a label for it without doing any
+lookup, and mark the lambda in (lambda () (k3)) with this
+label. Later, when this lambda flows into an application, we look at
+the lambda's list of labels for each free variables that was detected,
+find the corresponding binding labels, and create the right
+edges. This solves the "backward in time" problem, because a top level
+variable is only looked up when the enclosing lambda is applied
+(i.e. we are simulating a closure for top level variables).
+
+If we do that, then this works:
+
+(define k5 (lambda () (k6)))
+(define k7 (lambda () (k5)))
+(define k6 (lambda () 0))
+(k7)
+
+2.2 Delaying the application of nested lambdas
+==============================================
+
+With the previous solution, substituting k5 for its value in the
+definition of k7 above doesn't work:
+
+(define k8 (lambda () ((lambda () (k9))))) ; ex-k7 with k5 substituted
+(define k9 (lambda () 0))                  ; ex-k6
+(k8)
+
+because k9 is a top level variable in (lambda () (k9)), so this lambda
+is marked with a label for k9, and then the application around (lambda
+() (k9)) forces a lookup for k9, which fails. Note that the problem is
+not with the application around k9 itself, because this doesn't work
+either:
+
+(define k10 (lambda () ((lambda () k11)))) ; moved inner application below
+(define k11 (lambda () 0))
+((k10))
+
+The solution to this is to delay the flow of a lambda into an
+application inside a lambda, until the time when the enclosing lambda
+is itself applied. E.g. delay the flow of (lambda () k11) above into
+the ((lambda () k11)) application, until k10 is itself applied. This
+delaying means that the top level variable k11 will only be looked up
+when k10 is applied, which is what we want. It's just a cheap way to
+simulate the fact that the body of a closure is only executed when the
+closure is applied. The delaying itself is done by lifting a nested
+lambda to the top level and giving it a pseudo name using a
+gensym. I.e. the k10/k11 example above becomes equivalent to:
+
+(define g100 (lambda () k13))
+(define k12 (lambda () (g100)))
+(define k13 (lambda () 0))
+((k12))
+
+A side effect of using this method is that, for the code:
+
+(lambda () ((lambda (x) x) 0))
+
+nothing will flow into x until the enclosing lambda is applied, which
+makes sense.
+
+2.3 Delaying the application of lexically scoped variables
+==========================================================
+
+The trick described above makes pretty much any example work. But
+there are still two problems:
+- adding a fake top level name means adding a label in the graph that
+doesn't have any corresponding term in the program, which screws up
+the parent / children arrows in the GUI. There's a way around that but
+it's not especially clean.
+- it still doesn't solve something like:
+
+(define k14 ((lambda (f) (lambda () (f))) (lambda () k15)))
+(define k15 (lambda () 0))
+((k14))
+
+because, since (lambda (f) (lambda () (f))) is immediately applied,
+the application (f) inside it forces a lookup for k15, which fails.
+
+Note also that, in the above example, trying to have the free top
+level variable k15 become a free top level variable of (lambda () (f))
+doesn't work either. It solves the problem for this particular
+example, but then it fails to work (i.e. it computes the result as
+being empty) with the following example:
+
+(define k16 (lambda () (k17)))
+(define k17 (lambda () (k18)))
+(define k18 (lambda () 0))
+(k16)
+
+What happens is that:
+k17 correctly becomes a free variable of k16
+k18 correctly becomes a free variable of k17
+k18 is analyzed as usual
+when k16 is applied, (lambda () (k17)) flows into the application (k16)
+a lookup is done for k16's free variable k17
+(lambda () (k18)) then flows into the application (k17)
+but since this application has the enclosing lambda (lambda () (k17)),
+k18 becomes a free variable of the lambda (lambda () (k17)) and
+propagation stops.
+
+So the solution here is instead to delay the lookup for f in the (f)
+application, since this application is inside a lambda. This is
+exactly what we did in section 2.1 with top level variables. So we can
+use the exact same method and delay the lookup until the enclosing
+lambda is itself applied.
+There are two differences though:
+- since people tend to use the same names for lexical variables over
+and over in different functions, we can directly lift the variable
+name to the top level. We have instead to use faked names and fake
+nodes, just as we did in section 2.2 for lambdas. This introduces more
+fake nodes and more problems with getting the GUI arrows right, that
+can only be solved in ugly ways.
+- a top level variable has to be looked up every time the lambda
+containing a reference to it is applied, because the top level
+variable might be bound to something different each time it is
+used. But lexical variables are always bound to the same thing, so
+they should be looked up only once. So the code has to keep top level
+variables and lexical variables separate.
+
+Note also that delaying the lookup is not necessary for lexical
+variables that are defined by the directly enclosing lambda, since we
+now that nothing will flow into these variables as long as the lambda
+is not applied. So these variables can be looked immediately, instead
+of only being looked up when the lambda is applied.
+
+And then everything works fine.
+
+2.4 Delaying applications instead
+=================================
+
+If we look at what we have done so far in section 2, we have:
+1) delayed the lookup for top level variables references inside a lambda
+2) delayed the application of lambdas when the application is itself
+inside another lambda, by lifting the inner lambda
+3) delayed the lookup for lexically scoped variables used inside a
+lambda (except the ones bound by the directly enclosing lambda) by
+lifting them to the top level too.
+
+The only reason we did 2) and 3) is because lambdas and lexically
+scoped variables can appear in the operator position of an
+application. 1) is always necessary, because top level variable can be
+bound to different things over time, but it also happens to help when
+the reference to the top level variable is in the operator position of
+an application. So instead of doing 2) and 3), what we really need to
+do is to delay the application of a function when it flows into the
+operator position of an application, if this application is nested
+inside a lambda.
+
+The way we simulate an application is by having a special functional
+edge, going out of the graph node for the operator of the application,
+which, when a label corresponding to a function flows through it,
+modifies the graph by connecting the nodes for the actual arguments of
+the application to the nodes of the formal arguments of the function,
+and the node for the body of the function to the node for the whole
+application. So, the only thing that has to be done to delay the
+application of functions for an application that is nested inside a
+lambda, is to delay the addition of the special functional edge to the
+list of edges going out of the operator node, when the operator
+appears inside a lambda. The functional edge should be added to the
+operator node only when the enclosing lambda is applied. This is easy
+to do, by simply keeping with the enclosing lambda a thunk that will
+be applied when the lambda flows into an application, and that will
+then add the functional edge to the operator node of the application
+inside the lambda.
+
+This method makes the whole code much simpler, since no special
+lifting of lambdas or lexical variables has to be done and since no
+special code has to be added to keep the GUI arrows right, and it also
+makes the analysis faster, since only what is strictly necessary is
+delayed (while 2) and 3) was done regardless of whether the lambdas or
+lexical variables were in operator position or not, which was an
+overkill).
+
+So this is the solution currently implemented.
+
+Note that this method is more powerful than what MrSpidey
+does. There's no constraint derivation rule dealing directly with the
+application of a function, the rules for analyzing lambda and
+applications being completely separate [1]. The application of a
+lambda is simulated during the propagation phase using two rules that
+simply do some matching based on the right selectors, regardless of
+the meaning of the selectors. So MrSpidey has no simple way to delay
+flows inside applications when these are nested, or prevent flows from
+going backward in time. I guess the implemented solution in MrSpidey
+is ad hoc. So MrSpidey finds errors with code like:
+
+(define c4 (lambda (x) (b4 2)))
+(define a4 ((lambda (f) (lambda () (f))) (lambda () c4)))
+(define b4 (lambda (y) y))
+((a4) 3)
+
+or gives a value to (g0 3) in:
+
+(define g0 (lambda (x) (f0 x)))
+(g0 3)
+(define f0 (lambda (x) 17))
+
+[1] The rules currently written on paper for the new analysis are not
+yet up to date in this regard. We would need a conditional flow
+constraint ("if a lambda1 flows into this application1") that would
+trigger the addition of one new conditional flow constraint ("if a
+lambda2 flows into this application2") for each application2 inside
+the body of the lambda1.
+
+Philippe
+

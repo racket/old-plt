@@ -10,7 +10,9 @@ with one import: `remember'. remember is a procedure that takes as
 first argument a string naming the event. It's six remaining arguments
 qare all numbers, describing the second, minute, hour, day of the
 month, month and year of the event. Omit the year, and the event will
-repreat annually. Omit the month and the event repeats monthly, etc.
+repreat annually. Omit the month and the event repeats monthly,
+etc. Note that the second, minute, and hour all count from zero, not
+1.
 
 Say, you have trouble remembering Matthew's birthday. Just put this
 line in your .countdownrc and you will never miss it again:

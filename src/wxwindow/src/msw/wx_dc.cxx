@@ -1280,9 +1280,11 @@ float wxDC::FLogicalToDeviceYRel(float y)
   return MS_YLOG2DEVREL(y);
 }
 
+#define wxKEEPDEST (DWORD)0x00AA0029
+
 Bool wxDC::Blit(float xdest, float ydest, float width, float height,
                 wxBitmap *source, float xsrc, float ysrc, int rop,
-		wxColour *c)
+		wxColour *c, wxBitmap *mask)
 {
   HDC dc = ThisDC();
 
@@ -1318,10 +1320,18 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   if (source->GetDepth() == 1) {
     if (rop == wxSOLID) {
       SetTextColor(dc, wxBLACK->pixel);
-      success = BitBlt(dc, xdest1, ydest1, 
-		       width, height,
-		       dc_src, xsrc1, ysrc1,
-		       MERGEPAINT);
+      if (mask) {
+	success = MaskBlt(dc, xdest1, ydest1, 
+			  width, height,
+			  dc_src, xsrc1, ysrc1,
+			  mask->ms_bitmap, xsrc1, ysrc1,
+			  MAKEROP4(wxKEEPDEST, MERGEPAINT));
+      } else {
+	success = BitBlt(dc, xdest1, ydest1, 
+			 width, height,
+			 dc_src, xsrc1, ysrc1,
+			 MERGEPAINT);
+      }
       op = SRCAND;
     } else
       op = ((rop == wxXOR) 
@@ -1333,10 +1343,20 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
     SetTextColor(dc, wxBLACK->pixel);
   }
   
-  if (op)
-    success = BitBlt(dc, xdest1, ydest1, 
-		     width, height,
-		     dc_src, xsrc1, ysrc1, op);
+  if (op) {
+    if (mask) {
+      success = MaskBlt(dc, xdest1, ydest1, 
+			width, height,
+			dc_src, xsrc1, ysrc1,
+			mask->ms_bitmap, xsrc1, ysrc1,
+			MAKEROP4(wxKEEPDEST, op));
+    } else {
+      success = BitBlt(dc, xdest1, ydest1, 
+		       width, height,
+		       dc_src, xsrc1, ysrc1, 
+		       op);
+    }
+  }
 
   DoneDC(dc);
   blit_dc->DoneDC(dc_src);

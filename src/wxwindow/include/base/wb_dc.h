@@ -201,7 +201,7 @@ class wxbDC: public wxObject
   virtual inline float MaxY(void) { return max_y; }
   virtual Bool Blit(float xdest, float ydest, float width, float height,
                     wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, 
-		    wxColour* c = NULL) = 0;
+		    wxColour* c = NULL, wxBitmap *mask = NULL) = 0;
 
   // Sometimes we need to override optimization, e.g.
   // if other software is drawing onto our surface and we

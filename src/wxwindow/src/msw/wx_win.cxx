@@ -892,6 +892,7 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
     if ((wParam == VK_MENU) || (wParam == VK_F4)) { /* F4 is close */
       retval = wnd->DefWindowProc(message, wParam, lParam);
     }
+  case WM_KEYUP:
   case WM_KEYDOWN: /* ^^^ fallthrough */
     {
       // Avoid duplicate messages to OnChar
@@ -902,11 +903,9 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
 	  && (wParam != VK_RETURN) 
 	  && (wParam != VK_TAB) 
 	  && (wParam != VK_BACK))
-	wnd->OnChar((WORD)wParam, lParam);
+	wnd->OnChar((WORD)wParam, lParam, FALSE, message == WM_KEYUP);
       break;
     }
-  case WM_KEYUP:
-    break;
   case WM_SYSCHAR:
     if (wParam == VK_MENU) {
       retval = wnd->DefWindowProc(message, wParam, lParam);
@@ -1640,9 +1639,11 @@ static int times_scan_code;
 static int divide_scan_code;
 static int dot_scan_code;
 
+static int generic_ascii_code[256];
+
 #define THE_SCAN_CODE(lParam) ((((unsigned long)lParam) >> 16) & 0x1FF)
 
-void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
+void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
 {
   int id;
   Bool tempControlDown = (::GetKeyState(VK_CONTROL) >> 1);
@@ -1678,6 +1679,9 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
 	  id = -1;
       }
     }
+
+    if ((id >= 0) && (id <= 255))
+      generic_ascii_code[id] = sc;
   } else {
     if ((id = wxCharCodeMSWToWX(wParam)) == 0)
       id = -1;
@@ -1695,6 +1699,18 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     } else if (id == WXK_DECIMAL) {
       dot_scan_code = THE_SCAN_CODE(lParam);
     }
+
+    if (isRelease && (id < 0)) {
+      /* Try to generate a sensible release key: */
+      int i, sc;
+      sc = THE_SCAN_CODE(lParam);
+      for (i = 0; i < 256; i++) {
+	if (generic_ascii_code[i] == sc) {
+	  id = i;
+	  break;
+	}
+      }
+    }
   } 
 
   if ((id > -1) && wx_window) {
@@ -1707,7 +1723,8 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
       event->metaDown = TRUE;
 
-    event->keyCode = id;
+    event->keyCode = (isRelease ? WXK_RELEASE : id);
+    event->keyUpCode = (isRelease ? id : WXK_PRESS);
     event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
     POINT pt;

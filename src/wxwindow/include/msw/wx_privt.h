@@ -102,7 +102,7 @@ public:
     virtual void OnMouseEnter(int x, int y, UINT flags);
     virtual void OnMouseLeave(int x, int y, UINT flags);
 
-    virtual void OnChar(WORD wParam, LPARAM lParam, Bool isASCII = FALSE);
+    virtual void OnChar(WORD wParam, LPARAM lParam, Bool isASCII = FALSE, Bool isRelease = FALSE);
 
     virtual BOOL OnActivate(BOOL flag, BOOL minimized, HWND activate);
     virtual BOOL OnMDIActivate(BOOL flag, HWND activate, HWND deactivate);

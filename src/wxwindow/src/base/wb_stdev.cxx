@@ -267,6 +267,7 @@ wxKeyEvent::wxKeyEvent(WXTYPE type)
   metaDown = FALSE;
   altDown = FALSE;
   keyCode = 0;
+  keyUpCode = WXK_PRESS;
 }
 
 Bool wxKeyEvent::ControlDown(void)

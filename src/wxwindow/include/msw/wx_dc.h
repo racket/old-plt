@@ -132,7 +132,7 @@ class wxDC: public wxbDC
 
   Bool Blit(float xdest, float ydest, float width, float height,
             wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID,
-	    wxColour *c=NULL);
+	    wxColour *c=NULL, wxBitmap *mask=NULL);
             
   Bool CanDrawBitmap(void);
   Bool CanGetTextExtent(void);

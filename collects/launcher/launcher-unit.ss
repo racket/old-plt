@@ -340,8 +340,7 @@
 	      ;; have to roll my own install-template, because Apps are
 	      ;; really directories.
 	      (let* ([name (let-values ([(base name dir?) (split-path dest)])
-			     name)]
-		     [dest (string-append dest ".app")]
+			     (regexp-replace "[.]app$" name ""))]
 		     [src (build-path (collection-path "launcher")
 				      "Starter.app")]
 		     [exec-name (build-path plthome 
@@ -353,13 +352,7 @@
 		  (delete-directory/files dest))
 		(make-directory* (build-path dest "Contents" "Resources"))
 		(make-directory* (build-path dest "Contents" "MacOS"))
-		(make-file-or-directory-link exec-name
-					     (build-path dest "Contents" "MacOS" name))
-		(make-file-or-directory-link (build-path plthome 
-							 "MrEd.app" "Contents" "Resources" 
-							 "MrEd.rsrc")
-					     (build-path dest "Contents" "Resources" 
-							 (format "~a.rsrc" name)))
+		(copy-file exec-name (build-path dest "Contents" "MacOS" name))
 		(copy-file (build-path src "Contents" "PkgInfo")
 			   (build-path dest "Contents" "PkgInfo"))
 		(copy-file (build-path src "Contents" "Resources" "Starter.icns")
@@ -530,9 +523,11 @@
 			   [else file]))
 
       (define (mred-program-launcher-path name)
-	(add-file-suffix 
-	 (build-path l-home (sfx name))
-	 (current-launcher-variant)))
+	(string-append
+	 (add-file-suffix 
+	  (build-path l-home (sfx name))
+	  (current-launcher-variant))
+	 (if (eq? (system-type) 'macosx) ".app")))
       
       (define (mzscheme-program-launcher-path name)
 	(case (system-type)

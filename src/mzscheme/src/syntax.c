@@ -134,6 +134,7 @@ static Scheme_Object *letrec_values_symbol;
 static Scheme_Object *let_star_values_symbol;
 static Scheme_Object *let_values_symbol;
 static Scheme_Object *begin_symbol;
+static Scheme_Object *disappeared_binding_symbol;
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -169,6 +170,7 @@ scheme_init_syntax (Scheme_Env *env)
   REGISTER_SO(let_star_values_symbol);
   REGISTER_SO(let_values_symbol);
   REGISTER_SO(begin_symbol);
+  REGISTER_SO(disappeared_binding_symbol);
 
   scheme_undefined->type = scheme_undefined_type;
   
@@ -183,6 +185,8 @@ scheme_init_syntax (Scheme_Env *env)
   let_values_symbol = scheme_intern_symbol("let-values");
 
   begin_symbol = scheme_intern_symbol("begin");
+
+  disappeared_binding_symbol = scheme_intern_symbol("disappeared-binding");
 
   scheme_register_syntax(DEFINE_VALUES_EXPD, 
 			 define_values_resolve, define_values_validate, 
@@ -3115,7 +3119,7 @@ do_letrec_syntaxes(const char *where, int normal,
 		   int depth, Scheme_Object *boundname)
 {
   Scheme_Object *form, *bindings, *var_bindings, *body, *v;
-  Scheme_Object *macro;
+  Scheme_Object *macro, *names_to_disappear;
   Scheme_Comp_Env *stx_env, *var_env, *rhs_env;
   Scheme_Compile_Info mrec;
   int cnt, stx_cnt, var_cnt, i, j;
@@ -3156,6 +3160,12 @@ do_letrec_syntaxes(const char *where, int normal,
   }
 
   cnt = stx_cnt = var_cnt = 0;
+
+  if (normal && !rec && (depth <= 0) && (depth > -2))
+    names_to_disappear = scheme_null;
+  else
+    names_to_disappear = NULL;
+
 
   scheme_begin_dup_symbol_check(&r, stx_env);
 
@@ -3336,11 +3346,21 @@ do_letrec_syntaxes(const char *where, int normal,
 	SCHEME_PTR_VAL(macro) = results[j];
 
       scheme_set_local_syntax(i++, name, macro, stx_env);
+      if (names_to_disappear)
+	names_to_disappear = icons(name, names_to_disappear);
     }
   }
 
   if (normal) {
     body = scheme_add_env_renames(body, stx_env, origenv);
+    if (names_to_disappear) {
+      Scheme_Object *l, *a;
+      for (l = names_to_disappear; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	a = SCHEME_CAR(l);
+	a = scheme_add_env_renames(a, stx_env, origenv);
+	SCHEME_CAR(l) = a;
+      }
+    }
     if (var_env)
       var_bindings = scheme_add_env_renames(var_bindings, stx_env, origenv);
   }
@@ -3387,6 +3407,10 @@ do_letrec_syntaxes(const char *where, int normal,
       }
     }
   }
+
+  /* Add the 'disappeared-binding property */
+  if (names_to_disappear)
+    v = scheme_stx_property(v, disappeared_binding_symbol, names_to_disappear);
 
   return v;
 }

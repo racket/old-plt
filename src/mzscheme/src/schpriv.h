@@ -1581,6 +1581,8 @@ Scheme_Object *scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env,
 Scheme_Object *scheme_expand_block(Scheme_Object *form, Scheme_Comp_Env *env,
 				   int depth, Scheme_Object *boundname);
 
+Scheme_Object *scheme_flatten_begin(Scheme_Object *expr, Scheme_Object *append_onto);
+
 Scheme_Object *scheme_make_svector(mzshort v, mzshort *a);
 
 #define SCHEME_SVEC_LEN(obj) ((obj)->u.svector_val.len)

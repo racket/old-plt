@@ -40,6 +40,7 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
 static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_property(int argc, Scheme_Object **argv);
+static Scheme_Object *syntax_track_origin(int argc, Scheme_Object **argv);
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
@@ -305,6 +306,12 @@ void scheme_init_stx(Scheme_Env *env)
 			     scheme_make_prim_w_arity(syntax_property,
 						      "syntax-property",
 						      2, 3),
+			     env);
+
+  scheme_add_global_constant("syntax-track-origin", 
+			     scheme_make_prim_w_arity(syntax_track_origin,
+						      "syntax-track-origin",
+						      3, 3),
 			     env);
 
   scheme_add_global_constant("bound-identifier=?", 
@@ -3551,6 +3558,18 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
 }
 
 #define SCHEME_STX_IDP(o) (SCHEME_STXP(o) && SCHEME_SYMBOLP(SCHEME_STX_VAL(o)))
+
+static Scheme_Object *syntax_track_origin(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-track-origin", "syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]))
+    scheme_wrong_type("syntax-track-origin", "syntax", 1, argc, argv);
+  if (!SCHEME_STX_IDP(argv[2]))
+    scheme_wrong_type("syntax-track-origin", "identifier syntax", 2, argc, argv);
+  
+  return scheme_stx_track(argv[0], argv[1], argv[2]);
+}
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
 {

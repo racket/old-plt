@@ -738,6 +738,7 @@
 				       `(make-struct-field-mutator mutate ,n ',(car field-names))
 				       (loop (cdr field-names) (add1 n))))))))])
       (values
+       ;; define-struct
        (lambda (stx)
 	 (if (identifier? stx)
 	     (raise-syntax-error #f "bad syntax" stx))
@@ -810,31 +811,38 @@
 		 (let-values ([(super-id/struct: stx-info) (if delay?
 							       (values #f #f)
 							       (get-stx-info stx super-id defined-names #t))])
-		   (datum->syntax-object
-		    (quote-syntax here)
-		    `(begin
-		       (define-values
-			 ,defined-names
-			 ,(let ([core (if delay?
-					  `(begin0 ;; the `begin0' stops `class' from inspecting more closely
-					    (generate-struct-vals ,stx ,name ,(and inspector 'inspector) ,super-id ,field-names))
-					  (make-core name (and inspector 'inspector) super-id/struct: field-names))])
-			    (if inspector
-				`(let ([inspector ,inspector])
-				   (if (not (inspector? inspector))
-				       (raise-type-error 'define-struct "inspector" inspector))
-				   ,core)
-				core)))
-		       (define-syntaxes (,name) ,(if delay?
-						     `(let-values ([(super-id/struct: stx-info) 
-								    (get-stx-info (quote-syntax ,stx)
-										  (quote-syntax ,super-id)
-										  (list ,@(map (lambda (x) `(quote-syntax ,x))
-											       defined-names))
-										  #f)])
-							stx-info)
-						     stx-info)))
-		    stx)))))))
+		   (let ([result
+			  (datum->syntax-object
+			   (quote-syntax here)
+			   `(begin
+			      (define-values
+				,defined-names
+				,(let ([core (if delay?
+						 `(begin0 ;; the `begin0' stops `class' from inspecting more closely
+						   (generate-struct-vals ,stx ,name ,(and inspector 'inspector) ,super-id ,field-names))
+						 (make-core name (and inspector 'inspector) super-id/struct: field-names))])
+				   (if inspector
+				       `(let ([inspector ,inspector])
+					  (if (not (inspector? inspector))
+					      (raise-type-error 'define-struct "inspector" inspector))
+					  ,core)
+				       core)))
+			      (define-syntaxes (,name) ,(if delay?
+							    `(let-values ([(super-id/struct: stx-info) 
+									   (get-stx-info (quote-syntax ,stx)
+											 (quote-syntax ,super-id)
+											 (list ,@(map (lambda (x) `(quote-syntax ,x))
+												      defined-names))
+											 #f)])
+							       stx-info)
+							    stx-info)))
+			   stx)])
+		     (if super-id
+			 (syntax-property result 
+					  'disappeared-use 
+					  (syntax-local-introduce super-id))
+			 result))))))))
+       
        ;; generate-struct-vals
        (lambda (stx)
 	 (let* ([stx (stx-cdr stx)]

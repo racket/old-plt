@@ -2346,11 +2346,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     if (SAME_OBJ(gval, scheme_begin_syntax)) {
       /* Inline content */
       Scheme_Object *orig_forms = forms;
-      Scheme_Object *content;
 
-      content = SCHEME_STX_CDR(first);
-
-      if (scheme_stx_proper_list_length(content) < 0)
+      if (scheme_stx_proper_list_length(first) < 0)
 	scheme_wrong_syntax(scheme_begin_stx_string, NULL, first, 
 			    "bad syntax (" IMPROPER_LIST_FORM ")");
 
@@ -2368,9 +2365,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	  boundname = scheme_check_name_property(first, boundname);
       }
 
-      forms = scheme_append(scheme_flatten_syntax_list(content, NULL),
-			    forms);
-
+      forms = scheme_flatten_begin(first, forms);
+      
       if (SCHEME_STX_NULLP(forms)) {
 	scheme_wrong_syntax(scheme_begin_stx_string, NULL, first, 
 			    "bad syntax (empty form)");
@@ -2406,6 +2402,11 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	  vars = SCHEME_STX_CDR(vars);
 	}
 
+	/* Preserve properties and track at the clause level: */
+	v = scheme_datum_to_syntax(v, first, first, 0, 0);
+	var = SCHEME_STX_CAR(first);
+	v = scheme_stx_track(v, first, var);
+
 	link = scheme_make_immutable_pair(v, scheme_null);
 	if (is_val) {
 	  if (!start)
@@ -2435,16 +2436,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	      && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax)) {
 	    if (SAME_OBJ(gval, scheme_begin_syntax)) {
 	      /* Inline content */
-	      Scheme_Object *content;
-
-	      content = SCHEME_STX_CDR(first);
-		
-	      if (scheme_stx_proper_list_length(content) < 0)
-		scheme_wrong_syntax(NULL, NULL, first, 
-				    "bad syntax (" IMPROPER_LIST_FORM ")");
-		
-	      result = scheme_append(scheme_flatten_syntax_list(content, NULL), 
-				     SCHEME_CDR(result));
+	      result = SCHEME_STX_CDR(result);
+	      result = scheme_flatten_begin(first, result);
 	      goto define_try_again;
 	    } else
 	      break;
@@ -2577,6 +2570,29 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
   }
 
   return scheme_datum_to_syntax(first, form, form, 0, 0);
+}
+
+
+Scheme_Object *
+scheme_flatten_begin(Scheme_Object *expr, Scheme_Object *append_onto)
+{
+  Scheme_Object *l, *ll, *a, *name, *body;
+  
+  if (scheme_stx_proper_list_length(expr) < 0)
+    scheme_wrong_syntax(NULL, NULL, expr, "bad syntax (" IMPROPER_LIST_FORM ")");
+
+  name = SCHEME_STX_CAR(expr);
+  body = SCHEME_STX_CDR(expr);
+
+  /* Extract body of `begin' and add tracking information */
+  l = scheme_copy_list(scheme_flatten_syntax_list(body, NULL));
+  for (ll = l; !SCHEME_NULLP(ll); ll = SCHEME_CDR(ll)) {
+    a = SCHEME_CAR(ll);
+    a = scheme_stx_track(a, expr, name);
+    SCHEME_CAR(ll) = a;
+  }
+  
+  return scheme_append(l, append_onto);
 }
 
 /*========================================================================*/

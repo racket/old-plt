@@ -186,12 +186,13 @@
 
     (define make-menu-bar%
       (lambda (super%)
-	(class-asi super%
+	(class super% ([init-menus null]
+		       [init-titles null])
 	  (inherit enable-top)
 	  (rename [super-append append]
 		  [super-delete delete])
 	  (private
-	    [menus ()]
+	    [menus init-menus]
 	    [keymap%
 	     (class-asi wx:keymap%
 	       (rename [super-map-function map-function])
@@ -259,5 +260,7 @@
 		     #f
 		     (if (send (car menus) dispatch op)
 			 #t
-			 (loop (cdr menus))))))]))))
+			 (loop (cdr menus))))))])
+	  (sequence
+	    (super-init init-menus init-titles)))))
     (define menu-bar% (make-menu-bar% wx:menu-bar%)))

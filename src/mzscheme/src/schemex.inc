@@ -176,8 +176,6 @@
   scheme_extension_table->scheme_make_float = scheme_make_float;
 #endif
   scheme_extension_table->scheme_make_char = scheme_make_char;
-  scheme_extension_table->scheme_make_promise = scheme_make_promise;
-  scheme_extension_table->scheme_make_promise_from_thunk = scheme_make_promise_from_thunk;
 #ifndef NO_SCHEME_THREADS
   scheme_extension_table->scheme_make_sema = scheme_make_sema;
   scheme_extension_table->scheme_post_sema = scheme_post_sema;
@@ -224,7 +222,6 @@
   scheme_extension_table->scheme_is_inexact = scheme_is_inexact;
   scheme_extension_table->scheme_expand = scheme_expand;
   scheme_extension_table->scheme_compile = scheme_compile;
-  scheme_extension_table->scheme_make_promise_value = scheme_make_promise_value;
   scheme_extension_table->scheme_link = scheme_link;
   scheme_extension_table->scheme_read = scheme_read;
   scheme_extension_table->scheme_read_syntax = scheme_read_syntax;

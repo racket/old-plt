@@ -277,8 +277,6 @@ Scheme_Object *(*scheme_make_double)(double d);
 Scheme_Object *(*scheme_make_float)(float f) ;
 #endif
 Scheme_Object *(*scheme_make_char)(char ch);
-Scheme_Object *(*scheme_make_promise)(Scheme_Object *expr, Scheme_Env *env);
-Scheme_Object *(*scheme_make_promise_from_thunk)(Scheme_Object *expr);
 #ifndef NO_SCHEME_THREADS
 Scheme_Object *(*scheme_make_sema)(long v);
 void (*scheme_post_sema)(Scheme_Object *o);
@@ -338,7 +336,6 @@ int (*scheme_is_inexact)(Scheme_Object *n);
 /*========================================================================*/
 Scheme_Object *(*scheme_expand)(Scheme_Object *form, Scheme_Env *env);
 Scheme_Object *(*scheme_compile)(Scheme_Object *form, Scheme_Env *env, int writeable);
-Scheme_Object *(*scheme_make_promise_value)(Scheme_Object *compiled_expr);
 Scheme_Object *(*scheme_link)(Scheme_Object *compiled, Scheme_Env *env);
 /*========================================================================*/
 /*                               ports                                    */

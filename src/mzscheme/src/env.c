@@ -351,7 +351,6 @@ static void make_init_env(void)
   MZTIMEIT(syntax, scheme_init_syntax(env));
   MZTIMEIT(eval, scheme_init_eval(env));
   MZTIMEIT(error, scheme_init_error(env));
-  MZTIMEIT(promise, scheme_init_promise(env));
   MZTIMEIT(struct, scheme_init_struct(env));
 #ifndef NO_SCHEME_EXNS
   MZTIMEIT(exn, scheme_init_exn(env));

@@ -36,7 +36,6 @@ OBJS =  salloc.o \
 	portfun.o \
 	print.o \
 	process.o \
-	promise.o \
         rational.o \
 	read.o \
 	regexp.o \
@@ -75,7 +74,6 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/portfun.c \
 	$(srcdir)/print.c \
 	$(srcdir)/process.c \
-	$(srcdir)/promise.c \
 	$(srcdir)/rational.c \
 	$(srcdir)/read.c \
 	$(srcdir)/regexp.c \
@@ -185,8 +183,6 @@ print.o: $(srcdir)/print.c
 	$(CC) $(CFLAGS) -c $(srcdir)/print.c -o print.o
 process.o: $(srcdir)/process.c
 	$(CC) $(CFLAGS) -c $(srcdir)/process.c -o process.o
-promise.o: $(srcdir)/promise.c
-	$(CC) $(CFLAGS) -c $(srcdir)/promise.c -o promise.o
 rational.o: $(srcdir)/rational.c $(srcdir)/ratfloat.inc
 	$(CC) $(CFLAGS) -c $(srcdir)/rational.c -o rational.o
 read.o: $(srcdir)/read.c
@@ -268,8 +264,6 @@ print.o: $(srcdir)/../include/scheme.h $(srcdir)/../src/stypes.h $(srcdir)/../sr
           $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG)
 process.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h  $(srcdir)/schfd.h $(srcdir)/mzmark.c
-promise.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
-         $(srcdir)/../src/stypes.h  
 rational.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h    
 read.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h $(srcdir)/../src/schcpt.h \

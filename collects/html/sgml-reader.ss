@@ -179,10 +179,10 @@
   (define (lex-tag-cdata-pi-comment in)
     (let ([start (file-position in)])
       (read-char in)
-      (case (non-eof peek-char in)
+      (case (peek-char in)
         [(#\!)
          (read-char in)
-         (case (non-eof peek-char in)
+         (case (peek-char in)
            [(#\-) (read-char in)
             (let ([c (read-char in)])
               (cond
@@ -245,10 +245,10 @@
                         (case delimiter
                           [(#\' #\")
                            (let read-more ()
-                             (let ([c (non-eof peek-char in)])
+                             (let ([c (read-char in)])
                                (cond
-                                 [(eq? c delimiter) (read-char in) null]
-                                 [else (read-char in) (cons c (read-more))])))]
+                                 [(or (eq? c delimiter) (eof-object? c)) null]
+                                 [else (cons c (read-more))])))]
                           [else (cons delimiter (read-up-to (lambda (c) (or (char-whitespace? c) (eq? c #\>))) in))]))])
            (make-attribute start (file-position in) name value))]
         [else (make-attribute start (file-position in) name (symbol->string name))])))
@@ -295,32 +295,40 @@
   ;; skip-dtd : Input-port -> Void
   (define (skip-dtd in)
     (let skip ()
-      (case (non-eof read-char in)
-        [(#\') (read-until #\' in) (skip)]
-        [(#\") (read-until #\" in) (skip)]
-        [(#\<)
-         (case (non-eof read-char in)
-           [(#\!) (case (non-eof read-char in)
-                    [(#\-) (read-char in) (lex-comment-contents in) (skip)]
-                    [else (skip) (skip)])]
-           [(#\?) (lex-pi-data in) (skip)]
-           [else (skip) (skip)])]
-        [(#\>) (void)]
-        [else (skip)])))
+      (let ([c (read-char in)])
+        (if (eof-object? c)
+            (void)
+            (case c
+              [(#\') (read-until #\' in) (skip)]
+              [(#\") (read-until #\" in) (skip)]
+              [(#\<)
+               (case (read-char in)
+                 [(#\!) (case (read-char in)
+                          [(#\-) (read-char in) (lex-comment-contents in) (skip)]
+                          [else (skip) (skip)])]
+                 [(#\?) (lex-pi-data in) (skip)]
+                 [else (skip) (skip)])]
+              [(#\>) (void)]
+              [else (skip)])))))
   
-  ;; name-start? : Char -> Bool
+  ;; name-start? : TST -> Bool
   (define (name-start? ch)
+    (and (char? ch) (char-name-start? ch)))
+  
+  ;; char-name-start? : Char -> Bool
+  (define (char-name-start? ch)
     (or (char-alphabetic? ch) 
         (eq? ch #\_)
         (eq? ch #\:)))
   
-  ;; name-char? : Char -> Bool
+  ;; name-char? : TST -> Bool
   (define (name-char? ch)
-    (or (name-start? ch)
-        (char-numeric? ch)
-        (eq? ch #\&) ; ugly illegal junk for SEC's EDGAR database
-        (eq? ch #\.)
-        (eq? ch #\-)))
+    (and (char? ch)
+         (or (char-name-start? ch)
+             (char-numeric? ch)
+             (eq? ch #\&) ; ugly illegal junk for SEC's EDGAR database
+             (eq? ch #\.)
+             (eq? ch #\-))))
   
   ;; read-up-to : (Char -> Bool) Input-port -> (listof Char)
   ;; abstract this with read-until
@@ -340,14 +348,7 @@
          (cond
            [(or (eof-object? c) (eq? c char)) null]
            [else (cons c (read-more))])))))
-  
-  ;; non-eof : (Input-port -> (U Char Eof)) Input-port -> Char
-  (define (non-eof f in)
-    (let ([c (f in)])
-      (cond
-        [(eof-object? c) (lex-error in "unexpected eof")]
-        [else c])))
-  
+    
   ;; gen-read-until-string : String -> Input-port -> String
   ;; uses Knuth-Morris-Pratt from
   ;; Introduction to Algorithms, Cormen, Leiserson, and Rivest, pages 869-876
@@ -385,9 +386,4 @@
   ;; "-->" makes more sense, but "--" follows the spec, but this isn't XML anymore.
   (define lex-comment-contents (gen-read-until-string "-->"))
   (define lex-pi-data (gen-read-until-string "?>"))
-  (define lex-cdata-contents (gen-read-until-string "]]>"))
-  
-  ;; lex-error : Input-port String TST* -> alpha
-  (define (lex-error in str . rest)
-    (error 'lex-error " at positon ~a: ~a" (file-position in)
-           (apply format str rest))))
+  (define lex-cdata-contents (gen-read-until-string "]]>")))

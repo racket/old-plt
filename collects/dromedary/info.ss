@@ -1,3 +1,3 @@
 (module info (lib "infotab.ss" "setup")
   (define name "Dromedary")
-  #;(define tools (list (list "tool.ss"))))
+  (define broken-tools (list (list "tool.ss"))))

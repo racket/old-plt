@@ -2,6 +2,7 @@
 
 (define-signature mysterx:mysterx^
   (mx-browser%
+   mx-version
    com-invoke
    com-set-property!
    com-get-property
@@ -42,7 +43,8 @@
    css-length-units))
 
 (define-signature mysterx:prims^
-  (com-invoke
+  (mx-version
+   com-invoke
    com-set-property!
    com-get-property
    com-methods

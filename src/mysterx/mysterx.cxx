@@ -22,6 +22,7 @@
 #include "resource.h"
 
 #include "escheme.h"
+#include "schvers.h"
 
 #include "bstr.h"
 
@@ -65,6 +66,10 @@ static char *objectAttributes[] = { "InprocServer", "InprocServer32",
 static char *controlAttributes[] = { "Control", NULL };
 
 static MX_PRIM mxPrims[] = {
+
+  // version
+
+  { mx_version,"mx-version",0,0},
 
   // COM reflection
   
@@ -676,6 +681,10 @@ void codedComError(char *s,HRESULT hr) {
   }
 
   scheme_signal_error(finalBuff);
+}
+
+Scheme_Object *mx_version(int argc,Scheme_Object **argv) {
+  return scheme_make_string(MX_VERSION);
 }
 
 Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
@@ -4315,8 +4324,9 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   initMysSinkTable();
 
   if (isatty(fileno(stdin))) {
-    fputs("MysterX extension for MzScheme, "
-	  "Copyright (c) 1999-2000 PLT (Paul Steckler)",stderr);
+    fprintf(stderr,
+	    "MysterX extension for MzScheme, "
+	    "Copyright (c) 1999-2000 PLT (Paul Steckler)\n");
   }
   
   return (Scheme_Object *)mx_unit;

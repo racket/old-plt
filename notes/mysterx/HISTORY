@@ -1,3 +1,14 @@
+Version 102p1:
+
+Added synonyms cci/coclass for 
+ cocreate-instance-from-coclass, and cci/progid
+ for cocreate-instance-from-progid
+com-all-coclasses, com-all-controls return
+ sorted lists
+Fixed bug when methods, properties return
+ NULL COM objects
+Added procedure mx-version
+
 Version 102:
 
 cocreate-instance renamed to 

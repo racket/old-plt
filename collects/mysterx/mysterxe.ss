@@ -10,6 +10,8 @@
    mysterx:properties^
    mysterx:util^)
 
+  (define mx-version mxprims:mx-version)
+
   (define com-invoke mxprims:com-invoke)
   (define com-set-property! mxprims:com-set-property!)
   (define com-get-property mxprims:com-get-property)

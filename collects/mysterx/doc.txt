@@ -65,6 +65,13 @@ _MysterX_
  may find using these procedures useful in
  creating HTML strings for use by MysterX.
 
+ Version
+ -------
+
+> (mx-version)
+
+ Returns a string indicating the version of MysterX.
+
  Browsers
  --------
 

@@ -1,5 +1,9 @@
 // mysterx.h
 
+#define MX_PATCH_LEVEL "p1"
+
+#define MX_VERSION VERSION "-" MX_PATCH_LEVEL
+
 #ifndef _SINKTBL_
 #include "sinktbl.h"
 #endif
@@ -240,6 +244,10 @@ DATE mx_date_val(Scheme_Object *);
 SCODE mx_scode_val(Scheme_Object *);
 IDispatch *mx_comobj_val(Scheme_Object *);
 IUnknown *mx_iunknown_val(Scheme_Object *);
+
+// version
+
+MX_PRIM_DECL(mx_version);
 
 // browsers
 

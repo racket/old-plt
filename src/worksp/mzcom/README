@@ -1,4 +1,4 @@
-This directory contains the Visual C++ project
+This directory contains the Visual Studio .NET solution
 files for MzCOM.
 
 The MzCOM source files are in plt/src/mzcom/.
@@ -7,4 +7,4 @@ You'll also need the MzScheme sources to compile
 MzCOM.  See plt/src/worksp/README for more information
 on compiling MzScheme.
 
-Send questions to Paul Steckler, steck@cs.rice.edu.
+Send questions to Paul Steckler, steck@plt-scheme.org.

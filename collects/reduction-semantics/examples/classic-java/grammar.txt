@@ -66,4 +66,4 @@ Expressions
   -  text_exp ? then_exp : else_exp     (if test_exp then_exp else_exp)
 
 And built-in binary and unary operators as listed above are expressed in
-prefix notation (+ 3 (* 4 5))
+prefix notation: (+ 3 (* 4 5)) .

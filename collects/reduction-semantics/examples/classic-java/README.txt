@@ -1,13 +1,12 @@
 ClassicJava in PLT Redex
 Richard Cobbe
 January 2005
-$Id$
+$Id: README.txt,v 1.1 2005/01/21 16:08:40 cobbe Exp $
 ======================================================================
 
 This directory contains an implementation of most of ClassicJava (Flatt,
 Krishnamurthi, and Felleisen, '99) in the PLT Redex system (Matthews et al,
-'04).  The implementation currently runs in DrScheme 209; it will not
-compile in DrScheme 299/300.
+'04).  This implementation requires DrScheme v299.
 
 Language Differences
 ====================
@@ -15,6 +14,7 @@ There are several differences between the language implemented here and the
 language described in the paper.  
 
   1) This implementation does not support interfaces or abstract methods.  
+     (I'll gladly welcome any offers to implement these features!)
 
   2) I have added boolean and integer types, with associated primitives, to
      make it easier to write interesting test cases without having to
@@ -23,11 +23,11 @@ language described in the paper.
   3) There is a minor change to the dynamic semantics.  In the paper, the
      expression
         view t null
-    would produce, at run-time, "error: dereferenced null".  In this
-    implementation, the equivalent expression 
+     would produce, at run-time, "error: dereferenced null".  In this
+     implementation, the equivalent expression
         (cast t null)
-    evaluates to null.  The implementation's behavior is consistent with
-    Java.
+     evaluates to null.  The implementation's behavior is consistent with
+     Java.
 
 Overview of the files:
 ======================
@@ -59,8 +59,6 @@ Overview of the files:
   programs (either graphically or textually).  See the comments at the
   start of classic-java.ss for details.
 
-- *-tests.ss: all of my test cases.  You will not be able to load these, as
-  they depend on SchemeUnit and a couple of other libraries that I've
-  hacked up but not distributed.  I've included these primarily for
-  documentation purposes.  If you should want to run these, let me know,
-  and I can send you the necessary libraries.
+- *-tests.ss: all of my test cases.  These require SchemeUnit in order to
+  run; contact me for information about running SchemeUnit under DrScheme
+  299.

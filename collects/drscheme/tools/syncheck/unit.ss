@@ -457,21 +457,25 @@
 							    (set-position start-pos-left start-pos-right))))))]
 				    [rename-item
 				     (make-object mred:menu-item%
-						  menu
 						  "Rename"
+						  menu
 						  (lambda (item evt)
+						    (printf "arrows.1: ~a~n" (null? arrows))
 						    (unless (null? arrows)
 						      (let* ([arrow (car arrows)]
-							     [id-name (arrow-id-name arrow)])
-							((arrow-rename arrow)
-							 (mred:get-text-from-user
-							  "Rename Identifier"
-							  (format "Rename ~a to:" id-name)
-							  (format "~a" id-name))))
+							     [id-name (arrow-id-name arrow)]
+							     [new-id 
+							      (mred:get-text-from-user
+							       "Rename Identifier"
+							       (format "Rename ~a to:" id-name)
+							       #f
+							       (format "~a" id-name))])
+							(printf "arrows.2: id-name ~a new-id ~a~n" id-name new-id)
+							((arrow-rename arrow) new-id))
 						      (invalidate-bitmap-cache))))])
 			       (send (get-canvas) popup-menu menu
-				     (send event get-x)
-				     (send event get-y)))))]
+				     (inexact->exact (floor (send event get-x)))
+				     (inexact->exact (floor (send event get-y)))))))]
 		      [else (super-on-local-event event)])
 		    (super-on-local-event event))))])))))
   
@@ -556,6 +560,7 @@
 			  [const-style (send style-list find-named-style "mzprizm:constant")]
 			  [rename-bindings
 			   (lambda (occurrances input-name)
+			     (printf "rename-bindings.1~n")
 			     (dynamic-wind
 			      (lambda ()
 				(send definitions-edit begin-edit-sequence))
@@ -573,6 +578,7 @@
 						 (zodiac:location-offset (zodiac:zodiac-start z))
 						 (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))))])
 				  (for-each rename-one sorted))
+				(printf "re-checking syntax~n")
 				(button-callback))
 			      (lambda ()
 				(send definitions-edit end-edit-sequence))))]
@@ -746,33 +752,37 @@
 			(syncheck:clear-highlighting)
 			
 			;; color each exp
-			(let ([semaphore (make-semaphore 0)])
+			(let ([semaphore (make-semaphore 0)]
+			      [output-port (current-output-port)])
 			  (send interactions-edit
 				run-in-evaluation-thread
-				(lambda ()
-				  (with-handlers ([(lambda (x) #t)
-						   (lambda (x)
-						     (mred:message-box
-						      "exception during processing"
-						      (if (exn? x)
-							  (exn-message x)
-							  (format "~s" x))))])
-				    (drscheme:rep:process-edit/zodiac
-				     definitions-edit
-				     (lambda (expr recur)
-				       (cond
-					[(not (zodiac:zodiac? expr))
-					 (recur)]
-					[(drscheme:basis:process-finish? expr)
-					 (when (drscheme:basis:process-finish-error? expr)
-					   (send interactions-edit insert-prompt))
-					 (semaphore-post semaphore)]
-					[else
-					 (color-loop expr)
-					 (recur)]))
-				     0
-				     (send definitions-edit last-position)
-				     #f))))
+				(rec check-syntax-in-evaluation-thread
+				     (lambda ()
+				       (parameterize ([current-output-port output-port])
+					 (with-handlers ([(lambda (x) #t)
+							  (lambda (x)
+							    (mred:message-box
+							     "exception during syntax checking"
+							     (if (exn? x)
+								 (exn-message x)
+								 (format "~s" x)))
+							    (semaphore-post semaphore))])
+					   (drscheme:rep:process-edit/zodiac
+					    definitions-edit
+					    (lambda (expr recur)
+					      (cond
+						[(drscheme:basis:process-finish? expr)
+						 (when (drscheme:basis:process-finish-error? expr)
+						   (send interactions-edit insert-prompt))
+						 (semaphore-post semaphore)]
+						[(not (zodiac:zodiac? expr))
+						 (recur)]
+						[else
+						 (color-loop expr)
+						 (recur)]))
+					    0
+					    (send definitions-edit last-position)
+					    #f))))))
 			  (semaphore-wait semaphore))
 
 			; color the top-level varrefs

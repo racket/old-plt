@@ -5,7 +5,6 @@
     get-menu-item%
     get-file-menu
     get-edit-menu
-    get-windows-menu
     get-help-menu
     file-menu:new
     file-menu:get-new-item
@@ -111,11 +110,6 @@
                     (lambda () m))))
          (public (get-edit-menu
                   (let ((m (make-object (get-menu%) "&Edit" (get-menu-bar))))
-                    (lambda () m))))
-         (public (get-windows-menu
-                  (let ((m (make-object (get-menu%)
-                             "&Windows"
-                             (get-menu-bar))))
                     (lambda () m))))
          (public (get-help-menu
                   (let ((m (make-object (get-menu%) "&Help" (get-menu-bar))))
@@ -239,7 +233,6 @@
                  (help-menu:about-help-string
                   (lambda () "Learn something about this application")))
          (public (help-menu:after-about (lambda (menu) (void))))
-         (sequence (void))
          (sequence (void))
          (sequence (void))
          (sequence (void))

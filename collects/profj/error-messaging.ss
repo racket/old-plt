@@ -3,9 +3,9 @@
   (require "ast.ss")
   (require "types.ss")
   
-  (provide make-error-pass get-expected type->ext-name id->ext-name get-call-type)
+  (provide make-error-pass get-expected type->ext-name id->ext-name get-call-type method-name->ext-name)
   
-  (provide make-so build-src-list)
+  (provide make-so build-src-list make-parm-string)
   
   ;make-error: 'a string 'a src -> void
   (define (make-error-pass parm)
@@ -62,5 +62,19 @@
       ((eq? t 'super) "the current super class")
       ((not t) "this class")
       (else (type->ext-name exp))))
+  
+  ;make-parm-string: (list field) -> string
+  (define (make-parm-string parms)
+    (if (null? parms)
+        ""
+        (substring (apply string-append
+                          (map 
+                           (lambda (p) (string-append (id-string (field-name p)) " "))
+                           parms))
+                   0 (sub1 (length parms)))))
+  
+  ;method-name->ext-name: string (list field) -> string
+  (define (method-name->ext-name name parms)
+    (format "~a(~a)" name (make-parm-string parms)))
   
   )

@@ -1,7 +1,7 @@
 (module build-info mzscheme
   
   (require (lib "class.ss") (lib "file.ss") (lib "list.ss") (lib "match.ss")
-           "ast.ss" "types.ss" "parameters.ss" "parser.ss")
+           "ast.ss" "types.ss" "error-messaging.ss" "parameters.ss" "parser.ss")
 
   (provide build-info build-interactions-info find-implicit-import load-lang)
   
@@ -67,10 +67,7 @@
                     (send type-recs add-class-req defname #f current-loc)
                     (send type-recs add-require-syntax defname
                           (build-require-syntax (car defname) pname 
-                                                (find-directory pname 
-                                                                (lambda () 
-                                                                  (error 'build-info 
-                                                                         "Internal error: find-directory cannot find directory of given package")))
+                                                (find-directory pname (lambda () #f))
                                                 #t))
                     (send type-recs add-to-records def-name
                           (lambda () (process-class/iface def pname type-recs (null? args) level)))))
@@ -230,15 +227,15 @@
       ((class-def? ci) (process-class ci package-name type-recs look-in-table level))))
   
   ;;get-parent-record: (list string) name (list string) type-records (list string) -> record
-  (define (get-parent-record name name-src child-name level type-recs)
+  (define (get-parent-record name n child-name level type-recs)
     (when (equal? name child-name)
-      (raise-error name-src extends-self))
+      (dependence-error 'immediate (name-id n) (name-src n)))
     (let ((record (send type-recs get-class-record name (lambda () #f))))
       (cond
         ((class-record? record) record)
         ((procedure? record) (get-record record type-recs))
         ((eq? record 'in-progress)
-         (raise-error name-src cyclic-depends))
+         (dependence-error 'cycle (name-id n) (name-src n)))
         (else (get-record (find-implicit-import name type-recs level) type-recs)))))
   
   (define (class-specific-field? field)
@@ -651,17 +648,17 @@
               (lambda (level mods)
                 (or (null? mods)
                     (and (not (memq (modifier-kind (car mods)) (valids-choice level)))
-                         (raise-error (car mods) (error-type level)))
+                         (modifier-error (error-type level) (car mods)))
                     (tester level (cdr mods))))))
       tester))
 
   ;valid-*-mods?: symbol (list modifier) -> bool
   (define valid-class-mods?
     (make-valid-mods (lambda (x) '(public abstract final strictfp))
-                     (lambda (x) class-incorrect-modifiers)))
+                     (lambda (x) 'invalid-class)))
   (define valid-interface-mods?
     (make-valid-mods (lambda (x) '(public abstract strictfp))
-                     (lambda (x) interface-incorrect-modifiers)))  
+                     (lambda (x) 'invalid-iface)))
   (define valid-field-mods?
     (make-valid-mods
      (lambda (level)
@@ -669,7 +666,7 @@
          ((beginner intermediate) '(private final))
          ((advanced) '(public protected private static))
          ((full) `(public protected private static final transient volatile))))
-     (lambda (x) invalid-field-mod)))  
+     (lambda (x) 'invalid-field)))  
   (define valid-method-mods?
     (make-valid-mods
      (lambda (level)
@@ -679,14 +676,14 @@
          ((full) '(public protected private abstract static final synchronized native strictfp))
          ((abstract) '(public protected))))
      (lambda (level)
-       (if (eq? level 'abstract) abstract-restrict invalid-method-mod))))
+       (if (eq? level 'abstract) 'invalid-abstract 'invalid-method))))
   
   ;one-access: symbol symbol symbol (list modifiers) -> bool
   (define (one-access is check1 check2 mods)
     (and (eq? is (modifier-kind (car mods)))
          (or (memq check1 (map modifier-kind (cdr mods)))
              (memq check2 (map modifier-kind (cdr mods))))
-         (raise-error (car mods) one-of-access)))
+         (modifier-error 'access (car mods))))
 
   ;one-of-access?: (list modifier) -> bool
   (define (one-of-access? mods)
@@ -703,59 +700,73 @@
                 (and (not (null? mods))
                      (or (and (eq? first (modifier-kind (car mods)))
                               (memq second (map modifier-kind (cdr mods)))
-                              (raise-error (car mods) (error)))
+                              (modifier-error error (car mods)))
                          (and (eq? second (modifier-kind (car mods)))
                               (memq first (map modifier-kind (cdr mods)))
-                              (raise-error (car mods) (error)))
+                              (modifier-error error (car mods)))
                          (tester (cdr mods)))))))
       tester))
   
-  (define final-and-abstract? (make-not-two 'final 'abstract (lambda () final-and-abstract)))
-  (define volatile-and-final? (make-not-two 'volatile 'final (lambda () final-and-volatile)))  
-  (define native-and-fp? (make-not-two 'native 'strictfp (lambda () native-and-fp)))
+  (define final-and-abstract? (make-not-two 'final 'abstract 'final-abstract))
+  (define volatile-and-final? (make-not-two 'volatile 'final 'final-volatile))
+  (define native-and-fp? (make-not-two 'native 'strictfp 'native-strictfp))
     
   ;duplicate-mods?: (list modifier) -> bool
   (define (duplicate-mods? mods)
     (and (not (null? mods))
          (or (and (memq (modifier-kind (car mods))
                         (map modifier-kind (cdr mods)))
-                  (raise-error (car mods) duplicate-mods))
+                  (modifier-error 'dups (car mods)))
              (duplicate-mods? (cdr mods)))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Error raising code: code that takes information about the error message and throws the error
   
-  (define (build-src-list src)
-    (if (not src)
-        src
-        (if (and (= (src-line src) 0)
-                 (= (src-col src) 0)
-                 (= (src-pos src) 0)
-                 (= (src-span src) 0))
-            #f
-            (list (build-info-location) (src-line src) (src-col src) (src-pos src) (src-span src)))))        
+;  (define (build-src-list src)
+;    (if (not src)
+;        src
+;        (if (and (= (src-line src) 0)
+;                 (= (src-col src) 0)
+;                 (= (src-pos src) 0)
+;                 (= (src-span src) 0))
+;            #f
+;            (list (build-info-location) (src-line src) (src-col src) (src-pos src) (src-span src)))))        
 
+  ;modifier-error: symbol modifier -> void
+  (define (modifier-error kind mod)
+    (let ((m (modifier-kind mod))
+          (src (modifier-src mod)))
+      (raise-error m
+                   (case kind
+                     ((dups) 
+                      (format "Modifier ~a appears multiple times in one declaration" m))
+                     ((access)
+                      "Declaration can only be one of public, private, or protected")
+                     ((invalid-iface)
+                      (format "Modifier ~a is not valid for interfaces" m))
+                     ((invalid-class)
+                      (format "Modifier ~a is not valid for classes" m))
+                     ((invalid-field)
+                      (format "Modifier ~a is not valid for fields" m))
+                     ((invalid-method)
+                      (format "Modifier ~a is not valid for methods" m))
+                     ((invalid-abstract)
+                      (format "Modifier ~a is not valid for an abstract method" m))
+                     ((final-abstract) "Class cannot be final and abstract")
+                     ((final-volatile) "Field cannot be final and volatile")
+                     ((native-strictfp) "Method cannot be native and strictfp"))
+                   m src)))
+
+  ;dependence-error: symbol id src -> void
+  (define (dependence-error kind name src)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (case kind
+                     ((immediate) (format "~a may not extend itself" n))
+                     ((cycle) 
+                      (format "~a is illegally dependent on itself, potentially through other definitions" n)))
+                   n src)))
   
-  (define (duplicate-mods a)
-    (format "Modifier ~a cannot appear multiple times in one declaration" a))
-  
-  (define (one-of-access a) "Only one of public, private, or protected permitted")
- 
-  (define (invalid-mods for)
-    (lambda (a) (format "Modifier ~a is not a legal modifier for ~a" a for)))  
-  (define interface-incorrect-modifiers (invalid-mods "interfaces"))
-  (define class-incorrect-modifiers (invalid-mods "class"))
-  (define invalid-field-mod (invalid-mods "fields"))
-  (define invalid-method-mod (invalid-mods "methods"))
-  (define abstract-restrict (invalid-mods "an abstract method"))
-  
-  (define (final-and-abstract a) "Class cannot be both abstract and final")
-  (define (final-and-volatile a) "Field cannot be both final and volatile")
-  (define (native-and-fp a) "Method cannot be both native and strictfp")
-  
-  (define (extends-self a) (format "~a may not extend itself" a))
-  (define (cyclic-depends a)
-    (format "~a is illegally dependent on itself, potentially through other definitions" a))
 
   (define (final-extend a) (format "Final class ~a may not be extended" a))
 
@@ -786,19 +797,19 @@
   (define (thrown-not-throwable given)
     (format "Classes listed as thrown by a method must be subtypes of Throwable. Given ~a"))
   
-  (define (make-so id src)
-    (datum->syntax-object #f id (build-src-list src)))
+;  (define (make-so id src)
+;    (datum->syntax-object #f id (build-src-list src)))
   
-  (define (make-parm-string parms)
-    (if (null? parms)
-        ""
-        (substring (apply string-append
-                          (map 
-                           (lambda (p) (string-append (id-string (field-name p)) " "))
-                           parms))
-                   0 (sub1 (length parms)))))
+;  (define (make-parm-string parms)
+;    (if (null? parms)
+;        ""
+;        (substring (apply string-append
+;                          (map 
+;                           (lambda (p) (string-append (id-string (field-name p)) " "))
+;                           parms))
+;                   0 (sub1 (length parms)))))
   
-  (define (raise-error code make-msg)
+  (define (raise-old-error code make-msg)
     (match code
       ;Covers duplicate-mods one-of-access *-incorrect-modifiers invalid-*-mod abstract-restrict final-and-abstract
       ;       final-and-volatile native-and-fp
@@ -856,10 +867,9 @@
                            #f))
       (_
        (error 'internal-error "raise-error given ~a and ~a" code))))
-      
-
         
   (define build-info-location (make-parameter #f))
+  (define raise-error (make-error-pass build-info-location))
   
   )
   

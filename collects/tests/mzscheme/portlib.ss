@@ -7,6 +7,8 @@
 
 (require (lib "port.ss"))
 
+;; ----------------------------------------
+
 ;; pipe and pipe-with-specials commmit tests
 (define (test-pipe-commit make-pipe)
   (let-values ([(in out) (make-pipe)])
@@ -444,5 +446,88 @@
       (test 1 peek-bytes-avail!* b 1 #f s)
       (test 2 read-bytes-avail!* b s))))
 	     
+;; ----------------------------------------
+;; Conversion wrappers
+
+(define (try-eip-seq encoding bytes try-map)
+  (let* ([p (open-input-bytes bytes)]
+	 [p2 (reencode-input-port p encoding #".!")])
+    (for-each (lambda (one-try)
+		(let ([p (if (car one-try)
+			     p2
+			     p)]
+		      [len (cadr one-try)]
+		      [expect (caddr one-try)])
+		  (test expect read-bytes len p)))
+	      try-map)))
+
+(try-eip-seq "UTF-8" #"apple" `((#t 3 #"app") (#f 2 #"le") (#t 4 ,eof)))
+(try-eip-seq "UTF-8" #"ap\303\251ple" `((#t 3 #"ap\303") (#f 2 #"pl") (#t 4 #"\251e") (#t 5 ,eof)))
+(try-eip-seq "ISO-8859-1" #"ap\303\251ple" `((#t 3 #"ap\303") (#f 2 #"\251p") (#t 4 #"\203le") (#t 5 ,eof)))
+(try-eip-seq "UTF-8" #"ap\251ple" `((#t 2 #"ap") (#f 2 #"\251p") (#t 4 #"le") (#t 5 ,eof)))
+(try-eip-seq "UTF-8" #"ap\251ple" `((#t 3 #"ap.") (#f 1 #"p") (#t 4 #"!le") (#t 5 ,eof)))
+(try-eip-seq "UTF-8" #"ap\251ple" `((#t 4 #"ap.!") (#f 1 #"l") (#t 4 #"pe") (#t 5 ,eof)))
+
+(let-values ([(in out) (make-pipe-with-specials)])
+  (display "ok" out)
+  (write-special 'special! out)
+  (display "yz" out)
+  (let ([p (reencode-input-port in "UTF-8")])
+    (test #"ok" read-bytes 2 p)
+    (test 'special! read-byte-or-special p)
+    (test #"yz" read-bytes 2 p)
+    (close-output-port out)
+    (test eof read-bytes 3 p)))
+
+(let*-values ([(r w) (make-pipe 10)]
+	      [(w2) (reencode-output-port w "UTF-8" #"!?")])
+  (test 4 write-bytes #"abcd" w2)
+  (flush-output w2)
+  (test #"abcd" read-bytes 4 r)
+  
+  (test 3 write-bytes #"abc" w2)
+  (test 0 read-bytes-avail!* (make-bytes 10) r)
+  (test 1 write-bytes-avail #"wx" w2)
+  (test #"abcw" read-bytes 4 r)
+
+  ;; Check encoding error
+  (test 4 write-bytes #"ab\303x" w2)
+  (flush-output w2)
+  (test #"ab!?x" read-bytes 5 r)
+
+  ;; Check flushing in middle of encoding:
+  (test 3 write-bytes #"ab\303" w2)
+  (test 0 read-bytes-avail!* (make-bytes 10) r)
+  (test 1 write-bytes-avail #"\251x" w2)
+  (test #"ab\303\251" read-bytes 4 r)
+  (test 1 write-bytes-avail #"abc" w2)
+  (test #"a" read-bytes 1 r)
+
+  ;; Check blocking on full pipe:
+  (test 10 write-bytes #"1234567890" w2)
+  (flush-output w2)
+  (test #f sync/timeout 0.0 w)
+  (test #f sync/timeout 0.0 w2)
+  (test 0 write-bytes-avail* #"123" w2)
+  (test 0 write-bytes-avail* #"123" w2)
+  (test 0 write-bytes-avail* #"123" w2)
+  (test #"1234567890" read-bytes 10 r)
+  (test w2 sync/timeout 0.0 w2)
+  (test 1 write-bytes-avail #"123" w2)
+
+  ;; Check specials:
+  (let*-values ([(in out) (make-pipe-with-specials)]
+		[(out2) (reencode-output-port out "UTF-8" #"!")])
+    (test 3 write-bytes #"123" out2)
+    (test #t write-special 'spec out2)
+    (test 3 write-bytes #"456" out2)
+    (flush-output out2)
+    (test #"123" read-bytes 3 in)
+    (test 'spec read-char-or-special in)
+    (test #"456" read-bytes 3 in))
+
+  (void))
+
+;; --------------------------------------------------
 
 (report-errs)

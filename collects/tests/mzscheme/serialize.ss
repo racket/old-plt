@@ -262,6 +262,19 @@
   (test-ser (cons p1 p2))
   (test-ser (cons p2 p1)))
       
+;; ----------------------------------------
+
+(module ser-mod mzscheme
+   (require (lib "serialize.ss"))
+   (provide ser-mod-test)
+
+   (define-serializable-struct foo (a b))
+
+   (define (ser-mod-test)
+     (foo-a (deserialize (serialize (make-foo 1 2))))))
+
+(require ser-mod)
+(test 1 ser-mod-test)
 
 ;; ----------------------------------------
 

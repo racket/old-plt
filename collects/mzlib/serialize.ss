@@ -446,10 +446,12 @@
 			 (let ([b (identifier-binding deserialize-id)])
 			   (cons
 			    (and (list? b)
-				 (collapse-module-path-index 
-				  (caddr b)
-				  `(file ,(build-path (serialize-info-dir info)
-						      "here.ss"))))
+				 (if (symbol? (caddr b))
+				     (caddr b)
+				     (collapse-module-path-index 
+				      (caddr b)
+				      `(file ,(build-path (serialize-info-dir info)
+							  "here.ss")))))
 			    (syntax-e deserialize-id)))]
 			[(symbol? deserialize-id)
 			 (cons #f deserialize-id)]

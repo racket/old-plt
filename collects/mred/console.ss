@@ -218,8 +218,6 @@
 		  (begin-edit-sequence)
 		  (lock #f)
 		  (erase))
-		(wx:message-box (format "~a" (send edit last-position))
-				"last-position")
 		(for-each
 		 (lambda (lines)
 		   (let ([pos (send edit get-start-position)])

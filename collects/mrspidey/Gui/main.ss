@@ -277,15 +277,12 @@
                 (send edit change-style delta s3 e3)
                 (send edit set-clickback s2 e2
 		  (lambda args
-                    (make-object hyper-text%
-		     (string->url
+		     (open-url
                       (string-append 
                         "file:"
                         (build-path
 			  (collection-path "mrspidey") ; MATTHEW: got rid of plt-home
-                          "about.html")))
-		      #f))
-                  click-delta)))))]
+                          "about.html")))))))))]
 
       [local-record-analyzed-file
         (lambda (filename thunk-port thunk-expression)

@@ -1234,7 +1234,8 @@ long scheme_get_string(const char *who,
        we haven't gotten anything so far, it means that we need to read before we
        can actually peek. Handle this case with a recursive peek that starts
        from the current position, then set peek_skip to 0 and go on. */
-    while (peek && !ps && (peek_skip != scheme_make_integer(0)) && !total_got && !got) {
+    while (peek && !ps && (peek_skip != scheme_make_integer(0)) && !total_got && !got
+	   && (ip->pending_eof < 2)) {
       char *tmp;
       int v, pcc;
       long skip;
@@ -1266,7 +1267,10 @@ long scheme_get_string(const char *who,
     }
 
     if (size) {
-      if (peek && ps)
+      if (ip->pending_eof > 1) {
+	ip->pending_eof = 1;
+	gc = EOF;
+      } else if (peek && ps)
 	gc = ps(ip, buffer, offset + got, size, peek_skip, only_avail == 2);
       else
 	gc = gs(ip, buffer, offset + got, size, only_avail == 2);
@@ -1299,8 +1303,14 @@ long scheme_get_string(const char *who,
 	  return 0;
 	}
       } else if (gc == EOF) {
-	if (!got && !total_got)
+	if (!got && !total_got) {
+	  if (peek && ip->pending_eof)
+	    ip->pending_eof = 2;
 	  return EOF;
+	}
+	/* remember the EOF for next time */
+	if (ip->pending_eof)
+	  ip->pending_eof = 2;
 	gc = 0;
 	size = 0; /* so that we stop */
       }
@@ -1567,6 +1577,7 @@ scheme_char_ready (Scheme_Object *port)
   CHECK_PORT_CLOSED("char-ready?", "input", port, ip->closed);
 
   if (ip->ungotten_count || ip->ungotten_special
+      || (ip->pending_eof > 1)
       || pipe_char_count(ip->peeked_read))
     retval = 1;
   else {
@@ -2836,6 +2847,8 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 	sfd = (Scheme_FD *)((Scheme_Input_Port *)argv[0])->port_data;
 	sfd->bufcount = 0;
 	sfd->buffpos = 0;
+	/* 1 means no pending eof, but can set: */
+	((Scheme_Input_Port *)argv[0])->pending_eof = 1;
       }
 #endif
     } else {
@@ -3611,6 +3624,8 @@ make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode, 
     s = scheme_strdup(filename);
     ip->name = s;
   }
+
+  ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
 #ifdef WINDOWS_FILE_HANDLES
   if (!regfile) {

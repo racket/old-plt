@@ -928,7 +928,7 @@ struct Scheme_Input_Port
 {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  short closed;
+  char closed, pending_eof;
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;

@@ -177,6 +177,7 @@ static Scheme_Object *same_symbol;
 static Scheme_Object *read_symbol, *write_symbol, *execute_symbol;
 
 static Scheme_Object *temp_dir_symbol, *home_dir_symbol, *pref_dir_symbol;
+static Scheme_Object *doc_dir_symbol, *desk_dir_symbol;
 static Scheme_Object *init_dir_symbol, *init_file_symbol, *sys_dir_symbol;
 static Scheme_Object *exec_file_symbol, *pref_file_symbol, *addon_dir_symbol;
 
@@ -196,6 +197,8 @@ void scheme_init_file(Scheme_Env *env)
   REGISTER_SO(temp_dir_symbol);
   REGISTER_SO(home_dir_symbol);
   REGISTER_SO(pref_dir_symbol);
+  REGISTER_SO(doc_dir_symbol);
+  REGISTER_SO(desk_dir_symbol);
   REGISTER_SO(init_dir_symbol);
   REGISTER_SO(init_file_symbol);
   REGISTER_SO(sys_dir_symbol);
@@ -209,13 +212,14 @@ void scheme_init_file(Scheme_Env *env)
   same_symbol = scheme_intern_symbol("same");
   
 #ifndef NO_FILE_SYSTEM_UTILS
-
   read_symbol = scheme_intern_symbol("read");
   write_symbol = scheme_intern_symbol("write");
   execute_symbol = scheme_intern_symbol("execute");
   
   temp_dir_symbol = scheme_intern_symbol("temp-dir");
   home_dir_symbol = scheme_intern_symbol("home-dir");
+  doc_dir_symbol = scheme_intern_symbol("doc-dir");
+  desk_dir_symbol = scheme_intern_symbol("desk-dir");
   pref_dir_symbol = scheme_intern_symbol("pref-dir");
   init_dir_symbol = scheme_intern_symbol("init-dir");
   init_file_symbol = scheme_intern_symbol("init-file");
@@ -4361,6 +4365,8 @@ static Scheme_Object *use_compiled_kind(int argc, Scheme_Object *argv[])
 enum {
   id_temp_dir,
   id_home_dir,
+  id_doc_dir,
+  id_desk_dir,
   id_pref_dir,
   id_pref_file,
   id_init_dir,
@@ -4378,6 +4384,10 @@ find_system_path(int argc, Scheme_Object **argv)
     which = id_temp_dir;
   else if (argv[0] == home_dir_symbol)
     which = id_home_dir;
+  else if (argv[0] == doc_dir_symbol)
+    which = id_doc_dir;
+  else if (argv[0] == desk_dir_symbol)
+    which = id_desk_dir;
   else if (argv[0] == pref_dir_symbol)
     which = id_pref_dir;
   else if (argv[0] == init_dir_symbol)
@@ -4443,11 +4453,18 @@ find_system_path(int argc, Scheme_Object **argv)
 #else
       home = scheme_make_path(scheme_expand_filename("~/.plt-scheme/", -1, NULL, NULL, 0));
 #endif 
-    } else
-      home = scheme_make_path(scheme_expand_filename("~/", 2, NULL, NULL, 0));
+    } else {
+#if defined(OS_X) && !defined(XONX)
+      if (which == id_desk_dir)
+	home = scheme_make_path(scheme_expand_filename("~/Desktop/", 10, NULL, NULL, 0));
+      else
+#endif
+	home = scheme_make_path(scheme_expand_filename("~/", 2, NULL, NULL, 0));
+    }
     
     if ((which == id_pref_dir) || (which == id_init_dir) 
-	|| (which == id_home_dir) || (which == id_addon_dir))
+	|| (which == id_home_dir) || (which == id_addon_dir)
+	|| (which == id_desk_dir) || (which == id_doc_dir))
       return home;
 
     ends_in_slash = (SCHEME_PATH_VAL(home))[SCHEME_PATH_LEN(home) - 1] == '/';
@@ -4486,12 +4503,30 @@ find_system_path(int argc, Scheme_Object **argv)
 
     home = NULL;
 
-    if ((which == id_addon_dir)
-	|| (which == id_pref_dir)
-	|| (which == id_pref_file)) {
+    {
       /* Try to get Application Data directory: */
       LPITEMIDLIST items;
-      if (SHGetSpecialFolderLocation(NULL, CSIDL_APPDATA, &items) == S_OK) {
+      int which_folder;
+
+      if ((which == id_addon_dir)
+	  || (which == id_pref_dir)
+	  || (which == id_pref_file)) 
+	which_folder = CSIDL_APPDATA;
+      else if (which == id_doc_dir) {
+#       ifndef CSIDL_MYDOCUMENTS
+#         define CSIDL_PERSONAL 0x0005
+#       endif
+	which_folder = CSIDL_PERSONAL;
+      } else if (which == id_desk_dir)	
+	which_folder = CSIDL_DESKTOPDIRECTORY;
+      else {
+#       ifndef CSIDL_PROFILE
+#         define CSIDL_PROFILE 0x0028
+#       endif
+	which_folder = CSIDL_PROFILE;
+      }
+
+      if (SHGetSpecialFolderLocation(NULL, which_folder, &items) == S_OK) {
 	int ok;
 	IMalloc *mi;
 	wchar_t *buf;
@@ -4510,6 +4545,16 @@ find_system_path(int argc, Scheme_Object **argv)
     }
 
     if (!home) {
+      /* Back-up: try USERPROFILE environment variable */
+      d = getenv("USERPROFILE");
+      if (d) {
+	if (scheme_directory_exists(d))
+	  home = scheme_make_path_without_copying(d);
+      }
+    }
+
+    if (!home) {
+    /* Last-ditch effort: try HOMEDRIVE+HOMEPATH */
       d = getenv("HOMEDRIVE");
       p = getenv("HOMEPATH");
 
@@ -4550,7 +4595,9 @@ find_system_path(int argc, Scheme_Object **argv)
     }
     
     if ((which == id_init_dir)
-	|| (which == id_home_dir))
+	|| (which == id_home_dir)
+	|| (which == id_doc_dir)
+	|| (which == id_desk_dir))
       return home;
 
     ends_in_slash = (SCHEME_PATH_VAL(home))[SCHEME_PATH_LEN(home) - 1];
@@ -4582,6 +4629,9 @@ find_system_path(int argc, Scheme_Object **argv)
     OSErr	err;
 
     switch (which) {
+    case id_doc_dir:
+      t = 'desk';
+      break;
     case id_home_dir:
     case id_pref_dir:
     case id_pref_file:
@@ -4618,6 +4668,7 @@ find_system_path(int argc, Scheme_Object **argv)
     }
   
     if ((which == id_home_dir) 
+	|| (which == id_doc_dir) 
 	|| (which == id_temp_dir) 
 	|| (which == id_init_dir) 
 	|| (which == id_sys_dir))

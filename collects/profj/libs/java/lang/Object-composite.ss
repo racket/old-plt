@@ -132,12 +132,12 @@
                                (current-continuation-marks)))
       
       (define/public (access index) 
-        (when (or (< index 0) (> index (length)))
+        (when (or (< index 0) (>= index (length)))
           (array-out-of-bounds index))
         (vector-ref array index))
       
       (define/public (set index val)
-        (when (or (< index 0) (> index (length)))
+        (when (or (< index 0) (>= index (length)))
           (array-out-of-bounds index))
         (if (check-runtime-type val)
             (vector-set! array index val)
@@ -606,7 +606,7 @@
         (set! stack (current-continuation-marks))
         (send this Object-constructor))    
       
-      (public-final set-exception get-exception)
+      (public-final set-exception! get-exception)
       ;Used to interoperate with mzscheme exceptions: set and get the current exception
       (define (set-exception exn)
         (set! exception exn)

@@ -208,7 +208,16 @@
            (array (datum->syntax-object #f `(lib "array.ss" "drj" "libs" "java" "lang") #f)))
       (send type-recs add-package-contents lang class-list)
       (for-each (lambda (c) (import-class c lang dir #f type-recs 'full #f)) class-list)
-      (send type-recs add-require-syntax (list 'array) (list array array))))
+      (send type-recs add-require-syntax (list 'array) (list array array))
+      
+      ;Add lang to interactions environment
+      (for-each (lambda (class) (send type-recs add-to-env class lang 'interactions)) class-list)
+      (send type-recs set-location! 'interactions)
+      (for-each (lambda (class) (send type-recs add-class-req (cons class lang) #f 'interactions)) class-list)
+      (send type-recs add-class-req (list 'array) #f 'interactions)
+
+      
+      ))
       
   
   ;------------------------------------------------------------------------------------

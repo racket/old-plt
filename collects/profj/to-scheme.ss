@@ -182,28 +182,34 @@
   ;Translation
   
   (define (translate-interactions prog type-recs)
-    (cond 
-      ((pair? prog)
-       (make-syntax #f 
-                    `(begin ,@(map (lambda (f)
-                                     (translate-interactions f type-recs))
-                                   prog))
-                    #f))       
-      ((field? prog) 
-       (translate-field `(private)
-                        (field-type prog)
-                        (field-name prog)
-                        (and (var-init? prog) prog)
-                        (if (var-init? prog)
-                            (var-init-src prog)
-                            (var-decl-src prog))
-                        #f))
-      ((statement? prog) 
-       (translate-statement prog type-recs))
-      ((expr? prog) 
-       (translate-expression prog))
-      (else 
-       (error 'translate-interactions "Internal Error: translate-interactions given ~a" prog))))
+    (let ((reqs (send type-recs get-class-reqs))
+          (syn (cond 
+                 ((pair? prog)
+                  (send type-recs set-class-reqs null)
+                  (make-syntax #f 
+                               `(begin ,@(map (lambda (f)
+                                                (translate-interactions f type-recs))
+                                              prog))
+                               #f))
+                 ((field? prog) 
+                  (translate-field `(private)
+                                   (field-type prog)
+                                   (field-name prog)
+                                   (and (var-init? prog) prog)
+                                   (if (var-init? prog)
+                                       (var-init-src prog)
+                                       (var-decl-src prog))
+                                   #f))
+                 ((statement? prog) (translate-statement prog type-recs))
+                 ((expr? prog) (translate-expression prog))
+                 (else 
+                  (error 'translate-interactions "Internal Error: translate-interactions given ~a" prog)))))
+      (if (null? reqs)
+          syn
+          (make-syntax #f
+                       `(begin (require ,@(translate-interact-require reqs type-recs))
+                               ,syn)
+                       #f))))
   
   ;translate-program: package type-records -> (list compilation-unit) 
   (define (translate-program program type-recs)
@@ -382,6 +388,19 @@
       (and (not (null? reqs))
            (or (equal? (cadr req) (cadr (car reqs)))
                (req-member req (cdr reqs))))))
+  
+  (define (translate-interact-require reqs type-recs)
+    (if (null? reqs)
+        null
+        (let ((req (car reqs)))
+          (cons (begin (send type-recs set-location! 'interactions)
+                       (send type-recs get-require-syntax
+                             (send type-recs require-prefix?
+                                   (cons (req-class req) (req-path req))
+                                   (lambda () #f))
+                             (cons (req-class req) (req-path req))
+                             (lambda () #f)))
+                (translate-interact-require (cdr reqs) type-recs)))))
   
   ;translate-require: (list req) type-records -> (list syntax)
   (define (translate-require reqs type-recs)

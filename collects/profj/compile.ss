@@ -14,6 +14,7 @@
   
   (define (create-type-record)
     (let ((t (make-object type-records)))
+      (set-importer! t find-implicit-import)
       (load-lang t)
       t))
   

@@ -83,6 +83,8 @@
   ;check-interactions-types: ast symbol location type-records -> void
   (define (check-interactions-types prog level loc type-recs)
     (check-location loc)
+    (send type-recs set-location! 'interactions)
+    (send type-recs set-class-reqs null)
     (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f
                                (create-field-env (send type-recs get-interactions-fields)
                                                  empty-env)))
@@ -389,10 +391,11 @@
        (set-expr-type exp
                       (check-array-access (check-sub-expr (array-access-name exp))
                                           (check-sub-expr (array-access-index exp))
-                                          (expr-src exp))))
+                                          (expr-src exp)
+                                          type-recs)))
       ((post-expr? exp)
        (set-expr-type exp
-                      (check-pre-post-expr (check-sub-expr (pre-expr-expr exp))
+                      (check-pre-post-expr (check-sub-expr (post-expr-expr exp))
                                            (post-expr-op exp)
                                            (expr-src exp))))
       ((pre-expr? exp)
@@ -760,6 +763,7 @@
   ;; 15.10
   ;;check-array-alloc type-spec (list expression) int src (expr->type) type-records -> type
   (define (check-array-alloc elt-type exps dim src check-sub-exp type-recs)
+    (send type-recs add-req (make-req 'array null))
     (let ((type (type-spec-to-type elt-type type-recs)))
       (for-each (lambda (e)
                   (let ((t (check-sub-exp e)))
@@ -789,7 +793,8 @@
 
   ;; 15.13
   ;check-array-access: type type src -> type
-  (define (check-array-access ref-type idx-type src)
+  (define (check-array-access ref-type idx-type src type-recs)
+    (send type-recs add-req (make-req 'array null))
     (unless (array-type? ref-type)
       (raise-error (list src 'access ref-type) array-ac-non-array))
     (when (or (not (prim-integral-type? idx-type))
@@ -899,7 +904,7 @@
   
   ;field-lookup errors
   (define (field-not-found type field)
-    (format "field ~a not found for object with type ~a") field type)
+    (format "field ~a not found for object with type ~a" field type))
   (define (array-field type field)
     (format "array ~a does not have a field ~a, only length" type field))
   (define (prim-field-acc type)
@@ -1029,6 +1034,10 @@
        (raise-syntax-error #f
                            (make-msg op (get-expected expt) (type->ext-name type))
                            (make-so op src))] 
+      ;Covers prim-call
+      [(src (? type? type) (? level? level))
+       (raise-syntax-error #f (make-msg (type->ext-name type) level) 
+                           (make-so 'call src))]
       ;Covers array-ac-idx
       [(src (? type? type) (? symbol? expt)) 
        (raise-syntax-error #f
@@ -1041,11 +1050,6 @@
       [(src (? string? name) (? type? type))
        (raise-syntax-error #f (make-msg (type->ext-name type) name)
                            (make-so (string->symbol name) src))]
-      ;Covers prim-call
-      [(src (? type? type) (? symbol? level))
-       (raise-syntax-error #f (make-msg (type->ext-name type) level) 
-                           (make-so 'call src))]
-
       ;Covers field-not-found array-field
       [(src (? type? type) (? string? name))
        (raise-syntax-error #f (make-msg (type->ext-name type) name) 
@@ -1058,6 +1062,10 @@
       [_ 
        (error 'type-error "This file has a type error in the statements but more likely expressions")]))
       
+  ;level?: ~a -> bool
+  (define (level? l)
+    (memq l '(beginner intermediate advanced full)))
+  
   ;type?: ~a -> bool
   (define (type? t)
     (or (reference-type? t)

@@ -19,10 +19,10 @@
 class wxbMemoryDC: public wxCanvasDC
 {
  public:
-  inline wxbMemoryDC(void) { }
-  inline wxbMemoryDC(wxCanvasDC *WXUNUSED(old_dc)) {} // Create compatible DC
+  wxbMemoryDC(void);
+  wxbMemoryDC(wxCanvasDC *WXUNUSED(old_dc));
 
-  inline ~wxbMemoryDC(void) { }
+  ~wxbMemoryDC(void);
   virtual void SelectObject(wxBitmap *bitmap) = 0;
   virtual wxBitmap* GetObject() = 0;
 };

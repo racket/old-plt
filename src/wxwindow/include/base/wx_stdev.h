@@ -77,7 +77,7 @@ class wxCommandEvent: public wxEvent
 {
  public:
   wxCommandEvent(WXTYPE type);
-  ~wxCommandEvent(void) {}
+  ~wxCommandEvent(void);
 };
 
 // Item or menu event class

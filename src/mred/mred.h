@@ -39,6 +39,10 @@ class MrEd_Saved_Modal;
 
 #include "wxs/mrdispatch.h"
 
+#ifdef wx_msw
+class LeaveEvent;
+#endif
+
 typedef struct MrEdContext {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -74,7 +78,7 @@ typedef struct MrEdContext {
   int killed;
 
 #ifdef wx_msw
-  struct LeaveEvent *queued_leaves;
+  LeaveEvent *queued_leaves;
 #endif
 
   struct Context_Custodian_Hop *mr_hop;

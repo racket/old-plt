@@ -244,10 +244,25 @@ void wxHashTable::Clear (void)
 
 /* This is a hash table implementation which does not lock the objects
    from garbage collection. */
-/* FIXME: doesn't work for precise GC */
+
+#ifdef MZ_PRECISE_GC
+typedef long *nlWidgetRef;
+# define nl_malloc_bucket_array(size) GC_malloc(size)
+# define nlGET_WIDGET(x) (*(long *)(x))
+# define nlGET_OBJECT(x) (((wxObject **)(x))[1])
+# define nlALLOC_WIDGET(w) { long *p; p = (long *)GC_malloc_atomic(sizeof(long)); w = p; }
+# define nlALLOC_OBJECT(o) { void *p; p = GC_malloc_weak_box(NULL, NULL, 0); o = (wxObject *)p; }
+#else
+# define nl_malloc_bucket_array(size) GC_malloc_atomic(size)
+typedef long nlWidgetRef;
+# define nlGET_WIDGET(x) x
+# define nlGET_OBJECT(x) x
+# define nlALLOC_WIDGET(w) /* empty */
+# define nlALLOC_OBJECT(w) /* empty */
+#endif
 
 typedef struct Bucket {
-  long widget;
+  nlWidgetRef widget;
   wxObject *object;
 } Bucket;
 
@@ -261,7 +276,7 @@ wxNonlockingHashTable::wxNonlockingHashTable()
   long i;
 
   numbuckets = 1001;
-  buckets = (Bucket *)GC_malloc_atomic(sizeof(Bucket) * numbuckets);
+  buckets = (Bucket *)nl_malloc_bucket_array(sizeof(Bucket) * numbuckets);
   for (i = 0; i < numbuckets; i++) {
     buckets[i].widget = 0;
   }
@@ -285,7 +300,7 @@ void wxNonlockingHashTable::Put(long widget, wxObject *object)
       numbuckets = (numbuckets * FILL_FACTOR) + 1;
     /* else, just need to rehash after many deletions */
 
-    buckets = (Bucket *)GC_malloc_atomic(sizeof(Bucket) * numbuckets);
+    buckets = (Bucket *)nl_malloc_bucket_array(sizeof(Bucket) * numbuckets);
     for (i = 0; i < numbuckets; i++) {
       buckets[i].widget = 0;
     }
@@ -293,19 +308,21 @@ void wxNonlockingHashTable::Put(long widget, wxObject *object)
     numwidgets = numused = 0;
     for (i = 0; i < oldnumbuckets; i++) {
       if (oldbuckets[i].widget && oldbuckets[i].object)
-	Put(oldbuckets[i].widget, oldbuckets[i].object);
+	Put(nlGET_WIDGET(oldbuckets[i].widget), nlGET_OBJECT(oldbuckets[i].object));
     }
   }
 
   i = HASH(widget);
   while (buckets[i].widget && buckets[i].object
-	 && (buckets[i].widget != widget)) {
+	 && (nlGET_WIDGET(buckets[i].widget) != widget)) {
     i = (i + 1) % numbuckets;
   }
   if (!buckets[i].widget)
     numused++;
-  buckets[i].widget = widget;
-  buckets[i].object = object;
+  nlALLOC_WIDGET(buckets[i].widget);
+  nlGET_WIDGET(buckets[i].widget) = widget;
+  nlALLOC_OBJECT(buckets[i].object);
+  nlGET_OBJECT(buckets[i].object) = object;
   numwidgets++;
 }
 
@@ -314,12 +331,15 @@ wxObject *wxNonlockingHashTable::Get(long widget)
   long i;
 
   i = HASH(widget);
-  while ((buckets[i].widget != widget) && buckets[i].widget) {
+  while (buckets[i].widget && (nlGET_WIDGET(buckets[i].widget) != widget)) {
     i = (i + 1) % numbuckets;
   }
 
-  if (buckets[i].widget == widget)
-    return buckets[i].object;
+  if (buckets[i].widget && (nlGET_WIDGET(buckets[i].widget) == widget)) {
+    wxObject *r;
+    r = nlGET_OBJECT(buckets[i].object);
+    return r;
+  }
 
   return NULL;
 }
@@ -329,11 +349,11 @@ void wxNonlockingHashTable::Delete(long widget)
   long i;
 
   i = HASH(widget);
-  while ((buckets[i].widget != widget) && buckets[i].widget) {
+  while (buckets[i].widget && (nlGET_WIDGET(buckets[i].widget) != widget)) {
     i = (i + 1) % numbuckets;
   }
 
-  if (buckets[i].widget == widget) {
+  if (buckets[i].widget && (nlGET_WIDGET(buckets[i].widget) == widget)) {
     buckets[i].object = NULL;
     --numwidgets;
     /* Don't decrement numused, since the widget half is still set;
@@ -341,14 +361,14 @@ void wxNonlockingHashTable::Delete(long widget)
   }
 }
 
-/* new method (not very fast) */
+/* not particularly fast... */
 void wxNonlockingHashTable::DeleteObject(wxObject *o)
 {
   long i;
   
   for (i = 0; i < numbuckets; i++) {
-    if (buckets[i].widget && buckets[i].object == o)
-      Delete(buckets[i].widget);
+    if (buckets[i].widget && buckets[i].object && nlGET_OBJECT(buckets[i].object) == o)
+      Delete(nlGET_WIDGET(buckets[i].widget));
   }
 }
 

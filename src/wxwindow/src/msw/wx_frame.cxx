@@ -1162,7 +1162,9 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
 
   wxWndHook = NULL;
   wxWinHandleList->Append((long)handle, this);
+#ifndef MZ_PRECISE_GC
   SetWindowLong(handle, 0, (long)this);
+#endif
   
   ShowWindow(handle, SW_HIDE);
 

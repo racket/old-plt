@@ -7,6 +7,9 @@
  */
 
 
+#if defined(MZ_PRECISE_GC)
+# include "wx.h"
+#endif
 #include "wx_main.h"
 #include "wx_media.h"
 #include "scheme.h"
@@ -45,11 +48,12 @@ extern LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM
 extern struct MrEdContext *MrEdGetContext(wxObject *w);
 extern void MrEdQueueInEventspace(void *context, Scheme_Object *thunk);
 
-typedef struct LeaveEvent {
+class LeaveEvent {
+public:
   wxWindow *wnd;
   int x, y, flags;
-  struct LeaveEvent *next;
-} LeaveEvent;
+  LeaveEvent *next;
+};
 
 static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime);
 static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv);
@@ -84,7 +88,9 @@ extern wxWindow *wxHWNDtoWindow(HWND);
 
 static MrEdContext *GetContext(HWND hwnd)
 {
+  wxWindow *w;
   HWND next = hwnd, wnd;
+
   do {
     do {
       wnd = next;
@@ -93,7 +99,6 @@ static MrEdContext *GetContext(HWND hwnd)
     next = GetWindow(wnd, GW_OWNER);
   } while (next);
 
-  wxWindow *w;
   w = wxHWNDtoWindow(wnd);
   
   if (!w)
@@ -173,11 +178,11 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
      as we do for all unexpected messages that can call into
      Scheme.) */
   {
-    MSG msg;
-    while (PeekMessage(&msg, NULL, 0x4000, 0xFFFF, PM_REMOVE)) {
+    MSG pmsg;
+    while (PeekMessage(&pmsg, NULL, 0x4000, 0xFFFF, PM_REMOVE)) {
       found_nothing = 0;
-      TranslateMessage(&msg);
-      DispatchMessage(&msg);
+      TranslateMessage(&pmsg);
+      DispatchMessage(&pmsg);
     }
   }
 
@@ -564,22 +569,28 @@ static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime
 
 int MrEdCheckForBreak(void)
 {
-  HWND w = GetActiveWindow();
+  HWND w;
+
+  w = GetActiveWindow();
 
   if (MrEdGetContext() != GetContext(w))
     return 0;
 
-  SHORT hit = (SHORT)0x8000;
-  SHORT hitnow = (SHORT)0x0001;
-  SHORT c = GetAsyncKeyState('C');
+  {
+    SHORT hit = (SHORT)0x8000;
+    SHORT hitnow = (SHORT)0x0001;
+    SHORT c, shift, control;
+
+    c = GetAsyncKeyState('C');
 #if BREAKING_REQUIRES_SHIFT
-  SHORT shift = GetAsyncKeyState(VK_SHIFT);
+    shift = GetAsyncKeyState(VK_SHIFT);
 #else
-  SHORT shift = hit;
+    shift = hit;
 #endif
-  SHORT control = GetAsyncKeyState(VK_CONTROL);
-  
-  return ((c & hit) && (c & hitnow) && (control & hit) && (shift & hit));
+    control = GetAsyncKeyState(VK_CONTROL);
+    
+    return ((c & hit) && (c & hitnow) && (control & hit) && (shift & hit));
+  }
 }
 
 static long signal_fddone(void *fds)
@@ -668,7 +679,11 @@ void MrEdMSWSleep(float secs, void *fds)
     int num_handles = r->num_handles, *rps, two_rps[2];
     HANDLE *handles, two_handles[2];
     SOCKET fake;
-
+    HANDLE th2;
+    DWORD result;
+    DWORD id;
+    struct Scheme_Thread_Memory *thread_memory;
+    
     if (num_handles) {
       /* handles has been set up with an extra couple of slots: */ 
       handles = r->handles;
@@ -677,13 +692,7 @@ void MrEdMSWSleep(float secs, void *fds)
       handles = two_handles;
       rps = two_rps;
     }
-
   
-    HANDLE th2;
-    DWORD result;
-    DWORD id;
-    struct Scheme_Thread_Memory *thread_memory;
-
     if (r->set.fd_count || w->set.fd_count || e->set.fd_count) {
       fake = socket(PF_INET, SOCK_STREAM, 0);
       FD_SET(fake, e);
@@ -727,7 +736,9 @@ void MrEdMSWSleep(float secs, void *fds)
 void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags)
 {
   MrEdContext *c = (MrEdContext *)ctx;
-  LeaveEvent *e = new LeaveEvent(), *prev, *n;
+  LeaveEvent *e, *prev, *n;
+
+  e = new LeaveEvent();
 
   e->wnd = wnd;
   e->x = x;
@@ -736,8 +747,9 @@ void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags)
   e->next = NULL;
 
   prev = NULL;
-  for (n = c->queued_leaves; n; n = n->next)
+  for (n = c->queued_leaves; n; n = n->next) {
     prev = n;
+  }
 
   if (prev)
     prev->next = e;
@@ -747,6 +759,13 @@ void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags)
 
 /**********************************************************************/
 
+/* For Windows 95/98/Me, it's important to release all GDI object
+   handles on exit. The gdi_objects table maps integers to pairs of
+   HANDLES.  The integer is the handle | 0x1, which ensures that the
+   key looks like a Scheme fixnum. The pair of handles has something
+   in the first slot for !(handle & 0x1), and something in the second
+   slot for (handle & 0x1). */
+
 static Scheme_Hash_Table *gdi_objects;
 static void (*orig_exit)(int);
 
@@ -754,12 +773,20 @@ void mred_clean_up_gdi_objects(void)
 {
   int i;
 
+  if ((long)gdi_objects == 0x1)
+    return;
+
   for (i = 0; i < gdi_objects->size; i++) {
     if (gdi_objects->vals[i]) {
       Scheme_Object *key;
+      HANDLE *val;
       key = gdi_objects->keys[i];
+      val = (HANDLE *)gdi_objects->vals[i];
       scheme_hash_set(gdi_objects, key, NULL);
-      DeleteObject((HANDLE)key);
+      if (val[0])
+	DeleteObject(val[0]);
+      if (val[1])
+	DeleteObject(val[1]);
     }
   }
 }
@@ -775,21 +802,61 @@ static void clean_up_and_exit(int v)
 void RegisterGDIObject(HANDLE x)
 {
   if (!gdi_objects) {
-    wxREGGLOB(gdi_objects);
-    gdi_objects = scheme_make_hash_table(SCHEME_hash_ptr);
-    orig_exit = scheme_exit;
-    scheme_exit = clean_up_and_exit;
+    /* Only need this table if we're in 95/98/Me */
+    OSVERSIONINFO info;
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&info);
+    if (info.dwPlatformId != VER_PLATFORM_WIN32_NT) {
+      /* Need it... */
+      wxREGGLOB(gdi_objects);
+      gdi_objects = scheme_make_hash_table(SCHEME_hash_ptr);
+      orig_exit = scheme_exit;
+      scheme_exit = clean_up_and_exit;
+    } else
+      gdi_objects = (Scheme_Hash_Table *)0x1;
   }
 
-  if (x)
-    scheme_hash_set(gdi_objects, (Scheme_Object *)x, scheme_true);
+  if ((long)gdi_objects == 0x1)
+    return;
+
+  if (x) {
+    Scheme_Object *key;
+    HANDLE *v;
+    key = (Scheme_Object *)(((long)x) | 0x1);
+    v = (HANDLE *)scheme_hash_get(gdi_objects, key);
+    if (!v) {
+      v = (HANDLE *)scheme_malloc_atomic(sizeof(HANDLE)*2);
+      v[0] = v[1] = NULL;
+    }
+    if (((long)x) & 1)
+      v[1] = x;
+    else
+      v[0] = x;
+    scheme_hash_set(gdi_objects, key, (Scheme_Object *)v);
+  }
 }
 
 void DeleteRegisteredGDIObject(HANDLE x)
 {
-  /* Removes from hash table: */
-  scheme_hash_set(gdi_objects, (Scheme_Object *)x, NULL);
-  
+  Scheme_Object *key;
+  HANDLE *v;
+
+  if ((long)gdi_objects != 0x1) {
+    key = (Scheme_Object *)(((long)x) | 0x1);
+    v = (HANDLE *)scheme_hash_get(gdi_objects, key);
+    if (v) {
+      if (((long)x) & 1)
+	v[1] = NULL;
+      else
+	v[0] = NULL;
+
+      if (!v[0] && !v[1]) {
+	/* Remove from hash table: */
+	scheme_hash_set(gdi_objects, (Scheme_Object *)x, NULL);
+      }
+    }
+  }
+
   DeleteObject(x);
 }
 

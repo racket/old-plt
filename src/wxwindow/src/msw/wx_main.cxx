@@ -379,6 +379,9 @@ int wxEntry(int argc, char **argv)
   wxTheApp->argv = argv;
 
   wxTheApp->OnInit();
+
+  /* xform.ss bug: if we don't refer to last_msg_time, it gets dropped */
+  last_msg_time = 0;
   
   return 0;
 }

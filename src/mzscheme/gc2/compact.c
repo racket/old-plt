@@ -15,7 +15,7 @@
 #define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
-#define GENERATIONS 1
+#define GENERATIONS 0
 
 #ifdef NO_GC_SIGNALS
 # undef GENERATIONS
@@ -40,6 +40,11 @@
 #ifdef _WIN32
 # include <windows.h>
 # define gcINLINE _inline
+static void gc_fprintf(int ignored, const char *c, ...);
+# define GCPRINT gc_fprintf
+# define GCOUTF 0
+# define GCFLUSHOUT() /* empty */
+# define GCPRINT_TO_WINDOWS_CONSOLE
 #endif
 #ifdef OSKIT
 # undef GENERATIONS
@@ -65,7 +70,7 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
 #define CHECK_STACK_PTRS 0
 #define NOISY 0
 #define MARK_STATS 0
@@ -77,6 +82,12 @@ typedef short Type_Tag;
 # include <sys/time.h>
 # include <sys/resource.h>
 # include <unistd.h>
+#endif
+
+#ifndef GCPRINT
+# define GCPRINT fprintf
+# define GCOUTF stderr
+# define GCFLUSHOUT() fflush(NULL)
 #endif
 
 /**************** Stack for mark phase ****************/
@@ -341,7 +352,11 @@ static MPage *find_page(void *p);
 #if CHECKS
 static void CRASH(int where)
 {
-  fprintf(stderr, "crash @%d\n", where);
+  GCPRINT(GCOUTF, "crash @%d\n", where);
+  GCFLUSHOUT();
+#ifdef _WIN32
+  DebugBreak();
+#endif
   abort();
 }
 
@@ -565,10 +580,10 @@ void *malloc_pages(size_t len, size_t alignment)
     pre_extra = real_r - r;
     if (pre_extra)
       if (munmap(r, pre_extra))
-	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
+	GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
     if (pre_extra < extra)
       if (munmap(real_r + len, extra - pre_extra))
-	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
+	GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
     r = real_r;
   }
 
@@ -615,7 +630,7 @@ void free_pages(void *p, size_t len)
   collapse_adjacent_pages();
 
   if (munmap(p, len)) {
-    fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)p, (long)len, errno);
+    GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", (long)p, (long)len, errno);
   }
 
   page_reservations -= len;
@@ -631,7 +646,7 @@ void flush_freed_pages(void)
     if (blockfree[i].start) {
       if (blockfree[i].age == BLOCKFREE_UNMAP_AGE) {
 	if (munmap(blockfree[i].start, blockfree[i].len)) {
-	  fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", 
+	  GCPRINT(GCOUTF, "Unmap warning: %lx, %ld, %d\n", 
 		  (long)blockfree[i].start, blockfree[i].len,
 		  errno);
 	}
@@ -1117,13 +1132,13 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
 
     if (tagged) {
       if (m->type != MTYPE_TAGGED) {
-	fprintf(stderr, "Not tagged: %lx (%d)\n", 
+	GCPRINT(GCOUTF, "Not tagged: %lx (%d)\n", 
 		(long)p, m->type);
 	CRASH(4);
       }
     } else {
       if (m->type != MTYPE_XTAGGED) {
-	fprintf(stderr, "Not xtagged: %lx (%d)\n", 
+	GCPRINT(GCOUTF, "Not xtagged: %lx (%d)\n", 
 		(long)p, m->type);
 	CRASH(5);
       }
@@ -1247,7 +1262,7 @@ long search_size;
 
 void stop()
 {
-  printf("stopped\n");
+  GCPRINT(GCOUTF, "stopped\n");
 }
 #endif
 
@@ -1297,8 +1312,8 @@ static void init_tagged_mpage(void **p, MPage *page)
 
 #if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-	printf("bad tag: %d at %lx\n", tag, (long)p);
-	fflush(NULL);
+	GCPRINT(GCOUTF, "bad tag: %d at %lx\n", tag, (long)p);
+	GCFLUSHOUT();
 	CRASH(7);
       }
       prev_prev_prev_ptr = prev_prev_ptr;
@@ -1587,7 +1602,7 @@ void GC_mark(const void *p)
 	    {
 	      Type_Tag tag = *(Type_Tag *)p;
 	      if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-		printf("bad tag: %d at %lx\n", tag, (long)p);
+		GCPRINT(GCOUTF, "bad tag: %d at %lx\n", tag, (long)p);
 		CRASH(11);
 	      }
 	    }
@@ -2276,9 +2291,9 @@ static void compact_tagged_mpage(void **p, MPage *page)
 	  *(Type_Tag *)(dest + dest_offset) = TAGGED_EOM;
 	
 #if NOISY
-	printf("t: %lx [0,%d] -> %lx [%d,%d]\n", 
-	       (long)startp, offset,
-	       (long)dest, dest_start_offset, dest_offset);
+	GCPRINT(GCOUTF, "t: %lx [0,%d] -> %lx [%d,%d]\n", 
+		(long)startp, offset,
+		(long)dest, dest_start_offset, dest_offset);
 #endif
 
 	dest_offset = 0;
@@ -2325,9 +2340,9 @@ static void compact_tagged_mpage(void **p, MPage *page)
     /* Nothing left in here. Reset color to white: */
     page->flags = (page->flags & NONCOLOR_MASK);
 #if NOISY
-    printf("t: %lx [all=%d] -> %lx [%d,%d]\n", 
-	   (long)startp, offset,
-	   (long)dest, dest_start_offset, dest_offset);
+    GCPRINT(GCOUTF, "t: %lx [all=%d] -> %lx [%d,%d]\n", 
+	    (long)startp, offset,
+	    (long)dest, dest_start_offset, dest_offset);
 #endif
   }
 }
@@ -2411,7 +2426,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	  *(long *)(dest + dest_offset) = UNTAGGED_EOM - 1;
 	
 #if NOISY
-	printf("u: %lx -> %lx [%d]\n", (long)startp, (long)dest, offset);
+	GCPRINT(GCOUTF, "u: %lx -> %lx [%d]\n", (long)startp, (long)dest, offset);
 #endif
 
 	dest_offset = 0;
@@ -2469,7 +2484,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
     /* Nothing left in here. Reset color to white: */
     page->flags = (page->flags & NONCOLOR_MASK);
 #if NOISY
-    printf("u: %lx -> %lx [all]\n", (long)startp, (long)dest);
+    GCPRINT(GCOUTF, "u: %lx -> %lx [all]\n", (long)startp, (long)dest);
 #endif
   }
 }
@@ -2498,7 +2513,7 @@ static void compact_all_mpages()
 	/* Set compact_boundar to 0 to indicate no moves: */
 	page->compact_boundary = 0;
 #if NOISY
-	printf("x: %lx\n", (long)page->block_start);
+	GCPRINT(GCOUTF, "x: %lx\n", (long)page->block_start);
 #endif
       }
     }
@@ -2796,7 +2811,7 @@ static void fixup_tagged_mpage(void **p, MPage *page)
 
 #if CHECKS
       if ((tag < 0) || (tag >= _num_tags_) || !size_table[tag]) {
-	fflush(NULL);
+	GCFLUSHOUT();
 	CRASH(28);
       }
       prev_var_stack = prev_ptr;
@@ -2923,7 +2938,7 @@ static void fixup_all_mpages()
 	p = page->block_start;
 
 #if NOISY
-	fprintf(stderr, "Fixup %lx\n", (long)p);
+	GCPRINT(GCOUTF, "Fixup %lx\n", (long)p);
 #endif
 
 	if (page->flags & MFLAG_BIGBLOCK) {
@@ -2978,7 +2993,7 @@ static void free_unused_mpages()
 
       if (page->flags & MFLAG_BIGBLOCK) {
 #if NOISY
-	fprintf(stderr, "Free %lx - %lx\n", (long)p,
+	GCPRINT(GCOUTF, "Free %lx - %lx\n", (long)p,
 		(long)p + page->u.size);
 #endif
 
@@ -3001,7 +3016,7 @@ static void free_unused_mpages()
 	}
       } else {
 #if NOISY
-	fprintf(stderr, "Free %lx\n", (long)p);
+	GCPRINT(GCOUTF, "Free %lx\n", (long)p);
 #endif
 	free_pages((void *)p, MPAGE_SIZE);
 	free_pages(page->u.offsets, OPAGE_SIZE);
@@ -3099,15 +3114,19 @@ static void designate_modified(void *p)
 	return;
       }
 
-      fprintf(stderr, "Seg fault (internal error) at %lx [%ld]\n", 
+      GCPRINT(GCOUTF, "Seg fault (internal error) at %lx [%ld]\n", 
 	      (long)p, num_seg_faults);
       abort();
     }
   }
 
   
-  fprintf(stderr, "Access on unmapped page at %lx [%ld]\n", 
+  GCPRINT(GCOUTF, "Access on unmapped page at %lx [%ld]\n", 
 	  (long)p, num_seg_faults);
+
+#if defined(_WIN32) && defined(CHECKS)
+  DebugBreak();
+#endif
   abort();
 }
 
@@ -3253,7 +3272,7 @@ void GC_mark_variable_stack(void **var_stack,
 
 #if 0
     if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
-      printf("bad %d\n", stack_depth);
+      GCPRINT(GCOUTF, "bad %d\n", stack_depth);
       CRASH(32);
     }
 #endif
@@ -3314,7 +3333,7 @@ void GC_fixup_variable_stack(void **var_stack,
 }
 
 #if CHECKS
-# ifdef CHECK_STACK_PTRS
+# if CHECK_STACK_PTRS
 static void check_ptr(void **a)
 {
   void *p = *a;
@@ -3335,8 +3354,8 @@ static void check_ptr(void **a)
 	      && (tag != weak_box_tag)
 	      && (tag != gc_weak_array_tag)
 	      && (tag != gc_on_free_list_tag))) {
-	printf("bad tag: %d at %lx, references from %lx\n", tag, (long)p, (long)a);
-	fflush(NULL);
+	GCPRINT(GCOUTF, "bad tag: %d at %lx, references from %lx\n", tag, (long)p, (long)a);
+	GCFLUSHOUT();
 	CRASH(7);
       }
 
@@ -3348,7 +3367,7 @@ static void check_ptr(void **a)
 static void check_variable_stack()
 {
   void **limit, **var_stack;
-# ifdef CHECK_STACK_PTRS
+# if CHECK_STACK_PTRS
   long size, count;
   void ***p, **a;
 # endif
@@ -3366,7 +3385,7 @@ static void check_variable_stack()
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
       CRASH(33);
 
-# ifdef CHECK_STACK_PTRS
+# if CHECK_STACK_PTRS
     size = *(long *)(var_stack + 1);
 
     oo_var_stack = o_var_stack;
@@ -3481,8 +3500,8 @@ extern long scheme_get_process_milliseconds();
 #endif
 
 #if TIME
-# define PRINTTIME(x) fprintf x
-# define STDERR stderr
+# define PRINTTIME(x) GCPRINT x
+# define STDERR GCOUTF
 static long started, rightnow, old;
 # define INITTIME() (started = GETTIME())
 # define GETTIMEREL() (rightnow = GETTIME(), old = started, started = rightnow, rightnow - old)
@@ -4164,7 +4183,7 @@ void *malloc_pages_try_hard(size_t len, size_t alignment)
   if (GC_out_of_memory)
     GC_out_of_memory();
 
-  printf("Out of memory\n");
+  GCPRINT(GCOUTF, "Out of memory\n");
   abort();
 }
 
@@ -4181,7 +4200,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype, mflags_t flags)
     int i;
     mpage_maps = (MPage **)malloc_pages(sizeof(MPage *) * MAPS_SIZE, 0);
     if (!mpage_maps) {
-      printf("Can't allocate map list\n");
+      GCPRINT(GCOUTF, "Can't allocate map list\n");
       abort();
     }
     for (i = 0; i < MAPS_SIZE; i++)
@@ -4221,7 +4240,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype, mflags_t flags)
       if (flags & MFLAG_BIGBLOCK)
 	c = c - ('a' - 'A');
     }
-    printf("%c p = %lx, g = %lx, addr = %lx\n", c, (long)p, g, addr);
+    GCPRINT(GCOUTF, "%c p = %lx, g = %lx, addr = %lx\n", c, (long)p, g, addr);
   }
 #endif
 
@@ -4657,27 +4676,27 @@ void GC_dump(void)
   int i;
   long waste = 0;
 
-  fprintf(stderr, "t=tagged a=atomic v=array x=xtagged g=tagarray\n");
-  fprintf(stderr, "pagesize=%d  mpagesize=%d  opagesize=%d\n", page_size, MPAGE_SIZE, OPAGE_SIZE);
-  fprintf(stderr, "[");
+  GCPRINT(GCOUTF, "t=tagged a=atomic v=array x=xtagged g=tagarray\n");
+  GCPRINT(GCOUTF, "pagesize=%d  mpagesize=%d  opagesize=%d\n", page_size, MPAGE_SIZE, OPAGE_SIZE);
+  GCPRINT(GCOUTF, "[");
   for (i = 0; i < MAPS_SIZE; i++) {
     if (i && !(i & 63))
-      fprintf(stderr, "\n ");
+      GCPRINT(GCOUTF, "\n ");
 
     if (mpage_maps[i])
-      fprintf(stderr, "*");
+      GCPRINT(GCOUTF, "*");
     else
-      fprintf(stderr, "-");
+      GCPRINT(GCOUTF, "-");
   }
-  fprintf(stderr, "]\n");
+  GCPRINT(GCOUTF, "]\n");
   for (i = 0; i < MAPS_SIZE; i++) {
     MPage *maps = mpage_maps[i];
     if (maps) {
       int j;
-      fprintf(stderr, "%.2x:\n ", i);
+      GCPRINT(GCOUTF, "%.2x:\n ", i);
       for (j = 0; j < MAP_SIZE; j++) {
 	if (j && !(j & 63))
-	  fprintf(stderr, "\n ");
+	  GCPRINT(GCOUTF, "\n ");
 
 	if (maps[j].type) {
 	  int c;
@@ -4700,19 +4719,19 @@ void GC_dump(void)
 	      c = c - ('a' - 'A');
 	  }
 
-	  fprintf(stderr, "%c", c);
+	  GCPRINT(GCOUTF, "%c", c);
 	} else {
-	  fprintf(stderr, "-");
+	  GCPRINT(GCOUTF, "-");
 	}
       }
-      fprintf(stderr, "\n");
+      GCPRINT(GCOUTF, "\n");
     }
   }
 
   {
     MPage *page;
 
-    fprintf(stderr, "Block info: [type][modified?][age][refs-age]\n");
+    GCPRINT(GCOUTF, "Block info: [type][modified?][age][refs-age]\n");
     for (page = first, i = 0; page; page = page->next, i++) {
        int c;
 
@@ -4734,7 +4753,7 @@ void GC_dump(void)
 	   c = c - ('a' - 'A');
        }
        
-       fprintf(stderr, " %c%c%c%c",
+       GCPRINT(GCOUTF, " %c%c%c%c",
 	       c,
 	       ((page->flags & MFLAG_MODIFIED)
 		? 'M'
@@ -4748,9 +4767,9 @@ void GC_dump(void)
 		   ? (page->refs_age + '0')
 		   : (page->refs_age + 'a' - 10))));
       if ((i % 10) == 9)
-	fprintf(stderr, "\n");
+	GCPRINT(GCOUTF, "\n");
     }
-    fprintf(stderr, "\n");
+    GCPRINT(GCOUTF, "\n");
   }
 
   {
@@ -4792,21 +4811,21 @@ void GC_dump(void)
 
       if (j >= NUM_TAGGED_SETS) {
 	int k = 0;
-	fprintf(stderr, "%s counts: ", name);
+	GCPRINT(GCOUTF, "%s counts: ", name);
 	for (i = 0; i < (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE); i++) {
 	  if (dump_info_array[i]) {
 	    k++;
 	    if (k == 10) {
-	      fprintf(stderr, "\n    ");
+	      GCPRINT(GCOUTF, "\n    ");
 	      k = 0;
 	    }
-	    fprintf(stderr, " [%d:%ld]", i << LOG_WORD_SIZE, dump_info_array[i]);
+	    GCPRINT(GCOUTF, " [%d:%ld]", i << LOG_WORD_SIZE, dump_info_array[i]);
 	  }
 	}
-	fprintf(stderr, "\n");
+	GCPRINT(GCOUTF, "\n");
       } else {
-	fprintf(stderr, "Tag counts and sizes:\n");
-	fprintf(stderr, "Begin MzScheme3m\n");
+	GCPRINT(GCOUTF, "Tag counts and sizes:\n");
+	GCPRINT(GCOUTF, "Begin MzScheme3m\n");
 	for (i = 0; i < _num_tags_; i++) {
 	  if (dump_info_array[i]) {
 	    char *tn, buf[256];
@@ -4821,10 +4840,10 @@ void GC_dump(void)
 	      }
 	      break;
 	    }
-	    fprintf(stderr, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << LOG_WORD_SIZE);
+	    GCPRINT(GCOUTF, "  %20.20s: %10ld %10ld\n", tn, dump_info_array[i], (dump_info_array[i + _num_tags_]) << LOG_WORD_SIZE);
 	  }
 	}
-	fprintf(stderr, "End MzScheme3m\n");
+	GCPRINT(GCOUTF, "End MzScheme3m\n");
       }
 
       {
@@ -4832,44 +4851,205 @@ void GC_dump(void)
 	for (page = first; page; page = page->next) {
 	  if ((page->type == kind) && (page->flags & MFLAG_BIGBLOCK) && !(page->flags & MFLAG_CONTINUED)) {
 	    if (!did_big) {
-	      fprintf(stderr, "    ");
+	      GCPRINT(GCOUTF, "    ");
 	      did_big = 1;
 	    }
 	    if (j >= NUM_TAGGED_SETS)
-	      fprintf(stderr, " [+%ld]", page->u.size);
+	      GCPRINT(GCOUTF, " [+%ld]", page->u.size);
 	    else
-	      fprintf(stderr, " %d:[+%ld]", (int)*(Type_Tag *)(page->block_start), page->u.size);
+	      GCPRINT(GCOUTF, " %d:[+%ld]", (int)*(Type_Tag *)(page->block_start), page->u.size);
 	    
 	    total += (page->u.size >> LOG_WORD_SIZE);
 	    waste += ((page->u.size >> LOG_WORD_SIZE)  & (MPAGE_WORDS - 1));
 	  }
 	}
 	if (did_big)
-	  fprintf(stderr, "\n");
+	  GCPRINT(GCOUTF, "\n");
       }
 
-      fprintf(stderr, " Total %s: %ld\n", name, total << LOG_WORD_SIZE);
+      GCPRINT(GCOUTF, " Total %s: %ld\n", name, total << LOG_WORD_SIZE);
     }
   }
 
-  fprintf(stderr, "Active fnls: %d\n", num_fnls);
-  fprintf(stderr, "Active fnl weak links: %d\n", fnl_weak_link_count);
+  GCPRINT(GCOUTF, "Active fnls: %d\n", num_fnls);
+  GCPRINT(GCOUTF, "Active fnl weak links: %d\n", fnl_weak_link_count);
 
   if (memory_in_use > max_memory_use)
     max_memory_use = memory_in_use;
   
-  fprintf(stderr, "Number of collections: %d  (%d compacting)\n", cycle_count, compact_count);
-  fprintf(stderr, "Memory high point: %ld\n", max_memory_use);
+  GCPRINT(GCOUTF, "Number of collections: %d  (%d compacting)\n", cycle_count, compact_count);
+  GCPRINT(GCOUTF, "Memory high point: %ld\n", max_memory_use);
 
-  fprintf(stderr, "Memory use: %ld\n", memory_in_use - FREE_LIST_DELTA);
-  fprintf(stderr, "Memory wasted: %ld (%.2f%%)\n", waste << LOG_WORD_SIZE, 
+  GCPRINT(GCOUTF, "Memory use: %ld\n", memory_in_use - FREE_LIST_DELTA);
+  GCPRINT(GCOUTF, "Memory wasted: %ld (%.2f%%)\n", waste << LOG_WORD_SIZE, 
 	  (100.0 * (waste << LOG_WORD_SIZE)) / memory_in_use);
-  fprintf(stderr, "Memory overhead: %ld (%.2f%%)   %ld (%.2f%%) on free list\n", 
+  GCPRINT(GCOUTF, "Memory overhead: %ld (%.2f%%)   %ld (%.2f%%) on free list\n", 
 	  page_allocations - memory_in_use + FREE_LIST_DELTA,
 	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use,
 	  (long)FREE_LIST_DELTA,
 	  (100.0 * FREE_LIST_DELTA) / memory_in_use);
-  fprintf(stderr, "Mmap overhead: %ld (%.2f%%)\n", 
+  GCPRINT(GCOUTF, "Mmap overhead: %ld (%.2f%%)\n", 
 	  page_reservations - memory_in_use + FREE_LIST_DELTA,
 	  (100.0 * ((double)page_reservations - memory_in_use)) / memory_in_use);
 }
+
+/**************** Windows stderr ****************/
+
+#ifdef GCPRINT_TO_WINDOWS_CONSOLE
+
+static void GC_prim_stringout(char *s, int len)
+{
+  static HANDLE console;
+  DWORD wrote;
+
+  if (!console) {
+    COORD size;
+    int is_new;
+    console = GetStdHandle(STD_ERROR_HANDLE);
+    if (console == INVALID_HANDLE_VALUE) {
+      AllocConsole();
+      console = GetStdHandle(STD_ERROR_HANDLE);
+      size.X = 90;
+      size.Y = 500;
+      SetConsoleScreenBufferSize(console, size);
+    }
+  }
+
+  WriteFile(console, s, len, &wrote, NULL);
+}
+
+#include <stdarg.h>
+#include <ctype.h>
+
+#define NP_BUFSIZE 512
+
+/* Non-allocating printf. */
+static void gc_fprintf(int ignored, const char *c, ...)
+{
+  char buffer[NP_BUFSIZE];
+  int pos;
+  va_list args;
+
+  va_start(args, c);
+
+  pos = 0;
+  while (*c) {
+    if (*c == '%') {
+      int len = -1, slen;
+      int islong = 0;
+      char *s;
+
+      if (pos) {
+	GC_prim_stringout(buffer, pos);
+	pos = 0;
+      }
+
+      c++;
+      if (isdigit(*c)) {
+	len = 0;
+	while (isdigit(*c)) {
+	  len = (len * 10) + (*c - '0');
+	  c++;
+	}
+      }
+
+      if (*c == 'l') {
+	islong = 1;
+	c++;
+      }
+      while (isdigit(*c)) {
+	c++;
+      }
+      if (*c == '.') {
+      }
+      while (isdigit(*c)) {
+	c++;
+      }
+      
+      switch (*c) {
+      case 'd':
+      case 'x':
+	{
+	  long v;
+	  int d, i;
+
+	  if (islong) {
+	    v = va_arg(args, long);
+	  } else {
+	    v = va_arg(args, int);
+	  }
+	  
+	  if (!v) {
+	    s = "0";
+	    slen = 1;
+	  } else {
+	    int neg = 0;
+
+	    i = NP_BUFSIZE - 2;
+	    
+	    if (v < 0) {
+	      neg = 1;
+	      v = -v;
+	    }
+
+	    d = (((*c) == 'd') ? 10 : 16);
+	    while (v) {
+	      int digit = (v % d);
+	      if (digit < 10)
+		digit += '0';
+	      else
+		digit += 'a' - 10;
+	      buffer[i--] = digit;
+	      v = v / d;
+	    }
+	    if (neg)
+	      buffer[i--] = '-';
+
+	    s = buffer + i + 1;
+	    slen = (NP_BUFSIZE - 2) - i;
+	  }
+	}
+	break;
+      case 's':
+	s = va_arg(args, char*);
+	slen = strlen(s);
+	break;
+      default:
+	s = "???";
+	slen = 3;
+	break;
+      }
+
+      c++;
+
+      if (len != -1) {
+	if (slen > len)
+	  slen = len;
+	else {
+	  int i;
+	  for (i = slen; i < len; i++)
+	    GC_prim_stringout(" ", 1);
+	}
+      }
+      
+      if (slen)
+	GC_prim_stringout(s, slen);
+    } else {
+      if (pos == (NP_BUFSIZE - 1)) {
+	GC_prim_stringout(buffer, pos);
+	pos = 0;
+      }
+      buffer[pos++] = *(c++);
+    }
+  }
+
+  if (pos)
+    GC_prim_stringout(buffer, pos);
+
+  /* Suggest a flush: */
+  GC_prim_stringout(NULL, 0);
+
+  va_end(args);
+}
+
+#endif

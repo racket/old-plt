@@ -123,3 +123,6 @@ char *wxGetTypeName(WXTYPE type)
     return NULL;
   return typ->name;
 }
+
+wxTypeDef::wxTypeDef(void) { name = NULL ; }
+wxTypeDef::~wxTypeDef(void) { if (name) delete name ; }

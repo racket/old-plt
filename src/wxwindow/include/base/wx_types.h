@@ -97,8 +97,8 @@ class wxTypeDef: public wxObject
   char *name;
   WXTYPE type;
   WXTYPE parent;
-  inline wxTypeDef(void) { name = NULL ; }
-  inline ~wxTypeDef(void) { if (name) delete name ; }
+  wxTypeDef(void);
+  ~wxTypeDef(void);
 };
 
 class wxTypeTree: public wxHashTable

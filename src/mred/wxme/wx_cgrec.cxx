@@ -21,6 +21,9 @@
 
  */
 
+#if defined(_MSC_VER) && defined(MZ_PRECISE_GC)
+# include "wx.h"
+#endif
 #include "common.h"
 #include <stdio.h>
 #include <string.h>

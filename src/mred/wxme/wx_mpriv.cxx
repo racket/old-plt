@@ -21,6 +21,9 @@
 
  */
 
+#if defined(_MSC_VER) && defined(MZ_PRECISE_GC)
+# include "wx.h"
+#endif
 #define Uses_wxPrintSetup /* for wx_xt */
 #define Uses_XLib /* for getting black pixel value */
 #include "common.h"

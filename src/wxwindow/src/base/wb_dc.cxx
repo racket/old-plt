@@ -177,3 +177,10 @@ void wxbDC::TryColour(wxColour *src, wxColour *dest)
   dest = src;
 }
 
+wxbMemoryDC::wxbMemoryDC(void) { }
+wxbMemoryDC::wxbMemoryDC(wxCanvasDC *WXUNUSED(old_dc)) { }
+wxbMemoryDC::~wxbMemoryDC(void) { }
+
+wxbCanvasDC::wxbCanvasDC(void) { }
+wxbCanvasDC::~wxbCanvasDC(void) { }
+

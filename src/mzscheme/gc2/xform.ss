@@ -867,6 +867,16 @@
       scheme_raise_out_of_memory
       ))
 
+  
+  (define non-pointer-typedef-names
+    ;; Under Windows, things like HANDLE and HWND, are not
+    ;; malloced and could overlap with GCed areas.
+    '(|HANDLE|
+       |HWND| |HDC| |HMENU|
+	|HBITMAP| |HBRUSH| |HPEN| |HFONT| |HPALETTE| |HRGN|
+	 |HICON| |HINSTANCE|
+	  |GLOBALHANDLE| |LOCALHANDLE| |HGLOBAL| |HLOCAL|))
+
   (define asm-commands
     ;; When outputting, add newline before these syms
     ;; (for __asm blocks in Windows)
@@ -929,7 +939,7 @@
 
   ;; Accum top-level typedefs for pointers and non-pointers as a list-of-sym:
   (define pointer-types '())
-  (define non-pointer-types '(int char long unsigned ulong uint void float double))
+  (define non-pointer-types '(int char long unsigned ulong uint void float double uchar))
   ;; Accum top-level struct decls as list of (cons sym (list (cons symbol vtype) ...))
   (define struct-defs '())
 
@@ -1169,7 +1179,13 @@
 		  (display (tok-n v))
 		  (display/indent v "\""))
 		(display/indent v (tok-n v)))
-	    (display/indent v " ")
+	    ;; Don't put a space between L and a string, because without
+	    ;; the space it means a long string.
+	    (unless (and (eq? '|L| (tok-n v))
+			 (pair? (cdr e))
+			 (string? (tok-n (cadr e)))
+			 (not (seq? (tok-n (cadr e)))))
+	       (display/indent v " "))
 	    (when (and (eq? semi (tok-n v))
 		       semi-newlines?)
 	      (newline/indent indent))])
@@ -1458,7 +1474,8 @@
 		[else #f]))))))
 
   (define (struct-decl? e)
-    (memq (tok-n (car e)) '(struct enum)))
+    (and (memq (tok-n (car e)) '(struct enum))
+	 (ormap braces? (cdr e))))
 
   (define (class-decl? e)
     (memq (tok-n (car e)) '(class)))
@@ -1573,12 +1590,24 @@
   ;; parse it as a variable declaration using `get-vars', then extend
   ;; `pointer-types' and `non-pointer-types' based on the result.
   (define (check-pointer-type e)
-    (let-values ([(pointers non-pointers)
-		  (get-vars ((if (eq? '__extension__ (car e))
-				 cddr
-				 cdr)
-			     e)
-			    "PTRDEF" #t)])
+    (let*-values ([(pointers non-pointers)
+		   (get-vars ((if (eq? '__extension__ (car e))
+				  cddr
+				  cdr)
+			      e)
+			     "PTRDEF" #t)]
+		  ;; Remove things like HANDLE and HWND, which are not
+		  ;; malloced and could overlap with GCed areas:
+		  [(pointers non-pointers)
+		   (let ([l (filter (lambda (p)
+				      (memq (car p) non-pointer-typedef-names))
+				    pointers)])
+		     (if (null? l)
+			 (values pointers non-pointers)
+			 (values (filter (lambda (p)
+					   (not (memq (car p) non-pointer-typedef-names)))
+					 pointers)
+				 (append l non-pointers))))])
       (set! pointer-types (append pointers pointer-types))
       (set! non-pointer-types (append (map car non-pointers) non-pointer-types))))
 

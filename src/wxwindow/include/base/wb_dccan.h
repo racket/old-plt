@@ -18,9 +18,8 @@
 class wxbCanvasDC: public wxDC
 {
  public:
-  inline wxbCanvasDC(void) { }
-
-  inline ~wxbCanvasDC(void) { }
+  wxbCanvasDC(void);
+  ~wxbCanvasDC(void);
 };
 
 #endif // wxb_dccanh

@@ -94,13 +94,14 @@ wxPathOnly(char *path)
 {
   if (path && *path) {
     char *buf;
-    
-    buf = copystring(path);
-
-    int l = strlen(path);
+    int i, l;
     Bool done = FALSE;
 
-    int i = l - 1;
+    buf = copystring(path);
+
+    l = strlen(path);
+
+    i = l - 1;
 
     // Search backward for a backward or forward slash
     while (!done && i > -1) {
@@ -127,8 +128,10 @@ wxPathOnly(char *path)
 char *wxNow( void )
 {
   time_t now;
+  char *date;
+
   now = time(NULL);
-  char *date = ctime(&now); 
+  date = ctime(&now); 
   date[24] = '\0';
   return date;
 }
@@ -138,13 +141,13 @@ Bool wxGetEmailAddress (char *address, int maxSize)
 {
   char host[65];
   char user[65];
+  char tmp[130];
 
   if (wxGetHostName(host, 64) == FALSE)
     return FALSE;
   if (wxGetUserId(user, 64) == FALSE)
     return FALSE;
 
-  char tmp[130];
   strcpy(tmp, user);
   strcat(tmp, "@");
   strcat(tmp, host);

@@ -11,6 +11,10 @@
 #define Uses_XtIntrinsicP
 #define Uses_XLib
 
+#if defined(_MSC_VER) && defined(MZ_PRECISE_GC)
+# include "wx.h"
+#endif
+
 /* wx_motif, for wxTimer: */
 #ifdef __GNUG__
 # pragma implementation "wx_timer.h"
@@ -289,7 +293,7 @@ static int mark_eventspace_val(void *p)
   gcMARK_TYPED(MrEdContext *, c->next);
 
 #ifdef wx_msw
-  gcMARK_TYPED(struct LeaveEvent *, c->queued_leaves);
+  gcMARK_TYPED(LeaveEvent *, c->queued_leaves);
 #endif
 
   gcMARK_TYPED(Context_Custodian_Hop *, c->mr_hop);
@@ -320,7 +324,7 @@ static int fixup_eventspace_val(void *p)
   gcFIXUP_TYPED(MrEdContext *, c->next);
 
 #ifdef wx_msw
-  gcFIXUP_TYPED(struct LeaveEvent *, c->queued_leaves);
+  gcFIXUP_TYPED(LeaveEvent *, c->queued_leaves);
 #endif
 
   gcFIXUP_TYPED(Context_Custodian_Hop *, c->mr_hop);

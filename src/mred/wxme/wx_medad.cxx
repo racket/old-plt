@@ -6,6 +6,9 @@
  * Copyright:   (c) 1995, Matthew Flatt
  */
 
+#if defined(_MSC_VER) && defined(MZ_PRECISE_GC)
+# include "wx.h"
+#endif
 #include "common.h"
 
 #include <string.h>

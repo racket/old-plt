@@ -658,15 +658,16 @@ int scheme_diff_pointer(void *a, void *b)
 
 #endif
 
-#ifdef __cplusplus
+#ifndef MZ_PRECISE_GC
+# ifdef __cplusplus
 extern "C" 
 {
-#endif
+# endif
   extern MZ_DLLIMPORT void GC_dump(void);
-#ifdef __cplusplus
+# ifdef __cplusplus
 };
+# endif
 #endif
- 
 
 #ifdef USE_TAGGED_ALLOCATION
 #define NUM_TYPE_SLOTS (_scheme_last_type_ + 5) /* extra space for externally defined */

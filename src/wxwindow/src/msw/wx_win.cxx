@@ -799,7 +799,11 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
     wnd = wxFindWinFromHandle(hWnd);
     retval = 1; /* dialog: handled */
   } else {
+#ifdef MZ_PRECISE_GC
+    wnd = wxFindWinFromHandle(hWnd);
+#else
     wnd = (wxWnd *)GetWindowLong(hWnd, 0);
+#endif
     retval = 0; /* most common expected result for windows */
   }
 
@@ -1336,7 +1340,9 @@ void wxWnd::DestroyWindow(void)
   HWND oldHandle = handle;
 
   DetachWindowMenu();
+#ifndef MZ_PRECISE_GC
   SetWindowLong(handle, 0, (long)0);
+#endif
   handle = NULL;
 
   wxwmDestroyWindow(oldHandle);
@@ -1428,8 +1434,10 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
     }
     MoveWindow(handle, x1, y1, w2, h2, FALSE);
   } else {
+#ifndef MZ_PRECISE_GC
     // Only for non-dialogs:
     SetWindowLong(handle, 0, (long)this);
+#endif
   }
 }
 
@@ -2369,10 +2377,11 @@ void wxWindow::DoScroll(wxScrollEvent *event)
   if (!wnd->calcScrolledOffset) {
     OnScroll(event);
   } else {
-    if (orient == wxHORIZONTAL)
+    if (orient == wxHORIZONTAL) {
       ::ScrollWindow(hWnd, nScrollInc, 0, NULL, NULL);
-    else
+    } else {
       ::ScrollWindow(hWnd, 0, nScrollInc, NULL, NULL);      
+    }
   
     InvalidateRect(hWnd, NULL, FALSE);
   }

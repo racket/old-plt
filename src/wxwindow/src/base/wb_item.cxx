@@ -117,6 +117,19 @@ wxbButton::~wxbButton (void)
 }
 
 /*
+ * Menu item
+ */
+
+wbMenuItem::wbMenuItem(void) { 
+  itemId = 0; itemName = NULL; topMenu = NULL; subMenu = NULL;
+  menuBar = NULL; helpString = NULL;
+  WXGC_IGNORE(this, menuBar); WXGC_IGNORE(this, topMenu);
+}
+
+wbMenuItem::~wbMenuItem(void) {
+}
+
+/*
  * Menu
  */
 

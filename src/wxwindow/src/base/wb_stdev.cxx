@@ -21,6 +21,10 @@ wxCommandEvent::wxCommandEvent(WXTYPE commandType)
   eventClass = wxTYPE_COMMAND_EVENT;
   eventType = commandType;
 }
+wxCommandEvent::~wxCommandEvent()
+{
+}
+
 
 wxPopupEvent::wxPopupEvent()
   : wxCommandEvent(wxEVENT_TYPE_MENU_SELECT)

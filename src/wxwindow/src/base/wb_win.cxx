@@ -52,8 +52,11 @@ wxWindow *wxbWindow::GetParent(void)
 
 wxWindow *wxbWindow::GetGrandParent(void)
 {
-  if (GetParent())
-    return GetParent()->GetParent();
+  wxWindow *par;
+  
+  par = GetParent();
+  if (par)
+    return par->GetParent();
   else
     return NULL;
 }
@@ -112,7 +115,9 @@ void wxbWindow::MakeModal(Bool modal)
   // Disable all other windows
   if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME)) {
     wxChildNode *node;
-    node = wxTopLevelWindows(this)->First();
+    wxChildList *tlw;
+    tlw = wxTopLevelWindows(this);
+    node = tlw->First();
     while (node) {
       wxWindow *win;
       win = (wxWindow *)node->Data();
@@ -153,10 +158,14 @@ wxEvtHandler::~wxEvtHandler(void)
 void wxbWindow::ForEach(wxForEachProc foreach, void *data)
 {
   wxChildNode *node;
-  node = GetChildren()->First();
+  wxChildList *cl;
+
+  cl = GetChildren();
+  node = cl->First();
   while (node) {
     wxChildNode *next;
     wxWindow *win;
+
     next = node->Next();
     win = (wxWindow *)node->Data();
     win->ForEach(foreach, data);

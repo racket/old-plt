@@ -433,6 +433,9 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
   char *s;
 #ifndef wx_x
   wxColour *c;
+# ifdef wx_msw
+  wxWindow *parent;
+# endif
 #endif
 
   if (!argc || SCHEME_FALSEP(argv[0]))
@@ -442,9 +445,9 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 
 #ifndef wx_x
 # ifdef wx_msw
-  wxWindow *parent = ((argc > 1)
-		      ? objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1)
-		      : NULL);
+  parent = ((argc > 1)
+	    ? objscheme_unbundle_wxWindow(argv[1], "get-color-from-user", 1)
+	    : NULL);
 # endif
   c = ((argc > 2)
        ? objscheme_unbundle_wxColour(argv[2], "get-color-from-user", 1)
@@ -516,23 +519,34 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 # endif
 #endif
 #ifdef wx_msw
-  CHOOSECOLOR *cc;
-  static unsigned long userCustomColors[16];
+  {
+    CHOOSECOLOR *cc;
+    static unsigned long userCustomColors[16];
 
-  cc = new CHOOSECOLOR;
-  cc->lStructSize = sizeof(CHOOSECOLOR);
-  cc->hwndOwner = NULL; /* (parent ? parent->GetHWND() : (HWND)NULL */
-  if (c)
-    cc->rgbResult = RGB(c->Red(), c->Green(), c->Blue());
-  cc->Flags = (c ? CC_RGBINIT : 0);
-  cc->lpCustColors = userCustomColors;
+    cc = (CHOOSECOLOR *)malloc(sizeof(CHOOSECOLOR));
+    cc->lStructSize = sizeof(CHOOSECOLOR);
+    cc->hwndOwner = NULL; // (parent ? parent->GetHWND() : (HWND)NULL)
+    if (c) {
+      int rr, gg, bb;
+      rr = c->Red();
+      gg = c->Green();
+      bb = c->Blue();
+      cc->rgbResult = RGB(rr, gg, bb);
+    }
+    cc->Flags = (c ? CC_RGBINIT : 0);
+    cc->lpCustColors = userCustomColors;
+    
+    if (!wxPrimitiveDialog(do_choose_color, cc, 0)) {
+      free(cc);
+      return scheme_false;
+    }
+    
+    c = new wxColour(GetRValue(cc->rgbResult), GetGValue(cc->rgbResult), GetBValue(cc->rgbResult));
+    
+    free(cc);
 
-  if (!wxPrimitiveDialog(do_choose_color, cc, 0))
-    return scheme_false;
-
-  c = new wxColour(GetRValue(cc->rgbResult), GetGValue(cc->rgbResult), GetBValue(cc->rgbResult));
-
-  return objscheme_bundle_wxColour(c);
+    return objscheme_bundle_wxColour(c);
+  }
 #endif
 }
 
@@ -559,15 +573,6 @@ static Scheme_Object *wxSchemeGetFontFromUser(int argc, Scheme_Object **argv)
   else
     prompt = objscheme_unbundle_string(argv[0], "get-font-from-user");
 
-#ifdef wx_msw
-  wxWindow *parent = ((argc > 1)
-		      ? objscheme_unbundle_wxWindow(argv[1], "get-font-from-user", 1)
-		      : NULL);
-  wxFont *f = ((argc > 2)
-	       ? objscheme_unbundle_wxFont(argv[2], "get-font-from-user", 1)
-	       : NULL);
-#endif
-
 #ifdef wx_x
   return scheme_false;
 #endif
@@ -575,162 +580,185 @@ static Scheme_Object *wxSchemeGetFontFromUser(int argc, Scheme_Object **argv)
   return scheme_false;
 #endif
 #ifdef wx_msw
-  CHOOSEFONT *c;
-  LOGFONT *lf;
-  int len;
-  char *s;
+  {
+    wxWindow *parent;
+    wxFont *f;
+    CHOOSEFONT *c;
+    LOGFONT *lf;
+    int len;
+    char *s;
+    int fontFamily = wxSWISS;
+    int fontStyle = wxNORMAL;
+    int fontWeight = wxNORMAL;
+    int fontPoints = 10;
+    Bool fontUnderline = FALSE;
+    int lfFamily;
 
-  lf = new LOGFONT;
-  c = new CHOOSEFONT;
+    parent = ((argc > 1)
+		      ? objscheme_unbundle_wxWindow(argv[1], "get-font-from-user", 1)
+		      : NULL);
+    f = ((argc > 2)
+	 ? objscheme_unbundle_wxFont(argv[2], "get-font-from-user", 1)
+	 : NULL);
 
-  s = (f ? f->GetFaceString() : NULL);
-  if (s) {
-    len = strlen(s);
-    if (len > 31)
-      len = 31;
-  } else
-    len = 0;
+    lf = (LOGFONT *)malloc(sizeof(LOGFONT));
+    c = (CHOOSEFONT *)malloc(sizeof(CHOOSEFONT));
+
+    s = (f ? f->GetFaceString() : NULL);
+    if (s) {
+      len = strlen(s);
+      if (len > 31)
+	len = 31;
+    } else
+      len = 0;
   
-  memcpy(lf->lfFaceName, s, len);
-  lf->lfFaceName[len] = 0;
+    memcpy(lf->lfFaceName, s, len);
+    lf->lfFaceName[len] = 0;
   
-  lf->lfHeight = 0;
-  lf->lfWidth = 0;
-  lf->lfEscapement = 0;
-  lf->lfOrientation = 0;
-  if (f) {
-    switch (f->GetWeight()) {
-    case wxBOLD:
-      lf->lfWeight = FW_BOLD;
-      break;
-    case wxLIGHT:
-      lf->lfWeight = FW_LIGHT;
-    default:
+    lf->lfHeight = 0;
+    lf->lfWidth = 0;
+    lf->lfEscapement = 0;
+    lf->lfOrientation = 0;
+    if (f) {
+      switch (f->GetWeight()) {
+      case wxBOLD:
+	lf->lfWeight = FW_BOLD;
+	break;
+      case wxLIGHT:
+	lf->lfWeight = FW_LIGHT;
+      default:
+	lf->lfWeight = FW_NORMAL;
+      } 
+    } else
       lf->lfWeight = FW_NORMAL;
-    } 
-  } else
-    lf->lfWeight = FW_NORMAL;
-  if (f) {
-    switch (f->GetStyle()) {
-    case wxITALIC:
-    case wxSLANT:
-      lf->lfItalic = TRUE;
-      break;
-    default:
+    if (f) {
+      switch (f->GetStyle()) {
+      case wxITALIC:
+      case wxSLANT:
+	lf->lfItalic = TRUE;
+	break;
+      default:
+	lf->lfItalic = FALSE;
+      } 
+    } else
       lf->lfItalic = FALSE;
-    } 
-  } else
-    lf->lfItalic = FALSE;
-  lf->lfUnderline = f && f->GetUnderlined();
-  lf->lfStrikeOut = FALSE;
-  lf->lfCharSet = OEM_CHARSET;
-  lf->lfOutPrecision = OUT_DEFAULT_PRECIS;
-  lf->lfClipPrecision = CLIP_DEFAULT_PRECIS;
-  lf->lfQuality = DEFAULT_QUALITY;
-  lf->lfPitchAndFamily = DEFAULT_PITCH;
-  if (f) {
-    switch (f->GetFamily()) {
-    case wxDECORATIVE:
-      lf->lfPitchAndFamily |= FF_DECORATIVE;
-      break;
-    case wxMODERN:
-      lf->lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
-      break;
-    case wxROMAN:
-      lf->lfPitchAndFamily |= FF_ROMAN;
-      break;
-    case wxSCRIPT:
-      lf->lfPitchAndFamily |= FF_SCRIPT;
-      break;
-    case wxSWISS:
-      lf->lfPitchAndFamily |= FF_SWISS;
-      break;
-    default:
-    case wxDEFAULT:
+    if (f) {
+      lf->lfUnderline = f->GetUnderlined();
+    } else
+      lf->lfUnderline = FALSE;
+    lf->lfStrikeOut = FALSE;
+    lf->lfCharSet = OEM_CHARSET;
+    lf->lfOutPrecision = OUT_DEFAULT_PRECIS;
+    lf->lfClipPrecision = CLIP_DEFAULT_PRECIS;
+    lf->lfQuality = DEFAULT_QUALITY;
+    lf->lfPitchAndFamily = DEFAULT_PITCH;
+    if (f) {
+      switch (f->GetFamily()) {
+      case wxDECORATIVE:
+	lf->lfPitchAndFamily |= FF_DECORATIVE;
+	break;
+      case wxMODERN:
+	lf->lfPitchAndFamily = FIXED_PITCH | FF_MODERN;
+	break;
+      case wxROMAN:
+	lf->lfPitchAndFamily |= FF_ROMAN;
+	break;
+      case wxSCRIPT:
+	lf->lfPitchAndFamily |= FF_SCRIPT;
+	break;
+      case wxSWISS:
+	lf->lfPitchAndFamily |= FF_SWISS;
+	break;
+      default:
+      case wxDEFAULT:
+	lf->lfPitchAndFamily |= FF_DONTCARE;
+	break;
+      } 
+    } else
       lf->lfPitchAndFamily |= FF_DONTCARE;
-      break;
-    } 
-  } else
-    lf->lfPitchAndFamily |= FF_DONTCARE;
 
-  c->lStructSize = sizeof(CHOOSEFONT);
-  c->hwndOwner = NULL; /* (parent ? parent->GetHWND() : (HWND)NULL) */
-  c->lpLogFont = lf;
-  c->iPointSize = 10 * (f ? f->GetPointSize() : 10);
-  c->Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
+    c->lStructSize = sizeof(CHOOSEFONT);
+    c->hwndOwner = NULL; /* (parent ? parent->GetHWND() : (HWND)NULL) */
+    c->lpLogFont = lf;
+    if (f) {
+      c->iPointSize = 10 * f->GetPointSize();
+    } else
+      c->iPointSize = 100;
+    c->Flags = CF_INITTOLOGFONTSTRUCT | CF_SCREENFONTS;
 
-  if (!wxPrimitiveDialog(do_choose_font, c, 0))
-    return scheme_false;
+    if (!wxPrimitiveDialog(do_choose_font, c, 0)) {
+      free(c);
+      free(lf);
+      return scheme_false;
+    }
   
-  if (!lf->lfFaceName[0])
-    s = NULL;
-  else
-    s = lf->lfFaceName;
-  
-  int fontFamily = wxSWISS;
-  int fontStyle = wxNORMAL;
-  int fontWeight = wxNORMAL;
-  int fontPoints = 10;
-  Bool fontUnderline = FALSE;
+    if (!lf->lfFaceName[0])
+      s = NULL;
+    else
+      s = lf->lfFaceName;
+    
+    lfFamily = lf->lfPitchAndFamily;
+    if (lfFamily & FIXED_PITCH)
+      lfFamily -= FIXED_PITCH;
+    if (lfFamily & VARIABLE_PITCH)
+      lfFamily -= VARIABLE_PITCH;
+    
+    switch (lfFamily)
+      {
+      case FF_ROMAN:
+	fontFamily = wxROMAN;
+	break;
+      case FF_SWISS:
+	fontFamily = wxSWISS;
+	break;
+      case FF_SCRIPT:
+	fontFamily = wxSCRIPT;
+	break;
+      case FF_MODERN:
+	fontFamily = wxMODERN;
+	break;
+      case FF_DECORATIVE:
+	fontFamily = wxDECORATIVE;
+	break;
+      default:
+	fontFamily = wxSWISS;
+	break;
+      }
+    switch (lf->lfWeight)
+      {
+      case FW_LIGHT:
+	fontWeight = wxLIGHT;
+	break;
+      case FW_NORMAL:
+	fontWeight = wxNORMAL;
+	break;
+      case FW_BOLD:
+	fontWeight = wxBOLD;
+	break;
+      default:
+	fontWeight = wxNORMAL;
+	break;
+      }
+    if (lf->lfItalic)
+      fontStyle = wxITALIC;
+    else
+      fontStyle = wxNORMAL;
 
-  int lfFamily = lf->lfPitchAndFamily;
-  if (lfFamily & FIXED_PITCH)
-    lfFamily -= FIXED_PITCH;
-  if (lfFamily & VARIABLE_PITCH)
-    lfFamily -= VARIABLE_PITCH;
-  
-  switch (lfFamily)
-  {
-    case FF_ROMAN:
-      fontFamily = wxROMAN;
-      break;
-    case FF_SWISS:
-      fontFamily = wxSWISS;
-      break;
-    case FF_SCRIPT:
-      fontFamily = wxSCRIPT;
-      break;
-    case FF_MODERN:
-      fontFamily = wxMODERN;
-      break;
-    case FF_DECORATIVE:
-      fontFamily = wxDECORATIVE;
-      break;
-    default:
-      fontFamily = wxSWISS;
-      break;
+    if (lf->lfUnderline)
+      fontUnderline = TRUE;
+
+    if (s)
+      f = new wxFont(c->iPointSize / 10, s, fontFamily, fontStyle, 
+		     fontWeight, fontUnderline);
+    else
+      f = new wxFont(c->iPointSize / 10, fontFamily, fontStyle, 
+		     fontWeight, fontUnderline);
+
+    free(c);
+    free(lf);
+
+    return objscheme_bundle_wxFont(f);
   }
-  switch (lf->lfWeight)
-  {
-    case FW_LIGHT:
-      fontWeight = wxLIGHT;
-      break;
-    case FW_NORMAL:
-      fontWeight = wxNORMAL;
-      break;
-    case FW_BOLD:
-      fontWeight = wxBOLD;
-      break;
-    default:
-      fontWeight = wxNORMAL;
-      break;
-  }
-  if (lf->lfItalic)
-    fontStyle = wxITALIC;
-  else
-    fontStyle = wxNORMAL;
-
-  if (lf->lfUnderline)
-    fontUnderline = TRUE;
-
-  if (s)
-    f = new wxFont(c->iPointSize / 10, s, fontFamily, fontStyle, 
-		   fontWeight, fontUnderline);
-  else
-    f = new wxFont(c->iPointSize / 10, fontFamily, fontStyle, 
-		   fontWeight, fontUnderline);
-
-  return objscheme_bundle_wxFont(f);
 #endif
 }
 
@@ -921,7 +949,9 @@ static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
   c = new wxColour(0xE8, 0xE8, 0xE8);
 #endif
 #ifdef wx_msw
-  DWORD v = GetSysColor(COLOR_BTNFACE);
+  DWORD v;
+
+  v = GetSysColor(COLOR_BTNFACE);
 
   c = new wxColour(GetRValue(v), GetGValue(v), GetBValue(v));
 #endif
@@ -1890,24 +1920,25 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef wx_msw
-  Scheme_Object *home;
-
-  home = scheme_make_string_without_copying(win_find_home());
-
-  int ends_in_slash;
-
-  ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];
-  ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
-
-  if (which == id_init_file)
-    return scheme_append_string(home,
-				scheme_make_string("\\mredrc.ss" + ends_in_slash));
-  if (which == id_setup_file)
-    return scheme_append_string(home,
-				scheme_make_string("\\mred.ini" + ends_in_slash));  
-
-  if (which == id_x_display)
-    return scheme_false;
+  {
+    Scheme_Object *home;
+    int ends_in_slash;
+    
+    home = scheme_make_string_without_copying(win_find_home());
+    
+    ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];
+    ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
+    
+    if (which == id_init_file)
+      return scheme_append_string(home,
+				  scheme_make_string("\\mredrc.ss" + ends_in_slash));
+    if (which == id_setup_file)
+      return scheme_append_string(home,
+				  scheme_make_string("\\mred.ini" + ends_in_slash));  
+    
+    if (which == id_x_display)
+      return scheme_false;
+  }
 #endif
 
 #if defined(wx_mac) && !defined(OS_X)

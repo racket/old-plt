@@ -118,6 +118,10 @@ typedef jmpbuf jmp_buf[1];
 
 #define GC_MIGHT_USE_REGISTERED_STATICS
 
+#ifdef OS_X
+#include "macosxpre.h"
+#endif
+
 /* Set up MZ_EXTERN for DLL build */
 #if SCHEME_DIRECT_EMBEDDED && defined(WINDOWS_DYNAMIC_LOAD) \
     && (defined(_MSC_VER) || defined(__BORLANDC__)) \
@@ -1168,7 +1172,7 @@ void scheme_restore_nonmain_thread(void);
 #ifdef MAC_FILE_SYSTEM
 extern long scheme_creator_id;
 #endif
-#ifdef MACINTOSH_EVENTS
+#ifdef MACINTOSH_EVENTS 
 extern void (*scheme_handle_aewait_event)(EventRecord *e);
 #endif
 

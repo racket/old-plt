@@ -247,14 +247,17 @@
 	  env trans? expr (quote-syntax begin)
 	  (syntax exprs)
 	  annotate-top)]
-	[(define-syntax name rhs)
+	[(define-syntaxes (name ...) rhs)
 	 top?
 	 (with-syntax ([marked (with-mark expr
 					  (annotate-named
-					   (syntax name)
+					   (let ([l (syntax->list (syntax (name ...)))])
+					     (and (pair? l)
+						  (null? (cdr l))
+						  (car l)))
 					   (syntax rhs)
 					   env #t))])
-	   (syntax/loc expr (define-syntax name marked)))]
+	   (syntax/loc expr (define-syntaxes (name ...) marked)))]
 
 	;; Just wrap body expressions
 	[(module name init-import body ...)

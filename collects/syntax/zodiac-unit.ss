@@ -243,11 +243,11 @@
 		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #f))]
 		
-		[(define-syntax name rhs)
-		 (make-define-syntax-form
+		[(define-syntaxes names rhs)
+		 (make-define-syntaxes-form
 		  stx
 		  (mk-back)
-		  (syntax name)
+		  (syntax->list (syntax names))
 		  (loop (syntax rhs) null #t))]
 		
 		[(module name init-require . body)
@@ -593,9 +593,9 @@
       (define (create-quote-syntax-form z expr)
 	(make-quote-syntax-form (zodiac-stx z) (mk-back) expr))
 
-      (define-struct (define-syntax-form struct:parsed) (name expr))
-      (define (create-define-syntax-form z name expr)
-	(make-define-syntax-form (zodiac-stx z) (mk-back) name expr))
+      (define-struct (define-syntaxes-form struct:parsed) (names expr))
+      (define (create-define-syntaxes-form z names expr)
+	(make-define-syntaxes-form (zodiac-stx z) (mk-back) names expr))
 
       (define-struct (module-form struct:parsed) (name init-require body))
       (define (create-module-form z name init-require body)

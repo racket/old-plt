@@ -12,7 +12,7 @@
 				    begin begin0 set!
 				    with-continuation-mark
 				    if #%app
-				    define-values define-syntax
+				    define-values define-syntaxes
 				    module require provide require-for-syntax)
 			       (if trans? module-transformer-identifier=? module-identifier=?)
 			  clause ...))])))
@@ -22,7 +22,7 @@
 	   (datum->syntax-object stx s #f))
 	 '(begin
 	    define-values
-	    define-syntax
+	    define-syntaxes
 	    set!
 	    let
 	    let-values
@@ -34,7 +34,7 @@
 	    case-lambda
 	    if
 	    quote
-	    letrec-syntax
+	    letrec-syntaxes
 	    with-continuation-mark
 	    #%app
 	    #%top

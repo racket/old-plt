@@ -449,7 +449,7 @@
 		     ;;----------------------------------------------------------
 		     ;; DEFINE-SYNTAX - FIXME, WRONG!!!!
 		     ;;
-		     [(zodiac:define-syntax-form? ast)
+		     [(zodiac:define-syntaxes-form? ast)
 		      (zodiac:make-special-constant 'void)]
 		     
 		     

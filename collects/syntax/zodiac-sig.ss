@@ -75,7 +75,7 @@
 
      ;; Thess are new:
      (struct quote-syntax-form (expr))               create-quote-syntax-form
-     (struct define-syntax-form (name expr))         create-define-syntax-form
+     (struct define-syntaxes-form (names expr))      create-define-syntaxes-form
      (struct module-form (name init-require body))   create-module-form
      (struct require/provide-form ())                create-require/provide-form
 

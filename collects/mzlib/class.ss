@@ -9,7 +9,7 @@
            object=?
 	   new make-object instantiate
 	   send send/apply send* class-field-accessor class-field-mutator with-method
-           get-field field-bound?
+           get-field field-bound? field-names
 	   private* public*  public-final* override* override-final*
 	   define/private define/public define/public-final define/override define/override-final
 	   define-local-member-name

@@ -2083,6 +2083,16 @@
           #t
           #f)))
   
+  (define (field-names obj)
+    (unless (object? obj)
+      (raise-mismatch-error 
+       'field-names
+       "expected an object, got "
+       obj))
+    (let* ([cls (object-ref obj)]
+           [field-ht (class-field-ht cls)])
+      (filter interned? (hash-table-map field-ht (lambda (x y) x)))))
+    
   (define (find-with-method object name)
     (find-method/who 'with-method object name))
 
@@ -2212,13 +2222,6 @@
     ;; copy list, and also filter private (interned) methods:
     (apply list-immutable (filter interned? (interface-public-ids i))))
 
-  (define (object=? o1 o2)
-    (unless (object? o1)
-      (raise-type-error 'object=? "object" o1))
-    (unless (object? o2)
-      (raise-type-error 'object=? "object" o2))
-    (eq? (unwrap-object o1)
-         (unwrap-object o2)))
   
   (define (object-info o)
     (unless (object? o)
@@ -2253,28 +2256,37 @@
 	(raise-mismatch-error 'class-info "current inspector cannot inspect class: " c)))
 
   (define object->vector
-    (opt-lambda (o [opaque-v '...])
-      (unless (object? o)
-	(raise-type-error 'object->vector "object" o))
-      (list->vector
-       (cons
-	(string->symbol (format "object:~a" (class-name (object-ref o))))
-	(reverse
-	 (let-values ([(c skipped?) (object-info o)])
-	   (let loop ([c c][skipped? skipped?])
-	     (cond
-	      [(not c) (if skipped? (list opaque-v) null)]
-	      [else (let-values ([(name num-fields field-ids field-ref field-set next next-skipped?)
-				  (class-info c)])
-		      (let ([rest (loop next next-skipped?)]
-			    [here (let loop ([n num-fields])
-				    (if (zero? n)
-					null
-					(cons (field-ref o (sub1 n))
-					      (loop (sub1 n)))))])
-			(append (if skipped? (list opaque-v) null)
-				here
-				rest)))]))))))))
+    (opt-lambda (in-o [opaque-v '...])
+      (unless (object? in-o)
+	(raise-type-error 'object->vector "object" in-o))
+      (let ([o (unwrap-object in-o)])
+        (list->vector
+         (cons
+          (string->symbol (format "object:~a" (class-name (object-ref o))))
+          (reverse
+           (let-values ([(c skipped?) (object-info o)])
+             (let loop ([c c][skipped? skipped?])
+               (cond
+                 [(not c) (if skipped? (list opaque-v) null)]
+                 [else (let-values ([(name num-fields field-ids field-ref field-set next next-skipped?)
+                                     (class-info c)])
+                         (let ([rest (loop next next-skipped?)]
+                               [here (let loop ([n num-fields])
+                                       (if (zero? n)
+                                           null
+                                           (cons (field-ref o (sub1 n))
+                                                 (loop (sub1 n)))))])
+                           (append (if skipped? (list opaque-v) null)
+                                   here
+                                   rest)))])))))))))
+  
+  (define (object=? o1 o2)
+    (unless (object? o1)
+      (raise-type-error 'object=? "object" o1))
+    (unless (object? o2)
+      (raise-type-error 'object=? "object" o2))
+    (eq? (unwrap-object o1)
+         (unwrap-object o2)))
     
   ;;--------------------------------------------------------------------
   ;;  primitive classes
@@ -2539,7 +2551,7 @@
 	   (rename :interface interface) interface?
 	   object% object? object=?
            new make-object instantiate
-           get-field field-bound?
+           get-field field-bound? field-names
 	   send send/apply send* class-field-accessor class-field-mutator with-method
 	   private* public*  public-final* override* override-final*
 	   define/private define/public define/public-final define/override define/override-final

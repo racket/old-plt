@@ -820,10 +820,10 @@
                                 (super-new))))])
                 (get-field f o))
             exn:application:mismatch?)
-(test #t zero? (get-field x (new (class object% (field [x 0]) (super-new)))))
-(test #t zero? (let ()
-                 (define-local-member-name f)
-                 (get-field f (new (class object% (field [f 0]) (super-new))))))
+(test 0 'get-field1 (get-field x (new (class object% (field [x 0]) (super-new)))))
+(test 0 'get-field2 (let ()
+                      (define-local-member-name f)
+                      (get-field f (new (class object% (field [f 0]) (super-new))))))
 
 (syntax-test #'(field-bound?))
 (syntax-test #'(field-bound? a))
@@ -831,21 +831,28 @@
 (syntax-test #'(field-bound? a b c))
 
 (error-test #'(field-bound? x 1) exn:application:mismatch?)
-(test #t (lambda (x) x) (field-bound? x (new (class object% (field [x 0]) (super-new)))))
-(test #f (lambda (x) x) (field-bound? y (new (class object% (field [x 0]) (super-new)))))
-(test #f (lambda (x) x) (field-bound? y (new object%)))
+(test #t 'field-bound?1 (field-bound? x (new (class object% (field [x 0]) (super-new)))))
+(test #f 'field-bound?2 (field-bound? y (new (class object% (field [x 0]) (super-new)))))
+(test #f 'field-bound?3 (field-bound? y (new object%)))
 
 (test #f
-      (lambda (x) x)
+      'field-bound?/local-name1
       (let ([o (let ()
                  (define-local-member-name f)
                  (new (class object% (field [f 10]) (super-new))))])
         (field-bound? f o)))
 
 (test #t
-      (lambda (x) x)
+      'field-bound?/local-name2
       (let ()
         (define-local-member-name f)
         (field-bound? f (new (class object% (field [f 10]) (super-new))))))
+
+(test '(f) field-names (new (class object% (field [f 1]) (super-new))))
+(test '(g)
+      field-names 
+      (let ()
+        (define-local-member-name f)
+        (new (class object% (field [f 1] [g 1]) (super-new)))))
 
 (report-errs)

@@ -492,50 +492,47 @@ improve method arity mismatch contract violation error messages?
               val))))
      predicate))
 
-  (define-syntax -contract
-    (lambda (stx)
-      (syntax-case stx ()
-        [(_ a-contract to-check pos-blame-e neg-blame-e)
-         (with-syntax ([src-loc (syntax/loc stx here)])
-           (syntax/loc stx
-             (-contract a-contract to-check pos-blame-e neg-blame-e (quote-syntax src-loc))))]
-        [(_ a-contract-e to-check pos-blame-e neg-blame-e src-info-e)
+  (define-syntax (-contract stx)
+    (syntax-case stx ()
+      [(_ a-contract to-check pos-blame-e neg-blame-e)
+       (with-syntax ([src-loc (syntax/loc stx here)])
          (syntax/loc stx
-           (let ([a-contract-raw a-contract-e]
-                 [name to-check]
-                 [neg-blame neg-blame-e]
-                 [pos-blame pos-blame-e]
-                 [src-info src-info-e])
-             (unless (or (contract? a-contract-raw)
-                         (and (procedure? a-contract-raw)
-                              (procedure-arity-includes? a-contract-raw 1)))
-               (error 'contract "expected a contract or a procedure of arity 1 as first argument, given: ~e, other args ~e ~e ~e ~e" 
-                      a-contract-raw
-                      name
-                      pos-blame
-                      neg-blame
-                      src-info))
-             (let ([a-contract (if (contract? a-contract-raw)
-                                   a-contract-raw
-                                   (flat-contract a-contract-raw))])
-               (unless (and (symbol? neg-blame)
-                            (symbol? pos-blame))
-                 (error 'contract
-                        "expected symbols as names for assigning blame, given: ~e and ~e, other args ~e ~e ~e"
-                        neg-blame pos-blame
-                        a-contract-raw 
-                        name
-                        src-info))
-               (unless (syntax? src-info)
-                 (error 'contract "expected syntax as last argument, given: ~e, other args ~e ~e ~e ~e"
-                        src-info
-                        neg-blame 
-                        pos-blame
-                        a-contract-raw
-                        name))
-               (((contract-proc a-contract) pos-blame neg-blame src-info (contract-name a-contract))
-                name))))])))
+           (contract/proc a-contract to-check pos-blame-e neg-blame-e (quote-syntax src-loc))))]
+      [(_ a-contract-e to-check pos-blame-e neg-blame-e src-info-e)
+       (syntax/loc stx
+         (contract/proc a-contract-e to-check pos-blame-e neg-blame-e src-info-e))]))
   
+  (define (contract/proc a-contract-raw name pos-blame neg-blame src-info)
+    (unless (or (contract? a-contract-raw)
+                (and (procedure? a-contract-raw)
+                     (procedure-arity-includes? a-contract-raw 1)))
+      (error 'contract "expected a contract or a procedure of arity 1 as first argument, given: ~e, other args ~e ~e ~e ~e" 
+             a-contract-raw
+             name
+             pos-blame
+             neg-blame
+             src-info))
+    (let ([a-contract (if (contract? a-contract-raw)
+                          a-contract-raw
+                          (flat-contract a-contract-raw))])
+      (unless (and (symbol? neg-blame)
+                   (symbol? pos-blame))
+        (error 'contract
+               "expected symbols as names for assigning blame, given: ~e and ~e, other args ~e ~e ~e"
+               neg-blame pos-blame
+               a-contract-raw 
+               name
+               src-info))
+      (unless (syntax? src-info)
+        (error 'contract "expected syntax as last argument, given: ~e, other args ~e ~e ~e ~e"
+               src-info
+               neg-blame 
+               pos-blame
+               a-contract-raw
+               name))
+      (((contract-proc a-contract) pos-blame neg-blame src-info (contract-name a-contract))
+       name)))
+    
   ;; raise-contract-error : (union syntax #f) symbol symbol string string args ... -> alpha
   ;; doesn't return
   (define (raise-contract-error src-info to-blame other-party orig-str fmt . args)
@@ -936,59 +933,75 @@ improve method arity mismatch contract violation error messages?
                      (syntax ((this-var args-vars ... . rst-var)))))]
           [(->* x ...)
            (raise-syntax-error 'object-object "malformed ->*" stx mtd-stx)]
-          #|
           [(->d) (raise-syntax-error 'object-contract "->d must have arguments" stx mtd-stx)]
           [(->d args ...)
            (let* ([args-list (syntax->list (syntax (args ...)))]
                   [doms-val (all-but-last args-list)])
-             (with-syntax ([(doms ...) doms-val]
-                           [(arg-vars ...) (generate-temporaries doms-val)]
-                           [rng-proc (car (last-pair args-list))]
-                           [arity-count (- (length args-list) 1)])
-               (syntax (->d this-ctc
-                            doms ... 
-                            (let ([f rng-proc])
-                              (unless (procedure? f)
-                                (error 'object-contract "expected last argument of ->d to be a procedure, got ~e" f))
-                              (unless (procedure-arity-includes f arity-count)
-                                (error 'object-contract 
-                                       "expected last argument of ->d to be a procedure that accepts ~a arguments, got ~e"
-                                       arity-count
-                                       f))
-                              (lambda (_this-var arg-vars ...)
-                                (f arg-vars ...)))))))]
+             (values
+              obj->d/proc
+              (with-syntax ([(doms ...) doms-val]
+                            [(arg-vars ...) (generate-temporaries doms-val)]
+                            [rng-proc (car (last-pair args-list))]
+                            [arity-count (- (length args-list) 1)])
+                (syntax 
+                 (->d any? doms ... 
+                      (let ([f rng-proc])
+                        (unless (procedure? f)
+                          (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
+                        (unless (procedure-arity-includes? f arity-count)
+                          (error 'object-contract 
+                                 "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
+                                 arity-count
+                                 f))
+                        (lambda (_this-var arg-vars ...)
+                          (f arg-vars ...))))))
+              (with-syntax ([(args-vars ...) (generate-temporaries doms-val)])
+                (syntax ((this-var args-vars ...))))))]
           [(->d* (doms ...) rng-proc)
-           (let ([doms-val (syntax->list (syntax (doms ...)))])
-             (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
-                           [arity-count (- (length doms-val) 1)])
-               (syntax (->d* (this-ctc doms ...)
-                             (let ([f rng-proc])
-                               (unless (procedure? f)
-                                 (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
-                               (unless (procedure-arity-includes f arity-count)
-                                 (error 'object-contract 
-                                        "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
-                                        arity-count
-                                        f))
-                               (lambda (_this-var arg-vars ...)
-                                 (f arg-vars ...)))))))]
+           (values
+            obj->d*/proc
+            (let ([doms-val (syntax->list (syntax (doms ...)))])
+              (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
+                            [arity-count (length doms-val)])
+                (syntax (->d* (any? doms ...)
+                              (let ([f rng-proc])
+                                (unless (procedure? f)
+                                  (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
+                                (unless (procedure-arity-includes? f arity-count)
+                                  (error 'object-contract 
+                                         "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
+                                         arity-count
+                                         f))
+                                (lambda (_this-var arg-vars ...)
+                                  (f arg-vars ...)))))))
+            (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
+                          [(this-var) (generate-temporaries (syntax (this-var)))])
+              (syntax ((this-var args-vars ...)))))]
           [(->d* (doms ...) rst-ctc rng-proc)
            (let ([doms-val (syntax->list (syntax (doms ...)))])
-             (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
-                           [arity-count (- (length doms-val) 1)])
-               (syntax (->d* (this-ctc doms ...)
-                             rst-ctc
-                             (let ([f rng-proc])
-                               (unless (procedure? f)
-                                 (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
-                               (unless (procedure-arity-includes f arity-count)
-                                 (error 'object-contract 
-                                        "expected last argument of ->d* to be a procedure that accepts ~a arguments, got ~e"
-                                        arity-count
-                                        f))
-                               (lambda (_this-var arg-vars ...)
-                                 (f arg-vars ...)))))))]
-          |#
+             (values
+              obj->d*/proc
+              (with-syntax ([(arg-vars ...) (generate-temporaries doms-val)]
+                            [(rest-var) (generate-temporaries (syntax (rst-ctc)))]
+                            [arity-count (length doms-val)])
+                (syntax (->d* (any? doms ...)
+                              rst-ctc
+                              (let ([f rng-proc])
+                                (unless (procedure? f)
+                                  (error 'object-contract "expected last argument of ->d* to be a procedure, got ~e" f))
+                                (unless (procedure-accepts-and-more? f arity-count)
+                                  (error 'object-contract 
+                                         "expected last argument of ->d* to be a procedure that accepts ~a arguments and arbitrarily many more, got ~e"
+                                         arity-count
+                                         f))
+                                (lambda (_this-var arg-vars ... . rest-var)
+                                  (apply f arg-vars ... rest-var))))))
+              (with-syntax ([(args-vars ...) (generate-temporaries (syntax (doms ...)))]
+                            [(rst-var) (generate-temporaries (syntax (rst-ctc)))]
+                            [(this-var) (generate-temporaries (syntax (this-var)))])
+                (syntax ((this-var args-vars ... . rst-var))))))]
+          [(->d* x ...)
+           (raise-syntax-error 'object-contract "malformed ->d* method contract" stx mtd-stx)]
           [else (raise-syntax-error 'object-contract "unknown method contract syntax" stx mtd-stx)]))
       
       
@@ -1005,7 +1018,7 @@ improve method arity mismatch contract violation error messages?
                                             (syntax-case arg-spec-stx ()
                                               [(this rest-ids ...)
                                                (syntax
-                                                ((this rest-ids ...) 
+                                                ((this rest-ids ...)
                                                  ((field-ref this i) (wrapper-object-wrapped this) rest-ids ...)))]
                                               [else
                                                (let-values ([(this rest-ids last-var)
@@ -1017,7 +1030,7 @@ improve method arity mismatch contract violation error messages?
                                                                [(rest-ids ...) rest-ids]
                                                                [last-var last-var])
                                                    (syntax
-                                                    ((this rest-ids ... . last-var) 
+                                                    ((this rest-ids ... . last-var)
                                                      (apply (field-ref this i)
                                                             (wrapper-object-wrapped this)
                                                             rest-ids ...
@@ -1079,7 +1092,9 @@ improve method arity mismatch contract violation error messages?
                                                       '(method-name ...)
                                                       (list methods ...)
                                                       '(field-name ...)
-                                                      )])
+                                                      )]
+                             [method-names-list '(method-name ...)]
+                             [field-names-list '(field-name ...)])
                          (lambda (val)
                            (unless (object? val)
                              (raise-contract-error src-info
@@ -1092,7 +1107,15 @@ improve method arity mismatch contract violation error messages?
                                   (interface->method-names
                                    (object-interface
                                     val))])
-                             (void)
+                             (for-each (lambda (val-mtd-name)
+                                         (unless (memq val-mtd-name method-names-list)
+                                           (raise-contract-error src-info
+                                                                 pos-blame
+                                                                 neg-blame
+                                                                 orig-str
+                                                                 "object has an extra method ~s" 
+                                                                 val-mtd-name)))
+                                       val-mtd-names)
                              (unless (memq 'method-name val-mtd-names)
                                (raise-contract-error src-info
                                                      pos-blame
@@ -1102,6 +1125,15 @@ improve method arity mismatch contract violation error messages?
                                                      'method-name))
                              ...)
                            
+                           (for-each (lambda (val-field-name)
+                                       (unless (memq val-field-name field-names-list)
+                                         (raise-contract-error src-info
+                                                               pos-blame
+                                                               neg-blame
+                                                               orig-str
+                                                               "object has an extra field ~s"
+                                                               val-field-name)))
+                                     (field-names val))
                            (unless (field-bound? field-name val)
                              (raise-contract-error src-info
                                                    pos-blame
@@ -1830,9 +1862,11 @@ improve method arity mismatch contract violation error messages?
                    (let ([dom-x (contract-proc dom-contract-x)] ...
                          [dom-rest-x (contract-proc dom-rest-contract-x)]
                          [rng-mk-x rng-mk])
-                     (unless (procedure? rng-mk-x)
-                       (error '->d* "expected range position to be a procedure that accepts ~a arguments, given: ~e"
-                              arity rng-mk-x))
+                     (unless (and (procedure? rng-mk-x)
+                                  (procedure-accepts-and-more? rng-mk-x arity))
+                       (error '->d* "expected range position to be a procedure that accepts ~a arguments and arbitrarily many more, given: ~e"
+                              arity 
+                              rng-mk-x))
                      (let ([name-id (string-append "(->d* "
                                                    (build-compound-type-name #f name-dom-contract-x ...)
                                                    " "
@@ -1849,7 +1883,8 @@ improve method arity mismatch contract violation error messages?
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
                 (syntax
-                 (unless (procedure? val)
+                 (unless (and (procedure? val)
+                              (procedure-accepts-and-more? val arity))
                    (raise-contract-error
                     src-info
                     pos-blame

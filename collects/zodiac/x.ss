@@ -44,17 +44,6 @@
 		 (hash-table-put! v n r))
 	    names)))))
 
-  (define remove-user-macros
-    (lambda (vocab)
-      (let vocab-loop ((vocab vocab))
-	(when vocab
-	  (let ((this (vocabulary-record-this vocab)))
-	    (hash-table-for-each this
-	      (lambda (key value)
-		(when (resolutions-user? value)
-		  (hash-table-remove! this key)))))
-	  (vocab-loop (vocabulary-record-rest vocab))))))
-
   (define vocab->list
     (lambda (vocab)
       (cons (vocabulary-record-name vocab)

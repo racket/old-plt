@@ -1351,7 +1351,8 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
 
   regstr = rw->str;
 
-  if (!got || (got == EOF)) {
+  if (got < 1) {
+    /* EOF, special, or 0-due-to-unless/nonblock */
     if (!got)
       rw->aborted = 1;
     rw->port = NULL; /* turn off further port reading */

@@ -109,7 +109,8 @@
 		 ,@(map
 		    (lambda (x)
 		      `(#%global-defined-value ',x ,x))
-		    tagged-exports))
+		    tagged-exports)
+                  (#%void))
 	      `(#%define-values ,tagged-exports ,invoke-unit)))))
     
     (define define-values/invoke-unit

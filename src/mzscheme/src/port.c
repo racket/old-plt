@@ -1556,7 +1556,7 @@ static Scheme_Object *read_special_exn_handler(void *e, int argc, Scheme_Object 
   if (scheme_special_comment_width(argv[0])) {
     /* Yes, we want to catch this. */
     Scheme_Thread *p = scheme_current_thread;
-    p->cjs.u.val = e;
+    p->cjs.u.val = argv[0];
     p->cjs.jumping_to_continuation = (Scheme_Escaping_Cont *)rs;
     scheme_longjmp(p->error_buf, 1);
     return NULL; /* doesn't get here */
@@ -1629,8 +1629,12 @@ static Scheme_Object *handle_call_ec(void *e)
   Scheme_Thread *p = scheme_current_thread;
 
   if ((void *)p->cjs.jumping_to_continuation == rs) {
+    Scheme_Object *val;
     rs->exn = 1;
-    return p->cjs.u.val;
+    val = p->cjs.u.val;
+    p->cjs.jumping_to_continuation = NULL;
+    p->cjs.u.val = NULL;
+    return val;
   } else
     return NULL;
 }
@@ -1698,7 +1702,8 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
 
   if (rs->exn) {
     /* r is the exception value */
-    *exn = r;
+    if (exn)
+      *exn = r;
     pd = scheme_special_comment_width(r);
     val = NULL;
     who = "exn:read-special-width from port read-special";
@@ -1728,9 +1733,14 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
   } else if (SCHEME_BIGNUMP(pd) && SCHEME_BIGPOS(pd)) {
     pos_delta = -(ip->position+1); /* drive position to -1 -> lost track */
   } else {
-    scheme_wrong_type(who, 
-		      "exact non-negative integer", 1, 
-		      -scheme_multiple_count, scheme_multiple_array);
+    if (val)
+      scheme_wrong_type(who, 
+			"exact non-negative integer", 1, 
+			-scheme_multiple_count, scheme_multiple_array);
+    else
+      scheme_wrong_type(who, 
+			"exact non-negative integer", -1, 
+			-1, &pd);
     return NULL;
   }
 

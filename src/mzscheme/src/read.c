@@ -401,7 +401,8 @@ print_vec_shorthand(int argc, Scheme_Object *argv[])
 static Scheme_Object *read_inner(Scheme_Object *port, 
 				 Scheme_Object *stxsrc,
 				 Scheme_Hash_Table **ht,
-				 Scheme_Object *indentation);
+				 Scheme_Object *indentation,
+				 int return_for_lookahead);
 
 static Scheme_Object *read_k(void)
 {
@@ -416,14 +417,15 @@ static Scheme_Object *read_k(void)
   p->ku.k.p3 = NULL;
   p->ku.k.p4 = NULL;
 
-  return read_inner(o, stxsrc, ht, indentation);
+  return read_inner(o, stxsrc, ht, indentation, p->ku.k.i1);
 }
 #endif
 
 #define MAX_GRAPH_ID_DIGITS 8
 
 static Scheme_Object *
-read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, Scheme_Object *indentation)
+read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, Scheme_Object *indentation,
+	   int return_for_lookahead_on_special_comment)
 {
   int ch, ch2, depth;
   long line = 0, col = 0, pos = 0;
@@ -437,6 +439,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
       p->ku.k.p2 = (void *)ht;
       p->ku.k.p3 = (void *)stxsrc;
       p->ku.k.p4 = (void *)indentation;
+      p->ku.k.i1 = return_for_lookahead_on_special_comment;
       return scheme_handle_stack_overflow(read_k);
     }
   }
@@ -492,7 +495,10 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	v = scheme_get_special(port, stxsrc, line, col, pos, NULL);
 	if (!v) {
 	  /* NULL result means a "comment" */
-	  goto start_over;
+	  if (return_for_lookahead_on_special_comment)
+	    return NULL;
+	  else
+	    goto start_over;
 	} else if (SCHEME_STXP(v)) {
 	  if (!stxsrc)
 	    v = scheme_syntax_to_datum(v, 0, NULL);
@@ -646,7 +652,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	    save_sens = local_case_sensitive;
 	    local_case_sensitive = sens;
 
-	    v = read_inner(port, stxsrc, ht, indentation);
+	    v = read_inner(port, stxsrc, ht, indentation, 0);
 
 	    local_case_sensitive = save_sens;
 
@@ -840,7 +846,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	      
 	      scheme_hash_set(*ht, scheme_make_integer(vector_length), (void *)ph);
 	      
-	      v = read_inner(port, stxsrc, ht, indentation);
+	      v = read_inner(port, stxsrc, ht, indentation, 0);
 	      if (SCHEME_EOFP(v))
 		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
 				"read: expected an element for graph (found end-of-file)");
@@ -985,7 +991,7 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   local_can_read_dot = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CAN_READ_DOT));
   
   ht = MALLOC_N(Scheme_Hash_Table *, 1);
-  v = read_inner(port, stxsrc, ht, scheme_null);
+  v = read_inner(port, stxsrc, ht, scheme_null, 0);
 
   if (*ht) {
     /* Resolve placeholders: */
@@ -1114,7 +1120,8 @@ read_list(Scheme_Object *port,
     }
 
     scheme_ungetc(ch, port);
-    car = read_inner(port, stxsrc, ht, indentation);
+    car = read_inner(port, stxsrc, ht, indentation, 1);
+    if (!car) continue; /* special was a comment */
     /* can't be eof, due to check above */
 
     if (USE_LISTSTACK(use_stack)) {
@@ -1182,7 +1189,7 @@ read_list(Scheme_Object *port,
 	return NULL;
       }
       /* can't be eof, due to check above: */
-      cdr = read_inner(port, stxsrc, ht, indentation);
+      cdr = read_inner(port, stxsrc, ht, indentation, 0);
       ch = skip_whitespace_comments(port, stxsrc);
       if (ch != closer) {
 	if (ch == '.') {
@@ -1744,7 +1751,7 @@ read_quote(char *who, Scheme_Object *quote_symbol, int len,
 {
   Scheme_Object *obj, *ret;
 
-  obj = read_inner(port, stxsrc, ht, indentation);
+  obj = read_inner(port, stxsrc, ht, indentation, 0);
   if (SCHEME_EOFP(obj))
     scheme_read_err(port, stxsrc, line, col, pos, len, EOF,
 		    "read: expected an element for %s (found end-of-file)",
@@ -1766,7 +1773,7 @@ static Scheme_Object *read_box(Scheme_Object *port,
 {
   Scheme_Object *o, *bx;
 
-  o = read_inner(port, stxsrc, ht, indentation);
+  o = read_inner(port, stxsrc, ht, indentation, 0);
   
   if (SCHEME_EOFP(o))
     scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
@@ -2137,7 +2144,7 @@ static Scheme_Object *read_compact(CPort *port,
 
 	ep = scheme_make_sized_string_input_port(s, len);
 	
-	v = read_inner(ep, NULL, ht, scheme_null);
+	v = read_inner(ep, NULL, ht, scheme_null, 0);
       }
       break;
     case CPT_SYMBOL:

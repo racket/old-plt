@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.118 1997/08/13 18:56:41 shriram Exp $
+; $Id: scm-main.ss,v 1.119 1997/08/14 17:36:56 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1241,7 +1241,7 @@
 				 (#%make-exn:else
 				   ,(if had-no-clauses?
 				      "cond must contain at least one clause"
-				      "no clause was matched")
+				      "no clause in the cond was matched")
 				   ,debug-info-handler-expression)))
 			    (let ((first (car exps))
 				   (rest (cdr exps)))

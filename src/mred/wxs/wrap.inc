@@ -10133,7 +10133,7 @@
 "(send f show #t)"
 "(and ok?(get-filename))))))"
 "(define default-filters"
-" '((\"Any file (*.*)\" \"*.*\")))"
+" '((\"Any\" \"*.*\")))"
 "(define get-file"
 "(case-lambda"
 "(()"

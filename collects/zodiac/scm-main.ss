@@ -1019,11 +1019,6 @@
 	    (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	      (static-error expr "Malformed recur"))))))
 
-    ; (cond)                                                   [macro]
-    ; (cond (else b ...))                                      [macro]
-    ; (cond (test b ...))                                      [macro]
-    ; (cond (test b ...) rest)                                 [macro]
-
     (add-macro-form
       'cond
       scheme-vocabulary

@@ -1082,7 +1082,9 @@ static void FreeSaferef(Widget WXUNUSED(w), wxWindow** winp,
 			XtPointer WXUNUSED(null))
 {
   FREE_SAFEREF((char *)winp);
-  /* No XFORM_RESET_VAR_STACK because this one isn't xformed. */
+
+  /* No XFORM_RESET_VAR_STACK because this one isn't xformed.  No need
+     to xform because FREE_SAFEREF won't set the GC variable stack. */
 }
 
 #ifdef MZ_PRECISE_GC

@@ -34,8 +34,6 @@
 		    (create-private-varref r expr))
 		  ((inherit-binding? r)
 		    (create-inherit-varref r expr))
-		  ((share-binding? r)
-		    (create-share-varref r expr))
 		  ((rename-binding? r)
 		    (create-rename-varref r expr))
 		  ((supervar-binding? r)

@@ -20,7 +20,6 @@
     (define-struct (public-binding struct:binding) ())
     (define-struct (private-binding struct:binding) ())
     (define-struct (inherit-binding struct:binding) ())
-    (define-struct (share-binding struct:binding) ())
     (define-struct (rename-binding struct:binding) ())
 
     (define create-supervar-binding+marks
@@ -35,8 +34,6 @@
     (define create-inherit-binding+marks
       (create-binding+marks make-inherit-binding
 	(lambda (v) (z:read-object v))))
-    (define create-share-binding+marks
-      (create-binding+marks make-share-binding))
     (define create-rename-binding+marks
       (create-binding+marks make-rename-binding))
 
@@ -45,7 +42,6 @@
     (define-struct (public-varref struct:bound-varref) ())
     (define-struct (private-varref struct:bound-varref) ())
     (define-struct (inherit-varref struct:bound-varref) ())
-    (define-struct (share-varref struct:bound-varref) ())
     (define-struct (rename-varref struct:bound-varref) ())
 
     (define create-supervar-varref
@@ -58,8 +54,6 @@
       (create-bound-varref make-private-varref))
     (define create-inherit-varref
       (create-bound-varref make-inherit-varref))
-    (define create-share-varref
-      (create-bound-varref make-share-varref))
     (define create-rename-varref
       (create-bound-varref make-rename-varref))
 
@@ -69,8 +63,6 @@
     (define-struct (inherit-from-clause struct:inherit-clause) (super))
     (define-struct rename-clause (internals imports))
     (define-struct (rename-from-clause struct:rename-clause) (super))
-    (define-struct share-clause (exports internals imports))
-    (define-struct (share-from-clause struct:share-clause) (super))
     (define-struct sequence-clause (exprs))
 
     ; ----------------------------------------------------------------------
@@ -100,8 +92,6 @@
 	      (create-private-varref r expr))
 	    ((inherit-binding? r)
 	      (create-inherit-varref r expr))
-	    ((share-binding? r)
-	      (create-share-varref r expr))
 	    ((rename-binding? r)
 	      (create-rename-varref r expr))
 	    ((supervar-binding? r)
@@ -123,9 +113,6 @@
     (define-struct (inherit-from-entry struct:ivar-entry) (super))
     (define-struct (rename-entry struct:ivar-entry) (imports))
     (define-struct (rename-from-entry struct:ivar-entry) (imports super))
-    (define-struct (share-entry struct:ivar-entry) (exports imports))
-    (define-struct (share-from-entry struct:ivar-entry)
-      (exports imports super))
 
     (define-struct sequence-entry (exprs))
 
@@ -374,91 +361,6 @@
 
     ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-    (define share-ivar-decl-entry-parser-vocab (make-vocabulary))
-
-    (add-sym-micro share-ivar-decl-entry-parser-vocab
-      (lambda (expr env attributes vocab)
-	(list
-	  (create-share-binding+marks expr)
-	  expr expr)))
-
-    (add-list-micro share-ivar-decl-entry-parser-vocab
-      (let* ((kwd '())
-	      (in-pattern-1 '((internal-var var) inherited-var))
-	      (in-pattern-2 '(var inherited-var))
-	      (m&e-1 (pat:make-match&env in-pattern-1 '()))
-	      (m&e-2 (pat:make-match&env in-pattern-2 '())))
-	(lambda (expr env attributes vocab)
-	  (cond
-	    ((pat:match-against m&e-1 expr env)
-	      =>
-	      (lambda (p-env)
-		(let ((internal-var (pat:pexpand 'internal-var p-env kwd))
-		       (var (pat:pexpand 'var p-env kwd))
-		       (inherited-var (pat:pexpand 'inherited-var p-env kwd)))
-		  (valid-syntactic-id? internal-var)
-		  (valid-syntactic-id? var)
-		  (valid-syntactic-id? inherited-var)
-		  (list (create-share-binding+marks internal-var)
-		    var inherited-var))))
-	    ((pat:match-against m&e-2 expr env)
-	      =>
-	      (lambda (p-env)
-		(let ((var (pat:pexpand 'var p-env kwd))
-		       (inherited-var (pat:pexpand 'inherited-var p-env kwd)))
-		  (valid-syntactic-id? var)
-		  (valid-syntactic-id? inherited-var)
-		  (list (create-share-binding+marks var)
-		    var inherited-var))))
-	    (else
-	      (static-error expr "Invalid ivar declaration"))))))
-
-    (let* ((kwd '(share))
-	    (in-pattern '(share ivar-decl ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (add-micro-form 'share ivar-decls-vocab
-	(lambda (expr env attributes vocab)
-	  (cond
-	    ((pat:match-against m&e expr env)
-	      =>
-	      (lambda (p-env)
-		(let ((decls
-			(map (lambda (decl)
-			       (expand-expr decl env attributes
-				 share-ivar-decl-entry-parser-vocab))
-			  (pat:pexpand '(ivar-decl ...) p-env kwd))))
-		  (make-share-entry
-		    (map car decls)
-		    (map cadr decls)
-		    (map caddr decls)))))
-	    (else
-	      (static-error expr "Invalid share clause"))))))
-
-    (let* ((kwd '(share-from))
-	    (in-pattern '(share-from super ivar-decl ...))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (add-micro-form 'share-from ivar-decls-vocab
-	(lambda (expr env attributes vocab)
-	  (cond
-	    ((pat:match-against m&e expr env)
-	      =>
-	      (lambda (p-env)
-		(let ((super (pat:pexpand 'super p-env kwd))
-		       (decls (map (lambda (decl)
-				     (expand-expr decl env attributes
-				       share-ivar-decl-entry-parser-vocab))
-				(pat:pexpand '(ivar-decl ...) p-env kwd))))
-		  (valid-syntactic-id? super)
-		  (make-share-from-entry
-		    (map car decls)
-		    (map cadr decls)
-		    (map caddr decls)
-		    super))))
-	    (else
-	      (static-error expr "Invalid share-from clause"))))))
-
-    ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
     (let* ((kwd '(sequence))
 	    (in-pattern '(sequence expr ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -609,23 +511,6 @@
 					       (expand-exprs
 						 (list
 						   (rename-from-entry-super e))))))
-					 ((share-entry? e)
-					   (make-share-clause
-					     (share-entry-exports e)
-					     (map car (ivar-entry-bindings e))
-					     (share-entry-imports e)))
-					 ((share-from-entry? e)
-					   (flag-non-supervar
-					     (share-from-entry-super e)
-					     env)
-					   (make-share-from-clause
-					     (share-from-entry-exports e)
-					     (map car (ivar-entry-bindings e))
-					     (share-from-entry-imports e)
-					     (car
-					       (expand-exprs
-						 (list
-						   (share-from-entry-super e))))))
 					 ((sequence-entry? e)
 					   (make-sequence-clause
 					     (expand-exprs
@@ -789,23 +674,6 @@
 				    `(,(p->r internal) ,(sexp->raw inherited)))
 			       (rename-clause-internals clause)
 			       (rename-clause-imports clause))))
-		      ((share-from-clause? clause)
-			`(share-from
-			   ,(p->r (share-from-clause-super clause))
-			   ,@(map (lambda (internal export inherited)
-				    `((,(p->r internal) ,(sexp->raw export))
-				       ,(sexp->raw inherited)))
-			       (share-clause-internals clause)
-			       (share-clause-exports clause)
-			       (share-clause-imports clause))))
-		      ((share-clause? clause)
-			`(share
-			   ,@(map (lambda (internal export inherited)
-				    `((,(p->r internal) ,(sexp->raw export))
-				       ,(sexp->raw inherited)))
-			       (share-clause-internals clause)
-			       (share-clause-exports clause)
-			       (share-clause-imports clause))))
 		      ((sequence-clause? clause)
 			`(sequence
 			   ,@(map p->r (sequence-clause-exprs clause))))))

@@ -101,14 +101,12 @@
     (struct public-varref ())    create-public-varref
     (struct private-varref ())   create-private-varref
     (struct inherit-varref ())   create-inherit-varref
-    (struct share-varref ())     create-share-varref
     (struct rename-varref ())    create-rename-varref
     (struct supervar-binding ())  create-supervar-binding+marks
     (struct superinit-binding ()) create-superinit-binding+marks
     (struct public-binding ())    create-public-binding+marks
     (struct private-binding ())   create-private-binding+marks
     (struct inherit-binding ())   create-inherit-binding+marks
-    (struct share-binding ())     create-share-binding+marks
     (struct rename-binding ())    create-rename-binding+marks
     (struct class*-form (this super-names super-exprs super-inits
 			  init-vars inst-clauses))
@@ -118,8 +116,6 @@
     (struct inherit-from-clause (super))
     (struct rename-clause (internals imports))
     (struct rename-from-clause (super))
-    (struct share-clause (exports internals imports))
-    (struct share-from-clause (super))
     (struct sequence-clause (exprs))))
 
 (define-signature zodiac:scheme-units^

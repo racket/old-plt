@@ -4,7 +4,7 @@
   
 (SECTION 'contracts)
 
-  (parameterize ([error-print-width 200])
+(parameterize ([error-print-width 200])
 (let ()
   ;; test/spec-passed : symbol sexp -> void
   ;; tests a passing specification
@@ -496,7 +496,10 @@
                (provide/contract (struct s ((a any?))))
                (define-struct s (a))))
       (eval '(require contract-test-suite4))
-      (eval '(list make-s s-a s? set-s-a!))))
+      (eval '(list (make-s 1)
+                   (s-a (make-s 1))
+                   (s? (make-s 1))
+                   (set-s-a! (make-s 1) 2)))))
   
   
   ))

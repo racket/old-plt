@@ -14,6 +14,7 @@
 
   (require-for-syntax mzscheme
                       (lib "list.ss")
+                      (lib "pretty.ss")
 		      (lib "name.ss" "syntax")
                       (lib "stx.ss" "syntax"))
   
@@ -115,9 +116,10 @@
                   [(struct struct-name ((field-name contract) ...))
                    (and (identifier? (syntax struct-name))
                         (andmap identifier? (syntax->list (syntax (field-name ...)))))
-                   (build-struct-code (syntax struct-name)
-                                      (syntax->list (syntax (field-name ...)))
-                                      (syntax->list (syntax (contract ...))))]                        
+                   (let ([sc (build-struct-code (syntax struct-name)
+                                          (syntax->list (syntax (field-name ...)))
+                                          (syntax->list (syntax (contract ...))))])
+                     (cons sc (code-for-each-clause (cdr clauses))))]
                   [(struct name)
                    (identifier? (syntax name))
                    (raise-syntax-error 'provide/contract
@@ -168,23 +170,24 @@
          ;; constructs the code for a struct clause
          (define (build-struct-code struct-name field-names field-contracts)
            (let* ([field-contract-ids (map (lambda (field-name) 
-                                             (mangle-id field-name "provide/contract-field-contract"))
+                                             (mangle-id field-name
+                                                        "provide/contract-field-contract"))
                                            field-names)]
-                  [selector-ids (map (lambda (field-contract-id) 
-                                       (build-selector-id struct-name field-contract-id))
-                                     field-contract-ids)]
-                  [mutator-ids (map (lambda (field-contract-id) 
-                                      (build-mutator-id struct-name field-contract-id))
-                                    field-contract-ids)]
-                  [predicate-id (build-predicate-id struct-name)])
+                  [selector-ids (map (lambda (field-name) 
+                                       (build-selector-id struct-name field-name))
+                                     field-names)]
+                  [mutator-ids (map (lambda (field-name) 
+                                      (build-mutator-id struct-name field-name))
+                                    field-names)]
+                  [predicate-id (build-predicate-id struct-name)]
+                  [constructor-id (build-constructor-id struct-name)])
              (with-syntax ([(selector-codes ...)
-                            (map (lambda (field-name field-contract-id) 
-                                   (code-for-one-id (build-selector-id struct-name 
-                                                                       field-contract-id)
+                            (map (lambda (selector-id field-contract-id) 
+                                   (code-for-one-id selector-id
                                                     (build-selector-contract struct-name 
                                                                              predicate-id
                                                                              field-contract-id)))
-                                 field-names
+                                 selector-ids
                                  field-contract-ids)]
                            [(mutator-codes ...)
                             (map (lambda (mutator-id field-contract-id)
@@ -196,7 +199,7 @@
                                  field-contract-ids)]
                            [predicate-code (code-for-one-id predicate-id (syntax (-> any? boolean?)))]
                            [constructor-code (code-for-one-id 
-                                              (build-constructor-id struct-name)
+                                              constructor-id
                                               (build-constructor-contract field-contract-ids 
                                                                           predicate-id))]
                            [(field-contracts ...) field-contracts]
@@ -213,21 +216,29 @@
          (define (build-constructor-contract field-contract-ids predicate-id)
            (with-syntax ([(field-contract-ids ...) field-contract-ids]
                          [predicate-id predicate-id])
-             (syntax (-> field-contract-ids ... predicate-id))))
+             (syntax (field-contract-ids 
+                      ...
+                      . -> . 
+                      (let ([predicate-id (lambda (x) (predicate-id x))]) predicate-id)))))
          
          ;; build-selector-contract : syntax syntax -> syntax
          ;; constructs the contract for a selector
          (define (build-selector-contract struct-name predicate-id field-contract-id)
            (with-syntax ([field-contract-id field-contract-id]
                          [predicate-id predicate-id])
-             (syntax (-> predicate-id field-contract-id))))
+             (syntax ((let ([predicate-id (lambda (x) (predicate-id x))]) predicate-id)
+                      . -> .
+                      field-contract-id))))
          
          ;; build-mutator-contract : syntax syntax -> syntax
          ;; constructs the contract for a selector
          (define (build-mutator-contract struct-name predicate-id field-contract-id)
            (with-syntax ([field-contract-id field-contract-id]
                          [predicate-id predicate-id])
-             (syntax (-> predicate-id contract-id void?))))
+             (syntax ((let ([predicate-id (lambda (x) (predicate-id x))]) predicate-id)
+                      field-contract-id
+                      . -> .
+                      void?))))
          
          ;; build-constructor-id : syntax -> syntax
          ;; constructs the name of the selector for a particular field of a struct
@@ -365,7 +376,7 @@
 
   ;; flat-named-contract = (make-flat-named-contract string (any -> boolean))
   ;; this holds flat contracts that have names for error reporting
-  (define-struct flat-named-contract (type-name predicate) (make-inspector)) (print-struct #t)
+  (define-struct flat-named-contract (type-name predicate))
 
   (provide (rename build-flat-named-contract flat-named-contract)
            flat-named-contract-type-name

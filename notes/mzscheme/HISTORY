@@ -2,6 +2,9 @@
 Version 205.5
 Added optional namespace argument to most of the
  namespace- primitives
+Added an optional argument to peek-char and 
+ peek-char-or-special to indicate the number of characters
+ to skip in the input stream
 
 Version 205.3
 Changed syntax-local-get-shadower to add the current

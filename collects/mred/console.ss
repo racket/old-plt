@@ -84,18 +84,20 @@
     (define dynamic-break-later
       (let ([p (current-output-port)])
 	(lambda (t)
-	  (let ([break? #f]
-		[old-handler (user-break-poll-handler)])
+	  (let* ([break? #f]
+		 [old-handler (user-break-poll-handler)]
+		 [new-handler
+		  (lambda ()
+		    (unless break?
+		      '(begin (fprintf p ".") (flush-output p))
+		      (when (old-handler)
+			'(fprintf p "~nsetting break to #t~n")
+			(set! break? #t)))
+		    #f)])
 	    (begin0
-	      (parameterize ([user-break-poll-handler
-			      (lambda ()
-				(unless break?
-				  '(fprintf p "checking break~n")
-				  (when (old-handler)
-				    '(fprintf p "setting break to #f~n")
-				    (set! break? #t)))
-				#f)])
+	      (parameterize ([user-break-poll-handler new-handler])
 			    (t))
+	      '(fprintf p "~nwill break: ~a~n" break?)
 	      (when break?
 		(break-thread (current-thread))))))))
 		    
@@ -252,21 +254,25 @@
 	     (lambda (s)
 	       (dynamic-break-later
 		(lambda ()
-		  (init-transparent-io)
-		  (send transparent-edit 
-			generic-write s 
-			(lambda (start end)
-			  (send transparent-edit
-				change-style output-delta 
-				start end))))))]
+		  (parameterize ([current-output-port orig-stdout]
+				 [current-error-port orig-stderr])
+	            (init-transparent-io)
+		    (send transparent-edit 
+			  generic-write s 
+			  (lambda (start end)
+			    (send transparent-edit
+				  change-style output-delta 
+				  start end)))))))]
 	    [this-err-write
 	     (lambda (s)
 	       (dynamic-break-later
 		(lambda ()
-		  (generic-write s
-				 (lambda (start end)
-				   (change-style error-delta 
-						 start end))))))])
+		  (parameterize ([current-output-port orig-stdout]
+				 [current-error-port orig-stderr])
+		    (generic-write s
+				   (lambda (start end)
+				     (change-style error-delta 
+						   start end)))))))])
 	       
 	  (public
 	    [transparent-edit #f]
@@ -421,17 +427,17 @@
 		   [else (pretty-print-out v)]))]
 	      [eval-and-display
 	       (lambda (str)
-		   (catch-errors
-		    #f
-		    (lambda () #f)
-		    (dynamic-enable-break
-		     (lambda ()
-		       (call-with-values 
-			(lambda ()
-			  (with-parameterization user-parameterization
-			    (lambda ()
-			      (eval-str str))))
-			(lambda v (map display-result v)))))))])
+		 (catch-errors
+		  #f
+		  (lambda () #f)
+		  (call-with-values 
+		   (lambda ()
+		     (with-parameterization user-parameterization
+		       (lambda ()
+			 (dynamic-enable-break
+			  (lambda ()
+			    (eval-str str))))))
+		   (lambda v (map display-result v)))))])
 	    
 	    (private
 	      [only-spaces-after

@@ -876,11 +876,17 @@
  (pretty-big-scheme-one-line-summary "Graphique, plus de nombreuses bibliothèques standards")
  (r5rs-lang-name "Standard (R5RS)")
  (r5rs-one-line-summary "R5RS, de base")
- (unknown-debug-frame "[inconnu]")
+ (expander "Expanseur") ; compression, compresseur, compresser => expansion, expanseur, expanser (expandeur, expander fait trop franglais et expandion n'existe pas)
+ (expander-one-line-summary "Expanse les expressions au lieu de les évaluer")
+ (professional-languages "Languages professionnels")
+ (teaching-languages "Languages d'enseignement")
+ (experimental-languages "Languages expérimentaux")
  
  (module-language-one-line-summary "Language avec module comme seule forme")
  
+  
  ;;; debug language
+ (unknown-debug-frame "[inconnu]")
  (backtrace-window-title "Trace - DrScheme")
  (files-interactions "les interactions de ~a") ;; filled with a filename
  (current-interactions "interactions")

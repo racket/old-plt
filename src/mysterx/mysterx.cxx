@@ -1013,15 +1013,52 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   }
   
   pIDispatch = obj->pIDispatch;
-  
+
+  /* preferred mechanism for finding coclass ITypeInfo */
+
   hr = pIDispatch->QueryInterface(IID_IProvideClassInfo,(void **)&pIProvideClassInfo);
   
-  if (hr != S_OK || pIProvideClassInfo == NULL) {
+  if (hr == S_OK && pIProvideClassInfo != NULL) {
+    hr = pIProvideClassInfo->GetClassInfo(&pITypeInfo);
+  }
+  else if (hr == E_NOINTERFACE) {
+    ITypeLib *pITypeLib;
+    TYPEKIND typeKind;
+    UINT ndx;
+    UINT typeInfoCount;
+    UINT coclassNdx;
+    BOOL foundCoclassNdx;
+
+    /* alternate mechanism */
+
+    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
+
+    hr = pITypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
+
+    typeInfoCount = pITypeLib->GetTypeInfoCount();
+
+    foundCoclassNdx = FALSE;
+
+    for (i = 0; i < typeInfoCount; i++) {
+      pITypeLib->GetTypeInfoType(i,&typeKind);
+      if (typeKind == TKIND_COCLASS) {
+	coclassNdx = i;
+	foundCoclassNdx = TRUE;
+	break;
+      }
+    }
+
+    if (foundCoclassNdx) {
+      hr = pITypeLib->GetTypeInfo(coclassNdx,&pITypeInfo);
+    }
+    else {
+      hr = E_NOINTERFACE;
+    }
+  }
+  else {
     codedComError("Error getting COM event type information",hr);
   }
-  
-  hr = pIProvideClassInfo->GetClassInfo(&pITypeInfo);
-  
+
   if (hr != S_OK || pITypeInfo == NULL) {
     codedComError("Error getting event type information",hr);
   }

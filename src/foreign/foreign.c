@@ -1589,18 +1589,19 @@ void do_ptr_finalizer(void *p, void *finalizer)
   ptr = NULL;
 }
 
-static Scheme_Object *pointer_sym;
-
 /* (register-finalizer ptrobj finalizer ['pointer]) -> old-finalizer */
 /* The finalizer is called by the primitive finalizer mechanism, make sure */
 /* no references to the object are recreated.  #f means erase existing */
 /* finalizer if any.*/
-/* If two arguments are used, this is used with any Scheme object, and the */
-/* finalizer will be called on it.  If a third argument of 'pointer is used, */
-/* the object must be an cpointer object, the finalizer will be invoked when */
-/* the pointer itself is unreachable, and it will get a new cpointer object */
-/* that points to it.  (Only needed in systems where pointer aliases might */
-/* be created.) */
+/* If no 'pointer argument is given, this is can be used with any Scheme
+/* object, and the finalizer will be called with it.  If an additional 'pointer
+/* argument of 'pointer is given, the object must be a cpointer object, the */
+/* finalizer will be invoked when the pointer itself is unreachable, and it */
+/* will get a new cpointer object that points to it.  (Only needed in cases */
+/* where pointer aliases might be created.) */
+/* *** Calling Scheme code while the GC is working leads to subtle bugs, so */
+/* *** this is implemented now in Scheme using will executors. */
+/*
 #undef MYNAME
 #define MYNAME "register-finalizer"
 static Scheme_Object *foreign_register_finalizer(int argc, Scheme_Object *argv[])
@@ -1625,6 +1626,7 @@ static Scheme_Object *foreign_register_finalizer(int argc, Scheme_Object *argv[]
      argv[1], NULL, &old);
   return (old == NULL) ? scheme_false : (Scheme_Object*)old;
 }
+*/
 
 /*****************************************************************************/
 /* Calling foreign function objects */
@@ -1970,8 +1972,6 @@ void scheme_init_foreign(Scheme_Env *env)
   fail_ok_sym = scheme_intern_symbol("fail-ok");
   MZ_REGISTER_STATIC(abs_sym);
   abs_sym = scheme_intern_symbol("abs");
-  MZ_REGISTER_STATIC(pointer_sym);
-  pointer_sym = scheme_intern_symbol("pointer");
   scheme_add_global("ffi-lib?",
     scheme_make_prim_w_arity(foreign_ffi_lib_p, "ffi-lib?", 1, 1), menv);
   scheme_add_global("ffi-lib",

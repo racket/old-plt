@@ -1161,18 +1161,20 @@ void do_ptr_finalizer(void *p, void *finalizer)
   ptr = NULL;
 }
 
-{:(defsymbols pointer):}
-
 /* (register-finalizer ptrobj finalizer ['pointer]) -> old-finalizer */
 /* The finalizer is called by the primitive finalizer mechanism, make sure */
 /* no references to the object are recreated.  #f means erase existing */
 /* finalizer if any.*/
-/* If two arguments are used, this is used with any Scheme object, and the */
-/* finalizer will be called on it.  If a third argument of 'pointer is used, */
-/* the object must be an cpointer object, the finalizer will be invoked when */
-/* the pointer itself is unreachable, and it will get a new cpointer object */
-/* that points to it.  (Only needed in systems where pointer aliases might */
-/* be created.) */
+/* If no 'pointer argument is given, this is can be used with any Scheme
+/* object, and the finalizer will be called with it.  If an additional 'pointer
+/* argument of 'pointer is given, the object must be a cpointer object, the */
+/* finalizer will be invoked when the pointer itself is unreachable, and it */
+/* will get a new cpointer object that points to it.  (Only needed in cases */
+/* where pointer aliases might be created.) */
+/* *** Calling Scheme code while the GC is working leads to subtle bugs, so */
+/* *** this is implemented now in Scheme using will executors. */
+/*
+{:#;(defsymbols pointer):}
 {:(cdefine register-finalizer 2 3):}
 {
   void *ptr, *old = NULL;
@@ -1195,6 +1197,7 @@ void do_ptr_finalizer(void *p, void *finalizer)
      argv[1], NULL, &old);
   return (old == NULL) ? scheme_false : (Scheme_Object*)old;
 }
+*/
 
 /*****************************************************************************/
 /* Calling foreign function objects */

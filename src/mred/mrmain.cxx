@@ -164,18 +164,21 @@ static void dangerdanger_gui(int)
 }
 #endif
 
+static FinishArgs *xfa;
+
 static void do_graph_repl(Scheme_Env *env)
 {
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_eval_string("(graphical-read-eval-print-loop)", env);
+    if (xfa->alternate_rep)
+      scheme_eval_string("(read-eval-print-loop)", env);
+    else
+      scheme_eval_string("(graphical-read-eval-print-loop)", env);
   }
 
 #ifdef MZ_PRECISE_GC
   env = NULL; /* makes xform think that env is live, so we get a __gc_var_stack__ */
 #endif
 }
-
-static FinishArgs *xfa;
 
 static int finish_cmd_line_run(void)
 {

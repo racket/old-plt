@@ -99,8 +99,9 @@ wxFrame *mred_real_main_frame;
 
 #if defined(wx_xt) || defined(OS_X)
 # define mred_BREAK_HANDLER
-static Scheme_Thread *user_main_thread;
 #endif
+
+static Scheme_Thread *user_main_thread;
 
 extern void wxMediaIOCheckLSB(void);
 
@@ -1343,11 +1344,8 @@ void wxDoEvents()
     {
       Scheme_Object *cp;
       cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
-#ifdef mred_BREAK_HANDLER
       wxREGGLOB(user_main_thread);
-      user_main_thread = (Scheme_Thread *)
-#endif
-	scheme_thread(cp, c->main_config);
+      user_main_thread = (Scheme_Thread *)scheme_thread(cp, c->main_config);
     }
 
 #if WINDOW_STDIO
@@ -1778,6 +1776,7 @@ static void MrEdSchemeMessages(char *, ...);
 static int have_stdio = 0;
 static int stdio_kills_prog = 0;
 static Bool RecordInput(void *media, wxEvent *event, void *data);
+static Bool SendBreak(void *media, wxEvent *event, void *data);
 static void break_console_reading_threads();
 
 class IOFrame : public wxFrame
@@ -1802,12 +1801,16 @@ public:
       wxKeymap *km = media->GetKeymap();
       media->AddBufferFunctions(km);
       media->AddEditorFunctions(km);
+      km->AddFunction("send-break", SendBreak, NULL);
 # ifdef wx_msw
       km->MapFunction("c:c", "copy-clipboard");
       km->MapFunction("c:x", "copy-clipboard");
+      km->MapFunction("c:v", "paste-clipboard");
 # else
       km->MapFunction("d:c", "copy-clipboard");
       km->MapFunction("d:x", "copy-clipboard");
+      km->MapFunction("d:v", "paste-clipboard");
+      km->MapFunction("d:.", "send-break");
 # endif
       km->MapFunction("return", "record-input");
       km->AddFunction("record-input", RecordInput, NULL);
@@ -1833,6 +1836,8 @@ public:
       wxMenu *m = new wxMenu();
       m->Append(79, "&Copy\tCmd+C");
       m->Append(81, "&Paste\tCmd+V");
+      m->AppendSeparator();
+      m->Append(83, "&Break\tCmd+.");
       mb->Append(fileMenu, "File");
       mb->Append(m, "Edit");
       
@@ -1874,6 +1879,8 @@ public:
 	media->Copy();
       else if (id == 81)
 	media->Paste();
+      else if (id == 83)
+	scheme_break_thread(user_main_thread);
       else if (id == 77)
         if (OnClose())
            Show(FALSE);
@@ -1941,6 +1948,11 @@ static Bool RecordInput(void *m, wxEvent *event, void *data)
   scheme_write_string(s, len, stdin_pipe);
 
   return TRUE;
+}
+
+static Bool SendBreak(void *m, wxEvent *event, void *data)
+{
+  scheme_break_thread(user_main_thread);
 }
 
 #else  /* !WINDOW_STDIO */

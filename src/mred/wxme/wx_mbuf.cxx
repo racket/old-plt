@@ -2231,8 +2231,8 @@ Bool wxMediaBuffer::GetLoadOverwritesStyles()
 
 #define edf(name, action, kname) \
      static Bool ed_##name(void *vb, wxEvent *kname, void *) \
-     { wxMediaBuffer *b; \
-       b = objscheme_unbundle_wxMediaBuffer((Scheme_Object *)vb, NULL, 0); \
+     { wxMediaBuffer *b = NULL; \
+       if (vb) b = objscheme_unbundle_wxMediaBuffer((Scheme_Object *)vb, NULL, 0); \
        if (!b) \
         return FALSE; \
        b->action; \

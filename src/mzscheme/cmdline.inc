@@ -209,6 +209,9 @@ typedef struct {
 #ifdef VERSION_YIELD_FLAG
   int add_yield;
 #endif
+#ifdef CMDLINE_STDIO_FLAG
+  int alternate_rep;
+#endif
   Scheme_Env *global_env;
 } FinishArgs;
 
@@ -366,6 +369,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif
 #ifdef VERSION_YIELD_FLAG
   int add_yield = 1;
+#endif
+#ifdef CMDLINE_STDIO_FLAG
+  int alternate_rep = 0;
 #endif
   int no_lib_path = 0;
   FinishArgs *fa;
@@ -782,9 +788,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif
 #ifdef CMDLINE_STDIO_FLAG
 	case 'z':
-	  no_rep = 1;
-	  evals_and_loads[num_enl] = "(read-eval-print-loop)";
-	  eval_kind[num_enl++] = mzcmd_EVAL;
+	  alternate_rep = 1;
 	  break;
 #endif
 #if defined(_IBMR2)
@@ -812,7 +816,11 @@ static int run_from_cmd_line(int argc, char *_argv[],
 
   if (!script_mode && !mute_banner) {
 #ifndef MZSCHEME_CMD_LINE  
-    if (no_rep)
+    if (no_rep
+#ifdef CMDLINE_STDIO_FLAG
+	|| alternate_rep
+#endif
+	)
 #endif
       PRINTF(BANNER);
 #ifdef MZSCHEME_CMD_LINE  
@@ -885,6 +893,9 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #ifdef VERSION_YIELD_FLAG
   fa->add_yield = add_yield;
 #endif
+#ifdef CMDLINE_STDIO_FLAG
+  fa->alternate_rep = alternate_rep;
+#endif
   fa->global_env = global_env;
 
   scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_true);
@@ -921,7 +932,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -Z, --nogui : Skip \"class.ss\" & \"mred.ss\" require, load handler set.\n"
 # endif
 # ifdef CMDLINE_STDIO_FLAG
-	 "  -z, --stdio : Use stdio REPL. Same as -ve '(read-eval-print-loop)'.\n"
+	 "  -z, --stdio : Show version, use read-eval-print-loop, not graphical-....\n"
 # endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
 	 "  -k <n> <m> : Load executable-embedded code from file offset <n> to <m>.\n"
@@ -942,7 +953,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # ifdef MZSCHEME_CMD_LINE  
 	 "the startup banner"
 # else
-	 "-v/--version"
+	 "-v/--version/-z/--stdio"
 # endif
 	 " text.\n"
 	 "  -v, --version : Suppresses the read-eval-print loop"

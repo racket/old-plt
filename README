@@ -28,9 +28,10 @@ for mred and mzscheme are in plt/.bin in a platform-dependent
 subdirectory. (If you have downloaded the source code distribution,
 the binaries will be absent and must be compiled.) The sh scripts pick
 an appropiate binary based on `uname`, so a single plt directory can
-be used in a multi-platform environment. (This causes problems for
-writing MzScheme scripts. See plt/notes/mzscheme/SCRIPTS for a way around
-the problem.)
+be used in a multi-platform environment. This causes problems for
+writing MzScheme scripts; see
+         plt/collects/doc/help/scheme/misc/script.html
+for a way around the problem.
 
 Compiling
 ---------

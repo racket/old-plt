@@ -258,7 +258,8 @@
 
 	   (define (convert-param mapping current)
 	     (let* ([name (car current)]
-		    [ttypes (map convert-ttypes (repeat mapping (length (cdr current))) (cdr current))])
+		    [foo (pretty-print (format "cd Current: ~a" (cdr current)))]
+		    [ttypes (map car (map convert-ttypes (map cons (cdr current) (repeat mapping (length (cdr current))))))])
 	       (cons name ttypes)))
 
 	   (define (convert-ttypes type-mapping)
@@ -301,7 +302,7 @@
 		 null
 		 (let* ([current (car scll)]
 			[name (syntax-object->datum (car current))]
-			[sname-type (make-usertype sname (map (make-tvar (map syntax-object->datum params))))]
+			[sname-type (make-usertype sname (map make-tvar (map syntax-object->datum params)))]
 			[ttypes (map typecheck-type (cdr current) (repeat boundlist (length (cdr current))))]
 )
 		   (begin
@@ -669,6 +670,7 @@
 		   (and (andmap unify (repeat (car tlist) (length tocompare)) tocompare (cdr synlist)) (same-types? tocompare (cdr synlist))))))
 
 	   (define (union tvl1 tvl2)
+	     (pretty-print (format "union: ~a ~a" tvl1 tvl2))
 	     (foldl (lambda (r l)
 		      (if (null? (filter (lambda (rprime) (eqv? r rprime)) l))
 			  (cons r l)
@@ -693,9 +695,13 @@
 				      (list r)
 				      (unsolved (unbox r))))]
 	      [(option? type) (unsolved (option-type type))]
-	      [(ref? type) (unsolved (ref-type type))]))
+	      [(ref? type) (unsolved (ref-type type))]
+	      [(usertype? type) (foldl (lambda (ut sl)
+					 (union (unsolved ut) sl)) (unsolved (car (usertype-params type))) (cdr (usertype-params type)))]
+	      [else (raise-syntax-error #f (format "Bad type: ~a" type))]))
 
 	   (define (env-unsolved r)
+	     (pretty-print (format "env-unsolved: ~a" r))
 	     (foldl (lambda (mapping tlist)
 		      (let ([l1 (unsolved (cadr mapping))])
 			(union tlist l1))) null r))
@@ -1042,6 +1048,7 @@
 		     (get-type var (cdr context))))))
 
 	   (define (update var type-tvarlist context)
+	     (pretty-print (format "update: ~a ~a ~a" var type-tvarlist context))
 	     (let ([new-context (cons (cons var type-tvarlist) context)])
 	       (begin ;(pretty-print (format "Update: ~a" new-context))
 		      new-context)))

@@ -68,7 +68,7 @@
 ;	 #f
 	 (let ([result (compile-ml stmt (empty-context))])
 ;	   (pretty-print "Compile successful")
-	   ;(pretty-print (format "initial progval: ~a" result))
+	   (pretty-print (format "initial progval: ~a" result))
 	    result))))
 ;	 #f)))
 
@@ -110,7 +110,7 @@
 		   (compile-ml expr context))]              
 ;	       #`((#,(create-syntax #f `lambda (if lsrc (build-src lsrc) #f)) () #,(compile-ml expr context)))]
 	      [($ ast:pstr_exception name decl)
-	       #`(begin (define-struct (#,(string->symbol (format "exn:~a" (syntax-object->datum name))) exn) ())
+	       #`(begin (define-struct (#,(datum->syntax-object (current-compile-context) (string->symbol (format "exn:~a" (syntax-object->datum name)))) exn) ())
 			(make-<voidstruct> #f))]
 	      [($ ast:pstr_exn_rebind name ident)
 ;	       #'"voigt"]

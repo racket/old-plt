@@ -189,7 +189,7 @@ xsrc/wx_xbm.cc: $(WXDIR)/utils/image/src/wx_xbm.cc $(WXBDIR)/utils/image/src/wx_
 
 MACXPRECOMP = macxsrc/xform_precomp.h
 
-macxsrc/xform_precomp.h : $(XFORMDEP) $(srcdir)/macprecomp.cxx
+macxsrc/xform_precomp.h : $(XFORMDEP) $(srcdir)/macprecomp.cxx $(srcdir)/../../mzscheme/src/schvers.h
 	env XFORM_PRECOMP=yes $(XFORM) $(srcdir)/macprecomp.cxx $(MACXPRECOMP)
 
 @INCLUDEDEP@ macprecomp.d

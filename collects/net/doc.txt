@@ -1,4 +1,4 @@
-Time-stamp: <99/10/22 12:42:59 shriram>
+Time-stamp: <00/06/09 11:12:16 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -65,9 +65,17 @@ PROCEDURES -----------------------------------------------------------
 
 > (unixpath->path string) -> path-string
 
-  Given a path from a URL structure, turns it into a path that
-  conforms to the local OS path specifications.  Useful for file
-  accesses on the local disk system.
+  Procedure that handles the translation of URL paths to paths on the
+  local filesystem (eg, for URLs with scheme "file").  This procedure
+  works as follows:
+
+  A leading slash is turned into a reference to the first string
+  returned by filesystem-root-list.  The rest of the path is split
+  into segments delimited by "/".  Each segment is translated and
+  combined with the remaining segments using build-path.  The segments
+  "", "." and ".." are treated specially: the first two translate into 
+  the 'same directive and the third into the 'up directive to
+  build-path.
 
 > (get-pure-port url [list-of-strings]) -> input-port
 
@@ -112,14 +120,12 @@ PROCEDURES -----------------------------------------------------------
 > (combine-url/relative url string) -> url
 
   Given a base URL and a relative path, combines the two and returns a
-  new URL.
+  new URL as per the URL combination specification.
 
 EXAMPLE --------------------------------------------------------------
 
  (require-library "url.ss" "net")
  (define url:cs (string->url "http://www.cs.rice.edu/"))
- (define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
- (define comb combine-url/relative)
  (define (test url)
    (call/input-url url get-pure-port display-pure-port))
  (test url:cs)
@@ -135,6 +141,19 @@ ABSTRACT -------------------------------------------------------------
 
 The cgi package helps programmers write scripts that follow the Common
 Gateway Interface (CGI) protocol of the World-Wide Web.
+
+INTERACTIONS ---------------------------------------------------------
+
+The CGI library expects to be run in a certain context as defined by
+the CGI standard.  This means, for instance, that certain environment
+variables will be bound.  Unfortunately, not all CGI environments
+provide this.  For instance, the FastCGI library, despite its name,
+does not bind the environment variables required of the standard.
+Users of FastCGI will need to bind REQUEST_METHOD and possibly also
+QUERY_STRING to successfully employ the CGI library.  The FastCGI
+library ought to provide a way to extract the values bound to these
+variables; the user can then put these into the CGI program's
+environment using PLT Scheme's `putenv' function.
 
 TYPES ----------------------------------------------------------------
 

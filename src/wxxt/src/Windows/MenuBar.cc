@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.1 1996/01/10 14:57:17 markus Exp $
+ * $Id: MenuBar.cc,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -101,6 +101,7 @@ Bool wxMenuBar::Create(wxPanel *panel)
 	 XtNhMargin,     4,
 	 XtNfont,        font->GetInternalFont(),
 	 XtNmenu,        top,
+	 XtNcursor,      None,
 	 NULL);
     // callbacks
     XtAddCallback(X->handle, XtNonSelect,  wxMenuBar::CommandEventCallback, this);

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.2 1998/01/30 15:20:32 mflatt Exp $
+ * $Id: AppMain.cc,v 1.3 1998/01/30 22:29:56 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -359,6 +359,7 @@ void wxCommonInit(void)
     wxSTANDARD_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_ARROW);
     wxHOURGLASS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_WAIT);
     wxCROSS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_CROSS);
+    wxIBEAM_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_IBEAM);
 }
 
 void wxCommonCleanUp(void)

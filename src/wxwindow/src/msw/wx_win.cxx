@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.3 1998/03/29 15:43:59 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.4 1998/04/08 12:35:39 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -537,6 +537,10 @@ void wxWindow::ClientToScreen(int *x, int *y)
 wxCursor *wxWindow::SetCursor(wxCursor *cursor)
 {
   wxCursor *old_cursor = wx_cursor;
+
+  if (cursor && !cursor->Ok())
+    return old_cursor;
+
   wx_cursor = cursor;
   if (wx_cursor)
   {

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Application.cc,v 1.1 1996/01/10 14:56:48 markus Exp $
+ * $Id: Application.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
  *
  * Purpose: global utilities for wxWindows application and main loop
  *
@@ -42,12 +42,14 @@ void wxExit(void)
 
 void wxFlushEvents(void)
 {
+#if 0
     XSync(wxAPP_DISPLAY, FALSE);
     XEvent event;
     while (wxTheApp->Pending()) {
       XFlush(wxAPP_DISPLAY);
       wxTheApp->Dispatch();
     }
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -56,9 +58,19 @@ void wxFlushEvents(void)
 
 Bool wxYield(void)
 {
-  while (wxTheApp->Pending())
-    wxTheApp->Dispatch();
+  int ever = 0;
+  int one_more;
 
-  return TRUE;
+  do {
+    XFlush(wxAPP_DISPLAY);
+    XSync(wxAPP_DISPLAY, FALSE);
+    one_more = 0;
+    while (wxTheApp->Pending()) {
+      one_more = 1;
+      ever = 1;
+      wxTheApp->Dispatch();
+    }
+  } while (one_more);
+
+  return ever;
 }
-

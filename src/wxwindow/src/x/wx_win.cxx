@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_win.cxx,v 1.2 1998/04/08 00:09:17 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.3 1998/04/10 15:08:16 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -162,12 +162,26 @@ void wxWindow::Enable(Bool enable)
 
 Window wxWindow::GetXWindow(void)
 {
-  return XtWindow((Widget)handle);
+  Widget w = (Widget)handle;
+
+  while (w && XmIsGadget(w))
+    w = XtParent(w);
+
+  if (!w) return (Window)NULL;
+
+  return XtWindow(w);
 }
 
 Display *wxWindow::GetXDisplay(void)
 {
-  return XtDisplay((Widget)handle);
+  Widget w = (Widget)handle;
+
+  while (w && XmIsGadget(w))
+    w = XtParent(w);
+
+  if (!w) return NULL;
+
+  return XtDisplay(w);
 }
 
 void wxWindow::Refresh(void)
@@ -255,15 +269,16 @@ wxCursor *wxWindow::SetCursor(wxCursor *cursor)
 {
   wxCursor *old_cursor = wx_cursor;
 
-  /* MATTHEW: [4] Get cursor for this display */
-  if (cursor && !currentWindowCursor)
-  {
-    Display *dpy = GetXDisplay();
-    Cursor x_cursor = cursor->GetXCursor(dpy);
+  if (cursor && !cursor->Ok())
+    return old_cursor;
 
-    Widget w = (Widget)handle;
-    Window win = XtWindow(w);
-    XDefineCursor(dpy, win, x_cursor);
+  if (!wxIsBusy()) {
+    Display *dpy = GetXDisplay();
+    Cursor x_cursor = cursor ? cursor->GetXCursor(dpy) : None;
+
+    Window win = GetXWindow();
+    if (win)
+      XDefineCursor(dpy, win, x_cursor);
   }
 
   wx_cursor = cursor;

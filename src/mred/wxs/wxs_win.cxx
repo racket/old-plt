@@ -882,7 +882,7 @@ static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Ob
   class wxCursor* x0;
 
   
-  x0 = objscheme_unbundle_wxCursor(p[0], "wx:window%::set-cursor", 0);
+  x0 = objscheme_unbundle_wxCursor(p[0], "wx:window%::set-cursor", 1);
 
   if (x0 && !x0->Ok()) x0 = wxSTANDARD_CURSOR;
   r = ((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->SetCursor(x0);

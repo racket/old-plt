@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: BusyCursor.cc,v 1.1 1996/01/10 14:56:49 markus Exp $
+ * $Id: BusyCursor.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
  *
  * Purpose: busy cursor
  *
@@ -35,23 +35,42 @@
 extern int wxGetBusyState();
 extern void wxSetBusyState(int);
 
+static void wxXSetNoCursor(wxWindow *win, wxCursor *cursor)
+{
+  Cursor c;
+
+  if (cursor || !win->cursor)
+    c = None;
+  else
+    c = GETCURSOR(win->cursor);
+
+  XtVaSetValues(win->X->handle, XtNcursor, c, NULL);
+  
+  for(wxChildNode *node = win->GetChildren()->First(); node; node = node->Next()) {
+    wxWindow *child = (wxWindow *) node->Data ();
+    wxXSetNoCursor(child, cursor);
+  }
+}
+
 void wxXSetBusyCursor(wxWindow *win, wxCursor *cursor)
 {
+  Cursor c;
+
   if (cursor)
-    XtVaSetValues(win->X->handle, XtNcursor, GETCURSOR(cursor), NULL);
+    c = GETCURSOR(cursor);
   else if (win->cursor)
-    XtVaSetValues(win->X->handle, XtNcursor, GETCURSOR(win->cursor), NULL);
+    c = GETCURSOR(win->cursor);
   else
-    XtVaSetValues(win->X->handle, XtNcursor, GETCURSOR(wxSTANDARD_CURSOR), 
-		  NULL);
+    c = GETCURSOR(wxSTANDARD_CURSOR);
+  
+  XtVaSetValues(win->X->handle, XtNcursor, c, NULL);
 
   for(wxChildNode *node = win->GetChildren()->First(); node; node = node->Next()) {
     wxWindow *child = (wxWindow *) node->Data ();
-    if (wxSubType(child->__type, wxTYPE_FRAME) ||
-	wxSubType(child->__type, wxTYPE_CANVAS) ||
-	wxSubType(child->__type, wxTYPE_PANEL) ||
-	wxSubType(child->__type, wxTYPE_TEXT_WINDOW))
+    if (wxSubType(child->__type, wxTYPE_FRAME))
       wxXSetBusyCursor(child, cursor);
+    else
+      wxXSetNoCursor(child, cursor);
   }
 }
 

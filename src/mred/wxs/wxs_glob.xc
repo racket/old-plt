@@ -260,7 +260,7 @@ static void __CopyBackIntArray(int count, Scheme_Object *vec, int *r)
 // @ "wx:new-id" : long wxNewId(); ## NO_XT
 // @ "wx:register-id" : void wxRegisterId(long); ## NO_XT
 
-@ "wx:begin-busy-cursor" : void wxBeginBusyCursor(wxCursor!=wxHOURGLASS_CURSOR); : : /CHECKOK[0."wx:begin-busy-cursor"]
+@ "wx:begin-busy-cursor" : void wxBeginBusyCursor()
 @ "wx:is-busy?" : bool wxIsBusy();
 @ "wx:end-busy-cursor" : void wxEndBusyCursor();
 @ "wx:bell" : void wxBell();

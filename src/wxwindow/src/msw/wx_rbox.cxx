@@ -24,8 +24,7 @@
 
 BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 {
-  if (param == BN_CLICKED)
-  {
+  if (param == BN_CLICKED)  {
 #ifdef WIN32
     int i;
     for (i = 0; i < no_items; i++)
@@ -43,27 +42,27 @@ BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
     event->eventObject = this;
     ProcessCommand(*event);
     return TRUE;
-  }
-  else return FALSE;
+  } else 
+    return FALSE;
 }
 
 extern int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 typedef struct {
-	FARPROC old;
-	wxItem *item;
+  FARPROC old;
+  wxItem *item;
 } wxRBInfo;
 
 // Sub-classed generic control proc
 LONG APIENTRY _EXPORT
-  wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   wxRBInfo *i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
   
   if (!i) return FALSE;
 
   if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam))
-	  return FALSE;
+    return FALSE;
 
   return CallWindowProc(i->old, hWnd, message, wParam, lParam);
 }
@@ -73,7 +72,7 @@ static FARPROC wxGenericRIProc;
 void SubclassRadioButton(HWND hWnd, wxItem *item)
 {
   wxRBInfo *i = (wxRBInfo *)malloc(sizeof(wxRBInfo));
-
+  
   i->item = item;
 
   // Subclass again for purposes of dialog editing mode
@@ -91,7 +90,7 @@ void UnsubclassRadioButton(HWND hWnd)
   if (i) {
     wxRemoveControlHandle(hWnd);
     SetWindowLong(hWnd, GWL_WNDPROC, (LONG)i->old);
-	free(i);
+    free(i);
   }
 }
 

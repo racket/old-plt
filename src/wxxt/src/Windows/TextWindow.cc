@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: TextWindow.cc,v 1.1 1996/01/10 14:57:26 markus Exp $
+ * $Id: TextWindow.cc,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
  *
  * Purpose: text window panel item
  *
@@ -96,6 +96,9 @@ Bool wxTextWindow::Create(wxPanel *panel, int x, int y, int width, int height,
 			(width  > -1 ? width  : wxTEXT_WINDOW_WIDTH),
 			(height > -1 ? height : wxTEXT_WINDOW_HEIGHT));
     AddEventHandlers();
+
+    cursor = wxIBEAM_CURSOR;
+
     return TRUE;
 }
 

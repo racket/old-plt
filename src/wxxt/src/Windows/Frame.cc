@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.3 1998/03/07 00:36:28 mflatt Exp $
+ * $Id: Frame.cc,v 1.4 1998/03/11 21:58:20 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -178,6 +178,11 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     XtAddEventHandler(X->frame, StructureNotifyMask,
 		      False, (XtEventHandler)wxFrameMapProc,
 		      (XtPointer)saferef);
+
+    cursor = wxSTANDARD_CURSOR;
+
+    if (wxIsBusy())
+      wxXSetBusyCursor(this, wxHOURGLASS_CURSOR);
 
     return TRUE;
 }

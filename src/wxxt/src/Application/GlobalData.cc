@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GlobalData.cc,v 1.3 1996/01/11 10:26:42 markus Exp $
+ * $Id: GlobalData.cc,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
  *
  * Purpose: global data for an application (UNSHARED)
  *
@@ -160,6 +160,7 @@ wxColour* wxLIGHT_GREY = 0;
 wxCursor* wxSTANDARD_CURSOR = 0;
 wxCursor* wxHOURGLASS_CURSOR = 0;
 wxCursor* wxCROSS_CURSOR = 0;
+wxCursor* wxIBEAM_CURSOR = 0;
 
 wxFont* wxNORMAL_FONT = 0;
 wxFont* wxSMALL_FONT = 0;

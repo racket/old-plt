@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.h,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Window.h,v 1.2 1998/02/05 23:00:33 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -279,6 +279,7 @@ protected:
 #   endif
 protected:
     friend void wxXSetBusyCursor(wxWindow *, wxCursor *); /* MATTHEW */
+    friend void wxXSetNoCursor(wxWindow *, wxCursor *); /* MATTHEW */
     // X representation
     wxWindow_Xintern *X;
     // device context

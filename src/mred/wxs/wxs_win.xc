@@ -76,7 +76,7 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @ "move" : void Move(int,int); 
 // @ "set-client-size" : void SetClientSize(int,int); : : /NOZERO[0]|NOZERO[1]
 // @ "set-colour-map" : void SetColourMap(wxColourMap!);
-@ "set-cursor" : wxCursor^ SetCursor(wxCursor!); : : /CHECKCURSOROK[0]
+@ "set-cursor" : wxCursor^ SetCursor(wxCursor^); : : /CHECKCURSOROK[0]
 @ "show" : void Show(bool);
 @ "is-shown?" : bool IsShown();
 @ "fit" : void Fit();

@@ -4,11 +4,14 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_utils.cc,v 1.64 1994/11/03 00:23:48 edz Exp edz $
+ * RCS_ID:      $Id: wx_utils.cxx,v 1.1.1.1 1997/12/22 16:12:05 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
-// $Log: wx_utils.cc,v $
+// $Log: wx_utils.cxx,v $
+// Revision 1.1.1.1  1997/12/22 16:12:05  mflatt
+// import
+//
 // Revision 1.64  1994/11/03  00:23:48  edz
 // Fixed OS Version function for XView, Motif still needs to
 // be done. The function returned the X protocol version and not
@@ -49,14 +52,6 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_utils.h"
 #include "wx_main.h"
 #include "wx_dialg.h"
-
-// Sun CC compatibility (interference with xview/pkg.h, apparently...)
-#if defined(SUN_CC) && defined(wx_xview)
-#undef va_start
-#undef va_end
-#undef va_arg
-#undef va_list
-#endif
 
 #include <stdarg.h>
 #include <sys/types.h>
@@ -136,17 +131,6 @@ extern "C" {
 #define _MAXPATHLEN 1024
 #endif
 
-#ifdef wx_xview
-#include <xview/canvas.h>
-#endif
-
-#if USE_RESOURCES
-#ifdef wx_xview
-#define use_xview_code
-#include <xview/defaults.h>
-#endif
-#endif
-
 #ifdef sun
 # ifndef __GNUG__
 #  ifndef SUN_CC
@@ -195,18 +179,8 @@ extern "C" uid_t getuid(void);
 #include <sysent.h>
 #endif
 
-#ifdef wx_xview
-#include <xview/screen.h>
-#include <xview/server.h>
-#include <xview/notify.h>
-extern Xv_Server xview_server;
-#endif
-
-#ifndef use_xview_code
-static XrmDatabase wxResourceDatabase = 0;
-#endif
-
 #if USE_RESOURCES
+static XrmDatabase wxResourceDatabase = 0;
 void wxXMergeDatabases (wxApp * theApp, Display * display);
 #endif
 
@@ -279,133 +253,25 @@ wxGetUserName (char *buf, int maxSize)
 //
 
 Bool 
-wxExecute (char **argv, Bool Async)
+wxExecute (char **, Bool)
 {
-#ifdef VMS
-  return(FALSE);
-#else
-  if (*argv == NULL)
-    return FALSE;	// Nothing???
-  // Run a program the recomended way under X (XView) 
-
-  /* fork the process */
-#if defined(sun) || defined(__ultrix) || defined(__bsdi__)
-  pid_t pid = vfork ();
-#else
-  pid_t pid = fork ();
-#endif
-  if (pid == -1)
-    {
-      perror ("fork failed");
-      return FALSE;
-    }
-  else if (pid == 0)
-    {
-      /* child */
-#ifdef _AIX
-      execvp ((const char *)*argv, (const char **)argv);
-#else
-      execvp (*argv, argv);
-#endif
-      if (errno == ENOENT)
-	printf ("%s: command not found\n", *argv);
-      else
-	perror (*argv);
-      printf ("wxWindows: could not execute '%s'\n", *argv);
-      _exit (-1);
-    }
-
-#ifdef wx_xview
-  static Notify_client sys_client = 42;
-  notify_set_wait3_func (sys_client, (Notify_func) notify_default_wait3, pid);
-#endif
-  // Code below is NOT really acceptable!
-  // One should NEVER use wait under X
-  // Ideas? A Sleep idle callback?
-
-  // WARNING: WARNING: WARNING: WARNING:
-  // The CODE BELOW IS BAD BAD BAD BAD!
-  if (Async)
-    {
-      int status;
-      wxSleep (2);		// Give a little time
-#if !defined(DG) && !defined(_AIX) && !defined(__xlC__) && !defined(SVR4) && !defined(sun) && !defined(__alpha) && !defined(__sgi) && !defined(__hpux) && !defined(__SUNPRO_CC)
-      while (wait ((union wait *) &status) != pid)
-#else
-      while (wait (&status) != pid)
-#endif
-	wxSleep(3);	// 3 sec?
-    }
-
-  return TRUE;
-#endif
-  // end VMS
+  return FALSE;
 }
 
 
 Bool 
-wxExecute (const char *command, Bool Async)
+wxExecute (const char *, Bool)
 {
-#ifdef VMS
-  return(FALSE);
-#else
-  if (command == NULL || *command == '\0')
-    return FALSE; // Nothing to do
-
-  // Run a program the recomended way under X (XView) 
-  int argc = 0;
-  char *argv[127];
-  char tmp[1024];
-  const char *IFS = " \t\n";
-
-  // Build argument vector 
-  strncpy (tmp, command, sizeof (tmp) / sizeof (char) - 1);
-  tmp[sizeof (tmp) / sizeof (char) - 1] = '\0';
-  argv[argc++] = strtok (tmp, IFS);
-  while ((argv[argc++] = strtok (NULL, IFS)) != NULL)
-    /* loop */ ;
-
-  return wxExecute(argv, Async);
-#endif
-  // VMS
+  return FALSE;
 }
 
 //
 // Execute a program in an Interactive Shell
 //
 Bool
-wxShell(const char *command)
+wxShell(const char *)
 {
-#ifdef VMS
-  return(FALSE);
-#else
-#if defined(sun) || defined(__ultrix) || defined(__bsdi__)
-  pid_t pid = vfork ();
-#else
-  pid_t pid = fork ();
-#endif
-  switch( pid ) {
-    case -1:			/* error */
-	return(FALSE);
-    case 0:			/* child */
-#ifdef wx_xview
-	execlp("shelltool", "-c", (char *) command, NULL);
-#else
-	// Generic X windows terminal window
-	if (command && *command)
-	  execlp("xterm", "-e", (char *) command, NULL);
-	else
-	  execlp("xterm", NULL);
-#endif
-	_exit(127);
-  }
-#ifdef wx_xview
-  static Notify_client sys_client = 42;
-  notify_set_wait3_func (sys_client, (Notify_func) notify_default_wait3, pid);
-#endif
-  return TRUE;
-#endif
- // End VMS
+  return FALSE;
 }
 
 // Get a temporary filename, opening and closing the file.
@@ -440,172 +306,53 @@ char *wxGetTempFileName (const char *prefix, char *dest)
 Bool 
 wxRemoveFile (const char *file)
 {
-#ifdef VMS
-  // unlink doesn't work on some ALPHAs
-  // therefore a badbadbad solution
-  // but it works!
-  char cmd[256];
-  sprintf(cmd,"delete %s;*",file);
-  system(cmd);
-  return(TRUE);
-#else
   return ((unlink (file) == 0) ? TRUE : FALSE);
-#endif
 }
 
 Bool 
 wxMkdir (const char *dir)
 {
-  // give default perms of owner read and write, group read and
-  // others read. The interface to this func should be changed
-  // to pass the perms info in.
-  // Since directory it must also be searchable @@@
-  // Added S_IXUSR | S_IXGRP | S_IXOTH
-#ifdef VMS
-  return FALSE;
-#else
   return (mkdir (dir, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0);
-#endif
 }
 
 Bool 
 wxRmdir (const char *dir)
 {
-#ifdef VMS
-  return FALSE;
-#else
   return (rmdir (dir) == 0);
-#endif
 }
 
 Bool 
 wxDirExists (const char *dir)
 {
-#ifdef VMS
-  return FALSE;
-#else
   struct stat sbuf;
   return (stat(dir, &sbuf) != -1) && S_ISDIR(sbuf.st_mode) ? TRUE : FALSE;
-#endif
 }
 
 
 // Get first file name matching given wild card.
 // Flags are reserved for future use.
 
-#ifndef VMS
-static DIR *wxDirStream = NULL;
-static char *wxFileSpec = NULL;
-static int wxFindFileFlags = 0;
-#endif
-
-char *wxFindFirstFile(const char *spec, int flags)
+char *wxFindFirstFile(const char *, int)
 {
-#ifndef VMS
-  if (wxDirStream)
-    closedir(wxDirStream); // edz 941103: better housekeping
-
-  wxFindFileFlags = flags;
-
-  if (wxFileSpec)
-    delete[] wxFileSpec;
-  wxFileSpec = copystring(spec);
-
-  // Find path only so we can concatenate
-  // found file onto path
-  char *p = wxPathOnly(wxFileSpec);
-
-  /* MATTHEW: special case: path is really "/" */
-  if (p && !*p && *wxFileSpec == '/')
-    p = "/";
-  /* MATTHEW: [2] p is NULL => Local directory */
-  if (!p)
-    p = "";
-
-  if ((wxDirStream=opendir(p))==NULL)
-    return NULL;
-
-  /* MATTHEW: [5] wxFindNextFile can do the rest of the work */
-  return wxFindNextFile();
-#endif
- // ifndef VMS
   return NULL;
 }
 
 char *wxFindNextFile(void)
 {
-#ifndef VMS
-  static char buf[400];
-
-  /* MATTHEW: [2] Don't crash if we read too many times */
-  if (!wxDirStream)
-    return NULL;
-
-  // Find path only so we can concatenate
-  // found file onto path
-  char *p = wxPathOnly(wxFileSpec);
-  char *n = wxFileNameFromPath(wxFileSpec);
-
-  /* MATTHEW: special case: path is really "/" */
-  if (p && !*p && *wxFileSpec == '/')
-    p = "/";
-
-  // Do the reading
-  struct dirent *nextDir;
-  for (nextDir = readdir(wxDirStream); nextDir != NULL; nextDir = readdir(wxDirStream))
-  {
-    /* MATTHEW: [5] Only return "." and ".." when they match, and only return
-       directories when flags & wxDIR */
-    if (wxMatchWild(n, nextDir->d_name)) {
-      Bool isdir;
-
-      if ((strcmp(nextDir->d_name, ".") == 0) ||
-	  (strcmp(nextDir->d_name, "..") == 0)) {
-	if (wxFindFileFlags && !(wxFindFileFlags & wxDIR))
-	  continue;
-	isdir = TRUE;
-      } else
-	isdir = wxDirExists(buf);
-      
-      buf[0] = 0;
-      if (p && *p) {
-        strcpy(buf, p);
-        if (strcmp(p, "/") != 0)
-          strcat(buf, "/");
-      }
-      strcat(buf, nextDir->d_name);
-
-      if (!wxFindFileFlags
-	  || ((wxFindFileFlags & wxDIR) && isdir)
-	  || ((wxFindFileFlags & wxFILE) && !isdir))
-	return buf;
-    }
-  }
-  closedir(wxDirStream);
-  wxDirStream = NULL;
-#endif
- // ifndef VMS
-
   return NULL;
 }
 
 // Get current working directory.
 // If buf is NULL, allocates space using new, else
 // copies into buf.
-char *wxGetWorkingDirectory(char *buf, int sz)
+char *wxGetWorkingDirectory(char *, int)
 {
-  if (!buf)
-    buf = new char[sz+1];
-  if (getcwd(buf, sz) == NULL) {
-    buf[0] = '.';
-    buf[1] = '\0';
-  }
-  return buf;
+  return NULL;
 }
 
-Bool wxSetWorkingDirectory(char *d)
+Bool wxSetWorkingDirectory(char *)
 {
-  return (chdir(d) == 0);
+  return FALSE;
 }
 
 // Get free memory in bytes, or -1 if cannot determine amount (e.g. on UNIX)
@@ -660,53 +407,16 @@ wxSleep (int nSecs)
 #endif // __sgi
 }
 
-// Consume all events until no more left
-#ifdef wx_xview
-extern "C" int xv_input_pending (Display *, int);
-extern "C" int ndis_dispatch (void);
-#endif
-
 void 
 wxFlushEvents (void)
 {
   Display *display = wxGetDisplay(); /* MATTHEW: [4] Always use GetDisplay */
 
-#ifdef wx_motif
   XSync (display, FALSE); /* MATTHEW: [4] Use display */
-  XEvent event;
-  while (
-#if 0
-	 XtAppPending (wxTheApp->appContext)
-#else
-	 wxTheApp->Pending()
-#endif
-	 )
-    {
-      XFlush (XtDisplay (wxTheApp->topLevel));
-#if 0
-      XtAppNextEvent (wxTheApp->appContext, &event);
-      XtDispatchEvent (&event);
-#else
+  while (wxTheApp->Pending()) {
+    XFlush (XtDisplay (wxTheApp->topLevel));
       wxTheApp->Dispatch();
-#endif
-    }
-#endif
-#ifdef wx_xview
-  /* MATTHEW: [4] Use display */
-  XSync (display, FALSE);
-  XFlush (display);
-/* Causes nasty internal problems. Pity, I thought I'd cracked it...
-   while(XPending(display))
-   {
-   XEvent event;
-   XPeekEvent(display, &event);
-   xv_input_pending(display, 0);
-   ndis_dispatch();
-   }
- */
-  // My try.... (edz)
-  xv_set(xview_server, SERVER_SYNC_AND_PROCESS_EVENTS, NULL);
-#endif
+  }
 }
 
 // Output a debug mess., in a system dependent fashion.
@@ -931,31 +641,6 @@ wxWriteResource (const char *section, const char *entry, int value, const char *
 Bool 
 wxGetResource (const char *section, const char *entry, char **value, const char *file)
 {
-#ifdef use_xview_code		/* @@@ */
-  // New code using Xview
-  char buf[1024];
-  char *result;
-  static int main_loaded = FALSE;
-
-  /* MATTHEW: [4] Much faster... */
-  if (!main_loaded || file) {
-    defaults_load_db (GetIniFile (buf, file));
-    if (!file)
-      main_loaded = TRUE;
-  }
-
-  strcpy (buf, section);
-  strcat (buf, ".");
-  strcat (buf, entry);
-  result = (char *) defaults_get_string (buf, buf, "$$default");
-  if (strcmp (result, "$$default") == 0)
-    return FALSE;
-  if (*value)
-    /* MATTHEW: [2] missing * before value: */
-    delete[] *value;
-  *value = copystring (result);
-  return TRUE;
-#else // Old code for XView and code for Motif
   if (!wxResourceDatabase)
     {
       Display *display = wxGetDisplay();
@@ -1020,7 +705,6 @@ wxGetResource (const char *section, const char *entry, char **value, const char 
       return TRUE;
     }
   return FALSE;
-#endif // use_xview_code
 }
 
 
@@ -1079,52 +763,6 @@ wxGetResource (const char *section, const char *entry, int *value, const char *f
     return FALSE;
 }
 
-#ifdef XXXX
-#ifdef wx_motif
-/*
- * Not yet used but may be useful.
- *
- */
-void 
-wxSetDefaultResources (const Widget w, const char **resourceSpec, const char *name)
-{
-  int i;
-  Display *dpy = XtDisplay (w);	// Retrieve the display pointer
-
-  XrmDatabase rdb = NULL;	// A resource data base
-
-  // Create an empty resource database
-  rdb = XrmGetStringDatabase ("");
-
-  // Add the Component resources, prepending the name of the component
-
-  i = 0;
-  while (resourceSpec[i] != NULL)
-    {
-      char buf[1000];
-
-      sprintf (buf, "*%s%s", name, resourceSpec[i++]);
-      XrmPutLineResource (&rdb, buf);
-    }
-
-  // Merge them into the Xt database, with lowest precendence
-
-  if (rdb)
-    {
-#if (XlibSpecificationRelease>=5)
-      XrmDatabase db = XtDatabase (dpy);
-      XrmCombineDatabase (rdb, &db, FALSE);
-#else
-      XrmMergeDatabases (dpy->db, &rdb);
-      dpy->db = rdb;
-#endif
-    }
-}
-#endif
-#endif // 0
-
-
-#ifndef use_xview_code
 /*
  * Merging defaults databases. We need to find resource information
  * from various sources and merge them before we query resources.
@@ -1197,8 +835,6 @@ wxXMergeDatabases (wxApp * theApp, Display * display)
 	(void)XrmMergeDatabases(userDB, &wxResourceDatabase);
     }
 }
-
-#endif // !use_xview_code
 
 #endif /* USE_RESOURCES */
 
@@ -1303,7 +939,6 @@ Display *wxGetDisplay(void)
 /* MATTHEW: [4] Added wxSetDisplay and wxGetDisplayName */
 Bool wxSetDisplay(char *display_name)
 {
-#ifdef wx_motif
   if (!display_name) {
     wx_current_display = NULL;
     if (wx_display_name)
@@ -1331,58 +966,44 @@ Bool wxSetDisplay(char *display_name)
     } else
       return FALSE;
   }
-#endif
-    return FALSE;
 }
 
 char *wxGetDisplayName(void)
 {
-#ifdef wx_motif
   return wx_display_name;
-#else
-  return NULL;
-#endif
 }
-
-// Helper function for XView
-#ifdef wx_xview
-static void SetXCursor(wxWindow *win, wxCursor *cursor)
-{
-  Display *dpy = win->GetXDisplay();
-  Window xwin = win->GetXWindow();
-  if (cursor)
-  {
-    if (cursor->x_cursor)
-    {
-      if (cursor->use_raw_x_cursor)
-      {
-        XDefineCursor(dpy, xwin, cursor->x_cursor);
-      }
-      else
-      {
-        Xv_opaque x_win = (Xv_opaque)win->handle;
-        if (wxSubType(win->__type, wxTYPE_CANVAS))
-        {
-          Xv_Window win2 = xv_get(x_win, CANVAS_NTH_PAINT_WINDOW, 0);
-
-          xv_set(win2, WIN_CURSOR, cursor->x_cursor, NULL);
-        }
-        else
-          xv_set(x_win, WIN_CURSOR, cursor->x_cursor, NULL);
-      }
-    }
-  }
-  else
-  {
-    XSetWindowAttributes attrs;
-    attrs.cursor = None;
-    XChangeWindowAttributes (dpy, xwin, CWCursor, &attrs);
-  }
-}
-#endif
 
 // Old cursor
 static int wxBusyCursorCount = FALSE;
+
+static void 
+wxXSetNoCursor (wxWindow * win, wxCursor * cursor)
+{
+  XSetWindowAttributes attrs;
+  Display *display = win->GetXDisplay();
+  Window xwin = win->GetXWindow();
+  
+  if (cursor) {
+    attrs.cursor = cursor->GetXCursor(display); /* MATTHEW: [4] Use display-specific */
+    win->currentWindowCursor = None;
+  } else {
+    // Restore old cursor
+    if (win->wx_cursor)
+      /* MATTHEW: [4] Use display-specific */
+      attrs.cursor = win->wx_cursor->GetXCursor(display); 
+    else
+      attrs.cursor = None;
+    win->currentWindowCursor = 0;
+  }
+
+  if (xwin)
+    XChangeWindowAttributes(display, xwin, CWCursor, &attrs);
+
+  for(wxChildNode *node = win->GetChildren()->First (); node; node = node->Next()) {
+    wxWindow *child = (wxWindow *)node->Data();
+    wxXSetNoCursor (child, cursor);
+  }
+}
 
 // Helper function
 static void 
@@ -1390,7 +1011,6 @@ wxXSetBusyCursor (wxWindow * win, wxCursor * cursor)
 {
   Display *display = win->GetXDisplay();
 
-#ifdef wx_motif
   Window xwin = XtWindow((Widget)win->handle);
   XSetWindowAttributes attrs;
 
@@ -1408,29 +1028,15 @@ wxXSetBusyCursor (wxWindow * win, wxCursor * cursor)
   }
   if (xwin)
     XChangeWindowAttributes (display, xwin, CWCursor, &attrs);
-#endif
-#ifdef wx_xview
-  if (cursor)
-    SetXCursor(win, cursor);
-  else
-    SetXCursor(win, win->wx_cursor);
-#endif
 
-  XFlush (display);
-
-  // Forget old cursor if we're resetting
-  //  if (!cursor)
-  //    win->currentWindowCursor = 0;
-
-  for(wxChildNode *node = win->GetChildren()->First (); node; node = node->Next())
-    {
-      wxWindow *child = (wxWindow *) node->Data ();
-      if (wxSubType (child->__type, wxTYPE_FRAME) ||
-	  wxSubType (child->__type, wxTYPE_CANVAS) ||
-	  wxSubType (child->__type, wxTYPE_PANEL) ||
-	  wxSubType (child->__type, wxTYPE_TEXT_WINDOW))
-	wxXSetBusyCursor (child, cursor);
-    }
+  for(wxChildNode *node = win->GetChildren()->First (); node; node = node->Next()) {
+    wxWindow *child = (wxWindow *) node->Data ();
+    if (wxSubType (child->__type, wxTYPE_FRAME) ||
+	wxSubType (child->__type, wxTYPE_DIALOG_BOX))
+      wxXSetBusyCursor (child, cursor);
+    else
+      wxXSetNoCursor (child, cursor);
+  }
 }
 
 extern int wxGetBusyState();
@@ -1444,15 +1050,13 @@ wxBeginBusyCursor (wxCursor * cursor)
   wxBusyCursorCount++;
   wxSetBusyState(wxBusyCursorCount);
 
-  if (wxBusyCursorCount == 1)
-    {
-      for(wxChildNode *node = wxTopLevelWindows(NULL)->First (); node; node = node->Next())
-	{
-	  wxWindow *win = (wxWindow *) node->Data ();
-	  if (win && node->IsShown())
-	    wxXSetBusyCursor (win, cursor);
-	}
+  if (wxBusyCursorCount == 1) {
+    for(wxChildNode *node = wxTopLevelWindows(NULL)->First (); node; node = node->Next()) {
+      wxWindow *win = (wxWindow *) node->Data ();
+      if (win && node->IsShown())
+	wxXSetBusyCursor(win, cursor);
     }
+  }
 }
 
 // Restore cursor to normal
@@ -1465,15 +1069,13 @@ wxEndBusyCursor (void)
   --wxBusyCursorCount;
   wxSetBusyState(wxBusyCursorCount);
     
-  if (wxBusyCursorCount == 0)
-    {
-      for(wxChildNode *node = wxTopLevelWindows(NULL)->First (); node; node = node->Next())
-	{
-	  wxWindow *win = (wxWindow *) node->Data ();
-	  if (win && node->IsShown())
-	    wxXSetBusyCursor (win, NULL);
-	}
+  if (wxBusyCursorCount == 0) {
+    for(wxChildNode *node = wxTopLevelWindows(NULL)->First (); node; node = node->Next()) {
+      wxWindow *win = (wxWindow *) node->Data ();
+      if (win && node->IsShown())
+	wxXSetBusyCursor (win, NULL);
     }
+  }
 }
 
 // TRUE if we're between the above two calls

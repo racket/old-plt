@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.7 1998/03/07 00:36:28 mflatt Exp $
+ * $Id: Window.cc,v 1.8 1998/04/10 15:07:22 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -88,7 +88,7 @@ wxWindow::wxWindow(void)
     fg     = wxBLACK;
     bg     = wxGREY;
     cmap   = wxAPP_COLOURMAP;
-    cursor = wxSTANDARD_CURSOR;
+    cursor = NULL /* wxSTANDARD_CURSOR */;
     font   = wxSYSTEM_FONT;
     // misc info
     allow_dclicks    = FALSE;
@@ -445,17 +445,18 @@ void wxWindow::SetBackgroundColour(wxColour *col)
 
 wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
 {
-    if (!X->handle) // forbid, if no widget associated
-	return NULL;
-
-    wxCursor *previous = cursor;
-
-    if (new_cursor && new_cursor->Ok()) {
-	cursor = new_cursor;
-	if (!wxIsBusy())
-	  XtVaSetValues(X->handle, XtNcursor, GETCURSOR(new_cursor), NULL);
-    }
-    return previous;
+  if (!X->handle) // forbid, if no widget associated
+    return NULL;
+  
+  wxCursor *previous = cursor;
+  
+  if (!new_cursor || (new_cursor && new_cursor->Ok())) {
+    cursor = new_cursor;
+    if (!wxIsBusy())
+      XtVaSetValues(X->handle, XtNcursor, new_cursor ? GETCURSOR(new_cursor) : None, NULL);
+  }
+  
+  return previous;
 }
 
 // merged with DC-method: void wxWindow::SetFont(wxFont *new_font)

@@ -657,16 +657,11 @@ static Scheme_Object *wxsGlobalwxIsBusy(int n,  Scheme_Object *p[])
 static Scheme_Object *wxsGlobalwxBeginBusyCursor(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxCursor* x0;
 
   
-  if (n > 0) {
-    x0 = objscheme_unbundle_wxCursor(p[0], "::wx:begin-busy-cursor", 0);
-  } else
-    x0 = wxHOURGLASS_CURSOR;
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", "wx:begin-busy-cursor");
-  wxBeginBusyCursor(x0);
+  
+  wxBeginBusyCursor();
 
   
   
@@ -1802,7 +1797,7 @@ void objscheme_setup_wxsGlobal(void *env)
   scheme_install_xc_global("wx:bell", scheme_make_prim_w_arity(wxsGlobalwxBell, "wx:bell", 0, 0), env);
   scheme_install_xc_global("wx:end-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxEndBusyCursor, "wx:end-busy-cursor", 0, 0), env);
   scheme_install_xc_global("wx:is-busy?", scheme_make_prim_w_arity(wxsGlobalwxIsBusy, "wx:is-busy?", 0, 0), env);
-  scheme_install_xc_global("wx:begin-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxBeginBusyCursor, "wx:begin-busy-cursor", 0, 1), env);
+  scheme_install_xc_global("wx:begin-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxBeginBusyCursor, "wx:begin-busy-cursor", 0, 0), env);
 #if  USE_PRINTER
   scheme_install_xc_global("wx:set-post-script-level-2", scheme_make_prim_w_arity(wxsGlobalwxSetLevel2Ok, "wx:set-post-script-level-2", 1, 1), env);
 #endif

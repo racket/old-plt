@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.1.1.1 1997/12/22 16:11:59 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.2 1998/04/08 12:35:38 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -234,38 +234,17 @@ void wxFindMaxSize(HWND wnd, RECT *rect)
 
 }
 
-/*
-// Not currently used
-void wxConvertDialogToPixels(wxWindow *control, int *x, int *y)
-{
-  if (control->window_parent && control->window_parent->is_dialog)
-  {
-    DWORD word = GetDialogBaseUnits();
-    int xs = LOWORD(word);
-    int ys = HIWORD(word);
-    *x = (int)(*x * xs/4);
-    *y = (int)(*y * ys/8);
-  }
-  else
-  {
-    *x = *x;
-    *y = *y;
-  }
-}
-*/
-
 int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 
   // If not in edit mode (or has been removed from parent), call the default proc.
   wxPanel *panel = (wxPanel *)item->GetParent();
-
+  
   if (panel && !item->isBeingDeleted) {
-   
-  /* Check PreOnChar or PreOnEvent */
-  switch (message) {
-	case WM_RBUTTONDOWN:
-	case WM_RBUTTONUP:
+    /* Check PreOnChar or PreOnEvent */
+    switch (message) {
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
     case WM_RBUTTONDBLCLK:
     case WM_MBUTTONDOWN:
     case WM_MBUTTONUP:
@@ -273,145 +252,133 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
     case WM_LBUTTONDBLCLK:
-	case WM_MOUSEMOVE:
-    	{
-			int et;
+    case WM_MOUSEMOVE:
+      {
+	int et;
 	switch(message) {
         case WM_RBUTTONDOWN:
-		  et = wxEVENT_TYPE_RIGHT_DOWN; break;
+	  et = wxEVENT_TYPE_RIGHT_DOWN; break;
         case WM_RBUTTONUP:
-		  et = wxEVENT_TYPE_RIGHT_UP; break;
+	  et = wxEVENT_TYPE_RIGHT_UP; break;
         case WM_RBUTTONDBLCLK:
-		  et = wxEVENT_TYPE_RIGHT_DCLICK; break;    
+	  et = wxEVENT_TYPE_RIGHT_DCLICK; break;    
         case WM_MBUTTONDOWN:
-		  et = wxEVENT_TYPE_MIDDLE_DOWN; break;
+	  et = wxEVENT_TYPE_MIDDLE_DOWN; break;
         case WM_MBUTTONUP:
-		  et = wxEVENT_TYPE_MIDDLE_UP; break;
+	  et = wxEVENT_TYPE_MIDDLE_UP; break;
         case WM_MBUTTONDBLCLK:
-		  et = wxEVENT_TYPE_MIDDLE_DCLICK; break;
+	  et = wxEVENT_TYPE_MIDDLE_DCLICK; break;
         case WM_LBUTTONDOWN:
-		  et = wxEVENT_TYPE_LEFT_DOWN; break;
+	  et = wxEVENT_TYPE_LEFT_DOWN; break;
         case WM_LBUTTONUP:
-		  et = wxEVENT_TYPE_LEFT_UP; break;
+	  et = wxEVENT_TYPE_LEFT_UP; break;
         case WM_LBUTTONDBLCLK:
-		  et = wxEVENT_TYPE_LEFT_DCLICK; break;
-	    case WM_MOUSEMOVE:
-		  et = wxEVENT_TYPE_MOTION; break;
-    	  }
+	  et = wxEVENT_TYPE_LEFT_DCLICK; break;
+	case WM_MOUSEMOVE:
+	  et = wxEVENT_TYPE_MOTION; break;
+	}
+	
+	int x = (int)LOWORD(lParam);
+	int y = (int)HIWORD(lParam);
+	int flags = wParam;
+	
+	wxMouseEvent *_event = new wxMouseEvent(et);
+	wxMouseEvent &event = *_event;
+	
+	event.x = (float)x;
+	event.y = (float)y;
+	
+	event.shiftDown = (flags & MK_SHIFT);
+	event.controlDown = (flags & MK_CONTROL);
+	event.leftDown = (flags & MK_LBUTTON);
+	event.middleDown = (flags & MK_MBUTTON);
+	event.rightDown = (flags & MK_RBUTTON);
+	event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+	event.eventObject = item;
 
-		int x = (int)LOWORD(lParam);
-            int y = (int)HIWORD(lParam);
-            int flags = wParam;
-
-		  wxMouseEvent *_event = new wxMouseEvent(et);
-  wxMouseEvent &event = *_event;
-
-  event.x = (float)x;
-  event.y = (float)y;
-
-  event.shiftDown = (flags & MK_SHIFT);
-  event.controlDown = (flags & MK_CONTROL);
-  event.leftDown = (flags & MK_LBUTTON);
-  event.middleDown = (flags & MK_MBUTTON);
-  event.rightDown = (flags & MK_RBUTTON);
-  event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
-  event.eventObject = item;
-
-  if (item->CallPreOnEvent(item, &event))
+	if (item->CallPreOnEvent(item, &event))
 	  return 0;
-		}
+      }
 
-	case WM_KEYDOWN:
+    case WM_KEYDOWN:
     case WM_CHAR: // Always an ASCII character
-		{
-			int id = wParam;
-			int tempControlDown = FALSE;
-
-    if (message == WM_CHAR) {
-		if ((id > 0) && (id < 27))
-    {
-      switch (id)
       {
-        case 13:
-        {
-          id = WXK_RETURN;
-          break;
-        }
-        case 8:
-        {
-          id = WXK_BACK;
-          break;
-        }
-        case 9:
-        {
-          id = WXK_TAB;
-          break;
-        }
-        default:
-        {
-          tempControlDown = TRUE;
-          id = id + 96;
-        }
-      } 
-		} else
-       if ((id = wxCharCodeMSWToWX(wParam)) == 0)
-      id = -1;
+	int id = wParam;
+	int tempControlDown = FALSE;
 
-			wxKeyEvent *_event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
-    wxKeyEvent &event = *_event;
+	if (message == WM_CHAR) {
+	  if ((id > 0) && (id < 27)) {
+	    switch (id) {
+	    case 13:
+	      id = WXK_RETURN;
+	      break;
+	    case 8:
+	      id = WXK_BACK;
+	      break;
+	    case 9:
+	      id = WXK_TAB;
+	      break;
+	    default:
+	      tempControlDown = TRUE;
+	      id = id + 96;
+	    } 
+	  } else
+	    if ((id = wxCharCodeMSWToWX(wParam)) == 0)
+	      id = -1;
 
-    if (::GetKeyState(VK_SHIFT) >> 1)
-      event.shiftDown = TRUE;
-    if (tempControlDown || (::GetKeyState(VK_CONTROL) >> 1))
-      event.controlDown = TRUE;
-    if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
-      event.altDown = TRUE;
+	  wxKeyEvent *_event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+	  wxKeyEvent &event = *_event;
+	  
+	  if (::GetKeyState(VK_SHIFT) >> 1)
+	    event.shiftDown = TRUE;
+	  if (tempControlDown || (::GetKeyState(VK_CONTROL) >> 1))
+	    event.controlDown = TRUE;
+	  if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
+	    event.altDown = TRUE;
 
-    event.eventObject = item;
-    event.keyCode = id;
-    event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
+	  event.eventObject = item;
+	  event.keyCode = id;
+	  event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-    POINT pt ;
-    GetCursorPos(&pt) ;
-    RECT rect ;
-    GetWindowRect(item->handle,&rect) ;
-    pt.x -= rect.left ;
-    pt.y -= rect.top ;
-    event.x = pt.x;
-	event.y = pt.y;
+	  POINT pt ;
+	  GetCursorPos(&pt) ;
+	  RECT rect ;
+	  GetWindowRect(item->handle,&rect) ;
+	  pt.x -= rect.left ;
+	  pt.y -= rect.top ;
+	  event.x = pt.x;
+	  event.y = pt.y;
 
-	if (item->CallPreOnChar(item, &event))
-      return FALSE;
-  }
-		}
-  }
-
-  // Special edit control processing
-  if (!panel->GetUserEditMode() && (item->__type == wxTYPE_TEXT))
-  {
-    switch (message)
-    {
-      case WM_GETDLGCODE:
-      {
-        if (item->GetWindowStyleFlag() & wxPROCESS_ENTER)
-          return DLGC_WANTALLKEYS;
-        break;
+	  if (item->CallPreOnChar(item, &event))
+	    return FALSE;
+	}
       }
-      case WM_CHAR: // Always an ASCII character
-      {
-        if (wParam == VK_RETURN)
-        {
-          wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_TEXT_ENTER_COMMAND);
-          event->commandString = ((wxText *)item)->GetValue();
-          event->eventObject = item;
-		  item->ProcessCommand(*event);
-          return 0;
-        }
-      }
-      break;
     }
-  }
 
+    // Special edit control processing
+    if (!panel->GetUserEditMode() && (item->__type == wxTYPE_TEXT)) {
+      switch (message)
+	{
+	case WM_GETDLGCODE:
+	  {
+	    if (item->GetWindowStyleFlag() & wxPROCESS_ENTER)
+	      return DLGC_WANTALLKEYS;
+	    break;
+	  }
+	case WM_CHAR: // Always an ASCII character
+	  {
+	    if (wParam == VK_RETURN)
+	      {
+		wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_TEXT_ENTER_COMMAND);
+		event->commandString = ((wxText *)item)->GetValue();
+		event->eventObject = item;
+		item->ProcessCommand(*event);
+		return 0;
+	      }
+	  }
+	break;
+	}
+    }
   }
 
   return 1;

@@ -285,7 +285,7 @@
 			   (annotate super-val)))
 		    (z:class*-form-super-names expr)
 		    (z:class*-form-super-exprs expr))
-		 ,(optarglist->ilist (z:class*-form-init-vars expr))
+		 ,(paroptarglist->ilist (z:class*-form-init-vars expr))
 		 ,@(map
 		     (lambda (clause)
 		       (cond

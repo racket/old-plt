@@ -173,6 +173,7 @@
 	  (set! redo-regions? #f)))
 
       (define/private (ready-regions)
+	(compute-sizes)
 	(unless (and regions (not redo-regions?)) 
 	  (setup-regions)))
 

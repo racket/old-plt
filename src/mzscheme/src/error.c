@@ -461,6 +461,10 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
     name = ((Scheme_Closed_Primitive_Proc *)proc)->name;
     mina = ((Scheme_Closed_Primitive_Proc *)proc)->mina;
     maxa = ((Scheme_Closed_Primitive_Proc *)proc)->maxa;
+  } else if (SAME_TYPE(SCHEME_TYPE(proc), scheme_case_closure_type)) {
+    name = scheme_get_proc_name(proc, NULL, 1);
+    mina = -2;
+    maxa = 0;
   } else {
     Scheme_Closure_Compilation_Data *data;
     
@@ -470,7 +474,7 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
       --mina;
       maxa = -1;
     }
-    name = "#<procedure>";
+    name = scheme_get_proc_name(proc, NULL, 1);
   }
 
   return make_arity_expect_string(name, mina, maxa, argc, argv);

@@ -1,16 +1,19 @@
 
-#ifdef _MSC_VER
-#pragma optimize("p", on)
-#endif
+/* Optimization someimtes causes asame problem: d is represented in an
+   extended format instead of a `double'. We don't want to turn off
+   floatng-point optimizations in the rest of the program, so we use a
+   little function to defeat the optimization: */
+
+static int IS_FLOAT_INF(FP_TYPE d)
+{
+  return MZ_IS_POS_INFINITY(d);
+}
 
 FP_TYPE SCHEME_BIGNUM_TO_FLOAT_INFO(const Scheme_Object *n, int skip, int *_skipped)
 {
   int nl, skipped;
   bigdig *na;
   FP_TYPE d;
-#ifdef MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION
-  FP_TYPE *dp;
-#endif
 
   nl = SCHEME_BIGLEN(n);
   na = SCHEME_BIGDIG(n) + nl;
@@ -21,26 +24,12 @@ FP_TYPE SCHEME_BIGNUM_TO_FLOAT_INFO(const Scheme_Object *n, int skip, int *_skip
     return 0.0;
   else
     nl -= skip;
-
-  /* Optimization someimtes causes asame problem:
-     d is represented in an extended format instead of
-	 a `double'. We don't want to turn off floatng-point
-	 optimizations in the rest of the program, so if there's
-	 no #pragma we use a hack here. */
-#ifdef MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION
-  if (SAME_TYPE(scheme_false_type, SCHEME_TYPE(scheme_false)))
-    dp = &d;
-  else
-    dp = NULL;
-#endif
+	
   d = 0;
   while (nl--) {
     d *= (FP_TYPE)BIG_RADIX;
     d += *(--na);
-#ifdef MUST_DEFEAT_FLOAT_REGISTER_OPTIMIZATION
-    d = *dp;
-#endif
-    if (MZ_IS_POS_INFINITY(d))
+    if (IS_FLOAT_INF(d))
       break;
     --skipped;
   }
@@ -53,10 +42,6 @@ FP_TYPE SCHEME_BIGNUM_TO_FLOAT_INFO(const Scheme_Object *n, int skip, int *_skip
 
   return d;
 }
-
-#ifdef _MSC_VER
-#pragma optimize("p", off)
-#endif
 
 FP_TYPE SCHEME_BIGNUM_TO_FLOAT(const Scheme_Object *n)
 {

@@ -166,12 +166,13 @@
 		     (inherit get-menu-bar set-icon)
                      (public 
                        [send-message 
-                        (lambda () (send-msg))])
+                        (lambda () 
+                          (send-msg))])
                      (override
 		       [can-close?
 			(lambda ()
 			  (and (send (get-menu-bar) is-enabled?)
-			       (or (not (send e is-modified?))
+			       (or (not (send message-editor is-modified?))
 				   (eq? 'yes
 					(message-box
 					 "Warning"
@@ -196,7 +197,7 @@
 		       (lambda (b e) (cancel-button-todo))))
 	(define cancel-button-todo void)
 	(define c (make-object editor-canvas% f))
-	(define e (make-object text%))
+	(define message-editor (make-object text%))
 	(define enclosure-list (make-object hierarchical-list% f))
 
 	(define (enable on? refocus cancel-proc)
@@ -209,9 +210,6 @@
 	      (send refocus focus))
 	    w))
 
-	(define (clean-filename name)
-	  (regexp-replace* "[ /:\\\"'`?*%<>$|]" name "_"))
-
 	(define (parse-server-name s)
 	  (let ([m (regexp-match "^([^:]*):([^:]*)$" s)])
 	    (if (and m (string->number (caddr m)))
@@ -222,84 +220,32 @@
 	  (parse-server-name SMTP-SERVER))
 
 	(define (send-msg)
-	  (let ([t (lf->crlf (send e get-text))]
-		[re (regexp (format "~a~a" SEPARATOR crlf))])
-	    (let ([m (regexp-match-positions re t)])
-	      (if m
-		  (let ([header (string-append (substring t 0 (caar m)) empty-header)]
-			[body (substring t (cdar m) (string-length t))])
-		    (validate-header header)
-		    (let* ([to* (sm-extract-addresses (extract-field "To" header))]
-			   [to (map car to*)]
-			   [cc* (sm-extract-addresses (extract-field "CC" header))]
-			   [cc (map car cc*)]
-			   [bcc* (sm-extract-addresses (extract-field "BCC" header))]
-			   [bcc (map car bcc*)]
-			   [from (let ([l (extract-addresses MAIL-FROM 'full)])
-				   (unless (= 1 (length l))
-				     (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
-				   (car l))]
-                           [simple-from (let ([l (extract-addresses MAIL-FROM 'address)])
-                                          (unless (= 1 (length l))
-                                            (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
-                                          (car l))]
-			   [subject (extract-field "Subject" header)]
-			   [prop-header (remove-fields '("To" "CC" "BCC" "Subject") header)]
-			   [std-header (standard-message-header from to cc bcc subject)]
-			   [new-header (append-headers std-header prop-header)]
-			   [tos (map cdr (append to* cc* bcc*))]
-			   [enclosures (map (lambda (i) (send i user-data)) 
-					    (send enclosure-list get-items))])
-
-		      (let-values ([(new-header body) (enclose new-header body enclosures)])
-			(when SAVE-SENT
-			  (let* ([chop (lambda (s)
-					 (let ([l (string-length s)])
-					   (clean-filename (substring s 0 (min l 10)))))]
-				 [to (if (null? tos) "noone" (chop (car tos)))]
-				 [subj (if subject (chop subject) "nosubj")])
-			    (let loop ([n 1])
-			      (let ([fn (build-path SAVE-SENT (format "~a_~a_~a" to subj n))])
-				(if (file-exists? fn)
-				    (loop (add1 n))
-				    (with-output-to-file fn
-				      (lambda ()
-					(display (crlf->lf header))
-					(display (crlf->lf body)))))))))
-			(as-background
-			 enable
-			 (lambda (break-bad break-ok)
-			   (send f set-status-text "Sending mail...")
-			   (with-handlers ([void (lambda (x)
-						   (send f set-status-text "")
-						   (raise x))])
-			     (break-ok)
-			     (smtp-sending-end-of-message break-bad)
-			     (smtp-send-message smtp-server-to-use
-						simple-from
-                                                tos
-						new-header
-						(split-crlf body)
-						smtp-port-to-use)))
-			 (lambda ()
-			   (let loop ()
-			     (when (eq? (message-box "Save?" "Save message before killing?" #f '(yes-no))
-					'yes)
-			       (let ([f (put-file)])
-				 (if f
-				     (send e save-file f 'text)
-				     (loop)))))))))
-		    (send f on-close)
-		    (send f show #f))
-		  (message-box
-		   "Error"
-		   (format "Lost \"~a\" separator" SEPARATOR))))))
+          (send-message
+           (lf->crlf (send message-editor get-text))
+           smtp-server-to-use
+           smtp-port-to-use
+           (map (lambda (i) (send i user-data)) 
+                (send enclosure-list get-items))
+           enable
+           (lambda () (send f set-status-text "Sending mail..."))
+           (lambda () (send f set-status-text ""))
+           (lambda ()
+             (send f on-close)
+             (send f show #f))
+           (lambda ()
+             (let loop ()
+               (when (eq? (message-box "Save?" "Save message before killing?" #f '(yes-no))
+                          'yes)
+                 (let ([f (put-file)])
+                   (if f
+                       (send message-editor save-file f 'text)
+                       (loop))))))))
 
         ;; enq-msg : -> void
         ;; enqueues a message for a later send
 	(define (enq-msg)
           (let ([filename (get-fresh-queue-filename)])
-            (send e save-file filename 'text))
+            (send message-editor save-file filename 'text))
           
           (when (send f can-close?)
             (send f on-close)
@@ -325,7 +271,7 @@
 	 enclosures)
 	
 	(make-object menu-item% "Save" file-menu 
-		     (lambda (i ev) (send e save-file #f 'text)))
+		     (lambda (i ev) (send message-editor save-file #f 'text)))
 	(make-object menu-item% "Send" file-menu (lambda (i ev) (send-msg)))
         (make-object menu-item% "Enqueue message" file-menu (lambda (i ev) (enq-msg)))
 	(make-object separator-menu-item% file-menu)
@@ -413,7 +359,7 @@
 	     (send i set-shortcut #f)))
 	 (send edit-menu get-items))
 
-	(let ([km (send e get-keymap)])
+	(let ([km (send message-editor get-keymap)])
 	  (send km add-function "reflow-paragraph"
 		(lambda (e ev) (reflow-paragraph 
 				e
@@ -432,43 +378,43 @@
 	  (send km map-function ":m:return" "send-message")
 	  (send km map-function ":a:return" "send-message"))
 
-	(make-fixed-width c e #t return-bitmap)
-	(send e set-paste-text-only #t)
-	(send e set-max-undo-history 5000) ;; Many undos!
-	(send c set-editor e)
+	(make-fixed-width c message-editor #t return-bitmap)
+	(send message-editor set-paste-text-only #t)
+	(send message-editor set-max-undo-history 5000) ;; Many undos!
+	(send c set-editor message-editor)
 
 	(if file
 					; Resume a composition...
-	    (send e load-file file)
+	    (send message-editor load-file file)
 					; Build message skeleton
 	    (begin
-	      (send e insert "To: ")
-	      (send e insert (crlf->lf to))
-	      (send e insert #\newline)
+	      (send message-editor insert "To: ")
+	      (send message-editor insert (crlf->lf to))
+	      (send message-editor insert #\newline)
 	      (unless (string=? cc "")
-		(send e insert "CC: ")
-		(send e insert (crlf->lf cc))
-		(send e insert #\newline))
-	      (send e insert "Subject: ")
-	      (send e insert (crlf->lf subject))
-	      (send e insert #\newline)
-	      (send e insert (crlf->lf other-headers))
-	      (send e insert "X-Mailer: SirMail under MrEd ")
-	      (send e insert (version))
-	      (send e insert " (")
-	      (send e insert (system-library-subpath))
-	      (send e insert ")")
-	      (send e insert #\newline)
-	      (send e insert SEPARATOR)
-	      (send e insert #\newline)
-	      (let ([message-start (send e last-position)])
-		(send e insert (crlf->lf body))
+		(send message-editor insert "CC: ")
+		(send message-editor insert (crlf->lf cc))
+		(send message-editor insert #\newline))
+	      (send message-editor insert "Subject: ")
+	      (send message-editor insert (crlf->lf subject))
+	      (send message-editor insert #\newline)
+	      (send message-editor insert (crlf->lf other-headers))
+	      (send message-editor insert "X-Mailer: SirMail under MrEd ")
+	      (send message-editor insert (version))
+	      (send message-editor insert " (")
+	      (send message-editor insert (system-library-subpath))
+	      (send message-editor insert ")")
+	      (send message-editor insert #\newline)
+	      (send message-editor insert SEPARATOR)
+	      (send message-editor insert #\newline)
+	      (let ([message-start (send message-editor last-position)])
+		(send message-editor insert (crlf->lf body))
 		(if (string=? to "")
-		    (send e set-position (send e paragraph-end-position 0))
-		    (send e set-position message-start)))))
+		    (send message-editor set-position (send message-editor paragraph-end-position 0))
+		    (send message-editor set-position message-start)))))
 
-	(send e set-modified #f)
-	(send e scroll-to-position 0)
+	(send message-editor set-modified #f)
+	(send message-editor scroll-to-position 0)
 	(send c focus)
 
 	(send f create-status-line)
@@ -476,6 +422,83 @@
 	(send f show #t)
         f)
 
+      
+      ;; clean-filename : string -> string
+      ;; builds a filename from a name by sripping out bad chars.
+      (define (clean-filename name)
+        (regexp-replace* "[ /:\\\"'`?*%<>$|]" name "_"))
+      
+      (define (send-message message-str
+                            smtp-server
+                            smtp-port
+                            enclosures
+                            enable 
+                            status-message-starting
+                            status-message-clear
+                            status-done
+                            save-before-killing)
+        (let ([re (regexp (format "~a~a" SEPARATOR crlf))])
+          (let ([m (regexp-match-positions re message-str)])
+            (if m
+                (let ([header (string-append (substring message-str 0 (caar m)) empty-header)]
+                      [body (substring message-str (cdar m) (string-length message-str))])
+                  (validate-header header)
+                  (let* ([to* (sm-extract-addresses (extract-field "To" header))]
+                         [to (map car to*)]
+                         [cc* (sm-extract-addresses (extract-field "CC" header))]
+                         [cc (map car cc*)]
+                         [bcc* (sm-extract-addresses (extract-field "BCC" header))]
+                         [bcc (map car bcc*)]
+                         [from (let ([l (extract-addresses MAIL-FROM 'full)])
+                                 (unless (= 1 (length l))
+                                   (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
+                                 (car l))]
+                         [simple-from (let ([l (extract-addresses MAIL-FROM 'address)])
+                                        (unless (= 1 (length l))
+                                          (error 'send "bad mail-from configuration: ~a" MAIL-FROM))
+                                        (car l))]
+                         [subject (extract-field "Subject" header)]
+                         [prop-header (remove-fields '("To" "CC" "BCC" "Subject") header)]
+                         [std-header (standard-message-header from to cc bcc subject)]
+                         [new-header (append-headers std-header prop-header)]
+                         [tos (map cdr (append to* cc* bcc*))])
+                    
+                    (let-values ([(new-header body) (enclose new-header body enclosures)])
+                      (when SAVE-SENT
+                        (let* ([chop (lambda (s)
+                                       (let ([l (string-length s)])
+                                         (clean-filename (substring s 0 (min l 10)))))]
+                               [to (if (null? tos) "noone" (chop (car tos)))]
+                               [subj (if subject (chop subject) "nosubj")])
+                          (let loop ([n 1])
+                            (let ([fn (build-path SAVE-SENT (format "~a_~a_~a" to subj n))])
+                              (if (file-exists? fn)
+                                  (loop (add1 n))
+                                  (with-output-to-file fn
+                                    (lambda ()
+                                      (display (crlf->lf header))
+                                      (display (crlf->lf body)))))))))
+                      (as-background
+                       enable
+                       (lambda (break-bad break-ok)
+                         (status-message-starting)
+                         (with-handlers ([void (lambda (x)
+                                                 (status-message-clear)
+                                                 (raise x))])
+                           (break-ok)
+                           (smtp-sending-end-of-message break-bad)
+                           (smtp-send-message smtp-server
+                                              simple-from
+                                              tos
+                                              new-header
+                                              (split-crlf body)
+                                              smtp-port)))
+                       save-before-killing)))
+                  (status-done))
+                (message-box
+                 "Error"
+                 (format "Lost \"~a\" separator" SEPARATOR))))))
+      
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Meta-Q Reflowing                                      ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

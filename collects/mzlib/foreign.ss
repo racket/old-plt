@@ -57,8 +57,7 @@
 
 (provide* ctype-sizeof ctype-alignof malloc free end-stubborn-change
           cpointer? (unsafe ptr-ref) (unsafe ptr-set!) ptr-equal?
-          ctype? make-ctype make-cstruct-type register-finalizer
-          make-sized-byte-string)
+          ctype? make-ctype make-cstruct-type make-sized-byte-string)
 (provide* _void _int8 _uint8 _int16 _uint16 _int32 _uint32 _int64 _uint64
           _byte _word _int _uint _fixint _ufixint _long _ulong _fixnum _ufixnum
           _float _double _double*
@@ -1245,6 +1244,16 @@
                                  (object-name (caar rs)) (caar rs)))
                regexp-replace regexp-replace*)
              (caar rs) str (cadar rs)) (cdr rs)))))
+
+;; A facility for running finalizers using executors.  #%foreign has a C-based
+;; version that uses finalizers, but that leads to calling Scheme from the GC
+;; which is not a good idea.
+(define killer-executor (make-will-executor))
+(define killer-thread
+  (thread (lambda () (let loop () (will-execute killer-executor) (loop)))))
+(provide (rename register-finalizer* register-finalizer))
+(define (register-finalizer* obj finalizer)
+  (will-register killer-executor obj finalizer))
 
 (define-unsafer unsafe!)
 )

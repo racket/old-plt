@@ -206,10 +206,10 @@
 	  ; set-size:
 	  [set-size
 	    (lambda (x y width height)
-	      (if (and (= x (get-x))
-		       (= y (get-y))
-		       (= width (get-width))
-		       (= height (get-height)))
+	      (if (and (same-dimension? x (get-x))
+		       (same-dimension? y (get-y))
+		       (same-dimension? width (get-width))
+		       (same-dimension? height (get-height)))
 		  (begin
 		    (mred:debug:printf 'container-panel-set-size
 		      "container-panel-set-size: redrawing children")

@@ -69,6 +69,13 @@ static void COLLECT(OFFSET_ARG)
     unsigned long source;
 #endif
 
+#if CHECK_SKIP_MARK_AT_FIRST
+    if (local_collect_stack_count == collect_start_disable_mark_skip) {
+      skip_mark_at_first = NULL;
+      collect_start_disable_mark_skip = 0;
+    }
+#endif
+
 #if ALLOW_TRACE_COUNT
     if (local_collect_stack_count == collect_start_tracing) {
       void *tracing_for_object;
@@ -150,108 +157,111 @@ static void COLLECT(OFFSET_ARG)
 #ifndef FOLLOW_INTERIOR
 	      if (p == start)
 #endif
-	      {
-		int bpos;
-		unsigned char bit;
-#if DISTINGUISH_FREE_FROM_UNMARKED
-		unsigned char fbit;
+#if CHECK_SKIP_MARK_AT_FIRST
+		if (!skip_mark_at_first || !skip_mark_at_first((void *)p, size))
 #endif
-		unsigned char freebyte;
+		  {
+		    int bpos;
+		    unsigned char bit;
+#if DISTINGUISH_FREE_FROM_UNMARKED
+		    unsigned char fbit;
+#endif
+		    unsigned char freebyte;
 	
-		MARK_STATISTIC(num_blockaligns_stat++);
+		    MARK_STATISTIC(num_blockaligns_stat++);
 
-		bpos = POS_TO_UNMARK_INDEX(pos);
-		bit = POS_TO_UNMARK_BIT(pos);
+		    bpos = POS_TO_UNMARK_INDEX(pos);
+		    bit = POS_TO_UNMARK_BIT(pos);
 #if DISTINGUISH_FREE_FROM_UNMARKED
-		fbit = POS_TO_FREE_BIT(pos);
+		    fbit = POS_TO_FREE_BIT(pos);
 #endif
 
-		freebyte = block->free[bpos];
+		    freebyte = block->free[bpos];
 		
-		if (NOT_MARKED(freebyte & bit) && _NOT_FREE(freebyte & fbit)) {
-		  MARK_STATISTIC(num_blockmarks_stat++);
+		    if (NOT_MARKED(freebyte & bit) && _NOT_FREE(freebyte & fbit)) {
+		      MARK_STATISTIC(num_blockmarks_stat++);
 #if ALLOW_TRACE_COUNT
-		  if (collecting_with_trace_count) {
-		    GC_count_tracer count_tracer;
-		    if ((count_tracer = common_sets[block->set_no]->count_tracer)) {
-		      void *o;
+		      if (collecting_with_trace_count) {
+			GC_count_tracer count_tracer;
+			if ((count_tracer = common_sets[block->set_no]->count_tracer)) {
+			  void *o;
 #ifdef FOLLOW_INTERIOR
-		      p = start;
+			  p = start;
 #endif
-		      o = INT_TO_PTR(p);
-		      if (block->atomic) {
-			void *s = o;
+			  o = INT_TO_PTR(p);
+			  if (block->atomic) {
+			    void *s = o;
 #if PAD_BOUNDARY_BYTES
-			s = PAD_FORWARD(s);
+			    s = PAD_FORWARD(s);
 #endif
-			count_tracer(s, size); 
-			mem_traced += size;
-		      } else {
-			/* Push new trace onto the stack: */
-			PUSH_WAIT_TRACE(collect_start_tracing);
-			PUSH_WAIT_TRACE(size);
-			PUSH_WAIT_TRACE(count_tracer);
-			PUSH_WAIT_TRACE(o);
-			collect_start_tracing = local_collect_stack_count + COLLECT_STACK_FRAME_SIZE;
+			    count_tracer(s, size); 
+			    mem_traced += size;
+			  } else {
+			    /* Push new trace onto the stack: */
+			    PUSH_WAIT_TRACE(collect_start_tracing);
+			    PUSH_WAIT_TRACE(size);
+			    PUSH_WAIT_TRACE(count_tracer);
+			    PUSH_WAIT_TRACE(o);
+			    collect_start_tracing = local_collect_stack_count + COLLECT_STACK_FRAME_SIZE;
+			  }
+			} else
+			  collect_trace_count += size;
 		      }
-		    } else
-		      collect_trace_count += size;
-		  }
 #endif
 #if ALLOW_TRACE_PATH
-		  if (collecting_with_trace_path) {
-		    GC_path_tracer path_tracer;
-		    if ((path_tracer = common_sets[block->set_no]->path_tracer)) {
-		      void *o;
+		      if (collecting_with_trace_path) {
+			GC_path_tracer path_tracer;
+			if ((path_tracer = common_sets[block->set_no]->path_tracer)) {
+			  void *o;
 #ifdef FOLLOW_INTERIOR
-		      p = start;
+			  p = start;
 #endif
-		      o = INT_TO_PTR(p);
+			  o = INT_TO_PTR(p);
 # if PAD_BOUNDARY_BYTES
-		      o = PAD_FORWARD(o);
+			  o = PAD_FORWARD(o);
 # endif
-		      path_tracer(o, s, &collect_trace_path_stack);
-		    }
-		  }
+			  path_tracer(o, s, &collect_trace_path_stack);
+			}
+		      }
 #endif
 		
 #if PRINT && 0
 # ifdef FOLLOW_INTERIOR
-		  if (diff % size)
-		    FPRINTF(STDERR,
-			    "inexact block: %d for %lx[%d], %d=(%d, %d) {%d} %lx -> %lx\n", 
-			    diff % size, block, size, pos, bpos, bit,
-			    freebyte, p, start);
+		      if (diff % size)
+			FPRINTF(STDERR,
+				"inexact block: %d for %lx[%d], %d=(%d, %d) {%d} %lx -> %lx\n", 
+				diff % size, block, size, pos, bpos, bit,
+				freebyte, p, start);
 # endif
 #endif
 		  
-		  block->free[bpos] = freebyte ^ bit;
+		      block->free[bpos] = freebyte ^ bit;
 		  
-		  local_mem_use += size;
+		      local_mem_use += size;
 		  
-		  if (!block->atomic) {
-		    MARK_STATISTIC(num_blockpushes_stat++);
+		      if (!block->atomic) {
+			MARK_STATISTIC(num_blockpushes_stat++);
 #ifdef FOLLOW_INTERIOR
-		    p = start;
+			p = start;
 #endif
 #if ALLOW_TAIL_PUSH
-		    if (s + PTR_ALIGNMENT >= end) {
-		      MARK_STATISTIC(num_blockpushes_tail_stat++);
-		      s = p - PTR_ALIGNMENT;
-		      end = p + size;
-		    } else 
+			if (s + PTR_ALIGNMENT >= end) {
+			  MARK_STATISTIC(num_blockpushes_tail_stat++);
+			  s = p - PTR_ALIGNMENT;
+			  end = p + size;
+			} else 
 #endif
-		      LOCAL_PUSH_COLLECT(p, p + size, s);
-		  }
+			  LOCAL_PUSH_COLLECT(p, p + size, s);
+		      }
 		
 #if STAMP_AND_REMEMBER_SOURCE
-		  if (!block->low_marker || (s < block->low_marker))
-		    block->low_marker = s;
-		  if (!block->high_marker || (s > block->high_marker))
-		    block->high_marker = s;
+		      if (!block->low_marker || (s < block->low_marker))
+			block->low_marker = s;
+		      if (!block->high_marker || (s > block->high_marker))
+			block->high_marker = s;
 #endif
-		}
-	      }
+		    }
+		  }
 	    }
 	  } else if (kind == sector_kind_chunk) {
 	    MemoryChunk *c = (MemoryChunk *)INT_TO_PTR(page->start);

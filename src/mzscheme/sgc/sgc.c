@@ -133,7 +133,7 @@ typedef jmpbuf jmp_buf[1];
 
 #define TERSE_MEMORY_TRACING 0
 /* Automatically implies ALLOW_TRACE_COUNT, ALLOW_TRACE_PATH,
-   ALLOW_SET_FINALIZER, and CHECK_WATCH_FOR_PTR_ALLOC */
+   ALLOW_SET_FINALIZER, CHECK_SKIP_MARK_AT_FIRST, and CHECK_WATCH_FOR_PTR_ALLOC */
 
 #define STD_MEMORY_TRACING SGC_STD_DEBUGGING
 /* Automatically implies TERSE_MEMORY_TRACING, DUMP_BLOCK_COUNTS,
@@ -154,6 +154,10 @@ typedef jmpbuf jmp_buf[1];
 
 #define KEEP_DETAIL_PATH SGC_STD_DEBUGGING
 /* Keep source offsets for path traces */
+
+#define CHECK_SKIP_MARK_AT_FIRST 0
+/* Enables skipping certain marks during collection from the inital
+   root supplied as GC_initial_trace_root */
 
 #define ALLOW_SET_LOCKING 0
 /* Enables locking out collections for a specific set. */
@@ -375,10 +379,12 @@ typedef jmpbuf jmp_buf[1];
 # undef ALLOW_TRACE_PATH
 # undef ALLOW_SET_FINALIZER
 # undef CHECK_WATCH_FOR_PTR_ALLOC
+# undef CHECK_SKIP_MARK_AT_FIRST
 # define ALLOW_TRACE_COUNT 1
 # define ALLOW_TRACE_PATH 1
 # define ALLOW_SET_FINALIZER 1
 # define CHECK_WATCH_FOR_PTR_ALLOC 1
+# define CHECK_SKIP_MARK_AT_FIRST 1
 #endif
 
 #if PAD_BOUNDARY_BYTES
@@ -442,9 +448,12 @@ typedef jmpbuf jmp_buf[1];
 # define PAD_BACKWARD(p) (p)
 #endif
 
-/* A root to start with, when non-zero. Useful for
-   tracing from a particular object. */
+/* A root to start with, when non-zero. Useful for tracing from a
+   particular object. The skip function is used when
+   CHECK_SKIP_MARK_AT_FIRST to skip certain objects when marking from
+   this root (when the function return 1) */
 void *GC_initial_trace_root;
+int (*GC_inital_root_skip)(void *, size_t);
 
 void (*GC_out_of_memory)(void);
 
@@ -3478,6 +3487,11 @@ static int collect_end_path_elem;
 
 #endif
 
+#if CHECK_SKIP_MARK_AT_FIRST
+static int collect_start_disable_mark_skip;
+int (*skip_mark_at_first)(void *, size_t);
+#endif
+
 #if MARK_STATS
 static int num_pairs_stat;
 static int num_checks_stat;
@@ -4351,6 +4365,10 @@ static void do_GC_gcollect(void *stack_now)
   }
 
   if (GC_initial_trace_root) {
+#ifdef CHECK_SKIP_MARK_AT_FIRST
+    collect_start_disable_mark_skip = collect_stack_count;
+    skip_mark_at_first = GC_inital_root_skip;
+#endif
     collect_stack[collect_stack_count++] = (unsigned long)&GC_initial_trace_root;
     collect_stack[collect_stack_count++] = ((unsigned long)&GC_initial_trace_root) + 1;
 # if KEEP_DETAIL_PATH

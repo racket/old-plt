@@ -16,11 +16,22 @@ typedef EventRecord MrEdEvent;
 #endif
 
 class wxTimer;
+class MrEdContextFrames;
+
+#if defined(MZ_PRECISE_GC) || defined(SGC_STD_DEBUGGING)
+typedef Scheme_Object *MrEdContextFramesRef;
+# define MAKE_FRAMES_REF(x) scheme_make_weak_box((Scheme_Object *)x)
+# define FRAMES_REF(p) ((MrEdContextFrames *)SCHEME_WEAK_BOX_VAL(p))
+#else
+typedef MrEdContextFrames *MrEdContextFramesRef;
+# define MAKE_FRAMES_REF(x) x
+# define FRAMES_REF(p) p
+#endif
 
 class MrEdContextFrames {
  public:
   wxChildList *list;
-  MrEdContextFrames *next, *prev;
+  MrEdContextFramesRef next, prev;
 };
 
 class MrEdFinalizedContext;
@@ -74,7 +85,6 @@ class MrEdFinalizedContext {
   Widget toplevel;
 #endif
   MrEdContextFrames *frames;
-  MrEdContext **real_context; /* atomic ptr to actual context */
 };
 
 extern MrEdContext *mred_contexts;

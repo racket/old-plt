@@ -146,7 +146,7 @@ static int exit_val = 0;
 MrEdContext *mred_contexts;
 static MrEdContext *mred_main_context;
 static MrEdContext *mred_only_context;
-static MrEdContextFrames *mred_frames;
+static MrEdContextFrames *mred_frames; /* list of all frames (weak link to invisible ones) */
 static wxTimer *mred_timers;
 int mred_eventspace_param;
 int mred_event_dispatch_param;
@@ -503,11 +503,14 @@ static void CollectingContext(void *cfx, void *)
   cf = (MrEdFinalizedContext *)gcPTR_TO_OBJ(cfx);
 
   if (cf->frames->next)
-    cf->frames->next->prev = cf->frames->prev;
+    FRAMES_REF(cf->frames->next)->prev = cf->frames->prev;
   if (cf->frames->prev)
-    cf->frames->prev->next = cf->frames->next;
+    FRAMES_REF(cf->frames->prev)->next = cf->frames->next;
   else
-    mred_frames = cf->frames->next;
+    mred_frames = FRAMES_REF(cf->frames->next);
+
+  cf->frames->next = NULL;
+  cf->frames->prev = NULL;
 
   /* Must explicitly delete frames now because their context
      is going away. (The frame would certainly have been finalized
@@ -561,11 +564,18 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   frames = new MrEdContextFrames;
   c->finalized->frames = frames;
-  frames->next = mred_frames;
+  {
+    MrEdContextFramesRef r;
+    r = MAKE_FRAMES_REF(mred_frames);
+    frames->next = r;
+  }
   frames->prev = NULL;
   frames->list = c->topLevelWindowList;
-  if (mred_frames)
-    mred_frames->prev = frames;
+  if (mred_frames) {
+    MrEdContextFramesRef r;
+    r = MAKE_FRAMES_REF(frames);
+    mred_frames->prev = r;
+  }
   mred_frames = frames;
 
   c->modal_window = NULL;
@@ -637,7 +647,7 @@ static void ChainContextsList()
       c->next = mred_contexts;
       mred_contexts = c;
     }
-    f = f->next;
+    f = FRAMES_REF(f->next);
   }
 }
 
@@ -727,7 +737,7 @@ void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
       node = node->Next();
     }
 
-    f = f->next;
+    f = FRAMES_REF(f->next);
   }
 
   return data;

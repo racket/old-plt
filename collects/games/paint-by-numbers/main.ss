@@ -166,9 +166,9 @@
 	 [else (send g set-value counter)]))))
 
   (define (show-wrong)
-    (let loop ([i (length (problem-rows problem))])
+    (let loop ([i (length (problem-cols problem))])
       (unless (zero? i)
-	(let loop ([j (length (problem-cols problem))])
+	(let loop ([j (length (problem-rows problem))])
 	  (unless (zero? j)
 	    (let* ([m (- i 1)]
 		   [n (- j 1)]

@@ -1,0 +1,4 @@
+- if you open a non-scheme file, and then open a scheme file from that
+  frame, you won't get anything. You have to open the new scheme file
+  from the original drscheme window.
+

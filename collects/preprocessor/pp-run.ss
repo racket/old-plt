@@ -28,7 +28,7 @@
       (let ([p (process/ports (current-output-port) #f (current-error-port)
                               run-cmd)])
         (parameterize ([current-output-port (list-ref p 1)])
-          (preprocess files))
+          (apply preprocess files))
         (close-output-port (list-ref p 1))
         ((list-ref p 4) 'wait)
         (set! error? (eq? 'done-ok ((list-ref p 4) 'status))))]
@@ -43,15 +43,15 @@
         (dynamic-wind
           (lambda () (rename-file-or-directory file temp))
           (lambda ()
-            (with-output-to-file file (lambda () (preprocess (list temp))))
+            (with-output-to-file file (lambda () (preprocess temp)))
             (do-run-subst file))
           (lambda ()
             (delete-file file)
             (rename-file-or-directory temp file))))]
      [output
-      (with-output-to-file output (lambda () (preprocess files)) 'replace)
+      (with-output-to-file output (lambda () (apply preprocess files)) 'replace)
       (when run-cmd (do-run-subst output))]
-     [else (preprocess files)])
+     [else (apply preprocess files)])
     (when error? (exit 1))))
 
 )

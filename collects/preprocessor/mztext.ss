@@ -288,7 +288,7 @@
   (run))
 
 (provide preprocess)
-(define (preprocess files)
+(define (preprocess . files)
   (initialize)
   (unless (null? files)
     (let-values ([(input add-port) (make-composite-input)])

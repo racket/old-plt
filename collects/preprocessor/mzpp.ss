@@ -149,7 +149,7 @@
     (run files)))
 
 (provide preprocess)
-(define (preprocess files)
+(define (preprocess . files)
   (namespace-require '(lib "mzpp.ss" "preprocessor"))
   (do-evals)
   (run files))

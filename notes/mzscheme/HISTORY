@@ -87,6 +87,8 @@ Fixed reading from special devices, such as /dev/null and /dev/zero,
  in Solaris and HP/UX
 Fixed blocking output (to stdout, stderr, or a process port) so that
  only the writing thread is blocked
+Changed default exit handler to return only results in 0 to 255
+ as results to the OS, and everything else means 1
 Added square to MzLib's function.ss
 Inside MzScheme: scheme_basic_env() initializes break-enabled
  to #f instead of #t

@@ -643,10 +643,16 @@ Misc Tags
 These tags can appear at any language level:
 |#(
 
+   generic
+
+(
+
   read:syntax-error
   scan:syntax-error
 
-)#|
+))
+
+#|
 
 kwd: Tags
 ---------
@@ -654,7 +660,11 @@ kwd: Tags
 The r4rs language level is special because it is unrelated to all
 other language levels.  It can signal the following keyword errors.
 
-    r4rs:	    |#(
+|#(
+
+    r4rs
+
+(
 
   kwd:lambda
   kwd:begin
@@ -673,18 +683,26 @@ other language levels.  It can signal the following keyword errors.
   kwd:do
   kwd:quasiquote
 
-)#|
+))#|
 
 The other languages are arranged in a hierarchy.  If a tag is inserted
 at some language level, it is automatically present at all subsequent
 language levels.
 
-    common:         |#(
+|#( 
+
+     common
+
+(
 
   kwd:define-macro
   kwd:let-macro
 
-)#|  beginner:      |#(
+))(
+
+    beginner
+
+(
 
   kwd:case-lambda
   kwd:lambda
@@ -710,7 +728,11 @@ language levels.
   kwd:define-constructor
 
 
-)#|  intermediate:  |#(
+))(
+
+   intermediate
+
+(
 
   kwd:local
   kwd:let-struct
@@ -726,7 +748,11 @@ language levels.
   kwd:quasiquote
 
 
-)#|  advanced:      |#(
+))(
+
+    advanced
+
+(
 
   kwd:begin
   kwd:begin0
@@ -747,7 +773,11 @@ language levels.
   kwd:with-handlers
 
 
-)#|  full scheme:   |#(
+))(
+
+  full 
+
+(
 
   kwd:with-continuation-mark
   kwd:unit
@@ -783,7 +813,7 @@ language levels.
   kwd:send
   kwd:send*
   kwd:make-generic
-)#|
+))#|
 term: Tags
 ---------
 
@@ -796,7 +826,7 @@ because the advanced level has introduced or activated a feature not
 allowed in a lower level (where an attempt to use it might merely
 result in a syntax error), and its misuse is flagged by this tag.
 
-do not occur (fallbacks that are never fallen back to):
+These tags do not occur (fallbacks that are never fallen back to):
 
   invalid-pos-symbol
   invalid-pos-literal
@@ -804,7 +834,11 @@ do not occur (fallbacks that are never fallen back to):
   invalid-pos-ilist
 
 
-     beginner:      |#(
+|#(
+
+     beginner
+
+(
 
   term:internal-def-not-foll-by-expr
   term:duplicate-internal-def
@@ -828,7 +862,11 @@ do not occur (fallbacks that are never fallen back to):
   term:cannot-bind-kwd
   term:macro-error
 
-)#|  intermediate:  |#(
+))( 
+
+   intermediate
+
+(
 
   term:internal-def-not-foll-by-expr
   term:duplicate-internal-def
@@ -851,7 +889,11 @@ do not occur (fallbacks that are never fallen back to):
   term:macro-error
 
 
-)#|  advanced:      |#(
+))(
+
+    advanced 
+
+(
 
   term:internal-def-not-foll-by-expr
   term:duplicate-internal-def
@@ -872,7 +914,11 @@ do not occur (fallbacks that are never fallen back to):
   term:macro-error
   term:set!-no-mutate-lambda-bound
 
-)#|  r4rs:          |#(
+))(
+
+  r4rs          
+
+(
 
   term:internal-def-not-foll-by-expr
   term:duplicate-internal-def
@@ -885,7 +931,11 @@ do not occur (fallbacks that are never fallen back to):
   term:invalid-intl-defn-posn
   term:cannot-bind-kwd
 
-)#|  full scheme:   |#(
+))(  
+
+  full
+
+(
 
   term:internal-def-not-foll-by-expr
   term:duplicate-internal-def
@@ -943,4 +993,4 @@ do not occur (fallbacks that are never fallen back to):
   term:invalid-intl-defn-posn
   term:cannot-bind-kwd
   term:macro-error
-))
+)))

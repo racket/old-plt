@@ -2121,7 +2121,8 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
 
     body = scheme_datum_to_syntax(body, form, form, 0, 0);
 
-    body = scheme_stx_track(body, form, SCHEME_STX_CAR(form));
+    first = SCHEME_STX_CAR(form);
+    body = scheme_stx_track(body, form, first);
 
     if (depth > 0)
       --depth;
@@ -2251,8 +2252,10 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   v = icons(v, icons(first, body));
 
   v = scheme_datum_to_syntax(v, form, form, 0, multi);
-  if (!multi)
-    v = scheme_stx_track(v, form, SCHEME_STX_CAR(form));
+  if (!multi) {
+    name = SCHEME_STX_CAR(form);
+    v = scheme_stx_track(v, form, name);
+  }
 
   return v;
 }
@@ -2423,7 +2426,8 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   if (rec)
     return scheme_compile_expr(app, env, rec, drec);
   else {
-    app = scheme_stx_track(app, form, SCHEME_STX_CAR(form));
+    name = SCHEME_STX_CAR(form);
+    app = scheme_stx_track(app, form, name);
 
     if (depth > 0)
       --depth;

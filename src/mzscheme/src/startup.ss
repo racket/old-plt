@@ -455,28 +455,37 @@
 (module #%struct-info #%kernel
   (require #%stx #%qq-and-or)
 
+  (define-values (identifier/#f?)
+    (lambda (x) (or (not x) (identifier? x))))
+
+  ;; Check for a list containing all ids, except that last can be #f:
+  (define-values (id/#f-list?)
+    (lambda (x)
+      (if (null? x)
+	  #t
+	  (if (pair? x)
+	      (if (null? (cdr x))
+		  (identifier/#f? (car x))
+		  (and (identifier? (car x))
+		       (id/#f-list? (cdr x))))))))
+
   (define-values (struct-info?)
     (lambda (x)
       (and (list? x)
 	   (= (length x) 5)
-	   (identifier? (car x))
-	   (identifier? (cadr x))
-	   (identifier? (caddr x))
-	   (list? (list-ref x 3))
-	   (andmap identifier? (list-ref x 3))
-	   (list? (list-ref x 4))
-	   (andmap identifier? (list-ref x 4))
-	   (= (length (list-ref x 3)) (length (list-ref x 4))))))
+	   (identifier/#f? (car x))
+	   (identifier/#f? (cadr x))
+	   (identifier/#f? (caddr x))
+	   (id/#f-list? (list-ref x 3))
+	   (id/#f-list? (list-ref x 4)))))
 
-  (define-values (make-struct-info) list)
-  
   (define-values (struct-info-type-id) car)
   (define-values (struct-info-constructor-id) cadr)
   (define-values (struct-info-predicate-id) caddr)
   (define-values (struct-info-accessor-ids) cadddr)
   (define-values (struct-info-mutator-ids) (lambda (x) (list-ref x 4)))
 
-  (provide make-struct-info struct-info? 
+  (provide struct-info? 
 	   struct-info-type-id
 	   struct-info-constructor-id
 	   struct-info-predicate-id
@@ -495,17 +504,18 @@
 			    (string->symbol (format "~a%#" (syntax-e name))) 
 			    name)))
 
-  ;; Temporary hack:
+  (define-values (list->immutable-list)
+    (lambda (l)
+      (if (null? l) null (cons-immutable (car l) (list->immutable-list (cdr l))))))
+  
   (define-values (get-stx-info)
-    (lambda (orig-stx super-id defined-names)
-      (values super-id ''no-info-for-now)))
-
-  (define-values (real-get-stx-info)
-    (lambda (orig-stx super-id defined-names)
+    (lambda (orig-stx super-id defined-names gen-expr?)
       ;; Looks up super info, if needed, and builds compile-time info for the
-      ;; new struct; called by all three forms, but doesonly half the work
-      ;; if `defined-names' is #f
-      (let ([qs (lambda (x) `(quote-syntax ,x))]
+      ;; new struct; called by all three forms, but does only half the work
+      ;; if `defined-names' is #f.
+      ;; If `expr?' is #t, then generate an expression to build the info,
+      ;; otherwise build the info directly.
+      (let ([qs (if gen-expr? (lambda (x) `(quote-syntax ,x)) values)]
 	    [every-other (lambda (l)
 			   (let loop ([l l][r null])
 			     (cond
@@ -516,15 +526,17 @@
 			     (syntax-local-value (->%# super-id) (lambda () #f)))])
 	(if super-id 
 	    ;; Did we get valid super-info ?
-	    (if (or (not super-info)
-		    (not (struct-info? super-info)))
+	    (if (or (not (struct-info? super-info))
+		    (not (struct-info-type-id super-info)))
 		(raise-syntax-error
 		 #f
-		 (format "struct supertype not defined (because ~a%# ~a)"
-			 (syntax-e super-id)
-			 (if super-info
-			     "does not name struct type information"
-			     "is not in the environment"))
+		 (if (struct-info? super-info)
+		     "parent struct information does not include a type for subtyping"
+		     (format "parent struct type not defined~a"
+			     (if super-info
+				 (format " (~a%# does not name struct type information)"
+					 (syntax-e super-id))
+				 "")))
 		 orig-stx
 		 super-id)))
 	(values
@@ -537,16 +549,22 @@
 			       (values (map qs (struct-info-accessor-ids super-info))
 				       (map qs (struct-info-mutator-ids super-info)))
 			       (values null null))]
-			  [(fields) (cdddr defined-names)])
-	       `(make-struct-info ,(qs (car defined-names))
-				  ,(qs (cadr defined-names))
-				  ,(qs (caddr defined-names))
-				  (list-immutable ,@(map qs (every-other fields)) 
-						  ,@initial-gets)
-				  (list-immutable ,@(map qs (if (null? fields) 
-								null 
-								(every-other (cdr fields)))) 
-						  ,@initial-sets)))
+			  [(fields) (cdddr defined-names)]
+			  [(wrap) (if gen-expr? (lambda (x) (cons 'list-immutable x)) values)])
+	       (wrap
+		(list-immutable (qs (car defined-names))
+				(qs (cadr defined-names))
+				(qs (caddr defined-names))
+				(wrap
+				 (list->immutable-list
+				  (append (map qs (every-other fields)) 
+					  initial-gets)))
+				(wrap
+				 (list->immutable-list
+				  (append (map qs (if (null? fields) 
+						      null 
+						      (every-other (cdr fields)))) 
+					  initial-sets))))))
 	     #f)))))
 
   (provide ->%# get-stx-info))
@@ -762,7 +780,7 @@
 		     [delay? (and (eq? (syntax-local-context) 'internal-define) super-id)])
 		 (let-values ([(super-id/struct: stx-info) (if delay?
 							       (values #f #f)
-							       (get-stx-info stx super-id defined-names))])
+							       (get-stx-info stx super-id defined-names #t))])
 		   (datum->syntax-object
 		    (quote-syntax here)
 		    `(begin
@@ -783,7 +801,8 @@
 								      (get-stx-info (quote-syntax ,stx)
 										    (quote-syntax ,super-id)
 										    (list ,@(map (lambda (x) `(quote-syntax ,x))
-												 defined-names)))])
+												 defined-names))
+										    #f)])
 							  stx-info)
 						       stx-info)))
 		    stx)))))))
@@ -797,7 +816,7 @@
 		[inspector (stx-car stx)]
 		[super-id (stx-car (stx-cdr stx))]
 		[field-names (stx-car (stx-cdr (stx-cdr stx)))])
-	   (let-values ([(super-id/struct: stx-info) (get-stx-info orig-stx super-id #f)])
+	   (let-values ([(super-id/struct: stx-info) (get-stx-info orig-stx super-id #f #f)])
 	     (datum->syntax-object
 	      (quote-syntax here)
 	      (make-core name

@@ -1584,8 +1584,28 @@ void wxWindow::WindowEventHandler(Widget w,
 	}
         break;
     case ButtonPress:
+#if 0
+      if (win->__type == wxTYPE_PANEL) {
+	wxWindow *p = win;
+	while (p) {
+	  if (p->cursor)
+	    break;
+	  if (wxSubType(p->__type, wxTYPE_FRAME)
+	      || wxSubType(p->__type, wxTYPE_DIALOG_BOX))
+	    p = NULL;
+	  else
+	    p = p->GetParent();
+	}
+	
+	if (p && p->cursor->Ok()) {
+	  XChangeActivePointerGrab(wxAPP_DISPLAY, 0,
+				   GETCURSOR(p->cursor), 
+				   xev->xbutton.time);
+	}
+      }
+#endif
 	Press = TRUE;
-    case ButtonRelease: 
+    case ButtonRelease:  /* ^^^^ fallthrough */
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
       {

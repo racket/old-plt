@@ -553,9 +553,9 @@ wxCursor::wxCursor(char bits[], int width, int height /* , int x, int y */)
 }
 
 static unsigned int x_cursor_id[] = { // same order as wxCURSOR_...
-	XC_top_left_arrow,	XC_based_arrow_down,	XC_based_arrow_up,
+	XC_left_ptr,	        XC_based_arrow_down,	XC_based_arrow_up,
 	XC_target,		XC_crosshair,		XC_cross_reverse,
-	XC_double_arrow,	XC_hand1,		XC_xterm,
+	XC_double_arrow,	XC_hand2,		XC_xterm,
 	XC_leftbutton,		XC_sizing,		XC_middlebutton,
 	XC_pirate,		XC_spraycan,		XC_pencil,
 	XC_sb_left_arrow,	XC_sb_right_arrow,	XC_question_arrow,
@@ -578,6 +578,17 @@ static char blank_data[32] = { // bits for blank pointer
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
 
+static char nwse_bits[32] = {
+ 0x00,0x00,0x00,0x00,0xf8,0x00,0x38,0x00,0x58,0x00,0xa8,0x00,0x48,0x01,0x80,
+ 0x02,0x00,0x25,0x00,0x2a,0x00,0x34,0x00,0x38,0x00,0x3e,0x00,0x00,0x00,0x00,
+ 0x00,0x00};
+
+static char swne_bits[32] = {
+ 0x00,0x00,0x00,0x00,0x00,0x3e,0x00,0x38,0x00,0x34,0x00,0x2a,0x00,0x25,0x80,
+ 0x02,0x48,0x01,0xa8,0x00,0x58,0x00,0x38,0x00,0xf8,0x00,0x00,0x00,0x00,0x00,
+ 0x00,0x00};
+
+
 wxCursor::wxCursor(int cursor_type) : wxBitmap()
 {
     Pixmap pixmap;
@@ -594,6 +605,16 @@ wxCursor::wxCursor(int cursor_type) : wxBitmap()
       break;
     case wxCURSOR_CHAR:
       pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, char_data, 16, 16);
+      Xcursor->x_cursor = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, pixmap, &black, &black, 0, 13);
+      XFreePixmap(wxAPP_DISPLAY, pixmap);
+      break;
+    case wxCURSOR_SIZENESW:
+      pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, swne_bits, 16, 16);
+      Xcursor->x_cursor = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, pixmap, &black, &black, 0, 13);
+      XFreePixmap(wxAPP_DISPLAY, pixmap);
+      break;
+    case wxCURSOR_SIZENWSE:
+      pixmap = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, nwse_bits, 16, 16);
       Xcursor->x_cursor = XCreatePixmapCursor(wxAPP_DISPLAY, pixmap, pixmap, &black, &black, 0, 13);
       XFreePixmap(wxAPP_DISPLAY, pixmap);
       break;

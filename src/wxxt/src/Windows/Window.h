@@ -210,12 +210,14 @@ protected:
     Bool  user_edit_mode;
     long  style;
 
-    wxWindow **saferef; /* MATTHEW: indirection for safety in callbacks */
+    wxWindow **saferef; /* indirection for safety in callbacks */
 
-    long misc_flags; /* MATTHEW */
+    long misc_flags;
 
-    short internal_disabled;  /* MATTHEW */
-    short internal_gray_disabled;  /* MATTHEW */
+    unsigned long current_state;
+
+    short internal_disabled;
+    short internal_gray_disabled;
 
     /* For scrolling with explicit control: */ 
     long hs_pos, vs_pos, hs_page, vs_page, hs_width, vs_width;

@@ -1530,10 +1530,13 @@ void wxWindow::WindowEventHandler(Widget w,
 		p = p->GetParent();
 	      }
 	    }
+	    win->current_state = xev->xkey.state;
 	    break;
 	  }
 	}
-    case KeyPress: { /* ^^^ fallthrough !!!! ^^^ */
+    case KeyPress: 
+      win->current_state = xev->xkey.state;
+      { /* ^^^ fallthrough !!!! ^^^ */
 	wxKeyEvent *wxevent;
 	KeySym	   keysym;
 	long       kc;
@@ -1652,6 +1655,7 @@ void wxWindow::WindowEventHandler(Widget w,
       }
       Press = TRUE;
     case ButtonRelease:  /* ^^^^ fallthrough */
+      win->current_state = xev->xbutton.state;
       if (!Press)
 	grabbing_panel = NULL;
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
@@ -1780,7 +1784,8 @@ void wxWindow::WindowEventHandler(Widget w,
       break;
     case EnterNotify:
       Enter = TRUE;
-    case LeaveNotify: 
+    case LeaveNotify: /* ^^^^ fallthrough! */
+      win->current_state = xev->xcrossing.state;
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
       if (w == win->X->frame) {
@@ -1833,53 +1838,61 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
       break;
-    case MotionNotify: {
+    case MotionNotify: 
+      {
 	wxMouseEvent *wxevent;
+	int skip = 0;
 
 	wxevent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 
 	if (xev->xmotion.is_hint == NotifyHint) {
-	    // hints need a XQueryPointer
-	    Window root, child;
-	    XQueryPointer(XtDisplay(w), XtWindow(w), &root, &child,
-			  &(xev->xmotion.x_root), &(xev->xmotion.y_root),
-			  &(xev->xmotion.x),      &(xev->xmotion.y),
-			  &(xev->xmotion.state));
-	}
-	// set wxWindows event structure
-	wxevent->eventHandle	= (char*)xev;
-	wxevent->x		= xev->xmotion.x;
-	wxevent->y		= xev->xmotion.y;
-	wxevent->altDown		= /* xev->xmotion.state & Mod3Mask */ FALSE;
-	wxevent->controlDown	= xev->xmotion.state & ControlMask;
-	wxevent->metaDown	= xev->xmotion.state & Mod1Mask;
-	wxevent->shiftDown	= xev->xmotion.state & ShiftMask;
-	wxevent->leftDown	= xev->xmotion.state & Button1Mask;
-	wxevent->middleDown	= xev->xmotion.state & Button2Mask;
-	wxevent->rightDown	= xev->xmotion.state & Button3Mask;
-	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
-	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */
+	  // hints need a XQueryPointer
+	  Window root, child;
+	  XQueryPointer(XtDisplay(w), XtWindow(w), &root, &child,
+			&(xev->xmotion.x_root), &(xev->xmotion.y_root),
+			&(xev->xmotion.x),      &(xev->xmotion.y),
+			&(xev->xmotion.state));
+	  if (xev->xmotion.state != win->current_state)
+	    skip = 1;
+	} else
+	  win->current_state = xev->xmotion.state;
 
-	/* Reverse scroll effects: */
-	if (wxSubType(win->__type, wxTYPE_CANVAS)) {
-	  int dx, dy;
-	  ((wxCanvas *)win)->ViewStart(&dx, &dy);
-	  wxevent->x -= dx;
-	  wxevent->y -= dy;
-	}
+	if (!skip) {
+	  // set wxWindows event structure
+	  wxevent->eventHandle	= (char*)xev;
+	  wxevent->x		= xev->xmotion.x;
+	  wxevent->y		= xev->xmotion.y;
+	  wxevent->altDown		= /* xev->xmotion.state & Mod3Mask */ FALSE;
+	  wxevent->controlDown	= xev->xmotion.state & ControlMask;
+	  wxevent->metaDown	= xev->xmotion.state & Mod1Mask;
+	  wxevent->shiftDown	= xev->xmotion.state & ShiftMask;
+	  wxevent->leftDown	= xev->xmotion.state & Button1Mask;
+	  wxevent->middleDown	= xev->xmotion.state & Button2Mask;
+	  wxevent->rightDown	= xev->xmotion.state & Button3Mask;
+	  wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
+	  *continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */
 
-	if (!win->CallPreOnEvent(win, wxevent)) {
-	  if (subWin)
-	    *continue_to_dispatch_return = TRUE;
-	  else {
-	    if (!win->IsGray())
-	      win->OnEvent(wxevent);
+	  /* Reverse scroll effects: */
+	  if (wxSubType(win->__type, wxTYPE_CANVAS)) {
+	    int dx, dy;
+	    ((wxCanvas *)win)->ViewStart(&dx, &dy);
+	    wxevent->x -= dx;
+	    wxevent->y -= dy;
 	  }
+
+	  if (!win->CallPreOnEvent(win, wxevent)) {
+	    if (subWin)
+	      *continue_to_dispatch_return = TRUE;
+	    else {
+	      if (!win->IsGray())
+		win->OnEvent(wxevent);
+	    }
+	  }
+	  wxevent->eventHandle = NULL;
 	}
-	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
       }
-	break;
-      /* MATTHEW : [5] Use focus in/out for OnActivate */
+      break;
+	/* Use focus in/out for OnActivate */
     case FocusIn:
         Enter = TRUE;
     case FocusOut:

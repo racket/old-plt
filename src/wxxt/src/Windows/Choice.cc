@@ -144,7 +144,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 			 ButtonPressMask |	// for PreOnEvent
 			 ButtonReleaseMask |
 			 ButtonMotionMask |
-			 PointerMotionMask,
+			 PointerMotionMask | PointerMotionHintMask,
 			 FALSE,
 			 (XtEventHandler)wxWindow::WindowEventHandler,
 			 (XtPointer)saferef,

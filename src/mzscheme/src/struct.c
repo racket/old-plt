@@ -1360,8 +1360,12 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
   struct_type =(Scheme_Struct_Type *)scheme_malloc_tagged(sizeof(Scheme_Struct_Type)
 							  + (depth 
 							     * sizeof(Scheme_Struct_Type *)));
-  
+
+  /* defeats optimizer bug in gcc 2.7.2.3: */
+  depth = parent_type ? (1 + parent_type->name_pos) : 0;
+
   struct_type->type = scheme_struct_type_type;
+
   struct_type->name_pos = depth;
   struct_type->parent_types[depth] = struct_type;
   for (j = depth; j--; ) {

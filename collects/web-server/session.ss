@@ -1,8 +1,7 @@
 ;; ################################################################################
 ;; This is the timeout version of sessions
 (module session mzscheme
-  (require "session-queue.ss"
-           "timer.ss")
+  (require "timer.ss")
   
   (provide session->resource
            session?

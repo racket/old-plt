@@ -439,12 +439,14 @@ void wxKeymap::MapFunction(char *keys, char *fname)
   int shift, ctrl, alt, meta, mod;
   int part = 1, i, j;
   long code;
-  char *errstr;
+  char *errstr, *start_keys;
   char buffer[256];
 
   num_keys = 1;
   key = new wxKeycode*[1];
   key[0] = NULL;
+
+  start_keys = keys;
 
   while (*keyseq) {
     shift = ctrl = alt = meta = 0;
@@ -452,7 +454,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
     
     while (*keyseq && (*keyseq != ';')) {
       mod = 1;
-      if ((keyseq == keys) && (*keyseq == ':') && keyseq[1]) {
+      if ((keyseq == start_keys) && (*keyseq == ':') && keyseq[1]) {
 	shift = ctrl = alt = meta = -1;
 	keyseq++;
       } else if (*keyseq == '~') {
@@ -531,6 +533,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
       part++;
       if (*keyseq)
 	keyseq++;
+      start_keys = keyseq;
     } else {
       errstr = "no non-modifier key";
       goto key_error;

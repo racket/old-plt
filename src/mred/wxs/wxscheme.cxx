@@ -750,6 +750,25 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
   return first;
 }
 
+static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
+{
+  wxColour *c;
+
+#ifdef wx_x
+  c = new wxColour("GRAY");
+#endif
+#ifdef wx_mac
+  c = new wxColour(0xE8, 0xE8, 0xE8);
+#endif
+#ifdef wx_msw
+  DWORD v = GetSysColor(COLOR_WINDOW);
+
+  c = new wxColour(GetRValue(v), GetGValue(v), GetBValue(v));
+#endif
+
+  return objscheme_bundle_wxColour(c);
+}
+
 #ifdef wx_mac
 #include <Sound.h>
 typedef struct AsyncSoundRec {
@@ -1494,6 +1513,12 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   scheme_install_xc_global("get-face-list",
 			   scheme_make_prim_w_arity(wxSchemeGetFontList,
 						    "get-face-list",
+						    0, 0),
+			   global_env);
+  
+  scheme_install_xc_global("get-panel-background",
+			   scheme_make_prim_w_arity(wxSchemeGetPanelBackground,
+						    "get-panel-background",
 						    0, 0),
 			   global_env);
   

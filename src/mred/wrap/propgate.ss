@@ -88,4 +88,5 @@
  write-resource
  queue-callback
  yield
- eventspace-shutdown?)
+ eventspace-shutdown?
+ get-panel-background)

@@ -43,7 +43,11 @@
                            zodiac
                            utils
                            marks
-                           annotate)]
+                           annotate
+                           ankle-query)]
+        [ankle-query : (use-ankle-wrap?)
+                     ((require-library-unit/sig "ankle-query.ss" "stepper-graphical")
+                      framework)]
         [break : (break)
                ((require-library-unit/sig "break-graphical.ss" "stepper-graphical")
                 core
@@ -51,9 +55,11 @@
                 marks
                 annotate
                 print-convert
+                pretty
                 zodiac
                 utils
-                error)]
+                error
+                framework)]
         [mred-extensions : stepper:mred-extensions^
                  ((require-library-unit/sig "mred-extensions.ss" "stepper-graphical")
                   mred

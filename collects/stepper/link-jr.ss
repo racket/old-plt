@@ -22,6 +22,12 @@
                                    client-procs)]
         [fake-stepper : stepper:model^
                      ((require-library-unit/sig "fake-model.ss" "stepper"))]
+        [fake-ankle-query : (use-ankle-wrap?)
+                    ((require-library-unit/sig "fake-ankle-query.ss" "stepper")
+                     error)]
+        [fake-break : (break)
+                    ((require-library-unit/sig "fake-break.ss" "stepper")
+                     error)]
         [annotate : stepper:annotate^
                   ((require-library-unit/sig "annotater.ss" "stepper")
                    zodiac
@@ -37,7 +43,6 @@
                            zodiac
                            utils
                            marks
-                           annotate)]
-        [break : (break)
-               ((unit/sig (break) (import) (define break (lambda () #f))))])       
-      (export (open debug-wrapper) (open break)))
+                           annotate
+                           fake-ankle-query)])       
+      (export (open debug-wrapper) (open fake-break)))

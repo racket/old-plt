@@ -2,20 +2,23 @@
   (import [zodiac : zodiac:system^]
           [utils : stepper:cogen-utils^]
           [marks : stepper:marks^]
-          [annotate : stepper:annotate^])
+          [annotate : stepper:annotate^]
+          [aq : (use-ankle-wrap?)])
   
   (define w-c-m-key annotate:debug-key)
   
   (define current-environments #f)
   
   (define (annotate sexp zodiac-read)
-    (let-values 
+    (let*-values 
         ([(annotateds new-envs)
           (annotate:annotate (and zodiac-read (list zodiac-read)) 
                              (list sexp) 
                              current-environments 
                              #f
-                             'ankle-wrap)])
+                             (if (aq:use-ankle-wrap?)
+                                 'ankle-wrap
+                                 'cheap-wrap))])
       (set! current-environments new-envs)
       (car annotateds)))
   

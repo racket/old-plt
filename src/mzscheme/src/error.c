@@ -268,6 +268,7 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	      char *es;
 #ifdef NO_STRERROR_AVAILABLE
 	      es = "Unknown error";
+#else
 # ifdef DOS_FILE_SYSTEM
 	      char mbuf[256];
 	      if (type == 'E') {

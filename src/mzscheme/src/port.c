@@ -428,7 +428,7 @@ scheme_init_port (Scheme_Env *env)
 #endif
 			       );
 #ifdef USE_FD_PORTS
-# if USE_ON_EXIT_FOR_ATEXIT
+# ifdef USE_ON_EXIT_FOR_ATEXIT
     on_exit(flush_all_output_fds, NULL);
 # else
     atexit(flush_all_output_fds);

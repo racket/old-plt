@@ -22,7 +22,6 @@
     (report-errors-to-browser send/finish)
     (let ()
       ; doc subcollection name -> boolean
-      (define installed-table #f)
       
       (define search-sem (make-semaphore 1))
       
@@ -179,28 +178,7 @@
                 (hexify-string (make-caption maybe-coll))
                 maybe-coll))]
             [else ; manual, so have absolute path
-             (let* ([tidy-path (tidy-manual-path anchored-path)]
-                    [base-path (path-only (normalize-path path))]
-                    [exp-base-path (explode-path base-path)]
-                    [doc-dir (car (last-pair exp-base-path))]
-                    [full-doc-dir (build-path (collection-path "doc") doc-dir)]
-                    [installed? (hash-table-get installed-table
-                                                doc-dir
-                                                (lambda () 'installed-unknown))])
-               (when (eq? installed? 'installed-unknown)
-                 (let ([has-index?
-                        (ormap file-exists? 
-                               (map (lambda (s)
-                                      (build-path full-doc-dir s))
-                                    '("index.htm" "index.html")))])
-                   (hash-table-put! installed-table doc-dir has-index?)
-                   (set! installed? has-index?)))
-               (if installed?
-                   tidy-path
-                   (let* ([doc-entry (assoc doc-dir known-docs)]
-                          [manual-label (or (and doc-entry (cdr doc-entry)) doc-dir)])
-                     (format "/servlets/missing-manual.ss?manual=~a&name=~a"
-                             doc-dir (hexify-string manual-label)))))])))
+             (tidy-manual-path anchored-path)])))
       
       ; path is absolute pathname
       (define (make-text-href page-label path)
@@ -267,7 +245,6 @@
       (define (search-results lucky? search-string search-type match-type)
         (semaphore-wait search-sem)
         (set! search-responses '())
-        (set! installed-table (make-hash-table 'weak 'equal))
         (set! max-reached #f)
         (let* ([search-level (search-type->search-level search-type)]
                [regexp? (string=? match-type "regexp-match")]

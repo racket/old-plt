@@ -7,7 +7,7 @@
   
   (define doc-root "http://download.plt-scheme.org/doc")
   
-  (define (no-manual manual label)
+  (define (no-manual manual label link)
     (let* ([vno (version)]
            [html-url (format "~a/~a/html/~a/index.htm" 
                              doc-root vno manual)]
@@ -16,8 +16,8 @@
                             (if (cvs?) "pre-release" vno)
                             manual)])
       
-      `(HTML
-        (HEAD ,hd-css
+      `(html
+        (head ,hd-css
               ,@hd-links 
               (TITLE "Missing PLT manual")) 
         (body ((bgcolor "white")) 
@@ -29,15 +29,21 @@
               "machine, probably because it is not part of the "
               "standard DrScheme distribution."
               (p)
-              (h2 "To download and/or install the documentation")
-              (p)
-              (ul (li (a ((href ,plt-url)) "Click here")))
-              ,@(if (cvs?)
-                    '()
-                    `((p)
-                      (h2 "To read the documentation online")
-                      (p)
-                      (ul (li (a ((href ,html-url)) "Click here")))))))))
+              
+              (h2 "Install Locally")
+              (a ((href ,plt-url)) "Download and/or install")
+              " the documentation."
+              (br)
+              "After installing, "
+              (a ((href ,link)) "continue")
+              " to the originally requested page."
+              
+              (br) nbsp (br)
+              
+              (h2 "Read Online")
+              "Read the documentation on "
+              (a ((href ,html-url)) "PLT's servers")
+              "."))))
   
   (require (lib "servlet.ss" "web-server"))
   (provide interface-version timeout start)
@@ -48,7 +54,6 @@
     (report-errors-to-browser send/finish)
     
     (let ([bindings (request-bindings initial-request)])
-      (no-manual (extract-binding/single 'manual 
-                                         bindings)
-                 (extract-binding/single 'name
-                                         bindings)))))
+      (no-manual (extract-binding/single 'manual bindings)
+                 (extract-binding/single 'name bindings)
+                 (extract-binding/single 'link bindings)))))

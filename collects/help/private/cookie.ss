@@ -6,6 +6,7 @@
                             shutdown-server
                             url-on-server-test
                             extract-url-path
+                            url->string
                             find-browser
                             new-browser)
                  (make-inspector))
@@ -26,5 +27,6 @@
                       shutdown-server
                       url-on-server-test
                       extract-url-path
+                      url->string
                       find-browser
                       new-browser))))

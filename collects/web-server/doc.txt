@@ -67,7 +67,14 @@ network connections from the underlying OS are used.
 It returns four functions. The first one shutsdown the web
 server, as above.
 
-The second is a function that takes in a url value (any
+The second, third, and fourth results are helper functions
+that manipulate urls. They are here as an artifact of the
+internal server organization. Since the internal server has
+its own instantiation of the net collection's url library,
+other code cannot manipulate the urls. These are various
+needed helper functions.
+
+The second result is a function that takes in a url value (any
 value, really -- whatever the browser collection uses as
 urls should be okay here) and determines if it represents a
 url that would be used internally or is a file: url. This
@@ -80,7 +87,9 @@ whatever the browser collection uses as urls should be okay
 here) and returns that path portion of the url, or #f if
 none.
 
-The fourth result from this serve is a function that returns
+The fourth result turns a url into a string.
+
+The fifth result from this serve is a function that returns
 an already opened browser window, if one is available or #f
 if none are available.
 
@@ -98,8 +107,9 @@ instantiated with one argument: the url to visit.
             (union string? false?)
             (make-mixin-contract frame%))
            ((-> void?)
-            (any? any? . -> . (union false? string?))
-            (any? any? . -> . (union false? string?))
+            (any? . -> . (union false? string?))
+            (any? . -> . (union false? string?))
+            (any? . -> . string?)
             (-> (union false? (is-a?/c frame%)))
             (-> (is-a?/c frame%))))
 

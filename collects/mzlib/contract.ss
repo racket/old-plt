@@ -14,7 +14,12 @@
            ;object-contract ;; not yet good enough
            (rename -contract? contract?)
            provide/contract
-           define/contract)
+           define/contract
+           
+           none?
+           none-v
+           any-mb
+           none-mb)
 
   (require-for-syntax mzscheme
                       "list.ss"
@@ -429,7 +434,41 @@
   ;; flat-named-contract = (make-flat-named-contract string (any -> boolean))
   ;; this holds flat contracts that have names for error reporting
   (define-struct flat-named-contract (type-name predicate))
-
+  
+  (define (make-mb pos?)
+    (make-contract
+     (lambda (val pos neg src-loc)
+       (define (any-contract v)
+         (cond
+           [(procedure? v)
+            (lambda x 
+              (call-with-values
+               (lambda ()
+                 (apply v (map none-contract x)))
+               (lambda x
+                 (apply values (map any-contract x)))))]
+           [else v]))
+       
+       (define (none-contract v)
+         (make-none
+          (if (procedure? v)
+              (lambda x
+                (call-with-values
+                 (lambda ()
+                   (apply v (map any-contract x)))
+                 (lambda x
+                   (apply values (map none-contract x)))))
+              v)
+          (if pos? pos neg)))
+       
+       (any-contract val))
+     (lambda (a b c d e) (error 'any-mb "subtyping unimplemented"))))
+  
+  (define any-mb (make-mb #f))
+  (define none-mb (make-mb #t))
+  
+  (define-struct none (v tbb))
+  
   (provide (rename build-flat-named-contract flat-named-contract)
            flat-named-contract-type-name
            flat-named-contract-predicate)
@@ -498,26 +537,34 @@
     (cond
       [(contract? contract)
        ((contract-wrap contract) val pos neg src-info)]
-      [(flat-named-contract? contract)
-       (if ((flat-named-contract-predicate contract) val)
-           val
-           (raise-contract-error
-            src-info
-            pos
-	    neg
-            "expected type <~a>, given: ~e"
-	    (flat-named-contract-type-name contract)
-	    val))]
       [else
-       (if (contract val)
-           val
-           (raise-contract-error
-            src-info
-            pos
-	    neg
-            "~agiven: ~e"
-	    (predicate->expected-msg contract)
-	    val))]))
+       (let ([passed-test?
+              (if (flat-named-contract? contract)
+                  ((flat-named-contract-predicate contract) val)
+                  (contract val))])
+         (if passed-test?
+             val
+             (let ([actual-pos (if (none? val)
+                                   (none-tbb val)
+                                   pos)]
+                   [actual-neg (if (none? val)
+                                   (none-tbb val)
+                                   neg)])
+               (if (flat-named-contract? contract)
+                   (raise-contract-error
+                    src-info
+                    actual-pos
+                    actual-neg
+                    "expected type <~a>, given: ~e"
+                    (flat-named-contract-type-name contract)
+                    val)
+                   (raise-contract-error
+                    src-info
+                    actual-pos
+                    actual-neg
+                    "~agiven: ~e"
+                    (predicate->expected-msg contract)
+                    val)))))]))
 
   (define-syntax (contract-=> stx)
     (syntax-case stx ()

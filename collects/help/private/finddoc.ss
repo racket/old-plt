@@ -34,14 +34,14 @@
   (define (finddoc-page-help manual index-key anchor?)
     (let ([m (lookup manual index-key "dummy")])
       (if (string? m)
-	(error (format "Error finding index \"~a\" in manual \"~a\""
-		       index-key manual))
-	(let ([path (if anchor?
-			(string-append (caddr m) "#" (cadddr m))
-			(caddr m))])
-	  (if (servlet-path? path)
-	      path
-	      (format "/doc/~a/~a" manual path))))))
+          (error (format "Error finding index \"~a\" in manual \"~a\""
+                         index-key manual))
+          (let ([path (if anchor?
+                          (string-append (caddr m) "#" (cadddr m))
+                          (caddr m))])
+            (if (servlet-path? path)
+                path
+                (format "/doc/~a/~a" manual path))))))
   
   ; finddoc-page : string string -> string
   ; returns path for use by PLT Web server
@@ -69,12 +69,14 @@
 		key
 		(lambda ()
 		  (let ([f (build-path docdir "hdindex")])
-		    (let ([l (with-input-from-file f read)])
-		      (hash-table-put! ht key l)
-		      l))))])
+                    (if (file-exists? f)
+                        (let ([l (with-input-from-file f read)])
+                          (hash-table-put! ht key l)
+                          l)
+                        (error 'finddoc "manual index ~s not installed" manual)))))])
 	(let ([m (assoc index-key l)])
 	  (if m 
 	      (cons docdir m)
-	      (raise 'not-there)))))))
+	      (error 'finddoc "index key ~s not found in manual ~s" index-key manual)))))))
 
 

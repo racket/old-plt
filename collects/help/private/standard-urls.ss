@@ -10,7 +10,7 @@
            prefix-with-server)
   
   (provide/contract 
-   (make-missing-manual-url (hd-cookie? string? string? . -> . string?))
+   (make-missing-manual-url (hd-cookie? string? string? string? . -> . string?))
    (search-for-docs (hd-cookie? 
                      string? 
                      (lambda (s) 
@@ -38,11 +38,12 @@
   (define (make-home-page-url port)
     (format "http://127.0.0.1:~a/servlets/home.ss" port))
   
-  (define (make-missing-manual-url cookie coll name)
-    (format "http://127.0.0.1:~a/servlets/missing-manual.ss?manual=~a&name=~a"
+  (define (make-missing-manual-url cookie coll name link)
+    (format "http://127.0.0.1:~a/servlets/missing-manual.ss?manual=~a&name=~a&link=~a"
             (hd-cookie-port cookie)
             coll
-            (hexify-string name)))
+            (hexify-string name)
+            (hexify-string link)))
   
   (define (make-results-url port search-string search-type match-type lucky?)
     (format 

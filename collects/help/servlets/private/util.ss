@@ -2,9 +2,9 @@
   (require (lib "file.ss")
 	   (lib "list.ss")
 	   (lib "xml.ss" "xml")
-	   (lib "finddoc.ss" "help" "private")
+           "../../private/finddoc.ss"
 	   (lib "string-constant.ss" "string-constants")
-	   (lib "docpos.ss" "help" "private"))
+	   "../../private/docpos.ss")
 
   (provide get-pref/default
 	   get-bool-pref/default
@@ -78,35 +78,26 @@
     (let* ([entry (assoc manual known-docs)]
 	   [name (or (and entry (cdr entry))
 		      manual)]
-	   [main-page (build-path (collection-path "doc")
-				  manual
-				  "index.htm")]
-	   [href (if (file-exists? main-page)
-		     (string-append "/doc/" manual "/")
-		     (string-append "/servlets/missing-manual.ss?"
-				    "manual=" manual "&"
-				    "name="
-				    (hexify-string name)))])
+	   [href (string-append "/doc/" manual "/")])
       `(A ((HREF ,href)) ,name)))
 
   ; string string string -> xexpr
   ; man is manual name
   ; ndx is index into the manual
   ; txt is the link text
+  ;; warning: if the index file isn't present, this page
   (define (manual-entry man ndx txt)
-    `(A ((HREF 
-	  ,(with-handlers
-	    ([void (lambda _
-		     (format "/servlets/missing-manual.ss?manual=~a&name=~a"
-			     man 
-			     (hexify-string
-			      (let ([pr (assoc man known-docs)])
-				(or (and pr
-					 (cdr pr))
-				    man)))))])
-	    (finddoc-page man ndx))))
-	,txt))
-
+    (with-handlers ([not-break-exn?
+                     (lambda (x)
+                       `(font ((color "red"))
+                              ,txt
+                              " ["
+                              ,(if (exn? x)
+                                   (exn-message x)
+                                   (format "~s" x))
+                              "]"))])
+      `(A ((HREF ,(finddoc-page man ndx))) ,txt)))
+  
   (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\>))
   ; string -> string
   (define (hexify-string s)

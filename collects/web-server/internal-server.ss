@@ -28,6 +28,7 @@
            ((-> void?)
             (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
             (any? . -> . (union false? string?))  ;; any? should be url? but that comes into unit
+            (any? . -> . string?)                 ;; any? should be url? but that comes into unit
             (-> (union false? (is-a?/c frame%)))
             (-> (is-a?/c frame%))))))
   
@@ -117,6 +118,7 @@
 			 shutdown-server
 			 url-on-server-test
                          extract-url-path
+                         url->string
                          find-browser
                          new-browser))
                       tcp browser web-server url)])

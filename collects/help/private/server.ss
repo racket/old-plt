@@ -12,15 +12,16 @@
   (define start-help-server
     (opt-lambda ([addl-browser-frame-mixin (lambda (x) x)])
       (let* ([configuration (build-developer-configuration (build-config-exp))]
-             [hd-cookie (make-hd-cookie min-port #f #f #f #f #f)]
+             [hd-cookie (make-hd-cookie min-port #f #f #f #f #f #f)]
              [combined-browser-mixin
               (compose addl-browser-frame-mixin
                        (make-help-desk-frame-mixin hd-cookie))])
-        (let-values ([(shutdown-server url-on-server-test extract-url-path find-browser new-browser)
+        (let-values ([(shutdown-server url-on-server-test extract-url-path url->string find-browser new-browser)
                       (serve configuration min-port #f combined-browser-mixin)])
           (set-hd-cookie-shutdown-server! hd-cookie shutdown-server)
           (set-hd-cookie-url-on-server-test! hd-cookie url-on-server-test)
           (set-hd-cookie-extract-url-path! hd-cookie extract-url-path)
+          (set-hd-cookie-url->string! hd-cookie url->string)
           (set-hd-cookie-find-browser! hd-cookie find-browser)
           (set-hd-cookie-new-browser! hd-cookie new-browser)
           hd-cookie))))

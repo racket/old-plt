@@ -97,6 +97,11 @@
                           ;; they will be caught elsewhere.
                           [(regexp-match #rx".plt$" s) #f]
                           
+                          ;; files on download.plt-scheme.org in /doc are considered
+                          ;; things that we should view in the browser itself.
+                          [(is-download.plt-scheme.org/doc-url? s)
+                           #f]
+                          
                           [(preferences:get 'drscheme:help-desk:ask-about-external-urls)
                            (ask-user-about-separate-browser)]
                           [else
@@ -115,8 +120,9 @@
                                 (not (assoc coll known-docs)))
                             url]
                            [else
-                            (let ([doc-pr (assoc coll known-docs)])
-                              (make-missing-manual-url hd-cookie coll (cdr doc-pr)))]))
+                            (let ([doc-pr (assoc coll known-docs)]
+                                  [url-str ((hd-cookie-url->string hd-cookie) url)])
+                              (make-missing-manual-url hd-cookie coll (cdr doc-pr) url-str))]))
                        url)))]
               [else 
                url])))
@@ -129,6 +135,12 @@
           (catch-url-hyper-panel-mixin (super-get-hyper-panel%)))
         (super-instantiate ()))))
 
+  (define (is-download.plt-scheme.org/doc-url? s)
+    (let ([url (string->url s)])
+      (and (equal? "download.plt-scheme.org" (url-host url))
+           (string? (url-path url))
+           (regexp-match #rx"^/doc" (url-path url)))))
+  
   (define (ask-user-about-separate-browser)
     (define separate-default? (preferences:get 'drscheme:help-desk:separate-browser))
     (define dlg (instantiate dialog% ()

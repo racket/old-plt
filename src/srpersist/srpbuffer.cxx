@@ -60,16 +60,13 @@ Scheme_Object *readWideCharBuffer(wchar_t *buffer,long numElts) {
 }
 
 void writeWideCharBuffer(wchar_t *buffer,Scheme_Object *obj) {
-  int i;
   char *s;
 
   s = SCHEME_STR_VAL(obj);
 
   while (*s) {
-    buffer[i] = (wchar_t)(s[i]);
-    s++;
+    *buffer++ = (wchar_t)(*s++);
   }
-
 }
 #endif
 

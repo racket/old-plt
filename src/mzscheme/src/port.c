@@ -822,8 +822,10 @@ Scheme_Thread_Memory *scheme_remember_thread(void *t, int autoclose)
   Scheme_Thread_Memory *tm = tm_next;
 
   tm->handle = t;
+  tm->subhandle = NULL;
   tm->autoclose = autoclose;
 
+  tm->prev = NULL;
   tm->next = tm_start;
   if (tm->next)
     tm->next->prev = tm;
@@ -858,7 +860,7 @@ void scheme_forget_thread(struct Scheme_Thread_Memory *tm)
     tm_start = tm->next;
 
   if (tm->next)
-    tm->next = tm->prev;
+    tm->next->prev = tm->prev;
 
 #ifdef MZ_PRECISE_GC
   free(tm);

@@ -201,7 +201,7 @@ void wxInitialize(HINSTANCE hInstance)
   wxREGGLOB(wxSliderList);
 
   wxWinHandleList = new wxNonlockingHashTable();
-  wxSliderList = new wxNonlockingHashTable();
+  wxSliderList = new wxNonlockingHashTable();  
 }
 
 

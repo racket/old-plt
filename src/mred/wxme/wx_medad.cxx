@@ -195,7 +195,8 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 	   (wxmeBORDER 
 	    + wxOVERRIDE_KEY_TRANSLATIONS 
 	    + INIT_SB 
-	    + (style & wxINVISIBLE ? wxINVISIBLE : 0)), 
+	    + (style & wxINVISIBLE ? wxINVISIBLE : 0)
+	    + (style & wxCONTROL_BORDER ? wxCONTROL_BORDER : 0)), 
 	   name)
 {
   static int type_added = FALSE;

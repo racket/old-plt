@@ -60,7 +60,7 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 	char *name)
 {
   wxWnd *cparent;
-  DWORD msflags = 0;
+  DWORD msflags = 0, exflags = 0;
   wxCanvasWnd *wnd;
 
   wxWinType = wxTYPE_XWND;
@@ -72,8 +72,13 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->GetValidPosition(&x, &y);
 
-  if (style & wxBORDER)
-    msflags |= WS_BORDER;
+  if (style & wxCONTROL_BORDER) {
+    exflags |= WS_EX_CLIENTEDGE;
+  } else if (style & wxBORDER) {
+    // msflags |= WS_BORDER;
+    exflags |= WS_EX_STATICEDGE;
+  }
+
   msflags |= WS_CHILD | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE);
   if (style & wxHSCROLL)
     msflags |= WS_HSCROLL;
@@ -81,7 +86,7 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
     msflags |= WS_VSCROLL;
   msflags |= WS_CLIPSIBLINGS;
 
-  wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags);
+  wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags, exflags);
   handle = (char *) wnd;
 
   if (parent)
@@ -446,8 +451,8 @@ void wxWnd::DeviceToLogical (float *x, float *y)
 }
 
 wxCanvasWnd::wxCanvasWnd (wxWnd * parent, wxWindow * wx_win,
-			  int x, int y, int width, int height, DWORD style)
-: wxSubWnd (parent, wxCanvasClassName, wx_win, x, y, width, height, style)
+			  int x, int y, int width, int height, DWORD style, DWORD exstyle)
+: wxSubWnd (parent, wxCanvasClassName, wx_win, x, y, width, height, style, NULL, exstyle)
 {
   is_canvas = TRUE;
 }
@@ -459,20 +464,110 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
   wxCanvas *canvas;
   int mode;
   HBRUSH brsh;
+  long wstyle;
 
-  GetClientRect(handle, &rect);
-  mode = SetMapMode(pDC, MM_TEXT);
-  brsh = (HBRUSH)GetStockObject(WHITE_BRUSH);
-  FillRect(pDC, &rect, brsh);
-  SetMapMode(pDC, mode);
+  wstyle = wx_window->GetWindowStyleFlag();
 
-  canvas = (wxCanvas *)wx_window;
-  if (canvas->wx_dc) {
-    SetViewportExtEx(pDC, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
-    SetWindowExtEx(pDC, canvas->wx_dc->window_ext_x, canvas->wx_dc->window_ext_y, NULL);
+  if (!(wstyle & wxNO_AUTOCLEAR)) {
+    GetClientRect(handle, &rect);
+    mode = SetMapMode(pDC, MM_TEXT);
+    brsh = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    FillRect(pDC, &rect, brsh);
+    SetMapMode(pDC, mode);
+
+    canvas = (wxCanvas *)wx_window;
+    if (canvas->wx_dc) {
+      SetViewportExtEx(pDC, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
+      SetWindowExtEx(pDC, canvas->wx_dc->window_ext_x, canvas->wx_dc->window_ext_y, NULL);
+    }
   }
   
   return TRUE;
+}
+
+typedef void (WINAPI *wxCLOSE_THEME_DATA_PROC)(HANDLE);
+typedef HANDLE (WINAPI *wxOPEN_THEME_DATA_PROC)(HWND, LPCWSTR);
+typedef HRESULT (WINAPI *wxDRAW_THEME_BACKGROUND_PROC)(HANDLE, HDC, int, int, const RECT *, const RECT *);
+typedef HRESULT (WINAPI *wxDRAW_THEME_EDGE_PROC)(HANDLE, HDC, int, int, const RECT *, UINT, UINT, RECT *);
+
+static int theme_tried;
+static wxCLOSE_THEME_DATA_PROC wxCloseThemeData;
+static wxOPEN_THEME_DATA_PROC wxOpenThemeData;
+static wxDRAW_THEME_BACKGROUND_PROC wxDrawThemeBackground;
+static wxDRAW_THEME_EDGE_PROC wxDrawThemeEdge;
+
+BOOL wxCanvasWnd::NCPaint(WPARAM wParam, LPARAM lParam, LONG *result)
+{
+  long wstyle;
+
+  wstyle = wx_window->GetWindowStyleFlag();
+
+  if ((wstyle & wxCONTROL_BORDER) && !(wstyle & (wxHSCROLL | wxVSCROLL))) {
+    if (!theme_tried) {
+      HMODULE hm;
+      hm = LoadLibrary("UxTheme.dll");
+      if (hm) {
+	wxCloseThemeData = (wxCLOSE_THEME_DATA_PROC)GetProcAddress(hm, "CloseThemeData");
+	wxOpenThemeData = (wxOPEN_THEME_DATA_PROC)GetProcAddress(hm, "OpenThemeData");
+	wxDrawThemeBackground = (wxDRAW_THEME_BACKGROUND_PROC)GetProcAddress(hm, "DrawThemeBackground");
+	wxDrawThemeEdge = (wxDRAW_THEME_EDGE_PROC)GetProcAddress(hm, "DrawThemeEdge");
+      }
+      theme_tried = 1;
+    }
+
+    if (wxOpenThemeData) {
+      RECT wr;
+      HDC hdc;
+      HANDLE orig;
+      HWND hWnd;
+      static HANDLE gray;
+    
+      hWnd = (HWND)handle;
+    
+      if (!control_theme) {
+	control_theme = wxOpenThemeData(hWnd, L"Edit");
+      }
+
+      GetWindowRect(hWnd, &wr);
+      
+      *result = DefWindowProc(WM_NCPAINT, wParam, lParam);
+
+      if (control_theme) {    
+	hdc = GetDCEx(hWnd, (HRGN)wParam, DCX_WINDOW|DCX_INTERSECTRGN);
+
+	wr.right -= wr.left;
+	wr.bottom -= wr.top;
+	wr.top = wr.left = 0;
+
+#ifndef EP_EDITTEXT
+# define EP_EDITTEXT 1
+#endif
+#ifndef ETS_NORMAL
+# define ETS_NORMAL 1
+#endif
+#ifndef ETS_DISBALED
+# define ETS_DISABLE 4
+#endif
+	wxDrawThemeBackground(control_theme, hdc,
+			      EP_EDITTEXT, ETS_NORMAL /* or ETS_DISABLED */,
+			      &wr, NULL);
+	
+	ReleaseDC(hWnd, hdc);
+      }
+
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+void wxCanvasWnd::OnWinThemeChange()
+{
+  if (control_theme && wxCloseThemeData) {
+    wxCloseThemeData(control_theme);
+    control_theme = NULL;
+  }
 }
 
 extern void MrEdQueuePaint(wxWindow *wx_window);

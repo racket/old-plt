@@ -3543,11 +3543,11 @@ static void init(void)
 # ifdef NEED_SIGWIN
     {
       HMODULE hm;
-      PVOID (*aveh)(ULONG, PVECTORED_EXCEPTION_HANDLER);
+      PVOID (WINAPI*aveh)(ULONG, PVECTORED_EXCEPTION_HANDLER);
 
       hm = LoadLibrary("kernel32.dll");
       if (hm)
-	aveh = (PVOID (*)(ULONG, PVECTORED_EXCEPTION_HANDLER))GetProcAddress(hm, "AddVectoredExceptionHandler");
+	aveh = (PVOID (WINAPI*)(ULONG, PVECTORED_EXCEPTION_HANDLER))GetProcAddress(hm, "AddVectoredExceptionHandler");
       else
 	aveh = NULL;
       if (aveh)

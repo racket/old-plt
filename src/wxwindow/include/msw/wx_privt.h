@@ -110,6 +110,9 @@ public:
     virtual BOOL ProcessMessage(MSG* pMsg);
     virtual void DestroyWindow(void);
 
+    virtual BOOL NCPaint(WPARAM wParam, LPARAM lParam, LONG *result);
+    virtual void OnWinThemeChange();
+
     // Detach "Window" menu from menu bar so it doesn't get deleted
     void DetachWindowMenu(void);
 };
@@ -141,13 +144,18 @@ public:
 class wxCanvasWnd : public wxSubWnd
 {
 public:
+  HANDLE control_theme;
+
   wxCanvasWnd(wxWnd *parent, wxWindow *wx_win,
               int x, int y, int width, int height,
-              DWORD style);
+              DWORD style, DWORD ex_style);
 
   // Handlers
   BOOL OnEraseBkgnd(HDC pDC);
   BOOL OnPaint(void);
+
+  BOOL NCPaint(WPARAM wParam, LPARAM lParam, LONG *result);
+  void OnWinThemeChange();
 };
 
 class wxFrameWnd : public wxWnd

@@ -33,6 +33,8 @@ extern long last_msg_time; /* timeStamp implementation */
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags);
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags);
 
+extern char wxCanvasClassName[];
+
 void wxWindowInit(void)
 {
   wxREGGLOB(current_mouse_wnd);
@@ -796,7 +798,7 @@ extern void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp
 // Main window proc
 static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialog, int tramp)
 {
-  int retval;
+  LONG retval;
   wxWnd *wnd;
 
   if (dialog) {
@@ -1197,6 +1199,22 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       retval = (message == WM_CLOSE);
       break;
     }
+#ifndef WM_THEMECHANGED
+# define WM_THEMECHANGED 0x031A
+#endif
+  case WM_THEMECHANGED:
+    {
+      wnd->OnWinThemeChange();
+      if (dialog)
+	retval = 0;
+      else
+	retval = wnd->DefWindowProc(message, wParam, lParam);
+    }
+  case WM_NCPAINT:
+    {
+      if (wnd->NCPaint(wParam, lParam, &retval))
+	break;
+    }
   default: /* ^^^ fallthrough ^^^ */
     {
       if (dialog)
@@ -1480,6 +1498,15 @@ void wxWnd::OnMenuSelect(WORD WXUNUSED(item), WORD WXUNUSED(flags), HMENU WXUNUS
 }
 
 void wxWnd::OnMenuClick(WPARAM mnu)
+{
+}
+
+BOOL wxWnd::NCPaint(WPARAM wParam, LPARAM lParam, LONG *result)
+{
+  return FALSE;
+}
+
+void wxWnd::OnWinThemeChange()
 {
 }
 

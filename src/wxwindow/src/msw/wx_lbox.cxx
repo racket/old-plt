@@ -87,11 +87,11 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   // Windows sense of MULTIPLE & EXTENDED is backwards from ours.
   if (multiple == wxEXTENDED)
-    wstyle = WS_VSCROLL | WS_BORDER | LBS_MULTIPLESEL | LBS_NOTIFY;
+    wstyle = WS_VSCROLL | LBS_MULTIPLESEL | LBS_NOTIFY;
   else if (multiple == wxMULTIPLE)
-    wstyle = WS_VSCROLL | WS_BORDER | LBS_EXTENDEDSEL | LBS_NOTIFY;
+    wstyle = WS_VSCROLL | LBS_EXTENDEDSEL | LBS_NOTIFY;
   else
-    wstyle = WS_VSCROLL | WS_BORDER | LBS_NOTIFY;
+    wstyle = WS_VSCROLL | LBS_NOTIFY;
   if ((Multiple&wxALWAYS_SB) || (style & wxALWAYS_SB))
     wstyle |= LBS_DISABLENOSCROLL ;
   if (style & wxHSCROLL)
@@ -99,10 +99,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   windows_id = NewId(this);
 
-  wx_list = wxwmCreateWindowEx(0, "wxLISTBOX", NULL,
-				    wstyle | WS_CHILD | WS_CLIPSIBLINGS,
-				    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-				    wxhInstance, NULL);
+  wx_list = wxwmCreateWindowEx(WS_EX_CLIENTEDGE, "wxLISTBOX", NULL,
+			       wstyle | WS_CHILD | WS_CLIPSIBLINGS,
+			       0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+			       wxhInstance, NULL);
 
   user_data = new char*[N];
   for (i = 0; i < N; i++) {

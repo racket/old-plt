@@ -13,7 +13,7 @@
 
 #include <math.h>
 
-#include "../base/xfspline.cxx"
+#include "xfspline.cxx"
 
 // Default constructor
 wxbDC::wxbDC(void)
@@ -33,32 +33,40 @@ wxbDC::~wxbDC(void)
 
 void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset,int fillStyle)
 {
-  int n = list->Number();
-  wxPoint *points = new wxPoint[n];
+  int n;
+  wxPoint *points, *point;
+  wxNode *node;
 
   int i = 0;
-  for(wxNode *node = list->First(); node; node = node->Next()) {
-    wxPoint *point = (wxPoint *)node->Data();
+
+  n = list->Number();
+  points = new wxPoint[n];
+
+  for(node = list->First(); node; node = node->Next()) {
+    point = (wxPoint *)node->Data();
     points[i].x = point->x;
     points[i++].y = point->y;
   }
   DrawPolygon(n, points, xoffset, yoffset,fillStyle);
-  delete[] points;
 }
 
 void wxbDC::DrawLines(wxList *list, float xoffset, float yoffset)
 {
-  int n = list->Number();
-  wxPoint *points = new wxPoint[n];
+  int n;
+  wxPoint *points, *point;
+  wxNode *node;
 
   int i = 0;
-  for(wxNode *node = list->First(); node; node = node->Next()) {
-    wxPoint *point = (wxPoint *)node->Data();
+
+  n = list->Number();
+  points = new wxPoint[n];
+
+  for(node = list->First(); node; node = node->Next()) {
+    point = (wxPoint *)node->Data();
     points[i].x = point->x;
     points[i++].y = point->y;
   }
   DrawLines(n, points, xoffset, yoffset);
-  delete []points;
 }
 
 void wxbDC::SetTextForeground(wxColour *colour)
@@ -99,24 +107,31 @@ void wxbDC::GetSize(float *width, float *height)
 // Make a 3-point spline
 void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3)
 {
-  wxList *point_list = new wxList;
+  wxList *point_list;
+  wxPoint *point1;
+  wxPoint *point2;
+  wxPoint *point3;
+  wxNode *node;
+  wxPoint *p;
 
-  wxPoint *point1 = new wxPoint;
+  point_list = new wxList;
+
+  point1 = new wxPoint;
   point1->x = x1; point1->y = y1;
   point_list->Append((wxObject*)point1);
 
-  wxPoint *point2 = new wxPoint;
+  point2 = new wxPoint;
   point2->x = x2; point2->y = y2;
   point_list->Append((wxObject*)point2);
 
-  wxPoint *point3 = new wxPoint;
+  point3 = new wxPoint;
   point3->x = x3; point3->y = y3;
   point_list->Append((wxObject*)point3);
 
   DrawSpline(point_list);
 
-  for(wxNode *node = point_list->First(); node; node = node->Next()) {
-    wxPoint *p = (wxPoint *)node->Data();
+  for(node = point_list->First(); node; node = node->Next()) {
+    p = (wxPoint *)node->Data();
     delete p;
   }
   delete point_list;
@@ -125,7 +140,8 @@ void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y
 
 wxColour *wxbDC::GetBackground(void)
 {
-  wxColour *c = new wxColour;
+  wxColour *c;
+  c  = new wxColour;
   c->CopyFrom(current_background_color);
   return c;
 }

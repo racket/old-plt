@@ -78,19 +78,12 @@ wxTypeTree::wxTypeTree(void):wxHashTable(wxKEY_INTEGER)
 
 wxTypeTree::~wxTypeTree(void)
 {
-  // Cleanup wxTypeDef allocated
-  BeginFind();
-  wxNode *node = Next();
-  while (node) {
-    wxTypeDef *typ = (wxTypeDef *)node->Data();
-    delete typ;
-    node = Next();
-  }
 }
 
 void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)
 {
-  wxTypeDef *typ = new wxTypeDef;
+  wxTypeDef  *;
+  typ = new wxTypeDef;
   typ->type = type;
   typ->parent = parent;
   typ->name = copystring(name);
@@ -99,12 +92,15 @@ void wxTypeTree::AddType(WXTYPE type, WXTYPE parent, char *name)
 
 Bool wxSubType(WXTYPE type1, WXTYPE type2)
 {
+  WXTYPE t;
+
   if (type1 == type2)
     return TRUE;
 
-  WXTYPE t = type1;
+  t = type1;
   while (1) {
-    wxTypeDef *typ = (wxTypeDef *)wxAllTypes->Get((long)t);
+    wxTypeDef *typ;
+    typ = (wxTypeDef *)wxAllTypes->Get((long)t);
     if (!typ)
       return FALSE;
 
@@ -117,12 +113,13 @@ Bool wxSubType(WXTYPE type1, WXTYPE type2)
 
 char *wxGetTypeName(WXTYPE type)
 {
+  wxTypeDef *typ;
+
   if (type == wxTYPE_ANY)
     return "any";
-
-  wxTypeDef *typ = (wxTypeDef *)wxAllTypes->Get((long)type);
+  
+  typ = (wxTypeDef *)wxAllTypes->Get((long)type);
   if (!typ)
     return NULL;
   return typ->name;
 }
-

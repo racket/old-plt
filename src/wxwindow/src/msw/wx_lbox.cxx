@@ -18,12 +18,12 @@ BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
   if (param == LBN_SELCHANGE) {
     wxCommandEvent *event;
-	event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
+    event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
     ProcessCommand(event);
     return TRUE;
   } else if (param == LBN_DBLCLK) {
     wxCommandEvent *event;
-	event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
+    event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
     ProcessCommand(event);
     return TRUE;
   }
@@ -49,17 +49,23 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        int x, int y, int width, int height,
                        int N, char **Choices, long style, char *name)
 {
+  wxWnd *cparent;
+  char *the_label;
+  DWORD wstyle;
+  HWND wx_list;
+  int i;
+    
   panel->AddChild(this);
   multiple = Multiple & wxMULTIPLE_MASK;
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
 
-  wxWnd *cparent = (wxWnd *)(panel->handle);
+  cparent = (wxWnd *)(panel->handle);
 
   labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
 
-  char *the_label = NULL;
+  the_label = NULL;
 
   if (Title)
     the_label = copystring(Title);
@@ -70,18 +76,19 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-    HDC the_dc = GetWindowDC(static_label) ;
-    if (labelFont && labelFont->GetInternalFont(the_dc))
-      SendMessage(static_label,WM_SETFONT,
-                  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-    ReleaseDC(static_label,the_dc) ;
-
+    {
+      HDC the_dc;
+      the_dc = GetWindowDC(static_label) ;
+      if (labelFont && labelFont->GetInternalFont(the_dc))
+	SendMessage(static_label,WM_SETFONT,
+		    (WPARAM)labelFont->GetInternalFont(the_dc),0L);
+      ReleaseDC(static_label,the_dc) ;
+    }
   }
   else
     static_label = NULL;
 
 
-  DWORD wstyle;
   // Windows sense of MULTIPLE & EXTENDED is backwards from ours.
   if (multiple == wxEXTENDED)
     wstyle = WS_VSCROLL | WS_BORDER | LBS_MULTIPLESEL | LBS_NOTIFY;
@@ -96,19 +103,19 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
 
   windows_id = (int)NewId(this);
 
-  HWND wx_list = wxwmCreateWindowEx(0, "wxLISTBOX", NULL,
+  wx_list = wxwmCreateWindowEx(0, "wxLISTBOX", NULL,
 				    wstyle | WS_CHILD | WS_CLIPSIBLINGS,
 				    0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
 				    wxhInstance, NULL);
 
-  int i;
-
   user_data = new char*[N];
-  for (i = 0; i < N; i++)
+  for (i = 0; i < N; i++) {
     user_data[i] = NULL;
+  }
 
-  for (i = 0; i < N; i++)
+  for (i = 0; i < N; i++) {
     SendMessage(wx_list, LB_ADDSTRING, 0, (LONG)Choices[i]);
+  }
   if (!Multiple)
     SendMessage(wx_list, LB_SETCURSEL, 0, 0);
 
@@ -119,11 +126,14 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   // Subclass again for purposes of dialog editing mode
   SubclassControl(wx_list);
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-  if (buttonFont && buttonFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
+  {
+    HDC the_dc;
+    the_dc = GetWindowDC((HWND)ms_handle) ;
+    if (buttonFont && buttonFont->GetInternalFont(the_dc))
+      SendMessage((HWND)ms_handle,WM_SETFONT,
+		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
+    ReleaseDC((HWND)ms_handle,the_dc) ;
+  }
 
   SetSize(x, y, width, height);
 
@@ -162,7 +172,8 @@ void wxListBox::SetFirstItem(int N)
 
 void wxListBox::SetFirstItem(char *s)
 {
-  int N = FindString(s);
+  int N;
+  N = FindString(s);
 
   if (N>=0)
     SetFirstItem(N);
@@ -170,9 +181,11 @@ void wxListBox::SetFirstItem(char *s)
 
 int wxListBox::NumberOfVisibleItems(void)
 {
-  int h = SendMessage((HWND)ms_handle,LB_GETITEMHEIGHT,(WPARAM)0,(LPARAM)0);
+  int h;
   int cw, ch;
   
+  h = SendMessage((HWND)ms_handle,LB_GETITEMHEIGHT,(WPARAM)0,(LPARAM)0);
+
   GetClientSize(&cw, &ch);
   ch = ch / h;
 
@@ -204,14 +217,15 @@ void wxListBox::Append(char *Item)
 void wxListBox::Append(char *Item, char *Client_data)
 {
   char **old = user_data;
-  int i;
+  int i, index;
 
   user_data = new char*[no_items + 1];
-  for (i = no_items; i--; )
+  for (i = no_items; i--; ) {
     user_data[i] = old[i];
+  }
   user_data[no_items] = Client_data;
 
-  int index = (int)SendMessage((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)Item);
+  index = (int)SendMessage((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)Item);
   no_items++;
   SetHorizontalExtent(Item);
 }
@@ -236,7 +250,8 @@ void wxListBox::Set(int n, char *choices[])
 
 int wxListBox::FindString(char *s)
 {
-  int pos = (int)SendMessage((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)s);
+  int pos;
+  pos = (int)SendMessage((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)s);
   if (pos == LB_ERR)
     return -1;
   else
@@ -299,7 +314,8 @@ int wxListBox::GetSelections(int **list_selections)
   HWND listbox = (HWND)ms_handle;
 
   if (multiple == wxSINGLE) {
-    int sel = (int)SendMessage(listbox, LB_GETCURSEL, 0, 0);
+    int sel;
+    sel = (int)SendMessage(listbox, LB_GETCURSEL, 0, 0);
     if (sel == LB_ERR)
       return 0;
     selections = new int[1];
@@ -307,7 +323,8 @@ int wxListBox::GetSelections(int **list_selections)
     *list_selections = selections;
     return 1;
   } else {
-    int no_sel = (int)SendMessage(listbox, LB_GETSELCOUNT, 0, 0);
+    int no_sel;
+    no_sel = (int)SendMessage(listbox, LB_GETSELCOUNT, 0, 0);
     if (no_sel == 0)
       return 0;
     selections = new int[no_sel];
@@ -331,7 +348,6 @@ int wxListBox::GetSelection(void)
 // Find string for position
 char *wxListBox::GetString(int N)
 {
-  /* MATTHEW: [6] Check bounds */
   int len;
 
   if (N < 0 || N >= no_items)
@@ -347,6 +363,14 @@ char *wxListBox::GetString(int N)
 void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
   int currentX, currentY;
+  char buf[300];
+  int cx; // button font dimensions
+  int cy;
+  int clx; // label font dimensions
+  int cly;
+  float label_width, label_height, label_x, label_y;
+  float control_width, control_height, control_x, control_y;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
@@ -357,17 +381,7 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
     GetSize(&width, &height);
 
-  char buf[300];
-
-  int cx; // button font dimensions
-  int cy;
-  int clx; // label font dimensions
-  int cly;
-
   wxGetCharSize((HWND)ms_handle, &cx, &cy, buttonFont);
-
-  float label_width, label_height, label_x, label_y;
-  float control_width, control_height, control_x, control_y;
 
   // Deal with default size (using -1 values)
   if (width <= 0)
@@ -428,6 +442,7 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
 void wxListBox::GetSize(int *width, int *height)
 {
   RECT rect;
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize((HWND)ms_handle, &rect);
@@ -442,8 +457,11 @@ void wxListBox::GetSize(int *width, int *height)
 
 void wxListBox::GetPosition(int *x, int *y)
 {
-  wxWindow *parent = GetParent();
   RECT rect;
+  wxWindow *parent;
+  POINT point;
+
+  parent = GetParent();
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize((HWND)ms_handle, &rect);
@@ -452,7 +470,6 @@ void wxListBox::GetPosition(int *x, int *y)
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
   if (parent)
@@ -481,13 +498,14 @@ void wxListBox::SetLabel(char *label)
   {
     float w, h;
     RECT rect;
+    POINT point;
+    wxWindow *parent;
 
-    wxWindow *parent = GetParent();
+    parent = GetParent();
     GetWindowRect(static_label, &rect);
 
     // Since we now have the absolute screen coords,
     // if there's a parent we must subtract its top left corner
-    POINT point;
     point.x = rect.left;
     point.y = rect.top;
     if (parent)
@@ -509,21 +527,26 @@ void wxListBox::SetLabel(char *label)
 // Otherwise, all strings are used.
 void wxListBox::SetHorizontalExtent(char *s)
 {
+  HWND hWnd;
+  TEXTMETRIC lpTextMetric;
+
   // Only necessary if we want a horizontal scrollbar
   if (!(windowStyle & wxHSCROLL))
     return;
-  TEXTMETRIC lpTextMetric;
 
-  HWND hWnd = GetHWND();
+  hWnd = GetHWND();
 
   if (s)
   {
-    int existingExtent = (int)SendMessage(hWnd, LB_GETHORIZONTALEXTENT, 0, 0L);
-    HDC dc = GetWindowDC(hWnd);
-    GetTextMetrics(dc, &lpTextMetric);
+    int existingExtent;
+    HDC dc;
     SIZE extentXY;
+    int extentX;
+    existingExtent = (int)SendMessage(hWnd, LB_GETHORIZONTALEXTENT, 0, 0L);
+    dc = GetWindowDC(hWnd);
+    GetTextMetrics(dc, &lpTextMetric);
     ::GetTextExtentPoint(dc, (LPSTR)s, strlen(s), &extentXY);
-    int extentX = (int)(extentXY.cx + lpTextMetric.tmAveCharWidth);
+    extentX = (int)(extentXY.cx + lpTextMetric.tmAveCharWidth);
     ReleaseDC(hWnd, dc);
     if (extentX > existingExtent)
       SendMessage(hWnd, LB_SETHORIZONTALEXTENT, LOWORD(extentX), 0L);
@@ -532,16 +555,18 @@ void wxListBox::SetHorizontalExtent(char *s)
   else
   {
     int largestExtent = 0;
-    HDC dc = GetWindowDC(hWnd);
-    GetTextMetrics(dc, &lpTextMetric);
     int i;
-    for (i = 0; i < no_items; i++)
-    {
-      int len = (int)SendMessage(hWnd, LB_GETTEXT, i, (LONG)wxBuffer);
-      wxBuffer[len] = 0;
+    HDC dc;
+    dc = GetWindowDC(hWnd);
+    GetTextMetrics(dc, &lpTextMetric);
+    for (i = 0; i < no_items; i++) {
+      int len;
       SIZE extentXY;
+      int extentX;
+      len = (int)SendMessage(hWnd, LB_GETTEXT, i, (LONG)wxBuffer);
+      wxBuffer[len] = 0;
       ::GetTextExtentPoint(dc, (LPSTR)wxBuffer, len, &extentXY);
-      int extentX = (int)(extentXY.cx + lpTextMetric.tmAveCharWidth);
+      extentX = (int)(extentXY.cx + lpTextMetric.tmAveCharWidth);
       if (extentX > largestExtent)
         largestExtent = extentX;
     }
@@ -557,12 +582,15 @@ wxListBox::InsertItems(int nItems, char **Items, int pos)
 
 void wxListBox::SetString(int N, char *s)
 {
+  int sel;
+  char *oldData;
+
   if ((N < 0) || (N >= no_items))
     return;
 
-  int sel = Selected(N);
+  sel = Selected(N);
   
-  char *oldData = (char *)wxListBox::GetClientData(N);
+  oldData = (char *)wxListBox::GetClientData(N);
   
   SendMessage((HWND)ms_handle, LB_INSERTSTRING, N, (LPARAM)s);
   SendMessage((HWND)ms_handle, LB_DELETESTRING, N + 1, 0);

@@ -23,7 +23,7 @@
 char *wxNow(void);
 
 // Make a copy of this string using 'new'
-char *copystring(const char *s);
+char *copystring(const char *s, long offset = 0);
 
 // Useful buffer
 extern char *wxBuffer;

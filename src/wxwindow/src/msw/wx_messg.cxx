@@ -34,6 +34,8 @@ wxMessage::wxMessage(wxPanel *panel, int iconID, int x, int y, long style, char 
   
 Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID, int x, int y, long style)
 {
+  wxWnd *cparent;
+  HWND static_item;
   HICON icn = NULL;
 
   if (image) {
@@ -67,10 +69,8 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
-  wxWnd *cparent;
   cparent = (wxWnd *)(panel->handle);
 
-  HWND static_item;
   if (image) {
     static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
 				     FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
@@ -110,7 +110,8 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   SubclassControl(static_item);
 
   if (!image && labelFont) {
-    HDC the_dc = GetWindowDC((HWND)ms_handle);
+    HDC the_dc;
+    the_dc = GetWindowDC((HWND)ms_handle);
     if (labelFont->GetInternalFont(the_dc))
       SendMessage((HWND)ms_handle,WM_SETFONT,
 		  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
@@ -141,22 +142,22 @@ wxMessage::~wxMessage(void)
 void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
   int currentX, currentY;
+  int actualWidth = width;
+  int actualHeight = height;
+  char buf[300];
+  float current_width;
+  float cyf;
+  int ww, hh;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  int actualWidth = width;
-  int actualHeight = height;
-
-  char buf[300];
-  float current_width;
-  float cyf;
   GetWindowText((HWND)ms_handle, buf, 300);
   GetTextExtent(buf, &current_width, &cyf, NULL, NULL,labelFont);
 
-  int ww, hh;
   GetSize(&ww, &hh);
 
   // If we're prepared to use the existing width, then...
@@ -179,17 +180,18 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
 
 void wxMessage::SetLabel(char *label)
 {
+  RECT rect;
+  wxWindow *parent;
+  POINT point;
+
   if (bm_label || is_icon)
     return;
 
-  RECT rect;
-
-  wxWindow *parent = GetParent();
+  parent = GetParent();
   GetWindowRect((HWND)ms_handle, &rect);
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
   if (parent) {
@@ -202,6 +204,10 @@ void wxMessage::SetLabel(char *label)
 
 void wxMessage::SetLabel(wxBitmap *bitmap)
 {
+  int x, y;
+  int w, h;
+  RECT rect;
+
   if (!bm_label || !bitmap->Ok() || (bitmap->selectedIntoDC < 0))
     return;
 
@@ -209,11 +215,8 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
   bm_label = bitmap;
   bm_label->selectedIntoDC++;
 
-  int x, y;
-  int w, h;
   GetPosition(&x, &y);
   GetSize(&w, &h);
-  RECT rect;
   rect.left = x; rect.top = y; rect.right = x + w; rect.bottom = y + h;
 
   SetBitmapDimensionEx(bitmap->ms_bitmap,

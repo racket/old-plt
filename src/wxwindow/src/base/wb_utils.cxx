@@ -19,14 +19,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-char *
-copystring (const char *s)
+char *copystring (const char *s, long offset)
 {
-  if (s == NULL) s = "";
-  size_t len = strlen (s) + 1;
+  char *news;
+  size_t len;
 
-  char *news = new char[len];
-  memcpy (news, s, len);	// Should be the fastest
+  if (s == NULL) s = "";
+  len = strlen(s + offset) + 1;
+
+  news = new char[len];
+  memcpy(news, s + offset, len);
 
   return news;
 }
@@ -50,8 +52,10 @@ wxFileExists (const char *filename)
  
 void wxStripExtension(char *buffer)
 {
-  int len = strlen(buffer);
-  int i = len-1;
+  int len, i;
+  
+  len = strlen(buffer);
+  i = len-1;
   while (i > 0)
   {
     if (buffer[i] == '.')
@@ -68,20 +72,19 @@ void wxStripExtension(char *buffer)
 char *
 wxFileNameFromPath (char *path)
 {
-  if (path)
-    {
-      register char *tcp;
-
-      tcp = path + strlen (path);
-      while (--tcp >= path)
-	{
-	  if (*tcp == '/' 
-	      || *tcp == '\\')
-	    return copystring(tcp + 1);
-	}			/* while */
-      if (isalpha (*path) && *(path + 1) == ':')
-	return copystring(path + 2);
+  if (path) {
+    char *tcp;
+    int tcpd;
+    
+    tcpd = strlen(path);
+    while (--tcpd >= 0) {
+      if ((tcp[tcpd] == '/') || (tcp[tcpd] == '\\'))
+	return copystring(tcp, tcpd + 1);
     }
+    if (isalpha(path[0]) && path[1] == ':')
+      return copystring(path, 2);
+  }
+
   return path;
 }
 
@@ -121,11 +124,10 @@ wxPathOnly(char *path)
   return NULL;
 }
 
-// Return the current date/time
-// [volatile]
 char *wxNow( void )
 {
-  time_t now = time(NULL);
+  time_t now;
+  now = time(NULL);
   char *date = ctime(&now); 
   date[24] = '\0';
   return date;
@@ -158,30 +160,32 @@ Bool wxGetEmailAddress (char *address, int maxSize)
 
 char *wxStripMenuCodes (char *in, char *out)
 {
+  int inp, outp;
+
   if (!in)
     return NULL;
     
   if (!out)
     out = copystring(in);
 
-  char *tmpOut = out;
-  
-  while (*in) {
-    if (*in == '&') {
+  inp = outp = 0;
+
+  while (in[inp]) {
+    if (in[inp] == '&') {
       // Check && -> &, &x -> x
-      if (*++in == '&')
-	*out++ = *in++;
-    } else if (*in == '\t') {
+      if (in[++inp] == '&')
+	out[outp++] = in[inp++];
+    } else if (in[inp] == '\t') {
       // Remove all stuff after \t in X mode, and let the stuff as is
       // in Windows mode.
       // Accelerators are handled in wx_item.cc for Motif, and are not
       // YET supported in XView
       break;
     } else
-      *out++ = *in++;
+      out[outp++] = in[inp++];
   }
 
-  *out = '\0';
+  out[outp] = '\0';
   
-  return tmpOut;
+  return out;
 }

@@ -50,13 +50,17 @@ wxMenu::wxMenu(char *Title, wxFunction func):wxbMenu(Title, func)
 // The wxWindow destructor will take care of deleting the submenus.
 wxMenu::~wxMenu(void)
 {
+  wxNode *node;
+  wxNode *next;
+
   if (ms_handle)
 	 wxwmDestroyMenu((HMENU)ms_handle);
   ms_handle = NULL;
 
-  wxNode *node = menuItems->First();
+  node = menuItems->First();
   while (node) {
-    wxMenuItem *item = (wxMenuItem *)node->Data();
+    wxMenuItem *item;
+    item = (wxMenuItem *)node->Data();
     item->menuBar = NULL;
     
     // Delete child menus.
@@ -66,7 +70,7 @@ wxMenu::~wxMenu(void)
       delete item->subMenu;
     item->subMenu = NULL;
     
-    wxNode *next = node->Next();
+    next = node->Next();
     delete item;
     delete node;
     node = next;
@@ -82,15 +86,17 @@ void wxMenu::Break(void)
 void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
 {
   // 'checkable' parameter is useless for Windows.
-  wxMenuItem *item = new wxMenuItem;
+  wxMenuItem *item;
+  WORD menuId;
+  int ms_flags;
+
+  item = new wxMenuItem;
   item->checkable = checkable;
   item->itemId = Id;
   item->itemName = copystring(Label);
   item->subMenu = NULL;
   if (helpString)
     item->helpString = copystring(helpString);
-
-  WORD menuId;
 
   if (!wxMenuItemIDs) {
     wxREGGLOB(wxMenuItemIDs);
@@ -107,7 +113,7 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
 
   menuItems->Append(item);
 
-  int ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
+  ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
   mustBeBreaked = FALSE;
 
   if (ms_handle)
@@ -129,6 +135,8 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
 void wxMenu::AppendSeparator(void)
 {
   int ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
+  wxMenuItem *item;
+  
   mustBeBreaked = FALSE;
 
   if (ms_handle)
@@ -136,7 +144,7 @@ void wxMenu::AppendSeparator(void)
   else if (save_ms_handle) // For Dynamic Manu Append, Thx!
     AppendMenu((HMENU)save_ms_handle, MF_SEPARATOR|ms_flags, NULL, NULL);
 
-  wxMenuItem *item = new wxMenuItem;
+  item = new wxMenuItem;
   item->checkable = FALSE;
   item->itemId = -1;
   menuItems->Append(item);
@@ -146,12 +154,15 @@ void wxMenu::AppendSeparator(void)
 // Pullright item
 void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
 {
+  wxMenuItem *item;
+  int ms_flags;
+
   if (!SubMenu->ms_handle)
     return;
 
   SubMenu->top_level_menu = top_level_menu;
 
-  wxMenuItem *item = new wxMenuItem;
+  item = new wxMenuItem;
   item->checkable = FALSE;
   item->itemId = Id;
   item->itemName = copystring(Label);
@@ -161,7 +172,7 @@ void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
 
   menuItems->Append(item);
 
-  int ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
+  ms_flags = mustBeBreaked? MF_MENUBREAK : 0;
   mustBeBreaked = FALSE;
 
   HMENU menu = (HMENU)(ms_handle ? ms_handle : save_ms_handle);

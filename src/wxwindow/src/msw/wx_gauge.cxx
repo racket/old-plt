@@ -26,6 +26,8 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 		     long style, char *name)
 {
   INITCOMMONCONTROLSEX icex;
+  wxWnd *cparent;
+  HWND wx_button;
 
   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
   icex.dwICC  = ICC_PROGRESS_CLASS;
@@ -37,7 +39,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
 
-  wxWnd *cparent = (wxWnd *)(panel->handle);
+  cparent = (wxWnd *)(panel->handle);
 
   labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
@@ -48,17 +50,20 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS,
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-    HDC the_dc = GetWindowDC(static_label) ;
-    if (labelFont && labelFont->GetInternalFont(the_dc))
-      SendMessage(static_label,WM_SETFONT,
-                  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-    ReleaseDC(static_label,the_dc) ;
+    {
+      HDC the_dc;
+      the_dc = GetWindowDC(static_label) ;
+      if (labelFont && labelFont->GetInternalFont(the_dc))
+	SendMessage(static_label,WM_SETFONT,
+		    (WPARAM)labelFont->GetInternalFont(the_dc),0L);
+      ReleaseDC(static_label,the_dc);
+    }
   } else
     static_label = NULL;
 
   windows_id = (int)NewId(this);
   
-  HWND wx_button =
+  wx_button =
     wxwmCreateWindowEx(0, PROGRESS_CLASS, label, 
 		       WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS
 		       | ((windowStyle & wxHORIZONTAL) ? 0 : PBS_VERTICAL),
@@ -71,12 +76,14 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   SendMessage(wx_button, PBM_SETRANGE, 0, MAKELPARAM(0, range));
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-
-  if (buttonFont && buttonFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
+  {
+    HDC the_dc;
+    the_dc = GetWindowDC((HWND)ms_handle) ;
+    if (buttonFont && buttonFont->GetInternalFont(the_dc))
+      SendMessage((HWND)ms_handle,WM_SETFONT,
+		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
+    ReleaseDC((HWND)ms_handle,the_dc) ;
+  }
 
   SetSize(x, y, width, height, wxSIZE_AUTO);
 
@@ -109,23 +116,22 @@ wxGauge::~wxGauge(void)
 void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
   int currentX, currentY;
+  int clx; // label font dimensions
+  int cly;
+  float label_width, label_height, label_x, label_y;
+  float control_width, control_height, control_x, control_y;
+  int defwidth, defheight;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  int clx; // label font dimensions
-  int cly;
-
-  float label_width, label_height, label_x, label_y;
-  float control_width, control_height, control_x, control_y;
-
   // If we're prepared to use the existing size, then...
   if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
     GetSize(&width, &height);
 
-  int defwidth, defheight;
   defwidth = ((windowStyle & wxHORIZONTAL) ? 100 : 24);
   defheight = ((windowStyle & wxHORIZONTAL) ? 24 : 100);
 
@@ -192,6 +198,7 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
 void wxGauge::GetSize(int *width, int *height)
 {
   RECT rect;
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize((HWND)ms_handle, &rect);
@@ -209,6 +216,8 @@ void wxGauge::GetPosition(int *x, int *y)
 {
   wxWindow *parent = GetParent();
   RECT rect;
+  POINT point;
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize((HWND)ms_handle, &rect);
@@ -217,7 +226,6 @@ void wxGauge::GetPosition(int *x, int *y)
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
   if (parent)

@@ -30,7 +30,9 @@ wxbItem::wxbItem (wxPanel *panel)
 
 wxbItem::~wxbItem (void)
 {
-  wxPanel *parent = (wxPanel *) GetParent ();
+  wxPanel *parent;
+
+  parent = (wxPanel *) GetParent ();
   if (parent) {
     // parent is not always a wxPanel: can be a wxMenu...
     if (wxSubType(parent->__type,wxTYPE_PANEL)) {
@@ -140,11 +142,15 @@ wxbMenu::~wxbMenu (void)
 
 wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
 {
+  wxNode * node;
+
   int i = 0;
   if (itemMenu)
     *itemMenu = NULL;
-  for (wxNode * node = menuItems->First (); node; node = node->Next (), i++) {
-    wxMenuItem *item = (wxMenuItem *) node->Data ();
+  for (node = menuItems->First (); node; node = node->Next (), i++) {
+    wxMenuItem *item;
+
+    item = (wxMenuItem *) node->Data ();
 
     if (item->itemId == itemId) {
       if (itemMenu)
@@ -155,7 +161,9 @@ wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
     }
 
     if (item->subMenu) {
-      wxMenuItem *ans = item->subMenu->FindItemForId (itemId, itemMenu, pos);
+      wxMenuItem *ans;
+
+      ans = item->subMenu->FindItemForId (itemId, itemMenu, pos);
       if (ans)
 	return ans;
     }
@@ -168,7 +176,8 @@ wxMenuItem *wxbMenu::FindItemForId (long itemId, wxMenu ** itemMenu, int * pos)
 
 void wxbMenu::SetHelpString(long itemId, char *helpString)
 {
-  wxMenuItem *item = FindItemForId (itemId);
+  wxMenuItem *item;
+  item = FindItemForId (itemId);
   if (item) {
     if (helpString)
       item->helpString = copystring(helpString);
@@ -179,7 +188,8 @@ void wxbMenu::SetHelpString(long itemId, char *helpString)
 
 char *wxbMenu::GetHelpString(long itemId)
 {
-  wxMenuItem *item = FindItemForId(itemId);
+  wxMenuItem *item;
+  item = FindItemForId(itemId);
   if (item)
     return item->helpString;
   else
@@ -228,13 +238,16 @@ wxbMenuBar::~wxbMenuBar (void)
 
 void wxbMenuBar::Append (wxMenu * menu, char *title)
 {
+  wxMenu **new_menus;
+  char **new_titles;
+  int i;
+
   if (!OnAppend(menu, title))
     return;
 
   n++;
-  wxMenu **new_menus = new wxMenu *[n];
-  char **new_titles = new char *[n];
-  int i;
+  new_menus = new wxMenu *[n];
+  new_titles = new char *[n];
 
   for (i = 0; i < n - 1; i++) {
     new_menus[i] = menus[i];
@@ -290,11 +303,12 @@ int wxbMenuBar::Number(void)
 
 wxMenuItem *wxbMenuBar::FindItemForId (long Id, wxMenu **itemMenu)
 {
+  wxMenuItem *item = NULL;
+  int i;
+
   if (itemMenu)
     *itemMenu = NULL;
 
-  wxMenuItem *item = NULL;
-  int i;
   for (i = 0; i < n; i++) {
     if ((item = menus[i]->FindItemForId (Id, itemMenu)))
       return item;
@@ -366,7 +380,8 @@ wxbChoice::~wxbChoice (void)
 
 char *wxbChoice::GetStringSelection (void)
 {
-  int sel = GetSelection ();
+  int sel;
+  sel = GetSelection ();
   if (sel > -1)
     return this->GetString (sel);
   else
@@ -375,7 +390,8 @@ char *wxbChoice::GetStringSelection (void)
 
 Bool wxbChoice::SetStringSelection (char *s)
 {
-  int sel = FindString (s);
+  int sel;
+  sel = FindString (s);
   if (sel > -1) {
     SetSelection (sel);
     return TRUE;
@@ -416,7 +432,8 @@ int wxbListBox::Number (void)
 // For single selection items only
 char *wxbListBox::GetStringSelection (void)
 {
-  int sel = GetSelection ();
+  int sel;
+  sel = GetSelection ();
   if (sel > -1)
     return this->GetString (sel);
   else
@@ -425,7 +442,8 @@ char *wxbListBox::GetStringSelection (void)
 
 Bool wxbListBox::SetStringSelection (char *s)
 {
-  int sel = FindString(s);
+  int sel;
+  sel = FindString(s);
   if (sel > -1) {
     SetOneSelection(sel);
     return TRUE;
@@ -478,7 +496,8 @@ int wxbRadioBox::Number (void)
 // For single selection items only
 char *wxbRadioBox::GetStringSelection (void)
 {
-  int sel = GetSelection ();
+  int sel;
+  sel = GetSelection ();
   if (sel > -1)
     return this->GetString (sel);
   else
@@ -487,7 +506,8 @@ char *wxbRadioBox::GetStringSelection (void)
 
 Bool wxbRadioBox::SetStringSelection (char *s)
 {
-  int sel = FindString (s);
+  int sel;
+  sel = FindString (s);
   if (sel > -1) {
     SetSelection (sel);
     return TRUE;

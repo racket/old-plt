@@ -59,16 +59,19 @@ Bool wxCanvas::
 Create (wxWindow * parent, int x, int y, int width, int height, long style,
 	char *name)
 {
+  wxWnd *cparent;
+  DWORD msflags = 0;
+  wxCanvasWnd *wnd;
+
   wxWinType = wxTYPE_XWND;
   windowStyle = style;
-  wxWnd *cparent = NULL;
+  cparent = NULL;
   if (parent)
     cparent = (wxWnd *) parent->handle;
 
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->GetValidPosition(&x, &y);
 
-  DWORD msflags = 0;
   if (style & wxBORDER)
     msflags |= WS_BORDER;
   msflags |= WS_CHILD | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE);
@@ -78,7 +81,7 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
     msflags |= WS_VSCROLL;
   msflags |= WS_CLIPSIBLINGS;
 
-  wxCanvasWnd *wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags);
+  wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags);
   handle = (char *) wnd;
 
   if (parent)
@@ -121,7 +124,8 @@ wxCanvas::~wxCanvas (void)
 
   if (wx_dc) {
     wxWnd *wnd = (wxWnd *)handle;
-    HDC dc = wxwmGetDC(wnd->handle);
+    HDC dc;
+    dc = wxwmGetDC(wnd->handle);
     wx_dc->SelectOldObjects(dc);
     wxwmReleaseDC(wnd->handle, dc);
     delete wx_dc;
@@ -131,25 +135,25 @@ wxCanvas::~wxCanvas (void)
 void wxCanvas::SetSize (int x, int y, int w, int h, int sizeFlags)
 {
   int currentX, currentY;
+  int ww, hh;
+  wxWnd *wnd = (wxWnd *) handle;
+
   GetPosition (&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  int ww, hh;
   GetSize (&ww, &hh);
   if (w == -1)
     w = ww;
   if (h == -1)
     h = hh;
 
-  wxWnd *wnd = (wxWnd *) handle;
-  if (wnd)
-    {
-      MoveWindow (wnd->handle, x, y, w, h, TRUE);
-      OnSize (w, h);
-    }
+  if (wnd) {
+    MoveWindow (wnd->handle, x, y, w, h, TRUE);
+    OnSize (w, h);
+  }
 }
 
 wxWindow *wxCanvas::FindFocusWindow()
@@ -171,6 +175,8 @@ SetScrollbars (int horizontal, int vertical,
 	       int x_page, int y_page,
 	       int x_pos, int y_pos, Bool setVirtualSize)
 {
+  wxWnd *wnd = (wxWnd *)handle;
+
   if (!(GetWindowStyleFlag() & wxHSCROLL))
     horizontal = -1;
   if (!(GetWindowStyleFlag() & wxVSCROLL))
@@ -195,14 +201,14 @@ SetScrollbars (int horizontal, int vertical,
   horiz_units = horizontal;
   vert_units = vertical;
   
-  wxWnd *wnd = (wxWnd *) handle;
   if (wnd) {
     Bool h_is_on, v_is_on;
+    int w, h;
+    RECT rect;
+    SCROLLINFO hinfo, vinfo;
     
     wnd->calcScrolledOffset = setVirtualSize;
     
-    int w, h;
-    RECT rect;
     GetClientRect(wnd->handle, &rect);
     w = rect.right - rect.left;
     h = rect.bottom - rect.top;
@@ -210,7 +216,6 @@ SetScrollbars (int horizontal, int vertical,
     if (!w) w = 1;
     if (!h) h = 1;
     
-    SCROLLINFO hinfo, vinfo;
     hinfo.cbSize = vinfo.cbSize = sizeof(SCROLLINFO);
     hinfo.fMask = vinfo.fMask = SIF_PAGE | SIF_RANGE | SIF_POS | SIF_DISABLENOSCROLL;
     hinfo.nMin = vinfo.nMin = 0;
@@ -218,6 +223,8 @@ SetScrollbars (int horizontal, int vertical,
     // Recalculate scroll bar range and position
     // ShowScrollBar(handle, SB_HORZ, wnd->xscroll_lines > 0);
     if (horizontal > 0)	{
+      int nHscrollMax;
+
       h_is_on = 1;
       
       if (setVirtualSize) {
@@ -231,7 +238,6 @@ SetScrollbars (int horizontal, int vertical,
 
       hinfo.fMask |= SIF_DISABLENOSCROLL;
       
-      int nHscrollMax;
       if (setVirtualSize) {
 	int nMaxWidth = wnd->xscroll_lines;
 	nHscrollMax = (nMaxWidth - w);
@@ -260,6 +266,8 @@ SetScrollbars (int horizontal, int vertical,
     
     // ShowScrollBar(handle, SB_VERT, wnd->yscroll_lines > 0);
     if (vertical > 0) {
+      int nVscrollMax;
+
       v_is_on = 1;
       
       if (setVirtualSize) {
@@ -273,7 +281,6 @@ SetScrollbars (int horizontal, int vertical,
       
       vinfo.fMask |= SIF_DISABLENOSCROLL;
       
-      int nVscrollMax;
       if (setVirtualSize) {
 	int nMaxHeight = wnd->yscroll_lines;
 	nVscrollMax = (nMaxHeight - h);
@@ -312,11 +319,10 @@ SetScrollbars (int horizontal, int vertical,
 void wxCanvas::GetScrollUnitsPerPage (int *x_page, int *y_page)
 {
   wxWnd *wnd = (wxWnd *) handle;
-  if (wnd)
-    {
-      *x_page = wnd->xscroll_lines_per_page;
-      *y_page = wnd->yscroll_lines_per_page;
-    }
+  if (wnd) {
+    *x_page = wnd->xscroll_lines_per_page;
+    *y_page = wnd->yscroll_lines_per_page;
+  }
 }
 
 /*
@@ -333,7 +339,8 @@ void wxCanvas::Scroll (int x_pos, int y_pos)
 void wxCanvas::ScrollPercent(float x, float y)
 {
   wxWnd *wnd = (wxWnd *) handle;
-  if (!wnd) return;
+  if (!wnd) 
+    return;
 
   if (!wnd->calcScrolledOffset) {
     /* Not managing  - do nothing */
@@ -378,9 +385,10 @@ void wxCanvas::EnableScrolling (Bool x_scroll, Bool y_scroll)
 
 void wxCanvas::GetVirtualSize (int *x, int *y)
 {
- GetClientSize(x, y);
-
   wxWnd *wnd = (wxWnd *) handle;
+
+  GetClientSize(x, y);
+
   if (wnd && wnd->calcScrolledOffset) {
     if (wnd->xscroll_lines > 0)
       *x = wnd->xscroll_pixels_per_line * wnd->xscroll_lines;
@@ -397,19 +405,19 @@ void wxCanvas::WarpPointer (int x_pos, int y_pos)
 
   wxWnd *wnd = (wxWnd *) handle;
 
-  if (wnd)
-    {
-      x_pos -= wnd->xscroll_position * wnd->xscroll_pixels_per_line;
-      y_pos -= wnd->yscroll_position * wnd->yscroll_pixels_per_line;
+  if (wnd) {
+    RECT rect;
 
-      RECT rect;
-      GetWindowRect (wnd->handle, &rect);
-
-      x_pos += rect.left;
-      y_pos += rect.top;
-
-      SetCursorPos (x_pos, y_pos);
-    }
+    x_pos -= wnd->xscroll_position * wnd->xscroll_pixels_per_line;
+    y_pos -= wnd->yscroll_position * wnd->yscroll_pixels_per_line;
+    
+    GetWindowRect (wnd->handle, &rect);
+    
+    x_pos += rect.left;
+    y_pos += rect.top;
+    
+    SetCursorPos (x_pos, y_pos);
+  }
 }
 
 // Where the current view starts from
@@ -427,15 +435,14 @@ void wxCanvas::ViewStart(int *x, int *y, Bool)
 
 void wxWnd::DeviceToLogical (float *x, float *y)
 {
-  if (is_canvas)
-    {
-      wxCanvas *canvas = (wxCanvas *) wx_window;
-      if (canvas->wx_dc)
-      {
-        *x = canvas->wx_dc->DeviceToLogicalX ((int) *x);
-        *y = canvas->wx_dc->DeviceToLogicalY ((int) *y);
-      }
+  if (is_canvas) {
+    wxCanvas *canvas;
+    canvas = (wxCanvas *) wx_window;
+    if (canvas->wx_dc) {
+      *x = canvas->wx_dc->DeviceToLogicalX ((int) *x);
+      *y = canvas->wx_dc->DeviceToLogicalY ((int) *y);
     }
+  }
 }
 
 wxCanvasWnd::wxCanvasWnd (wxWnd * parent, wxWindow * wx_win,
@@ -449,12 +456,15 @@ wxCanvasWnd::wxCanvasWnd (wxWnd * parent, wxWindow * wx_win,
 BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
 {
   RECT rect;
+  wxCanvas *canvas;
+  int mode;
+
   GetClientRect(handle, &rect);
-  int mode = SetMapMode(pDC, MM_TEXT);
+  mode = SetMapMode(pDC, MM_TEXT);
   FillRect(pDC, &rect, (HBRUSH)GetStockObject(WHITE_BRUSH));
   SetMapMode(pDC, mode);
 
-  wxCanvas *canvas = (wxCanvas *)wx_window;
+  canvas = (wxCanvas *)wx_window;
   if (canvas->wx_dc) {
     SetViewportExtEx(pDC, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
     SetWindowExtEx(pDC, canvas->wx_dc->window_ext_x, canvas->wx_dc->window_ext_y, NULL);
@@ -586,67 +596,72 @@ void wxGLContext::SetupPixelFormat(void) // (HDC hDC)
 
 void wxGLContext::SetupPalette() // (HDC hDC)
 {
-    int pixelFormat = GetPixelFormat(m_hDC); // GetPixelFormat is an OpenGL call.
-    PIXELFORMATDESCRIPTOR pfd;
+  int pixelFormat;
+  PIXELFORMATDESCRIPTOR pfd;
 
-    DescribePixelFormat(m_hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+  pixelFormat = GetPixelFormat(m_hDC); // GetPixelFormat is an OpenGL call.
 
-    if (pfd.dwFlags & PFD_NEED_PALETTE)
+  DescribePixelFormat(m_hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+
+  if (pfd.dwFlags & PFD_NEED_PALETTE)
     {
     }
-    else
+  else
     {
-	  return;
+      return;
     }
-
-    m_palette = CreateDefaultPalette();
-	m_deletePalette = TRUE;
-    
-    if (m_palette && m_palette->ms_palette)
-    {
-        SelectPalette(m_hDC, m_palette->ms_palette, FALSE);
-        RealizePalette(m_hDC);
-    }
+  
+  m_palette = CreateDefaultPalette();
+  m_deletePalette = TRUE;
+  
+  if (m_palette && m_palette->ms_palette) {
+    SelectPalette(m_hDC, m_palette->ms_palette, FALSE);
+    RealizePalette(m_hDC);
+  }
 }
 
 wxColourMap* wxGLContext::CreateDefaultPalette(void)
 {
-    PIXELFORMATDESCRIPTOR pfd;
-    int paletteSize;
-    int pixelFormat = GetPixelFormat(m_hDC); // GetPixelFormat is an OpenGL call.
+  PIXELFORMATDESCRIPTOR pfd;
+  int paletteSize;
+  int pixelFormat;
+  LOGPALETTE* pPal;
+  HPALETTE hPalette;
+  wxColourMap* cmap;
 
-    DescribePixelFormat(m_hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+  pixelFormat = GetPixelFormat(m_hDC); // GetPixelFormat is an OpenGL call.
 
-	paletteSize = 1 << pfd.cColorBits;
+  DescribePixelFormat(m_hDC, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+  
+  paletteSize = 1 << pfd.cColorBits;
+  
+  pPal = (LOGPALETTE*)new char[sizeof(LOGPALETTE) + paletteSize * sizeof(PALETTEENTRY)];
+  pPal->palVersion = 0x300;
+  pPal->palNumEntries = paletteSize;
 
-    LOGPALETTE* pPal =
-     (LOGPALETTE*) malloc(sizeof(LOGPALETTE) + paletteSize * sizeof(PALETTEENTRY));
-    pPal->palVersion = 0x300;
-    pPal->palNumEntries = paletteSize;
+  /* build a simple RGB color palette */
+  {
+    int redMask = (1 << pfd.cRedBits) - 1;
+    int greenMask = (1 << pfd.cGreenBits) - 1;
+    int blueMask = (1 << pfd.cBlueBits) - 1;
+    int i;
 
-    /* build a simple RGB color palette */
-    {
-	int redMask = (1 << pfd.cRedBits) - 1;
-	int greenMask = (1 << pfd.cGreenBits) - 1;
-	int blueMask = (1 << pfd.cBlueBits) - 1;
-	int i;
-
-	for (i=0; i<paletteSize; ++i) {
-	    pPal->palPalEntry[i].peRed =
-		    (((i >> pfd.cRedShift) & redMask) * 255) / redMask;
-	    pPal->palPalEntry[i].peGreen =
-		    (((i >> pfd.cGreenShift) & greenMask) * 255) / greenMask;
-	    pPal->palPalEntry[i].peBlue =
-		    (((i >> pfd.cBlueShift) & blueMask) * 255) / blueMask;
-	    pPal->palPalEntry[i].peFlags = 0;
-	}
+    for (i=0; i<paletteSize; ++i) {
+      pPal->palPalEntry[i].peRed =
+	(((i >> pfd.cRedShift) & redMask) * 255) / redMask;
+      pPal->palPalEntry[i].peGreen =
+	(((i >> pfd.cGreenShift) & greenMask) * 255) / greenMask;
+      pPal->palPalEntry[i].peBlue =
+	(((i >> pfd.cBlueShift) & blueMask) * 255) / blueMask;
+      pPal->palPalEntry[i].peFlags = 0;
     }
+  }
 
-    HPALETTE hPalette = CreatePalette(pPal);
-    free(pPal);
+  hPalette = CreatePalette(pPal);
+  free(pPal);
 
-    wxColourMap* cmap = new wxColourMap;
-    cmap->ms_palette = hPalette;
-
-    return cmap;
+  cmap = new wxColourMap;
+  cmap->ms_palette = hPalette;
+  
+  return cmap;
 }

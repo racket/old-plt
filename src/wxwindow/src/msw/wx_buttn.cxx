@@ -17,14 +17,13 @@
 
 BOOL wxButton::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
-  if (param == BN_CLICKED)
-  {
+  if (param == BN_CLICKED) {
     wxCommandEvent *event;
-	event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
+    event = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
     ProcessCommand(event);
     return TRUE;
-  }
-  else return FALSE;
+  } else
+    return FALSE;
 }
 
 wxButton::wxButton(wxPanel *panel, wxFunction Function, char *label,
@@ -48,6 +47,9 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
 		      int x, int y, int width, int height,
 		      long style, char *name)
 {
+  wxWnd *cparent;
+  HWND wx_button;
+  
   if (bitmap) {
     if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
       return Create(panel, Function, "<bad-image>", NULL, x, y, width, height, style, name);
@@ -60,13 +62,11 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
   
   wxWinType = wxTYPE_HWND;
 
-  wxWnd *cparent = (wxWnd *)(panel->handle);
+  cparent = (wxWnd *)(panel->handle);
 
   panel->GetValidPosition(&x, &y);
 
   windows_id = (int)NewId(this);
-
-  HWND wx_button;
 
   if (bitmap) {
     if (width < 0)
@@ -102,7 +102,8 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
   SubclassControl(wx_button);
 
   if (buttonFont) {
-    HDC the_dc = GetWindowDC((HWND)ms_handle);
+    HDC the_dc;
+    the_dc = GetWindowDC((HWND)ms_handle);
     if (buttonFont->GetInternalFont(the_dc))
       SendMessage((HWND)ms_handle,WM_SETFONT,
 		  (WPARAM)buttonFont->GetInternalFont(the_dc),0L);
@@ -172,22 +173,22 @@ char *wxButton::GetLabel(void)
 void wxButton::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
   HWND button = (HWND)ms_handle;
-
   int currentX, currentY;
+  int actualWidth = width;
+  int actualHeight = height;
+  int ww, hh;
+  float current_width;
+  float cyf;
+  char buf[300];
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  int actualWidth = width;
-  int actualHeight = height;
-  int ww, hh;
   GetSize(&ww, &hh);
 
-  float current_width;
-  float cyf;
-  char buf[300];
   GetWindowText(button, buf, 300);
   GetTextExtent(buf, &current_width, &cyf,NULL,NULL,buttonFont);
 
@@ -218,10 +219,12 @@ void wxButton::SetSize(int x, int y, int width, int height, int sizeFlags)
 
 void wxButton::SetDefault(void)
 {
-  wxPanel *panel = (wxPanel *)GetParent();
+  wxPanel *panel;
+  wxWnd *wnd;
 
+  panel = (wxPanel *)GetParent();
   panel->defaultItem = this;
 
-  wxWnd *wnd = (wxWnd *)panel->handle;
+  wnd = (wxWnd *)panel->handle;
   SendMessage(wnd->handle, DM_SETDEFID, windows_id, 0L);
 }

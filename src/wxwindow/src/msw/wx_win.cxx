@@ -43,23 +43,28 @@ void wxWindowInit(void)
 // Find an item given the MS Windows id
 wxWindow *wxWindow::FindItem(int id)
 {
+  wxChildNode *current;
+
   if (!children)
     return NULL;
-  wxChildNode *current = children->First();
+  current = children->First();
   while (current)
   {
-    wxObject *obj = (wxObject *)current->Data();
+    wxObject *obj;
+    obj = (wxObject *)current->Data();
     if (wxSubType(obj->__type, wxTYPE_PANEL)) {
       // Do a recursive search.
       wxPanel *panel = (wxPanel*)obj;
-      wxWindow *wnd = panel->FindItem(id);
+      wxWindow *wnd;
+      wnd = panel->FindItem(id);
       if (wnd)
         return wnd;
     } else if (wxSubType(obj->__type, wxTYPE_CANVAS)
 	     || wxSubType(obj->__type, wxTYPE_TEXT_WINDOW)) {
       // Do nothing
     } else {
-      wxItem *item = (wxItem *)current->Data();
+      wxItem *item;
+      item = (wxItem *)current->Data();
       if (item->windows_id == id)
         return item;
       else {
@@ -77,19 +82,24 @@ wxWindow *wxWindow::FindItem(int id)
 // Find an item given the MS Windows handle
 wxWindow *wxWindow::FindItemByHWND(HWND hWnd)
 {
+  wxChildNode *current;
+
   if (!children)
     return NULL;
-  wxChildNode *current = children->First();
+  current = children->First();
   while (current) {
-    wxObject *obj = (wxObject *)current->Data();
+    wxObject *obj;
+    obj = (wxObject *)current->Data();
     if (wxSubType(obj->__type,wxTYPE_PANEL)) {
       // Do a recursive search.
       wxPanel *panel = (wxPanel*)obj;
-      wxWindow *wnd = panel->FindItemByHWND(hWnd);
+      wxWindow *wnd;
+      wnd = panel->FindItemByHWND(hWnd);
       if (wnd)
         return wnd;
     } else {
-      wxItem *item = (wxItem *)current->Data();
+      wxItem *item;
+      item = (wxItem *)current->Data();
       if ((HWND)(item->ms_handle) == hWnd)
         return item;
       else {
@@ -97,9 +107,10 @@ wxWindow *wxWindow::FindItemByHWND(HWND hWnd)
         if (item->__type == wxTYPE_RADIO_BOX) {
           wxRadioBox *rbox = (wxRadioBox *)item;
           int i;
-          for (i = 0; i < rbox->no_items; i++)
+          for (i = 0; i < rbox->no_items; i++) {
             if (rbox->radioButtons[i] == hWnd)
               return item;
+	  }
         }
       }
     }
@@ -128,7 +139,7 @@ HWND wxWindow::GetHWND(void)
     case wxTYPE_MDICHILD:
     {
       wxWnd *wnd = (wxWnd *)handle;
-	  if (wnd)
+      if (wnd)
         hWnd = (HWND)wnd->handle;
       break;
     }
@@ -171,9 +182,11 @@ wxWindow::~wxWindow(void)
       if (handle)
       {
         wxWnd *wnd = (wxWnd *)handle;
-		  HDC dc = wxwmGetDC(wnd->handle);
-		  PreDelete(dc);
-		  wxwmReleaseDC(wnd->handle, dc);
+		  HDC dc;
+
+	dc = wxwmGetDC(wnd->handle);
+	PreDelete(dc);
+	wxwmReleaseDC(wnd->handle, dc);
 
         wnd->DestroyWindow();
         delete wnd;
@@ -212,23 +225,28 @@ wxWindow *wxWindow::GetTopLevel()
 {
   wxWindow *p = this;
   while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
-		|| wxSubType(p->__type, wxTYPE_DIALOG_BOX)))
+		|| wxSubType(p->__type, wxTYPE_DIALOG_BOX))) {
     p = p->GetParent();
+  }
   
   return p;
 }
 
 void wxWindow::SetFocus(void)
 {
+  wxWindow *p;
+
   if (!IsShownTree())
     return;
 
-  wxWindow *p = GetTopLevel();
+  p = GetTopLevel();
   
   if (p && wxSubType(p->__type, wxTYPE_FRAME)
       && (((wxFrame *)p)->frame_type == wxMDI_CHILD)) {
-    wxWindow *mdip = p->GetParent();
+    wxWindow *mdip;
     DWORD r;
+
+    mdip = p->GetParent();
 
     if (mdip && (GetActiveWindow() != mdip->GetHWND()))
       r = 0;
@@ -250,7 +268,8 @@ void wxWindow::SetFocus(void)
     p->focusWindow = this;
     
     if (GetActiveWindow() == p->GetHWND()) {
-      HWND hWnd = GetHWND();
+      HWND hWnd;
+      hWnd = GetHWND();
       if (hWnd)
 	wxwmSetFocus(hWnd);
     }
@@ -278,11 +297,13 @@ Bool wxWindow::IsGray(void)
 
 void wxWindow::DoEnableWindow(int on)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
+  hWnd = GetHWND();
   if (hWnd)
     ::EnableWindow(hWnd, (BOOL)on); 
   if (!on) {
-    wxWindow *p = GetTopLevel();
+    wxWindow *p;
+    p = GetTopLevel();
     if (p->focusWindow == this)
       p->SetFocus();
   }
@@ -336,10 +357,10 @@ void wxWindow::Enable(Bool enable)
 void wxWindow::InternalGrayChildren(Bool gray)
 {
   /* Called by ChangeToGray */
-
   wxChildNode *cn;
   for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
-    wxWindow *w = (wxWindow *)cn->Data();
+    wxWindow *w;
+    w = (wxWindow *)cn->Data();
     w->InternalEnable(!gray, TRUE);
   }
 }
@@ -357,7 +378,8 @@ void wxWindow::InitEnable()
 
 void wxWindow::CaptureMouse(void)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
+  hWnd = GetHWND();
   if (hWnd && !winCaptured) {
     SetCapture(hWnd);
     winCaptured = TRUE;
@@ -374,7 +396,8 @@ void wxWindow::ReleaseMouse(void)
 
 void wxWindow::DragAcceptFiles(Bool accept)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
+  hWnd = GetHWND();
   if (hWnd)
     ::DragAcceptFiles(hWnd, (BOOL)accept);
 }
@@ -382,8 +405,10 @@ void wxWindow::DragAcceptFiles(Bool accept)
 // Get total size
 void wxWindow::GetSize(int *x, int *y)
 {
-  HWND hWnd = GetHWND();
   RECT rect;
+  HWND hWnd;
+
+  hWnd = GetHWND();
   GetWindowRect(hWnd, &rect);
   *x = rect.right - rect.left;
   *y = rect.bottom - rect.top;
@@ -391,17 +416,19 @@ void wxWindow::GetSize(int *x, int *y)
 
 void wxWindow::GetPosition(int *x, int *y)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
   HWND hParentWnd = 0;
+  RECT rect;
+  POINT point;
+
+  hWnd = GetHWND();
   if (GetParent())
     hParentWnd = GetParent()->GetHWND();
   
-  RECT rect;
   GetWindowRect(hWnd, &rect);
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
   if (hParentWnd)
@@ -417,8 +444,10 @@ void wxWindow::GetPosition(int *x, int *y)
 
 void wxWindow::ScreenToClient(int *x, int *y)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
   POINT pt;
+
+  hWnd = GetHWND();
   pt.x = *x;
   pt.y = *y;
   ::ScreenToClient(hWnd, &pt);
@@ -429,8 +458,10 @@ void wxWindow::ScreenToClient(int *x, int *y)
 
 void wxWindow::ClientToScreen(int *x, int *y)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
   POINT pt;
+
+  hWnd = GetHWND();
   pt.x = *x;
   pt.y = *y;
   ::ClientToScreen(hWnd, &pt);
@@ -474,6 +505,7 @@ wxWindow *wxLocationToWindow(int x, int y)
 static wxWnd *wxCurrentWindow(int in_content)
 {
   HWND hwnd;
+  wxWnd *wnd = NULL;
 
   hwnd = GetCapture();
   if (!hwnd) {
@@ -488,7 +520,6 @@ static wxWnd *wxCurrentWindow(int in_content)
   if (!hwnd)
     return NULL;
 
-  wxWnd *wnd = NULL;
   while (hwnd) {
     wnd = wxFindWinFromHandle(hwnd);
     if (wnd)
@@ -500,10 +531,11 @@ static wxWnd *wxCurrentWindow(int in_content)
   if (wnd && in_content) {
     /* Check content vs. non-content area: */
     POINT pos;
+    RECT wind;
+
     GetCursorPos(&pos);
     ScreenToClient(wnd->handle, &pos);
 
-    RECT wind;
     GetClientRect(wnd->handle, &wind);
 
     if (!PtInRect(&wind, pos))
@@ -515,12 +547,13 @@ static wxWnd *wxCurrentWindow(int in_content)
 
 void wxResetCurrentCursor(void)
 {
-  wxWnd *wnd = wxCurrentWindow(1);
+  wxWnd *wnd;
+  wxWindow *w = wnd->wx_window;
+  wxCursor *cursor = wxSTANDARD_CURSOR;
+
+  wnd = wxCurrentWindow(1);
   if (!wnd) return;
 
-  wxWindow *w = wnd->wx_window;
-
-  wxCursor *cursor = wxSTANDARD_CURSOR;
   while (w) {
     if (w->wx_cursor) {
       cursor = w->wx_cursor;
@@ -551,8 +584,10 @@ wxCursor *wxWindow::SetCursor(wxCursor *cursor)
 // For XView, this is the same as GetSize
 void wxWindow::GetClientSize(int *x, int *y)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
   RECT rect;
+
+  hWnd = GetHWND();
   GetClientRect(hWnd, &rect);
   *x = rect.right;
   *y = rect.bottom;
@@ -561,22 +596,24 @@ void wxWindow::GetClientSize(int *x, int *y)
 void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
 {
   int currentX, currentY;
-  GetPosition(&currentX, &currentY);
   int actualWidth = width;
   int actualHeight = height;
+  int currentW,currentH;
+  HWND hWnd;
+
+  GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  int currentW,currentH;
   GetSize(&currentW, &currentH);
   if (width == -1)
     actualWidth = currentW;
   if (height == -1)
     actualHeight = currentH;
 
-  HWND hWnd = GetHWND();
+  hWnd = GetHWND();
   if (hWnd)
     MoveWindow(hWnd, x, y, actualWidth, actualHeight, (BOOL)TRUE);
 
@@ -585,26 +622,31 @@ void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFla
 
 void wxWindow::SetClientSize(int width, int height)
 {
-  wxWindow *parent = GetParent();
-  HWND hWnd = GetHWND();
-  HWND hParentWnd = parent->GetHWND();
-
+  wxWindow *parent;
+  HWND hWnd;
+  HWND hParentWnd;
   RECT rect;
+  RECT rect2;
+  POINT point;
+  int actual_width, actual_height;
+
+  parent = GetParent();
+  hWnd = GetHWND();
+  hParentWnd = parent->GetHWND();
+
   GetClientRect(hWnd, &rect);
 
-  RECT rect2;
   GetWindowRect(hWnd, &rect2);
 
   // Find the difference between the entire window (title bar and all)
   // and the client area; add this to the new client size to move the
   // window
-  int actual_width = rect2.right - rect2.left - rect.right + width;
-  int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
+  actual_width = rect2.right - rect2.left - rect.right + width;
+  actual_height = rect2.bottom - rect2.top - rect.bottom + height;
 
   // If there's a parent, must subtract the parent's top left corner
   // since MoveWindow moves relative to the parent
 
-  POINT point;
   point.x = rect2.left;
   point.y = rect2.top;
   if (parent)
@@ -618,13 +660,15 @@ void wxWindow::SetClientSize(int width, int height)
 
 Bool wxWindow::Show(Bool show)
 {
+  HWND hWnd;
+  int cshow;
+
   SetShown(show);
 
   if (window_parent)
     window_parent->GetChildren()->Show(this, show);
 
-  HWND hWnd = GetHWND();
-  int cshow;
+  hWnd = GetHWND();
   if (show)
     cshow = SW_SHOW;
   else
@@ -634,7 +678,8 @@ Bool wxWindow::Show(Bool show)
     BringWindowToTop(hWnd);
 
   {
-    wxWindow *p = GetTopLevel();
+    wxWindow *p;
+    p = GetTopLevel();
     if (p->focusWindow == this)
       p->focusWindow = NULL;
   }
@@ -647,14 +692,20 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 			     wxFont *theFont, Bool use16bit)
 {
   wxFont *fontToUse = theFont;
+  HWND hWnd;
+  HDC dc;
+  HFONT fnt = 0; 
+  HFONT was = 0;
+  SIZE sizeRect;
+  TEXTMETRIC tm;
+  int len;
+  
   if (!fontToUse)
     fontToUse = font;
     
-  HWND hWnd = GetHWND();
-  HDC dc = wxwmGetDC(hWnd);
+  hWnd = GetHWND();
+  dc = wxwmGetDC(hWnd);
 
-  HFONT fnt = 0; 
-  HFONT was = 0;
   if (fontToUse && (fnt = fontToUse->GetInternalFont(dc))) 
     was = (HFONT)SelectObject(dc, fnt); 
   else {
@@ -663,9 +714,7 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
       was = (HFONT)SelectObject(dc, fnt);
   }
 
-  SIZE sizeRect;
-  TEXTMETRIC tm;
-  int len = (int)strlen(string);
+  len = (int)strlen(string);
   GetTextExtentPoint(dc, len ? string : " ", len ? len : 1, &sizeRect);
   GetTextMetrics(dc, &tm);
 
@@ -682,7 +731,8 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 
 void wxWindow::Refresh(void)
 {
-  HWND hWnd = GetHWND();
+  HWND hWnd;
+  hWnd = GetHWND();
   if (hWnd)
   {
     ::InvalidateRect(hWnd, NULL, TRUE);
@@ -694,7 +744,8 @@ wxWindow *wxWindow::FindFocusWindow()
   if (IsShown()) {
     wxChildNode *cn;
     for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
-      wxWindow *w = (wxWindow *)cn->Data();
+      wxWindow *w;
+      w = (wxWindow *)cn->Data();
       w = w->FindFocusWindow();
       if (w)
 	return w;
@@ -1238,7 +1289,8 @@ wxWnd::~wxWnd(void)
   wxWinHandleList->DeleteObject(this);
 
   if (wx_window) {
-    wxWindow *p = wx_window->GetTopLevel();
+    wxWindow *p;
+    p = wx_window->GetTopLevel();
     if (p->focusWindow == wx_window)
       p->focusWindow = NULL;
   }
@@ -1269,9 +1321,10 @@ void wxWnd::ReleaseHDC(void)
 // (e.g. with MDI child windows)
 void wxWnd::DestroyWindow(void)
 {
+  HWND oldHandle = handle;
+
   DetachWindowMenu();
   SetWindowLong(handle, 0, (long)0);
-  HWND oldHandle = handle;
   handle = NULL;
 
   wxwmDestroyWindow(oldHandle);
@@ -1283,6 +1336,13 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
 		   int x, int y, int width, int height,
 		   DWORD style, char *dialog_template, DWORD extendedStyle)
 {
+  RECT parent_rect;
+  int x1 = 0;
+  int y1 = 0;
+  int w2 = 5;
+  int h2 = 5;
+  HWND hParent = NULL;
+
   WXGC_IGNORE(this, wx_window);
 
   wx_window = wx_win;
@@ -1290,10 +1350,6 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
     wx_window->handle = (char *)this;
     
   is_dialog = (dialog_template != NULL);
-  int x1 = 0;
-  int y1 = 0;
-  int w2 = 5;
-  int h2 = 5;
 
   if (!parent) {
     x1 = y1 = CW_USEDEFAULT;
@@ -1301,7 +1357,6 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
 
   // Find parent's size, if it exists, to set up a possible default
   // panel size the size of the parent window
-  RECT parent_rect;
   if (parent) {
     // Was GetWindowRect: JACS 5/5/95
     GetClientRect(parent->handle, &parent_rect);
@@ -1316,7 +1371,6 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
   if (width > -1) w2 = width;
   if (height > -1) h2 = height;
 
-  HWND hParent = NULL;
   if (parent)
     hParent = parent->handle;
 
@@ -1447,7 +1501,8 @@ BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
 {
   if (wx_window) {
     if (wx_window->IsShownTree()) {
-      wxWindow *p = wx_window->GetTopLevel();
+      wxWindow *p;
+      p = wx_window->GetTopLevel();
       p->focusWindow = wx_window;
       
       wx_window->OnSetFocus();
@@ -1471,26 +1526,29 @@ void wxWnd::OnDropFiles(WPARAM wParam)
 {
   HDROP hFilesInfo = (HDROP)wParam;
   POINT dropPoint;
+  WORD gwFilesDropped;
+  char **files;
+  int wIndex;
+
   DragQueryPoint(hFilesInfo, (LPPOINT) &dropPoint);
 
   // Get the total number of files dropped
-  WORD gwFilesDropped = (WORD)DragQueryFile ((HDROP)hFilesInfo,
+  gwFilesDropped = (WORD)DragQueryFile ((HDROP)hFilesInfo,
 				   (UINT)-1,
                                    (LPSTR)0,
                                    (UINT)0);
 
-  char **files = new char *[gwFilesDropped];
-  int wIndex;
-  for (wIndex=0; wIndex < (int)gwFilesDropped; wIndex++)
-  {
+  files = new char *[gwFilesDropped];
+  for (wIndex=0; wIndex < (int)gwFilesDropped; wIndex++) {
     DragQueryFile (hFilesInfo, wIndex, (LPSTR) wxBuffer, 1000);
     files[wIndex] = copystring(wxBuffer);
   }
   DragFinish (hFilesInfo);
 
   if (wx_window)
-    for (wIndex=0; wIndex < (int)gwFilesDropped; wIndex++) 
+    for (wIndex=0; wIndex < (int)gwFilesDropped; wIndex++) {
       wx_window->OnDropFile(files[wIndex]);
+    }
 }
 
 void wxWnd::OnVScroll(WORD WXUNUSED(code), WORD WXUNUSED(pos), HWND WXUNUSED(control))
@@ -1537,14 +1595,14 @@ void wxWnd::DetachWindowMenu(void)
 {
   if (hMenu)
   {
-    int N = GetMenuItemCount(hMenu);
+    int N;
     int i;
-    for (i = 0; i < N; i++)
-    {
+    N = GetMenuItemCount(hMenu);
+    for (i = 0; i < N; i++) {
       char buf[100];
-      int chars = GetMenuString(hMenu, i, buf, 100, MF_BYPOSITION);
-      if ((chars > 0) && (strcmp(buf, "&Window") == 0))
-      {
+      int chars;
+      chars = GetMenuString(hMenu, i, buf, 100, MF_BYPOSITION);
+      if ((chars > 0) && (strcmp(buf, "&Window") == 0)) {
         RemoveMenu(hMenu, i, MF_BYPOSITION);
         break;
       }
@@ -1583,7 +1641,8 @@ void wxSubWnd::OnSize(int bad_w, int bad_h, UINT WXUNUSED(flag))
 
   if (calcScrolledOffset) {
     if ((xscroll_lines > 0) || (yscroll_lines > 0)) {
-      wxCanvas * c= (wxCanvas *)wx_window;
+      wxCanvas * c;
+      c = (wxCanvas *)wx_window;
       if (c) {
 	c->SetScrollbars(c->horiz_units, c->vert_units,
 			 xscroll_lines, yscroll_lines,
@@ -1600,7 +1659,8 @@ void wxSubWnd::OnSize(int bad_w, int bad_h, UINT WXUNUSED(flag))
 // Deal with child commands from buttons etc.
 BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
 {
-  wxWindow *item = wx_window->FindItem(id);
+  wxWindow *item;
+  item = wx_window->FindItem(id);
   if (item) {
     return item->MSWCommand(cmd, id);
   } else
@@ -1609,7 +1669,9 @@ BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
 
 int wxWnd::OnButton(int x, int y, UINT flags, int evttype, int for_nc)
 {
-  wxMouseEvent *event = new wxMouseEvent(evttype);
+  wxMouseEvent *event;
+
+  event = new wxMouseEvent(evttype);
 
   event->x = x;
   event->y = y;
@@ -1660,8 +1722,9 @@ int wxCheckMousePosition()
   if (current_mouse_wnd && !wxCurrentWindow(0)) {
     wxWindow *imw;
 
-    for (imw = current_mouse_wnd; imw; imw = el_PARENT(imw))
+    for (imw = current_mouse_wnd; imw; imw = el_PARENT(imw)) {
       wxQueueLeaveEvent(current_mouse_context, imw, -10, -10, 0);
+    }
 
     current_mouse_wnd = NULL;
     current_mouse_context = NULL;
@@ -1680,15 +1743,19 @@ void wxDoLeaveEvent(wxWindow *w, int x, int y, int flags)
 void wxEntered(wxWindow *mw, int x, int y, int flags)
 {
   wxWindow *imw, *join, *nextw;
-  void *curr_context = wxGetContextForFrame();
+  void *curr_context;
   POINT glob, pos;
+  wxWindow *mouse_wnd;
+  void *mouse_context;
+
+  curr_context = wxGetContextForFrame();
 
   glob.x = x;
   glob.y = y;
   ::ClientToScreen(mw->GetHWND(), &glob);
   
-  wxWindow *mouse_wnd = current_mouse_wnd;
-  void *mouse_context = current_mouse_context;
+  mouse_wnd = current_mouse_wnd;
+  mouse_context = current_mouse_context;
 
   current_mouse_wnd = NULL;
   current_mouse_context = NULL;
@@ -1734,6 +1801,8 @@ void wxEntered(wxWindow *mw, int x, int y, int flags)
 
 int wxWnd::OnMouseMove(int x, int y, UINT flags, int for_nc)
 {
+  wxMouseEvent *event;
+
   if (wxIsBusy())
     wxMSWSetCursor(wxHOURGLASS_CURSOR->ms_cursor);
   else
@@ -1747,7 +1816,7 @@ int wxWnd::OnMouseMove(int x, int y, UINT flags, int for_nc)
     /* We'd like to re-dispatch to the frame... */
   }
 
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
+  event = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 
   event->x = x;
   event->y = y;
@@ -1792,7 +1861,9 @@ void wxWnd::OnMouseEnter(int x, int y, UINT flags)
 
 static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags)
 {
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_ENTER_WINDOW);
+  wxMouseEvent *event;
+
+  event = new wxMouseEvent(wxEVENT_TYPE_ENTER_WINDOW);
 
   event->x = x;
   event->y = y;
@@ -1817,7 +1888,9 @@ void wxWnd::OnMouseLeave(int x, int y, UINT flags)
 
 static void wxDoOnMouseLeave(wxWindow *wx_window, int x, int y, UINT flags)
 {
-  wxMouseEvent *event = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
+  wxMouseEvent *event;
+
+  event = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
 
   event->x = x;
   event->y = y;
@@ -1848,7 +1921,9 @@ static int generic_ascii_code[256];
 wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease, HWND handle)
 {
   int id;
-  Bool tempControlDown = (::GetKeyState(VK_CONTROL) >> 1);
+  Bool tempControlDown;
+
+  tempControlDown = (::GetKeyState(VK_CONTROL) >> 1);
 
   if (isASCII) {
     // If 1 -> 26, translate to CTRL plus a letter.
@@ -1916,7 +1991,11 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
   } 
 
   if (id > -1) {
-    wxKeyEvent *event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+    POINT pt;
+    RECT rect;
+    wxKeyEvent *event;
+
+    event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
 
     if (::GetKeyState(VK_SHIFT) >> 1)
       event->shiftDown = TRUE;
@@ -1929,9 +2008,7 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
     event->keyUpCode = (isRelease ? id : WXK_PRESS);
     event->SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
-    POINT pt;
     GetCursorPos(&pt);
-    RECT rect;
     GetWindowRect(handle,&rect);
     pt.x -= rect.left;
     pt.y -= rect.top;
@@ -1946,7 +2023,9 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
 
 void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
 {
-  wxKeyEvent *event = wxMakeCharEvent(wParam, lParam, isASCII, isRelease, handle);
+  wxKeyEvent *event;
+
+  event = wxMakeCharEvent(wParam, lParam, isASCII, isRelease, handle);
 
   if (event && wx_window) {
     if (!wx_window->CallPreOnChar(wx_window, event))
@@ -1957,14 +2036,17 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRelease)
 
 void wxSubWnd::OnVScroll(WORD wParam, WORD pos, HWND control)
 {
+  wxScrollEvent *event;
+
   if (control) {
-    wxSlider *slider = (wxSlider *)wxSliderList->Find((long)control);
+    wxSlider *slider;
+    slider = (wxSlider *)wxSliderList->Find((long)control);
     if (slider)
       wxSliderEvent(control, wParam, pos);
     return;
   }
 
-  wxScrollEvent *event = new wxScrollEvent;
+  event = new wxScrollEvent;
   
   event->pos = pos;
   event->direction = wxVERTICAL;
@@ -2007,14 +2089,17 @@ void wxSubWnd::OnVScroll(WORD wParam, WORD pos, HWND control)
 
 void wxSubWnd::OnHScroll( WORD wParam, WORD pos, HWND control)
 {
+  wxScrollEvent *event;
+
   if (control) {
-    wxSlider *slider = (wxSlider *)wxSliderList->Find((long)control);
+    wxSlider *slider;
+    slider = (wxSlider *)wxSliderList->Find((long)control);
     if (slider)
       wxSliderEvent(control, wParam, pos);
     return;
   }
 
-  wxScrollEvent *event = new wxScrollEvent;
+  event = new wxScrollEvent;
   
   event->pos = pos;
   event->direction = wxHORIZONTAL;
@@ -2058,9 +2143,12 @@ void wxSubWnd::OnHScroll( WORD wParam, WORD pos, HWND control)
 void wxGetCharSize(HWND wnd, int *x, int *y,wxFont *the_font)
 {
   TEXTMETRIC tm;
-  HDC dc = wxwmGetDC(wnd);
+  HDC dc;
   HFONT fnt =0;
   HFONT was = 0;
+
+  dc = wxwmGetDC(wnd);
+
   if (the_font&&(fnt=the_font->GetInternalFont(dc)))
   {
     was = (HFONT)SelectObject(dc,fnt);
@@ -2236,13 +2324,15 @@ int wxCharCodeWXToMSW(int id, Bool *isVirtual)
 void wxWindow::DoScroll(wxScrollEvent *event)
 {
   long orient = event->direction;
+  wxWnd *wnd = (wxWnd *)handle;
+  int nScrollInc;
+  HWND hWnd;
 
-  int nScrollInc = CalcScrollInc(event);
+  nScrollInc = CalcScrollInc(event);
   if (nScrollInc == 0)
     return;
 
-  wxWnd *wnd = (wxWnd *)handle;
-  HWND hWnd = GetHWND();
+  hWnd = GetHWND();
 
   if (orient == wxHORIZONTAL) {
     int newPos = wnd->xscroll_position + nScrollInc;
@@ -2279,7 +2369,6 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
 {
   int pos = event->pos;
   long orient = event->direction;
-
   int nScrollInc = 0;
   wxWnd *wnd = (wxWnd *)handle;
 
@@ -2340,17 +2429,21 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
       break;
     }
   }
-  HWND hWnd = GetHWND();
+  HWND hWnd;
+  hWnd = GetHWND();
   if (orient == wxHORIZONTAL) {
     if (wnd->calcScrolledOffset) {
       // We're scrolling automatically
       int w;
       RECT rect;
+      int nMaxWidth;
+      int nHscrollMax;
+
       GetClientRect(hWnd, &rect);
       w = rect.right - rect.left;
-      int nMaxWidth = wnd->xscroll_lines*wnd->xscroll_pixels_per_line;
+      nMaxWidth = wnd->xscroll_lines*wnd->xscroll_pixels_per_line;
       
-      int nHscrollMax = (int)ceil((nMaxWidth - w)/(float)wnd->xscroll_pixels_per_line);
+      nHscrollMax = (int)ceil((nMaxWidth - w)/(float)wnd->xscroll_pixels_per_line);
       nHscrollMax = max(0, nHscrollMax);
 
       nScrollInc = max(-wnd->xscroll_position,
@@ -2370,12 +2463,16 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
     if (wnd->calcScrolledOffset) {
       // We're scrolling automatically
       RECT rect;
+      int h;
+      int nMaxHeight;;
+      int nVscrollMax
+
       GetClientRect(hWnd, &rect);
-      int h = rect.bottom - rect.top;
+      h = rect.bottom - rect.top;
       
-      int nMaxHeight = wnd->yscroll_lines*wnd->yscroll_pixels_per_line;
+      nMaxHeight = wnd->yscroll_lines*wnd->yscroll_pixels_per_line;
       
-      int nVscrollMax = (int)ceil((nMaxHeight - h)/(float)wnd->yscroll_pixels_per_line);
+      nVscrollMax = (int)ceil((nMaxHeight - h)/(float)wnd->yscroll_pixels_per_line);
       nVscrollMax = max(0, nVscrollMax);
       
       nScrollInc = max(-wnd->yscroll_position,
@@ -2401,6 +2498,8 @@ void wxWindow::OnScroll(wxScrollEvent *event)
 void wxWindow::SetScrollPos(int orient, int pos)
 {
   wxWnd *wnd = (wxWnd *)handle;
+  int wOrient;
+  HWND hWnd;
 
   if (orient < 0) {
     /* Hack to avoid calcScrolledOffset check */
@@ -2410,13 +2509,12 @@ void wxWindow::SetScrollPos(int orient, int pos)
       return;
   }
 
-  int wOrient;
   if (orient == wxHORIZONTAL)
     wOrient = SB_HORZ;
   else
     wOrient = SB_VERT;
     
-  HWND hWnd = GetHWND();
+  hWnd = GetHWND();
   if (hWnd) {
     ::SetScrollPos(hWnd, wOrient, pos, TRUE);
 
@@ -2430,9 +2528,11 @@ void wxWindow::SetScrollPos(int orient, int pos)
 void wxWindow::SetScrollRange(int orient, int range)
 {
   wxWnd *wnd = (wxWnd *)handle;
-  if (wnd->calcScrolledOffset) return;
-
+  HWND hWnd;
   int wOrient, page;
+  SCROLLINFO info;
+
+  if (wnd->calcScrolledOffset) return;
 
   if (orient == wxHORIZONTAL)
     wOrient = SB_HORZ;
@@ -2445,7 +2545,6 @@ void wxWindow::SetScrollRange(int orient, int range)
     page = wnd->yscroll_lines_per_page;
   }
 
-  SCROLLINFO info;
   info.cbSize = sizeof(SCROLLINFO);
   info.nPage = page;
   info.nMin = 0;
@@ -2453,7 +2552,7 @@ void wxWindow::SetScrollRange(int orient, int range)
 
   info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
 
-  HWND hWnd = GetHWND();
+  hWnd = GetHWND();
 
   if (hWnd) {
     ::SetScrollInfo(hWnd, wOrient, &info, TRUE);
@@ -2468,11 +2567,11 @@ void wxWindow::SetScrollRange(int orient, int range)
 void wxWindow::SetScrollPage(int orient, int page)
 {
   wxWnd *wnd = (wxWnd *)handle;
-  if (wnd->calcScrolledOffset) return;
-
   SCROLLINFO info;
-
+  HWND hWnd;
   int dir, range;
+
+  if (wnd->calcScrolledOffset) return;
 
   if (orient == wxHORIZONTAL) {
     dir = SB_HORZ;    
@@ -2490,7 +2589,7 @@ void wxWindow::SetScrollPage(int orient, int page)
   info.nMax = range + page - 1;
   info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
 
-  HWND hWnd = GetHWND();
+  hWnd = GetHWND();
   if (hWnd) {
     ::SetScrollInfo(hWnd, dir, &info, TRUE);
   }
@@ -2499,14 +2598,16 @@ void wxWindow::SetScrollPage(int orient, int page)
 int wxWindow::GetScrollPos(int orient)
 {
   wxWnd *wnd = (wxWnd *)handle;
+  HWND hWnd;
+  int wOrient;
+
   if (wnd->calcScrolledOffset) return 0;
 
-  int wOrient;
   if (orient == wxHORIZONTAL)
     wOrient = SB_HORZ;
   else
     wOrient = SB_VERT;
-  HWND hWnd = GetHWND();
+  hWnd = GetHWND();
   if (hWnd)
     return ::GetScrollPos(hWnd, wOrient);
   else
@@ -2515,7 +2616,8 @@ int wxWindow::GetScrollPos(int orient)
 
 int wxWindow::GetScrollRange(int orient)
 {
-  wxWnd *wnd = (wxWnd *)handle;
+  wxWnd *wnd;
+  wnd = (wxWnd *)handle;
   if (wnd->calcScrolledOffset) return 0;
 
   if (orient == wxHORIZONTAL)
@@ -2526,10 +2628,13 @@ int wxWindow::GetScrollRange(int orient)
 
 int wxWindow::GetScrollPage(int orient)
 {
-  wxWnd *wnd = (wxWnd *)handle;
+  wxWnd *wnd;
+  wxCanvas *c;
+
+  wnd = (wxWnd *)handle;
   if (wnd->calcScrolledOffset) return 0;
 
-  wxCanvas *c = (wxCanvas *)this;
+  c = (wxCanvas *)this;
 
   if (orient == wxHORIZONTAL) {
     if (c->horiz_units <= 0)
@@ -2545,15 +2650,19 @@ int wxWindow::GetScrollPage(int orient)
 // Default OnSize resets scrollbars, if any
 void wxWindow::OnSize(int bad_w, int bad_h)
 {
+  wxWnd *wnd;
+
   if (wxWinType != wxTYPE_XWND)
     return;
-  wxWnd *wnd = (wxWnd *)handle;
+  wnd = (wxWnd *)handle;
     
   if (wxSubType(__type, wxTYPE_DIALOG_BOX)) {
-    wxChildNode* node = GetChildren()->First(); 
+    wxChildNode* node;
+    node = GetChildren()->First(); 
 
     if (node && !node->Next()) {
-      wxWindow *win = (wxWindow *)node->Data();
+      wxWindow *win;
+      win = (wxWindow *)node->Data();
       Bool hasSubPanel = ((wxSubType(win->__type, wxTYPE_PANEL)
 			   && !wxSubType(win->__type, wxTYPE_DIALOG_BOX))
 			  || wxSubType(win->__type, wxTYPE_CANVAS)
@@ -2605,10 +2714,12 @@ Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)
 
 wxWindow *wxGetActiveWindow(void)
 {
-  HWND hWnd = GetActiveWindow();
+  HWND hWnd;
+  hWnd = GetActiveWindow();
   if (hWnd != 0)
   {
-    wxWnd *wnd = wxFindWinFromHandle(hWnd);
+    wxWnd *wnd;
+    wnd = wxFindWinFromHandle(hWnd);
     if (wnd && wnd->wx_window)
     {
       return wnd->wx_window;

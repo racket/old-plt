@@ -18,16 +18,16 @@
 
 void wxbDC::DrawSpline(int n, wxPoint pts[])
 {
-    wxList *list;
-	int i;
+  wxList *list;
+  int i;
     
-    list = new wxList();
+  list = new wxList();
+  
+  for (i = 0; i < n; i++)
+    list->Append((wxObject*)&pts[i]);
+  DrawSpline(list);
 
-    for (i = 0; i < n; i++)
-      list->Append((wxObject*)&pts[i]);
-    DrawSpline(list);
-
-    delete list;
+  delete list;
 }
 
 // defines and static declarations for DrawSpline
@@ -48,43 +48,44 @@ static wxList *wx_spline_point_list;
 
 void wxbDC::DrawSpline(wxList *pts)
 {
-    wxPoint *p;
-    float  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-    float  x1,  y1,  x2 , y2;
+  wxPoint *p;
+  float  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
+  float  x1,  y1,  x2 , y2;
+  wxNode *node;
 
-    if (!wx_spline_point_list) {
-      wxREGGLOB(wx_spline_point_list);
-      wx_spline_point_list = new wxList();
-    }
+  if (!wx_spline_point_list) {
+    wxREGGLOB(wx_spline_point_list);
+    wx_spline_point_list = new wxList();
+  }
 
-    wxNode *node = pts->First();
+  node = pts->First();
+  p = (wxPoint*)node->Data();
+  x1 = p->x; y1 = p->y;
+
+  node = node->Next();
+  p = (wxPoint *)node->Data();
+  x2 = p->x; y2 = p->y;
+
+  cx1 = half(x1, x2);  cy1 = half(y1, y2);
+  cx2 = half(cx1, x2); cy2 = half(cy1, y2);
+
+  wx_spline_add_point(x1, y1);
+
+  while ((node=node->Next()) != NULL) {
     p = (wxPoint*)node->Data();
-    x1 = p->x; y1 = p->y;
+    x1  = x2;	      y1  = y2;
+    x2  = p->x;	      y2  = p->y;
+    cx4 = half(x1, x2);   cy4 = half(y1, y2);
+    cx3 = half(x1, cx4);  cy3 = half(y1, cy4);
 
-    node = node->Next();
-    p = (wxPoint *)node->Data();
-    x2 = p->x; y2 = p->y;
+    wx_quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4);
 
-    cx1 = half(x1, x2);  cy1 = half(y1, y2);
-    cx2 = half(cx1, x2); cy2 = half(cy1, y2);
-
-    wx_spline_add_point(x1, y1);
-
-    while ((node=node->Next()) != NULL) {
-        p = (wxPoint*)node->Data();
-	x1  = x2;	      y1  = y2;
-	x2  = p->x;	      y2  = p->y;
-        cx4 = half(x1, x2);   cy4 = half(y1, y2);
-        cx3 = half(x1, cx4);  cy3 = half(y1, cy4);
-
-        wx_quadratic_spline(cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4);
-
-	cx1 = cx4;	      cy1 = cy4;
-        cx2 = half(cx1, x2);  cy2 = half(cy1, y2);
-    }
-    wx_spline_add_point(cx1, cy1);
-    wx_spline_add_point(x2, y2);
-    wx_spline_draw_point_array(this);
+    cx1 = cx4;	      cy1 = cy4;
+    cx2 = half(cx1, x2);  cy2 = half(cy1, y2);
+  }
+  wx_spline_add_point(cx1, cy1);
+  wx_spline_add_point(x2, y2);
+  wx_spline_draw_point_array(this);
 }
 
 /********************* CURVES FOR SPLINES *****************************
@@ -185,23 +186,27 @@ int wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
 
 static Bool wx_spline_add_point(float x, float y)
 {
-    wxPoint *point = new wxPoint ;
-    point->x = x;
-    point->y = y;
-    wx_spline_point_list->Append((wxObject*)point);
-    return TRUE;
+  wxPoint *point;
+  point = new wxPoint ;
+  point->x = x;
+  point->y = y;
+  wx_spline_point_list->Append((wxObject*)point);
+  return TRUE;
 }
 
 static void wx_spline_draw_point_array(wxbDC *dc)
 {
-    dc->DrawLines(wx_spline_point_list, 0.0, 0.0);
-    wxNode *node = wx_spline_point_list->First();
-    while (node) {
-	wxPoint *point = (wxPoint *)node->Data();
-	delete point;
-	wx_spline_point_list->DeleteNode(node);
-	node = wx_spline_point_list->First();
-    }
+  wxNode *node;
+  wxPoint *point;
+
+  dc->DrawLines(wx_spline_point_list, 0.0, 0.0);
+  node = wx_spline_point_list->First();
+  while (node) {
+    point = (wxPoint *)node->Data();
+    delete point;
+    wx_spline_point_list->DeleteNode(node);
+    node = wx_spline_point_list->First();
+  }
 }
 
 #endif // USE_SPLINES

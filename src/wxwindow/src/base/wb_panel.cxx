@@ -44,11 +44,13 @@ wxbPanel::~wxbPanel(void)
 
 wxObject* wxbPanel::GetChild(int number)
 {
+  wxChildNode *node;
+
   // Return a pointer to the Nth object in the Panel
   if (!children)
     return(NULL);
 
-  wxChildNode *node = GetChildren()->First();
+  node = GetChildren()->First();
   while (node && number--) {
     node = node->Next();
   }

@@ -97,7 +97,8 @@ Bool wxbWindow::IsShownTree()
   if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME))
     return TRUE;
   else {
-    wxWindow *p = GetParent();
+    wxWindow *p;
+    p = GetParent();
 
     if (IsShown())
       return p->IsShownTree();
@@ -110,9 +111,11 @@ void wxbWindow::MakeModal(Bool modal)
 {
   // Disable all other windows
   if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME)) {
-    wxChildNode *node = wxTopLevelWindows(this)->First();
+    wxChildNode *node;
+    node = wxTopLevelWindows(this)->First();
     while (node) {
-      wxWindow *win = (wxWindow *)node->Data();
+      wxWindow *win;
+      win = (wxWindow *)node->Data();
       if (win != this)
         win->Enable(!modal);
       
@@ -149,10 +152,13 @@ wxEvtHandler::~wxEvtHandler(void)
 
 void wxbWindow::ForEach(wxForEachProc foreach, void *data)
 {
-  wxChildNode *node = GetChildren()->First();
+  wxChildNode *node;
+  node = GetChildren()->First();
   while (node) {
-    wxChildNode *next = node->Next();
-    wxWindow *win = (wxWindow *)node->Data();
+    wxChildNode *next;
+    wxWindow *win;
+    next = node->Next();
+    win = (wxWindow *)node->Data();
     win->ForEach(foreach, data);
     node = next;
   }

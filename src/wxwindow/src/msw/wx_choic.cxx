@@ -22,8 +22,7 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
   if (param == CBN_CLOSEUP)
     wx_choice_dropped = FALSE;
 
-  if (param == CBN_SELENDOK)
-  {
+  if (param == CBN_SELENDOK) {
     /* Callback possibly via popup window, which does not
        know its eventspace. If so, re-post the event to get
        eventspaces right. */
@@ -34,9 +33,8 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
 		  (LPARAM)GetHWND());
     } else {
       wxCommandEvent *event;
-	  event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+      event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
       ProcessCommand(event);
-      /* delete[] event->commandString; */
     }
     return TRUE;
   }
@@ -55,21 +53,22 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
                    int x, int y, int width, int height, int N, char **Choices,
                    long style, char *name)
 {
+  wxWnd *cparent = NULL;
+  char *the_label = NULL;
+
   panel->AddChild(this);
 
   no_strings = N;
 
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
+  HWND wx_combo;
 
-  wxWnd *cparent = NULL;
   if (panel)
     cparent = (wxWnd *)(panel->handle);
 
   labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
-
-  char *the_label = NULL ;
 
   if (Title) {
     the_label = new char[strlen(Title)+1];
@@ -78,12 +77,14 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   }
 
   if (Title) {
+    HDC the_dc;
+
     static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
 				      STATIC_FLAGS | WS_CLIPSIBLINGS
 				      | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				      0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
 				      wxhInstance, NULL);
-    HDC the_dc = GetWindowDC(static_label) ;
+    the_dc = GetWindowDC(static_label) ;
     if (labelFont && labelFont->GetInternalFont(the_dc))
       SendMessage(static_label,WM_SETFONT,
                   (WPARAM)labelFont->GetInternalFont(the_dc),0L);
@@ -93,26 +94,32 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
   
   windows_id = (int)NewId(this);
 
-  HWND wx_combo = wxwmCreateWindowEx(0, "wxCOMBOBOX", NULL,
-				     WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
-				     | WS_BORDER | WS_TABSTOP | WS_CLIPSIBLINGS
-				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				     0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-				     wxhInstance, NULL);
+  wx_combo = wxwmCreateWindowEx(0, "wxCOMBOBOX", NULL,
+				WS_CHILD | CBS_DROPDOWNLIST | WS_HSCROLL | WS_VSCROLL
+				| WS_BORDER | WS_TABSTOP | WS_CLIPSIBLINGS
+				| ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+				wxhInstance, NULL);
   ms_handle = (HANDLE)wx_combo;
 
   SubclassControl(wx_combo);
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle);
-  if (panel->buttonFont && panel->buttonFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle, WM_SETFONT,
-                (WPARAM)panel->buttonFont->GetInternalFont(the_dc), 0L);
-  ReleaseDC((HWND)ms_handle,the_dc);
+  {
+    HDC the_dc;
+    the_dc = GetWindowDC((HWND)ms_handle);
+    if (panel->buttonFont && panel->buttonFont->GetInternalFont(the_dc))
+      SendMessage((HWND)ms_handle, WM_SETFONT,
+		  (WPARAM)panel->buttonFont->GetInternalFont(the_dc), 0L);
+    ReleaseDC((HWND)ms_handle,the_dc);
+  }
 
-  int i;
-  for (i = 0; i < N; i++)
-    SendMessage(wx_combo, CB_INSERTSTRING, i, (LONG)Choices[i]);
-  SendMessage(wx_combo, CB_SETCURSEL, i, 0);
+  {
+    int i;
+    for (i = 0; i < N; i++) {
+      SendMessage(wx_combo, CB_INSERTSTRING, i, (LONG)Choices[i]);
+    }
+    SendMessage(wx_combo, CB_SETCURSEL, i, 0);
+  }
 
   SetSize(x, y, width, height);
   panel->AdvanceCursor(this);
@@ -169,20 +176,23 @@ void wxChoice::SetSelection(int n)
 
 int wxChoice::FindString(char *s)
 {
- int pos = (int)SendMessage((HWND)ms_handle, CB_FINDSTRINGEXACT, -1, (LPARAM)(LPSTR)s);
- if (pos == LB_ERR)
-   return -1;
- else
-   return pos;
+  int pos;
+  pos = (int)SendMessage((HWND)ms_handle, CB_FINDSTRINGEXACT, -1, (LPARAM)(LPSTR)s);
+  if (pos == LB_ERR)
+    return -1;
+  else
+    return pos;
 }
 
 char *wxChoice::GetString(int n)
 {
+  int len;
+
   if (!no_strings) return NULL;
   if (n < 0 || n > Number())
     return NULL;
 
-  int len = (int)SendMessage((HWND)ms_handle, CB_GETLBTEXT, n, (long)wxBuffer);
+  len = (int)SendMessage((HWND)ms_handle, CB_GETLBTEXT, n, (long)wxBuffer);
   wxBuffer[len] = 0;
 
   return copystring(wxBuffer);
@@ -191,6 +201,14 @@ char *wxChoice::GetString(int n)
 void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
   int currentX, currentY;
+  char buf[300];
+  int cx; // button font dimensions
+  int cy;
+  int clx; // label font dimensions
+  int cly;
+  float label_width, label_height, label_x, label_y;
+  float control_width, control_height, control_x, control_y;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
@@ -201,16 +219,7 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
     GetSize(&width, &height);
 
-  char buf[300];
-
-  int cx; // button font dimensions
-  int cy;
-  int clx; // label font dimensions
-  int cly;
   wxGetCharSize((HWND)ms_handle, &cx, &cy, buttonFont);
-
-  float label_width, label_height, label_x, label_y;
-  float control_width, control_height, control_x, control_y;
 
   // Ignore height parameter because height doesn't
   // mean 'initially displayed' height, it refers to the
@@ -233,7 +242,8 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
       int i;
       for (i = 0; i < no_strings; i++)
       {
-        char *s = GetString(i);
+        char *s;
+	s = GetString(i);
         GetTextExtent(s, &len, &ht, NULL, NULL,buttonFont);
         if ( len > longest) longest = len;
       }
@@ -314,6 +324,7 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
 void wxChoice::GetSize(int *width, int *height)
 {
   RECT rect;
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
 
   wxFindMaxSize((HWND)ms_handle, &rect);
@@ -330,9 +341,12 @@ void wxChoice::GetSize(int *width, int *height)
 void wxChoice::GetPosition(int *x, int *y)
 {
   HWND wnd = (HWND)ms_handle;
-  wxWindow *parent = GetParent();
+  wxWindow *parent;
   RECT rect;
+  POINT point;
+
   rect.left = -1; rect.right = -1; rect.top = -1; rect.bottom = -1;
+  parent = GetParent();
 
   wxFindMaxSize(wnd, &rect);
   if (static_label)
@@ -340,11 +354,9 @@ void wxChoice::GetPosition(int *x, int *y)
 
   // Since we now have the absolute screen coords,
   // if there's a parent we must subtract its top left corner
-  POINT point;
   point.x = rect.left;
   point.y = rect.top;
-  if (parent)
-  {
+  if (parent) {
     wxWnd *cparent = (wxWnd *)(parent->handle);
     ::ScreenToClient(cparent->handle, &point);
   }
@@ -355,8 +367,7 @@ void wxChoice::GetPosition(int *x, int *y)
 
 char *wxChoice::GetLabel(void)
 {
-  if (static_label)
-  {
+  if (static_label) {
     GetWindowText(static_label, wxBuffer, 300);
     return wxBuffer;
   }
@@ -365,21 +376,20 @@ char *wxChoice::GetLabel(void)
 
 void wxChoice::SetLabel(char *label)
 {
-  if (static_label)
-  {
+  if (static_label) {
     float w, h;
     RECT rect;
+    wxWindow *parent;
+    POINT point;
 
-    wxWindow *parent = GetParent();
+    parent = GetParent();
     GetWindowRect(static_label, &rect);
 
     // Since we now have the absolute screen coords,
     // if there's a parent we must subtract its top left corner
-    POINT point;
     point.x = rect.left;
     point.y = rect.top;
-    if (parent)
-    {
+    if (parent) {
       wxWnd *cparent = (wxWnd *)(parent->handle);
       ::ScreenToClient(cparent->handle, &point);
     }

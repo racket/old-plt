@@ -13,8 +13,7 @@
 
 BOOL wxCheckBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
-  if (param == BN_CLICKED)
-  {
+  if (param == BN_CLICKED) {
     wxCommandEvent *event;
     event = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
     ProcessCommand(event);
@@ -40,6 +39,9 @@ wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
 Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *bitmap,
                        int x, int y, int width, int height, long style, char *name)
 {
+  wxWnd *cparent = NULL;
+  HWND wx_button;
+
   if (bitmap) {
     if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
       return Create(panel, func, "<bad-image>", NULL, x, y, width, height, style, name);
@@ -52,14 +54,11 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
-  wxWnd *cparent = NULL;
   cparent = (wxWnd *)panel->handle;
 
   panel->GetValidPosition(&x, &y);
 
   windows_id = (int)NewId(this);
-
-  HWND wx_button;
 
   if (bitmap) {
     isFafa = TRUE;
@@ -97,11 +96,14 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
 
   ms_handle = (HANDLE)wx_button;
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-  if (labelFont && labelFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
+  {
+    HDC the_dc;
+    the_dc = GetWindowDC((HWND)ms_handle) ;
+    if (labelFont && labelFont->GetInternalFont(the_dc))
+      SendMessage((HWND)ms_handle,WM_SETFONT,
+		  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
+    ReleaseDC((HWND)ms_handle,the_dc) ;
+  }
 
   SetSize(x, y, width, height);
 
@@ -169,21 +171,19 @@ void wxCheckBox::SetLabel(wxBitmap *bitmap)
 void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
 {
   int currentX, currentY;
+  char buf[300];
+  float current_width;
+  int cx;
+  int cy;
+  float cyf;
+  HWND button = (HWND)ms_handle;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;
   if (y == -1)
     y = currentY;
 
-  char buf[300];
-
-  float current_width;
-
-  int cx;
-  int cy;
-  float cyf;
-
-  HWND button = (HWND)ms_handle;
   if (checkWidth < 0) {
     wxGetCharSize(button, &cx, &cy, labelFont);
 

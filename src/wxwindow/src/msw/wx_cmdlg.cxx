@@ -69,9 +69,9 @@ static int GetTotalLength(char* fileBuffer, int directoryLength)
   currentFile += currentLength + 1;
 
   while (*currentFile) {
-      currentLength = strlen(currentFile);
-      totalLength += directoryLength + currentLength + 8;
-      currentFile += currentLength + 1;
+    currentLength = strlen(currentFile);
+    totalLength += directoryLength + currentLength + 8;
+    currentFile += currentLength + 1;
   }
 
   return totalLength;
@@ -104,7 +104,7 @@ static char* ExtractMultipleFileNames(OPENFILENAME* of, char* fileBuffer)
   if (of->nFileOffset && !fileBuffer[of->nFileOffset - 1]) {
     char directory[FILEBUF_SIZE];
     int directoryLength = 0;
-    char* currentFile;
+    int currentFiled;
     int currentFileLength = 0;
     int currentTotal = 0;
     int totalLength = 0;
@@ -116,16 +116,16 @@ static char* ExtractMultipleFileNames(OPENFILENAME* of, char* fileBuffer)
 
     /* Skip the directory part */
     currentFileLength = strlen(fileBuffer);
-    currentFile = fileBuffer + currentFileLength + 1;
+    currentFile = currentFileLength + 1;
 
     /* Copy the concatentation of the directory and file */
-    while (*currentFile) {
-      currentFileLength = strlen(currentFile);
+    while (fileBuffer[currentFile]) {
+      currentFileLength = strlen(fileBuffer + currentFile);
       sprintf(result + currentTotal, "%5d ",
 	      currentFileLength + directoryLength);
       memcpy(result + currentTotal + 6, directory, directoryLength);
       memcpy(result + currentTotal + 6 + directoryLength,
-	     currentFile, currentFileLength);
+	     fileBuffer + currentFile, currentFileLength);
 
       currentFile += currentFileLength + 1;
       currentTotal += currentFileLength + directoryLength + 6;
@@ -207,13 +207,19 @@ char *wxFileSelector(char *message,
                      char *default_extension, char *wildcard, int flags,
                      wxWindow *parent, int x, int y)
 {
+  wxWnd *wnd = NULL;
+  HWND hwnd = NULL;
+  char *file_buffer;
+  char *title_buffer;
+  char *filter_buffer;
+  OPENFILENAME *of;
+  long msw_flags = 0;
+  Bool success;
+
   if (x < 0) x = wxDIALOG_DEFAULT_X;
   if (y < 0) y = wxDIALOG_DEFAULT_Y;
 
-  wxWnd *wnd = NULL;
-  HWND hwnd = NULL;
-  if (parent)
-  {
+  if (parent) {
     wnd = (wxWnd *)parent->handle;
     hwnd = wnd->handle;
   }
@@ -242,19 +248,15 @@ char *wxFileSelector(char *message,
       return NULL;
   }
 
-  char *file_buffer;
-
   file_buffer = new WXGC_ATOMIC char[FILEBUF_SIZE];
 
   if (default_filename)
     strcpy(file_buffer, default_filename);
   else file_buffer[0] = 0;
 
-  char *title_buffer;
   title_buffer = new WXGC_ATOMIC char[50];
   title_buffer[0] = 0;
 
-  char *filter_buffer;
   filter_buffer = new WXGC_ATOMIC char[200];
 
   if (!wildcard)
@@ -295,7 +297,6 @@ char *wxFileSelector(char *message,
     MrEdSyncCurrentDir();
   }
 
-  OPENFILENAME *of;
   of = new OPENFILENAME;
 
   memset(of, 0, sizeof(OPENFILENAME));
@@ -332,7 +333,6 @@ char *wxFileSelector(char *message,
   of->nFileExtension = 0;
   of->lpstrDefExt = default_extension;
 
-  long msw_flags = 0;
 
   if (flags & wxSAVE)
     msw_flags |= OFN_OVERWRITEPROMPT;
@@ -343,8 +343,6 @@ char *wxFileSelector(char *message,
   if (default_path)
     msw_flags |= OFN_NOCHANGEDIR;
   of->Flags = msw_flags;
-
-  Bool success;
 
   if (flags & wxSAVE)
     success = wxPrimitiveDialog((wxPDF)DoGetSaveFileName, of, 1);

@@ -47,17 +47,22 @@ wxbFrame::~wxbFrame(void)
 // resize to client rectangle size
 void wxbFrame::OnSize(int WXUNUSED(x), int WXUNUSED(y))
 {
+  wxWindow *child = NULL;
+  int noChildren = 0;
+  wxChildNode *node;
+  wxWindow *win;
+  WXTYPE winType;
+  int client_x, client_y;
+
   if (frame_type == wxMDI_PARENT)
     return;
 
   // Search for a child which is a subwindow, not another frame.
-  wxWindow *child = NULL;
   // Count the number of _subwindow_ children
-  int noChildren = 0;
-  for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
+  for(node = GetChildren()->First(); node; node = node->Next())
   {
-    wxWindow *win = (wxWindow *)node->Data();
-    WXTYPE winType = win->__type;
+    win = (wxWindow *)node->Data();
+    winType = win->__type;
 
     if (wxSubType(winType, wxTYPE_PANEL) ||
         wxSubType(winType, wxTYPE_TEXT_WINDOW) ||
@@ -72,8 +77,6 @@ void wxbFrame::OnSize(int WXUNUSED(x), int WXUNUSED(y))
   if (!child || (noChildren > 1))
     return;
 
-  int client_x, client_y;
-
   GetClientSize(&client_x, &client_y);
   child->SetSize(0, 0, client_x, client_y);
 }
@@ -87,10 +90,13 @@ void wxbFrame::OnActivate(Bool WXUNUSED(flag))
 // Default menu selection behaviour - display a help string
 void wxbFrame::OnMenuSelect(long id)
 {
+  wxMenuBar *menuBar;
+
   if (StatusLineExists()) {
-    wxMenuBar *menuBar = GetMenuBar();
+    menuBar = GetMenuBar();
     if (menuBar) {
-      char *helpString = GetMenuBar()->GetHelpString(id);
+      char *helpString;
+      helpString = GetMenuBar()->GetHelpString(id);
       if (helpString) {
 	SetStatusText(helpString);
 	return;
@@ -118,6 +124,7 @@ Bool wxbFrame::StatusLineExists(void)
 void wxbFrame::Centre(int direction)
 {
   int display_width, display_height, width, height, x, y;
+
   wxDisplaySize(&display_width, &display_height);
 
   GetSize(&width, &height);

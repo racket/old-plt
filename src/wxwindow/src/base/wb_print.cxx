@@ -50,7 +50,8 @@ static BOOL do_print(void *data, HWND parent)
 Bool wxPrintDialog::Run()
 {
   if (wxPrimitiveDialog(do_print, printData->printData , 0)) {
-    wxPrinterDC *pdc = new wxPrinterDC(((PRINTDLG *)printData->printData)->hDC);
+    wxPrinterDC *pdc;
+    pdc = new wxPrinterDC(((PRINTDLG *)printData->printData)->hDC);
     printerDC = pdc;
     return TRUE;
   } else
@@ -72,7 +73,8 @@ wxDC *wxPrintDialog::GetPrintDC(void)
 
 wxPrintData::wxPrintData(void)
 {
-  PRINTDLG *pd = new PRINTDLG;
+  PRINTDLG *pd;
+  pd = new PRINTDLG;
   printData = (void *)pd;
 
   memset(pd, 0, sizeof(PRINTDLG));
@@ -214,6 +216,13 @@ wxPrinter::~wxPrinter(void)
 
 Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 {
+  int fromPage, toPage;
+  int minPage, maxPage;
+  wxDC *dc = NULL;
+  wxWindow *win;
+  Bool keepGoing;
+  int copyCount;
+
   abortIt = FALSE;
   abortWindow = NULL;
 
@@ -223,8 +232,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   printout->OnPreparePrinting();
 
   // Get some parameters from the printout, if defined
-  int fromPage, toPage;
-  int minPage, maxPage;
   printout->GetPageInfo(&minPage, &maxPage, &fromPage, &toPage);
 
   if (maxPage == 0)
@@ -251,7 +258,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     printData->EnablePageNumbers(FALSE);
   
   // Create a suitable device context  
-  wxDC *dc = NULL;
   if (prompt) {
     wxPrintDialog  *dialog;
     dialog = new wxPrintDialog(parent, printData);
@@ -273,7 +279,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   // Create an abort window
   wxBeginBusyCursor();
 
-  wxWindow *win = CreateAbortWindow(parent, printout);
+  win = CreateAbortWindow(parent, printout);
   wxYield();
   ::SetAbortProc(dc->cdc, (ABORTPROC)lpAbortProc);
   
@@ -293,10 +299,13 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 
   printout->OnBeginPrinting();
   
-  Bool keepGoing = TRUE;
+  keepGoing = TRUE;
 
-  int copyCount;
   for (copyCount = 1; copyCount <= printData->GetNoCopies(); copyCount ++) {
+    int pn;
+    int is_down;
+    int endpage;
+
     if (!printout->OnBeginDocument(printData->GetFromPage(), printData->GetToPage())) {
       wxEndBusyCursor();
       wxMessageBox("Could not start printing.", "Print Error", wxOK, parent);
@@ -306,9 +315,8 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     if (abortIt)
       break;
 
-    int pn;
-    int is_down = (printData->GetFromPage() > printData->GetToPage());
-    int endpage = printData->GetToPage() + (is_down ? -1 : 1);
+    is_down = (printData->GetFromPage() > printData->GetToPage());
+    endpage = printData->GetToPage() + (is_down ? -1 : 1);
     for (pn = printData->GetFromPage(); keepGoing && (pn != endpage);
 	 pn = (is_down ? pn - 1 : pn + 1)) {
       if (!printout->HasPage(pn)) {
@@ -355,10 +363,13 @@ static void wxAbortWindowCancel(wxButton& WXUNUSED(but), wxCommandEvent& WXUNUSE
 
 wxWindow *wxPrinter::CreateAbortWindow(wxWindow *parent, wxPrintout *WXUNUSED(printout))
 {
-  wxDialogBox *dialog = new wxDialogBox(parent, "Printing", 0, 0, 400, 400);
-  (void) new wxMessage(dialog, "Please wait, printing...");
+  wxDialogBox *dialog;
+  wxButton *button;
+
+  dialog = new wxDialogBox(parent, "Printing", 0, 0, 400, 400);
+  new wxMessage(dialog, "Please wait, printing...");
   dialog->NewLine();
-  wxButton *button = new wxButton(dialog, (wxFunction) wxAbortWindowCancel, "Cancel");
+  button = new wxButton(dialog, (wxFunction) wxAbortWindowCancel, "Cancel");
   
   dialog->Fit();
   button->Centre(wxHORIZONTAL);

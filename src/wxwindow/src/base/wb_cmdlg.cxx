@@ -17,10 +17,11 @@ static char *
 wxDefaultFileSelector(Bool load, const char *what, char *extension, char *default_name)
 {
   char prompt[50];
+  char wild[60];
+
   sprintf(prompt, load ? "Select file" : "Save file", what);
 
   if (*extension == '.') extension++;
-  char wild[60];
   sprintf(wild, "*.%s", extension);
 
   return wxFileSelector (prompt, NULL, default_name, (char *)extension, wild);
@@ -49,28 +50,38 @@ wxSaveFileSelector(char *what, char *extension, char *default_name)
 
 void wxSplitMessage(char *message, wxList *messageList, wxPanel *panel)
 {
-  char *copyMessage = copystring(message);
+  char *copyMessage;
   size_t i = 0;
-  size_t len = strlen(copyMessage);
-  char *currentMessage = copyMessage;
+  size_t len;
+  char *currentMessage;
+  wxMessage *mess;
+
+  copyMessage = copystring(message);
+  i = 0;
+  len = strlen(copyMessage);
+  currentMessage = copyMessage;
 
   while (i < len) {
-    while ((i < len) && (copyMessage[i] != '\n')) i++;
+    while ((i < len) && (copyMessage[i] != '\n')) {
+      i++;
+    }
     if (i < len) copyMessage[i] = 0;
-    wxMessage *mess = new wxMessage(panel, currentMessage);
+    mess = new wxMessage(panel, currentMessage);
     messageList->Append(mess);
     panel->NewLine();
 
     currentMessage = copyMessage + i + 1;
   }
-  delete[] copyMessage;
 }
 
 void wxCentreMessage(wxList *messageList)
 {
+  wxNode *node;
+  wxMessage *mess;
+
   // Do the message centering
-  for(wxNode *node = messageList->First(); node; node = node->Next()) {
-    wxMessage *mess = (wxMessage *)node->Data();
+  for(node = messageList->First(); node; node = node->Next()) {
+    mess = (wxMessage *)node->Data();
     mess->Centre();
   }
 }
@@ -87,42 +98,53 @@ class wxMessageBoxDialog: public wxDialogBox
   int buttonPressed;
 
   wxMessageBoxDialog(wxWindow *parent, char *caption, Bool isModal, int x, int y,
-    int w, int h, long type):
-   wxDialogBox(parent, caption, isModal, x, y, w, h, type)
- {
-   buttonPressed = wxCANCEL;
- }
- Bool OnClose(void)
- {
-   return TRUE;
- }
+		     int w, int h, long type);
+  Bool OnClose(void);
 };
 
-void wxDialogOkButton(wxButton& but, wxEvent& WXUNUSED(event))
+wxMessageBoxDialog::wxMessageBoxDialog(wxWindow *parent, char *caption, Bool isModal, int x, int y,
+				       int w, int h, long type):
+  wxDialogBox(parent, caption, isModal, x, y, w, h, type)
 {
-  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)but.GetParent();
+  buttonPressed = wxCANCEL;
+}
+
+Bool wxMessageBoxDialog::OnClose(void)
+{
+  return TRUE;
+}
+
+void wxDialogOkButton(wxButton *but, wxEvent *)
+{
+  wxMessageBoxDialog *dialog;
+
+  dialog = (wxMessageBoxDialog *)but->GetParent();
 
   dialog->buttonPressed = wxOK;
   dialog->Show(FALSE);
 }
 
-void wxDialogCancelButton(wxButton& but, wxEvent& WXUNUSED(event))
+void wxDialogCancelButton(wxButton * but, wxEvent *)
 {
-  wxDialogBox *dialog = (wxDialogBox *)but.GetParent();
+  wxDialogBox *dialog;;
+
+  dialog = (wxDialogBox *)but->GetParent();
 
   dialog->Show(FALSE);
 }
 
-void wxDialogYesButton(wxButton& but, wxEvent& WXUNUSED(event))
+void wxDialogYesButton(wxButton *but, wxEvent *)
 {
-  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)but.GetParent();
+  wxMessageBoxDialog *dialog;
+  dialog = (wxMessageBoxDialog *)but->GetParent();
   dialog->buttonPressed = wxYES;
   dialog->Show(FALSE);
 }
 
-void wxDialogNoButton(wxButton& but, wxEvent& WXUNUSED(event))
+void wxDialogNoButton(wxButton *but, wxEvent *)
 {
-  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)but.GetParent();
+  wxMessageBoxDialog *dialog;
+  dialog = (wxMessageBoxDialog *)but->GetParent();
   dialog->buttonPressed = wxNO;
   dialog->Show(FALSE);
 }
@@ -131,24 +153,29 @@ void wxDialogNoButton(wxButton& but, wxEvent& WXUNUSED(event))
 int wxbMessageBox(char *message, char *caption, long type,
                  wxWindow *parent, int x, int y)
 {
+  wxMessageBoxDialog *dialog;
+  Bool centre;
+  wxList *messageList;
+  wxPanel *but_panel;
+  wxButton *ok = NULL;
+  wxButton *cancel = NULL;
+  wxButton *yes = NULL;
+  wxButton *no = NULL;
+
+  
   wxBeginBusyCursor();
 
-  wxMessageBoxDialog *dialog = new wxMessageBoxDialog(parent, caption, TRUE, x, y, 1000, 1000, 0);
+  dialog = new wxMessageBoxDialog(parent, caption, TRUE, x, y, 1000, 1000, 0);
 
-  Bool centre = ((type & wxCENTRE) == wxCENTRE);
+  centre = ((type & wxCENTRE) == wxCENTRE);
 
-  wxList *messageList = new wxList();
+  messageList = new wxList();
   wxSplitMessage(message, messageList, dialog);
 
   dialog->NewLine();
 
   // Create Buttons in a sub-panel, so they can be centered.
-  wxPanel *but_panel = dialog ;
-
-  wxButton *ok = NULL;
-  wxButton *cancel = NULL;
-  wxButton *yes = NULL;
-  wxButton *no = NULL;
+  but_panel = dialog ;
 
   if (type & wxYES_NO) {
     yes = new wxButton(but_panel, (wxFunction)&wxDialogYesButton, "Yes");

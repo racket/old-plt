@@ -16,21 +16,22 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
   wxItem(panel)
 {
   int x = 0, y = 0, width, height;
+  wxWnd *cparent;
+  char *the_label;
+  HWND the_handle;
 
   __type = wxTYPE_GROUP_BOX;
 
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
 
-  wxWnd *cparent = (wxWnd *)(panel->handle);
+  cparent = (wxWnd *)(panel->handle);
 
   panel->GetValidPosition(&x, &y);
 
-  char *the_label;
-
   the_label = copystring(Title ? Title : "");
 
-  HWND the_handle = cparent->handle;
+  the_handle = cparent->handle;
 
   ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
 				 GROUP_FLAGS
@@ -39,11 +40,14 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
 				 cparent->handle, (HMENU)NewId(this),
 				 wxhInstance, NULL);
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
-  if (labelFont && labelFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)labelFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
+  {
+    HDC the_dc;
+    the_dc = GetWindowDC((HWND)ms_handle) ;
+    if (labelFont && labelFont->GetInternalFont(the_dc))
+      SendMessage((HWND)ms_handle,WM_SETFONT,
+		  (WPARAM)labelFont->GetInternalFont(the_dc),0L);
+    ReleaseDC((HWND)ms_handle,the_dc) ;
+  }
 
   SubclassControl((HWND)ms_handle);
 
@@ -52,8 +56,9 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
   if (the_label) {
     float label_width = 0;
     float label_height = 0;
-    GetTextExtent(wxStripMenuCodes(the_label), &label_width, &label_height, NULL, NULL, labelFont);
     int char_width, ignored;
+
+    GetTextExtent(wxStripMenuCodes(the_label), &label_width, &label_height, NULL, NULL, labelFont);
     wxGetCharSize((HWND)ms_handle, &char_width, &ignored, labelFont);
     label_width += 3 * char_width; /* space before & after label */
     width = label_width;
@@ -79,6 +84,7 @@ wxGroupBox::~wxGroupBox(void)
 void wxGroupBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
 {
   int currentX, currentY;
+
   GetPosition(&currentX, &currentY);
   if (x == -1)
     x = currentX;

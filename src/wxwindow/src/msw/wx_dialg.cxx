@@ -52,7 +52,8 @@ BOOL wxDialogWnd::ProcessMessage(MSG* pMsg)
 BOOL wxDialogWnd::OnClose(void)
 {
   if (wx_window) {
-    wxWindow *modal = wxGetModalWindow(wx_window);
+    wxWindow *modal;
+    modal = wxGetModalWindow(wx_window);
     if (modal && (modal != wx_window))
       return FALSE;
     
@@ -79,6 +80,9 @@ wxDialogBox::wxDialogBox(wxWindow *Parent, char *Title, Bool Modal,
 Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal, 
                          int x, int y, int width, int height, long style, char *name)
 {
+  wxWnd *cparent = NULL;
+  wxDialogWnd *wnd;
+
   // Do anything that needs to be done in the generic base class
   wxbDialogBox::Create(Parent, Title, Modal, x, y, width, height, style, name);
 
@@ -104,7 +108,6 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 
   wxWinType = wxTYPE_XWND;
   windowStyle = style;
-  wxWnd *cparent = NULL;
   if (Parent)
     cparent = (wxWnd *)Parent->handle;
 
@@ -114,7 +117,6 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
     height = 0;
 
   // Allows creation of dialogs with & without captions under MSWindows
-  wxDialogWnd *wnd;
   wnd = new wxDialogWnd(cparent, this, x, y, width, height,
 			!(style & wxNO_CAPTION)
 			? ((style & wxMAXIMIZE) ? "wxCaptionResizeDialog" : "wxCaptionDialog")
@@ -171,16 +173,19 @@ void wxDialogBox::SetClientSize(int width, int height)
 {
   wxWnd *wnd = (wxWnd *)handle;
   RECT rect;
+  RECT rect2;
+  int actual_width;
+  int actual_height;
+
   GetClientRect(wnd->handle, &rect);
 
-  RECT rect2;
   GetWindowRect(wnd->handle, &rect2);
 
   // Find the difference between the entire window (title bar and all)
   // and the client area; add this to the new client size to move the
   // window
-  int actual_width = rect2.right - rect2.left - rect.right + width;
-  int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
+  actual_width = rect2.right - rect2.left - rect.right + width;
+  actual_height = rect2.bottom - rect2.top - rect.bottom + height;
 
   MoveWindow(wnd->handle, rect2.left, rect2.top, actual_width, actual_height, TRUE);
   OnSize(actual_width, actual_height);
@@ -190,6 +195,7 @@ void wxDialogBox::GetPosition(int *x, int *y)
 {
   HWND hWnd = GetHWND();
   RECT rect;
+
   GetWindowRect(hWnd, &rect);
 
   *x = rect.left;
@@ -239,7 +245,8 @@ Bool wxDialogBox::Show(Bool show)
 	
 	// Make list of windows that are disabled:
 	for (cnode = wxTopLevelWindows(this)->First(); cnode; cnode = cnode->Next()) {
-	  wxWindow *w = (wxWindow *)cnode->Data();
+	  wxWindow *w;
+	  w = (wxWindow *)cnode->Data();
 	  if (w && cnode->IsShown() && w != this) {
 	    disabled_windows->Append(w);
 	    w->InternalEnable(FALSE);
@@ -263,7 +270,8 @@ Bool wxDialogBox::Show(Bool show)
 	node = disabled_windows->First();
 
 	for (; node; node = node->Next()) {
-	  wxWindow *w = (wxWindow *)node->Data();
+	  wxWindow *w;
+	  w = (wxWindow *)node->Data();
 	  w->InternalEnable(TRUE);
 	}
 

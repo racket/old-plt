@@ -98,79 +98,87 @@ void wxInitialize(HINSTANCE hInstance)
   if (!RegisterClass(&wndclass))
     wxFatalError("Can't register Frame Window class");
 
-  ///////////////////////////////////////////////////////////////////////
-  // Register the MDI frame window class.
-  WNDCLASS wndclass1;   // Structure used to register Windows class.
+  {
+    ///////////////////////////////////////////////////////////////////////
+    // Register the MDI frame window class.
+    WNDCLASS wndclass1;   // Structure used to register Windows class.
+    
+    wndclass1.style         = CS_HREDRAW | CS_VREDRAW;
+    wndclass1.lpfnWndProc   = (WNDPROC)wxWndProc;
+    wndclass1.cbClsExtra    = 0;
+    wndclass1.cbWndExtra    = sizeof(DWORD);
+    wndclass1.hInstance     = hInstance;
+    wndclass1.hIcon         = wxSTD_FRAME_ICON;
+    wndclass1.hCursor       = NULL;
+    wndclass1.hbrBackground = (HBRUSH)(COLOR_APPWORKSPACE+1);
+    wndclass1.lpszMenuName  = NULL;
+    
+    wndclass1.lpszClassName = wxMDIFrameClassName;
+    if (!RegisterClass( &wndclass1 ))
+      wxFatalError("Can't register MDI Frame window class");
+  }
 
-  wndclass1.style         = CS_HREDRAW | CS_VREDRAW;
-  wndclass1.lpfnWndProc   = (WNDPROC)wxWndProc;
-  wndclass1.cbClsExtra    = 0;
-  wndclass1.cbWndExtra    = sizeof(DWORD);
-  wndclass1.hInstance     = hInstance;
-  wndclass1.hIcon         = wxSTD_FRAME_ICON;
-  wndclass1.hCursor       = NULL;
-  wndclass1.hbrBackground = (HBRUSH)(COLOR_APPWORKSPACE+1);
-  wndclass1.lpszMenuName  = NULL;
+  {
+    ///////////////////////////////////////////////////////////////////////
+    // Register the MDI child frame window class.
+    WNDCLASS wndclass4;   // Structure used to register Windows class.
+    
+    wndclass4.style         = CS_HREDRAW | CS_VREDRAW;
+    wndclass4.lpfnWndProc   = (WNDPROC)wxWndProc;
+    wndclass4.cbClsExtra    = 0;
+    wndclass4.cbWndExtra    = sizeof(DWORD);
+    wndclass4.hInstance     = hInstance;
+    wndclass4.hIcon         = wxSTD_FRAME_ICON;
+    wndclass4.hCursor       = NULL;
+    wndclass4.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
+    wndclass4.lpszMenuName  = NULL;
+    wndclass4.lpszClassName = wxMDIChildFrameClassName;
+    
+    if (!RegisterClass( &wndclass4 ))
+      wxFatalError("Can't register MDI child frame window class");
+  }
 
-  wndclass1.lpszClassName = wxMDIFrameClassName;
-  if (!RegisterClass( &wndclass1 ))
-    wxFatalError("Can't register MDI Frame window class");
+  {
+    ///////////////////////////////////////////////////////////////////////
+    // Register the panel window class.
+    WNDCLASS wndclass2;   // Structure used to register Windows class.
+    memset(&wndclass2, 0, sizeof(WNDCLASS));   // start with NULL defaults
+    // Use CS_OWNDC to avoid messing about restoring the context
+    // for every graphic operation.
+    wndclass2.style         = CS_HREDRAW | CS_VREDRAW;
+    wndclass2.lpfnWndProc   = (WNDPROC)wxWndProc;
+    wndclass2.cbClsExtra    = 0;
+    wndclass2.cbWndExtra    = sizeof(DWORD);
+    wndclass2.hInstance     = hInstance;
+    wndclass2.hIcon         = NULL;
+    wndclass2.hCursor       = NULL;
+    wndclass2.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
+    wndclass2.lpszMenuName  = NULL;
+    wndclass2.lpszClassName = wxPanelClassName;
+    if (!RegisterClass( &wndclass2 ))
+      wxFatalError("Can't register Panel Window class");
+  }
 
-  ///////////////////////////////////////////////////////////////////////
-  // Register the MDI child frame window class.
-  WNDCLASS wndclass4;   // Structure used to register Windows class.
-
-  wndclass4.style         = CS_HREDRAW | CS_VREDRAW;
-  wndclass4.lpfnWndProc   = (WNDPROC)wxWndProc;
-  wndclass4.cbClsExtra    = 0;
-  wndclass4.cbWndExtra    = sizeof(DWORD);
-  wndclass4.hInstance     = hInstance;
-  wndclass4.hIcon         = wxSTD_FRAME_ICON;
-  wndclass4.hCursor       = NULL;
-  wndclass4.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
-  wndclass4.lpszMenuName  = NULL;
-  wndclass4.lpszClassName = wxMDIChildFrameClassName;
-
-  if (!RegisterClass( &wndclass4 ))
-   wxFatalError("Can't register MDI child frame window class");
-
-  ///////////////////////////////////////////////////////////////////////
-  // Register the panel window class.
-  WNDCLASS wndclass2;   // Structure used to register Windows class.
-  memset(&wndclass2, 0, sizeof(WNDCLASS));   // start with NULL defaults
-  // Use CS_OWNDC to avoid messing about restoring the context
-  // for every graphic operation.
-  wndclass2.style         = CS_HREDRAW | CS_VREDRAW;
-  wndclass2.lpfnWndProc   = (WNDPROC)wxWndProc;
-  wndclass2.cbClsExtra    = 0;
-  wndclass2.cbWndExtra    = sizeof(DWORD);
-  wndclass2.hInstance     = hInstance;
-  wndclass2.hIcon         = NULL;
-  wndclass2.hCursor       = NULL;
-  wndclass2.hbrBackground = (HBRUSH)(COLOR_BTNFACE+1);
-  wndclass2.lpszMenuName  = NULL;
-  wndclass2.lpszClassName = wxPanelClassName;
-  if (!RegisterClass( &wndclass2 ))
-   wxFatalError("Can't register Panel Window class");
-
-  ///////////////////////////////////////////////////////////////////////
-  // Register the canvas and textsubwindow class name
-  WNDCLASS wndclass3;   // Structure used to register Windows class.
-  memset(&wndclass3, 0, sizeof(WNDCLASS));   // start with NULL defaults
-  // Use CS_OWNDC to avoid messing about restoring the context
-  // for every graphic operation.
-  wndclass3.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS; 
-  wndclass3.lpfnWndProc   = (WNDPROC)wxWndProc;
-  wndclass3.cbClsExtra    = 0;
-  wndclass3.cbWndExtra    = sizeof(DWORD); // was 4
-  wndclass3.hInstance     = hInstance;
-  wndclass3.hIcon         = NULL;
-  wndclass3.hCursor       = NULL;
-  wndclass3.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-  wndclass3.lpszMenuName  = NULL;
-  wndclass3.lpszClassName = wxCanvasClassName;
-  if (!RegisterClass( &wndclass3))
-   wxFatalError("Can't register Canvas class");
+  {
+    ///////////////////////////////////////////////////////////////////////
+    // Register the canvas and textsubwindow class name
+    WNDCLASS wndclass3;   // Structure used to register Windows class.
+    memset(&wndclass3, 0, sizeof(WNDCLASS));   // start with NULL defaults
+    // Use CS_OWNDC to avoid messing about restoring the context
+    // for every graphic operation.
+    wndclass3.style         = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS; 
+    wndclass3.lpfnWndProc   = (WNDPROC)wxWndProc;
+    wndclass3.cbClsExtra    = 0;
+    wndclass3.cbWndExtra    = sizeof(DWORD); // was 4
+    wndclass3.hInstance     = hInstance;
+    wndclass3.hIcon         = NULL;
+    wndclass3.hCursor       = NULL;
+    wndclass3.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+    wndclass3.lpszMenuName  = NULL;
+    wndclass3.lpszClassName = wxCanvasClassName;
+    if (!RegisterClass( &wndclass3))
+      wxFatalError("Can't register Canvas class");
+  }
 
   {
     OSVERSIONINFO info;
@@ -454,7 +462,8 @@ BOOL wxApp::ProcessMessage(MSG *msg)
   // Anyone for a message? Try youngest descendants first.
   for (hWnd = msg->hwnd; hWnd != NULL; hWnd = ::GetParent(hWnd))
   {
-    wxWnd *wnd = wxFindWinFromHandle(hWnd);
+    wxWnd *wnd;
+    wnd = wxFindWinFromHandle(hWnd);
     if (wnd)
     {
        if (wnd->ProcessMessage(msg))
@@ -473,7 +482,9 @@ BOOL wxApp::ProcessMessage(MSG *msg)
 
 wxWindow *wxHWNDtoWindow(HWND hwnd)
 {
-  wxWnd *wnd = wxFindWinFromHandle(hwnd);
+  wxWnd *wnd;
+
+  wnd = wxFindWinFromHandle(hwnd);
 
   if (wnd)
     return wnd->wx_window;

@@ -11,7 +11,7 @@
   
   (define drscheme@
     (compound-unit/sig
-      (import [top-level : (program argv get-dropped-files)])
+      (import)
       (link [init : drscheme:init^ (init@ mred)]
             [text : drscheme:text^ (edit@ framework)]
             [export* : drscheme:export^ (export@ app text init cogen)]

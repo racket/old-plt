@@ -13,18 +13,17 @@
   (require-library "errortrace.ss" "errortrace") (error-print-width 200)
   (current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x)))))
 
-;(define argv (vector "Cupertino:Desktop Folder:tmp.ss"))
+(require (lib "splash.ss" "framework"))
 
 (define-values (get-dropped-files shutdown-splash close-splash)
-  ((load (build-path (collection-path "framework") "splash.ss"))
+  (splash
    (build-path (collection-path "icons") "plt.gif")
    "DrScheme"
    81))
 
-(require "main-before.ss")
-(require "main.ss")
+(require "link.ss")
 (shutdown-splash)
-(start-drscheme)
+(invoke-unit/sig drscheme@)
 (close-splash)
 
 

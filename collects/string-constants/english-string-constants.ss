@@ -859,4 +859,7 @@
  (wizard-next "Next")
  (wizard-back "Back")
  (wizard-finish "Finish")
+
+ (plt-installer-progress-window-title "Installer Progress")
+ 
  )

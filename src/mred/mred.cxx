@@ -751,7 +751,7 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     scheme_current_process->block_check = check_for_nested_event;
     do {
       scheme_process_block(0);
-	} while (!check_for_nested_event((Scheme_Object *)c));
+    } while (!check_for_nested_event((Scheme_Object *)c));
     scheme_current_process->block_descriptor = 0;
     scheme_current_process->ran_some = 1;
 

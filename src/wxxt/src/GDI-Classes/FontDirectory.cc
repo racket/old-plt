@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cc,v 1.4 1999/08/02 17:31:51 mflatt Exp $
+ * $Id: FontDirectory.cc,v 1.5 1999/09/17 02:20:32 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -531,11 +531,41 @@ char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
 
   int wt = WCoordinate(weight), st = SCoordinate(style);
 
-  /* MATTHEW: [6] Check for init */
+  /* Check for init */
   if (!item->screen.map[wt][st])
     item->screen.Initialize(item->name, "Screen", wt, st);
 
   return item->screen.map[wt][st];
+}
+
+void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  
+  if (!item)
+    return NULL;
+
+  int wt = WCoordinate(weight), st = SCoordinate(style);
+
+  /* Safety: name must be less than 500 chars, and must not contain %
+     except maybe one instance of %d. */
+  int i, found_d = 0;
+  for (i = 0; s[i]; i++) {
+    if (i > 500) {
+      s = NULL;
+      break;
+    }
+    if (s[i] == '%') {
+      if (found_d || (s[i+1] != 'd')) {
+	s = NULL;
+	break;
+      } else
+	found_d = 1;
+    }
+  }
+
+  if (s)
+    item->screen.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
@@ -547,11 +577,23 @@ char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
 
   int wt = WCoordinate(weight), st = SCoordinate(style);
 
-  /* MATTHEW: [6] Check for init */
+  /* Check for init */
   if (!item->printing.map[wt][st])
     item->printing.Initialize(item->name, "PostScript", wt, st);
 
   return item->printing.map[wt][st];
+}
+
+void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+
+  if (!item)
+    return NULL;
+
+  int wt = WCoordinate(weight), st = SCoordinate(style);
+
+  item->printing.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
@@ -563,11 +605,23 @@ char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
 
   int wt = WCoordinate(weight), st = SCoordinate(style);
 
-  /* MATTHEW: [6] Check for init */
+  /* Check for init */
   if (!item->afm.map[wt][st])
     item->afm.Initialize(item->name, "Afm", wt, st);
 
   return item->afm.map[wt][st];
+}
+
+void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+
+  if (!item)
+    return NULL;
+
+  int wt = WCoordinate(weight), st = SCoordinate(style);
+
+  item->afm.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetFontName(int fontid)

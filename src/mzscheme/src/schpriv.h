@@ -1144,4 +1144,14 @@ void scheme_resume_remembered_threads(void);
 
 Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
 
+# define BEGIN_ESCAPEABLE(onbreak) \
+    { mz_jmp_buf savebuf; \
+      memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
+      if (scheme_setjmp(scheme_error_buf)) { \
+        onbreak; \
+        scheme_longjmp(savebuf, 1); \
+      } else {
+# define END_ESCAPEABLE() \
+      memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
+
 #endif /* __mzscheme_private__ */

@@ -2734,8 +2734,9 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     }
     counter++;
     if (!(counter & 0x15)) {
-      /* FIXME: escape means not closed; multiple return may come back when it's closed */
+      BEGIN_ESCAPEABLE(FIND_CLOSE(hfile));
       scheme_process_block(0);
+      END_ESCAPEABLE(FIND_CLOSE(hfile));
     }
   } while (!FIND_NEXT(hfile, &info));
   FIND_CLOSE(hfile);
@@ -2769,8 +2770,9 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 
     counter++;
     if (!(counter & 0xF)) {
-      /* FIXME: escape means not closed; multiple return may come back when it's closed */
+      BEGIN_ESCAPEABLE(closedir(dir));
       scheme_process_block(0);
+      END_ESCAPEABLE();
     }
   }
   
@@ -3897,7 +3899,6 @@ static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *
      escaped = 1;
      return TRUE; /* Immediately return to AESend */
    } else {
-     /* FIXME: multiple return can lead to use of disposed AE recs */      
      scheme_process_block(0);
      memcpy(&scheme_error_buf, &save, sizeof(mz_jmp_buf));
    }

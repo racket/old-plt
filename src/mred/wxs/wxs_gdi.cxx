@@ -3382,6 +3382,7 @@ static inline int Identity(wxFontNameDirectory *, int v)
 
 
 
+
 class os_wxFontNameDirectory : public wxFontNameDirectory {
  public:
 
@@ -3534,6 +3535,78 @@ static Scheme_Object *os_wxFontNameDirectoryGetNewFontId(Scheme_Object *obj, int
 }
 
 #pragma argsused
+static Scheme_Object *os_wxFontNameDirectorySetAFMName(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+  int x1;
+  int x2;
+  string x3;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "set-afm-name in font-name-directory<%>");
+  x1 = unbundle_symset_weight(p[1], "set-afm-name in font-name-directory<%>");
+  x2 = unbundle_symset_style(p[2], "set-afm-name in font-name-directory<%>");
+  x3 = (string)objscheme_unbundle_string(p[3], "set-afm-name in font-name-directory<%>");
+
+  
+  ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->SetAFMName(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxFontNameDirectorySetPostScriptName(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+  int x1;
+  int x2;
+  string x3;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "set-post-script-name in font-name-directory<%>");
+  x1 = unbundle_symset_weight(p[1], "set-post-script-name in font-name-directory<%>");
+  x2 = unbundle_symset_style(p[2], "set-post-script-name in font-name-directory<%>");
+  x3 = (string)objscheme_unbundle_string(p[3], "set-post-script-name in font-name-directory<%>");
+
+  
+  ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->SetPostScriptName(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxFontNameDirectorySetScreenName(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  int x0;
+  int x1;
+  int x2;
+  string x3;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "set-screen-name in font-name-directory<%>");
+  x1 = unbundle_symset_weight(p[1], "set-screen-name in font-name-directory<%>");
+  x2 = unbundle_symset_style(p[2], "set-screen-name in font-name-directory<%>");
+  x3 = (string)objscheme_unbundle_string(p[3], "set-screen-name in font-name-directory<%>");
+
+  
+  ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->SetScreenName(x0, x1, x2, x3);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3608,7 +3681,7 @@ if (os_wxFontNameDirectory_class) {
     objscheme_add_global_class(os_wxFontNameDirectory_class, "font-name-directory%", env);
     objscheme_add_global_interface(os_wxFontNameDirectory_interface, "font-name-directory" "<%>", env);
 } else {
-  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 10);
+  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 13);
 
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-family-default-font-id", os_wxFontNameDirectoryIdentity, 1, 1);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "find-or-create-font-id", os_wxFontNameDirectoryFindOrCreateFontId, 2, 2);
@@ -3617,6 +3690,9 @@ if (os_wxFontNameDirectory_class) {
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-font-id", os_wxFontNameDirectoryGetFontId, 1, 1);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "initialize", os_wxFontNameDirectoryInitialize, 3, 3);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-new-font-id", os_wxFontNameDirectoryGetNewFontId, 0, 0);
+ scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-afm-name", os_wxFontNameDirectorySetAFMName, 4, 4);
+ scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-post-script-name", os_wxFontNameDirectorySetPostScriptName, 4, 4);
+ scheme_add_method_w_arity(os_wxFontNameDirectory_class, "set-screen-name", os_wxFontNameDirectorySetScreenName, 4, 4);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-afm-name", os_wxFontNameDirectoryGetAFMName, 3, 3);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-post-script-name", os_wxFontNameDirectoryGetPostScriptName, 3, 3);
  scheme_add_method_w_arity(os_wxFontNameDirectory_class, "get-screen-name", os_wxFontNameDirectoryGetScreenName, 3, 3);

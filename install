@@ -31,38 +31,103 @@ exit
 
 (define plthome (regexp-replace* "\"" plthome "\\\\\""))
 
+(define in-osx-install? (getenv "OSX_PLT_INSTALL"))
+
+(when in-osx-install?
+  (namespace-require '(lib "mred.ss" "mred"))
+  (namespace-require '(lib "class.ss")))
+
+;; Set up GUI
+(when in-osx-install?
+  (let ([evt (make-eventspace)]
+	[there-was-an-error? #f])
+    (parameterize ([current-eventspace evt])
+      (define f (make-object frame% "PLT Installer" #f 600 480))
+      (define e (make-object text%))
+      (define c (make-object editor-canvas% f e))
+      (define b (make-object button% "Stop Installation" f
+			     (lambda (b e)
+			       (when (or there-was-an-error?
+					 (eq? 'ok (message-box
+						   "Stop Installation"
+						   "Ok to stop the installation?"
+						   f
+						   '(ok-cancel))))
+				 (exit 1)))))
+      (send e lock #t)
+      (send e auto-wrap #t)
+      (let ([out (make-custom-output-port
+		  #f
+		  (lambda (string start end flush?)
+		    (parameterize ([current-eventspace evt])
+		      (queue-callback
+		       (lambda ()
+			 (send e lock #f)
+			 (send e insert (substring string start end)
+			       (send e last-position))
+			 (send e lock #t))
+		       #t))
+		    (- end start))
+		  void
+		  void)])
+	(current-output-port out)
+	(current-error-port out))
+      (send f show #t)
+      (let ([old-exit (exit-handler)])
+	(exit-handler (lambda (v)
+			(unless (zero? v)
+			  (parameterize ([current-eventspace evt])
+			    (queue-callback
+			     (lambda ()
+			       (send e lock #f)
+			       (let ([s (send e last-position)])
+				 (send e insert "INSTALLATION FAILED" s)
+				 (let ([ss (send e last-position)])
+				   (send e insert "\n(click button below to continue)" ss)
+				   (send e change-style 
+					 (let ([d (make-object style-delta% 'change-bold)])
+					   (send d set-delta-foreground "red")
+					   d)
+					 s ss))
+				 (send e lock #t))
+			       (send b set-label "Quit Installation")
+			       (set! there-was-an-error? #t))))
+			  (semaphore-wait (make-semaphore)))
+			(old-exit v)))))))
+
 (printf "setting PLTHOME to \"~a\" in scripts:~n" plthome)
 
 (require (lib "check-text.ss" "version"))
 
 (for-each
  (lambda (f)
-   (cond
-    [(member f '("mzscheme" "mred"))
-     (printf " skipping bin/~a~n" f)]
-    [else
-     (let ([p (build-path "bin" f)])
-       (when (file-exists? p)
-	 (set! didnothing "")
-	 (printf " updating ~a~n" p)
-	 (let ([lines (with-input-from-file p
-			(lambda ()
-			  (let loop ()
-			    (let ([l (read-line)])
-			      (if (eof-object? l)
-				  null
-				  (cons l (loop)))))))])
-	   (with-output-to-file p
-	     (lambda ()
-	       (for-each
-		(lambda (l)
-		  (let ([m (regexp-match "^(.*)PLTHOME=(.*)$" l)])
-		    (if m
-			(printf "~aPLTHOME=\"~a\"~n"
-				(cadr m) plthome)
-			(printf "~a~n" l))))
-		lines))
-	     'truncate))))]))
+    (let ([p (build-path "bin" f)])
+      (cond
+       [(and (file-exists? p)
+	     (> (file-size p) 4096))
+	(printf " skipping ~a~n" p)]
+       [else
+	(when (file-exists? p)
+	  (set! didnothing "")
+	  (printf " updating ~a~n" p)
+	  (let ([lines (with-input-from-file p
+			 (lambda ()
+			   (let loop ()
+			     (let ([l (read-line)])
+			       (if (eof-object? l)
+				   null
+				   (cons l (loop)))))))])
+	    (with-output-to-file p
+	      (lambda ()
+		(for-each
+		 (lambda (l)
+		   (let ([m (regexp-match "^(.*)PLTHOME=(.*)$" l)])
+		     (if m
+			 (printf "~aPLTHOME=\"~a\"~n"
+				 (cadr m) plthome)
+			 (printf "~a~n" l))))
+		 lines))
+	      'truncate)))])))
  (directory-list "bin"))
 
 (define (get-y-n)
@@ -74,17 +139,20 @@ exit
 (define in-rpm-build? (and (getenv "RPM_OPT_FLAGS") (not in-rpm-install?)))
 
 (define check-version?
-  (if (or in-rpm-install? in-rpm-build?)
-      #f
-      (begin
-	(printf "Check for updates of PLT software over the Internet (y/n)? [y] ")
-	(get-y-n))))
+  (if in-osx-install?
+      #f ;; until the version checker can work better with the GUI...
+      (if (or in-rpm-install? in-rpm-build?)
+	  #f
+	  (begin
+	    (printf "Check for updates of PLT software over the Internet (y/n)? [y] ")
+	    (get-y-n)))))
 
 (when check-version?
-      (check-version))
+  (check-version))
 
 (define zo?
   (or in-rpm-install?
+      in-osx-install?
       (and (not in-rpm-build?)
 	   (begin
 	    (printf "PLT software starts up much faster with .zo files, but creating .zo~n")

@@ -392,7 +392,7 @@
 # define SIXTY_FOUR_BIT_INTEGERS
 
 # define ALPHA_CONTROL_FP
-# deifne USE_OSF_IEEE_PREDS
+# define USE_OSF_FP_PREDS
 
 # define FLAGS_ALREADY_SET
 

@@ -547,7 +547,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    sprintf(v, "%s%s%s%s%s-*-*-%%d-*-*-*-*-*-*",
 		    prefix, src + ds, weight, style, normalcy);
 	  } else
-	    v = copystring(src);
+	    v = COPYSTRING_TO_ALIGNED(src, ds);
 	}
       }
 #endif

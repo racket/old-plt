@@ -578,6 +578,8 @@
 (test #f regexp-match #rx"[\302\251-\304\250]+" "xx\302\250mm")
 (test '("\303\251\302\251") regexp-match #rx"[\302\251-\304\250]+" "xx\303\251\302\251mm")
 
+(test #f regexp-match #rx"[^a-z][^a-z]" "\302\251")
+
 ;; Nots of patterns and ranges:
 (test #f regexp-match #rx"[^a-z\302\251]" "\302\251mm")
 (test '("") regexp-match #rx"[^a-d\302\251]*" "\302\251mm")
@@ -609,7 +611,6 @@
 ;; Regexps that shouldn't parse:
 (err/rt-test (regexp "[a--b\341\275\270]") exn:misc?)
 (err/rt-test (regexp "[a-b-c\341\275\270]") exn:misc?)
-
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; String comparison. Relies on the default locale knowing
@@ -643,5 +644,51 @@
   (go #f)
   (parameterize ([current-locale "C"])
     (go #t)))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  locale<->unicode conversions
+
+;; Relies on a default locale that extends Latin-1:
+(let-values ([(s l ok?) (string-unicode->locale "abc")])
+  (test 3 'count l)
+  (test #t 'ok ok?))
+(let-values ([(s l ok?) (string-unicode->locale "a\300\300")])
+  (test 1 'count l)
+  (test #f 'ok ok?))
+(let-values ([(s l ok?) (string-unicode->locale "a\302\200")])
+  (test 3 'count l)
+  (test #t 'ok ok?))
+(test-values '("abcd" 4 #t) (lambda () (string-locale->unicode "abcd")))
+(test-values '("bcd" 3 #t) (lambda () (string-locale->unicode "abcd" 1)))
+(test-values '("bc" 2 #t) (lambda () (string-locale->unicode "abcd" 1 3)))
+(test-values '("a" 1 #f) (lambda () (string-locale->unicode "a\302\200" 0 2)))
+(test-values '(2 2 #t) (lambda () (string-locale->unicode "abcd" 1 3 (make-string 2))))
+(let ([s (make-string 10)])
+  (test-values '(2 2 #t) (lambda () (string-locale->unicode "abcd" 1 3 s 4 7)))
+  (test #\b string-ref s 4)
+  (test #\c string-ref s 5))
+(let ([s (make-string 10)])
+  (test-values '(1 1 #t) (lambda () (string-locale->unicode "abcd" 1 3 s 4 5)))
+  (test #\b string-ref s 4))
+;; The rest relies on the "C" locale:
+(parameterize ([current-locale "C"])
+  (test-values '("abc" 3 #t) (lambda () (string-unicode->locale "abc")))
+  (test-values '("a" 1 #f) (lambda () (string-unicode->locale "a\300\300")))
+  (test-values '("ab" 2 #f) (lambda () (string-unicode->locale "ab\303")))
+  ;; Well-formed, but can't be converted to "C":
+  (test-values '("a" 1 #f) (lambda () (string-unicode->locale "a\303\342"))))
+
+(err/rt-test (string-unicode->locale 'ok))
+(err/rt-test (string-unicode->locale "ok" -1))
+(err/rt-test (string-unicode->locale "ok" 3) exn:application:mismatch?)
+(err/rt-test (string-unicode->locale "ok" 1 0) exn:application:mismatch?)
+(err/rt-test (string-unicode->locale "ok" 1 3) exn:application:mismatch?)
+(err/rt-test (string-unicode->locale "ok" 1 2 'nope))
+(err/rt-test (string-unicode->locale "ok" 1 2 "nope"))
+(let ([s (make-string 4)])
+  (err/rt-test (string-unicode->locale "ok" 1 3 s -1) exn:application:mismatch?)
+  (err/rt-test (string-unicode->locale "ok" 1 3 s 5) exn:application:mismatch?)
+  (err/rt-test (string-unicode->locale "ok" 1 3 s 2 1) exn:application:mismatch?)
+  (err/rt-test (string-unicode->locale "ok" 1 3 s 2 7) exn:application:mismatch?))
 
 (report-errs)

@@ -2092,17 +2092,25 @@ int translate(unsigned char *s, int len, char **result)
   
   r = (char *)scheme_malloc_atomic(rs.size + 1);
 
-  /* We need to translate if the pattern contains any use of ".", if
-     there's a big character in a range, or if there's a big character
-     before '+', '*', or '?'. */
+  /* We need to translate if the pattern contains any use of "."
+     (except before "*"), if there's a big character in a range, if
+     there's a not-range, or if there's a big character before '+',
+     '*', or '?'. */
 
   for (rs.i = j = 0; rs.i < len;) {
     if (s[rs.i] == '[') {
       int k = rs.i + 1, saw_big = 0;
-      /* First, check whether we need to translate. */
-      /* Close bracket start is special: */
-      if ((k < len) && (s[k] == '^'))
+      int not_mode = 0;
+
+      /* First, check whether we need to translate this particular
+	 range. */
+
+      /* Caret at start is special: */
+      if ((k < len) && (s[k] == '^')) {
+	not_mode = 1;
 	k++;
+      }
+      /* Close bracket start is special: */
       if ((k < len) && (s[k] == ']'))
 	k++;
       while ((k < len) && (s[k] != ']')) {
@@ -2110,7 +2118,7 @@ int translate(unsigned char *s, int len, char **result)
 	  saw_big = 1;
 	k++;
       }
-      if ((k >= len) || !saw_big) {
+      if ((k >= len) || (!saw_big && !not_mode)) {
 	/* No translation necessary. */
 	while (rs.i <= k) {
 	  r[j++] = s[rs.i++];
@@ -2121,7 +2129,6 @@ int translate(unsigned char *s, int len, char **result)
 	Scheme_Object *ranges;
 	unsigned int *us, *range_array;
 	int ulen, on_count, range_len, rp, p;
-	int not_mode = (s[rs.i + 1] == '^');
 
 	ulen = scheme_utf8_decode(s, NULL, rs.i + 1, k, 0, 0, 0);
 	us = (unsigned int *)scheme_malloc_atomic(ulen * sizeof(unsigned int));

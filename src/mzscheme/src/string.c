@@ -91,6 +91,8 @@ static Scheme_Object *system_type(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_locale(int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_locale_to_unicode(int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_unicode_to_locale(int argc, Scheme_Object *argv[]);
 
 static int mz_strcmp(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 static int mz_strcmp_ci(const char *who, unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
@@ -344,18 +346,18 @@ scheme_init_string (Scheme_Env *env)
 						       MZCONFIG_LOCALE), 
 			     env);
 
-#if 0
-  scheme_add_global_constant("string-locale->string", 
-			     scheme_make_prim_w_arity(string_locale_to_unicode,
-						      "string-locale->unicode",
-						      1, 1),
+  scheme_add_global_constant("string-locale->unicode", 
+			     scheme_make_prim_w_arity2(string_locale_to_unicode,
+						       "string-locale->unicode",
+						       1, 6,
+						       3, 3),
 			     env);
-  scheme_add_global_constant("string->string-locale", 
-			     scheme_make_prim_w_arity(string_unicode_to_locale,
-						      "string->string-locale",
-						      1, 1),
+  scheme_add_global_constant("string-unicode->locale", 
+			     scheme_make_prim_w_arity2(string_unicode_to_locale,
+						       "string-unicode->locale",
+						       1, 6,
+						       3, 3),
 			     env);
-#endif
 
   scheme_add_global_constant("format", 
 			     scheme_make_folding_prim(format,
@@ -1072,7 +1074,7 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
 
 #ifndef DONT_USE_LOCALE
 
-char *scheme_locale_convert(char *from_e, char *to_e, 
+char *scheme_locale_convert(const char *from_e, const char *to_e, 
 			    char *in, int id, int iilen, 
 			    char *out, int od, int iolen, 
 			    /* if grow, then reallocate when out isn't big enough */
@@ -1134,7 +1136,7 @@ char *scheme_locale_convert(char *from_e, char *to_e,
   while (1) {
     ip = in + id + dip;
     op = out + od + dop;
-    r = iconv(cd, (const char **)&ip, &il, &op, &ol);
+    r = iconv(cd, &ip, &il, &op, &ol);
     dip = ip - (in + id);
     dop = op - (out + od);
     ip = op = NULL;
@@ -1269,7 +1271,7 @@ char *scheme_recase_locale_string(int to_up,
 }
 
 int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
-     /* The s1 and s2 arguments are really UCS-4. */
+     /* The s1 and s2 arguments are actually UCS-4. */
 {
 # define MZ_SC_BUF_SIZE 32
 # ifdef SCHEME_BIG_ENDIAN
@@ -1412,7 +1414,7 @@ int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
 
 #ifdef MACOS_UNICODE_SUPPORT
 int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
-     /* The s1 and s2 arguments are really UTF-16. */
+     /* The s1 and s2 arguments are actually UTF-16. */
 {
   CFStringRef str1, str2;
   CFComparisonResult r;
@@ -2132,6 +2134,59 @@ static Scheme_Object *current_locale(int argc, Scheme_Object *argv[])
 
   return v;
 }
+
+static Scheme_Object *convert_unicode_locale(const char *who, int argc, Scheme_Object *argv[],
+					     const char *from_e, const char *to_e)
+{
+  char *r;
+  int status;
+  long amt_read, amt_wrote;
+  long istart, ifinish, ostart, ofinish;
+  Scheme_Object *a[3];
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type(who, "string", 0, argc, argv);  
+  scheme_get_substring_indices("substring", argv[0], argc, argv, 1, 2, &istart, &ifinish);
+  if (argc > 3) {
+    if (!SCHEME_MUTABLE_STRINGP(argv[3]))
+      scheme_wrong_type(who, "mutable string", 3, argc, argv);  
+    r = SCHEME_STR_VAL(argv[3]);
+    scheme_get_substring_indices("substring", argv[3], argc, argv, 4, 5, &ostart, &ofinish);
+  } else {
+    r = NULL;
+    ostart = 0;
+    ofinish = 0;
+  }
+
+  r = scheme_locale_convert(from_e, to_e,
+			    SCHEME_STR_VAL(argv[0]), istart, ifinish-istart,
+			    r, ostart, ofinish-ostart,
+			    !r, 
+			    0,
+			    &amt_read, &amt_wrote,
+			    &status);
+  
+  if (argc < 4) {
+    a[0] = scheme_make_sized_string(r, amt_wrote, 0);
+  } else {
+    a[0] = scheme_make_integer(amt_wrote);
+  }
+  a[1] = scheme_make_integer(amt_read);
+  a[2] = ((status < 0) ? scheme_false : scheme_true);
+  
+  return scheme_values(3, a);
+}
+
+static Scheme_Object *string_locale_to_unicode(int argc, Scheme_Object *argv[])
+{
+  return convert_unicode_locale("string-locale->unicode", argc, argv, NULL, "UTF-8");
+}
+
+static Scheme_Object *string_unicode_to_locale(int argc, Scheme_Object *argv[])
+{
+  return convert_unicode_locale("string-unicode->locale", argc, argv, "UTF-8", NULL);
+}
+
 
 void scheme_reset_locale(void)
 {

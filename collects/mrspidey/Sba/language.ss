@@ -237,14 +237,11 @@
     (add-constructor! 'pair #t #t)
 
     (add-default-primitives!
-     `(
-       ;; for demos
+     `(;; for demos
        (nil            nil)
        (pair           (forall (a b) (a b -> (pair a b))))
        (left            (forall (a) ((pair a _) -> a)))
        (right            (forall (a) ((pair _ a) -> a)))
-
-       ;;(nil            nil)
 
        ;; booleans
        (not            (_ -> bool) (predicate* (#t false) (#f false)))
@@ -255,9 +252,11 @@
        (equal?         (_ _ -> bool))
 
        ;; pairs and lists
+       (empty          nil)
        (cons           (forall (a b) (a b -> (cons a b))))
        (car            (forall (a) ((cons a _) -> a)))
        (cdr            (forall (a) ((cons _ a) -> a)))
+       (rest           (forall (a) ((cons _ a) -> a)))
        (caar           (forall (a) ((cons (cons a _) _) -> a)))
        (cadr           (forall (a) ((cons _ (cons a _)) -> a)))
        (cdar           (forall (a) ((cons (cons _ a) _) -> a)))
@@ -528,6 +527,7 @@
        ;; predicates
        (number?        (_ -> bool)         (predicate num))
        (null?          (_ -> bool)         (predicate nil))
+       (empty?         (_ -> bool)         (predicate nil))
        (char?          (_ -> bool)         (predicate char))
        (symbol?        (_ -> bool)         (predicate sym))
        (string?        (_ -> bool)         (predicate str))
@@ -1116,7 +1116,7 @@
 
        (null           nil)
        (cons?          (_ -> bool) (predicate cons))
-       (gentemp        (-> sym)                                          )
+       (gentemp        (-> sym))
        (bound?         (sym -> bool))
        (flush-output-port (optional oport -> void))
        (real-time      (-> num))

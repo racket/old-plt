@@ -6783,6 +6783,7 @@ else
   LTO="o"
   MZLINKER="$CC"
   STATIC_AR="$AR"
+  PLAIN_CC="$CC"
 fi
 
 ############## final output ################

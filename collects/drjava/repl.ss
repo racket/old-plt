@@ -119,9 +119,14 @@
   
   ;; new-repl : -> Repl
   (define new-repl
-    (let* ([env-init (jfind-method Env-class "<init>" "(Ljava/lang/String;)V")])
+    (let ([env-init (jfind-method Env-class "<init>" "(Ljava/lang/String;Ljava/lang/String;)V")])
       (lambda ()
-	(make-repl null (jnew Env-class env-init gjc-output-dir)))))
+	(make-repl null (jnew Env-class env-init gjc-output-dir extension-path)))))
+  
+  (define update-lib
+    (let ([env-extensions (jfind-method Env-class "setExtensionPath" "(Ljava/lang/String;)V")])
+      (lambda (repl)
+        (jcall (repl-env repl) env-extensions extension-path))))
   
   ;; eval-str : Repl String -> (U Void jobject)
   (define (eval-str repl str)
@@ -222,10 +227,10 @@
 	  (enq! (deq! from) to)
 	  (loop)))))
   
-  ;;  eval-statement : Repl Queue(Scanned) -> Boolean
+  ;;  eval-statement : Repl Queue(Scanned) -> Void
   ;;  abstract w. eval-expression
   (define (eval-statement repl q)
-    (eval-common repl q wrap-statement))
+    (void (eval-common repl q wrap-statement)))
   
   ;;   wrap-statement : (listof Lhs) String Queue(Scanned) -> Queue(Scanned)
   (define (wrap-statement defs name q)

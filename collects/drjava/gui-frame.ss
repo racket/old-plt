@@ -1,5 +1,5 @@
 (unit/sig gui^
-  (import framework^ gui-text^ mred^ mzlib:function^)
+  (import framework^ gui-text^ gjc^ mred^ mzlib:function^)
   
   (define drjava-frame%
     (class frame:text-info-file% (filename)
@@ -14,6 +14,18 @@
         (edit-menu:between-find-and-preferences void)
         (file-menu:new
          (lambda (item evt) (handler:edit-file #f (lambda _ (new-document #f)))))
+        (file-menu:between-open-and-revert
+         (let ([title "Set Library To..."])
+           (lambda (file-menu)
+             (make-object menu-item% title
+               file-menu
+               (lambda (menu-item control-event)
+                 (let ([path (get-text-from-user title "Enter the extra library path:" #f "")])
+                   (when path
+                     (set-gjc-extension-path! path)
+                     (send repl lib-changed))))
+               #f
+               "Use pre-compiled libraries"))))
         (file-menu:between-print-and-close void))
       (sequence
         (super-init filename)
@@ -32,19 +44,19 @@
 		 [hide-str (format "Hide ~a" name)]
 		 [show-str (format "Show ~a" name)])
              (make-object menu-item% hide-str show
-                          (lambda (item cntl)
-                            (send (get-area-container)
-                                  change-children
-                                  (lambda (kids)
-                                    (if (memq can kids)
-                                        (begin
-                                          (send item set-label show-str)
-                                          (remq can kids))
-                                        (begin 
-                                          (send item set-label hide-str)
-                                          (cons (car kids) (pos can (cdr kids)))
-                                          (cons (car kids) (pos can (cdr kids))))))))
-                          key)))))
+               (lambda (item cntl)
+                 (send (get-area-container)
+                       change-children
+                       (lambda (kids)
+                         (if (memq can kids)
+                             (begin
+                               (send item set-label show-str)
+                               (remq can kids))
+                             (begin 
+                               (send item set-label hide-str)
+                               (cons (car kids) (pos can (cdr kids)))
+                               (cons (car kids) (pos can (cdr kids))))))))
+               key)))))
       (sequence
         (fix-parens (send repl get-keymap))
         (send defs set-file-format 'text)
@@ -85,20 +97,20 @@
   ;; fix-parens : Keymap% -> Void
   (define fix-parens
     (let ([fname "flash-paren-match"])
-    (lambda (keymap)
-      (send keymap add-function fname
-            (lambda (edit event)
-              (send edit on-default-char event)
-              (let ([pos (paren:backward-match 
-                          edit
-                          (send edit get-start-position)
-                          0
-                          parens quotes comments #f #f)])
-                (when pos
-                  (send edit flash-on pos (+ 1 pos))))
-              #t))
-      (map (lambda (x) (send keymap map-function (cdr x) fname))
-           parens))))
+      (lambda (keymap)
+        (send keymap add-function fname
+              (lambda (edit event)
+                (send edit on-default-char event)
+                (let ([pos (paren:backward-match 
+                            edit
+                            (send edit get-start-position)
+                            0
+                            parens quotes comments #f #f)])
+                  (when pos
+                    (send edit flash-on pos (+ 1 pos))))
+                #t))
+        (map (lambda (x) (send keymap map-function (cdr x) fname))
+             parens))))
   
   (define parens '(("(" . ")") ("[" . "]") ("{" . "}")))
   (define quotes '(("'" . "'") ("\"" . "\"") ("/*" . "*/")))

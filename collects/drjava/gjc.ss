@@ -72,14 +72,22 @@
              gj-compile gjlist)
       (jget-field log log-nerrors)))
   
-  ;; build-gjc-path : String -> String
-  (define (build-gjc-path dir)
-    (string-append dir ":" (getenv "GJC_PATH")))
   
   (define gjc-output-dir ".")
-  (define gjc-path (build-gjc-path gjc-output-dir))
+  (define extension-path gjc-output-dir)
+  
+  ;; build-gjc-path : -> String
+  (define (build-gjc-path)
+    (string-append gjc-output-dir ":" extension-path ":" (getenv "GJC_PATH")))
+  
+  (define gjc-path (build-gjc-path))
   
   ;; set-gjc-output-dir! : String -> Void
   (define (set-gjc-output-dir! dir)
     (set! gjc-output-dir dir)
-    (set! gjc-path (build-gjc-path dir))))
+    (set! gjc-path (build-gjc-path)))
+  
+  ;; set-gjc-extension-path! : String -> Void
+  (define (set-gjc-extension-path! libs)
+    (set! extension-path libs)
+    (set! gjc-path (build-gjc-path))))

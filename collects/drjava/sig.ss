@@ -4,7 +4,7 @@
         jSTRINGLITERAL jBOOLEAN jBYTE jCHAR jSHORT jINT jLONG jFLOAT jDOUBLE jDOT))
 
 (define-signature gjc-core^
-  (name->string compile-gjlist gjc-version gjc-class gjc-output-dir set-gjc-output-dir!))
+  (name->string compile-gjlist gjc-version gjc-class gjc-output-dir set-gjc-output-dir! set-gjc-extension-path! extension-path))
 
 (define-signature gjc^ ((open gjc-core^) (open tokens^)))
 
@@ -19,7 +19,7 @@
   (new-scanner enq-token! next-token current-token string->scanner (struct scanned (token pos lastpos name radix str))))
 
 (define-signature repl^
-  (new-repl eval-str (struct repl (env))))
+  (new-repl eval-str update-lib (struct repl (env))))
 
 (define-signature error^ (report-error report-warning))
 (define-signature gui^ (new-document))

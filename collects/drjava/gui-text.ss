@@ -223,6 +223,9 @@
            (init)
            (set! repl (new-repl))
            (repl-env repl)))
+        (lib-changed
+         (lambda ()
+           (update-lib repl)))
         (print-char
          (make-printer (make-color-style "black")))
         (print-red-char

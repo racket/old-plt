@@ -3089,9 +3089,7 @@ class wxPenList *objscheme_unbundle_wxPenList(Scheme_Object *obj, const char *wh
 // @SYM "question-arrow" : wxCURSOR_QUESTION_ARROW
 // @SYM "right-button" : wxCURSOR_RIGHT_BUTTON
 // @SYM "sizenesw" : wxCURSOR_SIZENESW
-// @SYM "sizens" : wxCURSOR_SIZENS
 // @SYM "sizenwse" : wxCURSOR_SIZENWSE
-// @SYM "sizewe" : wxCURSOR_SIZEWE
 // @SYM "sizing" : wxCURSOR_SIZING
 // @SYM "spraycan" : wxCURSOR_SPRAYCAN
 // @SYM "wait" : wxCURSOR_WAIT
@@ -3100,6 +3098,8 @@ static Scheme_Object *cursor_wxCURSOR_BULLSEYE_sym = NULL;
 static Scheme_Object *cursor_wxCURSOR_CROSS_sym = NULL;
 static Scheme_Object *cursor_wxCURSOR_HAND_sym = NULL;
 static Scheme_Object *cursor_wxCURSOR_IBEAM_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SIZENS_sym = NULL;
+static Scheme_Object *cursor_wxCURSOR_SIZEWE_sym = NULL;
 static Scheme_Object *cursor_wxCURSOR_WATCH_sym = NULL;
 
 static void init_symset_cursor(void) {
@@ -3114,6 +3114,10 @@ static void init_symset_cursor(void) {
   cursor_wxCURSOR_HAND_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hand"));
   wxREGGLOB(cursor_wxCURSOR_IBEAM_sym);
   cursor_wxCURSOR_IBEAM_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("ibeam"));
+  wxREGGLOB(cursor_wxCURSOR_SIZENS_sym);
+  cursor_wxCURSOR_SIZENS_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("size-ns"));
+  wxREGGLOB(cursor_wxCURSOR_SIZEWE_sym);
+  cursor_wxCURSOR_SIZEWE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("size-we"));
   wxREGGLOB(cursor_wxCURSOR_WATCH_sym);
   cursor_wxCURSOR_WATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("watch"));
 }
@@ -3128,6 +3132,8 @@ static int unbundle_symset_cursor(Scheme_Object *v, const char *where) {
   else if (v == cursor_wxCURSOR_CROSS_sym) { return wxCURSOR_CROSS; }
   else if (v == cursor_wxCURSOR_HAND_sym) { return wxCURSOR_HAND; }
   else if (v == cursor_wxCURSOR_IBEAM_sym) { return wxCURSOR_IBEAM; }
+  else if (v == cursor_wxCURSOR_SIZENS_sym) { return wxCURSOR_SIZENS; }
+  else if (v == cursor_wxCURSOR_SIZEWE_sym) { return wxCURSOR_SIZEWE; }
   else if (v == cursor_wxCURSOR_WATCH_sym) { return wxCURSOR_WATCH; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
   return 0;
@@ -3143,6 +3149,8 @@ static int istype_symset_cursor(Scheme_Object *v, const char *where) {
   else if (v == cursor_wxCURSOR_CROSS_sym) { return 1; }
   else if (v == cursor_wxCURSOR_HAND_sym) { return 1; }
   else if (v == cursor_wxCURSOR_IBEAM_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SIZENS_sym) { return 1; }
+  else if (v == cursor_wxCURSOR_SIZEWE_sym) { return 1; }
   else if (v == cursor_wxCURSOR_WATCH_sym) { return 1; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "cursor symbol", -1, 0, &v));
   return 0;

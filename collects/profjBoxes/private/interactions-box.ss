@@ -151,7 +151,7 @@
               (send* output-text 
                 (lock false)
                 (change-style blue-text 'start 'end #f))
-              (print-to-text output-text (list val))
+              ;(print-to-text output-text (list val))
               (send* output-text
                 (lock true))
               (send output show true)))

@@ -1,2 +1,2 @@
 (module info (lib "infotab.ss" "setup")
-  (define name "EoPL Support private"))
+  (define name "EoPL private"))

@@ -9,8 +9,7 @@ everything.
 |#
 
 (module eopl-tool mzscheme
-  (require (lib "class.ss")
-	   (lib "unitsig.ss")
+  (require (lib "unitsig.ss")
 	   (lib "tool.ss" "drscheme"))
   
   (provide tool@)

@@ -48,11 +48,16 @@
       (define in #f)
       (define input-port-start-pos start-pos)
 
+      (define finished? #t)
       
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
                get-surrogate set-surrogate get-style-list)
             
+      
+      (define/public (modify)
+        (set! in #f))
+      
       (define (reset)
         (set! tokens #f)
         (set! invalid-tokens #f)
@@ -60,7 +65,8 @@
         (set! current-pos start-pos)
         (set! colors null)
         (set! in #f)
-        (set! input-port-start-pos start-pos))
+        (set! input-port-start-pos start-pos)
+        (set! finished? #t))
       
       (define (color)
         (unless (null? colors)
@@ -135,7 +141,9 @@
                (break-enabled old-breaks))))))
     
       (define/public (do-insert/delete edit-start-pos change-length)
+        (modify)
         (when should-color?
+          (set! finished? #f)
           (when (> edit-start-pos start-pos)
             (set! edit-start-pos (sub1 edit-start-pos)))
           (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
@@ -143,12 +151,7 @@
             (set! invalid-tokens invalid-tree)
             (set! tokens valid-tree)
             (set! invalid-tokens-start (+ orig-token-end change-length))
-            (set! current-pos (+ start-pos orig-token-start))
-            (set! input-port-start-pos (+ start-pos orig-token-start))
-            (set! in (open-input-text-editor
-                      this
-                      input-port-start-pos
-                      end-pos)))
+            (set! current-pos (+ start-pos orig-token-start)))
           (colorer-callback)))
       
       (define/public (start prefix- get-token-)
@@ -163,7 +166,7 @@
                    (set! should-color? on?)
                    (set-surrogate (get-surrogate))))))
         (unless background-thread
-          (set! background-thread (thread (lambda () (background-colorer)))))
+          (set! background-thread (thread (lambda () (background-colorer #t)))))
         (do-insert/delete start-pos 0))
         
         
@@ -180,28 +183,42 @@
       (define (colorer-callback)
         (channel-put sync #f)
         (sleep .1)
-        (break-thread background-thread)
+        (unless finished?
+          (break-thread background-thread)
+          (channel-get sync))
         (begin-edit-sequence #f)
         (color)
         (end-edit-sequence)
-        (queue-callback colorer-callback #f))
-                
-      (define (background-colorer)
+        (unless finished?
+          (queue-callback colorer-callback #f)))
+      
+      (define (background-colorer starting?)
 	(break-enabled #f)
-	(let/ec restart
-	  (parameterize ((current-exception-handler
-			  (lambda (exn)
-			    (channel-get sync)
-			    (cond
-			     (in ((exn:break-continuation exn)))
-			     (else
-			      (break-enabled #f)
-			      (restart))))))
-	    (channel-get sync)
-	    (break-enabled #t)
-	    (with-handlers ((not-break-exn? void))
-	      (re-tokenize))))
-	(background-colorer))
+        (background-colorer
+         (let/ec restart
+           (parameterize ((current-exception-handler
+                           (lambda (exn)
+                             (channel-put sync #f)
+                             (channel-get sync)
+                             (cond
+                               (in (printf "continuing~n") ((exn:break-continuation exn)))
+                               (else
+                                (printf "restarting~n")
+                                (break-enabled #f)
+                                (restart #f))))))
+             (when starting?
+               (channel-get sync))
+             ;(with-handlers ((not-break-exn? void))
+               (set! input-port-start-pos current-pos)
+               (printf "~a~n" current-pos)
+               (set! in (open-input-text-editor this
+                                                input-port-start-pos
+                                                end-pos))
+               (break-enabled #t)
+               (re-tokenize)
+               (set! finished? #t)
+               (set! in #f)
+               #t))));)
       
       
 ;      (define (colorer-callback)
@@ -220,6 +237,7 @@
 ;        (background-colorer))
   
       (super-instantiate ())))
+  
   
   (define (colorer %)
     (class %
@@ -250,6 +268,41 @@
         (super-after-delete text _ edit-start-pos change-length)
         (send text do-insert/delete edit-start-pos (- change-length)))
       
+      (wrap on-change)
+      (wrap after-set-position)
+      (wrap on-change-style a b)
+;    after-edit-sequence 
+;    on-char 
+;    on-default-char 
+;    on-default-event 
+;    on-disable-surrogate 
+;    on-display-size 
+;    on-edit-sequence 
+;    on-enable-surrogate 
+;    on-event 
+;    on-focus 
+;    on-load-file 
+;    on-local-char 
+;    on-local-event 
+;    on-new-box 
+;    on-new-image-snip 
+;    on-new-string-snip 
+;    on-new-tab-snip 
+;    on-paint 
+;    on-save-file 
+;    on-set-size-constraint 
+;    on-snip-modified 
+      
       (super-instantiate ())
       ))
+  
+  (define-syntax wrap
+    (syntax-rules ()
+      ((_ name args ...)
+       (begin
+         (rename (x name))
+         (define/override (name text _ args ...)
+           (send text modify)
+           (x text _ args ...))))))
+
   )

@@ -6,7 +6,7 @@
 (invoke-open-unit
  (unit 
    (import)
-   (export error-context-display-depth instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
+   (export errortrace-print-trace error-context-display-depth instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
    
    (define key (gensym 'key))
 
@@ -282,6 +282,24 @@
 	    ;; The empty namespace, maybe? Don't annotate.
 	    (orig e)))))
    
+   ;; exn -> void
+   ;; effect: prints out the context surrounding the exception
+   (define (errortrace-print-trace x)
+     (let loop ([n (error-context-display-depth)]
+		[l (exn-debug-info x)])
+       (cond
+	 [(or (zero? n) (null? l)) (void)]
+	 [else
+	  (let ([m (car l)])
+	    (fprintf p "  ~e in ~a~n" 
+		     (cdr m)
+		     (let ([file (car m)])
+		       (if file
+			   file
+			   "UNKNOWN"))))
+	  (loop (- n 1)
+		(cdr l))])))
+   
    (current-exception-handler
     (let ([orig (current-exception-handler)])
       (lambda (x)
@@ -289,20 +307,7 @@
 	    (let ([p (current-error-port)])
 	      (display (exn-message x) p)
 	      (newline p)
-	      (let loop ([n (error-context-display-depth)]
-			 [l (exn-debug-info x)])
-		(cond
-		 [(or (zero? n) (null? l)) (void)]
-		 [else
-		  (let ([m (car l)])
-		    (fprintf p "  ~e in ~a~n" 
-			     (cdr m)
-			     (let ([file (car m)])
-			       (if file
-				   file
-				   "UNKNOWN"))))
-		  (loop (- n 1)
-			(cdr l))]))
+	      (errortrace-print-trace x)
 	      ((error-escape-handler)))
 	    (orig x)))))
 

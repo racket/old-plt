@@ -1629,10 +1629,35 @@ Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
 
 static Scheme_Object *fixnum_expt(int x, int y)
 {
+  int orig_x = x, orig_y = y;
   if ((x == 2) && (y <= MAX_SHIFT_TRY))
     return scheme_make_integer(1 << y);
   else
-    return scheme_bignum_power(scheme_make_bignum(x), scheme_make_bignum(y));
+  {
+    long result = 1;
+    int odd_result = x < 0 && y & 0x1;
+
+    if (x < 0)
+      x = -x;
+    while (y > 0)
+    {
+      /* x^y*result is invariant and result <= x*/
+      if (x > 46339 && y > 1) /* x * x won't fit in 31 bits */
+        return scheme_bignum_power(scheme_make_bignum(orig_x), scheme_make_bignum(orig_y));
+
+      if (y & 0x1) /* if (odd?) */
+      {
+        long next_result = x * result;
+        if (y == 1 && x > 46339 && !(next_result / x == result))
+          return scheme_bignum_power(scheme_make_bignum(orig_x), scheme_make_bignum(orig_y));
+        else
+          result = next_result;
+      }
+      y = y >> 1;
+      x = x * x;
+    }
+    return scheme_make_integer(odd_result ? -result : result);
+  }
 }
 
 #ifdef POW_HANDLES_INF_CORRECTLY
@@ -1784,7 +1809,7 @@ scheme_expt(int argc, Scheme_Object *argv[])
 	  }
 	  isnonneg = SCHEME_FALSEP(scheme_negative_p(1, &e));
 	  negz = scheme_minus_zero_p(d);
-	  
+
 	  if (isnonneg) {
 	    if (iseven || !negz) {
 #ifdef MZ_USE_SINGLE_FLOATS

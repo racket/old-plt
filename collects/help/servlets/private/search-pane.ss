@@ -29,9 +29,14 @@
     (and (= 3 (length opt))
 	 (eq? (caddr opt) '*)))
 
-  (define (make-option opt)
-    (let* ([value-attrib `(VALUE ,(car opt))]
-	   [attribs (if (default-option? opt)
+  (define (make-option curr opt)
+    (printf "curr: ~a~n" curr)
+    (let* ([val (car opt)]
+	   [value-attrib `(VALUE ,val)]
+	   [attribs (if (or (and curr
+				 (string=? curr val))
+			    (and (not curr) 
+				 (default-option? opt)))
 			`(,value-attrib
 			  (SELECTED "true"))
 			`(,value-attrib))]
@@ -73,11 +78,17 @@
 			 (TD ((COLSPAN "2")
 			      (NOWRAP "true"))
 			     (SELECT ((NAME "search-type"))
-				     ,@(map make-option
+				     ,@(map (lambda (st)
+					      (make-option
+					       (unbox curr-search-type-box)
+					       st))
 					    search-types))
 			     'nbsp 
 			     (SELECT ((NAME "match-type"))
-				     ,@(map make-option 
+				     ,@(map (lambda (mt)
+					      (make-option 
+					       (unbox curr-match-type-box)
+					       mt))
 					    match-types))))))
 		      (TD 'nbsp)
 		      (TD

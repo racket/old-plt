@@ -5,7 +5,9 @@
   (provide 
     search-types 
     match-types
-    kind-types)
+    kind-types
+    curr-search-type-box
+    curr-match-type-box)
 
   (define search-types
     `(("keyword" ,(string-constant plt:hd:search-for-keyword))
@@ -20,7 +22,11 @@
   (define kind-types
     `(("index entries" html)
       ("keyword entries" text)
-      ("text" text))))
+      ("text" text)))
+
+  (define curr-search-type-box (box #f))
+  (define curr-match-type-box (box #f)))
+
 
 
 

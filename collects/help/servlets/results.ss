@@ -282,6 +282,10 @@
      ([void (lambda _ #f)])
      (let ([result (extract-binding/single 'lucky bindings)])
        (not (string=? result "false")))))
+
+  (define (maybe-update-box b s)
+    (unless (string=? s "")
+	(set-box! b s)))
     
   (let* ([bindings (request-bindings initial-request)]
 	 [maybe-get (lambda (sym)
@@ -290,6 +294,9 @@
 		       (extract-binding/single sym bindings)))]
 	 [binding-vals (map maybe-get
 			    '(search-string search-type match-type))])
+    ; store search type, match type to maintain search pane
+    (maybe-update-box curr-search-type-box (cadr binding-vals))
+    (maybe-update-box curr-match-type-box (caddr binding-vals))
     (cond
      [(= (string-length (car binding-vals)) 0)
       empty-search-page]

@@ -78,8 +78,8 @@
       (lambda (url)
 	(let ((scheme (url-scheme url)))
 	  (cond
-	    ((string=? scheme "http") 80)
 	    ((not scheme) 80)
+	    ((string=? scheme "http") 80)
 	    (else
 	      (error 'url->default-port "Scheme ~s not supported"
 		(url-scheme url)))))))
@@ -121,6 +121,8 @@
       (opt-lambda (url (strings '()))
 	(let ((scheme (url-scheme url)))
 	  (cond
+	    ((not scheme)
+	      (error 'get-impure-port "Scheme unspecified"))
 	    ((string=? scheme "http")
 	      (http://get-impure-port url strings))
 	    ((string=? scheme "file")
@@ -133,6 +135,8 @@
       (opt-lambda (url (strings '()))
 	(let ((scheme (url-scheme url)))
 	  (cond
+	    ((not scheme)
+	      (error 'get-pure-port "Scheme unspecified"))
 	    ((string=? scheme "http")
 	      (let ((port (http://get-impure-port url strings)))
 		(purify-port port)

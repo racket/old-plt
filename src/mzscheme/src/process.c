@@ -3200,7 +3200,7 @@ static void do_nothing(int ignored)
   MZ_SIGSET(SIGINT, do_nothing);
 # endif
 
-# ifdef MZ_USE_LINUX_PTHREADS
+# ifdef ____MZ_USE_LINUX_PTHREADS
   {
     Scheme_Process *p;
     p = scheme_current_process;
@@ -3396,7 +3396,7 @@ int scheme_pthread_semaphore_down_breakable(void *s)
   SCHEME_RELEASE_LOCK();
 #endif
 
-#ifdef MZ_USE_LINUX_PTHREADS
+#ifdef ___MZ_USE_LINUX_PTHREADS
   {
     Scheme_Process *p = scheme_current_process;
 
@@ -3408,7 +3408,7 @@ int scheme_pthread_semaphore_down_breakable(void *s)
       v = !sem_wait((sem_t *)s);
 
 
-#ifdef MZ_USE_LINUX_PTHREADS
+#ifdef ___MZ_USE_LINUX_PTHREADS
       p->jump_on_signal = 0;
     } else {
       /* Somehow, the post was consumed, anyway; restore it. */

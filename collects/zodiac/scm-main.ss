@@ -1098,9 +1098,9 @@
 	    (lambda () #f)
 	    env)
 	  (if (compile-auto-cond-else)
-	    (pat:match-and-rewrite expr m&e-3-no-error out-pattern-3 kwd-1 env)
-	    (pat:match-and-rewrite expr m&e-3-signal-error
-	      out-pattern-3 kwd-1 env))
+	    (pat:match-and-rewrite expr m&e-3 out-pattern-3-no-error kwd-1 env)
+	    (pat:match-and-rewrite expr m&e-3
+	      out-pattern-3-signal-error kwd-1 env))
 	  (pat:match-and-rewrite expr m&e-4 out-pattern-4 kwd-1 env)
 	  (pat:match-and-rewrite expr m&e-5 out-pattern-5 kwd-1 env)
 	  (pat:match-and-rewrite expr m&e-6 out-pattern-6 kwd-1

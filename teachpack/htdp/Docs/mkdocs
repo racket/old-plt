@@ -56,7 +56,7 @@ fi
              (unless (file-exists?
                       (build-path 'up (string-append basename ".ss")))
                (error 'mkdocs "Found ~s but no ~s teachpack found"
-                      s (string-append s ".ss")))
+                      s (string-append basename ".ss")))
              (list (cadr m) basename)))
          (filter (lambda (f) (not (equal? f "index.thtml"))) thtml-files))))
 ;; Check that `lib-names' exactly match `libraires':

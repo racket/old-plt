@@ -37,7 +37,7 @@
 		  (- v wx:const-break-for-line))))))
     (scheme-init-wordbreak-map scheme-media-wordbreak-map)
 
-    (mred:preferences:set-preference-default 'mred:highlight-parens #t)
+    (mred:preferences:set-preference-default 'mred:highlight-parens #f)
 
     (mred:preferences:add-preference-panel
      "Indenting"

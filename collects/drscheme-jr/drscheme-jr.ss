@@ -202,13 +202,18 @@
 		 f))))
 	  (call-with-input-file f
 	    (lambda (p)
-	      (let ([read (let ([t (with-parameterization system-parameterization
-				     (lambda ()
-				       (zodiac:read
-					p
-					(zodiac:make-location
-					 1 1 0
-					 (build-path (current-directory) f)))))])
+	      (let ([read (let* ([fn
+				  (normalize-path
+				   (if (relative-path? f)
+				       (build-path (current-directory) f)
+				       f))]
+				 [t (with-parameterization system-parameterization
+				      (lambda ()
+					(zodiac:read
+					 p
+					 (zodiac:make-location
+					  1 1 0
+					  fn))))])
 			    (lambda ()
 			      (with-parameterization system-parameterization
 				t)))])

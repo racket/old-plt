@@ -174,6 +174,8 @@ static void *mark(void *p)
 	*(int *)0x0 = 1;
       }
 
+      prev_tag = tag;
+
       size = tag_table[tag](p, NULL);
       if (!(size & 0x4)) {
 	if ((long)new_tagged_high & 0x4) {
@@ -376,7 +378,7 @@ void gcollect(int needsize)
 	  if (v & 0x80000000) {
 	    /* Array of pointers */
 	    int i;
-	    printf("parray: %d %lx\n", size, (long)mp);
+	    /* printf("parray: %d %lx\n", size, (long)mp); */
 	    for (i = size; i--; mp++)
 	      *mp = cautious_mark(*mp);
 	  } else {
@@ -384,7 +386,7 @@ void gcollect(int needsize)
 	    int i, elem_size;
 	    Scheme_Type tag = *(Scheme_Type *)mp;
 	    
-	    printf("tarray: %d %d\n", size, tag);
+	    /* printf("tarray: %d %d\n", size, tag); */
 
 	    elem_size = tag_table[tag](mp, cautious_mark);
 	    mp += elem_size;
@@ -413,6 +415,32 @@ void gcollect(int needsize)
   heap_size = new_size - ((untagged_low - tagged_high) << 2);
   
   memset(tagged_high, 0, ((untagged_low - tagged_high) << 2));
+}
+
+void *GC_resolve(void *p)
+{
+  if ((p >= alloc_space)
+      && (p < (alloc_space + alloc_size))) {  
+    if (p < tagged_high) {
+      Scheme_Type tag = *(Scheme_Type *)p;
+
+      if (tag == MOVED)
+	return ((void **)p)[1];
+      else
+	return p;
+    } else {
+      long size;
+      
+      p -= 4;
+      size = ((*(long *)p) & 0x3FFFFFFF);
+      
+      if (!size)
+	return ((void **)p)[1];
+      else
+	return p;
+    }
+  } else
+    return p;
 }
 
 static void *malloc_tagged(size_t size_in_bytes)

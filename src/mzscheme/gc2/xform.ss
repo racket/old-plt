@@ -6,7 +6,7 @@
 (define file-out (caddr cmd-line))
 
 (require-library "function.ss")
-; (require-library "errortrace.ss" "errortrace")
+;(require-library "errortrace.ss" "errortrace")
 
 (unless (system (format "~a -DMZ_PRECISE_GC ~a ~a | ctok > xtmp"
 			cpp
@@ -400,9 +400,8 @@
 							       (has-union? (struct-type-struct v)))))
 						    v))))))
 			     (fprintf (current-error-port)
-				      "Warning: can't handle union or record with union. ~a in line ~a.~n~a~n"
-				      name (tok-line v)
-				      " If it matters, I'll report an error later..."))
+				      "Warning: can't handle union or record with union. ~a in line ~a.~n"
+				      name (tok-line v)))
 			   (if (or pointer?
 				   base-is-ptr?
 				   base-struct
@@ -859,27 +858,77 @@
 	(loop (cdr e-) (cons (car e-) result) live-vars)]
        [(braces? (car e-))
 	(let*-values ([(v) (car e-)]
-		      [(e live-vars) (convert-body (seq-in v) vars live-vars #f)])
-	  (loop (cdr e-) 
-		(cons (make-braces
-		       (tok-n v)
-		       (tok-line v)
-		       (tok-col v)
-		       (tok-file v)
-		       (seq-close v)
-		       e)
-		      result)
-		;; Filter live vars to drop vars no longer in scope:
-		(let ([new-live-vars (let loop ([l (live-var-info-vars live-vars)])
-				       (cond
-					[(null? l) null]
-					[(assq (caar l) vars)
-					 (cons (car l) (loop (cdr l)))]
-					[else (loop (cdr l))]))])
-		  (make-live-var-info (live-var-info-maxlive live-vars)
-				      new-live-vars
-				      (live-var-info-new-vars live-vars)
-				      (live-var-info-num-calls live-vars)))))]
+		      ;; do/while/for: we'll need a fixpoint for live-vars
+		      ;;  (We'll get the fixpoint by poing things twice)
+		      [(do?) (and (not (null? (cdr e-)))
+				  (memq (tok-n (cadr e-)) '(do)))]
+		      [(while?) (and (not (null? (cdr e-)))
+				     (parens? (cadr e-))
+				     (not (null? (cddr e-)))
+				     (memq (tok-n (caddr e-)) '(for while)))]
+		      [(orig-new-vars) (live-var-info-new-vars live-vars)]
+		      ;; Proc to convert body once
+		      [(convert-brace-body) 
+		       (lambda (live-vars)
+			 (convert-body (seq-in v) vars live-vars #f))]
+		      ;; First conversion
+		      [(e live-vars) (convert-brace-body live-vars)]
+		      ;; Proc to filter live vars, dropping vars no longer in scope:
+		      [(filter-live-vars)
+		       (lambda (live-vars)
+			 (let ([new-live-vars (let loop ([l (live-var-info-vars live-vars)])
+						(cond
+						 [(null? l) null]
+						 [(assq (caar l) vars)
+						  (cons (car l) (loop (cdr l)))]
+						 [else (loop (cdr l))]))])
+			   (make-live-var-info (live-var-info-maxlive live-vars)
+					       new-live-vars
+					       (live-var-info-new-vars live-vars)
+					       (live-var-info-num-calls live-vars))))]
+		      [(restore-new-vars)
+		       (lambda (live-vars)
+			 (make-live-var-info (live-var-info-maxlive live-vars)
+					     (live-var-info-vars live-vars)
+					     orig-new-vars
+					     (live-var-info-num-calls live-vars)))]
+		      [(e live-vars rest extra)
+		       (cond
+			[do?
+			 (let-values ([(e live-vars)
+				       (convert-brace-body (restore-new-vars live-vars))])
+			   (values e live-vars (cdr e-) #f))]
+			[while?
+			 ;; Run test part. We don't filter live-vars, but maybe we should:
+			 (let-values ([(v test-live-vars)
+				       (convert-seq-interior (cadr e-) #t vars 
+							     (restore-new-vars live-vars)
+							     #f)])
+			   ;; Now run body again, unioning live vars:
+			   (let-values ([(e live-vars)
+					 (convert-brace-body (restore-new-vars live-vars))])
+			     ;; Finally, run test again:
+			     (let-values ([(v test-live-vars)
+					   (convert-seq-interior (cadr e-) #t vars 
+								 live-vars
+								 #f)])
+			       (values e live-vars (cddr e-) v))))]
+			[else
+			 (values e live-vars (cdr e-) #f)])])
+	  (loop rest
+		(append
+		 (if extra
+		     (list extra)
+		     null)
+		 (list (make-braces
+			(tok-n v)
+			(tok-line v)
+			(tok-col v)
+			(tok-file v)
+			(seq-close v)
+			e))
+		 result)
+		(filter-live-vars live-vars)))]
        [(seq? (car e-))
 	;; Do nested body:
 	(let-values ([(v live-vars)
@@ -895,6 +944,17 @@
 					(live-var-info-vars live-vars))
 				  (live-var-info-new-vars live-vars)
 				  (live-var-info-num-calls live-vars)))]
+       [(and (memq (tok-n (car e-)) '(while do for))
+	     (case (tok-n (car e-))
+	       [(do)
+		(not (braces? (car result)))]
+	       [(for)
+		(not (braces? (cadr result)))]
+	       [(while)
+		(not (or (eq? semi (tok-n (cadr result)))
+			 (braces? (cadr result))))]))
+	(error 'xform "Achtung! while/do/for with body not in braces. Line ~a."
+	       (tok-line (car e-)))]
        [else (loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
 (define (convert-seq-interior v comma-sep? vars live-vars complain-not-in)

@@ -407,8 +407,9 @@ static int run_from_cmd_line(int argc, char *argv[],
   global_env = mk_basic_env();
 
   sch_argv = scheme_make_vector(argc, scheme_null);
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     SCHEME_VEC_ELS(sch_argv)[i] = scheme_make_string(argv[i]);
+  }
 
   scheme_add_global("argv", sch_argv, global_env);
   scheme_add_global("program", scheme_make_string(prog),

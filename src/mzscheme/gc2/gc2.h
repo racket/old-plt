@@ -72,6 +72,8 @@ typedef void *(*Mark_Proc)(void *);
 typedef int (*Traverse_Proc)(void *, Mark_Proc);
 void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc);
 
+void *GC_resolve(void *p);
+
 #define gcMARK(x) x = mark(x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 

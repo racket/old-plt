@@ -256,8 +256,12 @@ void wxMessage::ChangeColour (void)
 #if USE_BITMAP_MESSAGE
 void wxMessage::SetLabel(char *label)
 { 
-  if (!bm_label)
+  if (!bm_label) {
+    /* Don't allow the widget to resize to match the label: */
+    XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
     wxItem::SetLabel(label); 
+    XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_ANY, NULL);
+  }
 }
 
 void wxMessage::SetLabel(wxBitmap *image)
@@ -270,22 +274,29 @@ void wxMessage::SetLabel(wxBitmap *image)
   bm_label->selectedIntoDC++;
 
   Widget widget = (Widget) handle;
+#if 0
   int x, y, w1, h1, w2, h2;
 
   GetPosition(&x, &y);
 
   w2 = image->GetWidth();
   h2 = image->GetHeight();
-  if (image)
-    {
-      XtVaSetValues (widget,
-		     XmNlabelPixmap, image->GetLabelPixmap (widget),
-		     XmNlabelType, XmPIXMAP,
-		     NULL);
-    }
-  GetSize(&w1, &h1);
+#endif
 
+  if (image) {
+    /* Don't allow the widget to resize to match the label: */
+    XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
+    XtVaSetValues (widget,
+		   XmNlabelPixmap, image->GetLabelPixmap(widget),
+		   XmNlabelType, XmPIXMAP,
+		   NULL);
+    XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_ANY, NULL);
+  }
+
+#if 0
+  GetSize(&w1, &h1);
   if (! (w1 == w2) && (h1 == h2))
     SetSize(x, y, w2, h2);
+#endif
 }
 #endif

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
+ * $Id: Choice.cc,v 1.2 1998/02/05 23:00:32 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -116,6 +116,18 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
+
+    XtInsertEventHandler(button,
+			 KeyPressMask |	// for PreOnChar
+			 ButtonPressMask |	// for PreOnEvent
+			 ButtonReleaseMask |
+			 ButtonMotionMask |
+			 PointerMotionMask |
+			 PointerMotionHintMask,
+			 FALSE,
+			 (XtEventHandler)wxWindow::WindowEventHandler,
+			 (XtPointer)saferef,
+			 XtListHead);
 
     return TRUE;
 }

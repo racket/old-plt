@@ -43,7 +43,8 @@ class wxFrame: public wxbFrame
   int lastHeight;
   int visibleStatus; /* MATTHEW: used by show-&-hide sequence fix */
 
-#ifdef wx_motif
+  wxWindow *activeItem;
+
   Widget frameShell;
   Widget frameWidget;
   Widget workArea;
@@ -54,13 +55,6 @@ class wxFrame: public wxbFrame
   Widget statusTextWidget[wxMAX_STATUS];
   Widget GetMenuBarWidget(void);
   Bool PreResize(void);
-#endif
-#ifdef wx_xview
-  Bool isPinned;
-  wxPanel *menu_bar_panel;
-  int y_offset;
-  char *statusText[wxMAX_STATUS];
-#endif
 
   wxFrame(void);
   wxFrame(wxFrame *parent, char *title,

@@ -90,8 +90,9 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
       XmString text = XmStringCreateSimple (the_label);
       labelWidget = XtVaCreateManagedWidget ("choiceLabel",
 #if USE_GADGETS
-					     style & wxCOLOURED ?
-				    xmLabelWidgetClass : xmLabelGadgetClass,
+					     ((style & wxCOLOURED) 
+					      ? xmLabelWidgetClass 
+					      : xmLabelGadgetClass),
 					     formWidget,
 #else
 					     xmLabelWidgetClass, formWidget,
@@ -110,9 +111,13 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
     }
 
   Widget sliderWidget = XtVaCreateManagedWidget ("sliderWidget",
-					     xmScaleWidgetClass, formWidget,
-      XmNorientation, (((windowStyle & wxVERTICAL) == wxVERTICAL) ? XmVERTICAL : XmHORIZONTAL),
-				     XmNprocessingDirection, (((windowStyle & wxVERTICAL) == wxVERTICAL) ? XmMAX_ON_TOP : XmMAX_ON_RIGHT),
+						 xmScaleWidgetClass, formWidget,
+						 XmNorientation, (((windowStyle & wxVERTICAL) == wxVERTICAL) 
+								  ? XmVERTICAL 
+								  : XmHORIZONTAL),
+						 XmNprocessingDirection, (((windowStyle & wxVERTICAL) == wxVERTICAL) 
+									  ? XmMAX_ON_TOP 
+									  : XmMAX_ON_RIGHT),
 						 XmNmaximum, max_value,
 						 XmNminimum, min_value,
 						 XmNvalue, value,
@@ -120,39 +125,37 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
 						 NULL);
 
   if (buttonFont)
-    XtVaSetValues (sliderWidget,
-		   XmNfontList, 
-		   /* MATTHEW: [4] Provide display */
-		   buttonFont->GetInternalFont(XtDisplay(formWidget)),/* MATTHEW: [5] Use form widget */
-		   NULL);
+    XtVaSetValues(sliderWidget,
+		  XmNfontList, 
+		  /* MATTHEW: [4] Provide display */
+		  buttonFont->GetInternalFont(XtDisplay(formWidget)),/* MATTHEW: [5] Use form widget */
+		  NULL);
 
   handle = (char *) sliderWidget;
-
+  
   XtAddCallback (sliderWidget, XmNvalueChangedCallback, (XtCallbackProc) wxSliderCallback, (XtPointer) this);
 
-  panel->AttachWidget (this, formWidget, x, y,
-    (((windowStyle & wxVERTICAL) == wxVERTICAL) ? -1 : width),
-    (((windowStyle & wxVERTICAL) == wxVERTICAL) ? width : -1));
-
+  panel->AttachWidget(this, formWidget, x, y,
+		      (((windowStyle & wxVERTICAL) == wxVERTICAL) ? -1 : width),
+		      (((windowStyle & wxVERTICAL) == wxVERTICAL) ? width : -1));
+  
   ChangeColour ();
 
   /* After creating widgets, no more resizes. */
-  if (style & wxFIXED_LENGTH)
-    {
-      XtVaSetValues (formWidget,
-		     XmNpacking, XmPACK_NONE,
-		     NULL);
-
-      if (labelWidget)
-	{
-	  XmString text = XmStringCreateSimple (label);
-	  XtVaSetValues (labelWidget,
-			 XmNlabelString, text,
-			 NULL);
-	  XmStringFree (text);
-	}
+  if (style & wxFIXED_LENGTH) {
+    XtVaSetValues (formWidget,
+		   XmNpacking, XmPACK_NONE,
+		   NULL);
+    
+    if (labelWidget) {
+      XmString text = XmStringCreateSimple (label);
+      XtVaSetValues (labelWidget,
+		     XmNlabelString, text,
+		       NULL);
+      XmStringFree (text);
     }
-
+  }
+  
   Callback (func);
 
   wxWidgetHashTable->Put((long)sliderWidget, this);

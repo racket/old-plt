@@ -4,7 +4,7 @@
  *                and backup editor in MrEd
  * Author:      Matthew Flatt
  * Created:     1995
- * Copyright:   (c) 1995, Matthew Flatt
+ * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
 #include "wx_frame.h"

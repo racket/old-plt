@@ -30,6 +30,8 @@ void
 wxTextModifyProc (Widget w, XtPointer clientData, XmTextVerifyCallbackStruct *cbs);
 #endif
 
+extern void wxFrameCheckFocus(wxWindow *w);
+
 #define LABEL_OFFSET_PIXELS 4
 
 static Bool checkFunctionKey(wxPanel *panelPtr, wxItem *itemPtr,
@@ -98,9 +100,13 @@ void wxTextCallback(Widget w, XtPointer clientData,
 
   switch (ptr->reason) {
   case XmCR_LOSING_FOCUS:
-	panel->previousFocus = item;
-	return;
+    wxFrameCheckFocus(item);
+#if 0
+    panel->previousFocus = item;
+#endif
+    return;
   case XmCR_FOCUS:
+    wxFrameCheckFocus(item);
 /* THIS CODE CAUSES A CRASH in clientMsgHandler for more than 1
    text control. So for now, we're commenting it out. JACS 17/5/95
    

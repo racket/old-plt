@@ -3,7 +3,7 @@
  * Purpose:     wxMediaBuffer implementation
  * Author:      Matthew Flatt
  * Created:     1995
- * Copyright:   (c) 1995, Matthew Flatt
+ * Copyright:   (c) 1995-98, Matthew Flatt
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public

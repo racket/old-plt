@@ -40,7 +40,7 @@
 @ "get-horizontal-spacing" : int GetHorizontalSpacing();
 @ "get-vertical-spacing" : int GetVerticalSpacing();
 @ "set-horizontal-spacing" : void SetHorizontalSpacing(int);
-@ "set-vertical-spacing" : void SetVerticalSpacing(int);
+@ "set-vertical-spacing" : void SetVerticalSpacing(int)
 
 @ "new-line" : void NewLine(); <> no argument
 @ "new-line" : void NewLine(int); <> tab amount

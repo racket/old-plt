@@ -45,7 +45,7 @@
 @ "get-menu-bar" : wxMenuBar^ GetMenuBar() ## HAS_GET_MENU_BAR
 @ "set-tool-bar" : void SetToolBar(wxToolBar^) ## USE_TOOLBAR 
 @ "get-tool-bar" : wxToolBar^ GetToolBar() ## USE_TOOLBAR
-@ "set-status-text" : void SetStatusText(string);
+@ "set-status-text" : void SetStatusText(string)
 @ "iconized?" : bool Iconized();
 @ "status-line-exists?" : bool StatusLineExists();
 @ "maximize" : void Maximize(bool)

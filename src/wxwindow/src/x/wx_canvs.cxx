@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.1.1.1 1997/12/22 16:12:03 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.2 1998/04/08 00:09:10 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -46,6 +46,8 @@ void wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallba
 void wxCanvasMotionEvent (Widget, XButtonEvent * event);
 void wxCanvasEnterLeave (Widget drawingArea, XtPointer clientData, XCrossingEvent * event);
 #endif
+
+extern void wxFrameCheckFocus(wxWindow *w);
 
 //#define NSTATIC_RECTS	20
 //static wxRectangle wxRectArray[NSTATIC_RECTS];
@@ -157,7 +159,7 @@ Create (wxWindow * parent, int x, int y, int width, int height,
 
   if (style & wxBORDER)
     borderWidget = XtVaCreateManagedWidget ("canvasBorder",
-				      xmFrameWidgetClass, parentWidget,
+					    xmFrameWidgetClass, parentWidget,
 					    XmNshadowType, XmSHADOW_IN,
 					    NULL);
 
@@ -243,8 +245,8 @@ Create (wxWindow * parent, int x, int y, int width, int height,
   xwindow = XtWindow (drawingArea);
 
   XtAddEventHandler (drawingArea, PointerMotionHintMask | EnterWindowMask | LeaveWindowMask | FocusChangeMask,
-    False, (XtEventHandler) wxCanvasEnterLeave, (XtPointer) this);
-
+		     False, (XtEventHandler) wxCanvasEnterLeave, (XtPointer) this);
+  
   if (parent)
     parent->AddChild (this);
   window_parent = parent;
@@ -1496,24 +1498,20 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 
   local_event = *(cbs->event);	// We must keep a copy!
 
-  if (wait_dclick)
-    {
-      // If we are waiting for a double-click, we only handle Button events
-      // in a special fashion.
-      if (local_event.xany.type == ButtonPress)
-	{
-	  wait_dclick = FALSE;
-	  dclick = TRUE;
-	  lose_up = FALSE;
-	  XtRemoveTimeOut (timerId);
-	  return;
-	}
-      if (local_event.xany.type == ButtonRelease)
-	{
-	  lose_up = TRUE;
-	  return;
-	}
+  if (wait_dclick) {
+    // If we are waiting for a double-click, we only handle Button events
+    // in a special fashion.
+    if (local_event.xany.type == ButtonPress) {
+      wait_dclick = FALSE;
+      dclick = TRUE;
+      lose_up = FALSE;
+      XtRemoveTimeOut (timerId);
+      return;
+    } if (local_event.xany.type == ButtonRelease) {
+      lose_up = TRUE;
+      return;
     }
+  }
 
   switch (local_event.xany.type)
     {
@@ -1728,6 +1726,12 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 	break;
       }
     case FocusIn:
+    case FocusOut:
+      /* Check focus in Frame/Dialog: */
+      wxFrameCheckFocus(canvas);
+      break;
+#if 0
+    case FocusIn:
       {
 	/* MATTHEW: [2] detail check was needed after all */
 	if (local_event.xfocus.detail != NotifyPointer)
@@ -1741,6 +1745,7 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
           canvas->GetEventHandler()->OnKillFocus ();
         break;
       }
+#endif
     default:
       break;
     }

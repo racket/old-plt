@@ -36,6 +36,7 @@ class wxDialogBox: public wxbDialogBox
   Bool invisibleResize;
   Widget dialogShell;
   Widget localParentShell;
+  wxWindow *activeItem;
   wxDialogBox(void);
   wxDialogBox(wxWindow *parent, char *title, Bool modal = FALSE,
               int x = -1, int y = -1,

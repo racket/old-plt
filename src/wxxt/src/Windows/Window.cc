@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.6 1998/03/03 16:26:13 mflatt Exp $
+ * $Id: Window.cc,v 1.7 1998/03/07 00:36:28 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -1053,7 +1053,12 @@ void wxWindow::AddEventHandlers(void)
       (win->X->frame,	// handle events for frame widget
        EnterWindowMask |
        LeaveWindowMask |
-       FocusChangeMask, 	// for OnKillFocus, OnSetFocus
+       FocusChangeMask | // for OnKillFocus, OnSetFocus
+       /* Yucky hack to make PreOnChar work for messages, sliders, and gauges: */
+       ((wxSubType(win->__type, wxTYPE_MESSAGE) 
+	 || wxSubType(win->__type, wxTYPE_SLIDER) 
+	 || wxSubType(win->__type, wxTYPE_GAUGE))
+	? KeyPressMask : NoEventMask),
        FALSE,
        (XtEventHandler)wxWindow::WindowEventHandler,
        (XtPointer)saferef, /* MATTHEW */
@@ -1267,7 +1272,8 @@ void wxWindow::WindowEventHandler(Widget w,
     return;
   }
 
-    Bool Enter=FALSE, Press=FALSE;
+  Bool Enter=FALSE, Press=FALSE;
+  Bool subWin = (w != win->X->handle) && (w != win->X->frame);
 
     switch (xev->xany.type) {
     case KeyPress: {
@@ -1295,9 +1301,13 @@ void wxWindow::WindowEventHandler(Widget w,
 	||  IsPFKey(keysym))
 	    // call function key event handler
 	    event_handled = win->GetEventHandler()->OnFunctionKey(wxevent);
-	if (!event_handled && !win->CallPreOnChar(win, &wxevent))
-	    win->GetEventHandler()->OnChar(wxevent);
 	*continue_to_dispatch_return = FALSE;
+	if (!event_handled && !win->CallPreOnChar(win, &wxevent)) {
+	  if (subWin)
+	    *continue_to_dispatch_return = TRUE;
+	  else
+	    win->GetEventHandler()->OnChar(wxevent);
+	}
 	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
         /* Event was handled by OnFunctionKey and/or OnChar */ }
 	break;
@@ -1313,26 +1323,21 @@ void wxWindow::WindowEventHandler(Widget w,
 	case Button3: wxevent.eventType = wxEVENT_TYPE_RIGHT;  break;
 	}
 	if (Press) {
-	    /* MATTHEW */
-	    if (!wxSubType(win->__type, wxTYPE_MENU_BAR))
-	      win->SetFocus();
-	    // button is down
-	    wxevent.eventType |= wxEVENT_TYPE_DOWN;
-	    if (win->allow_dclicks) { // doubleclick handling wanted?
-		if (xev->xbutton.button == win->X->last_clickbutton
-		    &&  xev->xbutton.time   -  win->X->last_clicktime
-				<= (unsigned int)XtGetMultiClickTime(wxAPP_DISPLAY))
-		{
-		    // double click has arrived
-// 		    printf("DOUBLE CLICK in %s\n", win->GetName());
-		    wxevent.eventType |= wxEVENT_TYPE_DOUBLE;
-		    win->X->last_clicktime = 0; 
-		} else {
-		    // single click has arrived
-		    win->X->last_clickbutton = xev->xbutton.button;
-		    win->X->last_clicktime   = xev->xbutton.time;
-		}
+	  // button is down
+	  wxevent.eventType |= wxEVENT_TYPE_DOWN;
+	  if (win->allow_dclicks) { // doubleclick handling wanted?
+	    if (xev->xbutton.button == win->X->last_clickbutton
+		&&  (xev->xbutton.time - win->X->last_clicktime
+		     <= (unsigned int)XtGetMultiClickTime(wxAPP_DISPLAY))) {
+	      // double click has arrived
+	      wxevent.eventType |= wxEVENT_TYPE_DOUBLE;
+	      win->X->last_clicktime = 0; 
+	    } else {
+	      // single click has arrived
+	      win->X->last_clickbutton = xev->xbutton.button;
+	      win->X->last_clicktime   = xev->xbutton.time;
 	    }
+	  }
 	}
 	// set wxWindows event structure
 	wxevent.eventHandle	= (char*)xev;
@@ -1350,10 +1355,18 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent.rightDown	= ((wxevent.eventType == wxEVENT_TYPE_RIGHT_DOWN)
 				   || (xev->xbutton.state & Button3Mask));
 	wxevent.timeStamp       = xev->xbutton.time; /* MATTHEW */
-	if (!win->CallPreOnEvent(win, &wxevent))
-	  win->GetEventHandler()->OnEvent(wxevent);
+	*continue_to_dispatch_return = FALSE;
+	if (!win->CallPreOnEvent(win, &wxevent)) {
+	  if (subWin)
+	    *continue_to_dispatch_return = TRUE;
+	  else {
+	    if (Press && !wxSubType(win->__type, wxTYPE_MENU_BAR))
+	      win->SetFocus();
+	    win->GetEventHandler()->OnEvent(wxevent);
+	  }
+	}
 	wxevent.eventHandle = NULL; /* MATTHEW: [5] */
-	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ }
+        }
 	break;
     case EnterNotify:
       Enter = TRUE;

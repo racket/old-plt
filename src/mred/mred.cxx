@@ -3,7 +3,7 @@
  * Purpose:     MrEd main file, including a hodge-podge of global stuff
  * Author:      Matthew Flatt
  * Created:     1995
- * Copyright:   (c) 1995, Matthew Flatt
+ * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
 /* wx_xt: */

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_text.cxx,v 1.1.1.1 1997/12/22 16:12:06 mflatt Exp $
+ * RCS_ID:      $Id: wx_text.cxx,v 1.2 1998/04/08 00:09:16 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -40,6 +40,8 @@ wxTextWindowGainFocusProc (Widget w, XtPointer clientData, XmAnyCallbackStruct *
 static void 
 wxTextWindowLoseFocusProc (Widget w, XtPointer clientData, XmAnyCallbackStruct *cbs);
 #endif
+
+extern void wxFrameCheckFocus(wxWindow *w);
 
 IMPLEMENT_DYNAMIC_CLASS(wxTextWindow, wxWindow)
 
@@ -104,7 +106,7 @@ Create (wxWindow * parent, int x, int y, int width, int height,
 
   XtAddCallback(textWidget, XmNmodifyVerifyCallback, (XtCallbackProc)wxTextWindowModifyProc, (XtPointer)this);
 
-//  XtAddCallback(textWidget, XmNactivateCallback, (XtCallbackProc)wxTextWindowModifyProc, (XtPointer)this);
+  //  XtAddCallback(textWidget, XmNactivateCallback, (XtCallbackProc)wxTextWindowModifyProc, (XtPointer)this);
 
   XtAddCallback(textWidget, XmNfocusCallback, (XtCallbackProc)wxTextWindowGainFocusProc, (XtPointer)this);
 
@@ -548,7 +550,10 @@ wxTextWindowGainFocusProc (Widget w, XtPointer clientData, XmAnyCallbackStruct *
     return;
 
   wxTextWindow *tw = (wxTextWindow *) clientData;
+  wxFrameCheckFocus(tw);
+#if 0
   tw->GetEventHandler()->OnSetFocus();
+#endif
 }
 
 static void 
@@ -558,7 +563,10 @@ wxTextWindowLoseFocusProc (Widget w, XtPointer clientData, XmAnyCallbackStruct *
     return;
 
   wxTextWindow *tw = (wxTextWindow *) clientData;
+  wxFrameCheckFocus(tw);
+#if 0
   tw->GetEventHandler()->OnKillFocus();
+#endif
 }
 
 void wxTextWindow::OnChar(wxKeyEvent& event)

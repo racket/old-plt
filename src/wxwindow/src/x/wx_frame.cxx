@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.5 1998/03/07 14:23:46 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.6 1998/04/08 00:09:12 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -18,6 +18,7 @@ static const char sccsid[] = "@(#)wx_frame.cc	1.2 5/9/94";
 
 #include "common.h"
 #include "wx_frame.h"
+#include "wx_dialg.h"
 #include "wx_main.h"
 #include "wx_utils.h"
 #include "wx_privt.h"
@@ -56,13 +57,74 @@ extern void wxRegisterFrameWidget(Widget);
 extern void wxUnregisterFrameWidget(Widget);
 
 static Bool wxTopLevelUsed = FALSE;
+
+#define INACTIVE_FRAME_MARKER ((wxWindow *)-1)
+
+static void wxSetFrameFocus(wxWindow *frame, wxWindow *fw)
+{
+  wxWindow *ofw;
+  int is_frame;
+
+  is_frame = wxSubType(frame->__type, wxTYPE_FRAME);
+
+  if (is_frame) {
+    ofw = ((wxFrame *)frame)->activeItem;
+    ((wxFrame *)frame)->activeItem = fw;
+  } else {
+    ofw = ((wxDialogBox *)frame)->activeItem;
+    ((wxDialogBox *)frame)->activeItem = fw;
+  }
+  
+  if (ofw != fw) {
+    if (ofw && (ofw != INACTIVE_FRAME_MARKER))
+      ofw->OnKillFocus();
+    
+    if (fw && (fw != INACTIVE_FRAME_MARKER))
+      fw->OnSetFocus();
+  }
+}
+
 static void wxFrameFocusProc(Widget workArea, XtPointer, 
 			     XmAnyCallbackStruct *)
 {
-  wxFrame *frame = (wxFrame *)wxWidgetHashTable->Get((long)workArea);
+  wxWindow *fw = NULL, *frame;
 
-  if (frame)
-    frame->GetEventHandler()->OnSetFocus();
+  frame = (wxWindow *)wxWidgetHashTable->Get((long)workArea);
+  
+  if (!frame)
+    return;
+
+  Widget w = XmGetFocusWidget(workArea);
+
+  while (w) {
+    fw = (wxWindow *)wxWidgetHashTable->Get((long)w);
+    if (fw)
+      break;
+
+    w = XtParent(w);
+  }
+
+  wxSetFrameFocus(frame, fw);
+}
+
+void wxFrameCheckFocus(wxWindow *w)
+{
+  Widget wa;
+  wxWindow *ofw;
+
+  while (w && !wxSubType(w->__type, wxTYPE_FRAME) && !wxSubType(w->__type, wxTYPE_DIALOG_BOX))
+    w = w->GetParent();
+
+  if (wxSubType(w->__type, wxTYPE_FRAME)) {
+    wa = ((wxFrame *)w)->workArea;
+    ofw = ((wxFrame *)w)->activeItem;
+  } else {
+    wa = ((wxDialogBox *)w)->dialogShell;
+    ofw = ((wxDialogBox *)w)->activeItem;
+  }
+
+  if (ofw != INACTIVE_FRAME_MARKER)
+    wxFrameFocusProc(wa, NULL, NULL);
 }
 
 /* MATTEW: Used to insure that hide-&-show within an event cycle works */
@@ -104,6 +166,8 @@ static void wxWindowFocusProc(Widget, XtPointer clientData, XEvent *xev)
 	  else
 	    win->filler -= (win->filler & ACTIVE_VIA_POINTER_FLAG);
 	  win->GetEventHandler()->OnActivate(Enter);
+	  if (!Enter)
+	    wxSetFrameFocus(win, INACTIVE_FRAME_MARKER);
 	}
       }
       break;
@@ -133,6 +197,8 @@ static void wxWindowFocusProc(Widget, XtPointer clientData, XEvent *xev)
 	      win->filler -= (win->filler & ACTIVE_VIA_POINTER_FLAG);
 	  }
 	  win->GetEventHandler()->OnActivate(Enter);
+	  if (!Enter)
+	    wxSetFrameFocus(win, INACTIVE_FRAME_MARKER);
 	}
       }
     }
@@ -141,11 +207,14 @@ static void wxWindowFocusProc(Widget, XtPointer clientData, XEvent *xev)
 
 void wxInstallOnActivate(Widget frameShell, Widget workArea)
 {
-  /* MATTHEW: activate */
   XtAddEventHandler(frameShell, 
 		    FocusChangeMask | EnterWindowMask | LeaveWindowMask,
 		    False, (XtEventHandler)wxWindowFocusProc,
 		    (XtPointer)workArea);
+
+  XtAddCallback(workArea, XmNfocusCallback, 
+                (XtCallbackProc)wxFrameFocusProc, 
+		(XtPointer)NULL);
 }
 
 
@@ -274,9 +343,6 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
               ptr = XtParseTranslationTable("<Configure>: resize()"));
 
   XtFree((char *)ptr);
-
-  XtAddCallback(workArea, XmNfocusCallback, 
-                (XtCallbackProc)wxFrameFocusProc, (XtPointer)this);
 
   /* MATTHEW: part of show-&-hide fix */
   XtAddEventHandler(frameShell, StructureNotifyMask,

@@ -9,6 +9,7 @@
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "list.ss")
+	   (lib "string-constant.ss" "string-constants")
            "compile.ss"
            "parameters.ss")
 
@@ -150,7 +151,7 @@
                           (order (cdr mod-lists))))))
               
           (define/public (get-style-delta) #f)
-          (define/public (get-language-position) position)
+          (define/public (get-language-position) (cons (string-constant teaching-languages) position))
           (define/public (get-language-numbers) numbers)
           (define/public (get-language-name) name)
           (define/public (get-language-url) #f)
@@ -183,15 +184,15 @@
 
       
       (define full-lang% 
-        (java-lang-mixin 'full "Java" (list "DrJ" "Full Java") (list 10 4) "Java 1.0 (some 1.1)"))
+        (java-lang-mixin 'full "Java" (list "DrJ" "Full Java") (list 1000 10 4) "Java 1.0 (some 1.1)"))
       (define advanced-lang% 
         (java-lang-mixin 'advanced "Advanced Java" 
-                         (list "DrJ" "Advanced") (list 10 3) "Java Advanced teaching language"))
+                         (list "DrJ" "Advanced") (list 1000 10 3) "Java Advanced teaching language"))
       (define intermediate-lang% 
         (java-lang-mixin 'intermediate "Intermediate Java" 
-                         (list "DrJ" "Intermediate") (list 10 2) "Java Intermediate teaching language"))
+                         (list "DrJ" "Intermediate") (list 1000 10 2) "Java Intermediate teaching language"))
       (define beginner-lang% (java-lang-mixin 'beginner "Beginner Java" (list "DrJ" "Beginner")
-                                              (list 10 1) "Java Beginner teaching language"))
+                                              (list 1000 10 1) "Java Beginner teaching language"))
       ))
       
   

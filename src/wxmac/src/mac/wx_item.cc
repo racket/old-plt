@@ -25,6 +25,7 @@
 #include "wx_gdi.h"
 
 extern Bool wx_ignore_key;
+Bool wx_propagate_key;
 
 wxItem::wxItem(void)
 : wxbItem()
@@ -205,6 +206,8 @@ Bool wxItem::AcceptsExplicitFocus()
   if (WantsFocus())
     return TRUE;
 
+  /* Create a hidden window/control to check wherg Full Keyboard Access
+     has been enabled by the user: */
   if (!test_control && !test_win) {
     OSErr result;
     Rect r = { 0 , 0, 100, 100 };
@@ -223,6 +226,7 @@ Bool wxItem::AcceptsExplicitFocus()
   }
 
   if (test_control) {
+    /* Check for Full Keyboard Access by trying to set the focus: */
     ControlRef c;
     ::ClearKeyboardFocus(test_win);
     ::SetKeyboardFocus(test_win, test_control, kControlFocusNextPart);
@@ -252,8 +256,12 @@ static OSStatus myEventHandler(EventHandlerCallRef inHandlerCallRef,
 			       EventRef inEvent, 
 			       void *inUserData)
 {
-  wx_ignore_key = TRUE;
-  return noErr;
+  if (wx_propagate_key) {
+    return eventNotHandledErr;
+  } else {
+    wx_ignore_key = TRUE;
+    return noErr;
+  }
 }
 
 void wxItem::IgnoreKeyboardEvents()

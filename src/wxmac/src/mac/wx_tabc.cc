@@ -93,7 +93,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
    
   CheckMemOK(cMacControl);
 
-  focused_button = 1;
+  focused_button = -1;
 
 #if 0
   /* #^%$^&!!! GetBestControlRect doesn't work for tab widgets.
@@ -231,6 +231,35 @@ void wxTabChoice::SetPhantomSize(int w, int h)
   phantom_height = h;
 }
 
+extern Bool wx_propagate_key;
+
+static void move_it(ControlRef c, int delta)
+{
+  EventRef evt;
+  char ch = 0;
+  UInt32 zero = 0, code = ((delta > 0) ? 0x7c : 0x7b), kb = 0;
+
+  wx_propagate_key = 1;
+
+  CreateEvent(NULL, kEventClassKeyboard, kEventRawKeyDown, 0, 0, &evt);
+  SetEventParameter(evt, kEventParamKeyMacCharCodes, typeChar, 1, &ch);
+  SetEventParameter(evt, kEventParamKeyModifiers, typeUInt32, sizeof(UInt32), &zero);
+  SetEventParameter(evt, kEventParamKeyCode, typeUInt32, sizeof(UInt32), &code);
+  SetEventParameter(evt, kEventParamKeyboardType, typeUInt32, sizeof(UInt32), &kb);
+  SendEventToEventTarget(evt, GetControlEventTarget(c));
+  ReleaseEvent(evt);
+  
+  CreateEvent(NULL, kEventClassKeyboard, kEventRawKeyUp, 0, 0, &evt);
+  SetEventParameter(evt, kEventParamKeyMacCharCodes, typeChar, 1, &ch);
+  SetEventParameter(evt, kEventParamKeyModifiers, typeUInt32, sizeof(UInt32), &zero);
+  SetEventParameter(evt, kEventParamKeyCode, typeUInt32, sizeof(UInt32), &code);
+  SetEventParameter(evt, kEventParamKeyboardType, typeUInt32, sizeof(UInt32), &kb);
+  SendEventToEventTarget(evt, GetControlEventTarget(c));
+  ReleaseEvent(evt);
+
+  wx_propagate_key = 0;
+}
+
 int wxTabChoice::ButtonFocus(int n)
 {
   if (n < 0) {
@@ -241,25 +270,21 @@ int wxTabChoice::ButtonFocus(int n)
   } else {
     int i;
 
-    printf("tab set focus %d %d\n", n, focused_button);
-
     if (focused_button < 0) {
       SetFocus();
     }
 
     if (n > (focused_button - 1)) {
-      for (i = 1; i <= n; i++) {
-	::SetKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()),
-			   cMacControl,
-			   kControlFocusNextPart);
+      for (i = focused_button; i <= n; i++) {
+	move_it(cMacControl, 1);
       }
     } else {
-      for (i = focused_button; i > n; --i) {
-	::SetKeyboardFocus(GetWindowFromPort(cMacDC->macGrafPort()),
-			   cMacControl,
-			   kControlFocusPrevPart);
+      for (i = focused_button - 1; i > n; --i) {
+	move_it(cMacControl, -1);
       }
     }
+
+    focused_button = n + 1;
 
     return n;
   }
@@ -269,8 +294,7 @@ void wxTabChoice::OnSetFocus()
 {
   if (focused_button < 0) {
     wxItem::OnSetFocus();
-    focused_button = 1;
-    printf("tab focus %d\n", focused_button);
+    focused_button = GetSelection() + 1;
   }
 }
 
@@ -279,7 +303,6 @@ void wxTabChoice::OnKillFocus()
   if (focused_button > 0) {
     wxItem::OnKillFocus();
     focused_button = -focused_button;
-    printf("tab unfocus %d\n", focused_button);
   }
 }
 

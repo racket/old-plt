@@ -836,6 +836,7 @@ typedef struct Scheme_Cont {
   Scheme_Cont_Mark *cont_mark_stack_copied;
   Scheme_Thread **cont_mark_stack_owner;
   void *stack_start;
+  void *o_start;
   Scheme_Config *init_config;
   struct Scheme_Overflow *save_overflow;
   struct Scheme_Comp_Env *current_local_env;

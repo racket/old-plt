@@ -2334,6 +2334,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->cont_mark_stack_owner = p->cont_mark_stack_owner;
 
   cont->stack_start = p->stack_start;
+  cont->o_start = p->o_start;
 
   memcpy(&cont->savebuf, &p->error_buf, sizeof(mz_jmp_buf));
 
@@ -2350,6 +2351,7 @@ call_cc (int argc, Scheme_Object *argv[])
     memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
 
     p->stack_start = cont->stack_start;
+    p->o_start = cont->o_start;
     p->init_config = cont->init_config;
 
     /* For dynamic-winds after the "common" intersection

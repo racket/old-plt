@@ -153,11 +153,12 @@
 		   (lambda _ 
 		     (kill-thread timeout-thread)
 		     (hide-wait-dialog wait-dialog)
-		     (run-thunk
-		      (lambda ()
-			(show-error-ok
-			 (string-constant vc-network-failure)
-			 (string-constant vc-cannot-connect))))
+		     (unless got-cancel?
+			     (run-thunk
+			      (lambda ()
+				(show-error-ok
+				 (string-constant vc-network-failure)
+				 (string-constant vc-cannot-connect)))))
 		     (raise 'network-error))))
 		 (get-pure-port (string->url 
 				 (make-url-string

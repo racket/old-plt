@@ -276,9 +276,9 @@ scheme_init_fun (Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
 
-  scheme_add_global_constant("arity", 
+  scheme_add_global_constant("procedure-arity", 
 			     scheme_make_folding_prim(arity,  
-						      "arity", 
+						      "procedure-arity", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("procedure-arity-includes?", 
@@ -298,11 +298,6 @@ scheme_init_fun (Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
 
-  scheme_add_global_constant("primitive-name", 
-			     scheme_make_folding_prim(primitive_name, 
-						      "primitive-name", 
-						      1, 1, 1), 
-			     env);
   scheme_add_global_constant("primitive-result-arity", 
 			     scheme_make_folding_prim(primitive_result_arity, 
 						      "primitive-result-arity", 
@@ -1224,30 +1219,6 @@ static Scheme_Object *primitive_closure_p(int argc, Scheme_Object *argv[])
   return isprim ? scheme_true : scheme_false;
 }
 
-
-static Scheme_Object *primitive_name(int argc, Scheme_Object *argv[])
-{
-  const char *s;
-  Scheme_Object *o;
-
-  o = argv[0];
-
-  if (SCHEME_PRIMP(o)
-      && (((Scheme_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE))
-    s = ((Scheme_Primitive_Proc *)o)->name;
-  else if (SCHEME_CLSD_PRIMP(o)
-	   && (((Scheme_Closed_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE))
-    s = ((Scheme_Closed_Primitive_Proc *)o)->name;
-  else {
-    scheme_wrong_type("primitive-name", "primitive", 0, argc, argv);
-    s = NULL;
-  }
-
-  if (!s) s = "UNKNOWN";
-
-  return scheme_make_string(s);
-}
-
 const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
 {
   Scheme_Type type;
@@ -1339,19 +1310,22 @@ static Scheme_Object *macro_p(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *inferred_name(int argc, Scheme_Object **argv)
 {
-  const char *s;
-  int len;
-
   if (SCHEME_PROCP(argv[0])) {
+    const char *s;
+    int len;
+
     s = scheme_get_proc_name(argv[0], &len, 0);
-  } else {
-    s = NULL;
+    if (s) 
+      return scheme_intern_exact_symbol(s, len);
+  } else if (SCHEME_STRUCTP(argv[0])) {
+    return SCHEME_STRUCT_NAME_SYM(argv[0]);
+  } else if (SCHEME_STRUCT_TYPEP(argv[0])) {
+    return ((Scheme_Struct_Type *)argv[0])->name;
+  } else if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_property_type)) {
+    return ((Scheme_Struct_Property *)argv[0])->name;
   }
 
-  if (!s)
-    return scheme_false;
-  else
-    return scheme_intern_exact_symbol(s, len);
+  return scheme_false;
 }
 
 Scheme_Object *scheme_make_arity(short mina, short maxa)
@@ -1521,7 +1495,7 @@ Scheme_Object *scheme_arity(Scheme_Object *p)
 static Scheme_Object *arity(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_PROCP(argv[0]))
-    scheme_wrong_type("arity", "procedure", 0, argc, argv);
+    scheme_wrong_type("procedure-arity", "procedure", 0, argc, argv);
   
   return get_or_check_arity(argv[0], -1);
 }

@@ -112,7 +112,6 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_integer_type, "<fixnum-integer>");
   set_name(scheme_double_type, "<inexact-number>");
   set_name(scheme_float_type, "<inexact-number*>");
-  set_name(scheme_generic_type, "<unknown-external>");
   set_name(scheme_undefined_type, "<undefined>");
   set_name(scheme_eof_type, "<eof>");
   set_name(scheme_input_port_type, "<input-port>");
@@ -164,6 +163,9 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_module_index_type, "<module-path-index>");
 
   set_name(scheme_subprocess_type, "<subprocess>");
+
+  set_name(scheme_reserved_1_type, "<reserved1>");
+  set_name(scheme_reserved_2_type, "<reserved2>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");

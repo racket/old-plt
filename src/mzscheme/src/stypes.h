@@ -63,11 +63,11 @@ enum {
   scheme_box_type,
   scheme_thread_type,     /* 50 */
   scheme_structure_type,
-  scheme_generic_type, 
+  scheme_reserved_1_type, 
   scheme_cont_mark_set_type, 
   scheme_sema_type,
   scheme_hash_table_type,
-  scheme_generic_data_type,
+  scheme_reserved_2_type,
   scheme_weak_box_type,
   scheme_struct_type_type,
   scheme_module_index_type,
@@ -83,12 +83,6 @@ enum {
   scheme_bucket_type,
   scheme_bucket_table_type, /* 70 */
   scheme_subprocess_type,
-
-  /* These reserved types will let us add types
-     without forcing recompilation of compiled MzScheme code */
-  /* (all reserved types used up! */
-
-  /* more internal types: */
   scheme_compilation_top_type,
   scheme_envunbox_type,
   scheme_eval_waiting_type,

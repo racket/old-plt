@@ -365,18 +365,21 @@
 		       (tail-recur (z:if-form-then expr))]
 		  [val (values annotated-else free-vars-else) 
 		       (tail-recur (z:if-form-else expr))]
+                  [val inner-annotated `(#%if ,if-temp
+                                         ,annotated-then
+                                         ,annotated-else)]
 		  [val annotated `(#%begin
                                    (#%set! ,if-temp ,annotated-test)
                                    ,(break-wrap
-                                     `(#%if (#%boolean? ,if-temp)
-                                       (#%if ,if-temp
-                                        ,annotated-then
-                                        ,annotated-else)
-                                       (#%raise (,utils:make-not-boolean
-                                                 (#%format ,utils:not-boolean-error-format
-                                                  ,if-temp)
-                                                 (#%current-continuation-marks)
-                                                 ,if-temp)))))]
+                                     (if (signal-non-boolean)
+                                         `(#%if (#%boolean? ,if-temp)
+                                           ,inner-annotated
+                                           (#%raise (,utils:make-not-boolean
+                                                     (#%format ,utils:not-boolean-error-format
+                                                      ,if-temp)
+                                                     (#%current-continuation-marks)
+                                                     ,if-temp)))
+                                         inner-annotated)))]
                   [val if-temp-varref-list (list (create-bogus-bound-varref if-temp #f))]
 		  [val free-vars (var-set-union if-temp-varref-list
                                                 free-vars-test 

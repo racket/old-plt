@@ -5,7 +5,6 @@
            "types.ss"
            "parameters.ss"
            "error-messaging.ss"
-           (lib "match.ss")
            (lib "file.ss")
            (lib "class.ss")
            (lib "list.ss"))
@@ -26,22 +25,16 @@
   (define empty-env (make-environment null null null))
 
   ;; env => (list (list type-bound) (list var-type))
-  ;; var-type => (make-var-type string type boolean boolean)
-  (define-struct var-type (var type local? static?))
+  ;; var-type => (make-var-type string type boolean boolean boolean)
+  (define-struct var-type (var type local? static? field?))
   
-  ;; add-var-to-env: string type boolean boolean env -> env
-  (define (add-var-to-env name type local? static? oldEnv)
-    (make-environment (cons (make-var-type name type local? static?)
+  ;; add-var-to-env: string type boolean boolean boolean env -> env
+  (define (add-var-to-env name type local? static? field? oldEnv)
+    (make-environment (cons (make-var-type name type local? static? field?)
                             (environment-type-env oldEnv))
                       (environment-exn-env oldEnv)
                       (environment-label-env oldEnv)))
   
-  ;;add-var-group (list var-type) env -> env
-  (define (add-var-group vars env)
-    (make-environment (append vars (environment-type-env env))
-                      (environment-exn-env env)
-                      (environment-label-env env)))
-
   ;; lookup-var-in-env: string env -> (U var-type boolean)
   (define (lookup-var-in-env name env)
     (letrec ((lookup
@@ -119,7 +112,7 @@
     (check-location loc)
     (send type-recs set-location! 'interactions)
     (send type-recs set-class-reqs null)
-    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f
+    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f #f
                                (create-field-env (send type-recs get-interactions-fields)
                                                  empty-env)))
           (c-class (list "scheme-interactions")))
@@ -149,7 +142,7 @@
     (let ((this-ref (make-ref-type (id-string (header-id (class-def-info class)))
                                    package-name)))
       (check-members (class-def-members class)
-                     (add-var-to-env "this" this-ref #t #f empty-env)
+                     (add-var-to-env "this" this-ref #t #f #f empty-env)
                      level
                      type-recs 
                      (list (id-string (header-id (class-def-info class))))))
@@ -200,13 +193,6 @@
                     (else void)))
                 members)))
   
-  ;check-static-members -> env type-records -> (member -> void)
-  (define check-static-members
-    (lambda (env type-recs)
-      (lambda (members)
-        void)))  
-
-  
   ;create-field-env: (list field-record) env -> env
   (define (create-field-env fields env)
     (cond
@@ -219,6 +205,7 @@
                                            (field-record-type field)
                                            (not static?)
                                            static?
+                                           #t
                                            env))))))
   
   ;get-static-fields-env: env -> env
@@ -239,13 +226,12 @@
                        (type-spec-to-type (method-type method) type-recs))))
       (if (or (memq 'abstract mods) (memq 'native mods))
           (when body
-            (raise-member-error (id-src name)
-                                (list sym-name (memq 'abstract mods))
-                                impl-for-abs))                                
+            (method-error (if (memq 'abstract mods) 'abstract 'native)
+                          sym-name (id-src name)))
           (begin
             (when (and (not (eq? return 'void))
                        (not (reachable-return? body)))
-              (raise-member-error (id-src name) sym-name no-reachable-return)) 
+              (method-error 'no-reachable sym-name (id-src name)))
             (check-statement body
                              return
                              (build-method-env (method-parms method) env type-recs)
@@ -255,8 +241,7 @@
                              ctor?
                              static?
                              #f
-                             #f)))))
-  
+                             #f)))))  
   
   ;build-method-env: (list field) env type-records-> env
   (define (build-method-env parms env type-recs)
@@ -267,6 +252,7 @@
                          (add-var-to-env (id-string (field-name (car parms)))
                                          (type-spec-to-type (field-type (car parms)) type-recs)
                                          #t
+                                         #f
                                          #f
                                          env)
                          type-recs))))
@@ -282,7 +268,7 @@
         (if (array-type? dec-type)
             (check-array-init (array-init-vals init) check-e 
                               (array-type-type dec-type) name type-recs)
-            (raise-statement-error dec-type (array-init-src init) name array-not-expected))
+            (var-init-error name dec-type (array-init-src init)))
         (check-e init)))
   
   ;check-array-init (U (list array-init) (list Expression)) (expression->type) type symbol type-records -> type
@@ -298,29 +284,42 @@
        (for-each (lambda (e) 
                    (let ((new-type (check-e e)))
                      (unless (assignment-conversion dec-type new-type type-recs)
-                       (raise-statement-error (list dec-type new-type) 
-                                              (expr-src e) name init-incompatible))))
+                       (array-init-error dec-type new-type (expr-src e)))))
                  inits)
        (make-array-type dec-type 1))))
   
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Member errors
-  
-  (define (no-reachable-return method)
-    (format "method ~a does not have a reachable return" method))
 
-  (define (impl-for-abs name abs?)
-    (format "~a method ~a must not have an implementation. A ';' should appear after the header"
-            (if abs? 'abstract 'native) name))
+  (define (method-error kind method src)
+    (raise-error method
+                 (case kind
+                   ((no-return)
+                    (format "method ~a does not have a reachable return" method))
+                   ((abs)
+                    (format "abstract method ~a has an implementation. A ';' should come after the header"
+                            method))
+                   ((native)
+                    (format "native method ~a has an implementation." method)))
+                 method src))
   
-  (define (raise-member-error src code msg)
-    (match code
-      ((? symbol? code)
-       (raise-syntax-error code (msg code) (make-so code src)))
-      (((? symbol? name) (? boolean? cond))
-       (raise-syntax-error name (msg name cond) (make-so name src)))
-      (_
-       (error 'raise-member-error "Given ~a" code))))
-  
+  ;var-init-error: symbol type src -> void
+  (define (var-init-error name dec-type src)
+    (raise-error name
+                 (format "~a declared to be of type ~a, given an array" 
+                         name (type->ext-name dec-type))
+                 name src))
+
+  ;array-init-error: type type src -> void
+  (define (array-init-error dec-type given src)
+    (let ((d (type->ext-name dec-type))
+          (g (type->ext-name given)))
+      (raise-error 
+       g
+       (format "Error initializing declared array of ~a, given element with incompatible type ~a"
+               d g)
+       d src)))
+    
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   
@@ -450,8 +449,8 @@
   ;check-do: type src void -> void
   (define check-do (check-cond 'do))
   
-  ;check-for: forInit Expression (list Expression) Statement (Expression env -> type) (Statement env bool bool-> void) env 
-  ;           type-records bool -> void
+  ;check-for: forInit Expression (list Expression) Statement (Expression env -> type) 
+  ;           (Statement env bool bool-> void) env type-records bool -> void
   (define (check-for init cond incr loop check-e check-s env type-recs in-switch?)
     (let ((newEnv (if (and (not (null? init))
                            (field? (car init)))
@@ -474,15 +473,16 @@
   (define (check-local-var local env check-e type-recs)
     (let* ((is-var-init? (var-init? local))
            (name (id-string (field-name local)))
+           (in-env? (lookup-var-in-env name env))
            (sym-name (string->symbol name))
            (type (type-spec-to-type (field-type local) type-recs)))
-      (when (lookup-var-in-env name env)
+      (when (and in-env? (not (var-type-field? in-env?)))
         (illegal-redefinition (field-name local) (field-src local)))
       (when is-var-init?
         (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
           (unless (assignment-conversion type new-type type-recs)
             (variable-type-error (field-name local) new-type type (var-init-src local)))))
-      (add-var-to-env name type #t #f env)))   
+      (add-var-to-env name type #t #f #f env)))
 
   ;check-try: statement (list catch) (U #f statement) env (statement env -> void) type-records -> void
   (define (check-try body catches finally env check-s type-recs)
@@ -494,16 +494,17 @@
                         (type (field-type (catch-cond catch))))
                    (unless (and (ref-type? type)
                                 (is-subclass? type throw-type type-recs))
-                     (raise-statement-error type (field-src (catch-cond catch)) 'catch catch-throwable))
+                     (catch-error type (field-src (catch-cond catch))))
                    (loop (cdr catches) (add-exn-to-env type env)))))))
       (check-s body new-env)
       (for-each (lambda (catch)
                   (let* ((field (catch-cond catch))
-                         (name (id-string (field-name field))))
-                    (if (lookup-var-in-env name env)
+                         (name (id-string (field-name field)))
+                         (in-env? (lookup-var-in-env name env)))
+                    (if (and in-env? (not (var-type-field? in-env?)))
                         (illegal-redefinition (field-name field) (field-src field))
-                        (check-s (catch-body catch) 
-                                 (add-var-to-env name (field-type field) #t #f env)))))
+                        (check-s (catch-body catch)
+                                 (add-var-to-env name (field-type field) #t #f #f env)))))
                 catches)
       (when finally (check-s finally env))))
 
@@ -512,17 +513,14 @@
   (define (check-switch expr-type expr-src cases in-loop? env check-e check-s)
     (when (or (eq? expr-type 'long)
               (not (prim-integral-type? expr-type)))
-      (raise-statement-error expr-type expr-src 'switch wrong-switch-type))
+      (switch-error 'switch-type 'switch expr-type #f expr-src))
     (for-each (lambda (case)
                 (let* ((constant (caseS-constant))
                        (cons-type (unless (eq? 'default constant) (check-e constant))))
                   (if (or (eq? 'default constant)
                           (type=? cons-type expr-type))
                       void
-                      (raise-statement-error (list cons-type expr-type) 
-                                             (expr-src constant) 
-                                             'switch 
-                                             incompatible-case))))
+                      (switch-error 'incompat 'case cons-type expr-type (expr-src constant)))))
               cases))
   
   ;check-block: (list (U statement field)) env (statement env -> void) (expr -> type) type-records -> void
@@ -542,18 +540,18 @@
     (cond
       (label
        (unless (lookup-label (id-string label) env)
-         (raise-statement-error (id-string label) (id-src label) 'break (no-label 'break))))
+         (illegal-label 'break (id-string label) (id-src label))))
       ((or (not in-loop?) (not in-switch?))
-       (raise-statement-error 'break src 'break illegal-break))))
+       (break-error src))))
 
   ;check-continue: (U id #f) src env bool -> void
   (define (check-continue label src env in-loop?)
     (cond
       (label
        (unless (lookup-label (id-string label) env)
-         (raise-statement-error (id-string label) (id-src label) 'continue (no-label 'continue))))
+         (illegal-label 'continue (id-string label) (id-src label))))
       ((not in-loop?)
-       (raise-statement-error 'continue src 'continue continue-not-in-loop))))
+       (continue-error src))))
   
   ;check-label: statement string (statement env -> void) env -> void
   (define (check-label stmt label check-s env)
@@ -562,7 +560,7 @@
   ;check-synchronized: type src -> void
   (define (check-synchronized e-type e-src)
     (unless (reference-type? e-type)
-      (raise-statement-error e-type e-src 'synchronized synch-wrong-exp)))  
+      (synch-error e-type e-src)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;Statement error messages
@@ -609,54 +607,52 @@
   ;variable-type-error: id type type src -> void
   (define (variable-type-error field given expt src)
     (let ((f (id->ext-name field)))
-      (raise-error f
-                   (format "Variable ~a declared to be ~a, which is incompatible with the initial value type of ~a"
-                           f (type->ext-name expt) (type->ext-name given))
-                   f src)))
-  
-  
-  (define (init-incompatible given expected)
-    (format "types of all expressions in array initialization must be compatible with declared type. 
-             ~a is not compatible with declared type ~a" given expected))
-  (define (array-not-expected expected)
-    (format "variable declared to be of type ~a, given an array" expected))
+      (raise-error 
+       f
+       (format "Variable ~a declared to be ~a, which is incompatible with the initial value type of ~a"
+               f (type->ext-name expt) (type->ext-name given))
+       f src)))
 
-  (define (catch-throwable given)
-    (format "catch clauses must be given an argument that is a subclass of Throwable. Given ~a" given))
+  ;catch-error: type src -> void
+  (define (catch-error given src)
+    (raise-error 'catch
+                 (format "catch clause must catch an argument of subclass Throwable: Given ~a"
+                         (type->ext-name given))
+                 'catch src))
   
-  (define (wrong-switch-type given)
-    (format "Switch expression must be of type byte, short, int or char. Given: ~a" given))
-  (define (incompatible-case given expected)
-    (format "Each switch case must be the same type as switch expression. Given ~a: expected ~a" given expected))
+  ;switch-error symbol symbol type type src -> void
+  (define (switch-error kind syn given expected src)
+    (raise-error
+     syn
+     (case kind
+       ((switch-type) 
+        (format "switch expression must be of type byte, short, int or char. Given: ~a" 
+                (type->ext-name given)))
+       ((incompat)
+        (format "switch case must be same type as switch expression. Given ~a: expected ~a"
+                (type->ext-name given) (type->ext-name expected))))
+     syn src))
+  
+  ;illegal-label: symbol string src -> void
+  (define (illegal-label kind label src)
+    (raise-error kind
+                 (format "~a references label ~a, no enclosing statement has this label"
+                         kind label)
+                 kind src))
+                 
+  ;break-error: src -> void
+  (define (break-error src)
+    (raise-error 'break "break must be in either a loop or a switch"
+                 'break src))
+  (define (continue-error src)
+    (raise-error 'continue "continue must be in a loop" 'continue src))
 
-  (define (no-label kind)
-    (lambda (label)
-      (format "~a attempting to ~a to label ~a when no statement has that label" kind kind label)))
-  (define (illegal-break given)
-    "this break statement must be in either a loop or a switch")
-  (define (continue-not-in-loop given)
-    "this continue statement must be in a loop")
-  
-  (define (synch-wrong-exp given)
-    (format "The expression for synchronization must be a subtype of Object. Given ~a" given))
-  
-  ;raise-statement-error: ast src symbol ( 'a -> string) -> void
-  (define (raise-statement-error code src kind msg)
-    (match code
-      ;Covers statement-cond-not-bool throw-not-throwable thrown-not-declared
-      ;array-not-expected catch-throwable wrong-switch-type synch-wrong-exp
-      ((? type? c) (raise-syntax-error kind (msg (type->ext-name c)) (make-so kind src)))
-      ;Covers return-not-match init-incompatible incompatibe-type incompatible-case
-      (((? type? fst) (? type? snd)) 
-       (raise-syntax-error kind (msg (type->ext-name fst) (type->ext-name snd)) (make-so kind src)))
-      ;name-already-defined no-label
-      ((? string? name)
-       (raise-syntax-error kind (msg name) (make-so kind src)))
-      ;illegal-break continue-not-in-loop
-      ((? symbol? name)
-       (raise-syntax-error kind (msg name) (make-so kind src)))
-      (_ (error 'raise-statement-error "Given ~a" code)))) 
-                                        
+  ;synch-error: type src -> void
+  (define (synch-error given src)
+    (raise-error 'synchronize
+                 (format "synchronization expression must be a subtype of Object: Given ~a"
+                         (type->ext-name given))
+                 'synchronize src))                                        
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Expression checking functions
@@ -1615,13 +1611,6 @@
                  (format "Implicit import of class ~a failed as this class does not exist at the specified location"
                          class)
                  class src))
-         
-  ;type?: ~a -> bool
-  (define (type? t)
-    (or (reference-type? t)
-        (array-type? t)
-        (eq? t 'boolean)
-        (prim-numeric-type? t)))
   
   (define check-location (make-parameter #f))
   

@@ -736,7 +736,7 @@ void wxPen::ChangePen(void)
 
   if (use_const
       && join==wxJOIN_ROUND
-      && cap==wxCAP_BUTT
+      && cap==wxCAP_ROUND
       && !bm) {
     wxPen *cp;
     cp = wxThePenList->FindOrCreatePen(colour, width, style);

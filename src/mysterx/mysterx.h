@@ -583,6 +583,8 @@ MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_process_win_events);
 MX_PRIM_DECL(mx_release_type_table);
 
+MX_PRIM_DECL(initialize_dotnet_runtime);
+
 void browserHwndMsgLoop(LPVOID);
 void mx_register_com_object(Scheme_Object *,IDispatch *);
 void mx_register_simple_com_object(Scheme_Object *,IUnknown *);
@@ -650,10 +652,10 @@ extern unsigned long browserCount;
         ULONG hiWord = (ULONG)((*(ULONGLONG *)(&v)) >> 32);  \
         pusharg(hiWord); \
         pusharg(loWord); \
-      } 
+      }
 
-// push right to left 
-// i indexes argv's, j indexes COM type info 
+// push right to left
+// i indexes argv's, j indexes COM type info
 #define pushSuppliedArgs(pFuncDesc,numParamsPassed,argc,argv, \
                          argVas,vaPtr,va,i,j,lcidIndex,buff) \
   /* j is index into COM type descriptions */ \
@@ -695,7 +697,7 @@ extern unsigned long browserCount;
     pushOneArg(va,buff); \
   }
 
-// push right to left 
+// push right to left
 #define pushOptArgs(pFuncDesc,numParamsPassed,numOptParams, \
                     optArgVas,vaPtr,va,argc,i,j,lcidIndex,buff) \
   if (numOptParams > 0) { \

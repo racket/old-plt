@@ -5403,3 +5403,10 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
 
   return TRUE;
 }
+
+Scheme_Object *
+initialize_dotnet_runtime (int argc, Scheme_Object **argv)
+{
+  scheme_signal_error ("%%initialize-dotnet-runtime:  Support for .NET is not available in this image.");
+  return scheme_false;
+}

@@ -43,8 +43,9 @@
 	(public
 	  [pre-on-char
 	   (lambda (receiver event)
-	     (or (send keymap handle-key-event this event)
-		 (super-pre-on-char receiver event)))]
+	     (let ([ans (send keymap handle-key-event this event)])
+	       (or ans
+		   (super-pre-on-char receiver event))))]
 	  [pre-on-eventt
 	   (lambda (receiver event)
 	     (or (and #f (send keymap handle-key-event this event))
@@ -269,7 +270,7 @@
 						       "Clear"
 						       "&Delete")
 			     edit-menu:clear edit-menu:clear-help-string #f
-			     (lambda (wx:platform) "del")))
+			     (lambda (wx:platform) (begin "del" #f))))
 		 (set! edit-menu:select-all-id
 		       (send edit-menu append-item "Select A&ll"
 			     edit-menu:select-all edit-menu:select-all-help-string #f "a"))

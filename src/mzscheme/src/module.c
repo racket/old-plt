@@ -99,6 +99,16 @@ static Scheme_Object *provide_stx;
 static Scheme_Object *set_stx;
 static Scheme_Object *app_stx;
 static Scheme_Object *top_stx;
+static Scheme_Object *lambda_stx;
+static Scheme_Object *case_lambda_stx;
+static Scheme_Object *let_values_stx;
+static Scheme_Object *letrec_values_stx;
+static Scheme_Object *if_stx;
+static Scheme_Object *begin0_stx;
+static Scheme_Object *set_stx;
+static Scheme_Object *with_continuation_mark_stx;
+static Scheme_Object *letrec_syntaxes_stx;
+static Scheme_Object *fluid_let_syntax_stx;
 
 static int num_initial_modules;
 static Scheme_Object **initial_modules;
@@ -332,6 +342,16 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(set_stx);
   REGISTER_SO(app_stx);
   REGISTER_SO(top_stx);
+  REGISTER_SO(lambda_stx);
+  REGISTER_SO(case_lambda_stx);
+  REGISTER_SO(let_values_stx);
+  REGISTER_SO(letrec_values_stx);
+  REGISTER_SO(if_stx);
+  REGISTER_SO(begin0_stx);
+  REGISTER_SO(set_stx);
+  REGISTER_SO(with_continuation_mark_stx);
+  REGISTER_SO(letrec_syntaxes_stx);
+  REGISTER_SO(fluid_let_syntax_stx);
 
   w = scheme_sys_wraps0;
   begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w, 0, 0);
@@ -343,6 +363,16 @@ void scheme_finish_kernel(Scheme_Env *env)
   set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w, 0, 0);
   app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w, 0, 0);
   top_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%top"), scheme_false, w, 0, 0);
+  lambda_stx = scheme_datum_to_syntax(scheme_intern_symbol("lambda"), scheme_false, w, 0, 0);
+  case_lambda_stx = scheme_datum_to_syntax(scheme_intern_symbol("case-lambda"), scheme_false, w, 0, 0);
+  let_values_stx = scheme_datum_to_syntax(scheme_intern_symbol("let-values"), scheme_false, w, 0, 0);
+  letrec_values_stx = scheme_datum_to_syntax(scheme_intern_symbol("letrec-values"), scheme_false, w, 0, 0);
+  if_stx = scheme_datum_to_syntax(scheme_intern_symbol("if"), scheme_false, w, 0, 0);
+  begin0_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin0"), scheme_false, w, 0, 0);
+  set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w, 0, 0);
+  with_continuation_mark_stx = scheme_datum_to_syntax(scheme_intern_symbol("with-continuation-mark"), scheme_false, w, 0, 0);
+  letrec_syntaxes_stx = scheme_datum_to_syntax(scheme_intern_symbol("letrec-syntaxes"), scheme_false, w, 0, 0);
+  fluid_let_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("fluid-let-syntax"), scheme_false, w, 0, 0);
 
   REGISTER_SO(prefix_symbol);
   REGISTER_SO(rename_symbol);
@@ -2007,12 +2037,12 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     redef_modname = NULL;
 
   /* Expand each expression in form up to `begin', `define-values', `define-syntax', 
-     `require', `provide', and `#%app'. */
+     `require', `provide', `#%app', etc. */
   xenv = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME | SCHEME_MODULE_FRAME, env);
   {
     Scheme_Object *stop;
     stop = scheme_get_stop_expander();
-    scheme_add_local_syntax(9, xenv);
+    scheme_add_local_syntax(18, xenv);
     scheme_set_local_syntax(0, begin_stx, stop, xenv);
     scheme_set_local_syntax(1, define_values_stx, stop, xenv);
     scheme_set_local_syntax(2, define_syntaxes_stx, stop, xenv);
@@ -2022,6 +2052,15 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_set_local_syntax(6, set_stx, stop, xenv);
     scheme_set_local_syntax(7, app_stx, stop, xenv);
     scheme_set_local_syntax(8, top_stx, stop, xenv);
+    scheme_set_local_syntax(9, case_lambda_stx, stop, xenv);
+    scheme_set_local_syntax(10, let_values_stx, stop, xenv);
+    scheme_set_local_syntax(11, letrec_values_stx, stop, xenv);
+    scheme_set_local_syntax(12, if_stx, stop, xenv);
+    scheme_set_local_syntax(13, begin0_stx, stop, xenv);
+    scheme_set_local_syntax(14, set_stx, stop, xenv);
+    scheme_set_local_syntax(15, with_continuation_mark_stx, stop, xenv);
+    scheme_set_local_syntax(16, letrec_syntaxes_stx, stop, xenv);
+    scheme_set_local_syntax(17, fluid_let_syntax_stx, stop, xenv);
   }
 
   first = scheme_null;

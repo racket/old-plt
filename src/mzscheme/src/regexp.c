@@ -1853,20 +1853,23 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
 /*              UTF-8 -> per-byte translation               */
 /************************************************************/
 
-static unsigned char *make_room(unsigned char *r, int j, int need_extra, int *extra, int *rsize)
+typedef struct {
+  int i;
+  int orig_len;
+  int size;
+} RoomState;
+
+static unsigned char *make_room(unsigned char *r, int j, int need_extra, RoomState *rs)
 {
   int nrs;
   unsigned char *nr;
 
-  if (*extra < need_extra) {
-    nrs = ((*rsize) * 2) + need_extra;
-    *extra += *rsize + need_extra;
+  if ((rs->size - j - (rs->orig_len - rs->i)) < need_extra) {
+    nrs = ((rs->size) * 2) + need_extra;
     nr = (char *)scheme_malloc_atomic(nrs+1);
     memcpy(nr, r, j);
     r = nr;
-    *rsize = nrs;
-  } else {
-    *extra -= need_extra;
+    rs->size = nrs;
   }
 
   return r;
@@ -1883,7 +1886,7 @@ static int compare_ranges(const void *a, const void *b)
 }
 
 static unsigned char *add_byte_range(const unsigned char *lo, const unsigned char *hi, int count,
-				     unsigned char *r, int *_j, int *rextra, int *rsize,
+				     unsigned char *r, int *_j, RoomState *rs,
 				     int did_alt, int wrap_alts)
 {
   int same_chars, j, i;
@@ -1903,7 +1906,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
 
   /* Match exactly the part that's the same for hi and lo */
   if (same_chars) {
-    r = make_room(r, j, 4 + same_chars, rextra, rsize);
+    r = make_room(r, j, 4 + same_chars, rs);
     if (!did_alt) {
       r[j++] = '|';
       did_alt = 1;
@@ -1945,7 +1948,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       choices++;
 
     if ((wrap_alts || same_chars) && (choices > 1)) {
-      r = make_room(r, j, 4, rextra, rsize);
+      r = make_room(r, j, 4, rs);
       if (!did_alt) {
 	r[j++] = '|';
 	did_alt = 1;
@@ -1957,7 +1960,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
 
     
     if (p > lo[same_chars]) {
-      r = make_room(r, j, 2, rextra, rsize);
+      r = make_room(r, j, 2, rs);
       if (!did_alt) {
 	r[j++] = '|';
 	did_alt = 1;
@@ -1965,14 +1968,14 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       r[j++] = lo[same_chars];
       *_j = j;
       r = add_byte_range(lo + same_chars + 1, highest, count - same_chars - 1,
-			 r, _j, rextra, rsize, 1, 1);
+			 r, _j, rs, 1, 1);
       j = *_j;
       p = lo[same_chars] + 1;
       did_alt = 0;
     }
     
     if (q < hi[same_chars]) {
-      r = make_room(r, j, 2, rextra, rsize);
+      r = make_room(r, j, 2, rs);
       if (!did_alt) {
 	r[j++] = '|';
 	did_alt = 1;
@@ -1980,7 +1983,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       r[j++] = hi[same_chars];
       *_j = j;
       r = add_byte_range(lowest, hi + same_chars + 1, count - same_chars - 1,
-			 r, _j, rextra, rsize, 1, 1);
+			 r, _j, rs, 1, 1);
       j = *_j;
       did_alt = 0;
 
@@ -1993,7 +1996,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       const char *any_str = "[\200-\277]";
       const int any_len = 5;
 
-      r = make_room(r, j, 10 + ((count - same_chars - 1) * any_len) , rextra, rsize);
+      r = make_room(r, j, 6 + ((count - same_chars - 1) * any_len), rs);
       if (!did_alt) {
 	r[j++] = '|';
 	did_alt = 1;
@@ -2015,7 +2018,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
 
     if ((wrap_alts || same_chars) && (choices > 1)) {
       /* Close out the grouping */
-      r = make_room(r, j, 1, rextra, rsize);    
+      r = make_room(r, j, 1, rs);
       r[j++] = ')';
     } 
   }
@@ -2024,7 +2027,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
   return r;
 }
 
-static unsigned char *add_range(unsigned char *r, int *_j, int *rextra, int *rsize,
+static unsigned char *add_range(unsigned char *r, int *_j, RoomState *rs,
 				unsigned int start, unsigned int end, int did_alt)
 {
   int  top, count;
@@ -2050,7 +2053,7 @@ static unsigned char *add_range(unsigned char *r, int *_j, int *rextra, int *rsi
   }
 
   if (end > top) {
-    r = add_range(r, _j, rextra, rsize, top + 1, end, did_alt);
+    r = add_range(r, _j, rs, top + 1, end, did_alt);
     end = top;
     did_alt = 0;
   }
@@ -2075,24 +2078,27 @@ static unsigned char *add_range(unsigned char *r, int *_j, int *rextra, int *rsi
   scheme_utf8_encode(&start, lo, 0, 1, 0, 0);
   scheme_utf8_encode(&end, hi, 0, 1, 0, 0);
 
-  return add_byte_range(lo, hi, count, r, _j, rextra, rsize, did_alt, 0);
+  return add_byte_range(lo, hi, count, r, _j, rs, did_alt, 0);
 }
 
 int translate(unsigned char *s, int len, char **result)
 {
-  int i, j;
-  int rsize = len, rextra = 0;
+  int j;
+  RoomState rs;
   unsigned char *r;
+
+  rs.orig_len = len;
+  rs.size = len;
   
-  r = (char *)scheme_malloc_atomic(rsize + 1);
+  r = (char *)scheme_malloc_atomic(rs.size + 1);
 
   /* We need to translate if the pattern contains any use of ".", if
      there's a big character in a range, or if there's a big character
      before '+', '*', or '?'. */
 
-  for (i = j = 0; i < len;) {
-    if (s[i] == '[') {
-      int k = i + 1, saw_big = 0;
+  for (rs.i = j = 0; rs.i < len;) {
+    if (s[rs.i] == '[') {
+      int k = rs.i + 1, saw_big = 0;
       /* First, check whether we need to translate. */
       /* Close bracket start is special: */
       if ((k < len) && (s[k] == '^'))
@@ -2106,8 +2112,8 @@ int translate(unsigned char *s, int len, char **result)
       }
       if ((k >= len) || !saw_big) {
 	/* No translation necessary. */
-	while (i <= k) {
-	  r[j++] = s[i++];
+	while (rs.i <= k) {
+	  r[j++] = s[rs.i++];
 	}
       } else {
 	/* Need to translate. */
@@ -2115,11 +2121,11 @@ int translate(unsigned char *s, int len, char **result)
 	Scheme_Object *ranges;
 	unsigned int *us, *range_array;
 	int ulen, on_count, range_len, rp, p;
-	int not_mode = (s[i + 1] == '^');
+	int not_mode = (s[rs.i + 1] == '^');
 
-	ulen = scheme_utf8_decode(s, NULL, i + 1, k, 0, 0, 0);
+	ulen = scheme_utf8_decode(s, NULL, rs.i + 1, k, 0, 0, 0);
 	us = (unsigned int *)scheme_malloc_atomic(ulen * sizeof(unsigned int));
-	scheme_utf8_decode(s, us, i + 1, k, 0, 0, 0);
+	scheme_utf8_decode(s, us, rs.i + 1, k, 0, 0, 0);
 
 	/* The simple_on array lists ASCII chars to (not) find
 	   for the match */
@@ -2213,7 +2219,7 @@ int translate(unsigned char *s, int len, char **result)
 	  /* Start with "(?:[...]|" for simples. */
 	  long last_end;
 	  int did_alt;
-	  r = make_room(r, j, 6 + (128 - on_count), &rextra, &rsize);
+	  r = make_room(r, j, 6 + (128 - on_count), &rs);
 	  r[j++] = '(';
 	  r[j++] = '?';
 	  r[j++] = ':';
@@ -2243,23 +2249,23 @@ int translate(unsigned char *s, int len, char **result)
 	  last_end = 128;
 	  for (rp = 0; rp < range_len; rp += 2) {
 	    if (range_array[rp] > last_end) {
-	      r = add_range(r, &j, &rextra, &rsize, last_end, range_array[rp] - 1, did_alt);
+	      r = add_range(r, &j, &rs, last_end, range_array[rp] - 1, did_alt);
 	      did_alt = 0;
 	    }
 	    if ((range_array[rp + 1] + 1) > last_end)
 	      last_end = range_array[rp + 1] + 1;
 	  }
 	  if (last_end <= 0x7FFFFFFF) {
-	    r = add_range(r, &j, &rextra, &rsize, last_end, 0x7FFFFFFF, did_alt);
+	    r = add_range(r, &j, &rs, last_end, 0x7FFFFFFF, did_alt);
 	    did_alt = 0;
 	  }
-	  r = make_room(r, j, 1, &rextra, &rsize);
+	  r = make_room(r, j, 1, &rs);
 	  r[j++] = ')';
 	} else {
 	  /* Normal mode */
 	  /* Start with "(?:[...]|" for simples. */
 	  int p, did_alt;
-	  r = make_room(r, j, 5 + on_count, &rextra, &rsize);
+	  r = make_room(r, j, 5 + on_count, &rs);
 	  r[j++] = '(';
 	  r[j++] = '?';
 	  r[j++] = ':';
@@ -2287,39 +2293,39 @@ int translate(unsigned char *s, int len, char **result)
 	  } else
 	    did_alt = 1;
 	  for (rp = 0; rp < range_len; rp += 2) {
-	    r = add_range(r, &j, &rextra, &rsize, range_array[rp], range_array[rp+1], did_alt);
+	    r = add_range(r, &j, &rs, range_array[rp], range_array[rp+1], did_alt);
 	    did_alt = 0;
 	  }
-	  r = make_room(r, j, 1, &rextra, &rsize);
+	  r = make_room(r, j, 1, &rs);
 	  r[j++] = ')';
 	}
       }
-      i = k + 1;
-    } else if (s[i] == '\\') {
+      rs.i = k + 1;
+    } else if (s[rs.i] == '\\') {
       /* Skip over next char, possibly big: */
-      r[j++] = s[i++];
-      if ((i < len)
-	  && (s[i] > 127)) {
-	r[j++] = s[i++];
-	while ((i < len) && ((s[i] & 0xC0) == 0x80)) {
-	  r[j++] = s[i++];
+      r[j++] = s[rs.i++];
+      if ((rs.i < len)
+	  && (s[rs.i] > 127)) {
+	r[j++] = s[rs.i++];
+	while ((rs.i < len) && ((s[rs.i] & 0xC0) == 0x80)) {
+	  r[j++] = s[rs.i++];
 	}
       } else
-	r[j++] = s[i++];
-    } else if ((s[i] == '.') && (((i + 1) >= len)
-				 || (s[i+1] != '*'))) {
+	r[j++] = s[rs.i++];
+    } else if ((s[rs.i] == '.') && (((rs.i + 1) >= len)
+				 || (s[rs.i+1] != '*'))) {
       /* "." has to be expanded, but only if it's not followed by "*".
 	 (The ".*" exception is important to the regexp matcher, snce there's
 	 always an implement ".*" at the start of a pattern.) */
       const char *any_str = "(?:[0-\177]|[\300-\375][\200-\277]*)";
       int len;
       len = strlen(any_str);
-      r = make_room(r, j, len - 1, &rextra, &rsize);
+      r = make_room(r, j, len - 1, &rs);
       memcpy(r + j, any_str, len);
       j += len;
-      i++;
-    } else if (s[i] > 127) {
-      int k = i + 1;
+      rs.i++;
+    } else if (s[rs.i] > 127) {
+      int k = rs.i + 1;
       /* Look for *, +, or ? after this big char */
       while ((k < len) && ((s[k] & 0xC0) == 0x80)) {
 	k++;
@@ -2328,22 +2334,22 @@ int translate(unsigned char *s, int len, char **result)
 			|| (s[k] == '*')
 			|| (s[k] == '?'))) {
 	/* Need to translate; wrap char in (?: ...) */
-	r = make_room(r, j, 4, &rextra, &rsize);
+	r = make_room(r, j, 4, &rs);
 	r[j++] = '(';
 	r[j++] = '?';
 	r[j++] = ':';
-	while (i < k) {
-	  r[j++] = s[i++];
+	while (rs.i < k) {
+	  r[j++] = s[rs.i++];
 	}
 	r[j++] = ')';
       } else {
 	/* No translation. */
-	while (i < k) {
-	  r[j++] = s[i++];
+	while (rs.i < k) {
+	  r[j++] = s[rs.i++];
 	}
       }
     } else {
-      r[j++] = s[i++];
+      r[j++] = s[rs.i++];
     }
   }
 

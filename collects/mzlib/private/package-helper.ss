@@ -8,7 +8,8 @@
 	   re-pre-register-package 
 	   remove-dups stx-assoc mark-to-localize rebuild rebuild-cons
 	   split open
-	   protect not-bound-tag)
+	   protect not-bound-tag
+	   walk-path)
 
   ;; A compile-time struct for package info:
   (define-struct str (renames all-renames))
@@ -196,5 +197,25 @@
 								    orig-name 
 								    name))))))
       (get-renames (syntax-local-introduce name) err)))
+
+  (define (walk-path path env+rns+subs stx)
+    (let loop ([path path][env+rns+subs env+rns+subs])
+      (cond
+       [(null? path) env+rns+subs]
+       [else (let* ([new-name (stx-assoc (syntax-local-introduce (car path))
+					 (cadr env+rns+subs))]
+		    [v (and new-name
+			    (if (caddr env+rns+subs)
+				(bound-identifier-mapping-get (caddr env+rns+subs) 
+							      (cdr new-name)
+							      (lambda () #f))
+				(get-renames (cdr new-name) (lambda (x) (lambda () #f)))))])
+	       (if v
+		   (loop (cdr path) v)
+		   (raise-syntax-error
+		    #f
+		    "no such exported subpackage"
+		    stx
+		    (car path))))])))
   
   )

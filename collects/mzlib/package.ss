@@ -48,7 +48,8 @@
 	   define*-syntax define*
 	   define*-syntaxes define*-values
 	   open/derived open*/derived package/derived
-	   rename-potential-package)
+	   define-dot/derived define*-dot/derived
+	   rename-potential-package rename*-potential-package)
 
   ;; Used with `fluid-let-syntax' to communicate to `open'
   ;; when an expression is within the body of a `package' declaration.
@@ -103,10 +104,9 @@
 
   (define-syntax-set (package/derived)
 
-    (define kernel-form-identifier-list/no-begin
+    (define kernel-form-identifier-list+defines
       (append (list #'define*-values #'define*-syntaxes)
-              (filter (lambda (id) (not (eq? 'begin (syntax-e id))))
-                      (kernel-form-identifier-list #'here))))
+	      (kernel-form-identifier-list #'here)))
 
     (define (remove-begins def)
       (kernel-syntax-case def #f
@@ -126,16 +126,23 @@
     ;; Partially expands all body expressions, and wraps expressions
     ;; in empty `define-values'; the result is a list of definitions
     (define (get-defs expand-context defs exports)
-      (let ([stop-list (append kernel-form-identifier-list/no-begin
+      (let ([stop-list (append kernel-form-identifier-list+defines
 			       exports)])
 	(map fix-expr
 	     (apply append
-		    (map (lambda (d)
-			   (remove-begins
-			    (local-expand 
-			     d
-			     expand-context
-			     stop-list)))
+		    (map (letrec ([ex
+				   (lambda (d)
+				     (let ([e (local-expand 
+					       d
+					       expand-context
+					       stop-list)])
+				       (syntax-case e (begin)
+					 [(begin e ...)
+					  (apply
+					   append
+					   (map ex (syntax->list #'(e ...))))]
+					 [else (list e)])))])
+			   ex)
 			 defs)))))
     
     ;; Extracts all defined names, and also checks for duplicates
@@ -389,11 +396,10 @@
       [(package* name exports body ...)
        (with-syntax ([this-pkg (car (generate-temporaries '(this-pkg)))]
 		     [new-name (car (generate-temporaries (list #'name)))])
-       #`(begin
-	   (package this-pkg (new-name)
-	     (package/derived #,stx new-name exports
-	       body ...))
-	   (define*-dot name this-pkg new-name)))]))
+	 #`(begin
+	     (package/derived #,stx this-pkg exports
+			      body ...)
+	     (rename*-potential-package name this-pkg)))]))
   
   (define-syntax (package stx)
     (syntax-case stx ()
@@ -405,69 +411,144 @@
   ;; The main `open' implementation
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define-syntax-set (open/derived open*/derived open open* rename-potential-package)
-    (define (do-open derived-stx def op/d)
-      (syntax-case derived-stx ()
-	;; Base case: an immediate package name:
-	[(_ orig-stx orig-name top-name)
-	 (let ([top-name #'top-name]
-	       [stx #'orig-stx])
-	   ;; Find the package. `open' reports an error if it can't find one
-	   (let* ([env+rns+subs (open top-name #'orig-name stx)]
-		  [env (and env+rns+subs (car env+rns+subs))]
-		  ;; If we're in a package's body, get it's rename environment
-		  [cp-env+rns+subs (let ([cp (syntax-local-value #'current-package (lambda () #f))])
-				     (and cp (open cp cp stx)))]
-		  ;; Find the names that `open' is supposed to bind
-		  [shadowers (map (lambda (x)
-				    (let ([in-pack-bind (and cp-env+rns+subs
-							     (stx-assoc (car x) (cadr cp-env+rns+subs)))])
-				      (if in-pack-bind
-					  (syntax-local-get-shadower
-					   (cdr in-pack-bind))
-					  (syntax-local-get-shadower
-					   (car x)))))
-				  env)])
-	     ;; Set up the defined-name -> opened-name mapping
-	     (with-syntax ([((pub . hid) ...)
-			    (map (lambda (x shadower)
-				   (cons (syntax-local-introduce shadower)
-					 (syntax-local-introduce (cdr x))))
-				 env shadowers)]
-			   [def-stxes def])
-	       ;; In case another `open' follows this one in an
-	       ;; internal-defn position, register renames for
-	       ;; packages that we just made available:
-	       (let* ([ctx (syntax-local-context)]
-		      [subs (caddr env+rns+subs)])
-		 (when (pair? ctx)
-		   (for-each (lambda (x shadower)
-			       (re-pre-register-package subs ctx shadower 
-							(if subs
-							    (car x)
-							    (cdr x))))
-			     env shadowers)))
-	       ;; Open produces a syntax binding to map to the opened names:
-	       (syntax/loc stx
-		 (def-stxes (pub ...)
-		   (values (make-rename-transformer (quote-syntax hid)) ...))))))]
-	;; Inductive case: a path to a package:
-	[(_ orig-stx orig-top-name top-name elem path-rest ...)
-	 (with-syntax ([this-elem (car (generate-temporaries '(this-elem)))]
-		       [this-pkg (car (generate-temporaries '(this-pkg)))]
-		       [op/d op/d])
-	   #'(begin
-	       (package this-pkg (this-elem)
-		 ;; to check that open introduces the name:
-		 (define*-syntaxes (elem) 5)
-		 (open*/derived orig-stx orig-top-name top-name)
-		 (rename-potential-package this-elem elem))
-	       ;; If `elem' wasn't redefined above, this will produce
-	       ;; a no-such-package error:
-	       (open/derived orig-stx #f this-pkg)
-	       (op/d orig-stx elem this-elem path-rest ...)))]))
+  (define-syntax-set (open/derived open*/derived open open* 
+				   define-dot define*-dot define-dot/derived define*-dot/derived
+				   rename-potential-package rename*-potential-package)
+    (define (do-open stx orig-name
+		     path
+		     ex-name bind-name
+		     def)
+      ;; Find the package:
+      (let* ([env+rns+subs 
+	      ;; Find the initial package. `open' reports an error if it can't find one
+	      (let ([env+rns+subs (open (car path) orig-name stx)])
+		(walk-path (cdr path) env+rns+subs stx))]
+	     ;; If we're in a package's body, get it's rename environment
+	     [cp-env+rns+subs (let ([cp (syntax-local-value #'current-package (lambda () #f))])
+				(and cp (open cp cp stx)))]
+	     [env (and env+rns+subs (let ([e (car env+rns+subs)])
+				      (if ex-name
+					  (let ([a (stx-assoc 
+						    (let ([id (syntax-local-introduce ex-name)])
+						      ;; Reverse-map renaming due to being in a package body:
+						      (let ([in-pack-bind
+							     (and cp-env+rns+subs
+								  (ormap (lambda (p)
+									   (and (bound-identifier=? (cdr p) id)
+										p))
+									 (cadr cp-env+rns+subs)))])
+							(if in-pack-bind
+							    (car in-pack-bind)
+							    id)))
+						    (car env+rns+subs))])
+					    (unless a
+					      (raise-syntax-error
+					       #f
+					       "no such export from package"
+					       stx
+					       ex-name))
+					    (list a))
+					  e)))]
+	     ;; Find the names that `open' is supposed to bind
+	     [shadowers (if bind-name
+			    (list bind-name)
+			    (map (lambda (x)
+				   (let ([in-pack-bind (and cp-env+rns+subs
+							    (stx-assoc (car x) (cadr cp-env+rns+subs)))])
+				     (if in-pack-bind
+					 (syntax-local-get-shadower
+					  (cdr in-pack-bind))
+					 (syntax-local-get-shadower
+					  (car x)))))
+				 env))])
+	;; Set up the defined-name -> opened-name mapping
+	(with-syntax ([((pub . hid) ...)
+		       (map (lambda (x shadower)
+			      (cons (if bind-name
+					shadower ; which is bind-name
+					(syntax-local-introduce shadower))
+				    (syntax-local-introduce (cdr x))))
+			    env shadowers)]
+		      [def-stxes def])
+	  ;; In case another `open' follows this one in an
+	  ;; internal-defn position, register renames for
+	  ;; packages that we just made available:
+	  (let* ([ctx (syntax-local-context)]
+		 [subs (caddr env+rns+subs)])
+	    (when (pair? ctx)
+	      (for-each (lambda (x shadower)
+			  (re-pre-register-package subs ctx 
+						   (if bind-name
+						       (syntax-local-introduce shadower)
+						       shadower)
+						   (if subs
+						       (car x)
+						       (cdr x))))
+			env shadowers)))
+	  ;; Open produces a syntax binding to map to the opened names:
+	  (syntax/loc stx
+	    (def-stxes (pub ...)
+	      (values (make-rename-transformer (quote-syntax hid)) ...))))))
 
-    (define (rename-potential-package/proc stx)
+    (define (generic-open stx def)
+      (check-defn-context stx)
+      (syntax-case stx ()
+	[(_ elem1 elem ...)
+	 (do-open stx #f (syntax->list #'(elem1 elem ...))
+		  #f #f
+		  def)]))
+
+    (define (generic-open/derived stx def)
+      (syntax-case stx ()
+	[(_ orig-stx name elem ...)
+	 (do-open #'orig-stx #'name (syntax->list #'(elem ...))
+		  #f #f
+		  def)]))
+
+    (define (open/proc stx)
+      (generic-open stx #'define-syntaxes))
+    (define (open*/proc stx)
+      (generic-open stx #'define*-syntaxes))
+
+    (define (open/derived/proc stx)
+      (generic-open/derived stx #'define-syntaxes))
+    (define (open*/derived/proc stx)
+      (generic-open/derived stx #'define*-syntaxes))
+
+    (define (do-define-dot stx def-stxes path bind-name)
+      (unless (identifier? bind-name)
+	(raise-syntax-error #f "not an identifier" stx bind-name))
+      (let-values ([(path last) (split path)])
+	(do-open stx #f
+		 path
+		 last bind-name
+		 def-stxes)))
+
+    (define (generic-define-dot stx def-stxes)
+      (check-defn-context stx)
+      (syntax-case stx ()
+	((_ bind-name path1 path2 path3 ...)
+	 (do-define-dot stx def-stxes (syntax->list #'(path1 path2 path3 ...)) #'bind-name))))
+
+    (define (generic-define-dot/derived stx def-stxes)
+      (check-defn-context stx)
+      (syntax-case stx ()
+	((_ orig-stx bind-name path1 path2 path3 ...)
+	 (do-define-dot #'orig-stx def-stxes (syntax->list #'(path1 path2 path3 ...)) #'bind-name))))
+
+    (define (define-dot/proc stx)
+      (generic-define-dot stx #'define-syntaxes))
+
+    (define (define*-dot/proc stx)
+      (generic-define-dot stx #'define*-syntaxes))
+
+    (define (define-dot/derived/proc stx)
+      (generic-define-dot/derived stx #'define-syntaxes))
+
+    (define (define*-dot/derived/proc stx)
+      (generic-define-dot/derived stx #'define*-syntaxes))
+
+    (define (do-rename stx def-stxes)
       (syntax-case stx ()
 	[(_ new-name old-name)
 	 (begin
@@ -478,33 +559,18 @@
 	   ;; Re-register if in nested int-def context, and if old-name has
 	   ;; a package mapping:
 	   (let ([ctx (syntax-local-context)])
-	     (when (and (list? ctx)
-			((length ctx) . > . 1))
-	       (re-pre-register-package #f (cdr (syntax-local-context)) 
+	     (when (list? ctx)
+	       (re-pre-register-package #f (syntax-local-context)
 					(syntax-local-introduce #'new-name)
 					(syntax-local-introduce #'old-name))))
 	   ;; Produce syntax-level renaming:
-	   #'(define-syntaxes (new-name) (make-rename-transformer (quote-syntax old-name))))]))
+	   #`(#,def-stxes (new-name) (make-rename-transformer (quote-syntax old-name))))]))
 
-    (define (generic-open stx def op/d)
-      (check-defn-context stx)
-      (syntax-case stx ()
-	[(_ elem ...)
-	 (do-open #`(o #,stx #f elem ...) def op/d)]))
-
-    (define (open/proc stx)
-      (generic-open stx #'define-syntaxes #'open/derived))
-
-    (define (open*/proc stx)
-      (generic-open stx #'define*-syntaxes #'open*/derived))
-
-    (define (open/derived/proc stx)
-      (do-open stx #'define-syntaxes #'open/derived))
-
-    (define (open*/derived/proc stx)
-      (do-open stx #'define*-syntaxes #'open*/derived))
-    )
-       
+    (define (rename-potential-package/proc stx)
+      (do-rename stx #'define-syntaxes))
+    (define (rename*-potential-package/proc stx)
+      (do-rename stx #'define*-syntaxes)))
+  
   (define-syntax (dot stx)
     (syntax-case stx ()
       ((_ path1 path2 path-rest ...)
@@ -517,63 +583,11 @@
 			stx
 			elem)))
 		   path)
-	 (let*-values ([(path field) (split path)])
-	   (quasisyntax/loc
-	    stx
-	    (let ()
-	      (package this-pkg all-defined
-		(open/derived #,stx #f #,@path))
-	      (let-syntax ([#,field (lambda (stx)
-				      (raise-syntax-error
-				       #f
-				       "no such exported identifier"
-				       (quote-syntax #,stx)
-				       stx))])
-		(open/derived #f #f this-pkg)
-		(let ()
-		  #,field)))))))))
-  
-  (define-syntax-set (do-define-dot define-dot define*-dot)
-    (define (do-define-dot/proc derived-stx)
-      (syntax-case derived-stx ()
-	((_ orig-stx op/d rename top-name rest-name ...)
-	 (with-syntax ([this-pkg (car (generate-temporaries '(this-pkg)))]
-		       [((name ...) last-name) 
-			(let-values ([(path last) (split (syntax->list #'(top-name rest-name ...)))])
-			  (list path last))])
-	   #'(begin
-	       (package/derived #f this-pkg (rename)
-		 ;; To check that the name gets bound by open:
-		 (define*-syntaxes (last-name) not-bound-tag)
-		 ;; The open:
-		 (open*/derived orig-stx #f name ...)
-		 ;; Do the check, now:
-		 (define-syntaxes ()
-		   (begin
-		     (when (eq? not-bound-tag (syntax-local-value (quote-syntax last-name) (lambda () #f)))
-		       (raise-syntax-error #f
-					   "no such exported identifier"
-					   (quote-syntax last-name)
-					   #'orig-stx))
-		     (values)))
-		 ;; Rename:
-		 (rename-potential-package rename last-name))
-	       (op/d orig-stx #f this-pkg))))))
-    
-    (define (generic-define-dot stx op/d)
-      (check-defn-context stx)
-      (syntax-case stx ()
-	((_ rename path1 path2 path3 ...)
-	 (let ()
-	   (unless (identifier? #'rename)
-	     (raise-syntax-error #f "not an identifier" stx #'rename))
-	   #`(do-define-dot #,stx #,op/d rename path1 path2 path3 ...)))))
-
-    (define (define-dot/proc stx)
-      (generic-define-dot stx #'open/derived))
-
-    (define (define*-dot/proc stx)
-      (generic-define-dot stx #'open*/derived)))
+	 (quasisyntax/loc
+	  stx
+	  (let ()
+	    (define-dot/derived #,stx tmp path1 path2 path-rest ...)
+	    tmp))))))
     
   )
 

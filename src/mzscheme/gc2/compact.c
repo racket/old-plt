@@ -1763,19 +1763,27 @@ static void propagate_xtagged_mpage(void **bottom, MPage *page)
 
     size = *(long *)p + 1;
 	
-    v = OFFSET_COLOR_UNMASKED(offsets, offset);
-    if (v & MFLAG_GRAY) {
-      v -= MFLAG_GRAY;
-      v |= MFLAG_BLACK;
-      OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
-      
-#if RECORD_MARK_SRC
-      mark_src = p + 1;
-      mark_type = MTYPE_XTAGGED;
+#if ALIGN_DOUBLES
+    if (size > 1) {
 #endif
 
-      GC_mark_xtagged(p + 1);
+      v = OFFSET_COLOR_UNMASKED(offsets, offset);
+      if (v & MFLAG_GRAY) {
+	v -= MFLAG_GRAY;
+	v |= MFLAG_BLACK;
+	OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
+	
+#if RECORD_MARK_SRC
+	mark_src = p + 1;
+	mark_type = MTYPE_XTAGGED;
+#endif
+
+	GC_mark_xtagged(p + 1);
+      }
+
+#if ALIGN_DOUBLES
     }
+#endif
     
     p += size;
     offset += size;
@@ -1802,7 +1810,15 @@ static void propagate_xtagged_whole_mpage(void **p, MPage *page)
     mark_type = MTYPE_XTAGGED;
 #endif
 
-    GC_mark_xtagged(p + 1);
+#if ALIGN_DOUBLES
+    if (size > 1) {
+#endif
+
+      GC_mark_xtagged(p + 1);
+
+#if ALIGN_DOUBLES
+    }
+#endif
 
     p += size;
   } 

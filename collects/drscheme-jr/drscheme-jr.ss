@@ -327,7 +327,7 @@
       (unless (directory-exists? dir)
 	      (make-directory dir))
       (let ([file (build-path dir "mzrice")])
-	(write-image-to-file file #t))))
+	(write-image-to-file file))))
   (printf "Welcome to MzRice version ~a, Copyright (c) 1995-97 PLT~n"
 	  (version))
   (printf "Language: ~a~nImproper lists: ~a~n"

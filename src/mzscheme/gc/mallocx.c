@@ -135,7 +135,7 @@ void GC_incr_mem_freed(size_t n)
      ptr_t GC_generic_malloc_words_small(size_t lw, int k)
 #else 
      ptr_t GC_generic_malloc_words_small(lw, k)
-     register size_t lw;
+     register word lw;
      register int k;
 #endif
 {
@@ -153,7 +153,7 @@ DCL_LOCK_STATE;
             GC_init_inner();
         }
 	if (kind -> ok_reclaim_list != 0 || GC_alloc_reclaim_list(kind)) {
-	    op = GC_clear_stack(GC_allocobj(lw, k));
+	    op = GC_clear_stack(GC_allocobj((word)lw, k));
 	}
 	if (op == 0) {
 	    UNLOCK();

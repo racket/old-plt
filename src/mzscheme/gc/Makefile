@@ -24,8 +24,8 @@ EXEDIR = $(OBJDIR)
 
 #  The above doesn't work with gas, which doesn't run cpp.
 #  Define AS as `gcc -c -x assembler-with-cpp' instead.
-#  Under Irix 6, you will have to specify the ABI for as if you specify
-#  it for the C compiler.
+#  Under Irix 6, you will have to specify the ABI (-o32, -n32, or -64)
+#  if you use something other than the default ABI on your machine.
 
 # MATTHEW: setup flags to use inputs from wxWindows:
 
@@ -37,7 +37,7 @@ DEBUGFLAGS=
 WARN= -Wall
 OPT= -O
 
-CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DSILENT -DOLD_BLOCK_ALLOC
+CFLAGS= -DNO_SIGNALS $(WARN) $(OPT) $(OPTIONS) $(DEBUGFLAGS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC
 # Setjmp_test may yield overly optimistic results when compiled
 #  without optimization.
 # For dynamic library builds, it may be necessary to add flags to generate
@@ -386,7 +386,7 @@ gc.tar.gz: gc.tar
 	gzip gc.tar
 
 lint: $(CSRCS) test.c
-	lint -DLINT $(CSRCS) test.c | egrep -v "possible pointer alignment problem|abort|exit|sbrk|mprotect|syscall"
+	lint -DLINT $(CSRCS) test.c | egrep -v "possible pointer alignment problem|abort|exit|sbrk|mprotect|syscall|change in ANSI|improper alignment"
 
 # BTL: added to test shared library version of collector.
 # Currently works only under SunOS5.  Requires GC_INIT call from statically

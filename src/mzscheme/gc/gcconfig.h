@@ -38,7 +38,6 @@
 #    define HP
 #    define mach_type_known
 # endif
-/* MATTHEW: OpenBSD from Bengt Kleberg */
 # if defined(__OpenBSD__) && defined(m68k)
 #    define M68K
 #    define OPENBSD
@@ -179,7 +178,6 @@
 #   define NEXT
 #   define mach_type_known
 # endif
-/* MATTHEW: OpenBSD from Bengt Kleberg */
 # if defined(__OpenBSD__) && defined(i386)
 #   define I386
 #   define OPENBSD
@@ -216,7 +214,7 @@
 #   define mach_type_known
 # endif
 # if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-     || defined(_WIN32) && !defined(__CYGWIN32__)
+     || defined(_WIN32) && !defined(__CYGWIN32__) && !defined(__CYGWIN__)
 #   define I386
 #   define MSWIN32	/* or Win32s */
 #   define mach_type_known
@@ -228,7 +226,7 @@
 #   endif
 #   define mach_type_known
 # endif
-# if defined(__CYGWIN32__)
+# if defined(__CYGWIN32__) || defined(__CYGWIN__)
 #   define I386
 #   define CYGWIN32
 #   define mach_type_known
@@ -389,7 +387,6 @@
 # ifdef M68K
 #   define MACH_TYPE "M68K"
 #   define ALIGNMENT 2
-/* MATTHEW: OpenBSD from Bengt Kleberg */
 #   ifdef OPENBSD
 #	define OS_TYPE "OPENBSD"
 #	define HEURISTIC2
@@ -506,7 +503,9 @@
 #   endif
 #   ifdef LINUX
 #     define OS_TYPE "LINUX"
-#     define STACKBOTTOM ((ptr_t)0x80000000)
+#     define HEURISTIC1
+#     undef STACK_GRAN
+#     define STACK_GRAN 0x10000000
 #     define DATASTART GC_data_start
       extern int _end;
 #     define DATAEND (&_end)
@@ -751,7 +750,6 @@
                                                      + _stklen))
 		/* This may not be right.  */
 #   endif
-/* MATTHEW: OpenBSD from Bengt Kleberg */
 #   ifdef OPENBSD
 #	define OS_TYPE "OPENBSD"
 #   endif
@@ -768,7 +766,6 @@
 #   ifdef BSDI
 #	define OS_TYPE "BSDI"
 #   endif
-/* MATTHEW: OpenBSD from Bengt Kleberg */
 #   if defined(OPENBSD) || defined(FREEBSD) || defined(NETBSD) \
         || defined(THREE86BSD) || defined(BSDI)
 #	define HEURISTIC2
@@ -923,9 +920,9 @@
 #       endif
 	extern int _end;
 #	define DATAEND (&_end)
-	/* As of 1.3.90, I couldn't find a way to retrieve the correct	*/
-	/* fault address from a signal handler.				*/
-	/* Hence MPROTECT_VDB is broken.				*/
+#	define MPROTECT_VDB
+		/* Has only been superficially tested.  May not	*/
+		/* work on all versions.			*/
 #   endif
 # endif
 
@@ -1053,6 +1050,12 @@
 #   define THREADS
 # endif
 
+/* MATTHEW: added RS6000 */
+# if defined(HP_PA) || defined(M88K) || defined(POWERPC) || defined(RS6000) \
+     || (defined(I386) && defined(OS2)) || defined(UTS4) || defined(LINT)
+	/* Use setjmp based hack to mark from callee-save registers. */
+#	define USE_GENERIC_PUSH_REGS
+# endif
 # if defined(SPARC) && !defined(LINUX)
 #   define SAVE_CALL_CHAIN
 #   define ASM_CLEAR_CODE	/* Stack clearing is crucial, and we 	*/

@@ -164,7 +164,8 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 		if (size_avail != size_needed
 		    && !GC_incremental
 		    && (word)size_needed <= GC_max_hblk_size/2
-		    && GC_in_last_heap_sect(hbp) && GC_should_collect()) {
+		    && GC_in_last_heap_sect((ptr_t)hbp)
+		    && GC_should_collect()) {
 		    continue;
 		} 
 #	    endif
@@ -304,6 +305,7 @@ unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
 	
     /* Notify virtual dirty bit implementation that we are about to write. */
     	GC_write_hint(thishbp);
+	/* This should deal better with large blocks.	*/
     
     /* Add it to map of valid blocks */
     	if (!GC_install_counts(thishbp, (word)size_needed)) return(0);

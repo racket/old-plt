@@ -31,7 +31,11 @@
       /* make sure the former gets defined to be the latter if appropriate. */
 #     include <features.h>
 #     if 2 <= __GLIBC__
-#       include <sigcontext.h>
+#       if 0 == __GLIBC_MINOR__
+	  /* glibc 2.1 no longer has sigcontext.h.  But signal.h	*/
+	  /* has the right declaration for glibc 2.1.			*/
+#         include <sigcontext.h>
+#       endif /* 0 == __GLIBC_MINOR__ */
 #     else /* not 2 <= __GLIBC__ */
         /* libc5 doesn't have <sigcontext.h>: go directly with the kernel   */
         /* one.  Check LINUX_VERSION_CODE to see which we should reference. */
@@ -492,7 +496,9 @@ ptr_t GC_get_stack_base()
 
 #   if defined(SUNOS5SIGS) || defined(IRIX5)
 	static struct sigaction old_segv_act;
-	static struct sigaction old_bus_act;
+#	if defined(_sigargs) /* !Irix6.x */
+	    static struct sigaction old_bus_act;
+#	endif
 #   else
         static handler old_segv_handler, old_bus_handler;
 #   endif
@@ -623,6 +629,9 @@ ptr_t GC_get_stack_base()
 #	    endif
 
 #	endif /* HEURISTIC2 */
+#	ifdef STACK_GROWS_DOWN
+	    if (result == 0) result = (ptr_t)(signed_word)(-sizeof(ptr_t));
+#	endif
     	return(result);
 #   endif /* STACKBOTTOM */
 }
@@ -968,7 +977,7 @@ void GC_register_data_segments()
           		     (ptr_t)LMGetCurrentA5(), FALSE);
 	  /* MATTHEW: Handle Far Globals */          		     
 #         if __option(far_data)
-	  /* Far globals follow the QD globals: */
+      /* Far globals follow he QD globals: */
 	  GC_add_roots_inner((ptr_t)LMGetCurrentA5(),
           		     (ptr_t)GC_MacGetDataEnd(), FALSE);
 #         endif
@@ -1468,11 +1477,27 @@ struct hblk *h;
 #endif
 #if defined(LINUX)
 #   include <linux/version.h>
-#   if (LINUX_VERSION_CODE >= 0x20100)
-      typedef void (* REAL_SIG_PF)(int, struct sigcontext);
+#   if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K) || defined(ALPHA)
+      typedef struct sigcontext s_c;
 #   else
-      typedef void (* REAL_SIG_PF)(int, struct sigcontext_struct);
+      typedef struct sigcontext_struct s_c;
 #   endif
+#   ifdef ALPHA
+    typedef void (* REAL_SIG_PF)(int, int, s_c *);
+    /* Retrieve fault address from sigcontext structure by decoding	*/
+    /* instruction.							*/
+    char * get_fault_addr(s_c *sc) {
+        unsigned instr;
+	word faultaddr;
+
+	instr = *((unsigned *)(sc->sc_pc));
+	faultaddr = sc->sc_regs[(instr >> 16) & 0x1f];
+	faultaddr += (word) (((int)instr << 16) >> 16);
+	return (char *)faultaddr;
+    }
+#   else /* !ALPHA */
+    typedef void (* REAL_SIG_PF)(int, s_c);
+#   endif /* !ALPHA */
 # endif
 
 SIG_PF GC_old_bus_handler;
@@ -1507,10 +1532,10 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 #   endif
 # endif
 # if defined(LINUX)
-#   if (LINUX_VERSION_CODE >= 0x20100) && !defined(M68K)
-      void GC_write_fault_handler(int sig, struct sigcontext sc)
+#   ifdef ALPHA
+      void GC_write_fault_handler(int sig, int code, s_c * sc)
 #   else
-      void GC_write_fault_handler(int sig, struct sigcontext_struct sc)
+      void GC_write_fault_handler(int sig, s_c sc)
 #   endif
 #   define SIG_OK (sig == SIGSEGV)
 #   define CODE_OK TRUE
@@ -1570,9 +1595,11 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 	  }	
 	  addr = (char *)ea;
 #	else
-          char * addr =
-		/* As of 1.3.90 there seemed to be no way to do this
-		   on Linux/Alpha */;
+#	  ifdef ALPHA
+            char * addr = get_fault_addr(sc);
+#	  else
+		--> architecture not supported
+#	  endif
 #	endif
 #     endif
 #   endif
@@ -1624,7 +1651,11 @@ SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
 		    return;
 #		endif
 #		if defined (LINUX)
-		    (*(REAL_SIG_PF)old_handler) (sig, sc);
+#		    ifdef ALPHA
+		        (*(REAL_SIG_PF)old_handler) (sig, code, sc);
+#		    else 
+		        (*(REAL_SIG_PF)old_handler) (sig, sc);
+#		    endif
 		    return;
 #		endif
 #		if defined (IRIX5) || defined(OSF1)

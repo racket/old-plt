@@ -85,6 +85,7 @@ GC_bool GC_dont_expand = 0;
 word GC_free_space_divisor = 4;
 
 extern GC_bool GC_collection_in_progress();
+		/* Collection is in progress, or was abandoned.	*/
 
 int GC_never_stop_func GC_PROTO((void)) { return(0); }
 
@@ -278,7 +279,7 @@ GC_stop_func stop_func;
     if (GC_collect_start_callback)
       GC_collect_start_callback();
 
-    if (GC_collection_in_progress()) {
+    if (GC_incremental && GC_collection_in_progress()) {
 #   ifdef PRINTSTATS
 	GC_printf0(
 	    "GC_try_to_collect_inner: finishing collection in progress\n");
@@ -353,9 +354,9 @@ int n;
 {
     register int i;
     
-    if (GC_collection_in_progress()) {
+    if (GC_incremental && GC_collection_in_progress()) {
     	for (i = GC_deficit; i < GC_RATE*n; i++) {
-    	    if (GC_mark_some()) {
+    	    if (GC_mark_some((ptr_t)0)) {
     	        /* Need to finish a collection */
 #     		ifdef SAVE_CALL_CHAIN
         	    GC_save_callers(GC_last_stack);
@@ -406,6 +407,7 @@ GC_bool GC_stopped_mark(stop_func)
 GC_stop_func stop_func;
 {
     register int i;
+    int dummy;
 #   ifdef PRINTSTATS
 	CLOCK_TYPE start_time, current_time;
 #   endif
@@ -436,7 +438,7 @@ GC_stop_func stop_func;
 	            START_WORLD();
 	            return(FALSE);
 	    }
-	    if (GC_mark_some()) break;
+	    if (GC_mark_some((ptr_t)(&dummy))) break;
 	}
 	
     GC_gc_no++;

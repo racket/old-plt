@@ -341,6 +341,9 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 /* space is assumed to be cleared.				*/
 /* In the case os USE_MMAP, the argument must also be a 	*/
 /* physical page size.						*/
+/* GET_MEM is currently not assumed to retrieve 0 filled space, */
+/* though we should perhaps take advantage of the case in which */
+/* does.							*/
 # ifdef PCR
     char * real_malloc();
 #   define GET_MEM(bytes) HBLKPTR(real_malloc((size_t)bytes + GC_page_size) \
@@ -439,7 +442,7 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #  ifdef LINUX_THREADS
 #    include <pthread.h>
 #    ifdef __i386__
-       inline static GC_test_and_set(volatile unsigned int *addr) {
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
 	  int oldval;
 	  /* Note: the "xchg" instruction does not need a "lock" prefix */
 	  __asm__ __volatile__("xchgl %0, %1"
@@ -484,10 +487,11 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    include <pthread.h>
 #    include <mutex.h>
 
-#    if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64))
+#    if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64)) \
+	|| !defined(_COMPILER_VERSION) || _COMPILER_VERSION < 700
 #        define GC_test_and_set(addr, v) test_and_set(addr,v)
 #    else
-#	  define GC_test_and_set(addr, v) __test_and_set(addr,v)
+#	 define GC_test_and_set(addr, v) __test_and_set(addr,v)
 #    endif
      extern unsigned long GC_allocate_lock;
 	/* This is not a mutex because mutexes that obey the (optional) 	*/
@@ -506,10 +510,17 @@ void GC_print_callers (/* struct callinfo info[NFRAMES] */);
 #    	define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #    else
 #	define LOCK() { if (GC_test_and_set(&GC_allocate_lock, 1)) GC_lock(); }
-#       if __mips >= 3 && (defined (_ABIN32) || defined(_ABI64))
+#       if __mips >= 3 && (defined (_ABIN32) || defined(_ABI64)) \
+	   && defined(_COMPILER_VERSION) && _COMPILER_VERSION >= 700
 #	    define UNLOCK() __lock_release(&GC_allocate_lock)
 #	else
-#           define UNLOCK() GC_allocate_lock = 0
+	    /* The function call in the following should prevent the	*/
+	    /* compiler from moving assignments to below the UNLOCK.	*/
+	    /* This is probably not necessary for ucode or gcc 2.8.	*/
+	    /* It may be necessary for Ragnarok and future gcc		*/
+	    /* versions.						*/
+#           define UNLOCK() { GC_noop1(&GC_allocate_lock); \
+			*(volatile unsigned long *)(&GC_allocate_lock) = 0; }
 #	endif
 #    endif
      extern GC_bool GC_collecting;
@@ -893,7 +904,7 @@ typedef struct ms_entry * (*mark_proc)(/* word * addr, mark_stack_ptr,
 	    /* Under NT, we add only written pages, which can result 	*/
 	    /* in many small root sets.					*/
 #     else
-#       define MAX_ROOT_SETS 1024 /* MATTHEW: was 64, but extensions add a lot */
+#       define MAX_ROOT_SETS 64
 #     endif
 #   endif
 # endif
@@ -1254,10 +1265,6 @@ extern GC_bool GC_dirty_maintained;
 				/* either for incremental collection,	*/
 				/* or to limit the root set.		*/
 
-# ifndef PCR
-    extern ptr_t GC_stackbottom;	/* Cool end of user stack	*/
-# endif
-
 extern word GC_root_size;	/* Total size of registered root sections */
 
 extern GC_bool GC_debugging_started;	/* GC_debug_malloc has been called. */ 
@@ -1321,7 +1328,8 @@ void GC_mark_from_mark_stack(); /* Mark from everything on the mark stack. */
 				/* Return after about one pages worth of   */
 				/* work.				   */
 GC_bool GC_mark_stack_empty();
-GC_bool GC_mark_some();	/* Perform about one pages worth of marking	*/
+GC_bool GC_mark_some(/* cold_gc_frame */);
+			/* Perform about one pages worth of marking	*/
 			/* work of whatever kind is needed.  Returns	*/
 			/* quickly if no collection is in progress.	*/
 			/* Return TRUE if mark phase finished.		*/
@@ -1343,7 +1351,31 @@ void GC_push_dirty(/*b,t*/);      /* Push all possibly changed	 	*/
 				/* on the third arg.			*/
 void GC_push_all_stack(/*b,t*/);    /* As above, but consider		*/
 				    /*  interior pointers as valid  	*/
-void GC_push_roots(/* GC_bool all */); /* Push all or dirty roots.	*/
+void GC_push_all_eager(/*b,t*/);    /* Same as GC_push_all_stack, but   */
+				    /* ensures that stack is scanned	*/
+				    /* immediately, not just scheduled  */
+				    /* for scanning.			*/
+#ifndef THREADS
+  void GC_push_all_stack_partially_eager(/* bottom, top, cold_gc_frame */);
+			/* Similar to GC_push_all_eager, but only the	*/
+			/* part hotter than cold_gc_frame is scanned	*/
+			/* immediately.  Needed to endure that callee-	*/
+			/* save registers are not missed.		*/
+#else
+  /* In the threads case, we push part of the current thread stack	*/
+  /* with GC_push_all_eager when we push the registers.  This gets the  */
+  /* callee-save registers that may disappear.  The remainder of the	*/
+  /* stacks are scheduled for scanning in *GC_push_other_roots, which	*/
+  /* is thread-package-specific.					*/
+#endif
+void GC_push_current_stack(/* ptr_t cold_gc_frame */);
+			/* Push enough of the current stack eagerly to	*/
+			/* ensure that callee-save registers saved in	*/
+			/* GC frames are scanned.			*/
+			/* In the non-threads case, schedule entire	*/
+			/* stack for scanning.				*/
+void GC_push_roots(/* GC_bool all, ptr_t cold_gc_frame */);
+			/* Push all or dirty roots.	*/
 extern void (*GC_push_other_roots)();
 			/* Push system or application specific roots	*/
 			/* onto the mark stack.  In some environments	*/

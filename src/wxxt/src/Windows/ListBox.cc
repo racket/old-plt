@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.3 1998/02/05 23:00:32 mflatt Exp $
+ * $Id: ListBox.cc,v 1.4 1998/02/27 02:41:35 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -170,25 +170,33 @@ void wxListBox::SetSize(int x, int y, int width, int height, int flags)
 
 void wxListBox::Append(char *item)
 {
-    if (num_free == 0) {
-	num_free = LIST_CHUNK_SIZE;
-	char    **new_choices     = new char *[num_choices+LIST_CHUNK_SIZE];
-	char    **new_client_data = new char *[num_choices+LIST_CHUNK_SIZE];
-	// copy current choices
-	for (int i=0; i<num_choices; ++i) {
-	    new_choices[i] = choices[i];
-	    new_client_data[i] = client_data[i];
-	}
-	// delete old arrays
-	delete choices;      choices = new_choices;
-	delete client_data;  client_data = new_client_data;
+  int i, count, *selections;
+
+  count = GetSelections(&selections);
+
+  if (num_free == 0) {
+    num_free = LIST_CHUNK_SIZE;
+    char    **new_choices     = new char *[num_choices+LIST_CHUNK_SIZE];
+    char    **new_client_data = new char *[num_choices+LIST_CHUNK_SIZE];
+    // copy current choices
+    for (i=0; i<num_choices; ++i) {
+      new_choices[i] = choices[i];
+      new_client_data[i] = client_data[i];
     }
-    // set new item
-    choices[num_choices]     = copystring(item);
-    client_data[num_choices] = NULL;
-    // one choice more, one free space less
-    ++num_choices; --num_free;
-    SetInternalData();
+    // delete old arrays
+    delete choices;      choices = new_choices;
+    delete client_data;  client_data = new_client_data;
+  }
+  // set new item
+  choices[num_choices]     = copystring(item);
+  client_data[num_choices] = NULL;
+  // one choice more, one free space less
+  ++num_choices; --num_free;
+  SetInternalData();
+
+  while (count--) {
+    SetSelection(selections[count], TRUE);
+  }
 }
 
 void wxListBox::Append(char *item, char *_client_data)
@@ -218,13 +226,25 @@ void wxListBox::Clear(void)
 void wxListBox::Delete(int n)
 {
     if (0 <= n && n < num_choices) {
-	delete choices[n]; // free string;
-	for (int i=n+1; i<num_choices; ++i) { // shrink arrays
-	    choices[i-1] = choices[i];
-	    client_data[i-1] = client_data[i];
-	}
-	--num_choices; ++num_free;
-	SetInternalData();
+      int i, count, *selections;
+      
+      count = GetSelections(&selections);
+
+
+      delete choices[n]; // free string;
+      for (i=n+1; i<num_choices; ++i) { // shrink arrays
+	choices[i-1] = choices[i];
+	client_data[i-1] = client_data[i];
+      }
+      --num_choices; ++num_free;
+      SetInternalData();
+
+      while (count--) {
+	if (selections[count] < n)
+	  SetSelection(selections[count], TRUE);
+	else if (selections[count] > n)
+	  SetSelection(selections[count] - 1, TRUE);
+      }
     }
 }
 
@@ -306,19 +326,6 @@ void wxListBox::SetInternalData(void)
 
 void wxListBox::SetFirstItem(int n)
 {
-#if 0
-  /* MATTHEW: [6] No */
-    if (0 <= n && n < num_choices) {
-	char *_choice, *_client_data;
-	_choice        = choices[0];
-	choices[0]     = choices[n];
-	choices[n]     = _choice;
-	_client_data   = client_data[0];
-	client_data[0] = client_data[n];
-	client_data[n] = _client_data;
-	SetInternalData();
-    }
-#endif
     Dimension row_height;
     XtVaGetValues(X->handle, XtNrowHeight, &row_height, NULL);
     Scroll(0, n * row_height);
@@ -395,7 +402,13 @@ int wxListBox::GetSelections(int **list_selections)
 {
     XfwfMultiListReturnStruct *rs
 	= XfwfMultiListGetHighlighted(MULTILIST);
-    *list_selections = rs->selected_items;
+
+    int *selections = new int[rs->num_selected], i;
+    for (i = 0; i < rs->num_selected; i++)
+      selections[i] = rs->selected_items[i];
+    
+    *list_selections = selections;
+
     return (rs->num_selected);
 }
 
@@ -488,7 +501,11 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
 	return; /* MATTHEW */
     }
 
-    event.commandInt    = lbox->GetSelection();
+    if (rs->action != XfwfMultiListActionUnhighlight)
+      event.commandInt    = lbox->GetSelection();
+    else
+      event.commandInt    = -1;
+
     if (event.commandInt > -1) {
 	event.commandString = lbox->GetString(event.commandInt);
 	event.clientData    = lbox->GetClientData(event.commandInt);

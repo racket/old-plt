@@ -284,7 +284,7 @@ static char *error_write_to_string_w_max(Scheme_Object *v, int len, int *lenout)
   Scheme_Object *o, *args[3];
 
   o = scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER);
-
+  
   if (SAME_OBJ(o, def_err_val_proc)
       || (scheme_current_process->err_val_str_invoked)) {
     long l;
@@ -539,15 +539,16 @@ void scheme_wrong_syntax(const char *where,
 
   s = init_buf(&len);
 
-  if (form)
-    v = error_write_to_string_w_max(form, len, NULL);
+
+  if (form) 
+    v = scheme_write_to_string_w_max(form, NULL, len);
   else {
     form = scheme_false;
     v = NULL;
   }
 
   if (detail_form)
-    dv = error_write_to_string_w_max(detail_form, len, NULL);
+    dv = scheme_write_to_string_w_max(detail_form, NULL, len);
   else
     dv = NULL;
 

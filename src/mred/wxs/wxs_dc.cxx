@@ -419,7 +419,7 @@ static inline double approx_dist(double x, double y)
 {
   x = fabs(x);
   y = fabs(y);
-  return ((x < y) ? x : y);
+  return ((x < y) ? y : x);
 }
 
 #ifdef MZ_PRECISE_GC

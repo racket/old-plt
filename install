@@ -39,11 +39,6 @@ else
   exit 1
 fi
 
-# Prefer MrEd on Windows.
-if [ -e "$plt/MrEd.exe" ]; then
-  mz="$pltdir/MrEd.exe"
-fi
-
 exec "$mz" -qC "$0" "$@"
 exit 1
 |#

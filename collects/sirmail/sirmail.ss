@@ -8,7 +8,8 @@
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
 	   (lib "mred-sig.ss" "mred")
-	   (lib "mred.ss" "mred"))
+	   (lib "mred.ss" "mred")
+           (lib "framework.ss" "framework"))
   
   (require "sirmails.ss"
 	   "keyfunc.ss"
@@ -51,6 +52,7 @@
     (semaphore-wait exit-sema)
     (set! exit-count (sub1 exit-count))
     (when (zero? exit-count)
+      (preferences:save)
       (prim-exit 0))
     (semaphore-post exit-sema))
 

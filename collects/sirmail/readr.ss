@@ -5,7 +5,8 @@
 	   (lib "class100.ss")
            (lib "file.ss")
            (lib "etc.ss")
-	   (lib "mred-sig.ss" "mred"))
+	   (lib "mred-sig.ss" "mred")
+           (lib "framework.ss" "framework"))
 
   (require (lib "string.ss")
            (lib "list.ss"))
@@ -428,19 +429,26 @@
       ;;  Mail Reader GUI                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
-      (define FRAME-WIDTH 560)
-      (define FRAME-HEIGHT 600)
-      (let-values ([(display-width display-height) (get-display-size)])
-	(set! FRAME-HEIGHT (min display-height FRAME-HEIGHT))
-	(set! FRAME-WIDTH (min display-width FRAME-WIDTH)))
-      
-      
+      (let ([fw 560]
+            [fh 600])
+        (let-values ([(display-width display-height) (get-display-size)])
+          (preferences:set-default 'sirmail:frame-width
+                                   (min display-height fh)
+                                   (lambda (x) (and (number? x) (<= 0 x 32768))))
+          (preferences:set-default 'sirmail:frame-height 
+                                   (min display-width fw)
+                                   (lambda (x) (and (number? x) (<= 0 x 32768))))))
+
       (define FROM-WIDTH 150)
       (define SUBJECT-WIDTH 300)
-      (define (update-frame-width w)
-	(set! FRAME-WIDTH w)
+
+      ;; update-frame-width : -> void
+      ;; updates the green line's width
+      ;; preferences's value of sirmail:frame-width must be 
+      ;; up to date before calling this function
+      (define (update-frame-width)
 	(let* ([goofy-margin 15]
-	       [calc-w (- FRAME-WIDTH goofy-margin)])
+	       [calc-w (- (preferences:get 'sirmail:frame-width) goofy-margin)])
 	  (set! FROM-WIDTH (quotient calc-w 3))
 	  (set! SUBJECT-WIDTH (- calc-w FROM-WIDTH)))
 	
@@ -453,10 +461,10 @@
 				(let loop ([s (send e find-first-snip)]
 					   [l null])
 				  (cond
-				   [(not s) (reverse! l)]
-				   [(is-a? s editor-snip%) (loop (send s next)
-								 (cons s l))]
-				   [else (loop (send s next) l)]))]
+                                    [(not s) (reverse! l)]
+                                    [(is-a? s editor-snip%) (loop (send s next)
+                                                                  (cons s l))]
+                                    [else (loop (send s next) l)]))]
 			       [from-snip (car embedded-editors)]
 			       [subject-snip (cadr embedded-editors)])
 			  (send from-snip set-min-width FROM-WIDTH)
@@ -466,7 +474,7 @@
 		      (send header-list get-items))
 	    (send e end-edit-sequence))))
       
-      (update-frame-width FRAME-WIDTH)
+      (update-frame-width)
       
       (define show-full-headers? #f)
       (define quote-in-reply? #t)
@@ -614,7 +622,9 @@
           (override
             [on-size
              (lambda (w h)
-               (update-frame-width w))]
+               (preferences:set 'sirmail:frame-width w)
+               (preferences:set 'sirmail:frame-height h)
+               (update-frame-width))]
             [can-close? (lambda () (send (get-menu-bar) is-enabled?))]
             [on-close (lambda () (logout))]
             [on-subwindow-char
@@ -989,12 +999,20 @@
       
       (define display-text% (html-text-mixin text%))
       
-      (define f (make-object sm-frame% mailbox-name #f FRAME-WIDTH FRAME-HEIGHT))
+      (define f (make-object sm-frame% mailbox-name #f 
+                  (preferences:get 'sirmail:frame-width)
+                  (preferences:get 'sirmail:frame-height)))
       (set! main-frame f)
-      (define button-panel (make-object horizontal-panel% f))
-      (define header-list (make-object header-list% f))
+      (define sizing-panel (make-object panel:vertical-dragable% f))
+      (define top-half (make-object vertical-panel% sizing-panel))
+      (define button-panel (make-object horizontal-panel% top-half))
+      (define header-list (make-object header-list% top-half))
       (send (send header-list get-editor) set-line-spacing 0)
-      (define message (make-object editor-canvas% f))
+      (define message (make-object editor-canvas% sizing-panel))
+      (send header-list min-height 20)
+      (send header-list stretchable-height #t)
+      (send main-frame reflow-container)
+      (send sizing-panel set-percentages (list 1/3 2/3))
       (let ([e (make-object display-text%)])
 	((current-text-keymap-initializer) (send e get-keymap))
 	(send e set-max-undo-history 0)
@@ -1516,10 +1534,6 @@
 	    AUTO-FILE-TABLE))
 	 void)
 	(status "Auto file done"))
-      
-      (send header-list min-height 150)
-      (send header-list stretchable-height #f)
-      (send message min-height 200)
       
       (send button-panel stretchable-height #f)
       (define disable-button-panel (make-object horizontal-panel% button-panel))

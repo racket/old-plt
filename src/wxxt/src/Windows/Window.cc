@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.31 1999/11/04 17:25:39 mflatt Exp $
+ * $Id: Window.cc,v 1.32 1999/11/10 03:46:20 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -488,10 +488,12 @@ void wxWindow::SetBackgroundColour(wxColour *col)
 
 wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
 {
+  wxCursor *previous;
+
   if (!X->handle) // forbid, if no widget associated
     return NULL;
   
-  wxCursor *previous = cursor;
+  previous = cursor;
   
   if (!new_cursor || (new_cursor && new_cursor->Ok())) {
     cursor = new_cursor;
@@ -520,10 +522,8 @@ void wxWindow::SetForegroundColour(wxColour *col)
 
 void wxWindow::SetConstraints(wxLayoutConstraints *constr)
 {
-    if (constr) {
-	delete constraints;
-	constraints = constr;
-    }
+  if (constr)
+    constraints = constr;
 }
 
 // void wxWindow::Layout(void)
@@ -535,8 +535,8 @@ void wxWindow::SetConstraints(wxLayoutConstraints *constr)
 
 void wxWindow::EnableScrolling(Bool x, Bool y)
 {
-    if (X->scroll)
-	XtVaSetValues(X->scroll, XtNhideHScrollbar, !x, XtNhideVScrollbar, !y, NULL);
+  if (X->scroll)
+    XtVaSetValues(X->scroll, XtNhideHScrollbar, !x, XtNhideVScrollbar, !y, NULL);
 }
 
 int wxWindow::GetScrollPos(int orient)
@@ -1103,15 +1103,18 @@ void wxWindow::RegisterAll(Widget ww)
     Cardinal c, i;
 
     XtVaGetValues(ww, XtNchildren, &w, XtNnumChildren, &c, NULL);
-    for (i = 0; i < c; i++)
+    for (i = 0; i < c; i++) {
       RegisterAll(w[i]);
+    }
   }
 }
 
 void wxWindow::AddEventHandlers(void)
 {
-    if (!X->frame || !X->handle) // forbid, if no widget associated
-	return;
+  wxWindow * win;
+
+  if (!X->frame || !X->handle) // forbid, if no widget associated
+    return;
 
     // event handler for frame
     XtInsertEventHandler(X->frame,		// handle events for frame widget
@@ -1151,7 +1154,7 @@ void wxWindow::AddEventHandlers(void)
 		    (XtPointer)saferef);
     }
 
-    wxWindow *win = this;
+    win = this;
 
     win->X->translations_eventmask = XtBuildEventMask(win->X->handle);
     XtInsertEventHandler
@@ -1252,67 +1255,49 @@ void wxWindow::FrameEventHandler(Widget w,
   if (!win)
     return;
 
-    switch (xev->xany.type) {
-    case ClientMessage:
-// 	printf("ClientMessage <%s> for %s\n",
-// 	       XGetAtomName(XtDisplay(w), xev->xclient.message_type),
-// 	       win->GetName());
-	// only wxFrames have a WM_DELETE_WINDOW property
-	if(!strcmp(XGetAtomName(XtDisplay(w),xev->xclient.message_type),"WM_PROTOCOLS")
-	&& !strcmp(XGetAtomName(XtDisplay(w),xev->xclient.data.l[0]),"WM_DELETE_WINDOW")){
-	    // I've reveived a WM_DELETE_WINDOW message for win
-	    wxWindow *current_modal = wxGetModalWindow(win);
-	    if (current_modal && (current_modal != win))
-	      return;
-#if 0
-	    if (wxModalShowingStack.Number()>0 && wxModalFrames.First()->Data()!=win)
-		// forbid closing if there is a top-modal frame other than this
-		return;
-#endif
-	    
-	    // remove any focus.
-	    /* MATTHEW: [3] No! */
-	    /* XSetInputFocus(XtDisplay(w), None, RevertToNone, CurrentTime); */
-	    /* wxFlushEvents(); */
-
-	    // delete frame, if allowed
-	    if (win->GetEventHandler()->OnClose())
-	      /* MATTHEW: [3] In GC mode, hide instead of destroy */
-#if !WXGARBAGE_COLLECTION_ON
-		delete win;
-#else
-	        win->Show(FALSE);
-#endif
-	}
-	break;
-    case CreateNotify:
-	/* MATTHEW: was here */
-	break;
-    case ConfigureNotify:
-	// layout window
-	win->Layout();
-	// notify size and position change
-	win->GetEventHandler()->OnMove(xev->xconfigure.width, xev->xconfigure.height);
-	win->GetEventHandler()->OnSize(xev->xconfigure.width, xev->xconfigure.height);
-	break;
-    case UnmapNotify:
-        if (wxSubType(win->__type, wxTYPE_DIALOG_BOX)) {
-	  /* Check for a frame in the parent hierarchy: */
-	  wxWindow *p = win->GetParent();
-	  while (p) {
-	    if (!wxSubType(p->__type, wxTYPE_DIALOG_BOX))
-	      break;
-	    p = p->GetParent();
-	  }
-	  /* No parent? Can't iconize. */
-	  if (!p) {
-            if (win->IsShown()) {
-              ((wxDialogBox *)win)->Iconize(FALSE);
-	    }
-	  }
-	}
-	break;
+  switch (xev->xany.type) {
+  case ClientMessage:
+    // only wxFrames have a WM_DELETE_WINDOW property
+    if(!strcmp(XGetAtomName(XtDisplay(w),xev->xclient.message_type),"WM_PROTOCOLS")
+       && !strcmp(XGetAtomName(XtDisplay(w),xev->xclient.data.l[0]),"WM_DELETE_WINDOW")){
+      // I've reveived a WM_DELETE_WINDOW message for win
+      wxWindow *current_modal = wxGetModalWindow(win);
+      if (current_modal && (current_modal != win))
+	return;
+	
+      // delete frame, if allowed
+      if (win->GetEventHandler()->OnClose())
+	win->Show(FALSE);
     }
+    break;
+  case CreateNotify:
+    break;
+  case ConfigureNotify:
+    // layout window
+    win->Layout();
+    // notify size and position change
+    win->GetEventHandler()->OnMove(xev->xconfigure.width, xev->xconfigure.height);
+    win->GetEventHandler()->OnSize(xev->xconfigure.width, xev->xconfigure.height);
+    break;
+  case UnmapNotify:
+    if (wxSubType(win->__type, wxTYPE_DIALOG_BOX)) {
+      /* Check for a frame in the parent hierarchy: */
+      wxWindow *p;
+      p = win->GetParent();
+      while (p) {
+	if (!wxSubType(p->__type, wxTYPE_DIALOG_BOX))
+	  break;
+	p = p->GetParent();
+      }
+      /* No parent? Can't iconize. */
+      if (!p) {
+	if (win->IsShown()) {
+	  ((wxDialogBox *)win)->Iconize(FALSE);
+	}
+      }
+    }
+    break;
+  }
 }
 
 void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
@@ -1320,14 +1305,14 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
 				  XtPointer p_XfwfScrollInfo)
 {
   XfwfScrollInfo *sinfo = (XfwfScrollInfo*)p_XfwfScrollInfo;
-  
-  wxScrollEvent *_wxevent = new wxScrollEvent();
-  wxScrollEvent &wxevent = *_wxevent;
-  
+  wxScrollEvent *wxevent;
+
   wxWindow *win = *winp;
   if (!win)
     return;
 
+  wxevent = new wxScrollEvent();
+  
   if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
     int dir;
     switch (sinfo->reason) {
@@ -1376,7 +1361,7 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
       dir = wxHORIZONTAL;
       break;
     }
-    wxevent.pos = win->GetScrollPos(dir);
+    wxevent->pos = win->GetScrollPos(dir);
   } else {
     // sinfo->gx and sinfo->gy are set by the ScrolledWindow widget
     XtMoveWidget(win->X->handle, sinfo->gx, sinfo->gy);
@@ -1384,33 +1369,33 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
   }
   
   if (win->misc_flags & NO_AUTO_SCROLL_FLAG) {
-    wxevent.eventHandle = (char*)p_XfwfScrollInfo;
-    WXSCROLLORIENT(wxevent) = wxHORIZONTAL;
+    wxevent->eventHandle = (char*)p_XfwfScrollInfo;
+    wxevent->direction = wxHORIZONTAL;
     switch (sinfo->reason) {
-    case XfwfSUp:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-    case XfwfSLeft:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_LINEUP;
+    case XfwfSUp:	wxevent->direction = wxVERTICAL;
+    case XfwfSLeft:	wxevent->moveType = wxEVENT_TYPE_SCROLL_LINEUP;
       break;
-    case XfwfSDown:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-    case XfwfSRight:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_LINEDOWN;
+    case XfwfSDown:	wxevent->direction = wxVERTICAL;
+    case XfwfSRight:	wxevent->moveType = wxEVENT_TYPE_SCROLL_LINEDOWN;
       break;
-    case XfwfSPageUp:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-    case XfwfSPageLeft:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_PAGEUP;
+    case XfwfSPageUp:	wxevent->direction = wxVERTICAL;
+    case XfwfSPageLeft:	wxevent->moveType = wxEVENT_TYPE_SCROLL_PAGEUP;
       break;
-    case XfwfSPageDown:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-    case XfwfSPageRight:WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_PAGEDOWN;
+    case XfwfSPageDown:	wxevent->direction = wxVERTICAL;
+    case XfwfSPageRight:wxevent->moveType = wxEVENT_TYPE_SCROLL_PAGEDOWN;
       break;
-    case XfwfSTop:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-    case XfwfSLeftSide:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_TOP;
+    case XfwfSTop:	wxevent->direction = wxVERTICAL;
+    case XfwfSLeftSide:	wxevent->moveType = wxEVENT_TYPE_SCROLL_TOP;
       break;
-    case XfwfSBottom:	WXSCROLLORIENT(wxevent) = wxVERTICAL;
-    case XfwfSRightSide:WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_BOTTOM;
+    case XfwfSBottom:	wxevent->direction = wxVERTICAL;
+    case XfwfSRightSide:wxevent->moveType = wxEVENT_TYPE_SCROLL_BOTTOM;
       break;
-    case XfwfSDrag:	WXSCROLLPOS(wxevent) = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+    case XfwfSDrag:	wxevent->moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
     default:
       break;
     }
 
-    win->GetEventHandler()->OnScroll(wxevent);
+    win->GetEventHandler()->OnScroll(*wxevent);
 
     wxevent.eventHandle = NULL;
   }
@@ -1436,9 +1421,11 @@ void wxWindow::WindowEventHandler(Widget w,
 
     switch (xev->xany.type) {
     case KeyPress: {
-	wxKeyEvent *wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
-
+	wxKeyEvent *wxevent;
 	KeySym	   keysym;
+
+	wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+
 	(void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
 
 	if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
@@ -1484,7 +1471,8 @@ void wxWindow::WindowEventHandler(Widget w,
 	      wxWindow *p = win;
 	      while (p) {
 		if (wxSubType(p->__type, wxTYPE_FRAME)) {
-		  wxMenuBar *mb = ((wxFrame *)p)->GetMenuBar();
+		  wxMenuBar *mb;
+		  mb = ((wxFrame *)p)->GetMenuBar();
 		  if (mb)
 		    mb->SelectAMenu();
 		  break;
@@ -1575,9 +1563,11 @@ void wxWindow::WindowEventHandler(Widget w,
 	  }
 	}
       } else {
-        wxMouseEvent *wxevent = new wxMouseEvent(Enter 
-						 ? wxEVENT_TYPE_ENTER_WINDOW 
-						 : wxEVENT_TYPE_LEAVE_WINDOW);
+        wxMouseEvent *wxevent;
+
+	wxevent = new wxMouseEvent(Enter 
+				   ? wxEVENT_TYPE_ENTER_WINDOW 
+				   : wxEVENT_TYPE_LEAVE_WINDOW);
 
 	// set wxWindows event structure
 	wxevent->eventHandle	= (char*)xev;
@@ -1598,7 +1588,9 @@ void wxWindow::WindowEventHandler(Widget w,
       }
       break;
     case MotionNotify: {
-	wxMouseEvent *wxevent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
+	wxMouseEvent *wxevent;
+
+	wxevent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 
 	if (xev->xmotion.is_hint == NotifyHint) {
 	    // hints need a XQueryPointer
@@ -1683,11 +1675,12 @@ void wxWindow::WindowEventHandler(Widget w,
 
 void wxWindow::CreateDC(void)
 {
+    wxWindowDC_Xinit init;
+
     if (dc) return; // only create once!
 
     dc = DEBUG_NEW wxWindowDC;
     // Initialize wxWindowDC
-    wxWindowDC_Xinit init;
     init.dpy      = wxAPP_DISPLAY; // display is global to application
     init.scn      = wxAPP_SCREEN;  //  screen is global to application
     init.owner    = this;
@@ -1723,6 +1716,7 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
 {
     int direction, ascent, descent2;
     XCharStruct overall;
+    void *ifont;
 
     if (dc) {
       dc->GetTextExtent(s, w, h, descent, ext_leading, theFont, use16bit);
@@ -1730,7 +1724,8 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
     }
 
     if (!theFont) theFont = font;
-    XTextExtents((XFontStruct*)theFont->GetInternalFont(), s, strlen(s),
+    ifont = theFont->GetInternalFont();
+    XTextExtents((XFontStruct *)ifont, s, strlen(s),
 		 &direction, &ascent, &descent2, &overall);
     *w = (float)(overall.width);
     *h = (float)(ascent + descent2);
@@ -1743,8 +1738,9 @@ void wxWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
 {
   wxChildNode *node, *next;
   for (node = children->First(); node; node = next) {
+    wxWindow *child;
     next = node->Next();
-    wxWindow *child = (wxWindow*)(node->Data());
+    child = (wxWindow*)(node->Data());
     if (child) {
       child->ForEach(foreach, data);
     }

@@ -641,24 +641,24 @@ if test -n "$ac_init_help"; then
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  feature: mred           compile MrEd as well as MzScheme (enabled by default)
-  feature: gl             include OpenGL support in MrEd (enabled by default)
-  feature: dynlib         create shared libraries
-  feature: sgc            use Senora GC instead of the Boehm GC
-  feature: sgcdebug       use Senora GC for debugging
-  feature: account        3m: use memory-accounting GC
-  feature: paccount       3m: use precise memory-accounting GC
-  feature: float          include support for single-precision floats
-  feature: floatinstead   compile to use single-precision by default
-  feature: oskit          compile OSKit-based MzScheme kernel
-  feature: smalloskit     compile small OSKit-based MzScheme kernel
-  feature: wbuild         compile and use wbuild for .w sources
-  feature: perl           use perl to regenerate sources
-  feature: gprof          compile for profiling with gprof (gcc only)
-  feature: gcov           compile to gather gcov statistics (gcc3 only)
-  feature: noopt          drop -O C flags
-  feature: xonx           compile X11 (not Quartz) MrEd for Mac OS X
-  feature: libfw          install Mac OS X frameworks to /Library/Frameworks
+  --enable-mred           compile MrEd as well as MzScheme (enabled by default)
+  --enable-gl             include OpenGL support in MrEd (enabled by default)
+  --enable-dynlib         create shared libraries
+  --enable-sgc            use Senora GC instead of the Boehm GC
+  --enable-sgcdebug       use Senora GC for debugging
+  --enable-account        3m: use memory-accounting GC
+  --enable-paccount       3m: use precise memory-accounting GC
+  --enable-float          include support for single-precision floats
+  --enable-floatinstead   compile to use single-precision by default
+  --enable-oskit          compile OSKit-based MzScheme kernel
+  --enable-smalloskit     compile small OSKit-based MzScheme kernel
+  --enable-wbuild         compile and use wbuild for .w sources
+  --enable-perl           use perl to regenerate sources
+  --enable-gprof          compile for profiling with gprof (gcc only)
+  --enable-gcov           compile to gather gcov statistics (gcc3 only)
+  --enable-noopt          drop -O C flags
+  --enable-xonx           compile X11 (not Quartz) MrEd for Mac OS X
+  --enable-libfw          install Mac OS X frameworks to /Library/Frameworks
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]

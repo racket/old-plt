@@ -27,7 +27,7 @@ Exception Information
 Loading errortrace.ss file sets the eval handler to instrument
 Scheme source code. 
 
- NOTE: errortrace has no effect on code loaded as compiled byte codes
+ NOTE: errortrace has no effect on code loaded as compiled byte code
  (i.e., from a .zo file) or native code (i.e., from a .dll or .so
  file).
 
@@ -47,17 +47,22 @@ is reported.
 > (instrumenting-enabled on?) - enables/disables error tracing
   instrumentation
 
-Do not load errortrace.ss before writing .zo files. Errortrace
-instrumentats S-expressions with unprintable values; this works fine
-if the instrumented S-expression is passed to the default eval
-handler, but neither the S-expression nor its bytecode form can be
-marshalled to a string.
-
-The parameter _current-continuations-to-display_ controls how much context
-to display. It is defaultly set to 10.
-
 The instrucmentation for storing exception information slows most
 programs by a factor of 2 or 3.
+
+Do not load errortrace.ss before writing .zo files. Errortrace
+instruments S-expressions with unprintable values; this works fine if
+the instrumented S-expression is passed to the default eval handler,
+but neither the S-expression nor its byte-code form can be marshalled
+to a string.
+
+The `error-context-display-depth' parameter controls how much context
+errortrace's exception handler displays. The default value is 10000.
+
+> (error-context-display-depth) - returns the current context display
+  depth
+> (error-context-display-depth d) - sets the context display depth to
+  `d'
 
 Profiling
 ---------

@@ -6,12 +6,12 @@
 (invoke-open-unit
  (unit 
    (import)
-   (export current-continuations-to-display instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
+   (export error-context-display-depth instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
    
    (define key (gensym 'key))
 
    (define instrumenting-enabled (make-parameter #t))
-   (define current-continuations-to-display (make-parameter 10 number?))
+   (define error-context-display-depth (make-parameter 10000 (lambda (x) (and (integer? x) x))))
 
    (define profile-thread #f)
    (define profile-key (gensym))
@@ -289,7 +289,7 @@
 	    (let ([p (current-error-port)])
 	      (display (exn-message x) p)
 	      (newline p)
-	      (let loop ([n (current-continuations-to-display)]
+	      (let loop ([n (error-context-display-depth)]
 			 [l (exn-debug-info x)])
 		(cond
 		 [(or (zero? n) (null? l)) (void)]

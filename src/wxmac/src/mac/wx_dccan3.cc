@@ -117,6 +117,10 @@ static CGSize sizes_buf[QUICK_UBUF_SIZE];
 static CGFontRef prev_cgf;
 static short cgf_txFont, cgf_txFace;
 
+/* This undocumented Quartz function controls how fonts are anti-aliased.
+   (I discovered it by running `nm' on the "QD" framework.)
+   Mode 0 is normal anti-aliasing, mode 1 is no anti-aliasing, and mode 2 is
+   4-bit pixel-aligned anti-aliasing (the old QuickDraw standard). */
 extern "C" void CGContextSetFontRenderingMode(CGContextRef cg, int v);
 
 //-----------------------------------------------------------------------------
@@ -127,13 +131,16 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
 
   if (!Ok()) return;
 
-#if 1
+  /* If characters should not be combined (i.e., they should be drawn
+     separately), then try fast mode, using size and glyph information
+     gleaned from ATSUI on a previous round. We can save a factor of
+     10 for all but the smallest strings by avoiding ATSUI this
+     time. */
   if (!combine 
       && ucs4 
       && (angle == 0.0) 
       && table_key
       && (current_bk_mode == wxTRANSPARENT)) {
-    
     int i;
     unsigned int *s = (unsigned int *)text;
     wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
@@ -173,6 +180,8 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
 
     old = pre_scheme();
 
+    /* Check whether all of the characters have known widths and known
+       glyphs: */ 
     for (i = d; s[i]; i++) {
       k->code = s[i];
       val = scheme_hash_get(width_table, table_key);
@@ -200,6 +209,7 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
     post_scheme(old);
 
     if (!s[i]) {
+      /* Yes, all widths and glyphs are known. Use Quartz directly. */
       FMFont fnt;
       FMFontStyle intrinsic;
       int done = 0;
@@ -295,7 +305,8 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
 	return;
     }
   }
-#endif
+
+  /* Fall back to default mode. */
 
   SetCurrentDC();
 

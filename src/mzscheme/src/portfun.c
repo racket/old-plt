@@ -3682,21 +3682,21 @@ write_byte (int argc, Scheme_Object *argv[])
   unsigned char buffer[1];
 
   if (argc && !SCHEME_INTP(argv[0]))
-    scheme_wrong_type("write-char", "exact integer in [0,255]", 0, argc, argv);
+    scheme_wrong_type("write-byte", "exact integer in [0,255]", 0, argc, argv);
   v = SCHEME_INT_VAL(argv[0]);
   if ((v < 0) || (v > 255))
-    scheme_wrong_type("write-char", "exact integer in [0,255]", 0, argc, argv);
+    scheme_wrong_type("write-byte", "exact integer in [0,255]", 0, argc, argv);
 
   if (argc > 1) {
     if (!SCHEME_OUTPORTP(argv[1]))
-      scheme_wrong_type("write-char", "output-port", 1, argc, argv);
+      scheme_wrong_type("write-byte", "output-port", 1, argc, argv);
     port = argv[1];
   } else
     port = CURRENT_OUTPUT_PORT(scheme_current_config());
 
   buffer[0] = v;
 
-  scheme_put_byte_string("write-char", port,
+  scheme_put_byte_string("write-byte", port,
 			 (char *)buffer, 0, 1,
 			 0);
 

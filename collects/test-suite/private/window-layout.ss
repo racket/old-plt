@@ -27,7 +27,7 @@
       (define window%
         (class* super:window% (test-suite:window<%>)
           (inherit get-area-container)
-          (inherit-field model new delete execute break save)
+          (inherit-field model new new-helper delete execute break save)
           
           ;; update-executing (boolean? . -> . void?)
           ;; called when the model changes execution modes
@@ -36,11 +36,13 @@
             (if executing?
                 (begin
                   (send new-button enable false)
+		  (send new-helper-button enable false)
                   (send delete-button enable false)
                   (send execute-button enable false)
                   (hide-error-panel))
                 (begin
                   (send new-button enable true)
+                  (send new-helper-button enable true)
                   (send delete-button enable true)
                   (send execute-button enable true)))
             (super-update-executing executing?))
@@ -86,6 +88,13 @@
                 (get-area-container)))
               (parent button-panel)
               (callback (lambda (b e) (new))))]
+	   [new-helper-button
+            (instantiate button% ()
+              (label
+               ((drscheme:unit:make-bitmap "New Helpers" *empty-icon*)
+                (get-area-container)))
+              (parent button-panel)
+              (callback (lambda (b e) (new-helper))))]
            [delete-button
             (instantiate button% ()
               (label

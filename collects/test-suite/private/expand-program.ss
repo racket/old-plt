@@ -102,6 +102,24 @@
                    [else (error 'eval-text "Error")])))
              #f))
           
+          ;; expand-text ((is-a?/c text%) (any? . -> . void?) . -> . void?)
+          ;; evaluate the text box and call the function with it's value
+          (define/public (expand-text/multiple text next) ; =drscheme-eventspace=
+            (expand-program
+             (drscheme:language:make-text/pos
+              text 0 (send text last-position))
+             (lambda (object continue) ; =user-eventspace=
+               (cond
+                 [(eof-object? object)
+                  (queue-to-drscheme
+                   (lambda () ; =drscheme-eventspace=
+                     (next)))]
+                 [(syntax? object)
+                  (eval object)
+                  (continue)]
+                 [else (error 'eval-text "Error")]))
+             #f))
+          
           ;; eval-syntax (syntax? (any? . -> . void?) . -> . void?)
           ;; evaluate the syntax in the users eventspace
           (define/public (eval-syntax syntax-object next) ; =drscheme-eventspace=

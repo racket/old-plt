@@ -25,6 +25,8 @@
       get-error-handler
       ))
  
+  ;; should this have focus-first? It seems to be called on a case!
+  
   ;; the interface that is implemented by item in a test-suite
   (define test-suite:item<%>
     (interface (aligned-snip<%>)
@@ -59,6 +61,10 @@
       ;; insert-case (-> void?)
       ;; adds a new test case to the test-suite
       insert-case
+
+      ;; insert-helper (-> void?)
+      ;; adds a new helper function definitions section to the test-suite
+      insert-helper
       
       ;; delete-case (-> void?)
       ;; removes the case that currently has focus

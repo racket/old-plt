@@ -16,6 +16,7 @@
    "private/case-layout.ss"
    "private/case-tab.ss"
    "private/def.ss"
+   "private/helper.ss"
    "private/expand-program.ss")
   
   (provide tool@)
@@ -94,8 +95,14 @@
             (WINDOW-MENUS    : window^ (window-menus@ WINDOW-LAYOUT))
             (WINDOW-LANGUAGE : window^ (window-language@ TOOL WINDOW-MENUS))
             
-            (MODEL           : model^ (model@ TOOL CASE-SNIPCLASS DEF EXPAND-PROGRAM))
+            (MODEL           : model^ (model@ TOOL
+					      CASE-SNIPCLASS
+					      DEF
+					      HELPER
+					      EXPAND-PROGRAM))
             
+	    (HELPER          : helper^ (helper@))
+
             (CASE            : case^ (case@ TOOL))
             (CASE-LAYOUT     : case^ (case-layout@ CASE))
             (CASE-TAB        : case^ (case-tab@ CASE-LAYOUT))

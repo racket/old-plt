@@ -7,6 +7,7 @@
    window^
    model^
    case^
+   helper^
    def^
    expand-program^)
   
@@ -17,6 +18,7 @@
   (define-signature model^ (model%))
   
   (define-signature case^ (case%))
+  (define-signature helper^ (helper%))
   (define-signature def^ (def%))
   (define-signature expand-program^ (expand-program%))
   )

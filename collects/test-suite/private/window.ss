@@ -33,6 +33,7 @@
                  [execute (lambda () (send model execute))]
                  [delete (lambda () (send model delete-case))]
                  [new (lambda () (send model insert-case))]
+                 [new-helper (lambda () (send model insert-helper))]
                  [show-tests (lambda (show?) (send model show-tests show?))])
           
           ;; load-file (string? . -> . void?)

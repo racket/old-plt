@@ -20,7 +20,7 @@
   
   (define model@
     (unit/sig model^
-      (import drscheme:tool^ case^ def^ expand-program^)
+      (import drscheme:tool^ case^ def^ helper^ expand-program^)
       (define model%
         (class* vertical-pasteboard% (test-suite:model<%>)
           (inherit insert delete find-first-snip begin-write-header-footer-to-file
@@ -96,6 +96,11 @@
                      (test-showing? tests-showing?))])
               (insert new-case false)
               (send new-case focus-first)))
+
+	  (define/public (insert-helper)
+	    (let ([new-helper (new helper%)])
+	      (insert new-helper false)
+	      (send new-helper focus-first)))
           
           ;; delete-case (-> void?)
           ;; removes the case that currently has focus

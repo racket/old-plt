@@ -127,9 +127,12 @@
       (if sig-space
 	(let ((entry
 		(hash-table-get sig-space (z:read-object name)
-		  (lambda () (static-error name "Unbound signature name")))))
+		  (lambda ()
+		    (static-error name "Unbound signature name: ~s"
+		      (z:read-object name))))))
 	  entry)
-	(static-error name "Unbound signature name")))))
+	(static-error name "Unbound signature name: ~s"
+	  (z:read-object name))))))
 
 (define extract-sub-unit-signature
   (lambda (signature indices)

@@ -21,6 +21,7 @@
 
 #define I_HIDE_POINTERS	/* To make GC_call_with_alloc_lock visible */
 #include "private/gc_priv.h"
+#include "private/gc_mark.h"
 
 #ifdef SOLARIS_THREADS
 # include <sys/syscall.h>
@@ -87,10 +88,18 @@ GC_bool GC_dont_gc = 0;
 
 GC_bool GC_quiet = 0;
 
+GC_bool GC_print_stats = 0;
+
 #ifdef FIND_LEAK
   int GC_find_leak = 1;
 #else
   int GC_find_leak = 0;
+#endif
+
+#ifdef ALL_INTERIOR_POINTERS
+  int GC_all_interior_pointers = 1;
+#else
+  int GC_all_interior_pointers = 0;
 #endif
 
 /*ARGSUSED*/
@@ -122,8 +131,8 @@ extern signed_word GC_mem_found;
 	  for (i = 0; i < sizeof(word); i++) {
 	      GC_size_map[i] = MIN_WORDS;
 	  }
-#	  ifdef USE_MARK_BYTES
-	    GC_size_map[sizeof(word)] = ALIGNED_WORDS(sizeof(word));
+#	  if MIN_WORDS > 1
+	    GC_size_map[sizeof(word)] = MIN_WORDS;
 #	  else
 	    GC_size_map[sizeof(word)] = ROUNDED_UP_WORDS(sizeof(word));
 #	  endif
@@ -191,10 +200,10 @@ extern signed_word GC_mem_found;
 #	    endif
 	}
     	byte_sz = WORDS_TO_BYTES(word_sz);
-#	ifdef ADD_BYTE_AT_END
+	if (GC_all_interior_pointers) {
 	    /* We need one extra byte; don't fill in GC_size_map[byte_sz] */
 	    byte_sz--;
-#	endif
+	}
 
     	for (j = low_limit; j <= byte_sz; j++) GC_size_map[j] = word_sz;  
     }
@@ -211,39 +220,24 @@ extern signed_word GC_mem_found;
  */
 word GC_stack_last_cleared = 0;	/* GC_no when we last did this */
 # ifdef THREADS
-#   define CLEAR_SIZE 2048
-# else
-#   define CLEAR_SIZE 213
+#   define BIG_CLEAR_SIZE 2048	/* Clear this much now and then.	*/
+#   define SMALL_CLEAR_SIZE 256 /* Clear this much every time.		*/
 # endif
+# define CLEAR_SIZE 213  /* Granularity for GC_clear_stack_inner */
 # define DEGRADE_RATE 50
 
 word GC_min_sp;		/* Coolest stack pointer value from which we've */
 			/* already cleared the stack.			*/
 			
-# ifdef STACK_GROWS_DOWN
-#   define COOLER_THAN >
-#   define HOTTER_THAN <
-#   define MAKE_COOLER(x,y) if ((word)(x)+(y) > (word)(x)) {(x) += (y);} \
-			    else {(x) = (word)ONES;}
-#   define MAKE_HOTTER(x,y) (x) -= (y)
-# else
-#   define COOLER_THAN <
-#   define HOTTER_THAN >
-#   define MAKE_COOLER(x,y) if ((word)(x)-(y) < (word)(x)) {(x) -= (y);} else {(x) = 0;}
-#   define MAKE_HOTTER(x,y) (x) += (y)
-# endif
-
 word GC_high_water;
 			/* "hottest" stack pointer value we have seen	*/
 			/* recently.  Degrades over time.		*/
 
 word GC_words_allocd_at_reset;
 
-#if defined(ASM_CLEAR_CODE) && !defined(THREADS)
+#if defined(ASM_CLEAR_CODE)
   extern ptr_t GC_clear_stack_inner();
-#endif  
-
-#if !defined(ASM_CLEAR_CODE) && !defined(THREADS)
+#else  
 /* Clear the stack up to about limit.  Return arg. */
 /*ARGSUSED*/
 ptr_t GC_clear_stack_inner(arg, limit)
@@ -271,10 +265,12 @@ ptr_t arg;
 {
     register word sp = (word)GC_approx_sp();  /* Hotter than actual sp */
 #   ifdef THREADS
-        word dummy[CLEAR_SIZE];
-#   else
-    	register word limit;
+        word dummy[SMALL_CLEAR_SIZE];
+	unsigned random_no = 0;  /* Should be more random than it is ... */
+				 /* Used to occasionally clear a bigger	 */
+				 /* chunk.				 */
 #   endif
+    register word limit;
     
 #   define SLOP 400
 	/* Extra bytes we clear every time.  This clears our own	*/
@@ -292,7 +288,14 @@ ptr_t arg;
 	/* thus more junk remains accessible, thus the heap gets	*/
 	/* larger ...							*/
 # ifdef THREADS
-    BZERO(dummy, CLEAR_SIZE*sizeof(word));
+    if (++random_no % 13 == 0) {
+	limit = sp;
+	MAKE_HOTTER(limit, BIG_CLEAR_SIZE*sizeof(word));
+	return GC_clear_stack_inner(arg, limit);
+    } else {
+	BZERO(dummy, SMALL_CLEAR_SIZE*sizeof(word));
+	return arg;
+    }
 # else
     if (GC_gc_no > GC_stack_last_cleared) {
         /* Start things over, so we clear the entire stack again */
@@ -322,8 +325,8 @@ ptr_t arg;
     	if (GC_min_sp HOTTER_THAN GC_high_water) GC_min_sp = GC_high_water;
     	GC_words_allocd_at_reset = GC_words_allocd;
     }  
+    return(arg);
 # endif
-  return(arg);
 }
 
 
@@ -352,37 +355,27 @@ ptr_t arg;
     /* to the beginning.						*/
 	while (IS_FORWARDING_ADDR_OR_NIL(candidate_hdr)) {
 	   h = FORWARDED_ADDR(h,candidate_hdr);
-	   r = (word)h + HDR_BYTES;
+	   r = (word)h;
 	   candidate_hdr = HDR(h);
 	}
     if (candidate_hdr -> hb_map == GC_invalid_map) return(0);
     /* Make sure r points to the beginning of the object */
 	r &= ~(WORDS_TO_BYTES(1) - 1);
         {
-	    register int offset = (char *)r - (char *)(HBLKPTR(r));
+	    register int offset = HBLKDISPL(r);
 	    register signed_word sz = candidate_hdr -> hb_sz;
-	    
-#	    ifdef ALL_INTERIOR_POINTERS
-	      register map_entry_type map_entry;
+	    register signed_word map_entry;
 	      
-	      map_entry = MAP_ENTRY((candidate_hdr -> hb_map), offset);
-	      if (map_entry == OBJ_INVALID) {
-            	return(0);
-              }
-              r -= WORDS_TO_BYTES(map_entry);
-              limit = r + WORDS_TO_BYTES(sz);
-#	    else
-	      register int correction;
-	      
-	      offset = BYTES_TO_WORDS(offset - HDR_BYTES);
-	      correction = offset % sz;
-	      r -= (WORDS_TO_BYTES(correction));
-	      limit = r + WORDS_TO_BYTES(sz);
-	      if (limit > (word)(h + 1)
-	        && sz <= BYTES_TO_WORDS(HBLKSIZE) - HDR_WORDS) {
+	    map_entry = MAP_ENTRY((candidate_hdr -> hb_map), offset);
+	    if (map_entry > CPP_MAX_OFFSET) {
+            	map_entry = (signed_word)(BYTES_TO_WORDS(offset)) % sz;
+            }
+            r -= WORDS_TO_BYTES(map_entry);
+            limit = r + WORDS_TO_BYTES(sz);
+	    if (limit > (word)(h + 1)
+	        && sz <= BYTES_TO_WORDS(HBLKSIZE)) {
 	        return(0);
-	      }
-#	    endif
+	    }
 	    if ((word)p >= limit) return(0);
 	}
     return((GC_PTR)r);
@@ -403,11 +396,7 @@ ptr_t arg;
     register hdr * hhdr = HDR(p);
     
     sz = WORDS_TO_BYTES(hhdr -> hb_sz);
-    if (sz < 0) {
-        return(-sz);
-    } else {
-        return(sz);
-    }
+    return(sz);
 }
 
 size_t GC_get_heap_size GC_PROTO(())
@@ -452,15 +441,6 @@ void GC_init()
     extern void GC_init_win32 GC_PROTO((void));
 #endif
 
-/* PLTSCHEME: see calls in GC_init_inner */
-extern void GC_register_fnl_statics(void);
-extern void GC_register_allch_statics(void);
-extern void GC_register_bl_statics(void);
-#ifdef STUBBORN_ALLOC
-extern void GC_register_stubborn_statics(void);
-#endif
-extern int GC_use_registered_statics;
-
 extern void GC_setpagesize();
 
 void GC_init_inner()
@@ -468,8 +448,28 @@ void GC_init_inner()
 #   ifndef THREADS
         word dummy;
 #   endif
+    word initial_heap_sz = (word)MINHINCR;
     
     if (GC_is_initialized) return;
+#   ifdef PRINTSTATS
+      GC_print_stats = 1;
+#   endif
+    if (0 != GETENV("GC_PRINT_STATS")) {
+      GC_print_stats = 1;
+    } 
+    if (0 != GETENV("GC_FIND_LEAK")) {
+      GC_find_leak = 1;
+    }
+    if (0 != GETENV("GC_ALL_INTERIOR_POINTERS")) {
+      GC_all_interior_pointers = 1;
+    }
+    if (0 != GETENV("GC_DONT_GC")) {
+      GC_dont_gc = 1;
+    }
+    /* Adjust normal object descriptor for extra allocation.	*/
+    if (ALIGNMENT > DS_TAGS && EXTRA_BYTES != 0) {
+      GC_obj_kinds[NORMAL].ok_descriptor = ((word)(-ALIGNMENT) | DS_LENGTH);
+    }
 #   if defined(MSWIN32) || defined(MSWINCE)
 	InitializeCriticalSection(&GC_write_cs);
 #   endif
@@ -486,6 +486,9 @@ void GC_init_inner()
 #   if defined(SEARCH_FOR_DATA_START)
 	/* This doesn't really work if the collector is in a shared library. */
 	GC_init_linux_data_start();
+#   endif
+#   if defined(NETBSD) && defined(__ELF__)
+	GC_init_netbsd_elf();
 #   endif
 #   if defined(IRIX_THREADS) || defined(LINUX_THREADS) \
        || defined(HPUX_THREADS) || defined(SOLARIS_THREADS)
@@ -533,24 +536,24 @@ void GC_init_inner()
                        FALSE);
 #endif
 
-    /* PLTSCHEME: for platforms where we don't want to try to find the
-       static variables, we explicitly register the GC's statics. */
-    if (GC_use_registered_statics) {
-      GC_register_fnl_statics();
-      GC_register_allch_statics();
-      GC_register_bl_statics();
-#ifdef STUBBORN_ALLOC
-      GC_register_stubborn_statics();
-#endif
-    }
-
     /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
     /* might be used.							*/
       GC_register_data_segments();
     GC_init_headers();
     GC_bl_init();
     GC_mark_init();
-    if (!GC_expand_hp_inner((word)MINHINCR)) {
+    {
+	char * sz_str = GETENV("GC_INITIAL_HEAP_SIZE");
+	if (sz_str != NULL) {
+	  initial_heap_sz = atoi(sz_str);
+	  if (initial_heap_sz <= MINHINCR * HBLKSIZE) {
+	    WARN("Bad initial heap size %s - ignoring it.\n",
+		 sz_str);
+	  } 
+	  initial_heap_sz = divHBLKSZ(initial_heap_sz);
+	}
+    }
+    if (!GC_expand_hp_inner(initial_heap_sz)) {
         GC_err_printf0("Can't start up: not enough memory\n");
         EXIT();
     }
@@ -779,6 +782,15 @@ GC_CONST char *s;
     if (WRITE(GC_stderr, s, strlen(s)) < 0) ABORT("write to stderr failed");
 }
 
+#if defined(LINUX) && !defined(SMALL_CONFIG)
+void GC_err_write(buf, len)
+GC_CONST char *buf;
+size_t len;
+{
+    if (WRITE(GC_stderr, buf, len) < 0) ABORT("write to stderr failed");
+}
+#endif
+
 # if defined(__STDC__) || defined(__cplusplus)
     void GC_default_warn_proc(char *msg, GC_word arg)
 # else
@@ -819,15 +831,13 @@ GC_CONST char * msg;
 #   else
       GC_err_printf1("%s\n", msg);
 #   endif
-#   if defined(LINUX) || defined(HPUX) || defined(SUNOS5) || defined(IRIX)
-	if (getenv("GC_LOOP_ON_ABORT") != NULL) {
+    if (GETENV("GC_LOOP_ON_ABORT") != NULL) {
 	    /* In many cases it's easier to debug a running process.	*/
 	    /* It's arguably nicer to sleep, but that makes it harder	*/
 	    /* to look at the thread if the debugger doesn't know much	*/
 	    /* about threads.						*/
 	    for(;;);
-	}
-#   endif
+    }
 #   ifdef MSWIN32
 	DebugBreak();
 #   else
@@ -903,7 +913,7 @@ static void get_size(struct hblk *h, word lptr)
   hdr *hhdr = HDR(h);
   long bytes = WORDS_TO_BYTES(hhdr->hb_sz);
 
-  bytes += HDR_BYTES + HBLKSIZE-1;
+  bytes += HBLKSIZE-1;
   bytes &= ~(HBLKSIZE-1);
 
   *(long *)lptr += bytes;

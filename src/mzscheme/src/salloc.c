@@ -56,6 +56,35 @@ extern int scheme_num_copied_stacks;
 extern void (*GC_out_of_memory)(void);
 extern void GC_register_late_disappearing_link(void **link, void *obj);
 
+static int use_registered_statics;
+
+#if !defined(MZ_PRECISE_GC) && !defined(USE_SENORA_GC)
+extern void GC_push_finalizer_structures(void);
+extern unsigned long GC_get_stack_base();
+#endif
+
+void scheme_set_stack_base(void *base, int no_auto_statics)
+{
+#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
+  GC_set_stack_base(base);
+  /* no_auto_statics must always be true! */
+#else
+  GC_stackbottom = base;
+  if (no_auto_statics)
+    GC_clear_roots();
+#endif
+  use_registered_statics = no_auto_statics;
+}
+
+extern unsigned long scheme_get_stack_base()
+{
+  if (GC_stackbottom)
+    return (unsigned long)GC_stackbottom;
+  else
+    return GC_get_stack_base();
+}
+
+
 void scheme_dont_gc_ptr(void *p)
 {
   int i, oldsize;
@@ -241,7 +270,7 @@ void scheme_register_static(void *ptr, long size)
   GC_add_roots((char *)ptr, (char *)(((char *)ptr) + size + 1));
 #else
 # ifdef GC_MIGHT_USE_REGISTERED_STATICS
-  if (GC_use_registered_statics) {
+  if (use_registered_statics) {
     GC_add_roots((char *)ptr, (char *)(((char *)ptr) + size + 1));
   }
 # endif

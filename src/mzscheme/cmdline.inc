@@ -231,14 +231,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
   int no_lib_path = 0;
   FinishArgs *fa;
 
-#ifndef USE_SENORA_GC
-# ifndef MZ_PRECISE_GC
-#  ifdef GC_MIGHT_USE_REGISTERED_STATICS
-  GC_use_registered_statics = 1;
-#  endif
-# endif
-#endif
-
 #ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
   DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
 #endif

@@ -94,10 +94,9 @@
 #endif
 
 #ifdef AMIGA
-# include <proto/exec.h>
-# include <proto/dos.h>
-# include <dos/dosextens.h>
-# include <workbench/startup.h>
+# define GC_AMIGA_DEF
+# include "AmigaOS.c"
+# undef GC_AMIGA_DEF
 #endif
 
 #if defined(MSWIN32) || defined(MSWINCE)
@@ -118,6 +117,9 @@
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
+#endif
+
+#ifdef UNIX_LIKE
 # include <fcntl.h>
 #endif
 
@@ -149,20 +151,50 @@
 #endif
 
 #if defined(SEARCH_FOR_DATA_START)
-  /* The following doesn't work if the GC is in a dynamic library.	*/
   /* The I386 case can be handled without a search.  The Alpha case	*/
   /* used to be handled differently as well, but the rules changed	*/
   /* for recent Linux versions.  This seems to be the easiest way to	*/
   /* cover all versions.						*/
-  ptr_t GC_data_start;
 
-  extern char * GC_copyright[];  /* Any data symbol would do. */
+# ifdef LINUX
+#   pragma weak __data_start
+    extern int __data_start;
+#   pragma weak data_start
+    extern int data_start;
+# endif /* LINUX */
+  extern int _end;
+
+  ptr_t GC_data_start;
 
   void GC_init_linux_data_start()
   {
     extern ptr_t GC_find_limit();
 
-    GC_data_start = GC_find_limit((ptr_t)GC_copyright, FALSE);
+#   ifdef LINUX
+      /* Try the easy approaches first:	*/
+      if (&__data_start != 0) {
+	  GC_data_start = (ptr_t)(&__data_start);
+	  return;
+      }
+      if (&data_start != 0) {
+	  GC_data_start = (ptr_t)(&data_start);
+	  return;
+      }
+#   endif /* LINUX */
+    GC_data_start = GC_find_limit((ptr_t)(&_end), FALSE);
+  }
+#endif
+
+#if defined(NETBSD) && defined(__ELF__)
+  ptr_t GC_data_start;
+
+  void GC_init_netbsd_elf()
+  {
+    extern ptr_t GC_find_limit();
+    extern char **environ;
+	/* This may need to be environ, without the underscore, for	*/
+	/* some versions.						*/
+    GC_data_start = GC_find_limit((ptr_t)&environ, FALSE);
   }
 #endif
 
@@ -427,7 +459,17 @@ ptr_t GC_get_stack_base()
 }
 
 
-# else
+# endif /* MS Windows */
+
+# ifdef BEOS
+# include <kernel/OS.h>
+ptr_t GC_get_stack_base(){
+	thread_info th;
+	get_thread_info(find_thread(NULL),&th);
+	return th.stack_end;
+}
+# endif /* BEOS */
+
 
 # ifdef OS2
 
@@ -443,55 +485,13 @@ ptr_t GC_get_stack_base()
     return((ptr_t)(ptib -> tib_pstacklimit));
 }
 
-# else
+# endif /* OS2 */
 
 # ifdef AMIGA
-
-ptr_t GC_get_stack_base()
-{
-    struct Process *proc = (struct Process*)SysBase->ThisTask;
- 
-    /* Reference: Amiga Guru Book Pages: 42,567,574 */
-    if (proc->pr_Task.tc_Node.ln_Type==NT_PROCESS
-        && proc->pr_CLI != NULL) {
-	/* first ULONG is StackSize */
-	/*longPtr = proc->pr_ReturnAddr;
-	size = longPtr[0];*/
-
-	return (char *)proc->pr_ReturnAddr + sizeof(ULONG);
-    } else {
-	return (char *)proc->pr_Task.tc_SPUpper;
-    }
-}
-
-#if 0 /* old version */
-ptr_t GC_get_stack_base()
-{
-    extern struct WBStartup *_WBenchMsg;
-    extern long __base;
-    extern long __stack;
-    struct Task *task;
-    struct Process *proc;
-    struct CommandLineInterface *cli;
-    long size;
-
-    if ((task = FindTask(0)) == 0) {
-	GC_err_puts("Cannot find own task structure\n");
-	ABORT("task missing");
-    }
-    proc = (struct Process *)task;
-    cli = BADDR(proc->pr_CLI);
-
-    if (_WBenchMsg != 0 || cli == 0) {
-	size = (char *)task->tc_SPUpper - (char *)task->tc_SPLower;
-    } else {
-	size = cli->cli_DefaultStack * 4;
-    }
-    return (ptr_t)(__base + GC_max(size, __stack));
-}
-#endif /* 0 */
-
-# else /* !AMIGA, !OS2, ... */
+#   define GC_AMIGA_SB
+#   include "AmigaOS.c"
+#   undef GC_AMIGA_SB
+# endif /* AMIGA */
 
 # ifdef NEED_FIND_LIMIT
   /* Some tools to implement HEURISTIC2	*/
@@ -611,7 +611,6 @@ ptr_t GC_get_stack_base()
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 
 # define STAT_SKIP 27   /* Number of fields preceding startstack	*/
 			/* field in /proc/self/stat			*/
@@ -659,6 +658,9 @@ ptr_t GC_get_stack_base()
 
 #ifdef FREEBSD_STACKBOTTOM
 
+/* This uses an undocumented sysctl call, but at least one expert 	*/
+/* believes it will stay.						*/
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -676,6 +678,9 @@ ptr_t GC_get_stack_base()
   }
 
 #endif /* FREEBSD_STACKBOTTOM */
+
+#if !defined(BEOS) && !defined(AMIGA) && !defined(MSWIN32) \
+    && !defined(MSWINCE) && !defined(OS2)
 
 ptr_t GC_get_stack_base()
 {
@@ -730,9 +735,7 @@ ptr_t GC_get_stack_base()
 #   endif /* STACKBOTTOM */
 }
 
-# endif /* ! AMIGA */
-# endif /* ! OS2 */
-# endif /* ! MSWIN32 && !MSWINCE */
+# endif /* ! AMIGA, !OS 2, ! MS Windows, !BEOS */
 
 /*
  * Register static data segment(s) as roots.
@@ -832,7 +835,7 @@ void GC_register_data_segments()
     }
 }
 
-# else
+# else /* !OS2 */
 
 # if defined(MSWIN32) || defined(MSWINCE)
 
@@ -957,121 +960,7 @@ void GC_register_data_segments()
 #     endif
   }
 
-# else
-
-# ifdef AMIGA
-
-   void GC_register_data_segments()
-   {
-     struct Process	*proc;
-     struct CommandLineInterface *cli;
-     BPTR myseglist;
-     ULONG *data;
- 
-     int	num;
-
-
-#    ifdef __GNUC__
-        ULONG dataSegSize;
-        GC_bool found_segment = FALSE;
-	extern char __data_size[];
-
-	dataSegSize=__data_size+8;
-	/* Can`t find the Location of __data_size, because
-           it`s possible that is it, inside the segment. */
-
-#     endif
-
-	proc= (struct Process*)SysBase->ThisTask;
-
-	/* Reference: Amiga Guru Book Pages: 538ff,565,573
-		     and XOper.asm */
-	if (proc->pr_Task.tc_Node.ln_Type==NT_PROCESS) {
-	  if (proc->pr_CLI == NULL) {
-	    myseglist = proc->pr_SegList;
-	  } else {
-	    /* ProcLoaded	'Loaded as a command: '*/
-	    cli = BADDR(proc->pr_CLI);
-	    myseglist = cli->cli_Module;
-	  }
-	} else {
-	  ABORT("Not a Process.");
- 	}
-
-	if (myseglist == NULL) {
-	    ABORT("Arrrgh.. can't find segments, aborting");
- 	}
-
-	/* xoper hunks Shell Process */
-
-	num=0;
-        for (data = (ULONG *)BADDR(myseglist); data != NULL;
-             data = (ULONG *)BADDR(data[0])) {
-	  if (((ULONG) GC_register_data_segments < (ULONG) &data[1]) ||
-	      ((ULONG) GC_register_data_segments > (ULONG) &data[1] + data[-1])) {
-#             ifdef __GNUC__
-		if (dataSegSize == data[-1]) {
-		  found_segment = TRUE;
-		}
-# 	      endif
-	      GC_add_roots_inner((char *)&data[1],
-				 ((char *)&data[1]) + data[-1], FALSE);
-          }
-          ++num;
-        } /* for */
-# 	ifdef __GNUC__
-	   if (!found_segment) {
-	     ABORT("Can`t find correct Segments.\nSolution: Use an newer version of ixemul.library");
-	   }
-# 	endif
-  }
-
-#if 0 /* old version */
-  void GC_register_data_segments()
-  {
-    extern struct WBStartup *_WBenchMsg;
-    struct Process	*proc;
-    struct CommandLineInterface *cli;
-    BPTR myseglist;
-    ULONG *data;
-
-    if ( _WBenchMsg != 0 ) {
-	if ((myseglist = _WBenchMsg->sm_Segment) == 0) {
-	    GC_err_puts("No seglist from workbench\n");
-	    return;
-	}
-    } else {
-	if ((proc = (struct Process *)FindTask(0)) == 0) {
-	    GC_err_puts("Cannot find process structure\n");
-	    return;
-	}
-	if ((cli = BADDR(proc->pr_CLI)) == 0) {
-	    GC_err_puts("No CLI\n");
-	    return;
-	}
-	if ((myseglist = cli->cli_Module) == 0) {
-	    GC_err_puts("No seglist from CLI\n");
-	    return;
-	}
-    }
-
-    for (data = (ULONG *)BADDR(myseglist); data != 0;
-         data = (ULONG *)BADDR(data[0])) {
-#        ifdef AMIGA_SKIP_SEG
-           if (((ULONG) GC_register_data_segments < (ULONG) &data[1]) ||
-           ((ULONG) GC_register_data_segments > (ULONG) &data[1] + data[-1])) {
-#	 else
-      	   {
-#	 endif /* AMIGA_SKIP_SEG */
-          GC_add_roots_inner((char *)&data[1],
-          		     ((char *)&data[1]) + data[-1], FALSE);
-         }
-    }
-  }
-#endif /* old version */
-
-
-# else
+# else /* !OS2 && !Windows */
 
 # if (defined(SVR4) || defined(AUX) || defined(DGUX) \
       || (defined(LINUX) && defined(SPARC))) && !defined(PCR)
@@ -1107,6 +996,14 @@ int * etext_addr;
 }
 # endif
 
+
+#ifdef AMIGA
+
+#  define GC_AMIGA_DS
+#  include "AmigaOS.c"
+#  undef GC_AMIGA_DS
+
+#else /* !OS2 && !Windows && !AMIGA */
 
 void GC_register_data_segments()
 {
@@ -1173,7 +1070,7 @@ void GC_register_data_segments()
 /*
  * Auxiliary routines for obtaining memory from OS.
  */
- 
+
 # if !defined(OS2) && !defined(PCR) && !defined(AMIGA) \
 	&& !defined(MSWIN32) && !defined(MSWINCE) \
 	&& !defined(MACOS) && !defined(DOS4GW)
@@ -1186,6 +1083,7 @@ void GC_register_data_segments()
 # else
 #   define SBRK_ARG_T int
 # endif
+
 
 # ifdef RS6000
 /* The compiler seems to generate speculative reads one past the end of	*/
@@ -1219,7 +1117,7 @@ word bytes;
 #else  /* Not RS6000 */
 
 #if defined(USE_MMAP)
-/* Tested only under IRIX5 and Solaris 2 */
+/* Tested only under Linux, IRIX5 and Solaris 2 */
 
 #ifdef USE_MMAP_FIXED
 #   define GC_MMAP_FLAGS MAP_FIXED | MAP_PRIVATE
@@ -1227,6 +1125,10 @@ word bytes;
 	/* be unreliable if something is already mapped at the address.	*/
 #else
 #   define GC_MMAP_FLAGS MAP_PRIVATE
+#endif
+
+#ifndef HEAP_START
+#   define HEAP_START 0
 #endif
 
 ptr_t GC_unix_get_mem(bytes)
@@ -1254,6 +1156,18 @@ word bytes;
     if (result == MAP_FAILED) return(0);
     last_addr = (ptr_t)result + bytes + GC_page_size - 1;
     last_addr = (ptr_t)((word)last_addr & ~(GC_page_size - 1));
+#   if !defined(LINUX)
+      if (last_addr == 0) {
+        /* Oops.  We got the end of the address space.  This isn't	*/
+	/* usable by arbitrary C code, since one-past-end pointers	*/
+	/* don't work, so we discard it and try again.			*/
+	munmap(result, (size_t)(-GC_page_size) - (size_t)result);
+			/* Leave last page mapped, so we can't repeat. */
+	return GC_unix_get_mem(bytes);
+      }
+#   else
+      GC_ASSERT(last_addr != 0);
+#   endif
     return((ptr_t)result);
 }
 
@@ -1364,6 +1278,12 @@ void GC_win32_free_heap ()
 }
 # endif
 
+#ifdef AMIGA
+# define GC_AMIGA_AM
+# include "AmigaOS.c"
+# undef GC_AMIGA_AM
+#endif
+
 
 # ifdef MSWINCE
 word GC_n_heap_bases = 0;
@@ -1429,7 +1349,6 @@ word bytes;
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <fcntl.h>
 
 #endif
 
@@ -1915,75 +1834,7 @@ struct hblk *h;
 #   endif /* !ALPHA */
 # endif
 
-SIG_PF GC_old_bus_handler;
-SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
-
-/*ARGSUSED*/
-# if defined (SUNOS4) || defined(FREEBSD)
-    void GC_write_fault_handler(sig, code, scp, addr)
-    int sig, code;
-    struct sigcontext *scp;
-    char * addr;
-#   ifdef SUNOS4
-#     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
-#     define CODE_OK (FC_CODE(code) == FC_PROT \
-              	    || (FC_CODE(code) == FC_OBJERR \
-              	       && FC_ERRNO(code) == FC_PROT))
-#   endif
-#   ifdef FREEBSD
-#     define SIG_OK (sig == SIGBUS)
-#     define CODE_OK (code == BUS_PAGE_FAULT)
-#   endif
-# endif
-# if defined(IRIX5) || defined(OSF1)
-#   include <errno.h>
-    void GC_write_fault_handler(int sig, int code, struct sigcontext *scp)
-#   define SIG_OK (sig == SIGSEGV)
-#   ifdef OSF1
-#     define CODE_OK (code == 2 /* experimentally determined */)
-#   endif
-#   ifdef IRIX5
-#     define CODE_OK (code == EACCES)
-#   endif
-# endif
-# if defined(LINUX)
-#   if defined(ALPHA) || defined(M68K)
-      void GC_write_fault_handler(int sig, int code, s_c * sc)
-#   else
-#     if defined(IA64)
-        void GC_write_fault_handler(int sig, siginfo_t * si, s_c * scp)
-#     else
-        void GC_write_fault_handler(int sig, s_c sc)
-#     endif
-#   endif
-#   define SIG_OK (sig == SIGSEGV)
-#   define CODE_OK TRUE
-	/* Empirically c.trapno == 14, on IA32, but is that useful?     */
-	/* Should probably consider alignment issues on other 		*/
-	/* architectures.						*/
-# endif
-# if defined(SUNOS5SIGS)
-#  ifdef __STDC__
-    void GC_write_fault_handler(int sig, struct SIGINFO *scp, void * context)
-#  else
-    void GC_write_fault_handler(sig, scp, context)
-    int sig;
-    struct SIGINFO *scp;
-    void * context;
-#  endif
-#   ifdef HPUX
-#     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
-#     define CODE_OK (scp -> si_code == SEGV_ACCERR) \
-		     || (scp -> si_code == BUS_ADRERR) \
-		     || (scp -> si_code == BUS_UNKNOWN) \
-		     || (scp -> si_code == SEGV_UNKNOWN) \
-		     || (scp -> si_code == BUS_OBJERR)
-#   else
-#     define SIG_OK (sig == SIGSEGV)
-#     define CODE_OK (scp -> si_code == SEGV_ACCERR)
-#   endif
-# endif
-# if defined(MACOSX)
+# if defined(MACOSX) /* Should also test for PowerPC? */
     typedef void (* REAL_SIG_PF)(int, int, struct sigcontext *);
 
 /* Decodes the machine instruction which was responsible for the sending of the
@@ -2108,7 +1959,126 @@ static char *get_fault_addr(struct sigcontext *scp)
 #endif
    return (char *)addr;
 }
+#endif /* MACOSX */
 
+SIG_PF GC_old_bus_handler;
+SIG_PF GC_old_segv_handler;	/* Also old MSWIN32 ACCESS_VIOLATION filter */
+
+#ifdef THREADS
+/* We need to lock around the bitmap update in the write fault handler	*/
+/* in order to avoid the risk of losing a bit.  We do this with a 	*/
+/* test-and-set spin lock if we know how to do that.  Otherwise we	*/
+/* check whether we are already in the handler and use the dumb but	*/
+/* safe fallback algorithm of setting all bits in the word.		*/
+/* Contention should be very rare, so we do the minimum to handle it	*/
+/* correctly.								*/
+#ifdef GC_TEST_AND_SET_DEFINED
+  static VOLATILE unsigned int fault_handler_lock = 0;
+  void async_set_pht_entry_from_index(VOLATILE page_hash_table db, int index) {
+    while (GC_test_and_set(&fault_handler_lock));
+    /* Could also revert to set_pht_entry_from_index_safe if initial	*/
+    /* GC_test_and_set fails.						*/
+    set_pht_entry_from_index(db, index);
+    GC_clear(&fault_handler_lock);
+  }
+#else /* !GC_TEST_AND_SET_DEFINED */
+  /* THIS IS INCORRECT! The dirty bit vector may be temporarily wrong,	*/
+  /* just before we notice the conflict and correct it. We may end up   */
+  /* looking at it while it's wrong.  But this requires contention	*/
+  /* exactly when a GC is triggered, which seems far less likely to	*/
+  /* fail than the old code, which had no reported failures.  Thus we	*/
+  /* leave it this way while we think of something better, or support	*/
+  /* GC_test_and_set on the remaining platforms.			*/
+  static VOLATILE word currently_updating = 0;
+  void async_set_pht_entry_from_index(VOLATILE page_hash_table db, int index) {
+    unsigned int update_dummy;
+    currently_updating = (word)(&update_dummy);
+    set_pht_entry_from_index(db, index);
+    /* If we get contention in the 10 or so instruction window here,	*/
+    /* and we get stopped by a GC between the two updates, we lose!	*/
+    if (currently_updating != (word)(&update_dummy)) {
+	set_pht_entry_from_index_safe(db, index);
+	/* We claim that if two threads concurrently try to update the	*/
+	/* dirty bit vector, the first one to execute UPDATE_START 	*/
+	/* will see it changed when UPDATE_END is executed.  (Note that	*/
+	/* &update_dummy must differ in two distinct threads.)  It	*/
+	/* will then execute set_pht_entry_from_index_safe, thus 	*/
+	/* returning us to a safe state, though not soon enough.	*/
+    }
+  }
+#endif /* !GC_TEST_AND_SET_DEFINED */
+#else /* !THREADS */
+# define async_set_pht_entry_from_index(db, index) \
+	set_pht_entry_from_index(db, index)
+#endif /* !THREADS */
+
+/*ARGSUSED*/
+# if defined (SUNOS4) || defined(FREEBSD)
+    void GC_write_fault_handler(sig, code, scp, addr)
+    int sig, code;
+    struct sigcontext *scp;
+    char * addr;
+#   ifdef SUNOS4
+#     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
+#     define CODE_OK (FC_CODE(code) == FC_PROT \
+              	    || (FC_CODE(code) == FC_OBJERR \
+              	       && FC_ERRNO(code) == FC_PROT))
+#   endif
+#   ifdef FREEBSD
+#     define SIG_OK (sig == SIGBUS)
+#     define CODE_OK (code == BUS_PAGE_FAULT)
+#   endif
+# endif
+# if defined(IRIX5) || defined(OSF1)
+#   include <errno.h>
+    void GC_write_fault_handler(int sig, int code, struct sigcontext *scp)
+#   define SIG_OK (sig == SIGSEGV)
+#   ifdef OSF1
+#     define CODE_OK (code == 2 /* experimentally determined */)
+#   endif
+#   ifdef IRIX5
+#     define CODE_OK (code == EACCES)
+#   endif
+# endif
+# if defined(LINUX)
+#   if defined(ALPHA) || defined(M68K)
+      void GC_write_fault_handler(int sig, int code, s_c * sc)
+#   else
+#     if defined(IA64)
+        void GC_write_fault_handler(int sig, siginfo_t * si, s_c * scp)
+#     else
+        void GC_write_fault_handler(int sig, s_c sc)
+#     endif
+#   endif
+#   define SIG_OK (sig == SIGSEGV)
+#   define CODE_OK TRUE
+	/* Empirically c.trapno == 14, on IA32, but is that useful?     */
+	/* Should probably consider alignment issues on other 		*/
+	/* architectures.						*/
+# endif
+# if defined(SUNOS5SIGS)
+#  ifdef __STDC__
+    void GC_write_fault_handler(int sig, struct SIGINFO *scp, void * context)
+#  else
+    void GC_write_fault_handler(sig, scp, context)
+    int sig;
+    struct SIGINFO *scp;
+    void * context;
+#  endif
+#   ifdef HPUX
+#     define SIG_OK (sig == SIGSEGV || sig == SIGBUS)
+#     define CODE_OK (scp -> si_code == SEGV_ACCERR) \
+		     || (scp -> si_code == BUS_ADRERR) \
+		     || (scp -> si_code == BUS_UNKNOWN) \
+		     || (scp -> si_code == SEGV_UNKNOWN) \
+		     || (scp -> si_code == BUS_OBJERR)
+#   else
+#     define SIG_OK (sig == SIGSEGV)
+#     define CODE_OK (scp -> si_code == SEGV_ACCERR)
+#   endif
+# endif
+
+# if defined(MACOSX)
     void GC_write_fault_handler(int sig, int code, struct sigcontext *scp)
 #   define SIG_OK (sig == SIGBUS)
 #   define CODE_OK (code == 0 /* experimentally determined */)
@@ -2261,7 +2231,7 @@ static char *get_fault_addr(struct sigcontext *scp)
         for (i = 0; i < divHBLKSZ(GC_page_size); i++) {
             register int index = PHT_HASH(h+i);
             
-            set_pht_entry_from_index(GC_dirty_pages, index);
+            async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
         UNPROTECT(h, GC_page_size);
 #	if defined(OSF1) || defined(LINUX)
@@ -2303,7 +2273,7 @@ struct hblk *h;
             
         if (!get_pht_entry_from_index(GC_dirty_pages, index)) {
             found_clean = TRUE;
-            set_pht_entry_from_index(GC_dirty_pages, index);
+            async_set_pht_entry_from_index(GC_dirty_pages, index);
         }
     }
     if (found_clean) {
@@ -2496,7 +2466,7 @@ word len;
     for (h = start_block; h <= end_block; h++) {
         register word index = PHT_HASH(h);
         
-        set_pht_entry_from_index(GC_dirty_pages, index);
+        async_set_pht_entry_from_index(GC_dirty_pages, index);
     }
     UNPROTECT(start_block,
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
@@ -2615,7 +2585,6 @@ word n;
 #include <sys/syscall.h>
 #include <sys/procfs.h>
 #include <sys/stat.h>
-#include <fcntl.h>
 
 #define INITIAL_BUF_SZ 4096
 word GC_proc_buf_size = INITIAL_BUF_SZ;
@@ -2943,7 +2912,7 @@ struct hblk *h;
 #      if defined (DRSNX)
 #	 include <sys/sparc/frame.h>
 #      else
-#	 if defined(OPENBSD)
+#	 if defined(OPENBSD) || defined(NETBSD)
 #	   include <frame.h>
 #	 else
 #	   include <sys/frame.h>
@@ -2960,7 +2929,7 @@ struct hblk *h;
 /* Fill in the pc and argument information for up to NFRAMES of my	*/
 /* callers.  Ignore my frame and my callers frame.			*/
 
-#if defined(OPENBSD) && defined(SPARC)
+#if (defined(OPENBSD) || defined(NETBSD)) && defined(SPARC)
 #  define FR_SAVFP fr_fp
 #  define FR_SAVPC fr_pc
 #else
@@ -2991,7 +2960,8 @@ struct callinfo info[NFRAMES];
     fp = (struct frame *)((long) frame -> FR_SAVFP + BIAS);
 #endif
   
-  for (; fp != 0 && nframes < NFRAMES;
+   for (; (!(fp HOTTER_THAN frame) && !(GC_stackbottom HOTTER_THAN (ptr_t)fp)
+	   && (nframes < NFRAMES));
        fp = (struct frame *)((long) fp -> FR_SAVFP + BIAS), nframes++) {
       register int i;
       
@@ -3005,5 +2975,55 @@ struct callinfo info[NFRAMES];
 
 #endif /* SAVE_CALL_CHAIN */
 
+#if defined(LINUX) && defined(__ELF__) && \
+    (!defined(SMALL_CONFIG) || defined(USE_PROC_FOR_LIBRARIES))
+#ifdef GC_USE_LD_WRAP
+#   define READ __real_read
+#else
+#   define READ read
+#endif
+
+
+/* Repeatedly perform a read call until the buffer is filled or	*/
+/* we encounter EOF.						*/
+ssize_t GC_repeat_read(int fd, char *buf, size_t count)
+{
+    ssize_t num_read = 0;
+    ssize_t result;
+    
+    while (num_read < count) {
+	result = READ(fd, buf + num_read, count - num_read);
+	if (result < 0) return result;
+	if (result == 0) break;
+	num_read += result;
+    }
+    return num_read;
+}
+#endif /* LINUX && ... */
+
+
+#if defined(LINUX) && defined(__ELF__) && !defined(SMALL_CONFIG)
+
+/* Dump /proc/self/maps to GC_stderr, to enable looking up names for
+   addresses in FIND_LEAK output. */
+
+void GC_print_address_map()
+{
+    int f;
+    int result;
+    char maps_temp[32768];
+    GC_err_printf0("---------- Begin address map ----------\n");
+        f = open("/proc/self/maps", O_RDONLY);
+        if (-1 == f) ABORT("Couldn't open /proc/self/maps");
+	do {
+	    result = GC_repeat_read(f, maps_temp, sizeof(maps_temp));
+	    if (result <= 0) ABORT("Couldn't read /proc/self/maps");
+ 	    GC_err_write(maps_temp, result);
+	} while (result == sizeof(maps_temp));
+     
+    GC_err_printf0("---------- End address map ----------\n");
+}
+
+#endif
 
 

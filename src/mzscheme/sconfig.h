@@ -689,7 +689,6 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define WINDOWS_FIND_STACK_BOUNDS
 
 # define USE_MZ_SETJMP
-# define GC_MIGHT_USE_REGISTERED_STATICS
 
 # define WINDOWS_DYNAMIC_LOAD
 # define LINK_EXTENSIONS_BY_TABLE

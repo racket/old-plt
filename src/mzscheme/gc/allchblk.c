@@ -48,7 +48,7 @@ struct hblk * GC_hblkfreelist[N_HBLK_FLS+1] = { 0 };
 
 #ifndef USE_MUNMAP
   word GC_free_bytes[N_HBLK_FLS+1] = { 0 };
-	/* Number of free bytes bytes en each list.	*/
+	/* Number of free bytes on each list.	*/
 
   /* Is bytes + the number of free bytes on lists n .. N_HBLK_FLS 	*/
   /* > GC_max_large_allocd_bytes?					*/
@@ -469,7 +469,7 @@ int index;
     rest_hdr -> hb_sz = total_size - bytes;
     rest_hdr -> hb_flags = 0;
 #   ifdef GC_ASSERTIONS
-      // Mark h not free, to avoid assertion about adjacent free blocks.
+      /* Mark h not free, to avoid assertion about adjacent free blocks. */
         hhdr -> hb_map = 0;
 #   endif
     GC_add_to_fl(rest, rest_hdr);
@@ -543,7 +543,7 @@ struct hblk *
 GC_allochblk(sz, kind, flags)
 word sz;
 int kind;
-unsigned char flags;  /* IGNORE_OFF_PAGE or 0 */
+unsigned flags;  /* IGNORE_OFF_PAGE or 0 */
 {
     word blocks = OBJ_SZ_TO_BLOCKS(sz);
     int start_list = GC_hblk_fl_from_blocks(blocks);
@@ -656,8 +656,10 @@ int n;
 	        /* Punt, since anything else risks unreasonable heap growth. */
 		/* PLTSCHEME: I'd rather not see this particular message. */
 #if 0
-	        WARN("Needed to allocate blacklisted block at 0x%lx\n",
-		     (word)hbp);
+		if (0 != GETENV("GC_NO_BLACKLIST_WARNING")) {
+	          WARN("Needed to allocate blacklisted block at 0x%lx\n",
+		       (word)hbp);
+		}
 #endif
 	        size_avail = orig_avail;
 	      } else if (size_avail == 0 && size_needed == HBLKSIZE
@@ -686,10 +688,10 @@ int n;
 	                if (h == hbp || 0 != (hhdr = GC_install_header(h))) {
 	                  (void) setup_header(
 	                	  hhdr,
-	              		  BYTES_TO_WORDS(HBLKSIZE - HDR_BYTES),
+	              		  BYTES_TO_WORDS(HBLKSIZE),
 	              		  PTRFREE, 0); /* Cant fail */
 	              	  if (GC_debugging_started) {
-	              	    BZERO(h + HDR_BYTES, HBLKSIZE - HDR_BYTES);
+	              	    BZERO(h, HBLKSIZE);
 	              	  }
 	                }
 	              }
@@ -801,17 +803,4 @@ signed_word size;
 
     GC_large_free_bytes += size;
     GC_add_to_fl(hbp, hhdr);    
-}
-
-/* PLTSCHEME: GC_register_allch_statics */
-/* See call in GC_init_inner (misc.c) for details. */
-void GC_register_allch_statics(void)
-{
-#define REG(p) GC_add_roots_inner((char *)&p, ((char *)&p) + sizeof(p) + 1, FALSE)
-
-  REG(GC_freehblk_ptr);
-  REG(GC_hblkfreelist);
-
-  REG(GC_obj_kinds);
-  /* REG(GC_arrays); */
 }

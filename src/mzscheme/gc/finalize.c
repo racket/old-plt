@@ -89,13 +89,13 @@ static signed_word log_fo_table_size = -1;
 
 word GC_fo_entries = 0;
 
-# ifdef SRC_M3
 void GC_push_finalizer_structures()
 {
     GC_push_all((ptr_t)(&dl_head), (ptr_t)(&dl_head) + sizeof(word));
     GC_push_all((ptr_t)(&fo_head), (ptr_t)(&fo_head) + sizeof(word));
+
+    GC_push_all((ptr_t)(&GC_finalize_now), (ptr_t)(&GC_finalize_now) + sizeof(GC_finalize_now));
 }
-# endif
 
 /* Double the size of a hash table. *size_ptr is the log of its current	*/
 /* size.  May be a noop.						*/
@@ -200,9 +200,11 @@ void GC_register_late_disappearing_link(void **link, void *obj)
 #	endif
     	GC_grow_table((struct hash_chain_entry ***)(&dl_head),
     		      &log_dl_table_size);
-#	ifdef PRINTSTATS
+#	ifdef CONDPRINT
+	  if (GC_print_stats) {
 	    GC_printf1("Grew dl table to %lu entries\n",
 	    		(unsigned long)(1 << log_dl_table_size));
+	  }
 #	endif
 #	ifndef THREADS
 	    ENABLE_SIGNALS();
@@ -342,6 +344,7 @@ int eager_level; /* PLTSCHEME */
     struct finalizable_object * curr_fo, * prev_fo;
     int index;
     struct finalizable_object *new_fo;
+    hdr *hhdr;
     DCL_LOCK_STATE;
 
 #   ifdef THREADS
@@ -447,13 +450,22 @@ int eager_level; /* PLTSCHEME */
 #	endif
         return;
     }
+    GET_HDR(base, hhdr);
+    if (0 == hhdr) {
+      /* We won't collect it, hence finalizer wouldn't be run. */
+#     ifdef THREADS
+          UNLOCK();
+    	  ENABLE_SIGNALS();
+#     endif
+      return;
+    }
     new_fo = (struct finalizable_object *)
       GC_INTERNAL_MALLOC(sizeof(struct finalizable_object),NORMAL);
     if (new_fo != 0) {
         new_fo -> fo_hidden_base = (word)HIDE_POINTER(base);
 	new_fo -> fo_fn = fn;
 	new_fo -> fo_client_data = (ptr_t)cd;
-	new_fo -> fo_object_size = GC_size(base);
+	new_fo -> fo_object_size = hhdr->hb_sz;
 	new_fo -> fo_mark_proc = mp;
 	new_fo -> eager_level = eager_level; /* PLTSCHEME */
 	fo_set_next(new_fo, fo_head[index]);
@@ -696,7 +708,7 @@ void GC_finalize()
   /* from finalizable objects.						*/
   /* PLTSCHEME: non-eager finalizations only (eagers already marked) */
 #   ifdef PRINTSTATS
-        if (GC_mark_state != MS_NONE) ABORT("Bad mark state");
+    GC_ASSERT(GC_mark_state == MS_NONE);
 #   endif
     for (i = 0; i < fo_size; i++) {
       for (curr_fo = fo_head[i]; curr_fo != 0; curr_fo = fo_next(curr_fo)) {
@@ -755,11 +767,6 @@ void GC_finalize()
               GC_words_finalized +=
                  	ALIGNED_WORDS(curr_fo -> fo_object_size)
               		+ ALIGNED_WORDS(sizeof(struct finalizable_object));
-#	    ifdef PRINTSTATS
-              if (!GC_is_marked((ptr_t)curr_fo)) {
-                ABORT("GC_finalize: found accessible unmarked object\n");
-              }
-#	    endif
             curr_fo = next_fo;
         } else {
             prev_fo = curr_fo;

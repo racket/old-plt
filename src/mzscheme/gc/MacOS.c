@@ -12,7 +12,7 @@
 	
 	by Patrick C. Beard.
 
-	MATTHEW: this file is substantially modified for MzScheme/MrEd.
+	PLTSCHEME: this file is substantially modified for MzScheme/MrEd.
  */
 /* Boehm, November 17, 1995 11:50 am PST */
 
@@ -48,7 +48,7 @@ void* GC_MacGetDataStart()
 	return 0;
 }
 
-/* MATTHEW: Function for handling CW Pro 3 far data */
+/* PLTSCHEME: Function for handling CW Pro 3 far data */
 void* GC_MacGetDataEnd()
 {
 	CodeZeroHandle code0 = (CodeZeroHandle)GetResource('CODE', 0);
@@ -83,7 +83,7 @@ Ptr GC_MacTemporaryNewPtr(size_t size, Boolean clearMemory)
 	TemporaryMemoryHandle tempMemBlock;
 	Ptr tempPtr;
 
-	/* MATTHEW: IM requests that temp memory not be locked across 
+	/* PLTSCHEME: IM requests that temp memory not be locked across 
 	   calls to GetNextEvent or WaitNextEvent. So, we'll use regular
 	   pointers, but grab temp memory if we run out completely. 
 	   Also, we'll be nicer about not grabbing *all* of temp memory,

@@ -54,6 +54,16 @@ ptr_t p;
 #endif
 
 #ifdef KEEP_BACK_PTRS
+
+# include <stdlib.h>
+
+# if defined(LINUX) || defined(SUNOS4) || defined(SUNOS5) \
+     || defined(HPUX) || defined(IRIX) || defined(OSF1)
+#   define RANDOM() random()
+# else
+#   define RANDOM() (long)rand()
+# endif
+
   /* Store back pointer to source in dest, if that appears to be possible. */
   /* This is not completely safe, since we may mistakenly conclude that	   */
   /* dest has a debugging wrapper.  But the error probability is very	   */
@@ -107,7 +117,15 @@ ptr_t p;
   void *GC_generate_random_heap_address(void)
   {
     int i;
-    int heap_offset = random() % GC_heapsize;
+    long heap_offset = RANDOM();
+    if (GC_heapsize > RAND_MAX) {
+	heap_offset *= RAND_MAX;
+	heap_offset += RANDOM();
+    }
+    heap_offset %= GC_heapsize;
+    	/* This doesn't yield a uniform distribution, especially if	*/
+        /* e.g. RAND_MAX = 1.5* GC_heapsize.  But for typical cases,	*/
+        /* it's not too bad.						*/
     for (i = 0; i < GC_n_heap_sects; ++ i) {
 	int size = GC_heap_sects[i].hs_bytes;
 	if (heap_offset < size) {
@@ -746,7 +764,7 @@ void GC_debug_free_inner(GC_PTR p)
     register word *p, *plim;
     
     p = (word *)(hbp->hb_body);
-    word_no = HDR_WORDS;
+    word_no = 0;
     if (sz > MAXOBJSZ) {
 	plim = p;
     } else {
@@ -895,4 +913,17 @@ struct closure {
     }
     GC_register_finalizer_ignore_self(base, GC_debug_invoke_finalizer,
     			  	      GC_make_closure(fn,cd), ofn, ocd);
+}
+
+GC_PTR GC_debug_malloc_replacement(lb)
+size_t lb;
+{
+    return GC_debug_malloc(lb, "unknown", 0);
+}
+
+GC_PTR GC_debug_realloc_replacement(p, lb)
+GC_PTR p;
+size_t lb;
+{
+    return GC_debug_realloc(p, lb, "unknown", 0);
 }

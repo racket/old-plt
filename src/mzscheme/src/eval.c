@@ -360,10 +360,6 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
   return NULL; /* never gets here */
 }
 
-#if defined(UNIX_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE)
-extern unsigned long GC_get_stack_base();
-#endif
-
 void scheme_init_stack_check()
 {
   int *v;
@@ -395,7 +391,7 @@ void scheme_init_stack_check()
 #endif
 
 #ifdef ASSUME_FIXED_STACK_SIZE
-  scheme_stack_boundary = GC_get_stack_base();
+  scheme_stack_boundary = scheme_get_stack_base();
   if (scheme_stack_grows_up)
     scheme_stack_boundary += (FIXED_STACK_SIZE - STACK_SAFETY_MARGIN);
   else
@@ -403,7 +399,7 @@ void scheme_init_stack_check()
 #endif
 
 #ifdef WINDOWS_FIND_STACK_BOUNDS
-  scheme_stack_boundary = GC_get_stack_base();
+  scheme_stack_boundary = scheme_get_stack_base();
   scheme_stack_boundary += (STACK_SAFETY_MARGIN - 0x100000);
 #endif
 
@@ -436,7 +432,7 @@ void scheme_init_stack_check()
 
   {
     unsigned long bnd;
-    bnd = (unsigned long)GC_get_stack_base();
+    bnd = (unsigned long)scheme_get_stack_base();
 
     if (scheme_stack_grows_up)
       bnd += ((unsigned long)rl.rlim_cur - STACK_SAFETY_MARGIN);

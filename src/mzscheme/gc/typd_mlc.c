@@ -40,11 +40,7 @@
 #include "private/gc_mark.h"
 #include "gc_typed.h"
 
-# ifdef ADD_BYTE_AT_END
-#   define EXTRA_BYTES (sizeof(word) - 1)
-# else
-#   define EXTRA_BYTES (sizeof(word))
-# endif
+# define TYPD_EXTRA_BYTES (sizeof(word) - EXTRA_BYTES)
 
 GC_bool GC_explicit_typing_initialized = FALSE;
 
@@ -175,7 +171,7 @@ GC_descr GC_double_descr(descriptor, nwords)
 register GC_descr descriptor;
 register word nwords;
 {
-    if (descriptor & DS_TAGS == DS_LENGTH) {
+    if ((descriptor & DS_TAGS) == DS_LENGTH) {
         descriptor = GC_bm_table[BYTES_TO_WORDS((word)descriptor)];
     };
     descriptor |= (descriptor & ~DS_TAGS) >> nwords;
@@ -667,7 +663,7 @@ register ptr_t * opp;
 register word lw;
 DCL_LOCK_STATE;
 
-    lb += EXTRA_BYTES;
+    lb += TYPD_EXTRA_BYTES;
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
@@ -712,7 +708,7 @@ register ptr_t * opp;
 register word lw;
 DCL_LOCK_STATE;
 
-    lb += EXTRA_BYTES;
+    lb += TYPD_EXTRA_BYTES;
     if( SMALL_OBJ(lb) ) {
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
@@ -770,11 +766,11 @@ DCL_LOCK_STATE;
     	case SIMPLE: return(GC_malloc_explicitly_typed(n*lb, simple_descr));
     	case LEAF:
     	    lb *= n;
-    	    lb += sizeof(struct LeafDescriptor) + EXTRA_BYTES;
+    	    lb += sizeof(struct LeafDescriptor) + TYPD_EXTRA_BYTES;
     	    break;
     	case COMPLEX:
     	    lb *= n;
-    	    lb += EXTRA_BYTES;
+    	    lb += TYPD_EXTRA_BYTES;
     	    break;
     }
     if( SMALL_OBJ(lb) ) {

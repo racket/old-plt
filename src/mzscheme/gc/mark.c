@@ -56,11 +56,7 @@ struct obj_kind GC_obj_kinds[MAXOBJKINDS] = {
 /* PTRFREE */ { INIT_FLD(&GC_aobjfreelist[0]), 0 /* filled in dynamically */,
 		0 | DS_LENGTH, FALSE, FALSE },
 /* NORMAL  */ { INIT_FLD(&GC_objfreelist[0]), 0,
-#		if defined(ADD_BYTE_AT_END) && ALIGNMENT > DS_TAGS
-		(word)(-ALIGNMENT) | DS_LENGTH,
-#		else
-		0 | DS_LENGTH,
-#		endif
+		0 | DS_LENGTH,  /* Adjusted in GC_init_inner for EXTRA_BYTES */
 		TRUE /* add length to descr */, TRUE },
 /* UNCOLLECTABLE */
 	      { INIT_FLD(&GC_uobjfreelist[0]), 0,
@@ -268,9 +264,7 @@ void GC_initiate_gc()
 	    if (GC_dirty_maintained) GC_check_dirty();
 	}
 #   endif
-#   ifdef GATHERSTATS
-	GC_n_rescuing_pages = 0;
-#   endif
+    GC_n_rescuing_pages = 0;
     if (GC_mark_state == MS_NONE) {
         GC_mark_state = MS_PUSH_RESCUERS;
     } else if (GC_mark_state != MS_INVALID) {
@@ -321,9 +315,11 @@ ptr_t cold_gc_frame;
     	    } else {
     	        scan_ptr = GC_push_next_marked_dirty(scan_ptr);
     	        if (scan_ptr == 0) {
-#		    ifdef PRINTSTATS
+#		    ifdef CONDPRINT
+		      if (GC_print_stats) {
 			GC_printf1("Marked from %lu dirty pages\n",
 				   (unsigned long)GC_n_rescuing_pages);
+		      }
 #		    endif
     	    	    GC_push_roots(FALSE, cold_gc_frame);
     	    	    GC_objects_are_marked = TRUE;
@@ -426,10 +422,12 @@ ptr_t cold_gc_frame;
 #ifdef MSWIN32
   } __except (GetExceptionCode() == EXCEPTION_ACCESS_VIOLATION ?
 	    EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {
-#   ifdef PRINTSTATS
+#   ifdef CONDPRINT
+      if (GC_print_stats) {
 	GC_printf0("Caught ACCESS_VIOLATION in marker. "
 		   "Memory mapping disappeared.\n");
-#   endif /* PRINTSTATS */
+      }
+#   endif /* CONDPRINT */
     /* We have bad roots on the stack.  Discard mark stack.  	*/
     /* Rescan from marked objects.  Redetermine roots.		*/
     GC_invalidate_mark_state();	
@@ -469,11 +467,11 @@ GC_bool GC_mark_stack_empty()
 register ptr_t current;
 register hdr * hhdr;
 {
-#   ifdef ALL_INTERIOR_POINTERS
+    if (GC_all_interior_pointers) {
 	if (hhdr != 0) {
 	    register ptr_t orig = current;
 	    
-	    current = (ptr_t)HBLKPTR(current) + HDR_BYTES;
+	    current = (ptr_t)HBLKPTR(current);
 	    do {
 	      current = current - HBLKSIZE*(word)hhdr;
 	      hhdr = HDR(current);
@@ -491,10 +489,10 @@ register hdr * hhdr;
 	    GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source);
 	    return(0);
         }
-#   else
+    } else {
         GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source);
         return(0);
-#   endif
+    }
 #   undef source
 }
 
@@ -509,9 +507,11 @@ mse * msp;
 {
     GC_mark_state = MS_INVALID;
     GC_mark_stack_too_small = TRUE;
-#   ifdef PRINTSTATS
+#   ifdef CONDPRINT
+      if (GC_print_stats) {
 	GC_printf1("Mark stack overflow; current size = %lu entries\n",
 	    	    GC_mark_stack_size);
+      }
 #   endif
     return(msp - GC_MARK_STACK_DISCARDS);
 }
@@ -801,8 +801,10 @@ void GC_return_mark_stack(mse * low, mse * high)
     my_top = GC_mark_stack_top;
     my_start = my_top + 1;
     if (my_start - GC_mark_stack + stack_size > GC_mark_stack_size) {
-#     ifdef PRINTSTATS
-	GC_printf0("No room to copy back mark stack.");
+#     ifdef CONDPRINT
+	if (GC_print_stats) {
+	  GC_printf0("No room to copy back mark stack.");
+	}
 #     endif
       GC_mark_state = MS_INVALID;
       GC_mark_stack_too_small = TRUE;
@@ -923,7 +925,7 @@ void GC_mark_local(mse *local_mark_stack, int id)
 		if (0 == GC_active_count) GC_notify_all_marker();
 		while (GC_active_count > 0
 		       && GC_first_nonempty > GC_mark_stack_top) {
-		    /* We will be notofied if either GC_active_count	*/
+		    /* We will be notified if either GC_active_count	*/
 		    /* reaches zero, or if more objects are pushed on	*/
 		    /* the global mark stack.				*/
 		    GC_wait_marker();
@@ -1061,14 +1063,18 @@ word n;
 	      }
           GC_mark_stack = new_stack;
           GC_mark_stack_size = n;
-#	  ifdef PRINTSTATS
+#	  ifdef CONDPRINT
+	    if (GC_print_stats) {
 	      GC_printf1("Grew mark stack to %lu frames\n",
 		    	 (unsigned long) GC_mark_stack_size);
+	    }
 #	  endif
         } else {
-#	  ifdef PRINTSTATS
+#	  ifdef CONDPRINT
+	    if (GC_print_stats) {
 	      GC_printf1("Failed to grow mark stack to %lu frames\n",
 		    	 (unsigned long) n);
+	    }
 #	  endif
         }
     } else {
@@ -1251,18 +1257,15 @@ register GC_bool interior_ptrs;
         displ = HBLKDISPL(p);
         map_entry = MAP_ENTRY((hhdr -> hb_map), displ);
         if (map_entry == OBJ_INVALID) {
-#	  ifndef ALL_INTERIOR_POINTERS
-            if (interior_ptrs) {
+          if (!GC_all_interior_pointers && interior_ptrs) {
               r = BASE(p);
 	      displ = BYTES_TO_WORDS(HBLKDISPL(r));
 	      if (r == 0) hhdr = 0;
-            } else {
+          } else {
+	      /* Either map reflects interior pointers or there are */
+	      /* none registered.				    */
               hhdr = 0;
-            }
-#	  else
-	    /* map already reflects interior pointers */
-	    hhdr = 0;
-#	  endif
+          }
         } else {
           displ = BYTES_TO_WORDS(displ);
           displ -= map_entry;
@@ -1381,7 +1384,7 @@ ptr_t bottom;
 ptr_t top;
 ptr_t cold_gc_frame;
 {
-# ifdef ALL_INTERIOR_POINTERS
+  if (GC_all_interior_pointers) {
 #   define EAGER_BYTES 1024
     /* Push the hot end of the stack eagerly, so that register values   */
     /* saved inside GC frames are marked before they disappear.		*/
@@ -1397,9 +1400,9 @@ ptr_t cold_gc_frame;
 	GC_push_all_eager(cold_gc_frame, top);
 	GC_push_all(bottom, cold_gc_frame + sizeof(ptr_t));
 #   endif /* STACK_GROWS_UP */
-# else
+  } else {
     GC_push_all_eager(bottom, top);
-# endif
+  }
 # ifdef TRACE_BUF
       GC_add_trace_entry("GC_push_all_stack", bottom, top);
 # endif
@@ -1410,11 +1413,11 @@ void GC_push_all_stack(bottom, top)
 ptr_t bottom;
 ptr_t top;
 {
-# ifdef ALL_INTERIOR_POINTERS
+  if (GC_all_interior_pointers) {
     GC_push_all(bottom, top);
-# else
+  } else {
     GC_push_all_eager(bottom, top);
-# endif
+  }
 }
 
 #if !defined(SMALL_CONFIG) && !defined(USE_MARK_BYTES)
@@ -1424,7 +1427,7 @@ void GC_push_marked1(h, hhdr)
 struct hblk *h;
 register hdr * hhdr;
 {
-    word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p;
     word *plim;
     register int i;
@@ -1465,7 +1468,7 @@ void GC_push_marked2(h, hhdr)
 struct hblk *h;
 register hdr * hhdr;
 {
-    word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p;
     word *plim;
     register int i;
@@ -1507,7 +1510,7 @@ void GC_push_marked4(h, hhdr)
 struct hblk *h;
 register hdr * hhdr;
 {
-    word * mark_word_addr = &(hhdr->hb_marks[divWORDSZ(HDR_WORDS)]);
+    word * mark_word_addr = &(hhdr->hb_marks[0]);
     register word *p;
     word *plim;
     register int i;
@@ -1565,12 +1568,10 @@ register hdr * hhdr;
     /* Some quick shortcuts: */
 	if ((0 | DS_LENGTH) == descr) return;
         if (GC_block_empty(hhdr)/* nothing marked */) return;
-#   ifdef GATHERSTATS
-        GC_n_rescuing_pages++;
-#   endif
+    GC_n_rescuing_pages++;
     GC_objects_are_marked = TRUE;
     if (sz > MAXOBJSZ) {
-        lim = (word *)h + HDR_WORDS;
+        lim = (word *)h;
     } else {
         lim = (word *)(h + 1) - sz;
     }
@@ -1592,8 +1593,7 @@ register hdr * hhdr;
 #   endif       
      default:
       GC_mark_stack_top_reg = GC_mark_stack_top;
-      for (p = (word *)h + HDR_WORDS, word_no = HDR_WORDS; p <= lim;
-         p += sz, word_no += sz) {
+      for (p = (word *)h, word_no = 0; p <= lim; p += sz, word_no += sz) {
          if (mark_bit_from_hdr(hhdr, word_no)) {
            /* Mark from fields inside the object */
              PUSH_OBJ((word *)p, hhdr, GC_mark_stack_top_reg, mark_stack_limit);
@@ -1620,7 +1620,6 @@ register hdr * hhdr;
          return(GC_page_was_dirty(h));
     } else {
     	 register ptr_t p = (ptr_t)h;
-         sz += HDR_WORDS;
          sz = WORDS_TO_BYTES(sz);
          while (p < (ptr_t)h + sz) {
              if (GC_page_was_dirty((struct hblk *)p)) return(TRUE);

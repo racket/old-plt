@@ -25,13 +25,9 @@
  * there too.
  */
 
-# if defined(GC_IRIX_THREADS) || defined(GC_HPUX_THREADS) \
-     || defined(IRIX_THREADS) || defined(HPUX_THREADS)
+# if defined(GC_IRIX_THREADS) || defined(IRIX_THREADS)
 
 # include "private/gc_priv.h"
-# if defined(HPUX_THREADS)
-#   include <sys/semaphore.h>
-# endif
 # include <pthread.h>
 # include <semaphore.h>
 # include <time.h>
@@ -43,6 +39,7 @@
 #undef pthread_create
 #undef pthread_sigmask
 #undef pthread_join
+#undef pthread_detach
 
 void GC_thr_init();
 
@@ -503,10 +500,33 @@ int GC_pthread_join(pthread_t thread, void **retval)
     /* Some versions of the Irix pthreads library can erroneously 	*/
     /* return EINTR when the call succeeds.				*/
 	if (EINTR == result) result = 0;
+    if (result == 0) {
+        LOCK();
+        /* Here the pthread thread id may have been recycled. */
+        GC_delete_gc_thread(thread, thread_gc_id);
+        UNLOCK();
+    }
+    return result;
+}
+
+int GC_pthread_detach(pthread_t thread)
+{
+    int result;
+    GC_thread thread_gc_id;
+    
     LOCK();
-    /* Here the pthread thread id may have been recycled. */
-    GC_delete_gc_thread(thread, thread_gc_id);
+    thread_gc_id = GC_lookup_thread(thread);
     UNLOCK();
+    result = REAL_FUNC(pthread_detach)(thread);
+    if (result == 0) {
+      LOCK();
+      thread_gc_id -> flags |= DETACHED;
+      /* Here the pthread thread id may have been recycled. */
+      if (thread_gc_id -> flags & FINISHED) {
+        GC_delete_gc_thread(thread, thread_gc_id);
+      }
+      UNLOCK();
+    }
     return result;
 }
 
@@ -552,39 +572,7 @@ void * GC_start_routine(void * arg)
     return(result);
 }
 
-# ifdef HPUX_THREADS
-  /* pthread_attr_t is not a structure, thus a simple structure copy	*/
-  /* won't work.							*/
-  static void copy_attr(pthread_attr_t * pa_ptr,
-			const pthread_attr_t  * source) {
-    int tmp;
-    size_t stmp;
-    void * vtmp;
-    struct sched_param sp_tmp;
-    pthread_spu_t ps_tmp;
-    (void) pthread_attr_init(pa_ptr);
-    (void) pthread_attr_getdetachstate(source, &tmp);
-    (void) pthread_attr_setdetachstate(pa_ptr, tmp);
-    (void) pthread_attr_getinheritsched(source, &tmp);
-    (void) pthread_attr_setinheritsched(pa_ptr, tmp);
-    (void) pthread_attr_getschedpolicy(source, &tmp);
-    (void) pthread_attr_setschedpolicy(pa_ptr, tmp);
-    (void) pthread_attr_getstacksize(source, &stmp);
-    (void) pthread_attr_setstacksize(pa_ptr, stmp);
-    (void) pthread_attr_getguardsize(source, &stmp);
-    (void) pthread_attr_setguardsize(pa_ptr, stmp);
-    (void) pthread_attr_getstackaddr(source, &vtmp);
-    (void) pthread_attr_setstackaddr(pa_ptr, vtmp);
-    (void) pthread_attr_getscope(source, &tmp);
-    (void) pthread_attr_setscope(pa_ptr, tmp);
-    (void) pthread_attr_getschedparam(source, &sp_tmp);
-    (void) pthread_attr_setschedparam(pa_ptr, &sp_tmp);
-    (void) pthread_attr_getprocessor_np(source, &ps_tmp, &tmp);
-    (void) pthread_attr_setprocessor_np(pa_ptr, ps_tmp, tmp);
-  }
-# else
-#   define copy_attr(pa_ptr, source) *(pa_ptr) = *(source)
-# endif
+# define copy_attr(pa_ptr, source) *(pa_ptr) = *(source)
 
 int
 GC_pthread_create(pthread_t *new_thread,
@@ -650,14 +638,12 @@ GC_pthread_create(pthread_t *new_thread,
 	  }
 	}
         sem_destroy(&(si -> registered));
-    pthread_attr_destroy(&new_attr);  /* Not a no-op under HPUX */
+    pthread_attr_destroy(&new_attr);  /* Probably unnecessary under Irix */
     return(result);
 }
 
-#ifndef HPUX_THREADS
-/* For now we use the pthreads locking primitives on HP/UX */
-
-GC_bool GC_collecting = 0; /* A hint that we're in the collector and       */
+VOLATILE GC_bool GC_collecting = 0;
+			/* A hint that we're in the collector and       */
                         /* holding the allocation lock for an           */
                         /* extended period.                             */
 
@@ -666,15 +652,9 @@ GC_bool GC_collecting = 0; /* A hint that we're in the collector and       */
 
 #define SLEEP_THRESHOLD 3
 
-#ifdef HPUX
-   unsigned long GC_allocate_lock = 1;
-#  define GC_TRY_LOCK() GC_test_and_clear(&GC_allocate_lock)
-#  define GC_LOCK_TAKEN !GC_allocate_lock
-#else
-   unsigned long GC_allocate_lock = 0;
-#  define GC_TRY_LOCK() !GC_test_and_set(&GC_allocate_lock,1)
-#  define GC_LOCK_TAKEN GC_allocate_lock
-#endif
+unsigned long GC_allocate_lock = 0;
+# define GC_TRY_LOCK() !GC_test_and_set(&GC_allocate_lock,1)
+# define GC_LOCK_TAKEN GC_allocate_lock
 
 void GC_lock()
 {
@@ -733,8 +713,6 @@ yield:
 	}
     }
 }
-
-#endif /* !HPUX_THREADS */
 
 # else
 

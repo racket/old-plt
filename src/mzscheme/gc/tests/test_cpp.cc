@@ -29,9 +29,9 @@ few minutes to complete.
 #include <stdlib.h>
 #include <string.h>
 #ifdef __GNUC__
-#   include "include/new_gc_alloc.h"
+#   include "new_gc_alloc.h"
 #else
-#   include "include/gc_alloc.h"
+#   include "gc_alloc.h"
 #endif
 extern "C" {
 #include "private/gc_priv.h"

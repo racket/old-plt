@@ -82,7 +82,176 @@
 #    define LOCK() mutex_lock(&GC_allocate_ml);
 #    define UNLOCK() mutex_unlock(&GC_allocate_ml);
 #  endif
-#  if defined(LINUX_THREADS) 
+
+/* Try to define GC_TEST_AND_SET and a matching GC_CLEAR for spin lock	*/
+/* acquisition and release.  We need this for correct operation of the	*/
+/* incremental GC.							*/
+#  ifdef __GNUC__
+#    if defined(I386)
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
+	  int oldval;
+	  /* Note: the "xchg" instruction does not need a "lock" prefix */
+	  __asm__ __volatile__("xchgl %0, %1"
+		: "=r"(oldval), "=m"(*(addr))
+		: "0"(1), "m"(*(addr)) : "memory");
+	  return oldval;
+       }
+#      define GC_TEST_AND_SET_DEFINED
+#    endif
+#    if defined(IA64)
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
+	  long oldval, n = 1;
+	  __asm__ __volatile__("xchg4 %0=%1,%2"
+		: "=r"(oldval), "=m"(*addr)
+		: "r"(n), "1"(*addr) : "memory");
+	  return oldval;
+       }
+#      define GC_TEST_AND_SET_DEFINED
+       /* Should this handle post-increment addressing?? */
+       inline static void GC_clear(volatile unsigned int *addr) {
+	 __asm__ __volatile__("st4.rel %0=r0" : "=m" (*addr) : : "memory");
+       }
+#      define GC_CLEAR_DEFINED
+#    endif
+#    ifdef SPARC
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
+	 int oldval;
+
+	 __asm__ __volatile__("ldstub %1,%0"
+	 : "=r"(oldval), "=m"(*addr)
+	 : "m"(*addr) : "memory");
+	 return oldval;
+       }
+#      define GC_TEST_AND_SET_DEFINED
+#    endif
+#    ifdef M68K
+       /* Contributed by Tony Mantler.  I'm not sure how well it was	*/
+       /* tested.							*/
+       inline static int GC_test_and_set(volatile unsigned int *addr) {
+          char oldval; /* this must be no longer than 8 bits */
+
+          /* The return value is semi-phony. */
+          /* 'tas' sets bit 7 while the return */
+          /* value pretends bit 0 was set */
+          __asm__ __volatile__(
+                 "tas %1@; sne %0; negb %0"
+                 : "=d" (oldval)
+                 : "a" (addr) : "memory");
+          return oldval;
+       }
+#      define GC_TEST_AND_SET_DEFINED
+#    endif
+#    if defined(POWERPC)
+        inline static int GC_test_and_set(volatile unsigned int *addr) {
+          int oldval;
+          int temp = 1; // locked value
+
+          __asm__ __volatile__(
+               "1:\tlwarx %0,0,%3\n"   // load and reserve
+               "\tcmpwi %0, 0\n"       // if load is
+               "\tbne 2f\n"            //   non-zero, return already set
+               "\tstwcx. %2,0,%1\n"    // else store conditional
+               "\tbne- 1b\n"           // retry if lost reservation
+               "2:\t\n"                // oldval is zero if we set
+              : "=&r"(oldval), "=p"(addr)
+              : "r"(temp), "1"(addr)
+              : "memory");
+          return (int)oldval;
+        }
+#       define GC_TEST_AND_SET_DEFINED
+        inline static void GC_clear(volatile unsigned int *addr) {
+	  __asm__ __volatile__("eieio" ::: "memory");
+          *(addr) = 0;
+        }
+#       define GC_CLEAR_DEFINED
+#    endif
+#    if defined(ALPHA) 
+        inline static int GC_test_and_set(volatile unsigned int * addr)
+        {
+          unsigned long oldvalue;
+          unsigned long temp;
+
+          __asm__ __volatile__(
+                             "1:     ldl_l %0,%1\n"
+                             "       and %0,%3,%2\n"
+                             "       bne %2,2f\n"
+                             "       xor %0,%3,%0\n"
+                             "       stl_c %0,%1\n"
+                             "       beq %0,3f\n"
+                             "       mb\n"
+                             "2:\n"
+                             ".section .text2,\"ax\"\n"
+                             "3:     br 1b\n"
+                             ".previous"
+                             :"=&r" (temp), "=m" (*addr), "=&r" (oldvalue)
+                             :"Ir" (1), "m" (*addr)
+			     :"memory");
+
+          return oldvalue;
+        }
+#       define GC_TEST_AND_SET_DEFINED
+        /* Should probably also define GC_clear, since it needs	*/
+        /* a memory barrier ??					*/
+#    endif /* ALPHA */
+#    ifdef ARM32
+        inline static int GC_test_and_set(volatile unsigned int *addr) {
+          int oldval;
+          /* SWP on ARM is very similar to XCHG on x86.  Doesn't lock the
+           * bus because there are no SMP ARM machines.  If/when there are,
+           * this code will likely need to be updated. */
+          /* See linuxthreads/sysdeps/arm/pt-machine.h in glibc-2.1 */
+          __asm__ __volatile__("swp %0, %1, [%2]"
+      		  	     : "=r"(oldval)
+      			     : "r"(1), "r"(addr)
+			     : "memory");
+          return oldval;
+        }
+#       define GC_TEST_AND_SET_DEFINED
+#    endif /* ARM32 */
+#  endif /* __GNUC__ */
+#  if (defined(ALPHA) && !defined(__GNUC__))
+#    define GC_test_and_set(addr) __cxx_test_and_set_atomic(addr, 1)
+#    define GC_TEST_AND_SET_DEFINED
+#  endif
+#  if defined(MSWIN32)
+#    define GC_test_and_set(addr) InterlockedExchange((LPLONG)addr,1)
+#    define GC_TEST_AND_SET_DEFINED
+#  endif
+#  ifdef MIPS
+#    if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64)) \
+	|| !defined(_COMPILER_VERSION) || _COMPILER_VERSION < 700
+#        define GC_test_and_set(addr, v) test_and_set(addr,v)
+#    else
+#	 define GC_test_and_set(addr, v) __test_and_set(addr,v)
+#	 define GC_clear(addr) __lock_release(addr);
+#	 define GC_CLEAR_DEFINED
+#    endif
+#    define GC_TEST_AND_SET_DEFINED
+#  endif /* MIPS */
+#  ifdef HP_PA
+     /* "set" means 0 and "clear" means 1 here.		*/
+#    define GC_test_and_set(addr) !GC_test_and_clear(addr);
+#    define GC_TEST_AND_SET_DEFINED
+#    define GC_clear(addr) GC_noop1(addr); *(volatile unsigned int *)addr = 1;
+	/* The above needs a memory barrier! */
+#    define GC_CLEAR_DEFINED
+#  endif
+#  if defined(GC_TEST_AND_SET_DEFINED) && !defined(GC_CLEAR_DEFINED)
+#    ifdef __GNUC__
+       inline static void GC_clear(volatile unsigned int *addr) {
+         /* Try to discourage gcc from moving anything past this. */
+         __asm__ __volatile__(" " : : : "memory");
+         *(addr) = 0;
+       }
+#    else
+	    /* The function call in the following should prevent the	*/
+	    /* compiler from moving assignments to below the UNLOCK.	*/
+#      define GC_clear(addr) GC_noop1(addr); *(volatile unsigned int *)addr = 0;
+#    endif
+#    define GC_CLEAR_DEFINED
+#  endif /* !GC_CLEAR_DEFINED */
+
+#  if defined(LINUX_THREADS) || defined(GC_OSF1_THREADS)
 #   define NO_THREAD (pthread_t)(-1)
 #   if defined(I386)|| defined(POWERPC) || defined(ALPHA) || defined(IA64) \
     || defined(M68K) || defined(SPARC)
@@ -162,133 +331,13 @@
         return old;
       }
 #    endif /* PARALLEL_MARK */
+
 #    ifndef THREAD_LOCAL_ALLOC
       /* In the THREAD_LOCAL_ALLOC case, the allocation lock tends to	*/
       /* be held for long periods, if it is held at all.  Thus spinning	*/
       /* and sleeping for fixed periods are likely to result in 	*/
       /* significant wasted time.  We thus rely mostly on queued locks. */
 #     define USE_SPIN_LOCK
-#     if defined(I386)
-       inline static int GC_test_and_set(volatile unsigned int *addr) {
-	  int oldval;
-	  /* Note: the "xchg" instruction does not need a "lock" prefix */
-	  __asm__ __volatile__("xchgl %0, %1"
-		: "=r"(oldval), "=m"(*(addr))
-		: "0"(1), "m"(*(addr)) : "memory");
-	  return oldval;
-       }
-#     endif
-#     if defined(IA64)
-       inline static int GC_test_and_set(volatile unsigned int *addr) {
-	  long oldval, n = 1;
-	  __asm__ __volatile__("xchg4 %0=%1,%2"
-		: "=r"(oldval), "=m"(*addr)
-		: "r"(n), "1"(*addr) : "memory");
-	  return oldval;
-       }
-       inline static void GC_clear(volatile unsigned int *addr) {
-	 __asm__ __volatile__("st4.rel %0=r0" : "=m" (*addr) : : "memory");
-       }
-#      define GC_CLEAR_DEFINED
-#     endif
-#     ifdef SPARC
-       inline static int GC_test_and_set(volatile unsigned int *addr) {
-	 int oldval;
-
-	 __asm__ __volatile__("ldstub %1,%0"
-	 : "=r"(oldval), "=m"(*addr)
-	 : "m"(*addr) : "memory");
-	 return oldval;
-       }
-#     endif
-#     ifdef M68K
-       /* Contributed by Tony Mantler.  I'm not sure how well it was	*/
-       /* tested.							*/
-       inline static int GC_test_and_set(volatile unsigned int *addr) {
-          char oldval; /* this must be no longer than 8 bits */
-
-          /* The return value is semi-phony. */
-          /* 'tas' sets bit 7 while the return */
-          /* value pretends bit 0 was set */
-          __asm__ __volatile__(
-                 "tas %1@; sne %0; negb %0"
-                 : "=d" (oldval)
-                 : "a" (addr) : "memory");
-          return oldval;
-       }
-#     endif
-#     if defined(POWERPC)
-        inline static int GC_test_and_set(volatile unsigned int *addr) {
-          int oldval;
-          int temp = 1; // locked value
-
-          __asm__ __volatile__(
-               "1:\tlwarx %0,0,%3\n"   // load and reserve
-               "\tcmpwi %0, 0\n"       // if load is
-               "\tbne 2f\n"            //   non-zero, return already set
-               "\tstwcx. %2,0,%1\n"    // else store conditional
-               "\tbne- 1b\n"           // retry if lost reservation
-               "2:\t\n"                // oldval is zero if we set
-              : "=&r"(oldval), "=p"(addr)
-              : "r"(temp), "1"(addr)
-              : "memory");
-          return (int)oldval;
-        }
-        inline static void GC_clear(volatile unsigned int *addr) {
-	  __asm__ __volatile__("eieio" ::: "memory");
-          *(addr) = 0;
-        }
-#       define GC_CLEAR_DEFINED
-#     endif
-#     ifdef ALPHA
-        inline static int GC_test_and_set(volatile unsigned int * addr)
-        {
-          unsigned long oldvalue;
-          unsigned long temp;
-
-          __asm__ __volatile__(
-                             "1:     ldl_l %0,%1\n"
-                             "       and %0,%3,%2\n"
-                             "       bne %2,2f\n"
-                             "       xor %0,%3,%0\n"
-                             "       stl_c %0,%1\n"
-                             "       beq %0,3f\n"
-                             "       mb\n"
-                             "2:\n"
-                             ".section .text2,\"ax\"\n"
-                             "3:     br 1b\n"
-                             ".previous"
-                             :"=&r" (temp), "=m" (*addr), "=&r" (oldvalue)
-                             :"Ir" (1), "m" (*addr)
-			     :"memory");
-
-          return oldvalue;
-        }
-        /* Should probably also define GC_clear, since it needs	*/
-        /* a memory barrier ??					*/
-#     endif /* ALPHA */
-#     ifdef ARM32
-        inline static int GC_test_and_set(volatile unsigned int *addr) {
-          int oldval;
-          /* SWP on ARM is very similar to XCHG on x86.  Doesn't lock the
-           * bus because there are no SMP ARM machines.  If/when there are,
-           * this code will likely need to be updated. */
-          /* See linuxthreads/sysdeps/arm/pt-machine.h in glibc-2.1 */
-          __asm__ __volatile__("swp %0, %1, [%2]"
-      		  	     : "=r"(oldval)
-      			     : "r"(1), "r"(addr)
-			     : "memory");
-          return oldval;
-        }
-#     endif /* ARM32 */
-#     ifndef GC_CLEAR_DEFINED
-         inline static void GC_clear(volatile unsigned int *addr) {
-	  /* Try to discourage gcc from moving anything past this. */
-	  __asm__ __volatile__(" " : : : "memory");
-          *(addr) = 0;
-         }
-#     endif /* !GC_CLEAR_DEFINED */
-
       extern volatile unsigned int GC_allocate_lock;
       extern void GC_lock(void);
 	/* Allocation lock holder.  Only set if acquired by client through */
@@ -306,6 +355,18 @@
 #        define UNLOCK() \
 		GC_clear(&GC_allocate_lock)
 #     endif /* !GC_ASSERTIONS */
+#     if 0
+	/* Another alternative for OSF1 might be:		*/
+#       include <sys/mman.h>
+        extern msemaphore GC_allocate_semaphore;
+#       define LOCK() { if (msem_lock(&GC_allocate_semaphore, MSEM_IF_NOWAIT) \
+ 			    != 0) GC_lock(); else GC_allocate_lock = 1; }
+        /* The following is INCORRECT, since the memory model is too weak. */
+	/* Is this true?  Presumably msem_unlock has the right semantics?  */
+	/*		- HB						   */
+#       define UNLOCK() { GC_allocate_lock = 0; \
+                          msem_unlock(&GC_allocate_semaphore, 0); }
+#     endif /* 0 */
 #    else /* THREAD_LOCAL_ALLOC */
 #      define USE_PTHREAD_LOCKS
 #    endif /* THREAD_LOCAL_ALLOC */
@@ -340,7 +401,7 @@
 #   ifdef GC_ASSERTIONS
       extern pthread_t GC_mark_lock_holder;
 #   endif
-#  endif /* LINUX_THREADS */
+#  endif /* LINUX_THREADS || GC_OSF1_THREADS */
 #  if defined(HPUX_THREADS)
 #    include <pthread.h>
      extern pthread_mutex_t GC_allocate_ml;
@@ -349,24 +410,11 @@
 #    define UNLOCK() pthread_mutex_unlock(&GC_allocate_ml)
 #  endif
 #  if defined(IRIX_THREADS)
-     /* This may also eventually be appropriate for HPUX_THREADS */
 #    include <pthread.h>
-#    ifndef HPUX_THREADS
-	/* This probably should never be included, but I can't test	*/
-	/* on Irix anymore.						*/
-#       include <mutex.h>
-#    endif
+     /* This probably should never be included, but I can't test	*/
+     /* on Irix anymore.						*/
+#    include <mutex.h>
 
-#    ifndef HPUX_THREADS
-#      if __mips < 3 || !(defined (_ABIN32) || defined(_ABI64)) \
-	|| !defined(_COMPILER_VERSION) || _COMPILER_VERSION < 700
-#        define GC_test_and_set(addr, v) test_and_set(addr,v)
-#      else
-#	 define GC_test_and_set(addr, v) __test_and_set(addr,v)
-#      endif
-#    else
-       /* I couldn't find a way to do this inline on HP/UX	*/
-#    endif
      extern unsigned long GC_allocate_lock;
 	/* This is not a mutex because mutexes that obey the (optional) 	*/
 	/* POSIX scheduling rules are subject to convoys in high contention	*/
@@ -379,26 +427,8 @@
 #    define NO_THREAD (pthread_t)(-1)
 #    define UNSET_LOCK_HOLDER() GC_lock_holder = NO_THREAD
 #    define I_HOLD_LOCK() (pthread_equal(GC_lock_holder, pthread_self()))
-#    ifdef HPUX_THREADS
-#      define LOCK() { if (!GC_test_and_clear(&GC_allocate_lock)) GC_lock(); }
-       /* The following is INCORRECT, since the memory model is too weak. */
-#      define UNLOCK() { GC_noop1(&GC_allocate_lock); \
-			*(volatile unsigned long *)(&GC_allocate_lock) = 1; }
-#    else
-#      define LOCK() { if (GC_test_and_set(&GC_allocate_lock, 1)) GC_lock(); }
-#      if __mips >= 3 && (defined (_ABIN32) || defined(_ABI64)) \
-	   && defined(_COMPILER_VERSION) && _COMPILER_VERSION >= 700
-#	    define UNLOCK() __lock_release(&GC_allocate_lock)
-#      else
-	    /* The function call in the following should prevent the	*/
-	    /* compiler from moving assignments to below the UNLOCK.	*/
-	    /* This is probably not necessary for ucode or gcc 2.8.	*/
-	    /* It may be necessary for Ragnarok and future gcc		*/
-	    /* versions.						*/
-#           define UNLOCK() { GC_noop1(&GC_allocate_lock); \
-			*(volatile unsigned long *)(&GC_allocate_lock) = 0; }
-#      endif
-#    endif
+#    define LOCK() { if (GC_test_and_set(&GC_allocate_lock, 1)) GC_lock(); }
+#    define UNLOCK() GC_clear(&GC_allocate_lock);
      extern VOLATILE GC_bool GC_collecting;
 #    define ENTER_GC() \
 		{ \

@@ -110,6 +110,8 @@ typedef long FILE;
 typedef jmpbuf jmp_buf[1];
 #endif
 
+#define GC_MIGHT_USE_REGISTERED_STATICS
+
 #ifdef __cplusplus
 extern "C" 
 {
@@ -1101,9 +1103,6 @@ extern int scheme_square_brackets_are_parens; /* Defaults to 1 */
 extern int scheme_curly_braces_are_parens; /* Defaults to 1 */
 extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */
 extern int scheme_hash_percent_globals_only; /* Defaults to 0 */
-#ifdef GC_MIGHT_USE_REGISTERED_STATICS
-extern int GC_use_registered_statics; /* Defaults to 0 */
-#endif
 extern int scheme_binary_mode_stdio; /* Windows-MacOS-specific. Defaults to 0 */
 
 #ifdef MZ_REAL_THREADS
@@ -1161,6 +1160,10 @@ int scheme_image_main(int argc, char **argv);
 extern int (*scheme_actual_main)(int argc, char **argv);
 
 /* GC registration: */
+#ifdef GC_MIGHT_USE_REGISTERED_STATICS
+void scheme_set_stack_base();
+#endif
+
 void scheme_register_static(void *ptr, long size);
 #if defined(MUST_REGISTER_GLOBALS) || defined(GC_MIGHT_USE_REGISTERED_STATICS)
 # define MZ_REGISTER_STATIC(x)  scheme_register_static((void *)&x, sizeof(x))

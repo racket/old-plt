@@ -188,10 +188,6 @@ static void dangerdanger(int ignored)
 # include "sgc/sgc.h"
 #endif
 
-#ifdef MZ_STACK_START_HACK
-void *mzscheme_stack_start;
-#endif
-
 /* Forward declarations: */
 static void do_scheme_rep(Scheme_Env *);
 static int cont_run(FinishArgs *f);
@@ -202,22 +198,16 @@ int actual_main(int argc, char *argv[]);
 
 int main(int argc, char **argv)
 {
-#if defined(USE_SENORA_GC)
   void *mzscheme_stack_start;
-#endif
-#if defined(MZ_STACK_START_HACK) || defined(USE_SENORA_GC)
-  long start2;
 
-  mzscheme_stack_start = (void *)&start2;
-#endif
+  mzscheme_stack_start = (void *)&mzscheme_stack_start;
 
-#if defined(USE_SENORA_GC)
-  GC_set_stack_base(mzscheme_stack_start);
-#endif
 #if defined(MZ_PRECISE_GC)
-  GC_set_stack_base(&__gc_var_stack__);
+  mzscheme_stack_start = (void *)&__gc_var_stack__;
   GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
 #endif
+
+  scheme_set_stack_base(mzscheme_stack_start, 1);
 
 #ifdef USE_MSVC_MD_LIBRARY
   GC_pre_init();

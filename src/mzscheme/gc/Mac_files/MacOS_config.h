@@ -12,15 +12,15 @@
 /* Boehm, November 17, 1995 12:10 pm PST */
 
 #ifdef __MWERKS__
-# if defined(__powerc)
-#  include <MacHeadersPPC>
-/* MATTHEW: use 4-byte alignment */
-#  define USE_POWERPC_FOUR_BYTE_ALIGN
-# else
-#  include <MacHeaders68K>
-#  define USE_M68K_FOUR_BYTE_ALIGN
-# endif
+
+// for CodeWarrior Pro with Metrowerks Standard Library (MSL).
+// #define MSL_USE_PRECOMPILED_HEADERS 0
+#include <ansi_prefix.mac.h>
+#ifndef __STDC__
+#define __STDC__ 0
 #endif
+
+#endif /* __MWERKS__ */
 
 // these are defined again in gc_priv.h.
 #undef TRUE

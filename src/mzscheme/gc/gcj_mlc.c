@@ -115,7 +115,7 @@ register ptr_t * opp;
 register word lw;
 DCL_LOCK_STATE;
 
-    if( SMALL_OBJ(lb) ) {
+    if( EXPECT(SMALL_OBJ(lb), 1) ) {
 #       ifdef MERGE_SIZES
 	  lw = GC_size_map[lb];
 #	else
@@ -123,7 +123,8 @@ DCL_LOCK_STATE;
 #       endif
 	opp = &(GC_gcjobjfreelist[lw]);
 	LOCK();
-        if( (op = *opp) == 0 ) {
+	op = *opp;
+        if( EXPECT(op == 0, 0)) {
             op = (ptr_t)GENERAL_MALLOC((word)lb, GC_gcj_kind);
 	    if (0 == op) {
 		UNLOCK();
@@ -192,7 +193,8 @@ DCL_LOCK_STATE;
 
     opp = &(GC_gcjobjfreelist[lw]);
     LOCK();
-    if( (op = *opp) == 0 ) {
+    op = *opp;
+    if( EXPECT(op == 0, 0) ) {
         op = (ptr_t)GC_clear_stack(
 		GC_generic_malloc_words_small_inner(lw, GC_gcj_kind));
 	if (0 == op) {
@@ -263,7 +265,6 @@ DCL_LOCK_STATE;
         } else {
             *opp = obj_link(op);
             GC_words_allocd += lw;
-            FASTUNLOCK();
         }
 	*(void **)op = ptr_to_struct_containing_descr;
 	UNLOCK();

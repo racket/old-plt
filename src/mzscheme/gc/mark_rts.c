@@ -32,12 +32,11 @@ struct roots {
 struct roots GC_static_roots[MAX_ROOT_SETS];
 */
 
+int GC_no_dls = 0;	/* Register dynamic library data segments.	*/
+
 static int n_root_sets = 0;
 
 	/* GC_static_roots[0..n_root_sets) contains the valid root sets. */
-
-/* PLTSCHEME: declare GC_use_registered_statics */
-int GC_use_registered_statics = 0;
 
 /* PLTSCHEME: hook for last roots; need to mark copies of the stack */
 void (*GC_push_last_roots)() = 0;
@@ -472,15 +471,15 @@ ptr_t cold_gc_frame;
 			/* Previously set to backing store pointer.	*/
 		ptr_t bsp = (ptr_t) GC_save_regs_ret_val;
 	        ptr_t cold_gc_bs_pointer;
-#		ifdef ALL_INTERIOR_POINTERS
+		if (GC_all_interior_pointers) {
 	          cold_gc_bs_pointer = bsp - 2048;
 		  if (cold_gc_bs_pointer < BACKING_STORE_BASE) {
 		    cold_gc_bs_pointer = BACKING_STORE_BASE;
 		  }
 		  GC_push_all(BACKING_STORE_BASE, cold_gc_bs_pointer);
-#		else
+		} else {
 		  cold_gc_bs_pointer = BACKING_STORE_BASE;
-#		endif
+		}
 		GC_push_all_eager(cold_gc_bs_pointer, bsp);
 		/* All values should be sufficiently aligned that we	*/
 		/* dont have to worry about the boundary.		*/
@@ -526,9 +525,7 @@ ptr_t cold_gc_frame;
 #      if (defined(DYNAMIC_LOADING) || defined(MSWIN32) || defined(MSWINCE) \
 	   || defined(PCR)) && !defined(SRC_M3)
          GC_remove_tmp_roots();
-	 /* PLTSCHEME: check GC_use_registered_statics */
-	 if (!GC_use_registered_statics) 
-	   GC_register_dynamic_libraries();
+         if (!GC_no_dls) GC_register_dynamic_libraries();
 #      endif
      /* Mark everything in static data areas                             */
        for (i = 0; i < n_root_sets; i++) {

@@ -34,14 +34,14 @@
 #   include <assert.h>        /* Not normally used, but handy for debugging. */
 # endif
 # include <assert.h>	/* Not normally used, but handy for debugging. */
-# include "include/gc.h"
-# include "include/gc_typed.h"
+# include "gc.h"
+# include "gc_typed.h"
 # ifdef THREAD_LOCAL_ALLOC
-#   include "include/gc_local_alloc.h"
+#   include "gc_local_alloc.h"
 # endif
-# include "include/private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
+# include "private/gc_priv.h"	/* For output, locking, MIN_WORDS, 	*/
 			/* and some statistics.			*/
-# include "include/private/gcconfig.h"
+# include "private/gcconfig.h"
 
 # if defined(MSWIN32) || defined(MSWINCE)
 #   include <windows.h>
@@ -73,10 +73,6 @@
     static CRITICAL_SECTION incr_cs;
 # endif
 
-# ifdef AMIGA
-   long __stack = 200000;
-# endif
-
 
 /* Allocation Statistics */
 int stubborn_count = 0;
@@ -85,6 +81,45 @@ int collectable_count = 0;
 int atomic_count = 0;
 int realloc_count = 0;
 
+#if defined(GC_AMIGA_FASTALLOC) && defined(AMIGA)
+
+  extern void GC_amiga_free_all_mem(void);
+  void Amiga_Fail(void){GC_amiga_free_all_mem();abort();}
+# define FAIL (void)Amiga_Fail()
+  void *GC_amiga_gctest_malloc_explicitly_typed(size_t lb, GC_descr d){
+    void *ret=GC_malloc_explicitly_typed(lb,d);
+    if(ret==NULL){
+		if(!GC_dont_gc){
+	      GC_gcollect();
+	      ret=GC_malloc_explicitly_typed(lb,d);
+		}
+      if(ret==NULL){
+        GC_printf0("Out of memory, (typed allocations are not directly "
+		   "supported with the GC_AMIGA_FASTALLOC option.)\n");
+        FAIL;
+      }
+    }
+    return ret;
+  }
+  void *GC_amiga_gctest_calloc_explicitly_typed(size_t a,size_t lb, GC_descr d){
+    void *ret=GC_calloc_explicitly_typed(a,lb,d);
+    if(ret==NULL){
+		if(!GC_dont_gc){
+	      GC_gcollect();
+	      ret=GC_calloc_explicitly_typed(a,lb,d);
+		}
+      if(ret==NULL){
+        GC_printf0("Out of memory, (typed allocations are not directly "
+		   "supported with the GC_AMIGA_FASTALLOC option.)\n");
+        FAIL;
+      }
+    }
+    return ret;
+  }
+# define GC_malloc_explicitly_typed(a,b) GC_amiga_gctest_malloc_explicitly_typed(a,b) 
+# define GC_calloc_explicitly_typed(a,b,c) GC_amiga_gctest_calloc_explicitly_typed(a,b,c) 
+
+#else /* !AMIGA_FASTALLOC */
 
 # ifdef PCR
 #   define FAIL (void)abort()
@@ -95,6 +130,8 @@ int realloc_count = 0;
 #     define FAIL GC_abort("Test failed");
 #   endif
 # endif
+
+#endif /* !AMIGA_FASTALLOC */
 
 /* AT_END may be defined to exercise the interior pointer test	*/
 /* if the collector is configured with ALL_INTERIOR_POINTERS.   */
@@ -495,7 +532,12 @@ void reverse_test()
 	  /* WinCE only allows 64K stacks */
 #	  define BIG 500
 #	else
-#         define BIG 4500
+#	  if defined(OSF1)
+	    /* OSF has limited stack space by default, and large frames. */
+#           define BIG 200
+#	  else
+#           define BIG 4500
+#	  endif
 #	endif
 #     endif
 #   endif
@@ -531,11 +573,9 @@ void reverse_test()
       for (i = 0; i < 10; i++) {
         (void)ints(1, BIG);
       }
-#   ifdef ALL_INTERIOR_POINTERS
-	/* Superficially test interior pointer recognition on stack */
-	c = (sexpr)((char *)c + sizeof(char *));
-	d = (sexpr)((char *)d + sizeof(char *));
-#   endif
+    /* Superficially test interior pointer recognition on stack */
+      c = (sexpr)((char *)c + sizeof(char *));
+      d = (sexpr)((char *)d + sizeof(char *));
 
 #   ifdef __STDC__
         GC_FREE((void *)e);
@@ -567,10 +607,8 @@ void reverse_test()
     }
     check_ints(a,1,49);
     check_ints(b,1,50);
-#   ifdef ALL_INTERIOR_POINTERS
-	c = (sexpr)((char *)c - sizeof(char *));
-	d = (sexpr)((char *)d - sizeof(char *));
-#   endif
+    c = (sexpr)((char *)c - sizeof(char *));
+    d = (sexpr)((char *)d - sizeof(char *));
     check_ints(c,1,BIG);
     check_uncollectable_ints(d, 1, 100);
     check_ints(f[5], 1,17);
@@ -1113,7 +1151,8 @@ void run_one_test()
 #      if defined(RS6000) || defined(POWERPC)
         if (!TEST_FAIL_COUNT(1)) {
 #      else
-        if (!TEST_FAIL_COUNT(2)) {
+        if (GC_all_interior_pointers && !TEST_FAIL_COUNT(1)
+	    || !GC_all_interior_pointers && !TEST_FAIL_COUNT(2)) {
 #      endif
     	  (void)GC_printf0("GC_is_valid_displacement produced wrong failure indication\n");
     	  FAIL;
@@ -1170,7 +1209,10 @@ void check_heap_stats()
 #   ifdef GC_DEBUG
 	max_heap_sz *= 2;
 #       ifdef SAVE_CALL_CHAIN
-	    max_heap_sz *= 2;
+	    max_heap_sz *= 3;
+#           ifdef SAVE_CALL_COUNT
+		max_heap_sz *= SAVE_CALL_COUNT/4;
+#	    endif
 #       endif
 #   endif
     /* Garbage collect repeatedly so that all inaccessible objects	*/
@@ -1575,7 +1617,7 @@ main()
     	pthread_attr_setstacksize(&attr, 1000000);
 #   endif
     n_tests = 0;
-#   if  defined(MPROTECT_VDB) && !defined(PARALLEL_MARK)
+#   if  defined(MPROTECT_VDB) && !defined(PARALLEL_MARK) &&!defined(REDIRECT_MALLOC)
     	GC_enable_incremental();
         (void) GC_printf0("Switched to incremental mode\n");
 	(void) GC_printf0("Emulating dirty bits with mprotect/signals\n");

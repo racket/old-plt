@@ -673,7 +673,7 @@ void GC_push_all_stacks()
     
 #   define PUSH(bottom,top) \
       if (GC_dirty_maintained) { \
-	GC_push_dirty((bottom), (top), GC_page_was_ever_dirty, \
+	GC_push_selected((bottom), (top), GC_page_was_ever_dirty, \
 		      GC_push_all_stack); \
       } else { \
         GC_push_all_stack((bottom), (top)); \

@@ -303,19 +303,29 @@ exit_label2: ; \
     } 
 # endif /* USE_MARK_BYTES */
 
+/* If the mark bit corresponding to current is not set, set it, and 	*/
+/* push the contents of the object on the mark stack.  Since we		*/
+/* already have the header, we only look at the low order bits of 	*/
+/* current.  (The value of current doesn't matter if hhdr = 		*/
+/* GC_invalid_header.)							*/
 # define PUSH_CONTENTS_HDR(current, mark_stack_top, mark_stack_limit, \
 		           source, exit_label, hhdr) \
 { \
     int displ;  /* Displacement in block; first bytes, then words */ \
-    map_entry_type map_entry; \
+    int map_entry; \
     \
     displ = HBLKDISPL(current); \
     map_entry = MAP_ENTRY((hhdr -> hb_map), displ); \
-    if (map_entry == OBJ_INVALID) { \
-        GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source); goto exit_label; \
-    } \
     displ = BYTES_TO_WORDS(displ); \
+    if (map_entry > CPP_MAX_OFFSET) { \
+	if (map_entry == OFFSET_TOO_BIG) { \
+	  map_entry = displ % (hhdr -> hb_sz); \
+	} else { \
+          GC_ADD_TO_BLACK_LIST_NORMAL((word)current, source); goto exit_label; \
+	} \
+    } \
     displ -= map_entry; \
+    GC_ASSERT(displ >= 0 && displ < MARK_BITS_PER_HBLK); \
     SET_MARK_BIT_EXIT_IF_SET(hhdr, displ, exit_label); \
     GC_STORE_BACK_PTR((ptr_t)source, (ptr_t)HBLKPTR(current) \
 				      + WORDS_TO_BYTES(displ)); \
@@ -347,15 +357,10 @@ exit_label2: ; \
  * As above, but interior pointer recognition as for
  * normal for heap pointers.
  */
-# ifdef ALL_INTERIOR_POINTERS
-#   define AIP TRUE
-# else
-#   define AIP FALSE
-# endif
 # define GC_PUSH_ONE_HEAP(p,source) \
     if ((ptr_t)(p) >= GC_least_plausible_heap_addr 	\
 	 && (ptr_t)(p) < GC_greatest_plausible_heap_addr) {	\
-	 PUSH_ONE_CHECKED(p,AIP,source);	\
+	 PUSH_ONE_CHECKED(p,GC_all_interior_pointers,source);	\
     }
 
 /* Mark starting at mark stack entry top (incl.) down to	*/

@@ -55,7 +55,7 @@
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
 
-  (define library-invoker #f)
+  (define invoke-library void)
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
   (fw:preferences:set-default 'drscheme:library-file
@@ -93,7 +93,7 @@
 						      prefix
 						      (symbol->string s))))
 						  sub))))])))])
-		   (set! library-invoker
+		   (set! invoke-library
 			 (eval
 			  `(lambda ()
 			     (with-handlers ([(lambda (x) #t)
@@ -120,7 +120,7 @@
 		    "Invalid Library"
 		    "Library file does not contain a unit")
 		   #f)))
-	   (set! library-invoker #f)))))
+	   (set! invoke-library (void))))))
     
   (define exception-reporting-rep (make-parameter #f))
 
@@ -1309,8 +1309,7 @@
 	     
 	     (exit-handler (lambda (arg) (shutdown-user-custodian)))
 	     
-	     (when library-invoker
-	       (library-invoker))
+	     (invoker-library)
 	     
 	     ;; set all parameters before constructing eventspace
 	     ;; so that the parameters are set in the eventspace's

@@ -46,8 +46,16 @@
 
      (for-each
       update-missing
-      (list originator reply-to         subject                   description)
-      (list "Name"     "E-mail address" "Summary of the problem"  "Description of the problem"))
+      (list originator reply-to         subject)
+      (list "Name"     "E-mail address" "Summary of the problem"))
+
+     (when (andmap (lambda (s) (string=? s ""))
+		   (list description how-to-repeat))
+	   (set! missing-fields
+		(cons "Description or Steps to reproduce"
+		      missing-fields)))
+
+
 
      (cond 
       [(not (null? missing-fields))

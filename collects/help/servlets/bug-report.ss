@@ -109,7 +109,7 @@
 	    "Please give a short sequence of steps "
 	    "to reproduce the problem:") (BR)
 	    (TEXTAREA ((NAME "how-to-repeat")
-		       (ROWS "4")
+		       (ROWS "6")
 		       (COLS "60")
 		       (STYLE "font-family:monospace"))
 		      "")

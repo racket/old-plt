@@ -16,12 +16,6 @@
   (define bug-report-email-address 
     (string-append bug-report-recipient "@plt-scheme.org"))
 
-#| 
-  (define bug-email-server "mail.plt-scheme.org")
-  (define bug-email-server-port 25)
-  (define bug-report-email-address "steck@plt-scheme.org")
-|#
-
   (define (make-top-table s)
     `(TABLE ((CELLPADDING "0")
 	     (CELLSPACING "0")

@@ -36,6 +36,24 @@ typedef struct {
 
 typedef void (*atomic_timeout_t)(void);
 
+static atomic_timeout_t pre_scheme()
+{
+  atomic_timeout_t old;
+
+  old = scheme_on_atomic_timeout;
+  scheme_on_atomic_timeout = NULL;
+  scheme_start_atomic();
+  scheme_current_thread->suspend_break++;
+  return old;
+}
+
+static void post_scheme(atomic_timeout_t old)
+{
+  --scheme_current_thread->suspend_break;
+  scheme_end_atomic_no_swap();
+  scheme_on_atomic_timeout = old;
+}
+
 static void init_ATSU_style(void);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
 					       double angle, double scale_y, int qd_spacing);
@@ -85,6 +103,20 @@ static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 			    8364, 9002, 8747, 8992, 9134, 8993, 9118, 9119,
 			    9120, 9124, 9125, 9126, 9131, 9132, 9133, 0 };
 
+static int always_use_atsu = 1;
+# define ALWAYS_USE_ATSU always_use_atsu
+
+#define QUICK_UBUF_SIZE 512
+static UniChar u_buf[QUICK_UBUF_SIZE];
+static double widths_buf[QUICK_UBUF_SIZE];
+static ATSUTextLayout layout_buf[QUICK_UBUF_SIZE];
+static int glyphs_buf[QUICK_UBUF_SIZE];
+static CGGlyph cgglyphs_buf[QUICK_UBUF_SIZE];
+static CGSize sizes_buf[QUICK_UBUF_SIZE];
+
+static CGFontRef prev_cgf;
+static short cgf_txFont, cgf_txFace;
+
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bool ucs4, int d, double angle)
 {
@@ -92,7 +124,177 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
   double w;
 
   if (!Ok()) return;
-  
+
+#if 1
+  if (!combine 
+      && ucs4 
+      && (angle == 0.0) 
+      && table_key
+      && (current_bk_mode == wxTRANSPARENT)) {
+    int smoothing, use_cgctx;
+
+    smoothing = font->GetEffectiveSmoothing(user_scale_y);
+    use_cgctx = (always_use_atsu 
+		 && ((smoothing != wxSMOOTHING_PARTIAL) || (user_scale_x != user_scale_y)));
+
+    if (use_cgctx) {
+      int i;
+      unsigned int *s = (unsigned int *)text;
+      wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
+      int ulen;
+      atomic_timeout_t old;
+      CGSize *sizes;
+      CGGlyph *cgglyphs;
+      int glyph;
+      Scheme_Object *val;
+
+      k->scale_x = user_scale_x;
+      k->scale_y = user_scale_y;
+      k->angle = angle;
+      i = font->GetMacFontNum();
+      k->txFont = i;
+      i = font->GetPointSize();
+      k->txSize = i;
+      i = font->GetMacFontStyle();
+      k->txFace = i;
+      k->use_cgctx = (char)use_cgctx;
+      k->smoothing = (char)smoothing;
+
+      for (i = d; s[i]; i++) { }
+      ulen = i - d;
+      if (ulen > QUICK_UBUF_SIZE) {
+	sizes = (CGSize *)(new WXGC_ATOMIC char[ulen * sizeof(CGSize)]);
+	cgglyphs = (CGGlyph *)(new WXGC_ATOMIC char[ulen * sizeof(CGGlyph)]);
+      } else {
+	sizes = sizes_buf;
+	cgglyphs = cgglyphs_buf;
+      }
+
+      old = pre_scheme();
+
+      for (i = d; s[i]; i++) {
+	k->code = s[i];
+	val = scheme_hash_get(width_table, table_key);
+	if (!val) {
+	  val = scheme_hash_get(old_width_table, table_key);
+	  if (val) {
+	    /* Move it to the new table, so we find it faster, and
+	       so it's kept on the next rotation: */
+	    Scheme_Object *new_key;
+	    new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
+	    scheme_hash_set(width_table, new_key, val);
+	    scheme_hash_set(old_width_table, table_key, NULL);
+	  }
+	}
+	if (!val)
+	  break;
+	glyph = SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[2]);
+	if (glyph < 0)
+	  break;
+	sizes[i-d].width = SCHEME_DBL_VAL(SCHEME_VEC_ELS(val)[0]);
+	sizes[i-d].height = 0;
+	cgglyphs[i-d] = (CGGlyph)glyph;
+      }
+
+      post_scheme(old);
+
+      if (!s[i]) {
+	FMFont fnt;
+	FMFontStyle intrinsic;
+	int done = 0;
+	FontInfo fontInfo;
+	CGFontRef cgf;
+
+	wxTextFontInfo(k->txFont, k->txSize, k->txFace, &fontInfo, NULL, 0, 0);
+
+	if (prev_cgf
+	    && (cgf_txFont == k->txFont)
+	    && (cgf_txFace == k->txFace)) {
+	  cgf = prev_cgf;
+	} else {
+	  if (FMGetFontFromFontFamilyInstance(k->txFont,
+					      k->txFace,
+					      &fnt,
+					      &intrinsic)
+	      == noErr) {
+	    short face = k->txFace;
+
+	    face &= ~intrinsic;
+	    if (!face) {
+	      ATSFontRef ats;
+	      ats = FMGetATSFontRefFromFont(fnt);
+	      cgf = CGFontCreateWithPlatformFont(&ats);
+	    } else {
+	      /* After all this, we give up and let the OS take care of bolding
+		 or italicing the font. */
+	      cgf = NULL;
+	    }
+	  } else
+	    cgf = NULL;
+	}
+	  
+	if (cgf) {
+	  CGContextRef cg;
+	  CGrafPtr qdp;
+	  Rect portRect;
+
+	  SetCurrentDC(TRUE);
+	  cg = GetCG();
+	
+	  CGContextSaveGState(cg);
+      
+	  CGContextSetFont(cg, cgf);
+	  CGContextSetFontSize(cg, k->txSize);
+
+	  {
+	    int red, green, blue;
+
+	    red = current_text_foreground->Red();
+	    green = current_text_foreground->Green();
+	    blue = current_text_foreground->Blue();
+
+	    CGContextSetRGBFillColor(cg, 
+				     (double)red / 255.0,
+				     (double)green / 255.0,
+				     (double)blue / 255.0,
+				     1.0);
+	  }
+
+	  if (smoothing == wxSMOOTHING_OFF)
+	    CGContextSetShouldAntialias(cg, FALSE);
+
+	  qdp = cMacDC->macGrafPort();
+	  SyncCGContextOriginWithPort(cg, qdp);
+	  GetPortBounds(qdp, &portRect);
+	  CGContextTranslateCTM(cg, 
+				gdx + (x * user_scale_x) + device_origin_x, 
+				(portRect.bottom - portRect.top) 
+				- (gdy + ((y  + fontInfo.ascent) * user_scale_y) + device_origin_y));
+	  CGContextScaleCTM(cg, user_scale_x, user_scale_y);
+	  
+	  CGContextSetTextPosition(cg, 0, 0);
+	  CGContextShowGlyphsWithAdvances(cg, cgglyphs, sizes, ulen);
+
+	  if (prev_cgf && (prev_cgf != cgf))
+	    CGFontRelease(prev_cgf);
+	  prev_cgf = cgf;
+	  cgf_txFont = k->txFont;
+	  cgf_txFace = k->txFace;
+
+	  CGContextRestoreGState(cg);
+	
+	  ReleaseCurrentDC();
+
+	  done = 1;
+	}
+
+	if (done)
+	  return;
+      }
+    }
+  }
+#endif
+
   SetCurrentDC();
 
   wxMacSetCurrentTool(kTextTool);
@@ -179,9 +381,6 @@ void wxCanvasDC::GetTextExtent(const char* string, double* x, double* y, double*
 /*****************************************************************************/
 
 //----------------------------------------------------------------------
-
-static int always_use_atsu = 1;
-# define ALWAYS_USE_ATSU always_use_atsu
 
 void wxCheckATSUCapability()
 {
@@ -448,29 +647,6 @@ Bool wxGetUnicodeGlyphAvailable(int c,
   return (r != kATSUFontsNotMatched);
 }
 
-static atomic_timeout_t pre_scheme()
-{
-  atomic_timeout_t old;
-
-  old = scheme_on_atomic_timeout;
-  scheme_on_atomic_timeout = NULL;
-  scheme_start_atomic();
-  scheme_current_thread->suspend_break++;
-  return old;
-}
-
-static void post_scheme(atomic_timeout_t old)
-{
-  --scheme_current_thread->suspend_break;
-  scheme_end_atomic_no_swap();
-  scheme_on_atomic_timeout = old;
-}
-
-#define QUICK_UBUF_SIZE 512
-static UniChar u_buf[QUICK_UBUF_SIZE];
-static double widths_buf[QUICK_UBUF_SIZE];
-static ATSUTextLayout layout_buf[QUICK_UBUF_SIZE];
-
 #if 0
 static long time_preprocess, time_ctx, time_style, time_layout, time_measure, time_draw;
 static long time_counter, time_start;
@@ -508,6 +684,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   double *widths;
   int use_cgctx = (always_use_atsu 
 		   && ((smoothing != wxSMOOTHING_PARTIAL) || (scale_x != scale_y)));
+  int *glyphs;
   FontInfo fontInfo;
 	
   if (!theATSUstyle)
@@ -625,9 +802,11 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     if (ulen > QUICK_UBUF_SIZE) {
       widths = new WXGC_ATOMIC double[ulen];
       layouts = (ATSUTextLayout *)(new WXGC_ATOMIC char[sizeof(ATSUTextLayout) * ulen]);
+      glyphs = new WXGC_ATOMIC int[ulen];
     } else {
       widths = widths_buf;
       layouts = layout_buf;
+      glyphs = glyphs_buf;
     }
 
     old = pre_scheme();
@@ -658,8 +837,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	all = 0;
 	widths[i] = -1;
       } else {
-	widths[i] = SCHEME_DBL_VAL(SCHEME_CAR(val));
-	layouts[i] = *(ATSUTextLayout *)SCHEME_CDR(val);
+	widths[i] = SCHEME_DBL_VAL(SCHEME_VEC_ELS(val)[0]);
+	layouts[i] = *(ATSUTextLayout *)SCHEME_VEC_ELS(val)[1];
+	glyphs[i] = SCHEME_INT_VAL(SCHEME_VEC_ELS(val)[2]);
 	r += widths[i];
       }
     }
@@ -671,6 +851,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   } else {
     widths = NULL;
     layouts = NULL;
+    glyphs = NULL;
   }
 
   END_TIME(cache);
@@ -1058,7 +1239,42 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     }
 
     if (qd_spacing) {
-      layouts[delta] = layout;
+      if (need_size) {
+	ItemCount n;
+	ATSLayoutRecord *info;
+
+	if (ATSUDirectGetLayoutDataArrayPtrFromTextLayout(layout, 
+							  0, 
+							  kATSUDirectDataLayoutRecordATSLayoutRecordCurrent,
+							  (void **)&info, &n)
+	    == noErr) {
+	  if (n == 2) {
+	    /* Make sure that the glyph was not substituted from another font: */
+	    ATSUFontID fontid;
+	    UniCharArrayOffset changed;
+	    UniCharCount changedLen;
+	
+	    if (ATSUMatchFontsToText(layout,
+				     kATSUFromTextBeginning,
+				     kATSUToTextEnd,
+				     &fontid,
+				     &changed,
+				     &changedLen)
+		== noErr) {
+	      glyphs[delta] = info->glyphID;
+	    } else {
+	      glyphs[delta] = -1;
+	    }
+	  } else {
+	    glyphs[delta] = -1;
+	  }
+	  ATSUDirectReleaseLayoutDataArrayPtr(NULL, kATSUDirectDataLayoutRecordATSLayoutRecordCurrent, (void **)&info);
+	} else {
+	  glyphs[delta] = -1;
+	}
+
+	layouts[delta] = layout;
+      }
       layout = NULL;
     }
 
@@ -1103,15 +1319,23 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
       if (widths[j] >= 0) {
 	char *lp;
+	Scheme_Object *vec, *wd;
 
 	val = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
 	((wxKey *)SCHEME_BYTE_STR_VAL(val))->code = wc;
 
+	vec = scheme_make_vector(3, NULL);
+
+	wd = scheme_make_double(widths[j]);
+
 	lp = new WXGC_ATOMIC char[sizeof(ATSUTextLayout)];
 	*(ATSUTextLayout*)lp = layouts[j];
 
-	scheme_hash_set(width_table, val, scheme_make_pair(scheme_make_double(widths[j]),
-							   (Scheme_Object *)lp));
+	SCHEME_VEC_ELS(vec)[0] = wd;
+	SCHEME_VEC_ELS(vec)[1] = (Scheme_Object *)lp;
+	SCHEME_VEC_ELS(vec)[2] = scheme_make_integer(glyphs[j]);
+
+	scheme_hash_set(width_table, val, vec);
 	
 	if (width_table->mcount >= MAX_WIDTH_MAPPINGS) {
 	  /* rotate tables, so width_table doesn't grow indefinitely,

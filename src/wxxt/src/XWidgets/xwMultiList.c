@@ -77,6 +77,7 @@
 
 Pixmap XmuCreateStippledPixmap();
 extern void XawInitializeWidgetSet();
+extern int wxGetMultiClickTime(Display*);
 
 #define	SUPERCLASS	&(simpleClassRec)
 
@@ -1229,7 +1230,7 @@ Cardinal *num_params;
 
 	/* handle double click events using the timestamp of event */
 	if (event->xbutton.time - MultiListLastRelease(mlw)
-	    < XtGetMultiClickTime(XtDisplay(mlw)))
+	    < wxGetMultiClickTime(XtDisplay(mlw)))
 	{
 	    Select(mlw, event, params, num_params);
 	    MultiListMostRecentAct(mlw) = XfwfMultiListActionDClick;

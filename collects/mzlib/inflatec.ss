@@ -5,6 +5,4 @@
 (constant mzlib:inflate@)
 (constant mzlib:inflate^)
 
-(constant inflate)
-(constant gunzip)
-(constant gunzip-through-ports)
+(constant-signature-content mzlib:inflate^)

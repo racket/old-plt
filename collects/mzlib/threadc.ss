@@ -6,7 +6,4 @@
 (constant mzlib:thread@)
 (constant mzlib:thread^)
 
-(constant consumer-thread)
-(constant merge-input)
-(constant with-semaphore)
-(constant semaphore-wait-multiple)
+(constant-signature-content mzlib:thread^)

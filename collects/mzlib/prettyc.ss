@@ -4,7 +4,4 @@
 
 (constant mzlib:pretty-print@)
 
-(constant pretty-print)
-(constant pretty-print-columns)
-(constant pretty-print-depth)
-(constant pretty-print-handler)
+(constant-signature-content mzlib:pretty-print^)

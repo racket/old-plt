@@ -2184,7 +2184,7 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
 	    
 	    if (scheme_proper_list_length(l) < 0)
 	      l = NULL;
-	    for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	    for (; l && SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	      a = SCHEME_CAR(l);
 	      if (!((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
 		    || (SCHEME_BIGNUMP(a) && !SCHEME_BIGPOS(a)))) {

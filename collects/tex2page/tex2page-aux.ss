@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-06-19")
+(define *tex2page-version* "2003-06-23")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -7449,7 +7449,7 @@
       (write-log #\newline))
      ((string=? not-a-file "--help")
       (write-log
-        "\nThe command tex2page converts a (La)TeX document into\nWeb pages.  Call tex2page with the relative or full\npathname of the main (La)TeX file.  \n\nThe relative pathnames of the main and any subsidiary\n(La)TeX files are resolved against the current working\ndirectory and the list of directories in the\nenvironment variable TIIPINPUTS.  The file extension is\noptional if it is .tex. \n\nThe output Web files are generated in the current\ndirectory by default.  An alternate location can be\nspecified in  <jobname>.hdir, tex2page.hdir, or\n~/tex2page.hdir, where <jobname> is the basename of the\nmain (La)TeX file.  \n\nFor more information on tex2page, please see")
+        "\nThe command tex2page converts a (La)TeX document into\nWeb pages.  Call tex2page with the relative or full\npathname of the main (La)TeX file.  The file extension\nis optional if it is .tex.\n\nThe relative pathnames of the main and any subsidiary\n(La)TeX files are resolved against the current working\ndirectory and the list of directories in the\nenvironment variable TIIPINPUTS, or if that does not\nexist, TEXINPUTS.  \n\nThe output Web files are generated in the current\ndirectory by default.  An alternate location can be\nspecified in  <jobname>.hdir, tex2page.hdir, or\n~/tex2page.hdir, where <jobname> is the basename of the\nmain (La)TeX file.  \n\nFor more information on tex2page, please see")
       (write-log #\newline)
       (write-log *tex2page-website*)
       (write-log #\.)

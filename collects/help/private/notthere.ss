@@ -25,12 +25,15 @@
        "probably because it is not part of the standard DrScheme distribution.")
       
       (p
-       ,@(let* ([subpath (if (directory-exists? (build-path (collection-path "help") "CVS"))
-                             "PreRelease/DocBundles"
-                             (format "packages/~a/DocBundles" (version)))]
-                [url (format "http://www.cs.rice.edu/CS/PLT/~a/~a-doc.plt" subpath missing-doc-name)]
-                [web-url (format "http://www.cs.rice.edu/CS/PLT/packages/~a/doc/~a/~a"
-                                 (version) missing-doc-name missing-html-file)])
+       ,@(let* ([subpath (if (directory-exists? 
+			      (build-path (collection-path "help") "CVS"))
+                             "pre-release/bundles"
+                             (format "~a/bundles" (version)))]
+                [url (format "http://download.plt-scheme.org/doc/~a/~a-doc.plt" 
+			     subpath missing-doc-name)]
+                [web-url (format "http://download.plt-scheme.org/doc/~a/html/~a/~a"
+                                 (version) 
+				 missing-doc-name missing-html-file)])
            (list
             `(h3 "To Read the Documentation Online")
             `(UL

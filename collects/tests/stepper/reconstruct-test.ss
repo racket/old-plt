@@ -10,6 +10,11 @@
 
 (SECTION 'stepper-reconstruct)
 
+(define collector%
+  (class 
+      
+      
+      
 ; collect-in-pairs-maker : ((vector 'a 'a) -> 'b) -> (boolean 'a -> (union 'b void)) 
 (define (collect-in-pairs-maker action)
   (let ([stored-first #f]

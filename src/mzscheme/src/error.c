@@ -518,7 +518,7 @@ static void
 call_error(char *buffer, int len, Scheme_Object *exn)
 {
   Scheme_Object *p[2];
-  volatile mz_jmp_buf savebuf;
+  mz_jmp_buf savebuf;
 
   if (scheme_current_thread->error_invoked == 5) {
     scheme_longjmp (scheme_error_buf, 1);
@@ -535,7 +535,7 @@ call_error(char *buffer, int len, Scheme_Object *exn)
     memcpy((void *)&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(scheme_error_buf)) {
       scheme_current_thread->error_invoked = 0;
-      scheme_longjmp(*(mz_jmp_buf*)&savebuf, 1);
+      scheme_longjmp(savebuf, 1);
     } else {
       if (buffer)
 	scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 2, p);
@@ -545,7 +545,7 @@ call_error(char *buffer, int len, Scheme_Object *exn)
       /* Uh-oh; record the error fall back to the default escaper */
       scheme_inescapeable_error("error escape handler did not escape; calling the default error escape handler", "");
       scheme_current_thread->error_invoked = 0;
-      scheme_longjmp(*(mz_jmp_buf*)&savebuf, 1); /* force an exit */
+      scheme_longjmp(savebuf, 1); /* force an exit */
     }
   }
 }

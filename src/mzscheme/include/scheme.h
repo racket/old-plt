@@ -1073,11 +1073,12 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #endif
 
 #ifdef MZ_PRECISE_GC
-# define scheme_longjmp(b, v) (GC_variable_stack = (b).gcvs, \
-                               (GC_variable_stack ? (GC_variable_stack[1] = (b).gcvs_cnt) : 0), \
+/* Need to make sure that a __gc_var_stack__ is always available where
+   setjmp & longjmp are used. */
+# define scheme_longjmp(b, v) ((b).gcvs[1] = (b).gcvs_cnt, \
                                scheme_mz_longjmp((b).jb, v))
-# define scheme_setjmp(b)     ((b).gcvs = GC_variable_stack, \
-                               (b).gcvs_cnt = (GC_variable_stack ? GC_variable_stack[1] : 0), \
+# define scheme_setjmp(b)     ((b).gcvs = __gc_var_stack__, \
+                               (b).gcvs_cnt = __gc_var_stack__[1], \
                                scheme_mz_setjmp((b).jb))
 #else
 # define scheme_longjmp(b, v) scheme_mz_longjmp(b, v)

@@ -337,6 +337,9 @@
        return sizeof if for while else switch case
        asm __asm __asm__ __volatile __volatile__ volatile __extension__
        __typeof
+
+       ;; These don't act like functions:
+       setjmp longjmp _setjmp _longjmp scheme_setjmp scheme_longjmp
        
        ;; The following are functions, but they don't trigger GC, and
        ;; they either take one argument or no pointer arguments.

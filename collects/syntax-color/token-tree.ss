@@ -1,7 +1,7 @@
 (module token-tree mzscheme
   
-  (provide search! search-min! search-max! insert-after! split insert-next! insert-prev!
-           to-list
+  (provide search! search-min! search-max! insert-after! split insert-next! insert-prev! remove-root!
+           to-list size max-depth
            (struct node (token-length token-data left-subtree-length left right)))
   
   (define-struct node (token-length token-data left-subtree-length left right))
@@ -71,6 +71,11 @@
                    (node-right n)))
         (else (values 0 0 #f #f)))))
 
+  (define (remove-root! node)
+    (let ((new-node (search-max! (node-left node) null)))
+      (set-node-right! new-node (node-right node))
+      new-node))
+  
   (define (insert-before! node new-node)
     (let ((n (search-min! node null)))
       (cond
@@ -90,10 +95,12 @@
   (define (insert-prev! node new-node)
     (set-node-left! node (insert-after! (node-left node) new-node))
     (set-node-left-subtree-length! node (+ (node-token-length new-node) 
-                                           (node-left-subtree-length node))))
+                                           (node-left-subtree-length node)))
+    node)
   
   (define (insert-next! node new-node)
-    (set-node-right! node (insert-before! (node-right node) new-node)))
+    (set-node-right! node (insert-before! (node-right node) new-node))
+    node)
   
   
   (define (update-subtree-length-left-rotate! self parent)
@@ -170,6 +177,20 @@
                  (set-node-right! (caddr path) self)))
          (bottom-up-splay! self (cddr path))))))
 
+  (define (size node acc)
+    (cond
+      ((not node) acc)
+      (else
+       (let ((left-size (size (node-left node) acc)))
+         (size (node-right node) (add1 left-size))))))
+  
+  (define (max-depth node)
+    (cond
+      ((not node) 0)
+      (else
+       (add1 (max (max-depth (node-left node))
+                  (max-depth (node-right node)))))))
+      
   (define (to-list node)
     (cond
       (node

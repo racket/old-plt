@@ -11,7 +11,6 @@
   
   (define (tokenized-text-mixin %)
     (class %
-      
       ;; ---------------------- Lexing state ----------------------------------
       
       ;; The tree of valid tokens, starting at start-pos
@@ -29,7 +28,7 @@
       
       ;; The lexer
       (define get-token #f)
-      
+
       ;; If the tree is completed
       (define up-to-date? #t)
       
@@ -37,7 +36,10 @@
       
       ;; ---------------------- Parnethesis matching --------------------------
       
-      (define parens (new paren-tree% (matches '(|(| |)|))))
+      (define pairs '((|(| |)|)
+                      (|[| |]|)
+                      (|{| |}|)))
+      (define parens (new paren-tree% (matches pairs)))
       
       ;; ---------------------- Interactions state ----------------------------
       ;; The positions to start and end the coloring at.
@@ -58,14 +60,14 @@
       (define lock (make-semaphore 1))
       
       (inherit change-style begin-edit-sequence end-edit-sequence
-               get-style-list in-edit-sequence?)
+               get-style-list in-edit-sequence? get-start-position)
       
       (define/public (reset-tokens)
         (set! tokens #f)
         (set! invalid-tokens #f)
         (set! invalid-tokens-start +inf.0)
         (set! up-to-date? #t)
-        (set! parens (new paren-tree% (matches '(|(| |)|))))
+        (set! parens (new paren-tree% (matches pairs)))
         (set! current-pos start-pos)
         (set! colors null)
         (modify))
@@ -83,6 +85,8 @@
       (define (sync-invalid)
         (when (and invalid-tokens (< invalid-tokens-start current-pos))
           (let ((min-tree (search-min! invalid-tokens null)))
+            (send parens remove-token invalid-tokens-start (node-token-length min-tree))
+            (send parens print)
             (set! invalid-tokens (node-right min-tree))
             (set! invalid-tokens-start (+ invalid-tokens-start
                                           (node-token-length min-tree)))
@@ -116,6 +120,7 @@
                               colors)))
               (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
               (send parens add-token data (- current-pos start-pos len) len)
+              (send parens print)
               (cond
                 ((and invalid-tokens (= invalid-tokens-start current-pos))
                  (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
@@ -135,6 +140,8 @@
             (up-to-date?
              (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
                            (split tokens (- edit-start-pos start-pos))))
+               (when tokens
+                 (send parens remove-token orig-token-start (- orig-token-end orig-token-start)))
                (set! invalid-tokens invalid-tree)
                (set! tokens valid-tree)
                (set! invalid-tokens-start 
@@ -197,7 +204,6 @@
             ;; Breaks should be disabled from exit of re-tokenize
             ;; lock will be held
             (set! up-to-date? #t)
-            (send parens print)
             (semaphore-post lock)
             (thread-suspend (current-thread))))
         (background-colorer))
@@ -244,8 +250,9 @@
       (rename (super-after-set-position after-set-position))
       (define/override (after-set-position)
         (super-after-set-position)
-        (modify))
-      
+        (modify)
+        (let ((end (time (send parens match (get-start-position)))))
+          (printf "~a ~a~n" (get-start-position) end)))      
       (rename (super-on-change-style on-change-style))
       (define/override (on-change-style a b)
         (super-on-change-style a b)
@@ -265,7 +272,7 @@
       (define/override (after-delete edit-start-pos change-length)
         (super-after-delete edit-start-pos change-length)
         (do-insert/delete edit-start-pos (- change-length)))
-  
+      
       (super-instantiate ())))
   
   

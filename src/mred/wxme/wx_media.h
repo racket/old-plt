@@ -624,4 +624,6 @@ extern wxMediaSnip *wxsMakeMediaSnip(wxMediaBuffer *useme,
 extern wxMediaEdit *wxsMakeMediaEdit();
 extern wxMediaPasteboard *wxsMakeMediaPasteboard();
 
+extern int wxGetPreference(const char *name, int *res);
+
 #endif /* __WX_MEDIA__ */

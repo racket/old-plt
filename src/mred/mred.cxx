@@ -2660,12 +2660,6 @@ wxFrame *MrEdApp::OnInit(void)
 
   wxInitMedia();
 
-#ifdef GET_PLTCOLLECTS_VIA_RESOURCES
-  pltcollects_from_resource = NULL;
-  if (!wxGetResource(wxTheApp->wx_class, "PLTCOLLECTS", &pltcollects_from_resource))
-    pltcollects_from_resource = "";
-#endif
-
   mred_run_from_cmd_line(argc, argv, setup_basic_env);
 
 #ifndef wx_x

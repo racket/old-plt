@@ -50,16 +50,12 @@ extern void wxmeError(const char *e);
 
 wxStyleList *wxTheStyleList;
 
-#ifndef wx_x
-# define wxAPP_CLASS wxTheApp->wx_class
-#endif
-
 void wxInitStyles(void)
 {
   if (wxTheStyleList)
     return;
 
-  wxGetResource(wxAPP_CLASS, "defaultFontSize", &defaultSize);
+  wxGetPreference("default-font-size", &defaultSize);
 
   wxREGGLOB(wxTheStyleList);
   wxTheStyleList = new wxStyleList;

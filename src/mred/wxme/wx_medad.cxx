@@ -172,10 +172,6 @@ static int default_wheel_amt;
 # define wxmeBORDER wxBORDER
 #endif
 
-#ifndef wx_x
-# define wxAPP_CLASS wxTheApp->wx_class
-#endif
-
 wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     int x, int y,
 			     int width, int height,
@@ -263,7 +259,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
   autoDragger = NULL;
 
   if (!default_wheel_amt) {
-    wxGetResource(wxAPP_CLASS, "wheelStep", &default_wheel_amt);
+    wxGetPreference("wheelStep", &default_wheel_amt);
     if (!default_wheel_amt)
       default_wheel_amt = 3;
     if (default_wheel_amt > 1000)

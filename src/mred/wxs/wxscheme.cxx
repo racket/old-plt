@@ -50,6 +50,7 @@
 #endif
 
 #include <stdlib.h>
+#include <ctype.h>
 
 #ifdef wx_mac
  #ifdef OS_X
@@ -94,7 +95,7 @@ static void collect_end_callback(void);
 
 static void wxScheme_Install(Scheme_Env *global_env);
 
-static Scheme_Object *setup_file_symbol, *init_file_symbol;
+static Scheme_Object *init_file_symbol;
 
 static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box;
 
@@ -121,9 +122,7 @@ void wxsScheme_setup(Scheme_Env *env)
 
   objscheme_init(env);
 
-  wxREGGLOB(setup_file_symbol);
   wxREGGLOB(init_file_symbol);
-  setup_file_symbol = scheme_intern_symbol("setup-file");
   init_file_symbol = scheme_intern_symbol("init-file");
 
   wxScheme_Install(env);
@@ -1436,9 +1435,44 @@ extern char *wxmac_startup_directory;
 #endif
 
 enum {
-  id_init_file,
-  id_setup_file
+  id_init_file
 };
+
+#ifdef wx_msw
+static char *win_find_home()
+{
+  char *d, *p;
+
+  d = getenv("HOMEDRIVE");
+  p = getenv("HOMEPATH");
+
+  if (d && p) {
+    char *s;
+    s = new char[strlen(d) + strlen(p) + 1];
+    strcpy(s, d);
+    strcat(s, p);
+    
+    if (scheme_directory_exists(s))
+      return s;
+  }
+
+  {
+    int i;
+    char *s;
+
+    p = wxTheApp->argv[0];
+    s = copystring(p);
+
+    i = strlen(s) - 1;
+    
+    while (i && (s[i] != '\\')) {
+      --i;
+    }
+    s[i] = 0;
+    return s;
+  }
+} 
+#endif
 
 Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 {
@@ -1446,8 +1480,6 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
   if (argv[0] == init_file_symbol)
     which = id_init_file;
-  else if (argv[0] == setup_file_symbol)
-    which = id_setup_file;
   else {
     scheme_wrong_type("find-graphical-system-path", "graphical path symbol",
 		      0, argc, argv);
@@ -1466,60 +1498,22 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     if (which == id_init_file)
       return scheme_append_string(home,
 				  scheme_make_string("/.mredrc" + ends_in_slash));
-    
-    if (which == id_setup_file)
-      return scheme_append_string(home,
-				  scheme_make_string("/.mred.resources" + ends_in_slash));
   }
 #endif
 
 #ifdef wx_msw
-  char *d, *p;
   Scheme_Object *home;
 
-  d = getenv("HOMEDRIVE");
-  p = getenv("HOMEPATH");
-
-  if (d && p) {
-    char *s;
-    s = new char[strlen(d) + strlen(p) + 1];
-    strcpy(s, d);
-    strcat(s, p);
-    
-    if (scheme_directory_exists(s))
-      home = scheme_make_string_without_copying(s);
-    else
-      home = NULL;
-  } else 
-    home = NULL;
-
-  if (!home) {
-    int i;
-    char *s;
-
-    p = wxTheApp->argv[0];
-    s = copystring(p);
-
-    i = strlen(s) - 1;
-    
-    while (i && (s[i] != '\\')) {
-      --i;
-    }
-    s[i] = 0;
-    home = scheme_make_string_without_copying(s);
-  }
+  home = scheme_make_string_without_copying(win_find_home());
 
   int ends_in_slash;
+
   ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];
   ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
 
   if (which == id_init_file)
     return scheme_append_string(home,
 				scheme_make_string("\\mredrc.ss" + ends_in_slash));
-
-  if (which == id_setup_file)
-    return scheme_append_string(home,
-				scheme_make_string("\\mred.ini" + ends_in_slash));  
 #endif
 
 #ifdef wx_mac
@@ -1535,10 +1529,6 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     if (which == id_init_file)
       return scheme_append_string(home,
 				  scheme_make_string("/.mredrc" + ends_in_slash));
-    
-    if (which == id_setup_file)
-      return scheme_append_string(home,
-				  scheme_make_string("/.mred.resources" + ends_in_slash));
   }
 # else
 
@@ -1548,9 +1538,6 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 
   switch (which) {
   case id_init_file:
-  case id_setup_file:
-    t = 'pref';
-    break;
   default:
     t = 'temp';
     break;
@@ -1575,10 +1562,6 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_init_file)
     return scheme_append_string(home,
 				scheme_make_string(":mredrc.ss" + ends_in_colon));
-
-  if (which == id_setup_file)
-    return scheme_append_string(home,
-				scheme_make_string(":mred.fnt" + ends_in_colon));  
 # endif				
 #endif
 
@@ -1708,6 +1691,248 @@ int wxsGetImageType(char *fn)
     type = 0;
 
   return type ? type : wxBITMAP_TYPE_XBM;
+}
+
+static char *pref_file_cache;
+static long pref_file_cache_size;
+#define PREF_CACHE_SEG 4096
+
+int wxGetPreference(const char *name, char *res, long len)
+{
+  int offset, depth, c;
+
+  /* This function duplicates a lot of work that's elsewhere,
+     unfornatunately, due to timing constraints (i.e., it's called
+     especially early during startup). */
+
+  if (!pref_file_cache) {
+    FILE *fp;
+    char *home, *s;
+    int l, ends_in_slash;
+
+    wxREGGLOB(pref_file_cache);
+
+    /*************** Unix ***************/
+
+#if defined(wx_xt) || defined(OS_X)
+# ifdef OS_X
+    home = scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL);
+# else
+    home = scheme_expand_filename("~/", 2, NULL, NULL);
+# endif 
+    
+    l = strlen(home);
+    ends_in_slash = (home[l] == '/');
+    
+    s = new char[l + 20];
+    memcpy(s, home, l);
+    if (!ends_in_slash)
+      s[l++] = '/';
+    memcpy(s + l, ".plt-prefs.ss", 14);
+#endif
+
+    /*************** Windows ***************/
+
+#ifdef wx_win
+    home = win_find_home();
+
+    l = strlen(home);
+    ends_in_slash = ((home[l] == '/') || (home[l] == '\\'));
+  
+    s = new char[l + 20];
+    memcpy(s, home, l);
+    if (!ends_in_slash)
+      s[l++] = '\\';
+    memcpy(s + l, "plt-prefs.ss", 13);
+#endif
+
+    /*************** Mac OS Classic ***************/
+
+#if defined(wx_mac) && !defined(OS_X)
+    {
+      OSType t;
+      FSSpec spec;
+      SInt16 vRefNum;
+      SInt32 dirID;
+      const Str255 fileName = "\p";
+
+      if (!FindFolder(kOnSystemDisk, 'pref', kCreateFolder, &vRefNum, &dirID) == noErr) {
+	FSMakeFSSpec(vRefNum,dirID,fileName,&spec);
+	home = scheme_make_string(scheme_mac_spec_to_path(&spec));
+      } else if (wxmac_startup_directory) {
+	home = wxmac_startup_directory;
+      } else {
+	home = scheme_os_getcwd(NULL, 0, NULL, 1);
+      }
+    
+      l = strlen(home);
+      ends_in_slash = (home[l] == ':');
+  
+      s = new char[l + 20];
+      memcpy(s, home, l);
+      if (!ends_in_slash)
+	s[l++] = ':';
+      memcpy(s + l, "plt-prefs.ss", 13);
+    }
+#endif
+
+    /*************** Common ***************/
+
+    fp = fopen(s, "rb");
+    if (!fp)
+      return 0;
+
+    pref_file_cache_size = PREF_CACHE_SEG;
+    pref_file_cache = new char[pref_file_cache_size];
+    offset = 0;
+
+    while (!feof(fp)) {
+      long got;
+
+      if (offset + PREF_CACHE_SEG > pref_file_cache_size) {
+	char *s;
+	s = new char[2 * pref_file_cache_size];
+	memcpy(s, pref_file_cache, pref_file_cache_size);
+	pref_file_cache_size *= 2;
+	pref_file_cache = s;
+      }
+
+      got = fread(pref_file_cache + offset, 1, PREF_CACHE_SEG, fp);
+      offset += got;
+    }
+    pref_file_cache_size = offset;
+
+    fclose(fp);
+  }
+
+#define cgetc() ((offset < pref_file_cache_size) ? pref_file_cache[offset++] : -1)
+
+  offset = 0;
+  depth = 0;
+  while (offset < pref_file_cache_size) {
+    do {
+      c = cgetc();
+    } while ((c > 0) && isspace(c));
+
+  top:
+    
+    switch (c) {
+    case '(':
+      depth++;
+      if (depth == 2) {
+	/* Maybe the entry we're looking for: */
+	do {
+	  c = cgetc();
+	} while ((c > 0) && isspace(c));
+	
+	if (c == '|') {
+	  char *prefix = "MrEd:";
+	  int i;
+
+	  for (i = 0; prefix[i]; i++) {
+	    c = cgetc();
+	    if (c != prefix[i])
+	      break;
+	  }
+	  if (!prefix[i]) {
+	    for (i = 0; name[i]; i++) {
+	      c = cgetc();
+	      if (c != name[i])
+		break;
+	    }
+	    if (!name[i]) {
+	      c = cgetc();
+	      if (c == '|') {
+		c = cgetc();
+		if ((c > 0) && isspace(c)) {
+		  int closer = ')';
+		  
+		  do {
+		    c = cgetc();
+		  } while ((c > 0) && isspace(c));
+
+		  if (c == '"') {
+		    closer = '"';
+		    c = cgetc();
+		    i = 0;
+		  } else {
+		    res[0] = c;
+		    if (c == '\\')
+		      res[0] = cgetc();
+		    i = 1;
+		  }
+		  
+		  /* Read until closing parenthesis */
+		  for (; i < len; i++) {
+		    res[i] = cgetc();
+		    if (res[i] == '\\') {
+		      res[i] = cgetc();
+		    } else {
+		      if (res[i] == closer) {
+			res[i] = 0;
+			break;
+		      }
+		    }
+		  }
+		  res[len - 1] =0;
+		  
+		  return 1;
+		}
+
+		return 0;
+	      }
+	    }
+	  }
+	  /* Need closing | */
+	  if (c != '|') {
+	    do {
+	      c = cgetc();
+	    } while (c != '|');
+	  }
+	  c = cgetc();
+	}
+	goto top;
+      }
+      break;
+    case ')':
+      --depth;
+      break;
+    case '"':
+      do {
+	c = cgetc();
+	if (c == '\\')
+	  cgetc();
+      } while ((c != '"') && (c != -1));
+      break;
+    case '\\':
+      cgetc();
+      break;
+    case '|':
+      do {
+	c = cgetc();
+      } while ((c != '|') && (c != -1));
+      break;
+    }
+  }
+
+  return 0;
+}
+
+int wxGetPreference(const char *name, int *res)
+{
+  char buf[20];
+
+  if (wxGetPreference(name, buf, 20)) {    
+    long v;
+    char *p;
+    v = strtol(buf, &p, 10);
+    if (p == (buf + strlen(buf))) {
+      *res = v;
+      return 1;
+    }
+  }
+
+  return 0;
 }
 
 static Scheme_Object *SetExecuter(int, Scheme_Object *a[])

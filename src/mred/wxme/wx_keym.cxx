@@ -73,17 +73,12 @@ class wxKeycode
 
 static int doubleClickThreshold = -1;
 
-#ifndef wx_x
-# define wxAPP_CLASS wxTheApp->wx_class
-#endif
-
 extern int MrEdGetDoubleTime(void);
 
 int wxmeGetDoubleClickThreshold()
 {
   if (doubleClickThreshold < 0) {
-    if (!wxGetResource(wxAPP_CLASS, "doubleClickTime", 
-		       &doubleClickThreshold)) {
+    if (!wxGetPreference("doubleClickTime", &doubleClickThreshold)) {
       doubleClickThreshold = MrEdGetDoubleTime();
     }
   }

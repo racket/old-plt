@@ -1913,10 +1913,6 @@ static char xpattern[32] = {0x88, 0x88,
 #endif
 static wxBrush *clearBrush = NULL;
 
-#ifndef wx_x
-# define wxAPP_CLASS wxTheApp->wx_class
-#endif
-
 /* This does the actual drawing */
 void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy, 
 			 float leftx, float rightx,
@@ -1939,7 +1935,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   Bool wl;
 
   if (!show_outline_for_inactive) {
-    if (!wxGetResource(wxAPP_CLASS, "outlineInactiveSelection", &show_outline_for_inactive))
+    if (!wxGetPreference("outlineInactiveSelection", &show_outline_for_inactive))
       show_outline_for_inactive = 0;
     show_outline_for_inactive = !show_outline_for_inactive ? -1 : 1;
   }

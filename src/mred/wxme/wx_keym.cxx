@@ -59,6 +59,8 @@ class wxKeycode
   TF_Flag( altOff );
   TF_Flag( metaOn );
   TF_Flag( metaOff );
+
+  TF_Flag( fullset );
 #undef TF_Flag
 
   char *fname;
@@ -229,6 +231,9 @@ static Keybind keylist[]
 		{ "leftbuttontriple" , WXK_MOUSE_LEFT_TRIPLE },
 		{ "rightbuttontriple" , WXK_MOUSE_RIGHT_TRIPLE },
 		{ "middlebuttontriple" , WXK_MOUSE_MIDDLE_TRIPLE },
+		{ "leftbuttonseq" , WXK_MOUSE_LEFT },
+		{ "rightbuttonseq" , WXK_MOUSE_RIGHT },
+		{ "middlebuttonseq" , WXK_MOUSE_MIDDLE },
 		{ "esc", WXK_ESCAPE }, 
 		{ "delete", WXK_DELETE },
 		{ "del", WXK_DELETE },
@@ -383,6 +388,7 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
 		   + (newkey->altOff ? 5 : 0)
 		   + (newkey->metaOn ? 1 : 0)
 		   + (newkey->metaOn ? 5 : 0));
+  newkey->fullset = 0;
   newkey->fname = copystring(fname);
   newkey->next = NULL;
 
@@ -409,7 +415,7 @@ wxKeycode *wxKeymap::MapFunction(long code, int shift, int ctrl,
   return newkey;
 }
 
-static long GetCode(unsigned char *keyseq, int *_kp)
+static long GetCode(unsigned char *keyseq, int *_kp, int *fullset)
 {
   long i, code, kp;
 #define MAX_BUF 256
@@ -430,6 +436,10 @@ static long GetCode(unsigned char *keyseq, int *_kp)
     for (i = 0; keylist[i].str; i++) {
       if (!strcmp((char *)buffer, keylist[i].str)) {
 	code = keylist[i].code;
+	if (!strcmp((char *)buffer, "leftbuttonseq")
+	    || !strcmp((char *)buffer, "middlebuttonseq")
+	    || !strcmp((char *)buffer, "rightbuttonseq"))
+	  *fullset = 1;
 	break;
       }
     }
@@ -449,6 +459,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
   int shift, ctrl, alt, meta, mod;
   int part = 1, i, j;
   long code;
+  int fullset;
   char *errstr;
   char buffer[256];
 
@@ -461,7 +472,8 @@ void wxKeymap::MapFunction(char *keys, char *fname)
   while (keyseq[kp]) {
     shift = ctrl = alt = meta = 0;
     code = 0;
-    
+    fullset = 0;
+
     while (keyseq[kp] && (keyseq[kp] != ';')) {
       mod = 1;
       if ((kp == start_keys) && (keyseq[kp] == ':') && keyseq[kp + 1]) {
@@ -513,7 +525,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 	kp += 2;
       } else {
       do_char:
-	code = GetCode((unsigned char *)keyseq, &kp);
+	code = GetCode((unsigned char *)keyseq, &kp, &fullset);
 	if (!code) {
 	  errstr = "bad keyname";
 	  goto key_error;
@@ -536,6 +548,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 	wxKeycode *mf;
 	mf = MapFunction(code, shift, ctrl, alt, meta, fname, key[i], 
 			 keyseq[kp] ? wxKEY_PREFIX : wxKEY_FINAL);
+	mf->fullset = fullset;
 	new_key[j++] = mf;
       }
 
@@ -566,7 +579,7 @@ void wxKeymap::MapFunction(char *keys, char *fname)
 
 int wxKeymap::HandleEvent(long code, Bool shift, Bool ctrl, 
 			  Bool alt, Bool meta, int score,
-			  char **fname)
+			  char **fname, int *fullset)
 {
   wxKeycode *key;
 
@@ -581,6 +594,8 @@ int wxKeymap::HandleEvent(long code, Bool shift, Bool ctrl,
       return 1;
     }
     *fname = key->fname;
+    if (fullset)
+      *fullset = key->fullset;
     return 1;
   }
 
@@ -699,7 +714,8 @@ int wxKeymap::ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent *event,
 		  event->altDown,
 		  event->metaDown,
 		  score,
-		  &fname)) {
+		  &fname,
+		  NULL)) {
     if (fname) {
       Reset();
       if (grab && grab(fname, this, media, event, grabData))
@@ -758,21 +774,29 @@ int wxKeymap::GetBestScore(wxMouseEvent *event)
 {
   long code;
 
-  if (!event->ButtonDown())
+  if (!event->ButtonDown()) {
+    int i;
+    if (active_mouse_function)
+      return 100;
+    for (i = 0; i < chainCount; i++) {
+      if (chainTo[i]->GetBestScore(event))
+	return 100;
+    }
     return -1;
-
-  if (event->RightDown())
-    code = WXK_MOUSE_RIGHT;
-  else if (event->LeftDown())
-    code = WXK_MOUSE_LEFT;
-  else if (event->MiddleDown())
-    code = WXK_MOUSE_MIDDLE;
-  else
-    return -1;
-
-  if (code == lastButton && event->x == lastX && event->y == lastY) {
-    if (Abs(event->timeStamp - lastTime) < doubleInterval) {
-      code += WXK_CLICK_ADDER * clickCount;
+  } else {
+    if (event->RightDown())
+      code = WXK_MOUSE_RIGHT;
+    else if (event->LeftDown())
+      code = WXK_MOUSE_LEFT;
+    else if (event->MiddleDown())
+      code = WXK_MOUSE_MIDDLE;
+    else
+      return -1;
+  
+    if (code == lastButton && event->x == lastX && event->y == lastY) {
+      if (Abs(event->timeStamp - lastTime) < doubleInterval) {
+	code += WXK_CLICK_ADDER * clickCount;
+      }
     }
   }
   
@@ -808,7 +832,7 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
 {
   long code, origCode, lastCode;
   char *fname;
-  int result;
+  int result, fullset;
 
   if (grabMouseFunction) {
     grab = grabMouseFunction;
@@ -837,8 +861,10 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
       active_mouse_function = NULL;
     }
 
-    if (!active_mouse_function)
-      return 0;
+    if (!active_mouse_function) {
+      return OtherHandleMouseEvent(media, event, grab, grabData, -1, score);
+    }
+
     if (grab && grab(active_mouse_function, this, media, event, grabData))
       v = 1;
     else
@@ -880,9 +906,12 @@ int wxKeymap::ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent *event,
 		    event->altDown,
 		    event->metaDown,
 		    score,
-		    &fname)) {
+		    &fname,
+		    &fullset)) {
       if (fname) {
 	Reset();
+	if (fullset)
+	  active_mouse_function = fname;
 	if (grab && grab(fname, this, media, event, grabData))
 	  return 1;
 	return CallFunction(fname, media, event) 

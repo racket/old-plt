@@ -64,7 +64,7 @@ class wxKeymap : public wxObject
 
   class wxKeycode *FindKey(long, Bool, Bool, Bool, Bool, class wxKeycode *);
   int HandleEvent(long code, Bool shift, Bool ctrl, Bool alt, Bool meta,
-		  int score, char **fname);
+		  int score, char **fname, int *fullset);
   int GetBestScore(long code, Bool shift, Bool ctrl, Bool alt, Bool meta);
 
   Bool CycleCheck(wxKeymap *km);

@@ -58,6 +58,8 @@ static Scheme_Object *print_struct(int, Scheme_Object *[]);
 static Scheme_Object *print_box(int, Scheme_Object *[]);
 static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 
+#define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
+
 #define mzSPAN(port, pos)  (scheme_tell(port) - pos + 1)
 
 #ifdef MZ_PRECISE_GC
@@ -405,7 +407,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
 
   do {
     ch = scheme_getc_special_ok(port);
-  } while (isspace(ch));
+  } while (NOT_EOF_OR_SPECIAL(ch) && isspace(ch));
 
   line = scheme_tell_line(port);
   col = scheme_tell_column(port);
@@ -490,7 +492,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
     case '-':
     case '.':
       ch2 = scheme_peekc_special_ok(port);
-      if (isdigit(ch2) || (ch2 == '.') 
+      if ((NOT_EOF_OR_SPECIAL(ch2) && isdigit(ch2)) || (ch2 == '.') 
 	  || (ch2 == 'i') || (ch2 == 'I') /* Maybe inf */
 	  || (ch2 == 'n') || (ch2 == 'N') /* Maybe nan*/ ) {
 	scheme_ungetc(ch, port);
@@ -641,7 +643,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
 	    int i = 0, j = 0, overflow = 0, digits = 0;
 	    char tagbuf[64], vecbuf[64]; /* just for errors */
 	    
-	    while ((ch != EOF) && (ch != SCHEME_SPECIAL) && isdigit(ch)) {
+	    while (NOT_EOF_OR_SPECIAL(ch) && isdigit(ch)) {
 	      if (digits <= MAX_GRAPH_ID_DIGITS)
 		digits++;
 
@@ -1171,7 +1173,7 @@ read_string(Scheme_Object *port,
 	if (isxdigit(ch)) {
 	  n = ch<='9' ? ch-'0' : (toupper(ch)-'A'+10);
 	  ch = scheme_getc_special_ok(port);
-	  if ((ch != EOF) && (ch != SCHEME_SPECIAL) && isxdigit(ch)) {
+	  if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
 	    n = n*16 + (ch<='9' ? ch-'0' : (toupper(ch)-'A'+10));
 	  } else {
 	    scheme_ungetc(ch, port);
@@ -1349,8 +1351,7 @@ read_number_or_symbol(Scheme_Object *port,
   buf = onstack;
 
   ch = getc_special_ok_fun(port);
-  while ((ch != EOF)
-	 && (ch != SCHEME_SPECIAL)
+  while (NOT_EOF_OR_SPECIAL(ch)
 	 && (running_quote
 	     || (!isspace(ch)
 		 && (ch != '(')
@@ -1525,7 +1526,7 @@ read_character(Scheme_Object *port,
     return scheme_make_char(ch);
   }
 
-  if ((ch != EOF) && (next != EOF) && (next != SCHEME_SPECIAL) && isalpha(next)) {
+  if ((ch != EOF) && NOT_EOF_OR_SPECIAL(next) && isalpha(next)) {
     char *buf, *oldbuf, onstack[32];
     int i;
     long size = 31, oldsize;
@@ -1533,7 +1534,7 @@ read_character(Scheme_Object *port,
     i = 1;
     buf = onstack;
     buf[0] = tolower(ch);
-    while ((ch = scheme_peekc_special_ok(port), (ch != EOF) && (ch != SCHEME_SPECIAL) && isalpha(ch))) {
+    while ((ch = scheme_peekc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && isalpha(ch))) {
       scheme_getc(port); /* is alpha character */
       if (i >= size) {
 	oldsize = size;
@@ -1744,7 +1745,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc)
 
  start_over:
 
-  while ((ch = scheme_getc_special_ok(port), isspace(ch))) {}
+  while ((ch = scheme_getc_special_ok(port), NOT_EOF_OR_SPECIAL(ch) && isspace(ch))) {}
 
   if (ch == ';') {
     do {

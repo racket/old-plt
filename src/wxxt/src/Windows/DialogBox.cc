@@ -72,14 +72,6 @@ static int CheckDialogShowing(void *data)
 
 Bool wxDialogBox::Show(Bool show)
 {
-  if (show == IsShown()) { // do nothing if state doesn't change
-    if (show) { /* Well, do move it to the front... */
-      modal_please_close = 0;
-      wxFrame::Show(show);
-    }
-    return TRUE;
-  }
-
   // handle modality
   if (show) {
     wxList *disabled_windows;
@@ -93,39 +85,41 @@ Bool wxDialogBox::Show(Bool show)
     wxFrame::Show(show);
     SetShown(show);
       
-    if (modal_showing)
-      return TRUE;
+    if (!modal_showing) {
+      modal_showing = TRUE;
+      wxPushModalWindow(this, this);
       
-    modal_showing = TRUE;
-	
-    wxPushModalWindow(this, this);
+      disabled_windows = new wxList;
       
-    disabled_windows = new wxList;
-      
-    tlf = wxTopLevelFrames(this);
-    for (cnode = tlf->First(); cnode; cnode = cnode->Next()) {
-      wxWindow *w;
-      w = (wxWindow *)cnode->Data();
-      if (w && w != this && cnode->IsShown()) {
-	disabled_windows->Append(w);
-	w->InternalEnable(FALSE);
+      tlf = wxTopLevelFrames(this);
+      for (cnode = tlf->First(); cnode; cnode = cnode->Next()) {
+	wxWindow *w;
+	w = (wxWindow *)cnode->Data();
+	if (w && w != this && cnode->IsShown()) {
+	  disabled_windows->Append(w);
+	  w->InternalEnable(FALSE);
+	}
       }
-    }
+    } else
+     disabled_windows = NULL;
       
     wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
       
     wxFrame::Show(FALSE);
     SetShown(FALSE);
-    modal_showing = FALSE;
-    XFlush(XtDisplay(wxAPP_TOPLEVEL));
-    XSync(XtDisplay(wxAPP_TOPLEVEL), FALSE);
 
-    wxPopModalWindow(this, this);
+    if (disabled_windows) {
+      modal_showing = FALSE;
+      XFlush(XtDisplay(wxAPP_TOPLEVEL));
+      XSync(XtDisplay(wxAPP_TOPLEVEL), FALSE);
       
-    for (node = disabled_windows->First(); node; node = node->Next()) {
-      wxWindow *w;
-      w = (wxWindow *)node->Data();
-      w->InternalEnable(TRUE);
+      wxPopModalWindow(this, this);
+      
+      for (node = disabled_windows->First(); node; node = node->Next()) {
+	wxWindow *w;
+	w = (wxWindow *)node->Data();
+	w->InternalEnable(TRUE);
+      }
     }
   } else {
     modal_please_close = 1;

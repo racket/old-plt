@@ -538,6 +538,7 @@ void GC_init_inner()
 
     /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
     /* might be used.							*/
+    if (!GC_no_dls) /* PLTSCHEME: hack */
       GC_register_data_segments();
     GC_init_headers();
     GC_bl_init();

@@ -411,12 +411,12 @@ Scheme_Env *scheme_make_empty_env(void)
 
 static Scheme_Env *make_env(Scheme_Env *base, int semi)
 {
-  Scheme_Hash_Table *toplevel, *syntax;
+  Scheme_Bucket_Table *toplevel, *syntax;
   Scheme_Hash_Table *module_registry;
   Scheme_Object *modchain;
   Scheme_Env *env;
 
-  toplevel = scheme_hash_table(7, SCHEME_hash_ptr);
+  toplevel = scheme_make_bucket_table(7, SCHEME_hash_ptr);
   toplevel->with_home = 1;
 
   if (semi > 0) {
@@ -424,7 +424,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
     modchain = NULL;
     module_registry = NULL;
   } else {
-    syntax = scheme_hash_table(7, SCHEME_hash_ptr);
+    syntax = scheme_make_bucket_table(7, SCHEME_hash_ptr);
     if (base) {
       modchain = base->modchain;
       module_registry = base->module_registry;
@@ -435,11 +435,11 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi)
       } else {
 	Scheme_Hash_Table *modules;
 
-	modules = scheme_hash_table(7, SCHEME_hash_ptr);
+	modules = scheme_make_hash_table(SCHEME_hash_ptr);
 	modchain = scheme_make_vector(3, scheme_false);
 	SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)modules;
 
-	module_registry = scheme_hash_table(7, SCHEME_hash_ptr);
+	module_registry = scheme_make_hash_table(SCHEME_hash_ptr);
       }
     }
   }
@@ -486,7 +486,7 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree
     Scheme_Object *p;
     Scheme_Hash_Table *modules;
 
-    modules = scheme_hash_table(7, SCHEME_hash_ptr);
+    modules = scheme_make_hash_table(SCHEME_hash_ptr);
     p = scheme_make_vector(3, scheme_false);
     SCHEME_VEC_ELS(p)[0] = (Scheme_Object *)modules;
     menv->modchain = p;
@@ -511,7 +511,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     if (SCHEME_FALSEP(modchain)) {
       Scheme_Hash_Table *next_modules;
 
-      next_modules = scheme_hash_table(7, SCHEME_hash_ptr);
+      next_modules = scheme_make_hash_table(SCHEME_hash_ptr);
       modchain = scheme_make_vector(3, scheme_false);
       SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)next_modules;
       SCHEME_VEC_ELS(env->modchain)[1] = modchain;
@@ -568,7 +568,7 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
     if (SCHEME_FALSEP(modchain)) {
       Scheme_Hash_Table *next_modules;
       
-      next_modules = scheme_hash_table(7, SCHEME_hash_ptr);
+      next_modules = scheme_make_hash_table(SCHEME_hash_ptr);
       modchain = scheme_make_vector(3, scheme_false);
       SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)next_modules;
       SCHEME_VEC_ELS(menv2->modchain)[1] = modchain;
@@ -579,13 +579,13 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
   return menv2;
 }
 
-Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home)
+Scheme_Bucket_Table *scheme_clone_toplevel(Scheme_Bucket_Table *ht, Scheme_Env *home)
 {
-  Scheme_Hash_Table *r;
+  Scheme_Bucket_Table *r;
   Scheme_Bucket **bs;
   int i;
 
-  r = scheme_hash_table(7, SCHEME_hash_ptr);
+  r = scheme_make_bucket_table(7, SCHEME_hash_ptr);
   if (home)
     r->with_home = 1;
 
@@ -644,7 +644,7 @@ scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
       ((Scheme_Bucket_With_Flags *)b)->flags |= (GLOB_HAS_REF_ID | GLOB_IS_CONST);
     }
   } else
-    scheme_add_to_table(env->syntax, (char *)sym, obj, constant);
+    scheme_add_to_table(env->syntax, (const char *)sym, obj, constant);
 }
 
 void
@@ -684,7 +684,7 @@ void
 scheme_remove_global_symbol(Scheme_Object *sym, Scheme_Env *env)
 {
   Scheme_Bucket *b;
-  Scheme_Hash_Table *toplevel;
+  Scheme_Bucket_Table *toplevel;
 
   toplevel = env->toplevel;
 
@@ -708,7 +708,7 @@ scheme_remove_global(const char *name, Scheme_Env *env)
 
 Scheme_Object **scheme_make_builtin_references_table(void)
 {
-  Scheme_Hash_Table *ht;
+  Scheme_Bucket_Table *ht;
   Scheme_Object **t;
   Scheme_Bucket **bs;
   long i;
@@ -733,19 +733,20 @@ Scheme_Object **scheme_make_builtin_references_table(void)
 
 Scheme_Hash_Table *scheme_map_constants_to_globals(void)
 {
-  Scheme_Hash_Table *ht, *result;
+  Scheme_Bucket_Table *ht;
+  Scheme_Hash_Table*result;
   Scheme_Bucket **bs;
   long i;
 
   ht = scheme_initial_env->toplevel;
   bs = ht->buckets;
 
-  result = scheme_hash_table(10, SCHEME_hash_ptr);
+  result = scheme_make_hash_table(SCHEME_hash_ptr);
 
   for (i = ht->size; i--; ) {
     Scheme_Bucket *b = bs[i];
     if (b && (((Scheme_Bucket_With_Flags *)b)->flags & GLOB_IS_CONST))
-      scheme_add_to_table(result, (const char *)b->val, b, 0);
+      scheme_hash_set(result, b->val, (Scheme_Object *)b);
   }
 
   return result;
@@ -936,20 +937,20 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
   Scheme_Hash_Table *ht;
 
   if (!env->modvars) {
-    ht = scheme_hash_table(7, SCHEME_hash_ptr);
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
     env->modvars = ht;
   }
 
   stxsym = SCHEME_STX_SYM(stxsym);
 
-  ht = (Scheme_Hash_Table *)scheme_lookup_in_table(env->modvars, (char *)modidx);
+  ht = (Scheme_Hash_Table *)scheme_hash_get(env->modvars, modidx);
 
   if (!ht) {
-    ht = scheme_hash_table(7, SCHEME_hash_ptr);
-    scheme_add_to_table(env->modvars, (char *)modidx, ht, 0);
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    scheme_hash_set(env->modvars, modidx, (Scheme_Object *)ht);
   }
 
-  val = (Scheme_Object *)scheme_lookup_in_table(ht, (char *)stxsym);
+  val = scheme_hash_get(ht, stxsym);
 
   if (!val) {
     val = scheme_alloc_object();
@@ -958,7 +959,7 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
     SCHEME_PTR1_VAL(val) = modidx;
     SCHEME_PTR2_VAL(val) = stxsym;
 
-    scheme_add_to_table(ht, (char *)stxsym, val, 0);
+    scheme_hash_set(ht, stxsym, val);
   }
 
   return val;
@@ -1224,10 +1225,10 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     /* Only try syntax table if there's not an explicit (later)
        variable mapping: */
     if (genv->shadowed_syntax 
-	&& scheme_lookup_in_table(genv->shadowed_syntax, (char *)SCHEME_STX_SYM(symbol)))
+	&& scheme_hash_get(genv->shadowed_syntax, SCHEME_STX_SYM(symbol)))
       val = NULL;
     else
-      val = scheme_lookup_in_table(genv->syntax, (char *)SCHEME_STX_SYM(symbol));
+      val = scheme_lookup_in_table(genv->syntax, (const char *)SCHEME_STX_SYM(symbol));
   }
   
   if (val)
@@ -1290,19 +1291,14 @@ void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
     if (stxtoo) {
       if (!env->shadowed_syntax) {
 	Scheme_Hash_Table *ht;
-	ht = scheme_hash_table(7, SCHEME_hash_ptr);
+	ht = scheme_make_hash_table(SCHEME_hash_ptr);
 	env->shadowed_syntax = ht;
       }
 	
-      scheme_add_to_table(env->shadowed_syntax, (const char *)n, scheme_true, 0);
+      scheme_hash_set(env->shadowed_syntax, n, scheme_true);
     } else {
-      if (env->shadowed_syntax) {
-	Scheme_Bucket *b;
-
-	b = scheme_bucket_or_null_from_table(env->shadowed_syntax, (const char *)n, 0);
-	if (b)
-	  b->val = NULL;
-      }
+      if (env->shadowed_syntax)
+	scheme_hash_set(env->shadowed_syntax, n, NULL);
     }
   }
 }
@@ -1395,7 +1391,6 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 			     Scheme_Object *form)
 {
   int i;
-  char *key;
 
   if (r->count <= 5) {
     for (i = 0; i < r->count; i++) {
@@ -1409,22 +1404,20 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
       return;
     } else {
       Scheme_Hash_Table *ht;
-      ht = scheme_hash_table(7, SCHEME_hash_bound_id);
+      ht = scheme_make_hash_table(SCHEME_hash_bound_id);
       r->ht = ht;
       for (i = 0; i < r->count; i++) {
-	key = (char *)r->syms[i];
-	scheme_add_to_table(ht, key, (void *)scheme_true, 0);
+	scheme_hash_set(ht, r->syms[i], scheme_true);
       }
     }
   }
 
-  key = (char *)symbol;
-  if (scheme_lookup_in_table(r->ht, key)) {
+  if (scheme_hash_get(r->ht, symbol)) {
     scheme_wrong_syntax(where, symbol, form,
 			"duplicate %s name", what);
   }
 
-  scheme_add_to_table(r->ht, key, (void *)scheme_true, 0);
+  scheme_hash_set(r->ht, symbol, scheme_true);
 }
 
 Resolve_Info *scheme_resolve_info_create()

@@ -120,8 +120,8 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
 #ifndef NO_DYNAMIC_LOAD
     REGISTER_SO(loaded_extensions);
     REGISTER_SO(fullpath_loaded_extensions);
-    loaded_extensions = scheme_hash_table(0, SCHEME_hash_ptr);
-    fullpath_loaded_extensions = scheme_hash_table(0, SCHEME_hash_string);
+    loaded_extensions = scheme_make_hash_table(0);
+    fullpath_loaded_extensions = scheme_make_hash_table(0);
 #endif
 
 #ifdef LINK_EXTENSIONS_BY_TABLE
@@ -203,7 +203,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
   handle = NULL;
 
   if (comppath)
-    init_f = (Scheme_Object *(*)(Scheme_Env *))scheme_lookup_in_table(fullpath_loaded_extensions, filename);
+    init_f = (Scheme_Object *(*)(Scheme_Env *))scheme_hash_get(fullpath_loaded_extensions, (Scheme_Object *)filename);
   else
     init_f = NULL;
 
@@ -452,14 +452,14 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 #else
 
     if (comppath)
-      scheme_add_to_table(fullpath_loaded_extensions, filename, (void *)init_f, 0);
+      scheme_hash_set(fullpath_loaded_extensions, (Scheme_Object *)filename, (Scheme_Object *)init_f);
   }
 #endif
 
 #ifndef NO_DYNAMIC_LOAD
   scheme_no_dumps("a dynamic extension has been loaded");
 
-  ed = (ExtensionData *)scheme_lookup_in_table(loaded_extensions, (const char *)init_f);
+  ed = (ExtensionData *)scheme_hash_get(loaded_extensions, (Scheme_Object *)init_f);
 
   if (ed) {
     init_f = ed->reload_f;
@@ -468,7 +468,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     ed->handle = handle;
     ed->init_f = init_f;
     ed->reload_f = reload_f;
-    scheme_add_to_table(loaded_extensions, (const char *)init_f, ed, 0);
+    scheme_hash_set(loaded_extensions, (Scheme_Object *)init_f, (Scheme_Object *)ed);
   }
 
   return init_f(env);

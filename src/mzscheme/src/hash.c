@@ -50,6 +50,8 @@ long scheme_hash_primes[] =
 
 typedef int (*Hash_Compare_Proc)(void*, void*);
 
+typedef long hash_v_t;
+
 static void string_hash_indices(void *_key, long *_h, long *_h2)
 {
   const char *key = (char *)_key;
@@ -94,32 +96,18 @@ static int not_stx_bound_eq(char *a, char *b)
   return !scheme_stx_bound_eq((Scheme_Object *)a, (Scheme_Object *)b, 0);
 }
 
-Scheme_Hash_Table *
-scheme_hash_table (int size, int type)
+static Scheme_Object GONE[1];
+
+Scheme_Hash_Table *scheme_make_hash_table(int type)
 {
   Scheme_Hash_Table *table;
-  size_t asize;
 
   table = MALLOC_ONE_TAGGED(Scheme_Hash_Table);
 
   table->step = 0;
-  while (scheme_hash_primes[table->step] < size) {
-    table->step++;
-  }
-  table->size = scheme_hash_primes[table->step];
-
-  table->count = 0;
-
+  table->size = 0;
+    
   table->type = scheme_hash_table_type;
-
-  asize = (size_t)table->size * sizeof(Scheme_Bucket *);
-  {
-    Scheme_Bucket **ba;
-    ba = (Scheme_Bucket **)scheme_malloc(asize);
-    table->buckets = ba;
-  }
-
-  table->weak = (type == SCHEME_hash_weak_ptr);
 
   if (type == SCHEME_hash_string) {
     table->make_hash_indices = string_hash_indices;
@@ -141,15 +129,10 @@ scheme_hash_table (int size, int type)
   return table;
 }
 
-typedef long hash_v_t;
-
-long high_count;
-
-static Scheme_Bucket *
-get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b)
+static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int set, Scheme_Object *val)
 {
-  hash_v_t h, h2;
-  Scheme_Bucket *bucket;
+  Scheme_Object *tkey, **keys;
+  hash_v_t h, h2, useme = 0;
 
  rehash_key:
 
@@ -158,6 +141,187 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     h = h % table->size;
     h2 = h2 % table->size;
   } else {
+    long lkey;
+    lkey = PTR_TO_LONG((Scheme_Object *)key);
+    h = (lkey >> 2) % table->size;
+    h2 = (lkey >> 3) % table->size;
+  }
+
+  if (h < 0) h = -h;
+  if (h2 < 0) h2 = -h2;
+  
+  if (!h2)
+    h2 = 2;
+  else if (h2 & 0x1)
+    h2++;
+
+  keys = table->keys;
+  
+  if (table->compare) {
+    while ((tkey = keys[h])) {
+      if (SAME_PTR(tkey, GONE)) {
+	if (set > 1) {
+	  useme = h;
+	  set = 1;
+	}
+      } else if (!table->compare(tkey, (char *)key)) {
+	if (set) {
+	  table->vals[h] = val;
+	  if (!val)
+	    keys[h] = GONE;
+	  return val;
+	} else
+	  return table->vals[h];
+      }
+      h = (h + h2) % table->size;
+    }
+  } else {
+    while ((tkey = keys[h])) {
+      if (SAME_PTR(tkey, key)) {
+	if (set) {
+	  table->vals[h] = val;
+	  if (!val)
+	    keys[h] = GONE;
+	  return val;
+	} else
+	  return table->vals[h];
+      } else if (SAME_PTR(tkey, GONE)) {
+	if (set && (useme < 0)) {
+	  useme = h;
+	}
+      } 
+      h = (h + h2) % table->size;
+    }
+  }
+
+  if (!set || !val)
+    return NULL;
+
+  if (set == 1) {
+    h = useme;
+    --table->count; /* counter increment below */
+  } else if (table->count * FILL_FACTOR >= table->size) {
+    /* Rehash */
+    int i, oldsize = table->size;
+    Scheme_Object **oldkeys = table->keys;
+    Scheme_Object **oldvals = table->vals;
+
+    table->size = scheme_hash_primes[++table->step];
+    
+    {
+      Scheme_Object **ba;
+      ba = MALLOC_N(Scheme_Object *, table->size);
+      table->vals = ba;
+      ba = MALLOC_N(Scheme_Object *, table->size);
+      table->keys = ba;
+    }
+
+    table->count = 0;
+    for (i = 0; i < oldsize; i++) {
+      if (oldkeys[i])
+	do_hash(table, oldkeys[i], 2, oldvals[i]);
+    }
+
+    goto rehash_key;
+  }
+
+  table->keys[h] = key;
+  table->vals[h] = val;
+
+  table->count++;
+
+  return val;
+}
+
+void scheme_hash_set(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object *val)
+{
+#ifdef MZ_REAL_THREADS
+  SCHEME_LOCK_MUTEX(table->mutex);
+#endif
+
+  if (!table->vals) {
+    Scheme_Object **ba;
+
+    table->size = scheme_hash_primes[0];
+
+    ba = MALLOC_N(Scheme_Object *, table->size);
+    table->vals = ba;
+    ba = MALLOC_N(Scheme_Object *, table->size);
+    table->keys = ba;
+  }
+
+  do_hash(table, key, 2, val);
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_UNLOCK_MUTEX(table->mutex);
+#endif
+}
+
+Scheme_Object *scheme_hash_get(Scheme_Hash_Table *table, Scheme_Object *key)
+{
+  Scheme_Object *val;
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_LOCK_MUTEX(table->mutex);
+#endif
+
+  if (!table->vals)
+    val = NULL;
+  else
+    val = do_hash(table, key, 0, NULL);
+
+#ifdef MZ_REAL_THREADS
+  SCHEME_UNLOCK_MUTEX(table->mutex);
+#endif
+
+  return val;
+}
+
+/************************************************************************/
+
+Scheme_Bucket_Table *
+scheme_make_bucket_table (int size, int type)
+{
+  Scheme_Bucket_Table *table;
+  size_t asize;
+
+  table = MALLOC_ONE_TAGGED(Scheme_Bucket_Table);
+
+  table->step = 0;
+  while (scheme_hash_primes[table->step] < size) {
+    table->step++;
+  }
+  table->size = scheme_hash_primes[table->step];
+
+  table->count = 0;
+
+  table->type = scheme_bucket_table_type;
+
+  asize = (size_t)table->size * sizeof(Scheme_Bucket *);
+  {
+    Scheme_Bucket **ba;
+    ba = (Scheme_Bucket **)scheme_malloc(asize);
+    table->buckets = ba;
+  }
+
+  table->weak = (type == SCHEME_hash_weak_ptr);
+  
+#ifdef MZ_REAL_THREADS
+  table->mutex = SCHEME_MAKE_MUTEX();
+#endif
+
+  return table;
+}
+
+static Scheme_Bucket *
+get_bucket (Scheme_Bucket_Table *table, const char *key, int add, Scheme_Bucket *b)
+{
+  hash_v_t h, h2;
+  Scheme_Bucket *bucket;
+
+ rehash_key:
+
+  {
     long lkey;
     lkey = PTR_TO_LONG((Scheme_Object *)key);
     h = (lkey >> 2) % table->size;
@@ -187,12 +351,6 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
 	  return bucket;
       } else if (add)
 	break;
-      h = (h + h2) % table->size;
-    }
-  } else if (table->compare) {
-    while ((bucket = table->buckets[h])) {
-      if (!table->compare(bucket->key, (char *)key))
-	return bucket;
       h = (h + h2) % table->size;
     }
   } else {
@@ -303,7 +461,7 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
 }
 
 Scheme_Bucket *
-scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int add)
+scheme_bucket_or_null_from_table (Scheme_Bucket_Table *table, const char *key, int add)
 {
   Scheme_Bucket *b;
 
@@ -321,13 +479,13 @@ scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int
 }
 
 Scheme_Bucket *
-scheme_bucket_from_table (Scheme_Hash_Table *table, const char *key)
+scheme_bucket_from_table (Scheme_Bucket_Table *table, const char *key)
 {
   return scheme_bucket_or_null_from_table(table, key, 1);
 }
 
 void 
-scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val, 
+scheme_add_to_table (Scheme_Bucket_Table *table, const char *key, void *val, 
 		     int constant)
 {
   Scheme_Bucket *b;
@@ -348,13 +506,13 @@ scheme_add_to_table (Scheme_Hash_Table *table, const char *key, void *val,
     ((Scheme_Bucket_With_Flags *)b)->flags |= GLOB_IS_CONST;
 }
 
-void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b)
+void scheme_add_bucket_to_table(Scheme_Bucket_Table *table, Scheme_Bucket *b)
 {
   get_bucket(table, table->weak ? (char *)HT_EXTRACT_WEAK(b->key) : b->key, 1, b);
 }
 
 void *
-scheme_lookup_in_table (Scheme_Hash_Table *table, const char *key)
+scheme_lookup_in_table (Scheme_Bucket_Table *table, const char *key)
 {
   Scheme_Bucket *bucket;
 
@@ -375,7 +533,7 @@ scheme_lookup_in_table (Scheme_Hash_Table *table, const char *key)
 }
 
 void
-scheme_change_in_table (Scheme_Hash_Table *table, const char *key, void *naya)
+scheme_change_in_table (Scheme_Bucket_Table *table, const char *key, void *naya)
 {
   Scheme_Bucket *bucket;
 
@@ -483,6 +641,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_cont_mark_set_type, hash_general);
   PROC(scheme_sema_type, hash_general);
   PROC(scheme_hash_table_type, hash_general);
+  PROC(scheme_bucket_table_type, hash_general);
   PROC(scheme_weak_box_type, hash_general);
   PROC(scheme_struct_type_type, hash_general);
   PROC(scheme_id_macro_type, hash_general);

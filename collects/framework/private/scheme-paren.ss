@@ -2,7 +2,7 @@
 
 (module scheme-paren mzscheme
   (require (lib "unitsig.ss")
-	   "sig"
+	   "sig.ss"
 	   (lib "mred-sig.ss" "mred"))
 
   (provide scheme-paren@)

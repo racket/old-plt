@@ -6,7 +6,7 @@
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
 	   (lib "class100.ss")
-	   "sig"
+	   "sig.ss"
 	   (lib "mred-sig.ss" "mred"))
 
   (provide paren@)

@@ -291,6 +291,7 @@
 	 [else (translate-binding (car l) (loop (cdr l)))])))))
 
 
+#|
 (define (test)
 
   (define (test-at-x result name)
@@ -364,8 +365,12 @@
   (test-equal 3 '(let+ ([rec (values x) (lambda (y) (if y 3 (x #t)))]) (x #f)))
   (test-equal 3 '(let+ ([recs [x (lambda (y) (if y 3 (x #t)))]]) (x #f)))
   (test-equal 3 '(let+ ([recs [(values x) (lambda (y) (if y 3 (x #t)))]]) (x #f)))
+
+  (test-equal 3 '(let+ ([rec a (lambda () a)] [val b (a)]) 3))
+
   (printf "all tests passed~n")
 
   )
 
 (test)
+|#

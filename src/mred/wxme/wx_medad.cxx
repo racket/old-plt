@@ -198,7 +198,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     int scrollsPP,
 			     wxMediaBuffer *m)
 : wxCanvas(parent, x, y, width, height,
-	   (wxmeBORDER 
+	   (((style & wxBORDER) ? wxmeBORDER : 0)
 	    + wxOVERRIDE_KEY_TRANSLATIONS 
 	    + INIT_SB 
 	    + (style & wxINVISIBLE ? wxINVISIBLE : 0)

@@ -35,6 +35,7 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @SYM "deleted" : wxINVISIBLE
 @SYM "control-border" : wxCONTROL_BORDER
 @SYM "transparent" : wxTRANSPARENT_WIN
+@SYM "border" : wxBORDER
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci

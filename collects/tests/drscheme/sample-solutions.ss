@@ -2,13 +2,20 @@
 (global-defined-value 'top-level-frames null)
 
 (define sample-solutions-dir
-  (build-path (collection-path "mzlib")
-	      'up
-	      'up
-	      'up
-	      "robby"
-	      "collects"
-	      "solutions"))
+  (let ([try1
+	 (collection-path "solutions")]
+	[try2
+	 (build-path (collection-path "mzlib")
+		     'up
+		     'up
+		     'up
+		     "robby"
+		     "collects"
+		     "solutions")])
+    (cond
+     [(directory-exists? try1) try1]
+     [else try2])))
+
 (unless (directory-exists? sample-solutions-dir)
   (error 'sample-solutions.ss "expected directory ~s to exist" sample-solutions-dir))
 
@@ -55,6 +62,7 @@
 	    (loop (+ i 1))))
 	(fw:test:keystroke #\return)
 	(wait-for-new-frame dialog))
+
       (wait-for-new-frame drs-frame))
 
     (let* ([drs-frame (wait-for-drscheme-frame)]
@@ -128,4 +136,11 @@
 
 	(fw:preferences:set 'framework:file-dialogs old-pref))))
 
-(for-each test-single-file toc)
+;(for-each test-single-file toc)
+(let loop ()
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc)))

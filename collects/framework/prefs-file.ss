@@ -1,7 +1,7 @@
 (unit/sig framework:prefs-file^
   (import)
   
-  (define preferences-filename
+  (define (get-preferences-filename)
     (build-path (find-system-path 'pref-dir)
 		(case (system-type)
 		  [(macos) "MrEd Preferences"]

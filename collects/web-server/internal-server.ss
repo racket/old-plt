@@ -22,7 +22,7 @@
   (provide/contract 
    (internal-serve (opt->*
 	   (unit/sig?
-	    (and/f number? integer? exact? positive?)
+	    (and/c number? integer? exact? positive?)
             (union string? false?))
            ((make-mixin-contract frame%))
            ((-> void?)

@@ -521,7 +521,7 @@ int GC_did_mark_stack_overflow(void)
 {
   return GC_mark_state == MS_INVALID;
 }
-int GC_mark_from_mark_stack(void)
+void GC_mark_from_mark_stack(void)
 {
   MARK_FROM_MARK_STACK();
 }

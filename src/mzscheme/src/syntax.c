@@ -646,7 +646,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 
     pr = cons(bucket, scheme_null);
     if (last)
-      SCHEME_STX_CDR(last) = pr;
+      SCHEME_CDR(last) = pr;
     else
       first = pr;
     last = pr;
@@ -1243,7 +1243,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     c = scheme_datum_to_syntax(c, clause, clause, 0, 0);
 
     if (list)
-      SCHEME_STX_CDR(last) = c;
+      SCHEME_CDR(last) = c;
     else
       list = c;
 
@@ -1315,7 +1315,7 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
     c = icons(icons(args, scheme_expand_block(body, newenv, depth, scheme_false)),
 	      scheme_null);
 
-    SCHEME_STX_CDR(last) = c;
+    SCHEME_CDR(last) = c;
     last = c;
 
     form = SCHEME_STX_CDR(form);
@@ -2139,7 +2139,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     if (!first)
       first = v;
     else
-      SCHEME_STX_CDR(last) = v;
+      SCHEME_CDR(last) = v;
 
     last = v;
 

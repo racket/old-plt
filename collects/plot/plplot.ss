@@ -1,6 +1,7 @@
 (module plplot mzscheme
 
-(require (lib "etc.ss") (lib "list.ss") (lib "foreign.ss")) (unsafe!)
+(require (lib "etc.ss") (lib "list.ss") (lib "foreign.ss"))
+(unsafe!)
 
 (define libplplot
   (ffi-lib

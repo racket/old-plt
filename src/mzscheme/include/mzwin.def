@@ -383,6 +383,7 @@ EXPORTS
  scheme_save_initial_module_set
  scheme_primitive_module
  scheme_finish_primitive_module
+ scheme_protect_primitive_provide
  scheme_make_modidx
  scheme_declare_module
  scheme_intern_symbol

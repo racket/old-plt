@@ -776,6 +776,7 @@ module_val {
   gcMARK(m->provides);
   gcMARK(m->provide_srcs);
   gcMARK(m->provide_src_names);
+  gcMARK(m->provide_protects);
 
   gcMARK(m->kernel_exclusion);
 

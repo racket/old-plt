@@ -1779,6 +1779,7 @@ typedef struct Scheme_Module
   Scheme_Object **provides;          /* symbols (extenal names) */
   Scheme_Object **provide_srcs;      /* module access paths, #f for self */
   Scheme_Object **provide_src_names; /* symbols (original internal names) */
+  char *provide_protects;            /* 1 => protected, 0 => not */
   int num_provides;
   int num_var_provides;              /* non-syntax listed first in provides */
 

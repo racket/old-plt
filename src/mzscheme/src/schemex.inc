@@ -440,6 +440,7 @@
   scheme_extension_table->scheme_save_initial_module_set = scheme_save_initial_module_set;
   scheme_extension_table->scheme_primitive_module = scheme_primitive_module;
   scheme_extension_table->scheme_finish_primitive_module = scheme_finish_primitive_module;
+  scheme_extension_table->scheme_protect_primitive_provide = scheme_protect_primitive_provide;
   scheme_extension_table->scheme_make_modidx = scheme_make_modidx;
   scheme_extension_table->scheme_declare_module = scheme_declare_module;
   scheme_extension_table->scheme_intern_symbol = scheme_intern_symbol;

@@ -9,8 +9,6 @@
  (invoke-open-unit
   (require-library "letplusr.ss")))
 
-(define-macro let-enumerate let-enumerate)
-(define-macro catch-errors catch-errors)
 (define-macro class-asi class-asi)
 (define-macro class*-asi class*-asi)
 (define-macro opt-lambda opt-lambda)

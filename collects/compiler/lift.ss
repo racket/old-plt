@@ -639,7 +639,7 @@
 	     [globals empty-set]
 	     [add-global! (lambda (v) (set! globals (set-union-singleton globals v)))])
 			  	
-      (lambda (ast)
+      (lambda (ast code)
 	;; Find all the procedures
 	(find-all-procedures! ast)
 
@@ -656,7 +656,7 @@
 	(for-each set-liftable! procedures)
 
 	(set! globals empty-set)
-	(let ([ast (lift! ast #f)])
+	(let ([ast (lift! ast code)])
 	  (cons ast globals)))))
 
 )

@@ -178,7 +178,7 @@
   (define dynamic-enable-break
     (polymorphic
      (lambda (thunk)
-       (parameterize ([break-enabled #f])
+       (parameterize ([break-enabled #t])
 	 (thunk)))))
   
   (define dynamic-disable-break

@@ -1,11 +1,6 @@
-; $Id: invoke.ss,v 1.35 1998/07/14 20:25:00 shriram Exp $
+; $Id: invoke.ss,v 1.36 1998/08/31 17:26:58 mflatt Exp $
 
 (require-library "coreu.ss")
-(require-library "match.ss")
-(begin-elaboration-time (require-library "match.ss"))
-(begin-construction-time (require-library "match.ss"))
-
-(require-library "sparams.ss" "backward")
 
 (require-library "load.ss" "zodiac")
 
@@ -22,17 +17,6 @@
     (define static-error
       (default-error-handler 'syntax-error))))
 
-(define plt:mzscheme-parameters@
-  (require-library-unit/sig "sparamr.ss" "backward"))
-
-(define zodiac:mzscheme-parameters@
-  (unit/sig plt:parameters^
-    (import (plt : plt:parameters^))
-    (define check-syntax-level 'advanced)))
-; plt:check-syntax-level
-
-; (define language-levels '(core structured side-effecting advanced))
-
 (define zodiac:system@
   (require-library-unit/sig "link.ss" "zodiac"))
 
@@ -44,12 +28,8 @@
 	(link
 	  (INTERFACE : zodiac:interface^
 	    (zodiac:default-interface@))
-	  (ACTUAL-PARAMETERS : plt:parameters^
-	    (plt:mzscheme-parameters@))
-	  (LOCAL-PARAMETERS : plt:parameters^
-	    (zodiac:mzscheme-parameters@ ACTUAL-PARAMETERS))
 	  (SYSTEM : zodiac:system^
-	    (zodiac:system@ INTERFACE LOCAL-PARAMETERS
+	    (zodiac:system@ INTERFACE
 	      (MZLIB-CORE pretty-print)
 	      (MZLIB-CORE file)))
 	  (MZLIB-CORE : mzlib:core^
@@ -82,9 +62,7 @@
 		      (let ((e (car
 				 (with-parameterization system-params
 				   (lambda ()
-				     (call/nal zodiac:scheme-expand-program/nal
-				       zodiac:scheme-expand-program
-				       (expressions: (list in))))))))
+				     (zodiac:scheme-expand-program (list in)))))))
 			(if show-raw?
 			  (zodiac:parsed->raw e)
 			  e)))))
@@ -115,12 +93,10 @@
 		      (let ((e (car
 				 (with-parameterization system-params
 				   (lambda ()
-				     (call/nal zodiac:scheme-expand-program/nal
-				       zodiac:scheme-expand-program
-				       (expressions: (list in))
-				       (attributes: (zodiac:make-attributes))
-				       (vocabulary:
-					 zodiac:mrspidey-vocabulary)))))))
+				     (zodiac:scheme-expand-program
+				      (list in)
+				      (zodiac:make-attributes)
+				      zodiac:mrspidey-vocabulary))))))
 			(if show-raw?
 			  (zodiac:parsed->raw e)
 			  e)))))

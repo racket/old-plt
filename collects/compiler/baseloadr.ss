@@ -13,10 +13,8 @@
 	 (OPTIONS : compiler:option^)
 	 (SPIDEY : compiler:mrspidey^))
  (link
-  [SPARAMS : plt:parameters^ ((require-library-unit/sig "sparamr.ss" "backward"))]
   [ZODIAC : zodiac:system^ ((require-library-unit/sig "link.ss" "zodiac")
 			    (ZLAYER : zodiac:interface^)
-			    SPARAMS
 			    PRETTY-PRINT
 			    FILE)]
   [ZLAYER : compiler:zlayer^ ((require-relative-library-unit/sig "zlayer.ss")

@@ -1,4 +1,4 @@
-; $Id: scm-spdy.ss,v 1.39 1998/06/08 23:07:21 shriram Exp $
+; $Id: scm-spdy.ss,v 1.40 1998/11/03 23:55:48 mflatt Exp $
 
 (unit/sig zodiac:scheme-mrspidey^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -71,7 +71,7 @@
   ; --------------------------------------------------------------------
 
   (define mrspidey-vocabulary
-    (create-vocabulary 'mrspidey-vocabulary scheme-vocabulary))
+    (create-vocabulary 'mrspidey-vocabulary advanced-vocabulary))
 
   ; --------------------------------------------------------------------
 
@@ -190,7 +190,7 @@
 	  (else
 	    (static-error expr "Malformed define-constructor"))))))
 
-  (add-primitivized-micro-form 'require mrspidey-vocabulary
+  (add-primitivized-micro-form 'require-file mrspidey-vocabulary
     (let* ((kwd '())
 	    (in-pattern `(_ file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -265,7 +265,7 @@
 			      (close-input-port p))))))
 		    (static-error file "Does not yield a filename"))))))
 	  (else
-	    (static-error expr "Malformed require"))))))
+	    (static-error expr "Malformed require-file"))))))
 
   (define reference-library/relative-maker
     (lambda (form-name make-raw-filename)
@@ -411,7 +411,6 @@
 
   (define reference-library-unit-maker
     (lambda (form-name sig? relative?)
-      (when (language>=? 'advanced)
 	(add-primitivized-micro-form form-name mrspidey-vocabulary
 	  (let* ((kwd '())
 		  (in-pattern '(_ filename collections ...))
@@ -468,7 +467,7 @@
 			    expr))))))
 		(else
 		  (static-error expr
-		    (string-append "Malformed ~a" form-name))))))))))
+		    (string-append "Malformed ~a" form-name)))))))))
 
   (reference-library-unit-maker 'require-library-unit #f #f)
   (reference-library-unit-maker 'require-library-unit/sig #t #f)

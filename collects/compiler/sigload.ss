@@ -12,8 +12,6 @@
  (require-library "zsigs.ss" "zodiac")
  (require-library "sigs.ss" "zodiac")
 
- (require-library "sparams.ss" "backward")
-
  (require-relative-library "sig.ss") )
 
 (define-signature compiler:library^

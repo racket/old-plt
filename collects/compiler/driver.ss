@@ -137,42 +137,32 @@
     (compiler:report-messages! #t)
     (exit -1)))
   
-  (define (is-mzlib-library? path lib)
-    (and (regexp-match lib path)
-	 (string=? (build-path (collection-path "mzlib") lib) path)))
-  
   (define load-prefix-file
     (lambda (prefix)
-      (if (or (is-mzlib-library? prefix "refer.ss")
-	      (is-mzlib-library? prefix "macrox.ss"))
-	  (begin
-	    (printf " Prefix: skipping \"~a\"~n" prefix)
-	    (void))
-	  (begin
-	    (printf " Prefix: loading \"~a\"~n" prefix)
-	    (let-values ([(base file dir?) (split-path prefix)]
-			 ; [(start) (current-process-milliseconds)]
-			 [(p) (open-input-file prefix 'text)])
-			(let* ([results
-				(s:expand-top-level-expressions! 
-				 (path->complete-path
-				  (if (eq? 'relative base)
-				      (build-path 'same)
-				      base))
-				 (zodiac:read p (zodiac:make-location 1 1 0 prefix))
-				 #f
-				 #f
-				 (lambda (expr)
-				   (if (void? expr)
-				       expr
-				       (let ([r (zodiac:parsed->raw expr)])
-					 (call-with-values
-					  (lambda () 
-					    (eval r))
-					  list)))))])
-			  (close-input-port p)
-			  ; (printf "~a~n" (- (current-process-milliseconds) start))
-			  (apply values (car (last-pair results)))))))))
+      (printf " Prefix: loading \"~a\"~n" prefix)
+      (let-values ([(base file dir?) (split-path prefix)]
+		   ; [(start) (current-process-milliseconds)]
+		   [(p) (open-input-file prefix 'text)])
+	(let* ([results
+		(s:expand-top-level-expressions! 
+		 (path->complete-path
+		  (if (eq? 'relative base)
+		      (build-path 'same)
+		      base))
+		 (zodiac:read p (zodiac:make-location 1 1 0 prefix))
+		 #f
+		 #f
+		 (lambda (expr)
+		   (if (void? expr)
+		       expr
+		       (let ([r (zodiac:parsed->raw expr)])
+			 (call-with-values
+			  (lambda () 
+			    (eval r))
+			  list)))))])
+	  (close-input-port p)
+	  ; (printf "~a~n" (- (current-process-milliseconds) start))
+	  (apply values (car (last-pair results)))))))
   
   (define s:expand-top-level-expressions!
     (lambda (input-directory reader vocab verbose? r-eval)
@@ -201,18 +191,15 @@
 	(compiler:report-messages! #t)
 	(when verbose? (printf " expanding...~n"))
 	(parameterize ([current-load-relative-directory input-directory]
-		       [current-load load-prefix-file])
-	  (begin ; time
-	   (map r-eval (call/nal zodiac:scheme-expand-program/nal
-				 zodiac:scheme-expand-program
-				 (vocabulary:  vocab)
-				 (expressions: exprs)
-				 (elaboration-evaluator: (lambda (expr p->r phase)
-							   (if (void? expr)
-							       (void)
-							       (eval (p->r expr)))))
-				 (user-macro-body-evaluator: 
-				  (lambda (f . args) (apply f args))))))))))
+		       [current-load load-prefix-file]
+		       [zodiac:elaboration-evaluator
+			(lambda (expr p->r phase)
+			  (if (void? expr)
+			      (void)
+			      (eval (p->r expr))))]
+		       [zodiac:user-macro-body-evaluator
+			(lambda (f . args) (apply f args))])
+	  (map r-eval (zodiac:scheme-expand-program exprs 'previous vocab))))))
 
   (define elaborate-namespace (make-namespace))
 
@@ -274,7 +261,7 @@
       (compiler:init-lifted-lambda-list!)
       (compiler:init-once-closure-lists!)
 
-      (let ([l (map lift-lambdas! (block-source s:file-block))]
+      (let ([l (map lift-lambdas! (block-source s:file-block) (block-codes s:file-block))]
 	    [reset-globals (lambda (code globals)
 			     (set-code-global-vars! code globals)
 			     code)])

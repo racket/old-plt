@@ -1,53 +1,10 @@
 
 (unit
  (import)
- (export let-enumerate 
-	 catch-errors 
-	 class-asi
+ (export class-asi
 	 class*-asi
 	 opt-lambda)
 	 
- ;; let form where, instead of a list of name-value pairs, just
- ;; provide a list of names and they are bound to a sequence of
- ;; numbers (starting with 1)
- (define let-enumerate 
-  (lambda (name-lists . body)
-    (cons 'let
-	  (cons
-	   (let enum-all ((lists name-lists))
-	     (if (null? lists)
-		 '()
-		 (append (let enum ((names (car lists)) (pos 1))
-			   (if (null? names)
-			       '()
-			       (cons (list (car names) pos)
-				     (enum (cdr names) (+ pos 1)))))
-			 (enum-all (cdr lists)))))
-	   body))))
-
- (define catch-errors 
-  (lambda (displayer failure . body)
-    (let ([orig-displayer (gensym)]
-	  [orig-escaper (gensym)]
-	  [err (gensym)]
-	  [my-error (gensym)]
-	  [this-displayer (gensym)])
-      `(let* ([,orig-displayer (error-display-handler)]
-	      [,orig-escaper (error-escape-handler)]
-	      [,this-displayer ,displayer])
-	 (dynamic-wind
-	  (lambda () #f)
-	  (lambda ()
-	    (let/ec ,err
-		   (if ,this-displayer
-		       (error-display-handler ,this-displayer))
-		   (error-escape-handler
-		    (lambda () (,err (,failure))))
-		   ,@body))
-	  (lambda () 
-	    (error-display-handler ,orig-displayer)
-	    (error-escape-handler ,orig-escaper)))))))
-
  (define class*-asi
   (lambda (super interfaces . body)
     (let ([args (gensym)]

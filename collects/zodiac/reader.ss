@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:reader-code@
-;;  $Id: reader.ss,v 1.2 1997/09/05 17:29:43 shriram Exp $
+;;  $Id: reader.ss,v 1.3 1997/09/10 19:14:08 shriram Exp $
 ;;
 ;;  Zodiac Reader  July 96
 ;;  mwk, plt group, Rice university.
@@ -21,7 +21,6 @@
       zodiac:structures^
       zodiac:scanner-structs^
       (zodiac : zodiac:reader-structs^)
-      (parm : plt:parameters^)
       zodiac:scanner-parameters^
       (report : zodiac:interface^)
       zodiac:scanner-code^)

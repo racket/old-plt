@@ -3,6 +3,7 @@
   (case request
     [(name) "zodiac"]
     [(compile-prefix) '(begin
+			 (require-library "refer.ss")
 			 (require-library "zsigs.ss" "zodiac")
 			 (require-library "sigs.ss" "zodiac"))]
     [(compile-omit-files)

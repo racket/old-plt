@@ -3,10 +3,10 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (when (getenv "MREDDEBUG")
-  (letrec* ([old-handler (current-load)]
-	    [offset 2]
-	    [indent 0]
-	    [indent-string ""])
+  (letrec ([old-handler (current-load)]
+	   [offset 2]
+	   [indent 0]
+	   [indent-string ""])
     (current-load (lambda (f)
 		    (let ([file (if (relative-path? f)
 				    (build-path (current-directory) f)
@@ -40,7 +40,6 @@
 (require-library "zsigs.ss" "zodiac")
 (require-library "sigs.ss" "zodiac")
 
-(require-library "sparams.ss" "backward")
 (require-library "ariess.ss" "cogen")
 (require-library "userspcs.ss" "userspce")
 
@@ -369,9 +368,9 @@
 		       (unless (basis:process-finish? sexp)
 			 (mzlib:thread:dynamic-enable-break
 			  (lambda ()
-			    ((current-print)
-			     (primitive-eval
-			      sexp))))
+			    (call-with-values
+			     (lambda () (primitive-eval sexp))
+			     (current-print))))
 			 (display-prompt)
 			 (loop)))
 		     #t))
@@ -455,14 +454,21 @@
 		   (printf "Language: ~a~n"
 			   (cadr (assoc (basis:setting-vocabulary-symbol (basis:current-setting))
 					(map list basis:level-symbols basis:level-strings))))
-		   (thread-wait
-		    (thread
-		     (lambda ()
-		       
-		       (when (string? file)
-			 (load/prompt file))
-		       
-		       (repl))))))))
+
+		   (let ([repl-thread (thread
+				       (lambda ()
+					 
+					 (when (string? file)
+					   (load/prompt file))
+					 
+					 (repl)))])
+		     (mzlib:thread:dynamic-enable-break
+		      (lambda ()
+			(let loop ()
+			  (with-handlers ([exn:misc:user-break? (lambda (x)
+								  (break-thread repl-thread)
+								  (loop))])
+			    (thread-wait repl-thread))))))))))
 	    (when continue?
 	      (loop))))))
 
@@ -496,8 +502,7 @@
 	   [interface : drscheme:interface^
 		      ((require-library-unit/sig "interface.ss" "userspce") drzodiac)]
 	   [drzodiac : drscheme:zodiac^
-		     ((require-library-unit/sig "zlink.ss" "userspce")
-		      basis
+		     ((require-library-unit/sig "link.ss" "zodiac")
 		      (interface : zodiac:interface^)
 		      (mzlib pretty-print)
 		      (mzlib file))]

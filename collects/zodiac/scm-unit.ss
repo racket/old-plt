@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.66 1998/07/15 02:21:55 shriram Exp $
+; $Id: scm-unit.ss,v 1.67 1998/10/18 11:58:06 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -438,8 +438,7 @@
 
   ; ----------------------------------------------------------------------
 
-  (when (language>=? 'advanced)
-    (add-primitivized-micro-form 'unit scheme-vocabulary
+  (define unit-micro
       (let* ((kwd `(import export))
 	      (in-pattern `(_
 			     (import imports ...)
@@ -506,7 +505,10 @@
 			proc:exports
 			proc:clauses expr))))))
 	    (else
-	      (static-error expr "Malformed unit")))))))
+	      (static-error expr "Malformed unit"))))))
+
+  (add-primitivized-micro-form 'unit full-vocabulary unit-micro)
+  (add-primitivized-micro-form 'unit scheme-vocabulary unit-micro)
 
   ; ----------------------------------------------------------------------
 
@@ -630,8 +632,7 @@
 	  (else
 	    (static-error expr "Invalid export clause"))))))
 
-  (when (language>=? 'advanced)
-    (add-primitivized-micro-form 'compound-unit scheme-vocabulary
+  (define compound-unit-micro
       (let* ((kwd `(import link export))
 	      (in-pattern `(_
 			     (import imports ...)
@@ -653,55 +654,54 @@
 		  (distinct-valid-syntactic-id/s? in:link-tags)
 		  (make-vars-attribute attributes)
 		  (put-c-unit-vocab-attribute attributes vocab)
-		  (let*
-		    ((top-level? (get-top-level-status attributes))
-		      (_ (set-top-level-status attributes))
-		      (proc:imports (map (lambda (e)
-					   (expand-expr e env
-					     attributes c/imports-vocab))
-				      in:imports))
-		      (_ (extend-env proc:imports env))
-		      (_ (register-links in:link-tags attributes))
-		      (raw-link-clauses (map z:read-object in:link-tags))
-		      (proc:link-clauses
-			(map (lambda (link-tag link-body)
-			       (let ((this-tag (z:read-object link-tag)))
-				 (put-c-unit-current-link-tag-attribute
-				   attributes this-tag)
-				 (let ((expanded-body
-					 (expand-expr link-body env
+		  (let* ((proc:imports (map (lambda (e)
+					      (expand-expr e env
+							   attributes c/imports-vocab))
+					    in:imports))
+			 (_ (extend-env proc:imports env))
+			 (_ (register-links in:link-tags attributes))
+			 (raw-link-clauses (map z:read-object in:link-tags))
+			 (proc:link-clauses
+			  (map (lambda (link-tag link-body)
+				 (let ((this-tag (z:read-object link-tag)))
+				   (put-c-unit-current-link-tag-attribute
+				    attributes this-tag)
+				   (let ((expanded-body
+					  (as-nested
 					   attributes
-					   c-unit-link-body-vocab)))
-				   (let ((unit-expr (car expanded-body))
-					  (unit-args (apply append
-						       (cdr expanded-body))))
-				     (let loop ((args unit-args))
-				       (if (null? args)
-					 (begin
-					   (remove-c-unit-current-link-tag-attribute
-					     attributes)
-					   (cons link-tag
-					     (cons unit-expr unit-args)))
-					 (begin
-					   (if (pair? (car args))
-					     (let ((arg (caar args)))
-					       (if (z:symbol? arg)
-						 (when (not (memq (z:read-object arg)
-							      raw-link-clauses))
-						   (static-error arg
-						     "Not a valid tag"))
-						 (static-error arg
-						   "Tag must be a symbol"))))
-					   (loop (cdr args)))))))))
-			  in:link-tags in:link-bodies))
-		      (proc:export-clauses
-			(apply append
-			  (map (lambda (e)
-				 (expand-expr e env
-				   attributes c-unit-export-clause-vocab))
-			    in:export-clauses)))
-		      (_ (retract-env (map car proc:imports) env)))
-		    (set-top-level-status attributes top-level?)
+					   (lambda ()
+					     (expand-expr link-body env
+							  attributes
+							  c-unit-link-body-vocab)))))
+				     (let ((unit-expr (car expanded-body))
+					   (unit-args (apply append
+							     (cdr expanded-body))))
+				       (let loop ((args unit-args))
+					 (if (null? args)
+					     (begin
+					       (remove-c-unit-current-link-tag-attribute
+						attributes)
+					       (cons link-tag
+						     (cons unit-expr unit-args)))
+					     (begin
+					       (if (pair? (car args))
+						   (let ((arg (caar args)))
+						     (if (z:symbol? arg)
+							 (when (not (memq (z:read-object arg)
+									  raw-link-clauses))
+							   (static-error arg
+									 "Not a valid tag"))
+							 (static-error arg
+								       "Tag must be a symbol"))))
+					       (loop (cdr args)))))))))
+			       in:link-tags in:link-bodies))
+			 (proc:export-clauses
+			  (apply append
+				 (map (lambda (e)
+					(expand-expr e env
+						     attributes c-unit-export-clause-vocab))
+				      in:export-clauses)))
+			 (_ (retract-env (map car proc:imports) env)))
 		    (remove-c-unit-vocab-attribute attributes)
 		    (remove-vars-attribute attributes)
 		    (create-compound-unit-form
@@ -710,12 +710,14 @@
 		      proc:export-clauses
 		      expr)))))
 	    (else
-	      (static-error expr "Malformed compound-unit")))))))
+	      (static-error expr "Malformed compound-unit"))))))
+
+  (add-primitivized-micro-form 'compound-unit full-vocabulary compound-unit-micro)
+  (add-primitivized-micro-form 'compound-unit scheme-vocabulary compound-unit-micro)
 
   ; --------------------------------------------------------------------
 
-  (when (language>=? 'advanced)
-    (add-primitivized-micro-form 'invoke-unit scheme-vocabulary
+  (define invoke-unit-micro
       (let* ((kwd '())
 	      (in-pattern `(_ unit vars ...))
 	      (m&e (pat:make-match&env in-pattern kwd)))
@@ -727,26 +729,27 @@
 		(let ((unit (pat:pexpand 'unit p-env kwd))
 		       (vars (pat:pexpand '(vars ...) p-env kwd)))
 		  (valid-syntactic-id/s? vars)
-		  (let* ((top-level? (get-top-level-status
-				       attributes))
-			  (_ (set-top-level-status attributes))
-			  (expr-expr
-			    (expand-expr unit env attributes vocab))
-			  (var-exprs
-			    (map (lambda (e)
-				   (expand-expr e env
-				     attributes vocab))
-			      vars)))
-		    (set-top-level-status attributes top-level?)
+		  (let* ((expr-expr
+			  (as-nested
+			   attributes
+			   (lambda ()
+			     (expand-expr unit env attributes vocab))))
+			 (var-exprs
+			  (map (lambda (e)
+				 (expand-expr e env
+					      attributes vocab))
+			       vars)))
 		    (create-invoke-unit-form
 		      expr-expr
 		      var-exprs
 		      expr)))))
 	    (else
-	      (static-error expr "Malformed invoke-unit")))))))
+	      (static-error expr "Malformed invoke-unit"))))))
 
-  (when (language>=? 'advanced)
-    (add-primitivized-micro-form 'invoke-open-unit scheme-vocabulary
+  (add-primitivized-micro-form 'invoke-unit full-vocabulary invoke-unit-micro)
+  (add-primitivized-micro-form 'invoke-unit scheme-vocabulary invoke-unit-micro)
+
+  (define invoke-open-unit-micro
       (let* ((kwd '())
 	      (in-pattern-1 `(_ unit))
 	      (in-pattern-2 `(_ unit name-spec vars ...))
@@ -769,31 +772,33 @@
 		       (name-spec (pat:pexpand 'name-spec p-env kwd))
 		       (vars (pat:pexpand '(vars ...) p-env kwd)))
 		  (valid-syntactic-id/s? vars)
-		  (let* ((top-level? (get-top-level-status
-				       attributes))
-			  (_ (set-top-level-status attributes))
-			  (expr-expr
-			    (expand-expr unit env attributes vocab))
-			  (expanded-spec
-			    (if (or (z:symbol? name-spec)
+		  (let* ((expr-expr
+			  (as-nested
+			   attributes
+			   (lambda()
+			     (expand-expr unit env attributes vocab))))
+			 (expanded-spec
+			  (if (or (z:symbol? name-spec)
 				  (and (z:boolean? name-spec)
-				    (not (z:read-object name-spec))))
+				       (not (z:read-object name-spec))))
 			      (z:read-object name-spec)
 			      (static-error name-spec
-				"Invalid name specifier")))
-			  (vars-expr
-			    (map (lambda (v)
-				   (expand-expr v env
-				     attributes vocab))
-			      vars)))
-		    (set-top-level-status attributes top-level?)
+					    "Invalid name specifier")))
+			 (vars-expr
+			  (map (lambda (v)
+				 (expand-expr v env
+					      attributes vocab))
+			       vars)))
 		    (create-invoke-open-unit-form
 		      expr-expr
 		      expanded-spec
 		      vars-expr
 		      expr)))))
 	    (else
-	      (static-error expr "Malformed invoke-open-unit")))))))
+	      (static-error expr "Malformed invoke-open-unit"))))))
+
+  (add-primitivized-micro-form 'invoke-open-unit full-vocabulary invoke-open-unit-micro)
+  (add-primitivized-micro-form 'invoke-open-unit scheme-vocabulary invoke-open-unit-micro)
 
   ; --------------------------------------------------------------------
 
@@ -965,44 +970,6 @@
 	      (create-set!-form id-expr expr-expr expr))
 	    (static-error expr "Malformed set!"))))))
 
-  (add-primitivized-micro-form 'if unit-clauses-vocab-delta
-    (let* ((kwd '())
-	    (in-pattern-1 `(_ test then))
-	    (in-pattern-2 `(_ test then else))
-	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	    (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e-1 expr env)
-	    =>
-	    (lambda (p-env)
-	      (when (language<=? 'structured)
-		(static-error expr "If must have an else clause"))
-	      (expand-expr
-		(structurize-syntax
-		  (pat:pexpand '(if test then (#%void)) p-env kwd)
-		  expr '(-1))
-		env attributes vocab)))
-	  ((pat:match-against m&e-2 expr env)
-	    =>
-	    (lambda (p-env)
-	      (let* ((top-level? (get-top-level-status attributes))
-		      (_ (set-top-level-status attributes))
-		      (test-exp (expand-expr
-				  (pat:pexpand 'test p-env kwd)
-				  env attributes vocab))
-		      (then-exp (expand-expr
-				  (pat:pexpand 'then p-env kwd)
-				  env attributes vocab))
-		      (else-exp (expand-expr
-				  (pat:pexpand 'else p-env kwd)
-				  env attributes vocab))
-		      (_ (set-top-level-status attributes
-			   top-level?)))
-		(create-if-form test-exp then-exp else-exp expr))))
-	  (else
-	    (static-error expr "Malformed if"))))))
-
   (add-sym-micro unit-clauses-vocab-delta
     (let ((top-level-resolution (make-top-level-resolution 'dummy #f)))
       (lambda (expr env attributes vocab)
@@ -1049,111 +1016,113 @@
 
   (define reference-unit-maker
     (lambda (form-name sig?)
-      (when (language>=? 'advanced)
-	(add-primitivized-micro-form form-name scheme-vocabulary
-	  (let* ((kwd '())
-		  (in-pattern `(_ filename))
-		  (m&e (pat:make-match&env in-pattern kwd)))
-	    (lambda (expr env attributes vocab)
-	      (cond
-		((pat:match-against m&e expr env)
-		  =>
-		  (lambda (p-env)
-		    (let ((filename (pat:pexpand 'filename p-env kwd)))
-		      (let ((f (expand-expr filename env attributes vocab)))
-			(if (and (quote-form? f)
-			      (z:string? (quote-form-expr f)))
-			  (expand-expr
-			    (structurize-syntax
-			      `(let ((result (#%load/use-compiled
+      (let ([micro
+	     (let* ((kwd '())
+		    (in-pattern `(_ filename))
+		    (m&e (pat:make-match&env in-pattern kwd)))
+	       (lambda (expr env attributes vocab)
+		 (cond
+		  ((pat:match-against m&e expr env)
+		   =>
+		   (lambda (p-env)
+		     (let ((filename (pat:pexpand 'filename p-env kwd)))
+		       (let ((f (expand-expr filename env attributes vocab)))
+			 (if (and (quote-form? f)
+				  (z:string? (quote-form-expr f)))
+			     (expand-expr
+			      (structurize-syntax
+			       `(let ((result (#%load/use-compiled
 					       ,(quote-form-expr f))))
-				 (unless (,(if sig?
-					     '#%unit/sig?
-					     '#%unit?)
+				  (unless (,(if sig?
+						'#%unit/sig?
+						'#%unit?)
 					   result)
-				   (#%raise
+				    (#%raise
 				     (#%make-exn:unit
-				       ,(format
-					  "~s: result from ~s is not ~aunit"
-					  form-name
-					  (sexp->raw (quote-form-expr f))
-					  (if sig? "signed " ""))
-				       ((debug-info-handler)))))
-				 result)
-			      expr '(-1))
-			    env attributes vocab)
-			  (static-error filename
-			    "Does not yield a filename"))))))
-		(else
-		  (static-error expr "Malformed ~a" form-name)))))))))
+				      ,(format
+					"~s: result from ~s is not ~aunit"
+					form-name
+					(sexp->raw (quote-form-expr f))
+					(if sig? "signed " ""))
+				      ((debug-info-handler)))))
+				  result)
+			       expr '(-1))
+			      env attributes vocab)
+			     (static-error filename
+					   "Does not yield a filename"))))))
+		  (else
+		   (static-error expr "Malformed ~a" form-name)))))])
+	(add-primitivized-micro-form form-name full-vocabulary micro)
+	(add-on-demand-form 'micro form-name scheme-vocabulary micro))))
 
   (reference-unit-maker 'require-unit #f)
   (reference-unit-maker 'require-unit/sig #t)
 
   (define reference-library-unit-maker
     (lambda (form-name sig? relative?)
-      (when (language>=? 'advanced)
-	(add-primitivized-micro-form form-name scheme-vocabulary
-	  (let* ((kwd '())
-		  (in-pattern '(_ filename collections ...))
-		  (m&e (pat:make-match&env in-pattern kwd)))
-	    (lambda (expr env attributes vocab)
-	      (cond
-		((pat:match-against m&e expr env)
-		  =>
-		  (lambda (p-env)
-		    (let ((filename (pat:pexpand 'filename p-env kwd))
+      (let ([micro
+	     (let* ((kwd '())
+		    (in-pattern '(_ filename collections ...))
+		    (m&e (pat:make-match&env in-pattern kwd)))
+	       (lambda (expr env attributes vocab)
+		 (cond
+		  ((pat:match-against m&e expr env)
+		   =>
+		   (lambda (p-env)
+		     (let ((filename (pat:pexpand 'filename p-env kwd))
 			   (collections (pat:pexpand '(collections ...)
-					  p-env kwd)))
-		      (let ((f (expand-expr filename env attributes vocab))
+						     p-env kwd)))
+		       (let ((f (expand-expr filename env attributes vocab))
 			     (cs (map (lambda (c)
 					(expand-expr c env attributes vocab))
-				   collections)))
-			(unless (and (quote-form? f)
-				  (z:string? (quote-form-expr f)))
-			  (static-error filename "Does not yield a filename"))
-			(for-each
+				      collections)))
+			 (unless (and (quote-form? f)
+				      (z:string? (quote-form-expr f)))
+			   (static-error filename "Does not yield a filename"))
+			 (for-each
 			  (lambda (c collection)
 			    (unless (and (quote-form? c)
-				      (z:string? (quote-form-expr c)))
+					 (z:string? (quote-form-expr c)))
 			      (static-error collection
-				"Does not yield a string")))
+					    "Does not yield a string")))
 			  cs collections)
-			(let ((raw-f (z:read-object (quote-form-expr f)))
+			 (let ((raw-f (z:read-object (quote-form-expr f)))
 			       (raw-cs (map (lambda (c)
 					      (z:read-object
-						(quote-form-expr c)))
-					 cs)))
-			  (unless (relative-path? raw-f)
-			    (static-error f
-			      "Library path ~s must be a relative path"
-			      raw-f))
-			  (expand-expr
+					       (quote-form-expr c)))
+					    cs)))
+			   (unless (relative-path? raw-f)
+			     (static-error f
+					   "Library path ~s must be a relative path"
+					   raw-f))
+			   (expand-expr
 			    (structurize-syntax
-			      `(let ((result (,(if relative?
-						 '#%require-relative-library
-						 '#%require-library)
-					       ,(quote-form-expr f)
-					       ,@(map quote-form-expr cs))))
-				 (unless (,(if sig? '#%unit/sig? '#%unit?)
-					   result)
-				   (#%raise
-				     (#%make-exn:unit
-				       ,(format
-					  "~s: result from ~s in collection ~a not a ~aunit"
-					  form-name
-					  raw-f
-					  (if (null? raw-cs)
-					    '"mzlib"
-					    raw-cs)
-					  (if sig? "signed " ""))
-				       ((#%debug-info-handler)))))
-				 result)
-			      expr '(-1))
+			     `(let ((result (,(if relative?
+						  '#%require-relative-library
+						  '#%require-library)
+					     ,(quote-form-expr f)
+					     ,@(map quote-form-expr cs))))
+				(unless (,(if sig? '#%unit/sig? '#%unit?)
+					 result)
+				  (#%raise
+				   (#%make-exn:unit
+				    ,(format
+				      "~s: result from ~s in collection ~a not a ~aunit"
+				      form-name
+				      raw-f
+				      (if (null? raw-cs)
+					  '"mzlib"
+					  raw-cs)
+				      (if sig? "signed " ""))
+				    ((#%debug-info-handler)))))
+				result)
+			     expr '(-1))
 			    env attributes vocab))))))
-		(else
-		  (static-error expr
-		    (string-append "Malformed ~a" form-name))))))))))
+		  (else
+		   (static-error expr
+				 (string-append "Malformed ~a" form-name))))))])
+	(add-primitivized-micro-form form-name full-vocabulary micro)
+	(add-on-demand-form 'micro form-name scheme-vocabulary micro))))
 
   (reference-library-unit-maker 'require-library-unit #f #f)
   (reference-library-unit-maker 'require-library-unit/sig #t #f)

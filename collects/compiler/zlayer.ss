@@ -288,6 +288,26 @@
 			      (zodiac:unit-form-exports ast)))
 	       ,@(map zodiac->sexp/annotate (zodiac:unit-form-clauses ast)))]
 
+       [(zodiac:compound-unit-form? ast)
+	`(compound-unit
+	  (import ,@(map zodiac->sexp (zodiac:compound-unit-form-imports ast)))
+	  (link ,(map  
+		  (lambda (l)
+		    (zodiac:read-object (car l))
+		    `(,(zodiac->sexp (cadr l))
+		      ,@(map (lambda (x)
+			       (if (pair? x)
+				   `(,(zodiac:read-object (car x)) ,(zodiac:read-object (cdr x)))
+				   (zodiac->sexp x)))
+			     (cddr l))))
+		  (zodiac:compound-unit-form-links ast)))
+	  (export ,@(map
+		     (lambda (e)
+		       `(,(zodiac:read-object (car e))
+			 (,(zodiac:read-object (cadr e))
+			  ,(zodiac:read-object (cddr e)))))
+		     (zodiac:compound-unit-form-exports ast))))]
+
        [(zodiac:invoke-unit-form? ast)
 	`(invoke-unit ,(zodiac->sexp/annotate (zodiac:invoke-unit-form-unit ast))
 		      ,@(map zodiac->sexp (zodiac:invoke-unit-form-variables ast)))]

@@ -1,8 +1,26 @@
 
+Expander Procedures
+-------------------
+
 (scheme-expand expr [attr 'previous] [vocab #f]) - expands one expression
 
 (scheme-expand-program exprs [attr 'previous] [vocab #f]) - expands
   several expressions
+
+Vocabularies
+------------
+
+ beginner-vocabulary
+ intermediate-vocabulary
+ advanced-vocabulary
+ full-vocabulary - advanced + units and objects
+ scheme-vocabulary - MzScheme (unlike full-vocabulary, local, send*,
+                     etc. are not present until the correcponding
+                     `define-macro' expression in MzLib is evaluated
+                     at elaboration time)
+
+Handler Parameters
+------------------
 
 elaboration-evaluator - parameter for the evaluatotr used to evaluate
  begin-elaboration-time bodies and the RHS of a macro definition

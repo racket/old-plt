@@ -264,7 +264,7 @@
 				      (mv-wrap val)))))
 			(z:letrec*-values-form-vars expr)
 			(z:letrec*-values-form-vals expr))))
-		`(#%letrec*-values ,bindings
+		`(#%letrec-values ,bindings
 		   ,(annotate (z:letrec*-values-form-body expr))))]
 
 	    [(z:define-values-form? expr)
@@ -388,6 +388,15 @@
 				  (z:public-clause-internals clause)
 				  (z:public-clause-exports clause)
 				  (z:public-clause-exprs clause))))
+			 ((z:override-clause? clause)
+			   `(override
+			      ,@(map (lambda (internal export expr)
+				       `((,(z:binding-var internal)
+					   ,(read->raw export))
+					  ,(mv-wrap expr)))
+				  (z:override-clause-internals clause)
+				  (z:override-clause-exports clause)
+				  (z:override-clause-exprs clause))))
 			 ((z:private-clause? clause)
 			   `(private
 			      ,@(map (lambda (internal expr)

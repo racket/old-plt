@@ -46,16 +46,11 @@
 				whole/fractional-exact-numbers
 				printing))
 
-  (define-values (raw-name raw-vocab-symbol)
-    (if import:in-mzscheme?
-	(values 'MzScheme 'mzscheme)
-	(values 'MrEd 'mred)))
-  
   ;; settings : (list-of (list symbol setting))
   (define settings
     (list (vector 'Beginner (make-setting/parse
 			     `((use-zodiac? #t)
-			       (vocabulary-symbol core)
+			       (vocabulary-symbol beginner)
 			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
@@ -72,7 +67,7 @@
 			       (printing constructor-style))))
 	  (vector 'Intermediate (make-setting/parse
 				 `((use-zodiac? #t)
-				   (vocabulary-symbol structured)
+				   (vocabulary-symbol intermediate)
 				   (case-sensitive? #t)
 				   (allow-set!-on-undefined? #f)
 				   (unmatched-cond/case-is-error? #t)
@@ -89,7 +84,7 @@
 				   (printing constructor-style))))
 	  (vector 'Advanced (make-setting/parse
 			     `((use-zodiac? #t)
-			       (vocabulary-symbol side-effecting)
+			       (vocabulary-symbol advanced)
 			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #t)
@@ -104,57 +99,57 @@
 			       (print-tagged-inexact-numbers #f)
 			       (whole/fractional-exact-numbers #f)
 			       (printing constructor-style))))
-	  (vector 'R4RS+ (make-setting/parse
-			  `((use-zodiac? #t)
-			    (vocabulary-symbol advanced)
-			    (case-sensitive? #t)
-			    (allow-set!-on-undefined? #f)
-			    (unmatched-cond/case-is-error? #t)
-			    (allow-improper-lists? #t)
-			    (sharing-printing? #f)
-			    (abbreviate-cons-as-list? #t)
-			    (signal-undefined #t)
-			    (signal-not-boolean #f)
-			    (eq?-only-compares-symbols? #f)
-			    (<=-at-least-two-args #f)
-			    (disallow-untagged-inexact-numbers #f)
-			    (print-tagged-inexact-numbers #f)
-			    (whole/fractional-exact-numbers #f)
-			    (printing r4rs-style))))
-	  (vector raw-name (make-setting/parse
-			    `((use-zodiac? #f)
-			      (vocabulary-symbol ,raw-vocab-symbol)
-			      (case-sensitive? #t)
-			      (allow-set!-on-undefined? #f)
-			      (unmatched-cond/case-is-error? #t)
-			      (allow-improper-lists? #t)
-			      (sharing-printing? #t)
-			      (abbreviate-cons-as-list? #t)
-			      (signal-undefined #t)
-			      (signal-not-boolean #f)
-			      (eq?-only-compares-symbols? #f)
-			      (<=-at-least-two-args #f)
-			      (disallow-untagged-inexact-numbers #f)
-			      (print-tagged-inexact-numbers #f)
-			      (whole/fractional-exact-numbers #f)
-			      (printing r4rs-style))))))
+	  (vector 'MzScheme (make-setting/parse
+			     `((use-zodiac? #f)
+			       (vocabulary-symbol mzscheme)
+			       (case-sensitive? #f)
+			       (allow-set!-on-undefined? #f)
+			       (unmatched-cond/case-is-error? #f)
+			       (allow-improper-lists? #t)
+			       (sharing-printing? #f)
+			       (abbreviate-cons-as-list? #t)
+			       (signal-undefined #f)
+			       (signal-not-boolean #f)
+			       (eq?-only-compares-symbols? #f)
+			       (<=-at-least-two-args #f)
+			       (disallow-untagged-inexact-numbers #f)
+			       (print-tagged-inexact-numbers #f)
+			       (whole/fractional-exact-numbers #f)
+			       (printing r4rs-style))))
+	  (vector 'MzSchemeDebug (make-setting/parse
+				  `((use-zodiac? #t)
+				    (vocabulary-symbol mzscheme-debug)
+				    (case-sensitive? #f)
+				    (allow-set!-on-undefined? #f)
+				    (unmatched-cond/case-is-error? #f)
+				    (allow-improper-lists? #t)
+				    (sharing-printing? #f)
+				    (abbreviate-cons-as-list? #t)
+				    (signal-undefined #f)
+				    (signal-not-boolean #f)
+				    (eq?-only-compares-symbols? #f)
+				    (<=-at-least-two-args #f)
+				    (disallow-untagged-inexact-numbers #f)
+				    (print-tagged-inexact-numbers #f)
+				    (whole/fractional-exact-numbers #f)
+				    (printing r4rs-style))))))
 
   ;; level->number : symbol -> int
   (define level->number
     (lambda (x)
       (evcase x
-	['core 0]
-	['structured 1]
-	['side-effecting 2]
-	['advanced 3]
-	[raw-vocab-symbol 4]
+	['beginner 0]
+	['intermediate 1]
+	['advanced 2]
+	['mzscheme 3]
+	['mzscheme-debug 4]
 	[else (error 'level->number "unexpected level: ~a" x)])))
 
   ;; level-symbols (list-of sym)
-  (define level-symbols (list 'core 'structured 'side-effecting 'advanced raw-vocab-symbol))
+  (define level-symbols (list 'beginner 'intermediate 'advanced 'mzscheme 'mzscheme-debug))
 
   ;; level-strings : (list-of string)
-  (define level-strings (list "Beginner" "Intermediate" "Advanced" "R4RS+" (symbol->string raw-name)))
+  (define level-strings (list "Beginner" "Intermediate" "Advanced" "MzScheme" "MzSchemeDebug"))
 
   ;; find-setting-name : setting -> symbol
   (define (find-setting-name setting)
@@ -301,12 +296,12 @@
 			      [exp
 			       (dynamic-wind
 				(lambda () (zodiac:interface:set-zodiac-phase 'expander))
-				(lambda () (call/nal zodiac:scheme-expand/nal
-						     zodiac:scheme-expand
-						     [expression: zodiac-read]
-						     [vocabulary: vocab]
-						     [user-macro-body-evaluator: user-macro-body-evaluator]
-						     [elaboration-evaluator: evaluator]))
+				(lambda () (parameterize ([zodiac:user-macro-body-evaluator user-macro-body-evaluator]
+							  [zodiac:elaboration-evaluator evaluator])
+					     (zodiac:scheme-expand
+					      zodiac-read
+					      'previous
+					      vocab)))
 				(lambda () (zodiac:interface:set-zodiac-phase #f)))]
 			      [heading-out (if annotate? 
 					       (annotate exp)
@@ -500,13 +495,15 @@
 	    (error-print-width 250)
 	    (current-print drscheme-print)
 
-	    ;; ordering of these two is important;
-	    ;; zodiac:current-vocabulary-symbol bangs on zodiac:scheme-vocabulary
 	    (when (setting-use-zodiac? setting)
-	      (zodiac:current-vocabulary-symbol (setting-vocabulary-symbol setting))
 	      (current-vocabulary (zodiac:create-vocabulary
 				   'scheme-w/user-defined-macros/drscheme
-				   zodiac:scheme-vocabulary)))
+				   (case (setting-vocabulary-symbol setting)
+				     [(beginner) zodiac:beginner-vocabulary]
+				     [(intermediate) zodiac:intermediate-vocabulary]
+				     [(advanced) zodiac:advanced-vocabulary]
+				     [(mzscheme-debug) zodiac:scheme-vocabulary]
+				     [else (error 'init "bad vocabulary spec: ~a" (setting-vocabulary-symbol setting))]))))
 	    
 	    (read-case-sensitive (setting-case-sensitive? setting))
 

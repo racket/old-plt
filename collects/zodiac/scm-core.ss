@@ -1,10 +1,10 @@
-; $Id: scm-core.ss,v 1.45 1998/07/14 20:25:01 shriram Exp $
+; $Id: scm-core.ss,v 1.46 1998/11/03 23:55:47 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
     (z : zodiac:reader-structs^) zodiac:back-protocol^
     zodiac:expander^ zodiac:interface^
-    (pat : zodiac:pattern^) (param : plt:parameters^))
+    (pat : zodiac:pattern^))
 
   (define-struct (parsed struct:zodiac) (back))
   (define-struct (varref struct:parsed) (var))
@@ -138,6 +138,10 @@
     (create-vocabulary 'advanced-vocabulary
 		       intermediate-vocabulary))
 
+  (define full-vocabulary
+    (create-vocabulary 'full-vocabulary
+		       advanced-vocabulary))
+
   (define scheme-vocabulary
     (create-vocabulary 'scheme-vocabulary
 		       common-vocabulary))
@@ -188,25 +192,25 @@
 	    (expand-expr (structurize-syntax `(quote ,expr) expr)
 	      env attributes vocab)
 	    (static-error expr "Empty combination is a syntax error"))
-	  (let ((top-level? (get-top-level-status attributes)))
-	    (set-top-level-status attributes)
-	    (let ((bodies
+	  (as-nested
+	   attributes
+	   (lambda ()
+	     (let ((bodies
 		    (map
-		      (lambda (e)
-			(expand-expr e env attributes vocab))
-		      contents)))
-	      (when (or (and (not lexvar-ok?)
-			  (not (top-level-varref? (car bodies))))
-		      (and (not expr-ok?)
-			(not (varref? (car bodies)))))
-		(static-error expr
-		  "First term after parenthesis is illegal in an application"))
-	      (set-top-level-status attributes top-level?)
-	      (create-app (car bodies) (cdr bodies) expr)))))))
+		     (lambda (e)
+		       (expand-expr e env attributes vocab))
+		     contents)))
+	       (when (or (and (not lexvar-ok?)
+			      (not (top-level-varref? (car bodies))))
+			 (and (not expr-ok?)
+			      (not (varref? (car bodies)))))
+		 (static-error expr
+			       "First term after parenthesis is illegal in an application"))
+	      (create-app (car bodies) (cdr bodies) expr))))))))
 
   (add-list-micro beginner-vocabulary (make-list-micro #f #f #f))
   (add-list-micro intermediate-vocabulary (make-list-micro #f #t #f))
-  (add-list-micro advanced-vocabulary (make-list-micro #t #t #t))
+  (add-list-micro advanced-vocabulary (make-list-micro #f #t #t))
   (add-list-micro scheme-vocabulary (make-list-micro #t #t #t))
 
   (define lexically-resolved?
@@ -239,12 +243,35 @@
 
   (define at-top-level? get-top-level-status)
 
+
+  (define set-internal-define-status
+    (opt-lambda (attributes (value #f))
+      (put-attribute attributes 'at-internal-define-level? value)))
+
+  (define get-internal-define-status
+    (lambda (attributes)
+      (get-attribute attributes 'at-internal-define-level?
+	(lambda () #f))))
+
+  (define at-internal-define? get-internal-define-status)
+
+  (define (as-nested attributes f)
+    (let ([top? (get-top-level-status attributes)]
+	  [internal? (get-internal-define-status attributes)])
+      (set-top-level-status attributes #f)
+      (set-internal-define-status attributes #f)
+      (begin0
+       (f)
+       (set-top-level-status attributes top?)
+       (set-internal-define-status attributes internal?))))
+
   ; --------------------------------------------------------------------
 
   (define previous-attribute (make-attributes))
 
   (define (reset-internal-attributes attr)
     (set-top-level-status attr #t)
+    (set-internal-define-status attr #f)
     (for-each (lambda (r) (r attr)) (attributes-resetters)))
 
   (define elaboration-evaluator
@@ -748,11 +775,6 @@
       (make-ilist-arglist
        (map create-lexical-binding+marks
 	    (expose-list expr)))))
-
-  (add-sub-vocab 'args beginner-vocabulary nonempty-arglist-decls-vocab)
-  (add-sub-vocab 'args intermediate-vocabulary proper-arglist-decls-vocab)
-  (add-sub-vocab 'args advanced-vocabulary full-arglist-decls-vocab)
-  (add-sub-vocab 'args scheme-vocabulary full-arglist-decls-vocab)
 
   ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

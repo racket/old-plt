@@ -104,9 +104,7 @@
 
 (define-signature drscheme:exported-zodiac^ zodiac:system^)
 
-(define-signature drscheme:zodiac^
-  ((open drscheme:exported-zodiac^)
-   current-vocabulary-symbol))
+(define-signature drscheme:zodiac^ drscheme:exported-zodiac^)
 
 (define-signature userspace:basis-import^
   (in-mzscheme?))

@@ -22,7 +22,7 @@
    (define -require-relative-library-unit (make-require-unit #f #t #t #f 'require-relative-library-unit))
    (define -require-unit/sig (make-require-unit #f #f #f #t 'require-unit/sig))
    (define -require-unit (make-require-unit #f #f #f #f 'require-unit))
-   (define -require (make-require #f #f #f))
+   (define -require-file (make-require #f #f #f))
    (define -require-library (make-require #f #t #f))
    (define -require-relative-library (make-require #f #t #t))
    (define make--begin-elaboration-time
@@ -49,7 +49,7 @@
      (when (or preserve-elab? do-elab? preserve-constr? do-constr?)
        (eval `(begin
 		(require-library "refer.ss")
-		(define-macro require ,-require)
+		(define-macro require-file ,-require-file)
 		(define-macro require-unit/sig ,-require-unit/sig)
 		(define-macro require-unit ,-require-unit)
 		(define-macro require-library-unit/sig ,-require-library-unit/sig)

@@ -27,7 +27,7 @@
 ;;    binding - `binding' structure: UPDATED occasionally:
 ;;         rec? field for letrec bindings
 ;;         known-but-used? field for ill-used bindings
-;;    quote - zodiac:varref ( global var containing a constructed 
+;;    quote - zodiac:varref (global var containing a constructed 
 ;;         constant) or an immediate constant
 ;;    app - `app' structure: UPDATED tail? flag
 ;;    lambda - `procedure-code' structure
@@ -534,7 +534,7 @@
   ;;  2) a set of variables occurring free in that expression [free-vars]
   ;;  3) a set of variables which are bound by lets in that expression [local-vars]
   ;;  4) global variables and mutable `constants' used in the expression [global-vars]
-  ;;  5) local variables (including given bound set) that are used or captured by nested closures [used-vars]
+  ;;  5) local variables (including given bound set) that are used directly or captured by nested closures [used-vars]
   ;;  6) free and local variables that are captured by nested closures [captured-vars]
   ;;  7) a list of `code' structures
   ;;  8) maximum arity to a call made in this expression
@@ -776,7 +776,8 @@
 		(set! compiler:local-per-load-define-list null)
 		(let ([ret (compiler:construct-const-code! 
 			    (zodiac:quote-form-expr ast)
-			    known-immutable?)])
+			    (or known-immutable?
+				(eq? 'immutable (get-annotation ast))))])
 		  ; Put a pointer to the constructed constant in the quote-form's backbox
 		  (set-annotation! ast ret)
 		  
@@ -1410,10 +1411,17 @@
 		     (lambda (v)
 		       (let ([v (analyze-varref! v env #f #t)])
 			 (if (zodiac:bound-varref? v)
-			     (let ([binding (get-annotation (zodiac:bound-varref-binding v))])
+			     (let* ([zbinding (zodiac:bound-varref-binding v)]
+				    [binding (get-annotation zbinding)])
 			       (when (binding-known? binding)
 				 (set-binding-known-but-used?! binding #t))
-			       (binding-anchor binding))
+			       (let ([anchor (binding-anchor binding)])
+				 (when anchor
+				   ; mark var as captured so its anchor gets
+				   ; unpacked by this expression's
+				   ; procedure (if we happen to be in a procedure)
+				   (set! captured-vars (set-union-singleton captured-vars zbinding)))
+				 anchor))
 			     v)))
 		     (zodiac:invoke-form-variables ast))))
 		  

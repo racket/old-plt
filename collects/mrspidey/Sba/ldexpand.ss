@@ -361,12 +361,9 @@
 	    ;          [defs2 (zodiac:expand-program
 	    ;                   defs attributes zodiac:mrspidey-vocabulary p)]
 	    [defs2 (if needs-expand?
-		       (call/nal
-			zodiac:expand-program/nal
-			zodiac:expand-program
-			(expressions: defs)
-			(attributes: attributes)
-			(vocabulary:  zodiac:mrspidey-vocabulary))
+		       (zodiac:expand-program defs
+					      attributes
+					      zodiac:mrspidey-vocabulary)
 		       defs)]
 	    ; (parameterization: p))]
 	    [defs2 (zodiac:inline-begins defs2)]

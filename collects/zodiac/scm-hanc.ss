@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.53 1998/09/11 12:16:17 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.54 1998/11/03 23:55:47 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -580,8 +580,7 @@
 
 ; --------------------------------------------------------------------
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'signature->symbols scheme-vocabulary
+(define signature->symbols-micro
     (let* ((kwd '())
 	    (in-pattern '(_ name))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -600,10 +599,12 @@
 		    (structurize-syntax `(,'quote ,elements) expr '(-1))
 		    env attributes vocab)))))
 	  (else
-	    (static-error expr "Malformed signature->symbols")))))))
+	    (static-error expr "Malformed signature->symbols"))))))
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'define-signature scheme-vocabulary
+(add-primitivized-micro-form 'signature->symbols full-vocabulary signature->symbols-micro)
+(add-on-demand-form 'micro 'signature->symbols scheme-vocabulary signature->symbols-micro)
+
+(define define-signature-micro
     (let* ((kwd '())
 	    (in-pattern '(_ name sig))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -625,10 +626,12 @@
 		  (structurize-syntax '(#%void) expr '(-1))
 		  env attributes vocab))))
 	  (else
-	    (static-error expr "Malformed define-signature")))))))
+	    (static-error expr "Malformed define-signature"))))))
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'let-signature scheme-vocabulary
+(add-primitivized-micro-form 'define-signature full-vocabulary define-signature-micro)
+(add-primitivized-micro-form 'define-signature scheme-vocabulary define-signature-micro)
+
+(define let-signature-micro
     (let* ((kwd '())
 	    (in-pattern '(_ name sig b0 b1 ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -651,7 +654,10 @@
 		  (pop-signature name attributes old-value)
 		  output))))
 	  (else
-	    (static-error expr "Malformed let-signature")))))))
+	    (static-error expr "Malformed let-signature"))))))
+
+(add-primitivized-micro-form 'let-signature full-vocabulary let-signature-micro)
+(add-primitivized-micro-form 'let-signature scheme-vocabulary let-signature-micro)
 
 (define u/s-expand-includes-vocab
   (create-vocabulary 'u/s-expand-includes-vocab))
@@ -738,8 +744,7 @@
 	(else
           (static-error expr "Malformed include"))))))
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'unit/sig scheme-vocabulary
+(define unit/sig-micro
     (let* ((kwd-1 '(import rename))
 	    (in-pattern-1 '(_ signature
 			     (import imports ...)
@@ -814,7 +819,11 @@
 		  expr)
 		env attributes vocab)))
 	  (else
-	    (static-error expr "Malformed unit/sig")))))))
+	    (static-error expr "Malformed unit/sig"))))))
+
+
+(add-primitivized-micro-form 'unit/sig full-vocabulary unit/sig-micro)
+(add-primitivized-micro-form 'unit/sig scheme-vocabulary unit/sig-micro)
 
 ; --------------------------------------------------------------------
 
@@ -1748,8 +1757,7 @@
 	   (expand-expr l env attributes cu/s-link-record-tag-sigs-vocab))
       links)))
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'compound-unit/sig scheme-vocabulary
+(define compound-unit/sig-micro
     (let* ((kwd '(import link export))
 	    (in-pattern '(_
 			   (import imports ...)
@@ -1842,7 +1850,11 @@
 			expr '(-1))
 		      env attributes vocab))))))
 	  (else
-	    (static-error expr "Malformed compound-unit/sig")))))))
+	    (static-error expr "Malformed compound-unit/sig"))))))
+
+(add-primitivized-micro-form 'compound-unit/sig full-vocabulary compound-unit/sig-micro)
+(add-primitivized-micro-form 'compound-unit/sig scheme-vocabulary compound-unit/sig-micro)
+
 
 ; --------------------------------------------------------------------
 
@@ -1918,8 +1930,7 @@
 	    (signature-elements
 	      (expand-expr expr env attributes sig-vocab))))))))
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'invoke-unit/sig scheme-vocabulary
+(define invoke-unit/sig-micro
     (let* ((kwd '())
 	    (in-pattern '(_ expr linkage ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -1956,10 +1967,12 @@
 		    expr '(-1))
 		   env attributes vocab)))))
 	  (else
-	    (static-error expr "Malformed invoke-unit/sig")))))))
+	    (static-error expr "Malformed invoke-unit/sig"))))))
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'invoke-open-unit/sig scheme-vocabulary
+(add-primitivized-micro-form 'invoke-unit/sig full-vocabulary invoke-unit/sig-micro)
+(add-primitivized-micro-form 'invoke-unit/sig scheme-vocabulary invoke-unit/sig-micro)
+
+(define invoke-open-unit/sig-micro
     (let* ((kwd '())
 	    (in-pattern-1 '(_ expr))
 	    (out-pattern-1 '(invoke-open-unit/sig expr #f))
@@ -2007,10 +2020,12 @@
 		      expr '(-1))
 		    env attributes vocab)))))
 	  (else
-	    (static-error expr "Malformed invoke-open-unit/sig")))))))
+	    (static-error expr "Malformed invoke-open-unit/sig"))))))
 
-(when (language>=? 'advanced)
-  (add-primitivized-micro-form 'unit->unit/sig scheme-vocabulary
+(add-primitivized-micro-form 'invoke-open-unit/sig full-vocabulary invoke-open-unit/sig-micro)
+(add-primitivized-micro-form 'invoke-open-unit/sig scheme-vocabulary invoke-open-unit/sig-micro)
+
+(define unit->unit/sig-micro
     (let* ((kwd '())
 	    (in-pattern '(_ expr (in-sig ...) out-sig))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -2042,4 +2057,8 @@
 		    expr '(-1))
 		  env attributes vocab))))
 	  (else
-	    (static-error expr "Malformed unit->unit/sig")))))))
+	    (static-error expr "Malformed unit->unit/sig"))))))
+
+(add-primitivized-micro-form 'unit->unit/sig full-vocabulary unit->unit/sig-micro)
+(add-primitivized-micro-form 'unit->unit/sig scheme-vocabulary unit->unit/sig-micro)
+

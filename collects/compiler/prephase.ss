@@ -26,6 +26,8 @@
 ; Detects global varrefs to built-in primitives, changing +
 ;  to #%+ if primitivesare assumed.
 ; Drops MrSpidey-specific forms.
+; Detects known immutability of signature vectors produced by */sig
+;  forms
 
 ;;; Annotatitons: ----------------------------------------------
 ;;    binding - `binding-properties' structure
@@ -33,6 +35,7 @@
 ;;         annotation)
 ;;    varref - empty set of varref attrributes, except that
 ;;        the varref:primitive attribute can be added
+;;    quote - 'immutable for known immutable quoted vars
 ;;    lambda - an inferred name (temporary)
 ;;    unit - `unit-code' structure
 ;;    class - `class-code' structure
@@ -398,6 +401,19 @@
 						  (make-empty-box)
 						  (car (zodiac:read-object quoted))))))))
 	       #f] ; always return #f => use the (possibly mutated) ast
+	      [(#%verify-linkage-signature-match)
+	       ;; Important optimization for compound-unit/sig: mark signature-defining vectors
+	       ;;  as immutable
+	       (when (= 5 (length args))
+		 ; Mark 1st, 2nd, 4th, and 5th as 'immutable quotes
+		 (let ([mark (lambda (qf)
+			       (when (zodiac:quote-form? qf)
+				 (set-annotation! qf 'immutable)))])
+		   (mark (list-ref args 0))
+		   (mark (list-ref args 1))
+		   (mark (list-ref args 3))
+		   (mark (list-ref args 4))))
+	       #f]
 	      [else #f])))))
 
  ;;----------------------------------------------------------------------------

@@ -28,6 +28,8 @@
  (define const:inexact-counter 0)
  (define const:number-table (make-hash-table))
 
+ (define vector-table (make-hash-table))
+
  (define compiler:static-list null)
  (define compiler:per-load-static-list null)
 
@@ -38,7 +40,8 @@
    (set! const:inexact-counter 0)
    (set! const:number-table (make-hash-table))
    (set! compiler:static-list null)
-   (set! compiler:per-load-static-list null))
+   (set! compiler:per-load-static-list null)
+   (set! vector-table (make-hash-table)))
 
  (define (compiler:add-per-load-static-list! var)
    (set! compiler:per-load-static-list
@@ -150,6 +153,55 @@
        (compiler:add-primitive-varref! v)
        app)))
 
+ (define ht-eol (gensym))
+
+ (define (get-hash-id elem)
+   (cond
+    [(zodiac:quote-form? elem) (let ([o (zodiac:quote-form-expr elem)])
+				 (if (zodiac:number? o)
+				     (zodiac:read-object o)
+				     o))]
+    [else elem]))
+
+ (define (find-immutable-vector constructor elems)
+   (let ([ht (hash-table-get vector-table constructor (lambda () #f))])
+     (and ht
+	  (let loop ([ht ht][l elems])
+	    (if (null? l)
+		(hash-table-get ht ht-eol (lambda () #f))
+		(let ([ht (hash-table-get ht (get-hash-id (car l)) (lambda () #f))])
+		  (and ht (loop ht (cdr l)))))))))
+ 
+ (define (remember-immutable-vector constructor elems const)
+   (let ([ht (hash-table-get vector-table constructor make-hash-table)])
+     (hash-table-put! vector-table constructor ht)
+     (let loop ([ht ht][l elems])
+       (if (null? l)
+	   (hash-table-put! ht ht-eol const)
+	   (let* ([hash-id (get-hash-id (car l))]
+		  [htn (hash-table-get ht hash-id make-hash-table)])
+	     (hash-table-put! ht hash-id htn)
+	     (loop htn (cdr l)))))))
+
+(define (construct-vector-constant ast constructor known-immutable?)
+  (let* ([elems (map (lambda (x)
+		       (compiler:construct-const-code! x known-immutable?))
+		     (zodiac:read-object ast))]
+	 [known-immutable? (or known-immutable? (null? elems))])
+    (or (and known-immutable?
+	     (find-immutable-vector constructor elems))
+	(let ([const (compiler:add-const! 
+		      (compiler:make-const-constructor 
+		       ast
+		       constructor
+		       elems)
+		      (if known-immutable?
+			  varref:static
+			  varref:per-load-static))])
+	  (when known-immutable?
+	    (remember-immutable-vector constructor elems const))
+	  const))))
+
  (define compiler:construct-const-code!
    (lambda (ast known-immutable?)
      (cond
@@ -200,39 +252,15 @@
       
       ; lists
       [(zodiac:list? ast)
-       (compiler:add-const! (compiler:make-const-constructor 
-			     ast
-			     '#%list
-			     (map (lambda (x)
-				    (compiler:construct-const-code! x known-immutable?))
-				  (zodiac:read-object ast)))
-			    (if  known-immutable?
-				 varref:static
-				 varref:per-load-static))]
+       (construct-vector-constant ast '#%list known-immutable?)]
       
       ; improper lists
       [(zodiac:improper-list? ast)
-       (compiler:add-const! (compiler:make-const-constructor 
-			     ast
-			     '#%list*
-			     (map (lambda (x)
-				    (compiler:construct-const-code! x known-immutable?))
-				  (zodiac:read-object ast)))
-			    (if known-immutable?
-				varref:static
-				varref:per-load-static))]
+       (construct-vector-constant ast '#%list* known-immutable?)]
 
       ; vectors
       [(zodiac:vector? ast)
-       (compiler:add-const! (compiler:make-const-constructor 
-			     ast
-			     '#%vector
-			     (map (lambda (x)
-				    (compiler:construct-const-code! x known-immutable?))
-				  (zodiac:read-object ast)))
-			    (if known-immutable?
-				varref:static
-				varref:per-load-static))]
+       (construct-vector-constant ast '#%vector known-immutable?)]
 
       [(void? ast) ; elaboration may return #<void> - should it?
        (zodiac:make-special-constant 'void)]

@@ -1,5 +1,6 @@
 
-(require-library "refer.ss")
+(begin-elaboration-time 
+ (require-library "refer.ss"))
 
 (begin-elaboration-time
  (invoke-open-unit

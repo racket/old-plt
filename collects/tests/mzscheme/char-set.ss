@@ -108,7 +108,8 @@
 
 ;; Iterating over character sets ----------------------------------------
 
-(test 612 char-set-size char-set:digit)
+;; The number 268 comes from "grep Nd UnicodeData.txt | wc -l"
+(test 268 char-set-size char-set:digit)
 
 (test #t char-set=
       char-set:digit
@@ -122,13 +123,13 @@
 
 (test #t char-set=
       (ucs-range->char-set 10 20)
-      (char-set-unfold integer->char (lambda (x) (= x 20)) add1 10))
+      (char-set-unfold (lambda (x) (= x 20)) integer->char add1 10))
 (test #t char-set=
       (ucs-range->char-set 10 21)
-      (char-set-unfold integer->char (lambda (x) (= x 20)) add1 10 (char-set #\u14)))
+      (char-set-unfold (lambda (x) (= x 20)) integer->char add1 10 (char-set #\u14)))
 (test #t char-set=
       (ucs-range->char-set 10 20)
-      (char-set-unfold! integer->char (lambda (x) (= x 20)) add1 10 char-set:empty))
+      (char-set-unfold! (lambda (x) (= x 20)) integer->char add1 10 char-set:empty))
 
 (test #t char-set= char-set:digit
       (let ([cs char-set:empty])
@@ -139,18 +140,15 @@
 	cs))
 
 (test #t char-set= char-set:digit
-      (list->char-set
-       (char-set-map
-	(lambda (c) c)
-	char-set:digit)))
+      (char-set-map
+       (lambda (c) c)
+       char-set:digit))
 (test #t char-set= char-set:digit
-      (list->char-set!
-       (char-set-map
-	(lambda (c) c)
-	char-set:digit)
-       char-set:empty))
+      (char-set-map
+       (lambda (c) c)
+       char-set:digit))
 (test #t char-set= (char-set-adjoin char-set:digit #\A)
-      (list->char-set
+      (char-set-union
        (char-set-map
 	(lambda (c) c)
 	char-set:digit)
@@ -166,11 +164,12 @@
   (test #t char-set= abc (string->char-set! "cba" char-set:empty))
   (test #t char-set= abc (string->char-set "cb" (char-set #\a)))
   (test #t char-set= (char-set #\b) (char-set-filter (lambda (c) (char=? c #\b)) abc))
+  (test #t char-set= (char-set #\b) (char-set-filter (lambda (c) (char=? c #\b)) abc char-set:empty))
+  (test #t char-set= (char-set #\b) (char-set-filter! (lambda (c) (char=? c #\b)) abc char-set:empty))
   (test #t char-set= abc (->char-set "abc"))
   (test #t char-set= abc (->char-set abc))
   (test #t char-set= (char-set #\a) (->char-set #\a)))
 
-(printf "x~n")
 (test #t char-set= 
       (ucs-range->char-set 0 #x20000)
       (char-set-union (ucs-range->char-set 0 #xD800)
@@ -205,6 +204,8 @@
 (test 3 char-set-count (lambda (x) (char<=? #\0 x #\2)) char-set:digit)
 
 (test #t char-set= char-set:digit (list->char-set (char-set->list char-set:digit)))
+(test #t char-set= char-set:digit (list->char-set (char-set->list char-set:digit) char-set:empty))
+(test #t char-set= char-set:digit (list->char-set! (char-set->list char-set:digit) char-set:empty))
 (test #t char-set= char-set:digit (string->char-set (char-set->string char-set:digit)))
 
 ;; Character-set algebra ----------------------------------------
@@ -215,6 +216,14 @@
   (test #t char-set= cs2 (char-set-adjoin! cs1 #\S #\L #\C))
   (test #t char-set= (char-set-delete cs2 #\S #\L #\C) cs1)
   (test #t char-set= (char-set-delete! cs2 #\S #\L #\C) cs1)
+
+  (test #t char-set= char-set:empty (char-set-union))
+  (test #t char-set= char-set:full (char-set-intersection))
+  (test #t char-set= char-set:empty (char-set-xor))
+  (test #t char-set= char-set:digit (char-set-union char-set:digit))
+  (test #t char-set= char-set:digit (char-set-intersection char-set:digit))
+  (test #t char-set= char-set:digit (char-set-difference char-set:digit))
+  (test #t char-set= char-set:digit (char-set-xor char-set:digit))
 
   (let ([go 
 	 (lambda (char-set-union)
@@ -274,9 +283,212 @@
 
   )
 
+;; ----------------------------------------
   
+;;; This is a regression testing suite for the SRFI-14 char-set library.
+;;; Olin Shivers
+
+(letrec-syntax ((tests (syntax-rules ()
+			((_ tst ...)
+			 (begin (one-test tst) ...))))
+		(one-test (syntax-rules (let)
+			    ((_ (let . rest))
+			     (test #t 'let... (let . rest)))
+			    ((_ (op arg ...))
+			     (test #t op arg ...)))))
+  (let ((vowel? (lambda (c) (member c '(#\a #\e #\i #\o #\u)))))
+
+    (tests
+     (not (char-set? 5))
+
+     (char-set? (char-set #\a #\e #\i #\o #\u))
+
+     (char-set=)
+     (char-set= (char-set))
+
+     (char-set= (char-set #\a #\e #\i #\o #\u)
+		(string->char-set "ioeauaiii"))
+
+     (not (char-set= (char-set #\e #\i #\o #\u)
+		     (string->char-set "ioeauaiii")))
+
+     (char-set<=)
+     (char-set<= (char-set))
+
+     (char-set<= (char-set #\a #\e #\i #\o #\u)
+		 (string->char-set "ioeauaiii"))
+
+     (char-set<= (char-set #\e #\i #\o #\u)
+		 (string->char-set "ioeauaiii"))
+
+     (<= 0 (char-set-hash char-set:graphic 100) 99)
+
+     (= 4 (char-set-fold (lambda (c i) (+ i 1)) 0
+			 (char-set #\e #\i #\o #\u #\e #\e)))
+
+     (char-set= (string->char-set "eiaou2468013579999")
+		(char-set-intersection
+		 (char-set-unfold null? car cdr '(#\a #\e #\i #\o #\u #\u #\u)
+				  char-set:digit)
+		 char-set:ascii))
+
+     (char-set= (string->char-set "eiaou246801357999")
+		(char-set-unfold! null? car cdr '(#\a #\e #\i #\o #\u)
+				  (string->char-set "0123456789")))
+
+     (not (char-set= (string->char-set "eiaou246801357")
+		     (char-set-unfold! null? car cdr '(#\a #\e #\i #\o #\u)
+				       (string->char-set "0123456789"))))
+
+     (let ((cs (string->char-set "0123456789")))
+       (char-set-for-each (lambda (c) (set! cs (char-set-delete cs c)))
+			  (string->char-set "02468000"))
+       (char-set= cs (string->char-set "97531")))
+
+     (not (let ((cs (string->char-set "0123456789")))
+	    (char-set-for-each (lambda (c) (set! cs (char-set-delete cs c)))
+			       (string->char-set "02468"))
+	    (char-set= cs (string->char-set "7531"))))
+
+     (char-set= (char-set-map char-upcase (string->char-set "aeiou"))
+		(string->char-set "IOUAEEEE"))
+
+     (not (char-set= (char-set-map char-upcase (string->char-set "aeiou"))
+		     (string->char-set "OUAEEEE")))
+
+     (char-set= (char-set-copy (string->char-set "aeiou"))
+		(string->char-set "aeiou"))
+
+     (char-set= (char-set #\x #\y) (string->char-set "xy"))
+     (not (char-set= (char-set #\x #\y #\z) (string->char-set "xy")))
+
+     (char-set= (string->char-set "xy") (list->char-set '(#\x #\y)))
+     (not (char-set= (string->char-set "axy") (list->char-set '(#\x #\y))))
+
+     (char-set= (string->char-set "xy12345")
+		(list->char-set '(#\x #\y) (string->char-set "12345")))
+     (not (char-set= (string->char-set "y12345")
+		     (list->char-set '(#\x #\y) (string->char-set "12345"))))
+
+     (char-set= (string->char-set "xy12345")
+		(list->char-set! '(#\x #\y) (string->char-set "12345")))
+     (not (char-set= (string->char-set "y12345")
+		     (list->char-set! '(#\x #\y) (string->char-set "12345"))))
+
+     (char-set= (string->char-set "aeiou12345")
+		(char-set-filter vowel? char-set:ascii (string->char-set "12345")))
+     (not (char-set= (string->char-set "aeou12345")
+		     (char-set-filter vowel? char-set:ascii (string->char-set "12345"))))
+
+     (char-set= (string->char-set "aeiou12345")
+		(char-set-filter! vowel? char-set:ascii (string->char-set "12345")))
+     (not (char-set= (string->char-set "aeou12345")
+		     (char-set-filter! vowel? char-set:ascii (string->char-set "12345"))))
 
 
+     (char-set= (string->char-set "abcdef12345")
+		(ucs-range->char-set 97 103 #t (string->char-set "12345")))
+     (not (char-set= (string->char-set "abcef12345")
+		     (ucs-range->char-set 97 103 #t (string->char-set "12345"))))
+
+     (char-set= (string->char-set "abcdef12345")
+		(ucs-range->char-set! 97 103 #t (string->char-set "12345")))
+     (not (char-set= (string->char-set "abcef12345")
+		     (ucs-range->char-set! 97 103 #t (string->char-set "12345"))))
+
+
+     (char-set= (->char-set #\x)
+		(->char-set "x")
+		(->char-set (char-set #\x)))
+
+     (not (char-set= (->char-set #\x)
+		     (->char-set "y")
+		     (->char-set (char-set #\x))))
+
+     (= 10 (char-set-size (char-set-intersection char-set:ascii char-set:digit)))
+
+     (= 5 (char-set-count vowel? char-set:ascii))
+
+     (equal? '(#\x) (char-set->list (char-set #\x)))
+     (not (equal? '(#\X) (char-set->list (char-set #\x))))
+
+     (equal? "x" (char-set->string (char-set #\x)))
+     (not (equal? "X" (char-set->string (char-set #\x))))
+
+     (char-set-contains? (->char-set "xyz") #\x)
+     (not (char-set-contains? (->char-set "xyz") #\a))
+
+     (char-set-every char-lower-case? (->char-set "abcd"))
+     (not (char-set-every char-lower-case? (->char-set "abcD")))
+     (char-set-any char-lower-case? (->char-set "abcd"))
+     (not (char-set-any char-lower-case? (->char-set "ABCD")))
+
+     (char-set= (->char-set "ABCD")
+		(let ((cs (->char-set "abcd")))
+		  (let lp ((cur (char-set-cursor cs)) (ans '()))
+		    (if (end-of-char-set? cur) (list->char-set ans)
+			(lp (char-set-cursor-next cs cur)
+			    (cons (char-upcase (char-set-ref cs cur)) ans))))))
+
+
+     (char-set= (char-set-adjoin (->char-set "123") #\x #\a)
+		(->char-set "123xa"))
+     (not (char-set= (char-set-adjoin (->char-set "123") #\x #\a)
+		     (->char-set "123x")))
+     (char-set= (char-set-adjoin! (->char-set "123") #\x #\a)
+		(->char-set "123xa"))
+     (not (char-set= (char-set-adjoin! (->char-set "123") #\x #\a)
+		     (->char-set "123x")))
+
+     (char-set= (char-set-delete (->char-set "123") #\2 #\a #\2)
+		(->char-set "13"))
+     (not (char-set= (char-set-delete (->char-set "123") #\2 #\a #\2)
+		     (->char-set "13a")))
+     (char-set= (char-set-delete! (->char-set "123") #\2 #\a #\2)
+		(->char-set "13"))
+     (not (char-set= (char-set-delete! (->char-set "123") #\2 #\a #\2)
+		     (->char-set "13a")))
+
+     (char-set= (char-set-intersection char-set:hex-digit (char-set-complement char-set:digit))
+		(->char-set "abcdefABCDEF"))
+     (char-set= (char-set-intersection! (char-set-complement! (->char-set "0123456789"))
+					char-set:hex-digit)
+		(->char-set "abcdefABCDEF"))
+
+     (char-set= (char-set-union char-set:hex-digit
+				(->char-set "abcdefghijkl"))
+		(->char-set "abcdefABCDEFghijkl0123456789"))
+     (char-set= (char-set-union! (->char-set "abcdefghijkl")
+				 char-set:hex-digit)
+		(->char-set "abcdefABCDEFghijkl0123456789"))
+
+     (char-set= (char-set-difference (->char-set "abcdefghijklmn")
+				     char-set:hex-digit)
+		(->char-set "ghijklmn"))
+     (char-set= (char-set-difference! (->char-set "abcdefghijklmn")
+				      char-set:hex-digit)
+		(->char-set "ghijklmn"))
+
+     (char-set= (char-set-xor (->char-set "0123456789")
+			      char-set:hex-digit)
+		(->char-set "abcdefABCDEF"))
+     (char-set= (char-set-xor! (->char-set "0123456789")
+			       char-set:hex-digit)
+		(->char-set "abcdefABCDEF"))
+
+     (call-with-values (lambda ()
+			 (char-set-diff+intersection char-set:hex-digit
+						     char-set:letter))
+       (lambda (d i)
+	 (and (char-set= d (->char-set "0123456789"))
+	      (char-set= i (->char-set "abcdefABCDEF")))))
+
+     (call-with-values (lambda ()
+			 (char-set-diff+intersection! (char-set-copy char-set:hex-digit)
+						      (char-set-copy char-set:letter)))
+       (lambda (d i)
+	 (and (char-set= d (->char-set "0123456789"))
+	      (char-set= i (->char-set "abcdefABCDEF"))))))))
 
 ;; ----------------------------------------
 

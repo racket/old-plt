@@ -1,7 +1,7 @@
 #
 # 1.0 (Feb 1995)
 #
-# $Id: xwEnforcer.w,v 1.1.1.1 1997/12/22 17:29:04 mflatt Exp $
+# $Id: xwEnforcer.w,v 1.2 1998/01/31 01:16:35 mflatt Exp $
 
 @class XfwfEnforcer (XfwfBoard) @file=xwEnforcer
 
@@ -127,8 +127,10 @@ or |foreground|.
 	make_graygc($);
 
     if ($old$label != $label) {
-	XtFree($old$label);
-	$label = XtNewString($label);
+	if ($old$label)
+	  XtFree($old$label);
+	if ($label)
+	  $label = XtNewString($label);
 	need_redraw = True;
     }
     if ($font != $old$font || $foreground != $old$foreground) {

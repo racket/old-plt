@@ -5,7 +5,7 @@
 	   "client.ss")
 	  
   (define GREATEST-POSSIBLE-INTEGER 10000)
-  (define LOWEST-POSSIBLE-INTEGER  -10000)
+  (define LOWEST-POSSIBLE-INTEGER -10000)
 
   (define fuel-amount 100)
   (define capacity-amount 10000)
@@ -116,8 +116,10 @@
 
   ;; startup-player : gene-seq -> number
   (define (startup-player gene-seq)
+    (printf "(startup-player ~a)~n" gene-seq)
+    (flush-output (current-output-port))
     (set-parameter-values! gene-seq)
-    (start-client #f #f "localhost" 4000))
+    (start-client #t #f "localhost" 4000))
   
   ;; play-board : vector(num) string string vector(gene-seq) num -> void
   (define (play-board scoreboard board packages player-vec players)
@@ -129,12 +131,13 @@
 		       players board-file packages-file)
 	       (flush-output (current-output-port))
 	       (let loop ((ls players) (threads '()))
+		 (printf "Status: ~a~n" (utility 'status))
 		 (cond
 		  [(null? ls) (for-each thread-wait threads)
+		              (utility 'kill)
 			      (close-input-port stderr)
 		              (close-input-port stdout)
-			      (close-output-port stdin)
-			      (utility 'kill)]
+			      (close-output-port stdin)]
 		  [else (let ([genes (vector-ref player-vec (car ls))])
 			  (loop (cdr ls)
 				(cons (thread
@@ -144,10 +147,11 @@
 					     (+ (vector-ref scoreboard (car ls))
 						score)))))
 				      threads)))])))
-	     (process
-	      (format "./Simulator -p 4000 -n ~a -m ~a -k ~a -f ~a -c ~a~n"
-		      (length players) board-file packages-file
-		      fuel-amount capacity-amount)))))
+	     (begin
+	       (printf "/home/cs/grad/wick/plt/collects/robotclient/Simulator -p 4000 -n ~a -m ~a -k ~a -f ~a -c ~a~n" (length players) board-file packages-file fuel-amount capacity-amount)
+	       (process (format "/home/cs/grad/wick/plt/collects/robotclient/Simulator -p 4000 -n ~a -m ~a -k ~a -f ~a -c ~a~n"
+				(length players) board-file packages-file
+				fuel-amount capacity-amount))))))
 
   ;; generate-results : list-of-gene-seqs -> list-of-gene-seqs
   (define (generate-results ls)
@@ -206,11 +210,8 @@
         [else (loop (add1 i) (run-generation group #f))]))
     (void))
   
-  (run-genetic-algorithm
-   initial-set
-   output-port
-   print-every-n-generations
-   run-n-generations)
+  (run-genetic-algorithm initial-set output-port print-every-n-generations
+			 run-n-generations)
   
 )
 

@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.41 1997/12/04 21:34:06 mflatt Exp mflatt $
+; $Id: scm-hanc.ss,v 1.42 1997/12/05 16:36:10 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -539,6 +539,28 @@
 	      (expand-expr expr env attributes sig-vocab))))))))
 
 ; --------------------------------------------------------------------
+
+(when (language>=? 'advanced)
+  (add-primitivized-micro-form 'signature->symbols scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern '(_ name))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((name (pat:pexpand 'name p-env kwd)))
+		(valid-syntactic-id? name)
+		(let ((elements
+			(sig-list->sig-vector
+			  (signature-exploded
+			    (lookup-signature name attributes)))))
+		  (expand-expr
+		    (structurize-syntax `(,'quote ,elements) expr)
+		    env attributes vocab)))))
+	  (else
+	    (static-error expr "Malformed signature->symbols")))))))
 
 (when (language>=? 'advanced)
   (add-primitivized-micro-form 'define-signature scheme-vocabulary

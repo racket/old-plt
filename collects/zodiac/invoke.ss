@@ -1,4 +1,4 @@
-; $Id: invoke.ss,v 1.27 1997/09/18 17:57:58 shriram Exp mflatt $
+; $Id: invoke.ss,v 1.28 1997/11/14 22:01:17 mflatt Exp $
 
 (reference-library "coreu.ss")
 (reference-library "match.ss")
@@ -7,7 +7,7 @@
 
 (reference-library "sparams.ss" "backward")
 
-(reference-relative-library "load.ss")
+(reference-library "load.ss" "zodiac")
 
 (define zodiac:default-interface@
   (unit/sig zodiac:interface^
@@ -36,7 +36,7 @@
 ; (define language-levels '(core structured side-effecting advanced))
 
 (define zodiac:system@
-  (reference-unit/sig "link.ss"))
+  (reference-library-unit/sig "link.ss" "zodiac"))
 
 (define zodiac:invoke-system
   (lambda ()

@@ -4,7 +4,7 @@
            "data.ss"
            (lib "list.ss"))
 
-  (provide run-robot)
+  (provide run-robot run-robots)
   
   (define (match-up steps possible-moves possible-dests)
     (if (null? steps)
@@ -13,6 +13,13 @@
                  (and (equal? d (car steps)) m))
                possible-moves
                possible-dests)))
+
+  (define (run-robots n server port)
+    (if (<= n 1)
+        (run-robot server port)
+        (begin
+          (thread (lambda () (run-robot server port)))
+          (run-robots (sub1 n) server port))))
   
  (define (run-robot server port)
    (let-values ([(session board me robots0 packages0) (connect server port)])
@@ -29,6 +36,7 @@
                      (if (eq? 'base (get-cell board i j))
                          (cons (cons i j) (loop (add1 j)))
                          (loop (add1 j))))))))
+       (define possible-bases null)
        
        (define (find-steps-toward-targets starts targets)
          ;; Copy the board:
@@ -122,6 +130,32 @@
                                                   (and (= rx (sub1 (pkg-dest-x p)))
                                                        (= ry (sub1 (pkg-dest-y p))))))
                                               (bot-packages r))])
+           
+           ;; ----------------------------------------
+           ;; Base management
+           ;; Forget bases that have no packages:
+           (when (and (null? packages-here)
+                      (member (cons rx ry) bases))
+             (set! bases (remove (cons rx ry) bases)))
+           ;; If we know about an unowned package, add its
+           ;;  location to the list of possible "bases"
+           (let ([owned-packages (apply append
+                                        (map bot-packages robots))]
+                 [bases (append bases possible-bases)])
+             (for-each (lambda (p)
+                         (when (not (member (pkg-id p) owned-packages))
+                           (let ([px (sub1 (pkg-x p))]
+                                 [py (sub1 (pkg-y p))])
+                             (when (not (member (cons px py) bases))
+                               (set! possible-bases (cons (cons px py) possible-bases))))))
+                       packages))
+           ;; No bases? Copy over possible bases:
+           (when (null? bases)
+             (set! bases possible-bases)
+             (set! possible-bases null))
+               
+           ;; ----------------------------------------
+           ;; Move decision
            (let ([m (cond
                       [(pair? packages-should-drop)
                        ;; Drop delivered packages:

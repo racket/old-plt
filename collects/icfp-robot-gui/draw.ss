@@ -585,33 +585,34 @@
                       (send list get-items)))
              (get-status-lists)))
       
+      (define non-water-rgn (make-object region% offscreen))
+      
       (define/private update
         (opt-lambda ([lists-too? #t])
           ;; Update diplay:
-          (let ([non-water-rgn (make-object region% offscreen)])
-            (send non-water-rgn set-rectangle 0 0 display-w display-h)
-            (send offscreen clear)
-            (let loop ([i 0])
-              (unless (= i width)
-                (let loop ([j 0])
-                  (unless (= j height)
-                    (draw-board-pos offscreen i j non-water-rgn)
-                    (loop (add1 j))))
-                (loop (add1 i))))
-            (send offscreen set-clipping-region non-water-rgn)
-            (for-each (lambda (robot)
-                        (draw-robot offscreen robot))
-                      robots)
-            (send offscreen set-clipping-region #f)
-            (for-each (lambda (pack)
-                        (draw-package offscreen pack))
-                      packages)
-            (when active-i
-              (let-values ([(x y) (pos->location active-i active-j)])
-                (send offscreen set-pen red-pen)
-                (send offscreen set-brush transparent-brush)
-                (send offscreen draw-rectangle (- x 1) (- y 1) (+ cell-paint-size 2) (+ cell-paint-size 2))
-                (send offscreen set-pen transparent-pen))))
+          (send non-water-rgn set-rectangle 0 0 display-w display-h)
+          (send offscreen clear)
+          (let loop ([i 0])
+            (unless (= i width)
+              (let loop ([j 0])
+                (unless (= j height)
+                  (draw-board-pos offscreen i j non-water-rgn)
+                  (loop (add1 j))))
+              (loop (add1 i))))
+          (send offscreen set-clipping-region non-water-rgn)
+          (for-each (lambda (robot)
+                      (draw-robot offscreen robot))
+                    robots)
+          (send offscreen set-clipping-region #f)
+          (for-each (lambda (pack)
+                      (draw-package offscreen pack))
+                    packages)
+          (when active-i
+            (let-values ([(x y) (pos->location active-i active-j)])
+              (send offscreen set-pen red-pen)
+              (send offscreen set-brush transparent-brush)
+              (send offscreen draw-rectangle (- x 1) (- y 1) (+ cell-paint-size 2) (+ cell-paint-size 2))
+              (send offscreen set-pen transparent-pen)))
           (on-paint)
           
           ;; Update lists:
@@ -677,15 +678,16 @@
       (define (pos->cell i j)
         (vector-ref (vector-ref board j) i))
                         
+      (define water-rgn (make-object region% offscreen))
+
       (define/private (draw-board-pos dc i j non-water-rgn)
         (let-values ([(cell) (pos->cell i j)]
                      [(x y) (pos->location i j)])
           (send dc set-brush
                 (case cell
                   [(water) 
-                   (let ([water-rgn (make-object region% dc)])
-                     (send water-rgn set-rectangle x y cell-paint-size cell-paint-size)
-                     (send non-water-rgn subtract water-rgn))
+                   (send water-rgn set-rectangle x y cell-paint-size cell-paint-size)
+                   (send non-water-rgn subtract water-rgn)
                    water-brush]
                   [(wall) wall-brush]
                   [(plain) plain-brush]

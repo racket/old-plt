@@ -10,9 +10,9 @@
   
   (define server-port 4004)
 
-  (define num-players 1)
-  (define board-file "~/tmp/map")  ; maps available at the contest web site
-  (define pack-file "~/tmp/packs") ; pkg configuartions available there, too
+  (define num-players 2)
+  (define board-file "~/tmp/map3")  ; maps available at the contest web site
+  (define pack-file "~/tmp/packs3") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
   (define start-money 100)
@@ -63,7 +63,9 @@
   
   (define activity null)
 
-  (define f (instantiate frame% ("Robot")))
+  (define f (make-object (class frame% 
+                           (define/override (on-close) (exit))
+                           (super-instantiate ("Robot")))))
   (define drawn (instantiate board-panel% (f board-width board-height board)))
   (send drawn install-robots&packages robots packages)
   
@@ -106,27 +108,25 @@
       (yield s)
       (semaphore-Pn s (sub1 n))))
   
-  (define (semaphore-Vn s n)
-    (when (> n 0)
-      (semaphore-post s)
-      (semaphore-Vn s (sub1 n))))
-  
   (define (start-server)
     (let ((listener (tcp-listen server-port 5 #t))
-          (client-sema (make-semaphore))
           (server-sema (make-semaphore)))
-      (let server-loop ((id 1))
-        (when (<= id num-players)
-          (let-values (((input output) (tcp-accept listener)))
-            (thread (lambda () (client-handler input output client-sema server-sema id)))
-            (server-loop (add1 id)))))
-      (server client-sema server-sema)))
+      (let ([client-semas
+             (let server-loop ((id 1))
+               (if (<= id num-players)
+                   (let-values (((input output) (tcp-accept listener))
+                                ((client-sema) (make-semaphore)))
+                     (thread (lambda () (client-handler input output client-sema server-sema id)))
+                     (cons client-sema (server-loop (add1 id))))
+                   null))])
+        (server client-semas server-sema))))
   
   (define (update-state!)
     (let ([commands (let loop ([i 0])
                      (if (= i num-players)
                          null
                          (let ([cmd (vector-ref player-commands i)])
+                           (vector-set! player-commands i #f)
                            (cons
                             (list (add1 i)
                                   (command-bid cmd)
@@ -139,11 +139,11 @@
       (set! activity (send drawn get-most-recent-activity))
       (set!-values (robots packages) (send drawn get-robots&packages))))
   
-  (define (server client-sema server-sema)
+  (define (server client-semas server-sema)
     (semaphore-Pn server-sema num-players)
     (update-state!)
-    (semaphore-Vn client-sema num-players)
-    (server client-sema server-sema))
+    (map semaphore-post client-semas)
+    (server client-semas server-sema))
     
   (define (client-handler input output client-sema server-sema id)
     (when (regexp-match "^Player" input)

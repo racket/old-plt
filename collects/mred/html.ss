@@ -108,6 +108,19 @@
 		      (newline (current-error-port))))
 		  void)]
 
+	     [i-buffer null]
+	     [buffer-pos 0]
+	     [buffer-insert
+	      (lambda (char pos)
+		(when (null? i-buffer)
+		      (set! buffer-pos pos))
+		(set! i-buffer (cons char i-buffer)))]
+	     [flush-i-buffer
+	      (lambda ()
+		(when (pair? i-buffer)
+		      (insert (list->string (reverse! i-buffer)) buffer-pos)
+		      (set! i-buffer null)))]
+
 	     [parse-image-source
 	      (let ([re:quote-img (regexp "SRC=\"([^\"]*)\"")]
 		    [re:img (regexp "SRC=([^ ]*)")])
@@ -189,11 +202,15 @@
 		      [len (string-length str)])
 		  (let loop ([pos pos][c (get-char)])
 		    (cond
-		     [(char=? #\null c) -1]
+		     [(char=? #\null c)
+		      (flush-i-buffer)
+		      -1]
 		     [(char-ci=? c first)
 		      (let loop2 ([p 1][chars (list c)])
 			(if (= p len)
-			    pos
+			    (begin
+			      (flush-i-buffer)
+			      pos)
 			    (let ([c (get-char)])
 			      (cond
 			       [(char-ci=? c (string-ref str p))
@@ -202,6 +219,7 @@
 				(loop
 				 (if keep?
 				     (let ([s (list->string (reverse! chars))])
+				       (flush-i-buffer)
 				       (insert s pos)
 				       (+ pos (string-length s)))
 				     pos)
@@ -210,7 +228,7 @@
 		      (loop
 		       (if keep?
 			   (begin
-			     (insert c pos)
+			     (buffer-insert c pos)
 			     (add1 pos))
 			   pos)
 		       (get-char))]))))]
@@ -222,6 +240,7 @@
 		  (let ([ch (get-char)])
 		    (cond
 		     [(char=? #\null ch) 
+		      (flush-i-buffer)
 		      (when (> pos start-pos)
 			    (change-style normal start-pos pos))
 		      (values -1 #f)]
@@ -229,9 +248,10 @@
 		      (if del-white?
 			  (find-bracket pos #t)
 			  (begin
-			    (insert #\space pos)
+			    (buffer-insert #\space pos)
 			    (find-bracket (add1 pos) #t)))]
 		     [(char=? #\< ch) 
+		      (flush-i-buffer)
 		      (when (> pos start-pos)
 			    (change-style normal start-pos pos))
 		      (values pos del-white?)]
@@ -239,6 +259,7 @@
 		      (let ([ch (get-char)]
 			    [result
 			     (lambda (v)
+			       (flush-i-buffer)
 			       (insert v pos)
 			       (find-bracket (+ pos
 						(if (string? v)
@@ -265,7 +286,7 @@
 				       [else ""]))
 				    (loop (cons ch l)))))))]
 		     [else 
-		      (insert ch pos)
+		      (buffer-insert ch pos)
 		      (find-bracket (add1 pos) #f)]))))]
 
 	     ;; Read inside of <>; return content-of-string

@@ -28,6 +28,11 @@
  (are-you-sure-delete? "¿Seguro(a) quieres borrar ~a?") ;; ~a is a filename or directory name
  (ignore "Ignorar")
  (revert "Revertir")
+
+ ;; label for a generic check box, often supported on dialogs
+ ;; that ask a binary choice of the user. If checked, the
+ ;; dialog isn't going to be shown again.
+ (dont-ask-again "No volver a preguntar (usar la selección actual siempre)")
  
  ;; important urls
  (web-materials "Sitios de Web Relacionados")
@@ -59,6 +64,7 @@
  (bug-report-field-collections "Colecciones")
  (bug-report-field-human-language "Idioma")
  (bug-report-field-version "Versión")
+ (bug-report-synthesized-information "Información sintetizada")  ;; dialog title
  (bug-report-show-synthesized-info "Muestra información resumida")
  (bug-report-submit "Enviar")
  (sending-bug-report "Enviando reporte de problemas")
@@ -85,6 +91,14 @@
  (cs-rename-id "Renombrar identificador")
  (cs-rename-var-to "Renombrar ~a a:")
  (cs-name-duplication-error "El nuevo nombre que has seleccionado, ~s, colisiona con otro nombre en este ambiente.")
+ (cs-status-init "Checar sintaxis: Iniciando el ambiente para el código de usuario")
+ (cs-status-coloring-program "Checar sintaxis: coloreando la expresión")
+ (cs-status-eval-compile-time "Checar sintaxis: tiempo de evaluación y compilación")
+ (cs-status-expanding-expression "Checar sintaxis: expandiendo la expresión")
+ (cs-status-teachpacks "Checar sintaxis: instalando paquetes de enseñanza")
+ (cs-mouse-over-variable-import "variable ~s importada de ~s")
+ (cs-mouse-over-syntax-import "syntaxis ~s importada de ~s")
+ 
  
  ;;; info bar at botttom of drscheme frame
  (collect-button-label "Recolectar")
@@ -119,6 +133,14 @@
  (please-choose-either "Por favor seleccione una de \"~a\" o \"~a\"")
  (close-anyway "Cerrar y descartar cambios")
  (clear-anyway "Limpiar")
+
+ ;; menu item title
+ (log-definitions-and-interactions "Guardar bitácora de Definiciones e Interacciones...")
+ (stop-logging "Terminar bitácora")
+ (please-choose-a-log-directory "Por favor seleccione un directorio para almacenar bitácora")
+ (logging-to "Guardando bitácora en: ")
+ (erase-log-directory-contents "¿Borrar el contenido del directorio de bitácoras: ~a?")
+ (error-erasing-log-directory "Error al borrar el contenido del directorio de bitácoras.\n\n~a\n")
  
  (url "URL")
  (url: "URL:")
@@ -136,9 +158,10 @@
  (plt:hd:search-for "Busca")
  (plt:hd:lucky "¡Afortunado!")
  (plt:hd:feeling-lucky "Me siento afortunado")
+ (plt:hd:stop "Detener")    
  (plt:hd:options "Opciones")
  (plt:hd:configure "Configurar")
- (plt:hd:hd-home "Hogar del Módulo de Ayuda")
+ (plt:hd:home "Hogar del Módulo de Ayuda")
  (plt:hd:show-manuals "Mostrar manuales")
  (plt:hd:send-bug-report "Enviar reporte de problemas")
  (plt:hd:query-bug-reports "Buscar en los reporetes de problemas")
@@ -180,7 +203,6 @@
   "La selección que hagas aparecerá aquí si haz habilitado javascript y tienes un navegador estándar reciente.")
  ;; refreshing manuals
  (plt:hd:refresh-downloading "Bajando ~a")
- (plt:hd:refresh-deleting "Borrando ~a")
  (plt:hd:refresh-installing "Instalando ~a")
  (plt:hd:refresh-progress "Progreso de la descarga del manual del PLT")
  (plt:hd:refresh-done "Refresco de los manuales via CVS terminado")
@@ -190,15 +212,22 @@
  (plt:hd:refresh-downloading... "Bajando ~a...")
  (plt:hd:refresh-installing... "Instalando nueva versi<F3>n de ~a...")
  (plt:hd:refreshing-manuals "Bajando (nuevamente) los Manuales")
+ (plt:hd:refreshing-manuals-finished "Terminado.")
  (plt:hd:about-help-desk "Acerca del Módulo de Ayuda")
  (plt:hd:help-desk-about-string
   "El Módulo de Ayuda es una fuente complete de información acerca del software del grupo PLT, incluyendo DrScheme, MzScheme y MrEd.\n\nVersión ~a\nCopyright (c) 1995-2003 PLT")
  (plt:hd:help-on-help "Ayuda para la ayuda")
  (plt:hd:help-on-help-details "Para ayuda sobre el uso del Módulo de Ayuda, sigue la liga `Cómo usar el Módulo de Ayuda' desde el página principal del Módulo de Ayuda.  (Para llegar a la página principal si no estás ahí ya, presiona el botón marcado `Hogar' en la parte superior de la ventana del Módulo de Ayuda.")
+ (plt:hd:ask-about-separate-browser
+  "Ha seleccionado una liga que apunta a contenido en el Web.  ¿Le gustaría visitarlo en el navegador del Módulo de Ayuda o le gustaría usar un navegador separado para ver dicho contenido?")
+ (plt:hd:homebrew-browser "Navegador del Módulo de Ayuda") ;; choice for the above string (in a button)
+ (plt:hd:separate-browser "Navegador separado") ;; other choice for the above string (also in a button)
+ (plt:hd:external-link-in-help "URLs externos en Ayuda")
+ (plt:hd:use-homebrew-browser "Usar el Navegador del Módulo de Ayuda para URL externos")
+ (plt:hd:new-help-desk "Nuevo Módulo de Ayuda")
+ 
  (reload "Volver a cargar") ;; Reload
 
- ;;; help-desk-specific menus
- (new-help-desk "&Nuevo Módulo de Ayuda")
 
  ;; help desk http proxy
  (http-proxy "Proxy de HTTP")
@@ -276,6 +305,7 @@
  (scheme-prefs-panel-label "Scheme")
  (warnings-prefs-panel-label "Advertencias")
  (editor-prefs-panel-label "Editando")
+ (general-prefs-panel-label "General") 
  (highlight-parens "Resaltar entre parejas de paréntesis")
  (fixup-parens "Corrige paréntesis")
  (flash-paren-match "Señala el paréntesis que casa")
@@ -286,7 +316,7 @@
  (ask-before-changing-format "Preguntar antes de cambiar el formato de salida")
  (wrap-words-in-editor-buffers "Ajustar al border palabras en el editor")
  (show-status-line "Mostrar línea de estado")
- (count-from-one "Cuenta números de columna y líneas a partir de uno") 
+ (count-columns-from-one "Cuenta números de columna a partir de uno") 
  (display-line-numbers "Muestra números de línea en el contenedor; sin desplazamiento de caracteres")
  (enable-keybindings-in-menus "Habilita enlaces de teclas en los menús")
  (automatically-to-ps "Imprime automáticamente a un archivo en postscript")
@@ -513,10 +543,13 @@
  (bring-frame-to-front... "Traer ventana al frente...")
  (next-window "Ventana siguiente")
  (previous-window "Ventana anterior")
+ (most-recent-window "Ventana más reciente")
  
  (show-menu-label "&Muestra")
  (show-overview "Mostrar Panorama")
  (hide-overview "Esconder Panorama")
+ (show-module-browser "Mostrar Navegador de Módulos")
+ (hide-module-browser "Esconder Navegador de Módulos")
 
  (help-menu-label "&Ayuda")
  (about-info "Créditos y detalles de esta apliación")
@@ -591,6 +624,8 @@
   "esperaba que `tool-names' y `tools', en el archivo info.ss de ~s, fueran listas de la misma longitud, pero obtuve ~e y ~e")
  (tool-tool-icons-same-length
   "esperaba que `tool-icons' y  `tools', en el archivo info.ss de ~s, fueran listas de la misma longitud, pero obtuve ~e y ~e")
+ (tool-tool-urls-same-length
+  "esperaba que `tool-urls' y `tools' fueran listas del mismo tamaño en info.ss de ~s, pero obtuve ~e y ~e")
  (error-getting-info-tool "error al cargar el archivo info.ss de ~s")
  (tool-error-phase1 "Error en la fase 1 de la herramienta ~s; ~s")
  (tool-error-phase2 "Error en la fase 2 de la herramienta ~s; ~s")
@@ -682,6 +717,10 @@
  
  (create-servlet "Crear Servlet...")
  
+ ;; the ~a is a language such as "module" or "algol60"
+ (create-servlet-unsupported-language
+  "Crear Servlet no funciona con el lenguaje ~a.")
+
  ;;; buttons
  (execute-button-label "Ejecutar") 
  (save-button-label "Salvar")
@@ -757,6 +796,7 @@
  (beginning-student "Estudiante Principiante")
  (beginning-one-line-summary "define, cond, structs, constantes, y primitivas") 
  (beginning-student/abbrev "Estudiante Principiante con Abreviaturas de Listas")
+ (beginning/abbrev-one-line-summary "Principiante con estilo de impresión de listas en el REPL") 
  (intermediate-student "Estudiante Intermedio")
  (intermediate-one-line-summary "Estudiante Principiante más alcance léxico")
  (intermediate-student/lambda "Estudiante Intermedio con lambda")
@@ -766,6 +806,11 @@
  (full-language "Completo")
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "Similar a R5RS")
+ (expander "Expander")
+ (expander-one-line-summary "Expande, en lugar de evaluar, expresiones")
+ (professional-languages "Languajes Profesionales")
+ (teaching-languages "Languajes de Enseñanza")
+ (experimental-languages "Languajes Experimentales") 
  (pretty-big-scheme "Muy Grande (incluye MrEd y Avanzado)")
  (pretty-big-scheme-one-line-summary "Añade syntaxis y funciones de los lenguajes HtDP")
  (r5rs-lang-name "R5RS estándar")
@@ -869,10 +914,17 @@
  (module-browser-adding-file "Añadiendo archivo: ~a...")
  (module-browser-laying-out-graph-label "Depositando gráfica")
  (module-browser-open-file-format "Abriendo ~a")
- (module-browser "Módulo Navegador")
- (module-browser... "Módulo Navegador...")
+ (module-browser "Navegador de Módulos")
+ (module-browser... "Navegador de Módulos...")
  (module-browser-error-expanding "Error al expandir el programa:\n\n~a")
-
+ (module-browser-show-lib-paths "Muestra archivos cargados por rutas (lib ..)")
+ (module-browser-progress "Navegador de Módulos: ~a") ;; prefix in the status line
+ (module-browser-compiling-defns "Navegador de Módulos: compilando las definiciones")
+ (module-browser-show-lib-paths/short "Seguir los requires de bibliotecas (lib)") ;; check box label in show module browser pane in drscheme window.
+ (module-browser-refresh "Refrescar") ;; button label in show module browser pane in drscheme window.
+ (module-browser-only-in-plt-and-module-langs
+  "El navegador de módulos está disponible para programas en los lenguajes PLT y en el lenguaje con módulos (y únicamente para programas que incluyan módulos).")
+ 
  ;; Birthdays section
  (happy-birthday-matthias "¡Feliz cumpleaños Matthias!")
  (happy-birthday-matthew "¡Feliz cumpleaños Matthew!")

@@ -519,21 +519,21 @@
   
   ;;; multi-file-search
   (mfs-multi-file-search-menu-item "Rechercher dans les fichiers...")
-  (mfs-string-match/graphics "Une chaîne de caractères (y compris dans les fichiers avec graphiques)")
-  (mfs-regexp-match/no-graphics "Une expression régulière (fichiers textuels seulement)")
+  (mfs-string-match/graphics "une chaîne de caractères (y compris dans les fichiers avec graphiques)")
+  (mfs-regexp-match/no-graphics "une expression régulière (fichiers textuels seulement)")
   (mfs-searching... "Recherche en cours...")
   (mfs-configure-search "Configurer la recherche") ;; dialog title
   (mfs-files-section "Fichiers")   ;; section in config dialog
   (mfs-search-section "Rechercher") ;; section in config dialog
   (mfs-dir "Répertoire")
   (mfs-recur-over-subdirectories "Récursion dans les sous-répertoires")
-  (mfs-regexp-filename-filter "Filtre de nom de fichiers pour les expressions régulières")
+  (mfs-regexp-filename-filter "Expression régulière pour filtrer les noms de fichiers")
   (mfs-search-string "Chercher la chaîne de caractères")
   (mfs-drscheme-multi-file-search "DrScheme - Recherche dans des fichiers multiples") ;; results window and error message title
   (mfs-not-a-dir "\"~a\" n'est pas un répertoire")
   (mfs-open-file "Ouvrir le fichier")
   (mfs-stop-search "Stopper la recherche")
-  (mfs-case-sensitive-label "Différentier les lettres majuscules des minuscules.")
+  (mfs-case-sensitive-label "Différentier les lettres majuscules des minuscules")
   (mfs-no-matches-found "Rien n'a été trouvé.")
   (mfs-search-interrupted "Recherche avortée.")
   

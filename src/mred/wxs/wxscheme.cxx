@@ -952,6 +952,10 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
       free(s);
     }
 
+    first = scheme_make_pair(scheme_make_string(" Sans"), first);
+    first = scheme_make_pair(scheme_make_string(" Serif"), first);
+    first = scheme_make_pair(scheme_make_string(" Monospace"), first);
+
     FcFontSetDestroy(fs);
   }
 #endif

@@ -132,6 +132,7 @@ WXVARIANT="wx_xt"
 
 MROPTIONS=
 INCLUDEDEP="#"
+WX_MMD_FLAG=
 
 JPEG_A='$(JPEG_A)'
 JPEG_INC='$(JPEG_INC)'
@@ -208,6 +209,15 @@ fi
 # If using gcc, we want all warnings:
 if test "$CC" = "gcc" ; then 
   CFLAGS="$CFLAGS -Wall"
+
+  # Use -MMD when we have gcc and gnumake:
+  is_gmake=`make -v 2>&1 | grep "GNU Make"`
+  if test "$is_gmake" = "" ; then
+    WX_MMD_FLAG=""
+  else
+    WX_MMD_FLAG="-MMD"
+    INCLUDEDEP="-include"
+  fi
 fi
 
 if test "${enable_perl}" = "yes" ; then
@@ -734,6 +744,7 @@ AC_SUBST(MAKE_FINISH)
 AC_SUBST(WXPRECOMP)
 AC_SUBST(USE_WXPRECOMP)
 AC_SUBST(INCLUDEDEP)
+AC_SUBST(WX_MMD_FLAG)
 
 AC_SUBST(JPEG_A)
 AC_SUBST(JPEG_INC)

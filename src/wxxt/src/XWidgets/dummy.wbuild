@@ -16,3 +16,7 @@ findlast ${1+"$@"}
 if [ -f "${RESULT}.c" ] ; then
   touch "${RESULT}.c"
 fi
+
+if [ -f "${RESULT}.h" ] ; then
+  touch "${RESULT}.h"
+fi

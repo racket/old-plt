@@ -70,7 +70,7 @@ libwxme.a: $(OBJECTS)
 	$(AR) $(ARFLAGS) libwxme.a $(OBJECTS)
 	$(RANLIB) libwxme.a
 
-LOCALFLAGS_wx_xt =
+LOCALFLAGS_wx_xt = @WX_MMD_FLAG@
 LOCALFLAGS_wx_mac = -MMD -DWX_CARBON
 LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 

@@ -182,8 +182,8 @@ xwVScrollb_w_dep  = $(srcdir)/XWidgets/xwCommon.w $(srcdir)/XWidgets/xwFrame.w $
 # generated rules
 #------------------------------------------------------------------------------
 
-_WX_CXX_FLAGS = -I$(srcdir) -I$(srcdir)/XWidgets
-_WX_C_FLAGS = -I$(srcdir)/XWidgets
+_WX_CXX_FLAGS = @WX_MMD_FLAG@ -I$(srcdir) -I$(srcdir)/XWidgets
+_WX_C_FLAGS = @WX_MMD_FLAG@ -I$(srcdir)/XWidgets
 
 all: lib$(LIBNAME).a
 
@@ -354,20 +354,20 @@ XWidgets/xwscroll.o: $(srcdir)/XWidgets/xwscroll.c
 	$(CC) -c $(CFLAGS) $(_WX_C_FLAGS) -o XWidgets/xwscroll.o $(srcdir)/XWidgets/xwscroll.c
 
 clean:
-	rm -f Application/*.o
-	rm -f DataStructures/*.o
-	rm -f DeviceContexts/*.o
-	rm -f Dialogs/*.o
-	rm -f EventHandling/*.o
-	rm -f GDI-Classes/*.o
-	rm -f Misc/*.o
-	rm -f Utilities/*.o
-	rm -f Windows/*.o
-	rm -f XWidgets/*.o
+	rm -f Application/*.o Application/*.d
+	rm -f DataStructures/*.o DataStructures/*.d
+	rm -f DeviceContexts/*.o DeviceContexts/*.d
+	rm -f Dialogs/*.o Dialogs/*.d
+	rm -f EventHandling/*.o EventHandling/*.d
+	rm -f GDI-Classes/*.o GDI-Classes/*.d
+	rm -f Misc/*.o Misc/*.d
+	rm -f Utilities/*.o Utilities/*.d
+	rm -f Windows/*.o Windows/*.d
+	rm -f XWidgets/*.o XWidgets/*.d
 	rm -f lib$(LIBNAME).a
 
 #------------------------------------------------------------------------------
-# dependencies
+# dependencies (imprecise)
 #------------------------------------------------------------------------------
 
 $(srcdir)/XWidgets/xwArrow.c $(srcdir)/XWidgets/xwArrow.h: $(srcdir)/XWidgets/xwArrow.w
@@ -818,3 +818,83 @@ XWidgets/xwVScrollb.o:	 $(xwVScrollb_w_dep)
 XWidgets/xwScrollbar.o:	 $(xwScrollbar_w_dep)
 
 XWidgets/xwScrollWin.o:	 $(xwScrollWin_w_dep)
+
+#------------------------------------------------------------------------------
+# auto dependencies
+#------------------------------------------------------------------------------
+
+@INCLUDEDEP@ Application/AppMain.d
+@INCLUDEDEP@ Application/GlobalData.d
+@INCLUDEDEP@ DataStructures/Object.d
+@INCLUDEDEP@ DataStructures/TypeTree.d
+@INCLUDEDEP@ DataStructures/wb_hash.d
+@INCLUDEDEP@ DataStructures/wb_list.d
+@INCLUDEDEP@ DeviceContexts/DC.d
+@INCLUDEDEP@ DeviceContexts/MemoryDC.d
+@INCLUDEDEP@ DeviceContexts/PSDC.d
+@INCLUDEDEP@ DeviceContexts/WindowDC.d
+@INCLUDEDEP@ Dialogs/FileDialog.d
+@INCLUDEDEP@ Dialogs/MessageBox.d
+@INCLUDEDEP@ EventHandling/wb_stdev.d
+@INCLUDEDEP@ EventHandling/wb_sysev.d
+@INCLUDEDEP@ EventHandling/EvtHandler.d
+@INCLUDEDEP@ GDI-Classes/Bitmap.d
+@INCLUDEDEP@ GDI-Classes/Colour.d
+@INCLUDEDEP@ GDI-Classes/Font.d
+@INCLUDEDEP@ GDI-Classes/FontDirectory.d
+@INCLUDEDEP@ GDI-Classes/Pen+Brush.d
+@INCLUDEDEP@ Misc/Timer.d
+@INCLUDEDEP@ Misc/Clipboard.d
+@INCLUDEDEP@ Utilities/Application.d
+@INCLUDEDEP@ Utilities/Assert.d
+@INCLUDEDEP@ Utilities/BusyCursor.d
+@INCLUDEDEP@ Utilities/Date+Time.d
+@INCLUDEDEP@ Utilities/Directory.d
+@INCLUDEDEP@ Utilities/Error.d
+@INCLUDEDEP@ Utilities/GDI.d
+@INCLUDEDEP@ Utilities/Home.d
+@INCLUDEDEP@ Utilities/Misc.d
+@INCLUDEDEP@ Utilities/Net.d
+@INCLUDEDEP@ Utilities/Path.d
+@INCLUDEDEP@ Utilities/Resources.d
+@INCLUDEDEP@ Utilities/String.d
+@INCLUDEDEP@ Utilities/TempFile.d
+@INCLUDEDEP@ Windows/Button.d
+@INCLUDEDEP@ Windows/Canvas.d
+@INCLUDEDEP@ Windows/CheckBox.d
+@INCLUDEDEP@ Windows/Choice.d
+@INCLUDEDEP@ Windows/DialogBox.d
+@INCLUDEDEP@ Windows/Frame.d
+@INCLUDEDEP@ Windows/Gauge.d
+@INCLUDEDEP@ Windows/Item.d
+@INCLUDEDEP@ Windows/Layout.d
+@INCLUDEDEP@ Windows/ListBox.d
+@INCLUDEDEP@ Windows/Menu.d
+@INCLUDEDEP@ Windows/MenuBar.d
+@INCLUDEDEP@ Windows/Message.d
+@INCLUDEDEP@ Windows/Panel.d
+@INCLUDEDEP@ Windows/RadioBox.d
+@INCLUDEDEP@ Windows/Slider.d
+@INCLUDEDEP@ Windows/Window.d
+@INCLUDEDEP@ XWidgets/xwTabString.d
+@INCLUDEDEP@ XWidgets/xwTools3d.d
+@INCLUDEDEP@ XWidgets/xwscroll.d
+@INCLUDEDEP@ XWidgets/xwMenu.d
+@INCLUDEDEP@ XWidgets/xwMultiList.d
+@INCLUDEDEP@ XWidgets/xwScrollText.d
+@INCLUDEDEP@ XWidgets/xwCommon.d
+@INCLUDEDEP@ XWidgets/xwFrame.d
+@INCLUDEDEP@ XWidgets/xwBoard.d
+@INCLUDEDEP@ XWidgets/xwLabel.d
+@INCLUDEDEP@ XWidgets/xwButton.d
+@INCLUDEDEP@ XWidgets/xwToggle.d
+@INCLUDEDEP@ XWidgets/xwCanvas.d
+@INCLUDEDEP@ XWidgets/xwEnforcer.d
+@INCLUDEDEP@ XWidgets/xwGroup.d
+@INCLUDEDEP@ XWidgets/xwRowCol.d
+@INCLUDEDEP@ XWidgets/xwArrow.d
+@INCLUDEDEP@ XWidgets/xwSlider2.d
+@INCLUDEDEP@ XWidgets/xwHScrollb.d
+@INCLUDEDEP@ XWidgets/xwVScrollb.d
+@INCLUDEDEP@ XWidgets/xwScrollbar.d
+@INCLUDEDEP@ XWidgets/xwScrollWin.d

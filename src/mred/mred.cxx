@@ -2884,7 +2884,7 @@ void Drop_Runtime(char **argv, int argc)
   } else {
     for (i = 0; i < argc; i++) {
       Scheme_Object *p[1];
-      p[0] = scheme_make_string(argv[0]);
+      p[0] = scheme_make_string(argv[i]);
       scheme_apply(wxs_app_file_proc, 1, p);
     }
   }

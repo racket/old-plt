@@ -54,6 +54,9 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
 
 clean:
 	cd ..; $(MAKE) WXDIR='$(WXDIR)' clean
+	cd ../../contrib/xpm/lib; make clean	
+	rm -f $(XPMLIBDIR)/libXpm.a
+	cd ../../utils/image/src; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx cleaneach
 
 $(XPMOBJMAINDIR):
 	mkdir $(XPMOBJMAINDIR)

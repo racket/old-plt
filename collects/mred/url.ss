@@ -201,6 +201,17 @@
 		      (else		; Step 6
 			(if (and (url-scheme base)
 			      (string=? (url-scheme base) "file"))
+
+			  ; ROBBY: Code needs to get fixed here.
+			  ; Important that:
+			  ; 1. You set-url-path! the new path into
+			  ;    `relative'.
+			  ; 2. You return `relative' as the value
+			  ;    from here without invoking
+			  ;    `merge-and-normalize'.
+			  ; The variable `rel-path' contains the
+			  ; path portion of the relative URL.
+
 			  (begin
 			    (set-url-path! relative
 			      (begin

@@ -2175,7 +2175,7 @@ static void swap_reader_params(void *data)
   LoadHandlerData *lhd = (LoadHandlerData *)data;
 
   if (SCHEME_SYMBOLP(lhd->expected_module)) {
-    Scheme_Object *reader_params[10];
+    Scheme_Object *reader_params[11];
 
     reader_params[0] = scheme_get_param(lhd->config, MZCONFIG_CASE_SENS);
     reader_params[1] = scheme_get_param(lhd->config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS);

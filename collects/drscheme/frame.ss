@@ -13,7 +13,7 @@
   (define basics<%> (interface (fw:frame:standard-menus<%>)))
 
   (define (show-keybindings-to-user bindings)
-    (letrec ([f (make-object mred:dialog% "Keybindings")]
+    (letrec ([f (make-object mred:dialog% "Keybindings" #f #f #f #f #f '(resize-border))]
 	     [bp (make-object mred:horizontal-panel% f)]
 	     [b-name (make-object mred:button% "Sort by Name" bp (lambda x (update-bindings #f)))]
 	     [b-key (make-object mred:button% "Sort by Key" bp (lambda x (update-bindings #t)))]
@@ -21,6 +21,7 @@
 	      (make-object mred:list-box% #f null f void)]
 	     [bp2 (make-object mred:horizontal-panel% f)]
 	     [cancel (make-object mred:button% "OK" bp2 (lambda x (send f show #f)))]
+             [space (make-object mred:grow-box-spacer-pane% bp2)]
 	     [update-bindings
 	      (lambda (by-key?)
 		(let ([format-binding/name
@@ -159,8 +160,7 @@
 		   (sequence (apply super-init args)))])
 	    (make-object keybindings-menu-item% "Keybindings" menu
 			 (lambda x (show-keybindings))
-			 (and (fw:preferences:get 'framework:menu-bindings)
-			      #\h)
+			 #f
 			 "Show the currently active keybindings"))
           (make-object mred:separator-menu-item% menu))])
       

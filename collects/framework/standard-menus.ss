@@ -88,6 +88,10 @@
     edit-menu:get-find-again-item
     edit-menu:find-again-string
     edit-menu:find-again-help-string
+    edit-menu:replace-and-find-again
+    edit-menu:get-replace-and-find-again-item
+    edit-menu:replace-and-find-again-string
+    edit-menu:replace-and-find-again-help-string
     edit-menu:between-find-and-preferences
     edit-menu:preferences
     edit-menu:get-preferences-item
@@ -282,7 +286,15 @@
     (edit-menu:get-find-again-item (lambda () edit-menu:find-again-item))
     (edit-menu:find-again-string (lambda () ""))
     (edit-menu:find-again-help-string
-     (lambda () "Search the same string as before")))
+     (lambda () "Search for the same string as before")))
+   (public
+    (edit-menu:replace-and-find-again #f)
+    (edit-menu:get-replace-and-find-again-item
+     (lambda () edit-menu:replace-and-find-again-item))
+    (edit-menu:replace-and-find-again-string (lambda () ""))
+    (edit-menu:replace-and-find-again-help-string
+     (lambda ()
+       "Replace the current text and search for the same string as before")))
    (public
     (edit-menu:between-find-and-preferences
      (lambda (menu) (make-object separator-menu-item% menu))))
@@ -576,6 +588,21 @@
             edit-menu:find-again
             (if (preferences:get 'framework:menu-bindings) #\g #f)
             (edit-menu:find-again-help-string)))))
+   (private
+    (edit-menu:replace-and-find-again-item
+     (and edit-menu:replace-and-find-again
+          (make-object (get-menu-item%)
+            ((lambda (base special suffix)
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+             "Replace && Find Again"
+             (edit-menu:replace-and-find-again-string)
+             "")
+            (get-edit-menu)
+            edit-menu:replace-and-find-again
+            (if (preferences:get 'framework:menu-bindings) #\h #f)
+            (edit-menu:replace-and-find-again-help-string)))))
    (sequence (edit-menu:between-find-and-preferences (get-edit-menu)))
    (private
     (edit-menu:preferences-item

@@ -1,3 +1,7 @@
+;;
+;; $Id$
+;;
+
 (begin-elaboration-time
  (if mred:explicit-wx?
      `(reference "wxs.ss")
@@ -401,6 +405,8 @@
    (open mred:container-children-export^)
    (open mred:container-panels^)))
 
+(reference "stsigs.ss")
+
 (define-signature mred^
   ((unit constants : mred:constants^)
    (open mred:version^)
@@ -416,4 +422,5 @@
    (open mred:panel^) (open mred:paren^) (open mred:project^)
    (open mred:scheme-paren^) (open mred:scheme-mode^) 
    (open mred:hyper-edit^) (open mred:hyper-dialog^) (open mred:hyper-frame^)
+   (unit test : mred:self-test-export^)
    (open mred:url^)))

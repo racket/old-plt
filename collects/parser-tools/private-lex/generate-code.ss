@@ -13,102 +13,29 @@
   ;; build-lexer : syntax-object * s-expr -> syntax-object
   ;; has the lexer's runtime code as well as the initial compile-time driver
   (define (build-lexer runtime wrap)
-    (let ((code
-           `(letrec ((match
-                      (lambda (lb first-pos longest-match-length longest-match-action)
-                        (let* ((match (get-match lb longest-match-length))
-			       (end-pos (get-position lb)))
-                          (if (not longest-match-action)
-                              (raise-read-error
-                               (format "lexer: No match found in input starting with: ~a"
-                                       match)
-                               #f
-                               (position-line first-pos)
-                               (position-col first-pos)
-                               (position-offset first-pos)
-                               (- (position-offset end-pos) (position-offset first-pos))))
-                          (let/ec ret
-                            (,wrap
-                             (longest-match-action
-                              (lambda () first-pos)
-                              (lambda () end-pos)
-                              (lambda () match)
-                              ret
-                              lb)))))))
-              (lambda (lb)
-                (unless (lex-buffer? lb)
-                  (raise-type-error 
-                   'lexer 
-                   "lex-buf"
-                   0
-                   lb))
-                (let ((first-pos (get-position lb)))
-                  (let lexer-loop (
-                                   ;; current-state
-                                   (state start-state)
-                                   ;; the character to transition on
-                                   (char (next-char lb))
-                                   ;; action for the longest match seen thus far
-                                   ;; including a match at the current state
-                                   (longest-match-action 
-                                    (vector-ref actions start-state))
-                                   ;; how many characters have been read
-                                   ;; including the one just read
-                                   (length 1)
-                                   ;; how many characters are in the longest match
-                                   (longest-match-length 0))
-                    (let ((next-state
-                           (cond
-                             ((eof-object? char)
-                              (vector-ref eof-table state))
-                             (else
-                              (vector-ref 
-                               trans-table
-                               (bitwise-ior (char->integer char)
-                                            (arithmetic-shift state 8)))))))
-                      (cond
-                        ((not next-state)
-                         (match lb first-pos longest-match-length longest-match-action))
-                        ((vector-ref no-lookahead next-state)
-                         (let ((act (vector-ref actions next-state)))
-                           (match lb 
-                                  first-pos 
-                                  (if act length longest-match-length)
-                                  (if act act longest-match-action))))
-                        (else
-                         (let ((act (vector-ref actions next-state)))
-                           (lexer-loop next-state 
-                                       (next-char lb)
-                                       (if act
-                                           act
-                                           longest-match-action)
-                                       (add1 length)
-                                       (if act
-                                           length
-                                           longest-match-length))))))))))))
-      (lambda (stx)
-        (syntax-case stx ()
-          ((_)
-           (raise-syntax-error #f "empty lexer is not allowed" stx))
-          ((_ re-act ...)
-           (begin
-             (for-each
-              (lambda (x)
-                (syntax-case x ()
-                  ((re act) (void))
-                  (_ (raise-syntax-error 'lexer 
-                                         "expects regular expression / action pairs"
-                                         x))))
-              (syntax->list (syntax (re-act ...))))
-             (let* ((table (generate-table (syntax (re-act ...)) stx))
-                    (code
-                     `(let ((start-state ,(table-start table))
-                            (trans-table ,(table-trans table))
-                            (eof-table ,(table-eof table))
-                            (no-lookahead ,(table-no-lookahead table))
-                            (actions (vector ,@(vector->list (table-actions table)))))
-                        ,code)))
-               (datum->syntax-object runtime code #f))))))))
+    (lambda (stx)
+      (syntax-case stx ()
+        ((_)
+         (raise-syntax-error #f "empty lexer is not allowed" stx))
+        ((_ re-act ...)
+         (begin
+           (for-each
+            (lambda (x)
+              (syntax-case x ()
+                ((re act) (void))
+                (_ (raise-syntax-error 'lexer 
+                                       "expects regular expression / action pairs"
+                                       x))))
+            (syntax->list (syntax (re-act ...))))
+           (let* ((table (generate-table (syntax (re-act ...)) stx))
+                  (code
+                   `(let ((start-state ,(table-start table))
+                          (trans-table ,(table-trans table))
+                          (eof-table ,(table-eof table))
+                          (no-lookahead ,(table-no-lookahead table))
+                          (actions (vector ,@(vector->list (table-actions table)))))
+                      code)))
+             (datum->syntax-object runtime code #f)))))))
     
   
   

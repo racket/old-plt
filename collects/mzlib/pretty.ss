@@ -317,8 +317,9 @@
 	  (define (length1? l) (and (pair? l) (null? (cdr l))))
 	  (let ((head (car l)) (tail (cdr l)))
 	    (case head
-	      ((quote quasiquote unquote unquote-splicing) (length1? tail))
-	      (else                                        #f))))
+	      ((quote quasiquote unquote unquote-splicing syntax)
+               (length1? tail))
+	      (else #f))))
 
        (define (read-macro-body l)
 	 (cadr l))
@@ -329,7 +330,8 @@
 	     ((quote)            "'")
 	     ((quasiquote)       "`")
 	     ((unquote)          ",")
-	     ((unquote-splicing) ",@"))))
+	     ((unquote-splicing) ",@")
+             ((syntax)           "#'"))))
 
        (define (drop-repeated l)
 	 (if (null? l)

@@ -304,6 +304,8 @@ case $OS in
     if test "${enable_quartz}" = "yes" ; then
       # don't use X Libraries: 
       LIBS="-framework Carbon"
+    else
+      LIBS="-framework Carbon $LIBS"
     fi
     ;;
   *)
@@ -357,10 +359,10 @@ case $OS in
   Darwin)
     case `basename "$CC"` in
       mwccppc)
-        MZOPTIONS="$MZOPTIONS -include \$(srcdir)/../src/macosxpre"
+        MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre"
       ;;
       cc)
-        MZOPTIONS="$MZOPTIONS -include \$(srcdir)/../src/macosxpre.h"
+        MZOPTIONS="$MZOPTIONS -include \$(MZSRC)/macosxpre.h"
       ;;
       *)
         echo "unrecognized compiler: $CC"

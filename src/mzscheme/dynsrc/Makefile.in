@@ -8,6 +8,8 @@ DYNLINK = mzc --ld
 srcdir = @srcdir@
 prefix = @prefix@
 
+MZSRC = $(srcdir)/../src
+
 CC = @CC@
 CFLAGS = @CFLAGS@ -I$(srcdir)/../include -I$(srcdir)/../src @MZOPTIONS@
 

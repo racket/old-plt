@@ -9,6 +9,8 @@ PERL = @PERL@
 
 XMAKE = $(MAKE) $(EXPORT)
 
+MZSRC = $(srcdir)
+
 CFLAGS = @CFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
 
 OBJS =  salloc.o \

@@ -10,6 +10,7 @@
            "docpos.ss"
            "path.ss"
            "standard-urls.ss"
+           "get-help-url.ss"
            "../servlets/private/util.ss"
            "../servlets/private/headelts.ss")
 
@@ -384,9 +385,12 @@
     (let* ([manual-name (let-values ([(base manual-name dir?) (split-path doc-path)])
                           manual-name)]
            [index-file (get-index-file doc-path)])
-      (format "<LI> <A HREF=\"/doc/~a/~a\">~a</A>~a"
-              manual-name
-              (path->string index-file)
+      (format "<LI> <A HREF=\"~a\">~a</A>~a"
+              #;manual-name
+              #;(path->string index-file)
+              (get-help-url (build-path doc-path index-file))  
+                
+                
               name
               (if (and (cvs-or-nightly-build?)
                        (file-exists? (build-path doc-path index-file)))

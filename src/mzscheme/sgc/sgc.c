@@ -72,12 +72,8 @@
 #define NO_ATOMIC 0
 /* Never treat allocated data as atomic */
 
-#define KEEP_BLOCKS_FOREVER 1
+#define KEEP_BLOCKS_FOREVER 0
 /* Keep small-chunk assignment of a block forever */
-
-#define USE_BEST_FIT_ON_FREE_SECTORS 0
-/* Select best-fit versus gravity-fit (which tries to
-   keep all the blocks close together to avoid) */
 
 #define NO_STACK_OFFBYONE 0
 /* Don't notice a stack-based pointer just past the end of an object */
@@ -210,7 +206,7 @@
 # define MEM_USE_FACTOR 1.40
 #else
 # define FIRST_GC_LIMIT 100000
-# define MEM_USE_FACTOR 3
+# define MEM_USE_FACTOR 4
 #endif
 
 #ifdef DOS_FAR_POINTERS
@@ -300,7 +296,7 @@
 /* Debugging the collector: */
 #define CHECK 0
 #define PRINT 0
-#define TIME 1
+#define TIME 0
 #define ALWAYS_TRACE 0
 #define CHECK_COLLECTING 0
 #define MARK_STATS 0
@@ -501,15 +497,77 @@ typedef struct {
 
 static SectorPage **sector_pagetables;
 
+#include "splay.c"
+
 typedef struct SectorFreepage {
   long size; 
   unsigned long start; /* Sector start */
   unsigned long end; /* start of next */
-  struct SectorFreepage *next;
-  struct SectorFreepage *prev;
+  Tree by_start;
+  Tree by_end;
+  Tree by_start_per_size;
+  Tree by_size;
+  Tree *same_size;
 } SectorFreepage;
 
-static SectorFreepage *sector_freepage_start, *sector_freepage_end;
+static Tree *sector_freepage_by_start;
+static Tree *sector_freepage_by_end;
+static Tree *sector_freepage_by_size;
+
+#define TREE_FP(t) ((SectorFreepage *)(t->data))
+
+static Tree *next(Tree *node)
+{
+  node = node->right;
+  if (node) {
+    while (node->left) {
+      node = node->left;
+    }
+    return node;
+  } else
+    return NULL;
+}
+
+static void remove_freepage(SectorFreepage *fp)
+{
+  /* Remove fp from freelists: */
+  sector_freepage_by_start = delete(fp->start, sector_freepage_by_start);
+  sector_freepage_by_end = delete(fp->end, sector_freepage_by_end);
+  sector_freepage_by_size = splay(fp->size, sector_freepage_by_size);
+  if (TREE_FP(sector_freepage_by_size) == fp) {
+    /* This was the representative for its size; remove it. */
+    sector_freepage_by_size = delete(fp->size, sector_freepage_by_size);
+    if (fp->same_size) {
+      SectorFreepage *same;
+      same = TREE_FP(fp->same_size);
+      same->same_size = delete(same->start, fp->same_size);
+      sector_freepage_by_size = insert(same->size, &same->by_size, sector_freepage_by_size);
+    }
+  } else {
+    /* Not the top-level representative; remove it from the representative's
+       same_size tree */
+    SectorFreepage *same;
+    same = TREE_FP(sector_freepage_by_size);
+    same->same_size = delete(fp->start, same->same_size);
+  }
+}
+
+static void add_freepage(SectorFreepage *naya)
+{
+  naya->by_start.data = (void *)naya;
+  sector_freepage_by_start = insert(naya->start, &naya->by_start, sector_freepage_by_start);
+  naya->by_end.data = (void *)naya;
+  sector_freepage_by_end = insert(naya->end, &naya->by_end, sector_freepage_by_end);
+  naya->by_size.data = (void *)naya;
+  sector_freepage_by_size = insert(naya->size, &naya->by_size, sector_freepage_by_size);
+  if (TREE_FP(sector_freepage_by_size) != naya) {
+    /* This size was already in the tree; add it to the next_size list, instead */
+    SectorFreepage *already = TREE_FP(sector_freepage_by_size);
+    naya->by_start_per_size.data = (void *)naya;
+    already->same_size = insert(naya->start, &naya->by_start_per_size, already->same_size);
+  } else
+    naya->same_size = NULL;
+}
 
 #define TABLE_HI_SHIFT LOG_SECTOR_SEGMENT_SIZE
 #define TABLE_LO_MASK (SECTOR_SEGMENT_SIZE-1)
@@ -864,48 +922,41 @@ static void *malloc_sector(long size, long kind)
 
   need = (size + SECTOR_SEGMENT_SIZE - 1) / SECTOR_SEGMENT_SIZE;
 
-  /* This is best-fit when the free-list is sorted by size,
-     gravity-fit when the free list is sorted by position. */
-  fp = sector_freepage_start;
-  while (fp) {
-    if (fp->size >= need) {
-      naya = INT_TO_PTR(fp->start);
-      register_sector(naya, need, kind);
-      if (fp->size > need) {
-	/* Move freepage info and shrink */
-	SectorFreepage *naya;
-	unsigned long nfp;
-	nfp = fp->start + (need << LOG_SECTOR_SEGMENT_SIZE);
-	naya = (SectorFreepage *)INT_TO_PTR(nfp);
-	naya->size = fp->size - need;
-	naya->start = nfp;
-	naya->end = fp->end;
-	naya->prev = fp->prev;
-	naya->next = fp->next;
-	if (fp->prev)
-	  fp->prev->next = naya;
-	else
-	  sector_freepage_start = naya;
-	if (fp->next)
-	  fp->next->prev = naya;
-	else
-	  sector_freepage_end = naya;
-      } else {
-	/* Remove freepage */
-	if (fp->prev)
-	  fp->prev->next = fp->next;
-	else
-	  sector_freepage_start = fp->next;
-	if (fp->next)
-	  fp->next->prev = fp->prev;
-	else
-	  sector_freepage_end = fp->prev;
-      }
+  if (sector_freepage_by_size) {
+    sector_freepage_by_size = splay(need, sector_freepage_by_size);
+    if (TREE_FP(sector_freepage_by_size)->size < need) {
+      /* No exact match, so find the next size up */
+      Tree *node;
+      node = next(sector_freepage_by_size);
+      if (node)
+	fp = TREE_FP(node);
+      else
+	fp = NULL;
+    } else 
+      fp = TREE_FP(sector_freepage_by_size);
+  } else
+    fp = NULL;
+  
+  if (fp) {
+    remove_freepage(fp);
 
-      sector_free_mem_use -= (need << LOG_SECTOR_SEGMENT_SIZE);
-      return naya;
-    } else
-      fp = fp->next;
+    naya = INT_TO_PTR(fp->start);
+    register_sector(naya, need, kind);
+    if (fp->size > need) {
+      /* Move freepage info and shrink */
+      SectorFreepage *naya;
+      unsigned long nfp;
+      nfp = fp->start + (need << LOG_SECTOR_SEGMENT_SIZE);
+      naya = (SectorFreepage *)INT_TO_PTR(nfp);
+      naya->size = fp->size - need;
+      naya->start = nfp;
+      naya->end = fp->end;
+
+      add_freepage(naya);
+    }
+
+    sector_free_mem_use -= (need << LOG_SECTOR_SEGMENT_SIZE);
+    return naya;
   }
 
   naya = malloc_plain_sector(need);
@@ -947,82 +998,33 @@ static void free_sector(void *p)
 
   sector_free_mem_use += (c << LOG_SECTOR_SEGMENT_SIZE);
 
-  /* Try merge with a predecessor: */
-  ifp = sector_freepage_start;
-  while (ifp) {
+  if (sector_freepage_by_end) {
+    /* Try merge with a predecessor: */
+    sector_freepage_by_end = splay(s, sector_freepage_by_end);
+    ifp = TREE_FP(sector_freepage_by_end);
     if (ifp->end == s) {
-      /* Remove predecessor freepage */
-      if (ifp->prev)
-	ifp->prev->next = ifp->next;
-      else
-	sector_freepage_start = ifp->next;
-      if (ifp->next)
-	ifp->next->prev = ifp->prev;
-      else
-	sector_freepage_end = ifp->prev;
-
+      remove_freepage(ifp);
       c += ifp->size;
       s = ifp->start;
-
-      break;
     }
-    ifp = ifp->next;
-  }
-
-  /* Try merge with a successor: */
-  ifp = sector_freepage_start;
-  while (ifp) {
-    if (ifp->start == t) {
-      /* Remove successor freepage */
-      if (ifp->prev)
-	ifp->prev->next = ifp->next;
-      else
-	sector_freepage_start = ifp->next;
-      if (ifp->next)
-	ifp->next->prev = ifp->prev;
-      else
-	sector_freepage_end = ifp->prev;
-
-      c += ifp->size;
-      t = ifp->end;
-
-      break;
+    
+    if (sector_freepage_by_start) {
+      /* Try merge with a successor: */
+      sector_freepage_by_start = splay(t, sector_freepage_by_start);
+      ifp = TREE_FP(sector_freepage_by_start);
+      if (ifp->start == t) {
+	remove_freepage(ifp);
+	c += ifp->size;
+	t = ifp->end;
+      }
     }
-    ifp = ifp->next;
   }
   
-  ifp = sector_freepage_start;
-#if USE_BEST_FIT_ON_FREE_SECTORS
-  /* Insert after all smaller secots: */
-  while (ifp && (ifp->size < c))
-    ifp = ifp->next;
-#else
-  /* Insert after lower sectors: */
-  while (ifp && (ifp->start < s))
-    ifp = ifp->next;
-#endif
-
   fp = (SectorFreepage *)p;
   fp->start = s;
   fp->end = t;
   fp->size = c;
-  if (ifp) {
-    fp->prev = ifp->prev;
-    if (!ifp->prev)
-      sector_freepage_start = fp;
-    else
-      ifp->prev->next = fp;
-    ifp->prev = fp;
-    fp->next = ifp;
-  } else {
-    fp->prev = sector_freepage_end;
-    if (sector_freepage_end)
-      sector_freepage_end->next = fp;
-    fp->next = NULL;
-    sector_freepage_end = fp;
-    if (!sector_freepage_start)
-      sector_freepage_start = fp;
-  }
+  add_freepage(fp);
 }
 
 #ifdef WIN32
@@ -1928,6 +1930,7 @@ void GC_dump(void)
 	  "sector used: %ld  sector free: %ld  sector total: %ld\n"
 	  "sector range: %ld  sector administration: %ld\n"
 	  "num sector allocs: %ld  num sector frees: %ld\n"
+	  "num disappearing links: %d  num finalizations: %d\n"
 #if STAMP_AND_REMEMBER_SOURCE
 	  "current clock: %ld\n"
 #endif
@@ -1937,7 +1940,8 @@ void GC_dump(void)
 	  sector_mem_use - sector_free_mem_use, sector_free_mem_use, sector_mem_use,
 	  sector_high_plausible - sector_low_plausible,
 	  sector_admin_mem_use,
-	  num_sector_allocs, num_sector_frees
+	  num_sector_allocs, num_sector_frees,
+	  GC_dl_entries, GC_fo_entries
 #if STAMP_AND_REMEMBER_SOURCE
 	  , stamp_clock
 #endif
@@ -4194,7 +4198,7 @@ void do_GC_gcollect(void *stack_now)
   cmn_count = chk_count = 0;
 # endif
 
-  PRINTTIME((STDERR, "gc: common init start: %ld\n", scheme_get_process_milliseconds()));
+  PRINTTIME((STDERR, "gc: init start: %ld\n", scheme_get_process_milliseconds()));
 
   for (j = 0; j < num_common_sets; j++) {
 # if ALLOW_SET_LOCKING

@@ -25,6 +25,30 @@
 "Use this function to expand the contents of the definitions"
 "window for use with external program processing tools."
 ""
+"This function uses"
+"@flink drscheme:eval:build-user-eventspace/custodian"
+"to build the user's environment."
+"The arguments \\var{language-settings}, \\var{init}, and"
+"\\var{kill-termination} are passed to"
+"@flink drscheme:eval:build-user-eventspace/custodian %"
+"."
+""
+"The first argument to \\var{iter} is the expanded program"
+"(represented as syntax) or eof."
+"The second argument to \\var{iter} is a thunk that"
+"continues expanding the rest of the contents of the"
+"definitions window. If the first argument to \\var{iter} was"
+"eof, this argument is just the primitive"
+"\\rawscm{void}.")
+
+(drscheme:eval:build-user-eventspace/custodian
+ ((drscheme:language-configuration:language-settings?
+   (-> void?)
+   (-> void?))
+  . ->* .
+  (eventspace? custodian?))
+ (language-settings init kill-termination)
+
 "This function creates a custodian and an eventspace (on the"
 "new custodian) to expand the user's program. It does not"
 "kill this custodian, but it can safely be shutdown (with"
@@ -111,15 +135,7 @@
 "If your tool only processes the syntax without evaluating it,"
 "you may need to call"
 "\\rawscm{eval-compile-time-part-of-top-level} on the"
-"syntax object (on the user's thread)."
-""
-"The first argument to \\var{iter} is the expanded program"
-"(represented as syntax) or eof."
-"The second argument to \\var{iter} is a thunk that"
-"continues expanding the rest of the contents of the"
-"definitions window. If the first argument to \\var{iter} was"
-"eof, this argument is just the primitive"
-"\\rawscm{void}.")
+"syntax object (on the user's thread).")
 
 
 

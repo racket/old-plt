@@ -687,7 +687,7 @@ void GC_finalize()
     if (last_done_dl)
       last_done_dl->restore_next = NULL;
 
-  /* MATTHEW: All eagers first [cut-n-paste: yuck] */
+  /* MATTHEW: All eagers first */
   /* Enqueue for finalization all EAGER objects that are still		*/
   /* unreachable.							*/
     GC_words_finalized = 0;

@@ -3948,16 +3948,16 @@ static void do_disappearing(DisappearingLink **disappearing_ptr)
     if (watch && !find_ptr(watch, &size, NULL, NULL, NULL, 0)) {
       /* was the pointer allocated at all? */
       if (size) {
-	/* It's gone: */
+	/* It was allocated, and now it's gone: */
 	if (dl->kind != dl_restored) {
-	  /* disappear is done. */
+	  *dl->disappear = NULL;
+	  /* disappear is done */
 	  if (dl->prev)
 	    dl->prev->next = dl->next;
 	  else
 	    disappearing = dl->next;
 	  if (dl->next)
 	    dl->next->prev = dl->prev;
-	  *dl->disappear = NULL;
 	  
 	  mem_real_use -= sizeof(DisappearingLink);
 	  free_managed(dl);
@@ -4063,7 +4063,7 @@ static void do_disappear_and_finals()
   /* Restore disappeared links where watch value is NULL: */
   for (dl = disappearing; dl; dl = next) {
     next = dl->next;
-    if (!(dl->kind == dl_restored) && dl->saved_value) {
+    if ((dl->kind == dl_restored) && dl->saved_value) {
       /* Restore disappearing value and deregister */
       *dl->disappear = dl->saved_value;
       dl->saved_value = NULL;

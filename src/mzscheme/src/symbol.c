@@ -326,7 +326,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
 			   && (flags & SNF_FOR_TS)))
 
   if (len) {
-    digit_start = (isdigit(s[0]) || (s[0] == '.')
+    digit_start = (isdigit((unsigned char)s[0]) || (s[0] == '.')
 		   || (s[0] == '+') || (s[0] == '-'));
     if (s[0] == '#' && (len == 1 || s[1] != '%'))
       has_special = 1;
@@ -338,7 +338,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
   }
 
   for (i = 0; i < len; i++) {
-    if (isspace(s[i]) || !isprint(s[i])) {
+    if (isspace((unsigned char)s[i]) || !isprint((unsigned char)s[i])) {
       if ((flags & SNF_FOR_TS) && (s[i] == ' ')) {
 	/* space is OK in type symbols */
       } else
@@ -389,7 +389,7 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
       result = (char *)scheme_malloc_atomic((2 * len) + 1);
 
       for (i = 0; i < len; i++) {
-	if (isspace(s[i]) 
+	if (isspace((unsigned char)s[i]) 
 	    || isSpecial(s[i]) 
 	    || ((s[i] == '|') && pipe_quote)
 	    || (!i && s[0] == '#'))

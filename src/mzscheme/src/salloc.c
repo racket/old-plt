@@ -832,10 +832,11 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 	sep = "";
 
 	home = GC_set(v);
-	if ((home == real_tagged)
-	    || (home == tagged_atomic)
-	    || (home == tagged_uncollectable)
-	    || (home == tagged_eternal)) {
+	if (home
+	    && ((home == real_tagged)
+		|| (home == tagged_atomic)
+		|| (home == tagged_uncollectable)
+		|| (home == tagged_eternal))) {
 #if 0
 	  type = scheme_get_type_name(SCHEME_TYPE((Scheme_Object *)v));
 	  if (*type)

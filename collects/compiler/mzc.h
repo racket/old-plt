@@ -143,6 +143,10 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 
 #define MZC_CAR(p, av) (SCHEME_PAIRP(av) ? SCHEME_CAR(av) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
 #define MZC_CDR(p, av) (SCHEME_PAIRP(av) ? SCHEME_CDR(av) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
+#define MZC_CADR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CDR(av))) ? SCHEME_CAR(SCHEME_CDR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
+#define MZC_CDDR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CDR(av))) ? SCHEME_CDR(SCHEME_CDR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
+#define MZC_CDAR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CAR(av))) ? SCHEME_CDR(SCHEME_CAR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
+#define MZC_CAAR(p, av) ((SCHEME_PAIRP(av) && SCHEME_PAIRP(SCHEME_CAR(av))) ? SCHEME_CAR(SCHEME_CAR(av)) : (arg[0] = av, _scheme_direct_apply_primitive_multi(p, 1, arg)))
 #define MZC_SET_CAR(p, av, bv) (SCHEME_PAIRP(av) ? (SCHEME_CAR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
 #define MZC_SET_CDR(p, av, bv) (SCHEME_PAIRP(av) ? (SCHEME_CDR(av)=bv, scheme_void) : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(p, 2, arg)))
 

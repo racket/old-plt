@@ -621,8 +621,8 @@ node-bundle-snip%
                    (cond
                      [(not snip)
                       (let ([manager (send pb get-bundle-manager)])
-                        (message-box "-1" (format "manager: ~s" manager))
-                        (when (send pb get-bundle)
+                        (message-box "-1" (format "manager: ~s" (list manager (send manager get-bundle))))
+                        (when (send manager get-bundle)
                           (out))
                         (send manager set-bundle (make-object leaf-bundle% '())))]
                      [(and (is-a? snip node-bundle-snip%)

@@ -1,6 +1,6 @@
 ;(current-library-collection-paths '("d:\\plt\\collects"))
 ;(current-library-collection-paths (list (build-path "Cupertino:" "robby" "plt" "collects")))
-(current-library-collection-paths (list "/home/robby/plt/collects"))
+;(current-library-collection-paths (list "/home/robby/plt/collects"))
 
 (require-library "bundle-sig.ss" "drscheme" "tools" "unit-bundle")
 

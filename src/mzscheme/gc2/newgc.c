@@ -1636,7 +1636,7 @@ inline static void run_account_hooks()
 # define DO_BTC_ACCOUNTING() btc_account()
 # define DOING_MEMORY_ACCOUNTING doing_memory_accounting_pass
 # define MEMORY_ACCOUNT_MARK(p,o) mark_for_accounting(p, (void*)(o))
-# define ADD_ACCOUNT_HOOK(t,c1,c2,b) { add_account_hook(t, c1, c2, b); return 1; }
+# define ADD_ACCOUNT_HOOK(t,c1,c2,b) add_account_hook(t, c1, c2, b); return 1;
 # define REPAIR_ACCOUNT_HOOKS() repair_account_hooks()
 # define RUN_ACCOUNT_HOOKS() run_account_hooks()
 # define GET_CUSTODIAN_USAGE(cust) custodian_get_memory(cust)
@@ -1771,6 +1771,65 @@ long GC_get_memory_use(void *o)
   }
 
   return retval;
+}
+
+/*****************************************************************************/
+/* Undocumented Extensions                                                   */
+/*****************************************************************************/
+
+void GC_count_lambdas_and_structs(Scheme_Object *stype,
+				  unsigned long *lambdas,
+				  unsigned long *structs)
+{
+  Scheme_Structure *s;
+  struct mpage *work;
+  int i;
+
+  /* set up the counters */
+  *lambdas = *structs = 0;
+  /* skim through the normal pages */
+  for(work = pages[1][PAGE_TAGGED]; work; work = work->next) {
+    void **start = PPTR(NUM(work) + HEADER_SIZEB);
+    void **end = PPTR(NUM(work) + work->size);
+
+    while(start < end) {
+      int size = ((struct objhead *)start)->size;
+      unsigned short tag = *(unsigned short *)(NUM(start) + WORD_SIZE);
+
+      switch(tag) {
+        case scheme_closure_type:
+        case scheme_case_closure_type:
+	  *lambdas += 1;
+	  break;
+        case scheme_structure_type:
+        case scheme_proc_struct_type:
+	  s = (Scheme_Structure*)(NUM(start) + WORD_SIZE);
+	  if(s->stype == (Scheme_Struct_Type*)stype)
+	    *structs += 1;
+      }
+      start += size;
+    }
+  }
+
+  /* skim through the bigpages */
+  for(i = 0; i < 2; i++)
+    for(work = pages[i][PAGE_BIG]; work; work = work->next) {
+      unsigned short tag = *(unsigned short*)(NUM(work) + 
+					      HEADER_SIZEB + 
+					      WORD_SIZE);
+
+      switch(tag) {
+        case scheme_closure_type:
+        case scheme_case_closure_type:
+	  *lambdas += 1;
+	  break;
+        case scheme_structure_type:
+        case scheme_proc_struct_type:
+	  s = (Scheme_Structure*)(NUM(work) + HEADER_SIZEB + WORD_SIZE);
+	  if(s->stype == (Scheme_Struct_Type*)stype)
+	    *structs += 1;
+      }
+    }
 }
 
 /*****************************************************************************/

@@ -303,14 +303,13 @@ Precise GC
 
 MzScheme and MrEd can be compiled to an experimental form that uses a
 mmemory-moving garbage collector with precise tracking of pointers (as
-opposed to "conservation garbage collection") on some Unix platforms,
-including Linux, FreeBSD, and Solaris. The experimental forms are
-called MzScheme3m and MrEd3m, repsectively, where the "3m" stands for
-"moving memory manager".
+opposed to "conservation garbage collection"). The experimental forms
+are called MzScheme3m and MrEd3m, repsectively, where the "3m" stands
+for "moving memory manager". MrEd3m is not yet available under Windows.
 
-To build MzScheme3m and MrEd3m in Unix, run `make 3m'. Building
-MzScheme3m and MrEd3m first builds the normal MzScheme and MrEd
-executables, then uses them to build the 3m versions.
+To build MzScheme3m and MrEd3m for Unix or Mac OS X, run `make
+3m'. Building MzScheme3m and MrEd3m first builds the normal MzScheme
+and MrEd executables, then uses them to build the 3m versions.
 
 To build MzScheme3m for Windows with Microsoft Visual C, first build
 and install the normal MzScheme executable, and make sure that cl.exe

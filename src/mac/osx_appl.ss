@@ -14,10 +14,10 @@ PLTHOME=
 export PLTHOME
 PLTCOLLECTS=
 export PLTCOLLECTS
-DYLD_FRAMEWORK_PATH=../mzscheme:${DYLD_FRAMEWORK_PATH}
+DYLD_FRAMEWORK_PATH=${BUILDBASE}/mzscheme:${DYLD_FRAMEWORK_PATH}
 export DYLD_FRAMEWORK_PATH
 shift 1
-exec ../mzscheme/mzscheme -xqr "$0"
+exec ${BUILDBASE}/mzscheme/mzscheme -xqr "$0"
 echo "Couldn't start MzScheme!"
 exit 1
 
@@ -42,6 +42,8 @@ exit 1
   ; set plthome:
   (define plthome (getenv "PLTHOME"))
   (printf "plthome is ~s~n" plthome)
+
+  (define for-3m? (getenv "BUILDING_3M"))
 
   ; Rez where needed:
   (let* ([cw-path (build-path plthome "src" "mac" "cw")]
@@ -81,7 +83,7 @@ exit 1
 	  (write-plist info-plist port))
 	'truncate)))
 
-  (define (create-app dest-path app-name pkg-info-string info-plist)
+  (define (create-app dest-path app-name icon-src-name pkg-info-string info-plist)
     (let* ([app-path (build-path dest-path 
 				 (string-append app-name ".app"))])
       (make-directory* app-path)
@@ -94,17 +96,18 @@ exit 1
 	  'truncate))
       (let* ([contents-path (build-path app-path "Contents")])
 	(write-info contents-path info-plist)
-	(let* ([icns-name (string-append app-name ".icns")]
-	       [icns-src (build-path plthome "src" "mac" "icon" icns-name)]
-	       [icns-dest (build-path contents-path "Resources" icns-name)])
+	(let* ([icns-src (build-path plthome "src" "mac" "icon" (string-append icon-src-name ".icns"))]
+	       [icns-dest (build-path contents-path "Resources" (string-append (file-name-from-path app-name) ".icns"))])
 	  (unless (file-exists? icns-dest)
-		  (copy-file icns-src icns-dest))))))
+	    (copy-file icns-src icns-dest))))))
   
   (define (create-fw dest-path fw-name info-plist)
     (let* ([fw-path (build-path dest-path 
 				(string-append fw-name ".framework")
 				"Versions"
-				(version))])
+				(if for-3m?
+				    (format "~a_3m" (version))
+				    (version)))])
       (make-directory* fw-path)
       (realize-template fw-path fw-template-tree)
       (write-info (build-path fw-path "Resources") info-plist)
@@ -137,18 +140,20 @@ exit 1
 		       ,(version))))
 
     (create-app (current-directory)
+		(if for-3m? "../MrEd3m" "MrEd")
 		"MrEd"
 		"APPLMrEd"
-		(make-info-plist "MrEd" "MrEd" #t))
+		(make-info-plist (if for-3m? "MrEd3m" "MrEd") "MrEd" #t))
 
     (create-fw (current-directory)
 	       "PLT_MrEd"
 		(make-info-plist "PLT_MrEd" "MrEd" #f))
 
     (create-app (current-directory)
+		(if for-3m? "../Starter3m" "Starter")
 		"Starter"
 		"APPLMrSt"
-		(make-info-plist "Starter" "MrSt" #t)))
+		(make-info-plist (if for-3m? "Starter3m" "Starter") "MrSt" #t)))
 
 (require osx_appl)
 

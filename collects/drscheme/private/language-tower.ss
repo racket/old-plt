@@ -1,6 +1,8 @@
 (module language-tower mzscheme
   (require "drsig.ss"
            "string-constant.ss"
+           (lib "pconvert.ss")
+           (lib "pretty.ss")
 	   (lib "macro.ss" "userspce")
            (lib "etc.ss")
 	   (lib "unitsig.ss")
@@ -24,6 +26,7 @@
 	  config-panel
 	  on-execute
           render-value
+          render-value/error
           
           get-language-position))
       
@@ -38,6 +41,7 @@
 	  config-panel
 	  on-execute
           render-value
+          render-value/error
           
           get-language-position))
       
@@ -80,8 +84,10 @@
 	    (initialize-module-based-language setting (get-module) run-in-user-thread))
 	  (define (get-language-position)
 	    (send simple-module-based-language get-language-position))
-          (define (render-value value port put-snip)
-            (write value port))
+          (define (render-value value settings port put-snip)
+            (simple-module-based-language-render-value value settings port put-snip))
+          (define (render-value/error value settings port put-snip)
+            (simple-module-based-language-render-value/error value settings port put-snip))
 	  (super-instantiate ())))
 
       ;; settings for a simple module based language
@@ -95,18 +101,12 @@
       ;; simple-module-based-language-config-panel : parent settings -> (-> settings)
       (define (simple-module-based-language-config-panel _parent settings)
 	(let* ([parent (make-object vertical-panel% _parent)]
-	       ;[_gap1 (make-object vertical-panel% parent)]
-	       [input-parent-panel (make-object vertical-panel% parent)]
-	       [output-parent-panel (make-object vertical-panel% parent)]
-	       ;[_gap3 (make-object vertical-panel% parent)]
-
-	       [input-msg (make-object message% (string-constant input-syntax)
-				       input-parent-panel)]
-	       [input-panel (make-object vertical-panel% input-parent-panel '(border))]
 	       
-	       [output-msg (make-object message% (string-constant output-syntax)
-					output-parent-panel)]
-	       [output-panel (make-object vertical-panel% output-parent-panel '(border))]
+	       [input-msg (make-object message% (string-constant input-syntax) parent)]
+	       [input-panel (make-object vertical-panel% parent '(border))]
+	       
+	       [output-msg (make-object message% (string-constant output-syntax) parent)]
+	       [output-panel (make-object vertical-panel% parent '(border))]
 
 	       [case-sensitive (make-object check-box%
 				 (string-constant case-sensitive-label)
@@ -129,9 +129,8 @@
 				  void)])
 	  
 	  ;; set the characteristics of the GUI
-	  (send input-parent-panel stretchable-height #f)
-	  (send input-panel stretchable-width #f)
-	  (send output-parent-panel stretchable-height #f)
+	  (send parent stretchable-height #f)
+	  (send parent stretchable-width #f)
 	  (send output-panel stretchable-width #f)
 	  (send output-panel set-alignment 'left 'center)
           
@@ -165,6 +164,31 @@
 	     (send show-sharing get-value)
 	     (send insert-newlines get-value)))))
 
+      ;; simple-module-based-language-render-value : TST port (union #f (snip% -> void)) -> void
+      (define (simple-module-based-language-render-value value settings port put-snip)
+        (let ([converted-value
+               (simple-module-based-language-convert-value value settings)])
+          (cond
+            [(simple-settings-insert-newlines settings)
+             (pretty-print converted-val port)]
+            [else
+             (write value port)])))
+      
+      ;; simple-module-based-language-render-value/error : TST port (union #f (snip% -> void)) -> void
+      (define (simple-module-based-language-render-value/error value settings port put-snip)
+        (write (simple-module-based-language-convert-value value settings) port))
+
+      ;; simple-module-based-language-convert-value : TST settings -> TST
+    (define (simple-module-based-language-convert-value value settings)
+      (case (simple-settings-printing-style settings)
+        [(write) value]
+        [(constructor)
+         (parameterize ([constructor-style-printing #t])
+           (print-convert value))]
+        [(quasiquote)
+         (parameterize ([constructor-style-printing #f])
+           (print-convert value))]))
+        
       ;; initialize-simple-module-based-language : setting module-spec ((-> void) -> void)
       (define (initialize-module-based-language settings module-spec run-in-user-thread)
         ;; must call the resolver before setting the namespace
@@ -203,8 +227,8 @@
             (send module-based-language on-execute settings run-in-user-thread))
 	  (define (get-language-position)
 	    (send module-based-language get-language-position))
-          (define (render-value value port put-snip)
-            (send module-based-language render-value value port put-snip))
+          (define (render-value value settings port put-snip)
+            (send module-based-language render-value value settings port put-snip))
 	  (super-instantiate ())))
       
       ;; module-based-language-front-end : (input settings -> (-> (union sexp syntax eof)))
@@ -215,7 +239,7 @@
                                              (drscheme:rep:text/pos-start input)
                                              (drscheme:rep:text/pos-end input))])])
           (lambda ()
-            (read-syntax port))))
+            (read-syntax input port))))
       
       ;; open-input-text : (instanceof text%) num num -> input-port
       ;; creates a user port whose input is taken from the text%,

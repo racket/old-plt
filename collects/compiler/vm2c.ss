@@ -1465,7 +1465,7 @@
 			     (vm:compound-assembly ast)))]
 
 	 [(vm:invoke? ast)
-	  (emit-expr (format "_scheme_invoke~a_unit~a(arg[0], ~a, arg + 1, arg + 1 + ~a)"
+	  (emit-expr (format "_scheme_~ainvoke_unit~a(arg[0], ~a, arg + 1, arg + 1 + ~a)"
 			     (if (vm:invoke-tail? ast) "_tail" "")
 			     (if (and (vm:invoke-multi? ast)
 				      (not (vm:invoke-tail? ast)))

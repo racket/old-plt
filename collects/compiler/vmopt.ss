@@ -94,8 +94,8 @@
 			      (= current-vehicle 
 				 (closure-code-vehicle (get-annotation L))))])
 		    ((cond
-		       [(not current-lambda) call]
 		       [(not closure-label) unknown]
+		       [(not current-lambda) call]
 		       [(not current-label) call]
 		       [(not current-vehicle) call]
 		       [(and same-vehicle? (= closure-label current-label) (= closure-case current-case)) recur]

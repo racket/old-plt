@@ -247,7 +247,7 @@
 			 (reverse! children-acc))
 		    max-arity)
 	    (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars children new-max-arity multi)
-			  (analyze-expression! (car sexps) empty-set null #f)])
+			  (analyze-expression! (car sexps) empty-set null (null? (cdr sexps)))])
 	      (loop (cdr sexps) 
 		    (cons exp source-acc) 
 		    (cons local-vars locals-acc)
@@ -858,6 +858,8 @@
 				     (choose-closure-representation! code)))
 				 compiler:closure-list))])
 		(verbose-time rep-thunk))
+
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 	      
 	      ;;-----------------------------------------------------------------------
 	      ;; Virtual Machine Scheme translation
@@ -894,7 +896,7 @@
 							  (zodiac:zodiac-start ast)
 							  (zodiac:zodiac-finish ast)
 							  ast)))
-						   #f)])
+						   (null? (cdr s)))])
 			     (set-car! s vm)
 			     (add-code-local+used-vars! (car l) new-locals))
 			   (loop (cdr s) (cdr l))))
@@ -973,6 +975,9 @@
 		(verbose-time vmphase-thunk))
 
 	      (compiler:report-messages! #t)
+
+	      ; (print-struct #t)
+	      ; (map (lambda (ast) (pretty-print ast)) (block-source s:file-block))
 
 	      ;;-----------------------------------------------------------------------
 	      ;; Virtual Machine Optimization Pass

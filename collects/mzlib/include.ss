@@ -177,7 +177,7 @@
 	 (check-fn-form (syntax fn) stx)
 	 (with-syntax ([_stx stx])
 	   (syntax/loc stx 
-	     (do-include _stx _stx _stx fn 
+	     (do-include _stx ctx loc fn 
 			 (letrec-syntax ([the-reader (lambda (stx)
 						       (datum->syntax-object
 							#'here

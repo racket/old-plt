@@ -5,7 +5,7 @@ the "Revised Report on the Algorithmic Language Algol 60", edited by
 Peter Naur.
 
 
-The "algol.ss" library provides an `include-algol' form for including
+The "algol60.ss" library provides an `include-algol' form for including
 an Algol 60 program as an expression in a Scheme program:
 
 >  (include-algol file-path-string)

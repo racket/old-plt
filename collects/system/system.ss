@@ -46,13 +46,13 @@
 	(current-library-collection-paths)))
 
 (let ([libdir
-       (let ([try-dir (build-path mred:system-source-directory 'up "mzlib")])
+       (let ([try-dir (build-path mred:system-source-directory 'up "collects")])
 	 (if (directory-exists? try-dir)
 	     try-dir
-	     (let ([try-dir (build-path mred:system-source-directory 'up "mzscheme" "mzlib")])
+	     (let ([try-dir (build-path mred:system-source-directory 'up "mzscheme" "collects")])
 	       (if (directory-exists? try-dir)
 		   try-dir
-		   (let ([try-dir (build-path mred:system-source-directory 'up 'up "mzscheme" "mzlib")])
+		   (let ([try-dir (build-path mred:system-source-directory 'up 'up "mzscheme" "collects")])
 		     (if (directory-exists? try-dir)
 			 try-dir
 			 (let* ([v (getenv "PLTHOME")]
@@ -65,7 +65,7 @@
 					   "c:\\plt"]
 					  [else ; macintosh (there is no good default here)
 					   mred:system-source-directory]))])
-			   (build-path dir "mzscheme" "mzlib"))))))))])
+			   (build-path dir "mzscheme" "collects"))))))))])
 
   (unless (directory-exists? libdir)
     (wx:message-box "Cannot find the MzScheme libraries." "Error")

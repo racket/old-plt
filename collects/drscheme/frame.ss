@@ -14,7 +14,7 @@
 
     (define do-help
       (lambda ()
-	(mred:open-hyper-view (build-path mred:plt-directory
+	(mred:open-hyper-view (build-path mred:plt-home-directory
 					  "doc"
 					  "drscheme"
 					  "index.htm"))))

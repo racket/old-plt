@@ -75,7 +75,7 @@ wxPrintData::wxPrintData(void)
   PRINTDLG *pd = new PRINTDLG;
   printData = (void *)pd;
   
-  pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS | PD_HIDEPRINTTOFILE;
+  pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS /* | PD_HIDEPRINTTOFILE */;
   pd->lStructSize = sizeof(PRINTDLG);
   pd->hwndOwner = (HWND)NULL;
   pd->hDevMode = (HANDLE)NULL;

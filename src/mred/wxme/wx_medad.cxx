@@ -554,6 +554,24 @@ wxMenu *wxMediaCanvas::PopupForMedia(wxMediaBuffer *WXUNUSED(b), void *WXUNUSED(
 
 void wxMediaCanvas::OnChar(wxKeyEvent *event)
 {
+  /* Handle wheel here */
+  switch (event->KeyCode()) {
+  case WXK_WHEEL_UP:
+  case WXK_WHEEL_DOWN:
+    if (allowYScroll && !fakeYScroll) {
+      int x, y;
+      GetScroll(&x, &y);
+      y += ((event->KeyCode() == WXK_WHEEL_UP)
+	    ? -1
+	    : 1);
+      Scroll(x, y, 1);
+    }
+    return;
+  default:
+    break;
+  }
+
+
   if (media && !media->printing) {
     wxCanvasMediaAdmin *oldadmin;
     

@@ -456,6 +456,7 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
       totWidth = label_width;
 
     MoveWindow((HWND)ms_handle, x_offset, y_offset, totWidth, totHeight, TRUE);
+    ::InvalidateRect((HWND)ms_handle, NULL, TRUE);
 
     x_offset += cx1;
     y_offset += label_height + maxHeight/4;
@@ -494,6 +495,8 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
       x_offset += maxWidth + cx1;
     else
       y_offset += maxHeight + maxHeight/2;
+
+    ::InvalidateRect(radioButtons[i], NULL, TRUE);
   }
   OnSize(width, height);
 }

@@ -35,11 +35,17 @@ the C: drive, that directory would be
   C:\Microsoft Visual Studio\VC98\ATL
 
 The Microsoft HTML Help Workshop must be installed to
-build mysterx.dll.  The files are on the Visual Studio
+build mxmain.dll.  The files are on the Visual Studio
 CD in the directory HTMLHELP in the file HTMLHELP.EXE.  Run
 that program to install the files.  Alternatively, Help 
 Workshop may be downloaded from the Web, at
-http://msdn.microsoft.com/library/tools/htmlhelp/wkshp/download_main.htm
+
+ http://msdn.microsoft.com/library/default.asp?
+   url=/library/en-us/htmlhelp/html/vsconHH1Start.asp
+
+[The above URL is broken over two lines for readability.]
+Windows 2000 comes with HTML Help installed (probably 
+Windows XP Professional does as well.)
 
 The code for mx_element_focus in htmlutil.cxx uses the
 COM interface IHTMLElement2.  That interface is defined

@@ -2398,7 +2398,7 @@
 				 (flat-contract integer?)))
   (test-flat-contract '(and/c number? integer?) 1 3/2)
 
-  (test-flat-contract '(not/f integer?) #t 1)
+  (test-flat-contract '(not/c integer?) #t 1)
   (test-flat-contract '(=/c 2) 2 3)
   (test-flat-contract '(>=/c 5) 5 0)
   (test-flat-contract '(<=/c 5) 5 10)
@@ -2437,13 +2437,13 @@
   (test-flat-contract '(vectorof boolean?) (vector #t #f) (vector #f 3 #t))
   (test-flat-contract '(vectorof any?) (vector #t #f) 3)
   
-  (test-flat-contract '(vector/p boolean? (flat-contract integer?)) (vector #t 1) (vector 1 #f))
-  (test-flat-contract '(vector/p boolean? (flat-contract integer?)) (vector #t 1) #f)
+  (test-flat-contract '(vector/c boolean? (flat-contract integer?)) (vector #t 1) (vector 1 #f))
+  (test-flat-contract '(vector/c boolean? (flat-contract integer?)) (vector #t 1) #f)
 
-  (test-flat-contract '(cons/p boolean? (flat-contract integer?)) (cons #t 1) (cons 1 #f))
-  (test-flat-contract '(cons/p boolean? (flat-contract integer?)) (cons #t 1) #f)
-  (test-flat-contract '(list/p boolean? (flat-contract integer?)) (list #t 1) (list 1 #f))
-  (test-flat-contract '(list/p boolean? (flat-contract integer?)) (list #t 1) #f)
+  (test-flat-contract '(cons/c boolean? (flat-contract integer?)) (cons #t 1) (cons 1 #f))
+  (test-flat-contract '(cons/c boolean? (flat-contract integer?)) (cons #t 1) #f)
+  (test-flat-contract '(list/c boolean? (flat-contract integer?)) (list #t 1) (list 1 #f))
+  (test-flat-contract '(list/c boolean? (flat-contract integer?)) (list #t 1) #f)
 
   ;(test-flat-contract '(cons-immutable/c boolean? (flat-contract integer?)) (cons-immutable #t 1) (cons-immutable 1 #f))
   ;(test-flat-contract '(cons-immutable/c boolean? (flat-contract integer?)) (cons-immutable #t 1) #f)
@@ -2455,12 +2455,12 @@
   ;(test-flat-contract '(list-immutable/c boolean? (flat-contract integer?)) (list-immutable #t 1) (list #t 1))
   ;(test-flat-contract '(list-immutable/c (-> boolean? boolean?) integer?) (list-immutable (lambda (x) x) 1) #f)
   
-  (test-flat-contract '(box/p boolean?) (box #f) (box 1))
-  (test-flat-contract '(box/p (flat-contract boolean?)) (box #t) #f)
+  (test-flat-contract '(box/c boolean?) (box #f) (box 1))
+  (test-flat-contract '(box/c (flat-contract boolean?)) (box #t) #f)
   
-  (test-flat-contract '(flat-rec-contract sexp (cons/p sexp sexp) number?) '(1 2 . 3) '(1 . #f))
-  (test-flat-contract '(flat-murec-contract ([even1 (union null? (cons/p number? even2))] 
-                                             [even2 (cons/p number? even1)])
+  (test-flat-contract '(flat-rec-contract sexp (cons/c sexp sexp) number?) '(1 2 . 3) '(1 . #f))
+  (test-flat-contract '(flat-murec-contract ([even1 (union null? (cons/c number? even2))] 
+                                             [even2 (cons/c number? even1)])
                                             even1)
                       '(1 2 3 4)
                       '(1 2 3))
@@ -2549,7 +2549,7 @@
                                       (flat-contract integer?)))
   (test-name '(and/c number? (-> integer? integer?)) (and/c number? (-> integer? integer?)))
 
-  (test-name '(not/f integer?) (not/f integer?))
+  (test-name '(not/c integer?) (not/c integer?))
   (test-name '(=/c 5) (=/c 5))
   (test-name '(>=/c 5) (>=/c 5))
   (test-name '(<=/c 5) (<=/c 5))
@@ -2584,13 +2584,13 @@
   (test-name '(vectorof boolean?) (vectorof boolean?))
   (test-name '(vectorof any?) (vectorof any?))
   
-  (test-name '(vector/p boolean? integer?) (vector/p boolean? integer?))
-  (test-name '(vector/p boolean? integer?) (vector/p boolean? (flat-contract integer?)))
+  (test-name '(vector/c boolean? integer?) (vector/c boolean? integer?))
+  (test-name '(vector/c boolean? integer?) (vector/c boolean? (flat-contract integer?)))
 
-  (test-name '(cons/p boolean? integer?) (cons/p boolean? (flat-contract integer?)))
-  (test-name '(cons/p boolean? integer?) (cons/p boolean? (flat-contract integer?)))
-  (test-name '(cons/p boolean? (cons/p integer? null?)) (list/p boolean? (flat-contract integer?)))
-  (test-name '(cons/p boolean? (cons/p integer? null?)) (list/p boolean? (flat-contract integer?)))
+  (test-name '(cons/c boolean? integer?) (cons/c boolean? (flat-contract integer?)))
+  (test-name '(cons/c boolean? integer?) (cons/c boolean? (flat-contract integer?)))
+  (test-name '(cons/c boolean? (cons/c integer? null?)) (list/c boolean? (flat-contract integer?)))
+  (test-name '(cons/c boolean? (cons/c integer? null?)) (list/c boolean? (flat-contract integer?)))
 
   (test-name '(cons-immutable/c boolean? integer?) (cons-immutable/c boolean? (flat-contract integer?)))
   (test-name '(cons-immutable/c boolean? integer?) (cons-immutable/c boolean? (flat-contract integer?)))
@@ -2606,8 +2606,8 @@
   (test-name '(cons-immutable/c (-> boolean? boolean?) (cons-immutable/c integer? null?))
              (list-immutable/c (-> boolean? boolean?) integer?))
   
-  (test-name '(box/p boolean?) (box/p boolean?))
-  (test-name '(box/p boolean?) (box/p (flat-contract boolean?)))
+  (test-name '(box/c boolean?) (box/c boolean?))
+  (test-name '(box/c boolean?) (box/c (flat-contract boolean?)))
   (test-name "the-name" (flat-rec-contract the-name))
 
   (test-name '(object-contract) (object-contract))

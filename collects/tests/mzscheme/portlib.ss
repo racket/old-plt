@@ -5,6 +5,119 @@
 
 (require (lib "port.ss"))
 
+;; copy-port and make-pipe-with-specials tests
+(let ([s (let loop ([n 10000][l null])
+	   (if (zero? n)
+	       (apply bytes l)
+	       (loop (sub1 n) (cons (random 256) l))))])
+  (let-values ([(in out) (make-pipe-with-specials)])
+    (display s out)
+    (test #t 'pipe-same? (bytes=? s (read-bytes (bytes-length s) in)))
+    (test out sync/timeout 0 out)
+    (test #f sync/timeout 0 in)
+    (write-special 'hello? out)
+    (test 'hello? read-char-or-special in)
+    (display "123" out)
+    (write-special 'again! out)
+    (display "45" out)
+    (let ([s (make-bytes 5)])
+      (test 3 read-bytes-avail! s in)
+      (test #"123\0\0" values s)
+      (let ([p (read-bytes-avail! s in)])
+	(test #t procedure? p)
+	(test 'again! p 'ok 1 2 3))
+      (test 2 read-bytes-avail! s in)
+      (test #"453\0\0" values s)))
+  (let ([in (open-input-bytes s)]
+	[out (open-output-bytes)])
+    (copy-port in out)
+    (test #t 'copy-same? (bytes=? s (get-output-bytes out))))
+  (let* ([a (subbytes s 0 (max 1 (random (bytes-length s))))]
+	 [b (subbytes s (bytes-length a) (+ (bytes-length a)
+					    (max 1 (random (- (bytes-length s) (bytes-length a))))))]
+	 [c (subbytes s (+ (bytes-length a) (bytes-length b)))])
+    (define (go-stream close? copy? threads? peek?)
+      (printf "Go stream: ~a ~a ~a ~a~n" close? copy? threads? peek?)
+      (let*-values ([(in1 out) (make-pipe-with-specials)]
+		    [(in out1) (if copy?
+				   (make-pipe-with-specials)
+				   (values in1 out))])
+	(let ([w-th
+	       (lambda ()
+		 (display a out)
+		 (write-special '(first one) out)
+		 (display b out)
+		 (write-special '(second one) out)
+		 (display c out)
+		 (when close?
+		   (close-output-port out)))]
+	      [c-th (lambda ()
+		      (when copy?
+			(copy-port in1 out1)
+			(close-output-port out1)))]
+	      [r-th (lambda ()
+		      (let ([get-one-str
+			     (lambda (a)
+			       (let ([dest (make-bytes (bytes-length s))]
+				     [target (bytes-length a)])
+				 (let loop ([n 0])
+				   (let ([v (read-bytes-avail! dest in n)])
+				     (if (= target (+ v n))
+					 (test #t `(same? ,target) (equal? (subbytes dest 0 target) a))
+					 (loop (+ n v)))))))]
+			    [get-one-special
+			     (lambda (spec)
+			       (let ([v (read-bytes-avail! (make-bytes 10) in)])
+				 (test #t procedure? v)
+				 (test spec v 'ok 5 5 5)))])
+			(when peek?
+			  (test '(second one) peek-byte-or-special in (+ (bytes-length a) 1 (bytes-length b))))
+			(get-one-str a)
+			(get-one-special '(first one))
+			(get-one-str b)
+			(get-one-special '(second one))
+			(get-one-str c)
+			(if close?
+			    (test eof read-byte in)
+			    (test #f sync/timeout 0 in))))])
+	  (let ([th (if threads?
+			thread
+			(lambda (f) (f)))])
+	    (for-each (lambda (t)
+			(and (thread? t) (thread-wait t)))
+		      (list
+		       (th w-th)
+		       (th c-th)
+		       (th r-th)))))))
+    (go-stream #f #f #f #f)
+    (go-stream #t #f #f #f)
+    (go-stream #t #t #f #f)
+    (go-stream #t #f #t #f)
+    (go-stream #t #t #t #f)
+    (go-stream #t #f #f #t)
+    (go-stream #t #t #f #t)
+    (go-stream #t #f #t #t)
+    (go-stream #t #t #t #t)))
+
+;; pipe-with-specials and limit
+(let-values ([(in out) (make-pipe-with-specials 10)])
+  (test 10 write-bytes-avail #"1234567890ab" out)
+  (test #f sync/timeout 0 out)
+  (test #"1234" read-bytes 4 in)
+  (test out sync/timeout 0 out)
+  (test 4 write-bytes-avail #"xyzwqrst" out)
+  (test 0 write-bytes-avail* #"xyzwqrst" out)
+  (test #t write-special 'ok out)
+  ;; Now that we've written a special, text will go out, too
+  (test 8 write-bytes-avail* #"xyzwqrst" out)
+  (let ([s (make-bytes 40)])
+    (test 10 read-bytes-avail! s in)
+    (test #"567890xyzw" subbytes s 0 10))
+  (test 'ok read-char-or-special in)
+  (close-output-port out)
+  (test #"xyzwqrst" read-bytes 40 in)
+  (test eof read-bytes 40 in))
+
 ;; make-input-port/read-to-peek
 (define (make-list-port . l)
   (make-input-port/read-to-peek 

@@ -111,7 +111,7 @@
       (or (not limit)
 	  (and (number? limit) (positive? limit) (exact? limit) (integer? limit))
 	  (raise-type-error 'merge-input "positive exact integer or #f" limit))
-      (let-values ([(rd wt) (make-pipe limit)]
+      (let-values ([(rd wt) (make-pipe-with-specials limit)]
 		   [(other-done?) #f]
 		   [(sema) (make-semaphore 1)])
 	(let ([copy
@@ -372,22 +372,27 @@
 	  void)
 	 (make-output-port
 	  out-name
-	  always-evt
+	  w
 	  ;; write
 	  (lambda (str start end buffer? w/break?)
-	    (call-with-semaphore
-	     sema-semaphore
-	     (lambda ()
-	       (begin0
-		(if more-last
-		    (let ([p (cons (subbytes str start end) null)])
-		      (set-cdr! more-last p)
-		      (set! more-last p)
-		      (- end start))
-		    (write-bytes str w start end))
-		(when more-sema
-		  (semaphore-post more-sema)
-		  (set! more-sema #f))))))
+	    (if (= start end)
+		#t
+		(call-with-semaphore
+		 sema-semaphore
+		 (lambda ()
+		   (begin0
+		    (if more-last
+			(let ([p (cons (subbytes str start end) null)])
+			  (set-cdr! more-last p)
+			  (set! more-last p)
+			  (- end start))
+			(let ([v (write-bytes-avail* str w start end)])
+			  (if (zero? v)
+			      (wrap-evt w (lambda (x) #f))
+			      v)))
+		    (when more-sema
+		      (semaphore-post more-sema)
+		      (set! more-sema #f)))))))
 	  ;; close
 	  (lambda ()
 	    (call-with-semaphore

@@ -42,149 +42,149 @@
     (#(#x00110000) complete
      (#o364 #o220 #o200 #o200))
     ;; Missing start byte
-    (#() error
+    (#(#f) error
      (#o200))
-    (#() error
+    (#(#f) error
      (#o277))
-    (#() error
+    (#(#f #f) error
      (#o200 #o277))
-    (#() error
+    (#(#f #f #f) error
      (#o200 #o277 #o200))
-    (#() error
+    (#(#f #f #f #f) error
      (#o200 #o277 #o200 #o277))
-    (#() error
+    (#(#f #f #f #f #f) error
      (#o200 #o277 #o200 #o277 #o200))
-    (#() error
+    (#(#f #f #f #f #f #f) error
      (#o200 #o277 #o200 #o277 #o200 #o277))
-    (#() error
+    (#(#f #f #f #f #f #f #f) error
      (#o200 #o277 #o200 #o277 #o200 #o277 #o200))
-    (#() error
+    (#(#f) error
      (#o200))
-    (#() error
+    (#(#f) error
      (#o201))
-    (#() error
+    (#(#f) error
      (#o202))
-    (#() error
+    (#(#f) error
      (#o203))
-    (#() error
+    (#(#f) error
      (#o204))
-    (#() error
+    (#(#f) error
      (#o205))
-    (#() error
+    (#(#f) error
      (#o206))
-    (#() error
+    (#(#f) error
      (#o207))
-    (#() error
+    (#(#f) error
      (#o210))
-    (#() error
+    (#(#f) error
      (#o211))
-    (#() error
+    (#(#f) error
      (#o212))
-    (#() error
+    (#(#f) error
      (#o213))
-    (#() error
+    (#(#f) error
      (#o214))
-    (#() error
+    (#(#f) error
      (#o215))
-    (#() error
+    (#(#f) error
      (#o216))
-    (#() error
+    (#(#f) error
      (#o217))
-    (#() error
+    (#(#f) error
      (#o220))
-    (#() error
+    (#(#f) error
      (#o221))
-    (#() error
+    (#(#f) error
      (#o222))
-    (#() error
+    (#(#f) error
      (#o223))
-    (#() error
+    (#(#f) error
      (#o224))
-    (#() error
+    (#(#f) error
      (#o225))
-    (#() error
+    (#(#f) error
      (#o226))
-    (#() error
+    (#(#f) error
      (#o227))
-    (#() error
+    (#(#f) error
      (#o230))
-    (#() error
+    (#(#f) error
      (#o231))
-    (#() error
+    (#(#f) error
      (#o232))
-    (#() error
+    (#(#f) error
      (#o233))
-    (#() error
+    (#(#f) error
      (#o234))
-    (#() error
+    (#(#f) error
      (#o235))
-    (#() error
+    (#(#f) error
      (#o236))
-    (#() error
+    (#(#f) error
      (#o237))
-    (#() error
+    (#(#f) error
      (#o240))
-    (#() error
+    (#(#f) error
      (#o241))
-    (#() error
+    (#(#f) error
      (#o242))
-    (#() error
+    (#(#f) error
      (#o243))
-    (#() error
+    (#(#f) error
      (#o244))
-    (#() error
+    (#(#f) error
      (#o245))
-    (#() error
+    (#(#f) error
      (#o246))
-    (#() error
+    (#(#f) error
      (#o247))
-    (#() error
+    (#(#f) error
      (#o250))
-    (#() error
+    (#(#f) error
      (#o251))
-    (#() error
+    (#(#f) error
      (#o252))
-    (#() error
+    (#(#f) error
      (#o253))
-    (#() error
+    (#(#f) error
      (#o254))
-    (#() error
+    (#(#f) error
      (#o255))
-    (#() error
+    (#(#f) error
      (#o256))
-    (#() error
+    (#(#f) error
      (#o257))
-    (#() error
+    (#(#f) error
      (#o260))
-    (#() error
+    (#(#f) error
      (#o261))
-    (#() error
+    (#(#f) error
      (#o262))
-    (#() error
+    (#(#f) error
      (#o263))
-    (#() error
+    (#(#f) error
      (#o264))
-    (#() error
+    (#(#f) error
      (#o265))
-    (#() error
+    (#(#f) error
      (#o266))
-    (#() error
+    (#(#f) error
      (#o267))
-    (#() error
+    (#(#f) error
      (#o270))
-    (#() error
+    (#(#f) error
      (#o271))
-    (#() error
+    (#(#f) error
      (#o272))
-    (#() error
+    (#(#f) error
      (#o273))
-    (#() error
+    (#(#f) error
      (#o274))
-    (#() error
+    (#(#f) error
      (#o275))
-    (#() error
+    (#(#f) error
      (#o276))
-    (#() error
+    (#(#f) error
      (#o277))
     ;; 2-byte seqs with no continuation
     (#(#f 32) error
@@ -285,37 +285,37 @@
     (#(#f 32) error
      (#o357 #o40))
     ;; 3-byte seqs with partial continuation
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o340 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o341 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o342 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o343 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o344 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o345 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o346 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o347 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o350 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o351 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o352 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o353 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o354 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o355 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o356 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o357 #o203 #o40))
     ;; 4-byte seq with no continuations
     (#(#f 32) error
@@ -335,38 +335,38 @@
     (#(#f 32) error
      (#o367 #o40))
     ;; 4-byte seq with only 1 continuation
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o360 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o361 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o362 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o363 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o364 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o365 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o366 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o367 #o203 #o40))
     ;; 4-byte seq with only 2 continuation
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o360 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o361 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o362 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o363 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o364 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o365 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o366 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o367 #o203 #o203 #o40))
     ;; 5-byte seqs with no continuation
     (#(#f 32) error
@@ -378,31 +378,31 @@
     (#(#f 32) error
      (#o373 #o40))
     ;; 5-byte seqs with only 1 continuation
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o370 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o371 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o372 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o373 #o203 #o40))
     ;; 5-byte seqs with only 2 continuations
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o370 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o371 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o372 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o373 #o203 #o203 #o40))
     ;; 5-byte seqs with only 3 continuations
-    (#(#f 32) error
+    (#(#f #f #f #f 32) error
      (#o370 #o203 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f #f 32) error
      (#o371 #o203 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f #f 32) error
      (#o372 #o203 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f #f 32) error
      (#o373 #o203 #o203 #o203 #o40))
     ;; 6-byte seqs with no continuation
     (#(#f 32) error
@@ -410,69 +410,70 @@
     (#(#f 32) error
      (#o375 #o40))
     ;; 6-byte seqs with only 1 continuation
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o374 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f 32) error
      (#o375 #o203 #o40))
     ;; 6-byte seqs with only 2 continuation
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o374 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f 32) error
      (#o375 #o203 #o203 #o40))
     ;; 6-byte seqs with only 3 continuation
-    (#(#f 32) error
+    (#(#f #f #f #f 32) error
      (#o374 #o203 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f #f 32) error
      (#o375 #o203 #o203 #o203 #o40))
     ;; 6-byte seqs with only 4 continuation
-    (#(#f 32) error
+    (#(#f #f #f #f #f 32) error
      (#o374 #o203 #o203 #o203 #o203 #o40))
-    (#(#f 32) error
+    (#(#f #f #f #f #f 32) error
      (#o375 #o203 #o203 #o203 #o203 #o40))
     ;; Sequences with last continuation byte missing, eol instead of space
     (#(#f) aborts
      (#o300))
-    (#(#f) aborts
+    (#(#f #f) aborts
      (#o340 #o200))
     (#(#f) aborts
      (#o340))
-    (#(#f) aborts
+    (#(#f #f #f) aborts
      (#o360 #o200 #o200))
-    (#(#f) aborts
+    (#(#f #f) aborts
      (#o360 #o200))
-    (#(#f) aborts
+    (#(#f #f) aborts
      (#o360 #o200))
-    (#(#f) aborts
+    (#(#f #f #f #f) aborts
      (#o370 #o200 #o200 #o200))
     (#(#f) aborts
      (#o370))
-    (#(#f) aborts
+    (#(#f #f) aborts
      (#o370 #o200))
-    (#(#f) aborts
+    (#(#f #f #F) aborts
      (#o370 #o200 #o200))
-    (#(#f) aborts
+    (#(#f #f #f #f #f) aborts
      (#o374 #o200 #o200 #o200 #o200))
     (#(#f) aborts
      (#o374))
-    (#(#f) aborts
+    (#(#f #f) aborts
      (#o374 #o200))
-    (#(#f) aborts
+    (#(#f #f #f) aborts
      (#o374 #o200 #o200))
-    (#(#f) aborts
+    (#(#f #f #f #f) aborts
      (#o374 #o200 #o200 #o200))
     (#(#f) aborts
      (#o337))
-    (#(#f) aborts
+    (#(#f #f) aborts
      (#o357 #o277))
-    (#(#f) aborts
+    (#(#f #f #f) aborts
      (#o367 #o277 #o277))
-    (#(#f) aborts
+    (#(#f #f #f #f) aborts
      (#o373 #o277 #o277 #o277))
-    (#(#f) aborts
+    (#(#f #f #f #f #f) aborts
      (#o375 #o277 #o277 #o277 #o277))
     ;; Concatenation of incomplete sequences
-    (#(#f #f #f #f #f #f #f #f #f #f) error/aborts
-     (#o300 #o340 #o200 #o360 #o200 #o200 #o370 #o200 #o200 #o200 #o374 #o200 #o200 #o200 #o200 #o337 #o357 #o277 #o367 #o277 #o277 #o373 #o277 #o277 #o277 #o375 #o277 #o277 #o277 #o277))
+    (#(#f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #f #F #f #f #f #f #f #f #f #f #f #f) error/aborts
+     (#o300 #o340 #o200 #o360 #o200 #o200 #o370 #o200 #o200 #o200 #o374 #o200 #o200 #o200 #o200 #o337 #o357 #o277 #o367 #o277 #o277 #o373 #o277 #o277 #o277 #o375 #o277 #o277 #o277 #o277)
+     5)
     ;; Impossible bytes
     (#(#f) error
      (#o376))
@@ -481,72 +482,74 @@
     (#(#f #f #f #f) error
      (#o376 #o376 #o377 #o377))
     ;; Overlong
-    (#(#f) error
+    (#(#f #f) error
      (#o300 #o257))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o340 #o200 #o257))
-    (#(#f) error
+    (#(#f #f #f #f) error
      (#o360 #o200 #o200 #o257))
-    (#(#f) error
+    (#(#f #f #f #f #f) error
      (#o370 #o200 #o200 #o200 #o257))
-    (#(#f) error
+    (#(#f #f #f #f #f #f) error
      (#o374 #o200 #o200 #o200 #o200 #o257))
-    (#(#f) error
+    (#(#f #f) error
      (#o301 #o277))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o340 #o237 #o277))
-    (#(#f) error
+    (#(#f #f #f #f) error
      (#o360 #o217 #o277 #o277))
-    (#(#f) error
+    (#(#f #f #f #f #f) error
      (#o370 #o207 #o277 #o277 #o277))
-    (#(#f) error
+    (#(#f #f #f #f #f #f) error
      (#o374 #o203 #o277 #o277 #o277 #o277))
-    (#(#f) error
+    (#(#f #f) error
      (#o300 #o200))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o340 #o200 #o200))
-    (#(#f) error
+    (#(#f #f #f #f) error
      (#o360 #o200 #o200 #o200))
-    (#(#f) error
+    (#(#f #f #f #f #f) error
      (#o370 #o200 #o200 #o200 #o200))
-    (#(#f) error
+    (#(#f #f #f #f #f #f) error
      (#o374 #o200 #o200 #o200 #o200 #o200))
     ;; illedgal surrogates
-    (#(#f) error
+    (#(#f #f #f) error
      (#o355 #o240 #o200))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o355 #o255 #o277))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o355 #o256 #o200))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o355 #o257 #o277))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o355 #o260 #o200))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o355 #o276 #o200))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o355 #o277 #o277))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o240 #o200 #o355 #o260 #o200))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o240 #o200 #o355 #o277 #o277))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o255 #o277 #o355 #o260 #o200))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o255 #o277 #o355 #o277 #o277))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o256 #o200 #o355 #o260 #o200))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o256 #o200 #o355 #o277 #o277))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o257 #o277 #o355 #o260 #o200))
-    (#(#f #f) error
+    (#(#f #f #f #f #f #f) error
      (#o355 #o257 #o277 #o355 #o277 #o277))
     ;; Other illegal code positions
-    (#(#f) error
+    (#(#f #f #f) error
      (#o357 #o277 #o276))
-    (#(#f) error
+    (#(#f #f #f) error
      (#o357 #o277 #o277))))
+
+(define (string->print s) (map char->integer (string->list s)))
 
 (define bytes->unicode-vector
   (case-lambda
@@ -671,9 +674,11 @@
 				    (test 'aborts 'status status)
 				    (let ([code-points (list->vector
 							(reverse
-							 (cdr
+							 (list-tail
 							  (reverse
-							   (vector->list code-points)))))])
+							   (vector->list code-points))
+							  ;; indicates how many to be unused due to abort:
+							  (cadddr p))))])
 				      (test (+ (vector-length code-points) pl) bytes-length s2)
 				      (test (append (bytes->list prefix)
 						    (map 
@@ -738,7 +743,8 @@
 						       #t)))
 					    (let ([rs (read-string (string-length us) in)])
 					      (and (or (equal? us rs)
-						       (test us `(,i of 10 for ,(caddr p) with ,read-string) rs))
+						       (test (string->print us) `(,i of 10 for ,(caddr p) with ,read-string) 
+							     (string->print rs)))
 						   (loop (add1 i)))))))))])
 		    (go read-string)
 		    ;; Peek-string at front, consistent with read-string:
@@ -771,7 +777,21 @@
 					 [b (read-char p)])
 				     (if (equal? a b)
 					 (cons a (loop (add1 i)))
-					 (list* #\* a b #\* (loop (add1 i))))))))))))))
+					 (list* #\* a b #\* (loop (add1 i))))))))))
+		    ;; Read-string, one or two at a time
+		    (let ([read-n
+			   (lambda (n p d)
+			     (let loop ([n n][a null])
+			       (if (zero? n)
+				   (apply string-append (reverse a))
+				   (let ([s (read-string (min d n) p)])
+				     (if (eof-object? s)
+					 (if (null? a)
+					     s
+					     (loop 0 a))
+					 (loop (- n (min d n)) (cons s a)))))))])
+		      (go (lambda (n p) (read-n n p 1)))
+		      (go (lambda (n p) (read-n n p 2))))))))
 	    basic-utf-8-tests))
 
 ;; Seems like this sort of thing should be covered above, and maybe it

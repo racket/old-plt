@@ -263,6 +263,22 @@
 (test '(letrec) (tree-map syntax-e) (syntax-property (expand #'(letrec ([x 10]) x)) 'origin))
 (test '(let*-values) (tree-map syntax-e) (syntax-property (expand #'(let*-values ([(x) 10]) x)) 'origin))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Symbol Keys
+(test null syntax-property-symbol-keys #'a)
+(let ([ssort (lambda (l)
+	       (if (equal? l '(yep aha))
+		   '(aha yep)
+		   l))])
+  (test '(aha) syntax-property-symbol-keys (syntax-property #'a 'aha 1))
+  (test '(aha yep) ssort (syntax-property-symbol-keys (syntax-property (syntax-property #'a 'aha 1) 'yep 2)))
+  (test '(aha yep) ssort (syntax-property-symbol-keys (syntax-property 
+						       (syntax-property 
+							(syntax-property #'a 'aha 1) 
+							'yep 2)
+						       'aha 3))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test module-identifier=? on different phases via syntax-case*
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

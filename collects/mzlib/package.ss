@@ -444,7 +444,7 @@
 	     ;;   env is an (id-stx . id-stx) mapping - names exported by the package
 	     ;;   rns is an (id-stx . id-stx) mapping - names defined in the package
 	     ;;   subs is a table mapping defined id-stx to sub-package mappings
-	     [cp-env+rns+subs/s (let ([cps (syntax-local-value #'current-package (lambda () #f))])
+	     [cp-env+rns+subs+ispre/s (let ([cps (syntax-local-value #'current-package (lambda () #f))])
 				  (map (lambda (cp) (open cp cp stx))
 				       cps))]
 	     ;; Reverse-map renaming due to being in a package body. In other words,
@@ -452,44 +452,44 @@
 	     ;;  package, and we're about to look in a table that maps original
 	     ;;  names to something, so we need to reverse-map the name.
 	     [cp-orig-name (lambda (id)
-			     (let loop ([id id][cp-env+rns+subs/s cp-env+rns+subs/s])
-			       (if (null? cp-env+rns+subs/s)
+			     (let loop ([id id][cp-env+rns+subs+ispre/s cp-env+rns+subs+ispre/s])
+			       (if (null? cp-env+rns+subs+ispre/s)
 				   id
 				   (let ([in-pack-bind
 					  (ormap (lambda (p)
 						   (and (bound-identifier=? (cdr p) id)
 							p))
-						 (cadr (car cp-env+rns+subs/s)))])
+						 (cadr (car cp-env+rns+subs+ispre/s)))])
 				     (loop (if in-pack-bind
 					       (car in-pack-bind)
 					       id)
-					   (cdr cp-env+rns+subs/s))))))]
+					   (cdr cp-env+rns+subs+ispre/s))))))]
 	     ;; Reverse-map renaming due to being in a package
 	     ;;  body. For example, we have an "x" that we want to
 	     ;;  shadow, but the correct shadower must use the new name
 	     ;;  in the enclosing package.
 	     [cp-current-name (lambda (id)
-				(let loop ([id id][cp-env+rns+subs/s cp-env+rns+subs/s])
-				  (if (null? cp-env+rns+subs/s)
+				(let loop ([id id][cp-env+rns+subs+ispre/s cp-env+rns+subs+ispre/s])
+				  (if (null? cp-env+rns+subs+ispre/s)
 				      id
-				      (let ([in-pack-bind (stx-assoc id (cadr (car cp-env+rns+subs/s)))])
+				      (let ([in-pack-bind (stx-assoc id (cadr (car cp-env+rns+subs+ispre/s)))])
 					(loop (if in-pack-bind
 						  (cdr in-pack-bind)
 						  id)
-					      (cdr cp-env+rns+subs/s))))))])
-	;; Find the package. See above for a remainder of env+rns+subs.
+					      (cdr cp-env+rns+subs+ispre/s))))))])
+	;; Find the package. See above for a remainder of env+rns+subs+ispre.
 	;; The `rename-chain' variable binds an (stx . -> stx).
-	(let*-values ([(env+rns+subs rename-chain)
+	(let*-values ([(env+rns+subs+ispre rename-chain)
 		       ;; Find the initial package. `open' reports an error if it can't find one
-		       (let ([env+rns+subs (open (car path) orig-name stx)])
-			 (walk-path (cdr path) env+rns+subs stx values cp-orig-name))])
-	  (let* ([env (and env+rns+subs 
-			   (let ([e (car env+rns+subs)])
+		       (let ([env+rns+subs+ispre (open (car path) orig-name stx)])
+			 (walk-path (cdr path) env+rns+subs+ispre stx values cp-orig-name))])
+	  (let* ([env (and env+rns+subs+ispre 
+			   (let ([e (car env+rns+subs+ispre)])
 			     (if ex-name
 				 (let ([a (stx-assoc 
 					   (let ([id (syntax-local-introduce ex-name)])
 					     (cp-orig-name id))
-					   (car env+rns+subs))])
+					   (car env+rns+subs+ispre))])
 				   (unless a
 				     (raise-syntax-error
 				      #f
@@ -512,14 +512,29 @@
 				  (cons (if bind-name
 					    shadower ; which is bind-name
 					    (syntax-local-introduce shadower))
-					(syntax-local-introduce (cp-current-name (cdr x)))))
+					;; If the source module is defined in the same
+					;; internal-definition context as this open, then we must
+					;; introduce the use of the package export.
+					;;
+					;; If the source source module comes from elsewhere, we
+					;; must not introduce it, in case the new and original
+					;; name are the same (so the new binding might capture
+					;; the reference to the original binding.
+					;; 
+					;; Note that if the names are the same and the
+					;; context are the same, the choise doens't matter,
+					;; because a dup-defn error will be reported.
+					((if (cadddr env+rns+subs+ispre)
+					     syntax-local-introduce 
+					     values)
+					 (cp-current-name (cdr x)))))
 				env shadowers)]
 			  [def-stxes def])
 	      ;; In case another `open' follows this one in an
 	      ;; internal-defn position, register renames for
 	      ;; packages that we just made available:
 	      (let* ([ctx (syntax-local-context)]
-		     [subs (caddr env+rns+subs)])
+		     [subs (caddr env+rns+subs+ispre)])
 		(when (pair? ctx)
 		  (for-each (lambda (x shadower)
 			      (re-pre-register-package subs ctx 

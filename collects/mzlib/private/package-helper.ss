@@ -93,7 +93,8 @@
 		    all-renames)
 	       ;; Each package in the sub-ht table needs to be fixed
 	       ;; up with the renamings introduced by the enclosing package.
-	       (convert-subs sub-ht introducers protect-stx))))))
+	       (convert-subs sub-ht introducers protect-stx)
+	       #t)))))
 
   ;; Just a hash-table wrapper
   (define (do-pre-register-package immediate-ctx name val)
@@ -157,7 +158,8 @@
 				  ;; The main fixup operation:
 				  (intro-mark-to-localize (cdr i) introducers protect-stx)))
 			  (cadr v))
-		     (convert-subs (caddr v) introducers protect-stx)))))
+		     (convert-subs (caddr v) introducers protect-stx)
+		     #t))))
 	   naya)))
 
   ;; Mainly applies the introducers, but those introducers are
@@ -203,18 +205,18 @@
   ;; If the id was input to the current macro expander, it
   ;;  as been introduced (so we need to un-introduce it
   ;;  before using syntax-local-value).
-  ;; The resulting env+rns+subs will have #f for subs when
+  ;; The resulting env+rns+subs+ispre will have #f for subs when
   ;;  the package is found by `syntax-local-introduce'. In
   ;;  that case, sub-packages will be found in the
   ;;  environment, too.
   (define (get-renames id err try-pre?)
-    (let ([env+rns+subs 
+    (let ([env+rns+subs+ispre 
 	   (or (and try-pre?
 		    (get-pre-registered-package (syntax-local-context) id))
 	       (let ([v (syntax-local-value (syntax-local-introduce id) (err id))])
 		 (and (str? v)
-		      (list (str-renames v) (str-all-renames v) #f))))])
-      (or env+rns+subs
+		      (list (str-renames v) (str-all-renames v) #f #f))))])
+      (or env+rns+subs+ispre
 	  ((err id)))))
   
   ;; Wraps `get-renames' with suitable error handling.
@@ -228,40 +230,40 @@
 								    name))))))
       (get-renames (syntax-local-introduce name) err #t)))
 
-  ;; Given an initial package description (as env+rns+subs), find
+  ;; Given an initial package description (as env+rns+subs+ispre), find
   ;;  the innermost package indicated by `path'. The `stx'
   ;;  argument is for error reporting, the `rename' argument
   ;;  accumulates a renamer for environment lookups, and 
   ;;  `cp-rename' reverse-maps source ids for table lookups 
   ;;  (when we're in an enclosing package).
-  ;; When env+rns+subs has a non-#f subs, then we'll always
+  ;; When env+rns+subs+ispre has a non-#f subs, then we'll always
   ;;  walk pre-registration info, and the renamer is
   ;;  not extended.
-  (define (walk-path path env+rns+subs stx rename cp-rename)
-    (let loop ([path path][env+rns+subs env+rns+subs][rename rename])
+  (define (walk-path path env+rns+subs+ispre stx rename cp-rename)
+    (let loop ([path path][env+rns+subs+ispre env+rns+subs+ispre][rename rename])
       (cond
-       [(null? path) (values env+rns+subs rename)]
+       [(null? path) (values env+rns+subs+ispre rename)]
        [else (let* (;; Revser-map id, in case we're in an enclosing package:
 		    [id (cp-rename (syntax-local-introduce (car path)))]
 		    ;; If we have a sub-package table, it maps the 
 		    ;;  original name, otherwise we need to search
 		    ;;  based on the renamed package in an enclosing package.
-		    [new-name (if (caddr env+rns+subs)
+		    [new-name (if (caddr env+rns+subs+ispre)
 				  (cons id id)
-				  (stx-assoc id (cadr env+rns+subs)))]
+				  (stx-assoc id (cadr env+rns+subs+ispre)))]
 		    [v (and new-name
-			    (if (caddr env+rns+subs)
-				(bound-identifier-mapping-get (caddr env+rns+subs) 
+			    (if (caddr env+rns+subs+ispre)
+				(bound-identifier-mapping-get (caddr env+rns+subs+ispre) 
 							      (cdr new-name)
 							      (lambda () #f))
 				(get-renames (rename (cdr new-name))
 					     (lambda (x) (lambda () #f))
 					     #f)))])
 	       (if v
-		   (loop (cdr path) v (if (caddr env+rns+subs)
+		   (loop (cdr path) v (if (caddr env+rns+subs+ispre)
 					  rename
 					  (lambda (id)
-					    (let ([a (stx-assoc id (cadr env+rns+subs))])
+					    (let ([a (stx-assoc id (cadr env+rns+subs+ispre))])
 					      (rename (if a
 							  (cdr a)
 							  id))))))

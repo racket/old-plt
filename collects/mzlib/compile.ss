@@ -47,7 +47,7 @@
 		       (let loop ()
 			 (let ([r (read-syntax src in)])
 			   (unless (eof-object? r)
-			     (write (compile (filter r)) out)
+			     (write (compile-syntax (filter (namespace-syntax-introduce r))) out)
 			     (loop))))
 		       (set! ok? #t))
 		     (lambda () 

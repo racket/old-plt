@@ -354,7 +354,7 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
   int sj;
   static void *mcache = 0;
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "do-edit", &mcache);
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSnip_class, "do-edit-operation", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -984,13 +984,13 @@ static Scheme_Object *os_wxSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Object 
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit in snip%");
+  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in snip%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-edit in snip%");
+    x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in snip%");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "do-edit in snip%");
+    x2 = objscheme_unbundle_integer(p[2], "do-edit-operation in snip%");
   } else
     x2 = 0;
 
@@ -1623,7 +1623,7 @@ if (os_wxSnip_class) {
  scheme_add_method_w_arity(os_wxSnip_class, "write", os_wxSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxSnip_class, "match?", os_wxSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxSnip_class, "do-font", os_wxSnipDoFont, 1, 2);
- scheme_add_method_w_arity(os_wxSnip_class, "do-edit", os_wxSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxSnip_class, "do-edit-operation", os_wxSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxSnip_class, "own-caret", os_wxSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxSnip_class, "adjust-cursor", os_wxSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxSnip_class, "on-char", os_wxSnipOnChar, 6, 6);
@@ -1938,7 +1938,7 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
   int sj;
   static void *mcache = 0;
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "do-edit", &mcache);
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTextSnip_class, "do-edit-operation", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -2579,13 +2579,13 @@ static Scheme_Object *os_wxTextSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Obj
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit in text-snip%");
+  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in text-snip%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-edit in text-snip%");
+    x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in text-snip%");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "do-edit in text-snip%");
+    x2 = objscheme_unbundle_integer(p[2], "do-edit-operation in text-snip%");
   } else
     x2 = 0;
 
@@ -3040,7 +3040,7 @@ if (os_wxTextSnip_class) {
  scheme_add_method_w_arity(os_wxTextSnip_class, "write", os_wxTextSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxTextSnip_class, "match?", os_wxTextSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxTextSnip_class, "do-font", os_wxTextSnipDoFont, 1, 2);
- scheme_add_method_w_arity(os_wxTextSnip_class, "do-edit", os_wxTextSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxTextSnip_class, "do-edit-operation", os_wxTextSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxTextSnip_class, "own-caret", os_wxTextSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxTextSnip_class, "adjust-cursor", os_wxTextSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxTextSnip_class, "on-char", os_wxTextSnipOnChar, 6, 6);
@@ -3343,7 +3343,7 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
   int sj;
   static void *mcache = 0;
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "do-edit", &mcache);
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTabSnip_class, "do-edit-operation", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -3939,13 +3939,13 @@ static Scheme_Object *os_wxTabSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Obje
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit in tab-snip%");
+  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in tab-snip%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-edit in tab-snip%");
+    x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in tab-snip%");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "do-edit in tab-snip%");
+    x2 = objscheme_unbundle_integer(p[2], "do-edit-operation in tab-snip%");
   } else
     x2 = 0;
 
@@ -4393,7 +4393,7 @@ if (os_wxTabSnip_class) {
  scheme_add_method_w_arity(os_wxTabSnip_class, "write", os_wxTabSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "match?", os_wxTabSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "do-font", os_wxTabSnipDoFont, 1, 2);
- scheme_add_method_w_arity(os_wxTabSnip_class, "do-edit", os_wxTabSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxTabSnip_class, "do-edit-operation", os_wxTabSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxTabSnip_class, "own-caret", os_wxTabSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxTabSnip_class, "adjust-cursor", os_wxTabSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxTabSnip_class, "on-char", os_wxTabSnipOnChar, 6, 6);
@@ -4768,7 +4768,7 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
   int sj;
   static void *mcache = 0;
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "do-edit", &mcache);
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxImageSnip_class, "do-edit-operation", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -5474,13 +5474,13 @@ static Scheme_Object *os_wxImageSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Ob
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit in image-snip%");
+  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in image-snip%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-edit in image-snip%");
+    x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in image-snip%");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "do-edit in image-snip%");
+    x2 = objscheme_unbundle_integer(p[2], "do-edit-operation in image-snip%");
   } else
     x2 = 0;
 
@@ -5953,7 +5953,7 @@ if (os_wxImageSnip_class) {
  scheme_add_method_w_arity(os_wxImageSnip_class, "write", os_wxImageSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "match?", os_wxImageSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "do-font", os_wxImageSnipDoFont, 1, 2);
- scheme_add_method_w_arity(os_wxImageSnip_class, "do-edit", os_wxImageSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxImageSnip_class, "do-edit-operation", os_wxImageSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxImageSnip_class, "own-caret", os_wxImageSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxImageSnip_class, "adjust-cursor", os_wxImageSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxImageSnip_class, "on-char", os_wxImageSnipOnChar, 6, 6);
@@ -6261,7 +6261,7 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
   int sj;
   static void *mcache = 0;
 
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "do-edit", &mcache);
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaSnip_class, "do-edit-operation", &mcache);
   if (method && !OBJSCHEME_PRIM_METHOD(method)) {
     COPY_JMPBUF(savebuf, scheme_error_buf);
     sj = scheme_setjmp(scheme_error_buf);
@@ -7176,13 +7176,13 @@ static Scheme_Object *os_wxMediaSnipDoEdit(Scheme_Object *obj, int n,  Scheme_Ob
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "do-edit in editor-snip%");
+  x0 = objscheme_unbundle_integer(p[0], "do-edit-operation in editor-snip%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "do-edit in editor-snip%");
+    x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in editor-snip%");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "do-edit in editor-snip%");
+    x2 = objscheme_unbundle_integer(p[2], "do-edit-operation in editor-snip%");
   } else
     x2 = 0;
 
@@ -7749,7 +7749,7 @@ if (os_wxMediaSnip_class) {
  scheme_add_method_w_arity(os_wxMediaSnip_class, "write", os_wxMediaSnipWrite, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "match?", os_wxMediaSnipMatch, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "do-font", os_wxMediaSnipDoFont, 1, 2);
- scheme_add_method_w_arity(os_wxMediaSnip_class, "do-edit", os_wxMediaSnipDoEdit, 1, 3);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "do-edit-operation", os_wxMediaSnipDoEdit, 1, 3);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "own-caret", os_wxMediaSnipOwnCaret, 1, 1);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "adjust-cursor", os_wxMediaSnipAdjustCursor, 6, 6);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "on-char", os_wxMediaSnipOnChar, 6, 6);

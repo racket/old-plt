@@ -15,7 +15,7 @@
 @ s "adjust-cursor" : wxCursor^ AdjustCursor(wxDC!,float,float,float,float,wxMouseEvent%); : : /CHECKOK[0.METHODNAME("snip%","adjust-cursor")]
 @ s "own-caret" : void OwnCaret(bool); 
 
-@ s "do-edit" : void DoEdit(int,bool=TRUE,long=0);
+@ s "do-edit-operation" : void DoEdit(int,bool=TRUE,long=0);
 @ s "do-font" : void DoFont(int,bool=TRUE);
 @ s "match?" : bool Match(wxSnip!);
 

@@ -147,7 +147,6 @@ static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
 static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
   void* x0;
 
   
@@ -157,11 +156,11 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
     x0 = NULL;
 
   
-  r = wxSchemeYield(x0);
+  wxSchemeYield(x0);
 
   
   
-  return (r ? scheme_true : scheme_false);
+  return scheme_void;
 }
 
 #pragma argsused
@@ -522,8 +521,8 @@ void objscheme_setup_wxsGlobal(void *env)
   scheme_install_xc_global("is-busy?", scheme_make_prim_w_arity(wxsGlobalwxIsBusy, "is-busy?", 0, 0), env);
   scheme_install_xc_global("begin-busy-cursor", scheme_make_prim_w_arity(wxsGlobalwxBeginBusyCursor, "begin-busy-cursor", 0, 0), env);
   scheme_install_xc_global("make-meta-file-placeable", scheme_make_prim_w_arity(wxsGlobalwxMakeMetaFilePlaceable, "make-meta-file-placeable", 6, 6), env);
-  scheme_install_xc_global("display-depth", scheme_make_prim_w_arity(wxsGlobalwxDisplayDepth, "display-depth", 0, 0), env);
-  scheme_install_xc_global("color-display?", scheme_make_prim_w_arity(wxsGlobalwxColourDisplay, "color-display?", 0, 0), env);
+  scheme_install_xc_global("get-display-depth", scheme_make_prim_w_arity(wxsGlobalwxDisplayDepth, "get-display-depth", 0, 0), env);
+  scheme_install_xc_global("is-color-display?", scheme_make_prim_w_arity(wxsGlobalwxColourDisplay, "is-color-display?", 0, 0), env);
   scheme_install_xc_global("file-selector", scheme_make_prim_w_arity(wxsGlobalwxFileSelector, "file-selector", 1, 9), env);
 }
 

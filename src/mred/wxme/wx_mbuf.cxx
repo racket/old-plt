@@ -92,6 +92,9 @@ long wxMediaBuffer::bmHeight, wxMediaBuffer::bmWidth;
 Bool wxMediaBuffer::offscreenInUse = OFFSCREEN_IN_USE_INIT;
 wxMediaBuffer *wxMediaBuffer::lastUsedOffscreen = NULL;
 
+typedef struct { short type; } Scheme_Object;
+extern wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char*, int);
+extern Scheme_Object *objscheme_bundle_wxMediaBuffer(wxMediaBuffer*);
 
 /******************************************************************/
 
@@ -197,7 +200,8 @@ wxMediaBuffer::~wxMediaBuffer()
 void wxMediaBuffer::OnLocalEvent(wxMouseEvent &event)
 {
   if (map) {
-    if (map->HandleMouseEvent(this, event))
+    Scheme_Object *edit = objscheme_bundle_wxMediaBuffer(this);
+    if (map->HandleMouseEvent(edit, event))
       return;
     else if (!event.Moving())
       map->BreakSequence();
@@ -209,7 +213,8 @@ void wxMediaBuffer::OnLocalEvent(wxMouseEvent &event)
 void wxMediaBuffer::OnLocalChar(wxKeyEvent &event)
 {
   if (map) {
-    if (map->HandleKeyEvent(this, event))
+    Scheme_Object *edit = objscheme_bundle_wxMediaBuffer(this);
+    if (map->HandleKeyEvent(edit, event))
       return;
     else
       map->BreakSequence();
@@ -2056,9 +2061,6 @@ Bool wxMediaBuffer::GetLoadOverwritesStyles()
 
 
 /****************************************************************/
-
-typedef struct { short type; } Scheme_Object;
-extern wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char*, int);
 
 #define edf(name, action, kname) \
      static Bool ed_##name(void *vb, wxKeyEvent kname, void *) \

@@ -17,7 +17,6 @@
  clipboard-client%
  color%
  color-database%
- color-display?
  control-event%
  const-editor-snip-xinset
  const-editor-snip-xmargin
@@ -27,7 +26,7 @@
  current-ps-setup
  cursor%
  dc<%>
- display-depth
+ get-display-depth
  end-busy-cursor
  event%
  event-dispatch-handler
@@ -39,7 +38,7 @@
  font%
  font-list%
  font-name-directory%
- get-font-list
+ get-face-list
  get-editor-print-margin
  get-resource
  get-the-buffer-data-class-list
@@ -49,6 +48,7 @@
  image-snip%
  int-point%
  is-busy?
+ is-color-display?
  key-event%
  keymap%
  make-eventspace

@@ -1917,8 +1917,8 @@ static Scheme_Object *os_wxMediaBufferwxbDCToBuffer(Scheme_Object *obj, int n,  
   double x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc-location-to-buffer-location in editor<%>");
-  x1 = objscheme_unbundle_float(p[1], "dc-location-to-buffer-location in editor<%>");
+  x0 = objscheme_unbundle_float(p[0], "dc-location-to-editor-location in editor<%>");
+  x1 = objscheme_unbundle_float(p[1], "dc-location-to-editor-location in editor<%>");
 
   
   r = wxbDCToBuffer(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata), x0, x1);
@@ -1938,8 +1938,8 @@ static Scheme_Object *os_wxMediaBufferwxbBufferToDC(Scheme_Object *obj, int n,  
   double x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "buffer-location-to-dc-location in editor<%>");
-  x1 = objscheme_unbundle_float(p[1], "buffer-location-to-dc-location in editor<%>");
+  x0 = objscheme_unbundle_float(p[0], "editor-location-to-dc-location in editor<%>");
+  x1 = objscheme_unbundle_float(p[1], "editor-location-to-dc-location in editor<%>");
 
   
   r = wxbBufferToDC(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata), x0, x1);
@@ -4288,8 +4288,8 @@ if (os_wxMediaBuffer_class) {
 } else {
   os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 108);
 
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-buffer-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
- scheme_add_method_w_arity(os_wxMediaBuffer_class, "buffer-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-inactive-caret-threshold", os_wxMediaBufferSetInactiveCaretThreshold, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-inactive-caret-threshold", os_wxMediaBufferGetInactiveCaretThreshold, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-focus-snip", os_wxMediaBufferGetFocusSnip, 0, 0);

@@ -173,8 +173,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @MACRO bundleAny = ((Scheme_Object *){x})
  
-@ m "buffer-location-to-dc-location" : void*/bundleAny wxbBufferToDC(double, double);
-@ m "dc-location-to-buffer-location" : void*/bundleAny wxbDCToBuffer(double, double);
+@ m "editor-location-to-dc-location" : void*/bundleAny wxbBufferToDC(double, double);
+@ m "dc-location-to-editor-location" : void*/bundleAny wxbDCToBuffer(double, double);
 
 @END
 

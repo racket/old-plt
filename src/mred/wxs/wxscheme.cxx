@@ -76,9 +76,7 @@ static void collect_end_callback(void);
 
 static void wxScheme_Install(Scheme_Env *env, void *global_env);
 
-static Scheme_Object *pref_dir_symbol, *pref_file_symbol, 
-  *setup_file_symbol, *init_file_symbol, *init_dir_symbol, 
-  *temp_dir_symbol, *autosaves_file_symbol;
+static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
 static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user;
 
@@ -131,12 +129,7 @@ void wxsScheme_setup(Scheme_Env *env)
   objscheme_init(env);
 
   setup_file_symbol = scheme_intern_symbol("setup-file");
-  pref_dir_symbol = scheme_intern_symbol("pref-dir");
-  pref_file_symbol = scheme_intern_symbol("pref-file");
   init_file_symbol = scheme_intern_symbol("init-file");
-  init_dir_symbol = scheme_intern_symbol("init-dir");
-  autosaves_file_symbol = scheme_intern_symbol("autosaves-file");
-  temp_dir_symbol = scheme_intern_symbol("temp-dir");
 
   rec->count = 0;
 
@@ -1031,22 +1024,16 @@ extern char *wxmac_startup_directory;
 static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
 {
   enum {
-    id_pref_file,
     id_init_file,
-    id_setup_file,
-    id_autosaves_file
+    id_setup_file
   };
 
   int which;
 
-  if (argv[0] == pref_file_symbol)
-    which = id_pref_file;
-  else if (argv[0] == init_file_symbol)
+  if (argv[0] == init_file_symbol)
     which = id_init_file;
   else if (argv[0] == setup_file_symbol)
     which = id_setup_file;
-  else if (argv[0] == autosaves_file_symbol)
-    which = id_autosaves_file;
   else {
     scheme_wrong_type("find-mred-path", "find-mred-path-symbol",
 		      0, argc, argv);
@@ -1061,10 +1048,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   int ends_in_slash;
   ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
 
-  if (which == id_pref_file)
-    return scheme_append_string(home,
-				scheme_make_string("/.mred.prefs" + ends_in_slash));
-
   if (which == id_init_file)
     return scheme_append_string(home,
 				scheme_make_string("/.mredrc" + ends_in_slash));
@@ -1072,10 +1055,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_setup_file)
     return scheme_append_string(home,
 				scheme_make_string("/.mred.resources" + ends_in_slash));
-
-  if (which == id_autosaves_file)
-    return scheme_append_string(home,
-				scheme_make_string("/.mred.saves" + ends_in_slash));
 #endif
 
 #ifdef wx_msw
@@ -1117,10 +1096,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];
   ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
 
-  if (which == id_pref_file)
-    return scheme_append_string(home,
-				scheme_make_string("\\mred.pre" + ends_in_slash));
-
   if (which == id_init_file)
     return scheme_append_string(home,
 				scheme_make_string("\\mredrc.ss" + ends_in_slash));
@@ -1128,10 +1103,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_setup_file)
     return scheme_append_string(home,
 				scheme_make_string("\\mred.ini" + ends_in_slash));  
-
-  if (which == id_autosaves_file)
-    return scheme_append_string(home,
-				scheme_make_string("\\mred.asv" + ends_in_slash));  
 #endif
 
 #ifdef wx_mac
@@ -1161,10 +1132,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   int ends_in_colon;
   ends_in_colon = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == ':';
 
-  if (which == id_pref_file)
-    return scheme_append_string(home,
-				scheme_make_string(":MrEd Preferences" + ends_in_colon));
-
   if (which == id_init_file)
     return scheme_append_string(home,
 				scheme_make_string(":mredrc.ss" + ends_in_colon));
@@ -1172,10 +1139,6 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   if (which == id_setup_file)
     return scheme_append_string(home,
 				scheme_make_string(":mred.fnt" + ends_in_colon));  
-
-  if (which == id_autosaves_file)
-    return scheme_append_string(home,
-				scheme_make_string(":MrEd Autosaves" + ends_in_colon));
 #endif
 
   return scheme_void;
@@ -1206,13 +1169,14 @@ extern wxPrintSetupData *wxGetThePrintSetupData();
 
 Bool wxsPrinterDialog(wxWindow *parent)
 {
-  Scheme_Object *a[3], *r;
+  Scheme_Object *a[4], *r;
   
   a[0] = scheme_false;
   a[1] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
-  a[2] = scheme_null;
+  a[2] = scheme_false;
+  a[3] = scheme_null;
 
-  r = scheme_apply(get_ps_setup_from_user, 3, a);
+  r = scheme_apply(get_ps_setup_from_user, 4, a);
 
   if (SCHEME_FALSEP(r)) {
     return 0;
@@ -1262,9 +1226,9 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
 						    0, 3),
 			   global_env);
   
-  scheme_install_xc_global("get-font-list",
+  scheme_install_xc_global("get-face-list",
 			   scheme_make_prim_w_arity(wxSchemeGetFontList,
-						    "get-font-list",
+						    "get-face-list",
 						    0, 0),
 			   global_env);
   

@@ -72,8 +72,8 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 
 @ "file-selector" : nstring wxFileSelector(nstring,nstring=NULL,nstring=NULL,nstring=NULL,nstring=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^//ubFrameDialog["file-selector"]/cFrameDialog=NULL,int=-1,int=-1);
 
-@ "color-display?" : bool wxColourDisplay();
-@ "display-depth" : int wxDisplayDepth();
+@ "is-color-display?" : bool wxColourDisplay();
+@ "get-display-depth" : int wxDisplayDepth();
 
 #if !USE_METAFILE
 #define wxMakeMetaFilePlaceable(a,b,c,d,e,f) TRUE
@@ -97,7 +97,7 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @MACRO BundleVoidStar = (void *){x}
 @MACRO spSema = semaphore
 
-@ "yield" : bool wxSchemeYield(void[]=NULL//BundleVoidStar///spSema);
+@ "yield" : void wxSchemeYield(void[]=NULL//BundleVoidStar///spSema);
 @ "flush-display" : void wxFlushDisplay();
 
 @END

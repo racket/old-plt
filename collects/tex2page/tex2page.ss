@@ -45,7 +45,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p13")
+(define *tex2page-version* "4p14")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -2338,11 +2338,7 @@
 
 (define do-ref-aux
   (lambda (label ext-file link-text)
-    (let* ((label-table
-             (if ext-file
-               (table-get *external-label-tables* ext-file)
-               *label-table*))
-           (label-ref (label-bound? label label-table))
+    (let* ((label-ref (label-bound? label ext-file))
            (label-text
              (cond
               (link-text (tex-string->html-string link-text))
@@ -2381,13 +2377,6 @@
            (lbl (get-label)))
       (do-ref-aux lbl extf text))))
 
-'(define do-hyperref
-   (lambda ()
-     (let* ((text (get-group))
-            (lbl (begin (get-group) (get-group) (get-label)))
-            (label-ref (label-bound? lbl)))
-       (hyperize-text text label-ref))))
-
 (define do-hyperref
   (lambda ()
     (let* ((text (get-group))
@@ -2395,10 +2384,19 @@
       (do-ref-aux lbl #f text))))
 
 (define label-bound?
-  (lambda (label label-table)
-    (and label-table
-         (let ((label-ref (table-get label-table label)))
-           (or label-ref (begin (flag-unresolved-xref label) #f))))))
+  (lambda (label . ext-file)
+    (let* ((ext-file (if (pair? ext-file) (car ext-file) #f))
+           (label-table
+             (if ext-file
+               (table-get *external-label-tables* ext-file)
+               *label-table*)))
+      (or (and label-table (table-get label-table label))
+          (begin
+            (flag-unresolved-xref
+              (if ext-file
+                (string-append "{" ext-file " -> " label "}")
+                label))
+            #f)))))
 
 (define flag-unresolved-xref
   (lambda (xr)
@@ -2464,7 +2462,7 @@
 
 (define do-pageref
   (lambda ()
-    (let ((label-ref (label-bound? (get-label) *label-table*)))
+    (let ((label-ref (label-bound? (get-label))))
       (if label-ref
         (let ((pageno (label.page label-ref)))
           (emit-ext-page-node-link-start (label.src label-ref) pageno #f)
@@ -2475,7 +2473,7 @@
 (define do-html-page-ref
   (lambda ()
     (let ((label (get-label)))
-      (let ((label-ref (label-bound? label *label-table*)))
+      (let ((label-ref (label-bound? label)))
         (emit "\"")
         (if label-ref
           (emit
@@ -2488,8 +2486,7 @@
     (let ((n (string-length url)))
       (cond
        ((and (> n 0) (char=? (string-ref url 0) #\#))
-        (let* ((label (substring url 1 n))
-               (label-ref (label-bound? label *label-table*)))
+        (let* ((label (substring url 1 n)) (label-ref (label-bound? label)))
           (if label-ref
             (string-append
               (maybe-label-page (label.src label-ref) (label.page label-ref))

@@ -62,6 +62,11 @@ static int mzerrno = 0;
 #ifndef DONT_IGNORE_PIPE_SIGNAL
 # include <signal.h>
 #endif
+#ifdef USE_OSKIT_CONSOLE
+# ifndef OSKIT_TEST
+#  include <x86/pc/direct_cons.h> 
+# endif
+#endif
 #include <math.h> /* for fmod , used by default_sleep */
 #include "schfd.h"
 
@@ -235,6 +240,9 @@ int scheme_internal_checking_char;
 #ifdef USE_FD_PORTS
 static Scheme_Object *fd_input_port_type;
 #endif
+#ifdef USE_OSKIT_CONSOLE
+static Scheme_Object *oskit_console_input_port_type;
+#endif
 static Scheme_Object *file_input_port_type;
 static Scheme_Object *string_input_port_type;
 #ifdef USE_TCP
@@ -360,6 +368,9 @@ OS_SEMAPHORE_TYPE scheme_break_semaphore;
 static Scheme_Object *make_fd_input_port(int fd, const char *filename);
 static Scheme_Object *make_fd_output_port(int fd);
 #endif
+#ifdef USE_OSKIT_CONSOLE
+static Scheme_Object *make_oskit_console_input_port();
+#endif
 
 static Scheme_Object *default_read_handler;
 static Scheme_Object *default_display_handler;
@@ -397,6 +408,9 @@ scheme_init_port (Scheme_Env *env)
     REGISTER_SO(scheme_orig_stdin_port);
 #ifdef USE_FD_PORTS
     REGISTER_SO(fd_input_port_type);
+#endif
+#ifdef USE_OSKIT_CONSOLE
+    REGISTER_SO(oskit_console_input_port_type);
 #endif
     REGISTER_SO(file_input_port_type);
     REGISTER_SO(string_input_port_type);
@@ -455,6 +469,9 @@ scheme_init_port (Scheme_Env *env)
     fd_input_port_type = scheme_make_port_type("<file-desc-input-port>");
     fd_output_port_type = scheme_make_port_type("<file-desc-output-port>");
 #endif
+#ifdef USE_OSKIT_CONSOLE
+    oskit_console_input_port_type = scheme_make_port_type("<console-input-port>");
+#endif
 
     file_input_port_type = scheme_make_port_type("<file-input-port>");
     file_output_port_type = scheme_make_port_type("<file-output-port>");
@@ -485,7 +502,11 @@ scheme_init_port (Scheme_Env *env)
 #ifdef USE_FD_PORTS
 			      : make_fd_input_port(0, "STDIN")
 #else
+# ifdef USE_OSKIT_CONSOLE
+			      : make_oskit_console_input_port()
+# else
 			      : make_tested_file_input_port(stdin, "STDIN", 1)
+# endif
 #endif
 			      );
 
@@ -1857,6 +1878,136 @@ make_fd_input_port(int fd, const char *filename)
 
   ip->name = scheme_strdup(filename);
 
+  return (Scheme_Object *)ip;
+}
+
+#endif
+
+#ifdef USE_OSKIT_CONSOLE
+
+# ifdef OSKIT_TEST
+static Scheme_Object *normal_stdin;
+static int direct_cons_trygetchar() { return scheme_char_ready(normal_stdin) ? scheme_getc(normal_stdin) : -1; }
+static void direct_cons_putchar(int c) { }
+# endif
+
+typedef struct {
+  int count, size, ready;
+  char *buffer;
+} osk_console_input;
+
+static int
+osk_char_ready (Scheme_Input_Port *port)
+{
+  osk_console_input *osk;
+  int k;
+
+  osk = (osk_console_input *)port->port_data;
+
+  if (osk->ready)
+    return 1;
+
+  k = direct_cons_trygetchar();
+  if (k >= 0) {
+    if (k == 8) { /* Backspace */
+      direct_cons_putchar(8);
+      direct_cons_putchar(' '); /* space erases old letter */
+      direct_cons_putchar(8);
+      --osk->count;
+    } else {
+      if (osk->count == osk->size) {
+	char *naya;
+	osk->size = osk->size ? 2 * osk->size : 256;
+	naya = scheme_malloc_atomic(osk->size);
+	memcpy(naya, osk->buffer, osk->count);
+	osk->buffer = naya;
+      }
+      osk->buffer[osk->count++] = k;
+      if (k == 13 || k == 10) { /* Return/newline */
+	direct_cons_putchar(13);
+	direct_cons_putchar(10);
+	osk->ready = 1;
+      } else
+	direct_cons_putchar(k);
+    }
+  }
+
+  if (osk->ready)
+    return 1;
+  else
+    return 0;
+}
+
+static int osk_getc(Scheme_Input_Port *port)
+{
+  int c;
+  osk_console_input *osk;
+
+  if (!osk_char_ready(port)) {
+    scheme_current_process->block_descriptor = PORT_BLOCKED;
+    scheme_current_process->blocker = (Scheme_Object *)port;
+    do
+      scheme_process_block(0.0);
+    while (!osk_char_ready(port));
+    scheme_current_process->block_descriptor = NOT_BLOCKED;
+    scheme_current_process->blocker = NULL;
+    scheme_current_process->ran_some = 1;
+  }
+
+  osk = (osk_console_input *)port->port_data;
+
+  c = osk->buffer[osk->ready - 1];
+  osk->ready++;
+  if (osk->ready > osk->count)
+    osk->ready = osk->count = 0;
+
+  return c;
+}
+
+static void
+osk_close_input(Scheme_Input_Port *port)
+{
+}
+
+static void
+osk_need_wakeup(Scheme_Input_Port *port, void *fds)
+{
+# ifdef OSKIT_TEST
+  /* for testing, write to stdout is almost certainly ready: */
+  void *fdw;
+  fdw = MZ_GET_FDSET(fds, 1);
+  MZ_FD_SET(1, (fd_set *)fdw);
+# endif
+
+  /* In OSKit, makes select() return immediately */
+  MZ_FD_SET(0, (fd_set *)fds);
+}
+
+static Scheme_Object *
+make_oskit_console_input_port()
+{
+  Scheme_Input_Port *ip;
+  osk_console_input *osk;
+  
+  osk = (osk_console_input *)scheme_malloc(sizeof(osk_console_input));
+
+  osk->count = osk->size = osk->ready = 0;
+
+# ifdef OSKIT_TEST
+  REGISTER_SO(normal_stdin);
+  normal_stdin = make_tested_file_input_port(stdin, "STDIN", 1);
+# endif
+
+  ip = _scheme_make_input_port(oskit_console_input_port_type,
+			       osk,
+			       osk_getc,
+			       osk_char_ready,
+			       osk_close_input,
+			       osk_need_wakeup,
+			       1);
+  
+  ip->name = "STDIN";
+  
   return (Scheme_Object *)ip;
 }
 

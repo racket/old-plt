@@ -386,6 +386,7 @@ int actual_main(int argc, char *argv[])
 #if defined(OSKIT) && !defined(OSKIT_TEST)
 # include <oskit/dev/clock.h> 
 # include <oskit/c/sys/time.h> 
+# include <oskit/x86/pc/direct_cons.h> 
 void start_clock()
 {
 # define LOCAL_TO_GMT(t) /* (t)->tv_sec += secondswest */
@@ -423,8 +424,8 @@ int main(int argc, char **argv)
 #ifdef OSKIT
 # ifndef OSKIT_TEST
   oskit_init_libc();
-  fd_set_console();
   fs_init(oskit_bmod_init());
+  direct_cons_set_flags(DC_NONBLOCK);
   start_clock();
 # endif
 #endif

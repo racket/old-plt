@@ -63,15 +63,6 @@
 		(current-namespace n)
 		(eval `(#%define plt:home-directory ,mred:constants:plt-home-directory))
 		(break-enabled #t)
-		(user-break-poll-handler 
-		 (lambda ()
-		   (let ([one (parameterize 
-			       ([wx:current-eventspace bottom-eventspace])
-			       (wx:check-for-break))]
-			 [two (parameterize 
-			       ([wx:current-eventspace orig-eventspace])
-			       (wx:check-for-break))])
-		     (or one two))))
 		(wx:current-eventspace bottom-eventspace)
 		;(wx:eventspace-parameterization bottom-eventspace p)
 		(exit-handler (lambda (arg)
@@ -257,9 +248,6 @@
 									    (mred:message-box (format "~s" exn)
 											      "Uncaught Exception"))
 									(k #t))))])
-						   '(mred:message-box (format "~a" (require-library-use-compiled))
-								     "require-library-use-compiled")
-						   '(mred:message-box (format "~a" expr) "evalling")
 						   (primitive-eval expr)))))
 					   (lambda anss
 					     (let ([anss (let loop ([v anss])
@@ -362,6 +350,7 @@
 		      (when (input-port? re-p)
 			(close-input-port re-p)))))))])
 	  (public
+	    [takeover void]
 	    [reset-console
 	     (let ([first-dir (current-directory)])
 	       (lambda ()

@@ -59,38 +59,40 @@
   (define (get-move-weight x y)
     (let-values (((weight bid _ __) (calc-weight 'M x y (current-player) null)))
       (values weight bid)))
-  
-  (define (breadth-search queue)
+
+  (define (breadth-search limit queue)
     (cond
-     [(queue-empty? queue) (void)]
-     [else (let ([cur-item (dequeue! queue)])
-	     (let ([depth (qelt-depth cur-item)]
-		   [weight (qelt-weight cur-item)]
-		   [dir (qelt-dir cur-item)]
-		   [x (qelt-x cur-item)]
-		   [y (qelt-y cur-item)]
-		   [path/cmds (qelt-path/cmds cur-item)]
-		   [path/coords (qelt-path/coords cur-item)])
-	       (cond
-		[(= depth (depth-limit)) (void)]
-		[(not (coord-alright? x y path/coords)) (breadth-search queue)]
-		[else (let-values ([(cur-weight cur-bid) (get-move-weight x y)])
-			(let ([aveweight (/ (+ weight cur-weight) depth)]
-			      [path/cmds (cons (make-command cur-bid dir '()) path/cmds)]
-			      [path/coords (cons (make-cord x y) path/coords)]
-			      [depth (add1 depth)]
-			      [weight (+ weight cur-weight)])
-;			  (printf "Aveweight(~a ~a): ~a~n" depth (map command-command path/cmds) aveweight)
-			  (when (> aveweight (best-weight))
-;			    (printf "New best: (weight ~a) ~a~n" aveweight
-;				    (map command-command path/cmds))
-			    (best-weight aveweight)
-			    (best-cmd path/cmds))
-			  (enqueue! queue (make-qelt depth weight 'N x (add1 y) path/cmds path/coords))
-			  (enqueue! queue (make-qelt depth weight 'S x (sub1 y) path/cmds path/coords))
-			  (enqueue! queue (make-qelt depth weight 'E (add1 x) y path/cmds path/coords))
-			  (enqueue! queue (make-qelt depth weight 'W (sub1 x) y path/cmds path/coords))
-			  (breadth-search queue)))])))]))
+      [(or (queue-empty? queue) (= limit 0)) (void)]
+      [else (let ([cur-item (dequeue! queue)])
+	      (let ([weight (qelt-weight cur-item)]
+		    [dir (qelt-dir cur-item)]
+		    [x (qelt-x cur-item)]
+		    [y (qelt-y cur-item)]
+		    [path/cmds (qelt-path/cmds cur-item)]
+		    [path/coords (qelt-path/coords cur-item)])
+		(let ([depth (length path/cmds)])
+		  (let-values ([(cur-weight cur-bid) (get-move-weight x y)])
+		    (let ([aveweight (/ (+ weight cur-weight) depth)]
+			  [path/cmds (cons (make-command cur-bid dir '()) path/cmds)]
+			  [path/coords (cons (make-cord x y) path/coords)]
+			  [depth (add1 depth)]
+			  [weight (+ weight cur-weight)])
+		      (let ([northopt (make-qelt depth weight 'N x (add1 y) path/cmds path/coords)]
+			    [southopt (make-qelt depth weight 'S x (sub1 y) path/cmds path/coords)]
+			    [eastopt (make-qelt depth weight 'E (add1 x) y path/cmds path/coords)]
+			    [westopt (make-qelt depth weight 'W (sub1 x) y path/cmds path/coords)])
+			(when (> aveweight (best-weight))
+			  (best-weight aveweight)
+			  (best-cmd path/cmds))
+			(when (coord-alright? (move-x northopt) (move-y northopt) path/cmds)
+			  (enqueue! queue northopt))
+			(when (coord-alright? (move-x eastopt) (move-y eastopt) path/cmds)
+			  (enqueue! queue eastopt))
+			(when (coord-alright? (move-x westopt) (move-y westopt) path/cmds)
+			  (enqueue! queue westopt))
+			(when (coord-alright? (move-x southopt) (move-y southopt) path/cmds)
+			  (enqueue! queue southopt))
+			(breadth-search (sub1 limit) queue)))))))]))
 
   (define (compute-move packages robots)
     (let ([x (get-player-x)]

@@ -493,24 +493,24 @@ SOURCE=.\mzscheme.rc
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 "gc - Win32 Release" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Release" 
    cd "..\mzscheme"
 
 "gc - Win32 ReleaseCLEAN" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 "gc - Win32 Debug" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Debug" 
    cd "..\mzscheme"
 
 "gc - Win32 DebugCLEAN" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
@@ -519,24 +519,24 @@ SOURCE=.\mzscheme.rc
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Threads"
 
 "gc - Win32 Threads" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Threads" 
    cd "..\mzscheme"
 
 "gc - Win32 ThreadsCLEAN" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 Threads" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 MT DLL"
 
 "gc - Win32 MT DLL" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 MT DLL" 
    cd "..\mzscheme"
 
 "gc - Win32 MT DLLCLEAN" : 
-   cd "\Matthew\plt\src\worksp\gc"
+   cd "..\gc"
    $(MAKE) /$(MAKEFLAGS) /F .\gc.mak CFG="gc - Win32 MT DLL" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
@@ -545,60 +545,60 @@ SOURCE=.\mzscheme.rc
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 "mzsrc - Win32 Release" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Release" 
    cd "..\mzscheme"
 
 "mzsrc - Win32 ReleaseCLEAN" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 "mzsrc - Win32 Debug" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Debug" 
    cd "..\mzscheme"
 
 "mzsrc - Win32 DebugCLEAN" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 SGC"
 
 "mzsrc - Win32 SGC" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 SGC" 
    cd "..\mzscheme"
 
 "mzsrc - Win32 SGCCLEAN" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 SGC" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Threads"
 
 "mzsrc - Win32 Threads" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Threads" 
    cd "..\mzscheme"
 
 "mzsrc - Win32 ThreadsCLEAN" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 Threads" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 MT DLL"
 
 "mzsrc - Win32 MT DLL" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 MT DLL" 
    cd "..\mzscheme"
 
 "mzsrc - Win32 MT DLLCLEAN" : 
-   cd "\Matthew\plt\src\worksp\mzsrc"
+   cd "..\mzsrc"
    $(MAKE) /$(MAKEFLAGS) /F .\mzsrc.mak CFG="mzsrc - Win32 MT DLL" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 

@@ -117,7 +117,7 @@ SOURCE=.\..\..\mzscheme\dynsrc\start.c
 SOURCE=.\..\starters\start.rc
 
 "$(INTDIR)\start.res" : $(SOURCE) "$(INTDIR)"
-	$(RSC) /l 0x409 /fo"$(INTDIR)\start.res" /i "\Matthew\plt\src\worksp\starters" /d "NDEBUG" /d "MRSTART" $(SOURCE)
+	$(RSC) /l 0x409 /fo"$(INTDIR)\start.res" /i "..\starters" /d "NDEBUG" /d "MRSTART" $(SOURCE)
 
 
 

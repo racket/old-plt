@@ -57,7 +57,7 @@ History:
 --------
 
 Version 51: ??, 1997
-Added wxMediaAdmin::GetMaxWidth()
+Stopped keeping the history
 
 Version 50: August 26, 1997
 Added argument to wxMediaBuffer::Print()

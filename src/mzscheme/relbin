@@ -18,7 +18,7 @@ elif [ "-local" = "$1" ] ; then
   shift
   FARHOST=localhost
 else
-  FARHOST=asia
+  FARHOST=asia.cs.rice.edu
 fi
 
 MZSYS=`/home/scheme/plt/bin/archsys -`$1

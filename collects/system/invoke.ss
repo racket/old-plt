@@ -55,7 +55,15 @@
       (unless invoked?
 	(set! invoked? #t)
 	(mred:change-splash-message "Invoking...")
-	(invoke-open-unit/sig (mred:make-invokable-unit))
+	(unless (and (procedure? mred:make-invokable-unit)
+		     (equal? 0 (arity mred:make-invokable-unit)))
+	  (error 'mred:invoke "mred:make-invokable-unit is not a procedure of arity 0, it's: ~a~n"
+		 mred:make-invokable-unit))
+	(let ([unit/sig (mred:make-invokable-unit)])
+	  (unless (unit/sig? unit/sig)
+	    (error 'mred:invoke "mred:make-invokable-unit didn't return a unit/sig, returned: ~a~n"
+		   unit/sig))
+	  (invoke-open-unit/sig unit/sig))
 	(mred:user-setup)))))
 
 (define mred:startup

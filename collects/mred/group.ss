@@ -221,12 +221,12 @@
   
   (send the-frame-group set-empty-callbacks
 	(lambda () 
+	  (at-most-one (void) 
+		       (lambda () (mred:exit:exit #t))))
+	(lambda () 
 	  (at-most-one #t
 		       (lambda ()
-			 (mred:exit:run-exit-callbacks))))
-	(lambda () 
-	  (at-most-one (void) 
-		       (lambda () (mred:exit:exit #t)))))
+			 (mred:exit:run-exit-callbacks)))))
   
   (mred:exit:insert-exit-callback
    (lambda ()

@@ -66,11 +66,14 @@ static int block(void)
 Scheme_Object *scheme_reload(Scheme_Env *env)
 {
   Scheme_Object *a[2];
+  MZ_DECL_VAR_REG(2);
+  MZ_VAR_REG(0, a[0]);
+  MZ_VAR_REG(1, a[1]);
 
-  a[0] = scheme_make_prim_w_arity(do_readline, "readline", 1, 1);
-  a[1] = scheme_make_prim_w_arity(do_add_history, "add-history", 1, 1);
+  a[0] = MZ_CWVR(scheme_make_prim_w_arity(do_readline, "readline", 1, 1));
+  a[1] = MZ_CWVR(scheme_make_prim_w_arity(do_add_history, "add-history", 1, 1));
   
-  return scheme_values(2, a);
+  return MZ_CWVR(scheme_values(2, a));
 }
 
 Scheme_Object *scheme_initialize(Scheme_Env *env)

@@ -16,18 +16,18 @@
 	 ;; A counter
 	 (index -1)
 
-	 (regs (map (lambda (x) (car (syntax-e x))) (syntax-e rules)))
+	 (regs (map (lambda (x) (car (syntax->list x))) (syntax->list rules)))
 
 	 (actions (list->vector 
 		   (map 
 		    (lambda (x) 
-		      (let ((action (cadr (syntax-e x))))
+		      (let ((action (cadr (syntax->list x))))
 			(datum->syntax-object
 			 action
 			 `(lambda (get-start-pos get-end-pos get-lexeme lex-buf)
 			    ,action)
 			 action)))
-		    (syntax-e rules))))
+		    (syntax->list rules))))
 
 	 ;; big-re combines the sexp-res into one, so a single dfa can be built
 	 (big-re (datum->syntax-object 

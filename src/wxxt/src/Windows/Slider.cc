@@ -205,20 +205,35 @@ void wxSlider::EventCallback(Widget WXUNUSED(w),
 
     if ((slider->style & wxVERTICAL) && (info->flags & XFWF_VPOS)) {
 	if (info->reason == XfwfSPageUp || info->reason == XfwfSPageDown) {
-	    XfwfMoveThumb(slider->X->handle, 0.0, info->vpos);
+	  if (slider->value > slider->minimum) {
+	    new_value = slider->value + ((info->reason == XfwfSPageUp)
+					 ? -1
+					 : 1);
+	    process = TRUE;
+	    slider->SetValue(new_value);
+	  }
+	} else {
+	  new_value = (int)(slider->minimum 
+			    + info->vpos * (slider->maximum-slider->minimum));
+	  process = (new_value != slider->value);
 	}
-	new_value = int(slider->minimum 
-			+ info->vpos * (slider->maximum-slider->minimum));
-	process = TRUE;
     } else if (!(slider->style & wxVERTICAL) && (info->flags & XFWF_HPOS)) {
 	if (info->reason == XfwfSPageLeft || info->reason == XfwfSPageRight) {
-	    XfwfMoveThumb(slider->X->handle, info->hpos, 0.0);
+	  if (slider->value < slider->maximum) {
+	    new_value = slider->value + ((info->reason == XfwfSPageLeft)
+					 ? -1
+					 : 1);
+	    process = TRUE;
+	    slider->SetValue(new_value);
+	  }
+	} else {
+	  new_value = (int)(slider->minimum
+			    + info->hpos * (slider->maximum-slider->minimum));
+	  process = (new_value != slider->value);
 	}
-	new_value = int(slider->minimum
-			+ info->hpos * (slider->maximum-slider->minimum));
-	process = TRUE;
     }
-    if (process && new_value != slider->value) {
+
+    if (process) {
 	wxCommandEvent *event;
 
 	// set and display new value

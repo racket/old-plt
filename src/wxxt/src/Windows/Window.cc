@@ -1225,31 +1225,39 @@ void wxWindow::ExposeEventHandler(Widget     WXUNUSED(w),
     return;
   }
 
-    einfo = (XfwfExposeInfo*)p_XfwfExposeInfo;
+  einfo = (XfwfExposeInfo*)p_XfwfExposeInfo;
 
-    if (win->painting_enabled) { // painting is allowed
-	if (win->dc) {
-	    if (!(win->dc->ok)) { // setup drawable of dc on first expose
-	      win->dc->X->drawable = XtWindow(win->X->handle);
-	      win->dc->X->draw_window = win->dc->X->drawable;
-	      win->dc->SetBackground(win->dc->current_background_color);
-	      win->dc->Clear();
-	      win->dc->ok = TRUE;
-	    }
-	    // setup clipping region
-	    win->dc->X->expose_reg = einfo->region;
-	    win->dc->SetCanvasClipping();
-	}
-	// call refresh method
-	win->X->expose_region = einfo->region;
-	win->X->expose_event  = einfo->event;
-	win->OnPaint();
-	if (win->dc) {
-	    // reset clipping region
-	    win->dc->X->expose_reg = NULL;
-	    win->dc->SetCanvasClipping();
-	}
+  if (win->painting_enabled) { // painting is allowed
+    Region myregion;
+
+    if (win->dc) {
+      if (!(win->dc->ok)) { // setup drawable of dc on first expose
+	win->dc->X->drawable = XtWindow(win->X->handle);
+	win->dc->X->draw_window = win->dc->X->drawable;
+	win->dc->SetBackground(win->dc->current_background_color);
+	win->dc->Clear();
+	win->dc->ok = TRUE;
+      }
+      // Set up clipping region.
+      // Make a copy because Xt apparently has only one region that it uses
+      myregion = XCreateRegion(); 
+      XUnionRegion(myregion, einfo->region, myregion);
+
+      win->dc->X->expose_reg = myregion;
+      win->dc->SetCanvasClipping();
     }
+    // call refresh method
+    win->X->expose_region = einfo->region;
+    win->X->expose_event  = einfo->event;
+    win->OnPaint();
+    if (win->dc) {
+      // reset clipping region
+      win->dc->X->expose_reg = NULL;
+      win->dc->SetCanvasClipping();
+
+      XDestroyRegion(myregion);
+    }
+  }
 
 #ifdef MZ_PRECISE_GC
   XFORM_RESET_VAR_STACK;

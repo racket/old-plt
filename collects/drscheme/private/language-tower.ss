@@ -243,13 +243,25 @@
       
       ;; module-based-language-front-end : (input settings -> (-> (union sexp syntax eof)))
       (define (module-based-language-front-end input settings)
-        (let ([port (cond
-                      [(string? input) (open-input-file input)]
-                      [else (open-input-text (drscheme:rep:text/pos-text input)
-                                             (drscheme:rep:text/pos-start input)
-                                             (drscheme:rep:text/pos-end input))])])
+        (let-values ([(port source offset line col)
+                      (cond
+                        [(string? input) 
+                         (values (open-input-file input) input 0 0 0)]
+                        [else 
+                         (let* ([text (drscheme:rep:text/pos-text input)]
+                                [start (drscheme:rep:text/pos-start input)]
+                                [end (drscheme:rep:text/pos-end input)]
+                                [start-line (send text position-paragraph start)]
+                                [start-col (- start (send text paragraph-start-position start-line))])
+                           (values (open-input-text text start end)
+                                   text
+                                   start
+                                   start-line
+                                   start-col))])])
           (lambda ()
-            (read-syntax input port))))
+            (read-syntax source port 
+                         ;(list line col offset)
+                         ))))
       
       ;; open-input-text : (instanceof text%) num num -> input-port
       ;; creates a user port whose input is taken from the text%,

@@ -14,7 +14,6 @@
   (define (print-to-text atext vals)
     (unless (empty? vals)
       (send* atext
-        (lock false)
         (begin-edit-sequence)
         (erase))
       (let ([port
@@ -34,7 +33,5 @@
            (newline port)
            (print val port))
          (rest vals)))
-      (send* atext
-        (end-edit-sequence)
-        (lock true))))
+      (send atext end-edit-sequence)))
   )

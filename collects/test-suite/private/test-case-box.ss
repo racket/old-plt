@@ -128,7 +128,9 @@
           ;; set the text in the actual field to the value given
           (define (set-actuals vals)
             (send (send (get-admin) get-editor) begin-edit-sequence)
+            (send actual lock false)
             (print-to-text actual vals)
+            (send actual lock true)
             (send (send (get-admin) get-editor) end-edit-sequence))
           
           ;;;;;;;;;;

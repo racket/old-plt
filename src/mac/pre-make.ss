@@ -1,0 +1,104 @@
+#!/bin/sh
+
+# OS X pre-make script
+# builds resource files, makes template Starter.app and MrEd.app
+# this script must be run from its own directory
+
+exec ../../bin/mzscheme -r "$0" ${1+"$@"}
+echo Couldn't start MzScheme --- install incomplete!
+exit
+
+|#
+
+(module pre-make mzscheme
+
+  (require (lib "plist.ss" "xml")
+	   (lib "process.ss"))
+
+  (define rez-path "/Developer/Tools/Rez")
+
+  ; set plthome:
+  (define plthome (simplify-path (build-path (current-directory 'up 'up))))
+  (printf "plthome is ~s" plthome)
+
+  ; Rez where needed:
+  (let* ([cw-path (build-path plthome "src" "mac" "cw")]'
+	 [rez-it (lambda (app)
+		   (system* rez-path 
+			    (build-path cw-path (string-append app ".r")) "-UseDF" "-o" 
+			    (build-path cw-path (string-append app ".rsrc.OSX"))))])
+    (rez-it "MzScheme") ; actually, this is useless under OS X...
+    (rez-it "MrEd"))
+
+  ; make .app templates in the right places:
+
+  (define (realize-template path template-tree)
+    (let* ([head-path (build-path path (car template-tree))])
+      (when (file-exists? head-path)
+	    (error 'realize-template "Can't create directory ~s because there's a file with that name" head-path))
+      (unless (directory-exists? head-path)
+	      (printf "Creating directory: ~s~n" head-path)
+	      (make-directory head-path))
+      (foreach (lambda (template-tree) (realize-template head-path template-tree))
+	       (cdr template-tree))))
+
+  ; a template-tree is (list string<dir-name> (listof template-tree))
+  (define app-template-tree
+    '(("Contents" ("MacOS") ("Resources"))))
+
+  (define (create-app dest-path app-name pkg-info-string info-plist)
+    (let* ([app-path (build-path dest-path (string-append app-name ".app"))])
+      (unless (directory-exists? app-path)
+	      (make-directory app-path))
+      (realize-template app-path app-template-tree)
+      (let* ([pkg-info-path (build-path app-path "Contents" "PkgInfo")])
+	(printf
+	(call-with-output-file pkg-info-path
+	  (lambda (port)
+	    (fprintf port pkg-info-string))
+	  'truncate))
+      (let* ([contents-path (build-path app-path "Contents")])
+	(let* ([info-plist-path (build-path contents-path "Info.plist")])
+	  (call-with-output-file info-plist-path
+	    (lambda (port)
+	      (write-plist info-plist port))
+	    'truncate))
+        ; maybe someday we'll have Contents/Resources/English.lproj ?
+	(let* ([rsrc-src (build-path plthome "src" "mac" "cw" "MrEd.rsrc.OSX")]
+	       [rsrc-dest (build-path contents-path "Resources" "MrEd.rsrc")])
+	  (unless (file-exists? rsrc-dest)
+		  (copy-file rsrc-src rsrc-dest)))
+	(let* ([icns-name (string-append app-name ".icns")]
+	       [icns-src (build-path plthome "src" "mac" "icon" icns-name)]
+	       [icns-dest (build-path contents-path "Resources" icns-name)])
+	  (unless (file-exists? icns-dest)
+		  (copy-file icns-src icns-dest))))))
+
+  (define (make-info-plist app-name signature)
+    `(dict (assoc-pair "CFBundleDevelopmentRegion"
+		       "English")
+	   (assoc-pair "CFBundleExecutable"
+		       ,app-name)
+	   (assoc-pair "CFBundleIdentifier"
+		       "org.plt-scheme.MrEd")
+	   (assoc-pair "CFBundleIconFile"
+		       ,app-name)
+	   (assoc-pair "CFBundleInfoDictionaryVersion"
+		       "6.0")
+	   (assoc-pair "CFBundlePackageType"
+		       "APPL")
+	   (assoc-pair "CFBundleSignature"
+		       ,signature)
+	   (assoc-pair "CFBundleVersion"
+		       ,(version))))
+
+    (create-app (build-path plthome "bin")
+		"MrEd"
+		"APPLMrEd"
+		(make-info-plist "MrEd" "MrEd"))
+
+    (create-app (build-path plthome "collects" "launcher")
+		"Starter"
+		"APPLMrSt"
+		(make-info-plist "Starter" "MrSt")))
+

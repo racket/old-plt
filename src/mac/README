@@ -2,42 +2,54 @@
  Compiling for MacOS Classic
 ========================================================================
 
-Please unpack the file cw.sit, and read the instructions in 
-plt/src/mac/cw/README
+Read the instructions in plt/src/mac/cw/README
 
 ========================================================================
  Compiling for MacOS X
 ========================================================================
 
-Currently, we're using Apple's Project Builder to compile MrEd for OS X.
-Project Builder is available on Apple's Developer Tools CD for OS X.  It
-is free, if you say the right words in the right places.
+It is possible to compile MzScheme for OS X using only make & cc.
+However, the preferred method for MzScheme compilation and the only
+method for MrEd compilation is to use Codewarrior 7.0.  Instructions
+for compiling MzScheme without Codewarrior appear at the end of this 
+file.  Nevertheless, the Codewarrior compilation does require the use
+of make and cc, so familiarity with the command line is required.
+Also, these instructions are needlessly complicated because I haven't
+yet written scripts to do everything in the right order.
 
-These instructions also assume a familiarity with the Terminal, and the
-ability to run basic UNIX commands in a shell. 
+Compiling for Mac OS X using Codewarrior (and cc):
 
-1) Run the "configure" script in plt/src. For more details
-on this, read the UNIX section of the README in plt/src.
+0) You must have the Apple Developer Tools installed, as well
+as Codewarrior 7.0.
 
-2) Open the file plt/src/mac/proj-builder/MrEd/MrEd.pbproj in 
-Project Builer.
+1) cd to the plt/src directory, and execute './configure'
 
-3) Select Build, from the Build menu
+2) cd to plt/src/mzscheme, and execute 'make g-c'
 
-When finished, assuming all goes well, the application will be 
-located in plt/src/mac/proj-builder/MrEd/build.  Move it to
-wherever you like.  
+3) cd to plt/src/mac/cw and execute:
+  Rez -UseDF MzScheme.r -o MzScheme.rsrc.OSX
+  Rez -UseDF MrEd.r -o MrEd.rsrc.OSX
 
-Before you run it, you'll need to set your PLTHOME environment
-variable. If you're only planning to run it from the command
-line, this is easy: you'll need to add a few lines to your shell's
-startup files. PLTHOME should refer to ... well, wherever the top
-level plt directory resides.  So, for instance, I checked out the 
-cvs tree in /Users/clements, so my PLTHOME is set to 
-/Users/clements/plt.
+4) Follow the instructions for building MzScheme-app.mcp contained
+in plt/src/mac/cw/README (basically, open the project file and compile it)
 
-If you're planning to start the application from the Finder, you'll
-have to do a bit more magic
 
-There are two 
-ways to run it; from the Finder, or from the command line.  
+3) Follow the instructions for building MzScheme-app.mcp and MrEd.mcp
+contained in plt/src/mac/cw/readme
+
+
+Compiling for Mac OS X using only cc :
+
+0) You must have the Apple Developer Tools installed.
+
+1) in the files plt/src/mzscheme/sconfig.h and plt/include/sconfig.h,
+comment out the #define for MACINTOSH_EVENTS.  That is, change
+# define MACINTOSH_EVENTS
+to
+/*# define MACINTOSH_EVENTS */
+
+2) cd to plt/src, and execute './configure'
+
+3) execute 'make mz'
+
+4) execute 'make mzinstall'

@@ -52,19 +52,14 @@ static const char sccsid[] = "%W% %G%";
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 
-static void InsetSliderRect(long style, Rect *r);
+static void InsetSliderRect(Rect *r);
 
-static void InsetSliderRect(long style, Rect *r) 
+static void InsetSliderRect(Rect *r) 
 {
-  if (style & wxHORIZONTAL) {
-  	InsetRect(r,PAD_X,0);
-  	r->top += PAD_TOP;
-  	r->bottom -= PAD_BOTTOM;
-  } else {
-    InsetRect(r,0,PAD_X);
-    r->left += PAD_TOP;
-    r->right -= PAD_BOTTOM;
-  }
+	r->left += padLeft;
+	r->top += padTop;
+	r->right -= padRight;
+	r->bottom -= padBottom;
 }
 
 wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
@@ -134,8 +129,11 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 	
 	int adjust = 0;
 	if (style & wxVERTICAL) {
+		padLeft = PAD_BOTTOM;
+		padRight = PAD_TOP;
+		padTop = padBottom = PAD_X;
 		if (width < 0)
-			cWindowHeight = KDEFAULTW + (2 * PAD_X) + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
+			cWindowHeight = KDEFAULTW + (padTop + padBottom) + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
 		else
 			cWindowHeight = width;
 		cWindowWidth = vwid + KSCROLLH + hsp + ((labelPosition == wxVERTICAL) ? 0 : lblw + HSP);
@@ -147,8 +145,11 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 		valueRect.top = (cWindowHeight - vhgt) / 2;
 		adjust = -1;
 	} else {
+		padLeft = padRight = PAD_X;
+		padTop = PAD_TOP;
+		padBottom = PAD_BOTTOM;
 		if (width < 0)
-			cWindowWidth = KDEFAULTW + (2 * PAD_X) + ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
+			cWindowWidth = KDEFAULTW + (padLeft + padRight) + ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
 		else
 			cWindowWidth = width;
 		cWindowHeight = vhgt + KSCROLLH + vsp + ((labelPosition == wxVERTICAL) ? lblh + VSP : 0);
@@ -199,11 +200,14 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
-                
-        // Embed the control, if possible
-        if (panel->cEmbeddingControl && cMacControl) {
-            ::EmbedControl(cMacControl,panel->cEmbeddingControl);
-        }
+         
+#if 0
+	// EMBEDDING                
+    // Embed the control, if possible
+    if (panel->cEmbeddingControl && cMacControl) {
+      ::EmbedControl(cMacControl,panel->cEmbeddingControl);
+    }
+#endif    
                 
 	
 	return TRUE;

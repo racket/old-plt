@@ -1880,3 +1880,13 @@ Bool wxWindow::GetsFocus()
 {
   return WantsFocus();
 }
+
+//-----------------------------------------------------------------------------
+
+void wxWindow::MaybeMoveControls()
+{
+	wxFatalError("MaybeMoveControls called with an object that is neither a\n\
+	              panel nor an item.  This violates the invariant that panels\n\
+	              may contain only other panels or items.",
+	              "Invariant Violation");
+}

@@ -60,7 +60,10 @@ public:
 	Bool WindowPointInArea(int windowH, int windowV);
 	void FrameContentAreaOffset(int* x, int* y); // mac platform only
 
-        ControlHandle cEmbeddingControl;
+#if 0
+	// EMBEDDING
+    ControlHandle cEmbeddingControl;
+#endif    
         
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Sizing methods

@@ -69,7 +69,8 @@ wxItem::wxItem (wxArea* parentArea, int x, int y, int width, int height,
 	: wxbItem (windowName, parentArea, x, y, width, height, style)
 {
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
-        cMacControl = NULL;
+    cMacControl = NULL;
+    padLeft = padRight = padTop = padBottom = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -80,6 +81,7 @@ wxItem::wxItem (wxWindow* parentWindow, int x, int y, int width, int height,
 {
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
         cMacControl = NULL;
+    padLeft = padRight = padTop = padBottom = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -88,7 +90,8 @@ wxItem::wxItem (char* windowName)
 	: wxbItem (windowName)
 {
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
-        cMacControl = NULL;
+    cMacControl = NULL;
+    padLeft = padRight = padTop = padBottom = 0;
 }
 
 //=============================================================================
@@ -188,3 +191,17 @@ char *wxItemStripLabel(char *label)
 }
 
 
+//-----------------------------------------------------------------------------
+
+void wxItem::MaybeMoveControls()
+{
+	if (cMacControl) {
+		// This operation could be guarded by a memoized check, 
+		// if it turns out to be expensive.  I doubt it will.
+		cMacDC->setCurrentUser(NULL); // macDC no longer valid
+		SetCurrentDC();
+		
+		MoveControl(cMacControl,SetOriginX + padLeft, SetOriginY + padTop);
+	}
+}
+		

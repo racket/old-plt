@@ -38,6 +38,7 @@ wxPanel::wxPanel // Constructor (given parentArea)
 }
 
 #if 0
+// EMBEDDING
 //-----------------------------------------------------------------------------
 wxPanel::wxPanel // Constructor (given parentArea and control to embed to)
 // this is a cheap hack because I don't understand how wxAreas work and I don't want to.
@@ -58,9 +59,12 @@ wxPanel::wxPanel // Constructor (given parentArea and control to embed to)
 {
 	CreateWxPanel(x, y, width, height);
 
+#if 0
+	// EMBEDDING
         if (cEmbeddingControl && parentEmbeddingControl) {
             ::EmbedControl(cEmbeddingControl,parentEmbeddingControl);
         }
+#endif        
 }
 #endif
 
@@ -96,10 +100,13 @@ wxPanel::wxPanel // Constructor (given parentPanel)
 		wxbPanel (windowName, parentPanel, x, y, width, height, style)
 {
 	CreateWxPanel(x, y, width, height);
-        
+
+#if 0
+	// EMBEDDING        
         if (cEmbeddingControl && (parentPanel->cEmbeddingControl)) {
             ::EmbedControl(cEmbeddingControl,parentPanel->cEmbeddingControl);
         }
+#endif        
 }
 
 //=============================================================================
@@ -122,6 +129,8 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
 
 	SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
+#if 0
+	// EMBEDDING
         // create an embedding control so that embedded controls get moved.
         SetCurrentMacDCNoMargin();
         Rect cRect;
@@ -130,6 +139,7 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
         OffsetRect(&cRect,SetOriginX,SetOriginY);
         cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
                                             kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
+#endif
                                             
 	if (cStyle & wxBORDER) 
 	  cPanelBorder = new wxBorderArea(this, 1, Direction::wxAll, 1);
@@ -293,6 +303,8 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
 	Bool widthIsChanged = (width != cWindowWidth);
 	Bool heightIsChanged = (height != cWindowHeight);
 
+#if 0
+	// EMBEDDING
 	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
 	{
                 SetCurrentMacDCNoMargin();
@@ -300,6 +312,7 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
                 ::MoveControl(cEmbeddingControl,SetOriginX,SetOriginY);
                 ::SizeControl(cEmbeddingControl,width,height);
 	}
+#endif		
 
     wxWindow::DoSetSize(x,y,width,height);
 
@@ -525,12 +538,18 @@ void wxPanel::SetSize(int x, int y, int width, int height, int flags)
 {
 	wxWindow::SetSize(x,y,width,height,flags);
 
-#if 0
-	// I'm very unhappy about adding redundant calls to all these children. Ugh.
+	MaybeMoveControls();
+}
+
+//-----------------------------------------------------------------------------
+
+void wxPanel::MaybeMoveControls()
+{
+	// (foreach maybe-move-controls window-children)
 	wxChildNode *childNode = children->First();
 	while (childNode) {
-		((wxWindow *)childNode->Data())->SetSize(-1,-1,-1,-1);
+		((wxWindow *)childNode->Data())->MaybeMoveControls();
 		childNode = childNode->Next();
 	}
-#endif	
-}
+}	
+	

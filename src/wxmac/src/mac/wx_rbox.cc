@@ -63,7 +63,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 	Callback(function);
 
 #if 0
-// failed experiment
+	// EMBEDDING
         // create an embedding control so that embedded controls get moved.
         SetCurrentMacDCNoMargin();
         Rect cRect;
@@ -120,9 +120,12 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
 
+#if 0
+	// EMBEDDING
         if (cEmbeddingControl) {
             ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
         }
+#endif        
 }
 
 //-----------------------------------------------------------------------------
@@ -148,6 +151,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 	Callback(function);
 
 #if 0
+	// EMBEDDING
         // create an embedding control so that embedded controls get moved.
         SetCurrentMacDCNoMargin();
         Rect cRect;
@@ -196,10 +200,13 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 	{
 		Fit(); // WCH: need wxHorizontal and wxVertical for Fit(direction)
 	}
-        
+
+#if 0
+	// EMBEDDING        
         if (cEmbeddingControl) {
             ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
-        }        
+        }
+#endif         
 }
 
 //=============================================================================
@@ -378,12 +385,13 @@ int wxRadioBox::ButtonFocus(int)
 }
 
 #if 0
+// EMBEDDING
 // failed experiment, for the moment at least.
 //-----------------------------------------------------------------------------
 void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
 	SetCurrentMacDCNoMargin();
-        
+                
         if (cEmbeddingControl) {
             ::MoveControl(cEmbeddingControl,SetOriginX,SetOriginY);
             ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);

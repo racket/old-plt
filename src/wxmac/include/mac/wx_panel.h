@@ -64,6 +64,7 @@ public:
 	);
 
 #if 0
+	// EMBEDDING
 	wxPanel // Constructor (given parentArea and embedding control)
         // see implementation for explanation of this ugly hack.
 	(
@@ -141,7 +142,10 @@ public:
 	void DoShow(Bool show);
 	void Paint(void);
 	virtual void OnChar(wxKeyEvent *event); // mac platform only
-        ControlRef	cEmbeddingControl;
+#if 0
+	// EMBEDDING	
+    ControlRef	cEmbeddingControl;
+#endif    
 
  	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	// Tree methods
@@ -156,6 +160,9 @@ public:
 //=============================================================================
 protected:
 
+
+	virtual void MaybeMoveControls();
+	
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Tree methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

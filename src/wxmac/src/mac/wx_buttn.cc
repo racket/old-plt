@@ -85,6 +85,9 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 {
     buttonBitmap = NULL;
 	cColorTable = NULL;
+
+	padLeft = padRight = PAD_X;
+	padTop = padBottom = PAD_Y;
 		
 	Callback(function);
 
@@ -107,12 +110,9 @@ void wxButton::Create // Real constructor (given parentPanel, label)
         ::SetRect(&boundsRect,0,0,0,0);
         SInt16 baselineOffset; // ignored
         err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
-        cWindowWidth = boundsRect.right - boundsRect.left + (PAD_X * 2);
-        cWindowHeight = boundsRect.bottom - boundsRect.top + (PAD_Y * 2);
+        cWindowWidth = boundsRect.right - boundsRect.left + (padLeft + padRight);
+        cWindowHeight = boundsRect.bottom - boundsRect.top + (padTop + padBottom);
         ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
-        if (parentPanel->cEmbeddingControl) {
-            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
-        }
 #else
 
 	if (width <= 0 || height <= 0)
@@ -151,7 +151,14 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	
 #endif        
 
-        if (style & 1) OnSetDefault(TRUE);
+#if 0
+	// EMBEDDING
+    if (parentPanel->cEmbeddingControl) {
+      ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+    }
+#endif    
+
+    if (style & 1) OnSetDefault(TRUE);
 
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
@@ -549,14 +556,13 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
-		::SizeControl(cMacControl, clientWidth - 2 * PAD_X, clientHeight - 2 * PAD_Y);
+		::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
+						clientHeight - (padTop + padBottom));
 	}
 
 	if (dX || dY)
 	{
-		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC(); // put new origin at (0, 0)
-        ::MoveControl(cMacControl, SetOriginX + PAD_X, SetOriginY + PAD_Y);
+		MaybeMoveControls();
 	}
 
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);

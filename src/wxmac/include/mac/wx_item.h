@@ -51,6 +51,14 @@ public:
         ControlHandle cMacControl;
 protected:
     virtual void ChangeToGray(Bool gray);
+    
+    // Under OS X, an inset is necessary because the OS draws outside of the control rectangle.
+    int padLeft; // C++ doesn't have class variables, does it?
+    int padRight;
+    int padTop;
+    int padBottom;
+
+    virtual void MaybeMoveControls();
         
 };
 

@@ -97,9 +97,11 @@ public:
   
   int ButtonFocus(int);
   
+#if 0
+  // EMBEDDING  
   ControlHandle cEmbeddingControl;
   // void OnClientAreaDSize(int dW, int dH, int dX, int dY);
-
+#endif  
 };
 
 #endif // IN_CPROTO

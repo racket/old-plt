@@ -119,6 +119,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	windowStyle = style;
 	valueFont = buttonFont ? buttonFont : wxNORMAL_FONT;
 	Callback (func);
+	padLeft = padRight = PAD_X;
+	padTop = padBottom = PAD_Y;
 	
 	SetCurrentMacDC();
 /*	if (!buttonFont)
@@ -202,8 +204,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
         ::SetRect(&r,0,0,0,0);
         SInt16 baselineOffset; // ignored
         err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
-        maxdfltw = r.right - r.left + (PAD_X * 2);
-        maxdflth = r.bottom - r.top + (PAD_Y * 2);
+        maxdfltw = r.right - r.left + (padLeft + padRight);
+        maxdflth = r.bottom - r.top + (padTop + padBottom);
 #else        
 	maxdflth += MSPACEY*2;			// extra pixels on top & bottom
 	char checkm[] = {18, 0};
@@ -241,16 +243,22 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	}
 	SetSelection(0);
 
+#if 0
+	//EMBEDDING
         // Embed the control, if possible
         if (panel->cEmbeddingControl && cMacControl) {
             ::EmbedControl(cMacControl,panel->cEmbeddingControl);
         }
+#endif        
 	//DrawChoice(TRUE);
 
 #ifdef OS_X
         r = ValueRect;
-        ::OffsetRect(&r,SetOriginX+PAD_X,SetOriginY+PAD_Y);
-        ::InsetRect(&r,PAD_X,PAD_Y);
+        ::OffsetRect(&r,SetOriginX+padLeft,SetOriginY+padTop);
+		r.left += padLeft;
+		r.top += padTop;
+		r.right -= padRight;
+		r.bottom -= padBottom;
         ::MoveControl(cMacControl,r.left,r.top);
         ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
 #endif        
@@ -285,8 +293,8 @@ void wxChoice::ReCalcRect(void)
     Rect r = {0,0,0,0};
     SInt16 baselineOffset; // ignored
     ::GetBestControlRect(cMacControl,&r,&baselineOffset);
-    maxdfltw = r.right - r.left + (2 * PAD_X);
-    maxdflth = r.bottom - r.top + (2 * PAD_Y);
+    maxdfltw = r.right - r.left + (padLeft + padRight);
+    maxdflth = r.bottom - r.top + (padTop + padBottom);
 #else
 	float	fWidth, fHeight, fDescent, fLeading;
 	int n;
@@ -466,17 +474,8 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 
 	if (dX || dY)
 	{
-		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC(); // put new origin at (0, 0)
+		MaybeMoveControls();
 	}
-
-#ifdef OS_X
-        if (dW || dH || dX || dY) {
-            Rect r = ValueRect;
-            ::OffsetRect(&r,SetOriginX + PAD_X,SetOriginY + PAD_Y);
-            ::MoveControl(cMacControl,r.left,r.top);
-        }
-#endif                 
 }
 
 //-----------------------------------------------------------------------------

@@ -99,10 +99,14 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
                 err = CreateProgressBarControl(GetWindowFromPort(cMacDC->macGrafPort()),&bounds,
                                                 0,0,range,FALSE,&cMacControl);
 
+#if 0
+		//EMBEDDING
                 // Embed the control, if possible
                 if (panel->cEmbeddingControl && cMacControl) {
                     ::EmbedControl(cMacControl,panel->cEmbeddingControl);
                 }
+#endif
+                
 #endif
 	}
 	

@@ -20,13 +20,6 @@ static const char sccsid[] = "%W% %G%";
   #include <QuickDraw.h>
 #endif
 
-#ifdef OS_X
-#define PAD_X 0
-#define PAD_Y 0
-#else
-#define PAD_X 0
-#define PAD_Y 0
-#endif
 #define IC_BOX_SIZE 12
 #define IC_X_SPACE 3
 #define IC_Y_SPACE 2
@@ -81,7 +74,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
 	SetCurrentMacDC();
 	CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 	Rect boundsRect = {0, 0, 0, 0};
-        OffsetRect(&boundsRect,SetOriginX + PAD_X,SetOriginY + PAD_Y);
+    OffsetRect(&boundsRect,SetOriginX + padLeft,SetOriginY + padTop);
 	wxMacString theMacLabel = label;
 	const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
 	const short offValue = 0;
@@ -97,14 +90,18 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
         OSErr err;
         err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
         
-        cWindowWidth = r.right - r.left + (2 * PAD_X);
-        cWindowHeight = r.bottom - r.top + (2 * PAD_Y);
+        cWindowWidth = r.right - r.left + (padLeft + padRight);
+        cWindowHeight = r.bottom - r.top + (padTop + padBottom);
         
         ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
-        if (parentPanel->cEmbeddingControl) {
-            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
-        }
 
+#if 0
+	// EMBEDDING
+    if (parentPanel->cEmbeddingControl) {
+      ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+    }
+#endif
+    
 #else
 
 	if (width <= 0 || height <= 0)
@@ -269,14 +266,12 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 	{
 		int clientWidth, clientHeight;
 		GetClientSize(&clientWidth, &clientHeight);
-		::SizeControl(cMacControl, clientWidth - (2 * PAD_X), clientHeight - (2 * PAD_Y));
+		::SizeControl(cMacControl, clientWidth - (padLeft + padRight), clientHeight - (padTop + padBottom));
 	}
 
 	if (dX || dY)
 	{
-		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC(); // put new "origin" at (SetOriginX, SetOriginY)
-		::MoveControl(cMacControl,SetOriginX + PAD_X,SetOriginY + PAD_Y);
+		MaybeMoveControls();
 	}
 
 #ifndef OS_X

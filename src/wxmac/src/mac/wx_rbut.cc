@@ -103,10 +103,13 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
         cWindowHeight = boundsRect.bottom - boundsRect.top;
         ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
 
+#if 0
+	// EMBEDDING
         // Embed the control, if possible
         if (parentPanel->cEmbeddingControl && cMacControl) {
             ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
         }
+#endif        
         
 #endif
 }

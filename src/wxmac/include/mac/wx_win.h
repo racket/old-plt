@@ -350,6 +350,16 @@ protected:
 	 * the window gray, OS_deactivating it if necessary.
 	 */
 	virtual void ChangeToGray(Bool Gray);
+	
+	/* MaybeMoveControl is used by panels to notify sub-panels and controls
+	 * that a super-panel's absolute position has changed.  This is necessary
+	 * on the mac because the OS controls are located relative to the frame, and
+	 * the OS needs to be notified whenever they move relative to the frame,
+	 * even if they haven't moved relative to their enclosing panel.
+     *
+     * Needed Invariant: Panels contain only controls and other panels.
+	 */
+	virtual void MaybeMoveControls();
 
 //=============================================================================
 // Private methods

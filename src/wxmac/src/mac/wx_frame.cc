@@ -157,9 +157,12 @@ wxFrame::wxFrame // Constructor (for frame window)
 	if (wxIsBusy())
 	  cBusyCursor = 1;
           
+#if 0
+	// EMBEDDING
         // create a root control, to enable control embedding
         ControlRef rootControl;
         ::CreateRootControl(theMacWindow,&rootControl);
+#endif
 }
 
 //=============================================================================

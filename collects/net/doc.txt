@@ -12,11 +12,6 @@ following _Internet_ (quasi-)protocols:
   Mail header reading and writing
   DNS
 
-Shriram Krishnamurthi
-shriram@cs.rice.edu
-Matthew Flatt
-mflatt@cs.utah.edu
-
 ==========================================================================
 _URL_ posting, _web clients_, _WWW_
 ==========================================================================

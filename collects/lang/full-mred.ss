@@ -3,7 +3,7 @@
            (lib "class.ss"))
   
   (define argv #())
-  (define program (namespace-variable-binding 'program))
+  (define program "mred")
   
   (provide argv 
            program

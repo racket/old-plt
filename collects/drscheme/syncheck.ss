@@ -567,6 +567,7 @@
                                             (fw:editor:keymap-mixin
                                              fw:text:hide-caret/selection%)))])
           (send report-error-text auto-wrap #t)
+          (send report-error-text set-autowrap-bitmap #f)
           (send report-error-text lock #t)
           (rename [super-get-definitions/interactions-panel-parent 
                    get-definitions/interactions-panel-parent])
@@ -577,11 +578,13 @@
             (set! report-error-panel (instantiate horizontal-panel% ()
                                        (parent report-error-parent-panel)
                                        (stretchable-height #f)
+                                       (alignment '(center center))
                                        (style '(border))))
             (send report-error-parent-panel change-children (lambda (l) null))
             (let ([message-panel (instantiate vertical-panel% ()
                                    (parent report-error-panel)
                                    (stretchable-width #f)
+                                   (stretchable-height #f)
                                    (alignment '(left center)))])
               (make-object message% (string-constant check-syntax) message-panel)
               (make-object message% (string-constant cs-error-message) message-panel))
@@ -589,7 +592,7 @@
                                    report-error-panel
                                    report-error-text
                                    '(no-hscroll))])
-              (send editor-canvas set-line-count 2))
+              (send editor-canvas set-line-count 3))
             (instantiate button% () 
               (label (string-constant hide))
               (parent report-error-panel)
@@ -617,6 +620,7 @@
                report-error-style
                0
                (send report-error-text last-position))
+              (set-position 0 0)
               (lock #t)
               (end-edit-sequence))
 
@@ -737,29 +741,34 @@
                     (lambda (err? sexp run-in-expansion-thread loop)
                       (unless users-namespace
                         (set! users-namespace (run-in-expansion-thread current-namespace)))
-                      (if err?
-                          (begin
-                            (set! err-termination? #t)
-                            (syncheck:clear-highlighting)
-                            (report-error (car sexp) (cdr sexp)))
-                          (let-values ([(new-binders
-                                         pre-new-varrefs
-                                         new-tops
-                                         requires
-                                         require-for-syntaxes
-                                         referenced-macros)
-                                        (annotate-basic sexp run-in-expansion-thread)])
-                            (let ([new-varrefs
-                                   (if requires
-                                       (annotate-require-vars pre-new-varrefs 
-                                                              requires
-                                                              require-for-syntaxes
-                                                              referenced-macros)
-                                       (map cdr pre-new-varrefs))])
-                              (set! binders (append new-binders binders))
-                              (set! varrefs (append new-varrefs varrefs))
-                              (set! tops (append new-tops tops)))))
-                      (loop)))
+                      (cond
+                        [err?
+                         (begin
+                           (set! err-termination? #t)
+                           (syncheck:clear-highlighting)
+                           (report-error (car sexp) (cdr sexp)))]
+                        [(eof-object? sexp)
+                         ;(custodian-shutdown-all (run-in-expansion-thread current-custodian))
+                         ]
+                        [else
+                         (let-values ([(new-binders
+                                        pre-new-varrefs
+                                        new-tops
+                                        requires
+                                        require-for-syntaxes
+                                        referenced-macros)
+                                       (annotate-basic sexp run-in-expansion-thread)])
+                           (let ([new-varrefs
+                                  (if requires
+                                      (annotate-require-vars pre-new-varrefs 
+                                                             requires
+                                                             require-for-syntaxes
+                                                             referenced-macros)
+                                      (map cdr pre-new-varrefs))])
+                             (set! binders (append new-binders binders))
+                             (set! varrefs (append new-varrefs varrefs))
+                             (set! tops (append new-tops tops))))
+                         (loop)])))
               (unless err-termination? 
                 (annotate-variables users-namespace binders varrefs tops)))
             (send (get-definitions-text) end-edit-sequence))
@@ -1012,11 +1021,12 @@
             (annotate-original-keywords sexp)
             (set! referenced-macros (append (get-referenced-macros high-level? sexp) referenced-macros))
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
-              (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
-                                  quote quote-syntax with-continuation-mark 
-                                  #%app #%datum #%top #%plain-module-begin
-                                  define-values define-syntaxes module
-                                  require require-for-syntax provide)
+              (syntax-case* sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
+                                   quote quote-syntax with-continuation-mark 
+                                   #%app #%datum #%top #%plain-module-begin
+                                   define-values define-syntaxes module
+                                   require require-for-syntax provide)
+                (if high-level? module-transformer-identifier=? module-identifier=?)
                 [(lambda args bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
@@ -1133,8 +1143,13 @@
                    (annotate-raw-keyword sexp))]
                 
                 ; module top level only:
-                [(provide vars ...)
+                [(provide provide-specs ...)
                  (begin
+                   (set! varrefs
+                         (map
+                          (lambda (x) (cons #f x))
+                          (apply append (map extract-provided-vars 
+                                             (syntax->list (syntax (provide-specs ...)))))))
                    (annotate-raw-keyword sexp))]
                 
                 [id
@@ -1223,6 +1238,27 @@
                   [else stxs]))
               null)))
       
+      ;; extract-provided-vars : syntax -> (listof syntax[identifier])
+      (define (extract-provided-vars stx)
+        (syntax-case stx (rename struct all-from all-from-except)
+          [identifier
+           (identifier? (syntax identifier))
+           (list (syntax identifier))]
+          
+          [(rename local-identifier export-identifier) 
+           (list (syntax local-identifier))]
+          
+          ;; why do I even see this?!?
+          [(struct struct-identifier (field-identifier ...))
+           null]
+          
+          [(all-from module-name) null] 
+          [(all-from-except module-name identifer ...)
+           null]
+          [_ 
+           null]))
+          
+      
        ;; trim-require-prefix : syntax -> syntax
       (define (trim-require-prefix require-spec)
         (let loop ([stx require-spec])
@@ -1239,12 +1275,17 @@
       ;; combine-binders : syntax (listof syntax) -> (listof syntax)
       ;; transforms an argument list into a bunch of symbols/symbols and puts 
       ;; them on `incoming'
-      ;; [could be more efficient if it processed the stx itself instead of append]
       (define (combine-binders stx incoming)
-        (let ([lst (syntax->list stx)])
-          (if lst
-              (append lst incoming)
-              (cons stx incoming))))
+        (let loop ([stx stx]
+                   [sofar incoming])
+          (let ([e (if (syntax? stx) (syntax-e stx) stx)])
+            (cond
+              [(cons? e)
+               (if (syntax? (car e))
+                   (loop (cdr e) (cons (car e) sofar))
+                   (loop (cdr e) sofar))]
+              [(null? e) sofar]
+              [else (cons stx sofar)]))))
       
       
       ;; annotate-original-keywords : syntax -> void

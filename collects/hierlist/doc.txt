@@ -49,6 +49,13 @@ _hierlist_ defines three classes:
      `i', hierarchical-list-item<%> or #f, where #f means that no item
      is selected
 
+>  on-click :: (send a-list on-click i) - called when an item is
+     clicked on, but selection for that item is not allowed.
+     `i' is a hierarchical-list-item<%>.
+
+     selection can be disallowed by the `set-allow-selection' method
+     or by the `selectable' method.
+     
 >  on-double-select :: (send a-list on-double-select i) - called for
      double-click on hierarchical-list-item<%> `i'
 
@@ -84,6 +91,14 @@ _hierlist_ defines three classes:
    the list. This is intended for use with the autmatic test
    suite.
 
+>  get-allow-selection? :: (send an-item get-allow-selection?) -
+
+   returns #t or #f -- dictating if this item is allowed
+   to be selected.
+
+>  set-allow-selection :: (send an-item set-allow-selection boolean) -
+   deteremines if this item is allowed to be selected
+   
 --------------------------------------------------
 
 > hierarchical-list-compound-item<%>, instantiate via new-list

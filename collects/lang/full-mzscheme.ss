@@ -1,6 +1,6 @@
 (module full-mzscheme mzscheme
   (define argv #())
-  (define program (namespace-variable-binding 'program))
+  (define program "mzscheme")
   (provide argv 
            program
            (all-from mzscheme)))

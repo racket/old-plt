@@ -26,8 +26,11 @@
   
   (provide build)
   
+  ; should where the file is
+  (define here (this-expression-source-directory) )
+  
   (define ext-dir
-    (build-path "compiled" "native" (system-library-subpath)))
+    (build-path here "compiled" "native" (system-library-subpath)))
   
   (define (build)
     (begin
@@ -51,8 +54,7 @@
           winval
           unval)))
   
-  ; should where the file is
-  (define here (this-expression-source-directory) )
+
   
   ; command line flags: / for windows, - for unix
   (define flag (alt "/" "-"))

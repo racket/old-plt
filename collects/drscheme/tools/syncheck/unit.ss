@@ -506,9 +506,7 @@
 
     (define syncheck-bitmap
       (drscheme:unit:make-bitmap
-       (build-path mred:constants:plt-home-directory
-		   "icons"
-		   "syncheck.bmp")
+       (build-path (collection-path "icons") "syncheck.bmp")
        (mred:debug:if 'mrslatex
 		      "CS"
 		      "Check Syntax")))

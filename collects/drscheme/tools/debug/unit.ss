@@ -15,11 +15,9 @@
        (private
 	 [bitmap (make-object wx:bitmap% 
 			      (if (<= (wx:display-depth) 1)
-				  (build-path mred:constants:plt-home-directory
-					      "icons"
+				  (build-path (collection-path "icons")
 					      "bb-sm-bw.bmp")
-				  (build-path mred:constants:plt-home-directory
-					      "icons"
+				  (build-path (collection-path "icons")
 					      "bb-small.bmp"))
 			      wx:const-bitmap-type-bmp)]
 	 [button (make-object

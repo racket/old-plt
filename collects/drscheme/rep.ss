@@ -106,7 +106,6 @@
 			 short-string)))))
 	      (debug-info-handler (lambda () (unbox aries:error-box)))
 	      (current-namespace n)
-	      (eval `(#%define plt:home-directory ,mred:constants:plt-home-directory))
 	      (break-enabled #t)
 	      (wx:current-eventspace bottom-eventspace)
 	      ;(wx:eventspace-parameterization bottom-eventspace p)

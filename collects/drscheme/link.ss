@@ -20,10 +20,7 @@
 		  ((reference-unit/sig "language.ss")
 		   mred basis aries
 		   (mzlib function@) print-convert)]
-	[zodiac : zodiac:system^ ((reference-unit/sig (begin-construction-time
-						       (build-path plt:home-directory
-								   "zodiac"
-								   "link.ss")))
+	[zodiac : zodiac:system^ ((reference-library-unit/sig "link.ss" "zodiac")
 				  (interface : zodiac:interface^)
 				  (language : plt:parameters^)
 				  (mzlib pretty-print@)

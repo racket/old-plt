@@ -139,7 +139,7 @@
 	    (let ([tag (select-k next)])
 	      (if (string=? tag "allofthem")
 		  (all-status-page status)
-		  (download tag))))))
+		  (download status tag))))))
 
       (define (all-status-page status)
 	(let ([l (quicksort
@@ -162,13 +162,39 @@
 				     (td ((bgcolor "white")) ,@(solution-link k hi))))
 			      l)))))])
 	    (let ([tag (select-k next)])
-	      (download tag)))))
+	      (download status tag)))))
 
-      (define (download tag)
-	(list "application/data"
-	      (with-input-from-file tag
-		(lambda ()
-		  (read-string (file-size tag))))))
+      (define (download status tag)
+	;; Make sure the user is allowed to read the requested file:
+	(with-handlers ([not-break-exn? (lambda (exn) 
+					  (make-page 
+					   "Error"
+					   "Illegal file access"))])
+	  (let ([who (get-status status 'user (lambda () "???"))])
+	    (let-values ([(base name dir?) (split-path tag)])
+	      ;; Any file name is ok...
+	      (unless (string? name) (error "bad"))
+	      (let-values ([(base name dir?) (split-path base)])
+		;; Directory must be user or "solution"
+		(unless (or (string=? name who)
+			    (string=? name "solution"))
+		  (error "bad"))
+		;; Any dir name is ok...
+		(let-values ([(base name dir?) (split-path base)])
+		  (unless (string? name) (error "bad"))
+		  ;; Base must be active or inactive
+		  (let-values ([(base name dir?) (split-path base)])
+		    (unless (or (string=? name "active") 
+				(string=? name "inactive"))
+		      (error "bad"))
+		    ;; No more to path
+		    (unless (eq? base 'relative)
+		      (error "bad")))))))
+	  ;; Return the downloaded file
+	  (list "application/data"
+		(with-input-from-file tag
+		  (lambda ()
+		    (read-string (file-size tag)))))))
 
       (define (status-page status for-handin)
 	(if for-handin

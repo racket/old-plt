@@ -80,7 +80,9 @@
   (if mred:debug:on? 
       (lambda ()
 	(when mred:debug:new-eval
-	  (mred:debug:new-eval '(mred:run-exit-callbacks)))
+	  (let ([old mred:debug:new-eval])
+	    (set! mred:debug:new-eval #f)
+	    (old '(mred:run-exit-callbacks))))
 	(set! mred:debug:new-eval (make-eval 'wx))
 	(set! mred:make-application@ mred:non-unit-make-application@)
 	(load-recent "link")

@@ -46,8 +46,8 @@
 	    [save-as
 	     (opt-lambda ([format wx:const-media-ff-same])
 	       (let ([file (mred:finder:put-file)])
-		 (if file
-		     (send edit save-file file format))))])
+		 (when file
+		   (send (active-edit) save-file file format))))])
 	  
 	  (public
 	    [auto-save? #t]
@@ -203,24 +203,30 @@
 	    [file-menu:new (lambda () 
 			     (if (is-a? frameset mred:group:frame-group%)
 				 (send frames new-frame #f)
-				 (mred:handler:edit-file #f)))]
+				 (mred:handler:edit-file #f))
+			     #t)]
 	    [file-menu:revert 
 	     (lambda () 
 	       (let ([e (active-edit)]
 		     [b (box #f)])
 		 (if (or (null? (send e get-filename b)) (unbox b))
 		     (wx:bell)
-		     (send e load-file))))]
-	    [file-menu:save (lambda () (send (active-edit) save-file))]
-	    [file-menu:save-as (lambda () (save-as))]
-	    [file-menu:close (lambda () (if (on-close) (show #f)))]
+		     (send e load-file))
+		 #t))]
+	    [file-menu:save (lambda () 
+			      (send (active-edit) save-file)
+			      #t)]
+	    [file-menu:save-as (lambda () (save-as) #t)]
+	    [file-menu:close (lambda () 
+			       (when (on-close) (show #f))
+			       #t)]
 	    [file-menu:between-open-and-save
 	     (lambda (file-menu)
 	       (if keep-buffers?
 		   (send file-menu append-item "Switch to..."
 			 (lambda () (send buffers pick (active-canvas)))))
 	       (send file-menu append-separator))]
-	    [file-menu:print (lambda () (send (active-edit) print '()))]
+	    [file-menu:print (lambda () (send (active-edit) print '()) #t)]
 	    [file-menu:between-save-and-print
 	     (lambda (file-menu)
 	       (send file-menu append-item "Save As Text..."
@@ -255,7 +261,7 @@
 	       (send file-menu append-separator))])
 
 	  (private
-	    [edit-menu:do (lambda (const) (lambda () (send (active-edit) do-edit const)))])
+	    [edit-menu:do (lambda (const) (lambda () (send (active-edit) do-edit const) #t))])
 
 	  (public
 	    [edit-menu:undo (edit-menu:do wx:const-edit-undo)]

@@ -659,7 +659,6 @@
 	     (lambda (edit)
 	       (send edit set-wordbreak-map scheme-media-wordbreak-map)
 	       (send edit set-tabs '() 8 #f)
-	       (send edit set-autowrap-bitmap mred:icon:autowrap-bitmap)
 	       (set! tab-size 8)
 	       (super-install edit))]
 	    [evaluate-region
@@ -801,7 +800,17 @@
 			(send edit get-end-position))))
 
 	  (send keymap map-function "TAB" "tabify-at-caret")
+
 	  (send keymap map-function "return" "do-return")
+	  (send keymap map-function "s:return" "do-return")
+	  (send keymap map-function "s:c:return" "do-return")
+	  (send keymap map-function "a:return" "do-return")
+	  (send keymap map-function "s:a:return" "do-return")
+	  (send keymap map-function "c:a:return" "do-return")
+	  (send keymap map-function "c:s:a:return" "do-return")
+	  (send keymap map-function "c:return" "do-return")
+	  (send keymap map-function "d:return" "do-return")
+
 	  (send keymap map-function "c:c;c:r" "evaluate-region")
 	  (send keymap map-function ")" "balance-parens")
 	  (send keymap map-function "]" "balance-parens")
@@ -816,6 +825,15 @@
 	  (let ([map-meta
 		 (lambda (key func)
 		   (mred:keymap:send-map-function-meta keymap key func))])
+	    (map-meta "return" "do-return")
+	    (map-meta "s:return" "do-return")
+	    (map-meta "s:c:return" "do-return")
+	    (map-meta "a:return" "do-return")
+	    (map-meta "s:a:return" "do-return")
+	    (map-meta "c:a:return" "do-return")
+	    (map-meta "c:s:a:return" "do-return")
+	    (map-meta "c:return" "do-return")
+
 	    (map-meta "c:semicolon" "comment-out")
 	    (map-meta "c:=" "uncomment")
 	    (map-meta "c:k" "remove-sexp")

@@ -53,21 +53,6 @@
 	    (open aries)
 	    (open project))))
 
-(define drscheme:userspace@
-  (unit/sig->unit
-   (compound-unit/sig
-       (import [params : plt:parameters^])
-     (link [function : mzlib:function^ (mzlib:function@)]
-	   [compat : mzlib:compat^ (mzlib:compat@ function)]
-	   [string : mzlib:string^ (mzlib:string@)]
-	   [rice : ricedefs^ (ricedefs@ params)]
-	   [graphics : graphics^ (graphics@)])
-     (export (open function)
-	     (open compat)
-	     (open string)
-	     (open rice)
-	     (open graphics)))))
-
 (define mred:make-invokable-unit
   (lambda ()
     (unit/sig->unit

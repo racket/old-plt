@@ -205,13 +205,14 @@
 		   "calling parent's force-redraw"))
 		 (send parent force-redraw))))]
 	  
-	  ; get-min-size: poll children and return minimum possible size
-	  ;   for the container.
+	  ; get-min-graphical-size: poll children and return minimum possible
+	  ;   size, as required by the graphical representation of the tree,
+	  ;   of the panel.
 	  ; input: none
-	  ; returns: minimum full size (as a list, width & height) of
+	  ; returns: minimum full size (as a list, width & height) of the
 	  ;   container.
-	  ; effects: none.
-	  [get-min-size
+	  ; effects: none
+	  [get-graphical-min-size
 	   (letrec ([gms-helper
 		     (lambda (kid-info x-accum y-accum)
 		       (if (null? kid-info)
@@ -237,10 +238,21 @@
 				    (* 2 const-default-border))]
 		       [delta-w (- (get-width) client-w)]
 		       [delta-h (- (get-height) client-h)])
-		   (list (max (user-min-width)
-			      (+ delta-w (car min-client-size)))
-		         (max (user-min-height)
-			      (+ delta-h (cadr min-client-size))))))))]
+		   (list (+ delta-w (car min-client-size))
+			 (+ delta-h (cadr min-client-size)))))))]
+	  
+	  ; get-min-size: poll children and return minimum possible size
+	  ;   for the container which considers the user min sizes.
+	  ; input: none
+	  ; returns: minimum full size (as a list, width & height) of
+	  ;   container.
+	  ; effects: none.
+	  [get-min-size
+	   (lambda ()
+	     (let ([graphical-min-size (get-graphical-min-size)])
+	       (list
+		(max (car graphical-min-size) (user-min-width))
+		(max (cadr graphical-min-size) (user-min-height)))))]
 	  
 	  ; set-size:
 	  [set-size
@@ -370,8 +382,8 @@
 			   args))
 		  args)))))
     
-    ; make-get-size: creates a function which returns the minimum possible
-    ;   size for a horizontal-panel% or vertical-panel% object.
+    ; make-get-graphical-size: creates a function which returns the minimum
+    ;   possible size for a horizontal-panel% or vertical-panel% object.
     ; input: container: a pointer to the panel% descendant upon
     ;          which this function operates.
     ;        compute-x/compute-y: functions which take the current x/y
@@ -384,7 +396,7 @@
     ; returns: a thunk which returns the minimum possible size of the
     ;   entire panel (not just client) as a list of two elements:
     ;   (min-x min-y). 
-    (define make-get-size
+    (define make-get-graphical-size
       (lambda (container compute-x compute-y)
 	(letrec ([gms-help
 		  (lambda (kid-info x-accum y-accum)
@@ -404,11 +416,8 @@
 				(* 2 border) (* 2 border))]
 		     [delta-w (- (send container get-width) client-w)]
 		     [delta-h (- (send container get-height) client-h)])
-		(list
-		 (max (+ delta-w (car min-client-size))
-		      (send container user-min-width))
-		 (max (+ delta-h (cadr min-client-size))
-		      (send container user-min-height)))))))))
+		(list (+ delta-w (car min-client-size))
+		      (+ delta-h (cadr min-client-size)))))))))
     
     ; make-h-v-redraw: creates place-children functions for
     ; horizontal-panel% or vertical-panel% classes.
@@ -455,8 +464,9 @@
 				(- full-h height))]
 		   [num-stretchable (count-stretchable kid-info)]
 		   [extra-space (- (major-dim width height)
-				   (- (apply major-dim
-					     (send container get-min-size))
+				   (- (apply 
+				       major-dim
+				       (send container get-graphical-min-size))
 				      (apply major-dim delta-list)))]
 		   [extra-per-stretchable (if (zero? num-stretchable)
 					      0
@@ -549,17 +559,18 @@
 	  
 	  [border (make-border this)]
 	  
-	  [get-min-size
-	   (make-get-size this
-			  (lambda (x-accum kid-info)
-			    (+ x-accum (child-info-x-min (car kid-info))
-			       (if (null? (cdr kid-info))
-				   0
-				   (spacing))))
-			  (lambda (y-accum kid-info)
-			    (max y-accum
-				 (+ (child-info-y-min (car kid-info))
-				    (* 2 (border))))))]
+	  [get-graphical-min-size
+	   (make-get-graphical-size 
+	    this
+	    (lambda (x-accum kid-info)
+	      (+ x-accum (child-info-x-min (car kid-info))
+		 (if (null? (cdr kid-info))
+		     0
+		     (spacing))))
+	    (lambda (y-accum kid-info)
+	      (max y-accum
+		   (+ (child-info-y-min (car kid-info))
+		      (* 2 (border))))))]
 	  
 	  [place-children
 	   (make-place-children
@@ -586,17 +597,18 @@
 	  
 	  [border (make-border this)]
 	  
-	  [get-min-size
-	   (make-get-size this
-			  (lambda (x-accum kid-info)
-			    (max x-accum
-				 (+ (child-info-x-min (car kid-info))
-				    (* 2 (border)))))
-			  (lambda (y-accum kid-info)
-			    (+ y-accum (child-info-y-min (car kid-info))
-			       (if (null? (cdr kid-info))
-				   0
-				   (spacing)))))]
+	  [get-graphical-min-size
+	   (make-get-graphical-size
+	    this
+	    (lambda (x-accum kid-info)
+	      (max x-accum
+		   (+ (child-info-x-min (car kid-info))
+		      (* 2 (border)))))
+	    (lambda (y-accum kid-info)
+	      (+ y-accum (child-info-y-min (car kid-info))
+		 (if (null? (cdr kid-info))
+		     0
+		     (spacing)))))]
 	  
 	  [place-children
 	   (make-place-children this
@@ -701,8 +713,8 @@
 	     (set! active new-child)
 	     (force-redraw)])]
 	  
-	  [get-min-size
-	   (make-get-size
+	  [get-graphical-min-size
+	   (make-get-graphical-size
 	    this
 	    (lambda (x-accum kid-info)
 	      (max x-accum (+ (* 2 (border))

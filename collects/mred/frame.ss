@@ -180,7 +180,7 @@
 
 	  (public
 	    [file-menu:new-string ""]
-	    [file-menu:new (lambda () (mred:handler:edit-file #f))]
+	    [file-menu:new (lambda () (mred:handler:edit-file #f) #t)]
 	    [file-menu:new-id #f]
 	    [file-menu:new-help-string "Creates a new empty window for editing"]
 
@@ -215,14 +215,16 @@
 
 	    [file-menu:between-print-and-close (lambda (file-menu) (send file-menu append-separator))]
 
-	    [file-menu:close (lambda () (when (on-close) (show #f)))]
+	    [file-menu:close (lambda () (when (on-close) (show #f)) #t)]
 	    [file-menu:close-string ""]
 	    [file-menu:close-id #f]
 	    [file-menu:close-help-string ""]
 
 	    [file-menu:between-close-and-quit (lambda (file-menu) (void))]
 
-	    [file-menu:quit mred:exit:exit]
+	    [file-menu:quit (lambda ()
+			      (mred:exit:exit)
+			      #t)]
 	    [file-menu:quit-id #f]
 	    [file-menu:quit-help-string "Exits MrEd"]
 
@@ -262,7 +264,9 @@
 
 	    [edit-menu:between-select-all-and-find (lambda (edit-menu) (send edit-menu append-separator))]
 
-	    [edit-menu:find (lambda () (send this search))]
+	    [edit-menu:find (lambda () 
+			      (send this search)
+			      #t)]
 	    [edit-menu:find-id #f]
 	    [edit-menu:find-help-string "Search for a string in the buffer"]
 
@@ -270,7 +274,8 @@
 	    [edit-menu:replace-id #f]
 	    [edit-menu:replace-help-string "Search and replace in the buffer"]
 
-	    [edit-menu:between-replace-and-preferences (lambda (edit-menu) (send edit-menu append-separator))]
+	    [edit-menu:between-replace-and-preferences
+	     (lambda (edit-menu) (send edit-menu append-separator))]
 
 	    [edit-menu:preferences mred:preferences:show-preferences-dialog]
 	    [edit-menu:preferences-id #f]

@@ -5,23 +5,13 @@
     (mred:set-preference-default 'drscheme:scheme-level 'core)
     (define pref (mred:get-preference 'drscheme:scheme-level))
 
-    (define allow-one-armed-if? (case pref
-				  [(core) #f]
-				  [else #t]))
     (define case-sensitive? #t)
     (define allow-set!-on-undefined? (case pref
-				       [(advanced) #t]
-				       [else #f]))
-    (define allow-internal-defines? (case pref
 				       [(advanced) #t]
 				       [else #f]))
     (define allow-improper-lists? (case pref
 				       [(advanced) #t]
 				       [else #f]))
-    (define allow-improper-lists-in-lambda? (case pref
-					      [(core) #f]
-					      [else #t]))
-    (define unmatched-cond/case-is-error? #t)
     (define check-syntax-level pref)))
 
 (define drscheme:setup@
@@ -67,10 +57,10 @@
 	     [choice (make-object mred:choice% main choice-callback
 				  "Language"
 				  -1 -1 -1 -1
-				  (list "Functional Core Scheme"
-					"Structured Scheme"
-					"Side-Effecting Scheme"
-					"Advanced Scheme"))])
+				  (list "Functional Scheme"
+					"Function Scheme Plus Structures"
+					"Imperative Scheme"
+					"Scheme"))])
 	 (send choice set-selection 
 	       (case (mred:get-preference 'drscheme:scheme-level)
 		 [(core) 0]

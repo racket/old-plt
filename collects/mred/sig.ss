@@ -116,7 +116,9 @@
    print-paper-names))
 
 (define-signature mred:console^
-  (welcome-message
+  (credits-proc
+   copyright-string
+   welcome-message
    console-max-save-previous-exprs
    
    make-scheme-mode-edit%

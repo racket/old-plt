@@ -54,20 +54,20 @@
 	  (private
 	    [set-frame-title
 	     (lambda ()
-	       (if frame
-		   (let* ([edit (get-media)]
-			  [title (if (null? edit)
-				     "MrEd"
-				     (send edit get-filename))]
-			  [title (if (string? title)
-				     (string-append
-				      (ivar frame title-prefix)
-				      (or (mzlib:file:file-name-from-path title) "Untitled"))
-				     title)])
-		     (if (string? title)
-			 (let ([old-title (send frame get-title)])
-			   (if (not (equal? title old-title))
-			       (send frame set-title title)))))))])
+	       (when frame
+		 (let* ([edit (get-media)]
+			[title1 (if (null? edit)
+				    "MrEd"
+				    (send edit get-filename))]
+			[title (if (string? title1)
+				   (string-append
+				    (ivar frame title-prefix)
+				    (or (mzlib:file:file-name-from-path title1) "Untitled"))
+				   title1)])
+		   (if (string? title)
+		       (let ([old-title (send frame get-title)])
+			 (if (not (equal? title old-title))
+			     (send frame set-title title)))))))])
 	  (public
 	    [frame #f]
 	    [set-frame (lambda (f) (set! frame f))]

@@ -631,6 +631,7 @@
                                    ,@(map build-identifier providable-generics)
                                    ,@field-getters/setters)))
 
+          (printf "~a~n" names-for-dynamic)
           (let ((class-syntax
                  (create-syntax 
                   #f
@@ -780,27 +781,29 @@
                 (class-override-table old-override-table))))))))
 
   ;generate-dynamic-names: (list method) (list method)-> (list (list string method))
-  (define (generate-dynamic-names methods methods-to-remove)
+  (define (generate-dynamic-names methods overridden-methods)
     (map (lambda (method)
            (list (java-name->scheme (id-string (method-name method)))
                  method))
-         (disjoin-lists (remove-overloaded-methods methods)
-                        methods-to-remove)))
-  
-  (define disjoin-lists (lambda (x y) x))
-  (define remove-all-methods (lambda (x y) x))
-  
-  ;remove-overloaded-methods: (list method) -> (list method)
-  (define (remove-overloaded-methods methods)
-    methods
-    #;(cond
-      ((null? methods) methods)
-      ((member (id-string (method-name (car methods)))
-               (map (lambda (m) (id-string (method-name m))) (cdr methods)))
-       (remove-overloaded-methods
-        (remove-all-methods (id-string (method-name (car methods))) (cdr methods))))
-      (else (cons (car methods) (remove-overloaded-methods (cdr methods))))))
-  
+         (refine-method-list methods overridden-methods)))
+ 
+  ;refine-method-list: (list method) (list method) -> (list method)
+  (define (refine-method-list methods overridden-methods)
+    (if (null? methods) 
+        methods
+        (let ((overloaded-removed 
+               (filter (lambda (method)
+                         (not (equal? (id-string (method-name (car methods)))
+                                      (id-string (method-name method)))))
+                       (cdr methods))))
+          (cond
+            ((> (length (cdr methods))
+                (length overloaded-removed))
+             (refine-method-list overloaded-removed overridden-methods))
+            ((memq (car methods) overridden-methods)
+             (refine-method-list (cdr methods) overridden-methods))
+            (else (cons (car methods) (refine-method-list (cdr methods) overridden-methods)))))))
+    
   ;build-method-table: (list method) (list symbol) -> sexp
   (define (build-method-table methods generics)
     `(let ((table (make-hash-table)))

@@ -19,10 +19,7 @@
             (filter (lambda (x) x)
                     (map (lambda (c) (get-blurb c)) (all-collections)))
             comp<=?)])
-      (map build-string-from-comp comps)
-	(map (lambda (c)
-	       (list (comp-name c) (comp-xml c)))
-	     comps)))
+      (map comp-xml comps)))
   
   ;; all-collections : ->  (lisof string)
   ;; returns a list of the collections from the current-library-collections-path parameter

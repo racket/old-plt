@@ -38,10 +38,6 @@ MzLib tests are run with:
  > (load "PATHTOHERE/mzlib.ss")
 
 
-To run the test suite in MzRice, use these flags:
-  --case-insens --auto-else --no-set-undef --no-sig-undef
-
-
 Please report bugs using
   http://www.cs.rice.edu/CS/PLT/Bugs/
 or (as a last resort) send mail to

@@ -11,7 +11,7 @@
 (define-struct tester (x))
 (define a-tester (make-tester 5))
 
-(define (check-write-string v s)
+(define (check-write-string display v s)
   (let ([p (open-output-string)])
     (display v p)
     (let ([s2 (get-output-string p)])
@@ -123,17 +123,22 @@
 		      #f)
 		(list print-graph
 		      (list #t #f)
-		      '(check-write-string (quote (#0=(1 2) . #0#)) "(#0=(1 2) . #0#)")
+		      '(check-write-string display (quote (#0=(1 2) . #0#)) "(#0=(1 2) . #0#)")
 		      exn:check-string?
 		      #f)
 		(list print-struct
 		      (list #t #f)
-		      '(check-write-string a-tester "#(struct:tester 5)")
+		      '(check-write-string display a-tester "#(struct:tester 5)")
 		      exn:check-string?
 		      #f)
 		(list print-box
 		      (list #t #f)
-		      '(check-write-string (box 5) "#&5")
+		      '(check-write-string display (box 5) "#&5")
+		      exn:check-string?
+		      #f)
+		(list print-vector-length
+		      (list #t #f)
+		      '(check-write-string write (vector 1 2 2) "#3(1 2)")
 		      exn:check-string?
 		      #f)
 

@@ -45,6 +45,9 @@ Changed handling of inexact can complex numbers towards compliance
   Complex numbers can have a +nan.0 real/imaginary part with
    an imaginary/real part that is not +nan.0
 All zero-length vectors are eq
+Vectors are written (but not displayed) using the Chez-style
+ #n(...) shorthand by default; added print-vector-length
+ parameter
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss
@@ -57,6 +60,8 @@ MzLib cleanup:
  Removed from functio.ss: dynamic-wind/protect-break
  Added to thread.ss: dynamic-enable-break
  Moved MzLib's compat.ss out of the core
+ Removes all but the first two arguments to pretty-print (the
+  rest have parameters, which are more convenient anyway)
 file.ss library: added make-directory*
 pretty-print: default display string handler is now the default
  port display handler instead of the display procedure

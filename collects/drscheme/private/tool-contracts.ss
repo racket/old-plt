@@ -503,7 +503,7 @@
   any?
   (string? . -> . boolean?)
   . -> .
-  mode?)
+  drscheme:modes:mode?)
  (name surrogate repl-submit matches-filename)
  "Adds a mode to DrScheme. Returns a mode value"
  "that identifies the mode."
@@ -511,9 +511,15 @@
  "See also"
  "@flink drscheme:modes:get-modes %"
  ".")
-                     
+
+(drscheme:modes:mode?
+ (any? . -> . boolean?)
+ (val)
+ "Determines if \\var{val} is a mode.")
+  
 (drscheme:modes:get-modes
- (-> (listof modes?))
+ (-> (listof drscheme:modes:mode?))
+ ()
  "Returns all of the modes currently added to DrScheme."
  ""
  "See also"
@@ -521,7 +527,7 @@
  ".")
   
 (drscheme:modes:mode-name
- (mode? . -> . string?)
+ (drscheme:modes:mode? . -> . string?)
  (mode)
  "Extracts the name of the mode."
  ""
@@ -530,7 +536,7 @@
  ".")
   
 (drscheme:modes:mode-surrogate
- (mode? . -> . (union false? (is-a?/c mode:surrogate-text<%>)))
+ (drscheme:modes:mode? . -> . (union false? (is-a?/c mode:surrogate-text<%>)))
  (mode)
  "Extracts the surrogate of the mode."
  ""
@@ -539,7 +545,7 @@
  ".")
 
 (drscheme:modes:mode-repl-submit
- (mode? . -> . any)
+ (drscheme:modes:mode? . -> . any)
  (mode)
  "Extracts the repl submission predicate of the mode."
  ""
@@ -548,7 +554,7 @@
  ".")
   
 (drscheme:modes:mode-matches-filename
- (mode? . -> . (string? . -> . boolean?))
+ (drscheme:modes:mode? . -> . (string? . -> . boolean?))
  (mode)
  "Extracts the filename matching predicate of the mode."
  ""

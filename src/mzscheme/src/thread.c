@@ -2864,6 +2864,7 @@ static Scheme_Config *make_initial_config(void)
 							      ? scheme_true : scheme_false));
 
   scheme_set_param(config, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(100));
+  scheme_set_param(config, MZCONFIG_ERROR_PRINT_SRCLOC, scheme_true);
 
   REGISTER_SO(main_custodian);
   main_custodian = scheme_make_custodian(NULL);
@@ -2925,6 +2926,12 @@ static Scheme_Config *make_initial_config(void)
     scheme_set_param(config, MZCONFIG_INSPECTOR, ins);
   }
   
+  {
+    Scheme_Object *zlv;
+    zlv = scheme_make_vector(0, NULL);
+    scheme_set_param(config, MZCONFIG_CMDLINE_ARGS, zlv);
+  }
+
   config->extensions = NULL;
 
   return config;
@@ -2996,7 +3003,8 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 				   /* -3 => like -1, plus use check to unmarshall the value
                                       -2 => user parameter; pos is (cons key defval)
 				      -1 => use check; if isboolorfilter, check is a filter
-                                            (and expected is ignored)
+                                            (and expected is ignored), and if check is NULL,
+                                            parameter is boolean-valued
 				      0+ => check argument for this arity */
 				   Scheme_Object *(*check)(int, Scheme_Object **), 
 				   /* Actually called with (int, S_O **, Scheme_Config *) */
@@ -3114,7 +3122,6 @@ void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *))
 
 Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
 {
-  int save_ec_only;
   int empty = 0;
   Scheme_Env *env;
 

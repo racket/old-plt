@@ -128,7 +128,7 @@ extern char *copystring_xt(const char *s);
 # define FREE_MENU_STRING(s)     XtFree((char *)s)
 # define EXTRACT_TOP_MENU(item)  ((wxMenu*)GET_SAFEREF(item->user_data))
 # define BUNDLE_TOP_MENU(menu)   GC_malloc_immobile_box(GC_malloc_weak_box(gcOBJ_TO_PTR(menu), NULL, 0))
-# define FREE_TOP_POINTER(p)     GC_free_immobile_box(p)
+# define FREE_TOP_POINTER(p)     GC_free_immobile_box((void **)p)
 #else
 # define MALLOC_MENU_ITEM()      (new menu_item)
 # define FREE_MENU_ITEM(i)       /* nothing */

@@ -883,7 +883,7 @@ wxsMenuItem::wxsMenuItem(void)
 wxsMenuItem::~wxsMenuItem()
 {
 #ifdef MZ_PRECISE_GC
-  GC_free_immobile_box(my_id);
+  GC_free_immobile_box((void **)my_id);
 #endif
 }
 

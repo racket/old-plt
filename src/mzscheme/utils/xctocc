@@ -147,8 +147,13 @@ sub ReadFile {
 		$_ = &Wash(&SkipKey($_, $key_classbase));
 		$pos = index($_, ' ');
 		$base = substr($_, 0, $pos);
+		($base,$mkbase) = split(/=/, $base, 2);
+		if ($mkbase eq '') {
+		    $mkbase = $base;
+		}
 		$classstring = substr($_, $pos);
 		$base = &Wash($base);
+		$mkbase = &Wash($mkbase);
 		($classstring,$classflags) = split(/\//, $classstring, 2);
 		($classstring,$parentstring) = &SplitColon($classstring);
 		$classstring = '"' . &Unquote(&Wash($classstring))
@@ -160,6 +165,7 @@ sub ReadFile {
 		}
 		$classflags = &Wash($classflags);
 		$oldclass = $base;
+		$oldclassmk = $mkbase;
 		$newclass = 'os_' . $base;
 	    } elsif (&StartsWithKey($_, $key_interface)) {
 		$_ = &Wash(&SkipKey($_, $key_classbase));
@@ -753,7 +759,7 @@ sub DoPrintClass
     if (!$global) {
 	$globalname = "";
 
-	print "class ${newclass} : public ${oldclass} {\n";
+	print "class ${newclass} : public ${oldclassmk} {\n";
 	print " public:\n";
 	foreach $var (@vars) {
 	    print "  $var\n";
@@ -816,7 +822,7 @@ sub DoPrintClass
 
 	print "#ifdef MZ_PRECISE_GC\n";
 	print "void ${newclass}::gcMark() {\n";
-	print "  ${oldclass}::gcMark();\n";
+	print "  ${oldclassmk}::gcMark();\n";
 	foreach $var (@vars) {
 	    if ($var =~ /(.*[*])(.*);/) {
 		print "  gcMARK_TYPED($1, $2);\n";
@@ -825,7 +831,7 @@ sub DoPrintClass
 	print "}\n";
 	
 	print "void ${newclass}::gcFixup() {\n";
-	print "  ${oldclass}::gcFixup();\n";
+	print "  ${oldclassmk}::gcFixup();\n";
 	foreach $var (@vars) {
 	    if ($var =~ /(.*[*])(.*);/) {
 		print "  gcFIXUP_TYPED($1, $2);\n";
@@ -867,7 +873,7 @@ sub DoPrintClass
 		print "${newclass}::${newclass} CONSTRUCTOR_ARGS((";
 		&PrintParams(0);
 		print "))\n";
-		print "CONSTRUCTOR_INIT(: ${oldclass}(";
+		print "CONSTRUCTOR_INIT(: ${oldclassmk}(";
 		&PrintArgs(1);
 		print "))\n";
 		print "{\n";
@@ -1994,7 +2000,7 @@ sub PrintSpecificFunction
 	&PrintArgs();
 	print ")));\n";
 	print "#ifdef MZ_PRECISE_GC\n";
-	print "$prefix  WITH_VAR_STACK(realobj->gcInit_${oldclass}(";
+	print "$prefix  WITH_VAR_STACK(realobj->gcInit_${oldclassmk}(";
 	&PrintArgs();
 	print "));\n";
 	print "#endif\n";

@@ -46,6 +46,7 @@ static Scheme_Object *error_display_handler(int, Scheme_Object *[]);
 static Scheme_Object *error_value_string_handler(int, Scheme_Object *[]);
 static Scheme_Object *exit_handler(int, Scheme_Object *[]);
 static Scheme_Object *error_print_width(int, Scheme_Object *[]);
+static Scheme_Object *error_print_srcloc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_escape_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_display_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_value_string_proc(int, Scheme_Object *[]);
@@ -441,6 +442,11 @@ void scheme_init_error(Scheme_Env *env)
 			     scheme_register_parameter(error_print_width, 
 						       "error-print-width",
 						       MZCONFIG_ERROR_PRINT_WIDTH), 
+			     env);
+  scheme_add_global_constant("error-print-source-location", 
+			     scheme_register_parameter(error_print_srcloc, 
+						       "error-print-source-location",
+						       MZCONFIG_ERROR_PRINT_SRCLOC), 
 			     env);
   scheme_add_global_constant("exit", 
 			     scheme_make_prim_w_arity(scheme_do_exit, 
@@ -1080,6 +1086,7 @@ void scheme_wrong_syntax(const char *where,
   char *s, *buffer;
   char *v, *dv, *p;
   Scheme_Object *mod, *who;
+  int show_src;
 
   /* back-door argument: */
   if (syntax_error_module) {
@@ -1114,6 +1121,8 @@ void scheme_wrong_syntax(const char *where,
   p = NULL;
   plen = 0;
 
+  show_src = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC));
+  
   if (form) {
     Scheme_Object *pform;
     if (SCHEME_STXP(form)) {
@@ -1151,7 +1160,12 @@ void scheme_wrong_syntax(const char *where,
 	form = scheme_datum_to_syntax(form, scheme_false, scheme_false, 1, 0);
     }
     /* don't use error_write_to_string_w_max since this is code */
-    v = scheme_write_to_string_w_max(pform, &vlen, len);
+    if (show_src)
+      v = scheme_write_to_string_w_max(pform, &vlen, len);
+    else {
+      v = NULL;
+      vlen = 0;
+    }
   } else {
     form = scheme_false;
     v = NULL;
@@ -1171,7 +1185,12 @@ void scheme_wrong_syntax(const char *where,
     }
 
     /* don't use error_write_to_string_w_max since this is code */
-    dv = scheme_write_to_string_w_max(pform, &dvlen, len);
+    if (show_src)
+      dv = scheme_write_to_string_w_max(pform, &dvlen, len);
+    else {
+      dv = NULL;
+      dvlen = 0;
+    }
   } else {
     dv = NULL;
     dvlen = 0;
@@ -1565,6 +1584,14 @@ static Scheme_Object *error_print_width(int argc, Scheme_Object *argv[])
 			     scheme_make_integer(MZCONFIG_ERROR_PRINT_WIDTH),
 			     argc, argv,
 			     -1, good_print_width, "integer greater than three", 0);
+}
+
+static Scheme_Object *error_print_srcloc(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("error-print-source-location", 
+			     scheme_make_integer(MZCONFIG_ERROR_PRINT_SRCLOC),
+			     argc, argv,
+			     -1, NULL, NULL, 1);
 }
 
 static Scheme_Object *

@@ -51,6 +51,7 @@ static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
 static Scheme_Object *barrier_symbol;
 
 static Scheme_Object *source_symbol; /* uninterned! */
+static Scheme_Object *share_symbol; /* uninterned! */
 static Scheme_Object *origin_symbol;
 static Scheme_Object *lexical_symbol;
 
@@ -224,9 +225,11 @@ void scheme_init_stx(Scheme_Env *env)
   barrier_symbol = scheme_intern_symbol("*");
 
   REGISTER_SO(source_symbol);
+  REGISTER_SO(share_symbol);
   REGISTER_SO(origin_symbol);
   REGISTER_SO(lexical_symbol);
   source_symbol = scheme_make_symbol("source"); /* not interned! */
+  share_symbol = scheme_make_symbol("share"); /* not interned! */
   origin_symbol = scheme_intern_symbol("origin");
   lexical_symbol = scheme_intern_symbol("lexical");
 
@@ -304,7 +307,15 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col, long pos)
 /* Sets the "is graph" flag */
 {
+  Scheme_Object *tmp, *key;
+
   ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
+  
+  /* Add back-pointing property to track sharing 
+     independent of marks. */
+  key = scheme_new_mark();
+  tmp = scheme_stx_property(stx, share_symbol, key);
+  ((Scheme_Stx *)stx)->props = ((Scheme_Stx *)tmp)->props;
 
   return stx;
 }
@@ -319,6 +330,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   Scheme_Object *ne, *oe, *e1, *e2;
   Scheme_Object *wraps, *modinfo_cache;
   long lazy_prefix;
+  int graph;
 
   if (nstx->props) {
     if (SAME_OBJ(nstx->props, STX_SRCTAG)) {
@@ -341,10 +353,10 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
       oe = ostx->props;
 
-      /* Drop 'source, add 'origin if not there */
+      /* Drop 'source and 'share, add 'origin if not there */
       for (p = oe; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
 	a = SCHEME_CAR(SCHEME_CAR(p));
-	if (SAME_OBJ(a, source_symbol))
+	if (SAME_OBJ(a, source_symbol) || SAME_OBJ(a, share_symbol))
 	  mod = 1;
 	else if (SAME_OBJ(a, origin_symbol))
 	  mod = 1;
@@ -355,7 +367,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
 	for (; SCHEME_PAIRP(oe); oe = SCHEME_CDR(oe)) {
 	  a = SCHEME_CAR(SCHEME_CAR(oe));
-	  if (!SAME_OBJ(a, source_symbol)) {
+	  if (!SAME_OBJ(a, source_symbol) && !SAME_OBJ(a, share_symbol)) {
 	    if (!SAME_OBJ(a, origin_symbol)) {
 	      p = scheme_make_pair(SCHEME_CAR(oe), scheme_null);
 	    } else {
@@ -458,6 +470,8 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
   /* Clone nstx, keeping wraps, changing props to ne */
 
+  graph = (nstx->hash_code & STX_GRAPH_FLAG);
+
   wraps = nstx->wraps;
   if (nstx->hash_code & STX_SUBSTX_FLAG) {
     modinfo_cache = NULL;
@@ -474,6 +488,9 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
     nstx->u.modinfo_cache = modinfo_cache;
   else
     nstx->u.lazy_prefix = lazy_prefix;
+
+  if (graph)
+    nstx->hash_code |= STX_GRAPH_FLAG;
 
   return (Scheme_Object *)nstx;
 }
@@ -504,6 +521,9 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *wraps;
   long lp;
+  int graph;
+
+  graph = (stx->hash_code & STX_GRAPH_FLAG);
 
   if (stx->hash_code & STX_SUBSTX_FLAG)
     lp = stx->u.lazy_prefix;
@@ -518,6 +538,9 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   if (stx->hash_code & STX_SUBSTX_FLAG)
     stx->u.lazy_prefix = lp;
   /* else cache should stay zeroed */
+
+  if (graph)
+    stx->hash_code |= STX_GRAPH_FLAG;
 
   return (Scheme_Object *)stx;
 }
@@ -638,6 +661,9 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *wraps;
   long lp;
+  int graph;
+
+  graph = (stx->hash_code & STX_GRAPH_FLAG);
 
   wraps = scheme_make_pair(rename, stx->wraps);
   if (stx->hash_code & STX_SUBSTX_FLAG)
@@ -649,6 +675,9 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   stx->wraps = wraps;
 
   stx->u.lazy_prefix = lp; /* same as zeroing cache if no SUBSTX */
+
+  if (graph)
+    stx->hash_code |= STX_GRAPH_FLAG;
 
   return (Scheme_Object *)stx;
 }
@@ -697,6 +726,9 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     
     if (SAME_OBJ(stx->wraps, p1)) {
       long lp;
+      int graph;
+
+      graph = (stx->hash_code & STX_GRAPH_FLAG);
 
       if (stx->hash_code & STX_SUBSTX_FLAG)
 	lp = stx->u.lazy_prefix + len;
@@ -706,6 +738,9 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
       stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
       stx->wraps = owner_wraps;
       stx->u.lazy_prefix = lp; /* same as zeroing cache if no SUBSTX */
+
+      if (graph)
+	stx->hash_code |= STX_GRAPH_FLAG;
 
       return (Scheme_Object *)stx;
     }
@@ -1838,10 +1873,17 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
   SCHEME_USE_FUEL(1);
 
   if (stx->hash_code & STX_GRAPH_FLAG) {
+    Scheme_Object *key;
+
     if (!*ht)
       *ht = scheme_make_hash_table(SCHEME_hash_ptr);
     
-    ph = scheme_hash_get(*ht, (Scheme_Object *)stx);
+    key = scheme_stx_property((Scheme_Object *)stx, share_symbol, NULL);
+    if (SCHEME_FALSEP(key)) {
+      scheme_signal_error("bad 'share key");
+    }
+
+    ph = scheme_hash_get(*ht, key);
 
     if (ph)
       return ph;
@@ -1849,7 +1891,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
       ph = scheme_alloc_small_object();
       ph->type = scheme_placeholder_type;
       
-      scheme_hash_set(*ht, (Scheme_Object *)stx, (Scheme_Object *)ph);
+      scheme_hash_set(*ht, key, (Scheme_Object *)ph);
     }
   } else 
     ph = NULL;
@@ -2290,7 +2332,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   }
   
   if (ph) {
-    ((Scheme_Stx *)result)->hash_code |= STX_GRAPH_FLAG;
+    scheme_make_graph_stx(result, -1, -1, -1);
     SCHEME_PTR_VAL(ph) = result;
   }
 
@@ -2336,29 +2378,25 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
 
 #ifdef DO_STACK_CHECK
 static void simplify_syntax_inner(Scheme_Object *o,
-				  Scheme_Hash_Table *rns,
-				  Scheme_Hash_Table **ht);
+				  Scheme_Hash_Table *rns);
 
 static Scheme_Object *simplify_syntax_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
   Scheme_Hash_Table *rns = (Scheme_Hash_Table *)p->ku.k.p2;
-  Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
-  p->ku.k.p3 = NULL;
 
-  simplify_syntax_inner(o, rns, ht);
+  simplify_syntax_inner(o, rns);
 
   return NULL;
 }
 #endif
 
 static void simplify_syntax_inner(Scheme_Object *o, 
-				  Scheme_Hash_Table *rns,
-				  Scheme_Hash_Table **ht)
+				  Scheme_Hash_Table *rns)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *v;
@@ -2370,24 +2408,12 @@ static void simplify_syntax_inner(Scheme_Object *o,
       Scheme_Thread *p = scheme_current_thread;
       p->ku.k.p1 = (void *)o;
       p->ku.k.p2 = (void *)rns;
-      p->ku.k.p3 = (void *)ht;
       scheme_handle_stack_overflow(simplify_syntax_k);
       return;
     }
   }
 #endif
   SCHEME_USE_FUEL(1);
-
-  if (stx->hash_code & STX_GRAPH_FLAG) {
-    /* Avoid infinite loops... */
-    if (!*ht)
-      *ht = scheme_make_hash_table(SCHEME_hash_ptr);
-    
-    if (scheme_hash_get(*ht, (Scheme_Object *)stx))
-      return;
-    else
-      scheme_hash_set(*ht, (Scheme_Object *)stx, (Scheme_Object *)scheme_true);
-  }
  
   /* Propagate wraps: */
   scheme_stx_content((Scheme_Object *)stx);
@@ -2401,19 +2427,19 @@ static void simplify_syntax_inner(Scheme_Object *o,
   
   if (SCHEME_PAIRP(v)) {
     while (SCHEME_PAIRP(v)) {
-      simplify_syntax_inner(SCHEME_CAR(v), rns, ht);
+      simplify_syntax_inner(SCHEME_CAR(v), rns);
       v = SCHEME_CDR(v);
     }
     if (!SCHEME_NULLP(v)) {
-      simplify_syntax_inner(v, rns, ht);
+      simplify_syntax_inner(v, rns);
     }
   } else if (SCHEME_BOXP(v)) {
-    simplify_syntax_inner(SCHEME_BOX_VAL(v), rns, ht);
+    simplify_syntax_inner(SCHEME_BOX_VAL(v), rns);
   } else if (SCHEME_VECTORP(v)) {
     int size = SCHEME_VEC_SIZE(v), i;
     
     for (i = 0; i < size; i++) {
-      simplify_syntax_inner(SCHEME_VEC_ELS(v)[i], rns, ht);
+      simplify_syntax_inner(SCHEME_VEC_ELS(v)[i], rns);
     }
   }
 }
@@ -2426,11 +2452,11 @@ Scheme_Object *scheme_new_stx_simplify_cache()
 void scheme_simplify_stx(Scheme_Object *stx, Scheme_Object *cache)
 {
   if (cache) {
-    Scheme_Hash_Table *rns, *ht = NULL;
+    Scheme_Hash_Table *rns;
 
     rns = (Scheme_Hash_Table *)cache;
 
-    simplify_syntax_inner(stx, rns, &ht);
+    simplify_syntax_inner(stx, rns);
   }
 }
 
@@ -2709,7 +2735,10 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
   if (val) {
     Scheme_Object *wraps, *modinfo_cache;
     long lazy_prefix;
+    int graph;
     
+    graph = (stx->hash_code & STX_GRAPH_FLAG);
+
     l = scheme_make_pair(scheme_make_pair(key, val), l);
 
     wraps = stx->wraps;
@@ -2728,6 +2757,9 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
       stx->u.modinfo_cache = modinfo_cache;
     else
       stx->u.lazy_prefix = lazy_prefix; /* same as NULL modinfo if no SUBSTX */
+
+    if (graph)
+      stx->hash_code |= STX_GRAPH_FLAG;
 
     return (Scheme_Object *)stx;
   } else

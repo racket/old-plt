@@ -3,14 +3,83 @@
 
 #include "wx_stdev.h"
 
+class wxEvent_ext : public wxEvent {
+ public: wxEvent_ext(long ts);
+};
+
+wxEvent_ext::wxEvent_ext(long ts)
+: wxEvent() 
+{		
+  timeStamp = ts;
+}
+
+class wxCommandEvent_ext : public wxCommandEvent {
+ public: wxCommandEvent_ext(int at, long ts);
+};
+
+wxCommandEvent_ext::wxCommandEvent_ext(int at, long ts)
+: wxCommandEvent(at) 
+{
+  timeStamp = ts;
+}
+
+class wxScrollEvent_ext : public wxScrollEvent {
+ public: wxScrollEvent_ext(int et, int d, int p, long ts);
+};
+
+wxScrollEvent_ext::wxScrollEvent_ext(int et, int d, int p, long ts)
+: wxScrollEvent()
+{
+  moveType = et;
+  direction = d;
+  pos = p;
+  timeStamp = ts;
+}
+
+class wxKeyEvent_ext : public wxKeyEvent {
+ public: wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts);
+};
+
+wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts) 
+: wxKeyEvent(wxEVENT_TYPE_CHAR) 
+{
+  keyCode = kc;
+  shiftDown = sd;
+  controlDown = cd;
+  metaDown = md;
+  altDown = ad;
+  x = xv;
+  y = yv;
+  timeStamp = ts;
+}
+
+class wxMouseEvent_ext : public wxMouseEvent {
+ public: wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts);
+};
+
+wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts) 
+: wxMouseEvent(et)
+{
+  leftDown = ld;
+  middleDown = mdd;
+  rightDown = rd;
+  x = xv;
+  y = yv;
+  shiftDown = sd;
+  controlDown = cd;
+  metaDown = md;
+  altDown = ad;
+  timeStamp = ts;
+}
+
 @INCLUDE wxs.xci
 
 @HEADER
 
-@CLASSBASE wxEvent "event":"object" / nofnl
+@CLASSBASE wxEvent=wxEvent_ext "event":"object" / nofnl
 
-@CREATOR ()
-@ARGNAMES
+@CREATOR (ExactLong=0)
+@ARGNAMES [time-stamp 0]
 
 @IVAR "time-stamp" : ExactLong timeStamp
 
@@ -31,20 +100,21 @@
 @SYM "menu-popdown-none" : wxEVENT_TYPE_MENU_POPDOWN_NONE
 @ENDSYMBOLS
 
-@CLASSBASE wxCommandEvent "control-event":"event" / nofnl
+@CLASSBASE wxCommandEvent=wxCommandEvent_ext "control-event":"event" / nofnl
 
-@CREATOR (SYM[actionType])
-@ARGNAMES event-type
+@CREATOR (SYM[actionType], ExactLong=0)
+@ARGNAMES event-type [time-stamp 0]
 
 @IVAR "event-type" : SYM[actionType] eventType
 
 @END
 
 
+// This class is not instantiated from Scheme; it is only
+// instantiated to send info to mred.ss:
 @CLASSBASE wxPopupEvent "popup-event":"control-event" / nofnl
 
 @CREATOR ()
-@ARGNAMES
 
 @CLASSID wxTYPE_POPUP_EVENT
 
@@ -64,10 +134,10 @@
 
 @INCLUDE wxs_ornt.xci
 
-@CLASSBASE wxScrollEvent "scroll-event":"event" / nofnl
+@CLASSBASE wxScrollEvent=wxScrollEvent_ext "scroll-event":"event" / nofnl
 
-@CREATOR ()
-@ARGNAMES
+@CREATOR (SYM[scrollMoveType]=wxEVENT_TYPE_SCROLL_THUMBTRACK, SYM[orientation]=wxVERTICAL, int=0, ExactLong=0)
+@ARGNAMES [event-type 'thumb] [direction 'vertical] [position 0] [time-stamp 0]
 
 @IVAR "event-type" : SYM[scrollMoveType] moveType
 @IVAR "direction" : SYM[orientation] direction
@@ -145,11 +215,10 @@
 @SYM "scroll" : WXK_SCROLL
 @ENDSYMBOLS
 
-@CLASSBASE wxKeyEvent "key-event":"event" / nofnl
+@CLASSBASE wxKeyEvent=wxKeyEvent_ext "key-event":"event" / nofnl
 
-@MACRO SETX0 = x0=wxEVENT_TYPE_CHAR;
-@CREATOR (-int=wxEVENT_TYPE_CHAR); : : /SETX0
-@ARGNAMES
+@CREATOR (SYM[keyCode]=0, bool=0, bool=0, bool=0, bool=0, float=0.0, float=0.0, ExactLong=0)
+@ARGNAMES [key-code #\nul] [shift-down #f] [control-down #f] [meta-down #f] [alt-down #f] [x 0.0] [y 0.0] [time-stamp 0]
 
 @IVAR "key-code" : SYM[keyCode] keyCode
 @IVAR "shift-down" : bool shiftDown
@@ -182,10 +251,10 @@
 @SYM "right" : 3
 @ENDSYMBOLS
 
-@CLASSBASE wxMouseEvent "mouse-event":"event" / nofnl
+@CLASSBASE wxMouseEvent=wxMouseEvent_ext "mouse-event":"event" / nofnl
 
-@CREATOR (SYM[mouseEventType]);
-@ARGNAMES event-type
+@CREATOR (SYM[mouseEventType], bool=0, bool=0, bool=0, float=0.0, float=0.0, bool=0, bool=0, bool=0, bool=0, ExactLong=0)
+@ARGNAMES event-type [left-down #f] [middle-down #f] [right-down #f] [x 0.0] [y 0.0] [shift-down #f] [control-down #f] [meta-down #f] [alt-down #f] [time-stamp 0]
 
 @ "button-changed?" : bool Button(SYM[buttonId]=-1);
 @ "button-down?" : bool ButtonDown(SYM[buttonId]=-1);

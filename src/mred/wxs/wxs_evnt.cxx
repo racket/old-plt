@@ -8,6 +8,75 @@
 
 #include "wx_stdev.h"
 
+class wxEvent_ext : public wxEvent {
+ public: wxEvent_ext(long ts);
+};
+
+wxEvent_ext::wxEvent_ext(long ts)
+: wxEvent() 
+{		
+  timeStamp = ts;
+}
+
+class wxCommandEvent_ext : public wxCommandEvent {
+ public: wxCommandEvent_ext(int at, long ts);
+};
+
+wxCommandEvent_ext::wxCommandEvent_ext(int at, long ts)
+: wxCommandEvent(at) 
+{
+  timeStamp = ts;
+}
+
+class wxScrollEvent_ext : public wxScrollEvent {
+ public: wxScrollEvent_ext(int et, int d, int p, long ts);
+};
+
+wxScrollEvent_ext::wxScrollEvent_ext(int et, int d, int p, long ts)
+: wxScrollEvent()
+{
+  moveType = et;
+  direction = d;
+  pos = p;
+  timeStamp = ts;
+}
+
+class wxKeyEvent_ext : public wxKeyEvent {
+ public: wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts);
+};
+
+wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts) 
+: wxKeyEvent(wxEVENT_TYPE_CHAR) 
+{
+  keyCode = kc;
+  shiftDown = sd;
+  controlDown = cd;
+  metaDown = md;
+  altDown = ad;
+  x = xv;
+  y = yv;
+  timeStamp = ts;
+}
+
+class wxMouseEvent_ext : public wxMouseEvent {
+ public: wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts);
+};
+
+wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts) 
+: wxMouseEvent(et)
+{
+  leftDown = ld;
+  middleDown = mdd;
+  rightDown = rd;
+  x = xv;
+  y = yv;
+  shiftDown = sd;
+  controlDown = cd;
+  metaDown = md;
+  altDown = ad;
+  timeStamp = ts;
+}
+
 
 
 
@@ -33,10 +102,10 @@ START_XFORM_SKIP;
 
 
 
-class os_wxEvent : public wxEvent {
+class os_wxEvent : public wxEvent_ext {
  public:
 
-  os_wxEvent CONSTRUCTOR_ARGS(());
+  os_wxEvent CONSTRUCTOR_ARGS((ExactLong x0 = 0));
   ~os_wxEvent();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -46,17 +115,17 @@ class os_wxEvent : public wxEvent {
 
 #ifdef MZ_PRECISE_GC
 void os_wxEvent::gcMark() {
-  wxEvent::gcMark();
+  wxEvent_ext::gcMark();
 }
 void os_wxEvent::gcFixup() {
-  wxEvent::gcFixup();
+  wxEvent_ext::gcFixup();
 }
 #endif
 
 static Scheme_Object *os_wxEvent_class;
 
-os_wxEvent::os_wxEvent CONSTRUCTOR_ARGS(())
-CONSTRUCTOR_INIT(: wxEvent())
+os_wxEvent::os_wxEvent CONSTRUCTOR_ARGS((ExactLong x0))
+CONSTRUCTOR_INIT(: wxEvent_ext(x0))
 {
 }
 
@@ -104,19 +173,24 @@ static Scheme_Object *os_wxEvent_ConstructScheme(int n,  Scheme_Object *p[])
   PRE_VAR_STACK_PUSH(0, p);
   os_wxEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
+  ExactLong x0;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
 
   
-  if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in event%", POFFSET+0, POFFSET+0, n, p));
+  if ((n > (POFFSET+1))) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in event%", POFFSET+POFFSET, POFFSET+1, n, p));
+  if (n > (POFFSET+0)) {
+    x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "initialization in event%"));
+  } else
+    x0 = 0;
 
   
-  realobj = WITH_VAR_STACK(new os_wxEvent CONSTRUCTOR_ARGS(()));
+  realobj = WITH_VAR_STACK(new os_wxEvent CONSTRUCTOR_ARGS((x0)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxEvent());
+  WITH_VAR_STACK(realobj->gcInit_wxEvent_ext(x0));
 #endif
   realobj->__gc_external = (void *)p[0];
   
@@ -284,10 +358,10 @@ static Scheme_Object *bundle_symset_actionType(int v) {
 
 
 
-class os_wxCommandEvent : public wxCommandEvent {
+class os_wxCommandEvent : public wxCommandEvent_ext {
  public:
 
-  os_wxCommandEvent CONSTRUCTOR_ARGS((int x0));
+  os_wxCommandEvent CONSTRUCTOR_ARGS((int x0, ExactLong x1 = 0));
   ~os_wxCommandEvent();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -297,17 +371,17 @@ class os_wxCommandEvent : public wxCommandEvent {
 
 #ifdef MZ_PRECISE_GC
 void os_wxCommandEvent::gcMark() {
-  wxCommandEvent::gcMark();
+  wxCommandEvent_ext::gcMark();
 }
 void os_wxCommandEvent::gcFixup() {
-  wxCommandEvent::gcFixup();
+  wxCommandEvent_ext::gcFixup();
 }
 #endif
 
 static Scheme_Object *os_wxCommandEvent_class;
 
-os_wxCommandEvent::os_wxCommandEvent CONSTRUCTOR_ARGS((int x0))
-CONSTRUCTOR_INIT(: wxCommandEvent(x0))
+os_wxCommandEvent::os_wxCommandEvent CONSTRUCTOR_ARGS((int x0, ExactLong x1))
+CONSTRUCTOR_INIT(: wxCommandEvent_ext(x0, x1))
 {
 }
 
@@ -356,20 +430,25 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(int n,  Scheme_Object *p
   os_wxCommandEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
+  ExactLong x1;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
 
   
-  if (n != (POFFSET+1)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in control-event%", POFFSET+1, POFFSET+1, n, p));
+  if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in control-event%", POFFSET+1, POFFSET+2, n, p));
   x0 = WITH_VAR_STACK(unbundle_symset_actionType(p[POFFSET+0], "initialization in control-event%"));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "initialization in control-event%"));
+  } else
+    x1 = 0;
 
   
-  realobj = WITH_VAR_STACK(new os_wxCommandEvent CONSTRUCTOR_ARGS((x0)));
+  realobj = WITH_VAR_STACK(new os_wxCommandEvent CONSTRUCTOR_ARGS((x0, x1)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxCommandEvent(x0));
+  WITH_VAR_STACK(realobj->gcInit_wxCommandEvent_ext(x0, x1));
 #endif
   realobj->__gc_external = (void *)p[0];
   
@@ -453,6 +532,8 @@ class wxCommandEvent *objscheme_unbundle_wxCommandEvent(Scheme_Object *obj, cons
 
 
 
+// This class is not instantiated from Scheme; it is only
+// instantiated to send info to mred.ss:
 
 
 
@@ -717,10 +798,10 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
-class os_wxScrollEvent : public wxScrollEvent {
+class os_wxScrollEvent : public wxScrollEvent_ext {
  public:
 
-  os_wxScrollEvent CONSTRUCTOR_ARGS(());
+  os_wxScrollEvent CONSTRUCTOR_ARGS((int x0 = wxEVENT_TYPE_SCROLL_THUMBTRACK, int x1 = wxVERTICAL, int x2 = 0, ExactLong x3 = 0));
   ~os_wxScrollEvent();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -730,17 +811,17 @@ class os_wxScrollEvent : public wxScrollEvent {
 
 #ifdef MZ_PRECISE_GC
 void os_wxScrollEvent::gcMark() {
-  wxScrollEvent::gcMark();
+  wxScrollEvent_ext::gcMark();
 }
 void os_wxScrollEvent::gcFixup() {
-  wxScrollEvent::gcFixup();
+  wxScrollEvent_ext::gcFixup();
 }
 #endif
 
 static Scheme_Object *os_wxScrollEvent_class;
 
-os_wxScrollEvent::os_wxScrollEvent CONSTRUCTOR_ARGS(())
-CONSTRUCTOR_INIT(: wxScrollEvent())
+os_wxScrollEvent::os_wxScrollEvent CONSTRUCTOR_ARGS((int x0, int x1, int x2, ExactLong x3))
+CONSTRUCTOR_INIT(: wxScrollEvent_ext(x0, x1, x2, x3))
 {
 }
 
@@ -854,19 +935,39 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(int n,  Scheme_Object *p[
   PRE_VAR_STACK_PUSH(0, p);
   os_wxScrollEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
+  int x0;
+  int x1;
+  int x2;
+  ExactLong x3;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
 
   
-  if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in scroll-event%", POFFSET+0, POFFSET+0, n, p));
+  if ((n > (POFFSET+4))) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in scroll-event%", POFFSET+POFFSET, POFFSET+4, n, p));
+  if (n > (POFFSET+0)) {
+    x0 = WITH_VAR_STACK(unbundle_symset_scrollMoveType(p[POFFSET+0], "initialization in scroll-event%"));
+  } else
+    x0 = wxEVENT_TYPE_SCROLL_THUMBTRACK;
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(unbundle_symset_orientation(p[POFFSET+1], "initialization in scroll-event%"));
+  } else
+    x1 = wxVERTICAL;
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "initialization in scroll-event%"));
+  } else
+    x2 = 0;
+  if (n > (POFFSET+3)) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+3], "initialization in scroll-event%"));
+  } else
+    x3 = 0;
 
   
-  realobj = WITH_VAR_STACK(new os_wxScrollEvent CONSTRUCTOR_ARGS(()));
+  realobj = WITH_VAR_STACK(new os_wxScrollEvent CONSTRUCTOR_ARGS((x0, x1, x2, x3)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxScrollEvent());
+  WITH_VAR_STACK(realobj->gcInit_wxScrollEvent_ext(x0, x1, x2, x3));
 #endif
   realobj->__gc_external = (void *)p[0];
   
@@ -1311,10 +1412,10 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
 
 
 
-class os_wxKeyEvent : public wxKeyEvent {
+class os_wxKeyEvent : public wxKeyEvent_ext {
  public:
 
-  os_wxKeyEvent CONSTRUCTOR_ARGS((int x0 = wxEVENT_TYPE_CHAR));
+  os_wxKeyEvent CONSTRUCTOR_ARGS((int x0 = 0, Bool x1 = 0, Bool x2 = 0, Bool x3 = 0, Bool x4 = 0, float x5 = 0.0, float x6 = 0.0, ExactLong x7 = 0));
   ~os_wxKeyEvent();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -1324,17 +1425,17 @@ class os_wxKeyEvent : public wxKeyEvent {
 
 #ifdef MZ_PRECISE_GC
 void os_wxKeyEvent::gcMark() {
-  wxKeyEvent::gcMark();
+  wxKeyEvent_ext::gcMark();
 }
 void os_wxKeyEvent::gcFixup() {
-  wxKeyEvent::gcFixup();
+  wxKeyEvent_ext::gcFixup();
 }
 #endif
 
 static Scheme_Object *os_wxKeyEvent_class;
 
-os_wxKeyEvent::os_wxKeyEvent CONSTRUCTOR_ARGS((int x0))
-CONSTRUCTOR_INIT(: wxKeyEvent(x0))
+os_wxKeyEvent::os_wxKeyEvent CONSTRUCTOR_ARGS((int x0, Bool x1, Bool x2, Bool x3, Bool x4, float x5, float x6, ExactLong x7))
+CONSTRUCTOR_INIT(: wxKeyEvent_ext(x0, x1, x2, x3, x4, x5, x6, x7))
 {
 }
 
@@ -1581,19 +1682,58 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(int n,  Scheme_Object *p[])
   os_wxKeyEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
+  Bool x1;
+  Bool x2;
+  Bool x3;
+  Bool x4;
+  float x5;
+  float x6;
+  ExactLong x7;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
 
   
-  if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in key-event%", POFFSET+0, POFFSET+0, n, p));
+  if ((n > (POFFSET+8))) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in key-event%", POFFSET+POFFSET, POFFSET+8, n, p));
+  if (n > (POFFSET+0)) {
+    x0 = WITH_VAR_STACK(unbundle_symset_keyCode(p[POFFSET+0], "initialization in key-event%"));
+  } else
+    x0 = 0;
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "initialization in key-event%"));
+  } else
+    x1 = 0;
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in key-event%"));
+  } else
+    x2 = 0;
+  if (n > (POFFSET+3)) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "initialization in key-event%"));
+  } else
+    x3 = 0;
+  if (n > (POFFSET+4)) {
+    x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "initialization in key-event%"));
+  } else
+    x4 = 0;
+  if (n > (POFFSET+5)) {
+    x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "initialization in key-event%"));
+  } else
+    x5 = 0.0;
+  if (n > (POFFSET+6)) {
+    x6 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+6], "initialization in key-event%"));
+  } else
+    x6 = 0.0;
+  if (n > (POFFSET+7)) {
+    x7 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+7], "initialization in key-event%"));
+  } else
+    x7 = 0;
 
-  x0=wxEVENT_TYPE_CHAR;
-  realobj = WITH_VAR_STACK(new os_wxKeyEvent CONSTRUCTOR_ARGS((x0)));
+  
+  realobj = WITH_VAR_STACK(new os_wxKeyEvent CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxKeyEvent(x0));
+  WITH_VAR_STACK(realobj->gcInit_wxKeyEvent_ext(x0, x1, x2, x3, x4, x5, x6, x7));
 #endif
   realobj->__gc_external = (void *)p[0];
   
@@ -1791,10 +1931,10 @@ static int unbundle_symset_buttonId(Scheme_Object *v, const char *where) {
 
 
 
-class os_wxMouseEvent : public wxMouseEvent {
+class os_wxMouseEvent : public wxMouseEvent_ext {
  public:
 
-  os_wxMouseEvent CONSTRUCTOR_ARGS((int x0));
+  os_wxMouseEvent CONSTRUCTOR_ARGS((int x0, Bool x1 = 0, Bool x2 = 0, Bool x3 = 0, float x4 = 0.0, float x5 = 0.0, Bool x6 = 0, Bool x7 = 0, Bool x8 = 0, Bool x9 = 0, ExactLong x10 = 0));
   ~os_wxMouseEvent();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -1804,17 +1944,17 @@ class os_wxMouseEvent : public wxMouseEvent {
 
 #ifdef MZ_PRECISE_GC
 void os_wxMouseEvent::gcMark() {
-  wxMouseEvent::gcMark();
+  wxMouseEvent_ext::gcMark();
 }
 void os_wxMouseEvent::gcFixup() {
-  wxMouseEvent::gcFixup();
+  wxMouseEvent_ext::gcFixup();
 }
 #endif
 
 static Scheme_Object *os_wxMouseEvent_class;
 
-os_wxMouseEvent::os_wxMouseEvent CONSTRUCTOR_ARGS((int x0))
-CONSTRUCTOR_INIT(: wxMouseEvent(x0))
+os_wxMouseEvent::os_wxMouseEvent CONSTRUCTOR_ARGS((int x0, Bool x1, Bool x2, Bool x3, float x4, float x5, Bool x6, Bool x7, Bool x8, Bool x9, ExactLong x10))
+CONSTRUCTOR_INIT(: wxMouseEvent_ext(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10))
 {
 }
 
@@ -2315,20 +2455,70 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(int n,  Scheme_Object *p[]
   os_wxMouseEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
+  Bool x1;
+  Bool x2;
+  Bool x3;
+  float x4;
+  float x5;
+  Bool x6;
+  Bool x7;
+  Bool x8;
+  Bool x9;
+  ExactLong x10;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
 
   
-  if (n != (POFFSET+1)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in mouse-event%", POFFSET+1, POFFSET+1, n, p));
+  if ((n < (POFFSET+1)) || (n > (POFFSET+11))) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in mouse-event%", POFFSET+1, POFFSET+11, n, p));
   x0 = WITH_VAR_STACK(unbundle_symset_mouseEventType(p[POFFSET+0], "initialization in mouse-event%"));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "initialization in mouse-event%"));
+  } else
+    x1 = 0;
+  if (n > (POFFSET+2)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in mouse-event%"));
+  } else
+    x2 = 0;
+  if (n > (POFFSET+3)) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "initialization in mouse-event%"));
+  } else
+    x3 = 0;
+  if (n > (POFFSET+4)) {
+    x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "initialization in mouse-event%"));
+  } else
+    x4 = 0.0;
+  if (n > (POFFSET+5)) {
+    x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "initialization in mouse-event%"));
+  } else
+    x5 = 0.0;
+  if (n > (POFFSET+6)) {
+    x6 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+6], "initialization in mouse-event%"));
+  } else
+    x6 = 0;
+  if (n > (POFFSET+7)) {
+    x7 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+7], "initialization in mouse-event%"));
+  } else
+    x7 = 0;
+  if (n > (POFFSET+8)) {
+    x8 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+8], "initialization in mouse-event%"));
+  } else
+    x8 = 0;
+  if (n > (POFFSET+9)) {
+    x9 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+9], "initialization in mouse-event%"));
+  } else
+    x9 = 0;
+  if (n > (POFFSET+10)) {
+    x10 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+10], "initialization in mouse-event%"));
+  } else
+    x10 = 0;
 
   
-  realobj = WITH_VAR_STACK(new os_wxMouseEvent CONSTRUCTOR_ARGS((x0)));
+  realobj = WITH_VAR_STACK(new os_wxMouseEvent CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxMouseEvent(x0));
+  WITH_VAR_STACK(realobj->gcInit_wxMouseEvent_ext(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
 #endif
   realobj->__gc_external = (void *)p[0];
   

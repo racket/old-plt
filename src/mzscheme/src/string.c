@@ -66,6 +66,7 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_type(int argc, Scheme_Object *argv[]);
 static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
+static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
 
 static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2);
 static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2);
@@ -279,6 +280,13 @@ scheme_init_string (Scheme_Env *env)
 						      "system-library-subpath",
 						      0, 0),
 			     env);
+
+  scheme_add_global_constant("current-command-line-arguments", 
+			     scheme_register_parameter(cmdline_args, 
+						       "current-command-line-arguments",
+						       MZCONFIG_CMDLINE_ARGS), 
+			     env);
+
 }
 
 void
@@ -1376,6 +1384,47 @@ int scheme_strncmp(const char *a, const char *b, int len)
     return 0;
   else
     return *a - *b;
+}
+
+static Scheme_Object *ok_cmdline(int argc, Scheme_Object **argv)
+{
+  if (SCHEME_VECTORP(argv[0])) {
+    Scheme_Object *vec = argv[0], *vec2, *str;
+    int i, size = SCHEME_VEC_SIZE(vec);
+
+
+    if (!size)
+      return vec;
+
+    for (i = 0; i < size; i++) {
+      if (!SCHEME_STRINGP(SCHEME_VEC_ELS(vec)[i]))
+	return NULL;
+    }
+    
+    /* Make sure vector and strings are immutable: */
+    vec2 = scheme_make_vector(size, NULL);
+    SCHEME_SET_VECTOR_IMMUTABLE(vec2);
+    for (i = 0; i < size; i++) {
+      str = SCHEME_VEC_ELS(vec)[i];
+      if (!SCHEME_IMMUTABLE_STRINGP(str)) {
+	str = scheme_make_sized_string(SCHEME_STR_VAL(str), SCHEME_STRLEN_VAL(str), 0);
+	SCHEME_SET_STRING_IMMUTABLE(str);
+      }
+      SCHEME_VEC_ELS(vec2)[i] = str;
+    }
+
+    return vec2;
+  }
+
+  return NULL;
+}
+
+static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-command-line-arguments", 
+			     scheme_make_integer(MZCONFIG_CMDLINE_ARGS),
+			     argc, argv,
+			     -1, ok_cmdline, "vector of strings", 1);
 }
 
 /**********************************************************************/

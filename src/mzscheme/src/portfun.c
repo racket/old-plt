@@ -2279,7 +2279,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
       oldch = 0;
       while (1) {
 	ch = scheme_getc(port);
-	if (ch == '\n' || ch == '\r')
+	if (ch == EOF || ch == '\n' || ch == '\r')
 	  break;
 	oldch = ch;
       }

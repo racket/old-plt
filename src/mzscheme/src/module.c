@@ -783,9 +783,15 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
 	if (!menv) {
 	  /* Assert: name == argv[1] */
-	  scheme_arg_mismatch("namespace-attach-module",
-			      "unknown module (in the source namespace): ",
-			      name);
+	  /* Module at least declared? */
+	  if (scheme_hash_get(from_env->module_registry, name))
+	    scheme_arg_mismatch("namespace-attach-module",
+				"module not instantiated (in the source namespace): ",
+				name);
+	  else
+	    scheme_arg_mismatch("namespace-attach-module",
+				"unknown module (in the source namespace): ",
+				name);
 	}
 
 	if (SCHEME_TRUEP(to_modchain)) {

@@ -42,7 +42,7 @@ the function, all tests will be run.
    This tests the various graphic elements that can appear
    in programs.
 
-|# launcher.ss #|
+  launcher.ss
 
    This tests the launcher feature of drscheme.
 
@@ -51,10 +51,6 @@ the function, all tests will be run.
    This tests the sample solutions in HtDP,
    but reuses the same drscheme window.
    
-|#   drscheme-jr.ss #|
-
-   Runs the language-level specific drscheme-jr tests.
-
 |# teachpack.ss #|
 
    Tests the teachpacks

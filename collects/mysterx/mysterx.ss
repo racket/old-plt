@@ -1,4 +1,4 @@
-;; mysterxe.ss
+;; mysterx.ss
 
 (module mysterx mzscheme
 
@@ -2563,4 +2563,11 @@
        (lambda args
 	 (apply append-object-from-progid-raw args)))
      
-     (super-make-object))))
+     (super-make-object)))
+
+  (thread	
+   (lambda () 
+     (let loop ()
+       (mxprims:process-win-events)
+       (sleep)
+       (loop)))))

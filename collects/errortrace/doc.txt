@@ -53,6 +53,9 @@ if the instrumented S-expression is passed to the default eval
 handler, but neither the S-expression nor its bytecode form can be
 marshalled to a string.
 
+The parameter _current-continuations-to-display_ controls how much context
+to display. It is defaultly set to 10.
+
 The instrucmentation for storing exception information slows most
 programs by a factor of 2 or 3.
 

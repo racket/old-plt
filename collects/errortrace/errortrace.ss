@@ -6,11 +6,12 @@
 (invoke-open-unit
  (unit 
    (import)
-   (export instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
+   (export current-continuations-to-display instrumenting-enabled profiling-enabled profile-paths-enabled get-profile-results)
    
    (define key (gensym 'key))
 
    (define instrumenting-enabled (make-parameter #t))
+   (define current-continuations-to-display (make-parameter 10 number?))
 
    (define profile-thread #f)
    (define profile-key (gensym))
@@ -288,15 +289,20 @@
 	    (let ([p (current-error-port)])
 	      (display (exn-message x) p)
 	      (newline p)
-	      (for-each
-	       (lambda (m)
-		 (fprintf p "  ~e in ~a~n" 
-			  (cdr m)
-			  (let ([file (car m)])
-			    (if file
-				file
-				"UNKNOWN"))))
-	       (exn-debug-info x))
+	      (let loop ([n (current-continuations-to-display)]
+			 [l (exn-debug-info x)])
+		(cond
+		 [(or (zero? n) (null? l)) (void)]
+		 [else
+		  (let ([m (car l)])
+		    (fprintf p "  ~e in ~a~n" 
+			     (cdr m)
+			     (let ([file (car m)])
+			       (if file
+				   file
+				   "UNKNOWN"))))
+		  (loop (- n 1)
+			(cdr l))]))
 	      ((error-escape-handler)))
 	    (orig x)))))
 

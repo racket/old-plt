@@ -1,7 +1,7 @@
 # myssink.mak
 
 CPP=cl.exe
-CPP_FLAGS=/I"../../../include" /I"../mysc" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
+CPP_FLAGS=/I"../../../include" /I"../mysc" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /c
 
 MTL=midl.exe
 MTL_SWITCHES=/tlb myssink.tlb /h myssink.h /iid myssink_i.c /Oicf 

@@ -277,9 +277,18 @@
      ;; 3.7
      (Comment (return-without-pos (get-token input-port)))
 
-     ((special) (if ((interactions-box-test) special)
-                    (token-INTERACTIONS_BOX special)
-                    (token-OTHER_SPECIAL special)))
+     ((special) 
+      (cond
+        (((interactions-box-test) special) (token-INTERACTIONS_BOX special))
+        ((syntax? special)
+         (syntax-case special ()
+           ((define-values () (values)) (token-TEST_SUITE special))
+           (else (if (and (syntax? special) (pair? (syntax-e special)) 
+                          (symbol? (syntax-e (car (syntax-e special))))
+                          (eq? 'test-case (syntax-e (car (syntax-e special)))))
+                     (token-TEST_SUITE special)
+                     (token-OTHER_SPECIAL special)))))
+        (else (token-OTHER_SPECIAL special))))
           
      ;; 3.6
      ((+ WhiteSpace) (return-without-pos (get-token input-port)))

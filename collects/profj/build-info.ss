@@ -50,7 +50,17 @@
                            (not (forbidden-lang-class? class level)))                  
                          (send type-recs get-package-contents lang-pack 
                                (lambda () (error 'type-recs "Internal error: Type record not set with lang")))))
-           (current-loc (unless (null? (package-defs prog)) (def-file (car (package-defs prog))))))
+           (defs (let loop ((cur-defs (package-defs prog)))
+                   (cond
+                     ((null? cur-defs) null)
+                     ((def? (car cur-defs)) (cons (car cur-defs) (loop (cdr cur-defs))))
+                     (else 
+                      (when (execution?) 
+                        (send type-recs add-interactions-box (car cur-defs)))
+                      (loop (cdr cur-defs))))))
+           (current-loc (unless (null? defs) (def-file (car defs)))))
+      (set-package-defs! prog defs)
+      
       
       ;Add lang to local environment
       (for-each (lambda (class) (send type-recs add-to-env class lang-pack current-loc)) lang)
@@ -58,9 +68,9 @@
       (send type-recs add-class-req (list 'array) #f current-loc)
       
       ;Set location for type error messages
-      (build-info-location current-loc)
+      (build-info-location current-loc)      
       
-      (let loop ((cur-defs (package-defs prog)))
+      (let loop ((cur-defs defs))
         (unless (null? cur-defs)
           (when (member (id-string (def-name (car cur-defs)))
                         (map (lambda (d) (id-string (def-name d))) (cdr cur-defs)))
@@ -71,11 +81,10 @@
           (loop (cdr cur-defs))))
                         
       ;Add all defs in this file to environment
-      (for-each (lambda (def) (add-def-info def pname type-recs current-loc (null? args) level)) 
-                (package-defs prog))
+      (for-each (lambda (def) (add-def-info def pname type-recs current-loc (null? args) level)) defs)
 
       ;Set the package of the interactions window to that of the definitions window
-      (when execution? (send type-recs set-interactions-package pname))
+      (when (execution?) (send type-recs set-interactions-package pname))
       
       ;All further definitions do not come from the execution window
       (execution? #f)
@@ -88,11 +97,10 @@
       (for-each (lambda (imp) (process-import type-recs imp level)) (package-imports prog))
 
       ;Build jinfo information for each def in this file
-      (for-each (lambda (def) (process-class/iface def pname type-recs (null? args) level))
-                (package-defs prog))
+      (for-each (lambda (def) (process-class/iface def pname type-recs (null? args) level)) defs)
 
       ;Add these to the list for type checking
-      (add-to-queue (package-defs prog))))
+      (add-to-queue defs)))
 
   ;build-interactions-info: ast location type-records -> void
   (define (build-interactions-info prog level loc type-recs)

@@ -180,6 +180,7 @@
          (format "malformed string ~a" (car (token-value tok))))
         ((eq? (get-token-name tok) 'OTHER_SPECIAL)
          (format "special character ~a" (if (symbol? (token-value tok)) (token-value tok) "")))
+        ((eq? (get-token-name tok) 'TEST_SUITE) (format "Test Suite Test"))
         ((eq? (get-token-name tok) 'INTERACTIONS_BOX) (format "Java Interactions Box"))
         (else (get-token-name tok)))))
 

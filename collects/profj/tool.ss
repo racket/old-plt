@@ -337,12 +337,15 @@
               (let ((main-mod #f)
                     (require? #f)
                     (name-to-require #f)
-                    (modules null))
+                    (modules null)
+                    (extras null))
                 (lambda ()
 		  (syntax-as-top
 		   (let ((end? (eof-object? (peek-char-or-special port))))
 		     (cond
-                      ((and end? (not require?) (null? modules)) eof)
+                      ((and end? (not require?) (null? modules) (null? extras)) eof)
+                      ((and end? (not require?) (null? modules))
+                       (begin0 (car extras) (set! extras (cdr extras))))
                       ((and end? require?) 
                        (set! require? #f)
                        (with-syntax ([name name-to-require])
@@ -358,17 +361,20 @@
                       (else
                        (execution? #t)
                        (let ((mods (compile-java 'port 'out level #f port name execute-types)))
+                         (set! extras (process-extras (send execute-types get-interactions-boxes)))
                          (set! main-mod (find-main-module mods))
                          (set! mods (order mods))
-                         (if (null? mods) eof
-                             (begin
-                               (set! require? #t)
-                               (let-values (((name syn) (if (eq? main-mod (car mods))
-                                                            (add-main-call (expand (car mods)))
-                                                            (get-module-name (expand (car mods))))))
-                                 (set! name-to-require name)
-                                 (set! modules (cdr mods))
-                                 syn))))))))))))
+                         (cond
+                           ((and (null? mods) (null? extras)) eof)
+                           ((null? mods) (begin0 (car extras) (set! extras (cdr extras))))
+                           (else
+                            (set! require? #t)
+                            (let-values (((name syn) (if (eq? main-mod (car mods))
+                                                         (add-main-call (expand (car mods)))
+                                                         (get-module-name (expand (car mods))))))
+                              (set! name-to-require name)
+                              (set! modules (cdr mods))
+                              syn))))))))))))
           
           (define/public (front-end/interaction input settings teachpack-cache)
             (let-values ([(port name)
@@ -390,6 +396,10 @@
 		(namespace-syntax-introduce s)
 		s))
 
+          (define/private (process-extras extras)
+            (map (lambda (e)
+                   (if (syntax? e) e (datum->syntax-object #f 1 #f)))
+                 extras))
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)
           (define (find-main-module mod-lists)

@@ -125,6 +125,7 @@
        [(ClassDeclaration) $1]
        [(InterfaceDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
+       [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
       
       ;; 19.7

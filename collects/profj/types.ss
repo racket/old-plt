@@ -344,6 +344,7 @@
 
       (define interaction-package null)
       (define interaction-fields null)
+      (define interaction-boxes null)
       
       (define/public (set-interactions-package p) (set! interaction-package p))
       (define/public (get-interactions-package) interaction-package)
@@ -351,6 +352,9 @@
         (set! interaction-fields (cons rec interaction-fields)))
       (define/public (get-interactions-fields)
         interaction-fields)
+      (define/public (add-interactions-box box)
+        (set! interaction-boxes (cons box interaction-boxes)))
+      (define/public (get-interactions-boxes) (reverse interaction-boxes))
       
       (super-instantiate ())))
   

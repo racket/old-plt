@@ -530,6 +530,9 @@ const char *(*scheme_get_unit_name)(Scheme_Object *cl, int *len);
 int (*scheme_eq)(Scheme_Object *obj1, Scheme_Object *obj2);
 int (*scheme_eqv)(Scheme_Object *obj1, Scheme_Object *obj2);
 int (*scheme_equal)(Scheme_Object *obj1, Scheme_Object *obj2);
+#ifdef MZ_PRECISE_GC
+long (*scheme_hash_key)(Scheme_Object *o);
+#endif
 Scheme_Object *(*scheme_build_list)(int argc, Scheme_Object **argv);
 int (*scheme_list_length)(Scheme_Object *list);
 int (*scheme_proper_list_length)(Scheme_Object *list);

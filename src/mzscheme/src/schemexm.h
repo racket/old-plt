@@ -347,6 +347,9 @@
 #define scheme_eq (scheme_extension_table->scheme_eq)
 #define scheme_eqv (scheme_extension_table->scheme_eqv)
 #define scheme_equal (scheme_extension_table->scheme_equal)
+#ifdef MZ_PRECISE_GC
+#define scheme_hash_key (scheme_extension_table->scheme_hash_key)
+#endif
 #define scheme_build_list (scheme_extension_table->scheme_build_list)
 #define scheme_list_length (scheme_extension_table->scheme_list_length)
 #define scheme_proper_list_length (scheme_extension_table->scheme_proper_list_length)

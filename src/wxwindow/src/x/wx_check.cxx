@@ -104,6 +104,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   if (!Title)
     Title = "";
   char buf[400];
+  char mnem = wxFindMnemonic (Title);
   wxStripMenuCodes(Title, buf);
   XmString text = XmStringCreateSimple (buf);
 
@@ -124,6 +125,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 						 xmToggleButtonWidgetClass, formWidget,
 #endif
 						 XmNlabelString, text,
+						 XmNmnemonic, mnem,
 						 XmNtopAttachment, XmATTACH_FORM,
 						 XmNleftAttachment, XmATTACH_FORM,
 						 XmNbottomAttachment, XmATTACH_FORM,
@@ -347,27 +349,22 @@ void wxCheckBox::SetLabel (char *label)
   if (buttonBitmap)
     return;
 
-#ifdef wx_motif
   Widget widget = (Widget) handle;
   XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_ANY, NULL);
   if (label)
     {
-      XmString text = XmStringCreateSimple (label);
+      char buf[400];
+      char mnem = wxFindMnemonic (label);
+      wxStripMenuCodes(label, buf);
+      XmString text = XmStringCreateSimple(buf);
       XtVaSetValues (widget,
 		     XmNlabelString, text,
+		     XmNmnemonic, mnem,
 		     XmNlabelType, XmSTRING,
 		     NULL);
       XmStringFree (text);
     }
   XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
-#endif
-#ifdef wx_xview
-  if (label)
-    {
-      Panel_item item = (Panel_item) handle;
-      xv_set (item, PANEL_CHOICE_STRING, 0, label, NULL);
-    }
-#endif
 }
 
 void wxCheckBox::SetLabel (wxBitmap * bitmap)

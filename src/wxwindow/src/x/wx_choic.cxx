@@ -142,6 +142,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   if (Title)
     {
       char buf[400];
+      char mnem = wxFindMnemonic(Title);
       wxStripMenuCodes(Title, buf);
 
       char *the_label = (style & wxFIXED_LENGTH) ? fillCopy (buf) : copystring (buf);
@@ -150,12 +151,13 @@ Create (wxPanel * panel, wxFunction func, char *Title,
       labelWidget = XtVaCreateManagedWidget ("choiceLabel",
 #if USE_GADGETS
 					     style & wxCOLOURED ?
-				    xmLabelWidgetClass : xmLabelGadgetClass,
+					     xmLabelWidgetClass : xmLabelGadgetClass,
 					     formWidget,
 #else
 					     xmLabelWidgetClass, formWidget,
 #endif
 					     XmNlabelString, text,
+					     XmNmnemonic, mnem,
 					     NULL);
       if (labelFont)
 	XtVaSetValues (labelWidget,

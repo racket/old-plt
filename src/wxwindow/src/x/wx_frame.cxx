@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.10 1998/08/21 00:31:40 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.11 1998/09/18 23:09:52 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -979,13 +979,13 @@ void wxFrame::SetMenuBar (wxMenuBar * menu_bar)
       wxMenu *menu = menu_bar->menus[i];
       menu->buttonWidget = menu->CreateMenu (menu_bar, MenuBar, menu, menu_bar->titles[i], TRUE);
 
+      wxStripMenuCodes (menu_bar->titles[i], wxBuffer);
+
       /*
        * COMMENT THIS OUT IF YOU DON'T LIKE A RIGHT-JUSTIFIED HELP MENU
        */
-      wxStripMenuCodes (menu_bar->titles[i], wxBuffer);
-
       if (strcmp (wxBuffer, wxSTR_MENU_HELP) == 0)
-	XtVaSetValues (MenuBar, XmNmenuHelpWidget, menu->buttonWidget, NULL);
+	XtVaSetValues(MenuBar, XmNmenuHelpWidget, menu->buttonWidget, NULL);
     }
 
   XtRealizeWidget (MenuBar);

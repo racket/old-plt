@@ -89,6 +89,7 @@ Create (wxPanel * panel, char *label, int range,
   if (label)
     {
       char buf[400];
+      char mnem = wxFindMnemonic(label);
       wxStripMenuCodes(label, buf);
       the_label = (style & wxFIXED_LENGTH) ? fillCopy(buf) : copystring(buf);
       XmString text = XmStringCreateSimple (the_label);
@@ -102,6 +103,7 @@ Create (wxPanel * panel, char *label, int range,
 					     xmLabelWidgetClass, formWidget,
 #endif
 					     XmNlabelString, text,
+					     XmNmnemonic, mnem,
 					     NULL);
       if (labelFont)
 	XtVaSetValues (labelWidget,

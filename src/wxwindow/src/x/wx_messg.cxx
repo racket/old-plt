@@ -70,6 +70,7 @@ Create (wxPanel * panel, char *label, int x, int y, long style, char *name)
   if (!label)
     label = "";
   char *slabel = copystring(label);
+  char mnem = wxFindMnemonic(label);
   wxStripMenuCodes(label, slabel);
 
   Widget panelForm = panel->panelWidget;
@@ -92,6 +93,7 @@ Create (wxPanel * panel, char *label, int x, int y, long style, char *name)
 					 xmLabelWidgetClass, formWidget,
 #endif
 					 XmNlabelString, text,
+					 XmNmnemonic, mnem,
 					 XmNalignment, XmALIGNMENT_BEGINNING,
 					 XmNtopAttachment, XmATTACH_FORM,
 					 XmNleftAttachment, XmATTACH_FORM,

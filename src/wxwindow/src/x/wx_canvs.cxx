@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.8 1998/09/23 01:11:13 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.9 1998/11/17 21:40:40 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -94,7 +94,6 @@ Bool wxCanvas::
 Create (wxWindow * parent, int x, int y, int width, int height,
 	long style, char *name)
 {
-  requiresRetention = 0 && ((style & wxRETAINED) == wxRETAINED);
   windowStyle = style;
   scrolls_set_size = TRUE;
 
@@ -260,7 +259,7 @@ Create (wxWindow * parent, int x, int y, int width, int height,
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->AttachWidget(this, 0, x, y, width, height);
   else
-    SetSize (x, y, width, height);
+    SetSize(x, y, width, height);
 
   if (GetWindowStyleFlag() & (wxHSCROLL |  wxVSCROLL))
     SetScrollbars(1, 1, 0, 0, 1, 1, 0, 0, FALSE);
@@ -332,42 +331,11 @@ void wxCanvas:: SetColourMap (wxColourMap * cmap)
 
 void wxCanvas:: SetClientSize (int w, int h)
 {
-#ifdef _____wx_motif
-//  SetSize(-1, -1, w, h);
-  /* ALTERNATIVE CODE SUPPLIED BY ALS, NOT TESTED
-   * IS THIS BETTER AND IF SO WHY!
-   */
-  Widget drawingArea = (Widget) handle;
-
-  XtVaSetValues(drawingArea, XmNresizePolicy, XmRESIZE_ANY, NULL);
-
-  if (w > -1)
-    XtVaSetValues (drawingArea, XmNwidth, w, NULL);
-  if (h > -1)
-    XtVaSetValues (drawingArea, XmNheight, h, NULL);
-  allowRepainting = FALSE;
-
-  XSync (XtDisplay (drawingArea), FALSE);
-  XEvent event;
-  while (XtAppPending (wxTheApp->appContext))
-    {
-      XFlush (XtDisplay (drawingArea));
-      XtAppNextEvent (wxTheApp->appContext, &event);
-      XtDispatchEvent (&event);
-    }
-  XtVaSetValues(drawingArea, XmNresizePolicy, XmRESIZE_NONE, NULL);
-
-  allowRepainting = TRUE;
-  DoRefresh(FALSE);
-  GetEventHandler()->OnSize(w, h);
-#else
   wxWindow::SetClientSize (w, h);
-#endif
 }
 
 void wxCanvas:: GetClientSize (int *w, int *h)
 {
-#ifdef wx_motif
   Dimension xx, yy;
   if (handle) {
     XtVaGetValues ((Widget)handle,
@@ -379,9 +347,6 @@ void wxCanvas:: GetClientSize (int *w, int *h)
 
   *w = xx;
   *h = yy;
-#else
-  wxWindow::GetClientSize (w, h);
-#endif
 }
 
 void wxCanvas:: SetSize (int x, int y, int w, int h, int sizeFlags)
@@ -433,6 +398,8 @@ void wxCanvas:: SetSize (int x, int y, int w, int h, int sizeFlags)
     /* printf("unmanage: %lx\n", topWidget); */
   }
 
+  if (!cw) cw = 1; if (!ch) ch = 1;
+
   XtVaSetValues(topWidget, XmNx, cx, XmNy, cy,
 		XmNwidth, cw, XmNheight, ch, NULL);
   
@@ -445,7 +412,7 @@ void wxCanvas:: SetSize (int x, int y, int w, int h, int sizeFlags)
     cw -= 2 * (thick + margin);
     ch -= 2 * (thick + margin);
 
-    XtVaSetValues (scrolledWindow, XmNwidth, cw, XmNheight, ch, NULL);
+    XtVaSetValues(scrolledWindow, XmNwidth, cw, XmNheight, ch, NULL);
 
     cw += 2 * (thick + margin);
     ch += 2 * (thick + margin);
@@ -509,102 +476,7 @@ void wxCanvas:: GetPosition (int *x, int *y)
 void wxCanvas::PhysicalScroll(int x, int y, int w, int h,
 		int deltax, int deltay)
 {
-//  cerr << "Scrolling. delta = " << deltax << ", " << deltay << endl;
-  Widget drawingArea = (Widget) handle;
-
-  int x1 = deltax >= 0 ? x : x - deltax ;
-  int y1 = deltay >= 0 ? y : y - deltay;
-  int w1 = w - abs(deltax);
-  int h1 = h - abs(deltay);
-  int x2 = deltax >= 0 ? x + deltax : x;
-  int y2 = deltay >= 0 ? y + deltay : y;
-/*
-  cerr << "Copying " << x1 << ", " << y1 << ", " << "width = " << w1;
-  cerr << ", height = " << h1 << ", to " << x2 << ", " << y2 << endl;
-*/
-  XCopyArea(XtDisplay(drawingArea), XtWindow(drawingArea),
-    XtWindow(drawingArea), GetDC()->gc,
-    x1, y1,
-    w1, h1,
-    x2, y2);
-
-  GetDC()->autoSetting = TRUE;
-  GetDC()->SetBrush(wxTheBrushList->FindOrCreateBrush(&(GetDC()->current_background_color), wxSOLID));
-  //  SetBrush(wxRED_BRUSH);
-
-  // We'll add rectangles to the list of update rectangles
-  // according to which bits we've exposed.
-  updateRects.Clear();
-	
-  if (deltax > 0)
-  {
-    wxRectangle *rect = new wxRectangle;
-    rect->x = x;
-    rect->y = y;
-    rect->width = deltax;
-    rect->height = h;
-
-//    cerr << "Filling rectangle " << rect->x << ", " << rect->y << ", ";
-//    cerr << rect->width << ", " << rect->height << endl;
-
-    XFillRectangle(XtDisplay(drawingArea), XtWindow(drawingArea),
-     GetDC()->gc, rect->x, rect->y, rect->width, rect->height);
-
-    updateRects.Append(rect);
-  }
-  else if (deltax < 0)
-  {
-    wxRectangle *rect = new wxRectangle;
-
-    rect->x = x + w + deltax;
-    rect->y = y;
-    rect->width = -deltax;
-    rect->height = h;
-
-//    cerr << "Filling rectangle " << rect->x << ", " << rect->y << ", ";
-//    cerr << rect->width << ", " << rect->height << endl;
-
-    XFillRectangle(XtDisplay(drawingArea), XtWindow(drawingArea),
-      GetDC()->gc, rect->x, rect->y, rect->width,
-      rect->height);
-
-    updateRects.Append(rect);
-  }
-  if (deltay > 0)
-  {
-    wxRectangle *rect = new wxRectangle;
-
-    rect->x = x;
-    rect->y = y;
-    rect->width = w;
-    rect->height = deltay;
-//    cerr << "Filling rectangle " << rect->x << ", " << rect->y << ", ";
-//    cerr << rect->width << ", " << rect->height << endl;
-
-    XFillRectangle(XtDisplay(drawingArea), XtWindow(drawingArea),
-      GetDC()->gc, rect->x, rect->y, rect->width, rect->height);
-
-    updateRects.Append(rect);
-  }
-  else if (deltay < 0)
-  {
-    wxRectangle *rect = new wxRectangle;
-
-    rect->x = x;
-    rect->y = y + h + deltay;
-    rect->width = w;
-    rect->height = -deltay;
-//    cerr << "Filling rectangle " << rect->x << ", " << rect->y << ", ";
-//    cerr << rect->width << ", " << rect->height << endl;
-
-    XFillRectangle(XtDisplay(drawingArea), XtWindow(drawingArea),
-      GetDC()->gc, rect->x, rect->y, rect->width, rect->height);
-
-    updateRects.Append(rect);
-  }
-//  cerr << "About to paint" << endl;
   GetEventHandler()->OnPaint();
-  updateRects.Clear();
 }
 
 void wxCanvas::DoPaint(XRectangle *WXUNUSED(xrect), int WXUNUSED(n))
@@ -621,7 +493,7 @@ void wxCanvas:: DoRefresh (Bool paint)
   int canvasHeight1;
   GetClientSize (&canvasWidth1, &canvasHeight1);
 
-  // Following test assure that callback is not called repeatedly.
+  // Following test ensure that callback is not called repeatedly.
   if (hScroll && scrolls_set_size) {
     int old_size, old_max, old_pos;
     XtVaGetValues (hScrollBar,
@@ -632,12 +504,15 @@ void wxCanvas:: DoRefresh (Bool paint)
     int new_size =
       (int) (max (min (canvasWidth1 / horiz_units, hExtent / horiz_units), 1));
     if (old_size != new_size) {
-      int mx = max(new_size, old_max);
+      int mx = max(new_size, old_max), x_pos;
       XtVaSetValues (hScrollBar,
 		     XmNmaximum, mx,
 		     XmNsliderSize, new_size,
-		     XmNvalue, min(old_pos, mx - new_size),
+		     XmNvalue, x_pos = min(old_pos, mx - new_size),
 		     NULL);
+
+      if (GetDC())
+	GetDC()->device_origin_x = -(x_pos * horiz_units);
     }
   }
 
@@ -651,12 +526,14 @@ void wxCanvas:: DoRefresh (Bool paint)
     int new_size =
       (int) (max (min (canvasHeight1 / vert_units, vExtent / vert_units), 1));
     if (old_size != new_size) {
-      int mx = max(new_size, old_max);
+      int mx = max(new_size, old_max), y_pos;
       XtVaSetValues (vScrollBar,
 		     XmNmaximum, mx,
 		     XmNsliderSize, new_size, 
-		     XmNvalue, min(old_pos, mx - new_size),
+		     XmNvalue, y_pos = min(old_pos, mx - new_size),
 		     NULL);
+      if (GetDC())
+	GetDC()->device_origin_y = -(y_pos * vert_units);
     }
   }
   if (paint)
@@ -765,13 +642,13 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
   long orig_v_size = vertical * y_length;
 
   if (setVirtualSize) {
-    while (horizontal > canvasClientWidth) {
-      horizontal = ceil(horizontal / 2.0);
-      x_length *= 2;
+    if (horizontal > 0) {
+      x_length *= horizontal;
+      horizontal = 1;
     }
-    while (vertical > canvasClientHeight) {
-      vertical = ceil(vertical / 2.0);
-      y_length *= 2;
+    if (vertical > 0) {
+      y_length *= vertical;
+      vertical = 1;
     }
   }
 
@@ -835,32 +712,35 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
     
     int extra;
     if (setVirtualSize) {
-      x_page = max(1, canvasClientWidth / horizontal);
-      x_pos = min(x_pos, x_length - x_page);
+      if (x_length > canvasClientWidth)
+	x_page = max(1, canvasClientWidth / horizontal);
+      else
+	x_page = x_length;
+      x_pos = max(0, min(x_pos, x_length - x_page));
       extra = 0;
+
+      units_per_page_x = x_page;
     } else {
       extra = x_page;
     }
 
-    XtVaSetValues (hScrollBar,
-		   XmNincrement, 1,
-		   XmNpageIncrement, x_page,
-		   XmNmaximum, x_length + extra,
-		   XmNvalue, x_pos,
-		   XmNsliderSize, x_page,
-		   NULL);
+    XtVaSetValues(hScrollBar,
+		  XmNincrement, 1,
+		  XmNpageIncrement, x_page,
+		  XmNmaximum, x_length + extra,
+		  XmNvalue, x_pos,
+		  XmNsliderSize, x_page,
+		  NULL);
+
+    wxDC *dc = GetDC();
 
     if (setVirtualSize) {
       hStart = x_pos;
-      if (GetDC ())
-	GetDC ()->device_origin_x = -(x_pos * horiz_units);
-      if (requiresRetention)
-	pixmapOffsetX = (x_pos * horiz_units);
+      if (dc)
+	dc->device_origin_x = -(x_pos * horiz_units);
     } else {
-      if (GetDC ())
-	GetDC ()->device_origin_x = 0;
-      if (requiresRetention)
-	pixmapOffsetX = 0;
+      if (dc)
+	dc->device_origin_x = 0;
     }
 
     hScroll = TRUE;
@@ -875,10 +755,9 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 		    XmNpageIncrement, 1,
 		    XmNmaximum, 1,
 		    NULL);
-      if (GetDC ())
-	GetDC ()->device_origin_x = 0;
-      if (requiresRetention)
-	pixmapOffsetX = 0;
+      wxDC *dc = GetDC();
+      if (dc)
+	dc->device_origin_x = 0;
     } else {    
       if (hScrollBar) {
 	XtUnmanageChild (hScrollBar);
@@ -919,9 +798,14 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 
     int extra;
     if (setVirtualSize) {
-      y_page = max(1, canvasClientHeight / vertical);
-      y_pos = min(y_pos, y_length - y_page);
+      if (y_length > canvasClientHeight)
+	y_page = max(1, canvasClientHeight / vertical);
+      else
+	y_page = y_length;
+      y_pos = max(0, min(y_pos, y_length - y_page));
       extra = 0;
+
+      units_per_page_y = y_page;
     } else {
       extra = y_page;
     }
@@ -934,17 +818,15 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 		   XmNsliderSize, y_page,
 		   NULL);
 
+    wxDC *dc = GetDC();
+
     if (setVirtualSize) {
       vStart = y_pos;
-      if (GetDC())
-	GetDC()->device_origin_y = -(y_pos * vert_units);
-      if (requiresRetention)
-	pixmapOffsetY = (y_pos * vert_units);
+      if (dc)
+	dc->device_origin_y = -(y_pos * vert_units);
     } else {
-      if (GetDC())
-	GetDC()->device_origin_y = 0;
-      if (requiresRetention)
-	pixmapOffsetY = 0;
+      if (dc)
+	dc->device_origin_y = 0;
     }
       
 
@@ -960,10 +842,9 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 		    XmNpageIncrement, 1,
 		    XmNmaximum, 1,
 		    NULL);
-      if (GetDC())
-	GetDC()->device_origin_y = 0;
-      if (requiresRetention)
-	pixmapOffsetY = 0;
+      wxDC *dc = GetDC();
+      if (dc)
+	dc->device_origin_y = 0;
     } else {
       if (vScrollBar) {
 	XtUnmanageChild (vScrollBar);
@@ -994,45 +875,10 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
     }
   }
 
-#if 0
-  Dimension cw, ch;
-  XtVaGetValues(drawingArea, XtNwidth, &cw, XtNheight, &ch, NULL);
-  if (wx_dc && ((hExtent && (cw > hExtent)) || (vExtent && (ch > vExtent)))) {
-    float x, y, w, h;
-    wx_dc->GetClippingRegion(&x, &y, &w, &h);
-    if (hExtent && (cw > hExtent)) {
-      wx_dc->SetClippingRegion(hExtent, 0, cw, ch);
-      wx_dc->Clear();
-    }
-    if (vExtent && (ch > vExtent)) {
-      wx_dc->SetClippingRegion(0, vExtent, cw, ch);
-      wx_dc->Clear();
-    }
-    if (w >= 0)
-      wx_dc->SetClippingRegion(x, y, w, h);
-    else
-      wx_dc->DestroyClippingRegion();
-  }
-#endif
-
-  /*
-   * Retained pixmap stuff
-   *
-   */
-
-  if (requiresRetention && (hExtent > 0) && (vExtent > 0))
-    {
-      if ((hExtent != pixmapWidth) || (vExtent != pixmapHeight))
-	{
-	  pixmapWidth = hExtent;
-	  pixmapHeight = vExtent;
-	}
-    }
-
   if (needRepaint) {
     // This necessary to make scrollbars appear, for some reason!
     SetSize (x, y, w, h);
-    if (setVirtualSize) Refresh();
+    if (setVirtualSize) OnPaint();
   }
 }
 
@@ -1046,46 +892,69 @@ void wxCanvas:: GetScrollUnitsPerPage (int *x_page, int *y_page)
  * Scroll to given position (scroll position, not pixel position)
  */
 
-void wxCanvas:: Scroll (int x_pos, int y_pos)
+void wxCanvas::Scroll(int x_pos, int y_pos)
 {
+  if (x_pos > hExtent - units_per_page_x)
+    x_pos = hExtent - units_per_page_x;
+  
+  if (y_pos > vExtent - units_per_page_y)
+    y_pos = vExtent - units_per_page_y;
+
   int old_x, old_y;
   ViewStart(&old_x, &old_y, TRUE);
   if (((x_pos == -1) || (x_pos == old_x)) && ((y_pos == -1) || (y_pos == old_y)))
     return;
 
-  Bool clearCanvas = FALSE;
-  if (hScroll && (x_pos >= 0))
-    {
-      XtVaSetValues (hScrollBar, XmNvalue, x_pos, NULL);
-      hStart = x_pos;
-      if (hScrollingEnabled)
-	clearCanvas = TRUE;
+  if (hScroll && (x_pos >= 0)) {
+    XtVaSetValues (hScrollBar, XmNvalue, x_pos, NULL);
+    hStart = x_pos;
+    
+    if (GetDC())
+      GetDC()->device_origin_x = -(x_pos * horiz_units);
+  }
 
-      if (GetDC ())
-	GetDC ()->device_origin_x = -(x_pos * horiz_units);
-    }
-  if (vScroll && (y_pos >= 0))
-    {
-      XtVaSetValues (vScrollBar, XmNvalue, y_pos, NULL);
-      vStart = y_pos;
+  if (vScroll && (y_pos >= 0)) {
+    XtVaSetValues (vScrollBar, XmNvalue, y_pos, NULL);
+    vStart = y_pos;
+    
+    if (GetDC())
+      GetDC()->device_origin_y = -(y_pos * vert_units);
+  }
 
-      if (vScrollingEnabled)
-	clearCanvas = TRUE;
+  OnPaint();
+}
 
-      if (GetDC ())
-	GetDC ()->device_origin_y = -(y_pos * vert_units);
-    }
+void wxCanvas::ScrollPercent(float x, float y)
+{
+  if (!scrolls_set_size) {
+    /* Not managing  - do nothing */
+  } else {
+    /* Managing */
+    int xp, yp, vw, vh, cw, ch;
+    GetVirtualSize(&vw, &vh);
+    GetClientSize(&cw, &ch);
 
-	if (clearCanvas) {
-	  int new_x, new_y;
-	  int width, height;
-	  ViewStart(&new_x, &new_y, TRUE);
-	  GetClientSize(&width, &height);
-	  PhysicalScroll(0, 0, width, height,
-			 (old_x - new_x) * horiz_units,
-			 (old_y - new_y) * vert_units);
-	} else
-	  DoRefresh (FALSE);
+    if (vw > cw)
+      vw -= cw;
+    else
+      vw = 0;
+    if (vh > ch)
+      vh -= ch;
+    else
+      vh = 0;
+
+    if (x >= 0)
+      xp = (int)floor(x * vw);
+    else
+      xp = -1;
+
+    if (y >= 0)
+      yp = (int)floor(y * vh);
+    else
+      yp = -1;
+
+    Scroll(xp, yp);
+  } 
 }
 
 void wxCanvas:: EnableScrolling (Bool x_scroll, Bool y_scroll)
@@ -1324,115 +1193,6 @@ wxCanvasRepaintProc (Widget drawingArea, XtPointer clientData, XmDrawingAreaCall
     }
 }
 
-// Code with X event sequencing problems
-#if 0
-void 
-wxCanvasRepaintProc (Widget drawingArea, XtPointer clientData, XmDrawingAreaCallbackStruct * cbs)
-// void wxCanvasRepaintProc(Widget w, XtPointer c_data, XEvent *event, char *)
-   {
-  if (!wxWidgetHashTable->Get ((long) drawingArea))
-    return;
-
-  wxCanvas *canvas = (wxCanvas *) clientData;
-
-//     wxCanvas *canvas;
-//     Window window;
-     static XRectangle *xrect;
-     Display *display;
-     GC gc;
-     int llp = 0;
-//     int ppl;
-     static int last_count = 0;
-     static int draw_count = 0;
-     XEvent *event = cbs->event;
-
-//     canvas = (wxCanvas *) c_data;
-
-     switch(event -> type)
-        {
-          case Expose :
-               // window = XtWindow((Widget)canvas->handle); /* MATTHEW: [15] */
-               display = (Display *) canvas -> GetXDisplay();
-               gc = (GC) canvas -> GetDC() -> gc;
-               
-               llp = event -> xexpose.count;
-               
-               if ((last_count == 0) && (llp == 0))
-                  {
-                    xrect = new XRectangle[1];
-                    xrect[0].x = event -> xexpose.x;
-                    xrect[0].y = event -> xexpose.y;
-                    xrect[0].width = event -> xexpose.width;
-                    xrect[0].height = event -> xexpose.height;
-
-                    XSetClipRectangles(display,gc,0,0,xrect,1,Unsorted);
-                    canvas -> DoPaint(xrect,1);
-                    delete[] xrect;
-
-                    // This line is an attempt to restore canvas to no clipping: JACS
-//                    XSetClipMask (display, gc, None);
-
-                    // Didn't work; try this instead. JACS.
-#if 1
-                    XGCValues gc_val;
-                    gc_val.clip_mask = None;
-                    XChangeGC (display, gc, GCClipMask, &gc_val);
-#else
-		    XSetClipMask (display, gc, None);
-#endif
-
-                  }
-
-               if ((last_count == 0) && (llp != 0))
-                  {
-                    xrect = new XRectangle[llp + 1];
-                    draw_count = llp + 1;
-                    
-                    xrect[draw_count - llp - 1].x = event -> xexpose.x;
-                    xrect[draw_count - llp - 1].y = event -> xexpose.y;
-                    xrect[draw_count - llp - 1].width = event -> xexpose.width;
-                    xrect[draw_count - llp - 1].height = event -> xexpose.height;
-                  }
-
-               if ((last_count != 0) && (llp != 0))
-                  {
-                    xrect[draw_count - llp - 1].x = event -> xexpose.x;
-                    xrect[draw_count - llp - 1].y = event -> xexpose.y;
-                    xrect[draw_count - llp - 1].width = event -> xexpose.width;
-                    xrect[draw_count - llp - 1].height = event -> xexpose.height;
-                  }
-               
-               if ((last_count != 0) && (llp == 0))
-                  {
-                    xrect[draw_count - llp - 1].x = event -> xexpose.x;
-                    xrect[draw_count - llp - 1].y = event -> xexpose.y;
-                    xrect[draw_count - llp - 1].width = event -> xexpose.width;
-                    xrect[draw_count - llp - 1].height = event -> xexpose.height;
-
-                    XSetClipRectangles(display,gc,0,0,xrect,draw_count,Unsorted);
-                    canvas -> DoPaint(xrect,draw_count);
-                    delete[] xrect;
-
-                    // This line is an attempt to restore canvas to no clipping: JACS
-//                    XSetClipMask (display, gc, None);
-                    // Didn't work; try this instead
-#if 1
-                    XGCValues gc_val;
-                    gc_val.clip_mask = None;
-                    XChangeGC (display, gc, GCClipMask, &gc_val);
-#else
-		    XSetClipMask (display, gc, None);
-#endif
-                  }
-               last_count = event -> xexpose.count;
-               break;
-          default :
-               cout << "\n\nNew Event ! is = " << event -> type << "\n";
-               break;
-        }
-   }
-#endif
-
 // Unable to deal with Enter/Leave without a separate EventHandler (Motif 1.1.4)
 void 
 wxCanvasEnterLeave (Widget drawingArea, XtPointer, XCrossingEvent * event)
@@ -1520,17 +1280,11 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 
 	if (local_event.xany.type == EnterNotify)
 	  {
-	    //if (local_event.xcrossing.mode!=NotifyNormal)
-	    //  return ; // Ignore grab events
 	    eventType = wxEVENT_TYPE_ENTER_WINDOW;
-//            canvas->GetEventHandler()->OnSetFocus();
 	  }
 	else if (local_event.xany.type == LeaveNotify)
 	  {
-	    //if (local_event.xcrossing.mode!=NotifyNormal)
-	    //  return ; // Ignore grab events
 	    eventType = wxEVENT_TYPE_LEAVE_WINDOW;
-//            canvas->GetEventHandler()->OnKillFocus();
 	  }
 	else if (local_event.xany.type == MotionNotify)
 	  {
@@ -1547,11 +1301,9 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 			       &local_event.xmotion.x,
 			       &local_event.xmotion.y,
 			       &local_event.xmotion.state);
-//fprintf(stderr,"*") ; fflush(stderr) ;
 	      }
 	    else
 	      {
-//fprintf(stderr,".") ; fflush(stderr) ;
 	      }
 	  }
 
@@ -1723,22 +1475,6 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
       /* Check focus in Frame/Dialog: */
       wxFrameCheckFocus(canvas);
       break;
-#if 0
-    case FocusIn:
-      {
-	/* MATTHEW: [2] detail check was needed after all */
-	if (local_event.xfocus.detail != NotifyPointer)
-          canvas->GetEventHandler()->OnSetFocus ();
-	break;
-      }
-    case FocusOut:
-      {
-	/* MATTHEW: [2] detail check was needed after all */
-	if (local_event.xfocus.detail != NotifyPointer)
-          canvas->GetEventHandler()->OnKillFocus ();
-        break;
-      }
-#endif
     default:
       break;
     }
@@ -1802,57 +1538,19 @@ void wxCanvas::DoScroll(wxScrollEvent &event)
   if (!scrolls_set_size)
     return;
 
-  int newx, newy;
-  ViewStart(&newx, &newy);
-  int oldScrollX = hStart;
-  int oldScrollY = vStart;
-
-  Bool doScroll = FALSE;
   int value = event.pos;
 
-  if (event.direction == wxHORIZONTAL)
-  {
-    if (hScrollingEnabled)
-      doScroll = TRUE;
-
+  if (event.direction == wxHORIZONTAL) {
     hStart = value;
-    if (GetDC ())
-      GetDC ()->device_origin_x = -(value * horiz_units);
-  }
-  else
-  {
-    if (vScrollingEnabled)
-      doScroll = TRUE;
-
-     vStart = value;
-     if (GetDC ())
-       GetDC ()->device_origin_y = -(value * vert_units);
+    if (GetDC())
+      GetDC()->device_origin_x = -(value * horiz_units);
+  } else {
+    vStart = value;
+    if (GetDC())
+      GetDC()->device_origin_y = -(value * vert_units);
   }
 
-  if (doScroll)
-  {
-    int width, height;
-    GetClientSize(&width, &height);
-    PhysicalScroll(0, 0, width, height,
-		(oldScrollX - newx) * horiz_units
-
-    // This is an OBOB correction.... I don't know who's fault
-    // it is, but if this is not here... the horizontal
-    // scrolling is offset by 1.
-    // Hernan Otero (hernan@isoft.com.ar)
-/* Taken out by JACS 21/5/95: Alexey Iskhakov's new wx_dc.h macros
- * should cure the problem.
-        + (oldx == 0 && newx != 0 ? 1 :
-	  (newx == 0 && oldx != 0 ? -1 : 0))
-*/
-      ,
-      
-      (oldScrollY - newy) * vert_units);
-  }
-  else
-  {
-    DoRefresh(FALSE);
-  }
+  OnPaint();
 }
 
 /* MATTHEW: Fix [Set/Get]Scroll[Pos/Range/Page] */
@@ -1958,95 +1656,3 @@ int wxCanvas::GetScrollPage(int orient)
 
   return 0;
 }
-
-
-/*
- * Update iterator. Use from within OnPaint.
- */
- 
-wxUpdateIterator::wxUpdateIterator(wxWindow* wnd)
-{
-  current = 0;					//start somewhere...
-  win = wnd;
-}
-
-wxUpdateIterator::~wxUpdateIterator(void)
-{
-}
-
-wxUpdateIterator::operator int (void)
-{
-  wxCanvas *can = (wxCanvas *)win;
-  if (current < can->updateRects.Number())
-  {
-    return TRUE;
-  }
-  else
-  {
-    return FALSE;
-  }
-}
-
-wxUpdateIterator* wxUpdateIterator::operator ++(int)
-{
-  current++;
-  return this;
-}
-
-void wxUpdateIterator::GetRect(wxRectangle *rect)
-{
-  wxCanvas *can = (wxCanvas *)win;
-  if (current < can->updateRects.Number())
-  {
-    wxRectangle *canRect = (wxRectangle *)can->updateRects.Nth(current)->Data();
-    rect->x = canRect->x;
-    rect->y = canRect->y;
-    rect->width = canRect->width;
-    rect->height = canRect->height;
-  }
-}
-
-int wxUpdateIterator::GetX()
-{
-  wxCanvas *can = (wxCanvas *)win;
-  if (current < can->updateRects.Number())
-  {
-    wxRectangle *canRect = (wxRectangle *)can->updateRects.Nth(current)->Data();
-    return canRect->x;
-  }
-  else return 0;
-}
-
-int wxUpdateIterator::GetY()
-{
-  wxCanvas *can = (wxCanvas *)win;
-  if (current < can->updateRects.Number())
-  {
-    wxRectangle *canRect = (wxRectangle *)can->updateRects.Nth(current)->Data();
-    return canRect->y;
-  }
-  else return 0;
-}
-
-int wxUpdateIterator::GetW()
-{
-  wxCanvas *can = (wxCanvas *)win;
-  if (current < can->updateRects.Number())
-  {
-    wxRectangle *canRect = (wxRectangle *)can->updateRects.Nth(current)->Data();
-    return canRect->width;
-  }
-  else return 0;
-}
-
-int wxUpdateIterator::GetH()
-{
-  wxCanvas *can = (wxCanvas *)win;
-  if (current < can->updateRects.Number())
-  {
-    wxRectangle *canRect = (wxRectangle *)can->updateRects.Nth(current)->Data();
-    return canRect->height;
-  }
-  else return 0;
-}
-

@@ -434,15 +434,18 @@ void wxMenuBar::SetLabelTop (int pos, char *label)
   titles[pos] = copystring(label);
 
   Widget w = menus[pos]->buttonWidget;
-  if (w)
-    {
-      XmString label_str = XmStringCreateSimple (label);
-      XtVaSetValues (w,
-		     XmNlabelString, label_str,
-		     NULL);
-      XmStringFree (label_str);
-      return;
-    }
+  if (w) {
+    char mnem = wxFindMnemonic(label);
+    wxStripMenuCodes(label, wxBuffer);
+    
+    XmString label_str = XmStringCreateSimple(wxBuffer);
+    XtVaSetValues (w,
+		   XmNlabelString, label_str,
+		   XmNmnemonic, mnem,
+		   NULL);
+    XmStringFree (label_str);
+    return;
+  }
 }
 
 char *wxMenuBar::GetLabelTop (int pos)

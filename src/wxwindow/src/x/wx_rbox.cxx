@@ -123,6 +123,7 @@ Create (wxPanel * panel, wxFunction func,
   if (Title)
     {
       char buf[400];
+      char mnem = wxFindMnemonic(Title);
       wxStripMenuCodes(Title, buf);
 
       char *the_label = (style & wxFIXED_LENGTH) ? fillCopy (buf) : copystring (buf);
@@ -136,6 +137,7 @@ Create (wxPanel * panel, wxFunction func,
 					     xmLabelWidgetClass, formWidget,
 #endif
 					     XmNlabelString, text,
+					     XmNmnemonic, mnem,
 					     NULL);
       if (labelFont)
 	XtVaSetValues (labelWidget,
@@ -207,27 +209,29 @@ Create (wxPanel * panel, wxFunction func,
   radioEnabled = new Bool[N];
   for (i = 0; i < N; i++)
     {
+      char mnem = wxFindMnemonic(Choices[i]);
       radioEnabled[i] = TRUE;
       radioButtonLabels[i] = copystring (Choices[i]);
       wxStripMenuCodes(Choices[i], radioButtonLabels[i]);
-      radioButtons[i] = XtVaCreateManagedWidget (radioButtonLabels[i],
+      radioButtons[i] = XtVaCreateManagedWidget(radioButtonLabels[i],
 #if USE_GADGETS
-						 style & wxCOLOURED ?
-		      xmToggleButtonWidgetClass : xmToggleButtonGadgetClass,
-						 radioBoxWidget,
+						style & wxCOLOURED ?
+						xmToggleButtonWidgetClass : xmToggleButtonGadgetClass,
+						radioBoxWidget,
 #else
-				  xmToggleButtonWidgetClass, radioBoxWidget,
+						xmToggleButtonWidgetClass, radioBoxWidget,
 #endif
-						 NULL);
-      XtAddCallback (radioButtons[i], XmNvalueChangedCallback, (XtCallbackProc) wxRadioBoxCallback,
-		     (XtCallbackProc) this);
-
+						XmNmnemonic, mnem,
+						NULL);
+      XtAddCallback(radioButtons[i], XmNvalueChangedCallback, (XtCallbackProc) wxRadioBoxCallback,
+		    (XtCallbackProc) this);
+      
       if (buttonFont)
-	XtVaSetValues (radioButtons[i],
-		       XmNfontList,   
-		       /* MATTHEW: [4] Provide display */
-		       buttonFont->GetInternalFont(XtDisplay(formWidget)), /* MATTHEW: [5] Use form widget */
-		       NULL);
+	XtVaSetValues(radioButtons[i],
+		      XmNfontList,   
+		      /* MATTHEW: [4] Provide display */
+		      buttonFont->GetInternalFont(XtDisplay(formWidget)), /* MATTHEW: [5] Use form widget */
+		      NULL);
     }
   SetSelection (0);
 
@@ -324,18 +328,20 @@ Create (wxPanel * panel, wxFunction func,
 
   if (Title)
     {
+      char mnem = wxFindMnemonic(Title);
       char *actualLabel = wxStripMenuCodes(Title);
       char *the_label = (style & wxFIXED_LENGTH) ? fillCopy (actualLabel) : copystring (actualLabel);
       XmString text = XmStringCreateSimple (the_label);
       labelWidget = XtVaCreateManagedWidget (Title,
 #if USE_GADGETS
 					     style & wxCOLOURED ?
-				    xmLabelWidgetClass : xmLabelGadgetClass,
+					     xmLabelWidgetClass : xmLabelGadgetClass,
 					     formWidget,
 #else
 					     xmLabelWidgetClass, formWidget,
 #endif
 					     XmNlabelString, text,
+					     XmNmnemonic, mnem,
 					     NULL);
       if (labelFont)
 	XtVaSetValues (labelWidget,
@@ -660,23 +666,20 @@ void wxRadioBox::SetLabel (int item, char *label)
 {
   if (item < 0 || item >= no_items || (buttonBitmap && buttonBitmap[item]))
     return;
-#ifdef wx_motif
+
   Widget widget = (Widget) radioButtons[item];
-  if (label)
-    {
-      XmString text = XmStringCreateSimple (label);
-      XtVaSetValues (widget,
-		     XmNlabelString, text,
-		     XmNlabelType, XmSTRING,
-		     NULL);
-      XmStringFree (text);
-    }
-#endif
-#ifdef wx_xview
-  Panel_item x_choice = (Panel_item) handle;
-  if (label)
-    xv_set (x_choice, PANEL_CHOICE_STRING, item, label, NULL);
-#endif
+  if (label) {
+    char buf[400];
+    char mnem = wxFindMnemonic(label);
+    wxStripMenuCodes(label, buf);
+    XmString text = XmStringCreateSimple (label);
+    XtVaSetValues (widget,
+		   XmNlabelString, text,
+		   XmNmnemonic, mnem,
+		   XmNlabelType, XmSTRING,
+		   NULL);
+    XmStringFree (text);
+  }
 }
 
 void wxRadioBox::SetLabel (int item, wxBitmap * bitmap)

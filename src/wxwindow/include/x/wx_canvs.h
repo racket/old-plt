@@ -114,6 +114,7 @@ class wxCanvas: public wxbCanvas
 
   // Scroll the canvas
   void Scroll(int x_pos, int y_pos);
+  void ScrollPercent(float x_pos, float y_pos);
   void GetScrollUnitsPerPage(int *x_page, int *y_page);
 
   void OnScroll(wxScrollEvent& event);
@@ -155,25 +156,6 @@ class wxCanvas: public wxbCanvas
 
   Window GetXWindow(void);
   Window GetXCursorWindow(void);
-};
-
-// Allows iteration through damaged rectangles in OnPaint
-class wxUpdateIterator
-{
- private:
-  int current;					        // Current rectangle index
-  wxWindow *win;
- public:
-  wxUpdateIterator(wxWindow* wnd);
-  ~wxUpdateIterator(void);
-
-  operator int (void);
-  wxUpdateIterator* operator ++(int);
-  void GetRect(wxRectangle *rect);
-  int GetX();
-  int GetY();
-  int GetW();
-  int GetH();
 };
 
 #endif // IN_CPROTO

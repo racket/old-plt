@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.5 1998/10/16 18:19:40 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.6 1998/11/17 21:40:44 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1917,6 +1917,44 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   return retval;
 }
 
+Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
+			wxBitmap *source, float xsrc, float ysrc)
+{
+  /* Non-allocating (of collectable memory) Blit */
+
+  FreeGetPixelCache();
+
+  Bool retval = FALSE;
+
+  if (source->selectedTo) 
+    source->selectedTo->EndSetPixel();
+
+  int scaled_width
+    = source->GetWidth()  < XLOG2DEVREL(width) ? source->GetWidth()  : XLOG2DEVREL(width);
+  int scaled_height
+    = source->GetHeight() < YLOG2DEVREL(height) ? source->GetHeight() : YLOG2DEVREL(height);
+
+  if (pixmap && source->Ok()) {
+    XGCValues values;
+    GC gc = XCreateGC(display, pixmap, 0, &values);
+
+    if (!color || (source->GetDepth() == 1)) {
+      XCopyPlane (display, source->x_pixmap, pixmap, gc,
+		  (long)xsrc, (long)ysrc, scaled_width, scaled_height,
+		  XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
+    } else {
+      XCopyArea (display, source->x_pixmap, pixmap, gc,
+		 (long)xsrc, (long)ysrc, scaled_width, scaled_height,
+		 XLOG2DEV(xdest), YLOG2DEV(ydest));
+    }
+    
+    XFreeGC(display, gc);
+  
+    retval = TRUE;
+  }
+
+  return retval;
+}
 
 /*
  * Memory DC

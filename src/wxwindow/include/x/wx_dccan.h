@@ -160,6 +160,8 @@ class wxCanvasDC: public wxbCanvasDC
 
   Bool Blit(float xdest, float ydest, float width, float height,
             wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
+  Bool GCBlit(float xdest, float ydest, float width, float height,
+	      wxBitmap *source, float xsrc, float ysrc);
   inline Bool CanGetTextExtent(void) { return TRUE; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 

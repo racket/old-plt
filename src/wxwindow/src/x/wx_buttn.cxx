@@ -82,6 +82,7 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, char *label,
   if (!label)
     label = " ";
   char buf[400];
+  char mnem = wxFindMnemonic (label);
   wxStripMenuCodes(label, buf);
   XmString text = XmStringCreateSimple (buf);
 
@@ -116,6 +117,7 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, char *label,
 						 xmPushButtonWidgetClass, formWidget,
 #endif
 						 XmNlabelString, text,
+						 XmNmnemonic, mnem,
 						 XmNdefaultButtonShadowThickness, style ? 1 : 0,
 						 XmNshowAsDefault, style ? True : False,
 						 XmNtopAttachment, XmATTACH_FORM,
@@ -328,10 +330,12 @@ void wxButton::SetLabel (char *label)
   if (label)
     {
       char buf[400];
+      char mnem = wxFindMnemonic (label);
       wxStripMenuCodes(label, buf);
       XmString text = XmStringCreateSimple (buf);
       XtVaSetValues (widget,
 		     XmNlabelString, text,
+		     XmNmnemonic, mnem,
 		     XmNlabelType, XmSTRING,
 		     NULL);
       XmStringFree (text);
@@ -418,7 +422,5 @@ void wxButton::SetDefault (void)
 
 void wxButton::Command (wxCommandEvent & event)
 {
-  // How do we fill in this event structure.
-  XButtonEvent buttonEvent;
-  XtCallActionProc ((Widget) handle, "ArmAndActivate", (XEvent *) & buttonEvent, NULL, 0);
+  ProcessCommand(event);
 }

@@ -1,4 +1,22 @@
 
+Version 299.1
+Unicode
+Removed the char-locale... operations
+Removed char->latin-1-integer and latin-1-integer->char
+Added string-copy!, read-string!, peek-string!, and write-string
+Added convert-stream to thread.ss
+Added \u syntax in strings and chars
+Fixed log for large exact integers
+Added convert-stream
+Added make-alarm
+Removed exists check for current-directory
+Added terminal-port?
+Addede path-string?, path-replace-suffix
+Renamed all the number "byte-string" functions to "bytes"
+Regexp grammar changed to match docs with respect to -
+Changed pref dir (all platforms) and pref file name
+ (except Windows)
+
 Version 206, January 2004
 A shut-down custodian is no longer allowed to manage new
  objects

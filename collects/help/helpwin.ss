@@ -266,6 +266,12 @@
 
 	  (send results goto-url startup-url #f)
 
+	  (define searching-message-on? #f)
+	  (define (searching-done editor)
+	    (when searching-message-on?
+	      (set! searching-message-on? #f)
+	      (send editor erase)))
+
 	  (define cycle-key #f)
 	  (define break-sema (make-semaphore 1))
 
@@ -296,6 +302,7 @@
 		   (semaphore-post choices-sema)
 		   (send editor lock #f)
 		   (send editor begin-edit-sequence)
+		   (searching-done editor)
 		   (for-each
 		    (lambda (i)
 		      (let-values ([(key name title page label) (apply values i)])
@@ -353,17 +360,25 @@
 		   [maxxed-out? #f]
 		   [ckey (gensym)]
 		   [result #f])
+	      (send editor lock #f)
+	      (send editor insert "Searching...")
+	      (send editor lock #t)
+	      (set! searching-message-on? #t)
 	      (with-handlers ([exn:misc:user-break?
 			       (lambda (x)
 				 (queue-callback
 				  (lambda ()
 				    (when (eq? cycle-key ckey)
 				      (send editor lock #f)
+				      (searching-done editor)
 				      (send editor insert
 					    (format "(Search stopped~a.)" 
 						    (if maxxed-out?
 							" - found maximum allowed matches" 
-							"")))
+							""))
+					    (send editor last-position)
+					    'same
+					    #f)
 				      (send editor lock #t)))
 				  #f))])
 
@@ -403,6 +418,7 @@
 		   (when (eq? cycle-key ckey)
 		     (when result
 		       (send editor lock #f)
+		       (searching-done editor)
 		       (send editor insert result)
 		       (send editor lock #t))))
 		 #f))))

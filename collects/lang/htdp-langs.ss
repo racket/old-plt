@@ -18,7 +18,6 @@ WARNING: printf is rebound in the mosdule to always print
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "tool.ss" "drscheme")
-           (lib "macro.ss" "userspce")
            (lib "mred.ss" "mred"))
   
   (provide tool@)

@@ -2535,7 +2535,7 @@ do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
   int regfile;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(name, "string", offset, argc, argv);
+    scheme_wrong_type(name, "string", 0, argc, argv);
   if (argc > 1 + offset) {
     if (!SCHEME_SYMBOLP(argv[offset + 1]))
       scheme_wrong_type(name, "symbol", offset + 1, argc, argv);

@@ -306,17 +306,17 @@ void wxListBox::OnEvent(wxMouseEvent *event)
     
     ReleaseCurrentDC();
     
-    if (cellWasClicked) {
+    {
       wxCommandEvent *commandEvent;
       
-      cellWasClicked = false;			
-      
-      if (doubleclick)
+      if (cellWasClicked && doubleclick)
 	commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
       else
 	commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-      
-      ProcessCommand(commandEvent);
+
+      cellWasClicked = false;			
+  
+      ProcessCommand(commandEvent);    
     }
   }
 }

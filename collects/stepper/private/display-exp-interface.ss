@@ -19,8 +19,8 @@
   
   (define exp-without-holes?
     (union  exp-without-holes-base-case?
-           (and/f pair? (cons/p (lx ((flat-named-contract-predicate exp-without-holes?) _))
-                                (lx ((flat-named-contract-predicate exp-without-holes?) _))))))
+           (and/c pair? (cons/p (lx ((flat-contract-predicate exp-without-holes?) _))
+                                (lx ((flat-contract-predicate exp-without-holes?) _))))))
   
   (define exp-with-holes-base-case? 
     (union exp-without-holes-base-case?
@@ -28,7 +28,7 @@
   
   (define exp-with-holes?
     (union exp-with-holes-base-case?
-          (and/f pair? (cons/p (lx ((flat-named-contract-predicate exp-with-holes?) _)) 
-                               (lx ((flat-named-contract-predicate exp-with-holes?) _))))))
+          (and/c pair? (cons/p (lx ((flat-contract-predicate exp-with-holes?) _)) 
+                               (lx ((flat-contract-predicate exp-with-holes?) _))))))
   
 )

@@ -32,7 +32,7 @@
 	      (let ((new-binding-for 
 		     (lambda (f)
 		       (ormap (lambda (x) 
-				(if (eq? (syntax-object->datum (stx-car x)) (syntax-object->datum f)) 
+				(if (module-or-top-identifier=? (stx-car x) f)
 				    (cadr (syntax-e x)) 
 				    #f))
 			      ans))))
@@ -45,18 +45,23 @@
 					(caddr v)
 					(cadddr v)))]
 			     [(as) (map (lambda (an) (stx-car an)) ans)])
-		  (for-each 
-		   (lambda (field)
-		     (unless (ormap (lambda (f2) (module-or-top-identifier=? field f2)) accessors)
-		       (raise-syntax-error #f "accessor name not associated with the given structure type" stx field)))
-		   as)
-		  
-		  (let ((dupe (check-duplicate-identifier as)))
-		    (when dupe 
-		      (raise-syntax-error #f 
-					  "duplicate field assignment" 
-					  stx 
-					  dupe)))
+		  (let ([dests
+			 (map
+			  (lambda (field)
+			    (or (ormap (lambda (f2) (and (module-or-top-identifier=? field f2) f2)) accessors)
+				(raise-syntax-error #f "accessor name not associated with the given structure type" stx field)))
+			  as)])
+		    ;; Check for duplicates using dests, not as, because mod=? as might not be id=?
+		    (let ((dupe (check-duplicate-identifier dests)))
+		      (when dupe 
+			(raise-syntax-error #f 
+					    "duplicate field assignment" 
+					    stx 
+					    ;; Map back to an original field:
+					    (ormap (lambda (a)
+						     (and (module-or-top-identifier=? dupe a)
+							  a))
+						   (reverse as))))))
 		  
 		  ;; the actual result
 		  #`(let ((the-struct structure))

@@ -25,6 +25,10 @@
 (syntax-test #'(copy-struct x 10))
 (syntax-test #'(copy-struct date 10 (date-foo 12)))
 (syntax-test #'(copy-struct date 10 (date-second 12) (date-yeeer 10)))
+(syntax-test #'(copy-struct date 10 (date-second 12) (date-second 10)))
+
+(require (rename mzscheme mz:date-second date-second))
+(syntax-test #'(copy-struct date 10 (date-second 12) (mz:date-second 10)))
 
 (let ([v (let ()
 	   (define-struct a (b c) (make-inspector))

@@ -251,6 +251,7 @@ void wxWindow::SetTitle(char *title)
 		  XtNtitle, title, 
 		  XtNiconName, title, 
 		  XtNtitleEncoding, utf8_atom,
+		  XtNiconNameEncoding, utf8_atom,
 		  NULL);
 }
 

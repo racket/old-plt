@@ -66,7 +66,7 @@
 	;(make-core_type core_type_desc src)
 	(p-define-struct core_type (desc src))
 
-	; core_type_desc => any
+	; core_type_makdesc => any
 	;                 | var
 	;                 | arrow
 	;                 | tuple

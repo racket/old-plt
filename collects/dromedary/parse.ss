@@ -388,7 +388,7 @@
 ;;     [(<seq_expr> <structure_tail>)
     (<structure>
      [(<structure_tail>) $1]
-     [(<seq_expr> <structure_tail>) (ast:make-structure_item (ast:make-pstr_eval (cons $1 $2)) (build-src 1))])
+     [(<seq_expr> <structure_tail>) (ast:make-structure_item (ast:make-pstr_eval (cons $1 $2)) (build-src 2))])
 
     (<structure_tail>
      [() null]
@@ -447,7 +447,7 @@
       (cons (cons "" null) $1)])
 
     (<pattern_var>
-     [(LIDENT) (ast:make-pattern (ast:make-ppat_var (syntax-object->datum $1)) (build-src 1))])
+     [(LIDENT) (ast:make-pattern (ast:make-ppat_var $1) (build-src 1))])
 
     (<opt_default>
      [() null]
@@ -460,7 +460,7 @@
 	(cons (car label-pattern) (ast:make-pattern (ast:make-ppat_constraint (cdr label-pattern) $3))) (build-src 1))])
 
     (<label_var>
-     [(LIDENT) (cons $1 (ast:make-pattern (ast:make-ppat_var (syntax-object->datum $1))) (build-src 1))])
+     [(LIDENT) (cons $1 (ast:make-pattern (ast:make-ppat_var $1)) (build-src 1))])
 
     (<let_pattern>
      [(<pattern>) $1]
@@ -469,7 +469,7 @@
     (<expr>
      [(<simple_expr>) $1]
      [(<simple_expr> <simple_labeled_expr_list>) (prec <prec_appl>)
-      (ast:make-expression (ast:make-pexp_apply $1 (reverse $2)) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply $1 (reverse $2)) (build-src 1 2))]
      [(LET <rec_flag> <let_bindings> IN <seq_expr>) (prec <prec_let>)
       (ast:make-expression (ast:make-pexp_let $2 (reverse $3) $5) (build-src 1))]
      ;[(LET MODULE UIDENT <module_binding> IN <seq_expr>) (prec <prec_let>)
@@ -502,44 +502,44 @@
      [(<expr> COLONCOLON <expr>)
       (ast:make-expression (ast:make-pexp_construct (ast:make-lident "::") (ast:make-expression (ast:make-pexp_tuple (list $1 $3)) (build-src 1)) #f) (build-src 1))]
      [(<expr> INFIXOP0 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (syntax-object->datum $2))) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP1 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (syntax-object->datum $2))) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP2 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (syntax-object->datum $2))) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP3 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (syntax-object->datum $2))) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP4 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (syntax-object->datum $2))) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> PLUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "+")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "+")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> MINUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> MINUSDOT <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-.")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-.")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> STAR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "*")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "*")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> EQUAL <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "=")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "=")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> LESS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "<")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "<")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> GREATER <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ">")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ">")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> OR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "or")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "or")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> BARBAR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "||")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "||")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> AMPERSAND <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> AMPERAMPER <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&&")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&&")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> COLONEQUAL <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ":=")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ":=")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<subtractive> <expr>) (prec <prec_unary_minus>)
       (let ([type (ast:expression-pexp_desc $2)])
 	(if (and (ast:pexp_constant? type) (number? (ast:pexp_constant-const type)))
-	    (ast:make-expression (ast:make-pexp_constant (- (ast:pexp_constant-const type))) (build-src 1))
-	    (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (string-append "~" $1))) (build-src 1)) (list (cons "" $2))) (build-src 1))))]
+	    (ast:make-expression (ast:make-pexp_constant (- (ast:pexp_constant-const type))) (build-src 1 2))
+	    (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (string-append "~" $1))) (build-src 1)) (list (cons "" $2))) (build-src 1 2))))]
      [(<simple_expr> DOT <label_longident> LESSMINUS <expr>)
       (ast:make-expression (ast:make-pexp_setfield($1 $3 $5)) (build-src 1))]
      [(<simple_expr> DOT LPAREN <seq_expr> RPAREN LESSMINUS <expr>)
@@ -612,7 +612,7 @@
 ;;     [(LBRACKET <expr_semi_list> <opt_semi> error)
 ;; Unclosed error
      [(PREFIXOP <simple_expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (syntax-object->datum $1))) (build-src 1 1)) (list (cons "" $2))) (build-src 1))])
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $1)) (build-src 2)) (list (cons "" $2))) (build-src 1 2))])
 ;; Class related expression would go here
 
     (<simple_labeled_expr_list>
@@ -639,7 +639,7 @@
 
     (<label_ident>
      [(LIDENT)
-      (cons $1 (ast:make-expression (ast:make-pexp_ident (ast:make-lident (syntax-object->datum $1))) (build-src 1)))])
+      (cons $1 (ast:make-expression (ast:make-pexp_ident (ast:make-lident $1)) (build-src 1)))])
 
     (<let_bindings>
      [(<let_binding>)
@@ -649,7 +649,7 @@
 
     (<let_binding>
      [(<val_ident> <fun_binding>)
-      (cons (ast:make-pattern (ast:make-ppat_var (syntax-object->datum $1)) (build-src 1 1)) $2)]
+      (cons (ast:make-pattern (ast:make-ppat_var $1) (build-src 1 1)) $2)]
      [(<pattern> EQUAL <seq_expr>) (prec <prec_let>)
       (cons $1 $3)])
     
@@ -734,7 +734,7 @@
 
     (<simple_pattern>
      [(<val_ident>)
-      (ast:make-pattern (ast:make-ppat_var (syntax-object->datum $1)) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_var $1) (build-src 1))]
      [(UNDERSCORE)
       (ast:make-pattern (ast:make-ppat_any null) (build-src 1))]
      [(<signed_constant>)
@@ -1030,7 +1030,7 @@
      [(TRUE) "true"])
 
     (<val_longident>
-     [(<val_ident>) (ast:make-lident (syntax-object->datum $1))]
+     [(<val_ident>) (ast:make-lident $1)]
      [(<mod_longident> DOT <val_ident>) (ast:make-ldot $1 $3)])
 
     (<constr_longident>
@@ -1041,32 +1041,32 @@
      [(TRUE) (ast:make-lident "true")])
 
     (<label_longident>
-     [(LIDENT) (ast:make-lident (syntax-object->datum $1))]
+     [(LIDENT) (ast:make-lident $1)]
      [(<mod_longident> DOT LIDENT) (ast:make-ldot $1 $3)])
 
     (<type_longident>
-     [(LIDENT) (ast:make-lident (syntax-object->datum $1))]
+     [(LIDENT) (ast:make-lident $1)]
      [(<mod_ext_longident> DOT LIDENT) (ast:make-ldot $1 $3)])
 
     (<mod_longident>
-     [(UIDENT) (ast:make-lident (syntax-object->datum $1))]
+     [(UIDENT) (ast:make-lident $1)]
      [(<mod_longident> DOT UIDENT) (ast:make-ldot $1 $3)])
 
     (<mod_ext_longident>
-     [(UIDENT) (ast:make-lident (syntax-object->datum $1))]
+     [(UIDENT) (ast:make-lident $1)]
      [(<mod_ext_longident> DOT UIDENT) (ast:make-ldot $1 $3)]
      [(<mod_ext_longident> LPAREN <mod_ext_longident> RPAREN) (ast:make-lapply $1 $3)])
     
     (<mty_longident>
-     [(<ident>) (ast:make-lident (syntax-object->datum $1))]
+     [(<ident>) (ast:make-lident $1)]
      [(<mod_ext_longident> DOT <ident>) (ast:make-ldot $1 $3)])
 
     (<clty_longident>
-     [(LIDENT) (ast:make-lident (syntax-object->datum $1))]
+     [(LIDENT) (ast:make-lident $1)]
      [(<mod_ext_longident> DOT LIDENT) (ast:make-ldot $1 $3)])
 
     (<class_longident>
-     [(LIDENT) (ast:make-lident (syntax-object->datum $1))]
+     [(LIDENT) (ast:make-lident $1)]
      [(<mod_longident> DOT LIDENT) (ast:make-ldot $1 $3)])
 
 ;; Toplevel directives
@@ -1156,7 +1156,8 @@
 					   (format "$~a-end-pos"
 						   (syntax-object->datum (syntax end)))))))
 			       (syntax
-				(ast:make-src (position-line start-pos)
+				(ast:make-src
+				 (position-line start-pos)
 					      (position-col start-pos)
 					      (position-offset start-pos)
 					      (- (position-offset end-pos)

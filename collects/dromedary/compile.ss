@@ -9,12 +9,15 @@
      (provide compile-all)
 
      (define next-label 0)     
+     (define loc #f)
 
-     (define (compile-all stmt ctx)
-;       (datum->syntax-object
-;	ctx
-;	(parameterize ([current-compile-context ctx])
-		      (compile-ml stmt (empty-context)))
+     (define (compile-all stmt location)
+       (set! loc location)
+       (list
+;	(datum->syntax-object
+;	 #f
+	 (compile-ml stmt (empty-context))))
+;	 #f)))
 
      (define current-compile-context (make-parameter #f))
 
@@ -23,15 +26,14 @@
 	      [($ ast:expression desc src)
 	       (compile-expr desc src context)]
 	      [(a . b)
-	       (begin (pretty-print (list "This is a list/pair" stmt))
-		      (if (null? b)
-			  (compile-ml a context)
-	       #`(begin #,(compile-ml a context) #,(compile-ml b context))))]
+;	       (if (null? b)
+		   (cons (compile-ml a context) (compile-ml b context))]
 ;		      [($ ast:structure_item desc src)
 ;		       (compile-structure desc src context)]
 ;		      )]
 	      [($ ast:structure_item desc src)
 	       (compile-structure desc src context)]
+	      [() null]
 	      [else
 	       (pretty-print (list "Unknown: " stmt))]))
 
@@ -45,9 +47,8 @@
      (define (compile-structure desc src context)
        (match desc
 	      [($ ast:pstr_value rec_flag pelist)
-	       (let ([all-bindings (map compile-define pelist (repeat context (length pelist)))])
-		 (begin (pretty-print "Beginning definitions")
-		 #`(begin #,@all-bindings)))]
+	       (let ([all-bindings (map compile-define (repeat rec_flag (length pelist)) pelist (repeat context (length pelist)))])
+		 all-bindings)]
 	      [($ ast:pstr_type stdlist)
 	       (let* ([assumeone (car stdlist)]
 		      [name (eval (car assumeone))]
@@ -57,13 +58,13 @@
 			 (let ([core (compile-core_type (ast:type_declaration-manifest typedecl))])
 			   (begin
 			     (hash-table-put! user-types name core)
-			     #'"Type"))]
+			     #'(void #f)))]
 			[($ ast:ptype_variant scll)
 			 (let ([cscll (compile-scll scll)])
 			   (begin
 			     (hash-table-put! user-types name (lambda (x) (isa-variant? 'a 'b cscll)))
 			     (pretty-print "begining type definitions")
-			     #`(begin #,@(mkdefinestructs scll))))]
+			     (mkdefinestructs scll)))]
 ;			     #`(define-struct #,(string->symbol(eval (caar scll))) (tlist))))]
 			 ))]
 	      [($ ast:pstr_eval expr)
@@ -159,18 +160,30 @@
 		     [elseexpc (if (null? elseexp) null (compile-ml elseexp context))])
 		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc)))]
 	      [($ ast:pexp_construct name expr bool)
-	       (cond
-		[(and (null? expr) (not bool) (if (hash-table-get constructors name (lambda () #f)) #t #f))
-		 (cdr (hash-table-get constructors name))]
-		[(and (not bool) (if (hash-table-get constructors name (lambda () #f)) #t #f))
-		 (let ([constr (cdr (hash-table-get constructors name))]
-		       [args (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)])
-		   #`(#,constr #,@args))]
-		[else
-		 (let ([constr (string->symbol (format "make-~a" (ast:lident-name name)))]
-		       [args (if (null? expr) null (compile-ml expr context))])
-		 #`(#,(string->symbol (format "make-~a" (ast:lident-name name))) #,args))]
-		)]
+	       (let ([constr (hash-table-get constructors (unlongident name) (lambda () #f))])
+		 (if constr
+		     (if (null? expr)
+			 (cdr constr)
+			 (let ([args (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)])
+			   #`(#,(cdr constr) #,@args)))
+		     (let ([rconstr (string->symbol (format "make-~a" (unlongident name)))]
+			   [args (if (null? expr) #f (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context))])
+		       (if args
+			   #`(#,rconstr #,@args)
+			   #`#,rconstr))))]
+;	       (cond
+;		[(and (null? expr) (not bool) 
+;		      (if (hash-table-get constructors name (lambda () #f)) #t #f))
+;		 (cdr (hash-table-get constructors name))]
+;		[(and (not bool) (if (hash-table-get constructors name (lambda () #f)) #t #f))
+;		 (let ([constr (cdr (hash-table-get constructors name))]
+;		       [args (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)])
+;		   #`(#,constr #,@args))]
+;		[else
+;		 (let ([constr (string->symbol (format "make-~a" (ast:lident-name name)))]
+;		       [args (if (null? expr) null (compile-ml expr context))])
+;		 #`(#,(string->symbol (format "make-~a" (ast:lident-name name))) #,args))]
+;		)]
 
 	      [($ ast:pexp_match expr pelist)
 	       (let ([totest (compile-ml expr context)]
@@ -205,7 +218,7 @@
      (define (get-varpat pattern)
        (match (ast:pattern-ppat_desc pattern)
 	      [($ ast:ppat_var variable)
-	       (string->symbol variable)]
+	       (string->symbol (eval variable))]
 	      [($ ast:ppat_constant const)
 	       (eval const)]
 	      [($ ast:ppat_tuple tlist)
@@ -215,20 +228,20 @@
 	      [($ ast:ppat_any dummy)
 	       #'_]
 	      [($ ast:ppat_construct name pat bool)
-	       (cond [(and (null? pat) (not bool) (if (hash-table-get constructors name (lambda () #f)) #t #f))
-		      (hash-table-get constructors name)]
+	       (cond [(and (null? pat) (not bool) (if (hash-table-get constructors (unlongident name) (lambda () #f)) #t #f))
+		      (hash-table-get constructors (unlongident name))]
 		     [(not bool)
-		      (let ([constructor (hash-table-get constructors name (lambda () #f))])
+		      (let ([constructor (hash-table-get constructors (unlongident name) (lambda () #f))])
 			(if constructor
 			    ;; Best way I can think of to do this is specail case
-			    (if (equal? (hash-table-get constructors name) cons)
+			    (if (equal? (hash-table-get constructors (unlongident name)) cons)
 				;; The pattern should be a tuple of two
 				(if (ast:ppat_tuple? (ast:pattern-ppat_desc pat))
 				    (let ([head (get-varpat (car (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))]
 					  [tail (get-varpat (cadr (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))))])
 				      #`(#,head . #,tail))
 				    (pretty-print (list "Not a tuple: " (ast:pattern-ppat_desc pat))))
-				#`($ #,(string->symbol (ast:lident-name name)) #,(if (null? pat) pat (get-varpat pat))))
+				#`($ #,(string->symbol (eval (ast:lident-name name))) #,(if (null? pat) pat (get-varpat pat))))
 			    #`($ #,(string->symbol (unlongident name)) #,(if (null? pat) #'dummy (get-varpat pat)))))]
 		     [else (pretty-print (list "Unknown construct: " name pat bool))])]
 	      [else
@@ -258,7 +271,7 @@
 				    [tail (compile-test (cadr (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) context)])
 				#`(#,head . #,tail))
 			      (pretty-print (list "Not a tuple: " (ast:pattern-ppat_desc pat))))
-			  #`($ #,(string->symbol (ast:lident-name name)) #,(if (null? pat) pat (compile-test pat context))))]
+			  #`($ #,(string->symbol (eval (ast:lident-name name))) #,(if (null? pat) pat (compile-test pat context))))]
 		     [else (pretty-print (list "Unknown construct: " name pat bool))])]
 	      [else (pretty-print (list "Unknown pattern: " (ast:pattern-ppat_desc pattern)))]))
 
@@ -301,9 +314,9 @@
 		(or (ast:ppat_var? (ast:pattern-ppat_desc (car binding)))
 		    (and (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
 			 (ast:ppat_var? (ast:pattern-ppat_desc (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding))))))))
-	   #`(define #,(string->symbol (ast:ppat_var-name (ast:pattern-ppat_desc (if (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
+	   #`(define #,(string->symbol (eval (ast:ppat_var-name (ast:pattern-ppat_desc (if (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
 										     (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding)))
-      (car binding)))))
+      (car binding))))))
 	       #,(compile-ml (cdr binding) context)))
        (if rec
 	   (pretty-print "This kind of expression is not allowed on right hand side of let rec")
@@ -318,7 +331,7 @@
 	   (let* ([cur-bind (car bindings)])
 	     (if (and (ast:pexp_function? (ast:expression-pexp_desc (cdr cur-bind))) (or (ast:ppat_var? (ast:pattern-ppat_desc (car cur-bind)))
 											 (and (ast:ppat_constraint? (ast:pattern-ppat_desc (car cur-bind))) (ast:ppat_var? (ast:pattern-ppat_desc (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car cur-bind))))))))
-		 #`(#,(if rec #'letrec #'let) ([#,(string->symbol (ast:ppat_var-name (ast:pattern-ppat_desc (car cur-bind)))) #,(compile-ml (cdr cur-bind) context)]) #,(compile-let rec (cdr bindings) finalexpr context))
+		 #`(#,(if rec #'letrec #'let) ([#,(string->symbol (eval (ast:ppat_var-name (ast:pattern-ppat_desc (car cur-bind))))) #,(compile-ml (cdr cur-bind) context)]) #,(compile-let rec (cdr bindings) finalexpr context))
 		 (if rec
 		     (pretty-print "This kind of expression is not allowed as right-hand side of `let rec'")
 		     (let ([varpat (get-varpat (car cur-bind))]
@@ -358,19 +371,19 @@
 	      [($ ast:lident name)
 
 
-	       (let ([result (hash-table-get built-in-and-user-funcs name (lambda () #f))])
+	       (let ([result (hash-table-get built-in-and-user-funcs (eval name) (lambda () #f))])
 		 (if result
 		     (cdr result)
 		     #f))]
 	      [($ ast:ldot longident name)
 	       (match longident
 		      [($ ast:lident library)
-		       (let ([lib-map (hash-table-get library-names library (lambda () #f))])
+		       (let ([lib-map (hash-table-get library-names (eval library) (lambda () #f))])
 			 (if lib-map
 			     (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
 			       (if function
 				   (cdr function)
-				   (begin (pretty-print (list "Error: " (syntax-object->datum name) "not found in" library)) #f)))
+				   (begin (pretty-print (list "Error: " (syntax-object->datum name) "not found in" (eval library))) #f)))
 			     (begin (pretty-print (list "Error: " library "not found")) #f)))])]))
 
      (define (look-up name context)
@@ -382,8 +395,8 @@
 	  
      (define (unlongident uname)
        (match uname
-	      [($ ast:lident name) name]
-	      [($ ast:ldot longident name) (format "~a.~a" (unlongident longident) name)]))
+	      [($ ast:lident name) (eval name)]
+	      [($ ast:ldot longident name) (format "~a.~a" (unlongident longident) (eval name))]))
      
      (define (ml-primitive? fun primlist)
        (if (null? primlist)

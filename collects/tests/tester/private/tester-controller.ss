@@ -17,6 +17,8 @@
     (format "exception: ~a" (error-exception os))]
    [(finish? os)
     (format "result: ~n~v~n" (finish-value os))]
+   [(exit? os)
+    "<program termination>"]
    [else (error (format "oops! received ~v" os))]))
   
 ;; expect->str : expectation -> str
@@ -76,9 +78,7 @@
         
         ; okay-press : (listof (list str val (listof (list str val)))
         (lambda (btn evnt)
-          (thread
-           (lambda ()
-             (send model run-tests (send view get-current-test-selections)))))
+          (send model run-tests (send view get-current-test-selections)))
         
         ; prev-error
         (lambda (btn evnt)
@@ -100,6 +100,7 @@
         
         ; gui:in-choose : (listof test-group) -> void
         (lambda (tgs) 
+          (send view update-status "Choose the tests to run.")
           (send view set-mode 'choose)
           (set! selection-list tgs)
           (let ((selection-list
@@ -180,3 +181,10 @@
     
     (super-instantiate ()))))
 
+(define (my-expand stx)
+    (fluid-let-syntax 
+        ([a 
+          (lambda (x)
+            (syntax-case x ()
+              [(_ val) (syntax val)]))])
+      (expand stx)))

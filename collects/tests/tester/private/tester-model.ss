@@ -1,4 +1,5 @@
 (module tester-model mzscheme
+  (require (lib "mred.ss" "mred")) ;; for eventspace information
   (require (lib "class.ss"))
   (require (lib "growable-vector.ss" "tests" "tester" "private"))
   (require (lib "tester-structs.ss"  "tests" "tester" "private"))
@@ -113,39 +114,7 @@
           (super-instantiate ())))
               
       (transition-to (make-object init<S>%))
-      
-;      (define state-machine 
-;        (make-object
-;            (fsm 
-;             ; init state
-;             init<S>
-;             ; alphabet
-;             (load-tests run-tests restart rechoose)
-;             ; state definitions
-;             [init<S>   gui:in-init
-;                        (load-tests choose<S> (lambda (man)
-;                                                (gui:init->choose (length man))
-;                                                (load-tests-internal man)))]
-;             [choose<S> (lambda () (gui:in-choose (gvector->list queued-test-groups)))
-;                        (run-tests  done<S>   (lambda (tests)
-;                                                (gui:choose->done (apply + (map length (cadr tests))))
-;                                                (run-chosen-tests tests)))]
-;             [done<S>   gui:in-done
-;                        (rechoose   choose<S> (lambda () (void)))
-;                        (restart    init<S>   (lambda () (void)))])))
-;      
-;      (define load-tests
-;        (lambda args (send state-machine load-tests args)))
-;      
-;      (define run-tests
-;        (lambda args (send state-machine run-tests args)))
-;      
-;      (define restart
-;        (lambda args (send state-machine restart args)))
-;      
-;      (define rechoose
-;        (lambda args (send state-machine rechoose args)))
-      
+            
     ;; ======================================================================
     ;; LOADING
     ;; This section contains definitions related to loading tests. Its goal is
@@ -160,16 +129,17 @@
       ; selected and run.
       (define load-tests-internal
         (lambda (manifest)
-          (for-each
-           (lambda (spec)
-             (printf "loading ~v~n" spec)
-             (begin
-               (gui:loading-new-module spec)
-               (with-handlers
-                   ([exn? (lambda (e) (gui:failed-module-load e))])
-                 ((dynamic-require spec 'test-main))
-                 (gui:successful-module-load))))
-           manifest)))
+          (parameterize ((current-eventspace (make-eventspace)))
+            (for-each
+             (lambda (spec)
+               (printf "loading ~v~n" spec)
+               (begin
+                 (gui:loading-new-module spec)
+                 (with-handlers
+                     ([exn? (lambda (e) (gui:failed-module-load e))])
+                   ((dynamic-require spec 'test-main))
+                   (gui:successful-module-load))))
+             manifest))))
       
       ; register-test-group : test-group -> void
       ; side-effect: updates tests-to-run to include this test-group
@@ -186,30 +156,83 @@
       ; of the tests that the test-group provides
       (define run-chosen-tests
         (lambda (chosen-tests)
-          (for-each (lambda (x) (test (car x) (cadr x))) chosen-tests)))
+          (parameterize ((current-eventspace (make-eventspace)))
+            (for-each 
+             (lambda (x) (queue-callback (lambda () (test-one-group (car x) (cadr x)))))
+             chosen-tests))))
       
-      ; test: test-group x (listof test) -> void
-      ; side effect: informs the GUI of the new test group, runs the
-      ; group's initializer, and tests the given tests.
-      (define test
-        (lambda (test-group tests)
-          (begin
-            (gui:testing-new-group (test-group-description test-group)
-                                   (length tests))
-            (let ((initializer (test-group-initializer test-group)))
-              (if initializer (initializer)))
-            (for-each run-test tests))))
+      ; test-one-group : test-group x (listof test) -> void
+      ; runs the initializer and then all the tests in the given 
+      ; group. If evaluating a test causes the test thread while
+      ; there are still tests to run, the function re-runs the
+      ; initializer and then runs the remaining tests. Also updates
+      ; the GUI with test results.
+      (define (test-one-group group tests-to-run)
+        
+        ; curr-test : (union #f test)
+        ; the test currently being tested.
+        (define curr-test #f)
+        ; to-be-run : (listof test)
+        ; the tests that have not yet run.
+        (define to-be-run tests-to-run)
+        
+        ; run : (listof test) -> void
+        ; runs the given tests, updating to-be-run as it goes
+        ; with the rest of the tests to run after the current one.
+        (define (run tests)
+          (cond
+            [(null? tests) 
+             (begin (set! curr-test #f)
+                    (void))]
+            [else 
+             (begin (set! curr-test (car tests))
+                    (set! to-be-run (cdr tests))
+                    (report-test-result
+                     (car tests) 
+                     (get-result (test-thunk (car tests))))
+                    (run (cdr tests)))]))
+        
+        ; -> (-> void)
+        ; gives a thunk that runs the test group's initializer and then
+        ; the tests that have not yet been run in the group
+        (define (get-runner-thunk)
+          (lambda () (begin
+                       (let ((initializer (test-group-initializer group)))
+                         (begin
+                           (if initializer (initializer))
+                           (run to-be-run))))))
+ 
+        ; run the tester thread. restart it if it dies. If we wake up
+        ; (because testing-thread died) and curr-test is not #f, we
+        ; conclude that a test was being run when it exited and thus
+        ; report the answer that it has died. I'm not sure I like this,
+        ; because there isn't just one place where we can control where
+        ; answers come from. There are at least 2 now, which is yucky.
+        (define (main-test-loop)
+          (let ((testing-thread (thread (get-runner-thunk))))
+            (begin
+              (thread-wait testing-thread)
+              (cond
+                [(not curr-test) (void)]
+                [else (begin
+                        ;; FIXME : make-received needs the actual printed string
+                        (report-test-result curr-test (make-received (make-exit) ""))
+                        (main-test-loop))]))))
+        
+        (begin
+          (gui:testing-new-group (test-group-description group) (length tests-to-run))
+          (main-test-loop)))
       
-      ; run-test : test -> void
-      ; side-effect: updates gui
+      
+      ; report-test-result : test x received -> void
+      ; reports the test's result to the GUI
       ; runs the specified test and updates the gui with the result
-      (define run-test
-        (lambda (test)
-          (let ((expect (test-expectation test))
-                (resl   (get-result (test-thunk test))))
-            (if (result-matches-expectation? resl expect)
-                (do-report-success test expect resl)
-                (do-report-failure test expect resl)))))
+      (define (report-test-result test result)
+        (let ((expectation (test-expectation test)))
+          ((if (result-matches-expectation? result expectation)
+               do-report-success
+               do-report-failure)
+           test expectation result)))
       
       ; (-> value) -> received
       ; produces an output specification for a given thunk
@@ -218,13 +241,14 @@
           (let ([op (open-output-string)])
             (begin0
               (let ((result-val
-                     (parameterize ([current-output-port op])
-                       (with-handlers ([exn? (lambda (e)
+                     (parameterize ([current-output-port op]
+                                    [exit-handler 
+                                     (lambda (x) (kill-thread (current-thread)))])
+                       (with-handlers ([void (lambda (e)
                                                (make-error (exn-message e)))])
                          (let ([result-val (thunk)])
                            (make-finish result-val))))))
-                (make-received result-val 
-                               (get-output-string op)))
+                (make-received result-val (get-output-string op)))
               (close-output-port op)))))
       
       ; received x expectation -> bool
@@ -249,14 +273,14 @@
                     #f))
               (result-match-int resl expect))))
       
-;; output-matches? : received x expectation -> boolean
-;; determines if the produced output printed to stdout corresponds to the expected output
+      ; output-matches? : received x expectation -> boolean
+      ; determines if the produced output printed to stdout corresponds to the expected output
       (define (output-matches? result expect)
         (or (not (expect-print expect))
             (string=? (expect-print expect)
                       (received-print result))))
       
-;; result-match-int : received x expectation -> bool
+      ; result-match-int : received x expectation -> bool
       (define result-match-int
         (lambda (resl expect)
           (and 
@@ -271,16 +295,21 @@
              [(finish? (received-value resl))
               (and (finish? (expect-output-criterion expect))
                    (equal? (finish-value (received-value resl))
-                           (finish-value (expect-output-criterion expect))))]))))
+                           (finish-value (expect-output-criterion expect))))]
+             [(exit? (received-value resl))
+              (exit? (expect-output-criterion expect))]
+             [else
+              (begin (printf "Oops! result-match didn't know how to grade a test~n")
+                     #f)]))))
       
-;; do-report-success : test x expect x output-spec -> void
-;; reports successful completion of the test
+      ; do-report-success : test x expect x output-spec -> void
+      ; reports successful completion of the test
       (define do-report-success
         (lambda (test expect resl)
           (gui:report-test-passed test)))
       
-;; do-report-failure : test x expect x output-spec -> void
-;; reports a failure
+      ; do-report-failure : test x expect x output-spec -> void
+      ; reports a failure
       (define do-report-failure
         (lambda (test expect resl)
           (begin

@@ -41,16 +41,13 @@
               (make-editor ep txt)))))
       
     ;; --------------------- overall frame ------------------------------
-      (define my-eventspace (make-eventspace))
       (define top-frame 
-        (parameterize ([current-eventspace my-eventspace])
-          (make-object 
-              (class* frame% ()
-                (override on-close)
-                (define (on-close)
-                  (kill-thread gui-thread))
-                
-                (super-make-object "Tester" #f 600 400)))))
+        (make-object 
+            (class* frame% ()
+              (override on-close)
+              (define (on-close)
+                (kill-thread gui-thread))                
+              (super-make-object "Tester" #f 600 400))))
       
       (define menu-bar  (make-object menu-bar% top-frame))
       (define menu-edit (make-object menu% "Edit" menu-bar))
@@ -96,9 +93,8 @@
            selection-list)))
       
       (define (select-all)
-        (for-each (lambda (x) (send x select-all) (send selectable-tests get-items))
-                  (send selectable-tests get-items)))
-
+        (for-each (lambda (x) (send x select-all)) (send selectable-tests get-items)))
+      
       ; get-current-test-selections : -> (listof (list str (cons str (listof str))))
       (define (get-current-test-selections)
         (define (f l)
@@ -146,8 +142,7 @@
         (send testing-this-group-gauge tick))
       
     ;; -------------------- misc private fields --------------------------
-      (define gui-thread (parameterize ([current-eventspace my-eventspace])
-                           (current-thread)))
+      (define gui-thread (current-thread))
       
       ; mode-list : (listof (list sym [child of top-panel]))
       ; associates a mode-name with a list of panels to be visible
@@ -302,8 +297,8 @@
           ; -> void
           (define (toggle-selectedness)
             (if selected
-                (unselect-me)
-                (select-me)))
+                (do-unselect)
+                (do-select)))
           
           ; style-delta<%> -> void
           (define (set-style style)
@@ -311,11 +306,17 @@
               (send ed change-style style 0 (string-length (send ed get-text)))))
           
           (define (unselect-me)
+            (if selected (do-unselect)))
+          
+          (define (select-me)
+            (if (not selected) (do-select)))
+          
+          (define (do-unselect)
             (set! selected #f)
             (set-style unselected-style)
             (send parent decrement-selected-kids))
           
-          (define (select-me)
+          (define (do-select)
             (set! selected #t)
             (set-style selected-style)
             (send parent increment-selected-kids))

@@ -14,7 +14,8 @@
                (struct expect (output-criterion print))
                (struct received (value print))
                (struct error (exception))
-               (struct finish (value)))
+               (struct finish (value))
+               (struct exit ()))
 
 ;; test-group   ::= (make-test-group str (-> void) (listof test))
 ;; test         ::= (make-test str sexpr (-> value) expect)
@@ -22,7 +23,7 @@
 ;;                               (union str #f))
 ;;                  [str to match printed output, #f = don't care]
 ;; received     ::= (make-received output-spec str)
-;; output-spec  ::= error | finish
+;; output-spec  ::= error | finish | exit
 ;; error        ::= (make-error str)
 ;; finish       ::= (make-finish value) 
-
+;; exit         ::= (make-exit)

@@ -1,3 +1,6 @@
+;; growable-vector.ss : provides the datatype gvector, which is a growable vector. It supports
+;; the same operations a vector does (list->gvector, gvector->list, gvector-length, gvector-ref,
+;; gvector-set!
 (module growable-vector mzscheme
   (provide (rename produce-gvector make-gvector)
            list->gvector
@@ -6,6 +9,7 @@
            gvector-ref
            gvector-set!
            gvector-add!
+           gvector-grow!
            gvector->string)
   
 (define-struct gvector (items curr-size))
@@ -71,21 +75,48 @@
           (set-gvector-curr-size! gvec (add1 old-size)))
         (let ((new-vec (make-vector (if (zero? old-size) 1 (* 2 old-size)))))
           (begin
-            (let loop ((i 0))
-              (cond
-                [(= i old-size) 
-                 (vector-set! new-vec i new-item)]
-                [else
-                 (begin
-                   (vector-set! new-vec i (vector-ref old-items i))
-                   (loop (add1 i)))]))
+            (vector-copy! old-items new-vec)
+            (vector-set! new-vec old-size new-item)
             (set-gvector-items! gvec new-vec)
             (set-gvector-curr-size! gvec (add1 old-size)))))))
+
+;; vector-copy! : vector x vector -> void
+;; copies the contents of the first vector into the second
+;; does not check that the new vector is large enough because
+;; all code that calls this function knows the vector is big enough anyway
+(define (vector-copy! old-vec new-vec)
+  (let ((old-size (vector-length old-vec)))
+    (let loop ((i 0))
+      (cond
+        [(= i old-size) (void)]
+        [else
+         (begin
+           (vector-set! new-vec i (vector-ref old-vec i))
+           (loop (add1 i)))]))))
   
+;; gvector-grow! : gvector x number x [value] -> void
+;; grows the given gvector to at least the given size. If the gvector is
+;; already larger than the given size, it is unchanged. If a third value is provided, 
+;; it is the fill for new cells.
+(define gvector-grow!
+  (let ((grow-internal
+         (lambda (gvec n get-vec)
+           (if (< (gvector-curr-size gvec) n)
+               (begin
+                 (set-gvector-curr-size! gvec n)
+                 (if (< (vector-length (gvector-items gvec)) n)
+                     (let ([old-vec (gvector-items gvec)]
+                           [new-vec (get-vec)])
+                       (begin
+                         (vector-copy! old-vec new-vec)
+                         (set-gvector-items! gvec new-vec)))))))))
+    (case-lambda 
+     [(gvec n)
+      (grow-internal gvec n (lambda () (make-vector n)))]
+     [(gvec n fill)
+      (grow-internal gvec n (lambda () (make-vector n fill)))])))
+      
 ;; gvector->string : gvector -> str
 ;; produces a human-readable string representing the gvector
 (define (gvector->string gvec)
   (apply string-append "#" (gvector-curr-size) (gvector->list gvec))))
-         
-  
-            

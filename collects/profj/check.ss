@@ -180,7 +180,7 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Member checking methods
   
-  ;check-members: (list member) env symbol type-records (U #f (list string)) -> void
+  ;check-members: (list member) env symbol type-records (list string) -> void
   (define (check-members members env level type-recs c-class)
     (let* ((class-record (send type-recs get-class-record (var-type-type (lookup-var-in-env "this" env))))
            (fields (class-record-fields class-record))
@@ -227,11 +227,12 @@
                            (add-var-to-env name type #f #t #t fields))
                      (loop (cdr rest) statics 
                            (add-var-to-env name type #t #f #t fields)))))))))
-      (let ((assigns (get-assigns members level))
+      (let ((assigns (get-assigns members level (car c-class)))
             (static-assigns (get-static-assigns members level)))
         (for-each (lambda (field)
-                    (field-set? field (if (memq 'static (map modifier-kind (field-modifiers field)))
-                                          static-assigns assigns)))
+                    (if (memq 'static (map modifier-kind (field-modifiers field)))
+                        (field-set? field static-assigns (car c-class) level #t)
+                        (field-set? field assigns (car c-class) level #f)))
                   setting-fields))))
     
   ;create-field-env: (list field-record) env -> env
@@ -277,9 +278,9 @@
       (else #f)))
   
   ;get-assigns: (list member) symbol -> (list assignment)
-  (define (get-assigns members level)
+  (define (get-assigns members level class)
     (if (eq? level 'beginner)
-        (get-beginner-assigns members)
+        (get-beginner-assigns members class)
         (get-instance-assigns members)))
   
   (define (get-instance-assigns m)
@@ -297,31 +298,50 @@
                null)
            (get-beginner-assigns (cdr members))))))
   
-  (define ... null)
-  
-  ;get-b-assigns: (list statement) -> (list assignment)
-  (define (get-b-assigns statements)
+  ;get-b-assigns: (list statement) string-> (list assignment)
+  (define (get-b-assigns stmts class)
     (cond
-      ((ifS? (car statements)) (beginner-ctor-error ...))
-      ((return? (car statements)) (beginner-ctor-error ...))
-      (else (cons (get-b-assigns-expr (car statements))
-                  (get-b-assigns (cdr statements))))))
+      ((ifS? (car stmts)) 
+       (beginner-ctor-error class (car stmts) (ifS-src (car stmts))))
+      ((return? (car stmts)) 
+       (beginner-ctor-error class (car stmts) (ifS-src (car stmts))))
+      (else (cons (get-b-assigns-expr (car stmts) class)
+                  (get-b-assigns (cdr stmts) class)))))
   
-  ;get-b-assigns-expr: Expression -> assignment
-  (define (get-b-assigns-expr body)
+  ;get-b-assigns-expr: Expression string -> assignment
+  (define (get-b-assigns-expr body class)
     (if (assignment? body)
         body
-        (beginner-ctor-error ...)))
+        (beginner-ctor-error class body (expr-src body))))
 
-  (define (beginner-ctor-error class kind src)
-    (let ((exp (statement->ext-name kind)))
-      (raise-error exp
-                   (format "Constructor for ~a may only assign the fields of ~a. Found illegal statement ~a"
-                           class class exp)
-                   exp src)))
-  
   (define (get-static-assigns m l) null)
-  (define (field-set? f a) null)
+  
+  ;field-set?: field (list assignment) string symbol bool -> bool
+  (define (field-set? field assigns class level static?)
+    (if 
+     (null? assigns) (field-not-set-error (field-name field)
+                                          class
+                                          (if (memq level '(beginner intermediate))
+                                              level
+                                              (if static? 'static 'instance))
+                                          (field-src field))
+     (let* ((assign (car assigns))
+            (left (assignment-left assign)))
+       (or (cond
+             ((local-access? left) 
+              (equal? (id-string (local-access-name left))
+                      (id-string (field-name field))))
+             ((field-access? left)
+              (and (special-name? (field-access-object left))
+                   (equal? "this" (special-name-name (field-access-object left)))
+                   (equal? (id-string (field-access-field left))
+                           (id-string (field-name field))))))
+           (field-set? field
+                       (if (assignment? (assignment-right assign))
+                           (cons (assignment-right assign)
+                                 (cdr assigns))
+                           (cdr assigns))
+                       class level static?)))))
   
   ;check-method: method env type-records (list string) boolean-> void
   (define (check-method method env level type-recs c-class static?)
@@ -455,7 +475,27 @@
        (format "Error initializing declared array of ~a, given element with incompatible type ~a"
                d g)
        d src)))
-    
+
+  ;field-not-set-error: id string symbol src
+  (define (field-not-set-error name class kind src)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (format "Field ~a from ~a must be set in the ~a"
+                           n
+                           class
+                           (case kind
+                             ((beginner intermediate) "constructor")
+                             ((instance) "constructor or instance initialization")
+                             ((static) "static initialization")))
+                   n src)))
+
+  ;beginner-ctor-error: string statement src -> void
+  (define (beginner-ctor-error class kind src)
+    (let ((exp (statement->ext-name kind)))
+      (raise-error exp
+                   (format "Constructor for ~a may only assign the fields of ~a. Found illegal statement ~a"
+                           class class exp)
+                   exp src)))
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Statement checking functions
   

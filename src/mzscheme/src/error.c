@@ -1126,7 +1126,7 @@ static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
     
   if (col >= 0) {
     rlen = scheme_sprintf(result, srclen + 15, "%t:%L%ld: ", 
-			  srcstr, srclen, line, col-1);
+			  srcstr, srclen, line, col - 1);
   } else {
     rlen = scheme_sprintf(result, srclen + 15, "%t::: ", 
 			  srcstr, srclen);

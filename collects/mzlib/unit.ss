@@ -4,6 +4,7 @@
 (module unit mzscheme
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
+		      (lib "name.ss" "syntax")
 		      "list.ss"
 		      "private/unitidmap.ss")
 
@@ -305,7 +306,7 @@
 						       (quote-syntax here)
 						       (length (syntax->list (syntax (iloc ...))))
 						       #f)]
-					 [name (syntax-local-name)])
+					 [name (syntax-local-infer-name stx)])
 			     (syntax/loc stx
 			       (make-a-unit
 				'name
@@ -671,7 +672,7 @@
 						   #f)]
 				     [export-names export-names]
 				     [export-mapping export-mapping]
-				     [name (syntax-local-name)])
+				     [name (syntax-local-infer-name stx)])
 			 (syntax/loc
 			  stx
 			  (let ([constituent unit-expr]

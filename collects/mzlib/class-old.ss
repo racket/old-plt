@@ -5,7 +5,8 @@
 ;;  handle primitive classes (e.g., for MrEd). Now it's a mess.
 
 (module class-old mzscheme
-  (require-for-syntax (lib "stx.ss""syntax"))
+  (require-for-syntax (lib "stx.ss""syntax")
+		      (lib "name.ss""syntax"))
 
   (define insp (current-inspector))
 
@@ -722,7 +723,7 @@
 					  (syntax (set-box! nid (let ([id expr]) id)))))
 				      (syntax (set! id expr))))))
 			  (get-info '(public override private sequence) values))]
-			[name (syntax-local-name)])
+			[name (syntax-local-infer-name stx)])
 		   ;; Check for duplicates:
 		   (cond
 		    [(check-duplicate-identifier 
@@ -959,7 +960,7 @@
       (syntax-case stx ()
 	[(_ (interface-expr ...) var ...)
 	 (let ([vars (syntax->list (syntax (var ...)))]
-	       [name (syntax-local-name)])
+	       [name (syntax-local-infer-name stx)])
 	   (for-each
 	    (lambda (v)
 	      (unless (identifier? v)

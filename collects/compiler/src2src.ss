@@ -2,8 +2,8 @@
 ;; Implements a source-to-source optimizer
 
 ;; The src-to-src transformation currently drops
-;;  properties, which is bad. The 'mzc-cffi and
-;;  'method-arity-error properties are
+;;  properties, which is bad. The 'mzc-cffi,
+;;  'method-arity-error, and 'inferred-name properties are
 ;;  specially preserved for `lambda' expressions.
 
 (module src2src mzscheme
@@ -34,13 +34,17 @@
 
   (define (keep-mzc-property stx-out stx)
     (let ([v (syntax-property stx 'mzc-cffi)]
-	  [v2 (syntax-property stx 'method-arity-error)])
+	  [v2 (syntax-property stx 'method-arity-error)]
+	  [v3 (syntax-property stx 'inferred-name)])
       (let ([stx-out2 (if v
 			  (syntax-property stx-out 'mzc-cffi v)
 			  stx-out)])
-	(if v2
-	    (syntax-property stx-out2 'method-arity-error v2)
-	    stx-out2))))
+	(let ([stx-out3 (if v2
+			    (syntax-property stx-out2 'method-arity-error v2)
+			    stx-out2)])
+	  (if v3
+	      (syntax-property stx-out3 'inferred-name v3)
+	      stx-out3)))))
   
   (define-struct context (need indef))
   ;; need = #f => don't need  the value

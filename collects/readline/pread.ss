@@ -1,15 +1,14 @@
 
 (module pread mzscheme
-  (require "readline.ss")
+  (require "readline.ss"
+	   (lib "file.ss"))
 
-  (define .history "~/.mzrl.history")
   (define MAX-HISTORY 100)
   (define leftovers null)
 
-  (define local-history
-    (with-handlers ([void (lambda (exn) null)])
-      (with-input-from-file .history
-	(lambda () (read)))))
+  (define counter 1)
+
+  (define local-history (get-preference 'mzrl-history (lambda () null)))
 
   (define (do-readline p)
     (let ([s (readline p)])
@@ -21,10 +20,7 @@
       s))
 
   (define (save-history)
-    (with-handlers ([void void])
-      (with-output-to-file .history
-	(lambda () (write local-history))
-	'truncate)))
+    (put-preferences '(mzrl-history) (list local-history)))
 
   (exit-handler (let ([old (exit-handler)])
 		  (lambda (v)
@@ -51,16 +47,18 @@
 					  (string #\newline)
 					  (do-readline (get-prompt next-pos)))
 					 (add1 next-pos)))])
-		  (let* ([p (open-input-string s)]
-			 [rs (let loop ()
-			       (let ([r (read-syntax "repl" p)])
-				 (if (eof-object? r)
-				     null
-				     (cons r (loop)))))])
-		    (if (null? rs)
-			(big-loop)
-			(begin0
-			 (car rs)
-			 (set! leftovers (cdr rs)))))))))))
+		  (let ([p (open-input-string s)])
+		    (port-count-lines! p)
+		    (let ([rs (let loop ()
+				(let ([r (read-syntax (format "repl-~a" counter) p)])
+				  (if (eof-object? r)
+				      null
+				      (cons r (loop)))))])
+		      (if (null? rs)
+			  (big-loop)
+			  (begin0
+			   (car rs)
+			   (set! counter (add1 counter))
+			   (set! leftovers (cdr rs))))))))))))
 
   (provide prompt-read-using-readline))

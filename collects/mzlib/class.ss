@@ -3,6 +3,7 @@
   (require (lib "list.ss"))
   (require-for-syntax (lib "kerncase.ss" "syntax")
 		      (lib "stx.ss" "syntax")
+		      (lib "name.ss" "syntax")
 		      "private/classidmap.ss")
 
   (define insp (current-inspector)) ; for all structures
@@ -101,7 +102,7 @@
 					     [_else (cons e (loop (cdr l)))])))))]
 		 [bad (lambda (msg expr)
 			(raise-syntax-error #f msg stx expr))]
-		 [class-name (let ([s (syntax-local-name)])
+		 [class-name (let ([s (syntax-local-infer-name stx)])
 			       (if (syntax? s)
 				   (syntax-e s)
 				   s))])
@@ -1339,7 +1340,7 @@
       (syntax-case stx ()
 	[(_ (interface-expr ...) var ...)
 	 (let ([vars (syntax->list (syntax (var ...)))]
-	       [name (syntax-local-name)])
+	       [name (syntax-local-infer-name stx)])
 	   (for-each
 	    (lambda (v)
 	      (unless (identifier? v)

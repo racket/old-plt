@@ -190,7 +190,7 @@
 			     (syntax->list (syntax (arg-type ...))))]
 		 [result-type (parse-type (syntax result-type) stx #t)]
 		 [code (syntax code)]
-		 [proc-name (or (let ([s (syntax-local-name)])
+		 [proc-name (or (let ([s (syntax-infer-local-name stx)])
 				  (if (syntax? s)
 				      (syntax-e s)
 				      s))

@@ -11,7 +11,7 @@
 	    [mred:handler mred:handler^] [mred:keymap mred:keymap^]
 	    [mzlib:string mzlib:string^])
     
-    (mred:debug:dprintf "mred:scheme-mode@~n")
+    (mred:debug:printf "mred:scheme-mode@~n")
 
     (define newline-string (string #\newline))
 

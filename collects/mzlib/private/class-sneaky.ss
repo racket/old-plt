@@ -1040,54 +1040,59 @@ substitutability is checked properly.
 
   (define-syntaxes (define/private define/public define/public-final define/override define/override-final)
     (let ([mk
-	   (lambda (who decl-form)
+	   (lambda (who decl-form-id)
 	     (lambda (stx)
-	       (syntax-case stx ()
-		 [(_ name expr)
-		  (identifier? (syntax name))
-		  (with-syntax ([decl-form decl-form])
-		    (syntax
-		     (begin
-		       (decl-form name)
-		       (define name expr))))]
-		 [(_ (name . ids) expr0 expr ...)
-		  (and (identifier? (syntax name))
-		       (let loop ([ids (syntax ids)])
-			 (cond
-			  [(identifier? ids) #t]
-			  [(stx-null? ids) #t]
-			  [(stx-pair? ids)
-			   (and (identifier? (stx-car ids))
-				(loop (stx-cdr ids)))]
-			  [else (raise-syntax-error
-				 #f
-				 "bad identifier"
-				 stx
-				 ids)])))
-		  (with-syntax ([decl-form decl-form])
-		    (with-syntax ([decl (syntax/loc stx (decl-form name))]
-				  [defn (syntax/loc stx (define (name . ids) expr0 expr ...))])
-		      (syntax (begin decl defn))))]
-		 [(_ d . __)
-		  (or (identifier? (syntax d))
-		      (and (stx-pair? (syntax d))
-			   (identifier? (stx-car (syntax d)))))
-		  (raise-syntax-error
-		   #f
-		   "bad syntax (wrong number of parts)"
-		   stx)]
-		 [(_ d . __)
-		  (raise-syntax-error
-		   #f
-		   "bad syntax (no identifier for definition)"
-		   stx
-		   (syntax d))])))])
+               (syntax-case stx ()
+                 [(_ name expr)
+                  (identifier? (syntax name))
+                  (with-syntax ([decl-form (datum->syntax-object #'here
+                                                                 decl-form-id 
+                                                                 (syntax _))])
+                    (syntax/loc stx
+                      (begin
+                        (decl-form name)
+                        (define name expr))))]
+                 [(_ (name . ids) expr0 expr ...)
+                  (and (identifier? (syntax name))
+                       (let loop ([ids (syntax ids)])
+                         (cond
+                           [(identifier? ids) #t]
+                           [(stx-null? ids) #t]
+                           [(stx-pair? ids)
+                            (and (identifier? (stx-car ids))
+                                 (loop (stx-cdr ids)))]
+                           [else (raise-syntax-error
+                                  #f
+                                  "bad identifier"
+                                  stx
+                                  ids)])))
+                  (with-syntax ([decl-form (datum->syntax-object #'here
+                                                                 decl-form-id 
+                                                                 (syntax _))])
+                    (with-syntax ([decl (syntax/loc stx (decl-form name))]
+                                  [defn (syntax/loc stx (define (name . ids) expr0 expr ...))])
+                      (syntax/loc stx
+                        (begin decl defn))))]
+                 [(_ d . __)
+                  (or (identifier? (syntax d))
+                      (and (stx-pair? (syntax d))
+                           (identifier? (stx-car (syntax d)))))
+                  (raise-syntax-error
+                   #f
+                   "bad syntax (wrong number of parts)"
+                   stx)]
+                 [(_ d . __)
+                  (raise-syntax-error
+                   #f
+                   "bad syntax (no identifier for definition)"
+                   stx
+                   (syntax d))])))])
       (values
-       (mk 'define/private (syntax private))
-       (mk 'define/public (syntax public))
-       (mk 'define/public-final (syntax public-final))
-       (mk 'define/override (syntax override))
-       (mk 'define/override-final (syntax override-final)))))
+       (mk 'define/private 'private)
+       (mk 'define/public 'public)
+       (mk 'define/public-final 'public-final)
+       (mk 'define/override 'override)
+       (mk 'define/override-final 'override-final))))
 
   (define-syntax (define-local-member-name stx)
     (syntax-case stx ()

@@ -49,9 +49,9 @@ static wxCursor *iBeam = NULL, *arrow = NULL;
 
 extern void wxMediaIOCheckLSB(void);
 
-const char *(*wxmeExpandFilename)(const char *) = NULL;
+const char *(*wxmeExpandFilename)(const char *, const char *, int) = NULL;
 
-static const char *wxCallExpandPath(const char *f)
+static const char *wxCallExpandPath(const char *f, const char *who, int to_write)
 {
   return f; // wxExpandPath(NULL, f);
 }
@@ -2480,8 +2480,9 @@ void wxMediaEdit::SetClickback(long start, long end,
 
 void wxMediaEdit::SetClickback(wxClickback *click)
 {
-  if (!clickbacks)
+  if (!clickbacks) {
     clickbacks = new wxList(wxKEY_NONE, FALSE);
+  }
 
   clickbacks->Append(click);
 }
@@ -2848,6 +2849,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
 {
   FILE *f;
   Bool fileerr;
+  const char *fn;
 
   if (writeLocked)
     return FALSE;
@@ -2871,6 +2873,8 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   if (!file)
     return FALSE;
 
+  fn = wxmeExpandFilename(file, "load-file in text%", 0);
+
   if (!CanLoadFile(file, format))
     return FALSE;
   OnLoadFile(file, format);
@@ -2881,11 +2885,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
     return FALSE;
   }
 
-  {
-    const char *fn;
-    fn = wxmeExpandFilename(file);
-    f = fopen(fn, "rb");
-  }
+  f = fopen(fn, "rb");
   
   if (!f) {
     if (showErrors)
@@ -2933,7 +2933,7 @@ Bool wxMediaEdit::InsertFile(char *file, int format, Bool showErrors)
 
   {
     const char *fn;
-    fn = wxmeExpandFilename(file);
+    fn = wxmeExpandFilename(file, "insert-file in text%", 0);
     f = fopen(fn, "rb");
   }
   
@@ -2966,7 +2966,7 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
       if (showErrors)
 	wxmeError("There was an error closing the file.");
     }
-    f = fopen(wxmeExpandFilename(file), "r");
+    f = fopen(wxmeExpandFilename(file, "insert-file in text%", 0), "r");
     if (!f) {
       if (showErrors)
 	wxmeError("Couldn't open the file.");
@@ -3062,6 +3062,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 {
   Bool no_set_filename, fileerr;
   FILE *f;
+  const char *fn;
 
   if (readLocked)
     return FALSE;
@@ -3088,6 +3089,8 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   if (!file)
     return FALSE;
 
+  fn = wxmeExpandFilename(file, "save-file in text%", 1);
+
   if (!CanSaveFile(file, format))
     return FALSE;
   OnSaveFile(file, format);
@@ -3105,11 +3108,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
   /* Always open in binary mode, because flattened text
      gets cr/lf as appropriate */
-  {
-    const char *fn;
-    fn = wxmeExpandFilename(file);
-    f = fopen(fn, "wb");
-  }
+  f = fopen(fn, "wb");
   
   if (!f) {
     if (showErrors)

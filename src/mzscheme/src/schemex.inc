@@ -285,6 +285,8 @@
   scheme_extension_table->scheme_add_fd_handle = scheme_add_fd_handle;
   scheme_extension_table->scheme_add_fd_eventmask = scheme_add_fd_eventmask;
   scheme_extension_table->scheme_return_eof_for_error = scheme_return_eof_for_error;
+  scheme_extension_table->scheme_security_check_file = scheme_security_check_file;
+  scheme_extension_table->scheme_security_check_network = scheme_security_check_network;
   scheme_extension_table->scheme_make_namespace = scheme_make_namespace;
   scheme_extension_table->scheme_add_namespace_option = scheme_add_namespace_option;
   scheme_extension_table->scheme_require_from_original_env = scheme_require_from_original_env;

@@ -261,7 +261,7 @@
 @CLASSBASE wxCursor "cursor" : "object"
 
 @CREATOR (SYM[cursor]); <> symbolic name
-@CREATOR (wxBitmap!,wxBitmap!,rint[0|15]=0,rint[0|15]=0); : : /CHECKOK[0.METHODNAME("cursor","initialization")]|CHECKSIXTEEN[0.METHODNAME("cursor","initialization")]|CHECKOK[1.METHODNAME("cursor","initialization")]|CHECKSIXTEEN[1.METHODNAME("cursor","initialization")] <> pathname
+@CREATOR (wxBitmap!,wxBitmap!,rint[0|15]=0,rint[0|15]=0); : : /CHECKOK[0.METHODNAME("cursor","initialization")]|CHECKSIXTEEN[0.METHODNAME("cursor","initialization")]|CHECKOK[1.METHODNAME("cursor","initialization")]|CHECKSIXTEEN[1.METHODNAME("cursor","initialization")] <> bitmap
 
 @ "ok?" : bool Ok();
 

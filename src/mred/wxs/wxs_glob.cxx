@@ -222,7 +222,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     string x0 INIT_NULLED_OUT;
     string x1 INIT_NULLED_OUT;
     string x2 INIT_NULLED_OUT;
-    npathname x3 INIT_NULLED_OUT;
+    wnpathname x3 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
@@ -238,7 +238,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+1], "write-resource (string case)"));
     x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+2], "write-resource (string case)"));
     if (n > (0+3)) {
-      x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[0+3], "write-resource (string case)"));
+      x3 = (wnpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_write_pathname(p[0+3], "write-resource (string case)"));
     } else
       x3 = NULL;
 
@@ -251,7 +251,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     string x0 INIT_NULLED_OUT;
     string x1 INIT_NULLED_OUT;
     ExactLong x2;
-    npathname x3 INIT_NULLED_OUT;
+    wnpathname x3 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -266,7 +266,7 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0+1], "write-resource (number case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0+2], "write-resource (number case)"));
     if (n > (0+3)) {
-      x3 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[0+3], "write-resource (number case)"));
+      x3 = (wnpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_write_pathname(p[0+3], "write-resource (number case)"));
     } else
       x3 = NULL;
 

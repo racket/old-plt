@@ -38,6 +38,6 @@ static Bool IsColor(wxBitmap *bm)
 @ m "is-color?" : bool IsColor();
 
 @ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0);  : : //USEALLFUEL[r]
-@ "save-file" : bool SaveFile(pathname,SYM[saveBitmapType]);  : : //USEALLFUEL[1]
+@ "save-file" : bool SaveFile(wpathname,SYM[saveBitmapType]);  : : //USEALLFUEL[1]
 
 @END

@@ -478,7 +478,7 @@ MZ_EXTERN void scheme_pipe_with_limit(Scheme_Object **write, Scheme_Object **rea
 
 MZ_EXTERN int scheme_file_exists(char *filename);
 MZ_EXTERN int scheme_directory_exists(char *dirname);
-MZ_EXTERN char *scheme_expand_filename(char* filename, int ilen, char *errorin, int *ex);
+MZ_EXTERN char *scheme_expand_filename(char* filename, int ilen, const char *errorin, int *ex, int guards);
 
 MZ_EXTERN char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
 MZ_EXTERN int scheme_os_setcwd(char *buf, int noexn);
@@ -503,6 +503,9 @@ MZ_EXTERN void scheme_add_fd_handle(void *h, void *fds, int repost);
 MZ_EXTERN void scheme_add_fd_eventmask(void *fds, int mask);
 
 MZ_EXTERN int scheme_return_eof_for_error();
+
+MZ_EXTERN void scheme_security_check_file(const char *who, char *filename, int guards);
+MZ_EXTERN void scheme_security_check_network(const char *who, char *host, int port);
 
 /*========================================================================*/
 /*                        namespace/environment                           */

@@ -297,6 +297,14 @@ struct Scheme_Custodian {
 
 Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_Func f);
 
+typedef struct Scheme_Security_Guard {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  struct Scheme_Security_Guard *parent;
+  Scheme_Object *file_proc;    /* who-symbol path-string mode-symbol -> void */
+  Scheme_Object *network_proc; /* who-symbol host-string-or-'listen port-k -> void */
+} Scheme_Security_Guard;
+
 /*========================================================================*/
 /*                       hash tables and globals                          */
 /*========================================================================*/
@@ -1718,8 +1726,6 @@ int scheme_is_complete_path(const char *s, long len);
 Scheme_Object *scheme_get_file_directory(const char *filename);
 
 char *scheme_normal_path_case(char *s, int *_len);
-
-char *scheme_expand_filename(char* filename, int ilen, char *errorin, int *ex);
 
 int scheme_is_regular_file(char *filename);
 

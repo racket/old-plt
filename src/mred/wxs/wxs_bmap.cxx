@@ -196,7 +196,7 @@ static Scheme_Object *os_wxBitmapSaveFile(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxBitmap_class, "save-file in bitmap%", n, p);
-  pathname x0 INIT_NULLED_OUT;
+  wpathname x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -204,7 +204,7 @@ static Scheme_Object *os_wxBitmapSaveFile(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "save-file in bitmap%"));
+  x0 = (wpathname)WITH_VAR_STACK(objscheme_unbundle_write_pathname(p[POFFSET+0], "save-file in bitmap%"));
   x1 = WITH_VAR_STACK(unbundle_symset_saveBitmapType(p[POFFSET+1], "save-file in bitmap%"));
 
   

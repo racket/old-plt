@@ -631,6 +631,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_module_index_type, hash_general);
   PROC(scheme_variable_type, hash_general);
   PROC(scheme_module_variable_type, hash_general);
+  PROC(scheme_security_guard_type, hash_general);
 #undef PROC
 }
 

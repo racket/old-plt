@@ -2485,7 +2485,8 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    who,
-				    NULL);
+				    NULL,
+				    SCHEME_GUARD_FILE_READ);
 
   /* Calculate load directory */
   load_dir = scheme_get_file_directory(filename);
@@ -2545,7 +2546,8 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
 		       "current-load-relative-directory: not a complete path: \"%q\"",
 		       s);
 
-    expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
+    expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL, 
+				      SCHEME_GUARD_FILE_EXISTS);
     ed = scheme_make_immutable_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,

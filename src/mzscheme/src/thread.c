@@ -195,6 +195,8 @@ extern MZ_DLLIMPORT long GC_get_memory_use();
 
 static Scheme_Object *empty_symbol, *initial_symbol;
 
+static Scheme_Object *read_symbol, *write_symbol, *execute_symbol, *delete_symbol, *exists_symbol;
+
 static Scheme_Object *nested_exn_handler;
 
 static Scheme_Object *closers;
@@ -240,6 +242,10 @@ static Scheme_Object *namespace_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *parameter_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_parameter(int argc, Scheme_Object *args[]);
+
+static Scheme_Object *make_security_guard(int argc, Scheme_Object *argv[]);
+static Scheme_Object *security_guard_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *current_security_guard(int argc, Scheme_Object *argv[]);
 
 static void adjust_custodian_family(void *pr, void *ignored);
 
@@ -414,6 +420,23 @@ void scheme_init_thread(Scheme_Env *env)
 						      "namespace?", 
 						      1, 1), 
 			     env);
+
+  scheme_add_global_constant("security-guard?", 
+			     scheme_make_prim_w_arity(security_guard_p,
+						      "security-guard?", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("make-security-guard", 
+			     scheme_make_prim_w_arity(make_security_guard,
+						      "make-security-guard", 
+						      3, 3), 
+			     env);
+  scheme_add_global_constant("current-security-guard", 
+			     scheme_register_parameter(current_security_guard,
+						       "current-security-guard",
+						       MZCONFIG_SECURITY_GUARD),
+			     env);
+
   scheme_add_global_constant("parameter?", 
 			     scheme_make_prim_w_arity(parameter_p,
 						      "parameter?", 
@@ -3003,6 +3026,14 @@ static Scheme_Config *make_initial_config(void)
     scheme_set_param(config, MZCONFIG_CMDLINE_ARGS, zlv);
   }
 
+  {
+    Scheme_Security_Guard *sg;
+
+    sg = MALLOC_ONE_TAGGED(Scheme_Security_Guard);
+    sg->type = scheme_security_guard_type;
+    scheme_set_param(config, MZCONFIG_SECURITY_GUARD, (Scheme_Object *)sg);
+  }
+
   config->use_count = NULL;
   config->extensions = NULL;
 
@@ -3246,6 +3277,109 @@ static Scheme_Object *current_namespace(int argc, Scheme_Object *argv[])
 			     scheme_make_integer(MZCONFIG_ENV),
 			     argc, argv,
 			     -1, namespace_p, "namespace", 0);
+}
+
+/*========================================================================*/
+/*                           security guards                              */
+/*========================================================================*/
+
+static Scheme_Object *make_security_guard(int argc, Scheme_Object *argv[])
+{
+  Scheme_Security_Guard *sg;
+
+  if (!(SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_security_guard_type)))
+    scheme_wrong_type("make-security-guard", "security-guard", 0, argc, argv);
+  scheme_check_proc_arity("make-security-guard", 3, 1, argc, argv);
+  scheme_check_proc_arity("make-security-guard", 3, 2, argc, argv);
+
+  sg = MALLOC_ONE_TAGGED(Scheme_Security_Guard);
+  sg->type = scheme_security_guard_type;
+  sg->parent = (Scheme_Security_Guard *)argv[0];
+  sg->file_proc = argv[1];
+  sg->network_proc = argv[2];
+
+  return (Scheme_Object *)sg;
+}
+
+static Scheme_Object *security_guard_p(int argc, Scheme_Object *argv[])
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_security_guard_type)) 
+	  ? scheme_true 
+	  : scheme_false);
+}
+
+static Scheme_Object *current_security_guard(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-security-guard", 
+			     scheme_make_integer(MZCONFIG_SECURITY_GUARD),
+			     argc, argv,
+			     -1, security_guard_p, "security-guard", 0);
+}
+
+
+void scheme_security_check_file(const char *who, char *filename, int guards)
+{
+  Scheme_Security_Guard *sg;
+
+  sg = (Scheme_Security_Guard *)scheme_get_param(scheme_config, MZCONFIG_SECURITY_GUARD);
+
+  if (sg->file_proc) {
+    Scheme_Object *l = scheme_null, *a[3];
+
+    if (!read_symbol) {
+      REGISTER_SO(read_symbol);
+      REGISTER_SO(write_symbol);
+      REGISTER_SO(execute_symbol);
+      REGISTER_SO(delete_symbol);
+      REGISTER_SO(exists_symbol);
+
+      read_symbol = scheme_intern_symbol("read");
+      write_symbol = scheme_intern_symbol("write");
+      execute_symbol = scheme_intern_symbol("execute");
+      delete_symbol = scheme_intern_symbol("delete");
+      exists_symbol = scheme_intern_symbol("exists");
+    }
+
+    if (guards & SCHEME_GUARD_FILE_EXISTS)
+      l = scheme_make_pair(exists_symbol, l);
+    if (guards & SCHEME_GUARD_FILE_DELETE)
+      l = scheme_make_pair(delete_symbol, l);
+    if (guards & SCHEME_GUARD_FILE_EXECUTE)
+      l = scheme_make_pair(execute_symbol, l);
+    if (guards & SCHEME_GUARD_FILE_WRITE)
+      l = scheme_make_pair(write_symbol, l);
+    if (guards & SCHEME_GUARD_FILE_READ)
+      l = scheme_make_pair(read_symbol, l);
+
+    a[0] = scheme_intern_symbol(who);
+    a[1] = scheme_make_string(filename);
+    a[2] = l;
+
+    while (sg->parent) {
+      scheme_apply(sg->file_proc, 3, a);
+      sg = sg->parent;
+    }
+  }
+}
+
+void scheme_security_check_network(const char *who, char *host, int port)
+{
+  Scheme_Security_Guard *sg;
+
+  sg = (Scheme_Security_Guard *)scheme_get_param(scheme_config, MZCONFIG_SECURITY_GUARD);
+
+  if (sg->network_proc) {
+    Scheme_Object *a[3];
+
+    a[0] = scheme_intern_symbol(who);
+    a[1] = (host ? scheme_make_string(host) : scheme_false);
+    a[2] = scheme_make_integer(port);
+
+    while (sg->parent) {
+      scheme_apply(sg->network_proc, 3, a);
+      sg = sg->parent;
+    }
+  }
 }
 
 /*========================================================================*/

@@ -585,7 +585,8 @@ Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv)
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "default-load-extension-handler",
-				    NULL);
+				    NULL,
+				    SCHEME_GUARD_FILE_EXECUTE);
 
   return scheme_force_value(do_load_extension(filename, expected_module, scheme_get_env(scheme_config)));
 }

@@ -219,7 +219,7 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
     char *filename;
     filename = GET_INIT_FILENAME(fa->global_env);
     if (filename) {
-      filename = scheme_expand_filename(filename, -1, "startup", NULL);
+      filename = scheme_expand_filename(filename, -1, "startup", NULL, SCHEME_GUARD_FILE_EXISTS);
       if (scheme_file_exists(filename))
 	scheme_load(filename);
     }

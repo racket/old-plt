@@ -3185,15 +3185,15 @@ static Scheme_Object *os_wxCursor_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in cursor% (pathname case)", POFFSET+2, POFFSET+4, n, p, 1));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "initialization in cursor% (pathname case)", 0));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in cursor% (pathname case)", 0));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in cursor% (bitmap case)", POFFSET+2, POFFSET+4, n, p, 1));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "initialization in cursor% (bitmap case)", 0));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in cursor% (bitmap case)", 0));
     if (n > (POFFSET+2)) {
-      x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 15, "initialization in cursor% (pathname case)"));
+      x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 15, "initialization in cursor% (bitmap case)"));
     } else
       x2 = 0;
     if (n > (POFFSET+3)) {
-      x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 15, "initialization in cursor% (pathname case)"));
+      x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 15, "initialization in cursor% (bitmap case)"));
     } else
       x3 = 0;
 

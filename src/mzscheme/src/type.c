@@ -172,7 +172,8 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_wrap_chunk_type, "<wrap-chunk>");
 
-  set_name(scheme_reserved_1_type, "<reserved-1>");
+  set_name(scheme_security_guard_type, "<security-guard>");
+
   set_name(scheme_reserved_2_type, "<reserved-2>");
   set_name(scheme_reserved_3_type, "<reserved-3>");
   set_name(scheme_reserved_4_type, "<reserved-4>");
@@ -440,6 +441,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_stx_offset_type, stx_off_val);
   GC_REG_TRAV(scheme_module_type, module_val);
   GC_REG_TRAV(scheme_module_index_type, modidx_val);
+
+  GC_REG_TRAV(scheme_security_guard_type, guard_val);
 }
 
 END_XFORM_SKIP;

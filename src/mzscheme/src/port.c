@@ -2041,7 +2041,8 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    name,
-				    NULL);
+				    NULL,
+				    SCHEME_GUARD_FILE_READ);
 
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */
@@ -2180,7 +2181,12 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   filename = SCHEME_STR_VAL(argv[0]);
   namelen = SCHEME_STRTAG_VAL(argv[0]);
 
-  filename = scheme_expand_filename(filename, namelen, name, NULL);
+  filename = scheme_expand_filename(filename, namelen, name, NULL,
+				    (SCHEME_GUARD_FILE_WRITE
+				     | ((existsok && (existsok != -1))
+					? SCHEME_GUARD_FILE_DELETE
+					: 0)));
+					
 
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */
@@ -5052,7 +5058,8 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     char *ef;
     ef = scheme_expand_filename(SCHEME_STR_VAL(args[3]),
 				SCHEME_STRTAG_VAL(args[3]),
-				(char *)name, NULL);
+				(char *)name, NULL,
+				SCHEME_GUARD_FILE_EXECUTE);
     argv[0] = ef;
   }
   {

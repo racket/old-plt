@@ -119,6 +119,8 @@ char *objscheme_unbundle_string(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_string(Scheme_Object *, const char *);
 char *objscheme_unbundle_pathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_pathname(Scheme_Object *, const char *);
+char *objscheme_unbundle_write_pathname(Scheme_Object *, const char *);
+char *objscheme_unbundle_nullable_write_pathname(Scheme_Object *, const char *);
 char objscheme_unbundle_char(Scheme_Object *, const char *);
 
 #define objscheme_bundle_integer scheme_make_integer
@@ -163,6 +165,8 @@ typedef char *pathname;
 typedef char *npathname;
 typedef const char *cpathname;
 typedef const char *cnpathname;
+typedef char *wpathname;
+typedef char *wnpathname;
 
 typedef long nnlong;
 typedef int nnint;

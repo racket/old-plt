@@ -93,7 +93,8 @@ static Scheme_Object *dump_heap(int argc, Scheme_Object **argv)
 
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]), 
 				    SCHEME_STRTAG_VAL(argv[0]), 
-				    "write-image-to-file", NULL);
+				    "write-image-to-file", NULL,
+				    SCHEME_GUARD_FILE_WRITE);
 
   if (scheme_dump_heap) {
     if (no_dumps) {
@@ -160,7 +161,8 @@ static Scheme_Object *load_heap(int argc, Scheme_Object **argv)
 
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]), 
 				    SCHEME_STRTAG_VAL(argv[0]), 
-				    "read-image-from-file", NULL);
+				    "read-image-from-file", NULL,
+				    SCHEME_GUARD_FILE_READ);
 
   if (scheme_load_heap)
     scheme_load_heap(filename, argv[1]);

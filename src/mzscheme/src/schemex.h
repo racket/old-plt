@@ -394,7 +394,7 @@ void (*scheme_pipe)(Scheme_Object **write, Scheme_Object **read);
 void (*scheme_pipe_with_limit)(Scheme_Object **write, Scheme_Object **read, int maxsize);
 int (*scheme_file_exists)(char *filename);
 int (*scheme_directory_exists)(char *dirname);
-char *(*scheme_expand_filename)(char* filename, int ilen, char *errorin, int *ex);
+char *(*scheme_expand_filename)(char* filename, int ilen, const char *errorin, int *ex, int guards);
 char *(*scheme_os_getcwd)(char *buf, int buflen, int *actlen, int noexn);
 int (*scheme_os_setcwd)(char *buf, int noexn);
 char *(*scheme_getdrive)(void);
@@ -414,6 +414,8 @@ int (*scheme_fdisset)(void *fd, int pos);
 void (*scheme_add_fd_handle)(void *h, void *fds, int repost);
 void (*scheme_add_fd_eventmask)(void *fds, int mask);
 int (*scheme_return_eof_for_error)();
+void (*scheme_security_check_file)(const char *who, char *filename, int guards);
+void (*scheme_security_check_network)(const char *who, char *host, int port);
 /*========================================================================*/
 /*                        namespace/environment                           */
 /*========================================================================*/

@@ -1915,6 +1915,35 @@ int modidx_val_FIXUP(void *p) {
 #define modidx_val_IS_CONST_SIZE 1
 
 
+int guard_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Security_Guard));
+}
+
+int guard_val_MARK(void *p) {
+  Scheme_Security_Guard *g = (Scheme_Security_Guard *)p;
+
+  gcMARK(g->parent);
+  gcMARK(g->file_proc);
+  gcMARK(g->network_proc);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Security_Guard));
+}
+
+int guard_val_FIXUP(void *p) {
+  Scheme_Security_Guard *g = (Scheme_Security_Guard *)p;
+
+  gcFIXUP(g->parent);
+  gcFIXUP(g->file_proc);
+  gcFIXUP(g->network_proc);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Security_Guard));
+}
+
+#define guard_val_IS_ATOMIC 0
+#define guard_val_IS_CONST_SIZE 1
+
+
 #endif  /* TYPE */
 
 /**********************************************************************/

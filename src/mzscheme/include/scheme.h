@@ -824,6 +824,8 @@ enum {
 
   MZCONFIG_LOCALE,
 
+  MZCONFIG_SECURITY_GUARD,
+
   __MZCONFIG_BUILTIN_COUNT__
 };
 
@@ -900,6 +902,16 @@ typedef struct Scheme_Output_Port
 #else
 # include "../src/schexn.h"
 #endif
+
+/*========================================================================*/
+/*                               security                                 */
+/*========================================================================*/
+
+#define SCHEME_GUARD_FILE_READ    0x1
+#define SCHEME_GUARD_FILE_WRITE   0x2
+#define SCHEME_GUARD_FILE_EXECUTE 0x4
+#define SCHEME_GUARD_FILE_DELETE  0x8
+#define SCHEME_GUARD_FILE_EXISTS  0x10
 
 /*========================================================================*/
 /*                               modules                                  */

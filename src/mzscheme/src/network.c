@@ -1615,6 +1615,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   address = SCHEME_STR_VAL(argv[0]);
   origid = (unsigned short)SCHEME_INT_VAL(argv[1]);
 
+  scheme_security_check_network("tcp-connect", address, origid);
+
 #ifdef USE_TCP
   /* Set id in network order: */
   id = htons(origid);
@@ -1850,6 +1852,8 @@ tcp_listen(int argc, Scheme_Object *argv[])
     backlog = SCHEME_INT_VAL(argv[1]);
   else
     backlog = 4;
+
+  scheme_security_check_network("tcp-connect", NULL, origid);
 
 #ifdef USE_TCP
   /* Set id in network order: */

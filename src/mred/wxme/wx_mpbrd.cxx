@@ -2486,6 +2486,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
 {
   FILE *f;
   Bool ok;
+  const char *fn;
 
   if (userLocked || writeLocked)
     return FALSE;
@@ -2509,6 +2510,8 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   if (!file)
     return FALSE;
 
+  fn = wxmeExpandFilename(file, "load-file in pasteboard%", 0);
+
   if (!CanLoadFile(file, wxMEDIA_FF_STD))
     return FALSE;
   OnLoadFile(file, wxMEDIA_FF_STD);
@@ -2520,11 +2523,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
     return FALSE;
   }
 
-  {
-    const char *fn;
-    fn = wxmeExpandFilename(file);
-    f = fopen(fn, "rb");
-  }
+  f = fopen(fn, "rb");
   
   if (!f) {
     if (showErrors)
@@ -2565,7 +2564,7 @@ Bool wxMediaPasteboard::InsertFile(char *file, int WXUNUSED(format), Bool showEr
   if (userLocked || writeLocked)
     return FALSE;
 
-  fn = wxmeExpandFilename(file);
+  fn = wxmeExpandFilename(file, "insert-file in pasteboard%", 0);
   f = fopen(fn, "rb");
   
   if (!f)
@@ -2633,6 +2632,7 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   Bool no_set_filename;
   wxMediaStreamOutFileBase *b;
   wxMediaStreamOut *mf;
+  const char *fn;
 
   if (!file || !*file) {
     if ((file && !*file) || !filename || tempFilename) {
@@ -2661,15 +2661,13 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
 
   no_set_filename = (format == wxMEDIA_FF_COPY);
 
+  fn = wxmeExpandFilename(file, "save-file in pasteboard%", 0);
+
   if (!CanSaveFile(file, wxMEDIA_FF_STD))
     return FALSE;
   OnSaveFile(file, wxMEDIA_FF_STD);
   
-  {
-    const char *fn;
-    fn = wxmeExpandFilename(file);
-    f = fopen(fn, "wb");
-  }
+  f = fopen(fn, "wb");
   
   if (!f) {
     if (showErrors)

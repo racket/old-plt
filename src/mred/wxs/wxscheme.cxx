@@ -1020,7 +1020,8 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   f = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 			     SCHEME_STRTAG_VAL(argv[0]),
 			     "play-sound",
-			     NULL);
+			     NULL,
+			     SCHEME_GUARD_FILE_READ);
 
 #ifdef wx_msw  
   ok = PlaySound(f, NULL, async ? SND_ASYNC : SND_SYNC);
@@ -1582,9 +1583,9 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
     int ends_in_slash;
 
 # ifdef OS_X    
-    home = scheme_make_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL));
+    home = scheme_make_string(scheme_expand_filename("~/Library/Preferences", 2, NULL, NULL, 0));
 # else
-    home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
+    home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL, 0));
 # endif
     
     ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
@@ -1822,9 +1823,9 @@ int wxGetPreference(const char *name, char *res, long len)
 
 #if defined(wx_xt) || defined(OS_X)
 # ifdef OS_X
-    home = scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL);
+    home = scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL, 0);
 # else
-    home = scheme_expand_filename("~/", 2, NULL, NULL);
+    home = scheme_expand_filename("~/", 2, NULL, NULL, 0);
 # endif 
     
     l = strlen(home);

@@ -1187,12 +1187,16 @@ static int is_special_filename(const char *_f, int not_nul)
 }
 #endif
 
-static char *do_expand_filename(char* filename, int ilen, char *errorin, 
+static char *do_expand_filename(char* filename, int ilen, const char *errorin, 
 				int *expanded,
-				int report_bad_user, int fullpath)
+				int report_bad_user, int fullpath,
+				int guards)
 {
   if (expanded)
     *expanded = 0;
+
+  if (guards)
+    scheme_security_check_file(errorin, filename, guards);
 
   if (ilen < 0)
     ilen = strlen(filename);
@@ -1394,9 +1398,9 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
   return filename;
 }
 
-char *scheme_expand_filename(char* filename, int ilen, char *errorin, int *expanded)
+char *scheme_expand_filename(char* filename, int ilen, const char *errorin, int *expanded, int guards)
 {
-  return do_expand_filename(filename, ilen, errorin, expanded, 1, 1);
+  return do_expand_filename(filename, ilen, errorin, expanded, 1, 1, guards);
 }
 
 int scheme_file_exists(char *filename)
@@ -1607,7 +1611,8 @@ static Scheme_Object *file_exists(int argc, Scheme_Object **argv)
 			 SCHEME_STRTAG_VAL(argv[0]),
 			 "file-exists?",
 			 NULL,
-			 0, 1);
+			 0, 1,
+			 SCHEME_GUARD_FILE_EXISTS);
 
   return (f && scheme_file_exists(f)) ? scheme_true : scheme_false;
 }
@@ -1623,7 +1628,8 @@ static Scheme_Object *directory_exists(int argc, Scheme_Object **argv)
 			 SCHEME_STRTAG_VAL(argv[0]),
 			 "directory-exists?",
 			 NULL,
-			 0, 1);
+			 0, 1,
+			 SCHEME_GUARD_FILE_EXISTS);
 
   return (f && scheme_directory_exists(f)) ? scheme_true : scheme_false;
 }
@@ -1652,6 +1658,8 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
   {
     FSSpec spec;
   
+    scheme_security_check_file("link-exists?", filename, SCHEME_GUARD_FILE_EXISTS);
+
     if (!find_mac_file(filename, 0, &spec, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
       return scheme_false;
 
@@ -1666,7 +1674,8 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 				  SCHEME_STRTAG_VAL(argv[0]),
 				  "link-exists?",
 				  NULL,
-				  0, 1);
+				  0, 1,
+				  SCHEME_GUARD_FILE_EXISTS);
     while (1) {
       if (!MSC_IZE(lstat)(filename, &buf))
 	break;
@@ -2351,7 +2360,8 @@ static char *filename_for_error(Scheme_Object *p)
   return scheme_expand_filename(SCHEME_STR_VAL(p),
 				SCHEME_STRTAG_VAL(p),
 				NULL,
-				NULL);
+				NULL,
+				0);
 }
 
 static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
@@ -2370,6 +2380,8 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("delete-file", argv[0], "");
     
+    scheme_security_check_file("delete-file", file, SCHEME_GUARD_FILE_DELETE);
+ 
     if (find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
       errid = FSpDelete(&spec);
       if (!errid)
@@ -2381,7 +2393,8 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 						SCHEME_STRTAG_VAL(argv[0]),
 						"delete-file",
-						NULL)))
+						NULL,
+						SCHEME_GUARD_FILE_DELETE)))
       return scheme_void;
     else if (errno != EINTR)
       break;
@@ -2422,15 +2435,19 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
   dest = SCHEME_STR_VAL(argv[1]);
   if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
     raise_null_error("rename-file-or-directory", argv[1], "");
+  scheme_security_check_file("rename-file-or-directory", src, SCHEME_GUARD_FILE_READ);
+  scheme_security_check_file("rename-file-or-directory", dest, SCHEME_GUARD_FILE_WRITE);
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 			       SCHEME_STRTAG_VAL(argv[0]),
 			       "rename-file-or-directory",
-			       NULL);
+			       NULL,
+			       SCHEME_GUARD_FILE_READ);
   dest = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
 				SCHEME_STRTAG_VAL(argv[1]),
 				"rename-file-or-directory",
-				NULL);
+				NULL,
+				SCHEME_GUARD_FILE_WRITE);
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
@@ -2570,15 +2587,19 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
   dest = SCHEME_STR_VAL(argv[1]);
   if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
     raise_null_error("copy-file", argv[1], "");
+  scheme_security_check_file("copy-file", src, SCHEME_GUARD_FILE_READ);
+  scheme_security_check_file("copy-file", dest, SCHEME_GUARD_FILE_WRITE | SCHEME_GUARD_FILE_DELETE);
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 			       SCHEME_STRTAG_VAL(argv[0]),
 			       "copy-file",
-			       NULL);
+			       NULL,
+			       SCHEME_GUARD_FILE_READ);
   dest = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
 				SCHEME_STRTAG_VAL(argv[1]),
 				"copy-file",
-				NULL);
+				NULL, 
+				SCHEME_GUARD_FILE_WRITE | SCHEME_GUARD_FILE_DELETE);
 #endif
 
 #ifdef UNIX_FILE_SYSTEM
@@ -2804,7 +2825,8 @@ static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[])
 				SCHEME_STRTAG_VAL(argv[0]),
 				"resolve-path",
 				&expanded,
-				1, 0);
+				1, 0,
+				SCHEME_GUARD_FILE_EXISTS);
 
 #ifndef NO_READLINK
   {
@@ -2870,7 +2892,8 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
     /* Make it absolute */
     s = scheme_expand_filename(SCHEME_STR_VAL(path), 
 			       SCHEME_STRTAG_VAL(path), 
-			       "simplify-path", NULL);
+			       "simplify-path", NULL,
+				SCHEME_GUARD_FILE_EXISTS);
     len = strlen(s);
 
     /* Check for cycles: */
@@ -3022,7 +3045,8 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
 				SCHEME_STRTAG_VAL(argv[0]),
 				"expand-path",
 				&expanded,
-				1, 0);
+				1, 0,
+				SCHEME_GUARD_FILE_EXISTS);
 
   if (!expanded)
     return argv[0];
@@ -3085,7 +3109,8 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				      SCHEME_STRTAG_VAL(argv[0]),
 				      "directory-list",
-				      NULL);
+				      NULL,
+				      SCHEME_GUARD_FILE_READ);
   else
     filename = SCHEME_STR_VAL(CURRENT_WD());
 
@@ -3103,7 +3128,9 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("directory-list", argv[0], "");
   } else
-    filename = "";
+    filename = SCHEME_STR_VAL(CURRENT_WD());
+  scheme_security_check_file("directory-list", filename, SCHEME_GUARD_FILE_READ);
+
   if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
     if (argc) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -3314,7 +3341,8 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "make-directory",
-				    NULL);
+				    NULL,
+				    SCHEME_GUARD_FILE_WRITE);
   
   while (1) {
     if (!MSC_IZE(mkdir)(filename
@@ -3355,7 +3383,8 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "delete-directory",
-				    NULL);
+				    NULL,
+				    SCHEME_GUARD_FILE_DELETE);
 
   while (1) {
     if (!MSC_IZE(rmdir)(filename))
@@ -3409,10 +3438,13 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
   file = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				SCHEME_STRTAG_VAL(argv[0]),
 				"file-or-directory-modify-seconds",
-				NULL);
+				NULL,
+				SCHEME_GUARD_FILE_READ);
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
+  scheme_security_check_file("file-or-directory-modify-seconds", file, SCHEME_GUARD_FILE_READ);
+
   if (!find_mac_file(file, 0, &spec, 0, 0, NULL, NULL, &exists, &mtime, NULL, NULL, NULL, NULL)
       || !exists) {
     /* Failed */
@@ -3511,10 +3543,13 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "file-or-directory-permissions",
-				    NULL);
+				    NULL,
+				    SCHEME_GUARD_FILE_READ);
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
+  scheme_security_check_file("file-or-directory-permissions", file, SCHEME_GUARD_FILE_READ);
+
   if (!find_mac_file(filename, 0, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL)
       || !exists)
     return l = NULL;
@@ -3617,10 +3652,13 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
 				    "file-size",
-				    NULL);
+				    NULL,
+				    SCHEME_GUARD_FILE_READ);
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
+  scheme_security_check_file("file-size", filename, SCHEME_GUARD_FILE_READ);
+
   if (!find_mac_file(filename, 0, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &len, NULL))
     goto failed;
 #endif
@@ -3669,7 +3707,7 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
     s = SCHEME_STR_VAL(argv[0]);
     len = SCHEME_STRTAG_VAL(argv[0]);
 
-    expanded = scheme_expand_filename(s, len, "current-directory", NULL);
+    expanded = scheme_expand_filename(s, len, "current-directory", NULL, SCHEME_GUARD_FILE_EXISTS);
     ed = scheme_make_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
@@ -3824,7 +3862,7 @@ find_system_path(int argc, Scheme_Object **argv)
     char *p;
     
     if ((p = getenv("TMPDIR"))) {
-      p = scheme_expand_filename(p, -1, NULL, NULL);
+      p = scheme_expand_filename(p, -1, NULL, NULL, 0);
       if (p && scheme_directory_exists(p))
 	return scheme_make_string(p);
     }
@@ -3846,10 +3884,10 @@ find_system_path(int argc, Scheme_Object **argv)
 #ifdef OS_X
     if ((which == id_pref_dir) 
 	|| (which == id_pref_file)) {
-      home = scheme_make_string(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL));
+      home = scheme_make_string(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL, 0));
     } else
 #endif 
-      home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
+      home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL, 0));
     
     if ((which == id_pref_dir) || (which == id_init_dir) || (which == id_home_dir)) 
       return home;
@@ -3880,7 +3918,7 @@ find_system_path(int argc, Scheme_Object **argv)
     
     if (which == id_temp_dir) {
       if ((p = getenv("TMP")) || (p = getenv("TEMP"))) {
-	p = scheme_expand_filename(p, -1, NULL, NULL);
+	p = scheme_expand_filename(p, -1, NULL, NULL, 0);
 	if (p && scheme_directory_exists(p))
 	  return scheme_make_string(p);
       }
@@ -4086,7 +4124,8 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
     s = scheme_expand_filename(SCHEME_STR_VAL(o),
 			       SCHEME_STRTAG_VAL(o),
 			       name,
-			       NULL);
+			       NULL,
+			       0);
 
     if (!find_mac_file(s, 0, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
       return 0;

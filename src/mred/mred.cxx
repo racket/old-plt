@@ -2462,11 +2462,15 @@ void *wxMallocAtomicIfPossible(size_t s)
   return v;
 }
 
-static const char *CallSchemeExpand(const char *filename)
+static const char *CallSchemeExpand(const char *filename, const char *who, int to_write)
 {
   char *s;
 
-  s = scheme_expand_filename((char *)filename, strlen(filename), NULL, 0);
+  s = scheme_expand_filename((char *)filename, strlen(filename), 
+			     who, 0,
+			     (to_write 
+			      ? SCHEME_GUARD_FILE_WRITE 
+			      : SCHEME_GUARD_FILE_READ));
   
   return s ? s : filename;
 }

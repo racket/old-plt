@@ -612,7 +612,7 @@ void wxInitMedia(void);
 void wxAddMediaEditorFunctions(wxKeymap *tab);
 void wxAddMediaPasteboardFunctions(wxKeymap *tab);
 
-extern const char *(*wxmeExpandFilename)(const char *);
+extern const char *(*wxmeExpandFilename)(const char *, const char *, int);
 
 extern void wxmeError(const char *e);
 

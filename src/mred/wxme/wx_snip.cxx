@@ -1447,9 +1447,10 @@ void wxImageSnip::LoadFile(char *name, long type, Bool relative, Bool inlineImg)
 	}
       }
       
+      fn = (char *)wxmeExpandFilename(loadname, "load-file in image-snip%", 0);
+
       wxBeginBusyCursor();
 
-      fn = (char *)wxmeExpandFilename(loadname);
       {
 	wxBitmap *nbm;
 	nbm = new wxBitmap(fn, type);

@@ -736,6 +736,17 @@ modidx_val {
   gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }
 
+guard_val {
+ mark:
+  Scheme_Security_Guard *g = (Scheme_Security_Guard *)p;
+
+  gcMARK(g->parent);
+  gcMARK(g->file_proc);
+  gcMARK(g->network_proc);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Security_Guard));
+}
+
 END type;
 
 /**********************************************************************/

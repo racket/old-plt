@@ -18,7 +18,9 @@
 		  [m (make-object mred:message% "Please wait, loading the Analysis." p)])
 	     (send p stretchable-height #f)
 	     (send p stretchable-width #f)
-	     (send f show #t)
+; NEXT LINE CAUSES LOOPING
+;	     (send f show #t)
+; END BAD STUFF
 	     (parameterize ([mred:current-eventspace e])
 	       (mred:flush-display) (mred:yield)
 	       (mred:flush-display) (mred:yield)

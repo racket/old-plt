@@ -83,7 +83,7 @@
 						(message-box "Bad URL" 
 							     (format "Bad URL: ~a" (exn-message x))
 							     d)
-                                                (send d show #f))))])
+                                                (done))))])
 			 (let ([url (string->url
 				     (cond
 				      [(regexp-match ":" s) s]
@@ -102,7 +102,9 @@
 	     [cancel (make-object button% "Cancel" p 
 				  (lambda (b e) (send d show #f)))])
       (when last-url-string 
-	(send t set-value last-url-string))
+	(send t set-value last-url-string)
+        (let ([text (send t get-editor)])
+          (send text set-position 0 (send text last-position))))
       (send p set-alignment 'right 'center)
       (update-ok)
       (send d center)

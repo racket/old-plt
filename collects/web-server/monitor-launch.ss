@@ -11,7 +11,7 @@
   
   (parse-command-line
    "web-server-monitor"
-   (namespace-variable-binding 'argv)
+   (current-command-line-arguments)
    `((once-each
       [("-p" "--port")
        ,(handle-numeric-flag 'port)

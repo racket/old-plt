@@ -571,15 +571,14 @@
  (kill? "Tuer ?")
 
  ;;; version checker
-
+ (vc-update-check "Vérification des mises à jour.")
+ (vc-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
  (vc-please-wait "Veuillez patienter")
- ;(check-question "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT ?")
  (vc-connecting-version-server "Connexion au server de version de PLT en cours.")
  (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau.") 
  (vc-cannot-connect "Impossible de se connecter au serveur de version de PLT.")
  ;(collections-not-installed "Les collections suivantes ne sont pas installées:")
  ;(collections-missing-version "Les collections suivantes ont un numéro de version incomplet ou manquant:")
- (vc-update-check "Vérification des mises à jour.")
  (vc-network-failure "Erreur réseau.")
  (vc-old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour.")
  (vc-binary-information-format "Version binaire installée: ~a (itération ~a)")

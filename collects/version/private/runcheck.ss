@@ -36,10 +36,10 @@
       (define download-url-string "http://download.plt-scheme.org/")
 
       (define check-question 
-	(string-constant 'check-question))
+	(string-constant 'vc-check-question))
 	
       (define star "*")
-      (define dialog-title (string-constant 'update-dialog-title))
+      (define dialog-title (string-constant 'vc-update-dialog-title))
 
       (define rv-sym 'release-version)
       (define no-info-sym 'no-info-file)
@@ -140,8 +140,8 @@
 				(close-input-port the-port))
 			  (run-thunk
 			   (lambda () 
-			     (show-ok (string-constant 'network-timeout)
-				      (string-constant 'cannot-connect)
+			     (show-ok (string-constant 'vc-network-timeout)
+				      (string-constant 'vc-cannot-connect)
 				      #f))))
 			(begin
 			  (sleep 1)
@@ -153,8 +153,8 @@
 	     (set! wait-dialog
 		   (make-wait-dialog 
 		    #f
-		    (string-constant 'please-wait)
-		    (string-constant 'connecting-version-server)
+		    (string-constant 'vc-please-wait)
+		    (string-constant 'vc-connecting-version-server)
 		    (lambda ()
 		      (set! got-cancel? #t)
 		      (with-handlers 
@@ -176,8 +176,8 @@
 		     (run-thunk
 		      (lambda ()
 			(show-error-ok
-			 (string-constant 'network-failure)
-			 (string-constant 'cannot-connect))))
+			 (string-constant 'vc-network-failure)
+			 (string-constant 'vc-cannot-connect))))
 		     (raise 'network-error))))
 		 (get-pure-port (string->url 
 				 (make-url-string
@@ -224,14 +224,14 @@
 		 (show-ok 
 		  dialog-title
 		  (string-append
-		   (string-constant 'old-binaries)
+		   (string-constant 'vc-old-binaries)
 		   nl nl
 		   (format 
-		    (string-constant 'binary-information-format)
+		    (string-constant 'vc-binary-information-format)
 		    binary-version binary-iteration)
 		   nl nl
 		   (format 
-		    (string-constant 'latest-binary-information-format)
+		    (string-constant 'vc-latest-binary-information-format)
 		    latest-binary-version latest-binary-iteration)
 		   nl nl
 		   "Updates are available at "
@@ -256,7 +256,7 @@
 			       (begin
 				 (set! needs-update #t)
 				 (format 
-				  (string-constant 'update-format)
+				  (string-constant 'vc-update-format)
 				  package 
 				  installed-version installed-iteration 
 				  latest-version latest-iteration))]
@@ -277,12 +277,12 @@
 		    dialog-title
 		    (string-append
 		     (if needs-update
-			 (string-constant 'need-update-string)
-			 (string-constant 'no-update-string))
+			 (string-constant 'vc-need-update-string)
+			 (string-constant 'vc-no-update-string))
 		     nl
 		     " "
 		     (format up-to-format
-			     (string-constant 'binary-name)
+			     (string-constant 'vc-binary-name)
 			     binary-version binary-iteration))
 		    (if needs-update
 			(string-append

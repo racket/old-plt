@@ -398,7 +398,7 @@ lambda calculus:
       (subterm vars body)]
      [(? symbol?) (variable)]
      [(? number?) (constant)]
-     [`(,fun ,@args)
+     [`(,fun ,@(args ...))
       (all-vars '())
       (build (lambda (vars fun . args) `(,fun ,@args)))
       (subterm '() fun)

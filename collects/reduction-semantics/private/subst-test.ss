@@ -19,7 +19,7 @@
       (subterm (list l-var) body)]
      [(? symbol?) (variable)]
      [(? number?) (constant)]
-     [`(,fun ,@args)
+     [`(,fun ,@(args ...))
       (all-vars '())
       (build (lambda (vars fun . args) `(,fun ,@args)))
       (subterm '() fun)
@@ -38,7 +38,7 @@
                 (sub-piece (list l-var) body))]
       [(? symbol?) (variable (lambda (x) x) exp)]
       [(? number?) (constant exp)]
-      [`(,fun ,@args)
+      [`(,fun ,@(args ...))
        (apply 
         combine
         (lambda (variables fun . args) `(,fun ,@args))

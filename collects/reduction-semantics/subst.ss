@@ -230,7 +230,7 @@
              (if (eq? var1 var)
                  val
                  var1)]
-            [`(,@args)
+            [`(,@(args ...))
              `(,@(map (lambda (arg) (lc-direct-subst var val arg)) args))])
           exp)))
   
@@ -260,7 +260,7 @@
           [`(let (,var ,exp) ,body)
            (loop exp binding-vars)
            (loop body (cons var binding-vars))]
-          [`(,@args)
+          [`(,@(args ...))
            (for-each (lambda (arg) (loop arg binding-vars)) args)]))
       (hash-table-map ht (lambda (x y) x))))
   

@@ -181,7 +181,7 @@ before the pattern compiler is invoked.
            [`number (lambda (l) 'number)]
            [`string (lambda (l) 'string)]
            [`variable (lambda (l) 'variable)] 
-           [`(variable-except ,@vars) (lambda (l) pattern)]
+           [`(variable-except ,@(vars ...)) (lambda (l) pattern)]
            [`hole  (lambda (l) 'hole)]
            [(? string?) (lambda (l) pattern)]
            [(? symbol?) 
@@ -293,7 +293,7 @@ before the pattern compiler is invoked.
            [`variable 
             (lambda (exp hole-path hole-name)
               (and (symbol? exp) (list (make-bindings null))))]
-           [`(variable-except ,@vars)
+           [`(variable-except ,@(vars ...))
             (lambda (exp hole-path hole-name)
               (and (symbol? exp)
                    (not (memq exp vars))
@@ -591,7 +591,7 @@ before the pattern compiler is invoked.
         [`any ribs]
         [`number ribs] 
         [`variable ribs] 
-        [`(variable-except ,@vars) ribs]
+        [`(variable-except ,@(vars ...)) ribs]
 
         [`hole (error 'match-pattern "cannot have a hole inside an ellipses")]
 

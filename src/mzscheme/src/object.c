@@ -57,6 +57,7 @@
 #define IMPLEMENTATION "implementation?"
 #define INTERFACE_EXTENSION "interface-extension?"
 #define IVAR_IN_CLASS "ivar-in-class?"
+#define IVAR_IN_INTERFACE "ivar-in-interface?"
 #define OBJECT_CLASS "object-class"
 
 #define SUPER_INIT "super-init"
@@ -3581,6 +3582,23 @@ static Scheme_Object *IvarInClass(int c, Scheme_Object *p[])
   return scheme_false;
 }
 
+static Scheme_Object *IvarInInterface(int c, Scheme_Object *p[])
+{
+  Scheme_Interface *in;
+
+  if (!SCHEME_SYMBOLP(p[0]))
+    scheme_wrong_type(IVAR_IN_INTERFACE, "symbol", 0, c, p);
+  if (!SCHEME_INTERFACEP(p[1]))
+    scheme_wrong_type(IVAR_IN_INTERFACE, "interface", 1, c, p);
+
+  in = (Scheme_Interface *)p[1];
+
+  if (DoFindName(in->num_names, in->names, p[0]) >= 0)
+    return scheme_true;
+
+  return scheme_false;
+}
+
 static Scheme_Object *ObjectClass(int c, Scheme_Object *p[])
 {
   if (!SCHEME_OBJP(p[0]))
@@ -3725,6 +3743,11 @@ void scheme_init_object(Scheme_Env *env)
   scheme_add_global_constant(IVAR_IN_CLASS,
 			     scheme_make_folding_prim(IvarInClass,
 						      IVAR_IN_CLASS,
+						      2, 2, 1), 
+			     env);
+  scheme_add_global_constant(IVAR_IN_INTERFACE,
+			     scheme_make_folding_prim(IvarInInterface,
+						      IVAR_IN_INTERFACE,
 						      2, 2, 1), 
 			     env);
   scheme_add_global_constant(OBJECT_CLASS, 

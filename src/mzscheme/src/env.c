@@ -468,9 +468,16 @@ Scheme_Env *scheme_top_level_env(void)
    }
 
 #if USE_COMPILED_MACROS
-#include "cmacro.inc"
+   if (builtin_ref_counter != EXPECTED_PRIM_COUNT) {
+     printf("Primitive count %d doesn't match expected count %d\n"
+	    "Turn off USE_COMPILED_MACROS in src/schminc.h\n",
+	    builtin_ref_counter, EXPECTED_PRIM_COUNT);
+     exit(-1);
+   }
+
+# include "cmacro.inc"
 #else
-#include "macro.inc"
+# include "macro.inc"
 #endif
 
    scheme_remove_global_symbol(nllt, env);

@@ -8,11 +8,14 @@
    built-in names shift).
 
    If you make a version with omissions or additions and then run
-   `mzmake cmacro' to recreate the cXXX.inc files, then
-   USE_COMPILED_MACROS can be set to 1 again.
+   `mzmake cmacro' to recreate the cXXX.inc files, set
+   EXPECTED_PRIM_COUNT to the new value, and then USE_COMPILED_MACROS
+   can be set to 1 again.
 */
 
 #define USE_COMPILED_MACROS 1
+
+#define EXPECTED_PRIM_COUNT 881
 
 #ifdef MZSCHEME_SOMETHING_OMITTED
 # undef USE_COMPILED_MACROS

@@ -175,7 +175,7 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
                                       ? (SCHEME_INT_VAL(av) compareop SCHEME_INT_VAL(bv)) \
                                       : ((SCHEME_DBLP(av) && SCHEME_DBLP(bv)) \
                                          ? (SCHEME_DBL_VAL(av) compareop SCHEME_DBL_VAL(bv)) \
-                                         : (arg[0] = av, arg[1] = bv, SCHEME_TRUEP(_scheme_direct_apply_primitive_multi(cp, 1, arg)))))
+                                         : (arg[0] = av, arg[1] = bv, SCHEME_TRUEP(_scheme_direct_apply_primitive_multi(cp, 2, arg)))))
 
 #define MZC_LTP(cp, av, bv) MZC_ARITH_COMPARE(cp, av, bv, <)
 #define MZC_GTP(cp, av, bv) MZC_ARITH_COMPARE(cp, av, bv, >)

@@ -182,17 +182,21 @@
 	      ;; Compile the collection files via make-collection
 	      (let ([sses (filter
 			   extract-base-filename/ss
-			   (directory-list))])
+			   (map
+			    normal-case-path
+			    (directory-list)))])
 		(make-collection
 		 (info 'name (lambda () (error 'compile-collection "info.ss did not provide a name")))
 		 (info 'compile-prefix (lambda () '(void)))
 		 (remove*
-		  (info (if zos? 
-			    'compile-zo-omit-files 
-			    'compile-extension-omit-files)
+		  (info (map normal-case-path
+			     (if zos? 
+				 'compile-zo-omit-files 
+				 'compile-extension-omit-files))
 			(lambda () null))
 		  (remove*
-		   (info 'compile-omit-files (lambda () null))
+		   (map normal-case-path 
+			(info 'compile-omit-files (lambda () null)))
 		   sses))
 		 (if zos? #("zo") #())))
 	      ;; compile-elaboration-zos

@@ -15,7 +15,8 @@
 	 [get-binding (lambda (sym) (extract-binding/single sym bindings))]
 	 [tmp-directory (get-binding 'tmpdir)]
 	 [label (get-binding 'label)]
-	 [manual (get-binding 'manual)])
+	 [manual (get-binding 'manual)]
+         [install-sem (make-semaphore 0)])
     (make-html-response/incremental
      (lambda (show)
        (show "<HTML>"
@@ -53,7 +54,9 @@
 	    (run-setup-plt tmp-directory manual)
 	    (delete-directory/r tmp-directory)
 	    (close-output-port oport)
-	    (close-input-port iport))))
+	    (close-input-port iport)
+	    (semaphore-post install-sem))))
+       (semaphore-wait install-sem)
        (show (xexpr->string
 	      `(A ((HREF ,(string-append "/doc/" manual "/"))
 		   (TARGET "main"))

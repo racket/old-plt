@@ -22,7 +22,7 @@
       (define/private (choose-language)
         (let ([language
                ((tools 'drscheme:language-configuration:language-dialog)
-                false (send model get-language) false)])
+                false (send model get-language) this)])
           (send model set-language language)
           ((tools 'preferences:set)
            ((tools 'drscheme:language-configuration:get-settings-preferences-symbol))

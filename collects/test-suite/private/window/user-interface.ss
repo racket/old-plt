@@ -65,18 +65,23 @@
           (label "Break")
           (parent test-menu)
           (callback break-callback))
-        (instantiate menu-item% ()
-          (label "Show All Tests")
-          (parent test-menu)
-          (callback
-           (lambda (button event)
-             (send model show-tests true))))
-        (instantiate menu-item% ()
-          (label "Hide All Tests")
-          (parent test-menu)
-          (callback
-           (lambda (button event)
-             (send model show-tests false)))))
+        (letrec ([show/hide
+                  (instantiate menu-item% ()
+                    (label "Show Equality Tests")
+                    (parent test-menu)
+                    (callback
+                     (let ([tests-showing? false])
+                       (lambda (button event)
+                         (if tests-showing?
+                             (begin
+                               (set! tests-showing? false)
+                               (send show/hide set-label "Show Equality Tests")
+                               (send model show-tests false))
+                             (begin
+                               (set! tests-showing? true)
+                               (send show/hide set-label "Hide Equality Tests")
+                               (send model show-tests true)))))))])
+          (void)))
       
       (frame:reorder-menus this)
       ))
@@ -169,7 +174,6 @@
           (callback break-callback))])
       
       (send save-button show false)
-      (send save-button enable false)
       ))
   
   ;; save-menu-items-mixin mixin-contract
@@ -203,9 +207,9 @@
   ;; interface-mixin mixin-contract
   ;; add an interface for test suite functions to the frame
   (define (user-interface-mixin super%)
-    ;(save-menu-items-mixin
+    (save-menu-items-mixin
      (button-panel-mixin
       (test-menu-mixin
        (callbacks-mixin
-        super%))));)
+        super%)))))
   )

@@ -6,6 +6,7 @@
    (lib "etc.ss")
    (lib "framework.ss" "framework")
    (lib "aligned-pasteboard.ss" "mrlib")
+   (lib "contracts.ss")
    "test-text.ss")
   
   (provide test-case%)
@@ -15,25 +16,49 @@
   (define *failure* (build-path (collection-path "test-suite" "icons") "cross.jpeg"))
   (define *error* (build-path (collection-path "icons") "bug09.gif"))
   
+  (define test-case-class%
+    (class snip-class%
+      ;; read ((is-a?/c editor-stream-in%) . -> . void?)
+      ;; read a snip from the stream
+      (define/override (read f)
+        (let ([call-text (instantiate test:text% ())]
+              [expected-text (instantiate test:text% ())]
+              [test-text (instantiate test:text% ())])
+          (send call-text read-from-file f)
+          (send expected-text read-from-file f)
+          (send test-text read-from-file f)
+          (instantiate test-case% ()
+            (call call-text)
+            (expected expected-text)
+            (test test-text)
+            (test-showing? (string=? "#t" (send f get-string))))))
+      (super-instantiate ())))
+  
+  (define tcc (instantiate test-case-class% ()))
+  (send tcc set-classname "test-case%")
+  (send tcc set-version 1)
+  (send (get-the-snip-class-list) add tcc)
+  
   (define test-case%
     (class aligned-editor-snip%
       
-      (inherit get-editor next)
+      (inherit get-editor next set-snipclass)
       
       (init-field
-       [test-showing? true])
-      
-      (field
        [call (instantiate test:text% ())]
        [expected (instantiate test:text% ())]
+       [test (let ([tmp-text (instantiate test:text% ())])
+               (send tmp-text insert "equal?")
+               tmp-text)]
+       [test-showing? false])
+      
+      (field
        [actual (instantiate (text:hide-caret/selection-mixin test:text%) ())]
-       [test (instantiate test:text% ())]
        [pass (make-object image-snip% *unknown*)])
       
       (send* actual
         (lock true)
         (hide-caret true))
-      (send test insert "equal?")
       (send pass load-file *unknown*)
       
       ;; show-test (boolean? . -> . void?)
@@ -98,6 +123,15 @@
                                                            (send next-case execute expander continue)
                                                            (continue)))))))))))))))))
       
+      ;; write ((is-a?/c editor-stream-out%) . -> . void?)
+      ;; write the snip out to the stream
+      (rename [super-write write])
+      (define/override (write f)
+        (send call write-to-file f)
+        (send expected write-to-file f)
+        (send test write-to-file f)
+        (send f put (format "~s" test-showing?)))
+      
       (super-instantiate ()
         (stretchable-width true)
         (stretchable-height false)
@@ -108,12 +142,14 @@
                   (test-text test)
                   (pass-image pass)
                   (test-showing? test-showing?))))
+      (set-snipclass tcc)
       ))
   
   (define test-case-editor%
     (class vertical-pasteboard%
       (inherit begin-edit-sequence end-edit-sequence insert)
       (init-field call-text expected-text actual-text test-text pass-image test-showing?)
+      
       (field
        [bottom-pb (instantiate horizontal-pasteboard% ())]
        [call-snip (label-box "Call" call-text)]
@@ -158,25 +194,32 @@
       (end-edit-sequence)
       ))
   
-  ;; label-box (string? (is-a?/c editor<%>) . -> . (is-a?/c editor-snip%))
   ;; a snip with a box to type in and a label
-  (define (label-box label text)
-    (let ([sd (make-object style-delta% 'change-normal-color)]
-          [pb (instantiate vertical-pasteboard% ())]
-          [label-snip (make-object string-snip% label)])
-      (send sd set-delta-foreground "indigo")
-      (send sd set-delta 'change-weight 'bold)
-      (send* pb
-        (begin-edit-sequence)
-        (insert label-snip false)
-        (change-style sd label-snip)
-        (insert (instantiate test:editor-snip% ()
-                  (editor text)
-                  (stretchable-width true)
-                  (stretchable-height false))
-                false)
-        (end-edit-sequence))
-      (instantiate aligned-editor-snip% ()
-        (with-border? false)
-        (editor pb))))
+  ;(define/contract label-box
+  ;  (string? (is-a?/c editor<%>) . -> . (is-a?/c editor-snip%))
+  ; status: hey robby, this gives me a <em>weird</em> error.
+  (define label-box
+    (lambda (label text)
+      (let ([sd (make-object style-delta% 'change-normal-color)]
+            [pb (instantiate vertical-pasteboard% ())]
+            [label-snip (make-object string-snip% label)])
+        (send sd set-delta-foreground "indigo")
+        (send sd set-delta 'change-weight 'bold)
+        (send* pb
+          (begin-edit-sequence)
+          (insert label-snip false)
+          (change-style sd label-snip)
+          (insert (instantiate test:editor-snip% ()
+                    (editor text)
+                    (stretchable-width true)
+                    (stretchable-height false))
+                  false)
+          (end-edit-sequence))
+        (instantiate aligned-editor-snip% ()
+          (with-border? false)
+          (top-margin 0)
+          (bottom-margin 0)
+          (left-margin 0)
+          (right-margin 0)
+          (editor pb)))))
   )

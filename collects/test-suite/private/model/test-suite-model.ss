@@ -22,7 +22,7 @@
       
       (field
        [expander false]
-       [tests-showing? true]
+       [tests-showing? false]
        [program (instantiate text% ())]
        [language ((tools 'preferences:get)
                   ((tools 'drscheme:language-configuration:get-settings-preferences-symbol)))])
@@ -147,6 +147,13 @@
       (define/override (set-modified modified?)
         (send window update-modified modified?)
         (super-set-modified modified?))
+      
+      ;; load-file (boolean? . -> . void?)
+      ;; called after a file is loaded into the editor
+      (rename [super-after-load-file after-load-file])
+      (define/override (after-load-file success?)
+        (when success? (set-modified false))
+        (super-after-load-file success?))
       
       (super-instantiate ())
       ))

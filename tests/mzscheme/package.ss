@@ -7,9 +7,6 @@
 
 ;; Test suite does not cover:
 ;;  Ensuring that packages do not leak non-provided variables
-;;  open-in-context and other transformer sensitive features
-;;    of package (such as the effect of the context on the
-;;    all-defined identifier
 
 
 ;; syntax

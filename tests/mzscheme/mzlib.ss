@@ -24,6 +24,8 @@
 
 (load-relative "pretty.ss")
 
+(load-relative "package.ss")
+
 (load-relative "contract-test.ss")
 
 ; Next-to-last, because it `require's mzscheme

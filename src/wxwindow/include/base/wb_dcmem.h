@@ -36,8 +36,8 @@ class wxbMemoryDC: public wxCanvasDC
 
   inline ~wxbMemoryDC(void) { }
   virtual void SelectObject(wxBitmap *bitmap) = 0;
+  virtual wxBitmap* GetObject() = 0;
 };
 
 #endif // IN_CPROTO
 #endif // wx_dcmemh
-

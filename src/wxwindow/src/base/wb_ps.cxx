@@ -934,24 +934,6 @@ void wxPostScriptDC::DrawEllipse (float x, float y, float width, float height)
     }
 }
 
-void wxPostScriptDC::DrawIcon (wxIcon *icon, float x, float y)
-{
-  if (icon->Ok() && !icon->selectedIntoDC) {
-    int w, h;
-    wxMemoryDC *mdc;
-    w = icon->GetWidth();
-    h = icon->GetHeight();
-
-    mdc = new wxMemoryDC();
-    mdc->SelectObject(icon);
-    if (mdc->Ok()) {
-      Blit(x, y, w, h, mdc, 0, 0);
-    }
-    mdc->SelectObject(NULL);
-    delete mdc;
-  }
-}
-
 void wxPostScriptDC::SetFont (wxFont * the_font)
 {
   if (!pstream)
@@ -979,7 +961,6 @@ void wxPostScriptDC::SetFont (wxFont * the_font)
 static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm)
 {
   int width, height;
-  wxMemoryDC *mdc;
 
   width = bm->GetWidth();
   height = bm->GetHeight();
@@ -995,26 +976,7 @@ static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm)
    << " /XStep " << width << " def\n"
    << " /YStep " << height << " def\n");
 
-  /* HACK ALERT: */
-  int saveSelected = bm->selectedIntoDC;
-  bm->selectedIntoDC = 0;
-#ifdef wx_msw
-  wxDC *saveInto = bm->selectedInto;
-  bm->selectedInto = NULL;
-#endif
-
-  mdc = new wxMemoryDC();
-  mdc->SelectObject(bm);
-
-  dc->Blit(0, 0, width, height, mdc, 0, 0, -1);
-
-  mdc->SelectObject(NULL);
-  delete mdc;
-
-  bm->selectedIntoDC = saveSelected;
-#ifdef wx_msw
-  bm->selectedInto = saveInto;
-#endif
+  dc->Blit(0, 0, width, height, bm, 0, 0, -1);
 
   (*pstream << "end\n"
    << " matrix makepattern setpattern\n");
@@ -1494,7 +1456,7 @@ static void printhex(PSStream *pstream, int v)
 /* MATTHEW: [4] Re-wrote to use colormap */
 Bool wxPostScriptDC::
 Blit (float xdest, float ydest, float fwidth, float fheight,
-      BLIT_DC_TYPE *src, float xsrc, float ysrc, int rop)
+      wxMemoryDC *src, float xsrc, float ysrc, int rop)
 {
   if (!pstream)
     return FALSE;
@@ -1601,6 +1563,20 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   }
 
   return TRUE;
+}
+
+static wxMemoryDC *temp_mdc;
+
+Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight,
+      wxBitmap *bm, float xsrc, float ysrc, int rop)
+{
+  if (!temp_mdc)
+    temp_mdc = new wxMemoryDC(1);
+
+  temp_mdc->SelectObject(bm);
+  Blit(xdest, ydest, fwidth, fheight,
+       temp_mdc, xsrc, ysrc, rop);
+  temp_mdc->SelectObject(NULL);
 }
 
 float wxPostScriptDC::GetCharHeight (void)

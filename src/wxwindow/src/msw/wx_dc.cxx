@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.9 1998/09/13 13:02:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.10 1998/09/13 17:47:49 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -47,6 +47,8 @@
 #endif
 
 // Declarations local to this file
+
+static wxMemoryDC *blit_dc;
 
 #define YSCALE(y) (yorigin - (y))
 
@@ -865,27 +867,6 @@ void wxDC::DrawEllipse(float x, float y, float width, float height)
   CalcBoundingBox((float)x + width, (float)y + height);
 }
 
-void wxDC::DrawIcon(wxIcon *icon, float x, float y)
-{
-  if (icon->Ok() && !icon->selectedIntoDC) {
-    int w, h;
-    wxMemoryDC *mdc;
-
-    w = icon->GetWidth();
-    h = icon->GetHeight();
-
-    mdc = new wxMemoryDC();
-    mdc->SelectObject(icon);
-
-    if (mdc->Ok()) {
-      Blit(x, y, w, h, mdc, 0, 0);
-    }
-
-    mdc->SelectObject(NULL);
-    delete mdc;
-  }
-}
-
 void wxDC::SetFont(wxFont *the_font)
 {
   HDC dc = ThisDC();
@@ -1382,15 +1363,8 @@ int wxDC::LogicalToDeviceYRel(float y)
 }
 
 Bool wxDC::Blit(float xdest, float ydest, float width, float height,
-                wxCanvasDC *source, float xsrc, float ysrc, int rop)
+                wxBitmap *source, float xsrc, float ysrc, int rop)
 {
-  wxWnd *wnd = NULL;
-  wxWnd *wnd_src = NULL;
-  if (canvas)
-    wnd = (wxWnd *)canvas->handle;
-  if (source->canvas)
-    wnd_src = (wxWnd *)source->canvas->handle;
-
   HDC dc = ThisDC();
 
   if (!dc) return FALSE;
@@ -1399,11 +1373,26 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   ShiftXY(xdest, ydest, xdest1, ydest1);
 
-  source->ShiftXY(xsrc, ysrc, xsrc1, ysrc1);
+  xsrc1 = floor(xsrc);
+  ysrc1 = floor(ysrc);
 
-  HDC dc_src = source->ThisDC();
+  if (!blit_dc)
+    blit_dc = new wxMemoryDC(1);
 
-  if (!dc_src) return FALSE;
+  blit_dc->SelectObject(source);
+
+  if (!blit_dc->Ok()) {
+    blit_dc->SelectObject(NULL);
+    DoneDC(dc);
+    return FALSE;
+  }
+
+  HDC dc_src = blit_dc->ThisDC();
+
+  if (!dc_src) {
+    DoneDC(dc);
+    return FALSE;
+  }
 
   Bool success;
 
@@ -1431,13 +1420,9 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
                 SRCCOPY;		
   }
 
-  ::SetMapMode(dc_src, MM_TEXT);
-
   success = BitBlt(dc, xdest1, ydest1, 
 		   XLOG2DEVREL(width), YLOG2DEVREL(height), 
 		   dc_src, xsrc1, ysrc1, op);
-
-  source->SetMapMode(source->mapping_mode);
 
   DoneDC(dc);
 

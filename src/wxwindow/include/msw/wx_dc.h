@@ -94,8 +94,6 @@ class wxDC: public wxbDC
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20.0);
   void DrawEllipse(float x, float y, float width, float height);
 
-  void DrawIcon(wxIcon *icon, float x, float y);
-
   void Clear(void);
   void SetFont(wxFont *font);
   void SetPen(wxPen *pen);
@@ -138,7 +136,7 @@ class wxDC: public wxbDC
   int LogicalToDeviceYRel(float y);
 
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxCanvasDC *source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY);
             
   Bool CanDrawBitmap(void);
   Bool CanGetTextExtent(void);

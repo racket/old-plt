@@ -463,7 +463,7 @@ if (os_wxBitmap_class) {
 
  scheme_add_method_w_arity(os_wxBitmap_class, "save-file", os_wxBitmapSaveFile, 2, 2);
  scheme_add_method_w_arity(os_wxBitmap_class, "load-file", os_wxBitmapLoadFile, 1, 2);
- scheme_add_method_w_arity(os_wxBitmap_class, "color?", os_wxBitmapIsColor, 0, 0);
+ scheme_add_method_w_arity(os_wxBitmap_class, "is-color?", os_wxBitmapIsColor, 0, 0);
  scheme_add_method_w_arity(os_wxBitmap_class, "ok?", os_wxBitmapOk, 0, 0);
  scheme_add_method_w_arity(os_wxBitmap_class, "get-width", os_wxBitmapGetWidth, 0, 0);
  scheme_add_method_w_arity(os_wxBitmap_class, "get-height", os_wxBitmapGetHeight, 0, 0);

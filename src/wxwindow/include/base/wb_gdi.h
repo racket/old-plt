@@ -326,7 +326,6 @@ class wxbBrush: public wxObject
 
 class wxBitmap;
 class wxCursor;
-class wxIcon;
 
 // Management of pens, brushes and fonts
 class wxPenList: public wxObject

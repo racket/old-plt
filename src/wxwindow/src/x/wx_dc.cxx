@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.1.1.1 1997/12/22 16:12:03 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.2 1998/08/10 18:02:51 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -13,11 +13,11 @@ static const char sccsid[] = "@(#)wx_dc.cc	1.2 5/9/94";
 /* MATTHEW: [9] 
    About pens, brushes, and the autoSetting flag:
 
-   Under X, pens and brushes control some of the same X drawing 
-   parameters. Therefore, it is impossible to independently maintain
-   the current pen and the current brush. Also, some settings depend
-   on the current logical function. The current_fill, etc. instance
-   variables remember state across the brush and pen.
+   In this implementation, pens and brushes control some of the same X
+   drawing parameters. Therefore, it is impossible to independently
+   maintain the current pen and the current brush. Also, some settings
+   depend on the current logical function. The current_fill,
+   etc. instance variables remember state across the brush and pen.
 
    Since pens are used more than brushes, the autoSetting flag
    is used to indicate that a brush was recently used, and SetPen
@@ -130,6 +130,32 @@ YAllocColor (Display * dpy, Colormap cmap, XColor * color)
 
 static int failmsg = 1;
 
+static Status 
+AllocDCColor(Display * dpy, Colormap cmap, XColor * color, int fg, int is_color)
+{
+  if (is_color)
+    return wxAllocColor(dpy, cmap, color);
+  else {
+    int white;
+    if (fg) {
+      /* foreground: white = white, all else = black */
+      white = (((color->red >> SHIFT) == 255)
+	       && ((color->green >> SHIFT) == 255)
+	       && ((color->blue >> SHIFT) == 255));
+    } else {
+      /* background: black = black, all else = white */
+      white = (color->red || color->green || color->blue);
+    }
+
+    if (white)
+      color->pixel = 0;
+    else
+      color->pixel = 1;
+
+    return 1;
+  }
+}
+
 static void ColourFailed()
 {
   if (failmsg) {
@@ -211,7 +237,7 @@ wxCanvasDC::wxCanvasDC (void)
   current_text_background = *wxWHITE;
   current_bk_mode = wxTRANSPARENT;
 
-  Colour = wxColourDisplay ();
+  color = Colour = wxColourDisplay ();
 
   SetFont(wxNORMAL_FONT);
 
@@ -292,7 +318,7 @@ wxCanvasDC:: wxCanvasDC (wxCanvas * the_canvas):wxbCanvasDC (the_canvas)
   current_text_foreground = *wxBLACK;
   current_text_background = *wxWHITE;
   current_bk_mode = wxTRANSPARENT;
-  Colour = wxColourDisplay ();
+  color = Colour = wxColourDisplay ();
   SetBrush (wxWHITE_BRUSH);
   SetPen (wxBLACK_PEN);
   SetFont(wxNORMAL_FONT);
@@ -675,7 +701,7 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour * col)
   xcol.green = green << SHIFT;
   xcol.blue = blue << SHIFT;
   
-  wxAllocColor(display, wxGetMainColormap(display), &xcol);
+  AllocDCColor(display, wxGetMainColormap(display), &xcol, 1, color);
 
   pixel = xcol.pixel;
 
@@ -1079,7 +1105,7 @@ static void XCopyRemote(Display *srcdisplay, Display *destdisplay,
       
       cachesrc[cache_pos] = xcol.pixel = pixel;
       XQueryColor(srcdisplay, srccm, &xcol);
-      if (!wxAllocColor(destdisplay, destcm, &xcol))
+      if (!AllocDCColor(destdisplay, destcm, &xcol, 1, 1))
 	xcol.pixel = 0;
       cachedest[cache_pos] = pixel = xcol.pixel;
       
@@ -1101,49 +1127,6 @@ static void XCopyRemote(Display *srcdisplay, Display *destdisplay,
     XDestroyImage(image);
 }
 #endif
-
-void wxCanvasDC:: DrawIcon (wxIcon * icon, float x, float y)
-{
-  /* MATTHEW: [6] Safety */
-  if (!icon->Ok())
-    return;
-
-  /* MATTHEW: [7] Implement GetPixel */
-  FreeGetPixelCache();
-
-  // Be sure that foreground pixels (1) of
-  // the Icon will be painted with pen colour. [current_pen->SetColour()]
-  // Background pixels (0) will be painted with 
-  // last selected background color. [::SetBackground]
-  if (current_pen && autoSetting)
-    SetPen (current_pen);
-
-  int width, height;
-#ifdef wx_xview
-  Pixmap iconPixmap = (Pixmap) xv_get (icon->x_image, SERVER_IMAGE_PIXMAP);
-  width = (int) xv_get (icon->x_image, XV_WIDTH);
-  height = (int) xv_get (icon->x_image, XV_HEIGHT);
-#endif
-#ifdef wx_motif
-  Pixmap iconPixmap = icon->x_pixmap;
-  width = icon->GetWidth();
-  height = icon->GetHeight();
-#endif
-  /* MATTHEW: [4] Check display */
-#ifdef wx_motif
-  if (icon->display == display) {
-#endif
-    XCopyPlane (display, iconPixmap, pixmap, gc,
-		0, 0, width, height, 
-		(int) XLOG2DEV (x), (int) YLOG2DEV (y), 1);
-  } else { /* Remote copy (different displays) */
-    XImage *cache = NULL;
-    XCopyRemote(icon->display, display, iconPixmap, pixmap, gc,
-		0, 0, width, height, 
-		(int) XLOG2DEV (x), (int) YLOG2DEV (y), FALSE, &cache);
-  }
-  CalcBoundingBox (x, y);
-}
 
 void wxCanvasDC:: SetFont (wxFont * the_font)
 {
@@ -1451,7 +1434,7 @@ void wxCanvasDC::SetPen (wxPen * pen)
     {
       if (is_bitmap) {
 	XSetStipple (display, gc, current_stipple->x_pixmap);
-      } else {
+      } else if (color) {
 	XSetTile(display, gc, current_stipple->x_pixmap);
       }
     }
@@ -1479,29 +1462,10 @@ void wxCanvasDC::SetPen (wxPen * pen)
       if (pen->GetStyle () == wxTRANSPARENT)
 	pixel = background_pixel;
       else if (current_stipple)
-	pixel = (int)BlackPixel(display, DefaultScreen(display));
-      else if (!Colour)
-	{
-	  unsigned char red = pen->GetColour ().Red ();
-	  unsigned char blue = pen->GetColour ().Blue ();
-	  unsigned char green = pen->GetColour ().Green ();
-	  if (red == (unsigned char) 255 && blue == (unsigned char) 255
-	      && green == (unsigned char) 255)
-	    {
-	      pixel = (int) WhitePixel (display, DefaultScreen (display));
-	      current_colour = *wxWHITE;
-	      current_pen->GetColour().pixel = current_colour.pixel = pixel;
-	    }
-	  else
-	    {
-	      pixel = (int) BlackPixel (display, DefaultScreen (display));
-	      current_colour = *wxBLACK;
-	      current_pen->GetColour().pixel = current_colour.pixel = pixel;
-	    }
-	}
+	pixel = color ? (int)BlackPixel(display, DefaultScreen(display)) : 1;
       else
 	{
-	  if (pen->GetColour ().pixel != -1)
+	  if (Colour && (pen->GetColour ().pixel != -1))
 	    pixel = pen->GetColour ().pixel;
 	  else
 	    {
@@ -1512,16 +1476,17 @@ void wxCanvasDC::SetPen (wxPen * pen)
 	      exact_def.flags = DoRed | DoGreen | DoBlue;
 
 	      Colormap cmap = wxGetMainColormap(display);
-	      if (!wxAllocColor (display, cmap, &exact_def)
+	      if (!AllocDCColor (display, cmap, &exact_def, 1, color)
 		  && !alloc_close_color(display, cmap, &exact_def))
 		{
-//		  pixel = (int) BlackPixel (display, DefaultScreen (display));
 		  ColourFailed();
                   pixel = wxGetBestMatchingPixel(display,cmap,&exact_def);
 		}
 	      else
 		pixel = (int) exact_def.pixel;
-	      current_colour.pixel = pen->GetColour().pixel = pixel;
+	      current_colour.pixel = pixel;
+	      if (Colour)
+		pen->GetColour().pixel = pixel;
 	    }
 	}
 
@@ -1671,7 +1636,7 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
     {
       if (is_bitmap) {
 	XSetStipple (display, gc, current_stipple->x_pixmap);
-      } else {
+      } else if (color) {
 	XSetTile(display, gc, current_stipple->x_pixmap);
       }
     }
@@ -1681,42 +1646,10 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
     {
       int pixel = -1;
       if (current_stipple)
-	pixel = (int)BlackPixel(display, DefaultScreen(display));
-      else if (!Colour)
-	{
-	  // Policy - on a monochrome screen, all brushes are white,
-	  // except when they're REALLY black!!!
-	  unsigned char red = brush->GetColour ().Red ();
-	  unsigned char blue = brush->GetColour ().Blue ();
-	  unsigned char green = brush->GetColour ().Green ();
-
-	  if (red == (unsigned char) 0 && blue == (unsigned char) 0
-	      && green == (unsigned char) 0)
-	    {
-	      pixel = (int) BlackPixel (display, DefaultScreen (display));
-	      current_colour = *wxBLACK;
-	      current_brush->GetColour().pixel = current_colour.pixel = pixel;
-	    }
-	  else
-	    {
-	      pixel = (int) WhitePixel (display, DefaultScreen (display));
-	      current_colour = *wxWHITE;
-	      current_brush->GetColour().pixel = current_colour.pixel = pixel;
-	    }
-
-	  // N.B. comment out the above line and uncomment the following lines
-	  // if you want non-white colours to be black on a monochrome display.
-	  /*
-	     if (red == (unsigned char )255 && blue == (unsigned char)255
-	     && green == (unsigned char)255)
-	     pixel = (int)WhitePixel(display, DefaultScreen(display));
-	     else
-	     pixel = (int)BlackPixel(display, DefaultScreen(display));
-	   */
-	}
+	pixel = color ? (int)BlackPixel(display, DefaultScreen(display)) : 1;
       else if (brush->GetStyle () != wxTRANSPARENT)
 	{
-	  if (brush->GetColour ().pixel > -1)
+	  if (Colour && (brush->GetColour ().pixel > -1))
 	    pixel = brush->GetColour ().pixel;
 	  else
 	    {
@@ -1727,7 +1660,7 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
 	      exact_def.flags = DoRed | DoGreen | DoBlue;
 
 	      Colormap cmap = wxGetMainColormap(display);
-	      if (!wxAllocColor (display, cmap, &exact_def)
+	      if (!AllocDCColor (display, cmap, &exact_def, 1, color)
 		  && !alloc_close_color(display, cmap, &exact_def))
 		{
 //		  pixel = (int) BlackPixel (display, DefaultScreen (display));
@@ -1736,7 +1669,9 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
 		}
 	      else
 		pixel = (int) exact_def.pixel;
-	      current_colour.pixel = brush->GetColour().pixel = pixel;
+	      current_colour.pixel = pixel;
+	      if (Colour)
+		brush->GetColour().pixel = pixel;
 	    }
 	}
       if (pixel > -1)
@@ -1772,7 +1707,7 @@ void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
 
   Colormap cmap = wxGetMainColormap(display);
   
-  if (!wxAllocColor(display, cmap, &xcol))
+  if (!AllocDCColor(display, cmap, &xcol, 1, color))
     dest->Set(0, 0, 0);
   else
     dest->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
@@ -1876,7 +1811,7 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
 		  /* MATTHEW: [4] Use wxGetMainColormap */
 		  Colormap cmap = wxGetMainColormap(display);
 
-		  if (!wxAllocColor (display, cmap, &exact_def)
+		  if (!AllocDCColor(display, cmap, &exact_def, 0, color)
 		      && !alloc_close_color(display, cmap, &exact_def))
 		    {
 		      pixel = (int) WhitePixel (display, DefaultScreen (display));
@@ -1906,36 +1841,15 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
       current_colour = current_text_foreground;
       Bool same_colour = (old_pen_colour.Ok () && current_colour.Ok () &&
 			  (old_pen_colour.Red () == current_colour.Red ()) &&
-		       (old_pen_colour.Blue () == current_colour.Blue ()) &&
-		     (old_pen_colour.Green () == current_colour.Green ()) &&
+			  (old_pen_colour.Blue () == current_colour.Blue ()) &&
+			  (old_pen_colour.Green () == current_colour.Green ()) &&
 			  (old_pen_colour.pixel == current_colour.pixel));
 
       if (!same_colour || !dcOptimize)
 	{
 	  int pixel = -1;
-	  if (!Colour)
 	    {
-	      // Unless foreground is really white, draw it in black
-	      unsigned char red = current_text_foreground.Red ();
-	      unsigned char blue = current_text_foreground.Blue ();
-	      unsigned char green = current_text_foreground.Green ();
-	      if (red == (unsigned char) 255 && blue == (unsigned char) 255
-		  && green == (unsigned char) 255)
-		{
-		  pixel = (int) WhitePixel (display, DefaultScreen (display));
-		  current_colour = *wxWHITE;
-		  current_colour.pixel = current_text_foreground.pixel = pixel;
-		}
-	      else
-		{
-		  pixel = (int) BlackPixel (display, DefaultScreen (display));
-		  current_colour = *wxBLACK;
-		  current_colour.pixel = current_text_foreground.pixel = pixel;
-		}
-	    }
-	  else
-	    {
-	      if (current_text_foreground.pixel > -1)
+	      if (Colour && (current_text_foreground.pixel > -1))
 		pixel = current_text_foreground.pixel;
 	      else
 		{
@@ -1945,11 +1859,10 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
 		  exact_def.blue = (unsigned short) (((long) current_text_foreground.Blue ()) << SHIFT);
 		  exact_def.flags = DoRed | DoGreen | DoBlue;
 
-//       Colormap cmap = DefaultColormap(display, DefaultScreen(display));
 		  /* MATTHEW: [4] Use wxGetMainColormap */
 		  Colormap cmap = wxGetMainColormap(display);
 
-		  if (!wxAllocColor (display, cmap, &exact_def)
+		  if (!AllocDCColor (display, cmap, &exact_def, 1, color)
 		      && !alloc_close_color(display, cmap, &exact_def))
 		    {
 		      pixel = (int) BlackPixel (display, DefaultScreen (display));
@@ -1984,6 +1897,8 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
   GetTextExtent (text, &w, &h);
   CalcBoundingBox (x + w, y + h);
   CalcBoundingBox (x, y);
+
+  autoSetting = 1;
 }
 
 void wxCanvasDC:: SetBackground (wxBrush * brush)
@@ -2004,7 +1919,7 @@ void wxCanvasDC:: SetBackground (wxBrush * brush)
 
   if (current_background_brush)
     {
-      if (current_background_brush->GetColour ().pixel > -1)
+      if (Colour && (current_background_brush->GetColour ().pixel > -1))
 	pixel = current_background_brush->GetColour ().pixel;
       else
 	{
@@ -2015,7 +1930,7 @@ void wxCanvasDC:: SetBackground (wxBrush * brush)
 	  exact_def.flags = DoRed | DoGreen | DoBlue;
 
 	  Colormap cmap = wxGetMainColormap(display);
-	  if (!wxAllocColor (display, cmap, &exact_def)
+	  if (!AllocDCColor (display, cmap, &exact_def, 0, color)
 	      && !alloc_close_color(display, cmap, &exact_def))
 	    {
 	      pixel = (int) WhitePixel (display, DefaultScreen (display));
@@ -2023,7 +1938,8 @@ void wxCanvasDC:: SetBackground (wxBrush * brush)
 	    }
 	  else
 	    pixel = (int) exact_def.pixel;
-	  current_background_brush->GetColour().pixel = pixel;
+	  if (Colour)
+	    current_background_brush->GetColour().pixel = pixel;
 	}
 
       XSetWindowBackground (display, pixmap, pixel);
@@ -2350,7 +2266,7 @@ int wxCanvasDC:: LogicalToDeviceYRel (float y)
 }
 
 Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
-      wxCanvasDC * source, float xsrc, float ysrc, int rop)
+                        wxBitmap * source, float xsrc, float ysrc, int rop)
 {
   /* MATTHEW: [7] Implement GetPixel */
   FreeGetPixelCache();
@@ -2379,7 +2295,7 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
     resetPen = TRUE;
   }
 
-  if (pixmap && source->pixmap)
+  if (pixmap && source->Ok())
     {
       /* MATTHEW: [9] */
       int orig = current_logical_function;
@@ -2394,28 +2310,19 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
       {
 	XImage *cache = NULL;
 
-	XCopyRemote(source->display, display, source->pixmap, pixmap, gc,
-		    source->LogicalToDeviceX (xsrc), 
-		    source->LogicalToDeviceY (ysrc), 
-		    source->LogicalToDeviceXRel(width), 
-		    source->LogicalToDeviceYRel(height),
+	XCopyRemote(source->display, display, source->x_pixmap, pixmap, gc,
+		    xsrc, ysrc, width, height,
 		    XLOG2DEV (xdest), YLOG2DEV (ydest), 
 		    FALSE, &cache);
       } else {
 	// Check if we're copying from a mono bitmap
-	if (source->selected_pixmap && (source->selected_pixmap->GetDepth () == 1)) {
-	  XCopyPlane (display, source->pixmap, pixmap, gc,
-		      source->LogicalToDeviceX (xsrc), 
-		      source->LogicalToDeviceY (ysrc), 
-		      source->LogicalToDeviceXRel(width), 
-		      source->LogicalToDeviceYRel(height),
+	if (!color || (source->GetDepth () == 1)) {
+	  XCopyPlane (display, source->x_pixmap, pixmap, gc,
+		      xsrc, ysrc, width, height,
 		      XLOG2DEV (xdest), YLOG2DEV (ydest), 1);
 	} else {
-	  XCopyArea (display, source->pixmap, pixmap, gc,
-		     source->LogicalToDeviceX (xsrc), 
-		     source->LogicalToDeviceY (ysrc), 
-		     source->LogicalToDeviceXRel(width), 
-		     source->LogicalToDeviceYRel(height),
+	  XCopyArea (display, source->x_pixmap, pixmap, gc,
+		     xsrc, ysrc, width, height,
 		     XLOG2DEV (xdest), YLOG2DEV (ydest));
 
 	}
@@ -2449,11 +2356,12 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
 
 IMPLEMENT_DYNAMIC_CLASS(wxMemoryDC, wxCanvasDC)
 
-wxMemoryDC::wxMemoryDC (void)
+wxMemoryDC::wxMemoryDC (Bool ro)
 {
   __type = wxTYPE_DC_MEMORY;
   display = wxGetDisplay();
 
+  read_only = ro;
   device = wxDEVICE_PIXMAP;
 //  current_colour = NULL;
   current_pen_width = -1;
@@ -2516,87 +2424,7 @@ wxMemoryDC::wxMemoryDC (void)
 //  current_colour = NULL;
   selected_pixmap = NULL;
 
-  Colour = wxColourDisplay ();
-  SetBrush (wxWHITE_BRUSH);
-  SetPen (wxBLACK_PEN);
-  SetFont(wxNORMAL_FONT);
-}
-
-/*
- * Create a new dc from an old dc
- *
- */
-
-wxMemoryDC:: wxMemoryDC (wxCanvasDC * old_dc):wxbMemoryDC (old_dc)
-{
-  __type = wxTYPE_DC_MEMORY;
-  
-  min_x = 0;
-  min_y = 0;
-  max_x = 0;
-  max_y = 0;
-
-  display = old_dc ? old_dc->display : wxGetDisplay();
-
-  device = wxDEVICE_PIXMAP;
-
-  current_pen_width = -1;
-  current_pen_join = -1;
-  current_pen_cap = -1;
-  current_pen_nb_dash = -1;
-  current_pen_dash = NULL;
-  current_stipple = NULL;
-  current_style = -1;
-  current_fill = -1;
-
-  pixmap = 0;
-  pixmapWidth = 0;
-  pixmapHeight = 0;
-  canvas = NULL;
-
-  ok = FALSE;
-  title = NULL;
-
-  current_logical_function = wxCOPY;
-  font = NULL;
-  logical_origin_x = 0;
-  logical_origin_y = 0;
-
-  device_origin_x = 0;
-  device_origin_y = 0;
-
-  logical_scale_x = 1.0;
-  logical_scale_y = 1.0;
-
-  user_scale_x = 1.0;
-  user_scale_y = 1.0;
-
-  mapping_mode = MM_TEXT;
-
-  current_pen = NULL;
-  current_brush = NULL;
-  current_background_brush = wxWHITE_BRUSH;
-  current_text_foreground = *wxBLACK;
-  current_text_background = *wxWHITE;
-  current_bk_mode = wxTRANSPARENT;
-
-  XGCValues gcvalues;
-  gcvalues.foreground = BlackPixel (display,
-				    DefaultScreen (display));
-  gcvalues.background = WhitePixel (display,
-				    DefaultScreen (display));
-  gcvalues.graphics_exposures = False;
-  gcvalues.line_width = 1;
-  gc = XCreateGC (display, RootWindow (display, DefaultScreen (display)),
-	    GCForeground | GCBackground | GCGraphicsExposures | GCLineWidth,
-		  &gcvalues);
-
-  background_pixel = (int) gcvalues.background;
-  ok = TRUE;
-//  current_colour = NULL;
-  selected_pixmap = NULL;
-
-  Colour = wxColourDisplay ();
+  color = Colour = wxColourDisplay ();
   SetBrush (wxWHITE_BRUSH);
   SetPen (wxBLACK_PEN);
   SetFont(wxNORMAL_FONT);
@@ -2605,7 +2433,8 @@ wxMemoryDC:: wxMemoryDC (wxCanvasDC * old_dc):wxbMemoryDC (old_dc)
 wxMemoryDC::~wxMemoryDC (void)
 {
   if (selected_pixmap) {
-    selected_pixmap->selectedIntoDC = 0;
+    if (!read_only)
+      selected_pixmap->selectedIntoDC = 0;
     selected_pixmap = NULL;
   }
 }
@@ -2621,14 +2450,13 @@ void wxMemoryDC:: SelectObject (wxBitmap * bitmap)
     XFreeGC(display, gc);
   gc = NULL;
 
- /* MATTHEW: [4] Check display */
-#ifdef wx_motif
-  if (bitmap && (!bitmap->Ok() || bitmap->display != display || bitmap->selectedIntoDC))
+  if (bitmap && (!bitmap->Ok() || (!read_only && (bitmap->display != display || bitmap->selectedIntoDC))))
     bitmap = NULL;
-#endif
 
-  if (selected_pixmap)
-    selected_pixmap->selectedIntoDC = 0;
+  if (!read_only) {
+    if (selected_pixmap)
+      selected_pixmap->selectedIntoDC = 0;
+  }
 
   if (!bitmap)
   {
@@ -2644,11 +2472,13 @@ void wxMemoryDC:: SelectObject (wxBitmap * bitmap)
   pixmap = bitmap->x_pixmap;
   pixmapWidth = bitmap->GetWidth ();
   pixmapHeight = bitmap->GetHeight ();
-  bitmap->selectedIntoDC = -1;
+  if (!read_only)
+    bitmap->selectedIntoDC = -1;
+  color = Colour = (bitmap->GetDepth() != 1);
 
   XGCValues gcvalues;
-  gcvalues.foreground = BlackPixel(display, DefaultScreen(display));
-  gcvalues.background = WhitePixel(display, DefaultScreen(display));
+  gcvalues.foreground = color ? BlackPixel(display, DefaultScreen(display)) : 1;
+  gcvalues.background = color ? WhitePixel(display, DefaultScreen(display)) : 0;
   gcvalues.graphics_exposures = False;
   gcvalues.line_width = 1;
   gc = XCreateGC (display, pixmap,
@@ -2663,6 +2493,11 @@ void wxMemoryDC:: SelectObject (wxBitmap * bitmap)
   SetBrush(current_brush);
   SetFont(font);
   dcOptimize = save_opt;
+}
+
+wxBitmap* wxMemoryDC::GetObject()
+{
+  return selected_pixmap;
 }
 
 void wxMemoryDC::GetSize(float *w, float *h)

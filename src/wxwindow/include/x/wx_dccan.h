@@ -48,6 +48,7 @@ class wxCanvasDC: public wxbCanvasDC
   Pixmap pixmap;
   int pixmapWidth;
   int pixmapHeight;
+  Bool color;
 
   Region current_reg,
          onpaint_reg,
@@ -126,7 +127,6 @@ class wxCanvasDC: public wxbCanvasDC
   void DrawRectangle(float x, float y, float width, float height);
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
   void DrawEllipse(float x, float y, float width, float height);
-  void DrawIcon(wxIcon *icon, float x, float y);
   /* MATTHEW: [2] 16-bit fonts */
   void DrawText(const char *text, float x, float y, Bool use16 = FALSE);
 
@@ -164,7 +164,7 @@ class wxCanvasDC: public wxbCanvasDC
   int LogicalToDeviceYRel(float y);
 
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxCanvasDC *source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY);
   inline Bool CanGetTextExtent(void) { return TRUE; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 

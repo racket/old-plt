@@ -39,7 +39,7 @@ static Bool IsColor(wxBitmap *bm)
 @ "get-height" : int GetHeight();
 @ "get-width" : int GetWidth();
 @ "ok?" : bool Ok();
-@ m "color?" : bool IsColor();
+@ m "is-color?" : bool IsColor();
 
 @ "load-file" : bool LoadFile(pathname,SYM[bitmapType]=0);
 @ "save-file" : bool SaveFile(pathname,SYM[saveBitmapType]);

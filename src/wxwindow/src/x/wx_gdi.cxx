@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.3 1998/03/12 18:14:20 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.4 1998/08/10 18:02:53 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -676,72 +676,6 @@ wxbBrush (col, Style)
   stipple = NULL;
 }
 
-// Icons
-IMPLEMENT_DYNAMIC_CLASS(wxIcon, wxBitmap)
-
-wxIcon::wxIcon (char bits[], int Width, int Height)
-{
-  __type = wxTYPE_ICON;
-  ok = FALSE;
-  width = Width;
-  height = Height;
-  numColors = 0;
-  x_pixmap = 0;
-
-  image = 0;
-  Display *dpy = display = wxGetDisplay(); /* MATTHEW: [4] Use wxGetDisplay */
-  x_pixmap = XCreateBitmapFromData (dpy, RootWindow (dpy, DefaultScreen (dpy)), bits, width, height);
-  if (x_pixmap)
-    ok = TRUE;
-  else
-    ok = FALSE;
-}
-
-wxIcon::wxIcon (void)
-{
-  __type = wxTYPE_ICON;
-  ok = FALSE;
-  width = 0;
-  height = 0;
-  x_pixmap = 0;
-  image = 0;
-}
-
-wxIcon::wxIcon (const char *icon_file, long flags)
-{
-  __type = wxTYPE_ICON;
-  ok = FALSE;
-  width = 0;
-  height = 0;
-  numColors = 0;
-  x_pixmap = 0;
-  image = 0;
-  int hotX, hotY;
-  unsigned int w, h;
-  Display *dpy = display = wxGetDisplay(); /* MATTHEW: [4] Use wxGetDisplay */
-  int value = XReadBitmapFile (dpy, RootWindow (dpy, DefaultScreen (dpy)), icon_file, &w, &h, &x_pixmap, &hotX, &hotY);
-  width = w;
-  height = h;
-  if ((value == BitmapFileInvalid) || (value == BitmapOpenFailed) || (value == BitmapNoMemory)) {
-    x_pixmap = 0;
-    ok = FALSE;
-  } else
-    ok = TRUE;
-}
-
-#if USE_XPM_IN_X
-wxIcon::wxIcon(char **data):wxBitmap(data)
-{
-  __type = wxTYPE_ICON;
-}
-#endif
-
-wxIcon::~wxIcon (void)
-{
-  Display *dpy = display; /* MATTHEW: [4] Use display */
-  if (x_pixmap)
-    XFreePixmap (dpy, x_pixmap);
-}
 
 // Cursors
 IMPLEMENT_DYNAMIC_CLASS(wxCursor, wxBitmap)
@@ -1274,10 +1208,10 @@ wxBitmap::wxBitmap (void)
 }
 
 
-wxBitmap::wxBitmap (char bits[], int the_width, int the_height, int no_bits)
+wxBitmap::wxBitmap (char bits[], int the_width, int the_height)
 {
   __type = wxTYPE_BITMAP;
-  depth = no_bits = 1;
+  depth = 1;
   width = the_width;
   height = the_height;
   numColors = 0;
@@ -1420,20 +1354,6 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
 //		XpmDebugError(ErrorStatus, NULL);
 		ok = False;
   }
-// ADDED JACS
-#ifdef wx_xview
-  freePixmap = TRUE;
-  x_image = (Server_image) xv_create (XV_NULL, SERVER_IMAGE,
- 				      SERVER_IMAGE_SAVE_PIXMAP, TRUE,
-				      SERVER_IMAGE_PIXMAP, pixmap,
-                                      SERVER_IMAGE_DEPTH, GetDepth(),
-						   NULL);
-  if (x_image)
-    ok = TRUE;
-  else
-    ok = FALSE;
-
-#endif
 }
 #endif
 
@@ -1442,7 +1362,7 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
  *
  */
 
-wxBitmap::wxBitmap (int w, int h, int d)
+wxBitmap::wxBitmap (int w, int h, Bool b_and_w)
 {
   __type = wxTYPE_BITMAP;
   numColors = 0;
@@ -1450,24 +1370,12 @@ wxBitmap::wxBitmap (int w, int h, int d)
   free_colors = NULL;
   free_colors_num = 0;
   bitmapColourMap = NULL;
-  (void)Create(w, h, d);
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBitmapList->Append (this);
-#endif
+  (void)Create(w, h, b_and_w ? 1 : -1);
 }
 
 wxBitmap::~wxBitmap (void)
 {
   FreeBitmapImage();
-
-#ifdef wx_xview
-  // Should we be destroying the Server_image or not?
-//  xv_destroy_safe(x_image);
-#endif
-
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheBitmapList->DeleteObject (this);
-#endif
 }
 
 void wxBitmap::SetupBitmapImage()
@@ -1608,28 +1516,6 @@ static int FlagError(Display*, XErrorEvent*)
 Bool wxBitmap::Create(int w, int h, int d)
 {
   Display *dpy = wxGetDisplay();
-
-  /* MATTHEW: [13] */
-  if (d > 0) {
-    int c, *depths, n;
-    
-    n = ScreenCount(dpy);
-    while (n--) {
-      int i;
-      depths = XListDepths(dpy, n, &c);
-      
-      for (i = 0; i < c; i++)
-	if (depths[i] == d)
-	  break; /* good depth */
-      
-      if (i >= c)
-	break; /* bad depth */
-    }
-    
-    if (n >= 0)
-      d = -1; /* bad depth */
-  }
-  
 
   width = w;
   height = h;

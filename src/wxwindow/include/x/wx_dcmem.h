@@ -29,11 +29,13 @@ class wxMemoryDC: public wxbMemoryDC
   DECLARE_DYNAMIC_CLASS(wxMemoryDC)
 
  public:
-  wxMemoryDC(void);
-  wxMemoryDC(wxCanvasDC *old_dc); // Create compatible DC
+  Bool read_only;
+
+  wxMemoryDC(Bool read_only = 0);
 
   ~wxMemoryDC(void);
   virtual void SelectObject(wxBitmap *bitmap);
+  virtual wxBitmap* GetObject();
   void GetSize(float *w, float *h);
 };
 

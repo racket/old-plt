@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.4 1998/08/11 14:25:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.5 1998/08/16 19:23:13 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -432,15 +432,23 @@ char *wxFrame::GetTitle(void)
   return wxBuffer;
 }
 
-void wxFrame::SetIcon(wxIcon *wx_icon)
+void wxFrame::SetIcon(wxBitmap *wx_icon)
 {
   icon = wx_icon;
     
   wxFrameWnd *wnd = (wxFrameWnd *)handle;
+
+  if (wnd->icon)
+    DestroyIcon(wnd->icon);
+
   if (!wx_icon)
     wnd->icon = 0;
-  else
-    wnd->icon = wx_icon->ms_icon;
+  else {
+    ICONINFO info;
+    info.fIcon = TRUE;
+    info.hbmMask = info.hbmColor = icon->ms_bitmap;
+    wnd->icon = CreateIconIndirect(&info);
+  }
 }
 
 void wxFrame::CreateStatusLine(int number, char *WXUNUSED(name))

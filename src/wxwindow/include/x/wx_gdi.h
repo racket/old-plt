@@ -34,7 +34,6 @@ typedef       void    *wxFont ;
 typedef       void    *wxColourMap;
 typedef       void    *wxPen;
 typedef       void    *wxBrush;
-typedef       void    *wxIcon;
 typedef       void    *wxCursor;
 typedef       void    *wxBitmap;
 typedef       void    *XFontInfo;
@@ -198,10 +197,9 @@ class wxBitmap: public wxObject
 #endif
 
   wxBitmap(void) ;
-  wxBitmap(char bits[], int width, int height, int depth = 1);
+  wxBitmap(char bits[], int width, int height);
 
-  // If depth is omitted, will create a bitmap compatible with the display
-  wxBitmap(int width, int height, int depth = -1);
+  wxBitmap(int width, int height, Bool b_and_w = FALSE);
 
 #ifdef USE_XPM_IN_MSW
   // Initialize with XPM data
@@ -241,35 +239,6 @@ class wxBitmap: public wxObject
   inline void SetOk(Bool isOk) { ok = isOk; }
   inline wxColourMap *GetColourMap(void) { return bitmapColourMap; }
   inline void SetColourMap(wxColourMap *cmap) { bitmapColourMap = cmap ; }
-};
-
-// Icon
-class wxIcon: public wxBitmap
-{
-  DECLARE_DYNAMIC_CLASS(wxIcon)
-
- public:
-#ifdef wx_motif
-//  int iconWidth;
-//  int iconHeight;
-//  Pixmap x_pixmap;
-#endif
-#ifdef wx_xview
-  Icon x_icon;
-#endif
-  Display *display; /* MATTHEW: [4] We can use multiple displays now */
-
-  wxIcon(void);
-  wxIcon(char bits[], int width, int height);
-  wxIcon(const char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_XBM);
-
-#ifdef USE_XPM_IN_MSW
-  // Initialize with XPM data
-  wxIcon(char **data);
-#endif
-//  Bool LoadFile(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_XBM);
-
-  ~wxIcon(void);
 };
 
 #ifdef wx_motif

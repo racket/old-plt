@@ -36,6 +36,7 @@ class wxFrame: public wxbFrame
 
  private:
   char *frameTitle;
+  wxBitmap *frame_icon;
  public:
   // Store current size so we can ignore resize if only
   // a reposition!
@@ -85,7 +86,7 @@ class wxFrame: public wxbFrame
   void SetTitle(char *title);
 
   // Set icon
-  void SetIcon(wxIcon *icon);
+  void SetIcon(wxBitmap *icon);
 
   // Create status line
   void CreateStatusLine(int number = 1, char *name = "status_line");

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.6 1998/08/21 19:13:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.7 1998/09/13 13:02:15 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -670,97 +670,6 @@ wxBrush::wxBrush(const char *col, int Style)
   old_stipple = NULL;
 }
 
-// Icons
-IMPLEMENT_DYNAMIC_CLASS(wxIcon, wxBitmap)
-
-wxIcon::wxIcon(void) : wxBitmap()
-{
-  SetupIcon();
-}
-
-wxIcon::wxIcon(char bits[], int width, int height)
-: wxBitmap(bits, width, height)
-{
-  SetupIcon();
-}
-
-wxIcon::wxIcon(const char *icon_file, long flags)
-: wxBitmap((char *)icon_file, flags)
-{
-  SetupIcon();
-}
-
-wxIcon::~wxIcon(void)
-{
-  if (ms_icon)
-    DestroyIcon(ms_icon);
-
-//  wxTheIconList->DeleteObject(this);
-}
-
-void wxIcon::SetupIcon()
-{
-  __type = wxTYPE_ICON;
-  if (Ok()) {
-    ICONINFO info;
-    info.fIcon = TRUE;
-    info.hbmMask = info.hbmColor = ms_bitmap;
-    ms_icon = CreateIconIndirect(&info);
-    if (!ms_icon)
-      ok = FALSE;
-  } else
-    ms_icon = NULL;
-}
-
-Bool wxIcon::LoadFile(char *icon_file, long flags)
-{
-  if (selectedIntoDC)
-    return FALSE;
-
-  if (ms_icon) {
-    DestroyIcon(ms_icon);
-    ms_icon = NULL;
-  }
-  if (ms_bitmap) {
-    DeleteObject(ms_bitmap);
-    ms_bitmap = NULL;
-  }
-
-  if ((flags & wxBITMAP_TYPE_ICO_RESOURCE)
-      || (flags & wxBITMAP_TYPE_ICO)) {
-    if (flags & wxBITMAP_TYPE_ICO)
-      ms_icon = (HICON)LoadImage(wxhInstance, icon_file, IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
-    else
-      ms_icon = LoadIcon(wxhInstance, icon_file);
-    if (ms_icon) 
-    {
-      ICONINFO info;
-      if (GetIconInfo(ms_icon, &info))
-      {
-        HBITMAP ms_bitmap = info.hbmMask;
-        if (ms_bitmap)
-        {
-          BITMAP bm;
-          GetObject(ms_bitmap, sizeof(BITMAP), (LPSTR) &bm);
-          width = bm.bmWidth;
-          height = bm.bmHeight;
-        }
-        if (info.hbmMask)
-          DeleteObject(info.hbmMask);
-        if (info.hbmColor)
-          DeleteObject(info.hbmColor);
-      }
-    }
-    ok = (ms_icon != 0);
-  } else {
-    wxBitmap::LoadFile(icon_file, flags);
-    if (Ok())
-      SetupIcon();
-  }
-
-  return Ok();
-}
-
 // Cursors
 IMPLEMENT_DYNAMIC_CLASS(wxCursor, wxBitmap)
 
@@ -1037,14 +946,14 @@ wxBitmap::wxBitmap(void)
   WXGC_IGNORE(selectedInto);
 }
 
-wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
+wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 {
   COUNT_P(bitmap_count);
 
   __type = wxTYPE_BITMAP;
   width = the_width;
   height = the_height;
-  depth = no_bits = 1;
+  depth = 1;
   numColors = 0;
   bitmapColourMap = NULL;
 
@@ -1059,7 +968,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
   WXGC_IGNORE(selectedInto);
 }
 
-wxBitmap::wxBitmap(int w, int h, int d)
+wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
 {
   COUNT_P(bitmap_count);
 
@@ -1067,12 +976,12 @@ wxBitmap::wxBitmap(int w, int h, int d)
   ok = FALSE;
   width = w;
   height = h;
-  depth = d;
+  depth = b_and_w ? 1 : -1;
   numColors = 0;
   selectedInto = NULL;
   bitmapColourMap = NULL;
 
-  (void)Create(w, h, d);
+  (void)Create(w, h, b_and_w ? 1 : -1);
   WXGC_IGNORE(selectedInto);
 }
 
@@ -1155,18 +1064,15 @@ Bool wxBitmap::Create(int w, int h, int d)
   depth = d;
 
   if (d > 0)
-  {
     ms_bitmap = CreateBitmap(w, h, d, 1, NULL);
-  }
-  else
-  {
+  else {
     HDC dc = GetDC(NULL);
     ms_bitmap = ::CreateCompatibleBitmap(dc, w, h);
     ReleaseDC(NULL, dc);
     depth = wxDisplayDepth();
   }
   if (ms_bitmap)
-	 ok = TRUE;
+    ok = TRUE;
   else
     ok = FALSE;
   return ok;

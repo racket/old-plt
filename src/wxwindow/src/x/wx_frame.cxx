@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.9 1998/08/10 18:02:52 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.10 1998/08/21 00:31:40 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -23,6 +23,7 @@ static const char sccsid[] = "@(#)wx_frame.cc	1.2 5/9/94";
 #include "wx_utils.h"
 #include "wx_privt.h"
 #include "wx_menu.h"
+#include "wx_dcmem.h"
 
 #include <stdlib.h>
 
@@ -771,41 +772,22 @@ char *wxFrame::GetTitle(void)
 }
 
 
-void wxFrame::SetIcon(wxIcon *wx_icon)
+void wxFrame::SetIcon(wxBitmap *icon)
 {
-/*
-  if (icon)
-    delete icon;
-*/
-  icon = wx_icon;
-  if (!wx_icon->x_pixmap)
-    return;
+  if (icon->Ok()) {
+    wxBitmap *bm = new wxBitmap(icon->GetWidth(), icon->GetHeight());
+    if (bm->Ok()) {
+      wxMemoryDC *mdc = new wxMemoryDC();
+      mdc->SelectObject(bm);
+      mdc->Blit(0, 0, icon->GetWidth(), icon->GetHeight(), icon, 0, 0);
+      mdc->SelectObject(NULL);
 
-  XtVaSetValues(frameShell, XtNiconPixmap, wx_icon->x_pixmap, NULL);
-
-  // The following isn't necessary and doesn't even work (P.587 of Heller)
-/*
-  Display *dpy = XtDisplay(wxTheApp->topLevel);
-  Window window, root;
-  XtVaGetValues(frameShell, XtNiconWindow, &window, NULL);
-  if (!window)
-  {
-    int x, y;
-    unsigned int width, height, border_width, depth;
-    if (!XGetGeometry(dpy, wx_icon->x_pixmap, &root, &x, &y, &width, &height, &border_width,
-                      &depth) ||
-        !(window = XCreateSimpleWindow(dpy, root, 0, 0, width, height, (unsigned)0, 
-          CopyFromParent, CopyFromParent)))
-    {
-      XtVaSetValues(frameShell, XmNiconPixmap, wx_icon->x_pixmap, NULL);
-      return;
+      XtVaSetValues(frameShell, XtNiconPixmap, bm->x_pixmap, NULL);
+      
+      frame_icon = bm;
     }
-    XSetWindowBackgroundPixmap(dpy, window, wx_icon->x_pixmap);
-    XClearWindow(dpy, window);
   }
-*/
 }
-
 
 void wxFrame::CreateStatusLine(int number, char *name)
 {

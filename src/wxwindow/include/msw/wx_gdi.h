@@ -20,7 +20,6 @@ typedef       void    *wxFont ;
 typedef       void    *wxColourMap;
 typedef       void    *wxPen;
 typedef       void    *wxBrush;
-typedef       void    *wxIcon;
 typedef       void    *wxCursor;
 typedef       void    *wxBitmap;
 #else
@@ -137,7 +136,7 @@ class wxBitmap: public wxObject
   wxBitmap(void); // Platform-specific
 
   // Initialize with raw data
-  wxBitmap(char bits[], int width, int height, int depth = 1);
+  wxBitmap(char bits[], int width, int height);
 
 #if USE_XPM_IN_MSW
   // Initialize with XPM data
@@ -148,7 +147,7 @@ class wxBitmap: public wxObject
   wxBitmap(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_BMP_RESOURCE);
 
   // If depth is omitted, will create a bitmap compatible with the display
-  wxBitmap(int width, int height, int depth = -1);
+  wxBitmap(int width, int height, Bool b_and_w = FALSE);
   ~wxBitmap(void);
 
   virtual Bool Create(int width, int height, int depth = -1);
@@ -165,21 +164,6 @@ class wxBitmap: public wxObject
   inline void SetOk(Bool isOk) { ok = isOk; }
   inline wxColourMap *GetColourMap(void) { return bitmapColourMap; }
   inline void SetColourMap(wxColourMap *cmap) { bitmapColourMap = cmap ; }
-};
-
-// Icon
-class wxIcon: public wxBitmap
-{
-  DECLARE_DYNAMIC_CLASS(wxIcon)
-
- public:
-  HICON ms_icon;
-  wxIcon(void);
-  wxIcon(char bits[], int width, int height);
-  wxIcon(const char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_ICO_RESOURCE);
-  Bool LoadFile(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_ICO_RESOURCE);
-  ~wxIcon(void);
-  void SetupIcon(void);
 };
 
 // Cursor

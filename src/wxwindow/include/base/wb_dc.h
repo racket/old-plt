@@ -145,7 +145,6 @@ class wxbDC: public wxObject
   virtual void DrawSpline(wxList *points);
   virtual void DrawSpline(int n, wxPoint points[]);
 #endif
-  virtual void DrawIcon(wxIcon *icon, float x, float y) = 0;
   /* MATTHEW: [2] for 16-bit (non-Roman) text */
   virtual void DrawText(const char *text, float x, float y,
                         Bool use16bit = FALSE) = 0;
@@ -220,7 +219,7 @@ class wxbDC: public wxObject
   virtual inline float MinY(void) { return min_y; }
   virtual inline float MaxY(void) { return max_y; }
   virtual Bool Blit(float xdest, float ydest, float width, float height,
-            wxCanvasDC *source, float xsrc, float ysrc, int rop = wxCOPY) = 0;
+                    wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY) = 0;
 
   // Sometimes we need to override optimization, e.g.
   // if other software is drawing onto our surface and we

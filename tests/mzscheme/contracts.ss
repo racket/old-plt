@@ -13,13 +13,20 @@
           (let ([for-each-eval (lambda (l) (for-each eval l))]) for-each-eval)
           (list expression '(void))))
   
+  (define (test/spec-passed/result name expression result)
+    (test result
+          eval
+          expression))
+  
   ;; test/spec-failed : symbol sexp string -> void
   ;; tests a failing specification with blame assigned to `blame'
   (define (test/spec-failed name expression blame)
     (define (failed-contract x)
       (and (string? x)
-	   (let ([m (regexp-match ": ([^ ]*) broke" x)])
-	     (and m (cadr m)))))
+	   (cond
+             [(regexp-match ": ([^ ]*) broke" x) => cadr]
+             [(regexp-match "([^ ]+): .* does not imply" x) => cadr]
+             [else #f])))
     (test blame
           failed-contract
           (with-handlers ([(lambda (x) (and (not-break-exn? x) (exn? x)))
@@ -540,6 +547,21 @@
                (define-struct s (a))))
       (eval '(require contract-test-suite6))
       (eval '(define-struct (t s) ()))))
+  
+  
+  (test/spec-passed/result
+   'contract-=>1
+   '(contract-=> (>=/c 5) (>=/c 10) 1 'badguy)
+   1)
+  (test/spec-passed/result
+   'contract-=>2
+   '(contract-=> (>=/c 5) (>=/c 10) 12 'badguy)
+   12)
+  (test/spec-failed
+   'contract-=>3
+   '(contract-=> (>=/c 5) (>=/c 10) 6 'badguy)
+   "badguy")
+  
   ))
 
 (report-errs)

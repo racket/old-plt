@@ -9,14 +9,14 @@
 (begin-elaboration-time
  (define (struct-expander-fn def-str struct:)
   (#%let ([make-exn make-exn:syntax]
-	 [debug debug-info-handler])
+	  [debug current-continuation-marks])
   (#%lambda body
      (#%let ([syntax-error
 	      (#%lambda (s)
 		(#%raise
 		 (make-exn
 		  (#%format "~s: ~a" (cons def-str body) s)
-		  ((debug))
+		  (debug)
 		  (#%cons 'define-struct body))))]
 	     [build-struct-names
 	      (#%lambda (name fields)
@@ -175,11 +175,11 @@
 ; that act like parameters
 (#%define-macro parameterize*
   (#%let ([make-exn make-exn:syntax]
-	  [debug debug-info-handler])
+	  [debug current-continuation-marks])
     (#%lambda (params . body)
      (#%let ([fail
 	      (#%lambda (msg)
-	       (#%raise (make-exn msg ((debug))
+	       (#%raise (make-exn msg (debug)
 				  (#%list* 'parameterize* params body))))])
       (#%if (#%null? body) (fail "parameterize*: bad syntax (empty body)"))
       (#%if (#%null? params)

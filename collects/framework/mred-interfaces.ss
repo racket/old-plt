@@ -1,6 +1,6 @@
-(unless (equal? (version) "100alpha2")
+(unless (equal? (version) "100/37")
   (error 'mred-interfaces
-         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100alpha2, not version ~a"
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/37, not version ~a"
          (version)))
 (require-library "mred-interfacess.ss" "framework")
 
@@ -163,6 +163,17 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -193,7 +204,11 @@
                           focus
                           is-enabled?
                           min-height
-                          border
+                          border))
+                      ($$vertical-pane<%>
+                        (interface
+                          ()
+                          get-parent
                           horiz-margin
                           reflow-container
                           get-children
@@ -201,14 +216,6 @@
                           container-size
                           place-children
                           delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
-                      ($$vertical-pane<%>
-                        (interface
-                          ()
-                          get-parent
                           get-alignment
                           get-top-level-window
                           get-graphical-min-size
@@ -221,14 +228,7 @@
                           spacing
                           add-child
                           min-height
-                          border
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child))
+                          border))
                       ($$timer<%> (interface () interval notify start stop))
                       ($$text-field<%>
                         (interface
@@ -245,6 +245,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -267,12 +272,7 @@
                           get-cursor
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$text<%>
                         (interface
                           ()
@@ -280,6 +280,13 @@
                           print
                           set-cursor
                           refresh
+                          get-canvas
+                          add-canvas
+                          get-canvases
+                          get-active-canvas
+                          set-active-canvas
+                          remove-canvas
+                          get-max-view-size
                           get-snip-position-and-location
                           begin-write-header-footer-to-file
                           end-write-header-footer-to-file
@@ -288,10 +295,6 @@
                           editor-location-to-dc-location
                           dc-location-to-editor-location
                           get-position
-                          can-delete?
-                          on-delete
-                          hide-caret
-                          insert
                           copy
                           paste
                           kill
@@ -331,14 +334,12 @@
                           get-dc
                           load-file
                           save-file
-                          invalidate-bitmap-cache
                           scroll-line-location
                           set-max-undo-history
                           get-max-undo-history
                           set-load-overwrites-styles
                           get-load-overwrites-styles
                           set-position
-                          paragraph-end-line
                           last-paragraph
                           find-string-all
                           get-snip-position
@@ -436,6 +437,7 @@
                           read-footer-from-file
                           write-headers-to-file
                           write-footers-to-file
+                          invalidate-bitmap-cache
                           set-anchor
                           get-anchor
                           flash-on
@@ -454,6 +456,10 @@
                           set-tabs
                           can-insert?
                           on-insert
+                          can-delete?
+                          on-delete
+                          hide-caret
+                          insert
                           get-start-position
                           get-end-position
                           move-position
@@ -467,14 +473,8 @@
                           last-position
                           position-paragraph
                           line-paragraph
-                          auto-wrap
-                          get-canvases
-                          get-active-canvas
-                          set-active-canvas
-                          remove-canvas
-                          get-max-view-size
-                          get-canvas
-                          add-canvas))
+                          paragraph-end-line
+                          auto-wrap))
                       ($$tab-snip<%>
                         (interface
                           ()
@@ -482,7 +482,6 @@
                           read
                           get-style
                           set-style
-                          insert
                           copy
                           own-caret
                           blink-caret
@@ -507,6 +506,7 @@
                           previous
                           resize
                           get-text
+                          insert
                           set-snipclass
                           get-snipclass
                           release-from-owner
@@ -578,7 +578,6 @@
                           read
                           get-style
                           set-style
-                          insert
                           copy
                           own-caret
                           blink-caret
@@ -603,6 +602,7 @@
                           previous
                           resize
                           get-text
+                          insert
                           set-snipclass
                           get-snipclass
                           release-from-owner
@@ -688,6 +688,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -709,12 +714,7 @@
                           get-cursor
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$separator-menu-item<%>
                         (interface () get-parent delete restore is-deleted?))
                       ($$scroll-event<%>
@@ -757,6 +757,12 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-item-label
                           get-selection
                           set-selection
                           get-client-size
@@ -780,13 +786,7 @@
                           get-number
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
-                          get-item-label))
+                          min-height))
                       ($$ps-setup<%>
                         (interface
                           ()
@@ -932,15 +932,19 @@
                           set-cursor
                           refresh
                           raise
+                          get-canvas
+                          add-canvas
+                          get-canvases
+                          get-active-canvas
+                          set-active-canvas
+                          remove-canvas
+                          get-max-view-size
                           begin-write-header-footer-to-file
                           end-write-header-footer-to-file
                           get-inactive-caret-threshold
                           set-inactive-caret-threshold
                           editor-location-to-dc-location
                           dc-location-to-editor-location
-                          can-delete?
-                          on-delete
-                          insert
                           copy
                           paste
                           kill
@@ -979,7 +983,6 @@
                           get-dc
                           load-file
                           save-file
-                          invalidate-bitmap-cache
                           scroll-line-location
                           set-max-undo-history
                           get-max-undo-history
@@ -1056,6 +1059,7 @@
                           read-footer-from-file
                           write-headers-to-file
                           write-footers-to-file
+                          invalidate-bitmap-cache
                           remove
                           move-to
                           resize
@@ -1075,6 +1079,9 @@
                           find-snip
                           can-insert?
                           on-insert
+                          can-delete?
+                          on-delete
+                          insert
                           set-selected
                           add-selected
                           remove-selected
@@ -1089,14 +1096,7 @@
                           set-dragable
                           get-scroll-step
                           set-scroll-step
-                          auto-wrap
-                          get-canvases
-                          get-active-canvas
-                          set-active-canvas
-                          remove-canvas
-                          get-max-view-size
-                          get-canvas
-                          add-canvas))
+                          auto-wrap))
                       ($$panel<%>
                         (interface
                           ()
@@ -1112,6 +1112,17 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1142,7 +1153,11 @@
                           focus
                           is-enabled?
                           min-height
-                          border
+                          border))
+                      ($$pane<%>
+                        (interface
+                          ()
+                          get-parent
                           horiz-margin
                           reflow-container
                           get-children
@@ -1150,14 +1165,6 @@
                           container-size
                           place-children
                           delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
-                      ($$pane<%>
-                        (interface
-                          ()
-                          get-parent
                           get-alignment
                           get-top-level-window
                           get-graphical-min-size
@@ -1170,14 +1177,7 @@
                           spacing
                           add-child
                           min-height
-                          border
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child))
+                          border))
                       ($$mouse-event<%>
                         (interface
                           ()
@@ -1225,6 +1225,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1244,14 +1249,9 @@
                           get-cursor
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$menu-bar<%>
-                        (interface () enable get-frame get-items is-enabled?))
+                        (interface () enable get-items is-enabled? get-frame))
                       ($$menu<%>
                         (interface
                           ()
@@ -1284,6 +1284,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-selections
                           get-selection
                           set-selection
@@ -1321,12 +1326,7 @@
                           get-number
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$keymap<%>
                         (interface
                           ()
@@ -1421,6 +1421,17 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1451,7 +1462,11 @@
                           focus
                           is-enabled?
                           min-height
-                          border
+                          border))
+                      ($$horizontal-pane<%>
+                        (interface
+                          ()
+                          get-parent
                           horiz-margin
                           reflow-container
                           get-children
@@ -1459,14 +1474,6 @@
                           container-size
                           place-children
                           delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
-                      ($$horizontal-pane<%>
-                        (interface
-                          ()
-                          get-parent
                           get-alignment
                           get-top-level-window
                           get-graphical-min-size
@@ -1479,18 +1486,18 @@
                           spacing
                           add-child
                           min-height
-                          border
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child))
+                          border))
                       ($$grow-box-spacer-pane<%>
                         (interface
                           ()
                           get-parent
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
                           get-alignment
                           get-top-level-window
                           get-graphical-min-size
@@ -1503,14 +1510,7 @@
                           spacing
                           add-child
                           min-height
-                          border
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child))
+                          border))
                       ($$gauge<%>
                         (interface
                           ()
@@ -1526,6 +1526,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1549,12 +1554,7 @@
                           get-cursor
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$frame<%>
                         (interface
                           ()
@@ -1577,6 +1577,23 @@
                           get-x
                           get-y
                           on-size
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          get-eventspace
+                          get-focus-window
+                          get-focus-object
+                          on-menu-char
+                          has-status-line?
+                          is-iconized?
+                          on-traverse-char
+                          on-subwindow-char
                           get-menu-bar
                           set-status-text
                           create-status-line
@@ -1615,24 +1632,7 @@
                           focus
                           is-enabled?
                           min-height
-                          border
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          get-eventspace
-                          get-focus-window
-                          get-focus-object
-                          on-menu-char
-                          has-status-line?
-                          is-iconized?
-                          on-traverse-char
-                          on-subwindow-char))
+                          border))
                       ($$font-list<%> (interface () find-or-create-font))
                       ($$font<%>
                         (interface
@@ -1752,6 +1752,15 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          min-client-width
+                          min-client-height
+                          lazy-refresh
+                          set-line-count
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1784,16 +1793,7 @@
                           on-tab-in
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
-                          min-client-width
-                          min-client-height
-                          lazy-refresh
-                          set-line-count))
+                          min-height))
                       ($$editor-admin<%>
                         (interface
                           ()
@@ -1825,6 +1825,20 @@
                           get-x
                           get-y
                           on-size
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          get-eventspace
+                          get-focus-window
+                          get-focus-object
+                          on-traverse-char
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1860,21 +1874,7 @@
                           focus
                           is-enabled?
                           min-height
-                          border
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          get-eventspace
-                          get-focus-window
-                          get-focus-object
-                          on-traverse-char
-                          on-subwindow-char))
+                          border))
                       ($$cursor<%> (interface () ok?))
                       ($$control-event<%>
                         (interface
@@ -1903,6 +1903,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-selection
                           set-selection
                           get-client-size
@@ -1930,12 +1935,7 @@
                           get-number
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$checkable-menu-item<%>
                         (interface
                           ()
@@ -1972,6 +1972,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1993,12 +1998,7 @@
                           get-cursor
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$button<%>
                         (interface
                           ()
@@ -2014,6 +2014,11 @@
                           get-x
                           get-y
                           on-size
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -2033,12 +2038,7 @@
                           get-cursor
                           focus
                           is-enabled?
-                          min-height
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char))
+                          min-height))
                       ($$brush-list<%> (interface () find-or-create-brush))
                       ($$brush<%>
                         (interface

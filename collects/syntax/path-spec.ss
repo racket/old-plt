@@ -18,7 +18,7 @@
 		   fn))
 		s)]
 	     [(-build-path elem ...)
-	      (module-or-top-identifier=? build-path-stx #'-build-path)
+	      (module-or-top-identifier=? #'-build-path build-path-stx)
 	      (let ([l (syntax-object->datum (syntax (elem ...)))])
 		(when (null? l)
 		  (raise-syntax-error

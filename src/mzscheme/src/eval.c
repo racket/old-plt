@@ -3755,8 +3755,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       case scheme_letrec_type:
 	{
 	  Scheme_Letrec *l = (Scheme_Letrec *)obj;
-	  Scheme_Object **a, **dest, **stack;
-	  GC_CAN_IGNORE mzshort *map;
+	  Scheme_Object **a, **stack;
 	  int i;
 
 	  stack = RUNSTACK;
@@ -3777,6 +3776,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  while (i--) {
 	    GC_CAN_IGNORE Scheme_Closure *closure;
 	    GC_CAN_IGNORE Scheme_Closure_Data *data;
+	    GC_CAN_IGNORE Scheme_Object **dest;
+	    GC_CAN_IGNORE mzshort *map;
 	    int j;
 
 	    closure = (Scheme_Closure *)stack[i];
@@ -3785,6 +3786,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    map = data->closure_map;
 	    j = data->closure_size;
 	    dest = closure->vals;
+
+	    /* Beware - dest points to the middle of a block */
 
 	    while (j--) {
 	      dest[j] = stack[map[j]];

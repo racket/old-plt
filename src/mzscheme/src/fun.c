@@ -2500,10 +2500,25 @@ call_cc (int argc, Scheme_Object *argv[])
   if (scheme_setjmpup(&cont->buf, cont, p->next ? p->stack_start : p->o_start)) {
     /* We arrive here when the continuation is applied */
     MZ_MARK_STACK_TYPE copied_cms = 0;
-    Scheme_Object *result = cont->value;
+    Scheme_Object *result, **mv;
+    int mc;
+    
+    result = cont->value;
     cont->value = NULL;
 
     p = scheme_current_thread; /* maybe different than before */
+
+    if (SAME_OBJ(result, SCHEME_MULTIPLE_VALUES)) {
+      /* Get values out before GC */
+      mv = p->ku.multiple.array;
+      mc = p->ku.multiple.count;
+      if (SAME_OBJ(mv, p->values_buffer))
+	p->values_buffer = NULL;
+    } else {
+      mv = NULL;
+      mc = 0;
+    }
+
     p->current_local_env = cont->current_local_env;
 
     p->error_buf = cont->savebuf;
@@ -2597,6 +2612,11 @@ call_cc (int argc, Scheme_Object *argv[])
     
     /* We may have just re-activated breaking: */
     scheme_check_break_now();
+
+    if (SAME_OBJ(result, SCHEME_MULTIPLE_VALUES)) {
+      p->ku.multiple.array = mv;
+      p->ku.multiple.count = mc;
+    }
 
     return result;
   } else {

@@ -22,8 +22,9 @@ Check Syntax separates four classes of identifiers:
     variables in fully expanded text where
     identifier-binding identifies the input module.
     
- In addition, the syntax property 'bound-in-source
- specifies additional members of the 3rd category.
+ In addition, the syntax properties 'disappeared-binding
+ and 'disappared-use specify additional members of the 
+ 3rd category.
 
  Variables inside #%top are treated specially. 
  If the namespace has a binding for them, they are colored bound color.
@@ -34,6 +35,7 @@ Check Syntax separates four classes of identifiers:
      - write test suite for arrows and menus
      - symbols or preferences don't begin with framework: or plt: or anything like that.
      - figure out how annotate-raw-keyword can go away
+     - test case for requires in relative directories
 |#
 
 (module syncheck mzscheme
@@ -1235,9 +1237,9 @@ Check Syntax separates four classes of identifiers:
                [tl-mac-binders (make-id-set)]
                [tl-macrefs (make-id-set)]
                [tl-high-macrefs (make-id-set)]
+               [tl-disappeared-refs (make-id-set)]
                [tl-requires (make-hash-table 'equal)]
                [tl-require-for-syntaxes (make-hash-table 'equal)]
-               [tl-bound-in-sources null]
                [expanded-expression
                 (lambda (user-namespace user-directory sexp jump-to-id)
                   (let ([is-module? (syntax-case sexp (module)
@@ -1252,110 +1254,68 @@ Check Syntax separates four classes of identifiers:
                              [mac-binders (make-id-set)]
                              [macrefs (make-id-set)]
                              [high-macrefs (make-id-set)]
+                             [disappeared-refs (make-id-set)]
                              [requires (make-hash-table 'equal)]
                              [require-for-syntaxes (make-hash-table 'equal)])
-                         (let ([new-bound-in-sources
-                                (annotate-basic sexp user-namespace user-directory jump-to-id
-                                                binders varrefs high-varrefs
-                                                tops
-                                                mac-binders macrefs high-macrefs
-                                                requires require-for-syntaxes)])
-                           (annotate-complete user-namespace user-directory
-                                              binders
-                                              varrefs
-                                              high-varrefs
-                                              tops
-                                              mac-binders
-                                              macrefs
-                                              high-macrefs
-                                              requires
-                                              require-for-syntaxes
-                                              new-bound-in-sources)))]
+                         (annotate-basic sexp user-namespace user-directory jump-to-id
+                                         binders varrefs high-varrefs
+                                         tops
+                                         mac-binders macrefs high-macrefs
+                                         disappeared-refs
+                                         requires require-for-syntaxes) 
+                         (annotate-variables user-namespace
+                                             binders
+                                             varrefs
+                                             high-varrefs
+                                             tops
+                                             mac-binders
+                                             macrefs
+                                             high-macrefs
+                                             disappeared-refs
+                                             requires
+                                             require-for-syntaxes))]
                       [else
-                       (let ([new-bound-in-sources
-                              (annotate-basic sexp user-namespace user-directory jump-to-id
-                                              tl-binders tl-varrefs tl-high-varrefs
-                                              tl-tops 
-                                              tl-mac-binders tl-macrefs tl-high-macrefs
-                                              tl-requires tl-require-for-syntaxes)])
-                         (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources)))])))]
+                       (annotate-basic sexp user-namespace user-directory jump-to-id
+                                       tl-binders tl-varrefs tl-high-varrefs
+                                       tl-tops 
+                                       tl-mac-binders tl-macrefs tl-high-macrefs
+                                       tl-disappeared-refs
+                                       tl-requires tl-require-for-syntaxes)])))]
                [expansion-completed
                 (lambda (user-namespace user-directory)
-                  (annotate-complete user-namespace
-                                     user-directory
-                                     tl-binders
-                                     tl-varrefs
-                                     tl-high-varrefs
-                                     tl-tops
-                                     tl-mac-binders
-                                     tl-macrefs
-                                     tl-high-macrefs
-                                     tl-requires
-                                     tl-require-for-syntaxes
-                                     tl-bound-in-sources))])
+                  (annotate-variables user-namespace
+                                      tl-binders
+                                      tl-varrefs
+                                      tl-high-varrefs
+                                      tl-tops
+                                      tl-mac-binders
+                                      tl-macrefs
+                                      tl-high-macrefs
+                                      tl-disappeared-refs
+                                      tl-requires
+                                      tl-require-for-syntaxes))])
           (values expanded-expression expansion-completed)))
       
       
       ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
-      ;; annotate-complete :    namespace
-      ;;                        string[directory]
-      ;;                        id-set (six of them)
-      ;;                        (listof syntax)
-      ;;                        (listof syntax)
-      ;;                        (listof (cons syntax[original] syntax[original]))
-      ;;                     -> void
-      ;;
-      ;; annotates the non-local portions of a complete program.
-      ;; for the purposes of check syntax, a complete program is either
-      ;; a module expression, or everything at the top level.
-      ;;
-      ;; the inputs match the outputs of annotate-basic, except this
-      ;; accepts the user's namespace in addition and doesn't accept
-      ;; the boolean.
-      (define (annotate-complete user-namespace
-                                 user-directory
-                                 binders
-                                 varrefs
-                                 high-varrefs
-                                 tops
-                                 mac-binders
-                                 macrefs
-                                 high-macrefs
-                                 requires
-                                 require-for-syntaxes
-                                 bound-in-sources)
-        (annotate-variables user-namespace
-                            binders
-                            varrefs
-                            high-varrefs
-                            tops
-                            mac-binders
-                            macrefs
-                            high-macrefs
-                            requires
-                            require-for-syntaxes)
-        (annotate-bound-in-sources bound-in-sources))
-
       ;; annotate-basic : syntax 
       ;;                  namespace
-      ;;                  string
+      ;;                  string[directory]
       ;;                  syntax[id]
-      ;;                  id-set (seven of them)
+      ;;                  id-set (eight of them)
       ;;                  hash-table[require-spec -> syntax] (two of them)
-      ;;               -> (listof (cons syntax[original] syntax[original])
+      ;;               -> void
       (define (annotate-basic sexp user-namespace user-directory jump-to-id
-                              binders varrefs high-varrefs tops mac-binders macrefs high-macrefs
+                              binders varrefs high-varrefs tops mac-binders macrefs high-macrefs disappeared-ref
                               requires require-for-syntaxes)
-        (let ([bound-in-sources null]
-              [tail-ht (make-hash-table)])
+        (let ([tail-ht (make-hash-table)])
           (let level-loop ([sexp sexp]
                            [high-level? #f])
-            (set! bound-in-sources (combine-bound-in-source sexp bound-in-sources))
             (add-macrefs sexp (if high-level? high-macrefs macrefs))
-            (add-bis-tree (syntax-property sexp 'bound-in-source) (if high-level? high-varrefs varrefs))
-            (add-cons-tree (syntax-property sexp 'binding-in-source) (if high-level? high-varrefs varrefs))
+            (add-ids-from-prop sexp 'disappeared-binding mac-binders)
+            (add-ids-from-prop sexp 'disappeared-use disappeared-ref)
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
                                    quote quote-syntax with-continuation-mark 
@@ -1543,9 +1503,20 @@ Check Syntax separates four classes of identifiers:
                             (and (syntax? sexp)
                                  (syntax-source sexp)))
                    (void))])))
-          (add-tail-ht-links tail-ht)
-          bound-in-sources))
+          (add-tail-ht-links tail-ht)))
 
+      ;; add-ids-from-prop : syntax symbol id-set -> void
+      (define (add-ids-from-prop stx prop-id id-set)
+        (let ([prop (syntax-property stx prop-id)])
+          (when prop
+            (let loop ([prop prop])
+              (cond
+                [(pair? prop)
+                 (loop (car prop))
+                 (loop (cdr prop))]
+                [(identifier? prop)
+                 (add-id id-set prop)])))))
+      
       ;; add-require-spec : hash-table[sexp[require-spec] -o> (listof syntax)]
       ;;                 -> sexp[require-spec]
       ;;                    syntax
@@ -1576,6 +1547,7 @@ Check Syntax separates four classes of identifiers:
                                   mac-binders
                                   macrefs
                                   high-macrefs
+                                  disappeared-refs
                                   requires
                                   require-for-syntaxes)
         (let ([unused-requires (make-hash-table 'equal)]
@@ -1584,14 +1556,19 @@ Check Syntax separates four classes of identifiers:
           (hash-table-for-each requires (lambda (k v) (hash-table-put! unused-requires k #t)))
           (hash-table-for-each require-for-syntaxes (lambda (k v) (hash-table-put! unused-require-for-syntaxes k #t)))
         
-          ;(printf "> color binders\n")
+          (for-each-ids disappeared-refs
+                        (lambda (ids)
+                          (when (ormap (lambda (id) (get-ids mac-binders id)) ids)
+                            (for-each (lambda (id) (add-id macrefs id)) ids))
+                          (when (ormap (lambda (id) (get-ids binders id)) ids)
+                            (for-each (lambda (id) (add-id varrefs id)) ids))))
+          
           (for-each (lambda (vars) (for-each (lambda (var)
                                                (when (syntax-original? var)
                                                  (color-variable var identifier-binding)
                                                  (make-rename-menu var id-sets)))
                                              vars))
                     (get-idss binders))
-          ;(printf "> color varrefs\n")
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-binding)
@@ -1604,7 +1581,6 @@ Check Syntax separates four classes of identifiers:
                                                           identifier-binding))
                                     vars))
                     (get-idss varrefs))
-          ;(printf "> color high varrefs\n")
           (for-each (lambda (vars) (for-each 
                                     (lambda (var)
                                       (color-variable var identifier-transformer-binding)
@@ -1618,14 +1594,12 @@ Check Syntax separates four classes of identifiers:
                                     vars))
                     (get-idss high-varrefs))
           
-          ;(printf "> color mac binders\n")
           (for-each (lambda (vars) (for-each (lambda (var)
                                                (when (syntax-original? var)
                                                  (color-syntax var identifier-binding)
                                                  (make-rename-menu var id-sets)))
                                              vars))
                     (get-idss mac-binders))
-          ;(printf "> color macrefs\n")
           (for-each (lambda (vars) (for-each
                                     (lambda (var)
                                       (color-syntax var identifier-binding)
@@ -1638,7 +1612,7 @@ Check Syntax separates four classes of identifiers:
                                                           identifier-binding))
                                     vars))
                     (get-idss macrefs))
-          ;(printf "> color high macrefs\n")
+          
           (for-each (lambda (vars) (for-each
                                     (lambda (var)
                                       (color-syntax var identifier-transformer-binding)
@@ -1652,7 +1626,6 @@ Check Syntax separates four classes of identifiers:
                                     vars))
                     (get-idss high-macrefs))
           
-          ;(printf "> color tops\n")
           (for-each (lambda (vars) (for-each (lambda (x) (color/connect-top user-namespace binders x)) vars))
                   (get-idss tops))
           (color-unused require-for-syntaxes unused-require-for-syntaxes)
@@ -1673,12 +1646,9 @@ Check Syntax separates four classes of identifiers:
       ;;                      (union identifier-binding identifier-transformer-binding)
       ;;                   -> void
       (define (connect-identifier var all-binders unused requires get-binding)
-        ;(printf "connect-identifier.1 ~s\n" (syntax-object->datum var))
         (let ([binders (get-ids all-binders var)])
-          ;(printf "connect-identifier.2 ~s\n" binders)
           (when binders
             (for-each (lambda (x)
-                        ;(printf "connect-identifier.3 ~s\n" (syntax-original? x))
                         (when (syntax-original? x)
                           (connect-syntaxes x var)))
                       binders))
@@ -1735,7 +1705,6 @@ Check Syntax separates four classes of identifiers:
                                 (let-values ([(a b) (module-path-index-split path)])
                                   (and (not a)
                                        (not b)))))))])
-          ;(printf "coloring variable: ~s lexical? ~s\n" (syntax-e var) lexical?)
           (cond
             [lexical? (color var lexical-color)]
             [(pair? b) (color var imported-color)])))
@@ -1753,12 +1722,10 @@ Check Syntax separates four classes of identifiers:
       (define (connect-syntaxes from to)
         (let* ([from-source (syntax-source from)]
 	       [to-source (syntax-source to)])
-          ;(printf "connect-syntaxes.1 ~s ~s\n" from-source to-source)
-	  (when (and (is-a? from-source text%)
+          (when (and (is-a? from-source text%)
                      (is-a? to-source text%))
             (let ([to-syncheck-text (find-syncheck-text to-source)]
                   [from-syncheck-text (find-syncheck-text from-source)])
-              ;(printf "connect-syntaxes.2 ~s ~s\n" from-syncheck-text (eq? to-syncheck-text from-syncheck-text))
               (when (and to-syncheck-text
                          from-syncheck-text
                          (eq? to-syncheck-text from-syncheck-text))
@@ -1766,7 +1733,6 @@ Check Syntax separates four classes of identifiers:
                       [span-from (syntax-span from)]
                       [pos-to (syntax-position to)]
                       [span-to (syntax-span to)])
-                  ;(printf "connect-syntaxes.3 ~s\n" (list pos-from span-from pos-to span-to))
                   (when (and pos-from span-from pos-to span-to)
                         (let* ([from-pos-left (- (syntax-position from) 1)]
                                [from-pos-right (+ from-pos-left (syntax-span from))]
@@ -1842,35 +1808,6 @@ Check Syntax separates four classes of identifiers:
            tail-ht
            orig-stx
            (lambda () null)))))
-      
-      ;; annotate-bound-in-sources : (listof (cons syntax[orig] syntax[orig])) -> void
-      ;; adds arrows and colors between pairs found in the 'bound-in-source syntax property.
-      (define (annotate-bound-in-sources biss)
-        (for-each
-         (lambda (bis)
-           (color (car bis) lexically-bound-variable-style-name)
-           (color (cdr bis) lexically-bound-variable-style-name)
-           (connect-syntaxes (car bis) (cdr bis)))
-         biss))
-      
-      ;; combine-bound-in-sources : syntax (listof (cons syntax[orig] syntax[orig))
-      ;;                         -> (listof (cons syntax[orig] syntax[orig))
-      (define (combine-bound-in-source stx old-biss)
-        (let loop ([bis (syntax-property stx 'bound-in-source)]
-                   [acc old-biss])
-          (cond
-            [(and (cons? bis)
-                  (identifier? (car bis))
-                  (identifier? (cdr bis)))
-             (if (and (syntax-original? (car bis))
-                      (syntax-original? (cdr bis)))
-                 (cons bis acc)
-                 acc)]
-            [(cons? bis)
-             (loop (car bis)
-                   (loop (cdr bis)
-                         acc))]
-            [else acc])))
 
       ;; annotate-require-open : namespace string -> (stx -> void)
       ;; relies on current-module-name-resolver, which in turn depends on
@@ -1952,26 +1889,6 @@ Check Syntax separates four classes of identifiers:
             [(syntax? ct) 
              (when (syntax-original? ct)
                (add-id id-set ct))]
-            [else (void)])))
-
-      ;; add-bis-tree : cons-tree id-set -> void
-      ;; similar to add-cons-tree, except it
-      ;; flattens the tree associated with the 'bound-in-source property
-      (define (add-bis-tree ct id-set)
-        (let loop ([ct ct])
-          (cond
-            [(and (pair? ct)
-                  (syntax? (car ct))
-                  (syntax? (cdr ct)))
-             (when (and (identifier? (car ct))
-                        (syntax-original? (car ct))
-                        (identifier? (cdr ct))
-                        (syntax-original? (cdr ct)))
-               (add-id id-set (car ct))
-               (add-id id-set (cdr ct)))]
-            [(pair? ct) 
-             (loop (car ct))
-             (loop (cdr ct))]
             [else (void)])))
 
       ;; extract-provided-vars : syntax -> (listof syntax[identifier])

@@ -247,6 +247,11 @@
 	(compose get-annotation zodiac:bound-varref-binding))
 
       ;;----------------------------------------------------------------------------
+      ;; special constants
+      ;;
+      (define-struct c-lambda (function-name scheme-name body arity))
+      
+      ;;----------------------------------------------------------------------------
       ;; error/warning structures
       ;;
       (define-struct compiler:message (ast message))

@@ -20,6 +20,9 @@
 ; Drops MrSpidey-specific forms.
 ; Detects known immutability of signature vectors produced by */sig
 ;  forms
+; Lambdas that are really c-lambdas are converted to quote forms
+;  containing c-lambda records
+; Applications that are really c-declares are converted to voids
 
 ;;; Annotatitons: ----------------------------------------------
 ;;    binding - `binding-properties' structure
@@ -200,22 +203,44 @@
 		     ;; LAMBDA EXPRESSIONS
 		     ;;
 		     [(zodiac:case-lambda-form? ast)
-		      (let ([args (zodiac:case-lambda-form-args ast)]
-			    [bodies (zodiac:case-lambda-form-bodies ast)])
-			(for-each
-			 (lambda (args)
-			   (for-each (lambda (b) (prephase:init-binding-properties! b #f #f #f))
-				     (zodiac:arglist-vars args)))
-			 args)
-			(let ([ast (zodiac:make-case-lambda-form
-				    (zodiac:zodiac-stx ast)
-				    (zodiac:parsed-back ast)
-				    args
-				    (begin-map (lambda (e) (prephase! e in-mod? #f #f))
-					       (lambda (e) (prephase! e in-mod? #t #f))
-					       bodies))])
-			  (set-annotation! ast name)
-			  ast))]
+		      ;; Check for 'mzc-cffi attribute:
+		      (if (syntax-property (zodiac:zodiac-stx ast) 'mzc-cffi)
+
+			  ;; A C glue function. Change to a quote so it gets treated atomically
+			  (let* ([quote-expr (cadr
+					      (zodiac:begin-form-bodies (car (zodiac:case-lambda-form-bodies ast))))]
+				 [elems (syntax-e (zodiac:zodiac-stx (zodiac:quote-form-expr quote-expr)))]
+				 [fname (syntax-e (car elems))]
+				 [sname (syntax-e (cadr elems))]
+				 [arity (syntax-e (caddr elems))]
+				 [body (syntax-e (cadddr elems))])
+			    (register-c-lambda-function fname body)
+			    (zodiac:make-quote-form
+			     (zodiac:zodiac-stx ast)
+			     (zodiac:parsed-back ast)
+			     (zodiac:make-read
+			      (datum->syntax-object
+			       #f
+			       (make-c-lambda fname sname body arity)
+			       #f))))
+			  
+			  ;; Normal lambda
+			  (let ([args (zodiac:case-lambda-form-args ast)]
+				[bodies (zodiac:case-lambda-form-bodies ast)])
+			    (for-each
+			     (lambda (args)
+			       (for-each (lambda (b) (prephase:init-binding-properties! b #f #f #f))
+					 (zodiac:arglist-vars args)))
+			     args)
+			    (let ([ast (zodiac:make-case-lambda-form
+					(zodiac:zodiac-stx ast)
+					(zodiac:parsed-back ast)
+					args
+					(begin-map (lambda (e) (prephase! e in-mod? #f #f))
+						   (lambda (e) (prephase! e in-mod? #t #f))
+						   bodies))])
+			      (set-annotation! ast name)
+			      ast)))]
 		     
 		     ;;----------------------------------------------------------
 		     ;; LET EXPRESSIONS
@@ -475,58 +500,70 @@
 		     ;; ((lambda (x*) M) y*) -> (let ([x y]*) M)
 		     ;;
 		     [(zodiac:app? ast)
-
-		      (let ([process-normally
-			     (lambda ()
-			       (zodiac:set-app-fun!
-				ast
-				(prephase! (zodiac:app-fun ast) in-mod? #t #f))
-			       (let ([adhoc (preprocess:adhoc-app-optimization 
-					     ast
-					     (lambda (x)
-					       (prephase! x in-mod? #t #f)))])
-				 (if adhoc
-				     (prephase! adhoc in-mod? need-val? name)
-				     (begin
-				       (zodiac:set-app-args!
-					ast
-					(map (lambda (e) (prephase! e in-mod? #t #f))
-					     (zodiac:app-args ast)))
-				       ast))))])
-			
-			(if (and (zodiac:case-lambda-form? (zodiac:app-fun ast))
-				 (= 1 (length (zodiac:case-lambda-form-args 
-					       (zodiac:app-fun ast))))
-				 (zodiac:list-arglist? 
-				  (car (zodiac:case-lambda-form-args
-					(zodiac:app-fun ast)))))
+		      ;; Check for 'mzc-cffi attribute:
+		      (if (syntax-property (zodiac:zodiac-stx ast) 'mzc-cffi)
+			  
+			  ;; Really a c-declare
+			  (let* ([quote-expr (caddr (zodiac:app-args ast))]
+				 [str (syntax-e (zodiac:zodiac-stx (zodiac:quote-form-expr quote-expr)))])
+			    (register-c-declaration str)
+			    ;; return a void
+			    (zodiac:make-quote-form (zodiac:zodiac-stx ast)
+						    (make-empty-box)
+						    (zodiac:make-read
+						     (datum->syntax-object #f (void) #f))))
+			  
+			  (let ([process-normally
+				 (lambda ()
+				   (zodiac:set-app-fun!
+				    ast
+				    (prephase! (zodiac:app-fun ast) in-mod? #t #f))
+				   (let ([adhoc (preprocess:adhoc-app-optimization 
+						 ast
+						 (lambda (x)
+						   (prephase! x in-mod? #t #f)))])
+				     (if adhoc
+					 (prephase! adhoc in-mod? need-val? name)
+					 (begin
+					   (zodiac:set-app-args!
+					    ast
+					    (map (lambda (e) (prephase! e in-mod? #t #f))
+						 (zodiac:app-args ast)))
+					   ast))))])
 			    
-			    ;; optimize to let
-			    (let* ([L (zodiac:app-fun ast)]
-				   [args (zodiac:app-args ast)]
-				   [ids (zodiac:arglist-vars 
-					 (car (zodiac:case-lambda-form-args L)))]
-				   [body (car (zodiac:case-lambda-form-bodies L))]
-				   [ok? (= (length ids) (length args))])
-			      (unless ok?
-				((if (compiler:option:stupid) compiler:warning compiler:error)
-				 ast 
-				 "wrong number of arguments to literal function"))
-			      (if (not ok?)
-				  (process-normally)
-				  (prephase!
-				   (zodiac:make-let-values-form
-				    (zodiac:zodiac-stx ast)
-				    (zodiac:parsed-back ast)
-				    (map list ids)
-				    args
-				    body)
-				   in-mod? 
-				   need-val?
-				   name)))
-			    
-			    ;; don't optimize
-			    (process-normally)))]
+			    (if (and (zodiac:case-lambda-form? (zodiac:app-fun ast))
+				     (= 1 (length (zodiac:case-lambda-form-args 
+						   (zodiac:app-fun ast))))
+				     (zodiac:list-arglist? 
+				      (car (zodiac:case-lambda-form-args
+					    (zodiac:app-fun ast)))))
+				
+				;; optimize to let
+				(let* ([L (zodiac:app-fun ast)]
+				       [args (zodiac:app-args ast)]
+				       [ids (zodiac:arglist-vars 
+					     (car (zodiac:case-lambda-form-args L)))]
+				       [body (car (zodiac:case-lambda-form-bodies L))]
+				       [ok? (= (length ids) (length args))])
+				  (unless ok?
+				    ((if (compiler:option:stupid) compiler:warning compiler:error)
+				     ast 
+				     "wrong number of arguments to literal function"))
+				  (if (not ok?)
+				      (process-normally)
+				      (prephase!
+				       (zodiac:make-let-values-form
+					(zodiac:zodiac-stx ast)
+					(zodiac:parsed-back ast)
+					(map list ids)
+					args
+					body)
+				       in-mod? 
+				       need-val?
+				       name)))
+				
+				;; don't optimize
+				(process-normally))))]
 		     
 		     ;;-----------------------------------------------------------
 		     ;; WITH-CONTINUATION-MARK

@@ -1581,6 +1581,16 @@
 		    (emit-expr "self_modidx")]
 		   
 		   ;; HACK! - abused constants to communicate
+		   ;;  a direct call to scheme_make_prim_w_arity
+		   [(c-lambda? (zodiac:read-object ast))
+		    (let ([cl (zodiac:read-object ast)])
+		      (emit-expr "scheme_make_prim_w_arity(~a, ~s, ~a, ~a)"
+				 (c-lambda-function-name cl)
+				 (symbol->string (c-lambda-scheme-name cl))
+				 (c-lambda-arity cl)
+				 (c-lambda-arity cl)))]
+		   
+		   ;; HACK! - abused constants to communicate
 		   ;;  a direct call to scheme_read_compiled_stx_string():
 		   [(zodiac:varref? (zodiac:read-object ast))
 		    (let ([for-mod? (varref:has-attribute? (zodiac:read-object ast)

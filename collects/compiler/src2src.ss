@@ -1,6 +1,10 @@
 
 ;; Implements a source-to-source optimizer
 
+;; The src-to-src transformation currently drops
+;;  properties, which is bad. The 'mzc-cffi property is
+;;  specially preserved for `lambda' expressions.
+
 (module src2src mzscheme
   (require (lib "class.ss")
 	   (lib "class100.ss")
@@ -26,6 +30,12 @@
   ;; The following primitives either invoke functions, or
   ;;  install functions that can be used later.
   (define (non-valueable-prims) (procedure-calling-prims))
+
+  (define (keep-mzc-property stx-out stx)
+    (let ([v (syntax-property stx 'mzc-cffi)])
+      (if v
+	  (syntax-property stx-out 'mzc-cffi v)
+	  stx-out)))
 
   (define-struct context (need indef))
   ;; need = #f => don't need  the value
@@ -686,9 +696,11 @@
 
 	[sexpr
 	 (lambda ()
-	   (with-syntax ([rator (get-sexpr rator)]
-			 [(rand ...) (map get-sexpr rands)])
-	     (syntax/loc stx (rator rand ...))))])
+	   (keep-mzc-property
+	    (with-syntax ([rator (get-sexpr rator)]
+			  [(rand ...) (map get-sexpr rands)])
+	      (syntax/loc stx (rator rand ...)))
+	    stx))])
 
       (public
 	;; Checks whether the expression is an app of `values'
@@ -818,9 +830,11 @@
 		 (syntax/loc stx
 		   (case-lambda
 		    [vars . body] ...))
-		 (with-syntax ([body (car (syntax->list (syntax (body ...))))])
-		   (syntax/loc stx
-		     (lambda vars ... . body))))))])
+		 (keep-mzc-property
+		  (with-syntax ([body (car (syntax->list (syntax (body ...))))])
+		    (syntax/loc stx
+				(lambda vars ... . body)))
+		  stx))))])
       (sequence
 	(super-init stx))))
 

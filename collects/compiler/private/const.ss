@@ -275,6 +275,16 @@
 	  (cond
 	   ;; base case - constant does not have to be built
 	   [(vm:literal-constant? ast) (compiler:re-quote ast)]
+
+	   ;; c-lambda (kindof a hack)
+	   [(c-lambda? ast)
+	    (compiler:add-const! (compiler:re-quote 
+				  (zodiac:make-read
+				   (datum->syntax-object
+				    #f
+				    ast ;; See vm2c.ss
+				    #f)))
+				 varref:static)]
 	   
 	   ;; a box has a constant inside it to mess with, yet it's
 	   ;; still a scalar

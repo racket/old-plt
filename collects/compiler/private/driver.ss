@@ -532,6 +532,14 @@
       (define (get-s:file-block) s:file-block)
       (define (compiler:get-setup-suffix) compiler:setup-suffix)
 
+      (define c-declares null)
+      (define (register-c-declaration str)
+	(set! c-declares (cons str c-declares)))
+
+      (define c-lambdas null)
+      (define (register-c-lambda-function name body)
+	(set! c-lambdas (cons (cons name body) c-lambdas)))
+
       ;;-----------------------------------------------------------------------------
       ;; THE MAIN DRIVING ROUTINE
 
@@ -1036,6 +1044,28 @@
 				     (if (compiler:option:compile-for-embedded)
 					 ""
 					 "e"))
+			    
+			    (unless (null? c-declares)
+			      (fprintf c-port "~n/* c-declare literals */~n~n")
+			      (for-each
+			       (lambda (c-declare)
+				 (fprintf c-port "~a~n" c-declare))
+			       c-declares)
+			      (fprintf c-port "~n/* done with c-declare literals */~n~n"))
+
+			    (unless (null? c-lambdas)
+			      (fprintf c-port "~n/* c-lambda implementations */~n~n")
+			      (for-each
+			       (lambda (c-lambda)
+				 (let ([name (car c-lambda)]
+				       [body (cdr c-lambda)])
+				   (fprintf c-port "Scheme_Object *~a(int argc, Scheme_Object **argv) {\n"
+					    name)
+				   (fprintf c-port "~a~n" body)
+				   (fprintf c-port "}~n")))
+			       c-lambdas)
+			      (fprintf c-port "~n/* done with c-lambda implementations */~n~n"))
+
 			    (fprintf c-port "#include \"mzc.h\"~n~n")
 			    (vm->c:emit-struct-definitions! (compiler:get-structs) c-port)
 			    (vm->c:emit-symbol-declarations! c-port)

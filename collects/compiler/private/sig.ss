@@ -109,6 +109,8 @@
 
      compiler:bound-varref->binding 
 
+     (struct c-lambda (function-name scheme-name body arity))
+
      (struct compiler:message (ast message))
      (struct compiler:error ())
      (struct compiler:fatal-error ())
@@ -393,6 +395,9 @@
      compiler:get-setup-suffix
 
      compiler:multi-o-constant-pool
+
+     register-c-lambda-function
+     register-c-declaration
 
      debug
      debug:get-port))

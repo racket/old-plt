@@ -130,11 +130,7 @@
   (define source-is-c++? (regexp-match #rx"([.]cc$)|([.]cxx$)" file-in))
 
   (define (change-suffix filename new)
-    (regexp-replace #rx"[.][^.]*$" 
-		    (if (string? filename)
-			(string->bytes/utf-8 filename)
-			filename)
-		    new))
+    (path-replace-suffix filename new))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; "AST" structures
@@ -770,7 +766,7 @@
 
   (when (and pgc? precompiled-header)
     (printf "#include \"~a\"~n" (let-values ([(base name dir?) (split-path precompiled-header)])
-				  name)))
+				  (path->string name))))
 
   (when palm?
     (printf "#include \"segmap.h\"~n"))

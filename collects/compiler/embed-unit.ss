@@ -88,7 +88,7 @@
 
       (define (prepare-macosx-mred exec-name dest aux variant)
 	(let* ([name (let-values ([(base name dir?) (split-path dest)])
-		       (regexp-replace "[.]app$" name ""))]
+		       (path-replace-suffix name #""))]
 	       [variant-suffix (case variant
 				 [(normal) ""]
 				 [(3m) "3m"])]
@@ -121,10 +121,7 @@
 	      (error 'make-executable "bad file-types spec: ~e" file-types)))
 	  (when resource-files
 	    (unless (and (list? resource-files)
-			 (andmap (lambda (s)
-				   (and (string? s)
-					(or (absolute-path? s)
-					    (relative-path? s))))
+			 (andmap path-string?
 				 resource-files))
 	      (error 'make-executable "resource-files is not a list of paths: ~e" resource-files)))
 
@@ -170,13 +167,13 @@
 			       orig-plist
 			       
 			       "CFBundleExecutable" 
-			       name
+			       (path->string name)
 			       
 			       "CFBundleSignature"
 			       creator
 			       
 			       "CFBundleIdentifier" 
-			       (format "org.plt-scheme.~a" name))]
+			       (format "org.plt-scheme.~a" (path->string name)))]
 		   [new-plist (if file-types
 				  (plist-replace
 				   new-plist
@@ -226,7 +223,7 @@
 	    (write-plist 
 	     `(dict ,@(if keep-exe?
 			  `((assoc-pair "executable name"
-					,exec-name))
+					,(path->string exec-name)))
 			  null)
 		    (assoc-pair "stored arguments"
 				(array ,@flags)))
@@ -498,7 +495,7 @@
 					     (if launcher?
 						 (if (and (eq? 'windows (system-type))
 							  keep-exe?)
-						     (list exe) ; argv[0]
+						     (list (path->string exe)) ; argv[0]
 						     null)
 						 (list "-k" start-s end-s))
 					     cmdline)])

@@ -69,8 +69,10 @@
   (define un-plthome-ify
     (maybe-cdr-op 'un-plthome-ify
      (lambda (path)
-       (if (and (pair? path) (eq? 'plthome (car path)))
-         (if (equal? (cdr path) #"") 
-	     plthome 
-	     (build-path plthome (bytes->path (cdr path))))
-         path)))))
+       (if (and (pair? path) 
+		(eq? 'plthome (car path))
+		(bytes? (cdr path)))
+	   (if (equal? (cdr path) #"") 
+	       plthome 
+	       (build-path plthome (bytes->path (cdr path))))
+	   path)))))

@@ -692,7 +692,7 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
 #endif
   }
   if (mbar && mbar->wxHelpHackMenu && mbar->iHelpMenuHackNum) {
-    Str255 t = "\pAboutŠ";
+    Str255 t = "\pAbout\212";
     wxNode *n;
     n = mbar->wxHelpHackMenu->menuItems->Nth(mbar->iHelpMenuHackNum - 1);
     if (n) {

@@ -1,6 +1,32 @@
 
-The _readline_ library (not to be confused with MzScheme's `read-line'
-procedure) provides glue for using GNU's readline library with the
-MzScheme read-eval-print-loop.
+The _readline_ collection (not to be confused with MzScheme's
+`read-line' procedure) provides glue for using GNU's readline library
+with the MzScheme read-eval-print-loop. It has been tested under Linux
+(various flavors), FreeBSD, and Solaris.
 
-To use 
+To use readline, you must be able to compile the "mzrl.c" file to
+produce a MzScheme extension, which requires a C compiler. The
+"mzmake.ss" program in the "readline" library attempts to compile it
+for you, and the collection installer runs "mzmake.ss". Thus, if the
+installation succeeds, you can use the readline library right
+away. Otherwise, you may have to modified "mzmake.ss" to get it to
+work.
+
+
+The _readline.ss_ library provides two functions:
+
+> (readline prompt-string) - prints the given prompt string and reads
+  an S-expression.
+
+> (add-history s) - adds the given string to the readline history,
+  which is accessible to the user via the up-arrow key
+
+The _rep.ss_ library installs a readline-based function to implent the
+prompt-and-read part of MzScheme's read-eval-print loop.
+
+KNOWN BUG :Hitting ctl-C more than once tends to make readline or
+MzScheme crash.
+
+
+                                                   mflatt@cs.utah.edu
+

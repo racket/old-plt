@@ -5,78 +5,98 @@ string=? ;  exit -1
 string=? ; fi
 string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 
+;;; This program attempts to compile and link mzrl.c.
+;;; See doc.txt for more information.
+
+(define mach-id (string->symbol (system-library-subpath)))
+
+;; Is the readline library in /usr/local/gnu ?
+
+;; We look for the readline library and includes in the 
+;;  following places:
+(define search-path
+  (list "/usr"
+	"/usr/local/gnu"
+	;; Hack for the author's convenience:
+	(format "/home/mflatt/proj/readline-2.1/~a" mach-id)))
+
+(define rl-path
+  (ormap (lambda (x)
+	   (and (directory-exists? (build-path x "include" "readline"))
+		(or (file-exists? (build-path x "lib" "libreadline.a"))
+		    (file-exists? (build-path x "lib" "libreadline.so")))
+		x))
+	 search-path))
+
+(unless rl-path
+  (fprintf (current-error-port)
+	   "mzmake.ss: can't find readline include files and/or library;~
+	  ~n  try editing `search-path' in mzmake.ss~n")
+  (exit 1))
+
 (require-library "make.ss" "make")
 (require-library "link.ss" "dynext")
 (require-library "compile.ss" "dynext")
 (require-library "file.ss" "dynext")
-(require-library "file.ss")
 
+(require-library "file.ss")
 (require-library "functio.ss")
 
+(make-print-checking #f)
+
+;; Used as make dependencies:
 (define header (build-path (collection-path "mzscheme" "include") "scheme.h"))
 (define version-header (build-path (collection-path "mzscheme" "include") "schvers.h"))
 
 (define dir (build-path "compiled" "native" (system-library-subpath)))
-(define mzrl.so (build-path dir "mzrl.so"))
-(define mzrl.o (build-path dir "mzrl.o"))
+(define mzrl.so (build-path dir (append-extension-suffix "mzrl")))
+(define mzrl.o (build-path dir (append-object-suffix "mzrl")))
 
+;; Function used to add a command-line flag:
 (define (add-flags fp flags)
   (fp (append (fp) flags)))
 
-(define (files dir regexp)
-  (let loop ([l (directory-list dir)])
-    (cond
-     [(null? l) null]
-     [(regexp-match regexp (car l)) (cons (build-path dir (car l))
-					  (loop (cdr l)))]
-     [else (cdr l)])))
+;; Add -I to compiler command-line
+(add-flags current-extension-compiler-flags
+	   (list (format "-I~a/include" rl-path)))
 
-(define mach-id (string->symbol (system-library-subpath)))
-
-(when (and (eq? mach-id 'i386-linux)
-	   (file-exists? "/usr/lib/libreadline.so"))
-      (set! mach-id 'i386-linux/readline))
-
-(define readline-in-/usr/local/gnu?
-  (directory-exists? "/usr/local/gnu/include/readline"))
-
-; Compiler flags
+;; More platform-specific compiler flags.
 (case mach-id
-  [(sparc-solaris i386-solaris i386-linux)
-   (add-flags current-extension-compiler-flags
-	      (list "-I/home/mflatt/proj/readline-2.1"))]
   [(rs6k-aix)
    (add-flags current-extension-compiler-flags
-	      (cons "-DNEEDS_SELECT_H"
-		    (if readline-in-/usr/local/gnu?
-			(list "-I/usr/local/gnu/include")
-			null)))]
+	      (list "-DNEEDS_SELECT_H"))]
   [else (void)])
 
-; Linker flags
+;; If we don't have a .so file, we need to make the linker
+;;   use the whole archive:
+(when (not (file-exists? (build-path rl-path "lib" "libreadline.so")))
+  (case mach-id
+    [(sparc-solaris i386-solaris)
+     (add-flags current-extension-linker-flags
+		(list "-u" "rl_readline_name"))]
+    [(i386-linux i386-freebsd)
+     (add-flags current-extension-linker-flags
+		(list "--whole-archive"))]
+    [else (fpritnf (current-error-port)
+		   "mzmake.ss Warning: trying to use .a library, but don't know how to force inclusion;~
+                  ~n   result may have undefined references~n")]))
+
+;; Add -L and -l for readline:
+(add-flags current-extension-linker-flags 
+	   (list (format "-L~a/lib" rl-path)
+		 "-lreadline"))
+
+; More platform-specific linker flags.
 (case mach-id
   [(sparc-solaris i386-solaris)
    (add-flags current-extension-linker-flags
-	      (list "-ltermcap"
-		    "-u" "rl_readline_name"
-		    (format "/home/mflatt/proj/readline-2.1/~asolaris/libreadline.a"
-			    (if (eq? mach-id 'i386-solaris)
-				"i386-"
-				""))))]
-  [(i386-linux)
-   (add-flags current-extension-linker-flags
-	      (list "--whole-archive"
-		    "-L/home/mflatt/proj/readline-2.1/linux/"
-		    "-lreadline"))]
-  [else (add-flags current-extension-linker-flags 
-		   (list (if readline-in-/usr/local/gnu?
-			     "-L/usr/local/gnu/lib"
-			     "-L/usr/local/lib")
-			 "-lreadline"))
-	(when (eq? mach-id 'rs6k-aix)
-	      (add-flags current-extension-linker-flags 
-			 (list "-lc")))])
+	      (list "-ltermcap"))]
+  [(rs6k-aix)
+   (add-flags current-extension-linker-flags 
+	      (list "-lc"))]
+  [else (void)])
 
+;; Add the -lcurses flag:
 (add-flags current-extension-linker-flags (list "-lcurses"))
 
 (define (delete/continue x)

@@ -7,16 +7,16 @@
 	   "sexp-to-re.ss"
 	   (lib "list.ss"))
   
-  (provide generate-table compile-table)
+  (provide generate-table)
   
-  ;; generate-table : syntax-object -> lexer-table
+  ;; generate-table : (syntax-object list) syntax-object -> lexer-table
   ;; Creates the lexer's tables from a list of sexp-regex, action pairs.
   (define (generate-table rules s)
     (let* (
            ;; A counter
            (index -1)
            
-           (regs (map (lambda (x) (car (syntax->list x))) (syntax->list rules)))
+           (regs (map (lambda (x) (car (syntax->list x))) rules))
            
            (actions (list->vector 
                      (map 
@@ -27,7 +27,7 @@
                            `(lambda (start-pos end-pos lexeme return-without-pos input-port)
                               ,action)
                            action)))
-                      (syntax->list rules))))
+                      rules)))
            
            ;; big-re combines the sexp-res into one, so a single dfa can be built
            (big-re (datum->syntax-object 
@@ -54,7 +54,7 @@
            ;; that the state is not final)
            (finals (make-vector (length (dfa-states dfa)) #f))
            
-           ;; For each state whether the can ignore the next input
+           ;; For each state whether the lexer can ignore the next input.
            ;; It can do this only if there are no transitions out of the
            ;; current state.
            (no-look (make-vector (length (dfa-states dfa)) #t))
@@ -133,14 +133,14 @@
                     finals
                     no-look))))
   
-  (define (compile-table table)
+  #;(define (compile-table table)
     (let ((code (build-code table)))
       `(c-lambda (scheme-object scheme-object) ;; input-port peek-string
 		 scheme-object 
 		 ,code)))
   
   
-  (define (build-code table)
+  #;(define (build-code table)
     (let* ((trans (table-trans table))
 	   (eof (table-eof table))
 	   (start-state (table-start table))

@@ -3,6 +3,8 @@ _parser-tools_
 This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
+CHANGE: added support for custom input-ports that return non-character data (via (special)).
+
 CHANGE: token-name, token-value and token? functions are now exported from lex.ss.
 
 CHANGE: Regular expression of the form (symbol) are no longer valid and symbol
@@ -83,6 +85,11 @@ This gives you the following syntactic forms:
    then there will always be a match and custom-error-behavior will be
    executed to handle the error situation as desired, only consuming
    the first character from the input buffer.
+
+In addition to (re action) the lexer treats ((special) action)
+differently.  If the input port returns a non-character, non-eof value
+the lexer will invoke the action provided with special.
+
 
 > (lexer-src-pos (re action) ...) like a lexer, but the return of each
    match is (list action-result start-pos end-pos) instead of simply

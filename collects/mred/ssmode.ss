@@ -242,24 +242,27 @@
 			  (clear-old-location)
 			  (set! clear-old-location (lambda () (void)))
 			  (unless just-clear?
-			    (let ([here (send edit get-start-position)]
-				  [there (send edit get-end-position)]
-				  [is-paren?
-				   (lambda (f char)
-				     (ormap (lambda (x) (char=? char (string-ref (f x) 0)))
-					    mred:scheme-paren:scheme-paren-pairs))])
+			    (let* ([here (send edit get-start-position)]
+				   [there (send edit get-end-position)]
+				   [is-paren?
+				    (lambda (f)
+				      (lambda (char)
+					(ormap (lambda (x) (char=? char (string-ref (f x) 0)))
+					       mred:scheme-paren:scheme-paren-pairs)))]
+				   [is-left-paren? (is-paren? car)]
+				   [is-right-paren? (is-paren? cdr)])
 			      (when (= here there)
 				(let/ec k
 				  (let-values ([(left right)
 						(cond
-						  [(is-paren? cdr (send edit get-character (sub1 here))) 
+						  [(is-right-paren? (send edit get-character (sub1 here))) 
 						   (let ([end-pos (mred:scheme-paren:scheme-backward-match
 								   edit here (get-limit edit here)
 								   backward-cache)])
 						     (if end-pos
 							 (values end-pos here)
 							 (k (void))))]
-						  [(is-paren? car (send edit get-character here))
+						  [(is-left-paren? (send edit get-character here))
 						   (let ([end-pos (mred:scheme-paren:scheme-forward-match
 								   edit here (send edit last-position)
 								   forward-cache)])
@@ -267,6 +270,7 @@
 							 (values here end-pos)
 							 (k (void))))]
 						  [else (k (void))])])
+				    (clear-old-location)
 				    (set! clear-old-location
 					    (send edit highlight-range left right 
 						  color
@@ -836,11 +840,11 @@
 	  (send keymap map-function "c:down" "down-sexp")
 	  (send keymap map-function "s:c:down" "select-down-sexp")
 
-	  (send keymap map-function "c:left" "forward-sexp")
-	  (send keymap map-function "s:c:left" "select-forward-sexp")
+	  (send keymap map-function "c:right" "forward-sexp")
+	  (send keymap map-function "s:c:right" "select-forward-sexp")
 
-	  (send keymap map-function "c:right" "backward-sexp")
-	  (send keymap map-function "s:c:right" "select-backward-sexp")
+	  (send keymap map-function "c:left" "backward-sexp")
+	  (send keymap map-function "s:c:left" "select-backward-sexp")
 
 	  (let ([map-meta
 		 (lambda (key func)

@@ -207,11 +207,12 @@
 			     #t)]
 	    [file-menu:revert 
 	     (lambda () 
-	       (let ([e (active-edit)]
-		     [b (box #f)])
-		 (if (or (null? (send e get-filename b)) (unbox b))
+	       (let* ([e (active-edit)]
+		      [b (box #f)]
+		      [filename (send e get-filename b)])
+		 (if (or (null? filename) (unbox b))
 		     (wx:bell)
-		     (send e load-file))
+		     (send e load-file filename))
 		 #t))]
 	    [file-menu:save (lambda () 
 			      (send (active-edit) save-file)

@@ -101,9 +101,7 @@
 	    [open-file
 	     (lambda (name)
 	       (let ([name (mzlib:file:normalize-path name project-dir)])
-		 (mred:gui-utils:show-busy-cursor
-		  (lambda ()
-		    (send group open-file name)))))]
+		 (send group open-file name)))]
 	    [get-selected-files
 	     (lambda ()
 	       (let* ([sels (box ())]

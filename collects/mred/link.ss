@@ -24,7 +24,7 @@
 	    [mode : mred:mode^
 		  (mred:mode@ debug keymap)]
 	    [handler : mred:handler^
-		     (mred:handler@ debug group editor-frame finder (core file@))] 
+		     (mred:handler@ debug group gui-utils editor-frame finder (core file@))] 
 	    [keymap : mred:keymap^
 		    (mred:keymap@ debug preferences exit finder handler
 				find-string scheme-paren gui-utils)]
@@ -35,7 +35,7 @@
 	    [path-utils : mred:path-utils^ (mred:path-utils@ debug)]
 	    [gui-utils : mred:gui-utils^ (mred:gui-utils@ debug (core function@) trigger)]
 	    [finder : mred:finder^
-		    (mred:finder@ debug preferences (core string@)
+		    (mred:finder@ debug container preferences (core string@)
 				(core function@) (core file@))]
 	    [icon : mred:icon^ (mred:icon@ debug constants)]
 	    [menu : mred:menu^ (mred:menu@ debug (core function@))]

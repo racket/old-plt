@@ -59,9 +59,9 @@
 	     (let ([ans (send keymap handle-key-event this event)])
 	       (or ans
 		   (super-pre-on-char receiver event))))]
-	  [pre-on-eventt
+	  [pre-on-event
 	   (lambda (receiver event)
-	     (or (and #f (send keymap handle-key-event this event))
+	     (or (send keymap handle-mouse-event this event)
 		 (super-pre-on-event receiver event)))])))
 
     (define make-menu-frame%

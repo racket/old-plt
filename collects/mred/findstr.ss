@@ -286,6 +286,7 @@
 	(class super% args
 	  (inherit panel active-edit active-canvas)
 	  (private
+	    [searching-direction 1]
 	    [search-edit
 	     (make-object
 	      (class-asi mred:edit:edit%
@@ -342,6 +343,7 @@
 	    (send media-canvas user-min-height 40)
 	    (hide-search))
 	  (public
+	    [set-search-direction (lambda (x) (set! searching-direction x))]
 	    [search
 	     (opt-lambda ([reset-anchor? #t])
 	       (if hidden?
@@ -349,28 +351,48 @@
 			  (send panel add-child search-panel)
 			  (send search-panel set-focus))
 		   (let* ([edit (active-edit)]
-			  [string (send search-edit get-text)])
+			  [string (send search-edit get-text)]
+			  [found
+			   (lambda (first-pos)
+			     (let ([last-pos (+ first-pos (* searching-direction 
+						(string-length string)))])
+			       (send edit set-position
+				     (min first-pos last-pos)
+				     (max first-pos last-pos))))])
 		     (when reset-anchor?
-		       (set! anchor (send edit get-end-position)))
-		     (let ([first-pos (send edit find-string string 1 anchor)])
+		       (set! anchor 
+			     (if (= 1 searching-direction)
+				 (send edit get-end-position)
+				 (send edit get-start-position))))
+		     (let ([first-pos (send edit find-string 
+					    string 
+					    searching-direction
+					    anchor)])
 		       (cond
 			 [(= -1 first-pos)
-			  (let ([pos (send edit find-string string 1 0)])
+			  (let ([pos (send edit find-string
+					   string 
+					   searching-direction
+					   (if (= 1 searching-direction)
+					       0
+					       (send edit last-position)))])
 			    (if (= -1 pos)
 				(begin (send edit set-position anchor)
 				       (wx:bell))
-				(send edit set-position pos (+ pos (string-length string)))))]
-			 [else 
-			  (send edit set-position first-pos
-				(+ first-pos (string-length string)))])))))]))))
+				(found pos)))]
+			 [else
+			  (found first-pos)])))))]))))
 
     (define find-string
       (lambda (canvas in-edit x y flags)
 	(cond
 	  [(not (member 'replace flags)) 
-	   (send (let loop ([p canvas]) 
-		   (if (is-a? p wx:frame%)
-		       p
-		       (loop (send p get-parent))))
-	    search)]
+	   (let ([frame (let loop ([p canvas]) 
+			  (if (is-a? p wx:frame%)
+			      p
+			      (loop (send p get-parent))))])
+	     (send frame set-search-direction (if (member 'reverse flags)
+						  -1
+						  1))
+	     (send frame search))]
 	  [else (make-object find-frame% canvas in-edit x y flags)])))))

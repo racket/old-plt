@@ -253,21 +253,21 @@
 	   (set! mred:console (mred:startup)))
 	 mred:console]
 	[else 
-	 (let ([arg (car args)]
-	       [rest (cdr args)])
+	 (let* ([arg (car args)]
+		[rest (cdr args)]
+		[use-next-arg
+		 (lambda (f)
+		   (if (null? rest)
+		       (error "expected another arg after ~a" arg)
+		       (begin (f (car rest))
+			      (apply mred:initialize (cdr rest)))))])
 	   (cond
-	     [(string-ci=? "-f" arg)
-	      (if (null? rest)
-		  (error "expected a filename to load after -f flag")
- 		  (begin (mred:debug:printf (format "Loading: ~a" (car rest)))
-			 (load-with-cd (car rest))
-			 (apply mred:initialize (cdr rest))))]
-	     [(string-ci=? "-e" arg)
-	      (if (null? rest)
-		  (error "expected a string to evaluate after -e flag")
-		  (begin (eval-string (car rest))
-			 (apply mred:initialize (cdr rest))))]
-	     [(string-ci=? "--" arg) (for-each mred:edit-file rest)]
+	     [(string-ci=? "-f" arg) (use-next-arg load-with-cd)]
+	     [(string-ci=? "-e" arg) (use-next-arg eval-string)]
+	     [(string-ci=? "--" arg) (use-next-arg
+				      (lambda (fn)
+					(set! files-to-open
+					      (cons fn files-to-open))))]
 	     [(or (string-ci=? "-q" arg) 
 		  (string-ci=? "--no-init-file" arg))
 	      (set! mred:load-user-setup? #f)

@@ -14,6 +14,7 @@
 CC=gcc
 CXX=gcc
 AS=gcc -c -x assembler-with-cpp
+PERL=/usr/local/bin/perl
 
 # Debugging flags
 DEBUGFLAGS = -g
@@ -191,6 +192,9 @@ $(OBJDIR)/main.o: main.c include/scheme.h sconfig.h cmdline.inc
 testext.o: testext.c
 	$(CC) $(MAIN_CFLAGS) -I/home/scheme/plt/compiler/ -c testext.c -o testext.o
 
+exn:
+	$(XMAKE) src/schexn.h
+
 CMACRODEST = cmacro.inc
 
 cmacro:
@@ -217,6 +221,9 @@ headers:
 ../../collects/mzscheme/lib/mzdyn.c: dynsrc/mzdyn.c
 	rm -rf ../../collects/mzscheme/lib/mzdyn.c
 	cp dynsrc/mzdyn.c ../../collects/mzscheme/lib/mzdyn.c
+
+src/schexn.h: src/exnsrc.ss src/makeexn
+	cd src; ../$(MZSCHEME) -gqr makeexn < exnsrc.ss > schexn.h
 
 src/$(CMACRODEST): src/macro.ss src/schvers.h
 	cd src; ../$(MZSCHEME) -gqrna sstoinc.ss $(CMACROEXTRA) < macro.ss > $(CMACRODEST)

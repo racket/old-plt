@@ -62,9 +62,9 @@ case $OS in
        LINUXTHLIBS=""
     fi
     if [ `file /bin/ls | grep ELF | wc -l` = 1 ]; then
-      make $GCOPTS LIBS="-lm -ldl -rdynamic $LINUXTHLIBS" THREADFLAGS="$LINUXTHFLAGS" "$@"
+      make $GCOPTS PERL=/usr/bin/perl LIBS="-lm -ldl -rdynamic $LINUXTHLIBS" THREADFLAGS="$LINUXTHFLAGS" "$@"
     else
-      make $GCOPTS "$@"
+      make $GCOPTS PERL=/usr/bin/perl "$@"
     fi
     ;;
   OSF1)

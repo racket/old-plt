@@ -314,7 +314,7 @@ case $OS in
       LIBS="-framework Carbon -L/sw/lib/ -ldl "
     else
       CFLAGS="$CFLAGS -DXONX "
-      LIBS="-framework Carbon -L/sw/lib/ $LIBS -ldl "
+      LIBS="-L/sw/lib/ $LIBS -ldl "
     fi
     ;;
   *)

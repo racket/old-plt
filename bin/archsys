@@ -62,6 +62,16 @@ case $OS in
   HP-UX)
     SYS=parisc${SEP}hpux
     ;;
+  BeOS)
+    case `$UNAME -m` in
+      BePC)
+       SYS=i586${SEP}beos
+       ;;
+      *)
+       SYS=ppc${SEP}beos
+       ;;
+    esac
+    ;;
   *)
     echo Unsupported platform $OS
     exit -1

@@ -86,6 +86,16 @@
 	     [else (error 'raw-help-desk "--search-level: not a number: ~a" x)]))
 	("Set the searching level to <level>" "level")])))
 
+  (define (dump-out-file filename)
+    (call-with-input-file filename
+      (lambda (port)
+	(let loop ()
+	  (let ([l (read-line port)])
+	    (unless (eof-object? l)
+	      (display l)
+	      (newline)
+	      (loop)))))))
+
   (parse-command-line
    "raw-help-desk"
    argv
@@ -100,7 +110,7 @@
   (printf "<h2><a target=_top href=\"http://www.cs.rice.edu/CS/PLT\"><img align=center border=0 src=\"http://www.cs.rice.edu/CS/PLT/pltlogo.gif\">PLT</a> search results</h2>~n")
   (printf "<!-- BANNER END -->~n")
   (printf "</head>~n")
-  (printf "<body>~n")
+  (dump-out-file "/net/www1/htdocs/CS/PLT/Formats/body-tag.shtml") ; (printf "<body>~n")
 
   (let/ec k
     (let ([err-msg (do-search

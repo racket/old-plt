@@ -26,6 +26,8 @@ OBJS =  salloc.o \
 	hash.o \
 	image.o \
 	list.o \
+	network.o \
+	numarith.o \
 	number.o \
 	numstr.o \
         objclass.o \
@@ -64,6 +66,8 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/hash.c \
 	$(srcdir)/image.c \
 	$(srcdir)/list.c \
+	$(srcdir)/network.c \
+	$(srcdir)/numarith.c \
 	$(srcdir)/number.c \
 	$(srcdir)/numstr.c \
 	$(srcdir)/objclass.c \
@@ -163,6 +167,10 @@ image.o: $(srcdir)/image.c
 	$(CC) $(CFLAGS) -c $(srcdir)/image.c -o image.o
 list.o: $(srcdir)/list.c
 	$(CC) $(CFLAGS) -c $(srcdir)/list.c -o list.o
+network.o: $(srcdir)/network.c
+	$(CC) $(CFLAGS) -c $(srcdir)/network.c -o network.o
+numarith.o: $(srcdir)/numarith.c
+	$(CC) $(CFLAGS) -c $(srcdir)/numarith.c -o numarith.o
 number.o: $(srcdir)/number.c
 	$(CC) $(CFLAGS) -c $(srcdir)/number.c -o number.o
 numstr.o: $(srcdir)/numstr.c
@@ -244,10 +252,14 @@ image.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/
         $(srcdir)/../src/stypes.h  $(srcdir)/schvers.h
 list.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h  
+network.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
+        $(srcdir)/../src/stypes.h  $(srcdir)/schfd.h $(srcdir)/mzmark.c
+numarith.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
+         $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h
 number.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
-         $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h $(srcdir)/random.inc
+         $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h
 numstr.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
-         $(srcdir)/../src/stypes.h
+         $(srcdir)/../src/stypes.h  $(srcdir)/random.inc
 objclass.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h \
           $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG)
 object.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h \

@@ -1076,34 +1076,6 @@ mark_pipe {
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
-#ifdef USE_TCP
-mark_tcp {
- mark:
-  Scheme_Tcp *tcp = (Scheme_Tcp *)p;
-
-  gcMARK(tcp->buffer);
-# ifdef USE_MAC_TCP
-  gcMARK(tcp->tcp);
-  gcMARK(tcp->activeRcv);
-# endif
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
-}
-
-# ifdef USE_MAC_TCP
-mark_write_data {
- mark:
-  WriteData *d = (WriteData *)p;
-    
-  gcMARK(d->xpb);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(WriteData));
-}
-# endif
-#endif
-
 #ifdef USE_FD_PORTS
 mark_input_fd {
  mark:
@@ -1150,6 +1122,38 @@ mark_oskit_console_input {
 #endif
 
 END port;
+
+/**********************************************************************/
+
+START network;
+
+#ifdef USE_TCP
+mark_tcp {
+ mark:
+  Scheme_Tcp *tcp = (Scheme_Tcp *)p;
+
+  gcMARK(tcp->b.buffer);
+# ifdef USE_MAC_TCP
+  gcMARK(tcp->tcp);
+  gcMARK(tcp->activeRcv);
+# endif
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Tcp));
+}
+
+# ifdef USE_MAC_TCP
+mark_write_data {
+ mark:
+  WriteData *d = (WriteData *)p;
+    
+  gcMARK(d->xpb);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(WriteData));
+}
+# endif
+#endif
 
 /**********************************************************************/
 

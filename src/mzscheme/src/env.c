@@ -338,8 +338,13 @@ static void make_init_env(void)
   MZTIMEIT(symbol, scheme_init_symbol(env));
   MZTIMEIT(list, scheme_init_list(env));
   MZTIMEIT(number, scheme_init_number(env));
+  MZTIMEIT(numarith, scheme_init_numarith(env));
+  MZTIMEIT(numstr, scheme_init_numstr(env));
   MZTIMEIT(port, scheme_init_port(env));
-  MZTIMEIT(port, scheme_init_port_fun(env));
+  MZTIMEIT(portfun, scheme_init_port_fun(env));
+#ifndef NO_TCP_SUPPORT
+  MZTIMEIT(network, scheme_init_network(env));
+#endif
   MZTIMEIT(string, scheme_init_string(env));
   MZTIMEIT(vector, scheme_init_vector(env));
   MZTIMEIT(char, scheme_init_char(env));
@@ -426,6 +431,7 @@ static void make_init_env(void)
   DONE_TIME(env);
 
 #ifndef NO_OBJECT_SYSTEM
+  MZTIMEIT(objclass, scheme_init_objclass(env));
   MZTIMEIT(object, scheme_init_object(env));
 #endif
 

@@ -26,9 +26,108 @@
 #include <string.h>
 #include <ctype.h>
 
+static Scheme_Object *number_to_string (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_to_number (int argc, Scheme_Object *argv[]);
+
+static Scheme_Object *random_seed(int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_random(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv);
+static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object **argv);
+static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv);
+
+static char *infinity_str = "+inf.0";
+static char *minus_infinity_str = "-inf.0";
+static char *not_a_number_str = "+nan.0";
+static char *other_not_a_number_str = "-nan.0";
+
 #define TO_DOUBLE scheme_TO_DOUBLE
 
 #define zeroi scheme_make_integer(0)
+
+void scheme_init_numstr(Scheme_Env *env)
+{
+  if (scheme_starting_up) {
+  }
+
+  scheme_add_global_constant("number->string", 
+			     scheme_make_prim_w_arity(number_to_string,
+						      "number->string",
+						      1, 2),
+			     env);
+  scheme_add_global_constant("string->number", 
+			     scheme_make_folding_prim(string_to_number,
+						      "string->number", 
+						      1, 2, 1),
+			     env);
+
+  scheme_add_global_constant("random", 
+			     scheme_make_prim_w_arity(sch_random,
+						      "random",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("random-seed", 
+			     scheme_make_prim_w_arity(random_seed,
+						      "random-seed",
+						      1, 1),
+			     env);
+  scheme_add_global_constant("make-pseudo-random-generator", 
+			     scheme_make_prim_w_arity(make_pseudo_random_generator,
+						      "make-pseudo-random-generator", 
+						      0, 0), 
+			     env);
+  scheme_add_global_constant("pseudo-random-generator?", 
+			     scheme_make_prim_w_arity(pseudo_random_generator_p,
+						      "pseudo-random-generator?", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("current-pseudo-random-generator", 
+			     scheme_register_parameter(current_pseudo_random_generator,
+						       "current-pseudo-random-generator",
+						       MZCONFIG_RANDOM_STATE),
+			     env);
+}
+
+/*========================================================================*/
+/*                           number parsing                               */
+/*========================================================================*/
+
+static Scheme_Object *read_special_number(const char *str, int pos)
+{
+  if ((str[pos] == '-' || str[pos] == '+') && isalpha((unsigned char)str[pos + 1])) {
+    char s[7];
+    int i;
+
+    for (i = 0; i < 6; i++) {
+      s[i] = tolower((unsigned char)str[i + pos]);
+    }
+    s[i] = 0;
+
+    if (!strcmp(s, infinity_str)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      return single_inf_object;
+#else
+      return scheme_inf_object;
+#endif
+    }
+    else if (!strcmp(s, minus_infinity_str)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      return single_minus_inf_object;
+#else
+      return scheme_minus_inf_object;
+#endif
+    }
+    else if (!strcmp(s, not_a_number_str)
+	     || !strcmp(s, other_not_a_number_str)) {
+#ifdef USE_SINGLE_FLOATS_AS_DEFAULT
+      return single_nan_object;
+#else      
+      return scheme_nan_object;
+#endif
+    }
+  }
+
+  return NULL;
+}
 
 /* Don't bother reading more than the following number of digits in a
    floating-point mantissa: */
@@ -254,7 +353,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   /* look for +inf.0, etc: */
   if (len -delta == 6) {
     Scheme_Object *special;
-    special = scheme_read_special_number(str, delta);
+    special = read_special_number(str, delta);
     if (special)
       return special;
   }
@@ -265,14 +364,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     char *s2;
     
     /* Try <special>+...i */
-    special = scheme_read_special_number(str, delta);
+    special = read_special_number(str, delta);
     if (special) {
       s2 = scheme_malloc_atomic(len - delta - 6 + 4 + 1);
       memcpy(s2, "+0.0", 4);
       memcpy(s2 + 4, str + delta + 6, len - delta - 5);
     } else {
       /* Try ...<special>i: */
-      special = scheme_read_special_number(str, len - 7);
+      special = read_special_number(str, len - 7);
       if (special) {
 	s2 = scheme_malloc_atomic(len - delta - 6 + 4 + 1);
 	memcpy(s2, str + delta, len - delta - 7);
@@ -317,7 +416,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     /* Try <special>@... */
     if (str[delta+6] == '@')
-      special = scheme_read_special_number(str, delta);
+      special = read_special_number(str, delta);
     else
       special = NULL;
     if (special) {
@@ -326,7 +425,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       spec_mag = 1;
     } else {
       if (str[len - 7] == '@')
-	special = scheme_read_special_number(str, len - 6);
+	special = read_special_number(str, len - 6);
       else
 	special = NULL;
       
@@ -1071,5 +1170,271 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   }
 
   return o;
+}
+
+/*========================================================================*/
+/*                           scheme functions                             */
+/*========================================================================*/
+
+static Scheme_Object *
+number_to_string (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *o = argv[0];
+  long radix;
+
+  if (!SCHEME_NUMBERP(o))
+    scheme_wrong_type("number->string", "number", 0, argc, argv);
+  
+  if (argc == 2) {
+    if (!SCHEME_INTP(argv[1]))
+      radix = 0;
+    else
+      radix = SCHEME_INT_VAL(argv[1]);
+
+    if ((radix != 2) && (radix != 8) && (radix != 10)  && (radix != 16)) {
+      scheme_wrong_type("number->string", "2, 8, 10, or 16", 1, argc, argv);
+      ESCAPED_BEFORE_HERE;
+    }
+    
+    radix = SCHEME_INT_VAL(argv[1]);
+  } else
+    radix = 10;
+
+  return scheme_make_string_without_copying(scheme_number_to_string(radix, o));
+}
+
+
+static Scheme_Object *
+string_to_number (int argc, Scheme_Object *argv[])
+{
+  long radix;
+  long len;
+  char *str;
+  int decimal_inexact;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("string->number", "string", 0, argc, argv);
+  if (argc == 2) {
+    if (SCHEME_INTP(argv[1]))
+      radix = SCHEME_INT_VAL(argv[1]);
+    else
+      radix = 0;
+    
+    if ((radix < 2) || (radix > 16)) {
+      scheme_wrong_type("string->number", "exact integer in [2, 16]", 1, argc, argv);
+      ESCAPED_BEFORE_HERE;
+    }
+  } else
+    radix = 10;
+
+  str = SCHEME_STR_VAL(argv[0]);
+  len = SCHEME_STRTAG_VAL(argv[0]);
+
+  decimal_inexact = SCHEME_TRUEP(scheme_get_param(scheme_config, 
+						  MZCONFIG_READ_DECIMAL_INEXACT));
+  
+  return scheme_read_number(str, len, 
+			    0, 0, decimal_inexact,
+			    radix, 0, NULL, NULL,
+			    0);
+}
+
+
+static char *double_to_string (double d)
+{
+  char buffer[100], *s;
+  int l, i, digits;
+
+  if (MZ_IS_NAN(d))
+    return not_a_number_str;
+  else if (MZ_IS_POS_INFINITY(d))
+    return infinity_str;
+  else if (MZ_IS_NEG_INFINITY(d))
+    return minus_infinity_str;
+
+  if (d == 0.0) {
+    /* Check for -0.0, since some printers get it wrong. */
+    if (scheme_minus_zero_p(d))
+      return "-0.0";
+  }
+
+  /* Initial count for significant digits is 14. That's big enough to
+     get most right, small enough to avoid nonsense digits. But we'll
+     loop in case it's not precise enough to get read-write invariance: */
+  digits = 14;
+  while (digits < 30) {
+    double check;
+    char *ptr;
+
+    sprintf(buffer, "%.*g", digits, d);
+
+    /* Did we get read-write invariance, yet? */
+    check = strtod(buffer, &ptr);
+    if (check == d)
+      break;
+
+    digits++;
+  }
+
+  l = strlen(buffer);
+  for (i = 0; i < l; i++) {
+    if (buffer[i] == '.' || isalpha((unsigned char)buffer[i]))
+      break;
+  }
+  if (i == l) {
+    buffer[i] = '.';
+    buffer[i + 1] = '0';
+    buffer[i + 2] = 0;
+    l += 2;
+  }
+  
+  s = (char *)scheme_malloc_atomic(strlen(buffer) + 1);
+  strcpy(s, buffer);
+
+  return s;
+}
+
+char *scheme_number_to_string(int radix, Scheme_Object *obj)
+{
+  char *s;
+
+  if (SCHEME_FLOATP(obj)) {
+    if (radix != 10)
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, 
+		       scheme_make_integer(radix),
+		       "number->string: "
+		       "inexact numbers can only be printed in base 10");
+    s = double_to_string(SCHEME_FLOAT_VAL(obj));
+  } else if (SCHEME_RATIONALP(obj)) {
+    Scheme_Object *n, *d;
+    char *ns, *ds;
+    int nlen, dlen;
+
+    n = scheme_rational_numerator(obj);
+    d = scheme_rational_denominator(obj);
+
+    ns = scheme_number_to_string(radix, n);
+    ds = scheme_number_to_string(radix, d);
+
+    nlen = strlen(ns);
+    dlen = strlen(ds);
+
+    s = (char *)scheme_malloc_atomic(nlen + dlen + 2);
+    memcpy(s, ns, nlen);
+    s[nlen] = '/';
+    strcpy(s + nlen + 1, ds);
+  } else if (SCHEME_COMPLEXP(obj)) {
+    Scheme_Object *r, *i;
+    char *rs, *is;
+    int rlen, ilen, offset = 0;
+
+    r = _scheme_complex_real_part(obj);
+    i = _scheme_complex_imaginary_part(obj);
+
+    rs = scheme_number_to_string(radix, r);
+    is = scheme_number_to_string(radix, i);
+
+    rlen = strlen(rs);
+    ilen = strlen(is);
+    s = (char *)scheme_malloc_atomic(rlen + ilen + 3);
+    memcpy(s, rs, rlen);
+    if ((is[0] != '-') && (is[0] != '+')) {
+      offset = 1;
+      s[rlen] = '+';
+    }
+    memcpy(s + rlen + offset, is, ilen);
+    s[rlen + offset + ilen] = 'i';
+    s[rlen + offset + ilen + 1] = 0;
+  } else {
+    if (SCHEME_INTP(obj))
+      obj = scheme_make_bignum(SCHEME_INT_VAL(obj));
+
+    s = scheme_bignum_to_string(obj, radix);
+  }
+
+  return s;
+}
+
+int scheme_check_double(const char *where, double d, const char *dest)
+{
+  if (MZ_IS_POS_INFINITY(d)
+      || MZ_IS_NEG_INFINITY(d)
+      || MZ_IS_NAN(d)) {
+    if (where)
+      scheme_raise_exn(MZEXN_APPLICATION_TYPE,
+		       scheme_make_double(d),
+		       scheme_intern_symbol("small integer"),
+		       "%s: no %s representation for %s",
+		       where, 
+		       dest,
+		       double_to_string(d));
+    return 0;
+  }
+
+  return 1;
+}
+
+/*========================================================================*/
+/*                       random number generator                          */
+/*========================================================================*/
+
+#include "random.inc"
+
+static Scheme_Object *
+random_seed(int argc, Scheme_Object *argv[])
+{
+  long i = -1;
+  Scheme_Object *o = argv[0];
+
+  if (scheme_get_int_val(o,  &i)) {
+    if (i > 2147483647)
+      i = -1;
+  }
+
+  if (i < 0)
+    scheme_wrong_type("random-seed", "exact integer in [0, 2147483647]", 0, argc, argv);
+
+  sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE));
+
+  return scheme_void;
+}
+
+static Scheme_Object *
+sch_random(int argc, Scheme_Object *argv[])
+{
+  long i = -1, v;
+  Scheme_Object *o = argv[0];
+
+  if (scheme_get_int_val(o,  &i)) {
+    if (i > 2147483647)
+      i = -1;
+  }
+
+  if (i <= 0)
+    scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
+  
+  v = sch_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
+
+  return scheme_make_integer_value(v);
+}
+
+static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-pseudo-random-generator", 
+			     scheme_make_integer(MZCONFIG_RANDOM_STATE),
+			     argc, argv,
+			     -1, pseudo_random_generator_p, "pseudo-random-generator", 0);
+}
+
+static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv)
+{
+  return scheme_make_random_state(scheme_get_milliseconds());
+}
+
+static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv)
+{
+  return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_random_state_type)) 
+	  ? scheme_true 
+	  : scheme_false);
 }
 

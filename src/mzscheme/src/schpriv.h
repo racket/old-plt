@@ -109,11 +109,14 @@ void scheme_init_type(Scheme_Env *env);
 void scheme_init_list(Scheme_Env *env);
 void scheme_init_port(Scheme_Env *env);
 void scheme_init_port_fun(Scheme_Env *env);
+void scheme_init_network(Scheme_Env *env);
 void scheme_init_file(Scheme_Env *env);
 void scheme_init_proc(Scheme_Env *env);
 void scheme_init_vector(Scheme_Env *env);
 void scheme_init_string(Scheme_Env *env);
 void scheme_init_number(Scheme_Env *env);
+void scheme_init_numarith(Scheme_Env *env);
+void scheme_init_numstr(Scheme_Env *env);
 void scheme_init_eval(Scheme_Env *env);
 void scheme_init_promise(Scheme_Env *env);
 void scheme_init_struct(Scheme_Env *env);
@@ -639,6 +642,9 @@ extern unsigned long scheme_stack_boundary;
 # endif
 #endif
 
+/* Compiler helper: */
+#define ESCAPED_BEFORE_HERE  return NULL
+
 /*========================================================================*/
 /*                         semaphores and locks                           */
 /*========================================================================*/
@@ -833,6 +839,8 @@ int scheme_is_complex_exact(const Scheme_Object *o);
 
 /****** Inexacts ******/
 
+#define REAL_NUMBER_STR "real number"
+
 Scheme_Object *scheme_double_to_integer(const char *where, double d);
 
 int scheme_check_double(const char *where, double v, const char *dest);
@@ -843,6 +851,7 @@ int scheme_check_float(const char *where, float v, const char *dest);
 #endif
 
 double scheme_get_val_as_double(const Scheme_Object *n);
+int scheme_minus_zero_p(double d);
 
 #if !defined(USE_IEEE_FP_PREDS) && !defined(USE_SCO_IEEE_PREDS)
 extern double scheme_infinity_val, scheme_minus_infinity_val;
@@ -871,14 +880,17 @@ extern int scheme_both_nan(double a, double b);
 # endif
 #endif
 
+#define IZI_REAL_PART(n) (((Scheme_Complex *)(n))->r)
+
 extern double scheme_infinity_val, scheme_minus_infinity_val;
 extern double scheme_floating_point_zero;
 extern double scheme_floating_point_nzero;
 extern Scheme_Object *scheme_zerod, *scheme_nzerod, *scheme_pi, *scheme_half_pi, *scheme_plus_i, *scheme_minus_i;
+extern Scheme_Object *scheme_inf_object, *scheme_minus_inf_object, *scheme_nan_object;
 #ifdef MZ_USE_SINGLE_FLOATS
 extern Scheme_Object *scheme_zerof, *scheme_nzerof, *scheme_single_scheme_pi;
+Scheme_Object *scheme_single_inf_object, *scheme_single_minus_inf_object, *scheme_single_nan_object;
 #endif
-extern Scheme_Object *scheme_inf_object, *scheme_minus_inf_object;
 
 /****** General numeric ******/
 
@@ -890,7 +902,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  Scheme_Object *port,
 				  int *div_by_zero,
 				  int test_only);
-Scheme_Object *scheme_read_special_number(const char *str, int pos);
 
 Scheme_Object *scheme_bin_gcd(const Scheme_Object *n1, const Scheme_Object *n2);
 Scheme_Object *scheme_bin_quotient(const Scheme_Object *n1, const Scheme_Object *n2);
@@ -910,13 +921,18 @@ Scheme_Object *scheme_odd_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_expt(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_modulo(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_sqrt(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_abs(int argc, Scheme_Object *argv[]);
 
 Scheme_Object *scheme_inexact_to_exact(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_exact_to_inexact(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_inexact_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_TO_DOUBLE(const Scheme_Object *n);
+Scheme_Object *scheme_to_bignum(const Scheme_Object *o);
+int scheme_is_integer(const Scheme_Object *o);
 Scheme_Object *scheme_zero_p(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_negative_p(int argc, Scheme_Object *argv[]);
-Scheme_Object *scheme_make_polar (int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_positive_p(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_make_polar(int argc, Scheme_Object *argv[]);
 
 Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);
 
@@ -978,23 +994,6 @@ int scheme_strncmp(const char *a, const char *b, int len);
 Scheme_Object *scheme_default_eval_handler(int, Scheme_Object *[]);
 Scheme_Object *scheme_default_print_handler(int, Scheme_Object *[]);
 Scheme_Object *scheme_default_prompt_read_handler(int, Scheme_Object *[]);
-
-/*========================================================================*/
-/*                          fds, TCP                                      */
-/*========================================================================*/
-
-#ifdef NO_TCP_SUPPORT
-# undef USE_UNIX_SOCKETS_TCP
-# undef USE_WINSOCK_TCP
-# undef USE_MAC_TCP
-#endif
-#if defined(USE_UNIX_SOCKETS_TCP) || defined(USE_WINSOCK_TCP) || defined(USE_MAC_TCP)
-# define USE_TCP
-#endif
-
-extern int scheme_active_but_sleeping;
-
-extern int scheme_internal_checking_char;
 
 /*========================================================================*/
 /*                          compile and link                              */
@@ -1353,6 +1352,19 @@ Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv);
 /*                               ports                                    */
 /*========================================================================*/
 
+#ifdef NO_TCP_SUPPORT
+# undef USE_UNIX_SOCKETS_TCP
+# undef USE_WINSOCK_TCP
+# undef USE_MAC_TCP
+#endif
+#if defined(USE_UNIX_SOCKETS_TCP) || defined(USE_WINSOCK_TCP) || defined(USE_MAC_TCP)
+# define USE_TCP
+#endif
+
+extern int scheme_active_but_sleeping;
+extern int scheme_internal_checking_char;
+extern int scheme_file_open_count;
+
 typedef struct Scheme_Indexed_String {
   MZTAG_IF_REQUIRED
   char *string;
@@ -1377,12 +1389,26 @@ typedef struct {
 #endif
 } Scheme_Pipe;
 
+#ifdef USE_TCP
+typedef struct Scheme_Tcp_Buf {
+  MZTAG_IF_REQUIRED
+  short refcount;
+  char *buffer;
+  short bufpos, bufmax;
+  short hiteof;
+} Scheme_Tcp_Buf;
+#endif
+
 extern Scheme_Object *scheme_string_input_port_type;
 extern Scheme_Object *scheme_string_output_port_type;
 extern Scheme_Object *scheme_user_input_port_type;
 extern Scheme_Object *scheme_user_output_port_type;
 extern Scheme_Object *scheme_pipe_read_port_type;
 extern Scheme_Object *scheme_pipe_write_port_type;
+#ifdef USE_TCP
+static Scheme_Object *scheme_tcp_input_port_type;
+static Scheme_Object *scheme_tcp_output_port_type;
+#endif
 
 void scheme_flush_orig_outputs(void);
 Scheme_Object *scheme_file_stream_port_p(int, Scheme_Object *[]);
@@ -1390,6 +1416,10 @@ Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Schem
 Scheme_Object *scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_write_string_avail(int argc, Scheme_Object *argv[]);
+
+#ifdef USE_TCP
+int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
+#endif
 
 Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   void *data,
@@ -1403,6 +1433,12 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
 #define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)
 #define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: " kind " port is closed", who);
+
+#ifdef USE_FCNTL_O_NONBLOCK
+# define MZ_NONBLOCKING O_NONBLOCK
+#else
+# define MZ_NONBLOCKING FNDELAY
+#endif
 
 typedef void (*Write_String_Fun)(char *str, long d, long len, struct Scheme_Output_Port *);
 typedef void (*Close_Fun_o)(struct Scheme_Output_Port *);

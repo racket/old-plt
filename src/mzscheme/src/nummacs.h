@@ -21,6 +21,15 @@
   All rights reserved.
 */
 
+#define NEED_NUMBER(name) \
+  scheme_wrong_type(#name, "number", 0, argc, argv)
+#define NEED_REAL(name) \
+  scheme_wrong_type(#name, REAL_NUMBER_STR, 0, argc, argv)
+#define NEED_INTEGER(name) \
+  scheme_wrong_type(#name, "integer", 0, argc, argv)
+#define WRONG_TYPE(name, expected, value) \
+  scheme_wrong_type(name, expected, -1, 0, (Scheme_Object **)&value)
+
 #ifdef MZ_USE_SINGLE_FLOATS
 # define FLOATWRAP(x) x
 # ifdef USE_SINGLE_FLOATS_AS_DEFAULT
@@ -341,28 +350,28 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 #define GEN_RETURN_N2(x) x return (Scheme_Object *)n2;
 #define GEN_SINGLE_SUBTRACT_N2(x) x if SCHEME_FLOATP(n2) return minus(1, (Scheme_Object **)&n2);
 
-#define GEN_SAME_INF(x) ((SCHEME_TRUEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_inf_object : scheme_minus_inf_object)
-#define GEN_OPP_INF(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_inf_object : scheme_minus_inf_object)
-#define GEN_MAKE_PZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_nzerod : scheme_zerod)
-#define GEN_MAKE_NZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? scheme_zerod : scheme_nzerod)
-#define GEN_MAKE_ZERO_Z(x, y) (minus_zero_p(y) ? GEN_MAKE_NZERO(x) : GEN_MAKE_PZERO(x))
-#define GEN_SAME_INF_Z(x, y) (minus_zero_p(y) ?  GEN_OPP_INF(x) : GEN_SAME_INF(x))
+#define GEN_SAME_INF(x) ((SCHEME_TRUEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? scheme_inf_object : scheme_minus_inf_object)
+#define GEN_OPP_INF(x) ((SCHEME_FALSEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? scheme_inf_object : scheme_minus_inf_object)
+#define GEN_MAKE_PZERO(x) ((SCHEME_FALSEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? scheme_nzerod : scheme_zerod)
+#define GEN_MAKE_NZERO(x) ((SCHEME_FALSEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? scheme_zerod : scheme_nzerod)
+#define GEN_MAKE_ZERO_Z(x, y) (scheme_minus_zero_p(y) ? GEN_MAKE_NZERO(x) : GEN_MAKE_PZERO(x))
+#define GEN_SAME_INF_Z(x, y) (scheme_minus_zero_p(y) ?  GEN_OPP_INF(x) : GEN_SAME_INF(x))
 
-#define GEN_SAME_SINF(x) ((SCHEME_TRUEP(positive_p(1, (Scheme_Object **)&x))) ? single_inf_object : single_minus_inf_object)
-#define GEN_OPP_SINF(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? single_inf_object : single_minus_inf_object)
-#define GEN_MAKE_PSZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? nzerof : zerof)
-#define GEN_MAKE_NSZERO(x) ((SCHEME_FALSEP(positive_p(1, (Scheme_Object **)&x))) ? zerof : nzerof)
-#define GEN_MAKE_SZERO_Z(x, y) (minus_zero_p(y) ? GEN_MAKE_NSZERO(x) : GEN_MAKE_PSZERO(x))
-#define GEN_SAME_SINF_Z(x, y) (minus_zero_p(y) ?  GEN_OPP_SINF(x) : GEN_SAME_SINF(x))
+#define GEN_SAME_SINF(x) ((SCHEME_TRUEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? scheme_single_inf_object : scheme_single_minus_inf_object)
+#define GEN_OPP_SINF(x) ((SCHEME_FALSEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? scheme_single_inf_object : scheme_single_minus_inf_object)
+#define GEN_MAKE_PSZERO(x) ((SCHEME_FALSEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? nzerof : zerof)
+#define GEN_MAKE_NSZERO(x) ((SCHEME_FALSEP(scheme_positive_p(1, (Scheme_Object **)&x))) ? zerof : nzerof)
+#define GEN_MAKE_SZERO_Z(x, y) (scheme_minus_zero_p(y) ? GEN_MAKE_NSZERO(x) : GEN_MAKE_PSZERO(x))
+#define GEN_SAME_SINF_Z(x, y) (scheme_minus_zero_p(y) ?  GEN_OPP_SINF(x) : GEN_SAME_SINF(x))
 
 #define NO_NAN_CHECK(x) /* empty */
-#define NAN_RETURNS_NAN(x) if (MZ_IS_NAN(x)) return nan_object
-#define NAN_RETURNS_SNAN(x) if (MZ_IS_NAN(x)) return single_nan_object
+#define NAN_RETURNS_NAN(x) if (MZ_IS_NAN(x)) return scheme_nan_object
+#define NAN_RETURNS_SNAN(x) if (MZ_IS_NAN(x)) return scheme_single_nan_object
 
 #ifdef NAN_EQUALS_ANYTHING
 # define NAN_CHECK_0_IF_WEIRD(x) if (MZ_IS_NAN(x)) return 0
-# define NAN_CHECK_NAN_IF_WEIRD(x) if (MZ_IS_NAN(x)) return nan_object
-# define SNAN_CHECK_NAN_IF_WEIRD(x) if (MZ_IS_NAN(x)) return single_nan_object
+# define NAN_CHECK_NAN_IF_WEIRD(x) if (MZ_IS_NAN(x)) return scheme_nan_object
+# define SNAN_CHECK_NAN_IF_WEIRD(x) if (MZ_IS_NAN(x)) return scheme_single_nan_object
 #else
 # define NAN_CHECK_0_IF_WEIRD(x) /* empty */
 # define NAN_CHECK_NAN_IF_WEIRD(x) /* empty */

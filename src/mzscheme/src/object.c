@@ -2535,8 +2535,6 @@ static Scheme_Object *PSubObjectDetail(Scheme_Object *obj, int argc, Scheme_Obje
 
 void scheme_init_object(Scheme_Env *env)
 {
-  scheme_init_objclass(env);
-
   if (scheme_starting_up) {
 #ifdef MZ_PRECISE_GC
     register_traversers();

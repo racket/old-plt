@@ -33,6 +33,11 @@
 	    name
 	    (constructor rewriter)))))
 
+    (define vocab->list
+      (lambda (vocab)
+	(cons (vocabulary-record-name vocab)
+	  (hash-table-map cons (vocabulary-record-this vocab)))))
+
     (define add-micro-form
       (add-micro/macro-form make-micro-resolution))
 
@@ -84,8 +89,9 @@
 ;	(printf "Expanding~n") (pretty-print (sexp->raw expr))
 ;	(printf "Expanding~n") (pretty-print expr)
 ;	(printf "Expanding~n") (display expr)
-;	(printf "Expanding in ~s~n" (get-vocabulary-name vocab))
+;	(printf "in ~s~n" (get-vocabulary-name vocab))
 ;	(printf "in vocabulary~n") (print-env vocab)
+;	(printf "in attributes~n") (hash-table-map attributes cons)
 ;	(printf "in~n") (print-env env) (newline)
 	(cond
 	  ((z:symbol? expr)

@@ -232,6 +232,32 @@
       (lambda-handler 'lambda)
       (lambda-handler '#%lambda))
 
+    (define-struct internal-definition (vars val))
+
+    (define internal-define-vocab
+      (create-vocabulary 'internal-define-vocab scheme-vocabulary))
+
+    (let ((define-values-handler
+	    (lambda (d-kwd)
+	      (add-micro-form d-kwd internal-define-vocab
+		(let* ((kwd (list d-kwd))
+			(in-pattern `(,d-kwd (var ...) val))
+			(m&e (pat:make-match&env in-pattern kwd)))
+		  (lambda (expr env attributes vocab)
+		    (cond
+		      ((pat:match-against m&e expr env)
+			=>
+			(lambda (p-env)
+			  (let* ((vars (pat:pexpand '(var ...) p-env kwd))
+				  (_ (map valid-syntactic-id? vars))
+				  (val (pat:pexpand 'val p-env kwd)))
+			    (make-internal-definition vars val))))
+		      (else
+			(static-error expr
+			  "Malformed internal definition")))))))))
+      (define-values-handler 'define-values)
+      (define-values-handler '#%define-values))
+
     (when (language>=? 'side-effecting)
       (let
 	((begin-handler
@@ -246,37 +272,52 @@
 		       =>
 		       (lambda (p-env)
 			 (let ((bodies (pat:pexpand '(b ...) p-env kwd)))
-			   (let ((peabodies
-				   (map (lambda (e)
-					  (expand-expr e env
-					    attributes vocab))
-				     bodies)))
+			   (if (get-top-level-status attributes)
+			     (if (null? bodies)
+			       (static-error expr "Malformed begin")
+			       (create-begin-form
+				 (map (lambda (e)
+					(expand-expr e env attributes vocab))
+				   bodies)
+				 expr))
 			     (let-values
 			       (((definitions terms)
-				  (let loop ((seen '()) (rest peabodies))
+				  (let loop ((seen '()) (rest bodies))
 				    (if (null? rest)
 				      (static-error expr
 					(if (null? seen)
 					  "Malformed begin"
 					  "Internal definitions not followed by expression"))
 				      (let ((first (car rest)))
-					(if (define-values-form? first)
-					  (loop (cons first seen)
-					    (cdr rest))
-					  (values (reverse seen) rest)))))))
-			       (let loop ((terms terms))
-				 (unless (null? terms)
-				   (when (define-values-form? (car terms))
-				     (static-error (car terms)
-				       "Internal definition not at beginning"))
-				   (loop (cdr terms))))
+					(let ((e-first
+						(expand-expr first env
+						  attributes
+						  internal-define-vocab)))
+					  (if (internal-definition? e-first)
+					    (loop (cons e-first seen)
+					      (cdr rest))
+					    (values (reverse seen)
+					      rest))))))))
 			       (if (null? definitions)
-				 (create-begin-form terms expr)
-				 (create-letrec*-values-form
-				   (map define-values-form-vars definitions)
-				   (map define-values-form-val definitions)
-				   (create-begin-form terms expr)
-				   expr)))))))
+				 (create-begin-form
+				   (map (lambda (e)
+					  (expand-expr e env attributes
+					    vocab))
+				     terms)
+				   expr)
+				 (expand-expr
+				   (structurize-syntax
+				     `(letrec*-values
+					,(map (lambda (def)
+						(list
+						  (internal-definition-vars
+						    def)
+						  (internal-definition-val
+						    def)))
+					   definitions)
+					,@terms)
+				     expr)
+				   env attributes vocab)))))))
 		     (else
 		       (static-error expr "Malformed begin")))))))))
 	(begin-handler 'begin)
@@ -503,10 +544,8 @@
 		(let ((define-values-helper
 			(lambda (handler)
 			  (lambda (expr env attributes vocab)
-			    (when (language<=? 'structured) ; < side-effecting,
-					; where begin kicks in
-			      (unless (at-top-level? attributes)
-				(static-error expr "Not at top-level")))
+			    (unless (at-top-level? attributes)
+			      (static-error expr "Not at top-level"))
 			    (cond
 			      ((pat:match-against m&e-1 expr env)
 				=>
@@ -524,15 +563,19 @@
 				    (set-top-level-status attributes
 				      top-level?)
 				    out)))
-			      (else (static-error expr "Malformed define-values")))))))
+			      (else (static-error expr
+				      "Malformed define-values")))))))
 		  (add-micro-form d-kwd scheme-vocabulary
 		    (define-values-helper
 		      (lambda (expr env attributes vocab vars val)
 			(let* ((id-exprs (map (lambda (v)
-						(expand-expr v env attributes vocab))
+						(expand-expr v env
+						  attributes vocab))
 					   vars))
-				(expr-expr (expand-expr val env attributes vocab)))
-			  (create-define-values-form id-exprs expr-expr expr)))))
+				(expr-expr (expand-expr val env
+					     attributes vocab)))
+			  (create-define-values-form id-exprs
+			    expr-expr expr)))))
 		  (add-micro-form d-kwd local-extract-vocab
 		    (define-values-helper
 		      (lambda (expr env attributes vocab vars val)

@@ -201,7 +201,7 @@
                [(pieces rebuilder) (expose src trans?)]
                [(annotated-tree sub-free-vars) (cons-tree-map/fv (annotate-from-info my-tail-bound trans?)
                                                                  pieces trans?)]
-               [(free-here) (varref-set-union (list local-free-vars sub-free-vars))]
+               [(free-here) (varref-set-pair-union local-free-vars sub-free-vars)]
                [(free-for-parent) (varref-set-remove-bindings free-here (stx-info-new-bindings info))]
                [(rebuilt) (rebuilder annotated-tree)]
                [(profiled) (if (eq? (stx-info-tailness info) 'lambda-body)
@@ -223,7 +223,7 @@
         (cond [(null? tree) (values null null)]
               [(pair? tree) (let*-values ([(lhs-ann lhs-fv) (cons-tree-map/fv fn (car tree) trans?)]
                                           [(rhs-ann rhs-fv) (cons-tree-map/fv fn (cdr tree) trans?)])
-                              (values (cons lhs-ann rhs-ann) (varref-set-union (list lhs-fv rhs-fv))))]
+                              (values (cons lhs-ann rhs-ann) (varref-set-pair-union lhs-fv rhs-fv)))]
               [else (fn tree)]))
       
       ;; expose : (syntax-object? boolean? -> (values stx-info? (cons-tree? -> syntax-object?))
@@ -414,8 +414,8 @@
       
       (define (free-vars-of stx trans?)
         (kernel-syntax-case stx trans?
-          [(#%top . var)
-           (list #`var)]
+          ;[(#%top . var) ; top-level vars commented out.  They cause problems, & you can look them up later.
+          ; (list #`var)]
           [var-stx
            (identifier? stx)
            (list stx)]
@@ -424,4 +424,8 @@
           [_
            null]))
       
-      (define annotate-top annotate-top-level-expr))))
+      (define (annotate-top . args) 
+        (begin
+          (fprintf (current-error-port) "entering annotate-top.\n")
+          (apply annotate-top-level-expr args)
+          (fprintf (current-error-port) "leaving annotate-top.\n"))))))

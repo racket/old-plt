@@ -197,7 +197,7 @@
            (begin (swallow-newline) cont)
            (value->cont vs cont))))))
   (cond [(regexp-match/fail-without-reading (command-marker-here-re) (stdin))
-         => (lambda (here) (display (car here)))]
+         => (lambda (here) (display (car here)) (cont))]
         [else (do-thunk (lambda () (eval (read))))]))
 
 (provide paren-pairs)

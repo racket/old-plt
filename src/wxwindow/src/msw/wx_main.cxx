@@ -279,8 +279,8 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
 
   // Get application name
   {
-    char name[500];
-    ::GetModuleFileName(hInstance, name, 499);
+    char name[1024];
+    ::GetModuleFileName(hInstance, name, 1023);
 
     command[count++] = copystring(name);
 
@@ -310,9 +310,9 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
     
       wxInitUserResource(s);
     } else {
-      char name[500], *s;
+      char name[1024], *s;
       int i;
-      ::GetModuleFileName(hInstance, name, 499);
+      ::GetModuleFileName(hInstance, name, 10923);
 
        i = strlen(name) - 1;    
        while (i && (name[i] != '\\'))

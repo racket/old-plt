@@ -11,26 +11,57 @@
 
 #include "wx.h"
 
+static int icon_w, icon_h;
+static HICON icons[3];
+
 wxMessage::wxMessage(wxPanel *panel, char *label, int x, int y, long style, char *name):
   wxbMessage(panel, label, x, y, style, name)
 {
-  Create(panel, label, NULL, x, y, style);
+  Create(panel, label, NULL, 0, x, y, style);
 }
 
 wxMessage::wxMessage(wxPanel *panel, wxBitmap *image, int x, int y, long style, char *name):
   wxbMessage(panel, image, x, y, style, name)
 {
-  Create(panel, NULL, image, x, y, style);
+  Create(panel, NULL, image, 0, x, y, style);
 }
   
-Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int x, int y, long style)
+wxMessage::wxMessage(wxPanel *panel, int iconID, int x, int y, long style, char *name):
+  wxbMessage(panel, "<icon>", x, y, style, name)
 {
+  Create(panel, NULL, NULL, iconID, x, y, style);
+}
+  
+Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID, int x, int y, long style)
+{
+  HICON icn = NULL;
+
   if (image) {
     if (!image->Ok() || (image->selectedIntoDC < 0))
-      return Create(panel, "<bad-image>", NULL, x, y, style);
+      return Create(panel, "<bad-image>", NULL, 0, x, y, style);
     
     image->selectedIntoDC++;
     bm_label = image;
+  } else if (iconID) {
+    if (!icon_w) {
+      char name[1024];
+
+      icon_w = GetSystemMetrics(SM_CXICON);
+      icon_h = GetSystemMetrics(SM_CYICON);
+
+      ::GetModuleFileName(NULL, name, 1023);
+      icn = ExtractIcon(NULL, name, 0);
+      icons[wxMSGICON_APP - 1] = (icn ? icn : LoadIcon(NULL, IDI_APPLICATION));
+      icons[wxMSGICON_WARNING - 1] = LoadIcon(NULL, IDI_WARNING);
+      icons[wxMSGICON_ERROR - 1] = LoadIcon(NULL, IDI_ERROR);
+    }
+
+    icn = icons[iconID - 1];
+    if (icn)
+      is_icon = TRUE;
+    else {
+      return Create(panel, "<bad-icon>", NULL, 0, x, y, style);
+    }
   }
 
   panel->AddChild(this);
@@ -54,6 +85,16 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int x, int 
     SendMessage((HWND)static_item, WM_CHANGEBITMAP,
                   (WPARAM)0xFFFF,
                   (LPARAM)image->ms_bitmap);
+  } else if (is_icon) {
+    static_item = wxwmCreateWindowEx(0, FafaStat, NULL,
+				     FS_BITMAP | FS_X2 | FS_Y2 | WS_CHILD 
+				     | WS_VISIBLE | WS_GROUP | WS_CLIPSIBLINGS,
+				     0, 0, 0, 0, cparent->handle, (HMENU)NewId(this),
+				     wxhInstance, NULL);
+    
+    SendMessage((HWND)static_item, WM_CHANGEICON,
+		(WPARAM)0xFFFF,
+		(LPARAM)icn);
   } else {
     static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
 				     STATIC_FLAGS | WS_CLIPSIBLINGS,
@@ -75,7 +116,9 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int x, int 
 
   panel->GetValidPosition(&x, &y);
 
-  SetSize(x, y, image ? image->GetWidth() : -1, image ? image->GetHeight() : -1);
+  SetSize(x, y, 
+	  (is_icon ? icon_w : (image ? image->GetWidth() : -1)), 
+	  (is_icon ? icon_h : (image ? image->GetHeight() : -1)));
   panel->AdvanceCursor(this);
   return TRUE;
 }
@@ -129,7 +172,7 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
 
 void wxMessage::SetLabel(char *label)
 {
-  if (bm_label)
+  if (bm_label || is_icon)
     return;
 
   RECT rect;

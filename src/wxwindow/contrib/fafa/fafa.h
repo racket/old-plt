@@ -27,6 +27,7 @@
 enum	{				/* Messages users */
 	WM_WHOAREYOU	= ( WM_USER + 0x101 ),
 	WM_CHANGEBITMAP	= ( WM_USER + 0x102 ),
+	WM_CHANGEICON	= ( WM_USER + 0x105 ),
 	/* Do not use BM_GET... : they are translated!!! */
 	FAFA_GETCHECK   = ( WM_USER + 0x103 ),
 	FAFA_SETCHECK   = ( WM_USER + 0x104 )
@@ -73,6 +74,7 @@ enum	{				/* Fafa Button Styles : */
 	FS_MEPLAT_BTM,			/* meplat + bitmap */
 	FS_CADRE_DOWN,			/* cadre enfonce */
 	FS_CADRE_UP,			/* cadre relief */
+	FS_ICON,			/* icons */
 
 	FS_X1		= ( 0 << 4 ),		/* position en X */
 	FS_X2		= ( 1 << 4 ),

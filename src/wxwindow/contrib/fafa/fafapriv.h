@@ -94,6 +94,9 @@ enum	{				/* Extra BYTES, Offsets : */
 #define	GetBitmapH()	GetWindowWord( w, OF_BHEIGHT )
 #define	SetBitmapH( f )	SetWindowWord( w, OF_BHEIGHT,  ( f ) )
 
+#define	ffGetIcon()	(HICON)GetWindowLong( w, OF_BITMAP )
+#define	ffSetIcon( f )	SetWindowLong( w, OF_BITMAP, ( LONG ) ( f ) )
+
 #define	TstF( w, f )	( ( ( w ) & f ) != 0 )
 #define	BtStyle( w )	( ( ( UINT ) ( w ) ) & 0xf )
 

@@ -98,6 +98,22 @@ HDC	h ;
 		        ReleaseDC( w, h ) ;
 			return 0 ;
 		}
+		case WM_CHANGEICON:
+		{
+			HICON f = (HICON)ml ;
+			LONG style = GetStyle() ;
+			
+			ffSetIcon(f) ;
+
+			/* Switch to Bitmap button */
+			style &= 0xfffffff0 ;
+			style |= FS_ICON ;
+			SetStyle(style) ;
+		        h = GetDC( w ) ;
+			DrawFafaStatic(w,h) ;
+		        ReleaseDC( w, h ) ;
+			return 0 ;
+		}
 		case WM_GETFONT:
 			return (LRESULT)GetFont() ;
 		case WM_PAINT :
@@ -191,6 +207,17 @@ text:			DrawTaggedText( h, & r, ( int ) GetStX( v ),
 			DrawCadreRelief( h, & r, ( int ) GetStY( v ), t,
 				( BtStyle( v ) == FS_CADRE_UP ) ) ;
 			goto text ;
+		case FS_ICON:
+		  {
+		    RECT	rt ;
+		    rt.left = ( int ) GetStX( v ) - 1;
+		    rt.top = ( int ) GetStY( v ) - 1;
+		    rt.right = rt.left + GetSystemMetrics(SM_CXICON);
+		    rt.bottom = rt.top + GetSystemMetrics(SM_CYICON);
+		    FillRect( h, & rt, brushFace ) ;
+		    DrawIcon(h, rt.left, rt.top, ffGetIcon());
+		  }
+		  break;
 		}
 
 	if ( IsDisabled() )

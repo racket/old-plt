@@ -342,9 +342,10 @@
 		     (make-vector (add1 (last-position)) null)))]
 	    [syncheck:clear-arrows
 	     (lambda () 
-	       (set! arrow-vector #f)
-	       (set! cursor-location #f)
-	       (invalidate-bitmap-cache))]
+	       (when (or arrow-vector cursor-location)
+		 (set! arrow-vector #f)
+		 (set! cursor-location #f)
+		 (invalidate-bitmap-cache)))]
 	    [syncheck:add-arrow
 	     (lambda (start-pos-left start-pos-right end-pos-left end-pos-right id-name rename)
 	       (let* ([arrow (make-arrow start-pos-left start-pos-right

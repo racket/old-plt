@@ -1722,7 +1722,7 @@ extern GC_bool GC_print_stats;	/* Produce at least some logging output	*/
 				/* Set from environment variable.	*/
 
 #ifndef NO_DEBUGGING
-GC_bool GC_dump_regularly;  /* Generate regular debugging dumps. */
+extern GC_bool GC_dump_regularly;  /* Generate regular debugging dumps. */
 # define COND_DUMP if (GC_dump_regularly) GC_dump();
 #else
 # define COND_DUMP

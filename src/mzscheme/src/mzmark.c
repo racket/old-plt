@@ -1217,7 +1217,6 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->print_port);
   
   gcMARK(pr->overflow_reply);
-  MARK_jmpup(&pr->overflow_cont);
 
   gcMARK(pr->values_buffer);
 
@@ -1284,7 +1283,6 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->print_port);
   
   gcFIXUP(pr->overflow_reply);
-  FIXUP_jmpup(&pr->overflow_cont);
 
   gcFIXUP(pr->values_buffer);
 
@@ -1725,6 +1723,7 @@ int modidx_val_MARK(void *p) {
   gcMARK(modidx->base);
   gcMARK(modidx->resolved);
   gcMARK(modidx->shift_cache);
+  gcMARK(modidx->cache_next);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }
@@ -1736,6 +1735,7 @@ int modidx_val_FIXUP(void *p) {
   gcFIXUP(modidx->base);
   gcFIXUP(modidx->resolved);
   gcFIXUP(modidx->shift_cache);
+  gcFIXUP(modidx->cache_next);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Modidx));
 }

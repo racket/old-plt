@@ -384,13 +384,22 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
   /* "Stack overflow" means running out of C-stack space. The other
      end of this handler (i.e., the target for the longjmp) is
      scheme_top_level_do in fun.c */
+  Scheme_Overflow *overflow;
 
   scheme_overflow_k = k;
-  scheme_init_jmpup_buf(&scheme_overflow_cont);
+  
+  overflow = MALLOC_ONE_RT(Scheme_Overflow);
+#ifdef MZTAG_REQUIRED
+  overflow->type = scheme_rt_overflow;
+#endif
+  overflow->prev = scheme_current_thread->overflow;
+  scheme_current_thread->overflow = overflow;
+
+  scheme_init_jmpup_buf(&overflow->cont);
   scheme_zero_unneeded_rands(scheme_current_thread); /* for GC */
-  if (scheme_setjmpup(&scheme_overflow_cont, scheme_current_thread,
-		      scheme_current_thread->cc_start)) {
-    scheme_reset_jmpup_buf(&scheme_overflow_cont);
+  if (scheme_setjmpup(&overflow->cont, overflow, scheme_current_thread->cc_start)) {
+    if (!overflow->captured) /* reset if not captured in a continuation */
+      scheme_reset_jmpup_buf(&overflow->cont);
     if (!scheme_overflow_reply) {
       /* No reply value means we should continue some escape. */
       scheme_longjmp(scheme_error_buf, 1);

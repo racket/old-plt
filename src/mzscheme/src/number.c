@@ -777,8 +777,7 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
       b = i1;
     }
     
-    r = 1;
-    while ((b > 0) && (r > 0)) {
+    while (b > 0) {
       r = a % b;
       a = b;
       b = r;
@@ -833,8 +832,7 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
       return scheme_make_double(b);
     }
     
-    r = 1;
-    while ((b > 0) && (r > 0)) {
+    while (b > 0) {
       r = fmod(a, b);
       a = b;
       b = r;
@@ -864,8 +862,7 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
       n2 = save;
     }
     
-    r = scheme_make_bignum(1);
-    while (SCHEME_BIGLEN(n2) && SCHEME_BIGLEN(r)) {
+    while (SCHEME_BIGLEN(n2)) {
       scheme_bignum_divide(n1, n2, NULL, &r, 0);
       n1 = n2;
       n2 = r;

@@ -782,6 +782,7 @@ typedef struct Scheme_Overflow {
   Scheme_Jumpup_Buf cont; /* continuation after value obtained in overflowed */
   struct Scheme_Overflow *prev; /* old overflow info */
   mz_jmp_buf savebuf; /* save old error buffer here */
+  int captured; /* set to 1 if possibly captured in a continuation */
 } Scheme_Overflow;
 
 typedef void (*Scheme_Kill_Action_Func)(void *);

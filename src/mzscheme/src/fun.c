@@ -901,18 +901,9 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
       while (1) {
 	/* We get `p' again because it might be a nestee: */
 	Scheme_Thread * volatile pp = scheme_current_thread;
-	Scheme_Overflow *overflow;
+	Scheme_Overflow * volatile overflow;
 
-	overflow = MALLOC_ONE_RT(Scheme_Overflow);
-#ifdef MZTAG_REQUIRED
-	overflow->type = scheme_rt_overflow;
-#endif
-      
-	memcpy(&overflow->cont, &scheme_overflow_cont, 
-	       sizeof(Scheme_Jumpup_Buf));
-	memset(&scheme_overflow_cont, 0, sizeof(Scheme_Jumpup_Buf)); /* see MARK_jmpup in type.c */
-	overflow->prev = pp->overflow;
-	pp->overflow = overflow;
+	overflow = pp->overflow;
       
 	memcpy(&overflow->savebuf, &pp->error_buf, sizeof(mz_jmp_buf));
 	if (scheme_setjmp(pp->error_buf)) {
@@ -954,15 +945,11 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	overflow = pp->overflow;
 	memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(mz_jmp_buf));
 	pp->overflow = overflow->prev;
-	memcpy(&scheme_overflow_cont, &overflow->cont, 
-	       sizeof(Scheme_Jumpup_Buf));
-	memset(&overflow->cont, 0, sizeof(Scheme_Jumpup_Buf)); /* see MARK_jmpup in type.c */
-	overflow = NULL; /* Maybe helps GC */
 	/* Reset overflow buffer and continue */
 	if (scheme_setjmp(pp->overflow_buf)) {
 	  /* handle again */
 	} else
-	  scheme_longjmpup(&scheme_overflow_cont);
+	  scheme_longjmpup(&overflow->cont);
       }
     }
   }
@@ -1930,6 +1917,14 @@ call_cc (int argc, Scheme_Object *argv[])
   memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
   cont->current_local_env = p->current_local_env;
   scheme_save_env_stack_w_thread(cont->ss, p);
+
+  {
+    Scheme_Overflow *overflow;
+    /* Mark overflows as captured: */
+    for (overflow = p->overflow; overflow && !overflow->captured; overflow = overflow->prev) {
+      overflow->captured = 1;
+    }
+  }
 
   /* Hide call/cc's arg off of stack */
   p->ku.k.p1 = argv[0];

@@ -675,7 +675,6 @@ typedef struct Scheme_Thread {
 
   Scheme_Object *(*overflow_k)(void);
   Scheme_Object *overflow_reply;
-  Scheme_Jumpup_Buf overflow_cont;
 
   Scheme_Object **tail_buffer;
   int tail_buffer_size;
@@ -922,7 +921,6 @@ typedef void (*Scheme_Invoke_Proc)(Scheme_Env *env, long phase_shift,
 #define scheme_tail_rands (scheme_current_thread->ku.apply.tail_rands)
 #define scheme_overflow_k (scheme_current_thread->overflow_k)
 #define scheme_overflow_reply (scheme_current_thread->overflow_reply)
-#define scheme_overflow_cont (scheme_current_thread->overflow_cont)
 
 #define scheme_error_buf (scheme_current_thread->error_buf)
 #define scheme_jumping_to_continuation (scheme_current_thread->cjs.jumping_to_continuation)

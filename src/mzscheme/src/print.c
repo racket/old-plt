@@ -1221,7 +1221,7 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
     }
   else if (scheme_type_writers[SCHEME_TYPE(obj)]
 #if !NO_COMPACT
-	   && (compact || SAME_TYPE(SCHEME_TYPE(obj), scheme_compilation_top_type))
+	   && (compact || SAME_TYPE(SCHEME_TYPE(obj), scheme_writeable_compilation_type))
 #endif
 	   )
     {

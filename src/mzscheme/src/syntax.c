@@ -255,8 +255,8 @@ scheme_init_syntax (Scheme_Env *env)
     scheme_install_type_writer(scheme_case_lambda_sequence_type, write_case_lambda);
     scheme_install_type_reader(scheme_case_lambda_sequence_type, read_case_lambda);
 
-    scheme_install_type_writer(scheme_compilation_top_type, write_top);
-    scheme_install_type_reader(scheme_compilation_top_type, read_top);
+    scheme_install_type_writer(scheme_writeable_compilation_type, write_top);
+    scheme_install_type_reader(scheme_runnable_compilation_type, read_top);
 
     scheme_define_values_syntax = scheme_make_compiled_syntax(define_values_syntax, 
 							      define_values_expand);
@@ -2712,7 +2712,7 @@ static Scheme_Object *read_top(Scheme_Object *obj)
   Scheme_Compilation_Top *top;
 
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
-  top->type = scheme_compilation_top_type;
+  top->type = scheme_runnable_compilation_type;
   top->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
   top->code = SCHEME_CDR(obj);
 

@@ -163,14 +163,15 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_interface_data_type, "<interface-code>");
 
-  set_name(scheme_compilation_top_type, "<compiled-code>");
+  set_name(scheme_runnable_compilation_type, "<runnable-compiled-code>");
+  set_name(scheme_writeable_compilation_type, "<writeable-compiled-code>");
+
   set_name(scheme_svector_type, "<short-vector>");
 
   set_name(scheme_manager_type, "<custodian>");
   set_name(scheme_cont_mark_set_type, "<continuation-mark-set>");
   
   set_name(scheme_reserved_1_type, "<reserved1>");
-  set_name(scheme_reserved_3_type, "<reserved3>");
   set_name(scheme_reserved_5_type, "<reserved5>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -403,7 +404,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_namespace_type, namespace_val);
   GC_REG_TRAV(scheme_random_state_type, random_state_val);
   
-  GC_REG_TRAV(scheme_compilation_top_type, compilation_top_val);
+  GC_REG_TRAV(scheme_runnable_compilation_type, compilation_top_val);
+  GC_REG_TRAV(scheme_writeable_compilation_type, compilation_top_val);
 
   GC_REG_TRAV(scheme_envunbox_type, small_object);
   GC_REG_TRAV(scheme_eval_waiting_type, bad_trav);

@@ -815,7 +815,7 @@ static void *compile_k(void)
 		       scheme_link_info_create(can_opt));
 
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
-  top->type = scheme_compilation_top_type;
+  top->type = (can_opt ? scheme_runnable_compilation_type : scheme_writeable_compilation_type);
   top->max_let_depth = rec.max_let_depth;
   top->code = o;
 
@@ -826,7 +826,7 @@ static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeab
 {
   Scheme_Process *p = scheme_current_process;
 
-  if (SAME_TYPE(SCHEME_TYPE(form), scheme_compilation_top_type))
+  if (SAME_TYPE(SCHEME_TYPE(form), scheme_runnable_compilation_type))
     return form;
 
   p->ku.k.p1 = form;
@@ -2855,7 +2855,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	  goto eval_top;
 	}
-      
+
       default:
 	v = obj;
 	goto returnv;
@@ -2928,7 +2928,7 @@ static void *eval_k(void)
       v = _scheme_eval_compiled_expr_multi_wp(v, p);
     else
       v = _scheme_eval_compiled_expr_wp(v, p);
-  } else if (SAME_TYPE(SCHEME_TYPE(v), scheme_compilation_top_type)) {
+  } else if (SAME_TYPE(SCHEME_TYPE(v), scheme_runnable_compilation_type)) {
     Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)v;
 
     if (!scheme_check_runstack(top->max_let_depth)) {
@@ -3119,9 +3119,11 @@ compile(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 compiled_p(int argc, Scheme_Object *argv[])
 {
-  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_compilation_top_type)
-	  ? scheme_true
-	  : scheme_false);
+  Scheme_Object *v = argv[0];
+
+  return ((SAME_TYPE(SCHEME_TYPE(v), scheme_runnable_compilation_type)
+	   ? scheme_true
+	   : scheme_false));
 }
 
 #if OPT_COMPILE_VISIBLE

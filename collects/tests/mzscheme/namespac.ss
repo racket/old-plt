@@ -9,7 +9,12 @@
 (arity-test compiled-expression? 1 1)
 
 (test #f compiled-expression? 1)
-(test #t compiled-expression? (compile 1))
+(test #f compiled-expression? (compile 1))
+(test #t compiled-expression? (let ([c (compile 1)]
+				    [p (open-output-string)])
+				(display c p)
+				(parameterize ([read-accept-compiled #t])
+				  (read (open-input-string (get-output-string p))))))
 
 (test `,void eval `',void)
 

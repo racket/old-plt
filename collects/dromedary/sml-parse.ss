@@ -13,7 +13,7 @@
     (let ((get-token (make-get-token #f)))
       (port-count-lines! ip)
       (file-path f)
-      (parse-sml (lambda () (get-token ip)))))
+      ((list-ref parse-sml 3) (lambda () (get-token ip)))))
   
   (define (parse-ml-file f)
     (call-with-input-file f
@@ -388,7 +388,7 @@
                  (error 'parse-sml "Unknown token type ~a" tok-name)))))
      (tokens sml-toks sml-etoks)
      (src-pos)
-     ;;(debug "sml.table")
+     (debug "sml.table")
      (precs (right AND)
             (nonassoc DARROW)
             (nonassoc BAR)

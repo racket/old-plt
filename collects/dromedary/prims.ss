@@ -16,6 +16,7 @@
 		 (struct <unit> (dummy))
 		 (struct ref (type))
 		 (struct mlexn (name types))
+		 (struct ml-exn ())
 		 (struct value-set (name type))
 		 (struct <user-type> ())
 		 (struct |Some| (tlist))
@@ -23,6 +24,7 @@
 		 != <lt> <gt> <le> <ge> <or> <and> <>
 		 float? any?
 		 array-get
+		 pretty-print
 		 (all-from (lib "match.ss")))
 
 	(define-struct value-set (name type) (make-inspector))
@@ -38,6 +40,7 @@
 	(define-struct <unit> (dummy))
 	(define-struct ref (type))
 	(define-struct mlexn (name types))
+	(define-struct ml-exn ())
 	(define-struct option (type))
 	(define-struct <user-type> () (make-inspector))
 
@@ -81,9 +84,12 @@
 	(define (<foldll> a)
 	  (lambda (b)
 	    (lambda (c)
-	      (if (null? b)
-		  c
-		  (((<foldll> a) (cdr b)) ((a (car b)) c))))))
+	      (begin
+;		(pretty-print (list a b c))
+		(if (null? c)
+		    
+		  b
+		  (((<foldll> a) ((a b) (car c))) (cdr c)))))))
 
 	(define (<flattenf> a)
 	  (if (null? a)
@@ -126,9 +132,14 @@
 	(define (<uppercase> oldstr)
 	  (list->string (map char-upcase (string->list oldstr))))
 
+	(define (<string-ref> str)
+	  (lambda (int)
+	    (string-ref str int)))
+
 	(define <string-funcs> (make-hash-table 'equal))
 	(hash-table-put! <string-funcs> "length" (cons (make-arrow (list "string") "int") string-length))
 	(hash-table-put! <string-funcs> "uppercase" (cons (make-arrow (list "string") "string") <uppercase>))
+	(hash-table-put! <string-funcs> "get" (cons (make-arrow (list "string") (make-arrow (list "int") "char")) <string-ref>))
 
 	;; The array functions
 	(define (array-get arr)
@@ -413,6 +424,7 @@
 	(hash-table-put! built-in-and-user-funcs "print_float" (cons (make-arrow (list "float") "unit") print_float))
 	(hash-table-put! built-in-and-user-funcs "print_string" (cons (make-arrow (list "string") "unit") print_string))
 	(hash-table-put! built-in-and-user-funcs "print_newline" (cons (make-arrow (list "unit") "unit") print_newline))
+	(hash-table-put! built-in-and-user-funcs "pretty_print" (cons (make-arrow (list (make-tvar "'a")) "unit") pretty-print))
 
 	
 	(define (<flatten> a-list)

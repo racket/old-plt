@@ -100,13 +100,14 @@
 ;		     (begin (pretty-print "Typecheck-ml called for pstr_eval from typecheck-structure")
 		     (typecheck-ml expr context)]
 		    [($ ast:pstr_exception name decl)
-		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-ml decl (repeat context (length decl)))) "exception")])
+		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-type decl (repeat null (length decl)))) "exception")])
 		       (begin
 			 (hash-table-put! <constructors> (syntax-object->datum name) (cons (make-tconstructor 
-											    (let ([args (map typecheck-ml decl (repeat context (length decl)))])
-											      (if (null? args)
-												  null
-												  (make-<tuple> args))) "exception" ) #`#,(string->symbol (format "make-~a" (syntax-object->datum name)))))
+											    (let ([args (map typecheck-type decl (repeat null (length decl)))])
+											      (cond 
+											       [(null? args) null]
+											       [(= (length args) 1) (car args)]
+											       [else (make-<tuple> args)])) "exception" ) #`#,(string->symbol (format "make-~a" (syntax-object->datum name)))))
 			 (make-mlexn (syntax-object->datum name) nconst)))]
 		       
 		    [else

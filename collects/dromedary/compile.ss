@@ -111,7 +111,12 @@
 		   (compile-ml expr context))]              
 ;	       #`((#,(create-syntax #f `lambda (if lsrc (build-src lsrc) #f)) () #,(compile-ml expr context)))]
 	      [($ ast:pstr_exception name decl)
-	       #`(begin (define-struct (#,(datum->syntax-object (current-compile-context) (string->symbol (format "exn:~a" (syntax-object->datum name)))) exn) ())
+	       #`(begin (define-struct (#,(datum->syntax-object (current-compile-context) (string->symbol (syntax-object->datum name))) ml-exn) #,(if (null? decl)
+																		   #`()
+																		   #`(param)))
+			  
+
+;(string->symbol (format "exn:~a" (syntax-object->datum name)))) exn) ())
 			(make-<voidstruct> #f))]
 	      [($ ast:pstr_exn_rebind name ident)
 ;	       #'"voigt"]
@@ -333,13 +338,13 @@
 	   (cons x (repeat x (- n 1)))))
 
      (define (compile-apply fun args)
-       ;(pretty-print (format "compile-apply ~a ~a" fun args))
+;       (pretty-print (format "compile-apply ~a ~a" (syntax-object->datum fun) args))
        (cond 
 	[(null? args) fun]
 ;	[(null? (cdr-args))
 ;	 #`(#,(compile-apply fun (make-<unit> #f)) #,(car args))]
 	[else
-	   #`(#,(compile-apply fun (cdr args)) #,(car args))]))
+	 #`(#,(compile-apply fun (cdr args)) #,(car args))]))
 
 
 

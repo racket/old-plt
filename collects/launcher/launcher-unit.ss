@@ -336,74 +336,8 @@
 				       #t)))
         
       
-      ;; lazy install-aliases code for mac added by jbc 2000-6:
-      
-      (define (maybe-install-aliases)
-	(let* ([mz-ppc (build-path plthome mz-app-ppc)]
-	       [mz-68k (build-path plthome mz-app-68k)]
-	       [mr-ppc (build-path plthome mr-app-ppc)]
-	       [mr-68k (build-path plthome mr-app-68k)]
-	       [mz-app (cond [(file-exists? mz-ppc) mz-ppc]
-			     [(file-exists? mz-68k) mz-68k]
-			     [else (error 'maybe-install-aliases "cannot find ppc or 68k MzScheme application in plthome.")])]
-	       [mr-app (cond [(file-exists? mr-ppc) mr-ppc]
-			     [(file-exists? mr-68k) mr-68k]
-			     [else #f])] ; in DrScheme Jr, there is no MrEd
-	       [launcher-path (collection-path "launcher")]
-	       [extension-source-file (build-path launcher-path "starter-setup.c")]
-	       [extension (build-path launcher-path "starter-setup.so")]
-	       [gomz (build-path launcher-path "gomz")]
-	       [gomr (build-path launcher-path "gomr")]
-	       [marker-file (build-path launcher-path "marker-file")])
-	  (unless (file-exists? gomz)
-	    (error 'install-aliases "startup template GoMz is missing."))
-	  (when mr-app
-	    (unless (file-exists? gomr)
-	      (error 'install-aliases "startup template GoMr is missing.")))
-	  (unless (string=? (system-library-subpath) "68k-mac")   ; cannot use extensions on 68k mac
-	    (when (or (not (file-exists? extension))                             ; extension is missing altogether, or
-		      (and (let ([extension-file-date (file-or-directory-modify-seconds extension)])
-			     (ormap (lambda (file) (and (file-exists? file)           ; extension is older than source file or apps
-							(> (file-or-directory-modify-seconds file) extension-file-date)))
-				    (list extension-source-file mz-app)))
-			   (directory-exists? (build-path launcher-path "CVS")))); ... and this is a CVS tree
-	      (unless (file-exists? extension-source-file)
-		(error 'maybe-install-aliases "need startup-setup.c to compile startup-setup.so extension"))
-	      (let ([obj-file (build-path launcher-path "startup-setup.o")])
-		(c:compile-extension #t extension-source-file obj-file null)
-		(l:link-extension #t (list obj-file) extension)))
-	    (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (starters, apps, extension)
-		      (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
-			(or (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
-				   (list extension gomz gomr mz-app))
-			    (and mr-app (> (file-or-directory-modify-seconds mr-app) marker-file-date)))))
-	      (let ([installation-result (if mr-app
-					     ((load-extension extension) mz-app gomz mr-app gomr)
-					     ((load-extension extension) mz-app gomz))])
-		(unless installation-result
-		  (error 'maybe-install-aliases "installing aliases failed"))
-		(with-output-to-file marker-file
-		  (lambda () (printf "aliases successfully installed~n"))
-		  'truncate/replace))))))
-      
-      ; how to test:
-      ; 1. try with all combinations of mzscheme/mred ppc/68k/missing (6 total) (error)
-      ; 2. try with missing gomz and gomr (error)
-      ; 3. try with missing extension (success, reinstalls)
-      ; 4. try with missing extension and source file (error)
-      ; 5. try with source file newer than extension (success, recompiles extension, reinstalls)
-      ; 5b. try with same exc. no CVS dir (success, does _not_ recompile extension, reinstalls)
-      ; 5c. try with mz-app newer than extension (success, recompiles extension, reinstalls)
-      ; 5d. try with same exc. no CVS dir (possible error, "extension compiled for earlier app")
-      ; 6. try with missing marker file (success, reinstalls)
-      ; 7. try with marker file older than any of (gomz, gomr, apps) (success, reinstalls)
-      ; 8. try with everything all set (success, no action taken)
-      
-      ;; end of lazy install-aliases code for mac added by jbc 2000-6
-      
       (define (make-macos-launcher kind variant flags dest aux)
-	(maybe-install-aliases)
-	(install-template dest kind "GoMz" "GoMr")
+	(install-template dest kind "GoMr" "GoMr")
 	(let ([p (open-output-file dest 'truncate)])
 	  (display (str-list->sh-str flags) p)
 	  (close-output-port p)))

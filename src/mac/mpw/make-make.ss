@@ -484,10 +484,10 @@
     (for-each (lambda (p)
 		(printf "  ~a\266\r" (car p)))
 	      all-srcs)
-    (printf "\r\rSRCS = \266\r")
+    (printf "\r\rMZOBJS = \266\r")
     (for-each (lambda (p)
-		(printf "  ~a\266\r" (cadr p)))
-	      all-srcs)
+		(printf "  ~a\266\r" (car p)))
+	      (append mz-srcs gc-srcs))
     
     (printf "\r\r::::netglue \304 nethack.c\r")
     (printf "\tMrC nethack.c -o nethack.c.o\r")
@@ -498,6 +498,11 @@
     (printf "\tRez ::cw:MrStarter.r -o ::::collects:launcher:GoMr -append\r\r")
 
     (printf "\rall \304 ::::MrEd ::::netglue ::::collects:launcher:GoMr\r\r")
+    (printf "\rmz \304 ::::MzSchemeLib\r\r")
+
+    (printf "\r::::MzSchemeLib \304 {MZOBJS}\r")
+    (printf "\tPPCLink {MZOBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}StdCRuntime.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}MrCPlusLib.o\" -xm s -o ::::MzSchemeLib~a\r"
+	    (if debug? " -sym big" ""))
 
     (printf "\r::::MrEd \304 {OBJS}\r")
     (printf "\tPPCLink {OBJS} \"{SharedLibraries}CarbonLib\" \"{SharedLibraries}StdCLib\"  \"{PPCLibraries}StdCRuntime.o\" \"{PPCLibraries}PPCCRuntime.o\" \"{PPCLibraries}MrCPlusLib.o\" -o ::::MrEd -c 'MrEd' -m __appstart~a\r"

@@ -493,7 +493,7 @@
 						       *-> void))))
 
        (force                 (forall (a) ((promise a) -> a)))
-       (make-promise          ((-> a) -> (promise a)))
+       (make-promise          (forall (a) ((-> a) -> (promise a))))
        (promise?              (_ -> bool) (predicate promise))
        (call-with-current-continuation 
 	(forall (a) (((a *-> empty) ->* (mvalues a)) ->* (mvalues a))))

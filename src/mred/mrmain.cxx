@@ -46,6 +46,10 @@ class wxBufferDataClassList;
 extern short wxMacDisableMods;
 extern long wxMediaCreatorId;
 #endif
+#ifdef MACINTOSH_EVENTS
+# include "simpledrop.h"
+#endif
+
 
 #if defined(_IBMR2)
 static void dangerdanger(int)

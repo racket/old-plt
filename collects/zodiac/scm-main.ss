@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.117 1997/08/13 15:57:38 shriram Exp $
+; $Id: scm-main.ss,v 1.118 1997/08/13 18:56:41 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -439,8 +439,8 @@
 	    (if (or (language>=? 'side-effecting)
 		  (z:symbol? (cadr contents)))
 	      (create-quote-form (cadr contents) expr)
-	      (static-error expr "'~s is not a symbol"
-		(sanitized-sexp->raw (cadr contents))))
+	      (static-error expr "'~e is not a symbol"
+		(sexp->raw (cadr contents))))
 	    (static-error expr "Malformed quote")))
 	(static-error expr "Malformed quote"))))
 
@@ -1241,7 +1241,7 @@
 				 (#%make-exn:else
 				   ,(if had-no-clauses?
 				      "cond must contain at least one clause"
-				      "no matching else clause")
+				      "no clause was matched")
 				   ,debug-info-handler-expression)))
 			    (let ((first (car exps))
 				   (rest (cdr exps)))

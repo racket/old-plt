@@ -556,6 +556,14 @@
 	     (and col
 		  (pp-down (cddr expr) (+ col 1) (+ col 2) extra pp-item #t #t depth))))
 
+	 ; (head item1
+	 ;   item2
+	 ;   item3)
+	 (define (pp-one-up expr col extra pp-item depth)
+	   (let ((col* (wr (car expr) (out "(" col) (dsub1 depth))))
+	     (and col
+		  (pp-down (cdr expr) (+ col 1) (+ col 2) extra pp-item #t #t depth))))
+
 	 ; (item1
 	 ;  item2
 	 ;  item3)
@@ -638,6 +646,9 @@
 	 (define (pp-class expr col extra depth)
 	   (pp-two-up expr col extra pp-expr-list depth))
 
+	 (define (pp-make-object expr col extra depth)
+	   (pp-one-up expr col extra pp-expr-list depth))
+
 	 (define (pp-case expr col extra depth)
 	   (pp-general expr col extra #f pp-expr #f pp-expr-list depth))
 
@@ -676,7 +687,7 @@
 	      pp-cond)
 	     ((case #%case) 
 	      pp-case)
-	     ((and or #%and #%or)
+	     ((and or #%and #%or link)
 	      pp-and)
 	     ((let #%let)
 	      pp-let)
@@ -685,7 +696,8 @@
 	     ((do #%do)
 	      pp-do)
 
-	     ((class #%class) pp-class)
+	     ((send class #%class) pp-class)
+	     ((send make-object) pp-make-object)
 
 	     (else #f)))
 

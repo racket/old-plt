@@ -2,7 +2,7 @@
 
 ;;; this generated error before
 
-(require-library "referf.ss")
+(require-library/proc "referf.ss")
 
 
  

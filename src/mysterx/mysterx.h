@@ -16,21 +16,6 @@
 
 #define MAXARRAYDIMS 32
 
-// temp !!! until dont_gc_ptr fixed
-
-#ifdef scheme_dont_gc_ptr
-#undef scheme_dont_gc_ptr
-#endif
-
-#ifdef scheme_gc_ptr_ok
-#undef scheme_gc_ptr_ok
-#endif
-
-#define scheme_dont_gc_ptr(p)
-#define scheme_gc_ptr_ok(p)
-
-// end temp !!!!!!!!!!!!!!!!!!!!!
-
 #define NORETVALINDEX (-1)
 #define UNICODE_BUFFER_SIZE 256
 #define TYPE_TBL_SIZE 1019

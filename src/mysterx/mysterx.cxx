@@ -2251,7 +2251,6 @@ void *allocParamMemory(size_t n) {
   
   retval = scheme_malloc(n);
   scheme_dont_gc_ptr(retval);
-  
   return retval;
 }
 
@@ -2512,7 +2511,8 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     break;
     
   default :
-    scheme_signal_error("Unable to marshall Scheme value into VARIANT: 0x%X",pVariantArg->vt);
+    scheme_signal_error("Unable to marshall Scheme value into VARIANT: 0x%X",
+			pVariantArg->vt);
     
   }
 }
@@ -2836,6 +2836,10 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     }
   }
   
+  if (numParamsPassed > 0) {
+    scheme_gc_ptr_ok(methodArguments->rgvarg);
+  }
+
   return numParamsPassed;
 }
 
@@ -2901,7 +2905,11 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
     
     marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
-  
+
+  if (numParamsPassed > 0) {
+    scheme_gc_ptr_ok(methodArguments->rgvarg);
+  }
+
   return numParamsPassed;
 }
 

@@ -29,7 +29,6 @@
                     accounting information, but is slow and uses (as
                     above) an extra word per tagged object.
 */
-#define ACCNT_PRECISE
 #if !defined(ACCNT_OFF) && !defined(ACCNT_EXTERNAL) && !defined(ACCNT_PRECISE)
 # define ACCNT_INPLACE
 #endif

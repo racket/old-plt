@@ -329,7 +329,12 @@
 
 (parameterize ([break-enabled #f])
   (test #t exn:thread? (chain c1))
-  (test-stream '(os ms mpre is ie)))
+  (test-stream '(os ms mpre is ie))
+  (test (void) 'discard-break
+	(with-handlers ([void void])
+	  (break-enabled #t)
+	  (sleep)
+	  'not-void)))
 
 (test #t exn:thread? (chain c2))
 (test-stream '(os ms mpre is mpost))
@@ -353,7 +358,12 @@
 				  (test #t thread-running? (current-thread))
 				  (test #t thread-running? t)
 				  (test #f thread-running? t1)))))
-  (test-stream '(os ms mpre is ie)))
+  (test-stream '(os ms mpre is ie))
+  (test (void) 'discard-break
+	(with-handlers ([void void])
+	  (break-enabled #t)
+	  (sleep)
+	  'not-void)))
 
 (error-test '(let/cc k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)
 (error-test '(let/ec k (call-in-nested-thread (lambda () (k)))) exn:application:continuation?)

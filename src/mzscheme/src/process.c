@@ -1773,8 +1773,12 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   scheme_init_error_escape_proc(np);
   scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
+  SCHEME_GET_LOCK();
   np->nester = p;
   p->nestee = np;
+  np->external_break = p->external_break;
+  p->external_break = 0;
+  SCHEME_RELEASE_LOCK();
 
   {
     Scheme_Process_Manager_Hop *hop;
@@ -1836,9 +1840,12 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   scheme_post_sema(np->done_sema);
 #endif
 
+  SCHEME_GET_LOCK();
+  p->external_break = np->external_break;
   p->nestee = NULL;
-
   np->nester = NULL;
+  SCHEME_RELEASE_LOCK();
+
   np->runstack_start = NULL;
   np->runstack_saved = NULL;
   np->list_stack = NULL;
@@ -1864,6 +1871,12 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
       scheme_raise_exn(MZEXN_THREAD, "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
     else
       scheme_raise(v);
+  }
+
+  /* May have just moved a break to a breakable thread: */
+    /* Check for external break again after swap or sleep */
+  if (p->external_break && !p->suspend_break && scheme_can_break(p, p->config)) {
+    scheme_process_block(0.0);
   }
 
   return v;
@@ -2100,10 +2113,12 @@ void scheme_break_thread(Scheme_Process *p)
       return;
   }
 
+  SCHEME_GET_LOCK();
   /* Propagate breaks: */
   while (p->nestee && scheme_can_break(p, p->config)) {
     p = p->nestee;
   }
+  SCHEME_RELEASE_LOCK();
 
 #ifdef MZ_REAL_THREADS
   /* Avoid signals to wrapping thread when nested already has died: */

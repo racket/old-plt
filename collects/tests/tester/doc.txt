@@ -1,0 +1,68 @@
+_TEST SUITE INTERFACE_
+
+=========================================================================
+_Test Suite Quickstart_
+
+Define a module in which to put your tests. In that module, require
+the library _tester.ss_.
+
+As a body expression of your module, write
+
+(run-tests "a description of this group of tests" 
+   (test "description" expression-to-test expected-result) ...)
+
+To run your test suite, call test-manifest with a list of quoted
+require-specs, each of which specifies a file of tests -- for example, if
+you wanted to run test files "a.ss", "b.ss", and "c.ss", call test-manifest
+like this:
+
+(test-manifest (list '(file "a.ss")
+                     '(file "b.ss")
+                     '(file "c.ss")))
+
+Each test-expression in all files listed in the manifest will be
+evaluated in a special context where any printing to standard output
+will be intercepted and any exceptions that it raises will be
+caught. Its return value will be compared to the expected return
+value, and the result of the test will be printed to a GUI window.
+
+=========================================================================
+
+The file _tester.ss_ defines a module named tester that provides four
+names: run-tests, test, test-error, and test-function. run-tests has
+the form:
+
+> (run-tests str a-test ...)
+
+Where a-test is either:
+
+> (test str expr value [str])
+> (test-error str expr str [str])
+> (test-function str expr (value x str -> bool))
+
+In all three test forms, the first position should be a description of
+the test to be performed and the second should be the expression to be
+tested. The third position is the "comparison datum," which is used to
+determine whether or not the test should pass. The optional fourth
+position specifies an output string that the program must produce for
+the test to pass.
+
+The different forms use their comparison data to determine if the test
+should pass based on the following rules:
+
+* test tests the value produced by evaluating the given expression and
+  comparing it using equal? to the given expected value. If evaluating
+  the expression results in an error being raised, the test automatically 
+  fails.
+
+* test-error tests the error raised as a result of evaluating the
+  given expression to see if it has the same error message string as
+  the given string. If the expression evaluates to a value without
+  raising an exception, the test fails.
+
+* test-function applies the given function to the value produced by
+  the expression (if the optional string was provided) or the value
+  produced by the expression and the printed output of the expression
+  (if the optional string was not provided). If evaluating the
+  expression results in an error being raised, the test fails.
+

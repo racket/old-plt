@@ -231,7 +231,7 @@ void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
   replace_val = park[0];
   park[0] = NULL;
 
-  w->type = scheme_rt_gc_weak_array;
+  w->type = gc_weak_array_tag;
   w->replace_val = replace_val;
   w->count = (size_in_bytes >> 2);
   
@@ -383,7 +383,7 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
   data = park[1];
   park[1] = NULL;
 
-  fnl->type = scheme_rt_gc_finalization;
+  fnl->type = gc_finalization_tag;
   fnl->next = fnls;
   fnl->p = p;
   fnl->f = f;
@@ -409,15 +409,17 @@ unsigned long GC_get_stack_base(void)
 
 void GC_dump(void)
 {
+  fprintf(stderr, "Memory use: %ld\n", GC_get_memory_use());
 }
 
 long GC_get_memory_use()
 {
-  return 0;
+  return (alloc_size - ((untagged_low - tagged_high) << 2)) >> 2;
 }
 
-void GC_end_stubborn_change(void *s)
+void GC_init_type_tags(int count, int weakbox)
 {
+  weak_box_tag = weakbox;
 }
 
 #define SKIP ((Type_Tag)0x7000)
@@ -630,7 +632,7 @@ void gcollect(int needsize)
 
   if (!initialized) {
     tag_table[weak_box_tag] = mark_weak_box;
-    tag_table[weak_array_tag] = mark_weak_array;
+    tag_table[gc_weak_array_tag] = mark_weak_array;
     tag_table[gc_finalization_tag] = mark_finalizer;
     GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
     GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);

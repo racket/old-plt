@@ -1231,8 +1231,8 @@ void scheme_reset_prepared_error_buffer(void);
 
 #ifdef MZ_PRECISE_GC
 # define WEAKIFY(x) scheme_make_weak_box(x)
-# define WEAKIFIED(x) SCHEME_BOX_VAL(x)
-# define HT_EXTRACT_WEAK(x) SCHEME_BOX_VAL(x)
+# define WEAKIFIED(x) SCHEME_WEAK_BOX_VAL(x)
+# define HT_EXTRACT_WEAK(x) SCHEME_WEAK_BOX_VAL(x)
 #else
 # define WEAKIFY(x) x
 # define WEAKIFIED(x) x

@@ -251,10 +251,9 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
 
     if (table->weak) {
 #ifdef MZ_PRECISE_GC
-      Scheme_Weak_Box *kb;
-      kb = (Scheme_Weak_Box *)scheme_make_weak_box(key);
+      void *kb;
+      kb = GC_malloc_weak_box(key, &bucket->key);
       bucket->key = (char *)kb;
-      kb->secondary_erase = (Scheme_Object *)bucket;
 #else
       char *kb;
       kb = (char *)MALLOC_ONE_WEAK(void *);

@@ -628,6 +628,7 @@ int main(int argc, char **argv)
 #endif
 #if defined(MZ_PRECISE_GC)
   GC_set_stack_base(&__gc_var_stack__);
+  GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
 #endif
 
 #ifdef USE_MSVC_MD_LIBRARY

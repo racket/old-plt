@@ -199,7 +199,9 @@ void *scheme_malloc_fail_ok(void *(*f)(size_t), size_t s)
 
 void scheme_end_stubborn_change(void *p)
 {
+#ifndef MZ_PRECISE_GC
   GC_end_stubborn_change(p);
+#endif
 }
 
 void *scheme_malloc_eternal(size_t n)

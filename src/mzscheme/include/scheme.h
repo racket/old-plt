@@ -259,13 +259,9 @@ typedef struct Scheme_Vector {
   Scheme_Object *els[1];
 } Scheme_Vector;
 
-#ifdef MZ_PRECISE_GC
-typedef struct GC_Weak_Box Scheme_Weak_Box;
-#endif
-
 typedef void Scheme_Close_Manager_Client(Scheme_Object *o, void *data);
 #ifdef MZ_PRECISE_GC
-typedef struct Scheme_Weak_Box Scheme_Manager_Reference;
+typedef struct Scheme_Object Scheme_Manager_Reference;
 #else
 typedef struct Scheme_Manager *Scheme_Manager_Reference;
 #endif
@@ -736,6 +732,7 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #else
 # define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
 #endif
+#define SCHEME_WEAK_BOX_VAL(obj) SCHEME_BOX_VAL(obj) 
 
 #define SCHEME_ASSERT(expr,msg) ((expr) ? 1 : (scheme_signal_error(msg), 0))
 
@@ -868,7 +865,11 @@ void *scheme_malloc(size_t size);
 #else
 # define scheme_malloc GC_malloc
 # define scheme_malloc_atomic GC_malloc_atomic
-# define scheme_malloc_stubborn GC_malloc_stubborn
+# ifdef MZ_PRECISE_GC
+#  define scheme_malloc_stubborn scheme_malloc
+# else
+#  define scheme_malloc_stubborn GC_malloc_stubborn
+# endif
 # define scheme_malloc_uncollectable GC_malloc_uncollectable
 #endif
 
@@ -886,9 +887,9 @@ void *scheme_malloc(size_t size);
 # define scheme_malloc_tagged GC_malloc_one_tagged
 # define scheme_malloc_array_tagged GC_malloc_array_tagged
 # define scheme_malloc_atomic_tagged GC_malloc_atomic_tagged
-# define scheme_malloc_stubborn_tagged GC_malloc_one_stubborn_tagged
-# define scheme_malloc_eternal_tagged GC_malloc_eternal_tagged
-# define scheme_malloc_uncollectable_tagged GC_malloc_uncollectable_tagged
+# define scheme_malloc_stubborn_tagged GC_malloc_one_tagged
+# define scheme_malloc_eternal_tagged GC_malloc_atomic_uncollectable
+# define scheme_malloc_uncollectable_tagged >> error <<
 # define scheme_malloc_envunbox GC_malloc_one_tagged
 # define scheme_malloc_weak GC_malloc_weak
 # define scheme_malloc_weak_tagged GC_malloc_one_weak_tagged
@@ -1118,11 +1119,11 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_INTERFACEP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_interface_type)
 #define SCHEME_VOIDP(obj)     SAME_OBJ((obj), scheme_void)
 #define SCHEME_DIVARP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_delayed_ivar_type)
-#define SCHEME_WEAKP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_weak_box_type)
 #define SCHEME_GENDATAP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_generic_data_type)
 #define SCHEME_UNITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_unit_type)
 #define SCHEME_CONFIGP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_config_type)
 #define SCHEME_NAMESPACEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_namespace_type)
+#define SCHEME_WEAKP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_weak_box_type)
 
 /* other */
 #define SCHEME_CADR(obj)     (SCHEME_CAR (SCHEME_CDR (obj)))

@@ -801,9 +801,12 @@ static void add_managed_box(Scheme_Manager *m,
 }
 
 #ifdef MZ_PRECISE_GC
+/* This is a trick to get the types right. Note that 
+   the layout of the weak box is defined by the
+   GC spec. */
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  short type;
+  short hash_key;
   Scheme_Manager *val;
 } Scheme_Manager_Weak_Box;
 

@@ -160,7 +160,7 @@ void GC_free(void *);
    Lets the collector optionally reverse an allocation immediately.
    [Generally a noop.] */
 
-void *GC_alloc_weak_box(void *p, void **secondary);
+void *GC_malloc_weak_box(void *p, void **secondary);
 /* 
    Allocate a weak box. A weak box must have the following initial
    structure:

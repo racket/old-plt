@@ -3,6 +3,7 @@
   (require (lib "deflate.ss")
            (lib "base64.ss" "net")
            (lib "process.ss")
+	   (lib "list.ss")
 	   (lib "etc.ss")
 	   (lib "getinfo.ss" "setup"))
 
@@ -165,7 +166,7 @@
              (regexp-match "~$" path)
              (regexp-match "^#.*#$" path))))
 
-  (define (pack-collections collections output name replace? extra-setup-collections)
+  (define (pack-collections output name collections replace? extra-setup-collections)
     (let-values ([(dir source-files requires conflicts name)
 		  (let ([dirs (map (lambda (cp) (apply collection-path cp)) collections)])
 		    ;; Figure out the base path:
@@ -226,7 +227,7 @@
 		(map (lambda (cp) (apply build-path 'same cp)) collections)
 		(append
 		 extra-setup-collections
-		 collections)
+		 (filter get-info collections))
 		std-filter #t 
 		(if replace?
 		    'file-replace

@@ -116,6 +116,8 @@ static long mark_stack_pos = 0;
 #if KEEP_BACKPOINTERS
 # undef RECORD_MARK_SRC
 # define RECORD_MARK_SRC 1
+/* Disabled generations, since old-page ifxups would be wrong,
+   and even if that were fixed, the results would be confusing. */
 # undef GENERATIONS
 # define GENERATIONS 0
 #endif
@@ -4477,7 +4479,7 @@ void *print_out_pointer(const char *prefix, void *p)
   if (page->flags & MFLAG_BIGBLOCK)
     return (void *)page->backpointer_page;
   else
-    return page->backpointer_page[(p - page->block_start) >> LOG_WORD_SIZE];
+    return page->backpointer_page[((char *)p - page->block_start) >> LOG_WORD_SIZE];
 }
 #endif
 

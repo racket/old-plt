@@ -1,6 +1,6 @@
 
 #ifdef _WIN32
-static void gc_fprintf(int ignored, const char *c, ...);
+void gc_fprintf(int ignored, const char *c, ...);
 # define GCPRINT gc_fprintf
 # define GCOUTF 0
 # define GCFLUSHOUT() /* empty */
@@ -35,7 +35,14 @@ static void GC_prim_stringout(char *s, int len)
     }
   }
 
-  WriteFile(console, s, len, &wrote, NULL);
+  while (len) {
+    if (WriteFile(console, s, len, &wrote, NULL)) {
+      len -= wrote;
+      s += wrote;
+      if (len)
+	Sleep(10);
+    }
+  }
 }
 
 #include <stdarg.h>
@@ -44,7 +51,7 @@ static void GC_prim_stringout(char *s, int len)
 #define NP_BUFSIZE 512
 
 /* Non-allocating printf. */
-static void gc_fprintf(int ignored, const char *c, ...)
+void gc_fprintf(int ignored, const char *c, ...)
 {
   char buffer[NP_BUFSIZE];
   int pos;
@@ -81,6 +88,7 @@ static void gc_fprintf(int ignored, const char *c, ...)
 	c++;
       }
       if (*c == '.') {
+	c++;
       }
       while (isdigit(*c)) {
 	c++;
@@ -135,6 +143,15 @@ static void gc_fprintf(int ignored, const char *c, ...)
       case 's':
 	s = va_arg(args, char*);
 	slen = strlen(s);
+	break;
+      case 'c':
+	{
+	  int v;
+	  v = va_arg(args, int);
+	  s = buffer;
+	  buffer[0] = (char)v;
+	  slen = 1;
+	}
 	break;
       default:
 	s = "???";

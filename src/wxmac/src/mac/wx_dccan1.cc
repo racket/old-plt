@@ -432,21 +432,25 @@ void wxCanvasDC::SetFont(wxFont *the_font)
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetPen(wxPen *pen)
 {
-  if (current_pen) current_pen->Lock(-1);
-  current_pen = pen;
-  if (current_pen) current_pen->Lock(1);
-
-  ToolChanged(kPenTool);
+  if (pen != current_pen) {
+    if (current_pen) current_pen->Lock(-1);
+    current_pen = pen;
+    if (current_pen) current_pen->Lock(1);
+    
+    ToolChanged(kPenTool);
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetBrush(wxBrush *brush)
 {
-  if (current_brush) current_brush->Lock(-1);
-  current_brush = brush;
-  if (current_brush) current_brush->Lock(1);
-
-  ToolChanged(kBrushTool);
+  if (brush != current_brush) {
+    if (current_brush) current_brush->Lock(-1);
+    current_brush = brush;
+    if (current_brush) current_brush->Lock(1);
+    
+    ToolChanged(kBrushTool);
+  }
 }
 
 //-----------------------------------------------------------------------------

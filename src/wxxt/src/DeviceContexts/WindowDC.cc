@@ -1772,6 +1772,9 @@ void wxWindowDC::SetBrush(wxBrush *brush)
   if (!DRAWABLE)
     return;
 
+  if (brush == current_brush)
+      return;
+    
   if (current_brush) current_brush->Lock(-1);
 
   if (!(current_brush = brush)) // nothing to do without brush
@@ -1877,6 +1880,9 @@ void wxWindowDC::SetPen(wxPen *pen)
   unsigned long pixel;
 
     if (!DRAWABLE) /* MATTHEW: [5] */
+      return;
+
+    if (pen == current_pen)
       return;
 
     if (current_pen) current_pen->Lock(-1);

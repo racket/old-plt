@@ -670,7 +670,7 @@
 					  new-locals)]
 			     [(zodiac:unit-form? L)
 			      (let-values ([(vm new-locals)
-					    (vm-phase (car (zodiac:unit-form-clauses l)) 
+					    (vm-phase (car (zodiac:unit-form-clauses L)) 
 						      #t #f tail-pos #t)])
 				 (zodiac:set-unit-form-clauses! L (list vm))
 				 new-locals)]
@@ -960,7 +960,7 @@
 						 (code-label (get-annotation l2))))))
 			   (for-each (lambda (L)
 				       (let ([code (get-annotation L)]
-					     [start (zodiac:zodiac-start l)])
+					     [start (zodiac:zodiac-start L)])
 					 (fprintf c-port "~a/* code body ~a ~a [~a,~a] */~n"
 						  vm->c:indent-spaces (code-label code)
 						  (let ([n (code-name code)])

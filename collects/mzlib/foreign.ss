@@ -35,7 +35,8 @@
 
 (provide (rename get-ffi-lib ffi-lib))
 (define (get-ffi-lib name . version)
-  (let ([version (if (pair? version) (string-append "." (car version)) "")])
+  (let ([version (if (pair? version) (string-append "." (car version)) "")]
+        [fullpath (lambda (x) (path->complete-path (expand-path p)))])
     (let loop ([name name])
       (cond
        [(ffi-lib? name) name]
@@ -48,9 +49,9 @@
                (or (ffi-lib name #t)         ; try good name first
                    (ffi-lib name0 #t)        ; try original
                    (and (file-exists? name)  ; try a relative path
-                        (ffi-lib (path->complete-path name) #t))
+                        (ffi-lib (fullpath name) #t))
                    (and (file-exists? name0) ; relative with original
-                        (ffi-lib (path->complete-path name0) #t))
+                        (ffi-lib (fullpath name0) #t))
                    ;; give up: call ffi-lib so it will raise an error
                    (ffi-lib name)))]))))
 

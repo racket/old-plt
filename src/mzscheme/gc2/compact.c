@@ -195,10 +195,10 @@ static long dump_info_array[BIGBLOCK_MIN_SIZE];
 #define MTYPE_ARRAY        4
 #define MTYPE_XTAGGED      5
 
-# define COLOR_MASK        0x3
+#define COLOR_MASK         0x3
 
-# define GRAY_BIT          0x1
-# define BLACK_BIT         0x2
+#define MFLAG_GRAY         0x1
+#define MFLAG_BLACK        0x2
 
 #define NONCOLOR_MASK      0xFC
 
@@ -241,6 +241,8 @@ typedef struct {
 } MSet;
 
 #define NUM_SETS 5
+#define NUM_TAGGED_SETS 1
+#define NUM_NONATOMIC_SETS 4
 static MSet tagged, atomic, array, tagged_array, xtagged;
 static MSet *sets[NUM_SETS]; /* First one is tagged, last one is atomic */
 
@@ -1024,7 +1026,7 @@ void GC_dump(void)
 	  if (maps[j].flags & MFLAG_CONTINUED) 
 	    c = '.';
 	  else {
-	    if (maps[j].type == MTYPE_TAGGED)
+	    if (maps[j].type <= MTYPE_TAGGED)
 	      c = 't';
 	    else if (maps[j].type == MTYPE_TAGGED_ARRAY)
 	      c = 'g';
@@ -1058,7 +1060,7 @@ void GC_dump(void)
        if (page->flags & MFLAG_CONTINUED) 
 	 c = '.';
        else {
-	 if (page->type == MTYPE_TAGGED)
+	 if (page->type <= MTYPE_TAGGED)
 	   c = 't';
 	 else if (page->type == MTYPE_TAGGED_ARRAY)
 	   c = 'g';
@@ -1116,14 +1118,14 @@ void GC_dump(void)
 
       for (page = first; page; page = page->next) {
 	if ((page->type == kind) && !(page->flags & MFLAG_BIGBLOCK)) {
-	  if (j)
+	  if (j >= NUM_TAGGED_SETS)
 	    scan_untagged_mpage(page->block_start, page); /* gets size counts */
 	  else
 	    scan_tagged_mpage(page->block_start, page); /* gets tag counts */
 	}
       }
 
-      if (j) {
+      if (j >= NUM_TAGGED_SETS) {
 	int k = 0;
 	fprintf(stderr, "%s counts: ", name);
 	for (i = 0; i < (BIGBLOCK_MIN_SIZE >> 2); i++) {
@@ -1243,7 +1245,7 @@ static int is_marked(void *p)
       else if (page->flags & COLOR_MASK) {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
 
-	if (page->type != MTYPE_TAGGED)
+	if (page->type > MTYPE_TAGGED)
 	  offset -= 1;
 
 	return OFFSET_COLOR(page->u.offsets, offset);
@@ -1398,7 +1400,7 @@ static void init_all_mpages(int young)
 	page->flags |= MFLAG_INITED;
       } else {
 	if (is_old) {
-	  if (page->type == MTYPE_TAGGED)
+	  if (page->type <= MTYPE_TAGGED)
 	    init_tagged_mpage((void **)p, page);
 	  else
 	    init_untagged_mpage((void **)p, page);
@@ -1425,7 +1427,7 @@ static void init_all_mpages(int young)
 	    || (page->flags & MFLAG_MODIFIED))
 	&& (page->type != MTYPE_ATOMIC)) {
       /* Offsets inited; need to set gray flag */
-      page->flags |= GRAY_BIT;
+      page->flags |= MFLAG_GRAY;
       
       page->gray_next = gray_first;
       gray_first = page;
@@ -1500,7 +1502,7 @@ void GC_mark(const void *p)
 #if MARK_STATS
 	  mark_colors++;
 #endif
-	  page->flags = (flags | GRAY_BIT);
+	  page->flags = (flags | MFLAG_GRAY);
 	  
 	  if (page->type != MTYPE_ATOMIC) {
 	    page->gray_next = gray_first;
@@ -1516,7 +1518,7 @@ void GC_mark(const void *p)
 
 	/* Check for lazy initialization: */
 	if (!(flags & MFLAG_INITED)) {
-	  if (type == MTYPE_TAGGED)
+	  if (type <= MTYPE_TAGGED)
 	    init_tagged_mpage((void **)page->block_start, page);
 	  else
 	    init_untagged_mpage((void **)page->block_start, page);
@@ -1524,7 +1526,7 @@ void GC_mark(const void *p)
 	  page->flags = flags;
 	}
 
-	if (type != MTYPE_TAGGED) {
+	if (type > MTYPE_TAGGED) {
 #if SAFETY
 	  if (!((long)p & MPAGE_MASK)) {
 	    /* Can't point to beginning of non-tagged block! */
@@ -1555,17 +1557,17 @@ void GC_mark(const void *p)
 	  case MTYPE_XTAGGED:
 	  case MTYPE_ARRAY:
 	    if (mark_stack_pos < MARK_STACK_MAX) {
-	      page->flags = (flags | BLACK_BIT);
-	      OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | BLACK_BIT); /* black can mean on stack */
+	      page->flags = (flags | MFLAG_BLACK);
+	      OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | MFLAG_BLACK); /* black can mean on stack */
 	      mark_stack[mark_stack_pos] = (void *)p;
 	      mark_stack_type[mark_stack_pos++] = type;
 	      break;
 	    }
 	  default: /* ^^^ fallthrough */
-	    OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | GRAY_BIT);
+	    OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | MFLAG_GRAY);
 
-	    if (!(flags & GRAY_BIT)) {
-	      page->flags = (flags | GRAY_BIT);
+	    if (!(flags & MFLAG_GRAY)) {
+	      page->flags = (flags | MFLAG_GRAY);
 	      
 	      if (type != MTYPE_ATOMIC) {
 		mark_stackoflw++;
@@ -1627,9 +1629,9 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
       
       v = OFFSET_COLOR_UNMASKED(offsets, offset);
       size = OFFSET_SIZE(offsets, offset);
-      if (v & GRAY_BIT) {
-	v -= GRAY_BIT;
-	v |= BLACK_BIT;
+      if (v & MFLAG_GRAY) {
+	v -= MFLAG_GRAY;
+	v |= MFLAG_BLACK;
 	OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
 	mark_table[tag](p);
       }
@@ -1648,7 +1650,7 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
 #endif
 
 #if MARK_STATS
-  if (page->flags & GRAY_BIT) {
+  if (page->flags & MFLAG_GRAY) {
     mark_slow++;
   }
 #endif
@@ -1704,11 +1706,11 @@ static void propagate_array_mpage(void **bottom, MPage *page)
     size = *(long *)p + 1;
 	
     v = OFFSET_COLOR_UNMASKED(offsets, offset);
-    if (v & GRAY_BIT) {
+    if (v & MFLAG_GRAY) {
       int i;
 
-      v -= GRAY_BIT;
-      v |= BLACK_BIT;
+      v -= MFLAG_GRAY;
+      v |= MFLAG_BLACK;
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
       
       for (i = 1; i <= size; i++) {
@@ -1762,9 +1764,9 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
     size = *(long *)p + 1;
 
     v = OFFSET_COLOR_UNMASKED(offsets, offset);
-    if (v & GRAY_BIT) {
-      v -= GRAY_BIT;
-      v |= BLACK_BIT;
+    if (v & MFLAG_GRAY) {
+      v -= MFLAG_GRAY;
+      v |= MFLAG_BLACK;
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
 
       {
@@ -1840,9 +1842,9 @@ static void propagate_xtagged_mpage(void **bottom, MPage *page)
     size = *(long *)p + 1;
 	
     v = OFFSET_COLOR_UNMASKED(offsets, offset);
-    if (v & GRAY_BIT) {
-      v -= GRAY_BIT;
-      v |= BLACK_BIT;
+    if (v & MFLAG_GRAY) {
+      v -= MFLAG_GRAY;
+      v |= MFLAG_BLACK;
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
       
       GC_mark_xtagged(p + 1);
@@ -2018,7 +2020,7 @@ static void propagate_all_mpages()
       page = gray_first;
       gray_first = page->gray_next;
       
-      page->flags = ((page->flags & NONCOLOR_MASK) | BLACK_BIT);
+      page->flags = ((page->flags & NONCOLOR_MASK) | MFLAG_BLACK);
       p = page->block_start;
       
       if (page->flags & MFLAG_BIGBLOCK) {
@@ -2071,14 +2073,21 @@ static void compact_tagged_mpage(void **p, MPage *page)
   OffsetArrTy *offsets;
   void **dest, **startp;
   void **top;
+  MSet *set;
 
   offsets = page->u.offsets;
 
   top = p + page->alloc_boundary;
 
   startp = p;
-  dest = tagged.compact_to;
-  dest_offset = dest_start_offset = tagged.compact_to_offset;
+  switch (page->type) {
+  case MTYPE_TAGGED:
+    set = &tagged;
+    break;
+  }
+  dest = set->compact_to;
+  dest_start_offset = set->compact_to_offset;
+  dest_offset = dest_start_offset;
   offset = 0;
 
   page->o.compact_to = dest;
@@ -2117,8 +2126,8 @@ static void compact_tagged_mpage(void **p, MPage *page)
 	to_near = 1;
 	if (set_age) {
 	  page->compact_boundary = offset;
-	  tagged.compact_page->age = page->age;
-	  tagged.compact_page->refs_age = page->age;
+	  set->compact_page->age = page->age;
+	  set->compact_page->refs_age = page->age;
 	} else
 	  /* Haven't moved anything; set boundary to 0 to indicate this */
 	  page->compact_boundary = 0;
@@ -2151,9 +2160,9 @@ static void compact_tagged_mpage(void **p, MPage *page)
   }
 
   if (to_near)
-    tagged.compact_page = page;
-  tagged.compact_to = dest;
-  tagged.compact_to_offset = dest_offset;
+    set->compact_page = page;
+  set->compact_to = dest;
+  set->compact_to_offset = dest_offset;
 
   if (!to_near) {
     /* Nothing left in here. Reset color to white: */
@@ -2307,7 +2316,7 @@ static void compact_all_mpages()
 	page->flags -= (page->flags & MFLAG_INITED);
 	p = page->block_start;
 	
-	if (page->type == MTYPE_TAGGED)
+	if (page->type <= MTYPE_TAGGED)
 	  compact_tagged_mpage((void **)p, page);
 	else
 	  compact_untagged_mpage((void **)p, page);
@@ -2321,9 +2330,11 @@ static void compact_all_mpages()
     }
   }
 
-  if (tagged.compact_to_offset < MPAGE_WORDS)
-    *(Type_Tag *)(tagged.compact_to + tagged.compact_to_offset) = TAGGED_EOM;
-  for (i = 1; i < NUM_SETS; i++) {
+  for (i = 0; i < NUM_TAGGED_SETS; i++) {
+    if (sets[i]->compact_to_offset < MPAGE_WORDS)
+      *(Type_Tag *)(sets[i]->compact_to + sets[i]->compact_to_offset) = TAGGED_EOM;
+  }
+  for (i = NUM_TAGGED_SETS; i < NUM_SETS; i++) {
     if (sets[i]->compact_to_offset < MPAGE_WORDS)
       *(long *)(sets[i]->compact_to + sets[i]->compact_to_offset) = UNTAGGED_EOM - 1;
   }
@@ -2338,6 +2349,7 @@ static void freelist_tagged_mpage(void **p, MPage *page)
   OffsetTy offset;
   OffsetArrTy *offsets;
   void **top;
+  void **free_lists;
   long on_at_start = on_free_list;
 
   offsets = page->u.offsets;
@@ -2345,6 +2357,12 @@ static void freelist_tagged_mpage(void **p, MPage *page)
   top = p + page->alloc_boundary;
 
   offset = 0;
+
+  switch (page->type) {
+  case MTYPE_TAGGED:
+    free_lists = tagged.free_lists;
+    break;
+  }
 
   while (p < top) {
     long size;
@@ -2360,15 +2378,15 @@ static void freelist_tagged_mpage(void **p, MPage *page)
 	/* HACK! This relies on both Type_Tag and OffsetTy being `short' */
 	((Type_Tag *)p)[0] = gc_on_free_list_tag;
 	((Type_Tag *)p)[1] = size;
-	p[1] = tagged.free_lists[size];
-	tagged.free_lists[size] = (void *)p;
+	p[1] = free_lists[size];
+	free_lists[size] = (void *)p;
 	on_free_list += size;
 #if ALIGN_DOUBLES
       }
 #endif
     } else {
       /* Remove color: */
-      v -= (v & (GRAY_BIT | BLACK_BIT));
+      v -= (v & (MFLAG_GRAY | MFLAG_BLACK));
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
     }
 
@@ -2433,7 +2451,7 @@ static void freelist_untagged_mpage(void **p, MPage *page)
 #endif
     } else {
       /* Remove color: */
-      v -= (v & (GRAY_BIT | BLACK_BIT));
+      v -= (v & (MFLAG_GRAY | MFLAG_BLACK));
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
     }
      
@@ -2458,7 +2476,7 @@ static void freelist_all_mpages(int young)
 	
 	p = page->block_start;
 	
-	if (page->type == MTYPE_TAGGED)
+	if (page->type <= MTYPE_TAGGED)
 	  freelist_tagged_mpage((void **)p, page);
 	else
 	  freelist_untagged_mpage((void **)p, page);
@@ -2500,7 +2518,7 @@ void GC_fixup(void *pp)
 	OffsetTy v;
 	void *r;
 
-	if (page->type != MTYPE_TAGGED) {
+	if (page->type > MTYPE_TAGGED) {
 #if SAFETY
 	  if (!offset) {
 	    /* Can't point to beginning of non-tagged block! */
@@ -2778,6 +2796,7 @@ static void free_unused_mpages()
 	     i++;
 	   }
 	   mpage_maps[i][j].type = 0;
+	   mpage_maps[i][j].flags = 0;
 	 }
 	}
       } else {
@@ -2792,6 +2811,7 @@ static void free_unused_mpages()
 	scanned_pages++;
       
       page->type = 0;
+      page->flags = 0;
       skipped_pages++;
     } else {
       if (page->flags & MFLAG_BIGBLOCK) {
@@ -3059,9 +3079,11 @@ static void set_ending_tags(void)
 {
   int i;
 
-  if (tagged.low < tagged.high)
-    *(Type_Tag *)tagged.low = TAGGED_EOM;
-  for (i = 1; i < NUM_SETS; i++) {
+  for (i = 0; i < NUM_TAGGED_SETS; i++) {
+    if (sets[i]->low < sets[i]->high)
+      *(Type_Tag *)sets[i]->low = TAGGED_EOM;
+  }
+  for (i = NUM_TAGGED_SETS; i < NUM_SETS; i++) {
     if (sets[i]->low < sets[i]->high)
       *(long *)sets[i]->low = UNTAGGED_EOM - 1;
   }
@@ -3616,7 +3638,7 @@ static void gcollect(int full)
 			+ GROW_ADDITION);
 
   if (compact) {
-    for (i = 0; i < (NUM_SETS - 1); i++) {
+    for (i = 0; i < NUM_NONATOMIC_SETS; i++) {
       if (sets[i]->compact_to_offset < MPAGE_WORDS)
 	memset(sets[i]->low, 0, (sets[i]->high - sets[i]->low) << 2);
     }
@@ -3713,8 +3735,10 @@ static MPage *get_page_rec(void *p, mtype_t mtype, mflags_t flags)
     int i;
 
     map = (MPage *)malloc_pages_try_hard(sizeof(MPage) * MAP_SIZE, 0);
-    for (i = 0; i < MAP_SIZE; i++)
+    for (i = 0; i < MAP_SIZE; i++) {
       map[i].type = 0;
+      map[i].flags = 0;
+    }
 
     mpage_maps[g] = map;
   }
@@ -3727,7 +3751,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype, mflags_t flags)
     if (!mtype)
       c = '.';
     else {
-      if (mtype == MTYPE_TAGGED)
+      if (mtype <= MTYPE_TAGGED)
 	c = 't';
       else if (mtype == MTYPE_ATOMIC)
 	c = 'a';
@@ -4042,6 +4066,7 @@ void GC_free(void *p)
     else
       last = page->prev;
     page->type = 0;
+    page->flags = 0;
 
     free_pages((void *)p, page->u.size);
 	
@@ -4056,6 +4081,7 @@ void GC_free(void *p)
 	i++;
       }
       mpage_maps[i][j].type = 0;
+      mpage_maps[i][j].flags = 0;
     }
   }
 }

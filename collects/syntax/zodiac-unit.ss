@@ -204,8 +204,7 @@
 					      identifier-transformer-binding
 					      identifier-binding)
 					  stx)])
-				  ;; If b, is it imported? (Might not be imported
-				  ;; if this is the RHS of set!)
+				  ;; If b, is it imported?
 				  (and (pair? b)
 				       (let ([modname (and (pair? b) (car b))])
 					 (and (or (symbol? modname)
@@ -231,7 +230,7 @@
 				stx))))))]
 
 		[(#%top . id)
-		 ;; Top-level (or module) reference:
+		 ;; Top-level reference:
 		 (make-top-level-varref
 		  stx
 		  (mk-back)

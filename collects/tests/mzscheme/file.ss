@@ -867,12 +867,12 @@
 			    (set! counter (add1 counter))
 			    (loop (add1 got)))
 			  (if (zero? got)
-			      (convert-evt
+			      (wrap-evt
 			       (semaphore-peek-evt ready-sema)
 			       (lambda (x) 0))
 			      got)))
 		    (semaphore-post lock))
-		   (convert-evt
+		   (wrap-evt
 		    (semaphore-peek-evt lock)
 		    (lambda (x) 0))))
 	     (and supply-peek?
@@ -893,9 +893,9 @@
 			       ;; when new things appear:
 			       (let ([s (make-semaphore)])
 				 (set! extras (cons s extras))
-				 (convert-evt s (lambda (x) 0)))))
+				 (wrap-evt s (lambda (x) 0)))))
 			 (semaphore-post lock))
-			(convert-evt
+			(wrap-evt
 			 (semaphore-peek-evt lock)
 			 (lambda () 0)))))
 	     void)])

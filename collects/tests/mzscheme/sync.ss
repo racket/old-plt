@@ -133,11 +133,11 @@
 
 (test #f sync/timeout 0.1 (alarm-evt (+ (current-inexact-milliseconds) 200)))
 (test 'ok sync/timeout 0.1 
-      (convert-evt
+      (wrap-evt
        (alarm-evt (+ (current-inexact-milliseconds) 50))
        (lambda (x) 'ok)))
 (test 'ok sync/timeout 100
-      (convert-evt
+      (wrap-evt
        (alarm-evt (+ (current-inexact-milliseconds) 50))
        (lambda (x) 'ok)))
 
@@ -207,14 +207,14 @@
 
 (test 77 sync/timeout 
       #f 
-      (convert-evt (make-semaphore) void) 
+      (wrap-evt (make-semaphore) void) 
       (guard-evt 
        (lambda () 
 	 (choice-evt 
 	  (make-semaphore) (make-semaphore) (make-semaphore) (make-semaphore) 
 	  (make-semaphore) (make-semaphore) (make-semaphore) (make-semaphore) 
 	  (let ([sema (make-semaphore 1)])
-	    (convert-evt sema (lambda (x)
+	    (wrap-evt sema (lambda (x)
 					  (test sema values x)
 					  77)))))))
 
@@ -223,7 +223,7 @@
        (lambda (amt)
 	 (guard-evt
 	  (lambda ()
-	    (convert-evt
+	    (wrap-evt
 	     (alarm-evt (+ (current-inexact-milliseconds) (* 1000 amt)))
 	     (lambda (v) amt)))))])
   (test #f sync/timeout 0.1 (make-delay 0.15) (make-delay 0.2))
@@ -236,35 +236,35 @@
 ;; ----------------------------------------
 ;; Wrapped waitables
 
-(arity-test convert-evt 2 2)
+(arity-test wrap-evt 2 2)
 
-(err/rt-test (convert-evt 1 void))
-(err/rt-test (convert-evt (make-semaphore) 10))
-(err/rt-test (convert-evt (make-semaphore) (lambda () 10)))
+(err/rt-test (wrap-evt 1 void))
+(err/rt-test (wrap-evt (make-semaphore) 10))
+(err/rt-test (wrap-evt (make-semaphore) (lambda () 10)))
 
-(test 17 sync (convert-evt (make-semaphore 1) (lambda (sema) 17)))
+(test 17 sync (wrap-evt (make-semaphore 1) (lambda (sema) 17)))
 (test 17 sync (choice-evt
 				  (make-semaphore)
-				  (convert-evt (make-semaphore 1) (lambda (sema) 17))))
-(test #t sync (convert-evt (make-semaphore 1) semaphore?))
+				  (wrap-evt (make-semaphore 1) (lambda (sema) 17))))
+(test #t sync (wrap-evt (make-semaphore 1) semaphore?))
 (test 18 'sync
       (let ([n 17]
 	    [s (make-semaphore)])
 	(thread (lambda () (sleep SYNC-SLEEP-DELAY) (semaphore-post s)))
 	(sync 
-			      (convert-evt 
+			      (wrap-evt 
 			       s 
 			       (lambda (sema) (set! n (add1 n)) n))
-			      (convert-evt 
+			      (wrap-evt 
 			       s 
 			       (lambda (sema) (set! n (add1 n)) n)))))
 
 (let ([c (make-channel)])
   (thread (lambda () (channel-put c 76)))
-  (test 77 sync (convert-evt c add1)))
+  (test 77 sync (wrap-evt c add1)))
 
 (test 78 sync 
-      (convert-evt (choice-evt (make-semaphore 1) (make-semaphore 1))
+      (wrap-evt (choice-evt (make-semaphore 1) (make-semaphore 1))
 			     (lambda (x) 78)))
 
 ;; ----------------------------------------
@@ -713,7 +713,7 @@
   (check-threads-gcable 'semap (lambda () (sync (c (semaphore-peek-evt (make-semaphore))))))
   (check-threads-gcable 'ch (lambda () (sync (c (make-channel)))))
   (check-threads-gcable 'chput (lambda () (sync (c (channel-put-evt (make-channel) 10)))))
-  (check-threads-gcable 'wrapped (lambda () (sync (c (convert-evt (make-semaphore) void)))))
+  (check-threads-gcable 'wrapped (lambda () (sync (c (wrap-evt (make-semaphore) void)))))
   (check-threads-gcable 'guard (lambda () (sync (c (guard-evt (lambda () (make-semaphore)))))))
   (check-threads-gcable 'nack (lambda () (sync (c (nack-guard-evt (lambda (nack) (make-semaphore)))))))
   (check-threads-gcable 'poll (lambda () (sync (c (poll-guard-evt (lambda (poll?) (make-semaphore))))))))

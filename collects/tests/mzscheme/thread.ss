@@ -333,7 +333,7 @@
 		 (let ([c (if nl?
 			      (if ready?
 				  #\newline
-				  (convert-evt nl-sema
+				  (wrap-evt nl-sema
 					       (lambda (x) 0)))
 			      (begin
 				(set! nl? #t)

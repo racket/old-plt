@@ -839,4 +839,39 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(let ([p (open-output-bytes)])
+  (display void p)
+  (test "#<primitive:void>" get-output-string p)
+  (let ([try-bad
+	 (lambda (x)
+	   (err/rt-test (parameterize ([print-unreadable #f])
+			  (display x p))))]
+	[try-good
+	 (lambda (x)
+	   (test (void) (list x)
+		 (parameterize ([print-unreadable #f])
+		   (display x p))))])
+    (try-bad void)
+    (try-bad (lambda () 10))
+    (try-bad (seconds->date (current-seconds)))
+    (try-bad (let ()
+	   (define-struct s (x))
+	   (make-s 10)))
+    (try-bad #'apple)
+    
+    (try-good 'ex)
+    (try-good '(1 ex))
+    (try-good '(1 . ex))
+    (try-good #(1 2))
+    (try-good #&(1))
+    (try-good 1)
+    (try-good 1.0)
+    (try-good "apple")
+    (try-good #"apple")
+    (try-good #rx"ok")
+    (try-good #rx#"ok")
+    (try-good #f)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (report-errs)

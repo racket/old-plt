@@ -162,10 +162,10 @@
   (define (serve commit-reqs response-evts)
     (apply
      sync
-     (finish-evt read-req-ch (handle-read commit-reqs response-evts))
-     (finish-evt progress-req-ch (handle-progress commit-reqs response-evts))
-     (finish-evt commit-req-ch (add-commit commit-reqs response-evts))
-     (finish-evt close-req-ch (handle-close commit-reqs response-evts))
+     (handle-evt read-req-ch (handle-read commit-reqs response-evts))
+     (handle-evt progress-req-ch (handle-progress commit-reqs response-evts))
+     (handle-evt commit-req-ch (add-commit commit-reqs response-evts))
+     (handle-evt close-req-ch (handle-close commit-reqs response-evts))
      (append
       (map (make-handle-response commit-reqs response-evts) response-evts)
       (map (make-handle-commit commit-reqs response-evts) commit-reqs))))
@@ -222,7 +222,7 @@
       ;;  previous peeks, because the entire stream is actually
       ;;  known, but we could send an exception in that case.
       (choice-evt
-       (finish-evt progress-evt
+       (handle-evt progress-evt
 		   (lambda (x) 
 		     (sync nack (channel-put-evt ch #f))
 		     (serve (remq r commit-reqs) response-evts)))
@@ -233,7 +233,7 @@
        ;;  only because the server control all posts to progress-evt.
        (if (sync/timeout 0 progress-evt)
 	   never-evt
-	   (finish-evt done-evt
+	   (handle-evt done-evt
 		       (lambda (v)
 			 (commit! k)
 			 (sync nack (channel-put-evt ch #t))
@@ -241,7 +241,7 @@
   ;; Response handling: as soon as the respondee listerns,
   ;;  remove the response
   (define ((make-handle-response commit-reqs response-evts) evt)
-    (finish-evt evt
+    (handle-evt evt
 		(lambda (x)
 		  (serve commit-reqs
 			 (remq evt response-evts)))))
@@ -350,7 +350,7 @@
    (lambda (special non-block? breakable?) 
      (test should-be-breakable? 'spec-breakable breakable?)
      #t)
-   (lambda (s start end) (convert-evt
+   (lambda (s start end) (wrap-evt
 			  always-evt
 			  (lambda (x)
 			    (- end start))))
@@ -403,7 +403,7 @@
              (- end start))
 	   ;; Cheap strategy: block until the list is unlocked,
 	   ;;   then return 0, so we get called again
-           (convert-evt
+           (wrap-evt
 	    lock-peek
 	    (lambda (x) 0))))
      void)))

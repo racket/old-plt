@@ -23,6 +23,11 @@ void wxGRelease(Graphics *g)
   delete g;
 }
 
+void wxGSetPageUnit(Graphics *g, Unit u)
+{
+  g->SetPageUnit(u);
+}
+
 GraphicsState wxGSave(Graphics *g)
 {
   return g->Save();

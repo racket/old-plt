@@ -485,6 +485,9 @@ void wxDC::InitGraphics(HDC dc)
 
     g = wxGMake(dc);
 
+    if (wxSubType(__type, wxTYPE_DC_PRINTER))
+      wxGSetPageUnit(g, UnitPoint);
+
     /* Scroll translate before clip: */
     wxGTranslate(g, canvas_scroll_dx, canvas_scroll_dy);
 
@@ -2154,7 +2157,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
 void wxDC::ResetMapMode(HDC given_dc)
 {
-  double sx, sy, ox, oy;
+  double sx, sy, ox, oy, lx, ly;
   HDC dc;
 
   if (given_dc)
@@ -2168,22 +2171,20 @@ void wxDC::ResetMapMode(HDC given_dc)
   switch (mapping_mode) {
   case wxPOINTS_MAP:
     {
-      double mm2pixelsX;
-      double mm2pixelsY;
+      double pixelsX;
+      double pixelsY;
   
-      mm2pixelsX = GetDeviceCaps(dc, LOGPIXELSX) * mm2inches;
-      mm2pixelsY = GetDeviceCaps(dc, LOGPIXELSY) * mm2inches;
+      pixelsX = GetDeviceCaps(dc, LOGPIXELSX) / 72.0;
+      pixelsY = GetDeviceCaps(dc, LOGPIXELSY) / 72.0;
 	
-      if (!mm2pixelsX || !mm2pixelsY) {
-	/* Guess 300 dpi. At least we should start getting bug reports
-	   about text too large, instead of too small, if this is where
-	   things fail. */
-	mm2pixelsX = 300 * mm2inches;
-	mm2pixelsY = 300 * mm2inches;
+      if (!pixelsX || !pixelsY) {
+	/* Guess 300 dpi. */
+	pixelsX = 300.0 / 72.0;
+	pixelsY = 300.0 / 72.0;
       }
 	
-      logical_scale_x = (double)(pt2mm * mm2pixelsX);
-      logical_scale_y = (double)(pt2mm * mm2pixelsY);
+      logical_scale_x = pixelsX;
+      logical_scale_y = pixelsY;
     }
     break;
   case wxPIXELS_MAP:
@@ -2199,11 +2200,15 @@ void wxDC::ResetMapMode(HDC given_dc)
     /* disable user xform */
     sx = 1.0;
     sy = 1.0;
+    lx = 1.0;
+    ly = 1.0;
     ox = 0.0;
     oy = 0.0;
   } else {
     sx = user_scale_x;
     sy = user_scale_y;
+    lx = logical_scale_x;
+    ly = logical_scale_y;
     ox = device_origin_x;
     oy = device_origin_y;
   }
@@ -2223,11 +2228,11 @@ void wxDC::ResetMapMode(HDC given_dc)
     xform.eDy = (FLOAT)oy;
     ::SetWorldTransform(dc, &xform);
   } else {
-    ::SetViewportExtEx(dc, 1000, 1000, NULL);
-    ::SetWindowExtEx(dc, 
-		     (int)floor(1000*logical_scale_x*sx), 
-		     (int)floor(1000*logical_scale_y*sy),
-		     NULL);
+    ::SetViewportExtEx(dc, 
+		       (int)floor(1000*lx*sx), 
+		       (int)floor(1000*ly*sy),
+		       NULL);
+    ::SetWindowExtEx(dc, 1000, 1000, NULL);
     ::SetViewportOrgEx(dc, (int)floor(ox), (int)floor(oy), NULL);
     ::SetWindowOrgEx(dc, (int)0, (int)0, NULL);
   }

@@ -17,6 +17,8 @@ typedef void (*p_wxGShutdown)();
 typedef Graphics *(*p_wxGMake)(HDC dc);
 typedef void (*p_wxGRelease)(Graphics *g);
 
+typedef void (*p_wxGSetPageUnit)(Graphics *g, Unit u);
+
 typedef void (*p_wxGResetClip)(Graphics *g);
 typedef void (*p_wxGSetClip)(Graphics *g, GraphicsPath *gp, CombineMode m);
 
@@ -84,6 +86,8 @@ p_wxGShutdown wxGShutdown;
 
 p_wxGMake wxGMake;
 p_wxGRelease wxGRelease;
+
+p_wxGSetPageUnit wxGSetPageUnit;
 
 p_wxGResetClip wxGResetClip;
 p_wxGSetClip wxGSetClip;
@@ -153,6 +157,8 @@ static void GetProcs(HMODULE m)
 
   wxGMake = (p_wxGMake)GetProcAddress(m, "wxGMake");
   wxGRelease = (p_wxGRelease)GetProcAddress(m, "wxGRelease");
+
+  wxGSetPageUnit = (p_wxGSetPageUnit)GetProcAddress(m, "wxGSetPageUnit");
 
   wxGResetClip = (p_wxGResetClip)GetProcAddress(m, "wxGResetClip");
   wxGSetClip = (p_wxGSetClip)GetProcAddress(m, "wxGSetClip");

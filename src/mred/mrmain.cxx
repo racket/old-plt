@@ -33,8 +33,8 @@
 class wxStandardSnipClassList;
 class wxBufferDataClassList;
 
-# include "wxs/wxscheme.h"
-# include "wxs/wxsmred.h"
+#include "wxs/wxscheme.h"
+#include "wxs/wxsmred.h"
 
 #include "mred.h"
 

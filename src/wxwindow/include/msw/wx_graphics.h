@@ -14,6 +14,8 @@ WX_GRAPHICS_EXPORT void WX_GPROC(wxGShutdown)();
 WX_GRAPHICS_EXPORT Graphics *WX_GPROC(wxGMake)(HDC dc);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGRelease)(Graphics *g);
 
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGSetPageUnit)(Graphics *g, Unit u);
+
 WX_GRAPHICS_EXPORT GraphicsState WX_GPROC(wxGSave)(Graphics *g);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGRestore)(Graphics *g, GraphicsState s);
 

@@ -38,8 +38,10 @@
       (LI  "Enter one or more terms into the " 
 	   (B  (TT  "Search for")) " field.")
       (LI  "Click the " (B  "Search") " button "
-	   "(or hit Enter) to start a search.")
-      (LI  "Help Desk scans the documentation pages and "
+	   "(or hit Enter) to start a search, "
+	   "or click on the " (B "Lucky!") " button.")
+      (LI  "If you click on the " (B "Search") " button, "
+	   "Help Desk scans the documentation pages and "
 	   "returns a list of hyperlinks for "
 	   (I  "keyword") ", "
 	   (I  "index entry") ", and "
@@ -54,9 +56,14 @@
 	    "text from the documentation pages. "
 	    "(Raw text results are useful only as "
 	    "a last resort.)"))
+      (LI "If you click on the " (B "Lucky!") " button, "
+	 "Help Desk displays only the first item of documentation "
+	 "that matches the search term, without displaying links to "
+	 "all relevant items.")
       (LI  "Expert users can adjust the search with the "
 	   "popdown menus below the "
 	   (B "Search for") " field."))
      (P)
      "Help Desk sorts search results according to their source, "
      "and then according to their (apparent) relevance.")))
+

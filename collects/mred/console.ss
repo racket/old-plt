@@ -102,6 +102,15 @@
 			       wx:const-change-style
 			       wx:const-slant)])
 	       
+	
+	  (sequence
+	    '(let ([mult (make-object wx:mult-colour%)]
+		   [add (make-object wx:add-colour%)])
+	      (send mult set 1 0 0)
+	      (send add set 255 0 0)
+	      (send error-delta set-foreground-add add)
+	      (send error-delta set-foreground-mult mult)))
+
 	       (rename
 		[super-on-insert on-insert]
 		[super-on-delete on-delete]
@@ -474,14 +483,20 @@
     (define make-console-frame%
       (lambda (super%)
 	(class super% ([close-item? #f]
-		       [mssg welcome-message])
-	  (inherit active-edit edit canvas show make-menu on-close)
+		       [mssg welcome-message]
+		       [show? #t])
+	  (inherit active-edit edit canvas show make-menu)
+	  (rename [super-on-close on-close])
 	  (private 
 	    edit-offset 
 	    other-offset)
 	  (public
 	    [edit% console-edit%])
 	  (public 
+	    [on-close 
+	     (lambda ()
+	       (super-on-close)
+	       (mred:exit:exit))]
 	    [next-menu-id (lambda () other-offset)]
 	    [load-file
 	     (lambda (file)
@@ -525,7 +540,7 @@
 	     (lambda ()
 	       (send (active-edit) set-position
 		     0 (send (active-edit) last-position)))]
-	    [edit-menu:between-select-all-and-preferences
+	    [edit-menu:between-find-and-preferences
 	     (let ()
 	       (lambda (edit-menu)
 		 (send edit-menu append-separator)
@@ -573,7 +588,8 @@
 	      (send edit takeover-output)
 	      (send edit insert-prompt)
 	      (send edit clear-undos)
-	      (show #t))))))
+	      (when show?
+		(show #t)))))))
 
     (define console-frame% (make-console-frame%
 			    (mred:find-string:make-searchable-frame%

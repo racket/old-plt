@@ -32,7 +32,9 @@ Reader Procedures
 
 > (zodiac:read p (make-location 1 1 0 filename)) - reads from the port
   `p', which represents the file indicated by the `filename' string.
-  Returns a PROCEDURE that gets each expression as a zodiac AST.
+  Returns a PROCEDURE that gets each expression as a zodiac AST. When
+  the reader encounters an eof-of-file, it returns an instance of
+  zodiac:eof.
 
 Expander Procedures
 -------------------

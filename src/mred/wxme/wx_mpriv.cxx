@@ -197,19 +197,6 @@ void wxMediaEdit::_SetPosition(Bool setflash, int bias, long start, long end,
   }
 
   if (needRefresh) {
-    if (hiliteOn && admin && (admin->standard > 0) && !delayRefresh 
-	&& oldstart == oldend && start == end && 
-	caretOn && !flash) {
-      /* Try to take a shortcut */
-      if (CaretOff()) {
-	/* Shortcut works */
-	caretLocationX = -1;
-	caretBlinked = FALSE;
-	CaretOn();
-	needRefresh = FALSE;
-      }
-    }
-
     if (needRefresh) {
       caretBlinked = FALSE;
       if (start >= oldend || end <= oldstart || needFullRefresh) {
@@ -401,7 +388,6 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
 
 void wxMediaEdit::SettingAdmin(wxMediaAdmin * /* newadmin */)
 {
-  caretLocationX = -1;
 }
 
 void wxMediaEdit::InitNewAdmin(void)
@@ -1110,6 +1096,8 @@ void wxMediaEdit::MakeSnipset(long start, long end)
       
       SnipSetAdmin(snip, snipAdmin);
       SnipSetAdmin(insSnip, snipAdmin);
+
+      OnSplitSnip(start - sPos);
     }
   }
 
@@ -1139,6 +1127,8 @@ void wxMediaEdit::MakeSnipset(long start, long end)
       
       SnipSetAdmin(snip, snipAdmin);
       SnipSetAdmin(insSnip, snipAdmin);
+
+      OnSplitSnip(end - sPos);
     }
   }
 }
@@ -1238,9 +1228,11 @@ void wxMediaEdit::CheckMergeSnips(long start)
 {
   wxSnip *snip1, *snip2, *prev, *next;
   long sPos1, sPos2, c;
-
+  int did_something = 0;
   wxMediaLine *line;
   Bool atStart, atEnd;
+
+ restart:
 
   snip1 = FindSnip(start, -1, &sPos1);
   snip2 = FindSnip(start, +1, &sPos2);
@@ -1257,12 +1249,13 @@ void wxMediaEdit::CheckMergeSnips(long start)
 	  && (snip2->flags & wxSNIP_CAN_APPEND)
 	  && (snip1->count + snip2->count < MAX_COUNT_FOR_SNIP)
 	  && PTREQ(snip1->line, snip2->line)) {
+	did_something = 1;
 	if (!snip1->count) {
 	  if (PTREQ(snip1->line->snip, snip1))
 	    snip1->line->snip = snip2;
 	  DeleteSnip(snip1);
 	  snip1->flags -= wxSNIP_OWNED;
-	  CheckMergeSnips(start);
+	  goto restart;
 	} else if (!snip2->count) {
 	  if (PTREQ(snip1->line->lastSnip, snip2)) {
 	    snip1->line->lastSnip = snip1;
@@ -1271,7 +1264,7 @@ void wxMediaEdit::CheckMergeSnips(long start)
 	  }
 	  DeleteSnip(snip2);
 	  snip2->flags -= wxSNIP_OWNED;
-	  CheckMergeSnips(start);
+	  goto restart;
 	} else {
 	  wxSnip *naya;
 	  Bool wl, fl;
@@ -1333,6 +1326,9 @@ void wxMediaEdit::CheckMergeSnips(long start)
       }
     }
   }
+
+  if (did_something)
+    OnMergeSnips(start);
 }
 
 wxTextSnip *wxMediaEdit::OnNewTextSnip()
@@ -2324,11 +2320,7 @@ void wxMediaEdit::Redraw(wxDC *dc, double starty, double endy,
 			 hsxs + dx, 
 			 hsye + dy - 1 + GC_LINE_EXTEND);
 	    dc->SetPen(savePen);
-	  } 
-	  caretLocationX = hsxs;
-	  caretLocationT = hsys;
-	  caretLocationB = hsye + GC_LINE_EXTEND;
-	  caretOn = TRUE;
+	  }
 	}
       }
     }
@@ -2355,11 +2347,6 @@ void wxMediaEdit::Redraw(wxDC *dc, double starty, double endy,
 	dc->DrawLine(dx, y + dy, dx, 
 		     y + extraLineH + dy - 1 + GC_LINE_EXTEND);
 	dc->SetPen(savePen);
-
-	caretLocationX = 0;
-	caretLocationT = y;
-	caretLocationB = y + extraLineH + GC_LINE_EXTEND;
-	caretOn = TRUE;
       }
  
 paint_done:
@@ -2560,9 +2547,6 @@ void wxMediaEdit::Refresh(double left, double top, double width, double height,
     show_caret = 0;
   }
 
-  caretLocationX = -1;
-  caretOn = FALSE;
-
   if (ReadyOffscreen(width, height))
     drawCachedInBitmap = FALSE;
 
@@ -2701,104 +2685,7 @@ void wxMediaEdit::RefreshByLineDemand(void)
 
 void wxMediaEdit::NeedCaretRefresh(void)
 {
-  if (!admin || (admin->standard <= 0) || delayRefresh 
-      || startpos != endpos || flash || !hiliteOn
-      || (!caretOn && (caretLocationX < 0) && ownCaret)) {
-    caretBlinked = FALSE;
-    NeedRefresh(startpos, endpos);
-  } else if (ownCaret) {
-    caretBlinked = FALSE;
-    if (!caretOn && (caretLocationX >= 0))
-      CaretOn();
-  } else {
-    if (caretOn)
-      CaretOff();
-    caretBlinked = FALSE;
-  }
-}
-
-void wxMediaEdit::CalcCaretLocation(void)
-{
-  if (caretLocationX < 0) {
-    double x, t, b;
-    PositionLocation(startpos, &x, &t,
-		     TRUE, posateol, FALSE);
-    caretLocationX = x;
-    caretLocationT = t;
-    PositionLocation(startpos, NULL, &b,
-		     FALSE, posateol, FALSE);
-    caretLocationB = b;
-  }
-}
-
-Bool wxMediaEdit::CaretOff(void)
-  /* Actually toggles the state of the caret on the screen,
-     but sets caretOn to FALSE. Do not use this if caretOn
-     is FALSE --- except in CaretOn(). */
-{
-  wxDC *dc;
-  double dx, dy, x, y, w, h, X, T, B;
-
-  if (!CheckRecalc(TRUE, FALSE))
-    return FALSE;
-
-  if (refreshAll || !refreshUnset || !refreshBoxUnset || (delayedscroll!=-1)) {
-    Redraw();
-    return FALSE;
-  }
-
-  dc = admin->GetDC(&dx, &dy);
-
-  if (!dc)
-    return FALSE;
-
-  admin->GetView(&x, &y, &w, &h);
-
-  CalcCaretLocation();
-
-  X = caretLocationX;
-  T = caretLocationT;
-  B = caretLocationB;
-
-  if (B < y)
-    return TRUE;
-  if (T >= y + h)
-    return TRUE;
-  if (X < x || X >= x + w)
-    return TRUE;
-
-  if (T < y)
-    T = y;
-  if (B > y + h)
-    B = y + h;
-
-  if (!caretPen) {
-    wxREGGLOB(caretPen);
-    caretPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxXOR);
-  }
-
-  {
-    wxPen *oldpen;
-    oldpen = dc->GetPen();
-    dc->SetPen(caretPen);
-    dc->DrawLine(X - dx, T - dy, X - dx, B - dy - 1 + GC_LINE_EXTEND);
-    dc->SetPen(oldpen);
-  }
-
-  drawCachedInBitmap = FALSE;
-
-  caretOn = FALSE;
-
-  return TRUE;
-}
-
-void wxMediaEdit::CaretOn(void)
-  /* Assumes that the caret really is not drawn right now.  To test
-     for whether the caret is drawn, note that !caretOn only works
-     when caretLocationX >= 0. */
-{
-  if (CaretOff())
-    caretOn = TRUE;
+  NeedRefresh(startpos, endpos);
 }
 
 /* 8.5" x 11" Paper, 0.5" Margin; usually not used */

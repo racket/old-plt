@@ -249,9 +249,6 @@ wxMediaEdit::wxMediaEdit(double spacing, double *tabstops, int numtabs)
   wordBreakData = NULL;
   wordBreakMap = wxTheMediaWordbreakMap;
 
-  caretLocationX = -1;
-  caretOn = FALSE;
-
   autoWrapBitmap = NULL;
   wrapBitmapWidth = 0;
 
@@ -735,21 +732,8 @@ void wxMediaEdit::BlinkCaret()
     if ((startpos == endpos) 
 	&& !flash 
 	&& hiliteOn) {
-      int need_refresh = 0;
-      BeginSequenceLock();
       caretBlinked  = !caretBlinked;
-      if (caretBlinked) {
-	if (caretOn)
-	  CaretOff();
-      } else {
-	if (!caretOn && (caretLocationX >= 0))
-	  CaretOn();
-	else
-	  need_refresh = 1;
-      }
-      EndSequenceLock();
-      if (need_refresh)
-	NeedCaretRefresh();
+      NeedCaretRefresh();
     }
   }
 }
@@ -848,6 +832,16 @@ void wxMediaEdit::OnSetSizeConstraint(void)
 }
 
 void wxMediaEdit::AfterSetSizeConstraint(void)
+{
+  /* Do nothing */
+}
+
+void wxMediaEdit::OnSplitSnip(long pos)
+{
+  /* Do nothing */
+}
+
+void wxMediaEdit::OnMergeSnips(long pos)
 {
   /* Do nothing */
 }

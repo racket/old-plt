@@ -225,6 +225,8 @@
 @ v "can-set-size-constraint?" : bool CanSetSizeConstraint();
 @ v "on-set-size-constraint" : void OnSetSizeConstraint();
 @ v "after-set-size-constraint" : void AfterSetSizeConstraint();
+@ v "after-split-snip" : void OnSplitSnip(nnlong);
+@ v "after-merge-snips" : void OnMergeSnips(nnlong);
 
 @ v "get-region-data" : wxBufferData^ GetRegionData(nnlong,nnlong);
 @ v "set-region-data" : void SetRegionData(nnlong,nnlong,wxBufferData^);

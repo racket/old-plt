@@ -976,6 +976,8 @@ class os_wxMediaEdit : public wxMediaEdit {
   class wxTextSnip* OnNewTextSnip();
   void SetRegionData(nnlong x0, nnlong x1, class wxBufferData* x2);
   class wxBufferData* GetRegionData(nnlong x0, nnlong x1);
+  void OnMergeSnips(nnlong x0);
+  void OnSplitSnip(nnlong x0);
   void AfterSetSizeConstraint();
   void OnSetSizeConstraint();
   Bool CanSetSizeConstraint();
@@ -1223,6 +1225,76 @@ class wxBufferData* os_wxMediaEdit::GetRegionData(nnlong x0, nnlong x1)
      READY_TO_RETURN;
      return resval;
   }
+  }
+}
+
+static Scheme_Object *os_wxMediaEditOnMergeSnips(int n, Scheme_Object *p[]);
+
+void os_wxMediaEdit::OnMergeSnips(nnlong x0)
+{
+  Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaEdit *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-merge-snips", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaEditOnMergeSnips)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaEdit::OnMergeSnips(x0);
+  } else {
+  
+  p[POFFSET+0] = scheme_make_integer(x0);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
+  
+  
+     READY_TO_RETURN;
+  }
+}
+
+static Scheme_Object *os_wxMediaEditOnSplitSnip(int n, Scheme_Object *p[]);
+
+void os_wxMediaEdit::OnSplitSnip(nnlong x0)
+{
+  Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaEdit *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaEdit_class, "after-split-snip", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method, os_wxMediaEditOnSplitSnip)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaEdit::OnSplitSnip(x0);
+  } else {
+  
+  p[POFFSET+0] = scheme_make_integer(x0);
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
+  
+  
+     READY_TO_RETURN;
   }
 }
 
@@ -4020,6 +4092,56 @@ static Scheme_Object *os_wxMediaEditGetRegionData(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxBufferData(r));
+}
+
+static Scheme_Object *os_wxMediaEditOnMergeSnips(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaEdit_class, "after-merge-snips in text%", n, p);
+  nnlong x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "after-merge-snips in text%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaEdit::OnMergeSnips(x0));
+  else
+    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->OnMergeSnips(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaEditOnSplitSnip(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaEdit_class, "after-split-snip in text%", n, p);
+  nnlong x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "after-split-snip in text%"));
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaEdit::OnSplitSnip(x0));
+  else
+    WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->OnSplitSnip(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxMediaEditAfterSetSizeConstraint(int n,  Scheme_Object *p[])
@@ -8360,7 +8482,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 146));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 148));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditRemoveClickback, 2, 2));
@@ -8376,6 +8498,8 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "find-wordbreak" " method", (Scheme_Method_Prim *)os_wxMediaEditFindWordbreak, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "set-region-data" " method", (Scheme_Method_Prim *)os_wxMediaEditSetRegionData, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-region-data" " method", (Scheme_Method_Prim *)os_wxMediaEditGetRegionData, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-merge-snips" " method", (Scheme_Method_Prim *)os_wxMediaEditOnMergeSnips, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-split-snip" " method", (Scheme_Method_Prim *)os_wxMediaEditOnSplitSnip, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "after-set-size-constraint" " method", (Scheme_Method_Prim *)os_wxMediaEditAfterSetSizeConstraint, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "on-set-size-constraint" " method", (Scheme_Method_Prim *)os_wxMediaEditOnSetSizeConstraint, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "can-set-size-constraint?" " method", (Scheme_Method_Prim *)os_wxMediaEditCanSetSizeConstraint, 0, 0));

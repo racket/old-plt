@@ -176,6 +176,8 @@ class wxMediaEdit : public wxMediaBuffer
   virtual Bool CanSetSizeConstraint(void);
   virtual void OnSetSizeConstraint(void);
   virtual void AfterSetSizeConstraint(void);
+  virtual void OnSplitSnip(long pos);
+  virtual void OnMergeSnips(long pos);
 
   /* Set the caret position: */
   void GetPosition(long *start, long *end = NULL);
@@ -487,7 +489,6 @@ class wxMediaEdit : public wxMediaBuffer
 
   TF_Flag( delayedscrollateol );
   TF_Flag( delayedscrollbox );
-  TF_Flag( caretOn ); /* Whether the caret was drawn on the last update */
   TF_Flag( drawCachedInBitmap );
   TF_Flag( refreshUnset );
   TF_Flag( refreshBoxUnset );
@@ -550,8 +551,6 @@ class wxMediaEdit : public wxMediaBuffer
   double refreshL, refreshT, refreshR, refreshB;
 
   double lastDrawL, lastDrawT, lastDrawR, lastDrawB;
-
-  double caretLocationX, caretLocationT, caretLocationB;
 
   long delayedscroll, delayedscrollend;
   int delayedscrollbias;
@@ -642,9 +641,6 @@ class wxMediaEdit : public wxMediaBuffer
   void RefreshBox(double x, double y, double w, double h);
 
   void NeedCaretRefresh(void);
-  void CaretOn(void);
-  Bool CaretOff(void);
-  void CalcCaretLocation(void);
   
   void EndStreaks(int exception = 0);
 

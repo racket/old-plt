@@ -1262,6 +1262,10 @@ static long pipe_get_or_peek_string(Scheme_Input_Port *p,
 
   if (!peek)
     pipe_did_read(pipe);
+  else {
+    if (!c && size && pipe->eof)
+      return EOF;
+  }
 
   return c;
 }

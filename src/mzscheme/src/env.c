@@ -60,6 +60,7 @@ static void make_init_env(void);
 static Scheme_Object *namespace_identifier(int, Scheme_Object *[]);
 static Scheme_Object *namespace_variable_value(int, Scheme_Object *[]);
 static Scheme_Object *namespace_set_variable_value(int, Scheme_Object *[]);
+static Scheme_Object *namespace_mapped_symbols(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
@@ -365,6 +366,13 @@ static void make_init_env(void)
 						      "namespace-set-variable-value!",
 						      2, 3),
 			     env);
+
+  scheme_add_global_constant("namespace-mapped-symbols",
+			     scheme_make_prim_w_arity(namespace_mapped_symbols,
+						      "namespace-mapped-symbols",
+						      0, 0),
+			     env);
+
 
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
@@ -2312,6 +2320,46 @@ namespace_set_variable_value(int argc, Scheme_Object *argv[])
   }
 
   return scheme_void;
+}
+
+static Scheme_Object *
+namespace_mapped_symbols(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *l;
+  Scheme_Env *env;
+  Scheme_Hash_Table *mapped;
+  Scheme_Bucket_Table *ht;
+  Scheme_Bucket **bs;
+  int i, j;
+
+  mapped = scheme_make_hash_table(SCHEME_hash_ptr);
+
+  env = scheme_get_env(scheme_config);
+
+  for (j = 0; j < 2; j++) {
+    if (j)
+      ht = env->syntax;
+    else
+      ht = env->toplevel;
+
+    bs = ht->buckets;
+    for (i = ht->size; i--; ) {
+      Scheme_Bucket *b = bs[i];
+      if (b && b->val) {
+	scheme_hash_set(mapped, (Scheme_Object *)b->key, scheme_true);
+      }
+    }
+  }
+
+  scheme_list_module_rename(env->rename, mapped);
+
+  l = scheme_null;
+  for (i = mapped->size; i--; ) {
+    if (mapped->vals[i])
+      l = scheme_make_pair(mapped->keys[i], l);
+  }
+
+  return l;
 }
 
 static Scheme_Object *

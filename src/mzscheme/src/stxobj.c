@@ -806,6 +806,25 @@ void scheme_remove_module_rename(Scheme_Object *mrn,
   scheme_hash_set(((Module_Renames *)mrn)->ht, localname, NULL);
 }
 
+void scheme_list_module_rename(Scheme_Object *src, Scheme_Hash_Table *ht)
+{
+  /* Put every name mapped by src into ht: */
+  Scheme_Hash_Table *hts;
+  int i;
+
+  hts = ((Module_Renames *)src)->ht;
+  
+  for (i = hts->size; i--; ) {
+    if (hts->vals[i]) {
+      scheme_hash_set(ht, hts->keys[i], scheme_false);
+    }
+  }
+
+  if (((Module_Renames *)src)->plus_kernel) {
+    scheme_list_module_rename((Scheme_Object *)krn, ht);
+  }
+}
+
 /******************** wrap manipulations ********************/
 
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)

@@ -1197,7 +1197,7 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
 
     /* Non-blocking read got enough? If not, try againin blocking mode: */
     if (need_total > rw->input_end) {
-      rw->str = regstr; /* get_string can swap threadsa */
+      rw->str = regstr; /* get_string can swap threads */
       got = scheme_get_string("regexp-match", rw->port, 
 			      rw->instr, rw->input_end, need_total - rw->input_end,
 			      0, /* blocking mode */
@@ -1284,12 +1284,23 @@ regmatch(Regwork *rw, rxpos prog)
 
       opnd = OPSTR(OPERAND(scan));
       len = OPLEN(OPERAND(scan));
-      NEED_INPUT(rw, rw->input, len);
-      if (len > rw->input_end - rw->input)
-	return 0;
-      for (i = 0; i < len; i++) {
-	if (regstr[opnd+i] != rw->instr[rw->input+i])
+      if (rw->port) {
+	/* Like the other branch, but demand chars one at a time, as
+           we need them */
+	for (i = 0; i < len; i++) {
+	  NEED_INPUT(rw, rw->input + i, 1);
+	  if (rw->input + i >= rw->input_end)
+	    return 0;
+	  if (regstr[opnd+i] != rw->instr[rw->input+i])
+	    return 0;
+	}
+      } else {
+	if (len > rw->input_end - rw->input)
 	  return 0;
+	for (i = 0; i < len; i++) {
+	  if (regstr[opnd+i] != rw->instr[rw->input+i])
+	    return 0;
+	}
       }
       rw->input += len;
     }
@@ -1380,6 +1391,7 @@ regmatch(Regwork *rw, rxpos prog)
 	for (i = min; i <= no; i++) {
 	  rw->input = save + i;
 	  /* If it could work, try it. */
+	  NEED_INPUT(rw, save + i, 1);
 	  if (nextch == '\0' || rw->instr[rw->input] == nextch)
 	    if (regmatch(rw, next)) {
 	      return(1);
@@ -1388,10 +1400,6 @@ regmatch(Regwork *rw, rxpos prog)
 	  if ((i == no) && (nongreedy == 2)) {
 	    /* Maybe regrepeat can match more if we let it read from
 	       the port. */
-	    if (rw->port && ((rw->input_end - save) == no)) {
-	      NEED_INPUT(rw, save, no + 1);
-	    }
-
 	    if ((rw->input_end - save) > no) {
 	      /* We have pulled-in chars to try. */
 	      int moreno;
@@ -1684,7 +1692,8 @@ static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *gen_compare(char *name, int pos, 
-				  int argc, Scheme_Object *argv[])
+				  int argc, Scheme_Object *argv[],
+				  int peek)
 {
   regexp *r;
   char *full_s;
@@ -1695,9 +1704,9 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
     scheme_wrong_type(name, "regexp-or-string", 0, argc, argv);
-  if (!SCHEME_STRINGP(argv[1])
+  if ((peek || !SCHEME_STRINGP(argv[1]))
       && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type(name, "string or input-port", 1, argc, argv);
+    scheme_wrong_type(name, peek ? "input-port" : "string or input-port", 1, argc, argv);
   
   if (SCHEME_INPORTP(argv[1])) {
     iport = argv[1];
@@ -1767,7 +1776,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
 
   m = regexec(name, r, full_s, offset, endset - offset, startp, endp,
-	      iport, &full_s, 0, pos, oport);
+	      iport, &full_s, peek, pos && !peek, oport);
 
   if (m) {
     int i;
@@ -1802,12 +1811,22 @@ static Scheme_Object *gen_compare(char *name, int pos,
 
 static Scheme_Object *compare(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match", 0, argc, argv);
+  return gen_compare("regexp-match", 0, argc, argv, 0);
 }
 
 static Scheme_Object *positions(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match-positions", 1, argc, argv);
+  return gen_compare("regexp-match-positions", 1, argc, argv, 0);
+}
+
+static Scheme_Object *compare_peek(int argc, Scheme_Object *argv[])
+{
+  return gen_compare("regexp-match-peek", 0, argc, argv, 1);
+}
+
+static Scheme_Object *positions_peek(int argc, Scheme_Object *argv[])
+{
+  return gen_compare("regexp-match-peek-positions", 1, argc, argv, 1);
 }
 
 static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
@@ -1955,6 +1974,16 @@ void scheme_regexp_initialize(Scheme_Env *env)
 			     scheme_make_prim_w_arity(positions, 
 						      "regexp-match-positions", 
 						      2, 5),
+			     env);
+  scheme_add_global_constant("regexp-match-peek",
+			     scheme_make_prim_w_arity(compare_peek,
+						      "regexp-match-peek",
+						      2, 4),
+			     env);
+  scheme_add_global_constant("regexp-match-peek-positions", 
+			     scheme_make_prim_w_arity(positions_peek, 
+						      "regexp-match-peek-positions",
+						      2, 4),
 			     env);
   scheme_add_global_constant("regexp-replace", 
 			     scheme_make_prim_w_arity(replace, 

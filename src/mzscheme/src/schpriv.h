@@ -474,6 +474,7 @@ void scheme_extend_module_rename_with_kernel(Scheme_Object *rn, Scheme_Object *n
 void scheme_remove_module_rename(Scheme_Object *mrn,
 				 Scheme_Object *localname);
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
+void scheme_list_module_rename(Scheme_Object *src, Scheme_Hash_Table *ht);
 
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);

@@ -612,13 +612,16 @@
 					 end
 					 #t))
 			 (lambda () (void)))))))))])
+	(private
+	  [shutdown-user-custodian
+	   (lambda ()
+	     (custodian-shutdown-all user-custodian))])
 	(public
 	  [reset-break-state (lambda () (set! ask-about-kill? #f))]
 	  [break-semaphore (make-semaphore 1)]
 	  [break (lambda ()
 		   (mred:debug:printf 'console-threading "break: waiting break.1")
 		   (semaphore-wait break-semaphore)
-		   (mred:debug:printf 'console-threading "break: passed break.1")
 		   (cond
 		     [(or (not in-evaluation?)
 			  in-break?
@@ -636,7 +639,7 @@
 			   "Kill"
 			   "Kill?")
 			  (break-thread evaluation-thread)
-			  (kill-thread evaluation-thread))
+			  (shutdown-user-custodian))
 		      (mred:debug:printf 'console-threading "break: waiting break.2")
 		      (semaphore-wait break-semaphore)
 		      (mred:debug:printf 'console-threading "break: passed break.2")
@@ -647,7 +650,8 @@
 		      (break-thread evaluation-thread)
 		      (set! ask-about-kill? #t)
 		      (mred:debug:printf 'console-threading "break: posting break.1.3")
-		      (semaphore-post break-semaphore)]))])
+		      (semaphore-post break-semaphore)])
+		   (mred:debug:printf 'console-threading "break: passed break.1"))])
 	(public
 	  [current-thread-directory (current-directory)]
 	  [escape
@@ -775,15 +779,13 @@
 	  [shutdown 
 	   (lambda ()
 	     (set! shutting-down? #t)
-	     (custodian-shutdown-all user-custodian)
-	     (when evaluation-thread
-	       (kill-thread evaluation-thread)))]
+	     (shutdown-user-custodian))]
 	  [repl-initially-active? #f] 
 	  [reset-console
 	   (let ([first-dir (current-directory)])
 	     (lambda ()
 	       (clear-previous-expr-positions)
-	       (custodian-shutdown-all user-custodian)
+	       (shutdown-user-custodian)
 	       (cleanup-transparent-io)
 	       (set! should-collect-garbage? #t)
 	       (lock #f) ;; locked if the thread was killed
@@ -802,7 +804,7 @@
 		     (exit-handler (lambda (arg)
 				     (with-parameterization drscheme:init:system-parameterization
 				       (lambda ()
-					 (kill-thread evaluation-thread)))))
+					 (shutdown-user-custodian)))))
 		     (set! current-thread-directory
 			   (let/ec k
 			     (unless (get-frame)

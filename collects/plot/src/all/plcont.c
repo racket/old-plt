@@ -1,4 +1,4 @@
-/* $Id: plcont.c,v 1.1 2004/03/01 20:54:51 cozmic Exp $
+/* $Id: plcont.c,v 1.2 2004/10/26 03:59:54 cozmic Exp $
 
 	Contour plotter.
 */
@@ -932,8 +932,8 @@ pltr1(PLFLT x, PLFLT y, PLFLT *tx, PLFLT *ty, PLPointer pltr_data)
 
     if (x < 0 || x > nx - 1 || y < 0 || y > ny - 1) {
 
-      fprintf(stderr, "nx : %d, ny : %d",nx,ny);
-	plexit("pltr1: Invalid coordinates");
+      /* fprintf(stderr, "nx : %d, ny : %d",nx,ny); */
+      plexit("pltr1: Invalid coordinates");
     }
 
 /* Look up coordinates in row-dominant array.

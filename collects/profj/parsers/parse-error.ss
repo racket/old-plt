@@ -1713,8 +1713,8 @@
                 ((eof? (get-tok next)) (parse-error "Expected ';' to close 'do'" ps end))
                 ((semi-colon? (get-tok next)) (getter))
                 (else 
-                 (parse-error (format "Expected ';' to end 'do'. Found ~a which is not allowed" (output-format (get-tok next))
-                                      (get-start next) (get-end next)))))))
+                 (parse-error (format "Expected ';' to end 'do'. Found ~a which is not allowed" (output-format (get-tok next)))
+                                      (get-start next) (get-end next))))))
            (else
             (parse-error (format "Expected ')' to close condition of 'do'. Found ~a which is not allowed" out) ps end))))                  
         ;Advanced
@@ -1831,7 +1831,7 @@
                  
   ;parse-expression: token token state (->token) bool -> token
   (define (parse-expression pre cur-tok state getter statement-ok?)
-    ;(printf "parse-expression state ~a pre ~a cur-tok ~a statement-ok? ~a ~n" state pre cur-tok statement-ok?)
+;    (printf "parse-expression state ~a pre ~a cur-tok ~a statement-ok? ~a ~n" state pre cur-tok statement-ok?)
     (let* ((tok (get-tok cur-tok))
            (kind (get-token-name tok))
            (out (output-format tok))
@@ -1995,8 +1995,8 @@
                 ((NULL_LIT)
                  (if (or (advanced?) (intermediate?))
                      (parse-expression cur-tok next 'start getter #f)
-                     (parse-expression cur-tok next 'dot-op-or-end #f)))
-                (else (parse-expression cur-tok next 'dot-op-or-end #f)))))
+                     (parse-expression cur-tok next 'dot-op-or-end getter #f)))
+                (else (parse-expression cur-tok next 'dot-op-or-end getter #f)))))
            ((and (advanced?) (o-bracket? tok))
             (let* ((next (getter))
                    (next-tok (get-tok next)))
@@ -2007,7 +2007,8 @@
                 (else (parse-expression cur-tok 
                                         (parse-expression cur-tok next 'array-acc getter #f)
                                         'c-paren getter statement-ok?)))))
-           (else (parse-error (format "Expected a ')', found ~a" out) ps end))))
+           (else (parse-expression pre (parse-expression pre cur-tok 'name getter #f) 'c-paren getter statement-ok?))))
+;           (else (parse-error (format "Expected a ')', found ~a" out) ps end))))
         ((c-paren)
          (cond
            ((eof? tok) (parse-error "Expected a )" ps pe))

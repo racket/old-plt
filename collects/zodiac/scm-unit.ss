@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.77 1999/02/10 17:35:44 mflatt Exp $
+; $Id: scm-unit.ss,v 1.78 1999/02/17 22:42:36 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -551,8 +551,7 @@
 					  vocab 'unit-clauses-vocab)])
 		  (set-top-level-status attributes #t)
 		  (set-internal-define-status attributes #f)
-		  (when old-top-level
-		    (put-attribute attributes 'top-levels (make-hash-table)))
+		  (put-attribute attributes 'top-levels (make-hash-table))
 		  (let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
 			(in:exports (pat:pexpand '(exports ...) p-env kwd))
 			(in:clauses (pat:pexpand '(clauses ...) p-env kwd)))
@@ -599,8 +598,7 @@
 		      (remove-vars-attribute attributes)
 		      (remove/update-unresolved-attribute attributes
 							  unresolveds)
-		      (when old-top-level
-			(put-attribute attributes 'top-levels old-top-level))
+		      (put-attribute attributes 'top-levels old-top-level)
 		      (set-top-level-status attributes top-level?)
 		      (set-internal-define-status attributes internal?)
 		      

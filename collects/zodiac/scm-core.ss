@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.49 1998/12/01 00:17:15 mflatt Exp $
+; $Id: scm-core.ss,v 1.50 1999/02/02 19:33:14 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -329,7 +329,7 @@
   (define valid-syntactic-id?
     (lambda (id)
       (or (z:symbol? id) 
-	(static-error id "~e is not an identifier" (sexp->raw id)))))
+	(static-error id "~s is not an identifier" (sexp->raw id)))))
 
   (define valid-syntactic-id/s?
     (lambda (ids)

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.172 1999/02/04 14:32:54 mflatt Exp $
+; $Id: scm-main.ss,v 1.173 1999/02/04 21:14:42 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -807,7 +807,7 @@
 	    (else
 	      (static-error expr "Malformed struct"))))))
 
-  (add-primitivized-micro-form 'struct intermediate-vocabulary struct-micro)
+  (add-primitivized-micro-form 'struct beginner-vocabulary struct-micro)
   (add-primitivized-micro-form 'struct scheme-vocabulary struct-micro)
 
   (define generate-struct-names
@@ -866,7 +866,7 @@
 		    `(define-values ,names ,struct-expr)
 		    expr '(-1))
 		   env attributes vocab)))])
-	  (add-primitivized-micro-form 'define-struct intermediate-vocabulary ds-micro)
+	  (add-primitivized-micro-form 'define-struct beginner-vocabulary ds-micro)
 	  (add-primitivized-micro-form 'define-struct scheme-vocabulary ds-micro))
 	(let ([int-ds-micro (ds-core
 			     (lambda (expr env attributes vocab names struct-expr)
@@ -925,62 +925,74 @@
 
   ; ----------------------------------------------------------------------
 
-  (define (make-let-micro named?)
+    ; Sometimes a single source symbol appears twice in an expansion.
+    ; When that happens, we mark all but the first occurrence as a
+    ; "duplicate" so that syntax-processing tools can correlate
+    ; identifiers in elaboated syntax to source syntax.
+
+    (define (dup-symbol s)
+      (z:make-symbol
+       (make-origin 'duplicated (zodiac-origin s))
+       (zodiac-start s)
+       (zodiac-finish s)
+       (z:read-object s)
+       (z:symbol-orig-name s)
+       (z:symbol-marks s)))
+    
+  (define (make-let-macro named?)
       (let* ((kwd '())
-	      (in-pattern-1 (if (not named?)
-			      '(_ ((v e) ...) b)
-			      '(_ fun ((v e) ...) b ...)))
-	      (out-pattern-1 (if (not named?)
-			       '(let-values (((v) e) ...) b)
-			       '((letrec ((fun (lambda (v ...) b ...)))
-				   fun)
-				  e ...)))
-	      (in-pattern-2 (if (not named?)
-			      in-pattern-1
-			      '(_ ((v e) ...) b ...)))
-	      (out-pattern-2 (if (not named?)
-			       out-pattern-1
-			       '(let-values (((v) e) ...) b ...)))
-	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+	     
+	     (in-pattern-1 '(_ fun ((v e) ...) b ...))
+	     (out-pattern-1 '((letrec ((fun (lambda (v ...) b ...)))
+				fun-copy) ; fun-copy is fun with a different source
+			      e ...))
+
+	     (in-pattern-2 '(_ ((v e) ...) b))
+	     (out-pattern-2 '(let-values (((v) e) ...) b))
+
+	     (m&e-1 (and named? (pat:make-match&env in-pattern-1 kwd)))
+	     (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)
-	  (let ((p-env (pat:match-against m&e-1 expr env)))
+	  (let ((p-env (and named? (pat:match-against m&e-1 expr env))))
 	    (if (and p-env (z:symbol? (pat:pexpand 'fun p-env kwd)))
-	      (pat:pexpand out-pattern-1 p-env kwd)
-	      (or (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
-		(static-error expr "Malformed let")))))))
+		(let* ([fun (pat:pexpand 'fun p-env kwd)]
+		       [fun-copy (dup-symbol fun)])
+		  (pat:pexpand out-pattern-1
+			       (pat:extend-penv 'fun-copy fun-copy p-env)
+			       kwd))
+		(or (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
+		    (static-error expr "Malformed let")))))))
 
-  (add-primitivized-macro-form 'let intermediate-vocabulary (make-let-micro #f))
-  (add-primitivized-macro-form 'let advanced-vocabulary (make-let-micro #t))
-  (add-primitivized-macro-form 'let scheme-vocabulary (make-let-micro #t))
+  (add-primitivized-macro-form 'let intermediate-vocabulary (make-let-macro #f))
+  (add-primitivized-macro-form 'let advanced-vocabulary (make-let-macro #t))
+  (add-primitivized-macro-form 'let scheme-vocabulary (make-let-macro #t))
 
-					; Turtle Macros for Robby
-
-    (let ([add-patterned-macro
-	    (lambda (formname in-pattern out-pattern)
-	      (add-macro-form
-		formname
-		intermediate-vocabulary
-		(let* ((kwd (list formname))
-			(m&e (pat:make-match&env in-pattern kwd)))
-		  (lambda (expr env)
-		    (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-		      (static-error expr
-			(format "Malformed ~a" formname)))))))])
-      (add-patterned-macro 'tprompt
-	'(tprompt E ...)
-	'(let ([grab-Turtles Turtles]
-		[grab-Cache Cache])
-	   (begin E ...)
-	   (set! Turtles grab-Turtles)
-	   (set! Cache grab-Cache)))
-      (add-patterned-macro 'split
-	'(split E ...)
-	'(splitfn (lambda () E ...)))
-      (add-patterned-macro 'split*
-	'(split* E ...)
-	'(split*fn (lambda () E) ...)))
-
+  ; Turtle Macros for Robby
+  (let ([add-patterned-macro
+	 (lambda (formname in-pattern out-pattern)
+	   (add-macro-form
+	    formname
+	    intermediate-vocabulary
+	    (let* ((kwd (list formname))
+		   (m&e (pat:make-match&env in-pattern kwd)))
+	      (lambda (expr env)
+		(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+		    (static-error expr
+				  (format "Malformed ~a" formname)))))))])
+    (add-patterned-macro 'tprompt
+			 '(tprompt E ...)
+			 '(let ([grab-Turtles Turtles]
+				[grab-Cache Cache])
+			    (begin E ...)
+			    (set! Turtles grab-Turtles)
+			    (set! Cache grab-Cache)))
+    (add-patterned-macro 'split
+			 '(split E ...)
+			 '(splitfn (lambda () E ...)))
+    (add-patterned-macro 'split*
+			 '(split* E ...)
+			 '(split*fn (lambda () E) ...)))
+  
   (define (make-let*-macro begin?)
       (let* ((kwd '())
 	      (in-pattern-1 (if (not begin?)
@@ -1268,11 +1280,20 @@
   (define rec-macro
       (let* ((kwd '())
 	      (in-pattern '(_ looper body))
-	      (out-pattern '(letrec ((looper body)) looper))
+	      (out-pattern '(letrec ((looper body)) looper-copy))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
-	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	    (static-error expr "Malformed rec")))))
+	  (let ((p-env (pat:match-against m&e expr env)))
+	    (or (and p-env
+		     (let ([looper (pat:pexpand 'looper p-env kwd)])
+		       (and (valid-syntactic-id? looper)
+			    (pat:pexpand
+			     out-pattern
+			     (pat:extend-penv 'looper-copy 
+					      (dup-symbol looper)
+					      p-env)
+			     kwd))))
+		(static-error expr "Malformed rec"))))))
 
   (add-primitivized-macro-form 'rec advanced-vocabulary rec-macro)
   (add-on-demand-form 'macro 'rec common-vocabulary rec-macro)
@@ -1628,7 +1649,7 @@
 				 ,@body)
 			       (lambda ()
 				 ,@(map (lambda (var tmp)
-					  `(set! ,var ,tmp))
+					  `(set! ,(dup-symbol var) ,tmp))
 				     vars new-vars)))))
 			expr '(-1))
 		      env attributes vocab)))))

@@ -104,3 +104,16 @@ Example
                          (zodiac:make-location 1 1 0 "string")))])
     (eval (zodiac:parsed->raw (zodiac:scheme-expand r))))
   = (list 1)
+
+
+Correlating Source
+------------------
+
+Although there is not a unique mapping from elaborated expressions to
+source expressions, the mapping is unique when restricted to
+elaborated expressions that have a source-who field of 'source or
+'reader. When a source expression is duplicated by elaboration (e.g.,
+the `loop' in `(let loop () (loop))' => `(letrec ([loop (lambda ()
+(loop))]) (loop))'), all but the first instance get a 'duplcate
+source-who annotation. (The source-how field contains the original
+source record.)

@@ -334,6 +334,7 @@
 						  vocab)))
 				    (lambda () (zodiac:interface:set-zodiac-phase #f)))
 				   (zodiac:sexp->raw zodiac-read))]
+			      [_ (mzlib:pretty-print:pretty-print exp)]
 			      [heading-out (if (and annotate? use-z-exp?)
 					       (annotate exp)
 					       exp)])

@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.39 1998/11/06 01:35:12 mflatt Exp $
+; $Id: scm-obj.ss,v 1.40 1999/02/02 19:33:15 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -757,7 +757,7 @@
 		(when (or (inherit-varref? id-expr)
 			(rename-varref? id-expr))
 		  (static-error var-p
-		    "Cannot mutate inherit's and rename's"))
+		    "Cannot mutate inherited or renamed variables"))
 		(create-set!-form id-expr expr-expr expr))
 	      (static-error expr "Malformed set!"))))))
 

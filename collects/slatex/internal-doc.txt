@@ -15,8 +15,8 @@ directory.
 2) place this file in plt/collects/slatex (this directory).
 3) also copy slatex.sty to plt/collects/slatex.
 
-4) check it in.
+4) (hopefully temporary?) Modify slatex.scm so that it doesn't refer to
+   slatex::slatex-error at evaluation time.
 
-hopefully, this is it.  However, the environment in which mzscheme can 
-currently load slatex.scm is very fragile, because mzscheme and slatex
-have very different worldviews re: macros.
+5) check it in.
+

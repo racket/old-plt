@@ -37,6 +37,11 @@ This procedure accepts a filename and, if that file exists, it returns
 it. If the filename appended with the suffix `.tex' exists, that filename
 is returned. Otherwise, error is called.
 
+NOTE: in order to run slatex, your TEXINPUTS environment variable
+must contain a reference to the directory in which the most recent
+version of slatex.sty lives.  That file resides by default in 
+plt/collects/slatex.
+
 _PDF-SLaTeX_
 ============
 

@@ -16,8 +16,6 @@
   (provide tool@)
 
   (preferences:set-default 'profj:classpath null (lambda (v) (and (list? v) (andmap string? v))))
-  (preferences:set-default 'profj:print-style 'type symbol?)
-  (preferences:set-default 'profj:print-full? #t boolean?)
   
   (define tool@
     (unit/sig drscheme:tool-exports^
@@ -68,16 +66,14 @@
           ;marshall-settings: profj-settings -> (list (list symbol) (list bool) (list string))
           (define/public (marshall-settings s)
             (list (list (profj-settings-print-style s))
-                  (list (profj-settings-print-full? s))
-                  (profj-settings-classpath s)))
+                  (list (profj-settings-print-full? s))))
           
           ;unmarshall-settings: any -> (U profj-settings #f)
           (define/public (unmarshall-settings s)
-            (if (and (pair? s) (= (length s) 3)
+            (if (and (pair? s) (= (length s) 2)
                      (pair? (car s)) (= (length (car s)) 1)
-                     (pair? (cadr s)) (= (length (cadr s)) 1)
-                     (pair? (caddr s)))
-                (make-profj-settings (caar s) (caadr s) (caddr s))
+                     (pair? (cadr s)) (= (length (cadr s)) 1))
+                (make-profj-settings (caar s) (caadr s) null)
                 #f))
 
           (define/public (config-panel _parent)
@@ -100,15 +96,8 @@
                                     output-panel
                                     (lambda (x y) (update-ps)))]
                      
-                     [update-pf
-                      (lambda ()
-                        (preferences:set 'profj:print-full? (send print-full get-value)))]
-                     [update-ps
-                      (lambda ()
-                        (preferences:set 'profj:print-style (case (send print-style get-selection)
-                                                              ((0) 'type)
-                                                              ((1) 'field)
-                                                              ((2) 'graphical))))]
+                     [update-pf (lambda () (void))]
+                     [update-ps (lambda () (void))]
                      
                      [cp-panel (instantiate group-box-panel% ()
                                             (parent parent)
@@ -396,10 +385,7 @@
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
           (define/public (render-value value settings port port-write)
-            (display (format-java value 
-                                  (preferences:get 'profj:print-full?)
-                                  (preferences:get 'profj:print-style) 
-                                  null)
+            (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings) null)
                      port))
           ;(write value port))
           (define/public (render-value/format value settings port port-write width) 

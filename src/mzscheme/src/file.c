@@ -3612,8 +3612,8 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 				"file-or-directory-modify-seconds",
 				NULL,
 				(set_time
-				 ? SCHEME_GUARD_FILE_READ
-				 : SCHEME_GUARD_FILE_WRITE));
+				 ? SCHEME_GUARD_FILE_WRITE
+				 : SCHEME_GUARD_FILE_READ));
 #endif
 
   if (set_time) {

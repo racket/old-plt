@@ -393,31 +393,31 @@ static void make_init_env(void)
   scheme_add_global_constant("namespace-symbol->identifier",
 			     scheme_make_prim_w_arity(namespace_identifier,
 						      "namespace-identifier",
-						      1, 1),
+						      1, 2),
 			     env);
 
   scheme_add_global_constant("namespace-variable-value",
 			     scheme_make_prim_w_arity(namespace_variable_value,
 						      "namespace-variable-value",
-						      1, 3),
+						      1, 4),
 			     env);
 
   scheme_add_global_constant("namespace-set-variable-value!",
 			     scheme_make_prim_w_arity(namespace_set_variable_value,
 						      "namespace-set-variable-value!",
-						      2, 3),
+						      2, 4),
 			     env);
 
   scheme_add_global_constant("namespace-undefine-variable!",
 			     scheme_make_prim_w_arity(namespace_undefine_variable,
 						      "namespace-undefine-variable!",
-						      1, 1),
+						      1, 2),
 			     env);
 
   scheme_add_global_constant("namespace-mapped-symbols",
 			     scheme_make_prim_w_arity(namespace_mapped_symbols,
 						      "namespace-mapped-symbols",
-						      0, 0),
+						      0, 1),
 			     env);
 
   scheme_add_global_constant("namespace-module-registry",
@@ -942,7 +942,10 @@ static void init_compile_data(Scheme_Comp_Env *env)
   int i, c, *use;
 
   c = env->num_bindings;
-  use = MALLOC_N_ATOMIC(int, c);
+  if (c)
+    use = MALLOC_N_ATOMIC(int, c);
+  else
+    use = NULL;
 
   data = COMPILE_DATA(env);
 
@@ -2504,8 +2507,13 @@ namespace_identifier(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("namespace-symbol->identifier", "symbol", 0, argc, argv);
+  if ((argc > 1) && !SCHEME_NAMESPACEP(argv[1]))
+    scheme_wrong_type("namespace-symbol->identifier", "namespace", 1, argc, argv);
 
-  genv = scheme_get_env(scheme_config);
+  if (argc > 1)
+    genv = (Scheme_Env *)argv[1];
+  else
+    genv = scheme_get_env(scheme_config);
 
   obj = argv[0];
   obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false, 1, 0);
@@ -2529,24 +2537,32 @@ namespace_variable_value(int argc, Scheme_Object *argv[])
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("namespace-variable-value", "symbol", 0, argc, argv);
   use_map = ((argc > 0) ? SCHEME_TRUEP(argv[1]) : 1);
-  if (argc > 2)
-    scheme_check_proc_arity("namespace-variable-value", 0, 2, argc, argv);
+  if ((argc > 2) && SCHEME_TRUEP(argv[2])
+      && !scheme_check_proc_arity(NULL, 0, 2, argc, argv))
+    scheme_wrong_type("namespace-variable-value", "procedure (arity 0) or #f", 1, argc, argv);
+  if ((argc > 3) && !SCHEME_NAMESPACEP(argv[3]))
+    scheme_wrong_type("namespace-variable-value", "namespace", 3, argc, argv);
 
-  genv = scheme_get_env(scheme_config);
+  if (argc > 3)
+    genv = (Scheme_Env *)argv[3];
+  else
+    genv = scheme_get_env(scheme_config);
 
   if (!use_map)
     v = scheme_lookup_global(argv[0], genv);
   else {
-    Scheme_Comp_Env *env;
+    Scheme_Full_Comp_Env inlined_e;
 
-    id = argv[0];
-    id = scheme_datum_to_syntax(id, scheme_false, scheme_false, 1, 0);
-    if (genv->rename)
-      id = scheme_add_rename(id, genv->rename);
+    id = scheme_make_renamed_stx(argv[0], genv->rename);
 
-    env = scheme_new_comp_env(genv, SCHEME_TOPLEVEL_FRAME);
+    inlined_e.base.num_bindings = 0;
+    inlined_e.base.next = NULL;
+    inlined_e.base.genv = genv;
+    inlined_e.base.flags = SCHEME_TOPLEVEL_FRAME;
+    init_compile_data((Scheme_Comp_Env *)&inlined_e);
+    inlined_e.base.prefix = NULL;
 
-    v = scheme_lookup_binding(id, env, SCHEME_RESOLVE_MODIDS);
+    v = scheme_lookup_binding(id, (Scheme_Comp_Env *)&inlined_e, SCHEME_RESOLVE_MODIDS);
     if (v) {
       if (!SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)) {
 	use_map = -1;
@@ -2557,7 +2573,7 @@ namespace_variable_value(int argc, Scheme_Object *argv[])
   }
   
   if (!v) {
-    if (argc > 2)
+    if ((argc > 2) && SCHEME_TRUEP(argv[2]))
       return _scheme_tail_apply(argv[2], 0, NULL);
     else if (use_map == -1) {
       scheme_wrong_syntax("namespace-variable-value", NULL, id, "bound to syntax");
@@ -2581,8 +2597,13 @@ namespace_set_variable_value(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("namespace-set-variable-value!", "symbol", 0, argc, argv);
+  if ((argc > 3) && !SCHEME_NAMESPACEP(argv[3]))
+    scheme_wrong_type("namespace-set-variable-value!", "namespace", 3, argc, argv);
 
-  env = scheme_get_env(scheme_config);
+  if (argc > 3)
+    env = (Scheme_Env *)argv[3];
+  else
+    env = scheme_get_env(scheme_config);
 
   bucket = scheme_global_bucket(argv[0], env);
   
@@ -2603,8 +2624,13 @@ namespace_undefine_variable(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("namespace-undefine-variable!", "symbol", 0, argc, argv);
+  if ((argc > 1) && !SCHEME_NAMESPACEP(argv[1]))
+    scheme_wrong_type("namespace-undefine-variable!", "namespace", 1, argc, argv);
 
-  env = scheme_get_env(scheme_config);
+  if (argc > 1)
+    env = (Scheme_Env *)argv[1];
+  else
+    env = scheme_get_env(scheme_config);
 
   if (scheme_lookup_global(argv[0], env)) {
     bucket = scheme_global_bucket(argv[0], env);
@@ -2628,9 +2654,15 @@ namespace_mapped_symbols(int argc, Scheme_Object *argv[])
   Scheme_Bucket **bs;
   int i, j;
 
-  mapped = scheme_make_hash_table(SCHEME_hash_ptr);
+  if ((argc > 0) && !SCHEME_NAMESPACEP(argv[0]))
+    scheme_wrong_type("namespace-mapped-symbols", "namespace", 0, argc, argv);
 
-  env = scheme_get_env(scheme_config);
+  if (argc)
+    env = (Scheme_Env *)argv[0];
+  else
+    env = scheme_get_env(scheme_config);
+  
+  mapped = scheme_make_hash_table(SCHEME_hash_ptr);
 
   for (j = 0; j < 2; j++) {
     if (j)

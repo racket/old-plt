@@ -471,6 +471,21 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col, lo
   return stx;
 }
 
+Scheme_Object *scheme_make_renamed_stx(Scheme_Object *sym, 
+				       Scheme_Object *rn)
+{
+  Scheme_Object *stx;
+
+  stx = scheme_make_stx(sym, empty_srcloc, NULL);
+
+  if (rn) {
+    rn = scheme_make_pair(rn, scheme_null);
+    ((Scheme_Stx *)stx)->wraps = rn;
+  }
+
+  return stx;
+}
+
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
 				Scheme_Object *old,
 				Scheme_Object *origin)

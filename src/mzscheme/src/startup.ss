@@ -2998,7 +2998,7 @@
 		  (version)
 		  "collects")
       (or (ormap
-	   (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list p))))
+	   (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list (simplify-path p)))))
 	   (list
 	    (lambda () (let ((v (getenv "PLTHOME")))
 			 (and v (build-path v "collects"))))

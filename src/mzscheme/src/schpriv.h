@@ -479,6 +479,8 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
 					Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col, long pos);
+Scheme_Object *scheme_make_renamed_stx(Scheme_Object *sym,
+				       Scheme_Object *rn);
 
 Scheme_Object *scheme_new_stx_simplify_cache();
 void scheme_simplify_stx(Scheme_Object *stx, Scheme_Object *simplify_cache);

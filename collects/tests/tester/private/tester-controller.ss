@@ -74,20 +74,11 @@
     (define view
       (make-object view%
         
-        ; okay-press : (listof (list str (listof str)))
+        ; okay-press : (listof (list str val (listof (list str val)))
         (lambda (btn evnt)
           (thread
            (lambda ()
-             (let ((tests-to-run
-                    (map
-                     (lambda (group-index)
-                       (let* ([the-group (list-ref selection-list (car group-index))]
-                              [the-tests (test-group-tests the-group)])
-                         (list the-group (map (lambda (test-index)
-                                                (list-ref the-tests test-index))
-                                              (cadr group-index)))))
-                     (send view get-current-test-selections))))
-               (send model run-tests tests-to-run)))))
+             (send model run-tests (send view get-current-test-selections)))))
         
         ; prev-error
         (lambda (btn evnt)
@@ -114,8 +105,11 @@
           (let ((selection-list
                  (map (lambda (tg)
                         (list (test-group-description tg)
+                              tg
                               (map 
-                               test-description
+                               (lambda (t)
+                                 (list (test-description t)
+                                       t))
                                (test-group-tests tg))))
                       tgs)))
             (send view set-selections selection-list)))

@@ -3,6 +3,8 @@
   (require (lib "class.ss"))
   (require (lib "thread.ss"))
   (require (lib "framework.ss" "framework"))
+  (require (lib "hierlist.ss" "hierlist"))
+  (require (lib "etc.ss"))
   
   (provide view%)
 
@@ -70,95 +72,135 @@
     
     ;; --------------------- choice mode --------------------------------
     (define selection-mode-panel (make-object vertical-panel% top-panel))
-    (define sel-list-panel (make-object horizontal-panel% selection-mode-panel))
-    (define group-selection-box (make-object list-box%
-                                  "Test groups"
-                                  null
-                                  sel-list-panel
-                                  (lambda (x y) (on-group-select x y))
-                                  '(single)))
-    (define test-selection-box (make-object list-box%
-                                 "Tests"
-                                 null
-                                 sel-list-panel
-                                 (lambda (x y) (capture-current-selection))
-                                 '(extended)))
+    (define selectable-tests (make-object hierarchical-list% selection-mode-panel))
     
     (define sel-buttons-panel (make-object horizontal-panel% selection-mode-panel))
     (define okay-button (make-object button% "Okay" sel-buttons-panel okay-press))
     
-    ; get-current-test-selections : -> (listof (list natnum (listof natnum)))
-    ; returns the list of current selections from the test selection widget
-    (define get-current-test-selections
-      (lambda ()
-        (let loop ((counter 0))
-          (cond
-            [(>= counter (vector-length current-selected-tests)) null]
-            [else
-             (let ((line (vector-ref current-selected-tests counter)))
-               (if (null? line)
-                   (loop (add1 counter))
-                   (cons (list counter line) (loop (add1 counter)))))]))))
-    
-    (define select-all-button (make-object button%
-                                "Select all" sel-buttons-panel void))
-    (define select-none-button (make-object button%
-                                 "Clear all selections" sel-buttons-panel void))
-    (send sel-buttons-panel stretchable-height #f)
-    
-    ; current-selected : vector[(listof natnum)]
-    ; holds the currently-selected tests
-    (define current-selected-tests (make-vector 0))
-    ; current-selected-group : natnum
-    ; the index of the currently-selected group
-    (define current-selected-group #f)
-    
-    ; set-selections : (listof (list str (listof str))) -> void
-    (define (set-selections new-selections)
-      (set! current-selected-tests (make-vector (length new-selections) null))
-      (set! current-selected-group (if (null? new-selections) #f 0))
-      (update-group-box new-selections))
-    
-    ; capture-current-selection : -> void
-    ; set!'s the current selected group's current selected tests to reflect the actual
-    ; selection in the test box
-    (define (capture-current-selection)
-      (vector-set! current-selected-tests 
-                   current-selected-group 
-                   (send test-selection-box get-selections)))
-    
-    ; update-group-box : (listof str (listof str)) -> void
-    (define (update-group-box sel-list)
-      (set-listbox-contents group-selection-box sel-list))
-    
-    ; on-group-select : list-box<%> x callback-event% -> void
-    ; handles a click on the left menu box (controls remembering what was selected
-    ; in the right-hand side)
-    (define (on-group-select listbox callback)
-      (if (eq? (send callback get-event-type) 'list-box)
-          (let ([sel (send group-selection-box get-selections)])
-            (if (not (null? sel))
-                (let ((sel (car sel)))
-                  (begin
-                    (update-test-box (send group-selection-box get-data sel)
-                                     (vector-ref current-selected-tests sel))
-                    (set! current-selected-group sel)))))))
-    
-    ; update-test-box : (listof str) x (listof natnum) -> void
-    (define (update-test-box vals selections)
-      (begin 
-        (send test-selection-box set vals)
-        (for-each (lambda (selection) (send test-selection-box select selection #t)) selections)))
-    
-    ; list-box<%> x (listof (list str val)) -> void
-    ; sets the list-box's contents to the given list and selects the first item
-    (define (set-listbox-contents box val-list)
-      (begin
-        (send box set '())
+    ; set-selections : (listof (list str val (listof (cons (list str val) (list str val)))))
+    (define set-selections
+      (lambda (selection-list)
         (for-each
-         (lambda (x) (send box append (car x) (cadr x)))
-         val-list)))
+         (lambda (test-group)
+           (let ((tg (send selectable-tests new-list (list-mixin (car test-group)
+                                                                 (cadr test-group)))))
+             (send (send tg get-editor) insert (car test-group))
+             (for-each
+              (lambda (test)
+                (let* ([i (send tg new-item (item-mixin (car test) (cadr test) tg))]
+                       [ed (send i get-editor)])
+                  (send ed insert (car test) 0 'same)
+                  (send ed set-clickback 0 (string-length (car test))
+                        (lambda (a b c) (send i toggle-selectedness)))))
+              (caddr test-group))))
+         selection-list)))
+    
+    ; get-current-test-selections : -> (listof (list str (cons str (listof str))))
+    (define (get-current-test-selections)
+      (define (f l)
+        (cond
+          [(null? l) null]
+          [else
+           (if (send (car l) has-any-selections?)
+               (cons (send (car l) to-selection)
+                     (f (cdr l)))
+               (f (cdr l)))]))
+      (f (send selectable-tests get-items)))
+      
+    ; str -> (class -> list-mixin)
+    ; our new lists know how many selected "kids" they have (but not what they
+    ; are or how many unselected) -- this allows us to boldify 
+    (define list-mixin 
+      (lambda (name val)
+        (lambda (superclass)
+          (class superclass ()
+            (public to-selection 
+                    increment-selected-kids
+                    decrement-selected-kids
+                    has-any-selections?)
+            (init-rest args)
+            
+            (define selected-style (make-object style-delta% 'change-bold))
+            (define unselected-style (make-object style-delta% 'change-normal))
+            (define selected-kids 0)
+            
+            ; -> str
+            ; return the selection representation of this list
+            (define (to-selection)
+              (define (f l)
+                (cond
+                  [(null? l) null]
+                  [else
+                   (if (send (car l) am-i-selected?)
+                       (cons (send (car l) to-selection)
+                             (f (cdr l)))
+                       (f (cdr l)))]))
+              (list val (f (send this get-items))))
+            
+            ; -> void
+            ; tell the list about one more kid, possibly changing selected status
+            (define (increment-selected-kids)
+              (begin
+                (set! selected-kids (add1 selected-kids))
+                (if (= selected-kids 1) (select-myself))))
+            
+            ; -> void
+            (define (decrement-selected-kids)
+              (begin
+                (set! selected-kids (sub1 selected-kids))
+                (if (= selected-kids 0) (unselect-myself))))
+            
+            ; style-delta<%> -> void
+            ; changes the text style of the label for this snip
+            (define (set-style style)
+              (let ((ed (send this get-editor)))
+                (send ed change-style style 0 (string-length (send ed get-text)))))
        
+            (define (has-any-selections?) (> selected-kids 0))
+            (define (select-myself) (set-style selected-style))
+            (define (unselect-myself) (set-style unselected-style))
+            
+            (apply super-make-object args)))))
+    
+    ; item-mixin : str x list-mixin -> (class -> item-mixin)
+    (define item-mixin 
+      (lambda (str val parent)
+        (lambda (superclass)
+          (class superclass ()
+            (public toggle-selectedness to-selection am-i-selected?)
+            (init-rest vars)
+            
+            (define selected #f)
+            (define selected-style (make-object style-delta% 'change-bold))
+            (define unselected-style (make-object style-delta% 'change-normal))
+            
+            ; -> void
+            (define (toggle-selectedness)
+              (if selected
+                  (unselect-me)
+                  (select-me)))
+            
+            ; style-delta<%> -> void
+            (define (set-style style)
+              (let ((ed (send this get-editor)))
+                (send ed change-style style 0 (string-length (send ed get-text)))))
+            
+            (define (unselect-me)
+              (set! selected #f)
+              (set-style unselected-style)
+              (send parent decrement-selected-kids))
+            
+            (define (select-me)
+              (set! selected #t)
+              (set-style selected-style)
+              (send parent increment-selected-kids))
+            
+            (define (to-selection) val)
+            (define (am-i-selected?) selected)
+            
+            (apply super-make-object vars)))))
+    
+    (send sel-buttons-panel stretchable-height #f)
     (send sel-buttons-panel set-alignment 'center 'center)
     
     ;; --------------------- testing mode -------------------------------

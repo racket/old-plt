@@ -1152,6 +1152,13 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     scheme_wrong_syntax("set!", symbol, srcsym, "cannot mutate imported variable");
   }
 
+  if (!modname  && (flags & SCHEME_SETTING) && genv->module) {
+    /* Check for set! of unbound variable: */
+    
+    if (!scheme_lookup_in_table(genv->toplevel, (const char *)symbol))
+      scheme_wrong_syntax("set!", NULL, srcsym, "unbound variable in module");
+  }
+
   if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND))
     return NULL;
 

@@ -839,7 +839,7 @@ typedef struct Scheme_Cont {
   Scheme_Dynamic_Wind *dw, *common;
   Scheme_Thread *home;
   Scheme_Continuation_Jump_State cjs;
-  mz_jmp_buf save_overflow_buf;
+  mz_jmp_buf *save_overflow_buf;
   int suspend_break;
   Scheme_Stack_State ss;
   Scheme_Saved_Stack *runstack_copied;

@@ -2428,7 +2428,7 @@ call_cc (int argc, Scheme_Object *argv[])
   cont->suspend_break = p->suspend_break;
   copy_cjs(&cont->cjs, &p->cjs);
   cont->save_overflow = p->overflow;
-  memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
+  cont->save_overflow_buf = p->overflow_buf;
   cont->current_local_env = p->current_local_env;
   scheme_save_env_stack_w_thread(cont->ss, p);
   cont->init_config = p->init_config;
@@ -2515,7 +2515,7 @@ call_cc (int argc, Scheme_Object *argv[])
     p->suspend_break = cont->suspend_break;
     
     copy_cjs(&p->cjs, &cont->cjs);
-    memcpy(&p->overflow_buf, &cont->save_overflow_buf, sizeof(mz_jmp_buf));
+    p->overflow_buf = cont->save_overflow_buf;
     p->overflow = cont->save_overflow;
     scheme_restore_env_stack_w_thread(cont->ss, p);
 

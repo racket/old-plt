@@ -863,7 +863,7 @@ typedef struct Scheme_Thread {
     } multiple;
     struct {
       void *p1, *p2, *p3, *p4, *p5;
-      long i1, i2, i3;
+      long i1, i2, i3, i4;
     } k;
   } ku;
 

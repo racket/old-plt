@@ -118,9 +118,6 @@ $(MRFWRES): $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
 	ln -s Versions/$(FWVERSION)/PLT_MrEd PLT_MrEd.framework/PLT_MrEd
 	ln -s Versions/$(FWVERSION)/Resources PLT_MrEd.framework/Resources
 
-$(MRFWMMMRES): $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
-	env BUILDING_3M=yes $(srcdir)/../mac/osx_appl.ss $(srcdir)/..
-
 ee-app: mred mrmain_ee.@LTO@
 	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mrmain_ee.@LTO@ $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi
 

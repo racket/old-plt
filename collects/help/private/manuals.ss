@@ -20,7 +20,8 @@
            finddoc-page
 	   finddoc-page-anchor)
   
-  (provide/contract [find-doc-directories (-> (listof string?))]
+  (provide/contract [get-doc-name (string? . -> . string?)]
+                    [find-doc-directories (-> (listof string?))]
                     [find-doc-directory (string? . -> . (union false? string?))]
                     [find-doc-names (-> (listof (cons/p string? string?)))]
                     
@@ -319,9 +320,9 @@
 		(list "</UL>")))]))
 	  (list "</body></html>"))))))
   
+  ;; get-doc-name : string -> string
   (define cached-doc-names (make-hash-table 'equal))
   (define (get-doc-name doc-dir)
-    (printf "get-doc-name: ~s\n" doc-dir)
     (hash-table-get
      cached-doc-names
      doc-dir

@@ -1,3 +1,9 @@
+Version 102:
+
+Componential analysis works again
+Infinite recursions on certain kinds
+  of errors eliminated
+
 Version 101:
 
 Fixed preferences dialogs, had not

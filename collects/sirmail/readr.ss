@@ -13,6 +13,8 @@
 
   (require "sirmails.ss")
 
+  (require "pref.ss")
+
   (require (lib "imap-sig.ss" "net")
 	   (lib "smtp-sig.ss" "net")
 	   (lib "head-sig.ss" "net")
@@ -1380,6 +1382,10 @@
 	(when ((car (last-pair items)) . is-a? . separator-menu-item%)
 	  (send (car (last-pair items)) delete)))
       
+      (make-object separator-menu-item% edit-menu)
+
+      (create-preferences edit-menu)
+
       (define no-status-handler (lambda (x) (status "") (raise x)))
       
       (define (add-mailbox)

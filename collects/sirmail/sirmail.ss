@@ -14,11 +14,13 @@
   (require "sirmails.ss"
 	   "keyfunc.ss"
 	   "keymap.ss"
+	   "pref.ss"
 	   "sirmailr.ss")
 
   (require (lib "imap-sig.ss" "net")
 	   (lib "smtp-sig.ss" "net")
 	   (lib "head-sig.ss" "net")
+           (lib "framework.ss" "framework")
 	   (lib "base64-sig.ss" "net")
 	   (lib "mime-sig.ss" "net")
 	   (lib "qp-sig.ss" "net")
@@ -40,6 +42,10 @@
     keymap@
     #f
     mred^)
+
+  (preferences:set-default sirmail-login-pref
+			   '()
+			   (lambda (_) #t))
 
   (define inbox-name "Inbox")
   (define default-mailbox-options null)

@@ -3,9 +3,12 @@
   (require (lib "unitsig.ss"))
 
   (require (lib "imap-sig.ss" "net")
-           (lib "mred-sig.ss" "mred"))
+           (lib "mred-sig.ss" "mred")
+	   (lib "framework.ss" "framework"))
 
   (require "sirmails.ss")
+
+  (require "pref.ss")
 
   (provide option@)
   (define option@
@@ -36,21 +39,22 @@
 	(with-handlers ([void (lambda (x) #f)])
 	  (get-pref key)))
 
-      (define IMAP-SERVER (get-pref 'imap-server))
-      (define USERNAME (get-pref 'username))
-      (define PASSWORD (get-optional-pref 'password))
+      (define pref-prefs (preferences:get sirmail-login-pref))
+      (define MAIL-FROM (lookup-pref/prefs 'mail-from pref-prefs))
+      (define USERNAME (lookup-pref/prefs 'username pref-prefs))
+      (define DEFAULT-DOMAIN (lookup-pref/prefs 'default-to-domain pref-prefs))
+      (define IMAP-SERVER (lookup-pref/prefs 'imap-server pref-prefs))
 
+      (define PASSWORD (get-optional-pref 'password))
       (define (get-PASSWORD) PASSWORD)
       (define (set-PASSWORD p) (set! PASSWORD p))
 
       (define LOCAL* (get-pref 'local))
-      (define MAIL-FROM (get-pref 'mail-from))
       (define SMTP-SERVERS (let ([many (get-optional-pref 'smtp-servers)])
 			     (if (and (list? many)
 				      (pair? many))
 				 many
 				 (list (get-pref 'smtp-server)))))
-      (define DEFAULT-DOMAIN (get-optional-pref 'default-to-domain))
       (define SAVE-SENT (get-optional-pref 'save-sent))
       (define ALIASES (let ([f (get-optional-pref 'aliases-file)]
 			    [aliases (or (get-optional-pref 'aliases) null)])

@@ -37,6 +37,19 @@ static int mask_length(unsigned long mask)
     return length;
 }
 
+/* Where does the mask start, in bits from the LSB? */
+static int mask_start(unsigned long mask)
+{
+    int pos = 0;
+
+    while (!(mask & 0x1)) {
+      pos++;
+      mask >>= 1;
+    }
+
+    return pos;
+}
+
 /* Take the nb most significant bits in value. */
 static unsigned short n_bits(unsigned short value, int nb)
 {
@@ -68,6 +81,9 @@ static Visual *tc;
 
 static int tc_known;
 
+static unsigned int r_length, g_length, b_length;
+static unsigned int r_start, g_start, b_start;
+
 Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 {
   int i;
@@ -90,24 +106,27 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 					   cm));
     if (tc->class != TrueColor)
       tc = NULL;
+    else {
+      r_length = mask_length(tc->red_mask);
+      g_length = mask_length(tc->green_mask);
+      b_length = mask_length(tc->blue_mask);
+
+      r_start = mask_start(tc->red_mask);
+      g_start = mask_start(tc->green_mask);
+      b_start = mask_start(tc->blue_mask);
+    }
     tc_known = 1;
   }
   
   if (tc) {
-    unsigned int r_length, g_length, b_length;
-
-    r_length = mask_length(tc->red_mask);
-    g_length = mask_length(tc->green_mask);
-    b_length = mask_length(tc->blue_mask);
-
     c->red = n_bits(c->red, r_length);
     c->green = n_bits(c->green, g_length);
     c->blue = n_bits(c->blue, b_length);
 
     /* c->pixel = rrrrrggggggbbbbb */
-    c->pixel = (c->red << (g_length + b_length)) |
-	       (c->green << b_length) |
-	        c->blue;
+    c->pixel = ((c->red << r_start)
+		| (c->green << g_start)
+		| (c->blue << b_start));
 
     return OK;
   }

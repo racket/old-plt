@@ -222,7 +222,15 @@ void set_copy(void *s_c, void *c)
    l = ll / sizeof(stack_val); d = (stack_val *)dd; s = (stack_val *)ss; \
    while (l--) { *(d++) = *(s++);} }
 
-static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
+#ifdef MZ_PRECISE_GC
+# define GC_VAR_STACK_ARG_DECL , void *gc_var_stack_in
+# define GC_VAR_STACK_ARG      , __gc_var_stack__
+#else
+# define GC_VAR_STACK_ARG_DECL /* empty */
+# define GC_VAR_STACK_ARG      /* empty */
+#endif
+
+static void copy_stack(Scheme_Jumpup_Buf *b, void *start GC_VAR_STACK_ARG_DECL)
 {
   long size;
   void *here;
@@ -256,7 +264,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
   b->stack_size = size;
 
 #ifdef MZ_PRECISE_GC
-  b->gc_var_stack = GC_variable_stack;
+  b->gc_var_stack = gc_var_stack_in;
   if (scheme_get_external_stack_val)
     b->external_stack = scheme_get_external_stack_val();
 #endif
@@ -339,7 +347,7 @@ int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void * volatile start,
       }
     } else
       b->cont = NULL;
-    copy_stack(b, start);
+    copy_stack(b, start GC_VAR_STACK_ARG);
     return 0;
   }
 

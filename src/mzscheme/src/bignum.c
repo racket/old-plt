@@ -126,7 +126,7 @@ Scheme_Object *scheme_make_bignum(long v)
     o = (Small_Bignum *)scheme_malloc_tagged(sizeof(Small_Bignum) + sizeof(bigdig));
     o->o.type = scheme_bignum_type;
 #if MZ_PRECISE_GC
-    o->o.allocated_inline = 1;
+    o->o.allocated_inline = 2;
 #endif  
 
     SCHEME_BIGDIG(&o->o) = o->v;
@@ -162,7 +162,7 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
     o = (Small_Bignum *)scheme_malloc_tagged(sizeof(Small_Bignum) + sizeof(bigdig));
     o->o.type = scheme_bignum_type;
 #if MZ_PRECISE_GC
-    o->o.allocated_inline = 1;
+    o->o.allocated_inline = 2;
 #endif  
 
     SCHEME_BIGDIG(&o->o) = o->v;

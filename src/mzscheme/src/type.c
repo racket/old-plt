@@ -555,7 +555,8 @@ static void mark_jmpup(Scheme_Jumpup_Buf *buf, Mark_Proc mark)
     GC_mark_variable_stack(buf->gc_var_stack,
 			   (long)buf->stack_copy - (long)buf->stack_from,
 			   /* FIXME: stack direction */
-			   buf->stack_copy + buf->stack_size);
+			   buf->stack_copy + buf->stack_size,
+			   mark);
 }
 
 
@@ -643,7 +644,7 @@ static int bignum_obj(void *p, Mark_Proc mark)
   if (!b->allocated_inline)
     return gcBYTES_TO_WORDS(sizeof(Scheme_Bignum));
   else {
-    if (SCHEME_BIGLEN(b) > 1)
+    if (b->allocated_inline > 1)
       return gcBYTES_TO_WORDS(sizeof(Small_Bignum) + sizeof(bigdig));
     else
       return gcBYTES_TO_WORDS(sizeof(Small_Bignum));

@@ -4330,12 +4330,13 @@ static int mark_object_val(void *p, Mark_Proc mark)
   
   if (mark) {
     int i;
-    for (i = sclass->num_slots; i--; ) {
-      gcMARK(obj->slots[i]);
-    }
 
     gcMARK(obj->o.sclass);
     sclass = (Scheme_Class *)obj->o.sclass; /* In case we just moved it */
+
+    for (i = sclass->num_slots; i--; ) {
+      gcMARK(obj->slots[i]);
+    }
   }
 
   return gcBYTES_TO_WORDS((sizeof(Internal_Object) 

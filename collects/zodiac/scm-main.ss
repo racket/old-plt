@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.200 2000/01/10 22:51:11 clements Exp $
+; $Id: scm-main.ss,v 1.201 2000/01/25 17:13:10 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -467,7 +467,7 @@
 	 (else
 	  (static-error expr "Malformed begin"))))))
 
-  (add-primitivized-micro-form 'begin full-vocabulary begin-micro)
+  (add-primitivized-micro-form 'begin advanced-vocabulary begin-micro)
   (add-primitivized-micro-form 'begin scheme-vocabulary begin-micro)
 
   (define begin0-micro
@@ -499,7 +499,7 @@
 	    (else
 	     (static-error expr "Malformed begin0"))))))
 
-  (add-primitivized-micro-form 'begin0 full-vocabulary begin0-micro)
+  (add-primitivized-micro-form 'begin0 advanced-vocabulary begin0-micro)
   (add-primitivized-micro-form 'begin0 scheme-vocabulary begin0-micro)
 
   (define (make-if-micro one-arm-ok?)

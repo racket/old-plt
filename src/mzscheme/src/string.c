@@ -401,26 +401,26 @@ scheme_init_string (Scheme_Env *env)
 			     env);
 
 
-  scheme_add_global_constant("byte-string-convert",
+  scheme_add_global_constant("bytes-convert",
 			     scheme_make_prim_w_arity2(byte_string_convert,
-						       "byte-string-convert",
+						       "bytes-convert",
 						       1, 7,
 						       3, 3),
 			     env);
-  scheme_add_global_constant("byte-string-convert-end",
+  scheme_add_global_constant("bytes-convert-end",
 			     scheme_make_prim_w_arity2(byte_string_convert_end,
-						       "byte-string-convert-end",
+						       "bytes-convert-end",
 						       0, 3,
 						       2, 2),
 			     env);
-  scheme_add_global_constant("byte-string-open-converter", 
+  scheme_add_global_constant("bytes-open-converter", 
 			     scheme_make_prim_w_arity(byte_string_open_converter,
-						      "byte-string-open-converter",
+						      "bytes-open-converter",
 						      2, 2),
 			     env);
-  scheme_add_global_constant("byte-string-close-converter", 
+  scheme_add_global_constant("bytes-close-converter", 
 			     scheme_make_prim_w_arity(byte_string_close_converter,
-						      "byte-string-close-converter",
+						      "bytes-close-converter",
 						      1, 1),
 			     env);
 
@@ -446,123 +446,123 @@ scheme_init_string (Scheme_Env *env)
 						      1, 1, 1),
 			     env);
 
-  scheme_add_global_constant("byte-string?", 
+  scheme_add_global_constant("bytes?", 
 			     scheme_make_folding_prim(byte_string_p,
-						      "byte-string?",
+						      "bytes?",
 						      1, 1, 1),
 			     env);
-  scheme_add_global_constant("make-byte-string", 
+  scheme_add_global_constant("make-bytes", 
 			     scheme_make_prim_w_arity(make_byte_string,
-						      "make-byte-string",
+						      "make-bytes",
 						      1, 2),
 			     env);
-  scheme_add_global_constant("byte-string", 
+  scheme_add_global_constant("bytes", 
 			     scheme_make_prim_w_arity(byte_string,
-						      "byte-string", 
+						      "bytes", 
 						      0, -1),
 			     env);
-  scheme_add_global_constant("byte-string-length", 
+  scheme_add_global_constant("bytes-length", 
 			     scheme_make_folding_prim(byte_string_length,
-						      "byte-string-length",
+						      "bytes-length",
 						      1, 1, 1),
 			     env);
-  scheme_add_global_constant("byte-string-ref", 
+  scheme_add_global_constant("bytes-ref", 
 			     scheme_make_prim_w_arity(byte_string_ref,
-						      "byte-string-ref", 
+						      "bytes-ref", 
 						      2, 2),
 			     env);
-  scheme_add_global_constant("byte-string-set!", 
+  scheme_add_global_constant("bytes-set!", 
 			     scheme_make_prim_w_arity(byte_string_set,
-						      "byte-string-set!", 
+						      "bytes-set!", 
 						      3, 3),
 			     env);
-  scheme_add_global_constant("byte-string=?", 
+  scheme_add_global_constant("bytes=?", 
 			     scheme_make_prim_w_arity(byte_string_eq,
-						      "byte-string=?",
+						      "bytes=?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("byte-string<?", 
+  scheme_add_global_constant("bytes<?", 
 			     scheme_make_prim_w_arity(byte_string_lt,
-						      "byte-string<?",
+						      "bytes<?",
 						      2, -1),
 			     env);
-  scheme_add_global_constant("byte-string>?", 
+  scheme_add_global_constant("bytes>?", 
 			     scheme_make_prim_w_arity(byte_string_gt,
-						      "byte-string>?",
+						      "bytes>?",
 						      2, -1),
 			     env);
 
-  scheme_add_global_constant("byte-substring", 
+  scheme_add_global_constant("subbytes", 
 			     scheme_make_prim_w_arity(byte_substring,
-						      "byte-substring", 
+						      "subbytes", 
 						      2, 3),
 			     env);
-  scheme_add_global_constant("byte-string-append", 
+  scheme_add_global_constant("bytes-append", 
 			     scheme_make_prim_w_arity(byte_string_append,
-						      "byte-string-append", 
+						      "bytes-append", 
 						      0, -1),
 			     env);
-  scheme_add_global_constant("byte-string->list", 
+  scheme_add_global_constant("bytes->list", 
 			     scheme_make_prim_w_arity(byte_string_to_list,
-						      "byte-string->list",
+						      "bytes->list",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("list->byte-string", 
+  scheme_add_global_constant("list->bytes", 
 			     scheme_make_prim_w_arity(list_to_byte_string,
-						      "list->byte-string",
+						      "list->bytes",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("byte-string-copy", 
+  scheme_add_global_constant("bytes-copy", 
 			     scheme_make_prim_w_arity(byte_string_copy,
-						      "byte-string-copy",
+						      "bytes-copy",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("byte-string-copy!", 
+  scheme_add_global_constant("bytes-copy!", 
 			     scheme_make_prim_w_arity(byte_string_copy_bang,
-						      "byte-string-copy!",
+						      "bytes-copy!",
 						      3, 5),
 			     env);
-  scheme_add_global_constant("byte-string-fill!", 
+  scheme_add_global_constant("bytes-fill!", 
 			     scheme_make_prim_w_arity(byte_string_fill,
-						      "byte-string-fill!", 
+						      "bytes-fill!", 
 						      2, 2),
 			     env);
-  scheme_add_global_constant("byte-string->immutable-byte-string", 
+  scheme_add_global_constant("bytes->immutable-bytes", 
 			     scheme_make_prim_w_arity(byte_string_to_immutable,
-						      "byte-string->byte-immutable-string",
+						      "bytes->immutable-bytes",
 						      1, 1),
 			     env);
 
 
-  scheme_add_global_constant("byte-string-utf8-index", 
+  scheme_add_global_constant("bytes-utf8-index", 
 			     scheme_make_prim_w_arity(byte_string_utf8_index,
-						      "byte-string-utf8-index",
+						      "bytes-utf8-index",
 						      2, 3),
 			     env);
-  scheme_add_global_constant("byte-string-utf8-length",
+  scheme_add_global_constant("bytes-utf8-length",
 			     scheme_make_prim_w_arity(byte_string_utf8_length,
-						      "byte-string-utf8-length",
+						      "bytes-utf8-length",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("byte-string-utf8-ref",
+  scheme_add_global_constant("bytes-utf8-ref",
 			     scheme_make_prim_w_arity(byte_string_utf8_ref,
-						      "byte-string-utf8-ref",
+						      "bytes-utf8-ref",
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("byte-string->string/utf8",
+  scheme_add_global_constant("bytes->string/utf8",
 			     scheme_make_prim_w_arity(byte_string_to_char_string,
-						      "byte-string->string/utf8",
+						      "bytes->string/utf8",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("byte-string->string/utf8-permissive",
+  scheme_add_global_constant("bytes->string/utf8-permissive",
 			     scheme_make_prim_w_arity(byte_string_to_char_string_permissive,
-						      "byte-string->string/utf8-permissive",
-						      1, 1),
+						      "bytes->string/utf8-permissive",
+						      2, 2),
 			     env);
-  scheme_add_global_constant("string->byte-string/utf8",
+  scheme_add_global_constant("string->bytes/utf8",
 			     scheme_make_prim_w_arity(char_string_to_byte_string,
-						      "string->byte-string/utf8",
+						      "string->bytes/utf8",
 						      1, 1),
 			     env);
 
@@ -834,6 +834,8 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
 #define Xchar mzchar
 #define uXchar mzchar
 #define XSTR ""
+#define XSTRINGSTR "string"
+#define SUBXSTR "substring"
 #define CHARP(x) SCHEME_CHARP(x)
 #define CHAR_VAL(x) SCHEME_CHAR_VAL(x)
 #define CHAR_STR "character"
@@ -903,11 +905,13 @@ byte_p(int argc, Scheme_Object *argv[])
 #define EMPTY ""
 #define Xchar char
 #define uXchar unsigned char
-#define XSTR "byte-"
+#define XSTR "byte "
+#define XSTRINGSTR "bytes"
+#define SUBXSTR "subbytes"
 #define CHARP(x) SCHEME_BYTEP(x)
 #define CHAR_VAL(x) SCHEME_INT_VAL(x)
 #define CHAR_STR BYTE_STR
-#define MAKE_CHAR(x) scheme_make_integer(x)
+#define MAKE_CHAR(x) scheme_make_integer_value(x)
 #define xstrlen strlen
 #include "strops.inc"
 
@@ -917,11 +921,11 @@ byte_p(int argc, Scheme_Object *argv[])
 static Scheme_Object * name (int argc, Scheme_Object *argv[]) \
 {  char *s, *prev; int i, sl, pl; int falz = 0;\
    if (!SCHEME_BYTE_STRINGP(argv[0])) \
-    scheme_wrong_type(scheme_name, "byte-string", 0, argc, argv); \
+    scheme_wrong_type(scheme_name, "byte string", 0, argc, argv); \
    prev = SCHEME_BYTE_STR_VAL(argv[0]); pl = SCHEME_BYTE_STRTAG_VAL(argv[0]); \
    for (i = 1; i < argc; i++) { \
      if (!SCHEME_BYTE_STRINGP(argv[i])) \
-      scheme_wrong_type(scheme_name, "byte-string", i, argc, argv); \
+      scheme_wrong_type(scheme_name, "byte string", i, argc, argv); \
      s = SCHEME_BYTE_STR_VAL(argv[i]); sl = SCHEME_BYTE_STRTAG_VAL(argv[i]); \
      if (!falz) if (!(comp(scheme_name, \
                            (unsigned char *)prev, pl, \
@@ -931,9 +935,9 @@ static Scheme_Object * name (int argc, Scheme_Object *argv[]) \
   return falz ? scheme_false : scheme_true; \
 }
 
-GEN_BYTE_STRING_COMP(byte_string_eq, "byte-string=?", mz_strcmp, ==)
-GEN_BYTE_STRING_COMP(byte_string_lt, "byte-string<?", mz_strcmp, <)
-GEN_BYTE_STRING_COMP(byte_string_gt, "byte-string>?", mz_strcmp, >)
+GEN_BYTE_STRING_COMP(byte_string_eq, "bytes=?", mz_strcmp, ==)
+GEN_BYTE_STRING_COMP(byte_string_lt, "bytes<?", mz_strcmp, <)
+GEN_BYTE_STRING_COMP(byte_string_gt, "bytes>?", mz_strcmp, >)
 
 /**********************************************************************/
 /*                   byte string <-> char string                      */
@@ -983,7 +987,7 @@ do_string_to_vector(const char *who, int offset_start, int permc_pos, int argc, 
   long istart, ifinish;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type(who, "byte-string", 0, argc, argv);
+    scheme_wrong_type(who, "byte string", 0, argc, argv);
 
   if (permc_pos) {
     if (!SCHEME_CHARP(argv[permc_pos]))
@@ -1003,13 +1007,13 @@ do_string_to_vector(const char *who, int offset_start, int permc_pos, int argc, 
 static Scheme_Object *
 byte_string_to_char_string (int argc, Scheme_Object *argv[])
 {
-  return do_string_to_vector("string->byte-string/utf8", 1, 0, argc, argv);
+  return do_string_to_vector("string->bytes/utf8", 1, 0, argc, argv);
 }
 
 static Scheme_Object *
 byte_string_to_char_string_permissive (int argc, Scheme_Object *argv[])
 {
-  return do_string_to_vector("string->byte-string/utf8-permissive", 2, 1, argc, argv);
+  return do_string_to_vector("string->bytes/utf8-permissive", 2, 1, argc, argv);
 }
 
 Scheme_Object *scheme_byte_string_to_char_string(Scheme_Object *o)
@@ -1045,9 +1049,9 @@ Scheme_Object *char_string_to_byte_string(int argc, Scheme_Object *argv[])
   long istart, ifinish;
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type("string->byte-string/utf8", "string", 0, argc, argv);
+    scheme_wrong_type("string->bytes/utf8", "string", 0, argc, argv);
   
-  scheme_get_substring_indices("string->byte-string/utf8", argv[0], argc, argv, 
+  scheme_get_substring_indices("string->bytes/utf8", argv[0], argc, argv, 
 			       1, 2, &istart, &ifinish);
     
   return do_char_string_to_byte_string(argv[0], istart, ifinish);
@@ -1062,11 +1066,11 @@ byte_string_utf8_length (int argc, Scheme_Object *argv[])
   char *chars;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type("byte-string-utf8-length", "string", 0, argc, argv);
+    scheme_wrong_type("bytes-utf8-length", "string", 0, argc, argv);
   
   chars = SCHEME_BYTE_STR_VAL(argv[0]);
 
-  scheme_get_substring_indices("byte-string-utf8-length", argv[0], argc, argv, 
+  scheme_get_substring_indices("bytes-utf8-length", argv[0], argc, argv, 
 			       1, 2,
 			       &istart, &ifinish);
   
@@ -1087,7 +1091,7 @@ byte_string_utf8_index(int argc, Scheme_Object *argv[])
   char *chars;
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type("byte-string-utf8-index", "byte-string", 0, argc, argv);
+    scheme_wrong_type("bytes-utf8-index", "byte string", 0, argc, argv);
   
   chars = SCHEME_BYTE_STR_VAL(argv[0]);
 
@@ -1099,10 +1103,10 @@ byte_string_utf8_index(int argc, Scheme_Object *argv[])
   }
 
   if (pos < 0) {
-    scheme_wrong_type("byte-string-utf8-index", "non-negative exact integer", 1, argc, argv);
+    scheme_wrong_type("bytes-utf8-index", "non-negative exact integer", 1, argc, argv);
   }
 
-  scheme_get_substring_indices("byte-string-utf8-index", argv[0], argc, argv, 
+  scheme_get_substring_indices("bytes-utf8-index", argv[0], argc, argv, 
 			       2, 3,
 			       &istart, &ifinish);
   
@@ -1124,7 +1128,7 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
   unsigned int us[1];
 
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type("byte-string-utf8-ref", "byte-string", 0, argc, argv);
+    scheme_wrong_type("bytes-utf8-ref", "byte string", 0, argc, argv);
   
   chars = SCHEME_BYTE_STR_VAL(argv[0]);
 
@@ -1136,10 +1140,10 @@ byte_string_utf8_ref(int argc, Scheme_Object *argv[])
   }
 
   if (pos < 0) {
-    scheme_wrong_type("byte-string-utf8-ref", "non-negative exact integer", 1, argc, argv);
+    scheme_wrong_type("bytes-utf8-ref", "non-negative exact integer", 1, argc, argv);
   }
 
-  scheme_get_substring_indices("byte-string-utf8-ref", argv[0], argc, argv, 
+  scheme_get_substring_indices("bytes-utf8-ref", argv[0], argc, argv, 
 			       2, 3,
 			       &istart, &ifinish);
   
@@ -1534,6 +1538,21 @@ int scheme_byte_string_has_null(Scheme_Object *o)
   return 0;
 }
 
+int scheme_any_string_has_null(Scheme_Object *o)
+{
+  if (SCHEME_BYTE_STRINGP(o))
+    return scheme_byte_string_has_null(o);
+  else {
+    const mzchar *s = SCHEME_CHAR_STR_VAL(o);
+    int i = SCHEME_CHAR_STRTAG_VAL(o);
+    while (i--) {
+      if (!s[i])
+	return 1;
+    }
+    return 0;
+  }
+}
+
 static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
 {
   char *s;
@@ -1544,7 +1563,7 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
       || scheme_any_string_has_null(argv[0]))
     scheme_wrong_type("getenv", STRING_OR_BYTE_STRING_W_NO_NULLS, 0, argc, argv);
 
-  if (SCHEME_CAR_STRINGP(argv[0]))
+  if (SCHEME_CHAR_STRINGP(argv[0]))
     bs = scheme_char_string_to_byte_string(argv[0]);
   else
     bs = argv[0];
@@ -1582,13 +1601,13 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
       || scheme_any_string_has_null(argv[1]))
     scheme_wrong_type("putenv", STRING_OR_BYTE_STRING_W_NO_NULLS, 1, argc, argv);
 
-  if (SCHEME_CAR_STRINGP(argv[0]))
+  if (SCHEME_CHAR_STRINGP(argv[0]))
     var = SCHEME_BYTE_STR_VAL(argv[0]);
   else {
     bs = scheme_char_string_to_byte_string(argv[0]);
     var = SCHEME_BYTE_STR_VAL(bs);
   }
-  if (SCHEME_CAR_STRINGP(argv[1]))
+  if (SCHEME_CHAR_STRINGP(argv[1]))
     val = SCHEME_BYTE_STR_VAL(argv[1]);
   else {
     bs = scheme_char_string_to_byte_string(argv[1]);
@@ -1717,7 +1736,7 @@ static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-command-line-arguments", 
 			     scheme_make_integer(MZCONFIG_CMDLINE_ARGS),
 			     argc, argv,
-			     -1, ok_cmdline, "vector of byte-strings", 1);
+			     -1, ok_cmdline, "vector of byte strings", 1);
 }
 
 /**********************************************************************/
@@ -2607,11 +2626,11 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
   Scheme_Custodian_Reference *mref;
 
   if (!SCHEME_CHAR_STRINGP(argv[0]))
-    scheme_wrong_type("string-open-converter", "byte-string", 0, argc, argv);
+    scheme_wrong_type("bytes-open-converter", "byte string", 0, argc, argv);
   if (!SCHEME_CHAR_STRINGP(argv[1]))
-    scheme_wrong_type("string-open-converter", "byte-string", 1, argc, argv);
+    scheme_wrong_type("bytes-open-converter", "byte string", 1, argc, argv);
   
-  scheme_custodian_check_available(NULL, "string-open-converter", "converter");
+  scheme_custodian_check_available(NULL, "bytes-open-converter", "converter");
 
   s1 = scheme_char_string_to_byte_string(argv[0]);
   s2 = scheme_char_string_to_byte_string(argv[1]);
@@ -2631,7 +2650,10 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
 	  || (!*to_e && !iconv_open))) {
     /* Use the built-in conversion UTF-8<->UTF-8 converter: */
     kind = mzUTF8_KIND;
-    permissive = !strcmp(from_e, "UTF-8-permissive");
+    if (!strcmp(from_e, "UTF-8-permissive"))
+      permissive = '?';
+    else
+      permissive = 0;
     cd = (iconv_t)-1;
   } else {
     if (!iconv_open)
@@ -2679,7 +2701,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
 
   if (opos > 1) {
     if (!SCHEME_BYTE_STRINGP(argv[1]))
-      scheme_wrong_type(who, "byte-string", 1, argc, argv);  
+      scheme_wrong_type(who, "bytes", 1, argc, argv);  
     scheme_get_substring_indices(who, argv[1], argc, argv, 2, 3, &istart, &ifinish);
   } else {
     istart = 0;
@@ -2688,7 +2710,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
   
   if (argc > opos) {
     if (!SCHEME_MUTABLE_BYTE_STRINGP(argv[opos]))
-      scheme_wrong_type(who, "mutable-byte-string", opos, argc, argv);  
+      scheme_wrong_type(who, "mutable byte string", opos, argc, argv);  
     r = SCHEME_BYTE_STR_VAL(argv[opos]);
     scheme_get_substring_indices(who, argv[opos], argc, argv, opos + 1, opos + 2, &ostart, &ofinish);
   } else {
@@ -2780,18 +2802,18 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
 
 static Scheme_Object *byte_string_convert(int argc, Scheme_Object *argv[])
 {
-  return convert_one("byte-string-convert", 4, argc, argv);
+  return convert_one("bytes-convert", 4, argc, argv);
 }
 
 static Scheme_Object *byte_string_convert_end(int argc, Scheme_Object *argv[])
 {
-  return convert_one("byte-string-convert-end", 1, argc, argv);
+  return convert_one("bytes-convert-end", 1, argc, argv);
 }
 
 static Scheme_Object *byte_string_close_converter(int argc, Scheme_Object **argv)
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_string_converter_type))
-    scheme_wrong_type("byte-string-close-converter", "converter", 0, argc, argv);
+    scheme_wrong_type("bytes-close-converter", "converter", 0, argc, argv);
 
   close_converter(argv[0], NULL);
 
@@ -3198,7 +3220,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	s[j++] = 0x80 | (wc & 0x3F);
       }
     }
-    return j;
+    return j - dstart;
   }
 }
 
@@ -3213,7 +3235,7 @@ char *scheme_utf8_encode_to_buffer_len(const mzchar *s, int len,
 {
   int slen;
   slen = scheme_utf8_encode(s, 0, len, NULL, 0, 0);
-  if (slen + 1 < blen) {
+  if (slen + 1 > blen) {
     buf = (char *)scheme_malloc_atomic(slen + 1);
   }
   scheme_utf8_encode(s, 0, len, buf, 0, 0);

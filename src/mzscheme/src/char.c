@@ -227,10 +227,11 @@ Scheme_Object *scheme_make_char(mzchar ch)
 {
   Scheme_Object *o;
 
-  if (ch < 255)
+  if (ch < 256)
     return scheme_char_constants[ch];
   
   o = scheme_alloc_small_object();
+  o->type = scheme_char_type;
   SCHEME_CHAR_VAL(o) = ch;
 
   return o;
@@ -309,7 +310,7 @@ char_to_integer (int argc, Scheme_Object *argv[])
 
   c = SCHEME_CHAR_VAL(argv[0]);
 
-  return scheme_make_integer(c);
+  return scheme_make_integer_value(c);
 }
 
 static Scheme_Object *
@@ -324,6 +325,14 @@ integer_to_char (int argc, Scheme_Object *argv[])
 	&& (v != 0xFFFF)
 	&& ((v < 0xD800) || (v > 0xDFFF)))
       return _scheme_make_char(v);
+  } else if (SCHEME_BIGNUMP(argv[0])
+	     && SCHEME_BIGPOS(argv[0])) {
+    /* On 32-bit machines, there's still a chance... */
+    long y;
+    if (scheme_get_int_val(argv[0], &y)) {
+      if (y <= 0x7FFFFFFF)
+	return _scheme_make_char(y);
+    }
   }
 
   scheme_wrong_type("integer->char", 

@@ -67,7 +67,7 @@ X(scheme_alloc, _string)(int size, Xchar fill)
   
   if (size < 0) {
     str = scheme_make_integer(size);
-    scheme_wrong_type("make-" XSTR "string", "non-negative exact integer",
+    scheme_wrong_type("make-" XSTRINGSTR, "non-negative exact integer",
 		      -1, 0, &str);
   }
 
@@ -101,16 +101,16 @@ X_(make, string) (int argc, Scheme_Object *argv[])
   Xchar fill;
   Scheme_Object *str;
 
-  len = scheme_extract_index("make-" XSTR "string", 0, argc, argv, -1, 0);
+  len = scheme_extract_index("make-" XSTRINGSTR, 0, argc, argv, -1, 0);
 
   if (len == -1) {
-    scheme_raise_out_of_memory("make-" XSTR "string", "making " XSTR "string of length %s",
+    scheme_raise_out_of_memory("make-" XSTRINGSTR, "making " XSTR "string of length %s",
 			       scheme_make_provided_string(argv[0], 0, NULL));
   }
 
   if (argc == 2) {
     if (!CHARP(argv[1]))
-      scheme_wrong_type("make-" XSTR "string", CHAR_STR, 1, argc, argv);
+      scheme_wrong_type("make-" XSTRINGSTR, CHAR_STR, 1, argc, argv);
     fill = CHAR_VAL(argv[1]);
   } else
     fill = 0;
@@ -129,7 +129,7 @@ X__(string) (int argc, Scheme_Object *argv[])
 
   for ( i=0 ; i<argc ; ++i ) {
     if (!CHARP(argv[i]))
-      scheme_wrong_type(XSTR "string", CHAR_STR, i, argc, argv);
+      scheme_wrong_type(XSTRINGSTR, CHAR_STR, i, argc, argv);
     SCHEME_X_STR_VAL(str)[i] = CHAR_VAL(argv[i]);
   }
 
@@ -140,7 +140,7 @@ static Scheme_Object *
 X__(string_length) (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string-length", XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-length", XSTR "string", 0, argc, argv);
 
   return scheme_make_integer(SCHEME_X_STRTAG_VAL(argv[0]));
 }
@@ -153,15 +153,15 @@ X__(string_ref) (int argc, Scheme_Object *argv[])
   Xchar *str;
 
   if (!SCHEME_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string-ref", XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-ref", XSTR "string", 0, argc, argv);
 
   str = SCHEME_X_STR_VAL(argv[0]);
   len = SCHEME_X_STRTAG_VAL(argv[0]);
 
-  i = scheme_extract_index(XSTR "string-ref", 1, argc, argv, len, 0);
+  i = scheme_extract_index(XSTRINGSTR "-ref", 1, argc, argv, len, 0);
 
   if (i >= len) {
-    scheme_out_of_string_range(XSTR "string-ref", "", argv[1], argv[0], 0, len - 1);
+    scheme_out_of_string_range(XSTRINGSTR "-ref", "", argv[1], argv[0], 0, len - 1);
     return NULL;
   }
 
@@ -176,18 +176,18 @@ X__(string_set) (int argc, Scheme_Object *argv[])
   Xchar *str;
   
   if (!SCHEME_MUTABLE_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string-set!", "mutable-" XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-set!", "mutable " XSTR "string", 0, argc, argv);
 
   str = SCHEME_X_STR_VAL(argv[0]);
   len = SCHEME_X_STRTAG_VAL(argv[0]);
 
-  i = scheme_extract_index(XSTR "string-set!", 1, argc, argv, len, 0);
+  i = scheme_extract_index(XSTRINGSTR "-set!", 1, argc, argv, len, 0);
 
   if (!CHARP(argv[2]))
-    scheme_wrong_type(XSTR "string-set!", CHAR_STR, 2, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-set!", CHAR_STR, 2, argc, argv);
 
   if (i >= len) {
-    scheme_out_of_string_range(XSTR "string-set!", "", argv[1], argv[0], 0, len - 1);
+    scheme_out_of_string_range(XSTRINGSTR "-set!", "", argv[1], argv[0], 0, len - 1);
     return NULL;
   }
 
@@ -204,11 +204,11 @@ X__(substring) (int argc, Scheme_Object *argv[])
   Scheme_Object *str;
 
   if (!SCHEME_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "substring", XSTR "string", 0, argc, argv);
+    scheme_wrong_type(SUBXSTR, XSTR "string", 0, argc, argv);
 
   chars = SCHEME_X_STR_VAL(argv[0]);
 
-  scheme_get_substring_indices(XSTR "substring", argv[0], argc, argv, 1, 2,
+  scheme_get_substring_indices(SUBXSTR, argv[0], argc, argv, 1, 2,
 			       &start, &finish);
 
   str = X(scheme_alloc, _string)(finish-start, 0);
@@ -229,7 +229,7 @@ X__(string_append) (int argc, Scheme_Object *argv[])
   for (i = 0; i < argc; i++) {
     s = argv[i];
     if (!SCHEME_X_STRINGP(s))
-      scheme_wrong_type(XSTR "string-append", "string", i, argc, argv);
+      scheme_wrong_type(XSTRINGSTR "-append", "string", i, argc, argv);
     len += SCHEME_X_STRTAG_VAL(s);
   }
 
@@ -262,8 +262,8 @@ X(scheme_append, _string)(Scheme_Object *str1, Scheme_Object *str2)
   naya = X(scheme_alloc, _string)(len1 + len2, 0);
 
   r = SCHEME_X_STR_VAL(naya);
-  memcpy(r, SCHEME_X_STR_VAL(str1), len1 * sizeof(mzchar));
-  memcpy(r + len1, SCHEME_X_STR_VAL(str2), len2 * sizeof(mzchar));
+  memcpy(r, SCHEME_X_STR_VAL(str1), len1 * sizeof(Xchar));
+  memcpy(r + len1, SCHEME_X_STR_VAL(str2), len2 * sizeof(Xchar));
 
   r[len1 + len2] = 0;
 
@@ -278,7 +278,7 @@ X__(string_to_list) (int argc, Scheme_Object *argv[])
   Scheme_Object *pair = scheme_null;
 
   if (!SCHEME_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string->list", XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "->list", XSTR "string", 0, argc, argv);
 
   chars = SCHEME_X_STR_VAL(argv[0]);
   len = SCHEME_X_STRTAG_VAL(argv[0]);
@@ -312,7 +312,7 @@ X_(list_to, string) (int argc, Scheme_Object *argv[])
     ch = SCHEME_CAR(list);
     
     if (!CHARP(ch))
-      scheme_wrong_type("list->" XSTR "string", "list of " CHAR_STR, 0, 
+      scheme_wrong_type("list->" XSTRINGSTR, "list of " CHAR_STR, 0, 
 			argc, argv);
     
     SCHEME_X_STR_VAL(str)[i] = CHAR_VAL(ch);
@@ -321,7 +321,7 @@ X_(list_to, string) (int argc, Scheme_Object *argv[])
   }  
   
   if (!SCHEME_NULLP(list))
-    scheme_wrong_type("list->" XSTR "string", "list of" CHAR_STR, 0, argc, argv);
+    scheme_wrong_type("list->" XSTRINGSTR, "list of" CHAR_STR, 0, argc, argv);
 
   return str;
 }
@@ -330,7 +330,7 @@ static Scheme_Object *
 X__(string_copy) (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string-copy", XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-copy", XSTR "string", 0, argc, argv);
 
   return X(scheme_make_sized, _string)(SCHEME_X_STR_VAL(argv[0]), 
 					   SCHEME_X_STRTAG_VAL(argv[0]), 1);
@@ -343,21 +343,21 @@ X__(string_copy_bang)(int argc, Scheme_Object *argv[])
   long ostart, ofinish;
 
   if (!SCHEME_MUTABLE_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string-copy!", "mutable-" XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-copy!", "mutable " XSTR "string", 0, argc, argv);
 
-  scheme_get_substring_indices(XSTR "string-copy!", argv[0], 
+  scheme_get_substring_indices(XSTRINGSTR "-copy!", argv[0], 
 			       argc, argv, 1, 5, 
 			       &ostart, &ofinish);
 
   if (!SCHEME_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string-copy!", XSTR "string", 2, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-copy!", XSTR "string", 2, argc, argv);
 
-  scheme_get_substring_indices(XSTR "string-copy!", argv[2], 
+  scheme_get_substring_indices(XSTRINGSTR "-copy!", argv[2], 
 			       argc, argv, 3, 4, 
 			       &istart, &ifinish);
 
   if ((ofinish - ostart) < (ifinish - istart)) {
-    scheme_arg_mismatch(XSTR "string-copy!",
+    scheme_arg_mismatch(XSTRINGSTR "-copy!",
 			"not enough room in target " XSTR "string: ",
 			argv[2]);
     return NULL;
@@ -377,9 +377,9 @@ X__(string_fill) (int argc, Scheme_Object *argv[])
   Xchar *chars, ch;
 
   if (!SCHEME_MUTABLE_X_STRINGP(argv[0]))
-    scheme_wrong_type(XSTR "string-fill!", "mutable-" XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-fill!", "mutable " XSTR "string", 0, argc, argv);
   if (!CHARP(argv[1]))
-    scheme_wrong_type(XSTR "string-fill!", CHAR_STR, 1, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "-fill!", CHAR_STR, 1, argc, argv);
   
   chars = SCHEME_X_STR_VAL(argv[0]);
   ch = CHAR_VAL(argv[1]);
@@ -397,7 +397,7 @@ X__(string_to_immutable) (int argc, Scheme_Object *argv[])
   Scheme_Object *s = argv[0];
 
   if (!SCHEME_X_STRINGP(s))
-    scheme_wrong_type(XSTR "string->immutable-" XSTR "string", XSTR "string", 0, argc, argv);
+    scheme_wrong_type(XSTRINGSTR "->immutable-" XSTRINGSTR, XSTR "string", 0, argc, argv);
 
   if (SCHEME_MUTABLE_X_STRINGP(s)) {
     Scheme_Object *s2;
@@ -425,6 +425,8 @@ X__(string_to_immutable) (int argc, Scheme_Object *argv[])
 #undef Xchar
 #undef uXchar
 #undef XSTR
+#undef XSTRINGSTR
+#undef SUBXSTR
 #undef CHARP
 #undef CHAR_VAL
 #undef CHAR_STR

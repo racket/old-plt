@@ -493,7 +493,7 @@ typedef struct Scheme_Vector {
 #define scheme_isgraphic(x) ((scheme_uchar_find(x)) & 0x800)
 
 #define scheme_toupper(x) (x + scheme_uchar_ups[(((scheme_uchar_find(x)) & 0x3F000) >> 12)])
-#define scheme_tolower(x) (x + scheme_uchar_downs[(((scheme_uchar_find(x)) & 0xFA0000) >> 18)])
+#define scheme_tolower(x) (x + scheme_uchar_downs[(((scheme_uchar_find(x)) & 0xFC0000) >> 18)])
 #define scheme_totitle(x) (x + scheme_uchar_titles[(((scheme_uchar_find(x)) & 0x3F000000) >> 24)])
 
 /*========================================================================*/

@@ -373,6 +373,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    }
 	    t = scheme_utf8_encode_to_buffer_len(u, tlen, NULL, 0, (long *)&tlen);
 	  }
+	  break;
 	default:
 	  {
 	    t = (char *)ptrs[pp++];

@@ -2513,14 +2513,6 @@ static Scheme_Object *gen_compare(char *name, int pos,
     scheme_wrong_type(name, peek ? "input-port" : "string, byte-string, or input-port", 1, argc, argv);
   
   if (SCHEME_CHAR_STRINGP(argv[1])) {
-    if (SCHEME_BYTE_STRINGP(argv[0])
-	|| ((SCHEME_TYPE(argv[0]) == scheme_regexp_type)
-	    && !((regexp *)argv[0])->is_utf8)) {
-      scheme_arg_mismatch(name, 
-			  "cannot match a byte-regexp against a string: ", 
-			  argv[1]);
-      return NULL;
-    }
     iport = NULL;
     endset = SCHEME_CHAR_STRLEN_VAL(argv[1]);
   } else if (SCHEME_INPORTP(argv[1])) {
@@ -2605,7 +2597,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
 			 0 /* not UTF-16 */);
       offset = 0;
       endset = blen;
-      was_non_byte = 1;
+      if (r->is_utf8)
+	was_non_byte = 1;
     }
   } else
     full_s = NULL;
@@ -2725,13 +2718,6 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
 			  argv[2]);
     }
   } else {
-    if (SCHEME_BYTE_STRINGP(argv[0])
-	|| ((SCHEME_TYPE(argv[0]) == scheme_regexp_type)
-	    && !((regexp *)argv[0])->is_utf8)) {
-      scheme_arg_mismatch(name, 
-			  "cannot match a byte-regexp against a string: ", 
-			  argv[1]);
-    }
     if (!SCHEME_CHAR_STRINGP(argv[2])) {
       scheme_arg_mismatch(name, "cannot replace a string with a byte-string: ",
 			  argv[2]);
@@ -2749,7 +2735,8 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
     bs = scheme_char_string_to_byte_string(argv[1]);
     source = SCHEME_BYTE_STR_VAL(bs);
     sourcelen = SCHEME_BYTE_STRTAG_VAL(bs);
-    was_non_byte = 1;
+    if (r->is_utf8)
+      was_non_byte = 1;
   } else {
     source = SCHEME_BYTE_STR_VAL(argv[1]);
     sourcelen = SCHEME_BYTE_STRTAG_VAL(argv[1]);

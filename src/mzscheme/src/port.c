@@ -1578,7 +1578,7 @@ long scheme_get_bytes(Scheme_Object *port, long size, char *buffer, int offset)
     only_avail = 1;
   }
 
-  n = scheme_get_byte_string("read-byte-string", port,
+  n = scheme_get_byte_string("read-bytes", port,
 			     buffer, offset, size,
 			     only_avail,
 			     0, 0);

@@ -2834,8 +2834,9 @@
 
   (define load/cd
     (lambda (n)
-      (unless (string? n)
-	(raise-type-error 'load/cd "string" n))
+      (unless (or (string? n)
+		  (bytes? n))
+	(raise-type-error 'load/cd "string or byte string" n))
       (let-values ([(base name dir?) (split-path n)])
 	(if dir?
 	    (raise
@@ -2845,7 +2846,7 @@
 	      (current-continuation-marks)
 	      n
 	      #f))
-	    (if (not (string? base))
+	    (if (not (bytes? base))
 		(load n)
 		(begin
 		  (if (not (directory-exists? base))
@@ -2865,8 +2866,10 @@
 			(lambda () (current-directory orig))))))))))
 
   (define (-load load name path)
-    (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
-      (raise-type-error name "pathname string" path))
+    (unless (and (or (string? path) 
+		     (bytes? path))
+		 (or (relative-path? path) (absolute-path? path)))
+      (raise-type-error name "pathname string or byte string" path))
     (if (complete-path? path)
 	(load path)
 	(let ([dir (current-load-relative-directory)])
@@ -2875,19 +2878,21 @@
   (define (load-relative-extension path) (-load load-extension 'load-relative-extension path))
   
   (define path-list-string->path-list
-    (let ((r (byte-regexp (string->byte-string/utf8
+    (let ((r (byte-regexp (string->bytes/utf8
 			   (let ((sep (case (system-type) 
 					((unix beos oskit macosx) ":")
 					((windows macos) ";"))))
 			     (format "([^~a]*)~a(.*)" sep sep)))))
 	  (cons-path (lambda (default s l) 
-		       (if (string=? s "")
+		       (if (bytes=? s #"")
 			   (append default l)
 			   (if (or (relative-path? s) (absolute-path? s)) (cons s l) l)))))
       (lambda (s default)
-	(unless (string? s) (raise-type-error 'path-list-string->path-list "string" s))
-	(unless (list? default) (raise-type-error 'path-list-string->path-list "list" default))
-	(let loop ([s s])
+	(unless (or (bytes? s) (string? s))
+	  (raise-type-error 'path-list-string->path-list "string or byte string" s))
+	(unless (list? default)
+	  (raise-type-error 'path-list-string->path-list "list" default))
+	(let loop ([s (if (bytes? s) s (string->bytes/utf8 s))])
 	  (let ([m (regexp-match r s)])
 	    (if m
 		(cons-path default (cadr m) (loop (caddr m)))
@@ -2895,17 +2900,20 @@
 
   (define find-executable-path
     (lambda (program libpath)
-      (unless (and (string? program) 
+      (unless (and (or (string? program) 
+		       (bytes? program))
 		   (or (relative-path? program)
 		       (absolute-path? program)))
-	(raise-type-error 'find-executable-path "path string" program))
-      (unless (or (not libpath) (and (string? libpath) (relative-path? libpath)))
+	(raise-type-error 'find-executable-path "path string or byte string" program))
+      (unless (or (not libpath) (and (or (string? libpath) 
+					 (bytes? libpath) )
+				     (relative-path? libpath)))
 	(raise-type-error 'find-executable-path "relative-path string or #f" libpath))
       (letrec ([found-exec
 		(lambda (exec-name)
                   (if libpath
 		      (let-values ([(base name isdir?) (split-path exec-name)])
-			(if (string? base)
+			(if (bytes? base)
 			    (let ([lib (build-path base libpath)])
 			      (if (or (directory-exists? lib) 
 				      (file-exists? lib))
@@ -2921,8 +2929,8 @@
 	(if (and (relative-path? program)
 		 (let-values ([(base name dir?) (split-path program)])
 		   (eq? base 'relative)))
-	    (let ([paths-str (getenv "PATH")]
-		  [win-add (lambda (s) (if (eq? (system-type) 'windows) (cons "." s) s))])
+	    (let ([paths-str (getenv #"PATH")]
+		  [win-add (lambda (s) (if (eq? (system-type) 'windows) (cons #"." s) s))])
 	      (let loop ([paths (if paths-str 
 				    (win-add (path-list-string->path-list paths-str null))
 				    null)])
@@ -2959,8 +2967,9 @@
   ;; ------------------------------ Collections ------------------------------
 
   (define (-check-relpath who s)
-    (unless (string? s)
-      (raise-type-error who "string" s))
+    (unless (or (string? s)
+		(bytes? s))
+      (raise-type-error who "string or byte string" s))
     (unless (relative-path? s)
       (raise (make-exn:i/o:filesystem
 	      (string->immutable-string
@@ -3013,8 +3022,9 @@
 				       (file-or-directory-modify-seconds a))])
 			     (or (and (not bm) am) (and am bm (>= am bm))))))])
 	       (lambda (path expect-module)
-		 (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
-		   (raise-type-error 'load/use-compiled "pathname string" path))
+		 (unless (and (or (string? path) (bytes? path))
+			      (or (relative-path? path) (absolute-path? path)))
+		   (raise-type-error 'load/use-compiled "pathname string or byte string" path))
 		 (let*-values ([(path) (resolve path)]
 			       [(base file dir?) (split-path path)]
 			       [(base) (if (eq? base 'relative) 'same base)]
@@ -3023,31 +3033,33 @@
 		   (let* ([get-so (lambda (file)
 				    (if comp?
 					(build-path base
-						    "compiled"
-						    "native"
+						    #"compiled"
+						    #"native"
 						    (system-library-subpath)
 						    (regexp-replace 
 						     -re:suffix file
 						     (case (system-type)
-						       [(windows) ".dll"]
-						       [else ".so"])))
+						       [(windows) #".dll"]
+						       [else #".so"])))
 					#f))]
 			  [zo (and comp?
 				   (build-path base
-					       "compiled"
-					       (regexp-replace -re:suffix file ".zo")))]
+					       #"compiled"
+					       (regexp-replace -re:suffix file #".zo")))]
 			  [so (get-so file)]
-			  [_loader-so (get-so "_loader.ss")]
+			  [_loader-so (get-so #"_loader.ss")]
 			  [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
 				    (file-or-directory-modify-seconds path))]
 			  [with-dir (lambda (t) 
 				      (parameterize ([current-load-relative-directory 
-						      (if (string? base) base (current-directory))])
+						      (if (bytes? base) 
+							  base 
+							  (current-directory))])
 					(t)))])
 		     (cond
 		      [(and (date>=? _loader-so path-d)
 			    (let ([getter (load-extension _loader-so)])
-			      (let-values ([(loader modname) (getter (string->symbol (regexp-replace -re:suffix file "")))])
+			      (let-values ([(loader modname) (getter (string->symbol (regexp-replace -re:suffix file #"")))])
 				(and loader
 				     (begin
 				       (when expect-module
@@ -3102,7 +3114,7 @@
 	 [(and (pair? s) (eq? (car s) 'planet))
 	  (unless planet-resolver
 	    (parameterize ([current-namespace orig-namespace])
-	      (set! planet-resolver (dynamic-require '(lib "resolver.ss" "planet") 'planet-module-name-resolver))))
+	      (set! planet-resolver (dynamic-require '(lib #"resolver.ss" #"planet") 'planet-module-name-resolver))))
 	  (planet-resolver s relto stx)]
 	 [s
 	  (let ([get-dir (lambda ()
@@ -3118,24 +3130,28 @@
 	    (let ([filename
 		   ;; Non-string result represents an error
 		   (cond
-		    [(string? s)
-		     (if (regexp-match -re:ok-relpath s)
-			 ;; Parse Unix-style relative path string
-			 (let loop ([path (get-dir)][s s])
-			   (let ([prefix (regexp-match -re:dir s)])
-			     (if prefix
-				 (loop (build-path path 
-						   (let ([p (cadr prefix)])
-						     (cond
-						      [(string=? p ".") 'same]
-						      [(string=? p "..") 'up]
-						      [else p])))
-				       (caddr prefix))
-				 (build-path path s))))
-			 (list
-			  (string-append
-			   " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
-			   "space, with no leading or trailing /)")))]
+		    [(or (bytes? s)
+			 (string? s))
+		     (let ([s (if (string? s)
+				  (string->bytes/utf8 s)
+				  s)])
+		       (if (regexp-match -re:ok-relpath s)
+			   ;; Parse Unix-style relative path string
+			   (let loop ([path (get-dir)][s s])
+			     (let ([prefix (regexp-match -re:dir s)])
+			       (if prefix
+				   (loop (build-path path 
+						     (let ([p (cadr prefix)])
+						       (cond
+							[(string=? p ".") 'same]
+							[(string=? p "..") 'up]
+							[else p])))
+					 (caddr prefix))
+				   (build-path path s))))
+			   (list
+			    (string-append
+			     " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
+			     "space, with no leading or trailing /)"))))]
 		    [(or (not (pair? s))
 			 (not (list? s)))
 		     #f]
@@ -3147,20 +3163,24 @@
 					   (cddr s)
 					   #f)))])
 		       (and cols
-			    (andmap (lambda (x) (and (string? x) (relative-path? x))) cols)
-			    (string? (cadr s))
+			    (andmap (lambda (x) (and (or (string? x) 
+							 (bytes? x))
+						     (relative-path? x))) cols)
+			    (or (string? (cadr s))
+				(bytes? (cadr s)))
 			    (relative-path? (cadr s))
 			    (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
 			      (build-path p (cadr s)))))]
 		    [(eq? (car s) 'file)
 		     (and (= (length s) 2)
 			  (let ([p (cadr s)])
-			    (and (string? p)
+			    (and (or (string? p)
+				     (bytes? p))
 				 (or (relative-path? p)
 				     (absolute-path? p))
 				 (path->complete-path p (get-dir)))))]
 		    [else #f])])
-	      (unless (string? filename)
+	      (unless (bytes? filename)
 		(if stx
 		    (raise-syntax-error
 		     '(require require mzscheme)
@@ -3177,9 +3197,9 @@
 	      ;; At this point, filename is a complete path
 	      (let ([filename (simplify-path (expand-path filename))])
 		(let-values ([(base name dir?) (split-path filename)])
-		  (let ([no-sfx (regexp-replace -re:suffix name "")]
+		  (let ([no-sfx (regexp-replace -re:suffix name #"")]
 			[abase (format ",~a" base)])
-		    (let ([modname (string->symbol (string-append abase no-sfx))]
+		    (let ([modname (string->symbol (format "~a~a" abase no-sfx))]
 			  [ht (hash-table-get
 			       -module-hash-table-table
 			       (namespace-module-registry (current-namespace))
@@ -3219,7 +3239,9 @@
 			  (let ([prefix (string->symbol abase)])
 			    (with-continuation-mark -loading-filename filename
 			      (parameterize ([current-module-name-prefix prefix])
-				((current-load/use-compiled) filename (string->symbol no-sfx)))))
+				((current-load/use-compiled) 
+				 filename 
+				 (string->symbol (bytes->string/utf8 no-sfx))))))
 			  (hash-table-put! ht modname suffix)))
 		      ;; Result is the module name:
 		      modname))))))]
@@ -3242,23 +3264,23 @@
     
   (define (find-library-collection-paths)
     (path-list-string->path-list
-     (or (getenv "PLTCOLLECTS") "")
+     (or (getenv #"PLTCOLLECTS") #"")
      (cons
       (build-path (find-system-path 'addon-dir)
 		  (version)
-		  "collects")
+		  #"collects")
       (or (ormap
 	   (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list (simplify-path p)))))
 	   (list
-	    (lambda () (let ((v (getenv "PLTHOME")))
-			 (and v (build-path v "collects"))))
-	    (lambda () (find-executable-path (find-system-path 'exec-file) "collects"))
+	    (lambda () (let ((v (getenv #"PLTHOME")))
+			 (and v (build-path v #"collects"))))
+	    (lambda () (find-executable-path (find-system-path 'exec-file) #"collects"))
 	    ;; When binary is in bin/ subdir:
-	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up "collects")))
+	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up #"collects")))
 	    ;; When binary is in .bin/<platform> subdir:
-	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up "collects")))
+	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up #"collects")))
 	    ;; When binary is in bin/<appname>.app/Contents/Macos subdir:
-	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up "collects")))))
+	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up 'up 'up #"collects")))))
 	  null))))
 
   ;; -------------------------------------------------------------------------

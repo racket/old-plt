@@ -4,604 +4,653 @@
 (SECTION 'utf8)
 
 (define basic-utf8-tests
-  '((#(#x3ba #x1f79 #x3c3 #x3bc #x3b5)
-     (#\316 #\272 #\341 #\275 #\271 #\317 #\203 #\316 #\274 #\316 #\265))
-    (#(0)
-     (#\nul))
-    (#(#x00000080)
-     (#\302 #\200))
-    (#(#x00000800)
-     (#\340 #\240 #\200))
-    (#(#x00010000)
-     (#\360 #\220 #\200 #\200))
-    (#(#x00200000)
-     (#\370 #\210 #\200 #\200 #\200))
-    (#(#x04000000)
-     (#\374 #\204 #\200 #\200 #\200 #\200))
-    (#(#x0000007F)
-     (#\rubout))
-    (#(#x000007FF)
-     (#\337 #\277))
-    ;; Should this one be allowed? We check below that it's
-    ;;  disallowed!
-    ;; (#(#x0000FFFF)
-    ;;  (#\357 #\277 #\277))
-    (#(#x001FFFFF)
-     (#\367 #\277 #\277 #\277))
-    (#(#x03FFFFFF)
-     (#\373 #\277 #\277 #\277 #\277))
-    (#(#x7FFFFFFF)
-     (#\375 #\277 #\277 #\277 #\277 #\277))
-    (#(#x0000D7FF)
-     (#\355 #\237 #\277))
-    (#(#x0000E000)
-     (#\356 #\200 #\200))
-    (#(#x0000FFFD)
-     (#\357 #\277 #\275))
-    (#(#x0010FFFF)
-     (#\364 #\217 #\277 #\277))
-    (#(#x00110000)
-     (#\364 #\220 #\200 #\200))
-    (#()
-     (#\200))
-    (#()
-     (#\277))
-    (#()
-     (#\200 #\277))
-    (#()
-     (#\200 #\277 #\200))
-    (#()
-     (#\200 #\277 #\200 #\277))
-    (#()
-     (#\200 #\277 #\200 #\277 #\200))
-    (#()
-     (#\200 #\277 #\200 #\277 #\200 #\277))
-    (#()
-     (#\200 #\277 #\200 #\277 #\200 #\277 #\200))
-    (#()
-     (#\200))
-    (#()
-     (#\201))
-    (#()
-     (#\202))
-    (#()
-     (#\203))
-    (#()
-     (#\204))
-    (#()
-     (#\205))
-    (#()
-     (#\206))
-    (#()
-     (#\207))
-    (#()
-     (#\210))
-    (#()
-     (#\211))
-    (#()
-     (#\212))
-    (#()
-     (#\213))
-    (#()
-     (#\214))
-    (#()
-     (#\215))
-    (#()
-     (#\216))
-    (#()
-     (#\217))
-    (#()
-     (#\220))
-    (#()
-     (#\221))
-    (#()
-     (#\222))
-    (#()
-     (#\223))
-    (#()
-     (#\224))
-    (#()
-     (#\225))
-    (#()
-     (#\226))
-    (#()
-     (#\227))
-    (#()
-     (#\230))
-    (#()
-     (#\231))
-    (#()
-     (#\232))
-    (#()
-     (#\233))
-    (#()
-     (#\234))
-    (#()
-     (#\235))
-    (#()
-     (#\236))
-    (#()
-     (#\237))
-    (#()
-     (#\240))
-    (#()
-     (#\241))
-    (#()
-     (#\242))
-    (#()
-     (#\243))
-    (#()
-     (#\244))
-    (#()
-     (#\245))
-    (#()
-     (#\246))
-    (#()
-     (#\247))
-    (#()
-     (#\250))
-    (#()
-     (#\251))
-    (#()
-     (#\252))
-    (#()
-     (#\253))
-    (#()
-     (#\254))
-    (#()
-     (#\255))
-    (#()
-     (#\256))
-    (#()
-     (#\257))
-    (#()
-     (#\260))
-    (#()
-     (#\261))
-    (#()
-     (#\262))
-    (#()
-     (#\263))
-    (#()
-     (#\264))
-    (#()
-     (#\265))
-    (#()
-     (#\266))
-    (#()
-     (#\267))
-    (#()
-     (#\270))
-    (#()
-     (#\271))
-    (#()
-     (#\272))
-    (#()
-     (#\273))
-    (#()
-     (#\274))
-    (#()
-     (#\275))
-    (#()
-     (#\276))
-    (#()
-     (#\277))
+  '((#(#x3ba #x1f79 #x3c3 #x3bc #x3b5) complete
+     (#o316 #o272 #o341 #o275 #o271 #o317 #o203 #o316 #o274 #o316 #o265))
+    (#(0) complete
+     (#o0))
+    (#(#x00000080) complete
+     (#o302 #o200))
+    (#(#x00000800) complete
+     (#o340 #o240 #o200))
+    (#(#x00010000) complete
+     (#o360 #o220 #o200 #o200))
+    (#(#x00200000) complete
+     (#o370 #o210 #o200 #o200 #o200))
+    (#(#x04000000) complete
+     (#o374 #o204 #o200 #o200 #o200 #o200))
+    (#(#x0000007F) complete
+     (127))
+    (#(#x000007FF) complete
+     (#o337 #o277))
+    (#(#x001FFFFF) complete
+     (#o367 #o277 #o277 #o277))
+    (#(#x03FFFFFF) complete
+     (#o373 #o277 #o277 #o277 #o277))
+    (#(#x7FFFFFFF) complete
+     (#o375 #o277 #o277 #o277 #o277 #o277))
+    (#(#x0000D7FF) complete
+     (#o355 #o237 #o277))
+    (#(#x0000E000) complete
+     (#o356 #o200 #o200))
+    (#(#x0000FFFD) complete
+     (#o357 #o277 #o275))
+    (#(#x0010FFFF) complete
+     (#o364 #o217 #o277 #o277))
+    (#(#x00110000) complete
+     (#o364 #o220 #o200 #o200))
+    ;; Missing start byte
+    (#() error
+     (#o200))
+    (#() error
+     (#o277))
+    (#() error
+     (#o200 #o277))
+    (#() error
+     (#o200 #o277 #o200))
+    (#() error
+     (#o200 #o277 #o200 #o277))
+    (#() error
+     (#o200 #o277 #o200 #o277 #o200))
+    (#() error
+     (#o200 #o277 #o200 #o277 #o200 #o277))
+    (#() error
+     (#o200 #o277 #o200 #o277 #o200 #o277 #o200))
+    (#() error
+     (#o200))
+    (#() error
+     (#o201))
+    (#() error
+     (#o202))
+    (#() error
+     (#o203))
+    (#() error
+     (#o204))
+    (#() error
+     (#o205))
+    (#() error
+     (#o206))
+    (#() error
+     (#o207))
+    (#() error
+     (#o210))
+    (#() error
+     (#o211))
+    (#() error
+     (#o212))
+    (#() error
+     (#o213))
+    (#() error
+     (#o214))
+    (#() error
+     (#o215))
+    (#() error
+     (#o216))
+    (#() error
+     (#o217))
+    (#() error
+     (#o220))
+    (#() error
+     (#o221))
+    (#() error
+     (#o222))
+    (#() error
+     (#o223))
+    (#() error
+     (#o224))
+    (#() error
+     (#o225))
+    (#() error
+     (#o226))
+    (#() error
+     (#o227))
+    (#() error
+     (#o230))
+    (#() error
+     (#o231))
+    (#() error
+     (#o232))
+    (#() error
+     (#o233))
+    (#() error
+     (#o234))
+    (#() error
+     (#o235))
+    (#() error
+     (#o236))
+    (#() error
+     (#o237))
+    (#() error
+     (#o240))
+    (#() error
+     (#o241))
+    (#() error
+     (#o242))
+    (#() error
+     (#o243))
+    (#() error
+     (#o244))
+    (#() error
+     (#o245))
+    (#() error
+     (#o246))
+    (#() error
+     (#o247))
+    (#() error
+     (#o250))
+    (#() error
+     (#o251))
+    (#() error
+     (#o252))
+    (#() error
+     (#o253))
+    (#() error
+     (#o254))
+    (#() error
+     (#o255))
+    (#() error
+     (#o256))
+    (#() error
+     (#o257))
+    (#() error
+     (#o260))
+    (#() error
+     (#o261))
+    (#() error
+     (#o262))
+    (#() error
+     (#o263))
+    (#() error
+     (#o264))
+    (#() error
+     (#o265))
+    (#() error
+     (#o266))
+    (#() error
+     (#o267))
+    (#() error
+     (#o270))
+    (#() error
+     (#o271))
+    (#() error
+     (#o272))
+    (#() error
+     (#o273))
+    (#() error
+     (#o274))
+    (#() error
+     (#o275))
+    (#() error
+     (#o276))
+    (#() error
+     (#o277))
     ;; 2-byte seqs with no continuation
-    (#(#f 32)
-     (#\300 #\space))
-    (#(#f 32)
-     (#\301 #\space))
-    (#(#f 32)
-     (#\302 #\space))
-    (#(#f 32)
-     (#\303 #\space))
-    (#(#f 32)
-     (#\304 #\space))
-    (#(#f 32)
-     (#\305 #\space))
-    (#(#f 32)
-     (#\306 #\space))
-    (#(#f 32)
-     (#\307 #\space))
-    (#(#f 32)
-     (#\310 #\space))
-    (#(#f 32)
-     (#\311 #\space))
-    (#(#f 32)
-     (#\312 #\space))
-    (#(#f 32)
-     (#\313 #\space))
-    (#(#f 32)
-     (#\314 #\space))
-    (#(#f 32)
-     (#\315 #\space))
-    (#(#f 32)
-     (#\316 #\space))
-    (#(#f 32)
-     (#\317 #\space))
-    (#(#f 32)
-     (#\320 #\space))
-    (#(#f 32)
-     (#\321 #\space))
-    (#(#f 32)
-     (#\322 #\space))
-    (#(#f 32)
-     (#\323 #\space))
-    (#(#f 32)
-     (#\324 #\space))
-    (#(#f 32)
-     (#\325 #\space))
-    (#(#f 32)
-     (#\326 #\space))
-    (#(#f 32)
-     (#\327 #\space))
-    (#(#f 32)
-     (#\330 #\space))
-    (#(#f 32)
-     (#\331 #\space))
-    (#(#f 32)
-     (#\332 #\space))
-    (#(#f 32)
-     (#\333 #\space))
-    (#(#f 32)
-     (#\334 #\space))
-    (#(#f 32)
-     (#\335 #\space))
-    (#(#f 32)
-     (#\336 #\space))
-    (#(#f 32)
-     (#\337 #\space))
+    (#(#f 32) error
+     (#o300 #o40))
+    (#(#f 32) error
+     (#o301 #o40))
+    (#(#f 32) error
+     (#o302 #o40))
+    (#(#f 32) error
+     (#o303 #o40))
+    (#(#f 32) error
+     (#o304 #o40))
+    (#(#f 32) error
+     (#o305 #o40))
+    (#(#f 32) error
+     (#o306 #o40))
+    (#(#f 32) error
+     (#o307 #o40))
+    (#(#f 32) error
+     (#o310 #o40))
+    (#(#f 32) error
+     (#o311 #o40))
+    (#(#f 32) error
+     (#o312 #o40))
+    (#(#f 32) error
+     (#o313 #o40))
+    (#(#f 32) error
+     (#o314 #o40))
+    (#(#f 32) error
+     (#o315 #o40))
+    (#(#f 32) error
+     (#o316 #o40))
+    (#(#f 32) error
+     (#o317 #o40))
+    (#(#f 32) error
+     (#o320 #o40))
+    (#(#f 32) error
+     (#o321 #o40))
+    (#(#f 32) error
+     (#o322 #o40))
+    (#(#f 32) error
+     (#o323 #o40))
+    (#(#f 32) error
+     (#o324 #o40))
+    (#(#f 32) error
+     (#o325 #o40))
+    (#(#f 32) error
+     (#o326 #o40))
+    (#(#f 32) error
+     (#o327 #o40))
+    (#(#f 32) error
+     (#o330 #o40))
+    (#(#f 32) error
+     (#o331 #o40))
+    (#(#f 32) error
+     (#o332 #o40))
+    (#(#f 32) error
+     (#o333 #o40))
+    (#(#f 32) error
+     (#o334 #o40))
+    (#(#f 32) error
+     (#o335 #o40))
+    (#(#f 32) error
+     (#o336 #o40))
+    (#(#f 32) error
+     (#o337 #o40))
     ;; 3-byte seqs with no continuation
-    (#(#f 32)
-     (#\340 #\space))
-    (#(#f 32)
-     (#\341 #\space))
-    (#(#f 32)
-     (#\342 #\space))
-    (#(#f 32)
-     (#\343 #\space))
-    (#(#f 32)
-     (#\344 #\space))
-    (#(#f 32)
-     (#\345 #\space))
-    (#(#f 32)
-     (#\346 #\space))
-    (#(#f 32)
-     (#\347 #\space))
-    (#(#f 32)
-     (#\350 #\space))
-    (#(#f 32)
-     (#\351 #\space))
-    (#(#f 32)
-     (#\352 #\space))
-    (#(#f 32)
-     (#\353 #\space))
-    (#(#f 32)
-     (#\354 #\space))
-    (#(#f 32)
-     (#\355 #\space))
-    (#(#f 32)
-     (#\356 #\space))
-    (#(#f 32)
-     (#\357 #\space))
+    (#(#f 32) error
+     (#o340 #o40))
+    (#(#f 32) error
+     (#o341 #o40))
+    (#(#f 32) error
+     (#o342 #o40))
+    (#(#f 32) error
+     (#o343 #o40))
+    (#(#f 32) error
+     (#o344 #o40))
+    (#(#f 32) error
+     (#o345 #o40))
+    (#(#f 32) error
+     (#o346 #o40))
+    (#(#f 32) error
+     (#o347 #o40))
+    (#(#f 32) error
+     (#o350 #o40))
+    (#(#f 32) error
+     (#o351 #o40))
+    (#(#f 32) error
+     (#o352 #o40))
+    (#(#f 32) error
+     (#o353 #o40))
+    (#(#f 32) error
+     (#o354 #o40))
+    (#(#f 32) error
+     (#o355 #o40))
+    (#(#f 32) error
+     (#o356 #o40))
+    (#(#f 32) error
+     (#o357 #o40))
     ;; 3-byte seqs with partial continuation
-    (#(#f 32)
-     (#\340 #\203 #\space))
-    (#(#f 32)
-     (#\341 #\203 #\space))
-    (#(#f 32)
-     (#\342 #\203 #\space))
-    (#(#f 32)
-     (#\343 #\203 #\space))
-    (#(#f 32)
-     (#\344 #\203 #\space))
-    (#(#f 32)
-     (#\345 #\203 #\space))
-    (#(#f 32)
-     (#\346 #\203 #\space))
-    (#(#f 32)
-     (#\347 #\203 #\space))
-    (#(#f 32)
-     (#\350 #\203 #\space))
-    (#(#f 32)
-     (#\351 #\203 #\space))
-    (#(#f 32)
-     (#\352 #\203 #\space))
-    (#(#f 32)
-     (#\353 #\203 #\space))
-    (#(#f 32)
-     (#\354 #\203 #\space))
-    (#(#f 32)
-     (#\355 #\203 #\space))
-    (#(#f 32)
-     (#\356 #\203 #\space))
-    (#(#f 32)
-     (#\357 #\203 #\space))
+    (#(#f 32) error
+     (#o340 #o203 #o40))
+    (#(#f 32) error
+     (#o341 #o203 #o40))
+    (#(#f 32) error
+     (#o342 #o203 #o40))
+    (#(#f 32) error
+     (#o343 #o203 #o40))
+    (#(#f 32) error
+     (#o344 #o203 #o40))
+    (#(#f 32) error
+     (#o345 #o203 #o40))
+    (#(#f 32) error
+     (#o346 #o203 #o40))
+    (#(#f 32) error
+     (#o347 #o203 #o40))
+    (#(#f 32) error
+     (#o350 #o203 #o40))
+    (#(#f 32) error
+     (#o351 #o203 #o40))
+    (#(#f 32) error
+     (#o352 #o203 #o40))
+    (#(#f 32) error
+     (#o353 #o203 #o40))
+    (#(#f 32) error
+     (#o354 #o203 #o40))
+    (#(#f 32) error
+     (#o355 #o203 #o40))
+    (#(#f 32) error
+     (#o356 #o203 #o40))
+    (#(#f 32) error
+     (#o357 #o203 #o40))
     ;; 4-byte seq with no continuations
-    (#(#f 32)
-     (#\360 #\space))
-    (#(#f 32)
-     (#\361 #\space))
-    (#(#f 32)
-     (#\362 #\space))
-    (#(#f 32)
-     (#\363 #\space))
-    (#(#f 32)
-     (#\364 #\space))
-    (#(#f 32)
-     (#\365 #\space))
-    (#(#f 32)
-     (#\366 #\space))
-    (#(#f 32)
-     (#\367 #\space))
+    (#(#f 32) error
+     (#o360 #o40))
+    (#(#f 32) error
+     (#o361 #o40))
+    (#(#f 32) error
+     (#o362 #o40))
+    (#(#f 32) error
+     (#o363 #o40))
+    (#(#f 32) error
+     (#o364 #o40))
+    (#(#f 32) error
+     (#o365 #o40))
+    (#(#f 32) error
+     (#o366 #o40))
+    (#(#f 32) error
+     (#o367 #o40))
     ;; 4-byte seq with only 1 continuation
-    (#(#f 32)
-     (#\360 #\203 #\space))
-    (#(#f 32)
-     (#\361 #\203 #\space))
-    (#(#f 32)
-     (#\362 #\203 #\space))
-    (#(#f 32)
-     (#\363 #\203 #\space))
-    (#(#f 32)
-     (#\364 #\203 #\space))
-    (#(#f 32)
-     (#\365 #\203 #\space))
-    (#(#f 32)
-     (#\366 #\203 #\space))
-    (#(#f 32)
-     (#\367 #\203 #\space))
+    (#(#f 32) error
+     (#o360 #o203 #o40))
+    (#(#f 32) error
+     (#o361 #o203 #o40))
+    (#(#f 32) error
+     (#o362 #o203 #o40))
+    (#(#f 32) error
+     (#o363 #o203 #o40))
+    (#(#f 32) error
+     (#o364 #o203 #o40))
+    (#(#f 32) error
+     (#o365 #o203 #o40))
+    (#(#f 32) error
+     (#o366 #o203 #o40))
+    (#(#f 32) error
+     (#o367 #o203 #o40))
     ;; 4-byte seq with only 2 continuation
-    (#(#f 32)
-     (#\360 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\361 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\362 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\363 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\364 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\365 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\366 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\367 #\203 #\203 #\space))
+    (#(#f 32) error
+     (#o360 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o361 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o362 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o363 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o364 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o365 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o366 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o367 #o203 #o203 #o40))
     ;; 5-byte seqs with no continuation
-    (#(#f 32)
-     (#\370 #\space))
-    (#(#f 32)
-     (#\371 #\space))
-    (#(#f 32)
-     (#\372 #\space))
-    (#(#f 32)
-     (#\373 #\space))
+    (#(#f 32) error
+     (#o370 #o40))
+    (#(#f 32) error
+     (#o371 #o40))
+    (#(#f 32) error
+     (#o372 #o40))
+    (#(#f 32) error
+     (#o373 #o40))
     ;; 5-byte seqs with only 1 continuation
-    (#(#f 32)
-     (#\370 #\203 #\space))
-    (#(#f 32)
-     (#\371 #\203 #\space))
-    (#(#f 32)
-     (#\372 #\203 #\space))
-    (#(#f 32)
-     (#\373 #\203 #\space))
+    (#(#f 32) error
+     (#o370 #o203 #o40))
+    (#(#f 32) error
+     (#o371 #o203 #o40))
+    (#(#f 32) error
+     (#o372 #o203 #o40))
+    (#(#f 32) error
+     (#o373 #o203 #o40))
     ;; 5-byte seqs with only 2 continuations
-    (#(#f 32)
-     (#\370 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\371 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\372 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\373 #\203 #\203 #\space))
+    (#(#f 32) error
+     (#o370 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o371 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o372 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o373 #o203 #o203 #o40))
     ;; 5-byte seqs with only 3 continuations
-    (#(#f 32)
-     (#\370 #\203 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\371 #\203 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\372 #\203 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\373 #\203 #\203 #\203 #\space))
+    (#(#f 32) error
+     (#o370 #o203 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o371 #o203 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o372 #o203 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o373 #o203 #o203 #o203 #o40))
     ;; 6-byte seqs with no continuation
-    (#(#f 32)
-     (#\374 #\space))
-    (#(#f 32)
-     (#\375 #\space))
+    (#(#f 32) error
+     (#o374 #o40))
+    (#(#f 32) error
+     (#o375 #o40))
     ;; 6-byte seqs with only 1 continuation
-    (#(#f 32)
-     (#\374 #\203 #\space))
-    (#(#f 32)
-     (#\375 #\203 #\space))
+    (#(#f 32) error
+     (#o374 #o203 #o40))
+    (#(#f 32) error
+     (#o375 #o203 #o40))
     ;; 6-byte seqs with only 2 continuation
-    (#(#f 32)
-     (#\374 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\375 #\203 #\203 #\space))
+    (#(#f 32) error
+     (#o374 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o375 #o203 #o203 #o40))
     ;; 6-byte seqs with only 3 continuation
-    (#(#f 32)
-     (#\374 #\203 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\375 #\203 #\203 #\203 #\space))
+    (#(#f 32) error
+     (#o374 #o203 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o375 #o203 #o203 #o203 #o40))
     ;; 6-byte seqs with only 4 continuation
-    (#(#f 32)
-     (#\374 #\203 #\203 #\203 #\203 #\space))
-    (#(#f 32)
-     (#\375 #\203 #\203 #\203 #\203 #\space))
+    (#(#f 32) error
+     (#o374 #o203 #o203 #o203 #o203 #o40))
+    (#(#f 32) error
+     (#o375 #o203 #o203 #o203 #o203 #o40))
     ;; Sequences with last continuation byte missing, eol instead of space
-    (#(#f)
-     (#\300))
-    (#(#f)
-     (#\340 #\200))
-    (#(#f)
-     (#\340))
-    (#(#f)
-     (#\360 #\200 #\200))
-    (#(#f)
-     (#\360 #\200))
-    (#(#f)
-     (#\360 #\200))
-    (#(#f)
-     (#\370 #\200 #\200 #\200))
-    (#(#f)
-     (#\370))
-    (#(#f)
-     (#\370 #\200))
-    (#(#f)
-     (#\370 #\200 #\200))
-    (#(#f)
-     (#\374 #\200 #\200 #\200 #\200))
-    (#(#f)
-     (#\374))
-    (#(#f)
-     (#\374 #\200))
-    (#(#f)
-     (#\374 #\200 #\200))
-    (#(#f)
-     (#\374 #\200 #\200 #\200))
-    (#(#f)
-     (#\337))
-    (#(#f)
-     (#\357 #\277))
-    (#(#f)
-     (#\367 #\277 #\277))
-    (#(#f)
-     (#\373 #\277 #\277 #\277))
-    (#(#f)
-     (#\375 #\277 #\277 #\277 #\277))
+    (#(#f) aborts
+     (#o300))
+    (#(#f) aborts
+     (#o340 #o200))
+    (#(#f) aborts
+     (#o340))
+    (#(#f) aborts
+     (#o360 #o200 #o200))
+    (#(#f) aborts
+     (#o360 #o200))
+    (#(#f) aborts
+     (#o360 #o200))
+    (#(#f) aborts
+     (#o370 #o200 #o200 #o200))
+    (#(#f) aborts
+     (#o370))
+    (#(#f) aborts
+     (#o370 #o200))
+    (#(#f) aborts
+     (#o370 #o200 #o200))
+    (#(#f) aborts
+     (#o374 #o200 #o200 #o200 #o200))
+    (#(#f) aborts
+     (#o374))
+    (#(#f) aborts
+     (#o374 #o200))
+    (#(#f) aborts
+     (#o374 #o200 #o200))
+    (#(#f) aborts
+     (#o374 #o200 #o200 #o200))
+    (#(#f) aborts
+     (#o337))
+    (#(#f) aborts
+     (#o357 #o277))
+    (#(#f) aborts
+     (#o367 #o277 #o277))
+    (#(#f) aborts
+     (#o373 #o277 #o277 #o277))
+    (#(#f) aborts
+     (#o375 #o277 #o277 #o277 #o277))
     ;; Concatenation of incomplete sequences
-    (#(#f #f #f #f #f #f #f #f #f #f)
-     (#\300 #\340 #\200 #\360 #\200 #\200 #\370 #\200 #\200 #\200 #\374 #\200 #\200 #\200 #\200 #\337 #\357 #\277 #\367 #\277 #\277 #\373 #\277 #\277 #\277 #\375 #\277 #\277 #\277 #\277))
+    (#(#f #f #f #f #f #f #f #f #f #f) error/aborts
+     (#o300 #o340 #o200 #o360 #o200 #o200 #o370 #o200 #o200 #o200 #o374 #o200 #o200 #o200 #o200 #o337 #o357 #o277 #o367 #o277 #o277 #o373 #o277 #o277 #o277 #o375 #o277 #o277 #o277 #o277))
     ;; Impossible bytes
-    (#(#f)
-     (#\376))
-    (#(#f)
-     (#\377))
-    (#(#f #f #f #f)
-     (#\376 #\376 #\377 #\377))
+    (#(#f) error
+     (#o376))
+    (#(#f) error
+     (#o377))
+    (#(#f #f #f #f) error
+     (#o376 #o376 #o377 #o377))
     ;; Overlong
-    (#(#f)
-     (#\300 #\257))
-    (#(#f)
-     (#\340 #\200 #\257))
-    (#(#f)
-     (#\360 #\200 #\200 #\257))
-    (#(#f)
-     (#\370 #\200 #\200 #\200 #\257))
-    (#(#f)
-     (#\374 #\200 #\200 #\200 #\200 #\257))
-    (#(#f)
-     (#\301 #\277))
-    (#(#f)
-     (#\340 #\237 #\277))
-    (#(#f)
-     (#\360 #\217 #\277 #\277))
-    (#(#f)
-     (#\370 #\207 #\277 #\277 #\277))
-    (#(#f)
-     (#\374 #\203 #\277 #\277 #\277 #\277))
-    (#(#f)
-     (#\300 #\200))
-    (#(#f)
-     (#\340 #\200 #\200))
-    (#(#f)
-     (#\360 #\200 #\200 #\200))
-    (#(#f)
-     (#\370 #\200 #\200 #\200 #\200))
-    (#(#f)
-     (#\374 #\200 #\200 #\200 #\200 #\200))
+    (#(#f) error
+     (#o300 #o257))
+    (#(#f) error
+     (#o340 #o200 #o257))
+    (#(#f) error
+     (#o360 #o200 #o200 #o257))
+    (#(#f) error
+     (#o370 #o200 #o200 #o200 #o257))
+    (#(#f) error
+     (#o374 #o200 #o200 #o200 #o200 #o257))
+    (#(#f) error
+     (#o301 #o277))
+    (#(#f) error
+     (#o340 #o237 #o277))
+    (#(#f) error
+     (#o360 #o217 #o277 #o277))
+    (#(#f) error
+     (#o370 #o207 #o277 #o277 #o277))
+    (#(#f) error
+     (#o374 #o203 #o277 #o277 #o277 #o277))
+    (#(#f) error
+     (#o300 #o200))
+    (#(#f) error
+     (#o340 #o200 #o200))
+    (#(#f) error
+     (#o360 #o200 #o200 #o200))
+    (#(#f) error
+     (#o370 #o200 #o200 #o200 #o200))
+    (#(#f) error
+     (#o374 #o200 #o200 #o200 #o200 #o200))
     ;; illedgal surrogates
-    (#(#f)
-     (#\355 #\240 #\200))
-    (#(#f)
-     (#\355 #\255 #\277))
-    (#(#f)
-     (#\355 #\256 #\200))
-    (#(#f)
-     (#\355 #\257 #\277))
-    (#(#f)
-     (#\355 #\260 #\200))
-    (#(#f)
-     (#\355 #\276 #\200))
-    (#(#f)
-     (#\355 #\277 #\277))
-    (#(#f #f)
-     (#\355 #\240 #\200 #\355 #\260 #\200))
-    (#(#f #f)
-     (#\355 #\240 #\200 #\355 #\277 #\277))
-    (#(#f #f)
-     (#\355 #\255 #\277 #\355 #\260 #\200))
-    (#(#f #f)
-     (#\355 #\255 #\277 #\355 #\277 #\277))
-    (#(#f #f)
-     (#\355 #\256 #\200 #\355 #\260 #\200))
-    (#(#f #f)
-     (#\355 #\256 #\200 #\355 #\277 #\277))
-    (#(#f #f)
-     (#\355 #\257 #\277 #\355 #\260 #\200))
-    (#(#f #f)
-     (#\355 #\257 #\277 #\355 #\277 #\277))
+    (#(#f) error
+     (#o355 #o240 #o200))
+    (#(#f) error
+     (#o355 #o255 #o277))
+    (#(#f) error
+     (#o355 #o256 #o200))
+    (#(#f) error
+     (#o355 #o257 #o277))
+    (#(#f) error
+     (#o355 #o260 #o200))
+    (#(#f) error
+     (#o355 #o276 #o200))
+    (#(#f) error
+     (#o355 #o277 #o277))
+    (#(#f #f) error
+     (#o355 #o240 #o200 #o355 #o260 #o200))
+    (#(#f #f) error
+     (#o355 #o240 #o200 #o355 #o277 #o277))
+    (#(#f #f) error
+     (#o355 #o255 #o277 #o355 #o260 #o200))
+    (#(#f #f) error
+     (#o355 #o255 #o277 #o355 #o277 #o277))
+    (#(#f #f) error
+     (#o355 #o256 #o200 #o355 #o260 #o200))
+    (#(#f #f) error
+     (#o355 #o256 #o200 #o355 #o277 #o277))
+    (#(#f #f) error
+     (#o355 #o257 #o277 #o355 #o260 #o200))
+    (#(#f #f) error
+     (#o355 #o257 #o277 #o355 #o277 #o277))
     ;; Other illegal code positions
-    (#(#f)
-     (#\357 #\277 #\276))
-    (#(#f)
-     (#\357 #\277 #\277))))
+    (#(#f) error
+     (#o357 #o277 #o276))
+    (#(#f) error
+     (#o357 #o277 #o277))))
 
-(let ([utf8-iconv (string-open-utf8-identity-converter)]
-      [utf8-iconv-p (string-open-utf8-identity-converter #\?)])
+(define bytes->unicode-vector
+  (case-lambda
+   [(s)
+    (list->vector (map char->integer (string->list (bytes->string/utf8 s))))]
+   [(s start)
+    (bytes->unicode-vector (subbytes s start))]
+   [(s start end)
+    (bytes->unicode-vector (subbytes s start end))]))
+(define (bytes-any->unicode-vector s non-v)
+  (list->vector 
+   (map (lambda (x) (if (= x (char->integer #\?)) non-v x))
+	(map char->integer (string->list (bytes->string/utf8-permissive s #\?))))))
+(define (unicode-vector->bytes v)
+  (string->bytes/utf8 (list->string (map integer->char (vector->list v)))))
+
+(let ([utf8-iconv (bytes-open-converter "UTF-8" "UTF-8")]
+      [utf8-iconv-p (bytes-open-converter "UTF-8-permissive" "UTF-8")])
   (for-each (lambda (p)
 	      (let ([code-points (car p)]
-		    [s (apply string (cadr p))])
+		    [parse-status (cadr p)]
+		    [s (apply bytes (caddr p))])
 		(if (and (positive? (vector-length code-points))
 			 (vector-ref code-points 0))
 		    (begin
-		      (test (vector-length code-points) string-unicode-length s)
-		      (test code-points string->unicode-vector s)
-		      (test code-points string-any->unicode-vector s #f)
-		      (test s unicode-vector->string code-points)
-		      (test 0 string-unicode-index s 0)
-		      (test (string-length s) string-unicode-index 
-			    (string-append s "x")
+		      (test (vector-length code-points) bytes-utf8-length s)
+		      (test code-points bytes->unicode-vector s)
+		      (test code-points bytes-any->unicode-vector s #f)
+		      (test s unicode-vector->bytes code-points)
+		      (test 0 bytes-utf8-index s 0)
+		      (test (bytes-length s) bytes-utf8-index 
+			    (bytes-append s #"x")
 			    (vector-length code-points))
 		      (if ((vector-length code-points) . > . 1)
 			  (begin
-			    (let ([post-1 (string-unicode-index s 1)])
+			    (let ([post-1 (bytes-utf8-index s 1)])
 			      (test #t positive? post-1)
 			      (test (list->vector (cdr (vector->list code-points)))
-				    string->unicode-vector s post-1))
-			    (let ([last-1 (string-unicode-index s (sub1 (vector-length code-points)))])
+				    bytes->unicode-vector s post-1))
+			    (let ([last-1 (bytes-utf8-index s (sub1 (vector-length code-points)))])
 			      (test #t positive? last-1)
 			      (test code-points
 				    list->vector (append
-						  (vector->list (string->unicode-vector s 0 last-1))
-						  (vector->list (string->unicode-vector s last-1))))))
-			  (test #f string-unicode-index s 1))
-		      (test-values (list s (string-length s) 'complete)
-				   (lambda () (string-convert utf8-iconv s))))
+						  (vector->list (bytes->unicode-vector s 0 last-1))
+						  (vector->list (bytes->unicode-vector s last-1))))))
+			  (test #f bytes-utf8-index s 1))
+		      (test-values (list s (bytes-length s) 'complete)
+				   (lambda () (bytes-convert utf8-iconv s))))
 		    (begin
-		      (test code-points string-any->unicode-vector s #f)
+		      (test code-points bytes-any->unicode-vector s #f)
 		      (test (list->vector (append '(97) (vector->list code-points) '(98)))
-			    string-any->unicode-vector (format "a~ab" s) #f)
+			    bytes-any->unicode-vector (bytes-append #"a" s #"b") #f)
 		      (test (list->vector (append (vector->list code-points) (vector->list code-points)))
-			    string-any->unicode-vector (format "~a~a" s s) #f)
-		      (test #f string-unicode-length s)
-		      (test 0 string-unicode-index s 0)
-		      (let-values ([(s2 n status) (string-convert utf8-iconv s)])
-			(test #f eq? status 'complete))
-		      (let-values ([(s2 n status) (string-convert utf8-iconv-p s)])
+			    bytes-any->unicode-vector (bytes-append s s) #f)
+		      (test #f bytes-utf8-length s)
+		      (test 0 bytes-utf8-index s 0)
+		      (let-values ([(s2 n status) (bytes-convert utf8-iconv s)])
+			(test (case parse-status 
+				[(error/aborts) 'error]
+				[else parse-status ])
+			      'status status))
+		      (let ([convert
+			     (lambda (prefix)
+			       (let-values ([(s2 n status) 
+					     (bytes-convert utf8-iconv-p (bytes-append prefix s))]
+					    [(pl) (bytes-length prefix)])
+				 (case parse-status
+				   [(error)
+				    (test 'complete 'status status)
+				    (test (+ (bytes-length s) pl) 'n n)
+				    (test (+ (vector-length code-points) pl) bytes-length s2)
+				    (test (append (bytes->list prefix)
+						  (map 
+						   (lambda (i) (or i (char->integer #\?)))
+						   (vector->list code-points)))
+					  vector->list (bytes->unicode-vector s2))]
+				   [(error/aborts)
+				    (test 'aborts 'status status)
+				    (let ([code-points (list->vector
+							(reverse
+							 (cdr
+							  (reverse
+							   (vector->list code-points)))))])
+				      (test (+ (vector-length code-points) pl) bytes-length s2)
+				      (test (append (bytes->list prefix)
+						    (map 
+						     (lambda (i) (or i (char->integer #\?)))
+						     (vector->list code-points)))
+					    vector->list (bytes->unicode-vector s2)))]
+				   [else
+				    (test parse-status 'status status)])))])
+			(convert #"")
+			(convert #"so"))
+		      (let-values ([(s2 n status) (bytes-convert utf8-iconv-p (bytes-append s #"xxxxx"))])
 			(test 'complete 'status status)
-			(test n string-length s))))
-		(let ([v (string-any->unicode-vector s #f)])
-		  (let ([p (open-input-string s)])
+			(test '(#"xxxxx") regexp-match #rx#"xxxxx$" s2)
+			(test (+ 5 (bytes-length s)) 'n n))))
+		(let ([v (bytes-any->unicode-vector s #f)])
+		  (let ([p (open-input-bytes s)])
 		    (port-count-lines! p)
-		    (read-string 500 p)
+		    (read-bytes 500 p)
 		    (let-values ([(l c p) (port-next-location p)])
 		      (test (vector-length v) 'c c)
 		      (test (add1 (vector-length v)) 'p p)))
 		  (let ([p (open-input-string (format "\t~a\t" s))])
 		    (port-count-lines! p)
-		    (read-string 500 p)
+		    (read-bytes 500 p)
 		    (let-values ([(l c p) (port-next-location p)])
 		      (test p 'p (add1 (+ 2 (vector-length v))))
 		      (test c 'tab (+ 16
@@ -609,7 +658,7 @@
 					 (bitwise-and (vector-length v) 7))))))
 		  (let ([p (open-input-string (format "~a\t~a" s s))])
 		    (port-count-lines! p)
-		    (read-string 500 p)
+		    (read-bytes 500 p)
 		    (let-values ([(l c p) (port-next-location p)])
 		      (test p 'p (add1 (+ 1 (* 2 (vector-length v)))))
 		      (test c 'tab (+ 8
@@ -618,42 +667,47 @@
 				      (vector-length v))))))))
 	    basic-utf8-tests))
 
-(test '(#\302 #\251) string->list (unicode-vector->string (vector 169)))
-(test '(#\304 #\250) string->list (unicode-vector->string (vector 296)))
+(test '(#o302 #o251) bytes->list (unicode-vector->bytes (vector 169)))
+(test '(#o304 #o250) bytes->list (unicode-vector->bytes (vector 296)))
 
-(test '("\302\251") regexp-match #rxu"." "\302\251")
-(test '("\302") regexp-match #rx"." "\302\251")
+(test '("\302\251") regexp-match #rx"." "\uA9")
+(test '("\302") regexp-match #rx#"." #"\302\251")
+(test '("\302") regexp-match #rx#"." "\uA9")
+(test '("\302\251") regexp-match #rx"." #"\302\251")
 
-(test #f regexp-match #rxu"[a-z]" "\302\251")
-(test '("\302\251") regexp-match #rxu"\302\251" "\302\251")
-(test '("\302\251") regexp-match #rxu"\302\251+" "\302\251")
-(test '("\302\251\302\251") regexp-match #rxu"\302\251+" "\302\251\302\251")
-(test '("\302\251\302\251") regexp-match #rxu"\302\251+" "x\302\251\302\251y")
-(test '("\302\251") regexp-match #rxu"[a-z\302\251]" "\302\251mm")
-(test '("\302\251mm") regexp-match #rxu"[a-z\302\251]+" "\302\251mm")
-(test '("\302\251") regexp-match #rxu"[\302\251-\304\250]+" "xx\302\251mm")
-(test '("\303\251") regexp-match #rxu"[\302\251-\304\250]+" "xx\303\251mm")
-(test #f regexp-match #rxu"[\302\251-\304\250]+" "xx\304\251mm")
-(test #f regexp-match #rxu"[\302\251-\304\250]+" "xx\302\250mm")
-(test '("\303\251\302\251") regexp-match #rxu"[\302\251-\304\250]+" "xx\303\251\302\251mm")
+(test #f regexp-match #rx"[a-z]" "\uA9")
+(test '("\uA9") regexp-match #rx"\uA9" "\uA9")
+(test '("\uA9") regexp-match #rx"\uA9+" "\uA9")
+(test '("\uA9\uA9") regexp-match #rx"\uA9+" "\uA9\uA9")
+(test '("\uA9\uA9") regexp-match #rx"\uA9+" "x\uA9\uA9y")
+(test '("\uA9") regexp-match #rx"[a-z\uA9]" "\uA9mm")
+(test '("\uA9mm") regexp-match #rx"[a-z\uA9]+" "\uA9mm")
+(test '("\uA9") regexp-match #rx"[\uA9-\304\250]+" "xx\uA9mm")
+(test '("\303\251") regexp-match #rx"[\uA9-\304\250]+" "xx\303\251mm")
+(test #f regexp-match #rx"[\uA9-\304\250]+" "xx\304\251mm")
+(test #f regexp-match #rx"[\uA9-\304\250]+" "xx\302\250mm")
+(test '("\303\251\uA9") regexp-match #rx"[\uA9-\304\250]+" "xx\303\251\uA9mm")
 
-(test #f regexp-match #rxu"[^a-z][^a-z]" "\302\251")
+(test #f regexp-match #rx"[^a-z][^a-z]" "\uA9")
+(test #f regexp-match #rx"[^a-z][^a-z]" (string->bytes/utf8 "\uA9"))
+(test (string->bytes/utf8 "\uA9") regexp-match #rx#"[^a-z][^a-z]" "\uA9")
+(test (string->bytes/utf8 "\uA9") regexp-match #rx#"[^a-z][^a-z]" (string->bytes/utf8 "\uA9"))
 
 ;; Nots of patterns and ranges:
-(test #f regexp-match #rxu"[^a-z\302\251]" "\302\251mm")
-(test '("") regexp-match #rxu"[^a-d\302\251]*" "\302\251mm")
-(test '("xx") regexp-match #rxu"[^\302\251-\304\250]+" "xx\302\251mm")
-(test '("xx") regexp-match #rxu"[^\302\251-\304\250]+" "xx\303\251mm")
-(test '("xx\304\251mm") regexp-match #rxu"[^\302\251-\304\250]+" "xx\304\251mm")
-(test '("xx\302\250mm") regexp-match #rxu"[^\302\251-\304\250]+" "xx\302\250mm")
-(test '("xx") regexp-match #rxu"[^\302\251-\304\250]+" "xx\303\251\302\251mm")
+(test #f regexp-match #rxu"[^a-z\uA9]" "\uA9mm")
+(test '("") regexp-match #rxu"[^a-d\uA9]*" "\uA9mm")
+(test '("xx") regexp-match #rxu"[^\uA9-\304\250]+" "xx\uA9mm")
+(test '("xx") regexp-match #rxu"[^\uA9-\304\250]+" "xx\303\251mm")
+(test '("xx\304\251mm") regexp-match #rxu"[^\uA9-\304\250]+" "xx\304\251mm")
+(test '("xx\302\250mm") regexp-match #rxu"[^\uA9-\304\250]+" "xx\302\250mm")
+(test '("xx") regexp-match #rxu"[^\uA9-\304\250]+" "xx\303\251\uA9mm")
 
 ;; 3-char seqs
 (test '("\341\275\271") regexp-match #rxu"\341\275\271" "a\341\275\271\341\275\271b")
 (test '("\341\275\271\341\275\271") regexp-match #rxu"\341\275\271+" "a\341\275\271\341\275\271b")
 
-(test '("\341\275\271\302\251\341\275\271r") regexp-match #rxu"[c-\341\275\271]+" "a\341\275\271\302\251\341\275\271r")
-(test '("d\341\275\271\302\251\341\275\271r") regexp-match #rxu"[c-\341\275\271]+" "d\341\275\271\302\251\341\275\271r")
+(test '("\341\275\271\uA9\341\275\271r") regexp-match #rxu"[c-\341\275\271]+" "a\341\275\271\uA9\341\275\271r")
+(test '("d\341\275\271\uA9\341\275\271r") regexp-match #rxu"[c-\341\275\271]+" "d\341\275\271\uA9\341\275\271r")
 
 (test '("\342\275\271") regexp-match #rxu"[\341\275\271-\343\275\271]" "\342\275\271")
 (test '("\341\275\271") regexp-match #rxu"[\341\275\271-\343\275\271]" "\341\275\271")

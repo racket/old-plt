@@ -314,116 +314,16 @@
 
 (define drscheme:scheme-project-editor-frame%
   (class mred:editor-frame% args
-    (inherit panel active-canvas)
-    (private 
-      [name-message #f]
-      [save-button #f]
-      [save-init-shown? #f])
-    (public
-      [canvas% 
-       (class mred:simple-frame-canvas% args
-	 (inherit get-media)
-	 (rename [super-edit-modified edit-modified])
-	 (public
-	   [style-flags (- wx:const-mcanvas-no-h-scroll
-			   wx:const-mcanvas-no-h-scroll)]
-	   [edit-renamed
-	    (lambda (name)
-	      (when save-button
-		(let ([msg (make-object mred:message% button-panel
-					(if (null? name) 
-					    "Untitled" 
-					    (or (file-name-from-path name)
-						"Untitled")))])
-		  (when name-message
-		    (send button-panel delete-child name-message))
-		  (send button-panel delete-child msg)
-		  (send msg show #t)
-		  (send button-panel change-children
-			(lambda (l) (cons msg l)))
-		  (set! name-message msg))))]
-	   [edit-modified
-	    (lambda (mod?)
-	      (if save-button
-		  (send save-button show mod?)
-		  (set! save-init-shown? mod?))
-	      (super-edit-modified mod?))])
-	 (sequence
-	   (apply super-init args)
-	   (let ([m (get-media)])
-	     (set! save-init-shown? (and (not (null? m)) (send m modified?))))))])
-    (sequence (apply super-init args))
-    (public
-      [button-panel (make-object mred:horizontal-panel% panel)])
+    (inherit panel active-canvas active-edit)
+
     (sequence
-      (let* ([canvas (active-canvas)]
-	     [edit (and canvas (send canvas get-media))]) 
-	(set! name-message
-	      (make-object mred:message% button-panel
-			   (cond
-			     [(or (not edit) (null? edit)) "Untitled"]
-			     [(file-name-from-path (send edit get-filename))]
-			     [else "Untitled"]))))
-      (make-object mred:panel% button-panel)
-      (set! save-button
-	    (make-object mred:button% 
-			 button-panel
-			 (lambda args
-			   (let* ([canvas (active-canvas)]
-				  [edit (and canvas (send canvas get-media))])
-			     (unless (or (null? edit) (not edit))
-			       (send edit save-file))))
-			 "Save"))
-      (send save-button show save-init-shown?))
-    (sequence
-      (when drscheme:allow-execute?
-	(make-object mred:button% button-panel
-		     (lambda args
-		       (send (get-parent) load-frame-buffer-into-scheme
-			     (get-media)))
-		     "Execute"))
-      (when drscheme:allow-the-debugger?
-	(make-object mred:button% button-panel
-		     (lambda args
-		       (send (get-parent) the-debugger-frame-buffer
-			     (get-media)))
-		     "Debug"))
-      (when drscheme:allow-mrslatex?
-	(make-object mred:button% button-panel
-		     (lambda args
-		       (send (get-parent) slatex-frame-buffer
-			     (get-media)))
-		     "Color"))      
-      (make-object mred:button% button-panel 
-		   (lambda args (send console-edit break))
-		   "Stop Executing")
-      (make-object mred:button% button-panel
-		   (lambda args (check-syntax))
-		   "Check Syntax")
-      (make-object mred:button% button-panel
-		   (lambda args (drscheme:do-help))
-		   "Help")
-      (send button-panel stretchable-in-y? #f)
-      (send button-panel border 1)
-      (send panel change-children 
-	    (lambda (l) 
-	      (cons button-panel (remove button-panel l eq?)))))
+      (apply super-init args))
+
     (public
       [project (void)]
       [set-project
        (lambda (p)
-	 (set! project p))]
-      [slatex-frame-buffer
-       (lambda (buffer)
-	 (send project slatex-one-file buffer))]
-      
-      [the-debugger-frame-buffer
-       (lambda (buffer)
-	 (send project the-debugger-one-file buffer))]
-      
-      [load-frame-buffer-into-scheme
-       (lambda (buffer)
-	 (send project load-one-file-into-scheme buffer))])))
+	 (set! project p))])))
 
 (mred:insert-format-handler "Scheme Project" "spj"
 			    (lambda (filename group-ignored)

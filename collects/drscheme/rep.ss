@@ -74,7 +74,7 @@
      (with-handlers
 	 ([(lambda (x) #t)
 	   (lambda (x)
-	     (mred:message-box "Invalid Teacpack" (exn-message x))
+	     (mred:message-box "Invalid Teachpack" (exn-message x))
 	     #f)])
        (if v
 	   (let ([new-unit (parameterize ([read-case-sensitive #t])

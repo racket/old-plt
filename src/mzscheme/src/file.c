@@ -3179,7 +3179,9 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 #endif
 			))
       return scheme_void;
+#if !defined(__MWERKS__)
     else if (errno != EINTR)
+#endif
       break;
   }
 
@@ -3211,7 +3213,9 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
   while (1) {
     if (!MSC_IZE(rmdir)(filename))
       return scheme_void;
+#if !defined(__MWERKS__)
     else if (errno != EINTR)
+#endif
       break;
   }
 

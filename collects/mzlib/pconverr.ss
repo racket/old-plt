@@ -13,6 +13,7 @@
     (define constructor-style-printing (make-parameter #f))
     (define quasi-read-style-printing (make-parameter #t))
     (define abbreviate-cons-as-list (make-parameter #t))
+    (define whole/fractional-exact-numbers (make-parameter #t))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     ;; share-hash is the hash-table containing info on what cons cells
@@ -171,6 +172,12 @@
 			      [else #t]))])
 		  (let ([answer (doesnt-contain-shared-conses input-expr)])
 		    answer)))]
+	     [get-whole/frac
+	      (lambda (exact-num)
+		(let* ([num (numerator exact-num)]
+		       [den (denominator exact-num)])
+		  (values (quotient num den)
+			  (/ (modulo num den) den))))]
 	     [print
 	      (lambda (in-quasiquote? first-time)
 		(lambda (expr)
@@ -179,7 +186,12 @@
 		       [recur (print in-quasiquote? #f)]
 		       [self-quoting?
 			(lambda (expr)
-			  (or (number? expr)
+			  (or (and (number? expr)
+				   (or (inexact? expr)
+				       (not (whole/fractional-exact-numbers))
+				       (let-values ([(whole frac) (get-whole/frac expr)])
+					 (or (zero? whole)
+					     (zero? frac)))))
 			      (and (symbol? expr)
 				   (not (eq? expr 'quasiquote))
 				   (not (eq? expr 'quote))
@@ -286,6 +298,13 @@
 					       expr
 					       (lambda () 
 						 '(unit ...)))]
+				[(and (number? expr) (exact? expr))
+				 (let-values ([(whole frac) (get-whole/frac expr)])
+				   (if (or (zero? whole)
+					   (zero? frac)
+					   (not (whole/fractional-exact-numbers)))
+				       expr
+				       `(+ ,whole ,frac)))]
 				[else expr]))
 			   recur)))])
 		    (let ([es (convert-share-info-expand-shared? csi)])

@@ -4,6 +4,7 @@
    constructor-style-printing
    quasi-read-style-printing
    abbreviate-cons-as-list
+   whole/fractional-exact-numbers
 
    print-convert
    print-convert-expr

@@ -80,8 +80,7 @@
            (lambda ()
              (current-output-port debugger-output-port)
              (error-display-handler err-display-handler)
-             (fprintf debugger-debugger-error-port "about to perform first wait.\n")
-             (semaphore-wait go-semaphore)
+  
              ) ; init
            (lambda (expanded continue-thunk) ; iter
              (unless (eof-object? expanded)

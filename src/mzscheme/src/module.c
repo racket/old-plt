@@ -1182,7 +1182,10 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
     }
   }
 
+  if (menv->lazy_syntax)
+    finish_expstart_module(menv, env, scheme_null);
   scheme_prepare_exp_env(menv);
+
   if (!menv->exp_env->rename) {
     if (menv->module->et_rn_stx) {
       Scheme_Object *v, *rn;

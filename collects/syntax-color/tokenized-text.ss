@@ -21,10 +21,10 @@
       ;; but might still be valid.
       (define invalid-tokens #f)
       
-      ;; The starting position of the invalid-tokens tree
+      ;; The position right before the invalid-tokens tree
       (define invalid-tokens-start +inf.0)
       
-      ;; The position of the next token to be read
+      ;; The position right before the next token to be read
       (define current-pos start-pos)
       
       ;; The lexer
@@ -43,7 +43,7 @@
       (define parens (new paren-tree% (matches pairs)))
       
       ;; ---------------------- Interactions state ----------------------------
-      ;; The positions to start and end the coloring at.
+      ;; The positions right before and right after the area to be tokenized
       (field (start-pos 0) (end-pos 'end))
       
       ;; ---------------------- Preferences -----------------------------------
@@ -86,7 +86,7 @@
       (define (sync-invalid)
         (when (and invalid-tokens (< invalid-tokens-start current-pos))
           (let ((min-tree (search-min! invalid-tokens null)))
-            (send parens remove-token invalid-tokens-start (node-token-length min-tree))
+            (send parens remove-token (- invalid-tokens-start start-pos) (node-token-length min-tree))
             (set! invalid-tokens (node-right min-tree))
             (set! invalid-tokens-start (+ invalid-tokens-start
                                           (node-token-length min-tree)))
@@ -114,8 +114,8 @@
                                  (preferences:get (string->symbol (format "syntax-coloring:~a:~a"
                                                                           prefix
                                                                           type)))
-                                 (sub1 (+ in-start-pos new-token-start))
-                                 (sub1 (+ in-start-pos new-token-end))
+                                 (+ in-start-pos (sub1 new-token-start))
+                                 (+ in-start-pos (sub1 new-token-end))
                                  #f))
                               colors)))
               (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
@@ -154,7 +154,7 @@
              (let-values (((tok-start tok-end valid-tree invalid-tree)
                            (split invalid-tokens (- edit-start-pos invalid-tokens-start))))
                (set! invalid-tokens invalid-tree)
-               (set! invalid-tokens-start (+ start-pos tok-end change-length))))
+               (set! invalid-tokens-start (+ invalid-tokens-start tok-end change-length))))
             ((>= edit-start-pos current-pos)
              (set! invalid-tokens-start (+ change-length invalid-tokens-start)))
             (else

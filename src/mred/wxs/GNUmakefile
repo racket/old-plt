@@ -151,7 +151,7 @@ $(OBJDIR)/wxs_fram.o : wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) ../../wx
 	$(WXSCC) wxs_fram.cxx -o $(OBJDIR)/wxs_fram.o
 $(OBJDIR)/wxs_gage.o : wxs_gage.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_gage.cxx -o $(OBJDIR)/wxs_gage.o
-$(OBJDIR)/wxs_gdi.o : wxs_gdi.cxx $(WXSCHEMEHEADERS)
+$(OBJDIR)/wxs_gdi.o : wxs_gdi.cxx $(WXSCHEMEHEADERS) ../../wxxt/src/GDI-Classes/Pen+Brush.h
 	$(WXSCC) wxs_gdi.cxx -o $(OBJDIR)/wxs_gdi.o
 $(OBJDIR)/wxs_glob.o : wxs_glob.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
 	$(WXSCC) wxs_glob.cxx -o $(OBJDIR)/wxs_glob.o

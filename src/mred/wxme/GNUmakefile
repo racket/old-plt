@@ -42,7 +42,7 @@ $(OBJDIR)/wx_media.o : wx_media.cxx $(HEADERS) wx_keym.h wx_snip.h \
 	$(MCC) wx_media.cxx -o $(OBJDIR)/wx_media.o
 
 $(OBJDIR)/wx_mpriv.o : wx_mpriv.cxx $(HEADERS) wx_keym.h wx_snip.h wx_mpriv.h \
-                       wx_mline.h wx_gcrct.h
+                       wx_mline.h wx_gcrct.h ../../wxxt/src/GDI-Classes/Pen+Brush.h
 	$(MCC) wx_mpriv.cxx -o $(OBJDIR)/wx_mpriv.o
 
 $(OBJDIR)/wx_msnip.o : wx_msnip.cxx $(HEADERS) wx_keym.h wx_snip.h wx_madm.h \
@@ -52,7 +52,8 @@ $(OBJDIR)/wx_msnip.o : wx_msnip.cxx $(HEADERS) wx_keym.h wx_snip.h wx_madm.h \
 $(OBJDIR)/wx_mline.o : wx_mline.cxx wx_mline.h wx_snip.h $(HEADERS)
 	$(MCC) wx_mline.cxx -o $(OBJDIR)/wx_mline.o
 
-$(OBJDIR)/wx_mpbrd.o : wx_mpbrd.cxx $(HEADERS) wx_keym.h wx_snip.h wx_medpb.h
+$(OBJDIR)/wx_mpbrd.o : wx_mpbrd.cxx $(HEADERS) wx_keym.h wx_snip.h wx_medpb.h \
+                        ../../wxxt/src/GDI-Classes/Pen+Brush.h
 	$(MCC) wx_mpbrd.cxx -o $(OBJDIR)/wx_mpbrd.o
 
 $(OBJDIR)/wx_medad.o : wx_medad.cxx $(HEADERS) wx_snip.h
@@ -73,7 +74,8 @@ $(OBJDIR)/wx_keym.o : wx_keym.cxx wx_keym.h $(ALLHEADERS)
 $(OBJDIR)/wx_medio.o : wx_medio.cxx wx_medio.h $(ALLHEADERS)
 	$(MCC) wx_medio.cxx -o $(OBJDIR)/wx_medio.o
 
-$(OBJDIR)/wx_style.o : wx_style.cxx wx_style.h wx_medio.h $(ALLHEADERS) ../../wxxt/src/DeviceContexts/DC.h
+$(OBJDIR)/wx_style.o : wx_style.cxx wx_style.h wx_medio.h $(ALLHEADERS) \
+                       ../../wxxt/src/DeviceContexts/DC.h  ../../wxxt/src/GDI-Classes/Pen+Brush.h
 	$(MCC) wx_style.cxx -o $(OBJDIR)/wx_style.o 
 
 $(OBJDIR)/edjr.o : edjr.cxx edjr.h  wx_media.h wx_medad.h

@@ -720,7 +720,10 @@
 					base-struct
 					union?)
 				    ; Ignore these variables, for one reason or another:
-				    (not (memq name '(tcp_connect_dest_addr tcp_listen_addr
+				    (not (memq name '(tcp_connect_dest_addr
+						      tcp_listen_addr
+						      tcp_here_addr
+						      tcp_there_addr
 						      tcp_accept_addr))))
 			       (begin
 				 (when show-info?

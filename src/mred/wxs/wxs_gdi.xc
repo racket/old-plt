@@ -206,11 +206,11 @@
 @CLASSBASE wxPen "pen" : "object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour!,rint[0|255],SYM[penStyle]); <> color%
-@CREATOR (string,rint[0|255],SYM[penStyle]); <> color name
+@CREATOR (wxColour!,rfloat[0|255],SYM[penStyle]); <> color%
+@CREATOR (string,rfloat[0|255],SYM[penStyle]); <> color name
 
-@ "get-width" : int GetWidth();
-@ "set-width" : void SetWidth(rint[0|255]);
+@ "get-width" : float GetWidthF();
+@ "set-width" : void SetWidth(rfloat[0|255]);
 @ "get-cap" : SYM[cap] GetCap();
 @ "set-cap" : void SetCap(SYM[cap]);
 @ "get-join" : SYM[join] GetJoin();
@@ -234,8 +234,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,rint[0|255],SYM[penStyle]); <> color%
-@ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,rint[0|255],SYM[penStyle]); <> color name
+@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,rfloat[0|255],SYM[penStyle]); <> color%
+@ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,rfloat[0|255],SYM[penStyle]); <> color name
 
 @CONSTANT "the-pen-list" : wxPenList! wxThePenList
 

@@ -936,7 +936,7 @@ void wxPostScriptDC::SetPen (wxPen * pen)
   wxPen *oldPen = current_pen;
   char *psdash = NULL;
   unsigned char red, blue, green;
-  int width;
+  float width;
 
   if (!pstream)
     return;
@@ -948,7 +948,7 @@ void wxPostScriptDC::SetPen (wxPen * pen)
     return;			/* NIL */
 
   // Line width
-  width = pen->GetWidth();
+  width = pen->GetWidthF();
   pstream->Out(width);
   pstream->Out(" setlinewidth\n");
 

@@ -85,6 +85,7 @@ long objscheme_unbundle_nonnegative_integer(Scheme_Object *, const char *);
 long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *, const char *symname, const char *);
 ExactLong objscheme_unbundle_ExactLong(Scheme_Object *, const char *);
 double objscheme_unbundle_float(Scheme_Object *, const char *);
+double objscheme_unbundle_float_in(Scheme_Object *, double, double, const char *);
 double objscheme_unbundle_nonnegative_float(Scheme_Object *, const char *);
 double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *, const char *symname, const char *);
 int objscheme_unbundle_bool(Scheme_Object *, const char *);

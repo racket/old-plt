@@ -207,6 +207,7 @@ typedef struct {
   Scheme_Manager_Reference *mref;
 } listener_t;
 # define htons(x) x
+# define htonl(x) x
 #endif
 
 typedef struct Scheme_Tcp {
@@ -384,6 +385,7 @@ static Scheme_Object *tcp_stop(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept_ready(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_accept(int argc, Scheme_Object *argv[]);
 static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[]);
 #endif
 
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[]);
@@ -983,6 +985,11 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("tcp-listener?", 
 			     scheme_make_folding_prim(tcp_listener_p,
 						      "tcp-listener?", 
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("tcp-addresses", 
+			     scheme_make_folding_prim(tcp_addresses,
+						      "tcp-addresses", 
 						      1, 1, 1), 
 			     env);
 #endif
@@ -7664,6 +7671,77 @@ static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])
    return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_listener_type)
 	   ? scheme_true
 	   : scheme_false);
+}
+
+static Scheme_Object *tcp_addresses(int argc, Scheme_Object *argv[])
+{
+  Scheme_Tcp *tcp = NULL;
+  int closed = 0;
+  unsigned long here_a, there_a;
+  unsigned char *b;
+  Scheme_Object *result[2];
+  char sa[20];
+
+  if (SCHEME_OUTPORTP(argv[0])) {
+    Scheme_Output_Port *op;
+    op = (Scheme_Output_Port *)argv[0];
+    if (op->sub_type == tcp_output_port_type)
+      tcp = op->port_data;
+    closed = op->closed;
+  } else if (SCHEME_INPORTP(argv[0])) {
+    Scheme_Input_Port *ip;
+    ip = (Scheme_Input_Port *)argv[0];
+    if (ip->sub_type == tcp_input_port_type)
+      tcp = ip->port_data;
+    closed = ip->closed;
+  }
+
+  if (!tcp)
+    scheme_wrong_type("tcp-addresses", "tcp-port", 0, argc, argv);
+
+  if (closed)
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		     argv[0],
+		     "tcp-addresses: port is closed");
+
+# ifdef USE_SOCKETS_TCP
+  {
+    /* Use a long name for precise GC's xform.ss: */
+    tcp_address tcp_here_addr, tcp_there_addr;
+    int l;
+    
+    l = sizeof(tcp_here_addr);
+    if (getsockname(tcp->tcp, &tcp_here_addr, &l)) {
+      scheme_raise_exn(MZEXN_I_O_TCP,
+		       "tcp-addresses: could not get local address (%d)",
+		       errno);
+    }
+    l = sizeof(tcp_there_addr);
+    if (getpeername(tcp->tcp, &tcp_there_addr, &l)) {
+      scheme_raise_exn(MZEXN_I_O_TCP,
+		       "tcp-addresses: could not get peer address (%d)",
+		       errno);
+    }
+
+    here_a = *(unsigned long *)&tcp_here_addr.sin_addr;
+    there_a = *(unsigned long *)&tcp_there_addr.sin_addr;
+  }
+# endif
+# ifdef USE_MAC_TCP
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "tcp-addresses: not yet supported");
+  return NULL;
+# endif
+
+  b = (unsigned char *)&here_a;
+  sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
+  result[0] = scheme_make_string(sa);
+
+  b = (unsigned char *)&there_a;
+  sprintf(sa, "%d.%d.%d.%d", b[0], b[1], b[2], b[3]);
+  result[1] = scheme_make_string(sa);
+
+  return scheme_values(2, result);
 }
 
 #endif /* !NO_TCP_SUPPORT */

@@ -221,7 +221,7 @@ static void remove_q_callbacks(MrEdContext *c);
 
 START_XFORM_SKIP;
 
-static int size_eventspace_val(void *p)
+static int size_eventspace_val(void *)
 {
   return gcBYTES_TO_WORDS(sizeof(MrEdContext));
 }
@@ -288,7 +288,7 @@ static int fixup_eventspace_val(void *p)
   return gcBYTES_TO_WORDS(sizeof(MrEdContext));
 }
 
-static int size_eventspace_hop_val(void *p)
+static int size_eventspace_hop_val(void *)
 {
   return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
 }

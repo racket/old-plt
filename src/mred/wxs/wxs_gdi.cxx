@@ -2456,10 +2456,10 @@ class os_wxPen : public wxPen {
 
   os_wxPen CONSTRUCTOR_ARGS(());
 #ifndef MZ_PRECISE_GC
-  os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, int x1, int x2));
+  os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, float x1, int x2));
 #endif
 #ifndef MZ_PRECISE_GC
-  os_wxPen CONSTRUCTOR_ARGS((string x0, int x1, int x2));
+  os_wxPen CONSTRUCTOR_ARGS((string x0, float x1, int x2));
 #endif
   ~os_wxPen();
 #ifdef MZ_PRECISE_GC
@@ -2485,14 +2485,14 @@ CONSTRUCTOR_INIT(: wxPen())
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxPen::os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, int x1, int x2))
+os_wxPen::os_wxPen CONSTRUCTOR_ARGS((class wxColour* x0, float x1, int x2))
 CONSTRUCTOR_INIT(: wxPen(x0, x1, x2))
 {
 }
 #endif
 
 #ifndef MZ_PRECISE_GC
-os_wxPen::os_wxPen CONSTRUCTOR_ARGS((string x0, int x1, int x2))
+os_wxPen::os_wxPen CONSTRUCTOR_ARGS((string x0, float x1, int x2))
 CONSTRUCTOR_INIT(: wxPen(x0, x1, x2))
 {
 }
@@ -2772,14 +2772,14 @@ static Scheme_Object *os_wxPenSetWidth(Scheme_Object *obj, int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  int x0;
+  float x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[0], 0, 255, "set-width in pen%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[0], 0, 255, "set-width in pen%"));
 
   
   WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetWidth(x0));
@@ -2789,11 +2789,11 @@ static Scheme_Object *os_wxPenSetWidth(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-static Scheme_Object *os_wxPenGetWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxPenGetWidthF(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  int r;
+  float r;
   objscheme_check_valid(obj);
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -2803,11 +2803,11 @@ static Scheme_Object *os_wxPenGetWidth(Scheme_Object *obj, int n,  Scheme_Object
   
 
   
-  r = WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)obj)->primdata)->GetWidth());
+  r = WITH_VAR_STACK(((wxPen *)((Scheme_Class_Object *)obj)->primdata)->GetWidthF());
 
   
   
-  return scheme_make_integer(r);
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
 static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -2819,7 +2819,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     string x0;
-    int x1;
+    float x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
@@ -2832,7 +2832,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     if (n != 3) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in pen% (color name case)", 3, 3, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "initialization in pen% (color name case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in pen% (color name case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[1], 0, 255, "initialization in pen% (color name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "initialization in pen% (color name case)"));
 
     
@@ -2846,7 +2846,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
-    int x1;
+    float x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
@@ -2859,7 +2859,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
     if (n != 3) 
       WITH_VAR_STACK(scheme_wrong_count("initialization in pen% (color% case)", 3, 3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[0], "initialization in pen% (color% case)", 0));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 255, "initialization in pen% (color% case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[1], 0, 255, "initialization in pen% (color% case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "initialization in pen% (color% case)"));
 
     
@@ -2919,7 +2919,7 @@ void objscheme_setup_wxPen(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-cap", os_wxPenSetCap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-cap", os_wxPenGetCap, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "set-width", os_wxPenSetWidth, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-width", os_wxPenGetWidth, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPen_class, "get-width", os_wxPenGetWidthF, 0, 0));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxPen_class));
@@ -3032,7 +3032,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
     class wxColour* x0;
-    int x1;
+    float x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -3044,7 +3044,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
     if (n != 3) 
       WITH_VAR_STACK(scheme_wrong_count("find-or-create-pen in pen-list% (color% case)", 3, 3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[0], "find-or-create-pen in pen-list% (color% case)", 0));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 255, "find-or-create-pen in pen-list% (color% case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[1], 0, 255, "find-or-create-pen in pen-list% (color% case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "find-or-create-pen in pen-list% (color% case)"));
 
     
@@ -3054,7 +3054,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
     
   } else  {
     string x0;
-    int x1;
+    float x1;
     int x2;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -3066,7 +3066,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
     if (n != 3) 
       WITH_VAR_STACK(scheme_wrong_count("find-or-create-pen in pen-list% (color name case)", 3, 3, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "find-or-create-pen in pen-list% (color name case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 255, "find-or-create-pen in pen-list% (color name case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_float_in(p[1], 0, 255, "find-or-create-pen in pen-list% (color name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_penStyle(p[2], "find-or-create-pen in pen-list% (color name case)"));
 
     
@@ -3506,6 +3506,7 @@ static void *RgnBoundingBox(wxRegion *r)
 
 #define l_ADDRESS &
 #define l_DEREF *
+#define l_NEWATOMIC 
 #define l_NULLOK 0
 #define l_TEST , l_NULLOK
 #define l_POINT 
@@ -3558,7 +3559,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   if (!(len + l_EXTRA))
     return NULL;
 
-  f = WITH_VAR_STACK(new l_TYPE l_POINT[len + l_EXTRA]);
+  f = WITH_VAR_STACK(new l_NEWATOMIC l_TYPE l_POINT[len + l_EXTRA]);
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {

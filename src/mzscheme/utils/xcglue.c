@@ -453,6 +453,24 @@ double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const cha
   return -1;
 }
 
+double objscheme_unbundle_float_in(Scheme_Object *obj, double minv, double maxv, const char *stopifbad)
+{
+  if (objscheme_istype_number(obj, NULL)) {
+    double v;
+    v = objscheme_unbundle_float(obj, stopifbad);
+    if ((v >= minv) && (v <= maxv))
+      return v;
+  }
+
+  if (stopifbad) {
+    char buffer[100];
+    sprintf(buffer, "real number in [%f, %f]", minv, maxv);
+    scheme_wrong_type(stopifbad, buffer, -1, 0, &obj);
+  }
+
+  return 0;
+}
+
 double objscheme_unbundle_nonnegative_float(Scheme_Object *obj, const char *where)
 {
   if (objscheme_istype_number(obj, NULL)) {

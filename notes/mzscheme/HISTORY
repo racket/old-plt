@@ -18,7 +18,7 @@ Version 199.27:
 
  * Changed `struct-info' and `struct->vector' to work on all values.
 
- * Added `send/apply' to "class.ss". (For now, I left the old dotted
+ * Added `send/apply' to "class.ss". (For now, I left the odd dotted
    apply forms in place and improved the documentation.)
 
  * Added `prefix-all-except' form for `require'.

@@ -256,10 +256,10 @@ class os_wxFont : public wxFont {
 
   os_wxFont CONSTRUCTOR_ARGS(());
 #ifndef MZ_PRECISE_GC
-  os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2, int x3, Bool x4 = 0, int x5 = wxSMOOTHING_DEFAULT));
+  os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2, int x3, Bool x4 = 0, int x5 = wxSMOOTHING_DEFAULT, Bool x6 = 0));
 #endif
 #ifndef MZ_PRECISE_GC
-  os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0, int x6 = wxSMOOTHING_DEFAULT));
+  os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3, int x4, Bool x5 = 0, int x6 = wxSMOOTHING_DEFAULT, Bool x7 = 0));
 #endif
   ~os_wxFont();
 #ifdef MZ_PRECISE_GC
@@ -285,15 +285,15 @@ CONSTRUCTOR_INIT(: wxFont())
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxFont::os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2, int x3, Bool x4, int x5))
-CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4, x5))
+os_wxFont::os_wxFont CONSTRUCTOR_ARGS((int x0, int x1, int x2, int x3, Bool x4, int x5, Bool x6))
+CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4, x5, x6))
 {
 }
 #endif
 
 #ifndef MZ_PRECISE_GC
-os_wxFont::os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3, int x4, Bool x5, int x6))
-CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4, x5, x6))
+os_wxFont::os_wxFont CONSTRUCTOR_ARGS((int x0, cstring x1, int x2, int x3, int x4, Bool x5, int x6, Bool x7))
+CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4, x5, x6, x7))
 {
 }
 #endif
@@ -322,6 +322,27 @@ static Scheme_Object *os_wxFontGetFontId(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxFontGetSizeInPixels(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxFont_class, "get-size-in-pixels? in font%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxFont *)((Scheme_Class_Object *)p[0])->primdata)->GetSizeInPixels());
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxFontGetUnderlined(int n,  Scheme_Object *p[])
@@ -485,6 +506,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     int x4;
     Bool x5;
     int x6;
+    Bool x7;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -492,8 +514,8 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     VAR_STACK_PUSH(2, x1);
 
     
-    if ((n < (POFFSET+5)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (font name case)", POFFSET+5, POFFSET+7, n, p, 1));
+    if ((n < (POFFSET+5)) || (n > (POFFSET+8))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (font name case)", POFFSET+5, POFFSET+8, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "initialization in font% (font name case)"));
     x1 = (cstring)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "initialization in font% (font name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+2], "initialization in font% (font name case)"));
@@ -507,11 +529,15 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
       x6 = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET+6], "initialization in font% (font name case)"));
     } else
       x6 = wxSMOOTHING_DEFAULT;
+    if (n > (POFFSET+7)) {
+      x7 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+7], "initialization in font% (font name case)"));
+    } else
+      x7 = 0;
 
     
-    realobj = WITH_VAR_STACK(new os_wxFont CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
+    realobj = WITH_VAR_STACK(new os_wxFont CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxFont(x0, x1, x2, x3, x4, x5, x6));
+    WITH_VAR_STACK(realobj->gcInit_wxFont(x0, x1, x2, x3, x4, x5, x6, x7));
 #endif
     realobj->__gc_external = (void *)p[0];
     
@@ -524,14 +550,15 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
     int x3;
     Bool x4;
     int x5;
+    Bool x6;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
 
     
-    if ((n < (POFFSET+4)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (family case)", POFFSET+4, POFFSET+6, n, p, 1));
+    if ((n < (POFFSET+4)) || (n > (POFFSET+7))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in font% (family case)", POFFSET+4, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "initialization in font% (family case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+1], "initialization in font% (family case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+2], "initialization in font% (family case)"));
@@ -544,11 +571,15 @@ static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
       x5 = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET+5], "initialization in font% (family case)"));
     } else
       x5 = wxSMOOTHING_DEFAULT;
+    if (n > (POFFSET+6)) {
+      x6 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+6], "initialization in font% (family case)"));
+    } else
+      x6 = 0;
 
     
-    realobj = WITH_VAR_STACK(new os_wxFont CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+    realobj = WITH_VAR_STACK(new os_wxFont CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxFont(x0, x1, x2, x3, x4, x5));
+    WITH_VAR_STACK(realobj->gcInit_wxFont(x0, x1, x2, x3, x4, x5, x6));
 #endif
     realobj->__gc_external = (void *)p[0];
     
@@ -588,9 +619,10 @@ void objscheme_setup_wxFont(Scheme_Env *env)
 
   wxREGGLOB(os_wxFont_class);
 
-  os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", (Scheme_Method_Prim *)os_wxFont_ConstructScheme, 8));
+  os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", (Scheme_Method_Prim *)os_wxFont_ConstructScheme, 9));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id" " method", (Scheme_Method_Prim *)os_wxFontGetFontId, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-size-in-pixels?" " method", (Scheme_Method_Prim *)os_wxFontGetSizeInPixels, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxFontGetUnderlined, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-smoothing" " method", (Scheme_Method_Prim *)os_wxFontGetSmoothing, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-weight" " method", (Scheme_Method_Prim *)os_wxFontGetWeight, 0, 0));
@@ -713,14 +745,15 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
     int x3;
     Bool x4;
     int x5;
+    Bool x6;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(2);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, r);
 
     
-    if ((n < (POFFSET+4)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (family id case)", POFFSET+4, POFFSET+6, n, p, 1));
+    if ((n < (POFFSET+4)) || (n > (POFFSET+7))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (family id case)", POFFSET+4, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "find-or-create-font in font-list% (family id case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+1], "find-or-create-font in font-list% (family id case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+2], "find-or-create-font in font-list% (family id case)"));
@@ -733,9 +766,13 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
       x5 = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET+5], "find-or-create-font in font-list% (family id case)"));
     } else
       x5 = wxSMOOTHING_DEFAULT;
+    if (n > (POFFSET+6)) {
+      x6 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+6], "find-or-create-font in font-list% (family id case)"));
+    } else
+      x6 = 0;
 
     
-    r = WITH_VAR_STACK(((wxFontList *)((Scheme_Class_Object *)p[0])->primdata)->FindOrCreateFont(x0, x1, x2, x3, x4, x5));
+    r = WITH_VAR_STACK(((wxFontList *)((Scheme_Class_Object *)p[0])->primdata)->FindOrCreateFont(x0, x1, x2, x3, x4, x5, x6));
 
     
     
@@ -748,6 +785,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
     int x4;
     Bool x5;
     int x6;
+    Bool x7;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -755,8 +793,8 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
     VAR_STACK_PUSH(2, x1);
 
     
-    if ((n < (POFFSET+5)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (font name case)", POFFSET+5, POFFSET+7, n, p, 1));
+    if ((n < (POFFSET+5)) || (n > (POFFSET+8))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (font name case)", POFFSET+5, POFFSET+8, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "find-or-create-font in font-list% (font name case)"));
     x1 = (cstring)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "find-or-create-font in font-list% (font name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+2], "find-or-create-font in font-list% (font name case)"));
@@ -770,9 +808,13 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
       x6 = WITH_VAR_STACK(unbundle_symset_smoothing(p[POFFSET+6], "find-or-create-font in font-list% (font name case)"));
     } else
       x6 = wxSMOOTHING_DEFAULT;
+    if (n > (POFFSET+7)) {
+      x7 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+7], "find-or-create-font in font-list% (font name case)"));
+    } else
+      x7 = 0;
 
     
-    r = WITH_VAR_STACK(((wxFontList *)((Scheme_Class_Object *)p[0])->primdata)->FindOrCreateFont(x0, x1, x2, x3, x4, x5, x6));
+    r = WITH_VAR_STACK(((wxFontList *)((Scheme_Class_Object *)p[0])->primdata)->FindOrCreateFont(x0, x1, x2, x3, x4, x5, x6, x7));
 
     
     
@@ -821,7 +863,7 @@ void objscheme_setup_wxFontList(Scheme_Env *env)
 
   os_wxFontList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font-list%", "object%", (Scheme_Method_Prim *)os_wxFontList_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font" " method", (Scheme_Method_Prim *)os_wxFontListFindOrCreateFont, 4, 7));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font" " method", (Scheme_Method_Prim *)os_wxFontListFindOrCreateFont, 4, 8));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxFontList_class));

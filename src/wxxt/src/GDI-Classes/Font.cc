@@ -52,11 +52,12 @@ char *wx_font_spec [] = {
 // local function prototypes
 static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int family,
 					   int style, int weight, 
-					   Bool underlined);
+					   Bool underlined, Bool size_in_pixels);
 #ifdef WX_USE_XFT
 static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int family,
 					      int style, int weight, 
-					      Bool underlined, int smoothing);
+					      Bool underlined, int smoothing, 
+					      Bool size_in_pixels);
 #endif
 
 //-----------------------------------------------------------------------------
@@ -76,7 +77,7 @@ wxFont::wxFont(void)
 }
 
 wxFont::wxFont(int PointSize, int FontIdOrFamily, int Style, int Weight,
-	       Bool Underlined, int Smoothing)
+	       Bool Underlined, int Smoothing, Bool sip)
 {
     font_id       = FontIdOrFamily;
     family        = wxTheFontNameDirectory->GetFamily(FontIdOrFamily);
@@ -85,12 +86,13 @@ wxFont::wxFont(int PointSize, int FontIdOrFamily, int Style, int Weight,
     point_size    = PointSize;
     underlined    = Underlined;
     smoothing     = Smoothing;
+    size_in_pixels = sip;
 
     InitFont();
 }
 
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, 
-	       int Weight, Bool Underlined, int Smoothing)
+	       int Weight, Bool Underlined, int Smoothing, Bool sip)
 {
     font_id       = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
     family        = wxTheFontNameDirectory->GetFamily(font_id);
@@ -99,6 +101,7 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style,
     point_size    = PointSize;
     underlined    = Underlined;
     smoothing     = Smoothing;
+    size_in_pixels = sip;
 
     InitFont();
 }
@@ -181,7 +184,7 @@ void *wxFont::GetInternalFont(float scale)
       xfont = (XFontStruct*)node->Data();
     } else {
       xfont = wxLoadQueryNearestFont(point_scale, font_id, family, style, weight,
-				     underlined);
+				     underlined, size_in_pixels);
       scaled_xfonts->Append(int_scale, (wxObject*)xfont);
     }
     return (void*)xfont;
@@ -204,7 +207,7 @@ void *wxFont::GetInternalAAFont(float scale)
       xft_font = (wxFontStruct*)node->Data();
     } else {
       xft_font = wxLoadQueryNearestAAFont(point_scale, font_id, family, style, weight,
-					  underlined, smoothing);
+					  underlined, smoothing, size_in_pixels);
 
       /* Record a 0x1 to mean "no AA font": */
       if (!xft_font)
@@ -248,7 +251,7 @@ void wxFontList::AddFont(wxFont *Font)
 
 wxFont *wxFontList::FindOrCreateFont(int PointSize, int FontIdOrFamily, 
 				     int Style, int Weight, Bool underline,
-				     int smoothing)
+				     int smoothing, Bool sip)
 {
   wxFont *font;
   wxChildNode *node;
@@ -263,11 +266,12 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, int FontIdOrFamily,
 	each_font->GetWeight() == Weight &&
 	each_font->GetFontId() == FontIdOrFamily &&
 	each_font->GetUnderlined() == underline &&
-	each_font->GetSmoothing() == smoothing)
+	each_font->GetSmoothing() == smoothing &&
+	each_font->GetSizeInPixels() == sip)
       return each_font;
   }
   
-  font = new wxFont(PointSize, FontIdOrFamily, Style, Weight, underline, smoothing);
+  font = new wxFont(PointSize, FontIdOrFamily, Style, Weight, underline, smoothing, sip);
 
 #if WXGARBAGE_COLLECTION_ON
   AddFont(font);
@@ -278,7 +282,7 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, int FontIdOrFamily,
 
 wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face, 
 				     int Family, int Style, int Weight, 
-				     Bool underline, int smoothing)
+				     Bool underline, int smoothing, Bool sip)
 {
   int id;
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
@@ -288,7 +292,8 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 			  Style,
 			  Weight,
 			  underline,
-			  smoothing);
+			  smoothing,
+			  sip);
 }
 
 //-----------------------------------------------------------------------------
@@ -299,7 +304,7 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 
 static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int family,
 					      int style, int weight,
-					      Bool underlined, int smoothing)
+					      Bool underlined, int smoothing, Bool sip)
 {
   char *name;
   wxFontStruct *fs;
@@ -342,7 +347,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
     if (name) {
       fs = XftFontOpen(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY),
 		       XFT_FAMILY, XftTypeString, name + 1,
-		       XFT_SIZE, XftTypeInteger, point_size,
+		       (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, point_size,
 		       XFT_WEIGHT, XftTypeInteger, wt,
 		       XFT_SLANT, XftTypeInteger, sl,
 		       /* aa tag must be last, b/c is might be 0ed: */
@@ -354,7 +359,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
     if (!fs) {
       /* accept most any default: */
       fs = XftFontOpen(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY),
-		       XFT_SIZE, XftTypeInteger, point_size,
+		       (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, point_size,
 		       XFT_WEIGHT, XftTypeInteger, wt,
 		       XFT_SLANT, XftTypeInteger, sl,
 		       /* aa tag must be last, b/c is might be 0ed: */
@@ -397,7 +402,7 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
 
 static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int family,
 					   int style, int weight,
-					   Bool underlined)
+					   Bool underlined, Bool sip)
 {
   XFontStruct *font;
   int tried_once = 0;

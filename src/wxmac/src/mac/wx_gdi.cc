@@ -169,14 +169,15 @@ wxFont::wxFont(void)
   Create(10, wxDEFAULT, 
 	 wxDEFAULT, 
 	 wxNORMAL, wxNORMAL, FALSE, 
-	 wxSMOOTHING_DEFAULT);
+	 wxSMOOTHING_DEFAULT, FALSE);
 }
 
 //-----------------------------------------------------------------------------
 // Constructor for a font. Note that the real construction is done
 // in wxDC::SetFont, when information is available about scaling etc.
 //-----------------------------------------------------------------------------
-wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool Underlined, int Smoothing)
+wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, 
+	       Bool Underlined, int Smoothing, Bool sip)
 {
   int fam;
 
@@ -184,22 +185,22 @@ wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool Un
 
   Create(PointSize, FontOrFamilyId, 
 	 fam, 
-	 Style, Weight, Underlined, Smoothing);
+	 Style, Weight, Underlined, Smoothing, sip);
 }
 
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
-	       Bool underlined, int Smoothing)
+	       Bool underlined, int Smoothing, Bool sip)
 {
   int id, fam;
 
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
   fam = wxTheFontNameDirectory->GetFamily(id);
   
-  Create(PointSize, id, fam, Style, Weight, underlined, Smoothing);
+  Create(PointSize, id, fam, Style, Weight, underlined, Smoothing, sip);
 }
 
 void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight, 
-		    Bool Underlined, int Smoothing)
+		    Bool Underlined, int Smoothing, Bool sip)
 {
   int tried_once = 0;
 
@@ -210,6 +211,7 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
   point_size = PointSize;
   underlined = Underlined;
   smoothing = Smoothing;
+  size_in_pixels = sip;
 
   while (1) {
     char *name;

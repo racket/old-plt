@@ -35,7 +35,7 @@ wxbFont::wxbFont (void)
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxbFont::wxbFont (int PointSize, int Family, int Style, int Weight, Bool Underline, int smoothing)
+wxbFont::wxbFont (int PointSize, int Family, int Style, int Weight, Bool Underline, int smoothing, Bool sip)
 {
   __type = wxTYPE_FONT;
 }
@@ -747,7 +747,7 @@ void wxFontList::AddFont (wxFont * font)
 }
 
 wxFont *wxFontList::
-FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline, int smoothing)
+FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline, int smoothing, Bool sip)
 {
   wxFont *font;
   wxChildNode *node;
@@ -762,16 +762,17 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 	each_font->GetWeight () == Weight &&
 	each_font->GetFontId () == FamilyOrFontId &&
 	each_font->GetUnderlined () == underline &&
-	each_font->GetSmoothing () == smoothing)
+	each_font->GetSmoothing () == smoothing &&
+	each_font->GetSizeInPixels () == sip)
       return each_font;
   }
-  font = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline, smoothing);
+  font = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline, smoothing, sip);
   AddFont(font);
   return font;
 }
 
 wxFont *wxFontList::
-FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline, int smoothing)
+FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline, int smoothing, Bool sip)
 {
   int id;
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
@@ -780,7 +781,8 @@ FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int We
 			  Style,
 			  Weight,
 			  underline,
-			  smoothing);
+			  smoothing,
+			  sip);
 }
 
 #if (!USE_TYPEDEFS)

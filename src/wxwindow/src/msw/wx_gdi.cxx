@@ -48,16 +48,16 @@ wxFont::wxFont(void)
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing):
+wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip):
   wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing)
 {
   COUNT_P(font_count);
 
-  Create(PointSize, Family, Style, Weight, Underlined, Smoothing);
+  Create(PointSize, Family, Style, Weight, Underlined, Smoothing, sip);
 }
 
-wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined, int Smoothing):
-  wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing)
+wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip):
+  wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing, sip)
 {
   int id;
 
@@ -65,10 +65,10 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
 
-  Create(PointSize, id, Style, Weight, Underlined, Smoothing);
+  Create(PointSize, id, Style, Weight, Underlined, Smoothing, sip);
 }
 
-Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing)
+Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip)
 {
   fontid = FontId;
   family = wxTheFontNameDirectory->GetFamily(fontid);
@@ -77,6 +77,7 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
   point_size = PointSize;
   underlined = Underlined;
   smoothing = Smoothing;
+  size_in_pixels = sip;
 
   temporary = FALSE;
 
@@ -120,7 +121,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   if (!screenFont && general_cfont)
     return general_cfont;
 
-  if (screenFont) {
+  if (screenFont && !size_in_pixels) {
     int dpi;
     dpi = ::GetDeviceCaps(dc, LOGPIXELSY);
     nHeight = MulDiv(point_size, dpi, 72);

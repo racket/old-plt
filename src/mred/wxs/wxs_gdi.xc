@@ -55,8 +55,8 @@
 @CLASSBASE wxFont "font":"object"
 
 @CREATOR (); <> no argument
-@CREATOR (rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> family
-@CREATOR (rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> font name
+@CREATOR (rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> family
+@CREATOR (rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> font name
 
 @ "get-family" : SYM[family] GetFamily();
 @ "get-face" : nstring GetFaceString();
@@ -65,6 +65,7 @@
 @ "get-weight" : SYM[weight] GetWeight();
 @ "get-smoothing" : SYM[smoothing] GetSmoothing();
 @ "get-underlined" : bool GetUnderlined();
+@ "get-size-in-pixels?" : bool GetSizeInPixels();
 
 @ "get-font-id" : int GetFontId();
 
@@ -74,8 +75,8 @@
 
 @CREATOR ();
 
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> family id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT) <> font name
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> family id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> font name
 
 @END
 

@@ -626,7 +626,7 @@ void wxFontList::AddFont (wxFont * font)
 }
 
 wxFont *wxFontList::
-FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline, int smoothing)
+FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline, int smoothing, Bool sip)
 {
   wxFont *fnt;
   int i = 0;
@@ -641,11 +641,12 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 	each_font->GetWeight () == Weight &&
 	each_font->GetFontId () == FamilyOrFontId &&
 	each_font->GetUnderlined () == underline &&
-	each_font->GetSmoothing () == smoothing)
+	each_font->GetSmoothing () == smoothing &&
+	each_font->GetSizeInPixels () == sip)
       return each_font;
   }
 
-  fnt = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline, smoothing);
+  fnt = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline, smoothing, sip);
 
   AddFont(fnt);
 
@@ -654,7 +655,7 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 
 wxFont *wxFontList::
 FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline,
-		  int smoothing)
+		  int smoothing, Bool sip)
 {
   int fid;
   fid = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
@@ -663,7 +664,8 @@ FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int We
 			  Style,
 			  Weight,
 			  underline,
-			  smoothing);
+			  smoothing,
+			  sip);
 }
 
 wxPoint::wxPoint (void) : wxObject(WXGC_NO_CLEANUP)

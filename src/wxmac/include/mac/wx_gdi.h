@@ -33,13 +33,14 @@ class wxFont: public wxbFont
  private:
 	short macFontId;
 
-	void Create(int PointSize, int FontId, int Family, int Style, int Weight, Bool underlined, int smoothing);
+	void Create(int PointSize, int FontId, int Family, int Style, int Weight, Bool underlined, int smoothing, Bool sip);
 
  public:
 	wxFont(void);
-	wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
+	wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool underlined = FALSE, 
+	       int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
 	wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
-	       Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
+	       Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
 	~wxFont(void);
 
 	float GetCharHeight(void);		// Mac Platform Only?

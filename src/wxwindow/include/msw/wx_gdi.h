@@ -23,9 +23,9 @@ class wxFont: public wxbFont
 
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
-	 int smoothing = wxSMOOTHING_DEFAULT);
+	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
   wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
-	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT);
+	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
   ~wxFont(void);
   Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined,
 	      int smoothing);

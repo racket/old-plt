@@ -271,7 +271,7 @@
            ((eof? tok) (parse-error "Expected parent class after extends" ps pe))
            ((id-token? tok)
             (if (not (eq? (level) 'intermediate))
-                (parse-definition cur-tok (getter) 'body getter)
+                (parse-definition cur-tok (getter) 'class-body getter)
                 (let* ((next (getter))
                        (next-tok (get-tok next)))
                   (cond

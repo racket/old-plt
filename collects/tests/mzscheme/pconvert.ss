@@ -117,6 +117,7 @@
      (make-same-test 1/2 1/2)
      (make-same-test 1.1 1.1)
 
+     (make-test -10/3 -10/3 '(+ -3 -1/3) -10/3 -10/3 '(+ -3 -1/3) -10/3 -10/3)
      (make-test 3/2 3/2 '(+ 1 1/2) 3/2 3/2 '(+ 1 1/2) 3/2 3/2)
 
      (make-test (list 1) '(list 1) '(list 1) '(list 1) '`(1) '`(1) '`(1) '(cons 1 empty))

@@ -182,11 +182,12 @@
 	      (lambda (exact-num)
 		(let ([split 
 		       (lambda (real)
-			 (let* ([num (numerator real)]
-				[den (denominator real)])
-			   (values (quotient num den)
-				   (* (if (negative? num) -1 1)
-				      (/ (modulo num den) den)))))])
+			 (let* ([num (numerator (abs real))]
+				[den (denominator (abs real))]
+                                [sign (if (< real 0) - +)])
+			   (values (sign (quotient num den))
+				   (sign (* (if (negative? num) -1 1)
+                                            (/ (modulo num den) den))))))])
 		  (let-values ([(whole frac) (split (real-part exact-num))]
 			       [(whole-i frac-i) (split (imag-part exact-num))])
 		    (values whole frac whole-i frac-i))))]

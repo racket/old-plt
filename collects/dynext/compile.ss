@@ -1,8 +1,12 @@
 
-(require-relative-library "compiles.ss")
+(module compile mzscheme
+  (import (lib "unitsig.ss"))
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+  (import "compile-sig.ss")
+  (import "compile-unit.ss")
 
-(define-values/invoke-unit/sig dynext:compile^
-  (require-relative-library "compiler.ss"))
+  (define-values/invoke-unit/sig dynext:compile^
+    dynext:compile:unit)
+
+  (export-signature-elements dynext:compile^))
+

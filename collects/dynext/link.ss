@@ -1,9 +1,11 @@
 
-(require-relative-library "links.ss")
+(module link mzscheme
+  (import (lib "unitsig.ss"))
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+  (import "link-sig.ss")
+  (import "link-unit.ss")
 
-(define-values/invoke-unit/sig dynext:link^
-  (require-relative-library "linkr.ss"))
+  (define-values/invoke-unit/sig dynext:link^
+    dynext:link:unit)
 
+  (export-signature-elements dynext:link^))

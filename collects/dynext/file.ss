@@ -1,8 +1,11 @@
 
-(require-relative-library "files.ss")
+(module file mzscheme
+  (import (lib "unitsig.ss"))
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+  (import "file-sig.ss")
+  (import "file-unit.ss")
 
-(define-values/invoke-unit/sig dynext:file^
-  (require-relative-library "filer.ss"))
+  (define-values/invoke-unit/sig dynext:file^
+    dynext:file:unit)
+
+  (export-signature-elements dynext:file^))

@@ -1021,6 +1021,8 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
 
   /* If it's a name id, resolve the name. */
   modname = scheme_module_resolve(modidx);
+  if (rootname)
+    rootname = scheme_module_resolve(rootname);
 
   if (rootname && info->val_env)
     root = (Scheme_Env *)scheme_module_syntax(rootname, info->val_env, NULL);
@@ -1031,8 +1033,12 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
   
   if (!menv) {
     scheme_wrong_syntax("link", NULL, varname,
-			"broken compiled code (phase %d), no declaration for module"
-			": %S", info->phase, modname);
+			"broken compiled code (phase %d, in %V, relto %V), no declaration for module"
+			": %S", 
+			info->phase, 
+			info->module ? info->module->modname : scheme_false,
+			rootname ? rootname : scheme_false,
+			modname);
     return NULL;
   }
 

@@ -3,11 +3,7 @@
 ;;  analysis.
 
 (compound-unit/sig
- (import (FUNCTION : mzlib:function^)
-	 (PRETTY-PRINT : mzlib:pretty-print^)
-	 (FILE : mzlib:file^)
-	 (STRING : mzlib:string^)
-	 (COMPILE : dynext:compile^)
+ (import (COMPILE : dynext:compile^)
 	 (LINK : dynext:link^)
 	 (DFILE : dynext:file^)
 	 (OPTIONS : compiler:option^))

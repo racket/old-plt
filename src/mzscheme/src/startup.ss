@@ -1422,6 +1422,8 @@
   (define-syntax case
     (lambda (x)
       (syntax-case x (else)
+	((_ v)
+	 (syntax (begin v (cond))))
 	((_ v (else e1 e2 ...))
 	 (syntax/loc x (begin v e1 e2 ...)))
 	((_ v ((k ...) e1 e2 ...))
@@ -1430,7 +1432,25 @@
 	 (syntax/loc x (let ((x v))
 			 (if (memv x '(k ...))
 			     (begin e1 e2 ...)
-			     (case x c1 c2 ...))))))))
+			     (case x c1 c2 ...)))))
+	((_ v (bad e1 e2 ...) . rest)
+	 (raise-syntax-error 
+	  'case
+	  "bad syntax (not a datum sequence)"
+	  x
+	  (syntax bad)))
+	((_ v clause . rest)
+	 (raise-syntax-error 
+	  'case
+	  "bad syntax (missing expression after datum sequence)"
+	  x
+	  (syntax clause)))
+	((_ . v)
+	 (not (null? (syntax-e (syntax v))))
+	 (raise-syntax-error 
+	  'case
+	  "bad syntax (illegal use of `.')"
+	  x)))))
 
   ;; From Dybvig:
   (define-syntax do

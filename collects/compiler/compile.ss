@@ -1,35 +1,28 @@
 
-(require-relative-library "sig.ss")
-(require-relative-library "option.ss")
+(module compile mzscheme
+  (import (lib "unitsig.ss"))
+  
+  (import "sig.ss")
 
-(require-library "functio.ss")
-(require-library "pretty.ss")
-(require-library "file.ss")
-(require-library "string.ss")
-(require-library "compile.ss")
+  (import (lib "compile-sig.ss" "dynext"))
+  (import (lib "link-sig.ss" "dynext"))
+  (import (lib "file-sig.ss" "dynext"))
+  ;;
+  (import (lib "compile.ss" "dynext"))
+  (import (lib "link.ss" "dynext"))
+  (import (lib "file.ss" "dynext"))
 
-(require-library "compile.ss" "dynext")
-(require-library "link.ss" "dynext")
-(require-library "file.ss" "dynext")
+  (import "option.ss")
 
-(require-library "makes.ss" "make")
-(require-library "collections.ss" "make")
+  (import "compiler-unit.ss")
 
-(require-library "get-info.ss" "setup")
+  (define-values/invoke-unit/sig compiler^
+    compiler:unit
+    #f
+    compiler:options^
+    dynext:compile^
+    dynext:link^
+    dynext:file^)
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+  (export-signature-elements compiler^))
 
-(define-values/invoke-unit/sig compiler^
-  (require-relative-library "compiler.ss")
-  #f
-  (compiler:option : compiler:option^)
-  mzlib:function^
-  mzlib:pretty-print^
-  mzlib:file^
-  mzlib:string^
-  mzlib:compile^
-  setup:info^
-  dynext:compile^
-  dynext:link^
-  dynext:file^)

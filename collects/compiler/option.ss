@@ -1,9 +1,12 @@
 
-(require-relative-library "sig.ss")
+(module option mzscheme
+  (import (lib "unitsig.ss"))
 
-(begin-elaboration-time
- (require-library "invoke.ss"))
+  (import "sig.ss")
+  (import "option-unit.ss")
 
-(define-values/invoke-unit/sig compiler:option^
-  (require-relative-library "optionr.ss")
-  compiler:option)
+  (define-values/invoke-unit/sig
+    compiler:options^
+    compiler:options:unit)
+
+  (export-signature-elements compiler:options^))

@@ -242,14 +242,15 @@
 			 (get-sig formname (syntax orig) #f s))
 		       (syntax->list (syntax imports)))])
 		 (let ([im-explodeds (explode-named-sigs im-sigs)]
-		       [im-flattened (flatten-signatures im-sigs)])
+		       [im-flattened (apply append (map (lambda (x) (flatten-signature #f x)) im-sigs))]
+		       [d->s (lambda (x) (datum->syntax x (syntax orig) (syntax orig)))])
 		   (with-syntax ([dv/iu (if (syntax-e (syntax global?))
 					    (quote-syntax global-define-values/invoke-unit)
 					    (quote-syntax define-values/invoke-unit))]
-				 [ex-flattened ex-flattened]
-				 [ex-exploded ex-exploded]
-				 [im-explodeds im-explodeds]
-				 [im-flattened im-flattened]
+				 [ex-flattened (d->s ex-flattened)]
+				 [ex-exploded (d->s ex-exploded)]
+				 [im-explodeds (d->s im-explodeds)]
+				 [im-flattened (d->s im-flattened)]
 				 [formname formname])
 		     (syntax
 		      (dv/iu

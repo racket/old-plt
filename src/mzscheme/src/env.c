@@ -1136,9 +1136,17 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, modname)) {
     /* Create a module variable reference, so that idx is preserved: */
+    Scheme_Object *mrel;
+
     val = scheme_alloc_object();
     val->type = scheme_module_variable_type;
-    SCHEME_PTR1_VAL(val) = modidx;
+
+    if (home_env && home_env->link_midx)
+      mrel = scheme_make_pair(modidx, home_env->link_midx);
+    else
+      mrel = modidx;
+
+    SCHEME_PTR1_VAL(val) = mrel;
     SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(symbol);
     
     return val;

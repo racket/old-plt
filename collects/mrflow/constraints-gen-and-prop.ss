@@ -2714,55 +2714,61 @@
          (create-simple-edge letrec-values-label))
         letrec-values-label)]
      [(if test then else)
-      (let* ([test (syntax test)]
-             ;[test-label (create-label-from-term sba-state (syntax test) gamma enclosing-lambda-label)]
-             [test-label (create-label-from-term sba-state test gamma enclosing-lambda-label)]
-             [then-label 
-              (if (symbol? (syntax-e test))
-                  (let ([binding-label (lookup-env test gamma)])
-                    (if binding-label
-                        (let* ([new-binding-label (create-simple-prim-label term)]
-                               [new-gamma (extend-env gamma (list test) (list new-binding-label))]
-                               [normal-edge (create-simple-edge new-binding-label)]
-                               ; discards #f, passes the rest to normal-edge
-                               [filtering-edge
-                                (cons
-                                 (lambda (out-label inflowing-label tunnel-label)
-                                   (when (or (not (label-cst? inflowing-label))
-                                             (label-cst-value inflowing-label))
-                                     ((car normal-edge) out-label inflowing-label tunnel-label)))
-                                 (cdr normal-edge))])
-                          (add-edge-and-propagate-set-through-edge binding-label filtering-edge)
-                          (create-label-from-term sba-state (syntax then) new-gamma enclosing-lambda-label))
-                        (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label))) 
-                  (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label))]
-             [else-label
-              (if (symbol? (syntax-e test))
-                  (let ([binding-label (lookup-env test gamma)])
-                    (if binding-label
-                        (let* ([new-binding-label (create-simple-prim-label term)]
-                               [new-gamma (extend-env gamma (list test) (list new-binding-label))]
-                               [normal-edge (create-simple-edge new-binding-label)]
-                               ; discards #f, passes the rest to normal-edge
-                               [filtering-edge
-                                (cons
-                                 (lambda (out-label inflowing-label tunnel-label)
-                                   (when (and (label-cst? inflowing-label)
-                                              (not (label-cst-value inflowing-label)))
-                                     ((car normal-edge) out-label inflowing-label tunnel-label)))
-                                 (cdr normal-edge))])
-                          (add-edge-and-propagate-set-through-edge binding-label filtering-edge)
-                          (create-label-from-term sba-state (syntax else) new-gamma enclosing-lambda-label))
-                        (create-label-from-term sba-state (syntax else) gamma enclosing-lambda-label))) 
-                  (create-label-from-term sba-state (syntax else) gamma enclosing-lambda-label))]
-             ; because of the (if test then) case below, else-label might be associated with
-             ; the same position as the whole term, so we have to create the if-label after
-             ; the else-label, so that the wrong label/position association created by the
-             ; else-label is overwritten.
-             [if-label (create-simple-label sba-state term)]
-             [if-edge (create-simple-edge if-label)]
-             ; that does the outgoing flow sensitivity
-             [test-edge (create-self-modifying-edge (lambda (label)
+      (let*-values
+          ([(test) (syntax test)]
+           [(test-label) (create-label-from-term sba-state test gamma enclosing-lambda-label)]
+           [(then-label else-label)
+            (if (symbol? (syntax-e test))
+                (let* ([test-name (syntax-e test)]
+                       [binding-label (or (lookup-env test gamma)
+                                          (lookup-top-level-name sba-state test-name)
+                                          (let ([primitive-data (lookup-primitive-data sba-state test-name)])
+                                            (if primitive-data
+                                                (prim-data-label primitive-data)
+                                                #f)))]
+                       [new-then-binding-label (create-simple-prim-label term)]
+                       [new-else-binding-label (create-simple-prim-label term)]
+                       [new-then-gamma (extend-env gamma (list test) (list new-then-binding-label))]
+                       [new-else-gamma (extend-env gamma (list test) (list new-else-binding-label))]
+                       [then-normal-edge (create-simple-edge new-then-binding-label)]
+                       [else-normal-edge (create-simple-edge new-else-binding-label)]
+                       ; discards #f, passes the rest to then-normal-edge
+                       [then-filtering-edge
+                        (cons
+                         (lambda (out-label inflowing-label tunnel-label)
+                           (when (or (not (label-cst? inflowing-label))
+                                     (label-cst-value inflowing-label))
+                             ((car then-normal-edge) out-label inflowing-label tunnel-label)))
+                         (cdr then-normal-edge))]
+                       ; discards everything but #f and passes it to else-normal-edge
+                       [else-filtering-edge
+                        (cons
+                         (lambda (out-label inflowing-label tunnel-label)
+                           (when (and (label-cst? inflowing-label)
+                                      (not (label-cst-value inflowing-label)))
+                             ((car else-normal-edge) out-label inflowing-label tunnel-label)))
+                         (cdr else-normal-edge))])
+                  (if binding-label
+                      (begin
+                        (add-edge-and-propagate-set-through-edge binding-label then-filtering-edge)
+                        (add-edge-and-propagate-set-through-edge binding-label else-filtering-edge)
+                        (values
+                         (create-label-from-term sba-state (syntax then) new-then-gamma enclosing-lambda-label)
+                         (create-label-from-term sba-state (syntax else) new-else-gamma enclosing-lambda-label)))
+                      (values
+                       (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label)
+                       (create-label-from-term sba-state (syntax else) gamma enclosing-lambda-label))))
+                (values
+                 (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label)
+                 (create-label-from-term sba-state (syntax else) gamma enclosing-lambda-label)))]
+           ; because of the (if test then) case below, else-label might be associated with
+           ; the same position as the whole term, so we have to create the if-label after
+           ; the else-label, so that the wrong label/position association created by the
+           ; else-label is overwritten.
+           [(if-label) (create-simple-label sba-state term)]
+           [(if-edge) (create-simple-edge if-label)]
+           ; that does the outgoing flow sensitivity
+           [(test-edge) (create-self-modifying-edge (lambda (label)
                                                       ; XXX subtping should be used here
                                                       (or (not (label-cst? label))
                                                           (label-cst-value label)))
@@ -2770,8 +2776,34 @@
         (add-edge-and-propagate-set-through-edge test-label test-edge)
         if-label)]
      [(if test then)
-      (let* ([test-label (create-label-from-term sba-state (syntax test) gamma enclosing-lambda-label)]
-             [then-label (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label)]
+      (let* ([test (syntax test)]
+             [test-label (create-label-from-term sba-state test gamma enclosing-lambda-label)]
+             [then-label
+              (if (symbol? (syntax-e test))
+                  (let* ([test-name (syntax-e test)]
+                         [binding-label (or (lookup-env test gamma)
+                                            (lookup-top-level-name sba-state test-name)
+                                            (let ([primitive-data (lookup-primitive-data sba-state test-name)])
+                                              (if primitive-data
+                                                  (prim-data-label primitive-data)
+                                                  #f)))]
+                         [new-then-binding-label (create-simple-prim-label term)]
+                         [new-then-gamma (extend-env gamma (list test) (list new-then-binding-label))]
+                         [then-normal-edge (create-simple-edge new-then-binding-label)]
+                         ; discards #f, passes the rest to then-normal-edge
+                         [then-filtering-edge
+                          (cons
+                           (lambda (out-label inflowing-label tunnel-label)
+                             (when (or (not (label-cst? inflowing-label))
+                                       (label-cst-value inflowing-label))
+                               ((car then-normal-edge) out-label inflowing-label tunnel-label)))
+                           (cdr then-normal-edge))])
+                    (if binding-label
+                        (begin
+                          (add-edge-and-propagate-set-through-edge binding-label then-filtering-edge)
+                          (create-label-from-term sba-state (syntax then) new-then-gamma enclosing-lambda-label))
+                        (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label)))
+                  (create-label-from-term sba-state (syntax then) gamma enclosing-lambda-label))]
              [else-label (let ([void-label (make-label-cst
                                             #f #f #f #f #t
                                             term

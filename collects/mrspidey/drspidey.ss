@@ -167,6 +167,7 @@
 	       FRAMEWORK
 	       DRSCHEME
 	       BROWSER
+	       URL
 	       ((MZLIB function) : mrspidey:mzlib:function^)
 	       (MZLIB pretty-print)
 	       (MZLIB file)

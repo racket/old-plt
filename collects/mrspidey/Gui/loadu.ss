@@ -25,6 +25,7 @@
 	    framework^
 	    (drscheme : drscheme:export^)
 	    browser^ 
+	    mzlib:url^
 	    mrspidey:mzlib:function^
 	    mzlib:pretty-print^
 	    mzlib:file^
@@ -39,8 +40,6 @@
     (include "graphics.ss")
     (include "arrow.ss")
     (include "annotat.ss")
-    ;(include "paramenu.ss")
-    ;(include "option.ss")
     (include "prefs.ss")
     (include "Tframe.ss")
     (include "main.ss")))

@@ -278,11 +278,13 @@
                 (send edit set-clickback s2 e2
 		  (lambda args
                     (make-object hyper-text%
+		     (string->url
                       (string-append 
                         "file:"
                         (build-path
 			  (collection-path "mrspidey") ; MATTHEW: got rid of plt-home
-                          "about.html"))))
+                          "about.html")))
+		      #f))
                   click-delta)))))]
 
       [local-record-analyzed-file

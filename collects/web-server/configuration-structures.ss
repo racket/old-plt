@@ -6,10 +6,11 @@
   
   ; configuration is now a unit.  See sig.ss
 
-  ; host = (make-host (listof str) (str str -> (U #f str)) (str str sym url str -> str)
-  ;                   passwords resopnders timeouts paths (U oport #f))
+  ; host = (make-host (listof str) (string -> resource) (str str sym url str -> str)
+  ;                   passwords resopnders timeouts paths)
+  ; Greg P: see dispatcher.ss for data definition of resource
   (provide-define-struct
-   host (indices servlet-path log-message passwords responders timeouts paths))
+   host (indices dispatcher log-message passwords responders timeouts paths))
   
   ; passwords = (listof (list* relm:str protected-dir-regexp:str
   ;                            (listof (list user:sym password:str))))

@@ -1,6 +1,122 @@
 _Web-server_ Collection
 =======================
 
+URL Path Resolution
+===================
+
+The web-server now supports multiple file-root and servlet-root
+specifications in the configuration-table file.
+
+file-root specification has the form:
+(file-root <prefix> <base>)
+
+servlet-root specification has the form:
+(servlet-root <prefix> <base>)
+
+For both, the <prefix> is compared to the url path. If <prefix> matches the
+first part of the url path, then <base> specifies the location in the
+server file system to find the resource. The remaining part of the url path
+is appended to <base> in the sense of build-path in order to identify the
+resource.
+
+For example:
+Suppose you specify a file-root as follows:
+
+(file-root "/bing/bang/"
+"/plt/collects/web-server/default-web-root/my-pages")
+
+If the url path is "/bing/bang/bong/drum.html" then the <prefix> matches
+the first part, and the remainder is "/bong/drum.html". The resource
+specified is thus:
+"/plt/collects/web-server/default-web-root/my-pages/bong/drum.html"
+
+If it were a servlet-root instead of a file-root, then the resource is
+loaded as a servlet and executed to produce the response sent to the
+client.
+
+Special Forms
+Two special forms are provided to support backward compatibility:
+(file-root <base>)
+(servlet-root <base>)
+
+(file-root <base>) should be considered an abreviation for (file-root "/"
+<base>). Likewise, (servlet-root <base>) is an abreviation for
+(servlet-root "/servlets" <base>)
+
+Best Matches
+Duplicate <prefix>s are not allowed, however one <prefix> may be strictly a
+prefix of another <prefix>. In that case, the longest match wins.
+
+Many-to-One
+Note that different <prefix>s can be paired with the same <base>, so it is
+possible to map multiple urls to the same file. Also, could potentially mix
+both dynamic and static files in the same directory, whether or not the
+files are treated dynamically or statically would depend on which url was
+used to reference the file.
+
+Custom Resource Resolution
+_resource-map_
+It is possible to write your own code to perform resource resolution by
+specifying a <resource-map> instead of a <base> for a servlet-root:
+(servlet-root <prefix> <resource-map>)
+
+<resource-map> is a path string for a file. The file must contain a module
+that provides a function called _resource-map_. _resource-map_ consumes a
+path prefix and a path suffix and produces either a resource or #f. A
+resource is a structure (make-resource string string).
+
+(define-struct resource (base path))
+(define-struct (dynamic-resource resource) ())
+(define-struct (static-resource resource ()))
+
+resource-base is a path in the server's file system, while resource-path is
+usually the suffix, i.e. the remaining part of the url that doesn't match
+<prefix>.
+
+These structures are defined in dispatcher.ss located in the web-server
+collection. Note that only the dynamic-resource and static-resource
+variants should be used.
+
+resource-map: string string -> (Union resource #f)
+(define (resource-map prefix suffix) ...)
+
+For example:
+(servlet-root "/serv3/" "servlets3/urlmap.ss")
+
+specifies that urlmap.ss (if it is a file) contains a module that provides
+resource-map. (Note that the full path to urlmap.ss depends on the directory
+that contains configuration-table and on the host-root.)
+
+urlmap.ss might contain code that looks like this:
+
+(module urlmap mzscheme
+  (require (lib "dispatcher.ss" "web-server"))
+
+  (provide resource-map)
+  
+  (define re (regexp "\\.ss$|\\.scm$"))
+
+
+  (define cd (current-directory))
+  
+  (define (resource-map prefix suffix)
+     (cond
+
+       ; don't serve urlmap.ss
+       [(string=? suffix "urlmap.ss") #f]
+       
+       ; default page is index.html (static)
+       [(string=? suffix "")
+        (make-static-resource "index.html" cd)]
+
+       ; files with .ss or .scm are dynamic
+       [(regexp-match re suffix)
+        (make-dynamic-resource suffix cd)]
+
+       ; otherwise static
+       [else (make-static-resource suffix cd)])))
+
+
 Launchers
 =========
 

@@ -6,6 +6,7 @@
 	    '(begin
 	       (require-library "refer.ss")
 	       (require-library "coreflats.ss")
+	       (require-library "turtles.ss")
 	       (require-library "sig.ss" "mred")
 	       (require-library "errors.ss" "userspce")
 	       (require-library "graphics.ss" "graphics")

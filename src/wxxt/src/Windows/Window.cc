@@ -1658,7 +1658,41 @@ void wxWindow::WindowEventHandler(Widget w,
 	grabbing_panel = NULL;
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
-      {
+      if ((xev->xbutton.button == Button4)
+	  || (xev->xbutton.button == Button5)) {
+	/* Button4 and Button5 seem to be mapped to wheel up and down, now: */
+	if (Press) {
+	  wxKeyEvent *wxevent;
+
+	  wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+
+	  wxevent->eventHandle	= NULL;
+	  wxevent->keyCode	= ((xev->xbutton.button == Button5) 
+				   ? WXK_WHEEL_DOWN 
+				   : WXK_WHEEL_UP);
+	  wxevent->x		= xev->xbutton.x;
+	  wxevent->y		= xev->xbutton.y;
+	  wxevent->altDown	= FALSE;
+	  wxevent->controlDown	= xev->xbutton.state & ControlMask;
+	  wxevent->metaDown	= xev->xbutton.state & Mod1Mask;
+	  wxevent->shiftDown	= xev->xbutton.state & ShiftMask;
+	  wxevent->timeStamp    = xev->xbutton.time;
+
+	  *continue_to_dispatch_return = FALSE;
+	  if (!win->CallPreOnChar(win, wxevent)) {
+	    if (subWin && (win->__type == wxTYPE_CHOICE))
+	      subWin = 0;
+	    
+	    if (subWin)
+	      *continue_to_dispatch_return = TRUE;
+	    else {
+	      /* Double-check that pre-on-char didn't disable: */
+	      if (!win->IsGray())
+		win->OnChar(wxevent);
+	    }
+	  }	  
+	}
+      } else {
         wxMouseEvent *wxevent;
 
 	wxevent = new wxMouseEvent;
@@ -1744,8 +1778,8 @@ void wxWindow::WindowEventHandler(Widget w,
 	  }
 	}
 	wxevent->eventHandle = NULL; /* MATTHEW: [5] */
-        }
-	break;
+      }
+      break;
     case EnterNotify:
       Enter = TRUE;
     case LeaveNotify: 

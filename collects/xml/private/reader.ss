@@ -1,6 +1,7 @@
 (module reader mzscheme
   (require (lib "unitsig.ss")
-           (lib "list.ss"))
+           (lib "list.ss")
+           (lib "etc.ss"))
   
   (require "sig.ss")
   
@@ -23,30 +24,36 @@
       
       ;; read-xml : [Input-port] -> Document
       (define read-xml
-        (case-lambda
-          [(in) (read-from-port in)]
-          [() (read-from-port (current-input-port))]))
+        (opt-lambda ([in (current-input-port)])
+          (let*-values ([(in pos) (positionify in)]
+                        [(misc0 start) (read-misc in pos)])
+            (make-document (make-prolog misc0 #f)
+                           (read-xml-element-helper pos in start)
+                           (let ([loc-before (pos)])
+                             (let-values ([(misc1 end-of-file) (read-misc in pos)])
+                               (unless (eof-object? end-of-file)
+                                 (let ([loc-after (pos)])
+                                   (parse-error (list (list (location-offset loc-before)
+                                                            (location-offset loc-after)))
+                                                "extra stuff at end of document ~a"
+                                                end-of-file)))
+                               misc1))))))
       
-      ;; read-from-port : Input-port -> Document
-      (define (read-from-port in)
-        (let*-values ([(in pos) (positionify in)]
-                      [(misc0 start) (read-misc in pos)])
-          (make-document (make-prolog misc0 #f)
-                         (cond
-                           [(start-tag? start) (read-element start in pos)]
-                           [(element? start) start]
-                           [else (parse-error (list (list 1 (location-offset (pos))))
-                                              "expected root element - received ~a"
-                                              start)])
-                         (let ([loc-before (pos)])
-                           (let-values ([(misc1 end-of-file) (read-misc in pos)])
-                             (unless (eof-object? end-of-file)
-                               (let ([loc-after (pos)])
-                                 (parse-error (list (list (location-offset loc-before)
-                                                          (location-offset loc-after)))
-                                              "extra stuff at end of document ~a"
-                                              end-of-file)))
-                             misc1)))))
+      ;; read-xml/element : [Input-port] -> Element
+      (define read-xml/element
+        (opt-lambda ([in (current-input-port)])
+          (let-values ([(in pos) (positionify in)])
+            (skip-space in)
+            (read-xml-element-helper pos in (lex in pos)))))
+      
+      ;; read-xml-element-helper : Nat Iport Token -> Element
+      (define (read-xml-element-helper pos in start)
+        (cond
+          [(start-tag? start) (read-element start in pos)]
+          [(element? start) start]
+          [else (parse-error (list (list 1 (location-offset (pos))))
+                             "expected root element - received ~a"
+                             start)]))
       
       ;; read-misc : Input-port (-> Location) -> (listof Misc) Token
       (define (read-misc in pos)
@@ -385,7 +392,7 @@
          (lambda ()
            (let-values ([(line column offset) (port-next-location in)])
              (make-location line column offset)))))
-
+      
       ;; locs : (listof (list number number))
       (define-struct (exn:xml exn) (locs))
       

@@ -24,6 +24,5 @@
       (T : xexpr^ (xexpr@ S U))
       (W : space^ (space@ S)))
      (export (open S) (open R) (var (R2 read-xml) syntax:read-xml)
+             (var (R2 read-xml/element) syntax:read-xml/element)
              (open U) (open T) (open W)))))
-
-

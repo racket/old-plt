@@ -41,11 +41,20 @@ Functions
        appear in the document content.  Such special values may only appear
        where XML content may.  See make-custom-input-port for information
        about creating ports that return non-character values.
+       
+> read-xml/element : [Input-port] -> Element
+       reads an XML element from the port.  The next non-whitespace character
+       read must start an XML element.  The input-port may contain other data
+       after the element.
 
 > syntax:read-xml : [Input-port] -> Syntax
        reads in an XML document and produces a syntax object version of
        an xexpression.
 
+> syntax:read-xml/element : [Input-port] -> Syntax
+       is just like read-xml/element except it produces a syntax version
+       of an xexpression
+       
 > write-xml : Document [Output-port] -> Void
        writes a document to the given or current output port, currently
        ignoring everything except the document's root element.

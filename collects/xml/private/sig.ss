@@ -22,6 +22,7 @@
   (define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand html-empty-tags))
   (define-signature reader^ 
     (read-xml
+     read-xml/element
      read-comments
      collapse-whitespace
      (struct exn:xml (locs))))

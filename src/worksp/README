@@ -1,12 +1,14 @@
 This directory contains 
 
- - makefiles and project files for building MzScheme and MrEd 
-    with Microsoft Visual C++ (MSVC) version 6, and
- - solution files and project files for building MzScheme and 
-    MrEd with Microsoft Visual Studio .NET (VS.NET).
+ - makefiles and project files for building MzScheme and MrEd
+    with Microsoft Visual C++ (MSVC) version 6,
+ - solution files and project files for building MzScheme and
+    MrEd with Microsoft Visual Studio .NET (VS.NET),
+ - mzconfig.h which is a manual version of information that is
+    gathered automatically when using the "configure" script.
 
-If you have downloaded MzCOM, the directory also contains 
-MSVC and VS.NET files for MzCOM. 
+If you have downloaded MzCOM, the directory also contains
+MSVC and VS.NET files for MzCOM.
 
 MzScheme (but not MzCOM or MrEd) also compiles with Cygwin gcc (a
 free compiler from GNU and Cygnus Solutions); to compile with gcc,

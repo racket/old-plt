@@ -2186,8 +2186,7 @@
   ; enclosing-lambda-label is the label for the enclosing lambda, if any. We
   ; need it to update its list of free variables if we find any. This means
   ; we have to create the label for a lambda before analyzing its body...
-  ; letrec-trace is to detect things like (letrec ([x (+ 1 x)]) x)
-  (define (create-label-from-term term gamma enclosing-lambda-label letrec-trace)
+  (define (create-label-from-term term gamma enclosing-lambda-label)
     (kern:kernel-syntax-case
      term #f
      ; lambda and case-lambda are currently both core forms. This might change (dixit Matthew)
@@ -2196,7 +2195,7 @@
                                term
                                `(case-lambda . (,(syntax clause)))
                                term term)
-                              gamma enclosing-lambda-label letrec-trace)]
+                              gamma enclosing-lambda-label)]
      [(case-lambda . ((args exps ...) ...))
       (set! ast-nodes (add1 ast-nodes))
       (let* (; scheme lists of syntax object lists of syntax objects
@@ -2245,7 +2244,7 @@
                                (cons args-labels argss-labels)
                                (cons (list:foldl
                                       (lambda (exp _)
-                                        (create-label-from-term exp gamma-extended label '()))
+                                        (create-label-from-term exp gamma-extended label))
                                       cst:dummy
                                       exps)
                                      exps-labels)))]
@@ -2276,7 +2275,7 @@
                                (cons args-labels argss-labels)
                                (cons (list:foldl
                                       (lambda (exp _)
-                                        (create-label-from-term exp gamma-extended label '()))
+                                        (create-label-from-term exp gamma-extended label))
                                       cst:dummy
                                       exps)
                                      exps-labels)))]
@@ -2290,7 +2289,7 @@
                                (cons rest-arg-label-list argss-labels)
                                (cons (list:foldl
                                       (lambda (exp _)
-                                        (create-label-from-term exp gamma-extended label '()))
+                                        (create-label-from-term exp gamma-extended label))
                                       cst:dummy
                                       exps)
                                      exps-labels)))]
@@ -2311,11 +2310,11 @@
       (set! ast-nodes (add1 ast-nodes))
       (let* ([app-label (create-simple-label term)]
              [op-term (syntax op)]
-             [op-label (create-label-from-term op-term gamma enclosing-lambda-label letrec-trace)]
+             [op-label (create-label-from-term op-term gamma enclosing-lambda-label)]
              [stx-actual-args (syntax (actual-args ...))]
              [actual-args-labels
               (map (lambda (actual-arg)
-                     (create-label-from-term actual-arg gamma enclosing-lambda-label letrec-trace))
+                     (create-label-from-term actual-arg gamma enclosing-lambda-label))
                    (syntax-e stx-actual-args))]
              [actual-args-length (length actual-args-labels)]
              [edge (create-case-lambda-edge
@@ -2381,7 +2380,7 @@
       (let* (; scheme list of syntax objects
              [vars (syntax-e (syntax vars))]
              [vars-length (length vars)]
-             [exp-label (create-label-from-term (syntax exp) gamma enclosing-lambda-label letrec-trace)]
+             [exp-label (create-label-from-term (syntax exp) gamma enclosing-lambda-label)]
              [vars-labels (map create-simple-label vars)]
              [define-label (make-label-cst
                             #f #f #f
@@ -2496,7 +2495,7 @@
                         [vars-length (length vars)]
                         [vars-labels (map create-simple-label vars)]
                         ; analyse exp of clause in gamma, not gamma-extended...
-                        [exp-label (create-label-from-term exp gamma enclosing-lambda-label letrec-trace)])
+                        [exp-label (create-label-from-term exp gamma enclosing-lambda-label)])
                    ; We must be able to take care of all the following different cases:
                    ; (let-values ([(x) a] ...) ...)
                    ; (let-values ([(x) (values a)] ...) ...)
@@ -2601,7 +2600,7 @@
              [last-body-exp-label
               (list:foldl
                (lambda (exp _)
-                 (create-label-from-term exp gamma-extended enclosing-lambda-label letrec-trace))
+                 (create-label-from-term exp gamma-extended enclosing-lambda-label))
                cst:dummy
                (syntax-e (syntax (body-exps ...))))])
         (add-edge-and-propagate-set-through-edge
@@ -2610,9 +2609,23 @@
         let-values-label)]
      [(letrec-values ((vars exp) ...) body-exps ...)
       (set! ast-nodes (add1 ast-nodes))
+      ; we simulate letrec by doing a let followed by a set!, except that we have to do that
+      ; clause after clause.
       (let* ([varss-stx (map syntax-e (syntax-e (syntax (vars ...))))]
-             [varss-labelss (map (lambda (single-clause-vars)
-                                   (map create-simple-label single-clause-vars))
+             [varss-labelss (map (lambda (single-clause-vars-stx)
+                                   (map (lambda (var-stx)
+                                          (let ([undefined-label (make-label-cst #f #f #f
+                                                                                 var-stx
+                                                                                 (make-hash-table)
+                                                                                 (make-hash-table)
+                                                                                 cst:undefined)]
+                                                [binding-label (create-simple-label var-stx)])
+                                            (initialize-label-set-for-value-source undefined-label)
+                                            (add-edge-and-propagate-set-through-edge
+                                             undefined-label
+                                             (create-simple-edge binding-label))
+                                            binding-label))
+                                        single-clause-vars-stx))
                                  varss-stx)]
              [gamma-extended (list:foldl
                               (lambda (vars-stx vars-labels current-gamma)
@@ -2620,103 +2633,111 @@
                               gamma
                               varss-stx
                               varss-labelss)]
-             [new-letrec-trace (list:foldl append letrec-trace varss-labelss)]
-             [exps-labels (map (lambda (exp)
-                                 (create-label-from-term exp gamma-extended enclosing-lambda-label
-                                                         new-letrec-trace))
-                               (syntax-e (syntax (exp ...))))]
+             [_
+              ; process the clauses expressions, creating new labels for the vars and set!-ing
+              ; gamma-extended as we go along, since the current labels for var contain the
+              ; undefined value. We need to do that before analyzing the body.
+              (let loop ([varss-stx varss-stx]
+                         [exps (syntax-e (syntax (exp ...)))])
+                (unless (null? exps)
+                  ; process current clause
+                  (let* ([exp-label (create-label-from-term (car exps) gamma-extended enclosing-lambda-label)]
+                         [vars-stx (car varss-stx)]
+                         [vars-length (length vars-stx)])
+                    (if (= vars-length 1)
+                        ; we have a clause like [(x) (values (values (values a)))] so we
+                        ; can directly start the recursion.
+                        (let* ([var-stx (car vars-stx)]
+                               [var-label (create-simple-label var-stx)]
+                               [var-name (syntax-e var-stx)])
+                          (add-edge-and-propagate-set-through-edge
+                           exp-label
+                           (extend-edge-for-values (create-simple-edge var-label)))
+                          (search-and-replace gamma-extended var-name var-label))
+                        ; we have a clause like [(x y) (values (values (values a)) (values (values b)))]
+                        ; so we first have to manually unpack the top-most "values", then start a
+                        ; recursion for each of the defined variables. So in effect we end up doing
+                        ; something equivalent to analysing the clauses
+                        ; [(x) (values (values a))]
+                        ; [(y) (values (values b))]
+                        ; in parallel.
+                        (let ([distributive-unpacking-edge
+                               (cons
+                                (lambda (out-label inflowing-label tunnel-label)
+                                  ; inflowing-label (the label corresponding to the top "values") doesn't
+                                  ; flow anywhere, it's just taken apart and its elements are connected to
+                                  ; the different variables. I.e. it's a sink for multiple values. So we
+                                  ; have no need for out-label here.
+                                  (if (label-values? inflowing-label)
+                                      (let ([label-list (hash-table-map (label-set (label-values-label
+                                                                                    inflowing-label))
+                                                                        (lambda (label arrows)
+                                                                          label))])
+                                        (if (= (length label-list) 1)
+                                            (let ([values-label (car label-list)])
+                                              ; we do not expect an infinite list here
+                                              (if (= (label-list-length values-label) vars-length)
+                                                  ; we have something like
+                                                  ; [(x y) (... (values a b) ...)], so we add a
+                                                  ; new direct edge from a to x and b to y. Of course these new
+                                                  ; edges have to be themselves recursive unpacking edges, since
+                                                  ; some (values c) could later flow into either a or b.
+                                                  (label-ormap-strict
+                                                   (lambda (new-origin-label var-stx)
+                                                     (let ([var-label (create-simple-label var-stx)])
+                                                       (add-edge-and-propagate-set-through-edge
+                                                        new-origin-label
+                                                        (extend-edge-for-values (create-simple-edge var-label)))
+                                                       (search-and-replace gamma-extended (syntax-e var-stx) var-label)))
+                                                   values-label vars-stx)
+                                                  ; [(x y) (... (values a b c) ...)]
+                                                  (begin
+                                                    (set! *errors*
+                                                          (cons
+                                                           (list (list (label-term inflowing-label))
+                                                                 'red
+                                                                 (format "letrec-values: context expected ~a value, received ~a values"
+                                                                         vars-length (label-list-length values-label)))
+                                                           *errors*))
+                                                    #f)))
+                                            (error 'letrec-values "values didn't contain list: ~a"
+                                                   (map (lambda (label)
+                                                          (pp-type (get-type label) 'letrec-values))
+                                                        label-list))))
+                                      ; [(x y) (... 1 ...))]
+                                      (begin
+                                        (set! *errors*
+                                              (cons
+                                               (list
+                                                (list term)
+                                                'red
+                                                (format "letrec-values: context expected ~a values, received 1 non-multiple-values value"
+                                                        vars-length))
+                                               *errors*))
+                                        #f)))
+                                ; multiple values sink => unique, fake destination
+                                (gensym))])
+                          (add-edge-and-propagate-set-through-edge
+                           exp-label
+                           distributive-unpacking-edge))))
+                  ; process remaining clauses
+                  (loop (cdr varss-stx) (cdr exps))))]
              [last-body-exp-label
               (list:foldl
                (lambda (exp _)
-                 (create-label-from-term exp gamma-extended enclosing-lambda-label letrec-trace))
+                 (create-label-from-term exp gamma-extended enclosing-lambda-label))
                cst:dummy
                (syntax-e (syntax (body-exps ...))))]
              [letrec-values-label (create-simple-label term)])
-        (for-each
-         (lambda (vars-labels exp-label)
-           (let ([vars-length (length vars-labels)])
-             (if (= vars-length 1)
-                 ; we have a clause like [(x) (values (values (values a)))] so we
-                 ; can directly start the recursion.
-                 (let ([var-label (car vars-labels)])
-                   (add-edge-and-propagate-set-through-edge
-                    exp-label
-                    (extend-edge-for-values (create-simple-edge var-label))))
-                 ; we have a clause like [(x y) (values (values (values a)) (values (values b)))]
-                 ; so we first have to manually unpack the top-most "values", then start a
-                 ; recursion for each of the defined variables. So in effect we end up doing
-                 ; something equivalent to analysing the clauses
-                 ; [(x) (values (values a))]
-                 ; [(y) (values (values b))]
-                 ; in parallel.
-                 (let ([distributive-unpacking-edge
-                        (cons
-                         (lambda (out-label inflowing-label tunnel-label)
-                           ; inflowing-label (the label corresponding to the top "values") doesn't
-                           ; flow anywhere, it's just taken apart and its elements are connected to
-                           ; the different variables. I.e. it's a sink for multiple values. So we
-                           ; have no need for out-label here.
-                           (if (label-values? inflowing-label)
-                               (let ([label-list (hash-table-map (label-set (label-values-label
-                                                                             inflowing-label))
-                                                                 (lambda (label arrows)
-                                                                   label))])
-                                 (if (= (length label-list) 1)
-                                     (let ([values-label (car label-list)])
-                                       ; we do not expect an infinite list here
-                                       (if (= (label-list-length values-label) vars-length)
-                                           ; we have something like
-                                           ; [(x y) (... (values a b) ...)], so we add a
-                                           ; new direct edge from a to x and b to y. Of course these new
-                                           ; edges have to be themselves recursive unpacking edges, since
-                                           ; some (values c) could later flow into either a or b.
-                                           (label-ormap-strict
-                                            (lambda (new-origin-label var-label)
-                                              (add-edge-and-propagate-set-through-edge
-                                               new-origin-label
-                                               (extend-edge-for-values (create-simple-edge var-label))))
-                                            values-label vars-labels)
-                                           ; [(x y) (... (values a b c) ...)]
-                                           (begin
-                                             (set! *errors*
-                                                   (cons
-                                                    (list (list (label-term inflowing-label))
-                                                          'red
-                                                          (format "letrec-values: context expected ~a value, received ~a values"
-                                                                  vars-length (label-list-length values-label)))
-                                                    *errors*))
-                                             #f)))
-                                     (error 'letrec-values "values didn't contain list: ~a"
-                                            (map (lambda (label)
-                                                   (pp-type (get-type label) 'letrec-values))
-                                                 label-list))))
-                               ; [(x y) (... 1 ...))]
-                               (begin
-                                 (set! *errors*
-                                       (cons
-                                        (list
-                                         (list term)
-                                         'red
-                                         (format "letrec-values: context expected ~a values, received 1 non-multiple-values value"
-                                                 vars-length))
-                                        *errors*))
-                                 #f)))
-                         ; multiple values sink => unique, fake destination
-                         (gensym))])
-                   (add-edge-and-propagate-set-through-edge
-                    exp-label
-                    distributive-unpacking-edge)))))
-         varss-labelss
-         exps-labels)
         (add-edge-and-propagate-set-through-edge
          last-body-exp-label
          (create-simple-edge letrec-values-label))
         letrec-values-label)]
      [(if test then else)
       (set! ast-nodes (add1 ast-nodes))
-      (let* ([test-label (create-label-from-term (syntax test) gamma enclosing-lambda-label letrec-trace)]
-             [then-label (create-label-from-term (syntax then) gamma enclosing-lambda-label letrec-trace)]
-             [else-label (create-label-from-term (syntax else) gamma enclosing-lambda-label letrec-trace)]
+      (let* ([test-label (create-label-from-term (syntax test) gamma enclosing-lambda-label)]
+             [then-label (create-label-from-term (syntax then) gamma enclosing-lambda-label)]
+             [else-label (create-label-from-term (syntax else) gamma enclosing-lambda-label)]
              ; because of the (if test then) case below, else-label might be associated with
              ; the same position as the whole term, so we have to create the if-label after
              ; the else-label, so that the wrong label/position association created by the
@@ -2734,13 +2755,13 @@
                                term
                                (list 'if (syntax test) (syntax then) '(#%app (#%top . void)))
                                term term)
-                              gamma enclosing-lambda-label letrec-trace)]
+                              gamma enclosing-lambda-label)]
      [(begin exp exps ...)
       (set! ast-nodes (add1 ast-nodes))
       (let ([begin-label (create-simple-label term)]
             [last-body-exp-label (list:foldl
                                   (lambda (exp _)
-                                    (create-label-from-term exp gamma enclosing-lambda-label letrec-trace))
+                                    (create-label-from-term exp gamma enclosing-lambda-label))
                                   cst:dummy
                                   (cons (syntax exp) (syntax-e (syntax (exps ...)))))])
         (add-edge-and-propagate-set-through-edge
@@ -2751,9 +2772,9 @@
       (set! ast-nodes (add1 ast-nodes))
       (let ([begin0-label (create-simple-label term)]
             [first-body-exp-label
-             (create-label-from-term (syntax exp) gamma enclosing-lambda-label letrec-trace)])
+             (create-label-from-term (syntax exp) gamma enclosing-lambda-label)])
         (for-each (lambda (exp)
-                    (create-label-from-term exp gamma enclosing-lambda-label letrec-trace))
+                    (create-label-from-term exp gamma enclosing-lambda-label))
                   (syntax-e (syntax (exps ...))))
         (add-edge-and-propagate-set-through-edge
          first-body-exp-label
@@ -2790,7 +2811,7 @@
              [var-label (create-simple-label var-stx)]
              [var-edge (create-simple-edge var-label)]
              [exp-label
-              (create-label-from-term (syntax exp) gamma enclosing-lambda-label letrec-trace)]
+              (create-label-from-term (syntax exp) gamma enclosing-lambda-label)]
              [set!-label (create-simple-label term)]
              [set!-edge (create-simple-edge set!-label)]
              [void-label (make-label-cst #f #f #f
@@ -2920,29 +2941,25 @@
             ; lexical variable
             (let ([bound-label (create-simple-label term)])
               (set! ast-nodes (add1 ast-nodes))
-              (if (memq binding-label letrec-trace)
-                  (set! *errors*
-                        (cons (list (list term)
-                                    'red
-                                    (format "bound but undefined variable: ~a" (syntax-object->datum var-stx)))
-                              *errors*))
-                  (if enclosing-lambda-label
-                      ; we have to delay the binding, because there might be a set! in between.
-                      ; Note that this means we have to redo a lookup later to get the right binder,
-                      ; which will have changed if a set! has occured.
-                      (let* ([enclosing-lambda-top-free-varss&app-thunks
-                              (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
-                             [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
-                        (set-car! enclosing-lambda-top-free-varss&app-thunks
-                                  (lambda ()
-                                    (current-thunk)
-                                    (let ([binding-label (lookup-env var-stx gamma)])
-                                      (add-edge-and-propagate-set-through-edge
-                                       binding-label
-                                       (extend-edge-for-values (create-simple-edge bound-label)))))))
-                      (add-edge-and-propagate-set-through-edge
-                       binding-label
-                       (extend-edge-for-values (create-simple-edge bound-label)))))
+              (if enclosing-lambda-label
+                  ; we have to delay the binding, because there might be a set! in between the
+                  ; analysis of the enclosing lambda and the time the lambda is applied.
+                  ; Note that this means we have to redo a lookup later to get the right binder,
+                  ; which will have changed if a set! has occured (explicitely, or because
+                  ; the lambda is in a letrec clause (see letrec))
+                  (let* ([enclosing-lambda-top-free-varss&app-thunks
+                          (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
+                         [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
+                    (set-car! enclosing-lambda-top-free-varss&app-thunks
+                              (lambda ()
+                                (current-thunk)
+                                (let ([binding-label (lookup-env var-stx gamma)])
+                                  (add-edge-and-propagate-set-through-edge
+                                   binding-label
+                                   (extend-edge-for-values (create-simple-edge bound-label)))))))
+                  (add-edge-and-propagate-set-through-edge
+                   binding-label
+                   (extend-edge-for-values (create-simple-edge bound-label))))
               bound-label)
             ; probably a top level var (like a primitive name) but without #%top (if it comes
             ; from a macro, or some strange stuff like that.
@@ -2950,7 +2967,7 @@
              (datum->syntax-object var-stx
                                    (cons '#%top var-stx)
                                    var-stx var-stx)
-             gamma enclosing-lambda-label letrec-trace)))]
+             gamma enclosing-lambda-label)))]
      ))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TYPES
@@ -2992,8 +3009,9 @@
   ; top should appear first (see the subtype function below)
   ; note also that exact? and inexact? can only be used for numbers, so we have to do
   ; tests like complex? first.
-  (define *basic-types* `((top (void null boolean char symbol string eof-object env number port)
+  (define *basic-types* `((top (undefined void null boolean char symbol string eof-object env number port)
                                ,(lambda (_) #t))
+                          (undefined () ,(lambda (v) (eq? v cst:undefined)))
                           (void () ,void?)
                           (null () ,null?)
                           (boolean () ,boolean?)
@@ -3394,6 +3412,8 @@
               (make-type-cst (void))]
              [(eq? sexp 'bottom)
               (make-type-empty)]
+             [(eq? sexp 'undefined)
+              (make-type-cst cst:undefined)]
              [else (make-type-cst sexp)])])))
   
   ; (listof alpha) number sexp symbol string -> (listof alpha)
@@ -4748,18 +4768,6 @@
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; DRIVER
   
-  ;  ; port value -> void
-  ;  (define (sba-driver port source)
-  ;    (let ([start (current-milliseconds)])
-  ;      (reset-all)
-  ;      (read-and-analyze port source)
-  ;      (check-primitive-types)
-  ;      (printf "time: ~a ms~n" (- (current-milliseconds) start)))
-  ;    
-  ;    ; XXX perf analysis
-  ;    ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
-  ;    )
-  
   ; -> void
   (define (reset-all)
     (reset-derivation)
@@ -4768,33 +4776,45 @@
     (reset-perf)
     )
   
-  ;  ; port value -> void
-  ;  ; read and analyze, one syntax object at a time
-  ;  (define (read-and-analyze port source)
-  ;    (let ([stx-obj (read-syntax source port)])
-  ;      ;(unless (eof-object? stx-obj)
-  ;      ;  (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
-  ;      ;         (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
-  ;      ;         (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f '())))
-  ;      ;  (read-and-analyze port source))))
-  ;      (if (eof-object? stx-obj)
-  ;        '()
-  ;        (cons (create-label-from-term (expand stx-obj) '() #f '())
-  ;              (read-and-analyze port source)))))
-  ;  
-  ;  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
-  ;  
-  ;  ; (: test-i (nothing -> void))
-  ;  ; parse expression interactively
-  ;  (define (test-i)
-  ;    (sba-driver (current-input-port) 'interactive))
-  ;  
-  ;  ; (: test-f (string -> (listof Ast)))
-  ;  (define (test-f filename)
-  ;    (let ([port (open-input-file filename)])
-  ;      (sba-driver port filename)
-  ;      (close-input-port port)))
-  ;  
+    ; port value -> void
+    (define (sba-driver port source)
+      (let ([start (current-milliseconds)])
+        (reset-all)
+        (read-and-analyze port source)
+        (check-primitive-types)
+        (printf "time: ~a ms~n" (- (current-milliseconds) start)))
+      
+      ; XXX perf analysis
+      ;(printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" ast-nodes graph-nodes graph-edges)
+      )
+  
+    ; port value -> void
+    ; read and analyze, one syntax object at a time
+    (define (read-and-analyze port source)
+      (let ([stx-obj (read-syntax source port)])
+        ;(unless (eof-object? stx-obj)
+        ;  (begin (printf "sba-driver in: ~a~n" (syntax-object->datum stx-obj))
+        ;         (printf "sba-driver analyzed: ~a~n~n" (syntax-object->datum (expand stx-obj)))
+        ;         (printf "sba-driver out: ~a~n~n" (create-label-from-term (expand stx-obj) '() #f)))
+        ;  (read-and-analyze port source))))
+        (if (eof-object? stx-obj)
+          '()
+          (cons (create-label-from-term (expand stx-obj) '() #f)
+                (read-and-analyze port source)))))
+    
+    ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PERFORMANCE TEST
+    
+    ; (: test-i (nothing -> void))
+    ; parse expression interactively
+    (define (test-i)
+      (sba-driver (current-input-port) 'interactive))
+    
+    ; (: test-f (string -> (listof Ast)))
+    (define (test-f filename)
+      (let ([port (open-input-file filename)])
+        (sba-driver port filename)
+        (close-input-port port)))
+    
   ;  (let* ([path (build-path (collection-path "mrflow") "tests")]
   ;         [files (list:filter (lambda (file)
   ;                               (and (> (string-length file) 3)
@@ -4807,7 +4827,7 @@
   ;                              string<=?)
   ;                             )]
   ;         )
-  ;    (initialize-primitive-type-schemes)
+  ;    (initialize-primitive-type-schemes XXX)
   ;    (for-each (lambda (file)
   ;                (printf "~a: " file)
   ;                (test-f (build-path path file))

@@ -40,10 +40,10 @@
  
  ; runtime support
  
- ;(struct a60:array (vec dimens))
- ;(struct a60:switch (choices))
+ ;(a60:array (struct a60:array (dependant type)))
+ ;(a60:switch (struct a60:switch (choices))
  
- (undefined void)
+ (undefined undefined)
  
  (check-boolean (forall ([a top]) (a -> a)))
  (goto (forall ([a top]) ((-> a) -> a)))

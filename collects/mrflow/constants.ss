@@ -2,6 +2,7 @@
   (provide
    dummy
    dummy-thunk
+   undefined
    fail-empty
    fail-false
    test-true
@@ -13,6 +14,7 @@
   
   (define dummy (void))
   (define dummy-thunk (lambda () dummy))
+  (define undefined (letrec ([x x]) x))
   (define fail-empty (lambda () '()))
   (define fail-false (lambda () #f))
   (define test-true (lambda (x) #t))

@@ -461,7 +461,7 @@
                                                (format "unknown exception: ~a" exn))]))
                            (unless (eof-object? syntax-object/exception)
                              ;(printf "~a~n~n" (syntax-object->datum syntax-object/exception))
-                             (mrflow:create-label-from-term syntax-object/exception '() #f '())))
+                             (mrflow:create-label-from-term syntax-object/exception '() #f)))
                          (loop)))
                  (mrflow:check-primitive-types)
                  ;(printf "time: ~a ms~n" (- (current-milliseconds) start))

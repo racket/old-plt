@@ -1,16 +1,3 @@
-(require-library "macro.ss")
-
-(define-signature mred:url^
-  ((struct url (scheme host port path params query fragment))
-    get-pure-port			; url [x list (str)] -> in-port
-    get-impure-port			; url [x list (str)] -> in-port
-    display-pure-port			; in-port -> ()
-    purify-port				; in-port -> list (mime-header)
-    string->url				; str -> url
-    call/input-url			; url x (url -> in-port) x
-					; (in-port -> ())
-					; [x list (str)] -> ()
-    combine-url/relative))		; url x str -> url
 
 ; To do:
 ;   Handle HTTP/file errors.
@@ -71,6 +58,23 @@
     ; value : str (doesn't have the eol delimiter)
     (define-struct mime-header (name value))
 
+    (define url->string 
+      (lambda (x)
+	(match x
+	  [($ url scheme host port path params query fragment)
+	   (string-append (cond
+			    [(and scheme (string=? scheme "file"))
+			     "file:"]
+			    [scheme (string-append scheme "://")]
+			    [else ""])
+			  (or host "")
+			  (if port
+			      (string-append ":" port)
+			      "")
+			  (or path "")
+			  (or fragment ""))])))
+
+
     ; url->default-port : url -> num
     (define url->default-port
       (lambda (url)
@@ -107,11 +111,12 @@
       (lambda (url)
 	(let ((host (url-host url)))
 	  (if (or (not host)
-		(string=? host "localhost"))
-	    (open-input-file
-	      (unixpath->path (url-path url)))
-	    (error 'file://get-pure-port
-	      "Cannot get file from remote hosts")))))
+		  (string=? host "")
+		  (string=? host "localhost"))
+	      (open-input-file
+	       (unixpath->path (url-path url)))
+	      (error 'file://get-pure-port
+		     "Cannot get file from remote hosts")))))
 
     ; get-impure-port : url [x list (str)] -> in-port
     (define get-impure-port

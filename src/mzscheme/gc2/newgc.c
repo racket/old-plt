@@ -429,6 +429,9 @@ void GC_free(void *p) {}
 
 inline static void reset_nursery(void)
 {
+  ((struct mpage *)gen0_alloc_region)->size = gen0_size;
+  ((struct mpage *)gen0_alloc_region)->big_page = 1;
+  pagemap_remove((struct mpage *)gen0_alloc_region);
   gen0_bigpages_size = 0;
   free_pages(gen0_alloc_region, gen0_size); flush_freed_pages();
   gen0_size = (GEN0_GROW_FACTOR * memory_in_use) + GEN0_GROW_ADDITION;
@@ -1493,7 +1496,7 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
       break;
     case PAGE_ATOMIC: break;
     case PAGE_ARRAY: { 
-      void **temp = ptr, **end = temp + info->size;
+      void **temp = ptr, **end = temp + (info->size - 1);
       
       while(temp < end) gcMARK(*(temp++));
       break;

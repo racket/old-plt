@@ -30,7 +30,7 @@
 	  user-min-width
 	  user-min-height
 	  get-client-size
-	  set-item-cursor
+	  ;set-item-cursor
 	  get-parent)
 
 	(rename
@@ -86,7 +86,7 @@
 		 (lambda (l)
 		   (append l (list new-child))))
 	       (when (eq? wx:window-system 'motif)
-		 (set-item-cursor 0 0))))]
+		 (send this set-item-cursor 0 0))))]
 	  
 	  ; change-children: changes the list of children.
 	  ; input: f is a function which takes the current list of children

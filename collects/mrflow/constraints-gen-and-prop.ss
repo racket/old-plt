@@ -8,10 +8,12 @@
            (prefix list: (lib "list.ss"))
            (prefix etc: (lib "etc.ss"))
            (prefix string: (lib "string.ss"))
+           (lib "match.ss")
            
            "labels.ss"
            "types.ss"
            "set-hash.ss"
+           "dbg.ss"
            (prefix hc: "hashcons.ss")
            (prefix cst: "constants.ss")
            ;(prefix types: "types.ss")
@@ -78,7 +80,6 @@
   ;               (set! counter (add1 counter))
   ;               stx-out))]))))
   
-  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
   (define-struct arrows (in out tunnel) (make-inspector))
@@ -99,7 +100,7 @@
                             ; (hash-tableof (cons symbol type-scheme))
                             primitive-types-table
                             ; hashcons-table
-                            hashcon-tbl
+                            hashcons-tbl
                             ))
   
   (set! make-sba-state
@@ -129,7 +130,7 @@
                         ;       "not a label list: ~a ~a ~a"
                         ;       (syntax-object->datum
                         ;        (label-term start-label))
-                        ;       (pp-type (get-type-from-label sba-state start-label) 'label-list-length)
+                        ;       (pp-type sba-state (get-type-from-label sba-state start-label) 'label-list-length)
                         ;       label))))])
                         ; the assumption is that we'll never call this function
                         ; for something not a list. So if what we have doesn't
@@ -298,23 +299,23 @@
                              [(eq? free-var-name-in 'string-set!)
                               (create-3args-mutator sba-state
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-cst 'string)
-                                                               'lookup-and-bind-top-level-vars1
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-cst 'string)
+                                                                    'lookup-and-bind-top-level-vars1
+                                                                    #f #f))
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-cst 'exact-integer)
-                                                               'lookup-and-bind-top-level-vars2
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-cst 'exact-integer)
+                                                                    'lookup-and-bind-top-level-vars2
+                                                                    #f #f))
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-cst 'char)
-                                                               'lookup-and-bind-top-level-vars3
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-cst 'char)
+                                                                    'lookup-and-bind-top-level-vars3
+                                                                    #f #f))
                                                     cst:id
                                                     (lambda (inflowing-label)
                                                       (let ([label (make-label-cst
@@ -332,17 +333,17 @@
                              [(eq? free-var-name-in 'string-fill!)
                               (create-2args-mutator sba-state
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-cst 'string)
-                                                               'lookup-and-bind-top-level-vars4
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-cst 'string)
+                                                                    'lookup-and-bind-top-level-vars4
+                                                                    #f #f))
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-cst 'char)
-                                                               'lookup-and-bind-top-level-vars5
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-cst 'char)
+                                                                    'lookup-and-bind-top-level-vars5
+                                                                    #f #f))
                                                     cst:id
                                                     (lambda (inflowing-label)
                                                       (let ([label (make-label-cst
@@ -360,17 +361,17 @@
                              [(eq? free-var-name-in 'vector-set!)
                               (create-3args-mutator sba-state
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-vector (make-type-cst 'top))
-                                                               'lookup-and-bind-top-level-vars6
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-vector (make-type-cst 'top))
+                                                                    'lookup-and-bind-top-level-vars6
+                                                                    #f #f))
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-cst 'exact-integer)
-                                                               'lookup-and-bind-top-level-vars7
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-cst 'exact-integer)
+                                                                    'lookup-and-bind-top-level-vars7
+                                                                    #f #f))
                                                     cst:test-true
                                                     label-vector-element
                                                     cst:id
@@ -381,11 +382,11 @@
                              [(eq? free-var-name-in 'vector-fill!)
                               (create-2args-mutator sba-state
                                                     (lambda (inflowing-label)
-                                                      (subtype sba-state
-                                                               (get-type-from-label sba-state inflowing-label)
-                                                               (make-type-vector (make-type-cst 'top))
-                                                               'lookup-and-bind-top-level-vars8
-                                                               #f #f))
+                                                      (subtype-type sba-state
+                                                                    (get-type-from-label sba-state inflowing-label)
+                                                                    (make-type-vector (make-type-cst 'top))
+                                                                    'lookup-and-bind-top-level-vars8
+                                                                    #f #f))
                                                     cst:test-true
                                                     label-vector-element
                                                     cst:id
@@ -471,7 +472,7 @@
            ;               (or (= 1 (label-cst-value inflowing-label))
            ;                   (= 1 (label-cst-value inflowing-label)))))
            ;(printf "propagate ~a from ~a to ~a (type ~a)~n"
-           ;        (pp-type (get-type-from-label sba-state inflowing-label) 'create-simpled-edge1)
+           ;        (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-simpled-edge1)
            ;        (syntax-object->datum (label-term out-label))
            ;        (syntax-object->datum (label-term in-label))
            ;        (label-type-var in-label))
@@ -529,7 +530,7 @@
                      ;               (or (= 1 (label-cst-value inflowing-label))
                      ;                   (= 2 (label-cst-value inflowing-label)))))
                      ;  (printf "propagate ~a from ~a to ~a (type ~a)~n"
-                     ;          (pp-type (get-type-from-label sba-state inflowing-label) 'create-simple-edge2)
+                     ;          (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-simple-edge2)
                      ;          (syntax-object->datum (label-term out-label))
                      ;          (syntax-object->datum (label-term in-label))
                      ;          (label-type-var in-label))
@@ -613,7 +614,7 @@
                          #f)))
                  (error 'extend-edge-for-values "values didn't contain list: ~a"
                         (map (lambda (label)
-                               (pp-type (get-type-from-label sba-state label) 'extend-edge-for-values))
+                               (pp-type sba-state (get-type-from-label sba-state label) 'extend-edge-for-values))
                              label-list))
                  ))
            ; (define-values (x) a) or equivalent (e.g. the result of analysing something like
@@ -1656,7 +1657,7 @@
                                           inflowing-label
                                           'red
                                           (format "make-struct-field-accessor: expects type <accessor procedure that requires a field index> as 1st argument, given: ~a"
-                                                  (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label1)))
+                                                  (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label1)))
                      #f)))
              (gensym))]
            [second-arg-label (create-simple-prim-label term)]
@@ -1684,10 +1685,10 @@
                                 inflowing-label
                                 'red
                                 (format "make-struct-field-accessor: slot index for ~a not in [0, ~a]: ~a"
-                                        (pp-type (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-accessor-label2)
+                                        (pp-type sba-state (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-accessor-label2)
                                         (- (label-struct-type-total-fields-nbr struct-type-label)
                                            (label-struct-type-parent-fields-nbr struct-type-label))
-                                        (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label3)))
+                                        (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label3)))
                                #f)))
                        (begin
                          (set! struct-type-label #f)
@@ -1697,7 +1698,7 @@
                           inflowing-label
                           'red
                           (format "make-struct-field-accessor: expects type <non-negative exact integer> as 2nd argument, given: ~a"
-                                  (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label4)))
+                                  (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label4)))
                          #f))
                    #f))
              (gensym))]
@@ -1742,8 +1743,8 @@
                                          tunnel-label
                                          'red
                                          (format "accessor expects type ~a as 1st argument, given: ~a"
-                                                 (pp-type (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-accessor-label5)
-                                                 (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label6)))
+                                                 (pp-type sba-state (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-accessor-label5)
+                                                 (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label6)))
                                         #f)))
                                 (gensym))]
                               [accessor-case-lambda-label (make-label-case-lambda
@@ -1777,7 +1778,7 @@
                           inflowing-label
                           'red
                           (format "make-struct-field-accessor: expects type <symbol> as 3rd argument, given: ~a"
-                                  (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label7)))
+                                  (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label7)))
                          #f))
                    #f))
              (gensym))]
@@ -1840,7 +1841,7 @@
                       inflowing-label
                       'red
                       (format "make-struct-field-mutator: expects type <mutator procedure that requires a field index> as 1st argument, given: ~a"
-                              (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label1)))
+                              (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label1)))
                      #f)))
              (gensym))]
            [second-arg-label (create-simple-prim-label term)]
@@ -1868,10 +1869,10 @@
                                 inflowing-label
                                 'red
                                 (format "make-struct-field-mutator: slot index for ~a not in [0, ~a]: ~a"
-                                        (pp-type (get-type-from-label sba-state (struct-type-label)) 'create-make-struct-field-mutator-label2)
+                                        (pp-type sba-state (get-type-from-label sba-state (struct-type-label)) 'create-make-struct-field-mutator-label2)
                                         (- (label-struct-type-total-fields-nbr struct-type-label)
                                            (label-struct-type-parent-fields-nbr struct-type-label))
-                                        (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label3)))
+                                        (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label3)))
                                #f)))
                        (begin
                          (set! struct-type-label #f)
@@ -1881,7 +1882,7 @@
                           inflowing-label
                           'red
                           (format "make-struct-field-mutator: expects type <non-negative exact integer> as 2nd argument, given: ~a"
-                                  (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label4)))
+                                  (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label4)))
                          #f))
                    #f))
              (gensym))]
@@ -1910,7 +1911,7 @@
                                              inflowing-label)
                                             field-index))
                                 cst:id
-                                (pp-type (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-mutator-label5)
+                                (pp-type sba-state (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-mutator-label5)
                                 "internal error 5: all types must be a subtype of top"
                                 term)]
                               ; a mutator has only one clause
@@ -1947,7 +1948,7 @@
                           inflowing-label
                           'red
                           (format "make-struct-field-mutator: expects type <symbol> as 3rd argument, given: ~a"
-                                  (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label7)))
+                                  (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label7)))
                          #f))
                    #f))
              (gensym))]
@@ -2002,7 +2003,7 @@
                       'red
                       (format "mutator expects type ~a as 1st argument, given: ~a"
                               error-first-arg
-                              (pp-type (get-type-from-label sba-state inflowing-label) 'create-2args-mutator1)))
+                              (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-2args-mutator1)))
                      #f)))
              (gensym))]
            [mutator-second-arg-edge
@@ -2022,7 +2023,7 @@
                       'red
                       (format "mutator expects type ~a as 2nd argument, given: ~a"
                               error-second-arg
-                              (pp-type (get-type-from-label sba-state inflowing-label) 'create-2args-mutator2)))
+                              (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-2args-mutator2)))
                      #f)))
              (gensym))]
            [mutator-case-lambda-label (make-label-case-lambda
@@ -2079,7 +2080,7 @@
                       'red
                       (format "mutator expects type ~a as 1st argument, given: ~a"
                               error-first-arg
-                              (pp-type (get-type-from-label sba-state inflowing-label) 'create-3args-mutator1)))
+                              (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-3args-mutator1)))
                      #f)))
              (gensym))]
            [mutator-second-arg-edge
@@ -2097,7 +2098,7 @@
                       'red
                       (format "mutator expects type ~a as 2nd argument, given: ~a"
                               error-second-arg
-                              (pp-type (get-type-from-label sba-state inflowing-label) 'create-3args-mutator2)))
+                              (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-3args-mutator2)))
                      #f)))
              (gensym))]
            [mutator-third-arg-edge
@@ -2117,7 +2118,7 @@
                       'red
                       (format "mutator expects type ~a as 3rd argument, given: ~a"
                               error-third-arg
-                              (pp-type (get-type-from-label sba-state inflowing-label) 'create-3args-mutator3)))
+                              (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'create-3args-mutator3)))
                      #f)))
              (gensym))]
            [mutator-case-lambda-label (make-label-case-lambda
@@ -2473,7 +2474,7 @@
                                         #f)))
                                 (error 'define-values "values didn't contain list: ~a"
                                        (map (lambda (label)
-                                              (pp-type (get-type-from-label sba-state label) 'define-values))
+                                              (pp-type sba-state (get-type-from-label sba-state label) 'define-values))
                                             label-list))))
                           ; (define-values (x y) (... 1 ...))
                           (begin
@@ -2583,7 +2584,7 @@
                                                    #f)))
                                            (error 'let-values "values didn't contain list: ~a"
                                                   (map (lambda (label)
-                                                         (pp-type (get-type-from-label sba-state label)
+                                                         (pp-type sba-state (get-type-from-label sba-state label)
                                                                   'let-values))
                                                        label-list))))
                                      ; (let-values ([(x y) (... 1 ...)] ...) ...)
@@ -2711,7 +2712,7 @@
                                                     #f)))
                                             (error 'letrec-values "values didn't contain list: ~a"
                                                    (map (lambda (label)
-                                                          (pp-type (get-type-from-label sba-state label)
+                                                          (pp-type sba-state (get-type-from-label sba-state label)
                                                                    'letrec-values))
                                                         label-list))))
                                       ; [(x y) (... 1 ...))]
@@ -3733,9 +3734,9 @@
                                                      label
                                                      'red
                                                      (format "primitive expects argument of type <pair>; given ~a"
-                                                             (pp-type (get-type-from-label
-                                                                       sba-state
-                                                                       inflowing-label)
+                                                             (pp-type sba-state (get-type-from-label
+                                                                                 sba-state
+                                                                                 inflowing-label)
                                                                       'type-cons)))
                                 #f))))
                     ; cons sink
@@ -3782,8 +3783,8 @@
                                                      label
                                                      'red
                                                      (format "primitive expects argument of type <vector>; given ~a"
-                                                             (pp-type (get-type-from-label
-                                                                       sba-state inflowing-label)
+                                                             (pp-type sba-state (get-type-from-label
+                                                                                 sba-state inflowing-label)
                                                                       'type-vector)))
                                 #f))))
                     ; vector sink
@@ -3828,8 +3829,8 @@
                                                      label
                                                      'red
                                                      (format "primitive expects argument of type <promise>; given ~a"
-                                                             (pp-type (get-type-from-label
-                                                                       sba-state inflowing-label)
+                                                             (pp-type sba-state (get-type-from-label
+                                                                                 sba-state inflowing-label)
                                                                       'type-promise)))
                                 #f))))
                     ; promise sink
@@ -3960,12 +3961,12 @@
                                                  label
                                                  'red
                                                  (format "value ~a not a subtype of union ~a inside application of ~a"
-                                                         (pp-type (get-type-from-label
-                                                                   sba-state inflowing-label)
+                                                         (pp-type sba-state (get-type-from-label
+                                                                             sba-state inflowing-label)
                                                                   'type-union1)
                                                          ;(syntax-object->datum
                                                          ; (label-term inflowing-label))
-                                                         (pp-type type 'type-union2)
+                                                         (pp-type sba-state type 'type-union2)
                                                          (syntax-object->datum term)))
                             ; stop error up-propagation
                             #t)))
@@ -4029,8 +4030,13 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; POST ANALYSIS TYPE CHECKING FOR PRIMITIVES
   
   ; sba-state label type (hash-table-of type-flow-var (cons label type)) -> void
+  ; Note that we don't store the type but only the handle.
   (define (associate-label-with-type sba-state label type delta-flow)
-    (hash-table-put! (sba-state-label->types sba-state) label (cons type delta-flow)))
+    (hash-table-put! (sba-state-label->types sba-state)
+                     label
+                     (cons (hc:hashcons-type (sba-state-hashcons-tbl sba-state)
+                                             (subst-vals/flow-vars type delta-flow))
+                           delta-flow)))
   
   ; sba-state -> void
   ; post analysis checking of primitives inputs and outputs
@@ -4038,10 +4044,10 @@
     (hash-table-for-each
      (sba-state-label->types sba-state)
      (lambda (label expected-type&delta)
-       (let ([computed-type (get-type-from-label sba-state label)])
-         (subtype sba-state
-                  computed-type (car expected-type&delta)
-                  (cdr expected-type&delta) #t label)))))
+       (subtype sba-state
+                (get-type-from-label sba-state label)
+                (car expected-type&delta)
+                (cdr expected-type&delta) #t label))))
   
   ; (hashtableof symbol (cons (listof symbol) (top -> boolean)) symbol -> (listof symbol)
   ; computes the complete (closed) list of subtypes for type-entry
@@ -4062,251 +4068,215 @@
             (hash-table-put! table type-name new-type-entry)
             (car new-type-entry)))))
   
-  ; sba-state type type (listof (cons symbol type)) (listof (cons symbol type))
-  ; (hash-table-of type-flow-var (cons label type)) (listof (cons type type))
-  ; -> boolean
-  (define subt
+  (dbg-define/contract subt
+    (sba-state? hc:hashcons-table? hc:handle? hc:handle? any? set? ;(listof (cons/p handle? handle?))
+                . -> . boolean?)
     (let ([subtyping-table
            (let ([table (make-hash-table)])
              ; the entry for 'top should appear first. Everything will get
              ; put into the table as we process this one.
              (close-subtypes table (caar *basic-types*))
-             table)])
-      (lambda (sba-state t1 t2 t1-env t2-env delta-flow trace)
-        (or
-         ; basic cases
-         (or (and (type-cst? t2) (eq? (type-cst-type t2) 'top))
-             ;(and (type-cst? t1) (eq? (type-cst-type t1) 'bottom))
-             (type-empty? t1) ; bottom
-             (if (member (cons t1 t2) trace) #t #f))
-         ; constants
-         (and (type-cst? t1) (type-cst? t2)
-              (let* ([t1 (type-cst-type t1)]
-                     [t2 (type-cst-type t2)]
-                     [t2-entry (hash-table-get subtyping-table t2 cst:thunk-false)])
-                (if t2-entry
-                    ; t2 is a symbolic type (like number)
-                    (if (or (memq t1 (car t2-entry)) ; for symbolic t1: real <= number
-                            ((cdr t2-entry) t1))     ; for scheme t1: 3 <= number
-                        #t #f)
-                    ; t2 is an immediate type (like 5), and we already know t1 is not bottom
-                    ; so t1 and t2 have to be equal
-                    (eq? t1 t2))))
-         ;cons
-         (and (type-cons? t1) (type-cons? t2)
-              (subt sba-state (type-cons-car t1) (type-cons-car t2) t1-env t2-env delta-flow trace)
-              (subt sba-state (type-cons-cdr t1) (type-cons-cdr t2) t1-env t2-env delta-flow trace))
-         ; vector
-         (and (type-vector? t1) (type-vector? t2)
-              (subt sba-state (type-vector-element t1) (type-vector-element t2) t1-env t2-env delta-flow trace))
-         ; case-lambda
-         (and (type-case-lambda? t1) (type-case-lambda? t2)
-              (ormap (lambda (t1-rest-arg? t1-req-arg t1-args t1-exp)
-                       (if t1-rest-arg?
-                           (andmap (lambda (t2-rest-arg? t2-req-arg t2-args t2-exp)
+             table)]
+          [memo-table (make-hash-table 'equal)])
+      (lambda (sba-state hashcons-tbl t1-handle t2-handle delta-flow trace)
+        (let* ([t1 (hc:get-type hashcons-tbl t1-handle)]
+               [t2 (hc:get-type hashcons-tbl t2-handle)]
+               [subt (lambda (handle1 handle2)
+                       (set-set trace (cons t1-handle t2-handle))
+                       ;		       (subt sba-state hashcons-tbl handle1 handle2 delta-flow (cons (cons t1-handle t2-handle) trace)))
+                       (let ([v (subt sba-state hashcons-tbl handle1 handle2 delta-flow trace)])
+                         (set-remove trace (cons t1-handle t2-handle))
+                         v))]
+               [get-list-of-handle
+                (lambda (handle)
+                  (let* ([fake-type-var (make-type-var (gensym) #f #f)]
+                         [type (make-type-rec  (list fake-type-var)
+                                               (list (make-type-union (list (make-type-cst '())
+                                                                            (make-type-cons handle fake-type-var))))
+                                               fake-type-var)])
+                    (hc:hashcons-type hashcons-tbl type)))])
+          (if (hash-table-get memo-table (cons t1-handle t2-handle) cst:thunk-false)
+              (hash-table-get memo-table (cons t1-handle t2-handle) cst:thunk-false)
+              (let ([subtype-value
+                     (or
+                      ; basic cases
+                      (or (= t1-handle t2-handle)
+                          (and (type-cst? t2) (eq? (type-cst-type t2) 'top))
+                          ;(and (type-cst? t1) (eq? (type-cst-type t1) 'bottom))
+                          (type-empty? t1) ; bottom
+                          (set-in? trace (cons t1-handle t2-handle)))
+                      ; constants
+                      (and (type-cst? t1) (type-cst? t2)
+                           (let* ([t1 (type-cst-type t1)]
+                                  [t2 (type-cst-type t2)]
+                                  [t2-entry (hash-table-get subtyping-table t2 cst:thunk-false)])
+                             (if t2-entry
+                                 ; t2 is a symbolic type (like number)
+                                 (if (or (memq t1 (car t2-entry)) ; for symbolic t1: real <= number
+                                         ((cdr t2-entry) t1))     ; for scheme t1: 3 <= number
+                                     #t #f)
+                                 ; t2 is an immediate type (like 5), and we already know t1 is not bottom
+                                 ; so t1 and t2 have to be equal
+                                 (eq? t1 t2))))
+                      ; cons
+                      (and (type-cons? t1) (type-cons? t2)
+                           (subt (type-cons-car t1) (type-cons-car t2))
+                           (subt (type-cons-cdr t1) (type-cons-cdr t2)))
+                      ; vector
+                      (and (type-vector? t1) (type-vector? t2)
+                           (subt (type-vector-element t1) (type-vector-element t2)))
+                      ; case-lambda
+                      (and (type-case-lambda? t1) (type-case-lambda? t2)
+                           (ormap4-vector
+                            (lambda (t1-rest-arg? t1-req-arg t1-args t1-exp)
+                              (if t1-rest-arg?
+                                  (andmap4-vector
+                                   (lambda (t2-rest-arg? t2-req-arg t2-args t2-exp)
                                      (if t2-rest-arg?
                                          ; both t1 and t2 have rest args
                                          (or (and (< t1-req-arg t2-req-arg)
-                                                  (subt sba-state t1-exp t2-exp t1-env t2-env delta-flow trace)
-                                                  (andmap (lambda (t1-arg t2-arg)
-                                                            ; contravariant
-                                                            (subt sba-state t2-arg t1-arg t2-env t1-env delta-flow trace))
-                                                          (list-head t1-args t1-req-arg)
-                                                          (list-head t2-args t1-req-arg))
+                                                  (subt t1-exp t2-exp)
                                                   ; contravariant
-                                                  (let ([t1-rest-arg (list-ref t1-args t1-req-arg)]
-                                                        [fake-type-var (make-type-var (gensym) #f #f)])
+                                                  (andmap2-vector-interval subt t2-args t1-args 0 t1-req-arg)
+                                                  (let ([t1-rest-arg (vector-ref t1-args t1-req-arg)])
                                                     (and
-                                                     (andmap (lambda (t2-arg)
-                                                               (subt sba-state (make-type-rec ; faked list
-                                                                                (list fake-type-var)
-                                                                                (list (make-type-union
-                                                                                       (list
-                                                                                        (make-type-cst '())
-                                                                                        (make-type-cons
-                                                                                         t2-arg
-                                                                                         fake-type-var))))
-                                                                                fake-type-var)
-                                                                     t1-rest-arg
-                                                                     t2-env t1-env delta-flow trace))
-                                                             (list-head
-                                                              (list-tail t2-args t1-req-arg)
-                                                              (- t2-req-arg t1-req-arg)))
-                                                     (subt sba-state (list-ref t2-args t2-req-arg) ; t2-rest-arg
-                                                           t1-rest-arg
-                                                           t2-env t1-env delta-flow trace))))
+                                                     (andmap-vector-interval
+                                                      (lambda (t2-arg)
+                                                        ; contravariant
+                                                        (subt (get-list-of-handle t2-arg) t1-rest-arg))
+                                                      t2-args t1-req-arg t2-req-arg)
+                                                     (subt (vector-ref t2-args t2-req-arg) ; t2-rest-arg
+                                                           t1-rest-arg))))
                                              (and (= t1-req-arg t2-req-arg)
-                                                  (subt sba-state t1-exp t2-exp t1-env t2-env delta-flow trace)
-                                                  (andmap (lambda (t1-arg t2-arg)
-                                                            ; contravariant
-                                                            (subt sba-state t2-arg t1-arg t2-env t1-env delta-flow trace))
-                                                          t1-args
-                                                          t2-args))
+                                                  (subt t1-exp t2-exp)
+                                                  ; contravariant
+                                                  (andmap2-vector subt t2-args t1-args))
                                              (and (> t1-req-arg t2-req-arg)
-                                                  (subt sba-state t1-exp t2-exp t1-env t2-env delta-flow trace)
-                                                  (andmap (lambda (t1-arg t2-arg)
-                                                            ; contravariant
-                                                            (subt sba-state t2-arg t1-arg t2-env t1-env delta-flow trace))
-                                                          (list-head t1-args t2-req-arg)
-                                                          (list-head t2-args t2-req-arg))
-                                                  (let ([t2-rest-arg (list-ref t2-args t2-req-arg)]
-                                                        [fake-type-var (make-type-var (gensym) #f #f)])
+                                                  (subt t1-exp t2-exp)
+                                                  ; contravariant
+                                                  (andmap2-vector-interval subt t2-args t1-args 0 t2-req-arg)
+                                                  (let ([t2-rest-arg (vector-ref t2-args t2-req-arg)])
                                                     (and
-                                                     (andmap (lambda (t1-arg)
-                                                               (subt sba-state t2-rest-arg
-                                                                     (make-type-rec ; faked list
-                                                                      (list fake-type-var)
-                                                                      (list (make-type-union
-                                                                             (list
-                                                                              (make-type-cst '())
-                                                                              (make-type-cons
-                                                                               t1-arg
-                                                                               fake-type-var))))
-                                                                      fake-type-var)
-                                                                     t2-env t1-env delta-flow trace))
-                                                             (list-head
-                                                              (list-tail t1-args t2-req-arg)
-                                                              (- t1-req-arg t2-req-arg)))
-                                                     (subt sba-state t2-rest-arg
-                                                           (list-ref t1-args t1-req-arg) ; t1-rest-arg
-                                                           t2-env t1-env delta-flow trace)))))
+                                                     (andmap-vector-interval
+                                                      (lambda (t1-arg)
+                                                        (subt t2-rest-arg (get-list-of-handle t1-arg)))
+                                                      t1-args t2-req-arg t1-req-arg)
+                                                     (subt t2-rest-arg
+                                                           (vector-ref t1-args t1-req-arg) ; t1-rest-arg
+                                                           )))))
+                                         ;; t1 has rest-args, t2 has NO rest-args
                                          (and (<= t1-req-arg t2-req-arg)
-                                              (subt sba-state t1-exp t2-exp t1-env t2-env delta-flow trace)
+                                              (subt t1-exp t2-exp)
                                               ; t1 has a rest arg, t2 has a fixed number of args
                                               ; so we need to check all the required args, and
                                               ; check the rest arg specially, since the rest arg
                                               ; of t1 is automatically wrapped inside a list.
-                                              (andmap (lambda (t1-arg t2-arg)
-                                                        ; contravariant
-                                                        (subt sba-state t2-arg t1-arg t2-env t1-env delta-flow trace))
-                                                      (list-head t1-args t1-req-arg)
-                                                      (list-head t2-args t1-req-arg))
                                               ; contravariant
-                                              (subt sba-state (list:foldr make-type-cons
-                                                                          (make-type-cst '())
-                                                                          (list-tail t2-args t1-req-arg))
-                                                    (list-ref t1-args t1-req-arg) ; rest arg
-                                                    t2-env t1-env delta-flow trace))))
+                                              (andmap2-vector-interval subt t2-args t1-args 0 t1-req-arg)
+                                              ; contravariant
+                                              (subt (hc:hashcons-type hashcons-tbl
+                                                                      (list:foldr make-type-cons
+                                                                                  (make-type-cst '())
+                                                                                  (interval->list t2-args t1-req-arg
+                                                                                                  (vector-length t2-args))))
+                                                    (vector-ref t1-args t1-req-arg) ; rest arg
+                                                    ))))
                                    (type-case-lambda-rest-arg?s t2)
                                    (type-case-lambda-req-args t2)
                                    (type-case-lambda-argss t2)
                                    (type-case-lambda-exps t2))
-                           (andmap (lambda (t2-rest-arg? t2-req-arg t2-args t2-exp)
+                                  ; t1 has no rest-args
+                                  (andmap4-vector
+                                   (lambda (t2-rest-arg? t2-req-arg t2-args t2-exp)
                                      (if t2-rest-arg?
                                          (and (>= t1-req-arg t2-req-arg)
-                                              (subt sba-state t1-exp t2-exp t1-env t2-env delta-flow trace)
+                                              (subt t1-exp t2-exp)
                                               ; t1 has a fixed number of args, t2 has a rest arg
                                               ; so we need to check all the required args, and
                                               ; check the rest arg specially, since the rest arg
                                               ; of t2 is automatically wrapped inside a list.
-                                              (andmap (lambda (t1-arg t2-arg)
-                                                        ; contravariant
-                                                        (subt sba-state t2-arg t1-arg t2-env t1-env delta-flow trace))
-                                                      (list-head t1-args t2-req-arg)
-                                                      (list-head t2-args t2-req-arg))
                                               ; contravariant
-                                              (let ([t2-rest-arg (list-ref t2-args t2-req-arg)]
-                                                    [fake-type-var (make-type-var (gensym) #f #f)])
-                                                (andmap (lambda (t1-arg)
-                                                          (subt sba-state t2-rest-arg
-                                                                (make-type-rec ; faked list
-                                                                 (list fake-type-var)
-                                                                 (list (make-type-union
-                                                                        (list
-                                                                         (make-type-cst '())
-                                                                         (make-type-cons
-                                                                          t1-arg
-                                                                          fake-type-var))))
-                                                                 fake-type-var)
-                                                                t2-env t1-env delta-flow trace))
-                                                        (list-tail t1-args t2-req-arg))))
+                                              (andmap2-vector-interval subt t2-args t1-args 0 t2-req-arg)
+                                              ; contravariant
+                                              (let ([t2-rest-arg (vector-ref t2-args t2-req-arg)])
+                                                (andmap-vector-interval
+                                                 (lambda (t1-arg)
+                                                   (subt t2-rest-arg (get-list-of-handle t1-arg)))
+                                                 t1-args t2-req-arg (vector-length t1-args))))
                                          ; t1 and t2 have a fixed number of args
                                          (and (= t1-req-arg t2-req-arg)
-                                              (subt sba-state t1-exp t2-exp t1-env t2-env delta-flow trace)
-                                              (andmap (lambda (t1-arg t2-arg)
-                                                        ; contravariant
-                                                        (subt sba-state t2-arg t1-arg t2-env t1-env delta-flow trace))
-                                                      t1-args
-                                                      t2-args))))
+                                              (subt t1-exp t2-exp)
+                                              ; contravariant
+                                              (andmap2-vector subt t2-args t1-args))))
                                    (type-case-lambda-rest-arg?s t2)
                                    (type-case-lambda-req-args t2)
                                    (type-case-lambda-argss t2)
                                    (type-case-lambda-exps t2))))
-                     (type-case-lambda-rest-arg?s t1)
-                     (type-case-lambda-req-args t1)
-                     (type-case-lambda-argss t1)
-                     (type-case-lambda-exps t1)))
-         ; type variable. These create recursions, so we add them to the trace
-         (and (type-var? t1)
-              (subt sba-state (cdr (assq (type-var-name t1) t1-env)) t2 t1-env t2-env delta-flow (cons (cons t1 t2) trace)))
-         (and (type-var? t2)
-              (subt sba-state t1 (cdr (assq (type-var-name t2) t2-env)) t1-env t2-env delta-flow (cons (cons t1 t2) trace)))
-         ; the order of the following two rules matters, because, for example:
-         ; (union 1 2) is a subtype of (union 1 2 3), but is not a subtype of either
-         ; 1, 2 or 3. On the other hand both 1 and 2 are subtypes of (union 1 2 3),
-         ; so if both t1 and t2 are unions, we have to split t1 first.
-         (and (type-union? t1)
-              (andmap (lambda (t1-elt)
-                        (subt sba-state t1-elt t2 t1-env t2-env delta-flow trace))
-                      (type-union-elements t1)))
-         (and (type-union? t2)
-              (ormap (lambda (t2-elt)
-                       (subt sba-state t1 t2-elt t1-env t2-env delta-flow trace))
-                     (type-union-elements t2)))
-         ; recursive type
-         (and (type-rec? t1)
-              (subt sba-state (type-rec-body t1) t2
-                    (append (map (lambda (type-var type)
-                                   (cons (type-var-name type-var)
-                                         type))
-                                 (type-rec-vars t1) (type-rec-types t1))
-                            t1-env)
-                    t2-env
-                    delta-flow trace))
-         (and (type-rec? t2)
-              (subt sba-state t1 (type-rec-body t2)
-                    t1-env
-                    (append (map (lambda (type-var type)
-                                   (cons (type-var-name type-var)
-                                         type))
-                                 (type-rec-vars t2) (type-rec-types t2))
-                            t2-env)
-                    delta-flow trace))
-         ; multiple values
-         (and (type-values? t1) (type-values? t2)
-              (subt sba-state (type-values-type t1) (type-values-type t2) t1-env t2-env delta-flow trace))
-         (and (type-promise? t1) (type-promise? t2)
-              (subt sba-state (type-promise-value t1) (type-promise-value t2) t1-env t2-env delta-flow trace))
-         (and (type-struct-type? t1) (type-struct-type? t2)
-              ; can't use strutural equivalence here because of genericity
-              (or (eq? (type-struct-type-type-label t1) (type-struct-type-type-label t2))
-                  (let ([t1-parent-label (label-struct-type-parent
-                                          (type-struct-type-type-label t1))])
-                    (if t1-parent-label
-                        (subt sba-state (get-type-from-label sba-state t1-parent-label) t2 t1-env t2-env delta-flow trace)
-                        #f))))
-         (and (type-struct-value? t1) (type-struct-type? t2)
-              (subt sba-state (get-type-from-label sba-state (type-struct-value-type-label t1)) t2 t1-env t2-env delta-flow trace))
-         (and (type-flow-var? t2)
-              (let ([label&type^C (lookup-flow-var-in-env delta-flow t2)])
-                (subt sba-state t1 (cdr label&type^C) t1-env t2-env delta-flow trace)))
-         (and (or (type-flow-var? t1)
-                  (type-scheme? t1) (type-scheme? t2))
-              (error 'subt "unexpected types: ~a ~a" t1 t2))))))
+                            (type-case-lambda-rest-arg?s t1)
+                            (type-case-lambda-req-args t1)
+                            (type-case-lambda-argss t1)
+                            (type-case-lambda-exps t1)))
+                      ; the order of the following two rules matters, because, for
+                      ; example: (union 1 2) is a subtype of (union 1 2 3), but is
+                      ; not a subtype of either 1, 2 or 3. On the other hand both 1
+                      ; and 2 are subtypes of (union 1 2 3), so if both t1 and t2
+                      ; are unions, we have to split t1 first.
+                      (and (type-union? t1)
+                           (andmap (lambda (t1-elt) (subt t1-elt t2-handle)) (type-union-elements t1)))
+                      (and (type-union? t2)
+                           (ormap (lambda (t2-elt) (subt t1-handle t2-elt)) (type-union-elements t2)))
+                      ; multiple values
+                      (and (type-values? t1) (type-values? t2)
+                           (subt (type-values-type t1) (type-values-type t2)))
+                      (and (type-promise? t1) (type-promise? t2)
+                           (subt (type-promise-value t1) (type-promise-value t2)))
+                      (and (type-struct-type? t1) (type-struct-type? t2)
+                           ; can't use strutural equivalence here because of genericity
+                           (or (eq? (type-struct-type-type-label t1) (type-struct-type-type-label t2))
+                               (let ([t1-parent-label (label-struct-type-parent
+                                                       (type-struct-type-type-label t1))])
+                                 (if t1-parent-label
+                                     (subt (get-type-from-label sba-state t1-parent-label)
+                                           t2-handle)
+                                     #f))))
+                      (and (type-struct-value? t1) (type-struct-type? t2)
+                           (subt (get-type-from-label sba-state (type-struct-value-type-label t1))
+                                 t2-handle))
+                      (and (type-flow-var? t2)
+                           (let ([label&type (lookup-flow-var-in-env delta-flow t2)])
+                             (subt t1 (hc:hashcons-type hashcons-tbl (cdr label&type)))))
+                      ;; Subt works on previously hashcons values,
+                      ;; i.e. all cycles are implicit in the table
+                      (and (or (type-flow-var? t1) (type-flow-var? t2)
+                               (type-var? t1) (type-var? t2)
+                               (type-rec? t1) (type-rec? t2)
+                               (type-scheme? t1) (type-scheme? t2))
+                           (error 'subt "Unexpected non-hashconsed types: ~a ~a" t1 t2)))])
+                (hash-table-put! memo-table (cons t1-handle t2-handle) subtype-value)
+                subtype-value))))))
   
-  ; sba-state type type (hash-table-of type-flow-var (cons label type)) boolean label -> boolean
-  (define (subtype sba-state t1 t2 delta-flow error? label)
-    (if (subt sba-state t1 t2 '() '() delta-flow '())
-        #t
-        (begin
-          (when error?
-            (set-error-for-label sba-state
-                                 label
-                                 'red
-                                 (format "~a not a subtype of ~a" 
-                                         (pp-type t1 'subtype)
-                                         (pp-type t2 delta-flow))))
-          #f)))
+  ; called when t2 is a (flow var free) type instead of a handle
+  (dbg-define/contract subtype-type
+    (sba-state? hc:handle? hc:hashcons-type? any? boolean? (union false? label?) . -> . boolean?)
+    (lambda (sba-state t1-handle t2 delta-flow error? label)
+      (subtype sba-state t1-handle
+               (hc:hashcons-type (sba-state-hashcons-tbl sba-state) t2)
+               delta-flow error? label)))
+  
+  (dbg-define/contract subtype
+    (sba-state? hc:handle? hc:handle? any? boolean? (union false? label?) . -> . boolean?)
+    (lambda (sba-state t1-handle t2-handle delta-flow error? label)
+      (if (subt sba-state (sba-state-hashcons-tbl sba-state) t1-handle t2-handle delta-flow (set-make 'equal))
+          #t
+          (begin
+            (when error?
+              (set-error-for-label sba-state
+                                   label
+                                   'red
+                                   (format "~a not a subtype of ~a"
+                                           (pp-type sba-state t1-handle 'subtype)
+                                           (pp-type sba-state t2-handle delta-flow))))
+            #f))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; GUI INTERFACE
   
@@ -4350,293 +4320,303 @@
   (define (get-source-from-label label)
     (syntax-source (label-term label)))
   
+  ; label sba-state -> void
+  (define (add-type-var-to-label label sba-state)
+    (unless (label-type-var label)
+      (set-label-type-var! label (make-type-var (create-type-var-name sba-state) #f #f))))
+  
+  ; label set -> void
+  ; if the reachable set has already been computed, re-use it, otherwise compute it
+  ; (unless we detected a cycle).
+  (define (reachL label set)
+    (if (and (label-type-var label)
+             (type-var-reach (label-type-var label)))
+        (set-union set (type-var-reach (label-type-var label)) 'first)
+        (unless (set-in? set label)
+          (set-set set label)
+          (reachU label set))))
+  
+  ; label set -> void
+  ; a label for a value constructor has itself in its own value set, so reachL above might
+  ; already have put that label in set, but a simple label does not appear in its own set
+  ; so we still have to add the content of its set to set.  Hence the #f below.
+  (define (reachU label set)
+    (hash-table-for-each (label-set label)
+                         (lambda (value-label arrows)
+                           (set-set set value-label #f)
+                           (reachT value-label set))))
+  ; label set -> void
+  (define (reachT label set)
+    (cond
+      ;[(label-cst? label) cst:void]
+      [(label-cons? label) (begin (reachL (label-cons-car label) set)
+                                  (reachL (label-cons-cdr label) set))]
+      [(label-vector? label) (reachL (label-vector-element label) set)]
+      [(label-promise? label) (reachL (label-promise-value label) set)]
+      [(label-values? label) (reachL (label-values-label label) set)]
+      [(label-case-lambda? label) (for-each (lambda (args-labels exp-label)
+                                              (for-each (lambda (l) (reachL l set)) args-labels)
+                                              (reachL exp-label set))
+                                            (label-case-lambda-argss label)
+                                            (label-case-lambda-exps label))]
+      [(label-struct-value? label) (begin (reachL (label-struct-value-type label) set)
+                                          (for-each (lambda (l) (reachL l set)) (label-struct-value-fields label)))]
+      ;[(label-struct-type? label) cst:void]
+      ;[else cst:void]
+      ))
+  
   ; label sba-state -> (set-of label)
   ; reachable lables from a given label
-  (define (reachable-labels-from-label label sba-state)
-    (letrec ([reach (lambda (label)
-                      (if (label-type-var label)
-                          (let ([type-var (label-type-var label)])
-                            (unless (type-var-reach type-var)
-                              (set-type-var-reach! type-var (set-make))))
-                          (set-label-type-var! label
-                                               (make-type-var (create-type-var-name sba-state)
-                                                              (set-make)
-                                                              #f)))
-                      (let ([set (type-var-reach (label-type-var label))])
-                        (unless (set-in? set label)
-                          ; the label itself
-                          (set-set set label)
-                          ; either the label is for a constructor, in which case its set only
-                          ; contains itself and there's no need to look at it since the label
-                          ; itself has already been added to the set, or the label is a simple
-                          ; label and we just need to look at its set without worrying about
-                          ; possible sub-components (being a simple label).
-                          ; label-cst? and label-struct-type? don't do anything in the cond
-                          ; because typeT below doesn't use label-type-var in those two cases.
-                          (cond
-                            [(label-cst? label) cst:void]
-                            [(label-cons? label) (begin (set-union set (reach (label-cons-car label)) 'first)
-                                                        (set-union set (reach (label-cons-cdr label)) 'first))]
-                            [(label-vector? label) (set-union set (reach (label-vector-element label)) 'first)]
-                            [(label-promise? label) (set-union set (reach (label-promise-value label)) 'first)]
-                            [(label-values? label) (set-union set (reach (label-values-label label)) 'first)]
-                            [(label-case-lambda? label) (for-each (lambda (args-labels exp-label)
-                                                                    (for-each (lambda (arg-label)
-                                                                                (set-union set (reach arg-label) 'first))
-                                                                              args-labels)
-                                                                    (set-union set (reach exp-label) 'first))
-                                                                  (label-case-lambda-argss label)
-                                                                  (label-case-lambda-exps label))]
-                            [(label-struct-value? label) (begin (set-union set (reach (label-struct-value-type label)) 'first)
-                                                                (for-each (lambda (label)
-                                                                            (set-union set (reach label) 'first))
-                                                                          (label-struct-value-fields label)))]
-                            [(label-struct-type? label) cst:void]
-                            [else (hash-table-for-each (label-set label)
-                                                       (lambda (value-label arrows)
-                                                         (set-union set (reach value-label) 'first)))]))
-                        set))])
-      (reach label)))
+  ; we know the label has a type var because add-type-var-to-label has been called
+  ; already in get-type-from-label.
+  ; Note that this is the only place where we set the type-var-reach, so if reachL above
+  ; find a set, we know that set already contains everything we need.
+  (define (reachable-labels-from-label label)
+    (let ([set (type-var-reach (label-type-var label))])
+      (if set
+          set
+          (let ([set (set-make)])
+            (reachL label set)
+            (set-type-var-reach! (label-type-var label) set)
+            set))))
   
-;  ; XXX the following two functions don't work with make-struct-type, I don't know why.
-;  ; The version of get-type-from-label below works though.
-;  ; label -> type
-;  (define (typeT label)
-;    (cond
-;      [(label-cst? label) (make-type-cst (label-cst-value label))]
-;      [(label-cons? label) (make-type-cons (label-type-var (label-cons-car label))
-;                                           (label-type-var (label-cons-cdr label)))]
-;      [(label-vector? label) (make-type-vector (label-type-var (label-vector-element label)))]
-;      [(label-promise? label) (make-type-promise (label-type-var (label-promise-value label)))]
-;      [(label-values? label) (make-type-values (label-type-var (label-values-label label)))]
-;      [(label-case-lambda? label) (make-type-case-lambda (label-case-lambda-rest-arg?s label)
-;                                                         (label-case-lambda-req-args label)
-;                                                         (map (lambda (args)
-;                                                                (map label-type-var args))
-;                                                              (label-case-lambda-argss label))
-;                                                         (map label-type-var (label-case-lambda-exps label)))]
-;      [(label-struct-value? label) (make-type-struct-value (label-struct-value-type label)
-;                                                           (map label-type-var (label-struct-value-fields label)))]
-;      [(label-struct-type? label) (make-type-struct-type label)]
-;      [else (let* ([union-content (hash-table-map (label-set label)
-;                                                  (lambda (label arrows)
-;                                                    (label-type-var label)))]
-;                   [union-length (length union-content)])
-;              (cond
-;                ;[(= union-length 0) (make-type-empty)]
-;                ;[(= union-length 1) (car union-content)] ; XXX taken care of by type simplifaction?
-;                [else (make-type-union union-content)]))]))
-;  
-;  ; sba-state label -> type
-;  ; computes type for label
-;  (define (get-type-from-label sba-state label)
-;    (let ([reachable-labels (set-map (reachable-labels-from-label label sba-state) cst:id)])
-;      (make-type-rec (map label-type-var reachable-labels)
-;                     (map typeT reachable-labels)
-;                     (label-type-var label))))
-
+  ; label -> (union type-var handle)
+  ; the label better have a type-var...
+  (define (get-handle-or-type-var label)
+    (let* ([type-var (label-type-var label)]
+           [handle (type-var-handle type-var)])
+      (if handle (begin (printf ".") handle) type-var)))
+  
+  ; label (listof labels) -> type-rec
+  (define (typeL label reachable-labels)
+    (make-type-rec (map label-type-var reachable-labels)
+                   (map typeU reachable-labels)
+                   (get-handle-or-type-var label)))
+  
+  ; label -> type-union
+  (define (typeU label)
+    (let ([union-content (hash-table-map (label-set label) (lambda (label arrows) (typeT label)))])
+      ; XXX taken care of by type simplifaction?
+      ;[union-length (length union-content)])
+      ;(cond
+      ;[(= union-length 0) (make-type-empty)]
+      ;[(= union-length 1) (car union-content)]
+      ;[else
+      (make-type-union union-content)
+      ;])
+      ))
+  
+  ; label -> type
+  (define (typeT label)
+    (cond
+      [(label-cst? label) (make-type-cst (label-cst-value label))]
+      [(label-cons? label) (make-type-cons (get-handle-or-type-var (label-cons-car label))
+                                           (get-handle-or-type-var (label-cons-cdr label)))]
+      [(label-vector? label) (make-type-vector (get-handle-or-type-var (label-vector-element label)))]
+      [(label-promise? label) (make-type-promise (get-handle-or-type-var (label-promise-value label)))]
+      [(label-values? label) (make-type-values (get-handle-or-type-var (label-values-label label)))]
+      [(label-case-lambda? label) (make-type-case-lambda (label-case-lambda-rest-arg?s label)
+                                                         (label-case-lambda-req-args label)
+                                                         (map (lambda (args)
+                                                                (map get-handle-or-type-var args))
+                                                              (label-case-lambda-argss label))
+                                                         (map get-handle-or-type-var (label-case-lambda-exps label)))]
+      [(label-struct-value? label) (make-type-struct-value (label-struct-value-type label)
+                                                           (map get-handle-or-type-var (label-struct-value-fields label)))]
+      [(label-struct-type? label) (make-type-struct-type label)]
+      [else (error 'typeT "unknown label: ~a" label)]))
+  
   ; sba-state label -> type
-  ; computes type for label
+  ; computes type for label, computes the corresponding handle, and memoize it
   (define (get-type-from-label sba-state label)
-    (let ([reachable-labels (set-map (reachable-labels-from-label label sba-state) cst:id)])
-      (letrec ([type (lambda (label)
-                       (make-type-rec (map label-type-var reachable-labels)
-                                      (map typeU reachable-labels)
-                                      (label-type-var label)))]
-               [typeU (lambda (label)
-                        (let ([union-content (hash-table-map (label-set label) (lambda (label arrows) (typeT label)))])
-                              ;[union-length (length union-content)])
-                          (cond
-                            ;[(= union-length 0) (make-type-empty)]
-                            ;[(= union-length 1) (car union-content)] ; XXX taken care of by type simplifaction?
-                            [else (make-type-union union-content)])))]
-               [typeT (lambda (label)
-                        (cond
-                          [(label-cst? label) (make-type-cst (label-cst-value label))]
-                          [(label-cons? label) (make-type-cons (label-type-var (label-cons-car label))
-                                                               (label-type-var (label-cons-cdr label)))]
-                          [(label-vector? label) (make-type-vector (label-type-var (label-vector-element label)))]
-                          [(label-promise? label) (make-type-promise (label-type-var (label-promise-value label)))]
-                          [(label-values? label) (make-type-values (label-type-var (label-values-label label)))]
-                          [(label-case-lambda? label) (make-type-case-lambda (label-case-lambda-rest-arg?s label)
-                                                                             (label-case-lambda-req-args label)
-                                                                             (map (lambda (args)
-                                                                                    (map label-type-var args))
-                                                                                  (label-case-lambda-argss label))
-                                                                             (map label-type-var (label-case-lambda-exps label)))]
-                          [(label-struct-value? label) (make-type-struct-value (label-struct-value-type label)
-                                                                               (map label-type-var (label-struct-value-fields label)))]
-                          [(label-struct-type? label) (make-type-struct-type label)]
-                          [else (error 'typeT "unknown label: ~a" label)]))])
-        (type label))))
-
+    (add-type-var-to-label label sba-state)
+    (let ([handle (type-var-handle (label-type-var label))])
+      (if handle
+          handle
+          (let* ([_ (begin (print-struct #t)(printf "T: ~a " (type-var-name (label-type-var label))))]
+                 [start (current-milliseconds)]
+                 [reachable-labels (set-map (reachable-labels-from-label label)
+                                            (lambda (l) (add-type-var-to-label l sba-state) l))]
+                 [_ (printf "~a " (- (current-milliseconds) start))]
+                 [start (current-milliseconds)]
+                 [foo (typeL label reachable-labels)]
+                 [_ (printf " ~a~n" (- (current-milliseconds) start))]
+                 [start (current-milliseconds)]
+                 [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) foo)]
+                 [_ (printf " ~a~n" (- (current-milliseconds) start))])
+            (set-type-var-handle! (label-type-var label) handle)
+            handle))))
+  
   ; type (union (hash-table-of type-flow-var (cons label type)) symbol) -> string
   ; type pretty printer
   ; delta-flow is the flow variable environment, or a symbol if no flow environment
   ; was available at the time of the call.
-  (define (pp-type type delta-flow)
-    (cond
-      [(type-empty? type) "_"]
-      [(type-cst? type)
-       ; can be a complex sexp if (quote sexp) is in the input
-       (string:expr->string (type-cst-type type))]
-      ;      (let ([val (type-cst-type type)])
-      ;        (cond
-      ;          [(number? val) (number->string val)]
-      ;          [(symbol? val) (symbol->string val)]
-      ;          [(string? val) (string-append "\"" val "\"")]
-      ;          [(void? val) "void"]
-      ;          [else (error 'pp-type "unknown datum: ~a" val)]))]
-      [(type-cons? type)
-       (string-append "(cons "
-                      (pp-type (type-cons-car type) delta-flow) " "
-                      (pp-type (type-cons-cdr type) delta-flow) ")")]
-      [(type-vector? type)
-       (string-append "(vector " (pp-type (type-vector-element type) delta-flow) ")")]
-      [(type-promise? type)
-       (string-append "(promise "
-                      ; skipping the thunk inside the promise (we know it's always a
-                      ; thunk because delay is a macro...) Note that the promise might
-                      ; be empty, for now, so we have to test that...
-                      (let ([promise-value-type (type-promise-value type)])
-                        (if (type-case-lambda? promise-value-type)
-                            (pp-type (car (type-case-lambda-exps promise-value-type)) delta-flow)
-                            (pp-type promise-value-type delta-flow)))
-                      ")")]
-      [(type-case-lambda? type)
-       (string-append
-        "(case-lambda "
-        (list:foldr
-         (lambda (rest-arg? formal-args-types body-exp-type str)
-           (string-append
-            "["
-            (list:foldr
-             (lambda (formal-arg-type str)
-               (string-append
-                (pp-type formal-arg-type delta-flow)
-                " "
-                str))
-             ""
-             formal-args-types)
-            (if rest-arg?
-                "*-> "
-                "-> ")
-            (pp-type body-exp-type delta-flow)
-            "]"
-            ;(if (string=? str "")
-            ;  ""
-            ;  " ")
-            str))
-         ""
-         (type-case-lambda-rest-arg?s type)
-         (type-case-lambda-argss type)
-         (type-case-lambda-exps type))
-        ")")]
-      [(type-var? type)
-       (symbol->string (type-var-name type))]
-      [(type-flow-var? type)
-       (pp-type (cdr (lookup-flow-var-in-env delta-flow type)) delta-flow)]
-      [(type-union? type)
-       (string-append
-        "(union "
-        (list:foldr
-         (lambda (union-element str)
-           (string-append
-            (pp-type union-element delta-flow)
-            (if (string=? str ")")
-                ""
-                " ")
-            str))
-         ")"
-         (type-union-elements type)))]
-      [(type-values? type)
-       (let ([values-type (type-values-type type)])
-         (cond
-           [(type-empty? values-type)
-            (pp-type values-type delta-flow)]
-           [(and (type-cst? values-type) (eq? (type-cst-type values-type) 'top))
-            (pp-type values-type delta-flow)]
-           [else
-            (let* ([values-types-list (type-list-map cst:id (type-values-type type))]
-                   [values-types-list-length (length values-types-list)])
-              (cond
-                [(zero? values-types-list-length)
-                 (pp-type (make-type-empty) delta-flow)]
-                [(= values-types-list-length 1)
-                 (pp-type (car values-types-list) delta-flow)]
-                [else (string-append
-                       "(values "
-                       (list:foldr
-                        (lambda (type str)
-                          (string-append (pp-type type delta-flow)
-                                         (if (string=? str ")")
-                                             ""
-                                             " ")
-                                         str))
-                        ")"
-                        values-types-list))]))]))]
-      [(type-rec? type)
-       (string-append
-        "(rec-type ("
-        (list:foldr
-         (lambda (var type str)
-           (string-append
-            "["
-            (symbol->string (type-var-name var))
-            " "
-            ; poor man's type beautifier
-            (if (and (type-union? type)
-                     (= (length (type-union-elements type)) 2)
-                     (or (and (type-cst? (car (type-union-elements type)))
-                              (null? (type-cst-type (car (type-union-elements type))))
-                              (type-cons? (cadr (type-union-elements type)))
-                              (type-var? (type-cons-cdr (cadr (type-union-elements type))))
-                              (eq? (type-var-name (type-cons-cdr (cadr (type-union-elements type))))
-                                   (type-var-name var)))
-                         (and (type-cst? (cadr (type-union-elements type)))
-                              (null? (type-cst-type (cadr (type-union-elements type))))
-                              (type-cons? (car (type-union-elements type)))
-                              (type-var? (type-cons-cdr (car (type-union-elements type))))
-                              (eq? (type-var-name (type-cons-cdr (car (type-union-elements type))))
-                                   (type-var-name var)))))
-                (string-append
-                 "(listof "
-                 (pp-type (if (type-cst? (car (type-union-elements type)))
-                              (type-cons-car (cadr (type-union-elements type)))
-                              (type-cons-car (car (type-union-elements type))))
-                          delta-flow)
-                 ")")
-                (pp-type type delta-flow))
-            (if (string=? str ") ")
-                "]"
-                "] ")
-            str))
-         ") "
-         (type-rec-vars type)
-         (type-rec-types type))
-        (pp-type (type-rec-body type) delta-flow)
-        ")")]
-      [(type-struct-value? type)
-       (string-append
-        "#(struct:"
-        (symbol->string (label-struct-type-name (type-struct-value-type-label type)))
-        " "
-        (list:foldr
-         (lambda (elt-type str)
-           (string-append
-            (pp-type elt-type delta-flow)
-            (if (string=? str ")")
-                ""
-                " ")
-            str))
-         ")"
-         (type-struct-value-types type)))]
-      [(type-struct-type? type)
-       (string-append
-        "#<struct-type:"
-        (symbol->string (label-struct-type-name (type-struct-type-type-label type)))
-        ">")]
-      [else (error 'pp-type "unknown type: ~a" type)]))
+  (define (pp-type sba-state type delta-flow)
+    (hc:handle->string (sba-state-hashcons-tbl sba-state) type))
+  
+  ;    (cond
+  ;      [(type-empty? type) "_"]
+  ;      [(type-cst? type)
+  ;       ; can be a complex sexp if (quote sexp) is in the input
+  ;       (string:expr->string (type-cst-type type))]
+  ;      ;      (let ([val (type-cst-type type)])
+  ;      ;        (cond
+  ;      ;          [(number? val) (number->string val)]
+  ;      ;          [(symbol? val) (symbol->string val)]
+  ;      ;          [(string? val) (string-append "\"" val "\"")]
+  ;      ;          [(void? val) "void"]
+  ;      ;          [else (error 'pp-type "unknown datum: ~a" val)]))]
+  ;      [(type-cons? type)
+  ;       (string-append "(cons "
+  ;                      (pp-type (type-cons-car type) delta-flow) " "
+  ;                      (pp-type (type-cons-cdr type) delta-flow) ")")]
+  ;      [(type-vector? type)
+  ;       (string-append "(vector " (pp-type (type-vector-element type) delta-flow) ")")]
+  ;      [(type-promise? type)
+  ;       (string-append "(promise "
+  ;                      ; skipping the thunk inside the promise (we know it's always a
+  ;                      ; thunk because delay is a macro...) Note that the promise might
+  ;                      ; be empty, for now, so we have to test that...
+  ;                      (let ([promise-value-type (type-promise-value type)])
+  ;                        (if (type-case-lambda? promise-value-type)
+  ;                            (pp-type (car (type-case-lambda-exps promise-value-type)) delta-flow)
+  ;                            (pp-type promise-value-type delta-flow)))
+  ;                      ")")]
+  ;      [(type-case-lambda? type)
+  ;       (string-append
+  ;        "(case-lambda "
+  ;        (list:foldr
+  ;         (lambda (rest-arg? formal-args-types body-exp-type str)
+  ;           (string-append
+  ;            "["
+  ;            (list:foldr
+  ;             (lambda (formal-arg-type str)
+  ;               (string-append
+  ;                (pp-type formal-arg-type delta-flow)
+  ;                " "
+  ;                str))
+  ;             ""
+  ;             formal-args-types)
+  ;            (if rest-arg?
+  ;                "*-> "
+  ;                "-> ")
+  ;            (pp-type body-exp-type delta-flow)
+  ;            "]"
+  ;            ;(if (string=? str "")
+  ;            ;  ""
+  ;            ;  " ")
+  ;            str))
+  ;         ""
+  ;         (type-case-lambda-rest-arg?s type)
+  ;         (type-case-lambda-argss type)
+  ;         (type-case-lambda-exps type))
+  ;        ")")]
+  ;      [(type-var? type)
+  ;       (symbol->string (type-var-name type))]
+  ;      [(type-flow-var? type)
+  ;       (error 'pp-type "flow var: ~a~n" (type-flow-var-name type))
+  ;       (pp-type (cdr (lookup-flow-var-in-env delta-flow type)) delta-flow)]
+  ;      [(type-union? type)
+  ;       (string-append
+  ;        "(union "
+  ;        (list:foldr
+  ;         (lambda (union-element str)
+  ;           (string-append
+  ;            (pp-type union-element delta-flow)
+  ;            (if (string=? str ")")
+  ;                ""
+  ;                " ")
+  ;            str))
+  ;         ")"
+  ;         (type-union-elements type)))]
+  ;      [(type-values? type)
+  ;       (let ([values-type (type-values-type type)])
+  ;         (cond
+  ;           [(type-empty? values-type)
+  ;            (pp-type values-type delta-flow)]
+  ;           [(and (type-cst? values-type) (eq? (type-cst-type values-type) 'top))
+  ;            (pp-type values-type delta-flow)]
+  ;           [else
+  ;            (let* ([values-types-list (type-list-map cst:id (type-values-type type))]
+  ;                   [values-types-list-length (length values-types-list)])
+  ;              (cond
+  ;                [(zero? values-types-list-length)
+  ;                 (pp-type (make-type-empty) delta-flow)]
+  ;                [(= values-types-list-length 1)
+  ;                 (pp-type (car values-types-list) delta-flow)]
+  ;                [else (string-append
+  ;                       "(values "
+  ;                       (list:foldr
+  ;                        (lambda (type str)
+  ;                          (string-append (pp-type type delta-flow)
+  ;                                         (if (string=? str ")")
+  ;                                             ""
+  ;                                             " ")
+  ;                                         str))
+  ;                        ")"
+  ;                        values-types-list))]))]))]
+  ;      [(type-rec? type)
+  ;       (string-append
+  ;        "(rec-type ("
+  ;        (list:foldr
+  ;         (lambda (var type str)
+  ;           (string-append
+  ;            "["
+  ;            (symbol->string (type-var-name var))
+  ;            " "
+  ;            ; poor man's type beautifier
+  ;            (if (and (type-union? type)
+  ;                     (= (length (type-union-elements type)) 2)
+  ;                     (or (and (type-cst? (car (type-union-elements type)))
+  ;                              (null? (type-cst-type (car (type-union-elements type))))
+  ;                              (type-cons? (cadr (type-union-elements type)))
+  ;                              (type-var? (type-cons-cdr (cadr (type-union-elements type))))
+  ;                              (eq? (type-var-name (type-cons-cdr (cadr (type-union-elements type))))
+  ;                                   (type-var-name var)))
+  ;                         (and (type-cst? (cadr (type-union-elements type)))
+  ;                              (null? (type-cst-type (cadr (type-union-elements type))))
+  ;                              (type-cons? (car (type-union-elements type)))
+  ;                              (type-var? (type-cons-cdr (car (type-union-elements type))))
+  ;                              (eq? (type-var-name (type-cons-cdr (car (type-union-elements type))))
+  ;                                   (type-var-name var)))))
+  ;                (string-append
+  ;                 "(listof "
+  ;                 (pp-type (if (type-cst? (car (type-union-elements type)))
+  ;                              (type-cons-car (cadr (type-union-elements type)))
+  ;                              (type-cons-car (car (type-union-elements type))))
+  ;                          delta-flow)
+  ;                 ")")
+  ;                (pp-type type delta-flow))
+  ;            (if (string=? str ") ")
+  ;                "]"
+  ;                "] ")
+  ;            str))
+  ;         ") "
+  ;         (type-rec-vars type)
+  ;         (type-rec-types type))
+  ;        (pp-type (type-rec-body type) delta-flow)
+  ;        ")")]
+  ;      [(type-struct-value? type)
+  ;       (string-append
+  ;        "#(struct:"
+  ;        (symbol->string (label-struct-type-name (type-struct-value-type-label type)))
+  ;        " "
+  ;        (list:foldr
+  ;         (lambda (elt-type str)
+  ;           (string-append
+  ;            (pp-type elt-type delta-flow)
+  ;            (if (string=? str ")")
+  ;                ""
+  ;                " ")
+  ;            str))
+  ;         ")"
+  ;         (type-struct-value-types type)))]
+  ;      [(type-struct-type? type)
+  ;       (string-append
+  ;        "#<struct-type:"
+  ;        (symbol->string (label-struct-type-name (type-struct-type-type-label type)))
+  ;        ">")]
+  ;      [else (error 'pp-type "unknown type: ~a" type)]))
   
   ; label (listof label) -> (listof label)
   ; returns list of labels from which labels in label's set went in
@@ -4808,5 +4788,86 @@
   ;                ;		  (test-f file)
   ;                )
   ;              files))
+  
+  (define printf-debug
+    (lambda (v fmt . args)
+      (apply printf (string-append "returning ~a:" fmt) (cons v args)) v))
+  
+  (dbg-define/contract subst-vals/flow-vars (type? any? . -> . type?)
+    (lambda (type delta-flow)
+      (let subst ([type type])
+        (match type
+          [(? hc:handle? type) type]
+          [($ type-case-lambda rest-arg?s req-args argss exps)
+           (let* ([argss ((if (list? argss) map2deep hc:for-each-vov!) subst argss)]
+                  [exps ((if (list? exps) map hc:for-each-vector!) subst exps)])
+             (make-type-case-lambda rest-arg?s req-args argss exps))]
+          [($ type-cons hd tl)
+           (make-type-cons (subst hd) (subst tl))]
+          [($ type-cst ty) type]
+          [($ type-empty) type]
+          [($ type-promise value)
+           (make-type-promise (subst value))]
+          [($ type-rec vars types body)
+           (make-type-rec vars (map subst types) (subst body))]
+          [($ type-struct-type label) type]
+          [($ type-struct-value label types)
+           (make-type-struct-value label (map subst types))]
+          [($ type-union elements)
+           (make-type-union (map subst elements))]
+          [($ type-values type)
+           (make-type-values (subst type))]
+          [($ type-var name reach handle) type]
+          [($ type-vector element)
+           (make-type-vector (subst element))]
+          [($ type-flow-var name) (cdr (lookup-flow-var-in-env delta-flow type))]
+          [_ (error 'subst-vals/flow-vars "Unmatched type ~a" type)]))))
+  
+  (define andmap4-vector
+    (lambda (f v0 v1 v2 v3)
+      (let loop ([i 0])
+        (if (= i (vector-length v0)) #t
+            (and (f (vector-ref v0 i) (vector-ref v1 i) (vector-ref v2 i) (vector-ref v3 i))
+                 (loop (add1 i)))))))
+  
+  (define andmap2-vector-interval
+    (lambda (f v0 v1 lo high)
+      (let loop ([i lo])
+        (if (= i high) #t
+            (and (f (vector-ref v0 i) (vector-ref v1 i))
+                 (loop (add1 i)))))))
+  
+  (define andmap2-vector
+    (lambda (f v0 v1)
+      (andmap2-vector-interval f v0 v1 0 (vector-length v0))))
+  
+  ; return #t if the p(i) = # for all i in the half-open interval lo <= i < hi 
+  (define andmap-vector-interval
+    (lambda (f v0 lo high)
+      (let loop ([i lo])
+        (if (= i high) #t
+            (and (f (vector-ref v0 i))
+                 (loop (add1 i)))))))
+  
+  (define andmap-vector
+    (lambda (f v0)
+      (andmap-vector-interval f v0 0 (vector-length v0))))
+  
+  (define ormap4-vector
+    (lambda (f v0 v1 v2 v3)
+      (let loop ([i 0])
+        (if (= i (vector-length v0)) #f
+            (or (f (vector-ref v0 i) (vector-ref v1 i) (vector-ref v2 i) (vector-ref v3 i))
+                (loop (add1 i)))))))
+  
+  (define interval->list
+    (lambda (v lo hi)
+      (let loop ([i lo])
+        (if (= i hi) '()
+            (cons (vector-ref v i) (loop (add1 i)))))))
+  
+  (define map2deep
+    (lambda (f xss)
+      (map (lambda (xs) (map f xs)) xss)))
   
   ) ; end module constraints-gen-and-prop

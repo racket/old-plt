@@ -148,7 +148,7 @@
       ; added for that type and label.
       (define (get-snip-text-from-snip-type sba-state type label)
         (case type
-          [(type) (list (sba:pp-type (sba:get-type-from-label sba-state label) 'gui))]
+          [(type) (list (sba:pp-type sba-state (sba:get-type-from-label sba-state label) 'gui))]
           [(error) (map err:sba-error-message (sba:get-errors-from-label sba-state label))]))
       
       

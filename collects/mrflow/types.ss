@@ -17,7 +17,7 @@
   (define-struct (type-cons type) (car cdr) (make-inspector))
   (define-struct (type-vector type) (element) (make-inspector))
   (define-struct (type-case-lambda type) (rest-arg?s req-args argss exps) (make-inspector))
-  (define-struct (type-var type) (name reach type) (make-inspector))
+  (define-struct (type-var type) (name reach handle) (make-inspector))
   (define-struct (type-union type) (elements) (make-inspector))
   (define-struct (type-rec type) (vars types body) (make-inspector))
   (define-struct (type-values type) (type) (make-inspector))

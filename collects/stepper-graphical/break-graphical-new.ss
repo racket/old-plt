@@ -2,6 +2,7 @@
   (import mzlib:core^
           [m : mred^]
           [marks : stepper:marks^]
+          [sh : stepper:shared^]
           [pc : mzlib:print-convert^]
           [pp : mzlib:pretty-print^]
           [z : zodiac:system^]
@@ -124,8 +125,8 @@
                [listbox-callback
                 (lambda (list-box event)
                   (if (= (length (send list-box get-selections)) 0) ; i.e., nothing selected 
-                      (begin (send list-box select saved-selection)
-                             (message-box "BAD user! No deselecting the current item." '(ok)))
+                      (begin (send list-box select stored-selection)
+                             (m:message-box "BAD user! No deselecting the current item." '(ok)))
                       (let* ([selection (context-lbox-selection)]
                              [lbox-info (send list-box get-data selection)]
                              [mark (lbox-info-mark lbox-info)]
@@ -148,7 +149,9 @@
                 (lambda (binding x y)
                   (let ([pm (make-object m:popup-menu%)])
                     (if (z:top-level-varref? binding) ; this will only include truly-top-level vars
-                        (add-to-popup pm (global-defined-value (z:varref-var binding)) 'highlighted) ; hack to fix namespace?
+                        (add-to-popup pm (global-defined-value (z:varref-var binding)) 
+                                      (z:varref-var binding)
+                                      'highlighted) ; hack to fix namespace?
                         (let*-values ([(mark) (send context-lbox get-data (context-lbox-selection))]
                                       [(rev-before after)
                                        (let loop ([remaining stored-mark-list] [building null])
@@ -164,20 +167,25 @@
                                  [rev-before-vals
                                   (extract-vals rev-before)]
                                  [after-vals
-                                  (extract-vals after)])
+                                  (extract-vals after)]
+                                 [var-name
+                                  (ccond [(z:binding? binding)
+                                          (z:binding-orig-name binding)]
+                                         [(pair? binding)
+                                          (z:varref-var (car binding))])])
                             (for-each (lambda (val)
-                                        (add-to-popup pm val))
+                                        (add-to-popup pm val var-name))
                                       (reverse after-vals))
-                            (add-to-popup pm (car rev-before-vals) 'highlighted)
+                            (add-to-popup pm (car rev-before-vals) var-name 'highlighted)
                             (for-each (lambda (val)
-                                        (add-to-popup pm val))
+                                        (add-to-popup pm val var-name))
                                       rev-before-vals))))
                     (send frame popup-menu pm (inexact->exact x) (inexact->exact y))))]
                
                  [add-to-popup
-                  (lambda (pm val . options)
+                  (lambda (pm val name . options)
                     (cond [(procedure? val)
-                           (make-object m:menu-item% "(closure)" pm (make-display-closure val))]
+                           (make-object m:menu-item% "(closure)" pm (make-display-closure val name))]
                           [(struct? val)
                            (make-object m:menu-item% "(structure)" pm void)]
                           [(class? val)
@@ -195,11 +203,13 @@
                                  (make-object m:menu-item% (get-output-string sp) pm void)))]))]
                  
                  [make-display-closure
-                  (lambda (closure)
+                  (lambda (closure var-name)
                     (lambda (menu event)
-                      ([
-                    ; whoops!  need to get into the closure table
-                    )]
+                      (let ([mark (sh:closure-table-lookup closure)]
+                            [selection (context-lbox-selection)])
+                        (send context-lbox append 
+                              (string-append "  " var-name " : " (zodiac-abbr (marks:mark-source mark)))
+                              (make-lbox-info mark #t)))))]
                  
                
                  [clear-var-highlights

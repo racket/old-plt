@@ -49,6 +49,7 @@
                 core
                 mred
                 marks
+                shared
                 print-convert
                 pretty
                 zodiac

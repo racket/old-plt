@@ -66,9 +66,9 @@
   (define (make-compilation-path file-name)
     (let* ((path (explode-path (normalize-path file-name)))
            (rev-path (reverse path))
-           (file (path->string (car rev-path))))
+           (file (car rev-path)))
       (build-path (apply build-path (reverse (cdr rev-path)))
-                  "compiled" (string-append (regexp-replace ".java" file "") ".jinfo"))))
+                  "compiled" (path-replace-suffix file ".jinfo"))))
   
   (define (write-out-jinfos files jinfos)
     (for-each (lambda (file-name jinfo)

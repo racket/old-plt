@@ -92,8 +92,7 @@
     (let ((type-recs (make-object type-records))
           (get-class-names 
            (lambda (files)
-             (map (lambda (f)
-                    (regexp-replace ".java" (path->string (file-name-from-path f)) ""))
+             (map (lambda (f) (path->string (path-replace-suffix (file-name-from-path f) "")))
                   files))))
       (map (lambda (package-files)
              (let* ((files (car package-files))

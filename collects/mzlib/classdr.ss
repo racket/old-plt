@@ -132,7 +132,7 @@
 			       ,@(apply append clausess)))))))
       
 
-      (define namespace (make-namespace))
+      (define namespace (make-namespace 'no-keywords))
       
       (parameterize ([current-namespace namespace])
         (eval `(define-macro class/d*/names ,class/d*/names-f))

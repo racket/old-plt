@@ -118,6 +118,8 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
 UInt32 kEventClassMrEd = 'MrEd';
 UInt32 kEventMrEdLeave = 'LEEV';
 
+UInt32 typeWxWindowPtr = FOUR_CHAR_CODE('WinP'), /* wxWindow * */
+
 static EventQueueRef mainQueue = NULL;
 
 
@@ -170,9 +172,38 @@ typedef struct {
 
 Bool EventFinder(EventRef inEvent, EventFinderClosure *closure)
 {
-  
-}
+  return ((GetEventClass(inEvent) == closure->eventClass) &&
+          (GetEventKind(inEvent) == closure->eventKind));
+}          
 
+
+//**********
+        wxWindow *win = (wxWindow *)q->event.message;
+
+        if ((win->__type != -1) && win->IsShown()) {
+          fr = (wxFrame *)win->GetRootFrame();
+	      fc = fr ? (MrEdContext *)fr->context : NULL;
+	      if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
+	        if (which)
+	          *which = fc;
+
+#ifdef RECORD_HISTORY
+	        fprintf(history, "leave\n");
+	        fflush(history);
+#endif
+
+	        if (check_only)
+	          return TRUE;
+	
+	        MrDequeue(q);
+	        memcpy(event, &q->event, sizeof(EventRecord));
+	        return TRUE;
+	      }
+        } else {
+          MrDequeue(q);
+        }
+
+//************
 EventComparatorUPP EventFinderUPP = NewEventComparatorUPP(EventFinder);
  
 #else

@@ -1097,6 +1097,9 @@ static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *ev
    				TicksToEventTime(UNSCALE_TIMESTAMP(evt->timeStamp)),
    				kEventAttributeUserEvent,
    				&e);
+    // result ignored:
+    SetEventParameter(e, kEventParamDirectObject, typeWxWindowPtr, sizeof(wxWindow *), target);  
+   				
    	// result ignored:
 	QueueMrEdCarbonEvent(e);
 	ReleaseEvent(e);

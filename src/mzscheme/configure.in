@@ -421,8 +421,15 @@ case $OS in
       # gcc 3.x
       MROPTIONS="$MROPTIONS -fno-rtti"
       if test "${enable_quartz}" = "yes" ; then
-        WXPRECOMP='$(WXPRECOMPDIR)/precomp.o'
-        USE_WXPRECOMP='--load-pch $(WXPRECOMPDIR)'
+        gcc_vers_three_one=`${CC} -v 2>&1 | grep "version 3[.]1"`
+        if test "$gcc_vers_three_one" = "" ; then
+          # gcc 3.3 and up
+          GCC_VERSION_THREE_THREE="yes"
+        else
+          # gcc 3.1
+          WXPRECOMP='$(WXPRECOMPDIR)/precomp.o'
+          USE_WXPRECOMP='--load-pch $(WXPRECOMPDIR)'
+        fi
       else
         MROPTIONS="$MROPTIONS -no-cpp-precomp"
       fi

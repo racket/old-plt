@@ -175,8 +175,9 @@
            [() (list)]
            [(#\% char1 char2 . rest)
             (cons
-             (vector-ref table
-                         (string->number (string char1 char2) 16))
+	     ;; This used to consult the table again, but I think that's
+	     ;;  wrong. For exmaple %2b should produce +, not a space.
+             (string (integer->char (string->number (string char1 char2) 16)))
              (internal-decode rest))]
            [(char . rest)
             (cons

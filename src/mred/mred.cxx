@@ -168,6 +168,12 @@ int mred_event_dispatch_param;
 Scheme_Type mred_eventspace_type;
 static Scheme_Object *def_dispatch;
 
+typedef struct Context_Manager_Hop {
+  Scheme_Type type;
+  MrEdContext *context;
+} Context_Manager_Hop;
+
+
 MrEdContext *MrEdGetContext(wxObject *w)
 {
   if (w) {
@@ -266,7 +272,10 @@ static void destroy_wxObject(wxWindow *w, void *)
 
 static void kill_eventspace(Scheme_Object *ec, void *)
 {
-  MrEdContext *c = (MrEdContext *)ec;
+  MrEdContext *c = ((Context_Manager_Hop *)ec)->context;
+
+  if (!c)
+    return; /* must not have had any frames or timers */
 
   {
     wxChildNode *node, *next;
@@ -327,7 +336,7 @@ static void CollectingContext(void *cfx, void *)
 static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 {
   if (!c) {
-    c = new MrEdContext;
+    c = (MrEdContext *)scheme_malloc_tagged(sizeof(MrEdContext));
 
     c->topLevelWindowList = new wxChildList();
     c->snipClassList = wxMakeTheSnipClassList();
@@ -354,13 +363,6 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   if (!config) {
     config = (Scheme_Config *)scheme_branch_config();
-#if 0
-    scheme_set_param(config, MZCONFIG_CONFIG_BRANCH_HANDLER, 
-		     scheme_make_closed_prim_w_arity((Scheme_Closed_Prim *)scheme_make_config,
-						     config,
-						     "eventspace-parameterization-branch-handler",
-						     0, 0));
-#endif
     scheme_set_param(config, mred_eventspace_param, (Scheme_Object *)c);
   }
 
@@ -373,7 +375,14 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
   num_contexts++;
 
   c->type = mred_eventspace_type;
-  scheme_add_managed(NULL, (Scheme_Object *)c, kill_eventspace, NULL, 0);
+
+  Context_Manager_Hop *mr_hop = (Context_Manager_Hop *)scheme_malloc_atomic(sizeof(Context_Manager_Hop));
+  mr_hop->type = 0;
+  mr_hop->context = c;
+  c->mr_hop = mr_hop;
+  scheme_weak_reference((void **)&mr_hop->context);
+
+  c->mref = scheme_add_managed(NULL, (Scheme_Object *)mr_hop, kill_eventspace, NULL, 0);
 
   return c;
 }
@@ -633,55 +642,38 @@ int wxEventReady()
 	  && MrEdEventReady(c));
 }
 
-#define LET_HOW_MANY_WAIT 10
-#define WAIT_JUST_HOW_LONG 2.0
-
-static int num_waiting_a_little;
-
-static int check_for_nested_or_timeout(Scheme_Object *cx)
+static void WaitForAnEvent_OrDie(MrEdContext *c)
 {
-  if (check_for_nested_event(cx))
-    return 1;
-  
-  long d = scheme_get_milliseconds() -  scheme_current_process->block_start_sleep;
-  if (d < 0)
-    d = -d;
-
-  if ((d / 1000.0) > scheme_current_process->sleep_time)
-    return 1;
-
-  return 0;
-}
-
-static int WaitJustALittleLonger(MrEdContext *c)
-{
-  if (num_waiting_a_little >= LET_HOW_MANY_WAIT)
-    return 0;
-
-  num_waiting_a_little++;
   c->ready = 1;
   c->waiting_for_nested = 1;
-  c->waiting_a_little = 1;
   c->alternate = NULL;
-  scheme_current_process->sleep_time = WAIT_JUST_HOW_LONG;
-  scheme_current_process->block_start_sleep = scheme_get_milliseconds();
 
-  scheme_block_until(check_for_nested_or_timeout, NULL, c, 0);
+  /* Suspend the thread. If another event is found for the eventspace, the
+     thread will be resumed. */
+  c->suspended = 1;
+  while (1) {
+    scheme_weak_suspend_thread(c->handler_running); /* suspend self */
 
-  scheme_current_process->sleep_time = 0;
-
-  c->waiting_a_little = 0;
-  --num_waiting_a_little;
-
-  if (!c->waiting_for_nested) {
-    DoTheEvent(c);
-    return 1;
-  } else {
-    c->ready = 0;
-    c->waiting_for_nested = 0;
-
-    return 0;
+    if (c->waiting_for_nested) {
+      /* we were resumed for a break signal, or some such: */
+      c->suspended = 0;
+      c->ready = 0;
+      c->waiting_for_nested = 0;
+      
+      scheme_process_block(0);
+      
+      /* Go back to sleep: */
+      c->ready = 1;
+      c->waiting_for_nested = 1;
+      c->suspended = 1;
+    } else
+      break;
   }
+
+  /* An event has been found. Do it. */
+  DoTheEvent(c);
+
+  /* Return to loop and look for more events... */
 }
 
 static void on_handler_killed(Scheme_Process *p)
@@ -691,12 +683,9 @@ static void on_handler_killed(Scheme_Process *p)
   p->on_kill = NULL;
   p->kill_data = NULL;
 
-  if (c->waiting_a_little) {
-    c->waiting_a_little = 0;
-    --num_waiting_a_little;
-  }
-
-  c->ready = 1;
+  /* The thread is forever not ready: */
+  c->handler_running = NULL;
+  c->ready = 0;
   c->waiting_for_nested = 0;
   c->sema_callback = 0;
   c->timer = NULL;
@@ -720,6 +709,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
   c->handler_running = this_thread;
   this_thread->on_kill = on_handler_killed;
   this_thread->kill_data = c;
+  c->suspended = 0;
   c->ready = 0;
 
   if (!scheme_setjmp(scheme_error_buf)) {
@@ -728,7 +718,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
     else {
       DoTheEvent(c);
 
-      do {
+      while(1) {
 	while (MrEdEventReady(c)) {
 	  /* reset parameterization in case the last event handler 
 	     changed it */
@@ -736,10 +726,13 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 	  
 	  MrEdDoNextEvent(c, NULL, NULL);
 	}
-      } while (WaitJustALittleLonger(c));
+
+	WaitForAnEvent_OrDie(c);
+      }
     }
   }
    
+  /* We should never get here, now. */
   c->ready = 1;
   c->handler_running = NULL;
   this_thread->on_kill = NULL;
@@ -753,6 +746,23 @@ static int main_loop_exited = 0;
 static int MrEdContextReady(void *, void *c)
 {
   return ((MrEdContext *)c)->ready;
+}
+
+static void event_found(MrEdContext *c)
+{
+  c->ready = 0;
+  
+  if (c->waiting_for_nested) {
+    if (c->suspended) {
+      c->suspended = 0;
+      scheme_weak_resume_thread(c->handler_running);
+    }
+    c->waiting_for_nested = 0;
+  } else
+    scheme_thread_w_manager(scheme_make_closed_prim(handle_events, c), 
+			    c->main_config,
+			    (Scheme_Manager *)scheme_get_param(c->main_config, 
+							       MZCONFIG_MANAGER));
 }
 
 static int try_dispatch(Scheme_Object *do_it)
@@ -772,18 +782,11 @@ static int try_dispatch(Scheme_Object *do_it)
     if (SCHEME_FALSEP(do_it))
       scheme_current_process->ran_some = 1;
 
-    if (c == mred_main_context) {
+    if (c == mred_main_context)
       scheme_check_sema_callbacks(MrEdSameContext, c, 0);
-    } else {
-      c->ready = 0;
+    else {
       c->sema_callback = 1;
-      if (c->waiting_for_nested)
-	c->waiting_for_nested = 0;
-      else
-	scheme_thread_w_manager(scheme_make_closed_prim(handle_events, c), 
-				c->main_config,
-				(Scheme_Manager *)scheme_get_param(c->main_config, 
-								   MZCONFIG_MANAGER));
+      event_found(c);
     }
 
     return 1;
@@ -799,17 +802,11 @@ static int try_dispatch(Scheme_Object *do_it)
 
     timer->Dequeue();
 
-    if (c == mred_main_context) {
+    if (c == mred_main_context)
       timer->Notify();
-    } else {
-      c->ready = 0;
+    else {
       c->timer = timer;
-      if (c->waiting_for_nested)
-	c->waiting_for_nested = 0;
-      else
-	scheme_thread(scheme_make_closed_prim(handle_events,
-					      c), 
-		      c->main_config);
+      event_found(c);
     }
 
     return 1;
@@ -830,14 +827,8 @@ static int try_dispatch(Scheme_Object *do_it)
     scheme_current_process->ran_some = 1;
 
   if (c) {
-    c->ready = 0;
     memcpy(&c->event, &e, sizeof(MrEdEvent));
-    if (c->waiting_for_nested)
-      c->waiting_for_nested = 0;
-    else
-      scheme_thread(scheme_make_closed_prim(handle_events,
-					    c), 
-		    c->main_config);
+    event_found(c);
   } else
     /* Event with unknown context: */
     MrEdDispatchEvent(&e);
@@ -848,11 +839,11 @@ static int try_dispatch(Scheme_Object *do_it)
 static void wakeup_on_dispatch(Scheme_Object *, void *fds)
 {
 #ifdef wx_x
-#ifdef wx_xt
+# ifdef wx_xt
   Display *d = XtDisplay(mred_main_context->finalized->toplevel);
-#else
+# else
   Display *d = XtDisplay(wxTheApp->topLevel);
-#endif
+# endif
   int fd;
   
   fd = ConnectionNumber(d);
@@ -1211,7 +1202,7 @@ static void MrEdSchemeMessages(char *msg, ...)
 #endif
 #if WCONSOLE_STDIO
   if (!console_out) {
-	AllocConsole();
+    AllocConsole();
     console_out = GetStdHandle(STD_OUTPUT_HANDLE);
   }
 #endif

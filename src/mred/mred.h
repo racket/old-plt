@@ -30,6 +30,7 @@ typedef struct MrEdContext {
   Scheme_Type type;
 
   Scheme_Process *handler_running;
+  int suspended;
 
   MrEdFinalizedContext *finalized;
 
@@ -42,7 +43,7 @@ typedef struct MrEdContext {
 
   short ready_to_go;
 
-  short ready, waiting_for_nested, waiting_a_little;
+  short ready, waiting_for_nested;
   short sema_callback;
   wxTimer *timer;
   MrEdEvent event;
@@ -56,6 +57,7 @@ typedef struct MrEdContext {
 
   int busyState;
 
+  struct Context_Manager_Hop *mr_hop;
   Scheme_Manager_Reference *mref;
 } MrEdContext;
 

@@ -34,6 +34,20 @@
 
 @INCLUDE wxs_drws.xci
 
+static wxColour* dcGetTextBackground(wxDC *dc)
+{
+  wxColour *c = new wxColour();
+  *c = dc->GetTextBackground();
+  return c;
+}
+
+static wxColour* dcGetTextForeground(wxDC *dc)
+{
+  wxColour *c = new wxColour();
+  *c = dc->GetTextForeground();
+  return c;
+}
+
 @CLASSBASE wxDC "wx:dc":"wx:object"
 
 @CLASSID wxTYPE_DC
@@ -87,8 +101,8 @@
 @ q "get-logical-function" : SYM[logicalFunc] GetLogicalFunction();
 @ q "get-map-mode" : SYM[mapMode] GetMapMode();
 @ q "get-pen" : wxPen! GetPen();
-@ q "get-text-background" : wxColour% GetTextBackground();
-@ q "get-text-foreground" : wxColour% GetTextForeground();
+@ m "get-text-background" : wxColour! dcGetTextBackground();
+@ m "get-text-foreground" : wxColour! dcGetTextForeground();
 
 @ q "get-size" : void GetSize(float*,float*);
 

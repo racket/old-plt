@@ -175,6 +175,20 @@ static Scheme_Object *bundle_symset_fillKind(int v) {
 
 
 
+static wxColour* dcGetTextBackground(wxDC *dc)
+{
+  wxColour *c = new wxColour();
+  *c = dc->GetTextBackground();
+  return c;
+}
+
+static wxColour* dcGetTextForeground(wxDC *dc)
+{
+  wxColour *c = new wxColour();
+  *c = dc->GetTextForeground();
+  return c;
+}
+
 
 
 
@@ -592,7 +606,7 @@ static Scheme_Object *os_wxDCGetSize(Scheme_Object *obj, int n,  Scheme_Object *
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCGetTextForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDCdcGetTextForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   class wxColour* r;
@@ -601,7 +615,7 @@ static Scheme_Object *os_wxDCGetTextForeground(Scheme_Object *obj, int n,  Schem
   
 
   
-  r = &((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetTextForeground();
+  r = dcGetTextForeground(((wxDC *)((Scheme_Class_Object *)obj)->primdata));
 
   
   
@@ -609,7 +623,7 @@ static Scheme_Object *os_wxDCGetTextForeground(Scheme_Object *obj, int n,  Schem
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCGetTextBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDCdcGetTextBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   class wxColour* r;
@@ -618,7 +632,7 @@ static Scheme_Object *os_wxDCGetTextBackground(Scheme_Object *obj, int n,  Schem
   
 
   
-  r = &((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetTextBackground();
+  r = dcGetTextBackground(((wxDC *)((Scheme_Class_Object *)obj)->primdata));
 
   
   
@@ -1641,8 +1655,8 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "max-y", os_wxDCMaxY, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "max-x", os_wxDCMaxX, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-size", os_wxDCGetSize, 2, 2);
- scheme_add_method_w_arity(os_wxDC_class, "get-text-foreground", os_wxDCGetTextForeground, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "get-text-background", os_wxDCGetTextBackground, 0, 0);
+ scheme_add_method_w_arity(os_wxDC_class, "get-text-foreground", os_wxDCdcGetTextForeground, 0, 0);
+ scheme_add_method_w_arity(os_wxDC_class, "get-text-background", os_wxDCdcGetTextBackground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-pen", os_wxDCGetPen, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-map-mode", os_wxDCGetMapMode, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-logical-function", os_wxDCGetLogicalFunction, 0, 0);

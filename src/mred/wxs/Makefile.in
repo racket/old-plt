@@ -107,60 +107,60 @@ DRAW_DEPEND = $(srcdir)/wxs_draw.xci $(srcdir)/wxs_drwf.xci $(srcdir)/wxs_drws.x
 ITEM_DEPEND = $(srcdir)/wxs_item.xci $(srcdir)/wxs_win.xci
 
 $(srcdir)/wxs_bmap.cxx : $(srcdir)/wxs_bmap.xc $(srcdir)/wxs_bmt.xci $(XCDEPEND) $(LIST_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_bmap.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_bmap.cxx ; else $(XCTOCXX) $(srcdir)/wxs_bmap.xc ; fi
 $(srcdir)/wxs_butn.cxx : $(srcdir)/wxs_butn.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_butn.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_butn.cxx ; else $(XCTOCXX) $(srcdir)/wxs_butn.xc ; fi
 $(srcdir)/wxs_chce.cxx : $(srcdir)/wxs_chce.xc  $(srcdir)/range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(ITEM_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_chce.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_chce.cxx ; else $(XCTOCXX) $(srcdir)/wxs_chce.xc ; fi
 $(srcdir)/wxs_ckbx.cxx : $(srcdir)/wxs_ckbx.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_ckbx.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_ckbx.cxx ; else $(XCTOCXX) $(srcdir)/wxs_ckbx.xc ; fi
 $(srcdir)/wxs_cnvs.cxx : $(srcdir)/wxs_cnvs.xc $(srcdir)/wxs_win.xci $(srcdir)/wxs_cnvs.xci $(srcdir)/wxs_char.xci $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_cnvs.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_cnvs.cxx ; else $(XCTOCXX) $(srcdir)/wxs_cnvs.xc ; fi
 $(srcdir)/wxs_dc.cxx : $(srcdir)/wxs_dc.xc  $(srcdir)/wxs_dorf.xci $(XCDEPEND) $(DRAW_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_dc.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_dc.cxx ; else $(XCTOCXX) $(srcdir)/wxs_dc.xc ; fi
 $(srcdir)/wxs_evnt.cxx : $(srcdir)/wxs_evnt.xc  $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_evnt.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_evnt.cxx ; else $(XCTOCXX) $(srcdir)/wxs_evnt.xc ; fi
 $(srcdir)/wxs_fram.cxx : $(srcdir)/wxs_fram.xc $(srcdir)/wxs_win.xci $(srcdir)/wxs_fram.xci $(srcdir)/wxs_espc.xci $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_fram.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_fram.cxx ; else $(XCTOCXX) $(srcdir)/wxs_fram.xc ; fi
 $(srcdir)/wxs_gage.cxx : $(srcdir)/wxs_gage.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_gage.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_gage.cxx ; else $(XCTOCXX) $(srcdir)/wxs_gage.xc ; fi
 $(srcdir)/wxs_gdi.cxx : $(srcdir)/wxs_gdi.xc  $(XCDEPEND) $(LIST_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_gdi.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_gdi.cxx ; else $(XCTOCXX) $(srcdir)/wxs_gdi.xc ; fi
 $(srcdir)/wxs_glob.cxx : $(srcdir)/wxs_glob.xc  $(XCDEPEND) $(LIST_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_glob.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_glob.cxx ; else $(XCTOCXX) $(srcdir)/wxs_glob.xc ; fi
 $(srcdir)/wxs_item.cxx : $(srcdir)/wxs_item.xc  $(ITEM_DEPEND) $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_item.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_item.cxx ; else $(XCTOCXX) $(srcdir)/wxs_item.xc ; fi
 $(srcdir)/wxs_lbox.cxx : $(srcdir)/wxs_lbox.xc  $(srcdir)/range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(ITEM_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_lbox.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_lbox.cxx ; else $(XCTOCXX) $(srcdir)/wxs_lbox.xc ; fi
 $(srcdir)/wxs_madm.cxx : $(srcdir)/wxs_madm.xc $(srcdir)/wxs_madm.xci $(srcdir)/wxs_fcs.xci $(srcdir)/wxs_bkt.xci $(srcdir)/wxs_win.xci $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_madm.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_madm.cxx ; else $(XCTOCXX) $(srcdir)/wxs_madm.xc ; fi
 $(srcdir)/wxs_medi.cxx : $(srcdir)/wxs_medi.xc $(srcdir)/wxs_mbuf.xci $(srcdir)/wxs_fcs.xci $(srcdir)/wxs_eds.xci $(srcdir)/wxs_cret.xci $(srcdir)/wxs_eop.xci $(XCDEPEND) $(LIST_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_medi.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_medi.cxx ; else $(XCTOCXX) $(srcdir)/wxs_medi.xc ; fi
 $(srcdir)/wxs_mede.cxx : $(srcdir)/wxs_mede.xc $(srcdir)/wxs_mbuf.xci $(srcdir)/wxs_fcs.xci $(srcdir)/wxs_eds.xci $(srcdir)/wxs_cret.xci $(srcdir)/wxs_bkt.xci $(XCDEPEND) $(LIST_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_mede.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_mede.cxx ; else $(XCTOCXX) $(srcdir)/wxs_mede.xc ; fi
 $(srcdir)/wxs_menu.cxx : $(srcdir)/wxs_menu.xc  $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_menu.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_menu.cxx ; else $(XCTOCXX) $(srcdir)/wxs_menu.xc ; fi
 $(srcdir)/wxs_mio.cxx : $(srcdir)/wxs_mio.xc  $(XCDEPEND) $(LIST_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_mio.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_mio.cxx ; else $(XCTOCXX) $(srcdir)/wxs_mio.xc ; fi
 $(srcdir)/wxs_misc.cxx : $(srcdir)/wxs_misc.xc  $(srcdir)/wxs_espc.xci $(XCDEPEND) $(CB_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_misc.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_misc.cxx ; else $(XCTOCXX) $(srcdir)/wxs_misc.xc ; fi
 $(srcdir)/wxs_mpb.cxx : $(srcdir)/wxs_mpb.xc  $(srcdir)/wxs_mbuf.xci $(srcdir)/wxs_eds.xci $(srcdir)/wxs_cret.xci $(srcdir)/wxs_fcs.xci $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_mpb.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_mpb.cxx ; else $(XCTOCXX) $(srcdir)/wxs_mpb.xc ; fi
 $(srcdir)/wxs_obj.cxx : $(srcdir)/wxs_obj.xc  $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_obj.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_obj.cxx ; else $(XCTOCXX) $(srcdir)/wxs_obj.xc ; fi
 $(srcdir)/wxs_panl.cxx : $(srcdir)/wxs_panl.xc $(srcdir)/wxs_panl.xci $(srcdir)/wxs_fram.xci $(srcdir)/wxs_cnvs.xci $(srcdir)/wxs_dorf.xci \
                          $(srcdir)/wxs_ifnt.xci $(srcdir)/wxs_win.xci $(srcdir)/wxs_espc.xci $(XCDEPEND) $(CB_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_panl.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_panl.cxx ; else $(XCTOCXX) $(srcdir)/wxs_panl.xc ; fi
 $(srcdir)/wxs_rado.cxx : $(srcdir)/wxs_rado.xc  $(srcdir)/range.xci $(XCDEPEND) $(CB_DEPEND) $(LIST_DEPEND) $(ITEM_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_rado.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_rado.cxx ; else $(XCTOCXX) $(srcdir)/wxs_rado.xc ; fi
 $(srcdir)/wxs_slid.cxx : $(srcdir)/wxs_slid.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_slid.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_slid.cxx ; else $(XCTOCXX) $(srcdir)/wxs_slid.xc ; fi
 $(srcdir)/wxs_snip.cxx : $(srcdir)/wxs_snip.xc  $(srcdir)/wxs_snip.xci $(srcdir)/wxs_bmt.xci $(srcdir)/wxs_cret.xci $(srcdir)/wxs_eop.xci $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_snip.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_snip.cxx ; else $(XCTOCXX) $(srcdir)/wxs_snip.xc ; fi
 $(srcdir)/wxs_styl.cxx : $(srcdir)/wxs_styl.xc  $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_styl.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_styl.cxx ; else $(XCTOCXX) $(srcdir)/wxs_styl.xc ; fi
 $(srcdir)/wxs_win.cxx : $(srcdir)/wxs_win.xc $(srcdir)/wxs_win.xci $(XCDEPEND)
-	$(XCTOCXX) $(srcdir)/wxs_win.xc
+	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_win.cxx ; else $(XCTOCXX) $(srcdir)/wxs_win.xc ; fi
 
 WXSCC = $(CXX) $(WXSCFLAGS) $(LOCALFLAGS) -c
 

@@ -13,9 +13,9 @@
             (build-path (if (eq? 'relative base) (current-directory) base)
                         name)))))
 
-  ;; The plthome-ify and un-plthome-ify two functions are used to
-  ;; store paths that are relative to plthome as such in dep files.
-  ;; This means that if the plt tree is moved .dep files still work.
+  ;; The plthome-ify and un-plthome-ify functions are used to store
+  ;; paths that are relative to plthome as such in dep files.  This
+  ;; means that if the plt tree is moved .dep files still work.
   ;; `plthome-ify' uses `plthome' with a hard-wired "/" suffix, so it
   ;; will not work properly if there is a different separator or if
   ;; the input path uses a directory that is equivalent to plthome but
@@ -29,20 +29,20 @@
   ;; with a pathname in its cdr, the plthome-ified pathname will
   ;; itself be a pair.
 
+  (define (simplify-bytes-path bytes)
+    (path->bytes (simplify-path (bytes->path bytes))))
+
   (define simplify-path*
     (if (eq? 'windows (system-type))
-	(lambda (str) (regexp-replace* #rx#"\\\\" 
-				       (path->bytes
-					(simplify-path (bytes->path str)))
-				       #"/"))
-	(lambda (str) (path->bytes (simplify-path (bytes->path str))))))
+      (lambda (str)
+        (regexp-replace* #rx#"\\\\" (simplify-bytes-path str) #"/"))
+      simplify-bytes-path))
 
   (define plthome-bytes
     (and plthome (path->bytes plthome)))
   (define plthome/
     (and plthome
 	 (regexp-replace #rx#"/?$" (simplify-path* (path->bytes plthome)) #"/")))
-
   (define plthome/-len
     (and plthome/ (bytes-length plthome/)))
 
@@ -53,28 +53,31 @@
              (cons (car x) (f (cdr x)))]
             [else (f x)])))
 
-  ;; plthome-ify : bytes -> datum
-  (define plthome-ify
-    (maybe-cdr-op 'plthome-ify
-     (lambda (path)
-       (let ([path* (and (bytes? path) (simplify-path* path))])
-         (cond [(and path*
-                     (> (bytes-length path*) plthome/-len)
-                     (equal? (subbytes path* 0 plthome/-len) plthome/))
-                (cons 'plthome (subbytes path* plthome/-len))]
-               [(equal? path* plthome-bytes) (cons 'plthome "")]
-               [else path])))))
+  ;; plthome-ify : path-or-bytes -> datum-containing-bytes-or-path
+  (define (plthome-ify* path)
+    (let* ([path (cond [(bytes?  path) path]
+                       [(path?   path) (path->bytes   path)]
+                       [else (error 'plthome-ify
+                                    "expecting a byte-string, got ~e" path)])]
+           [path* (simplify-path* path)])
+      (cond [(and path*
+                  (> (bytes-length path*) plthome/-len)
+                  (equal? (subbytes path* 0 plthome/-len) plthome/))
+             (cons 'plthome (subbytes path* plthome/-len))]
+            [(equal? path* plthome-bytes) (cons 'plthome #"")]
+            [else path])))
 
-  ;; un-plthome-ify : datum -> path
-  (define un-plthome-ify
-    (maybe-cdr-op 'un-plthome-ify
-     (lambda (path)
-       (cond
-	[(and (pair? path) 
-	      (eq? 'plthome (car path))
-	      (bytes? (cdr path)))
-	 (if (equal? (cdr path) #"") 
-	     plthome 
-	     (build-path plthome (bytes->path (cdr path))))]
-	[(bytes? path) (bytes->path path)]
-	[else path])))))
+  ;; un-plthome-ify : datum-containing-bytes-or-path -> path
+  (define (un-plthome-ify* path)
+    (cond [(and (pair? path)
+                (eq? 'plthome (car path))
+                (bytes? (cdr path)))
+           (if (equal? (cdr path) #"")
+             plthome
+             (build-path plthome (bytes->path (cdr path))))]
+          [(bytes? path) (bytes->path path)]
+          [else path]))
+
+  (define plthome-ify    (maybe-cdr-op 'plthome-ify    plthome-ify*))
+  (define un-plthome-ify (maybe-cdr-op 'un-plthome-ify un-plthome-ify*))
+  )

@@ -1272,7 +1272,7 @@ Check Syntax separates four classes of identifiers:
       ;;
       ;; the inputs match the outputs of annotate-basic, except this
       ;; accepts the user's namespace in addition and doesn't accept
-      ;; the boolean or tail call hash-table from annotate-basic.
+      ;; the boolean.
       (define (annotate-complete user-namespace
                                  user-directory
                                  binders
@@ -1307,8 +1307,7 @@ Check Syntax separates four classes of identifiers:
       ;;                             (listof syntax)
       ;;                             (listof (cons boolean syntax[original]))
       ;;                             (listof (cons syntax[original] syntax[original]))
-      ;;                             boolean
-      ;;                             hash-table[ ... ])
+      ;;                             boolean)
       ;; annotates the lexical structure of the program `sexp', except
       ;; for the variables in the program. returns the variables in several
       ;; lists -- the first is the ones that occur in binding positions
@@ -1326,12 +1325,12 @@ Check Syntax separates four classes of identifiers:
         (let ([binders null]
               [varrefs null]
               [tops null]
-              [requires null]
-              [require-for-syntaxes null]
               [referenced-macros null]
               [bound-in-sources null]
-              [has-module? #f]
-              [tail-ht (make-hash-table)])
+              
+              [requires null]
+              [require-for-syntaxes null]
+              [has-module? #f])
           (let level-loop ([sexp sexp]
                            [high-level? #f])
             (annotate-original-keywords sexp)
@@ -1666,8 +1665,7 @@ Check Syntax separates four classes of identifiers:
       (define (annotate-binder vars-ht)
         (lambda (binder)
           (when (syntax-original? binder)
-            (let ([same-as-binder? (lambda (x) (module-identifier=? x binder))])
-              (make-rename-menu binder vars-ht)))))
+            (make-rename-menu binder vars-ht))))
       
       ;; annotate-varref : (syntax -> void) (listof syntax) (listof syntax) boolean -> syntax -> void
       ;; annotates a variable reference with green (if bound)
@@ -1702,7 +1700,6 @@ Check Syntax separates four classes of identifiers:
           (let ([defined-in-user-namespace?
                  (parameterize ([current-namespace user-namespace])
                    (namespace-variable-value (syntax-e varref) #t (lambda () #f)))])
-            ;; namespace-variable-value doesn't tell enough.
             (if defined-in-user-namespace?
                 (color varref lexically-bound-variable-style-str)
                 (color varref unbound-variable-style-str)))))
@@ -1797,7 +1794,7 @@ Check Syntax separates four classes of identifiers:
         (unless (null? stxs)
           (annotate-tail-position orig-stx (car (last-pair stxs)) tail-ht)))
       
-      ;; annotate-tail-position : syntax -> boid
+      ;; annotate-tail-position : syntax -> void
       ;; colors the parens (if any) around the argument
       ;; to indicate this is a tail call.
       (define (annotate-tail-position orig-stx tail-stx tail-ht)
@@ -1936,7 +1933,7 @@ Check Syntax separates four classes of identifiers:
       ;;                    (union (listof syntax[original]) (listof (cons boolean syntax[original])))
       ;;                 -> (listof syntax[original])
       ;; similar to flatten-cons-tree, except it
-      ;; flattesn the tree associated with the 'bound-in-source property
+      ;; flattens the tree associated with the 'bound-in-source property
       (define (flatten-bis-tree level ct acc)
         (let loop ([ct ct]
                    [acc acc])

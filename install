@@ -32,6 +32,8 @@ exit
 
 (printf "setting PLTHOME to \"~a\" in scripts:~n" plthome)
 
+(require (lib "check-text.ss" "version"))
+
 (for-each
  (lambda (f)
    (cond
@@ -62,6 +64,19 @@ exit
 	     'truncate))))]))
  (directory-list "bin"))
 
+(define (get-y-n)
+  (flush-output)
+  (let ([r (read-line)])
+    (not (regexp-match "^[nN]" r))))
+
+(define check-version?
+    (begin
+      (printf "Check for updates of PLT software over the Internet (y/n)? [y] ")
+      (get-y-n)))
+
+(when check-version?
+      (check-version))
+
 (define zo?
   (or (getenv "RPM_INSTALL_PREFIX")
       (begin
@@ -69,9 +84,7 @@ exit
 	(printf "files now takes a few minutes and requires about 5MB of additional~n")
 	(printf "disk space. Create .zo files later by running plt/bin/setup-plt.~n")
 	(printf "  Create .zo files now (y/n)? [y] ")
-	(flush-output)
-	(let ([r (read-line)])
-	  (not (regexp-match "^[nN]" r))))))
+	(get-y-n))))
 
 (when zo?
   (dynamic-require '(lib "setup.ss" "setup") #f))

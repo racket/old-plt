@@ -1500,6 +1500,10 @@ file_char_ready (Scheme_Input_Port *port)
   if (fp->_cnt)
     return 1;
 #endif
+#ifdef HAS_SCO_IOB  
+  if (fp->__cnt)
+    return 1;
+#endif
 #ifdef HAS_GNU_IOB
   if (fp->_egptr - fp->_gptr)
     return 1;

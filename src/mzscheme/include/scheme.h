@@ -1054,6 +1054,7 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_GENDATAP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_generic_data_type)
 #define SCHEME_UNITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_unit_type)
 #define SCHEME_CONFIGP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_config_type)
+#define SCHEME_NAMESPACEP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_namespace_type)
 
 /* other */
 #define SCHEME_CADR(obj)     (SCHEME_CAR (SCHEME_CDR (obj)))

@@ -771,6 +771,11 @@ extern double scheme_infinity_val, scheme_minus_infinity_val;
 # else
 #  define MZ_IS_NAN(d) (!((d) == (d)))
 # endif
+#elif USE_SCO_IEEE_PREDS
+# include <ieeefp.h>
+# define MZ_IS_POS_INFINITY(d) (fpclass(d) == FP_PINF)
+# define MZ_IS_NEG_INFINITY(d) (fpclass(d) == FP_NINF)
+# define MZ_IS_NAN(d) isnan(d)
 #else
 # define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
 # define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))

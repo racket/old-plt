@@ -68,6 +68,9 @@ case $OS in
     # gcc:
     # make AR='ar' LIBS='-Wl,-E' DYNOPTIONS='-fPIC' $GCOPTS DEBUGFLAGS='' "$@"
     ;;
+  SCO) # How do you really recognize SCO?
+    make $GCOPTS LIBS='-lc -lsocket' RANLIB=':' "$@"
+    ;;
   CYGWIN32*)
     if [ "${MZNOEXTTABLE}" = "yes" ]; then 
       make cygwin-dll-setup

@@ -17,4 +17,29 @@
 			       trans?
 			  clause ...))])))
 
-  (export kernel-syntax-case))
+  (define (kernel-form-identifier-list stx)
+    (map (lambda (s)
+	   (datum->syntax s #f stx))
+	 '(begin
+	    define-values
+	    define-syntax
+	    set!
+	    let
+	    let-values
+	    let*
+	    let*-values
+	    letrec
+	    letrec-values
+	    lambda
+	    case-lambda
+	    if
+	    struct
+	    quote
+	    letrec-syntax
+	    with-continuation-mark
+	    #%app
+	    #%unbound
+	    #%datum)))
+  
+  (export kernel-syntax-case
+	  kernel-form-identifier-list))

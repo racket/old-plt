@@ -104,7 +104,7 @@
     
     (define (check-fn-form fn stx)
       ;; Check form of fn:
-      (syntax-case* fn (build-path) module-or-top-identifier=?
+      (syntax-case* fn (build-path lib) module-or-top-identifier=?
 	[fn
 	 (string? (syntax-e (syntax fn)))
 	 'ok]
@@ -117,6 +117,12 @@
 		      (module-identifier=? e (quote-syntax up))
 		      (module-identifier=? e (quote-syntax same))))))
 	  (syntax->list (syntax (elem1 elem ...))))
+	 'ok]
+	[(lib filename ...)
+	 (andmap
+	  (lambda (e)
+	    (string? (syntax-e e)))
+	  (syntax->list (syntax (filename ...))))
 	 'ok]
 	[_else (raise-syntax-error #f "bad syntax" stx fn)]))
 

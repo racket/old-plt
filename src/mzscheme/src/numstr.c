@@ -1408,8 +1408,6 @@ char *number_to_allocated_string(int radix, Scheme_Object *obj, int alloc)
     rs = number_to_allocated_string(radix, r, 0);
     is = number_to_allocated_string(radix, i, 0);
 
-    printf("%s %s\n", rs, is);
-
     rlen = strlen(rs);
     ilen = strlen(is);
     s = (char *)scheme_malloc_atomic(rlen + ilen + 3);

@@ -162,14 +162,14 @@ gc/objects:
 sgc/objects:
 	mkdir sgc/objects
 
-$(GCDIR)/$(OBJDIR)/gc.a: $(GCDIR)/$(OBJDIR)
+$(GCDIR)/$(OBJDIR)/gc.a: $(GCDIR)/$(OBJDIR)/*.o
 	$(AR) ruv $(GCDIR)/$(OBJDIR)/gc.a $(GCDIR)/$(OBJDIR)/*.o  
 
 mzlibrary: lib $(LIBDIR) 
 	cd src; $(XMAKE) -e all 
 	$(XMAKE) $(LIBDIR)/libmzscheme.a
 
-$(LIBDIR)/libmzscheme.a: src/$(OBJDIR)
+$(LIBDIR)/libmzscheme.a: src/$(OBJDIR)/*.o
 	$(AR) ruv $(LIBDIR)/libmzscheme.a src/$(OBJDIR)/*.o
 	$(RANLIB) $(LIBDIR)/libmzscheme.a
 

@@ -12,23 +12,23 @@ Removed secure-primitive-exception-types
 Removed readable type symbols (e.g., #<procedure>)
 Removed semaphore-callback (MrEd now has queue-callback)
 Fixed unfairness in threads (perpetually creating threads
- would cause certain threads, particularly the main thread,
- to never get any time)
+ would starve certain threads, particularly the main thread)
 Added current-memory-use
 Asynchronous breaks are now disabled during dynamic-wind
  pre and post thunks
 Removed user-break-poll-handler; spawn a thread that sleeps and
  calls break-thread instead
-Removes dynamic-enable-break (no long needed since dynamic-wind
+Removed dynamic-enable-break (no long needed since dynamic-wind
  post thunks can't be broken), but moved it to MzLib's thread.ss
 Renamed call-with-escaping-continution procedure to
  call-with-escape-continution (call/ec unchanged)
-Cut the exn hierarchy to about 1/4 of its previous size, with
- minor renaming on the remainder; see the manual for details
+Finalized with-continuation-mark and current-continuation-marks
+ and documented them; the errortrace poor man's debugger relies
+ on continuation marks; see plt/collects/errortrace/doc.txt
 Added raise-mismatch-error
-MacOS: getenv and putenv work within MzScheme; in a file called
+MacOS: getenv and putenv work within MzScheme; if a file named
  "Environment" resides in MzScheme's folder, it provides the
- initial environment
+ initial environment; see the documentation for details
 MacOS: fixed TCP problems
 Changed handling of inexact can complex numbers towards compliance
  with Brad Lucier's proposal:
@@ -56,6 +56,10 @@ MzLib cleanup:
  Removed from functio.ss: dynamic-wind/protect-break
  Added to thread.ss: dynamic-enable-break
  Moved MzLib's compat.ss out of the core
+pretty-print: default display string handler is now the default
+ port display handler instead of the display procedure
+Ported to BeOS
+Inside MzScheme: new built-in type: scheme_complex_izi_type
 
 Version 53, July 25, 1998
 Changed file-modify-seconds to file-or-directory-modify-seconds

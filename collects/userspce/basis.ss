@@ -29,6 +29,8 @@
   (define eq?-only-compares-symbols (make-parameter #f))
   (define r4rs-style-printing (make-parameter #f))
   
+  (define this-program (with-handlers ([void "mzscheme"]) (global-defined-value 'program)))
+
   (define-struct/parse setting (use-zodiac?
 				vocabulary-symbol
 				case-sensitive?
@@ -44,7 +46,8 @@
 				disallow-untagged-inexact-numbers
 				print-tagged-inexact-numbers
 				whole/fractional-exact-numbers
-				printing))
+				printing
+				define-argv?))
 
   ;; settings : (list-of (list symbol setting))
   (define settings
@@ -64,7 +67,8 @@
 			       (disallow-untagged-inexact-numbers #f)
 			       (print-tagged-inexact-numbers #t)
 			       (whole/fractional-exact-numbers #f)
-			       (printing constructor-style))))
+			       (printing constructor-style)
+			       (define-argv? #f))))
 	  (vector 'Intermediate (make-setting/parse
 				 `((use-zodiac? #t)
 				   (vocabulary-symbol intermediate)
@@ -81,7 +85,8 @@
 				   (disallow-untagged-inexact-numbers #f)
 				   (print-tagged-inexact-numbers #t)
 				   (whole/fractional-exact-numbers #f)
-				   (printing constructor-style))))
+				   (printing constructor-style)
+				   (define-argv? #f))))
 	  (vector 'Advanced (make-setting/parse
 			     `((use-zodiac? #t)
 			       (vocabulary-symbol advanced)
@@ -98,7 +103,8 @@
 			       (disallow-untagged-inexact-numbers #f)
 			       (print-tagged-inexact-numbers #f)
 			       (whole/fractional-exact-numbers #f)
-			       (printing constructor-style))))
+			       (printing constructor-style)
+			       (define-argv? #f))))
 	  (vector 'MzScheme (make-setting/parse
 			     `((use-zodiac? #f)
 			       (vocabulary-symbol mzscheme)
@@ -115,7 +121,8 @@
 			       (disallow-untagged-inexact-numbers #f)
 			       (print-tagged-inexact-numbers #f)
 			       (whole/fractional-exact-numbers #f)
-			       (printing r4rs-style))))
+			       (printing r4rs-style)
+			       (define-argv? #t))))
 	  (vector 'MzSchemeDebug (make-setting/parse
 				  `((use-zodiac? #t)
 				    (vocabulary-symbol mzscheme-debug)
@@ -132,7 +139,8 @@
 				    (disallow-untagged-inexact-numbers #f)
 				    (print-tagged-inexact-numbers #f)
 				    (whole/fractional-exact-numbers #f)
-				    (printing r4rs-style))))))
+				    (printing r4rs-style)
+				    (define-argv? #t))))))
 
   ;; level->number : symbol -> int
   (define level->number
@@ -529,6 +537,10 @@
 
 	    (current-eval drscheme-eval-handler)
 	    (current-load drscheme-load-handler)
+
+	    (when (setting-define-argv? setting)
+	      (global-defined-value 'argv #())
+	      (global-defined-value 'program this-program))
 
 	    (mzlib:print-convert:empty-list-name 'empty)
 

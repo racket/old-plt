@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.13 1998/10/18 12:04:10 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.14 1998/10/19 20:40:49 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -794,7 +794,19 @@ void wxWindowDC::TryColour(wxColour *src, wxColour *dest)
 // text and font methods
 //-----------------------------------------------------------------------------
 
-void wxWindowDC::DrawText(char *text, float x, float y, Bool WXUNUSED(use16))
+static int str16len(const char *s)
+{
+  int count = 0;
+
+  while (s[0] && s[1]) {
+    count++;
+    s += 2;
+  }
+
+  return count;
+}
+
+void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit)
 {
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
@@ -807,16 +819,27 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool WXUNUSED(use16))
     int         ascent, descent, cx, cy;
     int         dev_x = XLOG2DEV(x);
     int         dev_y = YLOG2DEV(y);
-    int         textlen = strlen(text);
+    int         textlen = use16bit ? str16len(text) : strlen(text);
     XCharStruct overall;
 
-    (void)XTextExtents(fontinfo, text, textlen, &direction, &ascent, &descent,
-		       &overall);
+    if (use16bit)
+      (void)XTextExtents16(fontinfo, (XChar2b *)text, textlen, &direction, 
+			   &ascent, &descent, &overall);
+    else
+      (void)XTextExtents(fontinfo, text, textlen, &direction, &ascent, &descent,
+			 &overall);
+
     cx = overall.width;
     cy = ascent + descent;
     if (current_text_bgmode != wxTRANSPARENT) {
+      if (use16bit)
+	XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text, textlen);
+      else
 	XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text, textlen);
     } else {
+      if (use16bit)
+	XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text, textlen);
+      else
 	XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text, textlen);
     }
     CalcBoundingBox(x, y);
@@ -855,7 +878,7 @@ float wxWindowDC::GetCharWidth(void)
 
 void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_descent,
 			       float *_ext_leading, wxFont *_font,
-			       Bool WXUNUSED(use16bit))
+			       Bool use16bit)
 {
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return;
@@ -869,8 +892,15 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 
     int         direction, ascent, descent;
     XCharStruct overall;
-    XTextExtents ((XFontStruct*)font_to_use->GetInternalFont(scale_x), s, strlen(s),
-		  &direction, &ascent, &descent, &overall);
+    XFontStruct *fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x);
+
+    if (use16bit)
+      XTextExtents16(fontinfo, (XChar2b *)s, str16len(s),
+		     &direction, &ascent, &descent, &overall);
+    else
+      XTextExtents(fontinfo, s, strlen(s),
+		   &direction, &ascent, &descent, &overall);
+
     *_w = XDEV2LOGREL(overall.width);
     *_h = YDEV2LOGREL(ascent + descent);
     if (_descent)

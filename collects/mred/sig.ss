@@ -155,4 +155,5 @@
          get-top-level-edit-target-window
          register-collecting-blit
          unregister-collecting-blit
-         install-standard-text-bindings))
+         install-standard-text-bindings
+         sleep/yield))

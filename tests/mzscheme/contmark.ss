@@ -28,6 +28,11 @@
 		   (let ([x (with-continuation-mark 'key 10 (current-continuation-marks 'key))])
 		     (current-continuation-marks 'key))))
 
+(test '((11) (10 11) (11)) 'wcm (with-continuation-mark 'key 11
+				  (list (current-continuation-marks 'key)
+					(with-continuation-mark 'key 10 (current-continuation-marks 'key))
+					(current-continuation-marks 'key))))
+
 (define (get-marks)
   (current-continuation-marks 'key))
 
@@ -79,6 +84,20 @@
 	 (try-again 2))))
 
  (test '((1) (2) (1)) 'call/cc-restore-marks l))
+
+;; Create a deep stack with a deep mark stack
+(test #t
+      'deep-stacks
+      (equal?
+       (let loop ([n 1000][l null])
+	 (if (zero? n)
+	     l
+	     (loop (sub1 n) (cons n l))))
+       (let loop ([n 1000])
+	 (if (zero? n)
+	     (current-continuation-marks 'x)
+	     (let ([x (with-continuation-mark 'x n (loop (sub1 n)))])
+	       x)))))
 
 ;; Create a deep mark stack 10 times
 (let loop ([n 10])

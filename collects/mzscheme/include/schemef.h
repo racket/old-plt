@@ -209,6 +209,12 @@ Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj);
 void scheme_set_tail_buffer_size(int s);
 Scheme_Object *scheme_force_value(Scheme_Object *);
 
+void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val);
+void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *);
+void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *);
+void scheme_temp_dec_mark_depth();
+void scheme_temp_inc_mark_depth();
+
 /* Internal */
 #ifndef MZ_REAL_THREADS
 Scheme_Object *scheme_do_eval(Scheme_Object *obj, int _num_rands, Scheme_Object **rands, int val);

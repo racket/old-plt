@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.17 1998/10/30 00:01:39 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.18 1998/11/12 18:14:44 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1600,7 +1600,8 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 
   if (rop >= 0) {
     CalcBoundingBox(XSCALEBND(xdest), YSCALEBND(ydest));
-    CalcBoundingBox(XSCALEBND(xdest + fwidth), YSCALEBND(ydest + fheight));
+    /* Bitmap isn't scaled: */
+    CalcBoundingBox(XSCALEBND(xdest) + fwidth, YSCALEBND(ydest) + fheight);
   }
 
   return TRUE;

@@ -225,7 +225,7 @@ install-3m-basic:
 install-3m@NOT_OSX@:
 	$(MAKE) install-3m-basic
 
-LIBIDIR=$(prefix)/lib
+LIBIDIR=`(cd $(prefix); pwd)`/lib
 BUILDINFO=$(LIBIDIR)/buildinfo
 ICP=@ICP@
 
@@ -235,7 +235,7 @@ ICP=@ICP@
 normal-install:
 	cd ..; if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
 	cd ..; rm -f $(prefix)/bin/mzscheme
-	cd ..; $(ICP) mzscheme/mzscheme $(prefix)/bin/mzscheme
+	cd ..; $(ICP) mzscheme/mzscheme `(cd $(prefix); pwd)`/bin/mzscheme
 	cd ..; if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
 	cd ..; cp mzscheme/mzdyn.@LTO@ $(LIBIDIR)/mzdyn.@LTO@
 	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
@@ -268,14 +268,14 @@ install-3m@OSX@:
 	if [ ! -d $(MZFWDIR)/Versions/$(FWVERSION)_3m ] ; then mkdir $(MZFWDIR)/Versions/$(FWVERSION)_3m ; fi
 	cp $(MZFWMMM) $(MZFWDIR)/Versions/$(FWVERSION)_3m/
 
-WLIBIDIR=$(prefix)/lib
+WLIBIDIR=`(cd $(prefix); pwd)`/lib
 WBUILDINFO=$(WLIBIDIR)/buildinfo
 
 cygwin-install:
 	cd ..; rm -f $(prefix)/mzscheme.exe
 	cd ..; cp mzscheme/mzscheme.exe $(prefix)/mzscheme.exe
 	cd dynsrc; $(MAKE) cygwin-install
-	cd ..; $(ICP) mzscheme/mzstart.exe $(prefix)/collects/launcher/mzstart.exe
+	cd ..; $(ICP) mzscheme/mzstart.exe `(cd $(prefix); pwd)`/collects/launcher/mzstart.exe
 	cd ..; if [ ! -d $(WLIBIDIR) ] ; then mkdir $(WLIBIDIR) ; fi
 	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
 	cd ..; $(ICP) mzscheme/libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@

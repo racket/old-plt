@@ -227,12 +227,12 @@ install-no-lib:
 	echo "no dynamic libs"
 
 install-lib:
-	cd ..; $(ICP) mred/libmred.@LIBSFX@ $(prefix)/lib/
+	cd ..; $(ICP) mred/libmred.@LIBSFX@ `(cd $(prefix); pwd)`/lib/
 
 install_wx_xt:
 	cd ..; if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
 	cd ..; rm -f $(prefix)/bin/mred
-	cd ..; $(ICP) mred/mred $(prefix)/bin/
+	cd ..; $(ICP) mred/mred `(cd $(prefix); pwd)`/bin/
 	$(MAKE) @MRLIBINSTALL@
 
 MRFWDIR = @FRAMEWORK_INSTALL_DIR@/PLT_MrEd.framework

@@ -24,7 +24,7 @@ AC_ARG_ENABLE(mred, [  --enable-mred           compile MrEd as well as MzScheme 
 
 AC_ARG_ENABLE(gl, [  --enable-gl             include OpenGL in MrEd (enabled by default for Linux)])
 AC_ARG_ENABLE(xrender, [  --enable-xrender        use Xrender when available (enabled by default)])
-AC_ARG_ENABLE(xrender, [  --enable-xft            use Xft when available (enabled by default)])
+AC_ARG_ENABLE(xft, [  --enable-xft            use Xft when available (enabled by default)])
 AC_ARG_ENABLE(libpng, [  --enable-libpng         use libpng instead of building (enabled by default)])
 AC_ARG_ENABLE(libjpeg, [  --enable-libjpeg        use libjpeg instead of building (enabled by default)])
 
@@ -79,6 +79,7 @@ fi
 
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
+  enable_xrender=no
   enable_libpng=no
   enable_libjpeg=no
 fi
@@ -441,7 +442,7 @@ esac
 
 MACH=`$UNAME -m`
 case "$MACH" in
-  alpha)
+  alpha | SunOS)
     if test "$CC" = "gcc" ; then
       if test "$as_was_set" = "no" ; then
        AS="gcc -c -x assembler-with-cpp"
@@ -714,21 +715,28 @@ fi
 
 if test "${enable_shared}" = "yes" ; then
   echo "Configuring libtool"
+
   if test ! -d "lt" ; then
     mkdir "lt"
   fi
   abssrcdir=`(cd ${srcdir}; pwd)`
+  absprefix=`(cd ${prefix}; pwd)`
+
   (cd lt; sh ${abssrcdir}/lt/configure --enable-shared --disable-static)
   LTDIR=`pwd`/lt
-  absprefix=`(cd ${prefix}; pwd)`
-  AR="${LTDIR}/libtool --mode=link $CC -rpath ${absprefix}/lib -o"
+
+  plt_lib_version=`grep " MZSCHEME_VERSION " ${srcdir}/mzscheme/src/schvers.h | cut -d '"' -f 2`
+
+  AR="${LTDIR}/libtool --mode=link $CC -release ${plt_lib_version} -rpath ${absprefix}/lib -o"
   STATIC_AR="${LTDIR}/libtool --mode=link $CC -o"
   ARFLAGS=""
   RANLIB=":"
   MZLINKER="${LTDIR}/libtool --mode=link $CC"
   MREDLINKER="${LTDIR}/libtool --mode=link $CXX"
+  PLAIN_CC="$CC"
   CC="${LTDIR}/libtool --mode=compile $CC"
   CXX="${LTDIR}/libtool --mode=compile $CXX"
+  AS="${LTDIR}/libtool --mode=compile $AS"
   LIBSFX=la
   WXLIBS=WXLIBSDYN
   ICP="${LTDIR}/libtool --mode=install cp"
@@ -769,6 +777,7 @@ AC_SUBST(WBUILD)
 AC_SUBST(CC_FOR_BUILD)
 AC_SUBST(REZ)
 AC_SUBST(MZLINKER)
+AC_SUBST(PLAIN_CC)
 
 AC_SUBST(x_includes)
 AC_SUBST(x_libraries)

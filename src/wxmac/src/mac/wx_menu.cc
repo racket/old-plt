@@ -255,7 +255,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
   int i, offset;
   MenuHandle nmh;
   int helpflg;
-  int hId = 0;
+  int hId;
 	
   if (!toHandle)  {
     // Remove accel - not used in Mac Top Level Menus
@@ -304,6 +304,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
   for (i = 0; i < cnt; i++) {
     // Try to recreate from the wxMenuItem
     wxMenuItem* menuItem = (wxMenuItem*)node->Data(); 
+    hId = 0;
     if (menuItem->itemId == -1) {
       // Separator
       tmp[0] = t[0] = 1;

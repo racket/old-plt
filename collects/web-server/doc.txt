@@ -29,10 +29,24 @@ sends an error response, the monitor will notify <alert-email> of the problem.
 Another Start
 =============
 
-To use the Web server without a launcher, require web-server.ss:
-  (require (lib "web-server.ss" "web-server"))
+Using the version 200 release of DrScheme, programmers can insert graphical
+XML boxes into programs.  These boxes are not supported by the version 200
+release of the Web server when running outside of DrScheme.  Future releases
+of the Web server will remedy this situation.  For the current release,
+start the Web server from inside DrScheme.
 
-This provides one main function:
+To start the server
+  1) Start DrScheme
+  2) Type
+       (require (lib "launch.ss" "web-server"))
+     into the definitions window.
+  3) Click the Execute button.
+
+Alternatively, requiring the library _web-server.ss_, via 
+  (require (lib "web-server.ss" "web-server"))
+provides the serve function, which starts the server with more configuration
+options.
+
 > serve : configuration [nat] [str or #f] -> (-> void)
   (define (serve configuration port ip-address) ...)
   
@@ -104,14 +118,6 @@ A Response is one of the following:
      an environment is a (listof (cons symbol string))
    - body is a (listof string)
 
-
- > (make-response/incremental code message seconds mime extras body)
-   all the fields are the same as for response/full, except
-   - body is a ((string ... -> void) -> void)
-     In other words, body is a function that accepts an output function.
-     Since each bunch of strings sent to the browser includes a header for reliable
-     transmission, sending fewer larger bunches of strings generates less network
-     traffic.  Also see make-html-response/incremental in the helpers section.
 
 Evaluating (require (lib "servlet-sig.ss" "web-server")) loads
 the servlet^ signature consisting of the following imports:
@@ -188,21 +194,6 @@ provides a few additional functions helpful for constructing servlets:
   pair consisting of the username and password from the headers or #f if no
   password was provided.  This only extracts the provided username and
   password.  The servlet must perform any desired checking.
-
- > (make-html-response/incremental body)
-   This builds a response/incremental given the same body as the full
-   structure constructor, but with default values for the other fields
-   appropriate for html.  For example, the following response pauses 10
-   seconds between displaying paragraphs.
-
-   (make-html-response/incremental
-    (lambda (output-chunk)
-      (output-chunk "<html><head><title>"
-                    "my-title</title></head>\n")
-      (output-chunk "<body><p>The first paragraph</p>\n")
-      (sleep 10)
-      (output-chunk "<p>The second paragraph</p></body></html>\n")))
-
 
 For small example servlets, look in the "examples" directory in
 the "servlets" directory in the "default-web-root" of the web-server

@@ -490,43 +490,53 @@
 					     (relative-path? x)))
 				      l))
 		   (error "result is not a list of relative path strings:" l)))])
-	  (for-each (lambda (cc)
-		      (record-error
-		       cc
-		       "Launcher Setup"
-		       (lambda ()
-			 (when (= 1 (length (cc-collection cc)))
-			   (let ([info (cc-info cc)])
-			     (map
-			      (lambda (kind
-				       mzscheme-launcher-libraries
-				       mzscheme-launcher-names
-				       mzscheme-program-launcher-path
-				       install-mzscheme-program-launcher)
-				(let ([mzlls (call-info info mzscheme-launcher-libraries (lambda () null)
-							name-list)]
-				      [mzlns (call-info info mzscheme-launcher-names (lambda () null)
-							name-list)])
-				  (if (= (length mzlls) (length mzlns))
-				      (map
-				       (lambda (mzll mzln)
-					 (let ([p (mzscheme-program-launcher-path mzln)])
-					   (unless (file-exists? p)
-					     (setup-printf "Installing ~a launcher ~a" kind p)
-					     (install-mzscheme-program-launcher 
-					      mzll
-					      (car (cc-collection cc))
-					      mzln))))
-				       mzlls mzlns)
-				      (setup-printf 
-				       "Warning: ~a launcher library list ~s doesn't match name list ~s"
-				       kind mzlls mzlns))))
-			      '("MzScheme" "MrEd")
-			      '(mzscheme-launcher-libraries mred-launcher-libraries)
-			      '(mzscheme-launcher-names mred-launcher-names)
-			      (list mzscheme-program-launcher-path mred-program-launcher-path)
-			      (list install-mzscheme-program-launcher install-mred-program-launcher)))))))
-		    collections-to-compile)))
+	  (for-each
+	   (lambda (cc)
+	     (record-error
+	      cc
+	      "Launcher Setup"
+	      (lambda ()
+		(let* ([info (cc-info cc)]
+		       [make-launcher
+			(lambda (kind
+				 launcher-libraries
+				 launcher-names
+				 program-launcher-path
+				 make-launcher)
+			  (let ([mzlls (call-info info launcher-libraries (lambda () null)
+						  name-list)]
+				[mzlns (call-info info launcher-names (lambda () null)
+						  name-list)])
+			    (if (= (length mzlls) (length mzlns))
+				(for-each
+				 (lambda (mzll mzln)
+				   (let ([p (program-launcher-path mzln)])
+				     (unless (file-exists? p)
+				       (setup-printf "Installing ~a launcher ~a" kind p)
+				       (make-launcher 
+					(list
+					 "-mve-"
+					 (format
+					  "~s"
+					  `(require (lib ,mzll ,@(cc-collection cc)))))
+					p))))
+				 mzlls mzlns)
+				(setup-printf 
+				 "Warning: ~a launcher library list ~s doesn't match name list ~s"
+				 kind mzlls mzlns))))])
+		  (make-launcher
+		   "MrEd"
+		   'mred-launcher-libraries
+		   'mred-launcher-names
+		   mred-program-launcher-path
+		   make-mred-launcher)
+		  (make-launcher
+		   "MzScheme"
+		   'mzscheme-launcher-libraries
+		   'mzscheme-launcher-names
+		   mzscheme-program-launcher-path
+		   make-mzscheme-launcher)))))
+	   collections-to-compile)))
 
       (when (call-install)
 	(for-each (lambda (cc)

@@ -58,19 +58,26 @@ Additional info-table.ss fields trigger additional setup actions:
    by the collection. A parallel list of library names must be
    provided by `mzscheme-launcher-libraries'. For each name, a
    launching executable is set up using the launcher collection's
-   `install-mzscheme-program-launcher'. If the executable already
-   exists, no action is taken.
+   `make-mzscheme-launcher'. The arguments are "-mve-" and 
 
-> mzscheme-launcher-libraries - a list of library names in
+      (format "~s" `(require (lib <file> <colls> ...)))
+
+   where lib is the file named by mzscheme-launcher-libraries
+   and <colls> ... are the collections (and subcollections)
+   of the info.ss file. 
+
+   If compile-subcollections mentions a subcollection with
+   this field, the executable is also set up for that subcollection.
+
+   If the executable already exists, no action is taken.
+
+>  mzscheme-launcher-libraries - a list of library names in
    parallel to `mzscheme-launcher-names'.
 
->  mred-launcher-names - a list of executable names to be installed
-   in plt (or plt/bin) to run MrEd programs implemented by the
-   collection.  A parallel list of library names must be provided by
-   `mred-launcher-libraries'. For each name, a launching executable is
-   set up using the launcher collection's
-   `install-mred-program-launcher'. If the executable already exists,
-   no action is taken.
+>  mred-launcher-names - a list of executable names to be
+   installed in plt (or plt/bin) to run MrEd programs
+   implemented by the collection.  This is treated in
+   parallel to mzscheme-launcher-names. 
 
 >  mred-launcher-libraries - a list of library names in
    parallel to `mred-launcher-names'.

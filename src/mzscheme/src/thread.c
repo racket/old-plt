@@ -2200,7 +2200,6 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->runstack_size = p->runstack_size;
   np->runstack_saved = p->runstack_saved;
   np->stack_start = p->stack_start;
-  np->current_local_env = p->current_local_env;
   np->engine_weight = p->engine_weight;
   {
     Scheme_Object **tb;

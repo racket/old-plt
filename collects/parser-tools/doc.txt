@@ -4,11 +4,25 @@ This documentation assumes familiarity with lex and yacc style lexer
 and parser generators.
 
 
-CHANGE: The lexer uses a new back-end based on derivatives
+CHANGE: The lexer generator uses a new back-end based on derivatives
 (``Derivatives of Regular Expressions'',
  Janusz A. Brzozowski, JACM, Vol 11, No. 4 (October 1964))
 and can now support intersection and negation of arbitrary regular
-expressions!
+expressions.  For example, (@ "/*" (~ (&) "*/" (&)) "*/") matches a 
+Java comment.
+
+I was expecting the Brzozowski algorithm to generate tables more slowly
+than the previous algorithm from the Dragon book (direct re to dfa
+translation) and was pleasantly surprised to find it both faster and
+more flexible.  Generating the lex table for the Scheme lexer in
+collects/syntax-color/scheme-lexer.ss yielded the following comparison
+(this particular lexer doesn't use negation or intersection yet) on an
+800MHZ Pentium 3:
+Dragon book algorithm: 1191 states, 13.86 seconds, .0116 seconds per state
+Brzozowski algorithm: 464 states, 5.695 seconds, .0122 seconds per state
+Furthermore, the Brzozowski algorithm is more suited to functional
+programming, so the dfa generation code is much more pleasant.
+
 
 CHANGE: (eof) is no longer treated as a character, but as a 
  special.  This means that (eof) cannot appear except as the
@@ -31,7 +45,7 @@ A regular expression is one of the following:
  (@ re ...)                matches each sub-expression in succession
  (- char char)             matches any character between the two (inclusive)
                              (A single character string can be used here)
- (^ char_or_range ...1)    matches any character not listed                               
+ (^ char_or_range ...)     matches any character not listed                               
 
  (The empty concatenation, `(@), and "" both match the empty string.
   The empty or, `(:), matches nothing.

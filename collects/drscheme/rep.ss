@@ -615,7 +615,11 @@
 	(private
 	  [shutdown-user-custodian
 	   (lambda ()
-	     (custodian-shutdown-all user-custodian))])
+	     (let* ([frame (get-frame)]
+		    [interactions-edit (ivar frame interactions-edit)])
+	       (send interactions-edit kill-allow-protected
+		     (lambda ()
+		       (custodian-shutdown-all user-custodian)))))])
 	(public
 	  [reset-break-state (lambda () (set! ask-about-kill? #f))]
 	  [break-semaphore (make-semaphore 1)]

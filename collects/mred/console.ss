@@ -313,63 +313,71 @@
      'mred:console-previous-exprs
      marshall unmarshall))
   
-  (define (dynamic-disable-break/not-killable c needs-break? f)
+  (define share-except 
+    (lambda (cp l)
+      (lambda ()
+	(make-parameterization-with-sharing
+	 cp cp
+	 l
+	 (lambda (pm) #f)))))
+
+  (define (dynamic-disable-break f)
+    (with-parameterization ((share-except
+			     (current-parameterization)
+			     (list break-enabled
+				   current-custodian 
+				   current-exception-handler
+				   parameterization-branch-handler)))
+      (lambda ()
+	(mzlib:function:dynamic-disable-break f))))
+  
+  (define (dynamic-not-killable c needs-break? f)
+    ; Assume breaking is currently disabled
     (let* ([cp (current-parameterization)]
-	   [share-except (lambda (cp l)
-			   (lambda ()
-			     (make-parameterization-with-sharing
-			      cp cp
-			      l
-			      (lambda (pm) #f))))]
-	   [mp ((share-except cp (list break-enabled
-				       current-custodian 
-				       current-exception-handler)))])
-      (with-parameterization mp
-	(lambda ()
-	  (mzlib:function:dynamic-disable-break
-	   (lambda ()
-	     (let* ([result #f]
-		    [t (parameterize ([current-custodian c]
-				      [parameterization-branch-handler
-				       (share-except
-					(current-parameterization)
-					; Share break-enabled!
-					(list current-exception-handler))])
-			  (thread
-			   (lambda ()
-			     (if needs-break?
-				 (with-handlers ([exn:misc:user-break?
-						  void])
-				    (set! result (f)))
-				 (set! result (f))))))]
-		    [orig-t (current-thread)]
-		    [t2 (if needs-break?
-			    (parameterize ([current-custodian c]
-					   [parameterization-branch-handler
-					    (share-except
-					     cp
-					     (list break-enabled current-exception-handler))])
-			       (thread
-				(lambda ()
-				  ; If the original thread is killed, break the
-				  ;  work thread.
-				  (thread-wait orig-t)
-				  (break-thread t))))
-			    #f)]
-		    [kill-t2 (lambda ()
-			       (when t2
-				 (parameterize ([current-custodian c])
-				    (kill-thread t2))))])
-	       (if needs-break?
-		   (with-handlers ([exn:misc:user-break?
-				    (lambda (x)
-				      (break-thread t)
-				      (kill-t2)
-				      (raise x))])
-		      (thread-wait t))
-		   (thread-wait t))
-	       (kill-t2)
-	       result)))))))
+	   [result #f]
+	   [t-done (make-semaphore)]
+	   [t (parameterize ([current-custodian c]
+			     [parameterization-branch-handler
+			      (share-except
+			       cp
+			       ; Share break-enabled!
+			       (list current-exception-handler))])
+		   (thread
+		    (lambda ()
+		      (if needs-break?
+			  (with-handlers ([exn:misc:user-break?
+					   void])
+			       (set! result (f)))
+			  (set! result (f)))
+		      (semaphore-post t-done))))]
+	   [orig-t (current-thread)]
+	   [t2 (if needs-break?
+		   (parameterize ([current-custodian c]
+				  [parameterization-branch-handler
+				   (share-except
+				    cp
+				    (list break-enabled current-exception-handler))])
+		       (thread
+			(lambda ()
+			  ; If the original thread is killed, break the
+			  ;  work thread.
+			  (thread-wait orig-t)
+			  (break-thread t))))
+		   #f)]
+	   [kill-t2 (lambda ()
+		      (when t2
+			(parameterize ([current-custodian c])
+			   (kill-thread t2))))])
+      (if needs-break?
+	  (with-handlers ([exn:misc:user-break?
+			   (lambda (x)
+			     (break-thread t)
+			     (kill-t2)
+			     (raise x))])
+	     (wx:yield t-done))
+	  (wx:yield t-done))
+      (kill-t2)
+      result))
 
   (define make-console-edit%
     (lambda (super%)
@@ -604,7 +612,9 @@
 	  [timer-on #f]
 	  [timer-sema (make-semaphore 1)]
 
-	  [my-custodian (current-custodian)])
+	  [my-custodian (current-custodian)]
+	  [kill-lock (make-semaphore 1)]
+	  [want-kill? #f])
 
 	(public
 	  [MAX-CACHE-TIME 4000]
@@ -612,9 +622,34 @@
 	  [CACHE-TIME MIN-CACHE-TIME]
 	  [TIME-FACTOR 10]
 	  
+	  [kill-protect
+	   (lambda (who can-break? f)
+	     (dynamic-disable-break
+	      (lambda ()
+		(if (and (not want-kill?)
+			 (not can-break?)
+			 (semaphore-try-wait? kill-lock))
+		    (begin
+		      (begin0
+		       (f)
+		       (semaphore-post kill-lock)))
+		    (begin
+		      (dynamic-not-killable
+		       my-custodian
+		       can-break?
+		       f))))))]
+	  [kill-allow-protected
+	   (lambda (f)
+	     (set! want-kill? #t)
+	     (semaphore-wait kill-lock)
+	     (begin0
+	      (f)
+	      (set! want-kill? #f)
+	      (semaphore-post kill-lock)))]
+
 	  [generic-write
 	   ; This must be called within a procedure wrapped by
-	   ; dynamic-disable-break/not-killable
+	   ; kill-protect
 	   (let ([first-time? #t])
 	     (lambda (edit s style-func)
 		  (let ([handle-insertion
@@ -649,28 +684,34 @@
 			      (when transparent-edit
 				(send transparent-edit begin-edit-sequence))
 			      (set! timer-on on-box)
-			      (thread 
-			       (lambda ()
-				 (dynamic-wind
-				  void
-				  (lambda ()
-				    (sleep (/ CACHE-TIME 1000.)))
-				  (lambda ()
-				    (semaphore-wait timer-sema)
-				    (when (unbox on-box)
-				      (let* ([start (current-milliseconds)]
-					     [_ (begin (for-each (lambda (e) (send e end-edit-sequence))
-								 (unbox on-box))
-						       (end-edit-sequence))]
-					     [end (current-milliseconds)]
-					     [new-cache-time (* TIME-FACTOR (- end start))]
-					     [between
-					      (min (max MIN-CACHE-TIME
-							new-cache-time)
-						   MAX-CACHE-TIME)])
-					(set! CACHE-TIME between)
-					(set! timer-on #f)))
-				    (semaphore-post timer-sema)))))))
+			      (parameterize ([current-custodian my-custodian]
+					     [parameterization-branch-handler
+					      (share-except
+					       (current-parameterization)
+					       (list current-exception-handler))])
+			        (thread
+				 (lambda ()
+				   (dynamic-wind
+				    void
+				    (lambda ()
+				      (sleep (/ CACHE-TIME 1000.)))
+				    (lambda ()
+				      (semaphore-wait timer-sema)
+				      (when (unbox on-box)
+					(let* ([start (current-milliseconds)]
+					       [_ (begin (for-each (lambda (e) 
+								     (send e end-edit-sequence))
+								   (unbox on-box))
+							 (end-edit-sequence))]
+					       [end (current-milliseconds)]
+					       [new-cache-time (* TIME-FACTOR (- end start))]
+					       [between
+						(min (max MIN-CACHE-TIME
+							  new-cache-time)
+						     MAX-CACHE-TIME)])
+					  (set! CACHE-TIME between)
+					  (set! timer-on #f)))
+				      (semaphore-post timer-sema))))))))
 			  (begin-edit-sequence #f)
 			  (set-position (last-position))
 			  (when (and prompt-mode? autoprompting?)
@@ -710,8 +751,8 @@
 	  [saved-newline? #f]
 	  [this-out-write
 	   (lambda (s)
-	     (dynamic-disable-break/not-killable
-	      my-custodian
+	     (kill-protect
+	      'curout
 	      #f
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
@@ -740,8 +781,8 @@
 		    (gw s1))))))]
 	  [this-err-write
 	   (lambda (s)
-	     (dynamic-disable-break/not-killable
-	      my-custodian
+	     (kill-protect
+	      'curerr
 	      #f
 	      (lambda ()
 		(parameterize ([current-output-port orig-stdout]
@@ -826,8 +867,8 @@
 		       (init-transparent-io #t)
 		       (send transparent-edit fetch-char))])
 	     (lambda ()
-	       (dynamic-disable-break/not-killable
-		my-custodian
+	       (kill-protect
+		'read-char
 		#t
 		(lambda ()
 		  (single-threader g)))))]
@@ -836,8 +877,8 @@
 		       (init-transparent-io #t)
 		       (send transparent-edit fetch-sexp))])
 	     (lambda ()
-	       (dynamic-disable-break/not-killable
-		my-custodian
+	       (kill-protect
+		'read
 		#t
 		(lambda ()
 		  (single-threader g)))))])
@@ -957,8 +998,8 @@
 	  [eval-str mzlib:string:eval-string]
 	  [this-result-write 
 	   (lambda (s)
-	     (dynamic-disable-break/not-killable
-	      my-custodian
+	     (kill-protect
+	      'result
 	      #f
 	      (lambda ()
 		(generic-write this

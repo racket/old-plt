@@ -23,8 +23,7 @@
 			     "Keep execution history in interactions window")))])
 
        (send interaction-history set-value 
-	     (mred:set-preference-default 
-	      'drscheme:keep-interactions-history #f))
+	     (mred:get-preference 'drscheme:keep-interactions-history))
        (make-object mred:vertical-panel% main)
        main))))
        

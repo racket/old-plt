@@ -23,7 +23,7 @@
 
     (define make-editor-frame%
       (lambda (super%)
-	(class super% ([filename #f][show? #t][frameset mred:group:frames])
+	(class super% ([filename #f][show? #t][frameset (mred:group:current-frames)])
 	  (inherit make-menu show save-as
 		   make-edit active-edit
 		   get-edit get-canvas)

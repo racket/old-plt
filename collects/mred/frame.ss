@@ -193,7 +193,7 @@
 					      "w" "&Close" "")
 				(make-between 'file-menu 'between-close-and-quit #f)
 				(make-an-item 'file-menu:quit "" '(lambda () (mred:exit:exit))
-					      (if (eq? 'wx:platform 'macintosh) "q" "x")
+					      (if (eq? wx:platform 'macintosh) "q" "x")
 					      (if (eq? wx:platform 'macintosh) "Quit" "E&xit") "")
 				(make-between 'file-menu 'after-quit #f)
 				

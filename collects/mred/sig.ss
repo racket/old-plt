@@ -236,7 +236,7 @@
 (define-signature mred:group^
   (buffer-group%
    frame-group%
-   frames
+   current-frames
    keep-frames))
 
 (define-signature mred:handler^

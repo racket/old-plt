@@ -38,6 +38,7 @@
 			      (apply printf args)
 			      (newline)))
 			  (lambda args (void))))
+
       (define exit? #t))))
 
 (invoke-open-unit mred:debug@ mred:debug)
@@ -319,7 +320,8 @@
 	  (catch-errors (lambda (s) (wx:message-box s "Error"))
 			(lambda () (orig-escape))
 			(mred:eval-string 
-			 (string-append "(load/cd \"" init-file "\")"))))))))
+			 (string-append
+			  (expr->string `(load/cd ,init-file))))))))))
 
 (when (eq? wx:platform 'unix)
   (let* ([default-path "/usr/local/transcript-4.0/lib/"]

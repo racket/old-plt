@@ -155,7 +155,7 @@
 	    (public
 	      [empty-callback (lambda () #f)]
 	      [set-empty-callback (lambda (x) (set! empty-callback x))]
-	      [get-frames (lambda () frames)]
+	      [get-frames (lambda () (map frame-frame frames))]
 	      [buffer-group% b-group%]
 	      [frame% mred:editor-frame:editor-frame%]
 	      [get-frame% (lambda () frame%)]
@@ -276,8 +276,14 @@
 	    (public
 	      [buffers (make-object (get-buffer-group%))])))))
     
-    (define frames #f)
+    (define current-frames (make-parameter
+			    #f
+			    (lambda (x)
+			      (if (or (not x)
+				      (is-a? x frame-group%))
+				  x
+				  (raise 'illegal-current-frames)))))
 
     (define (keep-frames)
-      (unless frames
-	(set! frames (make-object frame-group%))))))
+      (unless (current-frames)
+	(current-frames (make-object frame-group%))))))

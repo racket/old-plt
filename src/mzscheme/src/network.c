@@ -2664,6 +2664,8 @@ static Scheme_Object *tcp_abandon_port(int argc, Scheme_Object *argv[])
 /*                                 UDP                                    */
 /*========================================================================*/
 
+/* Based on a design and implemenation by Eduardo Cavazos. */
+
 static int udp_close_it(Scheme_Object *_udp)
 {
   Scheme_UDP *udp = (Scheme_UDP *)_udp;

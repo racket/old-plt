@@ -1,7 +1,10 @@
 (module snip mzscheme
   (require (lib "unitsig.ss")
            "drsig.ss"
-           "mred-wrap.ss"
+	   (lib "etc.ss")
+	   (lib "mred.ss" "mred")
+	   (lib "class.ss")
+	   (lib "class100.ss")
            (lib "framework.ss" "framework")
            (lib "zodiac.ss" "syntax"))
   
@@ -11,10 +14,35 @@
     (unit/sig drscheme:snip^
       (import)
       (define (set-box/f! b v) (when (box? b) (set-box! b v)))
+
+      (define body-pen (send the-pen-list find-or-create-pen "BLACK" 0 'solid))
+      (define body-brush (send the-brush-list find-or-create-brush "BLACK" 'solid))
+      (define bw? (< (get-display-depth) 3))
+      (define-values (shadow-pen shadow-brush)
+	(if bw?
+	    (let* ([pen (make-object pen% "BLACK" 0 'solid)]
+		   [brush (make-object brush%)]
+		   [a (integer->char #b01010101)]
+		   [b (integer->char #b10101010)]
+		   [bitmap (make-object bitmap%
+			     (list a b a b a b a b)
+			     8 8 1)])
+	      (send* pen
+		     (set-colour "BLACK")
+		     (set-stipple bitmap))
+	      (send* brush
+		     (set-colour "BLACK")
+		     (set-stipple bitmap))
+	      (values pen brush))
+	    (values
+	     (send the-pen-list find-or-create-pen
+		   "GRAY" 0 'solid)
+	     (send the-brush-list find-or-create-brush
+		   "GRAY" 'solid))))
       
       (define separator-snipclass
         (make-object
-            (class-asi mred:snip-class%
+            (class100-asi snip-class%
               (override
                 [read (lambda (s) 
                         (let ([size-box (box 0)])
@@ -23,18 +51,19 @@
       (send* separator-snipclass
         (set-version 1)
         (set-classname "drscheme:sepatator-snip%"))
-      (send (mred:get-the-snip-class-list) add separator-snipclass)
+      (send (get-the-snip-class-list) add separator-snipclass)
       
       
   ;; the two numbers 1 and 2 which appear here are to line up this snip
   ;; with the embedded snips around it in the drscheme rep.
   ;; I have no idea where the extra pixels are going.
       (define separator-snip%
-        (class mred:snip% ()
+        (class100 snip% ()
           (inherit get-style set-snipclass set-flags get-flags get-admin)
-          (private [width 500]
-                   [height 1]
-                   [white-around 2])
+          (private-field
+	    [width 500]
+	    [height 1]
+	    [white-around 2])
           (override
             [write (lambda (s) 
                      (send s put (char->integer #\r)))]
@@ -59,10 +88,6 @@
                (set-box/f! w-box width)
                (set-box/f! h-box (+ (* 2 white-around) height)))]
             [draw
-             (let* ([body-pen (send mred:the-pen-list find-or-create-pen
-                                    "BLACK" 0 'solid)]
-                    [body-brush (send mred:the-brush-list find-or-create-brush
-                                      "BLACK" 'solid)])
                (lambda (dc x y left top right bottom dx dy draw-caret)
                  (let ([orig-pen (send dc get-pen)]
                        [orig-brush (send dc get-brush)])
@@ -73,7 +98,7 @@
                          (+ white-around y) width height)
                    
                    (send dc set-pen orig-pen)
-                   (send dc set-brush orig-brush))))])
+                   (send dc set-brush orig-brush)))])
           (sequence
             (super-init)
             (set-flags (cons 'hard-newline (get-flags)))
@@ -82,16 +107,16 @@
       (define make-snip-class
         (lambda (name get-%)
           (let ([ans (make-object
-                         (class-asi mred:snip-class%
+                         (class100-asi snip-class%
                            (override
                              [read (lambda (s) 
                                      (let ([size-box (box 0)])
                                        (send s get size-box)
                                        (make-object (get-%) (unbox size-box))))])))])   
-            (send* ans 
+            (send* ans
               (set-version 1)
               (set-classname name))
-            (send (mred:get-the-snip-class-list) add ans)
+            (send (get-the-snip-class-list) add ans)
             ans)))
       
       (define prompt-snip-class
@@ -105,10 +130,11 @@
       (define make-snip%
         (lambda (snip-class draw-snip)
           (rec
-              this%
-            (class mred:snip% ([initial-size 12])
+	   this%
+	   (class100 snip% ([initial-size 12])
               (inherit get-style set-snipclass set-style)
-              (private [allowed-size initial-size])
+              (private-field
+		[allowed-size initial-size])
               (override
                 [write (lambda (s) 
                          (send s put allowed-size))]
@@ -124,53 +150,26 @@
                    (set-box/f! w-box allowed-size)
                    (set-box/f! h-box allowed-size))]
                 [draw
-                 (let*-values
-                     ([(bw?) (< (mred:get-display-depth) 3)]
-                      [(body-pen) (send mred:the-pen-list find-or-create-pen
-                                        "BLACK" 0 'solid)]
-                      [(body-brush) (send mred:the-brush-list find-or-create-brush
-                                          "BLACK" 'solid)]
-                      [(shadow-pen shadow-brush)
-                       (if bw?
-                           (let* ([pen (make-object mred:pen% "BLACK" 0 'solid)]
-                                  [brush (make-object mred:brush%)]
-                                  [a (integer->char #b01010101)]
-                                  [b (integer->char #b10101010)]
-                                  [bitmap (make-object mred:bitmap%
-                                            (list a b a b a b a b)
-                                            8 8 1)])
-                             (send* pen
-                               (set-colour "BLACK")
-                               (set-stipple bitmap))
-                             (send* brush
-                               (set-colour "BLACK")
-                               (set-stipple bitmap))
-                             (values pen brush))
-                           (values
-                            (send mred:the-pen-list find-or-create-pen
-                                  "GRAY" 0 'solid)
-                            (send mred:the-brush-list find-or-create-brush
-                                  "GRAY" 'solid)))])
-                   (lambda (dc x y left top right bottom dx dy draw-caret)
-                     (let* ([shadow-size (max 1 (floor (/ allowed-size 10)))]
-                            [size (-  allowed-size shadow-size)]
-                            [line-width (/ size 3)]
-                            [orig-brush (send dc get-brush)]
-                            [orig-pen (send dc get-pen)])
-                       
-                       (send dc set-pen shadow-pen)
-                       (send dc set-brush shadow-brush)
-                       
-                       (draw-snip dc (+ x shadow-size) (+ y shadow-size)
-                                  size line-width)
-                       
-                       (send dc set-pen body-pen)
-                       (send dc set-brush body-brush)
-                       
-                       (draw-snip dc x y size line-width)
-                       
-                       (send dc set-pen orig-pen)
-                       (send dc set-brush orig-brush))))])
+		 (lambda (dc x y left top right bottom dx dy draw-caret)
+		   (let* ([shadow-size (max 1 (floor (/ allowed-size 10)))]
+			  [size (-  allowed-size shadow-size)]
+			  [line-width (/ size 3)]
+			  [orig-brush (send dc get-brush)]
+			  [orig-pen (send dc get-pen)])
+		     
+		     (send dc set-pen shadow-pen)
+		     (send dc set-brush shadow-brush)
+		     
+		     (draw-snip dc (+ x shadow-size) (+ y shadow-size)
+				size line-width)
+		     
+		     (send dc set-pen body-pen)
+		     (send dc set-brush body-brush)
+		     
+		     (draw-snip dc x y size line-width)
+		     
+		     (send dc set-pen orig-pen)
+		     (send dc set-brush orig-brush)))])
               (sequence
                 (super-init)
                 (set-snipclass snip-class))))))
@@ -198,31 +197,28 @@
       
       (define whole/part-number-snipclass
         (make-object 
-            (class mred:snip-class% ()
+            (class100 snip-class% args
               (override
                 [read
                  (lambda (p)
                    (make-object whole/part-number-snip%
                      (string->number (send p get-string))))])
-              (sequence (super-init)))))
+              (sequence (apply super-init args)))))
       (send whole/part-number-snipclass set-version 1)
       (send whole/part-number-snipclass set-classname 
             "drscheme:whole/part-number-snip")
-      (send (mred:get-the-snip-class-list) add whole/part-number-snipclass)
+      (send (get-the-snip-class-list) add whole/part-number-snipclass)
       
       (define whole/part-number-snip%
-        (class* mred:snip% (zodiac:expands<%> gui-utils:text-snip<%>) (number)
+        (class100* snip% (gui-utils:text-snip<%>) (_number . args)
+	  (private-field
+	    [number _number])
           (override
             [get-text
              (case-lambda
               [(offset num) (get-text offset num #f)]
               [(offset num flattened?) (number->string number)])])
           (public
-            [expand
-             (lambda (obj)
-               (zodiac:structurize-syntax
-                number
-                obj))]
             [get-number (lambda () number)]
             [get-formatted-string (lambda ()
                                     (if (or (string=? "" wholes)
@@ -232,7 +228,7 @@
             [get-string
              (lambda ()
                (format " ~a " number))])
-          (private
+          (private-field
             [wholes (cond
                       [(= (floor number) 0) ""]
                       [(= (ceiling number) 0) "-"]

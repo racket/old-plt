@@ -2,7 +2,7 @@
 (module main-before mzscheme
   (require (lib "unitsig.ss")
            "drsig.ss"
-           "mred-wrap.ss"
+	   (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
            "unitsig.ss"
            "class.ss"

@@ -1,6 +1,6 @@
 
 (module load-handlers mzscheme
-  (require "mred-wrap.ss"
+  (require (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
            (lib "zodiac.ss" "syntax")
            (lib "basis.ss" "userspce"))
@@ -85,11 +85,10 @@
                                    (lambda x x)))
                             (recur)])))])
                 (apply values 
-                       (let ([text (make-object
-                                       mred:text%
-				   ;;drscheme:text:text%
+                       (let ([text (make-object text%
+				     ;;drscheme:text:text%
                                      )])
-		     ;;(parameterize ([mred:current-eventspace
+		     ;;(parameterize ([current-eventspace
 		     ;; to get the right snipclasses
 		     ;;drscheme:init:system-eventspace])
                          (send text load-file filename)

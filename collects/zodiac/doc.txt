@@ -109,33 +109,69 @@ Correlating Source
 
 Quickref:
 
-    who           how     source expression?
-    ---           ---     ------------------
+    who           how     principal to a source expression?
+    ---           ---     ---------------------------------
     'source       ...     yes
     'reader       ...     yes
     'duplicate    ...     no
-    'micro        expr    iff expr is src
-    'macro        expr    iff expr is src
+    'micro        expr    iff expr is principal
+    'macro        expr    iff expr is principal
     'non-source   ...     no
 
 Details:
 
-Although there is not a unique mapping from elaborated expressions to
-source expressions, Zodiac gurantess that the mapping is unique when
-restricted to elaborated expressions that have a source-who field of
-'source or 'reader. When a source expression is duplicated by
-elaboration (e.g., the `loop' in `(let loop () (loop))' => `(letrec
-([loop (lambda () (loop))]) (loop))'), all but the first instance get
-a 'duplcate source-who annotation. (The source-how field contains the
-original source record.)
+The mapping from "Z-expressions" within an elaborated program to
+S-expressions is always an injection. Aries relies on the Z->S
+injection to hilite a specific S-expression in response to a run-time
+error for a particular Z-expression. However, the Z->S relation is
+obviously not a surjection. For example, (cond [#f 5][#t 6]) expands
+to (if #f 5 (if #t 6)), where the `cond' S-expression is identified as
+the source of both `if' Z-expressions. Other elaborations might drop
+S-expressions entirely, so that the S-expression has no reprentative
+in the final Z-expression.
 
-When an expression is dervied from a macro or micro expansion, the
-source-who field contains 'micro or 'macro. The source-how field
-contains the expression that was macro- or micro-expanded to produce
-the expression. Thus, the result of a macro or micro-expansion
-corresponds to a particular source expression iff the source-how field
-contains an expression that corresponds to a particular source
-expression.
+Certain tools, such as DrScheme's syntax checker, require a S->Z
+function in principle. The `origin' field of a Z-expression provides
+information for approximating a S->Z function. The S->Z function is
+obtained by dropping Z-expression elements from the Z->S domain before
+inverting the relation. More specifically, the `origin' field
+identifies each Z-expression as either the principal representative of
+its source expression or not. Zodiac guarantees that at most one
+Z-expression is a principal for each S-expression in the source.
+
+The principal is not chosen arbitrarily. In the case of 'source,
+'reader, 'macro, and 'micro principals, the Z-expression is equivalent
+to its S-expression in the sense that it encapsulates the original
+expression's intent. Thus, in the elaboration from (cond [#f 5][#t 6])
+to (if #f 5 (if #t 6)), the outer `if' is identified as the principal
+Z-expression. The inner `if' encapsulates only a part of the original
+`cond' expression (and it does not encapsulate any complete expression
+from the source).
+
+A more complete rendering on a slightly larger example:
+
+  (cond [#f 5][#t (+ 3 3)]) 
+    => (if #f 5 (if #t (+ 3 3)))
+       ^   ^  ^ ^   ^  ^^ ^-^- 'reader
+       |   |  | |   |  |`- 'source
+       |   |  | |   |  `- 'source
+       |   |  | |   `- 'reader 
+       |   |  | `- 'non-source
+       |   |  `- 'reader
+       |   `- 'reader
+       `- 'micro, how field points to `cond' expressions with
+          a a source-who value of 'source
+
+Macros/micros that expand to macros/micros produce chains of origin
+records. The chain ultimately leads either to a 'source entry or a
+'non-source entry.
+
+The 'duplicate who value is used when a macro/micro duplcates a source
+expression in its output, such as the `loop' in `(let loop () (loop))'
+=> `(letrec ([loop (lambda () (loop))]) (loop))'). All but the first
+instance of the duplicated expression get a 'duplcate source-who
+annotation. (The source-how field contains the original source
+record.)
 
 The 'non-source value for the who field indicates that there is no
 source expression that is equivalent to the expanded expression.  In
@@ -143,4 +179,5 @@ this case, a macro or micro must have manufactured the syntax; for
 example, the `this' binding intoroduced by class* -> class*/names has
 source-who value 'non-source. Of course, the location field of
 "non-source" syntax still matches the syntax to a particular source
-expression.
+expression. Similarly, the nested `if' in the expansion of `cons'
+contains a manufactured `if' expression.

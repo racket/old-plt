@@ -32,7 +32,7 @@
 
   (define (prompt-for-browser-switch hd-cookie exn)
     (eq? 1 
-	 (message-box/custom "Help Desk timeout"
+	 (message-box/custom "PLT Help Desk error"
            (fold-string			
 	    `(,(if exn
 		   (fold-string

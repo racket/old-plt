@@ -105,12 +105,6 @@ wxKeymap::wxKeymap()
   grabMouseFunction = NULL;
   onBreak = NULL;
 
-#if 0
-  WXGC_IGNORE(this, grabKeyData);
-  WXGC_IGNORE(this, grabMouseData);
-  WXGC_IGNORE(this, onBreakData);
-#endif
-
   chainCount = 0;
   chainTo = NULL;
 

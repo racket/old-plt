@@ -2465,7 +2465,6 @@ void wxMediaEdit::SetClickback(long start, long end,
   click->f = f;
   click->data = d;
   click->callOnDown = callOnDown;
-  WXGC_IGNORE(click, click->data);
 
   click->delta = new wxStyleDelta;
   if (delta)
@@ -2530,7 +2529,6 @@ void wxMediaEdit::FlashOn(long start, long end, Bool ateol, Bool scroll,
     }
     flashTimer = new wxMediaFlashTimer();
     flashTimer->media = this;
-    // WXGC_IGNORE(flashTimer->media);
     flashTimer->Start(timeout);
   }
   flashscroll = scroll;
@@ -2675,7 +2673,6 @@ void wxMediaEdit::SetWordbreakFunc(wxWordbreakFunc f, void *data)
 {
   wordBreak = f;
   wordBreakData = data;
-  WXGC_IGNORE(this, wordBreakData);
 }
 
 void wxMediaEdit::FindWordbreak(long *start, long *end, int reason)

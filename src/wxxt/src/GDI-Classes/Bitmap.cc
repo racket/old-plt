@@ -190,7 +190,8 @@ wxBitmap::~wxBitmap(void)
 {
     // free pixmap and infos
     Destroy();
-    // remove Bitmap form List
+
+    selectedTo = NULL;
 }
 
 static int errorFlagged;

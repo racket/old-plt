@@ -1406,9 +1406,7 @@ static void MrEdSleep(float secs, void *fds)
 /****************************************************************************/
 
 wxTimer::wxTimer(void)
-#ifdef wx_xt
  : wxObject(WXGC_NO_CLEANUP)
-#endif
 {
   void *ctx;
 
@@ -1418,8 +1416,6 @@ wxTimer::wxTimer(void)
 
   ctx = (void *)MrEdGetContext();
   context = ctx;
-
-  WXGC_IGNORE(this, context);
 }
 
 wxTimer::~wxTimer(void)

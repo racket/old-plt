@@ -53,11 +53,12 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
+#define RECORD_MARK_SRC 1
 
 #if TIME
 # include <sys/time.h>
@@ -67,9 +68,25 @@ typedef short Type_Tag;
 
 /**************** Stack for mark phase ****************/
 #define MARK_STACK_MAX 4096
-void *mark_stack[MARK_STACK_MAX];
-unsigned short mark_stack_type[MARK_STACK_MAX];
-long mark_stack_pos = 0;
+static void *mark_stack[MARK_STACK_MAX];
+static unsigned short mark_stack_type[MARK_STACK_MAX];
+static long mark_stack_pos = 0;
+
+#if RECORD_MARK_SRC
+static void *mark_src;
+static int mark_type;
+static void *mark_src_stack[MARK_STACK_MAX];
+static int mark_src_type[MARK_STACK_MAX];
+
+static void *current_mark_src;
+static int current_mark_type;
+
+#define MTYPE_ROOT      6
+#define MTYPE_STACK     7
+#define MTYPE_FINALIZER 8
+#define MTYPE_WEAKLINK  9
+#define MTYPE_IMMOBILE  10
+#endif
 
 /********************* Client hooks *********************/
 void (*GC_collect_start_callback)(void);
@@ -1005,9 +1022,28 @@ static void fixup_finalizer_weak_link(Fnl_Weak_Link *wl)
   gcFIXUP(wl->p);
 }
 
+#if CHECKS
+static int recent_size;
+#endif
+
 void GC_finalization_weak_ptr(void **p, int offset)
 {
   Fnl_Weak_Link *wl;
+
+#if CHECKS
+  {
+    MPage *m;
+
+    m = find_page(p);
+
+    if ((m->type != MTYPE_TAGGED) && (m->type != MTYPE_XTAGGED)) {
+      fprintf(stderr, "Not xtagged: %lx (%d)\n", 
+	      (long)p, m->type);
+      CRASH();
+    }
+    recent_size = ((long *)p)[-1];
+  }
+#endif
 
   /* Allcation might trigger GC, so we use park: */
   park[0] = p;
@@ -1433,6 +1469,10 @@ void GC_mark(const void *p)
 	    if (mark_stack_pos < MARK_STACK_MAX) {
 	      page->flags = (flags | MFLAG_BLACK);
 	      OFFSET_SET_COLOR_UNMASKED(page->u.offsets, offset, v | MFLAG_BLACK); /* black can mean on stack */
+# if RECORD_MARK_SRC
+	      mark_src_stack[mark_stack_pos] = mark_src;
+	      mark_src_type[mark_stack_pos] = mark_type;
+# endif
 	      mark_stack[mark_stack_pos] = (void *)p;
 	      mark_stack_type[mark_stack_pos++] = type;
 	      break;
@@ -1498,6 +1538,11 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
 #if ALIGN_DOUBLES
     if (tag != SKIP) {
 #endif
+
+#if RECORD_MARK_SRC
+      mark_src = p;
+      mark_type = MTYPE_TAGGED;
+#endif
       
       v = OFFSET_COLOR_UNMASKED(offsets, offset);
       size = OFFSET_SIZE(offsets, offset);
@@ -1550,6 +1595,11 @@ static void propagate_tagged_whole_mpage(void **p, MPage *page)
     } else {
 #endif
 
+#if RECORD_MARK_SRC
+      mark_src = p;
+      mark_type = MTYPE_TAGGED;
+#endif
+
       size = mark_table[tag](p);
 
       p += size;
@@ -1581,6 +1631,11 @@ static void propagate_array_mpage(void **bottom, MPage *page)
     if (v & MFLAG_GRAY) {
       int i;
 
+#if RECORD_MARK_SRC
+      mark_src = p;
+      mark_type = MTYPE_ARRAY;
+#endif
+
       v -= MFLAG_GRAY;
       v |= MFLAG_BLACK;
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
@@ -1609,6 +1664,11 @@ static void propagate_array_whole_mpage(void **p, MPage *page)
     if (size == UNTAGGED_EOM) {
       break;
     }
+
+#if RECORD_MARK_SRC
+    mark_src = p;
+    mark_type = MTYPE_ARRAY;
+#endif
 
     for (i = 1; i < size; i++) {
       gcMARK(p[i]);
@@ -1653,6 +1713,10 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 	traverse = mark_table[tag];
 	elem_size = traverse(mp);
 	mp += elem_size;
+#if RECORD_MARK_SRC
+	mark_src = mp;
+	mark_type = MTYPE_TAGGED_ARRAY;
+#endif
 	for (i = elem_size; i < size; i += elem_size, mp += elem_size)
 	  traverse(mp);
 
@@ -1691,6 +1755,10 @@ static void propagate_tagged_array_whole_mpage(void **p, MPage *page)
     traverse = mark_table[tag];
     elem_size = traverse(mp);
     mp += elem_size;
+#if RECORD_MARK_SRC
+    mark_src = mp;
+    mark_type = MTYPE_TAGGED_ARRAY;
+#endif
     for (i = elem_size; i < size; i += elem_size, mp += elem_size)
       traverse(mp);
   }
@@ -1719,6 +1787,11 @@ static void propagate_xtagged_mpage(void **bottom, MPage *page)
       v |= MFLAG_BLACK;
       OFFSET_SET_COLOR_UNMASKED(offsets, offset, v);
       
+#if RECORD_MARK_SRC
+      mark_src = p + 1;
+      mark_type = MTYPE_XTAGGED;
+#endif
+
       GC_mark_xtagged(p + 1);
     }
     
@@ -1741,6 +1814,11 @@ static void propagate_xtagged_whole_mpage(void **p, MPage *page)
     if (size == UNTAGGED_EOM) {
       break;
     }
+
+#if RECORD_MARK_SRC
+    mark_src = p + 1;
+    mark_type = MTYPE_XTAGGED;
+#endif
 
     GC_mark_xtagged(p + 1);
 
@@ -1765,6 +1843,10 @@ static void do_bigblock(void **p, MPage *page, int fixup)
 	CRASH();
       }
       prev_var_stack = GC_variable_stack;
+#endif
+#if RECORD_MARK_SRC
+      mark_src = p;
+      mark_type = MTYPE_TAGGED;
 #endif
 
       if (fixup)
@@ -1797,6 +1879,10 @@ static void do_bigblock(void **p, MPage *page, int fixup)
 	mark = mark_table[tag];
       elem_size = mark(mp);      
       mp += elem_size;
+#if RECORD_MARK_SRC
+      mark_src = mp;
+      mark_type = MTYPE_TAGGED_ARRAY;
+#endif
       for (i = elem_size; i < size; i += elem_size, mp += elem_size)
 	mark(mp);
 
@@ -1814,6 +1900,10 @@ static void do_bigblock(void **p, MPage *page, int fixup)
 	    gcFIXUP(*p);
 	}
       } else {
+#if RECORD_MARK_SRC
+	mark_src = p;
+	mark_type = MTYPE_ARRAY;
+#endif
 	for (i = 0; i < size; i++, p++) {
 	  if (*p)
 	    gcMARK(*p);
@@ -1825,6 +1915,10 @@ static void do_bigblock(void **p, MPage *page, int fixup)
 
   case MTYPE_XTAGGED:
   default:
+#if RECORD_MARK_SRC
+    mark_src = p;
+    mark_type = MTYPE_XTAGGED;
+#endif
    if (fixup)
      GC_fixup_xtagged(p);
    else
@@ -1846,6 +1940,10 @@ static void propagate_all_mpages()
       
       p = mark_stack[--mark_stack_pos];
       type = mark_stack_type[mark_stack_pos];
+# if RECORD_MARK_SRC
+      current_mark_src = mark_src_stack[mark_stack_pos];
+      current_mark_type = mark_src_type[mark_stack_pos];
+# endif
 
       switch (type) {
       case MTYPE_TAGGED:
@@ -1862,6 +1960,10 @@ static void propagate_all_mpages()
 	      CRASH();
 	    }
 #endif
+#if RECORD_MARK_SRC
+	    mark_src = p;
+	    mark_type = MTYPE_TAGGED;
+#endif
 	  
 	    mark_table[tag](p);
 	  
@@ -1872,6 +1974,10 @@ static void propagate_all_mpages()
 	break;
 
       case MTYPE_XTAGGED:
+#if RECORD_MARK_SRC
+	mark_src = p + 1;
+	mark_type = MTYPE_XTAGGED;
+#endif
 	GC_mark_xtagged((void **)p + 1);
 	break;
 
@@ -1881,6 +1987,11 @@ static void propagate_all_mpages()
 	  
 	  size = ((long *)p)[0];
 	  
+#if RECORD_MARK_SRC
+	  mark_src = p + 1;
+	  mark_type = MTYPE_ARRAY;
+#endif
+
 	  for (i = 1; i <= size; i++) {
 	    gcMARK(((void **)p)[i]);
 	  }
@@ -2931,11 +3042,19 @@ void GC_mark_variable_stack(void **var_stack,
 	size -= 2;
 	a = (void **)((char *)a + delta);
 	while (count--) {
+#if RECORD_MARK_SRC
+	  mark_src = a;
+	  mark_type = MTYPE_STACK;
+#endif
 	  gcMARK(*a);
 	  a++;
 	}
       } else {
 	a = (void **)((char *)a + delta);
+#if RECORD_MARK_SRC
+	mark_src = a;
+	mark_type = MTYPE_STACK;
+#endif
 	gcMARK(*a);
       }
       p++;
@@ -3122,6 +3241,10 @@ static void do_roots(int fixup)
       if (fixup) {
 	gcFIXUP(*s);
       } else {
+#if RECORD_MARK_SRC
+	mark_src = s;
+	mark_type = MTYPE_ROOT;
+#endif
 	gcMARK(*s);
       }
       s++;
@@ -3146,6 +3269,10 @@ static void do_roots(int fixup)
     if (fixup) {
       gcFIXUP(ib->p);
     } else {
+#if RECORD_MARK_SRC
+      mark_src = ib;
+      mark_type = MTYPE_IMMOBILE;
+#endif
       gcMARK(ib->p);
     }
   }
@@ -3261,16 +3388,31 @@ static void gcollect(int full)
 
   {
     Fnl *f;
-    for (f = fnls; f; f = f->next)
+    for (f = fnls; f; f = f->next) {
+#if RECORD_MARK_SRC
+      mark_src = f;
+      mark_type = MTYPE_FINALIZER;
+#endif
       mark_finalizer(f);
-    for (f = run_queue; f; f = f->next)
+    }
+    for (f = run_queue; f; f = f->next) {
+#if RECORD_MARK_SRC
+      mark_src = f;
+      mark_type = MTYPE_FINALIZER;
+#endif
       mark_finalizer(f);
+    }
   }
 
   {
     Fnl_Weak_Link *wl;
-    for (wl = fnl_weaks; wl; wl = wl->next)
+    for (wl = fnl_weaks; wl; wl = wl->next) {
+#if RECORD_MARK_SRC
+      mark_src = wl;
+      mark_type = MTYPE_WEAKLINK;
+#endif
       mark_finalizer_weak_link(wl);
+    }
   }
 
 #if TIME

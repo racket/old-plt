@@ -104,6 +104,8 @@ wxMenu::~wxMenu(void)
 
     FREE_SAFEREF(saferef);
 
+    owner = NULL;
+
 #ifdef MZ_PRECISE_GC
     DELETE_OBJ children;
 #endif

@@ -489,17 +489,6 @@ wxStyle::wxStyle()
 
   cl = new wxList(wxKEY_NONE, FALSE);
   children = cl;
-
-#if 0
-  /* (style lists are not finalized any more) */
-  WXGC_IGNORE(this, styleList);
-#endif
-
-#if 0
-  /* (styles are not finalized any more) */
-  WXGC_IGNORE(this, baseStyle);
-  WXGC_IGNORE(this, textMetricDC);
-#endif
 }
 
 wxStyle::~wxStyle()
@@ -1029,7 +1018,6 @@ wxStyle *wxStyleList::FindOrCreateJoinStyle(wxStyle *baseStyle,
 
   style->name = NULL;
 
-  // WXGC_IGNORE(style->join_shiftStyle);
   style->join_shiftStyle = shiftStyle;
   shiftStyle->children->Append(style);
 

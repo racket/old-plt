@@ -147,7 +147,6 @@ wxMediaBuffer::wxMediaBuffer()
   InitCutNPaste();
 
   admin = NULL;
-  // WXGC_IGNORE(admin);
 
 #ifdef EACH_BUFFER_OWN_OFFSCREEN
   offscreen = NULL;
@@ -2279,7 +2278,6 @@ wxStandardSnipAdmin::wxStandardSnipAdmin(wxMediaBuffer *m)
 #endif
 
   media = m;
-  // WXGC_IGNORE(media);
 }
 
 wxMediaBuffer *wxStandardSnipAdmin::GetMedia(void)

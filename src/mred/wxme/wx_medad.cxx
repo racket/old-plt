@@ -1263,8 +1263,6 @@ wxCanvasMediaAdmin::wxCanvasMediaAdmin(wxMediaCanvas *c)
   resetFlag = FALSE;
   nextadmin = prevadmin = NULL;
   WXGC_IGNORE(this, canvas);
-  // WXGC_IGNORE(nextadmin);
-  // WXGC_IGNORE(prevadmin);
 
   updateCursorTimer = NULL;
 
@@ -1275,6 +1273,7 @@ wxCanvasMediaAdmin::~wxCanvasMediaAdmin()
 {
   if (updateCursorTimer)
     updateCursorTimer->Cancel();
+  canvas = NULL;
 }
 
 wxDC *wxCanvasMediaAdmin::GetDC(float *fx, float *fy)

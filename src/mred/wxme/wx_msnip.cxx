@@ -670,7 +670,6 @@ wxMediaSnipMediaAdmin::wxMediaSnipMediaAdmin(wxMediaSnip *s)
   state = new wxMSMA_SnipDrawState;
   state->drawing = 0;
 
-  // WXGC_IGNORE(snip);
   WXGC_IGNORE(state, state->dc);
 }
 

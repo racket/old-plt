@@ -2126,20 +2126,23 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       a = rns->vals[i];
       if (a) {
 	if (SCHEME_PAIRP(a)) {
-	  a = SCHEME_CADR(a);
-	  if (((Wrap_Chunk *)a)->len == stack_size) {
-	    Wrap_Chunk *ac, *bc;
-	    ac = (Wrap_Chunk *)SCHEME_CAR(stack);
-	    bc = (Wrap_Chunk *)a;
-	    for (j = 0; j < stack_size; j++) {
-	      if (!SAME_OBJ(ac->a[j], bc->a[j]))
-		break;
-	    }
-	    if (j >= stack_size) {
-	      if (just_simplify)
-		return SCHEME_CDR(rns->vals[i]);
-	      else
-		return SCHEME_CAR(rns->vals[i]);
+	  a = SCHEME_CDR(a);
+	  if (!SCHEME_NULLP(a)) {
+	    a = SCHEME_CAR(a);
+	    if (((Wrap_Chunk *)a)->len == stack_size) {
+	      Wrap_Chunk *ac, *bc;
+	      ac = (Wrap_Chunk *)SCHEME_CAR(stack);
+	      bc = (Wrap_Chunk *)a;
+	      for (j = 0; j < stack_size; j++) {
+		if (!SAME_OBJ(ac->a[j], bc->a[j]))
+		  break;
+	      }
+	      if (j >= stack_size) {
+		if (just_simplify)
+		  return SCHEME_CDR(rns->vals[i]);
+		else
+		  return SCHEME_CAR(rns->vals[i]);
+	      }
 	    }
 	  }
 	}

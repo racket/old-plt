@@ -524,7 +524,9 @@ double scheme_real_to_double(Scheme_Object *r)
 
 static
 #ifndef NO_INLINE_KEYWORD
+# ifndef DONT_INLINE_NZERO_TEST
 MSC_IZE(inline)
+# endif
 #endif
 int minus_zero_p(double d)
 {

@@ -208,6 +208,9 @@
 
 # define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
+# if (__GNUC__ >= 3) && defined(i386)
+#  define DONT_INLINE_NZERO_TEST
+# endif
 
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL

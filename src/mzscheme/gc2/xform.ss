@@ -918,7 +918,10 @@
 	      (symbol? (tok-n (list-ref e (- l 5)))))))))
 
 (define (typedef? e)
-  (eq? 'typedef (tok-n (car e))))
+  (or (eq? 'typedef (tok-n (car e)))
+      (and (eq? '__extension__ (tok-n (car e)))
+	   (pair? (cdr e))
+	   (eq? 'typedef (tok-n (cadr e))))))
 
 (define (simple-unused-def? e)
   (and (not precompiling-header?)
@@ -937,17 +940,20 @@
 		     (= 1 (hash-table-get used-symbols 
 					  (tok-n s)))))]
 	[seps (list '|,| '* semi)])
-    (and (eq? (tok-n (cadr e)) 'struct)
-	 (brackets? (cadddr e))
-	 (once (caddr e))
-	 (let loop ([e (cddddr e)])
-	   (cond
-	    [(null? e) #t]
-	    [(or (memq (tok-n (car e)) seps)
-		 (braces? (car e))
-		 (once (car e)))
-	     (loop (cdr e))]
-	    [else #f])))))
+    (let ([e (if (eq? '__extension__ (car e))
+		 (cdr e)
+		 e)])
+      (and (eq? (tok-n (cadr e)) 'struct)
+	   (brackets? (cadddr e))
+	   (once (caddr e))
+	   (let loop ([e (cddddr e)])
+	     (cond
+	      [(null? e) #t]
+	      [(or (memq (tok-n (car e)) seps)
+		   (braces? (car e))
+		   (once (car e)))
+	       (loop (cdr e))]
+	      [else #f]))))))
 
 (define (struct-decl? e)
   (memq (tok-n (car e)) '(struct enum)))
@@ -1033,7 +1039,11 @@
 
 (define (check-pointer-type e)
   (let-values ([(pointers non-pointers)
-		(get-vars (cdr e) "PTRDEF" #t)])
+		(get-vars ((if (eq? '__extension__ (car e))
+			       cddr
+			       cdr)
+			   e)
+			  "PTRDEF" #t)])
     (set! pointer-types (append pointers pointer-types))
     (set! non-pointer-types (append (map car non-pointers) non-pointer-types))))
 
@@ -2871,7 +2881,7 @@
      [(and (eq? '|,| (tok-n (car e))) comma-sep?)
       (values (reverse! (cons (car e) result)) (cdr e))]
      [(and (braces? (car e))
-	   (not (memq first '(typedef struct union enum))))
+	   (not (memq first '(typedef struct union enum __extension__))))
       (let ([rest (cdr e)])
 	(if (or (null? rest)
 		(pragma? (car rest))

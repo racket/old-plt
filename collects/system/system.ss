@@ -1,10 +1,10 @@
 ;; dont open a spash screen if the splash image is #f
 
-(load-relative "loader.ss")
+;(load-relative "loader.ss")
 
 (error-print-width 250)
 
-(define-macro min
+'(define-macro min
   (let ([min min]
 	[counter 0])
     (lambda args

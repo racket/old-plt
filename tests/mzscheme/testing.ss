@@ -22,8 +22,9 @@
 (define teval eval)
 
 (define SECTION (lambda args
-		  (display "SECTION") (write args) (newline)
-		  (set! cur-section args) #t))
+		  (let ([ep (current-error-port)])
+		    (display "SECTION" ep) (write args ep) (newline ep)
+		    (set! cur-section args) #t)))
 (define record-error (lambda (e) (set! errs (cons (list cur-section e) errs))))
 
 (print-struct #t)

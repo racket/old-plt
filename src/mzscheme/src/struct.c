@@ -511,16 +511,20 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
   pos = 0;
   if (!(flags & SCHEME_STRUCT_NO_TYPE))
     values[pos++] = (Scheme_Object *)struct_type;
-  if (!(flags & SCHEME_STRUCT_NO_CONSTR))
-    values[pos++] = make_struct_proc(struct_type,
-				     names[pos],
-				     SCHEME_CONSTR, 
-				     struct_type->num_slots);
-  if (!(flags & SCHEME_STRUCT_NO_PRED))
-    values[pos++] = make_struct_proc(struct_type,
-				     names[pos],
-				     SCHEME_PRED,
-				     0);
+  if (!(flags & SCHEME_STRUCT_NO_CONSTR)) {
+    values[pos] = make_struct_proc(struct_type,
+				   names[pos],
+				   SCHEME_CONSTR, 
+				   struct_type->num_slots);
+    pos++;
+  }
+  if (!(flags & SCHEME_STRUCT_NO_PRED)) {
+    values[pos] = make_struct_proc(struct_type,
+				   names[pos],
+				   SCHEME_PRED,
+				   0);
+    pos++;
+  }
 
   slot_num = (struct_type->name_pos
 	      ? struct_type->parent_types[struct_type->name_pos - 1]->num_slots 

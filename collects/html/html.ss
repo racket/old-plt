@@ -12,6 +12,6 @@
     [S : sgml-reader^ ((require-library "sgml-reader.ss" "html") (x : xml-structs^) F)]
     [H : html^ ((require-library "htmlr.ss" "html") X S F FILE)])
    (export (open H)))
- #f
+ html
  mzlib:function^
  mzlib:file^)

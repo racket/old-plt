@@ -266,9 +266,10 @@ typedef struct MrEd_Saved_Modal {
 void wxPushModalWindow(wxObject *w, wxWindow *win)
 {
   MrEdContext *c = MrEdGetContext(w);
-  MrEd_Saved_Modal *save = new MrEd_Saved_Modal;
 
   if (c->modal_window) {
+    MrEd_Saved_Modal *save = new MrEd_Saved_Modal;
+
     save->next = c->modal_stack;
     save->win = c->modal_window;
     c->modal_stack = save;
@@ -286,7 +287,7 @@ void wxPopModalWindow(wxObject *w, wxWindow *win)
     c->modal_window = NULL;
 
   prev = NULL;
-  for (save = c->modal_stack; save; prev = save, save = save->next) {
+  for (save = c->modal_stack; save; save = save->next) {
     if ((save->win == win) || !c->modal_window) {
       if (prev)
 	prev->next = save->next;
@@ -294,8 +295,9 @@ void wxPopModalWindow(wxObject *w, wxWindow *win)
 	c->modal_stack = save->next;
 
       if (save->win != win)
-	c->modal_window = win;
-    }
+	c->modal_window = save->win;
+    } else
+      prev = save;
   }
 }
 

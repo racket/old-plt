@@ -173,17 +173,22 @@
          (cond
            [(zodiac:match-against m&e expr env)
             =>
-            (let ([expander (lambda (pattern-env)
-                              (let ([elements (zodiac:pexpand '(elements ...) pattern-env kwd)])
-                                (unless (procedure-arity-includes? func (length elements))
-                                  (zodiac:interface:static-error
-                                   (symbol->string symbol) symbol
-                                   (zodiac:sexp->raw expr)
-                                   (format "expected ~a, got ~a" (pp-arity func) (length elements))))
-                                (zodiac:structurize-syntax 
-                                 (apply func (map zodiac:sexp->raw elements))
-                                 expr)))])
-              expander)]
+            (lambda (pattern-env)
+              (let ([elements (zodiac:pexpand '(elements ...) pattern-env kwd)])
+                (unless (procedure-arity-includes? func (length elements))
+                  (zodiac:interface:static-error
+                   (symbol->string symbol) symbol
+                   (zodiac:sexp->raw expr)
+                   (format "expected ~a, got ~a" (pp-arity func) (length elements))))
+                (zodiac:expand-expr
+                 (zodiac:structurize-syntax 
+                  (apply func (map zodiac:sexp->raw elements))
+                  expr)
+                 env 
+                 attrib 
+                 (zodiac:create-vocabulary
+                  'scheme-w/user-defined-macros/drscheme
+                  zodiac:scheme-vocabulary))))]
            [else 
             (zodiac:interface:static-error
              (symbol->string symbol) symbol
@@ -296,6 +301,9 @@
     bad-teachpacks)
   
   (define (add-teachpack-macros vocab) (macros-thunk vocab))
+  
+  (define teachpack-error-display (make-parameter (lambda (x) (display x) (newline))))
+  (define (invalid-teachpack str) ((teachpack-error-display) str))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;

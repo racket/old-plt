@@ -153,7 +153,8 @@
    r4rs-style-printing?))
 
 (define-signature plt:init-namespace^
-  (init-namespace
+  (teachpack-error-display
+   init-namespace
    add-teachpack-macros
    bad-teachpacks
    teachpack-ok?
@@ -170,5 +171,4 @@
    set-zodiac-phase))
 
 (define-signature plt:basis-import^
-  (invalid-teachpack
-   in-mzscheme?))
+  (in-mzscheme?))

@@ -1561,7 +1561,14 @@
                    (break-enabled #f)
                    (set! user-thread (current-thread))
                    
-                   (initialize-parameters user-setting)
+                   (parameterize ([basis:teachpack-error-display
+                                   (lambda (message)
+                                     (parameterize ([mred:current-eventspace 
+                                                     drscheme:init:system-eventspace])
+                                       (mred:queue-callback
+                                        (lambda ()
+                                          (mred:message-box "Invalid Teachpack" message)))))])
+                     (initialize-parameters user-setting))
                    
                    (set! user-namespace (current-namespace))
                    
@@ -1648,9 +1655,10 @@
         
         (define initialize-parameters ; =User=
           (lambda (setting)
-	    (basis:initialize-parameters
-	     user-custodian
-	     setting)
+
+              (basis:initialize-parameters
+               user-custodian
+               setting)
 	    
 	    (current-rep-text this)
 	    (current-output-port this-out)

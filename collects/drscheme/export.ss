@@ -27,8 +27,6 @@
 	[basis-import : plt:basis-import^
 		      ((unit/sig plt:basis-import^
 			 (import mred^)
-			 (define (invalid-teachpack s)
-			   (message-box "Invalid Teachpack" s))
 			 (define in-mzscheme? #f))
 		       mred)]
         [params : plt:userspace:params^ ((require-library "paramr.ss" "userspce"))]

@@ -30,10 +30,10 @@
 	  user-min-width
 	  user-min-height
 	  get-client-size
-	  ;set-item-cursor
 	  get-parent)
 
 	(rename
+	  [super-on-size on-size]
 	  [super-set-size set-size])
 	
 	(private
@@ -80,8 +80,10 @@
 	     (unless (memq new-child children)
 	       (unless (eq? this (send new-child get-parent))
 		 (error 'add-child
-		   "Attempted to add child ~s to panel ~s (not child's parent)"
-		   new-child this))
+			(string-append
+			 "Attempted to add child ~s to panel ~s "
+			 "(not child's parent)")
+			new-child this))
 	       (change-children
 		 (lambda (l)
 		   (append l (list new-child))))
@@ -206,8 +208,11 @@
 	  ; set-size:
 	  [set-size
 	    (lambda (x y width height)
+	      (mred:debug:printf 'container-panel-set-size
+		"container-panel-set-size: entering; args ~s ~s ~s ~s"
+		x y width height)
 	      (if (and (same-dimension? x (get-x))
-		       (same-dimension? y (get-y))
+   		       (same-dimension? y (get-y))
 		       (same-dimension? width (get-width))
 		       (same-dimension? height (get-height)))
 		  (begin
@@ -230,25 +235,15 @@
 	  [on-size
 	    (lambda (new-width new-height)
 	      (mred:debug:printf 'container-panel-on-size
-		"container-panel-on-size: Entering panel on-size; object ID ~s;  "
-				 object-ID)
-	      (mred:debug:printf 'container-panel-on-size
-		"container-panel-on-size: New size: ~s x ~s" new-width new-height)
+		"container-panel-on-size: Entering; args: ~s x ~s"
+		new-width new-height)
+	      (super-on-size new-width new-height)
 	      (let-values ([(client-width client-height)
 			    (get-two-int-values get-client-size)])
 		(mred:debug:printf 'container-panel-on-size
 		  "container-panel-on-size: Client size: ~s x ~s"
 		  client-width client-height)
-		(unless (and (number? curr-width)
-			     (number? curr-height)
-			     (= client-width curr-width)
-			     (= client-height curr-height))
-		  (set! curr-width client-width)
-		  (set! curr-height client-height)
-		  (mred:debug:printf 'container-panel-on-size
-		    "container-panel-on-size: On-size is forcing a redraw.")
-		  (redraw client-width client-height))))]
-	  
+		(redraw client-width client-height)))]
 
 	  ; place-children: determines where each child of panel should be
 	  ; placed.
@@ -425,8 +420,7 @@
 			       (+ major-size major-posn spacing))))))])
 		(mred:debug:printf 'container-panel-redraw
 		  "container-panel-redraw: redrawing panel's children")
-		(pc-help kid-info (+ border
-				     (/ (apply major-dim delta-list) 2)))))))))
+		(pc-help kid-info border)))))))
 
     (define make-spacing
       (lambda (panel)

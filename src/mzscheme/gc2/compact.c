@@ -386,7 +386,7 @@ static char zero_sized[4];
 /* Temporary pointer-holder used by routines that allocate */
 static void *park[2];
 
-static int during_gc;
+static int during_gc, avoid_collection;
 
 static int resolve_for_fixup = 0;
 
@@ -1293,7 +1293,6 @@ void GC_mark(const void *p)
     return;
   }
 #endif
-
 #if MARK_STATS
   mark_calls++;
 #endif
@@ -1307,6 +1306,12 @@ void GC_mark(const void *p)
     mflags_t flags;
 
     page = map + (((unsigned long)p & MAP_MASK) >> MAP_SHIFT);
+
+#if SEARCH
+    if (p == search_mark) {
+      stop();
+    }
+#endif
 
 #if DEFINE_MALLOC_FREE
     if (page->type == MTYPE_MALLOCFREE) {
@@ -1600,7 +1605,7 @@ static void propagate_array_mpage(void **bottom, MPage *page)
       int i;
 
 #if RECORD_MARK_SRC
-      mark_src = p;
+      mark_src = p + 1;
       mark_type = MTYPE_ARRAY;
 #endif
 
@@ -1640,7 +1645,7 @@ static void propagate_array_whole_mpage(void **p, MPage *page)
     }
 
 #if RECORD_MARK_SRC
-    mark_src = p;
+    mark_src = p + 1;
     mark_type = MTYPE_ARRAY;
 #endif
 
@@ -1681,16 +1686,17 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 	Type_Tag tag;
 	Mark_Proc traverse;
 	
+#if RECORD_MARK_SRC
+	mark_src = mp;
+	mark_type = MTYPE_TAGGED_ARRAY;
+#endif
+
 	size--;
 	tag = *(Type_Tag *)mp;
 
 	traverse = mark_table[tag];
 	elem_size = traverse(mp);
 	mp += elem_size;
-#if RECORD_MARK_SRC
-	mark_src = mp;
-	mark_type = MTYPE_TAGGED_ARRAY;
-#endif
 	for (i = elem_size; i < size; i += elem_size, mp += elem_size)
 	  traverse(mp);
 
@@ -1726,13 +1732,14 @@ static void propagate_tagged_array_whole_mpage(void **p, MPage *page)
 
     tag = *(Type_Tag *)mp;
       
-    traverse = mark_table[tag];
-    elem_size = traverse(mp);
-    mp += elem_size;
 #if RECORD_MARK_SRC
     mark_src = mp;
     mark_type = MTYPE_TAGGED_ARRAY;
 #endif
+
+    traverse = mark_table[tag];
+    elem_size = traverse(mp);
+    mp += elem_size;
     for (i = elem_size; i < size; i += elem_size, mp += elem_size)
       traverse(mp);
   }
@@ -1863,16 +1870,17 @@ static void do_bigblock(void **p, MPage *page, int fixup)
       size = page->u.size >> LOG_WORD_SIZE;
       tag = *(Type_Tag *)mp;
 
+#if RECORD_MARK_SRC
+      mark_src = mp;
+      mark_type = MTYPE_TAGGED_ARRAY;
+#endif
+
       if (fixup)
 	mark = fixup_table[tag];
       else
 	mark = mark_table[tag];
       elem_size = mark(mp);      
       mp += elem_size;
-#if RECORD_MARK_SRC
-      mark_src = mp;
-      mark_type = MTYPE_TAGGED_ARRAY;
-#endif
       for (i = elem_size; i < size; i += elem_size, mp += elem_size)
 	mark(mp);
 
@@ -3014,6 +3022,9 @@ static void **o_var_stack, **oo_var_stack;
 #if TIME
 static int stack_depth;
 #endif
+#if RECORD_MARK_SRC
+static int record_stack_source = 0;
+#endif
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
@@ -3051,8 +3062,10 @@ void GC_mark_variable_stack(void **var_stack,
 	a = (void **)((char *)a + delta);
 	while (count--) {
 #if RECORD_MARK_SRC
-	  mark_src = a;
-	  mark_type = MTYPE_STACK;
+	  if (record_stack_source) {
+	    mark_src = a;
+	    mark_type = MTYPE_STACK;
+	  }
 #endif
 	  gcMARK(*a);
 	  a++;
@@ -3060,8 +3073,10 @@ void GC_mark_variable_stack(void **var_stack,
       } else {
 	a = (void **)((char *)a + delta);
 #if RECORD_MARK_SRC
-	mark_src = a;
-	mark_type = MTYPE_STACK;
+	if (record_stack_source) {
+	  mark_src = a;
+	  mark_type = MTYPE_STACK;
+	}
 #endif
 	gcMARK(*a);
       }
@@ -3317,12 +3332,19 @@ static void do_roots(int fixup)
 			    (void *)(GC_get_thread_stack_base
 				     ? GC_get_thread_stack_base()
 				     : stack_base));
-  else
+  else {
+#if RECORD_MARK_SRC
+    record_stack_source = 1;
+#endif
     GC_mark_variable_stack(GC_variable_stack,
 			   0,
 			   (void *)(GC_get_thread_stack_base
 				    ? GC_get_thread_stack_base()
 				    : stack_base));
+#if RECORD_MARK_SRC
+    record_stack_source = 0;
+#endif
+  }
 
   /* Do immobiles: */
   for (ib = immobile; ib; ib = ib->next) {
@@ -3591,6 +3613,10 @@ static void gcollect(int full)
 	   but don't mark the finalized objects themselves. */	
 	for (f = fnls; f; f = f->next) {
 	  if (f->eager_level == 3) {
+#if RECORD_MARK_SRC
+	    mark_src = f;
+	    mark_type = MTYPE_TAGGED;
+#endif
 	    if (!is_marked(f->p)) {
 	      /* Not yet marked. Mark content. */
 	      if (f->tagged) {
@@ -4050,7 +4076,7 @@ static void new_page(mtype_t mtype, mflags_t mflags, MSet *set, int link)
   MPage *map;
   OffsetArrTy *offsets;
 
-  if ((memory_in_use > gc_threshold) && link) {
+  if ((memory_in_use > gc_threshold) && link && !avoid_collection) {
     gcollect(0);
     return;
   }
@@ -4102,7 +4128,7 @@ static void *malloc_bigblock(long size_in_bytes, mtype_t mtype, int link)
     stop();
 #endif
 
-  if ((memory_in_use > gc_threshold) && link) {
+  if ((memory_in_use > gc_threshold) && link && !avoid_collection) {
     gcollect(0);
     return malloc_bigblock(size_in_bytes, mtype, 1);
   }
@@ -4762,7 +4788,10 @@ void *print_out_pointer(const char *prefix, void *p)
     offset = ((char *)p - (char *)page->block_start) >> LOG_WORD_SIZE;
     if (what)
       offset -= 1;
-    p = page->backpointer_page[offset];
+    if (offset > 0)
+      p = page->backpointer_page[offset];
+    else
+      p = NULL; /* This shouldn't happen */
   }
 
   return p;
@@ -5009,6 +5038,7 @@ void GC_dump(void)
 	  (100.0 * ((double)page_reservations - memory_in_use)) / memory_in_use);
 
 #if KEEP_BACKPOINTERS
+  avoid_collection++;
   GCPRINT(GCOUTF, "Begin Trace\n");
   for (i = 0; i < found_object_count; i++) {
     void *p;
@@ -5022,5 +5052,6 @@ void GC_dump(void)
   }
   GCPRINT(GCOUTF, "End Trace\n");
   GC_trace_for_tag = 57;
+  --avoid_collection;
 #endif
 }

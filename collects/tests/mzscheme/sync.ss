@@ -687,7 +687,16 @@
 ;; ----------------------------------------
 ;;  Garbage collection
 
+(define (num-scheduled)
+  (let ([v (make-vector 7)])
+    (vector-set-performance-stats! v)
+    (vector-ref v 6)))
+
 (define (check-threads-gcable label blocking-thunk)
+  ;; Actually, we approximate the gcable check as a num-scheduled check,
+  ;;  even though there's still a lot of machinery here to try to check
+  ;;  GCing. The explicit gc has been commented out.
+  (define orig-scheduled (num-scheduled))
   (let ([l (let loop ([n 20][die? #f])
 	     (if (zero? n)
 		 null
@@ -696,14 +705,15 @@
 	[sl (lambda ()
 	      (let loop ([n 20])
 		(unless (zero? n) (sleep) (loop (sub1 n)))))]
-	[ok-done? (lambda (r) (< (car r) 10))])
+	[ok-done? (lambda (r) (<= (list-ref r 3) orig-scheduled))])
     (test #t
 	  ok-done?
 	  (let loop ([tries 0][n 100])
 	    (if (or (= tries 3) (< n 10))
-		(list tries n label)
+		(list tries n label (num-scheduled))
 		(begin
-		  (sl) (collect-garbage)
+		  (sl) 
+		  ;; (collect-garbage)
 		  (loop (add1 tries)
 			(apply + (map (lambda (b) (if (weak-box-value b) 1 0)) l)))))))))
 
@@ -716,13 +726,15 @@
   (check-threads-gcable 'wrapped (lambda () (sync (c (wrap-evt (make-semaphore) void)))))
   (check-threads-gcable 'guard (lambda () (sync (c (guard-evt (lambda () (make-semaphore)))))))
   (check-threads-gcable 'nack (lambda () (sync (c (nack-guard-evt (lambda (nack) (make-semaphore)))))))
-  (check-threads-gcable 'poll (lambda () (sync (c (poll-guard-evt (lambda (poll?) (make-semaphore))))))))
+  (check-threads-gcable 'poll (lambda () (sync (c (poll-guard-evt (lambda (poll?) (make-semaphore)))))))
+  (check-threads-gcable 'never (lambda () (sync (c never-evt)))))
 (check/combine values)
 (check/combine (lambda (x) (choice-evt x (make-semaphore))))
 (check/combine (lambda (x) (choice-evt (make-semaphore) x)))
 (check/combine (lambda (x) (choice-evt (make-semaphore) x)))
 
 (check-threads-gcable 'nested (lambda () (call-in-nested-thread (lambda () (semaphore-wait (make-semaphore))))))
+(pseudo-random-generator? 10)
 (check-threads-gcable 'suspended (lambda () (thread-suspend (current-thread))))
 (check-threads-gcable 'nested-suspend (lambda () (call-in-nested-thread (lambda () (thread-suspend (current-thread))))))
 

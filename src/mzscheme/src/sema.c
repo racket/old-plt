@@ -334,7 +334,12 @@ static void get_into_line(Scheme_Sema *sema, Scheme_Channel_Syncer *w)
 {
   Scheme_Channel_Syncer *last, *first;
   
-  if (SCHEME_SEMAP(sema)) {
+  w->in_line = 1;
+  w->picked = 0;
+
+  if (SAME_TYPE(SCHEME_TYPE(sema), scheme_never_evt_type)) {
+    return; /* !!!! skip everything else */
+  } else if (SCHEME_SEMAP(sema)) {
     last = sema->last;
     first = sema->first;
   } else if (SCHEME_CHANNELP(sema)) {
@@ -345,8 +350,6 @@ static void get_into_line(Scheme_Sema *sema, Scheme_Channel_Syncer *w)
     first = ((Scheme_Channel_Put *)sema)->ch->put_first;
   }
 
-  w->in_line = 1;
-  w->picked = 0;
   w->prev = last;
   if (last)
     last->next = w;
@@ -371,7 +374,11 @@ static void get_outof_line(Scheme_Sema *sema, Scheme_Channel_Syncer *w)
 {
   Scheme_Channel_Syncer *last, *first;
 
-  if (SCHEME_SEMAP(sema)) {
+  w->in_line = 0;
+
+  if (SAME_TYPE(SCHEME_TYPE(sema), scheme_never_evt_type)) {
+    return; /* !!!! skip everything else */
+  } else if (SCHEME_SEMAP(sema)) {
     last = sema->last;
     first = sema->first;
   } else if (SCHEME_CHANNELP(sema)) {
@@ -382,7 +389,6 @@ static void get_outof_line(Scheme_Sema *sema, Scheme_Channel_Syncer *w)
     first = ((Scheme_Channel_Put *)sema)->ch->put_first;
   }
 
-  w->in_line = 0;
   if (w->prev)
     w->prev->next = w->next;
   else
@@ -512,8 +518,8 @@ static int try_channel(Scheme_Sema *sema, Syncing *syncing, int pos, Scheme_Obje
 }
 
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *syncing)
-     /* When syncing is supplied, o can contain Scheme_Channel_Syncer values, and
-	just_try must be 0. */
+     /* When syncing is supplied, o can contain Scheme_Channel_Syncer
+	and never-evt values, and just_try must be 0. */
 {
   Scheme_Sema **semas = (Scheme_Sema **)o;
   int v, i, ii;
@@ -569,6 +575,8 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *synci
 	    --semas[i]->value;
 	  break;
 	}
+      } else if (semas[i]->so.type == scheme_never_evt_type) {
+	/* Never ready. */
       } else if (semas[i]->so.type == scheme_channel_syncer_type) {
 	/* Probably no need to poll */
       } else if (try_channel(semas[i], syncing, i, NULL))

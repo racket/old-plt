@@ -2245,6 +2245,8 @@ static void thread_is_dead(Scheme_Thread *r)
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
 
+  r->blocker = NULL;
+
   r->transitive_resumes = NULL;
   
   r->error_buf = NULL;
@@ -4875,7 +4877,8 @@ static int syncing_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
     if (!SCHEME_SEMAP(o)
 	&& !SCHEME_CHANNELP(o) && !SCHEME_CHANNEL_PUTP(o)
-	&& !SAME_TYPE(SCHEME_TYPE(o), scheme_channel_syncer_type))
+	&& !SAME_TYPE(SCHEME_TYPE(o), scheme_channel_syncer_type)
+	&& !SAME_TYPE(SCHEME_TYPE(o), scheme_never_evt_type))
       all_semas = 0;
 
     if (ready) {

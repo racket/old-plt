@@ -980,17 +980,18 @@ void scheme_print_tagged_value(const char *prefix,
     type = scheme_write_to_string_w_max((Scheme_Object *)v, &len, max_w);
     if (!scheme_strncmp(type, "#<thread", 8)) {
       char buffer[256];
-      char *run, *sus, *kill, *clean, *all, *t2;
+      char *run, *sus, *kill, *clean, *deq, *all, *t2;
       int state = ((Scheme_Thread *)v)->running, len2;
 	    
       run = (state & MZTHREAD_RUNNING) ? "+run" : "";
       sus = (state & MZTHREAD_SUSPENDED) ? "+suspended" : "";
       kill = (state & MZTHREAD_KILLED) ? "+killed" : "";
       clean = (state & MZTHREAD_NEED_KILL_CLEANUP) ? "+cleanup" : "";
+      deq = (((Scheme_Thread *)v)->next || ((Scheme_Thread *)v)->prev) ? "" : "+deq";
       all = !state ? "defunct" : "";
 
-      sprintf(buffer, "[%d=%s%s%s%s%s]",
-	      state, run, sus, kill, clean, all);
+      sprintf(buffer, "[%d=%s%s%s%s%s%s]",
+	      state, run, sus, kill, clean, all, deq);
 
       len2 = strlen(buffer);
       t2 = (char *)scheme_malloc_atomic(len + len2 + 1);

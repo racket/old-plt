@@ -1,6 +1,7 @@
 (module pre-installer mzscheme
   (require 
-   (lib "file.ss"))
+   (lib "file.ss")
+   (lib "build-from-source.ss" "plot"))
 
   (define (pre-installer plthome)      
     (let ([dir (build-path (collection-path "plot")
@@ -8,7 +9,7 @@
                            "native"
                            (system-library-subpath #f))])
 	(if (directory-exists? dir) ; just copy things over
-            (let ((compiled-dir (buid-path
+            (let ((compiled-dir (build-path
                                  (collection-path "plot"
                                                   "compiled"
                                                   "native"
@@ -18,6 +19,6 @@
               (make-directory* compiled-dir)
               (copy-directory/files dir compiled-dir))
 
-            (load "build-from-source.ss")))) ; build
+            (build))))
                  
   (provide pre-installer))

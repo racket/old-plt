@@ -39,6 +39,8 @@
          (and 
            (file-exists? (build-path from f))
            (regexp-match re f)
+           (not (regexp-match #rx"[.]o$" f))
+	   (not (regexp-match #rx"[.]a$" f))
            (not (regexp-match #rx"~$" f))
            (not (regexp-match #rx"[.]plt$" f))
            (not (regexp-match #rx"^#.*#$" f))
@@ -69,10 +71,10 @@
          (copy-files 
           (apply build-path source dir) 
           (apply build-path target dir)
-          #rx".")))
+          #rx"[.]")))
      directories))
   
-  (copy-all inplace-structure (collection-path "plot") plot-target-dir)
+  (copy-all inplace-structure (collection-path "plot") plot-target-dir )
   (copy-all copied-structure 
             (simplify-path 
              (build-path 
@@ -124,6 +126,6 @@
     (delete-file dest))
   (copy-file (build-path work-dir "plot.plt") dest)
 
-;  (delete-directory/files work-dir)
+  (delete-directory/files work-dir)
 
   (printf "Output to ~a~n" dest))

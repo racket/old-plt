@@ -17,15 +17,15 @@
 			 ;; From 6.1 Lexical conventions
 			 [blank (: #\newline #\return #\tab #\page #\space )]
 			 [comment (@ "(*" (* (^ "*)")) "*)")]
-			 [identchar (: (lowercase) (uppercase) #\' (digit) )]
+			 [identchar (: lowercase uppercase #\' digit )]
 			 [symbolchar (: #\! #\$ #\% #\& #\* #\+ #\- #\. #\/ #\: #\< #\= #\> #\? #\@ #\^ #\| #\~ )]
-			 [decimal_literal (+ (digit))]
-			 [hex_literal (@ #\0 (: #\x #\X) (+ (: (digit) (- #\A #\F) (- #\a #\f))) )]
+			 [decimal_literal (+ digit)]
+			 [hex_literal (@ #\0 (: #\x #\X) (+ (: digit (- #\A #\F) (- #\a #\f))) )]
 			 [oct_literal (@ #\0 (: #\o #\O) (+ (- #\0 #\7)))]
 			 [bin_literal (@ #\0 (: #\b #\B) (+ (- #\0 #\1)))]
-			 [float_literal (@ (+ (digit)) (? (@ #\. (* (digit)))) (? (@ (: \#e \#E) (? (: #\+ #\-)) (+ (digit)))))]
+			 [float_literal (@ (+ digit) (? (@ #\. (* digit))) (? (@ (: #\e #\E) (? (: #\+ #\-)) (+ digit))))]
 
-			 [escape_sequence (: "\\\\" "\\\"" "\\n" "\\r" "\\t" "\\b" (@ #\\ (digit) (digit) (digit)))]
+			 [escape_sequence (: "\\\\" "\\\"" "\\n" "\\r" "\\t" "\\b" (@ #\\ digit digit digit))]
 			 [newln (: #\newline #\return (@ #\return #\newline))]
 )
  
@@ -198,21 +198,21 @@
 
      (define (lex source-name)
        (lexer-src-pos
-	[(+ (blank)) (void)]
-	[_ (ttoken UNDERSCORE)]
-	[~ (ttoken TILDE)]
-	[(@ ~ (lowercase) (* (identchar)) :) (let* ([s lexeme]
+	[(+ blank) (void)]
+	["_" (ttoken UNDERSCORE)]
+	["~" (ttoken TILDE)]
+	[(@ "~" lowercase (* identchar) ":") (let* ([s lexeme]
 						    [name (substring s 1 (sub1 (string-length s)))])
 					       (if (hash-table-get keyword-table name (lambda () #f))
 						   (token ERRORKEYWORDASLABEL (string->symbol s))
 						   (token LABEL (string->symbol s))))]
-	[? (ttoken QUESTION)]
-	[(@ ? (lowercase) (* (identchar)) :) (let* ([s lexeme]
+	["?" (ttoken QUESTION)]
+	[(@ "?" lowercase (* identchar) ":") (let* ([s lexeme]
 						    [name (substring s 1 (sub1 (string-length s)))])
 					       (if (hash-table-get keyword-table name (lambda () #f))
 						   (token ERRORKEYWORDASLABEL (string->symbol s))
 						   (token OPTLABEL (string->symbol s))))]
-	[(@ (lowercase) (* (identchar))) (let* ([s lexeme]
+	[(@ lowercase (* identchar)) (let* ([s lexeme]
 						[name (substring s 0 (string-length s))])
 					   (if (hash-table-get keyword-table name (lambda () #f))
 					       (let ([result (hash-table-get keyword-table name)])
@@ -230,73 +230,73 @@
 					       (token LIDENT s)))]
 	
 	;; No capitalized keywords
-	[(@ (uppercase) (* (identchar))) (token UIDENT lexeme)]
-	[(: (decimal_literal) (hex_literal) (oct_literal) (bin_literal)) (token INT (string->number lexeme))]
-	[(float_literal) (token FLOAT (string->number lexeme))]
+	[(@ uppercase (* identchar)) (token UIDENT lexeme)]
+	[(: decimal_literal hex_literal oct_literal bin_literal) (token INT (string->number lexeme))]
+	[float_literal (token FLOAT (string->number lexeme))]
 	[#\" (token STRING (list->string (get-string input-port)))]
 	[(@ #\' (: #\^ #\\ #\') #\') 
 	 (token CHAR (string-ref lexeme 1))]
 	[(@ #\' #\\ (: #\\ #\' #\n #\t #\b #\r) #\')
 	 (token CHAR (let ([s lexeme])
 		       (escape_sequence->char (string-ref lexeme 2))))]
-	[(@ #\' #\\ (digit) (digit) (digit) #\')
+	[(@ #\' #\\ digit digit digit #\')
 	 (token CHAR (let ([s lexeme])
 		       (integer->char (string->number (substring s 2 5)))))]
 	[(@ #\' (^ (: #\^ #\\ #\' #\\ )) #\')
 	 (token CHAR (string-ref lexeme 1))]
 	;; Comment
-	[(@ (@ #\( *) 
-	    (* (@ (* (: (^ *))) (+ *) (: (^ * #\)))))
-	    (* (: (^ *)))
-	    (+ *)
+	[(@ (@ #\( "*") 
+	    (* (@ (* (: (^ "*"))) (+ "*") (: (^ "*" #\)))))
+	    (* (: (^ "*")))
+	    (+ "*")
 	    #\))
 	 (return-without-pos ((lex source-name) input-port))]
 	;; Character sequence keywords
 	[#\# (ttoken SHARP)]
-	[& (ttoken AMPERSAND)]
-	[&& (ttoken AMPERAMPER)]
+	["&" (ttoken AMPERSAND)]
+	["&&" (ttoken AMPERAMPER)]
 	[#\` (ttoken BACKQUOTE)]
 	[#\' (ttoken QUOTE)]
 	[#\( (ttoken LPAREN)]
 	[#\) (ttoken RPAREN)]
-	[*  (ttoken STAR )]
+	["*"  (ttoken STAR )]
 	[#\,  (ttoken COMMA )]
-	[-> (ttoken MINUSGREATER )]
+	["->" (ttoken MINUSGREATER )]
 	[#\.  (ttoken DOT )]
-	[.. (ttoken DOTDOT )]
-	[:  (ttoken COLON )]
-	[:: (ttoken COLONCOLON )]
-	[:= (ttoken COLONEQUAL )]
-	[:> (ttoken COLONGREATER )]
+	[".." (ttoken DOTDOT )]
+	[":"  (ttoken COLON )]
+	["::" (ttoken COLONCOLON )]
+	[":=" (ttoken COLONEQUAL )]
+	[":>" (ttoken COLONGREATER )]
 	[#\;  (ttoken SEMI )]
 	[(@ #\; #\;) (ttoken SEMISEMI )]
-	[<  (ttoken LESS )]
-	[<- (ttoken LESSMINUS )]
-	[=  (ttoken EQUAL )]
+	["<"  (ttoken LESS )]
+	["<-" (ttoken LESSMINUS )]
+	["="  (ttoken EQUAL )]
 	[#\[  (ttoken LBRACKET )]
 	[(@ #\[ #\|) (ttoken LBRACKETBAR )]
-	[(@ #\[ <) (ttoken LBRACKETLESS )]
+	[(@ #\[ "<") (ttoken LBRACKETLESS )]
 	[#\]  (ttoken RBRACKET )]
 	[#\{  (ttoken LBRACE )]
-	[(@ #\{ <) (ttoken LBRACELESS )]
+	[(@ #\{ "<") (ttoken LBRACELESS )]
 	[#\|  (ttoken BAR )]
 	[(@ #\| #\|) (ttoken BARBAR )]
 	[(@ #\| #\]) (ttoken BARRBRACKET )]
-	[>  (ttoken GREATER )]
-	[(@ > #\]) (ttoken GREATERRBRACKET )]
+	[">"  (ttoken GREATER )]
+	[(@ ">" #\]) (ttoken GREATERRBRACKET )]
 	[#\}  (ttoken RBRACE )]
-	[(@ > #\}) (ttoken GREATERRBRACE )]
-	[!= (token INFIXOP0 "!=")]
-	[+ (ttoken PLUS)]
-	[- (ttoken MINUS)]
-	[-. (ttoken MINUSDOT)]
-	[(@ #\! (* (symbolchar))) (token PREFIXOP lexeme)]
-	[(@ (: #\~ #\?) (+ (symbolchar))) (token PREFIXOP lexeme)]
-	[(@ (: #\= #\< #\> #\| #\& #\$) (* (symbolchar))) (token INFIXOP0 lexeme)]
-	[(@ (: #\@ #\^) (* (symbolchar))) (token INFIXOP1 lexeme)]
-	[(@ (: #\+ #\-) (* (symbolchar))) (token INFIXOP2 lexeme)]
-	[(@ #\* #\* (* (symbolchar))) (token INFIXOP4 lexeme)]
-	[(@ (: #\* #\/ #\%) (* (symbolchar)) ) (token INFIXOP3 lexeme)]
+	[(@ ">" #\}) (ttoken GREATERRBRACE )]
+	["!=" (token INFIXOP0 "!=")]
+	["+" (ttoken PLUS)]
+	["-" (ttoken MINUS)]
+	["-." (ttoken MINUSDOT)]
+	[(@ #\! (* symbolchar)) (token PREFIXOP lexeme)]
+	[(@ (: #\~ #\?) (+ symbolchar)) (token PREFIXOP lexeme)]
+	[(@ (: #\= #\< #\> #\| #\& #\$) (* symbolchar)) (token INFIXOP0 lexeme)]
+	[(@ (: #\@ #\^) (* symbolchar)) (token INFIXOP1 lexeme)]
+	[(@ (: #\+ #\-) (* symbolchar)) (token INFIXOP2 lexeme)]
+	[(@ #\* #\* (* symbolchar)) (token INFIXOP4 lexeme)]
+	[(@ (: #\* #\/ #\%) (* symbolchar) ) (token INFIXOP3 lexeme)]
 	;; The rest
 	[(eof) (ttoken EOF)]
 	[(- #\000 #\377) (token UNPARSEABLE (string->symbol lexeme))]))
@@ -304,9 +304,9 @@
 (define get-string
   (lexer
    (#\" null)
-   ((escape_sequence) (cons (escape_sequence->char lexeme)
+   (escape_sequence (cons (escape_sequence->char lexeme)
 			   (get-string input-port)))
-   ((@ #\\ (newln) (* (blank))) (get-string input-port))
+   ((@ #\\ newln (* blank)) (get-string input-port))
    ((- #\000 #\377) (cons (string-ref lexeme 0)
 			   (get-string input-port)))))
 

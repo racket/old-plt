@@ -553,8 +553,20 @@ void wxListBox::OnChar(wxKeyEvent *e)
   case WXK_UP:
     delta = -1;
     break;
+  case WXK_PRIOR:
+    delta = - NumberOfVisibleItems();
+    break;
+  case WXK_HOME:
+    delta = - num_choices;
+    break;
   case WXK_DOWN:
     delta = 1;
+    break;
+  case WXK_NEXT:
+    delta = NumberOfVisibleItems();
+    break;
+  case WXK_END:
+    delta = num_choices;
     break;
   }
 
@@ -563,7 +575,7 @@ void wxListBox::OnChar(wxKeyEvent *e)
     int n;
     n = GetSelections(&sels);
     if (n <= 1) {
-      int s;
+      int s, s2;
       if (n == 1)
 	s = sels[0];
       else if (delta < 0)
@@ -571,7 +583,12 @@ void wxListBox::OnChar(wxKeyEvent *e)
       else
 	s = -1;
 
-      SetSelection(s + delta);
+      s2 = s + delta;
+      if (s2 < 0)
+	s2 = 0;
+      else if (s2 >= num_choices)
+	s2 = num_choices - 1;
+      SetSelection(s2);
 
       if (s != GetSelection()) {
 	wxCommandEvent *event;

@@ -7,7 +7,8 @@
     ())
 
   (define-signature defs^
-    (get-yes-no
+    (progname
+     get-yes-no
      show-ok 
      show-error-ok)))
 

@@ -11,5 +11,6 @@
 
   ... the following are all implicitly parameterized
       by the chosen frame
+    (bound) : all bound vars
     (v <x>) : value of a named variable
     (src) : the source code 

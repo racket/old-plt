@@ -5,7 +5,8 @@
   (require (lib "contract.ss")
            "marks.ss"
            (lib "etc.ss")
-           (lib "list.ss"))
+           (lib "list.ss")
+           (prefix kernel: (lib "kerncase.ss" "syntax")))
   
   (provide/contract [set-event-num! (-> number? void?)] 
                     [bt (-> void?)] 
@@ -23,6 +24,7 @@
     (namespace-set-variable-value! 'src src)
     (namespace-set-variable-value! 'v binding)
     (namespace-set-variable-value! 'c continue)
+    (namespace-set-variable-value! 'bound bound)
     (namespace-set-variable-value! 'help help))
   
   (define (help)
@@ -69,6 +71,14 @@
   
   ; pretty-print code (represented as sexp)
   ; stolen from MrFlow
+  (define (simplify t)
+    (kernel:kernel-syntax-case t #f
+      [(#%app . rest) (map simplify (syntax->list #`rest))]
+      [(#%datum . d) #`d]
+      [(#%top . v) #`v]
+      [(a ...) (map simplify (syntax->list #`(a ...)))]
+      [x #`x]))
+  
   (define (unexpand t)
     (if (pair? t)
         (let ([kw (car t)])
@@ -104,7 +114,12 @@
       (printf "~v\n" source)))
 
   (define (binding sym)
-    (lookup-binding-with-symbol (do-n-times cdr (current-frame-num) (current-mark-list)) sym))
+    (map (lambda (binding) (list (mark-binding-binding binding) (mark-binding-value binding)))
+    (lookup-binding-list-with-symbol (do-n-times cdr (current-frame-num) (current-mark-list)) sym)))
 
+  (define (bound)
+    (map (lambda (binding) (list (syntax-e binding) binding))
+         (all-bindings (car (do-n-times cdr (current-frame-num) (current-mark-list))))))
+  
   (define (do-n-times fn n arg)
     (foldl (lambda (x arg) (fn arg)) arg (build-list n (lambda (x) x)))))

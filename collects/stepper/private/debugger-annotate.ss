@@ -149,6 +149,25 @@
                                                        #,(annotate #`body bound-vars is-tail?)))]
         
         [(#%app . exprs)
+<<<<<<< debugger-annotate.ss
+         (kernel:kernel-syntax-case #`exprs #f
+           [((#%top . brk) arg)
+            (eq? (syntax-e #`brk) 'break)
+            (break-wrap (make-debug-info expr bound-vars bound-vars 'at-break #f)
+                        (annotate #`arg bound-vars is-tail?))]
+           [(brk arg)
+            (eq? (syntax-e #`brk) 'break)
+            (break-wrap (make-debug-info expr bound-vars bound-vars 'at-break #f)
+                        (annotate #`arg bound-vars is-tail?))]
+           [else 
+            (let ([subexprs (map (lambda (expr) 
+                                   (annotate expr bound-vars #f))
+                                 (syntax->list #`exprs))])
+              (if is-tail?
+                  (quasisyntax/loc expr #,subexprs)
+                  (wcm-wrap (make-debug-info expr bound-vars bound-vars 'normal #f)
+                            (quasisyntax/loc expr #,subexprs))))])]
+=======
          (let ([subexprs (map (lambda (expr) 
                                 (annotate expr bound-vars #f))
                               (syntax->list #`exprs))])
@@ -156,6 +175,7 @@
                (quasisyntax/loc expr #,subexprs)
                (wcm-wrap (make-debug-info expr bound-vars bound-vars 'normal #f)
                          (quasisyntax/loc expr #,subexprs))))]
+>>>>>>> 1.21
         
         [(#%datum . _) expr]
         

@@ -19,13 +19,22 @@
 		   ;; unix libs
 		   (list "ssl" "crypto")
 		   ;; windows libs
-		   (let ([lib (build-path (collection-path "openssl") 
-					  "openssl"
-					  "lib")])
-		     (if (and (file-exists? (build-path lib "libeay32xxxxxxx.lib"))
-			      (file-exists? (build-path lib "libeay32xxxxxxx.lib")))
+		   (let ([libs 
+			  (append
+			   (let ([v (getenv "PLT_EXTENSION_LIB_PATHS")])
+			     (if v 
+				 (path-list-string->path-list v)
+				 null))
+			   (list (build-path (collection-path "openssl") 
+					     "openssl"
+					     "lib")))])
+		     (if (ormap (lambda (lib)
+				  (and (file-exists? (build-path lib "libeay32xxxxxxx.lib"))
+				       (file-exists? (build-path lib "libeay32xxxxxxx.lib"))))
+				libs)
 			 ;; Use mangleable names:
 			 (list "libeay32xxxxxxx" "ssleay32xxxxxxx")
+			 ;; Use simple names:
 			 (list "libeay32" "ssleay32")))
 		   ;; unix extra libs (assume always there)
 		   null

@@ -926,7 +926,7 @@ void wxListBox::OnSetFocus()
 //-----------------------------------------------------------------------------
 void wxListBox::OnKillFocus()
 {
-	SetCurrentDC();  // are all of these necessary?
+	SetCurrentDC();  
 	ALSetFocus(kControlFocusNoPart,cListReference);
 	
 /*	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);

@@ -533,6 +533,12 @@
  (autosave-show-autosave "Autosave file")
  (autosave-explanation "DrScheme found autosave files, which may contain your unsaved work.")
  (autosave-recovered! "Recovered!")
+ (autosave-error-deleting "Error deleting ~a\n\n~a")
+ (autosave-are-you-sure-delete? "Are you sure you want to delete ~a?")
+ (autosave-delete-button "Delete")
+ (autosave-delete-title "Delete")
+ (autosave-deleted "Deleted")
+ (autosave-done "Done")
 
  ;;; file modified warning
  (file-has-been-modified

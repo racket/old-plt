@@ -179,18 +179,28 @@
   ;; it play nicely with code certificates, so Matthew wrote the following
   ;; code.  The idea is to create a define-fun-syntax which is not really a new
   ;; kind of a syntax transformer which should always be expanded with
-  ;; `expand-fun-syntax'.
+  ;; `expand-fun-syntax/fun'.
 
- (define fun-cert-key (gensym))
- (define-values (make-fun-syntax fun-syntax?
-                  fun-syntax-proc fun-syntax-certifier)
+  (define fun-cert-key (gensym))
+
+  ;; bug in begin-for-syntax (PR7104), see below
+  (define foo!!! (make-parameter #f))
+  (define (expand-fun-syntax/normal fun-stx stx)
+    ((foo!!!) fun-stx stx))
+
+  (define-values (make-fun-syntax fun-syntax?
+                  fun-syntax-proc fun-syntax-certifier fun-syntax-name)
     (let-values ([(desc make pred? get set!)
                   (make-struct-type
-                   'fun-syntax #f 2 0 #f '() (current-inspector) 0)])
+                   'fun-syntax #f 3 0 #f '() (current-inspector)
+                   expand-fun-syntax/normal)])
       (values make pred?
               (make-struct-field-accessor get 0 'proc)
-              (make-struct-field-accessor get 1 'certifier))))
-  (define (expand-fun-syntax stx)
+              (make-struct-field-accessor get 1 'certifier)
+              (make-struct-field-accessor get 2 'name))))
+
+  ;; This is used to expand a fun-syntax in a _fun type context.
+  (define (expand-fun-syntax/fun stx)
     (let loop ([stx stx])
       (define (do-expand id id?) ; id? == are we expanding an identifier?
         (define v           (syntax-local-value id (lambda () #f)))
@@ -208,7 +218,7 @@
                    ;;  introuced syntax marked)
                    (introduce
                     ;; Actually expand:
-                    (proc
+                    ((fun-syntax-proc proc)
                      ;; Add mark specific to this expansion:
                      (introduce
                       ;; Remove mark related to expansion of `_fun':
@@ -223,8 +233,8 @@
         [id          (identifier? #'id) (do-expand #'id #t)]
         [_else stx])))
 
-  ;; use module-or-top-identifier=? because we use keywords like `=' and want
-  ;; to make it possible to play with it at the toplevel
+  ;; Use module-or-top-identifier=? because we use keywords like `=' and want
+  ;; to make it possible to play with it at the toplevel.
   (define id=? module-or-top-identifier=?)
 
   (define (split-by key args)
@@ -245,11 +255,12 @@
       #'(let-syntax ([to (syntax-id-rules ()
                            [(_?_ . _rest_) (from . _rest_)] [_?_ from])])
           body)))
+
   (define (custom-type->keys type err)
     (define stops (map (lambda (s) (datum->syntax-object type s #f))
                        '(#%app #%top #%datum)))
-    ;; Expand `type' using expand-fun-syntax
-    (define orig (expand-fun-syntax type))
+    ;; Expand `type' using expand-fun-syntax/fun
+    (define orig (expand-fun-syntax/fun type))
     (define (with-arg x)
       (syntax-case* x (=>) id=?
         [(id => body) (identifier? #'id)
@@ -267,7 +278,7 @@
         [else (set! keys (cons (cons key val) keys))]))
      (let loop ([t orig])
        (define (next rest . args) (apply setkey! args) (loop rest))
-       (syntax-case* t (type: expr: bind: pre: post: 1st-arg: prev-arg:) id=?
+       (syntax-case* t (type: expr: bind: 1st-arg: prev-arg: pre: post:) id=?
          [(type: t x ...)      (next #'(x ...) 'type #'t)]
          [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
          [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
@@ -277,7 +288,45 @@
          [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
          [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]
          [() (and (pair? keys) keys)]
-         [_else #f])))))
+         [_else #f]))))
+
+  ;; This is used for a normal expansion of fun-syntax, when not in a _fun type
+  ;; context.
+  ;; bug in begin-for-syntax (PR7104), see above
+  ;;   should be (define (expand-fun-syntax/normal fun-stx stx) ...)
+  (foo!!! (lambda (fun-stx stx)
+    (define (err msg . sub)
+      (apply raise-syntax-error (fun-syntax-name fun-stx) msg stx sub))
+    (let ([keys (custom-type->keys stx err)])
+      (define (getkey key) (cond [(assq key keys) => cdr] [else #f]))
+      (define (notkey key)
+        (when (getkey key)
+          (err (format "this type must be used in a _fun expression (uses ~s)"
+                       key))))
+      (if keys
+        (let ([type (getkey 'type)] [pre (getkey 'pre)] [post (getkey 'post)])
+          (unless type
+            (err "this type must be used in a _fun expression (#f type)"))
+          (for-each notkey '(expr bind 1st prev))
+          (if (or pre post)
+            ;; a type with pre/post blocks
+            (let ([make-> (lambda (x what)
+                            (cond [(not x) #'#f]
+                                  [(and (list? x) (= 2 (length x))
+                                        (identifier? (car x)))
+                                   #`(lambda (#,(car x)) #,(cadr x))]
+                                  [else #`(lambda (_)
+                                            (error '#,(fun-syntax-name fun-stx)
+                                                   "cannot be used to ~a"
+                                                   #,what))]))])
+              (with-syntax ([type type]
+                            [scheme->c (make-> pre "send values to C")]
+                            [c->scheme (make-> post "get values from C")])
+                #'(make-ctype type scheme->c c->scheme)))
+            ;; simple type
+            type))
+        ;; no keys => normal expansion
+        ((fun-syntax-proc fun-stx) stx))))))
 
 ;; Use define-fun-syntax instead of define-syntax for forms that
 ;;  are to be expanded by `_fun':
@@ -298,7 +347,8 @@
                                      (set!-transformer-procedure xformer)
                                      xformer)
                                    ;; Capture definition-time certificates:
-                                   (syntax-local-certifier))])
+                                   (syntax-local-certifier)
+                                   'id)])
            (if set!-trans? (make-set!-transformer f) f))))]))
 
 ;; ----------------------------------------------------------------------------
@@ -347,8 +397,7 @@
        (define (post! x) (set! post (append! post (list x))))
        (define ((t-n-e clause) type name expr)
          (let ([keys (custom-type->keys type err)])
-           (define (getkey key)
-             (cond [(assq key keys) => cdr] [else #f]))
+           (define (getkey key) (cond [(assq key keys) => cdr] [else #f]))
            (define (arg x . no-expr?)
              (define use-expr?
                (and (list? x) (= 2 (length x)) (identifier? (car x))))

@@ -5,13 +5,15 @@
 
 (define mred:scheme-mode@
   (unit/s mred:scheme-mode^
-    (import [mred:debug mred:debug^] [mred:mode mred:mode^]
+    (import [mred:debug mred:debug^] 
+	    [mred:application mred:application^]
+	    [mred:mode mred:mode^]
 	    [mred:match-cache mred:match-cache^] [mred:paren mred:paren^] 
 	    [mred:scheme-paren mred:scheme-paren^] [mred:icon mred:icon^]
 	    [mred:handler mred:handler^] [mred:keymap mred:keymap^]
 	    [mzlib:string mzlib:string^])
     
-    (mred:debug:printf "mred:scheme-mode@~n")
+    (mred:debug:printf "mred:scheme-mode@")
 
     (define newline-string (string #\newline))
 
@@ -33,13 +35,13 @@
     (define make-scheme-mode% 
       (lambda (super%)
 	(class-asi super%
-		   (inherit keymap)
+	  (inherit keymap)
 		   (rename [super-on-char on-char]
 			   [super-install install])
 		   (public
 		    [define-list '("define" "defmacro" "define-macro"
 				    "define-signature" "define-syntax" "define-schema")]
-		    [lambda-list '("lambda" "let" "let*" "letrec" "recur" "let-values"
+		    [lambda-list '("lambda" "let" "let*" "letrec" "letrec*" "recur" "let-values"
 					    "let/cc" "let/ec" "letcc" "catch"
 					    "let-syntax" "letrec-syntax" "syntax-case"
 					    "let-struct" "let-macro"
@@ -550,23 +552,9 @@
 		       (set! tab-size 8)
 		       (super-install edit))]
 		    [evaluate-region
-		     (let ([console-evaluate 
-			    (lambda (file)
-			      (wx:begin-busy-cursor)
-			      (catch escape
-				     (let-values ([vs (mzlib:string:eval-string 
-						       file #f 
-						       (lambda () (escape #f)))])
-				       (for-each (lambda (v)
-						   (unless (void? v)
-						     (display v)
-						     (newline)))
-						 vs))
-				     (display 'evaluated))
-			      (wx:end-busy-cursor))])
-		       (lambda (edit start end)
-			 (console-evaluate (send edit get-text start end))
-			 #t))]
+		     (lambda (edit start end)
+		       (mred:application:eval-string (send edit get-text start end))
+		       #t)]
 
 		    [transpose-sexp
 		     (lambda (edit pos)

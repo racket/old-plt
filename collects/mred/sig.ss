@@ -2,6 +2,20 @@
   (console-frame
    eval-string))
 
+(define-signature mred:exn^
+  ((struct exn ())
+   (struct exn:unknown-preference ())))
+
+(define-signature mred:exn-external^
+  (exn? exn:unknown-preference?))
+
+(define-signature mred:preferences^
+  (get-preference
+   set-preference
+   save-user-preferences
+   read-user-preferences
+   restore-defaults))
+
 (define-signature mred:autoload^
   (autoload-paths
    make-autoload))

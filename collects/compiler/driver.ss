@@ -137,7 +137,7 @@
   (lambda (exn)
     (set! compiler:messages (reverse! compiler:messages))
     (compiler:report-messages! #t)
-    (exit -1)))
+    (exit 1)))
   
   (define load-prefix-file
     (lambda (prefix)

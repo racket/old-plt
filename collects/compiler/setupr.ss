@@ -535,6 +535,6 @@
       (fprintf (current-error-port)
 	       "INSTALLATION FAILED.~nPress Enter to continue...~n")
       (read-line))
-    (exit -1))
+    (exit 1))
 
   (exit 0))

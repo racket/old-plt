@@ -30,20 +30,18 @@
   (define-struct red (contractum reduct))
 
   ;; build-red : language pattern ((listof (cons sym tst)) -> any) -> red
-  (define build-red
-    (opt-lambda (lang contractum reduct [allow-cross? #f])
-      (make-red (compile-pattern/cross lang contractum allow-cross?) reduct)))
+  (define (build-red lang contractum reduct)
+    (make-red (compile-pattern lang contractum) reduct))
   
   (define (compatible-closure red lang nt)
     (context-closure red lang `(cross ,nt)))
   
   (define (context-closure red lang pattern)
     (let ([new-name (gensym 'context-closure)])
-      (make-red (compile-pattern/cross
+      (make-red (compile-pattern
                  lang
                  `(in-hole (name ,new-name ,pattern)
-                           ,(red-contractum red))
-                 #t)
+                           ,(red-contractum red)))
                 (lambda (bindings)
                   (let ([context (lookup-binding bindings new-name)]
                         [hole (lookup-binding bindings 'hole)]

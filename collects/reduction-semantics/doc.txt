@@ -56,6 +56,7 @@ language, used in various ways:
           | (in-hole <pattern> <pattern>)
           | (in-hole* <symbol> <pattern> <pattern>)
           | (side-condition <pattern> <guard>)
+          | (cross <symbol>>)
           | (pattern ...)
           | <scheme-constant>
 
@@ -93,6 +94,12 @@ evaluated. If it returns #f, the pattern fails to match,
 and if it returns anything else, the pattern matches. In
 addition, any occurrences of `name' in the pattern will be
 bound in the guard.
+
+The (cross <symbol>) pattern is used for the compatible
+closure functions. If the language contains a non-terminal
+with the same name as <symbol>, the pattern (cross <symbol>)
+matches the context that corresponds to the compatible
+closure of that non-terminal.
 
 The (pattern ...) pattern matches a sexpression list, where
 each pattern matches an element of the list. In addition, if

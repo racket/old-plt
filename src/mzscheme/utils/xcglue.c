@@ -232,7 +232,7 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
   }
 
   if (where) {
-    char *b = scheme_malloc_atomic(50);
+    char *b = (char *)scheme_malloc_atomic(50);
     strcpy(b, "non-negative number or '");
     strcat(b, sym);
     scheme_wrong_type(where, b, -1, 0, &obj);

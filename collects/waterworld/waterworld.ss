@@ -359,28 +359,82 @@
 		       (- (send loc get-unsafe-count)
 			  (send loc get-unsafe-revealed-neighbors))))
 	       border))]
-       [initial-assignment
-	(lambda (elts)
-	  (map (lambda (elt) 
-		 (cons elt #f)) 
-	       elts))]
-       [next-assignment 
-	(lambda (assn)
-	  (if (null? assn)
-	      null
-	      (let* ([the-car (car assn)]
-		     [first-loc (car the-car)]
-		     [first-val (cdr the-car)])
-		(if first-val
-		    (cons (cons first-loc #f) (next-assignment (cdr assn)))
-		    (cons (cons first-loc #t) (cdr assn))))))]
-       [run-consistency-checker
-	(lambda (loc safe? f)
-	  (let* ([f-elts-raw (get-frontier-elements)]
-		 [f-elts
-		  (filter (lambda (elt) (not (eq? elt loc))) f-elts-raw)] 
-		 [num-elts (length f-elts)]
-		 [num-assignments (expt 2 num-elts)]
+       [locally-consistent?
+	(lambda (loc assns)
+	  (let ([very-locally-consistent?
+		 (lambda (nbr)
+		   (let* ([nbr-nbrs (send nbr get-neighbors)]
+			  [nbr-contribution
+			   (foldr
+			    (lambda (nbr-nbr accum)
+			      (if (and (not (send nbr-nbr
+						  get-concealed?))
+				       (not (send nbr-nbr get-safe?)))
+				  (add1 accum)
+				  accum))
+			    0
+			    nbr-nbrs)]
+			  [assn-contribution
+			   (foldr
+			    (lambda (a accum)
+			      (let ([entry (assq a assns)])
+				(if (and entry
+					 (cdr entry))
+				    (add1 accum)
+				    accum)))
+			    0
+			    nbr-nbrs)])
+		     (<= (+ nbr-contribution
+			    assn-contribution)
+			 (send nbr get-unsafe-count))))]
+		[revealed-neighbors 
+		 (filter (lambda (nbr) 
+			   (and (not (send nbr get-concealed?))
+				(send nbr get-safe?)))
+			 (send loc get-neighbors))])
+	    (andmap very-locally-consistent? revealed-neighbors)))]
+       [check-assignment
+	(lambda (curr fr assns escape-info)
+	  (if (or (not (cdar assns)) ; #f consistent if (cdr assns) was
+		  (locally-consistent? curr assns))
+	      (gen-locally-consistent-assignments fr assns escape-info)
+	      null))]
+       [gen-locally-consistent-assignments 
+	(lambda (fr assns escape-info)
+	  (if (null? fr)
+	      ; escape-info is true iff we're looking for just
+	      ;  one consistent assignment
+	      (if escape-info
+		  (let-values
+		   ([(loc safe? border
+			  border-frontier-neighbors
+			  border-counts
+			  k)
+		     (apply values escape-info)])
+		   (if (and (let* ([loc-assn (cdr (assq loc assns))])
+			      ; really a counterexample
+			      (eq? loc-assn safe?))
+			    (check-consistency assns
+					       border 
+					       border-frontier-neighbors
+					       border-counts))
+			 ; show counterexample, then escape
+		       (k (counterexample-prompt assns loc safe?))
+		       (list assns)))
+		  (list assns))
+	      (let* ([curr (car fr)]
+		     [rest-fr (cdr fr)])
+		(apply 
+		 append
+		 (map (lambda (b)
+			(check-assignment
+			 curr rest-fr (cons (cons curr b) assns)
+			 escape-info))
+		      (list #f #t))))))]
+       [gen-all-consistent-assignments
+	(lambda ()
+	  (let* ([fr (frontier-list)]
+		 [assns null]
 		 [border (get-revealed-border)]
 		 [border-frontier-neighbors 
 		  (map (lambda (b)
@@ -388,40 +442,40 @@
 					 (send b get-neighbors))))
 		       border)]
 		 [border-counts (get-border-counts border)])
-	    (f f-elts num-assignments 
-	       border border-frontier-neighbors border-counts)))]
+	    (filter (lambda (assn)
+		      (check-consistency assn
+					 border
+					 border-frontier-neighbors
+					 border-counts))
+		    (gen-locally-consistent-assignments fr assns #f))))]
+       [all-assignments-consistent?
+	; do all consistent assignments have the same
+	;  value for particular location
+	(lambda (loc)
+	  (let* ([all-assns (gen-all-consistent-assignments)]
+		 [first-assn (car all-assns)] ; must be at least one
+		 [loc-val (cdr (assq loc first-assn))])
+	    (let loop ([assns (cdr all-assns)])
+	      (if (null? assns)
+		  #t
+		  (if (eq? (cdr (assq loc (car assns)))
+			   loc-val)
+		      (loop (cdr assns))
+		      #f)))))]
        [uniform-consistent-frontiers
-	; returns all consistent frontiers, if all have same num pirates
-	; else returns #f
-	(lambda (loc safe?)
-	  (run-consistency-checker
-	   loc safe?
-	   (lambda (f-elts num-assignments 
-			   border border-frontier-neighbors border-counts)
-	     (let/ec kont
-	       (let loop ([count 0]
-			  [num-unsafe #f]
-			  [assignment-to-try (initial-assignment f-elts)])
-		 (if (>= count num-assignments)
-		     (if num-unsafe null #f)
-		     (if (check-consistency assignment-to-try 
-					    border
-					    border-frontier-neighbors
-					    border-counts)
-			 (let ([curr-num-unsafe
-				(num-unsafe-in-assignment assignment-to-try)])
-			   (if num-unsafe
-			       (if (= num-unsafe curr-num-unsafe)
-				   (cons assignment-to-try 
-					 (loop (add1 count) num-unsafe 
-					       (next-assignment 
-						assignment-to-try)))
-				   (kont #f))
-			       (cons assignment-to-try 
-				 (loop (add1 count) curr-num-unsafe
-				       (next-assignment assignment-to-try)))))
-			 (loop (add1 count) num-unsafe 
-			       (next-assignment assignment-to-try)))))))))]
+	(lambda ()
+	  (let ([all-assns (gen-all-consistent-assignments)])
+	    (let loop ([assns all-assns]
+		       [count #f])
+	      (if (null? assns)
+		  all-assns
+		  (if count
+		      (if (= (num-unsafe-in-assignment (car assns))
+			     count)
+			  (loop (cdr assns) count)
+			  #f)
+		      (loop (cdr assns) (num-unsafe-in-assignment 
+					 (car assns))))))))]
        [dump-assignment
 	(lambda (assn)
 	  (printf "*** dumping assignment ***~n")
@@ -535,47 +589,28 @@
 	   [(= pirates-left 0) safe?]
 	   [(= pirates-left num-concealed) (not safe?)]
 	   [else #f]))]
-       [all-assignments-consistent?
+       [find-consistent-frontier
 	(lambda (loc safe?)
-	  (run-consistency-checker
-	   loc safe?
-	   (lambda (f-elts num-assignments 
-			   border border-frontier-neighbors border-counts)
-	     (not
-	      (andmap
-	       (lambda (bool)
-		 (let loop ([count 0]
-			    [cdr-assignment (initial-assignment f-elts)])
-		   (if (>= count num-assignments)
-		       #f
-		       (if (check-consistency 
-			    (cons (cons loc bool) cdr-assignment)
-			    border
-			    border-frontier-neighbors
-			    border-counts)
-			   #t
-			   (loop (add1 count)
-				 (next-assignment cdr-assignment))))))
-	       (list #t #f))))))]
-       [find-consistent-frontier 
-	(lambda (loc safe?)
-	  (run-consistency-checker
-	   loc safe?
-	   (lambda (f-elts num-assignments border border-frontier-neighbors 
-			   border-counts)
-	     (let loop ([count 0]
-			[cdr-assignment (initial-assignment f-elts)])
-	       (if (>= count num-assignments)
-		   #f
-		   (let ([assignment-to-try
-			  (cons (cons loc safe?) cdr-assignment)])
-		     (if (check-consistency assignment-to-try
-					    border
-					    border-frontier-neighbors
-					    border-counts)
-			 (counterexample-prompt assignment-to-try loc safe?)
-			 (loop (add1 count)
-			       (next-assignment cdr-assignment)))))))))])
+	  (let/ec k
+            (let* ([fr (frontier-list)]
+		   [assns null]
+		   [border (get-revealed-border)]
+		   [border-frontier-neighbors 
+		    (map (lambda (b)
+			   (cons b (filter (lambda (loc) (in-frontier? loc))
+					   (send b get-neighbors))))
+			 border)]
+		   [border-counts (get-border-counts border)])
+	      (gen-locally-consistent-assignments 
+	       fr assns 
+	       (list loc safe? 
+		     border
+		     border-frontier-neighbors
+		     border-counts
+		     k))
+	      ; we don't use the result
+	      ; either we escape out, or return #f
+	      #f)))])
       (public*
        [ww-message
 	(lambda (s)
@@ -698,7 +733,7 @@
 			      (expose-thunk))]
 		     [else ; special cases for beyond frontier
 		      (cond
-		       [(uniform-consistent-frontiers loc safe?)
+		       [(uniform-consistent-frontiers)
 			=>
 			(lambda (frontiers)
 			  (let ([k (num-unsafe-in-assignment 
@@ -740,10 +775,10 @@
 			  (forced-location? loc (not safe?)))
 		      (guess-demerit loc safe? expose-thunk)]
 		     [(in-frontier? loc)
-		      (if (all-assignments-consistent? loc safe?)
+		      (if (all-assignments-consistent? loc) ;safe?)
 			    (guess-demerit loc safe? expose-thunk)
 			    (check-guess loc safe? expose-thunk))]
-		     [(uniform-consistent-frontiers loc safe?)
+		     [(uniform-consistent-frontiers)
 		      =>
 		      (lambda (frontiers)
 			(let ([k (num-unsafe-in-assignment (car frontiers))])
@@ -908,6 +943,9 @@
 			 (in-frontier? nb))
 		     (add-to-frontier nb)))
 	   (send loc get-neighbors)))]
+       [frontier-list
+	(lambda ()
+	  (hash-table-map frontier-table (lambda (k v) k)))]
        [dump-frontier
 	(lambda ()
 	  (printf "Current frontier:~n")

@@ -40,7 +40,7 @@ static HWND documentHwnd;
 static HANDLE documentHwndMutex;
 static HANDLE createHwndSem;
 
-static MX_TYPE_TBL_ENTRY *methodTable[TYPE_TBL_SIZE];
+static MX_TYPE_TBL_ENTRY *typeTable[TYPE_TBL_SIZE];
 
 static char *objectAttributes[] = { "InprocServer", "InprocServer32",
 				    "LocalServer", "LocalServer32", NULL };
@@ -56,12 +56,11 @@ static MX_PRIM mxPrims[] = {
   { mx_com_method_type,"method-type",2,2 },
   { mx_com_get_property_type,"get-property-type",2,2 },
   { mx_com_set_property_type,"set-property-type",2,2 },
-  { mx_all_controls,"all-controls",0,0 },
-  { mx_all_objects,"all-objects",0,0 },
+  { mx_all_com_classes,"all-com-classes",0,0 },
   { mx_document_objects,"document-objects",1,1 },
   { mx_object_to_html,"object->html",1,3 },
-  { mx_insert_html,"insert-html",2,2 },
-  { mx_append_html,"append-HTML",2,2 },
+  { mx_insert_html,"document-insert-html",2,2 },
+  { mx_append_html,"document-append-HTML",2,2 },
   { mx_document_pred,"document?",1,1 },
   { mx_get_event,"get-event",1,1 },
   { mx_event_tag,"event-tag",1,1},
@@ -76,6 +75,7 @@ static MX_PRIM mxPrims[] = {
   { mx_event_keydown_pred,"event-keydown?",1,1},
   { mx_event_keyup_pred,"event-keyup?",1,1},
   { mx_event_mousedown_pred,"event-mousedown?",1,1},
+  { mx_event_mousemove_pred,"event-mousemove?",1,1},
   { mx_event_mouseover_pred,"event-mouseover?",1,1},
   { mx_event_mouseout_pred,"event-mouseout?",1,1},
   { mx_event_mouseup_pred,"event-mouseup?",1,1},
@@ -83,8 +83,8 @@ static MX_PRIM mxPrims[] = {
   { mx_event_dblclick_pred,"event-dblclick?",1,1},
   { mx_event_error_pred,"event-error?",1,1},
   { mx_event_available,"event-available?",1,1},
-  { mx_make_document,"make-document",0,6},
-  { mx_show_document,"show-document",2,2},
+  { mx_make_document,"make-document",6,6},
+  { mx_document_show,"document-show",2,2},
 };
 
 DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
@@ -136,13 +136,14 @@ char *mx_fun_string(INVOKEKIND invKind) {
   return NULL;
 }
 
-unsigned short getHashValue(IDispatch *pIDispatch,INVOKEKIND invKind,char *method) {
+unsigned short getHashValue(IDispatch *pIDispatch,INVOKEKIND invKind,
+			    char *name) {
   char *p;
   unsigned short hashVal;
   
   hashVal = (unsigned short)pIDispatch + invKind;
 
-  p = method;
+  p = name;
   while (*p) {
     hashVal += (unsigned short)(*p);
     p++;
@@ -152,25 +153,25 @@ unsigned short getHashValue(IDispatch *pIDispatch,INVOKEKIND invKind,char *metho
   
 }
 
-void addMethodDescToTable(IDispatch *pIDispatch,char *methodName,
+void addTypeToTable(IDispatch *pIDispatch,char *name,
 			  INVOKEKIND invKind,
-			  METHODDESC *pMethodDesc) {
+			  MX_TYPEDESC *pTypeDesc) {
   unsigned short hashVal;
   MX_TYPE_TBL_ENTRY *pEntry,*p;
 
   pEntry = (MX_TYPE_TBL_ENTRY *)scheme_malloc(sizeof(MX_TYPE_TBL_ENTRY));
-  pEntry->pMethodDesc = pMethodDesc;
+  pEntry->pTypeDesc = pTypeDesc;
   pEntry->pIDispatch = pIDispatch;
   pEntry->invKind = invKind;
-  pEntry->methodName = methodName;
+  pEntry->name = name;
   pEntry->next = NULL;
   
-  hashVal = getHashValue(pIDispatch,invKind,methodName);
+  hashVal = getHashValue(pIDispatch,invKind,name);
   
-  p = methodTable[hashVal];
+  p = typeTable[hashVal];
   
   if (p == NULL) {
-    methodTable[hashVal] = pEntry;
+    typeTable[hashVal] = pEntry;
   }
   else {
     while (p->next != NULL) {
@@ -180,27 +181,26 @@ void addMethodDescToTable(IDispatch *pIDispatch,char *methodName,
   }
 }
 
-METHODDESC *lookupMethodDesc(IDispatch *pIDispatch,char *methodName,
-			     INVOKEKIND invKind) {
+MX_TYPEDESC *lookupTypeDesc(IDispatch *pIDispatch,char *name,
+			    INVOKEKIND invKind) {
   unsigned short hashVal;
   MX_TYPE_TBL_ENTRY *p;
 
-  hashVal = getHashValue(pIDispatch,invKind,methodName);
+  hashVal = getHashValue(pIDispatch,invKind,name);
   
-  p = methodTable[hashVal];
+  p = typeTable[hashVal];
   
   while (p) {
     if (p->pIDispatch == pIDispatch && 
 	p->invKind == invKind &&
-	strcmp(p->methodName,methodName) == 0) {
-      return p->pMethodDesc;
+	strcmp(p->name,name) == 0) {
+      return p->pTypeDesc;
     }
     p = p->next;
   }
 
   return NULL;
 }
-
 
 void scheme_add_prim_to_env(Scheme_Env *env,
 			    Scheme_Object *(*f)(int,Scheme_Object **),
@@ -213,13 +213,15 @@ void scheme_add_prim_to_env(Scheme_Env *env,
   scheme_add_global(name,pobj,env);
 }
 
-METHODDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
+MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
   HRESULT hr;
   TYPEATTR *pTypeAttr;
   FUNCDESC *pFuncDesc;
-  METHODDESC *pMethodDesc;
+  VARDESC *pVarDesc;
+  MX_TYPEDESC *pTypeDesc;
   MEMBERID memID;
-  BOOL foundFuncDesc;
+  MX_DESCKIND descKind;
+  BOOL foundDesc;
   ITypeInfo *pITypeInfo;
   UINT typeInfoCount;
   int i;
@@ -236,10 +238,10 @@ METHODDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
 
   // check in hash table to see if we already have the type information
 
-  pMethodDesc = lookupMethodDesc(pIDispatch,name,invKind);
+  pTypeDesc = lookupTypeDesc(pIDispatch,name,invKind);
 
-  if (pMethodDesc) {
-    return pMethodDesc;
+  if (pTypeDesc) {
+    return pTypeDesc;
   }
   
   pIDispatch->GetTypeInfoCount(&typeInfoCount);
@@ -284,19 +286,20 @@ METHODDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
     scheme_signal_error("Error getting type attributes for function \"%s\"",name);
   }
 
-  foundFuncDesc = FALSE;
+  foundDesc = FALSE;
 
   for (i = 0; i < pTypeAttr->cFuncs; i++) {
     hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
 		
     if (hr != S_OK) {
-      scheme_signal_error("Error getting function description");
+      scheme_signal_error("Error getting type description");
     }
 
     // see if this FUNCDESC is the one we want
 
     if (pFuncDesc->memid == memID && pFuncDesc->invkind == invKind) {
-      foundFuncDesc = TRUE;			
+      foundDesc = TRUE;
+      descKind = funcDesc;			
       break;
     }
 
@@ -306,20 +309,49 @@ METHODDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
   
   }
 
-  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  if (invKind != INVOKE_FUNC) {
+    for (i = 0; i < pTypeAttr->cVars; i++) {
+      hr = pITypeInfo->GetVarDesc(i,&pVarDesc);		
+      if (hr != S_OK) {
+	scheme_signal_error("Error getting type description");
+      }
 
-  if (foundFuncDesc == FALSE) {
-    scheme_signal_error("Error finding function description for \"%s\"",name);
+      // see if this VARDESC is the one we want
+
+      if (pVarDesc->memid == memID) {
+	foundDesc = TRUE;
+	descKind = varDesc;
+	break;
+      }
+
+      // if not, throw it back
+      
+      pITypeInfo->ReleaseVarDesc(pVarDesc);
+  
+    }
   }
 
-  pMethodDesc = (METHODDESC *)scheme_malloc(sizeof(METHODDESC));
+  pITypeInfo->ReleaseTypeAttr(pTypeAttr);
 
-  pMethodDesc->memID = memID;
-  pMethodDesc->pFuncDesc = pFuncDesc;
+  if (foundDesc == FALSE) {
+    scheme_signal_error("Error finding type description for \"%s\"",name);
+  }
 
-  addMethodDescToTable(pIDispatch,name,invKind,pMethodDesc);
+  pTypeDesc = (MX_TYPEDESC *)scheme_malloc(sizeof(MX_TYPEDESC));
 
-  return pMethodDesc;
+  pTypeDesc->memID = memID;
+  pTypeDesc->descKind = descKind;
+
+  if (descKind == funcDesc) {
+    pTypeDesc->pFuncDesc = pFuncDesc;
+  }
+  else {
+    pTypeDesc->pVarDesc = pVarDesc;
+  }
+
+  addTypeToTable(pIDispatch,name,invKind,pTypeDesc);
+
+  return pTypeDesc;
 }
 
 Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKind) {
@@ -327,8 +359,9 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   ITypeInfo *pITypeInfo;
   BSTR bstr;
   HRESULT hr;
-  FUNCDESC *pFuncDesc;
   TYPEATTR *pTypeAttr;
+  FUNCDESC *pFuncDesc;
+  VARDESC *pVarDesc;
   Scheme_Object *retval;
   char buff[256];
   unsigned int count,typeInfoCount;
@@ -364,6 +397,9 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
 
   retval = scheme_null;
 
+  // properties can appear in list of functions
+  // or in list of variables
+
   for (i = 0; i < pTypeAttr->cFuncs; i++) {
     pITypeInfo->GetFuncDesc(i,&pFuncDesc);		
     if (pFuncDesc->invkind == invKind) {
@@ -376,6 +412,21 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
     }
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
   }
+
+  if (invKind == INVOKE_FUNC) { // done, if not a property
+    return retval;
+  }
+
+  for (i = 0; i < pTypeAttr->cVars; i++) {
+    pITypeInfo->GetVarDesc(i,&pVarDesc);		
+    pITypeInfo->GetNames(pVarDesc->memid,&bstr,1,&count);
+    WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,SysStringLen(bstr) + 1,
+			buff,sizeof(buff) - 1,
+			NULL,NULL);
+    retval = scheme_make_pair(scheme_make_string(buff),retval);
+    SysFreeString(bstr);
+    pITypeInfo->ReleaseVarDesc(pVarDesc);
+  } 
 
   return retval;
 }
@@ -605,8 +656,9 @@ Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
 Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 				     INVOKEKIND invKind) {
   IDispatch *pIDispatch;
-  METHODDESC *pMethodDesc;
+  MX_TYPEDESC *pTypeDesc;
   FUNCDESC *pFuncDesc;
+  VARDESC *pVarDesc;
   Scheme_Object *s,*paramTypes,*returnType;
   char *name;
   short int numActualParams;
@@ -628,32 +680,48 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 
   name = SCHEME_STR_VAL(argv[1]);
 
-  pMethodDesc = getMethodType(pIDispatch,name,invKind);
+  pTypeDesc = getMethodType(pIDispatch,name,invKind);
 
-  pFuncDesc = pMethodDesc->pFuncDesc;
+  if (pTypeDesc->descKind == funcDesc) {
+
+    pFuncDesc = pTypeDesc->pFuncDesc;
   
-  paramTypes = scheme_null;
+    paramTypes = scheme_null;
 
-  numActualParams = pFuncDesc->cParams;
+    numActualParams = pFuncDesc->cParams;
 
-  if ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) && 
-      pFuncDesc->cParams > 0) {
-    numActualParams--; 
+    if ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) && 
+	pFuncDesc->cParams > 0) {
+      numActualParams--; 
+    }
+
+    for (i = 0; i < numActualParams; i++) {
+      s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE);
+      paramTypes = scheme_make_pair(s,paramTypes);
+    }
   }
 
-  for (i = 0; i < numActualParams; i++) {
-    s = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[i],FALSE);
-    paramTypes = scheme_make_pair(s,paramTypes);
+  // if not a function type, distinguish varDesc's 
+  // by invKind
+
+  else if (invKind == INVOKE_PROPERTYGET) {
+    pVarDesc = pTypeDesc->pVarDesc;
+    paramTypes = scheme_null;
+    numActualParams = 0;
+  }
+  else if (invKind == INVOKE_PROPERTYPUT) {
+    pVarDesc = pTypeDesc->pVarDesc;
+    paramTypes = 
+      scheme_make_pair(elemDescToSchemeType(&pVarDesc->elemdescVar,FALSE),
+		       scheme_null);
+    numActualParams = 1;
   }
 
   switch(invKind) {
   
-  case INVOKE_PROPERTYPUT :
-    returnType = scheme_intern_symbol("void");
-    break;
-  
-  case INVOKE_PROPERTYGET :
   case INVOKE_FUNC :
+
+    // assume pTypeDesc->descKind is funcDesc
 
     if (pFuncDesc->cParams == 0) {
       returnType = scheme_intern_symbol("void");
@@ -661,6 +729,30 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     else {
       returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE);
     }
+    break;
+
+  case INVOKE_PROPERTYPUT :
+    returnType = scheme_intern_symbol("void");
+    break;
+  
+  case INVOKE_PROPERTYGET :
+
+    // pTypeDesc->descKind may be either funcDesc or varDesc
+
+    if (pTypeDesc->descKind == funcDesc) {
+
+      if (pFuncDesc->cParams == 0) {
+	returnType = scheme_intern_symbol("void");
+      }
+      else {
+	returnType = elemDescToSchemeType(&pFuncDesc->lprgelemdescParam[numActualParams],TRUE);
+      }
+
+    }
+    else { // pTypeDesc->descKind == varDesc
+	returnType = elemDescToSchemeType(&pVarDesc->elemdescVar,TRUE);
+    }
+
     break;
   }
 
@@ -938,6 +1030,82 @@ void *allocParamMemory(size_t n) {
   return retval;
 }
 
+void marshallSchemeValueToVariant(Scheme_Object *val,
+				    VARIANTARG *pVariantArg) {
+  // called when COM type spec allows any VARIANT
+
+  if (SCHEME_CHARP(val)) {
+    pVariantArg->vt = VT_UI1;
+    pVariantArg->bVal = SCHEME_CHAR_VAL(val);
+    return;
+  }
+
+  if (SCHEME_INTP(val)) {
+    pVariantArg->vt = VT_I4;
+    pVariantArg->lVal = SCHEME_INT_VAL(val);
+    return;
+  }
+
+#ifdef MZ_USE_SINGLE_FLOATS    
+  if (SCHEME_FLTP(val)) {
+    pVariantArg->vt = VT_R4;
+    pVariantArg->fltVal = SCHEME_FLT_VAL(val);
+    return;
+  }
+#endif
+    
+  if (SCHEME_DBLP(val)) {
+    pVariantArg->vt = VT_R8;
+    pVariantArg->dblVal = SCHEME_DBL_VAL(val);
+    return;
+  }
+
+  if (SCHEME_STRINGP(val)) {
+    pVariantArg->vt = VT_BSTR;
+    pVariantArg->bstrVal = schemeStringToBSTR(val);
+    return;
+  }
+
+  if (MX_CYP(val)) {
+    pVariantArg->vt = VT_CY;
+    pVariantArg->cyVal = MX_CY_VAL(val);
+    return;
+  }
+
+  if (MX_DATEP(val)) {
+    pVariantArg->vt = VT_DATE;
+    pVariantArg->date = MX_DATE_VAL(val);
+    return;
+  }
+
+  if (val == scheme_false) {
+    pVariantArg->vt = VT_BOOL;
+    pVariantArg->boolVal = 0;
+    return;
+  }
+
+  if (val == scheme_true) {
+    pVariantArg->vt = VT_BOOL;
+    pVariantArg->boolVal = -1;
+    return;
+  }
+
+  if (MX_SCODEP(val)) {
+    pVariantArg->vt = VT_ERROR;
+    pVariantArg->scode = MX_SCODE_VAL(val);
+    return;
+  }
+
+  if (MX_IUNKNOWNP(val)) {
+    pVariantArg->vt = VT_UNKNOWN;
+    pVariantArg->punkVal = MX_IUNKNOWN_VAL(val);
+    return;
+  }
+
+  scheme_signal_error("Unable to inject Scheme value into VARIANT");
+
+}
+
 void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   if (pVariantArg->vt & VT_ARRAY) {
@@ -1090,8 +1258,12 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     *pVariantArg->ppunkVal = MX_IUNKNOWN_VAL(SCHEME_BOX_VAL(val));
     break;
 
+  case VT_VARIANT :
+    marshallSchemeValueToVariant(val,pVariantArg);
+    break;
+
   default :
-    scheme_signal_error("Unable to inject Scheme value into VARIANT: 0x%X",pVariantArg->vt);
+    scheme_signal_error("Unable to marshall Scheme value into VARIANT: 0x%X",pVariantArg->vt);
 
   }
 }
@@ -1269,42 +1441,14 @@ void unmarshallVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
   }
 }
 
-static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
-				   INVOKEKIND invKind) {
-  METHODDESC *pMethodDesc;
-  FUNCDESC *pFuncDesc;
-  DISPPARAMS methodArguments; 
-  VARIANT methodResult;
-  EXCEPINFO exnInfo;
-  unsigned int errorIndex;
-  IDispatch *pIDispatch;
-  char *methodName;
+short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
+					    INVOKEKIND invKind,
+					    int argc,Scheme_Object **argv,
+					    DISPPARAMS *methodArguments) {
   char errBuff[256];
-  short numNeededParams;
+  short int numNeededParams;
   int i,j,k;
   static DISPID dispidPropPut = DISPID_PROPERTYPUT;
-  HRESULT hr;
-
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type(mx_fun_string(invKind),"mx-object",0,argc,argv) ;
-  }
-
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(mx_fun_string(invKind),"string",1,argc,argv) ;
-  }
- 
-  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
-
-  if (pIDispatch == NULL) {
-    scheme_signal_error("NULL COM object");
-  }
-  
-  methodName = SCHEME_STR_VAL(argv[1]);
-
-  // check arity, types of method arguments
-  
-  pMethodDesc = getMethodType(pIDispatch,methodName,invKind);
-  pFuncDesc = pMethodDesc->pFuncDesc;
 
   numNeededParams = pFuncDesc->cParams;
 
@@ -1320,12 +1464,6 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 	    inv_kind_string(invKind),
 	    SCHEME_STR_VAL(argv[1]));
     scheme_wrong_count(errBuff,numNeededParams+2,numNeededParams+2,argc,argv);
-  }
-  else if ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_PROPERTYPUT) &&
-	   numNeededParams
-    
-	   ) {
-
   }
 
   for (i = 0,j = numNeededParams - 1,k = 2; i < numNeededParams; i++,j--,k++) {
@@ -1349,30 +1487,30 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
     // Named argument represents the assigned value
 
-    methodArguments.rgdispidNamedArgs = &dispidPropPut;
-    methodArguments.cNamedArgs = methodArguments.cArgs = 1;
+    methodArguments->rgdispidNamedArgs = &dispidPropPut;
+    methodArguments->cNamedArgs = methodArguments->cArgs = 1;
     break;
 
   case INVOKE_PROPERTYGET :
 
-    methodArguments.rgdispidNamedArgs = NULL;
-    methodArguments.cNamedArgs = 0;
-    methodArguments.cArgs = numNeededParams;
+    methodArguments->rgdispidNamedArgs = NULL;
+    methodArguments->cNamedArgs = 0;
+    methodArguments->cArgs = numNeededParams;
     break;
 
   default :
 
-    methodArguments.rgdispidNamedArgs = NULL;
-    methodArguments.cNamedArgs = 0;
-    methodArguments.cArgs = numNeededParams;
+    methodArguments->rgdispidNamedArgs = NULL;
+    methodArguments->cNamedArgs = 0;
+    methodArguments->cArgs = numNeededParams;
     break;
 
   }
 
   if (numNeededParams > 0) {
-    methodArguments.rgvarg = 
+    methodArguments->rgvarg = 
       (VARIANTARG *)scheme_malloc(numNeededParams * sizeof(VARIANTARG));
-    scheme_dont_gc_ptr(methodArguments.rgvarg);
+    scheme_dont_gc_ptr(methodArguments->rgvarg);
   }
 
   // marshall Scheme argument list into COM argument list
@@ -1383,19 +1521,141 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
     // i = index of ELEMDESC's
     // j = index of VARIANTARG's
 
-    VariantInit(&methodArguments.rgvarg[j]);
-    methodArguments.rgvarg[j].vt = 
+    VariantInit(&methodArguments->rgvarg[j]);
+    methodArguments->rgvarg[j].vt = 
       getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[i]);
-    marshallSchemeValue(argv[k],&methodArguments.rgvarg[j]);
+    marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
   }
 
+  return numNeededParams;
+}
+
+short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
+					   INVOKEKIND invKind,
+					   int argc,Scheme_Object **argv,
+					   DISPPARAMS *methodArguments) {
+  char errBuff[256];
+  short int numNeededParams;
+  int i,j,k;
+  static DISPID dispidPropPut = DISPID_PROPERTYPUT;
+
+  if (invKind == INVOKE_PROPERTYGET) {
+    numNeededParams = 0;
+  }
+  else if (invKind == INVOKE_PROPERTYPUT) {
+    numNeededParams = 1;
+  }
+
+  if (argc != numNeededParams + 2) {
+    sprintf(errBuff,"%s (%s \"%s\")",
+	    mx_fun_string(invKind),
+	    inv_kind_string(invKind),
+	    SCHEME_STR_VAL(argv[1]));
+    scheme_wrong_count(errBuff,
+		       numNeededParams + 2,numNeededParams + 2,
+		       argc,argv);
+  }
+
+  switch(invKind) {
+
+  case INVOKE_PROPERTYPUT :
+
+    methodArguments->rgdispidNamedArgs = &dispidPropPut;
+    methodArguments->cNamedArgs = methodArguments->cArgs = 1;
+    break;
+
+  case INVOKE_PROPERTYGET :
+
+    methodArguments->rgdispidNamedArgs = NULL;
+    methodArguments->cNamedArgs = 0;
+    methodArguments->cArgs = numNeededParams;
+    break;
+
+  }
+
+  if (numNeededParams > 0) {
+    methodArguments->rgvarg = 
+      (VARIANTARG *)scheme_malloc(numNeededParams * sizeof(VARIANTARG));
+    scheme_dont_gc_ptr(methodArguments->rgvarg);
+  }
+
+  // marshall Scheme argument list into COM argument list
+
+  for (i = 0,j = numNeededParams - 1,k = 2; i < numNeededParams; i++,j--,k++) {
+
+    // i = index of ELEMDESC's
+    // j = index of VARIANTARG's
+
+    VariantInit(&methodArguments->rgvarg[j]);
+    methodArguments->rgvarg[j].vt = 
+      getVarTypeFromElemDesc(&pVarDesc->elemdescVar);
+    marshallSchemeValue(argv[k],&methodArguments->rgvarg[j]);
+  }
+
+  return numNeededParams;
+}
+
+short int buildMethodArguments(MX_TYPEDESC *pTypeDesc,
+			       INVOKEKIND invKind,
+			       int argc,Scheme_Object **argv,
+			       DISPPARAMS *methodArguments) {
+  if (pTypeDesc->descKind == funcDesc) {
+    return buildMethodArgumentsUsingFuncDesc(pTypeDesc->pFuncDesc,
+					     invKind,argc,argv,
+					     methodArguments);
+  }
+
+  return buildMethodArgumentsUsingVarDesc(pTypeDesc->pVarDesc,
+					  invKind,argc,argv,
+					  methodArguments);
+			       
+}
+
+static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
+				   INVOKEKIND invKind) {
+  MX_TYPEDESC *pTypeDesc;
+  DISPPARAMS methodArguments; 
+  VARIANT methodResult;
+  EXCEPINFO exnInfo;
+  unsigned int errorIndex;
+  IDispatch *pIDispatch;
+  char *name;
+  short numNeededParams;
+  int i,k;
+  HRESULT hr;
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type(mx_fun_string(invKind),"com-object",0,argc,argv) ;
+  }
+
+  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type(mx_fun_string(invKind),"string",1,argc,argv) ;
+  }
+ 
+  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+
+  if (pIDispatch == NULL) {
+    scheme_signal_error("NULL COM object");
+  }
+  
+  name = SCHEME_STR_VAL(argv[1]);
+
+  // check arity, types of method arguments
+  
+  pTypeDesc = getMethodType(pIDispatch,name,invKind);
+
+  numNeededParams = buildMethodArguments(pTypeDesc,
+					 invKind,
+					 argc,argv,
+					 &methodArguments);
+ 
   if (invKind != INVOKE_PROPERTYPUT) {
     VariantInit(&methodResult);
   }
 
   // invoke requested method
 
-  hr = pIDispatch->Invoke(pMethodDesc->memID,IID_NULL,LOCALE_SYSTEM_DEFAULT,
+  hr = pIDispatch->Invoke(pTypeDesc->memID,IID_NULL,LOCALE_SYSTEM_DEFAULT,
 			  invKind,
 			  &methodArguments,
 			  (invKind == INVOKE_PROPERTYPUT) ? NULL : &methodResult,
@@ -1583,7 +1843,7 @@ Scheme_Object *mx_all_controls(int argc,Scheme_Object **argv) {
   return mx_all_clsid(argc,argv,controlAttributes);
 }
 
-Scheme_Object *mx_all_objects(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_all_com_classes(int argc,Scheme_Object **argv) {
   return mx_all_clsid(argc,argv,objectAttributes);
 }
 
@@ -1867,11 +2127,11 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
 }
 
 Scheme_Object *mx_insert_html(int argc,Scheme_Object **argv) {
-  return mx_stuff_html(argc,argv,L"AfterBegin","mx-insert-HTML");
+  return mx_stuff_html(argc,argv,L"AfterBegin","doc-insert-html");
 }
 
 Scheme_Object *mx_append_html(int argc,Scheme_Object **argv) {
-  return mx_stuff_html(argc,argv,L"BeforeEnd","mx-append-HTML");
+  return mx_stuff_html(argc,argv,L"BeforeEnd","doc-append-html");
 }
 
 DWORD WINAPI docHwndMsgLoop(LPVOID p) {
@@ -1936,6 +2196,24 @@ int cmpDwso(char *key,DOCUMENT_WINDOW_STYLE_OPTION *dwso) {
   return strcmp(key,dwso->name);
 }
 
+void assignIntOrDefault(int *pVal,Scheme_Object **argv,int argc,int ndx) {
+  if (SCHEME_SYMBOLP(argv[1])) {
+    *pVal = CW_USEDEFAULT;
+    if (strcmpi(SCHEME_SYM_VAL(argv[ndx]),"default") == 0) {
+      *pVal = CW_USEDEFAULT;
+    }
+    else {
+      scheme_wrong_type("make-document","int",ndx+1,argc,argv);
+    }
+  }
+  else if (SCHEME_INTP(argv[1]) == FALSE) {
+    scheme_wrong_type("make-document","int",ndx+1,argc,argv);
+  }
+  else {
+    *pVal = SCHEME_INT_VAL(argv[ndx]);
+  }
+}
+
 Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   HRESULT hr;
   DWORD threadId;
@@ -1947,6 +2225,8 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   IHTMLDocument2 *pIHTMLDocument2;
   IEventQueue *pIEventQueue;
   MX_Document_Object *doc;
+  Scheme_Object *pSyms,*currSym;
+  char *currStyleOption;
   DOCUMENT_WINDOW_INIT docWindowInit;
   DOCUMENT_WINDOW_STYLE_OPTION *pDwso;
   int i;
@@ -1955,103 +2235,51 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
 
   WaitForSingleObject(documentHwndMutex,INFINITE);
 
-  if (argc >= 1) {
-    if (SCHEME_STRINGP(argv[0]) == FALSE) {
-      scheme_wrong_type("make-document","string",1,argc,argv) ;
-    }
-
-    docWindowInit.docWindow.label = SCHEME_STR_VAL(argv[0]);
-  }
-  else {
-    docWindowInit.docWindow.label = "MysterX";
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("make-document","string",1,argc,argv) ;
   }
 
-  if (argc >= 2) {
-    if (SCHEME_INTP(argv[1]) == FALSE) {
-      scheme_wrong_type("make-document","int",2,argc,argv) ;
-    }
+  docWindowInit.docWindow.label = SCHEME_STR_VAL(argv[0]);
 
-    docWindowInit.docWindow.width = SCHEME_INT_VAL(argv[1]);
-  }
-  else {
-    docWindowInit.docWindow.width = CW_USEDEFAULT;
-  }
+  assignIntOrDefault(&docWindowInit.docWindow.width,argv,argc,1);
+  assignIntOrDefault(&docWindowInit.docWindow.height,argv,argc,2);
+  assignIntOrDefault(&docWindowInit.docWindow.x,argv,argc,3);
+  assignIntOrDefault(&docWindowInit.docWindow.y,argv,argc,4);
 
-  if (argc >= 3) {
-    if (SCHEME_INTP(argv[2]) == FALSE) {
-      scheme_wrong_type("make-document","int",3,argc,argv) ;
-    }
-
-    docWindowInit.docWindow.height = SCHEME_INT_VAL(argv[2]);
-  }
-  else {
-    docWindowInit.docWindow.height = CW_USEDEFAULT;
+  if (SCHEME_PAIRP(argv[5]) == FALSE && argv[5] != scheme_null) {
+    scheme_wrong_type("make-document","list of symbols",5,argc,argv);
   }
 
-  if (argc >= 4) {
-    if (SCHEME_INTP(argv[3]) == FALSE) {
-      scheme_wrong_type("make-document","int",4,argc,argv) ;
-    }
+  pSyms = argv[5];
+  docWindowInit.docWindow.style |= WS_OVERLAPPEDWINDOW;
 
-    docWindowInit.docWindow.x = SCHEME_INT_VAL(argv[3]);
-  }
-  else {
-    docWindowInit.docWindow.x = CW_USEDEFAULT;
-  }
+  while (pSyms != scheme_null) {
 
+    currSym = SCHEME_CAR(pSyms);
 
-  if (argc >= 5) {
-    if (SCHEME_INTP(argv[4]) == FALSE) {
-      scheme_wrong_type("make-document","int",5,argc,argv);
-    }
-
-    docWindowInit.docWindow.y = SCHEME_INT_VAL(argv[4]);
-  }
-  else {
-    docWindowInit.docWindow.y = CW_USEDEFAULT;
-  }
-
-  docWindowInit.docWindow.style = WS_OVERLAPPEDWINDOW;
-
-  if (argc >= 6) {
-    Scheme_Object *pSyms,*currSym;
-    char *currStyleOption;
-
-    if (SCHEME_PAIRP(argv[5]) == FALSE) {
+    if (SCHEME_SYMBOLP(currSym) == FALSE) {
       scheme_wrong_type("make-document","list of symbols",5,argc,argv);
     }
-
-    pSyms = argv[5];
-
-    while (pSyms != scheme_null) {
-      currSym = SCHEME_CAR(pSyms);
-
-      if (SCHEME_SYMBOLP(currSym) == FALSE) {
-	scheme_wrong_type("make-document","list of symbols",5,argc,argv);
-      }
  
-      currStyleOption = SCHEME_SYM_VAL(currSym);
-
-      pDwso = (DOCUMENT_WINDOW_STYLE_OPTION *)bsearch(currStyleOption,
-						      styleOptions,
-						      sizeray(styleOptions),
-						      sizeof(styleOptions[0]),
-						      (int (*)(const void *,const void *))cmpDwso);
-
-      if (pDwso == NULL) {
-	scheme_signal_error("Invalid document window style option: %s",currStyleOption);
-      }
-      
-      if (pDwso->enable) {
-	docWindowInit.docWindow.style |= pDwso->bits;
-      }
-      else {
-	docWindowInit.docWindow.style &= ~(pDwso->bits);
-      }
-
-      pSyms = SCHEME_CDR(pSyms);
-      
+    currStyleOption = SCHEME_SYM_VAL(currSym);
+    
+    pDwso = (DOCUMENT_WINDOW_STYLE_OPTION *)bsearch(currStyleOption,
+						    styleOptions,
+						    sizeray(styleOptions),
+						    sizeof(styleOptions[0]),
+						    (int (*)(const void *,const void *))cmpDwso);
+    if (pDwso == NULL) {
+      scheme_signal_error("Invalid document window style option: %s",currStyleOption);
     }
+
+    if (pDwso->enable) {
+      docWindowInit.docWindow.style |= pDwso->bits;
+    }
+    else {
+      docWindowInit.docWindow.style &= ~(pDwso->bits);
+    }
+
+    pSyms = SCHEME_CDR(pSyms);
   }
 
   docWindowInit.ppIStream = &pDocumentStream;
@@ -2142,7 +2370,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   return (Scheme_Object *)doc;
 }
 
-Scheme_Object *mx_show_document(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {
   MX_Document_Object *pDoc;
 
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
@@ -2183,7 +2411,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   // make type hash table uncollectable
 
-  scheme_register_extension_global(methodTable,TYPE_TBL_SIZE * sizeof(MX_TYPE_TBL_ENTRY *));
+  scheme_register_extension_global(typeTable,TYPE_TBL_SIZE * sizeof(MX_TYPE_TBL_ENTRY *));
 
   for (i = 0; i < sizeray(mxPrims); i++) {
     scheme_add_prim_to_env(env,

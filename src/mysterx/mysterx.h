@@ -46,10 +46,18 @@ typedef struct _scheme_mx_event_ {
   IEvent *pEvent;
 } MX_Event;
 
+typedef enum _mx_desckind_ {
+  funcDesc,varDesc
+} MX_DESCKIND;
+
 typedef struct _method_desc_ {
-  FUNCDESC *pFuncDesc;
   MEMBERID memID;
-} METHODDESC;
+  MX_DESCKIND descKind;
+  union {
+    FUNCDESC *pFuncDesc;
+    VARDESC *pVarDesc;
+  };
+} MX_TYPEDESC;
 
 typedef struct _mx_com_data_ {
   Scheme_Type type;
@@ -74,9 +82,9 @@ typedef struct _date_ {
 
 typedef struct _mx_type_tbl_entry_ {
   IDispatch *pIDispatch;
-  char *methodName;
+  char *name;
   INVOKEKIND invKind;
-  METHODDESC *pMethodDesc;
+  MX_TYPEDESC *pTypeDesc;
   struct _mx_type_tbl_entry_ *next;
 } MX_TYPE_TBL_ENTRY;
 
@@ -161,7 +169,7 @@ MX_PRIM_DECL(mx_com_method_type);
 MX_PRIM_DECL(mx_com_get_property_type);
 MX_PRIM_DECL(mx_com_set_property_type);
 MX_PRIM_DECL(mx_all_controls);
-MX_PRIM_DECL(mx_all_objects);
+MX_PRIM_DECL(mx_all_com_classes);
 MX_PRIM_DECL(mx_document_objects);
 MX_PRIM_DECL(mx_object_to_html);
 MX_PRIM_DECL(mx_insert_html);
@@ -200,7 +208,7 @@ MX_PRIM_DECL(mx_event_error_pred);
 MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_event_available);
 MX_PRIM_DECL(mx_make_document);
-MX_PRIM_DECL(mx_show_document);
+MX_PRIM_DECL(mx_document_show);
   
 void mx_register_com_object(Scheme_Object *,IUnknown *);
 IHTMLElementCollection *getBodyObjects(IHTMLElement *);

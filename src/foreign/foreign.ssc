@@ -194,7 +194,7 @@ exec mzscheme -r "$0" "$0" "$@"
 (define (add-symbols syms)
   (for-each (lambda (s)
               (when (assq s symbols)
-                (error 'defsymbols "symbol ~s already defined" s))
+                (error 'add-symbols "symbol ~s already defined" s))
               (set! symbols
                     (cons (list s (string-append
                                    (regexp-replace

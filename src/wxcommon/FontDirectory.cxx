@@ -153,7 +153,7 @@ static int CALLBACK check_font_here(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *lpnt
 
 int check_avail(char *name)
 {
-  int present;
+  int present = 0;
   LOGFONT lf;
   HDC dc;
   

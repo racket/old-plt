@@ -13,13 +13,33 @@
             (car paths)
             (get-path (cdr paths)))))
   
+  ;move-file-in: string string -> void
+  (define (move-file-in path file)
+    (let ((comp-path (build-path path "compiled" file))
+          (o-path (build-path path file)))
+      (cond
+        ((not (file-exists? comp-path)) (copy-file o-path comp-path))
+        ((< (file-or-directory-modify-seconds comp-path) (file-or-directory-modify-seconds o-path))
+         (delete-file comp-path)
+         (copy-file o-path comp-path))
+        (else (void)))))
+  
   (let ((path (build-path (get-path (current-library-collection-paths)) "profj" "libs" "java" "lang")))
     (unless (directory-exists? (build-path path "compiled"))
       (make-directory (build-path path "compiled")))
-    (unless (file-exists? (build-path path "compiled" "Object.jinfo"))
-      (copy-file (build-path path "Object.jinfo") (build-path path "compiled" "Object.jinfo"))
-      (copy-file (build-path path "String.jinfo") (build-path path "compiled" "String.jinfo"))
-      (copy-file (build-path path "Throwable.jinfo") (build-path path "compiled" "Throwable.jinfo"))))
+    (move-file-in path "Object.jinfo")
+    (move-file-in path "String.jinfo")
+    (move-file-in path "Throwable.jinfo")
+    (for-each (lambda (file)
+                (delete-file (build-path path "compiled" file)))
+              (filter (lambda (file)
+                        (and
+                         (equal? "jinfo" (filename-extension file))
+                         (not (equal? file "Object.jinfo"))
+                         (not (equal? file "String.jinfo"))
+                         (not (equal? file "Throwable.jinfo"))))
+                      (directory-list (build-path path "compiled"))))
+    )
   
   ;flatten : list -> list
   (define (flatten l)

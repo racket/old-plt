@@ -142,12 +142,12 @@
   
   
   ;; (make-class-record (list string) (list symbol) boolean (list field-record) 
-  ;;                    (list method-records) (list (list strings)) (list (list strings)))
+  ;;                    (list method-records) (list (list string)) (list (list strings)) (list (list strings)))
   ;; After full processing fields and methods should contain all inherited fields 
   ;; and methods.  Also parents and ifaces should contain all super-classes/ifaces
-  (define-struct class-record (name modifiers class? fields methods parents ifaces))
+  (define-struct class-record (name modifiers class? fields methods inners parents ifaces))
 
-  (define interactions-record (make-class-record (list "interactions") null #f null null null null))
+  (define interactions-record (make-class-record (list "interactions") null #f null null null null null))
   
   ;; (make-field-record string (list symbol) bool (list string) type)
   (define-struct field-record (name modifiers init? class type))
@@ -437,7 +437,8 @@
                                    (map parse-field (list-ref input 3))
                                    (map parse-method (list-ref input 4))
                                    (list-ref input 5)
-                                   (list-ref input 6))))
+                                   (list-ref input 6)
+                                   (list-ref input 7))))
              (parse-field
               (lambda (input)
                 (make-field-record (car input)
@@ -476,6 +477,7 @@
                  (class-record-modifiers r)
                  (map field->list (class-record-fields r))
                  (map method->list (class-record-methods r))
+                 (class-record-inners r)
                  (class-record-parents r)
                  (class-record-ifaces r))))
              (field->list

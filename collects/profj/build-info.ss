@@ -404,6 +404,7 @@
                            (append m (filter (lambda (meth)
                                                (class-specific-method? meth m))
                                              (class-record-methods super-record)))
+                           null
                            (cons super-name (class-record-parents super-record))
                            (append (map name->list (header-implements info))
                                    (map class-record-parents iface-records)
@@ -504,6 +505,7 @@
                            #f
                            (apply append (cons f (map class-record-fields super-records)))
                            (apply append (cons m (map class-record-methods super-records)))
+                           null
                            (apply append (cons super-names 
                                                (map class-record-parents super-records)))
                            null)))

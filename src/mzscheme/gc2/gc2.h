@@ -77,9 +77,8 @@ unsigned long GC_get_stack_base(void);
    MzScheme started, before it has multiple threads. */
 
 void GC_add_roots(void *start, void *end);
-void GC_delete_roots(void *start, void *end);
 /*
-   Called by MzScheme to install/delete roots. The memory between
+   Called by MzScheme to install roots. The memory between
    `start' (inclusive) and `end' (exclusive) contains pointers. */
 
 void GC_init_type_tags(int count, int weakbox);
@@ -197,6 +196,13 @@ void GC_set_weak_box_val(void *wb, void *v);
 /*
    Gets/sets the `val' field in a structure matching the required
    header of a weak box (see GC_malloc_weak_box). */
+
+
+void *GC_malloc_immobile_box(void *p);
+void GC_free_immobile_box(void *b);
+/* 
+   Allocate an non-GCed box containing a pointer to a GCed value.
+   The pointer is stored as the first longword of the box. */
 
 /***************************************************************************/
 /* Finalization                                                            */

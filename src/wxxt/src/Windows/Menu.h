@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Menu.h,v 1.6 1999/11/04 17:25:38 mflatt Exp $
  *
  * Purpose: simple menu class
  *
@@ -115,5 +114,24 @@ private:
     // for special associated data
     char* client_data;
 };
+
+#ifdef MZ_PRECISE_GC
+extern char *copystring_xt(const char *s);
+# define MALLOC_MENU_ITEM()      (menu_item *)XtMalloc(sizeof(menu_item))
+# define FREE_MENU_ITEM(i)       XtFree((char *)i)
+# define MAKE_MENU_STRING(s)     copystring_xt(s)
+# define FREE_MENU_STRING(s)     XtFree((char *)s)
+# define EXTRACT_TOP_MENU(item)  (*(wxMenu**)(item->user_data))
+# define BUNDLE_TOP_MENU(menu)   GC_malloc_immobile_box(menu)
+# define FREE_TOP_POINTER(p)     GC_free_immobile_box(p)
+#else
+# define MALLOC_MENU_ITEM()      (new menu_item)
+# define FREE_MENU_ITEM(i)       /* nothing */
+# define MAKE_MENU_STRING(s)     s
+# define FREE_MENU_STRING(s)     /* nothing */
+# define EXTRACT_TOP_MENU(item)  ((wxMenu*)(item->user_data))
+# define BUNDLE_TOP_MENU(menu)   ((void*)menu)
+# define FREE_TOP_POINTER(p)     /* nothing */
+#endif
 
 #endif // Menu_h

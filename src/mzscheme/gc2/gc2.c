@@ -207,33 +207,44 @@ void GC_add_roots(void *start, void *end)
   roots[roots_count++] = PTR_TO_INT(end) - PTR_ALIGNMENT;
 }
 
-void GC_delete_roots(void *start, void *end)
+typedef struct ImmobileBox {
+  void *p;
+  struct ImmobileBox *next, *prev;
+} ImmobileBox;
+
+static ImmobileBox *immobile;
+
+void *GC_malloc_immobile_box(void *p)
 {
-  int i;
-  unsigned long s, e;
+  ImmobileBox *ib;
 
-  s = PTR_TO_INT(start);
-  e = PTR_TO_INT(end) - PTR_ALIGNMENT;
+  ib = (ImmobileBox *)malloc(sizeof(ImmobileBox));
+  ib->p = p;
+  ib->next = immobile;
+  if (immobile)
+    immobile->prev = ib;
+  ib->prev = NULL;
 
-  for (i = 0; i < roots_count; i += 2) {
-    if ((roots[i] <= s) && (roots[i + 1] >= e)) {
-      if (roots[i] == s) {
-	if (roots[i + 1] == e)
-	  roots[i] = e;
-	else
-	  roots[i] = e + (PTR_ALIGNMENT - 1);
-      } else if (roots[i + 1] == e) {
-	roots[i + 1] = s - (PTR_ALIGNMENT - 1);
-      } else {
-	unsigned long old_e;
-	old_e = roots[i + 1] + PTR_ALIGNMENT;
-	roots[i + 1] = s - (PTR_ALIGNMENT - 1);
-	e += (PTR_ALIGNMENT - 1);
-	GC_add_roots(INT_TO_PTR(e), INT_TO_PTR(old_e));
-      }
-      break;
-    }
-  }
+  immobile = ib;
+
+  return ib;
+}
+
+void GC_free_immobile_box(void *b)
+{
+  ImmobileBox *ib = (ImmobileBox *)b;
+
+  if (!ib)
+    return;
+
+  if (ib->prev)
+    ib->prev->next = ib->next;
+  else
+    immobile = ib->next;
+  if (ib->next)
+    ib->next->prev = ib->prev;
+
+  free(ib);
 }
 
 /******************************************************************************/
@@ -712,6 +723,7 @@ void gcollect(int needsize)
   char *bitmap;
   int i, did_fnls;
   long diff, iterations;
+  ImmobileBox *ib;
   GC_Weak_Box *wb;
   GC_Weak_Array *wa;
 
@@ -849,6 +861,10 @@ void gcollect(int needsize)
       gcMARK(*s);
       s++;
     }
+  }
+
+  for (ib = immobile; ib; ib = ib->next) {
+    gcMARK(ib->p);
   }
 
   PRINTTIME((STDERR, "gc: roots: %ld\n", GETTIMEREL()));

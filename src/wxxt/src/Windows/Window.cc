@@ -46,8 +46,13 @@
 
 #include <X11/keysym.h> // needed for IsFunctionKey, etc.
 
-#define MALLOC_SAFEREF(s) malloc(s)
-#define FREE_SAFEREF(x) free(x)
+#ifdef MZ_PRECISE_GC
+# define MALLOC_SAFEREF() GC_malloc_immobile_box(NULL)
+# define FREE_SAFEREF(x) GC_free_immobile_box(x)
+#else
+# define MALLOC_SAFEREF() malloc(sizeof(wxWindow *))
+# define FREE_SAFEREF(x) free(x)
+#endif
 
 extern void wxSetSensitive(Widget, Bool enabled);
 
@@ -102,10 +107,7 @@ wxWindow::wxWindow(void)
 
     {
       wxWindow **wa;
-      wa = (wxWindow **)MALLOC_SAFEREF(sizeof(wxWindow *));
-#ifdef MZ_PRECISE_GC
-      GC_add_roots(wa, ((char *)wa) + 5);
-#endif
+      wa = (wxWindow **)MALLOC_SAFEREF();
       saferef = wa;
     }
     *saferef = this;
@@ -1078,9 +1080,6 @@ void wxWindow::OnScroll(wxScrollEvent*)
 static void FreeSaferef(Widget WXUNUSED(w), wxWindow** winp,
 			XtPointer WXUNUSED(null))
 {
-#ifdef MZ_PRECISE_GC
-  GC_delete_roots(winp, ((char *)winp) + 5);
-#endif
   FREE_SAFEREF((char *)winp);
 }
 

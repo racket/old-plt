@@ -72,13 +72,15 @@ wxMenu::~wxMenu(void)
     while (item) {
 	menu_item *temp = item;
 	item = item->next;
-	DELETE_VAL temp->label;
+	FREE_MENU_STRING(temp->label);
+	FREE_MENU_STRING(temp->help_text);
 	if (temp->contents) { 	// has submenu?
 	  wxMenu *mnu;
-	  mnu = ((wxMenu*)(temp->user_data));
+	  mnu = EXTRACT_TOP_MENU(temp);
 	  DELETE_OBJ mnu;
+	  FREE_TOP_POINTER(temp->user_data);
 	}
-	DELETE_VAL temp;
+	FREE_MENU_ITEM(temp);
     }
 }
 
@@ -143,6 +145,7 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 {
     menu_item *item;
+    char *ms;
 
     Stop();
   
@@ -150,15 +153,11 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
     // create new menu item or use topdummy
     if (topdummy) {
 	item = (menu_item*)topdummy;
-	DELETE_VAL item->label;
+	FREE_MENU_STRING(item->label);
+	FREE_TOP_POINTER(item->user_data);
 	topdummy = 0;
     } else {
-#ifdef MZ_PRECISE_GC
-      /* FIXME: needs a tag! Moves on Xt lib! */
-      item = (menu_item *)GC_malloc(sizeof(menu_item));
-#else
-      item = new menu_item;
-#endif
+      item = MALLOC_MENU_ITEM();
       // chain or initialize menu_item list
       if (last) {
 	menu_item *prev = (menu_item*)last;
@@ -175,12 +174,16 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
       /* Hack to avoid parse: */
       char *s;
       s = copystring(label);
-      item->label= s;
+      ms = MAKE_MENU_STRING(s);
+      item->label = ms;
       item->key_binding = NULL;
     } else {
       wxGetLabelAndKey(label, &item->label, &item->key_binding);
+      ms = MAKE_MENU_STRING(item->label);
+      item->label = ms;
     }
-    item->help_text = help;
+    ms = MAKE_MENU_STRING(help);
+    item->help_text = ms;
     item->ID        = id; 
     item->enabled   = TRUE;
     item->set       = FALSE;
@@ -193,6 +196,7 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
 void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
 {
   menu_item *item;
+  void *tm;
 
   /* MATTHEW: enforce one-menu-owner: */
   if (submenu->owner)
@@ -206,8 +210,8 @@ void wxMenu::Append(long id, char *label, wxMenu *submenu, char *help)
   item            = (menu_item*)last;
   item->type      = MENU_CASCADE;
   item->contents  = (menu_item*)submenu->top;
-  item->user_data = (void*)submenu;
-  /* MATTHEW */
+  tm = BUNDLE_TOP_MENU(submenu);
+  item->user_data = tm;
   submenu->owner = (wxMenuItem **)&item->contents;
 }
 
@@ -261,11 +265,17 @@ Bool wxMenu::DeleteItem(long id, int pos)
 	last = (wxMenuItem*)prev;
     }
 
-    DELETE_VAL found->label;
+    FREE_MENU_STRING(found->label);
+    FREE_MENU_STRING(found->help_text);
+
     /* If there's a submenu, let it go. */
-    if (found->contents)
-      ((wxMenu *)found->user_data)->owner = NULL;
-    DELETE_VAL found;
+    if (found->contents) {
+      EXTRACT_TOP_MENU(found)->owner = NULL;
+      FREE_TOP_POINTER(found->user_data);
+    }
+
+    FREE_MENU_ITEM(found);
+
     return TRUE;
   } else
     return FALSE;
@@ -403,8 +413,8 @@ int wxMenu::FindItem(char *itemstring, int strip)
 	    break; // found
 	}
 	if (item->contents) // has submenu => search in submenu
-	    if ((answer = ((wxMenu*)item->user_data)->FindItem(label)) > -1)
-		break; // found
+	  if ((answer = EXTRACT_TOP_MENU(item)->FindItem(label)) > -1)
+	    break; // found
     }
     return answer;
 }
@@ -419,12 +429,11 @@ wxMenuItem *wxMenu::FindItemForId(long id, wxMenu **req_menu)
 	    break; // found
 	}
 	if (item->contents) // has submenu => search in submenu
-	    if ((answer =
-		 (menu_item*)((wxMenu*)item->user_data)->FindItemForId(id)))
-		break; // found
-    }
+	    if ((answer = (menu_item*)(EXTRACT_TOP_MENU(item)->FindItemForId(id))))
+	      break; // found
+      }
     if (req_menu)
-	*req_menu = (wxMenu*)answer->user_data;
+      *req_menu = EXTRACT_TOP_MENU(answer);
     return ((wxMenuItem*)answer);
 }
 
@@ -461,9 +470,31 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
       if (menu->callback)
 	menu->callback(menu, event);
     }
+
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxMenu::Stop()
 {
   /* No way to get to menu bar right now... */
 }
+
+
+#ifdef MZ_PRECISE_GC
+char *copystring_xt(const char *s)
+{
+  int l;
+  char *r;
+
+  if (!s)
+    return NULL;
+
+  l = strlen(s);
+  r = XtMalloc(l + 1);
+  memcpy(r, s, l + 1);
+
+  return r;
+}
+#endif

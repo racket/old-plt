@@ -73,11 +73,15 @@ wxMenuBar::~wxMenuBar(void)
 	item = item->next;
 	if (temp->contents) { // has submenu?
 	  wxMenu *mnu;
-	  DELETE_VAL temp->label;
-	  mnu = ((wxMenu*)(temp->user_data));
+
+	  FREE_MENU_STRING(temp->label);
+	  FREE_MENU_STRING(temp->help_text);
+
+	  mnu = EXTRACT_TOP_MENU(temp);
 	  DELETE_OBJ mnu; 
+	  FREE_TOP_POINTER(temp->user_data);
 	}
-	DELETE_VAL temp;
+	FREE_MENU_ITEM(temp);
     }
 }
 
@@ -150,6 +154,8 @@ void wxMenuBar::Destroy(void)
 void wxMenuBar::Append(wxMenu *menu, char *title)
 {
     menu_item *item = 0;
+    void *tm;
+    char *ms;
 
     if (!menu || !title) // I need menu and title
 	return;
@@ -162,27 +168,26 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
 
     // create new menu item or use topdummy
     if (topdummy) {
-	item = (menu_item*)topdummy;
-	DELETE_VAL item->label;
-	topdummy = 0;
+      item = (menu_item*)topdummy;
+      FREE_MENU_STRING(item->label);
+      FREE_TOP_POINTER(item->user_data);
+      topdummy = 0;
     } else {
-#ifdef MZ_PRECISE_GC
-      /* FIXME: needs a tag! Moves on Xt lib! */
-      item = (menu_item *)GC_malloc(sizeof(menu_item));
-#else
-      item = new menu_item;
-#endif
+      item = MALLOC_MENU_ITEM();
     }
     // initialize menu_item
     wxGetLabelAndKey(title, &item->label, &item->key_binding);
+    ms = MAKE_MENU_STRING(item->label);
+    item->label     = ms;
     item->help_text = NULL;
     item->ID        = -1; 
     item->enabled   = TRUE;
     item->set       = FALSE;
     item->contents  = (menu_item*)menu->top;
-    menu->owner     = (wxMenuItem **)&item->contents; /* MATTHEW */
+    menu->owner     = (wxMenuItem **)&item->contents;
     item->next      = NULL;
-    item->user_data = (void*)menu;
+    tm = BUNDLE_TOP_MENU(menu);
+    item->user_data = tm;
     {
       _e_menu_item_type t;
       t = (!strcmp(item->label, "Help")) ? MENU_HELP : MENU_CASCADE;
@@ -213,7 +218,7 @@ Bool wxMenuBar::Delete(wxMenu *menu, int pos)
     return FALSE;
 
   for (i = (menu_item *)top, counter = 0; 
-       i && ((menu && (i->user_data != (void *)menu))
+       i && ((menu && (EXTRACT_TOP_MENU(i) != menu))
 	     || (!menu && (counter < pos)));
        counter++) {
     i = i->next;
@@ -235,12 +240,14 @@ Bool wxMenuBar::Delete(wxMenu *menu, int pos)
     }
 
     if (i->contents) {
-      DELETE_VAL i->label;
+      FREE_MENU_STRING(i->label);
+      FREE_MENU_STRING(i->help_text);
       /* Release menu: */
-      ((wxMenu *)(i->user_data))->owner = NULL;
+      EXTRACT_TOP_MENU(i)->owner = NULL;
+      FREE_TOP_POINTER(i->user_data);
     }
 
-    DELETE_VAL i;
+    FREE_MENU_ITEM(i);
 
     if (X->handle) { // redisplay
       XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
@@ -346,17 +353,23 @@ void wxMenuBar::SetHelpString(long id, char *help)
 {
   menu_item *found;
   found = (menu_item*)FindItemForId(id);
-  if (found)
-    found->help_text = help;
+  if (found) {
+    char *hs;
+    hs = MAKE_MENU_STRING(help);
+    found->help_text = hs;
+  }
 }
 
 void wxMenuBar::SetLabel(long id, char *label)
 {
   menu_item *found;
+  char *ms;
   found = (menu_item*)FindItemForId(id);
   if (found) {
-    DELETE_VAL found->label;
+    FREE_MENU_STRING(found->label);
     wxGetLabelAndKey(label, &found->label, &found->key_binding);
+    ms = MAKE_MENU_STRING(found->label);
+    found->label = ms;
   }
 }
 
@@ -369,12 +382,15 @@ void wxMenuBar::SetLabelTop(int pos, char *label)
       item = item->next;
     }
     if (item) {
-        Stop();
-	DELETE_VAL item->label;
-	wxGetLabelAndKey(label, &item->label, &item->key_binding);
-	if (X->handle) { // redisplay if menu added
-	  XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
-	}
+      char *ms;
+      Stop();
+      FREE_MENU_STRING(item->label);
+      wxGetLabelAndKey(label, &item->label, &item->key_binding);
+      ms = MAKE_MENU_STRING(item->label);
+      item->label = ms;
+      if (X->handle) { // redisplay if menu added
+	XtVaSetValues(X->handle, XtNmenu, top, XtNrefresh, True, NULL);
+      }
     }
 }
 
@@ -392,7 +408,7 @@ int wxMenuBar::FindMenuItem(char *menu, char *itemstring)
 
     for (item = (menu_item*)top; item; item=item->next) {
       if (!strcmp(item->label, label) && item->contents) {
-	answer = ((wxMenu*)item->user_data)->FindItem(itemstring);
+	answer = EXTRACT_TOP_MENU(item)->FindItem(itemstring);
 	break;
       }
     }
@@ -405,12 +421,12 @@ wxMenuItem *wxMenuBar::FindItemForId(long id, wxMenu **req_menu)
     menu_item *answer=NULL;
 
     for (menu_item *item = (menu_item*)top; item; item=item->next) {
-	if (item->contents)
-	    if ((answer = (menu_item*)((wxMenu*)item->user_data)->FindItemForId(id)))
-		break; // found
+      if (item->contents)
+	if ((answer = (menu_item *)(EXTRACT_TOP_MENU(item)->FindItemForId(id))))
+	  break; // found
     }
     if (req_menu)
-	*req_menu = (wxMenu*)answer->user_data;
+      *req_menu = EXTRACT_TOP_MENU(answer);
     return ((wxMenuItem*)answer);
 }
 
@@ -432,6 +448,10 @@ void wxMenuBar::CommandEventCallback(Widget WXUNUSED(w),
       if (menu->parent)
 	menu->parent->OnMenuCommand(item->ID);
     }
+
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
@@ -443,6 +463,10 @@ void wxMenuBar::SelectEventCallback(Widget WXUNUSED(w),
     // call OnMenuSelect of parent (usually of a frame)
     if (menu->parent)
 	menu->parent->OnMenuSelect(item->ID);
+
+#ifdef MZ_PRECISE_GC
+    XFORM_RESET_VAR_STACK;
+#endif
 }
 
 void wxMenuBar::Stop(void)

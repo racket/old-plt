@@ -1,19 +1,23 @@
 (module servlet mzscheme
   (require (lib "url.ss" "net")
            (lib "list.ss")
+           "persistence.ss"
            "response.ss"
            "request-parsing.ss"
-           "persistent-eval.ss"
            "test-harness.ss")
 
   (provide send/back send/forward send/finish send/suspend
-           send/stop/persistent current-servlet-context
-           (all-from "persistent-eval.ss")
+
+           send/stop/persistent send/persistent/dispatch
+
+           current-servlet-context
+           (all-from "persistence.ss")
 
            ;; URL manipulation
            embed-ids
            remove-ids
-           embedded-ids?
+           continuation-url?
+           persistent-continuation-url?
 
            ;; data defs
            ;; TODO: close? is being kept in two places
@@ -71,13 +75,20 @@
      in-url
      (format "~a*~a" invoke-id k-id)))
 
-  ;; embedded-ids?: url -> (union (list number number) #f)
+  ;; continuation-url?: url -> (union (list number number) #f)
   ;; determine if this url encodes a continuation and extract the instance id and
   ;; continuation id.
-  (define (embedded-ids? a-url)
+  (define (continuation-url? a-url)
     (let ([str (url->param a-url)])
       (and str
            (map string->number (cdr (match-url-params str))))))
+
+  ;; persistent-continuation-url?: url -> (union number #f)
+  ;; determine if this url encodes a persistent continuation and extract the
+  ;; continuation id
+  (define (persistent-continuation-url? a-url)
+    (let ([str (url->param a-url)])
+      (and str (string->number str))))
 
   ;; url->param: url -> (union string #f)
   (define (url->param a-url)
@@ -89,97 +100,124 @@
   ;; add a path/param to the path in a url
   ;; (assumes that there is only one path/param)
   (define (insert-param in-url new-param-str)
-    (replace-path
-     (lambda (old-path)
-       (if (null? old-path)
-           (list (make-path/param "" new-param-str))
-           (let* ([car-old-path (car old-path)])
-             (cons (make-path/param (if (path/param? car-old-path)
-                                        (path/param-path car-old-path)
-                                        car-old-path)
-                                    new-param-str)
-                   (cdr old-path)))))
-     in-url))
+    (url->string
+     (replace-path
+      (lambda (old-path)
+        (if (null? old-path)
+            (list (make-path/param "" new-param-str))
+            (let* ([car-old-path (car old-path)])
+              (cons (make-path/param (if (path/param? car-old-path)
+                                         (path/param-path car-old-path)
+                                         car-old-path)
+                                     new-param-str)
+                    (cdr old-path)))))
+      in-url)))
 
   ;; remove-ids: url -> string
   ;; replace all path/params with just the path/param-path part
   (define (remove-ids from-url)
-    (replace-path
-     (lambda (old-path)
-       (map
-        (lambda (path-elt)
-          (if (path/param? path-elt)
-              (path/param-path path-elt)
-              path-elt))
-        old-path))
-     from-url))
+    (url->string
+     (replace-path
+      (lambda (old-path)
+        (map
+         (lambda (path-elt)
+           (if (path/param? path-elt)
+               (path/param-path path-elt)
+               path-elt))
+         old-path))
+      from-url)))
 
   ;; replace-path: (url-path -> url-path) url -> url
-  ;; replace the path part of a url
+  ;; make a new url by replacing the path part of a url with a function
+  ;; of the url's old path
   (define (replace-path proc in-url)
     (let ([new-path (proc (url-path in-url))])
+      (make-url
+       (url-scheme in-url)
+       (url-user in-url)
+       (url-host in-url)
+       (url-port in-url)
+       new-path
+       (url-query in-url)
+       (url-fragment in-url))))
+
+  ;; **************************************************
+  ;; create-entry-point-url: (union serializable-closure servlet-entry) -> url
+  ;; for the closure, write it to disk and then make the url
+  ;; for the entry, make the url
+  (define (create-entry-point-url entry-point)
+    (let* ([ctxt (thread-cell-ref current-servlet-context)]
+           [req (servlet-context-request ctxt)])
+      (cond
+       [(servlet-entry? entry-point)
+        (replace-path
+         (lambda (old-path)
+           (append (request-path-prefix req)
+                   (list (symbol->string (servlet-entry->symbol entry-point)))))
+         (request-uri req))]
+       [else
+        (raise (make-exn:servlet "can't get here"
+                                 (current-continuation-marks)))])))
+
+  (test "store-closure! is not implemented"
+        (lambda () #f))
+
+  ;; extend-url-query/args: url (listof value) -> string
+  ;; create a new url by extending the query of the given url with the given
+  ;; arguments
+  (define (extend-url-query/args in-url args)
+    (let* ([new-query (extend-query/args (url-query in-url)  args)])
       (url->string
        (make-url
         (url-scheme in-url)
         (url-user in-url)
         (url-host in-url)
         (url-port in-url)
-        new-path
-        (url-query in-url)
+        (url-path in-url)
+        new-query
         (url-fragment in-url)))))
 
-  ;; **************************************************
-  ;; create-entry-point-url: request (union serializable-closure servlet-entry) -> url
-  ;; for the closure, write it to disk and then make the url
-  ;; for the entry, make the url
-  ;; NOTE: Hmm... how to avoid making duplicate closures?
-  ;;      OK, a closure is formals, expression, environment
-  ;;      We can hash on the expression to find out if it's already stored
-  ;;      Then if it is, we know we only need to store the environment
-  ;;      (If I add recursion I will need to be careful about cycles)
-  (define (create-entry-point-url req entry-point)
-    (let* ([ctxt (thread-cell-ref current-servlet-context)]
-           [req (servlet-context-request ctxt)]
-           [uri (request-uri req)]
-           [path-prefix
-            (get-prefix (url-path uri) (request-path-suffix req))])
-      (cond
-       [(serializable-closure? entry-point)
-        (store-closure! path-prefix entry-point)]
-       [(servlet-entry? entry-point)
-        (replace-path
-         (lambda (old-path)
-           (append path-prefix
-                   (list "entry" (symbol->string (servlet-entry->symbol entry-point))))))]
-       [else
-        (raise (make-exn:servlet "can't get here"
-                                 (current-continuation-marks)))])))
-
-  ;; get-prefix: (listof (union string path/param)) (listof string) -> (listof string)
-  ;; get the first bit of the path given the full path and the last bit
-  (define (get-prefix full-path suffix)
-    (let prefix ([n (- (length full-path) (length suffix))]
-                 [l full-path])
-      (if (= n 0) '()
-          (cons (car l) (prefix (sub1 n) (cdr l))))))
-
-  ;; store-closure!: request entry-point
-  (define (store-closure! . args)
-    (error "store-closure! is not implemented"))
-
-  (test "store-closure! is not implemented"
-        (lambda () #f))
+  ;; extend-query/args: (listof (cons string string)) (listof value)
+  ;;                     -> (listof (cons string string)
+  ;; create a new query by extending the existing query with args
+  (define (extend-query/args in-query args)
+    (let extend-it ([args args] [id 0])
+      (if (null? args)
+          in-query
+          (cons (cons (format "arg~a" id) (car args))
+                (extend-it (cdr args) (add1 id))))))
 
   ;; **************************************************
   ;; send/*
+
+  ;; ***********
+  ;; prototypes:
 
   ;; send/stop/persistent: (union serializable-closure servlet-entry) (url -> void) -> doesn't
   (define (send/stop/persistent entry-point proc)
     (let ([new-url (create-entry-point-url entry-point)])
       (output-response
        (servlet-context-connection (thread-cell-ref current-servlet-context))
-       (proc new-url))
+       (proc (url->string new-url)))
       ((servlet-context-suspend (thread-cell-ref current-servlet-context)))))
+
+  ;; send/persistent/dispatch: proto-page -> doesn't
+  (define (send/persistent/dispatch proto)
+    (send/back
+     (replace-applications proto)))
+
+  ;; replace-applications: proto-page -> x-expression
+  (define (replace-applications proto)
+    (cond
+     [(list? proto) (map replace-applications proto)]
+     [(callback-application? proto)
+      (let* ([new-url (create-entry-point-url
+                       (callback-application-entry proto))])
+        (extend-url-query/args new-url (callback-application-args proto)))]
+     [else proto]))
+
+  ;; ************
+  ;; old friends:
 
   ;; send/back: response -> void
   ;; send a response and don't clear the continuation table

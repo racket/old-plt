@@ -49,7 +49,6 @@
       ;; respond to all requests on this connection
       (define (serve-connection conn)
         (let ([close? (config:serve-connection conn)])
-          (myprint "serve-connection: close? = ~a~n" close?)
           (cond
             [close? (kill-connection! conn)]
             [else

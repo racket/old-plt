@@ -6,33 +6,6 @@
   (require/expose "resolver.ss" (logical-path->list suffix r-map-is-function?
                                                     r-map-paths-same-type? r-map-paths-valid? longer?))
 
-
-  ;; string->logical-path: string ((listof string) string -> logical-path)-> logical-path
-  (define (string->logical-path str ctor)
-    (let ([special-re (regexp "^([^/]*)$")]
-          [file-re (regexp "^/([^/]*)$")]
-          [dir-re (regexp "^/([^/]*)(/.*)")])
-      (cond
-       [(regexp-match special-re str)
-        => (lambda (a-match)
-             (let ([a-file (cadr a-match)])
-               (ctor '() a-file)))]
-       [(regexp-match file-re str)
-        => (lambda (a-match)
-             (let ([a-file (cadr a-match)])
-               (ctor '() a-file)))]
-       [(regexp-match dir-re str)
-        => (lambda (a-match)
-             (let ([a-dir (cadr a-match)]
-                   [rest (string->logical-path (caddr a-match) ctor)])
-               (ctor
-                (if (string=? "" a-dir)
-                    (logical-path-directory-part rest)
-                    (cons a-dir (logical-path-directory-part rest)))
-                (logical-path-file-part rest))))]
-       [else
-        (error "weird logical-path " str)])))
-
   ;; check-logical-path: logical-path (listof string) string -> boolean
   (define (check-logical-path? lp dir-part file-part)
     (test (format "lp = ~s    dir-part = ~s   file-part = ~s"
@@ -45,10 +18,10 @@
                              (append dir-part (list file-part))))))))
 
   ;; suffix/strings: string string -> (union #f logical-path)
-  ;; call suffix after convertin strings to logical-paths
+  ;; call suffix after converting strings to logical-paths
   (define (suffix/strings pref of-this)
-    (suffix (string->logical-path pref make-logical-path)
-            (string->logical-path of-this make-logical-path)))
+    (suffix (string->logical-path pref)
+            (string->logical-path of-this)))
 
   ;; logical-path=?: logical-path logical-path -> boolean
   (define (logical-path=? lp1 lp2)
@@ -62,22 +35,9 @@
     (test (format "test-suffix: pref = ~s   of-this = ~s   expected = ~s"
                   pref of-this expected)
           (lambda ()
-            (logical-path=? (suffix/strings pref of-this)
-                            (string->logical-path expected make-logical-path)))))
-
-  ;; resolve/string: string resource-map -> (union resource-pair #f)
-  (define (resolve/string v-path-str r-map)
-    (resolve (string->logical-path v-path-str make-logical-path)
-             r-map))
-
-  ;; test-resolve: string resource-map resource-pair -> boolean
-  (define (test-resolve v-path-str r-map expected)
-    (test (format "test-resolve: v-path-str = ~s   r-map = ~s expected = ~s"
-                  v-path-str r-map expected)
-          (lambda ()
-            (let ([res (resolve/string v-path-str r-map)])
-              (if res (same-r-pair? res expected)
-                  (not expected))))))
+            (let ([sffx (suffix/strings pref of-this)])
+              (logical-path=? sffx
+                              (string->logical-path expected))))))
 
   ;; same-r-pair?: resource-pair resource-pair -> bollean
   ;; same type of resource pair with the same paths
@@ -90,46 +50,35 @@
          (logical-path=? (resource-pair-r-path rp1)
                          (resource-pair-r-path rp2))))
 
-
-
-
   (check-logical-path?
-   (string->logical-path "foo" make-logical-path)
+   (string->logical-path "foo")
    '() "foo")
 
   (check-logical-path?
-   (string->logical-path "/foo/" make-logical-path)
+   (string->logical-path "/foo/")
    '("foo") "")
 
   (check-logical-path?
-   (string->logical-path "/" make-logical-path)
+   (string->logical-path "/")
    '() "")
 
   (check-logical-path?
-   (string->logical-path "///" make-logical-path)
+   (string->logical-path "///")
    '() "")
 
   (check-logical-path?
-   (string->logical-path "/foo/bar/baz" make-logical-path)
+   (string->logical-path "/foo/bar/baz")
    '("foo" "bar") "baz")
 
   (check-logical-path?
-   (string->logical-path "/foo//bar///baz" make-logical-path)
+   (string->logical-path "/foo//bar///baz")
    '("foo" "bar") "baz")
 
   (check-logical-path?
-   (string->logical-path "/foo/bar/baz/" make-logical-path)
+   (string->logical-path "/foo/bar/baz/")
    '("foo" "bar" "baz") "")
 
-  ;; dpair: string string -> dynamic-pair
-  (define (dpair p1 p2)
-    (make-dynamic-pair (string->logical-path p1 make-logical-path)
-                       (string->logical-path p2 make-logical-path)))
 
-  ;; spair: string string -> static-pair
-  (define (spair p1 p2)
-    (make-static-pair (string->logical-path p1 make-logical-path)
-                      (string->logical-path p2 make-logical-path)))
 
   (test "tests for r-map-is-function?"
         (lambda ()
@@ -231,7 +180,7 @@
   (test-suffix "" "foo" "foo")
   (test-suffix "/" "/foo/" "/foo/")
   (test-suffix "/" "/foo/bar" "/foo/bar")
-
+  (test-suffix "/foo/bar/bing" "/foo/bar/bing/bang" "/bang")
 
   (test "more tests for suffix"
         (lambda ()
@@ -241,43 +190,81 @@
            (not (suffix/strings "foo" "bar"))
            (not (suffix/strings "/foo/" "/bar/")))))
 
-  (test "some test for when a resource doesn't resolver"
-        (lambda ()
-          (and
-           (not (resolve/string "foo" '()))
-           (not (resolve/string "/" '()))
-           (not (resolve/string "/foo" '()))
-           (not (resolve/string "/foo/bar" '()))
-           (not (resolve/string "/foo/bar/" '()))
-           (not (resolve/string "/foo/bar/baz"
-                                (list (dpair "/foo/bing" "ting")
-                                      (spair "/foo/baz" "dong")
-                                      (dpair "/bar/baz" "ball"))))
-           (not (resolve/string "/foo/bar/baz"
-                                (list (dpair "/foo/bing" "ting")
-                                      (spair "/foo/bar" "baz")
-                                      (dpair "/bar/baz" "ball")))))))
-  (test-resolve "/foo"
-                (list (spair "/foo" "bar"))
-                (spair "/foo" "bar"))
-  (test-resolve "/"
-                (list (spair "/" "bar"))
-                (spair "/" "bar"))
-  (test-resolve "/foo/"
-                (list (dpair "/foo/" "bar"))
-                (dpair "/foo/" "bar"))
-  (test-resolve "/foo/bar"
-                (list (dpair "/foo/bar" "bat"))
-                (dpair "/foo/bar" "bat"))
-  (test-resolve "/foo/bar/bing/bang/bong/"
-                (list (dpair "bar" "none")
-                      (dpair "/foo/bar/" "/big/ben/"))
-                (dpair "/foo/bar/bing/bang/bong/"
-                       "/big/ben/bing/bang/bong/"))
-  (test-resolve "/foo/bar/bing/bang/bong/"
-                (list (dpair "/foo/bar/" "/big/ben"))
-                (dpair "/foo/bar/bing/bang/bong/"
-                       "/big/ben/bing/bang/bong/"))
+  ;; test-apply-resource-map/not-in-map: string resource-map -> void
+  ;; test how longext-prefix behaves when the resource is not in the resource
+  ;; map
+  (define (test-apply-resource-map/not-in-map str r-map)
+    (test (format "test-apply-resource-map/not-in-map: str = ~s r-map = ~s" str r-map)
+          (lambda ()
+            (let-values ([(r-pair suff)
+                          (apply-resource-map r-map (string->logical-path str))])
+              (printf "r-pair = ~s   suff = ~s~n" r-pair suff)
+              (and (not r-pair)
+                   (not suff))))))
+
+  (test-apply-resource-map/not-in-map "foo" '())
+  (test-apply-resource-map/not-in-map "/" '())
+  (test-apply-resource-map/not-in-map "/foo/bar" '())
+  (test-apply-resource-map/not-in-map "/foo/bar/" '())
+  (test-apply-resource-map/not-in-map "/foo/bar/baz"
+                                      (list (dpair "/foo/bing" "ting")
+                                            (spair "/foo/baz" "dong")
+                                            (dpair "/bar/baz" "ball")))
+
+  ;; test-apply-resource-map: string resource-map resource-pair string -> void
+  ;; test apply-resource-map when the resource i
+  (define (test-apply-resource-map str r-map expected-pair expected-suffix)
+    (test (format (string-append "finding the longest prefix str = ~s   r-map = ~s"
+                                 "expected-pair = ~s expected-suffix = ~s")
+                  str r-map expected-pair expected-suffix)
+          (lambda ()
+            (let-values ([(r-pair suff)
+                          (apply-resource-map r-map  (string->logical-path str))])
+              (and (same-r-pair? r-pair expected-pair)
+                   (logical-path=? suff (string->logical-path expected-suffix)))))))
+
+
+  (test-apply-resource-map "/foo" (list (spair "/foo" "bar")) (spair "/foo" "bar")
+                     "/")
+
+  (test-apply-resource-map "/" (list (spair "/" "bar")) (spair "/" "bar")
+                     "/")
+
+  (test-apply-resource-map "/foo/" (list (dpair "/foo/" "bar")) (dpair "/foo/" "bar")
+                     "/")
+
+  (test-apply-resource-map "/foo/bar" (list (dpair "/foo/bar" "bat"))
+                     (dpair "/foo/bar" "bat") "/")
+
+  (test-apply-resource-map "/foo/bar/bing/bang/bong/"
+                     (list (dpair "bar" "none")
+                           (dpair "/foo/bar/" "/big/ben/"))
+                     (dpair "/foo/bar/" "/big/ben/")
+                     "/bing/bang/bong/")
+
+  (test-apply-resource-map "/foo/bar/bing/bang/bong"
+                           (list (dpair "/foo/bar/" "/big/ben"))
+                           (dpair "/foo/bar/" "/big/ben")
+                           "/bing/bang/bong")
+
+  (test-apply-resource-map "/foo/bar/bing/bang/bong"
+                           (list (spair "/foo/bar/" "/big/ben/")
+                                 (spair "/foo/bar/bing/" "/big/ben/")
+                                 (spair "/foo/bar/bing/bang/" "/big/ben/"))
+                           (spair "/foo/bar/bing/bang/" "/big/ben/")
+                           "/bong")
+
+  (test-apply-resource-map "/foo/bar/bing/bang"
+                           (list (dpair "/foo/bar" "/big/ben")
+                                 (dpair "/foo/bar/bing" "/big/ben/bank"))
+                           (dpair "/foo/bar/bing" "/big/ben/bank")
+                           "/bang")
+
+  (test-apply-resource-map "/foo/bar/bing/bang"
+                           (list (spair "/foo/bar" "/big/ben")
+                                 (spair "/foo/bar/bing" "/big/ben/bank"))
+                           (spair "/foo/bar/bing" "/big/ben/bank")
+                           "/bang")
 
   (define test/lp
     (lambda (dir-part file-part vp-url)

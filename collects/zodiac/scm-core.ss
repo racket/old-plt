@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.38 1997/09/18 18:00:08 shriram Exp $
+; $Id: scm-core.ss,v 1.39 1997/09/19 02:20:21 shriram Exp shriram $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -126,7 +126,10 @@
     '("refer.ss" "refer" "spidey.ss" "spidey" "macrox.ss" "macrox"))
 
   (define scheme-vocabulary
-    (create-vocabulary 'scheme-vocabulary #f))
+    (create-vocabulary (symbol-append param:check-syntax-level
+			 "-"
+			 'scheme-vocabulary)
+      #f))
 
   (add-sym-micro scheme-vocabulary
     (lambda (expr env attributes vocab)

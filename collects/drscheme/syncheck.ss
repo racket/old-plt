@@ -20,6 +20,12 @@
 
   (define o (current-output-port))
   
+  (define status-init "Check Syntax: Creating user environment")
+  (define status-coloring-program "Check Syntax: coloring expression")
+  (define status-eval-compile-time "Check syntax: eval compile time")
+  (define status-expanding-expression "Check Syntax: expanding expression")
+  (define status-teachpacks "Check Syntax: installing teachpacks")
+  
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
@@ -803,7 +809,8 @@
                 (set! docs-panel-visible? #t)
                 (update-docs-visibility))))
           
-          (inherit set-breakables get-breakables reset-offer-kill)
+          (inherit set-breakables get-breakables reset-offer-kill
+                   open-status-line close-status-line update-status-line)
           ;; syncheck:button-callback : -> void
           ;; this is the only function that has any code running on the user's thread
           (define/public (syncheck:button-callback)
@@ -819,7 +826,8 @@
                       (lambda () ; =drs=
                         (set-breakables old-break-thread old-kill-eventspace)
                         (enable-evaluation)
-                        (send definitions-text end-edit-sequence))]
+                        (send definitions-text end-edit-sequence)
+                        (close-status-line 'check-syntax))]
                      [kill-termination
                       (lambda ()
                         (unless normal-termination?
@@ -843,6 +851,8 @@
                      [teachpacks (fw:preferences:get 'drscheme:teachpacks)]
                      [init-proc
                       (lambda () ; =user=
+                        (open-status-line 'check-syntax)
+                        (update-status-line 'check-syntax status-init)
                         (set-breakables (current-thread) (current-custodian))
                         (set-directory definitions-text)
                         (error-display-handler (lambda (msg exn) ;; =user=
@@ -858,7 +868,9 @@
                            (lambda (exn)
                              (uncaught-exception-raised)
                              (oh exn))))
+                        (update-status-line 'check-syntax status-teachpacks)
                         (drscheme:teachpack:install-teachpacks teachpacks)
+                        (update-status-line 'check-syntax status-expanding-expression)
                         (set! user-custodian (current-custodian))
 			(set! user-directory (current-directory)) ;; set by set-directory above
                         (set! user-namespace (current-namespace)))])
@@ -894,13 +906,18 @@
                               (cleanup)
                               (custodian-shutdown-all user-custodian))))]
                         [else
+                         (update-status-line 'check-syntax status-eval-compile-time)
                          (eval-compile-time-part-of-top-level sexp)
                          (parameterize ([current-eventspace drs-eventspace])
                            (queue-callback
                             (lambda () ; =drs=
                               (with-lock/edit-sequence
                                (lambda ()
-                                 (expanded-expression user-directory user-namespace sexp))))))
+                                 (open-status-line 'check-syntax)
+                                 (update-status-line 'check-syntax status-coloring-program)
+                                 (expanded-expression user-directory user-namespace sexp)
+                                 (close-status-line 'check-syntax))))))
+                         (update-status-line 'check-syntax status-expanding-expression)
                          (loop)]))))))))
 
           ;; set-directory : text -> void

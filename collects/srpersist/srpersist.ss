@@ -1,7 +1,7 @@
 (module srpersist mzscheme
   (require (lib "unitsig.ss"))
-  (require (lib "private/sigs.ss" "srpersist"))
-  (require (lib "private/srpmain.ss" "srpersist"))
+  (require (lib "sigs.ss" "srpersist" "private"))
+  (require (lib "srpmain.ss" "srpersist" "private"))
   (provide-signature-elements srpersist:odbc^))
 
 

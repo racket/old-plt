@@ -20,7 +20,7 @@ static char *scheme_mac_spec_to_path(FSSpec *spec);
 #define FOR_MRED
 
 #ifdef FOR_MRED
-# define DEST_CREATOR 'MrEd'
+# define DEST_CREATOR 'mReD'
 # define PROGNAME "MrEd"
 #else
 # define DEST_CREATOR 'MzSc'

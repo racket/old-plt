@@ -90,9 +90,7 @@
 	(set! compiler:define-list null)
 	(set! compiler:per-load-define-list null)
 	(set! compiler:global-symbols (make-hash-table))
-	(set! compiler:primitive-refs empty-set)
-	(set! compiler:compounds null)
-	(set! compiler:interfaces null))
+	(set! compiler:primitive-refs empty-set))
       
       (define (compiler:add-local-per-load-define-list! def)
 	(set! compiler:local-per-load-define-list 

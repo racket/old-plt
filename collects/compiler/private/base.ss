@@ -1,11 +1,16 @@
 
-(module nospidey-unit mzscheme
+(module base mzscheme
   (import (lib "unitsig.ss"))
 
   (import "../sig.ss")
   (import "sig.ss")
 
-  (import (lib "zodiac-unit.ss" "syntax"))
+  (import (lib "zodiac-sig.ss" "syntax")
+	  (lib "zodiac-unit.ss" "syntax"))
+
+  (import (lib "file-sig.ss" "dynext")
+	  (lib "link-sig.ss" "dynext")
+	  (lib "compile-sig.ss" "dynext"))
 
   (import "zlayer.ss"
 	  "library.ss"
@@ -23,6 +28,8 @@
 	  "vmphase.ss"
 	  "vmopt.ss"
 	  "vm2c.ss"
+	  "lightweight.ss"
+	  "toplevel.ss"
 	  "driver.ss")
 
   ;; The core Scheme->C compiler linkage, including everything
@@ -38,8 +45,7 @@
 	     (OPTIONS : compiler:option^)
 	     (SPIDEY : compiler:mrspidey^))
      (link
-      [ZODIAC : zodiac:system^ ((require-library-unit/sig "link.ss" "zodiac")
-				(ZLAYER : zodiac:interface^))]
+      [ZODIAC : zodiac^ (zodiac@)]
       [ZLAYER : compiler:zlayer^ (zlayer@
 				  OPTIONS
 				  ZODIAC
@@ -219,7 +225,6 @@
 				  COMPILE
 				  LINK
 				  DFILE
-				  PRETTY-PRINT
 				  SPIDEY)])
      (export (unit ZODIAC)
 	     (unit ZLAYER)

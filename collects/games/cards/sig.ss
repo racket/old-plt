@@ -1,3 +1,4 @@
+
 (define-signature cards:classes^
   (pasteboard%
    table%))

@@ -1,11 +1,3 @@
-; Time-stamp: <97/08/19 15:07:32 shriram>
-; Time-stamp: <97/07/12 12:44:01 shriram>
-
-; Differences from the Chez implementation:
-
-; - The code does not respect tail-calls.
-; - If the library is loaded more than once, especially in the middle
-;   of a trace, the behavior is not well-defined.
 
 (module trace mzscheme
   (require "pretty.ss")
@@ -82,12 +74,10 @@
 	      (insert-prefix level first rest)
 	      (values first rest))))))
 
-  (define -:trace-level (make-parameter -1))
-
   (define -:trace-print-args
-    (lambda (name args)
+    (lambda (name args level)
       (let-values (((first rest)
-		    (build-prefixes (-:trace-level))))
+		    (build-prefixes level)))
 	(parameterize ((pretty-print-print-line
 			(lambda (n port offset width)
 			  (display
@@ -104,9 +94,9 @@
 	  (pretty-print (cons name args))))))
 
   (define -:trace-print-results
-    (lambda (name results)
+    (lambda (name results level)
       (let-values (((first rest)
-		    (build-prefixes (-:trace-level))))
+		    (build-prefixes level)))
 	(parameterize ((pretty-print-print-line
 			(lambda (n port offset width)
 			  (display
@@ -149,6 +139,87 @@
   (define -:trace-table
     (make-hash-table))
 
+  ;; Install traced versions of a given set of procedures.  The traced
+  ;;  versions are also given, so that they can be constructed to have
+  ;;  a nice name.
+  (define (do-trace ids mk-traced-procs)
+    (for-each (lambda (id)
+		(let ((global (namespace-variable-value 
+			       id #t 
+			       (lambda () (error 'trace "~s is not bound as a procedure" id)))))
+		  (unless (procedure? global)
+		    (error 'trace
+			   "the top-level value of ~s is not a procedure" id))))
+	      ids)
+    (for-each (lambda (id mk-traced-proc)
+		(let ((global-value (namespace-variable-value id)))
+		  (let ((table-entry (hash-table-get -:trace-table id (lambda () #f))))
+		    (unless (and table-entry
+				 (eq? global-value
+				      (-:traced-entry-trace-proc table-entry)))
+		      (let* ([real-value global-value]
+			     [traced-proc (mk-traced-proc real-value)])
+			(hash-table-put! -:trace-table id
+					 (-:make-traced-entry real-value traced-proc))
+			(namespace-set-variable-value! id traced-proc #f))))))
+	      ids mk-traced-procs)
+    ids)
+
+  ;; Key used for a continuation mark to indicate
+  ;;  the nesting depth:
+  (define -:trace-level-key (gensym))
+
+  ;; Apply a traced procedure to arguments, printing arguments
+  ;; and results. We set and inspect the -:trace-level-key continuation
+  ;; mark a few times to detect tail calls.
+  (define (do-traced id args real-value)
+    (let* ([levels (continuation-mark-set->list
+		    (current-continuation-marks)
+		    -:trace-level-key)]
+	   [level (if (null? levels) 0 (car levels))])
+      ;; Tentatively push the new depth level:
+      (with-continuation-mark
+	  -:trace-level-key
+	  (add1 level)
+	;; Check for tail-call => car of levels replaced,
+	;;  which means that the first two new marks are
+	;;  not consecutive:
+	(let ([new-levels (continuation-mark-set->list
+			   (current-continuation-marks)
+			   -:trace-level-key)])
+	  (if (and (pair? (cdr new-levels))
+		   (> (car new-levels) (add1 (cadr new-levels))))
+	      ;; Tail call: reset level and just call real-value.
+	      ;;  (This is in tail position to the call to `do-traced'.)
+	      ;;  We don't print the results, because the original
+	      ;;  call will.
+	      (begin
+		(-:trace-print-args id args (sub1 level))
+		(with-continuation-mark
+		    -:trace-level-key
+		    (car levels)
+		  (apply real-value args)))
+	      ;; Not a tail call; push the old level, again, to ensure
+	      ;;  that when we push the new level, we have consecutive
+	      ;;  levels associated with the mark (i.e., set up for 
+	      ;;  tail-call detection the next time around):
+	      (begin
+		(-:trace-print-args id args level)
+		(with-continuation-mark
+		    -:trace-level-key
+		    level
+		  (call-with-values (lambda () 
+				      (with-continuation-mark
+					  -:trace-level-key
+					  (add1 level)
+					(apply real-value args)))
+		    (lambda results
+		      (flush-output)
+		      ;; Print the results:
+		      (-:trace-print-results id results level)
+		      ;; Return the results:
+		      (apply values results))))))))))
+
   (define-syntax trace
     (lambda (stx)
       (syntax-case stx ()
@@ -171,45 +242,15 @@
 						  (symbol->string (syntax-e id))))
 				  #f))
 			       ids)])
-	     (syntax
-	      (begin
-		(let ((global (namespace-variable-value 
-			       'id #t 
-			       (lambda () (error 'trace "~s is not bound as a procedure" 'id)))))
-		  (unless (procedure? global)
-		    (error 'trace
-			   "the top-level value of ~s is not a procedure" 'id)))
-		...
-
-		(let ((global-value (namespace-variable-value 'id)))
-		  (let ((table-entry (hash-table-get -:trace-table 'id (lambda () #f))))
-		    (unless (and table-entry
-				 (eq? global-value
-				      (-:traced-entry-trace-proc table-entry)))
-		      (let* ((real-value global-value)
-			     (traced-name
-			      (lambda args
-				(dynamic-wind
-				 (lambda ()
-				   (-:trace-level
-				    (add1 (-:trace-level))))
-				 (lambda ()
-				   (-:trace-print-args 'id args)
-				   (call-with-values
-				    (lambda ()
-				      (apply real-value args))
-				    (lambda results
-				      (flush-output)
-				      (-:trace-print-results 'id results)
-				      (apply values results))))
-				 (lambda ()
-				   (-:trace-level
-				    (sub1 (-:trace-level))))))))
-			(hash-table-put! -:trace-table 'id
-					 (-:make-traced-entry real-value traced-name))
-			(namespace-set-variable-value! 'id traced-name #f)))))
-		...
-		'(id ...)))))])))
+	     #'(do-trace
+		'(id ...)
+		(list
+		 (lambda (real-value)
+		   (let ([traced-name
+			  (lambda args
+			    (do-traced 'id args real-value))])
+		     traced-name))
+		 ...))))])))
 
   (define-syntax untrace
     (lambda (stx)

@@ -101,17 +101,17 @@ void setupSchemeEnv(void) {
   char *wrapper;
   char exeBuff[260];
 
+  scheme_register_static(&env,sizeof(env)); 
+  scheme_register_static(&exn_catching_apply,sizeof(exn_catching_apply));
+  scheme_register_static(&exn_p,sizeof(exn_p));
+  scheme_register_static(&exn_message,sizeof(exn_message));
+
   env = scheme_basic_env();
 
   if (env == NULL) {
     ErrorBox("Can't create Scheme environment");
     ExitThread(0);
   } 
-
-  scheme_register_static(&env,sizeof(env)); 
-  scheme_register_static(&exn_catching_apply,sizeof(exn_catching_apply));
-  scheme_register_static(&exn_p,sizeof(exn_p));
-  scheme_register_static(&exn_message,sizeof(exn_message));
 
   // set up exception trapping
   
@@ -130,7 +130,7 @@ void setupSchemeEnv(void) {
 
   scheme_add_global("mzcom-exe",scheme_make_string(exeBuff),env);
 
-  scheme_eval_string("(current-library-collection-paths "
+  scheme_eval_string("(current-library-collection-paths)"
 		     "(path-list-string->path-list "
 		     "(or (getenv \"PLTCOLLECTS\") \"\") "
 		     "(or "

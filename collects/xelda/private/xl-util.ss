@@ -13,9 +13,33 @@
    find-rep
    union
    to-lower
+   show-constraints
+   all-hashed-values
+   in-hash?
+   init-hash
    left-of
    top-of)   
+      
+  (define (show-constraints constraints)
+    (for-each (lambda (c) (printf "constraint: ~a~n" c)) constraints))
+
+  (define (in-hash? ht v)
+    (not (not (hash-table-get ht v (lambda () #f)))))
   
+  (define (init-hash ht l)
+    (if (not (empty? l))
+        (begin
+          (let ([cell-name (car (first l))]
+                [u (cadr (first l))])
+            (if (not (in-hash? ht cell-name))
+                (hash-table-put! ht cell-name u)))
+          (init-hash ht (rest l)))))
+  
+  (define (all-hashed-values ht)
+    (hash-table-for-each ht
+                         (lambda (key val)
+                           (printf "Key:~a -> Value:~a~n" key val))))
+
   (define (make-equiv-class a) (list a))
   
   (define (find-rep equiv-class)

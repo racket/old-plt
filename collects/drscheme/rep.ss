@@ -129,32 +129,25 @@
          (thread
           (letrec ([loop
                     (lambda ()
-		      (printf "consumer-thread; waiting~n")
                       (semaphore-wait sema)
-		      (printf "consumer-thread; got signal~n")
                       (let ([local-state
                              (begin
-			       (printf "consumer-thread; waiting for args~n")
                                (semaphore-wait protect)
                                (if (null? back-state)
                                    (let ([new-front (reverse front-state)])
-				     (printf "consumer-thread; getting arg.1~n")
                                      (set! back-state (cdr new-front))
                                      (set! front-state null)
                                      (semaphore-post protect)
                                      (car new-front))
                                    (begin0
-				     (printf "consumer-thread; getting arg.2~n")
 				     (car back-state)
 				     (set! back-state (cdr back-state))
 				     (semaphore-post protect))))])
-			(printf "consumer-thread; calling function~n")
 			(dynamic-wind
 			 void
 			 (lambda () 
 			   (apply f local-state))
 			 (lambda ()
-			   (printf "consumer-thread; return from function")
 			   (loop)))))])
             (lambda ()
               (init)
@@ -169,15 +162,10 @@
 		 ((debug-info-handler))
 		 num
 		 (arity f)))))
-	   (printf "consumer-thread (here); waiting to add arg ---------------------------~n")
-	   (mzlib:pretty-print@:pretty-print new-state)
-	   (printf "consumer-thread (here); waiting to add arg ---------------------------~n")
            (semaphore-wait protect)
            (set! front-state (cons new-state front-state))
            (semaphore-post protect)
-	   (printf "consumer-thread (here); added arg; signalling thread~n")
            (semaphore-post sema))))]))
-
   
   (define make-edit%
     (lambda (super%)
@@ -354,11 +342,7 @@
 				  (lambda () (cleanup #f))
 				  (let* ([wait-on-scheme
 					  (lambda (expr)
-					    (printf "~n~n~nsending to scheme~n")
-					    (mzlib:pretty-print@:pretty-print expr)
 					    (let-values ([(answers error?) (send-scheme expr)])
-					      (printf "got response, continuting (error? ~a)~n" error?)
-					      (mzlib:pretty-print@:pretty-print answers)
 					      (if error?
 						  (k (lambda () (cleanup #t)))
 						  (apply values answers))))]
@@ -583,7 +567,6 @@
 	     (error-escape-k (list (void)) #t))]
 	  [send-scheme 
 	   (lambda (expr)
-	     (printf "evaluator-function~n")
 	     (dynamic-wind
 	      (lambda () (current-directory current-thread-directory))
 	      (lambda ()
@@ -593,7 +576,6 @@
 		   (lambda ()
 		     (set! exception-handler
 			   (lambda (exn)
-			     (printf "exception-handler~n")
 			     (with-parameterization drscheme:init:system-parameterization
 			       (lambda ()
 				 (report-exception-error exn this)))
@@ -603,15 +585,13 @@
 				 (mred:message-box "error-escape-handler didn't escape"
 						   "Error Escape")))
 			     (k (list (void)) #t)))
-		     (printf "evaluating~n")
 		     (with-parameterization user-param
 		       (lambda ()
 			 (drscheme:init:primitive-eval expr))))
 		   (lambda anss
 		     (values anss #f)))))
 	      (lambda () 
-		(set! current-thread-directory (current-directory))
-		(printf "calling after function~n"))))])
+		(set! current-thread-directory (current-directory)))))])
 	(public
 	  [evaluation-thread #f]
 	  [run-in-evaluation-thread void]
@@ -695,7 +675,8 @@
 	   (lambda ()
 	     (set! shutting-down? #t)
 	     (custodian-shutdown-all user-custodian)
-	     (kill-thread evaluation-thread))]
+	     (when evaluation-thread
+	       (kill-thread evaluation-thread)))]
 	  [reset-console
 	   (let ([first-dir (current-directory)])
 	     (lambda ()
@@ -762,7 +743,11 @@
 				(lambda args (drscheme:app:about-drscheme))
 				CLICK-DELTA)))
 	     (set-last-header-position (get-end-position))
-	     (reset-console))])
+
+	     ; this begin needs to be changed to make
+	     ; the rep functional at frame creation time
+	     (begin (lock #t)
+		    '(reset-console)))])
 	
 	(sequence
 	  (mred:debug:printf 'super-init "before drscheme:rep:edit")

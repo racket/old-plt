@@ -132,10 +132,6 @@
 
 (define *html-dagger-2* "&plusmn;&plusmn;")
 
-(define *html-iexcl* "&iexcl;")
-
-(define *html-iquest* "&iquest;")
-
 (define *html-ldquo* "``")
 
 (define *html-lsaquo* "&lt;")
@@ -2848,7 +2844,7 @@
       (emit #\!)
       (let ((c (snoop-actual-char)))
         (if (and (char? c) (char=? c #\`))
-          (begin (get-actual-char) (emit *html-iexcl*))
+          (begin (get-actual-char) (emit "&iexcl;"))
           (emit #\!))))))
 
 (define do-iquest
@@ -2857,7 +2853,7 @@
       (emit #\?)
       (let ((c (snoop-actual-char)))
         (if (and (char? c) (char=? c #\`))
-          (begin (get-actual-char) (emit *html-iquest*))
+          (begin (get-actual-char) (emit "&iquest;"))
           (emit #\?))))))
 
 (define do-ndash
@@ -3413,10 +3409,11 @@
     (write-aux `(!index-page ,*html-page-count*))
     (let ((ind-file
             (string-append *aux-dir/* *jobname* *index-file-suffix* ".ind")))
-      (unless (file-exists? ind-file)
+      (cond
+       ((file-exists? ind-file) (tex2page-file ind-file))
+       (else
         (flag-missing-piece 'index)
-        (non-fatal-error "Index not generated; rerun TeX2page"))
-      (tex2page-file ind-file))))
+        (non-fatal-error "Index not generated; rerun TeX2page"))))))
 
 (define do-theindex
   (lambda ()

@@ -105,9 +105,13 @@
          ,(main-manual-page "mred"))
         (LI
          ,(standout-text "Pretty Big")
-         " is a superset of the " (standout-text "Advanced Student")
-         " language, and adds the graphical toolbox of the "
-         (standout-text "Graphical (MrEd)") " language."))
+         " is a superset of the "
+	 (standout-text "Graphical (MrEd)")
+         " language, and adds forms from the "
+         (standout-text "Pretty Big")
+	 " language."
+	 " For those forms that are in both languages,"
+	 " Pretty Big behaves like Graphical (MrEd)."))
        "The "
        (A ((NAME "module") (VALUE "module")))
        ,(standout-text "module")

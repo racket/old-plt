@@ -42,8 +42,8 @@
                   "drscheme" "HISTORY")
                  ("Teachpack release notes"
                   "teachpack" "HISTORY")
-                 ("MzScheme version 200"
-                  "mzscheme" "MzScheme_200.txt")
+                 ("MzScheme version 300 notes"
+                  "mzscheme" "MzScheme_300.txt")
                  ("MzScheme release notes"
                   "mzscheme" "HISTORY")
                  ("MrEd release notes"

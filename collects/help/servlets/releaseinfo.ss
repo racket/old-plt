@@ -12,7 +12,6 @@
   
   (define (start initial-request)
     (report-errors-to-browser send/finish)
-    
     `(HTML 
       (HEAD ,hd-css
             ,@hd-links
@@ -33,4 +32,4 @@
        "The PLT software is installed on this machine at" (BR)
        (PRE 'nbsp nbsp
             ,(let-values ([(base file dir?) (split-path (collection-path "mzlib"))])
-               base))))))
+               (path->string base)))))))

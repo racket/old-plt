@@ -525,7 +525,8 @@
 		     (unless (and (procedure? t)
 				  (procedure-arity-includes? t 1))
 		       (error 'setup-plt
-			      "install-collection: result is not a procedure of arity 1"))
+			      "install-collection: result is not a procedure of arity 1 for ~a"
+			      (cc-name cc)))
 		     (setup-printf "Installing ~a" (cc-name cc))
 		     (t plthome))))))
 	    collections-to-compile))

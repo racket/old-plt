@@ -8,6 +8,7 @@
 
   (provide get-type get-robot get-valid set-valid set-invalid get-weight set-weight
            get-spot set-spot get-player-x get-player-y
+           home-list
            (struct command (bid command arg))
            (struct package (id x y weight))
            (struct robot (id x y))
@@ -18,6 +19,8 @@
   ;; water = 1
   ;; wall = 2
   ;; home = 3
+  
+  (define home-list (make-parameter null))
   
   (define-syntax get-type
     (syntax-rules ()
@@ -367,7 +370,8 @@
                      (case c
                        ((#\~) (set-water 0))
                        ((#\#) (set-wall 0))
-                       ((#\@) (set-home 0))
+                       ((#\@) (begin (home-list (cons (cons j i) (home-list)))
+                                     (set-home 0))
                        (else 0))))
          (loop i (add1 j)))))
     (player-id (read input))
@@ -381,5 +385,17 @@
     (let ((spot (get-spot (board) (get-player-x) (get-player-y))))
       (cond
         ((= 3 (get-type spot))
-         (set-spot (board) (get-player-x) (get-player-y) (set-empty spot))))))
+         (let ([px (get-player-x)]
+               [py (get-player-y)])
+           (begin
+             (home-list (remove-home px py (home-list)))
+             (set-spot (board) (get-player-x) (get-player-y) (set-empty spot)))))))
   )
+    
+    (define (remove-home x y hl)
+      (if (null? hl)
+          hl
+          (if (and (= x (caar hl))
+                   (= y (cdar hl)))
+              (cdr hl)
+              (cons (car hl) (remove-home (cdr hl))))))

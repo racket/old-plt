@@ -237,13 +237,18 @@
 		       (let ([rtype (typecheck-type (ast:type_declaration-manifest typedecl) boundlist)])
 			 (begin
 			   (hash-table-put! <constructors> name (cons rtype "some error"))
-			   (format "type ~a = ~a" name rtype)))]
+			   (format "type ~a ~a = ~a" (if (not (null? (ast:type_declaration-params td)))
+							 (map typecheck-type (ast:type_declaration-params td))
+							 "") name rtype)))]
 		      [($ ast:ptype_variant scll)
 		       (let* ([tscll (typecheck-scll name scll boundlist)]
 			      [ntv (make-tvariant name (map syntax-object->datum (map car scll)) tscll)])
 			 (begin
 			   (hash-table-put! <constructors> name (cons name "some error"))
-			   ntv))])))
+			   ntv))]
+		      [else
+		       (raise-syntax-error #f (format "Unkown typedecl found: ~a" td))]
+		       )))
 
 	   (define (typecheck-scll sname scll boundlist)
 	     (if (null? scll)

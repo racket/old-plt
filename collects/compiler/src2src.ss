@@ -188,12 +188,8 @@
 
   (define global%
     (class exp% 
-      (init -stx -trans? -tables -needs-top?)
-
-      (define stx -stx)
-      (define trans? -trans?)
-      (define tables -tables)
-      (define needs-top? -needs-top?)
+      (init-field stx trans? tables needs-top?)
+      
       (define mbind #f)
       (define bucket (global-bucket ((if trans? tables-et-global-ht tables-global-ht) tables) stx))
       (define (get-mbind!)
@@ -250,9 +246,7 @@
 
   (define binding% 
     (class exp% 
-      (init -name -always-inited?)
-      (define name -name)
-      (define always-inited? -always-inited?)
+      (init-field name always-inited?)
       (define value #f)
       (define used 0)
       (define mutated? #f)
@@ -303,9 +297,7 @@
 
   (define ref% 
     (class exp% 
-      (init -stx lexical-var)
-      (define stx -stx)
-      (define binding lexical-var)
+      (init-field stx binding)
 
       (define/public (is-used?) (send binding is-used?))
       (define/public (is-mutated?) (send binding is-mutated?))
@@ -356,9 +348,7 @@
 
   (define begin% 
     (class exp%
-      (init -stx -subs)
-      (define stx -stx)
-      (define subs -subs)
+      (init-field stx subs)
 
       (define/override (nonbind-sub-exprs) subs)
       (define/override (set-nonbind-sub-exprs s) (set! subs s))
@@ -410,12 +400,7 @@
   
   (define top-def% 
     (class exp% 
-      (init -stx -formname -varnames -expr -tables)
-      (define stx -stx)
-      (define formname -formname)
-      (define varnames -varnames)
-      (define expr -expr)
-      (define tables -tables)
+      (init-field stx formname varnames expr tables)
       (define globals #f)
       
       (define/override (nonbind-sub-exprs) (list expr))
@@ -452,14 +437,14 @@
 
   (define variable-def% 
     (class top-def% 
-      (init -stx -varnames -expr -tables)
+      (init stx varnames expr tables)
       
-      (super-instantiate (-stx (quote-syntax define-values) -varnames -expr -tables))))
+      (super-instantiate (stx (quote-syntax define-values) varnames expr tables))))
 
   (define syntax-def% 
     (class top-def% 
-      (init -stx -varnames -expr -tables)
-      (super-instantiate (-stx (quote-syntax define-syntaxes) -varnames -expr -tables))))
+      (init stx varnames expr tables)
+      (super-instantiate (stx (quote-syntax define-syntaxes) varnames expr tables))))
 
   (define (install-values vars expr)
     (when (= 1 (length vars))
@@ -467,9 +452,7 @@
 
   (define constant% 
     (class exp% 
-      (init -stx -val)
-      (define stx -stx)
-      (define val -val)
+      (init-field stx val)
 
       (define/public (get-const-val) val)
 
@@ -536,12 +519,8 @@
 
   (define app%
     (class exp% 
-      (init -stx -rator -rands -tables)
+      (init-field stx rator rands tables)
 
-      (define stx -stx)
-      (define rator -rator)
-      (define rands -rands)
-      (define tables -tables)
       (define known-single-result? #f)
 
       (rename [super-simplify simplify]
@@ -800,13 +779,8 @@
 
   (define lambda% 
     (class exp% 
-      (init -stx -varss -normal?s -bodys)
+      (init-field stx varss normal?s bodys)
       
-      (define stx -stx)
-      (define varss -varss)
-      (define normal?s -normal?s)
-      (define bodys -bodys)
-
       (rename [super-simplify simplify])
       (inherit drop-uses)
       
@@ -906,14 +880,8 @@
 
   (define local% 
     (class exp% 
-      (init -stx -form -varss -rhss -body)
+      (init-field stx form varss rhss body)
 
-      (define stx -stx)
-      (define form -form)
-      (define varss -varss)
-      (define rhss -rhss)
-      (define body -body)
-      
       (define/public (get-rhss) rhss)
       (define/public (get-varss) varss)
       (define/public (get-body) body)
@@ -1022,7 +990,7 @@
                             body ...))))
       
       
-      (super-instantiate (-stx))))
+      (super-instantiate (stx))))
 
   (define let%
     (class local% 
@@ -1057,11 +1025,7 @@
 
   (define set!%
     (class exp% 
-      (init -stx -var -val)
-      
-      (define stx -stx)
-      (define var -var)
-      (define val -val)
+      (init-field stx var val)
       
       (define/override (nonbind-sub-exprs) (list var val))
       (define/override (set-nonbind-sub-exprs s) 
@@ -1088,16 +1052,11 @@
             (syntax/loc stx
                         (set! var val))))
       
-      (super-instantiate (-stx))))
+      (super-instantiate (stx))))
 
   (define if%
     (class exp% 
-      (init -stx -test -then -else)
-
-      (define stx -stx)
-      (define test -test)
-      (define then -then)
-      (define else -else)
+      (init-field stx test then else)
 
       (define/public (get-if-test) test)
       (define/public (get-if-then) then)
@@ -1186,16 +1145,12 @@
                 (syntax/loc stx
                             (if test then else))))))
       
-      (super-instantiate (-stx))))
+      (super-instantiate (stx))))
 
   (define begin0%
     (class exp% 
-      (init -stx -first -rest)
+      (init-field stx first rest)
       
-      (define stx -stx)
-      (define first -first)
-      (define rest -rest)
-
       (define/override (nonbind-sub-exprs) (list first rest))
       (define/override (set-nonbind-sub-exprs s)
         (set! first (car s))
@@ -1223,16 +1178,11 @@
             (syntax/loc stx
                         (begin0 first rest ...))))
 
-      (super-instantiate (-stx))))
+      (super-instantiate (stx))))
 
   (define wcm%
     (class exp% 
-      (init -stx -key -val -body)
-
-      (define stx -stx)
-      (define key -key)
-      (define val -val)
-      (define body -body)
+      (init-field stx key val body)
 
       (define/override (nonbind-sub-exprs) (list key val body))
       (define/override (set-nonbind-sub-exprs s)
@@ -1255,19 +1205,12 @@
           (syntax/loc stx
                       (with-continuation-mark key val body))))
       
-      (super-instantiate (-stx))))
+      (super-instantiate (stx))))
 
   (define module%
     (class exp% 
-      (init -stx -body -et-body -name -init-req -req-prov -tables)
+      (init-field stx body et-body name init-req req-prov tables)
 
-      (define stx -stx)
-      (define body -body)
-      (define et-body -et-body)
-      (define req-prov -req-prov)
-      (define name -name)
-      (define init-req -init-req)
-      (define tables -tables)
       (rename [super-deorganize deorganize])
 
       (define/override (reset-varflags)
@@ -1433,10 +1376,10 @@
   ;; requires and provides should really be ignored:
   (define require/provide%
     (class exp% 
-      (init stx)
+
       (define/override (valueable?) #f)
       (define/override (no-side-effect?) #f)
-      (super-instantiate (stx))))
+      (super-instantiate ())))
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Parser
@@ -1659,6 +1602,17 @@
   (define (create-tables)
     (make-tables (make-hash-table) (make-hash-table)))
 
+  
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Inliner
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; (define (inline! in-module? node)
+ ;   (cond
+  ;    ((and (is-a? node global%) in-module?)
+       
+       
+  
+  
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Optimizer
   ;; the driver function
@@ -1675,6 +1629,6 @@
 			 (send p deorganize)))))))
 
   (provide optimize))
-(require src2src)
-(optimize (expand (call-with-input-file "src2src.ss"
-                    (lambda (x) (read-syntax "src2src.ss" x)))))
+;(require src2src)
+;(optimize (expand (call-with-input-file "src2src.ss"
+;                    (lambda (x) (read-syntax "src2src.ss" x)))))

@@ -32,6 +32,7 @@
 #include "wx_medio.h"
 #include "wx_ptreq.h"
 #include <string.h>
+#include "scheme.h"
 
 #ifdef wx_x
 static int defaultSize = 12;
@@ -863,16 +864,12 @@ class NotificationRec {
   wxStyleNotifyFunc f;
   void *data;
 #ifdef MZ_PRECISE_GC
-# define GET_WEAK_DATA(data) GC_weak_box_val(data)
+# define GET_WEAK_DATA(data) SCHEME_BOX_VAL(data)
 #else
 # define GET_WEAK_DATA(data) data
 #endif
   void *id;
 };
-
-extern "C" {
-  void *scheme_make_symbol(const char *name);
-}
 
 wxStyleList::wxStyleList() : wxList()
 {

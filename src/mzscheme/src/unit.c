@@ -2617,7 +2617,8 @@ static Scheme_Object *write_compound_data(Scheme_Object *o)
 static Scheme_Object *read_compound_data(Scheme_Object *o)
 {
   CompoundData *data;
-  Scheme_Object *exs, *subs, *counts, *maps, *tags, **els = NULL;
+  Scheme_Object *vec;
+  Scheme_Object *exs, *subs, *counts, *maps, *tags;
   ParamMap *map;
   int c, n, i, j, p = 0, d = 0;
 
@@ -2687,10 +2688,8 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
     
     for (j = 0; j < c; j++) {
       if (d >= p) {
-	Scheme_Object *vec;
 	vec = SCHEME_CAR(maps);
 	maps = SCHEME_CDR(maps);
-	els = SCHEME_VEC_ELS(vec);
 	p = SCHEME_VEC_SIZE(vec);
 	d = 0;
       }
@@ -2698,11 +2697,11 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
 #ifdef MZTAG_REQUIRED
       map[j].type = scheme_rt_param_map;
 #endif
-      map[j].index = SCHEME_INT_VAL(els[d++]);
+      map[j].index = SCHEME_INT_VAL(SCHEME_VEC_ELS(vec)[d++]);
       if (map[j].index < 0)
-	map[j].u.pos = SCHEME_INT_VAL(els[d++]);
+	map[j].u.pos = SCHEME_INT_VAL(SCHEME_VEC_ELS(vec)[d++]);
       else
-	map[j].u.ext_id = els[d++];
+	map[j].u.ext_id = SCHEME_VEC_ELS(vec)[d++];
     }
   }
 

@@ -1256,7 +1256,7 @@ sub PrintFunction
 
     if ($iscreator) {
 	print "  ((Scheme_Class_Object *)obj)->primdata = realobj;\n";
-	print "  WITH_REMEMBERED_STACK(objscheme_register_primpointer(realobj, &((Scheme_Class_Object *)obj)";
+	print "  WITH_REMEMBERED_STACK(objscheme_register_primpointer(obj, &((Scheme_Class_Object *)obj)";
 	print "->primdata));\n";
 	print "  ((Scheme_Class_Object *)obj)->primflag = 1;\n";
 	print "  return obj;\n";

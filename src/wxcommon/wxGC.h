@@ -72,6 +72,7 @@ extern "C" {
 extern void *GC_cpp_malloc(size_t);
 extern void GC_cpp_delete(class gc *);
 # define GC_register_finalizer_ignore_self(self, a, b, c, d) GC_set_finalizer(self, 3, 0, a, b, c, d)
+extern void *GC_weak_box_val(void *);
 #endif
 
 

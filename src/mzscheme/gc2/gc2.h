@@ -10,53 +10,9 @@
 extern "C" {
 # endif
 
-/*
-   General architecture:
-
-   Each allocation is for either tagged or untagged memory. Untagged
-   memory must be either atomic or an array of pointers. Heterogenous
-   memory is always tagged. After alocating a tagged object, MzScheme
-   is responsible for setting the tag before a collection occurs. The
-   tag is always a `short' value at the beginning of the object.
-
-   MzScheme supplies three traversal procedures for every tag value:
-   one for obtaining the value's size in words (not bytes!), one for
-   marking pointers within the value, and one for fixing up pointers
-   in the value. The mark and fixup procedures should use gcMARK and
-   gcFIXUP. The fixup procedure must also return the size, like the
-   size procedure.
-
-   The value of a pointer can refer to a GCable object, to the middle
-   of a GCable object, or to some other point in memory. It might also
-   be a fixnum value, which has 1 in the least-significant bit,
-   whereas actual pointers are always 2-byte-aligned. Thus, when
-   moving GCable objects in a copying collector, the collector must
-   modify pointers to objects or to the middle of objects, but leave
-   other pointers and fixnums alone.
-
-   At any point when the allocator/collector is invoked, MzScheme will
-   have set the GC_variable_stack variable to indicate a chain of
-   local pointer variables on the stack (i.e., both the chain of
-   record and the pointer variables themselves are on the stack). The
-   GC_variable_stack global points to a value of the form
-
-     struct {
-        void *next_frame;
-        long frame_size;
-        void **pointers[...];
-     }
-
-   where the size of `pointers' is indicated by `frame_size'. Each
-   element of `pointers' is the address of a pointer of the stack.
-   The `next_frame' field in the structure gives the address of the
-   next frame on the stack, and so on. The garbage collector should
-   follow the chain of frames, adjusting pointers for copying
-   collection, until it reaches a frame that is deeper than the value
-   returned by GC_get_thread_stack_base() (which is supplied by
-   MzScheme).
-
-   More generally, GC_mark_variable_stack() can be used to GC a stack
-   that has been copied into the heap. See below for more details.  */
+/***************************************************************************/
+/***   See README for a general overview of the interface architecture.  ***/
+/***************************************************************************/
 
 /***************************************************************************/
 /* Administration                                                          */
@@ -65,8 +21,8 @@ extern "C" {
 extern unsigned long (*GC_get_thread_stack_base)(void);
 /* 
    Called by GC to get the base for stack traversal in the current
-   thread. The returned address must not be in the middle of
-   a variable-stack record. */
+   thread (see README). The returned address must not be in the middle
+   of a variable-stack record. */
 
 void GC_set_stack_base(void *base);
 unsigned long GC_get_stack_base(void);
@@ -92,11 +48,12 @@ extern void (*GC_collect_start_callback)(void);
 extern void (*GC_collect_end_callback)(void);
 /*
    Called by GC before/after performing a collection. Used by MzScheme
-   to zero out some data and record collection times. */
+   to zero out some data and record collection times. The end
+   procedure should be called before finalizations are performed. */
 
 extern void (*GC_out_of_memory)(void);
 /*
-   Called by GC when it can't satify a memory request. GC_out_of_memory
+   Called by GC when it can't satify a memory request. GC_out_of_memory()
    might perform a longjmp. */
 
 void GC_dump(void);
@@ -109,16 +66,11 @@ long GC_get_memory_use();
 
 void GC_gcollect(void);
 /*
-   Performs an immediate collection. */
+   Performs an immediate (full) collection. */
 
 /***************************************************************************/
 /* Allocation                                                              */
 /***************************************************************************/
-
-/* Note: All alocated memory must be longword-aligned. For architectures
-   where `double' values must be 8-byte aligned, the GC must provide
-   8-byte aligned memory in response to an allocation request for a
-   memory size divisible by 8. */
 
 void *GC_malloc(size_t size_in_bytes);
 /*
@@ -131,20 +83,22 @@ void *GC_malloc_one_tagged(size_t);
 
 void *GC_malloc_one_xtagged(size_t);
 /* 
-   Alloc an item, initially zeroed. Rather than having a specific
-   tag, all objects allocated this way are marked/fixedup via the
-   function in GC_mark_xtagged and GC_fixup_xtagged. MzScheme
-   (MrEd, actually) sets GC_{mark,fixup}_xtagged. */
+   Alloc an item, initially zeroed. Rather than having a specific tag,
+   all objects allocated this way are marked/fixedup via the function
+   in GC_mark_xtagged and GC_fixup_xtagged. MzScheme sets
+   GC_{mark,fixup}_xtagged. */
 
 extern void (*GC_mark_xtagged)(void *obj);
 extern void (*GC_fixup_xtagged)(void *obj);
+/* 
+  Mark and fixup functions for memory allocated with
+  GC_malloc_one_xtagged(). */
 
 void *GC_malloc_array_tagged(size_t);
 /* 
    Alloc an array of tagged items. MzScheme sets the tag in the first
    item before a collection, by maybe not all items. When traversing,
-   use the first one for size, and traverse only those with the tag
-   set. */
+   use the first one for size. */
 
 void *GC_malloc_atomic(size_t size_in_bytes);
 /*
@@ -166,61 +120,27 @@ void *GC_malloc_allow_interior(size_t size_in_bytes);
    array. */
 
 void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val);
-/* 
+/*
    Alloc an array of weak pointers, initially zeroed.  When a value in
    the array is collected, it's replaced by `replace-val'. The
    precense of a pointer in the array doesn't keep the referenced
-   memory from being collected. */
+   memory from being collected. See also README for information about
+   the structure of the array. */
 
 void GC_free(void *);
 /* 
    Lets the collector optionally reverse an allocation immediately.
-   [Generally a noop.] */
+   [Generally a no-op.] */
 
 void *GC_malloc_weak_box(void *p, void **secondary, int soffset);
 /* 
-   Allocate a weak box. A weak box will have the following initial
-   structure:
-
-     struct {
-       short tag;
-       short filler_used_for_hashing;
-       void *val;
-     }
-
-   but the remainder of the structure is up to the GC. The GC recives
-   from MzScheme a tag value to be used for weak boxes (see the
-   GC_init_type_tags() function above), but the GC is responsible for
-   traversing weak boxes.
-
-   MzScheme can change `val' at any time; when a collection happens,
-   if the object in `val' is collectable and is collected, then `val'
-   is zeroed.  The `val' pointer must be updated by the GC if the
-   object it refers to is moved by the GC, but it does not otherwise
-   keep an object from being collected. However, if `val' can be
-   moved, it must point to the beginning of the allocated object.
-
-   If the `secondary' argument is not NULL, it points to an auxilliary
-   address that should be zeroed at whenever `val' is zeroed. To allow
-   zeroing in the interior of an allocated pointer, the zero-out
-   address is determined by `secondary + soffset'. The memory
-   referenced by `secondary' is kept live as long as it isn't zeroed
-   by its registration in the weak box, but when the content of
-   `secondary' is zeroed, the `secondary' pointer itself should be
-   dropped. */
-
-void *GC_weak_box_val(void *wb);
-void GC_set_weak_box_val(void *wb, void *v);
-/*
-   Gets/sets the `val' field in a structure matching the required
-   header of a weak box (see GC_malloc_weak_box). */
-
+   Allocate a weak box. See README for details. */
 
 void *GC_malloc_immobile_box(void *p);
 void GC_free_immobile_box(void *b);
 /* 
-   Allocate an non-GCed box containing a pointer to a GCed value.
-   The pointer is stored as the first longword of the box. */
+   Allocate (or free) a non-GCed box containing a pointer to a GCed
+   value.  The pointer is stored as the first longword of the box. */
 
 /***************************************************************************/
 /* Finalization                                                            */
@@ -234,47 +154,11 @@ void GC_set_finalizer(void *p, int tagged, int level,
 		      GC_finalization_proc f, void *data, 
 		      GC_finalization_proc *oldf, void **olddata);
 /*
-   Installs a finalizer to be queued for invocation when `p' would
-   otherwise be collected. `p' isn't actually collected when a
-   finalizer is queued, since the finalizer will receive `p' as an
-   argument. (Hence, weak references aren't zeroed, either.) `p' must
-   point to the beginning of a tagged (if `tagged' is 1) or xtagged
-   (if `tagged' is 0) allocated object.
-
-   `level' refers to an ordering of finalizers. It can be 1, 2, or
-   3. During a collection, level 1 finalizers are queued first, then
-   all objects queued for finalization are marked as live and
-   traversed. Then, level 2 finalizers are queued in the same
-   way. Thus, if a level 1 object refers to a level 2 object, the
-   level 1 object will be queued for finalization, and only sometime
-   after the finalizer is run and the object is again no longer
-   refermced can the level 2 object be finalized.
-
-   Level 3 finalizers are even later. Not only are they after level 1
-   and 2, but a level 3 finalizer is only enqueued if no other level-3
-   finalizer refers to the object. Note that cycles among level-3
-   finalizers can prevent finalization and collection. (But it's also
-   possible that other finalizers will break a finalization cycle
-   among a set of level 3 finalizers.)
-
-   The `f' and `data' arguments are the finalizer clsoure to be
-   called. If a finalizer is already installed for `p', it is
-   replaced, and `oldf' and `olddata' are filled with the old
-   closure. If `f' is NULL, any existing finalizer is removed and no
-   new one is installed. */
+   See README for details. */
 
 void GC_finalization_weak_ptr(void **p, int offset);
 /*
-   Registers a "weak" pointer for level-3 finalization. `p' must be a
-   finalized object. When checking for references among level-3
-   finalized objects, `*(p + offset)' is set to NULL. The mark
-   procedure for the object `p' will see the NULL value, preventing it
-   from marking whatever `p + object' normally references. After
-   level-3 finalizers are enqueued, `*(p + offset)' is reset to its
-   original value (and marked if the object `p' is already marked).
-
-   When the object `p' is collected, the weak pointer registration is
-   removed automatically. */
+   See README for details. */
 
 /***************************************************************************/
 /* Cooperative GC                                                          */
@@ -282,13 +166,13 @@ void GC_finalization_weak_ptr(void **p, int offset);
 
 extern void **GC_variable_stack;
 /*
-   See the general overview at the top of the file: */
+   See the general overview in README. */
 
 typedef int (*Size_Proc)(void *obj);
 typedef int (*Mark_Proc)(void *obj);
 typedef int (*Fixup_Proc)(void *obj);
 /* 
-   Types of the traversal procs (supplied by MzScheme); see overview above
+   Types of the traversal procs (supplied by MzScheme); see overview in README
    for information about traversals. The return value is the size of
    the object in words. */
 
@@ -321,11 +205,14 @@ void *GC_resolve(void *p);
    class instance usually depends on a field count that is stored in
    the class. */
 
-/* INTERNAL: */
+/* INTERNAL for the current implemenation: */
 void GC_mark(const void *p);
 void GC_fixup(void *p);
 /*
-   Used in the expansion of gcMARK and gcFIXUP. */
+   Used in the expansion of gcMARK and gcFIXUP. 
+ 
+   These procedures are internal to the current implementation, and
+   are *not* part of the "official" interface. */
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
@@ -347,11 +234,6 @@ void GC_fixup_variable_stack(void **var_stack,
    region, regardless of which direction the stack grows). The `limit'
    argument corresponds to the value that would have been returned by
    GC_get_thread_stack_base() at the time the stack was copied. */
-
-extern void *GC_alloc_space, *GC_alloc_top;
-/*
-   Used by macro the implementations above; not to be considered part
-   of the spec. */
 
 # ifdef __cplusplus
 };

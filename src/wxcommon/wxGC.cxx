@@ -188,6 +188,17 @@ int GC_is_wx_object(void *v)
 
 #ifdef MZ_PRECISE_GC
 
+typedef struct {
+  short tag;
+  short filler_used_for_hashing;
+  void *val;
+} GC_WB;
+
+void *GC_weak_box_val(void *b)
+{
+  return ((GC_WB *)b)->val;
+}
+
 void gc::gcMark()
 {
 }

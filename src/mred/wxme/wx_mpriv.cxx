@@ -1758,15 +1758,19 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
   if (maxWidth > 0) {
     float w;
     Bool fl = flowLocked, wl = writeLocked;
+    wxMediaLine *lr;
 
     /* If any flow is update, snip sizing methods will be called. */
     flowLocked = TRUE;
     writeLocked = TRUE;
 
     w = maxWidth - CURSOR_WIDTH;
-    while (lineRoot->UpdateFlow(&lineRoot, this, w, dc)) {
+    lr = lineRoot;
+    while (lineRoot->UpdateFlow(&lr, this, w, dc)) {
+      lineRoot = lr;
       _changed = TRUE;
     }
+    lineRoot = lr;
 
     flowLocked = fl;
     writeLocked = wl;    
@@ -2598,10 +2602,14 @@ void wxMediaEdit::NeedCaretRefresh(void)
 void wxMediaEdit::CalcCaretLocation(void)
 {
   if (caretLocationX < 0) {
-    PositionLocation(startpos, &caretLocationX, &caretLocationT,
+    float x, t, b;
+    PositionLocation(startpos, &x, &t,
 		     TRUE, posateol, FALSE);
-    PositionLocation(startpos, NULL, &caretLocationB,
+    caretLocationX = x;
+    caretLocationT = t;
+    PositionLocation(startpos, NULL, &b,
 		     FALSE, posateol, FALSE);
+    caretLocationB = b;
   }
 }
 

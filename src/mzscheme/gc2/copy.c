@@ -43,6 +43,9 @@ typedef short Type_Tag;
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 
+#define CHECK_STACK_EVERY 5
+#define CHECK_STACK_START -1
+
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
 void (*GC_out_of_memory)(void);
@@ -385,16 +388,6 @@ void *GC_malloc_weak_box(void *p, void **secondary, int soffset)
   return w;
 }
 
-void *GC_weak_box_val(void *wb)
-{
-  return ((GC_Weak_Box *)wb)->val;
-}
-
-void GC_set_weak_box_val(void *wb, void *v)
-{
-  ((GC_Weak_Box *)wb)->val = v;
-}
-
 /******************************************************************************/
 
 typedef struct Fnl {
@@ -622,9 +615,16 @@ static void middle(unsigned long p, long delta, unsigned long where)
   fprintf(stderr, "Middle!: 0x%lx d: %ld at 0x%lx\n", p, delta, where);
 }
 
+static int check_count = CHECK_STACK_START;
+
 static void check_interior_pointer(void **pp)
 {
   void *p = *pp;
+
+  if (check_count--)
+    return;
+  else
+    check_count = CHECK_STACK_EVERY;
 
   if (!((long)p & 0x1)
       && (p >= GC_alloc_space)

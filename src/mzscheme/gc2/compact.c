@@ -35,12 +35,12 @@ typedef short Type_Tag;
 
 #define TIME 0
 #define SEARCH 0
-#define SAFETY 0
+#define SAFETY 1
 #define RECYCLE_HEAP 0
 #define NOISY 0
 #define MARK_STATS 0
 
-#define GENERATIONS 1
+#define GENERATIONS 0
 
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
@@ -537,16 +537,6 @@ void *GC_malloc_weak_box(void *p, void **secondary, int soffset)
   return w;
 }
 
-void *GC_weak_box_val(void *wb)
-{
-  return ((GC_Weak_Box *)wb)->val;
-}
-
-void GC_set_weak_box_val(void *wb, void *v)
-{
-  ((GC_Weak_Box *)wb)->val = v;
-}
-
 /******************************************************************************/
 
 typedef struct Fnl {
@@ -901,6 +891,10 @@ static int is_marked(void *p)
 	return 1;
       else {
 	long offset = ((long)p & MPAGE_MASK) >> 2;
+
+	if (!(page->type & MTYPE_TAGGED))
+	  offset -= 1;
+
 #if 0
 	OffsetTy v;
 	
@@ -1185,12 +1179,15 @@ void GC_mark(const void *p)
 
 	offset = ((long)p & MPAGE_MASK) >> 2;
 
-#if 0
+#if SAFETY
 	if (offset >= page->alloc_boundary) {
 	  /* Past allocation region. */
+	  CRASH();
 	  return;
 	}
+#endif
 
+#if 0
 	v = page->u.offsets[offset];
 	offset -= (v & OFFSET_MASK);
 #endif
@@ -1760,9 +1757,15 @@ static void compact_tagged_mpage(void **p, MPage *page)
 	  memcpy(dest + dest_offset, p, size << 2);
       }
       
+#if 1
+      offsets[offset] = dest_offset;
+      offset += size;
+      dest_offset += size;
+#else
       for (i = 0; i < size; i++, offset++, dest_offset++)
 	offsets[offset] = dest_offset;
-      
+#endif
+ 
       p += size;
     } else {
       p += size;
@@ -1893,9 +1896,15 @@ static void compact_untagged_mpage(void **p, MPage *page)
 	  memcpy(dest + dest_offset, p, size << 2);
       }
       
+#if 1
+      offsets[offset + 1] = dest_offset + 1;
+      offset += size;
+      dest_offset += size;
+#else
       for (i = 0; i < size; i++, offset++, dest_offset++)
 	offsets[offset] = dest_offset;
-      
+#endif
+ 
       p += size;
     } else {
       p += size;
@@ -2018,9 +2027,9 @@ void GC_fixup(void *pp)
 
 	v = page->u.offsets[offset] & OFFSET_MASK;
 	if (offset < page->compact_boundary)
-	  r = (void *)(page->o.compact_to + v) + ((long)p & 0x3);
+	  r = (void *)(page->o.compact_to + v) /* + ((long)p & 0x3) */;
 	else
-	  r = (void *)(((long)p & MPAGE_START) + ((long)v << 2)) + ((long)p & 0x3);
+	  r = (void *)(((long)p & MPAGE_START) + ((long)v << 2)) /* + ((long)p & 0x3) */;
 
 #if SEARCH
 	if (r == search_for)
@@ -2620,6 +2629,8 @@ static void gcollect(int full)
     *(long *)array_low = UNTAGGED_EOM - 1;
   if (tagged_array_low < tagged_array_high)
     *(long *)tagged_array_low = UNTAGGED_EOM - 1;
+  if (xtagged_low < xtagged_high)
+    *(long *)xtagged_low = UNTAGGED_EOM - 1;
 
   cycle_count++;
 
@@ -2991,6 +3002,13 @@ static void gcollect(int full)
     tagged_array_compact_page->refs_age = 0;
     tagged_array_compact_page->type |= MTYPE_MODIFIED;
   }
+  xtagged_low = xtagged_compact_to + xtagged_compact_to_offset;
+  xtagged_high = xtagged_compact_to + MPAGE_WORDS;
+  if (xtagged_compact_to_offset < MPAGE_WORDS) {
+    xtagged_compact_page->age = 0;
+    xtagged_compact_page->refs_age = 0;
+    xtagged_compact_page->type |= MTYPE_MODIFIED;
+  }
 
   reverse_propagate_new_age();
 
@@ -3025,6 +3043,8 @@ static void gcollect(int full)
     memset(array_low, 0, (array_high - array_low) << 2);
   if (tagged_array_compact_to_offset < MPAGE_WORDS)
     memset(tagged_array_low, 0, (tagged_array_high - tagged_array_low) << 2);
+  if (xtagged_compact_to_offset < MPAGE_WORDS)
+    memset(xtagged_low, 0, (xtagged_high - xtagged_low) << 2);
 
 #if TIME
   getrusage(RUSAGE_SELF, &post);

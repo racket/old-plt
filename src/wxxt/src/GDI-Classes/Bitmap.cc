@@ -371,8 +371,11 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
 
     if (flags & wxBITMAP_DISCARD_COLOURMAP)
       success = wxLoadIntoBitmap(fname, this);
-    else
-      success = wxLoadIntoBitmap(fname, this, &cmap);
+    else {
+      wxColourMap *cm;
+      success = wxLoadIntoBitmap(fname, this, &cm);
+      cmap = cm;
+    }
 
     if (!success && map) {
       DELETE_OBJ map;

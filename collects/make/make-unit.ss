@@ -24,7 +24,9 @@
 	(equal? (if (string? a) (string->path a) a)
 		(if (string? b) (string->path b) b)))
       (define (path-string->string s)
-	(if (string? s) s (path->string s)))
+	(if (string? s)
+            s 
+            (path->string s)))
 
       ; find-matching-line : path-string spec -> (union line #f)
       (define (find-matching-line str spec)
@@ -137,7 +139,10 @@
 						       (raise (make-exn:fail:make 
 							       (string->immutable-string
 								(format "make: Failed to make ~a; ~a"
-									(path-string->string (car line))
+									(let ([fst (car line)])
+                                                                          (if (pair? fst)
+                                                                              (map path-string->string fst)
+                                                                              (path-string->string fst)))
 									(if (exn? exn)
 									    (exn-message exn)
 									    exn)))

@@ -79,6 +79,12 @@ static void default_printf(char *msg, ...)
   fflush(stderr);
 }
 
+static void default_output(char *s, long len)
+{
+  fwrite(s, len, 1, stderr);
+  fflush(stderr);
+}
+
 void scheme_init_error_escape_proc(Scheme_Process *p)
 {
   if (!def_error_esc_proc) {
@@ -258,6 +264,8 @@ void scheme_init_error(Scheme_Env *env)
 {
   if (!scheme_console_printf)
     scheme_console_printf = default_printf;
+  if (!scheme_console_output)
+    scheme_console_output = default_output;
 
   scheme_add_global_constant("error", 
 			     scheme_make_prim_w_arity(error, 

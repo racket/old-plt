@@ -905,11 +905,7 @@ zero_p (int argc, Scheme_Object *argv[])
   Scheme_Object *o = argv[0];
 
   if (SCHEME_INTP(o))
-#ifdef FAST_NUMBERS
     return (o == zeroi) ? scheme_true : scheme_false;
-#else
-    return SCHEME_INT_VAL(o) ? scheme_false : scheme_true;
-#endif
   t = _SCHEME_TYPE(o);
 #ifdef MZ_USE_SINGLE_FLOATS
   if (t == scheme_float_type) {

@@ -130,10 +130,6 @@ int scheme_eqv (Scheme_Object *obj1, Scheme_Object *obj2)
 
   if (NOT_SAME_TYPE(t1, t2))
     return 0;
-#ifndef FAST_NUMBERS
-  else if (t1 == scheme_integer_type)
-    return SCHEME_INT_VAL(obj1) == SCHEME_INT_VAL(obj2);
-#endif
 #ifdef MZ_USE_SINGLE_FLOATS
   else if (t1 == scheme_float_type) {
     int i;

@@ -226,31 +226,6 @@ char *scheme_get_type_name(Scheme_Type t)
   return type_names[t];
 }
 
-int scheme_find_type(Scheme_Object *ts)
-{
-  int i;
-  char *str;
-
-  str = SCHEME_TSYM_VAL(ts);
-
-  for (i = maxtype; i--; ) {
-    if (type_names[i]) {
-      char *tss, *s;
-      tss = type_names[i] + 1;
-      s = str;
-      while (*s && *tss && (*s == *tss)) {
-	s++;
-	tss++;
-      }
-      if (!*s && *tss == '>')
-	return i;
-    }
-  }
-
-  scheme_signal_error("bad type name: %s", str);
-  return -1;
-}
-
 void scheme_install_type_reader(Scheme_Type t, Scheme_Type_Reader f)
 {
   if (t < 0 || t >= maxtype)

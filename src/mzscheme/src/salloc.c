@@ -230,17 +230,27 @@ void *scheme_malloc_eternal(size_t n)
 #endif
 }
 
-#ifndef USE_SENORA_GC
-# ifdef GC_MIGHT_USE_REGISTERED_STATICS
-void scheme_maybe_register_static(void *p, int s)
-{
-  if (GC_use_registered_statics) {
-    scheme_register_extension_global(p, s);
-  }
-}
-# endif
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
 #endif
 
+void scheme_register_static(void *ptr, long size)
+{
+#if defined(MZ_PRECISE_GC) || defined(USE_SENORA_GC)
+  /* Always register for precise and Senora GC: */
+  GC_add_roots((char *)ptr, (char *)(((char *)ptr) + size + 1));
+#else
+# ifdef GC_MIGHT_USE_REGISTERED_STATICS
+  if (GC_use_registered_statics) {
+    GC_add_roots((char *)ptr, (char *)(((char *)ptr) + size + 1));
+  }
+# endif
+#endif
+}
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 #ifdef USE_TAGGED_ALLOCATION
 

@@ -11,7 +11,15 @@
 ;; plt/src/mzscheme creates plt/src/mzscheme/src/cstartup.inc. Note
 ;; that `make startup' requires a working MzScheme executable; see
 ;; schminc.h for information about avoiding cstartup.inc, and using
-;; startup.inc (requires perl), instead.
+;; startup.inc (requires perl), instead. In fact, the recommend
+;; build strategy for cstartup.inc is
+;;   * Run configure in <builddir> with --enable-perl
+;;   * Set USE_COMPILED_STARTUP in schminc.h to 0
+;;   * Modify startup.ss to taste
+;;   * Run make in <builddir>/mzscheme
+;;   * Run make startup in <builddir>/mzscheme
+;;   * Set USE_COMPILED_STARTUP in schminc.h to 1
+;;   * Run make in <builddir>/mzscheme
 
 ;; Do not use block comments (with #| and |#) in this file. The
 ;; pre-processing script to build startup.inc can't handle them.

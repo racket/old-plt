@@ -271,7 +271,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   SetCurrentDC();
   Rect viewRect;
   
-  viewRect.top = VIEW_RECT_OFFSET;
+  viewRect.top = VIEW_RECT_OFFSET + 1;
   viewRect.bottom = ClientArea()->Height() - VIEW_RECT_OFFSET;
   viewRect.left = VIEW_RECT_OFFSET;
   viewRect.right = ClientArea()->Width() - VIEW_RECT_OFFSET;
@@ -490,32 +490,28 @@ void wxListBox::OnChar(wxKeyEvent *event)
 
     ALSetSelect(TRUE, &next, cListReference);
     
-    // Make sure newly selected is visible: 
-    if (! ALIsVisible(&next,cListReference)) {
-      Point midpoint;
-      Rect viewRect;
-      
-      ALGetViewRect(&viewRect,cListReference);
-      midpoint.h = VIEW_RECT_OFFSET;
-      midpoint.v = (viewRect.top + viewRect.bottom)/2;			
-      ALAutoScroll(midpoint,&next,cListReference);
-    }
+    {
+      Point cellSize;
+      Rect rView, rect;
 
-    /*	Rect rect;
-	LRect(&rect, next, cListHandle);
-	if (rect.top < 0) {
-	int amt = rect.top / (**cListHandle).cellSize.v;
-	if (rect.top % (**cListHandle).cellSize.v)
-	--amt;
-	LScroll(0, amt, cListHandle);
-	} else if (rect.bottom > (**cListHandle).rView.bottom) {
-	int diff = rect.bottom - (**cListHandle).rView.bottom;
-	int amt = diff / (**cListHandle).cellSize.v;
-	if (diff % (**cListHandle).cellSize.v)
-	amt++;
-	LScroll(0, amt, cListHandle);
-	}
-	*/
+      ALGetCellSize(&cellSize, cListReference);
+      ALGetViewRect(&rView, cListReference);
+
+      ALGetCellRect(&rect, &next, cListReference);
+      if (rect.top < rView.top) {
+	int diff = (rect.top - rView.top);
+	int amt = diff / cellSize.v;
+	if (diff % cellSize.v)
+	  --amt;
+	ALScrollCells(0, -amt, cListReference);
+      } else if (rect.bottom > rView.bottom) {
+	int diff = rect.bottom - rView.bottom;
+	int amt = diff / cellSize.v;
+	if (diff % cellSize.v)
+	  amt++;
+	ALScrollCells(0, -amt, cListReference);
+      }
+    }
 
     ReleaseCurrentDC();
 
@@ -740,50 +736,38 @@ void wxListBox::SetFirstItem(char *s)
 
 int wxListBox::GetFirstItem()
 {
-  LongPt c;
+  Rect rect, crect;
+  Point size;
+  LongPt next = {0, 0};
+  int item, d;
   
-  Point p = {VIEW_RECT_OFFSET + SetOriginY, VIEW_RECT_OFFSET + SetOriginX};
+  ALGetCellSize(&size, cListReference);     
+  ALGetViewRect(&rect, cListReference);
+  ALGetCellRect(&crect, &next, cListReference);
+  d = rect.top - crect.top;
+  if (d < 0)
+    return 0;
+  item = d / size.v;
+  if (d % size.v)
+    item++;
   
-  ALGetCellAndEdge(p,&c,cListReference);
-  
-  return c.v;
-  
-  /*   Point size = (**cListHandle).cellSize;
-       int item, d;
-       
-       LRect(&rect, c, cListHandle);
-       d = - rect.top;
-       item = d / size.v;
-       if (d % size.v)
-       item++;
-
-       return item;*/
+  return item;
 }
 
 int wxListBox::NumberOfVisibleItems()
 {
-  LongPt result;
-  long top_row;
-  
-  Point query = {VIEW_RECT_OFFSET + SetOriginY, VIEW_RECT_OFFSET + SetOriginX};
-  ALGetCellAndEdge(query,&result,cListReference);
-  top_row = result.v;
-  Point query2 = {ClientArea()->Height() - VIEW_RECT_OFFSET + SetOriginY, VIEW_RECT_OFFSET + SetOriginX};
-  ALGetCellAndEdge(query2,&result,cListReference);
-  
-  return result.v - top_row + 1;
-  
-  /*   
-     Rect view = (**cListHandle).rView;
-     Point size = (**cListHandle).cellSize;
-     int r;
+  Rect view;
+  Point size;
+  int r;
      
-     r = (view.bottom - view.top) / size.v;
-     if (r < 1)
-     r  = 1;
+  ALGetCellSize(&size, cListReference);     
+  ALGetViewRect(&view, cListReference);
+
+  r = (view.bottom - view.top) / size.v;
+  if (r < 1)
+    r  = 1;
      
-     return r;
-     */
+  return r;
 }
 
 void wxListBox::SetSelection(int N, Bool select, Bool just_one)

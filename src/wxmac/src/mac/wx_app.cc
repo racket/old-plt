@@ -776,6 +776,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
 	if (theMacWxFrame->OnClose())
 	  theMacWxFrame->Show(FALSE);
       }
+      HiliteMenu(0); // unhilite the hilited menu
     }
     return TRUE;
     // wxFatalError("No wxMenuBar for wxFrame.");

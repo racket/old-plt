@@ -601,7 +601,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       BackColor(whiteColor);
     BackPat(GetWhitePattern());
     ::TextFont(font->GetMacFontNum());
-    ::TextSize(font->GetPointSize());
+    ::TextSize(floor(font->GetPointSize() * user_scale_y));
     ::TextFace(font->GetMacFontStyle());
     ::TextMode((current_bk_mode == wxTRANSPARENT) ? srcOr : srcCopy);
     InstallLogicalFunction(wxCOPY);

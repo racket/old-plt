@@ -553,6 +553,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   RgnHandle maskRgn = NULL;
   
   if (!Ok() || !cMacDC || !source->Ok()) return FALSE;
+  if (mask && !mask->Ok()) return FALSE;
 
   SetCurrentDC();
   
@@ -623,9 +624,11 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
       maskRgn = NewRgn();
       err = BitMapToRegion(maskRgn,GetPortBitMapForCopyBits(mask->x_pixmap));
       if (err != noErr) {
+	DisposeRgn(maskRgn);
 	ReleaseCurrentDC();
 	return FALSE;
       }
+      OffsetRgn(maskRgn, destr.left, destr.top);
     }
     
     ::CopyBits(srcbm, dstbm, &srcr, &destr, mode, maskRgn);

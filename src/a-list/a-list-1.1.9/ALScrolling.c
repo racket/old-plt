@@ -191,9 +191,6 @@ ALIST_API void ALScrollPixels(long hOffset, long vOffset, ALHandle hAL)
 		if (pAL->currentDrag != nil)
 			DragPreScroll(pAL->currentDrag, (short) hOffset, (short) vOffset);
 
-               viewRect.top += 2;
-               --viewRect.bottom;
-
 		// ScrollRect will set updateRgn to the region to redraw
 		ScrollRect(&viewRect, (short) hOffset, (short) vOffset, updateRgn);
 

@@ -36,7 +36,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
   Point start, end;
   ::GetFontInfo(&fontInfo);
   start.h = XLOG2DEV(x);
-  start.v = YLOG2DEV(y + fontInfo.ascent);
+  start.v = YLOG2DEV(y) + fontInfo.ascent; /* ascent is already scaled */
   MoveTo(start.h + SetOriginX, start.v + SetOriginY); // move pen to start drawing text
 
   DrawLatin1Text(text, d, -1, use16);
@@ -87,9 +87,9 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 {
   float x2, y2, descent2, externalLeading2;
   if (the_font)
-    the_font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
+    the_font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
   else if (font)
-    font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
+    font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
   else {
     *x = -1;
     *y = -1;

@@ -529,7 +529,8 @@ void _ALDrawListBorder(ALHandle hAL)
 
 	// Get the rectangle to draw.
 	ALGetViewRect(&box, hAL);
-	InsetRect(&box, 1, 1);
+	--box.top;
+	// InsetRect(&box, 1, 1);
 
 	// Check the focused state.  Also, check for the Appearance Manager for a bit of speed.
 	focused = (BTST((*hAL)->flags, alFFocused) != 0);

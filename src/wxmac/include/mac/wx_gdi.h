@@ -45,7 +45,8 @@ class wxFont: public wxbFont
 	float GetCharHeight(void);		// Mac Platform Only?
 	float GetCharWidth(void);
 	void  GetTextExtent(char* string, float* x, float* y,
-						float* descent, float* externalLeading, Bool use16 = FALSE);
+			    float* descent, float* externalLeading, Bool use16 = FALSE,
+			    float scale = 1.0);
 
 	int GetMacFontNum(void); // mac platform only
 	Style GetMacFontStyle(void); // mac platform only

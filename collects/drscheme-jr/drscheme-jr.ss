@@ -37,14 +37,14 @@
 	       (string=? (vector-ref argv 0) "print-convert")))))
 
 (when use-print-convert?
-  (require-library "pconver.ss"))
+  (reference-library "pconver.ss"))
 
-(require-library "mzlib.ss")
-(require-library "pretty.ss")
+(reference-library "mzlib.ss")
+(reference-library "pretty.ss")
 
 (load-recent (build-path plt-dir "zodiac" "load"))
 
-(require-library (build-path plt-dir "lib" "require.ss"))
+(reference-library (build-path plt-dir "lib" "require.ss"))
 (plt:require-library "ariesu.ss")
 (plt:require-library "sparamu.ss")
 (plt:require-library "userspcu.ss")
@@ -110,7 +110,9 @@
   (compound-unit/sig
       (import)
     (link [params : plt:parameters^ (parameters@)]
-	  [zodiac : zodiac:system^ (zodiac:system@ zodiac:interface params)]
+          [pretty : mzlib:pretty-print^ (mzlib:pretty-print@)]
+          [zodiac : zodiac:system^ (zodiac:system@ zodiac:interface
+				     params pretty)]
 	  [zodiac:interface : zodiac:interface^ (interface@ zodiac)]
 	  [aries : plt:aries^ (plt:aries@ zodiac zodiac:interface)])
     (export (unit params)

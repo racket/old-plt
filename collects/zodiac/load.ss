@@ -26,8 +26,9 @@
 (reference "zsigs.ss")
 (reference "sigs.ss")
 
+(define zodiac:system@ (reference-unit/sig "link.ss"))
+
 (when (begin-elaboration-time
 	(and (defined? 'mcmicmac:interactive?)
 	  mcmicmac:interactive?))
-  (define zodiac:system@ (reference-unit/sig "link.ss"))
   (reference "invoke.ss"))

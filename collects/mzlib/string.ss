@@ -131,15 +131,20 @@
     (regexp-replace* "&" (regexp-replace* "\\\\" s "\\\\\\\\") "\\\\&"))
 
   (define regexp-match/fail-without-reading
-    (opt-lambda (pattern input-port [start-k 0] [end-k #f])
+    (opt-lambda (pattern input-port [start-k 0] [end-k #f] [out #f])
       (unless (input-port? input-port)
         (raise-type-error 'regexp-match/fail-without-reading "input port" input-port))
+      (unless (or (not out) (output-port? out))
+        (raise-type-error 'regexp-match/fail-without-reading "output port or #f" out))
       (let ([m (regexp-match-peek-positions pattern input-port start-k end-k)])
         (and m
              ;; What happens if someone swipes our chars before we can get them?
              (let ([drop (caar m)])
                ;; drop prefix before match:
-               (read-string drop input-port)
+               (let ([s (read-string drop input-port)])
+		 (when out
+		   (display s out)))
+	       ;; Get the matching part, and shift matching indicies
                (let ([s (read-string (- (cdar m) drop) input-port)])
                  (cons s
                        (map (lambda (p)

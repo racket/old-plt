@@ -12,7 +12,7 @@
 
 	  merge-input
 	  copy-port
-	  wrap-input-ports
+	  input-port-append
 
 	  run-server
 	  make-limited-input-port)
@@ -191,30 +191,58 @@
 		(loop)))
 	    (lambda () (tcp-close l))))))
 
-  (define wrap-input-ports
-    (opt-lambda (ports [close-orig? #t])
-      (let ([go (lambda (op)
-		  (if (null? ports)
-		      eof
-		      (let ([n (op (car ports))])
-			(cond
-			 [(eq? n 0) (car ports)]
-			 [(eof-object? n)
-			  (when close-orig?
-			    (close-input-port (car ports)))
-			  (set! ports (cdr ports))
-			  0]
-			 [else n]))))])
-	(make-custom-input-port
-	 (lambda (str)
-	   (go (lambda (p)
-		 (read-string-avail!* str p))))
-	 (lambda (str skip)
-	   (go (lambda (p)
-		 (peek-string-avail!* str skip p))))
-	 (lambda ()
-	   (when close-orig?
-	     (map close-input-port ports)))))))
+  (define input-port-append
+    (opt-lambda (close-orig? . ports)
+      (make-custom-input-port
+       (lambda (str)
+	 ;; Reading is easy -- read from the first port,
+	 ;;  and get rid of it if the result is eof
+	 (if (null? ports)
+	     eof
+	     (let ([n (read-string-avail!* str (car ports))])
+	       (cond
+		[(eq? n 0) (car ports)]
+		[(eof-object? n)
+		 (when close-orig?
+		   (close-input-port (car ports)))
+		 (set! ports (cdr ports))
+		 0]
+		[else n]))))
+       (lambda (str skip)
+	 ;; Peeking is more difficult, due to skips.
+	 (let loop ([ports ports][skip skip])
+	   (if (null? ports)
+	       eof
+	       (let ([n (peek-string-avail!* str skip (car ports))])
+		 (cond
+		  [(eq? n 0) 
+		   ;; Not ready, yet.
+		   (car ports)]
+		  [(eof-object? n)
+		   ;; Port is exhausted, or we skipped past its input.
+		   ;; If skip is not zero, we need to figure out
+		   ;;  how many chars were skipped.
+		   (loop (cdr ports)
+			 (- skip (compute-avail-to-skip skip (car ports))))]
+		  [else n])))))
+       (lambda ()
+	 (when close-orig?
+	   (map close-input-port ports))))))
+
+  ;; Helper for input-port-append; given a skip count
+  ;;  and an input port, determine how many characters
+  ;;  (up to upto) are left in the port. We figure this
+  ;;  out using binary search.
+  (define (compute-avail-to-skip upto p)
+    (let ([str (make-string 1)])
+      (let loop ([upto upto][skip 0])
+	(if (zero? upto)
+	    skip
+	    (let* ([half (quotient upto 2)]
+		   [n (peek-string-avail!* str (+ skip half) p)])
+	      (if (eq? n 1)
+		  (loop (- upto half 1) (+ skip half 1))
+		  (loop half skip)))))))
 
   (define make-limited-input-port
     (opt-lambda (port limit [close-orig? #t])

@@ -189,17 +189,12 @@ void PSStream::Out(long l)
     fprintf(f, "%ld", l);
 }
 
-wxPostScriptDC::wxPostScriptDC (void)
+wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent)
 {
-  Create(TRUE);
+  Create(interactive, parent);
 }
 
-wxPostScriptDC::wxPostScriptDC (Bool interactive)
-{
-  Create(interactive);
-}
-
-Bool wxPostScriptDC::Create(Bool interactive)
+Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent)
 {
   wxPrintSetupData *wxThePrintSetupData;
   char *paperType;
@@ -260,7 +255,7 @@ Bool wxPostScriptDC::Create(Bool interactive)
   clipw = -1;
   cliph = -1;
 
-  ok = PrinterDialog(interactive);
+  ok = PrinterDialog(interactive, parent);
   if (!ok)
     return FALSE;
 
@@ -335,13 +330,13 @@ wxPostScriptDC::~wxPostScriptDC (void)
     DELETE_OBJ pstream;
 }
 
-Bool wxPostScriptDC::PrinterDialog(Bool interactive)
+Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent)
 {
   wxPrintSetupData *wxThePrintSetupData;
   char *s;
 
   if (interactive) {
-    ok = XPrinterDialog(NULL);
+    ok = XPrinterDialog(parent);
     if (!ok)
       return FALSE;
   } else

@@ -71,14 +71,13 @@ class wxPostScriptDC: public wxDC
   char *preview_cmd, *print_cmd, *print_opts;
 
   // Create a printer DC
-  wxPostScriptDC(void);
-  wxPostScriptDC(Bool interactive);
+  wxPostScriptDC(Bool interactive = TRUE, wxWindow *parent = NULL);
 
   ~wxPostScriptDC(void);
 
-  Bool Create(Bool interactive = TRUE);
+  Bool Create(Bool interactive = TRUE, wxWindow *parent = NULL);
 
-  Bool PrinterDialog(Bool interactive);
+  Bool PrinterDialog(Bool interactive, wxWindow *parent);
 
   inline virtual void BeginDrawing(void) {} ;
   inline virtual void EndDrawing(void) {} ;

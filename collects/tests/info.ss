@@ -1,7 +1,7 @@
 (module info (lib "infotab.ss" "setup")
   (define name "Test Suites")
   (define doc-subcollections (list "tester"))
-  (define compile-subcollections '(("drscheme") ("tests" "framework")))
+  (define compile-subcollections '(("tests" "drscheme") ("tests" "framework")))
   (define tools (list '("tool.ss" "drscheme")))
   (define tool-icons (list '("bb.gif" "icons")))
   (define tool-names (list "DrScheme Test Suites")))

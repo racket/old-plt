@@ -12,6 +12,9 @@
 			       (syntax-case defn (define)
 				 [(define var val)
 				  (syntax var)]
+				 ;; In case it gets expanded:
+				 [(define-values (var) val)
+				  (syntax var)]
 				 [_else (raise-syntax-error
 					 'infotab-module
 					 "not a well-formed definition"
@@ -40,10 +43,10 @@
 		 (provide #%info-lookup))))))])))
 
   (provide (rename info-module-begin #%module-begin)
-	  #%app #%datum #%top
-	  define quote
-	  list cons car cdr quasiquote unquote unquote-splicing
-	  build-path collection-path))
+	   #%app #%datum #%top
+	   define quote
+	   list cons car cdr quasiquote unquote unquote-splicing
+	   build-path collection-path))
 
 
 	

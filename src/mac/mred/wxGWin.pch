@@ -24,11 +24,12 @@
     
   #include <Carbon/Carbon.h>
 #else
-
-  #include <MacHeaders.h>
-  EXTERN_API(WindowRef) GetWindowFromPort(CGrafPtr port);
-  extern RgnHandle GetPortVisibleRegion(CGrafPtr port, RgnHandle visRgn);
-  EXTERN_API( Rect *)GetControlBounds(ControlRef control, Rect *bounds);
+  #define ACCESSOR_CALLS_ARE_FUNCTIONS 1
+  //#include <MacHeaders.h>
+  #include <QuickDraw.h>
+  //EXTERN_API(WindowRef) GetWindowFromPort(CGrafPtr port);
+  //extern RgnHandle GetPortVisibleRegion(CGrafPtr port, RgnHandle visRgn);
+  //EXTERN_API( Rect *)GetControlBounds(ControlRef control, Rect *bounds);
   
 #endif
 

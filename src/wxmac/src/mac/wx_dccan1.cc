@@ -65,7 +65,7 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
     WXGC_IGNORE(this, canvas);
    cMacDC = canvas->MacDC();
    GrafPtr theMacGrafPort = cMacDC->macGrafPort();
-   pixmap = GetPortPixMap(theMacGrafPort);
+   pixmap = GetPortPixMap((CGrafPtr)theMacGrafPort);
   }
 
   cMacDoingDrawing = FALSE;
@@ -165,7 +165,7 @@ GDHandle wxGetGDHandle(void)
   static GDHandle def_dev_handle = 0;
 
   if (!def_dev_handle) {
-    GrafPtr p;
+    CGrafPtr p;
     GetGWorld(&p, &def_dev_handle);
   }
   
@@ -178,13 +178,13 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 {
 	if (!Ok()) return;
 	 
-        GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+        CGrafPtr theMacGrafPort = (CGrafPtr)cMacDC->macGrafPort();
         if (theMacGrafPort != GetQDGlobalsThePort()) {
-	  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
-        }
+	    ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+     }
     
-        SetOriginX = SetOriginY = 0;
-        if (canvas)
+     SetOriginX = SetOriginY = 0;
+     if (canvas)
             canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 
 	if (cMacDC->currentUser() != this)
@@ -219,9 +219,9 @@ void wxCanvasDC::SetCanvasClipping(void)
     	wxObject* theCurrentUser = cMacDC->currentUser();
 	if (theCurrentUser == this)
 	{ // must update platfrom
-		GrafPtr savep;
+		CGrafPtr savep;
 		GDHandle savegd;
-		GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+		CGrafPtr theMacGrafPort = (CGrafPtr)cMacDC->macGrafPort();
 		 
 		::GetGWorld(&savep, &savegd);  
 		::SetGWorld(theMacGrafPort, wxGetGDHandle());
@@ -236,11 +236,11 @@ void wxCanvasDC::SetCanvasClipping(void)
 void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
 //-----------------------------------------------------------------------------
 {
-	GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+	CGrafPtr theMacGrafPort = (CGrafPtr)cMacDC->macGrafPort();
 
 	if (current_reg)
 	{
-                RgnHandle clipRgn;
+                RgnHandle clipRgn = NewRgn();
                 Rect theClipRect;
                 
                 GetPortClipRegion(theMacGrafPort,clipRgn);
@@ -389,9 +389,9 @@ void wxCanvasDC::SetBackground(wxColour* color)
         if (cMacDC->currentUser() == this
 		&& (cMacCurrentTool == kNoTool))
 	{ // must update platform to kNoTool
-		GrafPtr savep;
+		CGrafPtr savep;
 		GDHandle savegd;
-		GrafPtr theMacGrafPort = cMacDC->macGrafPort();
+		CGrafPtr theMacGrafPort = (CGrafPtr)cMacDC->macGrafPort();
 		 
 		::GetGWorld(&savep, &savegd);  
 		::SetGWorld(theMacGrafPort, wxGetGDHandle());
@@ -622,7 +622,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			wxBitmap *bm = current_pen->GetStipple();
 			if (bm && bm->Ok() && (bm->GetDepth() == 1)
 			    && (bm->GetWidth() == 8) && (bm->GetHeight() == 8)) {
-			  GDHandle savegd; GrafPtr saveport;
+			  GDHandle savegd; CGrafPtr saveport;
 			  char p[8]; int i, k;
                           GetGWorld(&saveport, &savegd);
                           SetGWorld(bm->x_pixmap, 0);

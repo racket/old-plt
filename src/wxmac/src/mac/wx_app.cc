@@ -100,7 +100,7 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 #ifdef OS_X
         gMacFontGrafPort = CreateNewPort();
 #else        
-	gMacFontGrafPort = new CGrafPort;
+	gMacFontGrafPort = new GrafPort;
 	::OpenPort((GrafPtr)gMacFontGrafPort);
 #endif
 

@@ -160,8 +160,8 @@ protected:
 	// Platform methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	virtual Bool IsMacWindow(void);
-	void wxMacStartDrawing(CGrafPtr& oldPort, GDHandle& oldGD, int& savePortH, int& savePortV);
-	void wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD, int savePortH, int savePortV);
+	void wxMacStartDrawing(GrafPtr  * oldPort, GDHandle * oldGD);
+	void wxMacStopDrawing(GrafPtr oldPort, GDHandle oldGD);
 	Rect wxMacGetContRect(void);
 	Rect wxMacGetStrucRect(void);
 	inline wxDialogBox* wxMacGetDialog(void) {return cDialogPanel;} 

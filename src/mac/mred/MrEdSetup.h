@@ -10,6 +10,7 @@
 
   #include <Carbon/Carbon.h>
 #else
+  #define ACCESSOR_CALLS_ARE_FUNCTIONS 1
   #ifdef __MWERKS__
   #if defined(__powerc)
   #include <MacHeadersPPC>

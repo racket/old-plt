@@ -142,7 +142,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	const short maxValue = 1;
 	short refCon = 0;
 
-	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
+	cMacControl = ::NewControl(GetWindowFromPort((CGrafPtr)theMacGrafPort), &boundsRect, theMacTitle(),
 			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
 #endif        
@@ -196,7 +196,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 	cWindowWidth = bounds.right;
         OffsetRect(&bounds,SetOriginX,SetOriginY);
         
-	::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
+	::InvalWindowRect(GetWindowFromPort((CGrafPtr)theMacGrafPort),&bounds);
         	
 	if (GetParent()->IsHidden())
 		DoShow(FALSE);
@@ -608,6 +608,6 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 		GetClientSize(&clientWidth, &clientHeight);
 		Rect clientRect = {0, 0, clientHeight, clientWidth};
                 OffsetRect(&clientRect,SetOriginX,SetOriginY);
-		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
+		::InvalWindowRect(GetWindowFromPort((CGrafPtr)cMacDC->macGrafPort()),&clientRect);
 	}
 }

@@ -15,14 +15,14 @@
 class wxMacDC: public wxMacObject
 {
   protected:
-	CGrafPtr	cMacGrafPort;
+	GrafPtr	cMacGrafPort;
 	wxObject*	cCurrentUser;
 
   public:
-	wxMacDC(CGrafPtr port);		// constructor
+	wxMacDC(GrafPtr port);		// constructor
 	~wxMacDC(void);				// destructor
 
-	CGrafPtr macGrafPort(void);
+	GrafPtr macGrafPort(void);
 	wxObject* currentUser(void);
 	void setCurrentUser(wxObject* user);
 

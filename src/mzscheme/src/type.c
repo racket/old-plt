@@ -191,26 +191,31 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_indent_type, "<internal-indentation>");
 
   set_name(scheme_udp_type, "<udp-socket>");
-  set_name(scheme_udp_waitable_type, "<udp-socket-waitable>");
+  set_name(scheme_udp_sble_type, "<udp-socket-sble>");
 
-  set_name(scheme_waitable_set_type, "<waitable-set>");
-  set_name(scheme_wrapped_waitable_type, "<waitable>");
-  set_name(scheme_nack_waitable_type, "<waitable>");
-  set_name(scheme_nack_guard_waitable_type, "<waitable>");
-  set_name(scheme_poll_waitable_type, "<waitable>");
+  set_name(scheme_sble_set_type, "<sble-set>");
+  set_name(scheme_wrapped_sble_type, "<sble>");
+  set_name(scheme_nack_sble_type, "<sble>");
+  set_name(scheme_nack_guard_sble_type, "<sble>");
+  set_name(scheme_poll_sble_type, "<sble>");
   set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
-  set_name(scheme_alarm_type, "<alarm>");
+  set_name(scheme_alarm_type, "<alarm-sble>");
+  set_name(scheme_read_sble_type, "<read-sble>");
+  set_name(scheme_peek_sble_type, "<peek-sble>");
+  set_name(scheme_write_sble_type, "<write-sble>");
+  set_name(scheme_always_sble_type, "<always-sble>");
+  set_name(scheme_never_sble_type, "<never-sble>");
 
-  set_name(scheme_thread_resume_type, "<thread-resume-waitable>");
-  set_name(scheme_thread_suspend_type, "<thread-suspend-waitable>");
-  set_name(scheme_thread_dead_type, "<thread-dead-waitable>");
+  set_name(scheme_thread_resume_type, "<thread-resume-sble>");
+  set_name(scheme_thread_suspend_type, "<thread-suspend-sble>");
+  set_name(scheme_thread_dead_type, "<thread-dead-sble>");
 
   set_name(scheme_thread_set_type, "<thread-set>");
   set_name(scheme_thread_cell_type, "<thread-cell>");
 
   set_name(scheme_string_converter_type, "<string-converter>");
 
-  set_name(scheme_channel_waiter_type, "<channel-waiter>");
+  set_name(scheme_channel_syncer_type, "<channel-syncer>");
 
   set_name(scheme_special_comment_type, "<special-comment>");
 
@@ -491,7 +496,9 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_security_guard_type, guard_val);
 
-  GC_REG_TRAV(scheme_nack_waitable_type, twoptr_obj);
+  GC_REG_TRAV(scheme_nack_sble_type, twoptr_obj);
+  GC_REG_TRAV(scheme_always_sble_type, char_obj);
+  GC_REG_TRAV(scheme_never_sble_type, char_obj);
 
   GC_REG_TRAV(scheme_inspector_type, mark_inspector);
 

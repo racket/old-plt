@@ -2595,11 +2595,12 @@ int mark_user_input_SIZE(void *p) {
 int mark_user_input_MARK(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
+  gcMARK(uip->read_sble_proc);
   gcMARK(uip->read_proc);
+  gcMARK(uip->peek_sble_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->peeked);
-  gcMARK(uip->closed_sema);
   gcMARK(uip->reuse_str);
   return
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
@@ -2608,11 +2609,12 @@ int mark_user_input_MARK(void *p) {
 int mark_user_input_FIXUP(void *p) {
   User_Input_Port *uip = (User_Input_Port *)p;
 
+  gcFIXUP(uip->read_sble_proc);
   gcFIXUP(uip->read_proc);
+  gcFIXUP(uip->peek_sble_proc);
   gcFIXUP(uip->peek_proc);
   gcFIXUP(uip->close_proc);
   gcFIXUP(uip->peeked);
-  gcFIXUP(uip->closed_sema);
   gcFIXUP(uip->reuse_str);
   return
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
@@ -2630,12 +2632,12 @@ int mark_user_output_SIZE(void *p) {
 int mark_user_output_MARK(void *p) {
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcMARK(uop->proc_for_waitable);
+  gcMARK(uop->sble);
+  gcMARK(uop->write_sble_proc);
   gcMARK(uop->write_proc);
-  gcMARK(uop->flush_proc);
-  gcMARK(uop->close_proc);
+  gcMARK(uop->write_special_sble_proc);
   gcMARK(uop->write_special_proc);
-  gcMARK(uop->closed_sema);
+  gcMARK(uop->close_proc);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
 }
@@ -2643,12 +2645,12 @@ int mark_user_output_MARK(void *p) {
 int mark_user_output_FIXUP(void *p) {
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcFIXUP(uop->proc_for_waitable);
+  gcFIXUP(uop->sble);
+  gcFIXUP(uop->write_sble_proc);
   gcFIXUP(uop->write_proc);
-  gcFIXUP(uop->flush_proc);
-  gcFIXUP(uop->close_proc);
+  gcFIXUP(uop->write_special_sble_proc);
   gcFIXUP(uop->write_special_proc);
-  gcFIXUP(uop->closed_sema);
+  gcFIXUP(uop->close_proc);
   return
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
 }
@@ -2912,6 +2914,33 @@ int mark_read_special_FIXUP(void *p) {
 #define mark_read_special_IS_CONST_SIZE 1
 
 
+int mark_read_write_sble_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+}
+
+int mark_read_write_sble_MARK(void *p) {
+  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)p;
+  gcMARK(rww->port);
+  gcMARK(rww->v);
+  gcMARK(rww->str);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+}
+
+int mark_read_write_sble_FIXUP(void *p) {
+  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)p;
+  gcFIXUP(rww->port);
+  gcFIXUP(rww->v);
+  gcFIXUP(rww->str);
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+}
+
+#define mark_read_write_sble_IS_ATOMIC 0
+#define mark_read_write_sble_IS_CONST_SIZE 1
+
+
 #endif  /* PORT */
 
 /**********************************************************************/
@@ -3046,31 +3075,31 @@ int mark_udp_FIXUP(void *p) {
 #define mark_udp_IS_CONST_SIZE 1
 
 
-int mark_udp_waitable_SIZE(void *p) {
+int mark_udp_sble_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
 }
 
-int mark_udp_waitable_MARK(void *p) {
-  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)p;
+int mark_udp_sble_MARK(void *p) {
+  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)p;
 
   gcMARK(uw->udp);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
 }
 
-int mark_udp_waitable_FIXUP(void *p) {
-  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)p;
+int mark_udp_sble_FIXUP(void *p) {
+  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)p;
 
   gcFIXUP(uw->udp);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
 }
 
-#define mark_udp_waitable_IS_ATOMIC 0
-#define mark_udp_waitable_IS_CONST_SIZE 1
+#define mark_udp_sble_IS_ATOMIC 0
+#define mark_udp_sble_IS_CONST_SIZE 1
 
 # endif
 #endif
@@ -3371,40 +3400,40 @@ int mark_will_registration_FIXUP(void *p) {
 #define mark_will_registration_IS_CONST_SIZE 1
 
 
-int mark_waitable_SIZE(void *p) {
+int mark_sble_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Waitable));
+  gcBYTES_TO_WORDS(sizeof(Sble));
 }
 
-int mark_waitable_MARK(void *p) {
-  Waitable *r = (Waitable *)p;
+int mark_sble_MARK(void *p) {
+  Sble *r = (Sble *)p;
  
   gcMARK(r->next);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Waitable));
+  gcBYTES_TO_WORDS(sizeof(Sble));
 }
 
-int mark_waitable_FIXUP(void *p) {
-  Waitable *r = (Waitable *)p;
+int mark_sble_FIXUP(void *p) {
+  Sble *r = (Sble *)p;
  
   gcFIXUP(r->next);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Waitable));
+  gcBYTES_TO_WORDS(sizeof(Sble));
 }
 
-#define mark_waitable_IS_ATOMIC 0
-#define mark_waitable_IS_CONST_SIZE 1
+#define mark_sble_IS_ATOMIC 0
+#define mark_sble_IS_CONST_SIZE 1
 
 
-int mark_waiting_SIZE(void *p) {
+int mark_syncing_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Waiting));
+  gcBYTES_TO_WORDS(sizeof(Syncing));
 }
 
-int mark_waiting_MARK(void *p) {
-  Waiting *w = (Waiting *)p;
+int mark_syncing_MARK(void *p) {
+  Syncing *w = (Syncing *)p;
  
   gcMARK(w->set);
   gcMARK(w->wrapss);
@@ -3413,11 +3442,11 @@ int mark_waiting_MARK(void *p) {
   gcMARK(w->disable_break);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Waiting));
+  gcBYTES_TO_WORDS(sizeof(Syncing));
 }
 
-int mark_waiting_FIXUP(void *p) {
-  Waiting *w = (Waiting *)p;
+int mark_syncing_FIXUP(void *p) {
+  Syncing *w = (Syncing *)p;
  
   gcFIXUP(w->set);
   gcFIXUP(w->wrapss);
@@ -3426,40 +3455,40 @@ int mark_waiting_FIXUP(void *p) {
   gcFIXUP(w->disable_break);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Waiting));
+  gcBYTES_TO_WORDS(sizeof(Syncing));
 }
 
-#define mark_waiting_IS_ATOMIC 0
-#define mark_waiting_IS_CONST_SIZE 1
+#define mark_syncing_IS_ATOMIC 0
+#define mark_syncing_IS_CONST_SIZE 1
 
 
-int mark_waitable_set_SIZE(void *p) {
+int mark_sble_set_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+  gcBYTES_TO_WORDS(sizeof(Sble_Set));
 }
 
-int mark_waitable_set_MARK(void *p) {
-  Waitable_Set *w = (Waitable_Set *)p;
+int mark_sble_set_MARK(void *p) {
+  Sble_Set *w = (Sble_Set *)p;
  
   gcMARK(w->ws);
   gcMARK(w->argv);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+  gcBYTES_TO_WORDS(sizeof(Sble_Set));
 }
 
-int mark_waitable_set_FIXUP(void *p) {
-  Waitable_Set *w = (Waitable_Set *)p;
+int mark_sble_set_FIXUP(void *p) {
+  Sble_Set *w = (Sble_Set *)p;
  
   gcFIXUP(w->ws);
   gcFIXUP(w->argv);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+  gcBYTES_TO_WORDS(sizeof(Sble_Set));
 }
 
-#define mark_waitable_set_IS_ATOMIC 0
-#define mark_waitable_set_IS_CONST_SIZE 1
+#define mark_sble_set_IS_ATOMIC 0
+#define mark_sble_set_IS_CONST_SIZE 1
 
 
 int mark_thread_set_SIZE(void *p) {
@@ -3578,39 +3607,39 @@ int mark_finalizations_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_SEMA_C
 
-int mark_channel_waiter_SIZE(void *p) {
+int mark_channel_syncer_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Syncer));
 }
 
-int mark_channel_waiter_MARK(void *p) {
-  Scheme_Channel_Waiter *w = (Scheme_Channel_Waiter *)p;
+int mark_channel_syncer_MARK(void *p) {
+  Scheme_Channel_Syncer *w = (Scheme_Channel_Syncer *)p;
 
   gcMARK(w->p);
   gcMARK(w->prev);
   gcMARK(w->next);
-  gcMARK(w->waiting);
+  gcMARK(w->syncing);
   gcMARK(w->obj);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Syncer));
 }
 
-int mark_channel_waiter_FIXUP(void *p) {
-  Scheme_Channel_Waiter *w = (Scheme_Channel_Waiter *)p;
+int mark_channel_syncer_FIXUP(void *p) {
+  Scheme_Channel_Syncer *w = (Scheme_Channel_Syncer *)p;
 
   gcFIXUP(w->p);
   gcFIXUP(w->prev);
   gcFIXUP(w->next);
-  gcFIXUP(w->waiting);
+  gcFIXUP(w->syncing);
   gcFIXUP(w->obj);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Syncer));
 }
 
-#define mark_channel_waiter_IS_ATOMIC 0
-#define mark_channel_waiter_IS_CONST_SIZE 1
+#define mark_channel_syncer_IS_ATOMIC 0
+#define mark_channel_syncer_IS_CONST_SIZE 1
 
 
 int mark_alarm_SIZE(void *p) {
@@ -3793,60 +3822,60 @@ int mark_struct_property_FIXUP(void *p) {
 #define mark_struct_property_IS_CONST_SIZE 1
 
 
-int mark_wrapped_waitable_SIZE(void *p) {
+int mark_wrapped_sble_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
 }
 
-int mark_wrapped_waitable_MARK(void *p) {
-  Wrapped_Waitable *ww = (Wrapped_Waitable *)p;
+int mark_wrapped_sble_MARK(void *p) {
+  Wrapped_Sble *ww = (Wrapped_Sble *)p;
 
-  gcMARK(ww->waitable);
+  gcMARK(ww->sble);
   gcMARK(ww->wrapper);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
 }
 
-int mark_wrapped_waitable_FIXUP(void *p) {
-  Wrapped_Waitable *ww = (Wrapped_Waitable *)p;
+int mark_wrapped_sble_FIXUP(void *p) {
+  Wrapped_Sble *ww = (Wrapped_Sble *)p;
 
-  gcFIXUP(ww->waitable);
+  gcFIXUP(ww->sble);
   gcFIXUP(ww->wrapper);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
 }
 
-#define mark_wrapped_waitable_IS_ATOMIC 0
-#define mark_wrapped_waitable_IS_CONST_SIZE 1
+#define mark_wrapped_sble_IS_ATOMIC 0
+#define mark_wrapped_sble_IS_CONST_SIZE 1
 
 
-int mark_nack_guard_waitable_SIZE(void *p) {
+int mark_nack_guard_sble_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
 }
 
-int mark_nack_guard_waitable_MARK(void *p) {
-  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)p;
+int mark_nack_guard_sble_MARK(void *p) {
+  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)p;
 
   gcMARK(nw->maker);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
 }
 
-int mark_nack_guard_waitable_FIXUP(void *p) {
-  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)p;
+int mark_nack_guard_sble_FIXUP(void *p) {
+  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)p;
 
   gcFIXUP(nw->maker);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
 }
 
-#define mark_nack_guard_waitable_IS_ATOMIC 0
-#define mark_nack_guard_waitable_IS_CONST_SIZE 1
+#define mark_nack_guard_sble_IS_ATOMIC 0
+#define mark_nack_guard_sble_IS_CONST_SIZE 1
 
 
 #endif  /* STRUCT */

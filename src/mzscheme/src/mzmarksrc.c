@@ -1026,11 +1026,12 @@ mark_user_input {
  mark:
   User_Input_Port *uip = (User_Input_Port *)p;
 
+  gcMARK(uip->read_sble_proc);
   gcMARK(uip->read_proc);
+  gcMARK(uip->peek_sble_proc);
   gcMARK(uip->peek_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->peeked);
-  gcMARK(uip->closed_sema);
   gcMARK(uip->reuse_str);
  size:
   gcBYTES_TO_WORDS(sizeof(User_Input_Port));
@@ -1040,12 +1041,12 @@ mark_user_output {
  mark:
   User_Output_Port *uop = (User_Output_Port *)p;
 
-  gcMARK(uop->proc_for_waitable);
+  gcMARK(uop->sble);
+  gcMARK(uop->write_sble_proc);
   gcMARK(uop->write_proc);
-  gcMARK(uop->flush_proc);
-  gcMARK(uop->close_proc);
+  gcMARK(uop->write_special_sble_proc);
   gcMARK(uop->write_special_proc);
-  gcMARK(uop->closed_sema);
+  gcMARK(uop->close_proc);
  size:
   gcBYTES_TO_WORDS(sizeof(User_Output_Port));
 }
@@ -1154,6 +1155,16 @@ mark_read_special {
   gcBYTES_TO_WORDS(sizeof(Read_Special_DW));
 }
 
+mark_read_write_sble {
+ mark:
+  Scheme_Read_Write_Sble *rww = (Scheme_Read_Write_Sble *)p;
+  gcMARK(rww->port);
+  gcMARK(rww->v);
+  gcMARK(rww->str);
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Read_Write_Sble));
+}
+
 END port;
 
 /**********************************************************************/
@@ -1212,14 +1223,14 @@ mark_udp {
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP));
 }
 
-mark_udp_waitable {
+mark_udp_sble {
  mark:
-  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)p;
+  Scheme_UDP_Sble *uw = (Scheme_UDP_Sble *)p;
 
   gcMARK(uw->udp);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Sble));
 }
 # endif
 #endif
@@ -1343,19 +1354,19 @@ mark_will_registration {
   gcBYTES_TO_WORDS(sizeof(WillRegistration));
 }
 
-mark_waitable {
+mark_sble {
  mark:
-  Waitable *r = (Waitable *)p;
+  Sble *r = (Sble *)p;
  
   gcMARK(r->next);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Waitable));
+  gcBYTES_TO_WORDS(sizeof(Sble));
 }
 
-mark_waiting {
+mark_syncing {
  mark:
-  Waiting *w = (Waiting *)p;
+  Syncing *w = (Syncing *)p;
  
   gcMARK(w->set);
   gcMARK(w->wrapss);
@@ -1364,18 +1375,18 @@ mark_waiting {
   gcMARK(w->disable_break);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Waiting));
+  gcBYTES_TO_WORDS(sizeof(Syncing));
 }
 
-mark_waitable_set {
+mark_sble_set {
  mark:
-  Waitable_Set *w = (Waitable_Set *)p;
+  Sble_Set *w = (Sble_Set *)p;
  
   gcMARK(w->ws);
   gcMARK(w->argv);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+  gcBYTES_TO_WORDS(sizeof(Sble_Set));
 }
 
 mark_thread_set {
@@ -1432,18 +1443,18 @@ END salloc;
 
 START sema;
 
-mark_channel_waiter {
+mark_channel_syncer {
  mark:
-  Scheme_Channel_Waiter *w = (Scheme_Channel_Waiter *)p;
+  Scheme_Channel_Syncer *w = (Scheme_Channel_Syncer *)p;
 
   gcMARK(w->p);
   gcMARK(w->prev);
   gcMARK(w->next);
-  gcMARK(w->waiting);
+  gcMARK(w->syncing);
   gcMARK(w->obj);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Syncer));
 }
 
 mark_alarm {
@@ -1518,25 +1529,25 @@ mark_struct_property {
   gcBYTES_TO_WORDS(sizeof(Scheme_Struct_Property));
 }
 
-mark_wrapped_waitable {
+mark_wrapped_sble {
  mark:
-  Wrapped_Waitable *ww = (Wrapped_Waitable *)p;
+  Wrapped_Sble *ww = (Wrapped_Sble *)p;
 
-  gcMARK(ww->waitable);
+  gcMARK(ww->sble);
   gcMARK(ww->wrapper);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Wrapped_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Wrapped_Sble));
 }
 
-mark_nack_guard_waitable {
+mark_nack_guard_sble {
  mark:
-  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)p;
+  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)p;
 
   gcMARK(nw->maker);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Waitable));
+  gcBYTES_TO_WORDS(sizeof(Nack_Guard_Sble));
 }
 
 END struct;

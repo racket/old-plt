@@ -251,11 +251,13 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_thread_resume(int argc, Scheme_Object *args[]);
 static Scheme_Object *make_thread_dead(int argc, Scheme_Object *args[]);
-static void register_thread_wait();
+static void register_thread_sync();
 
-static Scheme_Object *sch_object_wait_multiple(int argc, Scheme_Object *args[]);
-static Scheme_Object *object_waitable_p(int argc, Scheme_Object *args[]);
-static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *args[]);
+static Scheme_Object *sch_sync(int argc, Scheme_Object *args[]);
+static Scheme_Object *sch_sync_timeout(int argc, Scheme_Object *args[]);
+static Scheme_Object *sch_sync_timeout_enable_break(int argc, Scheme_Object *args[]);
+static Scheme_Object *sble_p(int argc, Scheme_Object *args[]);
+static Scheme_Object *sbles_to_sble(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[]);
 static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[]);
@@ -456,26 +458,26 @@ void scheme_init_thread(Scheme_Env *env)
 						      1, 2), 
 			     env);
 
-  scheme_add_global_constant("thread-resume-waitable", 
+  scheme_add_global_constant("thread-resume-sble", 
 			     scheme_make_prim_w_arity(make_thread_resume,
-						      "thread-resume-waitable", 
+						      "thread-resume-sble", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("thread-suspend-waitable", 
+  scheme_add_global_constant("thread-suspend-sble", 
 			     scheme_make_prim_w_arity(make_thread_suspend,
-						      "thread-suspend-waitable", 
+						      "thread-suspend-sble", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("thread-dead-waitable", 
+  scheme_add_global_constant("thread-dead-sble", 
 			     scheme_make_prim_w_arity(make_thread_dead,
-						      "thread-dead-waitable", 
+						      "thread-dead-sble", 
 						      1, 1), 
 			     env);
 
-  register_thread_wait();
-  scheme_add_waitable(scheme_thread_suspend_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
-  scheme_add_waitable(scheme_thread_resume_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
-  scheme_add_waitable(scheme_thread_dead_type, (Scheme_Ready_Fun)dead_ready, NULL, NULL, 1);
+  register_thread_sync();
+  scheme_add_sble(scheme_thread_suspend_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
+  scheme_add_sble(scheme_thread_resume_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
+  scheme_add_sble(scheme_thread_dead_type, (Scheme_Ready_Fun)dead_ready, NULL, NULL, 1);
 
   scheme_add_global_constant("make-custodian",
 			     scheme_make_prim_w_arity(make_custodian,
@@ -621,7 +623,7 @@ void scheme_init_thread(Scheme_Env *env)
 						      1, 1), 
 			     env);
   
-  scheme_add_waitable_through_sema(scheme_will_executor_type, will_executor_sema, NULL);
+  scheme_add_sble_through_sema(scheme_will_executor_type, will_executor_sema, NULL);
 
 
   scheme_add_global_constant("collect-garbage", 
@@ -647,24 +649,34 @@ void scheme_init_thread(Scheme_Env *env)
 			     env);
   
 
-  scheme_add_global_constant("object-waitable?", 
-			     scheme_make_folding_prim(object_waitable_p,
-						      "object-waitable?", 
+  scheme_add_global_constant("sble?", 
+			     scheme_make_folding_prim(sble_p,
+						      "sble?", 
 						      1, 1, 1), 
 			     env);
-  scheme_add_global_constant("object-wait-multiple", 
-			     scheme_make_prim_w_arity(sch_object_wait_multiple,
-						      "object-wait-multiple", 
+  scheme_add_global_constant("sync", 
+			     scheme_make_prim_w_arity(sch_sync,
+						      "sync", 
+						      1, -1), 
+			     env);
+  scheme_add_global_constant("sync/timeout", 
+			     scheme_make_prim_w_arity(sch_sync_timeout,
+						      "sync/timeout", 
 						      2, -1), 
 			     env);
-  scheme_add_global_constant("object-wait-multiple/enable-break", 
-			     scheme_make_prim_w_arity(scheme_object_wait_multiple_enable_break,
-						      "object-wait-multiple/enable-break", 
+  scheme_add_global_constant("sync/enable-break", 
+			     scheme_make_prim_w_arity(scheme_sync_enable_break,
+						      "sync/enable-break", 
+						      1, -1),
+			     env);
+  scheme_add_global_constant("sync/timeout/enable-break", 
+			     scheme_make_prim_w_arity(sch_sync_timeout_enable_break,
+						      "sync/timeout/enable-break", 
 						      2, -1),
 			     env);
-  scheme_add_global_constant("waitables->waitable-set", 
-			     scheme_make_prim_w_arity(waitables_to_waitable,
-						      "waitables->waitable-set", 
+  scheme_add_global_constant("choice-sble", 
+			     scheme_make_prim_w_arity(sbles_to_sble,
+						      "choice-sble", 
 						      0, -1), 
 			     env);
 
@@ -2488,11 +2500,11 @@ static Scheme_Object *thread_wait(int argc, Scheme_Object *args[])
   return scheme_void;
 }
 
-static void register_thread_wait()
+static void register_thread_sync()
 {
-  scheme_add_waitable(scheme_thread_type, 
-		      thread_wait_done, 
-		      NULL, NULL, 0);
+  scheme_add_sble(scheme_thread_type, 
+		  thread_wait_done, 
+		  NULL, NULL, 0);
 }
 
 void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data)
@@ -3039,7 +3051,7 @@ static void init_schedule_info(Scheme_Schedule_Info *sinfo, int false_pos_ok,
 {
   sinfo->false_positive_ok = false_pos_ok;
   sinfo->potentially_false_positive = 0;
-  sinfo->current_waiting = NULL;
+  sinfo->current_syncing = NULL;
   sinfo->spin = 0;
   sinfo->is_poll = 0;
   sinfo->sleep_end = sleep_end;
@@ -3821,7 +3833,7 @@ void scheme_pop_kill_action()
 }
 
 /*========================================================================*/
-/*                      suspend/resume and waitables                      */
+/*                      suspend/resume and sbles                          */
 /*========================================================================*/
 
 /* Forward decl: */
@@ -4219,7 +4231,7 @@ static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *argv[])
   Scheme_Thread *p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("thread-suspend-waitable", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-suspend-sble", "thread", 0, argc, argv);
 
   p = (Scheme_Thread *)argv[0];
 
@@ -4245,7 +4257,7 @@ static Scheme_Object *make_thread_resume(int argc, Scheme_Object *argv[])
   Scheme_Thread *p;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("thread-resume-waitable", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-resume-sble", "thread", 0, argc, argv);
 
   p = (Scheme_Thread *)argv[0];
 
@@ -4272,18 +4284,18 @@ static int resume_suspend_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 
   t = SCHEME_PTR2_VAL(o);
   if (t) {
-    scheme_set_wait_target(sinfo, o, t, NULL, 0, 0);
+    scheme_set_sync_target(sinfo, o, t, NULL, 0, 0);
     return 1;
   }
 
-  scheme_set_wait_target(sinfo, SCHEME_PTR1_VAL(o), o, NULL, 0, 1);
+  scheme_set_sync_target(sinfo, SCHEME_PTR1_VAL(o), o, NULL, 0, 1);
   return 0;
 }
 
 static Scheme_Object *make_thread_dead(int argc, Scheme_Object *argv[])
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("thread-resume-waitable", "thread", 0, argc, argv);
+    scheme_wrong_type("thread-resume-sble", "thread", 0, argc, argv);
 
   return scheme_get_thread_dead((Scheme_Thread *)argv[0]);
 }
@@ -4309,72 +4321,72 @@ Scheme_Object *scheme_get_thread_dead(Scheme_Thread *p)
 
 static int dead_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  scheme_set_wait_target(sinfo, SCHEME_PTR_VAL(o), o, NULL, 0, 1);
+  scheme_set_sync_target(sinfo, SCHEME_PTR_VAL(o), o, NULL, 0, 1);
   return 0;
 }
 
 /*========================================================================*/
-/*                              waiting                                   */
+/*                              syncing                                   */
 /*========================================================================*/
 
-static void waiting_needs_wakeup(Scheme_Object *s, void *fds);
+static void syncing_needs_wakeup(Scheme_Object *s, void *fds);
 
-typedef struct Waitable {
+typedef struct Sble {
   MZTAG_IF_REQUIRED
-  Scheme_Type wait_type;
+  Scheme_Type sync_type;
   Scheme_Ready_Fun_FPC ready;
   Scheme_Needs_Wakeup_Fun needs_wakeup;
-  Scheme_Wait_Sema_Fun get_sema;
-  Scheme_Wait_Filter_Fun filter;
+  Scheme_Sync_Sema_Fun get_sema;
+  Scheme_Sync_Filter_Fun filter;
   int can_redirect;
-  struct Waitable *next;
-} Waitable;
+  struct Sble *next;
+} Sble;
 
-static Waitable *waitables;
+static Sble *sbles;
 
-void scheme_add_waitable(Scheme_Type type,
+void scheme_add_sble(Scheme_Type type,
 			 Scheme_Ready_Fun ready, 
 			 Scheme_Needs_Wakeup_Fun wakeup, 
-			 Scheme_Wait_Filter_Fun filter,
+			 Scheme_Sync_Filter_Fun filter,
 			 int can_redirect)
 {
-  Waitable *next = waitables;
+  Sble *next = sbles;
 
-  if (!waitables) {
-    REGISTER_SO(waitables);
+  if (!sbles) {
+    REGISTER_SO(sbles);
   }
 
-  waitables = MALLOC_ONE_RT(Waitable);
+  sbles = MALLOC_ONE_RT(Sble);
 #ifdef MZTAG_REQUIRED
-  waitables->type = scheme_rt_waitable;
+  sbles->type = scheme_rt_sble;
 #endif
-  waitables->wait_type = type;
-  waitables->ready = (Scheme_Ready_Fun_FPC)ready;
-  waitables->needs_wakeup = wakeup;
-  waitables->filter = filter;
-  waitables->can_redirect = can_redirect;
-  waitables->next = next;
+  sbles->sync_type = type;
+  sbles->ready = (Scheme_Ready_Fun_FPC)ready;
+  sbles->needs_wakeup = wakeup;
+  sbles->filter = filter;
+  sbles->can_redirect = can_redirect;
+  sbles->next = next;
 }
 
-void scheme_add_waitable_through_sema(Scheme_Type type,
-				      Scheme_Wait_Sema_Fun get_sema, 
-				      Scheme_Wait_Filter_Fun filter)
+void scheme_add_sble_through_sema(Scheme_Type type,
+				  Scheme_Sync_Sema_Fun get_sema, 
+				  Scheme_Sync_Filter_Fun filter)
 {
-  scheme_add_waitable(type, NULL, NULL, filter, 0);
-  waitables->get_sema = get_sema;
+  scheme_add_sble(type, NULL, NULL, filter, 0);
+  sbles->get_sema = get_sema;
 }
 
-static Waitable *find_waitable(Scheme_Object *o)
+static Sble *find_sble(Scheme_Object *o)
 {
   Scheme_Type t;
-  Waitable *w;
+  Sble *w;
 
   t = SCHEME_TYPE(o);
   
-  for (w = waitables; w; w = w->next) {
-    if (SAME_TYPE(t, w->wait_type)) {
+  for (w = sbles; w; w = w->next) {
+    if (SAME_TYPE(t, w->sync_type)) {
       if (w->filter) {
-	Scheme_Wait_Filter_Fun filter;
+	Scheme_Sync_Filter_Fun filter;
 	filter = w->filter;
 	if (!filter(o))
 	  return NULL;
@@ -4386,40 +4398,40 @@ static Waitable *find_waitable(Scheme_Object *o)
   return NULL;
 }
 
-int scheme_is_waitable(Scheme_Object *o)
+int scheme_is_sble(Scheme_Object *o)
 {
-  if (SCHEME_WAITSETP(o))
+  if (SCHEME_SBLESETP(o))
     return 1;
 
-  return !!find_waitable(o);
+  return !!find_sble(o);
 }
 
-static Waiting *make_waiting(Waitable_Set *waitable_set, float timeout, double start_time) 
+static Syncing *make_syncing(Sble_Set *sble_set, float timeout, double start_time) 
 {
-  Waiting *waiting;
+  Syncing *syncing;
   int pos;
 
-  waiting = MALLOC_ONE_RT(Waiting);
+  syncing = MALLOC_ONE_RT(Syncing);
 #ifdef MZTAG_REQUIRED
-  waiting->type = scheme_rt_waiting;
+  syncing->type = scheme_rt_syncing;
 #endif
-  waiting->set = waitable_set;
-  waiting->timeout = timeout;
+  syncing->set = sble_set;
+  syncing->timeout = timeout;
   if (timeout >= 0)
-    waiting->sleep_end = start_time + (timeout * 1000);
+    syncing->sleep_end = start_time + (timeout * 1000);
   else
-    waiting->sleep_end = 0.0;
+    syncing->sleep_end = 0.0;
 
-  if (waitable_set->argc > 1) {
+  if (sble_set->argc > 1) {
     Scheme_Config *config;
     Scheme_Object *rand_state;
     config = scheme_current_config();
     rand_state = scheme_get_param(config, MZCONFIG_SCHEDULER_RANDOM_STATE);
     pos = scheme_rand((Scheme_Random_State *)rand_state);
-    waiting->start_pos = (pos % waitable_set->argc);
+    syncing->start_pos = (pos % sble_set->argc);
   }
 
-  return waiting;
+  return syncing;
 }
 
 static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
@@ -4444,128 +4456,128 @@ static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
   return r;
 }
 
-static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target, 
+static void set_sync_target(Syncing *syncing, int i, Scheme_Object *target, 
 			    Scheme_Object *wrap, Scheme_Object *nack, 
 			    int repost, int retry)
 /* Not ready, deferred to target. */
 {
-  Waitable_Set *waitable_set = waiting->set;
+  Sble_Set *sble_set = syncing->set;
 
   if (wrap) {
-    if (!waiting->wrapss) {
+    if (!syncing->wrapss) {
       Scheme_Object **wrapss;
-      wrapss = MALLOC_N(Scheme_Object*, waitable_set->argc);
-      waiting->wrapss = wrapss;
+      wrapss = MALLOC_N(Scheme_Object*, sble_set->argc);
+      syncing->wrapss = wrapss;
     }
-    if (!waiting->wrapss[i])
-      waiting->wrapss[i] = scheme_null;
-    wrap = scheme_make_pair(wrap, waiting->wrapss[i]);
-    waiting->wrapss[i] = wrap;
+    if (!syncing->wrapss[i])
+      syncing->wrapss[i] = scheme_null;
+    wrap = scheme_make_pair(wrap, syncing->wrapss[i]);
+    syncing->wrapss[i] = wrap;
   }
 
   if (nack) {
-    if (!waiting->nackss) {
+    if (!syncing->nackss) {
       Scheme_Object **nackss;
-      nackss = MALLOC_N(Scheme_Object*, waitable_set->argc);
-      waiting->nackss = nackss;
+      nackss = MALLOC_N(Scheme_Object*, sble_set->argc);
+      syncing->nackss = nackss;
     }
-    if (!waiting->nackss[i])
-      waiting->nackss[i] = scheme_null;
-    nack = scheme_make_pair(nack, waiting->nackss[i]);
-    waiting->nackss[i] = nack;
+    if (!syncing->nackss[i])
+      syncing->nackss[i] = scheme_null;
+    nack = scheme_make_pair(nack, syncing->nackss[i]);
+    syncing->nackss[i] = nack;
   }
 
   if (repost) {
-    if (!waiting->reposts) {
+    if (!syncing->reposts) {
       char *s;
-      s = (char *)scheme_malloc_atomic(waitable_set->argc);
-      memset(s, 0, waitable_set->argc);
-      waiting->reposts = s;
+      s = (char *)scheme_malloc_atomic(sble_set->argc);
+      memset(s, 0, sble_set->argc);
+      syncing->reposts = s;
     }
-    waiting->reposts[i] = 1;
+    syncing->reposts[i] = 1;
   }
 
-  if (SCHEME_WAITSETP(target) && retry) {
+  if (SCHEME_SBLESETP(target) && retry) {
     /* Flatten the set into this one */
-    Waitable_Set *wts = (Waitable_Set *)target;
+    Sble_Set *wts = (Sble_Set *)target;
     if (wts->argc == 1) {
       /* 1 thing in set? Flattening is easy! */
-      waitable_set->argv[i] = wts->argv[0];
-      waitable_set->ws[i] = wts->ws[0];
+      sble_set->argv[i] = wts->argv[0];
+      sble_set->ws[i] = wts->ws[0];
     } else {
       /* Inline the set (in place) */
       Scheme_Object **argv;
-      Waitable **ws;
+      Sble **ws;
        
-      argv = (Scheme_Object **)splice_ptr_array((void **)waitable_set->argv, 
-						waitable_set->argc,
+      argv = (Scheme_Object **)splice_ptr_array((void **)sble_set->argv, 
+						sble_set->argc,
 						(void **)wts->argv, 
 						wts->argc,
 						i);
-      ws = (Waitable **)splice_ptr_array((void **)waitable_set->ws, 
-					 waitable_set->argc,
+      ws = (Sble **)splice_ptr_array((void **)sble_set->ws, 
+					 sble_set->argc,
 					 (void **)wts->ws, 
 					 wts->argc,
 					 i);
 
-      waitable_set->argv = argv;
-      waitable_set->ws = ws;
+      sble_set->argv = argv;
+      sble_set->ws = ws;
 
-      if (waiting->wrapss) {
-	argv = (Scheme_Object **)splice_ptr_array((void **)waiting->wrapss, 
-						  waitable_set->argc,
+      if (syncing->wrapss) {
+	argv = (Scheme_Object **)splice_ptr_array((void **)syncing->wrapss, 
+						  sble_set->argc,
 						  (void **)NULL,
 						  wts->argc,
 						  i);
-	waiting->wrapss = argv;
+	syncing->wrapss = argv;
       }
-      if (waiting->nackss) {
-	argv = (Scheme_Object **)splice_ptr_array((void **)waiting->nackss, 
-						  waitable_set->argc,
+      if (syncing->nackss) {
+	argv = (Scheme_Object **)splice_ptr_array((void **)syncing->nackss, 
+						  sble_set->argc,
 						  (void **)NULL,
 						  wts->argc,
 						  i);
-	waiting->nackss = argv;
+	syncing->nackss = argv;
       }
-      if (waiting->reposts) {
+      if (syncing->reposts) {
 	char *s;
 	int len;
 	
-	len = waitable_set->argc + wts->argc - 1;
+	len = sble_set->argc + wts->argc - 1;
 	
 	s = (char *)scheme_malloc_atomic(len);
 	memset(s, 0, len);
 	
-	memcpy(s, waiting->reposts, i);
-	memcpy(s + i + wts->argc, waiting->reposts + i + 1, waitable_set->argc - i - 1);
-	waiting->reposts = s;
+	memcpy(s, syncing->reposts, i);
+	memcpy(s + i + wts->argc, syncing->reposts + i + 1, sble_set->argc - i - 1);
+	syncing->reposts = s;
       }
 
-      waitable_set->argc += (wts->argc - 1);
+      sble_set->argc += (wts->argc - 1);
 
-      /* scheme_channel_waiter_type needs to know its location, which
+      /* scheme_channel_syncer_type needs to know its location, which
 	 might have changed: */
-      argv = waitable_set->argv;
-      for (i = waitable_set->argc; i--; ) {
-	if (SAME_TYPE(SCHEME_TYPE(argv[i]), scheme_channel_waiter_type)) {
-	  ((Scheme_Channel_Waiter *)argv[i])->waiting_i = i;
+      argv = sble_set->argv;
+      for (i = sble_set->argc; i--; ) {
+	if (SAME_TYPE(SCHEME_TYPE(argv[i]), scheme_channel_syncer_type)) {
+	  ((Scheme_Channel_Syncer *)argv[i])->syncing_i = i;
 	}
       }
 
     }
   } else {
-    Waitable *ww;
-    waitable_set->argv[i] = target;
-    ww = find_waitable(target);
-    waitable_set->ws[i] = ww;
+    Sble *ww;
+    sble_set->argv[i] = target;
+    ww = find_sble(target);
+    sble_set->ws[i] = ww;
   }
 }
 
-void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
+void scheme_set_sync_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
 			    Scheme_Object *wrap, Scheme_Object *nack, 
 			    int repost, int retry)
 {
-  set_wait_target((Waiting *)sinfo->current_waiting, sinfo->w_i,
+  set_sync_target((Syncing *)sinfo->current_syncing, sinfo->w_i,
 		  target, wrap, nack, repost, retry);
   if (retry) {
     /* Rewind one step to try new ones (or continue
@@ -4574,46 +4586,46 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
   }
 }
 
-static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
+static int syncing_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 {
   int i, redirections = 0, all_semas = 1, j, result = 0;
-  Waitable *w;
+  Sble *w;
   Scheme_Object *o;
   Scheme_Schedule_Info r_sinfo;
-  Waiting *waiting = (Waiting *)s;
-  Waitable_Set *waitable_set;
+  Syncing *syncing = (Syncing *)s;
+  Sble_Set *sble_set;
   int is_poll;
   double sleep_end;
   
-  sleep_end = waiting->sleep_end;
+  sleep_end = syncing->sleep_end;
 
-  if (waiting->result) {
+  if (syncing->result) {
     result = 1;
     goto set_sleep_end_and_return;
   }
 
   /* We must handle target redirections in the objects on which we're
-     waiting. We never have to redirect the waitable_set itself, but
-     a waitable_set can show up as a target, and we inline it in
+     syncing. We never have to redirect the sble_set itself, but
+     a sble_set can show up as a target, and we inline it in
      that case. */
 
-  waitable_set = waiting->set;
+  sble_set = syncing->set;
 
-  is_poll = (waiting->timeout == 0.0);
+  is_poll = (syncing->timeout == 0.0);
 
   /* Anything ready? */
-  for (j = 0; j < waitable_set->argc; j++) {
+  for (j = 0; j < sble_set->argc; j++) {
     Scheme_Ready_Fun_FPC ready;
 
-    i = (j + waiting->start_pos) % waitable_set->argc;
+    i = (j + syncing->start_pos) % sble_set->argc;
 
-    o = waitable_set->argv[i];
-    w = waitable_set->ws[i];
+    o = sble_set->argv[i];
+    w = sble_set->ws[i];
     ready = w->ready;
 
     if (!SCHEME_SEMAP(o)
 	&& !SCHEME_CHANNELP(o) && !SCHEME_CHANNEL_PUTP(o)
-	&& !SAME_TYPE(SCHEME_TYPE(o), scheme_channel_waiter_type))
+	&& !SAME_TYPE(SCHEME_TYPE(o), scheme_channel_syncer_type))
       all_semas = 0;
 
     if (ready) {
@@ -4621,7 +4633,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
       init_schedule_info(&r_sinfo, sinfo->false_positive_ok, sleep_end);
 
-      r_sinfo.current_waiting = (Scheme_Object *)waiting;
+      r_sinfo.current_syncing = (Scheme_Object *)syncing;
       r_sinfo.w_i = i;
       r_sinfo.is_poll = is_poll;
 
@@ -4647,10 +4659,10 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 	   don't set result permanently. Otherwise,
 	   propagate the false-positive indicator.*/
 	if (!r_sinfo.potentially_false_positive) {
-	  waiting->result = i + 1;
-	  if (waiting->disable_break)
-	    scheme_set_param(waiting->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
-	  if (waiting->reposts && waiting->reposts[i])
+	  syncing->result = i + 1;
+	  if (syncing->disable_break)
+	    scheme_set_param(syncing->disable_break, MZCONFIG_ENABLE_BREAK, scheme_false);
+	  if (syncing->reposts && syncing->reposts[i])
 	    scheme_post_sema(o);
 	  result = 1;
 	  goto set_sleep_end_and_return;
@@ -4664,17 +4676,17 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
       }
     } else if (w->get_sema) {
       int repost = 0;
-      Scheme_Wait_Sema_Fun get_sema = w->get_sema;
+      Scheme_Sync_Sema_Fun get_sema = w->get_sema;
       Scheme_Object *sema;
       
       sema = get_sema(o, &repost);
-      set_wait_target(waiting, i, sema, o, NULL, repost, 1);
+      set_sync_target(syncing, i, sema, o, NULL, repost, 1);
       j--; /* try again with this sema */
     }
   }
 
-  if (waiting->timeout >= 0.0) {
-    if (waiting->sleep_end <= scheme_get_inexact_milliseconds())
+  if (syncing->timeout >= 0.0) {
+    if (syncing->sleep_end <= scheme_get_inexact_milliseconds())
       result = 1;
   } else if (all_semas) {
     /* Try to block in a GCable way: */
@@ -4685,7 +4697,7 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
     } else {
       /* Not in scheduler --- we're allowed to block via suspend,
 	 which makes the thread GCable. */
-      scheme_wait_semas_chs(waiting->set->argc, waiting->set->argv, 0, waiting);
+      scheme_wait_semas_chs(syncing->set->argc, syncing->set->argv, 0, syncing);
 
       /* In case a break appeared after we chose something,
 	 check for a break, because scheme_wait_semas_chs() won't: */
@@ -4697,25 +4709,25 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 
  set_sleep_end_and_return:
 
-  waiting->sleep_end = sleep_end;
-  if (waiting->sleep_end
+  syncing->sleep_end = sleep_end;
+  if (syncing->sleep_end
       && (!sinfo->sleep_end
-	  || (sinfo->sleep_end > waiting->sleep_end)))
-    sinfo->sleep_end = waiting->sleep_end;
+	  || (sinfo->sleep_end > syncing->sleep_end)))
+    sinfo->sleep_end = syncing->sleep_end;
 
   return result;
 }
 
-static void waiting_needs_wakeup(Scheme_Object *s, void *fds)
+static void syncing_needs_wakeup(Scheme_Object *s, void *fds)
 {
   int i;
   Scheme_Object *o;
-  Waitable *w;
-  Waitable_Set *waitable_set = ((Waiting *)s)->set;
+  Sble *w;
+  Sble_Set *sble_set = ((Syncing *)s)->set;
 
-  for (i = 0; i < waitable_set->argc; i++) {
-    o = waitable_set->argv[i];
-    w = waitable_set->ws[i];
+  for (i = 0; i < sble_set->argc; i++) {
+    o = sble_set->argv[i];
+    w = sble_set->ws[i];
 
     if (w->needs_wakeup) {
       Scheme_Needs_Wakeup_Fun nw = w->needs_wakeup;
@@ -4725,51 +4737,51 @@ static void waiting_needs_wakeup(Scheme_Object *s, void *fds)
   }
 }
 
-static Scheme_Object *object_waitable_p(int argc, Scheme_Object *argv[])
+static Scheme_Object *sble_p(int argc, Scheme_Object *argv[])
 {
-  return (scheme_is_waitable(argv[0])
+  return (scheme_is_sble(argv[0])
 	  ? scheme_true
 	  : scheme_false);
 }
 
-Waitable_Set *make_waitable_set(const char *name, int argc, Scheme_Object **argv, int delta)
+Sble_Set *make_sble_set(const char *name, int argc, Scheme_Object **argv, int delta)
 {
-  Waitable *w, **iws, **ws;
-  Waitable_Set *waitable_set, *subset;
+  Sble *w, **iws, **ws;
+  Sble_Set *sble_set, *subset;
   Scheme_Object **args;
   int i, j, count = 0;
 
-  iws = MALLOC_N(Waitable*, argc-delta);
+  iws = MALLOC_N(Sble*, argc-delta);
   
-  /* Find Waitable record for each non-set argument, and compute flattened size. */
+  /* Find Sble record for each non-set argument, and compute flattened size. */
   for (i = 0; i < (argc - delta); i++) {
-    if (!SCHEME_WAITSETP(argv[i+delta])) {
-      w = find_waitable(argv[i+delta]);
+    if (!SCHEME_SBLESETP(argv[i+delta])) {
+      w = find_sble(argv[i+delta]);
       if (!w) {
-	scheme_wrong_type(name, "waitable", i+delta, argc, argv);
+	scheme_wrong_type(name, "sble", i+delta, argc, argv);
 	return NULL;
       }
       iws[i] = w;
       count++;
     } else {
-      count += ((Waitable_Set *)argv[i+delta])->argc;
+      count += ((Sble_Set *)argv[i+delta])->argc;
     }
   }
 
-  waitable_set = MALLOC_ONE_TAGGED(Waitable_Set);
-  waitable_set->so.type = scheme_waitable_set_type;
-  waitable_set->argc = count;
+  sble_set = MALLOC_ONE_TAGGED(Sble_Set);
+  sble_set->so.type = scheme_sble_set_type;
+  sble_set->argc = count;
 
   if (count == (argc - delta))
     ws = iws;
   else
-    ws = MALLOC_N(Waitable*, count);
+    ws = MALLOC_N(Sble*, count);
 
   args = MALLOC_N(Scheme_Object*, count);
   for (i = delta, j = 0; i < argc; i++, j++) {
-    if (SCHEME_WAITSETP(argv[i])) {
+    if (SCHEME_SBLESETP(argv[i])) {
       int k, n;
-      subset = (Waitable_Set *)argv[i];
+      subset = (Sble_Set *)argv[i];
       n = subset->argc;
       for (k = 0; k < n; k++, j++) {
 	args[j] = subset->argv[k];
@@ -4782,31 +4794,31 @@ Waitable_Set *make_waitable_set(const char *name, int argc, Scheme_Object **argv
     }
   }
 
-  waitable_set->ws = ws;
-  waitable_set->argv = args;
+  sble_set->ws = ws;
+  sble_set->argv = args;
 
-  return waitable_set;
+  return sble_set;
 }
 
-Scheme_Object *scheme_make_waitable_set(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_make_sble_set(int argc, Scheme_Object **argv)
 {
-  return (Scheme_Object *)make_waitable_set("internal-make-waitable-set", argc, argv, 0);
+  return (Scheme_Object *)make_sble_set("internal-make-sble-set", argc, argv, 0);
 }
 
-static void post_waiting_nacks(Waiting *waiting)
-     /* Also removes channel-waiters */
+static void post_syncing_nacks(Syncing *syncing)
+     /* Also removes channel-syncers */
 {
   int i, c;
   Scheme_Object *l;
 
-  c = waiting->set->argc;
+  c = syncing->set->argc;
   
   for (i = 0; i < c; i++) {
-    if (SAME_TYPE(SCHEME_TYPE(waiting->set->argv[i]), scheme_channel_waiter_type))
-      scheme_get_outof_line((Scheme_Channel_Waiter *)waiting->set->argv[i]);
-    if (waiting->nackss) {
-      if ((i + 1) != waiting->result) {
-	l = waiting->nackss[i];
+    if (SAME_TYPE(SCHEME_TYPE(syncing->set->argv[i]), scheme_channel_syncer_type))
+      scheme_get_outof_line((Scheme_Channel_Syncer *)syncing->set->argv[i]);
+    if (syncing->nackss) {
+      if ((i + 1) != syncing->result) {
+	l = syncing->nackss[i];
 	if (l) {
 	  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	    scheme_post_sema_all(SCHEME_CAR(l));
@@ -4817,75 +4829,79 @@ static void post_waiting_nacks(Waiting *waiting)
   }
 }
 
-static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Object *argv[], int with_break, int tailok)
+static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[], int with_break, int with_timeout, int tailok)
 {
-  Waitable_Set *waitable_set;
-  Waiting *waiting;
+  Sble_Set *sble_set;
+  Syncing *syncing;
   float timeout = -1.0;
   double start_time;
 
-  if (!SCHEME_FALSEP(argv[0])) {
-    if (SCHEME_REALP(argv[0]))
-      timeout = (float)scheme_real_to_double(argv[0]);
-
-    if (timeout < 0.0) {
-      scheme_wrong_type(name, "non-negative real number", 0, argc, argv);
-      return NULL;
-    }
-
-    start_time = scheme_get_inexact_milliseconds();
-  } else
+  if (with_timeout) {
+    if (!SCHEME_FALSEP(argv[0])) {
+      if (SCHEME_REALP(argv[0]))
+	timeout = (float)scheme_real_to_double(argv[0]);
+      
+      if (timeout < 0.0) {
+	scheme_wrong_type(name, "non-negative real number", 0, argc, argv);
+	return NULL;
+      }
+      
+      start_time = scheme_get_inexact_milliseconds();
+    } else
+      start_time = 0;
+  } else {
     start_time = 0;
-
-  /* Special case: no timeout, only object is a semaphore */
-  if (argc == 2 && SCHEME_FALSEP(argv[0]) && SCHEME_SEMAP(argv[1])) {
-    scheme_wait_sema(argv[1], 0);
-    return argv[1];
   }
 
-  waitable_set = NULL;
+  /* Special case: no timeout, only object is a semaphore */
+  if (argc == (with_timeout + 1) && !start_time && SCHEME_SEMAP(argv[with_timeout])) {
+    scheme_wait_sema(argv[with_timeout], 0);
+    return argv[with_timeout];
+  }
 
-  /* Special case: only argument is an immutable waitable set: */
-  if ((argc == 2) && SCHEME_WAITSETP(argv[1])) {
+  sble_set = NULL;
+
+  /* Special case: only argument is an immutable sble set: */
+  if ((argc == (with_timeout + 1)) && SCHEME_SBLESETP(argv[with_timeout])) {
     int i;
-    waitable_set = (Waitable_Set *)argv[1];
-    for (i = waitable_set->argc; i--; ) {
-      if (waitable_set->ws[i]->can_redirect) {
+    sble_set = (Sble_Set *)argv[with_timeout];
+    for (i = sble_set->argc; i--; ) {
+      if (sble_set->ws[i]->can_redirect) {
 	/* Need to copy this set to handle redirections. */
-	waitable_set = NULL;
+	sble_set = NULL;
 	break;
       }
     }
   }
 
-  if (!waitable_set)
-    waitable_set = make_waitable_set(name, argc, argv, 1);
+  if (!sble_set)
+    sble_set = make_sble_set(name, argc, argv, with_timeout);
 
-  /* Check for another special case: waiting on a set of semaphores
+  /* Check for another special case: syncing on a set of semaphores
      without a timeout. Use general code for channels.
-     (Note that we check for this case after waitable-set flattening.) */
+     (Note that we check for this case after sble-set flattening.) */
   if (timeout < 0.0) {
     int i;
-    for (i = waitable_set->argc; i--; ) {
-      if (!SCHEME_SEMAP(waitable_set->argv[i]))
+    for (i = sble_set->argc; i--; ) {
+      if (!SCHEME_SEMAP(sble_set->argv[i]))
 	break;
     }
     if (i < 0) {
       /* Hit the special case. */
-      i = scheme_wait_semas_chs(waitable_set->argc, waitable_set->argv, 0, NULL);
+      i = scheme_wait_semas_chs(sble_set->argc, sble_set->argv, 0, NULL);
 
       /* In case a break appeared after we received a post,
 	 check for a break, because scheme_wait_semas_chs() won't: */
       scheme_check_break_now();
 
       if (i)
-	return waitable_set->argv[i - 1];
+	return sble_set->argv[i - 1];
       else
 	return (tailok ? scheme_false : NULL);
     }
   }
 
-  waiting = make_waiting(waitable_set, timeout, start_time);
+  syncing = make_syncing(sble_set, timeout, start_time);
 
   if (timeout < 0.0)
     timeout = 0.0; /* means "no timeout" to block_until */
@@ -4893,26 +4909,26 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
   if (with_break) {
     Scheme_Config *config;
     config = scheme_current_config();
-    waiting->disable_break = config;
+    syncing->disable_break = config;
   }
 
-  BEGIN_ESCAPEABLE(post_waiting_nacks, waiting);
-  scheme_block_until((Scheme_Ready_Fun)waiting_ready, waiting_needs_wakeup, 
-		     (Scheme_Object *)waiting, timeout);
+  BEGIN_ESCAPEABLE(post_syncing_nacks, syncing);
+  scheme_block_until((Scheme_Ready_Fun)syncing_ready, syncing_needs_wakeup, 
+		     (Scheme_Object *)syncing, timeout);
   END_ESCAPEABLE();
 
-  post_waiting_nacks(waiting);
+  post_syncing_nacks(syncing);
 
-  if (waiting->result) {
-    /* Apply wrap functions to the selected waitable: */
+  if (syncing->result) {
+    /* Apply wrap functions to the selected sble: */
     Scheme_Object *o, *l, *a, *to_call = NULL, *args[1];
-    o = waitable_set->argv[waiting->result - 1];
-    if (SAME_TYPE(SCHEME_TYPE(o), scheme_channel_waiter_type)) {
-      /* This is a put that got changed to a waiter, but not changed back */
-      o = ((Scheme_Channel_Waiter *)o)->obj;
+    o = sble_set->argv[syncing->result - 1];
+    if (SAME_TYPE(SCHEME_TYPE(o), scheme_channel_syncer_type)) {
+      /* This is a put that got changed to a syncer, but not changed back */
+      o = ((Scheme_Channel_Syncer *)o)->obj;
     }
-    if (waiting->wrapss) {
-      l = waiting->wrapss[waiting->result - 1];
+    if (syncing->wrapss) {
+      l = syncing->wrapss[syncing->result - 1];
       if (l) {
 	for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
 	  a = SCHEME_CAR(l);
@@ -4945,22 +4961,37 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
     return NULL;
 }
 
-Scheme_Object *sch_object_wait_multiple(int argc, Scheme_Object *argv[])
+Scheme_Object *sch_sync(int argc, Scheme_Object *argv[])
 {
-  return object_wait_multiple("object-wait-multiple", argc, argv, 0, 1);
+  return do_sync("sync", argc, argv, 0, 0, 1);
 }
 
-Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
+Scheme_Object *sch_sync_timeout(int argc, Scheme_Object *argv[])
 {
-  return object_wait_multiple("object-wait-multiple", argc, argv, 0, 0);
+  return do_sync("sync/timeout", argc, argv, 0, 1, 1);
 }
 
-Scheme_Object *do_object_wait_multiple_break(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_sync(int argc, Scheme_Object *argv[])
 {
-  return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 1, 1);
+  return do_sync("sync", argc, argv, 0, 0, 0);
 }
 
-Scheme_Object *scheme_object_wait_multiple_enable_break(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_sync_timeout(int argc, Scheme_Object *argv[])
+{
+  return do_sync("sync/timeout", argc, argv, 0, 0, 1);
+}
+
+Scheme_Object *do_sync_break(int argc, Scheme_Object *argv[])
+{
+  return do_sync("sync/enable-break", argc, argv, 1, 0, 1);
+}
+
+Scheme_Object *do_sync_timeout_break(int argc, Scheme_Object *argv[])
+{
+  return do_sync("sync/timeout/enable-break", argc, argv, 1, 1, 1);
+}
+
+Scheme_Object *do_scheme_sync_enable_break(int with_timeout, int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v;
 
@@ -4969,20 +5000,34 @@ Scheme_Object *scheme_object_wait_multiple_enable_break(int argc, Scheme_Object 
     return scheme_void;
   }
 
-  /* Since we do special work to disable breaks after a sucessful wait,
+  /* Since we do special work to disable breaks after a sucessful sync,
      make sure that the work is necessary, and that it won't interfere
      with normal breakpoint checking: */
   v = scheme_get_param(scheme_current_config(), MZCONFIG_ENABLE_BREAK);
 
   if (SCHEME_FALSEP(v))
-    return scheme_call_enable_break(do_object_wait_multiple_break, argc, argv);
+    return scheme_call_enable_break((with_timeout
+				     ? do_sync_break
+				     : do_sync_timeout_break),
+				    argc, argv);
   else
-    return object_wait_multiple("object-wait-multiple/enable-break", argc, argv, 0, 1);
+    return do_sync(with_timeout ? "sync/timeout/enable-break" : "sync/enable-break",
+		   argc, argv, 0, with_timeout, 1);
 }
 
-static Scheme_Object *waitables_to_waitable(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_sync_enable_break(int argc, Scheme_Object *argv[])
 {
-  return (Scheme_Object *)make_waitable_set("waitables->waitable-set", argc, argv, 0);
+  return do_scheme_sync_enable_break(0, argc, argv);
+}
+
+Scheme_Object *sch_sync_timeout_enable_break(int argc, Scheme_Object *argv[])
+{
+  return do_scheme_sync_enable_break(1, argc, argv);
+}
+
+static Scheme_Object *sbles_to_sble(int argc, Scheme_Object *argv[])
+{
+  return (Scheme_Object *)make_sble_set("choice-sble", argc, argv, 0);
 }
 
 /*========================================================================*/
@@ -6352,7 +6397,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_will_executor_type, mark_will_executor_val);
   GC_REG_TRAV(scheme_custodian_type, mark_custodian_val);
   GC_REG_TRAV(scheme_thread_hop_type, mark_thread_hop);
-  GC_REG_TRAV(scheme_waitable_set_type, mark_waitable_set);
+  GC_REG_TRAV(scheme_sble_set_type, mark_sble_set);
   GC_REG_TRAV(scheme_thread_set_type, mark_thread_set);
   GC_REG_TRAV(scheme_config_type, mark_config);
 
@@ -6360,8 +6405,8 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_param_data, mark_param_data);
   GC_REG_TRAV(scheme_rt_will, mark_will);
   GC_REG_TRAV(scheme_rt_will_registration, mark_will_registration);
-  GC_REG_TRAV(scheme_rt_waitable, mark_waitable);
-  GC_REG_TRAV(scheme_rt_waiting, mark_waiting);
+  GC_REG_TRAV(scheme_rt_sble, mark_sble);
+  GC_REG_TRAV(scheme_rt_syncing, mark_syncing);
   GC_REG_TRAV(scheme_rt_parameterization, mark_parameterization);
 }
 

@@ -48,14 +48,14 @@ typedef struct {
 
 typedef struct {
   Scheme_Object so;
-  Scheme_Object *waitable;
+  Scheme_Object *sble;
   Scheme_Object *wrapper;
-} Wrapped_Waitable;
+} Wrapped_Sble;
 
 typedef struct {
   Scheme_Object so;
   Scheme_Object *maker;
-} Nack_Guard_Waitable;
+} Nack_Guard_Sble;
 
 static Scheme_Object *make_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *inspector_p(int argc, Scheme_Object *argv[]);
@@ -63,16 +63,15 @@ static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *argv[]);
+static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_type(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *wrap_waitable(int argc, Scheme_Object *argv[]);
-static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[]);
-static Scheme_Object *poll_waitable(int argc, Scheme_Object *argv[]);
+static Scheme_Object *nack_sble(int argc, Scheme_Object *argv[]);
+static Scheme_Object *poll_sble(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -94,17 +93,17 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int tnl, const 
 
 static void get_struct_type_info(int argc, Scheme_Object *argv[], Scheme_Object **a, int always);
 
-static Scheme_Object *waitable_property;
-static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int is_waitable_struct(Scheme_Object *);
+static Scheme_Object *sble_property;
+static int sble_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int is_sble_struct(Scheme_Object *);
 
-static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int nack_guard_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
-static int poll_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int wrapped_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int nack_guard_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int nack_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int poll_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 
 Scheme_Object *make_special_comment(int argc, Scheme_Object **argv);
-Scheme_Object *special_comment_width(int argc, Scheme_Object **argv);
+Scheme_Object *special_comment_value(int argc, Scheme_Object **argv);
 Scheme_Object *special_comment_p(int argc, Scheme_Object **argv);
 
 static Scheme_Object *check_location_fields(int argc, Scheme_Object **argv);
@@ -223,33 +222,33 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_global_keyword_symbol(loc_names[loc_count - 1], loc_et, env);
 
 
-  REGISTER_SO(waitable_property);
+  REGISTER_SO(sble_property);
   {
     Scheme_Object *guard;
-    guard = scheme_make_prim_w_arity(check_waitable_property_value_ok,
-				     "check-waitable-property-value-ok",
+    guard = scheme_make_prim_w_arity(check_sble_property_value_ok,
+				     "check-sble-property-value-ok",
 				     2, 2);
-    waitable_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("waitable"),
+    sble_property = scheme_make_struct_type_property_w_guard(scheme_intern_symbol("sble"),
 								 guard);
-    scheme_add_global_constant("prop:waitable", waitable_property, env);
+    scheme_add_global_constant("prop:sble", sble_property, env);
 
-    scheme_add_waitable(scheme_structure_type,
-			(Scheme_Ready_Fun)waitable_struct_is_ready,
+    scheme_add_sble(scheme_structure_type,
+			(Scheme_Ready_Fun)sble_struct_is_ready,
 			NULL,
-			is_waitable_struct, 1);
+			is_sble_struct, 1);
   }
 
-  scheme_add_waitable(scheme_wrapped_waitable_type,
-		      (Scheme_Ready_Fun)wrapped_waitable_is_ready,
+  scheme_add_sble(scheme_wrapped_sble_type,
+		      (Scheme_Ready_Fun)wrapped_sble_is_ready,
 		      NULL, NULL, 1);
-  scheme_add_waitable(scheme_nack_guard_waitable_type,
-		      (Scheme_Ready_Fun)nack_guard_waitable_is_ready,
+  scheme_add_sble(scheme_nack_guard_sble_type,
+		      (Scheme_Ready_Fun)nack_guard_sble_is_ready,
 		      NULL, NULL, 1);
-  scheme_add_waitable(scheme_nack_waitable_type,
-		      (Scheme_Ready_Fun)nack_waitable_is_ready,
+  scheme_add_sble(scheme_nack_sble_type,
+		      (Scheme_Ready_Fun)nack_sble_is_ready,
 		      NULL, NULL, 1);
-  scheme_add_waitable(scheme_poll_waitable_type,
-		      (Scheme_Ready_Fun)poll_waitable_is_ready,
+  scheme_add_sble(scheme_poll_sble_type,
+		      (Scheme_Ready_Fun)poll_sble_is_ready,
 		      NULL, NULL, 1);
 
   /*** basic interface ****/
@@ -279,19 +278,19 @@ scheme_init_struct (Scheme_Env *env)
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("make-wrapped-waitable",
-			     scheme_make_prim_w_arity(wrap_waitable,
-						      "make-wrapped-waitable",
+  scheme_add_global_constant("make-wrapped-sble",
+			     scheme_make_prim_w_arity(scheme_wrap_sble,
+						      "make-wrapped-sble",
 						      2, 2),
 			     env);
-  scheme_add_global_constant("make-nack-guard-waitable",
-			     scheme_make_prim_w_arity(nack_waitable,
-						      "make-nack-guard-waitable",
+  scheme_add_global_constant("make-nack-guard-sble",
+			     scheme_make_prim_w_arity(nack_sble,
+						      "make-nack-guard-sble",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("make-poll-guard-waitable",
-			     scheme_make_prim_w_arity(poll_waitable,
-						      "make-poll-guard-waitable",
+  scheme_add_global_constant("make-poll-guard-sble",
+			     scheme_make_prim_w_arity(poll_sble,
+						      "make-poll-guard-sble",
 						      1, 1),
 			     env);
 
@@ -379,9 +378,9 @@ scheme_init_struct (Scheme_Env *env)
 						      "make-special-comment",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("special-comment-width", 
-			     scheme_make_prim_w_arity(special_comment_width,
-						      "special-comment-width",
+  scheme_add_global_constant("special-comment-value", 
+			     scheme_make_prim_w_arity(special_comment_value,
+						      "special-comment-value",
 						      1, 1),
 			     env);
   scheme_add_global_constant("special-comment?", 
@@ -648,18 +647,18 @@ static Scheme_Object *guard_property(Scheme_Object *prop, Scheme_Object *v, Sche
 }
 
 /*========================================================================*/
-/*                            waitable structs                            */
+/*                            sble structs                            */
 /*========================================================================*/
 
-static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *argv[])
-/* This is the guard for prop:waitable */
+static Scheme_Object *check_sble_property_value_ok(int argc, Scheme_Object *argv[])
+/* This is the guard for prop:sble */
 {
   Scheme_Object *v, *l;
   int pos, num_islots;
 
   v = argv[0];
 
-  if (scheme_is_waitable(v))
+  if (scheme_is_sble(v))
     return v;
 
   if (scheme_check_proc_arity(NULL, 1, 0, 1, &v))
@@ -667,8 +666,8 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   
   if (!((SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
 	|| (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))))
-    scheme_arg_mismatch("prop:waitable-guard",
-			"property value is not a waitable, procedure (arity 1), or exact non-negative integer: ",
+    scheme_arg_mismatch("prop:sble-guard",
+			"property value is not a sble, procedure (arity 1), or exact non-negative integer: ",
 			v);
 
   l = argv[1];
@@ -686,7 +685,7 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
     pos = SCHEME_INT_VAL(v);
 
   if (pos >= num_islots) {
-    scheme_arg_mismatch("waitable-property-guard",
+    scheme_arg_mismatch("sble-property-guard",
 			"field index >= initialized-field count for structure type: ",
 			v);
   }
@@ -697,7 +696,7 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   }
 
   if (!SCHEME_PAIRP(l)) {
-    scheme_arg_mismatch("waitable-property-guard",
+    scheme_arg_mismatch("sble-property-guard",
 			"field index not declared immutable: ",
 			v);
   }
@@ -705,17 +704,17 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   return v;
 }
 
-static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int sble_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *v;
 
-  v = scheme_struct_type_property_ref(waitable_property, o);
+  v = scheme_struct_type_property_ref(sble_property, o);
 
   if (SCHEME_INTP(v))
     v = ((Scheme_Structure *)o)->slots[SCHEME_INT_VAL(v)];
 
-  if (scheme_is_waitable(v)) {
-    scheme_set_wait_target(sinfo, v, NULL, NULL, 0, 1);
+  if (scheme_is_sble(v)) {
+    scheme_set_sync_target(sinfo, v, NULL, NULL, 0, 1);
     return 0;
   }
 
@@ -731,13 +730,13 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
       a[0] = o;
       result = scheme_apply(f, 1, a);
 
-      if (scheme_is_waitable(result)) {
-	scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 1);
+      if (scheme_is_sble(result)) {
+	scheme_set_sync_target(sinfo, result, NULL, NULL, 0, 1);
 	return 0;
       }
 
-      /* non-waitable => ready and result is self */
-      scheme_set_wait_target(sinfo, o, o, NULL, 0, 0);
+      /* non-sble => ready and result is self */
+      scheme_set_sync_target(sinfo, o, o, NULL, 0, 0);
 
       return 1;
     }
@@ -746,9 +745,9 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
   return 0;
 }
 
-static int is_waitable_struct(Scheme_Object *o)
+static int is_sble_struct(Scheme_Object *o)
 {
-  return !!scheme_struct_type_property_ref(waitable_property, o);
+  return !!scheme_struct_type_property_ref(sble_property, o);
 }
 
 /*========================================================================*/
@@ -1383,59 +1382,59 @@ static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[])
 /*                           wraps and nacks                              */
 /*========================================================================*/
 
-static Scheme_Object *wrap_waitable(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_wrap_sble(int argc, Scheme_Object *argv[])
 {
-  Wrapped_Waitable *ww;
+  Wrapped_Sble *ww;
 
-  if (!scheme_is_waitable(argv[0]))
-    scheme_wrong_type("make-wrapped-waitable", "waitable-object", 0, argc, argv);
-  scheme_check_proc_arity("make-wrapped-waitable", 1, 1, argc, argv);
+  if (!scheme_is_sble(argv[0]))
+    scheme_wrong_type("make-wrapped-sble", "sble-object", 0, argc, argv);
+  scheme_check_proc_arity("make-wrapped-sble", 1, 1, argc, argv);
 
-  ww = MALLOC_ONE_TAGGED(Wrapped_Waitable);
-  ww->so.type = scheme_wrapped_waitable_type;
-  ww->waitable = argv[0];
+  ww = MALLOC_ONE_TAGGED(Wrapped_Sble);
+  ww->so.type = scheme_wrapped_sble_type;
+  ww->sble = argv[0];
   ww->wrapper = argv[1];
 
   return (Scheme_Object *)ww;
 }
 
-static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[])
+static Scheme_Object *nack_sble(int argc, Scheme_Object *argv[])
 {
-  Nack_Guard_Waitable *nw;
+  Nack_Guard_Sble *nw;
 
-  scheme_check_proc_arity("make-nack-guard-waitable", 1, 0, argc, argv);
+  scheme_check_proc_arity("make-nack-guard-sble", 1, 0, argc, argv);
 
-  nw = MALLOC_ONE_TAGGED(Nack_Guard_Waitable);
-  nw->so.type = scheme_nack_guard_waitable_type;
+  nw = MALLOC_ONE_TAGGED(Nack_Guard_Sble);
+  nw->so.type = scheme_nack_guard_sble_type;
   nw->maker = argv[0];
 
   return (Scheme_Object *)nw;
 }
 
-static Scheme_Object *poll_waitable(int argc, Scheme_Object *argv[])
+static Scheme_Object *poll_sble(int argc, Scheme_Object *argv[])
 {
-  Nack_Guard_Waitable *nw;
+  Nack_Guard_Sble *nw;
 
-  scheme_check_proc_arity("make-poll-guard-waitable", 1, 0, argc, argv);
+  scheme_check_proc_arity("make-poll-guard-sble", 1, 0, argc, argv);
 
-  nw = MALLOC_ONE_TAGGED(Nack_Guard_Waitable);
-  nw->so.type = scheme_poll_waitable_type;
+  nw = MALLOC_ONE_TAGGED(Nack_Guard_Sble);
+  nw->so.type = scheme_poll_sble_type;
   nw->maker = argv[0];
 
   return (Scheme_Object *)nw;
 }
 
-static int wrapped_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int wrapped_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Wrapped_Waitable *ww = (Wrapped_Waitable *)o;
+  Wrapped_Sble *ww = (Wrapped_Sble *)o;
 
-  scheme_set_wait_target(sinfo, ww->waitable, ww->wrapper, NULL, 0, 1);
+  scheme_set_sync_target(sinfo, ww->sble, ww->wrapper, NULL, 0, 1);
   return 0;
 }
 
-static int nack_guard_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int nack_guard_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)o;
+  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)o;
   Scheme_Object *sema, *a[1], *result;
   Scheme_Object *nack;
 
@@ -1449,11 +1448,11 @@ static int nack_guard_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *
   /* Install the semaphore immediately, so that it's posted on
      exceptions (e.g., breaks) even if they happen while trying
      to run the maker. */
-  scheme_set_wait_target(sinfo, o, NULL, sema, 0, 0);
+  scheme_set_sync_target(sinfo, o, NULL, sema, 0, 0);
 
-  /* Remember both the sema and the current thread's dead waitable: */
+  /* Remember both the sema and the current thread's dead sble: */
   nack = scheme_alloc_object();
-  nack->type = scheme_nack_waitable_type;
+  nack->type = scheme_nack_sble_type;
   SCHEME_PTR1_VAL(nack) = sema;
   result = scheme_get_thread_dead(scheme_current_thread);
   SCHEME_PTR2_VAL(nack) = result;
@@ -1461,35 +1460,35 @@ static int nack_guard_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *
   a[0] = nack;
   result = scheme_apply(nw->maker, 1, a);
 
-  if (scheme_is_waitable(result)) {
-    scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 1);
+  if (scheme_is_sble(result)) {
+    scheme_set_sync_target(sinfo, result, NULL, NULL, 0, 1);
     return 0;
   } else
-    return 1; /* Non-waitable => ready */
+    return 1; /* Non-sble => ready */
 }
 
-static int nack_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int nack_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Object *a[2], *wset;
 
   wset = SCHEME_PTR1_VAL(o);
-  /* Lazily construct a waitable set: */
+  /* Lazily construct a sble set: */
   if (SCHEME_SEMAP(wset)) {
     a[0] = wset;
     a[1] = SCHEME_PTR2_VAL(o);
-    wset = scheme_make_waitable_set(2, a);
+    wset = scheme_make_sble_set(2, a);
     SCHEME_PTR1_VAL(o) = wset;
   }
 
   /* Redirect to the set, and wrap with void: */
-  scheme_set_wait_target(sinfo, wset, scheme_void, NULL, 0, 1);
+  scheme_set_sync_target(sinfo, wset, scheme_void, NULL, 0, 1);
 
   return 0;
 }
 
-static int poll_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+static int poll_sble_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  Nack_Guard_Waitable *nw = (Nack_Guard_Waitable *)o;
+  Nack_Guard_Sble *nw = (Nack_Guard_Sble *)o;
   Scheme_Object *a[1], *result;
 
   if (sinfo->false_positive_ok) {
@@ -1500,11 +1499,11 @@ static int poll_waitable_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
   a[0] = (sinfo->is_poll ? scheme_true : scheme_false);
   result = scheme_apply(nw->maker, 1, a);
 
-  if (scheme_is_waitable(result)) {
-    scheme_set_wait_target(sinfo, result, NULL, NULL, 0, 1);
+  if (scheme_is_sble(result)) {
+    scheme_set_sync_target(sinfo, result, NULL, NULL, 0, 1);
     return 0;
   } else
-    return 1; /* Non-waitable => ready */
+    return 1; /* Non-sble => ready */
 }
 
 /*========================================================================*/
@@ -2507,7 +2506,7 @@ static Scheme_Object *check_location_fields(int argc, Scheme_Object **argv)
 /*                        special-comment struct                          */
 /*========================================================================*/
 
-Scheme_Object *scheme_special_comment_width(Scheme_Object *o)
+Scheme_Object *scheme_special_comment_value(Scheme_Object *o)
 {
   if (SAME_TYPE(SCHEME_TYPE(o), scheme_special_comment_type))
     return ((Scheme_Small_Object *)o)->u.ptr_val;
@@ -2519,9 +2518,6 @@ Scheme_Object *make_special_comment(int argc, Scheme_Object **argv)
 {
   Scheme_Object *o;
 
-  if (!exact_nneg_integer(argv[0]))
-    scheme_wrong_type("make-special-comment", "exact non-negative integer", 0, argc, argv);
-  
   o = scheme_alloc_small_object();
   o->type = scheme_special_comment_type;
   ((Scheme_Small_Object *)o)->u.ptr_val = argv[0];
@@ -2529,13 +2525,13 @@ Scheme_Object *make_special_comment(int argc, Scheme_Object **argv)
   return o;
 }
 
-Scheme_Object *special_comment_width(int argc, Scheme_Object **argv)
+Scheme_Object *special_comment_value(int argc, Scheme_Object **argv)
 {
   Scheme_Object *v;
 
-  v = scheme_special_comment_width(argv[0]);
+  v = scheme_special_comment_value(argv[0]);
   if (!v)
-    scheme_wrong_type("special-comment-width", "special comment", 0, argc, argv);
+    scheme_wrong_type("special-comment-value", "special comment", 0, argc, argv);
   return v;
 }
 
@@ -2590,9 +2586,9 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_struct_type_type, mark_struct_type_val);
   GC_REG_TRAV(scheme_struct_property_type, mark_struct_property);
 
-  GC_REG_TRAV(scheme_wrapped_waitable_type, mark_wrapped_waitable);
-  GC_REG_TRAV(scheme_nack_guard_waitable_type, mark_nack_guard_waitable);
-  GC_REG_TRAV(scheme_poll_waitable_type, mark_nack_guard_waitable);
+  GC_REG_TRAV(scheme_wrapped_sble_type, mark_wrapped_sble);
+  GC_REG_TRAV(scheme_nack_guard_sble_type, mark_nack_guard_sble);
+  GC_REG_TRAV(scheme_poll_sble_type, mark_nack_guard_sble);
 
   GC_REG_TRAV(scheme_rt_struct_proc_info, mark_struct_proc_info);
 }

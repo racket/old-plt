@@ -324,14 +324,14 @@ typedef struct Scheme_Security_Guard {
 typedef struct {
   int false_positive_ok;  /* non-zero => return 1 to swap in thread rather than running Scheme code */
   int potentially_false_positive; /* => returning 1 to swap thread in, but truth may be 0 */
-  Scheme_Object *current_waiting;
+  Scheme_Object *current_syncing;
   double sleep_end;
   int w_i;
   short spin;
   short is_poll;
 } Scheme_Schedule_Info;
 
-void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
+void scheme_set_sync_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 			    Scheme_Object *wrap, Scheme_Object *nack,
 			    int repost, int retry);
 
@@ -896,26 +896,26 @@ extern unsigned long scheme_stack_boundary;
 /*                         semaphores and locks                           */
 /*========================================================================*/
 
-typedef struct Scheme_Channel_Waiter {
+typedef struct Scheme_Channel_Syncer {
   Scheme_Object so;
   Scheme_Thread *p;
   char in_line, picked;
-  struct Scheme_Channel_Waiter *prev, *next;
-  struct Waiting *waiting;
+  struct Scheme_Channel_Syncer *prev, *next;
+  struct Syncing *syncing;
   Scheme_Object *obj;
-  int waiting_i;
-} Scheme_Channel_Waiter;
+  int syncing_i;
+} Scheme_Channel_Syncer;
 
 typedef struct Scheme_Sema {
   Scheme_Object so;
-  Scheme_Channel_Waiter *first, *last;
+  Scheme_Channel_Syncer *first, *last;
   long value;
 } Scheme_Sema;
 
 typedef struct Scheme_Channel {
   Scheme_Object so;
-  Scheme_Channel_Waiter *put_first, *put_last;
-  Scheme_Channel_Waiter *get_first, *get_last;
+  Scheme_Channel_Syncer *put_first, *put_last;
+  Scheme_Channel_Syncer *get_first, *get_last;
 } Scheme_Channel;
 
 typedef struct Scheme_Channel_Put {
@@ -928,19 +928,19 @@ typedef struct Scheme_Channel_Put {
 #define NOT_BLOCKED 0
 #define SLEEP_BLOCKED 1
 
-typedef struct Waitable_Set {
+typedef struct Sble_Set {
   Scheme_Object so;
 
   int argc;
-  Scheme_Object **argv; /* no waitable sets; nested sets get flattened */
-  struct Waitable **ws;
-} Waitable_Set;
+  Scheme_Object **argv; /* no sble sets; nested sets get flattened */
+  struct Sble **ws;
+} Sble_Set;
 
-#define SCHEME_WAITSETP(o) SAME_TYPE(SCHEME_TYPE(o), scheme_waitable_set_type)
+#define SCHEME_SBLESETP(o) SAME_TYPE(SCHEME_TYPE(o), scheme_sble_set_type)
 
-typedef struct Waiting {
+typedef struct Syncing {
   MZTAG_IF_REQUIRED
-  Waitable_Set *set;
+  Sble_Set *set;
   int result, start_pos;
   double sleep_end;
   float timeout;
@@ -950,12 +950,14 @@ typedef struct Waiting {
   char *reposts;
 
   Scheme_Config *disable_break; /* when result is set */
-} Waiting;
+} Syncing;
 
-int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting);
+int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *syncing);
 Scheme_Object *scheme_make_sema_repost(Scheme_Object *sema);
 
-void scheme_get_outof_line(Scheme_Channel_Waiter *ch_w);
+Scheme_Object *scheme_wrap_sble(int argc, Scheme_Object *argv[]);
+
+void scheme_get_outof_line(Scheme_Channel_Syncer *ch_w);
 
 /*========================================================================*/
 /*                                 numbers                                */
@@ -1908,7 +1910,7 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
 extern int scheme_exiting_result;
 
-Scheme_Object *scheme_special_comment_width(Scheme_Object *o);
+Scheme_Object *scheme_special_comment_value(Scheme_Object *o);
 
 /*========================================================================*/
 /*                         filesystem utilities                           */
@@ -2044,13 +2046,13 @@ Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[]);
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
 
-Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos,
-				  Scheme_Object **exn);
+Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos);
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;
 
 int scheme_user_port_byte_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo);
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *op, Scheme_Schedule_Info *sinfo);
+int scheme_is_user_port(Scheme_Object *port);
 
 int scheme_byte_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info *sinfo);
 

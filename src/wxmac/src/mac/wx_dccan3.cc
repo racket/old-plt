@@ -37,7 +37,7 @@ static PixMapHandle	bdiag,
 extern CGrafPtr wxMainColormap;
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16)
+void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
 {
 	if (!Ok()) return;
  
@@ -51,8 +51,8 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16)
 	start.h = XLOG2DEV(x);
 	start.v = YLOG2DEV(y + fontInfo.ascent);
 	MoveTo(start.h, start.v); // move pen to start drawing text
-	int theStrlen = strlen(text);
-	::DrawText(text, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
+	int theStrlen = strlen(text+d);
+	::DrawText(text+d, 0, theStrlen); // WCH: kludge, mac procedure same name as wxWindows method
 
 	// mflatt: look at pen, use distance travelled instead of calculating 
     // the length of the string (again)
@@ -93,16 +93,17 @@ float wxCanvasDC::GetCharWidth(void)
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* descent,
-			       float* internalLeading, wxFont* the_font, Bool use16)
+			       float* internalLeading, wxFont* the_font, Bool use16,
+			       int d)
 {
 	float x2, y2, descent2, externalLeading2;
 	if (the_font)
 	{
-		the_font->GetTextExtent((char *)string, &x2, &y2, &descent2, &externalLeading2, use16);
+		the_font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
 	}
 	else if (font)
 	{
-		font->GetTextExtent((char *)string, &x2, &y2, &descent2, &externalLeading2, use16);
+		font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16);
 	}
 	else
 	{

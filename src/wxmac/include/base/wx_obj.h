@@ -24,12 +24,12 @@ typedef       void    *wxObject ;
 
 #include "wxGC.h"
 
-#define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
+#define WXGC_IGNORE(base, ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 #define WXGC_ATOMIC (AtomicGC)
 #define WXGC_NO_CLEANUP FALSE
 #define DELETE_OBJ delete
 #define DELETE_VAL delete
-#define COPYSTRING_TO_ALIGNED(x) x
+#define COPYSTRING_TO_ALIGNED(x, d) (x + d)
 
 class wxObject : public gc_cleanup
 {

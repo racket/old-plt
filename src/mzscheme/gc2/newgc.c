@@ -1133,8 +1133,9 @@ inline static void mark_threads(int owner)
   struct thread *work;
 
   for(work = threads; work; work = work->next)
-    if(work->owner == owner)
+    if(work->owner == owner) {
       mark_table[scheme_thread_type](work->thread);
+    }
 }
 
 inline static void clean_up_thread_list(void)
@@ -1404,7 +1405,7 @@ inline static void memory_account_mark(struct mpage *page, void *ptr)
   GCDEBUG((DEBUGOUTF, "memory_account_mark: %p/%p\n", page, ptr));
   if(page->big_page) {
     struct objhead *info = (struct objhead *)((char*)page + HEADER_SIZEB);
-    
+
     if(!info->btc_mark) {
       info->btc_mark = 1;
       account_memory(current_mark_owner, gcBYTES_TO_WORDS(page->size));
@@ -1446,7 +1447,7 @@ inline static void mark_normal_obj(struct mpage *page, void *ptr)
     };
     case PAGE_TARRAY: {
       unsigned short tag = *(unsigned short*)ptr;
-      void **temp = ptr, **end = temp + info->size;
+      void **temp = ptr, **end = temp + (info->size - 1);
       
       while(temp < end) temp += mark_table[tag](temp);
       break;
@@ -1576,17 +1577,18 @@ inline static void clean_up_account_hooks()
   struct account_hook *work = hooks, *prev = NULL;
 
   while(work) {
-    if(!marked(work->c1) || !marked(work->c2)) {
+    if((!find_page(work->c1) || marked(work->c1)) &&
+       (!find_page(work->c2) || marked(work->c2))) {
+      work->c1 = GC_resolve(work->c1);
+      work->c2 = GC_resolve(work->c2);
+      prev = work; work = work->next;
+    } else {
       struct account_hook *next = work->next;
 
       if(prev) prev->next = next;
       if(!prev) hooks = next;
       free(work);
       work = next;
-    } else {
-      work->c1 = GC_resolve(work->c1);
-      work->c2 = GC_resolve(work->c2);
-      prev = work; work = work->next;
     }
   }
 }
@@ -1954,9 +1956,11 @@ void GC_fixup(void *pp)
 {
   void *p = *(void**)pp;
   
-  if(doing_memory_accounting)
-    GCWARN((GCOUTF, "Hit GC_fixup with pp = %p and p = %p during accounting\n",
-	    pp, p));
+  if(doing_memory_accounting) {
+/*  GCWARN((GCOUTF, "Hit GC_fixup with pp = %p and p = %p during accounting\n",  
+           pp, p));  */
+    return;
+  }
 
   if(p && !(NUM(p) & 0x1)) {
     struct mpage *page = find_page(p);
@@ -1997,7 +2001,7 @@ void GC_fixup(void *pp)
 
 	  if(!page->generation)
 	    if(type == PAGE_TAGGED)
-	      if((int)mark_table[*(unsigned short*)p] < PAGE_TYPES)
+	      if((int)mark_table[*(unsigned short*)p] < PAGE_TYPES) 
 		type = ohead->type = (int)mark_table[*(unsigned short*)p];
 	  work = to_pages[type]; size = ohead->size; 
 	  sizeb = gcWORDS_TO_BYTES(size);
@@ -2329,6 +2333,12 @@ static void clean_up_heap(void)
     from_pages[i] = NULL;
   }
 
+  /* now add everything to the page map. This needs to be done now or 
+     the memory accounting pass won't see it (which is bad) */
+  for(i = 0; i < PAGE_TYPES; i++) 
+    for(work = pages[i]; work; work = work->next)
+      pagemap_add(work);
+
   /* we need to do memory accounting right here. Any earlier and the page
      map won't help us. Any later and our writes will cause memory 
      violations. So do it. */
@@ -2340,7 +2350,6 @@ static void clean_up_heap(void)
     for(work = pages[i]; work; work = work->next) {
       memory_in_use += work->size;
       if(work->page_type != PAGE_ATOMIC) {
-	pagemap_add(work);
 	protect_pages(work, work->size, 0);
       }
     }

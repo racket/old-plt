@@ -450,6 +450,11 @@
 			 (mzlib:print-convert:print-convert v))])
 	  (mzlib:pretty-print:pretty-print-handler value))))
 
+  ;; drscheme-port-print-handler : TST port -> void
+  ;; effect: prints the value on the port
+  (define (drscheme-port-print-handler value port)
+    (parameterize ([mzlib:pretty-print:pretty-print-columns 'infinity])
+      (drscheme-print/void value)))
 
     ;; build-parameterization : (list-of symbols)
     ;;                          setting
@@ -517,10 +522,7 @@
 
 	    (mzlib:print-convert:empty-list-name 'empty)
 
-	    (global-port-print-handler
-	     (lambda (value port)
-	       (parameterize ([current-output-port port])
-		 (drscheme-print/void value))))
+	    (global-port-print-handler drscheme-port-print-handler)
 
 	    (case (setting-printing setting)
 	      [(constructor-style)

@@ -104,8 +104,8 @@
   (define with-semaphore
     (lambda (s f)
       (semaphore-wait s)
-      (f)
-      (semaphore-post s)))
+      (begin0 (f)
+	      (semaphore-post s))))
 
   (define semaphore-wait-multiple 
    (case-lambda

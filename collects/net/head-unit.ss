@@ -17,7 +17,7 @@
       (define re:continue (regexp "^[ \t\v]"))
       
       (define (validate-header s)
-	(let ([m (regexp-match #rx"[^\0-\277]" s)])
+	(let ([m (regexp-match #rx"[^\000-\377]" s)])
 	  (when m
 	    (error 'validate-header "non-Latin-1 character in string: ~a" (car m))))
 	(let ([len (string-length s)])
@@ -55,7 +55,7 @@
 				       s
 				       "")))))))
 
-      (define (remove-field field header)
+      (define (replace-field field data header)
 	(let ([m (regexp-match-positions 
 		  (make-field-start-regexp field)
 		  header)])
@@ -68,10 +68,23 @@
 				  (string-length header))])
 		(let ([m (regexp-match-positions #rx"[\r][\n][^: \r\n\"]*:" s)])
 		  (if m
-		      (string-append pre (substring s (+ 2 (caar m)) 
-						    (string-length s)))
-		      pre)))
-	      header)))
+		      (string-append pre 
+				     (let ([rest 
+					    (substring s (+ 2 (caar m)) 
+						       (string-length s))])
+				       (if data
+					   (insert-field field data rest)
+					   rest)))
+		      (if data
+			  (insert-field field data pre)
+			  pre))))
+	      (if data
+		  (insert-field field data header)
+		  header))))
+
+      (define (remove-field field header)
+	(replace-field field #f header))
+	
 
       (define (insert-field field data header)
 	(let ([field (format "~a: ~a\r\n"

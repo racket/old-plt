@@ -1135,6 +1135,11 @@ PROCEDURES -----------------------------------------------------------
   CRLF, but a multi-line value (perhaps created with
   `data-lines->data') may contain seperator CRLFs.
 
+> (replace-field field-string value-string header) -> header
+
+  Replaces or inserts the given field. If value-string is #f, then
+  the field is simply removed.
+
 > (append-headers a-header another-header) -> header
 
 > (standard-message-header from-string to-list-of-strings cc-list-of-strings bcc-list-of-strings subject-string) -> header

@@ -850,7 +850,7 @@ static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
   if (nargs < 0)
     scheme_wrong_type(MYNAME, "proper list", 0, argc, argv);
   /* allocate the type elements */
-  elements = scheme_malloc_stubborn((nargs+1) * sizeof(ffi_type*));
+  elements = scheme_malloc((nargs+1) * sizeof(ffi_type*));
   elements[nargs] = NULL;
   for (i=0, p=argv[0]; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
@@ -859,9 +859,8 @@ static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
       scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 0, argc, argv);
     elements[i] = CTYPE_PRIMTYPE(base);
   }
-  scheme_end_stubborn_change(elements);
   /* allocate the new libffi type object */
-  libffi_type = scheme_malloc_stubborn(sizeof(ffi_type));
+  libffi_type = scheme_malloc(sizeof(ffi_type));
   libffi_type->size      = 0;
   libffi_type->alignment = 0;
   libffi_type->type      = FFI_TYPE_STRUCT;
@@ -870,7 +869,6 @@ static Scheme_Object *foreign_make_cstruct_type(int argc, Scheme_Object *argv[])
   dummy = &libffi_type;
   if (ffi_prep_cif(&cif, FFI_DEFAULT_ABI, 1, &ffi_type_void, dummy) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
-  scheme_end_stubborn_change(libffi_type);
   type = (ctype_struct*)scheme_malloc_tagged(sizeof(ctype_struct));
   type->so.type = ctype_tag;
   type->basetype = (NULL);
@@ -1575,7 +1573,7 @@ static Scheme_Object *foreign_ffi_call(int argc, Scheme_Object *argv[])
   if (NULL == (base = get_ctype_base(otype)))
     scheme_wrong_type(MYNAME, "C-type", 2, argc, argv);
   rtype = CTYPE_PRIMTYPE(base);
-  atypes = scheme_malloc_stubborn(nargs * sizeof(ffi_cif));
+  atypes = scheme_malloc(nargs * sizeof(ffi_cif));
   for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
       scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);
@@ -1583,12 +1581,10 @@ static Scheme_Object *foreign_ffi_call(int argc, Scheme_Object *argv[])
       scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 1, argc, argv);
     atypes[i] = CTYPE_PRIMTYPE(base);
   }
-  scheme_end_stubborn_change(atypes);
-  cif = scheme_malloc_stubborn(sizeof(ffi_cif));
+  cif = scheme_malloc(sizeof(ffi_cif));
   if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
-  scheme_end_stubborn_change(cif);
-  data = scheme_malloc_stubborn(5 * sizeof(void*));
+  data = scheme_malloc(5 * sizeof(void*));
   p = scheme_append_byte_string
         (ffi_name_prefix,
          scheme_make_byte_string_without_copying
@@ -1599,7 +1595,6 @@ static Scheme_Object *foreign_ffi_call(int argc, Scheme_Object *argv[])
   data[2] = itypes;
   data[3] = otype;
   data[4] = (Scheme_Object*)cif;
-  scheme_end_stubborn_change(data);
   return scheme_make_closed_prim_w_arity
            (ffi_do_call, (void*)data, SCHEME_BYTE_STR_VAL(data[0]),
             nargs, nargs);
@@ -1649,7 +1644,7 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   if (NULL == (base = get_ctype_base(otype)))
     scheme_wrong_type(MYNAME, "C-type", 2, argc, argv);
   rtype = CTYPE_PRIMTYPE(base);
-  atypes = scheme_malloc_stubborn(nargs * sizeof(ffi_cif));
+  atypes = scheme_malloc(nargs * sizeof(ffi_cif));
   for (i=0, p=itypes; i<nargs; i++, p=SCHEME_CDR(p)) {
     if (NULL == (base = get_ctype_base(SCHEME_CAR(p))))
       scheme_wrong_type(MYNAME, "list-of-C-types", 1, argc, argv);
@@ -1657,12 +1652,10 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
       scheme_wrong_type(MYNAME, "list-of-non-void-C-types", 1, argc, argv);
     atypes[i] = CTYPE_PRIMTYPE(base);
   }
-  scheme_end_stubborn_change(atypes);
-  cif = scheme_malloc_stubborn(sizeof(ffi_cif));
+  cif = scheme_malloc(sizeof(ffi_cif));
   if (ffi_prep_cif(cif, FFI_DEFAULT_ABI, nargs, rtype, atypes) != FFI_OK)
     scheme_signal_error("internal error: ffi_prep_cif did not return FFI_OK");
-  scheme_end_stubborn_change(cif);
-  cl = scheme_malloc_stubborn(sizeof(ffi_closure));
+  cl = scheme_malloc(sizeof(ffi_closure));
   data = (ffi_callback_struct*)scheme_malloc_tagged(sizeof(ffi_callback_struct));
   data->so.type = ffi_callback_tag;
   data->callback = (cl);
@@ -1672,7 +1665,6 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)data) != FFI_OK)
     scheme_signal_error
       ("internal error: ffi_prep_closure did not return FFI_OK");
-  scheme_end_stubborn_change(cl);
   return (Scheme_Object*)data;
 }
 

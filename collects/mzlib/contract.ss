@@ -5,6 +5,12 @@ improve method arity mismatch contract violation error messages?
 
 add struct contracts for immutable structs?
 
+->r checklist:
+ - test suites for any, (values ...) should include lots of other tests
+   - negative reversed properly, values bound, etc (all tests should be duplicated)
+ - add in multi-arity ->r with any, values
+ - test object contract with ->r and any, values.
+
 |#
 
 (module contract mzscheme
@@ -2032,12 +2038,43 @@ add struct contracts for immutable structs?
                                            val))))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
-                (syntax
-                 ((x ...)
-                  (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                        ...
-                        [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
-                    (rng-id (val (dom-id x) ...)))))))))]
+                (syntax-case* (syntax rng) (any values) module-or-top-identifier=?
+                  [any 
+                   (syntax
+                    ((x ...)
+                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
+                           ...)
+                       (val (dom-id x) ...))))]
+                  [(values (rng-ids rng-ctc) ...)
+                   (and (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                        (not (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))))
+                   (with-syntax ([(rng-ids-x ...) (generate-temporaries (syntax (rng-ids ...)))])
+                     (syntax
+                      ((x ...)
+                       (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
+                             ...)
+                         (let-values ([(rng-ids ...) (val (dom-id x) ...)])
+                           (let ([rng-ids-x ((coerce/select-contract ->r rng-ctc)
+                                             pos-blame neg-blame src-info orig-str)] ...)
+                             (values (rng-ids-x rng-ids) ...)))))))]
+                  [(values (rng-ids rng-ctc) ...)
+                   (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                   (let ([dup (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))])
+                     (raise-syntax-error '->r "duplicate identifier" stx dup))]
+                  [(values (rng-ids rng-ctc) ...)
+                   (for-each (lambda (rng-id) 
+                               (unless (identifier? rng-id)
+                                 (raise-syntax-error '->r "expected identifier" stx rng-id)))
+                             (syntax->list (syntax (rng-ids ...))))]
+                  [(values . x)
+                   (raise-syntax-error '->r "malformed multiple values result" stx (syntax (values . x)))]
+                  [rng
+                   (syntax
+                    ((x ...)
+                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
+                           ...
+                           [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
+                       (rng-id (val (dom-id x) ...)))))])))))]
         [(_ ([x dom] ...) rng)
          (andmap identifier? (syntax->list (syntax (x ...))))
          (raise-syntax-error 
@@ -2102,13 +2139,46 @@ add struct contracts for immutable structs?
                                            val))))))
             (lambda (outer-args)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args])
-                (syntax
-                 ((x ... . rest-x)
-                  (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
-                        ...
-                        [rest-id ((coerce/select-contract ->r rest-dom) neg-blame pos-blame src-info orig-str)]
-                        [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
-                    (rng-id (apply val (dom-id x) ... (rest-id rest-x))))))))))]
+                (syntax-case* (syntax rng) (values any) module-or-top-identifier=?
+                  [any 
+                   (syntax
+                    ((x ... . rest-x)
+                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
+                           ...
+                           [rest-id ((coerce/select-contract ->r rest-dom) neg-blame pos-blame src-info orig-str)])
+                       (apply val (dom-id x) ... (rest-id rest-x)))))]
+                  [(values (rng-ids rng-ctc) ...)
+                   (and (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                        (not (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))))
+                   (with-syntax ([(rng-ids-x ...) (generate-temporaries (syntax (rng-ids ...)))])
+                     (syntax
+                      ((x ... . rest-x)
+                       (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
+                             ...
+                             [rest-id ((coerce/select-contract ->r rest-dom) neg-blame pos-blame src-info orig-str)])
+                         (let-values ([(rng-ids ...) (apply val (dom-id x) ... (rest-id rest-x))])
+                           (let ([rng-ids-x ((coerce/select-contract ->r rng-ctc)
+                                             pos-blame neg-blame src-info orig-str)] ...)
+                             (values (rng-ids-x rng-ids) ...)))))))]
+                  [(values (rng-ids rng-ctc) ...)
+                   (andmap identifier? (syntax->list (syntax (rng-ids ...))))
+                   (let ([dup (check-duplicate-identifier (syntax->list (syntax (rng-ids ...))))])
+                     (raise-syntax-error '->r "duplicate identifier" stx dup))]
+                  [(values (rng-ids rng-ctc) ...)
+                   (for-each (lambda (rng-id) 
+                               (unless (identifier? rng-id)
+                                 (raise-syntax-error '->r "expected identifier" stx rng-id)))
+                             (syntax->list (syntax (rng-ids ...))))]
+                  [(values . x)
+                   (raise-syntax-error '->r "malformed multiple values result" stx (syntax (values . x)))]
+                  [_
+                   (syntax
+                    ((x ... . rest-x)
+                     (let ([dom-id ((coerce/select-contract ->r dom) neg-blame pos-blame src-info orig-str)]
+                           ...
+                           [rest-id ((coerce/select-contract ->r rest-dom) neg-blame pos-blame src-info orig-str)]
+                           [rng-id ((coerce/select-contract ->r rng) pos-blame neg-blame src-info orig-str)])
+                       (rng-id (apply val (dom-id x) ... (rest-id rest-x))))))])))))]
         [(_ ([x dom] ...) rest-x rest-dom rng)
          (and (identifier? (syntax rest-x))
               (andmap identifier? (cons (syntax rest-x) (syntax->list (syntax (x ...))))))

@@ -479,14 +479,25 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
   if (b->val || set_undef)
     b->val = val;
   else {
-    scheme_raise_exn(MZEXN_VARIABLE, b->key,
-		     "%s: cannot set %s identifier: %S",
-		     who,
-		     (((Scheme_Bucket_With_Home *)b)->home->module
-		      ?  "uninitialized module" 
-		      : "undefined"),
-		     (Scheme_Object *)b->key);
-    
+    if (((Scheme_Bucket_With_Home *)b)->home->module) {
+      const char *msg;
+
+      if (SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC)))
+	msg = "%s: cannot set identifier before its definition: %S in module: %S";
+      else
+	msg = "%s: cannot set identifier before its definition: %S";
+
+      scheme_raise_exn(MZEXN_VARIABLE, b->key,
+		       msg,
+		       who,
+		       (Scheme_Object *)b->key,
+		       ((Scheme_Bucket_With_Home *)b)->home->module->modname);
+    } else {
+      scheme_raise_exn(MZEXN_VARIABLE, b->key,
+		       "%s: cannot set undefined identifier: %S",
+		       who,
+		       (Scheme_Object *)b->key);
+    }
   }
 }
 

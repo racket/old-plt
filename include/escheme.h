@@ -1,5 +1,6 @@
 /*
   MzScheme
+  Copyright (c) 2004 PLT Scheme, Inc.
   Copyright (c) 1995 Matthew Flatt
   All rights reserved.
 

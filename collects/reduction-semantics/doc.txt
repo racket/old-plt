@@ -61,6 +61,7 @@ language, used in various ways:
           | (in-hole* <symbol> <pattern> <pattern>)
           | (in-hole+ <pattern> <pattern>)
           | (in-named-hole <symbol> <symbol> <pattern> <pattern>)
+          | (in-named-hole+ <symbol> <pattern> <pattern>)
           | (side-condition <pattern> <guard>)
           | (cross <symbol>>)
           | (pattern ...)
@@ -127,7 +128,7 @@ named by the first argument to in-named-hole.
 
 _in-named-hole+_: The pattern:
 
-   (in-named-hole <symbol> <pattern> <pattern>) 
+   (in-named-hole+ <symbol> <pattern> <pattern>) 
 
 is similar in spirit to in-hole+, except that it supports
 languages with multiple holes in a context, like

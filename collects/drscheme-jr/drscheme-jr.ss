@@ -1,4 +1,3 @@
-;; Bugs: --save's help string (and file location?) is bad under NT
 
 (reference-library "macro.ss")
 (reference-library "cmdline.ss")
@@ -45,7 +44,7 @@
 (define signal-undef (make-parameter #f))
 (define allow-.-lists (make-not-parameter #f))
 (define eq?-only-on-syms (make-not-parameter #f))
-(define cond-is-boolean (make-parameter #f))
+(define cond-req-bool (make-parameter #f))
 (define inexact-needs-#i (make-parameter #f))
 (define print-with-list (make-parameter #f))
 
@@ -75,7 +74,7 @@
 	 allow-.-lists
 	 "improper lists")
    (list "--boolean-conds"
-	 cond-is-boolean
+	 cond-req-bool
 	 "conditionals must be #t or #f")
    (list "--tag-inexacts"
 	 inexact-needs-#i
@@ -105,18 +104,19 @@
   (compile-allow-set!-undefined #f)
   (compile-allow-cond-fallthrough #f)
   (allow-.-lists #f)
-  (cond-is-boolean #f)
+  (cond-req-bool #f)
   (eq?-only-on-syms #t)
   (inexact-needs-#i #f)
   (print-with-list #t)
   (print-graph #t)
   (case syntax-level
     [(core)
-     (cond-is-boolean #t)
+     (cond-req-bool #t)
      (inexact-needs-#i #t)
+     (print-with-list #f)
      (print-graph #f)]
     [(structured)
-     (cond-is-boolean #t)
+     (cond-req-bool #t)
      (inexact-needs-#i #t)
      (print-graph #f)]
     [(side-effecting)
@@ -196,13 +196,14 @@
 	(begin
 	  (set! syntax-level (cadr p))
 	  (install-level))
-	(bad-arguments "bad level name: ~s" level))))
+	(bad-arguments "bad language name: ~s" level))))
 
 (define (make-implies-string level)
   (let ([orig syntax-level]
 	[s (lambda (v) (if v "on" "off"))])
-    (set! syntax-level level)
-    (install-level)
+    (when level
+      (set! syntax-level level)
+      (install-level))
     (let ([s (apply
 	      string-append
 	      (map
@@ -211,8 +212,9 @@
 			 (car f)
 			 (s ((cadr f)))))
 	       flags))])
-      (set! syntax-level orig)
-      (install-level)
+      (when level
+        (set! syntax-level orig)
+        (install-level))
       s)))
 
 (define (on? v)
@@ -263,6 +265,9 @@
 	      (newline))
 	    'truncate/replace))
        (,(format "Save current settings to ~a" (get-argv-file)))]
+      [("--show")
+       ,(lambda (_) (printf "Current settings: ~a~n" (make-implies-string #f)))
+       ("Show the current settings")]
       [("--lhelp")
        ,(lambda (_ level)
 	  (set-level (string->symbol level))
@@ -283,7 +288,10 @@
 ;;;                     DrScheme Jr                        ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; dont' require mzlib or pretty-print here!!!!!!!
+(printf "DrScheme Jr is loading. Please wait...~n")
+(flush-output)
+
+;; Dont' require mzlib or pretty-print here; they are linked with zodiac
 
 (reference-library "zsigs.ss" "zodiac")
 (reference-library "sigs.ss" "zodiac")
@@ -366,14 +374,14 @@
 				    (mzlib-core file@))]
 	  [aries : plt:aries^ (aries@ zodiac zodiac:interface)])
     (export (open (mzlib-core pretty-print@))
+	    (open (mzlib-core file@))
 	    (unit params)
 	    (unit zodiac)
 	    (unit zodiac:interface)
 	    (unit aries))))
 
-(invoke-open-unit/sig z@ #f)
-
 (define system-parameterization (current-parameterization))
+(define user-parameterization (current-parameterization))
 
 ;; This should switch back to the system parameterization.
 (define prompt-read
@@ -408,7 +416,6 @@
 
 (print-struct #t)
 (error-print-width 200)
-(aries:signal-undefined (signal-undef))
 
 (define exception-handler
   (lambda (exn)
@@ -430,11 +437,18 @@
       (lambda (value)
 	(unless (void? value)
 	   (pretty-print-handler (print-convert value))))
-      pretty-print-handler))
+      (lambda (value)
+	(pretty-print-handler value))))
 
-(define drscheme-jr-user-vocabulary
+(show-sharing #t)
+(constructor-style-printing #t)
+(quasi-read-style-printing #t)
+
+(define (make-drj-vocab)
   (zodiac:create-vocabulary 'scheme-w/-user-defined-macros-vocab
 			    zodiac:scheme-vocabulary))
+
+(define drscheme-jr-user-vocabulary #f)
 
 (define drscheme-jr-expand-eval
   (let ([primitive-eval (current-eval)])
@@ -445,28 +459,44 @@
 		  (let* ([expanded (call/nal zodiac:scheme-expand/nal
 					     zodiac:scheme-expand
 					     (expression: x)
-					     (vocabulary: drscheme-jr-user-vocabulary))]
+					     (vocabulary: drscheme-jr-user-vocabulary)
+					     (elaboration-evaluator: 
+					      (lambda (expr p->r phase)
+						(if (void? expr)
+						    (void)
+						    (with-parameterization
+						     user-parameterization
+						     (lambda ()
+						       (primitive-eval (aries:annotate expr)))))))
+					     (user-macro-body-evaluator: 
+					      (lambda (f . args) 
+						(with-parameterization
+						 user-parameterization
+						 (lambda ()
+						   (apply f args))))))]
 			 [_ '(printf "expanded: ~a~n~n" expanded)]
 			 [annotated (if annotate?
 					(aries:annotate expanded)
 					(zodiac:parsed->raw expanded))]
 			 [_ '(printf "annotated: ~a~n~n" annotated)])
 		    annotated)))])
-	(primitive-eval annotated)))))
+	(with-parameterization user-parameterization
+          (lambda ()
+	    (primitive-eval annotated)))))))
 
 (define drscheme-jr-eval
   (lambda (x)
     '(printf "eval; x: ~a~n~n" x)
-    (let ([read 
+    (let ([z-x 
 	   (with-parameterization system-parameterization
 	     (lambda ()
 	       (let* ([z (or (unbox aries:error-box)
 			     (let ([loc (zodiac:make-location 0 0 0 'eval)])
 			       (zodiac:make-zodiac 'drscheme-jr-eval loc loc)))]
-		      [read (zodiac:structurize-syntax x z)])
+		      [z-x (zodiac:structurize-syntax x z)])
 		 '(printf "eval; read: ~a~n~n" read)
-		 read)))])
-      (drscheme-jr-expand-eval read))))
+		 z-x)))])
+      (drscheme-jr-expand-eval z-x))))
 
 (define load-dir/path
   (lambda (f)
@@ -483,7 +513,7 @@
 	[old-handler (current-load)])
     (lambda (f)
       (if (zo-file? f)
-	  (with-parameterization parameterization
+	  (with-parameterization user-parameterization
 	    (lambda ()
 	      (parameterize ((current-eval (with-parameterization 
 					       system-parameterization
@@ -512,70 +542,122 @@
 			      (lambda ()
 				(with-parameterization system-parameterization
 				  t)))])
-		  (let loop ([this (read)]
-			     [next (read)])
-		    (cond
-		      [(zodiac:eof? this) (void)]
-		      [(zodiac:eof? next) (drscheme-jr-expand-eval this)]
-		      [else (begin (drscheme-jr-expand-eval this)
-				   (loop next (read)))]))))))))))
+		  (let loop ([old-vals null])
+		    (let ([this (read)])
+		      (cond
+		       [(zodiac:eof? this) (apply values old-vals)]
+		       [else (begin 
+			       (call-with-values
+				(lambda () 
+				  (with-parameterization user-parameterization
+				    (lambda ()
+				      (parameterize ([current-load-relative-directory
+						      (load-dir/path f)])
+					 (drscheme-jr-expand-eval this)))))
+				(lambda vals
+				  (loop vals))))])))))))))))
 
-(define parameterization (make-parameterization))
-
-(define namespace (make-namespace 'no-constants
-				  (if annotate?
-				      'hash-percent-syntax
-				      'all-syntax)))
-
+(define (load/prompt f)
+ (let/ec jump
+   (let* ([eeh #f])
+     (dynamic-wind
+      (lambda () 
+	(set! eeh (error-escape-handler))
+	(error-escape-handler jump))
+      (lambda () (load f))
+      (lambda () 
+	(error-escape-handler eeh)
+	(set! eeh #f))))))
 
 (constructor-style-printing #t)
 (quasi-read-style-printing #t)
-(aries:signal-not-boolean (cond-is-boolean))
 (show-sharing (print-graph))
-(with-parameterization parameterization
-  (let ([u@ (unit/sig->unit
-	     (compound-unit/sig
-		 (import)
-	       (link
-		[params : plt:userspace:params^ (params@)]
-		[userspace : plt:userspace^
-			   ((reference-library-unit/sig
-			     "userspcr.ss" "userspce")
-			    params)])
-	       (export [open params]
-		       (open userspace))))]
-	[graph (print-graph)]
-	[inexact-needs-#i? (inexact-needs-#i)]
-	[print-with-list? (print-with-list)])
-    (lambda ()
-      (current-namespace namespace)
-      (eval `(#%define argv ,(list->vector user-argv)))
-      ;(eval `(#%define read/zodiac ,read/zodiac))
-      (invoke-open-unit u@)
-      ;(eval `(allow-improper-lists ,(allow-.-lists)))
-      ;(eval `(eq?-only-compares-symbols ,(eq?-only-on-syms)))
 
-      ; these should only be set in the system parameterization
-      (zodiac:allow-improper-lists (allow-.-lists))
-      (constructor-style-printing #t)
-      (show-sharing graph)
-      (pretty-print-show-inexactness inexact-needs-#i?)
-      (abbreviate-cons-as-list print-with-list?)
-      (zodiac:disallow-untagged-inexact-numbers inexact-needs-#i?)
+(define (repl file restart)
+  (let ([parameterization (make-parameterization)]
+	[namespace (make-namespace 'no-constants
+				   (if annotate?
+				       'hash-percent-syntax
+				       'all-syntax))])
+    (set! user-parameterization parameterization)
+    (with-parameterization parameterization
+      (let ([u@ (unit/sig->unit
+		 (compound-unit/sig
+		  (import)
+		  (link
+		   [params : plt:userspace:params^ (params@)]
+		   [userspace : plt:userspace^
+			      ((reference-library-unit/sig
+				"userspcr.ss" "userspce")
+			       params)])
+		  (export [open params]
+			  (open userspace))))])
+	(lambda ()
+	  (current-namespace namespace)
+	  (eval `(#%define argv ,(list->vector user-argv)))
+	  (eval `(#%define read/zodiac ,read/zodiac))
+	  (eval `(#%define restart ,restart))
+	  (invoke-open-unit u@)
+	  
+	  ; In case the user uses pretty-print:
+	  (eval `(pretty-print-show-inexactness ,(inexact-needs-#i)))
 
-      (current-prompt-read prompt-read)
-      (debug-info-handler debug-info)
-      (current-print drscheme-jr-print)
-      (current-exception-handler exception-handler)
-      (current-load drscheme-jr-load) 
-      (current-eval drscheme-jr-eval))))
+	  (debug-info-handler debug-info)
+	  (current-load drscheme-jr-load) 
+	  (current-eval drscheme-jr-eval)
+	  (current-exception-handler exception-handler)))))
 
-(define (go)
+  (current-load drscheme-jr-load) 
+  (current-eval drscheme-jr-eval)
+
   (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
 	  (version))
   (printf "Language: ~a~n"
 	  (cadr (assoc params:check-syntax-level
 		       (map (lambda (p) (list (cadr p) (car p))) language-levels))))
   
-  (current-parameterization parameterization)
-  (require-library-use-compiled #f))
+  (require-library-use-compiled #f)
+  (when (string? file)
+    (load/prompt file))
+
+  (current-prompt-read prompt-read)
+  (current-print drscheme-jr-print)
+
+  (read-eval-print-loop))
+
+(define (go)
+  (let loop ([file #f])
+    (define redo #f)
+    (define c (make-custodian))
+
+    (invoke-open-unit/sig z@)
+    ; Set the newly-created parameters:
+    (set! drscheme-jr-user-vocabulary (make-drj-vocab))
+    (aries:signal-undefined (signal-undef))
+    (aries:signal-not-boolean (cond-req-bool))
+    (zodiac:disallow-untagged-inexact-numbers (inexact-needs-#i))
+    (zodiac:allow-improper-lists (allow-.-lists))
+    (pretty-print-show-inexactness (inexact-needs-#i))
+    (abbreviate-cons-as-list (print-with-list))
+    (constructor-style-printing #t)
+    (quasi-read-style-printing #t)
+    (show-sharing (print-graph))
+    
+    (thread-wait
+     (parameterize ([current-custodian c])
+       (thread
+	(lambda ()
+	  (repl file
+		(let ([restart
+		       (lambda (file)
+			 (set! redo file)
+			 (custodian-shutdown-all c))])
+		  (case-lambda
+		   [(file)
+		    (unless (or (relative-path? file)
+				(absolute-path? file))
+		       (raise-type-error 'restart "path string" file))
+		    (restart file)]
+		   [() (restart #t)])))))))
+    (when redo
+      (loop redo))))

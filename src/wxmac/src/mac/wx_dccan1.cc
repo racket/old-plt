@@ -571,9 +571,9 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			break;
 		case kPenTool:
 		        {
-			int thePenWidth = current_pen->GetWidth();
-			int thePenHeight = current_pen->GetWidth();
-			PenSize(thePenWidth, thePenHeight);
+			int pensize = current_pen->GetWidth();
+			int thePenWidth = (pensize ? pensize : 1);
+			PenSize(thePenWidth, thePenWidth);
 
 			int thePenStyle = current_pen->GetStyle();
 			int log = patCopy;

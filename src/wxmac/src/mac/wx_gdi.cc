@@ -329,8 +329,6 @@ wxPen::wxPen(wxColour& col, int Width, int Style):
   colour = col;
   stipple = NULL ;
   width = Width;
-  if (width < 1)
-  	width = 1;
   style = Style;
   join = wxJOIN_ROUND ;
   cap = wxCAP_ROUND ;
@@ -348,8 +346,6 @@ wxPen::wxPen(char *col, int Width, int Style):
   SetColour(col);
   stipple = NULL ;
   width = Width;
-  if (width < 1)
-  	width = 1;
   style = Style;
   join = wxJOIN_ROUND ;
   cap = wxCAP_ROUND ;

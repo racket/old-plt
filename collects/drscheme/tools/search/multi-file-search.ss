@@ -74,7 +74,7 @@
                                           (= 1 (apply + x)))))
 
 (preferences:set-default 'drscheme:multi-file-search:frame-size '(300 . 400) 
-                         (lambda (x) (and (cons? x)
+                         (lambda (x) (and (pair? x)
                                           (number? (car x))
                                           (number? (cdr x)))))
 

@@ -89,7 +89,7 @@
 			     (arithmetic-shift b -4)))
 		    (outc (+ (bitwise-and #x3f (arithmetic-shift b 2))
 			     (arithmetic-shift c -6)))
-		    (outc (+ (bitwise-and #x3f c)))
+		    (outc (bitwise-and #x3f c))
 		    (loop (+ pos 4)))]
 		 [else
 		  ;; Hard case: n is 1 or 2
@@ -116,7 +116,7 @@
 				(done 1)
 				;; Finish c, loop
 				(begin
-				  (outc (+ (bitwise-and #xff c)))
+				  (outc (bitwise-and #x3f c))
 				  (loop (+ pos 4))))))))])))))]))
 
   (define (base64-decode src)

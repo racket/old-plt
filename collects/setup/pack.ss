@@ -1,5 +1,8 @@
 
-;; Utilities for creating a .plt package, relies on gzip and mmencode
+;; Utilities for creating a .plt package
+
+(require-library "deflate.ss")
+(require-library "base64.ss" "net")
 
 (define pack
   (case-lambda
@@ -10,46 +13,44 @@
    [(dest name paths collections filter encode?)
     (pack dest name paths collections filter encode? 'file)]
    [(dest name paths collections filter encode? file-mode)
-    (let* ([p (if encode?
-		  (process (format "gzip -c | mmencode > ~s" dest))
-		  #f)]
-	   [stdin (if p 
-		      (cadr p)
-		      (open-output-file dest 'truncate/replace))]
-	   [echo (lambda (p)
-		   (thread
-		    (lambda ()
-		      (let loop ()
-			(let ([l (read-line p 'any)])
-			  (unless (eof-object? l)
-			    (printf "~a~n" l)
-			    (loop)))))))]
-	   [t1 (and p (echo (car p)))]
-	   [t2 (and p (echo (list-ref p 3)))])
-      (fprintf stdin "PLT~n")
+    (let*-values ([(file) (open-output-file dest 'truncate/replace)]
+		  [(fileout thd)
+		   (if encode?
+		       (let-values ([(b64-out b64-in) (make-pipe 4096)]
+				    [(gz-out gz-in) (make-pipe 4096)])
+			 (thread
+			  (lambda ()
+			    (gzip-through-ports gz-out b64-in #f 0)
+			    (close-output-port b64-in)))
+			 (values
+			  gz-in
+			  (thread
+			   (lambda ()
+			     (base64-encode-stream b64-out file)
+			     (close-output-port file)))))
+		       (values file (thread void)))])
+      (fprintf fileout "PLT~n")
       (write
        `(lambda (request failure)
 	  (case request
 	    [(name) ,name]
 	    [(unpacker) 'mzscheme]))
-       stdin)
-      (newline stdin)
+       fileout)
+      (newline fileout)
       (write
        `(unit 
 	 (import plthome mzuntar)
 	 (export)
 	 (mzuntar void)
 	 (quote ,collections))
-       stdin)
-      (newline stdin)
+       fileout)
+      (newline fileout)
       (for-each
        (lambda (path)
-	 (mztar path stdin filter file-mode))
+	 (mztar path fileout filter file-mode))
        paths)
-      (close-output-port stdin)
-      (when p
-	(thread-wait t1)
-	(thread-wait t2)))]))
+      (close-output-port fileout)
+      (thread-wait thd))]))
 
 (define (mztar path output filter file-mode)
   (define (path->list p)
@@ -85,11 +86,14 @@
 			  len)
 		 (with-input-from-file p
 		   (lambda ()
-		     (let loop ()
-		       (let ([c (read-char)])
-			 (unless (eof-object? c)
-			   (write-char c output)
-			   (loop)))))))))))
+		     (let ([s (make-string 4096)])
+		       (let loop ()
+			 (let ([n (read-string-avail! s)])
+			   (unless (eof-object? n)
+			     (if (= n 4096)
+				 (display s output)
+				 (display (substring s 0 n) output))
+			     (loop))))))))))))
      (or files (directory-list dir)))))
 
 (define (std-filter path)

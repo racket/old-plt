@@ -68,78 +68,44 @@
   ;;               Archive Unpacking              ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define (port64->port p)
-    (let* ([waiting 0]
-	   [waiting-bits 0]
-	   [at-eof? #f]
-	   [push
-	    (lambda (v)
-	      (set! waiting (+ (arithmetic-shift waiting 6) v))
-	      (set! waiting-bits (+ waiting-bits 6)))])
-      (make-input-port
-       (lambda ()
-	 (let loop ()
-	   (if at-eof?
-	       eof
-	       (if (>= waiting-bits 8)
-		   (begin0
-		    (integer->char (arithmetic-shift waiting (- 8 waiting-bits)))
-		    (set! waiting-bits (- waiting-bits 8))
-		    (set! waiting (bitwise-and waiting (sub1 (arithmetic-shift 1 waiting-bits)))))
-		   (let* ([c (read-char p)]
-			  [n (if (eof-object? c)
-				 (#%char->integer #\=)
-				 (char->integer c))])
-		     (cond
-		      [(<= (#%char->integer #\A) n (#%char->integer #\Z)) (push (- n (#%char->integer #\A)))]
-		      [(<= (#%char->integer #\a) n (#%char->integer #\z)) (push (+ 26 (- n (#%char->integer #\a))))]
-		      [(<= (#%char->integer #\0) n (#%char->integer #\9)) (push (+ 52 (- n (#%char->integer #\0))))]
-		      [(= (#%char->integer #\+) n) (push 62)]
-		      [(= (#%char->integer #\/) n) (push 63)]
-		      [(= (#%char->integer #\=) n) (set! at-eof? #t)])
-		     (loop))))))
-       (lambda ()
-	 (or at-eof? (char-ready? p)))
-       void)))
-
+  ;; Returns a port and a kill thunk
   (define (port64gz->port p64gz)
+    ;; Ensure signatures are loaded into the current namespace
+    (require-library "inflates.ss")
+    (require-library "base64s.ss" "net")
     (let ([gunzip-through-ports
 	   (invoke-unit/sig
 	    (compound-unit/sig
 	     (import)
 	     (link [I : (gunzip-through-ports) ((require-library "inflater.ss"))]
 		   [X : () ((unit/sig () (import (gunzip-through-ports)) gunzip-through-ports) I)])
+	     (export)))]
+	  [base64-decode-stream
+	   (invoke-unit/sig
+	    (compound-unit/sig
+	     (import)
+	     (link [I : (base64-decode-stream) ((require-library "base64r.ss" "net"))]
+		   [X : () ((unit/sig () (import (base64-decode-stream)) base64-decode-stream) I)])
 	     (export)))])
       ; Inflate in a thread so the whole input isn't read at once
-      (let*-values ([(pgz) (port64->port p64gz)]
-		    [(waiting?) #f]
-		    [(ready) (make-semaphore)]
-		    [(read-pipe write-pipe) (make-pipe)]
-		    [(out) (make-output-port
-			    (lambda (s)
-			      (set! waiting? #t)
-			      (semaphore-wait ready)
-			      (set! waiting? #f)
-			      (display s write-pipe))
-			    (lambda ()
-			      (close-output-port write-pipe)))]
-		    [(get) (make-input-port
-			    (lambda ()
-			      (if (char-ready? read-pipe)
-				  (read-char read-pipe)
-				  (begin
-				    (semaphore-post ready)
-				    (read-char read-pipe))))
-			    (lambda ()
-			      (or (char-ready? read-pipe) waiting?))
-			    (lambda ()
-			      (close-input-port read-pipe)))])
-	(thread (lambda () 
-		  (with-handlers ([void (lambda (x)
-					  (warning "Warning: unpacking error: ~a" x))])
-		    (gunzip-through-ports pgz out))
-		  (close-output-port out)))
-	get)))
+      (let-values ([(base64-out base64-in) (make-pipe 4096)]
+		   [(guz-out guz-in) (make-pipe 4096)])
+	(let ([64t
+	       (thread (lambda () 
+			 (with-handlers ([void (lambda (x)
+						 (warning "Warning: base64 decoding error: ~a" x))])
+			   (base64-decode-stream p64gz base64-in))
+			 (close-output-port base64-in)))]
+	      [gzt
+	       (thread (lambda () 
+			 (with-handlers ([void (lambda (x)
+						 (warning "Warning: unpacking error: ~a" x))])
+			   (gunzip-through-ports base64-out guz-in))
+			 (close-output-port guz-in)))])
+	  (values guz-out
+		  (lambda ()
+		    (kill-thread 64t)
+		    (kill-thread gzt)))))))
 
   (define (unmztar p filter)
     (let loop ()
@@ -211,38 +177,43 @@
 					archive)
 				x)
 		       null)])
-      (call-with-input-file archive
-	(lambda (p64)
-	  (let* ([p (port64gz->port p64)])
-	    (unless (and (eq? #\P (read-char p))
-			 (eq? #\L (read-char p))
-			 (eq? #\T (read-char p)))
-	      (error "not an unpackable distribution archive"))
-	    (let* ([n (make-namespace)]
-		   [info (eval (read p) n)])
-	      (unless (and (procedure? info)
-			   (procedure-arity-includes? info 2))
-		(error "expected a procedure of arity 2, got" info))
-	      (let ([name (call-info info 'name #f
-				     (lambda (n) 
-				       (unless (string? n)
-					 (if n
-					     (error "couldn't find the package name")
-					     (error "expected a string")))))]
-		    [unpacker (call-info info 'unpacker #f
-					 (lambda (n) 
-					   (unless (eq? n 'mzscheme)
-					     (error "unpacker isn't mzscheme:" n))))])
-		(unless (and name unpacker)
-		  (error "bad name or unpacker"))
-		(setup-printf "Unpacking ~a from ~a" name archive)
-		(let ([u (eval (read p) n)])
-		  (unless (unit? u)
-		    (error "expected a unit, got" u))
-		  (let ([plthome plthome]
-			[unmztar (lambda (filter)
-				   (unmztar p filter))])
-		    (invoke-unit u plthome unmztar))))))))))
+      (let*-values ([(p64gz) (open-input-file archive)]
+		    [(p kill) (port64gz->port p64gz)])
+	(dynamic-wind
+	 void
+	 (lambda ()
+	   (unless (and (eq? #\P (read-char p))
+			(eq? #\L (read-char p))
+			(eq? #\T (read-char p)))
+	     (error "not an unpackable distribution archive"))
+	   (let* ([n (make-namespace)]
+		  [info (eval (read p) n)])
+	     (unless (and (procedure? info)
+			  (procedure-arity-includes? info 2))
+	       (error "expected a procedure of arity 2, got" info))
+	     (let ([name (call-info info 'name #f
+				    (lambda (n) 
+				      (unless (string? n)
+					(if n
+					    (error "couldn't find the package name")
+					    (error "expected a string")))))]
+		   [unpacker (call-info info 'unpacker #f
+					(lambda (n) 
+					  (unless (eq? n 'mzscheme)
+					    (error "unpacker isn't mzscheme:" n))))])
+	       (unless (and name unpacker)
+		 (error "bad name or unpacker"))
+	       (setup-printf "Unpacking ~a from ~a" name archive)
+	       (let ([u (eval (read p) n)])
+		 (unless (unit? u)
+		   (error "expected a unit, got" u))
+		 (let ([plthome plthome]
+		       [unmztar (lambda (filter)
+				  (unmztar p filter))])
+		   (invoke-unit u plthome unmztar))))))
+	 (lambda ()
+	   (kill)
+	   (close-input-port p64gz))))))
 
   (define x-specific-collections
     (apply 

@@ -217,9 +217,8 @@ make .plt archives, especially under Unix:
   (defined below).
   
   If `encode?' is #f, then the output archive is in raw form, and
-  still must be gzipped and mime-encoded. If `encode?'  is #t, then
-  gzip and mmencode must be in the shell's path for executables.
-  the default value is #t.
+  still must be gzipped and mime-encoded (in that order). The default
+  value is #t.
 
   The `file-mode' argument must be 'file or 'file-replace, indicating
   the default mode for a file in the archive. The default value is

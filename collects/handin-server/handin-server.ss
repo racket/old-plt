@@ -26,6 +26,8 @@
 		    #f
 		    "config.ss"))
 
+  (define PORT-NUMBER (get-config 'port-number 7979))
+  (define HTTPS-PORT-NUMBER (get-config 'https-port-number (add1 PORT-NUMBER)))
   (define SESSION-TIMEOUT (get-config 'session-timeout 300))
   (define MAX-UPLOAD (get-config 'max-upload 500000))
   (define MAX-UPLOAD-KEEP (get-config 'max-upload-keep 9))
@@ -195,7 +197,7 @@
 
   (LOG "server started ------------------------------")
 
-  (define stop-status (serve-status))
+  (define stop-status (serve-status HTTPS-PORT-NUMBER))
   
   (define session-count 0)
 
@@ -203,7 +205,7 @@
 		  (lambda (msg exn)
 		    (LOG msg))])
     (run-server
-     7979
+     PORT-NUMBER
      (lambda (r w)
        (parameterize ([current-session (begin
 					 (set! session-count (add1 session-count))

@@ -2,7 +2,8 @@
 _Handin Server and Client_
 
 The "handin-server" directory contains a server to be run by a course
-instructor for accepting homework assignments.
+instructor for accepting homework assignments and reporting on
+submitted assignments.
 
 The "handin-client" directory contains a client to be customized then
 re-distributed to students in the course. The customized client will
@@ -67,6 +68,11 @@ Quick Start for a Test Drive:
 
     The submitted file will be .../active/test/tester/handin0.
  
+ 9. Check the status of your submission by pointing a web browser at
+        https://localhost:7980/servlets/status.ss
+    Note the "s" in "https". Use the "tester" username and "pw"
+    password, as before.
+
   -------------------------------------------------------------------
  | "Where is the collection?"                                        |
  |- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -|
@@ -168,6 +174,13 @@ sub-directories:
 
     for the following keys:
 
+      'port-number : the port for the main handin server; the default
+         is 7979
+
+      'https-port-number : the port for the handin-status HTTPS
+         server; the default is one more than the main server's port
+         (so the transitive default is 7980)
+
       'session-timeout : number of seconds a session can last,
          including execution of the submit-validation function;
          the default is 300
@@ -227,6 +240,9 @@ sub-directories:
     For submissions from a test-suite window, the file is a normal
     test-suite file.
 
+  * inactive/ --- sub-directory for inactive assignments, used by the
+    HTTPS status web server.
+
   * active/<assignment>/checker.ss (optional) --- a module that
     exports a `checker' function. This function receives two
     strings. The first is a username and the second is the user's
@@ -247,6 +263,17 @@ sub-directories:
     and `id' is an integer reprsenting the connection (numbered
     consecutively from 1 when the server starts) or 0 for a message
     for server without a connection.
+
+  * status-web-log.ss (created if not present, appended otherwise)
+    --- records accesses of the HTTPS status web server.
+
+  * [in]active/<assignment>/<user>/<filename>0 (if submitted) --- the
+    most recent submission for <assignment> by <user> where <filename>
+    was returned by the checker (or is "handin" if there's no
+    checker).
+
+  * [in]active/<assignment>/<user>/grade (optional) --- <user>'s grade
+    for <assignment>, to be reported by the HTTPS status web server.
 
 The server can be run within either MzScheme or MrEd, but "utils.ss"
 requires MrEd (which means that `checker' modules will likely require
@@ -276,6 +303,21 @@ limited to 1 whenever possible. When multiple assignments are active,
 design a checker to help ensure that the student has selected the
 correct assignment in the handin dialog.
 
+A student can download his/her own submissions through a web server
+that runs concurrently with the handin server. The starting URL is
+
+  https://SERVER:PORT/servlets/status.ss
+
+to obtain a list of all assingments, or
+
+  https://SERVER:PORT/servlets/status.ss?handin=ASSIGNMENT
+
+to start with a specific assignment (named ASSIGNMENT). The default
+PORT is 7980.
+
+
+Checker Utilities
+============================================
 
 The _utils.ss_ module provides utilities helpful in implementing
 `checker' functions:

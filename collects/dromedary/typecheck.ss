@@ -753,7 +753,6 @@
 		     (let* ([rname (cond
 				    [(syntax? name) (syntax-object->datum name)]
 				    [(string? name) name])]
-				    
 			    [result (hash-table-get built-in-and-user-funcs rname (lambda () #f))])
 		       (if result
 			   (car result)
@@ -775,7 +774,8 @@
 				       (raise-syntax-error #f (format "Error: ~a not found in ~a" (syntax-object->datum name) (syntax-object->datum (ast:lident-name longident))) uname)
 				       #f)))
 			       (begin
-				 (raise-syntax-error #f (format "Error: ~a not found" (syntax-object->datum (ast:lident-name longident))) uname)
+				 (raise-syntax-error #f (format "Error: Library ~a not found" (syntax-object->datum (ast:lident-name longident))) (ast:lident-name longident))
+
 				 #f))))]))
 
 	   (define (convert-tvars type mappings)

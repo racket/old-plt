@@ -18,7 +18,7 @@
 		 (struct mlexn (name types))
 		 (struct value-set (name type))
 		 (struct <user-type> ())
-		 != <lt> <gt> <le> <ge> <or> <and> <> <list>
+		 != <lt> <gt> <le> <ge> <or> <and> <>
 		 float? any?
 		 array-get
 		 (all-from (lib "match.ss")))
@@ -59,12 +59,14 @@
 	(hash-table-put! <list-funcs> "tl" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) cdr))
 	(hash-table-put! <list-funcs> "rev" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) reverse))
 	(hash-table-put! <list-funcs> "map" (cons (make-arrow (list (make-arrow (list (make-tvar "'a")) (make-tvar "'b"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'b"))))  map))
-	(hash-table-put! <list-funcs> "filter" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-arrow (list (make-tvar "'a")) "bool")) (make-tlist (make-tvar "'a")))) filter))
+	(hash-table-put! <list-funcs> "filter" (cons (make-arrow (list (make-arrow (list (make-tvar "'a")) "bool")) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) filter))
 	(hash-table-put! <list-funcs> "append" (cons (make-arrow (list (make-tlist (make-tvar "'a"))) (make-arrow (list (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a")))) <append>))
 
+	;; The string functions
+	(define <string-funcs> (make-hash-table 'equal))
+	(hash-table-put! <string-funcs> "length" (cons (make-arrow (list "string") "int") string-length))
 
-	(define <list> list)
-
+	;; The array functions
 	(define (array-get arr)
 	  (lambda (pos)
 ;; Don't forget to return invalid argument
@@ -129,6 +131,7 @@
 	;; Fill up all the libraries
 	(hash-table-put! <library-names> "List" <list-funcs>)
 	(hash-table-put! <library-names> "Array" <array-funcs>)
+	(hash-table-put! <library-names> "String" <string-funcs>)
 
 	;; Curried primitives
 	(define (<+> a)
@@ -146,6 +149,10 @@
 	(define (<quotient> a)
 	  (lambda (b)
 	    (quotient a b)))
+
+	(define (<remainder> a)
+	  (lambda (b)
+	    (remainder a b)))
 
 	(define (</> a)
 	  (lambda (b)
@@ -293,6 +300,7 @@
 	(hash-table-put! built-in-and-user-funcs "*." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) <*>))
 	(hash-table-put! built-in-and-user-funcs "/" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <quotient>))
 	(hash-table-put! built-in-and-user-funcs "/." (cons (make-arrow (list "float") (make-arrow (list "float") "float")) </>))
+	(hash-table-put! built-in-and-user-funcs "mod" (cons (make-arrow (list "int") (make-arrow (list "int") "int")) <remainder>))
 	(hash-table-put! built-in-and-user-funcs "=" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'b")) "bool")) <equal?>))
 	(hash-table-put! built-in-and-user-funcs "==" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'b")) "bool")) <equal?>))
 	(hash-table-put! built-in-and-user-funcs "<" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <lt>))

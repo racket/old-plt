@@ -108,21 +108,22 @@
 			      [search-for-help
 			       (lambda (text type mode)
 				 (send (send search-text get-editor) erase)
-				 (run-search text 
-					     (case type
-					       [(keyword) 0]
-					       [(keyword+index) 1]
-					       [(all) 2]
-					       [else (raise-type-error 'search-for-help
-								       "'keyword, 'keyword-index, or 'all"
-								       type)])
-					     (case mode
-					       [(exact) 0]
-					       [(contains) 1]
-					       [(regexp) 2]
-					       [else (raise-type-error 'search-for-help
-								       "'exact, 'contains, or 'regexp"
-								       mode)])))]
+				 (do-lucky-search
+				  text 
+				  (case type
+				    [(keyword) 0]
+				    [(keyword+index) 1]
+				    [(all) 2]
+				    [else (raise-type-error 'search-for-help
+							    "'keyword, 'keyword-index, or 'all"
+							    type)])
+				  (case mode
+				    [(exact) 0]
+				    [(contains) 1]
+				    [(regexp) 2]
+				    [else (raise-type-error 'search-for-help
+							    "'exact, 'contains, or 'regexp"
+							    mode)])))]
 
 			      [goto-url (lambda (url) (send results goto-url url #f))])
 			    

@@ -722,57 +722,86 @@
 					(format "~a" (if (exn? x)
 							 (exn-message x)
 							 (format "~s" x)))))])
-	  (let* ([all (call-with-input-file filename read 'text)]
-		 [loaded-files (assoc 'files all)]
-		 [loaded-language-settings (assoc 'settings all)]
-		 [loaded-open-table (assoc 'open-table all)]
-		 [loaded-collection-paths (assoc 'collection-paths all)]
-                 [loaded-to-load-files-shown? (assoc 'to-load-files-shown? all)]
-                 [loaded-loaded-files-shown? (assoc 'loaded-files-shown? all)])
+	  (let* ([raw (call-with-input-file filename read 'text)])
+	    (unless (and (list? raw)
+			 (= 2 (length raw))
+			 (eq? 'quote (car raw)))
+	      (error 'bad-format))
+	    (let ([all (cadr raw)])
+	      (unless (and (list? all)
+			   (andmap (lambda (x)
+				     (and (list? x)
+					  (= 2 (length x))
+					  (symbol? (car x))))
+				   all))
+		(error 'bad-format))
+	      (let ([loaded-files (assoc 'files all)]
+		    [loaded-language-settings (assoc 'settings all)]
+		    [loaded-open-table (assoc 'open-table all)]
+		    [loaded-collection-paths (assoc 'collection-paths all)]
+		    [loaded-to-load-files-shown? (assoc 'to-load-files-shown? all)]
+		    [loaded-loaded-files-shown? (assoc 'loaded-files-shown? all)])
 
-	    (if (and loaded-language-settings
-		     (= (arity drscheme:basis:make-setting)
-			(length (function:second loaded-language-settings))))
-		(set! language-settings
-		      (apply drscheme:basis:make-setting (function:second loaded-language-settings)))
-		(message-box 
-                 "Loading Project"
-                 (format "Resetting language settings to default; saved language settings are from old version")))
+		(if (and loaded-language-settings
+			 (= (arity drscheme:basis:make-setting)
+			    (length (function:second loaded-language-settings))))
+		    (set! language-settings
+			  (apply drscheme:basis:make-setting (function:second loaded-language-settings)))
+		    (message-box 
+		     "Loading Project"
+		     (format "Resetting language settings to default; saved language settings are from old version")))
 
-            ;; need to update the gui at this point...
-            (when loaded-loaded-files-shown?
-              (set! loaded-files-shown? (function:second loaded-loaded-files-shown?)))
-            (update-loaded-files-shown)
-            (when loaded-to-load-files-shown?
-              (set! to-load-files-shown? (function:second loaded-to-load-files-shown?)))
-	    (update-to-load-files-shown)
-            
-            (when loaded-files
-	      (set! files (function:second loaded-files)))
+		;; need to update the gui at this point...
+		(when loaded-loaded-files-shown?
+		  (set! loaded-files-shown? (function:second loaded-loaded-files-shown?)))
+		(update-loaded-files-shown)
+		(when loaded-to-load-files-shown?
+		  (set! to-load-files-shown? (function:second loaded-to-load-files-shown?)))
+		(update-to-load-files-shown)
+		
+		(when loaded-files
+		  (set! files (function:second loaded-files)))
 
-	    (when loaded-open-table
-	      (set! open-table (make-hash-table))
-	      (for-each (lambda (t) (hash-table-put! open-table (car t) (make-open-info #t (cadr t))))
-			(function:second loaded-open-table)))
+		(when loaded-open-table
+		  (set! open-table (make-hash-table))
+		  (for-each (lambda (t) (hash-table-put! open-table (car t) (make-open-info #t (cadr t))))
+			    (function:second loaded-open-table)))
 
-	    (when loaded-collection-paths
-	      (set! collection-paths (function:second loaded-collection-paths)))
+		(when loaded-collection-paths
+		  (set! collection-paths (function:second loaded-collection-paths)))
 
-	    (refresh-files-list-box))))
+		(refresh-files-list-box))))))
+
+      (define project-save-file-tag ";; project file")
 
       (define (save-file filename)
 	(is-not-changed
 	 (lambda ()
 	   (call-with-output-file filename
 	     (lambda (port)
-	       (write (list
-                       `(loaded-files-shown? ,loaded-files-shown?)
-                       `(to-load-files-shown? ,to-load-files-shown?)
-		       `(collection-paths ,collection-paths)
-		       `(open-table ,(hash-table-map open-table (lambda (x v) (list x (open-info-open? v)))))
-		       `(files ,files)
-		       `(settings ,(cdr (vector->list (struct->vector language-settings)))))
-		      port))
+	       (fprintf port "~a~n" project-save-file-tag)
+	       (newline port)
+	       (fprintf port "; save data~n")
+	       (write `'((loaded-files-shown? ,loaded-files-shown?)
+			 (to-load-files-shown? ,to-load-files-shown?)
+			 (collection-paths ,collection-paths)
+			 (open-table ,(hash-table-map open-table (lambda (x v) (list x (open-info-open? v)))))
+			 (files ,files)
+			 (settings ,(cdr (vector->list (struct->vector language-settings)))))
+		      port)
+	       (newline port)
+	       (newline port)
+	       (fprintf port "; load commands~n")
+	       (for-each (lambda (file)
+			   (write
+			    (cond
+			     [(string? file)
+			      `(load ,file)]
+			     [else
+			      `(require-library ,@file)])
+			    port)
+			   (newline port))
+			 files))
 	     'truncate 'text))))
 
       (define loaded-files-shown? #f)

@@ -22,15 +22,15 @@
 		   (let/ec exit
 		     (unless tree
 		       (exit #f))
-		     (let* ([N (make-node #f #f 0 0)]
-			    [r N]
-			    [l N]
+		     (let* ([n (make-node #f #f 0 0)]
+			    [r n]
+			    [l n]
 			    [break-at
 			     (lambda (t)
 			       (set-node-right! l (node-left t))
 			       (set-node-left! r (node-right t))
-			       (set-node-left! t (node-right N))
-			       (set-node-right! t (node-left N))
+			       (set-node-left! t (node-right n))
+			       (set-node-right! t (node-left n))
 			       (set! tree t)
 			       (exit #f))])
 		       (let loop ([t tree])

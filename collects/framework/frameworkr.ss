@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkr.ss,v 1.15 1998/11/19 21:24:36 robby Exp $
+;; $Id: frameworkr.ss,v 1.16 1999/02/02 22:28:27 robby Exp $
 ;;
 
 (compound-unit/sig
@@ -7,7 +7,7 @@
 	  [mred : mred-interfaces^])
   (link [keys : framework:keys^ ((require-relative-library "keys.ss"))]
 	[test : framework:test^ ((require-relative-library "testr.ss") mred keys)]
-	[F : frameworkc^ ((require-relative-library "frameworkc.ss")
+	[f : frameworkc^ ((require-relative-library "frameworkc.ss")
 			  (core string)
 			  (core function)
 			  (core pretty-print)
@@ -19,4 +19,4 @@
   (export
    (unit keys)
    (unit test)
-   (open F)))
+   (open f)))

@@ -633,7 +633,7 @@
 	      (mred:end-busy-cursor)
 	      (cleanup-transparent-io)
 	      (send (get-top-level-window) enable-evaluation)
-	      (begin-edit-sequence)	     
+	      (begin-edit-sequence)
 	      (set-caret-owner #f 'display)
 
 	      (if (thread-running? user-thread)
@@ -709,11 +709,9 @@
 		 (semaphore-wait sema)))))])
       (public
 	[reset-break-state (lambda () (set! ask-about-kill? #f))]
-	[breakable-thread #f]
 	[break (lambda ()
 		 (cond
-		  [(or ;(not in-evaluation?)
-		       (not breakable-thread))
+		  [(not in-evaluation?)
 		   (mred:bell)]
 		  [ask-about-kill? 
 		   (if (fw:gui-utils:get-choice
@@ -721,11 +719,10 @@
 			"Just Break"
 			"Kill"
 			"Kill?")
-		       (break-thread breakable-thread)
-		       (begin 
-			 (shutdown-user-custodian)))]
+		       (break-thread user-thread)
+		       (shutdown-user-custodian))]
 		  [else 
-		   (break-thread breakable-thread)
+		   (break-thread user-thread)
 		   (set! ask-about-kill? #t)]))])
       (public
 	[error-escape-k void])
@@ -735,65 +732,46 @@
 	[eval-thread-state-sema (make-semaphore 1)]
 	[eval-thread-queue-sema (make-semaphore 0)]
 	
-	[evaluation-sucessful 'not-yet-evaluation-sucessful]
 	[cleanup-sucessful 'not-yet-cleanup-sucessful]
 	[cleanup-semaphore 'not-yet-cleanup-semaphore]
 	[thread-grace 'not-yet-thread-grace]
 	[thread-kill 'not-yet-thread-kill]
 	
+	[already-protecting? #f]
+
+	[killed-callback void]
+	[thread-killed 'not-yet-thread-killed]
+	[initialize-killed-thread
+	 (lambda ()
+	   (when (thread? thread-killed)
+	     (kill-thread thread-killed))
+	   (set! thread-killed
+		 (system
+		  (lambda ()
+		    (thread
+		     (lambda ()
+		       (thread-wait user-thread)
+		       (killed-callback)))))))]
+
 	[protect-user-evaluation
 	 (lambda (cleanup thunk)
 	   (semaphore-wait in-evaluation-semaphore)
 	   (set! in-evaluation? #t)
 	   (semaphore-post in-evaluation-semaphore)
 
-	   (fluid-let ([breakable-thread user-thread]
-		       [evaluation-sucessful  (make-semaphore 0)]
-		       [cleanup-semaphore (make-semaphore 1)]
-		       [cleanup-sucessful (make-semaphore 0)]
-		       [thread-grace
-			(system
-			 (lambda ()
-			   (thread
-			    (lambda ()
-			      (semaphore-wait evaluation-sucessful)
-
-			      (semaphore-wait cleanup-semaphore)
-
-			      (parameterize ([current-custodian drscheme:init:system-custodian])
-				(kill-thread thread-kill))
-
-			      (cleanup)
-			      (semaphore-post cleanup-sucessful)))))]
-		       [thread-kill
-			(system
-			 (lambda ()
-			   (thread 
-			    (lambda ()
-			      (thread-wait user-thread)
-
-			      (semaphore-wait cleanup-semaphore)
-
-			      (parameterize ([current-custodian drscheme:init:system-custodian])
-				(kill-thread thread-grace))
-
-			      (cleanup)
-			      (semaphore-post cleanup-sucessful)))))])
+	   (fluid-let ([killed-callback cleanup])
 
 	     (let/ec k
 	       (fluid-let ([error-escape-k 
 			    (lambda ()
-			      (semaphore-post evaluation-sucessful)
 			      (k (void)))])
-		 (thunk)))
+		 (thunk))))
+	   
+	   (cleanup)
 
-	     (semaphore-post evaluation-sucessful)
-	     (semaphore-wait cleanup-sucessful)
-
-
-	     (semaphore-wait in-evaluation-semaphore)
-	     (set! in-evaluation? #f)
-	     (semaphore-post in-evaluation-semaphore)))])
+	   (semaphore-wait in-evaluation-semaphore)
+	   (set! in-evaluation? #f)
+	   (semaphore-post in-evaluation-semaphore))])
       (public
 	[evaluation-thread #f]
 	[run-in-evaluation-thread 
@@ -802,21 +780,6 @@
 	   (set! eval-thread-thunks (append eval-thread-thunks (list thunk)))
 	   (semaphore-post eval-thread-state-sema)
 	   (semaphore-post eval-thread-queue-sema))]
-	[with-running-flag
-	 (lambda (thunk)
-	   (dynamic-wind
-	    (lambda ()
-	      (semaphore-wait running-semaphore)
-	      (set! evaluation-running #t)
-	      (semaphore-post running-semaphore)
-	      (update-running))
-	    (lambda ()
-	      (thunk))
-	    (lambda ()
-	      (semaphore-wait running-semaphore)
-	      (set! evaluation-running #f)
-	      (semaphore-post running-semaphore)
-	      (update-running))))]
 	[init-evaluation-thread
 	 (lambda ()
 	   (set! user-custodian (make-custodian))
@@ -832,13 +795,13 @@
 		   (set! user-thread (current-thread))
 
 		   (initialize-parameters)
+		   (initialize-killed-thread)
 
 		   (let ([drscheme-error-escape-handler
 			  (lambda ()
 			    (error-escape-k))])
 		     (error-escape-handler drscheme-error-escape-handler)
 		     (basis:bottom-escape-handler drscheme-error-escape-handler))
-
 
 		   (send (get-top-level-window) not-running)
 		   (set! evaluation-thread (current-thread))
@@ -859,22 +822,62 @@
 	   (shutdown-user-custodian))])
       
 	(private
-	  [running-semaphore (make-semaphore 1)]
-	  [running-on? #f]
-	  [running-events 0]
+	  [with-running-flag
+	   (lambda (thunk)
+	     (dynamic-wind
+	      (lambda ()
+		(update-running #t))
+	      (lambda ()
+		(thunk))
+	      (lambda ()
+		(update-running #f))))]
+
+	  [ok-to-break-semaphore (make-semaphore 1)]
+	  [ok-to-break #f]
+	  [start-callback? #f]
+
 	  [evaluation-running #f]
-	  [update-running
+	  [event-started (make-semaphore 0)]
+	  [running-callback-start
 	   (lambda ()
-	     (semaphore-wait running-semaphore)
-	     (if (or (> running-events 0)
-		     evaluation-running)
-		 (unless running-on?
-		   (set! running-on? #t)
-		   (send (get-top-level-window) running))
-		 (when running-on?
-		   (set! running-on? #f)
-		   (send (get-top-level-window) not-running)))
-	     (semaphore-post running-semaphore))])
+	     (semaphore-post event-started))]
+	  [running-callback-stop
+	   (lambda ()
+	     (semaphore-wait ok-to-break-semaphore)
+	     (when ok-to-break
+	       (break-thread running-thread)
+	       (semaphore-post event-started)
+	       (set! ok-to-break #f))
+	     (when evaluation-running
+	       (update-running #f))
+	     (semaphore-post ok-to-break-semaphore))]
+	  [update-running
+	   (lambda (flag)
+	     ;; need to handle nestings!
+	     (when (eq? flag evaluation-running)
+	       (error 'update-running "flags are already the same (~a)!" flag))
+	     (set! evaluation-running flag)
+	     (system
+	      (lambda ()
+		(if evaluation-running
+		    (mred:queue-callback (lambda () (send (get-top-level-window) running)))
+		    (mred:queue-callback (lambda () (send (get-top-level-window) not-running)))))))]
+	  [running-thread
+	   (thread
+	    (rec loop
+		 (lambda ()
+		   (semaphore-wait event-started)
+		   (with-handlers ([(lambda (x) #t)
+				    (lambda (x) #f)])
+		     (semaphore-wait ok-to-break-semaphore)
+		     (set! ok-to-break #t)
+		     (semaphore-post ok-to-break-semaphore)
+		     (sleep 1/2)
+		     (semaphore-wait ok-to-break-semaphore)
+		     (set! ok-to-break #f)
+		     (update-running #t)
+		     (semaphore-post ok-to-break-semaphore))
+		   (loop))))])
 
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -981,7 +984,6 @@
 	      (rec drscheme-error-display-handler
 		   (lambda (msg)
 		     (let ([rep (exception-reporting-rep)])
-		       (mred:message-box "Debugging Error" msg)
 		       (if rep
 			   (send rep report-unlocated-error msg)
 			   (mred:message-box "Uncaught Error" msg))))))
@@ -1006,46 +1008,33 @@
 	     ;; so that the parameters are set in the eventspace's
 	     ;; parameterization
 	     (let* ([primitive-dispatch-handler (mred:event-dispatch-handler)]
-		    [event-semaphore (make-semaphore 0)]
-		    
-		    [ht (make-hash-table-weak)]) ;; maps eventspaces to depth of nested yields (ints)
-	       
-	       (thread (rec f
-			    (lambda ()
-			      (semaphore-wait event-semaphore)
-			      (update-running)
-			      (f))))
+		    [depth 0])
 	       
 	       (mred:event-dispatch-handler
 		(rec drscheme-event-dispatch-handler
 		     (lambda (eventspace)
 		       (mzlib:thread:dynamic-disable-break
 			(lambda ()
-			  (when (eq? eventspace user-eventspace)
-			    
-			    (semaphore-wait running-semaphore)
-			    (hash-table-put! ht eventspace
-					     (+ 1 (hash-table-get ht eventspace (lambda () 0))))
-			    (when (= 1 (hash-table-get ht eventspace))
-			      (set! running-events (+ 1 running-events))
+			  (cond
+			   [(eq? eventspace user-eventspace)
+
+			    (set! depth (+ depth 1))
+
+			    (when (and (= depth 1)
+				       (not in-evaluation?))
 			      (reset-break-state)
-			      (semaphore-post event-semaphore))
-			    (semaphore-post running-semaphore)
-			    
-			    
-			    (protect-user-evaluation
-			     void
-			     (lambda ()
-			       (mzlib:thread:dynamic-enable-break
-				(lambda ()
-				  (primitive-dispatch-handler eventspace)))))
-			    
-			    (semaphore-wait running-semaphore)
-			    (hash-table-put! ht eventspace (max 0 (- (hash-table-get ht eventspace (lambda () 0)) 1)))
-			    (when (= 0 (hash-table-get ht eventspace))
-			      (set! running-events (- running-events 1)))
-			    (semaphore-post running-semaphore)
-			    (update-running))))))))))])
+			      (running-callback-start)
+			      
+			      (protect-user-evaluation
+			       (lambda ()
+				 (running-callback-stop))
+			       (lambda ()
+				 (mzlib:thread:dynamic-enable-break
+				  (lambda ()
+				    (primitive-dispatch-handler eventspace))))))
+
+			    (set! depth (- depth 1))]
+			   [else (primitive-dispatch-handler eventspace)])))))))))])
 	
       (override
 	[reset-console
@@ -1054,9 +1043,6 @@
 	   (shutdown-user-custodian)
 	   (cleanup-transparent-io)
 	   (set! should-collect-garbage? #t)
-
-	   (set! running-on? #f)
-	   (set! running-events 0)
 
 	   ;; in case the last evaluation thread was killed, clean up some state.
 	   (lock #f)

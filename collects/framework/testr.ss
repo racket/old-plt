@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.18 1999/03/02 02:57:14 robby Exp $
+;; $Id: testr.ss,v 1.19 1999/03/10 04:07:08 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -171,11 +171,10 @@
 	       
 	       [pass-errors-out
 		(lambda (thunk)
-		  (parameterize
-		      ([current-exception-handler
-			(lambda (exn)
-			  (end-action-with-error exn)
-			  ((error-escape-handler)))])
+		  (parameterize ([current-exception-handler
+				  (lambda (exn)
+				    (end-action-with-error exn)
+				    ((error-escape-handler)))])
 		    (thunk)))]
 	       
 	       [return (lambda () (semaphore-post sem))])

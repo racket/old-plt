@@ -1,8 +1,8 @@
 (define-signature turtle^ 
   (turtles
 
-   Turtles 
-   Cache 
+   turtles-state 
+   turtles-cache 
 
    clear
 

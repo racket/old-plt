@@ -1,3 +1,6 @@
+(require-library "errortrace.ss" "errortrace")
+(require-library "turtle.ss" "graphics")
+
 (define regular-poly
   (lambda (sides radius)
     (let* ([theta (/ (* 2 pi) sides)]
@@ -89,7 +92,7 @@
 		 (turn/radians (/ pi 2)))
 	  (gb square-size))))))
 
-(define serp-size 300)
+(define serp-size 120)
 
 (define serp
   (let ([sqrt3 (sqrt 3)]
@@ -253,9 +256,9 @@
   (lambda ()
     (begin
       (clear)
-      (move -300)
+      (move -270)
       (turn/radians (/ pi 2))
-      (move 200)
+      (move 250)
       (turn/radians (- (/ (* 3 pi) 4))))))
      
 (define peano
@@ -363,3 +366,40 @@
 		    (turn/radians (sign d))
 		    (fernd (- n 1) sign)))])
 	(fernd n +)))))
+
+(define frame (make-object frame% "Turtle Examples"))
+
+(define options
+  `(("Triangle" ,(lambda () (regular-poly 3 100)))
+    ("Hexagons" ,(lambda () (regular-polys 6 10)))
+    ("Spokes" ,spokes)
+    ("Spyro Gyra" ,spyro-gyra)
+    ("Neato" ,neato)
+    ("Graphics BExam" ,(lambda () 
+			 (turn/radians (/ pi 4))
+			 (move -150)
+			 (turn/radians (- (/ pi 4)))
+			 (graphics-bexam)))
+    ("Serpinski (split)" ,(lambda () (serp serp-size)))
+    ("Serpinski (no split)" ,(lambda () (serp-nosplit serp-size)))
+    ("Koch (split)" ,(lambda () (koch-split koch-size)))
+    ("Koch (no split)" ,(lambda () (koch-draw koch-size)))
+    ("Lorenz Attractor" ,lorenz1)
+    ("Peano" ,(lambda () (peano-position-turtle) (peano1 peano-size)))
+    ("Fern" ,(lambda () (turn pi) (move -100) (fern1 fern-size)))))
+
+(for-each (lambda (test) 
+	    (send
+	     (make-object button% 
+			  (car test)
+			  frame
+			  (lambda x 
+			    (turtles #t)
+			    (clear)
+			    (yield)
+			    ((cadr test))))
+	     stretchable-width #t))
+	  options)
+	  
+
+(send frame show #t)

@@ -1,23 +1,13 @@
-
 (define-macro split 
-  (lambda Es
-    `(splitfn (lambda () (begin ,@Es)))))
+  (lambda (e . es)
+    `(splitfn (lambda () (begin ,e ,@es)))))
 
 (define-macro split* 
-  (lambda Es 
-    `(split*fn (list ,@(map (lambda (x) `(lambda () ,x)) Es)))))
+  (lambda es 
+    `(split*fn (list ,@(map (lambda (x) `(lambda () ,x)) es)))))
 
 (define-macro tprompt
-  (lambda Es
-    `(fluid-let ([Turtles Turtles]
-		 [Cache Cache])
-		,@Es)))
-
-(define-macro repeat
-  (match-lambda* 
-   [((var n) . Es) (let ((loop (gensym 'repeat)))
-		     `(let ,loop ((,var 1))
-			(when (<= ,var ,n)
-			  ,@Es
-			  (,loop (add1 ,var)))))]
-   [_ (error 'repeat "bad syntax")]))
+  (lambda es
+    `(fluid-let ([turtles-state turtles-state]
+		 [turtles-cache turtles-cache])
+		,@es)))

@@ -21,8 +21,6 @@
 	 (unless (and (andmap interface? ,from-g) (andmap interface? ,to-g))
 	   (error 'mixin "expected interfaces for from and to, got: ~a ~a~n" ,from-g ,to-g))
 
-	 'SUPER-IVAR-CHECKS-BEGIN-HERE
-
 	 (let ([ensure-interface-has?
 		(lambda (x)
 		  (unless (ormap (lambda (i)
@@ -46,8 +44,6 @@
 			 ,@(map (lambda (id) `(ensure-interface-has? ',id))
 				names))))
 		  clauses))
-
-	 'MIXIN-BEGINS-HERE
 
 	 (lambda (,super-g)
 	   (unless (class? ,super-g)

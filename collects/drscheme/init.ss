@@ -14,12 +14,12 @@
   (define system-eventspace (mred:current-eventspace))
   (define first-dir (current-directory))
 
-  '(error-display-handler
+  (error-display-handler
    (lambda (msg)
      (parameterize ([mred:current-eventspace system-eventspace]
 		    [current-custodian system-custodian])
        (display msg)
        (newline)
-       (mred:message-box (format "Internal Error: ~a" msg)
-			 "Internal Error")))))
+       (mred:message-box "Internal Error"
+			 msg)))))
   

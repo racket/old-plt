@@ -19,17 +19,12 @@
       (public
 	[canvas% 
 	 (class mred:canvas% args
-	   (inherit set-background draw-rectangle set-pen 
-		    get-dc clear get-client-size)
-	   (sequence
-	     (apply super-init args))
-	   (private
-	     [dc (get-dc)]
-	     [draw-line (ivar dc draw-line)])
-	   (public
-	     [on-paint
+	   (inherit get-dc)
+	   (override
+	    [on-paint
 	      (lambda ()
-		(send dc draw-bitmap (send memory-dc get-bitmap) 0 0 'copy))]))]
+		(send (get-dc) draw-bitmap (send memory-dc get-bitmap) 0 0))])
+	   (sequence (apply super-init args)))]
 	[clear (lambda () 
 		 (send memory-dc set-pen w-pen)
 		 (send memory-dc set-brush w-brush)
@@ -37,7 +32,7 @@
 		 (send canvas on-paint)
 		 (send memory-dc set-pen b-pen))])
       (sequence
-	(send memory-dc select-object bitmap)
+	(send memory-dc set-bitmap bitmap)
 	(send memory-dc clear)
 	(super-init name #f width height)
 	'(set-client-size (+ width 16) (+ height 16)))
@@ -46,10 +41,11 @@
 	[on-menu-command (lambda (op) (turtles #f))])
       (private
 	[menu-bar (make-object mred:menu-bar% this)]
-	[menu (make-object mred:menu% menu-bar "File")])
+	[menu (make-object mred:menu% "File" menu-bar)])
       (sequence 
 	(make-object mred:menu-item%
 	  "Close"
+	  menu
 	  (lambda (_1 _2)
 	    (turtles #f))))
       
@@ -59,11 +55,12 @@
 	   (send bitmap save-file fn type))])
 
       (public
-	[canvas (make-object canvas% this 0 0 width height)]
-	[wipe-line (let ([dc-line (ivar memory-dc draw-line)]
-			 [canvas-line (ivar canvas draw-line)]
-			 [dc-pen (ivar memory-dc set-pen)]
-			 [canvas-pen (ivar canvas set-pen)])
+	[canvas (make-object canvas% this)]
+	[wipe-line (let* ([dc (send canvas get-dc)]
+			  [dc-line (ivar memory-dc draw-line)]
+			  [canvas-line (ivar dc draw-line)]
+			  [dc-pen (ivar memory-dc set-pen)]
+			  [canvas-pen (ivar dc set-pen)])
 		     (lambda (a b c d)
 		       (dc-pen w-pen)
 		       (canvas-pen w-pen)
@@ -71,18 +68,21 @@
 		       (canvas-line a b c d)
 		       (dc-pen b-pen)
 		       (canvas-pen b-pen)))]
-	[draw-line (let ([dc-line (ivar memory-dc draw-line)]
-			 [canvas-line (ivar canvas draw-line)])
+	[draw-line (let* ([dc (send canvas get-dc)]
+			  [dc-line (ivar memory-dc draw-line)]
+			  [canvas-line (ivar dc draw-line)])
 		     (lambda (a b c d)
 		       (dc-line a b c d)
 		       (canvas-line a b c d)))])
       (sequence
+	(send canvas min-width width)
+	(send canvas min-height height)
 	(clear))))
   
   (define turtle-window-size
     (let-values ([(w h) (mred:get-display-size)]
-		 [(user/client-offset) 65.])
-      (min 800.
+		 [(user/client-offset) 65])
+      (min 800
 	   (- w user/client-offset)
 	   (- h user/client-offset))))
   
@@ -98,18 +98,18 @@
   (define-struct tree (children))
   ; children : (list-of cached)
   
-  (define Clear-Turtle (make-turtle (/ turtle-window-size 2)
+  (define clear-turtle (make-turtle (/ turtle-window-size 2)
 				    (/ turtle-window-size 2) 0))
 
-  ;; Turtles is either a
+  ;; turtles-state is either a
   ;;    - (list-of turtle) or
   ;;    - tree 
-  (define Turtles (list Clear-Turtle))
+  (define turtles-state (list clear-turtle))
   
   ;; the cache contains a turtle-offset, which is represented
   ;; by a turtle -- but it is a delta not an absolute.
-  (define Empty-Cache (make-turtle 0 0 0))
-  (define Cache Empty-Cache)
+  (define empty-cache (make-turtle 0 0 0))
+  (define turtles-cache empty-cache)
   
   (define init-error (lambda _ (error 'turtles "Turtles not initialized. Evaluate (turtles).")))
   (define inner-line init-error)
@@ -142,8 +142,8 @@
   (define clear 
     (lambda ()
       (clear-window)
-      (set! Cache Empty-Cache)
-      (set! Turtles (list Clear-Turtle))))
+      (set! turtles-cache empty-cache)
+      (set! turtles-state (list clear-turtle))))
   
   ;; cache elements:
   (define-struct c-forward (distance))
@@ -155,30 +155,30 @@
   ;; turtle-offsets are represented as turtles, 
   ;; however they are deltas, not absolutes.
   (define combine
-    (lambda (entry Cache)
+    (lambda (entry cache)
       (cond 
 	[(c-forward? entry)
 	 (let* ([n (c-forward-distance entry)]
-		[angle (turtle-angle Cache)]
-		[x (turtle-x Cache)]
-		[y (turtle-y Cache)]
+		[angle (turtle-angle cache)]
+		[x (turtle-x cache)]
+		[y (turtle-y cache)]
 		[newx (+ x (* n (cos angle)))]
 		[newy (+ y (* n (sin angle)))])
 	   (make-turtle newx newy angle))]
 	[(c-offset? entry)
-	 (let* ([tx (turtle-x Cache)]
-		[ty (turtle-y Cache)]
+	 (let* ([tx (turtle-x cache)]
+		[ty (turtle-y cache)]
 		[newx (+ tx (c-offset-x entry))]
 		[newy (+ ty (c-offset-y entry))])
 	   (make-turtle newx newy 
-			(turtle-angle Cache)))]
+			(turtle-angle cache)))]
 	[(c-turn? entry)
-	 (make-turtle (turtle-x Cache)
-		      (turtle-y Cache)
-		      (- (turtle-angle Cache)
+	 (make-turtle (turtle-x cache)
+		      (turtle-y cache)
+		      (- (turtle-angle cache)
 			 (c-turn-angle entry)))]
 	[else
-	 (error 'turtle-cache "illegal entry in cache: ~a" entry)])))
+	 (error 'turtles-cache "illegal entry in cache: ~a" entry)])))
   
   ;; this applies an offset to a turtle.
   ;; an offset is a turtle, representing what would happen 
@@ -188,24 +188,24 @@
       (let ([x (turtle-x offset)]
 	    [y (turtle-y offset)]
 	    [offset-angle (turtle-angle offset)])
-	(lambda (Turtle)
-	  (let* ([angle (turtle-angle Turtle)])
+	(lambda (turtle)
+	  (let* ([angle (turtle-angle turtle)])
 	    (let* ([c (cos angle)]
 		   [s (sin angle)]
 		   [rx (- (* x c) (* y s))]
 		   [ry (+ (* y c) (* x s))])
-	      (make-turtle (+ rx (turtle-x Turtle))
-			   (+ ry (turtle-y Turtle))
+	      (make-turtle (+ rx (turtle-x turtle))
+			   (+ ry (turtle-y turtle))
 			   (+ offset-angle angle))))))))
   
   (define flatten
     (lambda (at-end)
       (letrec ([walk-turtles
-		(lambda (Turtles Cache list)
+		(lambda (turtles cache list)
 		  (cond
-		    [(tree? Turtles)
-		     (let ([children (tree-children Turtles)]
-			   [ac (apply-cache Cache)])
+		    [(tree? turtles)
+		     (let ([children (tree-children turtles)]
+			   [ac (apply-cache cache)])
 		       (foldl (lambda (child list)
 				(walk-turtles (cached-turtles child)
 					      (ac (cached-cache child))
@@ -213,20 +213,20 @@
 			      list
 			      children))]
 		    [else
-		     (let ([f (compose at-end (apply-cache Cache))])
-		       (foldl (lambda (T l) (cons (f T) l)) list Turtles))]))])
-	(set! Turtles (walk-turtles Turtles Cache null))
-	(set! Cache Empty-Cache))))
+		     (let ([f (compose at-end (apply-cache cache))])
+		       (foldl (lambda (t l) (cons (f t) l)) list turtles))]))])
+	(set! turtles-state (walk-turtles turtles-state turtles-cache null))
+	(set! turtles-cache empty-cache))))
   
   (define clear-cache flatten)
   
   (define draw/erase
     (lambda (doit)
       (lambda (n)
-	(clear-cache (lambda (Turtle)
-		       (let* ([x (turtle-x Turtle)]
-			      [y (turtle-y Turtle)]
-			      [angle (turtle-angle Turtle)]
+	(clear-cache (lambda (turtle)
+		       (let* ([x (turtle-x turtle)]
+			      [y (turtle-y turtle)]
+			      [angle (turtle-angle turtle)]
 			      [d (if (zero? n) 0 (sub1 (abs n)))]
 			      [res (if (< n 0) (- d) d)]
 			      [c (cos angle)]
@@ -243,11 +243,11 @@
   
   (define move
     (lambda (n)
-      (set! Cache (combine (make-c-forward n) Cache))))
+      (set! turtles-cache (combine (make-c-forward n) turtles-cache))))
   
   (define turn/radians
     (lambda (d)
-      (set! Cache (combine (make-c-turn d) Cache))))
+      (set! turtles-cache (combine (make-c-turn d) turtles-cache))))
   
   (define turn
     (lambda (c)
@@ -255,44 +255,44 @@
   
   (define move-offset
     (lambda (x y)
-      (set! Cache (combine (make-c-offset x y) Cache))))
+      (set! turtles-cache (combine (make-c-offset x y) turtles-cache))))
   
   (define erase/draw-offset
     (lambda (doit)
       (lambda (x y)
-	(clear-cache (lambda (Turtle)
-		       (let* ([tx (turtle-x Turtle)]
-			      [ty (turtle-y Turtle)]
+	(clear-cache (lambda (turtle)
+		       (let* ([tx (turtle-x turtle)]
+			      [ty (turtle-y turtle)]
 			      [newx (+ tx x)]
 			      [newy (+ ty y)])
 			 (doit tx ty newx newy)
-			 (make-turtle newx newy (turtle-angle Turtle))))))))
+			 (make-turtle newx newy (turtle-angle turtle))))))))
   
   (define erase-offset (erase/draw-offset (lambda (a b c d) (wipe-line a b c d))))
   (define draw-offset (erase/draw-offset (lambda (a b c d) (line a b c d))))
   
   (define splitfn
-    (lambda (E)
-      (let ([T Turtles]
-	    [C Cache])
-	(E)
-	(set! Turtles (make-tree (list (make-cached Turtles Cache)
-				       (make-cached T C))))
-	(set! Cache Empty-Cache))))
+    (lambda (e)
+      (let ([t turtles-state]
+	    [c turtles-cache])
+	(e)
+	(set! turtles-state (make-tree (list (make-cached turtles-state turtles-cache)
+				       (make-cached t c))))
+	(set! turtles-cache empty-cache))))
   
   (define split*fn
-    (lambda Es
-      (let ([T Turtles]
-	    [C Cache]
+    (lambda (es)
+      (let ([t turtles-state]
+	    [c turtles-cache]
 	    [l '()])
 	(for-each (lambda (x)
 		    (x)
-		    (set! l (cons (make-cached Turtles Cache) l))
-		    (set! Turtles T)
-		    (set! Cache C))
-		  Es)
-	(set! Cache Empty-Cache)
-	(set! Turtles (make-tree l)))))
+		    (set! l (cons (make-cached turtles-state turtles-cache) l))
+		    (set! turtles-state t)
+		    (set! turtles-cache c))
+		  es)
+	(set! turtles-cache empty-cache)
+	(set! turtles-state (make-tree l)))))
   
   (define pi 3.1415926535)
   

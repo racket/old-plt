@@ -725,7 +725,7 @@ Scheme_Object *readIntervalVal(SQL_INTERVAL_STRUCT *buffer,long offset,
 			       INTERVAL_FIELD_ACCESSOR *fs,
 			       size_t numAcc) {
   SQL_INTERVAL_STRUCT *currVal;
-  Scheme_Object *argv[3];
+  Scheme_Object *argv[10];
   size_t j;
   
   currVal = buffer + offset;
@@ -733,6 +733,7 @@ Scheme_Object *readIntervalVal(SQL_INTERVAL_STRUCT *buffer,long offset,
   for (j = 0; j < numAcc; j++) {
     argv[j+1] = scheme_make_integer_value_from_unsigned(*(fs[j](currVal)));
   }
+
   return scheme_make_struct_instance(structType,numAcc+1,argv);
 }
 
@@ -882,7 +883,8 @@ Scheme_Object *readIntervalDayHourBuffer(SQL_INTERVAL_STRUCT *buffer,
 #if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDayMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
 					   long arrayLength,long ndx) {
-  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour, getIntervalMinute }; 
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour,
+				    getIntervalMinute }; 
 
   return readIntervalBuffer(buffer,arrayLength,ndx,
 			    DAY_TO_MINUTE_INTERVAL_STRUCT_TYPE,

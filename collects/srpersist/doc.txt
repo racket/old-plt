@@ -2450,11 +2450,12 @@
  into the buffer.  If `n' is omitted, the entire buffer contents 
  are returned, in a form appropriate to the type of data contained
  in the buffer.  For most C data types, the buffer is read as a 
- list; for buffers containing 'sql-c-binary and 'sql-c-bit elements,
- the buffer is read as a string.  If `n' is given, an individual 
- element of the buffer is returned.   In the case of 'sql-c-wchar, an 
- error occurs if the segment of the buffer to be read contains a 
- character not representable as an ordinary character.  
+ list; for buffers containing 'sql-c-binary, 'sql-c-varbookmark, 
+ and 'sql-c-bit elements, the buffer is read as a string.  If `n' 
+ is given, an individual element of the buffer is returned.   In the 
+ case of 'sql-c-wchar, an error occurs if the segment of the buffer 
+ to be read contains a character not representable as an ordinary 
+ character.  
 
  SrPersist provides no guarantees that a buffer contains valid data.
 
@@ -2591,4 +2592,6 @@
 
   [ODBC 3.5 or greater]
  'sql-c-guid
+
+
 

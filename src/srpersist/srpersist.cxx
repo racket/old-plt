@@ -266,6 +266,7 @@ int sizeofCDataType(SQLSMALLINT type) {
     return sizeof(double);
   case SQL_C_BIT :
     return sizeof(unsigned char);
+  case SQL_C_TINYINT :
   case SQL_C_STINYINT :
     return sizeof(signed char);
   case SQL_C_UTINYINT :
@@ -1061,8 +1062,8 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
 
   if (argc == 2) {
     if (SCHEME_EXACT_INTEGERP(argv[1]) == FALSE ||
-	SCHEME_INT_VAL(argv[1]) <= 0) {
-      scheme_wrong_type("read-buffer","positive exact integer",1,argc,argv);
+	SCHEME_INT_VAL(argv[1]) < 0) {
+      scheme_wrong_type("read-buffer","nonnegative exact integer",1,argc,argv);
     }
     ndx = SCHEME_INT_VAL(argv[1]);
   }

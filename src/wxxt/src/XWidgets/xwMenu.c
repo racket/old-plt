@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.4 1998/04/22 14:38:48 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.5 1998/04/22 15:36:35 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -772,6 +772,11 @@ static void ComputeMenuSize(MenuWidget mw, menu_state *ms)
 	    item->end    = max_height + mw->menu.shadow_width;
 	}
 #       undef SET_MAX_VALUE
+    }
+    if (!max_height && in_menubar) {
+      /* For menu bar: make it at least as tall as with an item */
+      max_height = mw->menu.font->ascent + mw->menu.font->descent
+	+ 2*mw->menu.vmargin + 2*mw->menu.shadow_width;      
     }
     ms->w       = max_left_width + max_label_width + max_right_width
 	          + 2*mw->menu.shadow_width;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: MenuBar.cc,v 1.4 1998/04/22 15:36:34 mflatt Exp $
+ * $Id: MenuBar.cc,v 1.5 1998/04/23 19:07:03 mflatt Exp $
  *
  * Purpose: menu bar class
  *
@@ -106,14 +106,21 @@ Bool wxMenuBar::Create(wxPanel *panel)
     // callbacks
     XtAddCallback(X->handle, XtNonSelect,  wxMenuBar::CommandEventCallback, this);
     XtAddCallback(X->handle, XtNonNewItem, wxMenuBar::SelectEventCallback, this);
+
+    // Panel width needed
+    int ph, pw;
+    panel->GetSize(&ph, &pw);
+
     // position menubar
     Dimension hh, ww;
     XtVaGetValues(X->handle, XtNheight, &hh, XtNwidth, &ww, NULL);
+    ww = pw;
     XtVaSetValues(X->frame,  XtNheight,  hh, XtNwidth,  ww, NULL);
     constraints->top.Absolute(-hh);
     constraints->left.Absolute(0);
     constraints->width.SameAs(panel, wxWidth, 0);
     constraints->height.Absolute(hh);
+
     // menubar may now be managed
     XtManageChild(X->handle);
     AddEventHandlers();

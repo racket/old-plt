@@ -3,7 +3,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2
 #
-# $Id: xwArrow.w,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
+# $Id: xwArrow.w,v 1.2 1998/01/31 01:16:34 mflatt Exp $
 
 @CLASS XfwfArrow (XfwfBoard)  @file = xwArrow
 
@@ -324,17 +324,22 @@ a timeout routine.
         XtWarning("The Arrow activate action isn't bound to a BtnDown event");
 	return;
     }
+    stop_timer($, event, params, num_params);
+    $timer = 0x1; /* During callback, a stop_timer may be evaluated */
     XtCallCallbackList($, $callback, NULL);
-    if ($repeat)
+    if ($repeat) {
+      if ($timer) {
+        stop_timer($, event, params, num_params);
 	$timer = wxAppAddTimeOut(XtWidgetToApplicationContext($),
 				 $initialDelay, timer_callback, $);
-    else
+      }
+    } else
 	push_up($, event, params, num_params);
 }
 
 @proc stop_timer
 {
-    if ($timer)
+    if ($timer && $timer != 0x1)
 	wxRemoveTimeOut($timer);
     $timer = 0;
 }
@@ -476,8 +481,9 @@ other). The delay is now |repeatDelay| instead of |initialDelay|.
     Widget $ = (Widget) client_data;
 
     XtCallCallbackList($, $callback, NULL);
-    $timer = wxAppAddTimeOut(XtWidgetToApplicationContext($),
-			     $repeatDelay, timer_callback, $);
+    if ($timer) /* i.e., no stop issued by callback */
+      $timer = wxAppAddTimeOut(XtWidgetToApplicationContext($),
+				     $repeatDelay, timer_callback, $);
 }
 
 @ The GC for the triangle is created by a utility function. It destroys the

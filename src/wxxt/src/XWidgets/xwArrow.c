@@ -3,13 +3,13 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 582 "XWidgets/xwArrow.w"
+#line 588 "XWidgets/xwArrow.w"
 #include <X11/bitmaps/gray>
-#line 583 "XWidgets/xwArrow.w"
+#line 589 "XWidgets/xwArrow.w"
 #include <stdio.h>
-#line 584 "XWidgets/xwArrow.w"
+#line 590 "XWidgets/xwArrow.w"
 #include <assert.h>
-#line 585 "XWidgets/xwArrow.w"
+#line 591 "XWidgets/xwArrow.w"
 #include <wxtimeout.h>
 #include <./xwArrowP.h>
 #line 321 "XWidgets/xwArrow.w"
@@ -18,19 +18,19 @@ static void activate_and_start_timer(
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 335 "XWidgets/xwArrow.w"
+#line 340 "XWidgets/xwArrow.w"
 static void stop_timer(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 343 "XWidgets/xwArrow.w"
+#line 348 "XWidgets/xwArrow.w"
 static void push_up(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 405 "XWidgets/xwArrow.w"
+#line 410 "XWidgets/xwArrow.w"
 static void push_down(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -77,57 +77,58 @@ static void _expose(
 Widget,XEvent *,Region 
 #endif
 );
-#line 474 "XWidgets/xwArrow.w"
+#line 479 "XWidgets/xwArrow.w"
 static void timer_callback(
 #if NeedFunctionPrototypes
 XtPointer ,XtIntervalId *
 #endif
 );
-#line 486 "XWidgets/xwArrow.w"
+#line 492 "XWidgets/xwArrow.w"
 static void create_arrowgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 500 "XWidgets/xwArrow.w"
+#line 506 "XWidgets/xwArrow.w"
 static void create_arrowlightgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 540 "XWidgets/xwArrow.w"
+#line 546 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 474 "XWidgets/xwArrow.w"
+#line 479 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 474 "XWidgets/xwArrow.w"
+#line 479 "XWidgets/xwArrow.w"
 static void timer_callback(XtPointer  client_data,XtIntervalId * timer)
 #else
-#line 474 "XWidgets/xwArrow.w"
+#line 479 "XWidgets/xwArrow.w"
 static void timer_callback(client_data,timer)XtPointer  client_data;XtIntervalId * timer;
 #endif
-#line 475 "XWidgets/xwArrow.w"
+#line 480 "XWidgets/xwArrow.w"
 {
     Widget self = (Widget) client_data;
 
     XtCallCallbackList(self, ((XfwfArrowWidget)self)->xfwfArrow.callback, NULL);
-    ((XfwfArrowWidget)self)->xfwfArrow.timer = wxAppAddTimeOut(XtWidgetToApplicationContext(self),
-			     ((XfwfArrowWidget)self)->xfwfArrow.repeatDelay, timer_callback, self);
+    if (((XfwfArrowWidget)self)->xfwfArrow.timer) /* i.e., no stop issued by callback */
+      ((XfwfArrowWidget)self)->xfwfArrow.timer = wxAppAddTimeOut(XtWidgetToApplicationContext(self),
+				     ((XfwfArrowWidget)self)->xfwfArrow.repeatDelay, timer_callback, self);
 }
-#line 486 "XWidgets/xwArrow.w"
+#line 492 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 486 "XWidgets/xwArrow.w"
+#line 492 "XWidgets/xwArrow.w"
 static void create_arrowgc(Widget self)
 #else
-#line 486 "XWidgets/xwArrow.w"
+#line 492 "XWidgets/xwArrow.w"
 static void create_arrowgc(self)Widget self;
 #endif
-#line 487 "XWidgets/xwArrow.w"
+#line 493 "XWidgets/xwArrow.w"
 {
     XtGCMask mask;
     XGCValues values;
@@ -137,16 +138,16 @@ static void create_arrowgc(self)Widget self;
     values.foreground = ((XfwfArrowWidget)self)->xfwfArrow.foreground;
     ((XfwfArrowWidget)self)->xfwfArrow.arrowgc = XtGetGC(self, mask, &values);
 }
-#line 500 "XWidgets/xwArrow.w"
+#line 506 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 500 "XWidgets/xwArrow.w"
+#line 506 "XWidgets/xwArrow.w"
 static void create_arrowlightgc(Widget self)
 #else
-#line 500 "XWidgets/xwArrow.w"
+#line 506 "XWidgets/xwArrow.w"
 static void create_arrowlightgc(self)Widget self;
 #endif
-#line 501 "XWidgets/xwArrow.w"
+#line 507 "XWidgets/xwArrow.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -183,16 +184,16 @@ static void create_arrowlightgc(self)Widget self;
     }
     ((XfwfArrowWidget)self)->xfwfArrow.arrowlightgc = XtGetGC(self, mask, &values);
 }
-#line 540 "XWidgets/xwArrow.w"
+#line 546 "XWidgets/xwArrow.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 540 "XWidgets/xwArrow.w"
+#line 546 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(Widget self)
 #else
-#line 540 "XWidgets/xwArrow.w"
+#line 546 "XWidgets/xwArrow.w"
 static void create_arrowdarkgc(self)Widget self;
 #endif
-#line 541 "XWidgets/xwArrow.w"
+#line 547 "XWidgets/xwArrow.w"
 {
     XtGCMask mask=0;
     XGCValues values;
@@ -324,25 +325,30 @@ static void activate_and_start_timer(self,event,params,num_params)Widget self;XE
         XtWarning("The Arrow activate action isn't bound to a BtnDown event");
 	return;
     }
+    stop_timer(self, event, params, num_params);
+    ((XfwfArrowWidget)self)->xfwfArrow.timer = 0x1; /* During callback, a stop_timer may be evaluated */
     XtCallCallbackList(self, ((XfwfArrowWidget)self)->xfwfArrow.callback, NULL);
-    if (((XfwfArrowWidget)self)->xfwfArrow.repeat)
+    if (((XfwfArrowWidget)self)->xfwfArrow.repeat) {
+      if (((XfwfArrowWidget)self)->xfwfArrow.timer) {
+        stop_timer(self, event, params, num_params);
 	((XfwfArrowWidget)self)->xfwfArrow.timer = wxAppAddTimeOut(XtWidgetToApplicationContext(self),
 				 ((XfwfArrowWidget)self)->xfwfArrow.initialDelay, timer_callback, self);
-    else
+      }
+    } else
 	push_up(self, event, params, num_params);
 }
 
 /*ARGSUSED*/
-#line 335 "XWidgets/xwArrow.w"
+#line 340 "XWidgets/xwArrow.w"
 static void stop_timer(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-    if (((XfwfArrowWidget)self)->xfwfArrow.timer)
+    if (((XfwfArrowWidget)self)->xfwfArrow.timer && ((XfwfArrowWidget)self)->xfwfArrow.timer != 0x1)
 	wxRemoveTimeOut(((XfwfArrowWidget)self)->xfwfArrow.timer);
     ((XfwfArrowWidget)self)->xfwfArrow.timer = 0;
 }
 
 /*ARGSUSED*/
-#line 343 "XWidgets/xwArrow.w"
+#line 348 "XWidgets/xwArrow.w"
 static void push_up(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 
@@ -406,7 +412,7 @@ static void push_up(self,event,params,num_params)Widget self;XEvent*event;String
 }
 
 /*ARGSUSED*/
-#line 405 "XWidgets/xwArrow.w"
+#line 410 "XWidgets/xwArrow.w"
 static void push_down(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 

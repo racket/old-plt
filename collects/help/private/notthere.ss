@@ -26,7 +26,7 @@
       
       (p
        ,@(let* ([subpath (if (directory-exists? (build-path (collection-path "help") "CVS"))
-                             "PreRelease/DocBundles"
+                             "PreRelease/DocBundles200"
                              (format "packages/~a/DocBundles" (version)))]
                 [url (format "http://www.cs.rice.edu/CS/PLT/~a/~a-doc.plt" subpath missing-doc-name)]
                 [web-url (format "http://www.cs.rice.edu/CS/PLT/packages/~a/doc/~a/~a"

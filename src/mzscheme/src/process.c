@@ -1101,6 +1101,11 @@ static void start_child(Scheme_Process *child,
   if (SETJMP(child)) {
     RESETJMP(child);
 
+#ifdef RUNSTACK_IS_GLOBAL
+    MZ_RUNSTACK = scheme_current_process->runstack;
+    MZ_RUNSTACK_START = scheme_current_process->runstack_start;
+#endif
+
 #ifndef MZ_REAL_THREADS
     if (return_to_process)
       scheme_swap_process(return_to_process);

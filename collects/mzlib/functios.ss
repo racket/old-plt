@@ -42,8 +42,4 @@
 
    loop-until
 
-   ignore-errors
-
-   dynamic-disable-break
-   dynamic-wind/protect-break
-   make-single-threader))
+   ignore-errors))

@@ -90,7 +90,7 @@ static Scheme_Object *read_with_cont_mark(Scheme_Object *obj);
 static Scheme_Object *write_syntax(Scheme_Object *obj);
 static Scheme_Object *read_syntax(Scheme_Object *obj);
 
-static Scheme_Object *define_values_symbol, *letrec_star_values_symbol, *lambda_symbol;
+static Scheme_Object *define_values_symbol, *letrec_values_symbol, *lambda_symbol;
 static Scheme_Object *unknown_symbol, *void_link_symbol, *quote_symbol;
 static Scheme_Object *letmacro_symbol, *begin_symbol;
 static Scheme_Object *let_id_macro_symbol;
@@ -147,7 +147,7 @@ scheme_init_eval (Scheme_Env *env)
 #endif
 
     REGISTER_SO(define_values_symbol);
-    REGISTER_SO(letrec_star_values_symbol);
+    REGISTER_SO(letrec_values_symbol);
     REGISTER_SO(lambda_symbol);
     REGISTER_SO(unknown_symbol);
     REGISTER_SO(void_link_symbol);
@@ -159,7 +159,7 @@ scheme_init_eval (Scheme_Env *env)
     REGISTER_SO(let_symbol);
 
     define_values_symbol = scheme_intern_symbol("#%define-values");
-    letrec_star_values_symbol = scheme_intern_symbol("#%letrec*-values");
+    letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
     let_symbol = scheme_intern_symbol("#%let");
     lambda_symbol = scheme_intern_symbol("#%lambda");
     unknown_symbol = scheme_intern_symbol("unknown");
@@ -1254,7 +1254,7 @@ static Scheme_Object *
 scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env, 
 			    Scheme_Compile_Info *rec, int depth)
 /* This ugly code parses a block of code, transforming embedded
-  define-values and define-macro into letrec* and let-macro.
+  define-values and define-macro into letrec and let-macro.
   It is espcailly ugly because we have to expand macros
   before deciding what we have. */
 {
@@ -1283,7 +1283,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
     name = SCHEME_PAIRP(first) ? SCHEME_CAR(first) : scheme_void;
     if (SAME_OBJ(gval, scheme_define_values_syntax)) {
-      /* Turn defines into a letrec*-values: */
+      /* Turn defines into a letrec-values: */
       Scheme_Object *var, *vars, *v, *link, *l = scheme_null, *start = NULL;
       
       while (1) {
@@ -1331,7 +1331,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       }
 
       if (SCHEME_PAIRP(result)) {
-	result = scheme_make_pair(letrec_star_values_symbol, scheme_make_pair(start, result));
+	result = scheme_make_pair(letrec_values_symbol, scheme_make_pair(start, result));
       
 	name = NULL;
       } else {

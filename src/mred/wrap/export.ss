@@ -52,5 +52,5 @@
  get-display-size
  get-color-from-user
  get-font-from-user
- append-edit-operation-items
- append-edit-font-items)
+ append-edit-operation-menu-items
+ append-edit-font-menu-items)

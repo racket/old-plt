@@ -102,35 +102,6 @@
       (lambda (l r)
 	(remove* l r eqv?))))
 
-   (define dynamic-disable-break
-     (polymorphic
-      (lambda (thunk)
-	(parameterize ([break-enabled #f])
-	  (thunk)))))
-
-   (define dynamic-wind/protect-break
-     (polymorphic
-      (lambda (a b c)
-	(let ([enabled? (break-enabled)])
-	  (dynamic-disable-break
-	   (lambda ()
-	     (dynamic-wind 
-	      a
-	      (if enabled?
-		  (lambda () (dynamic-enable-break b))
-		  b)
-	      c)))))))
-   
-   (define make-single-threader
-     (polymorphic
-      (lambda ()
-	(let ([sema (make-semaphore 1)])
-	  (lambda (thunk)
-	    (dynamic-wind
-	     (lambda () (semaphore-wait sema))
-	     thunk
-	     (lambda () (semaphore-post sema))))))))
-
    ;; fold : ((A -> B) B (listof A) -> B)
    ;; fold : ((A1 ... An -> B) B (listof A1) ... (listof An) -> B)
 

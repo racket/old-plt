@@ -3,4 +3,8 @@
   (consumer-thread
    merge-input
    with-semaphore
-   semaphore-wait-multiple))
+   semaphore-wait-multiple
+
+   dynamic-disable-break
+   dynamic-wind/protect-break
+   make-single-threader))

@@ -3,6 +3,10 @@ MZSCHEME=../../mzscheme/${MZBUILDDIR}mzscheme
 
 all: ../wxs/wrap.inc ../wxs/cwrap.inc
 
+again:
+	rm wrap.ss
+	$(MAKE) all
+
 ../wxs/wrap.inc: wrap.ss
 	/usr/local/bin/perl ../../mzscheme/src/sstoinc < wrap.ss > ../wxs/wrap.inc
 

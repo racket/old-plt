@@ -14,6 +14,21 @@
          ; remove quotes
 	 [section (substring raw-section 
 			     1 (sub1 (string-length raw-section)))]
-	 [page (finddoc-page-anchor manual section)])
+	 [page (with-handlers 
+		([void (lambda _
+			 (send/finish
+			  `(HTML 
+			    (HEAD (TITLE "Can't find manual section")
+				  ,hd-css
+				  ,@hd-links)
+			    (BODY
+			     "Error looking up PLT manual section" 
+			     (P)
+			     "Requested manual: "
+			     ,manual (BR)
+			     "Requested section: "
+			     ,section))))])
+		(finddoc-page-anchor manual section))])
     (send/finish
      (redirect-to page))))
+

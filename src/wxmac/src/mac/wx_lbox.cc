@@ -314,13 +314,14 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }
 
-void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
+void wxListBox::OnEvent(wxMouseEvent *event)
 {
-  if (event->leftDown || event->rightDown) {
+  if (event->ButtonDown()) {
     int startH;
     int startV;
     Point startPt;
     int modifiers = 0;
+    Bool doubleclick;
 
     event->Position(&startH,&startV); // client c.s.
 
@@ -338,50 +339,20 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
     if (event->rightDown)  // mflatt: right button is control-click
       modifiers += controlKey;
 
-    /*		if ((**cListHandle).vScroll) {
-		int thePart = ::TestControl((**cListHandle).vScroll, startPt);
-		if (thePart) {
-		ManualScroll(cListHandle, (**cListHandle).vScroll, startPt, thePart);
-		return;
-		}
-		}
-		*/
-    /* Click past the last cell => ignore it */
-    /* This code has not been updated to work in the post-SetOrigin world */
-    /*		if (PtInRect(startPt, &(**cListHandle).rView)) {
-		Cell lastCell = { no_items - 1, 0 };
-		Rect r;
-		LRect(&r, lastCell, cListHandle);
-		if (startPt.v >= r.bottom)
-		return;
-		}
-		*/
-    if (event->ButtonDown()) {
-
-      Bool doubleclick;
-
-      doubleclick = ::ALClick(startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
-      
-      ReleaseCurrentDC();
-
-      if (!cellWasClicked) { // ie, click was in scroll bars
-	return;
-      }
+    doubleclick = ::ALClick(startPt, modifiers, UNSCALE_TIMESTAMP(event->timeStamp),cListReference);
+    
+    ReleaseCurrentDC();
+    
+    if (cellWasClicked) {
+      wxCommandEvent *commandEvent;
       
       cellWasClicked = false;			
       
-      if (doubleclick) {
-	wxCommandEvent *commandEvent;
+      if (doubleclick)
 	commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND);
-	ProcessCommand(commandEvent);
-	return;
-      }
-    } else
-      ReleaseCurrentDC();
-    
-    {
-      wxCommandEvent *commandEvent;
-      commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
+      else
+	commandEvent = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
+      
       ProcessCommand(commandEvent);
     }
   }

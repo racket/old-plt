@@ -1007,7 +1007,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
       last_mouse.v = event->where.v;
       last_mouse.h = event->where.h;
       last_front_window = FrontWindow();
-        
+
       event->what = nullEvent;
       event->when = TickCount();
       if (cont_event_context) {

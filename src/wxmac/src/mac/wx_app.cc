@@ -148,8 +148,6 @@ Bool wxApp::Pending(void)
 //-----------------------------------------------------------------------------
 void wxApp::DoIdle(void)
 {
-  if ((cCurrentEvent.what == nullEvent) && cCurrentEvent.message)
-    doMacMouseMotion();
   AdjustCursor();
 }
 
@@ -251,8 +249,12 @@ void wxApp::doMacDispatch(EventRecord *e)
       doMacOsEvt(); break;
     case kHighLevelEvent:
       doMacHighLevelEvent(); break;
-    case 42:
+    case leaveEvt:
       doMacMouseLeave(); break;
+    case nullEvent:
+      if (e->message)
+	doMacMouseMotion();
+      break;
     default:
       break;
     }

@@ -9,11 +9,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define-struct share-info (name shared?))
 
-    (define show-sharing (make-parameter #t))
-    (define constructor-style-printing (make-parameter #f))
-    (define quasi-read-style-printing (make-parameter #t))
-    (define abbreviate-cons-as-list (make-parameter #t))
-    (define whole/fractional-exact-numbers (make-parameter #t))
+    (define boolean-filter (lambda (x) (and x #t)))
+
+    (define show-sharing (make-parameter #t boolean-filter))
+    (define constructor-style-printing (make-parameter #f boolean-filter))
+    (define quasi-read-style-printing (make-parameter #t boolean-filter))
+    (define abbreviate-cons-as-list (make-parameter #t boolean-filter))
+    (define whole/fractional-exact-numbers (make-parameter #t boolean-filter))
     (define empty-list-name (make-parameter 'null))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -415,10 +417,7 @@
 		`(shared ,shared ,body))))]))
 
     (define current-read-eval-convert-print-prompt
-      (let ([p "|- "])
-	(case-lambda
-	 [() p]
-	 [(n) (set! p n)])))
+      (make-parameter "|- "))
 
     (define install-converting-printer
       (lambda ()
@@ -431,4 +430,4 @@
 			       (read))))))
 
 ;; TEST SUITE MOVED to mzscheme command test suite area.
-;; At Rice: ~mflatt/proj/mred/mzscheme/tests/pconvert.ss
+;; plt/tests/mzscheme/pconvert.ss

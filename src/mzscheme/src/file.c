@@ -3353,7 +3353,8 @@ find_system_path(int argc, Scheme_Object **argv)
     }
     
     if ((which == id_pref_dir)
-	|| (which == id_init_dir))
+	|| (which == id_init_dir)
+	|| (which == id_home_dir))
       return home;
 
     ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1];

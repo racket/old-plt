@@ -2310,7 +2310,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
   if (!dc)
     return;
 
-  if (caretBlinked && show_caret) {
+  if (caretBlinked && show_caret && !caretSnip) {
     /* Maintain caretBlinked invariant */
     show_caret = 0;
   }

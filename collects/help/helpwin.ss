@@ -78,6 +78,7 @@
 				   (sequence (apply super-init args)))
 				 (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 60)))))
 	  (define html-panel (make-object (class hyper-panel% ()
+					    (inherit get-canvas)
 					    (rename [super-leaving-page leaving-page])
 					    (public
 					      [stop-search
@@ -87,6 +88,45 @@
 						   (break-thread collecting-thread)
 						   (semaphore-post break-sema)))])
 					    (override
+					      [on-url-click
+					       (lambda (k url)
+						 ;; Watch for clicks from docs to undownloaded docs
+						 ((let/ec escape
+						    ;; Try to see if this is a link to missing documentation.
+						    ;; Many things can go wrong; give up if anything does...
+						    (with-handlers ([void void])
+						      (let ([start (send (send (get-canvas) get-editor) get-url)])
+							(when (string=? "file" (url-scheme start))
+							  (let ([url (if (string? url) 
+									 (combine-url/relative start url)
+									 url)])
+							    (when (string=? "file" (url-scheme url))
+							      (when (not (file-exists? (url-path url)))
+								;; Try comparing the base-of-base-of-url to
+								;;  the collection directory. Many things can go wrong,
+								;;  in which case we let the normal error happen.
+								(let-values ([(doc-dir) (normalize-path (collection-path "doc"))]
+									     [(dest-dir dest-doc)
+									      (let-values ([(base name dir?)
+											    (split-path (simplify-path (url-path url)))]) 
+										(let-values ([(base name dir?)
+											      (split-path base)])
+										  (values (normalize-path base) name)))])
+								  (when (and (string=? doc-dir dest-dir)
+									     (not (string=? dest-doc "help")))
+								    ;; Looks like the user needs to download some docs,
+								    ;;  rather than a generic file-not-found error.
+								    ;; Redirect to information about missing docs:
+								    (escape
+								     (lambda ()
+								       (global-defined-value 'missing-doc-name dest-doc)
+								       (send (get-canvas) goto-url 
+									     (string-append
+									      "file:"
+									      (build-path (collection-path "help") "notthere.htm"))
+									     #f)))))))))))
+						    (k url)
+						    void)))]
 					      [leaving-page
 					       (lambda (page new-page)
 						 (unless (is-a? (page->editor new-page) results-editor%)

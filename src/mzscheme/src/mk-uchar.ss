@@ -13,7 +13,7 @@
 
 (define mark-cats '("Mn" "Mc" "Me"))
 (define letter-cats '("Lu" "Ll" "Lt" "Lm" "Lo"))
-(define digit-cats '("Nd" "Nl" "No"))
+(define digit-cats '("Nd"))
 (define space-cats '("Zl" "Zs" "Zp"))
 (define punc-cats '("Pc" "Pd" "Ps" "Pe" "Pi" "Pf" "Po"))
 (define sym-cats '("Sm" "Sc" "Sk" "So"))

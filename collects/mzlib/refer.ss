@@ -14,6 +14,6 @@
 (define-macro require-unit/sig (require-unit #t #f #f #t 'require-unit/sig))
 (define-macro require-unit (require-unit #t #f #f #f 'require-unit))
 
-(define-macro include-file (include-file #t #f #f))
+(define-macro reference-file (reference-file #t #f #f))
 
 (require-library "spidey.ss")

@@ -1,4 +1,4 @@
-; $Id: scm-spdy.ss,v 1.40 1998/11/03 23:55:48 mflatt Exp $
+; $Id: scm-spdy.ss,v 1.41 1998/11/04 19:52:55 mflatt Exp $
 
 (unit/sig zodiac:scheme-mrspidey^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -190,7 +190,7 @@
 	  (else
 	    (static-error expr "Malformed define-constructor"))))))
 
-  (add-primitivized-micro-form 'require-file mrspidey-vocabulary
+  (add-primitivized-micro-form 'reference-file mrspidey-vocabulary
     (let* ((kwd '())
 	    (in-pattern `(_ file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -265,7 +265,7 @@
 			      (close-input-port p))))))
 		    (static-error file "Does not yield a filename"))))))
 	  (else
-	    (static-error expr "Malformed require-file"))))))
+	    (static-error expr "Malformed reference-file"))))))
 
   (define reference-library/relative-maker
     (lambda (form-name make-raw-filename)

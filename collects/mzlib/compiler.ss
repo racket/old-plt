@@ -2,14 +2,14 @@
  (import)
  (link
   [referf 
-   : (require-unit include-file)
+   : (require-unit reference-file)
    ((unit->unit/sig (require-relative-library "referf.ss") 
 		    () 
-		    (require-unit include-file)))]
+		    (require-unit reference-file)))]
   [compile 
    : mzlib:compile^
    ((unit/sig mzlib:compile^
-    (import (r : (require-unit include-file)))
+    (import (r : (require-unit reference-file)))
 
    (define identity (lambda (x n) x))
 
@@ -22,9 +22,9 @@
    (define -require-relative-library-unit (r:require-unit #f #t #t #f 'require-relative-library-unit))
    (define -require-unit/sig (r:require-unit #f #f #f #t 'require-unit/sig))
    (define -require-unit (r:require-unit #f #f #f #f 'require-unit))
-   (define -include-file (r:include-file #f #f #f))
-   (define -require-library (r:include-file #f #t #f))
-   (define -require-relative-library (r:include-file #f #t #t))
+   (define -reference-file (r:reference-file #f #f #f))
+   (define -require-library (r:reference-file #f #t #f))
+   (define -require-relative-library (r:reference-file #f #t #t))
    (define make--begin-elaboration-time
      (lambda (do?)
        (lambda body
@@ -49,7 +49,7 @@
      (when (or preserve-elab? do-elab? preserve-constr? do-constr?)
        (eval `(begin
 		(require-library "refer.ss")
-		(define-macro include-file ,-include-file)
+		(define-macro reference-file ,-reference-file)
 		(define-macro require-unit/sig ,-require-unit/sig)
 		(define-macro require-unit ,-require-unit)
 		(define-macro require-library-unit/sig ,-require-library-unit/sig)

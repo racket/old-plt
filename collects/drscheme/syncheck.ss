@@ -1177,7 +1177,7 @@ Check Syntax separates four classes of identifiers:
                                                     (string-constant cs-lexical-syntax))
         (fw:color-prefs:build-color-selection-panel parent
                                                     imported-variable-style-pref
-                                                    lexically-bound-variable-style-name
+                                                    imported-variable-style-name
                                                     (string-constant cs-imported-variable))
         (fw:color-prefs:build-color-selection-panel parent
                                                     imported-syntax-style-pref
@@ -1186,16 +1186,16 @@ Check Syntax separates four classes of identifiers:
       
       (fw:color-prefs:register-color-pref lexically-bound-variable-style-pref
                                           lexically-bound-variable-style-name
-                                          (make-object color% 89 131 255))
+                                          (make-object color% 81 112 203))
       (fw:color-prefs:register-color-pref imported-variable-style-pref
                                           imported-variable-style-name
-                                          (make-object color% 145 89 255))
+                                          (make-object color% 122 81 203))
       (fw:color-prefs:register-color-pref lexically-bound-syntax-style-pref
                                           lexically-bound-syntax-style-name
-                                          (make-object color% 0 64 255))
+                                          (make-object color% 0 51 203))
       (fw:color-prefs:register-color-pref imported-syntax-style-pref
                                           imported-syntax-style-name
-                                          (make-object color% 85 0 255))
+                                          (make-object color% 68 0 203))
 
 
                                           

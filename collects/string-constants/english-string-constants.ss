@@ -435,6 +435,7 @@ please adhere to these guidelines:
  (default-fonts "Default Fonts")
  (paren-match-color "Parenthesis highlight color") ; in prefs dialog
  (choose-color "Choose Color") ; in prefs dialog
+ (online-coloring-active "Color syntax interactively")
 
  ; title of the color choosing dialog
  (choose-paren-highlight-color "Choose Parenthesis Highlight Color")

@@ -6,10 +6,10 @@
       (syntax-case stx ()
 	[(_ stx trans? clause ...)
 	 (syntax (syntax-case* stx (quote 
-				    quote-syntax #%datum #%unbound
+				    quote-syntax #%datum #%top
 				    lambda case-lambda
 				    let-values letrec-values
-				    begin begin0 set! struct
+				    begin begin0 set!
 				    with-continuation-mark
 				    if #%app
 				    define-values define-syntax
@@ -19,7 +19,7 @@
 
   (define (kernel-form-identifier-list stx)
     (map (lambda (s)
-	   (datum->syntax s #f stx))
+	   (datum->syntax-object stx s #f))
 	 '(begin
 	    define-values
 	    define-syntax
@@ -33,12 +33,11 @@
 	    lambda
 	    case-lambda
 	    if
-	    struct
 	    quote
 	    letrec-syntax
 	    with-continuation-mark
 	    #%app
-	    #%unbound
+	    #%top
 	    #%datum)))
   
   (provide kernel-syntax-case

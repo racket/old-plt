@@ -233,8 +233,8 @@ Rough BNF
 		    (spec ...)
 		    defn-or-expr
 		    ...)
-	     (with-syntax ([this-id (datum->syntax 'this #f (syntax form))]
-			   [super-id (datum->syntax 'super-init #f (syntax form))])
+	     (with-syntax ([this-id (datum->syntax-object (syntax form) 'this #f)]
+			   [super-id (datum->syntax-object (syntax form) 'super-init #f)])
 	       (syntax (class/d*/names (this-id super-id) super-expresion (interface-expr ...) init-args
 				       (spec ...)
 				       defn-or-expr
@@ -247,7 +247,7 @@ Rough BNF
 		   (spec ...)
 		   defn-or-expr
 		   ...)
-	     (with-syntax ([class/d* (datum->syntax 'class/d* #f (syntax form))])
+	     (with-syntax ([class/d* (datum->syntax-object (syntax form) 'class/d* #f)])
 	       (syntax (class/d* super-expresion () init-args
 				 (spec ...)
 				 defn-or-expr

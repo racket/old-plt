@@ -3,9 +3,9 @@
 ;; See doc.txt for information.
 
 (module errortrace mzscheme
-  (import (lib "kerncase.ss" "syntax")
-	  (lib "stx.ss" "syntax"))
-  (import (lib "list.ss") (lib "pretty.ss"))
+  (require (lib "kerncase.ss" "syntax")
+	   (lib "stx.ss" "syntax"))
+  (require (lib "list.ss") (lib "pretty.ss"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Profiling run-time support
@@ -69,9 +69,9 @@
       (if (profiling-enabled)
           (let ([key (gensym)])
             (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
-	    (with-syntax ([key (datum->syntax key (quote-syntax here) #f)]
-			  [start (datum->syntax (gensym) (quote-syntax here) #f)]
-			  [profile-key (datum->syntax profile-key (quote-syntax here) #f)]
+	    (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
+			  [start (datum->syntax-object #f (gensym) (quote-syntax here))]
+			  [profile-key (datum->syntax-object #f profile-key (quote-syntax here))]
 			  [register-profile-start register-profile-start]
 			  [register-profile-done register-profile-done])
 	      (with-syntax ([rest 
@@ -101,13 +101,12 @@
 	[(quote _) (syntax (begin e expr))]
 	[(quote-syntax _) (syntax (begin e expr))]
 	[(#%datum . d) (syntax (begin e expr))]
-	[(#%unbound . d) (syntax (begin e expr))]
+	[(#%top . d) (syntax (begin e expr))]
 
 	;; No tail effect, and we want to account for the time
 	[(lambda . _) (syntax (begin0 expr e))]
 	[(case-lambda . _) (syntax (begin0 expr e))]
 	[(set! . _) (syntax (begin0 expr e))]
-	[(struct . _) (syntax (begin0 expr e))]
 
 	[(let-values bindings . body)
 	 (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
@@ -140,7 +139,7 @@
 	[_else
 	 (error 'errortrace
 		"unrecognized (non-top-level) expression form: ~e"
-		(syntax->datum sexpr))])))
+		(syntax-object->datum sexpr))])))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Stacktrace instrumenter
@@ -228,7 +227,7 @@
 	     ;; might be undefined/uninitialized
 	     (with-mark expr expr))]
 
-	[(#%unbound . _)
+	[(#%top . _)
 	 ;; might be undefined/uninitialized
 	 (with-mark expr expr)]
 	[(#%datum . _)
@@ -272,11 +271,10 @@
 	   (syntax/loc expr (module name init-import . bodyl)))]
 
 	;; No way to wrap
-	[(import i ...) expr]
-	[(import-for-syntax i ...) expr]
+	[(require i ...) expr]
+	[(require-for-syntax i ...) expr]
 	;; No error possible (and no way to wrap)
-	[(export i ...) expr]
-	[(export-indirect i ...) expr]
+	[(provide i ...) expr]
 
 	;; No error possible
 	[(quote _)
@@ -336,19 +334,11 @@
 				  (syntax #%app) (syntax body) 
 				  annotate))]
 
-	;; Going away...
-	[(struct (name sup) fields)
-	 (with-syntax ([sup (annotate (syntax sup) env trans?)])
-	   (syntax/loc expr (struct (name sup) fields)))]
-	[(struct . _)
-	 ;; no error possile
-	 expr]
-
 	[_else
 	 (error 'errortrace
 		"unrecognized expression form~a: ~e"
 		(if top? " at top-level" "")
-		(syntax->datum expr))])))
+		(syntax-object->datum expr))])))
   
   (define annotate (make-annotate #f #f))
   (define annotate-top (make-annotate #t #f))
@@ -381,7 +371,7 @@
   (define (cleanup v)
     (cond
      [(and (pair? v)
-	   (memq (car v) '(#%datum #%app #%unbound)))
+	   (memq (car v) '(#%datum #%app #%top)))
       (cleanup (cdr v))]
      [(pair? v)
       (cons (cleanup (car v)) (cleanup (cdr v)))]
@@ -397,7 +387,7 @@
         [(pair? l)
          (let ([m (car l)])
            (fprintf p "  ~e in ~a~n" 
-                    (cleanup (syntax->datum m))
+                    (cleanup (syntax-object->datum m))
                     (let ([file (syntax-source m)]
 			  [line (syntax-line m)]
 			  [col (syntax-column m)])
@@ -456,7 +446,7 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  (export print-error-trace 
+  (provide print-error-trace 
 	  error-context-display-depth 
 	  instrumenting-enabled 
 	  profiling-enabled

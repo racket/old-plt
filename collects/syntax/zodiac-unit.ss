@@ -382,25 +382,10 @@
 		     (loop arg env trans?))
 		   (syntax->list (syntax (arg ...)))))]
 		
-		[(struct (name sup) fields)
-		 (make-struct-form
-		  stx
-		  (mk-back)
-		  (syntax name)
-		  (loop (syntax sup) env trans?)
-		  (map syntax-e (syntax->list (syntax fields))))]
-		[(struct name fields)
-		 (make-struct-form
-		  stx
-		  (mk-back)
-		  (syntax name)
-		  #f
-		  (map syntax-e (syntax->list (syntax fields))))]
-		
 		[_else
 		 (error 'syntax->zodiac
 			"unrecognized expression form: ~e"
-			(syntax->datum stx))]))))
+			(syntax-object->datum stx))]))))
 
       
       (define (zodiac->syntax x)
@@ -413,25 +398,12 @@
 	    (zodiac-stx x)]
 	   [(bound-varref? x)
 	    ;; An stx object is getting gensymmed here!
-	    (datum->syntax (binding-var (bound-varref-binding x)) #f #f)]
+	    (datum->syntax-object #f (binding-var (bound-varref-binding x)) #f)]
 	   
 	   [(app? x)
 	    (with-syntax ([fun (loop (app-fun x))]
 			  [args (map loop (app-args x))])
 	      (syntax (#%app fun . args)))]
-
-	   [(struct-form? x)
-	    (let ([super (and (struct-form-super x)
-			      (loop (struct-form-super x)))])
-	      (with-syntax ([name (datum->syntax (struct-form-type x) #f #f)]
-			    [fields (map (lambda (x)
-					   (datum->syntax x #f #f))
-					 (struct-form-fields x))])
-		(with-syntax ([name+super (if (syntax-e (syntax super))
-					      (with-syntax ([super super])
-						(syntax (name super)))
-					      (syntax name))])
-		  (syntax (struct name+super fields)))))]
 
 	   [(if-form? x)
 	    (with-syntax ([test (loop (if-form-test x))]
@@ -487,15 +459,14 @@
 			   (map (lambda (args)
 				  (cond
 				   [(sym-arglist? args)
-				    (datum->syntax (binding-var (car (arglist-vars args)))
-						   #f #f)]
+				    (datum->syntax-object #f (binding-var (car (arglist-vars args))) #f)]
 				   [(list-arglist? args)
 				    (map (lambda (var)
-					   (datum->syntax (binding-var var) #f #f))
+					   (datum->syntax-object #f (binding-var var) #f))
 					 (arglist-vars args))]
 				   [(ilist-arglist? args)
 				    (let loop ([vars (arglist-vars args)])
-				      (let ([id (datum->syntax (binding-var (car vars)) #f #f)])
+				      (let ([id (datum->syntax-object #f (binding-var (car vars)) #f)])
 					(if (null? (cdr vars))
 					    id
 					    (cons id (loop (cdr vars))))))]))
@@ -540,7 +511,7 @@
 	(syntax-e (zodiac-stx z)))
 
       (define (structurize-syntax sexp)
-	(make-read (datum->syntax sexp #f #f)))
+	(make-read (datum->syntax-object #f sexp #f)))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -578,11 +549,6 @@
       (define (create-app z fun args)
 	(make-app (zodiac-stx z) (mk-back) fun args))
 
-      (define-struct struct-form (type super fields))
-      (define (create-struct-form z type super fields)
-	(make-struct-form (zodiac-stx z) (mk-back) type super fields))
-
-      
       (define-struct (if-form struct:parsed) (test then else))
       (define (create-if-form z test then else)
 	(make-if-form (zodiac-stx z) (mk-back) test then else))

@@ -87,7 +87,7 @@
       ;; what can be thrown away in a begin?
       (define prephase:dead-expression?
 	(one-of zodiac:bound-varref? zodiac:quote-form?
-		zodiac:case-lambda-form? zodiac:struct-form?))
+		zodiac:case-lambda-form?))
 
       ;; what can be ``pushed''?: (begin0 x ...) => (begin ... x)
       (define prephase:begin0-pushable?
@@ -515,17 +515,6 @@
 			    ;; don't optimize
 			    (process-normally)))]
 		     
-		     ;;-----------------------------------------------------------
-		     ;; STRUCTS
-		     ;;
-		     [(zodiac:struct-form? ast)
-		      (let ([super (zodiac:struct-form-super ast)])
-			(when super
-			  (zodiac:set-struct-form-super!
-			   ast
-			   (prephase! super #t #f)))
-			ast)]
-
 		     ;;-----------------------------------------------------------
 		     ;; WITH-CONTINUATION-MARK
 		     ;;

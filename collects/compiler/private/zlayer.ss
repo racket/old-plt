@@ -115,9 +115,9 @@
 	;; make-quote, make-constant
 	(lambda (text)
 	  (let ([stx (case text
-		       [(void) (datum->syntax (void) #f #f)]
-		       [(null) (datum->syntax null #f #f)]
-		       [(undefined) (datum->syntax undefined #f #f)]
+		       [(void) (datum->syntax-object #f (void) #f)]
+		       [(null) (datum->syntax-object null #f)]
+		       [(undefined) (datum->syntax-object undefined #f)]
 		       [else (compiler:internal-error 'make-special-constant "bad type")])])
 	    (zodiac:make-quote-form 
 	     stx (make-empty-box)
@@ -176,7 +176,7 @@
 	   [(or (zodiac:quote-form? ast) 
 		(zodiac:binding? ast)
 		(zodiac:varref? ast))
-	    (syntax->datum (zodiac:zodiac-stx ast))]
+	    (syntax-object->datum (zodiac:zodiac-stx ast))]
 	   
 					; compound sexps
 	   [(zodiac:define-values-form? ast)
@@ -233,14 +233,6 @@
 		 ,(zodiac->sexp/annotate (zodiac:if-form-then ast))
 		 ,(zodiac->sexp/annotate (zodiac:if-form-else ast)))]
 	   
-	   [(zodiac:struct-form? ast)
-	    (let ([type (zodiac:struct-form-type ast)]
-		  [super (zodiac:struct-form-super ast)]
-		  [fields (zodiac:struct-form-fields ast)])
-	      (if super
-		  `(struct (,type ,(zodiac->sexp/annotate super)) ,fields)
-		  (syntax->datum (zodiac:zodiac-stx ast))))]
-
 	   [(zodiac:with-continuation-mark-form? ast)
 	    `(with-continuation-mark 
 	      ,(zodiac->sexp/annotate (zodiac:with-continuation-mark-form-key ast))

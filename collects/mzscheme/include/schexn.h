@@ -13,8 +13,6 @@ enum {
   MZEXN_APPLICATION_MISMATCH,
   MZEXN_APPLICATION_DIVIDE_BY_ZERO,
   MZEXN_APPLICATION_CONTINUATION,
-  MZEXN_ELSE,
-  MZEXN_STRUCT,
   MZEXN_SYNTAX,
   MZEXN_READ,
   MZEXN_READ_EOF,
@@ -23,7 +21,6 @@ enum {
   MZEXN_I_O_PORT_READ,
   MZEXN_I_O_PORT_WRITE,
   MZEXN_I_O_PORT_CLOSED,
-  MZEXN_I_O_PORT_USER,
   MZEXN_I_O_FILESYSTEM,
   MZEXN_I_O_TCP,
   MZEXN_THREAD,
@@ -52,13 +49,10 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
-  { 2, NULL, NULL, 0 },
-  { 2, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
-  { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
@@ -91,8 +85,6 @@ static exn_rec *exn_table;
   exn_table[MZEXN_APPLICATION_MISMATCH].args = 3;
   exn_table[MZEXN_APPLICATION_DIVIDE_BY_ZERO].args = 3;
   exn_table[MZEXN_APPLICATION_CONTINUATION].args = 3;
-  exn_table[MZEXN_ELSE].args = 2;
-  exn_table[MZEXN_STRUCT].args = 2;
   exn_table[MZEXN_SYNTAX].args = 3;
   exn_table[MZEXN_READ].args = 3;
   exn_table[MZEXN_READ_EOF].args = 3;
@@ -101,7 +93,6 @@ static exn_rec *exn_table;
   exn_table[MZEXN_I_O_PORT_READ].args = 3;
   exn_table[MZEXN_I_O_PORT_WRITE].args = 3;
   exn_table[MZEXN_I_O_PORT_CLOSED].args = 3;
-  exn_table[MZEXN_I_O_PORT_USER].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM].args = 4;
   exn_table[MZEXN_I_O_TCP].args = 2;
   exn_table[MZEXN_THREAD].args = 2;
@@ -140,8 +131,6 @@ static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
   SETUP_STRUCT(MZEXN_APPLICATION_MISMATCH, EXN_PARENT(MZEXN_APPLICATION), "exn:application:mismatch", 0, NULL)
   SETUP_STRUCT(MZEXN_APPLICATION_DIVIDE_BY_ZERO, EXN_PARENT(MZEXN_APPLICATION), "exn:application:divide-by-zero", 0, NULL)
   SETUP_STRUCT(MZEXN_APPLICATION_CONTINUATION, EXN_PARENT(MZEXN_APPLICATION), "exn:application:continuation", 0, NULL)
-  SETUP_STRUCT(MZEXN_ELSE, EXN_PARENT(MZEXN), "exn:else", 0, NULL)
-  SETUP_STRUCT(MZEXN_STRUCT, EXN_PARENT(MZEXN), "exn:struct", 0, NULL)
   SETUP_STRUCT(MZEXN_SYNTAX, EXN_PARENT(MZEXN), "exn:syntax", 1, MZEXN_SYNTAX_FIELDS)
   SETUP_STRUCT(MZEXN_READ, EXN_PARENT(MZEXN), "exn:read", 1, MZEXN_READ_FIELDS)
   SETUP_STRUCT(MZEXN_READ_EOF, EXN_PARENT(MZEXN_READ), "exn:read:eof", 0, NULL)
@@ -150,7 +139,6 @@ static const char *MZEXN_MISC_USER_BREAK_FIELDS[1] = { "continuation" };
   SETUP_STRUCT(MZEXN_I_O_PORT_READ, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:read", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_PORT_WRITE, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:write", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_PORT_CLOSED, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:closed", 0, NULL)
-  SETUP_STRUCT(MZEXN_I_O_PORT_USER, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:user", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM, EXN_PARENT(MZEXN_I_O), "exn:i/o:filesystem", 2, MZEXN_I_O_FILESYSTEM_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_TCP, EXN_PARENT(MZEXN_I_O), "exn:i/o:tcp", 0, NULL)
   SETUP_STRUCT(MZEXN_THREAD, EXN_PARENT(MZEXN), "exn:thread", 0, NULL)

@@ -317,27 +317,6 @@
 						norm-fun
 						norm-terms))))))]
 		     
-		     ;;----------------------------------------------------------------
-		     ;; STRUCT
-		     ;;   a-normalize the super position if it exists
-		     ;; 
-		     ;; (norm (struct (x M) ...)) ->
-		     ;;   (name M (lambda A (struct (x A) ...)))
-		     ;; (norm (struct x ...) -> (struct x ...)
-		     ;;
-		     [(zodiac:struct-form? ast)
-		      (let ([super (zodiac:struct-form-super ast)])
-			(if super
-			    (normalize-name 
-			     super
-			     (lambda (norm-super)
-			       (k (zodiac:make-struct-form (zodiac:zodiac-stx ast)
-							   (zodiac:parsed-back ast)
-							   (zodiac:struct-form-type ast)
-							   norm-super
-							   (zodiac:struct-form-fields ast)))))
-			    (k ast)))]
-		     
 		     ;;-----------------------------------------------------------
 		     ;; WITH-CONTINUATION-MARK
 		     ;;

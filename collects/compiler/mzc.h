@@ -97,53 +97,6 @@ typedef struct {
   Scheme_Object *val;
 } _Scheme_WCM_Rec;
 
-/* this function is called with the super object and a (null-terminated) list  */
-/* of the field names and returns multiple values -- it is "struct"            */
-/* (struct (a b) (c d)) --> c_struct_imp(stuff(b), 2, "a", "c", "d", NULL);    */
-static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fields, 
-				    char * name, char * field_list, ...)
-{
-	va_list marker;
-	char * field = field_list;
-	Scheme_Object ** field_names;
-	Scheme_Object * type_name, * field_names_list, * v;
-	Scheme_Object ** struct_names, ** struct_values;
-	Scheme_Object * inspector = NULL;
-	int count;
-
-	if (super && (SCHEME_TYPE(super) == scheme_inspector_type)) {
-	  inspector = super;
-	  super = NULL;
-	}
-
-	if (super && !SAME_TYPE(SCHEME_TYPE(super), scheme_struct_type_type))
-	  scheme_raise_exn(MZEXN_STRUCT,
-			   "struct: supertype expression returned "
-			   "a value that is not a struct type value");
-
-	field_names = scheme_malloc(n_fields*sizeof(Scheme_Object*));
-
-	va_start( marker, field_list );
-	for(count=0; count < n_fields; count++)
-	{
-		field_names[count] = scheme_intern_symbol(field);
-		field = va_arg( marker, char* );
-	}
-	va_end(marker);
-	field_names_list = scheme_build_list(n_fields, field_names);
-	type_name = scheme_make_struct_type(scheme_intern_symbol(name), super, inspector, n_fields);
-	struct_names = scheme_make_struct_names(scheme_intern_symbol(name), field_names_list, 0, &count);
-	struct_values = scheme_make_struct_values(type_name, struct_names, count, 0);
-
-	/* return all this garbage as multiple values */
-	v = scheme_values(3+2*n_fields, struct_values);
-
-	if (!multiok && (v == SCHEME_MULTIPLE_VALUES))
-	  scheme_wrong_return_arity(NULL, 1, scheme_multiple_count, scheme_multiple_array, NULL);
-
-	return v;
-}
-
 #define _scheme_apply_ckp(f, argc, argv) (SCHEME_CLSD_PRIMP(f) ? _scheme_apply_closed_prim(f, argc, argv) : _scheme_apply(f, argc, argv))
 #define _scheme_apply_multi_ckp(f, argc, argv) (SCHEME_CLSD_PRIMP(f) ? _scheme_apply_closed_prim_multi(f, argc, argv) : _scheme_apply_multi(f, argc, argv))
 

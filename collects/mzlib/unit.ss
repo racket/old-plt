@@ -238,9 +238,10 @@
 						[var (make-id-mapper (quote-syntax (unbox loc)))])))
 					   (syntax->list 
 					    (syntax ((ivar iloc) ... (expname eloc) ...))))]
-					 [num-imports (datum->syntax 
+					 [num-imports (datum->syntax-object
+						       (quote-syntax here)
 						       (length (syntax->list (syntax (iloc ...))))
-						       #f (quote-syntax here))])
+						       #f)])
 			     (syntax/loc
 			      stx
 			      (make-unit
@@ -522,10 +523,10 @@
 						   [id e])))])
 				      (with-syntax ([ex-poss ex-poss]
 						    [setup setup]
-						    [pos (datum->syntax 
+						    [pos (datum->syntax-object
+							  (quote-syntax here)
 							  pos
-							  #f
-							  (quote-syntax here))])
+							  #f)])
 					(syntax 
 					 (vector-ref (car setup)
 						     (vector-ref ex-poss pos))))))
@@ -543,18 +544,21 @@
 				     [(import-mapping ...) import-mappings]
 				     [(unit-import-count ...) 
 				      (map (lambda (l) 
-					     (datum->syntax (apply
-							     +
-							     (map (lambda (v)
-								    (if (identifier? v)
-									1
-									(length (cdr (syntax->list v)))))
-								  l))
-							    #f
-							    (quote-syntax here)))
+					     (datum->syntax-object
+					      (quote-syntax here)
+					      (apply
+					       +
+					       (map (lambda (v)
+						      (if (identifier? v)
+							  1
+							  (length (cdr (syntax->list v)))))
+						    l))
+					      #f))
 					   linkages)]
-				     [num-imports (datum->syntax (length imports)
-								 #f (quote-syntax here))]
+				     [num-imports (datum->syntax-object
+						   (quote-syntax here)
+						   (length imports)
+						   #f)]
 				     [export-names export-names]
 				     [export-mapping export-mapping])
 			 (syntax/loc
@@ -598,9 +602,10 @@
 	[(_ unit-expr expr ...)
 	 (let ([exprs (syntax (expr ...))])
 	   (with-syntax ([(bx ...) (generate-temporaries (syntax (expr ...)))]
-			 [num (datum->syntax (length (syntax->list exprs)) 
-					     #f 
-					     (quote-syntax here))])
+			 [num (datum->syntax-object
+			       (quote-syntax here)
+			       (length (syntax->list exprs)) 
+			       #f)])
 	     (syntax/loc
 	      stx
 	      (let ([u unit-expr])
@@ -639,12 +644,13 @@
 					      (syntax-e (syntax prefix)))
 					     ":")])
 				(map (lambda (s)
-				       (datum->syntax
+				       (datum->syntax-object
+					s
 					(string->symbol
 					 (string-append
 					  prefix
 					  (symbol->string (syntax-e s))))
-					s s))
+					s))
 				     (syntax->list (syntax exports))))
 			      (syntax exports))]
 			 [extract-unit (syntax (unit

@@ -134,7 +134,7 @@
        (define (i v) (match:syntax-err p (format "illegal use of ~a" v)))
        (syntax-case p (_ quote $ ? and or not set! get! quasiquote ... ___)
 	 [_ '_]
-	 [(quote x) `(quote ,(syntax->datum (syntax x)))]
+	 [(quote x) `(quote ,(syntax-object->datum (syntax x)))]
 	 [(quote . _) (i "quote")]
 	 [($ struct p ...)
 	  `($ struct ,@(r (syntax (p ...))))]
@@ -199,7 +199,7 @@
 	  `(,(parse-quasipattern (syntax p)) ,(syntax-e (syntax ..k)))]
 	 [(i . rest)
 	  (identifier? (syntax i))
-	  `(,(syntax->datum (syntax i)) ,@(parse-quasipattern (syntax rest)))]
+	  `(,(syntax-object->datum (syntax i)) ,@(parse-quasipattern (syntax rest)))]
          [(qp . rest)
 	  `(,(parse-quasipattern (syntax qp)) ,@(parse-quasipattern (syntax rest)))]
 	 [_else
@@ -218,7 +218,8 @@
      (syntax-case stx ()
        [(_ exp clause ...)
 	(with-syntax ([body
-		       (datum->syntax
+		       (datum->syntax-object
+			(quote-syntax here)
 			(genmatch
 			 (quote-syntax mv)
 			 (map
@@ -237,7 +238,7 @@
 				"bad match clause")]))
 			  (syntax->list (syntax (clause ...))))
 			 stx)
-			stx (quote-syntax here))])
+			stx)])
 	  (syntax
 	   (let ([mv exp])
 	     body)))])))
@@ -274,20 +275,22 @@
    (lambda (stx)
      (syntax-case stx ()
        [(_ ([pat exp] ...) body1 body ...)
-	(datum->syntax
+	(datum->syntax-object
+	 (quote-syntax here)
 	 (genletrec 
 	  (map (lambda (p) (:ucall parse-pattern p)) (syntax->list (syntax (pat ...))))
 	  (syntax->list (syntax (exp ...)))
 	  (syntax->list (syntax (body1 body ...)))
 	  stx)
-	 stx (quote-syntax here))])))
+	 stx)])))
 
  (define-syntax match-define
    (lambda (stx)
      (syntax-case stx ()
        [(_ pat exp)
-	(datum->syntax
+	(datum->syntax-object
+	 (quote-syntax here)
 	 (gendefine (map (lambda (p) (:ucall parse-pattern p)) (syntax pat))
 		    (syntax exp)
 		    stx)
-	 stx (quote-syntax here))]))))
+	 stx)]))))

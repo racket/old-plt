@@ -703,29 +703,6 @@
 
 		 
 		 
-		 ;;-----------------------------------------------------------------
-		 ;; STRUCT FORMS
-		 ;;
-		 ;; Just one VM instruction for this...
-		 ;;
-		 [(zodiac:struct-form? ast)
-		  (let* ([super (zodiac:struct-form-super ast)]
-			 [exp (make-vm:struct
-			       (zodiac:zodiac-stx ast)
-			       (zodiac:struct-form-type ast)
-			       (if super (convert super #f identity #f #f #t) #f)
-			       (zodiac:struct-form-fields ast)
-			       multi?)])
-
-		    (unless multi?
-		      ((if (compiler:option:stupid) compiler:warning compiler:error)
-		       ast
-		       "returning multiple values (structure type and procedures) to a context expecting 1 value"))
-
-		    (if tail-pos
-			(leaf (tail-pos exp))
-			(leaf exp)))]
-
 		 ;;-------------------------------------------------------------------
 		 ;; WITH-CONTINUATION-MARK
 		 ;;

@@ -217,15 +217,6 @@
 		  (zodiac:set-app-args! ast (map transform! (zodiac:app-args ast)))
 		  ast]
 		 
-		 ;;-----------------------------------------------------------------
-		 ;; STRUCT
-		 ;;
-		 [(zodiac:struct-form? ast)
-		  (let ([super (zodiac:struct-form-super ast)])
-		    (when super
-		      (zodiac:set-struct-form-super! ast (transform! super)))
-		    ast)]
-
 		 ;;-------------------------------------------------------------------
 		 ;; WITH-CONTINUATION-MARK
 		 ;;

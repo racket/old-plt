@@ -55,8 +55,6 @@
 	(closure argc known? multi? prim simple-tail-prim?))
       (define-struct (vm:macro-apply zodiac:struct:zodiac) 
 	(name primitive args tail? bool?))
-      (define-struct (vm:struct zodiac:struct:zodiac)
-	(type super fields multi?)) ; multi? = #f => always run-time error
       (define-struct (vm:call zodiac:struct:zodiac) (label closure))
       (define-struct (vm:begin0-extract zodiac:struct:zodiac) (var))
       (define-struct (vm:wcm-mark! zodiac:struct:zodiac) (key val))

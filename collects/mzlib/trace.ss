@@ -164,11 +164,12 @@
 		     ids)
 	   (with-syntax ([(traced-name ...)
 			  (map (lambda (id)
-				 (datum->syntax
+				 (datum->syntax-object
+				  id
 				  (string->symbol
 				   (string-append "traced-"
 						  (symbol->string (syntax-e id))))
-				  #f id))
+				  #f))
 			       ids)])
 	     (syntax
 	      (begin

@@ -138,16 +138,6 @@
 		      (for-each find! (zodiac:app-args ast))]
 		     
 		     ;;-------------------------------------------------------------------
-		     ;; STRUCT
-		     ;;
-		     ;; nothing much to do except analyze the super position
-		     ;;
-		     [(zodiac:struct-form? ast)
-		      (let ([super (zodiac:struct-form-super ast)])
-			(when super
-			  (find! (zodiac:struct-form-super ast))))]
-		     
-		     ;;-------------------------------------------------------------------
 		     ;; WITH-CONTINUATION-MARK
 		     ;;
 		     ;; analyze the key, val, and body
@@ -499,18 +489,6 @@
 
 		      ast]
 		     
-		     ;;-------------------------------------------------------------------
-		     ;; STRUCT
-		     ;;
-		     ;; nothing much to do except analyze the super position
-		     ;;
-		     [(zodiac:struct-form? ast)
-		      (let ([super (zodiac:struct-form-super ast)])
-			(when super
-			  (zodiac:set-struct-form-super! ast (lift! super code))))
-		      
-		      ast]
-
 		     ;;-------------------------------------------------------------------
 		     ;; WITH-CONTINUATION-MARK
 		     ;;

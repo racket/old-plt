@@ -62,7 +62,6 @@
 
      (struct app (fun args))           create-app
 
-     (struct struct-form (type super fields))        create-struct-form
      (struct if-form (test then else))               create-if-form
      (struct quote-form (expr))                      create-quote-form
      (struct begin-form (bodies))                    create-begin-form

@@ -15,7 +15,7 @@
 	       [+ string-append])
 	   (with-syntax ([names
 			  (map (lambda (x)
-				 (datum->syntax x (syntax name) (syntax name)))
+				 (datum->syntax-object (syntax name) x (syntax name)))
 			       (map string->symbol
 				    (append
 				     (list 

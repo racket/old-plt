@@ -40,7 +40,7 @@
 		 (provide #%info-lookup))))))])))
 
   (provide (rename info-module-begin #%module-begin)
-	  #%app #%datum #%unbound
+	  #%app #%datum #%top
 	  define quote
 	  list cons car cdr quasiquote unquote unquote-splicing
 	  build-path collection-path))

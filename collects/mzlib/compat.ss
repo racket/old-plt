@@ -94,8 +94,10 @@
 				 (map syntax-e 
 				      (syntax->list (syntax (init-field ...)))))]
 	       [+ (lambda args
-		    (datum->syntax (string->symbol (apply string-append args)) 
-				   (syntax sname) (syntax sname)))])
+		    (datum->syntax-object
+		     (syntax sname)
+		     (string->symbol (apply string-append args)) 
+		     (syntax sname)))])
 	   (with-syntax ([struct: (+ "struct:" name)]
 			 [make- (+ "make-" name)]
 			 [? (+ name "?")]

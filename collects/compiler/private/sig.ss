@@ -283,7 +283,6 @@
      (struct vm:make-case-procedure-closure (vehicle num-cases case-arities name empty?))
      (struct vm:apply (closure argc known? multi? prim simple-tail-prim?))
      (struct vm:macro-apply (name primitive args tail? bool?))
-     (struct vm:struct (type super fields multi?)) ; multi? = #f => always run-time error
      (struct vm:call (label closure))
      (struct vm:begin0-extract (var))
      (struct vm:wcm-mark! (key val))

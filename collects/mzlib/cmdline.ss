@@ -27,11 +27,13 @@
 		  (lambda (l)
 		    (map
 		     (lambda (a)
-		       (datum->syntax (let ([s (symbol->string (syntax-e a))])
-					(if (char=? #\* (string-ref s (sub1 (string-length s))))
-					    (substring s 0 (sub1 (string-length s)))
-					    s))
-				      #f (quote-syntax here)))
+		       (datum->syntax-object
+			(quote-syntax here)
+			(let ([s (symbol->string (syntax-e a))])
+			  (if (char=? #\* (string-ref s (sub1 (string-length s))))
+			      (substring s 0 (sub1 (string-length s)))
+			      s))
+			#f))
 		     l))])
 	     (let ([clauses
 		    (let loop ([csrcs (syntax->list (syntax (clause ...)))][clauses null])

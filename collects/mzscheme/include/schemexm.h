@@ -14,27 +14,27 @@
 #define scheme_register_parameter (scheme_extension_table->scheme_register_parameter)
 #define scheme_get_env (scheme_extension_table->scheme_get_env)
 #ifdef MZ_REAL_THREADS
-#define scheme_get_current_process (scheme_extension_table->scheme_get_current_process)
+#define scheme_get_current_thread (scheme_extension_table->scheme_get_current_thread)
 #else
 #ifndef LINK_EXTENSIONS_BY_TABLE
-#define scheme_current_process (scheme_extension_table->scheme_current_process)
+#define scheme_current_thread (scheme_extension_table->scheme_current_thread)
 #define scheme_fuel_counter (scheme_extension_table->scheme_fuel_counter)
 #else
-#define scheme_current_process_ptr (scheme_extension_table->scheme_current_process_ptr)
+#define scheme_current_thread_ptr (scheme_extension_table->scheme_current_thread_ptr)
 #define scheme_fuel_counter_ptr (scheme_extension_table->scheme_fuel_counter_ptr)
 #endif
 #endif
 #ifndef NO_SCHEME_THREADS
 #define scheme_thread (scheme_extension_table->scheme_thread)
-#define scheme_thread_w_manager (scheme_extension_table->scheme_thread_w_manager)
+#define scheme_thread_w_custodian (scheme_extension_table->scheme_thread_w_custodian)
 #define scheme_kill_thread (scheme_extension_table->scheme_kill_thread)
 #endif
 #define scheme_break_thread (scheme_extension_table->scheme_break_thread)
 #ifndef MZ_REAL_THREADS
-#define scheme_process_block (scheme_extension_table->scheme_process_block)
-#define scheme_swap_process (scheme_extension_table->scheme_swap_process)
+#define scheme_thread_block (scheme_extension_table->scheme_thread_block)
+#define scheme_swap_thread (scheme_extension_table->scheme_swap_thread)
 #else
-#define scheme_process_block_w_process (scheme_extension_table->scheme_process_block_w_process)
+#define scheme_thread_block_w_thread (scheme_extension_table->scheme_thread_block_w_thread)
 #endif
 #define scheme_weak_suspend_thread (scheme_extension_table->scheme_weak_suspend_thread)
 #define scheme_weak_resume_thread (scheme_extension_table->scheme_weak_resume_thread)
@@ -43,13 +43,14 @@
 #define scheme_tls_allocate (scheme_extension_table->scheme_tls_allocate)
 #define scheme_tls_set (scheme_extension_table->scheme_tls_set)
 #define scheme_tls_get (scheme_extension_table->scheme_tls_get)
-#define scheme_make_manager (scheme_extension_table->scheme_make_manager)
+#define scheme_make_custodian (scheme_extension_table->scheme_make_custodian)
 #define scheme_add_managed (scheme_extension_table->scheme_add_managed)
 #define scheme_remove_managed (scheme_extension_table->scheme_remove_managed)
 #define scheme_close_managed (scheme_extension_table->scheme_close_managed)
 #define scheme_signal_error (scheme_extension_table->scheme_signal_error)
 #define scheme_raise_exn (scheme_extension_table->scheme_raise_exn)
 #define scheme_warning (scheme_extension_table->scheme_warning)
+#define scheme_raise (scheme_extension_table->scheme_raise)
 #define scheme_wrong_count (scheme_extension_table->scheme_wrong_count)
 #define scheme_case_lambda_wrong_count (scheme_extension_table->scheme_case_lambda_wrong_count)
 #define scheme_wrong_type (scheme_extension_table->scheme_wrong_type)
@@ -111,7 +112,7 @@
 #ifndef MZ_REAL_THREADS
 #define scheme_do_eval (scheme_extension_table->scheme_do_eval)
 #else
-#define scheme_do_eval_w_process (scheme_extension_table->scheme_do_eval_w_process)
+#define scheme_do_eval_w_thread (scheme_extension_table->scheme_do_eval_w_thread)
 #endif
 #ifndef SCHEME_NO_GC
 # ifndef SCHEME_NO_GC_PROTO
@@ -223,7 +224,6 @@
 #define scheme_is_inexact (scheme_extension_table->scheme_is_inexact)
 #define scheme_expand (scheme_extension_table->scheme_expand)
 #define scheme_compile (scheme_extension_table->scheme_compile)
-#define scheme_link (scheme_extension_table->scheme_link)
 #define scheme_read (scheme_extension_table->scheme_read)
 #define scheme_read_syntax (scheme_extension_table->scheme_read_syntax)
 #define scheme_write (scheme_extension_table->scheme_write)
@@ -292,7 +292,7 @@
 #define scheme_return_eof_for_error (scheme_extension_table->scheme_return_eof_for_error)
 #define scheme_make_namespace (scheme_extension_table->scheme_make_namespace)
 #define scheme_add_namespace_option (scheme_extension_table->scheme_add_namespace_option)
-#define scheme_copy_from_original_env (scheme_extension_table->scheme_copy_from_original_env)
+#define scheme_require_from_original_env (scheme_extension_table->scheme_require_from_original_env)
 #define scheme_add_global (scheme_extension_table->scheme_add_global)
 #define scheme_add_global_keyword (scheme_extension_table->scheme_add_global_keyword)
 #define scheme_add_global_constant (scheme_extension_table->scheme_add_global_constant)
@@ -304,6 +304,7 @@
 #define scheme_lookup_global (scheme_extension_table->scheme_lookup_global)
 #define scheme_global_bucket (scheme_extension_table->scheme_global_bucket)
 #define scheme_global_keyword_bucket (scheme_extension_table->scheme_global_keyword_bucket)
+#define scheme_module_bucket (scheme_extension_table->scheme_module_bucket)
 #define scheme_set_global_bucket (scheme_extension_table->scheme_set_global_bucket)
 #define scheme_save_initial_module_set (scheme_extension_table->scheme_save_initial_module_set)
 #define scheme_primitive_module (scheme_extension_table->scheme_primitive_module)
@@ -322,6 +323,8 @@
 #define scheme_is_struct_instance (scheme_extension_table->scheme_is_struct_instance)
 #define scheme_struct_ref (scheme_extension_table->scheme_struct_ref)
 #define scheme_struct_set (scheme_extension_table->scheme_struct_set)
+#define scheme_make_struct_type_property (scheme_extension_table->scheme_make_struct_type_property)
+#define scheme_struct_type_property_ref (scheme_extension_table->scheme_struct_type_property_ref)
 #define scheme_eq (scheme_extension_table->scheme_eq)
 #define scheme_eqv (scheme_extension_table->scheme_eqv)
 #define scheme_equal (scheme_extension_table->scheme_equal)

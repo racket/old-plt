@@ -18,7 +18,7 @@
 		       (module-identifier=? e (quote-syntax up))
 		       (module-identifier=? e (quote-syntax same))))
 		 (syntax->list (syntax (elem1 elem ...))))
-		(apply build-path (syntax->datum (syntax (elem1 elem ...))))])])
+		(apply build-path (syntax-object->datum (syntax (elem1 elem ...))))])])
 	;; Complete the file name
 	(let ([c-file
 	       (if (complete-path? file)
@@ -83,22 +83,22 @@
 			[(null? content) null]
 			[else
 			 (let ([v (syntax-e content)])
-			   (datum->syntax
+			   (datum->syntax-object
+			    stx
 			    (cond
 			     [(pair? v) 
 			      (loop v)]
-			    [(vector? v)
-			     (list->vector (loop (vector->list v)))]
-			    [(box? v)
-			     (box (loop (unbox v)))]
-			    [else
-			     v])
-			    content
-			    stx))]))])
-		(datum->syntax 
+			     [(vector? v)
+			      (list->vector (loop (vector->list v)))]
+			     [(box? v)
+			      (box (loop (unbox v)))]
+			     [else
+			      v])
+			    content))]))])
+		(datum->syntax-object
+		 (quote-syntax here)
 		 `(begin ,@lexed-content)
-		 stx
-		 (quote-syntax here)))))))))
+		 stx))))))))
 
   (provide include))
 

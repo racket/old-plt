@@ -966,8 +966,6 @@
 				   (and
 				    (is-primitive? proc)
 				    (primitive-result-arity proc))))
-			    (and (vm:struct? val)
-				 (length (vm:struct-fields val)))
 			    
 			    )])
 		  (emit-indentation)
@@ -1248,26 +1246,6 @@
 		(process (vm:call-closure ast) indent-level #f #t)
 		(emit "), 0, arg))")]
 
-	       ;; struct
-	       ;; the hairy work has been moved into c_struct_imp, which is
-	       ;; in compiled.h
-	       ;;
-	       [(vm:struct? ast)
-		(let* ([type (zodiac:read-object (vm:struct-type ast))]
-		       [fields (map zodiac:read-object (vm:struct-fields ast))]
-		       [type-name (symbol->string type)]
-		       [field-names (map symbol->string fields)]
-		       [c-type-name (vm->c:convert-symbol (compiler:gensym))]
-		       [ids-created (+ 3 (* 2 (length fields)))]
-		       [super (vm:struct-super ast)])
-		  (emit-expr "c_struct_imp(~a, " (if (vm:struct-multi? ast) "1" "0"))
-		  (if super (process super indent-level #f #t) (emit "NULL"))
-		  (emit ", ~a, \"~a\", "
-			(length field-names)
-			type-name)
-		  (for-each (lambda (f) (emit "\"~a\", " f)) field-names)
-		  (emit "NULL)"))]
-	       
 	       ;; (bound-varref x) -> x
 	       [(vm:local-varref? ast) 
 		(emit-expr (vm->c:convert-symbol

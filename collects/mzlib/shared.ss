@@ -64,7 +64,7 @@
 					 (let loop ([l l][n 0])
 					   (if (null? l)
 					       null
-					       (cons (datum->syntax n #f (quote-syntax here))
+					       (cons (datum->syntax-object (quote-syntax here) n #f)
 						     (loop (cdr l) (add1 n))))))])
 			    (map (lambda (name expr)
 				   (with-syntax ([name name])

@@ -42,16 +42,18 @@
 				    (quote-syntax define-values)
 				    (quote-syntax begin))])
 	    (check-signature-unit-body sig a-unit (parse-unit-renames a-unit) 'unit/sig expr)
-	    (with-syntax ([imports (datum->syntax
+	    (with-syntax ([imports (datum->syntax-object
+				    expr
 				    (flatten-signatures (parse-unit-imports a-unit))
-				    expr expr)]
-			  [exports (datum->syntax
+				    expr)]
+			  [exports (datum->syntax-object
+				    expr
 				    (map
 				     (lambda (name)
 				       (list (do-rename name (parse-unit-renames a-unit))
 					     name))
 				     (signature-vars sig))
-				    expr expr)]
+				    expr)]
 			  [body (reverse! (parse-unit-body a-unit))]
 			  [import-sigs (explode-named-sigs (parse-unit-imports a-unit))]
 			  [export-sig (explode-sig sig)])
@@ -78,7 +80,7 @@
 			exploded-imports
 			exploded-exports)
 		       (parse-compound-unit expr (syntax body))]
-		      [(t) (lambda (l) (datum->syntax l expr expr))])
+		      [(t) (lambda (l) (datum->syntax-object expr l expr))])
 	   (with-syntax ([(tag ...) (t tags)]
 			 [(uexpr ...) (t exprs)]
 			 [(tagx ...) (t (map (lambda (t) (string->symbol (format "u:~a" t))) tags))]
@@ -114,10 +116,14 @@
       (syntax-case expr ()
 	[(_ u sig ...)
 	 (let ([sigs (parse-invoke-vars 'invoke-unit/sig (syntax (sig ...)) expr)])
-	   (with-syntax ([exploded-sigs (datum->syntax (explode-named-sigs sigs) 
-						       expr expr)]
-			 [flat-sigs (datum->syntax (flatten-signatures sigs) 
-						   expr expr)])
+	   (with-syntax ([exploded-sigs (datum->syntax-object
+					 expr
+					 (explode-named-sigs sigs) 
+					 expr)]
+			 [flat-sigs (datum->syntax-object
+				     expr
+				     (flatten-signatures sigs) 
+				     expr)])
 	     (syntax/loc
 	      expr
 	      (let ([unt u])
@@ -138,10 +144,14 @@
 			       (get-sig 'unit->unit/sig expr #f sig))
 			     (syntax->list (syntax (im-sig ...))))]
 	       [ex-sig (get-sig 'unit->unit/sig expr #f (syntax ex-sig))])
-	   (with-syntax ([exploded-imports (datum->syntax (explode-named-sigs im-sigs)
-							  expr expr)]
-			 [exploded-exports (datum->syntax (explode-sig ex-sig)
-							  expr expr)])
+	   (with-syntax ([exploded-imports (datum->syntax-object
+					    expr
+					    (explode-named-sigs im-sigs)
+					    expr)]
+			 [exploded-exports (datum->syntax-object
+					    expr
+					    (explode-sig ex-sig)
+					    expr)])
 	     (syntax
 	      (make-unit/sig
 	       e
@@ -243,7 +253,7 @@
 		       (syntax->list (syntax imports)))])
 		 (let ([im-explodeds (explode-named-sigs im-sigs)]
 		       [im-flattened (apply append (map (lambda (x) (flatten-signature #f x)) im-sigs))]
-		       [d->s (lambda (x) (datum->syntax x (syntax orig) (syntax orig)))])
+		       [d->s (lambda (x) (datum->syntax-object (syntax orig) x (syntax orig)))])
 		   (with-syntax ([dv/iu (if (syntax-e (syntax global?))
 					    (quote-syntax global-define-values/invoke-unit)
 					    (quote-syntax define-values/invoke-unit))]
@@ -291,7 +301,7 @@
 	  [(_ signame)
 	   (let ([sig (get-sig 'provide-signature-elements stx #f (syntax signame))])
 	     (let ([flattened (flatten-signature #f sig)])
-	       (with-syntax ([flattened (map (lambda (x) (datum->syntax x #f (syntax signame)))
+	       (with-syntax ([flattened (map (lambda (x) (datum->syntax-object (syntax signame) x #f))
 					     flattened)])
 		 (syntax
 		  (provide . flattened)))))]))))

@@ -752,12 +752,13 @@
 				 [body-exprs (if (null? body-exprs)
 						 (syntax ((void)))
 						 body-exprs)]
-				 [init (datum->syntax 
+				 [init (datum->syntax-object
+					#f
 					(if name
 					    (string->symbol (format "~a-init" name))
 					    'init)
-					#f #f)]
-				 [name (datum->syntax name #f #f)])
+					#f)]
+				 [name (datum->syntax-object #f name #f)])
 		     (with-syntax ([go 
 				    ;; Create a sequence of case-lambda
 				    ;; clauses, to implement init variable defaults:
@@ -801,7 +802,8 @@
 						(syntax ([(var ... wd-var ...) (init var ... wd-var ... needs-init)]
 							 . rest)))
 					      (syntax rest)))]))]
-				   [go-arity (datum->syntax
+				   [go-arity (datum->syntax-object
+					      #f
 					      (let ([req (let loop ([l init-defs][c 0])
 							   (if (or (null? l) (car l))
 							       c
@@ -816,7 +818,7 @@
 							(list req)
 							(cons req (loop (add1 req)))))]
 						 [else req]))
-					      #f #f)])
+					      #f)])
 		       ;; Assemble the result as a `compose-class-info' call,
 		       ;; which does all the run-time checks, and knows how
 		       ;; to allocate objects and pass boxes to the init
@@ -919,8 +921,8 @@
 	    (interface-expr ...)
 	    init-vars
 	    clauses ...)
-	 (with-syntax ([this (datum->syntax 'this stx (stx-car stx))]
-		       [super-init (datum->syntax 'super-init stx (stx-car stx))])
+	 (with-syntax ([this (datum->syntax-object (stx-car stx) 'this stx)]
+		       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
 	   (syntax/loc
 	    stx
 	    (class*/names (this super-init)
@@ -935,7 +937,7 @@
 	[(_ super-expr
 	    init-vars
 	    clauses ...)
-	 (with-syntax ([class* (datum->syntax 'class* stx (stx-car stx))])
+	 (with-syntax ([class* (datum->syntax-object (stx-car stx) 'class* stx)])
 	   (syntax/loc stx (class* super-expr () init-vars clauses ...)))])))
 
   (define-syntax class*-asi
@@ -972,7 +974,7 @@
 				   "duplicate name"
 				   stx
 				   dup)))
-	   (with-syntax ([name (datum->syntax name #f #f)])
+	   (with-syntax ([name (datum->syntax-object #f name #f)])
 	     (syntax/loc
 	      stx
 	      (compose-interface

@@ -93,7 +93,7 @@
 		  (map (lambda (n)
 			 (if (syntax? n)
 			     n
-			     (datum->syntax n #f #f)))
+			     (datum->syntax-object #f n #f)))
 		       names))])
 	(when dup
 	  (error-k dup)))))
@@ -104,7 +104,7 @@
 	    [fields (map symbol->string (map syntax-e fields))]
 	    [+ string-append])
 	(map (lambda (s)
-	       (datum->syntax (string->symbol s) #f name-stx))
+	       (datum->syntax-object name-stx (string->symbol s) #f))
 	     (append
 	      (list 
 	       (+ "make-" name)
@@ -430,7 +430,7 @@
 			(if (and (stx-pair? body)
 				 (stx-pair? (car body))
 				 (eq? 'rename (syntax-e (stx-car (car body)))))
-			    (values (map syntax->datum (cdr (stx->list (car body)))) (cdr body))
+			    (values (map syntax-object->datum (cdr (stx->list (car body)))) (cdr body))
 			    (values null body))])
 	    (unless renames
 	      (syntax-error 'unit/sig expr "illegal use of `.'" (car body)))

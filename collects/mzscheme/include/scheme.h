@@ -1,6 +1,6 @@
 /*
   MzScheme
-  Copyright (c) 1995-2000 Matthew Flatt
+  Copyright (c) 1995-2001 Matthew Flatt
   All rights reserved.
 
   Please see the full copyright in the documentation.
@@ -277,8 +277,8 @@ typedef struct Scheme_Vector {
 
 #define SCHEME_PROMP(obj)    SAME_TYPE(SCHEME_TYPE(obj), scheme_promise_type)
 
-#define SCHEME_PROCESSP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_process_type)
-#define SCHEME_MANAGERP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_manager_type)
+#define SCHEME_THREADP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_thread_type)
+#define SCHEME_CUSTODIANP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_custodian_type)
 #define SCHEME_SEMAP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_sema_type)
 
 
@@ -455,7 +455,6 @@ typedef struct {
 typedef Scheme_Object *(*Scheme_Type_Reader)(Scheme_Object *list);
 typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 
-
 /*========================================================================*/
 /*                      hash tables and environments                      */
 /*========================================================================*/
@@ -574,23 +573,23 @@ typedef struct Scheme_Cont_Frame_Data {
 /*                              threads                                   */
 /*========================================================================*/
 
-typedef void Scheme_Close_Manager_Client(Scheme_Object *o, void *data);
+typedef void Scheme_Close_Custodian_Client(Scheme_Object *o, void *data);
 #ifdef MZ_PRECISE_GC
-typedef struct Scheme_Object Scheme_Manager_Reference;
+typedef struct Scheme_Object Scheme_Custodian_Reference;
 #else
-typedef struct Scheme_Manager *Scheme_Manager_Reference;
+typedef struct Scheme_Custodian *Scheme_Custodian_Reference;
 #endif
 
-typedef struct Scheme_Manager Scheme_Manager;
+typedef struct Scheme_Custodian Scheme_Custodian;
 
-/* The Scheme_Process structure represents a MzScheme thread. */
+/* The Scheme_Thread structure represents a MzScheme thread. */
 
-typedef struct Scheme_Process {
+typedef struct Scheme_Thread {
   Scheme_Type type;
   MZ_HASH_KEY_EX
 
-  struct Scheme_Process *next;
-  struct Scheme_Process *prev;
+  struct Scheme_Thread *next;
+  struct Scheme_Thread *prev;
 
   mz_jmp_buf error_buf;
   Scheme_Continuation_Jump_State cjs;
@@ -629,7 +628,7 @@ typedef struct Scheme_Process {
 
   int running;
 
-  struct Scheme_Process *nester, *nestee;
+  struct Scheme_Thread *nester, *nestee;
 
   float sleep_time; /* blocker has starting sleep time */
   int block_descriptor;
@@ -651,6 +650,7 @@ typedef struct Scheme_Process {
   char quick_can_read_pipe_quote;
   char quick_can_read_box;
   char quick_can_read_graph;
+  char quick_can_read_dot;
   char quick_case_sens;
   char quick_square_brackets_are_parens;
   char quick_curly_braces_are_parens;
@@ -701,8 +701,8 @@ typedef struct Scheme_Process {
 #ifdef MZ_REAL_THREADS
   Scheme_Object *done_sema;
   volatile long fuel_counter;
-# define scheme_fuel_counter (scheme_current_process->fuel_counter)
-# define scheme_stack_boundary ((unsigned long)scheme_current_process->stack_end)
+# define scheme_fuel_counter (scheme_current_thread->fuel_counter)
+# define scheme_stack_boundary ((unsigned long)scheme_current_thread->stack_end)
 #endif
 
   Scheme_Object *list_stack;
@@ -715,7 +715,7 @@ typedef struct Scheme_Process {
   int eof_on_error; /* For port operations */
 
   /* MzScheme client can use: */
-  void (*on_kill)(struct Scheme_Process *p);
+  void (*on_kill)(struct Scheme_Thread *p);
   void *kill_data;
 
   /* MzScheme use only: */
@@ -726,16 +726,16 @@ typedef struct Scheme_Process {
   void **user_tls;
   int user_tls_size;
 
-  struct Scheme_Process_Manager_Hop *mr_hop;
-  Scheme_Manager_Reference *mref;
-} Scheme_Process;
+  struct Scheme_Thread_Custodian_Hop *mr_hop;
+  Scheme_Custodian_Reference *mref;
+} Scheme_Thread;
 
 #if !SCHEME_DIRECT_EMBEDDED
 # ifdef MZ_REAL_THREADS
-#  define scheme_current_process (scheme_get_current_process())
+#  define scheme_current_thread (scheme_get_current_thread())
 # else
 #  ifdef LINK_EXTENSIONS_BY_TABLE
-#   define scheme_current_process (*scheme_current_process_ptr)
+#   define scheme_current_thread (*scheme_current_thread_ptr)
 #  endif
 # endif
 #endif
@@ -770,6 +770,7 @@ enum {
   MZCONFIG_CAN_READ_COMPILED,
   MZCONFIG_CAN_READ_BOX,
   MZCONFIG_CAN_READ_PIPE_QUOTE,
+  MZCONFIG_CAN_READ_DOT,
   MZCONFIG_READ_DECIMAL_INEXACT,
 
   MZCONFIG_PRINT_GRAPH,
@@ -787,7 +788,7 @@ enum {
 
   MZCONFIG_ALLOW_SET_UNDEFINED,
 
-  MZCONFIG_MANAGER,
+  MZCONFIG_CUSTODIAN,
   MZCONFIG_INSPECTOR,
 
   MZCONFIG_USE_COMPILED_KIND,
@@ -797,8 +798,6 @@ enum {
   MZCONFIG_COLLECTION_PATHS,
 
   MZCONFIG_PORT_PRINT_HANDLER,
-
-  MZCONFIG_REQUIRE_COLLECTION,
 
   MZCONFIG_LOAD_EXTENSION_HANDLER,
 
@@ -833,13 +832,14 @@ typedef struct Scheme_Input_Port
   MZ_HASH_KEY_EX
   short closed;
   Scheme_Object *sub_type;
-  Scheme_Manager_Reference *mref;
+  Scheme_Custodian_Reference *mref;
   void *port_data;
   int (*getc_fun) (struct Scheme_Input_Port *port);
   int (*peekc_fun) (struct Scheme_Input_Port *port);
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);
   void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
+  Scheme_Object *(*get_special_fun)(struct Scheme_Input_Port *);
   Scheme_Object *read_handler;
   char *name;
   unsigned char *ungotten;
@@ -858,7 +858,7 @@ typedef struct Scheme_Output_Port
   MZ_HASH_KEY_EX
   short closed;
   Scheme_Object *sub_type;
-  Scheme_Manager_Reference *mref;
+  Scheme_Custodian_Reference *mref;
   void *port_data;
   void (*write_string_fun)(char *str, long d, long len, struct Scheme_Output_Port *);
   void (*close_fun) (struct Scheme_Output_Port *);
@@ -909,33 +909,33 @@ typedef struct Scheme_Output_Port
 
 #define SCHEME_ASSERT(expr,msg) ((expr) ? 1 : (scheme_signal_error(msg), 0))
 
-#define scheme_eval_wait_expr (scheme_current_process->ku.eval.wait_expr)
-#define scheme_tail_rator (scheme_current_process->ku.apply.tail_rator)
-#define scheme_tail_num_rands (scheme_current_process->ku.apply.tail_num_rands)
-#define scheme_tail_rands (scheme_current_process->ku.apply.tail_rands)
-#define scheme_overflow_k (scheme_current_process->overflow_k)
-#define scheme_overflow_reply (scheme_current_process->overflow_reply)
-#define scheme_overflow_cont (scheme_current_process->overflow_cont)
+#define scheme_eval_wait_expr (scheme_current_thread->ku.eval.wait_expr)
+#define scheme_tail_rator (scheme_current_thread->ku.apply.tail_rator)
+#define scheme_tail_num_rands (scheme_current_thread->ku.apply.tail_num_rands)
+#define scheme_tail_rands (scheme_current_thread->ku.apply.tail_rands)
+#define scheme_overflow_k (scheme_current_thread->overflow_k)
+#define scheme_overflow_reply (scheme_current_thread->overflow_reply)
+#define scheme_overflow_cont (scheme_current_thread->overflow_cont)
 
-#define scheme_error_buf (scheme_current_process->error_buf)
-#define scheme_jumping_to_continuation (scheme_current_process->cjs.jumping_to_continuation)
-#define scheme_config (scheme_current_process->config)
+#define scheme_error_buf (scheme_current_thread->error_buf)
+#define scheme_jumping_to_continuation (scheme_current_thread->cjs.jumping_to_continuation)
+#define scheme_config (scheme_current_thread->config)
 
-#define scheme_multiple_count (scheme_current_process->ku.multiple.count)
-#define scheme_multiple_array (scheme_current_process->ku.multiple.array)
+#define scheme_multiple_count (scheme_current_thread->ku.multiple.count)
+#define scheme_multiple_array (scheme_current_thread->ku.multiple.array)
 
 #define scheme_setjmpup(b, base, s) scheme_setjmpup_relative(b, base, s, NULL)
 
 #ifdef MZ_REAL_THREADS
-#define scheme_do_eval(r,n,e,f) scheme_do_eval_w_process(r,n,e,f,scheme_current_process)
+#define scheme_do_eval(r,n,e,f) scheme_do_eval_w_thread(r,n,e,f,scheme_current_thread)
 #else
-#define scheme_do_eval_w_process(r,n,e,f,p) scheme_do_eval(r,n,e,f)
+#define scheme_do_eval_w_thread(r,n,e,f,p) scheme_do_eval(r,n,e,f)
 #endif
 #ifdef MZ_REAL_THREADS
-#define scheme_apply(r,n,a) scheme_apply_wp(r,n,a,scheme_current_process)
-#define scheme_apply_multi(r,n,a) scheme_apply_multi_wp(r,n,a,scheme_current_process)
-#define scheme_apply_eb(r,n,a) scheme_apply_eb_wp(r,n,a,scheme_current_process)
-#define scheme_apply_multi_eb(r,n,a) scheme_apply_multi_eb_wp(r,n,a,scheme_current_process)
+#define scheme_apply(r,n,a) scheme_apply_wp(r,n,a,scheme_current_thread)
+#define scheme_apply_multi(r,n,a) scheme_apply_multi_wp(r,n,a,scheme_current_thread)
+#define scheme_apply_eb(r,n,a) scheme_apply_eb_wp(r,n,a,scheme_current_thread)
+#define scheme_apply_multi_eb(r,n,a) scheme_apply_multi_eb_wp(r,n,a,scheme_current_thread)
 #else
 #define scheme_apply_wp(r,n,a,p) scheme_apply(r,n,a)
 #define scheme_apply_multi_wp(r,n,a,p) scheme_apply_multi(r,n,a)
@@ -945,8 +945,8 @@ typedef struct Scheme_Output_Port
 
 #define _scheme_apply(r,n,rs) scheme_do_eval(r,n,rs,1)
 #define _scheme_apply_multi(r,n,rs) scheme_do_eval(r,n,rs,-1)
-#define _scheme_apply_wp(r,n,rs,p) scheme_do_eval_w_process(r,n,rs,1,p)
-#define _scheme_apply_multi_wp(r,n,rs,p) scheme_do_eval_w_process(r,n,rs,-1,p)
+#define _scheme_apply_wp(r,n,rs,p) scheme_do_eval_w_thread(r,n,rs,1,p)
+#define _scheme_apply_multi_wp(r,n,rs,p) scheme_do_eval_w_thread(r,n,rs,-1,p)
 #define _scheme_tail_apply scheme_tail_apply
 #define _scheme_tail_apply_wp scheme_tail_apply_wp
 
@@ -965,16 +965,16 @@ typedef struct Scheme_Output_Port
 #define _scheme_force_value(v) ((v == SCHEME_TAIL_CALL_WAITING) ? scheme_force_value(v) : v)
 
 #define scheme_tail_apply_buffer_wp(n, p) ((p)->tail_buffer)
-#define scheme_tail_apply_buffer(n) scheme_tail_apply_buffer_wp(n, scheme_current_process)
+#define scheme_tail_apply_buffer(n) scheme_tail_apply_buffer_wp(n, scheme_current_thread)
 
 #define _scheme_tail_apply_no_copy_wp_tcw(f, n, args, p, tcw) (p->ku.apply.tail_rator = f, p->ku.apply.tail_rands = args, p->ku.apply.tail_num_rands = n, tcw)
 #define _scheme_tail_apply_no_copy_wp(f, n, args, p) _scheme_tail_apply_no_copy_wp_tcw(f, n, args, p, SCHEME_TAIL_CALL_WAITING)
-#define _scheme_tail_apply_no_copy(f, n, args) _scheme_tail_apply_no_copy_wp(f, n, args, scheme_current_process)
+#define _scheme_tail_apply_no_copy(f, n, args) _scheme_tail_apply_no_copy_wp(f, n, args, scheme_current_thread)
 
 #ifndef MZ_REAL_THREADS
-# define scheme_process_block_w_process(t,p) scheme_process_block(t)
+# define scheme_thread_block_w_thread(t,p) scheme_thread_block(t)
 #else
-# define scheme_process_block(t) scheme_process_block_w_process(t,scheme_current_process)
+# define scheme_thread_block(t) scheme_thread_block_w_thread(t,scheme_current_thread)
 #endif
 
 #ifndef MZ_REAL_THREADS
@@ -995,12 +995,12 @@ extern volatile int scheme_fuel_counter;
 
 #ifdef MZ_REAL_THREADS
 # define _scheme_check_for_break_wp(penalty, p) \
-   { if (DECREMENT_FUEL((p)->fuel_counter, penalty) <= 0) scheme_process_block_w_process(0, p); }
+   { if (DECREMENT_FUEL((p)->fuel_counter, penalty) <= 0) scheme_thread_block_w_thread(0, p); }
 #else
 # define _scheme_check_for_break_wp(penalty, p) \
-   { if (DECREMENT_FUEL(scheme_fuel_counter, penalty) <= 0) scheme_process_block_w_process(0, p); }
+   { if (DECREMENT_FUEL(scheme_fuel_counter, penalty) <= 0) scheme_thread_block_w_thread(0, p); }
 #endif
-#define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_process)
+#define _scheme_check_for_break(penalty) _scheme_check_for_break_wp(penalty, scheme_current_thread)
 
 #if SCHEME_DIRECT_EMBEDDED
 extern Scheme_Object *scheme_eval_waiting;
@@ -1140,12 +1140,12 @@ extern int GC_use_registered_statics; /* Defaults to 0 */
 extern int scheme_binary_mode_stdio; /* Windows-MacOS-specific. Defaults to 0 */
 
 #ifdef MZ_REAL_THREADS
-Scheme_Process *scheme_get_current_process();
-# define scheme_current_process (SCHEME_GET_CURRENT_PROCESS())
+Scheme_Thread *scheme_get_current_thread();
+# define scheme_current_thread (SCHEME_GET_CURRENT_THREAD())
 #else
-extern Scheme_Process *scheme_current_process;
+extern Scheme_Thread *scheme_current_thread;
 #endif
-extern Scheme_Process *scheme_first_process;
+extern Scheme_Thread *scheme_first_thread;
 
 /* Set these global hooks (optionally): */
 extern void (*scheme_exit)(int v);
@@ -1272,6 +1272,8 @@ extern Scheme_Extension_Table *scheme_extension_table;
 #define SCHEME_STRUCT_NO_PRED 0x04
 #define SCHEME_STRUCT_NO_GET 0x08
 #define SCHEME_STRUCT_NO_SET 0x10
+#define SCHEME_STRUCT_GEN_GET 0x20
+#define SCHEME_STRUCT_GEN_SET 0x40
 
 /*========================================================================*/
 /*                           file descriptors                             */

@@ -124,9 +124,6 @@
 		 (loop (zodiac:with-continuation-mark-form-val v) extra-known-bindings)
 		 (loop (zodiac:with-continuation-mark-form-body v) extra-known-bindings))]
 	   [(zodiac:set!-form? v) #f] ; because it changes a variable
-	   [(zodiac:struct-form? v)
-	    (or (not (zodiac:struct-form-super v))
-		(loop (zodiac:struct-form-super v) extra-known-bindings))]
 	   [(zodiac:if-form? v)
 	    (and (loop (zodiac:if-form-test v) extra-known-bindings)
 		 (loop (zodiac:if-form-then v) extra-known-bindings)
@@ -504,17 +501,6 @@
 			
 			ast)]
 		     
-		     ;;-------------------------------------------------------------------
-		     ;; STRUCT
-		     ;;
-		     ;; nothing much to do except analyze the super position
-		     ;;
-		     [(zodiac:struct-form? ast)
-		      (let ([super (zodiac:struct-form-super ast)])
-			(when super
-			  (zodiac:set-struct-form-super! ast (analyze! super)))
-			ast)]
-
 		     ;;-------------------------------------------------------------------
 		     ;; WITH-CONTINUATION-MARK
 		     ;;

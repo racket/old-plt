@@ -716,7 +716,7 @@ void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
 void wxDC::DrawPoint(float x, float y)
 {
   if (current_pen)
-    SetPixel(x, y, current_pen->GetColour());
+    SetPixel(x, y, NULL);
 }
 
 void wxDC::SetPixel(float x, float y, wxColour *c)
@@ -731,7 +731,16 @@ void wxDC::SetPixel(float x, float y, wxColour *c)
 
   ShiftXY(x, y, &xx1, &yy1);
   
-  ::SetPixelV(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), c->pixel);
+  if (!c) {
+    c = current_pen->GetColour();
+    if (StartPen(dc)) {
+      ::SetPixelV(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), c->pixel);
+      DonePen(dc);
+    }
+  } else {
+    SetRop(dc, wxSOLID);
+    ::SetPixelV(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), c->pixel);
+  }
 
   DoneDC(dc);
 

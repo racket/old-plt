@@ -57,8 +57,8 @@
 			   (dynamic-wind
 			       void
 			       (lambda ()
-				 (ready-for-break)
 				 (with-handlers ([exn:break? void])
+				   (ready-for-break)
 				   (copy-port cin in)))
 			       (lambda () (close-output-port in)))))])
 	  (and get-thread? t))

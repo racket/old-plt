@@ -1882,13 +1882,16 @@ scheme_close_input_port (Scheme_Object *port)
   ip = (Scheme_Input_Port *)port;
 
   if (!ip->closed) {
-    if (ip->mref)
-      scheme_remove_managed(ip->mref, (Scheme_Object *)ip);
-
     if (ip->close_fun) {
       Scheme_Close_Input_Fun f = ip->close_fun;
       f(ip);
     }
+
+    if (ip->mref) {
+      scheme_remove_managed(ip->mref, (Scheme_Object *)ip);
+      ip->mref = NULL;
+    }
+
     ip->closed = 1;
     ip->ungotten_count = 0;
     ip->ungotten_special = NULL;

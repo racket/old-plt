@@ -513,6 +513,9 @@ void scheme_remove_module_rename(Scheme_Object *mrn,
 void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest);
 void scheme_list_module_rename(Scheme_Object *src, Scheme_Hash_Table *ht);
 
+Scheme_Object *scheme_rename_to_stx(Scheme_Object *rn);
+Scheme_Object *scheme_stx_to_rename(Scheme_Object *stx);
+
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 
@@ -1657,7 +1660,7 @@ struct Scheme_Env {
   struct Scheme_Module *module; /* NULL => top-level */
 
   Scheme_Hash_Table *module_registry; /* symbol -> module ; loaded modules,
-					 shared with moucles in same space */
+					 shared with modules in same space */
 
   /* For compilation, per-declaration: */
   /* First two are passed from module to module-begin: */
@@ -1736,6 +1739,8 @@ typedef struct Scheme_Module
   Scheme_Object *dummy; /* for accessing the environment */
 
   Scheme_Env *primitive;
+
+  Scheme_Object *rn_stx, *et_rn_stx;
 } Scheme_Module;
 
 typedef struct Scheme_Modidx {

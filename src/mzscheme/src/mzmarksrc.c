@@ -777,6 +777,9 @@ module_val {
   gcMARK(m->prefix);
   gcMARK(m->dummy);
 
+  gcMARK(m->rn);
+  gcMARK(m->et_rn);
+
   gcMARK(m->primitive);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));

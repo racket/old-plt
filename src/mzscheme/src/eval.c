@@ -1501,6 +1501,12 @@ static void *compile_k(void)
     form = scheme_add_rename(form, env->genv->rename);
   if (env->genv->exp_env && env->genv->exp_env->rename)
     form = scheme_add_rename(form, env->genv->exp_env->rename);
+  if (env->genv->module) {
+    form = scheme_stx_phase_shift(form, 0, 
+				  env->genv->module->src_modidx, 
+				  env->genv->module->self_modidx);
+  }
+
 
   tl_queue = scheme_null;
 

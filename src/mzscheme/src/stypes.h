@@ -124,8 +124,7 @@ enum {
   scheme_thread_dead_type,
   scheme_poll_waitable_type,
   scheme_nack_waitable_type,
-
-  scheme_reserved1_type,
+  scheme_module_registry_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,  /* 110 */

@@ -228,6 +228,7 @@ class wxMediaEdit : public wxMediaBuffer
   void EndEditSequence(void);
   Bool RefreshDelayed(void);
   Bool InEditSequence(void);
+  Bool LocationsUpToDate(void);
 
   void ChangeStyle(wxStyleDelta *);
   void ChangeStyle(wxStyle *, long start = -1, long end = -1, Bool counts_as_mod = TRUE);

@@ -732,6 +732,20 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
   }
 }
 
+Scheme_Object *scheme_rename_to_stx(Scheme_Object *rn)
+{
+  Scheme_Object *stx;
+  stx = scheme_make_stx(scheme_false, empty_srcloc, NULL); 
+  return scheme_add_rename(stx, rn);
+}
+
+Scheme_Object *scheme_stx_to_rename(Scheme_Object *stx)
+{
+  Scheme_Object *wraps;
+  wraps = ((Scheme_Stx *)stx)->wraps;
+  return SCHEME_CAR(wraps);
+}
+
 /******************** module renames ********************/
 
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_Table *marked_names)
@@ -818,6 +832,23 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
     if (hts->vals[i]) {
       scheme_hash_set(ht, hts->keys[i], hts->vals[i]);
     }
+  }
+
+  /* Copy over marked names */
+
+  if (((Module_Renames *)src)->marked_names) {
+    if (!((Module_Renames *)dest)->marked_names) {
+      ht = scheme_make_hash_table(SCHEME_hash_ptr);
+      ((Module_Renames *)dest)->marked_names = ht;
+    } else
+      ht = ((Module_Renames *)dest)->marked_names;
+    hts = ((Module_Renames *)src)->marked_names;
+
+    for (i = hts->size; i--; ) {
+      if (hts->vals[i]) {
+	scheme_hash_set(ht, hts->keys[i], hts->vals[i]);
+      }
+    } 
   }
 }
 
@@ -1802,8 +1833,8 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
 /*                            wraps->datum                                */
 /*========================================================================*/
 
-/* Used for marshalling syntax objects. Note that we build a reverse
-   list for wraps. (Unmarshaller will reverse it back.) 
+/* Used for marshaling syntax objects. Note that we build a reverse
+   list for wraps. (Unmarshaler will reverse it back.) 
 
    The wraps->datum tools are also used to simplify syntax object (to
    minimize the occupied space among a set of objects). */
@@ -2513,7 +2544,7 @@ int scheme_syntax_is_graph(Scheme_Object *stx)
 /*                            datum->wraps                                */
 /*========================================================================*/
 
-static Scheme_Object *unmarshall_mark(Scheme_Object *a, Scheme_Hash_Table *rns)
+static Scheme_Object *unmarshal_mark(Scheme_Object *a, Scheme_Hash_Table *rns)
 {
   Scheme_Object *n;
 
@@ -2525,7 +2556,7 @@ static Scheme_Object *unmarshall_mark(Scheme_Object *a, Scheme_Hash_Table *rns)
   /* Picked a mapping yet? */
   n = scheme_hash_get(rns, a);
   if (!n) {
-    /* Map marshalled mark to a new mark. */
+    /* Map marshaled mark to a new mark. */
     n = scheme_new_mark();
     scheme_hash_set(rns, a, n);
   }
@@ -2587,7 +2618,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	       && SCHEME_NULLP(SCHEME_CDR(a))
 	       && SCHEME_NUMBERP(SCHEME_CAR(a))) {
       /* Mark */
-      a = unmarshall_mark(SCHEME_CAR(a), rns);
+      a = unmarshal_mark(SCHEME_CAR(a), rns);
       if (!a) return NULL;
     } else if (SCHEME_VECTORP(a)) {
       /* A (simplified) rename table. First element is the key. */
@@ -2681,7 +2712,7 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	    kfirst = scheme_null;
 	    klast = NULL;
 	    for (a = SCHEME_CAR(a); SCHEME_PAIRP(a); a = SCHEME_CDR(a)) {
-	      kp = CONS(unmarshall_mark(SCHEME_CAR(a), rns), scheme_null);
+	      kp = CONS(unmarshal_mark(SCHEME_CAR(a), rns), scheme_null);
 	      if (!klast)
 		kfirst = kp;
 	      else

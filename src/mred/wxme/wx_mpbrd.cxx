@@ -2757,6 +2757,10 @@ Bool wxMediaPasteboard::InEditSequence(void)
   return !!sequence;
 }
 
+Bool wxMediaPasteboard::LocationsUpToDate(void)
+{
+  return !needResize;
+}
 
 /************************************************************************/
 

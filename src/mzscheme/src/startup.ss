@@ -2906,11 +2906,11 @@
 		    (let ([modname (string->symbol (string-append abase no-sfx))]
 			  [ht (hash-table-get
 			       -module-hash-table-table
-			       (current-namespace)
+			       (namespace-module-registry (current-namespace))
 			       (lambda ()
 				 (let ([ht (make-hash-table)])
 				   (hash-table-put! -module-hash-table-table
-						    (current-namespace)
+						    (namespace-module-registry (current-namespace))
 						    ht)
 				   ht)))])
 		      ;; Loaded already?
@@ -2950,11 +2950,11 @@
 	  ;; Just register relto as loaded
 	  (let ([ht (hash-table-get
 		     -module-hash-table-table
-		     (current-namespace)
+		     (namespace-module-registry (current-namespace))
 		     (lambda ()
 		       (let ([ht (make-hash-table)])
 			 (hash-table-put! -module-hash-table-table
-					  (current-namespace)
+					  (namespace-module-registry (current-namespace))
 					  ht)
 			 ht)))])
 	    (hash-table-put! ht relto 'attach)))))

@@ -699,6 +699,7 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_channel_type, hash_general);
   PROC(scheme_channel_put_type, hash_general);
   PROC(scheme_hash_table_type, hash_general);
+  PROC(scheme_module_registry_type, hash_general);
   PROC(scheme_bucket_table_type, hash_general);
   PROC(scheme_weak_box_type, hash_general);
   PROC(scheme_struct_type_type, hash_general);

@@ -808,6 +808,11 @@ Bool wxMediaEdit::InEditSequence(void)
   return (delayRefresh > 0);
 }
 
+Bool wxMediaEdit::LocationsUpToDate(void)
+{
+  return !graphicMaybeInvalid;
+}
+
 void wxMediaEdit::Recalculate(void)
 {
 }

@@ -141,6 +141,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_channel_put_type, "<channel-put>");
   set_name(scheme_hash_table_type, "<hash-table>");
   set_name(scheme_bucket_table_type, "<hash-table>");
+  set_name(scheme_module_registry_type, "<module-registry>");
   set_name(scheme_case_closure_type, "<procedure>");
   set_name(scheme_multiple_values_type, "<multiple-values>");
   set_name(scheme_placeholder_type, "<placeholder>");
@@ -449,6 +450,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_thread_dead_type, small_object);
   GC_REG_TRAV(scheme_hash_table_type, hash_table_val);
   GC_REG_TRAV(scheme_bucket_table_type, bucket_table_val);
+  GC_REG_TRAV(scheme_module_registry_type, hash_table_val);
   GC_REG_TRAV(scheme_namespace_type, namespace_val);
   GC_REG_TRAV(scheme_random_state_type, random_state_val);
   

@@ -1963,9 +1963,6 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
     show_outline_for_inactive = !show_outline_for_inactive ? -1 : 1;
   }
 
-  if (flowLocked)
-    return;
-
   wl = writeLocked;
 
   flowLocked = TRUE;

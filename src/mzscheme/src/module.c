@@ -1076,31 +1076,55 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 {
   Scheme_Env *menv, *env;
-  Scheme_Object *modchain, *name;
-
-  name = argv[0];
-
-  if (!SCHEME_SYMBOLP(name))
-    scheme_wrong_type("module->namespace", "symbol", 0, argc, argv);
+  Scheme_Object *modchain, *name, *base_modidx;
 
   env = scheme_get_env(scheme_config);
+
+  if (env->module)
+    base_modidx = env->module->self_modidx;
+  else
+    base_modidx = scheme_false;
+
+  name = scheme_module_resolve(scheme_make_modidx(argv[0], scheme_false, scheme_false));
+
   modchain = env->modchain;
   menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(modchain), name);
   if (!menv) {
     if (scheme_hash_get(env->module_registry, name))
-      scheme_arg_mismatch("namespace-attach-module",
+      scheme_arg_mismatch("module->namespace",
 			  "module not instantiated in the current namespace: ",
 			  name);
     else
-      scheme_arg_mismatch("namespace-attach-module",
+      scheme_arg_mismatch("module->namespace",
 			  "unknown module in the current namespace: ",
 			  name);
   }
 
   if (menv->attached) {
     scheme_raise_exn(MZEXN_MODULE,
-		     "module: cannot obtain namespace of attached module: %S",
+		     "module->namespace: cannot obtain namespace of attached module: %S",
 		     name);
+  }
+
+  if (!menv->rename) {
+    if (menv->module->rn_stx) {
+      Scheme_Object *v, *rn;
+      v = scheme_stx_to_rename(menv->module->rn_stx);
+      rn = scheme_make_module_rename(0, 0, NULL);
+      scheme_append_module_rename(v, rn);
+      menv->rename = rn;
+    }
+  }
+
+  scheme_prepare_exp_env(menv);
+  if (!menv->exp_env->rename) {
+    if (menv->module->et_rn_stx) {
+      Scheme_Object *v, *rn;
+      v = scheme_stx_to_rename(menv->module->et_rn_stx);
+      rn = scheme_make_module_rename(1, 0, NULL);
+      scheme_append_module_rename(v, rn);
+      menv->exp_env->rename = rn;
+    }
   }
 
   return (Scheme_Object *)menv;
@@ -3741,6 +3765,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     env->genv->module->comp_prefix = cenv->prefix;
     env->genv->module->max_let_depth = max_let_depth;
 
+    rn = scheme_rename_to_stx(rn);
+    env->genv->module->rn_stx = rn;
+    et_rn = scheme_rename_to_stx(et_rn);
+    env->genv->module->et_rn_stx = et_rn;
+
     return (Scheme_Object *)env->genv->module;
   } else {
     p = SCHEME_STX_CAR(form);
@@ -4180,12 +4209,17 @@ static Scheme_Object *
 top_level_require_execute(Scheme_Object *data)
 {
   Scheme_Hash_Table *ht;
-  Scheme_Object *rn;
+  Scheme_Object *rn, *modidx;
   Scheme_Object *form = SCHEME_CDDR(data), *rest, *brn;
   int for_exp = (SCHEME_TRUEP(SCHEME_CADR(data)) ? 1 : 0);
   Scheme_Env *env;
 
   env = scheme_environment_from_dummy(SCHEME_CAR(data));
+
+  if (env->module)
+    modidx = env->module->self_modidx;
+  else
+    modidx = scheme_false;
 
   if (for_exp) {
     scheme_prepare_exp_env(env);
@@ -4210,7 +4244,7 @@ top_level_require_execute(Scheme_Object *data)
 
   rn = scheme_make_module_rename(for_exp, 1, NULL);
 
-  (void)parse_requires(form, scheme_false, env, rn, 
+  (void)parse_requires(form, modidx, env, rn, 
 		       check_dup_require, ht, 1, NULL,
 		       !env->module, 0);
 
@@ -4246,7 +4280,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
 				int for_exp)
 {
   Scheme_Hash_Table *ht;
-  Scheme_Object *rn, *dummy;
+  Scheme_Object *rn, *dummy, *modidx;
   Scheme_Env *genv;
 
   if (!scheme_is_toplevel(env))
@@ -4260,12 +4294,18 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
   rn = scheme_make_module_rename(for_exp, 1, NULL);
 
   genv = env->genv;
+
+  if (genv->module)
+    modidx = genv->module->self_modidx;
+  else
+    modidx = scheme_false;
+
   if (for_exp) {
     scheme_prepare_exp_env(genv);
     genv = genv->exp_env;
   }
 
-  (void)parse_requires(form, scheme_false, genv, rn, 
+  (void)parse_requires(form, modidx, genv, rn, 
 		       check_dup_require, ht, 0, 
 		       NULL, 0, 0);
 
@@ -4384,6 +4424,9 @@ static Scheme_Object *write_module(Scheme_Object *obj)
 
   l = cons(scheme_make_integer(m->max_let_depth), l);
 
+  l = cons(m->et_rn_stx ? m->et_rn_stx : scheme_false, l);
+  l = cons(m->rn_stx ? m->rn_stx : scheme_false, l);
+
   l = cons(m->src_modidx, l);
   l = cons(m->modname, l);
 
@@ -4409,6 +4452,18 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   obj = SCHEME_CDR(obj);
   ((Scheme_Modidx *)m->src_modidx)->resolved = m->modname;
   m->self_modidx = m->src_modidx;
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
+  m->rn_stx = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  if (SCHEME_FALSEP(m->rn_stx))
+    m->rn_stx = NULL;
+
+  if (!SCHEME_PAIRP(obj)) return NULL;
+  m->et_rn_stx = SCHEME_CAR(obj);
+  obj = SCHEME_CDR(obj);
+  if (SCHEME_FALSEP(m->rn_stx))
+    m->et_rn_stx = NULL;
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   m->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
@@ -4513,6 +4568,6 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   if (scheme_proper_list_length(obj) < 0) return NULL;
   e = scheme_copy_list(obj);
   m->et_requires = e;
-
+  
   return (Scheme_Object *)m;
 }

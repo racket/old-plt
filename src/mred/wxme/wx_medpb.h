@@ -96,6 +96,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   void EndEditSequence(void);
   Bool RefreshDelayed(void);
   Bool InEditSequence(void);
+  Bool LocationsUpToDate(void);
 
   void SetMaxWidth(float w);
   void SetMinWidth(float w);

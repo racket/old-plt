@@ -134,6 +134,7 @@ static void unexpected_closer(int ch,
 static void pop_indentation(Scheme_Object *indentation);
 
 static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
+				    Scheme_Hash_Table **ht,
 				    Scheme_Object *indentation);
 
 /* local_... is copy of parameter values, made before read starts: */
@@ -203,7 +204,7 @@ static Scheme_Object *unsyntax_symbol;
 static Scheme_Object *unsyntax_splicing_symbol;
 static Scheme_Object *quasisyntax_symbol;
 
-/* For reocginizing unresolved hash tables: */
+/* For recoginizing unresolved hash tables and commented-out graph introductions: */
 static Scheme_Object *an_uninterned_symbol;
 
 /* Table of built-in variable refs for .zo loading: */
@@ -636,6 +637,25 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht, S
 	case EOF:
 	case SCHEME_SPECIAL:
 	  scheme_read_err(port, stxsrc, line, col, pos, 1, ch, indentation, "read: bad syntax `#'");
+	  break;
+	case ';':
+	  {
+	    Scheme_Object *skipped;
+	    skipped = read_inner(port, stxsrc, ht, indentation, 0);
+	    if (SCHEME_EOFP(skipped))
+	      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
+			      "read: expected a commented-out element for `#;' (found end-of-file)");
+	    /* For resolving graphs introduced in #; : */
+	    if (*ht) {
+	      Scheme_Object *v;
+	      v = scheme_hash_get(*ht, an_uninterned_symbol);
+	      if (!v)
+		v = scheme_null;
+	      v = scheme_make_pair(skipped, v);
+	      scheme_hash_set(*ht, an_uninterned_symbol, v);
+	    }
+	    goto start_over;
+	  }
 	  break;
 	case '%':
 	  scheme_ungetc('%', port);
@@ -1157,7 +1177,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 Scheme_Object *
 _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
 {
-  Scheme_Object *v;
+  Scheme_Object *v, *v2;
   Scheme_Config *config = scheme_config;
   Scheme_Hash_Table **ht = NULL;
 
@@ -1178,6 +1198,11 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   if (*ht) {
     /* Resolve placeholders: */
     v = resolve_references(v, port, !!stxsrc);
+
+    /* In case some placeholders were introduced by #;: */
+    v2 = scheme_hash_get(*ht, an_uninterned_symbol);
+    if (v2)
+      resolve_references(v2, port, !!stxsrc);
   }
 
   return v;
@@ -1273,7 +1298,7 @@ read_list(Scheme_Object *port,
   }
 
   while (1) {
-    ch = skip_whitespace_comments(port, stxsrc, indentation);
+    ch = skip_whitespace_comments(port, stxsrc, ht, indentation);
     if (ch == EOF) {
       char *suggestion = "";
       if (SCHEME_PAIRP(indentation)) {
@@ -1354,7 +1379,7 @@ read_list(Scheme_Object *port,
 	SCHEME_SET_PAIR_IMMUTABLE(pair);
     }
 
-    ch = skip_whitespace_comments(port, stxsrc, indentation);
+    ch = skip_whitespace_comments(port, stxsrc, ht, indentation);
     if (ch == closer) {
       if (shape == mz_shape_hash_elem) {
 	scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), ch, indentation, 
@@ -1408,7 +1433,7 @@ read_list(Scheme_Object *port,
       }
       /* can't be eof, due to check above: */
       cdr = read_inner(port, stxsrc, ht, indentation, 0);
-      ch = skip_whitespace_comments(port, stxsrc, indentation);
+      ch = skip_whitespace_comments(port, stxsrc, ht, indentation);
       if (ch != closer) {
 	if (ch == '.') {
 	  /* Parse as infix: */
@@ -1429,7 +1454,7 @@ read_list(Scheme_Object *port,
 	  last = pair;
 
 	  /* Make sure there's not a closing paren immediately after the dot: */
-	  ch = skip_whitespace_comments(port, stxsrc, indentation);
+	  ch = skip_whitespace_comments(port, stxsrc, ht, indentation);
 	  if ((ch == closer) || (ch == EOF)) {
 	    scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, (ch == EOF) ? EOF : 0, indentation, 
 			    "read: illegal use of \".\"");
@@ -2125,7 +2150,8 @@ static Scheme_Object *read_hash(Scheme_Object *port, Scheme_Object *stxsrc,
 /*========================================================================*/
 
 static int
-skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Object *indentation)
+skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc, 
+			 Scheme_Hash_Table **ht, Scheme_Object *indentation)
 {
   int ch;
 
@@ -2173,6 +2199,33 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Obje
 	depth++;
       ch2 = ch;
     } while (1);
+
+    goto start_over;
+  }
+  if (ch == '#' && (scheme_peekc_special_ok(port) == ';')) {
+    Scheme_Object *skipped;
+    long col, pos, line;
+
+    pos = scheme_tell(port);
+    col = scheme_tell_column(port);
+    line = scheme_tell_line(port);
+
+    (void)scheme_getc(port); /* re-read ';' */
+
+    skipped = read_inner(port, stxsrc, ht, indentation, 0);
+    if (SCHEME_EOFP(skipped))
+      scheme_read_err(port, stxsrc, line, col, pos,  SPAN(port, pos), EOF, indentation, 
+		      "read: expected a commented-out element for `#;' (found end-of-file)");
+
+    /* For resolving graphs introduced in #; : */
+    if (*ht) {
+      Scheme_Object *v;
+      v = scheme_hash_get(*ht, an_uninterned_symbol);
+      if (!v)
+	v = scheme_null;
+      v = scheme_make_pair(skipped, v);
+      scheme_hash_set(*ht, an_uninterned_symbol, v);
+    }
 
     goto start_over;
   }

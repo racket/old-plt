@@ -64,6 +64,7 @@ static Scheme_Object *namespace_variable_value(int, Scheme_Object *[]);
 static Scheme_Object *namespace_set_variable_value(int, Scheme_Object *[]);
 static Scheme_Object *namespace_undefine_variable(int, Scheme_Object *[]);
 static Scheme_Object *namespace_mapped_symbols(int, Scheme_Object *[]);
+static Scheme_Object *namespace_module_registry(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_context(int argc, Scheme_Object *argv[]);
@@ -415,6 +416,12 @@ static void make_init_env(void)
 						      0, 0),
 			     env);
 
+  scheme_add_global_constant("namespace-module-registry",
+			     scheme_make_prim_w_arity(namespace_module_registry,
+						      "namespace-module-registry",
+						      1, 1),
+			     env);
+
 
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
@@ -557,6 +564,7 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
 	SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)modules;
 
 	module_registry = scheme_make_hash_table(SCHEME_hash_ptr);
+	module_registry->type = scheme_module_registry_type;
       }
     }
   }
@@ -829,22 +837,30 @@ scheme_add_global_keyword_symbol(Scheme_Object *name, Scheme_Object *obj,
 
 void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
 {
-  if (!env->module) {
-    if (env->rename)
-      scheme_remove_module_rename(env->rename, n);
+  if (env->rename) {
+    scheme_remove_module_rename(env->rename, n);
+    if (env->module) {
+      scheme_extend_module_rename(env->rename,
+				  env->module->self_modidx,
+				  n, n,
+				  env->module->self_modidx,
+				  n);
+    }
+  }
 
-    if (stxtoo) {
+  if (stxtoo) {
+    if (!env->module || env->rename) {
       if (!env->shadowed_syntax) {
 	Scheme_Hash_Table *ht;
 	ht = scheme_make_hash_table(SCHEME_hash_ptr);
 	env->shadowed_syntax = ht;
       }
-	
+      
       scheme_hash_set(env->shadowed_syntax, n, scheme_true);
-    } else {
-      if (env->shadowed_syntax)
-	scheme_hash_set(env->shadowed_syntax, n, NULL);
     }
+  } else {
+    if (env->shadowed_syntax)
+      scheme_hash_set(env->shadowed_syntax, n, NULL);
   }
 }
 
@@ -2620,6 +2636,14 @@ namespace_mapped_symbols(int argc, Scheme_Object *argv[])
   }
 
   return l;
+}
+
+static Scheme_Object *namespace_module_registry(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_NAMESPACEP(argv[0]))
+    scheme_wrong_type("namespace-module-registry", "namespace", 0, argc, argv);
+
+  return (Scheme_Object *)((Scheme_Env *)argv[0])->module_registry;
 }
 
 static Scheme_Object *

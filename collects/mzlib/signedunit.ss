@@ -198,7 +198,7 @@
 		      (syntax-error who expr "improper signature clause type"
 				    (syntax something))])
 		   (loop (syntax rest)))]
-		 [_ (syntax-error who expr "illegal use of `.'")]))])
+		 [_else (syntax-error who expr "illegal use of `.'")]))])
 	(check-unique (map
 		       (lambda (elem)
 			 (if (identifier? elem)
@@ -400,7 +400,7 @@
 	       [any
 		untagged-legal?
 		(rename-signature (get-sig who expr #f item) #f)]
-	       [_
+	       [_else
 		(bad "" item)]))
 	   clause)))))
 
@@ -641,7 +641,7 @@
 			     (make-link (syntax-e (syntax tag))
 					(get-sig cpd-unit/sig expr #f (syntax sig))
 					(syntax expr)
-					(syntax (linkage ...))))]
+					(syntax->list (syntax (linkage ...)))))]
 			  [(tag . x)
 			   (not (identifier? (syntax tag)))
 			   (bad ": tag is not an identifier" (syntax tag))]
@@ -657,10 +657,9 @@
 			   (bad ": expected a signature" line)]
 			  [(tag)
 			   (bad ": expected `:'" line)]
-			  [_
+			  [_else
 			   (bad "")]))
 		      link-lines)]
-		    [vars null]
 		    [in-sigs imports]
 		    [find-link
 		     (lambda (name links)
@@ -684,12 +683,10 @@
 		       (letrec ([check-sig
 				 (lambda (sig use-sig)
 				   (when use-sig
-				     (with-handlers
-					 ([exn:unit?
-					   (lambda (exn)
-					     (syntax-error 
-					      cpd-unit/sig expr
-					      (exn-message exn)))])
+				     (with-handlers ([exn:unit? (lambda (exn)
+								  (syntax-error 
+								   cpd-unit/sig expr
+								   (exn-message exn)))])
 				       (verify-signature-match
 					cpd-unit/sig #f
 					(format "signature ~s" (signature-src use-sig))
@@ -699,19 +696,19 @@
 				[flatten-subpath
 				 (lambda (base last use-sig name sig p)
 				   (cond
-				    [(null? p) 
+				    [(stx-null? p) 
 				     (check-sig sig use-sig)
 				     (unit-k base last name (if use-sig
 								use-sig
 								sig))]
-				    [(or (not (pair? p))
-					 (not (symbol? (car p))))
+				    [(or (not (stx-pair? p))
+					 (not (identifier? (stx-car p))))
 				     (syntax-error cpd-unit/sig expr
 						   (format "bad `~a' path" clause)
 						   path)]
-				    [(memq (car p) (signature-vars sig))
-				     (if (and (null? (cdr p)) (not use-sig))
-					 (let* ([id-nopath (car p)]
+				    [(memq (syntax-e (stx-car p)) (signature-vars sig))
+				     (if (and (stx-null? (stx-cdr p)) (not use-sig))
+					 (let* ([id-nopath (syntax-e (stx-car p))]
 						[id (if name
 							(string->symbol 
 							 (string-append name
@@ -723,13 +720,13 @@
 						       (format 
 							"bad `~a' path: \"~a\" is a variable" 
 							clause
-							(car p))
+							(syntax-e (stx-car p)))
 						       path))]
-				    [(find-sig (car p) (signature-elems sig))
+				    [(find-sig (syntax-e (stx-car p)) (signature-elems sig))
 				     =>
 				     (lambda (s)
 				       (flatten-subpath base
-							(car p)
+							(syntax-e (stx-car p))
 							use-sig
 							(let ([n (symbol->string 
 								  (signature-name s))])
@@ -737,52 +734,39 @@
 							      (string-append name ":" n)
 							      n))
 							s
-							(cdr p)))]
+							(stx-cdr p)))]
 				    [else
 				     (syntax-error cpd-unit/sig expr
 						   (format 
 						    "bad `~a' path: \"~a\" not found"
 						    clause
-						    (car p))
+						    (syntax-e (stx-car p)))
 						   path)]))])
 			 (let-values ([(p use-sig)
-				       (cond
-					[(symbol? path)
+				       (syntax-case p (:)
+					[_
+					 (identifier? path)
 					 (values (list path) #f)]
-					[(and (pair? path)
-					      (symbol? (car path))
-					      (pair? (cdr path))
-					      (eq? (cadr path) ':)
-					      (pair? (cddr path))
-					      (null? (cdddr path)))
-					 (values (list (car path))
+					[(name : sig)
+					 (identifier? (syntax name))
+					 (values (list (syntax name))
 						 (get-sig cpd-unit/sig expr
 							  #f
-							  (caddr path)))]
-					[(and (pair? path)
-					      (list? (car path))
-					      (not (null? (car path)))
-					      (andmap
-					       (lambda (s)
-						 (and (symbol? s)
-						      (not (eq? s ':))))
-					       (car path))
-					      (pair? (cdr path))
-					      (eq? (cadr path) ':)
-					      (pair? (cddr path))
-					      (null? (cdddr path)))
-					 (values (car path)
+							  (syntax sig)))]
+					[((elem ...) : sig)
+					 (andmap (lambda (s)
+						   (and (identifier? s)
+							(not (eq? (syntax-e s) ':))))
+						 (syntax (elem ...)))
+					 (values (syntax (elem ...))
 						 (get-sig cpd-unit/sig expr
 							  #f
-							  (caddr path)))]
-					[(and (pair? path)
-					      (list? path)
-					      (not (null? (car path)))
-					      (andmap
-					       (lambda (s)
-						 (and (symbol? s)
-						      (not (eq? s ':))))
-					       path))
+							  (syntax sig)))]
+					[(elem ...)
+					 (andmap (lambda (s)
+						   (and (identifier? s)
+							(not (eq? (syntax-e s) ':))))
+						 (syntax (elem ...)))
 					 (values path #f)]
 					[else
 					 (syntax-error cpd-unit/sig expr
@@ -791,33 +775,29 @@
 							clause)
 						       path)])])
 			   (cond
-			    [(and (null? (cdr p))
-				  (memq (car p) vars))
-			     (let ([id (car p)])
-			       (var-k #f id id))]
-			    [(find-link (car p) links)
+			    [(find-link (syntax-e (stx-car p)) links)
 			     => (lambda (link) 
 				  (flatten-subpath (link-name link)
-						   (car p)
+						   (syntax-e (stx-car p))
 						   use-sig
 						   #f
 						   (link-sig link)
-						   (cdr p)))]
-			    [(find-sig (car p) in-sigs)
+						   (stx-cdr p)))]
+			    [(find-sig (syntax-e (stx-car p)) in-sigs)
 			     => (lambda (sig) 
 				  (let ([s (symbol->string (signature-name sig))])
 				    (flatten-subpath #f
-						     (car p)
+						     (syntax-e (stx-car p))
 						     use-sig
 						     s
 						     sig
-						     (cdr p))))]
+						     (stx-cdr p))))]
 			    [else
 			     (syntax-error cpd-unit/sig expr
 					   (format 
 					    "bad `~a' path: \"~a\" not found"
 					    clause
-					    (car p))
+					    (syntax-e (stx-car p)))
 					   path)]))))])
 	  (check-unique (map link-name links)
 			(lambda (name)
@@ -857,155 +837,136 @@
 				      (flatten-signature id sig))))))
 	       (link-links link))))
 	   links)
-	  (unless (and (pair? body)
-		       (pair? (car body))
-		       (eq? 'export (caar body)))
-		  (syntax-error cpd-unit/sig expr "expected `export' clause"))
-	  (unless (list? (car body))
-		  (syntax-error cpd-unit/sig expr 
-				"bad `export' clause form"))
-	  (unless (null? (cdr body))
-		  (syntax-error cpd-unit/sig expr 
-				"another clause follows `export' clause"))
+	  (let ([export-list (syntax->list (syntax exports))])
+	    (unless export-list
+	      (syntax-error cpd-unit/sig expr 
+			    "improper `export' clause form"
+			    (syntax exports))))
 	  (let* ([upath? (lambda (p)
-			   (or (symbol? p)
-			       (and (list? p)
-				    (andmap symbol? p))))]
+			   (or (identifier? p)
+			       (and (stx-list? p)
+				    (andmap identifietr? (stx->list p)))))]
 		 [spath? (lambda (p)
-			   (or (and (list? p)
-				    (= 3 (length p))
-				    (eq? ': (cadr p))
-				    (upath? (car p))
-				    (or (symbol? (caddr p))
-					(parse-signature cpd-unit/sig expr #f (caddr p))))
-			       (upath? p)))]
+			   (syntax-case p (:)
+			     [(name : sig)
+			      (and (upath? (syntax name))
+				   (or (identifier? (syntax sig))
+				       (parse-signature cpd-unit/sig expr #f (syntax sig))))
+			      #t]
+			     [_else
+			      (upath? p)]))]
 		 [exports 
 		  (map
 		   (lambda (export)
-		     (cond
-		      [(or (not (list? export))
-			   (not (<= 2 (length export) 3))
-			   (not (or (null? (cddr export))
-				    (and (pair? (cddr export))
-					 (null? (cdddr export))))))
-		       (syntax-error cpd-unit/sig expr "bad `export' sub-clause"
-				     export)]
-		      [else
-		       (cond
-			[(eq? (car export) 'open)
-			 (let ([odef (cdr export)])
-			   (unless (and (pair? odef)
-					(spath? (car odef))
-					(null? (cdr odef)))
-				   (syntax-error cpd-unit/sig expr 
-						 "bad `open' sub-clause of `export'"
-						 export))
-			   (flatten-path 'export
-					 (car odef)
-					 (lambda (base var var-nopath)
-					   (syntax-error 
-					    cpd-unit/sig expr 
-					    "`open' sub-clause path is a variable"
-					    (car export)))
-					 (lambda (base last name sig)
-					   (if base
-					       (make-sig-explode-pair
-						(signature-elems sig)
-						(cons base 
-						      (map
-						       list
-						       (flatten-signature name sig)
-						       (flatten-signature #f sig))))
-					       (syntax-error 
-						cpd-unit/sig expr 
-						"cannot export imported variables"
-						export)))))]
-			 [(eq? (car export) 'var)
-			  (let ([vdef (cdr export)])
-			    (unless (and (pair? vdef)
-					 (pair? (car vdef))
-					 (upath? (caar vdef))
-					 (pair? (cdar vdef))
-					 (null? (cddar vdef))
-					 (symbol? (cadar vdef))
-					 (or (null? (cdr vdef))
-					     (and (pair? (cdr vdef))
-						  (symbol? (cadr vdef))
-						  (null? (cddr vdef)))))
-				    (syntax-error cpd-unit/sig expr 
-						  "bad `var' sub-clause of `export'"
-						  export))
-			    (flatten-path 'export
-					  (let ([upath (caar vdef)]
-						[vname (cadar vdef)])
-					    (if (symbol? upath)
-						(list upath vname)
-						(append upath (list vname))))
-					  (lambda (base var var-nopath)
-					    (if base
-						(make-sig-explode-pair
-						 (list (if (null? (cdr vdef))
-							   var-nopath
-							   (cadr vdef)))
-						 (list base
-						       (if (null? (cdr vdef))
-							   (list var var-nopath)
-							   (list var (cadr vdef)))))
-						(syntax-error 
+		     (syntax-case export (open var unit)
+		       [(open spath)
+			(begin
+			  (unless (spath? (syntax spath))
+			    (syntax-error cpd-unit/sig expr 
+					  "bad `open' sub-clause of `export'"
+					  export))
+			  (flatten-path 'export
+					(syntax spath)
+					(lambda (base var var-nopath)
+					  (syntax-error 
+					   cpd-unit/sig expr 
+					   "`open' sub-clause path is a variable"
+					   (car export)))
+					(lambda (base last name sig)
+					  (if base
+					      (make-sig-explode-pair
+					       (signature-elems sig)
+					       (cons base 
+						     (map
+						      list
+						      (flatten-signature name sig)
+						      (flatten-signature #f sig))))
+					      (syntax-error 
+					       cpd-unit/sig expr 
+					       "cannot export imported variables"
+					       export)))))]
+		       [(var upath vname . exname)
+			(let ([upath (syntax upath)]
+			      [vname (syntax vname)]
+			      [exname (syntax exname)])
+			  (unless (and (upath? upath)
+				       (identifier? vname)
+				       (or (stx-null? exname)
+					   (and (stx-pair? exname)
+						(identifier? (stx-car exname))
+						(stx-null? (stx-cdr exname)))))
+			    (syntax-error cpd-unit/sig expr 
+					  "bad `var' sub-clause of `export'"
+					  export))
+			  (flatten-path 'export
+					(if (identifier? upath)
+					    (list upath vname)
+					    (append (syntax->list upath) (list vname)))
+					(lambda (base var var-nopath)
+					  (if base
+					      (make-sig-explode-pair
+					       (list (if (stx-null? exname)
+							 var-nopath
+							 (syntax-e (stx-car exname))))
+					       (list base
+						     (if (stx-null? exname)
+							 (list var var-nopath)
+							 (list var (syntax-e (stx-car exname))))))
+					      (syntax-error 
+					       cpd-unit/sig expr 
+					       "cannot export imported variables"
+					       export)))
+					(lambda (base last name var)
+					  (syntax-error 
+					   cpd-unit/sig expr 
+					   "`var' sub-clause path specifies a unit"
+					   export))))]
+		       [(unit spath . exname)
+			(let ([spath (syntax spath)]
+			      [exname (syntax exname)])
+			  (unless (and (spath? spath)
+				       (or (stx-null? exname)
+					   (and (stx-pair? exname)
+						(identifier? (stx-car exname))
+						(stx-null? (stx-cdr exname)))))
+			    (syntax-error cpd-unit/sig expr 
+					  "bad `unit' sub-clause of `export'"
+					  export))
+			  (flatten-path 'export
+					spath
+					(lambda (base var var-nopath)
+					  (syntax-error 
+					   cpd-unit/sig expr 
+					   "`unit' sub-clause path is a variable"
+					   export))
+					(lambda (base last name sig)
+					  (if base
+					      (make-sig-explode-pair
+					       (list (rename-signature
+						      sig
+						      (if (stx-null? exname)
+							  last
+							  (syntax-e (stx-car exname)))))
+					       (let ([flat (flatten-signature name sig)])
+						 (cons base 
+						       (map
+							list
+							flat
+							(flatten-signature 
+							 (symbol->string (if (stx-null? exname)
+									     last
+									     (syntax-e (stx-car exname))))
+							 sig)))))
+					      (syntax-error 
 						 cpd-unit/sig expr 
-						 "cannot exported imported variables"
-						 (car export))))
-					  (lambda (base last name var)
-					    (syntax-error 
-					     cpd-unit/sig expr 
-					     "`var' sub-clause path specifies a unit"
-					     export))))]
-			 [(eq? (car export) 'unit)
-			  (let ([udef (cdr export)])
-			    (unless (and (pair? udef)
-					 (spath? (car udef))
-					 (or (null? (cdr udef))
-					     (and (pair? (cdr udef))
-						  (symbol? (cadr udef))
-						  (null? (cddr udef)))))
-				    (syntax-error cpd-unit/sig expr 
-						  "bad `unit' sub-clause of `export'"
-						  export))
-			    (flatten-path 'export
-					  (car udef)
-					  (lambda (base var var-nopath)
-					    (syntax-error 
-					     cpd-unit/sig expr 
-					     "`unit' sub-clause path is a variable"
-					     (car export)))
-					  (lambda (base last name sig)
-					    (if base
-						(make-sig-explode-pair
-						 (list (rename-signature
-							sig
-							(if (null? (cdr udef))
-							    last
-							    (cadr udef))))
-						 (let ([flat (flatten-signature name sig)])
-						   (cons base 
-							 (map
-							  list
-							  flat
-							  (flatten-signature 
-							   (symbol->string (if (null? (cdr udef))
-									       last
-									       (cadr udef)))
-							   sig)))))
-						(syntax-error 
-						 cpd-unit/sig expr 
-						 "cannot exported imported variables"
+						 "cannot export imported variables"
 						 export)))))]
-			 [else
-			  (syntax-error cpd-unit/sig expr 
-					(format 
-					 "bad `export' sub-clause")
-					export)])]))
-		   (cdar body))])
+		       [_else
+			(syntax-error cpd-unit/sig expr 
+				      (format 
+				       "bad `export' sub-clause")
+				      export)]))
+		   export-list)])
 	    (check-unique (map
 			   (lambda (s)
 			     (if (signature? s)
@@ -1019,106 +980,101 @@
 					  (format 
 					   "the name \"~s\" is exported twice" 
 					   name))))
-	    `(#%let ,(map
-		      (lambda (link)
-			(list (link-name link)
-			      (link-expr link)))
-		      links)
-	       (#%verify-linkage-signature-match
-		(#%quote ,cpd-unit/sig)
-		(#%quote ,(map link-name links))
-		(#%list ,@(map link-name links))
-		(#%quote ,(map (lambda (link) (explode-sig (link-sig link))) links))
-	        (#%quote ,(map
-			   (lambda (link)
-			     (map (lambda (sep)
-				    (explode-named-sig (sig-explode-pair-sigpart sep)))
-				  (link-links link)))
-			   links)))
-	       ; All checks done. Make the unit:
-	       (#%make-unit-with-signature
-		(#%compound-unit
-		 (import ,@(flatten-signatures
-			    imports))
-		 (link ,@(map
+	    (datum->syntax
+	     `(let ,(map
+		     (lambda (link)
+		       (list (link-name link)
+			     (link-expr link)))
+		     links)
+		(verify-linkage-signature-match
+		 (quote ,cpd-unit/sig)
+		 (quote ,(map link-name links))
+		 (list ,@(map link-name links))
+		 (quote ,(map (lambda (link) (explode-sig (link-sig link))) links))
+		 (quote ,(map
 			  (lambda (link)
-			    (list (link-name link)
-				  (cons `(#%unit-with-signature-unit
-					  ,(link-name link))
-					(apply
-					 append
-					 (map 
-					  sig-explode-pair-exploded 
-					  (link-links link))))))
-			  links))
-		 (export ,@(map sig-explode-pair-exploded exports)))
-	        (#%quote ,(explode-named-sigs imports))
-	        (#%quote ,(explode-sig
-			   (make-signature
-			    'dummy
-			    'dummy
-			    (apply
-			     append
-			     (map sig-explode-pair-sigpart exports))))))))))))
-			      
-  (define compound-unit-with-signature
-    (lambda body
-      (let ([expr (cons cpd-unit/sig body)])
-	(result (parse-compound-unit expr body)))))
+			    (map (lambda (sep)
+				   (explode-named-sig (sig-explode-pair-sigpart sep)))
+				 (link-links link)))
+			  links)))
+		; All checks done. Make the unit:
+		(make-unit-with-signature
+		 (compound-unit
+		  (import ,@(flatten-signatures
+			     imports))
+		  (link ,@(map
+			   (lambda (link)
+			     (list (link-name link)
+				   (cons `(unit-with-signature-unit
+					   ,(link-name link))
+					 (apply
+					  append
+					  (map 
+					   sig-explode-pair-exploded 
+					   (link-links link))))))
+			   links))
+		  (export ,@(map sig-explode-pair-exploded exports)))
+		 (quote ,(explode-named-sigs imports))
+		 (quote ,(explode-sig
+			  (make-signature
+			   'dummy
+			   'dummy
+			   (apply
+			    append
+			    (map sig-explode-pair-sigpart exports)))))))
+	     (quote-syntax here)
+	     expr)))))])))
+  
+  (define-syntax compound-unit/sig
+    (lambda (expr)
+      (syntax-case expr ()
+	[(_ . body)
+	 (parse-compound-unit expr (syntax body))])))
 
   (define parse-invoke-vars
     (lambda (who rest expr)
       (parse-imports who #t #f expr rest)))
 
-  (define build-invoke-unit
-    (lambda (who invoke-unit u sigs nsl)
-      (result `(let ([u ,u])
-		 (#%verify-linkage-signature-match
-		  (#%quote ,who)
-		  (#%quote (invoke))
-		  (#%list u)
-		  (#%quote (#()))
-		  (#%quote (,(explode-named-sigs sigs))))
-		 (,invoke-unit (#%unit-with-signature-unit u)
-			       ,@nsl
-			       ,@(flatten-signatures
-				  sigs))))))
-      
-
-  (define invoke-unit-with-signature
-    (lambda body
-      (let ([expr (cons invoke-unit/sig body)])
-	(unless (and (pair? body)
-		     (list? (cdr body)))
-		(syntax-error invoke-unit/sig expr "improper form"))
-	(let ([u (car body)]
-	      [sigs (parse-invoke-vars invoke-unit/sig (cdr body) expr)])
-	  (build-invoke-unit invoke-unit/sig '#%invoke-unit u sigs null)))))
+  (define-syntax invoke-unit/sig
+    (lambda (expr)
+      (syntax-case expr ()
+	[(_ u sig ...)
+	 (let ([u (syntax u)]
+	       [sigs (parse-invoke-vars invoke-unit/sig (syntax (sig ...)) expr)])
+	   (datum->syntax
+	    `(let ([u ,u])
+	       (verify-linkage-signature-match
+		(quote invoke-unit/sig)
+		(quote (invoke))
+		(list u)
+		(quote (#()))
+		(quote (,(explode-named-sigs sigs))))
+	       (invoke-unit (unit-with-signature-unit u)
+			    ,@(flatten-signatures
+			       sigs)))
+	    (quote-syntax here)
+	    expr))])))
   
-  (define unit->unit-with-signature
-    (lambda body
-      (let ([expr (cons u->u/sig body)])
-	(unless (and (pair? body)
-		     (pair? (cdr body))
-		     (list? (cadr body))
-		     (pair? (cddr body))
-		     (null? (cdddr body)))
-		(syntax-error u->u/sig expr "improper form"))
-	(let ([e (car body)]
-	      [im-sigs (map (lambda (sig)
-			      (get-sig u->u/sig expr #f sig))
-			    (cadr body))]
-	      [ex-sig (get-sig u->u/sig expr #f (caddr body))])
-	  `(#%make-unit-with-signature
-	    ,e
-	    (#%quote ,(explode-named-sigs im-sigs))
-	    (#%quote ,(explode-sig ex-sig)))))))
+  (define unit->unit/sig
+    (lambda (expr)
+      (syntax-case expr ()
+	[(_ e (im-sig ...) ex-sig)
+	 (let ([e (syntax e)]
+	       [im-sigs (map (lambda (sig)
+			       (get-sig u->u/sig expr #f sig))
+			     (syntax->list (syntax (im-sig ...))))]
+	       [ex-sig (get-sig u->u/sig expr #f (syntax ex-sig))])
+	   (datum->syntax
+	    `(make-unit-with-signature
+	      ,e
+	      (quote ,(explode-named-sigs im-sigs))
+	      (quote ,(explode-sig ex-sig)))
+	    (quote-syntax here)
+	    expr))])))
 
-  (vector define-signature
+  (export define-signature
 	  let-signature
-          unit-with-signature
-          compound-unit-with-signature
-	  invoke-unit-with-signature
-	  unit->unit-with-signature)))
-
-> stop unitsig <
+          unit/sig
+          compound-unit/sig
+	  invoke-unit/sig
+	  unit->unit/sig)))

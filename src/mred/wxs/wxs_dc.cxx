@@ -1286,7 +1286,7 @@ static Scheme_Object *os_wxDCDrawPolygon(Scheme_Object *obj, int n,  Scheme_Obje
   } else
     x4 = wxODDEVEN_RULE;
 
-  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, "dc%::draw-polygon");
+  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-polygon"));
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawPolygon(x0, x1, x2, x3, x4);
 
   
@@ -1315,7 +1315,7 @@ static Scheme_Object *os_wxDCDrawLines(Scheme_Object *obj, int n,  Scheme_Object
   } else
     x3 = 0;
 
-  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, "dc%::draw-lines");
+  DO_OK_CHECK(scheme_void)x1 = __MakewxPointArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("dc<%>","draw-lines"));
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawLines(x0, x1, x2, x3);
 
   

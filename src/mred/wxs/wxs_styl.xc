@@ -179,7 +179,7 @@
 @ "get-shift-style" :  wxStyle^ GetShiftStyle();
 @ "set-shift-style" : void SetShiftStyle(wxStyle!);
 
-@ "switch-to" : void SwitchTo(wxDC!, wxStyle!); : : /CHECKOK[0."style%::switch-to"]
+@ "switch-to" : void SwitchTo(wxDC!, wxStyle!); : : /CHECKOK[0.METHODNAME("style%","switch-to")]
 
 @END
 

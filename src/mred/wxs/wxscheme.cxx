@@ -160,6 +160,7 @@ void wxsScheme_setup(Scheme_Env *env)
 #define EVAL_ONE_STR(x) link = scheme_eval_string(x, env)
 #define EVAL_ONE_SIZED_STR(x, s) link = scheme_eval_compiled_sized_string(x, s, env)
 #define JUST_DEFINED_FUNC(x) /**/
+#define JUST_DEFINED_KEY(x) /**/
 #define MZCOMPILED_STRING_FAR /**/
 #if 1
 # include "cwrap.inc"

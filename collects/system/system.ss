@@ -131,6 +131,7 @@
 	 (mred:build-spidey-unit)
 	 (when mred:non-unit-startup?
 	   (set! mred:console (mred:startup)))
+	 (mred:no-more-splash-messages)
 	 (for-each mred:edit-file files-to-open)
 	 (mred:debug:when 'splash
 			  (unless (= mred:splash-max mred:splash-counter)

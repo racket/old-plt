@@ -11,7 +11,7 @@
 	     (define mred:explicit-wx? #t)
 	     (define plt:home-directory ,plt:home-directory)
 	     (define mred:plt-home-directory ,mred:plt-home-directory)
-	     (current-library-path (list ,@(current-library-collection-paths))))
+	     (current-library-collection-paths (list ,@(current-library-collection-paths))))
 	   port)
 
 	  (pretty-print `(reference-library "match.ss") port)
@@ -88,7 +88,8 @@
 	    (error 'mred:invoke "mred:make-invokable-unit didn't return a unit/sig, returned: ~a~n"
 		   unit/sig))
 	  (mred:change-splash-message "Invoking...")
-	  (mred:no-more-splash-messages)
+	  (unless mred:non-unit-startup?
+	    (mred:no-more-splash-messages))
 	  (invoke-open-unit/sig unit/sig))
 	(mred:user-setup)))))
 

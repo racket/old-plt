@@ -1553,8 +1553,8 @@
     (lambda (stx)
       (syntax-case stx ()
 	[(form class (arg ...) . x)
-	 (with-syntax ([stx stx])
-	   (syntax (-instantiate do-make-object stx (class) (list arg ...) . x)))])))
+	 (with-syntax ([orig-stx stx])
+	   (syntax/loc stx (-instantiate do-make-object orig-stx (class) (list arg ...) . x)))])))
 
   ;; Helper; used by instantiate and super-instantiate
   (define-syntax -instantiate
@@ -1563,10 +1563,11 @@
 	[(_ do-make-object orig-stx (maker-arg ...) args (kw arg) ...)
 	 (andmap identifier? (syntax->list (syntax (kw ...))))
 	 (with-syntax ([(kw ...) (map localize (syntax->list (syntax (kw ...))))])
-	   (syntax (do-make-object maker-arg ...
-				   args
-				   (list (cons `kw arg)
-					 ...))))]
+	   (syntax/loc stx
+	     (do-make-object maker-arg ...
+			     args
+			     (list (cons `kw arg)
+				   ...))))]
 	[(_ super-make-object orig-stx (make-arg ...) args kwarg ...)
 	 ;; some kwarg must be bad:
 	 (for-each (lambda (kwarg)

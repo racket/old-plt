@@ -1,5 +1,5 @@
 #!/bin/sh
-
+#|
 # PLT software installer
 # Configures PLTHOME path within scripts
 # For certain platforms and installations, adds extra
@@ -7,122 +7,77 @@
 #  through the platform's standard path)
 # Creates .zo files if the user assents
 
-didnothing=" (nothing to do)"
-
-showhelp ()
-{
-  echo "Usage: $0 [ newplthomedir ]"
-  echo " newplthomedir defaults to the current directory"
-  echo " use \"\" for newplthomedir to keep the current setting"
-  exit 1
-}
-
-if [ $# -gt 1 ] ; then
-  showhelp
-fi
-if [ "$1" = '-h' ] ; then
-  showhelp
-fi
-
 if [ ! \( \( -x install \) -a \( -d collects \) \) ] ; then
-  echo "$0: must be run from its own directory"
+  echo "install: must be run from its own directory"
   exit 1
 fi
 
-if [ $# -eq 1 ] ; then
-  installplthome="$1"
-else
-  installplthome=`pwd`
-fi
+exec ./bin/mzscheme -r "$0" ${1+"$@"}
+echo Couldn't start MzScheme --- install incomplete!
+exit
 
-PLTHOME="$installplthome"
-export PLTHOME
-PLTCOLLECTS=""
-export PLTCOLLECTS
-PLTEXTENSION=""
-export PLTEXTENSION
+|#
 
-echo "setting PLTHOME to $installplthome in scripts:"
+(unless (equal? #() argv)
+  (error './install "no arguments allowed on the command line")
+  (exit 1))
 
-case `uname -s` in
-  *BSD) # FreeBSD and OpenBSD, at least
-    chmod='chmod -RH'
-    ;;
-  *)
-    chmod='chmod'
-    ;;
-esac
+(define didnothing " (nothing to do)")
 
-if [ "$installplthome" != '' ] ; then
-  # Change the scripts in bin/, replacing
-  #   PLTHOME=.*
-  # with
-  #   PLTHOME=<newpath>
-  # where <newpath> is provided to this script
+(define plthome (current-directory))
+(putenv "PLTHOME" plthome)
+(putenv "PLTCOLLECTS" "")
 
-  PROGRAM="/set PLTHOME=.*/ { print \"  set PLTHOME=$installplthome\"; next } /PLTHOME=.*/ { print \"  PLTHOME=$installplthome\"; next } /.*/ {print} "
+(define plthome (regexp-replace* "\"" plthome "\\\\\""))
 
-  for f in bin/* ; do
-   if [ "$f" = 'bin/mzscheme' ] ; then
-     echo " skipping $f"
-   elif [ "$f" = 'bin/mred' ] ; then
-     echo " skipping $f"
-   elif [ -f $f ] ; then
-     echo " updating $f"
-     didnothing=""
-     awk "$PROGRAM" $f > $f.tmp
-     if [ -w $f ] ; then
-       cat $f.tmp > $f
-     else
-       # Ugh - temporarily chmod to allow writing
-       oldstate=`ls -Ll $f`
-       $chmod a+w $f
-       cat $f.tmp > $f  
-       $chmod a-w $f
-       ucanwrite=`echo $oldstate | cut -c3,3`
-       gcanwrite=`echo $oldstate | cut -c6,6`
-       ocanwrite=`echo $oldstate | cut -c9,9`
-       if [ $ucanwrite = 'w' ] ; then
-        $chmod u+w $f 
-       fi
-       if [ $gcanwrite = 'w' ] ; then
-        $chmod g+w $f 
-       fi
-       if [ $ocanwrite = 'w' ] ; then
-        $chmod o+w $f 
-       fi
-     fi
-     rm $f.tmp
-   else
-    if [ -d $f ]; then
-      echo "$0: weird - $f is not a file!"
-    fi
-   fi
-  done
-fi
+(printf "setting PLTHOME to \"~a\" in scripts:~n" plthome)
 
+(for-each
+ (lambda (f)
+   (cond
+    [(member f '("mzscheme" "mred"))
+     (printf " skipping bin/~a~n" f)]
+    [else
+     (let ([p (build-path "bin" f)])
+       (when (file-exists? p)
+	 (set! didnothing "")
+	 (printf " updating ~a~n" p)
+	 (let ([lines (with-input-from-file p
+			(lambda ()
+			  (let loop ()
+			    (let ([l (read-line)])
+			      (if (eof-object? l)
+				  null
+				  (cons l (loop)))))))])
+	   (with-output-to-file p
+	     (lambda ()
+	       (for-each
+		(lambda (l)
+		  (let ([m (regexp-match "^(.*)PLTHOME=(.*)$" l)])
+		    (if m
+			(printf "~aPLTHOME=\"~a\"~n"
+				(cadr m) plthome)
+			(printf "~a~n" l))))
+		lines))
+	     'truncate))))]))
+ (directory-list "bin"))
 
-if [ -z "${RPM_INSTALL_PREFIX}" ] ; then
-  # text-mode version checker - prompts user to check or not
-  bin/mzscheme -mve '(require (lib "check-text.ss" "version"))'
-  echo 'PLT software starts up much faster with .zo files, but creating .zo'
-  echo 'files now takes a few minutes and requires about 5MB of additional'
-  echo 'disk space. Create .zo files later by running plt/bin/setup-plt.'
-  echo ' Create .zo files now (y/n)? [y] \c'
-  read response
-else
-  response="y"
-fi
-if [ "$response" != 'n' ] ; then
-  if [ "$response" != 'N' ] ; then
-    didnothing=""
-    bin/setup-plt
- fi
-fi
+(define zo?
+  (or (getenv "RPM_INSTALL_PREFIX")
+      (begin
+	(printf "PLT software starts up much faster with .zo files, but creating .zo~n")
+	(printf "files now takes a few minutes and requires about 5MB of additional~n")
+	(printf "disk space. Create .zo files later by running plt/bin/setup-plt.~n")
+	(printf "  Create .zo files now (y/n)? [y] ")
+	(flush-output)
+	(let ([r (read-line)])
+	  (not (regexp-match "^[nN]" r))))))
 
-echo
-echo "PLT installation done${didnothing}."
-if [ -f bin/drscheme ] ; then
- echo "Run DrScheme as bin/drscheme."
- echo "For Help, select \`Help Desk' from DrScheme's \`Help' menu, or run bin/help-desk."
-fi
+(when zo?
+  (dynamic-require '(lib "setup.ss" "setup") #f))
+
+(printf "PLT installation done~a.~n" didnothing)
+(when (file-exists? "bin/drscheme")
+  (printf "Run DrScheme as bin/drscheme.~n")
+  (printf "For Help, select `Help Desk' from DrScheme's `Help' menu, or run bin/help-desk.~n"))
+

@@ -196,11 +196,11 @@
 			 "# This script was created by make-~a-launcher" newline
 			 newline
 			 "if [ \"$PLTHOME\" = '' ] ; then" newline
-			 "  PLTHOME=~a" newline
+			 "  PLTHOME=\"~a\"" newline
 			 "  export PLTHOME" newline
 			 "fi" newline
 			 newline)
-			kind plthome)]
+			kind (regexp-replace* "\"" plthome "\\\\\""))]
 	       [exec (format
 		      "exec ${PLTHOME}/bin/~a ~a"
 		      kind pre-str)]

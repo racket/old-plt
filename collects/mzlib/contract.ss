@@ -166,7 +166,7 @@ add struct contracts for immutable structs?
 
   
   ;; (provide/contract p/c-ele ...)
-  ;; p/c-ele = (id expr) | (struct (id expr) ...)
+  ;; p/c-ele = (id expr) | (rename id id expr) | (struct (id expr) ...)
   ;; provides each `id' with the contract `expr'.
   (define-syntax (provide/contract provide-stx)
     (syntax-case provide-stx (struct)
@@ -180,7 +180,26 @@ add struct contracts for immutable structs?
              [(null? clauses) null]
              [else
               (let ([clause (car clauses)])
-                (syntax-case clause (struct)
+                (syntax-case clause (struct rename)
+                  [(rename this-name new-name contract)
+                   (and (identifier? (syntax this-name))
+                        (identifier? (syntax new-name)))
+                   (cons (code-for-one-id provide-stx (syntax this-name) (syntax contract) (syntax new-name))
+                         (code-for-each-clause (cdr clauses)))]
+                  [(rename this-name new-name contract)
+                   (identifier? (syntax this-name))
+                   (raise-syntax-error 'provide/contract 
+                                       "malformed rename clause, expected an identifier" 
+                                       provide-stx
+                                       (syntax new-name))]
+                  [(rename this-name new-name contract)
+                   (identifier? (syntax new-name))
+                   (raise-syntax-error 'provide/contract 
+                                       "malformed rename clause, expected an identifier" 
+                                       provide-stx
+                                       (syntax this-name))]
+                  [(rename . _)
+                   (raise-syntax-error 'provide/contract "malformed rename clause" provide-stx clause)]
                   [(struct struct-name ((field-name contract) ...))
                    (and (identifier? (syntax struct-name))
                         (andmap identifier? (syntax->list (syntax (field-name ...)))))
@@ -222,7 +241,7 @@ add struct contracts for immutable structs?
                                        clause)]
                   [(name contract)
                    (identifier? (syntax name))
-                   (cons (code-for-one-id provide-stx (syntax name) (syntax contract))
+                   (cons (code-for-one-id provide-stx (syntax name) (syntax contract) #f)
                          (code-for-each-clause (cdr clauses)))]
                   [(name contract)
                    (raise-syntax-error 'provide/contract
@@ -259,7 +278,8 @@ add struct contracts for immutable structs?
                                                     selector-id
                                                     (build-selector-contract struct-name 
                                                                              predicate-id
-                                                                             field-contract-id)))
+                                                                             field-contract-id)
+                                                    #f))
                                  selector-ids
                                  field-contract-ids)]
                            [(mutator-codes ...)
@@ -268,16 +288,18 @@ add struct contracts for immutable structs?
                                                     mutator-id 
                                                     (build-mutator-contract struct-name 
                                                                             predicate-id
-                                                                            field-contract-id)))
+                                                                            field-contract-id)
+                                                    #f))
                                  mutator-ids
                                  field-contract-ids)]
-                           [predicate-code (code-for-one-id stx predicate-id (syntax (-> any? boolean?)))]
+                           [predicate-code (code-for-one-id stx predicate-id (syntax (-> any? boolean?)) #f)]
                            [constructor-code (code-for-one-id
                                               stx
                                               constructor-id
                                               (build-constructor-contract stx
                                                                           field-contract-ids 
-                                                                          predicate-id))]
+                                                                          predicate-id)
+                                              #f)]
                            [(field-contracts ...) field-contracts]
                            [(field-contract-ids ...) field-contract-ids]
                            [struct-name struct-name])
@@ -363,52 +385,57 @@ add struct contracts for immutable structs?
               (symbol->string (syntax-object->datum field-name))
               "!"))))
          
-         ;; code-for-one-id : syntax syntax syntax -> syntax
+         ;; code-for-one-id : syntax syntax syntax (union syntax #f) -> syntax
          ;; given the syntax for an identifier and a contract,
          ;; builds a begin expression for the entire contract and provide
          ;; the first syntax object is used for source locations
-         (define (code-for-one-id stx id ctrct)
+         (define (code-for-one-id stx id ctrct user-rename-id)
            (with-syntax ([id-rename (a:mangle-id provide-stx "provide/contract-id" id)]
                          [contract-id (a:mangle-id provide-stx "provide/contract-contract-id" id)]
                          [pos-module-source (a:mangle-id provide-stx "provide/contract-pos-module-source" id)]
                          [pos-stx (datum->syntax-object provide-stx 'here)]
                          [id id]
                          [ctrct ctrct])
-             (syntax/loc stx
-              (begin
-                (provide (rename id-rename id))
-                
-                ;; unbound id check
-                (if #f id)
-                (define pos-module-source (module-source-as-symbol #'pos-stx))
-                (define contract-id (let ([id ctrct]) id))
-                (define-syntax id-rename
-                  (make-set!-transformer
-                   (lambda (stx)
-                     (with-syntax ([neg-stx (datum->syntax-object stx 'here)])
-                       (syntax-case stx (set!)
-                         [(set! _ body) (raise-syntax-error
-                                         #f 
-                                         "cannot set! provide/contract identifier"
-                                         stx
-                                         (syntax _))]
-                         [(_ arg (... ...))
-                          (syntax 
-                           ((-contract contract-id
-                                       id
-                                       pos-module-source
-                                       (module-source-as-symbol #'neg-stx)
-                                       (quote-syntax _))
-                            arg
-                            (... ...)))]
-                         [_
-                          (identifier? (syntax _))
-                          (syntax 
-                           (-contract contract-id
-                                      id  
-                                      pos-module-source 
-                                      (module-source-as-symbol #'neg-stx)
-                                      (quote-syntax _)))])))))))))
+             (with-syntax ([provide-clause (if user-rename-id
+                                               (with-syntax ([user-rename-id user-rename-id])
+                                                 (syntax (provide (rename id-rename user-rename-id))))
+                                               (syntax (provide (rename id-rename id))))])
+               (syntax/loc stx
+                 (begin
+                   provide-clause
+                   
+                   ;; unbound id check
+                   (if #f id)
+                   
+                   (define pos-module-source (module-source-as-symbol #'pos-stx))
+                   (define contract-id (let ([id ctrct]) id))
+                   (define-syntax id-rename
+                     (make-set!-transformer
+                      (lambda (stx)
+                        (with-syntax ([neg-stx (datum->syntax-object stx 'here)])
+                          (syntax-case stx (set!)
+                            [(set! _ body) (raise-syntax-error
+                                            #f 
+                                            "cannot set! provide/contract identifier"
+                                            stx
+                                            (syntax _))]
+                            [(_ arg (... ...))
+                             (syntax 
+                              ((-contract contract-id
+                                          id
+                                          pos-module-source
+                                          (module-source-as-symbol #'neg-stx)
+                                          (quote-syntax _))
+                               arg
+                               (... ...)))]
+                            [_
+                             (identifier? (syntax _))
+                             (syntax 
+                              (-contract contract-id
+                                         id  
+                                         pos-module-source 
+                                         (module-source-as-symbol #'neg-stx)
+                                         (quote-syntax _)))]))))))))))
          
          (with-syntax ([(bodies ...) (code-for-each-clause (syntax->list (syntax (p/c-ele ...))))])
            (syntax 
@@ -1287,8 +1314,8 @@ add struct contracts for immutable structs?
     ;;    adds a let that binds the contract exprssions to names
     ;;    the results of the other functions mention these names.
     ;; the second and third function's input syntax should be four
-    ;;    names: val, pos-blame, neg-blame, src-info.
-    ;; the third function returns a syntax list with two elements,
+    ;;    names: val, pos-blame, neg-blame, src-info, orig-str, name-id
+    ;; the fourth function returns a syntax list with two elements,
     ;;    the argument list (to be used as the first arg to lambda,
     ;;    or as a case-lambda clause) and the body of the function.
     ;; They are combined into a lambda for the -> ->* ->d ->d* macros,
@@ -1707,7 +1734,7 @@ add struct contracts for immutable structs?
 		   (dom-projection-x arg-x)
 		   ...
 		   (dom-projection-rest-x arg-rest-x))))))))]))
-    
+
     ;; ->d/h : boolean stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
     (define (->d/h method-proc? stx)
       (syntax-case stx ()

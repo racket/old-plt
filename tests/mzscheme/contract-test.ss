@@ -767,6 +767,17 @@
                (define-struct s (a))))
       (eval '(require contract-test-suite6))
       (eval '(define-struct (t s) ()))))
+  
+  (test/spec-passed
+   'provide/contract7
+   '(let ()
+      (eval '(module contract-test-suite7 mzscheme
+               (require (lib "contract.ss"))
+               (provide/contract (rename the-internal-name the-external-name integer?))
+               (define the-internal-name 1)
+               (+ the-internal-name 1)))
+      (eval '(require contract-test-suite7))
+      (eval '(+ the-external-name 1))))
 
   
 ;                                                                                                     

@@ -31,7 +31,6 @@
 #define  Uses_wxPenBrush
 #define  Uses_wxBitmap
 #include "wx.h"
-#include <string.h>
 
 //-----------------------------------------------------------------------------
 // wxPen create and destroy

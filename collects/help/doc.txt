@@ -116,12 +116,16 @@ documentation.
   reaches the "docs" collection. The resulting link is relative, and
   it can point to a specific anchor in the target.
 
-> (finddoc-page manual index-key)
+> (finddoc-page-anchor manual index-key)
   This procedure accepts two strings. The first is the name of a 
   manual, the second is an index entry in that manual.  It 
   returns a string representation of the filename that contains 
   the index entry in the manual.  If the manual is not found, or the 
   index-key is not in the manual, an error occurs.
+
+> (finddoc-page manual index-key)
+  Like `finddoc-page-anchor', but returns only the page, without
+  an anchor.
 
 _Supplemental Help Desk functions_
 ----------------------------------

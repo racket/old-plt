@@ -1,7 +1,8 @@
 (module finddoc mzscheme
   (provide finddoc
 	   findreldoc
-           finddoc-page)
+           finddoc-page
+	   finddoc-page-anchor)
   
   ;; Creates a "file:" link into the indicated manual.
   ;; The link doesn't go to a particular anchor,
@@ -35,6 +36,14 @@
       (if (string? m)
           m
           (caddr m))))
+
+  ; finddoc-page-anchor : string string -> string
+  ; returns just the page html, with an anchor name, for use by PLT Web server
+  (define (finddoc-page-anchor manual index-key)
+    (let ([m (lookup manual index-key "dummy")])
+      (if (string? m)
+          m
+          (format "~a#~a" (caddr m) (cadddr m)))))
 
   (define ht (make-hash-table))
   

@@ -68,7 +68,7 @@
   (define (manual-entry man ndx txt)
     (let ([fname (with-handlers
 		  ([void (lambda _ #f)])
-		  (finddoc-page man ndx))])
+		  (finddoc-page-anchor man ndx))])
       (if fname
 	  `(A ((HREF ,(string-append 
 		       "/doc/"

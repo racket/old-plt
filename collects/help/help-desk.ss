@@ -30,6 +30,7 @@
     finddoc
     findreldoc
     finddoc-page
+    finddoc-page-anchor
     ;; supplemental
     help-desk:installed-components))
 

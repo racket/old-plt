@@ -183,7 +183,7 @@
       (define make-function
 	(lambda (name core structured side-effecting advanced args)
 	  (let ([vocab (current-vocabulary-symbol)])
-	    '(printf "calling from ~a; ~a~n" vocab name)
+	    ;(printf "calling from ~a; ~a~n" vocab name)
 	    (apply (case vocab
 		     [(core) core]
 		     [(structured) structured]

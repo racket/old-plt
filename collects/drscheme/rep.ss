@@ -93,7 +93,8 @@
   (define (make-edit% super%)
     (class super% args
       (inherit insert change-style
-	       cleanup-transparent-io 
+	       cleanup-transparent-io
+	       clear-undos
 	       transparent-snip set-caret-owner
 	       clear-previous-expr-positions
 	       get-end-position
@@ -288,11 +289,15 @@
 	 (lambda (anss)
 	   (let ([c-locked? locked?])
 	     (unless (andmap void? anss)
-	       (begin-edit-sequence)
-	       (lock #f)
-	       (for-each display-result anss)
-	       (lock c-locked?)
-	       (end-edit-sequence))))]
+	       (dynamic-wind
+		(lambda ()
+		  (begin-edit-sequence)
+		  (lock #f))
+		(lambda ()
+		  (for-each display-result anss))
+		(lambda ()
+		  (lock c-locked?)
+		  (end-edit-sequence))))))]
 	[do-many-buffer-evals
 	 (lambda (edit start end)
 	   (mred:debug:printf 'console-threading "do-many-buffer-evals: testing in-evaluation: ~a" in-evaluation?)
@@ -653,6 +658,7 @@
 		 (lambda ()
 
 		   (unless (basis:setting-use-zodiac? (basis:current-setting))
+		     (require-library "invsig.ss" "system")
 		     (require-library "sig.ss" "mred"))
 
 		   (exception-reporting-rep this)

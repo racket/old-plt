@@ -284,7 +284,23 @@
 	    [remove-paren-callback (mred:preferences:add-preference-callback
 				    'mred:highlight-parens 
 				    (lambda (p value)
-				      (set! highlight-parens? value)))])
+				      (set! highlight-parens? value)))]
+
+	    [find-enclosing-paren
+	     (lambda (edit pos)
+	       (let loop ([pos pos])
+		 (let ([paren-pos (apply max (map (lambda (pair) (send edit find-string (car pair) -1 pos -1 #f))
+						  mred:scheme-paren:scheme-paren-pairs))])
+		   (cond
+		    [(= -1 paren-pos) #f]
+		    [else
+		     (let ([semi-pos (send edit find-string ";" -1 paren-pos)])
+		       (cond
+			[(or (= -1 semi-pos)
+			     (< semi-pos (send edit paragraph-start-position
+					       (send edit position-paragraph paren-pos))))
+			 paren-pos]
+			[else (loop (- semi-pos 1))]))]))))])
 	  (public
 	    [highlight-parens
 	     (let* ([clear-old-location void]
@@ -379,24 +395,19 @@
 			   [char (integer->char code)]
 			   [here (send edit get-start-position)]
 			   [limit (get-limit edit here)]
-			   [check-one
-			    (lambda (p)
-			      (lambda (s)
-				(let ([left (car s)]
-				      [right (cdr s)])
-				  (if (string=? left (get-text (- p (string-length left)) p))
-				      right
-				      #f))))]
 			   [paren-match? (mred:preferences:get-preference 'mred:paren-match)]
 			   [fixup-parens? (mred:preferences:get-preference 'mred:fixup-parens)]
-			   [find-right-paren (lambda (p) 
-					       (cond
-						 [(zero? p) #t]
-						 [(ormap (check-one p)
-							 mred:scheme-paren:scheme-paren-pairs)
-						  =>
-						  (lambda (x) x)]
-						 [else (find-right-paren (- p 1))]))])
+			   [find-match
+			    (lambda (pos)
+			      (let loop ([parens mred:scheme-paren:scheme-paren-pairs])
+				(cond
+				 [(null? parens) #f]
+				 [else (let* ([paren (car parens)]
+					      [left (car paren)]
+					      [right (cdr paren)])
+					 (if (string=? left (get-text pos (+ pos (string-length left))))
+					     right
+					     (loop (cdr parens))))])))])
 		   (cond
 		    [(in-single-line-comment? edit here)
 		     (send edit insert char)]
@@ -409,19 +420,20 @@
 				      backward-cache)])
 		       (cond
 			[end-pos
-			 (let ([right-paren-string (find-right-paren end-pos)])
+			 (let* ([left-paren-pos (find-enclosing-paren edit end-pos)]
+				[match (and left-paren-pos
+					    (find-match left-paren-pos))])
 			   (cond
-			     [(equal? right-paren-string #t)
-			      (send edit insert char)]
-			     [right-paren-string
+			     [match
 			      (send edit insert (if fixup-parens?
-						    right-paren-string
+						    match
 						    char))
 			      (when paren-match?
 				(send edit flash-on
-				      (- end-pos (string-length right-paren-string))
-				      end-pos))]
-			     [else (send edit insert char)]))]
+				      left-paren-pos
+				      (+ left-paren-pos (string-length match))))]
+			     [else
+			      (send edit insert char)]))]
 			[else (send edit insert char)]))]
 		    [else (send edit insert char)])
 		   #t)))]
@@ -545,15 +557,11 @@
 		      [(= para 0) (do-indent 0)]
 		      [(or (not contains) (= contains -1))
 		       (do-indent 0)]
-		      [(not last)
-		       (let loop ([pos contains])
-			 (let ([char (string (send edit get-character pos))])
-			   (cond
-			     [(< pos limit) (do-indent 0)]
-			     [(ormap (lambda (x) (string=? (car x) char))
-				     mred:scheme-paren:scheme-paren-pairs)
-			      (do-indent (+ (visual-offset edit pos) 1))]
-			     [else (loop (- pos 1))])))]
+		      [(not last) ;; search backwards for the opening parenthesis, and use it to align this line
+		       (let ([enclosing (find-enclosing-paren edit pos)])
+			 (do-indent (if enclosing
+					(+ (visual-offset edit enclosing) 1)
+					0)))]
 		      [(= contains last)
 		       (do-indent (+ (visual-offset edit contains)
 				     (procedure-indent)))]

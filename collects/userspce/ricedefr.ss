@@ -7,7 +7,8 @@
       [orig-<= <=]
       [orig-< <]
       [orig-> >]
-      [orig->= >=])
+      [orig->= >=]
+      [orig-= =])
   (unit/sig ricedefs^
     (import [params : plt:userspace:params^])
 
@@ -50,6 +51,12 @@
 			last
 			(map (lambda (x) (format "~e" x)) args))))]
 	    [else (loop (cdr l))]))))
+
+    (define =
+      (if (params:<=-at-least-two-args)
+	  (lambda (x y . args)
+	    (apply orig-= (cons x (cons y args))))
+	  orig-=))
 
     (define >=
       (if (params:<=-at-least-two-args)

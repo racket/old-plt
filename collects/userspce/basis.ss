@@ -460,7 +460,8 @@
   ;; drscheme-port-print-handler : TST port -> void
   ;; effect: prints the value on the port
   (define (drscheme-port-print-handler value port)
-    (parameterize ([mzlib:pretty-print:pretty-print-columns 'infinity])
+    (parameterize ([mzlib:pretty-print:pretty-print-columns 'infinity]
+		   [current-output-port port])
       (drscheme-print/void value)))
 
     ;; build-parameterization : (list-of symbols)

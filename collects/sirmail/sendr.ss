@@ -23,6 +23,44 @@
 
   (require (lib "hierlist-sig.ss" "hierlist"))
 
+  (define invoked-time (current-seconds))
+  
+  (define (how-long-ago diff)
+    (let-values ([(seconds minutes hours days) (apply values (how-long-ago-list diff))])
+      (string-append
+       (build-ele days "day" " ")
+       (build-ele minutes "minute" " ")
+       (build-ele hours "hour" " ")
+       (if minutes
+           "and "
+           "")
+       (build-ele seconds "second" ""))))
+  
+  (define (build-ele count name extra)
+    (cond
+      [(or (not count) (zero? count))
+       ""]
+      [(= count 1)
+       (format "1 ~a~a" name extra)]
+      [else
+       (format "~a ~as~a" count name extra)]))
+  
+  (define (how-long-ago-list diff)
+    (let loop ([divs '(60 60 24)]
+               [diff diff])
+      (cond
+        [(null? divs) 
+         (if (zero? diff)
+             (list #f)
+             (list diff))]
+        [else (let ([div (car divs)])
+                (if (<= diff 0)
+                    (cons #f (loop (cdr divs) 0))
+                    (cons (modulo diff div)
+                          (loop (cdr divs)
+                                (quotient diff div)))))])))
+
+
   (provide send@)
   (define send@
     (unit/sig sirmail:send^
@@ -551,11 +589,12 @@
 	      (send message-editor insert (crlf->lf subject))
 	      (send message-editor insert #\newline)
 	      (send message-editor insert (crlf->lf other-headers))
-	      (send message-editor insert "X-Mailer: SirMail under MrEd ")
+	      (send message-editor insert "X-Mailer: SirMail, MrEd ")
 	      (send message-editor insert (version))
 	      (send message-editor insert " (")
 	      (send message-editor insert (system-library-subpath))
-	      (send message-editor insert ")")
+	      (send message-editor insert ") up ")
+	      (send message-editor insert (how-long-ago (- (current-seconds) invoked-time)))
 	      (send message-editor insert #\newline)
 	      (send message-editor insert SEPARATOR)
 	      (send message-editor insert #\newline)

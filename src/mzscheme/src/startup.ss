@@ -2873,11 +2873,19 @@
 	    (build-path base new-name)
 	    new-name))))
 
+  (define bsbs (string #\u5C #\u5C))
+
   (define (normal-case-path s)
     (unless (path-string? s)
       (raise-type-error 'normal-path-case "path or valid-path string" s))
     (cond
-     [(memq (system-type) '(windows macos))
+     [(eq? (system-type) 'windows)
+      (let ([s (string-locale-downcase (if (string? s)
+					   s
+					   (path->string s)))])
+	(string->path 
+	 (regexp-replace* #rx"/" (regexp-replace* #rx" +$" s "") bsbs)))]
+     [(eq? (system-type) 'macos)
       (string->path (string-locale-downcase (if (string? s)
 						s
 						(path->string s))))]

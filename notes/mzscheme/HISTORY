@@ -2,6 +2,10 @@ Version 52, ??, 1998
 R5RS non-compliance reduced to macros
 Added scheme-report-environment, null-environment, and
  interaction-environment
+Changed reference-library, etc. to require-library
+ and changed require-library, etc. to require-library/proc
+Changed uq-ivar and uq-make-gerenric to ivar/proc and 
+ make-generic/proc
 current-directory is now a parameter
 Added simplify-path
 Changed execute and execute* to exit via the exit handler
@@ -25,8 +29,18 @@ regexp-replace and regexp-replace*: \$ ("\\$" in Scheme)
 Fixed a potential bug with continuations (although I never
  saw it happen); they need to be marked by the GC with
  interior pointer marking
+Changed read-line to break lines only on #\newline by default;
+ new optional argument roughly parameterizes over the 
+ line-breaking character(s)
+Add read-string and read-string! for reading a block
+ of characters from a port
+Changed MzLib's read-string and read-string-all to
+ read-from-string and read-from-string-all
+Changed MzLib's with-semaphore to return the value returned
+ by the thunk.
 Inside MzScheme: current-directory, now a parameter, no
  longer sets the current directory as managed by the OS
+Inside MzScheme: added scheme_apply_eb
 Inside MzScheme: scheme_split_pathname changed
 Inside MzScheme: scheme_setcwd and scheme_getcwd renamed to
  scheme_os_setcwd and scheme_os_getcwd; these set and get the

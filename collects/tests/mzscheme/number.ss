@@ -915,6 +915,17 @@
 (test 1.0+2.0i make-rectangular 1.0 2)
 (test-nan.0 make-rectangular +nan.0 1)
 (test-nan.0 make-rectangular 1 +nan.0)
+(test +inf.0 real-part (make-rectangular +inf.0 -inf.0))
+(test -inf.0 imag-part (make-rectangular +inf.0 -inf.0))
+(test-nan.0 * 1. (make-rectangular +inf.0 -inf.0))  ; because the 0i is automtaically inexact...
+(test-nan.0 * +1.0i (make-rectangular +inf.0 -inf.0))
+(test-nan.0 * -3. (make-rectangular +inf.0 -inf.0))
+(test-nan.0 * (make-rectangular +inf.0 -inf.0) 1.)
+(test-nan.0 * (make-rectangular +inf.0 -inf.0) +1.0i)
+(test-nan.0 * (make-rectangular +inf.0 -inf.0) -3.)
+(test-nan.0 / (make-rectangular +inf.0 -inf.0) 1.)
+(test-nan.0 / (make-rectangular +inf.0 -inf.0) +1.0i)
+(test-nan.0 / (make-rectangular +inf.0 -inf.0) -3.) ; ...
 (test 1 real-part 1+2i)
 (test 1/5 real-part 1/5+2i)
 (test-on-reals real-part (lambda (x) x))
@@ -938,6 +949,13 @@
   (test 2.0 angle v))
 (test-nan.0 make-polar +nan.0 1)
 (test-nan.0 make-polar 1 +nan.0)
+(test-nan.0 make-polar 1 +inf.0)
+(test-nan.0 make-polar 1 -inf.0)
+(test-nan.0 make-polar +inf.0 0) ; because the 0 is automtaically inexact...
+(test-nan.0 make-polar -inf.0 0) ; ...so it's not clear which way to go 
+(test (make-rectangular +inf.0 +inf.0) make-polar +inf.0 (atan 1 1))
+(test (make-rectangular -inf.0 +inf.0) make-polar +inf.0 (atan 1 -1))
+(test (make-rectangular +inf.0 -inf.0) make-polar +inf.0 (atan -1 1))
 (test 785.0 floor (* 1000 (angle (make-rectangular 1 1))))
 (test 14142.0 floor (* 10000 (magnitude (make-rectangular 1 1))))
 (test-on-reals magnitude (lambda (x) x))

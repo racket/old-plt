@@ -30,7 +30,7 @@ MrEd Engine:
 
 * doc: [Mr] clarify "owning the caret" with respect to ownership by the parent, etc.
 
-* Motif: get-file dialog modality is wrong for eventspaces
+* Motif: built-in get-file dialog modality is wrong for eventspaces
 
 * Windows and MacOS: "primitive" dialogs don't get closed by
    custodian-shutdown-all

@@ -105,7 +105,7 @@
                                           latest-minor-version)))
                           "documentation")
                       `(span ((class "noDocs")) "[no documentation available]"))
-                 'nbsp 'sdot 'nbsp
+                 nbsp "-" nbsp
                  "latest version: " ,(format "~a.~a" 
                                              (number->string latest-major-version)
                                              (number->string latest-minor-version))

@@ -142,7 +142,7 @@ short wxMenuItem::GetMacItemNumber(void) // mac platform only
   short result = 0;
   if (parentMenu)
     {
-      long memberIndex = parentMenu->menuItems.MemberIndex(this);
+      long memberIndex = parentMenu->menuItems->MemberIndex(this);
       if (memberIndex >= 0) result = memberIndex + 1; // mac counts from one
     }
 

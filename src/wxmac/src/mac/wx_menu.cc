@@ -173,7 +173,7 @@ wxMenu::~wxMenu(void)
   ::DisposeMenu(cMacMenu); // does not dispose of submenus
 
   // if (title) delete[] title; // WCH: ~wxbMenu should do this - (cjc - it does)
-  wxNode* node = menuItems.First();
+  wxNode* node = menuItems->First();
   // mflatt: The menuItems list is not DeleteContents(TRUE).
   //         Also, we need to delete any submenus attached to this menu
   while (node) 
@@ -292,9 +292,9 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     offset = CountMenuItems(nmh) + 1;
     helpflg = 0;
   }
-  int cnt = menuItems.Number();
+  int cnt = menuItems->Number();
   // Create a new Mac Menu 
-  wxNode* node = menuItems.First();
+  wxNode* node = menuItems->First();
   for (i = 0; i < cnt; i++) {
     // Try to recreate from the wxMenuItem
     wxMenuItem* menuItem = (wxMenuItem*)node->Data(); 
@@ -622,7 +622,7 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
   }
   if (mbar && mbar->wxHelpHackMenu && mbar->iHelpMenuHackNum) {
     Str255 t = "\pAboutŠ";
-    wxNode *n = mbar->wxHelpHackMenu->menuItems.Nth(mbar->iHelpMenuHackNum - 1);
+    wxNode *n = mbar->wxHelpHackMenu->menuItems->Nth(mbar->iHelpMenuHackNum - 1);
     if (n) {
       wxMenuItem *i = (wxMenuItem *)n->Data();
       if (i) {
@@ -704,7 +704,7 @@ void wxMenu::AppendSeparator(void)
 
   item->itemId = -1;
   item->itemName = copystring("-");
-  menuItems.Append(item);
+  menuItems->Append(item);
   no_items ++;
 
   // menu item string can't be empty
@@ -724,7 +724,7 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   item->itemId = Id;
   item->itemName = macCopyString(Label);
   item->helpString = macCopyString(helpString);
-  menuItems.Append(item);
+  menuItems->Append(item);
   no_items ++;
 
   Str255 menusetup, menustr;
@@ -756,7 +756,7 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   item->itemName = macCopyString(Label);
   item->helpString = macCopyString(helpString);
 
-  menuItems.Append(item);
+  menuItems->Append(item);
   no_items++;
 
   Str255 pullrightSetup, pullrightLabel;
@@ -799,7 +799,7 @@ Bool wxMenu::Delete(wxMenu *menu, int Id, int delpos)
   if ((Id == -1) && (delpos == -1))
     return FALSE;
   
-  for (pos = 0, node = menuItems.First(); node; node = node->Next(), pos++) {
+  for (pos = 0, node = menuItems->First(); node; node = node->Next(), pos++) {
     item = (wxMenuItem *)node->Data();
     if ((menu && item->subMenu == menu) 
 	|| (!menu && (delpos == -1) && item->itemId == Id)
@@ -807,7 +807,7 @@ Bool wxMenu::Delete(wxMenu *menu, int Id, int delpos)
       if (item->subMenu)
 	item->subMenu->window_parent = NULL;
       ::DeleteMenuItem(cMacMenu, pos + 1);
-      menuItems.DeleteNode(node);
+      menuItems->DeleteNode(node);
       delete item;
       --no_items;
       CheckHelpHack();
@@ -957,7 +957,7 @@ short wxMenu::GetMacMenuId(void) { return cMacMenuId; }
 wxMenu* wxMenu::wxMacFindSubmenu(int macMenuId)
 {
   wxMenu* result = NULL;
-  wxNode* node = menuItems.First();
+  wxNode* node = menuItems->First();
   while (node && !result)
     {
       wxMenuItem* menuItem = (wxMenuItem*)node->Data();
@@ -981,7 +981,7 @@ wxMenu* wxMenu::wxMacFindSubmenu(int macMenuId)
 //-----------------------------------------------------------------------------
 void wxMenu::wxMacInsertSubmenu(void)
 {
-  wxNode* node = menuItems.First();
+  wxNode* node = menuItems->First();
   while (node)
     {
       wxMenuItem* menuItem = (wxMenuItem*)node->Data();

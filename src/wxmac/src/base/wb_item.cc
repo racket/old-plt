@@ -344,6 +344,7 @@ wxbMenu::wxbMenu (char *Title, wxFunction func)
     title = copystring (Title);
   else
     title = NULL;
+  menuItems = new wxList();
 }
 
 // The wxWindow destructor will take care of deleting the submenus.

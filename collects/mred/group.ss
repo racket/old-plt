@@ -48,25 +48,28 @@
 	    [insert-frame
 	     (lambda (f)
 	       (set! frame-counter (add1 frame-counter))
-	       (set! frames 
-		     (append frames 
-			     (list 
-			      (make-frame f frame-counter))))
+	       (let ([new-frames (append frames 
+					 (list 
+					  (make-frame f frame-counter)))])
+		 (set! frames new-frames))
 	       (todo-to-new-frames f))]
 	    [remove-frame
 	     (opt-lambda (f [reason "Close"])
 	       (when (eq? f active-frame)
 		 (set! active-frame #f))
-	       (catch exit
-		 (let ([new-frames
-			(mzlib:function:remove
-			 f frames
-			 (lambda (f fr) (eq? f (frame-frame fr))))])
-		   (if (or (not (null? new-frames))
-			   (empty-callback))
-		       (begin (set! frames new-frames)
-			      #t)
-		       #f))))]
+	       (let ([new-frames
+		      (mzlib:function:remove
+		       f frames
+		       (lambda (f fr) (eq? f (frame-frame fr))))])
+		 (let ([allow-changes
+			(lambda ()
+			  (set! frames new-frames)
+			  #t)])
+		   (if (null? new-frames)
+		       (if (empty-callback)
+			   (allow-changes)
+			   #f)
+		       (allow-changes)))))]
 	    [clear
 	     (lambda ()
 	       (and (empty-callback)

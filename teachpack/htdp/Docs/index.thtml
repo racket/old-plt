@@ -1,4 +1,4 @@
-#define LIBNAME Teachpacks
+#define LIBNAME Teachpack for How to Design Programs
 #include head.tinc
 <UL>
 <LI> <A HREF="master.html">Mastermind</A>
@@ -13,5 +13,8 @@
 <LI> <A HREF="dir.html">Directories</A>
 <LI> <A HREF="rectangle.html">Rectangles</A>
 <LI> <A HREF="graphing.html">Graphing Functions</A>
+<LI> <A HREF="lkup-gui.html">Lkup GUI</A>
+<LI> <A HREF="arrows-gui.html">Arrows GUI</A>
+<LI> <A HREF="guess-gui.html">Guess GUI</A>
 </UL>
 #include foot.tinc

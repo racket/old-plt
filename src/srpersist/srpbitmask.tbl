@@ -452,33 +452,35 @@ SRP_NAMED_CONSTANT timedateDiffIntervalsBits[] = {
   { "sql-fn-tsi-year", SQL_FN_TSI_YEAR },
 };
 
-#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT stringFunctionsBits[] = {
-  { "sql-fn-str-ascii", SQL_FN_STR_ASCII },
+#if (ODBCVER >= 0x0300)
   { "sql-fn-str-bit-length", SQL_FN_STR_BIT_LENGTH },
-  { "sql-fn-str-char", SQL_FN_STR_CHAR },
   { "sql-fn-str-char-length", SQL_FN_STR_CHAR_LENGTH },
   { "sql-fn-str-character-length", SQL_FN_STR_CHARACTER_LENGTH },
-  { "sql-fn-str-concat", SQL_FN_STR_CONCAT },
+  { "sql-fn-str-octet-length", SQL_FN_STR_OCTET_LENGTH },
+  { "sql-fn-str-position", SQL_FN_STR_POSITION },
+#endif
+#if (ODBCVER >= 0x0200)
   { "sql-fn-str-difference", SQL_FN_STR_DIFFERENCE },
+  { "sql-fn-str-soundex", SQL_FN_STR_SOUNDEX },
+  { "sql-fn-str-space", SQL_FN_STR_SPACE },
+#endif
+  { "sql-fn-str-ascii", SQL_FN_STR_ASCII },
+  { "sql-fn-str-char", SQL_FN_STR_CHAR },
+  { "sql-fn-str-concat", SQL_FN_STR_CONCAT },
   { "sql-fn-str-insert", SQL_FN_STR_INSERT },
   { "sql-fn-str-lcase", SQL_FN_STR_LCASE },
   { "sql-fn-str-left", SQL_FN_STR_LEFT },
   { "sql-fn-str-length", SQL_FN_STR_LENGTH },
   { "sql-fn-str-locate", SQL_FN_STR_LOCATE },
   { "sql-fn-str-ltrim", SQL_FN_STR_LTRIM },
-  { "sql-fn-str-octet-length", SQL_FN_STR_OCTET_LENGTH },
-  { "sql-fn-str-position", SQL_FN_STR_POSITION },
   { "sql-fn-str-repeat", SQL_FN_STR_REPEAT },
   { "sql-fn-str-replace", SQL_FN_STR_REPLACE },
   { "sql-fn-str-right", SQL_FN_STR_RIGHT },
   { "sql-fn-str-rtrim", SQL_FN_STR_RTRIM },
-  { "sql-fn-str-soundex", SQL_FN_STR_SOUNDEX },
-  { "sql-fn-str-space", SQL_FN_STR_SPACE },
   { "sql-fn-str-substring", SQL_FN_STR_SUBSTRING },
   { "sql-fn-str-ucase", SQL_FN_STR_UCASE },
 };
-#endif
 
 #if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT sql92DatetimeFunctionsBits[] = {
@@ -776,7 +778,6 @@ SRP_NAMED_BITS_DICT bitMaskTable[] = {
   { "sql-sql92-predicates",sql92PredicatesBits,sizeray(sql92PredicatesBits) },
   { "sql-sql92-relational-join-operators",sql92RelationalJoinOpsBits,sizeray(sql92RelationalJoinOpsBits) },
   { "sql-timedate-functions",timedateFunctionsBits,sizeray(timedateFunctionsBits) },
-  { "sql-string-functions",stringFunctionsBits,sizeray(stringFunctionsBits) },
   { "sql-aggregate-functions",aggregateFunctionsBits,sizeray(aggregateFunctionsBits) },
   { "sql-dynamic-cursor-attributes1",cursorAttributes1Bits,sizeray(cursorAttributes1Bits) },
   { "sql-dynamic-cursor-attributes2",cursorAttributes2Bits,sizeray(cursorAttributes2Bits) },
@@ -785,6 +786,7 @@ SRP_NAMED_BITS_DICT bitMaskTable[] = {
   { "sql-static-cursor-attributes1",cursorAttributes1Bits,sizeray(cursorAttributes1Bits) },
   { "sql-static-cursor-attributes2",cursorAttributes2Bits,sizeray(cursorAttributes2Bits) },
 #endif
+  { "sql-string-functions",stringFunctionsBits,sizeray(stringFunctionsBits) },
   { "sql-getdata-extensions",getdataExtensionsBits,sizeray(getdataExtensionsBits) },
   { "sql-bookmark-persistence",bookmarkPersistenceBits,sizeray(bookmarkPersistenceBits) },
   { "sql-scroll-options",scrollOptionsBits,sizeray(scrollOptionsBits) },
@@ -819,7 +821,7 @@ SRP_NAMED_BITS_DICT bitMaskTable[] = {
   { "sql-convert-integer",convertBits,sizeray(convertBits) },
   { "sql-convert-varbinary",convertBits,sizeray(convertBits) },
   { "sql-convert-varchar",convertBits,sizeray(convertBits) },
-  { "sql-convert-interval_year_month",convertBits,sizeray(convertBits) },
+  { "sql-convert-interval-year-month",convertBits,sizeray(convertBits) },
   { "sql-convert-interval-day-time",convertBits,sizeray(convertBits) },
   { "sql-owner-usage",ownerUsageBits,sizeray(ownerUsageBits) },
   { "sql-qualifier-usage",qualifierUsageBits,sizeray(qualifierUsageBits) },

@@ -7,7 +7,7 @@ static SRP_PRIM srpPrims[] = {
 #if ODBCVER >= 0x0300
   { srp_read_op_parms,"read-op-parms",1,1 },    
 #endif
-  { srp_make_length,"make-length",0,0 },  
+  { srp_make_length,"make-length",0,1 },  
   { srp_read_length,"read-length",1,1 },  
   { srp_make_indicator,"make-indicator",0,0 },  
   { srp_read_indicator,"read-indicator",1,1 },  
@@ -16,6 +16,7 @@ static SRP_PRIM srpPrims[] = {
   { srp_make_buffer,"make-buffer",2,2 },        
   { srp_read_buffer,"read-buffer",1,1 },        
   { srp_write_buffer,"write-buffer",2,2 },      
+  { srp_read_boxed_uint,"read-boxed-uint",1,1 },      
 	
   // from SQL.H
 

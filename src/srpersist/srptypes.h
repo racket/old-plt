@@ -63,7 +63,7 @@ typedef struct _sql_buffer_ {
   Scheme_Type type;
   void *storage;
   SQLSMALLINT CDataType;
-  long numElts;
+  unsigned long numElts;
   int eltSize;
 } SRP_SQL_BUFFER;
 

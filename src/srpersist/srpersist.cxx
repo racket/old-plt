@@ -369,12 +369,25 @@ char *rowStatusToString(SQLUSMALLINT rowStatus) {
 // utilities
 
 Scheme_Object *srp_make_length(int argc,Scheme_Object **argv) {
+  SQLINTEGER len;
   SRP_SQL_LENGTH *retval;
 
-  retval = (SRP_SQL_LENGTH *)scheme_malloc_eternal(sizeof(SRP_SQL_LENGTH));
+  if (argc == 1) {
+    if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE) {
+      scheme_wrong_type("make-length","int",0,argc,argv);
+    }
+    else if (scheme_get_int_val(argv[0],&len) == 0) {
+      scheme_signal_error("Too-large length");
+    }
+  }
+  else {
+    len = 0;
+  }
+
+  retval = (SRP_SQL_LENGTH *)scheme_malloc_uncollectable(sizeof(SRP_SQL_LENGTH));
 
   retval->type = sql_length_type; 
-  retval->value = 0;
+  retval->value = len;
 
   return (Scheme_Object *)retval;
 }
@@ -382,7 +395,7 @@ Scheme_Object *srp_make_length(int argc,Scheme_Object **argv) {
 Scheme_Object *srp_make_indicator(int argc,Scheme_Object **argv) {
   SRP_SQL_INDICATOR *retval;
 
-  retval = (SRP_SQL_INDICATOR *)scheme_malloc_eternal(sizeof(SRP_SQL_INDICATOR));
+  retval = (SRP_SQL_INDICATOR *)scheme_malloc_uncollectable(sizeof(SRP_SQL_INDICATOR));
 
   retval->type = sql_indicator_type; 
   retval->value = 0;
@@ -397,7 +410,7 @@ Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
   Scheme_Object *retval,*symbol;
   
   if (SQL_OP_PARMSP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-read-op-parms","sql-op-parms",0,argc,argv);
+    scheme_wrong_type("read-op-parms","sql-op-parms",0,argc,argv);
   }
 
   values = SQL_OP_PARMS_VAL(argv[0]);
@@ -417,7 +430,7 @@ Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
       symbol = scheme_intern_symbol("sql-param-ignore");
       break;
     default :
-      scheme_signal_error("sql-read-op-parms: unknown operation parameter: %X",
+      scheme_signal_error("read-op-parms: unknown operation parameter: %X",
 			  (unsigned int)(values[i]));
     }
     retval = scheme_make_pair(symbol,retval);
@@ -427,6 +440,14 @@ Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
 
 }
 #endif
+
+Scheme_Object *srp_read_boxed_uint(int argc,Scheme_Object **argv) {
+  if (SQL_BOXED_UINTP(argv[0]) == FALSE) {
+    scheme_wrong_type("read-boxed-uint","sql-boxed-uint",0,argc,argv);
+  }
+
+  return scheme_make_integer_value_from_unsigned(*(SQL_BOXED_UINT_VAL(argv[0])));
+}
 
 Scheme_Object *srp_read_indicator(int argc,Scheme_Object **argv) {
   SQLINTEGER value;
@@ -748,7 +769,7 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
   SRP_SQL_BUFFER *retval;
   char *typeName;
   SRP_NAMED_SMALL_CONSTANT *p;
-  long numElts;
+  unsigned long numElts;
 
   if (SCHEME_SYMBOLP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-make-buffer","symbol",0,argc,argv);
@@ -766,11 +787,11 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
     scheme_signal_error("sql-make-buffer: invalid C type: %s",typeName);
   }
 
-  if (scheme_get_int_val(argv[1],&numElts) == 0) {
+  if (scheme_get_unsigned_int_val(argv[1],&numElts) == 0) {
     scheme_signal_error("sql-make-buffer: too many elements requested");
   }
 
-  retval = (SRP_SQL_BUFFER *)scheme_malloc_eternal(sizeof(SRP_SQL_BUFFER));
+  retval = (SRP_SQL_BUFFER *)scheme_malloc_uncollectable(sizeof(SRP_SQL_BUFFER));
   retval->type = sql_buffer_type;
 
   retval->numElts = numElts;
@@ -783,7 +804,7 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
   // but still bound to OBDC columns
   // so make actual storage uncollectable
 
-  retval->storage = scheme_malloc_eternal(retval->numElts * sizeof(retval->eltSize));
+  retval->storage = scheme_malloc_uncollectable(retval->numElts * sizeof(retval->eltSize));
 
   // need to be able to recover <sql-buffer> from storage address
   // for use by SQLParamData()
@@ -3061,7 +3082,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pIndicator = (SRP_SQL_INDICATOR *)scheme_malloc_eternal(sizeof(SRP_SQL_INDICATOR));
+    pIndicator = (SRP_SQL_INDICATOR *)scheme_malloc_uncollectable(sizeof(SRP_SQL_INDICATOR));
     pIndicator->type = sql_indicator_type;
     pIndicator->value = *pIntVal;
 
@@ -3076,7 +3097,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pArrayStatus = (SRP_SQL_ARRAY_STATUS *)scheme_malloc_eternal(sizeof(SRP_SQL_ARRAY_STATUS));
+    pArrayStatus = (SRP_SQL_ARRAY_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ARRAY_STATUS));
     pArrayStatus->type = sql_array_status_type;
     pArrayStatus->hdesc = descHandle;
     pArrayStatus->descType = SQL_HDESC_DESCTYPE(argv[0]);
@@ -3093,7 +3114,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pBindingOffset = (SRP_SQL_BINDING_OFFSET *)scheme_malloc_eternal(sizeof(SRP_SQL_BINDING_OFFSET));
+    pBindingOffset = (SRP_SQL_BINDING_OFFSET *)scheme_malloc_uncollectable(sizeof(SRP_SQL_BINDING_OFFSET));
     pBindingOffset->type = sql_binding_offset_type;
     pBindingOffset->val = pIntVal;
 
@@ -3108,7 +3129,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pRowsProcessed = (SRP_SQL_ROWS_PROCESSED *)scheme_malloc_eternal(sizeof(SRP_SQL_ROWS_PROCESSED));
+    pRowsProcessed = (SRP_SQL_ROWS_PROCESSED *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROWS_PROCESSED));
     pRowsProcessed->type = sql_rows_processed_type;
     pRowsProcessed->val = pUintVal;
 
@@ -3123,7 +3144,7 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pOctetLength = (SRP_SQL_OCTET_LENGTH *)scheme_malloc_eternal(sizeof(SRP_SQL_OCTET_LENGTH));
+    pOctetLength = (SRP_SQL_OCTET_LENGTH *)scheme_malloc_uncollectable(sizeof(SRP_SQL_OCTET_LENGTH));
     pOctetLength->type = sql_octet_length_type;
     pOctetLength->val = pIntVal;
 
@@ -3552,9 +3573,6 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   Scheme_Object *retval;
   RETURN_CODE retcode;
 
-
-
-
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("get-info","sql-hdbc",0,argc,argv);
   }
@@ -3848,7 +3866,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     // need to keep rowStatus around until cursor closed
     // conservatively, make it uncollectable
 
-    rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_eternal(sizeof(SRP_SQL_ROW_STATUS));
+    rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROW_STATUS));
     rowStatus->type = sql_row_status_type;
     rowStatus->numRows = 0;
     rowStatus->values = smallnumpointer;
@@ -5928,10 +5946,10 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   // need to keep rowStatus around until cursor closed
   // conservatively, make it uncollectable
 
-  rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_eternal(sizeof(SRP_SQL_ROW_STATUS));
+  rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROW_STATUS));
   rowStatus->type = sql_row_status_type;
   rowStatus->numRows = 0;
-  rowStatus->values = (SQLUSMALLINT *)scheme_malloc_eternal(maxRows * sizeof(SQLUSMALLINT));
+  rowStatus->values = (SQLUSMALLINT *)scheme_malloc_uncollectable(maxRows * sizeof(SQLUSMALLINT));
 
   sr = SQLExtendedFetch(stmtHandle,fetchType,rowNumber,
 			&rowStatus->numRows,rowStatus->values);

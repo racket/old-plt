@@ -8,7 +8,8 @@
   
   (require (lib "yacc.ss" "parser-tools")
            (lib "lex.ss" "parser-tools")           
-           (lib "readerr.ss" "syntax"))
+           (lib "readerr.ss" "syntax")
+           (prefix class: (lib "class.ss")))
   
   ;(require (lib "build-grammar.ss" "tester"))
   
@@ -112,6 +113,8 @@
       (TypeDeclaration
        [(ClassDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
+       [(CLASS_BOX) 
+        (car (package-defs ((class:send $1 read-one-special  0 #f #f #f #f) 'beginner)))]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
       

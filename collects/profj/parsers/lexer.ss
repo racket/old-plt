@@ -13,7 +13,8 @@
   (provide (all-defined-except get-token-name))
   (define-struct test-case (test))
   (define-struct interact-case (box))
-  ;(provide (struct test-case (test)) (struct interact-case (box)))
+  (define-struct class-case (box))
+  #;(provide (struct test-case (test)) (struct interact-case (box) (struct class-case (box))))
   
   (define-syntax define-open-tokens
     (syntax-rules ()
@@ -54,7 +55,7 @@
                 IDENTIFIER STRING_ERROR NUMBER_ERROR HEX_LIT OCT_LIT HEXL_LIT OCTL_LIT))
   
   (define-open-tokens define-tokens special-toks special-tokens
-    (INTERACTIONS_BOX TEST_SUITE OTHER_SPECIAL))
+    (CLASS_BOX INTERACTIONS_BOX TEST_SUITE OTHER_SPECIAL))
 
   (define (trim-string s f l)
     (substring s f (- (string-length s) l)))
@@ -293,6 +294,7 @@
 
      ((special)
       (cond
+        ((class-case? special) (token-CLASS_BOX special))
         ((interact-case? special) (token-INTERACTIONS_BOX special))
         ((test-case? special) (token-TEST_SUITE special))
         (else (token-OTHER_SPECIAL (list special start-pos end-pos)))))

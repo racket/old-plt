@@ -777,6 +777,7 @@
         (cond
           ((equal? "test-case-box%" name) (values (make-test-case s) 1))
           ((equal? "java-interactions-box%" name) (values (make-interact-case s) 1))
+          ((equal? "java-class-box%" name) (values (make-class-case s) 1))
           (delay? (values (lambda () (send s read-one-special 0 #f #f #f #f)) 1))
           (else (values s 1))))))
   

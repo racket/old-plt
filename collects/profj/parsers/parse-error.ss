@@ -185,6 +185,7 @@
                       (cadr (token-value tok)) (caddr (token-value tok))))
         ((eq? (get-token-name tok) 'TEST_SUITE) (format "Test Suite Test"))
         ((eq? (get-token-name tok) 'INTERACTIONS_BOX) (format "Java Interactions Box"))
+        ((eq? (get-token-name tok) 'CLASS_BOX) (format "Java Class Box"))
         (else (get-token-name tok)))))
 
   ;parse-package: token token symbol (-> token) -> void
@@ -269,7 +270,7 @@
                  (format "~a is close to 'import' but is either miscapitalized or mispelled" (token-value tok))
                  srt end)
                 (parse-definition pre cur-tok 'start getter)))
-           ((INTERACTIONS_BOX TEST_SUITE) (parse-definition cur-tok (getter) 'start getter))
+           ((INTERACTIONS_BOX TEST_SUITE CLASS_BOX) (parse-definition cur-tok (getter) 'start getter))
            (else
             (parse-definition pre cur-tok 'start getter))))
         ((semi-colon)
@@ -323,7 +324,7 @@
             (if (advanced?)
                 (parse-definition cur-tok (getter) 'start getter)
                 (parse-error "Expected class definition, found 'public' which may not be written here" srt end)))
-           ((INTERACTIONS_BOX TEST_SUITE) (parse-definition cur-tok (getter) 'start getter))
+           ((INTERACTIONS_BOX TEST_SUITE CLASS_BOX) (parse-definition cur-tok (getter) 'start getter))
            ((import)
             (parse-error "Expected class definition, found 'import', which may only appear at the top of a file" srt end))
            ((package)

@@ -34,11 +34,11 @@
 		    "~a: ~a"
 		    lst-len
 		    (apply string-append
-			   (cons (format "~a" (car lst))
+			   (cons (format "~e" (car lst))
 				 (let loop ([rst (cdr lst)])
 				   (cond
 				    [(null? rst) null]
-				    [else (cons (format " ~a" (car rst))
+				    [else (cons (format " ~e" (car rst))
 						(loop (cdr rst)))]))))))))))
 		    
 

@@ -96,7 +96,6 @@
            "heap.ss")
   
   (require-for-syntax (lib "list.ss"))
-  
 
   (define frtime-version "0.2b -- Tue Jul 13 13:39:45 2004")
   (define frtime-inspector (make-inspector))
@@ -114,15 +113,17 @@
                   signal-thunk
                   signal-depth
                   signal-continuation-marks
+                  signal-guards
                   set-signal-value!
                   set-signal-dependents!
                   set-signal-stale?!
                   set-signal-thunk!
                   set-signal-depth!
-                  set-signal-continuation-marks!)
+                  set-signal-continuation-marks!
+                  set-signal-guards)
     (let-values ([(desc make-signal signal? acc mut)
                   (make-struct-type
-                   'signal #f 6 0 #f null frtime-inspector
+                   'signal #f 7 0 #f null frtime-inspector
                    (lambda (fn . args)
                      (unregister #f fn) ; clear out stale dependencies from previous apps
                      (let* ([cur-fn (value-now fn)]
@@ -142,7 +143,7 @@
                        ; may need to change for multiple values
                        (set-signal-value! ret (thunk))
                        ret)))]
-                 [(field-name-symbols) (list 'value 'dependents 'stale? 'thunk 'depth 'continuation-marks)])
+                 [(field-name-symbols) (list 'value 'dependents 'stale? 'thunk 'depth 'continuation-marks 'guards)])
       (apply values
              desc
              make-signal
@@ -152,6 +153,12 @@
                           (lambda (i) (make-struct-field-accessor acc i (list-ref field-name-symbols i))))
               (build-list (length field-name-symbols)
                           (lambda (i) (make-struct-field-mutator mut i (list-ref field-name-symbols i))))))))
+  
+  (define-struct guard (signal trans))
+  (define-struct non-scheduled (signal))
+  
+  (define current-guards
+    (make-parameter empty))
   
   (define-struct multiple (values))
   
@@ -177,18 +184,24 @@
     (and (signal? v) (not (event-cons? (signal-value v)))))
   
   (define (safe-signal-depth v)
-    (if (signal? v)
-        (signal-depth v)
-        0))
+    (cond
+      [(signal? v) (signal-depth v)]
+      [(non-scheduled? v) (signal-depth (non-scheduled-signal v))]
+      [0]))
   
   (define (proc->signal thunk . producers)
-    (let ([sig (make-signal
-                undefined empty #f thunk
-                (add1 (apply max 0 (map safe-signal-depth
-                                        producers)))
-                (current-continuation-marks))])
+    (let* ([guard-sigs (map guard-signal (current-guards))]
+           [all-dependees (append guard-sigs producers)]
+           [sig (make-signal
+                 undefined empty #f thunk
+                 (add1 (apply max 0 (map safe-signal-depth
+                                         all-dependees)))
+                 (current-continuation-marks)
+                 (current-guards))])
       (when (cons? producers)
         (register sig producers))
+      (when (cons? guard-sigs)
+        (register (make-non-scheduled sig) guard-sigs))
       (set-signal-value! sig (safe-eval (thunk)))
       sig))
   
@@ -208,11 +221,15 @@
     (let* ([cached-then-thunk (weakly-cache then-thunk)]
            [cached-else-thunk (weakly-cache else-thunk)]
            [cached-undef-thunk (weakly-cache undef-thunk)]
-           [if-fun (lambda (b)
-                     (cond
-                       [(undefined? b) (cached-undef-thunk)]
-                       [b (cached-then-thunk)]
-                       [else (cached-else-thunk)]))])
+           [if-fun (let ([true-guards (cons (make-guard test identity) (current-guards))]
+                         [false-guards (cons (make-guard test not) (current-guards))])
+                     (lambda (b)
+                       (cond
+                         [(undefined? b) (cached-undef-thunk)]
+                         [b (parameterize ([current-guards true-guards])
+                              (cached-then-thunk))]
+                         [else (parameterize ([current-guards false-guards])
+                                 (cached-else-thunk))])))])
       (switch
        ((changes test) . ==> .
                        if-fun)
@@ -284,12 +301,17 @@
       (if (memq sup mem)
           (send-event exceptions (list (make-exn:user "delay-less cycle in dataflow graph" (signal-continuation-marks sup))
                                        sup))
-          (when (<= (signal-depth inf)
-                    (signal-depth sup))
-            (set-signal-depth! inf (add1 (signal-depth sup)))
+          (when (<= (safe-signal-depth inf)
+                    (safe-signal-depth sup))
+            (set-signal-depth! inf (add1 (safe-signal-depth sup)))
             (for-each
              (lambda (dep) (help dep inf (cons sup mem)))
-             (map weak-box-value (filter weak-box-value (signal-dependents inf))))))))
+             (foldl (lambda (wb acc)
+                      (match (weak-box-value wb)
+                        [(and sig (? signal?)) (cons sig acc)]
+                        [(and (? non-scheduled?) (= non-scheduled-signal sig)) (cons sig acc)]
+                        [_ acc]))
+                    empty (signal-dependents inf)))))))
   
   (define (register inf sup)
     (if (eq? (self) man)
@@ -304,7 +326,7 @@
           [_ (void)])
         (begin
           (! man (make-reg inf sup (self)))
-          (receive [(? (lambda (v) (eq? v man))) (void)])))
+          (receive [(? man?) (void)])))
     inf)
     
   (define (unregister inf sup)
@@ -721,13 +743,16 @@
     (match b
       [(and (? signal?)
             (= signal-value value)
-            (= signal-thunk thunk))
+            (= signal-thunk thunk)
+            (= signal-guards guards))
        (set-signal-stale?! b #f)
-       (let ([new-value (thunk)])
-         ; consider modifying this test in order to support, e.g., mutable structs
-         (when (or (vector? new-value) (not (equal? value new-value)))
-           (set-signal-value! b new-value)
-           (propagate b)))]
+       (when (andmap (lambda (g) ((guard-trans g) (value-now (guard-signal g)))) guards)
+         (let ([new-value (parameterize ([current-guards guards])
+                            (thunk))])
+           ; consider modifying this test in order to support, e.g., mutable structs
+           (when (or (vector? new-value) (not (equal? value new-value)))
+             (set-signal-value! b new-value)
+             (propagate b))))]
       [_ (void)]))
   
   (define (update1 b a)
@@ -792,10 +817,10 @@
        (let outer ()
          (with-handlers ([not-break-exn?
                           (lambda (exn)
-                            (fprintf (current-error-port) "*~n")
+                            (fprintf (current-error-port) "*~n~a~n" (exn-message exn))
                             (when cur-beh
                               ;(when (empty? (continuation-mark-set->list (exn-continuation-marks exn) 'frtime))
-                                (set-exn-continuation-marks! exn (signal-continuation-marks cur-beh))
+                                ;(set-exn-continuation-marks! exn (signal-continuation-marks cur-beh))
                               (iq-enqueue (list exceptions (list exn cur-beh)))
                               (when (behavior? cur-beh)
                                 (undef cur-beh)))

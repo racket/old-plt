@@ -48,6 +48,7 @@
 #define GEN0_GROW_FACTOR 2
 #define GEN0_GROW_ADDITION (1 * 1024 * 1024)
 #define MAX_GEN0_SIZE (128 * 1024 * 1024)
+#define GENERATIONS 2
 
 /* This is the log base 2 of the size of one word, given in bytes */
 #define LOG_WORD_SIZE 2
@@ -2182,10 +2183,11 @@ static void protect_older_pages(void)
 static void garbage_collect(int force_full)
 {
   static unsigned long number = 0;
+  static unsigned int since_last_full = 0;
   static unsigned int running_finalizers = 0;
 
-  gc_full = force_full || !generations_available || ((number % 20) == 0);
-  number++;
+  gc_full = force_full || !generations_available || (since_last_full = 15);
+  number++; if(gc_full) since_last_full = 0; else since_last_full++;
   INIT_DEBUG_FILE(); DUMP_HEAP();
   
   if(GC_collect_start_callback)

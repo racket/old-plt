@@ -637,7 +637,14 @@ static void *mark(void *p)
       
     diff <<= 2;
 
-    fprintf(stderr, "Middle!: %lx d: %ld\n", p, diff1 - diff);
+    if (((diff + (char *)GC_alloc_space) > tagged_high)
+	&& ((*(long *)(diff + (char *)GC_alloc_space - 4) & 0x20000000)
+	    || (!(*(long *)(diff + (char *)GC_alloc_space - 4))
+		&& (*(long **)(diff + (char *)GC_alloc_space))[-1] & 0x20000000))) {
+      /* Middle is ok. */
+    } else {
+      fprintf(stderr, "Middle!: %lx d: %ld\n", p, diff1 - diff);
+    }
 
     return (void *)((char *)mark(diff + (char *)GC_alloc_space) + (diff1 - diff));
   } else {
@@ -694,7 +701,7 @@ static void *mark(void *p)
       long size;
 	
       p -= 4;
-      size = ((*(long *)p) & 0x3FFFFFFF);
+      size = ((*(long *)p) & 0x1FFFFFFF);
 	
       if (!size)
 	return ((void **)p)[1];
@@ -963,7 +970,7 @@ void gcollect(int needsize)
     p++;
 #endif
 
-    size = (*p & 0x3FFFFFFF) + 1;
+    size = (*p & 0x1FFFFFFF) + 1;
 
     bitmap[diff >> 3] |= (1 << (diff & 0x7));
 
@@ -1149,7 +1156,7 @@ void gcollect(int needsize)
 	  mp++;
 #endif
 	  v = *(long *)mp;
-	  size = (v & 0x3FFFFFFF);
+	  size = (v & 0x1FFFFFFF);
 	  
 	  if (v & 0xC0000000) {
 #if KEEP_FROM_PTR
@@ -1482,7 +1489,7 @@ void *GC_resolve(void *p)
       long size;
       
       p -= 4;
-      size = ((*(long *)p) & 0x3FFFFFFF);
+      size = ((*(long *)p) & 0x1FFFFFFF);
       
       if (!size)
 	return ((void **)p)[1];
@@ -1683,6 +1690,12 @@ void *GC_malloc_atomic(size_t size_in_bytes)
 void *GC_malloc_atomic_uncollectable(size_t size_in_bytes)
 {
   return malloc(size_in_bytes);
+}
+
+/* Array of pointers: */
+void *GC_malloc_middleable(size_t size_in_bytes)
+{
+  return malloc_untagged(size_in_bytes, 0xA0000000);
 }
 
 void GC_free(void *s) /* noop */

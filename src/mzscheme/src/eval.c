@@ -2004,7 +2004,7 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 
   p->runstack_saved = saved;
   p->runstack_size = size;
-  MZ_RUNSTACK_START = MALLOC_N(Scheme_Object*, size);
+  MZ_RUNSTACK_START = scheme_malloc_middleable(sizeof(Scheme_Object*) * size);
   MZ_RUNSTACK = MZ_RUNSTACK_START + size;
   
   v = k();
@@ -2555,15 +2555,24 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       case scheme_application_type:
 	{
 	  Scheme_App_Rec *app;
-	  Scheme_Object **args, *tmpv, **randsp, **stack;
-	  char *evals;
+	  Scheme_Object *tmpv, **randsp, **stack;
 	  int k;
+	  int d_evals;
+#ifdef MZ_PRECISE_GC
+# define GET_FIRST_EVAL ((char *)app)[d_evals]
+#else
+	  char *evals;	  
+	  Scheme_Object **args;
+# define GET_FIRST_EVAL evals[0]
+#endif
 
 	  app = (Scheme_App_Rec *)obj;
 	  num_rands = app->num_args;
 	  
-	  evals = ((char *)obj) + sizeof(Scheme_App_Rec)
-	    + (num_rands * sizeof(Scheme_Object *));
+	  d_evals = sizeof(Scheme_App_Rec) + (num_rands * sizeof(Scheme_Object *));
+#ifndef MZ_PRECISE_GC
+	  evals = ((char *)obj) + d_evals;
+#endif
 
 	  obj = app->args[0];
 	  
@@ -2572,7 +2581,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  UPDATE_THREAD_RSPTR();
 
 	  /* Inline local & global variable lookups for speed */
-	  switch (evals[0]) {
+	  switch (GET_FIRST_EVAL) {
 	  case SCHEME_EVAL_CONSTANT:
 	    break;
 	  case SCHEME_EVAL_GLOBAL:
@@ -2598,15 +2607,17 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	
 	    /* Inline local & global variable lookups for speed */
 #ifdef MZ_PRECISE_GC
-# define GET_NEXT_EVAL evals[evalpos++]	    
+# define GET_NEXT_EVAL ((char *)app)[d_evals + evalpos++]	    
+# define GET_NEXT_ARG app->args[evalpos]
 #else
 	    evals++;
-# define GET_NEXT_EVAL *(evals++)
-#endif
 	    args = app->args + 1;
+# define GET_NEXT_EVAL *(evals++)
+# define GET_NEXT_ARG *(args++)
+#endif
 	    randsp = rands;
 	    for (k = num_rands; k--; ) {
-	      v = *(args++);
+	      v = GET_NEXT_ARG;
 	      switch (GET_NEXT_EVAL) {
 	      case SCHEME_EVAL_CONSTANT:
 		*(randsp++) = v;
@@ -2639,18 +2650,17 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       case scheme_sequence_type:
 	{
-	  Scheme_Object **array;
+	  int cnt;
 	  int i;
 	  
-	  i = ((Scheme_Sequence *)obj)->count;
-	  array = ((Scheme_Sequence *)obj)->array;
+	  cnt = ((Scheme_Sequence *)obj)->count - 1;
 	  
 	  UPDATE_THREAD_RSPTR();
-	  while (--i) {
-	    (void)_scheme_eval_compiled_expr_multi_wp(*(array++), p);
+	  for (i = 0; i < cnt; i++) {
+	    (void)_scheme_eval_compiled_expr_multi_wp(((Scheme_Sequence *)obj)->array[i], p);
 	  }
 
-	  obj = *array;
+	  obj = ((Scheme_Sequence *)obj)->array[cnt];
 	  goto eval_top;
 	}
       case scheme_branch_type:
@@ -2704,6 +2714,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 					"lexical binding");
 	      return NULL;
 	    }
+
+	    /* Precise GC: values++ is ok because we exit the block
+	       before any GC can happen. */
 
 	    values = p->ku.multiple.array;
 #ifdef AGRESSIVE_ZERO_FOR_GC

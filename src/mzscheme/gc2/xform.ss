@@ -27,6 +27,7 @@
 ;;   mzscheme -r xform.ss [--notes] --palm <cpp> <src> <dest> <mapdest>
 
 (define show-info? #f)
+(define check-arith? #t)
 
 (define palm? #f)
 (define pgc? #t)
@@ -247,6 +248,8 @@
 (define CURRENT_NEW_THIS (string->symbol "CURRENT_NEW_THIS"))
 (define RESTORE_CURRENT_NEW_VAR_STACK (string->symbol "RESTORE_CURRENT_NEW_VAR_STACK"))
 (define XFORM_RESET_VAR_STACK (string->symbol "XFORM_RESET_VAR_STACK"))
+(define END_XFORM_ARITH (string->symbol "END_XFORM_ARITH"))
+(define START_XFORM_ARITH (string->symbol "START_XFORM_ARITH"))
 
 (define _OS_CALL (string->symbol "_OS_CALL"))
 (define _OS_CALL_WITH_SELECTOR (string->symbol "_OS_CALL_WITH_SELECTOR"))
@@ -507,6 +510,13 @@
    [skipping?
     e]
 
+   [(end-arith? e)
+    (set! check-arith? #f)
+    null]
+   [(start-arith? e)
+    (set! check-arith? #t)
+    null]
+
    [(access-modifier? e)
     ;; public, private, etc.
     (list* (car e) (cadr e) (top-level (cddr e) where))]
@@ -599,6 +609,14 @@
 (define (end-skip? e)
   (and (pair? e)
        (eq? END_XFORM_SKIP (tok-n (car e)))))
+
+(define (start-arith? e)
+  (and (pair? e)
+       (eq? START_XFORM_ARITH (tok-n (car e)))))
+
+(define (end-arith? e)
+  (and (pair? e)
+       (eq? END_XFORM_ARITH (tok-n (car e)))))
 
 (define (access-modifier? e)
   (and (memq (tok-n (car e)) '(public private protected))
@@ -1575,7 +1593,7 @@
 								       vars
 								       c++-class
 								       live-vars
-								       #f))])
+								       #f #f))])
 			      (values (cons e rest) live-vars))]))])
 	    ;; Collect live vars and look for function calls in decl section.
 	    (let ([live-vars
@@ -1590,7 +1608,7 @@
 					     ;; We're not really interested in the conversion.
 					     ;; We just want to get live vars and
 					     ;; complain about function calls:
-					     (convert-function-calls (car el) extra-vars c++-class live-vars #t)])
+					     (convert-function-calls (car el) extra-vars c++-class live-vars #t #f)])
 				 (dloop (cdr el) live-vars))))))])
 	      ;; Calculate vars to push in this block
 	      (let ([newly-pushed (filter (lambda (x)
@@ -1949,7 +1967,7 @@
 	     live-vars))]
    [else live-vars]))
 
-(define (convert-function-calls e vars c++-class live-vars complain-not-in)
+(define (convert-function-calls e vars c++-class live-vars complain-not-in memcpy?)
   ;; e is a single statement
   ;; Reverse to calculate live vars as we go.
   ;; Also, it's easier to look for parens and then inspect preceeding
@@ -1966,7 +1984,7 @@
 	 (lambda ()
 	   ;; It's a cast:
 	   (let-values ([(v live-vars)
-			 (convert-paren-interior (car e-) vars c++-class live-vars complain-not-in)])
+			 (convert-paren-interior (car e-) vars c++-class live-vars complain-not-in #f)])
 	     (loop (cddr e-)
 		   (list* (cadr e-) v result)
 		   live-vars)))
@@ -2011,6 +2029,10 @@
 			    ;; List newly-created vars (in order) in new-vars.
 			    ;; Make sure each setup ends with a comma.
 			    (lift-out-calls args live-vars c++-class)]
+			   [(sub-memcpy?)
+			    ;; memcpy, etc. call?
+			    (and (pair? (cdr e-))
+				 (memq (tok-n (cadr e-)) non-gcing-functions))]
 			   [(args live-vars)
 			    (convert-paren-interior args vars 
 						    c++-class
@@ -2022,9 +2044,10 @@
 									    (cdr x))
 									  new-vars))
 							     (live-var-info-vars live-vars)))
-						    ok-calls)]
+						    ok-calls
+						    sub-memcpy?)]
 			   [(func live-vars)
-			    (convert-function-calls (reverse func) vars c++-class live-vars #t)]
+			    (convert-function-calls (reverse func) vars c++-class live-vars #t #f)]
 			   ;; Process lifted-out function calls:
 			   [(setups live-vars)
 			    (let loop ([setups setups][new-vars new-vars][result null][live-vars live-vars])
@@ -2040,7 +2063,7 @@
 										 (live-var-info-vars live-vars)
 										 (lambda (a b)
 										   (eq? a (car b)))))
-									#f)])
+									#f #f)])
 				    (loop (cdr setups)
 					  (cdr new-vars)
 					  (cons (list* (make-tok (caar new-vars) #f #f)
@@ -2233,7 +2256,7 @@
 				       (convert-seq-interior (cadr e-) #t vars 
 							     c++-class
 							     (restore-new-vars live-vars)
-							     #f)])
+							     #f #f)])
 			   ;; Now run body again:
 			   (let-values ([(e live-vars)
 					 (convert-brace-body (restore-new-vars live-vars))])
@@ -2242,7 +2265,7 @@
 					   (convert-seq-interior (cadr e-) #t vars 
 								 c++-class
 								 live-vars
-								 #f)])
+								 #f #f)])
 			       (values e live-vars (cddr e-) v))))]
 			[else
 			 (values e live-vars (cdr e-) #f)])])
@@ -2270,7 +2293,8 @@
 			(convert-seq-interior (car e-) (parens? (car e-)) 
 					      vars c++-class live-vars 
 					      (or complain-not-in 
-						  (brackets? (car e-))))])
+						  (brackets? (car e-)))
+					      #f)])
 	    (loop (cdr e-) (cons v result) live-vars)))]
        [(and (assq (tok-n (car e-)) vars)
 	     (not (assq (tok-n (car e-)) (live-var-info-vars live-vars))))
@@ -2292,9 +2316,32 @@
 	(log-error "[LOOP] ~a in ~a: while/do/for with body not in braces."
 		   (tok-line (car e-)) (tok-file (car e-)))
 	(loop (cdr e-) (cons (car e-) result) live-vars)]
-       [else (loop (cdr e-) (cons (car e-) result) live-vars)]))))
+       [else 
+	(when (and check-arith? (not memcpy?)
+		   (positive? (live-var-info-num-calls live-vars)))
+	  (when (and (memq (tok-n (car e-)) '(+ - ++ --))
+		     (let ([assignee (cdr e-)])
+		       ;; Special case: (YYY -> ivar) + ...;
+		       (let ([special-case-type (and (not (null? assignee))
+						     (null? (cdr assignee))
+						     (= 2 (length result))
+						     (or (call? (car result))
+							 (creation-parens? (car result)))
+						     (eq? semi (tok-n (cadr result)))
+						     (let ([m (resolve-indirection (car assignee) get-c++-class-var c++-class vars)])
+						       (and m (cdr m))))])
+			 (or (and special-case-type
+				  (or (non-pointer-type? special-case-type)
+				      (pointer-type? special-case-type)))
+			     (and (not (null? assignee))
+				  (assq (tok-n (car assignee)) vars))))))
+	    (fprintf (current-error-port)
+		     "Warning [ARITH] ~a in ~a: suspicious arithmetic, LHS ends ~s.~n"
+		     (tok-line (car e-)) (tok-file (car e-))
+		     (tok-n (cadr e-)))))
+	(loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
-(define (convert-seq-interior v comma-sep? vars c++-class live-vars complain-not-in)
+(define (convert-seq-interior v comma-sep? vars c++-class live-vars complain-not-in memcpy?)
   (let ([e (seq->list (seq-in v))])
     (let ([el (body->lines e comma-sep?)])
       (let-values ([(el live-vars)
@@ -2303,7 +2350,7 @@
 			  (values null live-vars)
 			  (let-values ([(rest live-vars) (loop (cdr el))])
 			    (let-values ([(e live-vars)
-					  (convert-function-calls (car el) vars c++-class live-vars complain-not-in)])
+					  (convert-function-calls (car el) vars c++-class live-vars complain-not-in memcpy?)])
 			      (values (cons e rest) live-vars)))))])
 	(values ((get-constructor v)
 		 (tok-n v)
@@ -2313,8 +2360,8 @@
 		 (list->seq (apply append el)))
 		live-vars)))))
 
-(define (convert-paren-interior v vars c++-class live-vars complain-not-in)
-  (convert-seq-interior v #t vars c++-class live-vars complain-not-in))
+(define (convert-paren-interior v vars c++-class live-vars complain-not-in memcpy?)
+  (convert-seq-interior v #t vars c++-class live-vars complain-not-in memcpy?))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Palm call-graph

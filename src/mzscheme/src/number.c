@@ -3063,6 +3063,10 @@ static Scheme_Object *read_special_number(const char *str, int pos)
 /* Fixes SunOS problem with numbers like .3e2666666666666 => 0.0 */
 /* Fixes HP/UX problem with numbers like .3e2666666666666 => non-number */
 
+# ifdef MZ_PRECISE_GC
+END_XFORM_ARITH;
+# endif
+
 double STRTOD(const char *orig_c, char **f)
 {
   int neg = 0;
@@ -3147,6 +3151,9 @@ double STRTOD(const char *orig_c, char **f)
   /* It's OK if c is ok: */
   return strtod(orig_c, NULL);
 }
+# ifdef MZ_PRECISE_GC
+START_XFORM_ARITH;
+# endif
 #else
 #define STRTOD(x, y) strtod(x, y)
 #endif
@@ -3177,7 +3184,6 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   Scheme_Object *next_complain;
   int has_hash, has_expt, has_i, has_sign, has_at, saw_digit, saw_nonzero_digit;
   Scheme_Object *o;
-  char *ptr;
   const char *orig;
 #ifdef MZ_USE_SINGLE_FLOATS
   int single;
@@ -3766,6 +3772,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       && (len <= MAX_FAST_FLOATREAD_LEN)) {
     double d;
     const char *strcpy;
+    char *ptr;
+
     if (has_expt && (str[has_expt] != 'e' && str[has_expt] != 'E')) {
       char *str2;
       str2 = (char *)scheme_malloc_atomic(len + 1);
@@ -3776,6 +3784,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       strcpy = str;
     d = STRTOD(strcpy, &ptr);
     if ((ptr - strcpy) < len) {
+      ptr = NULL; /* because not precise-gc aligned */
       if (report)
 	scheme_raise_exn(MZEXN_READ, complain, 
 			 "read-number: bad decimal number %t",

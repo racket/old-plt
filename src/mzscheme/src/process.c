@@ -678,7 +678,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->runstack_size = INIT_SCHEME_STACK_SIZE;
   {
     Scheme_Object **sa;
-    sa = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
+    sa = scheme_malloc_middleable(sizeof(Scheme_Object*) * INIT_SCHEME_STACK_SIZE);
     process->runstack_start = sa;
   }
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;

@@ -381,17 +381,16 @@ static Scheme_Object *unit_varlist(BodyExpr *e,
     switch (e->btype) {
     case mm_body_def:
       {
-	BodyVar *vs, *v;
+	BodyVar *vs;
 	int i, c;
 
 	c = e->u.def.count;
 	vs = e->u.def.vars;
 	for (i = 0; i < c; i++) {
-	  v = vs + i;
-	  if (v->exported == exported) {
+	  if (vs[i]->exported == exported) {
 	    Scheme_Object *name;
 	    
-	    name = v->id;
+	    name = vs[i]->id;
 	    name = cons(name, scheme_null);
 	    if (last)
 	      SCHEME_CDR(last) = name;

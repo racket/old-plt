@@ -299,7 +299,8 @@ bignum_obj {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
  mark:
-  gcMARK(b->digits);
+  if (!b->allocated_inline)
+    gcMARK(b->digits);
 
  size:
   ((!b->allocated_inline)

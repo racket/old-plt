@@ -724,7 +724,8 @@ int bignum_obj_SIZE(void *p) {
 int bignum_obj_MARK(void *p) {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-  gcMARK(b->digits);
+  if (!b->allocated_inline)
+    gcMARK(b->digits);
 
   return
   ((!b->allocated_inline)
@@ -737,7 +738,8 @@ int bignum_obj_MARK(void *p) {
 int bignum_obj_FIXUP(void *p) {
   Scheme_Bignum *b = (Scheme_Bignum *)p;
 
-  gcFIXUP(b->digits);
+  if (!b->allocated_inline)
+    gcFIXUP(b->digits);
 
   return
   ((!b->allocated_inline)

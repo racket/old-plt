@@ -1338,8 +1338,8 @@ print_string(Scheme_Object *string, int escaped, Scheme_Process *p)
   if (len) {
     if (escaped) {
       str = SCHEME_STR_VAL(string);
-      for (i = 0; i < len; i++, str++) {
-	if ((*str == '"') || (*str == '\\')) {
+      for (i = 0; i < len; i++) {
+	if ((str[i] == '"') || (str[i] == '\\')) {
 	  simple = 0;
 	  break;
 	}

@@ -206,6 +206,10 @@ STATIC void regtail(char *, char *);
 STATIC void regoptail(char *, char *);
 STATIC int regstrcspn(char *, char *, char *);
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_ARITH;
+#endif
+
 static void
 regerror(char *s)
 {
@@ -1302,6 +1306,10 @@ regstrcspn(char *s1, char *e1, char *s2)
   return(count);
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_ARITH;
+#endif
+
 #ifndef strncpy
   extern char *strncpy();
 #endif
@@ -1310,15 +1318,13 @@ regstrcspn(char *s1, char *e1, char *s2)
    - regsub - perform substitutions after a regexp match
    */
 static 
-char *regsub(regexp *prog, char *source, int sourcelen, long *lenout, char *insrc, unsigned long srcbase, char **startp, char **endp)
+char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, unsigned long srcbase, char **startp, char **endp)
 {
   char *dest;
-  MZREGISTER char *src, *srcend;
-  MZREGISTER char *dst;
   MZREGISTER char c;
   MZREGISTER long no;
   MZREGISTER long len;
-  long destalloc, destlen;
+  long destalloc, destlen, srcpos;
 	
   destalloc = 2 * sourcelen;
   destlen = 0;
@@ -1330,23 +1336,21 @@ char *regsub(regexp *prog, char *source, int sourcelen, long *lenout, char *insr
     return "";
   }
 	
-  src = source;
-  srcend = source + sourcelen;
-  dst = dest;
-  while (src != srcend) {
-    c = *src++;
+  srcpos = 0;
+  while (srcpos < sourcelen) {
+    c = src[srcpos++];
     if (c == '&')
       no = 0;
     else if (c == '\\') {
-      if (*src == '\\' || *src == '&')
+      if (src[srcpos] == '\\' || src[srcpos] == '&')
 	no = -1;
-      else if (*src == '$') {
+      else if (src[srcpos] == '$') {
 	no = prog->nsubexp + 1; /* Gives the empty string */
-	src++;
+	srcpos++;
       } else {
 	no = 0;
-	while ('0' <= *src && *src <= '9') {
-	  no = (no * 10) + (*src++ - '0');
+	while ('0' <= src[srcpos] && src[srcpos] <= '9') {
+	  no = (no * 10) + (src[srcpos++] - '0');
 	}
       }
     } else
@@ -1354,17 +1358,15 @@ char *regsub(regexp *prog, char *source, int sourcelen, long *lenout, char *insr
 
 
     if (no < 0) {		/* Ordinary character. */
-      if (c == '\\' && (*src == '\\' || *src == '&'))
-	c = *src++;
+      if (c == '\\' && (src[srcpos] == '\\' || src[srcpos] == '&'))
+	c = src[srcpos++];
       if (destlen + 1 >= destalloc) {
 	char *old = dest;
 	destalloc *= 2;
 	dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	memcpy(dest, old, destlen);
-	dst = dest + destlen;
       }
-      *dst++ = c;
-      destlen++;
+      dest[destlen++] = c;
     } else if (no >= prog->nsubexp) {
       /* Number too big; prentend it's the empty string */
     } else if (startp[no] != NULL && endp[no] != NULL) {
@@ -1374,14 +1376,12 @@ char *regsub(regexp *prog, char *source, int sourcelen, long *lenout, char *insr
 	destalloc = 2 * destalloc + len + destlen;
 	dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	memcpy(dest, old, destlen);
-	dst = dest + destlen;
       }
-      memcpy(dst, insrc + ((unsigned long)startp[no] - srcbase), len);
-      dst += len;
+      memcpy(dest + destlen, insrc + ((unsigned long)startp[no] - srcbase), len);
       destlen += len;
     }
   }
-  *dst = '\0';
+  dest[destlen] = '\0';
 
   if (lenout)
     *lenout = destlen;

@@ -779,7 +779,11 @@ void wxImage::CreateXImage()
    *
    *   if dispDEEP is 6, format'll be a ZPixmap, 8 bits per pixel
    *
-   *   if dispDEEP is 24 or 32, format'll be a ZPixmap.  32 bits per pixel
+   *   if dispDEEP is 16, format'll be a ZPixmap.  16 bits per pixel
+   *
+   *   if dispDEEP is 24, format'll be a ZPixmap.  24 bits per pixel
+   *
+   *   if dispDEEP is 32, format'll be a ZPixmap.  32 bits per pixel
    *
    *   any other value of dispDEEP will use a XYPixmap of the appropriate
    *   depth, and some slug-like general-case code  DOESN'T YET!!
@@ -945,7 +949,7 @@ void wxImage::CreateXImage()
     case 24:
       {
       byte  *imagedata, *ip, *pp;
-      int extra = 3 - (eWide - 1) % 4, j;
+      int extra = 3 - (eWIDE - 1) % 4, j;
       imagedata = (byte *) malloc((3 * eWIDE + extra)*eHIGH);
       if (!imagedata) FatalError("couldn't malloc imagedata");
       

@@ -85,8 +85,7 @@
 			  (eq? expr (letrec ([x x]) x)) ; #<undefined> test - yuck
 			  (port? expr)
 			  (promise? expr)
-			  (object? expr)
-			  (class? expr)
+			  (object? expr) (class? expr) (interface? exp)
 			  (unit? expr)
 			  (procedure? expr))
 		      'atomic]
@@ -280,8 +279,8 @@
 				      (if (list? arity)
 					  `(case-lambda . ,(make-lambda-helper arity))
 					  `(lambda ,(make-lambda-helper arity) ...)))))]
-				[(regexp? expr)
-				 '(regexp ...)]
+				[(regexp? expr) `(regexp ...)]
+				[(interface? expr) `(interface ...)]
 				[(class? expr) 
 				 (build-named 
 				  expr

@@ -20,9 +20,12 @@ what is in the namespace automatically.
     the namespace already contains mred@
   - posn struture, including mutators
 
-Each of the beginnero.ss, intermediateo.ss, and advancedo.ss and
+Each of the beginner.ss, intermediate.ss, and advanced.ss and
 libraries returns a procedure that installs the corresponding bindings
 into the current namespace.
+
+The file _advancedr.ss_ contains a unit that exports all of the defintions
+in advanced.ss.
 
 The _simple-draw.ss_ library implements a simple drawing
 library on top of sixlib. It uses _error.ss_.

@@ -1366,7 +1366,9 @@ sub PrintBundleVar
 	print "scheme_make_integer($var)";
     } elsif ($paramtype eq 'byte' || $paramtype eq 'ubyte') {
 	print "scheme_make_integer($var)";
-    } elsif ($paramtype eq 'long' || $paramtype eq 'Long') {
+    } elsif ($paramtype eq 'long' 
+	     || $paramtype eq 'nnlong' 
+             || $paramtype eq 'Long') {
 	print "scheme_make_integer($var)";
     } elsif (($paramtype eq 'float') || ($paramtype eq 'double')
 	     || ($paramtype eq 'Double')) {
@@ -1462,7 +1464,7 @@ sub PrintUnbundleVar
 	     || ($paramtype eq 'short') || ($paramtype eq 'long')
 	     || ($paramtype eq 'Long')) {
 	print "objscheme_unbundle_integer($var, $stop)";
-    } elsif (($paramtype eq 'nnint')) {
+    } elsif (($paramtype eq 'nnint') || ($paramtype eq 'nnlong')) {
 	print "objscheme_unbundle_nonnegative_integer($var, $stop)";
     } elsif (($paramtype eq 'float') || ($paramtype eq 'double')
 	     || ($paramtype eq 'Double')) {
@@ -1755,7 +1757,7 @@ sub PrintTypecheck
     } elsif ($paramtype eq 'char' || $paramtype eq 'uchar') {
 	print "objscheme_istype_char($var, $stop)";
     } elsif (($paramtype eq 'int') || ($paramtype eq 'unsigned') 
-	     || ($paramtype eq 'nnint') 
+	     || ($paramtype eq 'nnint') || ($paramtype eq 'nnlong') 
 	     || ($paramtype eq 'byte') || ($paramtype eq 'ubyte')
 	     || ($paramtype eq 'short') || ($paramtype eq 'long') 
 	     || ($paramtype eq 'float') || ($paramtype eq 'nnfloat') 

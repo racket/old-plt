@@ -126,6 +126,7 @@ typedef char *npathname;
 typedef const char *cpathname;
 typedef const char *cnpathname;
 
+typedef long nnlong;
 typedef int nnint;
 typedef float nnfloat;
 

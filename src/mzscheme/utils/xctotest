@@ -102,6 +102,11 @@ sub DoPrintClass
 	$oldclass = "${oldclass}!-example-list";
     }
 
+    
+    if ($classstring =~ /media/) {
+	print "(unless skip-media?\n ";
+    }
+
     print "(hash-table-put! classinfo ${classstring}\n";
     print "  (list ${oldclass} (quote ${classstring})";
 
@@ -160,9 +165,13 @@ sub DoPrintClass
 	}
     }
 
-   print "))\n";
+    if ($classstring =~ /media/) {
+      print ")";
+    }
 
-push(@allclasses, $classstring);
+    print "))\n";
+
+    push(@allclasses, $classstring);
 }
 
 sub PrintType 
@@ -170,6 +179,7 @@ sub PrintType
     local($type) = @_;
     
     $type =~ s/\[\]/ARRAY/g;
+    $type =~ s/SYM\[([^\]]*)\]/SYM-\1/g;
 
     print "${type}-example-list";
 }
@@ -190,3 +200,33 @@ sub PrintHeader
 sub PrintDefine
 {
 }
+
+sub PrintSymSet
+{
+    local ($name, $kind, @syms) = @_;
+    local ($multi, $vv, $lname);
+
+    print "(define SYM-${name}-example-list (make-object example-list\% 'SYM-${name} null))\n";
+    
+    if ($kind =~ /ONE/) {
+	$multi = 0;
+    } else {
+	$multi = 1;
+	print "(add-all-combinations\n SYM-${name}-example-list\n (list";
+    }
+
+    foreach $sym (@syms) {
+	($n, $v) = split(/,/, $sym);
+	$n = &StripQuotes($n);
+	if ($multi) {
+	    print "\n  wx:const-$n";
+	} else {
+	    print "(send SYM-${name}-example-list add wx:const-$n)\n";
+	}
+    }
+    
+    if ($multi) {
+	print "))\n";
+    }
+}
+

@@ -268,7 +268,6 @@
   font-name-directory<%>
 
   cursor%
-  icon%
   bitmap%
 
   (event% control-event% scroll-event% mouse-event% key-event%)
@@ -277,9 +276,9 @@
   mouse-event%
   key-event%
 
-  (dc<%> canvas-dc% post-script-dc%)
-  (canvas-dc%  memory-dc%)
-  memory-dc%
+  (dc<%> pixel-dc<%> post-script-dc%)
+  (pixel-dc<%> bitmap-dc%)
+  bitmap-dc%
   post-script-dc%
 
   printer-dc%
@@ -682,7 +681,6 @@
 (send font-name-directory<%>-example-list add the-font-name-directory)
 
 (send cursor%-example-list add (make-object cursor% 'watch))
-(send icon%-example-list add (make-object icon% (build-path (collection-path "icons") "mred.xbm")))
 (send bitmap%-example-list add (make-object bitmap% (build-path (collection-path "icons") "bb.gif")))
 
 (send control-event%-example-list add (make-object control-event% 'list-box))
@@ -690,7 +688,7 @@
 (send mouse-event%-example-list add (make-object mouse-event% 'left-down))
 (send key-event%-example-list add (make-object key-event%))
 
-(send memory-dc%-example-list add (make-object memory-dc%))
+(send bitmap-dc%-example-list add (make-object bitmap-dc%))
 (send post-script-dc%-example-list add (make-object post-script-dc% #f))
 
 (with-handlers ([void void])

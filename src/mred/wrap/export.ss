@@ -62,6 +62,6 @@
  register-collecting-blit
  unregister-collecting-blit
  bitmap-dc%
- install-standard-text-bindings
+ current-text-keymap-initializer
  sleep/yield
  get-window-text-extent)

@@ -104,7 +104,7 @@ to the project by dropping it on the project window or by choosing the
 your driver manager.  Version 2.0 is specified as 0x0200, version
 3.5 as 0x0350, and so forth.
 
-4) Compile by choosing the "Make" option from the "Project" menu.  The project
+5) Compile by choosing the "Make" option from the "Project" menu.  The project
 will by default place the resulting "srpmain.so" library in the proper 
 subdirectory of plt/collects/srpersist (not to be confused with 
 plt/src/srpersist).  You may change the target location in the 

@@ -735,10 +735,11 @@
 				   (append proj-collections
 					   drs-collections)
 				   drs-collections))]
-		[exploded-collection-paths (map file:explode-path (current-library-collection-paths))])
+		[exploded-collection-paths (map (function:compose file:explode-path file:normalize-path)
+						(current-library-collection-paths))])
 	    (for-each
 	     (lambda (new-file)
-	       (let ([exploded (file:explode-path new-file)])
+	       (let ([exploded (file:explode-path (file:normalize-path new-file))])
 		 (let loop ([exploded-collection-paths exploded-collection-paths ])
 		   (cond
 		    [(null? exploded-collection-paths)

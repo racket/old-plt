@@ -1104,6 +1104,7 @@
         ((field-access? acc)
          (let ((obj (field-access-object acc))
                (fname (id-string (field-access-field acc)))
+               (src (id-src (field-access-field acc)))
                (record null))
            (if obj
                (set! record (field-lookup fname (check-sub-expr obj) obj type-recs))
@@ -1112,7 +1113,7 @@
                        (get-field-record fname
                                          (get-record 
                                           (send type-recs get-class-record name
-                                                ((get-importer type-recs) name type-recs 'full))
+                                                ((get-importer type-recs) name type-recs level src))
                                           type-recs)
                                          (lambda () 
                                            (field-lookup-error 'not-found
@@ -1128,9 +1129,8 @@
            (unless (eq? level 'full)
              (when (is-field-restricted? fname (field-record-class record))
                (restricted-field-access (field-access-field acc) 
-                                        (field-record-class record) 
-                                        (id-src (field-access-field acc)))))
-           (field-record-type record)))        
+                                        (field-record-class record) src)))
+           (field-record-type record)))
         ((local-access? acc) 
          (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
            (if (properties-usable? (var-type-properties var))
@@ -1183,7 +1183,7 @@
       (cond
         ((reference-type? obj-type)
          (let ((obj-record (send type-recs get-class-record obj-type
-                                 ((get-importer type-recs) obj-type type-recs 'full))))
+                                 ((get-importer type-recs) obj-type type-recs level src))))
            (get-field-record fname 
                              (get-record obj-record type-recs)
                              (lambda () 
@@ -1211,7 +1211,7 @@
           (list (let* ((name (cons (id-string (car accs)) path))
                        (record (get-record 
                                 (send type-recs get-class-record name 
-                                      ((get-importer type-recs) name type-recs 'full))
+                                      ((get-importer type-recs) name type-recs level (id-src (car accs))))
                                 type-recs)))
                   record)
                 (cdr accs))
@@ -1313,7 +1313,7 @@
                        (get-method-records (id-string name)
                                            (get-record 
                                             (send type-recs get-class-record call-exp 
-                                                  ((get-importer type-recs) call-exp type-recs 'full))
+                                                  ((get-importer type-recs) call-exp type-recs level src))
                                             type-recs)))
                       (else (prim-call-error call-exp name src level)))))
                  (else 

@@ -194,8 +194,8 @@
          (or (equal? class (id-string (def-name (car defs))))
              (contained-in? (cdr defs) class))))
   
-  ;find-implicit-import: (list string) type-records symbol-> ( -> record )
-  (define (find-implicit-import name type-recs level)
+  ;find-implicit-import: (list string) type-records symbol src-> ( -> record )
+  (define (find-implicit-import name type-recs level call-src)
     (lambda ()
       (let ((original-loc (send type-recs get-location))
             (dir (find-directory (cdr name) (lambda () (file-error 'dir name)))))
@@ -262,7 +262,7 @@
         ((procedure? record) (get-record record type-recs))
         ((eq? record 'in-progress)
          (dependence-error 'cycle (name-id n) (name-src n)))
-        (else (get-record (find-implicit-import name type-recs level) type-recs)))))
+        (else (get-record (find-implicit-import name type-recs level #f) type-recs)))))
   
   (define (class-specific-field? field)
     (not (memq 'private 

@@ -22,12 +22,11 @@
       (define window%
         (class* frame:standard-menus% (test-suite:window<%>)
           
-          (init-field
+          (init
            (filename false)
            (program false))
           
-          (field [model (instantiate model% ()
-                          (window this))]
+          (field [model (instantiate model% () (window this))]
                  [save (lambda () (send model save-file))]
                  [save-as (lambda () (send model save-file ""))]
                  [break (lambda () (send model break))]
@@ -56,6 +55,24 @@
           (define/public (get-error-handler)
             (lambda (message error)
               (update-executing false)))
+          
+          ;; can-close? (-> boolean?)
+          ;; whether or not the window can close
+          (define/override (can-close?)
+            (if (send model is-modified?)
+                (let ([responce (gui-utils:unsaved-warning
+                                 (or (send model get-filename) "Untitled")
+                                 "Close Anyway"
+                                 true
+                                 this)])
+                  (cond
+                    [(symbol=? responce 'continue)
+                     true]
+                    [(symbol=? responce 'save)
+                     (send model save-file)]
+                    [(symbol=? responce 'cancel)
+                     false]))
+                true))
           
           (super-instantiate ()
             (label "Test Suite"))

@@ -121,6 +121,7 @@
           (define/private (eval-cases)
             (let ([case (find-first-snip)]
                   [next (lambda ()
+                          (send expander done)
                           (send window update-executing false))])
               (if case
                   (send case execute expander next)

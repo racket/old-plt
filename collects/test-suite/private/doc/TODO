@@ -2,8 +2,6 @@ On Mon, Nov 18, 2002 at 03:03:49PM -0600, Robert Bruce Findler wrote:
 > Make deletion actually set the focus to another one of the snips, so I
 > can keep deleting.
 
-> Add keyboard shortcuts to the menu items?
-
 > Did we talk about teachpacks? I think that the teachpack prims exported
 > to the tools interface should be enough, but you'd have to be unititzed
 > first.
@@ -13,8 +11,6 @@ be nicer to use color to separate the lines and get back some screen
 "real estate".                                 
                                           
 Robby                                             
--------------------
-give menu items keyboard shortcuts
 -------------------
 > Also, it may look better to remove the outer box entirely and just have
 > lines between the test case items (or even not, if you can figure out
@@ -47,11 +43,5 @@ Philippe
 Make the save button come up when the program to test is changed.
 Make the save button not come up when a test-suite is just loaded.
 -------------------
-When execute finished naturally it is still possible to break and get
-the error panel to display. This should not happen.
--------------------
 Hide caret in the error display text
--------------------
-Make closing the window when the model is modfied an not saved ask
-for confermation.
 -------------------

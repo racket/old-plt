@@ -36,7 +36,8 @@
                 (begin
                   (send new-button enable false)
                   (send delete-button enable false)
-                  (send execute-button enable false))
+                  (send execute-button enable false)
+                  (hide-error-panel))
                 (begin
                   (send new-button enable true)
                   (send delete-button enable true)
@@ -205,7 +206,10 @@
                (lambda (text thunk) (thunk))
                highlight-errors
                (lambda (msg exn)
-                 (send error-text erase)
+                 (send* error-text
+                   (lock false)
+                   (erase)
+                   (lock true))
                  (drscheme:rep:insert-error-in-text/highlight-errors
                   error-text
                   highlight-errors

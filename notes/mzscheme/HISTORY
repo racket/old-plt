@@ -1,9 +1,26 @@
 
 Version 102/13:
 
+ * Unix: Fixed 'truncate/replace flag to `open-output-file' et al.
+   (Bug introduced in 102/10.)
+
+ * Windows: `normal-case-path' removes trailing spaces from a filename
+   (because the Windows API does).
+
+ * Windows: MzScheme recognizes special filenames like "LPT1" as
+   "files" that might block on I/O (except "NUL", which never
+   blocks). The `file-exists?' primitive reports #t for all of these
+   "files" (which can be prefixed with any path - even a non-existent
+   one - and/or postfixed with any file extension or with a single
+   colon!!!)
+
+ * Inside MzScheme: scheme_basic_env(), if called more than once,
+   resets all threads, parameters, ports, namespaces, and
+   finalizations.
+
  * Inside MzScheme: split some source files, adding builtin.c,
-   network.c, numarith.c, numstr.c, objclass.c, portfun.c, and
-   unitsig.c.
+   network.c, numarith.c, numcomp.c, numstr.c, objclass.c, portfun.c,
+   and unitsig.c.
 
 Version 102/12:
 
@@ -342,6 +359,7 @@ Inside MzScheme: restricted the format strings accepted by
  scheme_signal_error, scheme_raise_exn, and scheme_warning
 Inside MzScheme: added scheme_count_lines; scheme_tell_line
  can return -1 if lines are not counted for a port
+Inside MzScheme: added offset argument to scheme_write_string
 
 Version 101, October 25, 1999
 Added 'sys-dir to find-system-path

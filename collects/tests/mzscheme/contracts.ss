@@ -32,7 +32,7 @@
             (cond
               [(regexp-match ": ([^ ]*) broke" result) => cadr]
               [(regexp-match "([^ ]+): .* does not imply" result) => cadr]
-              [else "no blame in error message"])
+              [else (format "no blame in error message: \"~a\"" result)])
             result)))
     (printf "testing: ~s\n" name)
     (test blame
@@ -745,6 +745,73 @@
      100
      200
      300)
+   "badguy")
+  
+  (test/spec-passed/result
+   'contract-=>-case->1
+   '((contract-=> (case-> (integer? . -> . integer?)) (case-> (integer? . -> . integer?)) (case-lambda [(x) x]) 'badguy) 1)
+   1)
+  
+  (test/spec-passed/result
+   'contract-=>-case->2
+   '((contract-=> (case->
+                   (-> (>=/c 10) (>=/c 3))
+                   (-> (>=/c 10) (>=/c 10) (>=/c 3)))
+                  (case->
+                   (-> (>=/c 3) (>=/c 10))
+                   (-> (>=/c 3) (>=/c 3) (>=/c 10)))
+                  (case-lambda
+                    [(x) x]
+                    [(x y) x])
+                  'badguy)
+     100)
+   100)
+  
+  (test/spec-passed/result
+   'contract-=>-case->3
+   '((contract-=> (case->
+                   (-> (>=/c 10) (>=/c 3))
+                   (-> (>=/c 10) (>=/c 10) (>=/c 3)))
+                  (case->
+                   (-> (>=/c 3) (>=/c 10))
+                   (-> (>=/c 3) (>=/c 3) (>=/c 10)))
+                  (case-lambda
+                    [(x) x]
+                    [(x y) x])
+                  'badguy)
+     100
+     200)
+   100)
+  
+  (test/spec-failed
+   'contract-=>-case->4
+   '((contract-=> (case->
+                   (-> (>=/c 10) (>=/c 3))
+                   (-> (>=/c 100) (>=/c 100) (>=/c 30)))
+                  (case->
+                   (-> (>=/c 3) (>=/c 10))
+                   (-> (>=/c 30) (>=/c 30) (>=/c 100)))
+                  (case-lambda
+                    [(x) x]
+                    [(x y) x])
+                  'badguy)
+     8)
+   "badguy")
+  
+  (test/spec-failed
+   'contract-=>-case->5
+   '((contract-=> (case->
+                   (-> (>=/c 10) (>=/c 3))
+                   (-> (>=/c 100) (>=/c 100) (>=/c 30)))
+                  (case->
+                   (-> (>=/c 3) (>=/c 10))
+                   (-> (>=/c 30) (>=/c 30) (>=/c 100)))
+                  (case-lambda
+                    [(x) x]
+                    [(x y) x])
+                  'badguy)
+     80
+     80)
    "badguy")
   
   ))

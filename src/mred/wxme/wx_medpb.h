@@ -157,8 +157,8 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual Bool OnSelect(wxSnip *, Bool on);
   virtual void AfterSelect(wxSnip *, Bool on);
 
-  virtual Bool OnInteractiveMove(void);
-  virtual void AfterInteractiveMove(void);
+  virtual Bool OnInteractiveMove(wxMouseEvent *);
+  virtual void AfterInteractiveMove(wxMouseEvent *);
   virtual Bool OnInteractiveResize(wxSnip *snip);
   virtual void AfterInteractiveResize(wxSnip *snip);
 
@@ -208,8 +208,8 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   Bool changed;
 
-  void InitDragging();
-  void FinishDragging();
+  void InitDragging(wxMouseEvent *);
+  void FinishDragging(wxMouseEvent *);
 
   void DoSelect(wxSnip *, Bool on);
 

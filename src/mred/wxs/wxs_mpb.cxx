@@ -253,8 +253,8 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   ~os_wxMediaPasteboard();
   void AfterInteractiveResize(class wxSnip* x0);
   Bool OnInteractiveResize(class wxSnip* x0);
-  void AfterInteractiveMove();
-  Bool OnInteractiveMove();
+  void AfterInteractiveMove(class wxMouseEvent* x0);
+  Bool OnInteractiveMove(class wxMouseEvent* x0);
   void InteractiveAdjustResize(class wxSnip* x0, float* x1, float* x2);
   void InteractiveAdjustMove(class wxSnip* x0, float* x1, float* x2);
   void InteractiveAdjustMouse(float* x0, float* x1);
@@ -395,9 +395,9 @@ return wxMediaPasteboard::OnInteractiveResize(x0);
   }
 }
 
-void os_wxMediaPasteboard::AfterInteractiveMove()
+void os_wxMediaPasteboard::AfterInteractiveMove(class wxMouseEvent* x0)
 {
-  Scheme_Object **p = NULL;
+  Scheme_Object *p[1];
   Scheme_Object *v;
   mz_jmp_buf savebuf;
   Scheme_Object *method;
@@ -414,12 +414,13 @@ void os_wxMediaPasteboard::AfterInteractiveMove()
     }
   } else sj = 1;
   if (sj) {
-wxMediaPasteboard::AfterInteractiveMove();
+wxMediaPasteboard::AfterInteractiveMove(x0);
   } else {
   
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -427,9 +428,9 @@ wxMediaPasteboard::AfterInteractiveMove();
   }
 }
 
-Bool os_wxMediaPasteboard::OnInteractiveMove()
+Bool os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
 {
-  Scheme_Object **p = NULL;
+  Scheme_Object *p[1];
   Scheme_Object *v;
   mz_jmp_buf savebuf;
   Scheme_Object *method;
@@ -446,12 +447,13 @@ Bool os_wxMediaPasteboard::OnInteractiveMove()
     }
   } else sj = 1;
   if (sj) {
-return wxMediaPasteboard::OnInteractiveMove();
+return wxMediaPasteboard::OnInteractiveMove(x0);
   } else {
   
+  p[0] = objscheme_bundle_wxMouseEvent(x0);
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2543,14 +2545,16 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveMove(Scheme_Object *ob
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
+  class wxMouseEvent* x0;
 
   
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "after-interactive-move in pasteboard%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::AfterInteractiveMove();
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::AfterInteractiveMove(x0);
   else
-    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AfterInteractiveMove();
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AfterInteractiveMove(x0);
 
   
   
@@ -2563,14 +2567,16 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveMove(Scheme_Object *obj, 
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   Bool r;
   objscheme_check_valid(obj);
+  class wxMouseEvent* x0;
 
   
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-interactive-move in pasteboard%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInteractiveMove();
+    r = ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnInteractiveMove(x0);
   else
-    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInteractiveMove();
+    r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnInteractiveMove(x0);
 
   
   
@@ -4710,8 +4716,8 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-dragable", os_wxMediaPasteboardGetDragable, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-interactive-resize", os_wxMediaPasteboardAfterInteractiveResize, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-interactive-resize", os_wxMediaPasteboardOnInteractiveResize, 1, 1);
- scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-interactive-move", os_wxMediaPasteboardAfterInteractiveMove, 0, 0);
- scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-interactive-move", os_wxMediaPasteboardOnInteractiveMove, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "after-interactive-move", os_wxMediaPasteboardAfterInteractiveMove, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-interactive-move", os_wxMediaPasteboardOnInteractiveMove, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "interactive-adjust-resize", os_wxMediaPasteboardInteractiveAdjustResize, 3, 3);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "interactive-adjust-move", os_wxMediaPasteboardInteractiveAdjustMove, 3, 3);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "interactive-adjust-mouse", os_wxMediaPasteboardInteractiveAdjustMouse, 2, 2);

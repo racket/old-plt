@@ -81,8 +81,8 @@
 @ v "interactive-adjust-move" : void InteractiveAdjustMove(wxSnip!,float*,float*);
 @ v "interactive-adjust-resize" : void InteractiveAdjustResize(wxSnip!,float*,float*);
 
-@ v "on-interactive-move" : bool OnInteractiveMove();
-@ v "after-interactive-move" : void AfterInteractiveMove();
+@ v "on-interactive-move" : bool OnInteractiveMove(wxMouseEvent!);
+@ v "after-interactive-move" : void AfterInteractiveMove(wxMouseEvent!);
 @ v "on-interactive-resize" : bool OnInteractiveResize(wxSnip!);
 @ v "after-interactive-resize" : void AfterInteractiveResize(wxSnip!);
 

@@ -318,7 +318,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 	EndEditSequence();
 	resizing = NULL;
       } else {
-	FinishDragging();
+	FinishDragging(&event);
       }
     }
     if (rubberband) {
@@ -353,7 +353,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 	  if (!event.shiftDown)
 	    NoSelected();
 	  AddSelected(snip);
-	  InitDragging();
+	  InitDragging(&event);
 	} else {
 	  long interval;
 
@@ -365,7 +365,7 @@ void wxMediaPasteboard::OnDefaultEvent(wxMouseEvent& event)
 	  else {
 	    if (FindDot(loc, x, y, &sizedxm, &sizedym))
 	      resizing = snip;
-	    InitDragging();
+	    InitDragging(&event);
 	  }
 	}
         if (event.ButtonDown())
@@ -466,7 +466,7 @@ void wxMediaPasteboard::OnDefaultChar(wxKeyEvent &event)
     }
 }
 
-void wxMediaPasteboard::InitDragging(void)
+void wxMediaPasteboard::InitDragging(wxMouseEvent *e)
 {
   wxSnip *s = NULL;
 
@@ -476,7 +476,7 @@ void wxMediaPasteboard::InitDragging(void)
       return;
     }
   } else
-    if (!OnInteractiveMove())
+    if (!OnInteractiveMove(e))
       return;
 
   dragging = TRUE;
@@ -490,7 +490,7 @@ void wxMediaPasteboard::InitDragging(void)
   }
 }
 
-void wxMediaPasteboard::FinishDragging(void)
+void wxMediaPasteboard::FinishDragging(wxMouseEvent *e)
 {
   wxSnip *s = NULL;
 
@@ -515,7 +515,7 @@ void wxMediaPasteboard::FinishDragging(void)
     MoveTo(s, loc->startx, loc->starty);
   }
 
-  AfterInteractiveMove();
+  AfterInteractiveMove(e);
 
   EndEditSequence();
 }
@@ -2721,12 +2721,12 @@ Bool wxMediaPasteboard::OwnXSelection(Bool on, Bool WXUNUSED(update), Bool force
 }
 #endif
 
-Bool wxMediaPasteboard::OnInteractiveMove(void)
+Bool wxMediaPasteboard::OnInteractiveMove(wxMouseEvent *)
 {
   return TRUE;
 }
 
-void wxMediaPasteboard::AfterInteractiveMove(void)
+void wxMediaPasteboard::AfterInteractiveMove(wxMouseEvent *)
 {
 }
 

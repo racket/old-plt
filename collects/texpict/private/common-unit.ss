@@ -321,8 +321,8 @@
                          [else
                           (let* ([first (car args)]
                                  [rest (append-boxes (cdr args))]
-                                 [w (wcomb (pict-width first) (pict-width rest) sep)]
-                                 [h (hcomb (pict-height first) (pict-height rest) sep)]
+                                 [w (wcomb (pict-width first) (pict-width rest) sep first rest)]
+                                 [h (hcomb (pict-height first) (pict-height rest) sep first rest)]
                                  [fw (pict-width first)]
                                  [fh (pict-height first)]
                                  [rw (pict-width rest)]
@@ -332,9 +332,9 @@
                                  [rd1 (pict-ascent rest)]
                                  [rd2 (pict-descent rest)]
                                  [dx1 (fxoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
-                                 [dy1 (fyoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
+                                 [dy1 (fyoffset fw fh rw rh sep fd1 fd2 rd1 rd2 h)]
                                  [dx2 (rxoffset fw fh rw rh sep fd1 fd2 rd1 rd2)]
-                                 [dy2 (ryoffset fw fh rw rh sep fd1 fd2 rd1 rd2)])
+                                 [dy2 (ryoffset fw fh rw rh sep fd1 fd2 rd1 rd2 h)])
                             (make-pict
                              `(picture 
                                ,w ,h
@@ -349,64 +349,73 @@
                              (combine-descent fd2 rd2 fd1 rd1 fh rh h)
                              (list (make-child first dx1 dy1)
                                    (make-child rest dx2 dy2))))])))))]
-	      [2max (lambda (a b c) (max a b))]
-	      [zero (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 0)]
+	      [2max (lambda (a b c . rest) (max a b))]
+	      [zero (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 . args) 0)]
 	      [fv (lambda (a b . args) a)]
 	      [sv (lambda (a b . args) b)]
 	      [min2 (lambda (a b . args) (min a b))]
 	      [max2 (lambda (a b . args) (max a b))]
+              [3+ (lambda (a b c . args) (+ a b c))]
+              [a-max (lambda (a b c first rest)
+                       (+ (max (pict-ascent first) (pict-ascent rest))
+                          (max (- (pict-height first) (pict-ascent first))
+                               (- (pict-height rest) (pict-ascent rest)))))]
+              [d-max (lambda (a b c first rest)
+                       (+ (max (pict-descent first) (pict-descent rest))
+                          (max (- (pict-height first) (pict-descent first))
+                               (- (pict-height rest) (pict-descent rest)))))]
 	      [min-ad (lambda (a b oa ob ah bh h)
 			(if (and (= ah (+ a oa))
 				 (= bh (+ b ob)))
 			    (- h (max oa ob))
 			    (min a b)))])
 	  (values
-	   (make-append-boxes 2max + 
+	   (make-append-boxes 2max 3+ 
 			      zero (lambda (fw fh rw rh sep . a) (+ sep rh))
 			      zero zero 
 			      fv sv)
-	   (make-append-boxes 2max + 
+	   (make-append-boxes 2max 3+ 
 			      (lambda (fw fh rw rh sep . a) (quotient* (- (max fw rw) fw) 2))
 			      (lambda (fw fh rw rh sep . a) (+ sep rh))
 			      (lambda (fw fh rw rh sep . a) (quotient* (- (max fw rw) rw) 2))
 			      zero 
 			      fv sv)
-	   (make-append-boxes 2max + 
+	   (make-append-boxes 2max 3+ 
 			      (lambda (fw fh rw rh sep . a) (- (max fw rw) fw))
 			      (lambda (fw fh rw rh sep . a) (+ sep rh))
 			      (lambda (fw fh rw rh sep . a) (- (max fw rw) rw))
 			      zero 
 			      fv sv)
-	   (make-append-boxes + 2max
+	   (make-append-boxes 3+ 2max
 			      zero
 			      (lambda (fw fh rw rh sep . a) (- (max fh rh) fh))
 			      (lambda (fw fh rw rh sep . a) (+ sep fw))
 			      (lambda (fw fh rw rh sep . a) (- (max fh rh) rh))
 			      max2 min2)
-	   (make-append-boxes + 2max
+	   (make-append-boxes 3+ 2max
 			      zero
 			      (lambda (fw fh rw rh sep . a) (quotient* (- (max fh rh) fh) 2))
 			      (lambda (fw fh rw rh sep . a) (+ sep fw))
 			      (lambda (fw fh rw rh sep . a) (quotient* (- (max fh rh) rh) 2))
 			      min2 max2)
-	   (make-append-boxes + 2max 
+	   (make-append-boxes 3+ 2max 
 			      zero zero
 			      (lambda (fw fh rw rh sep . a) (+ sep fw)) zero
 			      min2 max2)
-	   (make-append-boxes + 2max
+	   (make-append-boxes 3+ a-max
 			      zero
-			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
-				(- (max fh rh) fh (- (max fd1 rd1) fd1)))
+			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 h) 
+				(- h fh (- (max fd1 rd1) fd1)))
 			      (lambda (fw fh rw rh sep . a) (+ sep fw))
-			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
-				(- (max fh rh) rh (- (max fd1 rd1) rd1)))
+			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 h) 
+				(- h rh (- (max fd1 rd1) rd1)))
 			      max2 min-ad)
-	   (make-append-boxes + 2max
+	   (make-append-boxes 3+ d-max
 			      zero
-			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
+			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 h) 
 				(- (max fd2 rd2) fd2))
 			      (lambda (fw fh rw rh sep . a) (+ sep fw))
-			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2) 
+			      (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 h) 
 				(- (max fd2 rd2) rd2))
 			      min-ad max2))))
 

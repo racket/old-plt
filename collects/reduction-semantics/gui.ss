@@ -12,7 +12,9 @@
            (lib "class.ss")
            (lib "list.ss"))
 
-  (provide gui gui/multiple
+  (provide gui 
+           gui/multiple
+           gui/pred
 	   reduction-steps-cutoff initial-font-size initial-char-width)
   
   ;; after (about) this many steps, stop automatic, initial reductions
@@ -35,13 +37,17 @@
   (define (default-pp v port w spec)
     (parameterize ([pretty-print-columns w])
       (pretty-print v port)))
-
+  
   (define gui
     (opt-lambda (lang reductions expr [pp default-pp])
       (gui/multiple lang reductions (list expr) pp)))
       
   (define gui/multiple
     (opt-lambda (lang reductions exprs [pp default-pp])
+      (gui/pred lang reductions exprs (lambda (x) #t) pp)))
+  
+  (define gui/pred
+    (opt-lambda (lang reductions exprs pred [pp default-pp])
       (define graph-pb (make-object graph-pasteboard%))
       (define f (instantiate red-sem-frame% ()
                   (label "Reduction Graph")
@@ -85,7 +91,7 @@
         
       ;; only changed on the reduction thread
       ;; frontier : (listof (is-a?/c graph-editor-snip%))
-      (define frontier (map (lambda (expr) (build-snip snip-cache #f expr pp)) exprs))
+      (define frontier (map (lambda (expr) (build-snip snip-cache #f expr pred pp)) exprs))
 
       ;; set-font-size : number -> void
       ;; =eventspace main thread=
@@ -116,7 +122,7 @@
                       [new-snips 
                        (filter 
                         (lambda (x) x)
-                        (map (lambda (sexp) (build-snip snip-cache snip sexp pp))
+                        (map (lambda (sexp) (build-snip snip-cache snip sexp pred pp))
                              (reduce reductions (send snip get-expr))))]
                       [new-y 
                        (call-on-eventspace-main-thread
@@ -271,7 +277,7 @@
   
   (define graph-editor-snip%
     (class* (graph-snip-mixin editor-snip%) (reflowing-snip<%>)
-      (init-field expr pp char-width)
+      (init-field expr pp char-width bad?)
       (define/public (get-expr) expr)
       
       (inherit get-editor)
@@ -291,6 +297,22 @@
                       (unless (equal? new-width char-width)
                         (set! char-width new-width)
                         (format-expr))))))))))
+      
+      (inherit get-extent)
+      (rename [super-draw draw])
+      (define/override (draw dc x y left top right bottom dx dy draw-caret)
+        (when bad?
+          (let ([bw (box 0)]
+                [bh (box 0)]
+                [pen (send dc get-pen)]
+                [brush (send dc get-brush)])
+            (get-extent dc x y bw bh #f #f #f #f)
+            (send dc set-pen (send the-pen-list find-or-create-pen "red" 1 'solid))
+            (send dc set-brush (send the-brush-list find-or-create-brush '"red" 'solid))
+            (send dc draw-rectangle x y (unbox bw) (unbox bh))
+            (send dc set-pen pen)
+            (send dc set-brush brush)))
+        (super-draw dc x y left top right bottom dx dy draw-caret))
       
       (define/public (format-expr)
         (let* ([text (get-editor)]
@@ -336,11 +358,12 @@
   ;; build-snip : hash-table
   ;;              (union #f (is-a?/c graph-snip<%>)) 
   ;;              sexp
+  ;;              sexp -> boolean
   ;;              (any port number -> void)
   ;;           -> (union #f (is-a?/c graph-editor-snip%))
   ;; returns #f if a snip corresponding to the expr has already been created.
   ;; also adds in the links to the parent snip
-  (define (build-snip cache parent-snip expr pp)
+  (define (build-snip cache parent-snip expr pred pp)
     (let-values ([(snip new?)
                   (let/ec k
                     (k
@@ -348,7 +371,7 @@
                       cache
                       expr
                       (lambda ()
-                        (let ([new-snip (make-snip parent-snip expr pp)])
+                        (let ([new-snip (make-snip parent-snip expr pred pp)])
                           (hash-table-put! cache expr new-snip)
                           (k new-snip #t))))
                      #f))])
@@ -358,16 +381,18 @@
   
   ;; make-snip : (union #f (is-a?/c graph-snip<%>)) 
   ;;             sexp 
+  ;;             sexp -> boolean
   ;;             (any port number -> void)
   ;;          -> (is-a?/c graph-editor-snip%)
   ;; unconditionally creates a new graph-editor-snip
-  (define (make-snip parent-snip expr pp)
+  (define (make-snip parent-snip expr pred pp)
     (let* ([text (make-object scheme:text%)]
            [es (instantiate graph-editor-snip% ()
                  (char-width (initial-char-width))
                  (editor text)
                  (pp pp)
-                 (expr expr))])
+                 (expr expr)
+                 (bad? (not (pred expr))))])
       (send text set-autowrap-bitmap #f)
       (send es format-expr)
       es))

@@ -344,9 +344,15 @@ This function calls gui/multiple with language, reductions
 and (list expr).
 
 > (gui/multiple lang reductions exprs [pp])
+
+This function calls gui/pred with the predicate
+(lambda (x) #t)
+
+> (gui/pred lang reductions exprs pred [pp])
   lang : language
   reductions : (listof reduction)
   exprs : (listof sexp)
+  pred : (sexp -> boolean)
   pp : (any port number (is-a?/c text%) -> void)
 
 This function opens a new window and inserts each
@@ -355,6 +361,11 @@ reduction-steps-cutoff (see below) different terms are
 found, or no more reductions can occur. It inserts each new
 term into the gui. Clicking the `reduce' button reduces
 until reduction-steps-cutoff more terms are found.
+
+The pred function indicates if this term has a particular
+property. If the function returns #t, the term is displayed
+normally. If it returns #f, the term is displayed with a
+red border.
 
 The pp function renders its first argument into the port
 (its second argument) with width at most given by the

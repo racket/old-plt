@@ -30,7 +30,7 @@
 # ifdef MZ_NO_ICONV
 #  define USE_ICONV_DLL
 # endif
-# ifdef USE_ICONV_DLL
+# ifndef USE_ICONV_DLL
 #  include <iconv.h>
 #  include <langinfo.h>
 # endif

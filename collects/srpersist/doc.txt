@@ -10,13 +10,17 @@
  Procedures from ODBC versions 1.0 through 3.5 are supported.   
  Where ODBC expects symbolic constants created through C #define's,
  SrPersist uses Scheme constants, which are checked for validity.
- In many cases, redundant arguments are eliminated.
+ In many cases, redundant arguments are eliminated.  In many cases,
+ the SrPersist version of an ODBC procedure returns a handle, allowing 
+ procedures to be composed.
 
  ODBC procedure names are mapped to Scheme names straightforwardly.
  The initial "SQL" in the name is removed, and uppercase letters,
  other than the first, are made lowercase and preceded by a 
  hyphen.  For example, the hypothetical ODBC name SQLProcedureName would 
- be mapped to the Scheme name procedure-name.  
+ be mapped to the Scheme name procedure-name.  One exception is 
+ SQLError, which is mapped to sql-error, to avoid confusion with 
+ the MzScheme procedure error.
 
  The documentation here may be sufficient to get started with
  SrPersist, but you will certainly want to consult an ODBC reference for 
@@ -202,20 +206,22 @@
 
  ODBC 1.0, deprecated in favor of free-handle.
 
- Frees a connection handle `hdbc'.
+ Frees a connection handle `hdbc', whose value is returned by the 
+ procedure.
 
 > (free-env henv)
 
  ODBC 1.0, deprecated in favor of free-handle.
 
- Frees an environment handle `henv'.
+ Frees an environment handle `henv', whose value is returned by the
+ procedure.
 
 > (free-handle handle)
 
  ODBC 3.0.
 
  Frees `handle', which may be an environment, connection, statment,
- or descriptor handle.
+ or descriptor handle.  Returns the value of `handle'.
 
 > (free-stmt hstmt option)
 
@@ -230,6 +236,8 @@
   'sql-drop         deprecated, effectively (free-handle hstmt) 
   'sql-unbind       releases all column buffers for the statement
   'sql-reset-parms  releases all parameter buffers for the statement
+
+ free-stmt returns the value of `hstmt'.
 
  Environments
  ------------
@@ -288,7 +296,8 @@
 
  Given an environment handle `henv', sets the value of its associated 
  attribute `attr' to the value `val'.  See `get-env-attr' for the
- available attributes and their valid values.
+ available attributes and their valid values.  Returns the value of 
+ `henv'.
 
  Connections
  -----------
@@ -304,6 +313,7 @@
 
  Establishes a connection, given a connection handle `hdbc', and 
  strings for a database server `dbms', a `name' and `password'.
+ Returns the value of `hdbc'.
 
 > (disconnect hdbc)
 
@@ -311,7 +321,7 @@
 
  Closes the data source connection associated with the connection 
  handle `hdbc'.  Frees any statement and descriptor handles associated 
- with the connection handle.
+ with the connection handle.  Returns the value of `hdbc'.
 
 > (get-info hdbc infotype [handle])
 
@@ -1178,6 +1188,8 @@
                                'sql-txn-repeatable-read, 
 			       'sql-txn-serializable
 
+ Returns the value of `hdbc'.
+
  Note that some connection attributes listed in the documentation
  for `get-connect-attr' are not settable.  The type boolean 
  above indicates that any Scheme value other than #f is
@@ -1194,6 +1206,7 @@
  symbol `option' to be `val'.  The type of `val' depends on `attr'.
  The permisible values of `option' are the same as for `attr' in 
  `set-connect-attr'.  See `set-connect-attr' for more information.
+ Returns the value of `hdbc'.
 
 > (driver-connect hdbc connect-string prompt)
 
@@ -1251,9 +1264,9 @@
  ODBC 1.0.
 
  Compiles the SQL statement given by the string `sql' for the 
- statement handle `hstmt'.  Once an SQL statement has been compiled
- for a statement handle, `sql-execute' can be called as many times 
- as desired using that handle.
+ statement handle `hstmt'.  Returns the value of `hstmt'.  Once 
+ an SQL statement has been compiled for a statement handle, 
+ `sql-execute' can be called as many times as desired using that handle.
  
 > (execute hstmt)
 
@@ -1264,6 +1277,7 @@
  `sql-prepare'.  When a statement executes, its parameters,
  indicated by ?'s in the SQL text, are replaced by the values
  bound to those parameters.  See `bind-parameter' and `bind-param'.
+ The value of `hstmt' is returned.
 
 > (exec-direct hstmt sql)
 
@@ -1273,7 +1287,8 @@
  associates that statement with the statement handle `hstmt'.  
  When a statement executes, its parameters, indicated by ?'s in 
  the SQL text, are replaced by the values bound to those parameters. 
- See `bind-parameter' and `bind-param'.
+ See `bind-parameter' and `bind-param'.  The value of `hstmt' is
+ returned.
 
 > (native-sql hdbc sql)
 
@@ -1297,14 +1312,15 @@
  Given the statement handle `hstmt' and an sql-buffer `buff',
  sends the buffer data to either 1) the parameter associated
  with the statement, or 2) the column associated with the
- statement, for use with bulk-operations or set-pos.
+ statement, for use with bulk-operations or set-pos.  Returns the
+ value of `hstmt'.
 
 > (cancel hstmt)
 
  ODBC 1.0.
 
  Terminates processing of the statement given by the statement handle
- `hstmt'.
+ `hstmt'.  Returns the value of `hstmt'.
 
 > (end-tran handle action)
 
@@ -1313,7 +1329,7 @@
  Requests a commit or rollback for all transactions associated with 
  `handle', which may be either an environment handle or a 
  connection handle.  `action' is one of the symbols 
- 'sql-commit or 'sql-rollback.
+ 'sql-commit or 'sql-rollback.  Returns the value of `handle'.
 
 > (transact henv hdbc action)
 
@@ -1324,7 +1340,7 @@
  `action' is one of the symbols 'sql-commit or 'sql-rollback.
  If `hdbc' is the symbol 'sql-null-hdbc, the action is performed
  for the environment handle; otherwise, it is performed for the
- connection handle.
+ connection handle.  Returns void.
 
 > (num-params hstmt)
 
@@ -1353,6 +1369,7 @@
  'sql-numeric, 'sql-time, 'sql-timestamp, 'sql-type-time, 
  'sql-type-timestamp, 'sql-interval-second,  'sql-interval-day-to-second,  
  'sql-interval-hour-to-second, or 'sql-interval-minute-to-second.
+ Returns the value of `hstmt'.
 
  The `prepare' procedure must be called before calling `bind-parameter'.
 
@@ -1392,7 +1409,8 @@
  for the same-named arguments of procedure `bind-parameter'; some arguments
  are omitted for `bind-param'.  Note that `bind-param' always 
  assumes an input parameter, unlike `bind-parameter', which takes 
- an argument to indicate the parameter type.
+ an argument to indicate the parameter type.  Returns the value 
+ of `hstmt'.
 
 > (set-param hstmt num sql-type buff ind)
 
@@ -1401,7 +1419,8 @@
  Associates the sql-buffer `buff' with the parameter (a placeholder 
  indicated by ? in an SQL statement) denoted by the statement 
  handle `hstmt' and positive integer `num'.  `sql-type' is an SQL 
- data type.  `ind' is an sql-indicator.
+ data type.  `ind' is an sql-indicator.  Returns the value of 
+ `hstmt'. 
 
 > (get-stmt-attr hstmt attr)
 
@@ -1530,7 +1549,7 @@
 
  For the statement handle `hstmt', sets its associated attribute `attr'
  to the value `val'.  See `get-stmt-attr' for attributes and 
- their possible values. 
+ their possible values.  Returns the value of `hstmt'. 
 
 > (set-stmt-option hstmt attr val)
   
@@ -1538,19 +1557,20 @@
 
  For the statement handle `hstmt', sets its associated `option'
  to the value `val'.  See `get-stmt-option' for options and 
- their possible values. 
+ their possible values.  Returns the value of `hstmt'.
 
  Descriptors
  -----------
 
- > (copy-desc hdesc-src hdesc-target)
+> (copy-desc hdesc-src hdesc-target)
 
  ODBC 3.0.
 
  Copies information from descriptor handle `hdesc-src' to
- descriptor handle `hdesc-target'.
+ descriptor handle `hdesc-target'.  Returns the value of 
+ `hdesc-src'.
 
- > (get-desc-rec hdesc recnum)
+> (get-desc-rec hdesc recnum)
 
  ODBC 3.0.
 
@@ -1572,7 +1592,7 @@
  'sql-no-nulls, 'sql-nullable, or 'sql-nullable-unknown, indicating
  whether the parameter or column may have NULL values.
 
- > (set-desc-rec hdesc recnum type subtype length precision scale buff len ind)
+> (set-desc-rec hdesc recnum type subtype length precision scale buff len ind)
 
  ODBC 3.0.
 
@@ -1584,7 +1604,7 @@
  `len' is an sql-length (see make-length and read-length, below), which 
  should be initialized to the desired length of the column or parameter 
  associated with the descriptor record; `ind' is an sql-indicator
- (see Indicators, below).
+ (see Indicators, below).  Returns the value of `hdesc'.
 
 > (get-desc-field hdesc recnum field)
 
@@ -1676,7 +1696,8 @@
  For the descriptor handle `hdesc', sets the field indicated 
  by the symbol `field' in the record with index `recnum', an integer, 
  to the value `val'.  See get-desc-field for valid values of 
- `field' and corresponding types for `val'.
+ `field' and corresponding types for `val'.  Returns the value of 
+ `hdesc'.
 
  Cursors
  -------
@@ -1693,14 +1714,14 @@
   ODBC 1.0.
 
   Assigns the string `name' as the name of the cursor associated with 
-  the statement handle `hstmt'. 
+  the statement handle `hstmt'.  Returns the value of `hstmt'.
 
 > (close-cursor hstmt)
 
   ODBC 3.0.
 
   Closes the cursor associated with the statement handle `hstmt',
-  discarding any pending results.
+  discarding any pending results.  Returns the value of `hstmt'.
 
  Columns and data retrieval
  -------------------------------
@@ -1829,7 +1850,8 @@
 
  Associates the sql-buffer `buff' and sql-indicator `ind' 
  with a column of data denoted by the statement handle `hstmt'
- and column numer `colnum', an integer.  
+ and column numer `colnum', an integer.  Returns the value 
+ of `hstmt'.  
  
 > (fetch hstmt)
 
@@ -1838,17 +1860,18 @@
  Retrieves data in the current row of the data set for 
  the statement handle `hstmt' into the sql-buffers
  bound to the data set's columns, and sets the columns' 
- associated sql-indicator's.  For columns without bound
- sql-buffers, `get-data' can be used to retrieve data
- following a `fetch'.
+ associated sql-indicator's.  Returns the value of `hstmt'.
+ For columns without bound sql-buffers, `get-data' can be used 
+ to retrieve data following a `fetch'.  
 
 > (get-data hstmt colnum buff ind)
 
  Retrieves data in the current row of the data set for 
  the column denoted by the statement handle `hstmt' 
  and column number `colnum', an integer, into the sql-buffer 
- `buff' and sets the sql-indicator `ind'.  `get-data' allows 
- column data to be retrieved without binding columns to buffers.
+ `buff' and sets the sql-indicator `ind'.  Returns the value of 
+ `hstmt'. `get-data' allows column data to be retrieved without 
+ binding columns to buffers.
 
 > (fetch-scroll hstmt orient [rownum])
 
@@ -1869,9 +1892,10 @@
                                   'sql-attr-fetch-bookmark-ptr
                                   statement attribute
 
- The size of rowsets is specified by the 'sql-attr-rowset-size
- statement attribute (see `get-stmt-attr' and `set-stmt-attr').
- See an ODBC reference for more information on using rowsets.
+ fetch-scroll returns the value of `hstmt'.  The size of rowsets is 
+ specified by the 'sql-attr-rowset-size statement attribute (see 
+ `get-stmt-attr' and `set-stmt-attr').  See an ODBC reference for more 
+ information on using rowsets.
 
 > (set-scroll-options hstmt concurrency keyset size)
 
@@ -1894,7 +1918,7 @@
    'sql-scroll-dynamic        use `size' parameter for keyset size
 
  `size', a nonnegative exact integer, gives the size of 
- rowsets when using `extended-fetch'.
+ rowsets when using `extended-fetch'.  Returns the value of `hstmt'.
 
 > (extended-fetch hstmt orientation [rownum])
 
@@ -1924,10 +1948,10 @@
 
  ODBC 1.0.
 
- Retrieves next data set for the statement handle `hstmt'.
- `more-results', which moves between data sets, is distinguished 
- from procedures such as `fetch', which return results within
- data sets.
+ Retrieves the next data set for the statement handle `hstmt', whose
+ value is returned by the procedure.  `more-results', which moves between 
+ data sets, is distinguished from procedures such as `fetch', which return 
+ results within data sets.  
 
 > (set-pos hstmt rownum operation lock)
 
@@ -1960,6 +1984,8 @@
                            access
    'sql-lock-unlock      no lock restrictions on access 
 
+ set-pos returns the value of `hstmt'.
+
 > (bulk-operations hstmt operation)
 
  ODBC 3.0.
@@ -1972,6 +1998,8 @@
    'sql-update-by-bookmark   updates rows identified by a bookmark
    'sql-delete-by-bookmark   deletes rows identified by a bookmark
    'sql-fetch-by-bookmark    retrieves rows identified by a bookmark
+
+ Returns the value of `hstmt'. 
 
  The details of using bulk-operations are beyond the scope of this
  documentation.  Consult an ODBC reference for more information.
@@ -1994,10 +2022,10 @@
  driver may add columns.  The contents of those columns are beyond the scope 
  of this documentation; consult an ODBC reference for details.
  
- `hstmt' is a statement handle, while `catalog', `schema', `table',
- and `column' are strings.  `column' may contain an underscore "_" 
- indicating a single-character wildcard, or a percent sign "%", which 
- matches zero or more characters.
+ `hstmt' is a statement handle, and its value is returned by the 
+ procedure.  `catalog', `schema', `table', and `column' are strings.  
+ `column' may contain an underscore "_" indicating a single-character 
+ wildcard, or a percent sign "%", which matches zero or more characters.
 
 > (columns hstmt catalog schema table column)
 
@@ -2006,37 +2034,37 @@
  driver may add columns.  The contents of those columns are beyond the scope 
  of this documentation; consult an ODBC reference for details.
  
- `hstmt' is a statement handle, while `catalog', `schema', `table',
- and `column' are strings.  `table' and `column' may contain 
- an underscore "_" indicating a single-character wildcard, or
- a percent sign "%", which matches zero or more characters.
+ `hstmt' is a statement handle, whose value is returned by the procedure. 
+ `catalog', `schema', `table', and `column' are strings.  `table' and 
+ `column' may contain an underscore "_" indicating a single-character 
+ wildcard, or a percent sign "%", which matches zero or more characters.
 
 > (foreign-keys hstmt catalog schema table fk-catalog fk-schema fk-table)
 
  ODBC 1.0.
 
  Creates a result data set containing foreign key information for the
- specified table.  There are fourteen ODBC-defined columns in the 
- resulting data set; a driver may add columns.  The contents of those 
- columns are beyond the scope of this documentation; consult an ODBC 
- reference for details.
+ specified table. There are fourteen ODBC-defined columns in the resulting 
+ data set; a driver may add columns. The contents of those columns are beyond 
+ the scope of this documentation; consult an ODBC reference for details.
  
- `hstmt' is a statement handle.  `catalog', `schema', `table', 
- `fk-catalog', `fk-schema', and `fk-table' are all strings.
- `catalog', `schema', and `table' specify a table containing a 
- primary key, while  `fk-catalog', `fk-schema', and `fk-table' 
+ `hstmt' is a statement handle; its value is returned by the procedure.
+ `catalog', `schema', `table', `fk-catalog', `fk-schema', and `fk-table' 
+ are all strings.  `catalog', `schema', and `table' specify a table 
+ containing a primary key, while  `fk-catalog', `fk-schema', and `fk-table' 
  specify a table containing a foreign key.
 
 > (get-type-info hstmt type)
 
  ODBC 1.0.
 
- Given a statement handle and a symbol indicating an SQL data type
- (see SQL data types, below), creates a result data set describing 
- support for that data type in the current data source.
- There are at least nineteen columns in the resulting data set; a driver 
- may add columns.  The contents of those columns are beyond the scope 
- of this documentation; consult an ODBC reference for details.
+ Given a statement handle `hstmt' and a symbol `type' indicating an 
+ SQL data type (see SQL data types, below), creates a result data set 
+ describing support for that data type in the current data source.
+ Returns the value of `hstmt'.  There are at least nineteen columns in 
+ the resulting data set; a driver may add columns.  The contents of 
+ those columns are beyond the scope of this documentation; consult an
+ ODBC reference for details.
 
 > (primary-keys hstmt catalog schema table)
 
@@ -2048,8 +2076,8 @@
  columns are beyond the scope of this documentation; consult an ODBC 
  reference for details.
  
- `hstmt' is a statement handle.  `catalog', `schema', and `table' are
- strings.
+ `hstmt' is a statement handle; its value is returned by the procedure.  
+ `catalog', `schema', and `table' are strings.
 
 > (procedure-columns hstmt catalog schema name column)
 
@@ -2061,11 +2089,11 @@
  driver may add columns.  The contents of those columns are beyond the 
  scope of this documentation; consult an ODBC reference for details.
 
- `hstmt' is a statement handle.  `catalog', `schema', `name', and `column'
- are strings.  `name' indicates a procedure name, while `column' is
- a column name.  `schema', `name', and `column' may contain an 
- underscore "_" indicating a single-character wildcard, or a percent 
- sign "%", which matches zero or more characters.
+ `hstmt' is a statement handle; its value is returned by the procedure.  
+ `catalog', `schema', `name', and `column' are strings.  `name' indicates 
+ a procedure name, while `column' is a column name.  `schema', `name', and 
+ `column' may contain an underscore "_" indicating a single-character 
+ wildcard, or a percent sign "%", which matches zero or more characters.
 
 > (procedures hstmt catalog schema name)
 
@@ -2077,10 +2105,11 @@
  columns are beyond the scope of this documentation; consult an ODBC 
  reference for details.
  
- `hstmt' is a statement handle.  `catalog', `schema', and `name' are
- strings.  `name' indicates a procedure name.  Both `schema' and
- `name' may contain an underscore "_" indicating a single-character
- wildcard, or a percent sign "%", which matches zero or more characters.
+ `hstmt' is a statement handle; its value is returned by the procedure.  
+ `catalog', `schema', and `name' are strings.  `name' indicates a procedure 
+ name.  Both `schema' and `name' may contain an underscore "_" indicating 
+ a single-character wildcard, or a percent sign "%", which matches zero or 
+ more characters.
 
 > (table-privileges hstmt catalog schema table)
 
@@ -2095,7 +2124,7 @@
  The seventh column is either "YES", "NO", or a NULL.  Drivers may
  add additional columns.
 
- `hstmt' is a statement handle.
+ `hstmt' is a statement handle; its value is returned by the procedure.
 
  `catalog', `schema', and `table' are strings to be matched when
  searching the system catalog.  An underscore "_" indicates a 
@@ -2113,7 +2142,8 @@
  name, table type, and descriptive remarks.  Drivers may add additional
  columns.  
 
- `hstmt' is a statement handle.
+ `hstmt' is a statement handle, and its value is returned by the
+ procedure.
 
  `catalog', `schema', `table', and `table-type' are strings 
  to be matched when searching the system catalog.  `catalog' and
@@ -2151,17 +2181,17 @@
  columns are beyond the scope of this documentation; consult an ODBC 
  reference for details.
  
- `hstmt' is a statement handle. `rowid' is either 'sql-best-rowid, 
- indicating that the result data set contains a column or columns
- that uniquely identify a row in a table; or 'sql-rowver, indicating 
- that the result data set contains those columns that are automatically 
- updated when a row value is updated by a transaction.  `catalog', 
- `schema', and `table' are strings.  `scope' is either 'sql-scope-currow,
- indicating that the primary key sought is for the current row, or
- 'sql-scope-transaction, indicating that the primary key applies to 
- the current transaction. `nullable' is either 'sql-no-nulls, which 
- excludes columns in the result data set that may contain NULL, or 
- 'sql-nullable, which allows such columns.
+ `hstmt' is a statement handle, and its value is returned by the
+ procedure. `rowid' is either 'sql-best-rowid, indicating that the
+ result data set contains a column or columns that uniquely identify 
+ a row in a table; or 'sql-rowver, indicating that the result data set 
+ contains those columns that are automatically updated when a row value 
+ is updated by a transaction.  `catalog', `schema', and `table' are 
+ strings.  `scope' is either 'sql-scope-currow, indicating that the primary 
+ key sought is for the current row, or 'sql-scope-transaction, indicating 
+ that the primary key applies to the current transaction. `nullable' is 
+ either 'sql-no-nulls, which excludes columns in the result data set that 
+ may contain NULL, or 'sql-nullable, which allows such columns.
 
 > (statistics hstmt catalog schema table index-type accuracy)
 
@@ -2172,13 +2202,13 @@
  set; a driver may add columns.  The contents of those columns are beyond 
  the scope of this documentation; consult an ODBC reference for details.
  
- `hstmt' is a statement handle. `catalog', `schema', and `table'
- are strings. `index-type' is either 'sql-index-unique, indicating 
- that only unique indexes are to be considered, or 'sql-index-all,
- indicating that all indexes are to be considered.  `accuracy' is 
- either 'sql-quick, indicating that readily-available but perhaps
- stale data may be used when generating the data set, or 'sql-ensure, 
- indicating that only up-to-date data is used.
+ `hstmt' is a statement handle, and its value is returned by the
+ procedure.  `catalog', `schema', and `table'  are strings. 
+ `index-type' is either 'sql-index-unique, indicating that only unique 
+ indexes are to be considered, or 'sql-index-all, indicating that all 
+ indexes are to be considered.  `accuracy' is either 'sql-quick, indicating 
+ that readily-available but perhaps stale data may be used when generating 
+ the data set, or 'sql-ensure, indicating that only up-to-date data is used.
 
  Errors and Diagnostics
  ----------------------

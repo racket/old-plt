@@ -327,15 +327,19 @@ _MysterX_
   Events have attributes that give detail about
   the event.
 
-> tag :: (send an-mx-event tag)
+> altkey :: (send an-mx-event altkey)
 
-  Returns a string indicating the HTML tag of the
-  element where the event occurred.
+  Returns #t if the Alt key was pressed when the 
+  even was generated, #f otherwise.  Return value is 
+  valid only for events for which `keypress?',
+  `keydown', or `keyup?' hold.
 
-> id :: (send an-mx-event id)
+> ctrlkey :: (send an-mx-event ctrlkey)
 
-  Returns a string indicating the identifier of
-  the HTML element where the event occurred.
+  Returns #t if the Ctrl key was pressed when the 
+  even was generated, #f otherwise.  Return value is 
+  valid only for events for which `keypress?',
+  `keydown', or `keyup?' hold.
 
 > from-tag :: (send an-mx-event from-tag)
 
@@ -350,6 +354,30 @@ _MysterX_
   the HTML element where the mouse is being moved
   from.  Return value is valid only for events for
   which `mouseover?' or `mouseout?' hold.
+
+> id :: (send an-mx-event id)
+
+  Returns a string indicating the identifier of
+  the HTML element where the event occurred.
+
+> keycode :: (send an-mx-event keycode)
+
+  Returns a number indicating the keycode for the
+  key that generated the event.  Return value is 
+  valid only for events for which `keypress?',
+  `keydown', or `keyup?' hold.
+
+> shiftkey :: (send an-mx-event shiftkey)
+
+  Returns #t if the Shift key was pressed when the 
+  even was generated, #f otherwise.  Return value is 
+  valid only for events for which `keypress?',
+  `keydown', or `keyup?' hold.
+
+> tag :: (send an-mx-event tag)
+
+  Returns a string indicating the HTML tag of the
+  element where the event occurred.
 
 > to-tag :: (send an-mx-event to-tag)
 

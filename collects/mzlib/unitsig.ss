@@ -8,7 +8,7 @@
   (require-for-syntax "private/sigmatch.ss")
   (require-for-syntax (lib "kerncase.ss" "syntax"))
 
-  (define-struct/export unit/sig (unit imports exports))
+  (define-struct unit/sig (unit imports exports))
 
   (define-syntax define-signature
     (lambda (expr)
@@ -310,6 +310,8 @@
 	   invoke-unit/sig
 	   unit->unit/sig
 	   signature->symbols
+
+	   (struct unit/sig (unit imports exports))
 	   
 	   define-values/invoke-unit/sig
 	   global-define-values/invoke-unit/sig

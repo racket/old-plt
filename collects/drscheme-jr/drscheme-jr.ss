@@ -81,6 +81,7 @@
       (let ([v ((zodiac:read
 		 (current-input-port)
 		 (zodiac:make-location 1 1 0 "stdin")))])
+	'(printf "read: ~a~n" v)
 	(if (zodiac:eof? v)
 	    eof
 	    v)))))
@@ -106,8 +107,23 @@
 			 (compose pretty-print-handler print-convert)
 			 pretty-print-handler))
 
-(define mzrice-eval (compose (current-eval)
-		      aries:annotate zodiac:scheme-expand))
+(define mzrice-expand-eval
+  (let ([primitive-eval (current-eval)])
+    (lambda (x)
+      (let* ([expanded (zodiac:scheme-expand x)]
+	     [_ '(printf "expanded: ~a~n" expanded)]
+	     [annotated (aries:annotate expanded)]
+	     [_ '(printf "annotated: ~a~n" annotated)])
+	(primitive-eval annotated)))))
+
+(define mzrice-eval
+  (let* ([loc (zodiac:make-location 0 0 0 'eval)]
+	 [z (zodiac:make-zodiac 'mzrice-eval loc loc)])
+    (lambda (x)
+      '(printf "eval; x: ~a~n" x)
+      (let* ([read (zodiac:structurize-syntax x z)])
+	'(printf "eval; read: ~a~n" read)
+	(mzrice-expand-eval read)))))
 
 (define mzrice-load
   (lambda (f)
@@ -118,7 +134,7 @@
 		     [last (void)])
 	    (if (zodiac:eof? v)
 		last
-		(loop (read) (mzrice-eval v)))))))))
+		(loop (read) (mzrice-expand-eval v)))))))))
 
 (define parameterization (make-parameterization))
 

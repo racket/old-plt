@@ -2079,6 +2079,7 @@ void scheme_regexp_initialize(Scheme_Env *env)
 {
 #ifdef MZ_PRECISE_GC
   GC_REG_TRAV(scheme_regexp_type, mark_regexp);
+  GC_REG_TRAV(scheme_rt_regwork, mark_regwork);
 #endif
 
   REGISTER_SO(regparsestr);

@@ -1697,7 +1697,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Obj
     Resolve_Prefix *rp;
     Scheme_Comp_Env *rhs_env;
 
-    rhs_env = scheme_new_comp_env(scheme_get_env(scheme_config), SCHEME_TOPLEVEL_FRAME);
+    rhs_env = scheme_new_comp_env(menv, SCHEME_TOPLEVEL_FRAME);
 
     for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
       e = SCHEME_CAR(body);
@@ -2743,7 +2743,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   self_modidx = env->genv->module->self_modidx;
 
   /* For syntax-local-context, etc., in a d-s RHS: */
-  rhs_env = scheme_new_comp_env(scheme_get_env(scheme_config), SCHEME_TOPLEVEL_FRAME);
+  rhs_env = scheme_new_comp_env(env->genv, SCHEME_TOPLEVEL_FRAME);
   
   /* Partially expand all expressions, and process definitions, requires,
      and provides. Also, flatten top-level `begin' expressions: */

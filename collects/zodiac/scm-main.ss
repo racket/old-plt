@@ -593,7 +593,8 @@
 
     (when (language>=? 'structured)
       (let* ((kwd '(let-struct))
-	      (in-pattern '(let-struct type-spec (fields ...) b ...))
+	      (in-pattern `(let-struct type-spec (fields ...)
+			     ,@expr-pattern))
 	      (m&e-in (pat:make-match&env in-pattern kwd)))
 	(let ((ls-core
                 (lambda (handler)
@@ -610,7 +611,7 @@
 	      (lambda (expr env attributes vocab p-env)
 		(let* ((fields (pat:pexpand '(fields ...) p-env kwd))
 			(type-spec (pat:pexpand 'type-spec p-env kwd))
-			(body (pat:pexpand '(b ...) p-env kwd)))
+			(body (pat:pexpand `(,@expr-pattern) p-env kwd)))
 		  (distinct-valid-syntactic-id/s? fields)
 		  (let-values (((type super)
 				 (extract-type&super type-spec env)))
@@ -742,7 +743,8 @@
 	    (lambda (l-kwd)
 	      (add-micro-form l-kwd scheme-vocabulary
 		(let* ((kwd (list l-kwd))
-			(in-pattern `(,l-kwd (((v ...) e) ...) b ...))
+			(in-pattern `(,l-kwd (((v ...) e) ...)
+				       ,@expr-pattern))
 			(m&e (pat:make-match&env in-pattern kwd)))
 		  (lambda (expr env attributes vocab)
 		    (cond
@@ -751,7 +753,8 @@
 			(lambda (p-env)
 			  (let ((vars (pat:pexpand '((v ...) ...) p-env kwd))
 				 (vals (pat:pexpand '(e ...) p-env kwd))
-				 (body (pat:pexpand '(b ...) p-env kwd)))
+				 (body (pat:pexpand `(,@expr-pattern)
+					 p-env kwd)))
 			    (let*
 			      ((all-vars (apply append vars))
 				(_ (distinct-valid-syntactic-id/s? all-vars))
@@ -767,7 +770,8 @@
 				  (extend-env new-vars+marks env))
 				(result
 				  (create-let-values-form
-				    (let loop ((var-lists vars) (new-vars new-vars))
+				    (let loop ((var-lists vars)
+						(new-vars new-vars))
 				      (if (null? var-lists)
 					'()
 					(let-values (((head tail)
@@ -776,9 +780,8 @@
 					  (cons head
 					    (loop (cdr var-lists) tail)))))
 				    expanded-vals
-				    (expand-expr
-				      (structurize-syntax `(begin ,@body) expr '(-1))
-				      env attributes vocab)
+				    (parse-expr body env
+				      attributes vocab expr)
 				    expr))
 				(_ (retract-env new-vars env)))
 			      result))))
@@ -789,12 +792,13 @@
 
     (add-macro-form 'let*-values scheme-vocabulary
       (let* ((kwd '(let*-values))
-	      (in-pattern-1 '(let*-values () b ...))
-	      (out-pattern-1 '(begin b ...))
-	      (in-pattern-2 '(let*-values ((v0 e0) (v1 e1) ...) b ...))
-	      (out-pattern-2 '(let-values ((v0 e0))
+	      (in-pattern-1 `(let*-values () ,@expr-pattern))
+	      (out-pattern-1 `(let-values () ,@expr-pattern))
+	      (in-pattern-2 `(let*-values ((v0 e0) (v1 e1) ...)
+			       ,@expr-pattern))
+	      (out-pattern-2 `(let-values ((v0 e0))
 				(let*-values ((v1 e1) ...)
-				  b ...)))
+				  ,@expr-pattern)))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)
@@ -806,7 +810,8 @@
 	    (lambda (l-kwd)
 	      (add-micro-form l-kwd scheme-vocabulary
 		(let* ((kwd (list l-kwd))
-			(in-pattern `(,l-kwd (((v ...) e) ...) b ...))
+			(in-pattern `(,l-kwd (((v ...) e) ...)
+				       ,@expr-pattern))
 			(m&e (pat:make-match&env in-pattern kwd)))
 		  (lambda (expr env attributes vocab)
 		    (cond
@@ -815,7 +820,8 @@
 			(lambda (p-env)
 			  (let ((vars (pat:pexpand '((v ...) ...) p-env kwd))
 				 (vals (pat:pexpand '(e ...) p-env kwd))
-				 (body (pat:pexpand '(b ...) p-env kwd)))
+				 (body (pat:pexpand `(,@expr-pattern)
+					 p-env kwd)))
 			    (let*
 			      ((all-vars (apply append vars))
 				(_ (distinct-valid-syntactic-id/s? all-vars))
@@ -831,7 +837,8 @@
 				    vals))
 				(result
 				  (create-letrec*-values-form
-				    (let loop ((var-lists vars) (new-vars new-vars))
+				    (let loop ((var-lists vars)
+						(new-vars new-vars))
 				      (if (null? var-lists)
 					'()
 					(let-values (((head tail)
@@ -840,9 +847,8 @@
 					  (cons head
 					    (loop (cdr var-lists) tail)))))
 				    expanded-vals
-				    (expand-expr
-				      (structurize-syntax `(begin ,@body) expr '(-1))
-				      env attributes vocab)
+				    (parse-expr body env
+				      attributes vocab expr)
 				    expr))
 				(_ (retract-env new-vars env)))
 			      result))))
@@ -853,27 +859,27 @@
 
     (add-macro-form 'letrec-values scheme-vocabulary
       (let* ((kwd '(letrec-values))
-	      (in-pattern '(letrec-values (((v ...) e) ...) b ...))
+	      (in-pattern `(letrec-values (((v ...) e) ...) ,@expr-pattern))
 	      (m&e (pat:make-match&env in-pattern kwd))
-	      (out-pattern '(letrec*-values (((v ...) e) ...) b ...)))
+	      (out-pattern `(letrec*-values (((v ...) e) ...) ,@expr-pattern)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed letrec-values")))))
 
     (add-macro-form 'letrec* scheme-vocabulary
       (let* ((kwd '(letrec*))
-	      (in-pattern '(letrec* ((v e) ...) b ...))
+	      (in-pattern `(letrec* ((v e) ...) ,@expr-pattern))
 	      (m&e (pat:make-match&env in-pattern kwd))
-	      (out-pattern '(letrec*-values (((v) e) ...) b ...)))
+	      (out-pattern `(letrec*-values (((v) e) ...) ,@expr-pattern)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed letrec*")))))
 
     (add-macro-form 'letrec scheme-vocabulary
       (let* ((kwd '(letrec))
-	      (in-pattern '(letrec ((v e) ...) b ...))
+	      (in-pattern `(letrec ((v e) ...) ,@expr-pattern))
 	      (m&e (pat:make-match&env in-pattern kwd))
-	      (out-pattern '(letrec*-values (((v) e) ...) b ...)))
+	      (out-pattern `(letrec*-values (((v) e) ...) ,@expr-pattern)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed letrec")))))
@@ -981,7 +987,7 @@
 	      (in-pattern-3 '(cond))
 	      (out-pattern-3 (if (language<=? 'structured)
 			       '(#%raise (#%make-exn:else
-					   "no else clause"
+					   "no matching clause"
 					   ((debug-info-handler))))
 			       '(#%void)))
 	      (in-pattern-4 (if (language<=? 'side-effecting)
@@ -1040,7 +1046,7 @@
 	      (in-pattern-2 '(case val))
 	      (out-pattern-2 (if (language<=? 'structured)
 			       '(#%raise (#%make-exn:else
-					   "no else clause"
+					   "no matching clause"
 					   ((debug-info-handler))))
 			       '(#%void)))
 	      (in-pattern-3 (if (language<=? 'structured)
@@ -1144,7 +1150,7 @@
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed define-schema")))))
 
-    (when (language>=? 'structured)
+    (when (language>=? 'side-effecting)
       (add-macro-form 'do scheme-vocabulary
 	(let* ((in-kwd '(do))
 		(in-pattern `(do (var-init-step ...)
@@ -1244,57 +1250,59 @@
 	      (else
 		(static-error expr "Malformed fluid-let")))))))
 
-    (add-macro-form 'parameterize scheme-vocabulary
-      (let* ((kwd '(parameterize))
-	      (in-pattern-1 '(parameterize () body ...))
-	      (out-pattern-1 '(begin body ...))
-	      (in-pattern-2 '(parameterize ((param value) rest ...) body ...))
-	      (out-pattern-2 '(let* ((pz (#%in-parameterization
-					   (#%current-parameterization)
-					   param #t))
-				      (orig (pz)))
-				(dynamic-wind
-				  (lambda () (pz value))
-				  (lambda () (parameterize (rest ...)
-					       body ...))
-				  (lambda () (pz orig)))))
-	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
-	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
-	(lambda (expr env)
-	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
-	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
-	    (static-error expr "Malformed parameterize")))))
+    (when (language>=? 'side-effecting)
+      (add-macro-form 'parameterize scheme-vocabulary
+	(let* ((kwd '(parameterize))
+		(in-pattern-1 '(parameterize () body ...))
+		(out-pattern-1 '(begin body ...))
+		(in-pattern-2 '(parameterize ((param value) rest ...) body ...))
+		(out-pattern-2 '(let* ((pz (#%in-parameterization
+					     (#%current-parameterization)
+					     param #t))
+					(orig (pz)))
+				  (dynamic-wind
+				    (lambda () (pz value))
+				    (lambda () (parameterize (rest ...)
+						 body ...))
+				    (lambda () (pz orig)))))
+		(m&e-1 (pat:make-match&env in-pattern-1 kwd))
+		(m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+	  (lambda (expr env)
+	    (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
+	      (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
+	      (static-error expr "Malformed parameterize"))))))
 
-    (add-macro-form 'with-handlers scheme-vocabulary
-      (let* ((kwd '(with-handlers))
-	      (in-pattern '(with-handlers ((pred handler) ...) body ...))
-	      (out-pattern
-		'((#%call/ec
-		    (lambda (k)
-		      (let ((handlers (#%list
-					(cons pred handler)
-					...)))
-			(parameterize
-			  ((#%current-exception-handler
-			     (lambda (e)
-			       (k
-				 (let loop ((handlers handlers))
-				   (cond
-				     ((#%null? handlers)
-				       (lambda () (#%raise e)))
-				     (((#%caar handlers) e)
-				       (lambda () ((#%cdar handlers) e)))
-				     (else
-				       (loop (#%cdr handlers)))))))))
-			  (#%call-with-values
-			    (lambda () body ...)
-			    (lambda args
-			      (k
-				(lambda () (#%apply #%values args)))))))))))
-	      (m&e (pat:make-match&env in-pattern kwd)))
-	(lambda (expr env)
-	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	    (static-error expr "Malformed with-handlers")))))
+    (when (language>=? 'side-effecting)
+      (add-macro-form 'with-handlers scheme-vocabulary
+	(let* ((kwd '(with-handlers))
+		(in-pattern '(with-handlers ((pred handler) ...) body ...))
+		(out-pattern
+		  '((#%call/ec
+		      (lambda (k)
+			(let ((handlers (#%list
+					  (cons pred handler)
+					  ...)))
+			  (parameterize
+			    ((#%current-exception-handler
+			       (lambda (e)
+				 (k
+				   (let loop ((handlers handlers))
+				     (cond
+				       ((#%null? handlers)
+					 (lambda () (#%raise e)))
+				       (((#%caar handlers) e)
+					 (lambda () ((#%cdar handlers) e)))
+				       (else
+					 (loop (#%cdr handlers)))))))))
+			    (#%call-with-values
+			      (lambda () body ...)
+			      (lambda args
+				(k
+				  (lambda () (#%apply #%values args)))))))))))
+		(m&e (pat:make-match&env in-pattern kwd)))
+	  (lambda (expr env)
+	    (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	      (static-error expr "Malformed with-handlers"))))))
 
     (add-micro-form 'define-macro scheme-vocabulary
       (let* ((kwd '(define-macro))

@@ -15,7 +15,7 @@
   (define-struct str (renames all-renames))
   ;; renames = renames for exports
   ;; all-renames = all internal renames (needed to determine
-  ;;               the approrpriate shadowing variable when `open'
+  ;;               the appropriate shadowing variable when `open'
   ;;               appears in a `package' body)
 
   ;; The mark-to-localize function detects uses of `protect'
@@ -198,20 +198,25 @@
 								    name))))))
       (get-renames (syntax-local-introduce name) err)))
 
-  (define (walk-path path env+rns+subs stx)
-    (let loop ([path path][env+rns+subs env+rns+subs])
+  (define (walk-path path env+rns+subs stx rename)
+    (let loop ([path path][env+rns+subs env+rns+subs][rename rename])
       (cond
-       [(null? path) env+rns+subs]
+       [(null? path) (values env+rns+subs rename)]
        [else (let* ([new-name (stx-assoc (syntax-local-introduce (car path))
 					 (cadr env+rns+subs))]
 		    [v (and new-name
 			    (if (caddr env+rns+subs)
 				(bound-identifier-mapping-get (caddr env+rns+subs) 
-							      (cdr new-name)
+							      (rename (cdr new-name))
 							      (lambda () #f))
-				(get-renames (cdr new-name) (lambda (x) (lambda () #f)))))])
+				(get-renames (rename (cdr new-name))
+					     (lambda (x) (lambda () #f)))))])
 	       (if v
-		   (loop (cdr path) v)
+		   (loop (cdr path) v (lambda (id)
+					(let ([a (stx-assoc id (cadr env+rns+subs))])
+					  (rename (if a
+						      (cdr a)
+						      id)))))
 		   (raise-syntax-error
 		    #f
 		    "no such exported subpackage"

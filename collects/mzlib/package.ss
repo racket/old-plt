@@ -418,76 +418,76 @@
 		     ex-name bind-name
 		     def)
       ;; Find the package:
-      (let* ([env+rns+subs 
-	      ;; Find the initial package. `open' reports an error if it can't find one
-	      (let ([env+rns+subs (open (car path) orig-name stx)])
-		(walk-path (cdr path) env+rns+subs stx))]
-	     ;; If we're in a package's body, get it's rename environment
-	     [cp-env+rns+subs (let ([cp (syntax-local-value #'current-package (lambda () #f))])
-				(and cp (open cp cp stx)))]
-	     [env (and env+rns+subs (let ([e (car env+rns+subs)])
-				      (if ex-name
-					  (let ([a (stx-assoc 
-						    (let ([id (syntax-local-introduce ex-name)])
-						      ;; Reverse-map renaming due to being in a package body:
-						      (let ([in-pack-bind
-							     (and cp-env+rns+subs
-								  (ormap (lambda (p)
-									   (and (bound-identifier=? (cdr p) id)
-										p))
-									 (cadr cp-env+rns+subs)))])
-							(if in-pack-bind
-							    (car in-pack-bind)
-							    id)))
-						    (car env+rns+subs))])
-					    (unless a
-					      (raise-syntax-error
-					       #f
-					       "no such export from package"
-					       stx
-					       ex-name))
-					    (list a))
-					  e)))]
-	     ;; Find the names that `open' is supposed to bind
-	     [shadowers (if bind-name
-			    (list bind-name)
-			    (map (lambda (x)
-				   (let ([in-pack-bind (and cp-env+rns+subs
-							    (stx-assoc (car x) (cadr cp-env+rns+subs)))])
-				     (if in-pack-bind
-					 (syntax-local-get-shadower
-					  (cdr in-pack-bind))
-					 (syntax-local-get-shadower
-					  (car x)))))
-				 env))])
-	;; Set up the defined-name -> opened-name mapping
-	(with-syntax ([((pub . hid) ...)
-		       (map (lambda (x shadower)
-			      (cons (if bind-name
-					shadower ; which is bind-name
-					(syntax-local-introduce shadower))
-				    (syntax-local-introduce (cdr x))))
-			    env shadowers)]
-		      [def-stxes def])
-	  ;; In case another `open' follows this one in an
-	  ;; internal-defn position, register renames for
-	  ;; packages that we just made available:
-	  (let* ([ctx (syntax-local-context)]
-		 [subs (caddr env+rns+subs)])
-	    (when (pair? ctx)
-	      (for-each (lambda (x shadower)
-			  (re-pre-register-package subs ctx 
-						   (if bind-name
-						       (syntax-local-introduce shadower)
-						       shadower)
-						   (if subs
-						       (car x)
-						       (cdr x))))
-			env shadowers)))
-	  ;; Open produces a syntax binding to map to the opened names:
-	  (syntax/loc stx
-	    (def-stxes (pub ...)
-	      (values (make-rename-transformer (quote-syntax hid)) ...))))))
+      (let*-values ([(env+rns+subs rename-chain)
+		     ;; Find the initial package. `open' reports an error if it can't find one
+		     (let ([env+rns+subs (open (car path) orig-name stx)])
+		       (walk-path (cdr path) env+rns+subs stx values))])
+	(let* (;; If we're in a package's body, get it's rename environment
+	       [cp-env+rns+subs (let ([cp (syntax-local-value #'current-package (lambda () #f))])
+				  (and cp (open cp cp stx)))]
+	       [env (and env+rns+subs (let ([e (car env+rns+subs)])
+					(if ex-name
+					    (let ([a (stx-assoc 
+						      (let ([id (syntax-local-introduce ex-name)])
+							;; Reverse-map renaming due to being in a package body:
+							(let ([in-pack-bind
+							       (and cp-env+rns+subs
+								    (ormap (lambda (p)
+									     (and (bound-identifier=? (cdr p) id)
+										  p))
+									   (cadr cp-env+rns+subs)))])
+							  (if in-pack-bind
+							      (car in-pack-bind)
+							      id)))
+						      (car env+rns+subs))])
+					      (unless a
+						(raise-syntax-error
+						 #f
+						 "no such export from package"
+						 stx
+						 ex-name))
+					      (list a))
+					    e)))]
+	       ;; Find the names that `open' is supposed to bind
+	       [shadowers (if bind-name
+			      (list bind-name)
+			      (map (lambda (x)
+				     (let ([in-pack-bind (and cp-env+rns+subs
+							      (stx-assoc (car x) (cadr cp-env+rns+subs)))])
+				       (if in-pack-bind
+					   (syntax-local-get-shadower
+					    (cdr in-pack-bind))
+					   (syntax-local-get-shadower
+					    (car x)))))
+				   env))])
+	  ;; Set up the defined-name -> opened-name mapping
+	  (with-syntax ([((pub . hid) ...)
+			 (map (lambda (x shadower)
+				(cons (if bind-name
+					  shadower ; which is bind-name
+					  (syntax-local-introduce shadower))
+				      (syntax-local-introduce (rename-chain (cdr x)))))
+			      env shadowers)]
+			[def-stxes def])
+	    ;; In case another `open' follows this one in an
+	    ;; internal-defn position, register renames for
+	    ;; packages that we just made available:
+	    (let* ([ctx (syntax-local-context)]
+		   [subs (caddr env+rns+subs)])
+	      (when (pair? ctx)
+		(for-each (lambda (x shadower)
+			    (re-pre-register-package subs ctx 
+						     (if bind-name
+							 (syntax-local-introduce shadower)
+							 shadower)
+						     (if subs
+							 (car x)
+							 (cdr x))))
+			  env shadowers)))
+	    ;; Open produces a syntax binding to map to the opened names:
+	    (syntax/loc stx
+	      (def-stxes (pub ...)
+		(values (make-rename-transformer (quote-syntax hid)) ...)))))))
 
     (define (generic-open stx def)
       (check-defn-context stx)

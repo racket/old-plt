@@ -226,7 +226,7 @@
 	   (define (newboundtypes tdlist)
 	     (if (null? tdlist)
 		 null
-		 (cons (syntax-object->datum (car (car tdlist))) (newboundtypes (cdr tdlist)))))
+		 (cons (cons (syntax-object->datum (car (car tdlist))) (syntax-object->datum (car (car tdlist)))) (newboundtypes (cdr tdlist)))))
 
 		       
 	   (define (typecheck-typedecl td boundlist)
@@ -237,11 +237,11 @@
 		       (let ([rtype (typecheck-type (ast:type_declaration-manifest typedecl) boundlist)])
 			 (begin
 			   (hash-table-put! <constructors> name (cons rtype "some error"))
-			   (format "type ~a ~a = ~a" (if (not (null? (ast:type_declaration-params td)))
-							 (map typecheck-type (ast:type_declaration-params td))
+			   (format "type ~a ~a = ~a" (if (not (null? (ast:type_declaration-params typedecl)))
+							 (map typecheck-type (ast:type_declaration-params typedecl))
 							 "") name rtype)))]
 		      [($ ast:ptype_variant scll)
-		       (let* ([tscll (typecheck-scll name scll boundlist)]
+		       (let* ([tscll (typecheck-scll name (ast:type_declaration-params typedecl) scll boundlist)]
 			      [ntv (make-tvariant name (map syntax-object->datum (map car scll)) tscll)])
 			 (begin
 			   (hash-table-put! <constructors> name (cons name "some error"))
@@ -250,12 +250,54 @@
 		       (raise-syntax-error #f (format "Unkown typedecl found: ~a" td))]
 		       )))
 
-	   (define (typecheck-scll sname scll boundlist)
+	   (define (create-mapping params mapping)
+	     (if (null? params)
+		 mapping
+		 (if (get-type (syntax-object->datum (car params)))
+		     (create-mapping (cdr params) mapping)
+		     (create-mapping (cdr params) (cons (cons (syntax-object->datum (car params)) (fresh-type-var)) mapping)))))
+
+	   (define (convert-param mapping scll)
+	     (let* ([name (car current)]
+		    [ttypes (map convert-ttypes (repeat mapping (length (cdr current))) (cdr current))])
+	       (cons name ttypes)))
+
+	   (define (convert-ttypes mapping type)
+	     (match (ast:core_type-desc type)
+		    [($ ast:ptyp_arrow label ct1 ct2)
+		     (ast:make-ptyp_arrow label 
+					  (convert-ttypes mapping ct1)
+					  (convert-ttypes mapping ct2))]
+		     [($ ast:ptyp_tuple ctlist)
+		      (ast:make-ptyp_tuple (map convert-ttypes (repeat mapping (length ctlist)) ctlist))]
+		     [($ ast:ptyp_constr name ctlist)
+		      (ast:make-ptyp_constr name (if (not (null? ctlist))
+						     (map convert-ttypes (repeat mapping (length ctlist)) ctlist)
+						     null))]
+		     [($ ast:ptyp_var f)
+		      (ast:make-ptyp_var
+		      (cond
+		       [(syntax? f) (get-type (syntax-object->datum f) mapping)]
+		       [(string? f) (get-type f mapping)]
+		       [else (raise-syntax-error #f (format "Bad ptyp_var: ~a" f))]))]
+		     [x x]))
+	       
+
+		    
+	   (define (typecheck-scll sname params scll boundlist)
 	     (if (null? scll)
 		 null
 		 (let* ([current (car scll)]
 			[name (syntax-object->datum (car current))]
-			[ttypes (map typecheck-type (cdr current) (repeat boundlist (length (cdr current))))])
+			
+			[params-as-tvars (map make-tvar (map syntax-object->datum params))]
+			[utype-type (cond
+				     [(> (length params-as-tvars) 1) (make-<tuple> params-as-tvars)]
+				     [(= (length params-as-tvars) 1) (car params-as-tvars)]
+				     [else null])]
+			[ut/env (convert-tvars (make-usertype sname utype-type))]
+			[ttypes (map typecheck-type (cdr current) (repeat boundlist (length (cdr current))))]
+)
 		   (begin
 		     (hash-table-put! <constructors> name (cond
 							   [(> (length ttypes) 1)

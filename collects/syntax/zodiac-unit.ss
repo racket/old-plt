@@ -209,7 +209,7 @@
 			  (and (pair? b) (car b))
 			  (get-slot stx slot-table)))))]
 
-		[(#%unbound . id)
+		[(#%top . id)
 		 ;; Top-level (or module) reference:
 		 (make-top-level-varref
 		  stx

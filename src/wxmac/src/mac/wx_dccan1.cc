@@ -563,7 +563,10 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 
       pensize = current_pen->GetWidth();
       thePenWidth = (pensize ? pensize : 1);
-      PenSize(thePenWidth, thePenWidth);
+      if (pensize)
+	PenSize(XLOG2DEVREL(thePenWidth), YLOG2DEVREL(thePenWidth));
+      else
+	PenSize(1, 1);
       
       thePenStyle = current_pen->GetStyle();
       log = patCopy;

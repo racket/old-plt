@@ -62,7 +62,7 @@ void wxCanvasDC::GetSize(float *width, float *height)
 void wxCanvasDC::CrossHair(float x, float y)
      //-----------------------------------------------------------------------------
 {
-  int xx, yy;
+  int xx, yy, dpx, dpy;
   float ww, hh;
   
   if (!Ok() || !cMacDC || !current_pen || current_pen->GetStyle() == wxTRANSPARENT)
@@ -70,12 +70,15 @@ void wxCanvasDC::CrossHair(float x, float y)
 
   SetCurrentDC();
 
+  dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
+  dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
+
   wxMacSetCurrentTool(kPenTool);
   xx = XLOG2DEV(x);
   yy = YLOG2DEV(y);
   GetSize(&ww, &hh) ;
-  wxMacDrawLine(0, yy, ww, yy);
-  wxMacDrawLine(xx, 0, xx, hh);
+  wxMacDrawLine(0, yy-dpy, ww, yy-dpy);
+  wxMacDrawLine(xx-dpx, 0, xx-dpx, hh);
 
   ReleaseCurrentDC();
 }
@@ -139,14 +142,19 @@ void wxCanvasDC::IntDrawLine(int x1, int y1, int x2, int y2)
 void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
      //-----------------------------------------------------------------------------
 {
+  int dpx, dpy;
+
   if (!Ok() || !cMacDC) return;
   
   if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
     return;
 
+  dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
+  dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
+
   SetCurrentDC();
   wxMacSetCurrentTool(kPenTool);
-  wxMacDrawLine(XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
+  wxMacDrawLine(XLOG2DEV(x1)-dpx, YLOG2DEV(y1)-dpy, XLOG2DEV(x2)-dpx, YLOG2DEV(y2)-dpy);
   CalcBoundingBox(x1, y1);
   CalcBoundingBox(x2, y2);
   ReleaseCurrentDC();
@@ -365,14 +373,17 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
   if (n <= 0) return;
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
     Point *xpoints;
-    int i, j;
+    int i, j, dpx, dpy;
     PolyHandle thePolygon;
 
     SetCurrentDC();
     wxMacSetCurrentTool(kPenTool);
     
     xpoints = new Point[n];
-      
+    
+    dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
+    dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
+
     for (i = 0; i < n; i++) {
       xpoints[i].h = XLOG2DEV(points[i].x + xoffset);
       xpoints[i].v = YLOG2DEV(points[i].y + yoffset);
@@ -380,9 +391,9 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
     }
     
     thePolygon = OpenPoly();
-    MoveTo(xpoints[0].h + SetOriginX, xpoints[0].v + SetOriginY);
+    MoveTo(xpoints[0].h + SetOriginX - dpx, xpoints[0].v + SetOriginY - dpy);
     for (j = 1; j < n; j++) {
-      LineTo(xpoints[j].h + SetOriginX, xpoints[j].v + SetOriginY);
+      LineTo(xpoints[j].h + SetOriginX - dpx, xpoints[j].v + SetOriginY - dpy);
     }
     ClosePoly();
       
@@ -402,7 +413,7 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
   if (n <= 0) return;
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
     Point *xpoints;
-    int i, j;
+    int i, j, dpx, dpy;
     PolyHandle thePolygon;
 
     SetCurrentDC();
@@ -410,6 +421,9 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
     
     xpoints = new Point[n];
       
+    dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
+    dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
+
     for (i = 0; i < n; i++) {
       xpoints[i].h = XLOG2DEV(points[i].x + xoffset);
       xpoints[i].v = YLOG2DEV(points[i].y + yoffset); // WCH: original mistype "h" for "v"
@@ -417,9 +431,9 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
     }
       
     thePolygon = OpenPoly();
-    MoveTo(xpoints[0].h + SetOriginX, xpoints[0].v + SetOriginY);
+    MoveTo(xpoints[0].h + SetOriginX - dpx, xpoints[0].v + SetOriginY - dpy);
     for (j = 1; j < n; j++) {
-      LineTo(xpoints[j].h + SetOriginX, xpoints[j].v + SetOriginY);
+      LineTo(xpoints[j].h + SetOriginX - dpx, xpoints[j].v + SetOriginY - dpy);
     }
     ClosePoly();
     

@@ -791,6 +791,7 @@ please adhere to these guidelines:
  (save-interactions-as-text "Save Interactions As Text...")
  (print-interactions "Print Interactions...")
  (new-tab "New Tab")
+ (close-tab "Close Tab")
  
  ;;; edit-menu
  (split-menu-item-label "&Split")

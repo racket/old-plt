@@ -183,11 +183,11 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
   {
     int nid;
     nid = NewId(this);
-    ms_handle = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-				   STATIC_FLAGS | WS_CLIPSIBLINGS
-				   | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
-				   wxhInstance, NULL);
+    ms_handle = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(the_label),
+				STATIC_FLAGS | WS_CLIPSIBLINGS
+				| ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				0, 0, 0, 0, cparent->handle, (HMENU)nid,
+				wxhInstance, NULL);
   }
 
   wxSetWinFont(labelFont, ms_handle);
@@ -256,11 +256,11 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
       HWND rbhand;
 
       radioWidth[i] = radioHeight[i] = -1 ;
-      rbhand = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],
-				  groupStyle | RADIO_FLAGS
-				  | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				  0, 0, 0, 0,
-				  the_handle, (HMENU)newId, wxhInstance, NULL);
+      rbhand = CreateWindowExW(0, L"wxBUTTON", wxWIDE_STRING(Choices[i]),
+			       groupStyle | RADIO_FLAGS
+			       | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+			       0, 0, 0, 0,
+			       the_handle, (HMENU)newId, wxhInstance, NULL);
       radioButtons[i] = rbhand;
     }
 
@@ -347,7 +347,7 @@ void wxRadioBox::SetLabel(int item, char *label)
 	      (LPARAM)NULL);
 
   radioWidth[item] = radioHeight[item] = -1 ;
-  SetWindowText((HWND)radioButtons[item], label);
+  SetWindowTextW((HWND)radioButtons[item], wxWIDE_STRING(label));
 }
 
 void wxRadioBox::SetLabel(int item,wxBitmap *bitmap)
@@ -451,7 +451,6 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
   int maxWidth =  -1;
   int maxHeight = -1;
   int hlabel = 0;
-  char buf[400];
   int i;
   float label_width = 0;
   float label_height = 0;
@@ -472,8 +471,9 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
 
   if ((style & HAS_LABEL)) {
     int char_width, ignored;
-    GetWindowText((HWND)ms_handle, buf, 300);
-    GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL, labelFont);
+    GetWindowTextW((HWND)ms_handle, (wchar_t *)wxBuffer, 300);
+    GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t*)wxBuffer)), 
+		  &label_width, &label_height, NULL, NULL, labelFont);
     wxGetCharSize(wnd, &char_width, &ignored, labelFont);
   } else {
     label_height = 0;
@@ -485,8 +485,9 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
     int eachHeight ;
     if (radioWidth[i] < 0) {
       // It's a labelled toggle
-      GetWindowText(radioButtons[i], buf, 300);
-      GetTextExtent(wxStripMenuCodes(buf), &current_width, &cyf,NULL,NULL, buttonFont);
+      GetWindowTextW(radioButtons[i], (wchar_t *)wxBuffer, 300);
+      GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t*)wxBuffer)), 
+		    &current_width, &cyf,NULL,NULL, buttonFont);
       eachWidth = (int)(current_width + RADIO_SIZE);
       eachHeight = (int)cyf;
     } else {
@@ -565,8 +566,9 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
 
     if (radioWidth[i] < 0) {
       // It's a labeled item
-      GetWindowText(radioButtons[i], buf, 300);
-      GetTextExtent(wxStripMenuCodes(buf), &current_width, &cyf, NULL, NULL, buttonFont);
+      GetWindowTextW(radioButtons[i], (wchar_t *)wxBuffer, 300);
+      GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t *)wxBuffer)), 
+		    &current_width, &cyf, NULL, NULL, buttonFont);
       eachWidth = (int)(current_width + RADIO_SIZE);
       eachHeight = (int)cyf;
     } else {
@@ -654,7 +656,7 @@ void wxRadioBox::SetLabel(char *label)
 {
   if (ms_handle) {
     if (GetWindowText((HWND)ms_handle, wxBuffer, 300))
-      SetWindowText((HWND)ms_handle, label);
+      SetWindowTextW((HWND)ms_handle, wxWIDE_STRING(label));
   }
 }
 

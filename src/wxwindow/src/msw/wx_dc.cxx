@@ -30,6 +30,12 @@ static HANDLE null_pen;
 
 void RegisterGDIObject(HANDLE x);
 
+extern "C" {
+  int scheme_utf8_decode(const unsigned char *s, int start, int len, 
+			 unsigned int *us, int dstart, int dlen,
+			 long *ipos, char utf16, int permissive);
+};
+
 static is_nt()
 {
   static int nt = -1;
@@ -1009,16 +1015,16 @@ static int ucs4_strlen(const unsigned int *c)
 #define QUICK_UBUF_SIZE 1024
 static wchar_t u_buf[QUICK_UBUF_SIZE];
 
-wchar_t *convert_to_drawable_format(char *text, int d, int ucs4, long *_ulen)
+wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen)
 {
   int ulen;
   wchar_t *unicode;
-  int theStrLen;
+  int theStrlen;
 
   if (ucs4) {
-    len = ucs4_strlen(text XFORM_OK_PLUS d);
+    theStrlen = ucs4_strlen((const unsigned int *)text XFORM_OK_PLUS d);
   } else {
-    len = strlen(text XFORM_OK_PLUS d);
+    theStrlen = strlen(text XFORM_OK_PLUS d);
   }
 
   if (ucs4) {
@@ -1065,7 +1071,7 @@ wchar_t *convert_to_drawable_format(char *text, int d, int ucs4, long *_ulen)
   return unicode;
 }
 
-void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool use16bit, int d, float angle)
+void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4, int d, float angle)
 {
   int xx1, yy1;
   HDC dc;
@@ -1116,7 +1122,7 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool use16
   
   CalcBoundingBox((float)x, (float)y);
 
-  GetTextExtent(text, &w, &h, NULL, NULL, NULL, combine, use16bit, d);
+  GetTextExtent(text, &w, &h, NULL, NULL, NULL, combine, ucs4, d);
   CalcBoundingBox((float)(x + w), (float)(y + h));
 }
 
@@ -1364,7 +1370,7 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
     return;
   }
 
-  ustring = convert_to_drawable_format(text, d, ucs4, &len);
+  ustring = convert_to_drawable_format(string, d, ucs4, &len);
 
   GetTextExtentPointW(dc, ustring, len, &sizeRect);
   if (descent || topSpace)

@@ -80,10 +80,10 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   if (Title) {
     int nid;
     nid = NewId(this);
-    static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-				      STATIC_FLAGS | WS_CLIPSIBLINGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)nid,
-				      wxhInstance, NULL);
+    static_label = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(the_label),
+				   STATIC_FLAGS | WS_CLIPSIBLINGS,
+				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
+				   wxhInstance, NULL);
 
     wxSetWinFont(labelFont, (HANDLE)static_label);
   }
@@ -116,7 +116,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   }
 
   for (i = 0; i < N; i++) {
-    SendMessage(wx_list, LB_ADDSTRING, 0, (LONG)Choices[i]);
+    SendMessageW(wx_list, LB_ADDSTRING, 0, (LONG)wxWIDE_STRING(Choices[i]));
   }
   if (!Multiple)
     SendMessage(wx_list, LB_SETCURSEL, 0, 0);
@@ -220,7 +220,7 @@ void wxListBox::Append(char *Item, char *Client_data)
   }
   user_data[no_items] = Client_data;
 
-  index = (int)SendMessage((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)Item);
+  index = (int)SendMessageW((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)wxWIDE_STRING(Item));
   no_items++;
   SetHorizontalExtent(Item);
 }
@@ -235,7 +235,7 @@ void wxListBox::Set(int n, char *choices[])
 
   ShowWindow((HWND)ms_handle, SW_HIDE);
   for (i = 0; i < n; i++) {
-    SendMessage((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)choices[i]);
+    SendMessageW((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)wxWIDE_STRING(choices[i]));
     user_data[i] = NULL;
   }
   no_items = n;
@@ -246,7 +246,7 @@ void wxListBox::Set(int n, char *choices[])
 int wxListBox::FindString(char *s)
 {
   int pos;
-  pos = (int)SendMessage((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)s);
+  pos = (int)SendMessageW((HWND)ms_handle, LB_FINDSTRINGEXACT, -1, (LONG)wxWIDE_STRING(s));
   if (pos == LB_ERR)
     return -1;
   else
@@ -351,11 +351,11 @@ char *wxListBox::GetString(int N)
   if (N < 0 || N >= no_items)
     return NULL;
   else
-    len = (int)SendMessage((HWND)ms_handle, LB_GETTEXT, N, (LONG)wxBuffer);
+    len = (int)SendMessageW((HWND)ms_handle, LB_GETTEXT, N, (LONG)wxBuffer);
 
-  wxBuffer[len] = 0;
+  ((wchar_t *)wxBuffer)[len] = 0;
 
-  return copystring(wxBuffer);
+  return wxNARROW_STRING((wchar_t *)wxBuffer);
 }
 
 void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
@@ -515,7 +515,7 @@ void wxListBox::SetLabel(char *label)
     GetTextExtent((LPSTR)label, &w, &h, NULL, NULL,labelFont);
     MoveWindow(static_label, point.x, point.y, (int)(w + 10), (int)h,
                TRUE);
-    SetWindowText(static_label, label);
+    SetWindowTextW(static_label, wxWIDE_STRING(label));
   }
 }
 
@@ -543,7 +543,11 @@ void wxListBox::SetHorizontalExtent(char *s)
     existingExtent = (int)SendMessage(hWnd, LB_GETHORIZONTALEXTENT, 0, 0L);
     dc = GetWindowDC(hWnd);
     GetTextMetrics(dc, &lpTextMetric);
-    ::GetTextExtentPoint(dc, (LPSTR)s, strlen(s), &extentXY);
+    {
+      wchar_t *ws;
+      ws = wxWIDE_STRING(s);
+      ::GetTextExtentPointW(dc, ws, wx_wstrlen(ws), &extentXY);
+    }
     extentX = (int)(extentXY.cx + lpTextMetric.tmAveCharWidth);
     ReleaseDC(hWnd, dc);
     if (extentX > existingExtent)
@@ -561,9 +565,9 @@ void wxListBox::SetHorizontalExtent(char *s)
       int len;
       SIZE extentXY;
       int extentX;
-      len = (int)SendMessage(hWnd, LB_GETTEXT, i, (LONG)wxBuffer);
-      wxBuffer[len] = 0;
-      ::GetTextExtentPoint(dc, (LPSTR)wxBuffer, len, &extentXY);
+      len = (int)SendMessageW(hWnd, LB_GETTEXT, i, (LONG)wxBuffer);
+      ((wchar_t *)wxBuffer)[len] = 0;
+      ::GetTextExtentPointW(dc, (LPWSTR)wxBuffer, len, &extentXY);
       extentX = (int)(extentXY.cx + lpTextMetric.tmAveCharWidth);
       if (extentX > largestExtent)
         largestExtent = extentX;
@@ -590,7 +594,7 @@ void wxListBox::SetString(int N, char *s)
   
   oldData = (char *)wxListBox::GetClientData(N);
   
-  SendMessage((HWND)ms_handle, LB_INSERTSTRING, N, (LPARAM)s);
+  SendMessageW((HWND)ms_handle, LB_INSERTSTRING, N, (LPARAM)wxWIDE_STRING(s));
   SendMessage((HWND)ms_handle, LB_DELETESTRING, N + 1, 0);
 
   if (oldData)

@@ -21,8 +21,8 @@
 #include "fafapriv.h" //added by Chubraev 
 
 #define STATIC_CLASS     "STATIC"
+#define LSTATIC_CLASS    L"STATIC"
 #define STATIC_FLAGS     (SS_LEFT|WS_CHILD)
-#define CHECK_CLASS      "wxBUTTON"
 #define CHECK_FLAGS      (BS_AUTOCHECKBOX|WS_TABSTOP|WS_CHILD)
 #define RADIO_CLASS      "wxBUTTON"
 #define RADIO_FLAGS      (BS_RADIOBUTTON|WS_CHILD)

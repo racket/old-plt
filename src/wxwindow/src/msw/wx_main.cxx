@@ -236,17 +236,17 @@ static int retValue = 0;
 
 static int parse_command_line(int count, char **command, char *buf, int maxargs)
 {
-  GC_CAN_IGNORE char *parse, *created, *write;
+  GC_CAN_IGNORE unsigned char *parse, *created, *write;
   int findquote = 0;
   
-  parse = created = write = buf;
+  parse = created = write = (unsigned char *)buf;
   while (*parse) {
     while (*parse && isspace(*parse)) { parse++; }
     while (*parse && (!isspace(*parse) || findquote))	{
       if (*parse== '"') {
 	findquote = !findquote;
       } else if (*parse== '\\') {
-	char *next;
+	unsigned char *next;
 	for (next = parse; *next == '\\'; next++) { }
 	if (*next == '"') {
 	  /* Special handling: */
@@ -270,7 +270,7 @@ static int parse_command_line(int count, char **command, char *buf, int maxargs)
     *(write++) = 0;
     
     if (*created)	{
-      command[count++] = created;
+      command[count++] = (char *)created;
       if (count == maxargs)
 	return count;
     }

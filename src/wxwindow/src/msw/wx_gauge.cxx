@@ -55,10 +55,10 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
     int nid;
 
     nid = NewId(this);
-    static_label = wxwmCreateWindowEx(0, STATIC_CLASS, label,
-				      STATIC_FLAGS | WS_CLIPSIBLINGS,
-				      0, 0, 0, 0, cparent->handle, (HMENU)nid,
-				      wxhInstance, NULL);
+    static_label = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(label),
+				   STATIC_FLAGS | WS_CLIPSIBLINGS,
+				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
+				   wxhInstance, NULL);
 
     wxSetWinFont(labelFont, (HANDLE)static_label);
   } else
@@ -133,10 +133,10 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
 
   if (static_label) {
     // Find size of label
-    char buf[300];
     wxGetCharSize((HWND)ms_handle, &clx, &cly, labelFont);
-    GetWindowText(static_label, buf, 300);
-    GetTextExtent(wxStripMenuCodes(buf), &label_width, &label_height, NULL, NULL, labelFont);
+    GetWindowTextW(static_label, (wchar_t *)wxBuffer, 300);
+    GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t *)wxBuffer)), 
+		  &label_width, &label_height, NULL, NULL, labelFont);
 
     // Given size is total label + edit size, find individual
     // control sizes on that basis.
@@ -275,10 +275,10 @@ void wxGauge::SetLabel(char *label)
       ::ScreenToClient(cparent->handle, &point);
     }
 
-    GetTextExtent(label, &w, &h, NULL, NULL,labelFont);
+    GetTextExtent(label, &w, &h, NULL, NULL, labelFont);
     MoveWindow(static_label, point.x, point.y, (int)(w + 10), (int)h,
                TRUE);
-    SetWindowText(static_label, label);
+    SetWindowTextW(static_label, wxWIDE_STRING(label));
   }
 }
 

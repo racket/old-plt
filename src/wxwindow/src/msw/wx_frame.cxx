@@ -468,7 +468,7 @@ void wxFrame::SetTitle(char *title)
     wxBuffer[len+1] = 0;
     title = wxBuffer;
   }
-  SetWindowText(GetHWND(), title);
+  SetWindowTextW(GetHWND(), wxWIDE_STRING(title));
 }
 
 char *wxFrame::GetTitle(void)

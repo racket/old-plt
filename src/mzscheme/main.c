@@ -251,13 +251,14 @@ int MAIN(int argc, MAIN_char **MAIN_argv)
    for (i = 0; i < argc; i++) {
      for (j = 0; wargv[i][j]; j++) {
      }
-     l = scheme_utf8_encode(argv[i], 0, j, 
+     l = scheme_utf8_encode((unsigned int*)wargv[i], 0, j, 
 			    NULL, 0,
 			    1 /* UTF-16 */);
      a = malloc(l + 1);
-     scheme_utf8_encode(argv[i], 0, j, 
-			a, 0,
+     scheme_utf8_encode((unsigned int *)wargv[i], 0, j, 
+			(unsigned char *)a, 0,
 			1 /* UTF-16 */);
+	 a[l] = 0;
      argv[i] = a;
    }
  }

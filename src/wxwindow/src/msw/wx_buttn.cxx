@@ -91,11 +91,11 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
 		(LPARAM)bitmap->ms_bitmap);
   } else {
     wx_button =
-      wxwmCreateWindowEx(0, "wxBUTTON", label, 
-			 (((style & 1) ? BS_DEFPUSHBUTTON : BS_PUSHBUTTON)
-			  | WS_CHILD | WS_CLIPSIBLINGS),
-			  0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-			  wxhInstance, NULL);
+      CreateWindowExW(0, L"wxBUTTON", wxWIDE_STRING(label), 
+		      (((style & 1) ? BS_DEFPUSHBUTTON : BS_PUSHBUTTON)
+		       | WS_CHILD | WS_CLIPSIBLINGS),
+		      0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+		      wxhInstance, NULL);
   }
 
   ms_handle = (HANDLE)wx_button;
@@ -137,7 +137,7 @@ void wxButton::SetLabel(char *label)
 	      (WPARAM)0,
 	      (LPARAM)NULL);
   
-  SetWindowText((HWND)ms_handle, label);
+  SetWindowTextW((HWND)ms_handle, wxWIDE_STRING(label));
 }
 
 void wxButton::SetLabel(wxBitmap *bitmap)

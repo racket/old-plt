@@ -397,11 +397,11 @@ static char *mz_getcwd(char *s, int l)
  if (!need_l)
    return NULL;
  
- bl = scheme_utf8_decode((unsigned int *)wbuf, 0, need_l, NULL, 0, -1, NULL, 1 /* utf16 */, 0);
+ bl = scheme_utf8_encode((unsigned int *)wbuf, 0, need_l, NULL, 0, 1 /* utf16 */);
  if (bl + 1 > l) {
    s = (char *)scheme_malloc_atomic(bl + 1);
  }
- bl = scheme_utf8_decode((unsigned int *)wbuf, 0, need_l, s, 0, -1, NULL, 1 /* utf16 */, 0);
+ bl = scheme_utf8_encode((unsigned int *)wbuf, 0, need_l, s, 0, 1 /* utf16 */);
  s[bl] = 0;
 
  return s;
@@ -559,12 +559,12 @@ wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
   len = scheme_utf8_decode(s, 0, l,
 			   NULL, 0, -1,
 			   NULL, 1/*UTF-16*/, 0);
-  if (!do_copy && (len < (WX_BUFFER_SIZE-1)))
+  if (!do_copy && (len < (WC_BUFFER_SIZE-1)))
     ws = wc_buffer;
   else
-    ws = (wchar_t *)scheme_malloc_atomic(sizeof(wchar_t) * (l + 1));
+    ws = (wchar_t *)scheme_malloc_atomic(sizeof(wchar_t) * (len + 1));
   scheme_utf8_decode(s, 0, l,
-		     ws, 0, -1,
+		     (unsigned int *)ws, 0, -1,
 		     NULL, 1/*UTF-16*/, 0);
   ws[len] = 0;
   return ws;
@@ -572,16 +572,15 @@ wchar_t *scheme_convert_to_wchar(char *s, int do_copy)
 
 char *scheme_convert_from_wchar(wchar_t *ws)
 {
-  int i;
   long len, l;
   char *s;
 
   l = wc_strlen(ws);
-  len = scheme_utf8_encode(ws, 0, l,
+  len = scheme_utf8_encode((unsigned int *)ws, 0, l,
 			   NULL, 0,
-			   1/*UTF-16*/, 0);
-  s = (char *)scheme_malloc_atomic(l + 1);
-  scheme_utf8_decode(ws, 0, l,
+			   1/*UTF-16*/);
+  s = (char *)scheme_malloc_atomic(len + 1);
+  scheme_utf8_encode((unsigned int *)ws, 0, l,
 		     s, 0,
 		     1/*UTF-16*/);
   s[len] = 0;
@@ -1499,15 +1498,15 @@ int scheme_file_exists(char *filename)
 # define FF_TYPE WIN32_FIND_DATAW
 # define FF_HANDLE_TYPE HANDLE
 # define FIND_FAILED(h) (h == INVALID_HANDLE_VALUE)
-# define _A_RDONLY FILE_ATTRIBUTE_READONLY
+# define FF_A_RDONLY FILE_ATTRIBUTE_READONLY
 # define GET_FF_ATTRIBS(fd) (fd.dwFileAttributes)
 # define GET_FF_MODDATE(fd) convert_date(&fd.ftLastWriteTime)
 # define GET_FF_NAME(fd) fd.cFileName
 static time_t convert_date(const FILETIME *ft)
 {
-  LONGLONG l, m;
+  LONGLONG l;
 
-  l = ((((LONGLONG)pft->dwHighDateTime << 32) | pft->dwLowDateTime)
+  l = ((((LONGLONG)ft->dwHighDateTime << 32) | ft->dwLowDateTime)
        - (((LONGLONG)0x019DB1DE << 32) | 0xD53E8000));
   l /= 10000000;
 
@@ -1541,7 +1540,12 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
       *isdir = 1;
 
     copy = scheme_malloc_atomic(len + 10);
-    memcpy(copy, dirname, len);
+    copy[0] = '\\';
+    copy[1] = '\\';
+    copy[2] = '?';
+    copy[3] = '\\';
+    memcpy(copy + 4, dirname, len);
+    len += 4;
     if (!IS_A_SEP(copy[len - 1])) {
       copy[len] = '\\';
       len++;
@@ -1553,7 +1557,7 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
       return 0;
     } else {
       if (flags)
-	*flags = MZ_UNC_READ | MZ_UNC_EXEC | ((GET_FF_ATTRIBS(fd) & _A_RDONLY) ? 0 : MZ_UNC_WRITE);
+	*flags = MZ_UNC_READ | MZ_UNC_EXEC | ((GET_FF_ATTRIBS(fd) & FF_A_RDONLY) ? 0 : MZ_UNC_WRITE);
       if (date)
 	*date = scheme_make_integer_value_from_time(GET_FF_MODDATE(fd));
       FIND_CLOSE(fh);
@@ -3289,7 +3293,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 #ifdef USE_FINDFIRST
   char *pattern;
   int len;
-  long hfile;
+  FF_HANDLE_TYPE hfile;
   FF_TYPE info;
 #endif
 #ifdef USE_MAC_FILE_TOOLBOX
@@ -3383,8 +3387,13 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     pattern = "*.*";
   else {
     len = strlen(filename);
-    pattern = (char *)scheme_malloc_atomic(len + 5);
-    memcpy(pattern, filename, len);
+    pattern = (char *)scheme_malloc_atomic(len + 10);
+    pattern[0] = '\\';
+    pattern[1] = '\\';
+    pattern[2] = '?';
+    pattern[3] = '\\';
+    memcpy(pattern + 4, filename, len);
+    len += 4;
     if (len && !IS_A_SEP(pattern[len - 1]))
       pattern[len++] = '\\';      
     memcpy(pattern + len, "*.*", 4);
@@ -3396,8 +3405,8 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 
   do {
     if ((GET_FF_NAME(info)[0] == '.')
-	&& (!GET_FF_NAME(info)[1] || ((GET_FF_NAME(cFileName)[1] == '.')
-				      && !GET_FF_NAME(cFileName)[2]))) {
+	&& (!GET_FF_NAME(info)[1] || ((GET_FF_NAME(info)[1] == '.')
+				      && !GET_FF_NAME(info)[2]))) {
       /* skip . and .. */
     } else {
       n = scheme_make_string(NARROW_PATH(info.cFileName));
@@ -3415,7 +3424,8 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
       END_ESCAPEABLE();
       scheme_current_thread->ran_some = 1;
     }
-  } while (!FIND_NEXT(hfile, &info));
+  } while (FIND_NEXT(hfile, &info));
+  
   FIND_CLOSE(hfile);
 
   return first;

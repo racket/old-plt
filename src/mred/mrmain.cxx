@@ -194,11 +194,13 @@ static int do_main_loop(FinishArgs *fa)
   wxREGGLOB(xfa);
   xfa = fa;
 
+#ifdef wx_mac
   if (!fa->no_front) {
     ProcessSerialNumber psn;
     GetCurrentProcess(&psn);    
     SetFrontProcess(&psn); /* kCurrentProcess doesn't work */
   }
+#endif
 
   wxDoMainLoop();
 
@@ -371,19 +373,21 @@ int main(int argc, char *argv[])
 
 #ifdef wx_msw 
 
-int APIENTRY WinMainW(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR m_lpCmdLine, int nCmdShow)
+int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored, int nCmdShow)
 {
+  LPWSTR m_lpCmdLine;
   long l, j;
   char *a;
   
+  m_lpCmdLine = GetCommandLineW();
   for (j = 0; m_lpCmdLine[j]; j++) {
   }
-  l = scheme_utf8_encode(m_lpCmdLine, 0, j, 
+  l = scheme_utf8_encode((unsigned int *)m_lpCmdLine, 0, j, 
 			 NULL, 0,
 			 1 /* UTF-16 */);
-  a = malloc(l + 1);
-  scheme_utf8_encode(m_lpCmdLine, 0, j, 
-		     a, 0,
+  a = (char *)malloc(l + 1);
+  scheme_utf8_encode((unsigned int *)m_lpCmdLine, 0, j, 
+		     (unsigned char *)a, 0,
 		     1 /* UTF-16 */);
 
   return wxWinMain(hInstance, hPrevInstance, a, nCmdShow, main);

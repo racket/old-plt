@@ -60,11 +60,11 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   if (label) {
     int nid;
     nid = NewId(this);
-    static_label = wxwmCreateWindowEx(0, STATIC_CLASS, the_label,
-				      STATIC_FLAGS | WS_CLIPSIBLINGS
-				      | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				      0, 0, 0, 0, cparent->handle, (HMENU)nid,
-				      wxhInstance, NULL);
+    static_label = CreateWindowExW(0, LSTATIC_CLASS, wxWIDE_STRING(the_label),
+				   STATIC_FLAGS | WS_CLIPSIBLINGS
+				   | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
+				   wxhInstance, NULL);
 
     wxSetWinFont(labelFont, (HANDLE)static_label);
   } else
@@ -101,7 +101,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   else
     msStyle = SBS_HORZ | WS_CHILD;
     
-  scroll_bar = wxwmCreateWindowEx(0, "SCROLLBAR", wxBuffer,
+  scroll_bar = wxwmCreateWindowEx(0, "SCROLLBAR", "",
 				  msStyle | WS_CLIPSIBLINGS
 				  | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
 				  0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
@@ -300,7 +300,7 @@ void wxSlider::SetLabel(char *label)
     GetTextExtent(label, &w, &h, NULL, NULL,labelFont);
     MoveWindow(static_label, point.x, point.y, (int)(w + 10), (int)h,
                TRUE);
-    SetWindowText(static_label, label);
+    SetWindowTextW(static_label, wxWIDE_STRING(label));
   }
 }
 

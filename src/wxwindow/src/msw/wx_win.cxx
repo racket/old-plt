@@ -715,6 +715,7 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
   SIZE sizeRect;
   TEXTMETRIC tm;
   int len;
+  wchar_t *ws;
   
   if (!fontToUse)
     fontToUse = font;
@@ -730,8 +731,9 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
       was = (HFONT)SelectObject(dc, fnt);
   }
 
-  len = (int)strlen(string);
-  GetTextExtentPoint(dc, len ? string : " ", len ? len : 1, &sizeRect);
+  ws = wxWIDE_STRING((char *)string);
+  len = wx_wstrlen(ws);
+  GetTextExtentPointW(dc, len ? ws : L" ", len ? len : 1, &sizeRect);
   GetTextMetrics(dc, &tm);
 
   if (fontToUse && fnt && was) 
@@ -1439,13 +1441,13 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
     }
   } else {
     /* Creating a non-dialog */
-    handle = wxwmCreateWindowEx(extendedStyle, wclass,
-				title,
-				style,
-				x1, y1,
-				w2, h2,
-				hParent, NULL, wxhInstance,
-				NULL);
+    handle = CreateWindowExW(extendedStyle, wxWIDE_STRING_COPY(wclass),
+			     wxWIDE_STRING(title),
+			     style,
+			     x1, y1,
+			     w2, h2,
+			     hParent, NULL, wxhInstance,
+			     NULL);
     
     if (handle == 0) {
       char buf[300];

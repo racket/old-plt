@@ -105,11 +105,11 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   } else {
     int nid;
     nid = NewId(this);
-    static_item = wxwmCreateWindowEx(0, "wxSTATIC", label,
-				     STATIC_FLAGS | WS_CLIPSIBLINGS
-				     | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				     0, 0, 0, 0, cparent->handle, (HMENU)nid,
-				     wxhInstance, NULL);
+    static_item = CreateWindowExW(0, L"wxSTATIC", wxWIDE_STRING(label),
+				  STATIC_FLAGS | WS_CLIPSIBLINGS
+				  | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+				  0, 0, 0, 0, cparent->handle, (HMENU)nid,
+				  wxhInstance, NULL);
   }
 
   ms_handle = (HANDLE)static_item;
@@ -205,7 +205,7 @@ void wxMessage::SetLabel(char *label)
     ::ScreenToClient(cparent->handle, &point);
   }
 
-  SetWindowText((HWND)ms_handle, label);
+  SetWindowTextW((HWND)ms_handle, wxWIDE_STRING(label));
 }
 
 void wxMessage::SetLabel(wxBitmap *bitmap)

@@ -13,6 +13,9 @@
 
 #include <commctrl.h>
 
+#define wx_TabCtrl_InsertItem(h, nv, tie) \
+   SendMessageW(h, (UINT)TCM_INSERTITEMW, nv, (LPARAM)tie)
+
 BOOL wxTabChoice::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
   if (param == 64985 /* (UINT)TCN_SELCHANGE  ? */) {
@@ -31,7 +34,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 {
   int x = 0, y = 0, i;
   wxWnd *cparent = NULL;
-  TCITEM tie;
+  TCITEMW tie;
   INITCOMMONCONTROLSEX icex;
   HWND hwndTab;
   int width, height, nid;
@@ -83,16 +86,18 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 				wxhInstance, NULL);
 
   tie.mask = TCIF_TEXT;
+
+  TabCtrl_SetUnicodeFormat(hwndTab, TRUE);
  
   if (n) {
     for (i = 0; i < n; i++) { 
-      tie.pszText = choices[i];
-      TabCtrl_InsertItem(hwndTab, i, &tie);
+      tie.pszText = wxWIDE_STRING(choices[i]);
+      wx_TabCtrl_InsertItem(hwndTab, i, &tie);
     } 
   } else {
     /* for height-meausing purposes, add one: */
-    tie.pszText = "Dummy";
-    TabCtrl_InsertItem(hwndTab, 0, &tie);
+    tie.pszText = L"Dummy";
+    wx_TabCtrl_InsertItem(hwndTab, 0, &tie);
   }
     
 
@@ -171,7 +176,7 @@ void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(size
 
 void wxTabChoice::Append(char *s)
 {
-  TCITEM tie;
+  TCITEMW tie;
   int shownhide = 0, nv;
 
   /* The control misupdates when going from 0 to non-zero
@@ -184,9 +189,9 @@ void wxTabChoice::Append(char *s)
     ShowWindow((HWND)ms_handle, SW_HIDE);
 
   tie.mask = TCIF_TEXT;
-  tie.pszText = s;
+  tie.pszText = wxWIDE_STRING(s);
   nv = Number();
-  TabCtrl_InsertItem((HWND)ms_handle, nv, &tie);
+  wx_TabCtrl_InsertItem((HWND)ms_handle, nv, &tie);
 
   if (shownhide)
     ShowWindow((HWND)ms_handle, SW_SHOW);

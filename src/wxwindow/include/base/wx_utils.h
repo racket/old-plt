@@ -135,4 +135,11 @@ Bool wxGetResource(const char *section, const char *entry, int *value, const cha
 // returns NULL is no HOME dir is known
 char *wxGetUserHome(const char *user = NULL);
 
+int wx_wstrlen(wchar_t *ws);
+wchar_t *wx_convert_to_wchar(char *s, int do_copy);
+char *wx_convert_from_wchar(wchar_t *ws);
+#define wxWIDE_STRING(s) wx_convert_to_wchar(s, 0)
+#define wxWIDE_STRING_COPY(s) wx_convert_to_wchar(s, 1)
+#define wxNARROW_STRING(ws) wx_convert_from_wchar(ws) 
+
 #endif // wxb_utilsh

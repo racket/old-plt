@@ -10,7 +10,7 @@
 #include "wx.h"
 #include "wx_gbox.h"
 
-#define GROUP_CLASS      "wxBUTTON"
+#define GROUP_CLASS      L"wxBUTTON"
 #define GROUP_FLAGS      (BS_GROUPBOX|WS_CHILD|WS_VISIBLE)
 
 wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
@@ -36,12 +36,12 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
 
   nid = NewId(this);
 
-  ms_handle = wxwmCreateWindowEx(0, GROUP_CLASS, the_label,
-				 GROUP_FLAGS
-				 | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
-				 0, 0, 0, 0,
-				 cparent->handle, (HMENU)nid,
-				 wxhInstance, NULL);
+  ms_handle = CreateWindowExW(0, GROUP_CLASS, wxWIDE_STRING(the_label),
+			      GROUP_FLAGS
+			      | ((_style & wxINVISIBLE) ? 0 : WS_VISIBLE),
+			      0, 0, 0, 0,
+			      cparent->handle, (HMENU)nid,
+			      wxhInstance, NULL);
 
   wxSetWinFont(labelFont, ms_handle);
 

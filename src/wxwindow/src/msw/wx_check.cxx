@@ -88,10 +88,10 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
     isFafa = FALSE;
     checkWidth = -1;
     checkHeight = -1;
-    wx_button = wxwmCreateWindowEx(0, CHECK_CLASS, Title,
-				   CHECK_FLAGS | WS_CLIPSIBLINGS,
-				   0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-				   wxhInstance, NULL);
+    wx_button = CreateWindowExW(0, L"wxBUTTON", wxWIDE_STRING(Title),
+				CHECK_FLAGS | WS_CLIPSIBLINGS,
+				0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+				wxhInstance, NULL);
   }
 
   SubclassControl(wx_button);
@@ -133,7 +133,7 @@ void wxCheckBox::SetLabel(char *label)
 	      (WPARAM)0,
 	      (LPARAM)NULL);
 
-  SetWindowText((HWND)ms_handle, label);
+  SetWindowTextW((HWND)ms_handle, wxWIDE_STRING(label));
 }
 
 char *wxCheckBox::GetLabel()

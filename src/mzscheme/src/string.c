@@ -55,6 +55,9 @@ static size_t (*iconv)(iconv_t cd,
 static iconv_t (*iconv_open)(const char *tocode, const char *fromcode);
 static void (*iconv_close)(iconv_t cd);
 # define CODESET 0
+# define ICONV_errno 0
+#else
+# define ICONV_errno errno
 #endif
 
 #define mzICONV_KIND 0
@@ -1387,7 +1390,7 @@ static char *do_convert(iconv_t cd,
 
     /* Got all the chars? */
     if (r == (size_t)-1) {
-      if (errno == E2BIG) {
+      if (ICONV_errno == E2BIG) {
 	if (grow) {
 	  /* Double the string size and try again */
 	  char *naya;
@@ -1438,6 +1441,9 @@ static char *locale_recase(int to_up,
 			   char *out, int od, int iolen,
 			   long *oolen)
 {
+#ifdef NO_MBTOWC_FUNCTIONS
+  return NULL;
+#else
   /* To change the case, convert the string to multibyte, re-case the
      multibyte, then convert back. */
 # define MZ_WC_BUF_SIZE 32
@@ -1445,10 +1451,10 @@ static char *locale_recase(int to_up,
   size_t wl, wl2, ml, ml2;
   wchar_t *wc, *ws, wcbuf[MZ_WC_BUF_SIZE], cwc;
   const char *s;
-  int j;
+  unsigned int j;
   /* The "n" versions are apparently not too standard: */
-# define mz_mbsnrtowcs(t, f, fl, tl, s) MSC_IZE(mbsrtowcs)(t, f, tl, s) 
-# define mz_wcsnrtombs(t, f, fl, tl, s) MSC_IZE(wcsrtombs)(t, f, tl, s) 
+# define mz_mbsnrtowcs(t, f, fl, tl, s) mbsrtowcs(t, f, tl, s) 
+# define mz_wcsnrtombs(t, f, fl, tl, s) wcsrtombs(t, f, tl, s) 
   
   /* ----- to wide char ---- */
 
@@ -1500,7 +1506,7 @@ static char *locale_recase(int to_up,
 
   /* Allocate space */
   *oolen = ml;
-  if (ml + 1 >= iolen) {
+  if (ml + 1 >= (unsigned int)iolen) {
     out = (char *)scheme_malloc_atomic(ml + 1);
     od = 0;
   }
@@ -1515,6 +1521,7 @@ static char *locale_recase(int to_up,
   out[od + ml] = 0;
 
   return out;
+#endif
 }
 
 int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
@@ -1689,7 +1696,7 @@ int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
 		    ((cvt_case ? NORM_IGNORECASE : 0)
 		     | NORM_IGNOREKANATYPE
 		     | NORM_IGNOREWIDTH),
-		    d1, l1, d2, l2);
+		    s1 + d1, l1, s2 + d2, l2);
 
   return r - 2;
 }
@@ -1884,9 +1891,9 @@ char *do_native_recase(int to_up, char *in, int delta, int len, long *olen)
   memcpy(result, in + (2 * delta), len * 2);
   
   if (to_up)
-    CharUpperBuffW(result, len);
+    CharUpperBuffW((wchar_t *)result, len);
   else
-    CharLowerBuffW(result, len);
+    CharLowerBuffW((wchar_t *)result, len);
 
   *olen = len;
   return result;

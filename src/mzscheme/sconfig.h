@@ -576,6 +576,7 @@
 
 # define WINDOWS_UNICODE_SUPPORT
 # define USE_ICONV_DLL
+# define NO_MBTOWC_FUNCTIONS
 
 # define FLAGS_ALREADY_SET
 
@@ -1271,6 +1272,9 @@
 
  /* USE_ICONV_DLL loads iconv.dll lazily for string conversion; no
     headers necessary. */
+
+ /* NO_MBTOWC_FUNCTIONS indicates that locale-to-wchar conversion
+    functions are not available. */
 
  /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
     C's `inline' keyword. */

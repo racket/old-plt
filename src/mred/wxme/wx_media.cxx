@@ -3129,7 +3129,7 @@ Bool wxMediaEdit::InsertFile(const char *who, Scheme_Object *f, char *WXUNUSED(f
 	  int i;
 	  for (i = 0; i < n - 1; i++) {
 	    if ((buffer[i] == '\r') && (buffer[i + 1] == '\n')) {
-	      memcpy(buffer + i + 1, buffer + i + 2, (n - i - 2) * sizeof(wxchar));
+	      memmove(buffer + i + 1, buffer + i + 2, (n - i - 2) * sizeof(char));
 	      --n;
 	    }
 	  }

@@ -24,6 +24,15 @@
 #include <string.h>
 #include <stdarg.h>
 
+extern "C" {
+  int scheme_utf8_decode(const unsigned char *s, int start, int len, 
+			 unsigned int *us, int dstart, int dlen,
+			 long *ipos, char utf16, int permissive);
+  int scheme_utf8_encode(const unsigned int *us, int start, int len, 
+			 unsigned char *s, int dstart,
+			 char utf16);
+};
+
 // In the WIN.INI file
 static const char WX_SECTION[] = "wxWindows";
 static const char eHOSTNAME[]  = "HostName";
@@ -370,3 +379,55 @@ Bool wxIsBusy(void)
   return (wxGetBusyState() > 0);
 }    
 
+/********************************************************************************/
+
+#define WC_BUFFER_SIZE 1024
+static wchar_t wc_buffer[WC_BUFFER_SIZE];
+
+int wx_wstrlen(wchar_t *ws)
+{
+  int l;
+  for (l =0; ws[l]; l++) { }
+  return l;
+}
+
+wchar_t *wx_convert_to_wchar(char *s, int do_copy)
+{
+  long len, l;
+  wchar_t *ws;
+
+  if (!s) return NULL;
+
+  l = strlen(s);
+  len = scheme_utf8_decode((unsigned char *)s, 0, l,
+			   NULL, 0, -1,
+			   NULL, 1/*UTF-16*/, 1);
+  if (!do_copy && (len < (WC_BUFFER_SIZE-1)))
+    ws = wc_buffer;
+  else
+    ws = new WXGC_ATOMIC wchar_t[len + 1];
+  scheme_utf8_decode((unsigned char *)s, 0, l,
+		     (unsigned int *)ws, 0, -1,
+		     NULL, 1/*UTF-16*/, 1);
+  ws[len] = 0;
+  return ws;
+}
+
+char *wx_convert_from_wchar(wchar_t *ws)
+{
+  long len, l;
+  char *s;
+
+  if (!ws) return NULL;
+
+  l = wx_wstrlen(ws);
+  len = scheme_utf8_encode((unsigned int *)ws, 0, l,
+			   NULL, 0,
+			   1/*UTF-16*/);
+  s = new char[len + 1];
+  scheme_utf8_encode((unsigned int *)ws, 0, l,
+		     (unsigned char *)s, 0,
+		     1/*UTF-16*/);
+  s[len] = 0;
+  return s;
+}

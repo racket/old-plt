@@ -152,7 +152,7 @@ void wxItem::SetClientSize(int width, int height)
 
 void wxItem::SetLabel(char *label)
 {
-  SetWindowText((HWND)ms_handle, label);
+  SetWindowTextW((HWND)ms_handle, wxWIDE_STRING(label));
 }
 
 char *wxItem::GetLabel(void)

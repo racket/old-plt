@@ -1,4 +1,6 @@
 (module cgi mzscheme
+  (require (lib "servlet-helpers.ss" "web-server"))
+  
   (require "../../private/headelts.ss")
   
   (require (lib "servlet.ss" "web-server"))
@@ -59,11 +61,9 @@
           "Make sure the path to MzScheme is specified correctly."
           (P)
           "Now we're in Scheme-land.  First, let's load the Scheme "
-          "CGI library, the Scheme process library, and define where "
-          "`finger' resides."
+          "CGI library and define where `finger' resides."
           (P)
           (PRE 
-           " (require (lib \"process.ss\"))" (BR)
            " (require (lib \"cgi.ss\" \"net\"))" (BR)
            " (define finger-program \"/usr/bin/finger\")")
           (P)
@@ -75,7 +75,7 @@
            "   (let ((name (extract-binding/single 'name bindings)))")
           (P)
           "We use extract-binding/single to make sure only one name "
-          "field was bound.  You can bind the same field multiple "
+          "field was bound.  (You can bind the same field multiple "
           "times using check-boxes.  This is just one kind of "
           "error-checking; a robust CGI script will do more."
           (P)
@@ -83,7 +83,7 @@
           "If no username was specified, we just run finger on the host."
           (P)
           (PRE 
-           " (let ((results (if (string=? name \"\")" (BR)
+           " (let ((results (if (string=? name \"\"))" (BR)
            "   (process* finger-program)" (BR)
            "   (process* finger-program name))))")
           (P)
@@ -99,10 +99,10 @@
           (P)
           (PRE 
            " (let ((strings (let loop " (BR)
-           "   ((l (read-line proc->self)))" (BR)
+           "   (let ((l (read-line proc->self)))" (BR)
            "     (if (eof-object? l)" (BR)
            "        null" (BR)
-           "        (cons l (loop)))))))")
+           "        (cons l (loop))))))))")
           (P)
           "All that's left is to print this out to the user.  "
           "We use the `generate-html-output' procedure to do that, "
@@ -134,21 +134,20 @@
            " #!/bin/sh" (BR)
            " string=? ; exec /usr/local/bin/mzscheme -r $0 "$@"" (BR)
            "" (BR)
-	   " (require (lib \"process.ss\"))" (BR)
            " (require (lib \"cgi.ss\" \"net\"))" (BR)
            " (define finger-program \"/usr/bin/finger\")" (BR)
            ""  (BR)
            " (let ((bindings (get-bindings)))" (BR)
            "   (let ((name (extract-binding/single 'name bindings)))" (BR)
-           "    (let ((results (if (string=? name \"\")" (BR)
+           "    (let ((results (if (string=? name "")" (BR)
            "      (process* finger-program)" (BR)
            "     (process* finger-program name))))" (BR)
            "     (let ((proc->self (car results)))" (BR)
            "       (let ((strings (let loop " (BR)
-           "                        ((l (read-line proc->self)))" (BR)
+           "                        (let ((l (read-line proc->self)))" (BR)
            "                          (if (eof-object? l)" (BR)
            "                            null" (BR)
-           "                            (cons l (loop))))))" (BR)
+           "                            (cons l (loop)))))))" (BR)
            "         (generate-html-output \"Finger Gateway Output\"" (BR)
            "         (append" (BR)
            "           '(\"<PRE>\")" (BR)

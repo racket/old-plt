@@ -592,9 +592,22 @@ void wxListBox::OnChar(wxKeyEvent *e)
 	s = -1;
 
       SetSelection(s + delta);
+
       if (s != GetSelection()) {
 	wxCommandEvent *event;
-	event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	int first, count;
+
+	// Is is visible?
+	first = GetFirstItem();
+	count = NumberOfVisibleItems() - 1;
+	s = GetSelection();
+	if (s < first)
+	  SetFirstItem(s);
+	else if (s > first + count) {
+	  SetFirstItem(s - count);
+	}
+
+	event = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
 	ProcessCommand(event);
       }
     }

@@ -42,6 +42,7 @@ wxLayoutConstraints::wxLayoutConstraints(void)
 {
     __type = wxTYPE_CONSTRAINTS;
 
+#ifdef MZ_PRECISE_GC
     left = new wxIndividualLayoutConstraint;
     top = new wxIndividualLayoutConstraint;
     right = new wxIndividualLayoutConstraint;
@@ -50,7 +51,8 @@ wxLayoutConstraints::wxLayoutConstraints(void)
     centreY = new wxIndividualLayoutConstraint;
     width = new wxIndividualLayoutConstraint;
     height = new wxIndividualLayoutConstraint;
-  
+#endif
+
     wxLC_MEM(left, myEdge)    = wxLeft;
     wxLC_MEM(top, myEdge)     = wxTop;
     wxLC_MEM(right, myEdge)   = wxRight;

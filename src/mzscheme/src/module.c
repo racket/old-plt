@@ -1777,13 +1777,13 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 	midx = scheme_modidx_shift(exss[i], iim->self_modidx, iidx);
       else
 	midx = iidx;
-      scheme_extend_module_rename(rn, midx, exs[i], exsns[i], iim->self_modidx, exs[i]);
+      scheme_extend_module_rename(rn, midx, exs[i], exsns[i], iidx, exs[i]);
       if (SAME_OBJ(exs[i], module_begin_symbol))
 	saw_mb = 1;
     }
 
     if (iim->reprovide_kernel) {
-      scheme_extend_module_rename_with_kernel(rn, iim->self_modidx);
+      scheme_extend_module_rename_with_kernel(rn, iidx);
       saw_mb = 1;
     }
   }

@@ -27,9 +27,9 @@
   (define this-program (with-handlers ([void (lambda (x) "mzscheme")])
 			 (global-defined-value 'program)))
   
-  (define-struct/parse setting (name
+  (define-struct/parse setting (key
+				name
 				vocabulary-symbol
-				extra-definitions-unit-name
 				macro-libraries
 				case-sensitive?
 				allow-set!-on-undefined?
@@ -55,8 +55,8 @@
   ;; settings : (list-of setting)
   (define settings
     (list (make-setting/parse
-	   `((name "Beginning Student")
-	     (extra-definitions-unit-name "beginner.ss")
+	   `((key beginner)
+	     (name "Beginning Student")
 	     (macro-libraries ())
 	     (vocabulary-symbol beginner)
 	     (case-sensitive? #t)
@@ -80,8 +80,8 @@
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
-	   `((name "Intermediate Student")
-	     (extra-definitions-unit-name "intermediate.ss")
+	   `((key intermediate)
+	     (name "Intermediate Student")
 	     (macro-libraries ())
 	     (vocabulary-symbol intermediate)
 	     (case-sensitive? #t)
@@ -105,10 +105,8 @@
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
-	   `((name "Advanced Student")
-	     (extra-definitions-unit-name ((mred@ "advanced.ss")
-					   .
-					   "advancedjr.ss"))
+	   `((key advanced)
+	     (name "Advanced Student")
 	     (macro-libraries ())
 	     (vocabulary-symbol advanced)
 	     (case-sensitive? #t)
@@ -132,9 +130,9 @@
 	     (define-argv? #f)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
-	   `((name "Textual Full Scheme (MzScheme)")
+	   `((key full)
+	     (name "Textual Full Scheme (MzScheme)")
 	     (vocabulary-symbol mzscheme-debug)
-	     (extra-definitions-unit-name #f)
 	     (macro-libraries ())
 	     (case-sensitive? #f)
 	     (allow-set!-on-undefined? #f)
@@ -157,8 +155,8 @@
 	     (define-argv? #t)
 	     (use-pretty-printer? #t)))
 	  (make-setting/parse
-	   `((name "Textual Full Scheme without Debugging (MzScheme)")
-	     (extra-definitions-unit-name #f)
+	   `((key full)
+	     (name "Textual Full Scheme without Debugging (MzScheme)")
 	     (macro-libraries ())
 	     (vocabulary-symbol mzscheme)
 	     (case-sensitive? #f)
@@ -249,6 +247,13 @@
     (not (or (eq? (setting-vocabulary-symbol setting) 'mzscheme)
 	     (eq? (setting-vocabulary-symbol setting) 'mred))))
   
+  ;; X-language : setting -> boolean
+  ;; returns true if the input language is the specified language
+  (define (beginner-language? setting) (eq? (setting-key setting) 'beginner))
+  (define (intermediate-language? setting) (eq? (setting-key setting) 'intermediate))
+  (define (advanced-language? setting) (eq? (setting-key setting) 'advanced))
+  (define (full-language? setting) (eq? (setting-key setting) 'full))
+
   ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
     (eq? 'r4rs-style (setting-printing setting)))
@@ -595,15 +600,6 @@
                                        (if (regexp-match "MrEd" name)
                                            (list 'mred)
                                            (list)))]
-                  [(extra-definitions)
-                   (let ([name (setting-extra-definitions-unit-name setting)])
-                     (let loop ([l name])
-                       (cond
-                         [(string? l) (require-library/proc l "userspce")]
-                         [(pair? l) (if (defined? (caar l))
-                                        (loop (cadar l))
-                                        (loop (cdr l)))]
-                         [else #f])))]
                   [(n) (apply make-namespace
                               (if (zodiac-vocabulary? setting)
                                   (append (list 'hash-percent-syntax) namespace-flags)
@@ -708,9 +704,6 @@
        (setting-print-booleans-as-true/false setting))
       (print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
       (mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
-      
-      (when extra-definitions
-        (extra-definitions))
       
       ;; ROBBY : attempt to back out of John's changes
       (global-defined-value '#%break aries:break)

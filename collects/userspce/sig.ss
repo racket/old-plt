@@ -1,7 +1,8 @@
 ;;;
-(with-handlers ([void void])
-  ; Might not be there if this is MrEd-less DrJr distribution
-  (require-relative-library "userspcs.ss"))
+(begin-elaboration-time
+ (with-handlers ([void void])
+   ;; Might not be there if this is MrEd-less DrJr distribution
+   (require-relative-library "userspcs.ss")))
 (require-relative-library "ricedefs.ss")
 (require-library "sig.ss" "stepper")
 (require-library "cores.ss")
@@ -50,6 +51,10 @@
    drscheme-load-handler
 
    zodiac-vocabulary?
+   beginner-language?
+   intermediate-language?
+   advanced-language?
+   full-language?
    
    error-display/debug-handler
    current-vocabulary
@@ -83,7 +88,6 @@
    number->setting
    (struct setting (name
 		    vocabulary-symbol
-		    extra-definitions-unit-name
 		    macro-libraries
 		    case-sensitive?
 		    allow-set!-on-undefined?

@@ -1,7 +1,33 @@
+(require-library "pretty.ss")
+
 (unit/sig drscheme:teachpack^
-  (import [mred : mred^]
+  (import [basis : userspace:basis^]
+	  [mred : mred^]
 	  mzlib:function^)
   
+  (define (exploded->flattened exploded)
+    (let ([sig exploded])
+      (let loop ([l (vector->list sig)][r null])
+	(cond
+	 [(null? l) r]
+	 [(symbol? (car l)) (loop (cdr l) (cons (car l) r))]
+	 [else (let ([sub (loop (vector->list (cadr l)) null)]
+		     [prefix (string-append (symbol->string (car l)) ":")])
+		 (loop (cdr l)
+		       (append
+			(map (lambda (s)
+			       (string->symbol
+				(string-append
+				 prefix
+				 (symbol->string s))))
+			     sub))))]))))
+
+  (define (build-gdvs exploded)
+    (let ([flattened (exploded->flattened exploded)])
+      (map
+       (lambda (x) `(global-defined-value ',x ,x))
+       flattened)))
+
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
   ;; build-single-teachpack-unit : string -> (union #f (unit () X))
@@ -17,22 +43,7 @@
 					; Put the unit into a procedure that invokes it into
 					;  the current namespace
 	   (let* ([signature 
-					; exploded -> flattened
-		   (let ([sig (unit-with-signature-exports new-unit)])
-		     (let loop ([l (vector->list sig)][r null])
-		       (cond
-			[(null? l) r]
-			[(symbol? (car l)) (loop (cdr l) (cons (car l) r))]
-			[else (let ([sub (loop (vector->list (cadr l)) null)]
-				    [prefix (string-append (symbol->string (car l)) ":")])
-				(loop (cdr l)
-				      (append
-				       (map (lambda (s)
-					      (string->symbol
-					       (string-append
-						prefix
-						(symbol->string s))))
-					    sub))))])))])
+		   (exploded->flattened (unit-with-signature-exports new-unit))])
 	     (eval
 	      `(unit/sig ()
 		 (import plt:userspace^)
@@ -77,18 +88,42 @@
 			(cons `[,(string->symbol (format "teachpack~a" tagn)) : () (,unit userspace)]
 			      (loop (cdr units))))
 		      (loop (cdr units))))]))]
+
 	   [cu
 	    (eval
 	     `(compound-unit/sig
 		(import)
-		(link ,@(cons
+		(link ,@(list*
 			 `[userspace : plt:userspace^ 
 				     ((compound-unit/sig 
 					(import)
 					(link [core : mzlib:core-flat^ (,core-flat@)]
-					      [mred : mred^ (,mred:mred@)])
+					      [mred : mred^ (,mred:mred@)]
+					      [turtles : turtle^ ((require-library "turtler.ss" "graphics")
+								   (core : mzlib:function^))]
+					      [posn : ((struct posn (x y)))
+						    ((unit/sig ((struct posn (x y)))
+						       (import)
+						       (define-struct posn (x y))))])
 					(export (open core)
-						(open mred))))]
+						(open mred)
+						(open posn)
+						(open turtles))))]
+			 `[language-specific-additions
+			   : ()
+			   ((unit/sig ()
+			     (import plt:userspace^)
+
+			     (cond
+			      [(,basis:beginner-language? (,basis:current-setting))
+			       ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
+			      [(,basis:intermediate-language? (,basis:current-setting))
+			       ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
+			      [(,basis:advanced-language? (,basis:current-setting))
+			       ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
+			      [(,basis:full-language? (,basis:current-setting)) (void)]))
+			    userspace)]
+
 			 link-clauses))
 		(export)))])
       (lambda ()

@@ -144,7 +144,7 @@
   (bug-report-field-class "Classe")
   (bug-report-field-priority "Priorité")
   (bug-report-field-description "Description")
-  (bug-report-field-reproduce1 "Etapes à suivre pour")
+  (bug-report-field-reproduce1 "Etapes �  suivre pour")
   (bug-report-field-reproduce2 "reproduire le bogue")
   (bug-report-field-environment "Environnement")
   (bug-report-field-tools "Outils")
@@ -161,11 +161,11 @@
   (error-sending-bug-report "Erreur durant la soumission du formulaire de bogue.")
   (error-sending-bug-report-expln "Une erreur s'est produite pendant la soumission de votre formulaire de bogue. Si votre connexion Internet fonctionne correctement, veuillez visiter :\n\n    http://bugs.plt-scheme.org/\n\net soumettre votre bogue en utilisant notre formulaire web en ligne. Je suis vraiment profondément désolé pour toutes vos difficultés.\n\nLe message d'erreur est :\n~a")
   (bug-report-sent "Le bogue a été correctement soumis.")
-  (bug-report-sent-detail "Merci pour votre soumission. Vous devriez recevoir une confirmation de votre soumission par email d'ici 30 minutes. Si vous ne recevez pas cette confirmation, veuillez envoyer un email à scheme@plt-scheme.org.")
+  (bug-report-sent-detail "Merci pour votre soumission. Vous devriez recevoir une confirmation de votre soumission par email d'ici 30 minutes. Si vous ne recevez pas cette confirmation, veuillez envoyer un email �  scheme@plt-scheme.org.")
   (illegal-bug-report "Formulaire de soumission de bogue incomplet.")
   (pls-fill-in-field "Merci de compléter le champ \"~a\".")
   (malformed-email-address "Adresse email malformée.")
-  (pls-fill-in-either-description-or-reproduce "Veuillez remplir soit le champ \"Description\", soit le champ \"Etapes à suivre pour reproduire le bogue\".")
+  (pls-fill-in-either-description-or-reproduce "Veuillez remplir soit le champ \"Description\", soit le champ \"Etapes �  suivre pour reproduire le bogue\".")
   
   ;;; check syntax
   (check-syntax "Vérifier") ; "Syntaxe" ; "Vérificateur de syntaxe" est long...
@@ -174,9 +174,9 @@
   (cs-underline "Souligné")
   (cs-change-color "Changer la couleur")
   (cs-tack/untack-arrow "Coller/décoller les flèches")
-  (cs-jump-to-next-bound-occurrence "Aller à l'occurence suivante")
-  (cs-jump-to-binding "Aller à l'occurence liant celle-ci")
-  (cs-jump-to-definition "Aller à la définition")
+  (cs-jump-to-next-bound-occurrence "Aller �  l'occurence suivante")
+  (cs-jump-to-binding "Aller �  l'occurence liant celle-ci")
+  (cs-jump-to-definition "Aller �  la définition")
   (cs-error-message "Message d'erreur")
   (cs-open-file "Ouvrir ~a")
   (cs-rename-var "Renommer ~a")
@@ -214,10 +214,10 @@
   (welcome-to-drscheme "Bienvenue dans DrScheme")
   (version/language "version ~a, ~a.")
   
-  (goto-line "Aller à la ligne")
+  (goto-line "Aller �  la ligne")
   (goto-line-invalid-number
    "~a n'est pas un numéro de ligne valide. Ce doit être un entier entre 1 et ~a.")
-  (goto-position "Aller à la position")
+  (goto-position "Aller �  la position")
   (no-full-name-since-not-saved
    "Le fichier n'a pas encore de nom complet car il n'a pas encore été sauvegardé.")
   (cannot-open-because-dne "Impossible d'ouvrir ~a car le fichier n'existe pas.")
@@ -325,9 +325,9 @@
   (plt:hd:refreshing-manuals-finished "Terminé.")
   (plt:hd:about-help-desk "A propos de l'Aide")
   (plt:hd:help-desk-about-string
-   "L'Aide est une source complète d'information à propos des logiciels du PLT, y compris DrScheme, MzScheme et MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT.")
+   "L'Aide est une source complète d'information �  propos des logiciels du PLT, y compris DrScheme, MzScheme et MrEd.\n\nVersion ~a\nCopyright (c) 1995-2003 PLT.")
   (plt:hd:help-on-help "Aide de l'Aide")
-  (plt:hd:help-on-help-details "Pour obtenir de l'aide sur comment utiliser l'Aide, suivez le lien `How to use Help Desk' à partir de la page principale de l'Aide (pour trouver la page principale, si vous n'y êtes pas déjà, cliquez sur le boutton `Home' qui apparaît en haut de la fenêtre de l'Aide).")
+  (plt:hd:help-on-help-details "Pour obtenir de l'aide sur comment utiliser l'Aide, suivez le lien `How to use Help Desk' �  partir de la page principale de l'Aide (pour trouver la page principale, si vous n'y êtes pas déj� , cliquez sur le boutton `Home' qui apparaît en haut de la fenêtre de l'Aide).")
   (reload "Rafraîchir")
   (plt:hd:ask-about-separate-browser
    "Vous avez sélectionné un lien vers une page sur le world-wide web. Voulez-vous voir cette page en utilisant le navigateur de l'Aide ou voulez-vous utiliser un navigateur séparé ?")
@@ -361,8 +361,8 @@
   (external-browser-choice-title "Navigateur externe") ; title for radio-button set
   (browser-command-line-label "Ligne de commande :") ; label for radio button that is followed by text boxes
   (no-browser "Demander plus tard")
-  (use-internal-browser-for-help "Lire l'Aide à l'aide du navigateur PLT interne") ; radio-button label
-  (use-external-browser-for-help "Lire l'Aide à l'aide d'un navigateur externe") ; radio-button label
+  (use-internal-browser-for-help "Lire l'Aide �  l'aide du navigateur PLT interne") ; radio-button label
+  (use-external-browser-for-help "Lire l'Aide �  l'aide d'un navigateur externe") ; radio-button label
   (browser-cmdline-expl-line-1 "(La ligne de commande est la concaténation du préfixe, de l'URL,") ; explanatory text for dialog, line 1
   (browser-cmdline-expl-line-2 "et du suffixe, sans espace additionel entre eux.)") ; ... line 2. (Anyone need more lines?)
   (cannot-display-url "Impossible de montrer l'URL ~s : ~a")
@@ -376,8 +376,8 @@
   (save-downloaded-file "Sauvegarder le fichier téléchargé sous le nom")  ;; label for get-file dialog
   (downloading "Téléchargement") ;; dialog title
   (downloading-file... "Téléchargement du fichier en cours...")
-  (package-was-installed "Le logiciel à été installé.")
-  (download-was-saved "Le fichier téléchargé à été sauvegardé.")
+  (package-was-installed "Le logiciel �  été installé.")
+  (download-was-saved "Le fichier téléchargé �  été sauvegardé.")
   (getting-page "Page en cours de réception") ;; dialog title
   
   (install-plt-file-menu-item... "Installer un fichier .plt...")
@@ -432,7 +432,7 @@
   (ask-before-changing-format "Confirmation avant de changer le format de sauvegarde.")
   (wrap-words-in-editor-buffers "Continuer une longue ligne sur la ligne suivante, dans les éditeurs.")
   (show-status-line "Montrer la barre de status.")
-  (count-columns-from-one "Compter les lignes et colonnes à partir de un.")
+  (count-columns-from-one "Compter les lignes et colonnes �  partir de un.")
   (display-line-numbers "Montrer le numéro de ligne et de colonne, pas la distance depuis le début d'éditeur.")
   (enable-keybindings-in-menus "Raccourcis clavier dans les menus.")
   (automatically-to-ps "Imprimer automatiquement dans un fichier postscript.")
@@ -443,12 +443,13 @@
   (paren-match-color "Couleur de surlignage des parenthèses") ; in prefs dialog
   (choose-color "Sélectionnez une couleur") ; in prefs dialog
   (online-coloring-active "Colorier la syntaxe interactivement")
+  (open-files-in-tabs "Ouvrir les fichiers dans de nouveaux onglets (pas dans de nouvelles fen�tres)")
   
   ; title of the color choosing dialog
   (choose-paren-highlight-color "Sélectionnez une couleur pour surligner les parenthèses")
   
   ; should have entire alphabet
-  (font-example-string "aâàbcçdeéêèëfghiîïjklmnoôpqrstuûùüvwxyz")
+  (font-example-string "aâ� bcçdeéêèëfghiîïjklmnoôpqrstuûùüvwxyz")
   
   (change-font-button-label "Changer")
   (fonts "Polices")
@@ -482,12 +483,12 @@
   (indenting-prefs-panel-label "Indentation")
   
   ; filled with define, lambda, or begin
-  (enter-new-keyword "Entrez un nouveau mot clef ressemblant à ~a :")
+  (enter-new-keyword "Entrez un nouveau mot clef ressemblant �  ~a :")
   (x-keyword "Mot clef ~a")
-  (x-like-keywords "Mots clefs ressemblant à ~a")
+  (x-like-keywords "Mots clefs ressemblant �  ~a")
   
   (expected-a-symbol "espérait un symbole, trouvé : ~a")
-  (already-used-keyword "\"~a\" est déjà un mot clef avec une indentation spéciale.")
+  (already-used-keyword "\"~a\" est déj�  un mot clef avec une indentation spéciale.")
   (add-keyword "Ajouter")
   (remove-keyword "Enlever")
   
@@ -498,8 +499,8 @@
   (dock "Attacher")
   (undock "Séparer")
   (use-separate-dialog-for-searching "Utiliser un menu séparé pour chercher.")
-  (replace&find-again "Remplacer && chercher à nouveau") ;;; need double & to get a single &
-  (replace-to-end "Remplacer jusqu'à la fin")
+  (replace&find-again "Remplacer && chercher �  nouveau") ;;; need double & to get a single &
+  (replace-to-end "Remplacer jusqu'�  la fin")
   (forward "En avant")
   (backward "En arrière")
   (hide "Cacher")
@@ -525,10 +526,10 @@
   (mfs-search-interrupted "Recherche avortée.")
   
   ;;;reverting a file
-  (error-reverting "DrScheme - Erreur durant le retour à l'original.")
+  (error-reverting "DrScheme - Erreur durant le retour �  l'original.")
   (could-not-read "impossible de lire \"~a\".")
   (are-you-sure-revert
-   "Etes-vous certain de vouloir retourner à la version de ce fichier qui est sur le disque dur ? Ce changement ne pourra pas être défait.")
+   "Etes-vous certain de vouloir retourner �  la version de ce fichier qui est sur le disque dur ? Ce changement ne pourra pas être défait.")
   (are-you-sure-revert-title
    "Retourner ?")
   
@@ -543,7 +544,7 @@
   ;;; finder dialog
   (must-specify-a-filename "Vous devez spécifier un nom de fichier.")
   (file-does-not-exist "Le fichier \"~a\" n'existe pas.")
-  (ask-because-file-exists "Le fichier \"~a\" existe déjà. Voulez-vous le remplacer ?")
+  (ask-because-file-exists "Le fichier \"~a\" existe déj� . Voulez-vous le remplacer ?")
   (dne-or-cycle "Le fichier \"~a\" contient un répertoire non-existant, ou une boucle.")
   (get-file "Obtenir fichier")
   (put-file "Donner fichier")
@@ -587,23 +588,23 @@
   (new-menu-item "&Nouvelle fenêtre")
   (new-...-menu-item "&Nouvelle...")
   
-  (open-info "Ouvrir un fichier à partir du disque dur.")
+  (open-info "Ouvrir un fichier �  partir du disque dur.")
   (open-menu-item "&Ouvrir")
   (open-here-menu-item "&Ouvrir ici...")
   
   (open-recent-info "Une liste des fichiers ouverts récemment.")
   (open-recent-menu-item "Ouvrir récent")
   
-  (revert-info "Retour à la version originale de ce fichier sur le disque dur.")
+  (revert-info "Retour �  la version originale de ce fichier sur le disque dur.")
   (revert-menu-item "&Retour version disque")
   
   (save-info "Sauvegarder ce fichier sur le disque dur.")
   (save-menu-item "&Sauvegarder")
   
   (save-as-info "Demander un nom de fichier et sauver ce fichier sur le disque dur.")
-  (save-as-menu-item "Sauvegarder à")
+  (save-as-menu-item "Sauvegarder � ")
   
-  (print-info "Envoyer ce fichier à une imprimante.")
+  (print-info "Envoyer ce fichier �  une imprimante.")
   (print-menu-item "&Imprimer...")
   
   (close-info "Fermer ce fichier.")
@@ -627,7 +628,7 @@
   (copy-info "Copier dans le porte-bloc les éléments sélectionés, pour collage ultérieur.")
   (copy-menu-item "Co&pier")
   
-  (paste-info "Coller à la place des éléments sélectionnés les éléments qui ont été copiés ou coupés le plus récemment.")
+  (paste-info "Coller �  la place des éléments sélectionnés les éléments qui ont été copiés ou coupés le plus récemment.")
   (paste-menu-item "C&oller")
   
   (clear-info "Effacer les éléments sélectionnés sans modifier le porte-bloc ou le collage.")
@@ -640,11 +641,11 @@
   (find-info "Rechercher une chaîne de caractères.")
   (find-menu-item "Rechercher...")
   
-  (find-again-info "Recherche à nouveau la même chaîne de caractères.")
-  (find-again-menu-item "Rechercher à nouveau")
+  (find-again-info "Recherche �  nouveau la même chaîne de caractères.")
+  (find-again-menu-item "Rechercher �  nouveau")
   
-  (replace-and-find-again-info "Remplacer le texte sélectionné et rechercher à nouveau le même texte.")
-  (replace-and-find-again-menu-item "Remplacer && rechercher à nouveau")
+  (replace-and-find-again-info "Remplacer le texte sélectionné et rechercher �  nouveau le même texte.")
+  (replace-and-find-again-menu-item "Remplacer && rechercher �  nouveau")
   
   (preferences-info "Configurer vos préférences.")
   (preferences-menu-item "Préférences...")
@@ -657,9 +658,9 @@
   
   ;; menu items in the "special" menu
   (insert-text-box-item "Insérer une boite texte")
-  (insert-pb-box-item "Insérer une boite à dessin")
+  (insert-pb-box-item "Insérer une boite �  dessin")
   (insert-image-item "Insérer une image...")
-  (insert-comment-box-menu-item-label "Insérer une boite à commentaires")
+  (insert-comment-box-menu-item-label "Insérer une boite �  commentaires")
   (insert-lambda "Insérer un &Lambda")
   (insert-delta "Insérer un &Delta (define)")
   
@@ -681,7 +682,7 @@
   (help-menu-label "&Aide")
   (about-info "Auteurs et détails concernant ce logiciel.")
   (about-menu-item "A propos de ...")
-  (help-menu-check-for-updates "Regarder les mises à jour...")
+  (help-menu-check-for-updates "Regarder les mises �  jour...")
   
   ;; open here's new menu item
   (create-new-window-or-clear-current
@@ -699,7 +700,7 @@
   
   ;;; autosaving
   (error-autosaving "Erreur durant l'auto-sauvegarde de \"~a\".")
-  (autosaving-turned-off "L'auto-sauvegarde est suspendue\njusqu'à ce que le fichier soit sauvegardé.")
+  (autosaving-turned-off "L'auto-sauvegarde est suspendue\njusqu'�  ce que le fichier soit sauvegardé.")
   (recover-autosave-files-frame-title "Recouvrer des fichiers auto-sauvegardés")
   (autosave-details "Détails")
   (autosave-recover "Recouvrer")
@@ -739,7 +740,7 @@
   (overwrite-file-button-label "Ecraser")
   
   (definitions-modified 
-   "Le texte de la fenêtre de définition a été modifié directement sur le disque dur. Sauvegardez ou retournez à la version sur le disque.")
+   "Le texte de la fenêtre de définition a été modifié directement sur le disque dur. Sauvegardez ou retournez �  la version sur le disque.")
   (drscheme-internal-error "Erreur interne de DrScheme.")
   
   ;;; tools
@@ -763,7 +764,7 @@
   (sort-by-name "Trier par nom")
   (sort-by-position "Trier par position dans le fichier")
   (no-definitions-found "<< aucune définition trouvée >>")
-  (jump-to-defn "Aller à la définition de ~a")
+  (jump-to-defn "Aller �  la définition de ~a")
   
   (recent-items-sort-by-age "Trier par age")
   (recent-items-sort-by-name "Trier par nom")
@@ -789,7 +790,9 @@
   (save-interactions-as "Sauvegarder les interactions...")
   (save-interactions-as-text "Sauvegarder les interactions au format texte...")
   (print-interactions "Imprimer les interactions...")
-  
+  (new-tab "Nouvel onglet")
+  (close-tab "Fermer l'onglet")
+
   ;;; edit-menu
   (split-menu-item-label "Di&viser")
   (collapse-menu-item-label "&Rassembler")
@@ -809,8 +812,8 @@
   (clear-error-highlight-item-help-string "Efface le surlignage rose après une erreur")
   (reindent-menu-item-label "&Réindenter")
   (reindent-all-menu-item-label "Réindenter &tout")
-  (semicolon-comment-out-menu-item-label "&Commenter à l'aide de points-virgules")
-  (box-comment-out-menu-item-label "&Commenter à l'aide d'une boite")
+  (semicolon-comment-out-menu-item-label "&Commenter �  l'aide de points-virgules")
+  (box-comment-out-menu-item-label "&Commenter �  l'aide d'une boite")
   (uncomment-menu-item-label "&Décommenter")
   
   (convert-to-semicolon-comment "Convertir en un commentaire avec points-virgules")
@@ -890,7 +893,7 @@
   (add-teachpack-menu-item-label "Ajouter un teachpack...")
   (clear-all-teachpacks-menu-item-label "Enlever tous les teachpacks")
   (drscheme-teachpack-message-title "DrScheme teachpack")
-  (already-added-teachpack "Le teachpack ~a a déjà été ajouté.")
+  (already-added-teachpack "Le teachpack ~a a déj�  été ajouté.")
   
   ;;; Language dialog
   (introduction-to-language-dialog
@@ -978,7 +981,7 @@
   (profiling-number "Numbre d'appels de fonctions")
   (profiling-time "Temps cumulatif")
   (profiling-clear "Effacer le profil")
-  (profiling-update "Mettre à jour le profil")
+  (profiling-update "Mettre �  jour le profil")
   (profiling-col-percent-time "% Temps")
   (profiling-col-function "Fonction")
   (profiling-col-name "Nom")
@@ -992,13 +995,13 @@
   
   ;; test coverage
   (test-coverage-clear? "Modifier le contenu de la fenêtre de définition invalide l'information de couverture de vos tests. Voulez-vous continuer ?")
-  (test-coverage-clear-and-do-not-ask-again "Oui, et ne me demandez pas à nouveau")
-  (test-coverage-ask? "Demander à propos de l'invalidation de l'information de couverture des tests ?")
+  (test-coverage-clear-and-do-not-ask-again "Oui, et ne me demandez pas �  nouveau")
+  (test-coverage-ask? "Demander �  propos de l'invalidation de l'information de couverture des tests ?")
   
   ;;; repl stuff
   (evaluation-terminated "Evaluation terminée.")
   (evaluation-terminated-explanation
-   "Le thread d'évaluation n'est plus en exécution, toute évaluation est donc impossible jusqu'à la prochaine exécution.")
+   "Le thread d'évaluation n'est plus en exécution, toute évaluation est donc impossible jusqu'�  la prochaine exécution.")
   (last-stack-frame "Montrer le dernier appel de fonction sur la pile.")
   (last-stack-frames "Montrer les derniers ~a appels de fonction sur la pile.")
   (next-stack-frames "Montrer les ~a appels de fonction suivants sur la pile.")
@@ -1022,25 +1025,25 @@
   ;; it will not make the dialog too wide.
   (vc-wizard-check-note "La version des logiciels que vous êtes en train d'installer n'est peut-être pas la dernière.~nSi vous le voulez DrScheme peut regarder pour une version plus récente.")
   (vc-wizard-check-button "Regarder !")
-  (vc-update-check "Vérification des mises à jour")
+  (vc-update-check "Vérification des mises �  jour")
   (vc-please-wait "Veuillez patienter")
   (vc-connecting-version-server "Connexion au server de version de PLT en cours")
-  (vc-network-timeout "Expiration du compte-à-rebours lors de la connexion réseau")
+  (vc-network-timeout "Expiration du compte-� -rebours lors de la connexion réseau")
   (vc-cannot-connect "Impossible de se connecter au serveur de version de PLT")
   (vc-network-failure "Erreur réseau")
-  (vc-old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas à jour")
+  (vc-old-binaries "Les fichiers binaires installés pour DrScheme (ou MzScheme) ne sont pas �  jour")
   (vc-binary-information-format "Version binaire installée : ~a (itération ~a)")
   (vc-details-format "~a~nDétails :~n~a")
   (vc-details-text "Détails :~n")
   (vc-error-format "Erreur : ~a")
-  (vc-current-format "~a v.~a (itération ~a) est à jour")
+  (vc-current-format "~a v.~a (itération ~a) est �  jour")
   (vc-update-format "~a v.~a (itération ~a) doit être remplacé par v.~a (itération ~a)")
   (vc-binary-name "Binaire")
-  (vc-updates-available "Les mises à jour sont disponibles à")
+  (vc-updates-available "Les mises �  jour sont disponibles � ")
   (vc-latest-binary-information-format "Version la plus récente : ~a (itération ~a)")
-  (vc-update-dialog-title "Etat des mises à jour")
-  (vc-need-update-string "Un ou plusieurs des logiciels PLT installés doivent être mis à jour")
-  (vc-no-update-string "Tous les logiciels PLT installés sont à jour")
+  (vc-update-dialog-title "Etat des mises �  jour")
+  (vc-need-update-string "Un ou plusieurs des logiciels PLT installés doivent être mis �  jour")
+  (vc-no-update-string "Tous les logiciels PLT installés sont �  jour")
   
   ;; special menu
   (special-menu "Spécial")
@@ -1048,7 +1051,7 @@
   ;; large semi colon letters
   (insert-large-letters... "Inserer de grandes lettres...")
   (large-semicolon-letters "Grandes lettres en points-virgules")
-  (text-to-insert "Texte à inserer")
+  (text-to-insert "Texte �  inserer")
   
   (module-browser-filename-format "Nom de fichier complet : ~a (~a lignes)")
   (module-browser-root-filename "Nom de fichier de la racine : ~a")
@@ -1060,7 +1063,7 @@
   (module-browser "Navigateur de modules") ;; frame title
   (module-browser... "Navigateur de modules...") ;; menu item title
   (module-browser-error-expanding "Erreur durant l'expansion du programme :\n\n~a")
-  (module-browser-show-lib-paths "Montrer les fichiers chargés à l'aide de chemins de fichiers du type (lib ..)")
+  (module-browser-show-lib-paths "Montrer les fichiers chargés �  l'aide de chemins de fichiers du type (lib ..)")
   (module-browser-progress "Navigateur de modules : ~a") ;; prefix in the status line
   (module-browser-compiling-defns "Navigateur de modules : compilation des définitions")
   (module-browser-show-lib-paths/short "(require (lib ...))") ;; check box label in show module browser pane in drscheme window.
@@ -1070,9 +1073,10 @@
   
   (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
   (happy-birthday-matthew "Joyeux anniversaire, Matthew !")
+  (happy-birthday-shriram "Joyeux anniversaire, Shriram !")
   
   (mrflow-using-default-language-title "Language par défaut utilisé")
-  (mrflow-using-default-language "Le language actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé à la place.")
+  (mrflow-using-default-language "Le language actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé �  la place.")
   (mrflow-button-title "Analyzer")
   ;(mrflow-unknown-style-delta-error-title "Delta de Style de boîte inconnu")
   ;(mrflow-unknown-style-delta-error "Delta de style de boîte inconnu : ~a")
@@ -1102,12 +1106,12 @@
   (xml-tool-menu "XML")
   (xml-tool-insert-xml-box "Insérer une boîte XML")
   (xml-tool-insert-scheme-box "Insérer une boîte Scheme")
-  (xml-tool-insert-scheme-splice-box "Insérer une boîte Scheme à raccord")
+  (xml-tool-insert-scheme-splice-box "Insérer une boîte Scheme �  raccord")
   (xml-tool-xml-box "Boîte XML")
   (xml-tool-scheme-box "Boîte Scheme")
-  (xml-tool-scheme-splice-box "Boîte Scheme à raccord")
+  (xml-tool-scheme-splice-box "Boîte Scheme �  raccord")
   (xml-tool-switch-to-scheme "Changer pour une boîte Scheme")
-  (xml-tool-switch-to-scheme-splice "Changer pour une boîte Scheme à raccord")
+  (xml-tool-switch-to-scheme-splice "Changer pour une boîte Scheme �  raccord")
   (xml-tool-eliminate-whitespace-in-empty-tags
    "Eliminer les espaces dans les délimiteurs vides")
   (xml-tool-leave-whitespace-alone
@@ -1144,7 +1148,7 @@
   
   ;; err msg when adding default twice
   (ml-cp-default-already-present
-   "Les chemins de répertoires pour les collections par défaut sont déjà présents")
+   "Les chemins de répertoires pour les collections par défaut sont déj�  présents")
   
   ;; title of this section of the dialog (possibly the word
   ;; `Collection' should not be translated)

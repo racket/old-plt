@@ -1829,6 +1829,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 	{
 	  scheme_init_expand_recs(rec, drec, &erec1, 1);
 	  erec1.depth = 1;
+	  erec1.value_name = rec[drec].value_name;
 	  first = scheme_expand_expr(first, xenv, &erec1, 0);
 	}
 	break; /* break to outer loop */

@@ -55,7 +55,7 @@
 	      (insert default-value)
 	      (set-position 0 (string-length default-value)))
 	    (send* c 
-	      (set-lines 3) 
+	      ;(set-lines 3) 
 	      (set-media e)
 	      (set-focus)
 	      (user-min-width 300))

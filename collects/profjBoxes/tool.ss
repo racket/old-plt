@@ -39,7 +39,7 @@
                     (when text
                       (send text begin-edit-sequence)
                       (send text insert box)
-                      #;(send box take-caret)
+                      (send box take-caret)
                       (send text end-edit-sequence)))))
                (demand-callback has-editor-on-demand))
           
@@ -53,7 +53,7 @@
                     (when text
                       (send text begin-edit-sequence)
                       (send text insert box)
-                      #;(send box take-caret)
+                      (send box take-caret)
                       (send text end-edit-sequence)))))
                (demand-callback has-editor-on-demand))
           ))

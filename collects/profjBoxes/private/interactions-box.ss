@@ -12,7 +12,8 @@
    (lib "framework.ss" "framework")
    (lib "readerr.ss" "syntax")
    (lib "parser.ss" "profj")
-   (lib "text-syntax-object.ss" "test-suite" "private"))
+   (lib "text-syntax-object.ss" "test-suite" "private")
+   (lib "print-to-text.ss" "test-suite" "private"))
   
   (provide interactions-box@
            interactions-box^)
@@ -32,8 +33,7 @@
               #;((is-a?/c text%) . -> . syntax-object?)
               (define (text->syntax-object text)
                 (match (text->syntax-objects text)
-                  [() (raise-read-error "Empty box"
-                                        source line #f position 1)]
+                  [() (raise-read-error "Empty box" source line #f position 1)]
                   [(stx) stx]
                   [(stx next rest-stx ...)
                    (raise-read-error "Too many expressions"
@@ -60,6 +60,14 @@
                                         ))
                                    #'(void))))))))
           
+          #;(-> void)
+          ;; tells the test-box to take the caret
+          (define/public (take-caret)
+            (let ([first-box (send (send interactions get-first-child) get-input)])
+              (send pb set-caret-owner
+                    (send (send first-box get-admin) get-snip)
+                    'display)))
+          
           (field
            [pb (new aligned-pasteboard%)]
            [main (new vertical-alignment% (parent pb))]
@@ -78,6 +86,8 @@
         (class vertical-alignment%
           (inherit get-pasteboard)
           (inherit-field head)
+          (define/public (get-first-child)
+            (send head next))
           (define/public (map-children f)
             (send head map-to-list f))
           (define/public add-new
@@ -111,12 +121,12 @@
           (define/public (display-output val)
             (let ([blue-text (new style-delta%)])
               (send blue-text set-delta-foreground "blue")
-              (send* output-text
+              (send* output-text 
                 (lock false)
-                (erase)
-                (change-style blue-text 'start 'end #f)
-                (insert (format "~s" val))
-              (lock true))
+                (change-style blue-text 'start 'end #f))
+              (print-to-text output-text (list val))
+              (send* output-text
+                (lock true))
               (send output show true)))
           
           (super-new)

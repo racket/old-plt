@@ -11,7 +11,7 @@
 (module winvers-change mzscheme
 
   (define verbose? #t)
-  (define binary-extensions '(exe dll lib obj o so def exp))
+  (define binary-extensions '(exe dll lib obj o so def))
   (define xxxs "xxxxxxx")
   (define xxxs-re       (format "lib(?:mzsch|mzgc|mred)(?:|3m)(~a)" xxxs))
   (define renaming      (regexp (format "^~a[.](?:dll|lib)$" xxxs-re)))
@@ -60,8 +60,8 @@
                              (current-directory) file new))
                    (rename-file-or-directory file new)
                    (set! file new)))]
-              [(regexp-match-positions xxxs dfile) =>
-               (fprintf (current-error-port) "Warning: ~a/~a was not renamed!"
+              [(regexp-match-positions xxxs dfile)
+               (fprintf (current-error-port) "Warning: ~a/~a was not renamed!\n"
                         (current-directory) file)]))
       (let-values ([(i o)    (open-input-output-file file 'update)]
                    [(print?) verbose?])
@@ -82,7 +82,7 @@
                   substitutions)
         (file-position i 0)
         (when (regexp-match-positions xxxs i)
-          (fprintf (current-error-port) "Warning: ~a/~a still has ~s!"
+          (fprintf (current-error-port) "Warning: ~a/~a still has ~s!\n"
                    (current-directory) file xxxs))
         (close-input-port i)
         (close-output-port o))))

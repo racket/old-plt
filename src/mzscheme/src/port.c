@@ -5125,6 +5125,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 	  sigprocmask(SIG_SETMASK, NULL, &sigs);
 	  sigdelset(&sigs, SIGPROF);
 	  sigsuspend(&sigs);
+	  sigemptyset(&sigs);
 	} else
 	  break;
       }

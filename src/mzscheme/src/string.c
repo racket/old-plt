@@ -1697,6 +1697,8 @@ void machine_details(char *buff)
 	scheme_close_output_port(sin);
 	scheme_close_input_port(serr);
 
+	memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+
 	/* Read result: */
 	strcpy(buff, "<unknown machine>");
 	c = scheme_get_chars(sout, 1023, buff, 0);
@@ -1708,8 +1710,6 @@ void machine_details(char *buff)
 	while (c && isspace(((unsigned char *)buff)[c - 1])) {
 	  buff[--c] = 0;
 	}
-
-	memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
 	return;
       }

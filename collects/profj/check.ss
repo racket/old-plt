@@ -5,6 +5,7 @@
            "types.ss"
            "parameters.ss"
            "error-messaging.ss"
+           "restrictions.ss"
            "profj-pref.ss"
            (lib "class.ss")
            (lib "list.ss"))
@@ -622,6 +623,7 @@
                        return
                        check-e-no-change
                        (return-src statement)
+                       level
                        type-recs))
         ((while? statement) 
          (check-while (check-e-no-change (while-cond statement))
@@ -706,14 +708,14 @@
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
 
-  ;check-return: expression type (expression -> type) src type-records -> void
-  (define (check-return ret-expr return check src type-recs)
+  ;check-return: expression type (expression -> type) src symbol type-records -> void
+  (define (check-return ret-expr return check src level type-recs)
     (cond
       ((and ret-expr (not (eq? 'void return)))
        (let ((ret-type (check ret-expr)))
          (unless (assignment-conversion return ret-type type-recs)
            (return-error 'not-equal ret-type return src))))
-      ((and ret-expr (eq? 'void return))
+      ((and ret-expr (eq? 'void return) (not (eq? level 'full)))
        (return-error 'void #f return src))
       ((and (not ret-expr) (not (eq? 'void return)))
        (return-error 'val #f return src))))
@@ -1104,12 +1106,7 @@
                (fname (id-string (field-access-field acc)))
                (record null))
            (if obj
-               (begin 
-                 (set! record (field-lookup fname (check-sub-expr obj) obj type-recs))
-                 (set-field-access-access! acc (make-var-access 
-                                                (memq 'static (field-record-modifiers record))
-                                                (memq 'final (field-record-modifiers record))
-                                                (field-record-class record))))
+               (set! record (field-lookup fname (check-sub-expr obj) obj type-recs))
                (set! record 
                      (let ((name (var-access-class (field-access-access acc))))
                        (get-field-record fname
@@ -1122,10 +1119,18 @@
                                                                (string->symbol fname)
                                                                (make-ref-type name null)
                                                                (expr-src exp)))))))
+           (set-field-access-access! acc (make-var-access 
+                                          (memq 'static (field-record-modifiers record))
+                                          (memq 'final (field-record-modifiers record))
+                                          (car (field-record-class record))))
            (add-required c-class (car (field-record-class record)) 
                          (cdr (field-record-class record)) type-recs)
-           (field-record-type record)))
-        
+           (unless (eq? level 'full)
+             (when (is-field-restricted? fname (field-record-class record))
+               (restricted-field-access (field-access-field acc) 
+                                        (field-record-class record) 
+                                        (id-src (field-access-field acc)))))
+           (field-record-type record)))        
         ((local-access? acc) 
          (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
            (if (properties-usable? (var-type-properties var))
@@ -1354,9 +1359,12 @@
         (when (and (eq? level 'beginner)
                    (eq? 'void (method-record-rtype method-record)))
           (beginner-call-error name src))
+        (unless (eq? level 'full)
+          (when (is-method-restricted? (id-string name) (method-record-class method-record))
+            (restricted-method-call name (method-record-class method-record) src)))
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))
-  
+    
   ;check-method-args: (list type) (list type) id type src type-records -> void
   (define (check-method-args args atypes name exp-type src type-recs)
     (unless (= (length args) (length atypes))
@@ -1619,6 +1627,13 @@
                          name)
                  name src))
   
+  ;restricted-field-access: id (list string) src -> void
+  (define (restricted-field-access field class src)
+    (let ((n (id->ext-name field)))
+      (raise-error n
+                   (format "field ~a from ~a may not be used" n (car class))
+                   n src)))
+  
   ;;special-name errors
   ;special-error: src bool -> void
   (define (special-error src interactions?)
@@ -1655,6 +1670,13 @@
                              ((super) "This class's super class")
                              ((this) "The current class"))
                            n)
+                   n src)))
+  
+  ;restricted-method-call id (list string) src -> void
+  (define (restricted-method-call name class src)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (format "method ~a from ~a may not be called" n (car class))
                    n src)))
   
   ;ctor-called-error: type id src -> void

@@ -1,7 +1,8 @@
 (module build-info mzscheme
   
   (require (lib "class.ss") (lib "file.ss") (lib "list.ss")
-           "ast.ss" "types.ss" "error-messaging.ss" "parameters.ss" "parser.ss" "profj-pref.ss")
+           "ast.ss" "types.ss" "error-messaging.ss" "parameters.ss" 
+           "restrictions.ss" "parser.ss" "profj-pref.ss")
 
   (provide build-info build-interactions-info find-implicit-import load-lang)
   
@@ -53,8 +54,10 @@
                               (list (id-string (name-id (package-name prog)))))
                       null))
            (lang-pack `("java" "lang"))
-           (lang (send type-recs get-package-contents lang-pack 
-                       (lambda () (error 'type-recs "Internal error: Type record not set with lang"))))
+           (lang (filter (lambda (class)
+                           (not (forbidden-lang-class? class level)))                  
+                         (send type-recs get-package-contents lang-pack 
+                               (lambda () (error 'type-recs "Internal error: Type record not set with lang")))))
            (current-loc (unless (null? (package-defs prog)) (def-file (car (package-defs prog))))))
 
       ;Add lang to local environment
@@ -139,6 +142,7 @@
           (file-path (build-path (apply build-path dir) class))
           (new-level (box level)))
       (cond
+        ((is-import-restricted? class path level) (used-restricted-import class path))
         ((send type-recs get-class-record class-name (lambda () #f)) void)
         ((file-exists? type-path) 
          (send type-recs add-class-record (read-record type-path))
@@ -163,6 +167,7 @@
         (else (file-error 'file (cons class path))))
       (when add-to-env (send type-recs add-to-env class path loc))
       (send type-recs add-class-req class-name (not add-to-env) loc)))
+
   
   ;check-file-exists?: string box -> bool
   ;side-effect: modifies contents of box
@@ -1139,6 +1144,13 @@
                      ((file) (format "Required file ~a not found" (path->ext path)))
                      ((dir) (format "Required directory ~a not found" (path->ext path))))
                    k #f)))
+
+  ;used-restricted-import: string (list string) -> void
+  (define (used-restricted-import class path)
+    (raise-error 'import
+                 (format "Imported class, ~a, cannot be imported or used" (path->ext (cons class path)))
+                 'import #f))
+
   
   ;throws-error id src -> void
   (define (throws-error t src)

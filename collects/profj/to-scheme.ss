@@ -497,7 +497,7 @@
                                           (accesses-package fields)
                                           (accesses-protected fields)
                                           (get-non-statics (accesses-private fields))))
-                           ;(accessors for private fields)
+                           ,@(create-private-setters/getters (get-non-statics (accesses-private fields)))
                            
                            ,@(map (lambda (m) (translate-method (method-type m)
                                                                 (map modifier-kind (method-modifiers m))
@@ -775,10 +775,10 @@
                (getter (car names))
                (final (final? (map modifier-kind (field-modifiers field)))))
           (append (cons (make-syntax #f `(define ,getter
-                                                    (class-field-accessor ,class ,quote-name)) #f)
+                                           (class-field-accessor ,class ,quote-name)) #f)
                         (if (not final)
                             (list (make-syntax #f `(define ,(cadr names)
-                                                              (class-field-mutator ,class ,quote-name)) #f))
+                                                     (class-field-mutator ,class ,quote-name)) #f))
                             null))
                   (create-field-accessors (if final (cdr names) (cddr names)) (cdr fields))))))
 
@@ -791,10 +791,24 @@
         (let ((name (car names))
               (field (car fields)))
           (cons (make-syntax #f
-                                      `(define (,name val)
-                                         (set! ,(build-identifier (build-static-name (id-string (field-name field)))) val))
-                                      #f)
+                             `(define (,name my-val)
+                                (set! ,(build-identifier (build-static-name (id-string (field-name field)))) my-val))
+                             #f)
                 (create-static-setters (cdr names) (cdr fields))))))
+  
+  ;create-private-setters/getters fields -> (list syntax)
+  (define (create-private-setters/getters fields)
+    (if (null? fields)
+        null
+        (let* ((field (car fields))
+               (s-name (id-string (field-name field)))
+               (name (build-identifier s-name))
+               (getter (create-get-name s-name))
+               (setter (create-set-name s-name)))
+          (append (list (make-syntax #f `(define (,getter my-val) ,name) (build-src (id-src (field-name field))))
+                        (make-syntax #f `(define (,setter my-val) (set! ,name my-val)) (build-src (id-src (field-name field)))))
+                  (create-private-setters/getters (cdr fields))))))
+                                           
   
   
   (define (make-static-field-names fields)
@@ -1319,14 +1333,11 @@
                   (translate-id (build-static-name field-string (car (var-access-class access)))
                                 field-src)
                   (error 'translate-access "Internal error: Translate access given list with no elements for class name")))
-             ((eq? 'array (car (var-access-class access)))
+             ((eq? 'array (var-access-class access))
               (make-syntax #f `(send ,expr ,(translate-id field-string field-src)) (build-src src)))
              (else
-              ;Come Back : loses src
-              (if (and obj (special-name? obj))
-                  (translate-id field-string field-src)              
-                  (let ((id (create-get-name field-string (car (var-access-class access)))))
-                    (make-syntax #f `(,id ,expr) (build-src src)))))))))))
+              (let ((id (create-get-name field-string (var-access-class access))))
+                (make-syntax #f `(,id ,expr) (build-src src))))))))))
   
   ;Converted
   ;translate-special-name: string src -> syntax
@@ -1531,11 +1542,7 @@
                     ((var-access-static? vaccess)
                      (set-h (build-identifier (build-static-name field 
                                                                  (build-identifier (var-access-class access))))))
-                    ((or (and obj
-                              (special-name? obj)
-                              (string=? (special-name-name obj) "this"))
-                         (not obj))
-                     (set-h (translate-id field field-src)))
+                    ((not obj) (set-h (translate-id field field-src)))
                     (else
                      (let ((setter (create-set-name field (var-access-class vaccess)))
                            (getter (create-get-name field (var-access-class vaccess))))

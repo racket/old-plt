@@ -353,8 +353,6 @@
   (define (is-subclass? c1 c2 type-recs)
     (let ((cr (get-record (send type-recs get-class-record c1 ((get-importer type-recs) c1 type-recs 'full))
                           type-recs)))
-      (display (cons (ref-type-class/iface c2) (ref-type-path c2)))(newline)
-      (display (class-record-parents cr))(newline)
       (member (cons (ref-type-class/iface c2) (ref-type-path c2))
               (class-record-parents cr))))
 

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.202 2000/01/25 17:26:48 shriram Exp $
+; $Id: scm-main.ss,v 1.203 2000/02/07 19:35:12 robby Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1153,21 +1153,21 @@
   (define time-macro
       (let* ((kwd '())
 	      (in-pattern '(_ e0 e1 ...))
-	      (out-pattern '(let-values (((s)
-					  (#%current-gc-milliseconds))
-					 ((v cpu user)
-					  (#%time-apply (lambda x
+	      (out-pattern '(let-values (((v cpu user gc)
+					  (#%time-apply (lambda (dont-care)
 							  e0
-							  e1 ...))))
-			      (#%printf
-			       "cpu time: ~s real time: ~s gc time: ~s~n"
-			       cpu user (#%- (#%current-gc-milliseconds) s))
-			      (#%apply #%values v)))
+							  e1 ...)
+                                           (#%cons (#%quote dont-care) #%null))))
+                              (#%begin
+                               (#%printf
+                                "cpu time: ~s real time: ~s gc time: ~s~n"
+                                cpu user gc)
+                               (#%apply #%values v))))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed time")))))
-
+  
   (add-primitivized-macro-form 'time intermediate-vocabulary time-macro)
   (add-primitivized-macro-form 'time scheme-vocabulary time-macro)
 

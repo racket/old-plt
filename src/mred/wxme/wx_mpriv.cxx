@@ -1963,7 +1963,6 @@ wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
 
 static int show_outline_for_inactive = 0;
 
-static wxMediaEdit *skipBox = NULL;
 static wxPen *caretPen = NULL;
 static wxPen *outlinePen = NULL;
 static wxPen *outlineInactivePen = NULL;
@@ -1993,7 +1992,8 @@ static wxBrush *clearBrush = NULL;
 void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy, 
 			 float leftx, float rightx,
 			 float dy, float dx, 
-			 int show_caret, int show_xsel)
+			 int show_caret, int show_xsel,
+			 wxColour *bgColor)
 {
   wxMediaLine *line;
   wxSnip *snip, *first, *last;
@@ -2064,14 +2064,18 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
   line = lineRoot->FindLocation(starty);
 
-  if (skipBox != this) {
+  if (bgColor) {
     wxPen *lsavePen;
-    wxBrush *lsaveBrush;
+    wxBrush *lsaveBrush, *wb;
 
     lsavePen = dc->GetPen();
     lsaveBrush = dc->GetBrush();
 
-    dc->SetBrush(clearBrush);
+    if (bgColor == wxWHITE)
+      wb = clearBrush;
+    else
+      wb = wxTheBrushList->FindOrCreateBrush(bgColor, wxSOLID);
+    dc->SetBrush(wb);
     dc->SetPen(outlinePen);
 
     dc->DrawRectangle(leftx + dx, starty + dy, 
@@ -2151,7 +2155,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
       /* The rules for hiliting are surprisingly complicated: */
 
-      if (hiliteOn && (skipBox != this)
+      if (hiliteOn
 	  && (show_xsel
 	      || (!caretSnip
 		  && ((show_caret == wxSNIP_DRAW_SHOW_CARET)
@@ -2509,7 +2513,7 @@ void wxMediaEdit::Redraw()
 
 /* This one is called by the administrator: */
 void wxMediaEdit::Refresh(float left, float top, float width, float height,
-			  int show_caret)
+			  int show_caret, wxColour *bgColor)
 {
   float x, y, bottom, right, ddx, ddy;
   Bool ps;
@@ -2561,12 +2565,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     show_xsel = 1;
 #endif
 
-  /* We have to register skipBox sometime... */
-  if (!outlineBrush) {
-    wxREGGLOB(skipBox);
-  }
-
-  if (!offscreenInUse && bitmap && bitmap->Ok() && offscreen->Ok() && !ps) {
+  if (bgColor && !offscreenInUse && bitmap && bitmap->Ok() && offscreen->Ok() && !ps) {
     /* Need to make sure that difference between coordinates is
        integral; otherwise, roundoff error could affect drawing */
     ddx = (left - x) - (long)(left - x);
@@ -2592,7 +2591,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 	|| (lastDrawXSel != show_xsel)) {
       offscreen->BeginDrawing();
       Redraw(offscreen, top, bottom, left, right, -top, -left, 
-	     show_caret, show_xsel);
+	     show_caret, show_xsel, bgColor);
       offscreen->EndDrawing();
       lastDrawL = left;
       lastDrawT = top;
@@ -2613,7 +2612,6 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     lastUsedOffscreen = this;
 #endif
   } else {
-    wxMediaEdit *savesb = skipBox;
     wxPen *pen;
     wxBrush *brush;
     wxFont *font;
@@ -2621,9 +2619,6 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 #ifndef NO_GET_CLIPPING_REGION
     wxRegion *rgn;
 #endif
-
-    if (ps)
-      skipBox = this;
 
     pen = dc->GetPen();
     brush = dc->GetBrush();
@@ -2638,7 +2633,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     dc->SetClippingRect(left - x, top - y, width, height);
 #endif
 
-    Redraw(dc, top, bottom, left, right, -y, -x, show_caret, show_xsel);
+    Redraw(dc, top, bottom, left, right, -y, -x, show_caret, show_xsel, bgColor);
 
 #ifndef NO_GET_CLIPPING_REGION
     dc->SetClippingRegion(rgn);
@@ -2649,9 +2644,6 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     dc->SetFont(font);
     dc->SetTextForeground(fg);
     dc->SetTextBackground(bg);
-
-    if (ps)
-      skipBox = savesb;
   }
 
   EndSequenceLock();
@@ -2702,7 +2694,11 @@ void wxMediaEdit::NeedCaretRefresh(void)
     caretBlinked = FALSE;
     CaretOn();
   } else {
-    if (!caretBlinked && caretOn)
+    /* caretBlinked is whether we *want* the caret on or not,
+       while caretOn reflects actual drawing. So the
+       !caretBlinked test should be commented out here
+       --- right? */
+    if (/* !caretBlinked && */ caretOn)
       CaretOff();
     caretBlinked = FALSE;
   }
@@ -3021,16 +3017,11 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
     }
 
     if (page < 0 || (page == this_page)) {
-      wxMediaEdit *savesb;
-
       if (page < 0)
 	dc->StartPage();
       
-      savesb = skipBox;
-      skipBox = this;
       Redraw(dc, y + (i ? 1 : 0), y + h - 1, 0, W, -y + vm, hm, 
-	     wxSNIP_DRAW_NO_CARET, 0);
-      skipBox = savesb;
+	     wxSNIP_DRAW_NO_CARET, 0, NULL);
 
       if (page < 0)
 	dc->EndPage();

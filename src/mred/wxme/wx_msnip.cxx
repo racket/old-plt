@@ -374,6 +374,7 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
 {
   float w, h, r, b, orig_x, orig_y;
   float t, l;
+  wxColour *bgColor = wxWHITE;
 
   wxMSMA_SnipDrawState *save;
 
@@ -425,7 +426,7 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
   b = ((b < bottom) ? b : bottom);
 
   if (me)
-    me->Refresh(l - x, t - y, r - l, b - t, show_caret);
+    me->Refresh(l - x, t - y, r - l, b - t, show_caret, bgColor);
 
   if (withBorder) {
     float mt, ml, mb, mr;

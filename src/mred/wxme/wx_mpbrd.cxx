@@ -84,8 +84,6 @@ class wxSnipLocation : public wxObject
 static wxBrush *blackBrush = NULL, *whiteBrush = NULL, *rbBrush = NULL;
 static wxPen *invisiPen = NULL, *rbPen = NULL;
 
-static wxMediaPasteboard *skipBox = NULL;
-
 #ifdef wx_mac
 extern void wxMediaSetFileCreatorType(char *file, Bool is_binary);
 #endif
@@ -123,7 +121,6 @@ wxMediaPasteboard::wxMediaPasteboard()
   dragging = rubberband = FALSE;
 
   if (!blackBrush) {
-    wxREGGLOB(skipBox);
     wxREGGLOB(blackBrush);
     wxREGGLOB(whiteBrush);
     wxREGGLOB(invisiPen);
@@ -1514,7 +1511,7 @@ wxSnip *wxMediaPasteboard::FindNextSelectedSnip(wxSnip *start)
 
 void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy, 
 			     float cx, float cy, float cw, float ch, 
-			     int show_caret)
+			     int show_caret, wxColour *bgColor)
 {
   wxSnip *snip;
   wxStyle *oldstyle = NULL;
@@ -1536,14 +1533,18 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
   dcr = dcx + cw;
   dcb = dcy + ch;
 
-  if (skipBox != this) {
+  if (bgColor) {
     wxPen *savePen;
-    wxBrush *saveBrush;
+    wxBrush *saveBrush, *wb;
 
     savePen = dc->GetPen();
     saveBrush = dc->GetBrush();
 
-    dc->SetBrush(whiteBrush);
+    if (bgColor == wxWHITE)
+      wb = whiteBrush;
+    else
+      wb = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
+    dc->SetBrush(wb);
     dc->SetPen(invisiPen);
     dc->DrawRectangle(dcx, dcy,
 		      cw + GC_RECT_BRUSH_EXTEND,
@@ -1648,7 +1649,7 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
 }
 
 void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h, 
-				int show_caret)
+				int show_caret, wxColour *bgColor)
 {
   float dx, dy, ddx, ddy;
   wxDC *dc;
@@ -1671,7 +1672,8 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
 
   dc = admin->GetDC(&dx, &dy);
 
-  if (!offscreenInUse && bitmap && bitmap->Ok() && offscreen->Ok()) {
+  if (!offscreenInUse && bitmap && bitmap->Ok() && offscreen->Ok()
+      && bgColor) {
     /* Need to make sure that difference between coordinates is
        integral; otherwise, roundoff error could affect drawing */
     ddx = (localx - dx) - (long)(localx - dx);
@@ -1689,7 +1691,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     offscreenInUse = TRUE;
 #endif
 
-    Draw(offscreen, -localx, -localy, localx, localy, w, h, show_caret);
+    Draw(offscreen, -localx, -localy, localx, localy, w, h, show_caret, bgColor);
     {
       wxBitmap *bm;
       bm = offscreen->GetObject();
@@ -1725,7 +1727,7 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     dc->SetClippingRect(localx - dx, localy - dy, w, h);
 #endif
 
-    Draw(dc, -dx, -dy, localx, localy, w, h, show_caret);
+    Draw(dc, -dx, -dy, localx, localy, w, h, show_caret, bgColor);
 
 #ifndef NO_GET_CLIPPING_REGION
     dc->SetClippingRegion(rgn);
@@ -3020,11 +3022,10 @@ void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
     if (page < 0)
       dc->StartPage();
     
-    skipBox = this;
     Draw(dc, -x + hm, -y + vm,
 	 x, y, x + W, y + H,
-	 FALSE);
-    skipBox = NULL;
+	 FALSE,
+	 NULL);
 
     if (page < 0)
       dc->EndPage();    

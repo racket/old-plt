@@ -48,6 +48,8 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   if (parent)
     cparent = (wxWnd *) parent->handle;
 
+  bgcol = ((style & wxTRANSPARENT_WIN) ? NULL : wxWHITE);
+
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->GetValidPosition(&x, &y);
 
@@ -444,6 +446,8 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
   wstyle = wx_window->GetWindowStyleFlag();
 
   if (!(wstyle & wxNO_AUTOCLEAR)) {
+    int free_brush = 0;
+
     GetClientRect(handle, &rect);
     mode = SetMapMode(pDC, MM_TEXT);
     if (wstyle & wxTRANSPARENT_WIN) {
@@ -452,11 +456,17 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
 	RegisterGDIObject(btnface_brush);
       }
       brsh = btnface_brush;
-    } else {
+    } else if (bgcol == wxWHITE) {
       brsh = (HBRUSH)GetStockObject(WHITE_BRUSH);
+    } else {
+      brsh = CreateSolidBrush(bgcol->pixel);
+      free_brush = 1;
     }
     FillRect(pDC, &rect, brsh);
     SetMapMode(pDC, mode);
+
+    if (free_brush)
+      DeleteObject(brsh);
 
     canvas = (wxCanvas *)wx_window;
     if (canvas->wx_dc) {
@@ -466,6 +476,24 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
   }
   
   return TRUE;
+}
+
+void wxCanvas::SetCanvasBackground(wxColor *c)
+{
+  if (!bgcol || !c)
+    return;
+  
+  if (c && c->IsMutable()) {
+    c = new wxColour(c);
+    c->Lock(1);
+  }
+   
+  bgcol = c;
+}
+
+wxColour *wxCanvas::GetCanvasBackground()
+{
+  return bgcol;
 }
 
 typedef void (WINAPI *wxCLOSE_THEME_DATA_PROC)(HANDLE);

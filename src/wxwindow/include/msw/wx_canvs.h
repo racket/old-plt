@@ -56,6 +56,12 @@ class wxCanvas: public wxbCanvas
 
   virtual void WarpPointer(int x_pos, int y_pos) ;
   virtual wxWindow *FindFocusWindow();
+
+  virtual void SetCanvasBackground(wxColor *c);
+  wxColor *GetCanvasBackground();
+
+ private:
+  wxColour *bgcol;
 };
 
 #endif // wx_canvsh

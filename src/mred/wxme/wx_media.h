@@ -142,7 +142,7 @@ class wxMediaEdit : public wxMediaBuffer
   virtual void OnChar(wxKeyEvent *event);
   virtual wxCursor *AdjustCursor(wxMouseEvent *event);
   virtual void Refresh(float localx, float localy, float w, float h, 
-		       int show_caret);
+		       int show_caret, wxColor *bgColor);
   virtual void OwnCaret(Bool ownit);
   virtual void BlinkCaret();
   virtual void SizeCacheInvalid(void);
@@ -480,7 +480,7 @@ class wxMediaEdit : public wxMediaBuffer
 
   TF_Flag( delayedscrollateol );
   TF_Flag( delayedscrollbox );
-  TF_Flag( caretOn );
+  TF_Flag( caretOn ); /* Whether the caret was drawn on the last update */
   TF_Flag( drawCachedInBitmap );
   TF_Flag( refreshUnset );
   TF_Flag( refreshBoxUnset );
@@ -494,7 +494,7 @@ class wxMediaEdit : public wxMediaBuffer
   TF_Flag( needXCopy );
 #endif
 
-  TF_Flag( caretBlinked );
+  TF_Flag( caretBlinked ); /* Whether we want to hide an active caret or not */
 
 #undef TF_Flag
 
@@ -506,7 +506,6 @@ class wxMediaEdit : public wxMediaBuffer
   float wrapBitmapWidth;
 
   wxBitmap *autoWrapBitmap;
-
 
   int delayRefresh;
 
@@ -627,7 +626,7 @@ class wxMediaEdit : public wxMediaBuffer
   void RecalcLines(wxDC *dc, Bool calcGraphic = TRUE);
   Bool CheckFlow(float maxw, wxDC *dc, float Y, long startp, wxSnip *start);
   Bool CheckRecalc(Bool need_graphic = TRUE, Bool need_write = TRUE, Bool no_display_ok = FALSE);
-  void Redraw(wxDC *, float, float, float, float, float, float, int, int);
+  void Redraw(wxDC *, float, float, float, float, float, float, int, int, wxColour*);
   void Redraw();
 
   void NeedRefresh(long start, long end = -1);

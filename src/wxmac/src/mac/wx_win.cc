@@ -1862,22 +1862,6 @@ void wxWindow::FlushDisplay()
 }
 
 //-----------------------------------------------------------------------------
-void wxWindow::AddWhiteRgn(RgnHandle r, RgnHandle er)
-{
-  wxChildNode *node;
-  wxWindow *c;
-  wxChildList *cl;
-
-  cl = GetChildren ();
-
-  for (node = cl->First(); node; node = node->Next()) {
-    c = (wxWindow *)(node->Data());
-    if (!c->cHidden)
-      c->AddWhiteRgn(r, er);
-  }
-}
-
-//-----------------------------------------------------------------------------
 Bool wxWindow::IsEnable(void) { return cEnable; }
 
 Bool wxWindow::CanAcceptEvent(void)

@@ -455,7 +455,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void OnLocalEvent(class wxMouseEvent* x0);
   void BlinkCaret();
   void OwnCaret(Bool x0);
-  void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4);
+  void Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4, class wxColour* x5);
   class wxCursor* AdjustCursor(class wxMouseEvent* x0);
   void OnChar(class wxKeyEvent* x0);
   void OnEvent(class wxMouseEvent* x0);
@@ -2986,9 +2986,9 @@ void os_wxMediaPasteboard::OwnCaret(Bool x0)
   }
 }
 
-void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
+void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4, class wxColour* x5)
 {
-  Scheme_Object *p[POFFSET+5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *p[POFFSET+6] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -2996,16 +2996,17 @@ void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, i
 #endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(5);
+  SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+5);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+6);
+  VAR_STACK_PUSH(5, x5);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "refresh", &mcache);
   if (!method || OBJSCHEME_PRIM_METHOD(method)) {
     SET_VAR_STACK();
-    READY_TO_RETURN; ASSELF wxMediaPasteboard::Refresh(x0, x1, x2, x3, x4);
+    READY_TO_RETURN; ASSELF wxMediaPasteboard::Refresh(x0, x1, x2, x3, x4, x5);
   } else {
   
   p[POFFSET+0] = WITH_VAR_STACK(scheme_make_double(x0));
@@ -3013,10 +3014,11 @@ void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, i
   p[POFFSET+2] = WITH_VAR_STACK(scheme_make_double(x2));
   p[POFFSET+3] = WITH_VAR_STACK(scheme_make_double(x3));
   p[POFFSET+4] = WITH_VAR_STACK(bundle_symset_caret(x4));
+  p[POFFSET+5] = WITH_VAR_STACK(objscheme_bundle_wxColour(x5));
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+5, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+6, p));
   
   
      READY_TO_RETURN;
@@ -6101,9 +6103,11 @@ static Scheme_Object *os_wxMediaPasteboardRefresh(int n,  Scheme_Object *p[])
   nnfloat x2;
   nnfloat x3;
   int x4;
+  class wxColour* x5 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(1);
+  SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x5);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "refresh in pasteboard%"));
@@ -6111,12 +6115,13 @@ static Scheme_Object *os_wxMediaPasteboardRefresh(int n,  Scheme_Object *p[])
   x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "refresh in pasteboard%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "refresh in pasteboard%"));
   x4 = WITH_VAR_STACK(unbundle_symset_caret(p[POFFSET+4], "refresh in pasteboard%"));
+  x5 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+5], "refresh in pasteboard%", 1));
 
   
   if (((Scheme_Class_Object *)p[0])->primflag)
-    WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::Refresh(x0, x1, x2, x3, x4));
+    WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::Refresh(x0, x1, x2, x3, x4, x5));
   else
-    WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->Refresh(x0, x1, x2, x3, x4));
+    WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->Refresh(x0, x1, x2, x3, x4, x5));
 
   
   
@@ -6499,7 +6504,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "find-first-snip" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardFindFirstSnip, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "blink-caret" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardBlinkCaret, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "own-caret" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOwnCaret, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "refresh" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardRefresh, 5, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "refresh" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardRefresh, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "adjust-cursor" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardAdjustCursor, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-char" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-event" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnEvent, 1, 1));

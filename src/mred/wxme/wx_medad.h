@@ -148,7 +148,7 @@ class wxMediaBuffer : public wxObject
   virtual void OnChar(wxKeyEvent *event) = 0;
   virtual wxCursor *AdjustCursor(wxMouseEvent *event) = 0;
   virtual void Refresh(float localx, float localy, float w, float h, 
-		       Bool show_caret) = 0;
+		       Bool show_caret, wxColour *bgColor) = 0;
   virtual void OwnCaret(Bool ownit) = 0;
   virtual void BlinkCaret() = 0;
   virtual void SizeCacheInvalid(void) = 0;
@@ -395,6 +395,8 @@ class wxMediaCanvas : public wxCanvas
 
   int last_x, last_y;
 
+  wxColour *bgColor;
+
   Bool allowXScroll, allowYScroll;
   Bool fakeXScroll, fakeYScroll;
   SimpleScroll *hscroll, *vscroll;
@@ -468,6 +470,8 @@ class wxMediaCanvas : public wxCanvas
   void SetYMargin(int);
   int GetXMargin(void);
   int GetYMargin(void);
+
+  virtual void SetCanvasBackground(wxColour *);
 };
 
 class wxCursor;

@@ -107,6 +107,7 @@ void wxCanvas::InitDefaults(void)
   hScrollingEnabled = TRUE;
   vScrollingEnabled = TRUE;
   scrollAutomanaged = TRUE;
+  bgcol = ((cStyle & wxTRANSPARENT_WIN) ? NULL : wxWHITE);
 
   wx_dc = new wxCanvasDC(this);
 
@@ -154,25 +155,6 @@ void wxCanvas::InitDefaults(void)
   if (cStyle & wxINVISIBLE)
     Show(FALSE);
   InitInternalGray();
-}
-
-void wxCanvas::AddWhiteRgn(RgnHandle rgn, RgnHandle noerasergn) 
-{
-  if (wxSubType(__type, wxTYPE_PANEL))
-    wxWindow::AddWhiteRgn(rgn, noerasergn);
-  else {
-    int theRootX, theRootY, w, h;
-    RgnHandle wrgn;
-    cClientArea->FrameContentAreaOffset(&theRootX, &theRootY);
-    GetClientSize(&w, &h);
-    if ((wrgn = NewRgn())) {
-      SetRectRgn(wrgn, theRootX, theRootY, theRootX + w, theRootY + h);
-      if (cStyle & wxNO_AUTOCLEAR)
-	rgn = noerasergn;
-      UnionRgn(rgn, wrgn, rgn);
-      DisposeRgn(wrgn);
-    }
-  }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -795,10 +777,14 @@ void wxCanvas::DoPaint(void)
 	&& !(cStyle & wxNO_AUTOCLEAR)) {
       Rect itemRect;
       ThemeDrawingState s;
+      RGBColor pixel;
+      
+      pixel = bgcol->pixel;
+
       SetCurrentDC();
       GetThemeDrawingState(&s);
       GetControlBounds(cPaintControl, &itemRect);
-      BackColor(whiteColor);
+      RGBBackColor(&pixel);
       BackPat(GetWhitePattern());
       EraseRect(&itemRect);
       SetThemeDrawingState(s, TRUE);
@@ -843,4 +829,22 @@ void wxCanvas::ResetGLView()
 			   w,
 			   h);
   }
+}
+
+void wxCanvas::SetCanvasBackground(wxColor *c)
+{
+  if (!bgcol || !c)
+    return;
+  
+  if (c && c->IsMutable()) {
+    c = new wxColour(c);
+    c->Lock(1);
+  }
+   
+  bgcol = c;
+}
+
+wxColour *wxCanvas::GetCanvasBackground()
+{
+  return bgcol;
 }

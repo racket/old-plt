@@ -40,7 +40,7 @@ LDFLAGS = $(XLIB)
 
 CPP = @CPP@
 
-JPEG_A = ../../wxcommon/jpeg/libjpeg.a
+JPEG_A = ../../wxcommon/jpeg/libjpeg.@LIBSFX@
 JPEG_INC = -I../../wxcommon/jpeg -I$(srcdir)/../../wxcommon/jpeg
 ZLIB_A = ../../wxcommon/zlib/libz.a
 ZLIB_INC = -I$(srcdir)/../../wxcommon/zlib

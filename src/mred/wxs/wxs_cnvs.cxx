@@ -168,6 +168,7 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
+
 class os_wxCanvas : public wxCanvas {
  public:
 
@@ -717,6 +718,50 @@ static Scheme_Object *os_wxCanvasOnKillFocus(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *os_wxCanvasGetCanvasBackground(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxColour* r;
+  objscheme_check_valid(os_wxCanvas_class, "get-canvas-background in canvas%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)->GetCanvasBackground());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxColour(r));
+}
+
+static Scheme_Object *os_wxCanvasSetCanvasBackground(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxCanvas_class, "set-canvas-background in canvas%", n, p);
+  class wxColour* x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-canvas-background in canvas%", 1));
+
+  
+  WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)->SetCanvasBackground(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxCanvaswxSetBackgroundToGray(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1228,7 +1273,7 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", (Scheme_Method_Prim *)os_wxCanvas_ConstructScheme, 23));
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", (Scheme_Method_Prim *)os_wxCanvas_ConstructScheme, 25));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxCanvasPreOnEvent, 2, 2));
@@ -1236,6 +1281,8 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-size" " method", (Scheme_Method_Prim *)os_wxCanvasOnSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-set-focus" " method", (Scheme_Method_Prim *)os_wxCanvasOnSetFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-kill-focus" " method", (Scheme_Method_Prim *)os_wxCanvasOnKillFocus, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-canvas-background" " method", (Scheme_Method_Prim *)os_wxCanvasGetCanvasBackground, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-canvas-background" " method", (Scheme_Method_Prim *)os_wxCanvasSetCanvasBackground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-background-to-gray" " method", (Scheme_Method_Prim *)os_wxCanvaswxSetBackgroundToGray, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-scroll" " method", (Scheme_Method_Prim *)os_wxCanvasOnScroll, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scroll-page" " method", (Scheme_Method_Prim *)os_wxCanvasSetScrollPage, 2, 2));

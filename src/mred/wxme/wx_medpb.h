@@ -15,7 +15,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   virtual void OnChar(wxKeyEvent *event);
   virtual wxCursor *AdjustCursor(wxMouseEvent *event);
   virtual void Refresh(float localx, float localy, float w, float h, 
-		       int show_caret);
+		       int show_caret, wxColour *c);
   virtual void OwnCaret(Bool ownit);
   virtual void BlinkCaret();
   virtual void SizeCacheInvalid(void);
@@ -244,7 +244,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void Draw(wxDC *dc, float dx, float dy, 
 	    float cx, float cy, float cw, float ch, 
-	    int show_caret);
+	    int show_caret, wxColour *bg);
 
   Bool FindDot(wxSnipLocation *loc, float x, float y,
 	       float *dxm, float *dym);

@@ -474,6 +474,8 @@ Scheme_Object *scheme_make_integer_value_from_unsigned_long_long(umzlonglong i)
 #endif
 }
 
+static Scheme_Object * fixnum_expt (long x, long y);
+
 Scheme_Object *
 scheme_make_integer_value_from_unsigned_long_halves(unsigned long lowhalf,
 						    unsigned long hihalf)
@@ -1790,13 +1792,13 @@ Scheme_Object *int_sqrt_rem (int argc, Scheme_Object *argv[])
   return do_int_sqrt("integer-sqrt/remainder", argc, argv, 1);
 }
 
-static Scheme_Object *fixnum_expt(int x, int y)
+static Scheme_Object *fixnum_expt(long x, long y)
 {
   int orig_x = x;
   int orig_y = y;
 
   if ((x == 2) && (y <= MAX_SHIFT_TRY))
-    return scheme_make_integer(1 << y);
+    return scheme_make_integer((long)1 << y);
   else
   {
     long result = 1;

@@ -23,7 +23,7 @@
 @ Y "on-event" : void OnEvent(wxMouseEvent!);
 @ Y "on-char" : void OnChar(wxKeyEvent!);
 @ Y "adjust-cursor" : wxCursor^ AdjustCursor(wxMouseEvent!); : : : : XrNULL
-@ Y "refresh" : void Refresh(float,float,nnfloat,nnfloat,SYM[caret]);
+@ Y "refresh" : void Refresh(float,float,nnfloat,nnfloat,SYM[caret],wxColour^);
 @ Y "own-caret" : void OwnCaret(bool);
 @ Y "blink-caret" : void BlinkCaret(); 
 

@@ -15,6 +15,8 @@ extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxMenu(class wxMenu *);
+extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
+extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *);
 extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);

@@ -369,6 +369,7 @@ void wxMediaCanvas::ResetSize()
   {
     wxDC *adc;
     adc = GetDC();
+    adc->SetBackground(GetCanvasBackground());
     adc->Clear();
   }
 #endif
@@ -409,6 +410,13 @@ int wxMediaCanvas::GetXMargin()
 int wxMediaCanvas::GetYMargin()
 {
   return ymargin;
+}
+
+void wxMediaCanvas::SetCanvasBackground(wxColour *c)
+{
+  wxCanvas::SetCanvasBackground(c);
+
+  Refresh();
 }
 
 void wxMediaCanvas::OnFocus(Bool focus)
@@ -733,6 +741,7 @@ void wxMediaCanvas::OnPaint(void)
   } else {
     wxDC *adc;
     adc = GetDC();
+    adc->SetBackground(GetCanvasBackground());
     adc->Clear();
   }
   
@@ -744,7 +753,7 @@ void wxMediaCanvas::Repaint(void)
   if (need_refresh)
     return;
 
-  if (lazy_refresh) {
+  if (lazy_refresh || !GetCanvasBackground()) {
     need_refresh = TRUE;
     Refresh();
   } else
@@ -939,11 +948,12 @@ void wxMediaCanvas::Redraw(float localx, float localy, float fw, float fh)
     if (PTRNE((oldadmin = (wxCanvasMediaAdmin *)media->GetAdmin()), admin)) {
       media->SetAdmin(admin);
     }
-    
+
     media->Refresh(x, y, w, h, 
 		   (focuson || focusforcedon)
 		   ? wxSNIP_DRAW_SHOW_CARET
-		   : wxSNIP_DRAW_SHOW_INACTIVE_CARET);
+		   : wxSNIP_DRAW_SHOW_INACTIVE_CARET,
+		   GetCanvasBackground());
 
     if (PTRNE(oldadmin, admin)) {
       media->SetAdmin(oldadmin);
@@ -1131,6 +1141,7 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       if (!media) {
 	wxDC *adc;
 	adc = GetDC();
+	adc->SetBackground(GetCanvasBackground());
 	adc->Clear();
       }
     }    
@@ -1580,8 +1591,12 @@ void wxCanvasMediaAdmin::NeedsUpdate(float localx, float localy,
     if (is_shown)
       canvas->Repaint();
     resetFlag = FALSE;
-  } else if (is_shown)
-    canvas->Redraw(localx, localy, w, h);
+  } else if (is_shown) {
+    if (!canvas->GetCanvasBackground())
+      canvas->Repaint();
+    else
+      canvas->Redraw(localx, localy, w, h);
+  }
 
   if (nextadmin)
     nextadmin->NeedsUpdate(localx, localy, w, h);

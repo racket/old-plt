@@ -78,6 +78,9 @@ typedef void *(*CAPOFunc)(void*);
 @ "set-x-margin" : void SetXMargin(nnint);
 @ "set-y-margin" : void SetYMargin(nnint);
 
+@ "set-canvas-background" : void SetCanvasBackground(wxColour^);
+@ "get-canvas-background" : wxColour^ GetCanvasBackground();
+
 @MACRO CastToSO = (Scheme_Object*){x}
 @MACRO ubTestFunc = DoCAPOCallback
 @MACRO ubData = p[POFFSET]

@@ -270,8 +270,6 @@ class wxWindow: public wxbWindow
   virtual void DestroyFocus();	/* tom (fettig@dfki.uni-sb.de) */
   /*+++++ End Macintosh Platform only +++++ */
 
-  virtual void AddWhiteRgn(RgnHandle rgn, RgnHandle ergn);
-
   Bool		OS_Active(void); /* should this window be shown as enabled right now? */
   void InitInternalGray(void);
 

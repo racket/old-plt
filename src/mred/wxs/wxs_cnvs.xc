@@ -76,6 +76,9 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 
 @ m "set-background-to-gray" : void wxSetBackgroundToGray()
 
+@ "set-canvas-background" : void SetCanvasBackground(wxColour^);
+@ "get-canvas-background" : wxColour^ GetCanvasBackground();
+
 @SETMARK w = d
 @INCLUDE wxs_win.xci
 

@@ -2464,7 +2464,6 @@ Bool wxMediaBuffer::GetLoadOverwritesStyles()
   return loadoverwritesstyles;
 }
 
-
 /****************************************************************/
 
 #define edf(name, action, kname) \

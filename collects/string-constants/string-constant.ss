@@ -2,29 +2,22 @@
 (module string-constant mzscheme
   (require-for-syntax (lib "etc.ss")
 		      (lib "list.ss"))
-  (require (lib "mred.ss" "mred"))
+  (require (lib "mred.ss" "mred")
+           (lib "file.ss"))
 
   (provide string-constant string-constants this-language all-languages set-language-pref)
   
-  ;; set-language-pref : string -> void
+  ;; set-language-pref : symbol -> void
   (define (set-language-pref language)
-    (write-resource "mred" "gui_language" language (find-graphical-system-path 'setup-file)))
+    (put-preferences (list 'plt:human-language) (list language)))
   
   ;; language : symbol
   (define language 
-    (let* ([b (box "")]
-           [r (get-resource "mred" "gui_language" b #f)]
-           [default-str "English"]
-           [default (string->symbol default-str)])
-      (if r
-          (string->symbol (unbox b))
-          (begin
-            (write-resource "mred" "gui_language" default-str)
-            default))))
+    (get-preference 'plt:human-language (lambda () '|English|)))
   
   (define-syntaxes (string-constant string-constants this-language all-languages)
     (let ()
-    ;; type sc = (make-sc string (listof (hash-table symbol string)))
+      ;; type sc = (make-sc symbol (listof (hash-table symbol string)))
       (define-struct sc (language-name constants))
       
       (define (get-string-constants filename)
@@ -52,10 +45,10 @@
       
       (define available-string-constant-sets
         (list 
-         (make-sc "English" (get-string-constants "english-string-constants.ss"))
-         (make-sc "Spanish" (get-string-constants "spanish-string-constants.ss"))
-         (make-sc "French" (get-string-constants "french-string-constants.ss"))
-         (make-sc "German" (get-string-constants "german-string-constants.ss"))))
+         (make-sc 'english (get-string-constants "english-string-constants.ss"))
+         (make-sc 'spanish (get-string-constants "spanish-string-constants.ss"))
+         (make-sc 'french (get-string-constants "french-string-constants.ss"))
+         (make-sc 'german (get-string-constants "german-string-constants.ss"))))
       
       (define first-string-constant-set (car available-string-constant-sets))
       
@@ -140,8 +133,7 @@
                 stx))
              (with-syntax ([(constants ...) (map (lambda (x) (hash-table-get (sc-constants x) datum))
                                                  available-string-constant-sets)]
-                           [(languages ...) (map (lambda (x) (string->symbol (sc-language-name x)))
-                                                 available-string-constant-sets)]
+                           [(languages ...) (map sc-language-name available-string-constant-sets)]
                            [first-constant (hash-table-get (sc-constants first-string-constant-set) datum)])
                (syntax (cond
                          [(eq? language 'languages) constants] ...
@@ -168,13 +160,13 @@
       (define (this-language stx)
         (syntax-case stx ()
           [(_)
-           (syntax (symbol->string language))]))
+           (syntax language)]))
       
       (define (all-languages stx)
         (syntax-case stx ()
           [(_) 
            (with-syntax ([(languages ...) (map sc-language-name available-string-constant-sets)])
-             (syntax (list languages ...)))]))
+             (syntax (list 'languages ...)))]))
       
       (values
        string-constant

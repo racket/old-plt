@@ -13,11 +13,11 @@ syntactic forms and procedures:
   This form returns a list of string constants, one for each
   language that DrScheme's GUI supports.
   
-> (this-language) : string
+> (this-language) : symbol
 
   This form returns the name of the current language
   
-> (all-languages) : (listof string)
+> (all-languages) : (listof symbol)
 
   This form returns a list of strings (in the same order as
   those returned from string-constants) naming each
@@ -26,8 +26,8 @@ syntactic forms and procedures:
 > (set-language-pref lang) : void
 
   Sets the language for the next run of DrScheme to
-  lang, which must be a string. Does not affect the 
-  running DrScheme.
+  lang, which must be a symbol returned from `all-languages'.
+  Does not affect the running DrScheme.
   
 ============================================================
 

@@ -1,3 +1,153 @@
+2004-10-20  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	* src/sh/sysv.S (ffi_call_SYSV): Don't align for double data.
+	* testsuite/libffi.call/float3.c: New test case.
+
+2004-10-18  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	* src/sh/ffi.c (ffi_prep_closure): Set T bit in trampoline for
+	the function returning a structure pointed with R2.
+	* src/sh/sysv.S (ffi_closure_SYSV): Use R2 as the pointer to
+	the structure return value if T bit set.  Emit position
+	independent code and EH data if PIC.
+
+2004-10-13  Kazuhiro Inaoka  <inaoka.kazuhiro@renesas.com>
+
+	* Makefile.am: Add m32r support.
+	* configure.ac: Likewise.
+	* Makefile.in: Regenerate.
+	* confiugre: Regenerate.
+	* src/types.c: Add m32r port to FFI_INTERNAL_TYPEDEF
+	(uint64, sint64, double, longdouble)
+	* src/m32r: New directory.
+	* src/m32r/ffi.c: New file.
+	* src/m32r/sysv.S: Likewise.
+	* src/m32r/ffitarget.h: Likewise.
+
+2004-10-02  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	* testsuite/libffi.call/negint.c: New test case.
+
+2004-09-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR libgcj/17465
+	* testsuite/lib/libffi-dg.exp: Don't use global ld_library_path.
+	Set up LD_LIBRARY_PATH, SHLIB_PATH, LD_LIBRARYN32_PATH,
+	LD_LIBRARY64_PATH, LD_LIBRARY_PATH_32, LD_LIBRARY_PATH_64 and
+	DYLD_LIBRARY_PATH.
+
+2004-09-05  Andreas Tobler  <a.tobler@schweiz.ch>
+
+	* testsuite/libffi.call/many_win32.c: Remove whitespaces.
+	* testsuite/libffi.call/promotion.c: Likewise.
+	* testsuite/libffi.call/return_ll.c: Remove unused var. Cleanup
+	whitespaces.
+	* testsuite/libffi.call/return_sc.c: Likewise.
+	* testsuite/libffi.call/return_uc.c: Likewise.
+
+2004-09-05  Andreas Tobler  <a.tobler@schweiz.ch>
+
+	* src/powerpc/darwin.S: Fix comments and identation.
+	* src/powerpc/darwin_closure.S: Likewise.
+
+2004-09-02  Andreas Tobler  <a.tobler@schweiz.ch>
+
+	* src/powerpc/ffi_darwin.c: Add flag for longdouble return values.
+	(ffi_prep_args): Handle longdouble arguments.
+	(ffi_prep_cif_machdep): Set flags for longdouble. Calculate space for
+	longdouble.
+	(ffi_closure_helper_DARWIN): Add closure handling for longdouble.
+	* src/powerpc/darwin.S (_ffi_call_DARWIN): Add handling of longdouble
+	values.
+	* src/powerpc/darwin_closure.S (_ffi_closure_ASM): Likewise.
+	* src/types.c: Defined longdouble size and alignment for darwin.
+
+2004-09-02  Andreas Tobler  <a.tobler@schweiz.ch>
+
+	* src/powerpc/aix.S: Remove whitespaces.
+	* src/powerpc/aix_closure.S: Likewise.
+	* src/powerpc/asm.h: Likewise.
+	* src/powerpc/ffi.c: Likewise.
+	* src/powerpc/ffitarget.h: Likewise.
+	* src/powerpc/linux64.S: Likewise.
+	* src/powerpc/linux64_closure.S: Likewise.
+	* src/powerpc/ppc_closure.S: Likewise.
+	* src/powerpc/sysv.S: Likewise.
+
+2004-08-30  Anthony Green  <green@redhat.com>
+
+	* Makefile.am: Add frv support.
+	* Makefile.in, testsuite/Makefile.in: Rebuilt.
+	* configure.ac: Read configure.host.
+	* configure.in: Read configure.host.
+	* configure.host: New file.  frv-elf needs libgloss.
+	* include/ffi.h.in: Force ffi_closure to have a nice big (8)
+	alignment.  This is needed to frv and shouldn't harm the others.
+	* include/ffi_common.h (ALIGN_DOWN): New macro.
+	* src/frv/ffi.c, src/frv/ffitarget.h, src/frv/eabi.S: New files.
+
+2004-08-24  David Daney  <daney@avtrex.com>
+
+	* testsuite/libffi.call/closure_fn0.c: Xfail mips64* instead of mips*.
+	* testsuite/libffi.call/closure_fn1.c: Likewise.
+	* testsuite/libffi.call/closure_fn2.c  Likewise.
+	* testsuite/libffi.call/closure_fn3.c: Likewise.
+	* testsuite/libffi.call/closure_fn4.c: Likewise.
+	* testsuite/libffi.call/closure_fn5.c: Likewise.
+	* testsuite/libffi.call/cls_18byte.c: Likewise.
+	* testsuite/libffi.call/cls_19byte.c: Likewise.
+	* testsuite/libffi.call/cls_1_1byte.c: Likewise.
+	* testsuite/libffi.call/cls_20byte.c: Likewise.
+	* testsuite/libffi.call/cls_20byte1.c: Likewise.
+	* testsuite/libffi.call/cls_24byte.c: Likewise.
+	* testsuite/libffi.call/cls_2byte.c: Likewise.
+	* testsuite/libffi.call/cls_3_1byte.c: Likewise.
+	* testsuite/libffi.call/cls_3byte1.c: Likewise.
+	* testsuite/libffi.call/cls_3byte2.c: Likewise.
+	* testsuite/libffi.call/cls_4_1byte.c: Likewise.
+	* testsuite/libffi.call/cls_4byte.c: Likewise.
+	* testsuite/libffi.call/cls_64byte.c: Likewise.
+	* testsuite/libffi.call/cls_6byte.c: Likewise.
+	* testsuite/libffi.call/cls_7byte.c: Likewise.
+	* testsuite/libffi.call/cls_8byte.c: Likewise.
+	* testsuite/libffi.call/cls_9byte1.c: Likewise.
+	* testsuite/libffi.call/cls_9byte2.c: Likewise.
+	* testsuite/libffi.call/cls_align_double.c: Likewise.
+	* testsuite/libffi.call/cls_align_float.c: Likewise.
+	* testsuite/libffi.call/cls_align_longdouble.c: Likewise.
+	* testsuite/libffi.call/cls_align_pointer.c: Likewise.
+	* testsuite/libffi.call/cls_align_sint16.c: Likewise.
+	* testsuite/libffi.call/cls_align_sint32.c: Likewise.
+	* testsuite/libffi.call/cls_align_sint64.c: Likewise.
+	* testsuite/libffi.call/cls_align_uint16.c: Likewise.
+	* testsuite/libffi.call/cls_align_uint32.c: Likewise.
+	* testsuite/libffi.call/cls_align_uint64.c: Likewise.
+	* testsuite/libffi.call/cls_double.c: Likewise.
+	* testsuite/libffi.call/cls_float.c: Likewise.
+	* testsuite/libffi.call/cls_multi_schar.c: Likewise.
+	* testsuite/libffi.call/cls_multi_sshort.c: Likewise.
+	* testsuite/libffi.call/cls_multi_sshortchar.c: Likewise.
+	* testsuite/libffi.call/cls_multi_uchar.c: Likewise.
+	* testsuite/libffi.call/cls_multi_ushort.c: Likewise.
+	* testsuite/libffi.call/cls_multi_ushortchar.c: Likewise.
+	* testsuite/libffi.call/cls_schar.c: Likewise.
+	* testsuite/libffi.call/cls_sint.c: Likewise.
+	* testsuite/libffi.call/cls_sshort.c: Likewise.
+	* testsuite/libffi.call/cls_uchar.c: Likewise.
+	* testsuite/libffi.call/cls_uint.c: Likewise.
+	* testsuite/libffi.call/cls_ulonglong.c: Likewise.
+	* testsuite/libffi.call/cls_ushort.c: Likewise.
+	* testsuite/libffi.call/nested_struct.c: Likewise.
+	* testsuite/libffi.call/nested_struct1.c: Likewise.
+	* testsuite/libffi.call/nested_struct2.c: Likewise.
+	* testsuite/libffi.call/nested_struct3.c: Likewise.
+	* testsuite/libffi.call/problem1.c: Likewise.
+	* testsuite/libffi.special/unwindtest.cc: Likewise.
+	* testsuite/libffi.call/cls_12byte.c: Likewise and set return value
+	to zero.
+	* testsuite/libffi.call/cls_16byte.c: Likewise.
+	* testsuite/libffi.call/cls_5byte.c: Likewise.
+
 2004-08-23  David Daney <daney@avtrex.com>
 
 	PR libgcj/13141

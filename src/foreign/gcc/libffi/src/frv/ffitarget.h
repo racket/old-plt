@@ -1,6 +1,6 @@
 /* -----------------------------------------------------------------*-C-*-
-   ffitarget.h - Copyright (c) 1996-2003  Red Hat, Inc.
-   Target configuration macros for PowerPC.
+   ffitarget.h - Copyright (c) 1996-2004  Red Hat, Inc.
+   Target configuration macros for FR-V
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -39,6 +39,11 @@ typedef signed long            ffi_sarg;
 typedef enum ffi_abi {
   FFI_FIRST_ABI = 0,
 
+#ifdef FRV
+  FFI_EABI,
+  FFI_DEFAULT_ABI = FFI_EABI,
+#endif
+
 #ifdef POWERPC
   FFI_SYSV,
   FFI_GCC_SYSV,
@@ -71,20 +76,13 @@ typedef enum ffi_abi {
 #define FFI_CLOSURES 1
 #define FFI_NATIVE_RAW_API 0
 
-#if defined(POWERPC64) || defined(POWERPC_AIX)
-#define FFI_TRAMPOLINE_SIZE 24
-#else /* POWERPC || POWERPC_AIX */
-#define FFI_TRAMPOLINE_SIZE 40
-#endif
-
-#ifndef LIBFFI_ASM
-#if defined(POWERPC_DARWIN) || defined(POWERPC_AIX)
-struct ffi_aix_trampoline_struct {
-    void * code_pointer;	/* Pointer to ffi_closure_ASM */
-    void * toc;			/* TOC */
-    void * static_chain;	/* Pointer to closure */
-};
-#endif
+#ifdef __FRV_FDPIC__
+/* Trampolines are 8 4-byte instructions long.  */
+#define FFI_TRAMPOLINE_SIZE (8*4) 
+#else
+/* Trampolines are 5 4-byte instructions long.  */
+#define FFI_TRAMPOLINE_SIZE (5*4) 
 #endif
 
 #endif
+

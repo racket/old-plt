@@ -1022,8 +1022,10 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	      if ((ch2 == '|') && (ch == '#')) {
 		if (!(depth--))
 		  goto start_over;
-	      } else if ((ch2 == '#') && (ch == '|'))
+	      } else if ((ch2 == '#') && (ch == '|')) {
 		depth++;
+		ch = 0; /* So we don't count '|' toward a closing "|#" */
+	      }
 	      ch2 = ch;
 	    } while (1);
 	  }
@@ -2998,8 +3000,10 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
       if ((ch2 == blockc_2) && (ch == blockc_1)) {
 	if (!(depth--))
 	  goto start_over;
-      } else if ((ch2 == blockc_1) && (ch == blockc_2))
+      } else if ((ch2 == blockc_1) && (ch == blockc_2)) {
 	depth++;
+	ch = 0; /* So we don't count '|' toward a closing "|#" */
+      }
       ch2 = ch;
     } while (1);
 

@@ -449,14 +449,17 @@ general functions to help make .plt archives:
 > (on-installer-run) - returns the on-installer-run thunk. The
   on-installer-run thunk is run after a .plt file is installed.
 
-> (with-installer-window do-install)
+> (with-installer-window do-install cleanup-thunk)
     do-install : 
       ((union (instanceof dialog%) (instanceof frame%)) -> void)
     creates a frame, sets up the current error and output ports, and
     turns on the busy cursor before calling `do-install' in a separate
-    thread. Returns before the installation process is complete; it is
-    called on a queued callback to the eventspace active when
-    `with-installer-window' is invoked.
+    thread. 
+
+    Returns before the installation process is complete;
+    cleanup-thunk is called on a queued callback to the
+    eventspace active when `with-installer-window' is
+    invoked.
 
   (run-single-installer file get-dir-proc) - the same as the sole
    export of _plt-single-installer.ss_; see above for documentation.

@@ -517,6 +517,15 @@
       (contracted-func
        "I'm a string constant with side effects"
        "ans")))
+
+  (test/spec-passed
+   'define/contract7
+   '(let ()
+      (eval '(module contract-test-suite-define1 mzscheme
+               (require (lib "contract.ss"))
+               (define/contract x string? "a")
+               x))
+      (eval '(require contract-test-suite-define1))))
   
   (test/spec-passed
    'provide/contract1

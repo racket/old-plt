@@ -12,10 +12,18 @@
   (define prim-exit (exit-handler))
   (define exit-count 0)
   (define exit-sema (make-semaphore 1))
-
+  (define (exit-help)
+    (if (zero? exit-count)
+	(prim-exit 0)
+	(begin
+	  ; Lock is because a separate process might be calling exit
+	  (semaphore-wait exit-sema)
+	  (set! exit-count (sub1 exit-count))
+	  (semaphore-post exit-sema))))
+  
   (define (launch-help-win)
     (set! exit-count (add1 exit-count))
-    (parameterize ([current-namespace (make-namespace)])
+    (parameterize ([current-eventspace (make-eventspace)])
       (queue-callback
        (lambda ()
 	 (exit-handler (lambda (x) (exit-help)))
@@ -28,21 +36,12 @@
 	  mzlib:url^
 	  mred^)))))
 
-  (define (exit-help)
-    (if (zero? exit-count)
-	(prim-exit 0)
-	(begin
-	  ; Lock is because a separate process might be calling exit
-	  (semaphore-wait exit-sema)
-	  (set! exit-count (sub1 exit-count))
-	  (semaphore-post exit-sema))))
-	  
   (define collecting-thread #f)
 
   (define results-editor% (class hyper-text% ()
 			    (inherit set-title)
 			    (sequence 
-			      (super-init #f)
+			      (super-init #f #f)
 			      (set-title "Search Results"))))
 
   (define-values (screen-w screen-h) (get-display-size))

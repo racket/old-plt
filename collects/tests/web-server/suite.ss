@@ -16,18 +16,31 @@
            (lib "base64.ss" "net")
            (lib "xml.ss" "xml")
            (lib "channel.ss" "web-server"))
+
+  (define myprint void)
   
   ; header-pattern = (listof (cons sym (+ regexp str)))
   
   (error-print-width 800)
   
   (define test-directory (build-path (collection-path "tests") "web-server"))
-  ;(define web-root (build-path test-directory "web-root"))
-  (define web-root (collection-path "web-server" "default-web-root"))
+  (define web-root (build-path test-directory "web-root"))
+  ;(define web-root (collection-path "web-server" "default-web-root"))
   (define answers-directory (build-path test-directory "answers"))
   (define TEST-IP "127.0.0.1")
   
   (print-struct #t)
+
+  ;; broken?/remote: nat -> (union falses str)
+  ;; same as broken? but connect to a running web-server
+  ;; rather than starting a new one
+  (define (broken?/remote port)
+    (or (files-broken? port)
+        (authentication-broken? port)
+        (normal-servlets-broken? port)
+        (extended-servlets-broken? port)
+        (errors-broken? port)
+        (timeouts-broken? port)))
   
   ; broken? : nat -> (+ false str)
   ;; the cadilac broken? function, starts the server automatically.
@@ -45,17 +58,6 @@
 		    (errors-broken? port)
 		    (timeouts-broken? port)))
 	      (lambda () (kill-subprocess server))))))
-  
-  ; broken?/remote: nat -> (+ false str)
-  ;; like broken? but assumes that a server is already running on port
-  (define (broken?/remote port)
-    (or (files-broken? port)
-        (authentication-broken? port)
-        (normal-servlets-broken? port)
-        (extended-servlets-broken? port)
-        (errors-broken? port)
-        ;(timeouts-broken? port)
-        ))
 
   ; channels-broken? : -> (U str #f)
   ; more here - stress test for synchronization defects
@@ -90,7 +92,8 @@
     (let-values ([(mz-subprocess mz-out mz-in mz-err)
                   (subprocess #f #f #f
                               (find-executable-path "web-server" #f)
-                              "-p" (number->string port))])
+                              "-p" (number->string port)
+                              "-f" (path->string (build-path test-directory "configuration-table")) )])
       (sleep 5)
       (if (not (eq? 'running (subprocess-status mz-subprocess)))
           (format "server mzscheme isn't running:~n~s"
@@ -146,11 +149,12 @@
   
   ; content-length-header : str -> (list sym str)
   (define (content-length-header file-path)
+    (myprint "   file-path = ~s~n" file-path)
     `(content-length ,(format "^~a$" (file-size file-path))))
   
   ; files-broken? : nat -> (+ false string)
   (define (files-broken? port)
-    (printf "files-broken?:~n")
+    (myprint "files-broken?~n")
     (with-handlers ([void (lambda (exn) (format "test-files: error starting up ~a" exn))])
       (let* ([file-path (build-path web-root "htdocs" "index.html")]
 	     [implicit-url (local-url port "")]
@@ -203,7 +207,7 @@
   
   ; authentication-broken? : nat -> (+ false str)
   (define (authentication-broken? port)
-    (printf "authentication-broken?:~n")
+    (myprint "authentication-broken?~n")
     (let* ([forbidden-file-path (build-path web-root "conf" "forbidden.html")]
 	   [okay-file-path (build-path web-root "htdocs" "secret" "index.html")]
 	   [forbidden-content-length (content-length-header forbidden-file-path)]
@@ -211,7 +215,9 @@
 	   [auth-header `(www-authenticate "^Basic realm=\"secret stuff\"$")]
 	   [forbidden-headers (append usual-headers (list forbidden-content-length auth-header))]
 	   [okay-headers (append usual-headers (list okay-content-length))]
-	   [authorization (list (format "authorization: Basic ~a" (base64-encode "bubba:bbq")))])
+;	   [authorization (list (format "authorization: Basic ~a" (base64-encode "bubba:bbq")))]
+           [authorization (list (bytes->string/utf-8 (bytes-append #"authorization: Basic " (base64-encode #"bubba:bbq"))))]
+           )
       (or (problem-with-url? forbidden-file-path
 			     forbidden-headers
 			     (local-url port "secret/"))
@@ -229,7 +235,7 @@
   
   ; normal-servlets-broken? : Nat -> (+ false str)
   (define (normal-servlets-broken? port)
-    (printf "normal-servlets-broken?:~n")
+    (myprint "normal-servlets-broken?~n")
     (let* ([local-test-url
             (lambda (path)
               (local-url port (string-append "servlets/tests/" path)))]
@@ -288,8 +294,8 @@
 	   [servlet-error-path (build-path web-root "conf" "servlet-error.html")]
            [servlet-error-headers (append usual-headers (list (content-length-header servlet-error-path)))])
       (or (problem-with-url? not-found-path
-                             not-found-headers
-                             (local-url port "conf/some-file-that-doesnt-exist.html"))
+			     not-found-headers
+			     (local-url port "/conf/some-file-name-that-is-not-there.hmtl"))
           (problem-with-url? not-found-path
 			     not-found-headers
 			     (local-url port "some-file-name-that-is-not-there.hmtl"))
@@ -331,6 +337,7 @@
   
   ; mime-headers-problem? : (listof mime-header) header-pattern -> (+ false str)
   (define (mime-headers-problem? headers answers)
+    (myprint "mime-headers-problem?~n")
     (if (not (= (length headers) (length answers)))
 	(format "wrong number of headers.~n  expected ~s~n  received ~s"
 		answers (map (lambda (h)
@@ -342,7 +349,7 @@
                                        (symbol->string (car a)))
 			  (regexp-match (cadr a) (mime-header-value h)))
 		     #f
-		     (format "~s" (list (list (car a) (mime-header-name h))
+		     (format "mime-header results:~s" (list (list (car a) (mime-header-name h))
 					(list (cadr a) (mime-header-value h))))))
 	       headers
 	       answers)))
@@ -350,10 +357,11 @@
   ; input-port-diff : iport iport -> (+ false str)
   ; effect: consumes all input on at least the shorter port
   (define (input-port-diff a b)
+    (myprint "input-port-diff~n")
     (let compare ([n 0])
       (let* ([c-a (read-char a)]
 	     [c-b (read-char b)]
-	     [differ (lambda () (format "~s" (list n c-a c-b)))])
+	     [differ (lambda () (format "(<where> <actual> <expected>): ~s" (list n c-a c-b)))])
 	(cond
 	  [(eof-object? c-a)
 	   (cond

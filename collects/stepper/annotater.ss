@@ -244,7 +244,7 @@
                             (else (e:static-error "unknown expression type in sequence" expr)))))
                        (else (e:static-error "unknown read type" expr))))))))
   
-         (define parsed-exprs (map z:scheme-expand exprs-read))  
+         (define parsed-exprs (z:scheme-expand-program exprs-read 'previous z:beginner-vocabulary))  
   
          ; find-defined-vars extracts a list of what variables an expression
          ; defines.  In the case of a top-level expression which does not

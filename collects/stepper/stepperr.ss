@@ -23,25 +23,22 @@
                 (let ([result (open-output-string)]
                       [output (open-output-string)]
                       [real-print-hook (pretty-print-print-hook)]
-                      [highlight-begin #f]
-                      [highlight-end #f])
+                      [redex-begin #f]
+                      [redex-end #f])
                   (parameterize ([current-output-port output]
-                                 [pretty-print-print-hook
-                                  (lambda (value . args)
-                                    (error "getting here")
-                                    (if (eq? value redex)
-                                        (begin
-                                          (set! highlight-begin (file-position result))
-                                          (error 'store-step "found matching value")
-                                          (apply real-print-hook value args)
-                                          (set! highlight-end (file-position result)))
-                                        (apply real-print-hook value args)))])
+                                 [pretty-print-pre-print-hook
+                                  (lambda (value p)
+                                    (when (eq? value redex)
+                                      (set! redex-begin (file-position result))))]
+                                 [pretty-print-post-print-hook
+                                  (lambda (value p)
+                                    (when (eq? value redex)
+                                      (set! redex-end (file-position result))))])
                     (for-each
                      (lambda (expr)
                        (pretty-print expr result)
                        (fprintf result "~n"))
                      reconstructed))
-                  (error 'store-step "begin: ~a~nend: ~a" highlight-begin highlight-end)
                   (let ([outer-edit (make-object f:text:basic%)])
                     (send outer-edit insert (get-output-string result))
                     (send outer-edit insert #\newline)
@@ -50,8 +47,9 @@
                       (send outer-edit change-style result-delta 0 between)
                       (send outer-edit change-style output-delta between
                             (send outer-edit last-position))
-                      (when (and highlight-begin highlight-end)
-                        (send outer-edit highlight-range highlight-begin highlight-end highlight-color #f #f))
+                      (when (and redex-begin redex-end)
+                        (send outer-edit change-style redex-delta redex-begin redex-end))
+;                      (send outer-edit highlight-range highlight-begin highlight-end highlight-color #f #f)
                       (set! history (append history (list outer-edit)))))))]
              
              [view-currently-updating #f]
@@ -75,6 +73,9 @@
              [s-frame (make-object frame% "Stepper")]
              [output-delta (make-object style-delta% 'change-family 'modern)]
              [result-delta (make-object style-delta% 'change-family 'modern)]
+             [redex-delta (make-object style-delta%)] 
+             [error-delta (make-object style-delta%)]
+                                       
              [button-panel (make-object horizontal-panel% s-frame)]
              [home-button (make-object button% "Home" button-panel
                                        (lambda (_1 _2) (home)))]
@@ -106,6 +107,25 @@
              
              [user-eventspace (make-eventspace)]
            
+             [make-exception-handler
+              (lambda (k)
+                (lambda (exn)
+                  (parameterize ([current-eventspace drscheme-eventspace])
+                    (queue-callback
+                     (lambda ()
+                       (let ([new-text (make-object f:text:basic%)])
+                         (when (> view-currently-updating 0)
+                           (send (list-ref history (- view-currently-updating 1))
+                                 copy-self-to
+                                 new-text))
+                         (let ([error-begin (send new-text last-position)])
+                           (send new-text insert (exn-message exn))
+                           (send new-text change-style error-delta error-begin (send new-text last-position))
+                           (set! history (append history (list new-text)))
+                           (set! final-view view-currently-updating)
+                           (update-view view-currently-updating))))))
+                  (k)))]
+             
              [stepper-start
               (lambda ()
                 (let-values ([(annotated exprs)
@@ -115,7 +135,11 @@
                     (queue-callback 
                      (lambda ()
                        ((require-library "beginner.ss" "userspce"))
-                       (for-each eval annotated))))))]
+                       (call-with-current-continuation
+                        (lambda (k)
+                          (current-exception-handler
+                           (make-exception-handler k))
+                          (for-each eval annotated))))))))]
            
 ;                          (d:basis:initialize-parameters
 ;                           (current-custodian)
@@ -129,13 +153,15 @@
              
              
 
-        (send result-delta set-delta-foreground "BLACK")
-        (send output-delta set-delta-foreground "PURPLE")
-        (set! view-currently-updating 0)
-        (stepper-start)
-        (send button-panel stretchable-width #f)
-        (send canvas min-width 500)
-        (send canvas min-height 500)
-        (send previous-button enable #f)
-        (send home-button enable #f)
-        (send s-frame show #t))))
+      (send result-delta set-delta-foreground "BLACK")
+      (send output-delta set-delta-foreground "PURPLE")
+      (send redex-delta set-delta-foreground "BLUE")
+      (send error-delta set-delta-foreground "RED")
+      (set! view-currently-updating 0)
+      (stepper-start)
+      (send button-panel stretchable-width #f)
+      (send canvas min-width 500)
+      (send canvas min-height 500)
+      (send previous-button enable #f)
+      (send home-button enable #f)
+      (send s-frame show #t))))

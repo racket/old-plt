@@ -3278,6 +3278,9 @@ void wxWindowDC::GetPixelFast(int i, int j, int *r, int *g, int *b)
 static wxGL *current_gl_context = NULL;
 static int gl_registered;
 
+static XVisualInfo *null_visual;
+static int null_visual_set = 0;
+
 typedef int (*X_Err_Handler)(Display*, XErrorEvent*);
 static int errorFlagged;
 static int FlagError(Display*, XErrorEvent*)
@@ -3469,8 +3472,17 @@ Visual *wxGetGLCanvasVisual(wxGLConfig *cfg)
 {
   XVisualInfo *vi;
 
-  vi = GetWindowVisual(cfg, FALSE);
-  
+  if (!cfg && null_visual_set)
+    vi = null_visual;
+  else {
+    vi = GetWindowVisual(cfg, FALSE);
+    
+    if (!cfg) {
+      null_visual_set = 1;
+      null_visual = vi;
+    }
+  }
+
   if (vi)
     return vi->visual;
   else

@@ -154,7 +154,7 @@
 	 (make-object graph-snip% function-expression))]
       [write
        (lambda (stream)
-	 (send stream << (expr->string functions)))])
+	 (send stream << (expr->string function-expression)))])
     (sequence
       (super-init 100 100)
       (set-snipclass (send (get-the-snip-class-list) find "graph"))

@@ -58,7 +58,7 @@
 		   (when s
 		     (let ([v (read-from-string s)])
 		       (send e insert 
-			     (make-object graph-snip% (list v))))))))
+			     (make-object graph-snip% v)))))))
 
   (append-editor-font-menu-items font-menu)
   ((current-text-keymap-initializer) (send e get-keymap))

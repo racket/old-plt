@@ -284,6 +284,8 @@ void wxApp::doMacMouseDown(void)
   short windowPart;
 
   windowPart = FindWindow(cCurrentEvent.where, &window);
+  if (!window)
+    window = FrontWindow();
 
   /* Check whether this window is blocked by a modal dialog: */
   {

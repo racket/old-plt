@@ -308,7 +308,9 @@ void wxFrame::DesignateRootFrame(void)
     wxRootFrame = this;
     Show(TRUE);
     
-    ::SendBehind(win, NULL);
+    if (!FrontWindow()) {
+      ::ShowWindow(win);
+    }
   }
 }
 
@@ -672,7 +674,7 @@ void wxFrame::SetMenuBar(wxMenuBar* menu_bar)
   if (menu_bar) menu_bar->menu_bar_frame = this;
   wx_menu_bar = menu_bar;
 
-  front = ::FrontWindow();
+  front = FrontWindow();
   if (front == theMacWindow) {
     NowFront(TRUE);
   }
@@ -913,6 +915,9 @@ void wxFrame::Show(Bool show)
   tlw = wxTopLevelWindows(ContextWindow());
   tlw->Show(this, show);
 
+  if (wxRootFrame == this)
+    return;
+
   theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
 #ifdef OS_X
@@ -970,6 +975,14 @@ void wxFrame::Show(Bool show)
     if (cMacDC->currentUser() == this)
       /* b/c may be optimized for hidden: */
       cMacDC->setCurrentUser(NULL);
+
+    /* Hide root frame, if any, in case it's shown */
+    if (wxRootFrame) {
+      wxMacDC *dc;
+      dc = wxRootFrame->MacDC();
+      theMacWindow = GetWindowFromPort(dc->macGrafPort());
+      ::HideWindow(theMacWindow);
+    }
   } else {
     if (cFocusWindow) {
       cFocusWindow->OnKillFocus();
@@ -991,6 +1004,14 @@ void wxFrame::Show(Bool show)
       {
 	::HideWindow(theMacWindow);
       }
+
+    /* If all frames are closed, it's time for the root window (if any) */
+    if (wxRootFrame && !FrontWindow()) {
+      wxMacDC *dc;
+      dc = wxRootFrame->MacDC();
+      theMacWindow = GetWindowFromPort(dc->macGrafPort());
+      ::ShowWindow(theMacWindow);
+    }
   }
 
   /* Paint(); */
@@ -1021,7 +1042,7 @@ Bool wxFrame::IsFrontWindow(void)
   WindowPtr theMacWindow, front;
   theMacWindow = macWindow();
   if (theMacWindow) {
-    front = ::FrontWindow();
+    front = FrontWindow();
     return (theMacWindow == front);
   } else
     return FALSE;

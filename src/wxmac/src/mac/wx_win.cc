@@ -44,7 +44,6 @@ wxWindow* wxWindow::gMouseWindow = NULL;
 END_XFORM_SKIP;
 #endif
 
-
 static void RestoreNormalBackground(wxBrush *erase);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -936,7 +936,9 @@ int MrEdGetNextEvent(int check_only, int current_only,
      * window in an application when that application comes to the front.
      */
 	       
-    WindowPtr front = FrontWindow();
+    WindowPtr front;
+
+    front = FrontWindow();
   
     if (front) {
       MrQueueElem *q;

@@ -26,6 +26,7 @@
   (define-struct cont-key ())
   (define the-cont-key (make-cont-key))
   
+  ;; BUGBUG this isn't thread safe
   (define current-abort-continuation
     (box #f))
   
@@ -38,7 +39,6 @@
   ;; resume: (listof (value -> value)) value -> value
   ;; resume a computation given a value and list of frame procedures
   (define (resume frames val)
-    (printf "resume: frames = ~s~n" frames)
     (cond
       [(null? frames) val]
       [else

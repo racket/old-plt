@@ -292,10 +292,11 @@
        (assert-true (check-unsupported-lambda
                      (normalize-term (expand (syntax (lambda x x)))))))
       
-      (make-test-case
-       "multi-valued let-values"
-       (assert-true (check-unsupported-let
-                     (normalize-term (expand (syntax (let-values ([(x y) (values 1 2)]) (+ x y))))))))
+      ; this is supported now
+      #; (make-test-case
+          "multi-valued let-values"
+          (assert-true (check-unsupported-let
+                        (normalize-term (expand (syntax (let-values ([(x y) (values 1 2)]) (+ x y))))))))
       
       (make-test-case
        "let/multiple clauses before body"

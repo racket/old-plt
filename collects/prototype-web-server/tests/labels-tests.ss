@@ -7,12 +7,14 @@
   
   (require/expose "../labels.ss" (add1/string))
   
+  (define THE-TEST-FILENAME "labels-test-file")
+  
   (provide labels-tests-suite)
   
-  (define l1 (make-labeling #"foo" "test-file"))
-  (define l2 (make-labeling #"foo" "test-file"))
-  (define l3 (make-labeling #"bar" "test-file"))
-  (define l4 (make-labeling #"baz" "test-file"))
+  (define l1 (make-labeling #"foo" THE-TEST-FILENAME))
+  (define l2 (make-labeling #"foo" THE-TEST-FILENAME))
+  (define l3 (make-labeling #"bar" THE-TEST-FILENAME))
+  (define l4 (make-labeling #"baz" THE-TEST-FILENAME))
   
   (define race-test-file "race-test-file")
   

@@ -51,29 +51,32 @@
                                  (#%app reverse (#%app continuation-mark-set->list
                                                        (#%app current-continuation-marks)
                                                        the-cont-key))))))]
-      [(#%app w e)
-       (syntax-case #'w (lambda)
-         [(lambda (formals ...) body)
-          (let ([w-prime (datum->syntax-object #f (gensym 'f))])
-            #`(let-values ([(#,w-prime) #,(elim-call/cc #'w)])
-                #,(markit
-                   (recertify-dammit
-                    #`(#%app #,w-prime
-                             #,(elim-call/cc/mark
-                                #'e
-                                (lambda (x)
-                                  #`(with-continuation-mark the-cont-key #,w-prime #,x))))
-                    expr))))]
-         [_else
-          (let ([w-prime (elim-call/cc #'w)])
-            (markit
-             (recertify-dammit
-              #`(#%app #,w-prime
-                       #,(elim-call/cc/mark
-                          #'e 
-                          (lambda (x)
-                            #`(with-continuation-mark the-cont-key #,w-prime #,x))))
-              expr)))])]
+      ;; this is (w e) where e is not a w. (w w) handled in next case.
+      ;; m00.4 in persistent-interaction-tests.ss tests this distinction
+      [(#%app w (#%app . stuff))
+       (with-syntax ([e #'(#%app . stuff)])       
+         (syntax-case #'w (lambda)
+           [(lambda (formals ...) body)
+            (let ([w-prime (datum->syntax-object #f (gensym 'f))])
+              #`(let-values ([(#,w-prime) #,(elim-call/cc #'w)])
+                  #,(markit
+                     (recertify-dammit
+                      #`(#%app #,w-prime
+                               #,(elim-call/cc/mark
+                                  #'e
+                                  (lambda (x)
+                                    #`(with-continuation-mark the-cont-key #,w-prime #,x))))
+                      expr))))]
+           [_else
+            (let ([w-prime (elim-call/cc #'w)])
+              (markit
+               (recertify-dammit
+                #`(#%app #,w-prime
+                         #,(elim-call/cc/mark
+                            #'e 
+                            (lambda (x)
+                              #`(with-continuation-mark the-cont-key #,w-prime #,x))))
+                expr)))]))]
       [(#%app w rest ...)
        (markit
         (recertify-dammit

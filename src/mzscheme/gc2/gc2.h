@@ -322,7 +322,8 @@ void *GC_resolve(void *p);
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
-			    void *limit);
+			    void *limit,
+			    Mark_Proc mark);
 /*
    Can be called by a traversal proc to traverse and update a chunk of
    (atomically-allocated) memory containing an image of the stack. It

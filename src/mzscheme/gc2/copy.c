@@ -713,7 +713,8 @@ static void **o_var_stack, **oo_var_stack;
 
 void GC_mark_variable_stack(void **var_stack,
 			    long delta,
-			    void *limit)
+			    void *limit,
+			    Mark_Proc ignored)
 {
   int stack_depth;
 
@@ -987,7 +988,8 @@ void gcollect(int needsize)
 			 0,
 			 (void *)(GC_get_thread_stack_base
 				  ? GC_get_thread_stack_base()
-				  : stack_base));
+				  : stack_base),
+			 mark);
 
   PRINTTIME((STDERR, "gc: stack: %ld\n", GETTIMEREL()));
 

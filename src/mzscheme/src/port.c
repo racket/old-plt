@@ -3238,7 +3238,7 @@ static int fd_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
 	if (fip->textmode == 2) {
 	  delta = 1;
 	  rgot--;
-	  fip->buffer[1] = '\r';
+	  fip->buffer[0] = '\r';
 	} else
 	  delta = 0;
 	
@@ -3278,7 +3278,8 @@ static int fd_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
 	    if (i < bc) /* common case: didn't end with CRLF */
 	      buf[j++] = buf[i];
 	    bc = j;
-	    /* Check for CR at end, to maybe get a LF on the next read: */
+	    /* Check for CR at end; if there, save it to maybe get a
+	       LF on the next read: */
 	    if (buf[bc - 1] == '\r') {
 	      bc--;
 	      fip->textmode = 2; /* 2 indicates a leftover CR */

@@ -146,31 +146,44 @@
 		     (let* ([z (or (unbox aries:error-box)
 				   (let ([loc (zodiac:make-location 0 0 0 'eval)])
 				     (zodiac:make-zodiac 'mzrice-eval loc loc)))]
+			    [_ (mred:debug:printf 'zodiac
+						  "zodiac eval; sexp: ~a~n" sexp)]
 			    [structurized (zodiac:structurize-syntax sexp z)]
+			    [_ (mred:debug:printf 'zodiac
+						  "zodiac eval; structurized: ~a~n" structurized)]
+			    [_ (mred:debug:printf 'zodiac
+						  "zodiac eval; unsexp: ~a~n" (zodiac:sexp->raw structurized))]
 			    [expanded (zodiac:scheme-expand structurized)]
-			    [annotated (aries:annotate expanded)])
+			    [_ (mred:debug:printf 'zodiac
+						  "zodiac eval; expanded: ~a~n" expanded)]
+			    [_ (mred:debug:printf 'zodiac
+						  "zodiac eval; unparsed: ~a~n" (zodiac:parsed->raw expanded))]
+			    [annotated (aries:annotate expanded)]
+			    [_ (mred:debug:printf 'zodiac
+						  "zodiac eval; annotated: ~a~n" annotated)])
 		       (user-eval annotated))))))]
 	    [user-eval
-	     (lambda (expr)
-	       (with-parameterization param
-		 (lambda ()
-		   (parameterize ([current-output-port this-out]
-				  [current-error-port this-err]
-				  [current-input-port this-in]
-				  [current-load do-load]
-				  ;[current-eval userspace-eval]
-				  [mzlib:pretty-print@:pretty-print-size-hook size-hook]
-				  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
-		     (eval expr)))))]
+	     (let ([primitive-eval (current-eval)])
+	       (lambda (expr)
+		 (with-parameterization param
+		   (lambda ()
+		     (parameterize ([current-output-port this-out]
+				    [current-error-port this-err]
+				    [current-input-port this-in]
+				    [current-load do-load]
+				    [current-eval userspace-eval]
+				    [mzlib:pretty-print@:pretty-print-size-hook size-hook]
+				    [mzlib:pretty-print@:pretty-print-print-hook print-hook])
+		       (primitive-eval expr))))))]
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
-	       (opt-lambda (expr [before void] [after void])
+	       (opt-lambda (get-expr [before void] [after void])
 		 (let* ([user-code
 			 (lambda ()
 			   '(begin (printf "sending scheme:~n")
-				   (pretty-print expr))
+				   (pretty-print (get-expr)))
 			   (call-with-values
-			    (lambda () (user-eval expr))
+			    (lambda () (user-eval (get-expr)))
 			    (lambda anss
 			      (for-each
 			       (lambda (ans)
@@ -218,7 +231,7 @@
 			  annotated))])
 		 (do-many-evals get-zodiac-code pre post)))]
 	    [do-many-evals
-	     (lambda (get-sexps pre post)
+	     (lambda (get-sexp pre post)
 		 (let/ec k
 		   (let ([new-pre
 			  (lambda ()
@@ -227,9 +240,8 @@
 			 [new-post 
 			  (lambda (sucessful?)
 			    (set-escape #f)
-			    (post))]
-			 [sexp (get-sexps)])
-		     (send-scheme sexp new-pre new-post))))]
+			    (post))])
+		     (send-scheme get-sexp new-pre new-post))))]
 	    [do-load
 	     (lambda (filename)
 	       (call-with-input-file filename
@@ -258,11 +270,26 @@
 					      null
 					      (cons expr (loop)))))]
 			       [built `(begin ,@exprs)]
+			       [_ (mred:debug:printf 
+				   'zodiac
+				   "zodiac; built: ~a~n" built)]
 			       [structurized (zodiac:structurize-syntax
 					      built
 					      (zodiac:make-zodiac 'rep loc loc))]
+			       [_ (mred:debug:printf 
+				   'zodiac
+				   "zodiac; structurized: ~a~n" structurized)]
 			       [expanded (zodiac:scheme-expand structurized)]
-			       [annotated (aries:annotate expanded)])
+			       [_ (mred:debug:printf 
+				   'zodiac
+				   "zodiac; expanded: ~a~n" expanded)]
+			       [_ (mred:debug:printf 
+				   'zodiac
+				   "zodiac; unparsed: ~a~n" (zodiac:parsed->raw expanded))]
+			       [annotated (aries:annotate expanded)]
+			       [_ (mred:debug:printf 
+				   'zodiac
+				   "zodiac; annotated: ~a~n" annotated)])
 			  annotated))])
 		 (mred:local-busy-cursor
 		  (get-canvas)

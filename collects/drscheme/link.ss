@@ -148,10 +148,13 @@
 		    (drscheme:frame@ mred mzlib basis
 				   setup tool unit
 				   compound-unit zodiac)]
+	     [language : drscheme:language^
+		       (drscheme:language@ mred basis)]
 	     [unit : drscheme:unit^
-		    (drscheme:unit@ mred mzlib basis 
+		    (drscheme:unit@ mred mzlib
 				  setup compound-unit
-				  tool frame edit rep)]
+				  tool frame edit rep
+				  language)]
 	     [compound-unit : drscheme:compound-unit^
 		    (drscheme:compound-unit@ mred mzlib unit frame)]
 	     [app : drscheme:app^ (drscheme:application@ unit frame mred mzlib)])

@@ -3135,7 +3135,7 @@ void wxWinGL::Reset(wxGLConfig *cfg, HDC dc, int offscreen)
 	int a[30];
 	BOOL valid;
 	UINT numFormats;
-	float fAttributes[] = {0,0};
+	GC_CAN_IGNORE float fAttributes[] = {0,0};
 	
 	a[0] = (offscreen ? WGL_DRAW_TO_BITMAP_ARB : WGL_DRAW_TO_WINDOW_ARB);
 	a[1] = GL_TRUE;

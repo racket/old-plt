@@ -1,4 +1,5 @@
 (module info (lib "infotab.ss" "setup")
+  (require (lib "string-constant.ss" "string-constants"))
   (define name "The Little LISPer")
   (define compile-omit-files '())
   (define tools
@@ -9,9 +10,9 @@
   (define drscheme-language-modules
     '(("tll.ss" "TLL")))
   (define drscheme-language-positions
-    '(("Teaching Languages" "The Little LISPer")))
+    `((,(string-constant teaching-languages) "The Little LISPer")))
   (define drscheme-language-numbers
-    '((-500 -1000)))
+    '((-500 -300)))
   (define drscheme-language-one-line-summaries
     '("Use with The Little Schemer (nee LISPer)"))
   (define drscheme-language-urls

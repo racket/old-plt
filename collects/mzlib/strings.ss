@@ -3,8 +3,8 @@
   (string-lowercase!
    string-uppercase!
    eval-string
-   read-string
-   read-string-all
+   read-from-string
+   read-from-string-all
    expr->string
    newline-string
    regexp-match-exact?))

@@ -221,8 +221,9 @@
 			       remaining)])
 		 (if (< remaining needed)
 		     (error (string->symbol program)
-			    "the ~s flag needs ~a arguments, but only ~a remain"
-			    flag needed remaining)
+			    "the ~s flag needs ~a argument~a, but only ~a provided"
+			    flag needed (if (> needed 1) "s" "")
+			    remaining)
 		     (let ([v (apply handler 
 				     flag
 				     (let loop ([n use][args args])

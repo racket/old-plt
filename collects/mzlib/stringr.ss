@@ -45,10 +45,10 @@
 		 (do-eval str))
 	     (do-eval str))])))
 
-   (define read-string-one-or-all
+   (define read-from-string-one-or-all
      (case-lambda
-      [(k all? str) (read-string-one-or-all k all? str #f #f)]
-      [(k all? str error-display) (read-string-one-or-all k all? str error-display #f)]
+      [(k all? str) (read-from-string-one-or-all k all? str #f #f)]
+      [(k all? str error-display) (read-from-string-one-or-all k all? str error-display #f)]
       [(k all? str error-display error-result)
        (let* ([p (open-input-string str)]
 	      [go (lambda ()
@@ -71,18 +71,18 @@
 		 (go))
 	     (go)))]))
 
-   (define read-string
+   (define read-from-string
      (lambda args
        (let/ec k
-         (let ([l (apply read-string-one-or-all k #f args)])
+         (let ([l (apply read-from-string-one-or-all k #f args)])
 	   (if (null? l)
 	       eof
 	       (car l))))))
      
-   (define read-string-all
+   (define read-from-string-all
      (lambda args
        (let/ec k
-         (apply read-string-one-or-all k #t args))))
+         (apply read-from-string-one-or-all k #t args))))
    
    (define expr->string
      (lambda (v)

@@ -59,7 +59,7 @@
         (label (string-constant help-desk)))
       
       (let ([hp (send this get-hyper-panel)])
-        (send hp set-home-page (make-home-page-url (hd-cookie->port hd-cookie)))
+        (send hp set-init-page (make-home-page-url (hd-cookie->port hd-cookie)))
         (send (send hp get-canvas) allow-tab-exit #t))
       
       (inherit get-menu-bar)

@@ -1,10 +1,8 @@
 
-MacOS: bitmaps don't print (with MacOS-specific printing)
-
-Windows and MacOS: "primitive" dialogs don't get closed by
+Windows and Mac OS: "primitive" dialogs don't get closed by
  custodian-shutdown-all
 
-MacOS: std file dialog and print dialogs block MzScheme threads
+Mac OS: std file dialog and print dialogs block MzScheme threads
 
 Unix: Clipboard client is invoked in the wrong thread/eventspace
 

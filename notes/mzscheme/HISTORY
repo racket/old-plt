@@ -1,8 +1,7 @@
 
-See MzScheme_200.txt for information on major changes in MzScheme
- 200alpha1. Minor changes are listed below.
-
-Version 200, ???, 2002
+Version 200, June 2002
+>> See MzScheme_200.txt for information on major changes in
+   MzScheme 200. Minor changes are listed below.
 (cond) alays returns void; the cond-allow-fallthough parameter and
  exn:cond exception have been removed
 Changed all comparison precedures to require at least two

@@ -1,4 +1,4 @@
-Version 53, August 1, 1998
+Version 53, July 25, 1998
 Changed file-modify-seconds to file-or-directory-modify-seconds
 Changed rename-file to rename-file-or-directory
 Changed file procedures to return void on success and raise
@@ -17,8 +17,10 @@ Fixed call/ec bug related to dynamic-wind (see !!! in
 Fixed dynamic-wind bug: multiple levels of pre-thunks for a
  jump into a continuation were evaluated in reverse order
 Fixed atan: second argument is allowed to be an exact non-integer
+Fixed equal?: comparisons on equivalent vectors or structs
+ with cycles no longer crash (until MzScheme runs out of memory)
 Added make-temporary-file to MzLib's file.ss
-Changed random and random-seed to a parameter-specified
+Changed random and random-seed to use a parameter-specified
  random number generator; the generator is initially
  seeded with a number based on (current-milliseconds)
 Removed the obsolete MzLib trigger library

@@ -1,6 +1,9 @@
 
 MrEd Engine:
 
+* wx:item%'s get-label includes & in names on some platforms,
+  strips & for others
+
 * Motif: pre-on-char doesn't work for sliders
 
 * Windows: pre-on-char doesn't work for input that moves
@@ -9,8 +12,6 @@ MrEd Engine:
 * MacOS needs way to control the 0-window menu bar
 
 * MacOS: bitmaps don't print with platform-specific printing
-
-* set-button-font is inconsistently supported
 
 * X Windows and drawing into b & w bitmaps: black and white
    are reversed when using certain kinds of displays

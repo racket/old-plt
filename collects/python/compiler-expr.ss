@@ -4,12 +4,17 @@
            (lib "etc.ss") ;build-list
 	   "compiler.ss"
 	   "compiler-target.ss"
-           "empty-context.ss"
+         ;  "empty-context.ss")
        ;    "primitives.ss"
-           "runtime-context.ss")
+          ; "runtime-context.ss")
+           )
   
   (provide (all-defined))
   
+  (define py-so (lambda (x) x))
+  ; program identifiers should search the top level
+;  (define program-context ;empty-context)
+;                          #f)
   
   ;; unpack: (or symbol (listof symbol)) syntax-object -> sexp
   (define (unpack tuple var)
@@ -207,7 +212,7 @@
       ;;daniel
       (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
-            (->lex-so (get-symbol) #f)) ;empty-context))
+            (->lex-so (get-symbol) program-context))
       
       (super-instantiate ())))
   
@@ -428,8 +433,14 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'python-get-member) ,(send expression to-scheme)
-                                                 ',(send identifier to-scheme))))
+        (let ([expr (send expression to-scheme)]
+              [id (send identifier to-scheme)])
+          (->orig-so `(,(py-so 'python-get-attribute) ,expr ',id))))
+                     ;`(if (namespace-variable-value ',expr #t (lambda () #f))
+                     ;     (,(py-so 'python-get-member) ,expr ',id)
+                     ;     ,(string->symbol (string-append (symbol->string (syntax-e expr))
+                     ;                                     "."
+                     ;                                     (symbol->string (syntax-e id))))))))
       
       (super-instantiate ())))
   

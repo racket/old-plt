@@ -149,6 +149,9 @@
   (define (py-string%->string ps)
     (python-get-member ps scheme-string-key #f))
   
+  (define (py-string%->symbol ps)
+    (string->symbol (py-string%->string ps)))
+  
   (define (symbol->py-string% s)
     (string->py-string% (symbol->string s)))
   
@@ -233,7 +236,9 @@
     (if (py-type? obj)
         (py-tuple%->list (hash-table-get (python-node-dict obj) '__bases__
                                          (lambda ()
-                                           (error "object type" (python-get-type-name obj) "has no bases!"))))
+                                           (error "object type"
+                                                  (python-get-type-name obj)
+                                                  "has no bases!"))))
         (list (python-node-type obj))))
     
   ;; python-get-bases*: py-object% -> (listof py-type%)
@@ -455,7 +460,22 @@
                                          (py-object%->string (python-get-member x 'im_self)))
                           "")
                       ">"))]
+      [(py-is-a? x py-module%) (format "<module '~a' from '~a'>"
+                                       (py-string%->string (python-get-name x))
+                                       (py-string%->string (python-get-member x '__file__ #f)))]
       [else (format "<~a object>" (py-string%->string (python-get-type-name (python-node-type x))))]))
+  
+  (define (python-get-attribute obj attr-sym)
+;    (printf "python-get-attribute is looking for ~a~n" attr-sym)
+    (python-method-call obj
+                        (python-get-member obj '__getattribute__)
+                        (list (symbol->py-string% attr-sym))))
+  
+  (define (python-set-attribute! obj attr-sym value)
+    (python-method-call obj
+                        '__setattribute__
+                        (list (symbol->py-string% attr-sym)
+                              value)))
   
   ;; python-get-type-name: py-type% -> py-string%
   (define (python-get-type-name type)
@@ -540,10 +560,15 @@
   (define py-repr (lambda (x)
                     (string->py-string% (py-object%->string x))))
   
-  ;; python-method-call: python-object symbol (listof X) (listof (cons Symbol X) -> ?
+  ;; python-method-call: python-object (U symbol py-method%) (listof X) (listof (cons Symbol X) -> ?
   (define python-method-call
-    (opt-lambda (obj method-name [pos-args '()] [key-args '()])
-      (let ([fn (python-get-member obj method-name)])
+    (opt-lambda (obj method [pos-args '()] [key-args '()])
+;      (printf "python-method-call is looking for ~a~n" (if (symbol? method)
+;                                                           method
+;                                                           (py-object%->string method)))
+      (let ([fn (if (symbol? method)
+                    (python-get-attribute obj method)
+                    method)])
         (py-call fn
                  (if (and (python-node? fn)
                           (or (py-is-a? fn py-function%) ; static method
@@ -606,9 +631,15 @@
   (python-add-members py-object%
                       `((__init__ ,(procedure->py-function% (lambda (this) (void))
                                                             '__init__))
-                        (__repr__ ,py-repr)))
-  
-  
+                        (__repr__ ,py-repr)
+                        (__getattribute__ ,(py-lambda '__getattribute__ (this key)
+                                               (python-get-member this (py-string%->symbol key))))
+                        (__setattribute__ ,(py-lambda '__setattribute__ (this key value)
+                                                (python-set-member! this (py-string%->symbol key) value)))))
+
+;  (python-add-members py-type%
+;                      `((__getattribute__ ,python-get-member)
+;                        (__setattribute__ ,python-set-member!)))
   (dprintf "7~n")
   
   (define (py-bin-op op)
@@ -813,7 +844,34 @@
                                                                   key)))))
   
   
+  (python-add-members py-module%
+                      `((__getattribute__ ,(py-lambda '__getattribute__ (this key)
+                                           (parameterize ([current-namespace
+                                                           (py-module%->namespace this)])
+                                             (let ([key (py-string%->symbol key)])
+                                               (namespace-variable-value key
+                                                                         #t
+                                                                         (lambda ()
+                                                                           (python-get-member this
+                                                                                              key)))))))
+                        (__setattribute__ ,(py-lambda '__setattribute__ (this key value)
+                                           (parameterize ([current-namespace
+                                                           (py-module%->namespace this)])
+                                             (namespace-set-variable-value! (py-string%->symbol key)
+                                                                            value))))))
   
+  ; turn a scheme namespace into a python module
+  (define namespace->py-module%
+    (opt-lambda (namespace [name ""] [path ""])
+      (let ([module (python-create-object py-module%)])
+        (python-set-member! module '__name__ (symbol->py-string% name))
+        (python-set-member! module '__file__ (string->py-string% path))
+        (python-set-member! module scheme-namespace-key namespace)
+        module)))
+  
+  (define (py-module%->namespace module)
+    (python-get-member module scheme-namespace-key #f))
+                                                 
   
   
   ;; more setup for PY-TYPE
@@ -859,10 +917,12 @@
                             (map ->scheme (py-list%->list pl))))
               (,py-dict% ,py-dict%->hash-table)
               (,py-function% ,py-function%->procedure)
+              (,py-module% ,py-module%->namespace)
               (,py-none% ,void)))
   
   (define (->scheme py-obj)
-    (python-method-call py-obj python-to-scheme-method))
+    (py-call (python-get-member py-obj python-to-scheme-method)
+             null))
   
   (define (->python sxp)
     (cond
@@ -885,6 +945,5 @@
                                                     (map ->scheme
                                                          (list #,@args)))))))]))
                                                          
-  
   
   )

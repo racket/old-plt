@@ -1,68 +1,81 @@
 (module python mzscheme
   (require (lib "class.ss")
-           (lib "list.ss")
+          ; (lib "list.ss")
+          ; (lib "etc.ss")
           ; "compiler.ss"
-           "python-node.ss"
-           "primitives.ss"
-           "read-python.ss")
+          ; "python-node.ss"
+           "primitives.ss" ;; need py-object%->string
+          ; "read-python.ss"
+           "compile-python.ss"
+           "python-import.ss")
            ;"base.ss")
   
   ;;;; temporary Python Evaluation module by Daniel ;;;;;;;
   
   (provide python
-           read-python
-           python-to-scheme
-           compile-python
-           compile-python-ast
-           parse-python-port
-           parse-python-file)
+           ;read-python
+           ;python-to-scheme
+           ;compile-python
+           ;compile-python-ast
+           ;parse-python-port
+           ;parse-python-file
+           render-python-value)
   
-  (define (python-to-scheme path)
-    (compile-python (read-python path)))
   
-  (define (compile-python ast-list)
-    ;    (set-context! #'here)
-    (map (lambda (ast)
-           (send ast to-scheme))
-         ast-list))
+  (define (render-python-value value port port-write)
+            (let ([to-render (if (python-node? value)
+                                (format "~a~n" (py-object%->string value))
+                                value)])
+              (if port-write
+                  (port-write to-render)
+                  (write to-render port))))
   
-  (define (compile-python-ast ast)
-    (send ast to-scheme))
+
+
   
-  (define parse-python-port read-python-port)
-  
-  (define parse-python-file read-python)
-  
+    
   (define (python path)
-    ;; setup initial eval namespace
-    (let ([m-path ((current-module-name-resolver) '"base.ss" #f #f)]
-          [empty-namespace (make-namespace 'empty)]
-          [n (current-namespace)])
-      (dynamic-require m-path #f)
-      ;; eval in new namespace
-      (let ([results (parameterize ([current-namespace empty-namespace])
-                       (namespace-attach-module n m-path)
-                       (namespace-require m-path)
-                       (map eval
-                            (python-to-scheme path)))])
-        ;; copy all new bindings to the first namespace
-        (for-each (lambda (symbol)
-                    (unless (namespace-variable-value symbol #t
-                                                      (lambda () #f))
-                      (with-handlers ([exn? (lambda (exn) #f)])
-                        (namespace-set-variable-value! symbol
-                                                       (parameterize ([current-namespace empty-namespace])
-                                                         (namespace-variable-value symbol))))))
-                  (parameterize ([current-namespace empty-namespace])
-                    (namespace-mapped-symbols)))
-        ;; return the results in a nice format
-        (map (lambda (result)
-               (if (python-node? result)
-                   (py-object%->string result)
-                   result))
-             (filter (lambda (r) (not (void? r)))
-                     results)))))
+    (let ([results (eval-python&copy (python-to-scheme path) (make-python-namespace))])
+      (let ([port (current-output-port)])
+        (for-each (lambda (value)
+                    (render-python-value value port printf))
+                  results))
+      (map py-object%->string results)))
+        
+                     
+;  (define (python path)
+;    ;; setup initial eval namespace
+;    (let ([m-path ((current-module-name-resolver) '"base.ss" #f #f)]
+;          [empty-namespace (make-namespace 'empty)]
+;          [n (current-namespace)])
+;      (dynamic-require m-path #f)
+;      ;; eval in new namespace
+;      (let ([results (parameterize ([current-namespace empty-namespace])
+;                       (namespace-attach-module n m-path)
+;                       (namespace-require m-path)
+;                       (map eval
+;                            (python-to-scheme path)))])
+;        ;; copy all new bindings to the first namespace
+;        (for-each (lambda (symbol)
+;                    (unless (namespace-variable-value symbol #t
+;                                                      (lambda () #f))
+;                      (with-handlers ([exn? (lambda (exn) #f)])
+;                        (namespace-set-variable-value! symbol
+;                                                       (parameterize ([current-namespace empty-namespace])
+;                                                         (namespace-variable-value symbol))))))
+;                  (parameterize ([current-namespace empty-namespace])
+;                    (namespace-mapped-symbols)))
+;        ;; return the results in a nice format
+;        (map (lambda (result)
+;               (if (python-node? result)
+;                   (py-object%->string result)
+;                   result))
+;             (filter (lambda (r) (not (void? r)))
+;                     results)))))
   
+
+
+
  ; (require "compiler-stmt.ss")
   
 ;  (define ast (fifth (read-python "mini.py")))

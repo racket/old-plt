@@ -1,7 +1,10 @@
 (module runtime-support mzscheme
   (require (lib "list.ss")
-           "primitives.ss")
-  (require-for-syntax "compiler.ss") ;; get the compiler context
+           (lib "etc.ss")
+           "primitives.ss"
+           "python-import.ss"
+           )
+;  (require-for-syntax "compiler.ss") ;; get the compiler context
   (provide (all-defined))
   
   ;;;;;;;;;; Python Runtime Support by Daniel ;;;;;;;;;
@@ -98,7 +101,7 @@
                              (syntax-case d-or-e (define)
                                [(__ member-name member-value)
                                 ;; make sure the "define" here is introduced by the compiler
-                                (free-identifier=? (datum->syntax-object compiler-context
+                                (free-identifier=? (datum->syntax-object #'here ;runtime-context
                                                                          'define)
                                                    (syntax __))
                                 `(list ',(syntax method-name) ,(syntax procedure))]
@@ -107,5 +110,8 @@
                              d-or-e d-or-e))
                           defs-and-exprs))]))
        stx stx))
+  
+
+  (define runtime-support-context #'here)
  
   )

@@ -1,7 +1,7 @@
 (module compiler-target mzscheme
   (require (lib "class.ss")
-	   "compiler.ss"
-           "empty-context.ss")
+	   "compiler.ss")
+           ;"empty-context.ss")
 
   (provide (all-defined))
 
@@ -31,7 +31,7 @@
       ;;daniel
       (inherit ->orig-so ->lex-so)
       (define/override (to-scheme)
-        (->lex-so (get-symbol) #f)) ;empty-context))
+        (->lex-so (get-symbol) program-context))
       
       ;;; had to change that context from an empty context defined in some module to no context.
       ;;; starting with mzscheme 203.4, top-level definitions cannot define variables with the context

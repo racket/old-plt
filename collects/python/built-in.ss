@@ -1,6 +1,7 @@
 #cs(module built-in mzscheme
   (require "primitives.ss"
-           "runtime-support.ss"
+           ;"runtime-support.ss"
+           ;"python-import.ss"
            (lib "list.ss")
            (lib "etc.ss"))
   (provide object
@@ -19,7 +20,13 @@
            (rename py-sqrt sqrt)
            (rename py-map map)
            (rename py-filter filter)
-           isinstance)
+           isinstance
+           
+           ;;; utilities
+;           *loaded-modules*
+;           *add-loaded-module*
+;           *lookup-loaded-module*
+           )
   
   (define object py-object%)
   (define staticmethod py-static-method%)
@@ -61,5 +68,6 @@
                   
 
 
+    
   
   )

@@ -4,14 +4,13 @@
            (lib "etc.ss") ; build-list
 	   "compiler.ss"
 	   "compiler-expr.ss"
-           "compiler-target.ss"
+           "compiler-target.ss")
           ; "primitives.ss"
-           "runtime-context.ss"
-           "empty-context.ss")
+          ; "runtime-context.ss"
+          ; "empty-context.ss")
 
   (provide (all-defined-except bindings-mixin))
     
-  
   (define statement%
     (class ast-node%
       ;; check-break/cont: (or/f false? (is-a?/c statement%)) ->
@@ -122,14 +121,24 @@
            [(is-a? target tidentifier%) `(,(if (def-targ? target)
                                                'define
                                                'set!) ,(send target to-scheme) ,rhs)]
-           [(is-a? target tattribute-ref%) `(,(py-so 'python-set-member!)
-                                             ,(send ((class-field-accessor tattribute-ref%
-                                                                           expression) target)
-                                                    to-scheme)
-                                             ',(send ((class-field-accessor tattribute-ref%
-                                                                            identifier) target)
-                                                     to-scheme)
-                                             ,rhs)]
+           [(is-a? target tattribute-ref%) (let* ([expr (send ((class-field-accessor tattribute-ref%
+                                                                                     expression) target)
+                                                              to-scheme)]
+                                                  [id (send ((class-field-accessor tattribute-ref%
+                                                                                   identifier) target)
+                                                            to-scheme)]
+                                                  [module-var (string->symbol
+                                                               (string-append
+                                                                (symbol->string (syntax-e expr))
+                                                                "."
+                                                                (symbol->string (syntax-e id))))])
+                                             `(,(py-so 'python-set-attribute!) ,expr ',id ,rhs))]
+           ; `(if (namespace-variable-value ',expr #t (lambda () #f))
+                                            ;      (,(py-so 'python-set-member!) ,expr ',id ,rhs)
+                                            ;      ,(if top?
+                                            ;           `(namespace-set-variable-value! ',module-var
+                                            ;                                           ,rhs)
+                                            ;           `(set! ,module-var ,rhs))))]
            [(is-a? target tsubscription%) `(,(py-so 'python-method-call)
                                             ,(send ((class-field-accessor tsubscription%
                                                                           expression) target)
@@ -247,6 +256,12 @@
 
       (define/override (set-bindings! enclosing-scope)
         (send target set-bindings! enclosing-scope))
+      
+      (inherit ->orig-so stx-err)
+      (define/override (to-scheme)
+        (->orig-so (cond
+                     [(is-a? target tidentifier%) `(namespace-set-variable-value! ,(send target to-scheme) 'undefined)]
+                     [else (stx-err "del statement not fully implemented yet.")])))
       
       (super-instantiate ())))
 
@@ -371,6 +386,7 @@
       
       (super-instantiate ())))
   
+  ;(require "empty-context.ss")
   ;; 6.12
   (define import-module%
     (class statement%
@@ -378,8 +394,38 @@
       ;;                          (or/f false? (is-a?/c identifier%))))
       (init-field modules)
 
+;      (printf "modules: ~a~n" modules)
+      (define scope #f)
+      (define (top?) (is-a? scope module-scope%))
+      (define/public (get-scope) scope)
+      
       (define/override (set-bindings! enclosing-scope)
+        (when enclosing-scope
+          (set! scope enclosing-scope)
+          (for-each (lambda (module)
+                      (let ([id (or (cadr module)
+                                    (car (car module)))])
+                        (unless (send enclosing-scope is-local? id)
+                          (send enclosing-scope add-binding id))))
+                    modules))
         (map caar modules))
+      
+      (inherit ->orig-so ->lex-so)
+      (define/override (to-scheme)
+        (->orig-so `(begin ,@(map (lambda (import)
+                                    (let ([ids (map (lambda (id) (car `(',(send id to-scheme))))
+                                                    (car import))]
+                                          [name (if (cadr import)
+                                                    (send (cadr import) to-scheme)
+                                                    (send (car (car import)) to-scheme))])
+                                      `(;,(->lex-so namespace-set-variable-value! empty-context)
+                                         ,(if (top?) 'define 'set!)
+                                        ,name
+                                        (call-with-values
+                                         (lambda ()
+                                           (python-load-module (list ,@ids)))
+                                         namespace->py-module%))))
+                                  modules))))
       
       (super-instantiate ())))
 
@@ -392,6 +438,20 @@
       
       (define/override (set-bindings! enclosing-scope)
         (unless (symbol? ids) (map (lambda (b) (if (cadr b) (cadr b) (car b))) ids)))
+      
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(py-so 'python-import-from-module)
+                     ,(if (eq? ids '*)
+                          #f
+                          `(list ,@(map (lambda (id)
+                                          (let ([binding (send (car id) to-scheme)])
+                                            (if (cadr id)
+                                                `(list ',binding ',(send (cadr id) to-scheme))
+                                                `(list ',binding #f))))
+                                        ids)))
+                     ,@(map (lambda (id) (car `(',(send id to-scheme))))
+                            module))))
       
       (super-instantiate ())))
   
@@ -456,7 +516,7 @@
                                    [so-l (syntax->list so)])
                               (if (and so-l
                                        (free-identifier=? (first so-l)
-                                                          (datum->syntax-object compiler-context
+                                                          (datum->syntax-object runtime-context
                                                                                 'define)))
                                   (list (second so-l) (third so-l))
                                   so)))))
@@ -928,7 +988,7 @@
                        (,(py-so 'python-method-call) ,(py-so 'py-type%) '__call__
                         (list (,(py-so 'symbol->py-string%) #cs',class-name)
                               (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
-                                                                     `(,(->lex-so 'object empty-context))
+                                                                     `(,(->lex-so 'object program-context))
                                                                      inherit-list)))
                         ,(let* ([exprs null]
                                 [keys null]

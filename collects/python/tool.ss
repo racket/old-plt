@@ -1,13 +1,14 @@
 (module tool mzscheme
-  (require (lib "tool.ss" "drscheme")
-           (lib "mred.ss" "mred")
+  (require  (lib "tool.ss" "drscheme")
+          ; (lib "mred.ss" "mred")
            (lib "unitsig.ss")
            (lib "class.ss")
 	   (lib "embed.ss" "compiler")
 	   (lib "string-constant.ss" "string-constants")
-           (lib "etc.ss")
+          ; (lib "etc.ss")
            "python.ss"
-           "primitives.ss")
+           "compile-python.ss"
+           "python-import.ss")
 
   (provide tool@)
 
@@ -79,32 +80,39 @@
           (define/public (get-teachpack-names) null)
           (define/public (marshall-settings x) x)
           (define/public (on-execute settings run-in-user-thread)
-
-
-
-            (dynamic-require '(lib "base.ss" "python") #f)
-            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
-                  [n (current-namespace)])
-              (run-in-user-thread
-               (lambda ()
-		 (error-display-handler 
-		  (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
-		 (current-eval 
-		  (drscheme:debug:make-debug-eval-handler (current-eval)))
-                 
-                 
-                 (with-handlers ([void (lambda (x)
-                                         (printf "~a~n"
-                                                 (exn-message x)))])
-                   (namespace-attach-module n path)
-                   (namespace-require path))))))
+            ;(run-in-user-thread
+            ; (lambda ()
+            ;   (toggle-python-cache-namespace! #t)
+            ;   (set-python-cache-namespace! (current-namespace))))
+            (init-python-namespace (current-namespace)
+                                   run-in-user-thread
+                                   (drscheme:debug:make-debug-error-display-handler
+                                    (error-display-handler))
+                                   (drscheme:debug:make-debug-eval-handler (current-eval))))
+;            (dynamic-require '(lib "base.ss" "python") #f)
+;            (let ([path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
+;                  [n (current-namespace)])
+;              (run-in-user-thread
+;               (lambda ()
+;		 (error-display-handler 
+;		  (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
+;		 (current-eval 
+;		  (drscheme:debug:make-debug-eval-handler (current-eval)))
+;                 
+;                 
+;                 (with-handlers ([void (lambda (x)
+;                                         (printf "~a~n"
+;                                                 (exn-message x)))])
+;                   (namespace-attach-module n path)
+;                   (namespace-require path))))))
           (define/public (render-value value settings port port-write)
-            (let ([to-render (if (python-node? value)
-                                (format "~a~n" (py-object%->string value))
-                                value)])
-              (if port-write
-                  (port-write to-render)
-                  (write to-render port))))
+            (render-python-value value port port-write))
+;            (let ([to-render (if (python-node? value)
+;                                (format "~a~n" (py-object%->string value))
+;                                value)])
+;              (if port-write
+;                  (port-write to-render)
+;                  (write to-render port))))
           (define/public (render-value/format value settings port port-write width)
             (render-value value settings port port-write))
           (define/public (unmarshall-settings x) x)

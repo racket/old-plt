@@ -11,6 +11,8 @@
 \tableofcontents
 \newpage
 
+\let\rulesection\subsection
+
 \section{Program}
 
 The grammar for Python programs is presented here.  The empty string is represented by $\varepsilon$.
@@ -19,7 +21,7 @@ The starting non-terminal is usually {\bf \verb+<+file\_input~\ref{filezzzinputb
 
 If a non-terminal is named {\bf nonterm\_list\_plus}, it is assumed that it defines the regular expression {\bf nonterm+}, while {\bf nonterm\_list} usually defines the regular expression {\bf nonterm*}, though it might be {\bf (nonterm ,)*} as well.
 
-\subsection{file\_input}
+\rulesection{file\_input}
 \label{filezzzinputb}
 The following non-terminal ({\bf file\_{}input}) is the result of the parser in the following situations:
 \begin{itemize}
@@ -34,7 +36,7 @@ The following non-terminal ({\bf file\_{}input}) is the result of the parser in 
  & \verb+|+  & {\bf \verb+<+file\_input~\ref{filezzzinputb}\verb+>+}  {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{eval\_input}
+\rulesection{eval\_input}
 \label{evalzzzinputb}
 Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Only expressions (\ref{tuplezzzorzzztestb}), possibly followed by newlines, are allowed. \\
 
@@ -45,7 +47,7 @@ Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Only e
 
 \section{Statements}
 
-\subsection{stmt}
+\rulesection{stmt}
 \label{stmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+stmt\verb+>+} & ::=  & {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
@@ -54,7 +56,7 @@ Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Only e
 
 Simple statements (\ref{simplezzzstmtb}) span a single line (no new indentation levels).  Compound statements (\ref{compoundzzzstmtb}) may span multiple lines. \\
 
-\subsection{simple\_stmt}
+\rulesection{simple\_stmt}
 \label{simplezzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+simple\_stmt\verb+>+} & ::=  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  NEWLINE \\
@@ -62,7 +64,7 @@ Simple statements (\ref{simplezzzstmtb}) span a single line (no new indentation 
  & \verb+|+  & {\bf \verb+<+small\_stmt~\ref{smallzzzstmtb}\verb+>+}  \verb|;| {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{small\_stmt}
+\rulesection{small\_stmt}
 \label{smallzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+small\_stmt\verb+>+} & ::=  & {\bf \verb+<+expr\_stmt~\ref{exprzzzstmtb}\verb+>+}  \\
@@ -76,7 +78,7 @@ Simple statements (\ref{simplezzzstmtb}) span a single line (no new indentation 
  & \verb+|+  & {\bf \verb+<+assert\_stmt~\ref{assertzzzstmtb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{expr\_stmt}
+\rulesection{expr\_stmt}
 \label{exprzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+expr\_stmt\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+augassign~\ref{augassignb}\verb+>+}  {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
@@ -85,7 +87,7 @@ Simple statements (\ref{simplezzzstmtb}) span a single line (no new indentation 
 
 An expression statement consists of either an in-place variable mutation operation or a {\bf \verb+<+testlist\_list\_plus~\ref{testlistzzzlistzzzplusb}\verb+>+} .
 
-\subsection{testlist\_list\_plus}
+\rulesection{testlist\_list\_plus}
 \label{testlistzzzlistzzzplusb}
 \begin{tabular}{lcl}
 {\bf \verb+<+testlist\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
@@ -94,7 +96,7 @@ An expression statement consists of either an in-place variable mutation operati
 
 A \verb|testlist_list_plus| is an assignment, which can define or mutate variables, or an expression (\ref{tuplezzzorzzztestb}), which will be displayed in the output of the interpreter.
 
-\subsection{augassign}
+\rulesection{augassign}
 \label{augassignb}
 \begin{tabular}{lcl}
 {\bf \verb+<+augassign\verb+>+} & ::=  & \verb|+=| \\
@@ -111,7 +113,7 @@ A \verb|testlist_list_plus| is an assignment, which can define or mutate variabl
  & \verb+|+  & \verb|//=| \\
 \end{tabular}
 
-\subsection{print\_stmt}
+\rulesection{print\_stmt}
 \label{printzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+print\_stmt\verb+>+} & ::=  & print {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
@@ -126,7 +128,7 @@ object, specifically an object that has a \verb|write| method, or \verb|None|.
 
 
 
-\subsection{del\_stmt}
+\rulesection{del\_stmt}
 \label{delzzzstmtb}
 http://www.python.org/doc/current/ref/del.html
 
@@ -134,13 +136,13 @@ http://www.python.org/doc/current/ref/del.html
 {\bf \verb+<+del\_stmt\verb+>+} & ::=  & del {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{pass\_stmt}
+\rulesection{pass\_stmt}
 \label{passzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+pass\_stmt\verb+>+} & ::=  & pass \\
 \end{tabular}
 
-\subsection{flow\_stmt}
+\rulesection{flow\_stmt}
 \label{flowzzzstmtb}
 A flow statement directs or modifies program flow. \\
 
@@ -152,7 +154,7 @@ A flow statement directs or modifies program flow. \\
  & \verb+|+  & {\bf \verb+<+yield\_stmt~\ref{yieldzzzstmtb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{break\_stmt}
+\rulesection{break\_stmt}
 \label{breakzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+break\_stmt\verb+>+} & ::=  & break \\
@@ -163,7 +165,7 @@ http://www.python.org/doc/current/ref/break.html
 \verb+break+ may only occur syntactically nested in a for or while loop, 
 but not nested in a function or class definition within that loop.   
 
-\subsection{continue\_stmt}
+\rulesection{continue\_stmt}
 \label{continuezzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+continue\_stmt\verb+>+} & ::=  & continue \\
@@ -175,7 +177,7 @@ http://www.python.org/doc/current/ref/continue.html
 but not nested in a function or class definition or try statement within 
 that loop.
 
-\subsection{return\_stmt}
+\rulesection{return\_stmt}
 \label{returnzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+return\_stmt\verb+>+} & ::=  & return {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
@@ -188,7 +190,7 @@ http://www.python.org/doc/current/ref/return.html
 not within a nested class definition.  In a generator function, 
 the return statement is not allowed to include an expression list (\ref{tuplezzzorzzztestb}). In that context, a bare return indicates that the generator is done and will cause \verb|StopIteration| to be raised. 
 
-\subsection{raise\_stmt}
+\rulesection{raise\_stmt}
 \label{raisezzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+raise\_stmt\verb+>+} & ::=  & raise \\
@@ -202,7 +204,7 @@ http://www.python.org/doc/current/ref/raise.html
 \verb|raise| may have up to three arguments, the first being the type of the exception,
 the second being its value, and the third being a traceback.
 
-\subsection{yield\_stmt (NOT YET IMPLEMENTED)}
+\rulesection{yield\_stmt (NOT YET IMPLEMENTED)}
 \label{yieldzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+yield\_stmt\verb+>+} & ::=  & yield {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
@@ -215,7 +217,7 @@ and is only used in the body of the generator function. Using a yield
 statement in a function definition is sufficient to cause that definition 
 to create a generator function instead of a normal function.
 
-\subsection{import\_stmt (NOT YET IMPLEMENTED)}
+\rulesection{import\_stmt (NOT YET IMPLEMENTED)}
 \label{importzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+import\_stmt\verb+>+} & ::=  & {\bf \verb+<+import\_stmt1~\ref{importzzzstmt1b}\verb+>+}  \\
@@ -225,42 +227,42 @@ to create a generator function instead of a normal function.
 
 http://www.python.org/doc/current/ref/import.html
 
-\subsection{import\_stmt1 (NOT YET IMPLEMENTED)}
+\rulesection{import\_stmt1 (NOT YET IMPLEMENTED)}
 \label{importzzzstmt1b}
 \begin{tabular}{lcl}
 {\bf \verb+<+import\_stmt1\verb+>+} & ::=  & import {\bf \verb+<+dotted\_as\_name~\ref{dottedzzzaszzznameb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+import\_stmt1~\ref{importzzzstmt1b}\verb+>+}  \verb|,| {\bf \verb+<+dotted\_as\_name~\ref{dottedzzzaszzznameb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{import\_stmt2 (NOT YET IMPLEMENTED)}
+\rulesection{import\_stmt2 (NOT YET IMPLEMENTED)}
 \label{importzzzstmt2b}
 \begin{tabular}{lcl}
 {\bf \verb+<+import\_stmt2\verb+>+} & ::=  & {\bf \verb+<+import\_as\_name~\ref{importzzzaszzznameb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+import\_as\_name~\ref{importzzzaszzznameb}\verb+>+}  \verb|,| {\bf \verb+<+import\_stmt2~\ref{importzzzstmt2b}\verb+>+}  \\
 \end{tabular}
 
-\subsection{import\_as\_name (NOT YET IMPLEMENTED)}
+\rulesection{import\_as\_name (NOT YET IMPLEMENTED)}
 \label{importzzzaszzznameb}
 \begin{tabular}{lcl}
 {\bf \verb+<+import\_as\_name\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  NAME {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{dotted\_as\_name (NOT YET IMPLEMENTED)}
+\rulesection{dotted\_as\_name (NOT YET IMPLEMENTED)}
 \label{dottedzzzaszzznameb}
 \begin{tabular}{lcl}
 {\bf \verb+<+dotted\_as\_name\verb+>+} & ::=  & {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  NAME {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{dotted\_name (NOT YET IMPLEMENTED)}
+\rulesection{dotted\_name (NOT YET IMPLEMENTED)}
 \label{dottedzzznameb}
 \begin{tabular}{lcl}
 {\bf \verb+<+dotted\_name\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|.| {\bf \verb+<+dotted\_name~\ref{dottedzzznameb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{global\_stmt}
+\rulesection{global\_stmt}
 \label{globalzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+global\_stmt\verb+>+} & ::=  & global {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
@@ -288,7 +290,7 @@ x = 2
 \end{verbatim}
 the generated code will define a new \verb|x|, not modify an existing one.
 
-\subsection{exec\_stmt (NOT YET IMPLEMENTED)}
+\rulesection{exec\_stmt (NOT YET IMPLEMENTED)}
 \label{execzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+exec\_stmt\verb+>+} & ::=  & exec {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
@@ -298,7 +300,7 @@ the generated code will define a new \verb|x|, not modify an existing one.
 
 http://www.python.org/doc/current/ref/exec.html
 
-\subsection{assert\_stmt}
+\rulesection{assert\_stmt}
 \label{assertzzzstmtb}
 \begin{tabular}{lcl}
 {\bf \verb+<+assert\_stmt\verb+>+} & ::=  & assert {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
@@ -319,7 +321,7 @@ if __debug__:
    if not expression1: raise AssertionError, expression2
 \end{verbatim}
 
-\subsection{compound\_stmt}
+\rulesection{compound\_stmt}
 \label{compoundzzzstmtb}
 \newlength{\tw}
 \settowidth{\tw}{compound\_stmt  ::=  }
@@ -338,7 +340,7 @@ if __debug__:
 
 Compound statements can span multiple lines, so they may introduce a new indentation level.
 
-\subsection{if\_stmt}
+\rulesection{if\_stmt}
 \label{ifzzzstmtb}
 \newlength{\tw}
 \settowidth{\tw}{if\_stmt  ::=  }
@@ -351,7 +353,7 @@ Compound statements can span multiple lines, so they may introduce a new indenta
  & \verb+|+  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  {\bf \verb+<+elif\_list~\ref{elifzzzlistb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{elif\_list}
+\rulesection{elif\_list}
 \label{elifzzzlistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+elif\_list\verb+>+} & ::=  & $\varepsilon$ \\
@@ -359,7 +361,7 @@ Compound statements can span multiple lines, so they may introduce a new indenta
 \end{tabular}
 
 %the suite subsection was moved
-\subsection{suite}
+\rulesection{suite}
 \label{suiteb}
 \begin{tabular}{lcl}
 {\bf \verb+<+suite\verb+>+} & ::=  & {\bf \verb+<+simple\_stmt~\ref{simplezzzstmtb}\verb+>+}  \\
@@ -368,14 +370,14 @@ Compound statements can span multiple lines, so they may introduce a new indenta
 
 The INDENT token indicates a new indentation level.  Similarly, the DEDENT token indicates a return to the previous indentation level.
 
-\subsection{stmt\_list\_plus}
+\rulesection{stmt\_list\_plus}
 \label{stmtzzzlistzzzplusb}
 \begin{tabular}{lcl}
 {\bf \verb+<+stmt\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+stmt\_list\_plus~\ref{stmtzzzlistzzzplusb}\verb+>+}  {\bf \verb+<+stmt~\ref{stmtb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{while\_stmt}
+\rulesection{while\_stmt}
 \label{whilezzzstmtb}
 \newlength{\tw}
 \settowidth{\tw}{while\_stmt  ::=  }
@@ -388,7 +390,7 @@ The INDENT token indicates a new indentation level.  Similarly, the DEDENT token
  & \verb+|+  & while {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{for\_stmt}
+\rulesection{for\_stmt}
 \label{forzzzstmtb}
 \newlength{\tw}
 \settowidth{\tw}{for\_stmt  ::=  }
@@ -401,7 +403,7 @@ The INDENT token indicates a new indentation level.  Similarly, the DEDENT token
  & \verb+|+  & for {\bf \verb+<+target\_tuple\_or\_expr~\ref{targetzzztuplezzzorzzzexprb}\verb+>+}  in {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  else \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{try\_stmt}
+\rulesection{try\_stmt}
 \label{tryzzzstmtb}
 \newlength{\tw}
 \settowidth{\tw}{try\_stmt  ::=  }
@@ -415,7 +417,7 @@ The INDENT token indicates a new indentation level.  Similarly, the DEDENT token
  & \verb+|+  & try \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  finally \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{except\_clause\_list\_plus}
+\rulesection{except\_clause\_list\_plus}
 \label{exceptzzzclausezzzlistzzzplusb}
 \newlength{\tw}
 \settowidth{\tw}{except\_clause\_list\_plus  ::=  }
@@ -428,7 +430,7 @@ The INDENT token indicates a new indentation level.  Similarly, the DEDENT token
  & \verb+|+  & {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  {\bf \verb{<}\mbox{except\_clause~\ref{exceptzzzclauseb}}\verb|>|}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{except\_clause}
+\rulesection{except\_clause}
 \label{exceptzzzclauseb}
 \begin{tabular}{lcl}
 {\bf \verb+<+except\_clause\verb+>+} & ::=  & except \\
@@ -436,7 +438,7 @@ The INDENT token indicates a new indentation level.  Similarly, the DEDENT token
  & \verb+|+  & except {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{funcdef}
+\rulesection{funcdef}
 \label{funcdefb}
 \urlh{http://www.python.org/doc/current/ref/function.html}{Function Definition\\ (\path{\1})} \\
 
@@ -444,14 +446,14 @@ The INDENT token indicates a new indentation level.  Similarly, the DEDENT token
 {\bf \verb+<+funcdef\verb+>+} & ::=  & def {\bf \verb+<+ident~\ref{identb}\verb+>+}  {\bf \verb+<+parameters~\ref{parametersb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{parameters}
+\rulesection{parameters}
 \label{parametersb}
 \begin{tabular}{lcl}
 {\bf \verb+<+parameters\verb+>+} & ::=  & \verb|(| \verb|)| \\
  & \verb+|+  & \verb|(| {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \verb|)| \\
 \end{tabular}
 
-\subsection{varargslist}
+\rulesection{varargslist}
 \label{varargslistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+varargslist\verb+>+} & ::=  & \verb|**| {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
@@ -474,7 +476,7 @@ If a parameter has a default value, all following parameters must also have a
 default value -- this is a syntactic restriction that is not expressed by the grammar, but is checked by the parser.   
 
 
-\subsection{fpdef}
+\rulesection{fpdef}
 \label{fpdefb}
 \begin{tabular}{lcl}
 {\bf \verb+<+fpdef\verb+>+} & ::=  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \\
@@ -491,7 +493,7 @@ f(1,(2,3))
 when f is called, \verb|x| is bound to \verb|1|, \verb|y| is bound to \verb|2|, and
 \verb|z| is bound to \verb|3|. \\
 
-\subsection{fplist}
+\rulesection{fplist}
 \label{fplistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+fplist\verb+>+} & ::=  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \\
@@ -499,7 +501,7 @@ when f is called, \verb|x| is bound to \verb|1|, \verb|y| is bound to \verb|2|, 
  & \verb+|+  & {\bf \verb+<+fpdef~\ref{fpdefb}\verb+>+}  \verb|,| {\bf \verb+<+fplist~\ref{fplistb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{classdef}
+\rulesection{classdef}
 \label{classdefb}
 \begin{tabular}{lcl}
 {\bf \verb+<+classdef\verb+>+} & ::=  & class {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
@@ -517,14 +519,14 @@ are ``new-style'' classes.
 \section{Expressions}
 Expressions produce a value that can be used on the right hand side of a variable assignment or a conditional boolean check (\verb|if|, \verb|while|).
 
-\subsection{tuple\_or\_test}
+\rulesection{tuple\_or\_test}
 \label{tuplezzzorzzztestb}
 \begin{tabular}{lcl}
 {\bf \verb+<+tuple\_or\_test\verb+>+} & ::=  & {\bf \verb+<+tuple~\ref{tupleb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{tuple}
+\rulesection{tuple}
 \label{tupleb}
 \begin{tabular}{lcl}
 {\bf \verb+<+tuple\verb+>+} & ::=  & {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
@@ -532,7 +534,7 @@ Expressions produce a value that can be used on the right hand side of a variabl
 
 A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the name ``tuple'' is more descriptive sometimes.
 
-\subsection{test}
+\rulesection{test}
 \label{testb}
 \urlh{http://www.python.org/doc/current/ref/Booleans.html}{Python Ref: Booleans\\ (\path{\1})}
 
@@ -541,7 +543,7 @@ A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the na
  & \verb+|+  & {\bf \verb+<+lambdef~\ref{lambdefb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{test\_list}
+\rulesection{test\_list}
 \label{testzzzlistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+test\_list\verb+>+} & ::=  & $\varepsilon$ \\
@@ -551,7 +553,7 @@ A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the na
 
 The usage of {\bf test\_{}list} depends on its context, so it never clashes with {\bf testlist~\ref{testlistb}} or {\bf testlist\_{}safe~\ref{testlistzzzsafeb}}.  A {\bf test\_{}list} is either the empty string, a {\bf test~\ref{testb}}, or a comma-separated list of tests, which may or may not end with a comma.
 
-\subsection{testlist}
+\rulesection{testlist}
 \label{testlistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+testlist\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| \\
@@ -561,42 +563,42 @@ The usage of {\bf test\_{}list} depends on its context, so it never clashes with
 
 See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never empty.
 
-\subsection{lambdef}
+\rulesection{lambdef}
 \label{lambdefb}
 \begin{tabular}{lcl}
 {\bf \verb+<+lambdef\verb+>+} & ::=  & lambda {\bf \verb+<+varargslist~\ref{varargslistb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
  & \verb+|+  & lambda \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{or\_test}
+\rulesection{or\_test}
 \label{orzzztestb}
 \begin{tabular}{lcl}
 {\bf \verb+<+or\_test\verb+>+} & ::=  & {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+or\_test~\ref{orzzztestb}\verb+>+}  or {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{and\_test}
+\rulesection{and\_test}
 \label{andzzztestb}
 \begin{tabular}{lcl}
 {\bf \verb+<+and\_test\verb+>+} & ::=  & {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+and\_test~\ref{andzzztestb}\verb+>+}  and {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{not\_test}
+\rulesection{not\_test}
 \label{notzzztestb}
 \begin{tabular}{lcl}
 {\bf \verb+<+not\_test\verb+>+} & ::=  & not {\bf \verb+<+not\_test~\ref{notzzztestb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+comparison~\ref{comparisonb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{comparison}
+\rulesection{comparison}
 \label{comparisonb}
 \begin{tabular}{lcl}
 {\bf \verb+<+comparison\verb+>+} & ::=  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+comparison~\ref{comparisonb}\verb+>+}  {\bf \verb+<+comp\_op~\ref{compzzzopb}\verb+>+}  {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{comp\_op}
+\rulesection{comp\_op}
 \label{compzzzopb}
 \begin{tabular}{lcl}
 {\bf \verb+<+comp\_op\verb+>+} & ::=  & \verb|<| \\
@@ -612,28 +614,28 @@ See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never e
  & \verb+|+  & is not \\
 \end{tabular}
 
-\subsection{expr}
+\rulesection{expr}
 \label{exprb}
 \begin{tabular}{lcl}
 {\bf \verb+<+expr\verb+>+} & ::=  & {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb+|+ {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{xor\_expr}
+\rulesection{xor\_expr}
 \label{xorzzzexprb}
 \begin{tabular}{lcl}
 {\bf \verb+<+xor\_expr\verb+>+} & ::=  & {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+xor\_expr~\ref{xorzzzexprb}\verb+>+}  \verb|^| {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{and\_expr}
+\rulesection{and\_expr}
 \label{andzzzexprb}
 \begin{tabular}{lcl}
 {\bf \verb+<+and\_expr\verb+>+} & ::=  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+and\_expr~\ref{andzzzexprb}\verb+>+}  \verb|&| {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{shift\_expr}
+\rulesection{shift\_expr}
 \label{shiftzzzexprb}
 \begin{tabular}{lcl}
 {\bf \verb+<+shift\_expr\verb+>+} & ::=  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
@@ -641,7 +643,7 @@ See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never e
  & \verb+|+  & {\bf \verb+<+shift\_expr~\ref{shiftzzzexprb}\verb+>+}  \verb|>>| {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{arith\_expr}
+\rulesection{arith\_expr}
 \label{arithzzzexprb}
 \begin{tabular}{lcl}
 {\bf \verb+<+arith\_expr\verb+>+} & ::=  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
@@ -649,7 +651,7 @@ See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never e
  & \verb+|+  & {\bf \verb+<+arith\_expr~\ref{arithzzzexprb}\verb+>+}  \verb|-| {\bf \verb+<+term~\ref{termb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{term}
+\rulesection{term}
 \label{termb}
 \begin{tabular}{lcl}
 {\bf \verb+<+term\verb+>+} & ::=  & {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
@@ -659,7 +661,7 @@ See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never e
  & \verb+|+  & {\bf \verb+<+term~\ref{termb}\verb+>+}  \verb|//| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{factor}
+\rulesection{factor}
 \label{factorb}
 \begin{tabular}{lcl}
 {\bf \verb+<+factor\verb+>+} & ::=  & \verb|+| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
@@ -668,23 +670,23 @@ See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never e
  & \verb+|+  & {\bf \verb+<+power~\ref{powerb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{power}
+\rulesection{power}
 \label{powerb}
 \begin{tabular}{lcl}
 {\bf \verb+<+power\verb+>+} & ::=  & {\bf \verb+<+atom~\ref{atomb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+atom~\ref{atomb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \verb|**| {\bf \verb+<+factor~\ref{factorb}\verb+>+}  \\
 \end{tabular} \\
 
-A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
+A trailer list is an index operation (e.g., the \verb|[7]| in \verb|x[7]|), a function argument list, or a class attribute reference.
 
-\subsection{trailer\_list}
+\rulesection{trailer\_list}
 \label{trailerzzzlistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+trailer\_list\verb+>+} & ::=  & $\varepsilon$ \\
  & \verb+|+  & {\bf \verb+<+trailer~\ref{trailerb}\verb+>+}  {\bf \verb+<+trailer\_list~\ref{trailerzzzlistb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{trailer}
+\rulesection{trailer}
 \label{trailerb}
 \begin{tabular}{lcl}
 {\bf \verb+<+trailer\verb+>+} & ::=  & ( ) \\
@@ -695,7 +697,7 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
 \end{tabular}
 
 %arglist has been moved
-\subsection{arglist}
+\rulesection{arglist}
 \label{arglistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+arglist\verb+>+} & ::=  & \verb|**| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
@@ -706,7 +708,14 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
  & \verb+|+  & {\bf \verb+<+argument~\ref{argumentb}\verb+>+}  \verb|,| {\bf \verb+<+arglist~\ref{arglistb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{atom}
+\rulesection{argument}
+\label{argumentb}
+\begin{tabular}{lcl}
+{\bf \verb+<+argument\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+ & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
+\end{tabular}
+
+\rulesection{atom}
 \label{atomb}
 \begin{tabular}{lcl}
 {\bf \verb+<+atom\verb+>+} & ::=  & ( {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  ) \\
@@ -728,14 +737,14 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
 \item \verb|`|\ldots\verb|`| is a shortcut for \verb|repr(|\ldots\verb|)|
 \end{itemize}
 
-\subsection{string\_list\_plus}
+\rulesection{string\_list\_plus}
 \label{stringzzzlistzzzplusb}
 \begin{tabular}{lcl}
 {\bf \verb+<+string\_list\_plus\verb+>+} & ::=  & STRING \\
  & \verb+|+  & STRING {\bf \verb+<+string\_list\_plus~\ref{stringzzzlistzzzplusb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{listmaker}
+\rulesection{listmaker}
 \label{listmakerb}
 \begin{tabular}{lcl}
 {\bf \verb+<+listmaker\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+list\_for~\ref{listzzzforb}\verb+>+}  \\
@@ -743,14 +752,14 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
  & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{list\_iter}
+\rulesection{list\_iter}
 \label{listzzziterb}
 \begin{tabular}{lcl}
 {\bf \verb+<+list\_iter\verb+>+} & ::=  & {\bf \verb+<+list\_for~\ref{listzzzforb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+list\_if~\ref{listzzzifb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{list\_for}
+\rulesection{list\_for}
 \label{listzzzforb}
 \newlength{\tw}
 \settowidth{\tw}{list\_for  ::=  }
@@ -765,14 +774,14 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
 
 \urlh{http://www.python.org/doc/current/ref/lists.html}{List Comprehensions\\ (\path{\1})}
 
-\subsection{list\_if}
+\rulesection{list\_if}
 \label{listzzzifb}
 \begin{tabular}{lcl}
 {\bf \verb+<+list\_if\verb+>+} & ::=  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
  & \verb+|+  & if {\bf \verb+<+test~\ref{testb}\verb+>+}  {\bf \verb+<+list\_iter~\ref{listzzziterb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{subscriptlist}
+\rulesection{subscriptlist}
 \label{subscriptlistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+subscriptlist\verb+>+} & ::=  & {\bf \verb+<+subscript~\ref{subscriptb}\verb+>+}  \verb|,| \\
@@ -781,7 +790,7 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
 \end{tabular}
 
 %the last production had to be changed from \verb|.| \verb|.| \verb|.| to \verb|...|
-\subsection{subscript}
+\rulesection{subscript}
 \label{subscriptb}
 \begin{tabular}{lcl}
 {\bf \verb+<+subscript\verb+>+} & ::=  & \verb|:| \\
@@ -796,7 +805,7 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
  & \verb+|+  & \verb|...| \\
 \end{tabular}
 
-\subsection{sliceop}
+\rulesection{sliceop}
 \label{sliceopb}
 \begin{tabular}{lcl}
 {\bf \verb+<+sliceop\verb+>+} & ::=  & \verb|:| \\
@@ -805,7 +814,7 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
 
 A {\bf sliceop} occurs inside of a {\bf subscript~\ref{subscriptb}}.
 
-\subsection{exprlist}
+\rulesection{exprlist}
 \label{exprlistb}
 \begin{tabular}{lcl}
 {\bf \verb+<+exprlist\verb+>+} & ::=  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| \\
@@ -813,20 +822,20 @@ A {\bf sliceop} occurs inside of a {\bf subscript~\ref{subscriptb}}.
  & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \verb|,| {\bf \verb+<+exprlist~\ref{exprlistb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{target\_tuple\_or\_expr}
+\rulesection{target\_tuple\_or\_expr}
 \label{targetzzztuplezzzorzzzexprb}
 \begin{tabular}{lcl}
 {\bf \verb+<+target\_tuple\_or\_expr\verb+>+} & ::=  & {\bf \verb+<+target\_tuple~\ref{targetzzztupleb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+expr~\ref{exprb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{target\_tuple}
+\rulesection{target\_tuple}
 \label{targetzzztupleb}
 \begin{tabular}{lcl}
 {\bf \verb+<+target\_tuple\verb+>+} & ::=  & {\bf \verb+<+exprlist~\ref{exprlistb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{testlist\_safe}
+\rulesection{testlist\_safe}
 \label{testlistzzzsafeb}
 \begin{tabular}{lcl}
 {\bf \verb+<+testlist\_safe\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
@@ -835,7 +844,7 @@ A {\bf sliceop} occurs inside of a {\bf subscript~\ref{subscriptb}}.
 
 Used in list comprehensions (\ref{listzzzforb}).  A safe \verb|testlist| cannot end with a comma.
 
-\subsection{dictmaker}
+\rulesection{dictmaker}
 \label{dictmakerb}
 \begin{tabular}{lcl}
 {\bf \verb+<+dictmaker\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
@@ -843,14 +852,7 @@ Used in list comprehensions (\ref{listzzzforb}).  A safe \verb|testlist| cannot 
  & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+dictmaker~\ref{dictmakerb}\verb+>+}  \\
 \end{tabular}
 
-\subsection{argument}
-\label{argumentb}
-\begin{tabular}{lcl}
-{\bf \verb+<+argument\verb+>+} & ::=  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+ident~\ref{identb}\verb+>+}  \verb|=| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
-\end{tabular}
-
-\subsection{ident}
+\rulesection{ident}
 \label{identb}
 \begin{tabular}{lcl}
 {\bf \verb+<+ident\verb+>+} & ::=  & NAME \\
@@ -862,7 +864,7 @@ The NAME token is a valid Python identifier.  A valid Python identifier is an al
 
 \section{Behavior}
 
-\subsection{Default Parameters}
+\rulesection{Default Parameters}
 Default parameter values are evaluated when the function definition is executed. 
 This means that the expression is evaluated once, when the function is defined, 
 and that that same ``pre-computed'' value is used for each call. This is especially 

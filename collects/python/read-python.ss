@@ -1,14 +1,14 @@
 (module read-python mzscheme
   (require "parser.ss"
-           "compiler.ss"
+          ; "compiler.ss"
            "compiler-stmt.ss" ; for module-scope%
            ;"base.ss"
           ; (lib "mred.ss" "mred") ; for the text% in the contracts...
-           (lib "contracts.ss")
+         ;  (lib "contracts.ss")
            (lib "class.ss"))
   
-  (provide/contract (read-python (string? . -> . (listof (is-a?/c ast-node%)))))
-  (provide read-python-port)
+;  (provide/contract (read-python (string? . -> . (listof (is-a?/c ast-node%)))))
+  (provide read-python read-python-port)
               ;      (read-python-port (input-port? (union (is-a?/c text%) string?) . -> . (listof (is-a?/c ast-node%)))))
   
   (define (read-python path)

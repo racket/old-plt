@@ -10,7 +10,15 @@
   (define stx-orig-prop
     (read-syntax #f (open-input-string "orig")))
   
-  (define compiler-context #'here)
+ 
+  ;(define compiler-context #'here)
+  ;(define compiler-context #f)
+  (require "runtime-support.ss")
+  
+  (define runtime-context runtime-support-context)
+
+  
+  (define program-context #f)
   
   (define new-context null)
   (define (set-context! ctx)
@@ -40,7 +48,7 @@
       ;; to make the syntax object look like it appeared in the
       ;; source text.  This way check syntax will highlight it.
       (define/public (->orig-so datum)
-        (datum->syntax-object compiler-context datum src-loc stx-orig-prop))
+        (datum->syntax-object runtime-context datum src-loc stx-orig-prop))
       
       ;; ->lex-so: datum context -> syntax-object
       ;; same as ->orig-so, but with lexical information

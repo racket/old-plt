@@ -19,6 +19,7 @@
   (define scheme-procedure-key (gensym 'procedure-key))
   (define scheme-hash-table-key (gensym 'hash-table-key))
   (define scheme-port-key (gensym 'port-key))
+  (define scheme-namespace-key (gensym 'namespace-key))
 
   ;; more hidden keys
   (define python-function-pos-ids-key (gensym 'pos))
@@ -26,6 +27,7 @@
   (define python-function-seq-id-key (gensym 'seq))
   (define python-function-dict-id-key (gensym 'dict))
   
+
   
   (define (python-set-member! obj name value)
     ;; special case: __class__ is actually the type

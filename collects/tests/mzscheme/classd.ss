@@ -5,20 +5,24 @@
 
 (SECTION 'class/d)
 
-(require-library "classd.ss")
+(import (lib "class.ss"))
+(import (lib "classd.ss"))
 
-(syntax-test '(class/d object% ((public x)) (define (x) 1)))
-(syntax-test '(class/d object% () ((public x))))
+(syntax-test #'(class/d object% ((public x)) (define (x) 1)))
+(syntax-test #'(class/d object% () ((public x))))
 ;; Should this be an error?
 ; (syntax-test '(class/d object% () ((public x x)) (define x 10)))
 
-(define-macro class/d-test-macro
-  (lambda (res test-name exp)
-    (let ([sym (gensym (format "~a:" test-name))])
-      `(test
-        ,res
-        (let ([,sym (lambda () ,exp)])
-          ,sym)))))
+(define-syntax class/d-test-macro
+  (lambda (stx)
+    (syntax-case stx ()
+      [(_ res test-name exp)
+       (with-syntax ([sym (datum->syntax (gensym (format "~a:" (syntax-e (syntax test-name)))) #f #f)])
+	 (syntax
+	  (test
+	   res
+	   (let ([sym (lambda () exp)])
+	     sym))))])))
 
 (class/d-test-macro
  1
@@ -235,3 +239,5 @@
                       (define x (y-b x1))
                       (super-init)))
        x))
+
+(report-errs)

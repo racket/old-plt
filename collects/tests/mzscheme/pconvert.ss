@@ -4,7 +4,9 @@
 
 (SECTION 'pconvert)
 
-(require-library "pconver.ss")
+(import (lib "unit.ss"))
+(import (lib "class.ss"))
+(import (lib "pconvert.ss"))
 
 (constructor-style-printing #t)
 (quasi-read-style-printing #f)

@@ -2,7 +2,7 @@
 ;; Uses (unix) `gzip' program from your path.
 ;; Run this in a directory with lots of files to use as tests
 
-(require-library "deflate.ss")
+(import (lib "deflate.ss"))
 
 (define (check-file/fastest p in)
   (let ([s1 (make-string 5000)]

@@ -4,7 +4,7 @@
 (if (not (defined? 'SECTION))
     (load-relative "testing.ss"))
 
-(require-library "pretty.ss")
+(import (lib "pretty.ss"))
 
 (define (pp-string v)
   (let ([p (open-output-string)])

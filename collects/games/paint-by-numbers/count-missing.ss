@@ -14,6 +14,12 @@ string=? ; exec mzscheme -qr $0
     (define total 0)
     (define total-missing 0)
 
+    (define (filter p l)
+      (cond
+       [(null? l) null]
+       [(p (car l)) (cons (car l) (filter p (cdr l)))]
+       [else (filter p (cdr l))]))
+
     (define (check-set problems set-name)
       (let ([missing (filter (lambda (x) x)
 			     (map (lambda (problem) (if (problem-solution problem) #f (problem-name problem)))

@@ -19,13 +19,15 @@
 
      ;; origin struct:
      origin-who  ; 'source or 'macro
-     origin-how  ; #f or syntax object
+     origin-how  ; #f or tree of syntax objects,
+                 ;  as repotred by the 'origin
+                 ;  property of the syntax object.
      
      ;; location struct:
      location-line    ; = syntax line
      location-column  ; = syntax col
      location-file    ; = syntax src
-     ;; Note: there is no location-offset
+     ;; Note: there is no location-offset, yet
 
      ;; EOF
      eof?
@@ -33,9 +35,9 @@
      ;; zodiac struct:
      ;;  zodiac (stx) ; used to be (origin start finish)
      (struct zodiac (stx))
-     zodiac-origin
-     zodiac-start
-     zodiac-finish    ; = start
+     zodiac-origin    ; = identity
+     zodiac-start     ; = identity
+     zodiac-finish    ; = zodiac-start
 
      ;; reader structs:
      ;;  zodiac (stx)

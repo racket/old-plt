@@ -42,7 +42,8 @@
   (provide (rename info-module-begin #%module-begin)
 	  #%app #%datum #%unbound
 	  define quote
-	  list cons car cdr quasiquote unquote unquote-splicing))
+	  list cons car cdr quasiquote unquote unquote-splicing
+	  build-path collection-path))
 
 
 	

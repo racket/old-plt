@@ -21,7 +21,7 @@
 
   (require (lib "list.ss"))
   (require (lib "compile.ss")) ; gets compile-file
-  (require (lib "get-info.ss" "setup"))
+  (require (lib "getinfo.ss" "setup"))
 
   (provide compiler@)
 

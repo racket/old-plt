@@ -393,6 +393,17 @@ void start_clock()
   set_system_clock(clock);
 }
 
+oskit_error_t fs_gettime(struct oskit_timespec *tsp)
+{
+  struct timeval now;
+  gettimeofday(&now, NULL);
+
+  tsp->tv_sec = now.tv_sec;
+  tsp->tv_nsec = now.tv_usec * 1000;
+
+  return 0;
+}
+
 int gethostname(char *s, int len)
 {
   strncpy(s, "mzscheme-machine", len);

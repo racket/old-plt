@@ -71,10 +71,15 @@
   scheme_extension_table->scheme_make_type = scheme_make_type;
   scheme_extension_table->scheme_get_type_name = scheme_get_type_name;
   scheme_extension_table->scheme_eof = scheme_eof;
+  scheme_extension_table->scheme_make_eof = scheme_make_eof;
   scheme_extension_table->scheme_null = scheme_null;
+  scheme_extension_table->scheme_make_null = scheme_make_null;
   scheme_extension_table->scheme_true = scheme_true;
+  scheme_extension_table->scheme_make_true = scheme_make_true;
   scheme_extension_table->scheme_false = scheme_false;
+  scheme_extension_table->scheme_make_false = scheme_make_false;
   scheme_extension_table->scheme_void = scheme_void;
+  scheme_extension_table->scheme_make_void = scheme_make_void;
   scheme_extension_table->scheme_undefined = scheme_undefined;
   scheme_extension_table->scheme_tail_call_waiting = scheme_tail_call_waiting;
   scheme_extension_table->scheme_multiple_values = scheme_multiple_values;

@@ -325,6 +325,8 @@ typedef struct Scheme_Vector {
 
 #define SCHEME_SYMBOLP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_symbol_type)
 
+#define SCHEME_STRSYMP(obj) (SCHEME_STRINGP(obj) || SCHEME_SYMBOLP(obj))
+
 #define SCHEME_BOOLP(obj)    (SAME_OBJ(obj, scheme_true) || SAME_OBJ(obj, scheme_false))
 #define SCHEME_FALSEP(obj)     SAME_OBJ((obj), scheme_false)
 #define SCHEME_TRUEP(obj)     (!SCHEME_FALSEP(obj))
@@ -376,6 +378,21 @@ typedef struct Scheme_Vector {
 #define SCHEME_MUTABLEP(obj) (!((obj)->keyex & 0x1))
 #define SCHEME_IMMUTABLEP(obj) ((obj)->keyex & 0x1)
 
+#define GUARANTEE_TYPE(fname, argnum, typepred, typenam)                                \
+   (typepred (argv [argnum])                                                            \
+        ? argv [argnum]                                                                 \
+        : (scheme_wrong_type (fname, typenam, argnum, argc, argv), argv [argnum]))
+
+#define GUARANTEE_BOOL(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_BOOLP, "boolean")
+#define GUARANTEE_CHAR(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_CHARP, "character")
+#define GUARANTEE_INTEGER(fname, argnum)   GUARANTEE_TYPE (fname, argnum, SCHEME_INTP, "integer")
+#define GUARANTEE_PAIR(fname, argnum)      GUARANTEE_TYPE (fname, argnum, SCHEME_PAIRP, "pair")
+#define GUARANTEE_PROCEDURE(fname, argnum) GUARANTEE_TYPE (fname, argnum, SCHEME_PROCP, "procedure")
+#define GUARANTEE_STRING(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRINGP, "string")
+#define GUARANTEE_STRSYM(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRINGP, "string or symbol")
+#define GUARANTEE_SYMBOL(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_SYMBOLP, "symbol")
+
+
 /*========================================================================*/
 /*                        basic Scheme accessors                          */
 /*========================================================================*/
@@ -399,6 +416,9 @@ typedef struct Scheme_Vector {
 #define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
 
 #define SCHEME_SYMSTR_OFFSET(obj) ((unsigned long)SCHEME_SYM_VAL(obj)-(unsigned long)(obj))
+
+/* return a `char *' pointing to the string or the symbol name */
+#define SCHEME_STRSYM_VAL(obj) (SCHEME_SYMBOLP(obj) ? SCHEME_SYM_VAL(obj) : SCHEME_STR_VAL(obj))
 
 #define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
 

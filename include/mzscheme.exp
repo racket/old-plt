@@ -63,10 +63,15 @@ scheme_dynamic_wind
 scheme_make_type
 scheme_get_type_name
 scheme_eof
+scheme_make_eof
 scheme_null
+scheme_make_null
 scheme_true
+scheme_make_true
 scheme_false
+scheme_make_false
 scheme_void
+scheme_make_void
 scheme_undefined
 scheme_tail_call_waiting
 scheme_multiple_values

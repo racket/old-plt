@@ -107,7 +107,7 @@ void (*scheme_pop_kill_action)();
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/
-void (*scheme_signal_error)(char *msg, ...);
+void (*scheme_signal_error)(const char *msg, ...);
 void (*scheme_raise_exn)(int exnid, ...);
 void (*scheme_warning)(char *msg, ...);
 void (*scheme_raise)(Scheme_Object *exn);
@@ -141,10 +141,15 @@ char *(*scheme_get_type_name)(Scheme_Type type);
 /*                              constants                                 */
 /*========================================================================*/
 Scheme_Object *scheme_eof;
+Scheme_Object *(*scheme_make_eof)(void);
 Scheme_Object *scheme_null;
+Scheme_Object *(*scheme_make_null)(void);
 Scheme_Object *scheme_true;
+Scheme_Object *(*scheme_make_true)(void);
 Scheme_Object *scheme_false;
+Scheme_Object *(*scheme_make_false)(void);
 Scheme_Object *scheme_void;
+Scheme_Object *(*scheme_make_void)(void);
 Scheme_Object *scheme_undefined;
 Scheme_Object *scheme_tail_call_waiting;
 Scheme_Object *scheme_multiple_values;

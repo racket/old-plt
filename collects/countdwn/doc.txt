@@ -1,10 +1,12 @@
 Are you forgetful? Do you often miss important dates in your life? Are
 your loved ones vengeful? If so, this program is for you!
 
-Countdown keeps track of the minute and second of approaching or past
+_Countdown_ keeps track of the minute and second of approaching or past
 life events. 
 
-To use, first create a .countdownrc in your homedirectory. All of the 
+To use, first create an initialization file. Under unix, it must be called
+_.countdownrc_ and be in your home directory. On MacOS and Windows, it must
+be called _countdownrc.ss_ and be in your PLTHOME directory. All of the 
 expressions in that file will be evaluated in the context of the definition 
 `remember'. It is bound to a procedure that takes as first argument a 
 string naming the event. It's six remaining arguments are all numbers, 
@@ -16,24 +18,17 @@ hour all count from zero, not 1. The day and month, however, count from 1.
 Say, you have trouble remembering Matthew's birthday. Just put this
 line in your .countdownrc and you will never miss it again:
 
-  (remember "Matthew's Birthday November 1st" 59 59 23 1 11)
+>  (remember "Matthew's Birthday November 1st" 59 59 23 1 11)
 
 If you want to remember an event that has starting and ending dates,
 use remember-around:
 
-  (remember-around "Christmas Break 1997" 
-                   (list 0 0 12 20 12 1997)
-                   (list 0 0 12 4 1 1998))
+>  (remember-around "Christmas Break 1997" 
+                    (list 0 0 12 20 12 1997)
+                    (list 0 0 12 4 1 1998))
 
 remember-around's second and third arguments are lists whose entries
 are the same as the last arguments to remember.
-
-After creating that file, run Countdown like this:
-
-  /home/scheme/plt/collects/countdwn/run
-
-(note the missing "o" in countdwn... thank you 8.3)
-It will open a window on your screen and your troubles will be over! 
 
 Countdown will periodically check to see if any changes have been
 made to the .countdownrc file. If so, it will reload it.

@@ -1264,7 +1264,7 @@
 			      (syntax/loc stx
 				(define-syntaxes (id ...)
 				  (values (make-private-name (quote-syntax id) 
-							     (quote-syntax gen-id)) 
+							     ((syntax-local-certifier) (quote-syntax gen-id)))
 					  ...)))])
 		 (syntax/loc stx
 		   (begin

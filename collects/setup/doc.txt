@@ -197,7 +197,7 @@ The raw format is
 
  * "PLT" are the first three characters.
 
- * An like procedure that takes a symbol and a failure thunk and
+ * A procedure that takes a symbol and a failure thunk and
    returns information about archive for recognized symbols. The
    information symbols are:
 
@@ -314,7 +314,7 @@ general functions to help make .plt archives:
   that are not included in the archive, but are set-up when the
   archive is unpacked.
 
-> (pack dest name paths collections [filter encode? file-mode plt-relative? requires conflicts])
+> (pack dest name paths collections [filter encode? file-mode unpack-unit plt-relative? requires conflicts])
 
   Creates the .plt file specified by the pathname `dest', using the
   string `name' as the name reported to Setup PLT as the archive's
@@ -338,6 +338,11 @@ general functions to help make .plt archives:
   The `file-mode' argument must be 'file or 'file-replace, indicating
   the default mode for a file in the archive. The default value is
   'file.
+
+  The `unpack-unit' argument is usually #f. Otherwise, it must be an
+  unsigned unit that performs the work of unpacking; see the above
+  section on .plt internals for more information about the unit. If
+  `unpack-unit' is #f, an appropriate unpacking unit is generated.
 
   If `plt-relative?', the archive's files and directories are to be
   unpacked relative to the plt installation directory.

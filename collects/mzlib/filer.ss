@@ -18,8 +18,8 @@
    (define normalize-path
      (letrec ([resolve-all
 	       (lambda (path wrt)
-		 (let ([orig-path (if (and wrt (relative-path? path))
-				      (build-path wrt path)
+		 (let ([orig-path (if (and wrt (not (complete-path? path)))
+				      (path->complete-path path wrt)
 				      path)])
 		   (let loop ([full-path orig-path])
 		     (let ([resolved (resolve-path full-path)])
@@ -28,7 +28,7 @@
 			   (let ([path (if (relative-path? resolved)
 					   (build-path
 					    (let-values ([(base name dir?) (split-path full-path)])
-							base)
+					      base)
 					    resolved)
 					   resolved)])
 			     (if (string=? path orig-path)
@@ -55,51 +55,51 @@
 	       (lambda (orig-path wrt)
 		 (let normalize ([path (expand-path orig-path)])
 		   (let-values ([(base name dir?) (split-path path)])
+		     (cond
+		      [(eq? name 'up)
+		       (let up ([base (if (eq? base 'relative)
+					  wrt
+					  (resolve-all base wrt))])
+			 (if (directory-exists? base)
+			     (let-values ([(prev name dir?) (split-path base)])
 			       (cond
-				[(eq? name 'up)
-				 (let up ([base (if (eq? base 'relative)
-						    wrt
-						    (resolve-all base wrt))])
-				   (if (directory-exists? base)
-				       (let-values ([(prev name dir?) (split-path base)])
-						   (cond
-						    [(not prev) 
-						     (error 'normalize-path
-							    "root has no parent directory: ~s"
-							    orig-path)]
-						    [else
-						     (let ([prev
-							    (if (eq? prev 'relative)
-								wrt
-								(normalize prev))])
-						       (cond
-							[(eq? name 'same) (up prev)]
-							[(eq? name 'up) (up (up prev))]
-							[else prev]))]))
-				       (error-not-a-dir base)))]
-				[(eq? name 'same)
-				 (cond
-				  [(eq? base 'relative) wrt]
-				  [else (let ([n (normalize base)])
-					  (if (directory-exists? n)
-					      n
-					      (error-not-a-dir n)))])]
+				[(not prev) 
+				 (error 'normalize-path
+					"root has no parent directory: ~s"
+					orig-path)]
 				[else
-				 (cond
-				  [(not base) path]
-				  [else (let* ([base (if (eq? base 'relative)
-							 (normalize wrt)
-							 (normalize base))]
-					       [path (if (directory-exists? base)
-							 (build-path base name)
-							 (error-not-a-dir base))]
-					       [resolved (expand-path (resolve path))])
-					  (cond
-					   [(relative-path? resolved)
-					    (normalize (build-path base resolved))]
-					   [(complete-path? resolved)
-					    resolved]
-					   [else (path->complete-path resolved base)]))])]))))])
+				 (let ([prev
+					(if (eq? prev 'relative)
+					    wrt
+					    (normalize prev))])
+				   (cond
+				    [(eq? name 'same) (up prev)]
+				    [(eq? name 'up) (up (up prev))]
+				    [else prev]))]))
+			     (error-not-a-dir base)))]
+		      [(eq? name 'same)
+		       (cond
+			[(eq? base 'relative) wrt]
+			[else (let ([n (normalize base)])
+				(if (directory-exists? n)
+				    n
+				    (error-not-a-dir n)))])]
+		      [else
+		       (cond
+			[(not base) (path->complete-path path)]
+			[else (let* ([base (if (eq? base 'relative)
+					       (normalize wrt)
+					       (normalize base))]
+				     [path (if (directory-exists? base)
+					       (build-path base name)
+					       (error-not-a-dir base))]
+				     [resolved (expand-path (resolve path))])
+				(cond
+				 [(relative-path? resolved)
+				  (normalize (build-path base resolved))]
+				 [(complete-path? resolved)
+				  resolved]
+				 [else (path->complete-path resolved base)]))])]))))])
        normalize-path))
 
    ; Argument must be in normal form

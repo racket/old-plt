@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.13 1998/11/05 22:18:31 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.14 1998/11/17 21:40:36 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1123,11 +1123,11 @@ char *font_defaults[] = {
   "ScreenSystem__", "MS Sans Serif",
   "ScreenDefault__", "MS Sans Serif",
   "ScreenRoman__", "Times New Roman",
-  "ScreenDecorative__", "Modern",
+  "ScreenDecorative__", "Arial",
   "ScreenModern__", "Courier New",
   "ScreenTeletype__", "${ScreenModern$[weight];$[style]}",
   "ScreenSwiss__", "Arial",
-  "ScreenScript__", "Script",
+  "ScreenScript__", "Arial",
 #endif
   NULL
 };

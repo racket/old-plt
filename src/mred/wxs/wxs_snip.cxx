@@ -7871,23 +7871,15 @@ class wxBufferDataClass *objscheme_unbundle_wxBufferDataClass(Scheme_Object *obj
 
 
 
-
 class os_wxBufferDataClassList : public wxBufferDataClassList {
  public:
 
-  os_wxBufferDataClassList(Scheme_Object * obj);
   ~os_wxBufferDataClassList();
 };
 
 Scheme_Object *os_wxBufferDataClassList_class;
 
-os_wxBufferDataClassList::os_wxBufferDataClassList(Scheme_Object * o)
-: wxBufferDataClassList()
-{
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
-}
+Scheme_Object *os_wxBufferDataClassList_interface;
 
 os_wxBufferDataClassList::~os_wxBufferDataClassList()
 {
@@ -7903,7 +7895,7 @@ static Scheme_Object *os_wxBufferDataClassListNth(Scheme_Object *obj, int n,  Sc
   nnint x0;
 
   
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "nth in editor-data-class-list%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "nth in editor-data-class-list<%>");
 
   
   r = ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->Nth(x0);
@@ -7938,7 +7930,7 @@ static Scheme_Object *os_wxBufferDataClassListAdd(Scheme_Object *obj, int n,  Sc
   class wxBufferDataClass* x0;
 
   
-  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "add in editor-data-class-list%", 0);
+  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "add in editor-data-class-list<%>", 0);
 
   
   ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->Add(x0);
@@ -7957,7 +7949,7 @@ static Scheme_Object *os_wxBufferDataClassListFindPosition(Scheme_Object *obj, i
   class wxBufferDataClass* x0;
 
   
-  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "find-position in editor-data-class-list%", 0);
+  x0 = objscheme_unbundle_wxBufferDataClass(p[0], "find-position in editor-data-class-list<%>", 0);
 
   
   r = ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->FindPosition(x0);
@@ -7976,7 +7968,7 @@ static Scheme_Object *os_wxBufferDataClassListFind(Scheme_Object *obj, int n,  S
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "find in editor-data-class-list%");
+  x0 = (string)objscheme_unbundle_string(p[0], "find in editor-data-class-list<%>");
 
   
   r = ((wxBufferDataClassList *)((Scheme_Class_Object *)obj)->primdata)->Find(x0);
@@ -7986,31 +7978,13 @@ static Scheme_Object *os_wxBufferDataClassListFind(Scheme_Object *obj, int n,  S
   return objscheme_bundle_wxBufferDataClass(r);
 }
 
-#pragma argsused
-static Scheme_Object *os_wxBufferDataClassList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  os_wxBufferDataClassList *realobj;
-
-  
-  if (n != 0) 
-    scheme_wrong_count("initialization in editor-data-class-list%", 0, 0, n, p);
-
-  
-  realobj = new os_wxBufferDataClassList(obj);
-  
-  
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
-}
-
 void objscheme_setup_wxBufferDataClassList(void *env)
 {
 if (os_wxBufferDataClassList_class) {
     objscheme_add_global_class(os_wxBufferDataClassList_class, "editor-data-class-list%", env);
+    objscheme_add_global_interface(os_wxBufferDataClassList_interface, "editor-data-class-list" "<%>", env);
 } else {
-  os_wxBufferDataClassList_class = objscheme_def_prim_class(env, "editor-data-class-list%", "object%", os_wxBufferDataClassList_ConstructScheme, 5);
+  os_wxBufferDataClassList_class = objscheme_def_prim_class(env, "editor-data-class-list%", "object%", NULL, 5);
 
  scheme_add_method_w_arity(os_wxBufferDataClassList_class, "nth", os_wxBufferDataClassListNth, 1, 1);
  scheme_add_method_w_arity(os_wxBufferDataClassList_class, "number", os_wxBufferDataClassListNumber, 0, 0);
@@ -8021,6 +7995,9 @@ if (os_wxBufferDataClassList_class) {
 
   scheme_made_class(os_wxBufferDataClassList_class);
 
+  os_wxBufferDataClassList_interface = scheme_class_to_interface(os_wxBufferDataClassList_class, "editor-data-class-list" "<%>");
+
+  objscheme_add_global_interface(os_wxBufferDataClassList_interface, "editor-data-class-list" "<%>", env);
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxBufferDataClassList, wxTYPE_BUFFER_DATA_CLASS_LIST);
 
 }

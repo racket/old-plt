@@ -94,6 +94,7 @@ typedef void *(*CAPOFunc)(void*);
 #define FIXMSMA os_wxMediaSnipMediaAdmin() : wxMediaSnipMediaAdmin(NULL) {}
 
 @CLASSBASE wxMediaSnipMediaAdmin "editor-snip-editor-admin":"editor-admin"
+@INTERFACE "editor-snip-editor-admin"
 
 @CLASSID wxTYPE_MEDIA_SNIP_MEDIA_ADMIN
 
@@ -144,6 +145,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 @CLASSBASE wxSnipClassList "snip-class-list" : "object"
+@INTERFACE "snip-class-list"
 
 @CLASSID wxTYPE_SNIP_CLASS_LIST
 

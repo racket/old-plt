@@ -1740,6 +1740,8 @@ class os_wxMediaSnipMediaAdmin : public wxMediaSnipMediaAdmin {
 
 Scheme_Object *os_wxMediaSnipMediaAdmin_class;
 
+Scheme_Object *os_wxMediaSnipMediaAdmin_interface;
+
 os_wxMediaSnipMediaAdmin::~os_wxMediaSnipMediaAdmin()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -1766,6 +1768,7 @@ void objscheme_setup_wxMediaSnipMediaAdmin(void *env)
 {
 if (os_wxMediaSnipMediaAdmin_class) {
     objscheme_add_global_class(os_wxMediaSnipMediaAdmin_class, "editor-snip-editor-admin%", env);
+    objscheme_add_global_interface(os_wxMediaSnipMediaAdmin_interface, "editor-snip-editor-admin" "<%>", env);
 } else {
   os_wxMediaSnipMediaAdmin_class = objscheme_def_prim_class(env, "editor-snip-editor-admin%", "editor-admin%", NULL, 1);
 
@@ -1774,6 +1777,9 @@ if (os_wxMediaSnipMediaAdmin_class) {
 
   scheme_made_class(os_wxMediaSnipMediaAdmin_class);
 
+  os_wxMediaSnipMediaAdmin_interface = scheme_class_to_interface(os_wxMediaSnipMediaAdmin_class, "editor-snip-editor-admin" "<%>");
+
+  objscheme_add_global_interface(os_wxMediaSnipMediaAdmin_interface, "editor-snip-editor-admin" "<%>", env);
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxMediaSnipMediaAdmin, wxTYPE_MEDIA_SNIP_MEDIA_ADMIN);
 
 }
@@ -2937,6 +2943,8 @@ class os_wxSnipClassList : public wxSnipClassList {
 
 Scheme_Object *os_wxSnipClassList_class;
 
+Scheme_Object *os_wxSnipClassList_interface;
+
 os_wxSnipClassList::~os_wxSnipClassList()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -2951,7 +2959,7 @@ static Scheme_Object *os_wxSnipClassListReadingVersion(Scheme_Object *obj, int n
   class wxSnipClass* x0;
 
   
-  x0 = objscheme_unbundle_wxSnipClass(p[0], "reading-version in snip-class-list%", 0);
+  x0 = objscheme_unbundle_wxSnipClass(p[0], "reading-version in snip-class-list<%>", 0);
 
   
   r = ((wxSnipClassList *)((Scheme_Class_Object *)obj)->primdata)->ReadingVersion(x0);
@@ -2970,7 +2978,7 @@ static Scheme_Object *os_wxSnipClassListNth(Scheme_Object *obj, int n,  Scheme_O
   nnint x0;
 
   
-  x0 = objscheme_unbundle_nonnegative_integer(p[0], "nth in snip-class-list%");
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "nth in snip-class-list<%>");
 
   
   r = ((wxSnipClassList *)((Scheme_Class_Object *)obj)->primdata)->Nth(x0);
@@ -3005,7 +3013,7 @@ static Scheme_Object *os_wxSnipClassListAdd(Scheme_Object *obj, int n,  Scheme_O
   class wxSnipClass* x0;
 
   
-  x0 = objscheme_unbundle_wxSnipClass(p[0], "add in snip-class-list%", 0);
+  x0 = objscheme_unbundle_wxSnipClass(p[0], "add in snip-class-list<%>", 0);
 
   
   ((wxSnipClassList *)((Scheme_Class_Object *)obj)->primdata)->Add(x0);
@@ -3024,7 +3032,7 @@ static Scheme_Object *os_wxSnipClassListFindPosition(Scheme_Object *obj, int n, 
   class wxSnipClass* x0;
 
   
-  x0 = objscheme_unbundle_wxSnipClass(p[0], "find-position in snip-class-list%", 0);
+  x0 = objscheme_unbundle_wxSnipClass(p[0], "find-position in snip-class-list<%>", 0);
 
   
   r = ((wxSnipClassList *)((Scheme_Class_Object *)obj)->primdata)->FindPosition(x0);
@@ -3043,7 +3051,7 @@ static Scheme_Object *os_wxSnipClassListFind(Scheme_Object *obj, int n,  Scheme_
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "find in snip-class-list%");
+  x0 = (string)objscheme_unbundle_string(p[0], "find in snip-class-list<%>");
 
   
   r = ((wxSnipClassList *)((Scheme_Class_Object *)obj)->primdata)->Find(x0);
@@ -3057,6 +3065,7 @@ void objscheme_setup_wxSnipClassList(void *env)
 {
 if (os_wxSnipClassList_class) {
     objscheme_add_global_class(os_wxSnipClassList_class, "snip-class-list%", env);
+    objscheme_add_global_interface(os_wxSnipClassList_interface, "snip-class-list" "<%>", env);
 } else {
   os_wxSnipClassList_class = objscheme_def_prim_class(env, "snip-class-list%", "object%", NULL, 6);
 
@@ -3070,6 +3079,9 @@ if (os_wxSnipClassList_class) {
 
   scheme_made_class(os_wxSnipClassList_class);
 
+  os_wxSnipClassList_interface = scheme_class_to_interface(os_wxSnipClassList_class, "snip-class-list" "<%>");
+
+  objscheme_add_global_interface(os_wxSnipClassList_interface, "snip-class-list" "<%>", env);
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxSnipClassList, wxTYPE_SNIP_CLASS_LIST);
 
 }

@@ -150,6 +150,7 @@
 
 
 @CLASSBASE wxStyle "style" : "object"
+@INTERFACE "style"
 
 @CLASSID wxTYPE_STYLE
 

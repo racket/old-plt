@@ -17,3 +17,4 @@
 //#define DONT_ADD_BYTE_AT_END      // no padding.
 //#define SMALL_CONFIG              // use a smaller heap.
 #define USE_TEMPORARY_MEMORY      // use Macintosh temporary memory.
+#define OLD_BLOCK_ALLOC

@@ -153,8 +153,7 @@
 @END
 
 @CLASSBASE wxBufferDataClassList "editor-data-class-list" : "object"
-
-@CREATOR ()
+@INTERFACE "editor-data-class-list"
 
 @CLASSID wxTYPE_BUFFER_DATA_CLASS_LIST
 

@@ -1985,6 +1985,8 @@ class os_wxStyle : public wxStyle {
 
 Scheme_Object *os_wxStyle_class;
 
+Scheme_Object *os_wxStyle_interface;
+
 os_wxStyle::~os_wxStyle()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
@@ -1999,8 +2001,8 @@ static Scheme_Object *os_wxStyleSwitchTo(Scheme_Object *obj, int n,  Scheme_Obje
   class wxStyle* x1;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "switch-to in style%", 0);
-  x1 = objscheme_unbundle_wxStyle(p[1], "switch-to in style%", 1);
+  x0 = objscheme_unbundle_wxDC(p[0], "switch-to in style<%>", 0);
+  x1 = objscheme_unbundle_wxStyle(p[1], "switch-to in style<%>", 1);
 
   if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("style%","switch-to"), "bad device context: ", p[0]);
   ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SwitchTo(x0, x1);
@@ -2018,7 +2020,7 @@ static Scheme_Object *os_wxStyleSetShiftStyle(Scheme_Object *obj, int n,  Scheme
   class wxStyle* x0;
 
   
-  x0 = objscheme_unbundle_wxStyle(p[0], "set-shift-style in style%", 0);
+  x0 = objscheme_unbundle_wxStyle(p[0], "set-shift-style in style<%>", 0);
 
   
   ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SetShiftStyle(x0);
@@ -2070,7 +2072,7 @@ static Scheme_Object *os_wxStyleSetDelta(Scheme_Object *obj, int n,  Scheme_Obje
   class wxStyleDelta* x0;
 
   
-  x0 = objscheme_unbundle_wxStyleDelta(p[0], "set-delta in style%", 0);
+  x0 = objscheme_unbundle_wxStyleDelta(p[0], "set-delta in style<%>", 0);
 
   
   ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SetDelta(*x0);
@@ -2088,7 +2090,7 @@ static Scheme_Object *os_wxStyleGetDelta(Scheme_Object *obj, int n,  Scheme_Obje
   class wxStyleDelta* x0;
 
   
-  x0 = objscheme_unbundle_wxStyleDelta(p[0], "get-delta in style%", 0);
+  x0 = objscheme_unbundle_wxStyleDelta(p[0], "get-delta in style<%>", 0);
 
   
   ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetDelta(*x0);
@@ -2106,7 +2108,7 @@ static Scheme_Object *os_wxStyleSetBaseStyle(Scheme_Object *obj, int n,  Scheme_
   class wxStyle* x0;
 
   
-  x0 = objscheme_unbundle_wxStyle(p[0], "set-base-style in style%", 0);
+  x0 = objscheme_unbundle_wxStyle(p[0], "set-base-style in style<%>", 0);
 
   
   ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SetBaseStyle(x0);
@@ -2142,7 +2144,7 @@ static Scheme_Object *os_wxStyleGetTextWidth(Scheme_Object *obj, int n,  Scheme_
   class wxDC* x0;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "get-text-width in style%", 0);
+  x0 = objscheme_unbundle_wxDC(p[0], "get-text-width in style<%>", 0);
 
   
   r = ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetTextWidth(x0);
@@ -2161,7 +2163,7 @@ static Scheme_Object *os_wxStyleGetTextSpace(Scheme_Object *obj, int n,  Scheme_
   class wxDC* x0;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "get-text-space in style%", 0);
+  x0 = objscheme_unbundle_wxDC(p[0], "get-text-space in style<%>", 0);
 
   
   r = ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetTextSpace(x0);
@@ -2180,7 +2182,7 @@ static Scheme_Object *os_wxStyleGetTextDescent(Scheme_Object *obj, int n,  Schem
   class wxDC* x0;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "get-text-descent in style%", 0);
+  x0 = objscheme_unbundle_wxDC(p[0], "get-text-descent in style<%>", 0);
 
   
   r = ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetTextDescent(x0);
@@ -2199,7 +2201,7 @@ static Scheme_Object *os_wxStyleGetTextHeight(Scheme_Object *obj, int n,  Scheme
   class wxDC* x0;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "get-text-height in style%", 0);
+  x0 = objscheme_unbundle_wxDC(p[0], "get-text-height in style<%>", 0);
 
   
   r = ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->GetTextHeight(x0);
@@ -2417,6 +2419,7 @@ void objscheme_setup_wxStyle(void *env)
 {
 if (os_wxStyle_class) {
     objscheme_add_global_class(os_wxStyle_class, "style%", env);
+    objscheme_add_global_interface(os_wxStyle_interface, "style" "<%>", env);
 } else {
   os_wxStyle_class = objscheme_def_prim_class(env, "style%", "object%", NULL, 24);
 
@@ -2448,6 +2451,9 @@ if (os_wxStyle_class) {
 
   scheme_made_class(os_wxStyle_class);
 
+  os_wxStyle_interface = scheme_class_to_interface(os_wxStyle_class, "style" "<%>");
+
+  objscheme_add_global_interface(os_wxStyle_interface, "style" "<%>", env);
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxStyle, wxTYPE_STYLE);
 
 }

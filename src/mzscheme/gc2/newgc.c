@@ -50,6 +50,7 @@
 #define GEN0_GROW_FACTOR 2
 #define GEN0_GROW_ADDITION (1 * 1024 * 1024)
 #define MAX_GEN0_SIZE (64 * 1024 * 1024)
+#define MAX_GEN0_GROW_SHRINK (16 * 1024 * 1024)
 
 #define FULL_COLLECT_EVERY 10
 #define GENERATIONS 2
@@ -469,6 +470,8 @@ inline static void resize_gen0(unsigned long new_size)
   gen0_current_size = 0;
 }
 
+#define difference(x, y) ((x > y) ? (x - y) : (y - x))
+
 inline static void reset_nursery(void)
 {
   unsigned long new_gen0_size;
@@ -476,6 +479,13 @@ inline static void reset_nursery(void)
   new_gen0_size = (GEN0_GROW_FACTOR * memory_in_use) + GEN0_GROW_ADDITION;
   if(new_gen0_size > MAX_GEN0_SIZE)
     new_gen0_size = MAX_GEN0_SIZE;
+
+  if(difference(new_gen0_size, gen0_max_size) > MAX_GEN0_GROW_SHRINK) {
+    if(gen0_max_size > new_gen0_size)
+      new_gen0_size = gen0_max_size - MAX_GEN0_GROW_SHRINK;
+    else
+      new_gen0_size = gen0_max_size + MAX_GEN0_GROW_SHRINK;
+  }
   
   resize_gen0(new_gen0_size);
   flush_freed_pages();

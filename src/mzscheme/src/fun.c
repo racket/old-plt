@@ -2274,6 +2274,8 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
     v = _scheme_apply_multi(argv[0], 1, a);
   }
 
+  p1 = scheme_current_thread;
+
   p1->error_buf = cont->saveerr;
 
   scheme_pop_continuation_frame((Scheme_Cont_Frame_Data *)&cframe);

@@ -3152,7 +3152,8 @@ void scheme_set_can_break(int on)
 			 (on ? scheme_true : scheme_false));
 }
 
-void scheme_check_break_now(void) {
+void scheme_check_break_now(void)
+{
   Scheme_Thread *p = scheme_current_thread;
 
   if (p->external_break && scheme_can_break(p)) {

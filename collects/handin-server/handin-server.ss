@@ -34,6 +34,7 @@
   (define ID-REGEXP (get-config 'id-regexp #rx"^.*$"))
   (define ID-DESC (get-config 'id-desc "anything"))
   (define ALLOW-NEW-USERS? (get-config 'allow-new-users #f))
+  (define MASTER-PASSWD (get-config 'master-password #f))
 
   (define (check-id s)
     (regexp-match ID-REGEXP s))
@@ -177,7 +178,9 @@
 	  (add-new-user username r-safe w)]
 	 [(and user-data
 	       (string? passwd)
-	       (equal? (md5 passwd) (car user-data)))
+	       (let ([pw (md5 passwd)])
+		 (or (equal? pw (car user-data))
+		     (equal? pw MASTER-PASSWD))))
 	  (LOG "login: ~a" username)
 	  (let ([assignment (read r-safe)])
 	    (LOG "assignment for ~a: ~a" username assignment)

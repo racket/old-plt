@@ -202,6 +202,10 @@ sub-directories:
       'allow-new-users : a boolean indicating whether to allow
          new-user requests from a client tool; the default is #f
 
+      'master-password : a string for an MD5 hash for a password that
+         allows login as any user; the default is #f, which disables
+         the password
+
   * users.ss (created if not present if a user is added) --- keeps
     the list of user accounts, along with the associated password
     (actually the MD5 hash of the password), full name, and free-form

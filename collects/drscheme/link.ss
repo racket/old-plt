@@ -26,9 +26,14 @@
 		   ((export* interface) : zodiac:interface^)
 		   (mzlib pretty-print)
 		   (mzlib file))]
-	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
-			     zodiac
-			     ((export* interface) : zodiac:interface^))]
+;	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
+;			     zodiac
+;			     ((export* interface) : zodiac:interface^))]
+        [aries : plt:aries^ ((require-library "debug-link.ss" "stepper")
+                             mzlib
+                             export*
+                             zodiac
+                             mred)]        
 	[app : drscheme:app^ ((require-relative-library "app.ss")
 			      mred
 			      mzlib

@@ -125,7 +125,7 @@
   
   ; annotate takes a list of expressions to annotate, a list of previously-defined variables
   ; (in the form returned by annotate), and a break routine to be called at breakpoints in the
-  ; annotated code and returns an annotated expression, along with a new pair
+  ; annotated code (may also be #f) and returns an annotated expression list, along with a new pair
   ; of environments (to be passed back in etc.)
   
   (define (annotate red-exprs parsed-exprs input-struct-proc-names break)
@@ -145,18 +145,24 @@
            `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,expr))
          
          (define (wcm-pre-break-wrap debug-info expr)
-           (simple-wcm-wrap debug-info `(#%begin (,(make-break 'result-break)) ,expr)))
+           (if break
+               (simple-wcm-wrap debug-info `(#%begin (,(make-break 'result-break)) ,expr))
+               (simple-wcm-wrap debug-info expr)))
          
          (define (break-wrap expr)
-           `(#%begin (,(make-break 'normal)) ,expr))
+           (if break
+               `(#%begin (,(make-break 'normal)) ,expr)
+               expr))
          
          (define (simple-wcm-break-wrap debug-info expr)
            (simple-wcm-wrap debug-info (break-wrap expr)))
          
          (define (return-value-wrap expr)
-            `(#%let* ([result ,expr])
-              (,(make-break 'result-break) result)
-              result))
+           (if break
+               `(#%let* ([result ,expr])
+                 (,(make-break 'result-break) result)
+                 result)
+               expr))
 
 ;  For Multiple Values:         
 ;           `(#%call-with-values
@@ -364,25 +370,11 @@
                                   `(#%quote ,(utils:read->raw (z:quote-form-expr expr)))) 
                         null)]
 	       
+               [(z:begin-form? expr)
+                ]
 	       ; there is no begin, begin0, or let in beginner. but can they be generated? 
 	       ; for instance by macros? Maybe.
-
-	       ; adding begin for xml stuff.  Just as a dummy, mind you.
-               
-               [(z:begin-form? expr) ; let's see if this works.
-                (let ([exps (z:begin-form-bodies expr)])
-                  (values
-                   `(#%begin 
-                      ,@(case (length exps)
-                          ((2) (let-values ([(annotated-struct-decl _) (tail-recur (cadr exps))])
-                                 (list annotated-struct-decl)))
-                          ((3) (let-values ([(annotated-xml-decl _1) (tail-recur (cadr exps))]
-                                            [(annotated-struct-decl _2) (tail-recur (caddr exps))])
-                                 (list annotated-xml-decl annotated-struct-decl)))
-                          [else (e:internal-error 'annotate/inner
-                                                  "I don't recognize this use of (xml) begin")]))
-                   null))]
-                 
+	       
 	       [(z:define-values-form? expr)
 		(let+ ([val vars (z:define-values-form-vars expr)]
 		       [val _ (map utils:check-for-keyword vars)]
@@ -460,13 +452,7 @@
          (define (annotate/top-level expr)
            (let-values ([(annotated dont-care)
                          (annotate/inner expr 'all #f)])
-             (cond [(z:define-values-form? expr)
-                    annotated]
-                   [(z:begin-form? expr) ; cheap hack for xml
-                    annotated]
-                   [else
-                    `(#%define-values ,(list (top-level-exp-gensym-source expr))
-                      ,annotated)]))))
+             annotated)))
          
          ; body of local
          

@@ -1,11 +1,18 @@
-(define-signature xml-reconstruct^
-  (patch-up-sexp))
-
 (define-signature stepper:zodiac-client-procs^
   (never-undefined-getter
    never-undefined-setter
    read-getter
    read-setter))
+
+(define-signature stepper:marks^
+  (mark-source
+   mark-bindings
+   mark-label
+   mark-binding-value
+   mark-binding-varref
+   expose-mark
+   display-mark
+   find-var-binding))
 
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))
@@ -48,7 +55,8 @@
 
 (define-signature stepper:annotate^
   (initial-env-package
-   annotate))
+   annotate
+   debug-key))
 
 (define-signature stepper:reconstruct^
   (expose-mark-list

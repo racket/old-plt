@@ -13,6 +13,11 @@
   (link [utils : cogen-utils^ ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
                                zodiac
                                (error : (internal-error static-error)))] 
+        [marks : stepper:marks^
+               ((require-library-unit/sig "marks.ss" "stepper")
+                zodiac
+                zcp
+                (core function))]
         [annotate : stepper:annotate^
                   ((require-library-unit/sig "annotater.ss" "stepper")
                    zodiac
@@ -29,6 +34,7 @@
                       error
                       utils
                       (drscheme basis)
+                      marks
                       stepper
                       shared)]
         [stepper : stepper:model^

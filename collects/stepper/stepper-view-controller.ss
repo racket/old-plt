@@ -207,7 +207,15 @@
                          (set! clear-highlight-thunks
                                (cons (highlight-range redex-begin redex-end highlight-color #f #f)
                                      clear-highlight-thunks))))))]
-              
+
+              [un-hacked-format-sexp
+               (lambda (exp region color)
+                 (if (confusable-value? region)
+                     (format-sexp exp region color)
+                     (format-sexp (insert-highlighted-value exp region) region color)))]
+                 
+              ; hacked-format-sexp exists to enable xml-style un-mangling of xml steps.
+              ; unfortunately, it's broken for simple symbols (that print as foo rather than 'foo).
               [hacked-format-sexp
                (lambda (exp region color)
                  (if (confusable-value? region)
@@ -227,22 +235,20 @@
                  (erase)
                  (for-each
                   (lambda (expr)
-                    (let-values ([(patched dont-care)
-                                  (xmls:patch-up-sexp expr no-sexp)])
-                      (format-sexp patched no-sexp #f))
+                    (un-hacked-format-sexp expr no-sexp #f)
                     (insert #\newline))
                   finished-exprs)
                  (insert (make-object separator-snip%))
                  (when (not (eq? redex no-sexp))
                    (insert #\newline)
                    (reset-style)
-                   (hacked-format-sexp exp redex redex-highlight-color)
+                   (un-hacked-format-sexp exp redex redex-highlight-color)
                    (insert #\newline)
                    (insert (make-object separator-snip%))
                    (insert #\newline))
                  (cond [(not (eq? reduct no-sexp))
                         (reset-style)
-                        (hacked-format-sexp post-exp reduct result-highlight-color)]
+                        (un-hacked-format-sexp post-exp reduct result-highlight-color)]
                        [error-msg
                         (let ([before-error-msg (last-position)])
                           (reset-style)
@@ -374,8 +380,8 @@
       (send button-panel stretchable-width #f)
       (send button-panel stretchable-height #f)
       (send canvas stretchable-height #t)
-      (send canvas min-width 500)
-      (send canvas min-height 500)
+      (send canvas min-width 400)
+      (send canvas min-height 100)
       (send previous-button enable #f)
       (send home-button enable #f)
       (send next-button enable #f)

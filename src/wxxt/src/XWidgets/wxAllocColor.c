@@ -31,8 +31,37 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
   unsigned long pixel;
   Status status;
 
-  if (cm != DefaultColormapOfScreen(wxAPP_SCREEN)) {
+  /* If we have a weird colormap, essentially give up (no
+     deallocation). */
+  if (cm != DefaultColormapOfScreen(wxAPP_SCREEN))
     return XAllocColor(d, cm, c);
+
+  /* If the screen is TrueColor, do it fast. (Does the default
+     colormap always use the default visual?) */
+  if (DefaultVisualOfScreen(wxAPP_SCREEN)->class == TrueColor) {
+    switch (DefaultDepthOfScreen(wxAPP_SCREEN)) {
+    case 24:
+    case 32:
+      c->pixel = (c->blue >> 8) |
+	(c->green & 0xff00) | 
+	((c->red & 0xff00) << 8);
+      return OK;
+      
+    case 16:
+      c->pixel = ((c->blue & 0xf800) >> 11) |
+	((c->green & 0xfc00) >> 5) |
+	(c->red & 0xf800);
+      return OK;
+      
+    case 15:
+      c->pixel = ((c->blue & 0xf800) >> 10) |
+	((c->green & 0xf800) >> 5) |
+	(c->red & 0xf800);
+      return OK;
+      
+    default:
+      break;
+    }
   }
 
   /* Check for black: */

@@ -82,8 +82,11 @@ to the original stdout of DrScheme.
                  (read-decimal-as-inexact #f)
                  (read-accept-dot (get-read-accept-dot)))))
             (super-on-execute settings run-in-user-thread))
-          
-          (define (set-printing-parameters settings thunk)
+
+	  ;; set-printing-parameters : settings ( -> TST) -> TST
+	  ;; is implicitly exposed to the stepper.  watch out!  --  john
+
+          (define/public (set-printing-parameters settings thunk)
             (parameterize ([pc:booleans-as-true/false #t]
                            [pc:abbreviate-cons-as-list (get-abbreviate-cons-as-list)]
                            [pretty-print-show-inexactness #t]

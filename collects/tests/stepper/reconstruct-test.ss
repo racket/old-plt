@@ -130,9 +130,9 @@
     (map annotate:top-level-rewrite (map expand (string->stx-list stx)))))
 
 (define mz-namespace (current-namespace))
-(define mz-render-settings (get-render-settings))
+(define mz-render-settings fake-mz-render-settings)
 (define (test-mz-sequence source-list result-list)
-  (set-render-settings mz-render-settings)
+  (reconstruct:set-render-settings! mz-render-settings)
   (test-sequence source-list result-list #f mz-namespace))
 
 (define beginner-namespace
@@ -143,7 +143,7 @@
     new-namespace))
 
 (define (test-beginner-sequence source-list result-list completed-list)
-  (set-render-settings fake-beginner-render-settings)
+  (reconstruct:set-render-settings! fake-beginner-render-settings)
   (test-sequence source-list result-list completed-list beginner-namespace))
 
 (test-mz-sequence "(+ 3 4)"
@@ -389,6 +389,6 @@
                     ((...) ())
                     (((... ,highlight-placeholder ...)) (5))
                     ((...) ())
-                    ((`(3 4 5)))))
+                    ((,highlight-placeholder) (`(3 4 5)))))
 
 (report-errs)

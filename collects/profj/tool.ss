@@ -344,8 +344,9 @@
                     (name-to-require #f)
                     (modules null))
                 (lambda ()
-                  (let ((end? (eof-object? (peek-char port))))
-                    (cond
+		  (syntax-as-top
+		   (let ((end? (eof-object? (peek-char port))))
+		     (cond
                       ((and end? (not require?) (null? modules)) eof)
                       ((and end? require?) 
                        (set! require? #f)
@@ -372,7 +373,7 @@
                                                             (get-module-name (expand (car mods))))))
                                  (set! name-to-require name)
                                  (set! modules (cdr mods))
-                                 syn)))))))))))
+                                 syn))))))))))))
           
           (define/public (front-end/interaction input settings)
             (let-values ([(port name)
@@ -393,7 +394,13 @@
               (lambda ()
                 (if (eof-object? (peek-char port))
                     eof
-                    (compile-interactions port name execute-types level)))))
+		    (syntax-as-top
+		     (compile-interactions port name execute-types level))))))
+
+	  (define/private (syntax-as-top s)
+	    (if (syntax? s)
+		(namespace-syntax-introduce s)
+		s))
 
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)

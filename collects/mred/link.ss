@@ -16,7 +16,8 @@
 	    [exit : mred:exit^ (mred:exit@ debug preferences gui-utils)]
 	    [preferences : mred:preferences^
 			 (mred:preferences@ debug exn container exit gui-utils
-					  edit (core function@))]
+					  edit (core pretty-print@)
+					  (core function@))]
 	    [autoload : mred:autoload^
 		      (mred:autoload@ debug preferences (core file@))]
 	    [autosave : mred:autosave^

@@ -5104,7 +5104,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   if (isatty(fileno(stdin))) {
     fprintf(stderr,
 	    "MysterX extension for PLT Scheme, "
-	    "Copyright (c) 1999-2002 PLT (Paul Steckler)\n");
+	    "Copyright (c) 1999-2003 PLT (Paul Steckler)\n");
   }
 
   scheme_add_atexit_closer(mx_exit_closer);

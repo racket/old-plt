@@ -677,7 +677,7 @@
  (large-semicolon-letters "Large Semicolon Letters")
  (text-to-insert "Text to insert")
 
- (module-browser-filename-constant "Full Filename: ")
+ (module-browser-filename-format "Full Filename: ~a (~a lines)")
  (module-browser-font-size-gauge-label "Font Size")
  (module-browser-progress-label "Module overview progress")
  (module-browser-adding-file "Adding file: ~a...")

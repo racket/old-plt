@@ -259,6 +259,7 @@
 	     (format "~a" docs-installed)
 	     (format "~n~a" "Collections:")
 	     (format "~a" collects-installed)
+	     (format "~nComputer Language: ~a" computer-language)
 	     (format "~nHuman Language: ~a" human-language)
 	     ">Fix: "
 	     ">Description:"

@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.61 1999/03/10 04:24:06 robby Exp $
+; $Id: sigs.ss,v 1.62 1999/03/28 21:37:08 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "mzlibs.ss"))
@@ -34,7 +34,7 @@
     add-list-micro add-ilist-micro add-lit-micro add-sym-micro
     get-list-micro get-ilist-micro get-lit-micro get-sym-micro
     make-attributes get-attribute put-attribute
-    extend-env copy-env retract-env
+    extend-env copy-env retract-env print-env
     resolve resolve-in-env
     macro-resolution? micro-resolution?
     (struct top-level-resolution ())
@@ -63,6 +63,7 @@
     set-internal-define-status get-internal-define-status at-internal-define?
     as-nested
     process-top-level-resolution ensure-not-macro/micro
+    check-for-signature-name
     (struct parsed (back))
     (struct varref (var))
     (struct top-level-varref ())          create-top-level-varref

@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.40 1999/02/02 19:33:15 mflatt Exp $
+; $Id: scm-obj.ss,v 1.41 1999/02/25 22:21:29 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -125,6 +125,7 @@
 	  ((lexical-binding? r)
 	    (create-lexical-varref r expr))
 	  ((top-level-resolution? r)
+	   (check-for-signature-name expr attributes)
 	   (process-top-level-resolution expr attributes))
 	  ((public-binding? r)
 	    (create-public-varref r expr))

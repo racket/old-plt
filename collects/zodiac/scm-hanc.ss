@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.58 1999/02/10 17:35:19 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.59 1999/02/17 22:42:35 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -632,6 +632,8 @@
 (add-primitivized-micro-form 'define-signature scheme-vocabulary define-signature-micro)
 
 (define let-signature-micro
+    ;; >> Broken by current embedded define hacks! <<
+    ;; e.g., (let ([a 7]) 5 (let-signature a () a))
     (let* ((kwd '())
 	    (in-pattern '(_ name sig b0 b1 ...))
 	    (m&e (pat:make-match&env in-pattern kwd)))
@@ -641,20 +643,36 @@
 	    =>
 	    (lambda (p-env)
 	      (let ((name (pat:pexpand 'name p-env kwd))
-		     (sig (pat:pexpand 'sig p-env kwd))
-		     (body (pat:pexpand '(begin b0 b1 ...) p-env kwd)))
+		    (sig (pat:pexpand 'sig p-env kwd))
+		    (body (pat:pexpand '(begin b0 b1 ...) p-env kwd)))
 		(valid-syntactic-id? name)
 		(let* ((elements
 			 (signature-elements
 			   (expand-expr sig env attributes sig-vocab)))
-			(old-value (push-signature name attributes elements))
-			(output (expand-expr
-				  (structurize-syntax body expr)
-				  env attributes vocab)))
-		  (pop-signature name attributes old-value)
-		  output))))
+		       (old-value (push-signature name attributes elements)))
+		  (dynamic-wind
+		   void
+		   (lambda ()
+		     ; Yuck - if name is in the environment, we shadow it
+		     ;  by retracting the env:
+		     (let ([new-env
+			    (let loop ([env env])
+			      (if (lexically-resolved? name env)
+				  (let ([env (copy-env env)]
+					[var (let ((name (z:read-object name)) 
+						   (marks (z:symbol-marks name)))
+					       (resolve-in-env name marks env))])
+				    (retract-env (list var) env)
+				    (loop env))
+				  env))])
+		       (let ([r (expand-expr
+				 (structurize-syntax body expr)
+				 new-env attributes vocab)])
+			 r)))
+		   (lambda ()
+		     (pop-signature name attributes old-value)))))))
 	  (else
-	    (static-error expr "Malformed let-signature"))))))
+	   (static-error expr "Malformed let-signature"))))))
 
 (add-primitivized-micro-form 'let-signature full-vocabulary let-signature-micro)
 (add-primitivized-micro-form 'let-signature scheme-vocabulary let-signature-micro)

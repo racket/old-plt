@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.51 1999/02/25 22:21:29 mflatt Exp $
+; $Id: scm-core.ss,v 1.52 1999/03/28 21:37:08 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -172,13 +172,23 @@
 	  (set! mred-vocabulary v)
 	  v)))
 
+  (define (check-for-signature-name expr attributes)
+    (let ([sig-space (get-attribute attributes 'sig-space)])
+      (when sig-space
+	(unless (get-attribute attributes 'delay-sig-name-check?)
+	  (when (hash-table-get sig-space (z:symbol-orig-name expr) (lambda () #f))
+	    (static-error 
+	     expr
+	     "Invalid use of signature name ~s" (z:symbol-orig-name expr)))))))
+
   (define ensure-not-macro/micro
-    (lambda (expr env vocab)
+    (lambda (expr env vocab attributes)
       (let ((r (resolve expr env vocab)))
 	(if (or (macro-resolution? r) (micro-resolution? r))
-	  (static-error expr
-	    "Invalid use of keyword ~s" (z:symbol-orig-name expr))
-	  r))))
+	    (static-error 
+	     expr
+	     "Invalid use of keyword ~s" (z:symbol-orig-name expr))
+	    r))))
 
   (define process-top-level-resolution
     (lambda (expr attributes)
@@ -201,14 +211,15 @@
 
   (add-sym-micro common-vocabulary
     (lambda (expr env attributes vocab)
-      (let ((r (ensure-not-macro/micro expr env vocab)))
+      (let ((r (ensure-not-macro/micro expr env vocab attributes)))
 	(cond
 	  ((lexical-binding? r)
 	    (create-lexical-varref r expr))
 	  ((top-level-resolution? r)
-	    (process-top-level-resolution expr attributes))
+	   (check-for-signature-name expr attributes)
+	   (process-top-level-resolution expr attributes))
 	  (else
-	    (internal-error expr "Invalid resolution in core: ~s" r))))))
+	   (internal-error expr "Invalid resolution in core: ~s" r))))))
 
   (define (make-list-micro null-ok? lexvar-ok? expr-ok?)
     (lambda (expr env attributes vocab)
@@ -301,6 +312,7 @@
   (define (reset-internal-attributes attr)
     (set-top-level-status attr #t)
     (set-internal-define-status attr #f)
+    (put-attribute attr 'delay-sig-name-check? #f)
     (for-each (lambda (r) (r attr)) (attributes-resetters)))
 
   (define elaboration-evaluator

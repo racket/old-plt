@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.79 1999/02/25 22:21:30 mflatt Exp $
+; $Id: scm-unit.ss,v 1.80 1999/04/07 16:05:06 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -124,14 +124,16 @@
 				 'unresolved-unit-vars))))
 	(if (null? left-unresolveds)
 	    (begin
-	    (put-attribute attributes 'unresolved-unit-vars null)
-	    (unless (null? unresolveds)
-	      (static-error (unresolved-id (car unresolveds))
-		"Unbound unit identifier ~a"
-		(z:read-object (unresolved-id (car unresolveds))))))
-	  (put-attribute attributes 'unresolved-unit-vars
-	    (cons (append unresolveds (car left-unresolveds))
-	      (cdr left-unresolveds)))))))
+	      (put-attribute attributes 'unresolved-unit-vars null)
+	      (unless (null? unresolveds)
+		(let ([id (unresolved-id (car unresolveds))])
+		  (check-for-signature-name id attributes)
+		  (static-error (unresolved-id (car unresolveds))
+				"Unbound unit identifier ~a"
+				(z:read-object id)))))
+	    (put-attribute attributes 'unresolved-unit-vars
+			   (cons (append unresolveds (car left-unresolveds))
+				 (cdr left-unresolveds)))))))
 
   ; --------------------------------------------------------------------
 
@@ -546,12 +548,14 @@
 		(let ([top-level? (get-top-level-status attributes)]
 		      [internal? (get-internal-define-status attributes)]
 		      [old-top-level (get-attribute attributes 'top-levels)]
+		      [old-delay (get-attribute attributes 'delay-sig-name-check?)]
 		      [unit-clauses-vocab
 		       (append-vocabulary unit-clauses-vocab-delta
 					  vocab 'unit-clauses-vocab)])
 		  (set-top-level-status attributes #t)
 		  (set-internal-define-status attributes #f)
 		  (put-attribute attributes 'top-levels (make-hash-table))
+		  (put-attribute attributes 'delay-sig-name-check? #t)
 		  (let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
 			(in:exports (pat:pexpand '(exports ...) p-env kwd))
 			(in:clauses (pat:pexpand '(clauses ...) p-env kwd)))
@@ -593,6 +597,8 @@
 						env
 						attributes
 						vocab)))
+
+		      (put-attribute attributes 'delay-sig-name-check? old-delay)
 
 		      (distinct-valid-syntactic-id/s? proc:exports-externals)
 		      (remove-vars-attribute attributes)
@@ -1088,6 +1094,7 @@
 	   ((lexical-binding? r)
 	    (create-lexical-varref r expr))
 	   ((top-level-resolution? r)
+	    (check-for-signature-name expr attributes)
 	    (process-unit-top-level-resolution expr attributes))
 	   (else
 	    (internal-error expr "Invalid resolution in unit delta: ~s"

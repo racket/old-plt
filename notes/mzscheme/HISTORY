@@ -1,3 +1,11 @@
+
+Version 103.4:
+
+ * Upgraded to gc 6.0alpha4
+
+ * 2k: fixed memory bug in thread/continuation setup, and fixed bugs
+   in bignum optimizations
+
 Version 103.3:
 
  * 2k: compiles and runs for Windows (not tested much)
@@ -35,6 +43,7 @@ Fixed `lambda' and `case-lambda' to signal an error when a keyword
  is used as an argument name
 Fixed leaks (file descriptors, etc.) that could happend with
  thread kills
+Upgraded to gc 6.0alpha4
 
 Version 103, August 28, 2000
 Changed define-values and set!-values to require distinct variables

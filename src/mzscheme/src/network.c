@@ -1510,6 +1510,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	  status = WSAGetLastError();
 
 	inprogress = (status == WSAEWOULDBLOCK);
+	errno = status;
 #endif
 
 	scheme_file_open_count++;
@@ -1569,7 +1570,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 
 #ifdef USE_TCP
   scheme_raise_exn(MZEXN_I_O_TCP,
-		   "tcp-connect: connection to %s, port %d failed%s (at step %d: %e)",
+		   "tcp-connect: connection to %s, port %d failed%s (at step %d: %E)",
 		   address, origid, errmsg, errpart, errid);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,

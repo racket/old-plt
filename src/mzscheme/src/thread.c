@@ -2434,7 +2434,7 @@ static int check_sleep(int need_activity, int sleep_now)
 
 	d = (scheme_get_inexact_milliseconds() - d);
 
-	t = p->sleep_time - (((float)d) / 1000);
+	t = p->sleep_time - (d / 1000);
 	if (t <= 0) {
 	  t = (float)0.00001;
 	  needs_sleep_cancelled = 1;
@@ -2452,7 +2452,7 @@ static int check_sleep(int need_activity, int sleep_now)
       float mst = (float)max_sleep_time;
 
       /* Make sure that mst didn't go to infinity: */
-      if ((double)mst > max_sleep_time) {
+      if ((double)mst > (2 * max_sleep_time)) {
 	mst = 100000000.0;
       }
 

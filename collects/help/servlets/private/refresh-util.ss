@@ -21,13 +21,11 @@
 	   set-progress-input-port!
 	   set-progress-output-port!
 	   progress-semaphore
-	   refresh-semaphore
 	   reset-progress-semaphore!
 	   make-local-doc-filename
 	   download-known-doc
 	   delete-known-doc
 	   run-setup-plt
-           download-in-progress-page
            no-download-dir-page)           
 
   (define refresh-docs-dir-base
@@ -169,16 +167,6 @@
        (P)
        ,home-page)))
 
-  (define (download-in-progress-page)
-    `(HTML
-      (HEAD ,hd-css
-	    ,@hd-links
-	    (TITLE "Manual download error"))
-      ,(color-with "red"
-		   `(H1 "Manual download already in progress"))
-      (P)
-      (H3 "Please try again later")))
-
   (define progress-input-port #f)
   (define progress-output-port #f)
 
@@ -195,7 +183,6 @@
     (set! progress-output-port p))
 
   (define progress-semaphore (make-semaphore 0))
-  (define refresh-semaphore (make-semaphore 1))
 
   (define (reset-progress-semaphore!)
     (set! progress-semaphore (make-semaphore 0)))

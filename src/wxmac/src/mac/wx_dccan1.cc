@@ -614,7 +614,28 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			PenSize(thePenWidth, thePenHeight);
 
 			int thePenStyle = current_pen->GetStyle();
-			int log = thePenStyle == wxXOR ? patXor : patCopy;
+			int log = patCopy;
+			switch (thePenStyle) {
+			  case wxXOR:
+			    log = patXor;
+			    break;
+			  case wxXOR_DOT:
+			    thePenStyle = wxDOT;
+			    log = patXor;
+			    break;
+			  case wxXOR_LONG_DASH:
+			    thePenStyle = wxLONG_DASH;
+			    log = patXor;
+			    break;
+			  case wxXOR_SHORT_DASH:
+			    thePenStyle = wxSHORT_DASH;
+			    log = patXor;
+			    break;
+			  case wxXOR_DOT_DASH:
+			    thePenStyle = wxDOT_DASH;
+			    log = patXor;
+			    break;
+			}
 			if (thePenStyle == wxSOLID)
 				PenPat(&qd.black);
 			else if (thePenStyle == wxTRANSPARENT)
@@ -622,11 +643,11 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			else if ((thePenStyle == wxDOT)
 			         || (thePenStyle == wxSHORT_DASH)) {
 				PenPat(&qd.ltGray);
-				log = patOr;
+				if (log == patCopy) log = patOr;
 			} else if ((thePenStyle == wxLONG_DASH)
 			         || (thePenStyle == wxDOT_DASH)) {
 				PenPat(&qd.dkGray);
-				log = patOr;
+				if (log == patCopy) log = patOr;
 			} else if (IS_HATCH(thePenStyle)) {
 				macGetHatchPattern(thePenStyle, &cMacPattern);
 				PenPat(&cMacPattern);

@@ -114,9 +114,15 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
 
 	SetCurrentDC();
 
-	rgb.red = col->Red() << 8;
-	rgb.green = col->Green() << 8;
-	rgb.blue = col->Blue() << 8;
+	if ((col->Red() == 255) && (col->Blue() == 255) && (col->Green() == 255)) {
+	  rgb.red = 0xFFFF;
+	  rgb.green = 0xFFFF;
+	  rgb.blue = 0xFFFF;
+	} else {
+	  rgb.red = col->Red() << 8;
+	  rgb.green = col->Green() << 8;
+	  rgb.blue = col->Blue() << 8;
+	}
 	SetCPixel(XLOG2DEV(x), YLOG2DEV(y), &rgb);
 }
 

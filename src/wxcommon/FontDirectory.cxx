@@ -188,7 +188,7 @@ static void AdjustFontDefaults(void)
       } else if (!strcmp(font_defaults[i], "ScreenDecorative__")) {
 	font_defaults[i + 1] = " Nimbus Sans L";
       } else if (!strcmp(font_defaults[i], "ScreenModern__")) {
-	font_defaults[i + 1] = " Courier 10 Pitch";
+	font_defaults[i + 1] = " Monospace";
       } else if (!strcmp(font_defaults[i], "ScreenTeletype__")) {
 	font_defaults[i + 1] = " Monospace";
       } else if (!strcmp(font_defaults[i], "ScreenSwiss__")) {

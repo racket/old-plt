@@ -83,23 +83,6 @@
 	  (if (eq? '3m (link-variant))
 	      null
 	      (list s))))
-
-      (define (wrap-xxxxxxx f)
-	(lambda ()
-	  (let ([l (f)])
-	    (if (null? l)
-		null
-		(let ([s (car l)]
-		      [ver (substring (regexp-replace*
-				       "alpha"
-				       (format "~a_000000000" (version))
-				       "a")
-				      0
-				      7)])
-		  (list
-		   (if (file-exists? (format s ver))
-		       (format s ver)
-		       (format s "xxxxxxx"))))))))
       
       (define (expand-for-link-variant l)
 	(apply append (map (lambda (s) (if (string? s) (list s) (s))) l)))
@@ -112,7 +95,10 @@
 	  [(i386-freebsd-2.x) (list "-Bshareable")]
 	  [(rs6k-aix) (list "-bM:SRE"
 			    "-brtl"
-			    (wrap-3m (format "-bI:~a/mzscheme~~a.exp" include-dir))
+			    (lambda () 
+			      (map (lambda (mz-exp)
+				     (format "-bI:~a/~a" include-dir mz-exp))
+				   ((wrap-3m "mzscheme~a.exp"))))
 			    (format "-bE:~a/ext.exp" include-dir)
 			    "-bnoentry")]
 	  [(parisc-hpux) (list "-b")]
@@ -174,26 +160,45 @@
 	   p)))
 
       (define (make-win-link-libraries win-gcc? win-borland?)
-	(let ([file (lambda (f)
-		      (build-path std-library-dir 
-				  (cond
-				   [win-gcc? "gcc"]
-				   [win-borland? "bcc"]
-				   [else "msvc"])
-				  f))])
+	(let* ([file (lambda (f)
+                       (build-path std-library-dir 
+                                   (cond
+                                     [win-gcc? "gcc"]
+                                     [win-borland? "bcc"]
+                                     [else "msvc"])
+                                   f))]
+               [filethunk (lambda (f)
+                            (lambda ()
+			      (map file (f))))]
+	       [wrap-xxxxxxx (lambda (f)
+                               (lambda ()
+				 (map (lambda (s)
+					(let ([ver (substring (regexp-replace*
+							       "alpha"
+							       (format "~a_000000000" (version))
+							       "a")
+							      0
+							      7)])
+					  (if (file-exists? (file (format s ver)))
+					      (file (format s ver))
+					      (file (format s "xxxxxxx")))))
+				      (f))))])
 	  (cond
-	   [win-gcc? (list (wrap-3m (file "mzdyn~a.exp"))
-			   (wrap-3m (file "mzdyn~a.o"))
+	   [win-gcc? (list (filethunk (wrap-3m "mzdyn~a.exp"))
+			   (filethunk (wrap-3m "mzdyn~a.o"))
 			   (file "init.o")
 			   (file "fixup.o"))]
 	   [win-borland? (map file (list "mzdynb.obj"))]
-	   [else (list (wrap-xxxxxxx (wrap-3m (file "libmzsch~a~~a.lib")))
-		       (wrap-xxxxxxx (drop-3m (file "libmzgc~a.lib")))
-		       (wrap-3m (file "mzdyn~a.exp"))
-		       (wrap-3m (file "mzdyn~a.obj")))])))
+	   [else (list (wrap-xxxxxxx (wrap-3m "libmzsch~a~~a.lib"))
+		       (wrap-xxxxxxx (drop-3m "libmzgc~a.lib"))
+		       (filethunk (wrap-3m "mzdyn~a.exp"))
+		       (filethunk (wrap-3m "mzdyn~a.obj")))])))
       
       (define (get-unix/macos-link-libraries)
-	(list (wrap-3m (build-path std-library-dir "mzdyn~a.o"))))
+	(list (lambda ()
+		(map (lambda (mz.o)
+		       (build-path std-library-dir mz.o))
+		     ((wrap-3m "mzdyn~a.o"))))))
 
       ;; See doc.txt:
       (define current-standard-link-libraries

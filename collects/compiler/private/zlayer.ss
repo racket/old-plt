@@ -3,8 +3,12 @@
 ;; (c)1997-2001 PLT
 
 (module zlayer mzscheme
-  (import (lib "unitsig.ss"))
+  (import (lib "unitsig.ss")
+	  (lib "list.ss")
+	  (lib "etc.ss"))
   
+  (import (lib "zodiac-sig.ss" "syntax"))
+
   (import "../sig.ss")
   (import "sig.ss")
   
@@ -13,7 +17,6 @@
 	    (zodiac : zodiac^)
 	    compiler:cstructs^
 	    compiler:driver^
-	    mzlib:function^
 	    (mrspidey : compiler:mrspidey^))
 
     ;;----------------------------------------------------------------------------
@@ -104,7 +107,7 @@
 
     (define undefined (letrec ([x x]) x))
 
-    (define (undefined? x) (eq? x udnefined))
+    (define (undefined? x) (eq? x undefined))
 
     (define zodiac:make-special-constant
       ;; make-quote, make-constant
@@ -170,7 +173,7 @@
 	 [(or (zodiac:quote-form? ast) 
 	      (zodiac:binding? ast)
 	      (zodiac:varref? ast))
-	  (zodiac:parsed->raw ast)]
+	  (syntax->datum (zodiac:zodiac-stx ast))]
 	 
 					; compound sexps
 	 [(zodiac:define-values-form? ast)
@@ -233,7 +236,7 @@
 		[fields (zodiac:struct-form-fields ast)])
 	    (if super
 		`(struct (,type ,(zodiac->sexp/annotate super)) ,fields)
-		(zodiac:parsed->raw ast)))]
+		(syntax->datum (zodiac:zodiac-stx ast))))]
 
 	 [(zodiac:with-continuation-mark-form? ast)
 	  `(with-continuation-mark 

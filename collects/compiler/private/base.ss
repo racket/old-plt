@@ -5,6 +5,26 @@
   (import "../sig.ss")
   (import "sig.ss")
 
+  (import (lib "zodiac-unit.ss" "syntax"))
+
+  (import "zlayer.ss"
+	  "library.ss"
+	  "cstructs.ss"
+	  "prephase.ss"
+	  "anorm.ss"
+	  "const.ss"
+	  "known.ss"
+	  "analyze.ss"
+	  "lift.ss"
+	  "closure.ss"
+	  "vehicle.ss"
+	  "rep.ss"
+	  "vmscheme.ss"
+	  "vmphase.ss"
+	  "vmopt.ss"
+	  "vm2c.ss"
+	  "driver.ss")
+
   ;; The core Scheme->C compiler linkage, including everything
   ;;  that's common to MrSpidey and non-MrSpidey compilation.
 
@@ -20,22 +40,19 @@
      (link
       [ZODIAC : zodiac:system^ ((require-library-unit/sig "link.ss" "zodiac")
 				(ZLAYER : zodiac:interface^))]
-      [ZLAYER : compiler:zlayer^ ((require-relative-library-unit/sig "zlayer.ss")
+      [ZLAYER : compiler:zlayer^ (zlayer@
 				  OPTIONS
 				  ZODIAC
 				  CSTRUCTS
 				  DRIVER
-				  FUNCTION
 				  SPIDEY)]
-      [LIBRARY : compiler:library^ ((require-relative-library-unit/sig "library.ss")
-				    ZODIAC
-				    FUNCTION)]
-      [CSTRUCTS : compiler:cstructs^ ((require-relative-library-unit/sig "cstructs.ss")
+      [LIBRARY : compiler:library^ (library@
+				    ZODIAC)]
+      [CSTRUCTS : compiler:cstructs^ (cstructs@
 				      LIBRARY
 				      ZODIAC
-				      ZLAYER
-				      FUNCTION)]
-      [PREPHASE : compiler:prephase^ ((require-relative-library-unit/sig "prephase.ss")
+				      ZLAYER)]
+      [PREPHASE : compiler:prephase^ (prephase@
 				      OPTIONS
 				      LIBRARY
 				      CSTRUCTS
@@ -43,16 +60,15 @@
 				      ZLAYER
 				      DRIVER
 				      SPIDEY)]
-      [ANORM : compiler:anorm^ ((require-relative-library-unit/sig "anorm.ss")
+      [ANORM : compiler:anorm^ (anorm@
 				OPTIONS
 				LIBRARY
 				CSTRUCTS
 				ZODIAC
 				ZLAYER
 				DRIVER
-				FUNCTION
 				SPIDEY)]
-      [CONST : compiler:const^ ((require-relative-library-unit/sig "const.ss")
+      [CONST : compiler:const^ (const@
 				OPTIONS
 				LIBRARY
 				CSTRUCTS
@@ -62,7 +78,7 @@
 				VMSTRUCTS
 				TOP-LEVEL
 				DRIVER)]
-      [KNOWN : compiler:known^ ((require-relative-library-unit/sig "known.ss")
+      [KNOWN : compiler:known^ (known@
 				OPTIONS
 				LIBRARY
 				CSTRUCTS
@@ -74,9 +90,8 @@
 				CLOSURE
 				REP
 				DRIVER
-				FUNCTION
 				SPIDEY)]
-      [LIGHTWEIGHT : compiler:lightweight^ ((require-relative-library-unit/sig "lightweight.ss")
+      [LIGHTWEIGHT : compiler:lightweight^ (lightweight@
 					    OPTIONS
 					    LIBRARY
 					    CSTRUCTS
@@ -84,9 +99,8 @@
 					    CONST
 					    TOP-LEVEL
 					    DRIVER
-					    FUNCTION
 					    ZODIAC)]
-      [ANALYZE : compiler:analyze^ ((require-relative-library-unit/sig "analyze.ss")
+      [ANALYZE : compiler:analyze^ (analyze@
 				    OPTIONS
 				    LIBRARY
 				    CSTRUCTS
@@ -98,9 +112,8 @@
 				    CONST
 				    REP
 				    DRIVER
-				    FUNCTION
 				    SPIDEY)]
-      [LIFT : compiler:lift^ ((require-relative-library-unit/sig "lift.ss")
+      [LIFT : compiler:lift^ (lift@
 			      OPTIONS
 			      LIBRARY
 			      CSTRUCTS
@@ -110,9 +123,8 @@
 			      TOP-LEVEL
 			      CONST
 			      CLOSURE
-			      DRIVER
-			      FUNCTION)]
-      [CLOSURE : compiler:closure^ ((require-relative-library-unit/sig "closure.ss")
+			      DRIVER)]
+      [CLOSURE : compiler:closure^ (closure@
 				    OPTIONS
 				    LIBRARY
 				    CSTRUCTS
@@ -120,7 +132,7 @@
 				    ZLAYER
 				    CONST
 				    DRIVER)]
-      [VEHICLE : compiler:vehicle^ ((require-relative-library-unit/sig "vehicle.ss")
+      [VEHICLE : compiler:vehicle^ (vehicle@
 				    OPTIONS
 				    LIBRARY
 				    CSTRUCTS
@@ -130,7 +142,7 @@
 				    KNOWN
 				    CLOSURE
 				    DRIVER)]
-      [REP : compiler:rep^ ((require-relative-library-unit/sig "rep.ss")
+      [REP : compiler:rep^ (rep@
 			    LIBRARY
 			    CSTRUCTS
 			    ZODIAC
@@ -138,14 +150,13 @@
 			    CONST
 			    VEHICLE
 			    DRIVER)]
-      [VMSTRUCTS : compiler:vmstructs^ ((require-relative-library-unit/sig "vmscheme.ss")
+      [VMSTRUCTS : compiler:vmstructs^ (vmscheme@
 					LIBRARY
 					CSTRUCTS
 					ZODIAC
 					ZLAYER
-					DRIVER
-					FUNCTION)]
-      [VMPHASE : compiler:vmphase^ ((require-relative-library-unit/sig "vmphase.ss")
+					DRIVER)]
+      [VMPHASE : compiler:vmphase^ (vmphase@
 				    OPTIONS
 				    LIBRARY
 				    CSTRUCTS
@@ -156,9 +167,8 @@
 				    REP
 				    CLOSURE
 				    VEHICLE
-				    DRIVER
-				    FUNCTION)]
-      [VMOPT : compiler:vmopt^ ((require-relative-library-unit/sig "vmopt.ss")
+				    DRIVER)]
+      [VMOPT : compiler:vmopt^ (vmopt@
 				OPTIONS
 				LIBRARY
 				CSTRUCTS
@@ -168,9 +178,8 @@
 				KNOWN
 				REP
 				VMPHASE
-				DRIVER
-				FUNCTION)]
-      [VM2C : compiler:vm2c^ ((require-relative-library-unit/sig "vm2c.ss")
+				DRIVER)]
+      [VM2C : compiler:vm2c^ (vm2c@
 			      OPTIONS
 			      LIBRARY
 			      CSTRUCTS
@@ -183,10 +192,10 @@
 			      VEHICLE
 			      VMSTRUCTS
 			      DRIVER)]
-      [TOP-LEVEL : compiler:top-level^ ((require-relative-library-unit/sig "toplevel.ss")
+      [TOP-LEVEL : compiler:top-level^ (toplevel@
 					LIBRARY
 					CSTRUCTS)]
-      [DRIVER : compiler:driver^ ((require-relative-library-unit/sig "driver.ss")
+      [DRIVER : compiler:driver^ (driver@
 				  OPTIONS
 				  LIBRARY
 				  CSTRUCTS
@@ -210,7 +219,6 @@
 				  COMPILE
 				  LINK
 				  DFILE
-				  FUNCTION
 				  PRETTY-PRINT
 				  SPIDEY)])
      (export (unit ZODIAC)

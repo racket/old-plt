@@ -39,7 +39,6 @@
      remove-duplicates
      symbol-append
      compiler:formals->arity
-     compiler:paroptformals->arity
      compiler:formals->arity*
      compiler:gensym
      compiler:genlabel
@@ -47,7 +46,7 @@
      protect-comment
      global-defined-value*
 
-     compiler:label-number
+     compiler:get-label-number
      compiler:reset-label-number!))
 
   (export compiler:cstructs^)
@@ -157,18 +156,18 @@
      const:the-per-load-statics-table
      const:per-load-statics-table?
 
-     const:symbol-counter
-     const:symbol-table
+     const:get-symbol-counter
+     const:get-symbol-table
 
-     const:inexact-counter
-     const:inexact-table
+     const:get-inexact-counter
+     const:get-inexact-table
 
      compiler:add-const!
      compiler:get-symbol-const!
      compiler:construct-const-code!
 
-     compiler:static-list
-     compiler:per-load-static-list
+     compiler:get-static-list
+     compiler:get-per-load-static-list
      
      compiler:add-per-load-static-list!
 
@@ -282,14 +281,9 @@
      (struct vm:make-closure (closure))
      (struct vm:make-procedure-closure (vehicle min-arity max-arity name empty?))
      (struct vm:make-case-procedure-closure (vehicle num-cases case-arities name empty?))
-     (struct vm:make-unit-closure (vehicle num-imports num-exports exports-offset name empty?))
-     (struct vm:make-class-closure (assembly))
      (struct vm:apply (closure argc known? multi? prim simple-tail-prim?))
      (struct vm:macro-apply (name primitive args tail? bool?))
      (struct vm:struct (type super fields multi?)) ; multi? = #f => always run-time error
-     (struct vm:compound (assembly))
-     (struct vm:invoke (num-variables multi? tail?))
-     (struct vm:interface (assembly))
      (struct vm:call (label closure))
      (struct vm:begin0-extract (var))
      (struct vm:wcm-mark! (key val))
@@ -385,16 +379,12 @@
      vm->c:emit-symbol-definitions!
      vm->c:emit-inexact-declarations!
      vm->c:emit-inexact-definitions!
-     vm->c:emit-export-symbol-definitions!
      vm->c:emit-prim-ref-declarations!
      vm->c:emit-prim-ref-definitions!
      vm->c:emit-struct-definitions!
      vm->c:emit-static-declarations!
      vm->c:emit-registration!
      vm->c:emit-case-arities-definitions!
-     vm->c:emit-compound-definitions!
-     vm->c:emit-class-definitions!
-     vm->c:emit-interface-definitions!
      vm->c:emit-top-levels!
      vm->c:emit-vehicle-prototype
      vm->c:emit-vehicle-declaration
@@ -406,10 +396,6 @@
      vm->c:emit-case-prologue
      vm->c:emit-case-epilogue
      vm->c:emit-function-epilogue
-     vm->c:emit-unit-prologue
-     vm->c:emit-unit-epilogue
-     vm->c:emit-class-prologue
-     vm->c:emit-class-epilogue
      vm->c-expression))
 
   (export compiler:mrspidey^)

@@ -924,14 +924,14 @@
 					 ""
 					 "e"))
 			    (fprintf c-port "#include \"mzc.h\"~n~n")
-			    (vm->c:emit-struct-definitions! compiler:structs c-port)
+			    (vm->c:emit-struct-definitions! (compiler:get-structs) c-port)
 			    (vm->c:emit-symbol-declarations! c-port)
 			    (vm->c:emit-inexact-declarations! c-port)
 			    (vm->c:emit-prim-ref-declarations! c-port)
 			    (vm->c:emit-static-declarations! c-port)
 			    
 			    (let loop ([n 0])
-			      (unless (= n compiler:total-vehicles)
+			      (unless (= n (compiler:get-total-vehicles))
 				(vm->c:emit-vehicle-declaration c-port n)
 				(loop (+ n 1))))
 			    (newline c-port)
@@ -941,14 +941,10 @@
 			      (vm->c:emit-symbol-definitions! c-port)
 			      (fprintf c-port "}~n"))
 			    
-			    (unless (zero? const:inexact-counter)
+			    (unless (zero? (const:get-inexact-counter))
 			      (fprintf c-port "~nstatic void make_inexacts()~n{~n")
 			      (vm->c:emit-inexact-definitions! c-port)
 			      (fprintf c-port "}~n"))
-
-			    (fprintf c-port "~nstatic void make_export_symbols()~n{~n")
-			    (vm->c:emit-export-symbol-definitions! c-port)
-			    (fprintf c-port "}~n")
 
 			    (fprintf c-port "~nstatic void gc_registration()~n{~n")
 			    (vm->c:emit-registration! c-port)
@@ -958,7 +954,7 @@
 			    (vm->c:emit-prim-ref-definitions! c-port)
 			    (fprintf c-port "}~n")
 			    
-			    (unless (null? compiler:case-lambdas)
+			    (unless (null? (compiler:get-case-lambdas))
 			      (fprintf c-port "~nstatic void init_cases_arities()~n{~n")
 			      (vm->c:emit-case-arities-definitions! c-port)
 			      (fprintf c-port "}~n"))
@@ -1012,14 +1008,14 @@
 			      (unless (compiler:multi-o-constant-pool)
 				(fprintf c-port "~amake_symbols();~n"
 					 vm->c:indent-spaces))
-			      (unless (zero? const:inexact-counter)
+			      (unless (zero? (const:get-inexact-counter))
 				(fprintf c-port "~amake_inexacts();~n"
 					 vm->c:indent-spaces))
 			      (fprintf c-port "~amake_export_symbols();~n"
 				       vm->c:indent-spaces)
 			      (fprintf c-port "~ainit_prims(env);~n"
 				       vm->c:indent-spaces)
-			      (unless (null? compiler:case-lambdas)
+			      (unless (null? (compiler:get-case-lambdas))
 				(fprintf c-port "~ainit_cases_arities();~n"
 					 vm->c:indent-spaces))		       
 
@@ -1029,16 +1025,6 @@
 					   vm->c:indent-spaces
 					   c)
 				  (loop (add1 c))))
-
-			      (unless (null? compiler:compounds)
-				(fprintf c-port "~ainit_compounds(env);~n"
-					 vm->c:indent-spaces))
-			      (unless (null? compiler:classes)
-				(fprintf c-port "~ainit_classes(env);~n"
-					 vm->c:indent-spaces))
-			      (unless (null? compiler:interfaces)
-				(fprintf c-port "~ainit_interfaces();~n"
-					 vm->c:indent-spaces))
 
 			      (fprintf c-port 
 				       "}~n~n")
@@ -1054,7 +1040,7 @@
 					 "}~n~n")))
 
 			    (let emit-vehicles ([vehicle-number 0])
-			      (unless (= vehicle-number compiler:total-vehicles)
+			      (unless (= vehicle-number (compiler:get-total-vehicles))
 				(let* ([vehicle (get-vehicle vehicle-number)]
 				       [lambda-list (vehicle-lambdas vehicle)])
 				  

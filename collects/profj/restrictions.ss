@@ -55,7 +55,7 @@
                                  
                                  ))
           (beginner&intermediate (list `("System" "java" "lang")
-                                        `("*" "java" "io")
+                                        ;`("*" "java" "io")
                                         ;`("*" "java" "util")
                                         )))
       (case level

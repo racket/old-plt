@@ -8,8 +8,8 @@
 	(find-executable-path "cc" "cc")))
   
   (define (get-windows-compile)
-    (or (find-executable-path "cl.exe" "cl.exe")
-	(find-executable-path "gcc.exe" "gcc.exe")))
+    (or (find-executable-path "gcc.exe" "gcc.exe")
+	(find-executable-path "cl.exe" "cl.exe")))
   
   (define current-extension-compiler 
     (make-parameter 
@@ -31,29 +31,33 @@
     (let ([c (current-extension-compiler)])
       (and c (regexp-match "gcc.exe$" c))))
   
+  (define unix-compile-flags '("-c" "-O2"))
+  (define msvc-compile-flags '("/c" "/O2"))
+
   (define current-extension-compiler-flags
     (make-parameter
      (case (system-type)
-       [(unix) '("-c" "-O2")]
+       [(unix) unix-compile-flags]
        [(windows) (if win-gcc?
-		      '("-c" "-O2")
-		      '("/c" "/O2"))]
+		      unix-compile-flags
+		      msvc-compile-flags)]
        [(macos) '()])
      (lambda (l)
        (unless (and (list? l) (andmap string? l))
 	 (raise-type-error 'current-extension-compiler-flags "list of strings" l))
        l)))
   
+  (define unix-compile-include-strings (lambda (s) (list (string-append "-I" s))))
+  (define msvc-compile-include-strings (lambda (s) (list (string-append "/I" s))))
+
   (define current-make-compile-include-strings
     (make-parameter
      (case (system-type)
-       [(unix) (lambda (s) (list (string-append "-I" s)))]
-       [(windows) (lambda (s) (list (string-append 
-				     (if win-gcc?
-					 "-I" 
-					 "/I")
-				     s)))]
-       [(macos) (lambda (s) (list (string-append "-I" s)))])
+       [(unix) unix-compile-include-strings]
+       [(windows) (if win-gcc?
+		      unix-compile-include-strings
+		      msvc-compile-include-strings)]
+       [(macos) unix-compile-include-strings])
      (lambda (p)
        (unless (procedure-arity-includes? p 1)
 	 (raise-type-error 'current-make-compile-include-strings "procedure of arity 1" p))
@@ -67,19 +71,69 @@
 	 (raise-type-error 'current-make-compile-input-strings "procedure of arity 1" p))
        p)))
   
+  (define unix-compile-output-strings (lambda (s) (list "-o" s)))
+  (define msvc-compile-output-strings (lambda (s) (list (string-append "/Fo" s))))
+
   (define current-make-compile-output-strings
     (make-parameter
      (case (system-type)
-       [(unix) (lambda (s) (list "-o" s))]
-       [(windows) (lambda (s) (if win-gcc?
-				  (list "-o" s)
-				  (list (string-append "/Fo" s))))]
-       [(macos) (lambda (s) (list "-o" s))])
+       [(unix) unix-compile-output-strings]
+       [(windows) (if win-gcc?
+		      unix-compile-output-strings
+		      msvc-compile-output-strings)]
+       [(macos) unix-compile-output-strings])
      (lambda (p)
        (unless (procedure-arity-includes? p 1)
 	 (raise-type-error 'current-make-compile-output-strings "procedure of arity 1" p))
        p)))
   
+  (define (get-standard-compilers)
+    (case (system-type)
+      [(unix) '(gcc cc)]
+      [(windows) '(gcc msvc)]
+      [(macos) '(cw)]))
+
+  (define (use-standard-compiler name)
+    (define (bad-name name)
+      (error 'use-standard-compiler "unknown compiler: ~a" name))
+    (case (system-type)
+      [(unix) (case name
+		[(cc gcc) (let* ([n (if (eq? name 'gcc) "gcc" "cc")]
+				 [f (find-executable-path n n)])
+			    (unless f
+			      (error 'use-standard-linker "cannot find ~a" n))
+			    (current-extension-compiler f))
+			  (current-extension-compiler-flags unix-compile-flags)
+			  (current-make-compile-include-strings unix-compile-include-strings)
+			  (current-make-compile-input-strings (lambda (s) (list s)))
+			  (current-make-compile-output-strings unix-compile-output-strings)]
+		[else (bad-name name)])]
+      [(windows) (case name
+		   [(gcc) (let ([f (find-executable-path "gcc.exe" "gcc.exe")])
+			    (unless f
+			      (error 'use-standard-linker "cannot find gcc.exe"))
+			    (current-extension-compiler f))
+			  (current-extension-compiler-flags unix-compile-flags)
+			  (current-make-compile-include-strings unix-compile-include-strings)
+			  (current-make-compile-input-strings (lambda (s) (list s)))
+			  (current-make-compile-output-strings unix-compile-output-strings)]
+		   [(msvc) (let ([f (find-executable-path "cl.exe" "cl.exe")])
+			    (unless f
+			      (error 'use-standard-linker "cannot find MSVC's cl.exe"))
+			    (current-extension-compiler f))
+			   (current-extension-compiler-flags msvc-compile-flags)
+			   (current-make-compile-include-strings msvc-compile-include-strings)
+			   (current-make-compile-input-strings (lambda (s) (list s)))
+			   (current-make-compile-output-strings msvc-compile-output-strings)]
+		   [else (bad-name name)])]
+      [(macos) (case name
+		 [(cw) (current-extension-compiler #f)
+		       (current-extension-compiler-flags unix-compile-flags)
+		       (current-make-compile-include-strings unix-compile-include-strings)
+		       (current-make-compile-input-strings (lambda (s) (list s)))
+		       (current-make-compile-output-strings unix-compile-output-strings)]
+		 [else (bad-name name)])]))
+
   (define-values (my-process* stdio-compile)
     (let-values ([(p* do-stdio) (require-library "stdio.ss" "dynext")])
       (values

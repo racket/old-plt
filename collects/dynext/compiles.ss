@@ -5,4 +5,6 @@
    current-extension-compiler-flags
    current-make-compile-include-strings
    current-make-compile-input-strings
-   current-make-compile-output-strings))
+   current-make-compile-output-strings
+   use-standard-compiler
+   get-standard-compilers))

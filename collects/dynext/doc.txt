@@ -14,7 +14,7 @@ and Unix:
    current-extension-compiler - compiler executable pathname or
      #f. The default is set by searching for an executable using
      the PATH environment variable. Under windows, the search
-     looks for cl.exe and then gcc.exe. Under Unix, it looks for 
+     looks for gcc.exe and then cl.exe. Under Unix, it looks for 
      gcc and then cc. #f indicates that no compiler could be
      found.
 
@@ -37,6 +37,16 @@ and Unix:
     Windows: "file" -> (list "/Fofile") for cl.exe or (list "-o" 
     "file") for gcc.exe; Unix: "file" -> (list "-o" "file")
 
+ (use-standard-compiler name) sets the above parameters for a
+    particular known compiler. The acceptable names are 
+    platforms-specific:
+      Unix: 'cc or 'gcc
+      Windows: 'gcc or 'msvc
+      MacOS: 'cw
+
+ (get-standard-compilers) returns a list of standard compiler
+    names for the current platform.
+
 Under MacOS, none of these options are used. The compiler always
 uses CodeWarrior if it can be found and the compilation options
 cannot be changed.
@@ -56,7 +66,7 @@ Linking parameters:
    current-extension-linker - linker executable pathname or #f. 
      The default is set by searching for an executable using
      the PATH environment variable. Under Windows, it looks for 
-     cl.exe and then ld.exe. Under Unix except AIX, it looks for 
+     ld.exe and then cl.exe. Under Unix except AIX, it looks for 
      ld. Under AIX, it looks for cc. #f indicates that no linker
      could be found.
 
@@ -78,6 +88,10 @@ Linking parameters:
      (list (build-path (collection-path "mzscheme" "lib") 
                        (system-library-subpath)
                        "mzdyn.o"))
+
+ (use-standard-linker name) sets the above parameters for a
+    particular known linker. The acceptable names are 
+    platforms-specific, the same as for use-standard-compiler.
 
 Under MacOS, none of these options are used. The linker always uses
 CodeWarrior if it can be found and the linking options cannot be
@@ -103,7 +117,7 @@ file.ss
    suffix (.kp) to s.
 
  (append-extension-suffix s) - appends the platform-standard dynamic
-   extension file suffix to s
+   extension file suffix to s.
 
  (extract-base-filename/ss s program) - strips the Scheme file suffix
    from the path s and returns the stripped pathname. If s is not a
@@ -112,13 +126,16 @@ file.ss
    `program' argument is optional and defaults to #f.
 
  (extract-base-filename/c s program) - same as
-   extract-base-filename/ss but for C source files.
+   extract-base-filename/ss, but for C source files.
 
  (extract-base-filename/kp s program) - same as
-   extract-base-filename/ss but for constant pool files.
+   extract-base-filename/ss, but for constant pool files.
 
  (extract-base-filename/o s program) - same as
-   extract-base-filename/ss but for compiled object files.
+   extract-base-filename/ss, but for compiled object files.
+
+ (extract-base-filename/ext s program) - same as
+   extract-base-filename/ss, but for extension files.
 
 The unit/sig form defined by "filer.ss" requires no imports.
 

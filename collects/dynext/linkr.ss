@@ -1,10 +1,10 @@
 (unit/sig dynext:link^ (import)
   
   (define include-dir (collection-path "mzscheme" "include"))
-  
+
   (define (get-windows-linker)
-    (or (find-executable-path "cl.exe" "cl.exe")
-	(find-executable-path "ld.exe" "ld.exe")))
+    (or (find-executable-path "ld.exe" "ld.exe")
+	(find-executable-path "cl.exe" "cl.exe")))
 
   (define (get-unix-linker)
     (let ([s (case (string->symbol (system-library-subpath))
@@ -46,14 +46,17 @@
 			      "-bnoentry")))]
       [(parisc-hpux) "-b"]
       [else (list "-shared")]))
+
+  (define msvc-linker-flags (list "/LD"))
+  (define win-gcc-linker-flags (list "--dll"))
   
   (define current-extension-linker-flags
     (make-parameter
      (case (system-type)
        [(unix) (get-unix-link-flags)]
        [(windows) (if win-gcc?
-		      (list "--dll")
-		      (list "/LD"))]
+		      win-gcc-linker-flags
+		      msvc-linker-flags)]
        [(macos) null])
      (lambda (l)
        (unless (and (list? l) (andmap string? l))
@@ -77,37 +80,47 @@
 	 (raise-type-error 'current-make-link-input-strings "procedure of arity 1" p))
        p)))
   
+  (define win-gcc-link-output-strings (lambda (s) (list "-e" "_dll_entry@12" "-o" s)))
+  (define msvc-link-output-strings (lambda (s) (list (string-append "/Fe" s))))
+
   (define current-make-link-output-strings
     (make-parameter
      (case (system-type)
        [(unix) (lambda (s) (list "-o" s))]
-       [(windows) (lambda (s) (if win-gcc?
-				  (list "-e" "_dll_entry@12" "-o" s)
-				  (list (string-append "/Fe" s))))]
+       [(windows) (if win-gcc?
+		      win-gcc-link-output-strings
+		      msvc-link-output-strings)]
        [(macos) (lambda (s) (list "-o" s))])
      (lambda (p)
        (unless (procedure-arity-includes? p 1)
 	 (raise-type-error 'current-make-link-output-strings "procedure of arity 1" p))
        p)))
+
+  (define (make-win-link-libraries win-gcc?)
+    (let ([file (lambda (f)
+		  (build-path std-library-dir 
+			      (if win-gcc?
+				  "gcc"
+				  "msvc")
+			      f))])
+      (if win-gcc?
+	  (map file (list "mzdyn.exp"
+			  "mzdyn.o"
+			  "init.o"
+			  "fixup.o"
+			  "gmzwin.a"))
+	  (map file (list "mzdyn.exp"
+			  "mzdyn.obj"
+			  "mzscheme.lib")))))
   
+  (define (get-unix/macos-link-libraries)
+    (list (build-path std-library-dir "mzdyn.o")))
+
   (define current-standard-link-libraries
     (make-parameter
      (case (system-type)
-       [(unix macos) (list (build-path std-library-dir "mzdyn.o"))]
-       [(windows) (let ([file (lambda (f)
-				(build-path std-library-dir 
-					    (if win-gcc?
-						"gcc"
-						"msvc")
-					    f))])
-		    (if win-gcc?
-			(map file (list "mzdyn.exp"
-					"mzdyn.o"
-					"init.o"
-					"fixup.o"))
-			(map file (list "mzdyn.exp"
-					"mzdyn.obj"
-					"mzscheme.lib"))))])
+       [(unix macos) (get-unix/macos-link-libraries)]
+       [(windows) (make-win-link-libraries win-gcc?)])
      (lambda (l)
        (unless (and (list? l) (andmap string? l))
 	 (raise-type-error 'current-standard-link-libraries "list of strings" l))
@@ -129,6 +142,43 @@
 			quiet?)
 	    (error 'link-extension "can't find linker")))))
   
+  (define (use-standard-linker name)
+    (define (bad-name name)
+      (error 'use-standard-linker "unknown linker: ~a" name))
+    (case (system-type)
+      [(unix) (case name
+		[(cc gcc) (current-extension-linker (get-unix-linker))
+			  (current-extension-linker-flags (get-unix-link-flags))
+			  (current-make-link-input-strings (lambda (s) (list s)))
+			  (current-make-link-output-strings (lambda (s) (list "-o" s)))
+			  (current-standard-link-libraries (get-unix/macos-link-libraries))]
+		[else (bad-name name)])]
+      [(windows) (case name
+		   [(gcc) (let ([f (find-executable-path "ld.exe" "ld.exe")])
+			    (unless f
+			      (error 'use-standard-linker "cannot find gcc's ld.exe"))
+			    (current-extension-linker f)
+			    (current-extension-linker-flags win-gcc-linker-flags)
+			    (current-make-link-input-strings (lambda (s) (list s)))
+			    (current-make-link-output-strings win-gcc-link-output-strings)
+			    (current-standard-link-libraries (make-win-link-libraries #t)))]
+		   [(msvc) (let ([f (find-executable-path "cl.exe" "cl.exe")])
+			    (unless f
+			      (error 'use-standard-linker "cannot find MSVC's cl.exe"))
+			    (current-extension-linker f)
+			    (current-extension-linker-flags msvc-linker-flags)
+			    (current-make-link-input-strings (lambda (s) (list s)))
+			    (current-make-link-output-strings msvc-link-output-strings)
+			    (current-standard-link-libraries (make-win-link-libraries #f)))]
+		   [else (bad-name name)])]
+      [(macos) (case name
+		 [(cw) (current-extension-linker #f)
+		       (current-extension-linker-flags null)
+		       (current-make-link-input-strings (lambda (s) (list s)))
+		       (current-make-link-output-strings (lambda (s) (list "-o" s)))
+		       (current-standard-link-libraries (get-unix/macos-link-libraries))]
+		 [else (bad-name name)])]))
+
   (include "macinc.ss")
   
   (define (macos-link quiet? input-files output-file)

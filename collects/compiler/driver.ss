@@ -754,7 +754,7 @@
 	      ;;
 
 	      (when (compiler:option:verbose) 
-		(printf " finding static procedures (1st)~n"))
+		(printf " finding static procedures~n"))
 	      (when (compiler:option:debug)
 		(debug " = LIFT =~n"))
 
@@ -781,7 +781,7 @@
 		  (compiler:report-messages! #t))
 
 		(when (compiler:option:verbose) 
-		      (printf " finding static procedures (2nd)~n"))
+		      (printf " finding static procedures again~n"))
 		(when (compiler:option:debug)
 		      (debug " = LIFT =~n"))
 

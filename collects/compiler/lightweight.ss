@@ -2817,8 +2817,7 @@
  ; sets free-var, global, and captured sets
 
  (define (update-variable-sets! ast) 
-   (let* ([pls-table (make-singleton-set const:the-per-load-statics-table)]
-	  [get-binder-anchors 
+   (let* ([get-binder-anchors 
 	   (lambda (bs)  ; : lexical-binding set -> lexical-binding set
 	     (list->set 
 	      (filter identity (map (compose binding-anchor get-annotation)
@@ -3211,22 +3210,6 @@
 					    (> (length the-vars) 1))
 				       (zodiac:make-ilist-arglist the-vars)
 				       as)))])
-
-
-			 ; update global vars 
-
-			 (set-code-global-vars! 
-			  code 
-			  (set-union-singleton (code-global-vars code)
-					       const:the-per-load-statics-table))
-
-			 (for-each
-			  (lambda (cc)
-			    (set-code-global-vars! 
-			     cc 
-			     (set-union-singleton (code-global-vars cc)
-						  const:the-per-load-statics-table)))
-			  case-codes)
 
 			 ; for each case in the case-lambda
 			 

@@ -5151,6 +5151,8 @@ static void default_sleep(float v, void *fds)
     DECL_FDSET(readfds, 1);
     struct timeval time;
 
+    INIT_DECL_FDSET(readfds, 1);
+
     time.tv_sec = (long)v;
     time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
 

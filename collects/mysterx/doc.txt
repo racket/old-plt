@@ -236,6 +236,10 @@ the ITypeInfo interface.
 
   Returns #t if the two COM objects are the same, #f otherwise.
 
+> (com-object? a-com-object)
+
+  Returns #t if the argument is a COM object, #f otherwise.
+
   COM events
   -----------
 

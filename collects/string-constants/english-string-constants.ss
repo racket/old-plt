@@ -225,7 +225,7 @@ please adhere to these guidelines:
 
  ;; menu item title
  (log-definitions-and-interactions "Log Definitions and Interactions...")
- (stop-logging "Stop logging")
+ (stop-logging "Stop Logging")
  (please-choose-a-log-directory "Please choose a log directory")
  (logging-to "Logging to: ")
  (erase-log-directory-contents "Erase contents of log directory: ~a?")

@@ -104,6 +104,8 @@ static Scheme_Object **initial_modules;
 static Scheme_Object *initial_renames;
 static Scheme_Bucket_Table *initial_toplevel;
 
+static Scheme_Object *empty_self_modidx;
+
 typedef void (*Check_Func)(Scheme_Object *name, Scheme_Object *nominal_modname, 
 			   Scheme_Object *modname, Scheme_Object *srcname, 
 			   int isval, void *data, Scheme_Object *e);
@@ -1669,8 +1671,13 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
   fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
 
+  if (!empty_self_modidx) {
+    REGISTER_SO(empty_self_modidx);
+    empty_self_modidx = scheme_make_modidx(scheme_false, scheme_false, scheme_false);
+  }
+
   /* phase shift to replace self_modidx of previous expansion (if any): */
-  fm = scheme_stx_phase_shift(fm, 0, scheme_false, self_modidx);
+  fm = scheme_stx_phase_shift(fm, 0, empty_self_modidx, self_modidx);
 
   fm = scheme_add_rename(fm, rn);
   fm = scheme_add_rename(fm, et_rn);
@@ -1741,7 +1748,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     }
 
     /* for future expansion, shift away from self_modidx: */
-    fm = scheme_stx_phase_shift(fm, 0, self_modidx, scheme_false);
+    fm = scheme_stx_phase_shift(fm, 0, self_modidx, empty_self_modidx);
     /* disable self_modidx, to detect errors: */
     ((Scheme_Modidx *)self_modidx)->resolved = scheme_false;
 

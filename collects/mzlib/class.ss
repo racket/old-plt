@@ -212,21 +212,19 @@
 		       defn-and-exprs)
 
 	     ;; ----- Sort body into different categories -----
-	     (let ([extract (lambda (kws reverse?)
-			      (let loop ([l defn-and-exprs])
-				(cond
-				 [(null? l) null]
-				 [(and (stx-pair? (car l))
-				       (let ([id (stx-car (car l))])
-					 (and (identifier? id)
-					      (ormap (lambda (k) (module-identifier=? k id)) kws))))
-				  (if reverse?
-				      (loop (cdr l))
-				      (cons (car l) (loop (cdr l))))]
-				 [else
-				  (if reverse?
-				      (cons (car l) (loop (cdr l)))
-				      (loop (cdr l)))])))]
+	     (let ([extract (lambda (kws l out-cons)
+			      (let loop ([l l])
+				(if (null? l)
+				    (values null null)
+				    (let-values ([(in out) (loop (cdr l))])
+				      (cond
+				       [(and (stx-pair? (car l))
+					     (let ([id (stx-car (car l))])
+					       (and (identifier? id)
+						    (ormap (lambda (k) (module-identifier=? k id)) kws))))
+					(values (cons (car l) in) out)]
+				       [else
+					(values in (out-cons (car l) out))])))))]
 		   [flatten (lambda (alone l)
 			      (apply append
 				     (map (lambda (i)
@@ -239,32 +237,57 @@
 						   l)))
 					  l)))]
 		   [pair (lambda (i) (cons i i))])
-	       (let ([init-rest-decls (extract (list (quote-syntax init-rest)) #f)]
-		     [inits (flatten values (extract (list (quote-syntax init)
-							   (quote-syntax init-field))
-						     #f))]
-		     [plain-inits (flatten values (extract (list (quote-syntax init)
-								 (quote-syntax init-rest))
-							   #f))]
-		     [plain-fields (flatten values (extract (list (quote-syntax field)) #f))]
-		     [plain-init-fields (flatten values (extract (list (quote-syntax init-field)) #f))]
-		     [inherit-fields (flatten values (extract (list (quote-syntax inherit-field)) #f))]
-		     [privates (flatten pair (extract (list (quote-syntax private)) #f))]
-		     [publics (flatten pair (extract (list (quote-syntax public)) #f))]
-		     [overrides (flatten pair (extract (list (quote-syntax override)) #f))]
-		     [public-finals (flatten pair (extract (list (quote-syntax public-final)) #f))]
-		     [override-finals (flatten pair (extract (list (quote-syntax override-final)) #f))]
-		     [renames (flatten pair (extract (list (quote-syntax rename)) #f))]
-		     [inherits (flatten pair (extract (list (quote-syntax inherit)) #f))]
-		     [exprs (extract (list (quote-syntax inherit-field)
-					   (quote-syntax private)
-					   (quote-syntax public)
-					   (quote-syntax override)
-					   (quote-syntax public-final)
-					   (quote-syntax override-final)
-					   (quote-syntax rename)
-					   (quote-syntax inherit))
-				     #t)])
+	       (let*-values ([(extract*) (lambda (kws l)
+					   (let-values ([(in out) (extract kws l void)])
+					     in))]
+			     [(decls exprs)
+			      (extract (list (quote-syntax inherit-field)
+					     (quote-syntax private)
+					     (quote-syntax public)
+					     (quote-syntax override)
+					     (quote-syntax public-final)
+					     (quote-syntax override-final)
+					     (quote-syntax rename)
+					     (quote-syntax inherit))
+				       defn-and-exprs
+				       cons)]
+			     [(plain-inits)
+			      (flatten values 
+				       (extract* (list (quote-syntax init)
+						       (quote-syntax init-rest))
+						 exprs))]
+			     [(init-rest-decls _) 
+			      (extract (list (quote-syntax init-rest))
+				       exprs
+				       void)]
+			     [(inits)
+			      (flatten values (extract* (list (quote-syntax init)
+							      (quote-syntax init-field))
+							exprs))]
+			     [(plain-inits)
+			      (flatten values (extract* (list (quote-syntax init)
+							      (quote-syntax init-rest))
+							exprs))]
+			     [(plain-fields)
+			      (flatten values (extract* (list (quote-syntax field)) exprs))]
+			     [(plain-init-fields)
+			      (flatten values (extract* (list (quote-syntax init-field)) exprs))]
+			     [(inherit-fields)
+			      (flatten values (extract* (list (quote-syntax inherit-field)) decls))]
+			     [(privates)
+			      (flatten pair (extract* (list (quote-syntax private)) decls))]
+			     [(publics)
+			      (flatten pair (extract* (list (quote-syntax public)) decls))]
+			     [(overrides)
+			      (flatten pair (extract* (list (quote-syntax override)) decls))]
+			     [(public-finals)
+			      (flatten pair (extract* (list (quote-syntax public-final)) decls))]
+			     [(override-finals)
+			      (flatten pair (extract* (list (quote-syntax override-final)) decls))]
+			     [(renames)
+			      (flatten pair (extract* (list (quote-syntax rename)) decls))]
+			     [(inherits)
+			      (flatten pair (extract* (list (quote-syntax inherit)) decls))])
 		 
 		 (unless (or (null? init-rest-decls)
 			     (null? (cdr init-rest-decls)))
@@ -633,49 +656,58 @@
 						[the-finder the-finder]
 						[this-id this-id])
 				    (syntax 
-				     ([this-id
-				       (make-this-map (quote-syntax the-finder)
-						      (quote the-obj))]
-				      [all-field
-				       (make-field-map (quote-syntax the-finder)
-						       (quote the-obj)
-						       (quote-syntax field-accessor)
-						       (quote-syntax field-mutator))]
-				      ...
-				      [rename-orig
-				       (make-rename-map (quote-syntax the-finder)
+				     ([(this-id
+					all-field ...
+					rename-orig ...
+					method-name ...
+					private-name ...
+					public-final-name ...
+					override-final-name ...)
+				       (values
+					(make-this-map (quote-syntax the-finder)
+						       (quote the-obj))
+					(make-field-map (quote-syntax the-finder)
 							(quote the-obj)
-							(quote rename-temp))]
-				      ...
-				      [method-name
-				       (make-method-map (quote-syntax the-finder)
-							(quote the-obj)
-							(quote-syntax method-accessor))]
-				      ...
-				      [private-name
-				       (make-direct-method-map (quote-syntax the-finder)
-							       (quote the-obj)
-							       (quote private-temp))]
-				      ...
-				      [public-final-name
-				       (make-direct-method-map (quote-syntax the-finder)
-							       (quote the-obj)
-							       (quote public-final-temp))]
-				      ...
-				      [override-final-name
-				       (make-direct-method-map (quote-syntax the-finder)
-							       (quote the-obj)
-							       (quote override-final-temp))]
-				      ...)))]
+							(quote-syntax field-accessor)
+							(quote-syntax field-mutator))
+					...
+					(make-rename-map (quote-syntax the-finder)
+							 (quote the-obj)
+							 (quote rename-temp))
+					...
+					(make-method-map (quote-syntax the-finder)
+							 (quote the-obj)
+							 (quote-syntax method-accessor))
+					...
+					(make-direct-method-map (quote-syntax the-finder)
+								(quote the-obj)
+								(quote private-temp))
+					...
+					(make-direct-method-map (quote-syntax the-finder)
+								(quote the-obj)
+								(quote public-final-temp))
+					...
+					(make-direct-method-map (quote-syntax the-finder)
+								(quote the-obj)
+								(quote override-final-temp))
+					...)])))]
 				 [extra-init-mappings
 				  (with-syntax ([super-instantiate-id super-instantiate-id]
-						[super-make-object-id super-make-object-id])
+						[super-make-object-id super-make-object-id]
+						[(init-error-map ...)
+						 (map (lambda (x)
+							(syntax init-error-map))
+						      plain-inits)])
 				    (syntax 
-				     ([plain-init-name init-error-map]
-				      ...
-				      [super-instantiate-id super-error-map]
-				      [super-make-object-id super-error-map])))])
-
+				     ([(plain-init-name ... 
+							super-instantiate-id
+							super-make-object-id)
+				       (values
+					init-error-map
+					...
+					super-error-map
+					super-error-map)])))])
+			     
 			     (let ([find-method 
 				    (lambda (methods)
 				      (lambda (name)
@@ -685,7 +717,7 @@
 						(with-syntax ([proc (proc-shape (car m) (cdr m) #t)]
 							      [extra-init-mappings extra-init-mappings])
 						  (syntax
-						   (letrec-syntax extra-init-mappings
+						   (letrec-syntaxes extra-init-mappings
 						     proc)))))
 					 methods)))])
 			       
@@ -756,7 +788,7 @@
 							     field-mutator ...
 							     rename-temp ...
 							     method-accessor ...) ; public, override, inherit
-				       (letrec-syntax mappings
+				       (letrec-syntaxes mappings
 					   (letrec ([private-temp private-method]
 						    ...
 						    [public-final-temp public-final-method]

@@ -2984,8 +2984,13 @@ do_letrec_syntaxes(const char *where, int normal,
     a = scheme_resolve_expr(a, scheme_resolve_info_create());
     a = scheme_link_expr(a, NULL);
 
-    scheme_on_next_top(env, NULL, scheme_false);
-    a = scheme_eval_linked_expr_multi(a, mrec.max_let_depth);
+    if (scheme_omittable_expr(a)) {
+      /* short cut */
+      a = _scheme_eval_linked_expr_multi(a);
+    } else {
+      scheme_on_next_top(env, NULL, scheme_false);
+      a = scheme_eval_linked_expr_multi(a, mrec.max_let_depth);
+    }
 
     if (SAME_OBJ(a, SCHEME_MULTIPLE_VALUES))
       vc = scheme_current_thread->ku.multiple.count;

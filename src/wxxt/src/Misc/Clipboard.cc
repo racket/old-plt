@@ -341,10 +341,13 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     xa = ATOM(format);
 
     for (i = 0; i < receivedLength; i++) {
-      if (((Atom *)receivedTargets)[i] == xa
-	  || (((Atom *)receivedTargets)[i] == XA_STRING
-	      && xa == xa_text))
+      if (((Atom *)receivedTargets)[i] == xa)
 	break;
+      else if (((Atom *)receivedTargets)[i] == XA_STRING
+	       && xa == xa_text) {
+	xa = XA_STRING;
+	break;
+      }
     }
 
     if (receivedLength)

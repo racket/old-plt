@@ -723,7 +723,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 /*                           stx comparison                               */
 /*========================================================================*/
 
-static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int ignore_barrier)
+static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int a_ignore_barrier)
 /* Compares the marks in two wraps lists */
 {
   Scheme_Object *acur_mark, *bcur_mark;
@@ -745,7 +745,7 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl, int ignore_barrier
 	  acur_mark = SCHEME_CAR(awl);
 	  awl = SCHEME_CDR(awl);
 	}
-      } else if (SAME_OBJ(SCHEME_CAR(awl), barrier_symbol) && !ignore_barrier) {
+      } else if (!a_ignore_barrier && SAME_OBJ(SCHEME_CAR(awl), barrier_symbol)) {
 	awl = scheme_null;
       } else
 	awl = SCHEME_CDR(awl);
@@ -1115,10 +1115,7 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
   if ((a == asym) || (b == bsym))
     return 1;
 
-  /* Check for non-hygenic: */
-  if (SCHEME_IMMUTABLEP(asym))
-    uid = NULL;
-  else if (!uid)
+  if (!uid)
     if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps, 0))
       return 0;
 
@@ -1342,7 +1339,7 @@ static void simplify_lex_renames(Scheme_Object *w)
       stx = SCHEME_VEC_ELS(v)[2+i];
       name = SCHEME_STX_VAL(stx);
       SCHEME_VEC_ELS(v2)[2+pos] = name;
-      if (same_marks(w, ((Scheme_Stx *)stx)->wraps, 0)) {
+      if (same_marks(((Scheme_Stx *)stx)->wraps, w, 0)) {
 	/* Either this name is in prev, in which case
 	   the answer must match this rename's target, or
 	   this rename's answer applies. */

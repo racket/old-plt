@@ -780,7 +780,7 @@
 			      (#%if d (#%path->complete-path s d) s))))]
 	  [date>=?
 	   (#%lambda (a bm)
-	     (#%let ([am (#%file-modify-seconds a)])
+	     (#%let ([am (#%with-handlers ([#%void (#%lambda (x) #f)]) (#%file-or-directory-modify-seconds a))])
 		(#%or (#%and (#%not bm) am) (#%and am bm (#%>= am bm)))))])
     (#%lambda (path)
       (#%unless (#%and (#%string? path) (#%or (#%relative-path? path) (#%absolute-path? path)))
@@ -803,7 +803,7 @@
 				   (#%regexp-replace re:suffix file ".zo"))]
 		 [so (get-so file)]
 		 [_loader-so (get-so "_loader.ss")]
-		 [path-d (#%file-modify-seconds path)]
+		 [path-d (#%file-or-directory-modify-seconds path)]
 		 [with-dir (#%lambda (t) (#%parameterize ([#%current-load-relative-directory 
 							   (#%if (#%string? base) base (#%current-directory))]) (t)))])
 	    (#%cond

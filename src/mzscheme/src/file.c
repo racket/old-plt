@@ -223,9 +223,9 @@ void scheme_init_file(Scheme_Env *env)
 						      "delete-file", 
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("rename-file", 
+  scheme_add_global_constant("rename-file-or-directory", 
 			     scheme_make_prim_w_arity(rename_file, 
-						      "rename-file", 
+						      "rename-file-or-directory", 
 						      2, 2), 
 			     env);
   scheme_add_global_constant("copy-file", 
@@ -304,9 +304,9 @@ void scheme_init_file(Scheme_Env *env)
 						      "delete-directory",
 						      1, 1), 
 			     env);
-  scheme_add_global_constant("file-modify-seconds",
+  scheme_add_global_constant("file-or-directory-modify-seconds",
 			     scheme_make_prim_w_arity(file_modify_seconds,
-						      "file-modify-seconds",
+						      "file-or-directory-modify-seconds",
 						      1, 1), 
 			     env);
   scheme_add_global_constant("file-or-directory-permissions",
@@ -1986,6 +1986,14 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
 
 #ifndef NO_FILE_SYSTEM_UTILS
 
+static char *filename_for_error(Scheme_Object *p)
+{
+  return scheme_expand_filename(SCHEME_STR_VAL(p),
+				SCHEME_STRTAG_VAL(p),
+				NULL,
+				NULL);
+}
+
 static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STRINGP(argv[0]))
@@ -2004,19 +2012,22 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
       return scheme_false;
 
     if (FSpDelete(&spec))
-      return scheme_false;
-    else
-      return scheme_true;
+      return scheme_void;
   }
-#endif
-
+#else
   if (!MSC_IZE(unlink)(scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 					      SCHEME_STRTAG_VAL(argv[0]),
 					      "delete-file",
 					      NULL)))
-    return scheme_true;
-  else
-    return scheme_false;
+    return scheme_void;
+#endif
+  
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE, 
+		   argv[0], 
+		   "delete-file: cannot delete file: \"%.255s\"",
+		   filename_for_error(argv[0]));
+
+  return NULL;
 }
 
 static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
@@ -2028,25 +2039,25 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("rename-file", "string", 0, argc, argv);
+    scheme_wrong_type("rename-file-or-directory", "string", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
-    scheme_wrong_type("rename-file", "string", 1, argc, argv);
+    scheme_wrong_type("rename-file-or-directory", "string", 1, argc, argv);
 
 #ifdef USE_MAC_FILE_TOOLBOX
   src = SCHEME_STR_VAL(argv[0]);
   if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
-	raise_null_error("rename-file", argv[0], "");
+	raise_null_error("rename-file-or-directory", argv[0], "");
   dest = SCHEME_STR_VAL(argv[1]);
   if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
-	raise_null_error("rename-file", argv[1], "");
+	raise_null_error("rename-file-or-directory", argv[1], "");
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 			       SCHEME_STRTAG_VAL(argv[0]),
-			       "rename-file",
+			       "rename-file-or-directory",
 			       NULL);
   dest = scheme_expand_filename(SCHEME_STR_VAL(argv[1]),
 				SCHEME_STRTAG_VAL(argv[1]),
-				"rename-file",
+				"rename-file-or-directory",
 				NULL);
 #endif
 
@@ -2067,7 +2078,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
           pb.hFileInfo.ioFDirIndex = -1;
           pb.hFileInfo.ioDirID = srcspec.parID;
           if (PBGetCatInfo(&pb, 0))
-            return scheme_false;
+            goto failed;
             
           srcspec.parID = pb.dirInfo.ioDrParID;
         }
@@ -2083,30 +2094,35 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
           mv.ioNewName = NULL;
           mv.ioNewDirID = destspec.parID;
           if (PBCatMove(&mv, 0))
-            return scheme_false;
+            goto failed;
         }
         
         if (rename) {
           srcspec.parID = destspec.parID;
           if (FSpRename(&srcspec, destspec.name))
-            return scheme_false;
+	    goto failed;
       	}
       	
-        return scheme_true;
+        return scheme_void;
       }
     }
   }
-  
-  return scheme_false;
 #else
   if (scheme_file_exists(dest) || scheme_directory_exists(dest))
-    return scheme_false;
+    goto failed;
   
   if (!rename(src, dest))
-    return scheme_true;
-  else
-    return scheme_false;
+    return scheme_void;
 #endif
+
+failed:
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_RENAME, 
+		   argv[0], argv[1],
+		   "rename-file-or-directory: cannot rename file or directory: %.255s to: %.255s",
+		   filename_for_error(argv[0]),
+		   filename_for_error(argv[1]));
+  
+  return NULL;
 }
 
 #ifdef MAC_FILE_SYSTEM
@@ -2128,7 +2144,7 @@ static int xCopyFile(short dest, short src) {
 
 static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
 {
-  char *src, *dest;
+  char *src, *dest, *reason = NULL;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("copy-file", "string", 0, argc, argv);
@@ -2138,10 +2154,10 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
 #ifdef MAC_FILE_SYSTEM
   src = SCHEME_STR_VAL(argv[0]);
   if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
-	raise_null_error("copy-file", argv[0], "");
+    raise_null_error("copy-file", argv[0], "");
   dest = SCHEME_STR_VAL(argv[1]);
   if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
-	raise_null_error("copy-file", argv[1], "");
+    raise_null_error("copy-file", argv[1], "");
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 			       SCHEME_STRTAG_VAL(argv[0]),
@@ -2162,20 +2178,27 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     int ok;
     struct stat buf;
 
-    if (stat(src, &buf) || S_ISDIR(buf.st_mode))
-      return scheme_false;
+    if (stat(src, &buf) || S_ISDIR(buf.st_mode)) {
+      reason = "source file does not exist";
+      goto failed;
+    }
 
-    if (!stat(dest, &buf))
-      return scheme_false;
+    if (!stat(dest, &buf)) {
+      reason = "destination already exists";
+      goto failed;
+    }
 
     s = fopen(src, "rb");
-    if (!s)
-      return scheme_false;
+    if (!s) {
+      reason = "cannot open source file";
+      goto failed;
+    }
 
     d = fopen(dest, "wb");
     if (!d) {
       fclose(s);
-      return scheme_false;
+      reason = "cannot open destination file";
+      goto failed;
     }
     
     ok = 1;
@@ -2192,11 +2215,12 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     fclose(d);
 
     if (ok) {
-      if (chmod(dest, buf.st_mode))
-	return scheme_false;
-      return scheme_true;
+      if (!chmod(dest, buf.st_mode))
+	return scheme_void;
+      else
+	reason = "cannot set destination's mode";
     } else
-      return scheme_false;
+      reason = "read or write failed";
   }
 #endif
 #ifdef DOS_FILE_SYSTEM
@@ -2204,9 +2228,9 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
 #endif
 #ifdef MAC_FILE_SYSTEM
   { 
-  	FInfo finfo;
+    FInfo finfo;
     FSSpec srcspec, destspec;
-    int exists;
+    int exists = 0;
     static OSErr en;
    
     if (find_mac_file(src, 0, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
@@ -2223,7 +2247,7 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
         rec.ioNewName = destspec.name;
         rec.ioCopyName = NULL;
         if (!(en = PBHCopyFileSync((HParmBlkPtr)&rec)))
-          return scheme_true;
+          return scheme_void;
         else {
           /* Try the old-fashioned way: */
           short sdf, srf, ddf, drf;
@@ -2238,26 +2262,46 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
 	                    FSClose(ddf);
 	                    FSClose(srf);
 	                    FSClose(sdf);
-	                    return scheme_true;
-	                  }
-	                }
+	                    return scheme_void;
+	                  } else
+			    reason = "read or write error on resource fork";
+	                } else
+			  reason = "read or write error on data fork";
 	                FSClose(drf);
-                  }
+                  }  else
+		    reason = "cannot open destination file resource fork";
                   FSClose(ddf);
-                }
+                } else
+		  reason = "cannot open destination file data fork";
                 FSpDelete(&destspec);
-              }
+              } else
+		reason = "cannot create destination file";
               FSClose(srf);
-            }
+            } else
+	      reason = "cannot open source file resource fork";
             FSClose(sdf);
-          }
+          } else
+	    reason = "cannot open source file data fork";
         }
+      } else {
+	if (exists)
+	  reason = "destination already exists";
+	else
+	  reason = "bad destination path";
       }
-    }
+    } else
+      reason = "source file does not exist";
   }
 #endif
 
-  return scheme_false;
+failed:
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_RENAME, 
+		   argv[0], argv[1],
+		   "copy-file: %s; cannot copy: %.255s to: %.255s",
+		   reason,
+		   filename_for_error(argv[0]),
+		   filename_for_error(argv[1]));
+  return NULL;
 }
 
 static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv)
@@ -2515,7 +2559,8 @@ static Scheme_Object *current_drive(int argc, Scheme_Object *argv[])
 
   return scheme_make_sized_string(drive, strlen(drive), 0);
 #else
-  return scheme_false;
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, "current-drive: not supported");
+  return NULL;
 #endif
 }
 
@@ -2822,10 +2867,14 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 #ifndef MKDIR_NO_MODE_FLAG
 		     , 0xFFFF
 #endif
-		     ))
-    return scheme_false;
-  else
-    return scheme_true;
+		     )) {
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+		     argv[0],
+		     "make-directory: cannot make directory: %.255s",
+		     filename_for_error(argv[0]));
+    return NULL;
+  } else
+    return scheme_void;
 #endif
 }
 
@@ -2844,10 +2893,14 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 				    "delete-directory",
 				    NULL);
   
-  if (MSC_IZE(rmdir)(filename))
-    return scheme_false;
-  else
-    return scheme_true;
+  if (MSC_IZE(rmdir)(filename)) {
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_DIRECTORY,
+		     argv[0],
+		     "delete-directory: cannot delete directory: %.255s",
+		     filename_for_error(argv[0]));
+    return NULL;
+  } else
+    return scheme_void;
 #endif
 }
 
@@ -2865,25 +2918,25 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("file-modify-seconds", "string", 0, argc, argv);
+    scheme_wrong_type("file-or-directory-modify-seconds", "string", 0, argc, argv);
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   file = SCHEME_STR_VAL(argv[0]);
   if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
-    raise_null_error("file-modify-seconds", argv[0], "");
+    raise_null_error("file-or-directory-modify-seconds", argv[0], "");
 #else
   file = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				SCHEME_STRTAG_VAL(argv[0]),
-				"file-modify-seconds",
+				"file-or-directory-modify-seconds",
 				NULL);
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   if (!find_mac_file(file, 0, &spec, 0, 0, NULL, NULL, &exists, &mtime, NULL, NULL, NULL, NULL)
-      || !exists)
-    return scheme_false;
-
-  return scheme_make_integer_value_from_time(mtime);
+      || !exists) {
+    /* Failed */
+  } else
+    return scheme_make_integer_value_from_time(mtime);
 #else
 # ifdef DOS_FILE_SYSTEM
   {
@@ -2892,16 +2945,18 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 
     if (UNC_stat(file, len, NULL, NULL, &secs))
       return secs;
-    else
-      return scheme_false;
   }
 # else
-  if (MSC_IZE(stat)(file, &buf))
-    return scheme_false;
-
-  return scheme_make_integer_value_from_time(buf.st_mtime);
+  if (!MSC_IZE(stat)(file, &buf))
+    return scheme_make_integer_value_from_time(buf.st_mtime);
 # endif
 #endif
+
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+		   argv[0],
+		   "file-or-directory-modify-seconds: file or directory not found: \"%.255s\"",
+		   filename_for_error(argv[0]));
+  return NULL;
 }
 
 #ifdef UNIX_FILE_SYSTEM
@@ -2972,17 +3027,16 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #ifdef USE_MAC_FILE_TOOLBOX
   if (!find_mac_file(filename, 0, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL)
       || !exists)
-    return scheme_null;
-
-  l = scheme_make_pair(read_symbol, l);
-
-  if (type == 'APPL')
-    l = scheme_make_pair(execute_symbol, l);
-
-  if (!(flags & 0x1))
-    l = scheme_make_pair(write_symbol, l);
-
-  return l;
+    return l = NULL;
+  else {
+    l = scheme_make_pair(read_symbol, l);
+    
+    if (type == 'APPL')
+      l = scheme_make_pair(execute_symbol, l);
+    
+    if (!(flags & 0x1))
+      l = scheme_make_pair(write_symbol, l);
+  }
 #else
 # ifdef NO_STAT_PROC
   return scheme_null;
@@ -2993,34 +3047,35 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
     int read, write, execute;
 
     if (stat(filename, &buf))
-      return scheme_null;
-
-    if (buf.st_uid == getuid()) {
-      read = !!(buf.st_mode & S_IRUSR);
-      write = !!(buf.st_mode & S_IWUSR);
-      execute = !!(buf.st_mode & S_IXUSR);
-    } else if (user_in_group(buf.st_gid)) {
-      read = !!(buf.st_mode & S_IRGRP);
-      write = !!(buf.st_mode & S_IWGRP);
-      execute = !!(buf.st_mode & S_IXGRP);
-    } else {
-      read = !!(buf.st_mode & S_IROTH);
-      write = !!(buf.st_mode & S_IWOTH);
-      execute = !!(buf.st_mode & S_IXOTH);
+      l = NULL;
+    else {
+      if (buf.st_uid == getuid()) {
+	read = !!(buf.st_mode & S_IRUSR);
+	write = !!(buf.st_mode & S_IWUSR);
+	execute = !!(buf.st_mode & S_IXUSR);
+      } else if (user_in_group(buf.st_gid)) {
+	read = !!(buf.st_mode & S_IRGRP);
+	write = !!(buf.st_mode & S_IWGRP);
+	execute = !!(buf.st_mode & S_IXGRP);
+      } else {
+	read = !!(buf.st_mode & S_IROTH);
+	write = !!(buf.st_mode & S_IWOTH);
+	execute = !!(buf.st_mode & S_IXOTH);
+      }
+      
+      if (read)
+	l = scheme_make_pair(read_symbol, l);
+      if (write)
+	l = scheme_make_pair(write_symbol, l);
+      if (execute)
+	l = scheme_make_pair(execute_symbol, l);
     }
-    
-    if (read)
-      l = scheme_make_pair(read_symbol, l);
-    if (write)
-      l = scheme_make_pair(write_symbol, l);
-    if (execute)
-      l = scheme_make_pair(execute_symbol, l);
   }
 #  endif  
 #  ifdef DOS_FILE_SYSTEM
   {
     int len = strlen(filename);
-	int flags;
+    int flags;
     
     if (UNC_stat(filename, len, &flags, NULL, NULL)) {
       if (flags & MZ_UNC_READ)
@@ -3029,11 +3084,19 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 	l = scheme_make_pair(write_symbol, l);
       if (flags & MZ_UNC_EXEC)
 	l = scheme_make_pair(execute_symbol, l);
-    }
+    } else
+      l = NULL;
   }
 #  endif
 # endif
 #endif
+  
+  if (!l) {
+    scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+		     argv[0],
+		     "file-or-directory-permissions: file or directory not found: \"%.255s\"",
+		     filename_for_error(argv[0]));
+  }
 
   return l;
 }
@@ -3062,20 +3125,27 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
 
 #ifdef USE_MAC_FILE_TOOLBOX
   if (!find_mac_file(filename, 0, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &len, NULL))
-    return scheme_false;
+    goto failed;
 #endif
 #if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
   {
     struct MSC_IZE(stat) buf;
 
     if (MSC_IZE(stat)(filename, &buf) || S_ISDIR(buf.st_mode))
-      return scheme_false;
+      goto failed;
 
     len = buf.st_size;
   }
 #endif
 
   return scheme_make_integer_value_from_unsigned(len);
+
+failed:
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+		   argv[0],
+		   "file-size: file not found: \"%.255s\"",
+		   filename_for_error(argv[0]));
+  return NULL;
 }
 
 #endif

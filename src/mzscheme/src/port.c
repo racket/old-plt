@@ -2382,12 +2382,12 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
   rel = dir ? dir : (drive ? drive : "");
   post = dir ? "\"" : "";
 
-  scheme_raise_exn (MZEXN_I_O_FILESYSTEM_FILE,
-		    scheme_make_string(filename),
-		    "%s: %s: \"%.255s\"%s%.255s%s (%d)", 
-		    name, msg, filename,
-		    pre, rel, post,
-		    err);
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM_FILE,
+		   scheme_make_string(filename),
+		   "%s: %s: \"%.255s\"%s%.255s%s (%d)", 
+		   name, msg, filename,
+		   pre, rel, post,
+		   err);
 }
 
 static Scheme_Object *

@@ -151,8 +151,9 @@ instantiated.
 	  (filesystem [pathname "string" "pathname"] -
 		      (+path [] "bad pathname; raised by all file procedures that take a pathname"
 			     (+username [] "bad username (Unix only); raised by all file procedures that take a pathname"))
-		      (+file [] "file not found; raised by procedures that open files")
-		      (+directory [] "directory not found; raised by \\scmfirst{current-directory}, \\scmfirst{current-load-relative-directory}, \\scmfirst{directory-list}, \\scmfirst{load-with-cd}")
+		      (+file [] "file not found or file operation failed; raised by procedures that operate on files, plus \\scmfirst{file-or-directory-modify-seconds}, \\scmfirst{file-or-directory-permissions}")
+		      (+directory [] "directory not found or directory operation failed; raised by procedures that operate on directories")
+		      (+rename [destination "string" "pathname"] "rename or copy failed; \\scmfirst{copy-file}, \\scmfirst{rename-file-or-directory}")
 		      (+collection [] "collection not found; raised by \\scmfirst{require-library}, \\scmfirst{require-relative-library}")
 		      (+file-exists [] "cannot overwrite file; raised by \\scmfirst{open-output-file}")
 		      (+link [] "bad link discovered; raised by \\scmfirst{simplify-path}"))

@@ -14,7 +14,6 @@
 
   (define basics-mixin
     (mixin (fw:frame:standard-menus<%>) (basics<%>) args
-      
       (inherit get-edit-target-object get-menu-bar)
       (private
 	[get-menu-bindings
@@ -133,7 +132,11 @@
        [edit-menu:between-find-and-preferences
         (lambda (menu)
           (make-object mred:separator-menu-item% menu)
-          (make-object mred:menu-item% "Keybindings" menu (lambda x (show-keybindings)) #\k)
+          (make-object mred:menu-item% "Keybindings" menu
+		       (lambda x (show-keybindings))
+		       (and (fw:preferences:get 'framework:menu-bindings)
+			    #\h)
+		       "Show the currently active keybindings")
           (make-object mred:separator-menu-item% menu))])
       
       (sequence 

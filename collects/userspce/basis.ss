@@ -387,7 +387,10 @@
 						  'previous
 						  vocab)))
 				    (lambda () (zodiac:interface:set-zodiac-phase #f)))
-				   (zodiac:sexp->raw zodiac-read))]
+
+				   ;; call expand-defmacro here so errors
+				   ;; are raised at the right time.
+				   (expand-defmacro (zodiac:sexp->raw zodiac-read)))]
 			      [heading-out (if (and annotate? use-z-exp?)
 					       (annotate exp zodiac-read)
 					       exp)])

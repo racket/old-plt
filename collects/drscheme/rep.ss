@@ -264,6 +264,13 @@
 			  (make-object mred:image-snip% bitmap)
 			  (make-object mred:string-snip% "[open file]"))))
   
+  (define (no-user-evaluation-message)
+    (mred:message-box
+     "Warning"
+     (format "The evaluation thread is no longer running, ~
+              so no evaluation can take place until ~
+              the next execution.")))
+
   (define (make-text% super%)
     (rec rep-text%
       (class/d super% (context)
@@ -361,7 +368,8 @@
            
            run-in-evaluation-thread
            
-           shutdown))
+           shutdown
+	   kill-evaluation))
         
         (unless (is-a? context context<%>)
           (error 'drscheme:rep:text% "expected an object that implements drscheme:rep:context<%> as initialization argument, got: ~e"
@@ -1029,11 +1037,7 @@
             (unless (and user-thread (thread-running? user-thread))
               (lock #t)
               (unless shutting-down?
-                (mred:message-box
-                 "Warning"
-                 (format "The evaluation thread is no longer running, ~
-                 so no evaluation can take place until ~
-                 the next execution."))))))
+		(no-user-evaluation-message)))))
         (define need-interaction-cleanup? #f)
         (define cleanup-interaction ; =Kernel=, =Handler=
           (lambda ()
@@ -1158,6 +1162,11 @@
                (break-thread user-thread)
                (set! ask-about-kill? #t)])))
         
+	(define kill-evaluation
+	  (lambda () ; =Kernel=, =Handler=
+	    (shutdown)
+	    (no-user-evaluation-message)))
+
         (define error-escape-k void)
         (define user-break-enabled #t)
         

@@ -157,7 +157,7 @@ exit
       (and (not in-rpm-build?)
 	   (begin
 	    (printf "PLT software starts up much faster with .zo files, but creating .zo~n")
-	    (printf "files now takes a few minutes and requires about 5MB of additional~n")
+	    (printf "files now takes a few minutes and requires several MB of additional~n")
 	    (printf "disk space.~n")
 	    (printf "  Create .zo files now (y/n)? [y] ")
 	    (get-y-n)))))

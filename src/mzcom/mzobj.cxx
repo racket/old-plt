@@ -79,7 +79,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
       outputObj = scheme_eval_string_all(narrowInput,env,TRUE);
 
-      narrowOutput = scheme_format("~a",2,1,&outputObj,NULL);
+      narrowOutput = scheme_format("~s",2,1,&outputObj,NULL);
   
       len = strlen(narrowOutput);
 

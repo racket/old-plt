@@ -284,6 +284,8 @@
                   
                   (send text set-position start-pos end-pos)
                   (send text end-edit-sequence)))])
+      (send text auto-wrap #t)
+      (send text set-autowrap-bitmap #f)
       (send text insert error-text)
       (send text insert #\newline)
       (send text insert #\newline)

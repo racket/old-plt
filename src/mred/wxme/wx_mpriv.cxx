@@ -2862,7 +2862,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       pos = FindScrollLine(y + H);
       py = ScrollLineLocation(pos);
       if (py > y) {
-	int new_h = py - y;
+	float new_h = py - y;
 	next_h = h - new_h;
 	h = new_h;
       }

@@ -86,7 +86,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
-static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
+static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
@@ -96,7 +96,7 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
   if (!dc->Ok()) {
     a[0] = a[1] = a[2] = a[3] = WITH_VAR_STACK(scheme_make_double(0.0));
   } else {
-    WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big));
+    WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
     
     a[0] = WITH_VAR_STACK(scheme_make_double(w));
     a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -131,7 +131,7 @@ static void* MyGetSize(wxDC *dc)
 @INCLUDE wxs_draw.xci
 
 // Also in wxWindow:
-@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE);
+@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,int=0);
 @ Q "get-char-height" : float GetCharHeight();
 @ Q "get-char-width" : float GetCharWidth();
 

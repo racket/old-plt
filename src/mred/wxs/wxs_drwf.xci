@@ -14,7 +14,7 @@
 @ Q "draw-rectangle" : void DrawRectangle(float,float,nnfloat,nnfloat); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk
 @ Q "draw-rounded-rectangle" : void DrawRoundedRectangle(float,float,nnfloat,nnfloat,float=20); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk
 @ q "draw-spline" : void DrawSpline(float,float,float,float,float,float); : : /CheckOk
-@ Q "draw-text" : void DrawText(string,float,float,bool=FALSE); : : /CheckOk
+@ Q "draw-text" : void DrawText(string,float,float,bool=FALSE,int=0); : : /CheckOk
 
 @ Q "draw-arc" : void DrawArc(float,float,nnfloat,nnfloat,float,float); : : /CheckOk
 @ Q "draw-ellipse" : void DrawEllipse(float,float,nnfloat,nnfloat); : : /ZeroReturn[2]|ZeroReturn[3]|CheckOk

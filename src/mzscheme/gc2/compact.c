@@ -1247,54 +1247,40 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
 
   offsets = page->u.offsets;
 
-  if (page->gray_start == page->gray_end) {
+  offset = page->gray_start;
+  p = bottom + offset;
+  graytop = bottom + page->gray_end;
+  
+  while (p <= graytop) {
+    OffsetTy v;
     Type_Tag tag;
-
-    offset = page->gray_start;
-    offsets[offset] = BLACK_BIT;
-    p = bottom + offset;
+    long size;
+    
     tag = *(Type_Tag *)p;
-    mark_table[tag](p);
-
-#if MARK_STATS
-    mark_one++;
-#endif
-  } else {
-    offset = page->gray_start;
-    p = bottom + offset;
-    graytop = bottom + page->gray_end;
-
-    while (p < graytop) {
-      OffsetTy v;
-      Type_Tag tag;
-      long size;
-
-      tag = *(Type_Tag *)p;
 
 #if ALIGN_DOUBLES
-      if (tag != SKIP) {
+    if (tag != SKIP) {
 #endif
       
-	v = offsets[offset];
-	if (v & GRAY_BIT) {
-	  offsets[offset] = BLACK_BIT;
-	  size = mark_table[tag](p);
-	} else
-	  size = size_table[tag](p);
+      v = offsets[offset];
+      size = (v & OFFSET_MASK);
+      if (v & GRAY_BIT) {
+	offsets[offset] = BLACK_BIT | size;
+	mark_table[tag](p);
+      }
 	
 #if ALIGN_DOUBLES
-      } else
-	size = 1;
+    } else
+      size = 1;
 #endif
 
-      p += size;
-      offset += size;
-    }
+    p += size;
+    offset += size;
+  }
 
 #if MARK_STATS
-    mark_many++;
+  mark_many++;
 #endif
-  }
 
 #if MARK_STATS
   if (page->type & GRAY_BIT) {
@@ -1345,17 +1331,17 @@ static void propagate_array_mpage(void **bottom, MPage *page)
   top = bottom + page->gray_end;
   offsets = page->u.offsets;
 
-  while (p < top) {
+  while (p <= top) {
     OffsetTy v;
     long size;
 
-    size = *(long *)p;
+    size = *(long *)p + 1;
 	
     v = offsets[offset];
     if (v & GRAY_BIT) {
       int i;
 
-      offsets[offset] = BLACK_BIT;
+      offsets[offset] = BLACK_BIT | (v & OFFSET_MASK);
       
       for (i = 1; i <= size; i++) {
 	gcMARK(p[i]);
@@ -1400,7 +1386,7 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
   top = bottom + page->gray_end;
   offsets = page->u.offsets;
 
-  while (p < top) {
+  while (p <= top) {
     OffsetTy v;
     int size;
     
@@ -1408,7 +1394,7 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
 
     v = offsets[offset];
     if (v & GRAY_BIT) {
-      offsets[offset] = BLACK_BIT;
+      offsets[offset] = BLACK_BIT | (v & OFFSET_MASK);
 
       {
 	int i, elem_size;

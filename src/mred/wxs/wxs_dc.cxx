@@ -178,7 +178,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
-static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
+static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
@@ -188,7 +188,7 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big)
   if (!dc->Ok()) {
     a[0] = a[1] = a[2] = a[3] = WITH_VAR_STACK(scheme_make_double(0.0));
   } else {
-    WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big));
+    WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
     
     a[0] = WITH_VAR_STACK(scheme_make_double(w));
     a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -892,6 +892,7 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
   string x0;
   class wxFont* x1;
   Bool x2;
+  int x3;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -909,9 +910,13 @@ static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Obj
     x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[2], "get-text-extent in dc<%>"));
   } else
     x2 = FALSE;
+  if (n > 3) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "get-text-extent in dc<%>"));
+  } else
+    x3 = 0;
 
   
-  r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2));
+  r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2, x3));
 
   
   
@@ -1270,6 +1275,7 @@ static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object 
   float x1;
   float x2;
   Bool x3;
+  int x4;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1284,9 +1290,13 @@ static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object 
     x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[3], "draw-text in dc<%>"));
   } else
     x3 = FALSE;
+  if (n > 4) {
+    x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "draw-text in dc<%>"));
+  } else
+    x4 = 0;
 
   DO_OK_CHECK(scheme_void)
-  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawText(x0, x1, x2, x3));
+  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawText(x0, x1, x2, x3, x4));
 
   
   
@@ -1489,7 +1499,7 @@ void objscheme_setup_wxDC(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-section", os_wxDCDrawBitmapRegion, 7, 9));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-width", os_wxDCGetCharWidth, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-height", os_wxDCGetCharHeight, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCMyTextExtent, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCMyTextExtent, 1, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-foreground", os_wxDCSetTextForeground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-background", os_wxDCSetTextBackground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-pen", os_wxDCSetPen, 1, 1));
@@ -1503,7 +1513,7 @@ void objscheme_setup_wxDC(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-lines", os_wxDCDrawLines, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-ellipse", os_wxDCDrawEllipse, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-arc", os_wxDCDrawArc, 6, 6));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-text", os_wxDCDrawText, 3, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-text", os_wxDCDrawText, 3, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-spline", os_wxDCDrawSpline, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-rounded-rectangle", os_wxDCDrawRoundedRectangle, 4, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-rectangle", os_wxDCDrawRectangle, 4, 4));

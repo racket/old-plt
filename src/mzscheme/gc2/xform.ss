@@ -173,7 +173,7 @@
   (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
   (printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
   (printf "#define BLOCK_SETUP(x) ~a~n" (if per-block-push? "x" "/* skipped */"))
-  (printf "#define NULLED_OUT ((void *)0)~n")
+  (printf "#define NULLED_OUT 0~n")
   (printf "#define NULL_OUT_ARRAY(a) memset(a, 0, sizeof(a))~n")
   (printf "~n")
   
@@ -282,11 +282,17 @@
 (define non-gcing-functions
   ;; The following don't need wrappers, but we need to check for
   ;;  nested function calls because it takes more than one argument:
-  '(memcpy
-    strcmp strcpy strcat memset
-    printf sprintf vsprintf vprintf
-    strncmp scheme_strncmp
-    read write))
+  (append
+   '(memcpy memmove
+     strcmp strcpy strcat memset
+     printf sprintf vsprintf vprintf
+     strncmp scheme_strncmp
+     read write)
+   (map
+    string->symbol
+    '("XTextExtents" "XTextExtents16" 
+      "XDrawImageString16" "XDrawImageString"
+      "XDrawString16" "XDrawString"))))
 
 (define non-returning-functions
   ;; The following functions never return, so the wrappers
@@ -1656,7 +1662,10 @@
 				     null
 				     (let null-var ([full-name (car var)][vtype (cdr var)])
 				       (cond
-					[(union-type? vtype)
+					[(or (union-type? vtype)
+					     (non-pointer-type? vtype)
+					     (and (pointer-type? vtype)
+						  (zero? (pointer-type-stars vtype))))
 					 null]
 					[(array-type? vtype)
 					 (let ([c (array-type-count vtype)])
@@ -1757,23 +1766,23 @@
 (define (resolve-indirection v get-c++-class-member c++-class locals)
   (and (parens? v)
        (let ([seql (seq->list (seq-in v))])
-	 (= 3 (length seql))
-	 (eq? '-> (tok-n (cadr seql)))
-	 (let ([lhs (car seql)])
-	   (cond
-	    [(eq? sElF (tok-n lhs))
-	     (get-c++-class-member (tok-n (caddr seql)) c++-class)]
-	    [(or (resolve-indirection lhs get-c++-class-var c++-class locals)
-		 (assq (tok-n lhs) locals))
-	     => (lambda (m)
-		  (let ([type (cdr m)])
-		    (and (pointer-type? type)
-			 (= 1 (pointer-type-stars type))
-			 (= 1 (length (pointer-type-base type))))
-		    (let ([c++-class (find-c++-class (car (pointer-type-base type)) #f)])
-		      (and c++-class
-			   (get-c++-class-member (tok-n (caddr seql)) c++-class)))))]
-	    [else #f])))))
+	 (and (= 3 (length seql))
+	      (eq? '-> (tok-n (cadr seql)))
+	      (let ([lhs (car seql)])
+		(cond
+		 [(eq? sElF (tok-n lhs))
+		  (get-c++-class-member (tok-n (caddr seql)) c++-class)]
+		 [(or (resolve-indirection lhs get-c++-class-var c++-class locals)
+		      (assq (tok-n lhs) locals))
+		  => (lambda (m)
+		       (let ([type (cdr m)])
+			 (and (pointer-type? type)
+			      (= 1 (pointer-type-stars type))
+			      (= 1 (length (pointer-type-base type))))
+			 (let ([c++-class (find-c++-class (car (pointer-type-base type)) #f)])
+			   (and c++-class
+				(get-c++-class-member (tok-n (caddr seql)) c++-class)))))]
+		 [else #f]))))))
 
 (define (extract-resolvable-record-var v)
   (and (parens? v)
@@ -2326,20 +2335,14 @@
 		   (positive? (live-var-info-num-calls live-vars)))
 	  (when (and (memq (tok-n (car e-)) '(+ - ++ -- += -=))
 		     (let ([assignee (cdr e-)])
-		       ;; Special case: (YYY -> ivar) + ...;
-		       (let ([special-case-type (and (not (null? assignee))
-						     (null? (cdr assignee))
-						     (= 2 (length result))
-						     (or (call? (car result))
-							 (creation-parens? (car result)))
-						     (eq? semi (tok-n (cadr result)))
-						     (let ([m (resolve-indirection (car assignee) get-c++-class-var c++-class vars)])
-						       (and m (cdr m))))])
-			 (or (and special-case-type
-				  (or (non-pointer-type? special-case-type)
-				      (pointer-type? special-case-type)))
-			     (and (not (null? assignee))
-				  (assq (tok-n (car assignee)) vars))))))
+		       (or (and (not (null? assignee))
+				(assq (tok-n (car assignee)) vars))
+			   ;; Special case: (YYY -> ivar) + ...;
+			   (let ([special-case-type (and (not (null? assignee))
+							 (let ([m (resolve-indirection (car assignee) get-c++-class-var c++-class vars)])
+							   (and m (cdr m))))])
+			     (and special-case-type
+				  (pointer-type? special-case-type))))))
 	    (fprintf (current-error-port)
 		     "Warning [ARITH] ~a in ~a: suspicious arithmetic, LHS ends ~s.~n"
 		     (tok-line (car e-)) (tok-file (car e-))
@@ -2496,14 +2499,14 @@
 				[(string=? "(" (caar v)) make-parens]
 				[(string=? "[" (caar v)) make-brackets]
 				[(string=? "{" (caar v)) make-braces])
-			       (caar v) (caddr v)
+			       (caar v) (sub1 (caddr v))
 			       source
 			       (cond
 				[(string=? "(" (caar v)) ")"]
 				[(string=? "[" (caar v)) "]"]
 				[(string=? "{" (caar v)) "}"])
 			       (list->seq body)))
-			    (make-tok (car v) (caddr v) source)))])
+			    (make-tok (car v) (sub1 (caddr v)) source)))])
 	      (map translate e-r)))])
   (foldl-statement
    e

@@ -1185,8 +1185,8 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
   }
 }
 
-void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
-			       Bool WXUNUSED(use16))
+void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
+			      Bool use16, int dt)
 {
   float tw, th;
   int i, len, size;
@@ -1196,7 +1196,7 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
   if (current_font)
     SetFont (current_font);
 
-  GetTextExtent(text, &tw, &th);
+  GetTextExtent(text, &tw, &th, NULL, NULL, NULL, use16, dt);
 
   if (current_bk_mode == wxSOLID) {
     unsigned char red, blue, green;
@@ -1261,10 +1261,10 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
   pstream->Out(XSCALE(x)); pstream->Out(" "); pstream->Out(YSCALE (y + size)); pstream->Out(" moveto\n");
 
   pstream->Out("(");
-  len = strlen (text);
+  len = strlen(text + dt);
   for (i = 0; i < len; i++)
     {
-      char ch = text[i];
+      char ch = text[i + dt];
       if (ch == ')' || ch == '(' || ch == '\\')
 	pstream->Out("\\");
       pstream->Out(ch);
@@ -1709,7 +1709,7 @@ static int lastWidths[256]; // widths of the characters
 
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
-				    Bool WXUNUSED(use16))
+				    Bool WXUNUSED(use16), int dt)
 {
   wxFont *fontToUse = theFont;
   int Family;
@@ -1881,7 +1881,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   // string. they are given in 1/1000 of the size!
 
   height = (float)Size;
-  for (p = (unsigned char *)string; *p; p++) {
+  for (p = (unsigned char *)string + dt; *p; p++) {
     if (lastWidths[*p] == INT_MIN) {
       wxDebugMsg("GetTextExtent: undefined width for character '%c' (%d)\n",
                  *p, *p);

@@ -1468,8 +1468,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     }
 
     snipStartPos = start;
-    str = snip->buffer + snip->dtext;
-    sp = s;
+    str = snip->buffer;
+    sp = s + snip->dtext;
     for (i = 0; i < addlen; i++) {
       if (str[sp] == '\r')
 	str[sp] = '\n';
@@ -1554,8 +1554,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
 	snip = (wxTextSnip *)FindSnip(i + start + 1, +1);
 	snipStartPos = i + start + 1;
-	str = snip->buffer + snip->dtext;
-	sp = 0;
+	str = snip->buffer;
+	sp = snip->dtext;
       } else
 	sp++;
     }

@@ -1,11 +1,11 @@
 (module ga mzscheme
-  (require (lib "list.ss" "mzlib"))
-  (require "heuristics.ss")
+  (require (lib "list.ss" "mzlib")
+	   "heuristics.ss"
+	   "client.ss")
 	  
   (define GREATEST-POSSIBLE-INTEGER 10000)
   (define LOWEST-POSSIBLE-INTEGER  -10000)
   
-  (define (start-client _ __ ___ ____) (random 10))
   (define print-every-n-generations 2)
   (define run-n-generations 10)
   (define output-port (current-output-port))
@@ -119,7 +119,11 @@
                     (subprocess #f #f #f "./Simulator"
 				(format "-p 4000 -m ~a -k ~a -n ~a"
 					board packages (length players)))])
-        (let ([threads (map (lambda (player-num)
+	(printf
+	 "Starting game with players ~a on board ~a with package file ~a~n"
+	 players board packages)
+	(flush-output (current-output-port))
+	(let ([threads (map (lambda (player-num)
                               (let ([genes (vector-ref player-vec player-num)])
                                 (thread (lambda ()
                                           (set-parameter-values! genes)
@@ -148,7 +152,7 @@
           [else (let tourny-loop ([i 0])
                   (cond
                     [(= i num-players) (board-loop (cdr board-ls))]
-                    [else (let ([need-players (sub1 (caar board-ls))]
+                    [else (let ([need-players (caar board-ls)]
                                 [board-file (cadar board-ls)]
                                 [packages-file (caddar board-ls)])
                             (let other-players ([player i] [acc '()])
@@ -158,8 +162,8 @@
                                              packages-file players acc)
                                  (tourny-loop (add1 i))]
                                 [else (other-players
-                                       (modulo (add1 i) num-players)
-                                       (cons i acc))])))]))]))))
+                                       (modulo (add1 player) num-players)
+                                       (cons player acc))])))]))]))))
   
   ;; chop-list! : num list -> void
   (define (chop-list! n ls)

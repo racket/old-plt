@@ -47,43 +47,43 @@ CPP=cl.exe
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
-OUTDIR=Release
-INTDIR=Release
+OUTDIR=.\Release
+INTDIR=.\Release
 
 ALL : "$(OUTDIR)\wxutils.lib"
 
 CLEAN : 
-	-@erase "Release\vc40.pdb"
-	-@erase "Release\wxutils.lib"
-	-@erase "Release\Check.obj"
-	-@erase "Release\DIB.obj"
-	-@erase "Release\Zyz3d.obj"
-	-@erase "Release\wximgxbm.obj"
-	-@erase "Release\Draw.obj"
-	-@erase "Release\Hashtab.obj"
-	-@erase "Release\Zyzgauge.obj"
-	-@erase "Release\Crifrdat.obj"
-	-@erase "Release\Crifrbuf.obj"
-	-@erase "Release\Misc.obj"
-	-@erase "Release\Crdatfri.obj"
-	-@erase "Release\Wrffri.obj"
-	-@erase "Release\Cont.obj"
-	-@erase "Release\Rdftoi.obj"
-	-@erase "Release\Dumfafa.obj"
-	-@erase "Release\Data.obj"
-	-@erase "Release\Rdftodat.obj"
-	-@erase "Release\Crbuffri.obj"
-	-@erase "Release\Parse.obj"
-	-@erase "Release\Fafa.obj"
-	-@erase "Release\Rgb.obj"
-	-@erase "Release\Dialog.obj"
-	-@erase "Release\Simx.obj"
-	-@erase "Release\Button.obj"
-	-@erase "Release\Scan.obj"
-	-@erase "Release\Wrffrdat.obj"
-	-@erase "Release\Wrffrp.obj"
-	-@erase "Release\Static.obj"
-	-@erase "Release\Create.obj"
+	-@erase ".\Release\vc40.pdb"
+	-@erase ".\Release\wxutils.lib"
+	-@erase ".\Release\Static.obj"
+	-@erase ".\Release\Rdftoi.obj"
+	-@erase ".\Release\Rgb.obj"
+	-@erase ".\Release\DIB.obj"
+	-@erase ".\Release\Create.obj"
+	-@erase ".\Release\Dialog.obj"
+	-@erase ".\Release\Button.obj"
+	-@erase ".\Release\Rdftodat.obj"
+	-@erase ".\Release\Simx.obj"
+	-@erase ".\Release\Draw.obj"
+	-@erase ".\Release\wximgxbm.obj"
+	-@erase ".\Release\Wrffrp.obj"
+	-@erase ".\Release\Zyzgauge.obj"
+	-@erase ".\Release\Hashtab.obj"
+	-@erase ".\Release\Crifrdat.obj"
+	-@erase ".\Release\Misc.obj"
+	-@erase ".\Release\Crifrbuf.obj"
+	-@erase ".\Release\Crdatfri.obj"
+	-@erase ".\Release\Parse.obj"
+	-@erase ".\Release\Cont.obj"
+	-@erase ".\Release\Check.obj"
+	-@erase ".\Release\Zyz3d.obj"
+	-@erase ".\Release\Data.obj"
+	-@erase ".\Release\Fafa.obj"
+	-@erase ".\Release\Crbuffri.obj"
+	-@erase ".\Release\Dumfafa.obj"
+	-@erase ".\Release\Wrffri.obj"
+	-@erase ".\Release\Scan.obj"
+	-@erase ".\Release\Wrffrdat.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -97,7 +97,7 @@ CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I\
  "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa"\
  /D "NDEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW"\
  /D WX_NORMALIZED_PS_FONTS=1 /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
-CPP_OBJS=Release/
+CPP_OBJS=.\Release/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -109,35 +109,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxutils.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Check.obj" \
-	"$(INTDIR)/DIB.obj" \
-	"$(INTDIR)/Zyz3d.obj" \
-	"$(INTDIR)/wximgxbm.obj" \
-	"$(INTDIR)/Draw.obj" \
-	"$(INTDIR)/Hashtab.obj" \
-	"$(INTDIR)/Zyzgauge.obj" \
-	"$(INTDIR)/Crifrdat.obj" \
-	"$(INTDIR)/Crifrbuf.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Crdatfri.obj" \
-	"$(INTDIR)/Wrffri.obj" \
-	"$(INTDIR)/Cont.obj" \
-	"$(INTDIR)/Rdftoi.obj" \
-	"$(INTDIR)/Dumfafa.obj" \
-	"$(INTDIR)/Data.obj" \
-	"$(INTDIR)/Rdftodat.obj" \
-	"$(INTDIR)/Crbuffri.obj" \
-	"$(INTDIR)/Parse.obj" \
-	"$(INTDIR)/Fafa.obj" \
-	"$(INTDIR)/Rgb.obj" \
-	"$(INTDIR)/Dialog.obj" \
-	"$(INTDIR)/Simx.obj" \
-	"$(INTDIR)/Button.obj" \
-	"$(INTDIR)/Scan.obj" \
-	"$(INTDIR)/Wrffrdat.obj" \
-	"$(INTDIR)/Wrffrp.obj" \
 	"$(INTDIR)/Static.obj" \
-	"$(INTDIR)/Create.obj"
+	"$(INTDIR)/Rdftoi.obj" \
+	"$(INTDIR)/Rgb.obj" \
+	"$(INTDIR)/DIB.obj" \
+	"$(INTDIR)/Create.obj" \
+	"$(INTDIR)/Dialog.obj" \
+	"$(INTDIR)/Button.obj" \
+	"$(INTDIR)/Rdftodat.obj" \
+	"$(INTDIR)/Simx.obj" \
+	"$(INTDIR)/Draw.obj" \
+	"$(INTDIR)/wximgxbm.obj" \
+	"$(INTDIR)/Wrffrp.obj" \
+	"$(INTDIR)/Zyzgauge.obj" \
+	"$(INTDIR)/Hashtab.obj" \
+	"$(INTDIR)/Crifrdat.obj" \
+	"$(INTDIR)/Misc.obj" \
+	"$(INTDIR)/Crifrbuf.obj" \
+	"$(INTDIR)/Crdatfri.obj" \
+	"$(INTDIR)/Parse.obj" \
+	"$(INTDIR)/Cont.obj" \
+	"$(INTDIR)/Check.obj" \
+	"$(INTDIR)/Zyz3d.obj" \
+	"$(INTDIR)/Data.obj" \
+	"$(INTDIR)/Fafa.obj" \
+	"$(INTDIR)/Crbuffri.obj" \
+	"$(INTDIR)/Dumfafa.obj" \
+	"$(INTDIR)/Wrffri.obj" \
+	"$(INTDIR)/Scan.obj" \
+	"$(INTDIR)/Wrffrdat.obj"
 
 "$(OUTDIR)\wxutils.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -156,42 +156,42 @@ LIB32_OBJS= \
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
-OUTDIR=Debug
-INTDIR=Debug
+OUTDIR=.\Debug
+INTDIR=.\Debug
 
 ALL : "$(OUTDIR)\wxutils.lib"
 
 CLEAN : 
-	-@erase "Debug\wxutils.lib"
-	-@erase "Debug\Wrffri.obj"
-	-@erase "Debug\Scan.obj"
-	-@erase "Debug\Hashtab.obj"
-	-@erase "Debug\Rgb.obj"
-	-@erase "Debug\Misc.obj"
-	-@erase "Debug\Static.obj"
-	-@erase "Debug\DIB.obj"
-	-@erase "Debug\Rdftoi.obj"
-	-@erase "Debug\Create.obj"
-	-@erase "Debug\Crbuffri.obj"
-	-@erase "Debug\Dialog.obj"
-	-@erase "Debug\Data.obj"
-	-@erase "Debug\wximgxbm.obj"
-	-@erase "Debug\Fafa.obj"
-	-@erase "Debug\Button.obj"
-	-@erase "Debug\Dumfafa.obj"
-	-@erase "Debug\Crifrdat.obj"
-	-@erase "Debug\Parse.obj"
-	-@erase "Debug\Wrffrp.obj"
-	-@erase "Debug\Check.obj"
-	-@erase "Debug\Zyz3d.obj"
-	-@erase "Debug\Cont.obj"
-	-@erase "Debug\Rdftodat.obj"
-	-@erase "Debug\Zyzgauge.obj"
-	-@erase "Debug\Crifrbuf.obj"
-	-@erase "Debug\Simx.obj"
-	-@erase "Debug\Draw.obj"
-	-@erase "Debug\Crdatfri.obj"
-	-@erase "Debug\Wrffrdat.obj"
+	-@erase ".\Debug\wxutils.lib"
+	-@erase ".\Debug\Crifrdat.obj"
+	-@erase ".\Debug\Crifrbuf.obj"
+	-@erase ".\Debug\Hashtab.obj"
+	-@erase ".\Debug\Cont.obj"
+	-@erase ".\Debug\Wrffri.obj"
+	-@erase ".\Debug\Rdftodat.obj"
+	-@erase ".\Debug\Crbuffri.obj"
+	-@erase ".\Debug\Static.obj"
+	-@erase ".\Debug\Rdftoi.obj"
+	-@erase ".\Debug\Simx.obj"
+	-@erase ".\Debug\Draw.obj"
+	-@erase ".\Debug\Zyzgauge.obj"
+	-@erase ".\Debug\Dumfafa.obj"
+	-@erase ".\Debug\Parse.obj"
+	-@erase ".\Debug\Scan.obj"
+	-@erase ".\Debug\Dialog.obj"
+	-@erase ".\Debug\Misc.obj"
+	-@erase ".\Debug\Crdatfri.obj"
+	-@erase ".\Debug\Wrffrdat.obj"
+	-@erase ".\Debug\Zyz3d.obj"
+	-@erase ".\Debug\Button.obj"
+	-@erase ".\Debug\Rgb.obj"
+	-@erase ".\Debug\DIB.obj"
+	-@erase ".\Debug\Wrffrp.obj"
+	-@erase ".\Debug\Data.obj"
+	-@erase ".\Debug\Create.obj"
+	-@erase ".\Debug\Fafa.obj"
+	-@erase ".\Debug\wximgxbm.obj"
+	-@erase ".\Debug\Check.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -205,7 +205,7 @@ CPP_PROJ=/nologo /MTd /W3 /Z7 /Od /I "..\..\mzscheme\gc" /I\
  "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa"\
  /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW"\
  /D WX_NORMALIZED_PS_FONTS=1 /Fo"$(INTDIR)/" /c 
-CPP_OBJS=Debug/
+CPP_OBJS=.\Debug/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -217,35 +217,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxutils.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Wrffri.obj" \
-	"$(INTDIR)/Scan.obj" \
-	"$(INTDIR)/Hashtab.obj" \
-	"$(INTDIR)/Rgb.obj" \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Static.obj" \
-	"$(INTDIR)/DIB.obj" \
-	"$(INTDIR)/Rdftoi.obj" \
-	"$(INTDIR)/Create.obj" \
-	"$(INTDIR)/Crbuffri.obj" \
-	"$(INTDIR)/Dialog.obj" \
-	"$(INTDIR)/Data.obj" \
-	"$(INTDIR)/wximgxbm.obj" \
-	"$(INTDIR)/Fafa.obj" \
-	"$(INTDIR)/Button.obj" \
-	"$(INTDIR)/Dumfafa.obj" \
 	"$(INTDIR)/Crifrdat.obj" \
-	"$(INTDIR)/Parse.obj" \
-	"$(INTDIR)/Wrffrp.obj" \
-	"$(INTDIR)/Check.obj" \
-	"$(INTDIR)/Zyz3d.obj" \
-	"$(INTDIR)/Cont.obj" \
-	"$(INTDIR)/Rdftodat.obj" \
-	"$(INTDIR)/Zyzgauge.obj" \
 	"$(INTDIR)/Crifrbuf.obj" \
+	"$(INTDIR)/Hashtab.obj" \
+	"$(INTDIR)/Cont.obj" \
+	"$(INTDIR)/Wrffri.obj" \
+	"$(INTDIR)/Rdftodat.obj" \
+	"$(INTDIR)/Crbuffri.obj" \
+	"$(INTDIR)/Static.obj" \
+	"$(INTDIR)/Rdftoi.obj" \
 	"$(INTDIR)/Simx.obj" \
 	"$(INTDIR)/Draw.obj" \
+	"$(INTDIR)/Zyzgauge.obj" \
+	"$(INTDIR)/Dumfafa.obj" \
+	"$(INTDIR)/Parse.obj" \
+	"$(INTDIR)/Scan.obj" \
+	"$(INTDIR)/Dialog.obj" \
+	"$(INTDIR)/Misc.obj" \
 	"$(INTDIR)/Crdatfri.obj" \
-	"$(INTDIR)/Wrffrdat.obj"
+	"$(INTDIR)/Wrffrdat.obj" \
+	"$(INTDIR)/Zyz3d.obj" \
+	"$(INTDIR)/Button.obj" \
+	"$(INTDIR)/Rgb.obj" \
+	"$(INTDIR)/DIB.obj" \
+	"$(INTDIR)/Wrffrp.obj" \
+	"$(INTDIR)/Data.obj" \
+	"$(INTDIR)/Create.obj" \
+	"$(INTDIR)/Fafa.obj" \
+	"$(INTDIR)/wximgxbm.obj" \
+	"$(INTDIR)/Check.obj"
 
 "$(OUTDIR)\wxutils.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -264,48 +264,48 @@ LIB32_OBJS= \
 # PROP Output_Dir "SGC"
 # PROP Intermediate_Dir "SGC"
 # PROP Target_Dir ""
-OUTDIR=SGC
-INTDIR=SGC
+OUTDIR=.\SGC
+INTDIR=.\SGC
 
 ALL : "$(OUTDIR)\wxutils.lib"
 
 CLEAN : 
-	-@erase "SGC\vc40.pdb"
-	-@erase "SGC\wxutils.lib"
-	-@erase "SGC\Misc.obj"
-	-@erase "SGC\Dialog.obj"
-	-@erase "SGC\Wrffrdat.obj"
-	-@erase "SGC\Button.obj"
-	-@erase "SGC\Cont.obj"
-	-@erase "SGC\Wrffrp.obj"
-	-@erase "SGC\Static.obj"
-	-@erase "SGC\Fafa.obj"
-	-@erase "SGC\Parse.obj"
-	-@erase "SGC\Create.obj"
-	-@erase "SGC\Hashtab.obj"
-	-@erase "SGC\wximgxbm.obj"
-	-@erase "SGC\Rgb.obj"
-	-@erase "SGC\Zyz3d.obj"
-	-@erase "SGC\Simx.obj"
-	-@erase "SGC\DIB.obj"
-	-@erase "SGC\Draw.obj"
-	-@erase "SGC\Zyzgauge.obj"
-	-@erase "SGC\Crifrdat.obj"
-	-@erase "SGC\Crifrbuf.obj"
-	-@erase "SGC\Scan.obj"
-	-@erase "SGC\Crdatfri.obj"
-	-@erase "SGC\Dumfafa.obj"
-	-@erase "SGC\Wrffri.obj"
-	-@erase "SGC\Rdftodat.obj"
-	-@erase "SGC\Crbuffri.obj"
-	-@erase "SGC\Check.obj"
-	-@erase "SGC\Data.obj"
-	-@erase "SGC\Rdftoi.obj"
+	-@erase ".\SGC\vc40.pdb"
+	-@erase ".\SGC\wxutils.lib"
+	-@erase ".\SGC\Rdftodat.obj"
+	-@erase ".\SGC\Crbuffri.obj"
+	-@erase ".\SGC\Zyzgauge.obj"
+	-@erase ".\SGC\Cont.obj"
+	-@erase ".\SGC\Wrffri.obj"
+	-@erase ".\SGC\Crdatfri.obj"
+	-@erase ".\SGC\Wrffrdat.obj"
+	-@erase ".\SGC\Rdftoi.obj"
+	-@erase ".\SGC\Hashtab.obj"
+	-@erase ".\SGC\Simx.obj"
+	-@erase ".\SGC\Draw.obj"
+	-@erase ".\SGC\DIB.obj"
+	-@erase ".\SGC\Dialog.obj"
+	-@erase ".\SGC\Scan.obj"
+	-@erase ".\SGC\Button.obj"
+	-@erase ".\SGC\Misc.obj"
+	-@erase ".\SGC\wximgxbm.obj"
+	-@erase ".\SGC\Wrffrp.obj"
+	-@erase ".\SGC\Dumfafa.obj"
+	-@erase ".\SGC\Static.obj"
+	-@erase ".\SGC\Crifrdat.obj"
+	-@erase ".\SGC\Crifrbuf.obj"
+	-@erase ".\SGC\Create.obj"
+	-@erase ".\SGC\Data.obj"
+	-@erase ".\SGC\Parse.obj"
+	-@erase ".\SGC\Fafa.obj"
+	-@erase ".\SGC\Check.obj"
+	-@erase ".\SGC\Zyz3d.obj"
+	-@erase ".\SGC\Rgb.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-# ADD BASE CPP /nologo /W3 /Z7 /Od /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\mzscheme\gc" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /YX"wx.h" /c
+# ADD BASE CPP /nologo /W3 /Z7 /Od /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\mred\mzscheme\gc" /I "..\..\wxWindow\contrib\fafa" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /YX"wx.h" /c
 # ADD CPP /nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I ":..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNT" /c
 # SUBTRACT CPP /YX
 CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\sgc" /I\
@@ -315,7 +315,7 @@ CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\sgc" /I\
  /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW"\
  /D WX_NORMALIZED_PS_FONTS=1 /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNT"\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
-CPP_OBJS=SGC/
+CPP_OBJS=.\SGC/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -327,35 +327,35 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxutils.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/Misc.obj" \
-	"$(INTDIR)/Dialog.obj" \
-	"$(INTDIR)/Wrffrdat.obj" \
-	"$(INTDIR)/Button.obj" \
-	"$(INTDIR)/Cont.obj" \
-	"$(INTDIR)/Wrffrp.obj" \
-	"$(INTDIR)/Static.obj" \
-	"$(INTDIR)/Fafa.obj" \
-	"$(INTDIR)/Parse.obj" \
-	"$(INTDIR)/Create.obj" \
-	"$(INTDIR)/Hashtab.obj" \
-	"$(INTDIR)/wximgxbm.obj" \
-	"$(INTDIR)/Rgb.obj" \
-	"$(INTDIR)/Zyz3d.obj" \
-	"$(INTDIR)/Simx.obj" \
-	"$(INTDIR)/DIB.obj" \
-	"$(INTDIR)/Draw.obj" \
-	"$(INTDIR)/Zyzgauge.obj" \
-	"$(INTDIR)/Crifrdat.obj" \
-	"$(INTDIR)/Crifrbuf.obj" \
-	"$(INTDIR)/Scan.obj" \
-	"$(INTDIR)/Crdatfri.obj" \
-	"$(INTDIR)/Dumfafa.obj" \
-	"$(INTDIR)/Wrffri.obj" \
 	"$(INTDIR)/Rdftodat.obj" \
 	"$(INTDIR)/Crbuffri.obj" \
-	"$(INTDIR)/Check.obj" \
+	"$(INTDIR)/Zyzgauge.obj" \
+	"$(INTDIR)/Cont.obj" \
+	"$(INTDIR)/Wrffri.obj" \
+	"$(INTDIR)/Crdatfri.obj" \
+	"$(INTDIR)/Wrffrdat.obj" \
+	"$(INTDIR)/Rdftoi.obj" \
+	"$(INTDIR)/Hashtab.obj" \
+	"$(INTDIR)/Simx.obj" \
+	"$(INTDIR)/Draw.obj" \
+	"$(INTDIR)/DIB.obj" \
+	"$(INTDIR)/Dialog.obj" \
+	"$(INTDIR)/Scan.obj" \
+	"$(INTDIR)/Button.obj" \
+	"$(INTDIR)/Misc.obj" \
+	"$(INTDIR)/wximgxbm.obj" \
+	"$(INTDIR)/Wrffrp.obj" \
+	"$(INTDIR)/Dumfafa.obj" \
+	"$(INTDIR)/Static.obj" \
+	"$(INTDIR)/Crifrdat.obj" \
+	"$(INTDIR)/Crifrbuf.obj" \
+	"$(INTDIR)/Create.obj" \
 	"$(INTDIR)/Data.obj" \
-	"$(INTDIR)/Rdftoi.obj"
+	"$(INTDIR)/Parse.obj" \
+	"$(INTDIR)/Fafa.obj" \
+	"$(INTDIR)/Check.obj" \
+	"$(INTDIR)/Zyz3d.obj" \
+	"$(INTDIR)/Rgb.obj"
 
 "$(OUTDIR)\wxutils.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -995,9 +995,8 @@ DEP_CPP_DIB_C=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
-	".\..\..\mzscheme\gc\gc.h"\
+	"..\..\mzscheme\gc\gc.h"\
 	
 
 "$(INTDIR)\DIB.obj" : $(SOURCE) $(DEP_CPP_DIB_C) "$(INTDIR)"
@@ -1014,8 +1013,9 @@ DEP_CPP_DIB_C=\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\gc\gc_cpp.h"\
-	".\..\..\mzscheme\gc\gc.h"\
+	"..\..\mzscheme\gc\gc.h"\
 	
 
 "$(INTDIR)\DIB.obj" : $(SOURCE) $(DEP_CPP_DIB_C) "$(INTDIR)"
@@ -1034,7 +1034,7 @@ DEP_CPP_DIB_C=\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
-	".\..\..\mzscheme\sgc\sgc.h"\
+	"..\..\mzscheme\sgc\sgc.h"\
 	
 
 "$(INTDIR)\DIB.obj" : $(SOURCE) $(DEP_CPP_DIB_C) "$(INTDIR)"

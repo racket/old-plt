@@ -47,89 +47,89 @@ CPP=cl.exe
 # PROP Output_Dir "Release"
 # PROP Intermediate_Dir "Release"
 # PROP Target_Dir ""
-OUTDIR=Release
-INTDIR=Release
+OUTDIR=.\Release
+INTDIR=.\Release
 
 ALL : "$(OUTDIR)\wxwin.lib"
 
 CLEAN : 
-	-@erase "Release\vc40.pdb"
-	-@erase "Release\wxwin.lib"
-	-@erase "Release\WX_WIN.obj"
-	-@erase "Release\WB_SCROL.obj"
-	-@erase "Release\WB_SYSEV.obj"
-	-@erase "Release\WX_DATE.obj"
-	-@erase "Release\WB_DATA.obj"
-	-@erase "Release\WX_FRAC.obj"
-	-@erase "Release\WX_FRAME.obj"
-	-@erase "Release\WX_GDI.obj"
-	-@erase "Release\WB_STDEV.obj"
-	-@erase "Release\WX_BBAR.obj"
-	-@erase "Release\WB_WIN.obj"
-	-@erase "Release\WX_MTXT.obj"
-	-@erase "Release\WX_RBOX.obj"
-	-@erase "Release\WX_DB.obj"
-	-@erase "Release\WX_VLBOX.obj"
-	-@erase "Release\WX_TIME.obj"
-	-@erase "Release\WB_GDI.obj"
-	-@erase "Release\WB_TIMER.obj"
-	-@erase "Release\WX_MEM.obj"
-	-@erase "Release\WX_TEXT.obj"
-	-@erase "Release\wx_pdf.obj"
-	-@erase "Release\WB_FRAME.obj"
-	-@erase "Release\WX_LBOX.obj"
-	-@erase "Release\WX_GAUGE.obj"
-	-@erase "Release\WB_HASH.obj"
-	-@erase "Release\WX_TIMER.obj"
-	-@erase "Release\WX_STAT.obj"
-	-@erase "Release\WB_RES.obj"
-	-@erase "Release\WB_PRINT.obj"
-	-@erase "Release\WB_FORM.obj"
-	-@erase "Release\WX_IPC.obj"
-	-@erase "Release\WX_GROUP.obj"
-	-@erase "Release\WX_BUTTN.obj"
-	-@erase "Release\WB_TEXT.obj"
-	-@erase "Release\WB_OBJ.obj"
-	-@erase "Release\WB_STAT.obj"
-	-@erase "Release\WB_CMDLG.obj"
-	-@erase "Release\WX_TBAR.obj"
-	-@erase "Release\WB_VLBOX.obj"
-	-@erase "Release\WX_MAIN.obj"
-	-@erase "Release\WX_DOC.obj"
-	-@erase "Release\WX_LAY.obj"
-	-@erase "Release\WX_CANVS.obj"
-	-@erase "Release\WB_PANEL.obj"
-	-@erase "Release\WX_UTILS.obj"
-	-@erase "Release\WB_TYPES.obj"
-	-@erase "Release\WX_MENU.obj"
-	-@erase "Release\WB_HELP.obj"
-	-@erase "Release\WX_MESSG.obj"
-	-@erase "Release\WXSTRING.obj"
-	-@erase "Release\WB_MF.obj"
-	-@erase "Release\WX_SCROL.obj"
-	-@erase "Release\WX_SLIDR.obj"
-	-@erase "Release\WX_CMDLG.obj"
-	-@erase "Release\WB_IPC.obj"
-	-@erase "Release\WB_MAIN.obj"
-	-@erase "Release\WX_PANEL.obj"
-	-@erase "Release\WX_TXT.obj"
-	-@erase "Release\WX_MF.obj"
-	-@erase "Release\WX_CHECK.obj"
-	-@erase "Release\WX_CHOIC.obj"
-	-@erase "Release\WX_CLIPB.obj"
-	-@erase "Release\WB_DIALG.obj"
-	-@erase "Release\WX_ITEM.obj"
-	-@erase "Release\WB_DC.obj"
-	-@erase "Release\WX_ENHDG.obj"
-	-@erase "Release\wximgfil.obj"
-	-@erase "Release\WB_CANVS.obj"
-	-@erase "Release\WB_UTILS.obj"
-	-@erase "Release\WB_LIST.obj"
-	-@erase "Release\WB_MGSTR.obj"
-	-@erase "Release\WB_PS.obj"
-	-@erase "Release\WX_DIALG.obj"
-	-@erase "Release\WB_ITEM.obj"
-	-@erase "Release\WX_DC.obj"
+	-@erase ".\Release\vc40.pdb"
+	-@erase ".\Release\wxwin.lib"
+	-@erase ".\Release\WX_TEXT.obj"
+	-@erase ".\Release\WX_ENHDG.obj"
+	-@erase ".\Release\WB_ITEM.obj"
+	-@erase ".\Release\WB_PRINT.obj"
+	-@erase ".\Release\WB_HASH.obj"
+	-@erase ".\Release\WX_MEM.obj"
+	-@erase ".\Release\WX_STAT.obj"
+	-@erase ".\Release\WB_UTILS.obj"
+	-@erase ".\Release\WB_DATA.obj"
+	-@erase ".\Release\WX_DIALG.obj"
+	-@erase ".\Release\WX_FRAC.obj"
+	-@erase ".\Release\WB_SCROL.obj"
+	-@erase ".\Release\WB_CMDLG.obj"
+	-@erase ".\Release\WX_CANVS.obj"
+	-@erase ".\Release\WB_STAT.obj"
+	-@erase ".\Release\WB_PANEL.obj"
+	-@erase ".\Release\WX_UTILS.obj"
+	-@erase ".\Release\WX_MAIN.obj"
+	-@erase ".\Release\WX_DB.obj"
+	-@erase ".\Release\WX_SCROL.obj"
+	-@erase ".\Release\WX_GDI.obj"
+	-@erase ".\Release\WX_CHECK.obj"
+	-@erase ".\Release\WB_DIALG.obj"
+	-@erase ".\Release\WX_ITEM.obj"
+	-@erase ".\Release\WX_LBOX.obj"
+	-@erase ".\Release\WB_GDI.obj"
+	-@erase ".\Release\wximgfil.obj"
+	-@erase ".\Release\WB_CANVS.obj"
+	-@erase ".\Release\WB_FORM.obj"
+	-@erase ".\Release\WB_MGSTR.obj"
+	-@erase ".\Release\WB_FRAME.obj"
+	-@erase ".\Release\WB_LIST.obj"
+	-@erase ".\Release\WX_GAUGE.obj"
+	-@erase ".\Release\WX_TIMER.obj"
+	-@erase ".\Release\WB_TEXT.obj"
+	-@erase ".\Release\WB_SYSEV.obj"
+	-@erase ".\Release\wx_pdf.obj"
+	-@erase ".\Release\WX_TBAR.obj"
+	-@erase ".\Release\WX_GROUP.obj"
+	-@erase ".\Release\WX_BUTTN.obj"
+	-@erase ".\Release\WX_DATE.obj"
+	-@erase ".\Release\WX_WIN.obj"
+	-@erase ".\Release\WX_FRAME.obj"
+	-@erase ".\Release\WB_RES.obj"
+	-@erase ".\Release\WB_MF.obj"
+	-@erase ".\Release\WB_STDEV.obj"
+	-@erase ".\Release\WX_IPC.obj"
+	-@erase ".\Release\WX_MENU.obj"
+	-@erase ".\Release\WB_HELP.obj"
+	-@erase ".\Release\WB_VLBOX.obj"
+	-@erase ".\Release\WX_BBAR.obj"
+	-@erase ".\Release\WB_OBJ.obj"
+	-@erase ".\Release\WB_MAIN.obj"
+	-@erase ".\Release\WB_TYPES.obj"
+	-@erase ".\Release\WX_DOC.obj"
+	-@erase ".\Release\WX_MESSG.obj"
+	-@erase ".\Release\WX_MF.obj"
+	-@erase ".\Release\WXSTRING.obj"
+	-@erase ".\Release\WX_LAY.obj"
+	-@erase ".\Release\WX_MTXT.obj"
+	-@erase ".\Release\WX_SLIDR.obj"
+	-@erase ".\Release\WX_RBOX.obj"
+	-@erase ".\Release\WX_CMDLG.obj"
+	-@erase ".\Release\WX_VLBOX.obj"
+	-@erase ".\Release\WB_WIN.obj"
+	-@erase ".\Release\WX_PANEL.obj"
+	-@erase ".\Release\WB_DC.obj"
+	-@erase ".\Release\WX_TIME.obj"
+	-@erase ".\Release\WB_IPC.obj"
+	-@erase ".\Release\WB_TIMER.obj"
+	-@erase ".\Release\WX_TXT.obj"
+	-@erase ".\Release\WB_PS.obj"
+	-@erase ".\Release\WX_CHOIC.obj"
+	-@erase ".\Release\WX_CLIPB.obj"
+	-@erase ".\Release\WX_DC.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -143,7 +143,7 @@ CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I\
  /D "NDEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW"\
  /D WX_NORMALIZED_PS_FONTS=1 /Fp"$(INTDIR)/wxwin.pch" /YX"wx.h" /Fo"$(INTDIR)/"\
  /Fd"$(INTDIR)/" /c 
-CPP_OBJS=Release/
+CPP_OBJS=.\Release/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -155,80 +155,80 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxwin.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/WX_WIN.obj" \
-	"$(INTDIR)/WB_SCROL.obj" \
-	"$(INTDIR)/WB_SYSEV.obj" \
-	"$(INTDIR)/WX_DATE.obj" \
-	"$(INTDIR)/WB_DATA.obj" \
-	"$(INTDIR)/WX_FRAC.obj" \
-	"$(INTDIR)/WX_FRAME.obj" \
-	"$(INTDIR)/WX_GDI.obj" \
-	"$(INTDIR)/WB_STDEV.obj" \
-	"$(INTDIR)/WX_BBAR.obj" \
-	"$(INTDIR)/WB_WIN.obj" \
-	"$(INTDIR)/WX_MTXT.obj" \
-	"$(INTDIR)/WX_RBOX.obj" \
-	"$(INTDIR)/WX_DB.obj" \
-	"$(INTDIR)/WX_VLBOX.obj" \
-	"$(INTDIR)/WX_TIME.obj" \
-	"$(INTDIR)/WB_GDI.obj" \
-	"$(INTDIR)/WB_TIMER.obj" \
-	"$(INTDIR)/WX_MEM.obj" \
 	"$(INTDIR)/WX_TEXT.obj" \
-	"$(INTDIR)/wx_pdf.obj" \
-	"$(INTDIR)/WB_FRAME.obj" \
-	"$(INTDIR)/WX_LBOX.obj" \
-	"$(INTDIR)/WX_GAUGE.obj" \
-	"$(INTDIR)/WB_HASH.obj" \
-	"$(INTDIR)/WX_TIMER.obj" \
-	"$(INTDIR)/WX_STAT.obj" \
-	"$(INTDIR)/WB_RES.obj" \
+	"$(INTDIR)/WX_ENHDG.obj" \
+	"$(INTDIR)/WB_ITEM.obj" \
 	"$(INTDIR)/WB_PRINT.obj" \
-	"$(INTDIR)/WB_FORM.obj" \
-	"$(INTDIR)/WX_IPC.obj" \
-	"$(INTDIR)/WX_GROUP.obj" \
-	"$(INTDIR)/WX_BUTTN.obj" \
-	"$(INTDIR)/WB_TEXT.obj" \
-	"$(INTDIR)/WB_OBJ.obj" \
-	"$(INTDIR)/WB_STAT.obj" \
+	"$(INTDIR)/WB_HASH.obj" \
+	"$(INTDIR)/WX_MEM.obj" \
+	"$(INTDIR)/WX_STAT.obj" \
+	"$(INTDIR)/WB_UTILS.obj" \
+	"$(INTDIR)/WB_DATA.obj" \
+	"$(INTDIR)/WX_DIALG.obj" \
+	"$(INTDIR)/WX_FRAC.obj" \
+	"$(INTDIR)/WB_SCROL.obj" \
 	"$(INTDIR)/WB_CMDLG.obj" \
-	"$(INTDIR)/WX_TBAR.obj" \
-	"$(INTDIR)/WB_VLBOX.obj" \
-	"$(INTDIR)/WX_MAIN.obj" \
-	"$(INTDIR)/WX_DOC.obj" \
-	"$(INTDIR)/WX_LAY.obj" \
 	"$(INTDIR)/WX_CANVS.obj" \
+	"$(INTDIR)/WB_STAT.obj" \
 	"$(INTDIR)/WB_PANEL.obj" \
 	"$(INTDIR)/WX_UTILS.obj" \
-	"$(INTDIR)/WB_TYPES.obj" \
-	"$(INTDIR)/WX_MENU.obj" \
-	"$(INTDIR)/WB_HELP.obj" \
-	"$(INTDIR)/WX_MESSG.obj" \
-	"$(INTDIR)/WXSTRING.obj" \
-	"$(INTDIR)/WB_MF.obj" \
+	"$(INTDIR)/WX_MAIN.obj" \
+	"$(INTDIR)/WX_DB.obj" \
 	"$(INTDIR)/WX_SCROL.obj" \
-	"$(INTDIR)/WX_SLIDR.obj" \
-	"$(INTDIR)/WX_CMDLG.obj" \
-	"$(INTDIR)/WB_IPC.obj" \
-	"$(INTDIR)/WB_MAIN.obj" \
-	"$(INTDIR)/WX_PANEL.obj" \
-	"$(INTDIR)/WX_TXT.obj" \
-	"$(INTDIR)/WX_MF.obj" \
+	"$(INTDIR)/WX_GDI.obj" \
 	"$(INTDIR)/WX_CHECK.obj" \
-	"$(INTDIR)/WX_CHOIC.obj" \
-	"$(INTDIR)/WX_CLIPB.obj" \
 	"$(INTDIR)/WB_DIALG.obj" \
 	"$(INTDIR)/WX_ITEM.obj" \
-	"$(INTDIR)/WB_DC.obj" \
-	"$(INTDIR)/WX_ENHDG.obj" \
+	"$(INTDIR)/WX_LBOX.obj" \
+	"$(INTDIR)/WB_GDI.obj" \
 	"$(INTDIR)/wximgfil.obj" \
 	"$(INTDIR)/WB_CANVS.obj" \
-	"$(INTDIR)/WB_UTILS.obj" \
-	"$(INTDIR)/WB_LIST.obj" \
+	"$(INTDIR)/WB_FORM.obj" \
 	"$(INTDIR)/WB_MGSTR.obj" \
+	"$(INTDIR)/WB_FRAME.obj" \
+	"$(INTDIR)/WB_LIST.obj" \
+	"$(INTDIR)/WX_GAUGE.obj" \
+	"$(INTDIR)/WX_TIMER.obj" \
+	"$(INTDIR)/WB_TEXT.obj" \
+	"$(INTDIR)/WB_SYSEV.obj" \
+	"$(INTDIR)/wx_pdf.obj" \
+	"$(INTDIR)/WX_TBAR.obj" \
+	"$(INTDIR)/WX_GROUP.obj" \
+	"$(INTDIR)/WX_BUTTN.obj" \
+	"$(INTDIR)/WX_DATE.obj" \
+	"$(INTDIR)/WX_WIN.obj" \
+	"$(INTDIR)/WX_FRAME.obj" \
+	"$(INTDIR)/WB_RES.obj" \
+	"$(INTDIR)/WB_MF.obj" \
+	"$(INTDIR)/WB_STDEV.obj" \
+	"$(INTDIR)/WX_IPC.obj" \
+	"$(INTDIR)/WX_MENU.obj" \
+	"$(INTDIR)/WB_HELP.obj" \
+	"$(INTDIR)/WB_VLBOX.obj" \
+	"$(INTDIR)/WX_BBAR.obj" \
+	"$(INTDIR)/WB_OBJ.obj" \
+	"$(INTDIR)/WB_MAIN.obj" \
+	"$(INTDIR)/WB_TYPES.obj" \
+	"$(INTDIR)/WX_DOC.obj" \
+	"$(INTDIR)/WX_MESSG.obj" \
+	"$(INTDIR)/WX_MF.obj" \
+	"$(INTDIR)/WXSTRING.obj" \
+	"$(INTDIR)/WX_LAY.obj" \
+	"$(INTDIR)/WX_MTXT.obj" \
+	"$(INTDIR)/WX_SLIDR.obj" \
+	"$(INTDIR)/WX_RBOX.obj" \
+	"$(INTDIR)/WX_CMDLG.obj" \
+	"$(INTDIR)/WX_VLBOX.obj" \
+	"$(INTDIR)/WB_WIN.obj" \
+	"$(INTDIR)/WX_PANEL.obj" \
+	"$(INTDIR)/WB_DC.obj" \
+	"$(INTDIR)/WX_TIME.obj" \
+	"$(INTDIR)/WB_IPC.obj" \
+	"$(INTDIR)/WB_TIMER.obj" \
+	"$(INTDIR)/WX_TXT.obj" \
 	"$(INTDIR)/WB_PS.obj" \
-	"$(INTDIR)/WX_DIALG.obj" \
-	"$(INTDIR)/WB_ITEM.obj" \
+	"$(INTDIR)/WX_CHOIC.obj" \
+	"$(INTDIR)/WX_CLIPB.obj" \
 	"$(INTDIR)/WX_DC.obj"
 
 "$(OUTDIR)\wxwin.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
@@ -248,88 +248,88 @@ LIB32_OBJS= \
 # PROP Output_Dir "Debug"
 # PROP Intermediate_Dir "Debug"
 # PROP Target_Dir ""
-OUTDIR=Debug
-INTDIR=Debug
+OUTDIR=.\Debug
+INTDIR=.\Debug
 
 ALL : "$(OUTDIR)\wxwin.lib"
 
 CLEAN : 
-	-@erase "Debug\wxwin.lib"
-	-@erase "Debug\WB_FORM.obj"
-	-@erase "Debug\WB_PS.obj"
-	-@erase "Debug\WB_TIMER.obj"
-	-@erase "Debug\WX_DC.obj"
-	-@erase "Debug\WB_LIST.obj"
-	-@erase "Debug\WB_TEXT.obj"
-	-@erase "Debug\WX_CHECK.obj"
-	-@erase "Debug\WX_CHOIC.obj"
-	-@erase "Debug\WX_CLIPB.obj"
-	-@erase "Debug\WX_DATE.obj"
-	-@erase "Debug\WX_ENHDG.obj"
-	-@erase "Debug\WB_CANVS.obj"
-	-@erase "Debug\WB_UTILS.obj"
-	-@erase "Debug\WX_MENU.obj"
-	-@erase "Debug\WB_HELP.obj"
-	-@erase "Debug\wx_pdf.obj"
-	-@erase "Debug\WX_DIALG.obj"
-	-@erase "Debug\WX_BBAR.obj"
-	-@erase "Debug\WX_WIN.obj"
-	-@erase "Debug\WB_SCROL.obj"
-	-@erase "Debug\WB_MAIN.obj"
-	-@erase "Debug\WB_RES.obj"
-	-@erase "Debug\WX_DB.obj"
-	-@erase "Debug\WX_CANVS.obj"
-	-@erase "Debug\WB_PANEL.obj"
-	-@erase "Debug\WX_UTILS.obj"
-	-@erase "Debug\WX_IPC.obj"
-	-@erase "Debug\WX_MTXT.obj"
-	-@erase "Debug\WX_RBOX.obj"
-	-@erase "Debug\WX_GDI.obj"
-	-@erase "Debug\WB_OBJ.obj"
-	-@erase "Debug\WX_SCROL.obj"
-	-@erase "Debug\WX_TIME.obj"
-	-@erase "Debug\WX_DOC.obj"
-	-@erase "Debug\WX_LAY.obj"
-	-@erase "Debug\WB_WIN.obj"
-	-@erase "Debug\WB_IPC.obj"
-	-@erase "Debug\WX_TEXT.obj"
-	-@erase "Debug\WB_ITEM.obj"
-	-@erase "Debug\WB_GDI.obj"
-	-@erase "Debug\WB_HASH.obj"
-	-@erase "Debug\WB_DIALG.obj"
-	-@erase "Debug\WX_STAT.obj"
-	-@erase "Debug\WB_DATA.obj"
-	-@erase "Debug\WX_FRAC.obj"
-	-@erase "Debug\wximgfil.obj"
-	-@erase "Debug\WB_MGSTR.obj"
-	-@erase "Debug\WX_MEM.obj"
-	-@erase "Debug\WB_FRAME.obj"
-	-@erase "Debug\WB_STAT.obj"
-	-@erase "Debug\WX_TBAR.obj"
-	-@erase "Debug\WX_GAUGE.obj"
-	-@erase "Debug\WX_MAIN.obj"
-	-@erase "Debug\WX_TIMER.obj"
-	-@erase "Debug\WB_PRINT.obj"
-	-@erase "Debug\WB_SYSEV.obj"
-	-@erase "Debug\WB_MF.obj"
-	-@erase "Debug\WX_GROUP.obj"
-	-@erase "Debug\WX_BUTTN.obj"
-	-@erase "Debug\WX_FRAME.obj"
-	-@erase "Debug\WB_STDEV.obj"
-	-@erase "Debug\WB_CMDLG.obj"
-	-@erase "Debug\WB_VLBOX.obj"
-	-@erase "Debug\WX_MF.obj"
-	-@erase "Debug\WB_TYPES.obj"
-	-@erase "Debug\WX_MESSG.obj"
-	-@erase "Debug\WXSTRING.obj"
-	-@erase "Debug\WB_DC.obj"
-	-@erase "Debug\WX_SLIDR.obj"
-	-@erase "Debug\WX_CMDLG.obj"
-	-@erase "Debug\WX_VLBOX.obj"
-	-@erase "Debug\WX_PANEL.obj"
-	-@erase "Debug\WX_ITEM.obj"
-	-@erase "Debug\WX_LBOX.obj"
-	-@erase "Debug\WX_TXT.obj"
+	-@erase ".\Debug\wxwin.lib"
+	-@erase ".\Debug\WB_VLBOX.obj"
+	-@erase ".\Debug\WB_LIST.obj"
+	-@erase ".\Debug\WB_TEXT.obj"
+	-@erase ".\Debug\WB_PS.obj"
+	-@erase ".\Debug\WB_TYPES.obj"
+	-@erase ".\Debug\WX_MEM.obj"
+	-@erase ".\Debug\WX_DC.obj"
+	-@erase ".\Debug\WX_MESSG.obj"
+	-@erase ".\Debug\WX_TBAR.obj"
+	-@erase ".\Debug\WXSTRING.obj"
+	-@erase ".\Debug\WX_SLIDR.obj"
+	-@erase ".\Debug\WX_CMDLG.obj"
+	-@erase ".\Debug\WX_VLBOX.obj"
+	-@erase ".\Debug\WX_PANEL.obj"
+	-@erase ".\Debug\WX_MENU.obj"
+	-@erase ".\Debug\WB_HELP.obj"
+	-@erase ".\Debug\WX_BBAR.obj"
+	-@erase ".\Debug\WB_TIMER.obj"
+	-@erase ".\Debug\WB_MAIN.obj"
+	-@erase ".\Debug\WX_CHECK.obj"
+	-@erase ".\Debug\WX_CHOIC.obj"
+	-@erase ".\Debug\WX_MTXT.obj"
+	-@erase ".\Debug\WX_RBOX.obj"
+	-@erase ".\Debug\WX_CLIPB.obj"
+	-@erase ".\Debug\WX_DB.obj"
+	-@erase ".\Debug\WX_ENHDG.obj"
+	-@erase ".\Debug\WX_TIME.obj"
+	-@erase ".\Debug\WB_CANVS.obj"
+	-@erase ".\Debug\WB_UTILS.obj"
+	-@erase ".\Debug\WX_TXT.obj"
+	-@erase ".\Debug\WX_DIALG.obj"
+	-@erase ".\Debug\WB_SCROL.obj"
+	-@erase ".\Debug\WX_CANVS.obj"
+	-@erase ".\Debug\WB_PANEL.obj"
+	-@erase ".\Debug\WX_UTILS.obj"
+	-@erase ".\Debug\WB_ITEM.obj"
+	-@erase ".\Debug\WB_HASH.obj"
+	-@erase ".\Debug\WX_STAT.obj"
+	-@erase ".\Debug\WX_SCROL.obj"
+	-@erase ".\Debug\WX_DATE.obj"
+	-@erase ".\Debug\WB_DATA.obj"
+	-@erase ".\Debug\WX_FRAC.obj"
+	-@erase ".\Debug\wx_pdf.obj"
+	-@erase ".\Debug\WB_STAT.obj"
+	-@erase ".\Debug\WX_WIN.obj"
+	-@erase ".\Debug\WX_MAIN.obj"
+	-@erase ".\Debug\WB_RES.obj"
+	-@erase ".\Debug\WX_IPC.obj"
+	-@erase ".\Debug\WB_DIALG.obj"
+	-@erase ".\Debug\WX_GDI.obj"
+	-@erase ".\Debug\WB_MF.obj"
+	-@erase ".\Debug\WB_OBJ.obj"
+	-@erase ".\Debug\wximgfil.obj"
+	-@erase ".\Debug\WX_DOC.obj"
+	-@erase ".\Debug\WX_LAY.obj"
+	-@erase ".\Debug\WB_MGSTR.obj"
+	-@erase ".\Debug\WB_FRAME.obj"
+	-@erase ".\Debug\WB_WIN.obj"
+	-@erase ".\Debug\WX_GAUGE.obj"
+	-@erase ".\Debug\WX_TIMER.obj"
+	-@erase ".\Debug\WB_PRINT.obj"
+	-@erase ".\Debug\WB_SYSEV.obj"
+	-@erase ".\Debug\WX_MF.obj"
+	-@erase ".\Debug\WB_IPC.obj"
+	-@erase ".\Debug\WX_TEXT.obj"
+	-@erase ".\Debug\WX_GROUP.obj"
+	-@erase ".\Debug\WX_BUTTN.obj"
+	-@erase ".\Debug\WX_ITEM.obj"
+	-@erase ".\Debug\WB_GDI.obj"
+	-@erase ".\Debug\WX_LBOX.obj"
+	-@erase ".\Debug\WX_FRAME.obj"
+	-@erase ".\Debug\WB_DC.obj"
+	-@erase ".\Debug\WB_STDEV.obj"
+	-@erase ".\Debug\WB_FORM.obj"
+	-@erase ".\Debug\WB_CMDLG.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -343,7 +343,7 @@ CPP_PROJ=/nologo /MTd /W3 /Z7 /Od /I "..\..\mzscheme\gc" /I\
  /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW"\
  /D WX_NORMALIZED_PS_FONTS=1 /Fp"$(INTDIR)/wxwin.pch" /YX"wx.h" /Fo"$(INTDIR)/"\
  /c 
-CPP_OBJS=Debug/
+CPP_OBJS=.\Debug/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -355,81 +355,81 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxwin.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/WB_FORM.obj" \
-	"$(INTDIR)/WB_PS.obj" \
-	"$(INTDIR)/WB_TIMER.obj" \
-	"$(INTDIR)/WX_DC.obj" \
+	"$(INTDIR)/WB_VLBOX.obj" \
 	"$(INTDIR)/WB_LIST.obj" \
 	"$(INTDIR)/WB_TEXT.obj" \
-	"$(INTDIR)/WX_CHECK.obj" \
-	"$(INTDIR)/WX_CHOIC.obj" \
-	"$(INTDIR)/WX_CLIPB.obj" \
-	"$(INTDIR)/WX_DATE.obj" \
-	"$(INTDIR)/WX_ENHDG.obj" \
-	"$(INTDIR)/WB_CANVS.obj" \
-	"$(INTDIR)/WB_UTILS.obj" \
-	"$(INTDIR)/WX_MENU.obj" \
-	"$(INTDIR)/WB_HELP.obj" \
-	"$(INTDIR)/wx_pdf.obj" \
-	"$(INTDIR)/WX_DIALG.obj" \
-	"$(INTDIR)/WX_BBAR.obj" \
-	"$(INTDIR)/WX_WIN.obj" \
-	"$(INTDIR)/WB_SCROL.obj" \
-	"$(INTDIR)/WB_MAIN.obj" \
-	"$(INTDIR)/WB_RES.obj" \
-	"$(INTDIR)/WX_DB.obj" \
-	"$(INTDIR)/WX_CANVS.obj" \
-	"$(INTDIR)/WB_PANEL.obj" \
-	"$(INTDIR)/WX_UTILS.obj" \
-	"$(INTDIR)/WX_IPC.obj" \
-	"$(INTDIR)/WX_MTXT.obj" \
-	"$(INTDIR)/WX_RBOX.obj" \
-	"$(INTDIR)/WX_GDI.obj" \
-	"$(INTDIR)/WB_OBJ.obj" \
-	"$(INTDIR)/WX_SCROL.obj" \
-	"$(INTDIR)/WX_TIME.obj" \
-	"$(INTDIR)/WX_DOC.obj" \
-	"$(INTDIR)/WX_LAY.obj" \
-	"$(INTDIR)/WB_WIN.obj" \
-	"$(INTDIR)/WB_IPC.obj" \
-	"$(INTDIR)/WX_TEXT.obj" \
-	"$(INTDIR)/WB_ITEM.obj" \
-	"$(INTDIR)/WB_GDI.obj" \
-	"$(INTDIR)/WB_HASH.obj" \
-	"$(INTDIR)/WB_DIALG.obj" \
-	"$(INTDIR)/WX_STAT.obj" \
-	"$(INTDIR)/WB_DATA.obj" \
-	"$(INTDIR)/WX_FRAC.obj" \
-	"$(INTDIR)/wximgfil.obj" \
-	"$(INTDIR)/WB_MGSTR.obj" \
-	"$(INTDIR)/WX_MEM.obj" \
-	"$(INTDIR)/WB_FRAME.obj" \
-	"$(INTDIR)/WB_STAT.obj" \
-	"$(INTDIR)/WX_TBAR.obj" \
-	"$(INTDIR)/WX_GAUGE.obj" \
-	"$(INTDIR)/WX_MAIN.obj" \
-	"$(INTDIR)/WX_TIMER.obj" \
-	"$(INTDIR)/WB_PRINT.obj" \
-	"$(INTDIR)/WB_SYSEV.obj" \
-	"$(INTDIR)/WB_MF.obj" \
-	"$(INTDIR)/WX_GROUP.obj" \
-	"$(INTDIR)/WX_BUTTN.obj" \
-	"$(INTDIR)/WX_FRAME.obj" \
-	"$(INTDIR)/WB_STDEV.obj" \
-	"$(INTDIR)/WB_CMDLG.obj" \
-	"$(INTDIR)/WB_VLBOX.obj" \
-	"$(INTDIR)/WX_MF.obj" \
+	"$(INTDIR)/WB_PS.obj" \
 	"$(INTDIR)/WB_TYPES.obj" \
+	"$(INTDIR)/WX_MEM.obj" \
+	"$(INTDIR)/WX_DC.obj" \
 	"$(INTDIR)/WX_MESSG.obj" \
+	"$(INTDIR)/WX_TBAR.obj" \
 	"$(INTDIR)/WXSTRING.obj" \
-	"$(INTDIR)/WB_DC.obj" \
 	"$(INTDIR)/WX_SLIDR.obj" \
 	"$(INTDIR)/WX_CMDLG.obj" \
 	"$(INTDIR)/WX_VLBOX.obj" \
 	"$(INTDIR)/WX_PANEL.obj" \
+	"$(INTDIR)/WX_MENU.obj" \
+	"$(INTDIR)/WB_HELP.obj" \
+	"$(INTDIR)/WX_BBAR.obj" \
+	"$(INTDIR)/WB_TIMER.obj" \
+	"$(INTDIR)/WB_MAIN.obj" \
+	"$(INTDIR)/WX_CHECK.obj" \
+	"$(INTDIR)/WX_CHOIC.obj" \
+	"$(INTDIR)/WX_MTXT.obj" \
+	"$(INTDIR)/WX_RBOX.obj" \
+	"$(INTDIR)/WX_CLIPB.obj" \
+	"$(INTDIR)/WX_DB.obj" \
+	"$(INTDIR)/WX_ENHDG.obj" \
+	"$(INTDIR)/WX_TIME.obj" \
+	"$(INTDIR)/WB_CANVS.obj" \
+	"$(INTDIR)/WB_UTILS.obj" \
+	"$(INTDIR)/WX_TXT.obj" \
+	"$(INTDIR)/WX_DIALG.obj" \
+	"$(INTDIR)/WB_SCROL.obj" \
+	"$(INTDIR)/WX_CANVS.obj" \
+	"$(INTDIR)/WB_PANEL.obj" \
+	"$(INTDIR)/WX_UTILS.obj" \
+	"$(INTDIR)/WB_ITEM.obj" \
+	"$(INTDIR)/WB_HASH.obj" \
+	"$(INTDIR)/WX_STAT.obj" \
+	"$(INTDIR)/WX_SCROL.obj" \
+	"$(INTDIR)/WX_DATE.obj" \
+	"$(INTDIR)/WB_DATA.obj" \
+	"$(INTDIR)/WX_FRAC.obj" \
+	"$(INTDIR)/wx_pdf.obj" \
+	"$(INTDIR)/WB_STAT.obj" \
+	"$(INTDIR)/WX_WIN.obj" \
+	"$(INTDIR)/WX_MAIN.obj" \
+	"$(INTDIR)/WB_RES.obj" \
+	"$(INTDIR)/WX_IPC.obj" \
+	"$(INTDIR)/WB_DIALG.obj" \
+	"$(INTDIR)/WX_GDI.obj" \
+	"$(INTDIR)/WB_MF.obj" \
+	"$(INTDIR)/WB_OBJ.obj" \
+	"$(INTDIR)/wximgfil.obj" \
+	"$(INTDIR)/WX_DOC.obj" \
+	"$(INTDIR)/WX_LAY.obj" \
+	"$(INTDIR)/WB_MGSTR.obj" \
+	"$(INTDIR)/WB_FRAME.obj" \
+	"$(INTDIR)/WB_WIN.obj" \
+	"$(INTDIR)/WX_GAUGE.obj" \
+	"$(INTDIR)/WX_TIMER.obj" \
+	"$(INTDIR)/WB_PRINT.obj" \
+	"$(INTDIR)/WB_SYSEV.obj" \
+	"$(INTDIR)/WX_MF.obj" \
+	"$(INTDIR)/WB_IPC.obj" \
+	"$(INTDIR)/WX_TEXT.obj" \
+	"$(INTDIR)/WX_GROUP.obj" \
+	"$(INTDIR)/WX_BUTTN.obj" \
 	"$(INTDIR)/WX_ITEM.obj" \
+	"$(INTDIR)/WB_GDI.obj" \
 	"$(INTDIR)/WX_LBOX.obj" \
-	"$(INTDIR)/WX_TXT.obj"
+	"$(INTDIR)/WX_FRAME.obj" \
+	"$(INTDIR)/WB_DC.obj" \
+	"$(INTDIR)/WB_STDEV.obj" \
+	"$(INTDIR)/WB_FORM.obj" \
+	"$(INTDIR)/WB_CMDLG.obj"
 
 "$(OUTDIR)\wxwin.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -448,89 +448,89 @@ LIB32_OBJS= \
 # PROP Output_Dir "SGC"
 # PROP Intermediate_Dir "SGC"
 # PROP Target_Dir ""
-OUTDIR=SGC
-INTDIR=SGC
+OUTDIR=.\SGC
+INTDIR=.\SGC
 
 ALL : "$(OUTDIR)\wxwin.lib"
 
 CLEAN : 
-	-@erase "SGC\vc40.pdb"
-	-@erase "SGC\wxwin.lib"
-	-@erase "SGC\WB_DATA.obj"
-	-@erase "SGC\WB_STDEV.obj"
-	-@erase "SGC\WX_DC.obj"
-	-@erase "SGC\WX_FRAC.obj"
-	-@erase "SGC\WB_VLBOX.obj"
-	-@erase "SGC\WX_MEM.obj"
-	-@erase "SGC\WB_STAT.obj"
-	-@erase "SGC\WB_TYPES.obj"
-	-@erase "SGC\WX_MAIN.obj"
-	-@erase "SGC\WX_MESSG.obj"
-	-@erase "SGC\WB_RES.obj"
-	-@erase "SGC\WXSTRING.obj"
-	-@erase "SGC\WX_SLIDR.obj"
-	-@erase "SGC\WX_CMDLG.obj"
-	-@erase "SGC\WX_VLBOX.obj"
-	-@erase "SGC\WX_PANEL.obj"
-	-@erase "SGC\WB_OBJ.obj"
-	-@erase "SGC\WB_TIMER.obj"
-	-@erase "SGC\WX_DB.obj"
-	-@erase "SGC\WX_DOC.obj"
-	-@erase "SGC\WX_CHOIC.obj"
-	-@erase "SGC\WB_FRAME.obj"
-	-@erase "SGC\WX_ENHDG.obj"
-	-@erase "SGC\WB_PRINT.obj"
-	-@erase "SGC\WX_ITEM.obj"
-	-@erase "SGC\WX_LBOX.obj"
-	-@erase "SGC\WX_TXT.obj"
-	-@erase "SGC\WB_UTILS.obj"
-	-@erase "SGC\WX_DIALG.obj"
-	-@erase "SGC\WB_FORM.obj"
-	-@erase "SGC\WB_SCROL.obj"
-	-@erase "SGC\WB_LIST.obj"
-	-@erase "SGC\WB_CMDLG.obj"
-	-@erase "SGC\WB_TEXT.obj"
-	-@erase "SGC\WX_CANVS.obj"
-	-@erase "SGC\WB_PANEL.obj"
-	-@erase "SGC\WX_UTILS.obj"
-	-@erase "SGC\WX_TBAR.obj"
-	-@erase "SGC\WX_DATE.obj"
-	-@erase "SGC\WX_SCROL.obj"
-	-@erase "SGC\WX_MENU.obj"
-	-@erase "SGC\WB_HELP.obj"
-	-@erase "SGC\wx_pdf.obj"
-	-@erase "SGC\WX_BBAR.obj"
-	-@erase "SGC\WX_WIN.obj"
-	-@erase "SGC\WB_MAIN.obj"
-	-@erase "SGC\WB_MF.obj"
-	-@erase "SGC\WX_MTXT.obj"
-	-@erase "SGC\WX_IPC.obj"
-	-@erase "SGC\WX_RBOX.obj"
-	-@erase "SGC\WX_CHECK.obj"
-	-@erase "SGC\WX_CLIPB.obj"
-	-@erase "SGC\WB_DIALG.obj"
-	-@erase "SGC\WX_GDI.obj"
-	-@erase "SGC\WX_TIME.obj"
-	-@erase "SGC\WX_LAY.obj"
-	-@erase "SGC\WX_MF.obj"
-	-@erase "SGC\wximgfil.obj"
-	-@erase "SGC\WB_CANVS.obj"
-	-@erase "SGC\WB_WIN.obj"
-	-@erase "SGC\WB_MGSTR.obj"
-	-@erase "SGC\WB_DC.obj"
-	-@erase "SGC\WX_GAUGE.obj"
-	-@erase "SGC\WX_TIMER.obj"
-	-@erase "SGC\WB_IPC.obj"
-	-@erase "SGC\WB_SYSEV.obj"
-	-@erase "SGC\WX_TEXT.obj"
-	-@erase "SGC\WB_ITEM.obj"
-	-@erase "SGC\WB_GDI.obj"
-	-@erase "SGC\WX_GROUP.obj"
-	-@erase "SGC\WB_HASH.obj"
-	-@erase "SGC\WX_BUTTN.obj"
-	-@erase "SGC\WX_STAT.obj"
-	-@erase "SGC\WX_FRAME.obj"
-	-@erase "SGC\WB_PS.obj"
+	-@erase ".\SGC\vc40.pdb"
+	-@erase ".\SGC\wxwin.lib"
+	-@erase ".\SGC\WB_ITEM.obj"
+	-@erase ".\SGC\WX_DC.obj"
+	-@erase ".\SGC\WX_SCROL.obj"
+	-@erase ".\SGC\WB_HASH.obj"
+	-@erase ".\SGC\WX_STAT.obj"
+	-@erase ".\SGC\WX_MEM.obj"
+	-@erase ".\SGC\WX_DATE.obj"
+	-@erase ".\SGC\WB_DATA.obj"
+	-@erase ".\SGC\WX_FRAC.obj"
+	-@erase ".\SGC\WX_BBAR.obj"
+	-@erase ".\SGC\WX_CHECK.obj"
+	-@erase ".\SGC\WX_CLIPB.obj"
+	-@erase ".\SGC\WB_DIALG.obj"
+	-@erase ".\SGC\WX_MTXT.obj"
+	-@erase ".\SGC\WX_DB.obj"
+	-@erase ".\SGC\WX_RBOX.obj"
+	-@erase ".\SGC\wximgfil.obj"
+	-@erase ".\SGC\WB_CANVS.obj"
+	-@erase ".\SGC\WB_MGSTR.obj"
+	-@erase ".\SGC\WX_TIME.obj"
+	-@erase ".\SGC\WX_GAUGE.obj"
+	-@erase ".\SGC\WX_TIMER.obj"
+	-@erase ".\SGC\WB_SYSEV.obj"
+	-@erase ".\SGC\WX_GROUP.obj"
+	-@erase ".\SGC\WX_BUTTN.obj"
+	-@erase ".\SGC\WX_FRAME.obj"
+	-@erase ".\SGC\WX_TEXT.obj"
+	-@erase ".\SGC\WX_LBOX.obj"
+	-@erase ".\SGC\WB_STDEV.obj"
+	-@erase ".\SGC\WB_VLBOX.obj"
+	-@erase ".\SGC\WB_FORM.obj"
+	-@erase ".\SGC\WB_LIST.obj"
+	-@erase ".\SGC\WB_TYPES.obj"
+	-@erase ".\SGC\WB_TEXT.obj"
+	-@erase ".\SGC\WX_MESSG.obj"
+	-@erase ".\SGC\WXSTRING.obj"
+	-@erase ".\SGC\WX_SLIDR.obj"
+	-@erase ".\SGC\WX_CMDLG.obj"
+	-@erase ".\SGC\WB_STAT.obj"
+	-@erase ".\SGC\WX_VLBOX.obj"
+	-@erase ".\SGC\WX_TBAR.obj"
+	-@erase ".\SGC\WX_PANEL.obj"
+	-@erase ".\SGC\WX_MAIN.obj"
+	-@erase ".\SGC\wx_pdf.obj"
+	-@erase ".\SGC\WX_WIN.obj"
+	-@erase ".\SGC\WB_RES.obj"
+	-@erase ".\SGC\WB_TIMER.obj"
+	-@erase ".\SGC\WX_MENU.obj"
+	-@erase ".\SGC\WB_MF.obj"
+	-@erase ".\SGC\WB_HELP.obj"
+	-@erase ".\SGC\WX_IPC.obj"
+	-@erase ".\SGC\WB_MAIN.obj"
+	-@erase ".\SGC\WX_GDI.obj"
+	-@erase ".\SGC\WX_CHOIC.obj"
+	-@erase ".\SGC\WB_FRAME.obj"
+	-@erase ".\SGC\WB_OBJ.obj"
+	-@erase ".\SGC\WX_ENHDG.obj"
+	-@erase ".\SGC\WX_DOC.obj"
+	-@erase ".\SGC\WB_PRINT.obj"
+	-@erase ".\SGC\WX_LAY.obj"
+	-@erase ".\SGC\WX_MF.obj"
+	-@erase ".\SGC\WB_UTILS.obj"
+	-@erase ".\SGC\WB_WIN.obj"
+	-@erase ".\SGC\WX_DIALG.obj"
+	-@erase ".\SGC\WB_DC.obj"
+	-@erase ".\SGC\WX_ITEM.obj"
+	-@erase ".\SGC\WB_IPC.obj"
+	-@erase ".\SGC\WB_SCROL.obj"
+	-@erase ".\SGC\WB_CMDLG.obj"
+	-@erase ".\SGC\WB_GDI.obj"
+	-@erase ".\SGC\WX_TXT.obj"
+	-@erase ".\SGC\WX_CANVS.obj"
+	-@erase ".\SGC\WB_PANEL.obj"
+	-@erase ".\SGC\WX_UTILS.obj"
+	-@erase ".\SGC\WB_PS.obj"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
@@ -544,7 +544,7 @@ CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\sgc" /I\
  /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW"\
  /D WX_NORMALIZED_PS_FONTS=1 /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNT"\
  /Fp"$(INTDIR)/wxwin.pch" /YX"wx.h" /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
-CPP_OBJS=SGC/
+CPP_OBJS=.\SGC/
 CPP_SBRS=
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
@@ -556,80 +556,80 @@ LIB32=link.exe -lib
 # ADD LIB32 /nologo
 LIB32_FLAGS=/nologo /out:"$(OUTDIR)/wxwin.lib" 
 LIB32_OBJS= \
-	"$(INTDIR)/WB_DATA.obj" \
-	"$(INTDIR)/WB_STDEV.obj" \
+	"$(INTDIR)/WB_ITEM.obj" \
 	"$(INTDIR)/WX_DC.obj" \
-	"$(INTDIR)/WX_FRAC.obj" \
-	"$(INTDIR)/WB_VLBOX.obj" \
-	"$(INTDIR)/WX_MEM.obj" \
-	"$(INTDIR)/WB_STAT.obj" \
-	"$(INTDIR)/WB_TYPES.obj" \
-	"$(INTDIR)/WX_MAIN.obj" \
-	"$(INTDIR)/WX_MESSG.obj" \
-	"$(INTDIR)/WB_RES.obj" \
-	"$(INTDIR)/WXSTRING.obj" \
-	"$(INTDIR)/WX_SLIDR.obj" \
-	"$(INTDIR)/WX_CMDLG.obj" \
-	"$(INTDIR)/WX_VLBOX.obj" \
-	"$(INTDIR)/WX_PANEL.obj" \
-	"$(INTDIR)/WB_OBJ.obj" \
-	"$(INTDIR)/WB_TIMER.obj" \
-	"$(INTDIR)/WX_DB.obj" \
-	"$(INTDIR)/WX_DOC.obj" \
-	"$(INTDIR)/WX_CHOIC.obj" \
-	"$(INTDIR)/WB_FRAME.obj" \
-	"$(INTDIR)/WX_ENHDG.obj" \
-	"$(INTDIR)/WB_PRINT.obj" \
-	"$(INTDIR)/WX_ITEM.obj" \
-	"$(INTDIR)/WX_LBOX.obj" \
-	"$(INTDIR)/WX_TXT.obj" \
-	"$(INTDIR)/WB_UTILS.obj" \
-	"$(INTDIR)/WX_DIALG.obj" \
-	"$(INTDIR)/WB_FORM.obj" \
-	"$(INTDIR)/WB_SCROL.obj" \
-	"$(INTDIR)/WB_LIST.obj" \
-	"$(INTDIR)/WB_CMDLG.obj" \
-	"$(INTDIR)/WB_TEXT.obj" \
-	"$(INTDIR)/WX_CANVS.obj" \
-	"$(INTDIR)/WB_PANEL.obj" \
-	"$(INTDIR)/WX_UTILS.obj" \
-	"$(INTDIR)/WX_TBAR.obj" \
-	"$(INTDIR)/WX_DATE.obj" \
 	"$(INTDIR)/WX_SCROL.obj" \
-	"$(INTDIR)/WX_MENU.obj" \
-	"$(INTDIR)/WB_HELP.obj" \
-	"$(INTDIR)/wx_pdf.obj" \
+	"$(INTDIR)/WB_HASH.obj" \
+	"$(INTDIR)/WX_STAT.obj" \
+	"$(INTDIR)/WX_MEM.obj" \
+	"$(INTDIR)/WX_DATE.obj" \
+	"$(INTDIR)/WB_DATA.obj" \
+	"$(INTDIR)/WX_FRAC.obj" \
 	"$(INTDIR)/WX_BBAR.obj" \
-	"$(INTDIR)/WX_WIN.obj" \
-	"$(INTDIR)/WB_MAIN.obj" \
-	"$(INTDIR)/WB_MF.obj" \
-	"$(INTDIR)/WX_MTXT.obj" \
-	"$(INTDIR)/WX_IPC.obj" \
-	"$(INTDIR)/WX_RBOX.obj" \
 	"$(INTDIR)/WX_CHECK.obj" \
 	"$(INTDIR)/WX_CLIPB.obj" \
 	"$(INTDIR)/WB_DIALG.obj" \
-	"$(INTDIR)/WX_GDI.obj" \
-	"$(INTDIR)/WX_TIME.obj" \
-	"$(INTDIR)/WX_LAY.obj" \
-	"$(INTDIR)/WX_MF.obj" \
+	"$(INTDIR)/WX_MTXT.obj" \
+	"$(INTDIR)/WX_DB.obj" \
+	"$(INTDIR)/WX_RBOX.obj" \
 	"$(INTDIR)/wximgfil.obj" \
 	"$(INTDIR)/WB_CANVS.obj" \
-	"$(INTDIR)/WB_WIN.obj" \
 	"$(INTDIR)/WB_MGSTR.obj" \
-	"$(INTDIR)/WB_DC.obj" \
+	"$(INTDIR)/WX_TIME.obj" \
 	"$(INTDIR)/WX_GAUGE.obj" \
 	"$(INTDIR)/WX_TIMER.obj" \
-	"$(INTDIR)/WB_IPC.obj" \
 	"$(INTDIR)/WB_SYSEV.obj" \
-	"$(INTDIR)/WX_TEXT.obj" \
-	"$(INTDIR)/WB_ITEM.obj" \
-	"$(INTDIR)/WB_GDI.obj" \
 	"$(INTDIR)/WX_GROUP.obj" \
-	"$(INTDIR)/WB_HASH.obj" \
 	"$(INTDIR)/WX_BUTTN.obj" \
-	"$(INTDIR)/WX_STAT.obj" \
 	"$(INTDIR)/WX_FRAME.obj" \
+	"$(INTDIR)/WX_TEXT.obj" \
+	"$(INTDIR)/WX_LBOX.obj" \
+	"$(INTDIR)/WB_STDEV.obj" \
+	"$(INTDIR)/WB_VLBOX.obj" \
+	"$(INTDIR)/WB_FORM.obj" \
+	"$(INTDIR)/WB_LIST.obj" \
+	"$(INTDIR)/WB_TYPES.obj" \
+	"$(INTDIR)/WB_TEXT.obj" \
+	"$(INTDIR)/WX_MESSG.obj" \
+	"$(INTDIR)/WXSTRING.obj" \
+	"$(INTDIR)/WX_SLIDR.obj" \
+	"$(INTDIR)/WX_CMDLG.obj" \
+	"$(INTDIR)/WB_STAT.obj" \
+	"$(INTDIR)/WX_VLBOX.obj" \
+	"$(INTDIR)/WX_TBAR.obj" \
+	"$(INTDIR)/WX_PANEL.obj" \
+	"$(INTDIR)/WX_MAIN.obj" \
+	"$(INTDIR)/wx_pdf.obj" \
+	"$(INTDIR)/WX_WIN.obj" \
+	"$(INTDIR)/WB_RES.obj" \
+	"$(INTDIR)/WB_TIMER.obj" \
+	"$(INTDIR)/WX_MENU.obj" \
+	"$(INTDIR)/WB_MF.obj" \
+	"$(INTDIR)/WB_HELP.obj" \
+	"$(INTDIR)/WX_IPC.obj" \
+	"$(INTDIR)/WB_MAIN.obj" \
+	"$(INTDIR)/WX_GDI.obj" \
+	"$(INTDIR)/WX_CHOIC.obj" \
+	"$(INTDIR)/WB_FRAME.obj" \
+	"$(INTDIR)/WB_OBJ.obj" \
+	"$(INTDIR)/WX_ENHDG.obj" \
+	"$(INTDIR)/WX_DOC.obj" \
+	"$(INTDIR)/WB_PRINT.obj" \
+	"$(INTDIR)/WX_LAY.obj" \
+	"$(INTDIR)/WX_MF.obj" \
+	"$(INTDIR)/WB_UTILS.obj" \
+	"$(INTDIR)/WB_WIN.obj" \
+	"$(INTDIR)/WX_DIALG.obj" \
+	"$(INTDIR)/WB_DC.obj" \
+	"$(INTDIR)/WX_ITEM.obj" \
+	"$(INTDIR)/WB_IPC.obj" \
+	"$(INTDIR)/WB_SCROL.obj" \
+	"$(INTDIR)/WB_CMDLG.obj" \
+	"$(INTDIR)/WB_GDI.obj" \
+	"$(INTDIR)/WX_TXT.obj" \
+	"$(INTDIR)/WX_CANVS.obj" \
+	"$(INTDIR)/WB_PANEL.obj" \
+	"$(INTDIR)/WX_UTILS.obj" \
 	"$(INTDIR)/WB_PS.obj"
 
 "$(OUTDIR)\wxwin.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
@@ -849,28 +849,58 @@ DEP_CPP_WB_CM=\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
 	".\..\..\wxwindow\include\base\wb_txt.h"\
 	".\..\..\wxwindow\include\base\wb_lbox.h"\
 	".\..\..\wxwindow\include\base\wb_rbox.h"\
@@ -1019,8 +1049,76 @@ DEP_CPP_WB_DA=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	
 
@@ -1176,17 +1274,74 @@ DEP_CPP_WB_DC=\
 	".\..\..\Wxwindow\Src\base\wxspline.cxx"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 
 "$(INTDIR)\WB_DC.obj" : $(SOURCE) $(DEP_CPP_WB_DC) "$(INTDIR)"
@@ -1375,26 +1530,53 @@ DEP_CPP_WB_DI=\
 	".\..\..\wxwindow\include\msw\wx_lbox.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
@@ -1602,28 +1784,50 @@ DEP_CPP_WB_FO=\
 	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wx_form.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
@@ -1800,31 +2004,72 @@ DEP_CPP_WB_FR=\
 	".\..\..\wxwindow\include\msw\wx_menu.h"\
 	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\base\wb_menu.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
 	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	
 
@@ -1975,13 +2220,74 @@ DEP_CPP_WB_GD=\
 	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	
 
@@ -2127,8 +2433,76 @@ DEP_CPP_WB_HA=\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	
 
 "$(INTDIR)\WB_HASH.obj" : $(SOURCE) $(DEP_CPP_WB_HA) "$(INTDIR)"
@@ -2284,15 +2658,82 @@ DEP_CPP_WB_HE=\
 	".\..\..\wxwindow\include\msw\wx_privt.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\msw\wx_ipc.h"\
 	".\..\..\wxwindow\include\base\wb_ipc.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxwindow\include\msw\wx_ipcob.h"\
 	".\..\..\wxwindow\include\base\wb_ipcob.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
 	
 
 "$(INTDIR)\WB_HELP.obj" : $(SOURCE) $(DEP_CPP_WB_HE) "$(INTDIR)"
@@ -2450,17 +2891,79 @@ DEP_CPP_WB_IP=\
 	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\msw\wx_ipc.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wb_ipc.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_ipcob.h"\
 	".\..\..\wxwindow\include\base\wb_ipcob.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	
 
 "$(INTDIR)\WB_IPC.obj" : $(SOURCE) $(DEP_CPP_WB_IP) "$(INTDIR)"
@@ -2652,25 +3155,47 @@ DEP_CPP_WB_IT=\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\base\wb_lbox.h"\
 	".\..\..\wxwindow\include\base\wb_rbox.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
@@ -2687,6 +3212,7 @@ DEP_CPP_WB_IT=\
 	".\..\..\wxwindow\include\base\wb_gauge.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 
 "$(INTDIR)\WB_ITEM.obj" : $(SOURCE) $(DEP_CPP_WB_IT) "$(INTDIR)"
@@ -2831,8 +3357,77 @@ DEP_CPP_WB_LI=\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
 	
 
 "$(INTDIR)\WB_LIST.obj" : $(SOURCE) $(DEP_CPP_WB_LI) "$(INTDIR)"
@@ -3003,27 +3598,69 @@ DEP_CPP_WB_MA=\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_dcps.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 
 "$(INTDIR)\WB_MAIN.obj" : $(SOURCE) $(DEP_CPP_WB_MA) "$(INTDIR)"
@@ -3169,13 +3806,78 @@ DEP_CPP_WB_MF=\
 	".\..\..\wxwindow\include\base\wb_mf.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 
 "$(INTDIR)\WB_MF.obj" : $(SOURCE) $(DEP_CPP_WB_MF) "$(INTDIR)"
@@ -3323,13 +4025,77 @@ DEP_CPP_WB_MG=\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	
 
 "$(INTDIR)\WB_MGSTR.obj" : $(SOURCE) $(DEP_CPP_WB_MG) "$(INTDIR)"
@@ -3474,8 +4240,76 @@ DEP_CPP_WB_OB=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\common.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
 	
 
 "$(INTDIR)\WB_OBJ.obj" : $(SOURCE) $(DEP_CPP_WB_OB) "$(INTDIR)"
@@ -3670,28 +4504,53 @@ DEP_CPP_WB_PA=\
 	".\..\..\wxwindow\include\msw\wx_slidr.h"\
 	".\..\..\wxwindow\include\msw\wx_dialg.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
 	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_buttn.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_stat.h"\
 	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
@@ -3703,6 +4562,7 @@ DEP_CPP_WB_PA=\
 	".\..\..\wxwindow\include\base\wb_lbox.h"\
 	".\..\..\wxwindow\include\base\wb_gauge.h"\
 	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	
 
 "$(INTDIR)\WB_PANEL.obj" : $(SOURCE) $(DEP_CPP_WB_PA) "$(INTDIR)"
@@ -3887,45 +4747,72 @@ DEP_CPP_WB_PR=\
 	".\..\..\wxwindow\include\msw\wx_pdf.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
-	".\..\..\wxwindow\include\msw\wx_buttn.h"\
-	".\..\..\wxwindow\include\msw\wx_choic.h"\
-	".\..\..\wxwindow\include\msw\wx_rbox.h"\
-	".\..\..\wxwindow\include\msw\wx_txt.h"\
-	".\..\..\wxwindow\include\base\wx_lay.h"\
 	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
 	".\..\..\wxwindow\include\base\wb_rbox.h"\
 	".\..\..\wxwindow\include\base\wb_txt.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
 	
 
 "$(INTDIR)\WB_PRINT.obj" : $(SOURCE) $(DEP_CPP_WB_PR) "$(INTDIR)"
@@ -4117,29 +5004,52 @@ DEP_CPP_WB_PS=\
 	".\..\..\wxwindow\include\msw\wx_privt.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
@@ -4313,28 +5223,71 @@ DEP_CPP_WB_RE=\
 	".\..\..\wxwindow\include\msw\wx_menu.h"\
 	".\..\..\wxwindow\include\base\wx_res.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\base\wb_menu.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
 	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	
 
@@ -4491,29 +5444,79 @@ DEP_CPP_WB_SC=\
 	".\..\..\wxwindow\include\msw\wx_scrol.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_scrol.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	
 
 "$(INTDIR)\WB_SCROL.obj" : $(SOURCE) $(DEP_CPP_WB_SC) "$(INTDIR)"
@@ -4668,26 +5671,76 @@ DEP_CPP_WB_ST=\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	
 
@@ -4842,27 +5895,76 @@ DEP_CPP_WB_STD=\
 	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\msw\wx_win.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
-	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 
 "$(INTDIR)\WB_STDEV.obj" : $(SOURCE) $(DEP_CPP_WB_STD) "$(INTDIR)"
@@ -5008,9 +6110,76 @@ DEP_CPP_WB_SY=\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_frame.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 
 "$(INTDIR)\WB_SYSEV.obj" : $(SOURCE) $(DEP_CPP_WB_SY) "$(INTDIR)"
@@ -5161,14 +6330,74 @@ DEP_CPP_WB_TE=\
 	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	
 
@@ -5329,17 +6558,70 @@ DEP_CPP_WB_TI=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
@@ -5490,20 +6772,76 @@ DEP_CPP_WB_TY=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	
 
 "$(INTDIR)\WB_TYPES.obj" : $(SOURCE) $(DEP_CPP_WB_TY) "$(INTDIR)"
@@ -5672,32 +7010,73 @@ DEP_CPP_WB_UT=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	
 
@@ -5867,30 +7246,73 @@ DEP_CPP_WB_VL=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_lbox.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_scrol.h"\
 	".\..\..\wxwindow\include\base\wb_vlbox.h"\
 	
@@ -6042,18 +7464,72 @@ DEP_CPP_WB_WI=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	
 
@@ -6215,27 +7691,73 @@ DEP_CPP_WX_BB=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wx_tbar.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
 	
@@ -6386,18 +7908,74 @@ DEP_CPP_WX_DA=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	
 
@@ -6588,52 +8166,70 @@ DEP_CPP_WX_DO=\
 	".\..\..\wxwindow\include\base\wx_setup.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\mzscheme\sgc\gc_cpp.h"\
-	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
-	".\..\..\wxwindow\include\base\wx_types.h"\
-	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wx_mgstr.h"\
-	".\..\..\wxwindow\include\base\wb_main.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
-	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
 	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\mzscheme\sgc\gc_cpp.h"\
+	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wx_types.h"\
+	".\..\..\wxwindow\include\base\wx_hash.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
 	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
 	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	".\..\..\wxwindow\include\base\wx_print.h"\
-	".\..\..\wxwindow\include\msw\wx_buttn.h"\
-	".\..\..\wxwindow\include\msw\wx_choic.h"\
-	".\..\..\wxwindow\include\msw\wx_rbox.h"\
-	".\..\..\wxwindow\include\msw\wx_txt.h"\
-	".\..\..\wxwindow\include\base\wx_lay.h"\
-	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
-	".\..\..\wxwindow\include\base\wx_dcps.h"\
-	".\..\..\wxwindow\include\base\wb_buttn.h"\
-	".\..\..\wxwindow\include\base\wb_choic.h"\
-	".\..\..\wxwindow\include\base\wb_rbox.h"\
-	".\..\..\wxwindow\include\base\wb_txt.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	
 
@@ -6831,29 +8427,49 @@ DEP_CPP_WX_EN=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_buttn.h"\
 	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
@@ -7013,19 +8629,75 @@ DEP_CPP_WX_FR=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	
 
@@ -7193,35 +8865,71 @@ DEP_CPP_WX_LA=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	
 
@@ -7373,19 +9081,71 @@ DEP_CPP_WX_ME=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
@@ -7538,26 +9298,76 @@ DEP_CPP_WX_TB=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	
 
 "$(INTDIR)\WX_TBAR.obj" : $(SOURCE) $(DEP_CPP_WX_TB) "$(INTDIR)"
@@ -7708,19 +9518,75 @@ DEP_CPP_WX_TI=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	
 
@@ -7879,19 +9745,75 @@ DEP_CPP_WXSTR=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\..\\..\\contrib\\wxstring\\wxregex.h"\
 	".\..\..\wxwindow\include\base\..\\..\\contrib\\wxstring\\wxstrgnu.h"\
@@ -8044,22 +9966,75 @@ DEP_CPP_WB_CA=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\base\wx_ver.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wx_ver.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
 	
 
 "$(INTDIR)\WB_CANVS.obj" : $(SOURCE) $(DEP_CPP_WB_CA) "$(INTDIR)"
@@ -8246,28 +10221,55 @@ DEP_CPP_WX_WI=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_rbox.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
 	".\..\..\wxwindow\include\base\wb_txt.h"\
 	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
@@ -8432,19 +10434,67 @@ DEP_CPP_WX_CA=\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
-	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
@@ -8613,32 +10663,70 @@ DEP_CPP_WX_CH=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\msw\wx_privt.h"\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxWindow\contrib\fafa\fafa.h"\
 	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	
@@ -8805,33 +10893,71 @@ DEP_CPP_WX_CHO=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_privt.h"\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxWindow\contrib\fafa\fafa.h"\
 	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_choic.h"\
 	
 
@@ -8994,17 +11120,68 @@ DEP_CPP_WX_CL=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_mf.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
@@ -9181,33 +11358,69 @@ DEP_CPP_WX_CM=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
-	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
+	".\..\..\wxwindow\include\base\wx_sysev.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	
 
@@ -9386,37 +11599,76 @@ DEP_CPP_WX_DB=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_wmgr.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\..\\..\\contrib\\wxstring\\wxregex.h"\
 	".\..\..\wxwindow\include\base\..\\..\\contrib\\wxstring\\wxstrgnu.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
 	
 NODEP_CPP_WX_DB=\
 	".\..\..\wxwindow\include\base\wxregex.h"\
@@ -9598,33 +11850,64 @@ DEP_CPP_WX_DC=\
 	".\..\..\wxwindow\include\base\common.h"\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafa.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_dcmem.h"\
 	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
 	
@@ -9796,34 +12079,68 @@ DEP_CPP_WX_DI=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\msw\wx_check.h"\
-	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_dialg.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_check.h"\
-	".\..\..\wxwindow\include\base\wb_messg.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
 	".\..\..\wxwindow\include\base\wb_main.h"\
@@ -10000,30 +12317,65 @@ DEP_CPP_WX_FRA=\
 	".\..\..\wxwindow\include\base\wx_mem.h"\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_panel.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_gauge.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\base\wx_stdev.h"\
+	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_itemp.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_win.h"\
 	".\..\..\wxwindow\include\base\wx_obj.h"\
-	".\..\..\wxwindow\include\base\wx_stdev.h"\
-	".\..\..\wxwindow\include\base\wx_list.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_panel.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_gauge.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
+	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_panel.h"\
 	".\..\..\wxwindow\include\base\wb_menu.h"\
-	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
 	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
 	".\..\..\wxwindow\include\base\wb_mnuit.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
 	".\..\..\wxwindow\include\base\wx_mgstr.h"\
@@ -10195,32 +12547,70 @@ DEP_CPP_WX_GA=\
 	".\..\..\wxwindow\include\msw\wx_win.h"\
 	".\..\..\wxwindow\include\msw\wx_frame.h"\
 	".\..\..\wxwindow\include\msw\wx_dc.h"\
-	".\..\..\wxwindow\include\base\wb_win.h"\
-	".\..\..\wxwindow\include\base\wx_obj.h"\
+	".\..\..\wxwindow\include\msw\wx_dccan.h"\
+	".\..\..\wxwindow\include\msw\wx_dcmem.h"\
+	".\..\..\wxwindow\include\base\wx_dcps.h"\
+	".\..\..\wxwindow\include\msw\wx_canvs.h"\
+	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
+	".\..\..\wxwindow\include\msw\wx_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_check.h"\
+	".\..\..\wxwindow\include\msw\wx_choic.h"\
+	".\..\..\wxwindow\include\msw\wx_messg.h"\
+	".\..\..\wxwindow\include\msw\wx_lbox.h"\
+	".\..\..\wxwindow\include\msw\wx_rbox.h"\
+	".\..\..\wxwindow\include\msw\wx_txt.h"\
+	".\..\..\wxwindow\include\msw\wx_mtxt.h"\
+	".\..\..\wxwindow\include\msw\wx_slidr.h"\
+	".\..\..\wxwindow\include\msw\wx_group.h"\
+	".\..\..\wxwindow\include\msw\wx_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_text.h"\
+	".\..\..\wxwindow\include\msw\wx_main.h"\
 	".\..\..\wxwindow\include\base\wx_stdev.h"\
 	".\..\..\wxwindow\include\base\wx_list.h"\
+	".\..\..\wxwindow\include\msw\wx_gdi.h"\
+	".\..\..\wxwindow\include\msw\wx_dialg.h"\
+	".\..\..\wxwindow\include\base\wx_utils.h"\
+	".\..\..\wxwindow\include\msw\wx_cmdlg.h"\
+	".\..\..\wxwindow\include\base\wx_res.h"\
+	".\..\..\wxwindow\include\base\wx_lay.h"\
+	".\..\..\wxwindow\include\msw\wx_privt.h"\
+	".\..\..\wxwindow\include\base\wb_win.h"\
+	".\..\..\wxwindow\include\base\wx_obj.h"\
 	".\..\..\mzscheme\sgc\gc_cpp.h"\
 	".\..\..\mzscheme\sgc\sgc.h"\
+	".\..\..\wxwindow\include\base\wb_frame.h"\
+	".\..\..\wxwindow\include\base\wb_dc.h"\
+	".\..\..\wxwindow\include\base\wb_dccan.h"\
+	".\..\..\wxwindow\include\base\wb_dcmem.h"\
+	".\..\..\wxwindow\include\base\wb_canvs.h"\
+	".\..\..\wxwindow\include\base\wb_dcpan.h"\
+	".\..\..\wxwindow\include\base\wb_buttn.h"\
+	".\..\..\wxwindow\include\msw\wx_item.h"\
+	".\..\..\wxwindow\include\base\wb_item.h"\
+	".\..\..\wxwindow\include\base\wb_check.h"\
+	".\..\..\wxwindow\include\base\wb_choic.h"\
+	".\..\..\wxwindow\include\base\wb_messg.h"\
+	".\..\..\wxwindow\include\base\wb_lbox.h"\
+	".\..\..\wxwindow\include\base\wb_rbox.h"\
+	".\..\..\wxwindow\include\base\wb_txt.h"\
+	".\..\..\wxwindow\include\base\wb_mtxt.h"\
+	".\..\..\wxwindow\include\base\wb_slidr.h"\
+	".\..\..\wxwindow\include\base\wb_group.h"\
+	".\..\..\wxwindow\include\base\wb_menu.h"\
+	".\..\..\wxwindow\include\msw\wx_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_mnuit.h"\
+	".\..\..\wxwindow\include\base\wb_text.h"\
+	".\..\..\wxwindow\include\base\wx_mgstr.h"\
+	".\..\..\wxwindow\include\base\wb_main.h"\
 	".\..\..\wxwindow\include\base\wx_sysev.h"\
 	".\..\..\wxwindow\include\base\wx_types.h"\
 	".\..\..\wxwindow\include\base\wx_hash.h"\
-	".\..\..\wxwindow\include\base\wb_frame.h"\
-	".\..\..\wxwindow\include\msw\wx_gdi.h"\
-	".\..\..\wxwindow\include\base\wb_dc.h"\
 	".\..\..\wxwindow\include\base\wb_gdi.h"\
+	".\..\..\wxwindow\include\base\wb_dialg.h"\
+	".\..\..\wxwindow\include\base\wb_cmdlg.h"\
 	".\..\..\wxwindow\include\base\wx_ver.h"\
 	".\..\..\wxwindow\include\base\wb_panel.h"\
-	".\..\..\wxwindow\include\msw\wx_canvs.h"\
-	".\..\..\wxwindow\include\base\wb_canvs.h"\
-	".\..\..\wxwindow\include\msw\wx_dccan.h"\
-	".\..\..\wxwindow\include\base\wb_dccan.h"\
 	".\..\..\wxwindow\include\base\wb_gauge.h"\
-	".\..\..\wxwindow\include\msw\wx_item.h"\
-	".\..\..\wxwindow\include\base\wb_item.h"\
-	".\..\..\wxwindow\include\msw\wx_dcpan.h"\
-	".\..\..\wxwindow\include\base\wb_dcpan.h"\
-	".\..\..\wxwindow\include\msw\wx_privt.h"\
-	".\..\..\wxwindow\include\base\wx_utils.h"\
 	".\..\..\wxWindow\contrib\fafa\fafa.h"\
 	".\..\..\wxWindow\contrib\fafa\fafapriv.h"\
 	

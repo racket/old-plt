@@ -335,10 +335,7 @@
    "Adds the profiling preferences panel.")
   
   (drscheme:debug:open-and-highlight-in-file
-   ((cons/c (union symbol? (is-a?/c editor<%>))
-            (cons/c number? number?))
-    . -> .
-    void?)
+   (srcloc? . -> . void?)
    (debug-info)
    "This function opens a DrScheme to display"
    "\\var{debug-info}. The first element in"

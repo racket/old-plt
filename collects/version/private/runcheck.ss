@@ -277,13 +277,17 @@
 			     
 			     (show-ok 
 			      dialog-title
-			      (if needs-update
-				  (string-append
-				   folded-string
-				   (string #\newline #\newline)
-				   "Updates are available at "
-				   download-url-string)
-				  folded-string))))))))))
+			      (string-append
+			       (format "Binary v.~a (iteration ~a) is up-to-date"
+				       binary-version binary-iteration)
+			       nl
+			       (if needs-update
+				   (string-append
+				    folded-string
+				    nl nl
+				    "Updates are available at "
+				    download-url-string)
+				   folded-string)))))))))))
 
       ; exceptions are used to report errors elsewhere
       ; just ignore here

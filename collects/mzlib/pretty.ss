@@ -235,6 +235,9 @@
 
    (define-struct mark (str def))
 
+   (define pre-sym (gensym 'pre))
+   (define post-sym (gensym 'post))
+
    (define (generic-write obj display? width output output-hooked 
 			  print-graph? print-struct? print-hash-table? print-vec-length?
 			  depth size-hook print-line
@@ -610,9 +613,9 @@
 				  new-def-box
 				  0
 				  (lambda (obj)
-				    (snoc (cons 'pre obj) 0))
+				    (snoc (cons pre-sym obj) 0))
 				  (lambda (obj)
-				    (snoc (cons 'post obj) 0)))
+				    (snoc (cons post-sym obj) 0)))
 		   (if (> left 0) ; all can be printed on one line
 		       (let loop ([result result][col col])
 			 (if (null? result) 
@@ -621,10 +624,10 @@
 				   (+ (let ([v (car result)])
 					(if (pair? v)
 					    (cond
-					     [(eq? (car v) 'pre)
+					     [(eq? (car v) pre-sym)
 					      (pre-print (cdr v))
 					      col]
-					     [(eq? (car v) 'post)
+					     [(eq? (car v) post-sym)
 					      (post-print (cdr v))
 					      col]
 					     [else

@@ -288,10 +288,16 @@
               (delete-arrows))))]
 
       [send-ftype
-        (lambda (ftype method . args)
-          (pretty-debug-gui `(send-ftype ,(FlowType->pretty ftype)))
-          (assert (symbol? method) 'send-ftype ftype method args)
-          (apply (ivar/proc (lookup-ftype ftype) method) args))]
+
+       ; modified by PAS
+       ; the looked-up-ftype can sometime be a string
+
+       (lambda (ftype method . args)
+	 (let ([looked-up-ftype (lookup-ftype ftype)]) 
+	   (when (type-annotation? looked-up-ftype)
+		 (pretty-debug-gui `(send-ftype ,(FlowType->pretty ftype)))
+		 (assert (symbol? method) 'send-ftype ftype method args)
+		 (apply (ivar/proc looked-up-ftype method) args))))]
 
       [flush-type-cache
         (lambda ()
@@ -314,7 +320,7 @@
       [add-type-annotation
         (match-lambda
           [($ type-annotation start end-first finish ftype)
-            '(pretty-debug-gui `(type-annotation 
+	   '(pretty-debug-gui `(type-annotation 
                                   ,(zodiac:location-offset start)
                                   ,(zodiac:location-offset end-first)
                                   ,(zodiac:location-offset finish)))

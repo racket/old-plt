@@ -802,10 +802,19 @@
 	       (values (wrap-value (mk-tvar-void)) env)]
 
 	      [($ zodiac:type:-form _ s _ _ type attrs)
-	       (let ([type (expand-input-type-err type E)])
-		 (values
-                  (wrap-value (apply primitive->atprim 'user type attrs))
-                  env))]
+	       (let ([type2 (expand-input-type-err type E)])
+		 (cond
+		  [(or (null? attrs)
+		       (memq (car attrs) '(predicate
+					   predicate-fn 
+					   predicate*)))
+		   (values
+		    (wrap-value (apply primitive->atprim 'user type2 attrs))
+		    env)]
+		  [else 
+		   (mrspidey:error
+		    (format "Type ~a has bad attribute list: ~a" 
+			       type attrs))]))]
 
 	      [($ zodiac:reference-unit-form)
 	       (values 

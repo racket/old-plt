@@ -321,6 +321,9 @@
        (member         (forall (a tail)
 			       (a (MU l (union nil (cons a l) tail)) 
 				  -> (union false (cons a tail)))))
+       (assf           (forall (a)
+			       ((a -> bool) (listof a) -> 
+					    (union false a))))
        (assq           (forall (a c)
 			       (a (listof (cons a c)) -> 
 				  (union false (cons a c)))))
@@ -463,9 +466,11 @@
 				 (arglistof x)
 				 *->* r))))
        (map            (case->
+
 			(forall (a r)
 				((a     -> r) (listof a) 
 					      -> (listof r)))
+
 			(forall (a b r)
 				((a b   -> r) (listof a) (listof b) 
 					      -> (listof r)))

@@ -158,13 +158,14 @@
                  (and (string? file)
                    (string=? filename file)
                    fi)])
-             fileinfo*)
-           (assert #f 'filename->fileinfo file)))]
+             fileinfo*)))]
+	   ; (assert #f 'filename->fileinfo file)))]
 
       [filename->frame
        (lambda (file)
          (let ([x (filename->fileinfo file)])
-           (and x (fileinfo-frame x))))]
+           (and x 
+		(fileinfo-frame x))))]
 
       [filename->edit
        (lambda (file)

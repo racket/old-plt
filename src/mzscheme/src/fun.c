@@ -83,6 +83,7 @@ static Scheme_Object *for_each (int argc, Scheme_Object *argv[]);
 static Scheme_Object *andmap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *ormap (int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_cc (int argc, Scheme_Object *argv[]);
+static Scheme_Object *call_with_continuation_barrier (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cont_marks (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cc_marks_p (int argc, Scheme_Object *argv[]);
@@ -228,6 +229,13 @@ scheme_init_fun (Scheme_Env *env)
 
   scheme_add_global_constant("call-with-current-continuation", o, env);
   scheme_add_global_constant("call/cc", o, env);
+
+  scheme_add_global_constant("call-with-continuation-barrier",
+			     scheme_make_prim_w_arity2(call_with_continuation_barrier,
+						       "call-with-continuation-barrier",
+						       1, 1,
+						       0, -1), 
+			     env);
 
   scheme_add_global_constant("current-continuation-marks",
 			     scheme_make_prim_w_arity(cc_marks,
@@ -2334,7 +2342,7 @@ call_cc (int argc, Scheme_Object *argv[])
 
   scheme_zero_unneeded_rands(p);
 
-  if (scheme_setjmpup(&cont->buf, cont, p->stack_start)) {
+  if (scheme_setjmpup(&cont->buf, cont, p->next ? p->stack_start : p->o_start)) {
     /* We arrive here when the continuation is applied */
     Scheme_Object *result = cont->value;
     cont->value = NULL;
@@ -2398,7 +2406,8 @@ call_cc (int argc, Scheme_Object *argv[])
     copy_in_runstack(p, cont->runstack_copied);
 
     p->cont_mark_stack_owner = cont->cont_mark_stack_owner;
-    if (p->cont_mark_stack_owner) {
+    if (p->cont_mark_stack_owner
+	&& (*p->cont_mark_stack_owner != p)) {
       Scheme_Thread *op;
       op = *p->cont_mark_stack_owner;
       if (op) {
@@ -2463,6 +2472,16 @@ void scheme_takeover_stacks(Scheme_Thread *p)
   }
 }
 
+static Scheme_Object *
+call_with_continuation_barrier (int argc, Scheme_Object *argv[])
+{
+  scheme_check_proc_arity("call-with-continuation-barrier", 1,
+			  0, argc, argv);
+
+  return scheme_apply(argv[0], 1, NULL);
+}
+
+
 static Scheme_Object *continuation_marks(Scheme_Thread *p,
 					 Scheme_Object *_cont,
 					 Scheme_Object *econt,
@@ -2484,6 +2503,8 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
   } else {
     findpos = (long)MZ_CONT_MARK_STACK;
     cmpos = (long)MZ_CONT_MARK_POS;
+    if (!p->cont_mark_stack_segments)
+      findpos = 0;
   }
 
   while (findpos--) {
@@ -2557,13 +2578,13 @@ cont_marks(int argc, Scheme_Object *argv[])
     scheme_wrong_type("continuation-marks", "continuation", 1, argc, argv);
 
   if (SCHEME_ECONTP(argv[0])) {
-    if (1) { /* FIX ME */
+    if (!scheme_escape_continuation_ok(argv[0])) {
       scheme_arg_mismatch("continuation-marks",
-			  "escape continuation no long applicable: ",
+			  "escape continuation not in the current thread's continuation: ",
 			  argv[0]);
     }
 
-    return continuation_marks(/* FIXME */ NULL, NULL, argv[0], 0);
+    return continuation_marks(scheme_current_thread, NULL, argv[0], 0);
   } else
     return continuation_marks(NULL, argv[0], NULL, 0);
 }

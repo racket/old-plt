@@ -2692,6 +2692,9 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->list_stack_pos = p->list_stack_pos;
 
   scheme_gmp_tls_init(np->gmp_tls);
+  
+  if (p->cc_ok)
+    *p->cc_ok = 0;
 
   /* np->prev = NULL; - 0ed by allocation */
   np->next = scheme_first_thread;
@@ -2819,6 +2822,9 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   MZ_CONT_MARK_STACK = p->cont_mark_stack;
   MZ_CONT_MARK_POS = p->cont_mark_pos;
 #endif
+
+  if (p->cc_ok)
+    *p->cc_ok = 1;
 
   if ((p->running & MZTHREAD_KILLED)
       || (p->running & MZTHREAD_USER_SUSPENDED))
@@ -3028,6 +3034,8 @@ int scheme_can_break(Scheme_Thread *p)
       config = scheme_current_config();
     } else {
       config = p->config_at_swap;
+      if (!config)
+	config = p->init_config; /* Presuambly never swapped in, so far */
     }
     return SCHEME_TRUEP(scheme_get_thread_param(config, p->cell_values, MZCONFIG_ENABLE_BREAK));
   }

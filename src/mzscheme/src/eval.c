@@ -3198,7 +3198,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 c,
-			 "continuation application: attempted to cross a continuation boundary");
+			 "continuation application: attempted to cross a continuation barrier");
       }
       
       p->suspend_break = 1; /* restored at call/cc destination */

@@ -350,6 +350,18 @@ DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
   { "no-thick-border",WS_THICKFRAME,FALSE },
 };
 
+/**************************
+
+void debug_msg(char *s) {
+  char buff[2048];
+
+  sprintf(buff,"%s~n",s);
+
+  scheme_printf(buff,strlen(buff),0,NULL);
+}
+
+*****************************/
+
 void scheme_release_typedesc(void *p,void *) {
   MX_TYPEDESC *pTypeDesc;
   ITypeInfo *pITypeInfo;
@@ -434,7 +446,6 @@ Scheme_Object *mx_com_register_object(int argc,Scheme_Object **argv) {
 }
 
 void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
-
   if (MX_MANAGED_OBJ_RELEASED(comObject)) {
     return;
   }
@@ -467,7 +478,7 @@ void scheme_release_document(void *doc,void *) {
     ((MX_Document_Object *)doc)->pIEventQueue->Release();
   }
 
-  MX_MANAGED_OBJ_RELEASED(doc);
+  MX_MANAGED_OBJ_RELEASED(doc) = TRUE;
 }
 
 Scheme_Object *mx_com_release_object(int argc,Scheme_Object **argv) {
@@ -476,7 +487,7 @@ Scheme_Object *mx_com_release_object(int argc,Scheme_Object **argv) {
   }
 
   scheme_release_com_object((void *)argv[0],MX_COM_OBJ_VAL(argv[0]));
-  
+
   return scheme_void;
 }
 
@@ -596,7 +607,7 @@ Scheme_Object *mx_release_type_table(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
 			    Scheme_Unit *m,void *debug_request) {
   int i;
-  
+
   for (i = 0; i < sizeray(mxPrims); i++) {
     SCHEME_ENVBOX_VAL(boxes[i]) = scheme_make_prim_w_arity(mxPrims[i].c_fun,
 							   mxPrims[i].name,
@@ -605,12 +616,12 @@ Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
     anchors[i] = boxes[i];
   }
   
-  mx_omit_obj = (Scheme_Object *)scheme_malloc(sizeof(MX_OMIT));
+  mx_omit_obj = (Scheme_Object *)scheme_malloc_uncollectable(sizeof(MX_OMIT));
   mx_omit_obj->type = mx_com_omit_type;
   
   SCHEME_ENVBOX_VAL(boxes[sizeray(mxPrims)]) = mx_omit_obj;
   anchors[sizeray(mxPrims)] = boxes[sizeray(mxPrims)];
-  
+
   return scheme_void;
 }
 
@@ -3390,7 +3401,8 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
 				  SCHEME_STR_VAL(argv[2]));
   
   if (pIHTMLElement == NULL) {
-    scheme_signal_error("Element not found");
+    scheme_signal_error("HTML element with tag = %s, id = %s not found",
+			SCHEME_STR_VAL(argv[1]),SCHEME_STR_VAL(argv[2]));
   }
   
   retval = (MX_Element *)scheme_malloc(sizeof(MX_Element));
@@ -3400,6 +3412,8 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
   
+  pIHTMLElement->AddRef();  /* IE doesn't do this for us */
+
   mx_register_simple_com_object((Scheme_Object *)retval,pIHTMLElement);
   
   return (Scheme_Object *)retval;
@@ -3480,7 +3494,7 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
   IHTMLDocument2 *pDocument; 
   IHTMLElement *pBody;
   BSTR where,html;
-  
+
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
     scheme_wrong_type(scheme_name,"mx-document",0,argc,argv);
   }
@@ -3548,7 +3562,7 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
 
 void docHwndMsgLoop(LPVOID p) {
   HRESULT hr;
-  MSG msg;
+  static MSG msg;
   HWND hwnd;
   IUnknown *pIUnknown;
   DOCUMENT_WINDOW_INIT *pDocWindowInit;
@@ -3639,11 +3653,11 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   DOCUMENT_WINDOW_INIT docWindowInit;
   DOCUMENT_WINDOW_STYLE_OPTION *pDwso;
   int i;
-  
+
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
     scheme_wrong_type("make-document","string",1,argc,argv);
   }
-  
+
   docWindowInit.docWindow.label = SCHEME_STR_VAL(argv[0]);
   
   assignIntOrDefault(&docWindowInit.docWindow.width,argv,argc,1);
@@ -3657,7 +3671,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   
   pSyms = argv[5];
   docWindowInit.docWindow.style = WS_OVERLAPPEDWINDOW;
-  
+
   while (pSyms != scheme_null) {
     
     currSym = SCHEME_CAR(pSyms);
@@ -3730,7 +3744,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   if (pIStream == NULL) {
     scheme_signal_error("Can't get stream for Web browser");
   }
-  
+
   hr = CoGetInterfaceAndReleaseStream(pIStream,IID_IWebBrowser2,(void **)&pIWebBrowser2);
   
   if (hr != S_OK || pIWebBrowser2 == NULL) {
@@ -3796,6 +3810,7 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
 		     (Scheme_Object *)doc,
 		     (Scheme_Close_Manager_Client *)scheme_release_document,
 		     NULL,0);
+
   scheme_register_finalizer(doc,scheme_release_document,NULL,NULL,NULL);
 
   return (Scheme_Object *)doc;
@@ -3823,7 +3838,7 @@ static BOOL win_event_available(void *) {
 
 static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
   static HANDLE dummySem;
-  
+
   if (!dummySem) {
     dummySem = CreateSemaphore(NULL,0,1,NULL); 
     if (!dummySem) {
@@ -3890,7 +3905,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   mx_com_array_type = scheme_make_type("<com-array>");
   mx_com_omit_type = scheme_make_type("<com-omit>");
   mx_com_typedesc_type = scheme_make_type("<com-typedesc>");
-  
+
   hr = CoInitialize(NULL);
   
   // S_OK means success, S_FALSE means COM already loaded
@@ -3905,7 +3920,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   
   // export prims + omit value
   
-  mx_unit = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
+  mx_unit = (Scheme_Unit *)scheme_malloc_uncollectable(sizeof(Scheme_Unit));
   mx_unit->type = scheme_unit_type;
   mx_unit->num_imports = 0;
   mx_unit->num_exports = sizeray(mxPrims) + 1;
@@ -3919,7 +3934,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   }
   
   mx_unit->exports[sizeray(mxPrims)] = scheme_intern_symbol("com-omit");
-  
+
   initEventNames();
   
   initMysSinkTable();

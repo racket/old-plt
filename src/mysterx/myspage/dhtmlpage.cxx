@@ -85,9 +85,11 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
     hr = CoCreateInstance(CLSID_Event,NULL,CLSCTX_ALL,IID_IEvent,(void **)&pEvent);
 
     if (SUCCEEDED(hr) == FALSE || pEvent == NULL) {
-      ::failureBox("Can't create event");
+      ::failureBox("Can't create event in MysPage");
        return -1;
     }
+
+    pEvent->AddRef();
 
     pIHTMLEventObj->get_type(&eventString);
 
@@ -228,6 +230,8 @@ LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
     return -1;
   }
   
+  pIEventQueue->AddRef();
+
   return 0;
 }
 

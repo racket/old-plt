@@ -22,8 +22,8 @@ all : myspage.tlb myspage.dll myspage.h myspage_i.c
 
 myspage.dll : $(DEF_FILE) $(LINK32_OBJS) 
 	$(LINK32) $(LINK32_FLAGS) $(LINK32_OBJS) 
-	copy myspage.dll ..\..\..\collects\mysterx\compiled\native
-	$(REGSVR32) /s ..\..\..\collects\mysterx\compiled\native\myspage.dll
+	copy myspage.dll ..\..\..\collects\mysterx\compiled\native\win32\i386
+	$(REGSVR32) /s ..\..\..\collects\mysterx\compiled\native\win32\i386\myspage.dll
 
 clean :
 	-@erase DHTMLPage.obj

@@ -196,6 +196,7 @@ Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,
   htmlBSTR = schemeStringToBSTR(argv[1]);
 
   pIHTMLElement->insertAdjacentHTML(whereBSTR,htmlBSTR);
+  scheme_printf("stuff 5~n",9,0,NULL);
 
   SysFreeString(whereBSTR);
   SysFreeString(htmlBSTR);

@@ -91,7 +91,7 @@ static MX_PRIM mxPrims[] = {
   
   { mx_all_coclasses,"com-all-coclasses",0,0 },
   { mx_all_controls,"com-all-controls",0,0 },
-  { mx_coclass_to_html,"coclass->html",1,3 },
+  { mx_coclass_to_html,"coclass->html",3,4 },
   
   // COM objects
   
@@ -3404,37 +3404,49 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   char *controlName;
   LPOLESTR clsidString;
+  char widthBuff[20];
+  char heightBuff[20];
   char buff[512];
   CLSID clsid;
   static CLSID emptyClsid;
-  int width,height;
-  
+  char *format; 
+  int i;
+
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
     scheme_wrong_type("coclass->html","string",0,argc,argv);
   }
   
-  if (argc == 2 || argc == 3) {
-    if (SCHEME_INTP(argv[1]) == FALSE) {
-      scheme_wrong_type("coclass->html","int",1,argc,argv);
+  for (i = 1; i <= 2; i++) { 
+    if (SCHEME_INTP(argv[i]) == FALSE) {
+      scheme_wrong_type("coclass->html","int",i,argc,argv);
     }
-    width = SCHEME_INT_VAL(argv[1]);
   }
-  else {
-    width = MX_DEFAULT_WIDTH;
-  }
-  
-  if (argc == 3) {
-    if (SCHEME_INTP(argv[2]) == FALSE) {
-      scheme_wrong_type("coclass->html","int",2,argc,argv);
+
+  format = "%u";
+
+  if (argc > 3) {
+    char *symString;
+
+    if (SCHEME_SYMBOLP(argv[3]) == FALSE) {
+      scheme_wrong_type("coclass->html","symbol",3,argc,argv);
     }
-    height = SCHEME_INT_VAL(argv[2]);
-  }
-  else {
-    height = MX_DEFAULT_HEIGHT;
-  }
-  
+
+    symString = SCHEME_SYM_VAL(argv[3]);
+
+    if (stricmp(symString,"percent") == 0) {
+      format = "%u%%";
+    }
+    else if (stricmp(symString,"pixels")) {
+      scheme_signal_error("Invalid size specifier '%s: "
+			  "must be either 'pixels or 'percent",symString);
+    }
+  } 
+
   controlName = SCHEME_STR_VAL(argv[0]);
   
+  sprintf(widthBuff,format,SCHEME_INT_VAL(argv[1]));
+  sprintf(heightBuff,format,SCHEME_INT_VAL(argv[2]));
+
   clsid = getCLSIDFromString(controlName);
   
   if (memcmp(&clsid,&emptyClsid,sizeof(CLSID)) == 0) {
@@ -3450,11 +3462,11 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   }
   
   sprintf(buff,
-	  "<OBJECT ID=\"%s\" CLASSID=\"clsid:%S\">\n"
+	  "<OBJECT ID=\"%s\" WIDTH=\"%s\" HEIGHT=\"%s\" CLASSID=\"clsid:%S\">\n"
 	  "</OBJECT>",
 	  controlName,		    
-	  clsidString + 1,
-	  width,height);
+	  widthBuff,heightBuff,
+	  clsidString + 1);
   
   return (Scheme_Object *)scheme_make_string(buff);
 }

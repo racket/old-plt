@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "myspage.h"
+#include "wrapper.h"
 #include "DHTMLPage.h"
 
 static EVENT_MAP eventMap[] = {
@@ -180,38 +181,60 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
 }
 
 LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
-     CAxWindow wnd(m_hWnd);
-     HRESULT hr;
-     
-     hr = wnd.CreateControl(IDH_DHTMLPAGE);
+  CAxWindow wnd(m_hWnd);
+  CComObject<CWrapperDispatch> *pdispWrapper;
+  HRESULT hr;
 
-     if (SUCCEEDED(hr) == FALSE) {
-       ::failureBox("Can't create DHTML control");
-       return -1;
-     }
+  hr = wnd.CreateControl(IDH_DHTMLPAGE);
 
-     hr = wnd.SetExternalDispatch(static_cast<IDHTMLPageUI*>(this));
-     if (SUCCEEDED(hr) == FALSE) {
-       ::failureBox("Can't set dispatcher for DHTML control");
-       return -1;
-     }
-     
-     hr = wnd.QueryControl(IID_IWebBrowser2, (void **)&m_spBrowser);
-     if (SUCCEEDED(hr) == FALSE) {
-        ::failureBox("Can't find browser in DHTML control");
-        return -1;
-     }
+  if (SUCCEEDED(hr) == FALSE) {
+    ::failureBox("Can't create DHTML control");
+    return -1;
+  }
+
+  // Create a wrapper about the external dispatch interface
+  // workaround for IE5
+
+  hr = pdispWrapper->CreateInstance(&pdispWrapper);
+  if (SUCCEEDED(hr) == FALSE) {
+    ::failureBox("Can't create Wrapper dispatch for DHTML control");
+    return -1;
+  }
+
+  CComPtr<IDHTMLPageUI> pdispExternal = com_cast<IDHTMLPageUI>(GetUnknown());
+  if (pdispExternal == NULL) {
+   return E_UNEXPECTED;
+  }
+
+  pdispWrapper->SetDispatch(pdispExternal);
+
+  hr = wnd.SetExternalDispatch(pdispWrapper);
+  if (SUCCEEDED(hr) == FALSE) {
+    ::failureBox("Can't set dispatcher for DHTML control");
+    return -1;
+  }
+
+  hr = wnd.QueryControl(IID_IWebBrowser2, (void**)&m_spBrowser);
+  if (SUCCEEDED(hr) == FALSE) {
+    ::failureBox("Can't find browser in DHTML control");
+    return -1;
+  }
+
+  hr = CoCreateInstance(CLSID_EventQueue,NULL,CLSCTX_ALL,
+			IID_IEventQueue,(void **)&pIEventQueue);
+
+  if (SUCCEEDED(hr) == FALSE || pIEventQueue == NULL) {
+    ::failureBox("Can't create event queue");
+    return -1;
+  }
   
-     hr = CoCreateInstance(CLSID_EventQueue,NULL,CLSCTX_ALL,IID_IEventQueue,(void **)&pIEventQueue);
-
-     if (SUCCEEDED(hr) == FALSE || pIEventQueue == NULL) {
-       ::failureBox("Can't create event queue");
-       return -1;
-     }
-
-     return 0;
+  return 0;
 }
 
+LRESULT CDHTMLPage::OnDestroy(UINT,WPARAM,LPARAM,BOOL&) {
+  pIEventQueue->Release();
+  return 0;
+}
 
 STDMETHODIMP CDHTMLPage::marshalWebBrowserToStream(IStream **ppIStream) {
   HRESULT hr;

@@ -43,7 +43,7 @@ clean :
 .cxx{$(INTDIR)}.obj::
    $(CPP) $(CPP_FLAGS) $< 
 
-dhtmlpage.obj : dhtmlpage.cxx dhtmlpage.h dhtmlpageui.htm stdafx.h
+dhtmlpage.obj : dhtmlpage.cxx dhtmlpage.h dhtmlpageui.htm wrapper.h stdafx.h
 
 event.obj : event.cxx event.h stdafx.h
 

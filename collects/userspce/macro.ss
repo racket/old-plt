@@ -23,6 +23,13 @@
                     [else (cons (car l)
                                 (loop (cddr l)))])))])
          (with-syntax ([(_ (struct: make pred? selectors/mutators ...) exp) defn]
+                       [->vector
+                        (datum->syntax-object
+                         stx
+                         (string->symbol 
+                          (string-append
+                           (symbol->string (syntax-e (syntax str)))
+                           "->vector")))]
                        [unparse (datum->syntax-object
 				 stx
 				 (string->symbol 
@@ -35,11 +42,18 @@
 				     (string-append
 				      "make-"
 				      (symbol->string (syntax-e (syntax str)))
-				      "/parse")))])
+				      "/parse")))]
+                       [struct:-name
+                        (datum->syntax-object
+                         stx
+                         (string->symbol
+                          (string-append
+                           "struct:"
+                           (symbol->string (syntax-e (syntax str))))))])
                       (with-syntax ([(selectors ...)
                                      (evens (syntax->list (syntax (selectors/mutators ...))))])
                                    (syntax
-                                    (define-values (make/parse unparse struct: make pred? selectors/mutators ...)
+                                    (define-values (make/parse unparse ->vector struct: make pred? selectors/mutators ...)
                                       (let-values ([(struct: make pred? selectors/mutators ...) exp])
                                         (let ([make/parse
                                                (lambda (inits)
@@ -57,5 +71,11 @@
                                                  (unless (pred? struct)
                                                    (error 'unparse "expected an instance of <struct:~a>, got ~e"
                                                           'str struct))
-                                                 (list (list 'fields (selectors struct)) ...))])
-                                          (values make/parse unparse struct: make pred? selectors/mutators ...))))))))])))
+                                                 (list (list 'fields (selectors struct)) ...))]
+                                              [->vector
+                                               (lambda (struct)
+                                                 (unless (pred? struct)
+                                                   (error '->vector "expected an instance of <struct:~a>, got ~e"
+                                                          'str struct))
+                                                 (vector 'struct:-name (selectors struct) ...))])
+                                          (values make/parse unparse ->vector struct: make pred? selectors/mutators ...))))))))])))

@@ -95,30 +95,30 @@
   (define this-program (with-handlers ([void (lambda (x) "mzscheme")])
 			 (namespace-variable-binding 'program)))
   
-  (define-struct/parse setting
-    (key
-     name
-     language-defining-module
-
-     read-decimal-as-exact?
-     case-sensitive?
-     allow-reader-quasiquote?
-     disallow-untagged-inexact-numbers
-
-     whole/fractional-exact-numbers
-
-     printing
-     use-pretty-printer?
-     sharing-printing?
-     abbreviate-cons-as-list?
-     print-tagged-inexact-numbers
-     print-booleans-as-true/false
-     print-exact-as-decimal?
-     print-.-symbols-without-bars
-     print-whole/part-fractions
-     
-     define-argv?)
-    (make-inspector))
+  (define-struct/parse 
+   setting
+   (key
+    name
+    language-defining-module
+    
+    read-decimal-as-exact?
+    case-sensitive?
+    allow-reader-quasiquote?
+    disallow-untagged-inexact-numbers
+    
+    whole/fractional-exact-numbers
+    
+    printing
+    use-pretty-printer?
+    sharing-printing?
+    abbreviate-cons-as-list?
+    print-tagged-inexact-numbers
+    print-booleans-as-true/false
+    print-exact-as-decimal?
+    print-.-symbols-without-bars
+    print-whole/part-fractions
+    
+    define-argv?))
   
   ;; settings : (list-of setting)
   (define settings
@@ -259,7 +259,7 @@
     (lambda (x)
       (unless (setting? x)
 	(error 'copy-setting "expected a setting, got ~e" x))
-      (apply make-setting (cdr (vector->list (struct->vector x))))))
+      (apply make-setting (cdr (vector->list (settings->vector x))))))
   
   ;; get-default-setting : (-> setting)
   (define (get-default-setting) (copy-setting (car settings)))

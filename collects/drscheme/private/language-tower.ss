@@ -94,7 +94,7 @@
                    (lambda (hp)
                      (make-object check-box% name hp void))
                    panel))]
-               [case-sensitive? (make-check-box (string-constant case-sensitive-?-label)
+               [case-sensitive? (make-check-box (string-constant case-sensitive?-label)
 						input-syntax-panel)]
                
                [printer-number->symbol
@@ -110,7 +110,7 @@
                  (lambda (main)
                    (make-object radio-box%
                      (string-constant output-style-label)
-                     (list (string-constant contructor-printing-style)
+                     (list (string-constant constructor-printing-style)
                            (string-constant quasiquote-printing-style)
                            (string-constant write-printing-style))
                      main
@@ -118,9 +118,9 @@
                  output-syntax-panel)]
                
                [sharing-printing?
-                (make-check-box (string-constant sharing-printing?) output-syntax-panel)]
+                (make-check-box (string-constant sharing-printing?-label) output-syntax-panel)]
                [whole/fractional-exact-numbers
-                (make-check-box (string-constant whle/fractional-exact-numbers-label) output-syntax-panel)]
+                (make-check-box (string-constant whole/fractional-exact-numbers-label) output-syntax-panel)]
                [booleans-as-true/false
                 (make-check-box (string-constant booleans-as-true/false-label) output-syntax-panel)]
                [use-pretty-printer?

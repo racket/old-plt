@@ -3499,8 +3499,8 @@ void scheme_init_object(Scheme_Env *env)
     inh_symbol = scheme_intern_symbol("inherit");
     ren_symbol = scheme_intern_symbol("rename");
     
-    class_star_symbol = scheme_intern_symbol("class*/names");
-    interface_symbol = scheme_intern_symbol("interface");
+    class_star_symbol = scheme_intern_symbol("#%class*/names");
+    interface_symbol = scheme_intern_symbol("#%interface");
 
     scheme_register_syntax("dc", DefineClass_Execute);
     scheme_register_syntax("if", Interface_Execute);

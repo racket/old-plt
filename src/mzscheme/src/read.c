@@ -73,6 +73,8 @@ static Scheme_Object *print_hash_table(int, Scheme_Object *[]);
 
 #define mzSPAN(port, pos)  (scheme_tell(port) - pos + 1)
 
+#define isdigit_ascii(n) ((n >= '0') && (n <= '9'))
+
 #ifdef MZ_XFORM
 static long SPAN(Scheme_Object *port, long pos) { return mzSPAN(port, pos); }
 #else
@@ -640,7 +642,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     case '-':
     case '.':
       ch2 = scheme_peekc_special_ok(port);
-      if ((NOT_EOF_OR_SPECIAL(ch2) && isdigit(ch2)) || (ch2 == '.') 
+      if ((NOT_EOF_OR_SPECIAL(ch2) && isdigit_ascii(ch2)) || (ch2 == '.') 
 	  || (ch2 == 'i') || (ch2 == 'I') /* Maybe inf */
 	  || (ch2 == 'n') || (ch2 == 'N') /* Maybe nan*/ ) {
 	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, indentation, params);
@@ -928,7 +930,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	    int i = 0, j = 0, overflow = 0, digits = 0;
 	    mzchar tagbuf[64], vecbuf[64]; /* just for errors */
 	    
-	    while (NOT_EOF_OR_SPECIAL(ch) && isdigit(ch)) {
+	    while (NOT_EOF_OR_SPECIAL(ch) && isdigit_ascii(ch)) {
 	      if (digits <= MAX_GRAPH_ID_DIGITS)
 		digits++;
 
@@ -1073,7 +1075,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  }
 	}
     default:
-      if (isdigit (ch))
+      if (isdigit_ascii(ch))
 	return read_number(ch, port, stxsrc, line, col, pos, 0, 0, 10, 0, indentation, params);
       else
 	return read_symbol(ch, port, stxsrc, line, col, pos, indentation, params);

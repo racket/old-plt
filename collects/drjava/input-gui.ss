@@ -1,5 +1,5 @@
 (unit/sig ()
-  (import jvm^ mred^ input-base^ channel^)
+  (import jvm^ mred^ framework^ channel^)
   
   (define input-frame%
     (class frame:basic% (name)
@@ -39,7 +39,8 @@
            (send ed read-char)))
         (available (lambda () (send ed available))))
       (sequence
-        (send buttons stretchable-height #f))))
+        (send buttons stretchable-height #f)
+        '(send (group:get-the-frame-group) remove-frame this))))
   
   (define input-text%
     (class text:basic% ()

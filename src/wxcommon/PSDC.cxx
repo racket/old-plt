@@ -580,8 +580,6 @@ void wxPostScriptDC::DrawSpline(float x1, float y1, float x2, float y2, float x3
 
   pstream->Out(XSCALE(xm1)); pstream->Out(" "); pstream->Out(YSCALE(ym1)); pstream->Out(" "); 
 
-  pstream->Out(XSCALE(x2)); pstream->Out(" "); pstream->Out(YSCALE(y2)); pstream->Out(" "); 
-
   pstream->Out(XSCALE(xm2)); pstream->Out(" "); pstream->Out(YSCALE(ym2)); pstream->Out(" "); 
 
   pstream->Out(XSCALE(x22)); pstream->Out(" "); pstream->Out(YSCALE(y22)); pstream->Out(" curveto\n");
@@ -1551,8 +1549,13 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   x = (long)floor(xsrc);
   y = (long)floor(ysrc);
 
-  /* Allocate space: */
-  pstream->Out("/DataString " );
+  /* Since we want a definition, may need to start a dictionary: */
+  if (rop >= 0) {
+    pstream->Out("1 dict begin\n");
+  }
+
+  /* Allocate space. */
+  pstream->Out("/DataString ");
   pstream->Out((width * (asColour ? 3 : 1) * ((rop < 0) ? height : 1)));
   pstream->Out(" string def\n");
 
@@ -1592,7 +1595,7 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
     wxBitmap *sbm;
     sbm = src->GetObject();
     mono = (sbm->GetDepth() == 1);
-  }
+   }
 
   if (mono && dcolor) {
     pr = dcolor->Red();
@@ -1645,6 +1648,8 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 
   if (rop >= 0) {
     pstream->Out("grestore\n");
+    /* End dictionary: */
+    pstream->Out("end\n");
   }
 
   if (rop >= 0) {

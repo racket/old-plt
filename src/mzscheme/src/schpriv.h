@@ -744,6 +744,8 @@ extern Scheme_Object *scheme_null_break_poll;
 # define SCHEME_SEMA_DOWN(sema) scheme_real_sema_down(sema)
 void scheme_real_sema_down(void *sema);
 
+/* #define MZ_KEEP_LOCK_INFO */
+
 extern void *scheme_global_lock;
 # ifdef MZ_KEEP_LOCK_INFO
 extern int scheme_global_lock_c;

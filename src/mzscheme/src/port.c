@@ -1092,8 +1092,10 @@ scheme_make_output_port(Scheme_Object *subtype,
 #define check_closed(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: " kind " port is closed", who);
 
 #ifdef MZ_REAL_THREADS
+
 # define BEGIN_LOCK_PORT(sema) \
     { mz_jmp_buf savebuf; \
+      ADD_PORT_LOCK() \
       scheme_wait_sema(sema, 0); \
       memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
       if (scheme_setjmp(scheme_error_buf)) { \
@@ -1102,7 +1104,18 @@ scheme_make_output_port(Scheme_Object *subtype,
       } else {
 # define END_LOCK_PORT(sema) \
       memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); \
+      SUB_PORT_LOCK() \
       scheme_post_sema(sema); } }
+
+# ifdef MZ_KEEP_LOCK_INFO
+int scheme_port_lock_c;
+#  define ADD_PORT_LOCK() SCHEME_GET_LOCK(); scheme_port_lock_c++; SCHEME_RELEASE_LOCK();
+#  define SUB_PORT_LOCK() SCHEME_GET_LOCK(); --scheme_port_lock_c; SCHEME_RELEASE_LOCK();
+# else
+#  define ADD_PORT_LOCK() /* empty */
+#  define SUB_PORT_LOCK() /* empty */
+# endif
+
 #else
 # define BEGIN_LOCK_PORT(sema) /* empty */
 # define END_LOCK_PORT(sema) /* empty */
@@ -3692,7 +3705,7 @@ typedef struct {
 #ifdef MZ_REAL_THREADS
   int num_waiting;
   void *change_mutex;
-  void *wait_sem;
+  Scheme_Object *wait_sem;
 #endif
 } Scheme_Pipe;
 
@@ -3708,9 +3721,9 @@ static int pipe_getc(Scheme_Input_Port *p)
   c = (pipe->bufstart == pipe->bufend && !pipe->eof) ? 0 : 1;
   if (!c) {
     pipe->num_waiting++;
-    SCHEME_SEMA_UP(pipe->change_mutex);
+    SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
     SCHEME_SEMA_DOWN(pipe->wait_sem);
-    SCHEME_SEMA_DOWN(pipe->change_mutex);
+    SCHEME_LOCK_MUTEX(pipe->change_mutex);
     scheme_process_block(0);
   }
 #else

@@ -1792,6 +1792,7 @@ word len;
     	      ((ptr_t)end_block - (ptr_t)start_block) + HBLKSIZE);
 }
 
+#if 0
 #ifndef MSWIN32
 /* Replacement for UNIX system call.	 */
 /* Other calls that write to the heap	 */
@@ -1832,6 +1833,7 @@ word len;
     return(result);
 }
 #endif /* !MSWIN32 */
+#endif
 
 /*ARGSUSED*/
 GC_bool GC_page_was_ever_dirty(h)

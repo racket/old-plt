@@ -3229,6 +3229,8 @@ static void *start_pthread_thread(void *_cl)
 {
   pthread_closure *cl = (pthread_closure *)_cl;
 
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+
   sem_wait(&cl->go_sema);
   sem_destroy(&cl->go_sema);
 
@@ -3258,6 +3260,8 @@ static void *start_pthread_thread(void *_cl)
 
 #ifdef MZ_KEEP_LOCK_INFO
 extern int scheme_fin_lock_c;
+extern int scheme_port_lock_c;
+static int sem_wait_c;
 static int made_printer = 0;
 static void print_lock_info(void *ignored)
 {
@@ -3281,10 +3285,10 @@ static void print_lock_info(void *ignored)
     for (p = scheme_first_process; p; p = p->next)
       c++;
     
-    printf("gl: %d cl: %d wl: %d fnl: %d tw: %d tc: %d fpb: %d\n", 
+    printf("gl: %d cl: %d wl: %d fnl: %d pl: %d sw: %d  tc: %d fpb: %d\n", 
 	   scheme_global_lock_c,
 	   cust_lock_c, will_lock_c, scheme_fin_lock_c,
-	   c,
+	   scheme_port_lock_c, sem_wait_c, c,
 	   scheme_first_process->block_descriptor);
     for (p = scheme_first_process; p; p = p->next)
       printf("[%d] ", p->block_descriptor);
@@ -3329,6 +3333,7 @@ void scheme_pthread_create_thread(void (*f)(void *), void *data,
     scheme_pthread_create_thread(print_lock_info, NULL, &e, &th);
   }
 #endif
+
 }
 
 void scheme_pthread_exit_thread()
@@ -3396,7 +3401,23 @@ int scheme_pthread_semaphore_up(void *s)
 
 int scheme_pthread_semaphore_down_breakable(void *s)
 {
-  return !sem_wait((sem_t *)s);
+  int v;
+
+#ifdef MZ_KEEP_LOCK_INFO
+  SCHEME_GET_LOCK();
+  sem_wait_c++;
+  SCHEME_RELEASE_LOCK();
+#endif
+
+  v = !sem_wait((sem_t *)s);
+
+#ifdef MZ_KEEP_LOCK_INFO
+  SCHEME_GET_LOCK();
+  --sem_wait_c;
+  SCHEME_RELEASE_LOCK();
+#endif
+
+  return v;
 }
 
 int scheme_pthread_semaphore_try_down(void *s)

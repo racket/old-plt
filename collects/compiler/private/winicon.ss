@@ -14,7 +14,7 @@
   (define (value v)
     (bitwise-and #x7FFFFFFF v))
 
-  (define (find-rsrc-start p re:rsrc)
+  (define (skip-to-image-headers-after-signature p)
     ;; p is expected to be a file port
     (file-position p 60)
     (let ([pos (word->integer p)])
@@ -22,6 +22,17 @@
       (file-position p pos)
       (unless (= #x4550 (dword->integer p))
 	      (error "bad signature"))
+      pos))
+
+  (define (get-image-base p)
+    (let ([pos (skip-to-image-headers-after-signature p)])
+      (file-position p (+ 4
+			  20
+			  28))
+      (dword->integer p)))
+
+  (define (find-section p find-name)
+    (let ([pos (skip-to-image-headers-after-signature p)])
       (word->integer p) ; skip machine
       (let ([num-sections (word->integer p)]
 	    [_ (begin (dword->integer p)
@@ -33,52 +44,102 @@
 		      20      ; FileHeader: IMAGE_FILE_HEADER
 		      size)]) ; "optional" header
 	  (let sloop ([section 0][section-pos pos])
-	    (unless (= section num-sections)
-		    (file-position p section-pos)
-		    ;; p points to an IMAGE_SECTION_HEADER
-		    (let ([name (read-string 8 p)])
-		      (if (not (string=? ".rsrc\0\0\0" name))
-			  (sloop (add1 section) (+ section-pos 40))
-			  (let ([_ (dword->integer p)]
-				[rsrc-virtual-addr (dword->integer p)]
-				[rsrc-len (dword->integer p)]
-				[rsrc-pos (dword->integer p)])
-			    (let loop ([dir-pos 0][path ""])
-			      (file-position p (+ rsrc-pos dir-pos 12))
-			      (let ([num-named (word->integer p)]
-				    [num-ided (word->integer p)])
-				(let iloop ([i 0])
-				  (if (= i (+ num-ided num-named))
-				      #f
-				      (let ([name-delta (dword->integer p)]
-					    [data-delta (dword->integer p)]
-					    [next (file-position p)])
-					(or (let ([name (if (flag name-delta)
-							    (begin
-							      (file-position p (+ rsrc-pos (value name-delta)))
-							      (let* ([len (word->integer p)])
-								;; len is in unicode chars...
-								(let ([unistr (read-string (* 2 len) p)])
-								  ;; Assume it fits into ASCII...
-								  (regexp-replace* "\0" unistr ""))))
-							    (value name-delta))])
-					      ;;(printf "Name: ~a~a = ~a~n" path name (+ rsrc-pos (value data-delta)))
-					      (let ([full-name (format "~a~a" path name)])
-						(if (flag data-delta)
-						    (loop (value data-delta) (string-append full-name "."))
-						    ;; Found the icon?
-						    (and (regexp-match re:rsrc full-name)
-							 ;; Yes, so read IMAGE_RESOURCE_DATA_ENTRY
-							 (begin
-							   (file-position p (+ rsrc-pos (value data-delta)))
-							   (cons
-							    (+ (dword->integer p)           ; offset (an RVA)
-							       (- rsrc-pos
-								  rsrc-virtual-addr))
-							    (dword->integer p)))))))        ; size
-					    (begin
-					      (file-position p next)
-					      (iloop (add1 i))))))))))))))))))
+	    (if (= section num-sections)
+		(error 'find-section "can't find section: ~e" find-name)
+		(begin
+		  (file-position p section-pos)
+		  ;; p points to an IMAGE_SECTION_HEADER
+		  (let ([name (read-string 8 p)])
+		    (if (string=? find-name name)
+			(let ([_ (dword->integer p)]) ; skip
+			  (values (dword->integer p)  ; virtual address
+				  (dword->integer p)  ; length
+				  (dword->integer p))); file pos
+			(sloop (add1 section) (+ section-pos 40)))))))))))
+  
+  (define (find-rsrc-start p re:rsrc)
+    (let-values ([(rsrc-virtual-addr rsrc-len rsrc-pos)
+		  (find-section p ".rsrc\0\0\0")])
+      (let loop ([dir-pos 0][path ""])
+	(file-position p (+ rsrc-pos dir-pos 12))
+	(let ([num-named (word->integer p)]
+	      [num-ided (word->integer p)])
+	  (let iloop ([i 0])
+	    (if (= i (+ num-ided num-named))
+		#f
+		(let ([name-delta (dword->integer p)]
+		      [data-delta (dword->integer p)]
+		      [next (file-position p)])
+		  (or (let ([name (if (flag name-delta)
+				      (begin
+					(file-position p (+ rsrc-pos (value name-delta)))
+					(let* ([len (word->integer p)])
+					  ;; len is in unicode chars...
+					  (let ([unistr (read-string (* 2 len) p)])
+					    ;; Assume it fits into ASCII...
+					    (regexp-replace* "\0" unistr ""))))
+				      (value name-delta))])
+			;;(printf "Name: ~a~a = ~a~n" path name (+ rsrc-pos (value data-delta)))
+			(let ([full-name (format "~a~a" path name)])
+			  (if (flag data-delta)
+			      (loop (value data-delta) (string-append full-name "."))
+			      ;; Found the icon?
+			      (and (regexp-match re:rsrc full-name)
+				   ;; Yes, so read IMAGE_RESOURCE_DATA_ENTRY
+				   (begin
+				     (file-position p (+ rsrc-pos (value data-delta)))
+				     (cons
+				      (+ (dword->integer p)           ; offset (an RVA)
+					 (- rsrc-pos
+					    rsrc-virtual-addr))
+				      (dword->integer p)))))))        ; size
+		      (begin
+			(file-position p next)
+			(iloop (add1 i)))))))))))
+
+  ;; >>> Probably doesn't work <<<
+  (define (find-import-names p)
+    (let-values ([(seg-virtual-addr seg-len seg-pos)
+		  (find-section p ".idata\0\0")])
+      (let loop ([pos seg-pos])
+	;; pos points to an IMAGE_IMPORT_DESCRIPTOR;
+	;; skip first 4 fields
+	(file-position p pos)
+	(if (zero? (dword->integer p)) ; 0 is terminator
+	    null
+	    (begin
+	      (dword->integer p)
+	      (dword->integer p)
+	      ;; next field is name
+	      (let ([name-pos (+ (dword->integer p) ; RVA to nul-terminated name
+				 (- seg-pos seg-virtual-addr))])
+		(file-position p name-pos)
+		(let ([name (regexp-match "^[^\0]*" p)])
+		  (cons (cons (car name) name-pos)
+			(loop (+ pos 20))))))))))
+
+  ;; >>> Doesn't work <<<
+  (define (find-delay-loads p)
+    (let-values ([(seg-virtual-addr seg-len seg-pos)
+		  (find-section p ".text\0\0")])
+    (let ([pos (skip-to-image-headers-after-signature p)]
+	  [image-base (get-image-base p)])
+      (let ([pos (+ pos
+		    4       ; Signature : DWORD
+		    20      ; FileHeader: IMAGE_FILE_HEADER
+		    96      ; IMAGE_OPTIONAL_HEADER up to directory
+		    104)]   ; skip 13 directory entries
+	    [vdelta image-base])
+	(file-position p pos)
+	(let loop ([delay-pos (dword->integer p)])
+	  (printf "~a ~a~n" delay-pos vdelta)
+	  (file-position p (+ delay-pos vdelta))
+	  (dword->integer p) ; skip attributes
+	  (let ([name-pos (dword->integer p)])
+	    (printf "~a ~a~n" name-pos vdelta)
+	    (file-position p (+ name-pos vdelta))
+	    (let ([name (regexp-match "^[^\0]*" p)])
+	      (printf "~a~n" name))))))))
 
   (define-struct icon (desc data) (make-inspector))
   (print-struct #t)

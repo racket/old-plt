@@ -4358,7 +4358,10 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 
   if (((Scheme_Stx *)argv[1])->certs) {
     Scheme_Stx *stx, *res;
-    Scheme_Cert *certs, *new_certs = NULL;
+    Scheme_Cert *certs, *new_certs;
+    
+    stx = (Scheme_Stx *)argv[0];
+    new_certs = stx->certs;
     
     certs = ((Scheme_Stx *)argv[1])->certs;
    
@@ -4372,8 +4375,6 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
       certs = certs->next;
     }
 
-    stx = (Scheme_Stx *)argv[0];
-    
     res = (Scheme_Stx *)scheme_make_stx(stx->val, 
 					stx->srcloc,
 					stx->props);

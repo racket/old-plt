@@ -1182,14 +1182,14 @@ void wxWindowDC::RenderAAPoints(void *pts, int npoints, int mode, Bool outline)
   srcpic = XftDrawSrcPicture(XFTDRAW, &col);
 
   if (mode == 0) {
-    XRenderCompositeTriStrip(DPY,
-			     PictOpOver,
-			     srcpic,
-			     pic,
-			     NULL,
-			     0, 0,
-			     (XPointFixed *)pts,
-			     npoints);
+    XRenderCompositeTrapezoids(DPY,
+			       PictOpOver,
+			       srcpic,
+			       pic,
+			       NULL,
+			       0, 0,
+			       (XTrapezoid *)pts,
+			       npoints);
   } else if (mode == 1) {
     XRenderCompositeTriFan(DPY,
 			   PictOpOver,
@@ -1249,50 +1249,26 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
   CalcBoundingBox(x + w, y + h);
 }
 
-static XPointFixed *xftEllipseToPolygon(double width, double height, double x, double y, int *_npoints)
-     /* Makes a polygon with the resolution determined by width */
+static double *xftHalfRound(int width, double height)
+  /* Maps integral in [0, width] to heights */
 {
-  int iwidth = (int)width + 2;
-  int is_odd = iwidth & 0x1;
-  int x_extent = (int)((iwidth + 1) / 2) + is_odd, i;
-  int pos;
-  double w2 = (x_extent - 1) * (x_extent - 1), dx, dy;
-  XPointFixed *p;
-  int npoints;
-
-  npoints = ((4 * x_extent) - (2 * is_odd)) + 1;
+  int iwidth = width + 1, i;
+  double w2 = (double)width / 2.0, w22, ratio;
+  double *p;
 
 #ifdef MZ_PRECISE_GC
-  p = (XPointFixed *)GC_malloc_atomic(sizeof(XPointFixed) * npoints);
+  p = (double *)GC_malloc_atomic(sizeof(double) * iwidth);
 #else
-  p = new XPointFixed[npoints];
+  p = new double[iwidth];
 #endif
 
-  dx = x + width / 2;
-  dy = y + height / 2;
+  ratio = (height / width);
 
-  p[0].x = XDoubleToFixed(dx);
-  p[0].y = XDoubleToFixed(dy);
-  
-  for (i = 0; i < x_extent; i++) {
-    double y = (height / width) * sqrt(w2 - (i * i));
-    pos = i + 1;
-    p[pos].x = XDoubleToFixed(i + dx);
-    p[pos].y = XDoubleToFixed(y + dy);
-    pos = (2 * x_extent - i - 1 + 1);
-    p[pos].x = XDoubleToFixed(i + dx);
-    p[pos].y = XDoubleToFixed(-y + dy);
-    pos = (2 * x_extent + i - is_odd + 1);
-    p[pos].x = XDoubleToFixed(-i + dx);
-    p[pos].y = XDoubleToFixed(-y + dy);
-    if (i || !is_odd) {
-      pos = (4 * x_extent - i - 1 - 2 * is_odd + 1); 
-      p[pos].x = XDoubleToFixed(-i + dx);
-      p[pos].y = XDoubleToFixed(y + dy);
-    }
+  w22 = w2 * w2;
+
+  for (i = 0; i < iwidth; i++) {
+    p[i] = ratio * sqrt(w22 - ((w2 - i) * (w2 - i)));
   }
-
-  *_npoints = npoints;
 
   return p;
 }
@@ -1309,17 +1285,115 @@ void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
 
 #if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
   if (anti_alias) {
-    int npoints;
-    XPointFixed *poly;
 
     x = (x * scale_x) + device_origin_x;
     y = (y * scale_y) + device_origin_y;
-    w *= scale_x;
-    h *= scale_y;
+    w = (w * scale_x);
+    h = (h * scale_y);
+    
+    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      int ih = (int)(y + h) - (int)y, i;
+      double iy = floor(y), nx;
+      double *p;
+      XTrapezoid *traps;
 
-    poly = xftEllipseToPolygon(w, h, x, y, &npoints);
+      p = xftHalfRound(ih, w);
+    
+# ifdef MZ_PRECISE_GC
+      traps = (XTrapezoid *)GC_malloc_atomic(sizeof(XTrapezoid) * ih);
+# else
+      traps = new XTrapezoid[ih];
+# endif
 
-    RenderAAPoints(poly, npoints, 1, 0);
+      nx = x + w/2;
+
+      for (i = 0; i < ih; i++) {
+	traps[i].top = XDoubleToFixed(iy + i);
+	traps[i].bottom = XDoubleToFixed(iy + i + 1);
+	traps[i].left.p1.x = XDoubleToFixed(nx - p[i]);
+	traps[i].left.p1.y = traps[i].top;
+	traps[i].left.p2.x = XDoubleToFixed(nx - p[i+1]);
+	traps[i].left.p2.y = traps[i].bottom;
+	traps[i].right.p1.x = XDoubleToFixed(nx + p[i]);
+	traps[i].right.p1.y = traps[i].top;
+	traps[i].right.p2.x = XDoubleToFixed(nx + p[i+1]);
+	traps[i].right.p2.y = traps[i].bottom;
+      }
+
+      RenderAAPoints(traps, ih, 0, 0);
+    }
+
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      double pw;
+      int ih, ipw, cnt, pos, i;
+      double iy, xx, yy, hh, ww, xpw;
+      double *p, *p2;
+      XTrapezoid *traps;
+
+      pw = current_pen->GetWidthF();
+      
+      xx = x;
+      yy = y;
+      ww = w;
+      hh = h;
+
+      if (!pw) {
+	pw = 1.0;
+	ipw = (int)1;
+	xpw = 1.0;
+      } else if ((pw != 1.0) || (scale_x != 1.0) || (scale_y != 1.0)) {
+	xx -= (pw * scale_x) / 2;
+	yy -= (pw * scale_y) / 2;
+	ww += (pw * scale_x);
+	hh += (pw * scale_y);
+	ipw = (int)(pw * scale_y);
+	xpw = pw * scale_x;
+      } else {
+	ipw = (int)pw;
+	xpw = pw;
+      }
+
+      ih = (int)(yy + hh) - (int)yy;
+      iy = floor(yy);
+
+      p = xftHalfRound(ih, ww);
+      p2 = xftHalfRound(ih - 2 * ipw, ww - 2 * xpw);
+    
+      cnt = 2 * (ih - ipw);
+
+# ifdef MZ_PRECISE_GC
+      traps = (XTrapezoid *)GC_malloc_atomic(sizeof(XTrapezoid) * cnt);
+# else
+      traps = new XTrapezoid[cnt];
+# endif
+
+      xx += ww/2;
+      pos = 0;
+
+      for (i = 0; i < ih; i++, pos++) {
+	  traps[pos].top = XDoubleToFixed(iy + i);
+	  traps[pos].bottom = XDoubleToFixed(iy + i + 1);
+	  traps[pos].left.p1.x = XDoubleToFixed(xx - p[i]);
+	  traps[pos].left.p1.y = traps[pos].top;
+	  traps[pos].left.p2.x = XDoubleToFixed(xx - p[i+1]);
+	  traps[pos].left.p2.y = traps[pos].bottom;
+	  traps[pos].right.p1.x = XDoubleToFixed(xx + p[i]);
+	  traps[pos].right.p1.y = traps[pos].top;
+	  traps[pos].right.p2.x = XDoubleToFixed(xx + p[i+1]);
+	  traps[pos].right.p2.y = traps[pos].bottom;
+
+	if ((i >= ipw) && ((ih - i) > ipw)) {
+	  traps[pos + 1] = traps[pos];
+	  traps[pos].right.p1.x = XDoubleToFixed(xx - p2[i-ipw]);
+	  traps[pos].right.p2.x = XDoubleToFixed(xx - p2[i-ipw+1]);
+	  traps[pos+1].left.p1.x = XDoubleToFixed(xx + p2[i-ipw]);
+	  traps[pos+1].left.p2.x = XDoubleToFixed(xx + p2[i-ipw+1]);
+	  pos++;
+	}
+      }
+
+      RenderAAPoints(traps, pos, 0, 1);
+    }
 
     return;
   }
@@ -1353,7 +1427,17 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 #if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
       if (anti_alias) {
 	double dx1, dy1, dx2, dy2, a, pw;
-	XPointFixed tris[4];
+	XTrapezoid traps[3];
+
+	/* Make sure point 1 is above 2 */
+	if (y1 > y2) {
+	  dx1 = x1;
+	  dy1 = y1;
+	  x1 = x2;
+	  y1 = y2;
+	  x2 = dx1;
+	  y2 = dy1;
+	}
 	
 	x1 = (x1 * scale_x) + device_origin_x;
 	x2 = (x2 * scale_x) + device_origin_x;
@@ -1361,31 +1445,114 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 	y2 = (y2 * scale_y) + device_origin_y;
 
 	pw = current_pen->GetWidthF();
-	if (!pw)
-	  pw = 1;
-
-	a = atan2(y2 - y1, x2 - x1);
-	dx2 = (sin(a) * pw) * scale_x;
-	dy2 = -(cos(a) * pw) * scale_y;
-	if (pw == 1.0) {
-	  dx1 = dy1 = 0;
+	
+	if (y2 == y1) {
+	  /* Simple case: one trapezoid, and no need to int-align */
+	  if (!pw || ((pw == 1.0) && (scale_y == 1.0))) {
+	    dy1 = 0;
+	    dy2 = 1;
+	  } else {
+	    dy1 = (pw * scale_y) / 2;
+	    dy2 = dy1;
+	  }
+	  traps[0].top = XDoubleToFixed(y1 - dy1);
+	  traps[0].bottom = XDoubleToFixed(y2 + dy2);
+	  traps[0].left.p1.x = XDoubleToFixed(x1);
+	  traps[0].left.p2.x = traps[0].left.p1.x;
+	  traps[0].right.p1.x = XDoubleToFixed(x2);
+	  traps[0].right.p2.x = traps[0].right.p1.x;
+	  traps[0].left.p1.y = XDoubleToFixed(0);
+	  traps[0].left.p2.y = XDoubleToFixed(1);
+	  traps[0].right.p1.y = XDoubleToFixed(0);
+	  traps[0].right.p2.y = XDoubleToFixed(1);
+	  RenderAAPoints(traps, 1, 0, 1);
 	} else {
-	  dx2 /= 2.0;
-	  dy2 /= 2.0;
-	  dx1 = dx2;
-	  dy1 = dy2;
+	  /* Complex case: 1 trapezoid for main part of line,
+	     with ends int-aligned. Then one trapezoid on
+	     each end to finish */
+	  double dydx;
+
+	  if (!pw)
+	    pw = 1;
+	  a = atan2(y2 - y1, x2 - x1);
+	  dx2 = (sin(a) * pw) * scale_x;
+	  dy2 = -(cos(a) * pw) * scale_y;
+	  if (pw == 1.0) {
+	    dx1 = dy1 = 0;
+	  } else {
+	    dx2 /= 2.0;
+	    dy2 /= 2.0;
+	    dx1 = dx2;
+	    dy1 = dy2;
+	  }
+	
+	  if (y1 - dy1 < y1 + dy2) {
+	    traps[0].top = XDoubleToFixed(floor(y1 + dy2));
+	    traps[0].bottom = XDoubleToFixed(floor(y2 - dy1));
+	  } else {
+	    traps[0].top = XDoubleToFixed(floor(y1 - dy1));
+	    traps[0].bottom = XDoubleToFixed(floor(y2 + dy2));
+	  }
+
+	  traps[0].left.p1.x = XDoubleToFixed(x1 - dx1);
+	  traps[0].left.p1.y = XDoubleToFixed(y1 - dy1);
+	  traps[0].left.p2.x = XDoubleToFixed(x2 - dx1);
+	  traps[0].left.p2.y = XDoubleToFixed(y2 - dy1);
+
+	  traps[0].right.p1.x = XDoubleToFixed(x1 + dx2);
+	  traps[0].right.p1.y = XDoubleToFixed(y1 + dy2);
+	  traps[0].right.p2.x = XDoubleToFixed(x2 + dx2);
+	  traps[0].right.p2.y = XDoubleToFixed(y2 + dy2);
+
+	  if (x1 == x2) {
+	    RenderAAPoints(traps, 1, 0, 1);
+	  } else {
+	    traps[1].bottom = traps[0].top;
+	    traps[2].top = traps[0].bottom;
+
+	    dydx = (y2 - y1) / (x1 - x2);
+
+	    if (y1 - dy1 > y1 + dy2) {
+	      traps[1].top = XDoubleToFixed(y1 + dy2);
+
+	      traps[1].left.p1.x = XDoubleToFixed(x1 - dx1);
+	      traps[1].left.p1.y = traps[1].bottom;
+	      traps[1].left.p2.x = XDoubleToFixed(x1 - dx1 + (dydx * (dy1 + dy2)) - 0.5); /* 0.5 steers clear of degeneracy */
+	      traps[1].left.p2.y = traps[1].top;
+
+	      traps[1].right = traps[0].right;
+
+	      traps[2].bottom = XDoubleToFixed(y2 - dy1);
+	      
+	      traps[2].right.p1.x = XDoubleToFixed(x2 + dx2);
+	      traps[2].right.p1.y = traps[2].top;
+	      traps[2].right.p2.x = XDoubleToFixed(x2 + dx2 - (dydx * (dy1 + dy2)) + 0.5); /* 0.5 steers clear of degeneracy */
+	      traps[2].right.p2.y = traps[2].bottom;
+
+	      traps[2].left = traps[0].left;
+	    } else {
+	      traps[1].top = XDoubleToFixed(y1 - dy1);
+
+	      traps[1].right.p1.x = XDoubleToFixed(x1 + dx2);
+	      traps[1].right.p1.y = traps[1].bottom;
+	      traps[1].right.p2.x = XDoubleToFixed(x1 + dx2 - (dydx * (dy1 + dy2)) + 0.5); /* 0.5 steers clear of degeneracy */
+	      traps[1].right.p2.y = traps[1].top;
+
+	      traps[1].left = traps[0].left;
+
+	      traps[2].bottom = XDoubleToFixed(y2 + dy2);
+
+	      traps[2].left.p1.x = XDoubleToFixed(x2 - dx1);
+	      traps[2].left.p1.y = traps[2].top;
+	      traps[2].left.p2.x = XDoubleToFixed(x2 - dx1 + (dydx * (dy1 + dy2)) - 0.5); /* 0.5 steers clear of degeneracy */
+	      traps[2].left.p2.y = traps[2].bottom;
+
+	      traps[2].right = traps[0].right;
+	    }
+	    
+	    RenderAAPoints(traps, 3, 0, 1);
+	  }
 	}
-
-	tris[0].x = XDoubleToFixed(x1 + dx2);
-	tris[0].y = XDoubleToFixed(y1 + dy2);
-	tris[1].x = XDoubleToFixed(x1 - dx1);
-	tris[1].y = XDoubleToFixed(y1 - dy1);
-	tris[2].x = XDoubleToFixed(x2 + dx2);
-	tris[2].y = XDoubleToFixed(y2 + dy2);
-	tris[3].x = XDoubleToFixed(x2 - dx1);
-	tris[3].y = XDoubleToFixed(y2 - dy1);
-
-	RenderAAPoints(tris, 4, 0, 1);
       } else
 #endif
 	XDrawLine(DPY, DRAWABLE, PEN_GC,

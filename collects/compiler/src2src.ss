@@ -190,15 +190,14 @@
 
       ;; adds certifications back to result of sexp, when needed
       (define/public (recertify stx)
-	(let ([orig-stx stx])
-	  (let loop ([cert-stxes cert-stxes][stx stx])
-	    (cond
-	     [(null? cert-stxes) stx]
-	     [else (loop (cdr cert-stxes)
-			 (syntax-recertify stx 
-					   (car cert-stxes)
-					   recert-insp 
-					   #f))]))))
+	(let loop ([cert-stxes cert-stxes][stx stx])
+	  (cond
+	   [(null? cert-stxes) stx]
+	   [else (loop (cdr cert-stxes)
+		       (syntax-recertify stx 
+					 (car cert-stxes)
+					 recert-insp 
+					 #f))])))
 
       ;; returns cert stxes
       (define/public (get-cert-stxes)

@@ -123,8 +123,8 @@
 		   (values (list week-day ", " day day-th " " month " " year)
 			   (list ", " hour12 ":" minute am-pm))]
 		  [(julian)
-		   (values (list (julian/scalinger-printer
-				   (julian-day-number/scalinger date)))
+		   (values (list (julian/scalinger->string
+				   (date->julian/scalinger date)))
 		           (list ", " hour24 ":" minute ":" second))]
 		  [else (error 'date->string "unknown date-display-format: ~s"
 			       (date-display-format))])])
@@ -295,12 +295,12 @@
 		[(eq? compare 'test-smaller) 
 		 (loop secs (floor (/ (+ above-secs secs) 2)) above-secs)]))))))
 
-    ;; julian-day-number/scalinger :
+    ;; date->julian/scalinger :
     ;; date -> number [julian-day]
 
     ;; Note: This code is correct until 2099 CE Gregorian
 
-    (define (julian-day-number/scalinger date)
+    (define (date->julian/scalinger date)
       (let ((day (date-day date))
 	     (month (date-month date))
 	     (year (date-year date)))
@@ -332,10 +332,10 @@
 					    gregorian-adjustment)))
 			  final-date)))))))))))
 
-    ;; julian/scalinger-printer :
+    ;; julian/scalinger->string :
     ;; number [julian-day] -> string [julian-day-format]
 
-    (define (julian/scalinger-printer julian-day)
+    (define (julian/scalinger->string julian-day)
       (apply string-append
 	(cons "JD "
 	  (reverse

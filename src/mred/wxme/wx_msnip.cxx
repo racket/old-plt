@@ -634,8 +634,53 @@ void wxMediaSnipMediaAdmin::GetView(float *x, float *y, float *w, float *h,
       if (*y < 0)
 	*y = 0;
     }
-    if (w) *w = sw; /* possibly too high due to margins */
-    if (h) *h = sh; /* possibly too high due to margins */
+
+    if (w || h) {
+      if (sw || sh) {
+	/* w and h might be too big due to margins - but
+	   they might be small enough already because 
+	   part of the snip itself is not viewed. */
+	float rw, rh;
+	
+	snip->GetExtent(state.dc, 0, 0, &rw, &rh);
+
+	/* remember: sx and sy are in snip coordinates */
+
+	if (w) {
+	  float leftMargin = snip->leftMargin - sx;
+	  if (leftMargin < 0)
+	    leftMargin = 0;
+	  sw -= leftMargin;
+	  rw -= snip->leftMargin;
+	  
+	  float rightMargin = snip->rightMargin - (rw - sw);
+	  if (rightMargin < 0)
+	    rightMargin = 0;
+	  sw -= rightMargin;
+
+	  if (sw < 0) sw = 0;
+	  *w = sw;
+	}
+	if (h) {
+	  float topMargin = snip->topMargin - sy;
+	  if (topMargin < 0)
+	    topMargin = 0;
+	  sh -= topMargin;
+	  rh -= snip->topMargin;
+
+	  float bottomMargin = snip->bottomMargin - (rh - sh);
+	  if (bottomMargin < 0)
+	    bottomMargin = 0;
+	  sh -= bottomMargin;
+
+	  if (sh < 0) sh = 0;
+	  *h = sh;
+	}
+      } else {
+	if (w) *w = 0;
+	if (h) *h = 0;
+      }
+    }
   }
 }
 

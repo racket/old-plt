@@ -30,11 +30,8 @@
 
 @BEGINSYMBOLS frameStyle
 @SYM "no-caption" : wxNO_CAPTION
-@SYM "iconize" : wxICONIZE
-@SYM "maximize" : wxMAXIMIZE
 @SYM "mdi-parent" : wxMDI_PARENT
 @SYM "mdi-child" : wxMDI_CHILD
-@SYM "no-thick-border" : wxNO_THICK_FRAME
 @SYM "no-system-menu" : wxNO_SYSTEM_MENU
 @SYM "no-resize-border" : wxNO_RESIZE_BORDER
 @ENDSYMBOLS

@@ -99,7 +99,7 @@ class wxMediaStreamOutStringBase : public wxMediaStreamOutBase
 #define MRED_START_STR_LEN 4
 #define MRED_FORMAT_STR "01"
 #define MRED_FORMAT_STR_LEN 2
-#define MRED_VERSION_STR "06"
+#define MRED_VERSION_STR "07"
 #define MRED_VERSION_STR_LEN 2
 
 #define WXME_VERSION_ONE(f) (f->read_version[1] == '1')
@@ -107,6 +107,8 @@ class wxMediaStreamOutStringBase : public wxMediaStreamOutBase
 #define WXME_VERSION_THREE(f) (f->read_version[1] == '3')
 #define WXME_VERSION_FOUR(f) (f->read_version[1] == '4')
 #define WXME_VERSION_FIVE(f) (f->read_version[1] == '5')
+#define WXME_VERSION_SIX(f) (f->read_version[1] == '6')
+#define WXME_VERSION_BEFORE_SEVEN(f) ((f->read_version[1] >= '1') && (f->read_version[1] <= '6'))
 
 class wxStandardSnipClassList;
 class wxBufferDataClassList;

@@ -1008,9 +1008,20 @@ void wxTextSnip::Read(long len, wxMediaStreamIn *f)
   }
 
   dtext = 0;
-  len *= sizeof(wxchar);
-  f->Get((long *)&len, (char *)buffer);
-  count = len / sizeof(wxchar);
+  if (WXME_VERSION_BEFORE_SEVEN(f)) {
+    int i;
+    /* Read Latin-1: */
+    f->Get((long *)&len, (char *)buffer);
+    /* Expand out Latin-1: */
+    for (i = len; i--; ) {
+      buffer[i] = ((unsigned char *)buffer)[i];
+    }
+    count = len;
+  } else {
+    len *= sizeof(wxchar);
+    f->Get((long *)&len, (char *)buffer);
+    count = len / sizeof(wxchar);
+  }
   w = -1.0;
 }
 

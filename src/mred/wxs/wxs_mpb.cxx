@@ -435,7 +435,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   Bool WriteHeadersToFile(class wxMediaStreamOut* x0);
   Bool ReadFooterFromFile(class wxMediaStreamIn* x0, string x1);
   Bool ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1);
-  void SetFilename(npstring x0, Bool x1 = FALSE);
+  void SetFilename(nxpathname x0, Bool x1 = FALSE);
   Bool ReleaseSnip(class wxSnip* x0);
   void OnSnipModified(class wxSnip* x0, Bool x1);
   void SetModified(Bool x0);
@@ -2286,7 +2286,7 @@ Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn* x0, string 
   }
 }
 
-void os_wxMediaPasteboard::SetFilename(npstring x0, Bool x1)
+void os_wxMediaPasteboard::SetFilename(nxpathname x0, Bool x1)
 {
   Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
@@ -2309,7 +2309,7 @@ void os_wxMediaPasteboard::SetFilename(npstring x0, Bool x1)
     READY_TO_RETURN; ASSELF wxMediaPasteboard::SetFilename(x0, x1);
   } else {
   
-  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pstring((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   p[POFFSET+1] = (x1 ? scheme_true : scheme_false);
   
   p[0] = (Scheme_Object *) ASSELF __gc_external;
@@ -5527,7 +5527,7 @@ static Scheme_Object *os_wxMediaPasteboardSetFilename(int n,  Scheme_Object *p[]
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxMediaPasteboard_class, "set-filename in pasteboard%", n, p);
-  npstring x0 INIT_NULLED_OUT;
+  nxpathname x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -5535,7 +5535,7 @@ static Scheme_Object *os_wxMediaPasteboardSetFilename(int n,  Scheme_Object *p[]
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "set-filename in pasteboard%"));
+  x0 = (nxpathname)WITH_VAR_STACK(objscheme_unbundle_nullable_xpathname(p[POFFSET+0], "set-filename in pasteboard%"));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "set-filename in pasteboard%"));
   } else

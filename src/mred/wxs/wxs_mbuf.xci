@@ -54,7 +54,7 @@
 
 @ Y "release-snip" : bool ReleaseSnip(wxSnip!); : : : : XrZERO
 
-@ Y "set-filename" : void SetFilename(npstring,bool=FALSE);
+@ Y "set-filename" : void SetFilename(nxpathname,bool=FALSE);
 
 @ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn!,bool=FALSE); <> without position
 @ X "write-to-file" : bool WriteToFile(wxMediaStreamOut!); <> without position

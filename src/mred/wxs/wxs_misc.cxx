@@ -1356,14 +1356,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-preview-command in ps-setup%", n, p);
-  pstring x0 INIT_NULLED_OUT;
+  bstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (pstring)WITH_VAR_STACK(objscheme_unbundle_pstring(p[POFFSET+0], "set-preview-command in ps-setup%"));
+  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "set-preview-command in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrintPreviewCommand(x0));
@@ -1379,14 +1379,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(int n,  Scheme_Object *p
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-file in ps-setup%", n, p);
-  npstring x0 INIT_NULLED_OUT;
+  npathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "set-file in ps-setup%"));
+  x0 = (npathname)WITH_VAR_STACK(objscheme_unbundle_nullable_pathname(p[POFFSET+0], "set-file in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterFile(x0));
@@ -1402,14 +1402,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-command in ps-setup%", n, p);
-  pstring x0 INIT_NULLED_OUT;
+  bstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (pstring)WITH_VAR_STACK(objscheme_unbundle_pstring(p[POFFSET+0], "set-command in ps-setup%"));
+  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "set-command in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterCommand(x0));
@@ -1674,7 +1674,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(int n,  Scheme_Object *p
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  bstring r;
+  npathname r;
   objscheme_check_valid(os_wxPrintSetupData_class, "get-file in ps-setup%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1688,7 +1688,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(int n,  Scheme_Object *p
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_pathname((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(int n,  Scheme_Object *p[])

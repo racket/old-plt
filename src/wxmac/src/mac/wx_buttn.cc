@@ -384,8 +384,6 @@ void wxButton::Paint(void)
       ::SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
       OffsetRect(&r,SetOriginX,SetOriginY);
       PaintBitmapButton(&r, buttonBitmap, 0, IsGray(), cColour);
-    } else if (cMacControl) {
-      ::Draw1Control(cMacControl);
     }
     wxWindow::Paint();
   }
@@ -402,7 +400,6 @@ void wxButton::DoShow(Bool show)
     } else {
       ::HideControl(cMacControl);
     }
-    RefreshIfUpdating();
   }
   
   wxWindow::DoShow(show);

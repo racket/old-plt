@@ -237,6 +237,11 @@ void wxChoice::DoShow(Bool show)
 {
   if (!show && cTitle)
     cTitle->DoShow(show);
+  if (show) {
+    ::ShowControl(cMacControl);
+  } else {
+    ::HideControl(cMacControl);
+  }
   wxWindow::DoShow(show);
   if (show && cTitle)
     cTitle->DoShow(show);

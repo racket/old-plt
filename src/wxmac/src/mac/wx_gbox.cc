@@ -155,16 +155,17 @@ void wxGroupBox::Paint(void)
 //-----------------------------------------------------------------------------
 void wxGroupBox::DoShow(Bool show)
 {
+  if (show) {
+    ::ShowControl(cMacControl);
+  } else {
+    ::HideControl(cMacControl);
+  }
   wxItem::DoShow(show);
-  Paint(); /* to paint custom control */
-  Refresh(); /* in case an update is in progress */
 }
 
 void wxGroupBox::ChangeToGray(Bool gray)
 {
   wxItem::ChangeToGray(gray);
-  Paint(); /* to paint custom control */
-  Refresh(); /* in case an update is in progress */
 }
 
 void wxGroupBox::Activate(Bool on)

@@ -103,7 +103,6 @@ void wxItem::ChangeColour(void)
 void wxItem::ChangeToGray(Bool gray)
 {
   if (cMacControl) {
-    SetCurrentDC();
     if (gray) {
 #ifdef OS_X
       DisableControl(cMacControl);
@@ -117,25 +116,19 @@ void wxItem::ChangeToGray(Bool gray)
       HiliteControl(cMacControl, 0);
 #endif
     }
-  } else {
-    Paint(); /* to paint custom control */
   }
 
-  RefreshIfUpdating();
-  
   wxWindow::ChangeToGray(gray);
 }
 
 void wxItem::Activate(Bool on)
 {
   if (cMacControl) {
-    SetCurrentDC();
     if (!on) {
       DeactivateControl(cMacControl);
     } else {
       ActivateControl(cMacControl);
     }
-    RefreshIfUpdating();
   }
 
   wxWindow::Activate(on);

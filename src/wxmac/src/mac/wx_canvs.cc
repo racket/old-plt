@@ -19,6 +19,7 @@
 #include "wxBorderArea.h"
 #include "wxRectBorder.h"
 
+extern void wxCallOnPaintOrQueue(wxCanvas *win);
 extern void MrEdQueuePaint(wxWindow *wx_window);
 
 //=============================================================================
@@ -483,8 +484,6 @@ void wxCanvas::SetScrollData
 	scrollRect.bottom = clientArea->Height();
 	scrollRect.right = clientArea->Width();
 	OffsetRect(&scrollRect,SetOriginX,SetOriginY);
-	/* FIXME: what if this is not the handler thread,
-	   and the handler is in an update sequence? */
 	::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
 	if (!EmptyRgn(theUpdateRgn))
 	  need_repaint = 1;
@@ -493,7 +492,7 @@ void wxCanvas::SetScrollData
       theDC->device_origin_x += -dH;
       theDC->device_origin_y += -dV;
 
-      /* FIXME: update problem applies here, too */
+      /* FIXME: the Paint() call below doesn't immediately paint anymore */
       if (need_repaint) {
 	if (evnt)
 	  MrEdQueuePaint(this);
@@ -793,7 +792,8 @@ void wxCanvas::Paint(void)
     BackPat(GetWhitePattern());
     EraseRect(&itemRect);
     
-    MrEdQueuePaint(this);
+    /* In wx_frame.cc: */
+    wxCallOnPaintOrQueue(this);
   }
 }
 

@@ -835,10 +835,16 @@ void wxListBox::DoShow(Bool on)
 {
   if (!CanShow(on))
     return;
-  
+
   ALFeatureFlag(alFInhibitRedraw, on ? alBitClear : alBitSet, cListReference);
 
+  if (!on && cListTitle)
+    cListTitle->DoShow(on);
+
   wxWindow::DoShow(on);
+
+  if (!on && cListTitle)
+    cListTitle->DoShow(on);
 
   if (on) {
     /* May need to do some things we skipped while hidden: */

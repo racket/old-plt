@@ -221,6 +221,11 @@ void wxTabChoice::Paint(void)
 //-----------------------------------------------------------------------------
 void wxTabChoice::DoShow(Bool show)
 {
+  if (show) {
+    ::ShowControl(cMacControl);
+  } else {
+    ::HideControl(cMacControl);
+  }
   wxItem::DoShow(show);
 }
 

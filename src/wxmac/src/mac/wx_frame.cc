@@ -20,6 +20,7 @@
 #include "wx_mac_utils.h"
 #include "wx_main.h"
 #include "wx_messg.h"
+#include "wx_canvs.h"
 #include "wx_utils.h"
 #include "wx_het.h"
 
@@ -29,16 +30,14 @@ extern int mred_current_thread_is_handler(void *ctx);
 extern int mred_in_restricted_context();
 extern int wxMenuBarHeight;
 
+extern void MrEdQueuePaint(wxWindow *wx_window);
+
 //=============================================================================
 // Public constructors
 //=============================================================================
 
 static pascal void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart);
 static ControlUserPaneDrawUPP userPaneDrawFunctionUPP = NewControlUserPaneDrawUPP(userPaneDrawFunction); 
-
-static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef, 
-				     EventRef inEvent, 
-				     void *inUserData);
 
 //-----------------------------------------------------------------------------
 wxFrame::wxFrame // Constructor (for frame window)
@@ -208,22 +207,6 @@ wxFrame::wxFrame // Constructor (for frame window)
   }
 
   EnforceSize(-1, -1, -1, -1, 1, 1);
-
-#ifdef OS_X
-  {
-    /* Enable updates for a frame just before it is shown.
-       The same handler could probably be used for live resizing. */
-    EventTypeSpec spec;
-    spec.eventClass = kEventClassWindow;
-    spec.eventKind = kEventWindowDrawContent;
-    InstallEventHandler(GetWindowEventTarget(theMacWindow),
-			update_if_in_handler,
-			1,
-			&spec,
-			refcon,
-			NULL);
-  }
-#endif      
 }
 
 static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart)
@@ -277,51 +260,40 @@ wxFrame::~wxFrame(void)
 // Paint callback when showing
 //=============================================================================
 
-#define wxNO_UPDATE 0
-#define wxDO_UPDATE 1
-#define wxDID_UPDATE 2
-
-static int DoPaint(void *_f)
+static int DoPaint(void *_c)
 {
+  wxCanvas *c = (wxCanvas *)_c;
+  
+  c->OnPaint();
+
   return 0;
 }
 
-static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef, 
-				     EventRef inEvent, 
-				     void *inUserData)
+void wxCallOnPaintOrQueue(wxCanvas *win)
 {
   wxFrame *f;
 
-  f = (wxFrame*)GET_SAFEREF(inUserData);
+  f = win->GetRootFrame();
 
-  /* This event handler should only be used when showing a window,
-     where we've set up a trampoline around the ShowWindow call.
-     The trampoline is necessary because Paint() might invoke arbitrary
-     Scheme code, and because the system called us, we can't
-     allow thread swaps (which would copy a part of the stack that
-     the system owns). See the use of wxHETShowWindow below. */
+  /* we can all OnPaint only when we've set up a trampoline around the
+     ShowWindow call.  The trampoline is necessary because OnPaint()
+     might invoke arbitrary Scheme code, and because the system called
+     us, we can't allow thread swaps (which would copy a part of the
+     stack that the system owns). See the use of wxHETShowWindow
+     below. */
 
-  if (f->cCanUpdateOnCallback == wxDO_UPDATE) {
-    int c = 0;
-    f->cCanUpdateOnCallback = wxDID_UPDATE;
-    /* wxHETYield doesn't actually wxYield(). It calls our DoPaint
-       proc. This might run some Scheme code and then time out
-       for a thread swap. We give the thread up to 10 times its
-       normal alotment to finish drawing the frame. */
-    while (wxHETYield(f, DoPaint, f)) {
-      c++;
-      if (c == 10)
+  if (f->cCanUpdateOnCallback) {
+    while (f->cCanUpdateOnCallback) {
+      --f->cCanUpdateOnCallback;
+      /* wxHETYield doesn't actually wxYield(). It calls our DoPaint
+	 proc. This might run some Scheme code and then time out
+	 for a thread swap. We give the thread up to 10 times its
+	 normal alotment to finish drawing the frame. */
+      if (!wxHETYield(f, DoPaint, win))
 	break;
     }
-  } else if (f->cCanUpdateOnCallback == wxNO_UPDATE) {
-    wxMacDC *dc;
-    Rect bounds;
-    dc = f->MacDC();
-    ::GetPortBounds(dc->macGrafPort(), &bounds);
-    ::InvalWindowRect(GetWindowFromPort(dc->macGrafPort()), &bounds);
-  }
-
-  return noErr;
+  } else
+    MrEdQueuePaint(win);
 }
 
 //=============================================================================
@@ -913,14 +885,9 @@ void wxFrame::Show(Bool show)
 	/* Enable the paint callback, which must run in
 	   a special trampoline mode; see update_if_in_handler
 	   above. */
-	SetCurrentDC();
-	cCanUpdateOnCallback = wxDO_UPDATE;
+	cCanUpdateOnCallback = 10;
 	wxHETShowSheetWindow(theMacWindow, pwin);
-	if (cCanUpdateOnCallback == wxDO_UPDATE) {
-	  cCanUpdateOnCallback = wxNO_UPDATE;
-	  Refresh();
-	} else
-	  cCanUpdateOnCallback = wxNO_UPDATE;
+	cCanUpdateOnCallback = 0;
       } else {
 	ShowSheetWindow(theMacWindow, pwin);
 	Refresh();
@@ -934,14 +901,9 @@ void wxFrame::Show(Bool show)
 	/* Enable the paint callback, which must run in
 	   a special trampoline mode; see update_if_in_handler
 	   above. */
-	SetCurrentDC();
-	cCanUpdateOnCallback = TRUE;
+	cCanUpdateOnCallback = 10;
 	wxHETShowWindow(theMacWindow);
-	if (cCanUpdateOnCallback == wxDO_UPDATE) {
-	  cCanUpdateOnCallback = wxNO_UPDATE;
-	  Refresh();
-	} else
-	  cCanUpdateOnCallback = wxNO_UPDATE;
+	cCanUpdateOnCallback = 0;
       } else {
 	ShowWindow(theMacWindow);
 	Refresh();

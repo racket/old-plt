@@ -190,6 +190,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
       cmaplen = biClrUsed;
     else
       cmaplen = 1 << biBitCount;
+    numcols = cmaplen;
     for (i=0; i<cmaplen; i++) {
       pinfo->b[i] = getc(fp);
       pinfo->g[i] = getc(fp);

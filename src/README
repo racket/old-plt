@@ -87,7 +87,12 @@ Mac OS Classic (PowerPC only):
     set -e makefile makefile
     buildprogram all
 
- [Depending on how you obtained the source, you may need to force the
+ [MPW hints: Use the "Set Directory..." menu item to set the working
+  directory.  Evaluate a command by first typing it in the worksheet,
+  then hit Cmd-Return with the caret on the line containing the
+  command.
+
+  Depending on how you obtained the source, you may need to force the
   source code files to have the type TEXT. The "textify.ss" program in
   ":mac:mpw" will do this for you, but it requires a Mac OS X MzScheme
   with Apple's Developer Tools installed.]

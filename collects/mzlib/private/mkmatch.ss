@@ -74,7 +74,7 @@
 	`(letrec ((,length>=
 		   (lambda (n) (lambda (l) (>= (length l) n))))
 		  ,@(map (lambda (v) `(,v #f)) bv)
-		  (,x ,exp)
+		  (,x (list ,@exp))
 		  (,code
 		   (lambda ,gs
 		     ,@(map (lambda (v g) `(set! ,v ,g)) bv gs)

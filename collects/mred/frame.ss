@@ -329,8 +329,9 @@
     (define make-simple-frame%
       (lambda (super%)
 	(class super% ([name frame-name])
-	  (inherit panel get-client-size get-title set-title set-icon)
-	  (rename [super-on-close on-close])
+	  (inherit panel get-client-size set-icon)
+	  (rename [super-on-close on-close]
+		  [super-set-title set-title])
 	  (public
 	    [WIDTH frame-width]
 	    [HEIGHT frame-height])
@@ -342,15 +343,35 @@
 	    [set-last-focus-canvas
 	     (lambda (c)
 	       (set! last-focus-canvas c))]
-	    [title-prefix ""])
+	    [title-prefix "MrEd"])
 	  
+	  (private
+	    [title ""]
+	    [do-title
+	     (lambda ()
+	       (let ([t (if (or (string=? "" title)
+				(string=? "" title-prefix))
+			    (string-append title-prefix title)
+			    (string-append title-prefix ": " title))])
+		 '(printf "setting-title to ~a~n" t)
+		 (super-set-title t)))])
+
 	  ; methods
 	  (public
 	    [on-frame-active (lambda () (void))]
+	    [get-title (lambda () title)]
+	    [set-title
+	     (lambda (t)
+	       (when (and (string? t)
+			  (not (string=? t title)))
+		 (set! title t)
+		 (do-title)))]
 	    [set-title-prefix
 	     (lambda (s)
-	       (if (string? s)
-		   (set! title-prefix s)))]
+	       (when (and (string? s)
+			  (not (string=? s title-prefix)))
+		 (set! title-prefix s)
+		 (do-title)))]
 	    [get-canvas% (lambda () canvas%)]
 	    [make-canvas
 	     (lambda ()
@@ -420,6 +441,7 @@
 	    [canvases (list canvas)])
 	  (sequence
 	    (when (send mred:icon:icon ok?)
-	      (set-icon mred:icon:icon))))))
+	      (set-icon mred:icon:icon))
+	    (do-title)))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%))))

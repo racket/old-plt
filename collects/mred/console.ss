@@ -12,6 +12,7 @@
 	    [mred:scheme-mode : mred:scheme-mode^]
 	    [mred:scheme-paren : mred:scheme-paren^]
 	    [mred:icon : mred:icon^]
+	    [mred:hyper-frame : mred:hyper-frame^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:string : mzlib:string^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
@@ -624,10 +625,9 @@
 	       (lambda ()
 		 (let* ([mb (super-make-menu-bar)]
 			[help-menu (make-menu)]
-			[added-help-menu #f]
 			[dir (build-path (global-defined-value 
 					  'mred:plt-home-directory)
-					 "doc/")])
+					 "doc")])
 		   (if (directory-exists? dir)
 		       (let* ([dirs (directory-list dir)]
 			      [find-title
@@ -637,20 +637,31 @@
 				     (if match
 					 (cadr match)
 					 (loop (read-line port))))))]				 
-			      [add-item
-			       (lambda (local-dir)
+			      [build-item
+			       (lambda (local-dir output)
 				 (let* ([f (build-path dir local-dir "index.htm")])
 				   (if (file-exists? f)
-				       (begin
-					 (unless added-help-menu
-					   (set! added-help-menu #t)
-					   (send mb append help-menu "Help"))
-					 (send help-menu append-item
-					       (call-with-input-file f find-title)
-					       (lambda ()
-						 (mred:handler:edit-file f))))
-				       (mred:debug:printf 'help-menu "couldn't find ~a" f))))])
-			 (for-each add-item dirs))
+				       (let ([title (call-with-input-file f find-title)])
+					 (cons 
+					  (list title
+						(lambda ()
+						  (let* ([f (make-object mred:hyper-frame:hyper-view-frame% f)]
+							 [g (send f get-frame-group)])
+						    (send f set-title-prefix title)
+						    (when g
+						      (send g set-frame-title-prefix title))
+						    f)))
+					  output))
+				       (begin (mred:debug:printf 'help-menu "couldn't find ~a" f)
+					      output))))]
+			      [item-pairs 
+			       (mzlib:function:quicksort
+				(mzlib:function:foldl build-item null dirs)
+				(lambda (x y) (string-ci<? (car x) (car y))))])
+			 (unless (null? item-pairs)
+			   (send mb append help-menu "Help"))
+			 (for-each (lambda (x) (apply (ivar help-menu append-item) x))
+				   item-pairs))
 		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory"))
 		   mb)))]
 	    [on-close 

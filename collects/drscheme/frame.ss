@@ -24,6 +24,7 @@
 				 [show? #t]
 				 [frameset drscheme:project:console])
 	(inherit canvas add-canvas remove-canvas
+		 set-title-prefix
 		 show menu-bar% make-menu
 		 open-file check-saved active-edit active-canvas panel
 		 file-menu file-menu:open-id file-menu:new-id file-menu:save-id 
@@ -416,7 +417,6 @@
 	   (lambda ()
 	     (if (on-close)
 		 (show #f)))]
-	  [set-title-prefix void]
 	  [execute-callback
 	   (lambda (button evt)
 	     (let* ([program-edit (get-program-edit)]
@@ -555,6 +555,8 @@
 
 	  ;; show both windows initially
 	  (set-show-mode 'both)
+
+	  (set-title-prefix "DrScheme")
 
 	  (send program-canvas set-focus)
 	  (when show?

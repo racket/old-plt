@@ -169,8 +169,7 @@
 		      ""
 		      (string-append
 		       " #"
-		       (number->string id)))
-		  ": "))]
+		       (number->string id)))))]
 
 	      [for-each-frame
 	       (lambda (f)

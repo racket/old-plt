@@ -32,7 +32,8 @@
 (define drscheme:basis@
   (unit/sig drscheme:basis^
     (import [params : plt:parameters^]
-	    [mred : mred^])
+	    [mred : mred^]
+	    [zodiac : zodiac:system^])
 
     (rename (user-defined? defined?)
 	    (user-macro? macro?)
@@ -141,7 +142,7 @@
 	     [trigger : mzlib:trigger^ (mzlib:trigger@)]
 	     [mred : mred^ (mred@ mzlib trigger (project : mred:application^))]
 	     [interface : zodiac:interface^ (drscheme:zodiac-interface@ zodiac mred)]
-	     [basis : drscheme:basis^ (drscheme:basis@ params mred)]
+	     [basis : drscheme:basis^ (drscheme:basis@ params mred zodiac)]
 	     [params : plt:parameters^ (drscheme:parameters@ mred basis)]
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
 	     [aries : plt:aries^ (plt:aries@ zodiac interface (basis : plt:aries:predicates^))]

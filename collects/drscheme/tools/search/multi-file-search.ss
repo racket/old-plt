@@ -85,13 +85,18 @@
   (define frame (make-object search-size-frame% "Search"))
   (define panel (make-object saved-vertical-resizable% frame))
   (define button-panel (make-object horizontal-panel% frame))
+  (define open-button (make-object button% "Open File" button-panel (lambda (x y) (open-file-callback))))
   (define stop-button (make-object button% "Stop Search" button-panel (lambda (x y) (stop-callback))))
+  (define grow-box-pane (make-object grow-box-spacer-pane% button-panel))
   
   (define zoom-text (make-object text%))
   (define results-text (make-object results-text% zoom-text))
   (define results-ec (make-object editor-canvas% panel results-text))
   (define zoom-ec (make-object editor-canvas% panel zoom-text))
   
+  (define (open-file-callback)
+    (send results-text open-file))
+
   (define (stop-callback)
     (break-thread thd)
     (send stop-button enable #f))
@@ -206,6 +211,10 @@
       ;; if not, need to clean out the "searching" message
       ;; and show a match. Done in `add-match'
       [match-shown? #f]
+
+      ;; current-file : (union #f string)
+      ;; the name of the currently viewed file, if one if viewed.
+      [current-file #f]
       
       [old-line #f]
       [hilite-line
@@ -220,6 +229,10 @@
                          (paragraph-end-position line)))
          (set! old-line line))])
     (public
+      [open-file
+       (lambda ()
+         (when current-file
+           (handler:edit-file current-file)))]
       [add-match
        (lambda (filename line-string line-number col-number match-length)
          (let* ([this-match-number (last-paragraph)]
@@ -228,6 +241,7 @@
                 [show-this-match
                  (lambda ()
                    (set! match-shown? #t)
+                   (set! current-file filename)
                    (send zoom-text begin-edit-sequence)
                    (send zoom-text lock #f)
                    (send zoom-text load-file filename)
@@ -333,7 +347,7 @@
   (define method-panel (make-object vertical-panel% method-inset-outer-panel))
     
   (define dir-panel (make-object horizontal-panel% files-panel))
-  (define dir-field (make-object text-field% "Dir" dir-panel void))
+  (define dir-field (make-object text-field% "Dir" dir-panel (lambda (x y) (dir-field-callback))))
   (define dir-button (make-object button% "Browse..." dir-panel (lambda (x y) (dir-button-callback))))
 
   (define recur-check-box (make-object check-box% "Recur over subdirectories" files-panel
@@ -428,6 +442,9 @@
                [else (cons (send (car methods-check-boxes) get-values)
                            (loop (cdr methods-check-boxes)))])))]))))
   
+  (define (dir-field-callback)
+    (preferences:set 'drscheme:multi-file-search:directory (send dir-field get-value)))
+
   (define (filter-check-box-callback) 
     (preferences:set 'drscheme:multi-file-search:filter? (send filter-check-box get-value))
     (send filter-text-field enable (send filter-check-box get-value)))

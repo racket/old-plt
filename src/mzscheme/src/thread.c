@@ -1694,7 +1694,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->stack_end = p->stack_end;
   np->current_local_env = p->current_local_env;
   np->engine_weight = p->engine_weight;
-  np->tail_buffer = p->tail_buffer;
+  np->tail_buffer = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
   np->tail_buffer_size = p->tail_buffer_size;
 
   np->overflow_set = p->overflow_set;

@@ -488,14 +488,6 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   Scheme_Saved_Stack *saved;
   void *v;
 
-  /* We might have come from apply where rands == p->tail_buffer. */
-  {
-    GC_CAN_IGNORE Scheme_Object **tb;
-    p->tail_buffer = NULL; /* so args aren't zeroed */
-    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
-    p->tail_buffer = tb;
-  }
-
   saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
 
 #ifdef MZTAG_REQUIRED
@@ -2521,6 +2513,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       p->ku.k.i2 = -1;
       
       UPDATE_THREAD_RSPTR();
+      if (rands == p->tail_buffer)
+	make_tail_buffer_safe();
       MZ_CONT_MARK_POS -= 2;
       return scheme_enlarge_runstack(100 * TAIL_COPY_THRESHOLD, (void *(*)(void))do_eval_k);
     }

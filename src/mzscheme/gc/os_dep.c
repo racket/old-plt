@@ -1140,8 +1140,12 @@ word bytes;
     static GC_bool initialized = FALSE;
     static int fd;
     void *result;
+    /* MATTHEW: make sure HEAP_START and MAP_FAILED are defined: */
 #if !defined(HEAP_START)
 # define HEAP_START 0
+#endif
+#if !defined(MAP_FAILED)
+# define MAP_FAILED ((void *)-1)
 #endif
     static ptr_t last_addr = HEAP_START;
 

@@ -843,7 +843,7 @@ extern double scheme_infinity_val, scheme_minus_infinity_val;
 # else
 #  ifdef DEFEAT_FP_COMP_OPTIMIZATION
 extern int scheme_both_nan(double a, double b);
-#   define MZ_IS_NAN(d) scheme_both_nan(d, d);
+#   define MZ_IS_NAN(d) (scheme_both_nan(d, d))
 #  else
 #   define MZ_IS_NAN(d) (!((d) == (d)))
 #  endif

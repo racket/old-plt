@@ -114,8 +114,8 @@ int scheme_solaris_semaphore_try_down(void *);
 #define SCHEME_SET_CURRENT_PROCESS(p) scheme_solaris_set_current_process(p)
 #define SCHEME_MAKE_MUTEX() scheme_solaris_make_mutex()
 #define SCHEME_FREE_MUTEX(m) scheme_solaris_free_mutex(m)
-#define SCHEME_LOCK_MUTEX(m) scheme_solaris_make_mutex(m)
-#define SCHEME_UNLOCK_MUTEX(m) scheme_solaris_make_mutex(m)
+#define SCHEME_LOCK_MUTEX(m) scheme_solaris_lock_mutex(m)
+#define SCHEME_UNLOCK_MUTEX(m) scheme_solaris_unlock_mutex(m)
 #define SCHEME_MAKE_SEMA(init) scheme_solaris_make_semaphore(init)
 #define SCHEME_FREE_SEMA(s) scheme_solaris_free_semaphore(s)
 #define SCHEME_SEMA_UP(s) scheme_solaris_semaphore_up(s)
@@ -183,6 +183,12 @@ int scheme_solaris_semaphore_try_down(void *);
 # define USE_DYNAMIC_FDSET_SIZE
 
 # define REGISTER_POOR_MACHINE
+
+# ifdef LINUX_THREADS
+#  define MZ_USE_PTHREADS
+#  define MZ_USE_LINUX_PTHREADS
+   /* More configuration below for pthreads */
+# endif
 
 # define FLAGS_ALREADY_SET
 
@@ -303,8 +309,8 @@ int   scheme_sproc_semaphore_try_down(void *);
 #define SCHEME_SET_CURRENT_PROCESS(p) scheme_sproc_set_current_process(p)
 #define SCHEME_MAKE_MUTEX() scheme_sproc_make_mutex()
 #define SCHEME_FREE_MUTEX(m) scheme_sproc_free_mutex(m)
-#define SCHEME_LOCK_MUTEX(m) scheme_sproc_make_mutex(m)
-#define SCHEME_UNLOCK_MUTEX(m) scheme_sproc_make_mutex(m)
+#define SCHEME_LOCK_MUTEX(m) scheme_sproc_lock_mutex(m)
+#define SCHEME_UNLOCK_MUTEX(m) scheme_sproc_unlock_mutex(m)
 #define SCHEME_MAKE_SEMA(init) scheme_sproc_make_semaphore(init)
 #define SCHEME_FREE_SEMA(s) scheme_sproc_free_semaphore(s)
 #define SCHEME_SEMA_UP(s) scheme_sproc_semaphore_up(s)
@@ -528,8 +534,8 @@ int scheme_win32_semaphore_try_down(void *);
 #define SCHEME_SET_CURRENT_PROCESS(p) scheme_win32_set_current_process(p)
 #define SCHEME_MAKE_MUTEX() scheme_win32_make_mutex()
 #define SCHEME_FREE_MUTEX(m) scheme_win32_free_mutex(m)
-#define SCHEME_LOCK_MUTEX(m) scheme_win32_make_mutex(m)
-#define SCHEME_UNLOCK_MUTEX(m) scheme_win32_make_mutex(m)
+#define SCHEME_LOCK_MUTEX(m) scheme_win32_lock_mutex(m)
+#define SCHEME_UNLOCK_MUTEX(m) scheme_win32_unlock_mutex(m)
 #define SCHEME_MAKE_SEMA(init) scheme_win32_make_semaphore(init)
 #define SCHEME_FREE_SEMA(s) scheme_win32_free_semaphore(s)
 #define SCHEME_SEMA_UP(s) scheme_win32_semaphore_up(s)
@@ -659,6 +665,54 @@ int scheme_win32_semaphore_try_down(void *);
 
 /************** (END KNOWN ARCHITECTURE/SYSTEMS) ****************/
 
+
+/************** (BEGIN PTHREAD SETUP) ***************/
+
+#ifdef MZ_USE_PTHREADS
+
+# define MZ_REAL_THREADS
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void *scheme_pthread_init_threads(void);
+void scheme_pthread_create_thread(void (*f)(void *), void *data, unsigned long *stackend, void **thp);
+void scheme_pthread_exit_thread();
+void scheme_pthread_break_thread(void *th);
+struct Scheme_Process *scheme_pthread_get_current_process();
+void scheme_pthread_set_current_process(struct Scheme_Process *);
+void *scheme_pthread_make_mutex();
+void scheme_pthread_free_mutex(void *);
+void scheme_pthread_lock_mutex(void *);
+void scheme_pthread_unlock_mutex(void *);
+void *scheme_pthread_make_semaphore(int init);
+void scheme_pthread_free_semaphore(void *);
+int scheme_pthread_semaphore_up(void *);
+int scheme_pthread_semaphore_down_breakable(void *);
+int scheme_pthread_semaphore_try_down(void *);
+#ifdef __cplusplus
+}
+#endif
+
+#define SCHEME_INIT_THREADS() scheme_pthread_init_threads()
+#define SCHEME_CREATE_THREAD(f, data, slimit, thp) scheme_pthread_create_thread(f, data, slimit, thp)
+#define SCHEME_EXIT_THREAD() scheme_pthread_exit_thread()
+#define SCHEME_BREAK_THREAD(th) scheme_pthread_break_thread(th)
+#define SCHEME_GET_CURRENT_PROCESS() scheme_pthread_get_current_process()
+#define SCHEME_SET_CURRENT_PROCESS(p) scheme_pthread_set_current_process(p)
+#define SCHEME_MAKE_MUTEX() scheme_pthread_make_mutex()
+#define SCHEME_FREE_MUTEX(m) scheme_pthread_free_mutex(m)
+#define SCHEME_LOCK_MUTEX(m) scheme_pthread_lock_mutex(m)
+#define SCHEME_UNLOCK_MUTEX(m) scheme_pthread_unlock_mutex(m)
+#define SCHEME_MAKE_SEMA(init) scheme_pthread_make_semaphore(init)
+#define SCHEME_FREE_SEMA(s) scheme_pthread_free_semaphore(s)
+#define SCHEME_SEMA_UP(s) scheme_pthread_semaphore_up(s)
+#define SCHEME_SEMA_DOWN_BREAKABLE(s) scheme_pthread_semaphore_down_breakable(s)
+#define SCHEME_SEMA_TRY_DOWN(s) scheme_pthread_semaphore_try_down(s)
+
+#endif
+
+/************** (END PTHREAD SETUP) ***************/
 
 /***** (BEGIN CONFIGURATION FLAG DESCRPTIONS AND DEFAULTS) ******/
 

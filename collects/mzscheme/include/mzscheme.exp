@@ -227,8 +227,6 @@ scheme_make_symbol
 scheme_make_exact_symbol
 scheme_symbol_name
 scheme_symbol_name_and_size
-scheme_intern_type_symbol
-scheme_make_type_symbol
 scheme_make_struct_values
 scheme_make_struct_names
 scheme_make_struct_type

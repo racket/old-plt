@@ -467,10 +467,6 @@ Scheme_Object *scheme_make_exact_symbol(const char *name, int len); /* Exact cas
 const char *scheme_symbol_name(Scheme_Object *sym);
 const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *l, int flags);
 
-/* Type Symbols */
-Scheme_Object *scheme_intern_type_symbol(Scheme_Object *sym);
-Scheme_Object *scheme_make_type_symbol(Scheme_Object *sym);/*Make uninterned */
-
 /* Structures */
 Scheme_Object **scheme_make_struct_values(Scheme_Object *struct_type,
 					  Scheme_Object **names,

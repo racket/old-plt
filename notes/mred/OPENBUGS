@@ -1,7 +1,4 @@
 
-Bugs
-----
-
 * MacOS: bitmaps don't print (with MacOS-specific printing)
 
 * Windows and MacOS: "primitive" dialogs don't get closed by
@@ -15,5 +12,8 @@ Bugs
   after certain primitive operations that can take a long time (e.g.,
   loading a bitmap or saving a file)
 
-* Updating bug? (hard to reproduce): long flash, not on same line,
-  update on focus-in
+* Windows: System menu navigation in a menuless MDI window leads to a
+  crash
+
+* A top-level-window<%>'s on-move method is not reliably called; also,
+  the result from get-x, get-y, and is-iconized? are not reliable

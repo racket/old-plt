@@ -138,7 +138,11 @@ string=? ; exec mred -magqvf $0
 
 (define (version-check filename)
   `(unless (equal? (version) ,(version))
-     (error 'mred-interfaces "mred-interfaces.ss and mred-interfacess.ss compiled for version ~a, not version ~a" ,(version) (version))))
+     (error 'mred-interfaces
+	    ,(format
+	     "mred-interfaces.ss and mred-interfacess.ss compiled for version ~a, not version ~~a"
+	     (version))
+	    (version))))
 
 (let ([fn (build-path framework-dir "mred-interfacess.ss")])
   (call-with-output-file fn

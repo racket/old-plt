@@ -12,7 +12,7 @@ exec mzscheme -mvt "$0" "$@"
             (load "install")
             (main '("install" "-i"))))
   (make-mred-launcher
-   `("-mvq" "-e" (format "~s" tiny-program))
+   `("-mvq" "-e" ,(format "~s" tiny-program))
    (mred-program-launcher-path "Finish Install")
    (cons
     '(forget-exe? . #t)

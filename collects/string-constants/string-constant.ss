@@ -15,44 +15,43 @@
   
   (define-syntaxes (string-constant string-constants this-language all-languages)
     (let ()
-      ;; type sc = (make-sc symbol (listof (hash-table symbol string)))
+      ;; type sc = (make-sc symbol (listof (list symbol string)))
       (define-struct sc (language-name constants))
       
-      (define string-constants-file-cache #&#f)
+      ;; string-constants-file-cache : (box (listof (list sym (listof (list sym string)))))
+      ;; first listof is the list of languages, second listof is the list of string-constants
+      (define string-constants-file-cache #&())
 
+      ;; get-string-constants : string -> (listof (list sym string))
       (define (get-string-constants filename)
-	(unless (unbox string-constants-file-cache)
-	  (set-box! string-constants-file-cache (make-hash-table)))
-	(let ([key (string->symbol filename)])
-	  (hash-table-get
-	   (unbox string-constants-file-cache)
-	   key
-	   (lambda ()
-	     (let* ([filename (build-path (this-expression-source-directory) filename)]
-		    [sexp (call-with-input-file filename read 'text)])
-	       (unless (and (list? sexp)
-			    (andmap (lambda (x) 
-				      (and (list? x)
-					   (= 2 (length x))
-					   (symbol? (car x))
-					   (string? (cadr x))))
-				    sexp))
-		 (raise-syntax-error 'string-constant
-				     (format "expected `((,symbol string) ...), got: ~s" sexp)))
-	       (let ([ht (make-hash-table)])
-		 (for-each (lambda (x) 
-			     (when (hash-table-get ht (car x) (lambda () #f))
-			       (raise-syntax-error
-				'string-constants 
-				(format "found duplicate for ~a in ~a"
-					(car x) filename)))
-			     (hash-table-put! ht (car x) (cadr x)))
-			   sexp)
-		 (hash-table-put!
-		  (unbox string-constants-file-cache)
-		  key
-		  ht)
-		 ht))))))
+        (let* ([key (string->symbol filename)]
+               [res (assq key (unbox string-constants-file-cache))])
+          (if res
+              (cadr res)
+              (let* ([filename (build-path (this-expression-source-directory) filename)]
+                     [sexp (call-with-input-file filename read 'text)])
+                (unless (and (list? sexp)
+                             (andmap (lambda (x) 
+                                       (and (list? x)
+                                            (= 2 (length x))
+                                            (symbol? (car x))
+                                            (string? (cadr x))))
+                                     sexp))
+                  (raise-syntax-error 'string-constant
+                                      (format "expected `((<symbol> <string>) ...), got: ~s" sexp)))
+                (let ([ht (make-hash-table)])
+                  (for-each (lambda (x) 
+                              (when (hash-table-get ht (car x) (lambda () #f))
+                                (raise-syntax-error
+                                 'string-constants 
+                                 (format "found duplicate for ~a in ~a"
+                                         (car x) filename)))
+                              (hash-table-put! ht (car x) (cadr x)))
+                            sexp))
+                (set-box! string-constants-file-cache
+                          (cons (list key sexp) 
+                                (unbox string-constants-file-cache)))
+                sexp))))
       
       (define available-string-constant-sets
         (list 
@@ -86,31 +85,34 @@
 
       (define dummy
         (let* ([already-printed #&#f]
+               ;; type no-warning-cache-key = (cons symbol symbol)
+               ;; warning-table : (listof (list no-warning-cache-key (listof (list sym string))))
 	       [warning-table null]
 	       [check-one-way
 		(lambda (sc1 sc2)
-		  (let ([ht1 (sc-constants sc1)]
-			[ht2 (sc-constants sc2)])
-		    (hash-table-for-each
-		     ht1
-		     (lambda (constant value)
-		       (unless (hash-table-get ht2 constant (lambda () #f))
-			 (let ([no-warning-cache-key
-                                (cons (sc-language-name sc1) (sc-language-name sc2))])
-			   (hash-table-put! ht2 constant value)
-			   (unless (unbox already-printed)
-                             (when (or (env-var-set? (sc-language-name sc1))
-				       (env-var-set? (sc-language-name sc2)))
-                               (cond
-                                 [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
-                                  =>
-                                  (lambda (x)
-                                    (let ([ent (car x)])
-                                      (set-car! (cdr ent) (cons (list constant value) (cadr ent)))))]
-                                 [else
-                                  (set! warning-table (cons (list no-warning-cache-key
-                                                                  (list (list constant value)))
-                                                            warning-table))])))))))))])
+		  (let ([assoc1 (sc-constants sc1)]
+			[assoc2 (sc-constants sc2)])
+		    (for-each
+		     (lambda (pair1)
+                       (let* ([constant1 (car pair1)]
+                              [value1 (cadr pair1)]
+                              [pair2 (assq constant1 assoc2)])
+                         (unless pair2
+                           (let ([no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
+                             (unless (unbox already-printed)
+                               (when (or (env-var-set? (sc-language-name sc1))
+                                         (env-var-set? (sc-language-name sc2)))
+                                 (cond
+                                   [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
+                                    =>
+                                    (lambda (x)
+                                      (let ([ent (car x)])
+                                        (set-car! (cdr ent) (cons (list constant1 value1) (cadr ent)))))]
+                                   [else
+                                    (set! warning-table (cons (list no-warning-cache-key
+                                                                    (list (list constant1 value1)))
+                                                              warning-table))])))))))
+		     assoc1)))])
 
           (for-each (lambda (x) 
                       (check-one-way x first-string-constant-set)
@@ -145,42 +147,52 @@
       (define (string-constant stx)
         (syntax-case stx ()
           [(_ name)
-           (let ([ht (sc-constants first-string-constant-set)]
+           (let ([assoc-table (sc-constants first-string-constant-set)]
                  [datum (syntax-object->datum (syntax name))])
              (unless (symbol? datum)
                (raise-syntax-error #f
                                    (format "expected name, got: ~s" datum)
                                    stx))
-             (unless (hash-table-get ht datum (lambda () #f))
-               (raise-syntax-error 
-                #f
-                (format "~a is not a known string constant" datum) 
-                stx))
-             (with-syntax ([(constants ...) (map (lambda (x) (hash-table-get (sc-constants x) datum))
-                                                 available-string-constant-sets)]
-                           [(languages ...) (map sc-language-name available-string-constant-sets)]
-                           [first-constant (hash-table-get (sc-constants first-string-constant-set) datum)])
-               (syntax (cond
-                         [(eq? language 'languages) constants] ...
-                         [else first-constant]))))]))
+             (let ([default-val (assq datum assoc-table)])
+               (unless default-val
+                 (raise-syntax-error 
+                  #f
+                  (format "~a is not a known string constant" datum) 
+                  stx))
+               (with-syntax ([(constants ...) (map (lambda (x)
+                                                     (let ([val (assq datum (sc-constants x))])
+                                                       (if val
+                                                           (cadr val)
+                                                           (cadr default-val))))
+                                                   available-string-constant-sets)]
+                             [(languages ...) (map sc-language-name available-string-constant-sets)]
+                             [first-constant (cadr (assq datum (sc-constants first-string-constant-set)))])
+                 (syntax (cond
+                           [(eq? language 'languages) constants] ...
+                           [else first-constant])))))]))
       
       (define (string-constants stx)
         (syntax-case stx ()
           [(_ name)
-           (let ([ht (sc-constants first-string-constant-set)]
+           (let ([assoc-table (sc-constants first-string-constant-set)]
                  [datum (syntax-object->datum (syntax name))])
              (unless (symbol? datum)
                (raise-syntax-error #f
                                    (format "expected name, got: ~s" datum)
                                    stx))
-             (unless (hash-table-get ht datum (lambda () #f))
-               (raise-syntax-error 
-                #f
-                (format "~a is not a known string constant" datum)
-                stx))
-             (with-syntax ([(constants ...) (map (lambda (x) (hash-table-get (sc-constants x) datum))
-                                                 available-string-constant-sets)])
-               (syntax (list constants ...))))]))
+             (let ([default-val (assq datum assoc-table)])
+               (unless default-val
+                 (raise-syntax-error 
+                  #f
+                  (format "~a is not a known string constant" datum)
+                  stx))
+               (with-syntax ([(constants ...) (map (lambda (x) 
+                                                     (let ([val (assq datum (sc-constants x))])
+                                                       (if val
+                                                           (cadr val)
+                                                           (cadr default-val))))
+                                                   available-string-constant-sets)])
+                 (syntax (list constants ...)))))]))
       
       (define (this-language stx)
         (syntax-case stx ()

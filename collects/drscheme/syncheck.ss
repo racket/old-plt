@@ -285,8 +285,11 @@
              v))))
       
       (define-struct graphic (pos* locs->thunks draw-fn click-fn))
-      (define-struct arrow (start-pos-left start-pos-right end-pos-left end-pos-right
-                                           start-x start-y end-x end-y))
+      (define-struct arrow (start-text
+                            start-pos-left start-pos-right
+                            end-text
+                            end-pos-left end-pos-right
+                            start-x start-y end-x end-y))
       
       (define tacked-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
       (define untacked-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
@@ -312,28 +315,43 @@
                [super-after-insert after-insert]
                [super-after-delete after-delete]
                [super-on-paint on-paint]
-               [super-on-local-event on-local-event])
+               [super-on-event on-event])
               
-              ;; arrow-vector : (union #f (vector (listof (union (cons (union #f sym) (menu -> void))
-              ;;                                                 arrow))))
-              (define arrow-vector #f)
+              ;; arrow-vectors : 
+              ;; (union 
+              ;;  #f
+              ;;  (hash-table
+              ;;    (text%
+              ;;     . -o> .
+              ;;    (vector (listof (union (cons (union #f sym) (menu -> void)) arrow))))))
+              (define arrow-vectors #f)
               
               (field (tacked-hash-table (make-hash-table)))
-              (field (cursor-location #f))
-              (define (find-poss left-pos right-pos)
+              (field [cursor-location #f]
+                     [cursor-text #f])
+              (define (find-poss text left-pos right-pos)
                 (let ([xlb (box 0)]
                       [ylb (box 0)]
                       [xrb (box 0)]
                       [yrb (box 0)])
-                  (position-location left-pos xlb ylb #t)
-                  (position-location right-pos xrb yrb #f)
-                  (values (/ (+ (unbox xlb) (unbox xrb)) 2)
-                          (/ (+ (unbox ylb) (unbox yrb)) 2))))
+                  (send text position-location left-pos xlb ylb #t)
+                  (send text position-location right-pos xrb yrb #f)
+                  (let*-values ([(xl-off yl-off) (send text editor-location-to-dc-location (unbox xlb) (unbox ylb))]
+                                [(xl yl) (dc-location-to-editor-location xl-off yl-off)]
+                                [(xr-off yr-off) (send text editor-location-to-dc-location (unbox xrb) (unbox yrb))]
+                                [(xr yr) (dc-location-to-editor-location xr-off yr-off)])
+                    (values (/ (+ xl xr) 2)
+                            (/ (+ yl yr) 2)))))
+              
               (define (update-poss arrow)
-                (let-values ([(start-x start-y) (find-poss (arrow-start-pos-left arrow)
-                                                           (arrow-start-pos-right arrow))]
-                             [(end-x end-y) (find-poss (arrow-end-pos-left arrow)
-                                                       (arrow-end-pos-right arrow))])
+                (let-values ([(start-x start-y) (find-poss 
+                                                 (arrow-start-text arrow)
+                                                 (arrow-start-pos-left arrow)
+                                                 (arrow-start-pos-right arrow))]
+                             [(end-x end-y) (find-poss 
+                                             (arrow-end-text arrow)
+                                             (arrow-end-pos-left arrow)
+                                             (arrow-end-pos-right arrow))])
                   (set-arrow-start-x! arrow start-x)
                   (set-arrow-start-y! arrow start-y)
                   (set-arrow-end-x! arrow end-x)
@@ -341,43 +359,60 @@
               
               (define/public (syncheck:init-arrows)
                 (set! tacked-hash-table (make-hash-table))
-                (set! arrow-vector (make-vector (add1 (last-position)) null)))
+                (set! arrow-vectors (make-hash-table)))
               (define/public (syncheck:clear-arrows)
-                (when (or arrow-vector cursor-location)
-                  (set! arrow-vector #f)
+                (when (or arrow-vectors cursor-location cursor-text)
+                  (set! arrow-vectors #f)
                   (set! cursor-location #f)
+                  (set! cursor-text #f)
                   (invalidate-bitmap-cache)))
-              (define/public (syncheck:add-menu start-pos end-pos key make-menu)
+              (define/public (syncheck:add-menu text start-pos end-pos key make-menu)
                 (when (and (<= 0 start-pos end-pos (last-position)))
-                  (add-to-range/key start-pos end-pos make-menu key #t)))
-              (define/public (syncheck:add-arrow start-pos-left start-pos-right
-                                                 end-pos-left end-pos-right)
-                (let* ([arrow (make-arrow start-pos-left start-pos-right
-                                          end-pos-left end-pos-right
+                  (add-to-range/key text start-pos end-pos make-menu key #t)))
+              
+              ;; syncheck:add-arrow : text number number text number number -> void
+              ;; pre: start-editor, end-editor are embedded in `this' (or are `this')
+              (define/public (syncheck:add-arrow start-text start-pos-left start-pos-right
+                                                 end-text end-pos-left end-pos-right)
+                (let* ([arrow (make-arrow start-text start-pos-left start-pos-right
+                                          end-text end-pos-left end-pos-right
                                           0 0 0 0)])
-                  (add-to-range/key start-pos-left start-pos-right arrow #f #f)
-                  (add-to-range/key end-pos-left end-pos-right arrow #f #f)))
+                  (add-to-range/key start-text start-pos-left start-pos-right arrow #f #f)
+                  (add-to-range/key end-text end-pos-left end-pos-right arrow #f #f)))
 
-              ;; add-to-range/key : number number any any boolean -> void
+              ;; add-to-range/key : text number number any any boolean -> void
               ;; adds `key' to the range `start' - `end' in the editor
               ;; If use-key? is #t, it adds `to-add' with the key, and doesnot
               ;; replace a value with that key already there.
               ;; If use-key? is #f, it adds `to-add' without a key.
-              ;; pre: arrow-vector is not #f
-              (define (add-to-range/key start end to-add key use-key?)
-                (let loop ([p start])
-                  (when (<= p end)
-                    (let ([r (vector-ref arrow-vector p)])
-                      (cond
-                        [use-key?
-                         (unless (ormap (lambda (x) (and (pair? x) 
-                                                         (car x)
-                                                         (eq? (car x) key)))
-                                        r)
-                           (vector-set! arrow-vector p (cons (cons key to-add) r)))]
-                        [else
-                         (vector-set! arrow-vector p (cons to-add r))]))
-                    (loop (add1 p)))))
+              ;; pre: arrow-vectors is not #f
+              (define (add-to-range/key text start end to-add key use-key?)
+                (let ([arrow-vector (hash-table-get 
+                                     arrow-vectors
+                                     text 
+                                     (lambda ()
+                                       (let ([new-vec 
+                                              (make-vector
+                                               (add1 (send text last-position))
+                                               null)])
+                                         (hash-table-put! 
+                                          arrow-vectors 
+                                          text
+                                          new-vec)
+                                         new-vec)))])
+                  (let loop ([p start])
+                    (when (<= p end)
+                      (let ([r (vector-ref arrow-vector p)])
+                        (cond
+                          [use-key?
+                           (unless (ormap (lambda (x) (and (pair? x) 
+                                                           (car x)
+                                                           (eq? (car x) key)))
+                                          r)
+                             (vector-set! arrow-vector p (cons (cons key to-add) r)))]
+                          [else
+                           (vector-set! arrow-vector p (cons to-add r))]))
+                      (loop (add1 p))))))
 
               (inherit get-top-level-window)
               (override after-delete)
@@ -393,27 +428,29 @@
               ;; flush-arrow-coordinates-cache : -> void
               ;; pre-condition: arrow-vector is not #f.
               (define/private (flush-arrow-coordinates-cache)
-                (let loop ([n (vector-length arrow-vector)])
-                  (unless (zero? n)
-                    (let ([eles (vector-ref arrow-vector (- n 1))])
-                      (for-each (lambda (ele)
-                                  (when (arrow? ele)
-                                    (update-poss ele)))
-                                eles))
-                    (loop (- n 1)))))
+                (hash-table-for-each
+                 arrow-vectors
+                 (lambda (text arrow-vector)
+                   (let loop ([n (vector-length arrow-vector)])
+                     (unless (zero? n)
+                       (let ([eles (vector-ref arrow-vector (- n 1))])
+                         (for-each (lambda (ele)
+                                     (when (arrow? ele)
+                                       (update-poss ele)))
+                                   eles))
+                       (loop (- n 1)))))))
               
               (rename [super-on-change on-change])
               (define/override (on-change)
                 (super-on-change)
-                (when arrow-vector
+                (when arrow-vectors
                   (flush-arrow-coordinates-cache)
                   (invalidate-bitmap-cache)))
               
               (override on-paint)
               (define (on-paint before dc left top right bottom dx dy draw-caret)
                 (super-on-paint before dc left top right bottom dx dy draw-caret)
-                (when (and arrow-vector 
-                           (not before))
+                (when (and arrow-vectors (not before))
                   (let ([draw-arrow2
                          (lambda (arrow)
                            (let ([start-x (arrow-start-x arrow)]
@@ -429,83 +466,103 @@
                                          (lambda (arrow v) 
                                            (when v 
                                              (draw-arrow2 arrow))))
-                    (when cursor-location
+                    (when (and cursor-location
+                               cursor-text)
                       (send dc set-brush untacked-brush)
-                      (let ([eles (vector-ref arrow-vector cursor-location)])
-                        (for-each (lambda (ele) 
-                                    (when (arrow? ele)
-                                      (draw-arrow2 ele)))
-                                  eles)))
+                      (let* ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))])
+                        (when arrow-vector
+                          (let ([eles (vector-ref arrow-vector cursor-location)])
+                            (for-each (lambda (ele) 
+                                        (when (arrow? ele)
+                                          (draw-arrow2 ele)))
+                                      eles)))))
                     (send dc set-brush old-brush)
                     (send dc set-pen old-pen))))
               
-              (define (get-pos event)
-                (let*-values ([(event-x event-y)
-                               (values (send event get-x)
-                                       (send event get-y))]
-                              [(x y) (dc-location-to-editor-location
-                                      event-x event-y)])
-                  (let* ([on-it? (box #f)]
-                         [pos (find-position x y #f on-it?)])
-                    (and (unbox on-it?)
-                         pos))))
+              ;; get-pos/text : event -> (values (union #f text%) (union number #f))
+              ;; returns two #fs to indicate the event doesn't correspond to
+              ;; a position in an editor, or returns the innermost text
+              ;; and position in that text where the event is.
+              (define (get-pos/text event)
+                (let ([event-x (send event get-x)]
+                      [event-y (send event get-y)]
+                      [on-it? (box #f)])
+                  (let loop ([text this])
+                    (let-values ([(x y) (send text dc-location-to-editor-location event-x event-y)])
+                      (let ([pos (send text find-position x y #f on-it?)])
+                        (cond
+                          [(not (unbox on-it?)) (values #f #f)]
+                          [else
+                           (let ([snip (send text find-snip pos 'after-or-none)])
+                             (if (and snip
+                                      (is-a? snip editor-snip%))
+                                 (loop (send snip get-editor))
+                                 (values pos text)))]))))))
               
-              (define/override (on-local-event event)
-                (if arrow-vector
+              (define/override (on-event event)
+                (if arrow-vectors
                     (cond
                       [(send event leaving?)
-                       (when cursor-location
+                       (when (and cursor-location cursor-text)
                          (set! cursor-location #f)
+                         (set! cursor-text #f)
                          (invalidate-bitmap-cache))
-                       (super-on-local-event event)]
+                       (super-on-event event)]
                       [(or (send event moving?)
                            (send event entering?))
-                       (let ([pos (get-pos event)])
+                       (let-values ([(pos text) (get-pos/text event)])
                          (cond
                            [pos
                             (unless (and cursor-location
-                                         (= pos cursor-location))
+                                         cursor-text
+                                         (= pos cursor-location)
+                                         (eq? cursor-text text)
+                                         (hash-table-get arrow-vectors cursor-text (lambda () #f)))
                               (set! cursor-location pos)
-                              (let ([eles (vector-ref arrow-vector cursor-location)])
-                                (for-each (lambda (ele)
-                                            (when (arrow? ele)
-                                              (update-poss ele)))
-                                          eles))
-                              (invalidate-bitmap-cache))]
+                              (set! cursor-text text)
+                              (let ([arrow-vector (hash-table-get arrow-vectors cursor-text (lambda () #f))])
+                                (when arrow-vector
+                                  (let ([eles (vector-ref arrow-vector cursor-location)])
+                                    (for-each (lambda (ele)
+                                                (when (arrow? ele)
+                                                  (update-poss ele)))
+                                              eles))
+                                  (invalidate-bitmap-cache))))]
                            [else
-                            (when cursor-location
+                            (when (or cursor-location cursor-text)
                               (set! cursor-location #f)
+                              (set! cursor-text #f)
                               (invalidate-bitmap-cache))]))
-                       (super-on-local-event event)]
-                      [(or (send event button-down? 'right)
-                           (and (send event button-down? 'left)
-                                (send event get-control-down)))
-                       (let* ([pos (get-pos event)])
-                         (if pos
-                             (let ([vec-ents (vector-ref arrow-vector pos)])
-                               (cond
-                                 [(null? vec-ents)
-                                  (super-on-local-event event)]
-                                 [else
-                                  (let ([menu (make-object popup-menu% #f)]
-                                        [arrows (filter arrow? vec-ents)]
-                                        [add-menus (map cdr (filter cons? vec-ents))])
-                                    (unless (null? arrows)
-                                      (make-object menu-item%
-                                        (string-constant cs-tack/untack-arrow)
-                                        menu
-                                        (lambda (item evt) (tack/untack-callback arrows)))
-                                      (make-object menu-item%
-                                        (string-constant cs-jump)
-                                        menu
-                                        (lambda (item evt) (jump-callback pos arrows))))
-                                    (for-each (lambda (f) (f menu)) add-menus)
-                                    (send (get-canvas) popup-menu menu
-                                          (+ 1 (inexact->exact (floor (send event get-x))))
-                                          (+ 1 (inexact->exact (floor (send event get-y))))))]))
-                             (super-on-local-event event)))]
-                      [else (super-on-local-event event)])
-                    (super-on-local-event event)))
+                       (super-on-event event)]
+                      [(send event button-down? 'right)
+                       (let-values ([(pos text) (get-pos/text event)])
+                         (if (and pos text)
+                             (let ([arrow-vector (hash-table-get arrow-vectors text (lambda () #f))])
+                               (when arrow-vector
+                                 (let ([vec-ents (vector-ref arrow-vector pos)])
+                                   (cond
+                                     [(null? vec-ents)
+                                      (super-on-event event)]
+                                     [else
+                                      (let ([menu (make-object popup-menu% #f)]
+                                            [arrows (filter arrow? vec-ents)]
+                                            [add-menus (map cdr (filter cons? vec-ents))])
+                                        (unless (null? arrows)
+                                          (make-object menu-item%
+                                            (string-constant cs-tack/untack-arrow)
+                                            menu
+                                            (lambda (item evt) (tack/untack-callback arrows)))
+                                          (make-object menu-item%
+                                            (string-constant cs-jump)
+                                            menu
+                                            (lambda (item evt) (jump-callback pos arrows))))
+                                        (for-each (lambda (f) (f menu)) add-menus)
+                                        (send (get-canvas) popup-menu menu
+                                              (+ 1 (inexact->exact (floor (send event get-x))))
+                                              (+ 1 (inexact->exact (floor (send event get-y))))))]))))
+                             (super-on-event event)))]
+                      [else (super-on-event event)])
+                    (super-on-event event)))
 
               ;; tack/untack-callback : (listof arrow) -> void
               ;; callback for the tack/untack menu item
@@ -1200,20 +1257,38 @@
       (define (connect-syntaxes from to)
         (let* ([from-source (syntax-source from)]
 	       [to-source (syntax-source to)])
-	  (when (and (eq? from-source to-source)
-		     (is-a? from-source syncheck-text<%>)
-		     (syntax-position from)
-		     (syntax-span from)
-		     (syntax-position to)
-		     (syntax-span to))
-	    (let* ([from-pos-left (- (syntax-position from) 1)]
-		   [from-pos-right (+ from-pos-left (syntax-span from))]
-		   [to-pos-left (- (syntax-position to) 1)]
-		   [to-pos-right (+ to-pos-left (syntax-span to))])
-	      (unless (= from-pos-left to-pos-left)
-		(send from-source syncheck:add-arrow
-		      from-pos-left from-pos-right
-		      to-pos-left to-pos-right))))))
+	  (when (and (is-a? from-source text%)
+                     (is-a? to-source text%))
+            (let ([to-syncheck-text (find-syncheck-text to-source)]
+                  [from-syncheck-text (find-syncheck-text from-source)])
+              (when (and to-syncheck-text
+                         from-syncheck-text
+                         (eq? to-syncheck-text from-syncheck-text)
+                         (syntax-position from)
+                         (syntax-span from)
+                         (syntax-position to)
+                         (syntax-span to))
+                (let* ([from-pos-left (- (syntax-position from) 1)]
+                       [from-pos-right (+ from-pos-left (syntax-span from))]
+                       [to-pos-left (- (syntax-position to) 1)]
+                       [to-pos-right (+ to-pos-left (syntax-span to))])
+                  (unless (= from-pos-left to-pos-left)
+                    (send from-syncheck-text syncheck:add-arrow
+                          from-source from-pos-left from-pos-right
+                          to-source to-pos-left to-pos-right))))))))
+      
+      ;; find-syncheck-text : text% -> (union #f (is-a?/c syncheck-text<%>))
+      (define (find-syncheck-text text)
+        (let loop ([text text])
+          (cond
+            [(is-a? text syncheck-text<%>) text]
+            [else 
+             (let ([admin (send text get-admin)])
+               (and (is-a? admin editor-snip-editor-admin<%>)
+                    (let* ([enclosing-editor-snip (send admin get-snip)]
+                           [editor-snip-admin (send enclosing-editor-snip get-admin)]
+                           [enclosing-editor (send editor-snip-admin get-editor)])
+                      (loop enclosing-editor))))])))
       
       ;; annotate-basic : syntax 
       ;;                  string
@@ -1438,27 +1513,31 @@
 	(lambda (require-spec)
 	  (when (syntax-original? require-spec)
 	    (let ([source (syntax-source require-spec)])
-	      (when (and (is-a? source syncheck-text<%>)
+	      (when (and (is-a? source text%)
 			 (syntax-position require-spec)
 			 (syntax-span require-spec))
-		(let* ([start (- (syntax-position require-spec) 1)]
-		       [end (+ start (syntax-span require-spec))]
-		       [datum (syntax-object->datum require-spec)]
-		       [sym 
-			(and (not (symbol? datum))
-			     (parameterize ([current-namespace user-namespace]
-					    [current-directory user-directory]
-					    [current-load-relative-directory user-directory])
-			       ((current-module-name-resolver)
-				(syntax-object->datum require-spec)
-				#f 
-				#f)))]
-		       [file (and (symbol? sym)
-				  (module-name-sym->filename sym))])
-		  (when file
-		    (send source syncheck:add-menu start end 
-			  #f
-			  (make-require-open-menu file)))))))))
+                (let ([syncheck-text (find-syncheck-text source)])
+                  (when syncheck-text
+                    (let* ([start (- (syntax-position require-spec) 1)]
+                           [end (+ start (syntax-span require-spec))]
+                           [datum (syntax-object->datum require-spec)]
+                           [sym 
+                            (and (not (symbol? datum))
+                                 (parameterize ([current-namespace user-namespace]
+                                                [current-directory user-directory]
+                                                [current-load-relative-directory user-directory])
+                                   ((current-module-name-resolver)
+                                    (syntax-object->datum require-spec)
+                                    #f 
+                                    #f)))]
+                           [file (and (symbol? sym)
+                                      (module-name-sym->filename sym))])
+                      (when file
+                        (send syncheck-text syncheck:add-menu
+                              source
+                              start end 
+                              #f
+                              (make-require-open-menu file)))))))))))
       
       ;; make-require-open-menu : string[filename] -> menu -> void
       (define (make-require-open-menu file)
@@ -1693,19 +1772,21 @@
       ;; make-rename-menu : stx[original] (hash-table symbol (listof syntax)) -> void
       (define (make-rename-menu stx vars-ht)
         (let ([source (syntax-source stx)])
-          (when (is-a? source syncheck-text<%>)
-            (let* ([name-to-offer (format "~a" (syntax-object->datum stx))]
-                   [start (- (syntax-position stx) 1)]
-                   [fin (+ start (syntax-span stx))])
-              (send source syncheck:add-menu
-                    start fin (syntax-e stx)
-                    (lambda (menu)
-                      (instantiate menu-item% ()
-                        (parent menu)
-                        (label (format (string-constant cs-rename-var) name-to-offer))
-                        (callback
-                         (lambda (x y)
-                           (rename-callback name-to-offer stx vars-ht))))))))))
+          (when (is-a? source text%)
+            (let ([syncheck-text (find-syncheck-text source)])
+              (when syncheck-text
+                (let* ([name-to-offer (format "~a" (syntax-object->datum stx))]
+                       [start (- (syntax-position stx) 1)]
+                       [fin (+ start (syntax-span stx))])
+                  (send syncheck-text syncheck:add-menu
+                        source start fin (syntax-e stx)
+                        (lambda (menu)
+                          (instantiate menu-item% ()
+                            (parent menu)
+                            (label (format (string-constant cs-rename-var) name-to-offer))
+                            (callback
+                             (lambda (x y)
+                               (rename-callback name-to-offer stx vars-ht))))))))))))
 
       ;; rename-callback : string syntax[original] (listof syntax) -> void
       ;; callback for the rename popup menu item

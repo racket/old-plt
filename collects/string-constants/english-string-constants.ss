@@ -152,8 +152,7 @@
  (nothing-found-for-empty-search "Nothing found for the empty search")
  (nothing-found-for "Nothing found for ~a")
  (and "and")
- (error-finding-docs
-  "Could not find documentation.\n\n~a")
+ (error-finding-docs "Could not find documentation.\n\n~a")
  (manual-installed-date "(installed ~a)")
 
  ;; refreshing manuals
@@ -584,9 +583,6 @@
  (filename "Filename: ")
  (create "Create")
  (please-choose-an-executable-filename "Please choose a filename to save the executable.")
- (help-on-executable-types "Help on Executable Types")
- (help-on-base-executable "Help on Base Executable")
-
  
  (create-servlet "Create Servlet...")
   

@@ -937,13 +937,18 @@
  "@flink drscheme:language:extend-language-interface %"
  ".")
 
-(drscheme:language:put-executable-file
- ((is-a?/c top-level-window<%>) string? . -> . (union false? string?))
- (parent program-filename)
+(drscheme:language:put-executable
+ ((is-a?/c top-level-window<%>) string? boolean? boolean? . -> . (union false? string?))
+ (parent program-filename mred? launcher?)
  "Calls the MrEd primitive"
  "@flink put-file"
  "with arguments appropriate for creating an executable"
- "from the file \\var{program-filename}. ")
+ "from the file \\var{program-filename}. "
+ ""
+ "The arguments \\var{mred?} and \\var{launcher?} indicate"
+ "what type of executable this should be (and the dialog"
+ "may be slightly different on some platforms, depending"
+ "on these arguments).")
 
 (drscheme:language:create-executable-gui
  ((union false? (is-a?/c top-level-window<%>))

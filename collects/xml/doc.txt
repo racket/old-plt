@@ -5,8 +5,10 @@ Basic XML Data Types
 ====================
 
 Document:
-       This structure represents an XML document. The only interesting part is
-       the document-element, which contains all the content.
+       This structure represents an XML document.  The only useful part is
+       the document-element, which contains all the content.  The rest of
+       of the structure contains DTD information, which isn't supported,
+       and processing-instructions.
 
 Element:
        Each pair of start/end tags and everything in between is an element.
@@ -27,10 +29,10 @@ Functions
 
 > write-xml : Document [Output-port] -> Void
        writes a document to the given or current output port, currently
-       ignoring the optional Document Type Declaration (DTD)
+       ignoring everything except the document's root element.
 
 > write-xml/content : Content [Output-port] -> Void
-       writes a document to the given or current output port
+       writes a document's contents to the given or current output port
 
 > display-xml : Document [Output-port] -> Void
        just like write-xml, but newlines and indentation make the output more
@@ -52,9 +54,21 @@ Parameters
 > empty-tag-shorthand : Bool
        Default: #t
        This determines if the output functions should use the <empty/> tag
-       notation instead of writing <empty></empty>.  The first form looks
-       nicer.  However, the shorthand isn't part of html, so most browsers
-       don't support it.
+       notation instead of writing <empty></empty>.  The first form is the
+       preferred XML notation.  However, it's not part of HTML, so this
+       parameter provides backward compatability.
+
+Examples
+========
+
+Reading an Xexpression:
+       (xml->xexpr (document-element (read-xml input-port)))
+
+Writing an Xexpression:
+       (write-xml/content (xexpr->xml `(html (head (title ,banner))
+					     (body ((bgcolor "white"))
+						   ,text)))
+			  output-port)
 
 What this Library Doesn't Provide
 =================================
@@ -63,7 +77,7 @@ What this Library Doesn't Provide
        Writing or displaying document headers
        Validation
        Proper reading of white space
-       Reading user defined entites
+       Reading user-defined entites
        Unicode support
 
 XML Datatype Details
@@ -77,7 +91,7 @@ Note: Xexpr is the only important one to understand.  Even then,
 > Xexpr ::= String
          |  Processing-instruction
          |  Symbol ;; symbolic entities such as &nbsp;
-         |  Number ;; numeric entities like &20;
+         |  Number ;; numeric entities like &#20;
          |  (list* Symbol (listof (list Symbol String)) (list Xexpr))
          |  (cons Symbol (listof Xexpr)) ;; an element with no attributes
 
@@ -106,7 +120,7 @@ Note: Xexpr is the only important one to understand.  Even then,
 > Location ::= Nat
             |  Symbol
 
-Note: I have never used the following structures for anything:
+Note:  The following structures are neither fully supported nor very useful:
 
 > Prolog ::= (make-prolog XMLDeclare (listof Processing-instruction) DocType
                           (listof Processing-instruction))

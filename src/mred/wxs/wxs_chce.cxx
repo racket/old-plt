@@ -45,7 +45,7 @@ static Scheme_Object *bundle_symset_choiceStyle(int v) {
 #define CALLBACKCLASS os_wxChoice
 #define CB_REALCLASS wxChoice
 #define CB_UNBUNDLE objscheme_unbundle_wxChoice
-#define CB_USER "wx:choice%::initialization"
+#define CB_USER "choice%::initialization"
 
 #undef CB_TOSCHEME
 #undef CB_TOC
@@ -218,7 +218,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:choice%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "choice%::pre-on-event"", extracting return value");
   }
 }
 
@@ -253,7 +253,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:choice%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "choice%::pre-on-char"", extracting return value");
   }
 }
 
@@ -364,7 +364,7 @@ static Scheme_Object *os_wxChoiceGetString(Scheme_Object *obj, int n,  Scheme_Ob
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:choice%::get-string");
+  x0 = objscheme_unbundle_integer(p[0], "choice%::get-string");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
@@ -382,7 +382,7 @@ static Scheme_Object *os_wxChoiceSetStringSelection(Scheme_Object *obj, int n,  
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:choice%::set-string-selection");
+  x0 = (string)objscheme_unbundle_string(p[0], "choice%::set-string-selection");
 
   
   ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->SetStringSelection(x0);
@@ -400,7 +400,7 @@ static Scheme_Object *os_wxChoiceSetSelection(Scheme_Object *obj, int n,  Scheme
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:choice%::set-selection");
+  x0 = objscheme_unbundle_integer(p[0], "choice%::set-selection");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->SetSelection(x0);
@@ -453,7 +453,7 @@ static Scheme_Object *os_wxChoiceFindString(Scheme_Object *obj, int n,  Scheme_O
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:choice%::find-string");
+  x0 = (string)objscheme_unbundle_string(p[0], "choice%::find-string");
 
   
   r = ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->FindString(x0);
@@ -504,7 +504,7 @@ static Scheme_Object *os_wxChoiceAppend(Scheme_Object *obj, int n,  Scheme_Objec
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:choice%::append");
+  x0 = (string)objscheme_unbundle_string(p[0], "choice%::append");
 
   
   ((wxChoice *)((Scheme_Class_Object *)obj)->primdata)->Append(x0);
@@ -524,8 +524,8 @@ static Scheme_Object *os_wxChoicePreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:choice%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "wx:choice%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "choice%::pre-on-event", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "choice%::pre-on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -548,8 +548,8 @@ static Scheme_Object *os_wxChoicePreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:choice%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "wx:choice%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "choice%::pre-on-char", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "choice%::pre-on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -571,8 +571,8 @@ static Scheme_Object *os_wxChoiceOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:choice%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "wx:choice%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "choice%::on-size");
+  x1 = objscheme_unbundle_integer(p[1], "choice%::on-size");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -641,24 +641,24 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
   Scheme_Object *tmp_callback = NULL;
   if ((n < 3) ||(n > 10)) 
-    scheme_wrong_count("wx:choice%::initialization", 3, 10, n, p);
-  x0 = objscheme_unbundle_wxPanel(p[0], "wx:choice%::initialization", 0);
+    scheme_wrong_count("choice%::initialization", 3, 10, n, p);
+  x0 = objscheme_unbundle_wxPanel(p[0], "choice%::initialization", 0);
   x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "wx:choice%::initialization");
+  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "choice%::initialization");
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], "wx:choice%::initialization");
+    x3 = objscheme_unbundle_integer(p[3], "choice%::initialization");
   } else
     x3 = -1;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "wx:choice%::initialization");
+    x4 = objscheme_unbundle_integer(p[4], "choice%::initialization");
   } else
     x4 = -1;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "wx:choice%::initialization");
+    x5 = objscheme_unbundle_integer(p[5], "choice%::initialization");
   } else
     x5 = -1;
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "wx:choice%::initialization");
+    x6 = objscheme_unbundle_integer(p[6], "choice%::initialization");
   } else
     x6 = -1;
   if (n > 7) {
@@ -666,15 +666,15 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x8 = NULL;
   if (n > 8) {
-    x9 = unbundle_symset_choiceStyle(p[8], "wx:choice%::initialization");
+    x9 = unbundle_symset_choiceStyle(p[8], "choice%::initialization");
   } else
     x9 = 0;
   if (n > 9) {
-    x10 = (string)objscheme_unbundle_string(p[9], "wx:choice%::initialization");
+    x10 = (string)objscheme_unbundle_string(p[9], "choice%::initialization");
   } else
     x10 = "checkBox";
 
-  x8 = __MakestringArray((7 < n) ? p[7] : scheme_null, &x7, "wx:choice%::initialization");if (!x5) x5 = -1;if (!x6) x6 = -1;
+  x8 = __MakestringArray((7 < n) ? p[7] : scheme_null, &x7, "choice%::initialization");if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = new os_wxChoice(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10);
   delete[] x8;
   realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -687,16 +687,16 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *objscheme_classname_os_wxChoice(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:choice%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:choice%");
+  if (n) scheme_wrong_count("choice%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("choice%");
 }
 
 void objscheme_setup_wxChoice(void *env)
 {
 if (os_wxChoice_class) {
-    objscheme_add_global_class(os_wxChoice_class,  "wx:choice%", env);
+    objscheme_add_global_class(os_wxChoice_class, "choice%", env);
 } else {
-  os_wxChoice_class = objscheme_def_prim_class(env, "wx:choice%", "wx:item%", os_wxChoice_ConstructScheme, 15);
+  os_wxChoice_class = objscheme_def_prim_class(env, "choice%", "item%", os_wxChoice_ConstructScheme, 15);
 
   scheme_add_method_w_arity(os_wxChoice_class,"get-class-name",objscheme_classname_os_wxChoice, 0, 0);
 
@@ -731,7 +731,7 @@ int objscheme_istype_wxChoice(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:choice% object or " XC_NULL_STR: "wx:choice% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "choice% object or " XC_NULL_STR: "choice% object", -1, 0, &obj);
     return 0;
   }
 }

@@ -22,16 +22,14 @@
 
 @INCLUDE wxs_ornt.xci
 
-/* The derivation wx:panel -> wx:canvas is a lie for Xt */
-@CLASSBASE wxPanel "wx:panel":"wx:canvas"
+/* The derivation panel -> canvas is a lie for Xt */
+@CLASSBASE wxPanel "panel":"canvas"
 
 @CLASSID wxTYPE_PANEL
 
 @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> frame
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[panelStyle]=0,string="panel") : : /NOZERO[3]|NOZERO[4] <> panel parent
 
-@ "fit" : void Fit();
-@ "get-default-item" : wxButton^ GetDefaultItem()
 @ "get-item-cursor" : void GetCursor(int*,int*);
 @ "set-item-cursor" : void SetItemCursor(int,int);
 
@@ -43,21 +41,8 @@
 @ "set-label-position" : void SetLabelPosition(SYM[orientation]);
 @ "get-label-position" : SYM[orientation] GetLabelPosition();
 
-@ "get-horizontal-spacing" : int GetHorizontalSpacing();
-@ "get-vertical-spacing" : int GetVerticalSpacing();
-@ "set-horizontal-spacing" : void SetHorizontalSpacing(int)
-@ "set-vertical-spacing" : void SetVerticalSpacing(int)
-
-@ "new-line" : void NewLine(); <> no argument
-@ "new-line" : void NewLine(int); <> tab amount
-
-@ "get-panel-dc" : wxDC! GetDC();
-
 @INCLUDE wxs_ifnt.xci
 @INCLUDE wxs_icol.xci
-
-@ "tab" : void Tab(); <> no argument
-@ "tab" : void Tab(int); <> tab amount
 
 @END
 
@@ -66,13 +51,13 @@
 @SYM "no-caption" : wxNO_CAPTION
 @ENDSYMBOLS
 
-@CLASSBASE wxDialogBox "wx:dialog-box" : "wx:panel"
+@CLASSBASE wxDialogBox "dialog-box" : "panel"
 
 @CLASSID wxTYPE_DIALOG_BOX
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=0,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
+@CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=0,string="dialogBox"); : : /DLGORFRAME[0."dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci

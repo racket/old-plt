@@ -66,7 +66,7 @@ static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n, 
 
   if (n != 1) scheme_wrong_count("set-time-stamp", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:event%::time-stamp");
+  v = objscheme_unbundle_integer(p[0], "event%::time-stamp");
   ((wxEvent *)cobj->primdata)->timeStamp = v;
 
   return scheme_void;
@@ -79,7 +79,7 @@ static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:event%::initialization", 0, 0, n, p);
+    scheme_wrong_count("event%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxEvent(obj);
@@ -94,16 +94,16 @@ static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *objscheme_classname_os_wxEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:event%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:event%");
+  if (n) scheme_wrong_count("event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("event%");
 }
 
 void objscheme_setup_wxEvent(void *env)
 {
 if (os_wxEvent_class) {
-    objscheme_add_global_class(os_wxEvent_class,  "wx:event%", env);
+    objscheme_add_global_class(os_wxEvent_class, "event%", env);
 } else {
-  os_wxEvent_class = objscheme_def_prim_class(env, "wx:event%", "wx:object%", os_wxEvent_ConstructScheme, 3);
+  os_wxEvent_class = objscheme_def_prim_class(env, "event%", "object%", os_wxEvent_ConstructScheme, 3);
 
   scheme_add_method_w_arity(os_wxEvent_class,"get-class-name",objscheme_classname_os_wxEvent, 0, 0);
 
@@ -126,7 +126,7 @@ int objscheme_istype_wxEvent(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:event% object or " XC_NULL_STR: "wx:event% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "event% object or " XC_NULL_STR: "event% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -292,7 +292,7 @@ static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, 
 
   if (n != 1) scheme_wrong_count("set-event-type", 1, 1, n, p);
 
-  v = unbundle_symset_actionType(p[0], "wx:control-event%::event-type");
+  v = unbundle_symset_actionType(p[0], "control-event%::event-type");
   ((wxCommandEvent *)cobj->primdata)->eventType = v;
 
   return scheme_void;
@@ -306,8 +306,8 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
 
   
   if (n != 1) 
-    scheme_wrong_count("wx:control-event%::initialization", 1, 1, n, p);
-  x0 = unbundle_symset_actionType(p[0], "wx:control-event%::initialization");
+    scheme_wrong_count("control-event%::initialization", 1, 1, n, p);
+  x0 = unbundle_symset_actionType(p[0], "control-event%::initialization");
 
   
   realobj = new os_wxCommandEvent(obj, x0);
@@ -322,16 +322,16 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
 static Scheme_Object *objscheme_classname_os_wxCommandEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:control-event%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:control-event%");
+  if (n) scheme_wrong_count("control-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("control-event%");
 }
 
 void objscheme_setup_wxCommandEvent(void *env)
 {
 if (os_wxCommandEvent_class) {
-    objscheme_add_global_class(os_wxCommandEvent_class,  "wx:control-event%", env);
+    objscheme_add_global_class(os_wxCommandEvent_class, "control-event%", env);
 } else {
-  os_wxCommandEvent_class = objscheme_def_prim_class(env, "wx:control-event%", "wx:event%", os_wxCommandEvent_ConstructScheme, 3);
+  os_wxCommandEvent_class = objscheme_def_prim_class(env, "control-event%", "event%", os_wxCommandEvent_ConstructScheme, 3);
 
   scheme_add_method_w_arity(os_wxCommandEvent_class,"get-class-name",objscheme_classname_os_wxCommandEvent, 0, 0);
 
@@ -354,7 +354,7 @@ int objscheme_istype_wxCommandEvent(Scheme_Object *obj, const char *stop, int nu
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:control-event% object or " XC_NULL_STR: "wx:control-event% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "control-event% object or " XC_NULL_STR: "control-event% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -445,7 +445,7 @@ static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n
 
   if (n != 1) scheme_wrong_count("set-menu-id", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:popup-event%::menu-id");
+  v = objscheme_unbundle_integer(p[0], "popup-event%::menu-id");
   ((wxPopupEvent *)cobj->primdata)->menuId = v;
 
   return scheme_void;
@@ -458,7 +458,7 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:popup-event%::initialization", 0, 0, n, p);
+    scheme_wrong_count("popup-event%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxPopupEvent(obj);
@@ -473,16 +473,16 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,
 static Scheme_Object *objscheme_classname_os_wxPopupEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:popup-event%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:popup-event%");
+  if (n) scheme_wrong_count("popup-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("popup-event%");
 }
 
 void objscheme_setup_wxPopupEvent(void *env)
 {
 if (os_wxPopupEvent_class) {
-    objscheme_add_global_class(os_wxPopupEvent_class,  "wx:popup-event%", env);
+    objscheme_add_global_class(os_wxPopupEvent_class, "popup-event%", env);
 } else {
-  os_wxPopupEvent_class = objscheme_def_prim_class(env, "wx:popup-event%", "wx:control-event%", os_wxPopupEvent_ConstructScheme, 3);
+  os_wxPopupEvent_class = objscheme_def_prim_class(env, "popup-event%", "control-event%", os_wxPopupEvent_ConstructScheme, 3);
 
   scheme_add_method_w_arity(os_wxPopupEvent_class,"get-class-name",objscheme_classname_os_wxPopupEvent, 0, 0);
 
@@ -505,7 +505,7 @@ int objscheme_istype_wxPopupEvent(Scheme_Object *obj, const char *stop, int null
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:popup-event% object or " XC_NULL_STR: "wx:popup-event% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "popup-event% object or " XC_NULL_STR: "popup-event% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -693,7 +693,7 @@ static Scheme_Object *objscheme_wxScrollEvent_SetmoveType(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-event-type", 1, 1, n, p);
 
-  v = unbundle_symset_scrollMoveType(p[0], "wx:scroll-event%::event-type");
+  v = unbundle_symset_scrollMoveType(p[0], "scroll-event%::event-type");
   ((wxScrollEvent *)cobj->primdata)->moveType = v;
 
   return scheme_void;
@@ -723,7 +723,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Setdirection(Scheme_Object *obj, i
 
   if (n != 1) scheme_wrong_count("set-direction", 1, 1, n, p);
 
-  v = unbundle_symset_orientation(p[0], "wx:scroll-event%::direction");
+  v = unbundle_symset_orientation(p[0], "scroll-event%::direction");
   ((wxScrollEvent *)cobj->primdata)->direction = v;
 
   return scheme_void;
@@ -753,7 +753,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Setpos(Scheme_Object *obj, int n, 
 
   if (n != 1) scheme_wrong_count("set-position", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:scroll-event%::position");
+  v = objscheme_unbundle_integer(p[0], "scroll-event%::position");
   ((wxScrollEvent *)cobj->primdata)->pos = v;
 
   return scheme_void;
@@ -766,7 +766,7 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:scroll-event%::initialization", 0, 0, n, p);
+    scheme_wrong_count("scroll-event%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxScrollEvent(obj);
@@ -781,16 +781,16 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n
 static Scheme_Object *objscheme_classname_os_wxScrollEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:scroll-event%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:scroll-event%");
+  if (n) scheme_wrong_count("scroll-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("scroll-event%");
 }
 
 void objscheme_setup_wxScrollEvent(void *env)
 {
 if (os_wxScrollEvent_class) {
-    objscheme_add_global_class(os_wxScrollEvent_class,  "wx:scroll-event%", env);
+    objscheme_add_global_class(os_wxScrollEvent_class, "scroll-event%", env);
 } else {
-  os_wxScrollEvent_class = objscheme_def_prim_class(env, "wx:scroll-event%", "wx:event%", os_wxScrollEvent_ConstructScheme, 7);
+  os_wxScrollEvent_class = objscheme_def_prim_class(env, "scroll-event%", "event%", os_wxScrollEvent_ConstructScheme, 7);
 
   scheme_add_method_w_arity(os_wxScrollEvent_class,"get-class-name",objscheme_classname_os_wxScrollEvent, 0, 0);
 
@@ -817,7 +817,7 @@ int objscheme_istype_wxScrollEvent(Scheme_Object *obj, const char *stop, int nul
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:scroll-event% object or " XC_NULL_STR: "wx:scroll-event% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "scroll-event% object or " XC_NULL_STR: "scroll-event% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1277,7 +1277,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(Scheme_Object *obj, int n,
 
   if (n != 1) scheme_wrong_count("set-key-code", 1, 1, n, p);
 
-  v = unbundle_symset_keyCode(p[0], "wx:key-event%::key-code");
+  v = unbundle_symset_keyCode(p[0], "key-event%::key-code");
   ((wxKeyEvent *)cobj->primdata)->keyCode = v;
 
   return scheme_void;
@@ -1307,7 +1307,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetshiftDown(Scheme_Object *obj, int 
 
   if (n != 1) scheme_wrong_count("set-shift-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:key-event%::shift-down");
+  v = objscheme_unbundle_bool(p[0], "key-event%::shift-down");
   ((wxKeyEvent *)cobj->primdata)->shiftDown = v;
 
   return scheme_void;
@@ -1337,7 +1337,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetcontrolDown(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-control-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:key-event%::control-down");
+  v = objscheme_unbundle_bool(p[0], "key-event%::control-down");
   ((wxKeyEvent *)cobj->primdata)->controlDown = v;
 
   return scheme_void;
@@ -1367,7 +1367,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetmetaDown(Scheme_Object *obj, int n
 
   if (n != 1) scheme_wrong_count("set-meta-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:key-event%::meta-down");
+  v = objscheme_unbundle_bool(p[0], "key-event%::meta-down");
   ((wxKeyEvent *)cobj->primdata)->metaDown = v;
 
   return scheme_void;
@@ -1397,7 +1397,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetaltDown(Scheme_Object *obj, int n,
 
   if (n != 1) scheme_wrong_count("set-alt-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:key-event%::alt-down");
+  v = objscheme_unbundle_bool(p[0], "key-event%::alt-down");
   ((wxKeyEvent *)cobj->primdata)->altDown = v;
 
   return scheme_void;
@@ -1427,7 +1427,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Setx(Scheme_Object *obj, int n,  Sche
 
   if (n != 1) scheme_wrong_count("set-x", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "wx:key-event%::x");
+  v = objscheme_unbundle_float(p[0], "key-event%::x");
   ((wxKeyEvent *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -1457,7 +1457,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Sety(Scheme_Object *obj, int n,  Sche
 
   if (n != 1) scheme_wrong_count("set-y", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "wx:key-event%::y");
+  v = objscheme_unbundle_float(p[0], "key-event%::y");
   ((wxKeyEvent *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -1471,7 +1471,7 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:key-event%::initialization", 0, 0, n, p);
+    scheme_wrong_count("key-event%::initialization", 0, 0, n, p);
 
   x0=wxEVENT_TYPE_CHAR;
   realobj = new os_wxKeyEvent(obj, x0);
@@ -1486,16 +1486,16 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
 static Scheme_Object *objscheme_classname_os_wxKeyEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:key-event%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:key-event%");
+  if (n) scheme_wrong_count("key-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("key-event%");
 }
 
 void objscheme_setup_wxKeyEvent(void *env)
 {
 if (os_wxKeyEvent_class) {
-    objscheme_add_global_class(os_wxKeyEvent_class,  "wx:key-event%", env);
+    objscheme_add_global_class(os_wxKeyEvent_class, "key-event%", env);
 } else {
-  os_wxKeyEvent_class = objscheme_def_prim_class(env, "wx:key-event%", "wx:event%", os_wxKeyEvent_ConstructScheme, 15);
+  os_wxKeyEvent_class = objscheme_def_prim_class(env, "key-event%", "event%", os_wxKeyEvent_ConstructScheme, 15);
 
   scheme_add_method_w_arity(os_wxKeyEvent_class,"get-class-name",objscheme_classname_os_wxKeyEvent, 0, 0);
 
@@ -1530,7 +1530,7 @@ int objscheme_istype_wxKeyEvent(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:key-event% object or " XC_NULL_STR: "wx:key-event% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "key-event% object or " XC_NULL_STR: "key-event% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1808,7 +1808,7 @@ static Scheme_Object *os_wxMouseEventButtonUp(Scheme_Object *obj, int n,  Scheme
 
   
   if (n > 0) {
-    x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-up?");
+    x0 = unbundle_symset_buttonId(p[0], "mouse-event%::button-up?");
   } else
     x0 = -1;
 
@@ -1830,7 +1830,7 @@ static Scheme_Object *os_wxMouseEventButtonDown(Scheme_Object *obj, int n,  Sche
 
   
   if (n > 0) {
-    x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-down?");
+    x0 = unbundle_symset_buttonId(p[0], "mouse-event%::button-down?");
   } else
     x0 = -1;
 
@@ -1852,7 +1852,7 @@ static Scheme_Object *os_wxMouseEventButtonDClick(Scheme_Object *obj, int n,  Sc
 
   
   if (n > 0) {
-    x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-dclick?");
+    x0 = unbundle_symset_buttonId(p[0], "mouse-event%::button-dclick?");
   } else
     x0 = -1;
 
@@ -1873,7 +1873,7 @@ static Scheme_Object *os_wxMouseEventButton(Scheme_Object *obj, int n,  Scheme_O
   int x0;
 
   
-  x0 = unbundle_symset_buttonId(p[0], "wx:mouse-event%::button-changed?");
+  x0 = unbundle_symset_buttonId(p[0], "mouse-event%::button-changed?");
 
   
   r = ((wxMouseEvent *)((Scheme_Class_Object *)obj)->primdata)->Button(x0);
@@ -1907,7 +1907,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SeteventType(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-event-type", 1, 1, n, p);
 
-  v = unbundle_symset_mouseEventType(p[0], "wx:mouse-event%::event-type");
+  v = unbundle_symset_mouseEventType(p[0], "mouse-event%::event-type");
   ((wxMouseEvent *)cobj->primdata)->eventType = v;
 
   return scheme_void;
@@ -1937,7 +1937,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetleftDown(Scheme_Object *obj, int
 
   if (n != 1) scheme_wrong_count("set-left-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:mouse-event%::left-down");
+  v = objscheme_unbundle_bool(p[0], "mouse-event%::left-down");
   ((wxMouseEvent *)cobj->primdata)->leftDown = v;
 
   return scheme_void;
@@ -1967,7 +1967,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetmiddleDown(Scheme_Object *obj, i
 
   if (n != 1) scheme_wrong_count("set-middle-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:mouse-event%::middle-down");
+  v = objscheme_unbundle_bool(p[0], "mouse-event%::middle-down");
   ((wxMouseEvent *)cobj->primdata)->middleDown = v;
 
   return scheme_void;
@@ -1997,7 +1997,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetrightDown(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-right-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:mouse-event%::right-down");
+  v = objscheme_unbundle_bool(p[0], "mouse-event%::right-down");
   ((wxMouseEvent *)cobj->primdata)->rightDown = v;
 
   return scheme_void;
@@ -2027,7 +2027,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetshiftDown(Scheme_Object *obj, in
 
   if (n != 1) scheme_wrong_count("set-shift-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:mouse-event%::shift-down");
+  v = objscheme_unbundle_bool(p[0], "mouse-event%::shift-down");
   ((wxMouseEvent *)cobj->primdata)->shiftDown = v;
 
   return scheme_void;
@@ -2057,7 +2057,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetcontrolDown(Scheme_Object *obj, 
 
   if (n != 1) scheme_wrong_count("set-control-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:mouse-event%::control-down");
+  v = objscheme_unbundle_bool(p[0], "mouse-event%::control-down");
   ((wxMouseEvent *)cobj->primdata)->controlDown = v;
 
   return scheme_void;
@@ -2087,7 +2087,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetmetaDown(Scheme_Object *obj, int
 
   if (n != 1) scheme_wrong_count("set-meta-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:mouse-event%::meta-down");
+  v = objscheme_unbundle_bool(p[0], "mouse-event%::meta-down");
   ((wxMouseEvent *)cobj->primdata)->metaDown = v;
 
   return scheme_void;
@@ -2117,7 +2117,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetaltDown(Scheme_Object *obj, int 
 
   if (n != 1) scheme_wrong_count("set-alt-down", 1, 1, n, p);
 
-  v = objscheme_unbundle_bool(p[0], "wx:mouse-event%::alt-down");
+  v = objscheme_unbundle_bool(p[0], "mouse-event%::alt-down");
   ((wxMouseEvent *)cobj->primdata)->altDown = v;
 
   return scheme_void;
@@ -2147,7 +2147,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Setx(Scheme_Object *obj, int n,  Sc
 
   if (n != 1) scheme_wrong_count("set-x", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "wx:mouse-event%::x");
+  v = objscheme_unbundle_float(p[0], "mouse-event%::x");
   ((wxMouseEvent *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -2177,7 +2177,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Sety(Scheme_Object *obj, int n,  Sc
 
   if (n != 1) scheme_wrong_count("set-y", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "wx:mouse-event%::y");
+  v = objscheme_unbundle_float(p[0], "mouse-event%::y");
   ((wxMouseEvent *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -2191,8 +2191,8 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
 
   
   if (n != 1) 
-    scheme_wrong_count("wx:mouse-event%::initialization", 1, 1, n, p);
-  x0 = unbundle_symset_mouseEventType(p[0], "wx:mouse-event%::initialization");
+    scheme_wrong_count("mouse-event%::initialization", 1, 1, n, p);
+  x0 = unbundle_symset_mouseEventType(p[0], "mouse-event%::initialization");
 
   
   realobj = new os_wxMouseEvent(obj, x0);
@@ -2207,16 +2207,16 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
 static Scheme_Object *objscheme_classname_os_wxMouseEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:mouse-event%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:mouse-event%");
+  if (n) scheme_wrong_count("mouse-event%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("mouse-event%");
 }
 
 void objscheme_setup_wxMouseEvent(void *env)
 {
 if (os_wxMouseEvent_class) {
-    objscheme_add_global_class(os_wxMouseEvent_class,  "wx:mouse-event%", env);
+    objscheme_add_global_class(os_wxMouseEvent_class, "mouse-event%", env);
 } else {
-  os_wxMouseEvent_class = objscheme_def_prim_class(env, "wx:mouse-event%", "wx:event%", os_wxMouseEvent_ConstructScheme, 29);
+  os_wxMouseEvent_class = objscheme_def_prim_class(env, "mouse-event%", "event%", os_wxMouseEvent_ConstructScheme, 29);
 
   scheme_add_method_w_arity(os_wxMouseEvent_class,"get-class-name",objscheme_classname_os_wxMouseEvent, 0, 0);
 
@@ -2265,7 +2265,7 @@ int objscheme_istype_wxMouseEvent(Scheme_Object *obj, const char *stop, int null
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:mouse-event% object or " XC_NULL_STR: "wx:mouse-event% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "mouse-event% object or " XC_NULL_STR: "mouse-event% object", -1, 0, &obj);
     return 0;
   }
 }

@@ -9,7 +9,7 @@
 
 @INCLUDE wxs_fcs.xci
 
-@CLASSBASE wxMediaPasteboard "wx:media-pasteboard" : "wx:media-buffer"
+@CLASSBASE wxMediaPasteboard "pasteboard-editor" : "editor"
 
 @CREATOR ()
 
@@ -20,12 +20,12 @@
 @SETMARK Z = d
 @INCLUDE wxs_mbuf.xci
 
-@ "insert" : void Insert(wxSnip!,float,float); <> wx:snip% with location
-@ "insert" : void Insert(wxSnip!,wxSnip^); <> wx:snip% with before-wx:snip%
-@ "insert" : void Insert(wxSnip!,wxSnip^,float,float); <> wx:snip% with before-wx:snip% and location
+@ "insert" : void Insert(wxSnip!,float,float); <> snip% with location
+@ "insert" : void Insert(wxSnip!,wxSnip^); <> snip% with before-snip%
+@ "insert" : void Insert(wxSnip!,wxSnip^,float,float); <> snip% with before-snip% and location
 
 @ "delete" : void Delete(); <> no argument
-@ "delete" : void Delete(wxSnip!); <> wx:snip%
+@ "delete" : void Delete(wxSnip!); <> snip%
 
 @ v "do-copy" : void DoCopy(long,bool);
 @ v "do-paste" : void DoPaste(long);
@@ -35,8 +35,8 @@
 @ "remove" : void Remove(wxSnip!);
 
 @ "move-to" : void MoveTo(wxSnip!,float,float);
-@ "move" : void Move(wxSnip!,float,float); <> wx:snip%
-@ "move" : void Move(float,float); <> without wx:snip%
+@ "move" : void Move(wxSnip!,float,float); <> snip%
+@ "move" : void Move(float,float); <> without snip%
 
 @ "resize" : bool Resize(wxSnip!, float, float);
 
@@ -45,11 +45,11 @@
 @ "set-before" : void SetBefore(wxSnip!,wxSnip^);
 @ "set-after" : void SetAfter(wxSnip!,wxSnip^);
   
-@ "change-style" : void ChangeStyle(wxStyleDelta^,wxSnip^); <> wx:style-delta% and wx:snip%
-@ "change-style" : void ChangeStyle(wxStyle^,wxSnip^=NULL); <> wx:style%
+@ "change-style" : void ChangeStyle(wxStyleDelta^,wxSnip^); <> style-delta% and snip%
+@ "change-style" : void ChangeStyle(wxStyle^,wxSnip^=NULL); <> style%
 
 @ "set-selected" : void SetSelected(wxSnip!);
-@ "add-selected" : void AddSelected(wxSnip!); <> wx:snip%
+@ "add-selected" : void AddSelected(wxSnip!); <> snip%
 @ "add-selected" : void AddSelected(float,float,float,float); <> rectangle
 @ "no-selected" :  void NoSelected();
 @ "remove-selected" :  void RemoveSelected(wxSnip!);

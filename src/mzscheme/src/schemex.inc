@@ -286,19 +286,20 @@
   scheme_extension_table->scheme_make_struct_instance = scheme_make_struct_instance;
   scheme_extension_table->scheme_is_struct_instance = scheme_is_struct_instance;
 #ifndef NO_OBJECT_SYSTEM
-  scheme_extension_table->scheme_make_class = scheme_make_class;
-  scheme_extension_table->scheme_add_method = scheme_add_method;
-  scheme_extension_table->scheme_add_method_w_arity = scheme_add_method_w_arity;
-  scheme_extension_table->scheme_made_class = scheme_made_class;
-  scheme_extension_table->scheme_make_object = scheme_make_object;
-  scheme_extension_table->scheme_make_uninited_object = scheme_make_uninited_object;
-  scheme_extension_table->scheme_find_ivar = scheme_find_ivar;
   scheme_extension_table->scheme_is_subclass = scheme_is_subclass;
   scheme_extension_table->scheme_is_implementation = scheme_is_implementation;
   scheme_extension_table->scheme_is_interface_extension = scheme_is_interface_extension;
   scheme_extension_table->scheme_is_a = scheme_is_a;
   scheme_extension_table->scheme_get_class_name = scheme_get_class_name;
   scheme_extension_table->scheme_get_interface_name = scheme_get_interface_name;
+  scheme_extension_table->scheme_make_object = scheme_make_object;
+  scheme_extension_table->scheme_make_uninited_object = scheme_make_uninited_object;
+  scheme_extension_table->scheme_find_ivar = scheme_find_ivar;
+  scheme_extension_table->scheme_make_class = scheme_make_class;
+  scheme_extension_table->scheme_add_method = scheme_add_method;
+  scheme_extension_table->scheme_add_method_w_arity = scheme_add_method_w_arity;
+  scheme_extension_table->scheme_made_class = scheme_made_class;
+  scheme_extension_table->scheme_class_to_interface = scheme_class_to_interface;
   scheme_extension_table->scheme_make_class_assembly = scheme_make_class_assembly;
   scheme_extension_table->scheme_create_class = scheme_create_class;
   scheme_extension_table->scheme_make_interface_assembly = scheme_make_interface_assembly;

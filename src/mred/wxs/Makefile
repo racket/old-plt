@@ -160,7 +160,7 @@ wxs_win.cxx : wxs_win.xc wxs_win.xci $(XCDEPEND)
 
 WXSCC = $(CXX) $(WXSCFLAGS) $(LOCALFLAGS) -c
 
-$(OBJDIR)/wxscheme.o : wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) wxsmred.h
+$(OBJDIR)/wxscheme.o : wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) wxsmred.h wrap.inc
 	$(WXSCC) wxscheme.cxx -o $(OBJDIR)/wxscheme.o 
 
 $(OBJDIR)/xcglue.o : ../../mzscheme/utils/xcglue.c ../../mzscheme/utils/xcglue.h ../../mzscheme/src/stypes.h

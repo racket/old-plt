@@ -1572,14 +1572,7 @@ void wxMediaBuffer::Print(char *filename, Bool interactive, Bool fitToPage,
   int ps;
 
 #ifndef wx_x
-  if (output_mode == 2) {
-    char *choices[2] = {"PostScript File", "Normal"};
-    int choice = wxGetSingleChoiceIndex("Print as:", "Print Form", 2, choices);
-    if (choice == -1)
-      return;
-    ps = !choice;
-  } else
-    ps = (output_mode == 1);
+  ps = (output_mode == 1);
 #else
   ps = 1;
 #endif

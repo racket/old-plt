@@ -109,7 +109,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
   Scheme_Object **a;
 
   if (!SCHEME_VECTORP(vec))
-    scheme_wrong_type("wx:media-stream-in-base::read", 
+    scheme_wrong_type("editor-stream-in-base::read", 
 		      "character vector", -1, 0, &vec);
 
   c = *len = SCHEME_VEC_SIZE(vec);
@@ -119,7 +119,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < c; i++) {
     if (!SCHEME_CHARP(a[i]))
-      scheme_wrong_type("wx:media-stream-in-base::read", 
+      scheme_wrong_type("editor-stream-in-base::read", 
 			"character vector", -1, 0, &vec);
     r[i] = SCHEME_CHAR_VAL(a[i]);
   }
@@ -135,7 +135,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
   if (!vec)
     vec = scheme_make_vector(len, scheme_make_char(0));
   else if (!SCHEME_VECTORP(vec))
-    scheme_wrong_type("wx:media-stream-in-base::read", 
+    scheme_wrong_type("editor-stream-in-base::read", 
 		      "character vector", -1, 0, &vec);
   
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < len; i++)
@@ -204,7 +204,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_integer(v, "wx:media-stream-in-base%::read"", extracting return value");
+  return objscheme_unbundle_integer(v, "editor-stream-in-base%::read"", extracting return value");
   }
 }
 
@@ -237,7 +237,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-stream-in-base%::bad?"", extracting return value");
+  return objscheme_unbundle_bool(v, "editor-stream-in-base%::bad?"", extracting return value");
   }
 }
 
@@ -336,7 +336,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_integer(v, "wx:media-stream-in-base%::tell"", extracting return value");
+  return objscheme_unbundle_integer(v, "editor-stream-in-base%::tell"", extracting return value");
   }
 }
 
@@ -391,7 +391,7 @@ static Scheme_Object *os_wxMediaStreamInBaseSkip(Scheme_Object *obj, int n,  Sch
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-in-base%::skip");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-in-base%::skip");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -412,7 +412,7 @@ static Scheme_Object *os_wxMediaStreamInBaseSeek(Scheme_Object *obj, int n,  Sch
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-in-base%::seek");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-in-base%::seek");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -452,7 +452,7 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj,
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:media-stream-in-base%::initialization", 0, 0, n, p);
+    scheme_wrong_count("editor-stream-in-base%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxMediaStreamInBase(obj);
@@ -467,16 +467,16 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj,
 static Scheme_Object *objscheme_classname_os_wxMediaStreamInBase(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:media-stream-in-base%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:media-stream-in-base%");
+  if (n) scheme_wrong_count("editor-stream-in-base%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("editor-stream-in-base%");
 }
 
 void objscheme_setup_wxMediaStreamInBase(void *env)
 {
 if (os_wxMediaStreamInBase_class) {
-    objscheme_add_global_class(os_wxMediaStreamInBase_class,  "wx:media-stream-in-base%", env);
+    objscheme_add_global_class(os_wxMediaStreamInBase_class, "editor-stream-in-base%", env);
 } else {
-  os_wxMediaStreamInBase_class = objscheme_def_prim_class(env, "wx:media-stream-in-base%", "wx:object%", os_wxMediaStreamInBase_ConstructScheme, 6);
+  os_wxMediaStreamInBase_class = objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", os_wxMediaStreamInBase_ConstructScheme, 6);
 
   scheme_add_method_w_arity(os_wxMediaStreamInBase_class,"get-class-name",objscheme_classname_os_wxMediaStreamInBase, 0, 0);
 
@@ -502,7 +502,7 @@ int objscheme_istype_wxMediaStreamInBase(Scheme_Object *obj, const char *stop, i
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:media-stream-in-base% object or " XC_NULL_STR: "wx:media-stream-in-base% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-stream-in-base% object or " XC_NULL_STR: "editor-stream-in-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -634,7 +634,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-stream-out-base%::bad?"", extracting return value");
+  return objscheme_unbundle_bool(v, "editor-stream-out-base%::bad?"", extracting return value");
   }
 }
 
@@ -700,7 +700,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_integer(v, "wx:media-stream-out-base%::tell"", extracting return value");
+  return objscheme_unbundle_integer(v, "editor-stream-out-base%::tell"", extracting return value");
   }
 }
 
@@ -715,7 +715,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseWrite(Scheme_Object *obj, int n,  S
   
   x0 = NULL;
 
-  x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, &x1, "wx:media-stream-out-base%::write");
+  x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, &x1, "editor-stream-out-base%::write");
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaStreamOutBase *)((Scheme_Class_Object *)obj)->primdata)->Write(x0, x1);
   else
@@ -754,7 +754,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseSeek(Scheme_Object *obj, int n,  Sc
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-out-base%::seek");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-out-base%::seek");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -794,7 +794,7 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:media-stream-out-base%::initialization", 0, 0, n, p);
+    scheme_wrong_count("editor-stream-out-base%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxMediaStreamOutBase(obj);
@@ -809,16 +809,16 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj
 static Scheme_Object *objscheme_classname_os_wxMediaStreamOutBase(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:media-stream-out-base%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:media-stream-out-base%");
+  if (n) scheme_wrong_count("editor-stream-out-base%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("editor-stream-out-base%");
 }
 
 void objscheme_setup_wxMediaStreamOutBase(void *env)
 {
 if (os_wxMediaStreamOutBase_class) {
-    objscheme_add_global_class(os_wxMediaStreamOutBase_class,  "wx:media-stream-out-base%", env);
+    objscheme_add_global_class(os_wxMediaStreamOutBase_class, "editor-stream-out-base%", env);
 } else {
-  os_wxMediaStreamOutBase_class = objscheme_def_prim_class(env, "wx:media-stream-out-base%", "wx:object%", os_wxMediaStreamOutBase_ConstructScheme, 5);
+  os_wxMediaStreamOutBase_class = objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", os_wxMediaStreamOutBase_ConstructScheme, 5);
 
   scheme_add_method_w_arity(os_wxMediaStreamOutBase_class,"get-class-name",objscheme_classname_os_wxMediaStreamOutBase, 0, 0);
 
@@ -843,7 +843,7 @@ int objscheme_istype_wxMediaStreamOutBase(Scheme_Object *obj, const char *stop, 
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:media-stream-out-base% object or " XC_NULL_STR: "wx:media-stream-out-base% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-stream-out-base% object or " XC_NULL_STR: "editor-stream-out-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -919,8 +919,8 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object
 
   
   if (n != 1) 
-    scheme_wrong_count("wx:media-stream-in-string-base%::initialization", 1, 1, n, p);
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:media-stream-in-string-base%::initialization");
+    scheme_wrong_count("editor-stream-in-string-base%::initialization", 1, 1, n, p);
+  x0 = (string)objscheme_unbundle_string(p[0], "editor-stream-in-string-base%::initialization");
 
   x1 = SCHEME_STRTAG_VAL(p[0]);
   realobj = new os_wxMediaStreamInStringBase(obj, x0, x1);
@@ -935,16 +935,16 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object
 static Scheme_Object *objscheme_classname_os_wxMediaStreamInStringBase(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:media-stream-in-string-base%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:media-stream-in-string-base%");
+  if (n) scheme_wrong_count("editor-stream-in-string-base%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("editor-stream-in-string-base%");
 }
 
 void objscheme_setup_wxMediaStreamInStringBase(void *env)
 {
 if (os_wxMediaStreamInStringBase_class) {
-    objscheme_add_global_class(os_wxMediaStreamInStringBase_class,  "wx:media-stream-in-string-base%", env);
+    objscheme_add_global_class(os_wxMediaStreamInStringBase_class, "editor-stream-in-string-base%", env);
 } else {
-  os_wxMediaStreamInStringBase_class = objscheme_def_prim_class(env, "wx:media-stream-in-string-base%", "wx:media-stream-in-base%", os_wxMediaStreamInStringBase_ConstructScheme, 1);
+  os_wxMediaStreamInStringBase_class = objscheme_def_prim_class(env, "editor-stream-in-string-base%", "editor-stream-in-base%", os_wxMediaStreamInStringBase_ConstructScheme, 1);
 
   scheme_add_method_w_arity(os_wxMediaStreamInStringBase_class,"get-class-name",objscheme_classname_os_wxMediaStreamInStringBase, 0, 0);
 
@@ -965,7 +965,7 @@ int objscheme_istype_wxMediaStreamInStringBase(Scheme_Object *obj, const char *s
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:media-stream-in-string-base% object or " XC_NULL_STR: "wx:media-stream-in-string-base% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-stream-in-string-base% object or " XC_NULL_STR: "editor-stream-in-string-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1058,7 +1058,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Objec
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:media-stream-out-string-base%::initialization", 0, 0, n, p);
+    scheme_wrong_count("editor-stream-out-string-base%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxMediaStreamOutStringBase(obj);
@@ -1073,16 +1073,16 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Objec
 static Scheme_Object *objscheme_classname_os_wxMediaStreamOutStringBase(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:media-stream-out-string-base%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:media-stream-out-string-base%");
+  if (n) scheme_wrong_count("editor-stream-out-string-base%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("editor-stream-out-string-base%");
 }
 
 void objscheme_setup_wxMediaStreamOutStringBase(void *env)
 {
 if (os_wxMediaStreamOutStringBase_class) {
-    objscheme_add_global_class(os_wxMediaStreamOutStringBase_class,  "wx:media-stream-out-string-base%", env);
+    objscheme_add_global_class(os_wxMediaStreamOutStringBase_class, "editor-stream-out-string-base%", env);
 } else {
-  os_wxMediaStreamOutStringBase_class = objscheme_def_prim_class(env, "wx:media-stream-out-string-base%", "wx:media-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 2);
+  os_wxMediaStreamOutStringBase_class = objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 2);
 
   scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class,"get-class-name",objscheme_classname_os_wxMediaStreamOutStringBase, 0, 0);
 
@@ -1104,7 +1104,7 @@ int objscheme_istype_wxMediaStreamOutStringBase(Scheme_Object *obj, const char *
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:media-stream-out-string-base% object or " XC_NULL_STR: "wx:media-stream-out-string-base% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-stream-out-string-base% object or " XC_NULL_STR: "editor-stream-out-string-base% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1215,7 +1215,7 @@ static Scheme_Object *os_wxMediaStreamInJumpTo(Scheme_Object *obj, int n,  Schem
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-in%::jump-to");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-in%::jump-to");
 
   
   ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0);
@@ -1250,7 +1250,7 @@ static Scheme_Object *os_wxMediaStreamInSkip(Scheme_Object *obj, int n,  Scheme_
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-in%::skip");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-in%::skip");
 
   
   ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Skip(x0);
@@ -1284,7 +1284,7 @@ static Scheme_Object *os_wxMediaStreamInSetBoundary(Scheme_Object *obj, int n,  
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-in%::set-boundary");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-in%::set-boundary");
 
   
   ((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->SetBoundary(x0);
@@ -1306,11 +1306,11 @@ static Scheme_Object *os_wxMediaStreamInoperatorGTGT(Scheme_Object *obj, int n, 
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-in%::>> (exact case)", 1, 1, n, p);
+      scheme_wrong_count("editor-stream-in%::>> (exact case)", 1, 1, n, p);
     if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::>> (exact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
+      scheme_wrong_type("editor-stream-in%::>> (exact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
-      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::>> (exact case)"), "wx:media-stream-in%::>> (exact case)");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "editor-stream-in%::>> (exact case)"), "editor-stream-in%::>> (exact case)");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->operator>>(*x0);
@@ -1325,11 +1325,11 @@ static Scheme_Object *os_wxMediaStreamInoperatorGTGT(Scheme_Object *obj, int n, 
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-in%::>> (inexact case)", 1, 1, n, p);
+      scheme_wrong_count("editor-stream-in%::>> (inexact case)", 1, 1, n, p);
     if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::>> (inexact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
+      scheme_wrong_type("editor-stream-in%::>> (inexact case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-stream-in%::>> (inexact case)"), "wx:media-stream-in%::>> (inexact case)");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "editor-stream-in%::>> (inexact case)"), "editor-stream-in%::>> (inexact case)");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->operator>>(*x0);
@@ -1388,9 +1388,9 @@ static Scheme_Object *os_wxMediaStreamInGetFixed(Scheme_Object *obj, int n,  Sch
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:media-stream-in%::get-fixed", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("editor-stream-in%::get-fixed", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::get-fixed"), "wx:media-stream-in%::get-fixed");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "editor-stream-in%::get-fixed"), "editor-stream-in%::get-fixed");
 
   
   r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->GetFixed(*x0);
@@ -1416,7 +1416,7 @@ static Scheme_Object *os_wxMediaStreamInGetString(Scheme_Object *obj, int n,  Sc
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::get-string"), "wx:media-stream-in%::get-string");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "editor-stream-in%::get-string"), "editor-stream-in%::get-string");
   } else
     x0 = NULL;
 
@@ -1442,11 +1442,11 @@ static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_O
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-in%::get (exact number case)", 1, 1, n, p);
+      scheme_wrong_count("editor-stream-in%::get (exact number case)", 1, 1, n, p);
     if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::get (exact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
+      scheme_wrong_type("editor-stream-in%::get (exact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
-      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:media-stream-in%::get (exact number case)"), "wx:media-stream-in%::get (exact number case)");
+      *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "editor-stream-in%::get (exact number case)"), "editor-stream-in%::get (exact number case)");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(*x0);
@@ -1461,11 +1461,11 @@ static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_O
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-in%::get (inexact number case)", 1, 1, n, p);
+      scheme_wrong_count("editor-stream-in%::get (inexact number case)", 1, 1, n, p);
     if (XC_SCHEME_NULLP(p[0]))
-      scheme_wrong_type("wx:media-stream-in%::get (inexact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
+      scheme_wrong_type("editor-stream-in%::get (inexact number case)", "non-" XC_NULL_STR, (0 - 0), n, p);
     else
-      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-stream-in%::get (inexact number case)"), "wx:media-stream-in%::get (inexact number case)");
+      *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "editor-stream-in%::get (inexact number case)"), "editor-stream-in%::get (inexact number case)");
 
     
     r = &((wxMediaStreamIn *)((Scheme_Class_Object *)obj)->primdata)->Get(*x0);
@@ -1487,8 +1487,8 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int
 
   
   if (n != 1) 
-    scheme_wrong_count("wx:media-stream-in%::initialization", 1, 1, n, p);
-  x0 = objscheme_unbundle_wxMediaStreamInBase(p[0], "wx:media-stream-in%::initialization", 0);
+    scheme_wrong_count("editor-stream-in%::initialization", 1, 1, n, p);
+  x0 = objscheme_unbundle_wxMediaStreamInBase(p[0], "editor-stream-in%::initialization", 0);
 
   
   realobj = new os_wxMediaStreamIn(obj, *x0);
@@ -1503,16 +1503,16 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int
 static Scheme_Object *objscheme_classname_os_wxMediaStreamIn(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:media-stream-in%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:media-stream-in%");
+  if (n) scheme_wrong_count("editor-stream-in%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("editor-stream-in%");
 }
 
 void objscheme_setup_wxMediaStreamIn(void *env)
 {
 if (os_wxMediaStreamIn_class) {
-    objscheme_add_global_class(os_wxMediaStreamIn_class,  "wx:media-stream-in%", env);
+    objscheme_add_global_class(os_wxMediaStreamIn_class, "editor-stream-in%", env);
 } else {
-  os_wxMediaStreamIn_class = objscheme_def_prim_class(env, "wx:media-stream-in%", "wx:object%", os_wxMediaStreamIn_ConstructScheme, 13);
+  os_wxMediaStreamIn_class = objscheme_def_prim_class(env, "editor-stream-in%", "object%", os_wxMediaStreamIn_ConstructScheme, 13);
 
   scheme_add_method_w_arity(os_wxMediaStreamIn_class,"get-class-name",objscheme_classname_os_wxMediaStreamIn, 0, 0);
 
@@ -1545,7 +1545,7 @@ int objscheme_istype_wxMediaStreamIn(Scheme_Object *obj, const char *stop, int n
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:media-stream-in% object or " XC_NULL_STR: "wx:media-stream-in% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-stream-in% object or " XC_NULL_STR: "editor-stream-in% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1641,7 +1641,7 @@ static Scheme_Object *os_wxMediaStreamOutJumpTo(Scheme_Object *obj, int n,  Sche
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-out%::jump-to");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-out%::jump-to");
 
   
   ((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->JumpTo(x0);
@@ -1679,8 +1679,8 @@ static Scheme_Object *os_wxMediaStreamOutoperatorLTLT(Scheme_Object *obj, int n,
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-out%::<< (string case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:media-stream-out%::<< (string case)");
+      scheme_wrong_count("editor-stream-out%::<< (string case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "editor-stream-out%::<< (string case)");
 
     
     r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->operator<<(x0);
@@ -1692,8 +1692,8 @@ static Scheme_Object *os_wxMediaStreamOutoperatorLTLT(Scheme_Object *obj, int n,
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-out%::<< (inexact number case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_float(p[0], "wx:media-stream-out%::<< (inexact number case)");
+      scheme_wrong_count("editor-stream-out%::<< (inexact number case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_float(p[0], "editor-stream-out%::<< (inexact number case)");
 
     
     r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->operator<<(x0);
@@ -1705,8 +1705,8 @@ static Scheme_Object *os_wxMediaStreamOutoperatorLTLT(Scheme_Object *obj, int n,
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-out%::<< (exact number case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-out%::<< (exact number case)");
+      scheme_wrong_count("editor-stream-out%::<< (exact number case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "editor-stream-out%::<< (exact number case)");
 
     
     r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->operator<<(x0);
@@ -1727,7 +1727,7 @@ static Scheme_Object *os_wxMediaStreamOutPutFixed(Scheme_Object *obj, int n,  Sc
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-out%::put-fixed");
+  x0 = objscheme_unbundle_integer(p[0], "editor-stream-out%::put-fixed");
 
   
   r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->PutFixed(x0);
@@ -1748,8 +1748,8 @@ static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-out%::put (string without length case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:media-stream-out%::put (string without length case)");
+      scheme_wrong_count("editor-stream-out%::put (string without length case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "editor-stream-out%::put (string without length case)");
 
     
     r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0);
@@ -1762,9 +1762,9 @@ static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:media-stream-out%::put (length and string case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:media-stream-out%::put (length and string case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "wx:media-stream-out%::put (length and string case)");
+      scheme_wrong_count("editor-stream-out%::put (length and string case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_nonnegative_integer(p[0], "editor-stream-out%::put (length and string case)");
+    x1 = (string)objscheme_unbundle_string(p[1], "editor-stream-out%::put (length and string case)");
 
     
     r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0, x1);
@@ -1776,8 +1776,8 @@ static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-out%::put (exact number case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:media-stream-out%::put (exact number case)");
+      scheme_wrong_count("editor-stream-out%::put (exact number case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "editor-stream-out%::put (exact number case)");
 
     
     r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0);
@@ -1789,8 +1789,8 @@ static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-stream-out%::put (inexact number case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_float(p[0], "wx:media-stream-out%::put (inexact number case)");
+      scheme_wrong_count("editor-stream-out%::put (inexact number case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_float(p[0], "editor-stream-out%::put (inexact number case)");
 
     
     r = &((wxMediaStreamOut *)((Scheme_Class_Object *)obj)->primdata)->Put(x0);
@@ -1810,8 +1810,8 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, in
 
   
   if (n != 1) 
-    scheme_wrong_count("wx:media-stream-out%::initialization", 1, 1, n, p);
-  x0 = objscheme_unbundle_wxMediaStreamOutBase(p[0], "wx:media-stream-out%::initialization", 0);
+    scheme_wrong_count("editor-stream-out%::initialization", 1, 1, n, p);
+  x0 = objscheme_unbundle_wxMediaStreamOutBase(p[0], "editor-stream-out%::initialization", 0);
 
   
   realobj = new os_wxMediaStreamOut(obj, *x0);
@@ -1826,16 +1826,16 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, in
 static Scheme_Object *objscheme_classname_os_wxMediaStreamOut(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:media-stream-out%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:media-stream-out%");
+  if (n) scheme_wrong_count("editor-stream-out%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("editor-stream-out%");
 }
 
 void objscheme_setup_wxMediaStreamOut(void *env)
 {
 if (os_wxMediaStreamOut_class) {
-    objscheme_add_global_class(os_wxMediaStreamOut_class,  "wx:media-stream-out%", env);
+    objscheme_add_global_class(os_wxMediaStreamOut_class, "editor-stream-out%", env);
 } else {
-  os_wxMediaStreamOut_class = objscheme_def_prim_class(env, "wx:media-stream-out%", "wx:object%", os_wxMediaStreamOut_ConstructScheme, 7);
+  os_wxMediaStreamOut_class = objscheme_def_prim_class(env, "editor-stream-out%", "object%", os_wxMediaStreamOut_ConstructScheme, 7);
 
   scheme_add_method_w_arity(os_wxMediaStreamOut_class,"get-class-name",objscheme_classname_os_wxMediaStreamOut, 0, 0);
 
@@ -1862,7 +1862,7 @@ int objscheme_istype_wxMediaStreamOut(Scheme_Object *obj, const char *stop, int 
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:media-stream-out% object or " XC_NULL_STR: "wx:media-stream-out% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "editor-stream-out% object or " XC_NULL_STR: "editor-stream-out% object", -1, 0, &obj);
     return 0;
   }
 }

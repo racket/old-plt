@@ -31,7 +31,7 @@ static void FillZero(int *a, int *b) {
 
 // @INCLUDE wxs_drws.xci
 
-@CLASSBASE wxCanvas "wx:canvas":"wx:window"
+@CLASSBASE wxCanvas "canvas":"window"
 
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> panel

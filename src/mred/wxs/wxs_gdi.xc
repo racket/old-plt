@@ -46,9 +46,9 @@
 # define COLORMAP_CREATE 1
 #endif
 
-@MACRO CHECKMUT[TYPE.what.who] = if (!((<TYPE> *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", <who>, <what>, <what>);
+@MACRO CHECKMUT[TYPE.what.who] = if (!((<TYPE> *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", <who>, <what>, <what>);
 
-@CLASSBASE wxFont "wx:font":"wx:object"
+@CLASSBASE wxFont "font":"object"
 
 @CREATOR (); <> no argument
 @CREATOR (nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family
@@ -63,28 +63,28 @@
 
 @END
 
-@CLASSBASE wxFontList "wx:font-list":"wx:object"
+@CLASSBASE wxFontList "font-list":"object"
 
 @CREATOR ();
 
 @ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,SYM[family],SYM[style],SYM[weight],bool=0) <> family id
 @ "find-or-create-font" : wxFont! FindOrCreateFont(nnint,cstring,SYM[family],SYM[style],SYM[weight],bool=0) <> font name ## USE_FONT_NAME_DIRECTORY
 
-@CONSTANT "wx:the-font-list" : wxFontList! wxTheFontList
+@CONSTANT "the-font-list" : wxFontList! wxTheFontList
 
 @END
 
 
-@CLASSBASE wxColour "wx:colour" : "wx:object"
+@CLASSBASE wxColour "color" : "object"
 
 @CREATOR (); <> no argument
 @CREATOR (ubyte,ubyte,ubyte); <> rgb values
 @CREATOR (string); <> color name
 
-@ "=" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."colour"."wx:colour%::="]
+@ "=" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."color"."color%::="]
 @ "get" : void Get(ubyte*,ubyte*,ubyte*);
 @ "ok?" : bool Ok();
-@ "set" : void Set(ubyte,ubyte,ubyte);   : : /CHECKMUT[wxColour."colour"."wx:colour%::set"]
+@ "set" : void Set(ubyte,ubyte,ubyte);   : : /CHECKMUT[wxColour."color"."color%::set"]
 
 @ "red" : ubyte Red();
 @ "green" : ubyte Green();
@@ -93,18 +93,11 @@
 @END
 
 
-@CLASSBASE wxColourMap "wx:colour-map" : "wx:object"
-
-@END
-
 #ifdef wx_mac
 #define _KEY_TYPE KeyType
 #else
 #define _KEY_TYPE int
 #endif
-@MACRO bInt = objscheme_bundle_integer((int){x})
-@MACRO ubIntKey = (_KEY_TYPE)objscheme_unbundle_integer({x}, "wxColourDatabase")
-@MACRO tInt = objscheme_istype_number({x}, NULL)
 
 // Since we don't allow creating this anymore, need a Mac fix:
 #if defined(wx_mac)
@@ -113,7 +106,7 @@
 #define CDB_FIX 
 #endif
 
-@CLASSBASE wxColourDatabase "wx:colour-database" : "wx:object"
+@CLASSBASE wxColourDatabase "color-database" : "object"
 
 @VAR CDB_FIX
 
@@ -121,12 +114,12 @@
 @ "find-name" : string FindName(wxColour%);
 @ "append" : void Append(string, wxColour!);
 
-@CONSTANT "wx:the-colour-database" : wxColourDatabase! wxTheColourDatabase
+@CONSTANT "the-color-database" : wxColourDatabase! wxTheColourDatabase
 
 @END
 
 
-@CLASSBASE wxPoint "wx:point" : "wx:object"
+@CLASSBASE wxPoint "point" : "object"
 
 @CREATOR (); <> no argument
 @CREATOR (float,float); <> xy values
@@ -136,7 +129,7 @@
 
 @END
 
-@CLASSBASE wxIntPoint "wx:int-point" : "wx:object"
+@CLASSBASE wxIntPoint "int-point" : "object"
 
 @CREATOR (); <> no argument
 @CREATOR (int,int) <> xy values
@@ -159,33 +152,33 @@
 @SYM "opaque-stipple" : wxOPAQUE_STIPPLE
 @ENDSYMBOLS
 
-@CLASSBASE wxBrush "wx:brush" : "wx:object"
+@CLASSBASE wxBrush "brush" : "object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour%,SYM[brushStyle]); <> wx:colour%
+@CREATOR (wxColour%,SYM[brushStyle]); <> color%
 @CREATOR (string,SYM[brushStyle]); <> color name
 
-@ "get-colour" : wxColour% GetColour();
-@ "set-colour" : void SetColour(wxColour%); : : /CHECKMUT[wxBrush."brush"."wx:brush::set-colour"] <> wx:colour%
-@ "set-colour" : void SetColour(string); : : /CHECKMUT[wxBrush."brush"."wx:brush::set-colour"] <> color name
-@ "set-colour" : void SetColour(int,int,int); : : /CHECKMUT[wxBrush."brush"."wx:brush::set-colour"] <> rgb values
+@ "get-color" : wxColour% GetColour();
+@ "set-color" : void SetColour(wxColour%); : : /CHECKMUT[wxBrush."brush"."brush::set-colour"] <> color%
+@ "set-color" : void SetColour(string); : : /CHECKMUT[wxBrush."brush"."brush::set-colour"] <> color name
+@ "set-color" : void SetColour(int,int,int); : : /CHECKMUT[wxBrush."brush"."brush::set-colour"] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
-@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxBrush."brush"."wx:brush::set-stipple"]
+@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxBrush."brush"."brush::set-stipple"]
 
 @ "get-style" : SYM[brushStyle] GetStyle();
-@ "set-style" : void SetStyle(SYM[brushStyle]); : : /CHECKMUT[wxBrush."brush"."wx:brush::set-style"]
+@ "set-style" : void SetStyle(SYM[brushStyle]); : : /CHECKMUT[wxBrush."brush"."brush::set-style"]
 
 @END
 
-@CLASSBASE wxBrushList "wx:brush-list" : "wx:object"
+@CLASSBASE wxBrushList "brush-list" : "object"
 
 @CREATOR ();
 
-@ "find-or-create-brush" : wxBrush! FindOrCreateBrush(wxColour!,SYM[brushStyle]); <> wx:colour%
+@ "find-or-create-brush" : wxBrush! FindOrCreateBrush(wxColour!,SYM[brushStyle]); <> color%
 @ "find-or-create-brush" : wxBrush^ FindOrCreateBrush(string,SYM[brushStyle]); <> color name
 
-@CONSTANT "wx:the-brush-list" : wxBrushList! wxTheBrushList
+@CONSTANT "the-brush-list" : wxBrushList! wxTheBrushList
 
 @END
 
@@ -211,10 +204,10 @@
 @SYM "butt" : wxCAP_BUTT
 @ENDSYMBOLS
 
-@CLASSBASE wxPen "wx:pen" : "wx:object"
+@CLASSBASE wxPen "pen" : "object"
 
 @CREATOR (); <> no argument
-@CREATOR (wxColour%,nnint,SYM[penStyle]); <> wx:colour%
+@CREATOR (wxColour%,nnint,SYM[penStyle]); <> color%
 @CREATOR (string,nnint,SYM[penStyle]); <> color name
 
 @ "get-width" : int GetWidth();
@@ -225,27 +218,27 @@
 @ "set-join" : void SetJoin(SYM[join]);
 
 @ "get-colour" : wxColour% GetColour();
-@ "set-colour" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen"."wx:pen::set-colour"] <> wx:colour%
-@ "set-colour" : void SetColour(string);  : : /CHECKMUT[wxPen."pen"."wx:pen::set-colour"] <> color name
-@ "set-colour" : void SetColour(int,int,int);  : : /CHECKMUT[wxPen."pen"."wx:pen::set-colour"] <> rgb values
+@ "set-colour" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen"."pen::set-colour"] <> color%
+@ "set-colour" : void SetColour(string);  : : /CHECKMUT[wxPen."pen"."pen::set-colour"] <> color name
+@ "set-colour" : void SetColour(int,int,int);  : : /CHECKMUT[wxPen."pen"."pen::set-colour"] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
-@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen"."wx:pen::set-stipple"]
+@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen"."pen::set-stipple"]
 
 @ "get-style" : SYM[penStyle] GetStyle();
-@ "set-style" : void SetStyle(SYM[penStyle]); : : /CHECKMUT[wxPen."pen"."wx:pen::set-style"]
+@ "set-style" : void SetStyle(SYM[penStyle]); : : /CHECKMUT[wxPen."pen"."pen::set-style"]
 
 @END
 
 
-@CLASSBASE wxPenList "wx:pen-list" : "wx:object"
+@CLASSBASE wxPenList "pen-list" : "object"
 
 @CREATOR ();
 
-@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,nnint,SYM[penStyle]); <> wx:colour%
+@ "find-or-create-pen" : wxPen! FindOrCreatePen(wxColour!,nnint,SYM[penStyle]); <> color%
 @ "find-or-create-pen" : wxPen^ FindOrCreatePen(string,nnint,SYM[penStyle]); <> color name
 
-@CONSTANT "wx:the-pen-list" : wxPenList! wxThePenList
+@CONSTANT "the-pen-list" : wxPenList! wxThePenList
 
 @END
 
@@ -276,7 +269,7 @@
 @SYM "watch" : wxCURSOR_WATCH
 @ENDSYMBOLS
 
-@CLASSBASE wxCursor "wx:cursor" : "wx:object"
+@CLASSBASE wxCursor "cursor" : "object"
 
 @CREATOR (string,SYM[bitmapType],int=0,int=0); <> cursor name
 @CREATOR (SYM[cursor]); <> cursor id
@@ -293,7 +286,7 @@ static inline int Identity(wxFontNameDirectory *, int v)
   return v;
 }
 
-@CLASSBASE wxFontNameDirectory "wx:font-name-directory":"wx:object"
+@CLASSBASE wxFontNameDirectory "font-name-directory":"object"
 
 @ "get-screen-name" : nstring GetScreenName(SYM[family],SYM[style],SYM[weight]);
 @ "get-post-script-name" : nstring GetPostScriptName(SYM[family],SYM[style],SYM[weight]);
@@ -309,7 +302,7 @@ static inline int Identity(wxFontNameDirectory *, int v)
 @ "find-or-create-font-id" : int FindOrCreateFontId(cstring,SYM[family]);
 @ m "find-family-default-font-id" : int Identity(SYM[family]);
 
-@CONSTANT "wx:the-font-name-directory" : wxFontNameDirectory% wxTheFontNameDirectory
+@CONSTANT "the-font-name-directory" : wxFontNameDirectory% wxTheFontNameDirectory
 
 @END
 

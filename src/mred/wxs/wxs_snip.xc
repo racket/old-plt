@@ -22,7 +22,7 @@
 @SYM "uses-buffer-path" : wxSNIP_USES_BUFFER_PATH
 @ENDSYMBOLS
 
-@CLASSBASE wxSnip "wx:snip":"wx:object"
+@CLASSBASE wxSnip "snip":"object"
 
 @CREATOR ();
 
@@ -52,7 +52,7 @@
 @END
 
 
-@CLASSBASE wxTextSnip "wx:text-snip":"wx:snip"
+@CLASSBASE wxTextSnip "text-snip":"snip"
 
 @CREATOR (long=0);
 
@@ -67,7 +67,7 @@
 @END
 
 
-@CLASSBASE wxTabSnip "wx:tab-snip":"wx:text-snip"
+@CLASSBASE wxTabSnip "tab-snip":"text-snip"
 
 @CREATOR ();
 
@@ -80,7 +80,7 @@
 
 @INCLUDE wxs_bmt.xci
 
-@CLASSBASE wxImageSnip "wx:image-snip":"wx:snip"
+@CLASSBASE wxImageSnip "image-snip":"snip"
 
 // This isn't `pathname' because it expands internally
 @CREATOR (nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
@@ -103,22 +103,19 @@
 @END
 
 
-#define Get_This_Media GetThisMedia
-
-@CLASSBASE wxMediaSnip "wx:media-snip" : "wx:snip"
+@CLASSBASE wxMediaSnip "editor-snip" : "snip"
 
 @CREATOR (wxMediaBuffer^=NULL,bool=TRUE,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,int=-1,int=-1,int=-1,int=-1);
 
 @CLASSID wxTYPE_MEDIA_SNIP
 
-@ "get-this-media" : wxMediaBuffer^ Get_This_Media();
-@ "get-media" : wxMediaBuffer^ GetThisMedia();
-@ "set-media" : void SetMedia(wxMediaBuffer^);
+@ "get-edit" : wxMediaBuffer^ GetThisMedia();
+@ "set-edit" : void SetMedia(wxMediaBuffer^);
 
-@CONSTANT "wx:const-msnipbox-xmargin" : int wxMSNIPBOX_XMARGIN
-@CONSTANT "wx:const-msnipbox-ymargin" : int wxMSNIPBOX_YMARGIN
-@CONSTANT "wx:const-msnipbox-xinset" : int wxMSNIPBOX_XINSET
-@CONSTANT "wx:const-msnipbox-yinset" : int wxMSNIPBOX_YINSET
+@CONSTANT "const-editor-snip-xmargin" : int wxMSNIPBOX_XMARGIN
+@CONSTANT "const-editor-snip-ymargin" : int wxMSNIPBOX_YMARGIN
+@CONSTANT "const-editor-snip-xinset" : int wxMSNIPBOX_XINSET
+@CONSTANT "const-editor-snip-yinset" : int wxMSNIPBOX_YINSET
 
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
@@ -145,7 +142,7 @@
 @MACRO rZERO = return 0;
 @MACRO rNULL = return NULL;
 
-@CLASSBASE wxBufferDataClass "wx:buffer-data-class" : "wx:object"
+@CLASSBASE wxBufferDataClass "buffer-data-class" : "object"
 
 @CREATOR ()
 
@@ -158,7 +155,7 @@
 
 @END
 
-@CLASSBASE wxBufferDataClassList "wx:buffer-data-class-list" : "wx:object"
+@CLASSBASE wxBufferDataClassList "buffer-data-class-list" : "object"
 
 @CREATOR ()
 
@@ -172,7 +169,7 @@
 
 @END
 
-@CLASSBASE wxBufferData "wx:buffer-data" : "wx:object"
+@CLASSBASE wxBufferData "buffer-data" : "object"
 
 @CREATOR ()
 

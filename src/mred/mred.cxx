@@ -6,9 +6,6 @@
  * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
-#define WINDOW_STDIO 0
-#define WCONSOLE_STDIO 1
-
 /* wx_xt: */
 #define Uses_XtIntrinsic
 #define Uses_XtIntrinsicP
@@ -120,7 +117,6 @@ static Scheme_Env *global_env;
 class MrEdApp: public wxApp
 {
 public:
-  char *file, *collection;
   Bool initialized;
   Bool edjrMode;
   int xargc;
@@ -1902,87 +1898,19 @@ wxFrame *MrEdApp::OnInit(void)
     --xargc;
   }
 
-  if (xargc >= 2 && !strcmp(xargv[0], "-s")) {
-    collection = xargv[1];
-    xargc -=2;
-    xargv += 2;
-  } else
-    collection = "system";
-
-  file = "system.ss";
-
   return mred_real_main_frame;
 }
 
 void MrEdApp::RealInit(void)
 {
-  const char *rl = "(require-library \"%s\" \"%s\")";
   char *s;
   mz_jmp_buf savebuf;
 
   initialized = 1;
 
-  wxMediaIOCheckLSB();
+  wxMediaIOCheckLSB(/* scheme_console_printf */);
 
-  s = (char *)scheme_malloc_atomic(strlen(rl) + strlen(file) + strlen(collection) + 3);
-  sprintf(s, rl, file, collection);
-  
-  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-  if (scheme_setjmp(scheme_error_buf)) {
-    /* give up */
-    wxMessageBox("Error loading system.", "Error");
-    goto giveup;
-  } else {
-    scheme_eval_string(s, global_env);
-  }
-
-#ifdef wx_mac
-  if (startup_dial) {
-    DisposeDialog(startup_dial);
-    startup_dial = NULL;
-  }
-#endif
-
-  Scheme_Object *startup;
-
-  startup = scheme_lookup_global(scheme_intern_symbol("mred:initialize"), 
-				 global_env);
-
-  if (!startup) {
-    wxMessageBox("Can't find mred:intialize function.", "Error");
-    goto giveup;
-  }
-
-  if (scheme_setjmp(scheme_error_buf)) {
-    wxMessageBox("Error initializing.", "Error");
-    goto giveup;
-  } else {
-    Scheme_Object **p;
-    int i;
-
-    p = (Scheme_Object **)scheme_malloc(xargc * sizeof(Scheme_Object *));
-    for (i = 0; i < xargc; i++)
-      p[i] = scheme_make_string(xargv[i]);
-
-    scheme_apply(startup, xargc, p);
-  }
-
-  goto done;
-
- giveup:
-#ifdef wx_mac
-  if (startup_dial)
-    DisposeDialog(startup_dial);
-#endif
-
-  MakeEdJrFrame();
-  edjrMode = TRUE;
-
- done:
-
-  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-
-  return;
+  scheme_eval_string("(graphical-read-eval-print-loop)", global_env);
 }
 
 #ifdef wx_mac

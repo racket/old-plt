@@ -2328,6 +2328,26 @@ void scheme_add_method(Scheme_Object *c, const char *name,
   scheme_add_method_w_arity(c, name, f, 0, -1);
 }
 
+static void InstallInterface(Scheme_Class *sclass, Scheme_Interface *in)
+{
+  int j, k = 0, num_public;
+  short *imap;
+
+  sclass->interface_maps = MALLOC_ONE(short*);
+  sclass->num_interfaces = 1;
+  sclass->interfaces = MALLOC_ONE(Scheme_Interface*);
+  sclass->interfaces[0] = in;
+  sclass->interface_maps[0] = imap = MALLOC_N(short, in->num_names);
+
+  num_public = sclass->num_public;
+
+  for (j = 0; j < in->num_names; j++) {
+    while ((k < num_public) && SLESSTHAN(sclass->public_names[k], in->names[j]))
+      k++;
+    imap[in->name_map[j]] = sclass->public_map[k];
+  }
+}
+
 void scheme_made_class(Scheme_Object *c)
 {
   Scheme_Class *sclass;
@@ -2346,6 +2366,43 @@ void scheme_made_class(Scheme_Object *c)
     sclass->vslot_map[i] = i;
     sclass->vslot_kind[i] = slot_TYPE_CMETHOD;
   }
+
+  if (sclass->superclass && sclass->superclass->num_interfaces) {
+    /* Only one interface per built-in class right now. */
+    InstallInterface(sclass, sclass->superclass->interfaces[0]);
+  }
+}
+
+Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name)
+{
+  Scheme_Class *sclass;
+  Scheme_Interface *in;
+  int i, num_methods;
+
+  sclass = (Scheme_Class *)c;
+  num_methods = sclass->num_public;
+  
+  in = MALLOC_ONE_TAGGED(Scheme_Interface);
+  in->type = scheme_interface_type;
+  in->num_supers = 0;
+  in->supers = NULL;
+  in->super_offsets = NULL;
+
+  in->defname = scheme_intern_symbol(name);
+
+  in->num_names = num_methods;
+
+  in->names = MALLOC_N(Scheme_Object*, num_methods);
+  in->name_map = MALLOC_N(short, num_methods);
+  
+  for (i = 0; i < num_methods; i++) {
+    in->name_map[i] = i;
+    in->names[i] = sclass->public_names[i];
+  }
+
+  InstallInterface(sclass, in);
+
+  return (Scheme_Object *)in;
 }
 
 /**********************************************************************/

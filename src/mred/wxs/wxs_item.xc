@@ -9,7 +9,7 @@
 
 @HEADER
 
-@CLASSBASE wxItem "wx:item":"wx:window"
+@CLASSBASE wxItem "item":"window"
 
 @CLASSID wxTYPE_ITEM
 
@@ -32,14 +32,14 @@
 @BEGINSYMBOLS messageStyle
 @ENDSYMBOLS
 
-@CLASSBASE wxMessage "wx:message" : "wx:item"
+@CLASSBASE wxMessage "message" : "item"
 
 @CREATOR (wxPanel!,string,int=-1,int=-1,SYM[messageStyle]=0,string="message"); <> string label
-@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,string="message"); : : /CHECKOK[1."wx:message::initialization"] <> bitmap label
+@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,string="message"); : : /CHECKOK[1."message::initialization"] <> bitmap label
 
 @INCLUDE wxs_item.xci
 
-@ "set-label" : void SetLabel(wxBitmap!) : : /CHECKOK[0."wx:button%::set-label"] <> bitmap label
+@ "set-label" : void SetLabel(wxBitmap!) : : /CHECKOK[0."button%::set-label"] <> bitmap label
 @ "set-label" : void SetLabel(string); <> string label
 
 @END

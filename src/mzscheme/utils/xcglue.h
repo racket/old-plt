@@ -24,6 +24,8 @@ objscheme_def_prim_class(void *env, char *name, char *superclass,
 			 Scheme_Method_Prim *initf, int nmethods);
 void objscheme_add_global_class(Scheme_Object *sclass, char *name,
 				void *env);
+void objscheme_add_global_interface(Scheme_Object *sclass, char *name,
+				    void *env);
 
 void objscheme_note_creation(Scheme_Object *obj);
 

@@ -1,0 +1,85 @@
+
+(require-library "pretty.ss")
+
+(define quicksort
+  (lambda (l less-than)
+    (let* ([v (list->vector l)]
+	   [count (vector-length v)])
+      (let loop ([min 0][max count])
+	(if (< min (sub1 max))
+	    (let ([pval (vector-ref v min)])
+	      (let pivot-loop ([pivot min]
+			       [pos (add1 min)])
+		(if (< pos max)
+		    (let ([cval (vector-ref v pos)])
+		      (if (less-than cval pval)
+			  (begin
+			    (vector-set! v pos (vector-ref v pivot))
+			    (vector-set! v pivot cval)
+			    (pivot-loop (add1 pivot) (add1 pos)))
+			  (pivot-loop pivot (add1 pos))))
+		    (if (= min pivot)
+			(loop (add1 pivot) max)
+			(begin
+			  (loop min pivot)
+			  (loop pivot max))))))))
+      (vector->list v))))
+
+(define (sym<? a b)
+  (string<? (symbol->string a) (symbol->string b)))
+(define (exspec<? a b)
+  (sym<? (cadr a) (cadr b)))
+
+(define (get-one f)
+  (with-input-from-file f read))
+
+(define (get-all f)
+  (with-input-from-file f
+    (lambda () 
+      (let loop ()
+	(let ([r (read)])
+	  (if (eof-object? r)
+	      null
+	      (cons r (loop))))))))
+
+(define (prefix-wx: s)
+  (string->symbol (format "wx:~a" s)))
+
+(define only-imports (get-one "import.ss"))
+(define mred-exports (get-one "export.ss"))
+(define propagate (get-one "propgate.ss"))
+
+(define imports (quicksort (append only-imports propagate) sym<?))
+
+(define code (get-all "mred.ss"))
+
+(with-output-to-file "wrap.ss"
+  (lambda ()
+    (pretty-print
+     `(lambda (wx@)
+	(letrec ([ex (invoke-unit
+		      (compound-unit 
+		       (import)
+		       (link [wx (wx@)]
+			     [mred ((unit (import ,@(map prefix-wx: imports))
+					  (export)
+					  ,@code
+					  (vector ,@mred-exports))
+				    (wx ,@imports))])
+		       (export)))])
+	  (letrec ([mred@
+		    (compound-unit 
+		     (import)
+		     (link [wx (wx@)]
+			   [mred ((unit (import)
+					(export ,@mred-exports [-mred@ mred@])
+					,@(let loop ([l mred-exports][n 0])
+					    (if (null? l)
+						null
+						(cons `(define ,(car l) (vector-ref ex ,n))
+						      (loop (cdr l) (add1 n)))))
+					(define -mred@ mred@)))])
+		     (export (wx ,@propagate) (mred ,@mred-exports)))])
+	    mred@))))
+    (display "> fstop func <"))
+  'replace)

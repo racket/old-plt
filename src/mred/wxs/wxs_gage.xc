@@ -45,7 +45,7 @@ class wxsGauge : public wxGauge
 @SYM "horizontal" : wxHORIZONTAL
 @ENDSYMBOLS
 
-@CLASSBASE wxsGauge "wx:gauge" : "wx:item"
+@CLASSBASE wxsGauge "gauge" : "item"
 
 @CREATOR (wxPanel!,nstring,int,int=-1,int=-1,int=-1,int=-1,SYM[gaugeStyle]=wxHORIZONTAL,string="gauge"); : : /NOZERO[5]|NOZERO[6]//
 

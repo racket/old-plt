@@ -7,7 +7,7 @@
 
 @HEADER
 
-@CLASSBASE wxObject "wx:object"
+@CLASSBASE wxObject "object"
 
 @CREATOR ()
 

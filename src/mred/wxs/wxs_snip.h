@@ -234,7 +234,6 @@ extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *);
-extern Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *);
 extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxMediaSnip(void *env);

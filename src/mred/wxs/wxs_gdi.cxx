@@ -406,14 +406,14 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
 
     
     if ((n < 5) ||(n > 6)) 
-      scheme_wrong_count("wx:font%::initialization (font name case)", 5, 6, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font%::initialization (font name case)");
-    x1 = (cstring)objscheme_unbundle_string(p[1], "wx:font%::initialization (font name case)");
-    x2 = unbundle_symset_family(p[2], "wx:font%::initialization (font name case)");
-    x3 = unbundle_symset_style(p[3], "wx:font%::initialization (font name case)");
-    x4 = unbundle_symset_weight(p[4], "wx:font%::initialization (font name case)");
+      scheme_wrong_count("font%::initialization (font name case)", 5, 6, n, p);
+    x0 = objscheme_unbundle_nonnegative_integer(p[0], "font%::initialization (font name case)");
+    x1 = (cstring)objscheme_unbundle_string(p[1], "font%::initialization (font name case)");
+    x2 = unbundle_symset_family(p[2], "font%::initialization (font name case)");
+    x3 = unbundle_symset_style(p[3], "font%::initialization (font name case)");
+    x4 = unbundle_symset_weight(p[4], "font%::initialization (font name case)");
     if (n > 5) {
-      x5 = objscheme_unbundle_bool(p[5], "wx:font%::initialization (font name case)");
+      x5 = objscheme_unbundle_bool(p[5], "font%::initialization (font name case)");
     } else
       x5 = 0;
 
@@ -430,13 +430,13 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
 
     
     if ((n < 4) ||(n > 5)) 
-      scheme_wrong_count("wx:font%::initialization (family case)", 4, 5, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font%::initialization (family case)");
-    x1 = unbundle_symset_family(p[1], "wx:font%::initialization (family case)");
-    x2 = unbundle_symset_style(p[2], "wx:font%::initialization (family case)");
-    x3 = unbundle_symset_weight(p[3], "wx:font%::initialization (family case)");
+      scheme_wrong_count("font%::initialization (family case)", 4, 5, n, p);
+    x0 = objscheme_unbundle_nonnegative_integer(p[0], "font%::initialization (family case)");
+    x1 = unbundle_symset_family(p[1], "font%::initialization (family case)");
+    x2 = unbundle_symset_style(p[2], "font%::initialization (family case)");
+    x3 = unbundle_symset_weight(p[3], "font%::initialization (family case)");
     if (n > 4) {
-      x4 = objscheme_unbundle_bool(p[4], "wx:font%::initialization (family case)");
+      x4 = objscheme_unbundle_bool(p[4], "font%::initialization (family case)");
     } else
       x4 = 0;
 
@@ -448,7 +448,7 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:font%::initialization (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("font%::initialization (no argument case)", 0, 0, n, p);
 
     
     realobj = new os_wxFont(obj);
@@ -465,16 +465,16 @@ static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Sche
 static Scheme_Object *objscheme_classname_os_wxFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:font%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:font%");
+  if (n) scheme_wrong_count("font%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("font%");
 }
 
 void objscheme_setup_wxFont(void *env)
 {
 if (os_wxFont_class) {
-    objscheme_add_global_class(os_wxFont_class,  "wx:font%", env);
+    objscheme_add_global_class(os_wxFont_class, "font%", env);
 } else {
-  os_wxFont_class = objscheme_def_prim_class(env, "wx:font%", "wx:object%", os_wxFont_ConstructScheme, 7);
+  os_wxFont_class = objscheme_def_prim_class(env, "font%", "object%", os_wxFont_ConstructScheme, 7);
 
   scheme_add_method_w_arity(os_wxFont_class,"get-class-name",objscheme_classname_os_wxFont, 0, 0);
 
@@ -501,7 +501,7 @@ int objscheme_istype_wxFont(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:font% object or " XC_NULL_STR: "wx:font% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "font% object or " XC_NULL_STR: "font% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -583,13 +583,13 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
 
     
     if ((n < 4) ||(n > 5)) 
-      scheme_wrong_count("wx:font-list%::find-or-create-font (family id case)", 4, 5, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font-list%::find-or-create-font (family id case)");
-    x1 = unbundle_symset_family(p[1], "wx:font-list%::find-or-create-font (family id case)");
-    x2 = unbundle_symset_style(p[2], "wx:font-list%::find-or-create-font (family id case)");
-    x3 = unbundle_symset_weight(p[3], "wx:font-list%::find-or-create-font (family id case)");
+      scheme_wrong_count("font-list%::find-or-create-font (family id case)", 4, 5, n, p);
+    x0 = objscheme_unbundle_nonnegative_integer(p[0], "font-list%::find-or-create-font (family id case)");
+    x1 = unbundle_symset_family(p[1], "font-list%::find-or-create-font (family id case)");
+    x2 = unbundle_symset_style(p[2], "font-list%::find-or-create-font (family id case)");
+    x3 = unbundle_symset_weight(p[3], "font-list%::find-or-create-font (family id case)");
     if (n > 4) {
-      x4 = objscheme_unbundle_bool(p[4], "wx:font-list%::find-or-create-font (family id case)");
+      x4 = objscheme_unbundle_bool(p[4], "font-list%::find-or-create-font (family id case)");
     } else
       x4 = 0;
 
@@ -609,14 +609,14 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
 
     
     if ((n < 5) ||(n > 6)) 
-      scheme_wrong_count("wx:font-list%::find-or-create-font (font name case)", 5, 6, n, p);
-    x0 = objscheme_unbundle_nonnegative_integer(p[0], "wx:font-list%::find-or-create-font (font name case)");
-    x1 = (cstring)objscheme_unbundle_string(p[1], "wx:font-list%::find-or-create-font (font name case)");
-    x2 = unbundle_symset_family(p[2], "wx:font-list%::find-or-create-font (font name case)");
-    x3 = unbundle_symset_style(p[3], "wx:font-list%::find-or-create-font (font name case)");
-    x4 = unbundle_symset_weight(p[4], "wx:font-list%::find-or-create-font (font name case)");
+      scheme_wrong_count("font-list%::find-or-create-font (font name case)", 5, 6, n, p);
+    x0 = objscheme_unbundle_nonnegative_integer(p[0], "font-list%::find-or-create-font (font name case)");
+    x1 = (cstring)objscheme_unbundle_string(p[1], "font-list%::find-or-create-font (font name case)");
+    x2 = unbundle_symset_family(p[2], "font-list%::find-or-create-font (font name case)");
+    x3 = unbundle_symset_style(p[3], "font-list%::find-or-create-font (font name case)");
+    x4 = unbundle_symset_weight(p[4], "font-list%::find-or-create-font (font name case)");
     if (n > 5) {
-      x5 = objscheme_unbundle_bool(p[5], "wx:font-list%::find-or-create-font (font name case)");
+      x5 = objscheme_unbundle_bool(p[5], "font-list%::find-or-create-font (font name case)");
     } else
       x5 = 0;
 
@@ -626,7 +626,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  
     
     
 #else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "wx:font-list%::find-or-create-font (font name case)");
+ scheme_signal_error("%s: provided arglist unsupported on this platform", "font-list%::find-or-create-font (font name case)");
 #endif
   }
 
@@ -640,7 +640,7 @@ static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:font-list%::initialization", 0, 0, n, p);
+    scheme_wrong_count("font-list%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxFontList(obj);
@@ -655,16 +655,16 @@ static Scheme_Object *os_wxFontList_ConstructScheme(Scheme_Object *obj, int n,  
 static Scheme_Object *objscheme_classname_os_wxFontList(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:font-list%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:font-list%");
+  if (n) scheme_wrong_count("font-list%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("font-list%");
 }
 
 void objscheme_setup_wxFontList(void *env)
 {
 if (os_wxFontList_class) {
-    objscheme_add_global_class(os_wxFontList_class,  "wx:font-list%", env);
+    objscheme_add_global_class(os_wxFontList_class, "font-list%", env);
 } else {
-  os_wxFontList_class = objscheme_def_prim_class(env, "wx:font-list%", "wx:object%", os_wxFontList_ConstructScheme, 2);
+  os_wxFontList_class = objscheme_def_prim_class(env, "font-list%", "object%", os_wxFontList_ConstructScheme, 2);
 
   scheme_add_method_w_arity(os_wxFontList_class,"get-class-name",objscheme_classname_os_wxFontList, 0, 0);
 
@@ -677,7 +677,7 @@ if (os_wxFontList_class) {
 
 
 }
-  scheme_install_xc_global("wx:the-font-list", objscheme_bundle_wxFontList(wxTheFontList), env);
+  scheme_install_xc_global("the-font-list", objscheme_bundle_wxFontList(wxTheFontList), env);
 }
 
 int objscheme_istype_wxFontList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -689,7 +689,7 @@ int objscheme_istype_wxFontList(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:font-list% object or " XC_NULL_STR: "wx:font-list% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "font-list% object or " XC_NULL_STR: "font-list% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -836,11 +836,11 @@ static Scheme_Object *os_wxColourSet(Scheme_Object *obj, int n,  Scheme_Object *
   ubyte x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:colour%::set");
-  x1 = objscheme_unbundle_integer(p[1], "wx:colour%::set");
-  x2 = objscheme_unbundle_integer(p[2], "wx:colour%::set");
+  x0 = objscheme_unbundle_integer(p[0], "color%::set");
+  x1 = objscheme_unbundle_integer(p[1], "color%::set");
+  x2 = objscheme_unbundle_integer(p[2], "color%::set");
 
-  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:colour%::set", "colour", "colour");
+  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "color%::set", "color", "color");
   ((wxColour *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1, x2);
 
   
@@ -879,17 +879,17 @@ static Scheme_Object *os_wxColourGet(Scheme_Object *obj, int n,  Scheme_Object *
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:colour%::get", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("color%::get", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:colour%::get"), "wx:colour%::get");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "color%::get"), "color%::get");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:colour%::get", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("color%::get", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:colour%::get"), "wx:colour%::get");
+    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "color%::get"), "color%::get");
   if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("wx:colour%::get", "non-" XC_NULL_STR, (2 - 0), n, p);
+    scheme_wrong_type("color%::get", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
-    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "wx:colour%::get"), "wx:colour%::get");
+    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "color%::get"), "color%::get");
 
   
   ((wxColour *)((Scheme_Class_Object *)obj)->primdata)->Get(x0, x1, x2);
@@ -914,9 +914,9 @@ static Scheme_Object *os_wxColouroperatorEQUAL(Scheme_Object *obj, int n,  Schem
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "wx:colour%::=", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "color%::=", 0);
 
-  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:colour%::=", "colour", "colour");
+  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "color%::=", "color", "color");
   r = &((wxColour *)((Scheme_Class_Object *)obj)->primdata)->operator=(*x0);
 
   
@@ -933,8 +933,8 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:colour%::initialization (color name case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:colour%::initialization (color name case)");
+      scheme_wrong_count("color%::initialization (color name case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "color%::initialization (color name case)");
 
     
     realobj = new os_wxColour(obj, x0);
@@ -947,10 +947,10 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:colour%::initialization (rgb values case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:colour%::initialization (rgb values case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:colour%::initialization (rgb values case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:colour%::initialization (rgb values case)");
+      scheme_wrong_count("color%::initialization (rgb values case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "color%::initialization (rgb values case)");
+    x1 = objscheme_unbundle_integer(p[1], "color%::initialization (rgb values case)");
+    x2 = objscheme_unbundle_integer(p[2], "color%::initialization (rgb values case)");
 
     
     realobj = new os_wxColour(obj, x0, x1, x2);
@@ -960,7 +960,7 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:colour%::initialization (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("color%::initialization (no argument case)", 0, 0, n, p);
 
     
     realobj = new os_wxColour(obj);
@@ -977,16 +977,16 @@ static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *objscheme_classname_os_wxColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:colour%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:colour%");
+  if (n) scheme_wrong_count("color%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("color%");
 }
 
 void objscheme_setup_wxColour(void *env)
 {
 if (os_wxColour_class) {
-    objscheme_add_global_class(os_wxColour_class,  "wx:colour%", env);
+    objscheme_add_global_class(os_wxColour_class, "color%", env);
 } else {
-  os_wxColour_class = objscheme_def_prim_class(env, "wx:colour%", "wx:object%", os_wxColour_ConstructScheme, 8);
+  os_wxColour_class = objscheme_def_prim_class(env, "color%", "object%", os_wxColour_ConstructScheme, 8);
 
   scheme_add_method_w_arity(os_wxColour_class,"get-class-name",objscheme_classname_os_wxColour, 0, 0);
 
@@ -1014,7 +1014,7 @@ int objscheme_istype_wxColour(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:colour% object or " XC_NULL_STR: "wx:colour% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "color% object or " XC_NULL_STR: "color% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1054,94 +1054,6 @@ class wxColour *objscheme_unbundle_wxColour(Scheme_Object *obj, const char *wher
     return (wxColour *)o->primdata;
 }
 
-
-
-
-class os_wxColourMap : public wxColourMap {
- public:
-
-  ~os_wxColourMap();
-};
-
-Scheme_Object *os_wxColourMap_class;
-
-os_wxColourMap::~os_wxColourMap()
-{
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-static Scheme_Object *objscheme_classname_os_wxColourMap(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:colour-map%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:colour-map%");
-}
-
-void objscheme_setup_wxColourMap(void *env)
-{
-if (os_wxColourMap_class) {
-    objscheme_add_global_class(os_wxColourMap_class,  "wx:colour-map%", env);
-} else {
-  os_wxColourMap_class = objscheme_def_prim_class(env, "wx:colour-map%", "wx:object%", NULL, 1);
-
-  scheme_add_method_w_arity(os_wxColourMap_class,"get-class-name",objscheme_classname_os_wxColourMap, 0, 0);
-
-
-
-  scheme_made_class(os_wxColourMap_class);
-
-
-}
-}
-
-int objscheme_istype_wxColourMap(Scheme_Object *obj, const char *stop, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxColourMap_class))
-    return 1;
-  else {
-    if (!stop)
-       return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:colour-map% object or " XC_NULL_STR: "wx:colour-map% object", -1, 0, &obj);
-    return 0;
-  }
-}
-
-Scheme_Object *objscheme_bundle_wxColourMap(class wxColourMap *realobj)
-{
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
-
-  if (!realobj) return XC_SCHEME_NULL;
-
-  if (realobj->__gc_external)
-    return (Scheme_Object *)realobj->__gc_external;
-  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
-    return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxColourMap_class);
-
-  obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
-  obj->primflag = 0;
-
-  realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
-  return (Scheme_Object *)obj;
-}
-
-class wxColourMap *objscheme_unbundle_wxColourMap(Scheme_Object *obj, const char *where, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
-
-  (void)objscheme_istype_wxColourMap(obj, where, nullOK);
-  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
-  if (o->primflag)
-    return (os_wxColourMap *)o->primdata;
-  else
-    return (wxColourMap *)o->primdata;
-}
 
 
 #ifdef wx_mac
@@ -1184,8 +1096,8 @@ static Scheme_Object *os_wxColourDatabaseAppend(Scheme_Object *obj, int n,  Sche
   class wxColour* x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:colour-database%::append");
-  x1 = objscheme_unbundle_wxColour(p[1], "wx:colour-database%::append", 0);
+  x0 = (string)objscheme_unbundle_string(p[0], "color-database%::append");
+  x1 = objscheme_unbundle_wxColour(p[1], "color-database%::append", 0);
 
   
   ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->Append(x0, x1);
@@ -1204,7 +1116,7 @@ static Scheme_Object *os_wxColourDatabaseFindName(Scheme_Object *obj, int n,  Sc
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "wx:colour-database%::find-name", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "color-database%::find-name", 0);
 
   
   r = ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->FindName(*x0);
@@ -1223,7 +1135,7 @@ static Scheme_Object *os_wxColourDatabaseFindColour(Scheme_Object *obj, int n,  
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:colour-database%::find-colour");
+  x0 = (string)objscheme_unbundle_string(p[0], "color-database%::find-colour");
 
   
   r = ((wxColourDatabase *)((Scheme_Class_Object *)obj)->primdata)->FindColour(x0);
@@ -1236,16 +1148,16 @@ static Scheme_Object *os_wxColourDatabaseFindColour(Scheme_Object *obj, int n,  
 static Scheme_Object *objscheme_classname_os_wxColourDatabase(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:colour-database%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:colour-database%");
+  if (n) scheme_wrong_count("color-database%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("color-database%");
 }
 
 void objscheme_setup_wxColourDatabase(void *env)
 {
 if (os_wxColourDatabase_class) {
-    objscheme_add_global_class(os_wxColourDatabase_class,  "wx:colour-database%", env);
+    objscheme_add_global_class(os_wxColourDatabase_class, "color-database%", env);
 } else {
-  os_wxColourDatabase_class = objscheme_def_prim_class(env, "wx:colour-database%", "wx:object%", NULL, 4);
+  os_wxColourDatabase_class = objscheme_def_prim_class(env, "color-database%", "object%", NULL, 4);
 
   scheme_add_method_w_arity(os_wxColourDatabase_class,"get-class-name",objscheme_classname_os_wxColourDatabase, 0, 0);
 
@@ -1258,7 +1170,7 @@ if (os_wxColourDatabase_class) {
 
 
 }
-  scheme_install_xc_global("wx:the-colour-database", objscheme_bundle_wxColourDatabase(wxTheColourDatabase), env);
+  scheme_install_xc_global("the-color-database", objscheme_bundle_wxColourDatabase(wxTheColourDatabase), env);
 }
 
 int objscheme_istype_wxColourDatabase(Scheme_Object *obj, const char *stop, int nullOK)
@@ -1270,7 +1182,7 @@ int objscheme_istype_wxColourDatabase(Scheme_Object *obj, const char *stop, int 
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:colour-database% object or " XC_NULL_STR: "wx:colour-database% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "color-database% object or " XC_NULL_STR: "color-database% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1370,7 +1282,7 @@ static Scheme_Object *objscheme_wxPoint_Setx(Scheme_Object *obj, int n,  Scheme_
 
   if (n != 1) scheme_wrong_count("set-x", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "wx:point%::x");
+  v = objscheme_unbundle_float(p[0], "point%::x");
   ((wxPoint *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -1400,7 +1312,7 @@ static Scheme_Object *objscheme_wxPoint_Sety(Scheme_Object *obj, int n,  Scheme_
 
   if (n != 1) scheme_wrong_count("set-y", 1, 1, n, p);
 
-  v = objscheme_unbundle_float(p[0], "wx:point%::y");
+  v = objscheme_unbundle_float(p[0], "point%::y");
   ((wxPoint *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -1416,9 +1328,9 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:point%::initialization (xy values case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_float(p[0], "wx:point%::initialization (xy values case)");
-    x1 = objscheme_unbundle_float(p[1], "wx:point%::initialization (xy values case)");
+      scheme_wrong_count("point%::initialization (xy values case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_float(p[0], "point%::initialization (xy values case)");
+    x1 = objscheme_unbundle_float(p[1], "point%::initialization (xy values case)");
 
     
     realobj = new os_wxPoint(obj, x0, x1);
@@ -1428,7 +1340,7 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:point%::initialization (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("point%::initialization (no argument case)", 0, 0, n, p);
 
     
     realobj = new os_wxPoint(obj);
@@ -1445,16 +1357,16 @@ static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *objscheme_classname_os_wxPoint(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:point%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:point%");
+  if (n) scheme_wrong_count("point%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("point%");
 }
 
 void objscheme_setup_wxPoint(void *env)
 {
 if (os_wxPoint_class) {
-    objscheme_add_global_class(os_wxPoint_class,  "wx:point%", env);
+    objscheme_add_global_class(os_wxPoint_class, "point%", env);
 } else {
-  os_wxPoint_class = objscheme_def_prim_class(env, "wx:point%", "wx:object%", os_wxPoint_ConstructScheme, 5);
+  os_wxPoint_class = objscheme_def_prim_class(env, "point%", "object%", os_wxPoint_ConstructScheme, 5);
 
   scheme_add_method_w_arity(os_wxPoint_class,"get-class-name",objscheme_classname_os_wxPoint, 0, 0);
 
@@ -1479,7 +1391,7 @@ int objscheme_istype_wxPoint(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:point% object or " XC_NULL_STR: "wx:point% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "point% object or " XC_NULL_STR: "point% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1578,7 +1490,7 @@ static Scheme_Object *objscheme_wxIntPoint_Setx(Scheme_Object *obj, int n,  Sche
 
   if (n != 1) scheme_wrong_count("set-x", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:int-point%::x");
+  v = objscheme_unbundle_integer(p[0], "int-point%::x");
   ((wxIntPoint *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -1608,7 +1520,7 @@ static Scheme_Object *objscheme_wxIntPoint_Sety(Scheme_Object *obj, int n,  Sche
 
   if (n != 1) scheme_wrong_count("set-y", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "wx:int-point%::y");
+  v = objscheme_unbundle_integer(p[0], "int-point%::y");
   ((wxIntPoint *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -1624,9 +1536,9 @@ static Scheme_Object *os_wxIntPoint_ConstructScheme(Scheme_Object *obj, int n,  
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:int-point%::initialization (xy values case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:int-point%::initialization (xy values case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:int-point%::initialization (xy values case)");
+      scheme_wrong_count("int-point%::initialization (xy values case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "int-point%::initialization (xy values case)");
+    x1 = objscheme_unbundle_integer(p[1], "int-point%::initialization (xy values case)");
 
     
     realobj = new os_wxIntPoint(obj, x0, x1);
@@ -1636,7 +1548,7 @@ static Scheme_Object *os_wxIntPoint_ConstructScheme(Scheme_Object *obj, int n,  
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:int-point%::initialization (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("int-point%::initialization (no argument case)", 0, 0, n, p);
 
     
     realobj = new os_wxIntPoint(obj);
@@ -1653,16 +1565,16 @@ static Scheme_Object *os_wxIntPoint_ConstructScheme(Scheme_Object *obj, int n,  
 static Scheme_Object *objscheme_classname_os_wxIntPoint(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:int-point%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:int-point%");
+  if (n) scheme_wrong_count("int-point%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("int-point%");
 }
 
 void objscheme_setup_wxIntPoint(void *env)
 {
 if (os_wxIntPoint_class) {
-    objscheme_add_global_class(os_wxIntPoint_class,  "wx:int-point%", env);
+    objscheme_add_global_class(os_wxIntPoint_class, "int-point%", env);
 } else {
-  os_wxIntPoint_class = objscheme_def_prim_class(env, "wx:int-point%", "wx:object%", os_wxIntPoint_ConstructScheme, 5);
+  os_wxIntPoint_class = objscheme_def_prim_class(env, "int-point%", "object%", os_wxIntPoint_ConstructScheme, 5);
 
   scheme_add_method_w_arity(os_wxIntPoint_class,"get-class-name",objscheme_classname_os_wxIntPoint, 0, 0);
 
@@ -1687,7 +1599,7 @@ int objscheme_istype_wxIntPoint(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:int-point% object or " XC_NULL_STR: "wx:int-point% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "int-point% object or " XC_NULL_STR: "int-point% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1857,9 +1769,9 @@ static Scheme_Object *os_wxBrushSetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   int x0;
 
   
-  x0 = unbundle_symset_brushStyle(p[0], "wx:brush%::set-style");
+  x0 = unbundle_symset_brushStyle(p[0], "brush%::set-style");
 
-  if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:brush::set-style", "brush", "brush");
+  if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "brush::set-style", "brush", "brush");
   ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetStyle(x0);
 
   
@@ -1892,9 +1804,9 @@ static Scheme_Object *os_wxBrushSetStipple(Scheme_Object *obj, int n,  Scheme_Ob
   class wxBitmap* x0;
 
   
-  x0 = objscheme_unbundle_wxBitmap(p[0], "wx:brush%::set-stipple", 1);
+  x0 = objscheme_unbundle_wxBitmap(p[0], "brush%::set-stipple", 1);
 
-  if (x0 && !x0->Ok()) return scheme_void;if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:brush::set-stipple", "brush", "brush");
+  if (x0 && !x0->Ok()) return scheme_void;if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "brush::set-stipple", "brush", "brush");
   ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0);
 
   
@@ -1929,10 +1841,10 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:brush%::set-colour (wx:colour% case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxColour(p[0], "wx:brush%::set-colour (wx:colour% case)", 0);
+      scheme_wrong_count("brush%::set-color (color% case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxColour(p[0], "brush%::set-color (color% case)", 0);
 
-    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:brush::set-colour", "brush", "brush");
+    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "brush::set-colour", "brush", "brush");
     ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(*x0);
 
     
@@ -1942,10 +1854,10 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:brush%::set-colour (color name case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:brush%::set-colour (color name case)");
+      scheme_wrong_count("brush%::set-color (color name case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "brush%::set-color (color name case)");
 
-    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:brush::set-colour", "brush", "brush");
+    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "brush::set-colour", "brush", "brush");
     ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0);
 
     
@@ -1957,12 +1869,12 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:brush%::set-colour (rgb values case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:brush%::set-colour (rgb values case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:brush%::set-colour (rgb values case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:brush%::set-colour (rgb values case)");
+      scheme_wrong_count("brush%::set-color (rgb values case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "brush%::set-color (rgb values case)");
+    x1 = objscheme_unbundle_integer(p[1], "brush%::set-color (rgb values case)");
+    x2 = objscheme_unbundle_integer(p[2], "brush%::set-color (rgb values case)");
 
-    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:brush::set-colour", "brush", "brush");
+    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "brush::set-colour", "brush", "brush");
     ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0, x1, x2);
 
     
@@ -1999,9 +1911,9 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:brush%::initialization (color name case)", 2, 2, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:brush%::initialization (color name case)");
-    x1 = unbundle_symset_brushStyle(p[1], "wx:brush%::initialization (color name case)");
+      scheme_wrong_count("brush%::initialization (color name case)", 2, 2, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "brush%::initialization (color name case)");
+    x1 = unbundle_symset_brushStyle(p[1], "brush%::initialization (color name case)");
 
     
     realobj = new os_wxBrush(obj, x0, x1);
@@ -2013,9 +1925,9 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:brush%::initialization (wx:colour% case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_wxColour(p[0], "wx:brush%::initialization (wx:colour% case)", 0);
-    x1 = unbundle_symset_brushStyle(p[1], "wx:brush%::initialization (wx:colour% case)");
+      scheme_wrong_count("brush%::initialization (color% case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_wxColour(p[0], "brush%::initialization (color% case)", 0);
+    x1 = unbundle_symset_brushStyle(p[1], "brush%::initialization (color% case)");
 
     
     realobj = new os_wxBrush(obj, *x0, x1);
@@ -2025,7 +1937,7 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:brush%::initialization (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("brush%::initialization (no argument case)", 0, 0, n, p);
 
     
     realobj = new os_wxBrush(obj);
@@ -2042,16 +1954,16 @@ static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *objscheme_classname_os_wxBrush(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:brush%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:brush%");
+  if (n) scheme_wrong_count("brush%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("brush%");
 }
 
 void objscheme_setup_wxBrush(void *env)
 {
 if (os_wxBrush_class) {
-    objscheme_add_global_class(os_wxBrush_class,  "wx:brush%", env);
+    objscheme_add_global_class(os_wxBrush_class, "brush%", env);
 } else {
-  os_wxBrush_class = objscheme_def_prim_class(env, "wx:brush%", "wx:object%", os_wxBrush_ConstructScheme, 7);
+  os_wxBrush_class = objscheme_def_prim_class(env, "brush%", "object%", os_wxBrush_ConstructScheme, 7);
 
   scheme_add_method_w_arity(os_wxBrush_class,"get-class-name",objscheme_classname_os_wxBrush, 0, 0);
 
@@ -2059,8 +1971,8 @@ if (os_wxBrush_class) {
  scheme_add_method_w_arity(os_wxBrush_class, "get-style", os_wxBrushGetStyle, 0, 0);
  scheme_add_method_w_arity(os_wxBrush_class, "set-stipple", os_wxBrushSetStipple, 1, 1);
  scheme_add_method_w_arity(os_wxBrush_class, "get-stipple", os_wxBrushGetStipple, 0, 0);
- scheme_add_method(os_wxBrush_class, "set-colour", os_wxBrushSetColour);
- scheme_add_method_w_arity(os_wxBrush_class, "get-colour", os_wxBrushGetColour, 0, 0);
+ scheme_add_method(os_wxBrush_class, "set-color", os_wxBrushSetColour);
+ scheme_add_method_w_arity(os_wxBrush_class, "get-color", os_wxBrushGetColour, 0, 0);
 
 
   scheme_made_class(os_wxBrush_class);
@@ -2078,7 +1990,7 @@ int objscheme_istype_wxBrush(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:brush% object or " XC_NULL_STR: "wx:brush% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "brush% object or " XC_NULL_STR: "brush% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -2157,9 +2069,9 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:brush-list%::find-or-create-brush (wx:colour% case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_wxColour(p[0], "wx:brush-list%::find-or-create-brush (wx:colour% case)", 0);
-    x1 = unbundle_symset_brushStyle(p[1], "wx:brush-list%::find-or-create-brush (wx:colour% case)");
+      scheme_wrong_count("brush-list%::find-or-create-brush (color% case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_wxColour(p[0], "brush-list%::find-or-create-brush (color% case)", 0);
+    x1 = unbundle_symset_brushStyle(p[1], "brush-list%::find-or-create-brush (color% case)");
 
     
     r = ((wxBrushList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreateBrush(x0, x1);
@@ -2172,9 +2084,9 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:brush-list%::find-or-create-brush (color name case)", 2, 2, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:brush-list%::find-or-create-brush (color name case)");
-    x1 = unbundle_symset_brushStyle(p[1], "wx:brush-list%::find-or-create-brush (color name case)");
+      scheme_wrong_count("brush-list%::find-or-create-brush (color name case)", 2, 2, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "brush-list%::find-or-create-brush (color name case)");
+    x1 = unbundle_symset_brushStyle(p[1], "brush-list%::find-or-create-brush (color name case)");
 
     
     r = ((wxBrushList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreateBrush(x0, x1);
@@ -2193,7 +2105,7 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n, 
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:brush-list%::initialization", 0, 0, n, p);
+    scheme_wrong_count("brush-list%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxBrushList(obj);
@@ -2208,16 +2120,16 @@ static Scheme_Object *os_wxBrushList_ConstructScheme(Scheme_Object *obj, int n, 
 static Scheme_Object *objscheme_classname_os_wxBrushList(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:brush-list%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:brush-list%");
+  if (n) scheme_wrong_count("brush-list%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("brush-list%");
 }
 
 void objscheme_setup_wxBrushList(void *env)
 {
 if (os_wxBrushList_class) {
-    objscheme_add_global_class(os_wxBrushList_class,  "wx:brush-list%", env);
+    objscheme_add_global_class(os_wxBrushList_class, "brush-list%", env);
 } else {
-  os_wxBrushList_class = objscheme_def_prim_class(env, "wx:brush-list%", "wx:object%", os_wxBrushList_ConstructScheme, 2);
+  os_wxBrushList_class = objscheme_def_prim_class(env, "brush-list%", "object%", os_wxBrushList_ConstructScheme, 2);
 
   scheme_add_method_w_arity(os_wxBrushList_class,"get-class-name",objscheme_classname_os_wxBrushList, 0, 0);
 
@@ -2228,7 +2140,7 @@ if (os_wxBrushList_class) {
 
 
 }
-  scheme_install_xc_global("wx:the-brush-list", objscheme_bundle_wxBrushList(wxTheBrushList), env);
+  scheme_install_xc_global("the-brush-list", objscheme_bundle_wxBrushList(wxTheBrushList), env);
 }
 
 int objscheme_istype_wxBrushList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2240,7 +2152,7 @@ int objscheme_istype_wxBrushList(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:brush-list% object or " XC_NULL_STR: "wx:brush-list% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "brush-list% object or " XC_NULL_STR: "brush-list% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -2478,9 +2390,9 @@ static Scheme_Object *os_wxPenSetStyle(Scheme_Object *obj, int n,  Scheme_Object
   int x0;
 
   
-  x0 = unbundle_symset_penStyle(p[0], "wx:pen%::set-style");
+  x0 = unbundle_symset_penStyle(p[0], "pen%::set-style");
 
-  if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:pen::set-style", "pen", "pen");
+  if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "pen::set-style", "pen", "pen");
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetStyle(x0);
 
   
@@ -2513,9 +2425,9 @@ static Scheme_Object *os_wxPenSetStipple(Scheme_Object *obj, int n,  Scheme_Obje
   class wxBitmap* x0;
 
   
-  x0 = objscheme_unbundle_wxBitmap(p[0], "wx:pen%::set-stipple", 1);
+  x0 = objscheme_unbundle_wxBitmap(p[0], "pen%::set-stipple", 1);
 
-  if (x0 && !x0->Ok()) return scheme_void;if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:pen::set-stipple", "pen", "pen");
+  if (x0 && !x0->Ok()) return scheme_void;if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "pen::set-stipple", "pen", "pen");
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0);
 
   
@@ -2550,10 +2462,10 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:pen%::set-colour (wx:colour% case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxColour(p[0], "wx:pen%::set-colour (wx:colour% case)", 0);
+      scheme_wrong_count("pen%::set-colour (color% case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxColour(p[0], "pen%::set-colour (color% case)", 0);
 
-    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:pen::set-colour", "pen", "pen");
+    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "pen::set-colour", "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(*x0);
 
     
@@ -2563,10 +2475,10 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:pen%::set-colour (color name case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:pen%::set-colour (color name case)");
+      scheme_wrong_count("pen%::set-colour (color name case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "pen%::set-colour (color name case)");
 
-    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:pen::set-colour", "pen", "pen");
+    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "pen::set-colour", "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0);
 
     
@@ -2578,12 +2490,12 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:pen%::set-colour (rgb values case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:pen%::set-colour (rgb values case)");
-    x1 = objscheme_unbundle_integer(p[1], "wx:pen%::set-colour (rgb values case)");
-    x2 = objscheme_unbundle_integer(p[2], "wx:pen%::set-colour (rgb values case)");
+      scheme_wrong_count("pen%::set-colour (rgb values case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "pen%::set-colour (rgb values case)");
+    x1 = objscheme_unbundle_integer(p[1], "pen%::set-colour (rgb values case)");
+    x2 = objscheme_unbundle_integer(p[2], "pen%::set-colour (rgb values case)");
 
-    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", "wx:pen::set-colour", "pen", "pen");
+    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", "pen::set-colour", "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0, x1, x2);
 
     
@@ -2618,7 +2530,7 @@ static Scheme_Object *os_wxPenSetJoin(Scheme_Object *obj, int n,  Scheme_Object 
   int x0;
 
   
-  x0 = unbundle_symset_join(p[0], "wx:pen%::set-join");
+  x0 = unbundle_symset_join(p[0], "pen%::set-join");
 
   
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetJoin(x0);
@@ -2653,7 +2565,7 @@ static Scheme_Object *os_wxPenSetCap(Scheme_Object *obj, int n,  Scheme_Object *
   int x0;
 
   
-  x0 = unbundle_symset_cap(p[0], "wx:pen%::set-cap");
+  x0 = unbundle_symset_cap(p[0], "pen%::set-cap");
 
   
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetCap(x0);
@@ -2688,7 +2600,7 @@ static Scheme_Object *os_wxPenSetWidth(Scheme_Object *obj, int n,  Scheme_Object
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:pen%::set-width");
+  x0 = objscheme_unbundle_integer(p[0], "pen%::set-width");
 
   
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetWidth(x0);
@@ -2726,10 +2638,10 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:pen%::initialization (color name case)", 3, 3, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:pen%::initialization (color name case)");
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen%::initialization (color name case)");
-    x2 = unbundle_symset_penStyle(p[2], "wx:pen%::initialization (color name case)");
+      scheme_wrong_count("pen%::initialization (color name case)", 3, 3, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "pen%::initialization (color name case)");
+    x1 = objscheme_unbundle_nonnegative_integer(p[1], "pen%::initialization (color name case)");
+    x2 = unbundle_symset_penStyle(p[2], "pen%::initialization (color name case)");
 
     
     realobj = new os_wxPen(obj, x0, x1, x2);
@@ -2742,10 +2654,10 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:pen%::initialization (wx:colour% case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_wxColour(p[0], "wx:pen%::initialization (wx:colour% case)", 0);
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen%::initialization (wx:colour% case)");
-    x2 = unbundle_symset_penStyle(p[2], "wx:pen%::initialization (wx:colour% case)");
+      scheme_wrong_count("pen%::initialization (color% case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_wxColour(p[0], "pen%::initialization (color% case)", 0);
+    x1 = objscheme_unbundle_nonnegative_integer(p[1], "pen%::initialization (color% case)");
+    x2 = unbundle_symset_penStyle(p[2], "pen%::initialization (color% case)");
 
     
     realobj = new os_wxPen(obj, *x0, x1, x2);
@@ -2755,7 +2667,7 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:pen%::initialization (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("pen%::initialization (no argument case)", 0, 0, n, p);
 
     
     realobj = new os_wxPen(obj);
@@ -2772,16 +2684,16 @@ static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Schem
 static Scheme_Object *objscheme_classname_os_wxPen(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:pen%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:pen%");
+  if (n) scheme_wrong_count("pen%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("pen%");
 }
 
 void objscheme_setup_wxPen(void *env)
 {
 if (os_wxPen_class) {
-    objscheme_add_global_class(os_wxPen_class,  "wx:pen%", env);
+    objscheme_add_global_class(os_wxPen_class, "pen%", env);
 } else {
-  os_wxPen_class = objscheme_def_prim_class(env, "wx:pen%", "wx:object%", os_wxPen_ConstructScheme, 13);
+  os_wxPen_class = objscheme_def_prim_class(env, "pen%", "object%", os_wxPen_ConstructScheme, 13);
 
   scheme_add_method_w_arity(os_wxPen_class,"get-class-name",objscheme_classname_os_wxPen, 0, 0);
 
@@ -2814,7 +2726,7 @@ int objscheme_istype_wxPen(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:pen% object or " XC_NULL_STR: "wx:pen% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "pen% object or " XC_NULL_STR: "pen% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -2895,10 +2807,10 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:pen-list%::find-or-create-pen (wx:colour% case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_wxColour(p[0], "wx:pen-list%::find-or-create-pen (wx:colour% case)", 0);
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen-list%::find-or-create-pen (wx:colour% case)");
-    x2 = unbundle_symset_penStyle(p[2], "wx:pen-list%::find-or-create-pen (wx:colour% case)");
+      scheme_wrong_count("pen-list%::find-or-create-pen (color% case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_wxColour(p[0], "pen-list%::find-or-create-pen (color% case)", 0);
+    x1 = objscheme_unbundle_nonnegative_integer(p[1], "pen-list%::find-or-create-pen (color% case)");
+    x2 = unbundle_symset_penStyle(p[2], "pen-list%::find-or-create-pen (color% case)");
 
     
     r = ((wxPenList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreatePen(x0, x1, x2);
@@ -2912,10 +2824,10 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:pen-list%::find-or-create-pen (color name case)", 3, 3, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:pen-list%::find-or-create-pen (color name case)");
-    x1 = objscheme_unbundle_nonnegative_integer(p[1], "wx:pen-list%::find-or-create-pen (color name case)");
-    x2 = unbundle_symset_penStyle(p[2], "wx:pen-list%::find-or-create-pen (color name case)");
+      scheme_wrong_count("pen-list%::find-or-create-pen (color name case)", 3, 3, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "pen-list%::find-or-create-pen (color name case)");
+    x1 = objscheme_unbundle_nonnegative_integer(p[1], "pen-list%::find-or-create-pen (color name case)");
+    x2 = unbundle_symset_penStyle(p[2], "pen-list%::find-or-create-pen (color name case)");
 
     
     r = ((wxPenList *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreatePen(x0, x1, x2);
@@ -2934,7 +2846,7 @@ static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  S
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:pen-list%::initialization", 0, 0, n, p);
+    scheme_wrong_count("pen-list%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxPenList(obj);
@@ -2949,16 +2861,16 @@ static Scheme_Object *os_wxPenList_ConstructScheme(Scheme_Object *obj, int n,  S
 static Scheme_Object *objscheme_classname_os_wxPenList(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:pen-list%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:pen-list%");
+  if (n) scheme_wrong_count("pen-list%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("pen-list%");
 }
 
 void objscheme_setup_wxPenList(void *env)
 {
 if (os_wxPenList_class) {
-    objscheme_add_global_class(os_wxPenList_class,  "wx:pen-list%", env);
+    objscheme_add_global_class(os_wxPenList_class, "pen-list%", env);
 } else {
-  os_wxPenList_class = objscheme_def_prim_class(env, "wx:pen-list%", "wx:object%", os_wxPenList_ConstructScheme, 2);
+  os_wxPenList_class = objscheme_def_prim_class(env, "pen-list%", "object%", os_wxPenList_ConstructScheme, 2);
 
   scheme_add_method_w_arity(os_wxPenList_class,"get-class-name",objscheme_classname_os_wxPenList, 0, 0);
 
@@ -2969,7 +2881,7 @@ if (os_wxPenList_class) {
 
 
 }
-  scheme_install_xc_global("wx:the-pen-list", objscheme_bundle_wxPenList(wxThePenList), env);
+  scheme_install_xc_global("the-pen-list", objscheme_bundle_wxPenList(wxThePenList), env);
 }
 
 int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK)
@@ -2981,7 +2893,7 @@ int objscheme_istype_wxPenList(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:pen-list% object or " XC_NULL_STR: "wx:pen-list% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "pen-list% object or " XC_NULL_STR: "pen-list% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -3156,8 +3068,8 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:cursor%::initialization (cursor id case)", 1, 1, n, p);
-    x0 = unbundle_symset_cursor(p[0], "wx:cursor%::initialization (cursor id case)");
+      scheme_wrong_count("cursor%::initialization (cursor id case)", 1, 1, n, p);
+    x0 = unbundle_symset_cursor(p[0], "cursor%::initialization (cursor id case)");
 
     
     realobj = new os_wxCursor(obj, x0);
@@ -3171,15 +3083,15 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if ((n < 2) ||(n > 4)) 
-      scheme_wrong_count("wx:cursor%::initialization (cursor name case)", 2, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:cursor%::initialization (cursor name case)");
-    x1 = unbundle_symset_bitmapType(p[1], "wx:cursor%::initialization (cursor name case)");
+      scheme_wrong_count("cursor%::initialization (cursor name case)", 2, 4, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "cursor%::initialization (cursor name case)");
+    x1 = unbundle_symset_bitmapType(p[1], "cursor%::initialization (cursor name case)");
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "wx:cursor%::initialization (cursor name case)");
+      x2 = objscheme_unbundle_integer(p[2], "cursor%::initialization (cursor name case)");
     } else
       x2 = 0;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:cursor%::initialization (cursor name case)");
+      x3 = objscheme_unbundle_integer(p[3], "cursor%::initialization (cursor name case)");
     } else
       x3 = 0;
 
@@ -3198,16 +3110,16 @@ static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *objscheme_classname_os_wxCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:cursor%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:cursor%");
+  if (n) scheme_wrong_count("cursor%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("cursor%");
 }
 
 void objscheme_setup_wxCursor(void *env)
 {
 if (os_wxCursor_class) {
-    objscheme_add_global_class(os_wxCursor_class,  "wx:cursor%", env);
+    objscheme_add_global_class(os_wxCursor_class, "cursor%", env);
 } else {
-  os_wxCursor_class = objscheme_def_prim_class(env, "wx:cursor%", "wx:object%", os_wxCursor_ConstructScheme, 2);
+  os_wxCursor_class = objscheme_def_prim_class(env, "cursor%", "object%", os_wxCursor_ConstructScheme, 2);
 
   scheme_add_method_w_arity(os_wxCursor_class,"get-class-name",objscheme_classname_os_wxCursor, 0, 0);
 
@@ -3229,7 +3141,7 @@ int objscheme_istype_wxCursor(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:cursor% object or " XC_NULL_STR: "wx:cursor% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "cursor% object or " XC_NULL_STR: "cursor% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -3306,7 +3218,7 @@ static Scheme_Object *os_wxFontNameDirectoryIdentity(Scheme_Object *obj, int n, 
   int x0;
 
   
-  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::find-family-default-font-id");
+  x0 = unbundle_symset_family(p[0], "font-name-directory%::find-family-default-font-id");
 
   
   r = Identity(((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata), x0);
@@ -3326,8 +3238,8 @@ static Scheme_Object *os_wxFontNameDirectoryFindOrCreateFontId(Scheme_Object *ob
   int x1;
 
   
-  x0 = (cstring)objscheme_unbundle_string(p[0], "wx:font-name-directory%::find-or-create-font-id");
-  x1 = unbundle_symset_family(p[1], "wx:font-name-directory%::find-or-create-font-id");
+  x0 = (cstring)objscheme_unbundle_string(p[0], "font-name-directory%::find-or-create-font-id");
+  x1 = unbundle_symset_family(p[1], "font-name-directory%::find-or-create-font-id");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->FindOrCreateFontId(x0, x1);
@@ -3346,7 +3258,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFamily(Scheme_Object *obj, int n,
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:font-name-directory%::get-family");
+  x0 = objscheme_unbundle_integer(p[0], "font-name-directory%::get-family");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetFamily(x0);
@@ -3365,7 +3277,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontName(Scheme_Object *obj, int 
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:font-name-directory%::get-font-name");
+  x0 = objscheme_unbundle_integer(p[0], "font-name-directory%::get-font-name");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetFontName(x0);
@@ -3384,7 +3296,7 @@ static Scheme_Object *os_wxFontNameDirectoryGetFontId(Scheme_Object *obj, int n,
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:font-name-directory%::get-font-id");
+  x0 = (string)objscheme_unbundle_string(p[0], "font-name-directory%::get-font-id");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetFontId(x0);
@@ -3404,9 +3316,9 @@ static Scheme_Object *os_wxFontNameDirectoryInitialize(Scheme_Object *obj, int n
   string x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:font-name-directory%::initialize");
-  x1 = objscheme_unbundle_integer(p[1], "wx:font-name-directory%::initialize");
-  x2 = (string)objscheme_unbundle_string(p[2], "wx:font-name-directory%::initialize");
+  x0 = objscheme_unbundle_integer(p[0], "font-name-directory%::initialize");
+  x1 = objscheme_unbundle_integer(p[1], "font-name-directory%::initialize");
+  x2 = (string)objscheme_unbundle_string(p[2], "font-name-directory%::initialize");
 
   
   ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->Initialize(x0, x1, x2);
@@ -3444,9 +3356,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetAFMName(Scheme_Object *obj, int n
   int x2;
 
   
-  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::get-afm-name");
-  x1 = unbundle_symset_style(p[1], "wx:font-name-directory%::get-afm-name");
-  x2 = unbundle_symset_weight(p[2], "wx:font-name-directory%::get-afm-name");
+  x0 = unbundle_symset_family(p[0], "font-name-directory%::get-afm-name");
+  x1 = unbundle_symset_style(p[1], "font-name-directory%::get-afm-name");
+  x2 = unbundle_symset_weight(p[2], "font-name-directory%::get-afm-name");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetAFMName(x0, x1, x2);
@@ -3467,9 +3379,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetPostScriptName(Scheme_Object *obj
   int x2;
 
   
-  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::get-post-script-name");
-  x1 = unbundle_symset_style(p[1], "wx:font-name-directory%::get-post-script-name");
-  x2 = unbundle_symset_weight(p[2], "wx:font-name-directory%::get-post-script-name");
+  x0 = unbundle_symset_family(p[0], "font-name-directory%::get-post-script-name");
+  x1 = unbundle_symset_style(p[1], "font-name-directory%::get-post-script-name");
+  x2 = unbundle_symset_weight(p[2], "font-name-directory%::get-post-script-name");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetPostScriptName(x0, x1, x2);
@@ -3490,9 +3402,9 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
   int x2;
 
   
-  x0 = unbundle_symset_family(p[0], "wx:font-name-directory%::get-screen-name");
-  x1 = unbundle_symset_style(p[1], "wx:font-name-directory%::get-screen-name");
-  x2 = unbundle_symset_weight(p[2], "wx:font-name-directory%::get-screen-name");
+  x0 = unbundle_symset_family(p[0], "font-name-directory%::get-screen-name");
+  x1 = unbundle_symset_style(p[1], "font-name-directory%::get-screen-name");
+  x2 = unbundle_symset_weight(p[2], "font-name-directory%::get-screen-name");
 
   
   r = ((wxFontNameDirectory *)((Scheme_Class_Object *)obj)->primdata)->GetScreenName(x0, x1, x2);
@@ -3505,16 +3417,16 @@ static Scheme_Object *os_wxFontNameDirectoryGetScreenName(Scheme_Object *obj, in
 static Scheme_Object *objscheme_classname_os_wxFontNameDirectory(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:font-name-directory%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:font-name-directory%");
+  if (n) scheme_wrong_count("font-name-directory%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("font-name-directory%");
 }
 
 void objscheme_setup_wxFontNameDirectory(void *env)
 {
 if (os_wxFontNameDirectory_class) {
-    objscheme_add_global_class(os_wxFontNameDirectory_class,  "wx:font-name-directory%", env);
+    objscheme_add_global_class(os_wxFontNameDirectory_class, "font-name-directory%", env);
 } else {
-  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "wx:font-name-directory%", "wx:object%", NULL, 11);
+  os_wxFontNameDirectory_class = objscheme_def_prim_class(env, "font-name-directory%", "object%", NULL, 11);
 
   scheme_add_method_w_arity(os_wxFontNameDirectory_class,"get-class-name",objscheme_classname_os_wxFontNameDirectory, 0, 0);
 
@@ -3534,7 +3446,7 @@ if (os_wxFontNameDirectory_class) {
 
 
 }
-  scheme_install_xc_global("wx:the-font-name-directory", objscheme_bundle_wxFontNameDirectory(&wxTheFontNameDirectory), env);
+  scheme_install_xc_global("the-font-name-directory", objscheme_bundle_wxFontNameDirectory(&wxTheFontNameDirectory), env);
 }
 
 int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, int nullOK)
@@ -3546,7 +3458,7 @@ int objscheme_istype_wxFontNameDirectory(Scheme_Object *obj, const char *stop, i
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:font-name-directory% object or " XC_NULL_STR: "wx:font-name-directory% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "font-name-directory% object or " XC_NULL_STR: "font-name-directory% object", -1, 0, &obj);
     return 0;
   }
 }

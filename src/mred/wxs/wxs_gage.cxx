@@ -167,7 +167,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:gauge%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "gauge%::pre-on-event"", extracting return value");
   }
 }
 
@@ -202,7 +202,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:gauge%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "gauge%::pre-on-char"", extracting return value");
   }
 }
 
@@ -329,7 +329,7 @@ static Scheme_Object *os_wxsGaugeSetValue(Scheme_Object *obj, int n,  Scheme_Obj
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:gauge%::set-value");
+  x0 = objscheme_unbundle_integer(p[0], "gauge%::set-value");
 
   
   ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->SetValue(x0);
@@ -364,7 +364,7 @@ static Scheme_Object *os_wxsGaugeSetRange(Scheme_Object *obj, int n,  Scheme_Obj
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:gauge%::set-range");
+  x0 = objscheme_unbundle_integer(p[0], "gauge%::set-range");
 
   
   ((wxsGauge *)((Scheme_Class_Object *)obj)->primdata)->SetRange(x0);
@@ -384,8 +384,8 @@ static Scheme_Object *os_wxsGaugePreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:gauge%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "wx:gauge%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "gauge%::pre-on-event", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "gauge%::pre-on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -408,8 +408,8 @@ static Scheme_Object *os_wxsGaugePreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:gauge%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "wx:gauge%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "gauge%::pre-on-char", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "gauge%::pre-on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -431,8 +431,8 @@ static Scheme_Object *os_wxsGaugeOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:gauge%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "wx:gauge%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "gauge%::on-size");
+  x1 = objscheme_unbundle_integer(p[1], "gauge%::on-size");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -499,32 +499,32 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
   
   if ((n < 3) ||(n > 9)) 
-    scheme_wrong_count("wx:gauge%::initialization", 3, 9, n, p);
-  x0 = objscheme_unbundle_wxPanel(p[0], "wx:gauge%::initialization", 0);
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "wx:gauge%::initialization");
-  x2 = objscheme_unbundle_integer(p[2], "wx:gauge%::initialization");
+    scheme_wrong_count("gauge%::initialization", 3, 9, n, p);
+  x0 = objscheme_unbundle_wxPanel(p[0], "gauge%::initialization", 0);
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "gauge%::initialization");
+  x2 = objscheme_unbundle_integer(p[2], "gauge%::initialization");
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], "wx:gauge%::initialization");
+    x3 = objscheme_unbundle_integer(p[3], "gauge%::initialization");
   } else
     x3 = -1;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "wx:gauge%::initialization");
+    x4 = objscheme_unbundle_integer(p[4], "gauge%::initialization");
   } else
     x4 = -1;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "wx:gauge%::initialization");
+    x5 = objscheme_unbundle_integer(p[5], "gauge%::initialization");
   } else
     x5 = -1;
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "wx:gauge%::initialization");
+    x6 = objscheme_unbundle_integer(p[6], "gauge%::initialization");
   } else
     x6 = -1;
   if (n > 7) {
-    x7 = unbundle_symset_gaugeStyle(p[7], "wx:gauge%::initialization");
+    x7 = unbundle_symset_gaugeStyle(p[7], "gauge%::initialization");
   } else
     x7 = wxHORIZONTAL;
   if (n > 8) {
-    x8 = (string)objscheme_unbundle_string(p[8], "wx:gauge%::initialization");
+    x8 = (string)objscheme_unbundle_string(p[8], "gauge%::initialization");
   } else
     x8 = "gauge";
 
@@ -541,16 +541,16 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *objscheme_classname_os_wxsGauge(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:gauge%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:gauge%");
+  if (n) scheme_wrong_count("gauge%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("gauge%");
 }
 
 void objscheme_setup_wxsGauge(void *env)
 {
 if (os_wxsGauge_class) {
-    objscheme_add_global_class(os_wxsGauge_class,  "wx:gauge%", env);
+    objscheme_add_global_class(os_wxsGauge_class, "gauge%", env);
 } else {
-  os_wxsGauge_class = objscheme_def_prim_class(env, "wx:gauge%", "wx:item%", os_wxsGauge_ConstructScheme, 10);
+  os_wxsGauge_class = objscheme_def_prim_class(env, "gauge%", "item%", os_wxsGauge_ConstructScheme, 10);
 
   scheme_add_method_w_arity(os_wxsGauge_class,"get-class-name",objscheme_classname_os_wxsGauge, 0, 0);
 
@@ -580,7 +580,7 @@ int objscheme_istype_wxsGauge(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:gauge% object or " XC_NULL_STR: "wx:gauge% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "gauge% object or " XC_NULL_STR: "gauge% object", -1, 0, &obj);
     return 0;
   }
 }

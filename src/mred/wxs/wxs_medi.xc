@@ -68,10 +68,10 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @BEGINSYMBOLS printMethod > ONE
 @SYM "standard" : 0
 @SYM "postscript" : 1
-@SYM "ask" : 2
 @ENDSYMBOLS
 
-@CLASSBASE wxMediaBuffer "wx:media-buffer" : "wx:object"
+@CLASSBASE wxMediaBuffer "editor" : "object"
+@INTERFACE "editor"
 
 @CLASSID wxTYPE_MEDIA_BUFFER
 
@@ -118,7 +118,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ X "num-scroll-lines" : long NumScrollLines(); : : : : XrZERO
 @ X "find-scroll-line" : long FindScrollLine(float); : : : : XrZERO
 
-@ X "print-to-dc" : void PrintToDC(wxDC!); : : /CHECKOK[0."wx:media-buffer%::print-to-dc"]
+@ X "print-to-dc" : void PrintToDC(wxDC!); : : /CHECKOK[0."editor<%>::print-to-dc"]
 
 @ X "get-admin" : wxMediaAdmin^ GetAdmin(); : : : rNULL
 @ X "set-admin" : void SetAdmin(wxMediaAdmin^);
@@ -185,21 +185,21 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 @GLOBAL wxMediaGlobal
 
-@ "wx:get-media-print-margin" : void wxGetMediaPrintMargin(long?=NULL,long?=NULL);
-@ "wx:set-media-print-margin" : void wxSetMediaPrintMargin(long=-1,long=-1);
+@ "get-editor-print-margin" : void wxGetMediaPrintMargin(long?=NULL,long?=NULL);
+@ "set-editor-print-margin" : void wxSetMediaPrintMargin(long=-1,long=-1);
 
-@ "wx:read-media-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn%);
-@ "wx:read-media-global-footer" : bool wxReadMediaGlobalFooter(wxMediaStreamIn%);
-@ "wx:write-media-global-header" : bool wxWriteMediaGlobalHeader(wxMediaStreamOut%);
-@ "wx:write-media-global-footer" : bool wxWriteMediaGlobalFooter(wxMediaStreamOut%);
+@ "read-editor-global-header" : bool wxReadMediaGlobalHeader(wxMediaStreamIn%);
+@ "read-editor-global-footer" : bool wxReadMediaGlobalFooter(wxMediaStreamIn%);
+@ "write-editor-global-header" : bool wxWriteMediaGlobalHeader(wxMediaStreamOut%);
+@ "write-editor-global-footer" : bool wxWriteMediaGlobalFooter(wxMediaStreamOut%);
 
-@ "wx:add-media-buffer-functions" : void wxAddMediaBufferFunctions(wxKeymap!);
-@ "wx:add-media-editor-functions" : void wxAddMediaEditorFunctions(wxKeymap!);
-@ "wx:add-media-pasteboard-functions" : void wxAddMediaPasteboardFunctions(wxKeymap!);
+@ "add-editor-functions" : void wxAddMediaBufferFunctions(wxKeymap!);
+@ "add-text-editor-functions" : void wxAddMediaEditorFunctions(wxKeymap!);
+@ "add-pasteboard-editor-functions" : void wxAddMediaPasteboardFunctions(wxKeymap!);
 
-@ "wx:media-set-x-selection-mode" : void wxMediaSetXSelectionMode(bool);
+@ "editor-set-x-selection-mode" : void wxMediaSetXSelectionMode(bool);
 
-@ "wx:get-the-snip-class-list" : wxSnipClassList! wxGetTheSnipClassList()
-@ "wx:get-the-buffer-data-class-list" : wxBufferDataClassList! wxGetTheBufferDataClassList()
+@ "get-the-snip-class-list" : wxSnipClassList! wxGetTheSnipClassList()
+@ "get-the-buffer-data-class-list" : wxBufferDataClassList! wxGetTheBufferDataClassList()
 
 @END

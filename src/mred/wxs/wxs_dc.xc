@@ -48,7 +48,8 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-@CLASSBASE wxDC "wx:dc":"wx:object"
+@CLASSBASE wxDC "dc":"object"
+@INTERFACE "dc"
 
 @CLASSID wxTYPE_DC
 
@@ -90,7 +91,6 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 // @ Q "set-map-mode" : void SetMapMode(SYM[mapMode]); : : /CheckOk
 @ Q "set-background-mode" : void SetBackgroundMode(SYM[solidity]); :  : /CheckOk
-@ q "set-colour-map" : void SetColourMap(wxColourMap!); : : /CheckOk
 @ Q "set-user-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
 @ Q "set-device-origin" : void SetDeviceOrigin(float,float); : : /CheckOk
 
@@ -120,7 +120,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 @END
 
-@CLASSBASE wxCanvasDC "wx:canvas-dc":"wx:dc"
+@CLASSBASE wxCanvasDC "canvas-dc":"dc"
 
 @CLASSID wxTYPE_DC_CANVAS
 
@@ -135,24 +135,24 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 @END
 
 
-@CLASSBASE wxMemoryDC "wx:memory-dc":"wx:canvas-dc"
+@CLASSBASE wxMemoryDC "memory-dc":"canvas-dc"
 
 @CLASSID wxTYPE_DC_MEMORY
 
 @CREATOR (); <> no argument
-@CREATOR (wxCanvasDC!); <> wx:canvas-dc%
+// @CREATOR (wxCanvasDC!); <> canvas-dc%
 
 @ "select-object" : void SelectObject(wxBitmap^);
 
 @END
 
-@CLASSBASE wxPostScriptDC "wx:post-script-dc":"wx:dc"
+@CLASSBASE wxPostScriptDC "post-script-dc":"dc"
 
 @CLASSID wxTYPE_DC_POSTSCRIPT
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (npathname,bool=TRUE,wxWindow^=NULL); : : /DLGORFRAME[2."wx:post-script-dc::initialization"]
+@CREATOR (npathname,bool=TRUE,wxWindow^=NULL); : : /DLGORFRAME[2."post-script-dc::initialization"]
 
 @END
 
@@ -163,7 +163,7 @@ class basePrinterDC : public wxObject
 public:
   basePrinterDC(char *, char *, char *, Bool = TRUE)
   {
-    scheme_signal_error("wx:printer-dc%::initialization: not supported for X Windows");
+    scheme_signal_error("printer-dc%::initialization: not supported for X Windows");
   }
 };
 
@@ -184,7 +184,7 @@ public:
 
 #endif
 
-@CLASSBASE basePrinterDC "wx:printer-dc":"wx:dc"
+@CLASSBASE basePrinterDC "printer-dc":"dc"
 
 @CLASSID wxTYPE_DC_PRINTER
 
@@ -211,13 +211,13 @@ class baseMetaFileDC : public wxObject
 {
 public:
   baseMetaFileDC(char * = NULL) {
-    scheme_signal_error("wx:meta-file-dc%::initialization: only supported for Windows");
+    scheme_signal_error("meta-file-dc%::initialization: only supported for Windows");
   }
 };
 
 #endif
 
-@CLASSBASE baseMetaFileDC "wx:meta-file-dc":"wx:dc"
+@CLASSBASE baseMetaFileDC "meta-file-dc":"dc"
 
 @CLASSID wxTYPE_DC_METAFILE
 

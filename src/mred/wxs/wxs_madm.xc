@@ -43,15 +43,15 @@ static void *DoCAPOCallback(void *data)
 
 typedef void *(*CAPOFunc)(void*);
 
-@CLASSBASE wxMediaCanvas "wx:media-canvas" : "wx:canvas"
+@CLASSBASE wxMediaCanvas "editor-canvas" : "canvas"
 
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
 @CREATOR (wxPanel!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> panel
 
 @CLASSID wxTYPE_MEDIA_CANVAS
 
-@ "set-media" : void SetMedia(wxMediaBuffer^,bool=TRUE);
-@ "get-media" : wxMediaBuffer^ GetMedia();
+@ "set-edit" : void SetMedia(wxMediaBuffer^,bool=TRUE);
+@ "get-edit" : wxMediaBuffer^ GetMedia();
 
 @ v "on-set-focus" : void OnSetFocus();
 @ v "on-kill-focus" : void OnKillFocus();
@@ -83,7 +83,7 @@ typedef void *(*CAPOFunc)(void*);
 @END
 
 
-@CLASSBASE wxMediaAdmin "wx:media-admin":"wx:object"
+@CLASSBASE wxMediaAdmin "editor-admin":"object"
 
 @CREATOR ();
 
@@ -95,7 +95,7 @@ typedef void *(*CAPOFunc)(void*);
 @END
 
 // #define FIXCMA os_wxCanvasMediaAdmin() : wxCanvasMediaAdmin(NULL) {}
-// @CLASSBASE wxCanvasMediaAdmin "wx:canvas-media-admin":"wx:media-admin"
+// @CLASSBASE wxCanvasMediaAdmin "canvas-media-admin":"media-admin"
 // @CLASSID wxTYPE_CANVAS_MEDIA_ADMIN
 // @VAR FIXCMA
 // @ "get-canvas" : wxMediaCanvas! GetCanvas()
@@ -103,7 +103,7 @@ typedef void *(*CAPOFunc)(void*);
 
 #define FIXMSMA os_wxMediaSnipMediaAdmin() : wxMediaSnipMediaAdmin(NULL) {}
 
-@CLASSBASE wxMediaSnipMediaAdmin "wx:media-snip-media-admin":"wx:media-admin"
+@CLASSBASE wxMediaSnipMediaAdmin "editor-snip-editor-admin":"editor-admin"
 
 @CLASSID wxTYPE_MEDIA_SNIP_MEDIA_ADMIN
 
@@ -114,13 +114,13 @@ typedef void *(*CAPOFunc)(void*);
 @END
 
 
-@CLASSBASE wxSnipAdmin "wx:snip-admin":"wx:object"
+@CLASSBASE wxSnipAdmin "snip-admin":"object"
 
 @CREATOR ();
 
 @CLASSID wxTYPE_MEDIA_SNIP_ADMIN
 
-@ V "get-media" : wxMediaBuffer^ GetMedia(); : : : rNULL
+@ V "get-edit" : wxMediaBuffer^ GetMedia(); : : : rNULL
 @ V "get-dc" : wxDC^ GetDC(); : : : rNULL
 @ V "get-view-size" : void GetViewSize(float?, float?);
 @ V "get-view" : void GetView(float?, float?, float?, float?, wxSnip^=NULL);
@@ -136,7 +136,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 
-@CLASSBASE wxSnipClass "wx:snip-class" : "wx:object"
+@CLASSBASE wxSnipClass "snip-class" : "object"
 
 @CREATOR ();
 
@@ -154,7 +154,7 @@ typedef void *(*CAPOFunc)(void*);
 @END
 
 
-@CLASSBASE wxSnipClassList "wx:snip-class-list" : "wx:object"
+@CLASSBASE wxSnipClassList "snip-class-list" : "object"
 
 @CLASSID wxTYPE_SNIP_CLASS_LIST
 
@@ -168,7 +168,7 @@ typedef void *(*CAPOFunc)(void*);
 @END
 
 
-@CLASSBASE wxKeymap "wx:keymap":"wx:object"
+@CLASSBASE wxKeymap "keymap":"object"
 
 typedef Scheme_Object KeymapCallbackToSchemeRec;
 #define kctsr(o) o
@@ -219,8 +219,8 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 @ "add-mouse-function" : void AddMouseFunction(string,wxMouseFunction/bCallback/ubCallbackMouse/cCallback2//spCallbackMouse,-unknown#void*=NULL); : : ubSetup / ubSetData[1.2]
 @ "set-grab-mouse-function" : void SetGrabMouseFunction(wxGrabMouseFunction/bCallback/ubCallbackGrabMouse/cCallback//spCallbackGrabMouse,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "remove-grab-mouse-function" : void RemoveGrabMouseFunction()
-@ "call-function" : bool CallFunction(string,wxObject!,wxKeyEvent%,bool=FALSE); <> wx:key-event%
-@ "call-function" : bool CallFunction(string,wxObject!,wxMouseEvent%,bool=FALSE); <> wx:mouse-event%
+@ "call-function" : bool CallFunction(string,wxObject!,wxKeyEvent%,bool=FALSE); <> key-event%
+@ "call-function" : bool CallFunction(string,wxObject!,wxMouseEvent%,bool=FALSE); <> mouse-event%
 @ "set-error-callback" : void SetErrorCallback(wxKeyErrorFunction/bCallback/ubCallbackError/cCallback//spCallbackError,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "set-break-sequence-callback" : void SetBreakSequenceCallback(wxBreakSequenceFunction/bCallback/ubCallbackBreak/cCallback//spCallbackBreak,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "chain-to-keymap" : void ChainToKeymap(wxKeymap!,bool);
@@ -361,7 +361,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
 
 @INCLUDE wxs_bkt.xci
 
-@CLASSBASE wxMediaWordbreakMap "wx:media-wordbreak-map" : "wx:object"
+@CLASSBASE wxMediaWordbreakMap "editor-wordbreak-map" : "object"
 
 @CREATOR ()
 
@@ -373,7 +373,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
 @ "adjust-usage" : void AdjustUsage(bool)
 @ "is-used?" : bool IsUsed();
 
-@CONSTANT "wx:the-media-wordbreak-map" : wxMediaWordbreakMap% wxTheMediaWordbreakMap
+@CONSTANT "the-editor-wordbreak-map" : wxMediaWordbreakMap% wxTheMediaWordbreakMap
 
 @END
 

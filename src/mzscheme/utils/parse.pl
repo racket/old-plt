@@ -5,6 +5,7 @@
 $key_include = '@INCLUDE ';
 $key_boolean = '@BOOLEAN ';
 $key_classbase = '@CLASSBASE ';
+$key_interface = '@INTERFACE ';
 $key_classid = '@CLASSID ';
 $key_global = '@GLOBAL ';
 $key_common = '@COMMON ';
@@ -45,6 +46,7 @@ sub ResetObjParams
     $global = 0;
     $common = 0;
     $implementor = "";
+    $interfacestring = "";
 }
 
 &ResetObjParams();
@@ -134,6 +136,9 @@ sub ReadFile {
 		}
 		$oldclass = $base;
 		$newclass = 'os_' . $base;
+	    } elsif (&StartsWithKey($_, $key_interface)) {
+		$_ = &Wash(&SkipKey($_, $key_classbase));
+		$interfacestring =$_;
 	    } elsif (&StartsWithKey($_, $key_global)) {
 		&ResetObjParams();
 		$global = 1;

@@ -109,7 +109,7 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 }
 
 
-/* The derivation wx:panel -> wx:canvas is a lie for Xt */
+/* The derivation panel -> canvas is a lie for Xt */
 
 
 
@@ -131,10 +131,6 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 // @ p "on-item-size" : void OnItemSize(wxItem!,int,int); ## INTERACT_METHODS
 // @ p "on-left-click" : void OnLeftClick(int,int,int); ## INTERACT_METHODS
 // @ p "on-right-click" : void OnRightClick(int,int,int); ## INTERACT_METHODS
-
-
-
-
 
 
 
@@ -347,7 +343,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:panel%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "panel%::pre-on-event"", extracting return value");
   }
 }
 
@@ -382,7 +378,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:panel%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "panel%::pre-on-char"", extracting return value");
   }
 }
 
@@ -485,40 +481,6 @@ wxPanel::OnKillFocus();
 }
 
 #pragma argsused
-static Scheme_Object *os_wxPanelTab(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
-    int x0;
-
-    
-    if (n != 1) 
-      scheme_wrong_count("wx:panel%::tab (tab amount case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:panel%::tab (tab amount case)");
-
-    
-    ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->Tab(x0);
-
-    
-    
-  } else  {
-
-    
-    if (n != 0) 
-      scheme_wrong_count("wx:panel%::tab (no argument case)", 0, 0, n, p);
-
-    
-    ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->Tab();
-
-    
-    
-  }
-
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxPanelSetBackgroundColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -526,7 +488,7 @@ static Scheme_Object *os_wxPanelSetBackgroundColour(Scheme_Object *obj, int n,  
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "wx:panel%::set-background-colour", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "panel%::set-background-colour", 0);
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetBackgroundColour(x0);
@@ -561,7 +523,7 @@ static Scheme_Object *os_wxPanelSetLabelColour(Scheme_Object *obj, int n,  Schem
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "wx:panel%::set-label-colour", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "panel%::set-label-colour", 0);
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetLabelColour(x0);
@@ -596,7 +558,7 @@ static Scheme_Object *os_wxPanelSetButtonColour(Scheme_Object *obj, int n,  Sche
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "wx:panel%::set-button-colour", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "panel%::set-button-colour", 0);
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetButtonColour(x0);
@@ -648,7 +610,7 @@ static Scheme_Object *os_wxPanelSetLabelFont(Scheme_Object *obj, int n,  Scheme_
   class wxFont* x0;
 
   
-  x0 = objscheme_unbundle_wxFont(p[0], "wx:panel%::set-label-font", 0);
+  x0 = objscheme_unbundle_wxFont(p[0], "panel%::set-label-font", 0);
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetLabelFont(x0);
@@ -683,7 +645,7 @@ static Scheme_Object *os_wxPanelSetButtonFont(Scheme_Object *obj, int n,  Scheme
   class wxFont* x0;
 
   
-  x0 = objscheme_unbundle_wxFont(p[0], "wx:panel%::set-button-font", 0);
+  x0 = objscheme_unbundle_wxFont(p[0], "panel%::set-button-font", 0);
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetButtonFont(x0);
@@ -691,127 +653,6 @@ static Scheme_Object *os_wxPanelSetButtonFont(Scheme_Object *obj, int n,  Scheme
   
   
   return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxDC* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetDC();
-
-  
-  
-  return objscheme_bundle_wxDC(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelNewLine(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  if ((n >= 1) && objscheme_istype_number(p[0], NULL)) {
-    int x0;
-
-    
-    if (n != 1) 
-      scheme_wrong_count("wx:panel%::new-line (tab amount case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:panel%::new-line (tab amount case)");
-
-    
-    ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->NewLine(x0);
-
-    
-    
-  } else  {
-
-    
-    if (n != 0) 
-      scheme_wrong_count("wx:panel%::new-line (no argument case)", 0, 0, n, p);
-
-    
-    ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->NewLine();
-
-    
-    
-  }
-
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelSetVerticalSpacing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "wx:panel%::set-vertical-spacing");
-
-  
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetVerticalSpacing(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelSetHorizontalSpacing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int x0;
-
-  
-  x0 = objscheme_unbundle_integer(p[0], "wx:panel%::set-horizontal-spacing");
-
-  
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetHorizontalSpacing(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelGetVerticalSpacing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetVerticalSpacing();
-
-  
-  
-  return scheme_make_integer(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelGetHorizontalSpacing(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  int r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetHorizontalSpacing();
-
-  
-  
-  return scheme_make_integer(r);
 }
 
 #pragma argsused
@@ -839,7 +680,7 @@ static Scheme_Object *os_wxPanelSetLabelPosition(Scheme_Object *obj, int n,  Sch
   int x0;
 
   
-  x0 = unbundle_symset_orientation(p[0], "wx:panel%::set-label-position");
+  x0 = unbundle_symset_orientation(p[0], "panel%::set-label-position");
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetLabelPosition(x0);
@@ -857,7 +698,7 @@ static Scheme_Object *os_wxPanelOnChar(Scheme_Object *obj, int n,  Scheme_Object
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "wx:panel%::on-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "panel%::on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -878,7 +719,7 @@ static Scheme_Object *os_wxPanelOnEvent(Scheme_Object *obj, int n,  Scheme_Objec
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "wx:panel%::on-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "panel%::on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -918,7 +759,7 @@ static Scheme_Object *os_wxPanelOnDefaultAction(Scheme_Object *obj, int n,  Sche
   class wxItem* x0;
 
   
-  x0 = objscheme_unbundle_wxItem(p[0], "wx:panel%::on-default-action", 0);
+  x0 = objscheme_unbundle_wxItem(p[0], "panel%::on-default-action", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -941,8 +782,8 @@ static Scheme_Object *os_wxPanelPreOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:panel%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "wx:panel%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "panel%::pre-on-event", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "panel%::pre-on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -965,8 +806,8 @@ static Scheme_Object *os_wxPanelPreOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:panel%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "wx:panel%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "panel%::pre-on-char", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "panel%::pre-on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -988,8 +829,8 @@ static Scheme_Object *os_wxPanelOnSize(Scheme_Object *obj, int n,  Scheme_Object
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:panel%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "wx:panel%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "panel%::on-size");
+  x1 = objscheme_unbundle_integer(p[1], "panel%::on-size");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1049,8 +890,8 @@ static Scheme_Object *os_wxPanelSetItemCursor(Scheme_Object *obj, int n,  Scheme
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:panel%::set-item-cursor");
-  x1 = objscheme_unbundle_integer(p[1], "wx:panel%::set-item-cursor");
+  x0 = objscheme_unbundle_integer(p[0], "panel%::set-item-cursor");
+  x1 = objscheme_unbundle_integer(p[1], "panel%::set-item-cursor");
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->SetItemCursor(x0, x1);
@@ -1072,13 +913,13 @@ static Scheme_Object *os_wxPanelGetCursor(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:panel%::get-item-cursor", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("panel%::get-item-cursor", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:panel%::get-item-cursor"), "wx:panel%::get-item-cursor");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "panel%::get-item-cursor"), "panel%::get-item-cursor");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:panel%::get-item-cursor", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("panel%::get-item-cursor", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:panel%::get-item-cursor"), "wx:panel%::get-item-cursor");
+    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "panel%::get-item-cursor"), "panel%::get-item-cursor");
 
   
   ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetCursor(x0, x1);
@@ -1088,39 +929,6 @@ static Scheme_Object *os_wxPanelGetCursor(Scheme_Object *obj, int n,  Scheme_Obj
     objscheme_set_box(p[0], scheme_make_integer(_x0));
   if (n > 1)
     objscheme_set_box(p[1], scheme_make_integer(_x1));
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelGetDefaultItem(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxButton* r;
-  objscheme_check_valid(obj);
-
-  
-
-  
-  r = ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->GetDefaultItem();
-
-  
-  
-  return objscheme_bundle_wxButton(r);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxPanelFit(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  
-  ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->Fit();
-
-  
   
   return scheme_void;
 }
@@ -1140,30 +948,30 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
     
     if ((n < 1) ||(n > 7)) 
-      scheme_wrong_count("wx:panel%::initialization (panel parent case)", 1, 7, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "wx:panel%::initialization (panel parent case)", 0);
+      scheme_wrong_count("panel%::initialization (panel parent case)", 1, 7, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "panel%::initialization (panel parent case)", 0);
     if (n > 1) {
-      x1 = objscheme_unbundle_integer(p[1], "wx:panel%::initialization (panel parent case)");
+      x1 = objscheme_unbundle_integer(p[1], "panel%::initialization (panel parent case)");
     } else
       x1 = -1;
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "wx:panel%::initialization (panel parent case)");
+      x2 = objscheme_unbundle_integer(p[2], "panel%::initialization (panel parent case)");
     } else
       x2 = -1;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:panel%::initialization (panel parent case)");
+      x3 = objscheme_unbundle_integer(p[3], "panel%::initialization (panel parent case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:panel%::initialization (panel parent case)");
+      x4 = objscheme_unbundle_integer(p[4], "panel%::initialization (panel parent case)");
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_panelStyle(p[5], "wx:panel%::initialization (panel parent case)");
+      x5 = unbundle_symset_panelStyle(p[5], "panel%::initialization (panel parent case)");
     } else
       x5 = 0;
     if (n > 6) {
-      x6 = (string)objscheme_unbundle_string(p[6], "wx:panel%::initialization (panel parent case)");
+      x6 = (string)objscheme_unbundle_string(p[6], "panel%::initialization (panel parent case)");
     } else
       x6 = "panel";
 
@@ -1182,30 +990,30 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
     
     if ((n < 1) ||(n > 7)) 
-      scheme_wrong_count("wx:panel%::initialization (frame case)", 1, 7, n, p);
-    x0 = objscheme_unbundle_wxFrame(p[0], "wx:panel%::initialization (frame case)", 0);
+      scheme_wrong_count("panel%::initialization (frame case)", 1, 7, n, p);
+    x0 = objscheme_unbundle_wxFrame(p[0], "panel%::initialization (frame case)", 0);
     if (n > 1) {
-      x1 = objscheme_unbundle_integer(p[1], "wx:panel%::initialization (frame case)");
+      x1 = objscheme_unbundle_integer(p[1], "panel%::initialization (frame case)");
     } else
       x1 = -1;
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "wx:panel%::initialization (frame case)");
+      x2 = objscheme_unbundle_integer(p[2], "panel%::initialization (frame case)");
     } else
       x2 = -1;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:panel%::initialization (frame case)");
+      x3 = objscheme_unbundle_integer(p[3], "panel%::initialization (frame case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:panel%::initialization (frame case)");
+      x4 = objscheme_unbundle_integer(p[4], "panel%::initialization (frame case)");
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = unbundle_symset_panelStyle(p[5], "wx:panel%::initialization (frame case)");
+      x5 = unbundle_symset_panelStyle(p[5], "panel%::initialization (frame case)");
     } else
       x5 = 0;
     if (n > 6) {
-      x6 = (string)objscheme_unbundle_string(p[6], "wx:panel%::initialization (frame case)");
+      x6 = (string)objscheme_unbundle_string(p[6], "panel%::initialization (frame case)");
     } else
       x6 = "panel";
 
@@ -1224,20 +1032,19 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *objscheme_classname_os_wxPanel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:panel%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:panel%");
+  if (n) scheme_wrong_count("panel%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("panel%");
 }
 
 void objscheme_setup_wxPanel(void *env)
 {
 if (os_wxPanel_class) {
-    objscheme_add_global_class(os_wxPanel_class,  "wx:panel%", env);
+    objscheme_add_global_class(os_wxPanel_class, "panel%", env);
 } else {
-  os_wxPanel_class = objscheme_def_prim_class(env, "wx:panel%", "wx:canvas%", os_wxPanel_ConstructScheme, 33);
+  os_wxPanel_class = objscheme_def_prim_class(env, "panel%", "canvas%", os_wxPanel_ConstructScheme, 24);
 
   scheme_add_method_w_arity(os_wxPanel_class,"get-class-name",objscheme_classname_os_wxPanel, 0, 0);
 
- scheme_add_method(os_wxPanel_class, "tab", os_wxPanelTab);
  scheme_add_method_w_arity(os_wxPanel_class, "set-background-colour", os_wxPanelSetBackgroundColour, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "get-background-colour", os_wxPanelGetBackgroundColour, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "set-label-colour", os_wxPanelSetLabelColour, 1, 1);
@@ -1248,12 +1055,6 @@ if (os_wxPanel_class) {
  scheme_add_method_w_arity(os_wxPanel_class, "set-label-font", os_wxPanelSetLabelFont, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "get-button-font", os_wxPanelGetButtonFont, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "set-button-font", os_wxPanelSetButtonFont, 1, 1);
- scheme_add_method_w_arity(os_wxPanel_class, "get-panel-dc", os_wxPanelGetDC, 0, 0);
- scheme_add_method(os_wxPanel_class, "new-line", os_wxPanelNewLine);
- scheme_add_method_w_arity(os_wxPanel_class, "set-vertical-spacing", os_wxPanelSetVerticalSpacing, 1, 1);
- scheme_add_method_w_arity(os_wxPanel_class, "set-horizontal-spacing", os_wxPanelSetHorizontalSpacing, 1, 1);
- scheme_add_method_w_arity(os_wxPanel_class, "get-vertical-spacing", os_wxPanelGetVerticalSpacing, 0, 0);
- scheme_add_method_w_arity(os_wxPanel_class, "get-horizontal-spacing", os_wxPanelGetHorizontalSpacing, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "get-label-position", os_wxPanelGetLabelPosition, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "set-label-position", os_wxPanelSetLabelPosition, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "on-char", os_wxPanelOnChar, 1, 1);
@@ -1267,8 +1068,6 @@ if (os_wxPanel_class) {
  scheme_add_method_w_arity(os_wxPanel_class, "on-kill-focus", os_wxPanelOnKillFocus, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "set-item-cursor", os_wxPanelSetItemCursor, 2, 2);
  scheme_add_method_w_arity(os_wxPanel_class, "get-item-cursor", os_wxPanelGetCursor, 2, 2);
- scheme_add_method_w_arity(os_wxPanel_class, "get-default-item", os_wxPanelGetDefaultItem, 0, 0);
- scheme_add_method_w_arity(os_wxPanel_class, "fit", os_wxPanelFit, 0, 0);
 
 
   scheme_made_class(os_wxPanel_class);
@@ -1287,7 +1086,7 @@ int objscheme_istype_wxPanel(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:panel% object or " XC_NULL_STR: "wx:panel% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "panel% object or " XC_NULL_STR: "panel% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1595,7 +1394,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:dialog-box%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "dialog-box%::pre-on-event"", extracting return value");
   }
 }
 
@@ -1630,7 +1429,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:dialog-box%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "dialog-box%::pre-on-char"", extracting return value");
   }
 }
 
@@ -1761,7 +1560,7 @@ return wxDialogBox::OnClose();
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:dialog-box%::on-close"", extracting return value");
+  return objscheme_unbundle_bool(v, "dialog-box%::on-close"", extracting return value");
   }
 }
 
@@ -1806,7 +1605,7 @@ static Scheme_Object *os_wxDialogBoxOnDefaultAction(Scheme_Object *obj, int n,  
   class wxItem* x0;
 
   
-  x0 = objscheme_unbundle_wxItem(p[0], "wx:dialog-box%::on-default-action", 0);
+  x0 = objscheme_unbundle_wxItem(p[0], "dialog-box%::on-default-action", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1827,7 +1626,7 @@ static Scheme_Object *os_wxDialogBoxOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "wx:dialog-box%::on-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "dialog-box%::on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1848,7 +1647,7 @@ static Scheme_Object *os_wxDialogBoxOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "wx:dialog-box%::on-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "dialog-box%::on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1890,8 +1689,8 @@ static Scheme_Object *os_wxDialogBoxPreOnEvent(Scheme_Object *obj, int n,  Schem
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:dialog-box%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "wx:dialog-box%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "dialog-box%::pre-on-event", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "dialog-box%::pre-on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1914,8 +1713,8 @@ static Scheme_Object *os_wxDialogBoxPreOnChar(Scheme_Object *obj, int n,  Scheme
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:dialog-box%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "wx:dialog-box%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "dialog-box%::pre-on-char", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "dialog-box%::pre-on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1937,8 +1736,8 @@ static Scheme_Object *os_wxDialogBoxOnSize(Scheme_Object *obj, int n,  Scheme_Ob
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:dialog-box%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "wx:dialog-box%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "dialog-box%::on-size");
+  x1 = objscheme_unbundle_integer(p[1], "dialog-box%::on-size");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2017,7 +1816,7 @@ static Scheme_Object *os_wxDialogBoxOnActivate(Scheme_Object *obj, int n,  Schem
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:dialog-box%::on-activate");
+  x0 = objscheme_unbundle_bool(p[0], "dialog-box%::on-activate");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2046,39 +1845,39 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
 
   
   if ((n < 2) ||(n > 9)) 
-    scheme_wrong_count("wx:dialog-box%::initialization", 2, 9, n, p);
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:dialog-box%::initialization", 1);
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "wx:dialog-box%::initialization");
+    scheme_wrong_count("dialog-box%::initialization", 2, 9, n, p);
+  x0 = objscheme_unbundle_wxWindow(p[0], "dialog-box%::initialization", 1);
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "dialog-box%::initialization");
   if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "wx:dialog-box%::initialization");
+    x2 = objscheme_unbundle_bool(p[2], "dialog-box%::initialization");
   } else
     x2 = FALSE;
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], "wx:dialog-box%::initialization");
+    x3 = objscheme_unbundle_integer(p[3], "dialog-box%::initialization");
   } else
     x3 = 300;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "wx:dialog-box%::initialization");
+    x4 = objscheme_unbundle_integer(p[4], "dialog-box%::initialization");
   } else
     x4 = 300;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "wx:dialog-box%::initialization");
+    x5 = objscheme_unbundle_integer(p[5], "dialog-box%::initialization");
   } else
     x5 = 500;
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "wx:dialog-box%::initialization");
+    x6 = objscheme_unbundle_integer(p[6], "dialog-box%::initialization");
   } else
     x6 = 500;
   if (n > 7) {
-    x7 = unbundle_symset_dialogStyle(p[7], "wx:dialog-box%::initialization");
+    x7 = unbundle_symset_dialogStyle(p[7], "dialog-box%::initialization");
   } else
     x7 = 0;
   if (n > 8) {
-    x8 = (string)objscheme_unbundle_string(p[8], "wx:dialog-box%::initialization");
+    x8 = (string)objscheme_unbundle_string(p[8], "dialog-box%::initialization");
   } else
     x8 = "dialogBox";
 
-  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type("wx:dialog-box%::initialization", "frame or dialog box", 0, n, p);if (!x5) x5 = -1;if (!x6) x6 = -1;
+  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type("dialog-box%::initialization", "frame or dialog box", 0, n, p);if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = new os_wxDialogBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
   
   
@@ -2091,16 +1890,16 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
 static Scheme_Object *objscheme_classname_os_wxDialogBox(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:dialog-box%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:dialog-box%");
+  if (n) scheme_wrong_count("dialog-box%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("dialog-box%");
 }
 
 void objscheme_setup_wxDialogBox(void *env)
 {
 if (os_wxDialogBox_class) {
-    objscheme_add_global_class(os_wxDialogBox_class,  "wx:dialog-box%", env);
+    objscheme_add_global_class(os_wxDialogBox_class, "dialog-box%", env);
 } else {
-  os_wxDialogBox_class = objscheme_def_prim_class(env, "wx:dialog-box%", "wx:panel%", os_wxDialogBox_ConstructScheme, 12);
+  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog-box%", "panel%", os_wxDialogBox_ConstructScheme, 12);
 
   scheme_add_method_w_arity(os_wxDialogBox_class,"get-class-name",objscheme_classname_os_wxDialogBox, 0, 0);
 
@@ -2133,7 +1932,7 @@ int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:dialog-box% object or " XC_NULL_STR: "wx:dialog-box% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "dialog-box% object or " XC_NULL_STR: "dialog-box% object", -1, 0, &obj);
     return 0;
   }
 }

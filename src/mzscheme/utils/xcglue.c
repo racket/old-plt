@@ -71,6 +71,11 @@ void objscheme_add_global_class(Scheme_Object *sclass, char *name, void *env)
   scheme_install_xc_global(name, sclass, env);
 }
 
+void objscheme_add_global_interface(Scheme_Object *in, char *name, void *env)
+{
+  scheme_install_xc_global(name, in, env);
+}
+
 Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
 				     char *name, void **cache)
 {

@@ -48,7 +48,7 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:object%::initialization", 0, 0, n, p);
+    scheme_wrong_count("object%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxObject(obj);
@@ -63,16 +63,16 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *objscheme_classname_os_wxObject(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:object%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:object%");
+  if (n) scheme_wrong_count("object%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("object%");
 }
 
 void objscheme_setup_wxObject(void *env)
 {
 if (os_wxObject_class) {
-    objscheme_add_global_class(os_wxObject_class,  "wx:object%", env);
+    objscheme_add_global_class(os_wxObject_class, "object%", env);
 } else {
-  os_wxObject_class = objscheme_def_prim_class(env, "wx:object%", NULL, os_wxObject_ConstructScheme, 1);
+  os_wxObject_class = objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 1);
 
   scheme_add_method_w_arity(os_wxObject_class,"get-class-name",objscheme_classname_os_wxObject, 0, 0);
 
@@ -93,7 +93,7 @@ int objscheme_istype_wxObject(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:object% object or " XC_NULL_STR: "wx:object% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "object% object or " XC_NULL_STR: "object% object", -1, 0, &obj);
     return 0;
   }
 }

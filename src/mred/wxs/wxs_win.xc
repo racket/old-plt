@@ -64,7 +64,7 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @SYM "horizontal" : wxHORIZONTAL
 @ENDSYMBOLS
 
-@CLASSBASE wxWindow "wx:window":"wx:object"
+@CLASSBASE wxWindow "window":"object"
 
 @MACRO CHECKCURSOROK[p] = if (x<p> && !x<p>->Ok()) x<p> = wxSTANDARD_CURSOR;
 

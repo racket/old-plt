@@ -7,15 +7,15 @@
 
 @INCLUDE wxs.xci
 
-// @CLASSBASE wxMenuItem "wx:menu-item" : "wx:object"
+// @CLASSBASE wxMenuItem "menu-item" : "object"
 // @END
 
 // wxMenu is really derived from wxItem
 //  but that makes no sense. Enforce different hierarchy here
-@CLASSBASE wxMenu "wx:menu" : "wx:object"
+@CLASSBASE wxMenu "menu" : "object"
 
 @SET CALLBACK_CLASS = wxMenu
-@SET CALLBACK_CLASS_USER = "wx:menu%::initialization"
+@SET CALLBACK_CLASS_USER = "menu%::initialization"
 @INCLUDE cb_start.xci
 
 @MACRO CHECKNEG[pos.result] = if (x<pos> < 0) return <result>;
@@ -51,7 +51,7 @@
 
 // wxMenuBar is really derived from wxItem
 //  but that makes no sense. Enforce different hierarchy here
-@CLASSBASE wxMenuBar "wx:menu-bar" : "wx:object"
+@CLASSBASE wxMenuBar "menu-bar" : "object"
 
 @SET TYPE = string
 @SET NOTEST = 1
@@ -61,12 +61,12 @@
 @SET POINTERS = 1
 @INCLUDE list.xci
 
-@MACRO CHECKSAMELENGTH = if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("wx:menu-bar%%::initialization: list size mismatch");
+@MACRO CHECKSAMELENGTH = if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("menu-bar%%::initialization: list size mismatch");
 
 @MACRO spMenuList = (listof wxMenu-object)
 
 @CREATOR (); <> no argument
-@CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList, string[]/bList/ubList/cList); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0."wx:menu-bar%::initialization"] | glueListSet[string.1.2.0."wx:menu-bar%::initialization"]// <> wx:menu% list
+@CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList, string[]/bList/ubList/cList); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0."menu-bar%::initialization"] | glueListSet[string.1.2.0."menu-bar%::initialization"]// <> menu% list
 
 @ "append" : void Append(wxMenu!,string);
 @ "delete" : bool Delete(wxMenu^,int=0);
@@ -108,7 +108,7 @@ wxsMenuItem* wxsIdToMenuItem(int id)
   return (wxsMenuItem *)id;
 }
 
-@CLASSBASE wxsMenuItem "wx:menu-item" : "wx:object"
+@CLASSBASE wxsMenuItem "menu-item" : "object"
 
 @CREATOR ()
 
@@ -119,6 +119,6 @@ wxsMenuItem* wxsIdToMenuItem(int id)
 
 @GLOBAL wxsMenuItemGlobal
 
-@ "wx:id-to-menu-item" : wxsMenuItem! wxsIdToMenuItem(int);
+@ "id-to-menu-item" : wxsMenuItem! wxsIdToMenuItem(int);
 
 @END

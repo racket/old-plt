@@ -81,8 +81,7 @@ static Scheme_Object *pref_dir_symbol, *pref_file_symbol,
 
 #define INSTALL_COUNT 520
 
-static Scheme_Unit *wxs_unit;
-static Scheme_Object *wxs_siglist, *wxs_signed_unit, *wxs_signature;
+static Scheme_Object *mred_unit;
 
 #define CONS scheme_make_pair
 
@@ -94,42 +93,9 @@ typedef struct {
   } v[INSTALL_COUNT];
 } InstallRec;
 
-static void wxScheme_Invoke(Scheme_Env * env)
+static void wxScheme_Invoke(Scheme_Env *)
 {
-  if (!wxs_signature) {
-    scheme_eval(CONS(scheme_intern_symbol("#%define-signature"),
-		     CONS(scheme_intern_symbol("wx^"),
-			  CONS(wxs_siglist,
-			       scheme_null))),
-		env);
-    wxs_signature = scheme_lookup_global(scheme_intern_symbol("wx^"), env);
-  }
-  scheme_add_global_constant("wx^", wxs_signature, env);
-
-  if (!wxs_signed_unit) {
-    wxs_signed_unit = scheme_eval(CONS(scheme_intern_symbol("#%unit->unit/sig"),
-				       CONS((Scheme_Object *)wxs_unit,
-					    CONS(scheme_null,
-						 CONS(scheme_intern_symbol("wx^"),
-						      scheme_null)))),
-				  env);
-
-    /* Now set "wx@" in "wx@": */
-    InstallRec *rec = (InstallRec *)wxs_unit->data;
-    int i;
-    
-    for (i = rec->count; i--; ) {
-      char *name = rec->v[i].name;
-      if (name[3] == 'w' && name[4] == 'x' && name[5] == '@' && name[6] == 0) {
-	rec->v[i].val = wxs_signed_unit;
-	break;
-      }
-    }
-  }
-
-  scheme_add_global("wx@", wxs_signed_unit, env); /* same as wx:wx@ */
-  
-  scheme_invoke_unit((Scheme_Object *)wxs_unit, 0, NULL, NULL, 1, "wx", 0, 0);
+  scheme_invoke_unit(mred_unit, 0, NULL, NULL, 1, NULL, 0, 0);
 }
 
 static Scheme_Object *wxsUnit_Init(Scheme_Object **boxes, Scheme_Object ** /* anchors */,
@@ -144,11 +110,14 @@ static Scheme_Object *wxsUnit_Init(Scheme_Object **boxes, Scheme_Object ** /* an
   return scheme_void;
 }
 
+extern "C" Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env);
+
 void wxsScheme_setup(Scheme_Env *env)
 {
   InstallRec *rec = (InstallRec *)scheme_malloc(sizeof(InstallRec));
   Scheme_Unit *u;
   int i;
+  Scheme_Object *link, *a[1];
 
   objscheme_init(env);
 
@@ -164,9 +133,6 @@ void wxsScheme_setup(Scheme_Env *env)
 
   wxScheme_Install(env, rec);
 
-  /* temporary wx@ binding */
-  scheme_install_xc_global("wx:wx@", scheme_void, (Scheme_Env *)rec);
-
   /* Note: the order of exports doesn't matter for matching the (sorted) sig */
   u = (Scheme_Unit *)scheme_malloc_tagged(sizeof(Scheme_Unit));
   u->type = scheme_unit_type;
@@ -175,15 +141,25 @@ void wxsScheme_setup(Scheme_Env *env)
   u->exports = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * rec->count);
   u->export_debug_names = NULL;
   u->data = (Scheme_Object *)rec;
-  wxs_siglist = scheme_null;
   for (i = rec->count; i--; ) {
-    Scheme_Object *s = scheme_intern_symbol(rec->v[i].name + 3); /* skip `wx:' */
+    Scheme_Object *s = scheme_intern_symbol(rec->v[i].name);
     u->exports[i] = s;
-    wxs_siglist = scheme_make_pair(s, wxs_siglist);
   }
   u->init_func = wxsUnit_Init;
 
-  wxs_unit = u;
+
+#define EVAL_ONE_STR(x) link = scheme_eval_string(x, env)
+#define EVAL_ONE_SIZED_STR(x, s) link = scheme_eval_compiled_sized_string(x, s, env)
+#define JUST_DEFINED_FUNC(x) /**/
+#define MZCOMPILED_STRING_FAR /**/
+#if 1
+# include "cwrap.inc"
+#else
+# include "wrap.inc"
+#endif
+
+  a[0] = (Scheme_Object *)u;
+  mred_unit = _scheme_apply(link, 1, a);
 
   wxScheme_Invoke(env);
 
@@ -258,7 +234,7 @@ static Scheme_Object *wxSchemeUnregisterCollectingBitmap(int, Scheme_Object **a)
   wxCanvas *c;
 
   if (a)
-    c = objscheme_unbundle_wxCanvas(a[0], "wx:unregister-collecting-blit", 0);
+    c = objscheme_unbundle_wxCanvas(a[0], "unregister-collecting-blit", 0);
   else
     c = NULL;
   
@@ -287,22 +263,22 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 
   gcbm->canvasptr = (wxCanvas **)scheme_malloc_atomic(sizeof(wxCanvas*));
 
-  *gcbm->canvasptr = objscheme_unbundle_wxCanvas(a[0], "wx:register-collecting-blit", 0);
-  gcbm->x = objscheme_unbundle_float(a[1], "wx:register-collecting-blit");
-  gcbm->y = objscheme_unbundle_float(a[2], "wx:register-collecting-blit");
-  gcbm->w = objscheme_unbundle_float(a[3], "wx:register-collecting-blit");
-  gcbm->h = objscheme_unbundle_float(a[4], "wx:register-collecting-blit");
-  gcbm->on = objscheme_unbundle_wxMemoryDC(a[5], "wx:register-collecting-blit", 0);
-  gcbm->off = objscheme_unbundle_wxMemoryDC(a[6], "wx:register-collecting-blit", 0);
+  *gcbm->canvasptr = objscheme_unbundle_wxCanvas(a[0], "register-collecting-blit", 0);
+  gcbm->x = objscheme_unbundle_float(a[1], "register-collecting-blit");
+  gcbm->y = objscheme_unbundle_float(a[2], "register-collecting-blit");
+  gcbm->w = objscheme_unbundle_float(a[3], "register-collecting-blit");
+  gcbm->h = objscheme_unbundle_float(a[4], "register-collecting-blit");
+  gcbm->on = objscheme_unbundle_wxMemoryDC(a[5], "register-collecting-blit", 0);
+  gcbm->off = objscheme_unbundle_wxMemoryDC(a[6], "register-collecting-blit", 0);
   gcbm->onx = gcbm->ony = gcbm->offx = gcbm-> offy = 0;
   if (n > 7) {
-    gcbm->onx = objscheme_unbundle_float(a[7], "wx:register-collecting-blit");
+    gcbm->onx = objscheme_unbundle_float(a[7], "register-collecting-blit");
     if (n > 8) {
-      gcbm->ony = objscheme_unbundle_float(a[8], "wx:register-collecting-blit");
+      gcbm->ony = objscheme_unbundle_float(a[8], "register-collecting-blit");
       if (n > 9) {
-	gcbm->offx = objscheme_unbundle_float(a[9], "wx:register-collecting-blit");
+	gcbm->offx = objscheme_unbundle_float(a[9], "register-collecting-blit");
 	if (n > 10) {
-	  gcbm->offy = objscheme_unbundle_float(a[10], "wx:register-collecting-blit");
+	  gcbm->offy = objscheme_unbundle_float(a[10], "register-collecting-blit");
 	}
       }
     }
@@ -345,10 +321,10 @@ static Scheme_Object *wxSchemeGetColourFromUser(int, Scheme_Object **argv)
   if (SCHEME_NULLP(argv[0]))
     s = "Choose a color";
   else
-    s = objscheme_unbundle_string(argv[0], "wx:get-colour-from-user");
+    s = objscheme_unbundle_string(argv[0], "get-color-from-user");
 
 #ifndef wx_x
-  wxColour *c = objscheme_unbundle_wxColour(argv[1], "wx:get-colour-from-user", 1);
+  wxColour *c = objscheme_unbundle_wxColour(argv[1], "get-color-from-user", 1);
 #endif
 
 #ifdef wx_x
@@ -427,10 +403,10 @@ static Scheme_Object *wxSchemeGetFontFromUser(int, Scheme_Object **argv)
   if (SCHEME_NULLP(argv[0]))
     prompt = "Choose a font";
   else
-    prompt = objscheme_unbundle_string(argv[0], "wx:get-font-from-user");
+    prompt = objscheme_unbundle_string(argv[0], "get-font-from-user");
 
 #ifdef wx_msw
-  wxFont *f = objscheme_unbundle_wxFont(argv[1], "wx:get-font-from-user", 1);
+  wxFont *f = objscheme_unbundle_wxFont(argv[1], "get-font-from-user", 1);
 #endif
 
 #ifdef wx_x
@@ -825,13 +801,13 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   char *f;
   
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("wx:play-sound", "string", 0, argc, argv);
+    scheme_wrong_type("play-sound", "string", 0, argc, argv);
   
   async = SCHEME_TRUEP(argv[1]);
   
   f = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 			     SCHEME_STRTAG_VAL(argv[0]),
-			     "wx:play-sound",
+			     "play-sound",
 			     NULL);
 
 #ifdef wx_msw  
@@ -933,7 +909,7 @@ static Scheme_Object *ApplicationFileProc(int n, Scheme_Object *p[])
   if (!n)
     return wxs_app_file_proc;
   else {
-    scheme_check_proc_arity("wx:application-file-handler", 1,
+    scheme_check_proc_arity("application-file-handler", 1,
 			    0, n, p);
     wxs_app_file_proc = p[0];
     return scheme_void;
@@ -949,14 +925,14 @@ static Scheme_Object *Eventspace_p(int, Scheme_Object **argv)
 
 static Scheme_Object *wxSchemeCurrentEventspace(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("wx:current-eventspace", mred_eventspace_param,
+  return scheme_param_config("current-eventspace", mred_eventspace_param,
 			     argc, argv,
 			     -1, Eventspace_p, "eventspace", 0);
 }
 
 static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("wx:event-dispatch-handler", 
+  return scheme_param_config("event-dispatch-handler", 
 			     mred_event_dispatch_param,
 			     argc, argv,
 			     1, NULL, NULL, 0);
@@ -965,7 +941,7 @@ static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **arg
 static Scheme_Object *wxSchemeEventspaceConfig(int argc, Scheme_Object **argv)
 {
   if (SCHEME_TYPE(argv[0]) != mred_eventspace_type)
-    scheme_wrong_type("wx:eventspace-parameterization", "eventspace",
+    scheme_wrong_type("eventspace-parameterization", "eventspace",
 		      0, argc, argv);
 
   return MrEdEventspaceConfig(argv[0]);
@@ -976,7 +952,7 @@ extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 static Scheme_Object *wxSchemeMakeEventspace(int argc, Scheme_Object **argv)
 {
   if (argc && (SCHEME_TYPE(argv[0]) != scheme_config_type))
-    scheme_wrong_type("wx:make-eventspace", "parameterization",
+    scheme_wrong_type("make-eventspace", "parameterization",
 		      0, argc, argv);
 
   return (Scheme_Object *)MrEdMakeEventspace(argc ? (Scheme_Config *)argv[0] : (Scheme_Config *)NULL);
@@ -1001,7 +977,7 @@ wxPrintSetupData *wxsUnbundlePSSetup(Scheme_Object *o)
 
 static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
 {
-  return scheme_param_config("wx:current-ps-setup", mred_ps_setup_param,
+  return scheme_param_config("current-ps-setup", mred_ps_setup_param,
 			     argc, argv,
 			     -1, PS_Setup_p, "ps-setup% instance", 0);
 }
@@ -1025,7 +1001,7 @@ Bool wxSchemeYield(void *sema)
     void **s;
 
     if (!SCHEME_SEMAP((Scheme_Object *)sema))
-      scheme_wrong_type("wx:yield", "semaphore", -1, 0, (Scheme_Object **)&sema);
+      scheme_wrong_type("yield", "semaphore", -1, 0, (Scheme_Object **)&sema);
 
     s = new void*;
     *s = sema;
@@ -1076,7 +1052,7 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   else if (argv[0] == autosaves_file_symbol)
     which = id_autosaves_file;
   else {
-    scheme_wrong_type("wx:find-path", "find-path-symbol",
+    scheme_wrong_type("find-mred-path", "find-mred-path-symbol",
 		      0, argc, argv);
     return NULL;
   }
@@ -1209,6 +1185,18 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
+char *wxsPrinterDialog(char *message, char *default_path, 
+		       char *default_filename, char *default_extension, 
+		       int is_put, wxWindow *parent)
+{
+  return NULL;
+}
+
+Bool wxsPrinterDialog(wxWindow *parent)
+{
+  return FALSE;
+}
+
 static void wxScheme_Install(Scheme_Env *env, void *global_env)
 {
   static int installed = 0;
@@ -1224,155 +1212,116 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
 						 1, 1);
   }
 
-#ifdef wx_x
-  scheme_install_xc_global("wx:platform", 
-			   scheme_intern_symbol("unix"), global_env);
-# ifdef wx_motif
-  scheme_install_xc_global("wx:window-system", 
-			   scheme_intern_symbol("motif"), global_env);
-# else
-#  ifdef wx_xt
-  scheme_install_xc_global("wx:window-system", 
-			   scheme_intern_symbol("xt"), global_env);
-#  else
-  scheme_install_xc_global("wx:window-system", 
-			   scheme_intern_symbol("xview"), global_env);
-#  endif
-# endif  
-#endif
-#ifdef wx_msw
-  scheme_install_xc_global("wx:platform", 
-			   scheme_intern_symbol("windows"), global_env);
-  scheme_install_xc_global("wx:window-system", 
-			   scheme_intern_symbol("windows"), global_env);
-#endif  
-#ifdef wx_mac
-  scheme_install_xc_global("wx:platform", 
-			   scheme_intern_symbol("macintosh"), global_env);
-  scheme_install_xc_global("wx:window-system", 
-			   scheme_intern_symbol("macintosh"), global_env);
-#endif
-
-  scheme_install_xc_global("wx:special-control-key", 
+  scheme_install_xc_global("special-control-key", 
 			   scheme_make_prim_w_arity(SpecialCtlKey, 
-						    "wx:special-control-key", 
+						    "special-control-key", 
 						    1, 1), 
 			   global_env);
   
-  scheme_install_xc_global("wx:application-file-handler",
+  scheme_install_xc_global("application-file-handler",
 			   scheme_make_prim_w_arity(ApplicationFileProc,
-						    "wx:application-file-handler",
+						    "application-file-handler",
 						    1, 1),
 			   global_env);
   
-  scheme_install_xc_global("wx:can-get-user-colour?",
+  scheme_install_xc_global("can-get-user-color?",
 			   scheme_make_prim_w_arity(wxSchemeCanGetUserColour,
-						    "wx:can-get-user-colour?",
+						    "can-get-user-color?",
 						    0, 0),
 			   global_env);
-  scheme_install_xc_global("wx:can-get-user-font?",
+  scheme_install_xc_global("can-get-user-font?",
 			   scheme_make_prim_w_arity(wxSchemeCanGetUserFont,
-						    "wx:can-get-user-font?",
+						    "can-get-user-font?",
 						    0, 0),
 			   global_env);
   
-  scheme_install_xc_global("wx:get-colour-from-user",
+  scheme_install_xc_global("get-color-from-user",
 			   scheme_make_prim_w_arity(wxSchemeGetColourFromUser,
-						    "wx:get-colour-from-user",
+						    "get-color-from-user",
 						    2, 2),
 			   global_env);
   
-  scheme_install_xc_global("wx:get-font-from-user",
+  scheme_install_xc_global("get-font-from-user",
 			   scheme_make_prim_w_arity(wxSchemeGetFontFromUser,
-						    "wx:get-font-from-user",
+						    "get-font-from-user",
 						    2, 2),
 			   global_env);
   
-  scheme_install_xc_global("wx:get-font-list",
+  scheme_install_xc_global("get-font-list",
 			   scheme_make_prim_w_arity(wxSchemeGetFontList,
-						    "wx:get-font-list",
+						    "get-font-list",
 						    0, 0),
 			   global_env);
   
 #ifdef wx_x
-  Scheme_Object *ps;
-
-  ps = scheme_eval_string("(#%lambda (f async?)"
-			  "  (#%unless (#%string? f)"
-			  "    (#%raise-type-error 'wx:play-sound \"string\" f))"
-			  "  (#%let ([b (#%box \"cat ~s > /dev/audio\")])"
-			  "    (#%wx:get-resource \"mred\" \"playcmd\" b)"
-			  "    ((#%if async? (#%lambda (x) (#%process x) #t) #%system)"
-			  "     (#%format (#%unbox b) (#%expand-path f)))))",
-			  env);
-  scheme_install_xc_global("wx:play-sound", ps, global_env);
+  scheme_install_xc_global("play-sound", scheme_false, global_env);
 #else
-  scheme_install_xc_global("wx:play-sound", 
+  scheme_install_xc_global("play-sound", 
 			     scheme_make_prim_w_arity(wxPlaySound, 
-						      "wx:play-sound", 
+						      "play-sound", 
 						      2, 2), 
 			     global_env);
 #endif
 
-  scheme_install_xc_global("wx:make-eventspace",
+  scheme_install_xc_global("make-eventspace",
 			     scheme_make_prim_w_arity(wxSchemeMakeEventspace,
-						      "wx:make-eventspace",
+						      "make-eventspace",
 						      0, 1),
 			     global_env);
-  scheme_install_xc_global("wx:current-eventspace",
+  scheme_install_xc_global("current-eventspace",
 			   scheme_register_parameter(wxSchemeCurrentEventspace,
-						     "wx:current-eventspace",
+						     "current-eventspace",
 						     mred_eventspace_param),
 			   global_env);
-  scheme_install_xc_global("wx:event-dispatch-handler",
+  scheme_install_xc_global("event-dispatch-handler",
 			   scheme_register_parameter(wxSchemeEventDispatchHandler,
-						     "wx:event-dispatch-handler",
+						     "event-dispatch-handler",
 						     mred_event_dispatch_param),
 			   global_env);
-  scheme_install_xc_global("wx:eventspace?",
+  scheme_install_xc_global("eventspace?",
 			   scheme_make_prim_w_arity(Eventspace_p,
-						    "wx:eventspace?",
+						    "eventspace?",
 						    1, 1),
 			   global_env);
-  scheme_install_xc_global("wx:eventspace-parameterization",
+  scheme_install_xc_global("eventspace-parameterization",
 			   scheme_make_prim_w_arity(wxSchemeEventspaceConfig,
-						    "wx:eventspace-parameterization",
+						    "eventspace-parameterization",
 						    1, 1),
 			   global_env);
 
-  scheme_install_xc_global("wx:current-ps-setup",
+  scheme_install_xc_global("current-ps-setup",
 			   scheme_register_parameter(wxSchemeCurrentPSSetup,
-						     "wx:current-ps-setup",
+						     "current-ps-setup",
 						     mred_ps_setup_param),
 			   global_env);
 
-  scheme_install_xc_global("wx:check-for-break",
+  scheme_install_xc_global("check-for-break",
 			   scheme_make_prim_w_arity(wxSchemeCheckForBreak,
-						    "wx:check-for-break",
+						    "check-for-break",
 						    0, 0),
 			   global_env);
 
 
-  scheme_install_xc_global("wx:find-path",
+  scheme_install_xc_global("find-mred-path",
 			   scheme_make_prim_w_arity(wxSchemeFindDirectory,
-						    "wx:find-path",
+						    "find-mred-path",
 						    1, 1),
 			   global_env);
 
-  scheme_install_xc_global("wx:get-frame-list",
+  scheme_install_xc_global("get-top-level-windows",
 			   scheme_make_prim_w_arity(wxSchemeGetFrameList,
-						    "wx:get-frame-list",
+						    "get-top-level-windows",
 						    0, 0),
 			   global_env);
 
-  scheme_install_xc_global("wx:register-collecting-blit",
+  scheme_install_xc_global("register-collecting-blit",
 			   scheme_make_prim_w_arity(wxSchemeRegisterCollectingBitmap,
-						    "wx:register-collecting-blit",
+						    "register-collecting-blit",
 						    7, 11),
 			   global_env);
-  scheme_install_xc_global("wx:unregister-collecting-blit",
+  scheme_install_xc_global("unregister-collecting-blit",
 			   scheme_make_prim_w_arity(wxSchemeUnregisterCollectingBitmap,
-						    "wx:unregister-collecting-blit",
+						    "unregister-collecting-blit",
 						    1, 1),
 			   global_env);
 
@@ -1381,7 +1330,6 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxWindow(global_env);
   objscheme_setup_wxFrame(global_env);
   objscheme_setup_wxColour(global_env);
-  objscheme_setup_wxColourMap(global_env);
   objscheme_setup_wxColourDatabase(global_env);
   objscheme_setup_wxPoint(global_env);
   objscheme_setup_wxIntPoint(global_env);

@@ -81,7 +81,7 @@ static Scheme_Object *bundle_symset_sliderStyle(int v) {
 #define CALLBACKCLASS os_wxSlider
 #define CB_REALCLASS wxSlider
 #define CB_UNBUNDLE objscheme_unbundle_wxSlider
-#define CB_USER "wx:slider%::initialization"
+#define CB_USER "slider%::initialization"
 
 #undef CB_TOSCHEME
 #undef CB_TOC
@@ -167,7 +167,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:slider%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "slider%::pre-on-event"", extracting return value");
   }
 }
 
@@ -202,7 +202,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:slider%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "slider%::pre-on-char"", extracting return value");
   }
 }
 
@@ -312,7 +312,7 @@ static Scheme_Object *os_wxSliderSetValue(Scheme_Object *obj, int n,  Scheme_Obj
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:slider%::set-value");
+  x0 = objscheme_unbundle_integer(p[0], "slider%::set-value");
 
   
   ((wxSlider *)((Scheme_Class_Object *)obj)->primdata)->SetValue(x0);
@@ -349,8 +349,8 @@ static Scheme_Object *os_wxSliderPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:slider%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "wx:slider%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "slider%::pre-on-event", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "slider%::pre-on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -373,8 +373,8 @@ static Scheme_Object *os_wxSliderPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:slider%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "wx:slider%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "slider%::pre-on-char", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "slider%::pre-on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -396,8 +396,8 @@ static Scheme_Object *os_wxSliderOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:slider%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "wx:slider%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "slider%::on-size");
+  x1 = objscheme_unbundle_integer(p[1], "slider%::on-size");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -466,32 +466,32 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
   Scheme_Object *tmp_callback = NULL;
   if ((n < 7) ||(n > 11)) 
-    scheme_wrong_count("wx:slider%::initialization", 7, 11, n, p);
-  x0 = objscheme_unbundle_wxPanel(p[0], "wx:slider%::initialization", 0);
+    scheme_wrong_count("slider%::initialization", 7, 11, n, p);
+  x0 = objscheme_unbundle_wxPanel(p[0], "slider%::initialization", 0);
   x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "wx:slider%::initialization");
-  x3 = objscheme_unbundle_integer(p[3], "wx:slider%::initialization");
-  x4 = objscheme_unbundle_integer(p[4], "wx:slider%::initialization");
-  x5 = objscheme_unbundle_integer(p[5], "wx:slider%::initialization");
-  x6 = objscheme_unbundle_integer(p[6], "wx:slider%::initialization");
+  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "slider%::initialization");
+  x3 = objscheme_unbundle_integer(p[3], "slider%::initialization");
+  x4 = objscheme_unbundle_integer(p[4], "slider%::initialization");
+  x5 = objscheme_unbundle_integer(p[5], "slider%::initialization");
+  x6 = objscheme_unbundle_integer(p[6], "slider%::initialization");
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "wx:slider%::initialization");
+    x7 = objscheme_unbundle_integer(p[7], "slider%::initialization");
   } else
     x7 = -1;
   if (n > 8) {
-    x8 = objscheme_unbundle_integer(p[8], "wx:slider%::initialization");
+    x8 = objscheme_unbundle_integer(p[8], "slider%::initialization");
   } else
     x8 = -1;
   if (n > 9) {
-    x9 = unbundle_symset_sliderStyle(p[9], "wx:slider%::initialization");
+    x9 = unbundle_symset_sliderStyle(p[9], "slider%::initialization");
   } else
     x9 = wxHORIZONTAL;
   if (n > 10) {
-    x10 = (string)objscheme_unbundle_string(p[10], "wx:slider%::initialization");
+    x10 = (string)objscheme_unbundle_string(p[10], "slider%::initialization");
   } else
     x10 = "slider";
 
-  if (x3 < x4 || x5 < x3) scheme_signal_error("wx:slider%%::initialization: minimum, value, and maximum must be increasing");if (x6 <= 0) x6 = 1;
+  if (x3 < x4 || x5 < x3) scheme_signal_error("slider%%::initialization: minimum, value, and maximum must be increasing");if (x6 <= 0) x6 = 1;
   realobj = new os_wxSlider(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10);
   
   realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -504,16 +504,16 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *objscheme_classname_os_wxSlider(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:slider%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:slider%");
+  if (n) scheme_wrong_count("slider%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("slider%");
 }
 
 void objscheme_setup_wxSlider(void *env)
 {
 if (os_wxSlider_class) {
-    objscheme_add_global_class(os_wxSlider_class,  "wx:slider%", env);
+    objscheme_add_global_class(os_wxSlider_class, "slider%", env);
 } else {
-  os_wxSlider_class = objscheme_def_prim_class(env, "wx:slider%", "wx:item%", os_wxSlider_ConstructScheme, 8);
+  os_wxSlider_class = objscheme_def_prim_class(env, "slider%", "item%", os_wxSlider_ConstructScheme, 8);
 
   scheme_add_method_w_arity(os_wxSlider_class,"get-class-name",objscheme_classname_os_wxSlider, 0, 0);
 
@@ -541,7 +541,7 @@ int objscheme_istype_wxSlider(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:slider% object or " XC_NULL_STR: "wx:slider% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "slider% object or " XC_NULL_STR: "slider% object", -1, 0, &obj);
     return 0;
   }
 }

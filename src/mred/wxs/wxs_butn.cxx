@@ -77,7 +77,7 @@ static Scheme_Object *bundle_symset_buttonStyle(int v) {
 #define CALLBACKCLASS os_wxButton
 #define CB_REALCLASS wxButton
 #define CB_UNBUNDLE objscheme_unbundle_wxButton
-#define CB_USER "wx:button%::initialization"
+#define CB_USER "button%::initialization"
 
 #undef CB_TOSCHEME
 #undef CB_TOC
@@ -172,7 +172,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:button%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "button%::pre-on-event"", extracting return value");
   }
 }
 
@@ -207,7 +207,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:button%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "button%::pre-on-char"", extracting return value");
   }
 }
 
@@ -319,10 +319,10 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:button%::set-label (bitmap label case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxBitmap(p[0], "wx:button%::set-label (bitmap label case)", 0);
+      scheme_wrong_count("button%::set-label (bitmap label case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxBitmap(p[0], "button%::set-label (bitmap label case)", 0);
 
-    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", "wx:button%::set-label");
+    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", "button%::set-label");
     ((wxButton *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
 
     
@@ -332,8 +332,8 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:button%::set-label (string label case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "wx:button%::set-label (string label case)");
+      scheme_wrong_count("button%::set-label (string label case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "button%::set-label (string label case)");
 
     
     ((wxButton *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
@@ -342,22 +342,6 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
     
   }
 
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxButtonSetDefault(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  
-  ((wxButton *)((Scheme_Class_Object *)obj)->primdata)->SetDefault();
-
-  
-  
   return scheme_void;
 }
 
@@ -371,8 +355,8 @@ static Scheme_Object *os_wxButtonPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:button%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "wx:button%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "button%::pre-on-event", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "button%::pre-on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -395,8 +379,8 @@ static Scheme_Object *os_wxButtonPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "wx:button%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "wx:button%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "button%::pre-on-char", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "button%::pre-on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -418,8 +402,8 @@ static Scheme_Object *os_wxButtonOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:button%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "wx:button%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "button%::on-size");
+  x1 = objscheme_unbundle_integer(p[1], "button%::on-size");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -487,36 +471,36 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
-      scheme_wrong_count("wx:button%::initialization (bitmap label case)", 3, 9, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "wx:button%::initialization (bitmap label case)", 0);
+      scheme_wrong_count("button%::initialization (bitmap label case)", 3, 9, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "button%::initialization (bitmap label case)", 0);
     x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = objscheme_unbundle_wxBitmap(p[2], "wx:button%::initialization (bitmap label case)", 0);
+    x2 = objscheme_unbundle_wxBitmap(p[2], "button%::initialization (bitmap label case)", 0);
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:button%::initialization (bitmap label case)");
+      x3 = objscheme_unbundle_integer(p[3], "button%::initialization (bitmap label case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:button%::initialization (bitmap label case)");
+      x4 = objscheme_unbundle_integer(p[4], "button%::initialization (bitmap label case)");
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "wx:button%::initialization (bitmap label case)");
+      x5 = objscheme_unbundle_integer(p[5], "button%::initialization (bitmap label case)");
     } else
       x5 = -1;
     if (n > 6) {
-      x6 = objscheme_unbundle_integer(p[6], "wx:button%::initialization (bitmap label case)");
+      x6 = objscheme_unbundle_integer(p[6], "button%::initialization (bitmap label case)");
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = unbundle_symset_buttonStyle(p[7], "wx:button%::initialization (bitmap label case)");
+      x7 = unbundle_symset_buttonStyle(p[7], "button%::initialization (bitmap label case)");
     } else
       x7 = 0;
     if (n > 8) {
-      x8 = (string)objscheme_unbundle_string(p[8], "wx:button%::initialization (bitmap label case)");
+      x8 = (string)objscheme_unbundle_string(p[8], "button%::initialization (bitmap label case)");
     } else
       x8 = "button";
 
-    if (x2 && !x2->Ok()) scheme_signal_error("%s: bad bitmap", "wx:button%::initialization");if (!x5) x5 = -1;if (!x6) x6 = -1;
+    if (x2 && !x2->Ok()) scheme_signal_error("%s: bad bitmap", "button%::initialization");if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = new os_wxButton(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
     
     realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -533,32 +517,32 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
-      scheme_wrong_count("wx:button%::initialization (string label case)", 3, 9, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "wx:button%::initialization (string label case)", 0);
+      scheme_wrong_count("button%::initialization (string label case)", 3, 9, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "button%::initialization (string label case)", 0);
     x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = (string)objscheme_unbundle_string(p[2], "wx:button%::initialization (string label case)");
+    x2 = (string)objscheme_unbundle_string(p[2], "button%::initialization (string label case)");
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:button%::initialization (string label case)");
+      x3 = objscheme_unbundle_integer(p[3], "button%::initialization (string label case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:button%::initialization (string label case)");
+      x4 = objscheme_unbundle_integer(p[4], "button%::initialization (string label case)");
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "wx:button%::initialization (string label case)");
+      x5 = objscheme_unbundle_integer(p[5], "button%::initialization (string label case)");
     } else
       x5 = -1;
     if (n > 6) {
-      x6 = objscheme_unbundle_integer(p[6], "wx:button%::initialization (string label case)");
+      x6 = objscheme_unbundle_integer(p[6], "button%::initialization (string label case)");
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = unbundle_symset_buttonStyle(p[7], "wx:button%::initialization (string label case)");
+      x7 = unbundle_symset_buttonStyle(p[7], "button%::initialization (string label case)");
     } else
       x7 = 0;
     if (n > 8) {
-      x8 = (string)objscheme_unbundle_string(p[8], "wx:button%::initialization (string label case)");
+      x8 = (string)objscheme_unbundle_string(p[8], "button%::initialization (string label case)");
     } else
       x8 = "button";
 
@@ -577,21 +561,20 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *objscheme_classname_os_wxButton(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:button%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:button%");
+  if (n) scheme_wrong_count("button%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("button%");
 }
 
 void objscheme_setup_wxButton(void *env)
 {
 if (os_wxButton_class) {
-    objscheme_add_global_class(os_wxButton_class,  "wx:button%", env);
+    objscheme_add_global_class(os_wxButton_class, "button%", env);
 } else {
-  os_wxButton_class = objscheme_def_prim_class(env, "wx:button%", "wx:item%", os_wxButton_ConstructScheme, 8);
+  os_wxButton_class = objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7);
 
   scheme_add_method_w_arity(os_wxButton_class,"get-class-name",objscheme_classname_os_wxButton, 0, 0);
 
  scheme_add_method(os_wxButton_class, "set-label", os_wxButtonSetLabel);
- scheme_add_method_w_arity(os_wxButton_class, "set-default", os_wxButtonSetDefault, 0, 0);
  scheme_add_method_w_arity(os_wxButton_class, "pre-on-event", os_wxButtonPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxButton_class, "pre-on-char", os_wxButtonPreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxButton_class, "on-size", os_wxButtonOnSize, 2, 2);
@@ -615,7 +598,7 @@ int objscheme_istype_wxButton(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:button% object or " XC_NULL_STR: "wx:button% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "button% object or " XC_NULL_STR: "button% object", -1, 0, &obj);
     return 0;
   }
 }

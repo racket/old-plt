@@ -46,7 +46,7 @@
 @ENDSYMBOLS
 
 
-@CLASSBASE wxFrame "wx:frame":"wx:window"
+@CLASSBASE wxFrame "frame":"window"
 
 @CLASSID wxTYPE_FRAME
 
@@ -54,28 +54,22 @@
 
 @MACRO CHECKICONOK[p] = if (x<p> && !x<p>->Ok()) return scheme_void;
 
-@ "get-title" : string GetTitle();
 @ "set-title" : void SetTitle(string);
 @ "iconize" : void Iconize(bool);
 @ "set-icon" : void SetIcon(wxIcon!); : : /CHECKICONOK[0]
 @ "set-menu-bar" : void SetMenuBar(wxMenuBar!) : : /CHECKHASMENU[ ]
 @IVAR r "menu-bar" : wxMenuBar^ wx_menu_bar ## NO_GET_MENU_BAR
 @ "get-menu-bar" : wxMenuBar^ GetMenuBar() ## HAS_GET_MENU_BAR
-@ "set-tool-bar" : void SetToolBar(wxToolBar^) ## USE_TOOLBAR 
-@ "get-tool-bar" : wxToolBar^ GetToolBar() ## USE_TOOLBAR
 @ "set-status-text" : void SetStatusText(string)
 @ "iconized?" : bool Iconized();
 @ "status-line-exists?" : bool StatusLineExists();
 @ "maximize" : void Maximize(bool)
-@ "load-accelerators" : void LoadAccelerators(string);
 @ "create-status-line" : void CreateStatusLine(int = 1, string = "status_line")
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci
 
-@ v "command" : void Command(int);
 @ v "on-menu-command" : void OnMenuCommand(int)
-@ v "on-menu-select" : void OnMenuSelect(int) : : CHECKHASMENU[!]
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

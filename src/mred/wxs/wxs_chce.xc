@@ -10,10 +10,10 @@
 @BEGINSYMBOLS choiceStyle
 @ENDSYMBOLS
 
-@CLASSBASE wxChoice "wx:choice":"wx:item"
+@CLASSBASE wxChoice "choice":"item"
 
 @SET CALLBACK_CLASS = wxChoice
-@SET CALLBACK_CLASS_USER = "wx:choice%::initialization"
+@SET CALLBACK_CLASS_USER = "choice%::initialization"
 @INCLUDE cb_start.xci
 
 @SET TYPE = string
@@ -23,7 +23,7 @@
 #define RANGECLASS wxChoice
 @INCLUDE range.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,SYM[choiceStyle]=0,string="checkBox"); : : ubCallbackSetup/glueListSet[string.7.8.7."wx:choice%::initialization"]|NOZERO[5]|NOZERO[6]/glueCleanup[8]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,SYM[choiceStyle]=0,string="checkBox"); : : ubCallbackSetup/glueListSet[string.7.8.7."choice%::initialization"]|NOZERO[5]|NOZERO[6]/glueCleanup[8]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 

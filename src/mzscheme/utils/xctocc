@@ -179,6 +179,9 @@ sub DoPrintClass
 
     if (!$global && !$common) {
 	print "Scheme_Object *${newclass}_class;\n\n";
+	if ($interfacestring ne '') {
+	    print "Scheme_Object *${newclass}_interface;\n\n";
+	}
 	
 	#Do creation methods
 	if ($#distinct_creators >= 0) {
@@ -339,8 +342,10 @@ sub DoPrintClass
 
 	if (1) {
 	    print "if (${newclass}_class) {\n";
-	    print "    objscheme_add_global_class(${newclass}_class, ";
-	    print " ${classstring}, env);\n";
+	    print "    objscheme_add_global_class(${newclass}_class, ${classstring}, env);\n";
+	    if ($interfacestring ne '') {
+		print "    objscheme_add_global_interface(${newclass}_interface, ${interfacestring} \"<%>\", env);\n";
+	    }
 	    print "} else {\n";
 	}
 
@@ -432,6 +437,10 @@ sub DoPrintClass
 	print "\n";
 
 	print "  scheme_made_class(${newclass}_class);\n\n";
+	if ($interfacestring ne '') {
+	    print "  ${newclass}_interface = scheme_class_to_interface(${newclass}_class, ${interfacestring} \"<%>\");\n\n";
+	    print "  objscheme_add_global_interface(${newclass}_interface, ${interfacestring} \"<%>\", env);\n";
+	}
 
 	if ($idfield ne '' && $classid ne '') {
 	    print "  objscheme_install_bundler(";

@@ -49,14 +49,13 @@ void wxMediaIOCheckLSB(void)
   first = !first;
 #endif
   if (first)
-    wxMessageBox("wxMedia was compiled with the wrong WXME_LSB_FIRST flag\nvalue. The correct value is "
+    printf("wxMedia was compiled with the wrong WXME_LSB_FIRST flag\nvalue. The correct value is "
 #if WXME_LSB_FIRST
-		 "FALSE"
+	   "FALSE"
 #else
-		 "TRUE"
+	   "TRUE"
 #endif
-		 ".",
-		 "Warning");
+	   ".");
 }
 
 /****************************************************************/

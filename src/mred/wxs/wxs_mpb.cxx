@@ -391,7 +391,7 @@ return wxMediaPasteboard::OnInteractiveResize(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-interactive-resize"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-interactive-resize"", extracting return value");
   }
 }
 
@@ -456,7 +456,7 @@ return wxMediaPasteboard::OnInteractiveMove();
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-interactive-move"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-interactive-move"", extracting return value");
   }
 }
 
@@ -489,8 +489,8 @@ wxMediaPasteboard::InteractiveAdjustResize(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box");
-  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "pasteboard-editor%::interactive-adjust-resize"", extracting return value via box"), "pasteboard-editor%::interactive-adjust-resize"", extracting return value via box");
+  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "pasteboard-editor%::interactive-adjust-resize"", extracting return value via box"), "pasteboard-editor%::interactive-adjust-resize"", extracting return value via box");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -526,8 +526,8 @@ wxMediaPasteboard::InteractiveAdjustMove(x0, x1, x2);
 
   v = scheme_apply(method, 3, p);
   
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box");
-  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "pasteboard-editor%::interactive-adjust-move"", extracting return value via box"), "pasteboard-editor%::interactive-adjust-move"", extracting return value via box");
+  if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "pasteboard-editor%::interactive-adjust-move"", extracting return value via box"), "pasteboard-editor%::interactive-adjust-move"", extracting return value via box");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -562,8 +562,8 @@ wxMediaPasteboard::InteractiveAdjustMouse(x0, x1);
 
   v = scheme_apply(method, 2, p);
   
-  if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box");
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box");
+  if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "pasteboard-editor%::interactive-adjust-mouse"", extracting return value via box"), "pasteboard-editor%::interactive-adjust-mouse"", extracting return value via box");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "pasteboard-editor%::interactive-adjust-mouse"", extracting return value via box"), "pasteboard-editor%::interactive-adjust-mouse"", extracting return value via box");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -669,7 +669,7 @@ return wxMediaPasteboard::OnSelect(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-select"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-select"", extracting return value");
   }
 }
 
@@ -741,7 +741,7 @@ return wxMediaPasteboard::OnResize(x0, x1, x2);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-resize"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-resize"", extracting return value");
   }
 }
 
@@ -814,7 +814,7 @@ return wxMediaPasteboard::OnMoveTo(x0, x1, x2, x3);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-move-to"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-move-to"", extracting return value");
   }
 }
 
@@ -881,7 +881,7 @@ return wxMediaPasteboard::OnDelete(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-delete"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-delete"", extracting return value");
   }
 }
 
@@ -954,7 +954,7 @@ return wxMediaPasteboard::OnInsert(x0, x1, x2, x3);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-insert"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-insert"", extracting return value");
   }
 }
 
@@ -1056,7 +1056,7 @@ return wxMediaPasteboard::PutFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return (nstring)objscheme_unbundle_nullable_string(v, "wx:media-pasteboard%::put-file"", extracting return value");
+  return (nstring)objscheme_unbundle_nullable_string(v, "pasteboard-editor%::put-file"", extracting return value");
   }
 }
 
@@ -1090,7 +1090,7 @@ return wxMediaPasteboard::GetFile(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return (nstring)objscheme_unbundle_nullable_string(v, "wx:media-pasteboard%::get-file"", extracting return value");
+  return (nstring)objscheme_unbundle_nullable_string(v, "pasteboard-editor%::get-file"", extracting return value");
   }
 }
 
@@ -1222,7 +1222,7 @@ return wxMediaPasteboard::OnLoadFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-load-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-load-file"", extracting return value");
   }
 }
 
@@ -1290,7 +1290,7 @@ return wxMediaPasteboard::OnSaveFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::on-save-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::on-save-file"", extracting return value");
   }
 }
 
@@ -1324,7 +1324,7 @@ return wxMediaPasteboard::OnNewBox(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxSnip(v, "wx:media-pasteboard%::on-new-box"", extracting return value", 0);
+  return objscheme_unbundle_wxSnip(v, "pasteboard-editor%::on-new-box"", extracting return value", 0);
   }
 }
 
@@ -1361,7 +1361,7 @@ return wxMediaPasteboard::OnNewImageSnip(x0, x1, x2, x3);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxImageSnip(v, "wx:media-pasteboard%::on-new-image-snip"", extracting return value", 0);
+  return objscheme_unbundle_wxImageSnip(v, "pasteboard-editor%::on-new-image-snip"", extracting return value", 0);
   }
 }
 
@@ -1472,7 +1472,7 @@ return wxMediaPasteboard::WriteFootersToFile(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::write-footers-to-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::write-footers-to-file"", extracting return value");
   }
 }
 
@@ -1506,7 +1506,7 @@ return wxMediaPasteboard::WriteHeadersToFile(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::write-headers-to-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::write-headers-to-file"", extracting return value");
   }
 }
 
@@ -1541,7 +1541,7 @@ return wxMediaPasteboard::ReadFooterFromFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::read-footer-from-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::read-footer-from-file"", extracting return value");
   }
 }
 
@@ -1576,7 +1576,7 @@ return wxMediaPasteboard::ReadHeaderFromFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::read-header-from-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::read-header-from-file"", extracting return value");
   }
 }
 
@@ -1644,7 +1644,7 @@ return wxMediaPasteboard::ReleaseSnip(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::release-snip"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::release-snip"", extracting return value");
   }
 }
 
@@ -1745,7 +1745,7 @@ return wxMediaPasteboard::GetSnipData(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxBufferData(v, "wx:media-pasteboard%::get-snip-data"", extracting return value", 1);
+  return objscheme_unbundle_wxBufferData(v, "pasteboard-editor%::get-snip-data"", extracting return value", 1);
   }
 }
 
@@ -1889,7 +1889,7 @@ return wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "wx:media-pasteboard%::scroll-to"", extracting return value");
+  return objscheme_unbundle_bool(v, "pasteboard-editor%::scroll-to"", extracting return value");
   }
 }
 
@@ -2254,7 +2254,7 @@ return wxMediaPasteboard::AdjustCursor(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxCursor(v, "wx:media-pasteboard%::adjust-cursor"", extracting return value", 1);
+  return objscheme_unbundle_wxCursor(v, "pasteboard-editor%::adjust-cursor"", extracting return value", 1);
   }
 }
 
@@ -2386,7 +2386,7 @@ return wxMediaPasteboard::CopySelf();
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxMediaBuffer(v, "wx:media-pasteboard%::copy-self"", extracting return value", 0);
+  return objscheme_unbundle_wxMediaBuffer(v, "pasteboard-editor%::copy-self"", extracting return value", 0);
   }
 }
 
@@ -2398,7 +2398,7 @@ static Scheme_Object *os_wxMediaPasteboardSetScrollStep(Scheme_Object *obj, int 
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "wx:media-pasteboard%::set-scroll-step");
+  x0 = objscheme_unbundle_float(p[0], "pasteboard-editor%::set-scroll-step");
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->SetScrollStep(x0);
@@ -2433,7 +2433,7 @@ static Scheme_Object *os_wxMediaPasteboardSetSelectionVisible(Scheme_Object *obj
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::set-selection-visible");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::set-selection-visible");
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->SetSelectionVisible(x0);
@@ -2468,7 +2468,7 @@ static Scheme_Object *os_wxMediaPasteboardSetDragable(Scheme_Object *obj, int n,
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::set-dragable");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::set-dragable");
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->SetDragable(x0);
@@ -2503,7 +2503,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveResize(Scheme_Object *
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::after-interactive-resize", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::after-interactive-resize", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2525,7 +2525,7 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveResize(Scheme_Object *obj
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::on-interactive-resize", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::on-interactive-resize", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2589,15 +2589,15 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(Scheme_Object 
   float* x2 = &_x2;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::interactive-adjust-resize", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::interactive-adjust-resize", 0);
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:media-pasteboard%::interactive-adjust-resize", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::interactive-adjust-resize", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-resize"), "wx:media-pasteboard%::interactive-adjust-resize");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "pasteboard-editor%::interactive-adjust-resize"), "pasteboard-editor%::interactive-adjust-resize");
   if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("wx:media-pasteboard%::interactive-adjust-resize", "non-" XC_NULL_STR, (2 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::interactive-adjust-resize", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:media-pasteboard%::interactive-adjust-resize"), "wx:media-pasteboard%::interactive-adjust-resize");
+    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "pasteboard-editor%::interactive-adjust-resize"), "pasteboard-editor%::interactive-adjust-resize");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2626,15 +2626,15 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(Scheme_Object *o
   float* x2 = &_x2;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::interactive-adjust-move", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::interactive-adjust-move", 0);
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:media-pasteboard%::interactive-adjust-move", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::interactive-adjust-move", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-move"), "wx:media-pasteboard%::interactive-adjust-move");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "pasteboard-editor%::interactive-adjust-move"), "pasteboard-editor%::interactive-adjust-move");
   if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("wx:media-pasteboard%::interactive-adjust-move", "non-" XC_NULL_STR, (2 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::interactive-adjust-move", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:media-pasteboard%::interactive-adjust-move"), "wx:media-pasteboard%::interactive-adjust-move");
+    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "pasteboard-editor%::interactive-adjust-move"), "pasteboard-editor%::interactive-adjust-move");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2663,13 +2663,13 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMouse(Scheme_Object *
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:media-pasteboard%::interactive-adjust-mouse", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::interactive-adjust-mouse", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-pasteboard%::interactive-adjust-mouse"), "wx:media-pasteboard%::interactive-adjust-mouse");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "pasteboard-editor%::interactive-adjust-mouse"), "pasteboard-editor%::interactive-adjust-mouse");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:media-pasteboard%::interactive-adjust-mouse", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::interactive-adjust-mouse", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-mouse"), "wx:media-pasteboard%::interactive-adjust-mouse");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "pasteboard-editor%::interactive-adjust-mouse"), "pasteboard-editor%::interactive-adjust-mouse");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2695,8 +2695,8 @@ static Scheme_Object *os_wxMediaPasteboardOnDoubleClick(Scheme_Object *obj, int 
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::on-double-click", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "wx:media-pasteboard%::on-double-click", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::on-double-click", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pasteboard-editor%::on-double-click", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2718,8 +2718,8 @@ static Scheme_Object *os_wxMediaPasteboardAfterSelect(Scheme_Object *obj, int n,
   Bool x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::after-select", 0);
-  x1 = objscheme_unbundle_bool(p[1], "wx:media-pasteboard%::after-select");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::after-select", 0);
+  x1 = objscheme_unbundle_bool(p[1], "pasteboard-editor%::after-select");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2742,8 +2742,8 @@ static Scheme_Object *os_wxMediaPasteboardOnSelect(Scheme_Object *obj, int n,  S
   Bool x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::on-select", 0);
-  x1 = objscheme_unbundle_bool(p[1], "wx:media-pasteboard%::on-select");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::on-select", 0);
+  x1 = objscheme_unbundle_bool(p[1], "pasteboard-editor%::on-select");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2767,10 +2767,10 @@ static Scheme_Object *os_wxMediaPasteboardAfterResize(Scheme_Object *obj, int n,
   Bool x3;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::after-resize", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::after-resize");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::after-resize");
-  x3 = objscheme_unbundle_bool(p[3], "wx:media-pasteboard%::after-resize");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::after-resize", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::after-resize");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::after-resize");
+  x3 = objscheme_unbundle_bool(p[3], "pasteboard-editor%::after-resize");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2794,9 +2794,9 @@ static Scheme_Object *os_wxMediaPasteboardOnResize(Scheme_Object *obj, int n,  S
   float x2;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::on-resize", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::on-resize");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::on-resize");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::on-resize", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::on-resize");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::on-resize");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2820,10 +2820,10 @@ static Scheme_Object *os_wxMediaPasteboardAfterMoveTo(Scheme_Object *obj, int n,
   Bool x3;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::after-move-to", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::after-move-to");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::after-move-to");
-  x3 = objscheme_unbundle_bool(p[3], "wx:media-pasteboard%::after-move-to");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::after-move-to", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::after-move-to");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::after-move-to");
+  x3 = objscheme_unbundle_bool(p[3], "pasteboard-editor%::after-move-to");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2848,10 +2848,10 @@ static Scheme_Object *os_wxMediaPasteboardOnMoveTo(Scheme_Object *obj, int n,  S
   Bool x3;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::on-move-to", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::on-move-to");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::on-move-to");
-  x3 = objscheme_unbundle_bool(p[3], "wx:media-pasteboard%::on-move-to");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::on-move-to", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::on-move-to");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::on-move-to");
+  x3 = objscheme_unbundle_bool(p[3], "pasteboard-editor%::on-move-to");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2872,7 +2872,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterDelete(Scheme_Object *obj, int n,
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::after-delete", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::after-delete", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2894,7 +2894,7 @@ static Scheme_Object *os_wxMediaPasteboardOnDelete(Scheme_Object *obj, int n,  S
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::on-delete", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::on-delete", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2918,10 +2918,10 @@ static Scheme_Object *os_wxMediaPasteboardAfterInsert(Scheme_Object *obj, int n,
   float x3;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::after-insert", 0);
-  x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::after-insert", 1);
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::after-insert");
-  x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::after-insert");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::after-insert", 0);
+  x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::after-insert", 1);
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::after-insert");
+  x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::after-insert");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2946,10 +2946,10 @@ static Scheme_Object *os_wxMediaPasteboardOnInsert(Scheme_Object *obj, int n,  S
   float x3;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::on-insert", 0);
-  x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::on-insert", 1);
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::on-insert");
-  x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::on-insert");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::on-insert", 0);
+  x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::on-insert", 1);
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::on-insert");
+  x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::on-insert");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2971,7 +2971,7 @@ static Scheme_Object *os_wxMediaPasteboardFindNextSelectedSnip(Scheme_Object *ob
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::find-next-selected-snip", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::find-next-selected-snip", 1);
 
   
   r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->FindNextSelectedSnip(x0);
@@ -2990,7 +2990,7 @@ static Scheme_Object *os_wxMediaPasteboardIsSelected(Scheme_Object *obj, int n, 
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::is-selected?", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::is-selected?", 1);
 
   
   r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->IsSelected(x0);
@@ -3027,8 +3027,8 @@ static Scheme_Object *os_wxMediaPasteboardFindSnip(Scheme_Object *obj, int n,  S
   float x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "wx:media-pasteboard%::find-snip");
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::find-snip");
+  x0 = objscheme_unbundle_float(p[0], "pasteboard-editor%::find-snip");
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::find-snip");
 
   
   r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->FindSnip(x0, x1);
@@ -3046,7 +3046,7 @@ static Scheme_Object *os_wxMediaPasteboardAddPasteboardFunctions(Scheme_Object *
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "wx:media-pasteboard%::add-pasteboard-functions", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "pasteboard-editor%::add-pasteboard-functions", 0);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AddPasteboardFunctions(x0);
@@ -3068,13 +3068,13 @@ static Scheme_Object *os_wxMediaPasteboardGetCenter(Scheme_Object *obj, int n,  
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:media-pasteboard%::get-center", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::get-center", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-pasteboard%::get-center"), "wx:media-pasteboard%::get-center");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "pasteboard-editor%::get-center"), "pasteboard-editor%::get-center");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:media-pasteboard%::get-center", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("pasteboard-editor%::get-center", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::get-center"), "wx:media-pasteboard%::get-center");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "pasteboard-editor%::get-center"), "pasteboard-editor%::get-center");
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->GetCenter(x0, x1);
@@ -3096,7 +3096,7 @@ static Scheme_Object *os_wxMediaPasteboardRemoveSelected(Scheme_Object *obj, int
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::remove-selected", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::remove-selected", 0);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->RemoveSelected(x0);
@@ -3132,8 +3132,8 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-pasteboard%::add-selected (wx:snip% case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::add-selected (wx:snip% case)", 0);
+      scheme_wrong_count("pasteboard-editor%::add-selected (snip% case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::add-selected (snip% case)", 0);
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AddSelected(x0);
@@ -3148,11 +3148,11 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,
 
     
     if (n != 4) 
-      scheme_wrong_count("wx:media-pasteboard%::add-selected (rectangle case)", 4, 4, n, p);
-    x0 = objscheme_unbundle_float(p[0], "wx:media-pasteboard%::add-selected (rectangle case)");
-    x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::add-selected (rectangle case)");
-    x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::add-selected (rectangle case)");
-    x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::add-selected (rectangle case)");
+      scheme_wrong_count("pasteboard-editor%::add-selected (rectangle case)", 4, 4, n, p);
+    x0 = objscheme_unbundle_float(p[0], "pasteboard-editor%::add-selected (rectangle case)");
+    x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::add-selected (rectangle case)");
+    x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::add-selected (rectangle case)");
+    x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::add-selected (rectangle case)");
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->AddSelected(x0, x1, x2, x3);
@@ -3172,7 +3172,7 @@ static Scheme_Object *os_wxMediaPasteboardSetSelected(Scheme_Object *obj, int n,
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::set-selected", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::set-selected", 0);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->SetSelected(x0);
@@ -3193,9 +3193,9 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:media-pasteboard%::change-style (wx:style-delta% and wx:snip% case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_wxStyleDelta(p[0], "wx:media-pasteboard%::change-style (wx:style-delta% and wx:snip% case)", 1);
-    x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::change-style (wx:style-delta% and wx:snip% case)", 1);
+      scheme_wrong_count("pasteboard-editor%::change-style (style-delta% and snip% case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_wxStyleDelta(p[0], "pasteboard-editor%::change-style (style-delta% and snip% case)", 1);
+    x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::change-style (style-delta% and snip% case)", 1);
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ChangeStyle(x0, x1);
@@ -3207,8 +3207,8 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-pasteboard%::change-style (wx:style-delta% without position or wx:snip% case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxStyleDelta(p[0], "wx:media-pasteboard%::change-style (wx:style-delta% without position or wx:snip% case)", 1);
+      scheme_wrong_count("pasteboard-editor%::change-style (style-delta% without position or snip% case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxStyleDelta(p[0], "pasteboard-editor%::change-style (style-delta% without position or snip% case)", 1);
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->ChangeStyle(x0);
@@ -3221,10 +3221,10 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
 
     
     if ((n < 1) ||(n > 2)) 
-      scheme_wrong_count("wx:media-pasteboard%::change-style (wx:style% case)", 1, 2, n, p);
-    x0 = objscheme_unbundle_wxStyle(p[0], "wx:media-pasteboard%::change-style (wx:style% case)", 1);
+      scheme_wrong_count("pasteboard-editor%::change-style (style% case)", 1, 2, n, p);
+    x0 = objscheme_unbundle_wxStyle(p[0], "pasteboard-editor%::change-style (style% case)", 1);
     if (n > 1) {
-      x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::change-style (wx:style% case)", 1);
+      x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::change-style (style% case)", 1);
     } else
       x1 = NULL;
 
@@ -3247,8 +3247,8 @@ static Scheme_Object *os_wxMediaPasteboardSetAfter(Scheme_Object *obj, int n,  S
   class wxSnip* x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::set-after", 0);
-  x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::set-after", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::set-after", 0);
+  x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::set-after", 1);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->SetAfter(x0, x1);
@@ -3267,8 +3267,8 @@ static Scheme_Object *os_wxMediaPasteboardSetBefore(Scheme_Object *obj, int n,  
   class wxSnip* x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::set-before", 0);
-  x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::set-before", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::set-before", 0);
+  x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::set-before", 1);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->SetBefore(x0, x1);
@@ -3286,7 +3286,7 @@ static Scheme_Object *os_wxMediaPasteboardLower(Scheme_Object *obj, int n,  Sche
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::lower", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::lower", 0);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Lower(x0);
@@ -3304,7 +3304,7 @@ static Scheme_Object *os_wxMediaPasteboardRaise(Scheme_Object *obj, int n,  Sche
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::raise", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::raise", 0);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Raise(x0);
@@ -3325,9 +3325,9 @@ static Scheme_Object *os_wxMediaPasteboardResize(Scheme_Object *obj, int n,  Sch
   float x2;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::resize", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::resize");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::resize");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::resize", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::resize");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::resize");
 
   
   r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Resize(x0, x1, x2);
@@ -3349,10 +3349,10 @@ static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Schem
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:media-pasteboard%::move (wx:snip% case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::move (wx:snip% case)", 0);
-    x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::move (wx:snip% case)");
-    x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::move (wx:snip% case)");
+      scheme_wrong_count("pasteboard-editor%::move (snip% case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::move (snip% case)", 0);
+    x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::move (snip% case)");
+    x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::move (snip% case)");
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Move(x0, x1, x2);
@@ -3365,9 +3365,9 @@ static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Schem
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:media-pasteboard%::move (without wx:snip% case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_float(p[0], "wx:media-pasteboard%::move (without wx:snip% case)");
-    x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::move (without wx:snip% case)");
+      scheme_wrong_count("pasteboard-editor%::move (without snip% case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_float(p[0], "pasteboard-editor%::move (without snip% case)");
+    x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::move (without snip% case)");
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Move(x0, x1);
@@ -3389,9 +3389,9 @@ static Scheme_Object *os_wxMediaPasteboardMoveTo(Scheme_Object *obj, int n,  Sch
   float x2;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::move-to", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::move-to");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::move-to");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::move-to", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::move-to");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::move-to");
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->MoveTo(x0, x1, x2);
@@ -3409,7 +3409,7 @@ static Scheme_Object *os_wxMediaPasteboardRemove(Scheme_Object *obj, int n,  Sch
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::remove", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::remove", 0);
 
   
   ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Remove(x0);
@@ -3443,7 +3443,7 @@ static Scheme_Object *os_wxMediaPasteboardDoPaste(Scheme_Object *obj, int n,  Sc
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-pasteboard%::do-paste");
+  x0 = objscheme_unbundle_integer(p[0], "pasteboard-editor%::do-paste");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3465,8 +3465,8 @@ static Scheme_Object *os_wxMediaPasteboardDoCopy(Scheme_Object *obj, int n,  Sch
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-pasteboard%::do-copy");
-  x1 = objscheme_unbundle_bool(p[1], "wx:media-pasteboard%::do-copy");
+  x0 = objscheme_unbundle_integer(p[0], "pasteboard-editor%::do-copy");
+  x1 = objscheme_unbundle_bool(p[1], "pasteboard-editor%::do-copy");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3489,8 +3489,8 @@ static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-pasteboard%::delete (wx:snip% case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::delete (wx:snip% case)", 0);
+      scheme_wrong_count("pasteboard-editor%::delete (snip% case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::delete (snip% case)", 0);
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Delete(x0);
@@ -3501,7 +3501,7 @@ static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:media-pasteboard%::delete (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("pasteboard-editor%::delete (no argument case)", 0, 0, n, p);
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Delete();
@@ -3525,10 +3525,10 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 3) 
-      scheme_wrong_count("wx:media-pasteboard%::insert (wx:snip% with location case)", 3, 3, n, p);
-    x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::insert (wx:snip% with location case)", 0);
-    x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::insert (wx:snip% with location case)");
-    x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::insert (wx:snip% with location case)");
+      scheme_wrong_count("pasteboard-editor%::insert (snip% with location case)", 3, 3, n, p);
+    x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::insert (snip% with location case)", 0);
+    x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::insert (snip% with location case)");
+    x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::insert (snip% with location case)");
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0, x1, x2);
@@ -3543,11 +3543,11 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 4) 
-      scheme_wrong_count("wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% and location case)", 4, 4, n, p);
-    x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% and location case)", 0);
-    x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% and location case)", 1);
-    x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% and location case)");
-    x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% and location case)");
+      scheme_wrong_count("pasteboard-editor%::insert (snip% with before-snip% and location case)", 4, 4, n, p);
+    x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::insert (snip% with before-snip% and location case)", 0);
+    x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::insert (snip% with before-snip% and location case)", 1);
+    x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::insert (snip% with before-snip% and location case)");
+    x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::insert (snip% with before-snip% and location case)");
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0, x1, x2, x3);
@@ -3560,9 +3560,9 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 2) 
-      scheme_wrong_count("wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% case)", 0);
-    x1 = objscheme_unbundle_wxSnip(p[1], "wx:media-pasteboard%::insert (wx:snip% with before-wx:snip% case)", 1);
+      scheme_wrong_count("pasteboard-editor%::insert (snip% with before-snip% case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::insert (snip% with before-snip% case)", 0);
+    x1 = objscheme_unbundle_wxSnip(p[1], "pasteboard-editor%::insert (snip% with before-snip% case)", 1);
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0, x1);
@@ -3574,8 +3574,8 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
 
     
     if (n != 1) 
-      scheme_wrong_count("wx:media-pasteboard%::insert (wx:snip% without position case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::insert (wx:snip% without position case)", 0);
+      scheme_wrong_count("pasteboard-editor%::insert (snip% without position case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::insert (snip% without position case)", 0);
 
     
     ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0);
@@ -3616,8 +3616,8 @@ static Scheme_Object *os_wxMediaPasteboardPutFile(Scheme_Object *obj, int n,  Sc
   nstring x1;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:media-pasteboard%::put-file");
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "wx:media-pasteboard%::put-file");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "pasteboard-editor%::put-file");
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "pasteboard-editor%::put-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3639,7 +3639,7 @@ static Scheme_Object *os_wxMediaPasteboardGetFile(Scheme_Object *obj, int n,  Sc
   nstring x0;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:media-pasteboard%::get-file");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "pasteboard-editor%::get-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3698,7 +3698,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterLoadFile(Scheme_Object *obj, int 
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::after-load-file");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::after-load-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3721,8 +3721,8 @@ static Scheme_Object *os_wxMediaPasteboardOnLoadFile(Scheme_Object *obj, int n, 
   int x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:media-pasteboard%::on-load-file");
-  x1 = unbundle_symset_fileType(p[1], "wx:media-pasteboard%::on-load-file");
+  x0 = (string)objscheme_unbundle_string(p[0], "pasteboard-editor%::on-load-file");
+  x1 = unbundle_symset_fileType(p[1], "pasteboard-editor%::on-load-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3743,7 +3743,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterSaveFile(Scheme_Object *obj, int 
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::after-save-file");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::after-save-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3766,8 +3766,8 @@ static Scheme_Object *os_wxMediaPasteboardOnSaveFile(Scheme_Object *obj, int n, 
   int x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:media-pasteboard%::on-save-file");
-  x1 = unbundle_symset_fileType(p[1], "wx:media-pasteboard%::on-save-file");
+  x0 = (string)objscheme_unbundle_string(p[0], "pasteboard-editor%::on-save-file");
+  x1 = unbundle_symset_fileType(p[1], "pasteboard-editor%::on-save-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3789,7 +3789,7 @@ static Scheme_Object *os_wxMediaPasteboardOnNewBox(Scheme_Object *obj, int n,  S
   int x0;
 
   
-  x0 = unbundle_symset_bufferType(p[0], "wx:media-pasteboard%::on-new-box");
+  x0 = unbundle_symset_bufferType(p[0], "pasteboard-editor%::on-new-box");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3814,10 +3814,10 @@ static Scheme_Object *os_wxMediaPasteboardOnNewImageSnip(Scheme_Object *obj, int
   Bool x3;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:media-pasteboard%::on-new-image-snip");
-  x1 = objscheme_unbundle_integer(p[1], "wx:media-pasteboard%::on-new-image-snip");
-  x2 = objscheme_unbundle_bool(p[2], "wx:media-pasteboard%::on-new-image-snip");
-  x3 = objscheme_unbundle_bool(p[3], "wx:media-pasteboard%::on-new-image-snip");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "pasteboard-editor%::on-new-image-snip");
+  x1 = objscheme_unbundle_integer(p[1], "pasteboard-editor%::on-new-image-snip");
+  x2 = objscheme_unbundle_bool(p[2], "pasteboard-editor%::on-new-image-snip");
+  x3 = objscheme_unbundle_bool(p[3], "pasteboard-editor%::on-new-image-snip");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3842,19 +3842,19 @@ static Scheme_Object *os_wxMediaPasteboardInvalidateBitmapCache(Scheme_Object *o
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_float(p[0], "wx:media-pasteboard%::invalidate-bitmap-cache");
+    x0 = objscheme_unbundle_float(p[0], "pasteboard-editor%::invalidate-bitmap-cache");
   } else
     x0 = 0.0;
   if (n > 1) {
-    x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::invalidate-bitmap-cache");
+    x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::invalidate-bitmap-cache");
   } else
     x1 = 0.0;
   if (n > 2) {
-    x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::invalidate-bitmap-cache");
+    x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::invalidate-bitmap-cache");
   } else
     x2 = -1.0;
   if (n > 3) {
-    x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::invalidate-bitmap-cache");
+    x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::invalidate-bitmap-cache");
   } else
     x3 = -1.0;
 
@@ -3885,17 +3885,17 @@ static Scheme_Object *os_wxMediaPasteboardOnPaint(Scheme_Object *obj, int n,  Sc
   int x8;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::on-paint");
-  x1 = objscheme_unbundle_wxDC(p[1], "wx:media-pasteboard%::on-paint", 0);
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::on-paint");
-  x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::on-paint");
-  x4 = objscheme_unbundle_float(p[4], "wx:media-pasteboard%::on-paint");
-  x5 = objscheme_unbundle_float(p[5], "wx:media-pasteboard%::on-paint");
-  x6 = objscheme_unbundle_float(p[6], "wx:media-pasteboard%::on-paint");
-  x7 = objscheme_unbundle_float(p[7], "wx:media-pasteboard%::on-paint");
-  x8 = unbundle_symset_caret(p[8], "wx:media-pasteboard%::on-paint");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::on-paint");
+  x1 = objscheme_unbundle_wxDC(p[1], "pasteboard-editor%::on-paint", 0);
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::on-paint");
+  x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::on-paint");
+  x4 = objscheme_unbundle_float(p[4], "pasteboard-editor%::on-paint");
+  x5 = objscheme_unbundle_float(p[5], "pasteboard-editor%::on-paint");
+  x6 = objscheme_unbundle_float(p[6], "pasteboard-editor%::on-paint");
+  x7 = objscheme_unbundle_float(p[7], "pasteboard-editor%::on-paint");
+  x8 = unbundle_symset_caret(p[8], "pasteboard-editor%::on-paint");
 
-  if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", "wx:media-buffer%::on-paint");
+  if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", "editor<%>::on-paint");
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else
@@ -3915,7 +3915,7 @@ static Scheme_Object *os_wxMediaPasteboardWriteFootersToFile(Scheme_Object *obj,
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "wx:media-pasteboard%::write-footers-to-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "pasteboard-editor%::write-footers-to-file", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3937,7 +3937,7 @@ static Scheme_Object *os_wxMediaPasteboardWriteHeadersToFile(Scheme_Object *obj,
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "wx:media-pasteboard%::write-headers-to-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "pasteboard-editor%::write-headers-to-file", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3960,8 +3960,8 @@ static Scheme_Object *os_wxMediaPasteboardReadFooterFromFile(Scheme_Object *obj,
   string x1;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "wx:media-pasteboard%::read-footer-from-file", 0);
-  x1 = (string)objscheme_unbundle_string(p[1], "wx:media-pasteboard%::read-footer-from-file");
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "pasteboard-editor%::read-footer-from-file", 0);
+  x1 = (string)objscheme_unbundle_string(p[1], "pasteboard-editor%::read-footer-from-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3984,8 +3984,8 @@ static Scheme_Object *os_wxMediaPasteboardReadHeaderFromFile(Scheme_Object *obj,
   string x1;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "wx:media-pasteboard%::read-header-from-file", 0);
-  x1 = (string)objscheme_unbundle_string(p[1], "wx:media-pasteboard%::read-header-from-file");
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "pasteboard-editor%::read-header-from-file", 0);
+  x1 = (string)objscheme_unbundle_string(p[1], "pasteboard-editor%::read-header-from-file");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4007,7 +4007,7 @@ static Scheme_Object *os_wxMediaPasteboardWriteToFile(Scheme_Object *obj, int n,
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "wx:media-pasteboard%::write-to-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "pasteboard-editor%::write-to-file", 0);
 
   
   r = ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->WriteToFile(*x0);
@@ -4027,9 +4027,9 @@ static Scheme_Object *os_wxMediaPasteboardReadFromFile(Scheme_Object *obj, int n
   Bool x1;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "wx:media-pasteboard%::read-from-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "pasteboard-editor%::read-from-file", 0);
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "wx:media-pasteboard%::read-from-file");
+    x1 = objscheme_unbundle_bool(p[1], "pasteboard-editor%::read-from-file");
   } else
     x1 = FALSE;
 
@@ -4050,9 +4050,9 @@ static Scheme_Object *os_wxMediaPasteboardSetFilename(Scheme_Object *obj, int n,
   Bool x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:media-pasteboard%::set-filename");
+  x0 = (string)objscheme_unbundle_string(p[0], "pasteboard-editor%::set-filename");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "wx:media-pasteboard%::set-filename");
+    x1 = objscheme_unbundle_bool(p[1], "pasteboard-editor%::set-filename");
   } else
     x1 = FALSE;
 
@@ -4076,7 +4076,7 @@ static Scheme_Object *os_wxMediaPasteboardReleaseSnip(Scheme_Object *obj, int n,
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::release-snip", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::release-snip", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4097,7 +4097,7 @@ static Scheme_Object *os_wxMediaPasteboardSetModified(Scheme_Object *obj, int n,
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::set-modified");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::set-modified");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4119,8 +4119,8 @@ static Scheme_Object *os_wxMediaPasteboardSetSnipData(Scheme_Object *obj, int n,
   class wxBufferData* x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::set-snip-data", 0);
-  x1 = objscheme_unbundle_wxBufferData(p[1], "wx:media-pasteboard%::set-snip-data", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::set-snip-data", 0);
+  x1 = objscheme_unbundle_wxBufferData(p[1], "pasteboard-editor%::set-snip-data", 1);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4142,7 +4142,7 @@ static Scheme_Object *os_wxMediaPasteboardGetSnipData(Scheme_Object *obj, int n,
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::get-snip-data", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::get-snip-data", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4167,11 +4167,11 @@ static Scheme_Object *os_wxMediaPasteboardNeedsUpdate(Scheme_Object *obj, int n,
   float x4;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::needs-update", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::needs-update");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::needs-update");
-  x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::needs-update");
-  x4 = objscheme_unbundle_float(p[4], "wx:media-pasteboard%::needs-update");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::needs-update", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::needs-update");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::needs-update");
+  x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::needs-update");
+  x4 = objscheme_unbundle_float(p[4], "pasteboard-editor%::needs-update");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4193,8 +4193,8 @@ static Scheme_Object *os_wxMediaPasteboardResized(Scheme_Object *obj, int n,  Sc
   Bool x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::resized", 0);
-  x1 = objscheme_unbundle_bool(p[1], "wx:media-pasteboard%::resized");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::resized", 0);
+  x1 = objscheme_unbundle_bool(p[1], "pasteboard-editor%::resized");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4216,9 +4216,9 @@ static Scheme_Object *os_wxMediaPasteboardSetCaretOwner(Scheme_Object *obj, int 
   int x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::set-caret-owner", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::set-caret-owner", 1);
   if (n > 1) {
-    x1 = unbundle_symset_focus(p[1], "wx:media-pasteboard%::set-caret-owner");
+    x1 = unbundle_symset_focus(p[1], "pasteboard-editor%::set-caret-owner");
   } else
     x1 = wxFOCUS_IMMEDIATE;
 
@@ -4247,12 +4247,12 @@ static Scheme_Object *os_wxMediaPasteboardScrollTo(Scheme_Object *obj, int n,  S
   Bool x5;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "wx:media-pasteboard%::scroll-to", 0);
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::scroll-to");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::scroll-to");
-  x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::scroll-to");
-  x4 = objscheme_unbundle_float(p[4], "wx:media-pasteboard%::scroll-to");
-  x5 = objscheme_unbundle_bool(p[5], "wx:media-pasteboard%::scroll-to");
+  x0 = objscheme_unbundle_wxSnip(p[0], "pasteboard-editor%::scroll-to", 0);
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::scroll-to");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::scroll-to");
+  x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::scroll-to");
+  x4 = objscheme_unbundle_float(p[4], "pasteboard-editor%::scroll-to");
+  x5 = objscheme_unbundle_bool(p[5], "pasteboard-editor%::scroll-to");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4311,7 +4311,7 @@ static Scheme_Object *os_wxMediaPasteboardOnFocus(Scheme_Object *obj, int n,  Sc
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::on-focus");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::on-focus");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4332,7 +4332,7 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultChar(Scheme_Object *obj, int 
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "wx:media-pasteboard%::on-default-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "pasteboard-editor%::on-default-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4353,7 +4353,7 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultEvent(Scheme_Object *obj, int
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "wx:media-pasteboard%::on-default-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "pasteboard-editor%::on-default-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4374,7 +4374,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalChar(Scheme_Object *obj, int n,
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "wx:media-pasteboard%::on-local-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "pasteboard-editor%::on-local-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4395,7 +4395,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalEvent(Scheme_Object *obj, int n
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "wx:media-pasteboard%::on-local-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "pasteboard-editor%::on-local-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4435,7 +4435,7 @@ static Scheme_Object *os_wxMediaPasteboardOwnCaret(Scheme_Object *obj, int n,  S
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::own-caret");
+  x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::own-caret");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4460,11 +4460,11 @@ static Scheme_Object *os_wxMediaPasteboardRefresh(Scheme_Object *obj, int n,  Sc
   Bool x4;
 
   
-  x0 = objscheme_unbundle_float(p[0], "wx:media-pasteboard%::refresh");
-  x1 = objscheme_unbundle_float(p[1], "wx:media-pasteboard%::refresh");
-  x2 = objscheme_unbundle_float(p[2], "wx:media-pasteboard%::refresh");
-  x3 = objscheme_unbundle_float(p[3], "wx:media-pasteboard%::refresh");
-  x4 = objscheme_unbundle_bool(p[4], "wx:media-pasteboard%::refresh");
+  x0 = objscheme_unbundle_float(p[0], "pasteboard-editor%::refresh");
+  x1 = objscheme_unbundle_float(p[1], "pasteboard-editor%::refresh");
+  x2 = objscheme_unbundle_float(p[2], "pasteboard-editor%::refresh");
+  x3 = objscheme_unbundle_float(p[3], "pasteboard-editor%::refresh");
+  x4 = objscheme_unbundle_bool(p[4], "pasteboard-editor%::refresh");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4486,7 +4486,7 @@ static Scheme_Object *os_wxMediaPasteboardAdjustCursor(Scheme_Object *obj, int n
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "wx:media-pasteboard%::adjust-cursor", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "pasteboard-editor%::adjust-cursor", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4507,7 +4507,7 @@ static Scheme_Object *os_wxMediaPasteboardOnChar(Scheme_Object *obj, int n,  Sch
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "wx:media-pasteboard%::on-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "pasteboard-editor%::on-char", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4528,7 +4528,7 @@ static Scheme_Object *os_wxMediaPasteboardOnEvent(Scheme_Object *obj, int n,  Sc
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "wx:media-pasteboard%::on-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "pasteboard-editor%::on-event", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4549,7 +4549,7 @@ static Scheme_Object *os_wxMediaPasteboardCopySelfTo(Scheme_Object *obj, int n, 
   class wxMediaBuffer* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "wx:media-pasteboard%::copy-self-to", 0);
+  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "pasteboard-editor%::copy-self-to", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4591,7 +4591,7 @@ static Scheme_Object *os_wxMediaPasteboardKill(Scheme_Object *obj, int n,  Schem
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:media-pasteboard%::kill");
+    x0 = objscheme_unbundle_integer(p[0], "pasteboard-editor%::kill");
   } else
     x0 = 0;
 
@@ -4612,7 +4612,7 @@ static Scheme_Object *os_wxMediaPasteboardPaste(Scheme_Object *obj, int n,  Sche
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "wx:media-pasteboard%::paste");
+    x0 = objscheme_unbundle_integer(p[0], "pasteboard-editor%::paste");
   } else
     x0 = 0;
 
@@ -4634,11 +4634,11 @@ static Scheme_Object *os_wxMediaPasteboardCopy(Scheme_Object *obj, int n,  Schem
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::copy");
+    x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::copy");
   } else
     x0 = FALSE;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "wx:media-pasteboard%::copy");
+    x1 = objscheme_unbundle_integer(p[1], "pasteboard-editor%::copy");
   } else
     x1 = 0;
 
@@ -4660,11 +4660,11 @@ static Scheme_Object *os_wxMediaPasteboardCut(Scheme_Object *obj, int n,  Scheme
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_bool(p[0], "wx:media-pasteboard%::cut");
+    x0 = objscheme_unbundle_bool(p[0], "pasteboard-editor%::cut");
   } else
     x0 = FALSE;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "wx:media-pasteboard%::cut");
+    x1 = objscheme_unbundle_integer(p[1], "pasteboard-editor%::cut");
   } else
     x1 = 0;
 
@@ -4683,7 +4683,7 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:media-pasteboard%::initialization", 0, 0, n, p);
+    scheme_wrong_count("pasteboard-editor%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxMediaPasteboard(obj);
@@ -4698,16 +4698,16 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
 static Scheme_Object *objscheme_classname_os_wxMediaPasteboard(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:media-pasteboard%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:media-pasteboard%");
+  if (n) scheme_wrong_count("pasteboard-editor%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("pasteboard-editor%");
 }
 
 void objscheme_setup_wxMediaPasteboard(void *env)
 {
 if (os_wxMediaPasteboard_class) {
-    objscheme_add_global_class(os_wxMediaPasteboard_class,  "wx:media-pasteboard%", env);
+    objscheme_add_global_class(os_wxMediaPasteboard_class, "pasteboard-editor%", env);
 } else {
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "wx:media-pasteboard%", "wx:media-buffer%", os_wxMediaPasteboard_ConstructScheme, 96);
+  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard-editor%", "editor%", os_wxMediaPasteboard_ConstructScheme, 96);
 
   scheme_add_method_w_arity(os_wxMediaPasteboard_class,"get-class-name",objscheme_classname_os_wxMediaPasteboard, 0, 0);
 
@@ -4824,7 +4824,7 @@ int objscheme_istype_wxMediaPasteboard(Scheme_Object *obj, const char *stop, int
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:media-pasteboard% object or " XC_NULL_STR: "wx:media-pasteboard% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "pasteboard-editor% object or " XC_NULL_STR: "pasteboard-editor% object", -1, 0, &obj);
     return 0;
   }
 }

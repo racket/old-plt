@@ -41,7 +41,7 @@ public:
 
 #endif
 
-@CLASSBASE baseMetaFile "wx:meta-file" : "wx:object"
+@CLASSBASE baseMetaFile "meta-file" : "object"
 
 // @CREATOR (string=NULL);
 
@@ -53,7 +53,7 @@ public:
 
 @MACRO rFALSE = return FALSE;
 
-@CLASSBASE wxTimer "wx:timer" : "wx:object"
+@CLASSBASE wxTimer "timer" : "object"
 
 @CREATOR ();
 
@@ -90,7 +90,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 @MACRO makeSizedString[i] = (r ? scheme_make_sized_string(r, _x<i>, 1) : XC_SCHEME_NULL)
 
-@CLASSBASE wxClipboard "wx:clipboard" : "wx:object"
+@CLASSBASE wxClipboard "clipboard" : "object"
 
 @ "set-clipboard-client" : void SetClipboardClient(wxClipboardClient!,long);
 @ "set-clipboard-string" : void SetClipboardString(string,long);
@@ -98,7 +98,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ "get-clipboard-string" : nstring GetClipboardString(long);
 @ "get-clipboard-data" : nstring/makeSizedString[1] GetClipboardData(string,-long*,long);
 
-@CONSTANT "wx:the-clipboard" : wxClipboard^ wxTheClipboard
+@CONSTANT "the-clipboard" : wxClipboard^ wxTheClipboard
 
 @END
 
@@ -109,7 +109,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 
 @MACRO sbString = str
 
-@CLASSBASE wxClipboardClient "wx:clipboard-client" : "wx:object"
+@CLASSBASE wxClipboardClient "clipboard-client" : "object"
 
 @CREATOR ()
 
@@ -134,7 +134,7 @@ Scheme_Object *GetTypes(wxClipboardClient *c)
 @ENDSYMBOLS
 
 
-@CLASSBASE wxPrintSetupData "wx:ps-setup" : "wx:object"
+@CLASSBASE wxPrintSetupData "ps-setup" : "object"
 
 @CREATOR ()
 

@@ -7,7 +7,7 @@
 
 @HEADER
 
-@CLASSBASE wxEvent "wx:event":"wx:object"
+@CLASSBASE wxEvent "event":"object"
 
 @CREATOR ()
 
@@ -28,7 +28,7 @@
 @SYM "menu" : wxEVENT_TYPE_MENU_SELECT
 @ENDSYMBOLS
 
-@CLASSBASE wxCommandEvent "wx:control-event":"wx:event"
+@CLASSBASE wxCommandEvent "control-event":"event"
 
 @CREATOR (SYM[actionType])
 
@@ -37,7 +37,7 @@
 @END
 
 
-@CLASSBASE wxPopupEvent "wx:popup-event":"wx:control-event"
+@CLASSBASE wxPopupEvent "popup-event":"control-event"
 
 @CREATOR ()
 
@@ -57,7 +57,7 @@
 
 @INCLUDE wxs_ornt.xci
 
-@CLASSBASE wxScrollEvent "wx:scroll-event":"wx:event"
+@CLASSBASE wxScrollEvent "scroll-event":"event"
 
 @CREATOR ()
 
@@ -139,7 +139,7 @@
 @SYM "scroll" : WXK_SCROLL
 @ENDSYMBOLS
 
-@CLASSBASE wxKeyEvent "wx:key-event":"wx:event"
+@CLASSBASE wxKeyEvent "key-event":"event"
 
 @MACRO SETX0 = x0=wxEVENT_TYPE_CHAR;
 @CREATOR (-int=wxEVENT_TYPE_CHAR); : : /SETX0
@@ -178,7 +178,7 @@
 @SYM "right" : 3
 @ENDSYMBOLS
 
-@CLASSBASE wxMouseEvent "wx:mouse-event":"wx:event"
+@CLASSBASE wxMouseEvent "mouse-event":"event"
 
 @CREATOR (SYM[mouseEventType]);
 

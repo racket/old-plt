@@ -8,7 +8,7 @@
 
 @HEADER
 
-@CLASSBASE wxMultColour "wx:mult-colour" : "wx:object"
+@CLASSBASE wxMultColour "mult-color" : "object"
 
 @IVAR "r" : float r
 @IVAR "g" : float g
@@ -19,7 +19,7 @@
 
 @END
 
-@CLASSBASE wxAddColour "wx:add-colour" : "wx:object"
+@CLASSBASE wxAddColour "add-color" : "object"
 
 @IVAR "r" : short r
 @IVAR "g" : short g
@@ -69,7 +69,7 @@
 @SYM "change-bold" : wxCHANGE_BOLD
 @SYM "change-italic" : wxCHANGE_ITALIC
 @SYM "change-toggle-underline" : wxCHANGE_TOGGLE_UNDERLINE
-@SYM "change-normal-colour" : wxCHANGE_NORMAL_COLOUR
+@SYM "change-normal-color" : wxCHANGE_NORMAL_COLOUR
 @ENDSYMBOLS
 @BEGINSYMBOLS changeFam > ONE
 @SYM "change-family" : wxCHANGE_FAMILY
@@ -94,7 +94,7 @@
 @SYM "change-alignment" : wxCHANGE_ALIGNMENT
 @ENDSYMBOLS
 
-@CLASSBASE wxStyleDelta "wx:style-delta" : "wx:object"
+@CLASSBASE wxStyleDelta "style-delta" : "object"
 
 @IVAR "family" : SYM[family] family
 @IVAR "face" : nstring face
@@ -135,9 +135,9 @@
 
 @ "set-delta-face" : wxStyleDelta! SetDeltaFace(string);
 @ "set-delta-background" : wxStyleDelta! SetDeltaBackground(string); <> color name
-@ "set-delta-background" : wxStyleDelta! SetDeltaBackground(wxColour%); <> wx:colour%
+@ "set-delta-background" : wxStyleDelta! SetDeltaBackground(wxColour%); <> colour%
 @ "set-delta-foreground" : wxStyleDelta! SetDeltaForeground(string); <> color name
-@ "set-delta-foreground" : wxStyleDelta! SetDeltaForeground(wxColour%); <> wx:colour%
+@ "set-delta-foreground" : wxStyleDelta! SetDeltaForeground(wxColour%); <> colour%
 
 @ "equal?" : bool Equal(wxStyleDelta%);
 @ "collapse" : bool Collapse(wxStyleDelta%);
@@ -146,7 +146,7 @@
 @END
 
 
-@CLASSBASE wxStyle "wx:style" : "wx:object"
+@CLASSBASE wxStyle "style" : "object"
 
 @CLASSID wxTYPE_STYLE
 
@@ -179,12 +179,12 @@
 @ "get-shift-style" :  wxStyle^ GetShiftStyle();
 @ "set-shift-style" : void SetShiftStyle(wxStyle!);
 
-@ "switch-to" : void SwitchTo(wxDC!, wxStyle!); : : /CHECKOK[0."wx:style%::switch-to"]
+@ "switch-to" : void SwitchTo(wxDC!, wxStyle!); : : /CHECKOK[0."style%::switch-to"]
 
 @END
 
 
-@CLASSBASE wxStyleList "wx:style-list" : "wx:object"
+@CLASSBASE wxStyleList "style-list" : "object"
 
 @CREATOR ();
 
@@ -211,7 +211,7 @@
 @ "adjust-usage" : void AdjustUsage(bool);
 @ "is-used? " : bool IsUsed();
 
-@CONSTANT "wx:the-style-list" : wxStyleList! wxTheStyleList
+@CONSTANT "the-style-list" : wxStyleList! wxTheStyleList
 
 @END
 

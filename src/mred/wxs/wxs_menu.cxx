@@ -17,7 +17,7 @@
 
 
 
-// @CLASSBASE wxMenuItem "wx:menu-item" : "wx:object"
+// @CLASSBASE wxMenuItem "menu-item" : "object"
 // @END
 
 // wxMenu is really derived from wxItem
@@ -35,7 +35,7 @@
 #define CALLBACKCLASS os_wxMenu
 #define CB_REALCLASS wxMenu
 #define CB_UNBUNDLE objscheme_unbundle_wxMenu
-#define CB_USER "wx:menu%::initialization"
+#define CB_USER "menu%::initialization"
 
 #undef CB_TOSCHEME
 #undef CB_TOC
@@ -91,7 +91,7 @@ static Scheme_Object *os_wxMenuSetTitle(Scheme_Object *obj, int n,  Scheme_Objec
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:menu%::set-title");
+  x0 = (string)objscheme_unbundle_string(p[0], "menu%::set-title");
 
   
   ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->SetTitle(x0);
@@ -110,8 +110,8 @@ static Scheme_Object *os_wxMenuSetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   string x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::set-label");
-  x1 = (string)objscheme_unbundle_string(p[1], "wx:menu%::set-label");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::set-label");
+  x1 = (string)objscheme_unbundle_string(p[1], "menu%::set-label");
 
   if (x0 < 0) return scheme_void;
   ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0, x1);
@@ -130,8 +130,8 @@ static Scheme_Object *os_wxMenuSetHelpString(Scheme_Object *obj, int n,  Scheme_
   nstring x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::set-help-string");
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "wx:menu%::set-help-string");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::set-help-string");
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "menu%::set-help-string");
 
   if (x0 < 0) return scheme_void;
   ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->SetHelpString(x0, x1);
@@ -167,7 +167,7 @@ static Scheme_Object *os_wxMenuGetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::get-label");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::get-label");
 
   if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->GetLabel(x0);
@@ -186,7 +186,7 @@ static Scheme_Object *os_wxMenuGetHelpString(Scheme_Object *obj, int n,  Scheme_
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::get-help-string");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::get-help-string");
 
   if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->GetHelpString(x0);
@@ -205,7 +205,7 @@ static Scheme_Object *os_wxMenuFindItem(Scheme_Object *obj, int n,  Scheme_Objec
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:menu%::find-item");
+  x0 = (string)objscheme_unbundle_string(p[0], "menu%::find-item");
 
   
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->FindItem(x0);
@@ -241,8 +241,8 @@ static Scheme_Object *os_wxMenuEnable(Scheme_Object *obj, int n,  Scheme_Object 
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::enable");
-  x1 = objscheme_unbundle_bool(p[1], "wx:menu%::enable");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::enable");
+  x1 = objscheme_unbundle_bool(p[1], "menu%::enable");
 
   if (x0 < 0) return scheme_void;
   ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Enable(x0, x1);
@@ -261,8 +261,8 @@ static Scheme_Object *os_wxMenuCheck(Scheme_Object *obj, int n,  Scheme_Object *
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::check");
-  x1 = objscheme_unbundle_bool(p[1], "wx:menu%::check");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::check");
+  x1 = objscheme_unbundle_bool(p[1], "menu%::check");
 
   if (x0 < 0) return scheme_void;
   ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Check(x0, x1);
@@ -281,7 +281,7 @@ static Scheme_Object *os_wxMenuChecked(Scheme_Object *obj, int n,  Scheme_Object
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::checked?");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::checked?");
 
   if (x0 < 0) return scheme_false;
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Checked(x0);
@@ -316,7 +316,7 @@ static Scheme_Object *os_wxMenuDeleteByPosition(Scheme_Object *obj, int n,  Sche
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::delete-by-position");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::delete-by-position");
 
   if (x0 < 0) return scheme_false;
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->DeleteByPosition(x0);
@@ -335,7 +335,7 @@ static Scheme_Object *os_wxMenuDelete(Scheme_Object *obj, int n,  Scheme_Object 
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu%::delete");
+  x0 = objscheme_unbundle_integer(p[0], "menu%::delete");
 
   if (x0 < 0) return scheme_false;
   r = ((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Delete(x0);
@@ -358,12 +358,12 @@ static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object 
 
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("wx:menu%::append (submenu case)", 3, 4, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:menu%::append (submenu case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "wx:menu%::append (submenu case)");
-    x2 = objscheme_unbundle_wxMenu(p[2], "wx:menu%::append (submenu case)", 0);
+      scheme_wrong_count("menu%::append (submenu case)", 3, 4, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "menu%::append (submenu case)");
+    x1 = (string)objscheme_unbundle_string(p[1], "menu%::append (submenu case)");
+    x2 = objscheme_unbundle_wxMenu(p[2], "menu%::append (submenu case)", 0);
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "wx:menu%::append (submenu case)");
+      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "menu%::append (submenu case)");
     } else
       x3 = NULL;
 
@@ -380,15 +380,15 @@ static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object 
 
     
     if ((n < 2) ||(n > 4)) 
-      scheme_wrong_count("wx:menu%::append (string item case)", 2, 4, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "wx:menu%::append (string item case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "wx:menu%::append (string item case)");
+      scheme_wrong_count("menu%::append (string item case)", 2, 4, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "menu%::append (string item case)");
+    x1 = (string)objscheme_unbundle_string(p[1], "menu%::append (string item case)");
     if (n > 2) {
-      x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "wx:menu%::append (string item case)");
+      x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "menu%::append (string item case)");
     } else
       x2 = NULL;
     if (n > 3) {
-      x3 = objscheme_unbundle_bool(p[3], "wx:menu%::append (string item case)");
+      x3 = objscheme_unbundle_bool(p[3], "menu%::append (string item case)");
     } else
       x3 = FALSE;
 
@@ -411,9 +411,9 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
 
   Scheme_Object *tmp_callback = NULL;
   if ((n > 2)) 
-    scheme_wrong_count("wx:menu%::initialization", 0, 2, n, p);
+    scheme_wrong_count("menu%::initialization", 0, 2, n, p);
   if (n > 0) {
-    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "wx:menu%::initialization");
+    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "menu%::initialization");
   } else
     x0 = NULL;
   if (n > 1) {
@@ -434,16 +434,16 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
 static Scheme_Object *objscheme_classname_os_wxMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:menu%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:menu%");
+  if (n) scheme_wrong_count("menu%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("menu%");
 }
 
 void objscheme_setup_wxMenu(void *env)
 {
 if (os_wxMenu_class) {
-    objscheme_add_global_class(os_wxMenu_class,  "wx:menu%", env);
+    objscheme_add_global_class(os_wxMenu_class, "menu%", env);
 } else {
-  os_wxMenu_class = objscheme_def_prim_class(env, "wx:menu%", "wx:object%", os_wxMenu_ConstructScheme, 16);
+  os_wxMenu_class = objscheme_def_prim_class(env, "menu%", "object%", os_wxMenu_ConstructScheme, 16);
 
   scheme_add_method_w_arity(os_wxMenu_class,"get-class-name",objscheme_classname_os_wxMenu, 0, 0);
 
@@ -479,7 +479,7 @@ int objscheme_istype_wxMenu(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:menu% object or " XC_NULL_STR: "wx:menu% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "menu% object or " XC_NULL_STR: "menu% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -765,8 +765,8 @@ static Scheme_Object *os_wxMenuBarSetLabelTop(Scheme_Object *obj, int n,  Scheme
   string x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::set-label-top");
-  x1 = (string)objscheme_unbundle_string(p[1], "wx:menu-bar%::set-label-top");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::set-label-top");
+  x1 = (string)objscheme_unbundle_string(p[1], "menu-bar%::set-label-top");
 
   if (x0 < 0) return scheme_void;
   ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->SetLabelTop(x0, x1);
@@ -785,8 +785,8 @@ static Scheme_Object *os_wxMenuBarSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
   string x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::set-label");
-  x1 = (string)objscheme_unbundle_string(p[1], "wx:menu-bar%::set-label");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::set-label");
+  x1 = (string)objscheme_unbundle_string(p[1], "menu-bar%::set-label");
 
   if (x0 < 0) return scheme_void;
   ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0, x1);
@@ -805,8 +805,8 @@ static Scheme_Object *os_wxMenuBarSetHelpString(Scheme_Object *obj, int n,  Sche
   nstring x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::set-help-string");
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "wx:menu-bar%::set-help-string");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::set-help-string");
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "menu-bar%::set-help-string");
 
   if (x0 < 0) return scheme_void;
   ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->SetHelpString(x0, x1);
@@ -842,7 +842,7 @@ static Scheme_Object *os_wxMenuBarGetLabelTop(Scheme_Object *obj, int n,  Scheme
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::get-label-top");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::get-label-top");
 
   if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->GetLabelTop(x0);
@@ -861,7 +861,7 @@ static Scheme_Object *os_wxMenuBarGetLabel(Scheme_Object *obj, int n,  Scheme_Ob
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::get-label");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::get-label");
 
   if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->GetLabel(x0);
@@ -880,7 +880,7 @@ static Scheme_Object *os_wxMenuBarGetHelpString(Scheme_Object *obj, int n,  Sche
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::get-help-string");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::get-help-string");
 
   if (x0 < 0) return XC_SCHEME_NULL;
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->GetHelpString(x0);
@@ -900,8 +900,8 @@ static Scheme_Object *os_wxMenuBarFindMenuItem(Scheme_Object *obj, int n,  Schem
   string x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "wx:menu-bar%::find-menu-item");
-  x1 = (string)objscheme_unbundle_string(p[1], "wx:menu-bar%::find-menu-item");
+  x0 = (string)objscheme_unbundle_string(p[0], "menu-bar%::find-menu-item");
+  x1 = (string)objscheme_unbundle_string(p[1], "menu-bar%::find-menu-item");
 
   
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->FindMenuItem(x0, x1);
@@ -937,8 +937,8 @@ static Scheme_Object *os_wxMenuBarEnableTop(Scheme_Object *obj, int n,  Scheme_O
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::enable-top");
-  x1 = objscheme_unbundle_bool(p[1], "wx:menu-bar%::enable-top");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::enable-top");
+  x1 = objscheme_unbundle_bool(p[1], "menu-bar%::enable-top");
 
   if (x0 < 0) return scheme_void;
   ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->EnableTop(x0, x1);
@@ -957,8 +957,8 @@ static Scheme_Object *os_wxMenuBarEnable(Scheme_Object *obj, int n,  Scheme_Obje
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::enable");
-  x1 = objscheme_unbundle_bool(p[1], "wx:menu-bar%::enable");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::enable");
+  x1 = objscheme_unbundle_bool(p[1], "menu-bar%::enable");
 
   if (x0 < 0) return scheme_void;
   ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->Enable(x0, x1);
@@ -977,7 +977,7 @@ static Scheme_Object *os_wxMenuBarChecked(Scheme_Object *obj, int n,  Scheme_Obj
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::checked?");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::checked?");
 
   if (x0 < 0) return scheme_false;
   r = ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->Checked(x0);
@@ -996,8 +996,8 @@ static Scheme_Object *os_wxMenuBarCheck(Scheme_Object *obj, int n,  Scheme_Objec
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-bar%::check");
-  x1 = objscheme_unbundle_bool(p[1], "wx:menu-bar%::check");
+  x0 = objscheme_unbundle_integer(p[0], "menu-bar%::check");
+  x1 = objscheme_unbundle_bool(p[1], "menu-bar%::check");
 
   if (x0 < 0) return scheme_void;
   ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->Check(x0, x1);
@@ -1017,9 +1017,9 @@ static Scheme_Object *os_wxMenuBarDelete(Scheme_Object *obj, int n,  Scheme_Obje
   int x1;
 
   
-  x0 = objscheme_unbundle_wxMenu(p[0], "wx:menu-bar%::delete", 1);
+  x0 = objscheme_unbundle_wxMenu(p[0], "menu-bar%::delete", 1);
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "wx:menu-bar%::delete");
+    x1 = objscheme_unbundle_integer(p[1], "menu-bar%::delete");
   } else
     x1 = 0;
 
@@ -1040,8 +1040,8 @@ static Scheme_Object *os_wxMenuBarAppend(Scheme_Object *obj, int n,  Scheme_Obje
   string x1;
 
   
-  x0 = objscheme_unbundle_wxMenu(p[0], "wx:menu-bar%::append", 0);
-  x1 = (string)objscheme_unbundle_string(p[1], "wx:menu-bar%::append");
+  x0 = objscheme_unbundle_wxMenu(p[0], "menu-bar%::append", 0);
+  x1 = (string)objscheme_unbundle_string(p[1], "menu-bar%::append");
 
   
   ((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->Append(x0, x1);
@@ -1060,13 +1060,13 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
     wxMenu** x1;
     string* x2;
 
-    if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("wx:menu-bar%%::initialization: list size mismatch");
+    if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("menu-bar%%::initialization: list size mismatch");
     if (n != 2) 
-      scheme_wrong_count("wx:menu-bar%::initialization (wx:menu% list case)", 2, 2, n, p);
+      scheme_wrong_count("menu-bar%::initialization (menu% list case)", 2, 2, n, p);
     x1 = NULL;
     x2 = NULL;
 
-    x1 = __MakewxMenuArray((0 < n) ? p[0] : scheme_null, &x0, "wx:menu-bar%::initialization");x2 = __MakestringArray((1 < n) ? p[1] : scheme_null, &x0, "wx:menu-bar%::initialization");
+    x1 = __MakewxMenuArray((0 < n) ? p[0] : scheme_null, &x0, "menu-bar%::initialization");x2 = __MakestringArray((1 < n) ? p[1] : scheme_null, &x0, "menu-bar%::initialization");
     realobj = new os_wxMenuBar(obj, x0, x1, x2);
     
     
@@ -1074,7 +1074,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
 
     
     if (n != 0) 
-      scheme_wrong_count("wx:menu-bar%::initialization (no argument case)", 0, 0, n, p);
+      scheme_wrong_count("menu-bar%::initialization (no argument case)", 0, 0, n, p);
 
     
     realobj = new os_wxMenuBar(obj);
@@ -1091,16 +1091,16 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
 static Scheme_Object *objscheme_classname_os_wxMenuBar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:menu-bar%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:menu-bar%");
+  if (n) scheme_wrong_count("menu-bar%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("menu-bar%");
 }
 
 void objscheme_setup_wxMenuBar(void *env)
 {
 if (os_wxMenuBar_class) {
-    objscheme_add_global_class(os_wxMenuBar_class,  "wx:menu-bar%", env);
+    objscheme_add_global_class(os_wxMenuBar_class, "menu-bar%", env);
 } else {
-  os_wxMenuBar_class = objscheme_def_prim_class(env, "wx:menu-bar%", "wx:object%", os_wxMenuBar_ConstructScheme, 16);
+  os_wxMenuBar_class = objscheme_def_prim_class(env, "menu-bar%", "object%", os_wxMenuBar_ConstructScheme, 16);
 
   scheme_add_method_w_arity(os_wxMenuBar_class,"get-class-name",objscheme_classname_os_wxMenuBar, 0, 0);
 
@@ -1136,7 +1136,7 @@ int objscheme_istype_wxMenuBar(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:menu-bar% object or " XC_NULL_STR: "wx:menu-bar% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "menu-bar% object or " XC_NULL_STR: "menu-bar% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1243,7 +1243,7 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n, 
 
   
   if (n != 0) 
-    scheme_wrong_count("wx:menu-item%::initialization", 0, 0, n, p);
+    scheme_wrong_count("menu-item%::initialization", 0, 0, n, p);
 
   
   realobj = new os_wxsMenuItem(obj);
@@ -1258,16 +1258,16 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n, 
 static Scheme_Object *objscheme_classname_os_wxsMenuItem(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("wx:menu-item%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("wx:menu-item%");
+  if (n) scheme_wrong_count("menu-item%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("menu-item%");
 }
 
 void objscheme_setup_wxsMenuItem(void *env)
 {
 if (os_wxsMenuItem_class) {
-    objscheme_add_global_class(os_wxsMenuItem_class,  "wx:menu-item%", env);
+    objscheme_add_global_class(os_wxsMenuItem_class, "menu-item%", env);
 } else {
-  os_wxsMenuItem_class = objscheme_def_prim_class(env, "wx:menu-item%", "wx:object%", os_wxsMenuItem_ConstructScheme, 2);
+  os_wxsMenuItem_class = objscheme_def_prim_class(env, "menu-item%", "object%", os_wxsMenuItem_ConstructScheme, 2);
 
   scheme_add_method_w_arity(os_wxsMenuItem_class,"get-class-name",objscheme_classname_os_wxsMenuItem, 0, 0);
 
@@ -1289,7 +1289,7 @@ int objscheme_istype_wxsMenuItem(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    scheme_wrong_type(stop, nullOK ? "wx:menu-item% object or " XC_NULL_STR: "wx:menu-item% object", -1, 0, &obj);
+    scheme_wrong_type(stop, nullOK ? "menu-item% object or " XC_NULL_STR: "menu-item% object", -1, 0, &obj);
     return 0;
   }
 }
@@ -1341,7 +1341,7 @@ static Scheme_Object *wxsMenuItemGlobalwxsIdToMenuItem(int n,  Scheme_Object *p[
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:menu-item%::wx:id-to-menu-item");
+  x0 = objscheme_unbundle_integer(p[0], "menu-item%::id-to-menu-item");
 
   
   r = wxsIdToMenuItem(x0);
@@ -1353,6 +1353,6 @@ static Scheme_Object *wxsMenuItemGlobalwxsIdToMenuItem(int n,  Scheme_Object *p[
 
 void objscheme_setup_wxsMenuItemGlobal(void *env)
 {
-  scheme_install_xc_global("wx:id-to-menu-item", scheme_make_prim_w_arity(wxsMenuItemGlobalwxsIdToMenuItem, "wx:id-to-menu-item", 1, 1), env);
+  scheme_install_xc_global("id-to-menu-item", scheme_make_prim_w_arity(wxsMenuItemGlobalwxsIdToMenuItem, "id-to-menu-item", 1, 1), env);
 }
 

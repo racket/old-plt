@@ -1,23 +1,29 @@
-(require (lib "unitsig.ss"))
+(module version mzscheme
 
-(require "private/checksigs.ss")
-(require "private/gui-defs.ss")
-(require "private/runcheck.ss")
+  (provide check-version)
 
-(define args@
-  (unit/sig args^
-	    (import progname^)
-	    (define collections '())))
+  (require (lib "unitsig.ss"))
 
-(invoke-unit/sig
- (compound-unit/sig
-  (import)
-  (link
-   [DEFS : defs^ (gui-defs@)]
-   [PROGNAME : progname^ (gui-defs@)]
-   [ARGS : args^ (args@ (PROGNAME))]
-   [RUNCHECK : empty^ (runcheck@ (DEFS) (ARGS))])
-  (export)))
+  (require "private/checksigs.ss")
+  (require "private/gui-defs.ss")
+  (require "private/runcheck.ss")
+
+  (define args@
+    (unit/sig args^
+      (import progname^)
+      (define collections '())))
+
+  (define (check-version)
+    (invoke-unit/sig
+     (compound-unit/sig
+      (import)
+      (link
+       [DEFS : defs^ (gui-defs@)]
+       [PROGNAME : progname^ (gui-defs@)]
+       [ARGS : args^ (args@ (PROGNAME))]
+       [RUNCHECK : empty^ (runcheck@ (DEFS) (ARGS))])
+      (export)))))
+
 
 
 

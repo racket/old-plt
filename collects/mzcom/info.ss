@@ -5,6 +5,6 @@
   (define blurb
     (list
       "MzCOM is a COM class that makes Scheme available to any COM client."))
-  (define release-version "208")
+  (define release-version "209")
   (define release-iteration "0")
   (define post-install-collection "installer.ss"))

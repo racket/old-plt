@@ -5453,13 +5453,14 @@ void scheme_flatten_config(Scheme_Config *orig_c)
       if (c->key) {
 	if (SCHEME_INTP(c->key)) {
 	  pos = SCHEME_INT_VAL(c->key);
-	  if (!SCHEME_THREAD_CELLP(c->cell)) {
-	    Scheme_Object *cell;
-	    cell = scheme_make_thread_cell(c->cell, 1);
-	    c->cell = cell;
-	  }
-	  if (!paramz->prims[pos])
+	  if (!paramz->prims[pos]) {
+	    if (!SCHEME_THREAD_CELLP(c->cell)) {
+	      Scheme_Object *cell;
+	      cell = scheme_make_thread_cell(c->cell, 1);
+	      c->cell = cell;
+	    }
 	    paramz->prims[pos] = c->cell;
+	  }
 	} else {
 	  if (!paramz->extensions) {
 	    Scheme_Bucket_Table *t;

@@ -331,7 +331,7 @@ class wxWindow: public wxbWindow
    * increases the internal_gray index of this and all enclosed windows.
    * Only when the internal_gray index is zero is a window OS_activated.
    */
-  void InternalGray(Bool gray);
+  void InternalGray(int gray_amt);
   Bool IsGray(void);
 	
   /* The Highlight method is used to make an item look "pressed." This is
@@ -363,7 +363,7 @@ class wxWindow: public wxbWindow
   /* ChildrenInternalGray is a local abstraction which calls
    * InternalGray for each of the children of this window.
    */
-  virtual void ChildrenInternalGray(Bool Gray);
+  virtual void ChildrenInternalGray(int gray_amt);
   /* ChangeToGray is the procedure which physically changes
    * the window gray, OS_deactivating it if necessary.
    */

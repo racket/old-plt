@@ -408,9 +408,9 @@ void wxSlider::SetLabel(char *label)
 	
 }
 
-void wxSlider::ChangeToGray(Bool gray)
+void wxSlider::InternalGray(int gray_amt)
 {
   if (cTitle)
-    ((wxLabelArea *)cTitle)->GetMessage()->InternalGray(gray);
-  wxItem::ChangeToGray(gray);
+    ((wxLabelArea *)cTitle)->GetMessage()->InternalGray(gray_amt);
+  wxItem::InternalGray(gray_amt);
 }

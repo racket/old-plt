@@ -1405,7 +1405,7 @@ void wxWindow::Enable(Bool Flag)
   
     cEnable = Flag;
     
-    ChildrenInternalGray(Flag);
+    ChildrenInternalGray(Flag ? -1 : 1);
     
     if (current != OS_Active()) {
       ChangeToGray(!OS_Active());
@@ -1413,17 +1413,13 @@ void wxWindow::Enable(Bool Flag)
   }
 }
 
-void wxWindow::InternalGray(Bool gray)
+void wxWindow::InternalGray(int gray_amt)
 {
   Bool current = OS_Active();
 
-  if (gray) {
-    internal_gray += 1;
-  } else {
-    internal_gray -= 1;
-  }
+  internal_gray += gray_amt;
   
-  ChildrenInternalGray(gray);
+  ChildrenInternalGray(gray_amt);
   
   if (current != OS_Active()) {
     ChangeToGray(!OS_Active());
@@ -1454,13 +1450,13 @@ Bool wxWindow::IsGray(void)
   return !cEnable || internal_gray;
 }
 
-void wxWindow::ChildrenInternalGray(Bool gray)
+void wxWindow::ChildrenInternalGray(int gray_amt)
 {
   wxChildNode *node;
   
   for (node = GetChildren()->First(); node; node = node->Next()) {
     wxWindow *w = (wxWindow *)(node->Data());
-    w->InternalGray(gray);
+    w->InternalGray(gray_amt);
   }
 }
 
@@ -1471,8 +1467,7 @@ void wxWindow::InitInternalGray()
   p = GetParent();
 
   if (!p->cEnable || p->internal_gray) {
-    internal_gray = p->internal_gray + (p->cEnable ? 0 : 1);
-    ChangeToGray(TRUE);
+    InternalGray(p->internal_gray + (p->cEnable ? 0 : 1));
   }
 }
 

@@ -72,13 +72,12 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
   Rect boundsRect = {0, 0, 0, 0};
   OffsetRect(&boundsRect,SetOriginX + padLeft,SetOriginY + padTop);
-  const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
-  const short offValue = 0;
-  const short minValue = 0;
-  const short maxValue = 1;
-  short refCon = 0;
-  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, wxC2P(label),
-			     drawNow, offValue, minValue, maxValue, checkBoxProc, refCon);
+
+  CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+  cMacControl = NULL;
+  CreateCheckBoxControl(GetWindowFromPort(theMacGrafPort), &boundsRect, 
+			title, 0, FALSE, &cMacControl);
+  CFRelease(title);
   CheckMemOK(cMacControl);
   
   Rect r = {0,0,0,0};
@@ -177,7 +176,9 @@ void wxCheckBox::SetLabel(char* label)
   labelString = label ? copystring(wxItemStripLabel(label)) : NULL;
 
   if (label && cMacControl) {
-    ::SetControlTitle(cMacControl, wxC2P(labelString));
+    CFStringRef llabel = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingISOLatin1);
+    SetControlTitleWithCFString(cMacControl, llabel);
+    CFRelease(llabel);
   } else
     Refresh();
 }

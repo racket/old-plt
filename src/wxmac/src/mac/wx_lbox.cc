@@ -107,7 +107,21 @@ Boolean MyClickInCell(ALCellPtr const theCell, Point mouseLoc, EventModifiers mo
   return true;
 }
 
+void MyDrawCell(ALData cellData, ALCellPtr cell, const Rect *cellRect, ALReference hAL)
+{
+  if (cellData) {
+    FontInfo fontInfo;
+    ::GetFontInfo(&fontInfo);
+    MoveTo(cellRect->left, fontInfo.ascent + cellRect->top);
+
+    ForeColor(blackColor);
+    CopyPascalStringToC(*(StringHandle)cellData, wxBuffer);
+    DrawLatin1Text(wxBuffer, 0, -1, 0);
+  }
+}
+
 static ALClickCellUPP MyClickInCellUPP = NewALClickCellProc(MyClickInCell);
+static ALDrawCellUPP MyDrawCellUPP = NewALDrawCellProc(MyDrawCell);
 
 Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        char *Title, Bool Multiple,
@@ -189,6 +203,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   }
   
   ALSetInfo(alClickCellHook,&MyClickInCellUPP,cListReference);
+  ALSetInfo(alDrawCellHook,&MyDrawCellUPP,cListReference);
 
   ReleaseCurrentDC();
 
@@ -203,6 +218,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   
   if (GetParent()->IsHidden())
     DoShow(FALSE);
+  InitInternalGray();
 
   OnClientAreaDSize(1, 1, 1, 1);
 
@@ -883,11 +899,11 @@ void wxListBox::DoShow(Bool on)
   }
 }
 
-void wxListBox::InternalGray(Bool gray)
+void wxListBox::InternalGray(int gray_amt)
 {
   if (cListTitle)
-    ((wxLabelArea *)cListTitle)->GetMessage()->InternalGray(gray);
-  wxItem::InternalGray(gray);
+    ((wxLabelArea *)cListTitle)->GetMessage()->InternalGray(gray_amt);
+  wxItem::InternalGray(gray_amt);
 }
 
 void wxListBox::ChangeToGray(Bool gray)

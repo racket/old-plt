@@ -172,8 +172,12 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
 //-----------------------------------------------------------------------------
 wxMessage::~wxMessage(void)
 {
-  if (cMessage) delete [] cMessage;
-  if (sBitmap) --sBitmap->selectedIntoDC;
+  if (cMessage)
+    cMessage = NULL;
+  if (sBitmap) {
+    --sBitmap->selectedIntoDC;
+    sBitmap = NULL;
+  }
   if (cParentArea->__type == wxTYPE_LABEL_AREA) {
     // CJC hack? clean up label area so it does point to us, since its 
     // about to go away.
@@ -210,6 +214,7 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
 	
   if (GetParent()->IsHidden())
     DoShow(FALSE);
+  InitInternalGray();
 }
 
 

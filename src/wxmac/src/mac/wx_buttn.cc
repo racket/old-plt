@@ -205,7 +205,11 @@ void wxButton::SetLabel(char* label)
   if (label) {
     if (cMacControl) {
       SetCurrentDC();
-      ::SetControlTitle(cMacControl, wxC2P(wxItemStripLabel(label)));
+      {
+	CFStringRef llabel = CFStringCreateWithCString(NULL, wxItemStripLabel(label), kCFStringEncodingISOLatin1);
+	SetControlTitleWithCFString(cMacControl, llabel);
+	CFRelease(llabel);
+      }
     }
   }
 }

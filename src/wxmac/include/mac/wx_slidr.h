@@ -59,7 +59,7 @@ public:
   
   virtual void DoShow(Bool s);
   
-  virtual void ChangeToGray(Bool gray);
+  virtual void InternalGray(int gray);
   
   void TrackPart(int);
 protected:

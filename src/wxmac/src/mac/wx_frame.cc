@@ -62,8 +62,6 @@ wxFrame::wxFrame // Constructor (for frame window)
 
   Rect theBoundsRect;
   ::SetRect(&theBoundsRect, X, Y, X + cWindowWidth, Y + cWindowHeight);
-  Str255 theWindowTitle = "\p";
-  if (windowTitle) CopyCStringToPascal(windowTitle, theWindowTitle);
 
   cUserHidden = TRUE;
 
@@ -113,7 +111,11 @@ wxFrame::wxFrame // Constructor (for frame window)
     wxFatalError(error);
   }
 
-  ::SetWTitle(theMacWindow, theWindowTitle);
+  if (windowTitle) {
+    CFStringRef wtitle = CFStringCreateWithCString(NULL, windowTitle,kCFStringEncodingISOLatin1);
+    SetWindowTitleWithCFString(theMacWindow, wtitle);
+    CFRelease(wtitle);
+  }
   
   SetWRefCon(theMacWindow, (long)this);
   
@@ -672,7 +674,11 @@ char* wxFrame::GetTitle(void) // WCH: return type should be "const char*"
 void wxFrame::SetTitle(char* title)
 {
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
-  ::SetWTitle(theMacWindow, wxC2P(title));
+  {
+    CFStringRef wtitle = CFStringCreateWithCString(NULL, title, kCFStringEncodingISOLatin1);
+    SetWindowTitleWithCFString(theMacWindow, wtitle);
+    CFRelease(title);
+  }
 }
 
 //-----------------------------------------------------------------------------

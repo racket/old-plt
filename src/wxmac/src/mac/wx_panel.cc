@@ -35,37 +35,6 @@ wxPanel::wxPanel // Constructor (given parentArea)
   CreateWxPanel(x, y, width, height);
 }
 
-#if 0
-// EMBEDDING
-//-----------------------------------------------------------------------------
-wxPanel::wxPanel // Constructor (given parentArea and control to embed to)
-// this is a cheap hack because I don't understand how wxAreas work and I don't want to.
-// the problem is that in a radio box, there's a sub-panel which needs to be embedded in
-// the radio box itself.
-(
- wxArea*		parentArea,
- ControlHandle	parentEmbeddingControl,
- int 		x,
- int			y,
- int			width,
- int			height,
- long		style,
- char*		windowName,
- WXTYPE		objectType
- ) :
-  wxbPanel (windowName, parentArea, x, y, width, height, style)
-{
-  CreateWxPanel(x, y, width, height);
-
-#if 0
-  // EMBEDDING
-  if (cEmbeddingControl && parentEmbeddingControl) {
-    ::EmbedControl(cEmbeddingControl,parentEmbeddingControl);
-  }
-#endif        
-}
-#endif
-
 //-----------------------------------------------------------------------------
 wxPanel::wxPanel // Constructor (given parentFrame)
 (
@@ -98,13 +67,6 @@ wxPanel::wxPanel // Constructor (given parentPanel)
   wxbPanel (windowName, parentPanel, x, y, width, height, style)
 {
   CreateWxPanel(x, y, width, height);
-
-#if 0
-  // EMBEDDING        
-  if (cEmbeddingControl && (parentPanel->cEmbeddingControl)) {
-    ::EmbedControl(cEmbeddingControl,parentPanel->cEmbeddingControl);
-  }
-#endif        
 }
 
 //=============================================================================
@@ -144,6 +106,10 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
       }
     }
   }
+
+  if (GetParent()->IsHidden())
+    DoShow(FALSE);
+  InitInternalGray();
 }
 
 //-----------------------------------------------------------------------------

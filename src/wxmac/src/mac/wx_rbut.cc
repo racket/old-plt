@@ -66,21 +66,6 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
   
   font = buttonFont; // WCH: mac platform only
 
-#if 0
-  float fLabelWidth = 100.0;
-  float fLabelHeight = 20.0;
-  if (label)
-    {
-      GetTextExtent(label, &fLabelWidth, &fLabelHeight, NULL, NULL, buttonFont);
-      fLabelWidth += 20; // add 20 for width of radio button icon
-      if (fLabelHeight < 12) fLabelHeight = 12; // height of radio button icon is 12
-    }
-
-  if (width < 0) cWindowWidth = (int)fLabelWidth;
-  if (height < 0) cWindowHeight = (int)fLabelHeight;
-
-  labelString = label;
-#else
   // First, create the control with a bogus rectangle;
   SetCurrentMacDC();
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
@@ -102,7 +87,10 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
   ::SizeControl(cMacControl, boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
 
   ::EmbedControl(cMacControl, GetRootControl());
-#endif
+
+  if (GetParent()->IsHidden())
+    DoShow(FALSE);
+  InitInternalGray();
 }
 
 //-----------------------------------------------------------------------------
@@ -140,6 +128,10 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
   
   if (SetCurrentMacDC())
     ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+
+  if (GetParent()->IsHidden())
+    DoShow(FALSE);
+  InitInternalGray();
 }
 
 //=============================================================================
@@ -181,7 +173,11 @@ void wxRadioButton::SetLabel(char* label)
   if (label && !buttonBitmap) {
     if (cMacControl) {
       SetCurrentDC();
-      ::SetControlTitle(cMacControl, wxC2P(label));
+      {
+	CFStringRef llabel = CFStringCreateWithCString(NULL, label, kCFStringEncodingISOLatin1);
+	SetControlTitleWithCFString(cMacControl, llabel);
+	CFRelease(llabel);
+      }
     } else
       labelString = label;
   }

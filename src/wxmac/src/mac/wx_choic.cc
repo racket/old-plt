@@ -141,7 +141,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     maxdflth = max(h, maxdflth);
     CopyCStringToPascal(Choices[n],temp);
     ::AppendMenu(hDynMenu, "\ptemp");
-    ::SetMenuItemText(hDynMenu, n + 1,temp);
+    ::SetMenuItemText(hDynMenu, n + 1, temp);
+    ::SetMenuItemTextEncoding(hDynMenu, n + 1, kCFStringEncodingISOLatin1);
   }
   no_strings = N;
 
@@ -200,6 +201,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 
   if (GetParent()->IsHidden())
     DoShow(FALSE);
+  InitInternalGray();
 
   return TRUE;
 }
@@ -241,6 +243,11 @@ void wxChoice::DrawChoice(Bool active)
   ::Draw1Control(cMacControl);
 }
 
+void wxChoice::ChangeToGray(Bool gray)
+{
+  wxItem::ChangeToGray(gray);
+  DrawChoice(TRUE);
+}
 
 // --------- Event Handling -------------------
 void wxChoice::Paint(void)
@@ -340,6 +347,7 @@ void wxChoice::Append (char *Item)
   s[0] = n;
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
   ::SetMenuItemText(hDynMenu, no_strings + 1, s);
+  ::SetMenuItemTextEncoding(hDynMenu, no_strings + 1, kCFStringEncodingISOLatin1);
   no_strings++;
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);
@@ -437,4 +445,3 @@ void wxChoice::SetLabel(char *label)
   EraseRect(&r);
   Paint();
 }
-

@@ -154,30 +154,16 @@ void wxbFrame::Command(int id)
 
 void wxbFrame::ProcessCommand(int id)
 {
-  wxCommandEvent *_commandEvent = new wxCommandEvent(wxEVENT_TYPE_MENU_SELECT);
-  wxCommandEvent &commandEvent = *_commandEvent;
-  
-  wxMenuBar *bar = GetMenuBar() ;
+  wxMenuBar *bar = GetMenuBar();
+
   if (!bar)
     return;
 
-  // Motif does the job by itself!!
-#ifndef wx_motif
-  wxMenuItem *item = bar->FindItemForId(id) ;
-#ifdef wx_mac
-  if (item && item->IsCheckable())
-  {
-    bar->Check(id,!bar->Checked(id)) ;
+  wxMenuItem *item = bar->FindItemForId(id);
+  if (item && item->IsCheckable()) {
+    bar->Check(id,!bar->Checked(id));
   }
-#else // wx_mac
-  if (item && item->checkable)
-  {
-//wxDebugMsg("Toggling id %d\n",id) ;
-    bar->Check(id,!bar->Checked(id)) ;
-  }
-#endif // wx_mac
 
-#endif
   OnMenuCommand(id);
 }
 

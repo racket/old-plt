@@ -192,7 +192,6 @@ static void wx_spline_draw_point_array(wxbDC *dc)
   dc->DrawLines(wx_spline_point_list, 0.0, 0.0);
   wxNode *node = wx_spline_point_list->First();
   while (node) {
-    wxPoint *point = (wxPoint *)node->Data();
     wx_spline_point_list->DeleteNode(node);
     node = wx_spline_point_list->First();
   }

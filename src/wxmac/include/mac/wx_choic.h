@@ -57,11 +57,6 @@ class wxChoice: public wxbChoice
   void SetSelection(int n);
   int FindString(char *s);
   char *GetString(int n);
-#if 0	// CJC
-  void SetSize(int x, int y, int width, int height, int sizeFlags);
-  void GetSize(int *x, int *y);
-  void GetPosition(int *x, int *y);
-#endif
   char *GetLabel(void);
   void SetLabel(char *label);
 
@@ -84,6 +79,9 @@ class wxChoice: public wxbChoice
 
   void DrawChoice(Bool flag);
   void ReCalcRect(void);
+
+ protected:
+  virtual void ChangeToGray(Bool gray);
 };
 
 #endif // IN_CPROTO

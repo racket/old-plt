@@ -175,6 +175,7 @@ char *wxItemStripLabel(char *label)
         } else
           naya[j++] = label[i];
       }
+      naya[j] = 0;
       
       return naya;
     }

@@ -2914,7 +2914,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  tmp = (Scheme_Object *)(SCHEME_VAR_BUCKET(_obj))->val;        \
 	  if (!tmp) {                                                   \
             UPDATE_THREAD_RSPTR_FOR_ERROR();                            \
-	    scheme_unbound_global(_obj);                                \
+	    scheme_unbound_global((Scheme_Bucket *)_obj);               \
             return NULL;                                                \
 	  }                                                             \
 	  prefix tmp
@@ -3605,7 +3605,7 @@ local_expand(int argc, Scheme_Object **argv)
   env = scheme_current_process->current_local_env;
 
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, "local-expand: illegal at run time");
+    scheme_raise_exn(MZEXN_MISC, "local-expand: not currently transforming");
 
   /* For each given stop-point identifier, shadow any potential syntax
      in the environment with an identity-expanding syntax expander. */

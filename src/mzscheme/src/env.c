@@ -996,7 +996,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     for (i = frame->num_bindings; i--; ) {
       while (c && (c->before > i)) {
 	int issame;
-	if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+	if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
 	  issame = scheme_stx_module_eq(symbol, c->name, phase);
 	else
 	  issame = scheme_stx_env_bound_eq(symbol, c->name, uid, phase);
@@ -1018,7 +1018,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     while (c) {
       int issame;
-      if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+      if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
 	issame = scheme_stx_module_eq(symbol, c->name, phase);
       else
 	issame = scheme_stx_env_bound_eq(symbol, c->name, uid, phase);

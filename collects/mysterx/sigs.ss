@@ -4,8 +4,10 @@
   (mx-browser%
    mx-version
    com-invoke
-   com-set-property!
    com-get-property
+   com-get-property*
+   com-set-property!
+   com-set-property*!
    com-methods
    com-get-properties
    com-set-properties

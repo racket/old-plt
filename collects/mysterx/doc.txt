@@ -485,6 +485,14 @@ _MysterX_
   `property-name' is a string.  Returns the value
   of the requested property.
 
+> (com-get-property* a-com-object property-name-1 property-name-2 ...)
+
+  `a-com-object' is a <com-object>, and each 
+  `property-name' is a string.  Returns the value 
+  of the final property by following the indicated path
+  of properties, where each intermediate property 
+  is a <com-object>. 
+
 > (com-set-properties a-com-object)
 > (com-set-properties a-com-type)
 
@@ -507,6 +515,13 @@ _MysterX_
   `property-name' is a string, and `val' is a
   value of suitable type.  Sets the value of the
   specified property.
+
+> (com-set-property*! a-com-object property-name-1 property-name-2 ... val)
+
+  `a-com-object' is a <com-object>, each `property-name' is a 
+   string, and `val' is a Scheme value.  Sets the value of the 
+   final property by following the indicated path of properties, 
+   where each intermediate property is a <com-object>. 
 
 > (com-help a-com-object topic)
 > (com-help a-com-type topic)

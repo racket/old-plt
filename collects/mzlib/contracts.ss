@@ -125,8 +125,6 @@
             
             (define pos-module-source (module-source-as-symbol #'pos-stx))
             ;; this is here to check for unbound ids.
-            ;; put outer `void' just in case we start printing out module
-            ;; body values (say in the module language or something)
             (if #f (begin (void) id ...))
             
             (define contract-id ctrct) ...

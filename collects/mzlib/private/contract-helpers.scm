@@ -34,6 +34,6 @@
                (string->symbol
                 (resolve-module-path-index
                  src-module
-                 (current-load-relative-directory)))
+                 (build-path 'same)))
                'top-level))]
         [else 'top-level]))))

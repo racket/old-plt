@@ -550,9 +550,7 @@ static struct hostent *MZ_GETHOSTBYNAME(const char *name)
   long th;
   DWORD id;
 
-  if (strlen(name) < 256)
-    strcpy(ghbn_hostname, name);
-  else
+  if (strlen(name) > 256)
     return NULL;
 
   rec = MALLOC_ONE_ATOMIC(GHBN_Rec);
@@ -561,6 +559,8 @@ static struct hostent *MZ_GETHOSTBYNAME(const char *name)
   scheme_block_until(ghbn_lock_avail, NULL, NULL, 0);
 
   ghbn_lock = 1;
+
+  strcpy(ghbn_hostname, name);
 
   th = _beginthreadex(NULL, 5000, 
 		      (MZ_LPTHREAD_START_ROUTINE)gethostbyname_in_thread,

@@ -23,6 +23,7 @@
     [(_ name expr)
      (begin (provide name) (define name expr))]))
 
+;; ----------------------------------------------------------------------------
 ;; Function type
 
 ;; internal, used by _fun
@@ -210,6 +211,7 @@
                      #,output-expr)))))
            #`(ffi-fun (list #,@(filtered-map car inputs)) #,(car output))))]))
 
+;; ----------------------------------------------------------------------------
 ;; String types
 
 ;; The internal _string type uses the native ucs-4 encoding, also providing a
@@ -250,6 +252,9 @@
 ;; `string/eof' type: converts an output #f (NULL) to an eof-object.
 (define* _string/eof
   (make-ctype _string #f (lambda (x) (or x eof))))
+
+;; ----------------------------------------------------------------------------
+;; Utility types
 
 ;; Call this with a name (symbol) and a list of symbols, where a symbol can be
 ;; followed by a '= and an integer to have a similar effect of C's enum.
@@ -325,6 +330,7 @@
     [(_ syms) (with-syntax ([name (syntax-local-name)])
                 #'(_bitmask* 'name syms))]))
 
+;; ----------------------------------------------------------------------------
 ;; Custom function type macros
 
 ;; These macros get expanded by the _fun type.  They can expand to a form that
@@ -413,20 +419,40 @@
               ;; post is needed when this is used as a function output type
               post: (x => (make-sized-byte-string x n)))]))
 
-;; Utilities
+;; ----------------------------------------------------------------------------
+;; Misc utilities
 
-;; Easy wrappers for retrieving and setting library values
+;; Wrappers for retrieving and setting library values
+
+;; Used to convert strings and symbols to a byte-string that names an object
 (define (get-ffi-obj-name name objname . args)
   (cond [(bytes? objname) objname]
         [(symbol? objname) (get-ffi-obj-name name (symbol->string objname))]
         [(string? objname) (string->bytes/utf-8 objname)]
         [else (apply raise-type-error name "object-name" 0 objname args)]))
+
 (define* (get-ffi-obj name lib type)
   (ptr-ref (ffi-obj (get-ffi-obj-name 'get-ffi-obj name lib type) lib)
            type))
+
+;; It is important to use the set-ffi-obj! wrapper because it takes care of
+;; keeping a handle on the object -- otherwise, setting a callback hook will
+;; crash when the Scheme function is gone.
 (define* (set-ffi-obj! name lib type new)
-  (ptr-set! (ffi-obj (get-ffi-obj-name 'get-ffi-obj name lib type new) lib)
-            type new))
+  (let ([obj (ffi-obj (get-ffi-obj-name 'get-ffi-obj name lib type new) lib)])
+    (let-values ([(new type) (get-lowlevel-object new type)])
+      (hash-table-put! ffi-objects-ref-table obj new)
+      (ptr-set! obj type new))))
+
+(define ffi-objects-ref-table (make-hash-table))
+
+;; Used by set-ffi-obj! to get the actual value so it can be kept around
+(define (get-lowlevel-object x type)
+  (let ([basetype (ctype-basetype type)])
+    (if basetype
+      (let ([s->c (ctype-scheme->c type)])
+        (get-lowlevel-object (if s->c (s->c x) x) basetype))
+      (values x type))))
 
 ;; Converting Scheme lists to/from C vectors (going back requires a length)
 (define* (list->cblock l type)
@@ -485,7 +511,8 @@
                regexp-replace regexp-replace*)
              (caar rs) str (cadar rs)) (cdr rs)))))
 
-;; Safe memory blocks
+;; ----------------------------------------------------------------------------
+;; Safe raw vectors
 
 (define-struct cvector (ptr type length))
 
@@ -522,6 +549,7 @@
 (define* (list->cvector l type)
   (make-cvector (list->cblock l type) type (length l)))
 
+;; ----------------------------------------------------------------------------
 ;; SRFI-4 implementation
 
 (define-syntax (make-srfi-4 stx)
@@ -593,6 +621,7 @@
 (make-srfi-4 f32 _float)
 (make-srfi-4 f64 _double)
 
+;; ----------------------------------------------------------------------------
 ;; Tagged pointers
 
 ;; This is a kind of a pointer that gets a specific tag when converted to
@@ -638,6 +667,7 @@
                        TYPE-tag)))))]
     [(_ _TYPE) #'(_ _TYPE _pointer)]))
 
+;; ----------------------------------------------------------------------------
 ;; Struct wrappers
 
 (define (compute-offsets types)

@@ -8,12 +8,12 @@
 (define-signature plt:mr-userspace^
   ((open mred^)
    (open mzlib:core-flat^)
-   (open turtles^)
+   (open turtle^)
    (struct posn (x y))))
 
 (define-signature plt:advanced^
   ((open mzlib:core-flat^)
-   (open turtles^)
+   (open turtle^)
    (struct posn (x y))))
 
 (define-signature plt:userspace^ plt:mr-userspace^)

@@ -758,8 +758,8 @@
   ;; returns #t if pat matching exp with the empty language produces ans.
   (define (test-empty pat exp ans)
     (run-test
-     `(match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table)) ',pat) ',exp)
-     (match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table)) pat) exp)
+     `(match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table)) ',pat) ',exp)
+     (match-pattern (compile-pattern (make-compiled-lang '() (make-hash-table) (make-hash-table)) pat) exp)
      ans))
   
   (define xab-lang #f)

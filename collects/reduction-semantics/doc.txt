@@ -155,11 +155,15 @@ example is this:
       ((lambda ((name x variable)) (name body e)) (name arg v))
       (lc-subst x arg body))
 
-> (reduction/cc language non-terminal pattern bodies ...)
+> compatible-closure : (red?
+                        compiled-lang?
+                        symbol?
+                        . -> .
+                        red?)
 
-reduction/cc is like reduction, except that the reduction
-may occur anywhere in the compatible closure of the
-non-terminal.
+This function accepts a reduction, a language, the name of a
+non-terminal in the language and returns the compatible
+closure of the reduction for the specified non-terminal.
 
 > replace : (any? hole-binding? any? . -> . any)
 

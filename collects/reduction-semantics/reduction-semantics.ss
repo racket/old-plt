@@ -5,8 +5,7 @@
            (lib "etc.ss"))
   (require-for-syntax "private/red-sem-macro-helpers.ss")
 
-  (provide reduction 
-           reduction/cc
+  (provide reduction
            reduction/context
            language
            replace)
@@ -42,36 +41,6 @@
                         [hole (lookup-binding bindings 'hole)]
                         [res ((red-reduct red) bindings)])
                     (replace context hole res))))))
-  
-  ;; (reduction/cc lang nt pattern expression ...)
-  (define-syntax (reduction/cc stx)
-    (syntax-case stx ()
-      [(_ lang-exp nt pattern bodies ...)
-       (let* ([names (extract-names (syntax pattern))])
-         (unless (identifier? (syntax nt))
-           (raise-syntax-error 'reduction/cc "expected name of non-terminal" stx (syntax nt)))
-         (with-syntax ([(names ...) (map (lambda (name)
-                                           (datum->syntax-object (syntax pattern) name))
-                                         names)]
-                       [hole (datum->syntax-object stx 'hole)]
-                       [context (car (generate-temporaries (list stx)))])
-           (syntax/loc stx
-            (let ([lang lang-exp])
-              (unless (hash-table-get (compiled-lang-ht lang) 'nt (lambda () #f))
-                (error 'reduction/cc "unknown non-terminal: ~a" 'nt))
-              (build-red lang
-                         '(in-hole (name context (cross nt)) pattern)
-                         (lambda (bindings)
-                           (let ([hole (lookup-binding bindings 'hole)]
-                                 [context (lookup-binding bindings 'context)]
-                                 [names (lookup-binding bindings 'names)] ...)
-                             (replace
-                              context
-                              hole
-                              (begin
-                                (void)
-                                bodies ...))))
-                         #t)))))]))
   
   ;; (reduction/context lang ctxt pattern expression ...)
   (define-syntax (reduction/context stx)

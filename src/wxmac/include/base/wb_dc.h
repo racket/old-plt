@@ -161,6 +161,8 @@ class wxbDC: public wxObject
   virtual void SetTextBackground(wxColour *colour);
   virtual void SetBackgroundMode(int mode); // wxSOLID or wxTRANSPARENT
                                             // for drawing background colour
+  inline int GetBackgroundMode(void) { return current_bk_mode; }
+
   virtual void SetClippingRegion(float x, float y, float width, float height)= 0;
   virtual void GetClippingRegion(float *x, float *y, float *width, float *height)= 0; // mflatt
   inline virtual void SetColourMap(wxColourMap *cmap) {};

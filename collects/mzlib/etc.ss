@@ -456,9 +456,13 @@
                                         (current-directory))))))
                        (local)))])
         (if (and (pair? dir) (eq? 'plthome (car dir)))
-          (with-syntax ([d dir])
-            (syntax (un-plthome-ify 'd)))
-          (datum->syntax-object (quote-syntax here) dir stx)))]))
+	    (with-syntax ([d dir])
+	      (syntax (un-plthome-ify 'd)))
+	    (datum->syntax-object (quote-syntax here) 
+				  (if (path? dir)
+				      (path->string dir)
+				      dir)
+				  stx)))]))
 
  ;; This is a macro-generating macro that wants to expand
  ;; expressions used in the generated macro. So it's weird,

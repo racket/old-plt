@@ -10,29 +10,13 @@
       [(_ id init-val)
        (with-syntax ([gen-id (car (generate-temporaries (list #'id)))])
 	 #'(begin
-	     (define-syntax gen-id init-val)
+	     (define-syntax gen-id (convert-renamer init-val))
 	     (define-syntax id 
 	       (make-set!-transformer
 		(make-syntax-parameter 
 		 (lambda (stx)
 		   (let ([v (syntax-parameter-target-value #'gen-id)])
-		     (cond
-		      [(set!-transformer? v) ((set!-transformer-procedure v) stx)]
-		      [(and (procedure? v)
-			    (procedure-arity-includes? v 1))
-		       (syntax-case stx (set!)
-			 [(set! id _) (raise-syntax-error
-				       #f
-				       "cannot mutate syntax identifier"
-				       stx
-				       #'id)]
-			 [else (v stx)])]
-		      [else
-		       (raise-syntax-error
-			#f
-			"bad syntax"
-			stx
-			#f)])))
+		     (apply-transformer v stx #'set!)))
 		 #'gen-id)))))]))
 
   (define-syntax (syntax-parameterize stx)
@@ -67,7 +51,7 @@
 		"duplicate binding"
 		stx
 		dup)))
-	   #'(let-syntax ([gen-id val] ...)
+	   #'(let-syntax ([gen-id (convert-renamer val)] ...)
 	       body0 body ...)))]))
 
   ;; ----------------------------------------
@@ -80,23 +64,7 @@
     (make-set!-transformer
      (lambda (stx)
        (let ([v (syntax-parameter-value (syntax-local-introduce id))])
-	 (cond
-	  [(set!-transformer? v) ((set!-transformer-procedure v) stx)]
-	  [(and (procedure? v)
-		(procedure-arity-includes? v 1))
-	   (syntax-case stx (set!)
-	     [(set! id _) (raise-syntax-error
-			  #f
-			  "cannot mutate syntax identifier"
-			  stx
-			  #'id)]
-	     [else (v stx)])]
-	  [else
-	   (raise-syntax-error
-	    #f
-	    "bad syntax"
-	    stx
-	    #f)])))))
+	 (apply-transformer v stx #'set!)))))
 
   (define (syntax-parameter-value id)
     (let* ([v (syntax-local-value id (lambda () #f))]

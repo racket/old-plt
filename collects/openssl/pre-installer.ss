@@ -56,12 +56,25 @@
 			       (list
 				"-qr"
 				(build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
-				(let ([inc (build-path 'up 'up "include")])
+				(let ([inc (build-path 'up 'up "include")]
+				      [extras (cond ((getenv "PLT_EXTENSION_LIB_PATHS") =>
+						     (lambda (ext)
+						       (apply string-append
+							      (map (lambda (p)
+								     (format 
+								      " ~a~s"
+								      (if (eq? 'windows (system-type))
+									  " /I"
+									  " -I")
+								      (build-path p "include")))
+								   (path-list-string->path-list ext '())))))
+						    (else ""))])
 				  (if (eq? 'windows (system-type))
-				      (format "cl.exe /MT /E /I~s /I~s" 
+				      (format "cl.exe /MT /E /I~s /I~s~a" 
 					      inc
-					      (build-path (collection-path "openssl") "openssl" "include"))
-				      (format "gcc -E -DOS_X -I~s" inc)))
+					      (build-path (collection-path "openssl") "openssl" "include")
+					      extras)
+				      (format "gcc -E -DOS_X -I~s~a" inc extras)))
 				"mzssl.c"
 				(build-path 3m-dir "mzssl.c")))
 			      void))

@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; ast.ss
-;; $Id: ast.ss,v 1.2 2004/08/03 17:02:03 cobbe Exp $
+;; $Id: ast.ss,v 1.3 2004/08/10 15:54:04 cobbe Exp $
 ;;
 ;; Defines the AST types used for the Acquired Java system.
 ;;
@@ -13,7 +13,7 @@
            "utils.ss")
 
   #| ID ::= any symbol except those in RESERVED-WORDS, BINARY-PRIMS, and
-  #         UNARY-PRIMS below
+            UNARY-PRIMS below
 
      Class-Name ::= ID | 'Object
      Defn-Name ::= ID     ;; those names legal for user-defined classes
@@ -82,8 +82,9 @@
    ;; Class ::= (make-class Type[Class] (Union Class #f)
    ;;                       (Listof Field) (Listof Method))
 
-   (define-struct field (type name))
-   ;; Field ::= (make-field Type Field-Name)
+   (define-struct field (type class name))
+   ;; Field ::= (make-field Type Type[Class] Field-Name)
+   ;;   class is class in which field is declared.
 
    (define-struct method (type name arg-names arg-types body))
    ;; Method ::= (make-method Type Method-Name (Listof Arg-Name)
@@ -183,6 +184,7 @@
                                    [methods (listof method?)])]
 
                     [struct field ([type type?]
+                                   [class class-type?]
                                    [name field-name?])]
                     [struct method ([type type?]
                                     [name method-name?]

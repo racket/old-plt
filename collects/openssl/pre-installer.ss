@@ -7,12 +7,12 @@
 	   (lib "launcher.ss" "launcher")
 	   (lib "file.ss"))
 
-  (define (pre-installer plthome)
+  (define (pre-installer plthome openssl-dir)
     (define (go file)
       (pre-install plthome
-		   (collection-path "openssl")
+		   openssl-dir
 		   file
-		   (build-path (collection-path "openssl") 
+		   (build-path openssl-dir
 			       "openssl")
 		   ;; header subdirs
 		   (list "openssl")
@@ -20,7 +20,7 @@
 		   (list "ssl" "crypto")
 		   ;; windows libs
 		   (let* ([default-paths
-			    (list (build-path (collection-path "openssl") "openssl"))]
+			    (list (build-path openssl-dir "openssl"))]
 			  [paths
 			   (let ([v (getenv "PLT_EXTENSION_LIB_PATHS")])
 			     (if v
@@ -47,8 +47,11 @@
     ;; Build for 3m when it looks like we can/should.
     ;; This is a hack --- hopefully temporary!
     (let ([3m-dir (build-path "compiled" "native" (system-library-subpath #f) "3m")]
-	  [mzssl.so (if (eq? 'windows (system-type)) "mzssl.dll" "mzssl.so")])
-      (parameterize ([current-directory (collection-path "openssl")])
+	  [mzssl.so (case (system-type)
+		      [(windows) "mzssl.dll"]
+		      [(macosx) "mzssl.dylib"]
+		      [else "mzssl.so"])])
+      (parameterize ([current-directory openssl-dir])
 	(when (and (memq (system-type) '(unix macosx windows))
 		   (memq '3m (available-mzscheme-variants))
 		   (directory-exists? (build-path 'up 'up "src" "mzscheme" "gc2")))
@@ -85,7 +88,7 @@
 				      (format "cl.exe /MT /E /I~a /I~a~a" 
 					      (fix-path inc)
 					      (fix-path
-					       (build-path (collection-path "openssl") "openssl" "include"))
+					       (build-path openssl-dir "openssl" "include"))
 					      extras)
 				      (format "gcc -E ~a-I~a~a" 
 					      (if (eq? 'macosx (system-type))
@@ -111,7 +114,7 @@
     ;; Under windows, put "{lib,sll}eay32" into the system folder when
     ;; they're in a "precompiled" dir.
     (when (eq? 'windows (system-type))
-      (let ([dir (build-path (collection-path "openssl")
+      (let ([dir (build-path openssl-dir
 			     "precompiled"
 			     "native"
 			     (system-library-subpath #f))])

@@ -220,8 +220,10 @@
 			(begin
 			  (when (= pos selected)
 			    (when light?
-			      (send dc draw-line 0 tab-height x tab-height)
-			      (send dc draw-line 0 (add1 tab-height) x (add1 tab-height))))
+			      (send dc set-pen border-pen)
+			      (send dc draw-line 0 tab-height (sub1 x) tab-height)
+			      (send dc set-pen light-pen)
+			      (send dc draw-line 0 (add1 tab-height) (sub1 x) (add1 tab-height))))
 			  (let ([short (if (or (= pos 0) (= pos selected))
 					   0
 					   (+ (/ tab-height 2) 
@@ -229,14 +231,18 @@
 						  raise-h
 						  0)))])
 			    (when light?
+			      (send dc set-pen border-pen)
 			      (send dc draw-line (+ x short -sel-d) (- tab-height short) (+ x tab-height) -sel-d)
+			      (send dc set-pen light-pen)
 			      (send dc draw-line (+ x short -sel-d 1) (- tab-height short) (+ x tab-height 1) -sel-d))
 			    (list (list (+ x short -sel-d -2 inset) (- tab-height short -2 inset))
 				  (list (+ x tab-height inset) (+ -sel-d inset)))))
 			;; top line
 			(begin
 			  (when light?
+			    (send dc set-pen border-pen)
 			    (send dc draw-line (+ x tab-height) -sel-d next-x -sel-d)
+			    (send dc set-pen light-pen)
 			    (send dc draw-line (+ x tab-height) (+ 1 -sel-d) next-x (+ 1 -sel-d)))
 			  (list (list (+ 1 next-x (- inset)) (+ inset -sel-d))))
 			;; right line
@@ -245,18 +251,26 @@
 					  0)]
 			       [short-d (if (zero? short) 0 -1)])
 			  (when dark?
-			    (send dc draw-line (+ 1 next-x) (+ -sel-d 1) (- (+ next-x tab-height) short 1 -sel-d) (- tab-height short 1))
+			    (send dc set-pen border-pen)
 			    (send dc draw-line next-x (+ -sel-d 1) 
-				  (- (+ next-x tab-height) short 2 -sel-d short-d) (- tab-height short 1 short-d)))
+				  (- (+ next-x tab-height) short 2 -sel-d short-d) (- tab-height short 1 short-d))
+			    (send dc set-pen dark-pen)
+			    (send dc draw-line (+ 1 next-x) (+ -sel-d 1) (- (+ next-x tab-height) short 1 -sel-d) (- tab-height short 1)))
 			  (list (list (- (+ next-x tab-height) -sel-d short (- short-d) -2 inset) (- tab-height short -2 inset))))
 			;; end point
 			(begin
 			  (when light?
 			    (when (= pos selected)
+			      (send dc set-pen border-pen)
 			      (send dc draw-line (+ next-x tab-height) tab-height w tab-height)
+			      (send dc set-pen light-pen)
 			      (send dc draw-line (+ next-x tab-height) (add1 tab-height) w (add1 tab-height)))
 			    (let ([x (+ x tab-height)]
 				  [y (- tab-v-space (if (= pos selected) raise-h 0))])
+			      (send dc set-text-foreground
+				    (if (is-enabled-to-root?)
+					black-color
+					disabled-color))
 			      (send dc draw-text (car l) x y)
 			      (when (and (has-focus?)
 					 (= pos current-focus-tab))
@@ -266,10 +280,10 @@
 					[y (+ y 2)]
 					[w (+ (car wl) 2)]
 					[h (- tab-height (* 2 tab-v-space) 2)])
-				    (send dc draw-line (+ x 1) y (+ x w -2) y)
-				    (send dc draw-line (+ x 1) (+ y h -1) (+ x w -2) (+ y h -1))
-				    (send dc draw-line x (+ y 1) x (+ y h -2))
-				    (send dc draw-line (+ x w -1) (+ y 1) (+ x w -1) (+ y h -2)))
+				    (send dc draw-line (+ x 0) (+ y -1) (+ x w -1) (+ y -1))
+				    (send dc draw-line (+ x 0) (+ y h) (+ x w -1) (+ y h))
+				    (send dc draw-line (+ x -1) (+ y 0) (+ x -1) (+ y h -1))
+				    (send dc draw-line (+ x w) (+ y 0) (+ x w) (+ y h -1)))
 				  (send dc set-pen p)))))
 			  (list (list (+ next-x inset (if (= selected (add1 pos)) -2 0)) (+ 2 tab-height (- inset)))))))
 		   (loop next-x (cdr l) (cdr wl) (add1 pos))))))))
@@ -302,17 +316,19 @@
 		 (send dc draw-tab-base 0 (- tab-height 3) w 6 (if active? 1 0)))
 	       (when border?
 		 (when (> h tab-height)
-		   (send dc draw-line 0 tab-height 0 h)
-		   (send dc draw-line 1 tab-height 1 h)))
+		   (send dc draw-line 1 (add1 tab-height) 1 h)
+		   (send dc set-pen border-pen)
+		   (send dc draw-line 0 tab-height 0 h)))
 	       (unless mac-tab?
 		 (send dc set-pen dark-pen))
 	       (draw-once dc w #f #t 0 active?)
 	       (when border?
 		 (when (> h tab-height)
-		   (send dc draw-line (- w 1) tab-height (- w 1) (- h raise-h))
 		   (send dc draw-line (- w 2) (+ 1 tab-height) (- w 2) (- h raise-h))
-		   (send dc draw-line 0 (- h 3 raise-h) w (- h 3 raise-h))
-		   (send dc draw-line 1 (- h 4 raise-h) w (- h 4 raise-h)))))
+		   (send dc draw-line 1 (- h 4 raise-h) w (- h 4 raise-h))
+		   (send dc set-pen border-pen)
+		   (send dc draw-line (- w 1) tab-height (- w 1) (- h raise-h))
+		   (send dc draw-line 0 (- h 3 raise-h) w (- h 3 raise-h)))))
 	     (send dc set-origin 0 0)))))
 
       (define/override (on-size w h)

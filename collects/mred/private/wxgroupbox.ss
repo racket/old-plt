@@ -24,7 +24,8 @@
       (inherit get-dc get-client-size get-mred
 	       set-min-width set-min-height
 	       set-tab-focus
-	       set-background-to-gray)
+	       set-background-to-gray
+	       is-enabled-to-root?)
       
       (define lbl label)
 
@@ -47,6 +48,10 @@
 	     (send dc set-background bg-color)
 	     (send dc set-font font)
 	     (send dc clear)
+	     (send dc set-text-foreground
+		   (if (is-enabled-to-root?)
+		       black-color
+		       disabled-color))
 	     (send dc draw-text lbl group-right-inset 0)
 	     (send dc set-pen light-pen)
 	     (let-values ([(w h) (my-get-client-size)]

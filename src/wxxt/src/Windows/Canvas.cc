@@ -203,7 +203,7 @@ wxCanvas::~wxCanvas(void)
 void wxCanvas::SetBackgroundToGray(void)
 {
   XtVaSetValues(X->handle, XtNbackground,  wxGREY_PIXEL, NULL);
-
+  bgcol = NULL;
 }
 
 void wxCanvas::SetCanvasBackground(wxColor *c)
@@ -232,7 +232,7 @@ void wxCanvas::Paint(void)
     /* Need to erase, first */
     wxColor *c;
     c = dc->GetBackground();
-    dc->SetBackground(bgcol);
+    dc->SetBackground(bgcol ? bgcol : wxGREY);
     dc->Clear();
     dc->SetBackground(c);
   }
@@ -432,6 +432,8 @@ void wxCanvas::ChangeToGray(Bool gray)
     XtVaSetValues(X->scroll, XtNforeground, gray ? wxGREY_PIXEL : wxDARK_GREY_PIXEL, NULL);
   }
   wxItem::ChangeToGray(gray);
+  if (!bgcol)
+    Refresh();
 }
 
 void wxCanvas::Layout(void)

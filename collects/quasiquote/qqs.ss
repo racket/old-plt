@@ -4,5 +4,6 @@
 (define-signature quasiquote:quotester^
   (get-chart
     get-quote
+    (struct entity (name))
     stock
     fund))

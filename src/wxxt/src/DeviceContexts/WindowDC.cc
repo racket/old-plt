@@ -512,7 +512,7 @@ long wxMakePicture(Drawable d, int color)
   }
   
   return (long)XRenderCreatePicture(wxAPP_DISPLAY,
-				    DRAWABLE,
+				    d,
 				    color ? format : mask_format,
 				    0,
 				    NULL);

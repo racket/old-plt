@@ -174,6 +174,7 @@ extern int wxXRenderHere(void);
 static void AdjustFontDefaults(void)
 {
 #ifdef wx_xt
+# ifdef WX_USE_XFT
   if (wxXRenderHere()) {
     int i;  
     
@@ -197,6 +198,7 @@ static void AdjustFontDefaults(void)
       }
     }
   }
+# endif
 #endif
 #ifdef wx_msw
   int i;

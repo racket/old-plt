@@ -57,32 +57,32 @@
      #|
             *---------------------*
             | dialog%             |
-	    *---------------------*
+            *---------------------*
                |
                |
               / \
-	    *---------------------*
+            *---------------------*
             | class-union-wizard% |
-	    *---------------------*
-	    | tostring?           |
-	    | template?           |
-	    | error-message       |
-	    | an-error?           |
-	    | call                |
-	    | A: produce          |
-	    | A: make-class-cb    |
-	    | A: add-field-cb     |
-	    *---------------------*
-	      |
+            *---------------------*
+            | tostring?           |
+            | template?           |
+            | error-message       |
+            | an-error?           |
+            | call                |
+            | A: produce          |
+            | A: make-class-cb    |
+            | A: add-field-cb     |
+            *---------------------*
+              |
               |
              / \
         --------------------------------------------
         |                                          |
     *---------------------*                    *---------------------*
-    | class-info%         |		       | union-info%         |
-    *---------------------*		       *---------------------*
-    | field-panel         |--+		       | vart-panel          |--+
-    *---------------------*  |  	       *---------------------*  |
+    | class-info%         |                    | union-info%         |
+    *---------------------*                    *---------------------*
+    | field-panel         |--+                 | vart-panel          |--+
+    *---------------------*  |                 *---------------------*  |
                              |                                          |          
                              |                                          |          
                              |                                          |          
@@ -93,14 +93,18 @@
                       |      |                                   |      |          
                       |      |                                   |      |          
                      / \     |                                  / \     |          
-                 *---------------------*		  *---------------------*
-                 | field-panel%        |		  | variant-panel%      |
-                 *---------------------*		  *---------------------*
-		 | add                 |		  | add                 |
-		 | add-on-return       |		  | produce             |
-		 | produce             |		  *---------------------*
-                 *---------------------*		  
- 
+                 *---------------------*                  *---------------------*
+                 | field-panel%        |                  | variant-panel%      |
+                 *---------------------*                  *---------------------*
+                 | add                 |                  | add                 |
+                 | add-on-return       |                  | produce             |
+                 | produce             |                  *---------------------*
+                 *---------------------*                  | acquired:           |
+                 | acquired:           |                  |  get-type           |
+                 |  window (?)         |                  |  error-message      |
+                 |  error-message      |                  |  an-error?          |
+                 *---------------------*                  *---------------------* 
+
     |#
      
      ;; ------------------------------------------------------------------------
@@ -157,6 +161,14 @@
          ;; Any -> Boolean 
          (define/public (an-error? x) (eq? an-error x ))
          
+         ;; TextField (union false String) -> java-id?
+         (define/public (produce-name-from-text name msg)
+           (let ([x (string-trim-both (send name get-value))])
+             (cond
+               [(not msg) x]
+               [(java-id? x) x]
+               [else (error-message (format CHECK-NAME-F msg))])))
+         
          ;; --------------------------------------------------------------------
          ;; call in 
          (define/public (call) (send this show #t) (produce))
@@ -171,7 +183,8 @@
          (init-field (a-super null) (a-v-class null))
          (super-new)
          (inherit-field info-pane)
-         (inherit tostring? template? error-message an-error?)
+         (inherit 
+           tostring? template? error-message an-error? produce-name-from-text)
          
          ;; --------------------------------------------------------------------
          ;; filling the info-pane 
@@ -207,11 +220,7 @@
                          (send field-panel produce))
                    (tostring?) 
                    (template?))))
-         
-         ;; TextField String -> java-id?
-         (define (produce-name-from-text name msg)
-           (let ([x (string-trim-both (send name get-value))])
-             (if (java-id? x) x (error-message (format CHECK-NAME-F msg)))))
+
          
          ;; if the class specification is proper, hide dialog
          (define/override (make-class-cb x e) 
@@ -239,8 +248,7 @@
             (let ([name (car a-v-class)]
                   [the-fields (cadr a-v-class)])
               (send class-name set-value name)
-              (for-each (lambda (f) (send field-panel add f))
-                        the-fields))])
+              (for-each (lambda (f) (send field-panel add f)) the-fields))])
          
          ))
      
@@ -279,29 +287,32 @@
                (add))
              (send window on-traverse-char (new key-event% (key-code #\tab)))))
          
-         ;; (list String String) *-> Void
+         ;; -> TextField TextField
+         ;; (list String String) -> TextField TextField
          ;; add a field panel so that a new field for the class can be specified
-         ;; if rest arguments, it consists of two strings: 
+         ;; if one argument, it consists of two strings: 
          ;; one for the type, one for name
-         (define/public (add . a-field)
-           (let* ([fp (add-horizontal-panel this)]
-                  ; [modi (make-modifier-menu fp)]
-                  [type (make-text-field fp TYPE)]
-                  [name (make-text-field fp NAME
-                                         (lambda (x e) (add-on-return x e)))]
-                  [get-values (lambda ()
-                                (list ;(send modi get-string-selection)
-                                 (send type get-value)
-                                 (send name get-value)))])
-             (when (pair? a-field)
-               (let ([a-field (car a-field)])
-                 (send type set-value (car a-field))
-                 (send name set-value (cadr a-field))))
-             (add-field-name name)
-             (send fields add type get-values)
-             (make-delete-button this fp (lambda ()
-                                           (send fields remove type)
-                                           (remove-field-name name)))))
+         (define/public add
+           (case-lambda
+             [() 
+              (let* ([fp (add-horizontal-panel this)]
+                     ; [modi (make-modifier-menu fp)]
+                     [type (make-text-field fp TYPE)]
+                     [name (make-text-field
+                            fp NAME (lambda (x e) (add-on-return x e)))]
+                     [get-values 
+                      (lambda () ; (send modi get-string-selection)
+                        (list (send type get-value) (send name get-value)))])
+                (add-field-name name)
+                (send fields add type get-values)
+                (make-delete-button this fp (lambda () 
+                                              (send fields remove type)
+                                              (remove-field-name name)))
+                (values type name))]
+             [(a-field)
+              (let-values ([(type name) (add)])
+                (send type set-value (car a-field))
+                (send name set-value (cadr a-field)))]))
          
          ;; --------------------------------------------------------------------
          ;; managing the fields of the class 
@@ -332,7 +343,8 @@
        (class class-union-wizard%
          (super-new)
          (inherit-field info-pane)
-         (inherit tostring? template? error-message an-error?)
+         (inherit
+           tostring? template? error-message an-error? produce-name-from-text)
          
          ;; --------------------------------------------------------------------
          ;; filling in the info-pane 
@@ -346,19 +358,16 @@
            (new text-field% 
                 (parent type-pane) (label PURPOSE-UNION) (callback void)))
          (define type-text (make-text-field type-pane TYPE))
-         
+         ;; -> String
+         (define (get-type) (produce-name-from-text type-text TYPE))
+
          (define vart-panel 
            (new variant-panel%
                 (parent info-pane)
                 (get-type (lambda () (get-type)))
                 (error-message (lambda (x) (error-message x)))
                 (an-error? (lambda (x) (an-error? x)))))
-         
-         ;; -> String
-         (define (get-type)
-           (let ([t (string-trim-both (send type-text get-value))])
-             (if (java-id? t) t (error-message "check type name"))))
-         
+
          ;; -> Union 
          (define/override (produce)
            (with-handlers ([(lambda (x) (an-error? x)) (lambda _ #f)])
@@ -396,10 +405,11 @@
              (send variants add bt #f)
              (make-delete-button this vp (lambda () (send variants remove bt)))))
          
+	 ;; Message -> (Button Event -> Void)
          (define (create-variant ms)
            (lambda (bt evt)
              (with-handlers ([an-error? void])
-               (let* ([type (get-type)]
+               (let* ([type (get-type)] ;; may raise an error message
                       [class-in (send variants lookup bt)]
                       [a-class (send (new class-info% 
                                           (title "Variant Wizard")
@@ -457,15 +467,15 @@
                                 (filter (lambda (c) (not (eq? vp c))) cs)))))))
      
      ;; ------------------------------------------------------------------------
-     #| Run, program, run: |#
+     #| Run, program, run:
      
      (require (file "class.scm"))
 
-     ; (define x (get-class-info))
-     ; (if x (printf "~a~n" (apply make-class x)))
+     (define x (get-class-info))
+     (if x (printf "~a~n" (apply make-class x)))
      
      (define y (get-union-info))
      (if y (printf "~a~n" (apply make-union y)))
      
-     #||#
+     |#
      )

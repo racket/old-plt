@@ -7,9 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_mf.h	1.2 5/9/94" */
-
-
 #ifndef wx_mfh
 #define wx_mfh
 
@@ -23,15 +20,8 @@
  *
  */
 
-#ifdef IN_CPROTO
-typedef       void    *wxMetaFile ;
-typedef       void    *wxMetaFileDC ;
-#else
-
 class wxMetaFile: public wxbMetaFile
 {
-  DECLARE_DYNAMIC_CLASS(wxMetaFile)
-
  public:
   HANDLE metafile;
 
@@ -49,8 +39,6 @@ class wxMetaFile: public wxbMetaFile
 
 class wxMetaFileDC: public wxbMetaFileDC
 {
-  DECLARE_DYNAMIC_CLASS(wxMetaFileDC)
-
  public:
   wxMetaFile *metafile;
 
@@ -75,6 +63,5 @@ class wxMetaFileDC: public wxbMetaFileDC
  
 Bool wxMakeMetaFilePlaceable(char *filename, int x1, int y1, int x2, int y2, float scale = 1.0);
 
-#endif // IN_CPROTO
 #endif // USE_METAFILE
 #endif // wx_mfh

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_menu.h	1.2 5/9/94" */
-
 #ifndef wx_menuh
 #define wx_menuh
 
@@ -17,17 +15,11 @@
 #include "wx_panel.h"
 #include "wb_menu.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxMenu ;
-typedef       void    *wxMenuBar ;
-#else
-
 class wxMenuBar;
 
 // Menu
 class wxMenu: public wxbMenu
 {
-  DECLARE_DYNAMIC_CLASS(wxMenu)
  private:
   Bool mustBeBreaked ;
  public:
@@ -68,8 +60,6 @@ class wxMenu: public wxbMenu
 class wxFrame;
 class wxMenuBar:public wxbMenuBar
 {
-  DECLARE_DYNAMIC_CLASS(wxMenuBar)
-
  public:
   wxMenuBar(void);
   wxMenuBar(int n, wxMenu *menus[], char *Titles[]);
@@ -91,10 +81,8 @@ class wxMenuBar:public wxbMenuBar
 
   wxMenuItem *FindItemForMenuId(WORD menuId);
 
-  /* MATTHEW: [6] */
   virtual Bool OnAppend(wxMenu *menu, char *title);
   virtual Bool OnDelete(wxMenu *menu, int index);
 };
 
-#endif // IN_CPROTO
 #endif // wx_menuh

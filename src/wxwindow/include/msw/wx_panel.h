@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_panel.h	1.2 5/9/94" */
-
 #ifndef wx_panelh
 #define wx_panelh
 
@@ -21,16 +19,10 @@
 #define PANEL_HSPACING  8
 #define PANEL_VSPACING  8
 
-#ifdef IN_CPROTO
-typedef       void    *wxPanel ;
-#else
-
 class wxItem;
 class wxFrame;
 class wxPanel: public wxbPanel
 {
-  DECLARE_DYNAMIC_CLASS(wxPanel)
-
  public:
   // For panel item positioning.
   int cursor_x;
@@ -98,12 +90,7 @@ class wxPanel: public wxbPanel
   // Internal use only.
   void GetValidPosition(int *x, int *y);
 
-  void SetBackgroundColour(wxColour*col) ;
-  void SetLabelColour(wxColour*col) ;
-  void SetButtonColour(wxColour*col) ;
-
   virtual void OnPaint(void);
 };
 
-#endif // IN_CPROTO
 #endif // wx_panelh

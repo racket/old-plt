@@ -7,22 +7,12 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_lbox.h	1.2 5/9/94" */
-
 #ifndef wxb_lboxh
 #define wxb_lboxh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_panel.h"
 #include "wx_item.h"
-
-#ifdef IN_CPROTO
-typedef       void    *wxbListBox ;
-#else
 
 // List box item
 class wxbListBox: public wxItem
@@ -34,7 +24,6 @@ class wxbListBox: public wxItem
   int *selections;
   int multiple;
 
-  wxbListBox(void);
   wxbListBox(wxPanel *panel, wxFunction func, char *Title, Bool Multiple = FALSE,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
@@ -74,5 +63,4 @@ class wxbListBox: public wxItem
   virtual int NumberOfVisibleItems(void) = 0;
 };
 
-#endif // IN_CPROTO
 #endif // wxb_lboxh

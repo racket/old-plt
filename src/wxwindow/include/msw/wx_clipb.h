@@ -7,23 +7,13 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_clipb.h	1.2 5/9/94" */
-
 #ifndef wx_clipbh
 #define wx_clipbh
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include "common.h"
 #include "wx_setup.h"
-
-#if USE_CLIPBOARD
-
 #include "wx_list.h"
 
-#ifndef IN_CPROTO
 Bool wxOpenClipboard(void);
 Bool wxCloseClipboard(void);
 Bool wxEmptyClipboard(void);
@@ -68,16 +58,11 @@ class wxClipboardClient : public wxObject
 /* ONE instance of this class: */
 class wxClipboard : public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxClipboard)
-
  public:
   wxClipboardClient *clipOwner;
   char *cbString, *sentString, *receivedString;
   void *receivedTargets;
   long receivedLength;
-#ifdef wx_xview
-  long sel_owner;
-#endif
 
   wxClipboard();
   ~wxClipboard();
@@ -108,6 +93,4 @@ void wxInitClipboard(void);
 /* The clipboard */
 extern wxClipboard *wxTheClipboard;
 
-#endif // IN_CPROTO
-#endif // USE_CLIPBOARD
 #endif // wx_clipbh

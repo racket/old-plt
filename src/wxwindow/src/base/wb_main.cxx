@@ -19,13 +19,10 @@ wxbApp::wxbApp()
 {
   __type = wxTYPE_APP;
   wx_class = NULL;
-  wantDebugOutput = TRUE ;
   appName = NULL;
   argc = 0;
   argv = NULL;
   death_processed = FALSE;
-  printMode = wxPRINT_WINDOWS;
-  work_proc = NULL;
   wx_frame = NULL;
 }
 

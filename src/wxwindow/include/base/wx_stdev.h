@@ -7,15 +7,8 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_stdev.h	1.2 5/9/94" */
-
-
 #ifndef wxb_stdevh
 #define wxb_stdevh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_obj.h"
@@ -76,17 +69,9 @@ enum {
  wxEVENT_TYPE_SCROLL_THUMBTRACK
 };
 
-#ifdef IN_CPROTO
-typedef       void    *wxCommandEvent ;
-typedef       void    *wxMouseEvent;
-typedef       void    *wxKeyEvent;
-#else
-
 // Item or menu event class
 class wxCommandEvent: public wxEvent
 {
-  DECLARE_DYNAMIC_CLASS(wxCommandEvent)
-
  public:
   wxCommandEvent(WXTYPE type);
   ~wxCommandEvent(void) {}
@@ -113,8 +98,6 @@ class wxScrollEvent: public wxEvent
 // Mouse event class
 class wxMouseEvent: public wxEvent
 {
-  DECLARE_DYNAMIC_CLASS(wxMouseEvent)
-
  public:
   float x;
   float y;
@@ -191,8 +174,6 @@ class wxMouseEvent: public wxEvent
 // Keyboard input event class
 class wxKeyEvent: public wxEvent
 {
-  DECLARE_DYNAMIC_CLASS(wxKeyEvent)
-
  public:
   float x ;
   float y ;
@@ -213,6 +194,5 @@ class wxKeyEvent: public wxEvent
   virtual void Position(float *x,float *y) ;
 };
 
-#endif // IN_CPROTO
 #endif // wxb_stdevh
 

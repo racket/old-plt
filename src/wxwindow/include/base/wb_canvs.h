@@ -7,18 +7,9 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_canvs.h	1.2 5/9/94" */
-
 #ifndef wxb_canvsh
 #define wxb_canvsh
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
-#ifndef IN_CPROTO
-#include <iostream.h>
-#endif
 #include "common.h"
 #include "wx_frame.h"
 #include "wx_gdi.h"
@@ -28,10 +19,6 @@
 // Convenience macros for accessing scroll event parameters
 #define WXSCROLLPOS(event) event.commandInt
 #define WXSCROLLORIENT(event) event.extraLong
-
-#ifdef IN_CPROTO
-typedef void *wxbCanvas ;
-#else
 
 // Canvas subwindow for drawing on
 class wxbCanvas: public wxWindow
@@ -95,5 +82,4 @@ class wxbCanvas: public wxWindow
   virtual void WarpPointer(int x_pos, int y_pos) = 0 ;
 };
 
-#endif // IN_CPROTO
 #endif // wxb_canvsh

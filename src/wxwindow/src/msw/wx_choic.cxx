@@ -41,17 +41,6 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
   return FALSE;
 }
 
-IMPLEMENT_DYNAMIC_CLASS(wxChoice, wxItem)
-
-wxChoice::wxChoice(void)
-{
-  no_strings = 0;
-  wxWinType = wxTYPE_HWND;
-  static_label = NULL;
-  windows_id = 0;
-  ms_handle = 0;
-}
-
 wxChoice::wxChoice(wxPanel *panel, wxFunction func, char *Title,
                    int x, int y, int width, int height, int N, char **Choices,
                    long style, char *name):
@@ -160,19 +149,6 @@ wxChoice::~wxChoice(void)
     wxwmDestroyWindow(static_label);
   static_label = NULL;
 }
-
-void wxChoice::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxChoice::SetLabelColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxChoice::SetButtonColour(wxColour* WXUNUSED(col))
-{
-}
-
 
 void wxChoice::Append(char *Item)
 {

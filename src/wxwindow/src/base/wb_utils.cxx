@@ -9,8 +9,6 @@
 
 #include "wx.h"
 
-#include <iostream.h>
-#include <fstream.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>

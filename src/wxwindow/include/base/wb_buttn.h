@@ -7,29 +7,18 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_buttn.h	1.2 5/9/94" */
-
 #ifndef wxb_buttnh
 #define wxb_buttnh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_panel.h"
 #include "wx_item.h"
-
-#ifdef IN_CPROTO
-typedef       void    *wxbButton ;
-#else
 
 // Pushbutton
 class wxBitmap;
 class wxbButton: public wxItem
 {
  public:
-  wxbButton(void);
   wxbButton(wxPanel *panel, wxFunction func, char *label, int x = -1, int y = -1,
            int width = -1, int height = -1, long style = 0, char *name = "button");
   wxbButton(wxPanel *panel, wxFunction func, wxBitmap *bitmap, int x = -1, int y = -1,
@@ -42,5 +31,4 @@ class wxbButton: public wxItem
   virtual void SetLabel(wxBitmap *bitmap) = 0;
 };
 
-#endif // IN_CPROTO
 #endif // wxb_buttnh

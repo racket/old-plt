@@ -32,14 +32,8 @@
   * else, force Windows Look
   */
 
-#if FAFA_LIB
 #include "fafa.h"
 #include "fafapriv.h" //added by Chubraev 
-#endif
-
-#if CTL3D
-#include <ctl3d.h>
-#endif
 
 /*
  * Decide what window classes we're going to use
@@ -67,12 +61,7 @@
 #define APIENTRY FAR PASCAL
 #endif
  
-#ifdef WIN32
 #define _EXPORT /**/
-#else
-#define _EXPORT _export
-typedef signed short int SHORT ;
-#endif
 
 // Generic subclass proc, for panel item moving/sizing and intercept
 // EDIT control VK_RETURN messages
@@ -83,11 +72,7 @@ extern LONG APIENTRY _EXPORT
 extern void wxFindMaxSize(HWND hwnd, RECT *rect);
 
 // List of controls
-#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
-extern wxList *wxControlHandleList;
-#else
 extern wxNonlockingHashTable *wxControlHandleList;
-#endif
 // List of scrollbar controls
 extern wxList wxScrollBarList;
 // The MakeProcInstance version of the function wxSubclassedGenericControlProc

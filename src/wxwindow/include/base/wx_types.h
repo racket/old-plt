@@ -7,14 +7,8 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wxb_typesh
 #define wxb_typesh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_obj.h"
@@ -94,14 +88,8 @@
 
 #define wxTYPE_USER            500
 
-#ifdef IN_CPROTO
-typedef       void    *wxTypeDef ;
-typedef       void    *wxTypeTree ;
-#else
-
 class wxTypeDef: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxTypeDef)
  public:
   char *name;
   WXTYPE type;
@@ -112,7 +100,6 @@ class wxTypeDef: public wxObject
 
 class wxTypeTree: public wxHashTable
 {
-  DECLARE_DYNAMIC_CLASS(wxTypeTree)
  public:
   wxTypeTree(void);
   ~wxTypeTree(void);
@@ -128,6 +115,5 @@ char *wxGetTypeName(WXTYPE type);
 
 void wxInitStandardTypes(void);
 
-#endif // IN_CPROTO
 #endif // wxb_typesh
 

@@ -7,23 +7,12 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wxb_menuh
 #define wxb_menuh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_item.h"
 #include "wx_mnuit.h"
-
-#ifdef IN_CPROTO
-typedef       void    *wxbMenu ;
-typedef       void    *wxbMenuBar;
-#else
 
 class wxMenuBar;
 class wxMenu;
@@ -97,5 +86,4 @@ class wxbMenuBar: public wxItem
   virtual Bool OnDelete(wxMenu *menu, int index) = 0;
 };
 
-#endif // IN_CPROTO
 #endif // wxb_menuh

@@ -7,22 +7,14 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_canvs.h	1.2 5/9/94" */
-
 #ifndef wx_canvsh
 #define wx_canvsh
 
 #include "wb_canvs.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxCanvas ;
-#else
-
 // Canvas subwindow for drawing on
 class wxCanvas: public wxbCanvas
 {
-  DECLARE_DYNAMIC_CLASS(wxCanvas)
-
  public:
   Bool clipping;
   int clip_x1;
@@ -71,5 +63,4 @@ class wxCanvas: public wxbCanvas
   virtual wxWindow *FindFocusWindow();
 };
 
-#endif // IN_CPROTO
 #endif // wx_canvsh

@@ -34,21 +34,6 @@ extern char wxMDIFrameClassName[];
 extern char wxMDIChildFrameClassName[];
 extern char wxPanelClassName[];
 
-wxFrame::wxFrame(void)
-{
-  frame_type = 0;
-  wx_menu_bar = NULL;
-  status_line_exists = FALSE;
-  modal_showing = FALSE;
-  window_parent = NULL;
-  int i;
-  for (i = 0; i < wxMAX_STATUS; i++)
-    status_window[i] = NULL;
-  hiddenmax = 0;
-  wxWinType = 0;
-  handle = NULL;
-}
-
 wxFrame::wxFrame(wxFrame *Parent, char *title, int x, int y,
                  int width, int height, long style, char *name):
   wxbFrame(Parent, title, x, y, width, height, style, name)
@@ -203,14 +188,6 @@ void wxFrame::GetClientSize(int *x, int *y)
       int cwidth = rect.right;
       int cheight = rect.bottom;
       int ctop = 0;
-
-      if (frameToolBar)
-      {
-        int tw, th;
-        frameToolBar->GetSize(&tw, &th);
-        ctop = th;
-        cheight -= th;
-      }
 
       if (status_window[0])
         cheight -= status_window[0]->height;
@@ -1016,31 +993,19 @@ void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
  {
   wxFrame *frame = (wxFrame *)wx_window;
 
-  if (frame && (frame->status_window[0] || frame->frameToolBar))
+  if (frame && (frame->status_window[0]))
   {
     RECT rect;
     GetClientRect(handle, &rect);
     int cwidth = rect.right;
     int cheight = rect.bottom;
     int ctop = 0;
-    int tw, th;
 
-    if (frame->frameToolBar)
-    {
-      frame->frameToolBar->GetSize(&tw, &th);
-      ctop = th;
-      cheight -= th;
-    }
-
-    if (frame->status_window[0])
-      cheight -= frame->status_window[0]->height;
+    cheight -= frame->status_window[0]->height;
 
     MoveWindow(client_hwnd, 0, ctop, cwidth, cheight, TRUE);
 
-    if (frame->frameToolBar)
-      frame->frameToolBar->SetSize(0, 0, cwidth, th);
-    if (frame->status_window[0])
-      frame->PositionStatusWindow();
+    frame->PositionStatusWindow();
   }
   else (void)DefWindowProc(last_msg, last_wparam, last_lparam);
 

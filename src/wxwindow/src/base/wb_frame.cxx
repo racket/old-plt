@@ -9,14 +9,6 @@
 
 #include "wx.h"
 
-wxbFrame::wxbFrame(void)
-{
-  __type = wxTYPE_FRAME;
-  nb_status = 0;
-  frameToolBar = NULL ;
-  SetShown(FALSE);
-}
-
 wxbFrame::wxbFrame(wxFrame *WXUNUSED(Parent), char *WXUNUSED(title),
 		   int WXUNUSED(x), int WXUNUSED(y),
 		   int WXUNUSED(width), int WXUNUSED(height),
@@ -24,7 +16,6 @@ wxbFrame::wxbFrame(wxFrame *WXUNUSED(Parent), char *WXUNUSED(title),
 {
   __type = wxTYPE_FRAME;
   windowStyle = style;
-  frameToolBar = NULL ;
   SetShown(FALSE);
 }
 

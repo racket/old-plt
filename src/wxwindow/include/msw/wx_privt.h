@@ -7,29 +7,12 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_privt.h	1.2 5/9/94" */
-
 #ifndef wx_privth
 #define wx_privth
 
 #include "common.h"
 #include "wx_obj.h"
 
-/*
- * This is a generic Windows 3 window.
- * I derive from this to create windows for panels, canvases,
- * status bar, text window, frame etc.
- */
-
-#ifdef IN_CPROTO
-typedef       void    *wxWnd ;
-typedef       void    *wxSubWnd ;
-typedef       void    *wxCanvasWnd ;
-typedef       void    *wxFrameWnd ;
-typedef       void    *wxStatusWnd ;
-typedef       void    *wxMDIFrame ;
-typedef       void    *wxMDIChild ;
-#else
 
 class wxWindow;
 
@@ -240,8 +223,6 @@ public:
     ~wxMDIFrame(void);
 
     void OnCreate(LPCREATESTRUCT cs);
-//    BOOL OnPaint(void);
-//    BOOL OnClose(void);
     void OnSize(int x, int y, UINT);
     BOOL OnCommand(WORD id, WORD cmd, HWND control);
     void OnMenuSelect(WORD, WORD, HMENU);
@@ -261,11 +242,9 @@ public:
     ~wxMDIChild(void);
 
     BOOL OnMDIActivate(BOOL bActivate, HWND, HWND);
-//    BOOL OnPaint(void);
     BOOL OnClose(void);
     void OnSize(int x, int y, UINT);
     BOOL OnCommand(WORD id, WORD cmd, HWND control);
-//    void OnMenuSelect(WORD, WORD, HMENU);
     long DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam);
     BOOL ProcessMessage(MSG *msg);
     void DestroyWindow(void);
@@ -292,6 +271,5 @@ extern HICON wxDEFAULT_MDIPARENTFRAME_ICON;
 extern HICON wxDEFAULT_MDICHILDFRAME_ICON;
 extern HFONT wxSTATUS_LINE_FONT;
 
-#endif // IN_CPROTO
 #endif // wx_privth
 

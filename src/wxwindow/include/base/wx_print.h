@@ -10,10 +10,6 @@
 #ifndef wx_printh
 #define wx_printh
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include "common.h"
 #include "wx_canvs.h"
 #include "wx_dialg.h"
@@ -27,12 +23,6 @@
 #include "wx_dcmem.h"
 #include "wx_dcps.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxPrintDialog ;
-typedef       void    *wxPrinter ;
-typedef       void    *wxPrintout ;
-#else
-
 class wxDC;
 class wxPrintout;
 class wxPrinter;
@@ -45,8 +35,6 @@ class wxPrintDialog;
  
 class wxPrintData: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxPrintData)
-
  public:
   void *printData;
 
@@ -96,14 +84,10 @@ class wxPrintDialog
  
 class wxPrinter: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxPrinter)
-
  private:
   wxPrintData printData;
   wxPrintout *currentPrintout;
-#ifdef wx_msw
   FARPROC lpAbortProc;
-#endif
  public:
   static wxWindow *abortWindow;
   static Bool abortIt;
@@ -127,8 +111,6 @@ class wxPrinter: public wxObject
  
 class wxPrintout: public wxObject
 {
-  DECLARE_ABSTRACT_CLASS(wxPrintout)
-
  private:
    char *printoutTitle;
    wxDC *printoutDC;
@@ -154,5 +136,4 @@ class wxPrintout: public wxObject
   inline void SetDC(wxDC *dc) { printoutDC = dc; }
 };
 
-#endif // IN_CPROTO
 #endif // wx_printh

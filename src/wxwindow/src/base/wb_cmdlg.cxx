@@ -82,29 +82,13 @@ void wxCentreMessage(wxList *messageList)
 class wxMessageBoxDialog: public wxDialogBox
 {
  public:
-  wxListBox *listBoxItem;
-  char *textAnswer;
-  char *listSelection;
-  char *listClientSelection;
-  int listPosition;
   int buttonPressed;
-  int  * listSelections;
-  int     nlistSelections;
 
   wxMessageBoxDialog(wxWindow *parent, char *caption, Bool isModal, int x, int y,
     int w, int h, long type):
    wxDialogBox(parent, caption, isModal, x, y, w, h, type)
  {
-   listBoxItem = NULL;
    buttonPressed = wxCANCEL;
-
-   textAnswer = NULL;
-   listSelection = NULL;
-   listClientSelection = NULL;
-   listPosition = 0;
-   buttonPressed = wxCANCEL;
-   listSelections = NULL;
-   nlistSelections = -1;
  }
  Bool OnClose(void)
  {
@@ -114,146 +98,31 @@ class wxMessageBoxDialog: public wxDialogBox
 
 void wxDialogOkButton(wxButton& but, wxEvent& WXUNUSED(event))
 {
-  wxPanel *panel = (wxPanel *)but.GetParent();
-  // There is a possibility that buttons belong to a sub panel.
-  // So, we must search the dialog.
-  while (!wxSubType(panel->__type,wxTYPE_DIALOG_BOX))
-    panel = (wxPanel*) panel->GetParent() ;
-
-  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)panel;
-
-  if (dialog->listBoxItem)
-    {
-      if ( dialog->listBoxItem->multiple==wxSINGLE)
-        {
-          if (dialog->listSelection)
-            delete[] dialog->listSelection;
-          dialog->listSelection = 
-            (dialog->listBoxItem->GetStringSelection() ?
-             copystring(dialog->listBoxItem->GetStringSelection()) : NULL);
-          dialog->listPosition = dialog->listBoxItem->GetSelection();
-          dialog->listClientSelection = 
-            dialog->listBoxItem->wxListBox::GetClientData(dialog->listPosition);
-        }
-      else 
-        if (dialog->listBoxItem->multiple==wxMULTIPLE)
-          {
-            if (dialog->listSelections)
-              delete[] dialog->listSelections;
-            dialog->listSelections = 0;
-            
-            int * sels;
-            dialog-> nlistSelections =
-              dialog->listBoxItem->GetSelections (&sels);
-            if ( dialog-> nlistSelections)
-              {
-                dialog->listSelections = new int [ dialog-> nlistSelections ];
-                int i;
-                for (i=0; i<  dialog-> nlistSelections; i++)
-                  dialog->listSelections[i] = sels[i];
-              }
-          }
-    }
+  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)but.GetParent();
 
   dialog->buttonPressed = wxOK;
   dialog->Show(FALSE);
-  // delete dialog;
 }
 
 void wxDialogCancelButton(wxButton& but, wxEvent& WXUNUSED(event))
 {
   wxDialogBox *dialog = (wxDialogBox *)but.GetParent();
-  // There is a possibility that buttons belong to a sub panel.
-  // So, we must search the dialog.
-  while (!wxSubType(dialog->__type,wxTYPE_DIALOG_BOX))
-    dialog = (wxDialogBox*) ((wxPanel*)dialog)->GetParent() ;
 
   dialog->Show(FALSE);
-  // delete dialog;
 }
 
 void wxDialogYesButton(wxButton& but, wxEvent& WXUNUSED(event))
 {
-  wxPanel *panel = (wxPanel *)but.GetParent();
-  // There is a possibility that buttons belong to a sub panel.
-  // So, we must search the dialog.
-  while (!wxSubType(panel->__type,wxTYPE_DIALOG_BOX))
-    panel = (wxPanel*) panel->GetParent() ;
-
-  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)panel;
+  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)but.GetParent();
   dialog->buttonPressed = wxYES;
   dialog->Show(FALSE);
-  // delete dialog;
 }
 
 void wxDialogNoButton(wxButton& but, wxEvent& WXUNUSED(event))
 {
-  wxPanel *panel = (wxPanel *)but.GetParent();
-  // There is a possibility that buttons belong to a sub panel.
-  // So, we must search the dialog.
-  while (!wxSubType(panel->__type,wxTYPE_DIALOG_BOX))
-    panel = (wxPanel*) panel->GetParent() ;
-
-  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)panel;
+  wxMessageBoxDialog *dialog = (wxMessageBoxDialog *)but.GetParent();
   dialog->buttonPressed = wxNO;
   dialog->Show(FALSE);
-  // delete dialog;
-}
-
-void wxDialogReturn(wxButton& but, wxEvent& event)
-/* "but" isn't really a button, but it's parent is what counts */
-{
-  if (event.eventClass == wxEVENT_TYPE_TEXT_ENTER_COMMAND)
-    wxDialogOkButton(but, event);
-}
-
-
-/*
- * BUGBUG Julian Smart 12/93
- * define USE_PANEL_IN_PANEL
- * if you dare use panel in panel for dialogs; I can't
- * get it to work without absolute positioning, because
- * wxItem::SetSize DOES NOT WORK (try the hello.cc About box.
- *
- */
-
-// Return NULL if cancel pressed
-char *wxGetTextFromUser(char *message, char *caption, char *default_value,
-                        wxWindow *parent, int x, int y, Bool centre)
-{
-  return NULL;
-}
-
-
-char *wxGetSingleChoice(char *message, char *caption, int n, char *choices[],
-                        wxWindow *parent, int x, int y, Bool centre, int width, int height)
-{
-  return NULL;
-}
-
-int wxGetSingleChoiceIndex(char *message, char *caption, int n, char *choices[],
-                           wxWindow *parent, int x, int y, Bool centre,
-                           int width, int height)
-{
-  return -1;
-}
-
-char *wxGetSingleChoiceData(char *message, char *caption, int n,
-                            char *choices[], char *client_data[],
-                            wxWindow *parent, int x, int y, Bool centre,
-                            int width, int height)
-{
-  return NULL;
-}
-
-
-int wxGetMultipleChoice(char *message, char *caption,
-			int n, char *choices[], 
-			int nsel, int * selection,
-			wxWindow *parent , int x , int y, Bool centre,
-			int width, int height)
-{
-  return -1;
 }
 
 // Pop up a message box: generic version used by X.

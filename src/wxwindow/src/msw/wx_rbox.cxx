@@ -87,21 +87,6 @@ void UnsubclassRadioButton(HWND hWnd)
 
 // Radio box item
 
-wxRadioBox::wxRadioBox(void)
-{
-  wxWinType = wxTYPE_HWND;
-  static_label = NULL;
-  windows_id = 0;
-  no_items = 0;
-  ms_handle = 0;
-  radioButtons = NULL;
-  majorDim = 0 ;
-  selected = -1;
-  radioWidth = NULL ;
-  radioHeight = NULL ;
-  isFafa = 0;
-}
-
 wxRadioBox::wxRadioBox(wxPanel *panel, wxFunction func,
                        char *Title,
                        int x, int y, int width, int height,
@@ -426,18 +411,6 @@ wxRadioBox::~wxRadioBox(void)
     wxwmDestroyWindow((HWND)ms_handle) ;
   ms_handle = NULL ;
 
-}
-
-void wxRadioBox::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxRadioBox::SetLabelColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxRadioBox::SetButtonColour(wxColour* WXUNUSED(col))
-{
 }
 
 char *wxRadioBox::GetLabel(int item)

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_timer.h	1.2 5/9/94" */
-
 #ifndef wx_timerh
 #define wx_timerh
 
@@ -16,18 +14,8 @@
 #include "wx_obj.h"
 #include "wb_timer.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxTimer ;
-#else
-
 class wxTimer: public wxbTimer
 {
-  DECLARE_DYNAMIC_CLASS(wxTimer)
-
-#if 0
- public:
-  long id;
-#endif
  public:
   wxTimer(void);
   ~wxTimer(void);
@@ -37,5 +25,4 @@ class wxTimer: public wxbTimer
   void Dequeue(void);
 };
 
-#endif // IN_CPROTO
 #endif // wx_timerh

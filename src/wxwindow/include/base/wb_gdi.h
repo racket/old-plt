@@ -7,18 +7,12 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_gdi.h	1.2 5/9/94" */
-
 #ifndef wxb_gdih
 #define wxb_gdih
 
 #include "wx_obj.h"
 #include "wx_list.h"
 #include "wx_setup.h"
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 // Standard cursors
 typedef enum {
@@ -47,35 +41,9 @@ typedef enum {
  wxCURSOR_WAIT,
  wxCURSOR_WATCH,
  wxCURSOR_BLANK
-#ifdef wx_x
-  /* Not yet implemented for Windows */
-  , wxCURSOR_CROSS_REVERSE,
-  wxCURSOR_DOUBLE_ARROW,
-  wxCURSOR_BASED_ARROW_UP,
-  wxCURSOR_BASED_ARROW_DOWN
-#endif
 } _standard_cursors_t;
 
-#ifdef IN_CPROTO
-typedef       void *wxbFont;
-typedef       void *wxColour;
-typedef       void *wxPoint;
-typedef       void *wxbPen;
-typedef       void *wxbBrush;
-typedef       void *wxPenList;
-typedef       void *wxBrushList;
-typedef       void *wxColourDatabase;
-typedef       void *wxGDIList;
-typedef       void *wxDash ;
-#else
-
-#ifdef wx_msw
 typedef    DWORD  wxDash ;
-#endif
-
-#ifdef wx_x
-typedef    char wxDash ;
-#endif
 
 // Font
 class wxFont;
@@ -115,7 +83,6 @@ class wxbFont: public wxObject
 // Colour
 class wxColour: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxColour)
  private:
   short isInit;
   short locked;
@@ -123,12 +90,7 @@ class wxColour: public wxObject
   unsigned char blue;
   unsigned char green;
  public:
-#ifdef wx_x
-  int pixel;
-#endif
-#ifdef wx_msw
   COLORREF pixel ;
-#endif
 
   wxColour(void);
   wxColour(const unsigned char r, const unsigned char b, const unsigned char g);
@@ -161,7 +123,6 @@ class wxColourMap;
 // Point
 class wxPoint: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxPoint)
  public:
   float x;
   float y;
@@ -172,7 +133,6 @@ class wxPoint: public wxObject
 
 class wxIntPoint: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxIntPoint)
  public:
   int x;
   int y;
@@ -287,7 +247,6 @@ class wxCursor;
 // Management of pens, brushes and fonts
 class wxPenList: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxPenList)
   wxChildList *list;
  public:
   wxPenList(void);
@@ -299,7 +258,6 @@ class wxPenList: public wxObject
 
 class wxBrushList: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxBrushList)
   wxChildList *list;
  public:
   wxBrushList(void);
@@ -311,7 +269,6 @@ class wxBrushList: public wxObject
 
 class wxFontList: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxFontList)
   wxChildList *list;
  public:
   wxFontList(void);
@@ -326,7 +283,6 @@ class wxFontList: public wxObject
 
 class wxColourDatabase: public wxList
 {
-  DECLARE_CLASS(wxColourDatabase)
  public:
   wxColourDatabase(int type);
   ~wxColourDatabase(void) ;
@@ -337,7 +293,6 @@ class wxColourDatabase: public wxList
 
 class wxGDIList: public wxList
 {
-  DECLARE_DYNAMIC_CLASS(wxGDIList)
  public:
    wxGDIList(void);
   ~wxGDIList(void);
@@ -404,5 +359,4 @@ extern void wxDisplaySize(int *width, int *height);
 
 extern void wxSetCursor(wxCursor *cursor);
 
-#endif // IN_CPROTO
 #endif // wxb_gdih

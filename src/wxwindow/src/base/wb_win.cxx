@@ -15,7 +15,6 @@ wxbWindow::wxbWindow(void)
   __type = wxTYPE_WINDOW;
   windowStyle = 0;
   window_parent = NULL;
-  windowEventHandler = this;
   font = NULL;
   handle = NULL;
   windowName = NULL;
@@ -25,7 +24,6 @@ wxbWindow::wxbWindow(void)
   paintingEnabled = TRUE;
   doubleClickAllowed = 0 ;
   winCaptured = FALSE;
-  editUIMode = FALSE;
   internal_disabled = 0;
   is_shown = 1;
   WXGC_IGNORE(window_parent);
@@ -41,16 +39,6 @@ wxbWindow::~wxbWindow(void)
 char *wxbWindow::GetHandle(void)
 {
   return handle;
-}
-
-void wxbWindow::SetEventHandler(wxEvtHandler *handler)
-{
-  windowEventHandler = handler;
-}
-
-wxEvtHandler *wxbWindow::GetEventHandler(void)
-{
-  return windowEventHandler;
 }
 
 // General callback setting

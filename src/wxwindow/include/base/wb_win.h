@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_win.h	1.2 5/9/94" */
-
 /*
  * Purpose:  wxWindow class declaration. Base class for all windows and
  *           panel items.
@@ -23,21 +21,14 @@
 #include "wx_stdev.h"
 #include "wx_list.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxFunction ;
-typedef       void    *wxbWindow ;
-#else
-
 class wxCursor;
 class wxFont;
 class wxIcon;
 class wxColourMap;
 class wxMenu;
 class wxWindow;
-class wxRectangle;
 class wxBitmap;
 class wxItem;
-class wxLayoutConstraints;
 
 // Callback function type definition
 typedef void (*wxFunction) (wxObject*, wxEvent*);
@@ -98,10 +89,8 @@ class wxSizer;
 class wxbWindow: public wxEvtHandler
 {
  protected:
-  short editUIMode;  // TRUE if user can edit interface
   short internal_disabled;
   long windowStyle; // Store the window's style
-  wxEvtHandler *windowEventHandler; // Usually is 'this'
   wxFont *font;                               // Window's font
   wxChildList *children;                           // Window's children
   wxWindow *window_parent;                     // Each window always knows its parent
@@ -152,10 +141,10 @@ class wxbWindow: public wxEvtHandler
 
   virtual float GetCharWidth(void) = 0;
   virtual float GetCharHeight(void) = 0;
-  /* MATTHEW: [2] 16-bit fonts */
   inline virtual void GetTextExtent(const char *WXUNUSED(string), float *WXUNUSED(x), float *WXUNUSED(y),
-       float *WXUNUSED(descent) = NULL, float *WXUNUSED(externalLeading) = NULL, wxFont *WXUNUSED(theFont) = NULL, Bool WXUNUSED(use16) = FALSE) {};
-
+				    float *WXUNUSED(descent) = NULL, float *WXUNUSED(externalLeading) = NULL, 
+				    wxFont *WXUNUSED(theFont) = NULL, Bool WXUNUSED(use16) = FALSE) {};
+  
   // Font
   inline virtual void SetFont(wxFont *f) { font = f; }
   inline virtual wxFont *GetFont(void) { return font; }
@@ -208,12 +197,7 @@ class wxbWindow: public wxEvtHandler
                                        // (but doesn't delete the child object)
   virtual void DestroyChildren(void);  // Removes and destroys all children
 
-  // Mode for manipulating the user interface
-  virtual inline void SetUserEditMode(Bool edit) { editUIMode = edit; }
-  virtual inline Bool GetUserEditMode(void) { return editUIMode; }
-
-  virtual void SetEventHandler(wxEvtHandler *handler);
-  virtual wxEvtHandler *GetEventHandler(void);
+  inline wxEvtHandler *GetEventHandler(void) { return this; }
 
   Bool IsShown();
   void SetShown(Bool s);
@@ -232,15 +216,4 @@ extern void wxPopModalWindow(wxObject*,wxWindow*);
 
 extern void *wxGetContextForFrame();
 
-class wxRectangle: public wxObject
-{
- public:
-  int x;
-  int y;
-  int width;
-  int height;
-  inline wxRectangle(void) { x = 0; y = 0; width = 0; height = 0; }
-};
-
-#endif // IN_CPROTO
 #endif // wxb_winh

@@ -7,17 +7,10 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_sysev.h	1.2 5/9/94" */
-
-
 #ifndef wxb_sysevh
 #define wxb_sysevh
 
 #include "common.h"
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "wx_obj.h"
 #include "wx_types.h"
@@ -34,15 +27,8 @@
  *
  */
 
-#ifdef IN_CPROTO
-typedef       void    *wxEvent ;
-typedef void  *wxEventHandler;
-#else
-
 class wxEvent: public wxObject
 {
-  DECLARE_ABSTRACT_CLASS(wxEvent)
-
  public:
   char *eventHandle;         // Handle of an underlying windowing system event
   WXTYPE   eventType;
@@ -58,5 +44,4 @@ class wxEvent: public wxObject
   void SetTimestamp(long ts = 0);
 };
 
-#endif // IN_CPROTO
 #endif // wxb_sysevh

@@ -9,12 +9,6 @@
 
 #include "wx.h"
 
-wxMessage::wxMessage(void)
-{
-  wxWinType = wxTYPE_HWND;
-  ms_handle = 0;
-}
-
 wxMessage::wxMessage(wxPanel *panel, char *label, int x, int y, long style, char *name):
   wxbMessage(panel, label, x, y, style, name)
 {
@@ -121,18 +115,6 @@ wxMessage::~wxMessage(void)
     --bm_label->selectedIntoDC;
     bm_label = NULL;
   }
-}
-
-void wxMessage::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxMessage::SetLabelColour(wxColour* WXUNUSED(col) )
-{
-}
-
-void wxMessage::SetButtonColour(wxColour* WXUNUSED(col))
-{
 }
 
 void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)

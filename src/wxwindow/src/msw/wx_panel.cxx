@@ -160,10 +160,8 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
   handle = (char *)wnd;
   if (parent) parent->AddChild(this);
 
-  wx_dc = new wxPanelDC (this);
-
   if (wxSubType(parent->__type, wxTYPE_PANEL))
-    ((wxPanel *)parent)->AdvanceCursor(this) ;
+    ((wxPanel *)parent)->AdvanceCursor(this);
 
   return TRUE;
 }
@@ -409,18 +407,6 @@ void wxPanel::AddChild(wxObject *child)
   current_vspacing = vSpacing;
 
   children->Append(child) ;
-}
-
-void wxPanel::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxPanel::SetLabelColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxPanel::SetButtonColour(wxColour* WXUNUSED(col))
-{
 }
 
 void wxPanel::OnPaint(void)

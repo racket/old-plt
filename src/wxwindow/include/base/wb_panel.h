@@ -7,14 +7,8 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_panel.h	1.2 5/9/94" */
-
 #ifndef wxb_panelh
 #define wxb_panelh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_win.h"
@@ -24,10 +18,6 @@
 #define wxKEY_SHIFT     1
 #define wxKEY_CTRL      2
 
-#ifdef IN_CPROTO
-typedef       void    *wxbPanel ;
-#else
-
 class wxItem;
 class wxButton;
 class wxPanel;
@@ -35,10 +25,6 @@ class wxColour;
 class wxBrush;
 class wxPanelDC;
 class wxStaticItem;
-
-#if USE_WX_RESOURCES
-class wxResourceTable;
-#endif
 
 class wxbPanel: public wxCanvas
 {
@@ -132,5 +118,4 @@ class wxbPanel: public wxCanvas
   virtual void PaintSelectionHandles(void);
 };
 
-#endif // IN_CPROTO
 #endif // wxb_panelh

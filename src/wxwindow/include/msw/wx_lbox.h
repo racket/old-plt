@@ -7,26 +7,18 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wx_lboxh
 #define wx_lboxh
 
 #include "wb_lbox.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxListBox ;
-#else
-
 // List box item
 class wxListBox: public wxbListBox
 {
-  DECLARE_DYNAMIC_CLASS(wxListBox)
  private:
   HWND static_label;
   char **user_data;
  public:
-  wxListBox(void);
   wxListBox(wxPanel *panel, wxFunction func, char *Title,
              Bool Multiple = wxSINGLE|wxNEEDED_SB,
              int x = -1, int y = -1, int width = -1, int height = -1,
@@ -93,5 +85,4 @@ class wxListBox: public wxbListBox
   virtual Bool Show(Bool s);
 };
 
-#endif // IN_CPROTO
 #endif // wx_lboxh

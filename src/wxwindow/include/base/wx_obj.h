@@ -7,14 +7,8 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_obj.h	1.2 5/9/94" */
-
 #ifndef wxb_objh
 #define wxb_objh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 
@@ -26,12 +20,6 @@
 #ifndef WXGC_CLEANUP_CLASS
 # define WXGC_CLEANUP_CLASS gc_cleanup
 #endif
-
-#ifdef IN_CPROTO
-typedef       void    *wxObject ;
-#else
-
-class wxObject;
 
 // No dynamic class system: so stub out the macros
 #define DECLARE_DYNAMIC_CLASS(name)
@@ -62,5 +50,4 @@ class wxObject : public WXGC_CLEANUP_CLASS
 };
 
 
-#endif // IN_CPROTO
 #endif // wx_objh

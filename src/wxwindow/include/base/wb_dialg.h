@@ -7,21 +7,11 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_dialg.h	1.2 5/9/94" */
-
 #ifndef wxb_dialgh
 #define wxb_dialgh
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include "common.h"
 #include "wx_panel.h"
-
-#ifdef IN_CPROTO
-typedef       void    *wxbDialogBox ;
-#else
 
 // Dialog boxes
 class wxbDialogBox: public wxPanel
@@ -51,5 +41,4 @@ class wxbDialogBox: public wxPanel
   virtual void SetShowing(Bool show) { is_show = show; }
 };
 
-#endif // IN_CPROTO
 #endif // wxb_dialgh

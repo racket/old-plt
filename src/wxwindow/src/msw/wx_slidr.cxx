@@ -14,20 +14,6 @@
 // Slider
 wxNonlockingHashTable *wxSliderList;
 
-wxSlider::wxSlider(void)
-{
-  wxWinType = wxTYPE_HWND;
-  static_label = NULL;
-  edit_value = NULL;
-  static_min = NULL;
-  windows_id = 0;
-  page_size = 0;
-  s_max = 0;
-  s_min = 0;
-  ms_handle = 0;
-  static_max = 0;
-}
-
 wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x, int y,
            long style, char *name):
@@ -243,18 +229,6 @@ wxSlider::~wxSlider(void)
     wxwmDestroyWindow(edit_value);
   if (static_label)
     wxwmDestroyWindow(static_label);
-}
-
-void wxSlider::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxSlider::SetLabelColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxSlider::SetButtonColour(wxColour* WXUNUSED(col))
-{
 }
 
 Bool wxSlider::Show(Bool show) 

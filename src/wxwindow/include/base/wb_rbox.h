@@ -7,18 +7,8 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_rbox.h	1.2 5/9/94" */
-
 #ifndef wxb_rboxh
 #define wxb_rboxh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
-
-#ifdef IN_CPROTO
-typedef       void    *wxbRadioBox ;
-#else
 
 #include "common.h"
 #include "wx_panel.h"
@@ -32,20 +22,18 @@ class wxbRadioBox: public wxItem
   int no_items;
   int selected;
 
-  wxbRadioBox(void);
   wxbRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
              int majorDim = 0,
              long style = wxHORIZONTAL, char *name = "radioBox");
 
-// #ifndef __BORLANDC__
   wxbRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x, int y, int width, int height,
              int N, wxBitmap **Choices,
              int majorDim = 0,
              long style = wxHORIZONTAL, char *name = "radioBox");
-// #endif
+
   ~wxbRadioBox(void);
 
   virtual int FindString(char *s) = 0;
@@ -64,5 +52,4 @@ class wxbRadioBox: public wxItem
   virtual void Show(int item, Bool show) = 0; // show/unshow specific item
 };
 
-#endif // IN_CPROTO
 #endif // wxb_rboxh

@@ -7,26 +7,14 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_dcmem.h	1.2 5/9/94" */
-
-
 #ifndef wx_dcmemh
 #define wx_dcmemh
 
-#ifndef IN_CPROTO
-#include <fstream.h>
-#endif
 #include "common.h"
 #include "wb_dcmem.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxMemoryDC ;
-#else
-
 class wxMemoryDC: public wxbMemoryDC
 {
-  DECLARE_DYNAMIC_CLASS(wxMemoryDC)
-
  public:
   Bool read_only;
   wxMemoryDC(Bool read_only = 0);
@@ -38,6 +26,5 @@ class wxMemoryDC: public wxbMemoryDC
   void GetSize(float *width, float *height);
 };
 
-#endif // IN_CPROTO
 #endif // wx_dcmemh
 

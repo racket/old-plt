@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_main.h	1.2 5/9/94" */
-
 #ifndef wx_mainh
 #define wx_mainh
 
@@ -18,10 +16,6 @@
 #include "wx_mgstr.h"
 #include "wb_main.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxApp ;
-#else
-
 class wxFrame;
 class wxKeyEvent;
 
@@ -29,8 +23,6 @@ class wxKeyEvent;
 // a new App object to start application
 class wxApp: public wxbApp
 {
-  DECLARE_DYNAMIC_CLASS(wxApp)
-
  public:
   HANDLE hInstance;
   MSG current_msg;
@@ -59,5 +51,4 @@ class wxApp: public wxbApp
 
 extern HINSTANCE wxhInstance;
 
-#endif // IN_CPROTO
 #endif

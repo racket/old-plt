@@ -25,13 +25,6 @@ BOOL wxButton::MSWCommand(UINT param, WORD WXUNUSED(id))
   else return FALSE;
 }
 
-wxButton::wxButton(void)
-{
-  wxWinType = wxTYPE_HWND;
-  windows_id = 0;
-  ms_handle = 0;
-}
-
 wxButton::wxButton(wxPanel *panel, wxFunction Function, char *label,
 		   int x, int y, int width, int height,
                    long style, char *name):
@@ -175,18 +168,6 @@ wxButton::~wxButton(void)
     --bm_label->selectedIntoDC;
     bm_label = NULL;
   }
-}
-
-void wxButton::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxButton::SetLabelColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxButton::SetButtonColour(wxColour* WXUNUSED(col))
-{
 }
 
 void wxButton::SetLabel(char *label)

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wx_dialgh
 #define wx_dialgh
 
@@ -18,15 +16,9 @@
 #include "wx_messg.h"
 #include "wb_dialg.h"
 
-#ifdef IN_CPROTO
-typedef void    *wxDialogBox ;
-#else
-
 // Dialog boxes
 class wxDialogBox: public wxbDialogBox
 {
-  DECLARE_DYNAMIC_CLASS(wxDialogBox)
-
  public:
   Bool modal_showing;
   wxList *disabled_windows;
@@ -60,5 +52,4 @@ class wxDialogBox: public wxbDialogBox
   void SystemMenu(void);
 };
 
-#endif // IN_CPROTO
 #endif // wx_dialgh

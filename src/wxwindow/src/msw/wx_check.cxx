@@ -18,15 +18,6 @@ BOOL wxCheckBox::MSWCommand(UINT WXUNUSED(param), WORD WXUNUSED(id))
 }
 
 // Single check box item
-wxCheckBox::wxCheckBox(void)
-{
-  wxWinType = wxTYPE_HWND;
-  windows_id = 0;
-  ms_handle = 0;
-  isFafa = 0;
-}
-
-// Single check box item
 wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction func, char *Title,
                        int x, int y, int width, int height, long style, char *name):
   wxbCheckBox(panel, func, Title, x, y, width, height, style, name)
@@ -177,18 +168,6 @@ wxCheckBox::~wxCheckBox(void)
     --bm_label->selectedIntoDC;
     bm_label = NULL;
   }
-}
-
-void wxCheckBox::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxCheckBox::SetLabelColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxCheckBox::SetButtonColour(wxColour* WXUNUSED(col))
-{
 }
 
 void wxCheckBox::SetLabel(char *label)

@@ -7,28 +7,17 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_group.h	1.2 5/9/94" */
-
 #ifndef wb_gaugeh
 #define wb_gaugeh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_panel.h"
 #include "wx_item.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxbGauge;
-#else
-
 // Group box
 class wxbGauge: public wxItem
 {
  public:
-  wxbGauge(void);
   wxbGauge(wxPanel *panel, char *label, int range, int x = -1, int y = -1,
            int width = -1, int height = -1, long style = 0, char *name = "gauge");
   ~wxbGauge(void);
@@ -41,5 +30,4 @@ class wxbGauge: public wxItem
 //  void SetBackgroundColour(int w) = 0;
 };
 
-#endif // IN_CPROTO
 #endif // wb_gaugeh

@@ -7,29 +7,18 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_frame.h	1.2 5/9/94" */
-
 #ifndef wxb_frameh
 #define wxb_frameh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_win.h"
 
 #define wxMAX_STATUS   5
 
-#ifdef IN_CPROTO
-typedef       void    *wxbFrame ;
-#else
-
 class wxMenuBar;
 class wxPanel ;
 class wxStatusWnd;
 class wxFrame;
-class wxToolBar;
 
 class wxbFrame: public wxWindow
 {
@@ -42,9 +31,6 @@ class wxbFrame: public wxWindow
   long frame_type;  // SDI, MDI parent/child
   int nb_status;
 
-  wxWindow *frameToolBar ;
-
-  wxbFrame(void);
   wxbFrame(wxFrame *parent, char *title,
           int x=-1, int y=-1, int width=-1, int height=-1,
           long type = 0, char *name = "frame");
@@ -94,11 +80,6 @@ class wxbFrame: public wxWindow
   // Call this to simulate a menu command
   virtual void Command(long id);
   virtual void ProcessCommand(long id);
-
-  // Toolbar (currently, for use by Windows MDI parent frames ONLY)
-  virtual inline void SetToolBar(wxToolBar *toolbar) { frameToolBar = (wxWindow *)toolbar; }
-  virtual inline wxToolBar *GetToolBar(void) { return (wxToolBar *)frameToolBar; }
 };
 
-#endif // IN_CPROTO
 #endif // wxb_frameh

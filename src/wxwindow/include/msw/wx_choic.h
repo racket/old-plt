@@ -7,26 +7,17 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_choic.h	1.2 5/9/94" */
-
 #ifndef wx_choich
 #define wx_choich
 
 #include "wb_choic.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxChoice ;
-#else
-
 // Choice item
 class wxChoice: public wxbChoice
 {
-  DECLARE_DYNAMIC_CLASS(wxChoice)
-
  public:
   HWND static_label;
 
-  wxChoice(void);
   wxChoice(wxPanel *panel, wxFunction func, char *Title,
            int x = -1, int y = -1, int width = -1, int height = -1,
            int N = 0, char **Choices = NULL,
@@ -63,5 +54,4 @@ class wxChoice: public wxbChoice
   inline int GetColumns(void) { return 1 ; };
 };
 
-#endif // IN_CPROTO
 #endif // wx_choich

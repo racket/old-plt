@@ -7,22 +7,15 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_rbox.h	1.2 5/9/94" */
-
 #ifndef wx_rboxh
 #define wx_rboxh
 
 #include "wb_rbox.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxRadioBox ;
-#else
-
 // List box item
 class wxBitmap ;
 class wxRadioBox: public wxbRadioBox
 {
-  DECLARE_DYNAMIC_CLASS(wxRadioBox)
  private:
   HWND static_label;
  public:
@@ -35,7 +28,6 @@ class wxRadioBox: public wxbRadioBox
   int *radioHeight ;
   Bool *buttonEnabled;
 
-  wxRadioBox(void);
   wxRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
@@ -44,28 +36,21 @@ class wxRadioBox: public wxbRadioBox
   virtual void ChangeToGray(Bool gray);
   void SetButton(int which, int value);
 
-/*
- * Turbo C++ can't handle this overloaded constructor
- *
- */
-// #ifndef __BORLANDC__
   wxRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x, int y, int width, int height,
              int N, wxBitmap **Choices,
              int majorDim = 0, long style = wxHORIZONTAL, char *name = "radioBox");
-// #endif
+
   ~wxRadioBox(void);
 
   Bool Create(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width =-1, int height = -1,
              int N = 0, char **Choices = NULL,
              int majorDim = 0, long style = wxHORIZONTAL, char *name = "radioBox");
-// #ifndef __BORLANDC__
   Bool Create(wxPanel *panel, wxFunction func, char *Title,
              int x, int y, int width, int height,
              int N, wxBitmap **Choices,
              int majorDim = 0, long style = wxHORIZONTAL, char *name = "radioBox");
-// #endif
              
   BOOL MSWCommand(UINT param, WORD id);
 
@@ -94,5 +79,4 @@ class wxRadioBox: public wxbRadioBox
   int ButtonFocus(int i);
 };
 
-#endif // IN_CPROTO
 #endif // wx_rboxh

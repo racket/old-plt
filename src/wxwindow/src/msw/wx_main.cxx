@@ -355,7 +355,6 @@ wxApp::wxApp() : wxbApp()
 
   wx_frame = NULL;
   death_processed = FALSE;
-  work_proc = NULL ;
   wx_class = NULL;
 }
 
@@ -458,8 +457,6 @@ wxWindow *wxHWNDtoWindow(HWND hwnd)
 
 BOOL wxApp::OnIdle(void)
 {
-  if (work_proc)
-    (*work_proc)(this) ;
   return FALSE;
 }
 

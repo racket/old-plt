@@ -128,18 +128,6 @@ void wxFlushEvents(void)
 // Output a debug mess., in a system dependent fashion.
 void wxDebugMsg(const char *fmt ...)
 {
-  va_list ap;
-  static char buffer[512];
-
-  if (!wxTheApp->wantDebugOutput)
-    return ;
-
-  va_start(ap, fmt);
-
-  wvsprintf(buffer,fmt,ap) ;
-  OutputDebugString((LPCSTR)buffer) ;
-
-  va_end(ap);
 }
 
 // Non-fatal error: pop up message box and (possibly) continue
@@ -150,10 +138,10 @@ void wxError(const char *msg, const char *title)
   int msAns;
 
   msAns = MessageBox(NULL, (LPCSTR)wxBuffer, (LPCSTR)title,
-							MB_ICONSTOP | MB_YESNO);
-
+		     MB_ICONSTOP | MB_YESNO);
+  
   if (msAns == IDNO)
-	 wxExit();
+    wxExit();
 }
 
 // Fatal error: pop up message box and abort

@@ -1365,7 +1365,7 @@ wxCanvasDC::wxCanvasDC(void)
   device = wxDEVICE_WINDOWS;
 }
 
-wxCanvasDC::wxCanvasDC(wxCanvas *the_canvas):wxbCanvasDC(the_canvas)
+wxCanvasDC::wxCanvasDC(wxCanvas *the_canvas) : wxbCanvasDC()
 {
   __type = wxTYPE_DC_CANVAS;
   canvas = the_canvas;
@@ -1708,26 +1708,6 @@ void wxMemoryDC::GetSize(float *width, float *height)
   }
   *width = selected_bitmap->GetWidth();
   *height = selected_bitmap->GetHeight();
-}
-
-/*
- * Panel device context
- */
- 
-wxPanelDC::wxPanelDC(void)
-{
-  __type = wxTYPE_DC_PANEL;
-  panel = NULL;
-}
-
-wxPanelDC::wxPanelDC(wxPanel *the_panel):wxbPanelDC(the_panel)
-{
-  panel = the_panel;
-  WXGC_IGNORE(panel);
-}
-
-wxPanelDC::~wxPanelDC(void)
-{
 }
 
 // Create a DC representing the whole screen

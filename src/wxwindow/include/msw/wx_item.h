@@ -7,16 +7,10 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_item.h	1.2 5/9/94" */
-
 #ifndef wx_itemh
 #define wx_itemh
 
 #include "wb_item.h"
-
-#ifdef IN_CPROTO
-typedef       void    *wxItem ;
-#else
 
 // General item class
 class wxBrush;
@@ -24,8 +18,6 @@ class wxFont;
 class wxColour;
 class wxItem: public wxbItem
 {
-  DECLARE_ABSTRACT_CLASS(wxItem)
-
  protected:
    Bool isFafa ;      // because we can mix Fafa/non-Fafa controls
  public:
@@ -52,10 +44,6 @@ class wxItem: public wxbItem
    float GetCharHeight(void);
    float GetCharWidth(void);
 
-   inline virtual void SetBackgroundColour(wxColour*col) { backColour = col; };
-   inline virtual void SetLabelColour(wxColour*col) { labelColour = col ; };
-   inline virtual void SetButtonColour(wxColour*col) { buttonColour = col ; };
-
    // Windows subclassing
    void SubclassControl(HWND hWnd);
    void UnsubclassControl(HWND hWnd);
@@ -68,5 +56,4 @@ class wxItem: public wxbItem
 long NewId(wxItem *i);
 void DoneIds(wxItem *i);
 
-#endif // IN_CPROTO
 #endif // wx_itemh

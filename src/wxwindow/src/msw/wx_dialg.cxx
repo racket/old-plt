@@ -79,8 +79,6 @@ BOOL wxDialogWnd::OnEraseBkgnd(HDC pDC)
   else return FALSE;
 }
 
-IMPLEMENT_DYNAMIC_CLASS(wxDialogBox, wxPanel)
-
 wxDialogBox::wxDialogBox(void)
 {
   window_parent = NULL;
@@ -166,8 +164,6 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   wxCreatedWindow(this);
 
   wx_cursor = wxSTANDARD_CURSOR;  
-
-  wx_dc = new wxPanelDC (this);
 
   modal = Modal;
   return TRUE;

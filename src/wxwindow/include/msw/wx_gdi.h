@@ -7,28 +7,14 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_gdi.h	1.2 5/9/94" */
-
-
 #ifndef wx_gdih
 #define wx_gdih
 
 #include "wb_gdi.h"
 
-#ifdef IN_CPROTO
-typedef       void    *wxFont ;
-typedef       void    *wxColourMap;
-typedef       void    *wxPen;
-typedef       void    *wxBrush;
-typedef       void    *wxCursor;
-typedef       void    *wxBitmap;
-#else
-
 // Font
 class wxFont: public wxbFont
 {
-  DECLARE_DYNAMIC_CLASS(wxFont)
-
  public:
   HFONT screen_cfont;
   HFONT general_cfont;
@@ -46,10 +32,8 @@ class wxFont: public wxbFont
 
 class wxColourMap: public wxObject
 {
-  DECLARE_DYNAMIC_CLASS(wxColourMap)
-
  public:
- HPALETTE ms_palette;
+  HPALETTE ms_palette;
   wxColourMap(void);
   wxColourMap(const int n, const unsigned char *red, const unsigned char *green, const unsigned char *blue);
   ~wxColourMap(void);
@@ -63,8 +47,6 @@ class wxColourMap: public wxObject
 // Pen
 class wxPen: public wxbPen
 {
-  DECLARE_DYNAMIC_CLASS(wxPen)
-
  public:
   float old_width;
   int old_style;
@@ -93,8 +75,6 @@ int wx2msPenStyle(int wx_style);
 // Brush
 class wxBrush: public wxbBrush
 {
-  DECLARE_DYNAMIC_CLASS(wxBrush)
-
  public:
   HBRUSH cbrush;
   HBRUSH my_old_cbrush ;
@@ -169,8 +149,6 @@ class wxBitmap: public wxObject
 // Cursor
 class wxCursor: public wxBitmap
 {
-  DECLARE_DYNAMIC_CLASS(wxCursor)
-
  public:
   HCURSOR ms_cursor;
   Bool destroyCursor;
@@ -182,5 +160,4 @@ class wxCursor: public wxBitmap
   ~wxCursor(void);
 };
 
-#endif // IN_CPROTO
 #endif // wx_gdih

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 /*
  * Purpose:  wxWindow class declaration. Base class for all windows and
  *           panel items.
@@ -27,14 +25,8 @@
  *
  */
 
-#ifdef IN_CPROTO
-typedef       void    *wxWindow ;
-#else
-
 class wxWindow: public wxbWindow
 {
-  DECLARE_ABSTRACT_CLASS(wxWindow)
-
  public:
   HANDLE ms_handle;                   // For menus and hwnds: using 'handle'
                                       // causes too many compiler messages
@@ -47,9 +39,7 @@ class wxWindow: public wxbWindow
   short internal_gray_disabled;
 
   RECT updateRect;             // Bounding box for screen damage area
-#ifdef WIN32
   HRGN updateRgn;                  // NT allows access to the rectangle list
-#endif
 
   // Caret data
   int caretWidth;
@@ -75,9 +65,8 @@ class wxWindow: public wxbWindow
 
   virtual float GetCharHeight(void);
   virtual float GetCharWidth(void);
-  /* MATTHEW: [2] 16-bit flag */
   virtual void GetTextExtent(const char *string, float *x, float *y,
-      float *descent = NULL, float *externalLeading = NULL, 
+			     float *descent = NULL, float *externalLeading = NULL, 
 			     wxFont *theFont = NULL, Bool use16bit = FALSE);
 
   void GetSize(int *width, int *height);
@@ -137,32 +126,7 @@ class wxWindow: public wxbWindow
 // Window specific (so far)
 wxWindow *wxGetActiveWindow(void);
 
-// Allows iteration through damaged rectangles in OnPaint
-class wxUpdateIterator
-{
-  int rects;						// How many rects in Update region
-  int current;					        // Current rectangle index
-  RECT *rp;						// current rectangle
-#ifdef	WIN32
-  RGNDATA *rlist;					// Storage for regiondata
-#endif
-
- public:
-  wxUpdateIterator(wxWindow* wnd);
-  ~wxUpdateIterator(void);
-
-  operator int (void);
-  wxUpdateIterator* operator ++(int);
-  RECT*	GetMSWRect(void);
-  void GetRect(wxRectangle *rect);
-  int GetX();
-  int GetY();
-  int GetW();
-  int GetH();
-};
-
 int wxCharCodeMSWToWX(int keySym);
 int wxCharCodeWXToMSW(int id, Bool *IsVirtual);
 
-#endif // IN_CPROTO
 #endif

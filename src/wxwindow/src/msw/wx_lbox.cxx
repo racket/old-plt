@@ -31,15 +31,6 @@ BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 
 // Listbox item
 
-wxListBox::wxListBox(void)
-{
-  wxWinType = wxTYPE_HWND;
-  static_label = NULL;
-  windows_id = 0;
-  no_items = 0;
-  ms_handle = 0;
-}
-
 wxListBox::wxListBox(wxPanel *panel, wxFunction func,
                        char *Title, Bool Multiple,
                        int x, int y, int width, int height,
@@ -170,18 +161,6 @@ wxListBox::~wxListBox(void)
   if (static_label)
     wxwmDestroyWindow(static_label);
   static_label = NULL;
-}
-
-void wxListBox::SetBackgroundColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxListBox::SetLabelColour(wxColour* WXUNUSED(col))
-{
-}
-
-void wxListBox::SetButtonColour(wxColour* WXUNUSED(col))
-{
 }
 
 void wxListBox::SetFirstItem(int N)

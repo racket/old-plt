@@ -10,28 +10,8 @@
 #ifndef wxb_mainh
 #define wxb_mainh
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
 #include "common.h"
 #include "wx_obj.h"
-#include "wx_mgstr.h"
-
-// Here's a macro you can use if your compiler
-// really, really wants main() to be in your main program
-// (e.g. hello.cc)
-
-#if defined(AIX) || defined(AIX4)
-#define IMPLEMENT_WXWIN_MAIN int main(int argc, char *argv[]) { return wxEntry(argc, argv); }
-#else
-#define IMPLEMENT_WXWIN_MAIN
-#endif
-
-
-#ifdef IN_CPROTO
-typedef       void    *wxbApp ;
-#else
 
 class wxFrame;
 class wxWindow;
@@ -45,15 +25,12 @@ class wxApp ;
 class wxbApp: public wxObject
 {
  public:
-  int wantDebugOutput ;
   char *wx_class;
   char *appName;
   wxFrame *wx_frame;
   int argc;
   char **argv;
   Bool death_processed;
-  int printMode; // wxPRINT_WINDOWS, wxPRINT_POSTSCRIPT
-  void (*work_proc)(wxApp*app) ; // work procedure
 
   wxbApp();
   ~wxbApp(void);
@@ -63,8 +40,6 @@ class wxbApp: public wxObject
   virtual Bool Initialized(void);
   virtual Bool Pending(void) = 0 ;
   virtual void Dispatch(void) = 0 ;
-  inline void SetPrintMode(int mode) { printMode = mode; }
-  inline int GetPrintMode(void) { return printMode; }
 
   virtual char *GetAppName(void);
   virtual void SetAppName(char *name);
@@ -86,5 +61,4 @@ void wxExit(void);
 // Yield to other apps/messages
 Bool wxYield(void);
 
-#endif // IN_CPROTO
 #endif

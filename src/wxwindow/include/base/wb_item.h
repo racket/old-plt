@@ -7,23 +7,13 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_item.h	1.2 5/9/94" */
-
 #ifndef wxb_itemh
 #define wxb_itemh
-
-#ifdef __GNUG__
-#pragma interface
-#endif
 
 #include "common.h"
 #include "wx_panel.h"
 #include "wx_dcpan.h"
 #include "wx_stdev.h"
-
-#ifdef IN_CPROTO
-typedef       void    *wxbItem ;
-#else
 
 class wxFont ;
 
@@ -76,11 +66,6 @@ class wxbItem: public wxWindow
   inline virtual wxColour*GetBackgroundColour(void) { return backColour ; }
   inline virtual wxColour*GetLabelColour(void)      { return labelColour ; }
   inline virtual wxColour*GetButtonColour(void)     { return buttonColour ; }
-
-  virtual void SetBackgroundColour(wxColour*col) = 0 ;
-  virtual void SetLabelColour(wxColour*col) = 0 ;
-  virtual void SetButtonColour(wxColour*col) = 0 ;
 };
 
-#endif // IN_CPROTO
 #endif // wxb_itemh

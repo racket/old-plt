@@ -11,14 +11,6 @@
 
 #include "..\..\contrib\gauge\zyzgauge.h"
 
-wxGauge::wxGauge(void)
-{
-  wxWinType = wxTYPE_HWND;
-  windows_id = 0;
-  ms_handle = 0;
-  static_label = 0;
-}
-
 wxGauge::wxGauge(wxPanel *panel, char *label,
 		 int range, int x, int y, int width, int height,
 		 long style, char *name):
@@ -263,16 +255,6 @@ void wxGauge::SetRange(int r)
 void wxGauge::SetValue(int pos)
 {
   SendMessage((HWND)ms_handle, ZYZG_SETPOSITION, pos, 0);
-}
-
-void wxGauge::SetButtonColour(wxColour *col)
-{
-  SendMessage((HWND)ms_handle, ZYZG_SETFGCOLOR, 0, RGB(col->Red(), col->Green(), col->Blue()));
-}
-
-void wxGauge::SetBackgroundColour(wxColour *col)
-{
-  SendMessage((HWND)ms_handle, ZYZG_SETBKCOLOR, 0, RGB(col->Red(), col->Green(), col->Blue()));
 }
 
 void wxGauge::SetLabel(char *label)

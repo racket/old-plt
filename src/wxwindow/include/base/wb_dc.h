@@ -7,19 +7,10 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_dc.h	1.2 5/9/94" */
-
 
 #ifndef wxb_dch
 #define wxb_dch
 
-#ifdef __GNUG__
-#pragma interface
-#endif
-
-#ifndef IN_CPROTO
-#include <fstream.h>
-#endif
 #include "common.h"
 #include "wx_frame.h"
 #include "wx_gdi.h"
@@ -33,21 +24,8 @@
 #define wxDEVICE_PIXMAP  4
                             // X pixmap
 
-#ifdef wx_x
-#define MM_TEXT        1
-#define MM_ISOTROPIC   2
-#define MM_ANISOTROPIC 3
-#define MM_LOMETRIC    4
-#define MM_HIMETRIC    5
-#define MM_TWIPS       6
-#endif
-
 #define MM_POINTS      7
 #define MM_METRIC      8
-
-#ifdef IN_CPROTO
-typedef       void    *wxbDC ;
-#else
 
 class wxRegion;
 class wxCanvas;
@@ -255,6 +233,4 @@ extern int wxPageNumber;
 
 #define     wx_round(a)    (int)((a)+.5)
 
-
-#endif // IN_CPROTO
 #endif // wxb_dch

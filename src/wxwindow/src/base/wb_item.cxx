@@ -111,18 +111,6 @@ void wxbItem::ProcessCommand (wxCommandEvent *event)
  * Button
  */
  
-wxbButton::wxbButton (void)
-{
-  __type = wxTYPE_BUTTON;
-  window_parent = NULL;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbButton::wxbButton (wxPanel * panel, wxFunction WXUNUSED(Function), 
 		      char *WXUNUSED(label),
 		      int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), 
@@ -383,16 +371,6 @@ char *wxbMenuBar::GetHelpString (long Id)
  * Single check box item
  */
  
-wxbCheckBox::wxbCheckBox (void)
-{
-  __type = wxTYPE_CHECK_BOX;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction WXUNUSED(func), char *WXUNUSED(Title),
 	     int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), long style, char *WXUNUSED(name))
 {
@@ -429,16 +407,6 @@ wxbCheckBox::~wxbCheckBox (void)
  * Choice
  */
  
-wxbChoice::wxbChoice (void)
-{
-  __type = wxTYPE_CHOICE;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbChoice::wxbChoice (wxPanel * panel, wxFunction WXUNUSED(func), char *WXUNUSED(Title),
 	   int WXUNUSED(x), int WXUNUSED(y), int WXUNUSED(width), int WXUNUSED(height), int N, char **WXUNUSED(Choices),
 	   long style, char *WXUNUSED(name))
@@ -485,19 +453,6 @@ Bool wxbChoice::SetStringSelection (char *s)
  * Listbox
  */
  
-wxbListBox::wxbListBox (void)
-{
-  __type = wxTYPE_LIST_BOX;
-  selected = -1;
-  selections = 0;
-  no_items = 0;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbListBox::wxbListBox(wxPanel * panel, wxFunction WXUNUSED(func),
 		       char *WXUNUSED(Title), Bool Multiple,
 		       int WXUNUSED(x), int WXUNUSED(y), 
@@ -556,18 +511,6 @@ Bool wxbListBox::SetStringSelection (char *s)
  * Radiobox item
  */
  
-wxbRadioBox::wxbRadioBox (void)
-{
-  __type = wxTYPE_RADIO_BOX;
-  selected = -1;
-  no_items = 0;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction WXUNUSED(func),
 			  char *WXUNUSED(Title),
 			  int WXUNUSED(x), int WXUNUSED(y),
@@ -644,16 +587,6 @@ Bool wxbRadioBox::SetStringSelection (char *s)
  * Message
  */
  
-wxbMessage::wxbMessage (void)
-{
-  __type = wxTYPE_MESSAGE;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbMessage::wxbMessage (wxPanel * panel, char *WXUNUSED(label),
 			int WXUNUSED(x), int WXUNUSED(y),
 			long style, char *WXUNUSED(name))
@@ -692,16 +625,6 @@ wxbMessage::~wxbMessage (void)
  * Slider
  */
  
-wxbSlider::wxbSlider (void)
-{
-  __type = wxTYPE_SLIDER;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbSlider::wxbSlider (wxPanel * panel, wxFunction WXUNUSED(func), 
 		      char *WXUNUSED(label), int WXUNUSED(value),
 		      int WXUNUSED(min_value), int WXUNUSED(max_value), int WXUNUSED(width),
@@ -726,18 +649,6 @@ wxbSlider::~wxbSlider (void)
  * Gauge
  */
  
-wxbGauge::wxbGauge (void)
-{
-  __type = wxTYPE_GAUGE;
-  window_parent = NULL;
-  labelPosition = wxHORIZONTAL;
-  buttonFont = NULL;
-  labelFont = NULL;
-  backColour = NULL;
-  labelColour = NULL;
-  buttonColour = NULL;
-}
-
 wxbGauge::wxbGauge (wxPanel * panel, char *WXUNUSED(label),
 		    int WXUNUSED(range), int WXUNUSED(x), int WXUNUSED(y),
 		    int WXUNUSED(width), int WXUNUSED(height), 

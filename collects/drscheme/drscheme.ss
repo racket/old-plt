@@ -1,5 +1,4 @@
-(require-library "errortrace.ss" "errortrace")
-(error-print-width 100)
+;(require-library "errortrace.ss" "errortrace") (error-print-width 100)
 
 ;(current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x))))
 

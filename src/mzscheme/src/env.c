@@ -1216,6 +1216,16 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   } else {
     genv = env->genv;
     modname = NULL;
+
+    if (genv->module) {
+      /* Free variable. Maybe don't continue. */
+      if (flags & SCHEME_SETTING) {
+	scheme_wrong_syntax("set!", NULL, srcsym, "unbound variable in module");
+	return NULL;
+      }
+      if (flags & SCHEME_NULL_FOR_UNBOUND)
+	return NULL;
+    }
   }
 
   /* Try syntax table: */

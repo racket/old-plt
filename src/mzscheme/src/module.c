@@ -1668,6 +1668,10 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   }
 
   fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
+
+  /* phase shift to replace self_modidx of previous expansion (if any): */
+  fm = scheme_stx_phase_shift(fm, 0, scheme_false, self_modidx);
+
   fm = scheme_add_rename(fm, rn);
   fm = scheme_add_rename(fm, et_rn);
 
@@ -1735,6 +1739,11 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 			       scheme_intern_symbol("module-self-path-index"),
 			       self_modidx);
     }
+
+    /* for future expansion, shift away from self_modidx: */
+    fm = scheme_stx_phase_shift(fm, 0, self_modidx, scheme_false);
+    /* disable self_modidx, to detect errors: */
+    ((Scheme_Modidx *)self_modidx)->resolved = scheme_false;
 
     return fm;
   }

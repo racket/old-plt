@@ -33,13 +33,16 @@
 		(#%module-begin
 		 defn ...
 		 (define #%info-lookup
-		   (case-lambda
-		    [(n) (#%info-lookup n (lambda () (error 'info.ss "no info for ~a" n)))]
-		    [(n fail)
-		     (case n
-		       [(name) name]
-		       ...
-		       [else (fail)])]))
+		   ;; letrec is needed, otherwise #%info-lookup is scoped here
+		   (letrec ([#%info-lookup
+			     (case-lambda
+			      [(n) (#%info-lookup n (lambda () (error 'info.ss "no info for ~a" n)))]
+			      [(n fail)
+			       (case n
+				 [(name) name]
+				 ...
+				 [else (fail)])])])
+		     #%info-lookup))
 		 (provide #%info-lookup))))))])))
 
   (provide (rename info-module-begin #%module-begin)

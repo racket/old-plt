@@ -1953,16 +1953,20 @@ static Scheme_Object *check_top(char *when, Scheme_Object *form, Scheme_Comp_Env
 
   if (env->genv->module) {
     Scheme_Object *modidx, *symbol = c;
+    int bad;
 
     modidx = scheme_stx_module_name(&symbol, env->genv->phase);
     if (modidx) {
       /* If it's an access path, resolve it: */
       if (env->genv->module
 	  && SAME_OBJ(scheme_module_resolve(modidx), env->genv->module->modname))
-	modidx = NULL;
-    }
+	bad = 0;
+      else
+	bad = 1;
+    } else
+      bad = 1;
 
-    if (modidx || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
+    if (bad || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
       scheme_wrong_syntax(when, NULL, c, 
 			  (env->genv->phase
 			   ? "unbound variable in module (transformer environment)"

@@ -119,6 +119,18 @@ files in the given directory and returns that file's name.  If the
 optional filename argument is provided, that filename will be used as
 the output file's name.
 
+> (remove-pkg owner name major-version minor-version) -> void
+
+Removes the specified package from the local planet cache. Owner and
+name must be strings; major-version and minor-version must be natural
+numbers and major-version must be greater than zero.
+
+> (unlink-all) -> void
+
+Removes the entire linkage table from the system, which will force all
+modules to relink themselves to PLaneT modules the next time they run.
+
+
 _The PLaneT search order_
 -------------------------
 

@@ -16,12 +16,13 @@
       
       (define (get-unix-compile)
 	(or (getenv "MZSCHEME_DYNEXT_COMPILER")
-	    (find-executable-path "gcc" "gcc")
-	    (find-executable-path "cc" "cc")))
+	    (find-executable-path "gcc" #f)
+	    (find-executable-path "cc" #f)))
       
       (define (get-windows-compile)
-	(or (find-executable-path "cl.exe" "cl.exe")
-	    (find-executable-path "gcc.exe" "gcc.exe")))
+	(or (find-executable-path "cl.exe" #f)
+	    (find-executable-path "gcc.exe" #f)
+	    (find-executable-path "bcc32.exe" #f)))
       
       (define current-extension-compiler 
 	(make-parameter 
@@ -42,6 +43,9 @@
       (define win-gcc?
 	(let ([c (current-extension-compiler)])
 	  (and c (regexp-match "gcc.exe$" c))))
+      (define win-borland?
+	(let ([c (current-extension-compiler)])
+	  (and c (regexp-match "bcc32.exe$" c))))
       (define unix-cc?
 	(let ([c (current-extension-compiler)])
 	  (and c (regexp-match "[^g]cc$" c))))
@@ -61,7 +65,7 @@
 	   [(unix beos) (if unix-cc?
 			    unix-compile-flags
 			    gcc-compile-flags)]
-	   [(windows) (if win-gcc?
+	   [(windows) (if (or win-gcc? win-borland?)
 			  gcc-compile-flags
 			  msvc-compile-flags)]
 	   [(macos) '()])
@@ -77,7 +81,7 @@
 	(make-parameter
 	 (case (system-type)
 	   [(unix beos) unix-compile-include-strings]
-	   [(windows) (if win-gcc?
+	   [(windows) (if (or win-gcc? win-borland?)
 			  unix-compile-include-strings
 			  msvc-compile-include-strings)]
 	   [(macos) unix-compile-include-strings])
@@ -101,7 +105,7 @@
 	(make-parameter
 	 (case (system-type)
 	   [(unix beos) unix-compile-output-strings]
-	   [(windows) (if win-gcc?
+	   [(windows) (if (or win-gcc? win-borland?)
 			  unix-compile-output-strings
 			  msvc-compile-output-strings)]
 	   [(macos) unix-compile-output-strings])
@@ -113,7 +117,7 @@
       (define (get-standard-compilers)
 	(case (system-type)
 	  [(unix beos) '(gcc cc)]
-	  [(windows) '(gcc msvc)]
+	  [(windows) '(gcc msvc borland)]
 	  [(macos) '(cw)]))
 
       (define (use-standard-compiler name)
@@ -136,7 +140,7 @@
 	     [else (bad-name name)])]
 	  [(windows) 
 	   (case name
-	     [(gcc) (let ([f (find-executable-path "gcc.exe" "gcc.exe")])
+	     [(gcc) (let ([f (find-executable-path "gcc.exe" #f)])
 		      (unless f
 			(error 'use-standard-linker "cannot find gcc.exe"))
 		      (current-extension-compiler f))
@@ -144,7 +148,15 @@
 	      (current-make-compile-include-strings unix-compile-include-strings)
 	      (current-make-compile-input-strings (lambda (s) (list s)))
 	      (current-make-compile-output-strings unix-compile-output-strings)]
-	     [(msvc) (let ([f (find-executable-path "cl.exe" "cl.exe")])
+	     [(borland) (let ([f (find-executable-path "bcc32.exe" #f)])
+			  (unless f
+			    (error 'use-standard-linker "cannot find bcc32.exe"))
+			  (current-extension-compiler f))
+	      (current-extension-compiler-flags gcc-compile-flags)
+	      (current-make-compile-include-strings unix-compile-include-strings)
+	      (current-make-compile-input-strings (lambda (s) (list s)))
+	      (current-make-compile-output-strings unix-compile-output-strings)]
+	     [(msvc) (let ([f (find-executable-path "cl.exe" #f)])
 		       (unless f
 			 (error 'use-standard-linker "cannot find MSVC's cl.exe"))
 		       (current-extension-compiler f))

@@ -754,18 +754,16 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
 
   pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
 
-  if (pFuncDesc) {				   
-    pISink->register_handler(pFuncDesc->memid,(int)argv[2]);
-  }
-
-  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
-  
   SysFreeString(unicodeName);
   
-  if (pFuncDesc == NULL) {
+  if (pFuncDesc == NULL) {				   
     scheme_signal_error("Can't find event %s in type description",eventName);
   }
-  
+
+  pISink->register_handler(pFuncDesc->memid,(int)argv[2]);
+
+  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+
   return scheme_void;
 }
 
@@ -802,18 +800,16 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
 
   pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
 
-  if (pFuncDesc) {				   
-    pISink->unregister_handler(pFuncDesc->memid);
-  }
-    
-  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
-  
   SysFreeString(unicodeName);
-  
-  if (pFuncDesc == NULL) {
+
+  if (pFuncDesc == NULL) {				   
     scheme_signal_error("Can't find event %s in type description",eventName);
   }
 
+  pISink->unregister_handler(pFuncDesc->memid);
+  
+  pITypeInfo->ReleaseFuncDesc(pFuncDesc);
+  
   return scheme_void;
 }
 

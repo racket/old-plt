@@ -224,18 +224,24 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_DISPATCH :
 
+    // event sources typically don't call AddRef() 
+
+    pVariantArg->pdispVal->AddRef();
     return make_idispatch(pVariantArg->pdispVal);
     
   case VT_DISPATCH | VT_BYREF :
 
+    pVariantArg->pdispVal->AddRef();
     return scheme_box(make_idispatch(pVariantArg->pdispVal));
     
   case VT_UNKNOWN :
 
+    pVariantArg->punkVal->AddRef();
     return make_iunknown(pVariantArg->punkVal);
 
   case VT_UNKNOWN | VT_BYREF:
 
+    pVariantArg->punkVal->AddRef();
     return scheme_box(make_iunknown(pVariantArg->punkVal));
 
   default :

@@ -74,7 +74,9 @@ int wxMediaStream::ReadingVersion(wxSnipClass *sclass)
       return asl->readingVersion;
   }
 
-  return 0;
+  /* Class didn't show up in the header?
+     Assume we're reading the current version. */
+  return sclass->version;
 }
 
 int wxMediaStream::MapPosition(wxSnipClass *c)

@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-04")
+(define *tex2page-version* "2005-03-05")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -3679,7 +3679,6 @@
       (do-para)
       (do-end-para)
       (emit "<div align=right class=colophon>")
-      (emit-newline)
       (when (and
              *colophon-mentions-last-mod-time?*
              *last-modification-time*
@@ -3687,11 +3686,9 @@
         (tex2page-string *last-modified*)
         (emit ": ")
         (emit (seconds->human-time *last-modification-time*))
-        (emit "<br>")
-        (emit-newline))
+        (emit "<br>"))
       (when *colophon-mentions-tex2page?*
         (emit "<div align=right class=advertisement>")
-        (emit-newline)
         (tex2page-string *html-conversion-by*)
         (emit " ")
         (when *colophon-links-to-tex2page-website?*
@@ -3700,8 +3697,7 @@
         (emit "TeX2page ")
         (emit *tex2page-version*)
         (when *colophon-links-to-tex2page-website?* (emit-link-stop))
-        (emit "</div>")
-        (emit-newline))
+        (emit "</div>"))
       (emit "</div>")
       (emit-newline))))
 
@@ -4054,29 +4050,6 @@
                 (else (terror 'do-diacritic "`" x "' is not a character"))))))
       (do-diacritic-aux diac c))))
 
-(define do-imageless-display-math
-  (lambda ()
-    (if *math-mode?*
-      (egroup)
-      (let ((old-in-math? *math-mode?*)
-            (old-in-display-math? *in-display-math?*)
-            (old-tabular-stack *tabular-stack*))
-        (do-end-para)
-        (emit "<div align=")
-        (emit *display-justification*)
-        (emit "><table><tr><td>")
-        (set! *math-mode?* #t)
-        (set! *in-display-math?* #t)
-        (set! *tabular-stack* '())
-        (bgroup)
-        (add-postlude-to-top-frame
-          (lambda ()
-            (set! *math-mode?* old-in-math?)
-            (set! *in-display-math?* old-in-display-math?)
-            (set! *tabular-stack* old-tabular-stack)
-            (emit "</td></tr></table></div>")
-            (do-para)))))))
-
 (define do-mathdg
   (lambda ()
     (fluid-let
@@ -4091,23 +4064,6 @@
       (tex2page-string (get-group))
       (emit "</td></tr></table></div>")
       (do-para))))
-
-(define do-imageless-intext-math
-  (lambda ()
-    (if *math-mode?*
-      (egroup)
-      (let ((old-in-math? *math-mode?*)
-            (old-in-display-math? *in-display-math?*)
-            (old-tabular-stack *tabular-stack*))
-        (set! *math-mode?* #t)
-        (set! *in-display-math?* #f)
-        (set! *tabular-stack* '())
-        (bgroup)
-        (add-postlude-to-top-frame
-          (lambda ()
-            (set! *math-mode?* old-in-math?)
-            (set! *in-display-math?* old-in-display-math?)
-            (set! *tabular-stack* old-tabular-stack)))))))
 
 (define do-mathg
   (lambda ()
@@ -4168,114 +4124,94 @@
       (number->string *img-file-count*))))
 
 (define call-with-html-image-port
-  (lambda (p)
-    (let* ((img-file-stem (next-html-image-file-stem))
+  (lambda (p . alt)
+    (let* ((alt (if (null? alt) #f (car alt)))
+           (img-file-stem (next-html-image-file-stem))
            (aux-tex-file (string-append img-file-stem ".tex")))
       (ensure-file-deleted aux-tex-file)
       (call-with-output-file
         aux-tex-file
         (lambda (o) (dump-tex-preamble o) (p o) (dump-tex-postamble o)))
       (tex-to-img img-file-stem)
-      (source-img-file img-file-stem))))
+      (source-img-file img-file-stem alt))))
 
-(define do-imaged-display-math
+(define do-display-math
   (lambda ()
     (do-end-para)
     (emit "<div align=")
     (emit *display-justification*)
     (emit ">")
-    (call-with-html-image-port
-      (lambda (o)
-        (display "$$" o)
-        (dump-till-char #\$ o)
-        (let ((c (get-actual-char)))
-          (cond
-           ((eof-object? c) (terror 'do-imaged-display-math))
-           ((char=? c #\$) #t)
-           (else (terror 'do-imaged-display-math))))
-        (display "$$" o)))
+    (let* ((alt-tex-string
+             (let ((o (open-output-string)))
+               (dump-till-char #\$ o)
+               (let ((c (get-actual-char)))
+                 (cond
+                  ((eof-object? c) (terror 'do-display-math))
+                  ((char=? c #\$) #t)
+                  (else (terror 'do-display-math))))
+               (get-output-string o)))
+           (alt-thunk
+             (lambda ()
+               (fluid-let
+                 ((*math-mode?* #t)
+                  (*in-display-math?* #t)
+                  (*tabular-stack* '()))
+                 (emit "<table><tr><td>")
+                 (tex2page-string alt-tex-string)
+                 (emit "</td></tr></table>")))))
+      (if *use-image-for-displayed-math?*
+        (call-with-html-image-port
+          (lambda (o)
+            (display "$$" o)
+            (display alt-tex-string o)
+            (display "$$" o))
+          alt-tex-string)
+        (alt-thunk)))
     (emit "</div>")
     (do-para)))
 
-(define do-imaged-intext-math
+(define do-intext-math
   (lambda ()
-    (call-with-html-image-port
-      (lambda (o) (display #\$ o) (dump-till-char #\$ o) (display #\$ o)))))
+    (let* ((alt-tex-string
+             (let ((o (open-output-string)))
+               (dump-till-char #\$ o)
+               (get-output-string o)))
+           (alt-thunk
+             (lambda ()
+               (fluid-let
+                 ((*math-mode?* #t)
+                  (*in-display-math?* #f)
+                  (*tabular-stack* '()))
+                 (bgroup)
+                 (tex2page-string alt-tex-string)
+                 (egroup)))))
+      (if *use-image-for-intext-math?*
+        (call-with-html-image-port
+          (lambda (o)
+            (display #\$ o)
+            (display alt-tex-string o)
+            (display #\$ o))
+          alt-tex-string)
+        (alt-thunk)))))
 
 (define do-mathp
   (lambda ()
     (call-with-html-image-port
       (lambda (o) (display #\$ o) (display (get-group) o) (display #\$ o)))))
 
-(define do-latex-in-text-math
+(define do-latex-intext-math
   (lambda ()
-    ((if *use-image-for-intext-math?*
-       do-img-latex-in-text-math
-       do-imgless-latex-in-text-math))))
+    (do-intext-math
+      (let ((o (open-output-string)))
+        (dump-till-ctl-seq "\\)" o)
+        (get-output-string o)))))
 
 (define do-latex-display-math
   (lambda ()
-    ((if *use-image-for-displayed-math?*
-       do-img-latex-display-math
-       do-imgless-latex-display-math))))
-
-(define do-img-latex-in-text-math
-  (lambda ()
-    (call-with-html-image-port
-      (lambda (o)
-        (display #\$ o)
-        (dump-till-ctl-seq "\\)" o)
-        (display #\$ o)))))
-
-(define do-img-latex-display-math
-  (lambda ()
-    (do-end-para)
-    (emit "<div align=")
-    (emit *display-justification*)
-    (emit ">")
-    (call-with-html-image-port
-      (lambda (o)
-        (display "$$" o)
+    (do-display-math
+      (let ((o (open-output-string)))
         (dump-till-ctl-seq "\\]" o)
-        (display "$$" o)))
-    (emit "</div>")
-    (do-para)))
-
-(define do-imgless-latex-in-text-math
-  (lambda ()
-    (let ((old-in-math? *math-mode?*)
-          (old-in-display-math? *in-display-math?*)
-          (old-tabular-stack *tabular-stack*))
-      (set! *math-mode?* #t)
-      (set! *in-display-math?* #f)
-      (set! *tabular-stack* '())
-      (bgroup)
-      (add-postlude-to-top-frame
-        (lambda ()
-          (set! *math-mode?* old-in-math?)
-          (set! *in-display-math?* old-in-display-math?)
-          (set! *tabular-stack* old-tabular-stack))))))
-
-(define do-imgless-latex-display-math
-  (lambda ()
-    (let ((old-in-math? *math-mode?*)
-          (old-in-display-math? *in-display-math?*)
-          (old-tabular-stack *tabular-stack*))
-      (do-end-para)
-      (emit "<div align=")
-      (emit *display-justification*)
-      (emit "><table><tr><td>")
-      (set! *math-mode?* #t)
-      (set! *in-display-math?* #t)
-      (set! *tabular-stack* '())
-      (bgroup)
-      (add-postlude-to-top-frame
-        (lambda ()
-          (set! *math-mode?* old-in-math?)
-          (set! *in-display-math?* old-in-display-math?)
-          (set! *tabular-stack* old-tabular-stack)
-          (emit "</td></tr></table></div>")
-          (do-para))))))
+        (get-output-string o)))))
 
 (define do-math
   (lambda ()
@@ -4283,13 +4219,7 @@
       (when (eqv? (snoop-actual-char) #\$)
         (set! display? #t)
         (get-actual-char))
-      ((if display?
-         (if *use-image-for-displayed-math?*
-           do-imaged-display-math
-           do-imageless-display-math)
-         (if *use-image-for-intext-math?*
-           do-imaged-intext-math
-           do-imageless-intext-math))))))
+      ((if display? do-display-math do-intext-math)))))
 
 (define dump-till-char
   (lambda (d o)
@@ -5770,8 +5700,9 @@
              (begin (delete-file f) #f)))))
 
 (define source-img-file
-  (lambda (img-file-stem)
-    (let* ((img-file (string-append img-file-stem *img-file-extn*))
+  (lambda (img-file-stem . alt)
+    (let* ((alt (if (null? alt) #f (car alt)))
+           (img-file (string-append img-file-stem *img-file-extn*))
            (f (string-append *aux-dir/* img-file)))
       (write-log #\()
       (write-log f)
@@ -5779,9 +5710,9 @@
       (valid-img-file? f)
       (emit "<img src=\"")
       (emit img-file)
-      (emit "\" border=\"0\" alt=\"[")
-      (emit img-file)
-      (emit "]\">")
+      (emit "\" border=\"0\" alt=\"")
+      (cond (alt (emit alt)) (else (emit "[") (emit img-file) (emit "]")))
+      (emit "\">")
       (write-log #\))
       (write-log 'separation-space)
       #t)))
@@ -8735,7 +8666,7 @@
 
 (tex-def-prim "\\`" (lambda () (do-diacritic 'grave)))
 
-(tex-def-prim "\\(" do-latex-in-text-math)
+(tex-def-prim "\\(" do-latex-intext-math)
 
 (tex-def-prim "\\[" do-latex-display-math)
 

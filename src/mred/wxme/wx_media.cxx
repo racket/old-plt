@@ -2453,7 +2453,7 @@ void wxMediaEdit::PasteNext(void)
 
   delta = len;
 
-  DoBufferPaste(0, TRUE);
+  DoBufferPaste(wxTheClipboard, 0, TRUE);
 
   EndEditSequence();
 

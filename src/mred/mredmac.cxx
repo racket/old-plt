@@ -405,8 +405,8 @@ int WNE(EventRecord *e, double sleep_secs)
       /* For bring-to-front: */
       if (!WeAreFront()) {
 	SendEventToEventTarget(ref, GetEventDispatcherTarget());
-	/* (Maybe sending the event is actually always ok. But
-	   we'll just do it here where it's necessary.) */
+	/* Drop this event, because the target will generate a new one */
+	ok = 0;
       }
     }
 

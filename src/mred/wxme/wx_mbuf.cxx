@@ -2266,7 +2266,8 @@ void wxMediaBuffer::OnDisplaySizeWhenReady(void)
     needOnDisplaySize = 1;
   else {
     if (!seq_lock || scheme_wait_sema((Scheme_Object *)seq_lock, 1)) {
-      scheme_post_sema((Scheme_Object *)seq_lock);
+      if (seq_lock)
+	scheme_post_sema((Scheme_Object *)seq_lock);
       OnDisplaySize();
     } else
       needOnDisplaySize = 1;

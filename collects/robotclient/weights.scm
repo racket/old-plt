@@ -167,7 +167,7 @@
 	  (syntax-rules ()
 			((_ board x y p)
 			 (cond
-			  [(water-escape? board x y p) (begin (printf "Doing a water escape") (* (water-escape-bid) (max-bid)))]
+			  [(water-escape? board x y p) (begin (* (water-escape-bid) (max-bid)))]
 			  [(water-push? board x y p) (begin (printf "Doing a water push") (* (water-push-bid) (max-bid)))]
 			  [(blank-escape? board x y p)(begin (printf "Doing a blank escape")  (* (blank-escape-bid) (max-bid)))]
 			  [(wall-escape? board x y p) (begin (printf "Doing a wall escape") (* (wall-escape-bid) (max-bid)))]
@@ -329,14 +329,34 @@
 	(define-syntax pinned?
 	  (syntax-rules ()
 			((_ board x y t)
-			 (or (and (is-robot? board (- x 1) y )
+			 (or (if
+                              (and (is-robot? board (- x 1) y )
 				  (= t (get-type (get-spot board (+ x 1) y))))
+                              (begin
+                                (printf "pinned (- x 1) y~n")
+                                #t)
+                              #f)
+                             (if
 			     (and (is-robot? board (+ x 1) y )
 				  (= t (get-type (get-spot board (- x 1) y))))
-			     (and (is-robot? board x (- y 1) )
+                             (begin
+                                (printf "pinned (+ x 1) y~n")
+                                #t)
+                              #f)
+			     (if
+                              (and (is-robot? board x (- y 1) )
 				  (= t (get-type (get-spot board x (+ y 1)))))
-			     (and (is-robot? board x (+ y 1) )
-				  (= t (get-type (get-spot board x (- y 1)))))))))
+                              (begin
+                                (printf "pinned (- y 1) y~n")
+                                #t)
+                              #f)
+			     (if
+                              (and (is-robot? board x (+ y 1) )
+				  (= t (get-type (get-spot board x (- y 1)))))
+                              (begin
+                                (printf "pinned (+ y 1) y~n")
+                                #t)
+                              #f)))))
 
 	(define-syntax wall-danger?
 	  (syntax-rules ()

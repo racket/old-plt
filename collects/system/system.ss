@@ -80,8 +80,6 @@
     (wx:message-box "Cannot find the MzScheme libraries." "Error")
     (error 'mrsystem "cannot find the MzScheme libraries"))
 
-(current-library-path "/home/mflatt/tmp/mzlib")
-
 (define mzlib:constant-lib? #t)
 (require-library "corec.ss")
 (require-library "triggerc.ss")

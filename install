@@ -185,6 +185,8 @@ exit 1
 
 (define (main args)
   (set-plthome (car args))
+  (when (regexp-match #rx"^finish.install($|\\.)" this-script)
+    (set! install-mode? #t))
   (setup-environment)
   (process-command-line)
   (create-zos)
@@ -202,4 +204,6 @@ exit 1
          ;; use setup-plt from now on.
          (delete-file this-script)
          (when (file-exists? (string-append this-script ".bat"))
-           (delete-file (string-append this-script ".bat")))]))
+           (delete-file (string-append this-script ".bat")))
+         (when (file-exists? "finish install.command")
+           (delete-file "finish install.command"))]))

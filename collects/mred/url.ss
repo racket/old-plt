@@ -201,9 +201,13 @@
 			      (string=? (url-scheme base) "file"))
 			  (begin
 			    (set-url-path! relative
-			      (build-path
-				(url-path base)
-				(unixpath->path rel-path)))
+			      (begin
+				(printf "Calling build-path on~n~s~n~s~n~n"
+				  (url-path base)
+				  (unixpath->path rel-path))
+				(build-path
+				  (url-path base)
+				  (unixpath->path rel-path))))
 			    relative)
 			  (merge-and-normalize
 			    (url-path base) relative))))))))))))

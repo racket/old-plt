@@ -467,7 +467,7 @@
 	   [show-simples (lambda (simples special-font-name special-font)
 			   (unless (null? simples)
 			     (when special-font
-			       (fprintf out "gsave~n/~a findfont~n~a scalefont setfont~n"
+			       (fprintf out "currentfont~n/~a findfont~n~a scalefont setfont~n"
 					(afm-expand-name special-font-name)
 					size))
 			     (if (font-is-cid? (or special-font font))
@@ -503,7 +503,8 @@
 					       ;; All safe - write directly
 					       (fprintf out "(~a) show\n" bytes)))))))
 			     (when special-font
-			       (fprintf out "grestore~n"))))])
+			       ;; Uses result of currentfont above:
+			       (fprintf out "setfont~n"))))])
       (let loop ([l l][simples null][special-font-name #f][special-font #f])
 	(cond
 	 [(null? l)

@@ -1,4 +1,7 @@
+- the language level message on startup is some strange red sexp
+
 - in the language dialog box:
+  - clicking on options 2 and 3 is strange for the printer
   - allow set! on undefined is ignored
   - show sharing is ignored
 

@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r8f")
+(define *tex2page-version* "4r9")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -5911,76 +5911,55 @@
       (set! *esc-char-verb* c2))))
 
 (define do-verb-braced
-  (lambda ()
-    (get-actual-char)
-    (let ((display? (munched-a-newline?)))
-      (if (not display?)
-        (emit "<code class=verbatim>")
-        (begin (do-end-para) (emit "<pre class=verbatim>")))
-      (bgroup)
-      (fluid-let
-        ((*verb-display?* display?)
-         (*esc-char* *esc-char-verb*)
-         (*tex-extra-letters* '()))
-        (let loop ((nesting 0))
-          (let ((c (get-actual-char)))
-            (cond
-             ((eof-object? c) (terror 'do-verb-braced "Eof inside verbatim"))
-             ((char=? c *esc-char*)
-              (toss-back-char c)
-              (let ((x (fluid-let ((*not-processing?* #t)) (get-ctl-seq))))
-                (cond
-                 ((ormap (lambda (z) (string=? x z)) '("\\ " "\\{" "\\}"))
-                  (emit (string-ref x 1)))
-                 (else
-                  (fluid-let
-                    ((*esc-char* *esc-char-std*))
-                    (do-tex-ctl-seq-completely x)))))
-              (loop nesting))
-             ((char=? c #\{) (emit #\{) (loop (+ nesting 1)))
-             ((char=? c #\})
-              (unless (= nesting 0) (emit #\}) (loop (- nesting 1))))
-             ((char=? c #\space)
-              (if *verb-visible-space?* (emit-visible-space) (emit #\space))
-              (loop nesting))
-             ((char=? c #\newline)
+  (lambda (ignore)
+    (fluid-let
+      ((*esc-char* *esc-char-verb*) (*tex-extra-letters* '()))
+      (let loop ((nesting 0))
+        (let ((c (get-actual-char)))
+          (cond
+           ((eof-object? c) (terror 'do-verb-braced "Eof inside verbatim"))
+           ((char=? c *esc-char*)
+            (toss-back-char c)
+            (let ((x (fluid-let ((*not-processing?* #t)) (get-ctl-seq))))
               (cond
-               (*verb-display?* (emit "&nbsp;") (emit-newline))
-               (*verb-visible-space?* (emit-visible-space))
-               (else (emit-newline)))
-              (loop nesting))
-             (else (emit-html-char c) (loop nesting))))))
-      (egroup)
-      (if (not display?) (emit "</code>") (begin (emit "</pre>") (do-para))))))
+               ((ormap (lambda (z) (string=? x z)) '("\\ " "\\{" "\\}"))
+                (emit (string-ref x 1)))
+               (else
+                (fluid-let
+                  ((*esc-char* *esc-char-std*))
+                  (do-tex-ctl-seq-completely x)))))
+            (loop nesting))
+           ((char=? c #\{) (emit #\{) (loop (+ nesting 1)))
+           ((char=? c #\})
+            (unless (= nesting 0) (emit #\}) (loop (- nesting 1))))
+           ((char=? c #\space)
+            (if *verb-visible-space?* (emit-visible-space) (emit #\space))
+            (loop nesting))
+           ((char=? c #\newline)
+            (cond
+             (*verb-display?* (emit "&nbsp;") (emit-newline))
+             (*verb-visible-space?* (emit-visible-space))
+             (else (emit-newline)))
+            (loop nesting))
+           (else (emit-html-char c) (loop nesting))))))))
 
 (define do-verb-delimed
-  (lambda ()
-    (let* ((d (get-actual-char)))
-      (let ((display? (munched-a-newline?)))
-        (if (not display?)
-          (emit "<code class=verbatim>")
-          (begin (do-end-para) (emit "<pre class=verbatim>")))
-        (fluid-let
-          ((*verb-display?* display?))
-          (let loop ()
-            (let ((c (get-actual-char)))
-              (cond
-               ((eof-object? c)
-                (terror 'do-verb-delimed "Eof inside verbatim"))
-               ((char=? c d) 'done)
-               ((char=? c #\space)
-                (if *verb-visible-space?* (emit-visible-space) (emit #\space))
-                (loop))
-               ((char=? c #\newline)
-                (cond
-                 (*verb-display?* (emit "&nbsp;") (emit-newline))
-                 (*verb-visible-space?* (emit-visible-space))
-                 (else (emit-newline)))
-                (loop))
-               (else (emit-html-char c) (loop))))))
-        (if (not display?)
-          (emit "</code>")
-          (begin (emit "</pre>") (do-para)))))))
+  (lambda (d)
+    (let loop ()
+      (let ((c (get-actual-char)))
+        (cond
+         ((eof-object? c) (terror 'do-verb-delimed "Eof inside verbatim"))
+         ((char=? c d) 'done)
+         ((char=? c #\space)
+          (if *verb-visible-space?* (emit-visible-space) (emit #\space))
+          (loop))
+         ((char=? c #\newline)
+          (cond
+           (*verb-display?* (emit "&nbsp;") (emit-newline))
+           (*verb-visible-space?* (emit-visible-space))
+           (else (emit-newline)))
+          (loop))
+         (else (emit-html-char c) (loop)))))))
 
 (define do-verb
   (lambda ()
@@ -5988,7 +5967,18 @@
     (bgroup)
     (fluid-let
       ((*verb-visible-space?* (eat-star)) (*ligatures?* #f))
-      ((if (char=? (snoop-actual-char) #\{) do-verb-braced do-verb-delimed)))
+      (let ((d (get-actual-char)))
+        (fluid-let
+          ((*verb-display?* (munched-a-newline?)))
+          (cond
+           (*outputting-external-title?* #f)
+           (*verb-display?* (do-end-para) (emit "<pre class=verbatim>"))
+           (else (emit "<code class=verbatim>")))
+          ((if (char=? d #\{) do-verb-braced do-verb-delimed) d)
+          (cond
+           (*outputting-external-title?* #f)
+           (*verb-display?* (emit "</pre>") (do-para))
+           (else (emit "</code>"))))))
     (egroup)))
 
 (define do-verbc
@@ -6451,13 +6441,16 @@
 
 (define do-scm
   (lambda (result?)
-    (ignorespaces)
-    (bgroup)
-    (fluid-let
-      ((*ligatures?* #f))
-      ((if (char=? (snoop-actual-char) #\{) do-scm-braced do-scm-delimed)
-       result?))
-    (egroup)))
+    (cond
+     (*outputting-external-title?* (do-verb))
+     (else
+      (ignorespaces)
+      (bgroup)
+      (fluid-let
+        ((*ligatures?* #f))
+        ((if (char=? (snoop-actual-char) #\{) do-scm-braced do-scm-delimed)
+         result?))
+      (egroup)))))
 
 (define do-scminput
   (lambda ()

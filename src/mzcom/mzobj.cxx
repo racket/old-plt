@@ -94,11 +94,15 @@ void exitHandler(int) {
 void setupSchemeEnv(void) {
   char *wrapper;
   char exeBuff[260];
+  static BOOL registered;
 
-  scheme_register_static(&env,sizeof(env)); 
-  scheme_register_static(&exn_catching_apply,sizeof(exn_catching_apply));
-  scheme_register_static(&exn_p,sizeof(exn_p));
-  scheme_register_static(&exn_message,sizeof(exn_message));
+  if (!registered) {
+    scheme_register_static(&env,sizeof(env)); 
+    scheme_register_static(&exn_catching_apply,sizeof(exn_catching_apply));
+    scheme_register_static(&exn_p,sizeof(exn_p));
+    scheme_register_static(&exn_message,sizeof(exn_message));
+    registered = TRUE;
+  }
 
   env = scheme_basic_env();
 

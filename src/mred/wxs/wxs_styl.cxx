@@ -1913,7 +1913,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(int n,  Scheme_Obje
 static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxStyleDelta *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_changeAlign(p[POFFSET+0], NULL))) {
@@ -3170,7 +3170,7 @@ static Scheme_Object *os_wxStyleListBasicStyle(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxStyleList_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxStyleList *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 

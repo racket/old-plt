@@ -67,7 +67,7 @@ os_wxObject::~os_wxObject()
 static Scheme_Object *os_wxObject_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxObject *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 

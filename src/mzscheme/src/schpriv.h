@@ -327,7 +327,7 @@ scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env,
 void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b);
 Scheme_Bucket *scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int add);
 
-void scheme_import_from_original_env(Scheme_Env *env, int syntax_only);
+void scheme_require_from_original_env(Scheme_Env *env, int syntax_only);
 
 /*========================================================================*/
 /*                              structs                                   */
@@ -1269,7 +1269,7 @@ Scheme_Object *scheme_compiled_void();
 #define BOXVAL_EXPD        7
 #define STRUCT_EXPD        8
 #define MODULE_EXPD        9
-#define IMPORT_EXPD        10
+#define REQUIRE_EXPD        10
 #define _COUNT_EXPD_       11
 
 #define scheme_register_syntax(i, fr, fl, fe, pa) \
@@ -1439,23 +1439,23 @@ typedef struct Scheme_Module
 
   Scheme_Object *modname;
 
-  Scheme_Object *et_imports; /* list of module access paths */
-  Scheme_Object *imports;    /* list of module access paths */
+  Scheme_Object *et_requires; /* list of module access paths */
+  Scheme_Object *requires;    /* list of module access paths */
 
   Scheme_Object *body;
   Scheme_Object *et_body;
 
-  Scheme_Object **exports;          /* symbols (extenal names) */
-  Scheme_Object **export_srcs;      /* module access paths, #f for self */
-  Scheme_Object **export_src_names; /* symbols (original internal names) */
-  int num_exports;
-  int num_var_exports;              /* non-syntax listed first in exports */
+  Scheme_Object **provides;          /* symbols (extenal names) */
+  Scheme_Object **provide_srcs;      /* module access paths, #f for self */
+  Scheme_Object **provide_src_names; /* symbols (original internal names) */
+  int num_provides;
+  int num_var_provides;              /* non-syntax listed first in provides */
 
-  int reexport_kernel;              /* if true, extend exports with kernel's */
+  int reprovide_kernel;              /* if true, extend provides with kernel's */
   Scheme_Object *kernel_exclusion;  /* we allow one exn, but it must be shadowed */
 
-  Scheme_Object **indirect_exports; /* symbols (internal names) */
-  int num_indirect_exports;
+  Scheme_Object **indirect_provides; /* symbols (internal names) */
+  int num_indirect_provides;
 
   Scheme_Object *self_modidx;
 

@@ -1473,19 +1473,19 @@ int module_val_MARK(void *p) {
   Scheme_Module *m = (Scheme_Module *)p;
   gcMARK(m->modname);
 
-  gcMARK(m->et_imports);
-  gcMARK(m->imports);
+  gcMARK(m->et_requires);
+  gcMARK(m->requires);
 
   gcMARK(m->body);
   gcMARK(m->et_body);
 
-  gcMARK(m->exports);
-  gcMARK(m->export_srcs);
-  gcMARK(m->export_src_names);
+  gcMARK(m->provides);
+  gcMARK(m->provide_srcs);
+  gcMARK(m->provide_src_names);
 
   gcMARK(m->kernel_exclusion);
 
-  gcMARK(m->indirect_exports);
+  gcMARK(m->indirect_provides);
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);
@@ -1499,19 +1499,19 @@ int module_val_FIXUP(void *p) {
   Scheme_Module *m = (Scheme_Module *)p;
   gcFIXUP(m->modname);
 
-  gcFIXUP(m->et_imports);
-  gcFIXUP(m->imports);
+  gcFIXUP(m->et_requires);
+  gcFIXUP(m->requires);
 
   gcFIXUP(m->body);
   gcFIXUP(m->et_body);
 
-  gcFIXUP(m->exports);
-  gcFIXUP(m->export_srcs);
-  gcFIXUP(m->export_src_names);
+  gcFIXUP(m->provides);
+  gcFIXUP(m->provide_srcs);
+  gcFIXUP(m->provide_src_names);
 
   gcFIXUP(m->kernel_exclusion);
 
-  gcFIXUP(m->indirect_exports);
+  gcFIXUP(m->indirect_provides);
   gcFIXUP(m->self_modidx);
 
   gcFIXUP(m->accessible);

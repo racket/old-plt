@@ -346,7 +346,7 @@ static Scheme_Object *os_wxBitmapGetDepth(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxBitmap *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {

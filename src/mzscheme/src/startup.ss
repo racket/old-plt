@@ -6,7 +6,7 @@
 
 ;; Replace the content of this file to get a new set of initial module
 ;; definitions, but beware that the stand-alone MzScheme program
-;; relies on some of the definitions. For example, it imports
+;; relies on some of the definitions. For example, it requires
 ;; `mzscheme' into the initial namespace. (This is not an issue
 ;; when using libmzscheme in an embedding application.)
 
@@ -102,14 +102,14 @@
 			      flat-end))))
 		e)))))
 
-  (export identifier? stx-null? stx-pair? stx-list?
-	  stx-car stx-cdr stx->list))
+  (provide identifier? stx-null? stx-pair? stx-list?
+	   stx-car stx-cdr stx->list))
 
 ;;----------------------------------------------------------------------
 ;; quasiquote
 
 (module #%qq-and-or #%kernel
-  (import-for-syntax #%stx #%kernel)
+  (require-for-syntax #%stx #%kernel)
 
   (define-syntax quasiquote
     (lambda (in-form)
@@ -304,13 +304,13 @@
 		     "bad syntax"
 		     x)))))))
 
-  (export quasiquote and or))
+  (provide quasiquote and or))
 
 ;;----------------------------------------------------------------------
 ;; cond
 
 (module #%cond #%kernel
-  (import-for-syntax #%stx #%qq-and-or #%kernel)
+  (require-for-syntax #%stx #%qq-and-or #%kernel)
 
   (define-syntax cond
     (lambda (in-form)
@@ -367,13 +367,13 @@
        in-form
        (quote-syntax here))))
 
-  (export cond))
+  (provide cond))
 
 ;;----------------------------------------------------------------------
 ;; define, when, unless, let/ec, define-struct
 
 (module #%define-et-al #%kernel
-  (import-for-syntax #%kernel #%stx #%qq-and-or #%cond)
+  (require-for-syntax #%kernel #%stx #%qq-and-or #%cond)
 
   (define-syntax define
     (lambda (code)
@@ -537,24 +537,24 @@
 	     stx
 	     (quote-syntax here)))))))
 
-  (export define when unless let/ec define-struct))
+  (provide define when unless let/ec define-struct))
 
 ;;----------------------------------------------------------------------
 ;; #%small-scheme: assembles all basic forms we have so far
 
 (module #%small-scheme #%kernel
-  (import #%stx #%qq-and-or #%cond #%define-et-al)
+  (require #%stx #%qq-and-or #%cond #%define-et-al)
 
-  (export (all-from #%qq-and-or)
-	  (all-from #%cond)
-	  (all-from #%define-et-al)))
+  (provide (all-from #%qq-and-or)
+	   (all-from #%cond)
+	   (all-from #%define-et-al)))
 
 ;;----------------------------------------------------------------------
 ;; pattern-matching utilities
 ;; based on Shriram's pattern matcher for Zodiac
 
 (module #%sc #%kernel
-  (import #%stx #%small-scheme)
+  (require #%stx #%small-scheme)
 
   ;; memq on a list of identifiers, and
   ;;  nested identifiers
@@ -1069,17 +1069,17 @@
   ;; Structure for communicating first-order pattern variable information:
   (define-struct syntax-mapping (depth valvar))
 
-  (export make-match&env get-match-vars make-pexpand
-	  make-syntax-mapping syntax-mapping?
-	  syntax-mapping-depth syntax-mapping-valvar
-	  stx-memq-pos))
+  (provide make-match&env get-match-vars make-pexpand
+	   make-syntax-mapping syntax-mapping?
+	   syntax-mapping-depth syntax-mapping-valvar
+	   stx-memq-pos))
 
 ;;----------------------------------------------------------------------
 ;; syntax-case and syntax
 
 (module #%stxcase #%kernel
-  (import #%stx #%small-scheme)
-  (import-for-syntax #%stx #%small-scheme #%sc #%kernel)
+  (require #%stx #%small-scheme)
+  (require-for-syntax #%stx #%small-scheme #%sc #%kernel)
 
   (define-syntax syntax-case*
     (lambda (x)
@@ -1295,14 +1295,14 @@
        x
        (quote-syntax here))))
 
-  (export syntax-case* syntax))
+  (provide syntax-case* syntax))
 
 ;;----------------------------------------------------------------------
 ;; syntax/loc
 
 (module #%stxloc #%kernel
-  (import #%stxcase)
-  (import-for-syntax #%kernel #%stxcase)
+  (require #%stxcase)
+  (require-for-syntax #%kernel #%stxcase)
 
   ;; Regular syntax-case
   (define-syntax syntax-case
@@ -1324,14 +1324,14 @@
 		    loc
 		    stx)))])))
 
-  (export syntax/loc syntax-case))
+  (provide syntax/loc syntax-case))
 
 ;;----------------------------------------------------------------------
 ;; with-syntax, generate-temporaries
 
 (module #%with-stx #%kernel
-  (import #%stx #%stxloc #%small-scheme)
-  (import-for-syntax #%kernel #%stxcase #%stxloc)
+  (require #%stx #%stxloc #%small-scheme)
+  (require-for-syntax #%kernel #%stxcase #%stxloc)
 
   ;; From Dybvig
   (define-syntax with-syntax
@@ -1355,15 +1355,15 @@
 				       [else (gensym)])
 				      #f #f)) l)))
 
-  (export with-syntax generate-temporaries))
+  (provide with-syntax generate-temporaries))
 
 ;;----------------------------------------------------------------------
 ;; #%stxcase-scheme: adds let-syntax, synatx-rules, and
 ;;  check-duplicate-identifier, and assembles everything we have so far
 
 (module #%stxcase-scheme #%kernel
-  (import #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
-  (import-for-syntax #%kernel #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
+  (require #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
+  (require-for-syntax #%kernel #%small-scheme #%stx #%stxcase #%with-stx #%stxloc)
 
   (define (check-duplicate-identifier names)
     (let/ec escape
@@ -1404,16 +1404,16 @@
 		       ((dummy . pattern) (syntax template))
 		       ...))))))))
 
-  (export (all-from #%stxcase) (all-from #%small-scheme)
-	  (all-from #%with-stx) (all-from #%stxloc) check-duplicate-identifier
-	  let-syntax syntax-rules))
+  (provide (all-from #%stxcase) (all-from #%small-scheme)
+	   (all-from #%with-stx) (all-from #%stxloc) check-duplicate-identifier
+	   let-syntax syntax-rules))
 
 ;;----------------------------------------------------------------------
 ;; #%more-scheme : case, do, etc. - remaining syntax
 
 (module #%more-scheme #%kernel
-  (import #%small-scheme)
-  (import-for-syntax #%kernel #%stx #%stxcase-scheme)
+  (require #%small-scheme)
+  (require-for-syntax #%kernel #%stx #%stxcase-scheme)
 
   (define (check-parameter-procedure p)
     (unless (and (procedure? p)
@@ -1631,16 +1631,15 @@
 	    (printf "cpu time: ~s real time: ~s gc time: ~s~n" cpu user gc)
 	    (apply values v)))])))
 
-  (export-indirect make-a-promise check-parameter-procedure)
-  (export case do delay force promise?
-	  parameterize with-handlers set!-values
-	  let/cc let-struct fluid-let time))
+  (provide case do delay force promise?
+	   parameterize with-handlers set!-values
+	   let/cc let-struct fluid-let time))
 
 ;;----------------------------------------------------------------------
 ;; #%misc : file utilities, etc. - remaining functions
 
 (module #%misc #%kernel
-  (import #%more-scheme #%small-scheme)
+  (require #%more-scheme #%small-scheme)
   
   (define rationalize
     (letrec ([check (lambda (x) 
@@ -2070,48 +2069,48 @@
 
   (define (not-break-exn? x) (not (exn:misc:user-break? x)))
 
-  (export rationalize 
-	  read-eval-print-loop
-	  load/cd
-	  load-relative load-relative-extension
-	  path-list-string->path-list find-executable-path
-	  collection-path load-library load-relative-library load/use-compiled
-	  simple-return-primitive? port? not-break-exn?
-	  standard-module-name-resolver find-library-collection-paths))
+  (provide rationalize 
+	   read-eval-print-loop
+	   load/cd
+	   load-relative load-relative-extension
+	   path-list-string->path-list find-executable-path
+	   collection-path load-library load-relative-library load/use-compiled
+	   simple-return-primitive? port? not-break-exn?
+	   standard-module-name-resolver find-library-collection-paths))
 
 ;;----------------------------------------------------------------------
 ;; #%stxrules-body
 
 (module #%stxrules-body #%kernel
-  (import #%stxcase-scheme)
-  (import-for-syntax #%kernel #%stx)
+  (require #%stxcase-scheme)
+  (require-for-syntax #%kernel #%stx)
 
   (define-syntax syntax-rules-module-begin
     (lambda (stx)
       (datum->syntax
        (list* (quote-syntax #%module-begin)
 	      (quote-syntax
-	       (import-for-syntax mzscheme))
+	       (require-for-syntax mzscheme))
 	      (stx-cdr stx))
        stx
        (quote-syntax here))))
 
-  (export syntax-rules-module-begin))
+  (provide syntax-rules-module-begin))
 
 ;;----------------------------------------------------------------------
-;; mzscheme: export everything
+;; mzscheme: provide everything
 
 (module mzscheme #%kernel
-  (import #%more-scheme)
-  (import #%misc)
-  (import #%stxcase-scheme)
-  (import #%stx)
-  (import #%stxrules-body)
+  (require #%more-scheme)
+  (require #%misc)
+  (require #%stxcase-scheme)
+  (require #%stx)
+  (require #%stxrules-body)
 
-  (export (all-from #%more-scheme)
-	  (all-from #%misc)
-	  (all-from #%stxcase-scheme)
-	  (all-from #%stx)
-	  (all-from-except #%kernel #%module-begin)
-	  (rename syntax-rules-module-begin #%module-begin)
-	  (rename #%module-begin #%plain-module-begin)))
+  (provide (all-from #%more-scheme)
+	   (all-from #%misc)
+	   (all-from #%stxcase-scheme)
+	   (all-from #%stx)
+	   (all-from-except #%kernel #%module-begin)
+	   (rename syntax-rules-module-begin #%module-begin)
+	   (rename #%module-begin #%plain-module-begin)))

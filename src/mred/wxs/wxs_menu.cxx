@@ -433,7 +433,7 @@ static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMenu_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMenu *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   nstring x0 INIT_NULLED_OUT;
@@ -747,7 +747,7 @@ static Scheme_Object *os_wxMenuBarAppend(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMenuBar_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMenuBar *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -963,7 +963,7 @@ static Scheme_Object *os_wxsMenuItemId(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxsMenuItem_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxsMenuItem *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 

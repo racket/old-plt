@@ -785,7 +785,7 @@ static Scheme_Object *os_wxPanelGetCursor(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxPanel_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxPanel *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0))) {
@@ -1666,7 +1666,7 @@ static Scheme_Object *os_wxDialogBoxOnActivate(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxDialogBox_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxDialogBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxWindow* x0 INIT_NULLED_OUT;

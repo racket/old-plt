@@ -1063,7 +1063,7 @@ static Scheme_Object *os_wxCanvasOnPaint(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxCanvas_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxCanvas *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxPanel* x0 INIT_NULLED_OUT;

@@ -45,12 +45,12 @@ static char *make_load_cd(char *file)
   return s;
 }
 
-static char *make_import(char *file)
+static char *make_require(char *file)
 {
   char *s;
   
   s = (char *)malloc(strlen(file) + 20);
-  strcpy(s, "(import (file \"");
+  strcpy(s, "(require (file \"");
   strcat(s, file);
   strcat(s, "\"))");
   return s;
@@ -61,7 +61,7 @@ static char *make_require_lib(const char *file, const char *coll)
   char *s;
   
   s = (char *)malloc(strlen(file) + strlen(coll) + 31);
-  strcpy(s, "(import (lib \"");
+  strcpy(s, "(require (lib \"");
   strcat(s, file);
   strcat(s, "\" \"");
   strcat(s, coll);
@@ -178,10 +178,10 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
   return exit_val;
 }
 
-static void initial_imports(Scheme_Env *env)
+static void initial_requires(Scheme_Env *env)
 {
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_eval_string("(begin (import mzscheme) (import-for-syntax mzscheme))", 
+    scheme_eval_string("(begin (require mzscheme) (require-for-syntax mzscheme))", 
 		       env);
     scheme_eval_string("(current-module-name-resolver standard-module-name-resolver)",
 		       env);
@@ -430,7 +430,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  }
 	  argv++;
 	  --argc;
-	  se = make_import(argv[0]);
+	  se = make_require(argv[0]);
 	  evals_and_loads[num_enl] = se;
 	  is_load[num_enl++] = 0;
 	  break;
@@ -455,7 +455,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  while (argc > 1) {
 	    argv++;
 	    --argc;
-	    se = make_import(argv[0]);
+	    se = make_require(argv[0]);
 	    evals_and_loads[num_enl] = se;
 	    is_load[num_enl++] = 0;
 	  }
@@ -592,7 +592,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 
   global_env = mk_basic_env();
 
-  initial_imports(global_env);
+  initial_requires(global_env);
 
   sch_argv = scheme_make_vector(argc, scheme_null);
   for (i = 0; i < argc; i++) {
@@ -615,7 +615,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 #endif /* NO_FILE_SYSTEM_UTILS */
 
 #ifndef MZSCHEME_CMD_LINE  
-  scheme_eval_string("(import (lib \"mred.ss\" \"mred\"))", 
+  scheme_eval_string("(require (lib \"mred.ss\" \"mred\"))", 
 		     global_env);
   scheme_eval_string("(with-handlers ([void void])"
 		     "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
@@ -660,12 +660,12 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -e <expr> : Evaluates <expr> after " PROGRAM " starts.\n"
 	 "  -f <file> : Loads <file> after " PROGRAM " starts.\n"
 	 "  -d <file> : Load/cds <file> after " PROGRAM " starts.\n"
-	 "  -i <file> : Imports <file> after " PROGRAM " starts.\n"
+	 "  -i <file> : Requires <file> after " PROGRAM " starts.\n"
 	 "  -F : Loads all remaining arguments after " PROGRAM " starts.\n"
 	 "  -D : Load/cds all remaining arguments after " PROGRAM " starts.\n"
-	 "  -I : Imports all remaining arguments after " PROGRAM " starts.\n"
-	 "  -l <file> : Same as -e '(import (lib \"<file>\"))'.\n"
-	 "  -L <file> <coll> : Same as -e '(import (lib \"<file>\" \"<coll>\"))'.\n"
+	 "  -I : Requires all remaining arguments after " PROGRAM " starts.\n"
+	 "  -l <file> : Same as -e '(require (lib \"<file>\"))'.\n"
+	 "  -L <file> <coll> : Same as -e '(require (lib \"<file>\" \"<coll>\"))'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -t, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 # ifdef CMDLINE_STDIO_FLAG

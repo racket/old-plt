@@ -135,10 +135,10 @@ Scheme_Env *scheme_basic_env()
     scheme_init_error_escape_proc(scheme_current_thread);
 
     env = scheme_make_empty_env();
-    scheme_import_from_original_env(env, 0);
+    scheme_require_from_original_env(env, 0);
     
     scheme_prepare_exp_env(env);
-    scheme_import_from_original_env(env->exp_env, 0);
+    scheme_require_from_original_env(env->exp_env, 0);
 
     scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env); 
     scheme_init_port_config();
@@ -245,10 +245,10 @@ Scheme_Env *scheme_basic_env()
   make_init_env();
 
   env = scheme_make_empty_env();
-  scheme_import_from_original_env(env, 0);
+  scheme_require_from_original_env(env, 0);
 
   scheme_prepare_exp_env(env);
-  scheme_import_from_original_env(env->exp_env, 0);
+  scheme_require_from_original_env(env->exp_env, 0);
 
   scheme_add_embedded_builtins(env);
 
@@ -1100,7 +1100,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
       if (!genv) {
 	if (env->genv->phase) {
-	  /* The failure might be due a laziness in imported-syntax
+	  /* The failure might be due a laziness in required-syntax
 	     execution. Force all laziness at the prior level 
 	     and try again. */
 	  scheme_module_force_lazy(env->genv);
@@ -1108,7 +1108,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	}
 
 	if (!genv) {
-	  scheme_wrong_syntax("import", NULL, srcsym, 
+	  scheme_wrong_syntax("require", NULL, srcsym, 
 			      "broken compiled code (stat-dist, phase %d): cannot find module %S",
 			      env->genv->phase, modname /*,  scheme_syntax_to_datum(srcsym, 1, NULL) */);
 	  return NULL;
@@ -1144,7 +1144,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   if (modname && (flags & SCHEME_SETTING)) {
     if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
       symbol = NULL;
-    scheme_wrong_syntax("set!", symbol, srcsym, "cannot mutate imported variable");
+    scheme_wrong_syntax("set!", symbol, srcsym, "cannot mutate module-required variable");
   }
 
   if (!modname  && (flags & SCHEME_SETTING) && genv->module) {

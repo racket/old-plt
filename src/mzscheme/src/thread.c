@@ -3119,7 +3119,7 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   /* Copy from original namespace: */
   env = scheme_make_empty_env();
   if (!empty) {
-    scheme_import_from_original_env(env, 1);
+    scheme_require_from_original_env(env, 1);
     scheme_copy_from_original_env(env);
   }
   scheme_install_initial_module_set(env);

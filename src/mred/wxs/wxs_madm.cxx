@@ -1013,7 +1013,7 @@ static Scheme_Object *os_wxMediaCanvasSetMedia(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaCanvas *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxPanel* x0 INIT_NULLED_OUT;
@@ -1958,7 +1958,7 @@ static Scheme_Object *os_wxMediaAdminGetDC(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaAdmin_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaAdmin *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -3059,7 +3059,7 @@ static Scheme_Object *os_wxSnipAdminGetMedia(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxSnipAdmin_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxSnipAdmin *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -3482,7 +3482,7 @@ static Scheme_Object *objscheme_wxSnipClass_Setversion(int n,  Scheme_Object *p[
 static Scheme_Object *os_wxSnipClass_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxSnipClass *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -4298,7 +4298,7 @@ static Scheme_Object *os_wxKeymapGetDoubleClickInterval(int n,  Scheme_Object *p
 static Scheme_Object *os_wxKeymap_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxKeymap *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -4619,7 +4619,7 @@ static Scheme_Object *os_wxMediaWordbreakMapSetMap(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaWordbreakMap *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 

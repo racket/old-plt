@@ -622,19 +622,19 @@ module_val {
   Scheme_Module *m = (Scheme_Module *)p;
   gcMARK(m->modname);
 
-  gcMARK(m->et_imports);
-  gcMARK(m->imports);
+  gcMARK(m->et_requires);
+  gcMARK(m->requires);
 
   gcMARK(m->body);
   gcMARK(m->et_body);
 
-  gcMARK(m->exports);
-  gcMARK(m->export_srcs);
-  gcMARK(m->export_src_names);
+  gcMARK(m->provides);
+  gcMARK(m->provide_srcs);
+  gcMARK(m->provide_src_names);
 
   gcMARK(m->kernel_exclusion);
 
-  gcMARK(m->indirect_exports);
+  gcMARK(m->indirect_provides);
   gcMARK(m->self_modidx);
 
   gcMARK(m->accessible);

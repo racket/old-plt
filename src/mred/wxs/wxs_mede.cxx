@@ -7376,7 +7376,7 @@ static Scheme_Object *os_wxMediaEditCopySelf(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaEdit_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaEdit *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   nnfloat x0;

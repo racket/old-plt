@@ -936,7 +936,7 @@ static Scheme_Object *os_wxRadioBoxOnKillFocus(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxRadioBox_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxRadioBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+8)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0)) && (SCHEME_NULLP(p[POFFSET+1]) || WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], NULL))) && (XC_SCHEME_NULLP(p[POFFSET+2]) || WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+2], NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+3], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+4], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+5], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+6], NULL)) && (SCHEME_LISTP(p[POFFSET+7]) && (XC_SCHEME_NULLP(p[POFFSET+7]) || WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap((SCHEME_CAR(p[POFFSET+7])), NULL, 0))))) {

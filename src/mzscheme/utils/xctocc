@@ -1608,7 +1608,7 @@ sub PrintFunction
 	print "\n{\n";
 
 	print "  SETUP_PRE_VAR_STACK(1);\n";
-	print "  PRE_VAR_STACK_PUSH(1, p);\n";
+	print "  PRE_VAR_STACK_PUSH(0, p);\n";
 	
 	$pre_var_stack = "PRE_";
 	print "  ${newclass} *realobj INIT_NULLED_OUT;\n";

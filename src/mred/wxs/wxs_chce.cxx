@@ -774,7 +774,7 @@ static Scheme_Object *os_wxChoiceOnKillFocus(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxChoice_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxChoice *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxPanel* x0 INIT_NULLED_OUT;

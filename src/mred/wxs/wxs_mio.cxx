@@ -509,7 +509,7 @@ static Scheme_Object *os_wxMediaStreamInBaseTell(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaStreamInBase *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -880,7 +880,7 @@ static Scheme_Object *os_wxMediaStreamOutBaseTell(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaStreamOutBase *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -1022,7 +1022,7 @@ os_wxMediaStreamInStringBase::~os_wxMediaStreamInStringBase()
 static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaStreamInStringBase *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   string x0 INIT_NULLED_OUT;
@@ -1186,7 +1186,7 @@ static Scheme_Object *os_wxMediaStreamOutStringBaseGetString(int n,  Scheme_Obje
 static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaStreamOutStringBase *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -1678,7 +1678,7 @@ static Scheme_Object *os_wxMediaStreamInGet(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaStreamIn *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxMediaStreamInBase* x0 INIT_NULLED_OUT;
@@ -2069,7 +2069,7 @@ static Scheme_Object *os_wxMediaStreamOutPut(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMediaStreamOut *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxMediaStreamOutBase* x0 INIT_NULLED_OUT;

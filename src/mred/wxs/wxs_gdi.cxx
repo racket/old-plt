@@ -464,7 +464,7 @@ static Scheme_Object *os_wxFontGetFamily(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxFont_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxFont *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+1], NULL))) {
@@ -753,7 +753,7 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxFontList_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxFontList *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -1047,7 +1047,7 @@ static Scheme_Object *os_wxColourCopyFrom(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxColour_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxColour *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
@@ -1465,7 +1465,7 @@ static Scheme_Object *objscheme_wxPoint_Sety(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxPoint_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxPoint *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
@@ -1892,7 +1892,7 @@ static Scheme_Object *os_wxBrushGetColour(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxBrush_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxBrush *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
@@ -2138,7 +2138,7 @@ static Scheme_Object *os_wxBrushListFindOrCreateBrush(int n,  Scheme_Object *p[]
 static Scheme_Object *os_wxBrushList_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxBrushList *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -2746,7 +2746,7 @@ static Scheme_Object *os_wxPenGetWidthF(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxPen_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxPen *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
@@ -3007,7 +3007,7 @@ static Scheme_Object *os_wxPenListFindOrCreatePen(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxPenList_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxPenList *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -3250,7 +3250,7 @@ static Scheme_Object *os_wxCursorOk(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxCursor_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxCursor *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(istype_symset_cursor(p[POFFSET+0], NULL))) {
@@ -3856,7 +3856,7 @@ static Scheme_Object *os_wxRegionGetDC(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxRegion_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxRegion *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxDC* x0 INIT_NULLED_OUT;

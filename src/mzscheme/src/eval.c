@@ -1024,7 +1024,7 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
   menv = scheme_module_access(modname, info);
   
   if (!menv && info->phase) {
-    /* The failure might be due a laziness in imported-syntax
+    /* The failure might be due a laziness in required-syntax
        execution. Force all laziness at the prior level 
        and try again. */
     scheme_module_force_lazy(info);
@@ -1338,7 +1338,7 @@ static void *compile_k(void)
   if (!SCHEME_STXP(form))
     form = scheme_datum_to_syntax(form, scheme_false, scheme_false, 1, 0);
 
-  /* Renamings for imports: */
+  /* Renamings for requires: */
   if (env->genv->rename)
     form = scheme_add_rename(form, env->genv->rename);
   if (env->genv->exp_env && env->genv->exp_env->rename)
@@ -3440,7 +3440,7 @@ static void *expand_k(void)
     obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false, 1, 0);
 
   if (rename) {
-    /* Renamings for imports: */
+    /* Renamings for requires: */
     if (env->genv->rename)
       obj = scheme_add_rename(obj, env->genv->rename);
     if (env->genv->exp_env && env->genv->exp_env->rename)

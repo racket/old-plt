@@ -1750,7 +1750,7 @@ static Scheme_Object *os_wxMemoryDCGetPixel(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMemoryDC_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxMemoryDC *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -1894,7 +1894,7 @@ os_wxPostScriptDC::~os_wxPostScriptDC()
 static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxPostScriptDC *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   Bool x0;
@@ -2081,7 +2081,7 @@ os_basePrinterDC::~os_basePrinterDC()
 static Scheme_Object *os_basePrinterDC_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_basePrinterDC *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxWindow* x0 INIT_NULLED_OUT;

@@ -575,7 +575,7 @@ static Scheme_Object *os_wxCheckBoxOnKillFocus(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(1, p);
+  PRE_VAR_STACK_PUSH(0, p);
   os_wxCheckBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= (POFFSET+3)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0)) && (SCHEME_NULLP(p[POFFSET+1]) || WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+2], NULL, 0))) {

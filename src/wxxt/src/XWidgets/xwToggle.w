@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 # 
-# $Id: xwToggle.w,v 1.3 1998/11/12 18:14:48 mflatt Exp $
+# $Id: xwToggle.w,v 1.4 1999/07/21 23:37:36 mflatt Exp $
 
 @class XfwfToggle(XfwfButton)  @file=xwToggle
 
@@ -198,12 +198,12 @@ button and then possibly adds a tick mark.
 	XtWarning("XfwfToggle has wrong indicatorType, using square!");
     case XfwfSquareIndicator:
 	Xaw3dDrawToggle(XtDisplay($), XtWindow($),
-	   	        $lightgc, $darkgc, $indicator_gc, $rv_gc, $gc,
+	   	        $lightgc, $darkgc, $indicator_gc, NULL, $gc,
 		        x, y, $indicatorSize, 2, $on);
 	break;
     case XfwfDiamondIndicator:
 	Xaw3dDrawRadio(XtDisplay($), XtWindow($),
-	   	       $lightgc, $darkgc, $indicator_gc, $rv_gc, $gc,
+	   	       $lightgc, $darkgc, $indicator_gc, NULL, $gc,
 		       x, y, $indicatorSize, 2, $on);
 	break;
     }

@@ -3,22 +3,18 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 264 "XWidgets/xwToggle.w"
 #include <xwTools3d.h>
 #include <./xwToggleP.h>
-#line 76 "XWidgets/xwToggle.w"
 static void toggle(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 87 "XWidgets/xwToggle.w"
 static void switch_on(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 100 "XWidgets/xwToggle.w"
 static void switch_off(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -40,58 +36,47 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 126 "XWidgets/xwToggle.w"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 138 "XWidgets/xwToggle.w"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 143 "XWidgets/xwToggle.w"
 static void realize(
 #if NeedFunctionPrototypes
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 154 "XWidgets/xwToggle.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 186 "XWidgets/xwToggle.w"
 static void _expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 216 "XWidgets/xwToggle.w"
 static void create_indicator_gc(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 251 "XWidgets/xwToggle.w"
 static void compute_indicatorcolor(
 #if NeedFunctionPrototypes
 Widget,int ,XrmValue *
 #endif
 );
-#line 216 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 216 "XWidgets/xwToggle.w"
 static void create_indicator_gc(Widget self)
 #else
-#line 216 "XWidgets/xwToggle.w"
 static void create_indicator_gc(self)Widget self;
 #endif
-#line 217 "XWidgets/xwToggle.w"
 {
     XtGCMask mask = 0;
     XGCValues values;
@@ -125,16 +110,12 @@ static void create_indicator_gc(self)Widget self;
     }
     ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = XtGetGC(self, mask, &values);
 }
-#line 251 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 251 "XWidgets/xwToggle.w"
 static void compute_indicatorcolor(Widget self,int  offset,XrmValue * value)
 #else
-#line 251 "XWidgets/xwToggle.w"
 static void compute_indicatorcolor(self,offset,value)Widget self;int  offset;XrmValue * value;
 #endif
-#line 252 "XWidgets/xwToggle.w"
 {
     static Pixel color;
 #if 1
@@ -146,19 +127,12 @@ static void compute_indicatorcolor(self,offset,value)Widget self;int  offset;Xrm
 }
 
 static XtResource resources[] = {
-#line 33 "XWidgets/xwToggle.w"
 {XtNonCallback,XtCOnCallback,XtRCallback,sizeof(((XfwfToggleRec*)NULL)->xfwfToggle.onCallback),XtOffsetOf(XfwfToggleRec,xfwfToggle.onCallback),XtRImmediate,(XtPointer)NULL },
-#line 39 "XWidgets/xwToggle.w"
 {XtNoffCallback,XtCOffCallback,XtRCallback,sizeof(((XfwfToggleRec*)NULL)->xfwfToggle.offCallback),XtOffsetOf(XfwfToggleRec,xfwfToggle.offCallback),XtRImmediate,(XtPointer)NULL },
-#line 44 "XWidgets/xwToggle.w"
 {XtNon,XtCOn,XtRBoolean,sizeof(((XfwfToggleRec*)NULL)->xfwfToggle.on),XtOffsetOf(XfwfToggleRec,xfwfToggle.on),XtRImmediate,(XtPointer)False },
-#line 51 "XWidgets/xwToggle.w"
 {XtNindicatorSize,XtCIndicatorSize,XtRDimension,sizeof(((XfwfToggleRec*)NULL)->xfwfToggle.indicatorSize),XtOffsetOf(XfwfToggleRec,xfwfToggle.indicatorSize),XtRImmediate,(XtPointer)0 },
-#line 53 "XWidgets/xwToggle.w"
 {XtNindicatorType,XtCIndicatorType,XtRIndicatorType,sizeof(((XfwfToggleRec*)NULL)->xfwfToggle.indicatorType),XtOffsetOf(XfwfToggleRec,xfwfToggle.indicatorType),XtRImmediate,(XtPointer)XfwfSquareIndicator },
-#line 55 "XWidgets/xwToggle.w"
 {XtNindicatorColor,XtCIndicatorColor,XtRPixel,sizeof(((XfwfToggleRec*)NULL)->xfwfToggle.indicatorColor),XtOffsetOf(XfwfToggleRec,xfwfToggle.indicatorColor),XtRCallProc,(XtPointer)compute_indicatorcolor },
-#line 59 "XWidgets/xwToggle.w"
 {XtNframeWidth,XtCFrameWidth,XtRDimension,sizeof(((XfwfToggleRec*)NULL)->xfwfFrame.frameWidth),XtOffsetOf(XfwfToggleRec,xfwfFrame.frameWidth),XtRImmediate,(XtPointer)0 },
 };
 
@@ -238,7 +212,6 @@ XtInherit_set_label,
 };
 WidgetClass xfwfToggleWidgetClass = (WidgetClass) &xfwfToggleClassRec;
 /*ARGSUSED*/
-#line 76 "XWidgets/xwToggle.w"
 static void toggle(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     XtVaSetValues(self, "on", !((XfwfToggleWidget)self)->xfwfToggle.on, NULL);
@@ -246,7 +219,6 @@ static void toggle(self,event,params,num_params)Widget self;XEvent*event;String*
 }
 
 /*ARGSUSED*/
-#line 87 "XWidgets/xwToggle.w"
 static void switch_on(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if (! ((XfwfToggleWidget)self)->xfwfToggle.on) {
@@ -256,7 +228,6 @@ static void switch_on(self,event,params,num_params)Widget self;XEvent*event;Stri
 }
 
 /*ARGSUSED*/
-#line 100 "XWidgets/xwToggle.w"
 static void switch_off(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if (((XfwfToggleWidget)self)->xfwfToggle.on) {
@@ -281,16 +252,12 @@ WidgetClass class;
   if (class == xfwfToggleWidgetClass) return;
   super = (XfwfToggleWidgetClass)class->core_class.superclass;
 }
-#line 126 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 126 "XWidgets/xwToggle.w"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 126 "XWidgets/xwToggle.w"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 127 "XWidgets/xwToggle.w"
 {
     ((XfwfToggleWidget)self)->xfwfToggle.saveLeftMargin = ((XfwfToggleWidget)self)->xfwfLabel.leftMargin;
 
@@ -301,43 +268,31 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 
     XtVaSetValues(self, XtNleftMargin, 2 * ((XfwfToggleWidget)self)->xfwfLabel.leftMargin + ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, NULL);
 }
-#line 138 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 138 "XWidgets/xwToggle.w"
 static void destroy(Widget self)
 #else
-#line 138 "XWidgets/xwToggle.w"
 static void destroy(self)Widget self;
 #endif
-#line 139 "XWidgets/xwToggle.w"
 {
    if (((XfwfToggleWidget)self)->xfwfToggle.indicator_gc) XtReleaseGC(self, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc); ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = NULL;
 }
-#line 143 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 143 "XWidgets/xwToggle.w"
 static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attributes)
 #else
-#line 143 "XWidgets/xwToggle.w"
 static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
 #endif
-#line 144 "XWidgets/xwToggle.w"
 {
     xfwfButtonClassRec.core_class.realize(self, mask, attributes);
     create_indicator_gc(self);
 }
-#line 154 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 154 "XWidgets/xwToggle.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 154 "XWidgets/xwToggle.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 155 "XWidgets/xwToggle.w"
 {
     Boolean redraw = False;
 
@@ -365,16 +320,12 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     }
     return redraw;
 }
-#line 186 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 186 "XWidgets/xwToggle.w"
 static void _expose(Widget self,XEvent * event,Region  region)
 #else
-#line 186 "XWidgets/xwToggle.w"
 static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 187 "XWidgets/xwToggle.w"
 {
     Position x, y;
     int w, h;
@@ -389,15 +340,13 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
 	XtWarning("XfwfToggle has wrong indicatorType, using square!");
     case XfwfSquareIndicator:
 	Xaw3dDrawToggle(XtDisplay(self), XtWindow(self),
-	   	        ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, ((XfwfToggleWidget)self)->xfwfLabel.rv_gc, ((XfwfToggleWidget)self)->xfwfLabel.gc,
+	   	        ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, NULL, ((XfwfToggleWidget)self)->xfwfLabel.gc,
 		        x, y, ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, 2, ((XfwfToggleWidget)self)->xfwfToggle.on);
 	break;
     case XfwfDiamondIndicator:
 	Xaw3dDrawRadio(XtDisplay(self), XtWindow(self),
-	   	       ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, ((XfwfToggleWidget)self)->xfwfLabel.rv_gc, ((XfwfToggleWidget)self)->xfwfLabel.gc,
+	   	       ((XfwfToggleWidget)self)->xfwfFrame.lightgc, ((XfwfToggleWidget)self)->xfwfFrame.darkgc, ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc, NULL, ((XfwfToggleWidget)self)->xfwfLabel.gc,
 		       x, y, ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize, 2, ((XfwfToggleWidget)self)->xfwfToggle.on);
 	break;
     }
 }
-#line 22 "XWidgets/xwToggle.w"
-#line 24 "XWidgets/xwToggle.w"

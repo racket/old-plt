@@ -164,32 +164,39 @@ the label to it.
     if (! XtIsRealized($)) return;
     #_expose($, event, region);
     if ($label) {
+        GC agc;
+
 	if (!$textgc) make_textgc($);
+	
 	$compute_inside($, &x, &y, &w, &h);
 
 	w = max(0, w);
 	h = max(0, h);
-	
+
+	if ($drawgray && !$graygc)
+	  make_graygc($);
+
+	agc = (($drawgray && wx_enough_colors(XtScreen($))) ? $graygc : $textgc);
+
 	switch ($alignment) {
 	case XfwfTop:
-	  XfwfDrawImageString(XtDisplay($), XtWindow($), $textgc,
+	  XfwfDrawImageString(XtDisplay($), XtWindow($), agc,
 			      x, $font->ascent,
 			      $label, strlen($label), NULL, $font);
 	  break;
 	case XfwfTopLeft:
-	  XfwfDrawImageString(XtDisplay($), XtWindow($), $textgc,
+	  XfwfDrawImageString(XtDisplay($), XtWindow($), agc,
 			      0, y+$font->ascent,
 			      $label, strlen($label), NULL, $font);
 	  break;
 	case XfwfLeft:
-	  XfwfDrawImageString(XtDisplay($), XtWindow($), $textgc,
+	  XfwfDrawImageString(XtDisplay($), XtWindow($), agc,
 			      0, y+(h-$labelHeight)/2+$font->ascent,
 			      $label, strlen($label), NULL, $font);
 	  break;
 	}
 
-	if ($drawgray) {
-	  if (!$graygc) make_graygc($);
+	if ($drawgray && !wx_enough_colors(XtScreen($))) {
 	  XFillRectangle(XtDisplay($), XtWindow($), $graygc, 
 			 0, y, w + x, h);
 	}
@@ -442,10 +449,23 @@ label.
     XGCValues values;
 
     if ($graygc != NULL) XtReleaseGC($, $graygc);
-    values.foreground = $background_pixel;
-    values.stipple = GetGray($);
-    values.fill_style = FillStippled;
-    mask = GCForeground | GCStipple | GCFillStyle;
+
+   if (!wx_enough_colors(XtScreen($))) {
+      /* A GC to draw over text: */
+      values.foreground = $background_pixel;
+      values.stipple = GetGray($);
+      values.fill_style = FillStippled;
+      mask = GCForeground | GCStipple | GCFillStyle;
+    } else {
+      /* A GC for drawing gray text: */
+      static Pixel color;
+      values.background = $background_pixel;
+      $darker_color($, $background_pixel, &color);
+      values.foreground = color;
+      values.font = $font->fid;
+      mask = GCFont | GCBackground | GCForeground;
+    }
+ 
     $graygc = XtGetGC($, mask, &values);
 }
 

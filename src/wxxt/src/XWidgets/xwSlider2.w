@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwSlider2.w,v 1.5 1999/08/28 16:14:52 mflatt Exp $
+# $Id: xwSlider2.w,v 1.6 2001/07/25 16:09:40 mflatt Exp $
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
@@ -279,7 +279,6 @@ differently.  The two new GC's are also initialized.
     $drag_in_progress = False;
     create_thumbgc($);
     create_gc($);
-    create_graygc($);
     $thumblightgc = NULL; create_thumblightgc($);
     $thumbdarkgc = NULL; create_thumbdarkgc($);
 }
@@ -287,8 +286,6 @@ differently.  The two new GC's are also initialized.
 @proc destroy
 {
   if ($gc) XtReleaseGC($, $gc); $gc = NULL;
-  if ($rv_gc) XtReleaseGC($, $rv_gc); $rv_gc = NULL;
-  if ($graygc) XtReleaseGC($, $graygc); $graygc = NULL;
   if ($thumblightgc) XtReleaseGC($, $thumblightgc); $thumblightgc = NULL;
   if ($thumbdarkgc) XtReleaseGC($, $thumbdarkgc); $thumbdarkgc = NULL;
 }
@@ -603,32 +600,6 @@ position of the thumb.
     values.font = $font->fid;
     mask = GCFont | GCBackground | GCForeground;
     $gc = XtGetGC($, mask, &values);
-
-    if ($rv_gc != NULL) XtReleaseGC($, $rv_gc);
-    values.foreground = $thumbColor;
-    values.background = $foreground;
-    values.font = $font->fid;
-    mask = GCFont | GCBackground | GCForeground;
-    $rv_gc = XtGetGC($, mask, &values);
-}
-
-@ The |create_graygc| routine creates the GC that grays the label in
-the thumb.
-
-@proc create_graygc($)
-{
-    XtGCMask mask;
-    XGCValues values;
-
-    if ($graygc != NULL) XtReleaseGC($, $graygc);
-    values.foreground = $thumbColor;
-    values.stipple =
-	XCreateBitmapFromData(XtDisplay($),
-			      RootWindowOfScreen(XtScreen($)),
-			      gray_bits, gray_width, gray_height);
-    values.fill_style = FillStippled;
-    mask = GCForeground | GCStipple | GCFillStyle;
-    $graygc = XtGetGC($, mask, &values);
 }
 
 @ |create_thumbgc| creates the GC that draw the background in the

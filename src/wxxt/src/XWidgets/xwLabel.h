@@ -55,16 +55,6 @@ _XFUNCPROTOBEGIN
 #define XtRPixel "Pixel"
 #endif
 
-#ifndef XtNhlForeground
-#define XtNhlForeground "hlForeground"
-#endif
-#ifndef XtCHlForeground
-#define XtCHlForeground "HlForeground"
-#endif
-#ifndef XtRPixel
-#define XtRPixel "Pixel"
-#endif
-
 #ifndef XtNalignment
 #define XtNalignment "alignment"
 #endif
@@ -140,26 +130,6 @@ _XFUNCPROTOBEGIN
 #endif
 #ifndef XtCRvLength
 #define XtCRvLength "RvLength"
-#endif
-#ifndef XtRInt
-#define XtRInt "Int"
-#endif
-
-#ifndef XtNhlStart
-#define XtNhlStart "hlStart"
-#endif
-#ifndef XtCHlStart
-#define XtCHlStart "HlStart"
-#endif
-#ifndef XtRInt
-#define XtRInt "Int"
-#endif
-
-#ifndef XtNhlLength
-#define XtNhlLength "hlLength"
-#endif
-#ifndef XtCHlLength
-#define XtCHlLength "HlLength"
 #endif
 #ifndef XtRInt
 #define XtRInt "Int"

@@ -33,7 +33,7 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, line,
   
   if (!length)
     return;
- 
+
   tab = tx = 0;
   for (p = string; length; )
     {
@@ -228,3 +228,14 @@ strnchr(s, c, n)
 		if (*s == c) return s; else ++s;
 	return NULL;
 }
+
+int wx_enough_colors(Screen *s)
+{
+  if (DefaultDepthOfScreen(s) > 8)
+    return 1;
+  else
+    return 0;
+}
+
+
+

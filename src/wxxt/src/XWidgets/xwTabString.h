@@ -28,3 +28,5 @@ extern char *	strnchr();
 
 #endif
 
+
+extern int wx_enough_colors(Screen *s);

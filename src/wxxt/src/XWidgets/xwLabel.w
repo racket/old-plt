@@ -1,6 +1,5 @@
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwLabel.w,v 1.4 1998/12/06 05:06:18 mflatt Exp $
 
 @class XfwfLabel (XfwfBoard) @file=xwLabel
 
@@ -41,10 +40,9 @@ within the label.
 	@var Pixmap pixmap = 0
 
 @ The foreground color is the color used to draw the
-text. |hlForeground| is the foreground for highlighted text.
+text.
 
 	@var Pixel foreground = <String> XtDefaultForeground
-	@var Pixel hlForeground = <String> XtDefaultForeground
 
 @ The text can be aligned in the widget in nine ways: left, right or
 center, combined with top, center or bottom. Symbolic constants
@@ -103,12 +101,6 @@ turned off.
 
 	@var traversalOn = False
 
-@ The start and length of the highlighted portion are set with the
-resources |hlStart| and |hlLength|.
-
-	@var int hlStart = 0
-	@var int hlLength = 0
-
         @var Boolean drawgray = FALSE
 
 
@@ -126,14 +118,6 @@ private variable by the |set_values| and |initialize| methods.
 @ For drawing the text, this GC is used.
 
 	@var GC gc
-
-@ This GC is for the text that is drawn in reverse video.
-
-	@var GC rv_gc
-
-@ The GC for the highlighted portion of the text
-
-	@var GC hl_gc
 
 @ For graying out the text, another GC is used.
 
@@ -205,7 +189,6 @@ updated.
 	if ($label != NULL) need_count = True;
     }
     if ($foreground != $old$foreground
- 	|| $hlForeground != $hlForeground
 	|| $background_pixel != $old$background_pixel) {
 	make_gc($);
 	if ($label != NULL || $pixmap != 0) need_redisplay = True;
@@ -220,10 +203,6 @@ updated.
     if (($sensitive != $old$sensitive)
         || ($drawgray != $old$drawgray))
 	if ($label != NULL || $pixmap != 0) need_redisplay = True;
-
-    if ($rvStart != $old$rvStart || $rvLength != $old$rvLength
- 	|| $hlStart != $old$hlStart || $hlLength != $old$hlLength)
-	if ($label != NULL) need_redisplay = True;
 
     if ($label != $old$label || $pixmap != $old$pixmap) {
 	XtFree($old$label);
@@ -260,9 +239,7 @@ routines to actually create them.
     if ($label) $label = XtNewString($label);
     count_lines($);
     $gc = NULL;
-    $rv_gc = NULL;
     $graygc = NULL;
-    $hl_gc = NULL;
     $tabs = XfwfTablist2Tabs($tablist);
     if ($shrinkToFit) {
 	$compute_inside($, &x, &y, &w, &h);
@@ -275,8 +252,6 @@ routines to actually create them.
 @proc destroy
 {
   if ($gc) XtReleaseGC($, $gc); $gc = NULL;
-  if ($rv_gc) XtReleaseGC($, $rv_gc); $rv_gc = NULL;
-  if ($hl_gc) XtReleaseGC($, $hl_gc); $hl_gc = NULL;
   if ($graygc) XtReleaseGC($, $graygc); $graygc = NULL;
 }
 
@@ -293,42 +268,22 @@ within the frame. If necessary, the text is clipped. The routine ends
 by calling the |expose| method from the superclass, which is
 responsible for drawing the frame.
 
-The part of the text that is to appear in reverse video is drawn with
-the |rv_gc| GC.
-
 @def draw_line(dpy, win, from, to) =
     do {
-	if ($hlStart >= to) hstart = to;
- 	else hstart = max($hlStart, from);
-	if ($hlStart + $hlLength <= from) hend = hstart;
- 	else hend = min($hlStart + $hlLength, to);
-        if ($rvStart >= to) rstart = to;
-	else rstart = max($rvStart, from);
-	if ($rvStart + $rvLength <= from) rend = rstart;
-	else rend = min($rvStart + $rvLength, to);
-	w1 = XfwfTextWidth($font, $label + from, rstart - from, $tabs);
-	w2 = XfwfTextWidth($font, $label + rstart, rend - rstart, $tabs);
-	w3 = XfwfTextWidth($font, $label + rend, to - rend, $tabs);
- 	w4 = XfwfTextWidth($font, $label + hstart, hend - hstart, $tabs);
- 	w5 = XfwfTextWidth($font, $label + from, hstart - from, $tabs);
+	w1 = XfwfTextWidth($font, $label + from, to - from, $tabs);
 	if ($alignment & XfwfLeft)
 	    x = rect.x;
 	else if ($alignment & XfwfRight)
-	    x = rect.x + rect.width - w1 - w2 - w3;
+	    x = rect.x + rect.width - w1;
 	else
-	    x = rect.x + (rect.width - w1 - w2 - w3)/2;
+	    x = rect.x + (rect.width - w1)/2;
 	if (w1)
-	    XfwfDrawImageString(dpy, win, $gc, x, y, $label + from,
-			     rstart - from, $tabs, $font);
-	if (w2)
-	    XfwfDrawImageString(dpy, win, $rv_gc, x + w1, y, $label
-			     + rstart, rend - rstart, $tabs, $font);
-	if (w3)
-	    XfwfDrawImageString(dpy, win, $gc, x + w1 + w2, y, $label +
-			     rend, to - rend, $tabs, $font);
- 	if (w4)
- 	    XfwfDrawString(dpy, win, $hl_gc, x + w5, y, $label
- 			     + hstart, hend - hstart, $tabs, $font, 1);
+	    XfwfDrawImageString(dpy, win, 
+				(((!$sensitive || $drawgray) && wx_enough_colors(XtScreen($))) 
+				 ? $graygc 
+				 : $gc), 
+				x, y, $label + from,
+				to - from, $tabs, $font);
     } while (0)
 
 @proc _expose
@@ -336,10 +291,14 @@ the |rv_gc| GC.
     Region reg;
     XRectangle rect;
     int baseline;
-    int w1, w2, w3, w4, w5;
-    int x, y, i, j, rstart, rend, hstart, hend;
+    int w1;
+    int x, y, i, j;
 
     if (! XtIsRealized($)) return;
+
+    if (!$sensitive || $drawgray)
+      if (!$graygc) make_graygc($);
+
     #_expose($, event, region);
     reg = NULL;
     if ($label != NULL || $pixmap != 0) {
@@ -353,8 +312,6 @@ the |rv_gc| GC.
 	XUnionRectWithRegion(&rect, reg, reg);
 	if (region != NULL) XIntersectRegion(region, reg, reg);
 	XSetRegion(XtDisplay($), $gc, reg);
-	XSetRegion(XtDisplay($), $rv_gc, reg);
- 	XSetRegion(XtDisplay($), $hl_gc, reg);
     }
     if ($label != NULL) {
 	baseline = $font->ascent + $font->descent;
@@ -395,18 +352,19 @@ the |rv_gc| GC.
 		      0, 0, width, height, x, y);
 	}
     }
-    if ($label != NULL || $pixmap != 0) {
-	/* Gray out if not sensitive */
-	if (! $sensitive || $drawgray) {
+
+    /* Gray out if not sensitive */
+    if (! $sensitive || $drawgray) {
+      if (($pixmap != 0) || !wx_enough_colors(XtScreen($))) {
 	    if (!$graygc) make_graygc($);
 	    XSetRegion(XtDisplay($), $graygc, reg);
 	    XFillRectangle(XtDisplay($), XtWindow($), $graygc, rect.x,
 			   rect.y, rect.width, rect.height);
 	    XSetClipMask(XtDisplay($), $graygc, None);
 	}
-	XSetClipMask(XtDisplay($), $gc, None);
-	XSetClipMask(XtDisplay($), $rv_gc, None);
- 	XSetClipMask(XtDisplay($), $hl_gc, None);
+    }
+    if ($label != NULL || $pixmap != 0) {
+      XSetClipMask(XtDisplay($), $gc, None);
     }
     if (reg) XDestroyRegion(reg);
 }
@@ -429,20 +387,6 @@ text.
     values.font = $font->fid;
     mask = GCFont | GCBackground | GCForeground;
     $gc = XtGetGC($, mask, &values);
-
-    if ($rv_gc != NULL) XtReleaseGC($, $rv_gc);
-    values.foreground = $background_pixel;
-    values.background = $foreground;
-    values.font = $font->fid;
-    mask = GCFont | GCBackground | GCForeground;
-    $rv_gc = XtGetGC($, mask, &values);
-
-    if ($hl_gc != NULL) XtReleaseGC($, $hl_gc);
-    values.background = $background_pixel;
-    values.foreground = $hlForeground;
-    values.font = $font->fid;
-    values.function = GXcopy;
-    $hl_gc = XtGetGC($, mask, &values);
 }
 
 @ The |make_graygc| routine creates a GC for graying out the text. It
@@ -455,10 +399,23 @@ the text.
     XGCValues values;
 
     if ($graygc != NULL) XtReleaseGC($, $graygc);
-    values.foreground = $background_pixel;
-    values.stipple = GetGray($);
-    values.fill_style = FillStippled;
-    mask = GCForeground | GCStipple | GCFillStyle;
+
+    if (($pixmap != 0) || !wx_enough_colors(XtScreen($))) {
+      /* A GC to draw over bitmaps/text: */
+      values.foreground = $background_pixel;
+      values.stipple = GetGray($);
+      values.fill_style = FillStippled;
+      mask = GCForeground | GCStipple | GCFillStyle;
+    } else {
+      /* A GC for drawing gray text: */
+      static Pixel color;
+      values.background = $background_pixel;
+      $darker_color($, $background_pixel, &color);
+      values.foreground = color;
+      values.font = $font->fid;
+      mask = GCFont | GCBackground | GCForeground;
+    }
+ 
     $graygc = XtGetGC($, mask, &values);
 }
 
@@ -498,6 +455,8 @@ private variables |nlines|, |label_width| and |label_height|.
     $label_width += $leftMargin + $rightMargin;
     $label_height += $topMargin + $bottomMargin;
 }
+
+@exports
 
 @imports
 

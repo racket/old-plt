@@ -140,10 +140,23 @@ static void make_graygc(self)Widget self;
     XGCValues values;
 
     if (((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc != NULL) XtReleaseGC(self, ((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc);
-    values.foreground = ((XfwfEnforcerWidget)self)->core.background_pixel;
-    values.stipple = GetGray(self);
-    values.fill_style = FillStippled;
-    mask = GCForeground | GCStipple | GCFillStyle;
+
+   if (!wx_enough_colors(XtScreen(self))) {
+      /* A GC to draw over text: */
+      values.foreground = ((XfwfEnforcerWidget)self)->core.background_pixel;
+      values.stipple = GetGray(self);
+      values.fill_style = FillStippled;
+      mask = GCForeground | GCStipple | GCFillStyle;
+    } else {
+      /* A GC for drawing gray text: */
+      static Pixel color;
+      values.background = ((XfwfEnforcerWidget)self)->core.background_pixel;
+      ((XfwfEnforcerWidgetClass)self->core.widget_class)->xfwfCommon_class.darker_color(self, ((XfwfEnforcerWidget)self)->core.background_pixel, &color);
+      values.foreground = color;
+      values.font = ((XfwfEnforcerWidget)self)->xfwfEnforcer.font->fid;
+      mask = GCFont | GCBackground | GCForeground;
+    }
+ 
     ((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc = XtGetGC(self, mask, &values);
 }
 
@@ -347,32 +360,39 @@ static void _expose(self,event,region)Widget self;XEvent * event;Region  region;
     if (! XtIsRealized(self)) return;
     xfwfBoardClassRec.xfwfCommon_class._expose(self, event, region);
     if (((XfwfEnforcerWidget)self)->xfwfEnforcer.label) {
+        GC agc;
+
 	if (!((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc) make_textgc(self);
+	
 	((XfwfEnforcerWidgetClass)self->core.widget_class)->xfwfCommon_class.compute_inside(self, &x, &y, &w, &h);
 
 	w = max(0, w);
 	h = max(0, h);
-	
+
+	if (((XfwfEnforcerWidget)self)->xfwfEnforcer.drawgray && !((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc)
+	  make_graygc(self);
+
+	agc = ((((XfwfEnforcerWidget)self)->xfwfEnforcer.drawgray && wx_enough_colors(XtScreen(self))) ? ((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc : ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc);
+
 	switch (((XfwfEnforcerWidget)self)->xfwfEnforcer.alignment) {
 	case XfwfTop:
-	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
+	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), agc,
 			      x, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
 			      ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label), NULL, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font);
 	  break;
 	case XfwfTopLeft:
-	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
+	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), agc,
 			      0, y+((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
 			      ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label), NULL, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font);
 	  break;
 	case XfwfLeft:
-	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.textgc,
+	  XfwfDrawImageString(XtDisplay(self), XtWindow(self), agc,
 			      0, y+(h-((XfwfEnforcerWidget)self)->xfwfEnforcer.labelHeight)/2+((XfwfEnforcerWidget)self)->xfwfEnforcer.font->ascent,
 			      ((XfwfEnforcerWidget)self)->xfwfEnforcer.label, strlen(((XfwfEnforcerWidget)self)->xfwfEnforcer.label), NULL, ((XfwfEnforcerWidget)self)->xfwfEnforcer.font);
 	  break;
 	}
 
-	if (((XfwfEnforcerWidget)self)->xfwfEnforcer.drawgray) {
-	  if (!((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc) make_graygc(self);
+	if (((XfwfEnforcerWidget)self)->xfwfEnforcer.drawgray && !wx_enough_colors(XtScreen(self))) {
 	  XFillRectangle(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfEnforcer.graygc, 
 			 0, y, w + x, h);
 	}

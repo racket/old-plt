@@ -697,6 +697,7 @@ XfwfMultiListWidget mlw;
 	destroyed.
 
  *---------------------------------------------------------------------------*/
+extern Boolean  get_scaled_color(Widget,float ,Pixel ,Pixel *);
 
 static void CreateNewGCs(mlw)
 XfwfMultiListWidget mlw;
@@ -721,12 +722,16 @@ XfwfMultiListWidget mlw;
 	values.background = MultiListHighlightBG(mlw);
 	MultiListHighlightBackGC(mlw) = XtGetGC((Widget)mlw,attribs,&values);
 
-	attribs |= GCTile | GCFillStyle;
-	values.foreground = MultiListFG(mlw);
-	values.background = MultiListBG(mlw);
-	values.fill_style = FillTiled;
-	values.tile = XmuCreateStippledPixmap(XtScreen(mlw),MultiListFG(mlw),
-					      MultiListBG(mlw),MultiListDepth(mlw));
+	if (wx_enough_colors(XtScreen(mlw))) {
+	  get_scaled_color((Widget)mlw, 0.6, MultiListBG(mlw), &values.foreground);
+	} else {
+	  attribs |= GCTile | GCFillStyle;
+	  values.foreground = MultiListFG(mlw);
+	  values.background = MultiListBG(mlw);
+	  values.fill_style = FillTiled;
+	  values.tile = XmuCreateStippledPixmap(XtScreen(mlw),MultiListFG(mlw),
+						MultiListBG(mlw),MultiListDepth(mlw));
+	}
 	MultiListGrayGC(mlw) = XtGetGC((Widget)mlw,attribs,&values);
 } /* End CreateNewGCs */
 

@@ -604,6 +604,8 @@ static void Key(w, event, params, num_params)
  *
  *****************************************************************************/
 
+extern Boolean  get_scaled_color(Widget,float ,Pixel ,Pixel *);
+
 static void CreateGCs(MenuWidget mw)
 {
     Display    *dpy = XtDisplay((Widget)mw);
@@ -628,13 +630,22 @@ static void CreateGCs(MenuWidget mw)
     mw->menu.normal_GC = XtGetGC((Widget)mw,
 				 GCFont|GCForeground|GCBackground,
 				 &xgcv);
-
-    xgcv.fill_style = FillStippled;
-    xgcv.stipple    = mw->menu.stipple_pxmap;
-    mw->menu.inactive_GC = XtGetGC((Widget)mw,
-				   GCFont|GCForeground|GCBackground|
-				   GCFillStyle|GCStipple,
-				   &xgcv);
+    
+    if (wx_enough_colors(scr)) {
+      Pixel r;
+      get_scaled_color((Widget)mw, 0.6, xgcv.background, &r);
+      xgcv.foreground = r;
+      mw->menu.inactive_GC = XtGetGC((Widget)mw,
+				     GCFont|GCForeground|GCBackground,
+				     &xgcv);
+    } else {
+      xgcv.fill_style = FillStippled;
+      xgcv.stipple    = mw->menu.stipple_pxmap;
+      mw->menu.inactive_GC = XtGetGC((Widget)mw,
+				     GCFont|GCForeground|GCBackground|
+				     GCFillStyle|GCStipple,
+				     &xgcv);
+    }
 
     if (mw->menu.be_nice_to_cmap || DefaultDepthOfScreen(scr) == 1) {
 	mw->menu.indicator_pxmap = Xaw3dAllocPixmap((Widget)mw,
@@ -1197,10 +1208,10 @@ static void MakeNewMenuWindow(MenuWidget mw, menu_state *prev, menu_item *item,
 
     /* position window on screen */
     if (mw->menu.horizontal && !prev->prev) { /* item in menubar? */
-	new->x = prev->x + x;
+	new->x = prev->x + x - 1;
 	if (new->x + new->w > scr_width)
 	    new->x = scr_width -  new->w;
-	new->y = prev->y + prev->h - mw->menu.shadow_width;
+	new->y = prev->y + prev->h - mw->menu.shadow_width - 1;
 	if (new->y + new->h > scr_height) /* menu doesn't below menubar -> */
 	    if (new->y > scr_height/2) /* is more place above the menubar ?*/
 		new->y = prev->y - new->h +mw->menu.shadow_width;

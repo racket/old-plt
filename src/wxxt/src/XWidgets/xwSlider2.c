@@ -91,11 +91,6 @@ static void create_gc(
 Widget
 #endif
 );
-static void create_graygc(
-#if NeedFunctionPrototypes
-Widget
-#endif
-);
 static void create_thumbgc(
 #if NeedFunctionPrototypes
 Widget
@@ -127,33 +122,6 @@ static void create_gc(self)Widget self;
     values.font = ((XfwfSlider2Widget)self)->xfwfLabel.font->fid;
     mask = GCFont | GCBackground | GCForeground;
     ((XfwfSlider2Widget)self)->xfwfLabel.gc = XtGetGC(self, mask, &values);
-
-    if (((XfwfSlider2Widget)self)->xfwfLabel.rv_gc != NULL) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfLabel.rv_gc);
-    values.foreground = ((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor;
-    values.background = ((XfwfSlider2Widget)self)->xfwfLabel.foreground;
-    values.font = ((XfwfSlider2Widget)self)->xfwfLabel.font->fid;
-    mask = GCFont | GCBackground | GCForeground;
-    ((XfwfSlider2Widget)self)->xfwfLabel.rv_gc = XtGetGC(self, mask, &values);
-}
-/*ARGSUSED*/
-#if NeedFunctionPrototypes
-static void create_graygc(Widget self)
-#else
-static void create_graygc(self)Widget self;
-#endif
-{
-    XtGCMask mask;
-    XGCValues values;
-
-    if (((XfwfSlider2Widget)self)->xfwfLabel.graygc != NULL) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfLabel.graygc);
-    values.foreground = ((XfwfSlider2Widget)self)->xfwfSlider2.thumbColor;
-    values.stipple =
-	XCreateBitmapFromData(XtDisplay(self),
-			      RootWindowOfScreen(XtScreen(self)),
-			      gray_bits, gray_width, gray_height);
-    values.fill_style = FillStippled;
-    mask = GCForeground | GCStipple | GCFillStyle;
-    ((XfwfSlider2Widget)self)->xfwfLabel.graygc = XtGetGC(self, mask, &values);
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
@@ -545,7 +513,6 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     ((XfwfSlider2Widget)self)->xfwfSlider2.drag_in_progress = False;
     create_thumbgc(self);
     create_gc(self);
-    create_graygc(self);
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc = NULL; create_thumblightgc(self);
     ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc = NULL; create_thumbdarkgc(self);
 }
@@ -557,8 +524,6 @@ static void destroy(self)Widget self;
 #endif
 {
   if (((XfwfSlider2Widget)self)->xfwfLabel.gc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfLabel.gc); ((XfwfSlider2Widget)self)->xfwfLabel.gc = NULL;
-  if (((XfwfSlider2Widget)self)->xfwfLabel.rv_gc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfLabel.rv_gc); ((XfwfSlider2Widget)self)->xfwfLabel.rv_gc = NULL;
-  if (((XfwfSlider2Widget)self)->xfwfLabel.graygc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfLabel.graygc); ((XfwfSlider2Widget)self)->xfwfLabel.graygc = NULL;
   if (((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc); ((XfwfSlider2Widget)self)->xfwfSlider2.thumblightgc = NULL;
   if (((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc) XtReleaseGC(self, ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc); ((XfwfSlider2Widget)self)->xfwfSlider2.thumbdarkgc = NULL;
 }

@@ -263,6 +263,9 @@
       (or (string=? "MrEd" name)
 	  (string=? "MrEd Debug" name))))
 
+  (define error-color (make-object mred:color% "PINK"))
+  (define color? (<= 8 (mred:get-display-depth)))
+  
   (define (make-edit% super%)
     (class super% args
       (inherit insert change-style
@@ -764,6 +767,7 @@
       ;;;                                            ;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
+      (inherit inserting-prompt)
       (public
 	[report-located-error ; =Kernel=, =Handler=
 	 (lambda (message di exn)
@@ -786,6 +790,8 @@
 		     exn)
 	       (send interactions-edit lock locked?)
 	       (send interactions-edit end-edit-sequence))))]
+
+        [reset-highlighting void]
 	[report-error ; =Kernel=, =Handler=
 	 (lambda (start-location end-location type input-string exn)
 	   (let* ([start (zodiac:location-offset start-location)]
@@ -800,14 +806,31 @@
 	     (when (is-a? file mred:text%)
 	       (send file begin-edit-sequence)
 	       (wait-for-io-to-complete)
-	       (send file set-position start finish)
-	       (if (is-a? file edit%)
-		   (send file scroll-to-position start
-			 #f (sub1 (send file last-position)) 'end)
-		   (send file scroll-to-position start #f finish))
+               (reset-highlighting)
+               (if color?
+                   (let ([reset (send file highlight-range start finish error-color #f)])
+                     (set! reset-highlighting
+                           (lambda ()
+                             (unless inserting-prompt
+                               (reset)
+                               (set! reset-highlighting void)))))
+                   (send file set-position start finish))
+               (send file scroll-to-position start #f finish)
 	       (send file end-edit-sequence)
 	       (send (send file get-canvas) focus))))]
 	[on-set-media void])
+
+      (rename [super-on-insert on-insert]
+              [super-on-delete on-delete])
+      (override
+        [on-insert
+         (lambda (x y)
+           (reset-highlighting)
+           (super-on-insert x y))]
+        [on-delete
+         (lambda (x y)
+           (reset-highlighting)
+           (super-on-delete x y))])
 
       (public
 	[process-edit ; =User=, =Handler=, =No-Breaks=
@@ -1697,26 +1720,28 @@
 			(super-on-local-char key)))]
 		 [else (super-on-local-char key)])))])
 	(public
+          [inserting-prompt #f]
 	  [insert-prompt
 	   (lambda ()
 	     (set! prompt-mode? #t)
-	     (begin-edit-sequence)
-	     (let* ([last (last-position)]
-		    [start-selection (get-start-position)]
-		    [end-selection (get-end-position)]
-		    [last-str (if (= last 0)
-				  ""
-				  (get-text (- last 1) last))])
-	       (unless (or (string=? last-str newline-string)
-			   (= last 0))
-		 (insert #\newline last))
-	       (let ([last (last-position)])
-		 (insert (get-prompt) last)
-		 (change-style normal-delta last (last-position)))
-	       (set! prompt-position (last-position))
-	       ;(clear-undos)
-	       (end-edit-sequence)
-	       (scroll-to-position start-selection #f (last-position) 'start)))])
+             (fluid-let ([inserting-prompt #t])
+               (begin-edit-sequence)
+               (let* ([last (last-position)]
+                      [start-selection (get-start-position)]
+                      [end-selection (get-end-position)]
+                      [last-str (if (= last 0)
+                                    ""
+                                    (get-text (- last 1) last))])
+                 (unless (or (string=? last-str newline-string)
+                             (= last 0))
+                   (insert #\newline last))
+                 (let ([last (last-position)])
+                   (insert (get-prompt) last)
+                   (change-style normal-delta last (last-position)))
+                 (set! prompt-position (last-position))
+                 ;(clear-undos)
+                 (end-edit-sequence)
+                 (scroll-to-position start-selection #f (last-position) 'start))))])
 	(public
 	  [reset-console
 	   (lambda ()

@@ -812,7 +812,8 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   GetGWorld(&saveport, &savegw);
   QDErr err;
   GWorldPtr	newGWorld;
-  err = NewGWorld(&newGWorld, 0, &bounds, NULL, NULL, noNewDevice);
+  err = NewGWorld(&newGWorld, (deep == 1) ? 1 : 0, &bounds, NULL, NULL, 
+                  (deep == 1) ? 0 : noNewDevice);
   if (err == noErr) {
 	  SetGWorld(newGWorld, 0);
 	  if (depth < 1)

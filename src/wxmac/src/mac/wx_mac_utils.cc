@@ -181,38 +181,57 @@ char* macCopyString1(char* s)
 	else return copystring(" ");
 }
 
+static Pattern bhatch, xhatch;
+
 //-----------------------------------------------------------------------------
-void macGetHatchPattern(int hatchStyle, Pattern pattern)
+void macGetHatchPattern(int hatchStyle, Pattern *pattern)
 {
 	int thePatListID = sysPatListID;
 	int theIndex;
 	switch(hatchStyle)
 	{
 		case wxBDIAGONAL_HATCH:
-			theIndex = 34; // WCH: this is not good
-			break;
+			if (!bhatch.pat[0]) {
+			   int i;
+			   GetIndPattern(&bhatch, thePatListID, 28);
+			   for (i = 0; i < 8; i++) {
+			     bhatch.pat[i] = (((bhatch.pat[i] & 0x80) >> 7)
+			     		      | ((bhatch.pat[i] & 0x40) >> 5)
+			     		      | ((bhatch.pat[i] & 0x20) >> 3)
+			     		      | ((bhatch.pat[i] & 0x10) >> 1)
+			     		      | ((bhatch.pat[i] & 0x08) << 1)
+			     		      | ((bhatch.pat[i] & 0x04) << 3)
+			     		      | ((bhatch.pat[i] & 0x02) << 5)
+			     		      | ((bhatch.pat[i] & 0x01) << 7));
+			   }
+			}
+			if (pattern) memcpy(pattern, &bhatch, sizeof(Pattern));
+			return;
 		case wxFDIAGONAL_HATCH:
-			theIndex = 26;
+			theIndex = 28;
 			break;
 		case wxCROSS_HATCH:
-			theIndex = 5;
+			theIndex = 30;
 			break;
 		case wxHORIZONTAL_HATCH:
-			theIndex = 25;
+			theIndex = 27;
 			break;
 		case wxVERTICAL_HATCH:
-			theIndex = 6;
+			theIndex = 8;
 			break;
 		case wxCROSSDIAG_HATCH:
-			theIndex = 4; // WCH: this is not good
-			break;
+			if (!xhatch.pat[0]) {
+			   int i;
+			   macGetHatchPattern(wxBDIAGONAL_HATCH, NULL);
+			   macGetHatchPattern(wxFDIAGONAL_HATCH, &xhatch);
+			   for (i = 0; i < 8; i++)
+			     xhatch.pat[i] |= bhatch.pat[i];
+			}
+			memcpy(pattern, &xhatch, sizeof(Pattern));
+			return;
 		default:
 			theIndex = 1; // solid pattern
 			break;
 	}
-#if !defined(OLD__HEADERS)
-	GetIndPattern(&pattern, thePatListID, theIndex);	
-#else
 	GetIndPattern(pattern, thePatListID, theIndex);	
-#endif
 }

@@ -222,6 +222,8 @@ wxDialogBox::~wxDialogBox()
 	}
 }
 
+extern int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent);
+
 //-----------------------------------------------------------------------------
 // Pop up a message box
 //-----------------------------------------------------------------------------
@@ -229,7 +231,7 @@ int wxMessageBox(char* message, char* caption, long style,
                  wxWindow* parent, int x, int y)
 {
 
-	return 0;
+  return wxsMessageBox(message, caption, style, parent);
 }
 
 extern "C" {

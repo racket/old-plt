@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
+ * RCS_ID:      $Id: wb_dc.cc,v 1.2 1998/05/26 19:21:26 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -147,18 +147,6 @@ void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y
   point_list->Append((wxObject*)point3);
 
   DrawSpline(point_list);
-
-  for(wxNode *node = point_list->First(); node; node = node->Next()) {
-    wxPoint *p = (wxPoint *)node->Data();
-    delete p;
-  }
-  delete point_list;
-/*
-  wxSpline spline(point_list);
-
-  wx_draw_open_spline(this, &spline);
-  spline.DeletePoints();
- */
 }
 #endif
 

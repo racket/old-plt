@@ -42,6 +42,6 @@ char* macCopyString(char* s);
 char* macCopyString0(char* s);
 char* macCopyString1(char* s);
 
-void macGetHatchPattern(int hatchStyle, Pattern pattern);
+void macGetHatchPattern(int hatchStyle, Pattern *pattern);
 
 #endif // wx_mac_utils

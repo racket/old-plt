@@ -630,7 +630,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			else if (theBrushStyle == wxTRANSPARENT)
 				PenPat(&qd.white); // WCH : does this work??
 			else if (IS_HATCH(theBrushStyle)) {
-				macGetHatchPattern(theBrushStyle, cMacPattern);
+				macGetHatchPattern(theBrushStyle, &cMacPattern);
 				PenPat(&cMacPattern);
 			} else {
 				PenPat(&qd.black);
@@ -657,7 +657,7 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			         || (thePenStyle == wxDOT_DASH))
 				PenPat(&qd.dkGray);
 			else if (IS_HATCH(thePenStyle)) {
-				macGetHatchPattern(thePenStyle, cMacPattern);
+				macGetHatchPattern(thePenStyle, &cMacPattern);
 				PenPat(&cMacPattern);
 			} else {
 				PenPat(&qd.black);

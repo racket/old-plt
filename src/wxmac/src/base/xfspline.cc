@@ -317,7 +317,7 @@ static void wx_spline_draw_point_array(wxbDC *dc)
   {
     wxPoint *point = (wxPoint *)node->Data();
     delete point;
-    delete node;
+    wx_spline_point_list.DeleteNode(node);
     node = wx_spline_point_list.First();
   }
 }

@@ -769,7 +769,7 @@ void wxWindow::MacSetBackground(void) // mac platform only
 		BackPat(&qd.white); // WCH: does this work??
 	else if (IS_HATCH(theBrushStyle))
 	{
-		macGetHatchPattern(theBrushStyle, cMacPattern);
+		macGetHatchPattern(theBrushStyle, &cMacPattern);
 		BackPat(&cMacPattern);
 	}
 	else
@@ -802,7 +802,7 @@ void wxWindow::SetForeground(void) // mac platform only
 		PenPat(&qd.white); // WCH: does this work??
 	else if (IS_HATCH(theBrushStyle))
 	{
-		macGetHatchPattern(theBrushStyle, cMacPattern);
+		macGetHatchPattern(theBrushStyle, &cMacPattern);
 		PenPat(&cMacPattern);
 	}
 	else

@@ -425,7 +425,7 @@
         
         (list #'(lambda (a b c) (a b)) 'mzscheme cadr
               (lambda (stx)
-                (syntax-case (strip-outer-lambda stx) (let\-values with-continuation-mark begin)
+                (syntax-case (strip-outer-lambda stx) (let-values with-continuation-mark begin set!)
                   [(let-values arg-temps
                      (with-continuation-mark
                       key-0
@@ -433,14 +433,78 @@
                       (begin
                         pre-break-0
                         (begin
-                          (set! var-0 val-0)
-                          (set! var-1 val-1)
-                          . rest))))
+                          (set! var-0 (with-continuation-mark key-1 mark-1 sym-1))
+                          (set! var-1 (with-continuation-mark key-2 mark-2 sym-2))
+                          (begin 
+                            break-0
+                            (with-continuation-mark key-3 mark-3 (sym-3 sym-4)))))))
                    (begin
                      (test (void) check-mark (syntax mark-0) '(a b arg-temp-0 arg-temp-1) 'all)
-                     (printf "mark-0: ~a~n" (syntax-object->datum (syntax mark-0))))])))
+                     (test 'arg-temp-0 syntax-e (syntax var-0))
+                     (test (void) check-mark (syntax mark-1) '() 'all)
+                     (test 'arg-temp-1 syntax-e (syntax var-1))
+                     (test (void) check-mark (syntax mark-2) '() 'all)
+                     (test (void) check-mark (syntax mark-3) '(arg-temp-0 arg-temp-1) 'all)
+                     (test 'arg-temp-0 syntax-e (syntax sym-3))
+                     (test 'arg-temp-1 syntax-e (syntax sym-4)))])))
         
-                   
+        ; datum
+        (list #'3 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (with-continuation-mark #%datum)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (#%datum . 3))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '() 'all))])))
+        
+        ; define-values
+        (list #'(define-values (a b) b) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (with-continuation-mark define-values)
+                  [(define-values (sym-0 sym-1)
+                     (with-continuation-mark
+                      key-0
+                      mark-0
+                      body))
+                   (begin
+                     (test 'a syntax-e (syntax sym-0))
+                     (test 'b syntax-e (syntax sym-1))
+                     (test (void) check-mark (syntax mark-0) '(b) 'all))])))
+        
+        ; top-level vars
+        (list #'a #f car
+              (lambda (stx)
+                (syntax-case stx (begin with-continuation-mark)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (begin 
+                      break-0 
+                      (let* ([result-sym sym-0])
+                        . rest)))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '(a) 'all)
+                     (printf "sym-0: ~a~n" (syntax-object->datum (syntax sym-0)))
+                     (test 'a syntax-e (syntax sym-0)))])))
+        
+        ; lexical vars
+        (list #'(lambda (a b) a) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (begin
+                      pre-break-0
+                      (begin
+                        break-0
+                        sym-0)))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '(a) 'all)
+                     (test 'a syntax-e (syntax sym-0)))])))
+              
         
         ))
 

@@ -26,7 +26,7 @@ wraps the load of the module.)
 	  (define/public (get-language-position)
 	    '("Essentials of Programming Languages (2nd ed.)"))
 	  (define/public (get-module)
-	    '("eopl.ss" "eopl"))
+	    '(lib "eopl.ss" "eopl"))
 	  (define/public (get-one-line-summary)
 	    "Based on the Friedman, Wand, and Haynes text")
 	  (define/public (get-reader)
@@ -42,8 +42,7 @@ wraps the load of the module.)
 	    (super-on-execute settings run-in-user-thread)
 	    (run-in-user-thread
 	     (lambda ()
-	       (current-exception-handler
-		(namespace-variable-value 'eopl-exception-handler)))))
+	       ((namespace-variable-value 'install-eopl-exception-handler)))))
 	  (super-instantiate ())))
 
       (define (phase1) (void))

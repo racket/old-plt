@@ -471,12 +471,12 @@
  "Clears the current error highlighting.")
 
 (drscheme:rep:insert-error-in-text
- ((is-a?/c text%) (is-a?/c drscheme:rep:text<%>) string? exn? (union false? (and/f string? directory-exists?)) . -> . void?)
+ ((is-a?/c text%) (union false? (is-a?/c drscheme:rep:text<%>)) string? exn? (union false? (and/f string? directory-exists?)) . -> . void?)
  (text rep-text msg exn dir)
  "Formats and inserts the error message described by"
  "\\var{msg} and \\var{exn} into the text% object \\var{text}."
  "The \\var{rep-text} argument is used to trigger the actual"
- "highlighting."
+ "highlighting. If it is \\scheme{#f}, no highlighting occurs."
  "The \\var{msg} and \\var{exn} arguments are expected to"
  "come from the"
  "\\MzLink{mz:p:error-print-source-location}{\\scheme|error-display-handler|},"

@@ -225,6 +225,18 @@ scheme_strdup_eternal(const char *str)
   return naya;
 }
 
+Scheme_Object *scheme_make_cptr(void *cptr, const char *typestr)
+{
+  Scheme_Object *o;
+
+  o = scheme_alloc_object();
+  o->type = scheme_c_pointer_type;
+  SCHEME_PTR1_VAL(o) = cptr;
+  SCHEME_PTR2_VAL(o) = (void *)typestr;
+
+  return o;
+}
+
 static void (*save_oom)(void);
 
 static void raise_out_of_memory(void)

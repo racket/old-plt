@@ -24,7 +24,6 @@
 #include "schpriv.h"
 #include "schmach.h"
 #include "schcpt.h"
-#include "schvers.h"
 #include <ctype.h>
 #ifdef USE_STACKAVAIL
 # include <malloc.h>
@@ -1159,6 +1158,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       print_this_string(p, "#", 0, 1);
       print_this_string(p, scheme_symbol_val(op->sub_type), 0, SCHEME_SYM_LEN(op->sub_type));
     }
+  else if (SCHEME_CPTRP(obj))
+    {
+      print_this_string(p, "#<c-pointer:", 0, 12);
+      print_this_string(p, SCHEME_CPTR_TYPE(obj), 0, -1);
+      print_this_string(p, ">", 0, 1);
+    }
   else if (SCHEME_STXP(obj))
     {
       if (compact) {
@@ -1418,8 +1423,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_substring(v, notdisplay, 1, NULL, symtab, rnht, p, NULL, &slen);
 
 	/* Remember version: */
-	print_compact_number(p, strlen(VERSION));
-	print_this_string(p, VERSION, 0, -1);
+	print_compact_number(p, strlen(MZSCHEME_VERSION));
+	print_this_string(p, MZSCHEME_VERSION, 0, -1);
 
 	print_compact_number(p, symtab->count);
 	print_compact_number(p, slen);

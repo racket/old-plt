@@ -163,8 +163,9 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_subprocess_type, "<subprocess>");
 
+  set_name(scheme_c_pointer_type, "<c-pointer>");
+
   set_name(scheme_reserved_1_type, "<reserved1>");
-  set_name(scheme_reserved_2_type, "<reserved2>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
@@ -375,6 +376,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_null_type, char_obj); /* small */
   GC_REG_TRAV(scheme_pair_type, cons_cell);
   GC_REG_TRAV(scheme_vector_type, vector_obj);
+  GC_REG_TRAV(scheme_c_pointer_type, c_pointer_obj);
 
   GC_REG_TRAV(scheme_bucket_type, bucket_obj);
 

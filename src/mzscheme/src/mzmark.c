@@ -72,6 +72,22 @@ int local_obj_FIXUP(void *p) {
 }
 
 
+int c_pointer_obj_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int c_pointer_obj_MARK(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+int c_pointer_obj_FIXUP(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
+
 int second_of_cons_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));

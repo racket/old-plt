@@ -298,4 +298,12 @@
 (err/rt-test (instantiate to-rest2% () (by-name "hi"))
 	     exn:object?)
 
+;; Even more nested:
+
+(define to-rest3%
+  (class to-rest2%
+    (super-instantiate ("um..."))))
+
+(test '("hey," "um..." "hi" "there") 'to-rest (send (instantiate to-rest3% ("hi" "there")) get-args))
+
 (report-errs)

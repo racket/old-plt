@@ -1,8 +1,14 @@
 
+/* For unusual compilation modes, we change the version string to
+   avoid confusing .zo mismatches: */
 #ifdef MZSCHEME_SOMETHING_OMITTED
-# define SPECIAL_TAG "-special"
+# define _MZ_SPECIAL_TAG "-special"
 #else
-# define SPECIAL_TAG ""
+# define _MZ_SPECIAL_TAG ""
 #endif
 
-#define VERSION "199.15" SPECIAL_TAG
+
+#define MZSCHEME_VERSION_MAJOR 199
+#define MZSCHEME_VERSION_MINOR 16
+
+#define MZSCHEME_VERSION "199.16" _MZ_SPECIAL_TAG

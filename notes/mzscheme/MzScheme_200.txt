@@ -114,6 +114,9 @@ in several important ways:
 
    The `execute' and `execute*' procedures were eliminated entirely.
 
+ * The mzc compiler supports a subset of the Gambit-C foreign-function
+   interface.
+
  * Nearly all #% names are gone, since they are unnecessary with the
    new syntax system. However, a few new syntactic forms, which are
    usually implicit, use #%: `#%app', `#%datum', `#%top', etc.
@@ -131,20 +134,42 @@ in several important ways:
    either replaced by `unit/sig' names or eliminated in favor of
    existing `unit/sig' names.
 
+ * Removed constant and keyword attributes of global variables, since
+   they are not needed with the module system
+
 MzLib changes:
 
- * "functio.ss" was split into "list.ss" and "etc.ss"
+ * "functio.ss" was split into "list.ss" and "etc.ss".
 
- * "macro.ss" was merged into "etc.ss", mostly
+ * "macro.ss" was merged into "etc.ss", mostly.
 
- * "invoke.ss" was merged into "unit.ss" and "unitsig.ss"
+ * "invoke.ss" was merged into "unit.ss" and "unitsig.ss".
 
  * "include.ss" is new; it implements the `include' form that used to
-    be restricted to `unit/sig' bodies
+    be restricted to `unit/sig' bodies.
 
  * "defstru.ss" was roughly re-implemented in "compat.ss" (and the
-    re-implementation matches the Chez form)
+    re-implementation matches the Chez form).
 
- * "process.ss" is new
+ * "process.ss" is new.
+
+ * The default for the whole/fractional-exact-numbers parameter in
+   the pconvert.ss library is now #f.
+
+Inside MzScheme:
+
+ * "process" in function, type, and macro names was replaced by
+   "thread".
+
+ * "manager" in function, type, and macro names was replaced by
+   "custodian".
+
+ * scheme_rep() is gone; use the Scheme procedure returned by
+   scheme_builtin_value("read-eval-print-loop") instead.
+
+ * scheme_add_global_constant(), etc. are gone, since globals have no
+   constant or keyword attributes; use scheme_add_global(),
+   etc. instead.
+
 
 For information about minor changes, see HISTORY.

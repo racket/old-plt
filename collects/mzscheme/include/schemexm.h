@@ -190,6 +190,7 @@
 #define scheme_get_int_val (scheme_extension_table->scheme_get_int_val)
 #define scheme_get_unsigned_int_val (scheme_extension_table->scheme_get_unsigned_int_val)
 #define scheme_real_to_double (scheme_extension_table->scheme_real_to_double)
+#define scheme_make_cptr (scheme_extension_table->scheme_make_cptr)
 #define scheme_get_proc_name (scheme_extension_table->scheme_get_proc_name)
 #define scheme_make_bignum (scheme_extension_table->scheme_make_bignum)
 #define scheme_make_bignum_from_unsigned (scheme_extension_table->scheme_make_bignum_from_unsigned)

@@ -24,7 +24,6 @@
 #define SCHEME_NO_GC_PROTO
 
 #include "schpriv.h"
-#include "schvers.h"
 #include "schgc.h"
 
 #ifdef UNIX_DYNAMIC_LOAD
@@ -107,9 +106,9 @@ static Scheme_Hash_Table *fullpath_loaded_extensions; /* hash on full path name 
 #endif
 
 #ifdef MZ_PRECISE_GC 
-# define VERSION_AND_VARIANT VERSION "@2k"
+# define VERSION_AND_VARIANT MZSCHEME_VERSION "@2k"
 #else
-# define VERSION_AND_VARIANT VERSION
+# define VERSION_AND_VARIANT MZSCHEME_VERSION
 #endif
 
 static Scheme_Object *fail_err_symbol, *version_err_symbol;

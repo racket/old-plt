@@ -51,5 +51,5 @@ char *scheme_initialize_internal(
   scheme_extension_table = table;
 #endif
 
-  return VERSION PLAIN_OR_2K;
+  return MZSCHEME_VERSION PLAIN_OR_2K;
 }

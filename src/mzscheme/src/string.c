@@ -25,8 +25,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "schvers.h"
-
 #ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 # include "schsys.h"
 #endif
@@ -1224,7 +1222,7 @@ banner(int argc, Scheme_Object *argv[])
 
 char *scheme_version(void)
 {
-  return VERSION;
+  return MZSCHEME_VERSION;
 }
 
 #ifdef USE_SENORA_GC
@@ -1246,7 +1244,7 @@ char *scheme_banner(void)
 #ifdef MZ_PRECISE_GC
       "2k"
 #endif      
-      " version " VERSION VERSION_SUFFIX
+      " version " MZSCHEME_VERSION VERSION_SUFFIX
       ", Copyright (c) 1995-2001 PLT\n";
 }
 

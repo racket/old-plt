@@ -32,6 +32,12 @@
 # include "../sconfig.h"
 #endif
 
+#ifdef INCLUDE_WITHOUT_PATHS
+# include "schvers.h"
+#else
+# include "../src/schvers.h"
+#endif
+
 #if defined(__MWERKS__)
 # ifdef MZSCHEME_USES_NEAR_GLOBALS
 #  pragma far_data off
@@ -293,6 +299,8 @@ typedef struct Scheme_Vector {
 
 #define SCHEME_STXP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_stx_type)
 
+#define SCHEME_CPTRP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_c_pointer_type)
+
 #define SCHEME_MUTABLEP(obj) (!((obj)->keyex & 0x1))
 #define SCHEME_IMMUTABLEP(obj) ((obj)->keyex & 0x1)
 
@@ -344,6 +352,9 @@ typedef struct Scheme_Vector {
 #define SCHEME_INT2_VAL(obj) ((obj)->u.two_int_val.int2)
 #define SCHEME_PINT_VAL(obj) ((obj)->u.ptr_int_val.pint)
 #define SCHEME_PLONG_VAL(obj) ((obj)->u.ptr_long_val.pint)
+
+#define SCHEME_CPTR_VAL(obj) SCHEME_PTR1_VAL(obj)
+#define SCHEME_CPTR_TYPE(obj) ((char *)SCHEME_PTR2_VAL(obj))
 
 #define SCHEME_SET_IMMUTABLE(obj)  (((obj)->keyex |= 0x1))
 #define SCHEME_SET_STRING_IMMUTABLE(obj) SCHEME_SET_IMMUTABLE(obj)

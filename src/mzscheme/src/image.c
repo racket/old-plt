@@ -25,7 +25,6 @@
 
 #ifdef UNIX_IMAGE_DUMPS
 #include "schmach.h"
-#include "schvers.h"
 #ifdef FILES_HAVE_FDS
 # include <sys/types.h>
 # include <sys/time.h>
@@ -314,9 +313,9 @@ static Scheme_Object *dump_image(char *filename)
       write(fd, (char *)&len, sizeof(char));
       write(fd, (char *)machine, len);
 
-      len = strlen(VERSION);
+      len = strlen(MZSCHEME_VERSION);
       write(fd, (char *)&len, sizeof(char));
-      write(fd, (char *)VERSION, len);
+      write(fd, (char *)MZSCHEME_VERSION, len);
       
       write(fd, (char *)&data_count, sizeof(int));
       for (i = 0; i < data_count; i++) {
@@ -412,7 +411,7 @@ static void do_restore_image(char *file, int argc, char **argv,
     die("getting version", file);
   }
   machvers[len] = 0;
-  if (strcmp(machvers, VERSION)) {
+  if (strcmp(machvers, MZSCHEME_VERSION)) {
     char buffer[256];
     sprintf(buffer, "version: image is %s, this is %s", machvers, machine);
     die(buffer, file);

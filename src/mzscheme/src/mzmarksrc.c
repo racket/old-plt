@@ -30,6 +30,12 @@ local_obj {
   gcBYTES_TO_WORDS(sizeof(Scheme_Local));
 }
 
+c_pointer_obj {
+ mark:
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Object));
+}
+
 second_of_cons {
  mark:
   gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));

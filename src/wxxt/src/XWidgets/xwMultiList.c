@@ -832,16 +832,17 @@ int row,column;
 	  (MultiListDrawGray(mlw)) ||
 	  (!MultiListItemSensitive(item))) /* Insensitive */
 	{
-	  xmode = 0;
 	  if (MultiListItemHighlighted(item)) /* Selected */
 	    {
 	      bg_gc = MultiListGrayGC(mlw);
 	      fg_gc = MultiListEraseGC(mlw);
+	      xmode = -1;
 	    }
 	  else			/* !Selected */
 	    {
 	      bg_gc = MultiListEraseGC(mlw);
 	      fg_gc = MultiListGrayGC(mlw);
+	      xmode = 0;
 	    }
 	}
       else			/* Sensitive */

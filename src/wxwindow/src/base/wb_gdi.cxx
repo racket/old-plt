@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.19 1999/11/13 03:36:48 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.20 1999/11/29 19:01:47 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -527,19 +527,24 @@ wxbPen::~wxbPen ()
     --stipple->selectedIntoDC;
 }
 
-wxbPen::wxbPen (wxColour * WXUNUSED(col), int WXUNUSED(Width), int WXUNUSED(Style))
+wxbPen::wxbPen (wxColour * WXUNUSED(col), float WXUNUSED(Width), int WXUNUSED(Style))
 {
   __type = wxTYPE_PEN;
   locked = 0;
 }
 
-wxbPen::wxbPen (const char *WXUNUSED(col), int WXUNUSED(Width), int WXUNUSED(Style))
+wxbPen::wxbPen (const char *WXUNUSED(col), float WXUNUSED(Width), int WXUNUSED(Style))
 {
   __type = wxTYPE_PEN;
   locked = 0;
 }
 
 int wxbPen::GetWidth (void)
+{
+  return (int)width;
+}
+
+float wxbPen::GetWidthF(void)
 {
   return width;
 }
@@ -590,7 +595,7 @@ void wxbPen::SetColour (char red, char green, char blue)
  colour.Set(red, green, blue);
 }
 
-void wxbPen::SetWidth (int Width)
+void wxbPen::SetWidth (float Width)
 {
   width = Width;
 }
@@ -736,7 +741,7 @@ void wxPenList::AddPen (wxPen * pen)
   list->Show(pen, -1); /* so it can be collected */
 }
 
-wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
+wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
 {
   wxPen *pen; /* MATTHEW: [8] */
   int i = 0;
@@ -748,7 +753,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
   while ((node = list->NextNode(i))) {
     wxPen *each_pen = (wxPen *) node->Data ();
     if (each_pen &&
-	each_pen->GetWidth() == width &&
+	each_pen->GetWidthF() == width &&
 	each_pen->GetStyle() == style &&
 	each_pen->GetColour()->Red () == colour->Red () &&
 	each_pen->GetColour()->Green () == colour->Green () &&
@@ -764,7 +769,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
   return pen;
 }
 
-wxPen *wxPenList::FindOrCreatePen (char *colour, int width, int style)
+wxPen *wxPenList::FindOrCreatePen (char *colour, float width, int style)
 {
   wxColour *the_colour = wxTheColourDatabase->FindColour (colour);
   if (the_colour)

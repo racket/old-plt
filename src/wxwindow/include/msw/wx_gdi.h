@@ -66,7 +66,7 @@ class wxPen: public wxbPen
   DECLARE_DYNAMIC_CLASS(wxPen)
 
  public:
-  int old_width;
+  float old_width;
   int old_style;
   int old_join ;
   int old_cap ;
@@ -79,8 +79,8 @@ class wxPen: public wxbPen
   HPEN my_old_cpen ;
 
   wxPen(void);
-  wxPen(wxColour *col, int width, int style);
-  wxPen(const char *col, int width, int style);
+  wxPen(wxColour *col, float width, int style);
+  wxPen(const char *col, float width, int style);
   ~wxPen(void);
 
   void ChangePen() ;

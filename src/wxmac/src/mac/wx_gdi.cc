@@ -337,7 +337,7 @@ wxPen::~wxPen()
 }
 
 //-----------------------------------------------------------------------------
-wxPen::wxPen(wxColour *col, int Width, int Style):
+wxPen::wxPen(wxColour *col, float Width, int Style):
   wxbPen(col, Width, Style)
 {
   colour.CopyFrom(col);
@@ -351,7 +351,7 @@ wxPen::wxPen(wxColour *col, int Width, int Style):
 }
 
 //-----------------------------------------------------------------------------
-wxPen::wxPen(char *col, int Width, int Style):
+wxPen::wxPen(char *col, float Width, int Style):
   wxbPen(col, Width, Style)
 {
   SetColour(col);

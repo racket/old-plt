@@ -187,7 +187,7 @@ class wxBitmap;
 class wxbPen: public wxObject
 {
  protected:
-  int width;
+  float width;
   short locked;
   short style;
   int join ;
@@ -200,28 +200,29 @@ class wxbPen: public wxObject
   wxColour colour;
 
   wxbPen(void);
-  wxbPen(wxColour *col, int width, int style);
-  wxbPen(const char *col, int width, int style);
+  wxbPen(wxColour *col, float width, int style);
+  wxbPen(const char *col, float width, int style);
   ~wxbPen(void);
 
-  virtual void SetColour(wxColour *col) ;
-  virtual void SetColour(const char *col)  ;
-  virtual void SetColour(char r, char g, char b)  ;
+  void SetColour(wxColour *col) ;
+  void SetColour(const char *col)  ;
+  void SetColour(char r, char g, char b)  ;
 
-  virtual void SetWidth(int width)  ;
-  virtual void SetStyle(int style)  ;
-  virtual void SetStipple(wxBitmap *stipple)  ;
-  virtual void SetDashes(int nb_dashes, wxDash *dash)  ;
-  virtual void SetJoin(int join)  ;
-  virtual void SetCap(int cap)  ;
+  void SetWidth(float width)  ;
+  void SetStyle(int style)  ;
+  void SetStipple(wxBitmap *stipple)  ;
+  void SetDashes(int nb_dashes, wxDash *dash)  ;
+  void SetJoin(int join)  ;
+  void SetCap(int cap)  ;
 
-  virtual wxColour* GetColour(void);
-  virtual int GetWidth(void);
-  virtual int GetStyle(void);
-  virtual int GetJoin(void);
-  virtual int GetCap(void);
-  virtual int GetDashes(wxDash **dash);
-  virtual wxBitmap *GetStipple(void);
+  wxColour* GetColour(void);
+  int GetWidth(void);
+  float GetWidthF(void);
+  int GetStyle(void);
+  int GetJoin(void);
+  int GetCap(void);
+  int GetDashes(wxDash **dash);
+  wxBitmap *GetStipple(void);
 
   inline Bool IsMutable(void) { return !locked; }
   inline void Lock(int d) { locked += d; colour.Lock(d); }
@@ -242,15 +243,15 @@ class wxbBrush: public wxObject
   wxbBrush(char *col, int style);
   ~wxbBrush(void);
 
-  virtual void SetColour(wxColour *col)  ;
-  virtual void SetColour(const char *col)  ;
-  virtual void SetColour(char r, char g, char b)  ;
-  virtual void SetStyle(int style)  ;
-  virtual void SetStipple(wxBitmap* stipple=NULL)  ;
+  void SetColour(wxColour *col)  ;
+  void SetColour(const char *col)  ;
+  void SetColour(char r, char g, char b)  ;
+  void SetStyle(int style)  ;
+  void SetStipple(wxBitmap* stipple=NULL)  ;
 
-  virtual wxColour *GetColour(void);
-  virtual int GetStyle(void);
-  virtual wxBitmap *GetStipple(void);
+  wxColour *GetColour(void);
+  int GetStyle(void);
+  wxBitmap *GetStipple(void);
 
   inline Bool IsMutable(void) { return !locked; }
   inline void Lock(int d) { locked += d; colour.Lock(d); }
@@ -292,8 +293,8 @@ class wxPenList: public wxObject
   wxPenList(void);
   ~wxPenList(void);
   void AddPen(wxPen *pen);
-  wxPen *FindOrCreatePen(wxColour *colour, int width, int style);
-  wxPen *FindOrCreatePen(char *colour, int width, int style);
+  wxPen *FindOrCreatePen(wxColour *colour, float width, int style);
+  wxPen *FindOrCreatePen(char *colour, float width, int style);
 };
 
 class wxBrushList: public wxObject

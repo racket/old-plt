@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.18 1999/11/29 19:01:48 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.19 1999/11/29 23:24:18 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -305,7 +305,7 @@ wxPen::~wxPen()
   cpen = NULL;
 }
 
-wxPen::wxPen(wxColour *col, int Width, int Style)
+wxPen::wxPen(wxColour *col, float Width, int Style)
 {
   COUNT_P(pen_count);
 
@@ -331,7 +331,7 @@ wxPen::wxPen(wxColour *col, int Width, int Style)
   ChangePen();
 }
 
-wxPen::wxPen(const char *col, int Width, int Style)
+wxPen::wxPen(const char *col, float Width, int Style)
 {
   COUNT_P(pen_count);
 

@@ -64,8 +64,8 @@ class wxPen: public wxbPen
 {
  public:
   wxPen(void);
-  wxPen(wxColour *col, int width, int style);
-  wxPen(char *col, int width, int style);
+  wxPen(wxColour *col, float width, int style);
+  wxPen(char *col, float width, int style);
   ~wxPen(void);
 
 };

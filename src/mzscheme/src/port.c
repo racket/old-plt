@@ -90,6 +90,7 @@ static void init_thread_memory();
 #  include <process.h>
 #  include <signal.h>
 #  include <io.h>
+#  include <fcntl.h>
 #  define OS_SEMAPHORE_TYPE HANDLE
 #  define OS_MUTEX_TYPE CRITICAL_SECTION
 #  define OS_THREAD_TYPE HANDLE
@@ -2724,7 +2725,7 @@ typedef struct {
   OS_SEMAPHORE_TYPE try_sema;    /* hit when a char is wanted */
   OS_SEMAPHORE_TYPE ready_sema;  /* hit when a char is ready */
 #ifdef WIN32_FD_HANDLES
-  int type; /* console or pipe? */
+  int primtype; /* console or pipe? */
   OS_SEMAPHORE_TYPE interrupt;  /* hit when a char is ready */
   int stupid_eof_check;
   OS_SEMAPHORE_TYPE stupid_eof_check_going;
@@ -2947,7 +2948,7 @@ static long read_for_tested_file(void *data)
 #ifdef WIN32_FD_HANDLES
       if (!tip->fp->_cnt) {
 	HANDLE file = (HANDLE)_get_osfhandle(_fileno(tip->fp));
-	if (tip->type == FILE_TYPE_CHAR) {
+	if (tip->primtype == FILE_TYPE_CHAR) {
 	  /* Console */
 	  HANDLE h[2];
 	  h[0] = file;
@@ -2960,6 +2961,7 @@ static long read_for_tested_file(void *data)
 	     created as overlayed. */
 	  while (!tip->err_no) {
 	    DWORD avail;
+	    /* Note: despite its name, PeekNamedPipe works on anonymous pipes. */
 	    if (!PeekNamedPipe(file, NULL, 0, NULL, &avail, NULL))
 	      break; /* let fgetc handle error */
 	    if (avail)
@@ -2973,7 +2975,7 @@ static long read_for_tested_file(void *data)
 	      if (!tip->stupid_eof_check_going)
 		tip->stupid_eof_check_going = MAKE_SEMAPHORE();
 
-	      /* Perhaps unlikely: parent thread is memorized, yet: */
+	      /* Perhaps unlikely: parent thread isn't memorized, yet: */
 	      while (!tip->thread_memory) {
 		Sleep(1);
 	      }
@@ -3008,7 +3010,7 @@ static long read_for_tested_file(void *data)
 	    tip->err_no = 1;
 	} else {
 #ifdef WIN32_FD_HANDLES
-	  if (tip->type == FILE_TYPE_CHAR) {
+	  if (tip->primtype == FILE_TYPE_CHAR) {
 	    /* Console */
 	    /* Unreliabale hack: */
 	    Sleep(100); /* Give the break thread time, if it's there */
@@ -3055,7 +3057,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
   tip->ready_sema = MAKE_SEMAPHORE();
   tip->try_sema = MAKE_SEMAPHORE();
 #ifdef WIN32_FD_HANDLES
-  tip->type = GetFileType((HANDLE)_get_osfhandle(_fileno(tip->fp)));
+  tip->primtype = GetFileType((HANDLE)_get_osfhandle(_fileno(tip->fp)));
   tip->interrupt = MAKE_SEMAPHORE();
   tip->stupid_eof_check_going = NULL;
 #endif
@@ -6241,7 +6243,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	Scheme_Input_Port *ip = (Scheme_Input_Port *)inport;
 
 	if (SAME_OBJ(ip->sub_type, file_input_port_type))
-	  to_subprocess[0] = fileno(((Scheme_Input_File *)ip->port_data)->f);
+	  to_subprocess[0] = MSC_IZE(fileno)(((Scheme_Input_File *)ip->port_data)->f);
 # ifdef USE_FD_PORTS
 	else if (SAME_OBJ(ip->sub_type, fd_input_port_type))
 	  to_subprocess[0] = ((Scheme_FD *)ip->port_data)->fd;
@@ -6259,7 +6261,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	Scheme_Output_Port *op = (Scheme_Output_Port *)outport;
 
 	if (SAME_OBJ(op->sub_type, file_output_port_type))
-	  from_subprocess[1] = fileno(((Scheme_Output_File *)op->port_data)->f);
+	  from_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
 # ifdef USE_FD_PORTS
 	else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	  from_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;
@@ -6277,7 +6279,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 	Scheme_Output_Port *op = (Scheme_Output_Port *)errport;
 
 	if (SAME_OBJ(op->sub_type, file_output_port_type))
-	  err_subprocess[1] = fileno(((Scheme_Output_File *)op->port_data)->f);
+	  err_subprocess[1] = MSC_IZE(fileno)(((Scheme_Output_File *)op->port_data)->f);
 # ifdef USE_FD_PORTS
 	else if (SAME_OBJ(op->sub_type, fd_output_port_type))
 	  err_subprocess[1] = ((Scheme_FD *)op->port_data)->fd;

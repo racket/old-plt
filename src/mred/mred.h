@@ -216,3 +216,8 @@ MRED_EXTERN MrEd_Run_From_Cmd_Line_Proc mred_run_from_cmd_line;
 #if defined(wx_mac) || defined(wx_msw)
 MRED_EXTERN void Drop_Runtime(char **argv, int argc);
 #endif
+
+#if defined(wx_mac)
+extern void WakeUpMrEd();
+#endif
+

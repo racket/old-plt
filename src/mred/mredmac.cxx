@@ -316,6 +316,7 @@ static int no_modifiers_last_time = 1;
 static int last_was_option_down;
 #endif
 static int WeAreFront(); /* forward decl */
+static int waiting_for_next_event;
 
 /* WNE: a replacement for WaitNextEvent so we can get things like
    wheel events. */
@@ -326,8 +327,12 @@ int WNE(EventRecord *e, double sleep_secs)
 #else
   EventRef ref;
 
+  waiting_for_next_event = 1;
+
   if (noErr == ReceiveNextEvent(0, NULL, sleep_secs, TRUE, &ref)) {
     Boolean ok, need_click = FALSE;
+
+    waiting_for_next_event = 0;
 
 #ifdef OPTION_KEY_HACK    
     if ((GetEventClass(ref) == kEventClassKeyboard)
@@ -434,8 +439,27 @@ int WNE(EventRecord *e, double sleep_secs)
 
     return ok;
   }
+
+  waiting_for_next_event = 0;
+
   return FALSE;
 #endif
+}
+
+void WakeUpMrEd()
+{
+  /* Make sure we wake up a sleep, if this is a callback through
+     a window painter. */
+  static EventRef wakeup_evt;
+
+  if (waiting_for_next_event) {
+    if (!wakeup_evt)
+      CreateEvent(NULL, 'MrEd', 'wkup', 0, 0, &wakeup_evt);
+    PostEventToQueue(GetMainEventQueue(),
+		     wakeup_evt, 
+		     kEventPriorityStandard);
+    waiting_for_next_event = 0;
+  }
 }
 
 /* TransferQueue sucks all of the pending events out of the

@@ -265,7 +265,7 @@ typedef struct Context_Custodian_Hop {
 #endif
 
 static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *),
-					 MrEdContext *tdata, int check_only);
+				      MrEdContext *tdata, int check_only);
 static void remove_q_callbacks(MrEdContext *c);
 
 #ifdef MZ_PRECISE_GC
@@ -1192,6 +1192,12 @@ static Scheme_Object *MrEdDoNextEvent(MrEdContext *c, wxDispatch_Check_Fun alt, 
   } else if (!restricted && MrEdGetNextEvent(0, 1, &evt, NULL)) {
     memcpy(&c->event, &evt, sizeof(MrEdEvent));
     DoTheEvent(c);
+#ifdef wx_mac
+    /* MrEdGetNextEvent might enqueue */
+  } else if (check_q_callbacks(1, MrEdSameContext, c, 1)) {
+    c->q_callback = 2;
+    DoTheEvent(c);
+#endif
   } else if (!restricted && check_q_callbacks(0, MrEdSameContext, c, 1)) {
     c->q_callback = 1;
     DoTheEvent(c);
@@ -1482,6 +1488,12 @@ static int try_dispatch(Scheme_Object *do_it)
   got_one = MrEdGetNextEvent(!do_it, 0, &e, &c);
 
   UnchainContextsList();
+
+#ifdef wx_mac
+  /* MrEdGetNextEvent might enqueue */
+  if (try_q_callback(do_it, 1))
+    return 1;
+#endif
 
   if (got_one) {
     if (!do_it)
@@ -1863,7 +1875,7 @@ static void call_one_callback(Q_Callback * volatile  cb)
 }
 
 static MrEdContext *check_q_callbacks(int hi, int (*test)(MrEdContext *, MrEdContext *),
-					 MrEdContext *tdata, int check_only)
+				      MrEdContext *tdata, int check_only)
 {
   Q_Callback_Set *cs = q_callbacks + hi;
   Q_Callback *cb;
@@ -1969,6 +1981,10 @@ static void MrEdQueueWindowCallback(wxWindow *wx_window, Scheme_Closed_Prim *scp
   cb->callback = p;
 
   insert_q_callback(q_callbacks + 1, cb);
+
+#ifdef wx_mac
+  WakeUpMrEd();
+#endif
 }
 
 static Scheme_Object *call_on_paint(void *d, int, Scheme_Object **argv)

@@ -46,7 +46,9 @@ THINGS TO DO FOR PLANET IN GENERAL
 
 (module planet-shared mzscheme
   
-  (require (lib "list.ss"))
+  (require (lib "list.ss")
+           (lib "etc.ss")
+           (lib "thread.ss"))
   
   (provide (all-defined))
   
@@ -62,13 +64,20 @@ THINGS TO DO FOR PLANET IN GENERAL
   
   ; exn:i/o:protocol: exception indicating that a protocol error occured
   (define-struct (exn:i/o:protocol exn:i/o) ())
- 
+  
   
   ; ==========================================================================================
   ; CACHE LOGIC
   ; Handles checking the cache for an appropriate module
   ; ==========================================================================================
-    
+
+  ; language-version->repository : string -> string
+  ; finds the appropriate language version for the given repository
+  (define (language-version->repository ver)
+    (cond
+      [(regexp-match #rx"20.+" ver) "207.1"]
+      [(regexp-match #rx"3.+|29.|" ver) "300"]))  
+  
   ; lookup-package : FULL-PKG-SPEC string[dirname] -> PKG | #f
   ; returns the directory pointing to the appropriate package in the cache, or #f if the given package
   ; isn't in the cache
@@ -131,6 +140,30 @@ THINGS TO DO FOR PLANET IN GENERAL
   ; Miscellaneous utility functions
   ; ==========================================================================================
   
+  ; make-cutoff-port : input-port nat [nat -> tst] -> input-port
+  ; makes a new input port that reads the first n characters from the given port, then
+  ; returns eof. If n characters are not available from the given input port, calls
+  ; the given function and then returns eof
+  (define make-cutoff-port
+    (opt-lambda (ip n [underflow-fn void])
+      (let ((to-read n))
+        (make-custom-input-port 
+         (lambda (str)
+           (cond
+             [(= to-read 0) eof]
+             [else
+              (let ((chars-read (read-string-avail! str ip 0 (min n (string-length str)))))
+                (if (eof-object? chars-read)
+                    (begin
+                      (underflow-fn (- to-read chars-read))
+                      (set! to-read 0)
+                      eof)
+                    (begin
+                      (set! to-read (- to-read chars-read))
+                      chars-read)))]))
+       #f
+       void))))
+  
   ; max-string : listof string[digits] -> string | #f
   ; this odd little guy takes a list of strings that represent a number and returns the string
   ; that represents the maximum number among them, or #f if there were no numbers at all 
@@ -165,11 +198,11 @@ THINGS TO DO FOR PLANET IN GENERAL
         [else
          (f (car l) n)
          (loop (cdr l) (add1 n))])))
-      
+  
   ; nat? : TST -> bool
   ; determines if the given scheme value is a natural number
   (define (nat? obj) (and (integer? obj) (>= obj 0)))
-    
+  
   ; read-n-chars-to-file : Nat input-port string[filename] -> void
   ; copies exactly n chars to the given file from the given port. Raises an exception
   ; if the given number of characters are not available.
@@ -182,30 +215,21 @@ THINGS TO DO FOR PLANET IN GENERAL
   ; copies exactly n characters from the input to the output. Raises an exception
   ; if this is not possible.
   (define (copy-n-chars n ip op)
-    (let* ((bufsize (expt 2 16))
-           (buf (make-string bufsize)))
-      (let loop ((chars-to-read n))
-        (cond
-          [(= chars-to-read 0) (void)]
-          [else
-           (let ((chars-read (read-string-avail!* buf ip 0 (min chars-to-read bufsize))))
-             (cond
-               [(eof-object? chars-read) 
-                (raise 
-                 (make-exn:i/o:port:read 
-                  (format "Not enough chars on input (expected ~a, got ~a)" n (- n chars-to-read))
-                  (current-continuation-marks)
-                  ip))]
-               [else 
-                (let loop ((chars-written 0))
-                  (unless (= chars-written chars-read)
-                    (loop (+ chars-written (write-string-avail buf op 0 chars-read)))))
-                (loop (- chars-to-read chars-read))]))]))))
+    (let ((cport (make-cutoff-port ip 
+                                   n
+                                   (lambda ()
+                                     (raise 
+                                      (make-exn:i/o:port:read 
+                                       (format "Not enough chars on input (expected ~a, got ~a)" 
+                                               n 
+                                               (- n 0))
+                                       (current-continuation-marks)
+                                       ip))))))
+      (copy-port cport op)))
   
   ; repeat-forever : (-> void) -> [diverges]
   ; repeatedly invokes the given thunk forever
   (define (repeat-forever thunk) (let loop () (thunk) (loop)))
-  
   
   ; build-hash-table : listof (list X Y) -> equal-hash-table[X -> Y]
   ; builds a new hash-table mapping all given X's to their appropriate Y values
@@ -236,7 +260,7 @@ THINGS TO DO FOR PLANET IN GENERAL
          (cond
            [(eof-object? sexpr) '()]
            [else (cons sexpr (read-all ip))]))]))
-
+  
   (define (wrap x) (begin (write x) (newline) x))
   
   
@@ -254,7 +278,7 @@ THINGS TO DO FOR PLANET IN GENERAL
              (files (map (lambda (d) (build-path directory d)) files))
              (files (filter (lambda (d) (and (directory-exists? d) (valid-dir? d))) files)))
         (make-branch name (map (lambda (d) (directory->tree d valid-dir?)) files)))))
-
+  
   ;; filter-tree-by-pattern : tree[x] (listof (x -> y)) -> tree[y]
   ;; constraint: depth of the tree <= length of the list
   ;; converts the tree by applying to each depth the function at that position in the list
@@ -266,7 +290,7 @@ THINGS TO DO FOR PLANET IN GENERAL
                     (map 
                      (lambda (x) (filter-tree-by-pattern x (cdr pattern)))
                      (branch-children tree)))]))
-
+  
   ;; sexp-tree[x] ::= (cons x (listof sexp-tree[x]))
   
   ;; tree->list : tree[x] -> sexp-tree[x]

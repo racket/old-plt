@@ -56,7 +56,7 @@ Follows the protocol listed in the PLaneT client file
            (write-line 'ok op)
            (state:get-requests)]
           [else
-           (write-line `(invalid ,(format "This server uses only the ~a protocol" VERSION-STRING)))
+           (write-line `(invalid ,(format "This server uses only the ~a protocol" VERSION-STRING)) op)
            (close-ports)])))
     
     (define (nat-or-false? n) (or (not n) (nat? n)))
@@ -78,12 +78,9 @@ Follows the protocol listed in the PLaneT client file
             (? string? path) ...)
            (if (legal-language? language-version)
                (match-let* ([thepkg (make-pkg-spec name maj min-lo min-hi path #f)]
-                            [repository (build-path (PLANET-SERVER-REPOSITORY) language-version)]
+                            [repository (build-path (PLANET-SERVER-REPOSITORY) 
+                                                    (language-version->repository language-version))]
                             [cache-pkg (lookup-package thepkg repository)])
-                 #;(printf "Looking for ~v in ~v, found ~v\n"
-                         (struct->vector thepkg) 
-                         repository
-                         cache-pkg)
                  (if cache-pkg
                      (let* ([path (pkg-path cache-pkg)]
                             [maj (pkg-maj cache-pkg)]

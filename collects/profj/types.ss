@@ -6,18 +6,8 @@
            (lib "class.ss")
            "ast.ss")
   
-  (provide (all-defined-except raise-error sort))
-    
-  ;raise-error: symbol 'a -> void
-  ;error-type is a symbol describing the type of error to raise. 
-  ;object is a scheme value giving information about the error
-  (define raise-error 
-    (lambda (error-type object)
-      (case error-type
-        ((type-not-found) ; object is expected to be a name
-         (display "Type not found error on: ") (display object) (newline)(`()))
-        (else (error 'raise-error "Internal error: given unrecognized key ~s" error-type)))))
-  
+  (provide (all-defined-except sort number-assign-conversions remove-dups meth-member?))
+      
   ;; symbol-type = 'null | 'string | 'boolean | 'char | 'byte | 'short | 'int
   ;;             | 'long | 'float | 'double | 'void
   ;; reference-type = 'null | 'string | (make-ref-type string (list string))
@@ -386,11 +376,8 @@
                             (method-record-atypes (car methods)))
              (meth-member? meth (cdr methods)))))
   
-  (define sort 
-    (lambda (l)
-      (quicksort l
-                 (lambda (item1 item2)
-                   (< (car item1) (car item2))))))
+  (define (sort l)
+    (quicksort l (lambda (i1 i2) (< (car i1) (car i2)))))
   
   ;number-assign-conversion: (list type) (list type) type-records -> int
   (define (number-assign-conversions site-args method-args type-recs)

@@ -78,6 +78,19 @@
         (define wait (lambda () void))
         (define wait_long (lambda (l) void))
         (define wait_long_int (lambda (l i) void))
+
+        (define/public (field-names) null)
+        (define/public (field-values) null)
+        
+        (define/public (fields-for-display)
+          (let ((field-name-list (send this field-names))
+                (field-value-list (send this field-values)))
+            (lambda ()
+              (if (null? field-name-list) 
+                  #f
+                  (begin0 (list (car field-name-list) (car field-value-list))
+                          (set! field-name-list (cdr field-name-list))
+                          (set! field-value-list (cdr field-value-list)))))))
         
         (super-instantiate ()))))
   
@@ -650,7 +663,8 @@
       (define/public (fillInStackTrace) this)
       
       ; -> string
-      (define/override (my-name) "Throwable")      
+      (define/override (my-name) "Throwable")
+      
       (super-instantiate ())))
   
   ;(make-java-exception string continuation-mark-set Throwable)

@@ -263,7 +263,7 @@
         ((procedure? record) (get-record record type-recs))
         ((eq? record 'in-progress)
          (dependence-error 'cycle (name-id n) (name-src n)))
-        (else (get-record (find-implicit-import name type-recs level (name-src n) #f) type-recs)))))
+        (else (get-record (find-implicit-import name type-recs level (name-src n)) type-recs)))))
   
   (define (class-specific-field? field)
     (not (memq 'private 

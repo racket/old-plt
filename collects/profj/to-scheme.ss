@@ -513,6 +513,23 @@
                            
                            (define/override (my-name) ,(class-name))
                            
+                           (rename (super-field-names field-names))
+                           (define/override (field-names)
+                             (append (super-field-names)
+                                     (list ,@(map (lambda (n) (id-string (field-name n)))
+                                                  (append (accesses-public fields)
+                                                          (accesses-package fields)
+                                                          (accesses-protected fields)
+                                                          (get-non-statics (accesses-private fields)))))))
+                           (rename (super-field-values field-values))
+                           (define/override (field-values)
+                             (append (super-field-values)
+                                     (list ,@(map (lambda (n) (build-identifier (id-string (field-name n))))
+                                                  (append (accesses-public fields)
+                                                          (accesses-package fields)
+                                                          (accesses-protected fields)
+                                                          (get-non-statics (accesses-private fields)))))))
+                           
                            ,@(map (lambda (i) (translate-initialize (initialize-static i)
                                                                     (initialize-block i)
                                                                     (initialize-src i)
@@ -806,7 +823,7 @@
                (getter (create-get-name s-name))
                (setter (create-set-name s-name)))
           (append (list (make-syntax #f `(define (,getter my-val) ,name) (build-src (id-src (field-name field))))
-                        (make-syntax #f `(define (,setter my-val) (set! ,name my-val)) (build-src (id-src (field-name field)))))
+                        (make-syntax #f `(define (,setter m-obj my-val) (set! ,name my-val)) (build-src (id-src (field-name field)))))
                   (create-private-setters/getters (cdr fields))))))
                                            
   

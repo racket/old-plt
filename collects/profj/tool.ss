@@ -54,7 +54,7 @@
           ;(drscheme:get/extend:extend-definitions-text profj-editor)
           
           ;default-settings: -> profj-settings
-          (define/public (default-settings) (make-profj-settings 'default #f null))
+          (define/public (default-settings) (make-profj-settings 'type #f null))
           ;default-settings? any -> bool
           (define/public (default-settings? s) (equal? s (default-settings)))
 
@@ -100,7 +100,7 @@
                       (lambda ()
                         (preferences:set 'profj:print-style (case (send print-style get-selection)
                                                               ((0) 'type)
-                                                              ((1) 'type+field)
+                                                              ((1) 'field)
                                                               ((2) 'graphical))))]
                      
                      [cp-panel (instantiate group-box-panel% ()
@@ -401,6 +401,16 @@
               ((is-a? value ObjectI)
                (case style
                  ((type) (send value my-name))
+                 ((field)
+                  (let ((retrieve-fields (send value fields-for-display))
+                        (st (format "~a(" (send value my-name))))
+                    (let loop ((current (retrieve-fields)))
+                      (when current
+                        (set! st (string-append st (format " ~a = ~a," 
+                                                           (car current) 
+                                                           (format-java (cadr current) full-print? style))))
+                        (loop (retrieve-fields))))
+                    (string-append (substring st 0 (sub1 (string-length st))) ")")))                    
                  (else (send value my-name))))
               (else (format "~a" value))))
 

@@ -247,7 +247,7 @@
                            (field-set? field assign (car c-class) level #t)) static-assigns)
                         (andmap
                          (lambda (assign)
-                           (field-set? field assigns (car c-class) level #f)) assigns)))
+                           (field-set? field assign (car c-class) level #f)) assigns)))
                   setting-fields))))
     
   ;create-field-env: (list field-record) env string -> env
@@ -312,7 +312,7 @@
       ((null? members) null)
       ((field? (car members)) (get-beginner-assigns (cdr members) class))
       ((method? (car members)) 
-       (if (eq? (method-type (car members)) 'ctor)
+       (if (eq? (type-spec-name (method-type (car members))) 'ctor)
            (if (block? (method-body (car members)))
                (get-b-assigns (block-stmts (method-body (car members))) class)
                null)
@@ -321,18 +321,24 @@
   ;get-b-assigns: (list statement) string-> (list assignment)
   (define (get-b-assigns stmts class)
     (cond
+      ((null? stmts) null)
       ((ifS? (car stmts)) 
        (beginner-ctor-error class (car stmts) (ifS-src (car stmts))))
       ((return? (car stmts)) 
        (beginner-ctor-error class (car stmts) (ifS-src (car stmts))))
-      (else (cons (get-b-assigns-expr (car stmts) class)
-                  (get-b-assigns (cdr stmts) class)))))
+      (else (append (get-b-assigns-expr (car stmts) class)
+                    (get-b-assigns (cdr stmts) class)))))
   
   ;get-b-assigns-expr: Expression string -> assignment
   (define (get-b-assigns-expr body class)
-    (if (assignment? body)
-        body
-        (beginner-ctor-error class body (expr-src body))))
+    (cond
+      ((assignment? body) (list body))
+      ((call? body) 
+       (if (expr-src body)
+           (beginner-ctor-error class body (expr-src body))
+           null))
+      (else 
+       (beginner-ctor-error class body (expr-src body)))))
 
   ;get-instance-assigns: (list member) -> (list (list assignment))
   (define (get-instance-assigns members)
@@ -1368,7 +1374,7 @@
                    (eq? 'void (method-record-rtype method-record)))
           (beginner-call-error name src))
         (unless (eq? level 'full)
-          (when (is-method-restricted? (id-string name) (method-record-class method-record))
+          (when (and (id? name) (is-method-restricted? (id-string name) (method-record-class method-record)))
             (restricted-method-call name (method-record-class method-record) src)))
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))

@@ -151,7 +151,7 @@
                             (insert-into col y graph-pb new-snips)
                             (send graph-pb end-edit-sequence)
                             (send status-message set-label
-                                  (format "found ~a terms..." (count-snips))))))])
+                                  (string-append (term-count (count-snips)) "...")))))])
                  (loop (cdr snips)
                        (append new-frontier new-snips)
                        new-y))]))))
@@ -182,12 +182,15 @@
               (send reduce-button set-label "Reduce")
               (cond
                 [(null? frontier)
-                 (send status-message set-label 
-                    (format "found ~a terms" (count-snips)))]
+                 (send status-message set-label (term-count (count-snips)))]
                 [else
                  (send status-message set-label 
-                    (format "found ~a terms (possibly more to find)" (count-snips)))
+                       (string-append (term-count (count-snips))
+                                      "(possibly more to find)"))
                  (send reduce-button enable #t)]))))))
+      
+      (define (term-count n)
+        (format "found ~a term~a" n (if (equal? n 1) "" "s")))
       
       ;; do-some-reductions : -> void
       ;; =reduction thread=
@@ -342,8 +345,8 @@
                [port (make-output-port
                       'graph-port
                       always-evt
-                      (lambda (str start end buffering? enable-breaks?)
-                        (send text insert (substring (bytes->string/utf-8 str) start end)
+                      (lambda (bytes start end buffering? enable-breaks?)
+                        (send text insert (bytes->string/utf-8 (subbytes bytes start end))
                               (send text last-position)
                               (send text last-position))
                         (- end start))

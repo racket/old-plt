@@ -42,11 +42,11 @@ Scheme_Object *readCharBuffer(char *buffer,long width,long arrayLength,long ndx)
     retval = scheme_null;
 
     for (i = arrayLength - 1, j = width * (arrayLength-1); i >= 0; i--, j -= width) {
-      retval = scheme_make_pair(scheme_make_sized_string(buffer + j,width,TRUE),retval);
+      retval = scheme_make_pair(scheme_make_string(buffer + j),retval);
     }
   }
   else {
-    retval = scheme_make_sized_string(buffer + (ndx * width),width,TRUE);
+    retval = scheme_make_string(buffer + (ndx * width));
   }
 
   return retval;
@@ -62,12 +62,10 @@ void writeCharBuffer(char *buffer,Scheme_Object *obj,long width,long ndx) {
 
 #if (ODBCVER >= 0x0300)
 Scheme_Object *readWideString(long sz,wchar_t *buffer,unsigned long n) {
-  Scheme_Object *sobj;
   char *s;
   long i,j;
 
-  sobj = scheme_alloc_string(sz,0);
-  s = SCHEME_STR_VAL(sobj);
+  s = (char *)scheme_malloc(sz + 1);
 
   /* truncate wide chars */
       
@@ -76,10 +74,15 @@ Scheme_Object *readWideString(long sz,wchar_t *buffer,unsigned long n) {
       scheme_signal_error("SQL_C_WCHAR buffer contains wide character, "
 			  "value %s",intToHexString(buffer[i]));
     }
+
     s[i] = (char)(buffer[i] & 0xFF);
+
+    if (s[i] == '\0') {
+      break;
+    }
   }
 
-  return sobj;
+  return scheme_make_string(s);
 }
 
 

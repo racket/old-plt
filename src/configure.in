@@ -178,6 +178,7 @@ if test "${enable_mred}" = "yes" ; then
   # If we're using gcc and including X11/Intrinsic doesn't work
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
+    CXXFLAGS="$CXXFLAGS $X_CFLAGS$"
     AC_MSG_CHECKING(need to use -fpermissive"?")
     AC_TRY_COMPILE([#]include "X11/Intrinsic.h", , addperm=no, addperm=yes)
     if test "$addperm" = "yes" ; then

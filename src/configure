@@ -2100,6 +2100,7 @@ fi
 MROPTIONS=
 
 if test "${enable_mred}" = "yes" ; then
+  CXXFLAGS="$CXXFLAGS $X_CFLAGS$"
   ac_ext=C
 # CXXFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -2110,12 +2111,12 @@ cross_compiling=$ac_cv_prog_cxx_cross
 
  msg="new and new[] are different"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2114: checking $msg" >&5
+echo "configure:2115: checking $msg" >&5
   if test "$cross_compiling" = yes; then
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
   cat > conftest.$ac_ext <<EOF
-#line 2119 "configure"
+#line 2120 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2127,7 +2128,7 @@ inline void *operator new(long size) { return (void *)0x1; }
     return (new C) != (new C[10]);       
    }
 EOF
-if { (eval echo configure:2131: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2132: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   different=no
 else
@@ -2147,7 +2148,6 @@ fi
   # If we're using gcc and including X11/Intrinsic doesn't work
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
-    CXXFLAGS="$CXXFLAGS $X_CFLAGS$"
     echo $ac_n "checking need to use -fpermissive"?"""... $ac_c" 1>&6
 echo "configure:2153: checking need to use -fpermissive"?"" >&5
     cat > conftest.$ac_ext <<EOF

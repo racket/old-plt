@@ -138,7 +138,7 @@ parameters that control the setup process:
             by the archives are set-up in addition to the collections
             listed in specific-collections  [default: null]
 > current-target-directory-getter - a thunk that returns the target
-            directory for unpacking a relative .plt archive;
+            directory for unpacking a relative .plt archive
             [default: current-directory]
 
 Thus, to unpack a single .plt archive "x.plt", set the `archives'

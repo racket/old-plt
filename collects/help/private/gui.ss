@@ -15,7 +15,7 @@
            (lib "browser-sig.ss" "browser")
            (lib "url-sig.ss" "net")
            "sig.ss"
-           
+           "../bug-report.ss"
            (lib "bday.ss" "framework" "private")
            
            "standard-urls.ss"
@@ -57,7 +57,13 @@
                 (message-box
                  (string-constant plt:hd:help-on-help)
                  (string-constant plt:hd:help-on-help-details)
-                 this))))
+                 this)))
+            (new menu-item%
+                 (label (string-constant bug-report-submit-menu-item))
+                 (parent menu)
+                 (callback
+                  (lambda (x y)
+                    (help-desk:report-bug)))))
           (super-new)))
       
       (define (browser-scroll-frame-mixin %)

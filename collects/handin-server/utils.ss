@@ -39,7 +39,7 @@
       ts))
 
   (define (is-test-suite-submission? str)
-    (with-handlers ([not-break-exn? (lambda (x) #f)])
+    (with-handlers () ; [not-break-exn? (lambda (x) #f)])
       (send (unpack-test-suite-submission str)
 	    got-program?)))
 
@@ -80,6 +80,28 @@
       (send (get-editor) insert (make-object editor-snip% call))
       (send (get-editor) insert (make-object editor-snip% expected))
       (send (get-editor) insert (make-object editor-snip% test))))
+
+  (define dsc (new
+	       (class snip-class%
+		 (define/override (read f)
+		   (let ([helper (new helper%)])
+		     (send helper read-from-file f)
+		     helper))
+		 (super-new))))
+  (send dsc set-classname "drscheme:test-suite:helper%")
+  (send dsc set-version 1)
+  (send (get-the-snip-class-list) add dsc)
+
+  (define helper%
+    (class editor-snip%
+      (inherit set-snipclass get-editor)
+
+      (define/public (read-from-file f)
+	(send (get-editor) read-from-file f))
+
+      (super-new)
+
+      (set-snipclass dsc)))
 
   (define ts-load%
     (class pasteboard%

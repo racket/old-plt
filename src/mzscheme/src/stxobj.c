@@ -45,6 +45,7 @@ static Scheme_Object *syntax_property(int argc, Scheme_Object **argv);
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
+static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv);
 
 static Scheme_Object *source_symbol; /* uninterned! */
 static Scheme_Object *origin_symbol;
@@ -168,19 +169,24 @@ void scheme_init_stx(Scheme_Env *env)
 			     env);
 
   scheme_add_global_constant("bound-identifier=?", 
-			     scheme_make_folding_prim(bound_eq,
+			     scheme_make_prim_w_arity(bound_eq,
 						      "bound-identifier=?",
-						      2, 2, 1),
+						      2, 2),
 			     env);
   scheme_add_global_constant("free-identifier=?", 
-			     scheme_make_folding_prim(free_eq,
+			     scheme_make_prim_w_arity(free_eq,
 						      "free-identifier=?",
-						      2, 2, 1),
+						      2, 2),
 			     env);
   scheme_add_global_constant("module-identifier=?", 
-			     scheme_make_folding_prim(module_eq,
+			     scheme_make_prim_w_arity(module_eq,
 						      "module-identifier=?",
-						      2, 2, 1),
+						      2, 2),
+			     env);
+  scheme_add_global_constant("module-transformer-identifier=?", 
+			     scheme_make_prim_w_arity(module_trans_eq,
+						      "module-transformer-identifier=?",
+						      2, 2),
 			     env);
 
   source_symbol = scheme_make_symbol("source");
@@ -2135,6 +2141,23 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
 			       (p->current_local_env
 				? p->current_local_env->genv->phase
 				: 0))
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv)
+{
+  Scheme_Process *p = scheme_current_process;
+
+  if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
+    scheme_wrong_type("module-transformer-identifier=?", "idenfitier syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]) || !SCHEME_STX_SYM(argv[1]))
+    scheme_wrong_type("module-transformer-identifier=?", "idenfitier syntax", 1, argc, argv);
+
+  return (scheme_stx_module_eq(argv[0], argv[1],
+			       1 + (p->current_local_env
+				    ? p->current_local_env->genv->phase
+				    : 0))
 	  ? scheme_true
 	  : scheme_false);
 }

@@ -616,7 +616,7 @@
   ;; does not contain the pattern variables as "keys", since the positions
   ;; can also be determined by the prototype.
   ;;
-  (define (make-match&env/extract-vars p k just-vars?)
+  (define (make-match&env/extract-vars p k just-vars? phase-param?)
     (define top p)
     (define (m&e p local-top use-ellipses?)
       (cond
@@ -689,6 +689,9 @@
 		null
 		`(lambda (e esc)
 		   (if (identifier? e)
+		       ;; This module-identifier=? can be turned into
+		       ;;  module-transformer-identifier=? by an
+		       ;;  enclosing binding.
 		       (if (module-identifier=? e (quote-syntax ,p))
 			   null
 			   (esc #f))
@@ -733,15 +736,17 @@
 		(loop (cdr r))]
 	       [else (void)]))
 	    r)
-	  `(lambda (e)
+	  `(lambda (e ,@(if phase-param?
+			    '(module-identifier=?) 
+			    null))
 	     (let/ec esc
 	       ,(app-e-esc r))))))
 
-  (define (make-match&env p k)
-    (make-match&env/extract-vars p k #f))
+  (define (make-match&env p k phase-param?)
+    (make-match&env/extract-vars p k #f phase-param?))
   
   (define (get-match-vars p k)
-    (make-match&env/extract-vars p k #t))
+    (make-match&env/extract-vars p k #t #f))
 
   ;; Create an S-expression that applies
   ;; rest to `e' and `esc'. Optimize
@@ -1075,18 +1080,19 @@
   (import #%stx #%small-scheme)
   (import-for-syntax #%stx #%small-scheme #%sc #%kernel)
 
-  (define-syntax syntax-case
+  (define-syntax syntax-case*
     (lambda (x)
       (define l (and (stx-list? x) (stx->list x)))
       (unless (and (stx-list? x)
-		   (> (length l) 2))
+		   (> (length l) 3))
 	(raise-syntax-error
-	 'syntax-case
+	 'syntax-case*
 	 "bad form"
 	 x))
       (let ([expr (cadr l)]
 	    [kws (caddr l)]
-	    [clauses (cdddr l)])
+	    [phase (cadddr l)]
+	    [clauses (cddddr l)])
 	(for-each
 	 (lambda (lit)
 	   (unless (identifier? lit)
@@ -1122,7 +1128,8 @@
 		 [pattern-varss (map
 				 (lambda (pattern)
 				   (get-match-vars pattern (stx->list kws)))
-				 (stx->list patterns))])
+				 (stx->list patterns))]
+		 [phase-param? (and (syntax-e phase) #t)])
 	    (datum->syntax
 	     (list (quote-syntax let) (list (list arg expr))
 		   (let loop ([patterns patterns]
@@ -1167,13 +1174,24 @@
 			    (list (quote-syntax let)
 				  (list 
 				   (list rslt
-					 (list (datum->syntax
-						(make-match&env
-						 pattern
-						 (stx->list kws))
-						pattern 
-						(quote-syntax here))
-					       arg)))
+					 (list* (datum->syntax
+						 (make-match&env
+						  pattern
+						  (stx->list kws)
+						  phase-param?)
+						 pattern 
+						 (quote-syntax here))
+						arg
+						(if phase-param?
+						    (list
+						     (list
+						      (quote-syntax if)
+						      phase
+						      (quote-syntax 
+						       module-transformer-identifier=?)
+						      (quote-syntax 
+						       module-identifier=?)))
+						    null))))
 				  ;; If match succeeded...
 				  (list 
 				   (quote-syntax if)
@@ -1280,7 +1298,7 @@
        x
        (quote-syntax here))))
 
-  (export syntax-case syntax))
+  (export syntax-case* syntax))
 
 ;;----------------------------------------------------------------------
 ;; syntax/loc
@@ -1289,12 +1307,19 @@
   (import #%stxcase)
   (import-for-syntax #%kernel #%stxcase)
 
+  ;; Regular syntax-case
+  (define-syntax syntax-case
+    (lambda (stx)
+      (syntax-case* stx () #f
+	[(_ stxe kl clause ...)
+	 (syntax (syntax-case* stxe kl #f clause ...))])))
+
   ;; Like syntax, but also takes a syntax object
   ;; that supplies a source location for the
   ;; resulting syntax object.
   (define-syntax syntax/loc
     (lambda (stx)
-      (syntax-case stx ()
+      (syntax-case* stx () #f
 	[(_ loc pattern)
 	 (syntax (let ([stx (syntax pattern)])
 		   (datum->syntax
@@ -1302,13 +1327,13 @@
 		    loc
 		    stx)))])))
 
-  (export syntax/loc))
+  (export syntax/loc syntax-case))
 
 ;;----------------------------------------------------------------------
 ;; with-syntax, generate-temporaries
 
 (module #%with-stx #%kernel
-  (import #%stxcase #%stx #%small-scheme)
+  (import #%stx #%stxloc #%small-scheme)
   (import-for-syntax #%kernel #%stxcase #%stxloc)
 
   ;; From Dybvig

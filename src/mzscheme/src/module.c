@@ -2112,6 +2112,9 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 	       && !prefix
 	       && !iname);
 
+    if (prefix)
+      prefix = SCHEME_STX_VAL(prefix);
+      
     while (1) { /* loop to handle kernel re-exports... */
 
       /* Add name to import list, if it's not there: */
@@ -2136,9 +2139,6 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
       exss = m->export_srcs;
       var_count = m->num_var_exports;
 
-      if (prefix)
-	prefix = SCHEME_STX_VAL(prefix);
-      
       for (j = m->num_exports; j--; ) {
 	Scheme_Object *modidx;
 	
@@ -2193,10 +2193,9 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 	idx = kernel_symbol;
 	exns = m->kernel_exclusion;
 	m = kernel;
-	is_kern = 1;
+	is_kern = !prefix;
 	iname = NULL;
 	ename = NULL;
-	prefix = NULL;
       } else
 	break;
     }

@@ -1848,7 +1848,7 @@ datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec
   if (SCHEME_NULLP(c))
     scheme_wrong_syntax("#%datum", NULL, form, NULL);
 
-  return SCHEME_STX_VAL(c);
+  return scheme_syntax_to_datum(c, 0, NULL);
 }
 
 static Scheme_Object *

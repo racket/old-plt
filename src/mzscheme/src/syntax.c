@@ -2790,9 +2790,11 @@ defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Obj
 {
   Scheme_Object *name, *code, *fpart, *fn;
 
+  scheme_prepare_exp_env(env->genv);
+
   scheme_defmacro_parse(form, &name, &code, env);
   
-  fpart = scheme_expand_expr(code, env, depth, name);
+  fpart = scheme_expand_expr(code, env->genv->exp_env->init, depth, name);
   
   code = icons(fpart, scheme_null);
   code = icons(name, code);

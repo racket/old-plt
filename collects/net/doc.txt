@@ -1,4 +1,4 @@
-Time-stamp: <00/06/15 14:50:00 shriram>
+Time-stamp: <00/06/19 15:36:15 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -28,7 +28,7 @@ Files: _url.ss_, _urlr.ss_, _urls.ss_, _urlu.ss_
 ABSTRACT -------------------------------------------------------------
 
 The url package helps programmers use URLs as specified in RFC 1738:
-http://www.cis.ohio-state.edu/rfc/rfc1738.txt
+http://www.ietf.org/rfc/rfc1738.txt
 
 TYPES ----------------------------------------------------------------
 
@@ -435,7 +435,7 @@ ABSTRACT -------------------------------------------------------------
 
 The nntp package helps programmers access Usenet groups via the NNTP
 protocols:
-http://www.cis.ohio-state.edu/rfc/rfc0977.txt
+http://www.ietf.org/rfc/rfc0977.txt
 
 TYPES ----------------------------------------------------------------
 
@@ -556,7 +556,7 @@ Note: The pop3.ss invoke-opens the pop3r.ss unit with a "pop3:" prefix.
 ABSTRACT -------------------------------------------------------------
 
 Implements RFC 1939, Post Office Protocol - Version 3, Myers & Rose.
-http://www.cis.ohio-state.edu/htbin/rfc/rfc1939.html
+http://www.ietf.org/rfc/rfc1939.txt
 
 TYPES ----------------------------------------------------------------
 
@@ -733,7 +733,8 @@ Files: _imap.ss_, _imapr.ss_, _imaps.ss_
 ABSTRACT -------------------------------------------------------------
 
 Implements portions of client-side RFC 2060, Internet Message Access
-Protocol - Version 4rev1, Crispin, http://www.isi.edu/in-notes/rfc2060.txt
+Protocol - Version 4rev1, Crispin
+http://www.ietf.org/rfc/rfc2060.txt
 
 TYPES ----------------------------------------------------------------
 

@@ -109,7 +109,7 @@
 	(newline client->server)
 	(close-output-port client->server)
 	server->client)))
-  
+
   ;; file://get-pure-port : url -> in-port
   (define file://get-pure-port
     (lambda (url)

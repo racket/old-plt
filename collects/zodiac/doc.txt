@@ -105,14 +105,30 @@ procedures never return.  internal-error has the same interface in
 both link.ss and link2.ss:
 
 internal-error: where fmt-spec . args
-  where -- a zodiac AST
+  where -- possibly a zodiac AST [see below]
   fmt-spec -- a format-style string
   args -- arguments for the format string
+
+  The value in the where argument is sometimes, but not always, a
+  zodiac AST.  The implementation of internal-error should test for
+  this before using it.  The reason it may not be a zodiac AST may be
+  that the internal error is precisely that a non-zodiac term ended up 
+  in a context expecting a zodiac term!
+
+  In general, it is best to err on the side of commission when
+  printing out the internal error message.  The user is unlikely to
+  understand it, and should be alerted accordingly, but the more
+  information the user submits, the better for the developers.  In
+  particular, the where term should not be discarded in the event it
+  is not a zodiac value: it may be the most important clue for the
+  developers.
 
   Sample implementation:
 
  (define (internal-error where fmt-spec . args)
-    (printf "Internal error at: ~s~n" where) ; or, pull location out of `where'
+    (if (zodiac? where)
+      (printf "Internal error at: ~s~n" where)
+      (printf "Internal error with term: ~s~n" where))
     (apply error 'internal-error fmt-spec args))
 
 static-error has two different interfaces.  In link.ss:
@@ -357,11 +373,6 @@ programs.
 > term:super-struct-invalid
 
   Invalid super-structure declaration syntax.
-
-> term:super-struct-not-id
-
-  Structure name declaration not an identifier when declaring a
-  super-structure.
 
 > term:cond-else-only-in-last
 

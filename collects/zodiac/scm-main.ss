@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.216 2000/06/15 03:39:48 shriram Exp $
+; $Id: scm-main.ss,v 1.217 2000/06/17 16:54:00 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -979,7 +979,7 @@
 	    (begin
 	      (unless (z:symbol? type-spec)
 		(static-error
-		  "super-structure definition" 'term:super-struct-not-id
+		  "structure definition" 'term:struct-not-id
 		  type-spec "not an identifier"))
 	      (values type-spec #f))))))
 

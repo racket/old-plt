@@ -1,6 +1,33 @@
 (module finddoc mzscheme
-  (provide finddoc-page)
+  (provide finddoc
+	   findreldoc
+           finddoc-page)
   
+  ;; Creates a "file:" link into the indicated manual.
+  ;; The link doesn't go to a particular anchor,
+  ;; because "file:" does not support that.
+  (define (finddoc manual index-key label)
+    (let ([m (lookup manual index-key label)])
+      (if (string? m)
+          m
+          (format "<A href=\"file:~a\">~a</A>"
+                  (build-path (car m) (caddr m))
+                    label))))
+
+  ;; Given a Unix-style relative path to reach the "doc"
+  ;; collection, creates a link that can go to a
+  ;; particular anchor.
+  (define (findreldoc todocs manual index-key label)
+    (let ([m (lookup manual index-key label)])
+      (if (string? m)
+          m
+          (format "<A href=\"~a/~a/~a#~a\">~a</A>"
+                  todocs
+                  manual
+                  (caddr m)
+                  (cadddr m)
+                  label))))
+
   ; finddoc-page : string string -> string
   ; returns just the page html, suitable for use by PLT Web server
   (define (finddoc-page manual index-key)

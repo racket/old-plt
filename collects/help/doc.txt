@@ -89,10 +89,25 @@ search.ss in the private subdirectory of the help collection.
 Calling this procedure indicates to the Help Desk search engine that 
 the documentation collections have changed.
 
-_Supplemental Help Desk functions_
-----------------------------------
+_Manual search functions_
+-------------------------
 
-These functions are used to build dynamic portions of Help Desk.
+These functions are used to search for particular portions of
+documentation.
+
+> (finddoc manual index-key label)
+  This procedure accepts three strings. The first is the name of 
+  a doc collection, the second is an index entry in that manual and 
+  the final is a desriptive string. It returns a string representation 
+  of an anchor (in HTML) that points to that index entry in the manual.
+  If the manual is not found, or the index-key is not in the manual,
+  it returns html code that shows an error. Because the link is
+  a "file:" link, it cannot link to a particular anchor in the target.
+
+> (findreldoc to-doc-path manual index-key label)
+  Like `finddoc', but `to-doc-path' is a Unix-style relative path that
+  reaches the "docs" collection. The resulting link is relative, and
+  it can point to a specific anchor in the target.
 
 > (finddoc-page manual index-key)
   This procedure accepts two strings. The first is the name of a 
@@ -100,6 +115,9 @@ These functions are used to build dynamic portions of Help Desk.
   returns a string representation of the filename that contains 
   the index entry in the manual.  If the manual is not found, or the 
   index-key is not in the manual, an error occurs.
+
+_Supplemental Help Desk functions_
+----------------------------------
 
 > (help-desk:installed-components)
   It returns a string of XHTML with documentation extracted from the 

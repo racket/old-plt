@@ -24,8 +24,11 @@
     search-for-docs
     do-search
     doc-collections-changed
-    ;; supplemental
+    ;; manual search
+    finddoc
+    findreldoc
     finddoc-page
+    ;; supplemental
     help-desk:installed-components))
 
 

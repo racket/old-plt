@@ -479,6 +479,7 @@
 		     (let () (define define-values 10) define-values)))
 
 ;; Invoke-unit linking in let-bound variables
+(define x 'not-the-right-x)
 (test '(the-x 10) 'invoke/sig 
       (let ([x 'the-x])
 	(invoke-unit/sig

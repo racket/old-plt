@@ -20,8 +20,6 @@
                   (hash-table-put! close-matches-table (cadr x) (car x)))
                 matches)
       
-      (define tree #f)
-      
       (define (is-open? x)
         (hash-table-get open-matches-table x (lambda () #f)))
       
@@ -31,56 +29,66 @@
       (define (matches? open close)
         (equal? (hash-table-get open-matches-table open (lambda () #f))
                 close))
+
+      (define tree #f)
+      (define invalid-tree #f)
       
-      (define/public (add-token type start length)
+      (define (split tree pos)
         (cond
-          ((not tree)
-           (set! tree (make-node length (cons type length) 0 #f #f)))
-          ((or (is-open? type) (is-close? type))
-           (set! tree (search! tree start))
-           (let ((node-start (node-left-subtree-length tree)))
+          (tree
+           (let ((t (search! tree pos)))
              (cond
-               ((= node-start start)
-                (set! tree (insert-prev! tree (make-node length (cons type length) 0 #f #f))))
-               ((>= start (+ node-start (node-token-length tree)))
-                (set! tree (insert-next! tree (make-node length (cons type length) 0 #f #f))))
+               ((= pos (node-left-subtree-length t))
+                (values (node-left t)
+                        (begin
+                          (set-node-left! t #f)
+                          (set-node-left-subtree-length! t 0)
+                          t)))
                (else
-                (let ((old-length (node-token-length tree))
-                      (new-length (- start node-start)))
-                  (set-node-token-length! tree new-length)
-                  (set! tree (insert-next! tree (make-node (+ length (- old-length new-length))
-                                                           (cons type length)
-                                                           0
-                                                           #f
-                                                           #f))))))))
-          (else
-           (set! tree (search! tree (if (> start 0) (sub1 start) start)))
-           (set-node-token-length! tree (+ (node-token-length tree) length)))))
+                (values (make-node (- pos (node-left-subtree-length t))
+                                   (node-token-data t)
+                                   (node-left-subtree-length t)
+                                   (node-left t)
+                                   #f)
+                        (make-node (- (+ (node-token-length t) (node-left-subtree-length t))
+                                      pos)
+                                   (cons #f #f)
+                                   0
+                                   #f
+                                   (node-right t)))))))
+          (else (values #f #f))))
+
       
-      (define/public (remove-token start len)
-        (set! tree (search! tree start))
+      (define/public (split-tree pos)
+        (let-values (((l r) (split tree pos)))
+          (set! tree l)
+          (set! invalid-tree r)))
+        
+      (define/public (merge-tree num-to-keep)
+        (set! invalid-tree (search-max! invalid-tree null))
+        (let-values (((bad good) (split invalid-tree (- (+ (node-token-length invalid-tree)
+                                                           (node-left-subtree-length invalid-tree))
+                                                        num-to-keep))))
+          (when (not (or (is-open? (car (node-token-data good)))
+                         (is-close? (car (node-token-data good)))))
+            (add-token #f (node-token-length good))
+            (set! good (node-right good)))
+          (set! tree (insert-after! tree good))
+          (set! invalid-tree #f)))
+      
+      (define/public (add-token type length)
         (cond
-          ((= start 0)
-           (set! tree (search-min! tree null))
-           (cond
-             ((= (node-token-length tree) len)
-              (set! tree (node-right tree)))
-             (else
-              (let ((data (node-token-data tree)))
-                (when (or (is-open? (car data)) (is-close? (car data)))
-                  (set-node-token-data! tree (cons #f (cdr data))))
-                (set-node-token-length! tree (- (node-token-length tree) len))))))
-          ((and (> start 0) (= start (node-left-subtree-length tree)))
-           (let ((len (- (node-token-length tree) len)))
-             (set! tree (search! (remove-root! tree) (sub1 start)))
-             (set-node-token-length! tree (+ (node-token-length tree) len))))
+          ((or (not tree) (is-open? type) (is-close? type))
+           (set! tree (insert-after! tree (make-node length (cons type length) 0 #f #f))))
           (else
-           (set-node-token-length! tree (- (node-token-length tree) len)))))
+           (set! tree (search-max! tree null))
+           (set-node-token-length! tree (+ (node-token-length tree) length)))))
       
       (define/public (match-forward pos)
         (set! tree (search! tree pos))
         (cond
           ((and tree
+                (node-token-data tree)
                 (is-open? (car (node-token-data tree)))
                 (= (node-left-subtree-length tree) pos))
            (let ((end

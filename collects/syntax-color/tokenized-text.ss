@@ -41,6 +41,7 @@
                       (|[| |]|)
                       (|{| |}|)))
       (define parens (new paren-tree% (matches pairs)))
+
       
       ;; ---------------------- Interactions state ----------------------------
       ;; The positions right before and right after the area to be tokenized
@@ -86,7 +87,6 @@
       (define (sync-invalid)
         (when (and invalid-tokens (< invalid-tokens-start current-pos))
           (let ((min-tree (search-min! invalid-tokens null)))
-            (send parens remove-token (- invalid-tokens-start start-pos) (node-token-length min-tree))
             (set! invalid-tokens (node-right min-tree))
             (set! invalid-tokens-start (+ invalid-tokens-start
                                           (node-token-length min-tree)))
@@ -119,9 +119,12 @@
                                  #f))
                               colors)))
               (set! tokens (insert-after! tokens (make-node len data 0 #f #f)))
-              (send parens add-token data (- current-pos start-pos len) len)
+              (send parens add-token data len)
               (cond
                 ((and invalid-tokens (= invalid-tokens-start current-pos))
+                 (set! invalid-tokens (search-max! invalid-tokens null))
+                 (send parens merge-tree (+ (node-token-length invalid-tokens)
+                                            (node-left-subtree-length invalid-tokens)))
                  (set! tokens (insert-after! tokens (search-min! invalid-tokens null)))
                  (set! invalid-tokens #f)
                  (set! invalid-tokens-start +inf.0))
@@ -139,8 +142,7 @@
             (up-to-date?
              (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
                            (split tokens (- edit-start-pos start-pos))))
-               (when tokens
-                 (send parens remove-token orig-token-start (- orig-token-end orig-token-start)))
+               (send parens split-tree orig-token-start)
                (set! invalid-tokens invalid-tree)
                (set! tokens valid-tree)
                (set! invalid-tokens-start 
@@ -284,7 +286,8 @@
                         (highlight start-b end-b here error-b)))))))
             (end-edit-sequence)
             (set! in-match-parens? #f))))
-          
+      
+      
       (define/override highlight-parens
         (lambda x (void)))
       

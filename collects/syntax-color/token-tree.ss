@@ -1,6 +1,7 @@
 (module token-tree mzscheme
   
-  (provide search! search-min! search-max! insert-after! split insert-next! insert-prev! remove-root!
+  (provide search! search-min! search-max! insert-after! insert-before! 
+           split insert-next! insert-prev! remove-root!
            to-list size max-depth
            (struct node (token-length token-data left-subtree-length left right)))
   

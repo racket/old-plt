@@ -182,7 +182,7 @@
 	      (add-micro-form cl-kwd scheme-vocabulary
 		(let* ((kwd `(,cl-kwd else))
 			(in-pattern `(,cl-kwd
-				       (,@arglist-pattern ,@expr-pattern)
+				       (args ,@expr-pattern)
 				       ...))
 			(m&e (pat:make-match&env in-pattern kwd)))
 		  (lambda (expr env attributes vocab)
@@ -190,8 +190,9 @@
 		      ((pat:match-against m&e expr env)
 			=>
 			(lambda (p-env)
-			  (let ((args (pat:pexpand `(,@arglist-pattern ...) p-env kwd))
-				 (bodies (pat:pexpand `((,@expr-pattern) ...) p-env kwd)))
+			  (let ((args (pat:pexpand '(args ...) p-env kwd))
+				 (bodies (pat:pexpand `((,@expr-pattern) ...)
+					   p-env kwd)))
 			    (let*
 			      ((top-level? (get-top-level-status attributes))
 				(_ (set-top-level-status attributes))
@@ -225,9 +226,9 @@
 	    (lambda (l-kwd)
 	      (add-macro-form l-kwd scheme-vocabulary
 		(let* ((kwd (list l-kwd))
-			(in-pattern `(,l-kwd ,@arglist-pattern ,@expr-pattern))
+			(in-pattern `(,l-kwd args ,@expr-pattern))
 			(out-pattern `(case-lambda
-					(,@arglist-pattern ,@expr-pattern)))
+					(args ,@expr-pattern)))
 			(m&e (pat:make-match&env in-pattern kwd)))
 		  (lambda (expr env)
 		    (or (pat:match-and-rewrite expr m&e out-pattern kwd env)

@@ -631,12 +631,13 @@
     (define arglist-decls-vocab
       (create-vocabulary 'arglist-decls-vocab))
 
-    (when (language>=? 'side-effecting)
-      (add-sym-micro arglist-decls-vocab
-	(lambda (expr env attributes vocab)
+    (add-sym-micro arglist-decls-vocab
+      (lambda (expr env attributes vocab)
+	(if (language>=? 'side-effecting)
 	  (make-sym-arglist
 	    (list
-	      (create-lexical-binding+marks expr))))))
+	      (create-lexical-binding+marks expr)))
+	  (static-error expr "Invalid argument list syntax"))))
 
     (add-list-micro arglist-decls-vocab
       (lambda (expr env attributes vocab)
@@ -644,12 +645,13 @@
 	  (map create-lexical-binding+marks
 	    (expose-list expr)))))
 
-    (when (language>=? 'structured)
-      (add-ilist-micro arglist-decls-vocab
-	(lambda (expr env attributes vocab)
+    (add-ilist-micro arglist-decls-vocab
+      (lambda (expr env attributes vocab)
+	(if (language>=? 'structured)
 	  (make-ilist-arglist
 	    (map create-lexical-binding+marks
-	      (expose-list expr))))))
+	      (expose-list expr)))
+	  (static-error expr "Invalid argument list syntax"))))
 
     ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 

@@ -7,11 +7,7 @@
 
 @HEADER
 
-#if !defined(wx_mac)
 #define NEW_EVENT_IDS 1
-#else
-#define NEW_EVENT_IDS 0
-#endif
 
 @CLASSBASE wxEvent "wx:event":"wx:object"
 

@@ -1449,6 +1449,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
   writeLocked = FALSE;
   flowLocked = FALSE;
 
+  if (scroll)
+    caretBlinked = FALSE;
+
   if (scroll && scrollOk) {
     delayRefresh++;
     ScrollToPosition(startpos);
@@ -1691,10 +1694,13 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   flowLocked = FALSE;
   writeLocked = FALSE;
 
-  if ((startpos >= start) && (startpos <= end))
+  if ((startpos >= start) && (startpos <= end)) {
+    caretBlinked = FALSE;
     startpos = start;
-  else if (startpos > end)
+  } else if (startpos > end) {
+    caretBlinked = FALSE;
     startpos -= dellen;
+  }
 
   if ((endpos >= start) && (endpos <= end))
     endpos = start;

@@ -7,7 +7,7 @@
       (global-defined-value 'slatex::*texinputs* #f)
       (global-defined-value 'slatex::*texinputs-list* #f))
     (lambda (file)
-      (unless (file-exists? file)
+      (unless (or (file-exists? file) (file-exists? (string-append file ".tex")))
 	(error 'slatex "~e does not exist" file))
       (let ([file (normalize-path file)])
 	(let-values ([(base name dir?) (split-path file)])

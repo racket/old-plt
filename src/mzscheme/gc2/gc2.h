@@ -186,8 +186,8 @@ GC2_EXTERN void GC_free_immobile_box(void **b);
 /***************************************************************************/
 /* Memory tracing                                                          */
 /***************************************************************************/
-GC2_EXTERN int mtrace_new_id(void *f);
-GC2_EXTERN int mtrace_union_current_with(int newval);
+GC2_EXTERN int GC_mtrace_new_id(void *f);
+GC2_EXTERN int GC_mtrace_union_current_with(int newval);
 
 /***************************************************************************/
 /* Finalization                                                            */

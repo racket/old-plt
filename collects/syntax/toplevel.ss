@@ -26,7 +26,7 @@
         [(begin expr ...)
          (with-syntax ([(expr ...) 
                         ;;left-to-right part of this map is important:
-                        (map expand-top-level-with-compile-time-evals
+                        (map expand-syntax-top-level-with-compile-time-evals
                              (syntax->list (syntax (expr ...))))]
                        [(beg . _) e])
            (datum->syntax-object e (syntax-e (syntax (beg expr ...))) e e))]

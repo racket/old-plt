@@ -728,7 +728,7 @@ static Scheme_Object *new_tracking_fun(int argc, Scheme_Object *args[])
   int retval = 0;
 
 #ifdef MZ_PRECISE_GC
-  retval = mtrace_new_id(args[0]);
+  retval = GC_mtrace_new_id(args[0]);
 #endif
 
   return scheme_make_integer(retval);
@@ -739,7 +739,7 @@ static Scheme_Object *union_tracking_val(int argc, Scheme_Object *args[])
   int retval = 0;
 
 #ifdef MZ_PRECISE_GC
-  retval = mtrace_union_current_with(SCHEME_INT_VAL(args[0]));
+  retval = GC_mtrace_union_current_with(SCHEME_INT_VAL(args[0]));
 #endif
 
   return scheme_make_integer(retval);

@@ -184,14 +184,10 @@ GC2_EXTERN void GC_free_immobile_box(void **b);
    value.  The pointer is stored as the first longword of the box. */
 
 /***************************************************************************/
-/* Manual Memory accounting						   */
+/* Memory tracing                                                          */
 /***************************************************************************/
-#ifdef NEWGC_MANUAL_ACCOUNT
-GC2_EXTERN void scheme_init_manual_memory(void *key);
-GC2_EXTERN void *scheme_new_tracking_val(void);
-GC2_EXTERN int scheme_alias_tracking_val(void *val1, void *val2);
-GC2_EXTERN unsigned long scheme_get_tracking_val_memory(void *val);
-#endif
+GC2_EXTERN int GC_mtrace_new_id(void *f);
+GC2_EXTERN int GC_mtrace_union_current_with(int newval);
 
 /***************************************************************************/
 /* Finalization                                                            */

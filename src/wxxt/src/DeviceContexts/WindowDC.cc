@@ -1729,7 +1729,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
     if (CURRENT_REG)
       XftDrawSetClip(XFTDRAW, CURRENT_REG);
 
-    if (current_text_bgmode == wxSOLID) {
+    if ((angle == 0.0) && (current_text_bgmode == wxSOLID)) {
       /* For B & W target, XftDrawRect doesn't seem to work right. */
       if (Colour) {
 	XftColor bg;
@@ -1769,7 +1769,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
   } else
 #endif
     {
-      if (current_text_bgmode == wxSOLID) {
+      if ((angle == 0.0) && (current_text_bgmode == wxSOLID)) {
 	if (use16bit)
 	  XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
 	else

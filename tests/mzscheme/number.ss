@@ -1250,6 +1250,14 @@
 (test (make-rectangular -inf.0 -inf.0) / (make-rectangular +inf.0 -inf.0) +1.0i)
 (test (make-rectangular -inf.0 +inf.0) / (make-rectangular +inf.0 -inf.0) -3.)
 
+;; Test division with exact zeros in demoniator where
+;;  the exact zero gets polluted to an inexact zero unless
+;;  it's special-cased
+(test 0-0.0i / 0+1.0i -inf.0)
+(test -0.0-0.0i / 1.0+1.0i -inf.0)
+(test -0.0 / 0+1.0i 0-inf.0i)
+(test -0.0+0.0i / 1.0+1.0i 0-inf.0i)
+
 (test-i-nan.0 * 1.+0.i (make-rectangular +inf.0 -inf.0))
 (test-i-nan.0 * 0.+1.0i (make-rectangular +inf.0 -inf.0))
 (test-i-nan.0 * -3.+0.i (make-rectangular +inf.0 -inf.0))
@@ -1361,7 +1369,7 @@
 (test 2 * 1+i 1-i)
 (test +2i * 1+i 1+i)
 (test -3+4i - 3-4i)
-(test 0.5 - (+ 0.5 +i) +i)
+(test 0.5+0.0i - (+ 0.5 +i) +i)
 (test 1/2 - (+ 1/2 +i) +i)
 (test 1.0+0.0i - (+ 1 +0.5i) +1/2i)
 

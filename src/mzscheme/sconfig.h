@@ -521,7 +521,6 @@
 #endif
 #ifdef __CYGWIN32__
 # define USE_DIVIDE_MAKE_INFINITY
-# define LINK_EXTENSIONS_BY_TABLE
 #endif
 #ifdef __BORLANDC__
 # define NAN_EQUALS_ANYTHING

@@ -1,8 +1,6 @@
 
-/* We have several experimental GC implementations.
+/* We have several experimental GC implementations. */
 
-   The copying version is mainly for debugging, since it can move data
-   on every collection. */
 #ifdef NEWGC_BTC_ACCOUNT
 # include "newgc.c"
 # define COLLECTOR_INCLUDED

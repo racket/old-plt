@@ -148,11 +148,13 @@ if ($list) {
 		    || ($f =~ /scheme_void/)
 		    || ($f =~ /scheme_undefined/)
 		    || ($f =~ /scheme_null/)) {
-		    if (!$gwinex) {
-			$data = " DATA";
-		    }
+		    $data = " DATA";
 		}
-		print " $f$data\n" unless $suspend;
+		if ($winex && ($f =~ /^scheme_/)) {
+		    print " $f$data\n" unless $suspend;
+		} elsif ($gwinex && ($f =~ /^GC_/)) {
+		    print " $f$data\n" unless $suspend;
+		}
 	    } else {
 		print "#define $f (scheme_extension_table->$f)\n";
 	    }

@@ -126,7 +126,7 @@ typedef struct FSSpec mzFSSpec;
 
 /* Set up MZ_EXTERN for DLL build */
 #if defined(WINDOWS_DYNAMIC_LOAD) \
-    && (defined(_MSC_VER) || defined(__BORLANDC__)) \
+    && !defined(LINK_EXTENSIONS_BY_TABLE) \
     && !defined(SCHEME_EMBEDDED_NO_DLL)
 # define MZ_DLLIMPORT __declspec(dllimport)
 # ifdef __mzscheme_private__

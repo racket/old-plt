@@ -160,6 +160,7 @@ void scheme_init_dynamic_extension(Scheme_Env *env);
 #ifndef NO_REGEXP_UTILS
 extern void scheme_regexp_initialize(Scheme_Env *env);
 #endif
+void scheme_init_memtrace(Scheme_Env *env);
 void scheme_init_getenv(void);
 
 /* Type readers & writers for compiled code data */

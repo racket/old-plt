@@ -4332,6 +4332,16 @@ int GC_set_account_hook(int type, void *cust, unsigned long b, void *f)
   return 0;
 }
 
+int GC_mtrace_new_id(void *f)
+{
+  return 0;
+}
+
+int GC_mtrace_union_current_with(int newval)
+{
+  return 0;
+}
+
 unsigned long GC_get_stack_base(void)
 {
   return stack_base;

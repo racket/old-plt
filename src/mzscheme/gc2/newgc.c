@@ -172,7 +172,7 @@ static int mtrace_id_usage[MTRACE_ID_SIZE];
 extern Scheme_Object *mtrace_cmark_key;
 static int track_mtrace_info = 0;
 
-int mtrace_new_id(void *f)
+int GC_mtrace_new_id(void *f)
 {
   u_int64_t newid = 0;
   int i;
@@ -237,7 +237,7 @@ inline static int current_mtrace_mark(size_t size)
   } else return 0;
 }
 
-int mtrace_union_current_with(int newval)
+int GC_mtrace_union_current_with(int newval)
 {
   u_int64_t newid;
   int i, curval;
@@ -273,12 +273,12 @@ int mtrace_union_current_with(int newval)
 
 
 #ifndef NEWGC_MEMORY_TRACE
-int mtrace_new_id(void *f)
+int GC_mtrace_new_id(void *f)
 {
   return 0;
 }
 
-int mtrace_union_current_with(int newval)
+int GC_mtrace_union_current_with(int newval)
 {
   return 0;
 }

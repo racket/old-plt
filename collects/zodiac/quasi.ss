@@ -42,6 +42,8 @@
 		(qq-normalize
 		  (let qq ((x template)
 			    (level 0))
+		    (pretty-print (sexp->raw x))
+		    (newline)
 		    (let ((qq-list (lambda (x level)
 				     (let* ((old-first (syntax-car x))
 					     (old-rest (syntax-cdr x))
@@ -75,22 +77,23 @@
 			    ((pat:match-against qq-m&e-5 x env)
 			      =>
 			      (lambda (p-env)
-				(let ((body (pat:pexpand 'body p-env kwd)))
-				  (let* ((l (syntax-cdr x))
-					  (ql (qq l level)))
-				    (if (zero? level)
-				      (let ((ql (qq-normalize ql l)))
-					(list '#%append body ql))
-				      (let* ((rest (pat:pexpand 'rest p-env kwd))
-					      (q-rest (qq-list rest (sub1 level))))
-					(if (and (eq? l ql)
-					      (eq? rest q-rest))
-					  x
+				(let* ((body (pat:pexpand 'body p-env kwd))
+					(rest (pat:pexpand 'rest p-env kwd))
+					(q-rest (qq rest level)))
+				  (if (zero? level)
+				    (list '#%append body
+				      (qq-normalize q-rest rest))
+				    (let ((q-body (qq body (sub1 level))))
+				      (if (and (eq? q-rest rest)
+					    (eq? q-body body))
+					x
+					(list '#%cons
 					  (list '#%cons
+					    (list '#%quote '#%unquote-splicing)
 					    (list '#%cons
-					      (list '#%quote 'unquote-splicing)
-					      (qq-normalize q-rest rest))
-					    (qq-normalize l ql)))))))))
+					      (qq-normalize q-body body)
+					      '()))
+					  (qq-normalize q-rest rest))))))))
 			    ((pat:match-against qq-m&e-6 x env)
 			      (static-error x
 				"unquote-splicing takes exactly one expression"))

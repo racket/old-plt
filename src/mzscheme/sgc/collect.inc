@@ -32,6 +32,14 @@
 # define MARK_STATISTIC(x)
 #endif
 
+#ifdef FOLLOW_INTERIOR
+# define ALIGNED(x) 1
+#else
+# define ALIGNED(x) !(x & (PTR_ALIGNMENT - 1))
+#endif
+
+#define ALLOW_TAIL_PUSH 0
+
 static void COLLECT(OFFSET_ARG)
 {
   SectorPage **local_sector_pagetables;
@@ -105,8 +113,10 @@ static void COLLECT(OFFSET_ARG)
       unsigned long p = ADD_LOCAL_OFFSET(PTR_TO_INT(d));
 
       MARK_STATISTIC(num_checks_stat++);
-
-      if (p >= local_low_plausible && p < local_high_plausible) {
+#ifdef FOLLOW_INTERIOR
+      MARK_STATISTIC(num_interior_checks_stat++);
+#endif
+      if (p >= local_low_plausible && p < local_high_plausible && ALIGNED(p)) {
 	SectorPage *pagetable = local_sector_pagetables[SECTOR_LOOKUP_PAGETABLE(p)];
 
 	MARK_STATISTIC(num_plausibles_stat++);
@@ -142,6 +152,8 @@ static void COLLECT(OFFSET_ARG)
 #endif
 		unsigned char freebyte;
 	
+		MARK_STATISTIC(num_blockaligns_stat++);
+
 		bpos = POS_TO_UNMARK_INDEX(pos);
 		bit = POS_TO_UNMARK_BIT(pos);
 #if DISTINGUISH_FREE_FROM_UNMARKED
@@ -212,10 +224,18 @@ static void COLLECT(OFFSET_ARG)
 		  mem_use += size;
 		  
 		  if (!block->atomic) {
+		    MARK_STATISTIC(num_blockpushes_stat++);
 #ifdef FOLLOW_INTERIOR
 		    p = start;
 #endif
-		    LOCAL_PUSH_COLLECT(p, p + size, s);
+#if ALLOW_TAIL_PUSH
+		    if (s + PTR_ALIGNMENT >= end) {
+		      MARK_STATISTIC(num_blockpushes_tail_stat++);
+		      s = p - PTR_ALIGNMENT;
+		      end = p + size;
+		    } else 
+#endif
+		      LOCAL_PUSH_COLLECT(p, p + size, s);
 		  }
 		
 #if STAMP_AND_REMEMBER_SOURCE
@@ -349,6 +369,7 @@ static void COLLECT(OFFSET_ARG)
 #endif
 }
 
+#undef ALIGNED
 #undef OFFSET_ARG
 #undef ADD_LOCAL_OFFSET
 #undef IF_OR_WHILE

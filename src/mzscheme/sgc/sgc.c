@@ -143,7 +143,7 @@
 #define USE_WATCH_FOUND_FUNC SGC_STD_DEBUGGING
 /* Calls GC_found_watch when the watch-for ptr is found. */
 
-#define PAD_BOUNDARY_BYTES 0
+#define PAD_BOUNDARY_BYTES 1
 /* Put a known padding pattern around every allocated
    block to test for array overflow/underflow.
    Pad-testing is performed at the beginning of every GC.
@@ -206,7 +206,7 @@
 # define MEM_USE_FACTOR 1.40
 #else
 # define FIRST_GC_LIMIT 100000
-# define MEM_USE_FACTOR 4
+# define MEM_USE_FACTOR 3
 #endif
 
 #ifdef DOS_FAR_POINTERS
@@ -3479,11 +3479,15 @@ static int collect_end_path_elem;
 #if MARK_STATS
 static int num_pairs_stat;
 static int num_checks_stat;
+static int num_interior_checks_stat;
 static int num_plausibles_stat;
 static int num_pages_stat;
 static int num_blocks_stat;
 static int num_blockallocs_stat;
+static int num_blockaligns_stat;
 static int num_blockmarks_stat;
+static int num_blockpushes_stat;
+static int num_blockpushes_tail_stat;
 static int num_chunks_stat;
 static int num_chunkmarks_stat;
 #endif
@@ -4431,20 +4435,28 @@ void do_GC_gcollect(void *stack_now)
 	  "mark stats:\n"
 	  " %d pairs\n"
 	  " %d lookups\n"
+	  "   %d interior\n"
 	  "   %d plausible\n"
 	  "     %d paged\n"
 	  "       %d block page\n"
 	  "         %d block\n"
-	  "           %d block mark\n"
+	  "           %d block aligned\n"
+	  "             %d block mark\n"
+	  "               %d block pushes\n"
+	  "                 %d block tail pushes\n"
 	  "       %d chunk page\n"
 	  "         %d chunk mark\n",
 	  num_pairs_stat,
 	  num_checks_stat,
+	  num_interior_checks_stat,
 	  num_plausibles_stat,
 	  num_pages_stat,
 	  num_blocks_stat,
 	  num_blockallocs_stat,
+	  num_blockaligns_stat,
 	  num_blockmarks_stat,
+	  num_blockpushes_stat,
+	  num_blockpushes_tail_stat,
 	  num_chunks_stat,
 	  num_chunkmarks_stat);
 #endif

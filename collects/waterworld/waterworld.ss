@@ -72,8 +72,12 @@
 
   (define *click-sem* (make-semaphore 1))
 
-  (define *default-message*
-    "Shift = unsafe (default safe)  Ctrl = assert (default guess)")
+  (define *default-message-1*
+    "Hold Shift to indicate a pirate (instead of safe water)")
+  (define *default-message-2*
+    "Hold Control to make an assertion (not just a guess)")
+  (define *checking-message*
+    "Considering your move ...")
 
   (define (make-bitmap s)
     (make-object bitmap% 
@@ -412,9 +416,10 @@
 			  thunk
 			  k)
 		     (apply values escape-info)])
-		   (if (and (let* ([loc-assn (cdr (assq loc assns))])
+		   (if (and (let* ([loc-entry (assq loc assns)]
+				   [loc-assn (and loc-entry (cdr loc-entry))])
 			      ; really a counterexample
-			      (eq? loc-assn safe?))
+			      (and loc-entry (eq? loc-assn safe?)))
 			    (check-consistency assns
 					       border 
 					       border-frontier-neighbors
@@ -611,14 +616,14 @@
 		     k))
 	      (thunk))))])
       (public*
-       [ww-message
-	(lambda (s)
+       [ww-messages
+	(lambda (s1 s2)
 	  (and canvas
-	       (send canvas ww-message s)))]
-       [reset-ww-message!
+	       (send canvas ww-messages s1 s2)))]
+       [reset-ww-messages!
 	(lambda ()
 	  (and canvas
-	       (send canvas reset-ww-message!)))]
+	       (send canvas reset-ww-messages!)))]
        [get-num-concealed
 	(lambda () num-concealed)]
        [draw
@@ -696,19 +701,19 @@
        [guess-demerit
 	(lambda (loc safe? thunk)
 	  (thunk)
-	  (ww-message
+	  (ww-messages
 	   (string-append
 	    "Aaargh! Yer guessed "
 	    (if (eq? safe? (send loc get-safe?))
 		"right"
-		"wrong")
-	    " when ya ought notta guessed!")))]
+		"wrong") " when ya ought notta guessed!")
+	   ""))]
        [check-guess
 	(lambda (loc safe? thunk)
 	  (thunk)
 	  (unless (eq? safe? (send loc get-safe?))
-		  (ww-message
-		   "Yer guess waren't so good, matey!")))]
+		  (ww-messages
+		   "Yer guess waren't so good, matey!" "")))]
        [expose-row-col
 	(lambda (r c safe? assert auto-clicked?)
 	  (let* ([loc (get-location r c)]
@@ -891,7 +896,7 @@
 	  (calc-neighbors!)
 	  (reset-pirate-counts!)
 	  (clear-counterexample!)
-	  (reset-ww-message!)
+	  (reset-ww-messages!)
 	  (reset-frontier!))]
        [reset-pirate-counts!
 	(lambda () 
@@ -1069,7 +1074,8 @@
 	    [message-panel #f]
 	    [pirates-left-msg #f]
 	    [pirates-ratio-msg #f]
-	    [status-msg #f]
+	    [status-msg-1 #f]
+	    [status-msg-2 #f]
 	    [clear-counterexample-button #f]
 	    [new-game-button #f])
 	   (private*
@@ -1079,6 +1085,8 @@
 	   (public*
 	    [set-default-label!
 	     (lambda () (set-label frame-label))]
+	    [get-top-status-line
+	     (lambda () (send status-msg-1 get-label))]
 	    [set-game-over-label!
 	     (lambda () (set-label game-over-frame-label))]
 	    [set-ce-button-state!
@@ -1161,13 +1169,19 @@
 				  (vert-margin 2)
 				  (stretchable-height #f)))
 	       (send message-panel stretchable-height #f)
-	       (set! status-msg
-		     (instantiate message% ()
-				  (label *default-message*)
-				  (stretchable-width #t)
-				  (parent
-				   (instantiate vertical-pane% ()
-						(parent message-panel))))))]
+	       (let* ([msg-vpane 
+		       (instantiate vertical-pane% ()
+				    (parent message-panel))]
+		      [mk-status-msg
+		       (lambda (msg)
+			 (instantiate message% ()
+				      (label msg)
+				      (stretchable-width #t)
+				      (parent msg-vpane)))])
+		 (set! status-msg-1
+		       (mk-status-msg *default-message-1*))
+		 (set! status-msg-2
+		       (mk-status-msg *default-message-2*))))]
 	    [update-status!
 	     (lambda ()
 	       (send pirates-left-msg set-label
@@ -1177,9 +1191,10 @@
 		       (if ratio
 			   (format "Ratio: ~a~a" ratio "%")
 			   ""))))]
-	    [ww-message
-	     (lambda (s)
-	       (send status-msg set-label s))]
+	    [ww-messages
+	     (lambda (s1 s2)
+	       (send status-msg-1 set-label s1)
+	       (send status-msg-2 set-label s2))]
 	    [update-board-size!
 	     (lambda (rs cs)
 	       (send canvas set-board-size! rs cs)
@@ -1534,12 +1549,17 @@
 		  (,*tile-edge-length* 0)))]
 	      [in-counterexample? #f])
 	     (public*
-	      [ww-message
-	       (lambda (s)
-		 (send frame ww-message s))]
-	      [reset-ww-message!
+	      [ww-messages
+	       (lambda (s1 s2)
+		 (send frame ww-messages s1 s2))]
+	      [reset-ww-messages!
 	       (lambda ()
-		 (ww-message *default-message*))]
+		 (ww-messages *default-message-1* *default-message-2*))]
+	      [end-checking-ww-messages
+	       (lambda ()
+		 (when (equal? (send frame get-top-status-line)
+			       *checking-message*)
+		       (reset-ww-messages!)))]
 	      [set-in-counterexample!
 	       (lambda (v)
 		 (set! in-counterexample? v)
@@ -1705,11 +1725,12 @@
 				     (>= row 0)
 				     (< row board-height)
 				     (> (send board get-num-concealed) 0))
-				(reset-ww-message!)
+				(ww-messages *checking-message* "")
 				(send frame expose-row-col
 				      row col
 				      (not (send e get-shift-down))
 				      (send e get-control-down))
+				(end-checking-ww-messages)
 				(send frame update-status!)
 				(when (zero? (send board get-num-concealed))
 				      (send frame set-game-over-label!))))

@@ -2571,10 +2571,17 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(o)) {
       float v = SCHEME_FLT_VAL(o);
-      if (v == 0.0f)
+      if (v == 0.0f) {
+	int neg;
+	neg = minus_zero_p(v);
+#if 0
 	scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
 			 "angle: undefined for %s0.0",
-			 minus_zero_p(v) ? "-" : "");
+			 neg ? "-" : "");
+#else
+	v = (neg ? -1.0f : 1.0f);
+#endif
+      }
       if (v > 0)
 	return zeroi;
       else
@@ -2586,9 +2593,13 @@ static Scheme_Object *angle (int argc, Scheme_Object *argv[])
       if (v == 0.0) {
 	int neg;
 	neg = minus_zero_p(v);
+#if 0
 	scheme_raise_exn(MZEXN_APPLICATION_DIVIDE_BY_ZERO, o,
 			 "angle: undefined for %s0.0",
 			 neg ? "-" : "");
+#else
+	v = (neg ? -1.0 : 1.0);
+#endif
       }
       if (v > 0)
 	return zeroi;

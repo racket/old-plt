@@ -41,38 +41,42 @@ server and each user's password.
 Quick Start for a Test Drive:
 ============================================
 
- 1. Create a new directory.
+ 1.  Create a new directory.
 
- 2. Copy "server-cert.pem" from the "handin-client" collection
-    to the new directory.
+ 2.  Copy "server-cert.pem" from the "handin-client" collection
+     to the new directory.
        NOTE: for real use, you need a new certificate.
        NOTE: see also "Where is the collection?", below
 
- 3. Copy "private-key.pem" from the "handin-server" collection
-    to the new directory.
+ 3.  Copy "private-key.pem" from the "handin-server" collection
+     to the new directory.
        NOTE: for real use, you need a new key.
 
- 4. Create a file "users.ss" with the following content:
+ 4.  Create a file "users.ss" with the following content:
        ((tester ("8fe4c11451281c094a6578e6ddbf5eed"
                  "Chester Tester"
                  "123")))
 
- 5. Make an "active" subdirectory in your new directory.
+ 5.  Make an "active" subdirectory in your new directory.
 
- 6. Make a "test" subdirectory in "active".
+ 6.  Make a "test" subdirectory in "active".
 
- 7. In your new directory, run
+ 7.  In your new directory, run
         mred -mvqM handin-server
      
- 8. Start DrScheme, click "Handin" to run the client, submit with
-    username "tester" and password "pw".
+ 8.  In the "handin-client" collection, edit "info.ss" and
+     uncomment the line
+        (define server:port "localhost:7979")
 
-    The submitted file will be .../active/test/tester/handin.scm.
+ 9.  Start DrScheme, click "Handin" to run the client, submit with
+     username "tester" and password "pw".
+
+     The submitted file will be .../active/test/tester/handin.scm.
  
- 9. Check the status of your submission by pointing a web browser at
+ 10. Check the status of your submission by pointing a web browser at
         https://localhost:7980/servlets/status.ss
-    Note the "s" in "https". Use the "tester" username and "pw"
-    password, as before.
+     Note the "s" in "https". Use the "tester" username and "pw"
+     password, as before.
 
   -------------------------------------------------------------------
  | "Where is the collection?"                                        |
@@ -99,7 +103,7 @@ To customize the client:
      uniquely. For example, "uu-cpsc2010" is a good name for CPSC 2010
      at the University of Utah.
 
-  2. Edit the first four definitions of "info.ss" in your renamed
+  2. Edit the first three definitions of "info.ss" in your renamed
      client collection:
 
        * For `name', choose a name for the handin tool as it will

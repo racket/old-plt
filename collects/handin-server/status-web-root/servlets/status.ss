@@ -70,7 +70,8 @@
 				    "inactive")
 				hi
 				user)]
-	       [l (filter file-exists?
+	       [l (filter (lambda (f)
+			    (file-exists? (build-path dir f)))
 			  (with-handlers ([not-break-exn? (lambda (x) null)])
 			    (directory-list dir)))])
 	  (if (pair? l)

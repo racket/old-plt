@@ -316,9 +316,7 @@
            file-menu:quit-help-string
            file-menu:quit-on-demand
            file-menu:create-quit?)
-   (define file-menu:quit-callback
-     (lambda (item control)
-       (parameterize ((exit:frame-exiting this)) (exit:exit))))
+   (define file-menu:quit-callback (lambda (item control) (exit:exit)))
    (define file-menu:get-quit-item (lambda () file-menu:quit-item))
    (define file-menu:quit-string
      (lambda ()

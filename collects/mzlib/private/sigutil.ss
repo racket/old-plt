@@ -398,13 +398,13 @@
 	  (caar renames)]
 	 [else (loop (cdr renames))]))))
 
-  (define (make-struct-stx-decls sig prefix src-stx check?)
+  (define (make-struct-stx-decls sig prefix init-prefix? src-stx check?)
     ;; If check? is #f, generates a syntax definition for <name>%# for
     ;; each <name> struct form in `sig'. Used for imports.
     ;; If check? is #t, generates an empty syntax "definition" that has
     ;; the side-effect of checking <name>%# against its expected shape.
     ;; CURRENTLY, check? is always #f.
-    (let ([signame (and (or prefix (not check?))
+    (let ([signame (and init-prefix?
 			(signature-name sig))])
       (append
        (apply
@@ -416,6 +416,7 @@
 						  (or prefix "")
 						  signame)
 					  prefix)
+				      #t
 				      src-stx
 				      check?))
 	     (filter signature? (signature-elems sig))))
@@ -630,11 +631,11 @@
 		  (make-parse-unit imports 
 				   renames 
 				   vars 
-				   (lambda (src-stx) (apply append (map (lambda (i) (make-struct-stx-decls i #f src-stx #f)) imports)))
+				   (lambda (src-stx) (apply append (map (lambda (i) (make-struct-stx-decls i #f #t src-stx #f)) imports)))
 				   body
 				   (lambda (src-stx) 
 				     ;; Disabled until we have a mechanism for declaring precise information in signatures:
-				     ; (make-struct-stx-decls sig #f src-stx #t)
+				     ; (make-struct-stx-decls sig #f #f src-stx #t)
 				     null))]
 		 [(and (null? pre-lines) (not port) (not (pair? lines)))
 		  (syntax-error 'unit/sig expr "improper body list form")]
@@ -1134,6 +1135,7 @@
 	   parse-unit-body
 	   parse-unit-stx-checks
 
+	   make-struct-stx-decls
 	   verify-struct-shape
 
 	   signature-vars

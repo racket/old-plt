@@ -268,20 +268,25 @@
 				 [ex-exploded (d->s ex-exploded)]
 				 [im-explodeds (d->s im-explodeds)]
 				 [im-flattened (d->s im-flattened)]
-				 [formname formname])
+				 [formname formname]
+				 [stx-decls (if (syntax-e (syntax global?))
+						null
+						(make-struct-stx-decls ex-sig #f #f (syntax signame) #f))])
 		     (syntax
-		      (dv/iu
-		       ex-flattened
-		       (let ([unit-var unite])
-			 (verify-linkage-signature-match
-			  'formname
-			  '(invoke)
-			  (list unit-var)
-			  '(ex-exploded)
-			  '(im-explodeds))
-			 (unit/sig-unit unit-var))
-		       prefix
-		       . im-flattened))))))))])))
+		      (begin
+			(dv/iu
+			 ex-flattened
+			 (let ([unit-var unite])
+			   (verify-linkage-signature-match
+			    'formname
+			    '(invoke)
+			    (list unit-var)
+			    '(ex-exploded)
+			    '(im-explodeds))
+			   (unit/sig-unit unit-var))
+			 prefix
+			 . im-flattened)
+			. stx-decls))))))))])))
   
   (define-syntax define-values/invoke-unit/sig
     (lambda (stx)

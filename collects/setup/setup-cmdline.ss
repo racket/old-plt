@@ -34,7 +34,7 @@
 	 (add-flags '((make-zo #f)))]
 	[("-x" "--no-launcher") "Do not produce launcher programs"
 	 (add-flags '((make-launchers #f)))]
-	[("-i" "--no-install") "Do not call collection-specific installers (just the post-installer)"
+	[("-i" "--no-install") "Do not call collection-specific pre-installers"
 	 (add-flags '((call-install #f)))]
 	[("-e" "--extension") "Produce native code extensions"
 	 (add-flags '((make-so #t)))]
@@ -45,7 +45,7 @@
 	[("-r" "--compile-verbose") "See make and compiler verbose messages"
 	 (add-flags '((make-verbose #t)
 		      (compiler-verbose #t)))]
-	[("--trust-zos") "Trust existing zo files (use only with prepackaged zo distributions)"
+	[("--trust-zos") "Trust existing .zos (use only with prepackaged .zos)"
 	 (add-flags '((trust-existing-zos #t)))]
 	[("-p" "--pause") "Pause at the end if there are any errors"
 	 (add-flags '((pause-on-errors #t)))]

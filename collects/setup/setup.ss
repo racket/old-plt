@@ -46,7 +46,7 @@
 	(when (on? 'trust-existing-zos values)
 	  (trust-zos #t))
 	(current-load/use-compiled (mk))))
-  
+
   ;; This has to be dynamic, so we get a chance to turn off
   ;; .zo use and turn on the compilation manager.
   (dynamic-require '(lib "setup-go.ss" "setup") #f))

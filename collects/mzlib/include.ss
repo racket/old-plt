@@ -111,7 +111,7 @@
 	[(build-path elem1 elem ...)
 	 (andmap
 	  (lambda (e)
-	    (or (string? (syntax-e e))
+	    (or (path-string? (syntax-e e))
 		(and (identifier? e)
 		     (or
 		      (module-identifier=? e (quote-syntax up))
@@ -121,7 +121,7 @@
 	[(lib filename ...)
 	 (andmap
 	  (lambda (e)
-	    (string? (syntax-e e)))
+	    (path-string? (syntax-e e)))
 	  (syntax->list (syntax (filename ...))))
 	 'ok]
 	[_else (raise-syntax-error #f "bad syntax" stx fn)]))

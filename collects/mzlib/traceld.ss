@@ -16,7 +16,7 @@
 		 (dynamic-wind
 		  (lambda () (set! tab (string-append " " tab)))
 		  (lambda () 
-		    (if (regexp-match "_loader" filename)
+		    (if (regexp-match #rx#"_loader" (path->bytes filename))
 			(let ([f (load filename #f)])
 			  (lambda (sym)
 			    (fprintf ep

@@ -106,12 +106,31 @@
       (let ([port (open-output-string)])
 	(write v port)
 	(get-output-string port))))
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Regexp helpers
+
+  (define (bstring-length s)
+    (if (string? s)
+	(string-length s)
+	(bytes-length s)))
+
+  (define (subbstring s st e)
+    (if (string? s)
+	(substring s st e)
+	(subbytes s st e)))
+
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Regexp helpers
   
   (define regexp-quote
     (opt-lambda (s [case-sens? #t])
-      (unless (string? s)
-	(raise-type-error 'regexp-quote "string" s))
-      (list->string
+      (unless (or (string? s)
+		  (bytes? s))
+	(raise-type-error 'regexp-quote "string or byte string" s))
+      ((if (bytes? s) 
+	   (lambda (l) (list->bytes (map char->integer l)))
+	   list->string)
        (apply
 	append
 	(map
@@ -119,16 +138,21 @@
 	   (cond 
 	    [(memq c '(#\$ #\| #\\ #\[ #\] #\. #\* #\? #\+ #\( #\) #\^))
 	     (list #\\ c)]
-	    [(and (char-alphabetic? c)
-		  (not case-sens?))
+	    [(and (not case-sens?)
+		  (not (char=? (char-upcase c) (char-downcase c))))
 	     (list #\[ (char-upcase c) (char-downcase c) #\])]
 	    [else (list c)]))
-	 (string->list s))))))
+	 (if (bytes? s) 
+	     (map integer->char (bytes->list s))
+	     (string->list s)))))))
 
   (define (regexp-replace-quote s)
-    (unless (string? s)
-      (raise-type-error 'regexp-replace-quote "string" s))
-    (regexp-replace* "&" (regexp-replace* "\\\\" s "\\\\\\\\") "\\\\&"))
+    (unless (or (string? s)
+		(bytes? s))
+      (raise-type-error 'regexp-replace-quote "string or byte string" s))
+    (if (bytes? s)
+	(regexp-replace* #rx"&" (regexp-replace* #rx"\\\\" s "\\\\\\\\") "\\\\&")
+	(regexp-replace* #rx#"&" (regexp-replace* #rx#"\\\\" s #"\\\\\\\\") #"\\\\&")))
 
   (define regexp-match/fail-without-reading
     (opt-lambda (pattern input-port [start-k 0] [end-k #f] [out #f])
@@ -138,74 +162,87 @@
         (raise-type-error 'regexp-match/fail-without-reading "output port or #f" out))
       (let ([m (regexp-match-peek-positions pattern input-port start-k end-k)])
         (and m
-             ;; What happens if someone swipes our chars before we can get them?
+             ;; What happens if someone swipes our bytes before we can get them?
              (let ([drop (caar m)])
                ;; drop prefix before match:
-               (let ([s (read-string drop input-port)])
+               (let ([s (read-bytes drop input-port)])
 		 (when out
 		   (display s out)))
 	       ;; Get the matching part, and shift matching indicies
-               (let ([s (read-string (- (cdar m) drop) input-port)])
+               (let ([s (read-bytes (- (cdar m) drop) input-port)])
                  (cons s
                        (map (lambda (p)
-                              (and p (substring s (- (car p) drop) (- (cdr p) drop))))
+                              (and p (subbytes s (- (car p) drop) (- (cdr p) drop))))
                             (cdr m)))))))))
 
   ;; Helper function for the regexp functions below.
   (define (regexp-fn name success-k port-success-k failure-k port-failure-k 
 		     need-leftover? peek?)
     (lambda (pattern string start end)
-
-      (unless (or (string? pattern) (regexp? pattern))
-	(raise-type-error name "regexp or string" pattern))
+      (unless (or (string? pattern) (bytes? pattern) 
+		  (regexp? pattern) (byte-regexp? pattern))
+	(raise-type-error name "regexp, byte regexp, string, or byte string" pattern))
       (if peek?
 	  (unless (input-port? string)
-	    (raise-type-error name "input-port" string))
-	  (unless (or (string? string) (input-port? string))
-	    (raise-type-error name "string or input-port" string)))
+	    (raise-type-error name "input port" string))
+	  (unless (or (string? string) 
+		      (bytes? string) 
+		      (input-port? string))
+	    (raise-type-error name "string, byte string or input port" string)))
       (unless (and (number? start) (exact? start) (integer? start) (start . >= . 0))
 	(raise-type-error name "non-negative exact integer" start))
       (unless (or (not end) 
 		  (and (number? end) (exact? end) (integer? end) (end . >= . 0)))
 	(raise-type-error name "non-negative exact integer or false" end))
       (unless (or (input-port? string)
-		  (start . <= . (string-length string)))
+		  (and (string? string)
+		       (start . <= . (string-length string)))
+		  (and (bytes? string)
+		       (start . <= . (bytes-length string))))
 	(raise-mismatch-error
 	 name
 	 (format "starting offset index out of range [0,~a]: " 
-		 (string-length string))
+		 (if (string? string)
+		     (string-length string)
+		     (bytes-length string)))
 	 start))
       (unless (or (not end)
 		  (and (start . <= . end)
 		       (or (input-port? string)
-			   (end . <= . (string-length string)))))
+			   (and (string? string)
+				(end . <= . (string-length string)))
+			   (and (bytes? string)
+				(end . <= . (bytes-length string))))))
 	(raise-mismatch-error
 	 name
 	 (format "ending offset index out of range [~a,~a]: " 
 		 end
-		 (string-length string))
+		 (if (string? string)
+		     (string-length string)
+		     (bytes-length string)))
 	 start))
 
       (when (and (positive? start)
 		 (input-port? string)
 		 need-leftover?)
 	;; Skip start chars:
-	(let ([s (make-string 4096)])
+	(let ([s (make-bytes 4096)])
 	  (let loop ([n 0])
 	    (unless (= n start)
-	      (let ([m (read-string-avail! s string 0 (min (- start n) 4096))])
+	      (let ([m (read-bytes-avail! s string 0 (min (- start n) 4096))])
 		(unless (eof-object? m)
 		  (loop (+ n m))))))))
 
-      (let ((expr (if (regexp? pattern) 
-		      pattern 
-		      (regexp pattern))))
+      (let ((expr (cond
+		   [(string? pattern) (regexp pattern)]
+		   [(bytes? pattern) (byte-regexp pattern)]
+		   [else pattern])))
 	(if (and (input-port? string)
 		 port-success-k)
 	    ;; Input port match, get string
 	    (let ([discarded 0]
 		  [leftover-port (and need-leftover?
-				      (open-output-string))])
+				      (open-output-bytes))])
 	      (let ([match (regexp-match expr string 
 					 (if need-leftover? 0 start) 
 					 (and end (if need-leftover? (- end start) end))
@@ -220,14 +257,17 @@
 					      void
 					      void)))]
 		    [leftovers (and need-leftover?
-				    (get-output-string leftover-port))])
+				    (if (and (regexp? pattern) 
+					     (string? string))
+					(get-output-string leftover-port)
+					(get-output-bytes leftover-port)))])
 		(if match
 		    (port-success-k expr string (car match) 
 				    (and end (- end 
 						(if need-leftover?
-						    (+ (string-length leftovers) start)
+						    (+ (bstring-length leftovers) start)
 						    discarded)
-						(string-length (car match))))
+						(bstring-length (car match))))
 				    leftovers)
 		    (port-failure-k leftovers))))
 	    ;; String/port match, get positions
@@ -299,7 +339,7 @@
 	       ;; success-k
 	       (lambda (expr string start end match-start match-end)
 		 (cons
-		  (substring string start match-start)
+		  (subbstring string start match-start)
 		  (regexp-split expr string match-end end)))
 	       ;; port-success-k:
 	       (lambda (expr string match-string new-end leftovers)
@@ -309,7 +349,7 @@
 	       ;; failure-k:
 	       (lambda (expr string start end)
 		 (list
-		  (substring string start (or end (string-length string)))))
+		  (subbstring string start (or end (bstring-length string)))))
 	       ;; port-fail-k
 	       (lambda (leftover)
 		 (list leftover))
@@ -323,7 +363,7 @@
 	       ;; success-k:
 	       (lambda (expr string start end match-start match-end)
 		 (cons
-		  (substring string match-start match-end)
+		  (subbstring string match-start match-end)
 		  (regexp-match* expr string match-end end)))
 	       ;; port-success-k:
 	       (lambda (expr string match-string new-end leftovers)
@@ -345,4 +385,10 @@
       (let ([m (regexp-match-positions p s)])
 	(and m
 	     (zero? (caar m))
-	     (= (string-length s) (cdar m)))))))
+	     (if (or (byte-regexp? p)
+		     (bytes? p)
+		     (bytes? s))
+		 (= (cdar m) (if (bytes? s)
+				 (bytes-length s)
+				 (string-utf-8-length s)))
+		 (= (cdar m) (string-length s))))))))

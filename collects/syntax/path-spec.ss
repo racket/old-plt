@@ -52,7 +52,7 @@
 	   file
 	   (cond
 	    ;; Src of include expression is a path?
-	    [(and (string? (syntax-source loc))
+	    [(and (path? (syntax-source loc))
 		  (complete-path? (syntax-source loc)))
 	     (let-values ([(base name dir?) 
 			   (split-path (syntax-source loc))])

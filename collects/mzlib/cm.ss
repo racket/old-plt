@@ -19,18 +19,19 @@
   
   (define (get-deps code path)
     (let-values ([(imports fs-imports) (module-compiled-imports code)])
-      (map (lambda (x)
-	     (resolve-module-path-index x path))
-	   ;; Filter symbols:
-	   (let loop ([l (append imports fs-imports)])
-	     (cond
-	      [(null? l) null]
-	      [(symbol? (car l)) (loop (cdr l))]
-	      [else (cons (car l) (loop (cdr l)))])))))
+      (map path->bytes
+	   (map (lambda (x)
+		  (resolve-module-path-index x path))
+		;; Filter symbols:
+		(let loop ([l (append imports fs-imports)])
+		  (cond
+		   [(null? l) null]
+		   [(symbol? (car l)) (loop (cdr l))]
+		   [else (cons (car l) (loop (cdr l)))]))))))
 
   (define (get-compilation-dir+name path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
-      (let ((name (regexp-replace #rx"\\..?.?.?$" name-suffix "")))
+      (let ((name (path-replace-suffix name-suffix #"")))
 	(values
 	 (cond
 	  ((eq? 'relative base) (build-path "compiled"))
@@ -39,7 +40,7 @@
 
   (define (get-compilation-path path)
     (let-values ([(dir name) (get-compilation-dir+name path)])
-      (build-path dir name)))
+      (path->bytes (build-path dir name))))
 
   (define (get-code-dir path)
     (let-values (((base name-suffix must-be-dir?) (split-path path)))
@@ -48,7 +49,8 @@
         (else (build-path base "compiled")))))
 
   (define (write-deps code path external-deps)
-    (let ((dep-path (string-append (get-compilation-path path) ".dep"))
+    (let ((dep-path (bytes->path
+		     (bytes-append (get-compilation-path path) #".dep")))
           (deps (get-deps code path)))
       (let ((op (open-output-file dep-path 'replace)))
         (write (cons (version)
@@ -65,14 +67,15 @@
   (define (compilation-failure path zo-name date-path)
     (with-handlers ((not-break-exn? void))
       (delete-file zo-name))
-    (let ([fail-path (string-append (get-compilation-path path) ".fail")])
+    (let ([fail-path (bytes->path
+		      (bytes-append (get-compilation-path path) #".fail"))])
       (close-output-port (open-output-file fail-path 'truncate/replace)))
     ((trace) (format "~afailure" (indent))))
 
   (define (compile-zo path)
-    ((trace) (format "~acompiling: ~a" (indent) path))
+    ((trace) (format "~acompiling: ~a" (indent) (path->bytes path)))
     (parameterize ([indent (string-append "  " (indent))])
-      (let ([zo-name (string-append (get-compilation-path path) ".zo")])
+      (let ([zo-name (bytes->path (bytes-append (get-compilation-path path) #".zo"))])
         (cond
          [(and (file-exists? zo-name) (trust-existing-zos)) (touch zo-name)]
          [else
@@ -89,7 +92,7 @@
                    [external-deps null]
                    [code (parameterize ([param (lambda (ext-file)
                                                  (set! external-deps
-                                                       (cons ext-file
+                                                       (cons (path->bytes ext-file)
                                                              external-deps)))])
                            (get-module-code path))]
                    [code-dir (get-code-dir path)])
@@ -107,15 +110,15 @@
                 (when (< zo-sec ss-sec)
                   (error 'compile-zo
                          "date for newly created .zo file (~a @ ~a) is before source-file date (~a @ ~a)~a"
-                         zo-name
+                         (path->bytes zo-name)
                          (format-date (seconds->date zo-sec))
-                         path
+                         (path->bytes path)
                          (format-date (seconds->date ss-sec))
                          (if (> ss-sec (current-seconds))
                            ", which appears to be in the future"
                            ""))))
               (write-deps code path external-deps)))])))
-    ((trace) (format "~aend compile: ~a" (indent) path)))
+    ((trace) (format "~aend compile: ~a" (indent) (path->bytes path))))
 
   (define (format-date date)
     (format "~a:~a:~a:~a:~a:~a"
@@ -127,17 +130,19 @@
 	    (date-second date)))
   
   (define (append-object-suffix f)
-    (string-append f (case (system-type)
-		       [(windows) ".dll"]
-		       [else ".so"])))
+    (path-replace-suffix f (case (system-type)
+			     [(windows) #".dll"]
+			     [else #".so"])))
+
+  (define _loader-path (append-object-suffix (bytes->path #"_loader")))
 
   (define (get-compiled-time path w/fail?)
-    (let-values  ([(dir name) (get-compilation-dir+name path)])
+    (let*-values  ([(dir name) (get-compilation-dir+name path)])
       (first-date
-       (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix "_loader")))
+       (lambda () (build-path dir "native" (system-library-subpath) _loader-path))
        (lambda () (build-path dir "native" (system-library-subpath) (append-object-suffix name)))
-       (lambda () (build-path dir (string-append name ".zo")))
-       (and w/fail? (lambda () (build-path dir (string-append name ".zo" ".fail")))))))
+       (lambda () (build-path dir (path-replace-suffix name #".zo")))
+       (and w/fail? (lambda () (build-path dir (path-replace-suffix name #".zo" #".fail")))))))
 
   (define first-date
     (case-lambda
@@ -157,12 +162,12 @@
 	(cond
           (stamp stamp)
           (else
-           ((trace) (format "~achecking: ~a" (indent) path))
+           ((trace) (format "~achecking: ~a" (indent) (path->bytes path)))
            (let ((path-zo-time (get-compiled-time path #f))
                  (path-time 
                   (with-handlers ((exn:i/o:filesystem? 
                                    (lambda (ex)
-                                     ((trace) (format "~a~a does not exist" (indent) path))
+                                     ((trace) (format "~a~a does not exist" (indent) (path->bytes path)))
                                      #f)))
                     (file-or-directory-modify-seconds path))))
              (cond
@@ -174,7 +179,8 @@
 		   (compile-zo path))
                   (else
                    (let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) (list (version)))))
-                                 (call-with-input-file (string-append (get-compilation-path path) ".dep")
+                                 (call-with-input-file (bytes->path 
+							(bytes-append (get-compilation-path path) #".dep"))
                                    read))))
                      (cond
                        ((or (not (pair? deps))
@@ -185,7 +191,8 @@
 				 ;; str => str is a module file name (check transitive dates)
 				 ;; (cons 'ext str) => str is an non-module file (check date)
 				 (let ([t (cond
-					   [(string? d) (compile-root d up-to-date)]
+					   [(bytes? d) (compile-root (bytes->path d) up-to-date)]
+					   [(path? d) (compile-root d up-to-date)]
 					   [(and (pair? d) (eq? (car d) 'ext))
 					    (with-handlers ((exn:i/o:filesystem?
 							     (lambda (ex) +inf.0)))
@@ -221,29 +228,29 @@
 		(lambda (path mod-name)
 		  (cond
                     [(not mod-name)
-                     ((trace) (format "~askipping:  ~a mod-name ~s" (indent) path mod-name))
+                     ((trace) (format "~askipping:  ~a mod-name ~s" (indent) (path->bytes path) mod-name))
                      (default-handler path mod-name)]
                     [(eq? 'none (use-compiled-file-kinds))
-                     ((trace) (format "~askipping:  ~a file-kinds ~s" (indent) path (use-compiled-file-kinds)))
+                     ((trace) (format "~askipping:  ~a file-kinds ~s" (indent) (path->bytes path) (use-compiled-file-kinds)))
                      (default-handler path mod-name)]
                     [(not (eq? compilation-manager-load-handler (current-load/use-compiled)))
                      ((trace) (format "~askipping:  ~a current-load/use-compiled changed ~s"
-                                      (indent) path (current-load/use-compiled)))
+                                      (indent) (path->bytes path) (current-load/use-compiled)))
                      (default-handler path mod-name)]
                     [(not (eq? orig-eval (current-eval)))
                      ((trace) (format "~askipping:  ~a orig-eval ~s current-eval ~s" 
-                                      (indent) path orig-eval (current-eval)))
+                                      (indent) (path->bytes path) orig-eval (current-eval)))
                      (default-handler path mod-name)]
                     [(not (eq? orig-load (current-load)))
                      ((trace) (format "~askipping:  ~a orig-load ~s current-load ~s" 
-                                      (indent) path orig-load (current-load)))
+                                      (indent) (path->bytes path) orig-load (current-load)))
                      (default-handler path mod-name)]
                     [(not (eq? orig-namespace (current-namespace)))
                      ((trace) (format "~askipping:  ~a orig-namespace ~s current-namespace ~s" 
-                                      (indent) path orig-namespace (current-namespace)))
+                                      (indent) (path->bytes path) orig-namespace (current-namespace)))
                      (default-handler path mod-name)]
                     [else 
-                     ((trace) (format "~aprocessing: ~a" (indent) path))
+                     ((trace) (format "~aprocessing: ~a" (indent) (path->bytes path)))
                      (compile-root path cache)
                      (default-handler path mod-name)]))])
 	compilation-manager-load-handler))))

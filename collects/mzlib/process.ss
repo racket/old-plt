@@ -15,7 +15,7 @@
 
   (define (shell-path/args who argstr)
     (case (system-type)
-      ((unix macosx) (append '("/bin/sh" "-c") (list argstr)))
+      ((unix macosx) (append '(#"/bin/sh" #"-c") (list argstr)))
       ((windows) (let ([cmd
 			(let ([d (find-system-path 'sys-dir)])
 			  (let ([cmd (build-path d "cmd.exe")])
@@ -28,7 +28,8 @@
 				      (build-path d 'up "command.com"))))))])
 		   (list cmd
 			 'exact
-			 (format "~a /c ~a" cmd argstr))))
+			 (string->bytes/utf-8
+			  (format "~a /c ~a" cmd argstr)))))
       (else (raise-mismatch-error 
 	     who
 	     (format "~a: don't know what shell to use for platform: " who)

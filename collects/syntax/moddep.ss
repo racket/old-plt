@@ -58,7 +58,7 @@
                expected-module filename)
               (current-continuation-marks))))]))
   
-  (define re:suffix (regexp "\\..?.?.?$"))
+  (define re:suffix #rx#"\\..*$")
 	  
   (define (resolve s)
     (if (complete-path? s)
@@ -84,7 +84,9 @@
 	   (when (eof-object? v)
 	     (error 'read-one "empty file; expected a module declaration in: ~a" path))
 	   (let ([name (let-values ([(base name dir?) (split-path path)])
-				   (string->symbol (regexp-replace re:suffix name "")))])
+			 (string->symbol (bytes->string/utf-8
+					  (path->bytes (path-replace-suffix  name #""))
+					  #\?)))])
 	     (check-module-form v name path))
 	   (unless (eof-object? (read p))
 	     (error 
@@ -100,8 +102,8 @@
   (define-struct (exn:get-module-code exn) (path))
 
   (define (get-module-code path)
-    (unless (and (string? path) (or (relative-path? path) (absolute-path? path)))
-      (raise-type-error 'get-module-code "pathname string" path))
+    (unless (path-string? path) 
+      (raise-type-error 'get-module-code "path or string (sans nul)" path))
     (let*-values ([(path) (resolve path)]
 		  [(base file dir?) (split-path path)]
 		  [(base) (if (eq? base 'relative) 'same base)]
@@ -113,29 +115,34 @@
 				       "compiled"
 				       "native"
 				       (system-library-subpath)
-				       (regexp-replace 
-					re:suffix file
+				       (path-replace-suffix
+					file
 					(case (system-type)
-					  [(windows) ".dll"]
-					  [else ".so"])))
+					  [(windows) #".dll"]
+					  [else #".so"])))
 			   #f))]
 	     [ok-kind? (lambda (file) (eq? mode 'all))]
 	     [zo (and comp?
 		      (build-path base
 				  "compiled"
-				  (regexp-replace re:suffix file ".zo")))]
+				  (path-replace-suffix file #".zo")))]
 	     [so (get-so file)]
-	     [_loader-so (get-so "_loader.ss")]
+	     [_loader-so (get-so (string->path "_loader.ss"))]
 	     [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
 		       (file-or-directory-modify-seconds path))]
 	     [with-dir (lambda (t) 
 			 (parameterize ([current-load-relative-directory 
-					 (if (string? base) base (current-directory))])
+					 (if (path? base) 
+					     base 
+					     (current-directory))])
 			   (t)))])
 	(cond
 	 [(and (date>=? _loader-so path-d)
 	       (let ([getter (load-extension _loader-so)])
-		 (let-values ([(loader modname) (getter (string->symbol (regexp-replace re:suffix file "")))])
+		 (let-values ([(loader modname) (getter (string->symbol 
+							 (bytes->string/latin-1
+							  (path->bytes
+							   (path-replace-suffix file #"")))))])
 		   loader)))
 	  => (lambda (loader)
 	       (raise (make-exn:get-module-code (format "get-module-code: cannot use _loader file: ~e"
@@ -156,11 +163,11 @@
 	 [else 
 	  (with-dir (lambda () (compile (read-one path #t))))]))))
 
-  (define re:dir (regexp "(.+?)/+(.*)"))
+  (define re:dir #rx#"(.+?)/+(.*)")
 
   (define (force-relto relto dir?)
     (cond
-     [(string? relto)
+     [(path-string? relto)
       (if dir?
 	  (let-values ([(base n d?) (split-path relto)])
 	    (if (eq? base 'relative)
@@ -180,19 +187,21 @@
     (lambda (s relto)
       (let ([get-dir (lambda () (force-relto relto #t))])
 	(cond
-	 [(string? s)
+	 [(path-string? s)
 	  ;; Parse Unix-style relative path string
-	  (let loop ([path (get-dir)][s s])
+	  (let loop ([path (get-dir)][s (if (path? s)
+					    (path->bytes s)
+					    (string->bytes/utf-8 s))])
 	    (let ([prefix (regexp-match re:dir s)])
 	      (if prefix
 		  (loop (build-path path 
 				    (let ([p (cadr prefix)])
 				      (cond
-				       [(string=? p ".") 'same]
-				       [(string=? p "..") 'up]
-				       [else p])))
+				       [(bytes=? p #".") 'same]
+				       [(bytes=? p #"..") 'up]
+				       [else (bytes->path p)])))
 			(caddr prefix))
-		  (build-path path s))))]
+		  (build-path path (bytes->path s)))))]
 	 [(or (not (pair? s))
 	      (not (list? s)))
 	  #f]
@@ -230,7 +239,7 @@
 		relto)]
      [else #f]))
 
-  (define re:path-only (regexp "^(.*)/[^/]*$"))
+  (define re:path-only #rx#"^(.*)/[^/]*$")
 
   (define collapse-module-path
     ;; relto-mp should be a relative path, '(lib relative-path collection), or '(file path)
@@ -241,19 +250,20 @@
 	       (when (procedure? relto-mp)
 		 (set! relto-mp (relto-mp)))
 	       (cond
-		[(string? relto-mp)
-		 (apply
-		  string-append
-		  (let ([m (regexp-match re:path-only relto-mp)])
-		    (if m
-			(cadr m)
-			"."))
-		  (map (lambda (e)
-			 (cond
-			  [(eq? e 'same) "/."]
-			  [(eq? e 'up) "/.."]
-			  [else (string-append "/" e)]))
-		       elements))]
+		[(path-string? relto-mp)
+		 (bytes->string/utf-8
+		  (apply
+		   bytes-append
+		   (let ([m (regexp-match re:path-only relto-mp)])
+		     (if m
+			 (cadr m)
+			 #"."))
+		   (map (lambda (e)
+			  (cond
+			   [(eq? e 'same) #"/."]
+			   [(eq? e 'up) #"/.."]
+			   [else (bytes-append #"/" e)]))
+			elements)))]
 		[else (let ([path (apply build-path
 					 (let-values ([(base n d?) (split-path (cadr relto-mp))])
 					   (if (eq? base 'relative)
@@ -264,16 +274,16 @@
 			    `(lib ,path ,(caddr relto-mp))
 			    `(file ,path)))]))])
 	(cond
-	 [(string? s)
+	 [(path-string? s)
 	  ;; Parse Unix-style relative path string
 	  (let loop ([elements null][s s])
 	    (let ([prefix (regexp-match re:dir s)])
 	      (if prefix
 		  (loop (cons (let ([p (cadr prefix)])
 				(cond
-				 [(string=? p ".") 'same]
-				 [(string=? p "..") 'up]
-				 [else p]))
+				 [(bytes=? p #".") 'same]
+				 [(bytes=? p #"..") 'up]
+				 [else (bytes->path p)]))
 			      elements)
 			(caddr prefix))
 		  (combine-relative-elements 

@@ -172,7 +172,7 @@
   (define file-name-from-path
     (lambda (name)
       (let-values ([(base file dir?) (split-path name)])
-	(if (and (not dir?) (string? file))
+	(if (and (not dir?) (path? file))
 	    file
 	    #f))))
 
@@ -181,7 +181,7 @@
       (let-values ([(base file dir?) (split-path name)])
 	(cond
 	 [dir? name]
-	 [(string? base) base]
+	 [(path? base) base]
 	 [else #f]))))
 
   ;; name can be any string; we just look for a dot

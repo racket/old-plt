@@ -34,12 +34,12 @@
 	  (apply setup-fprintf (current-output-port) s args)))
 
       (setup-printf "Setup version is ~a" (version))
-      (setup-printf "PLT home directory is ~a" plthome)
+      (setup-printf "PLT home directory is ~a" (path->string plthome))
       (setup-printf "Collection paths are ~a" (if (null? (current-library-collection-paths))
 						  "empty!"
 						  ""))
       (for-each (lambda (p)
-		  (setup-printf "  ~a" p))
+		  (setup-printf "  ~a" (path->string p)))
 		(current-library-collection-paths))
 
       (exit-handler
@@ -136,7 +136,7 @@
       (define collections-to-compile
 	(quicksort
 	 (if (null? x-specific-collections)
-	     (let ([ht (make-hash-table)])
+	     (let ([ht (make-hash-table 'equal)])
 	       (let loop ([collection-paths (current-library-collection-paths)])
 		 (cond
 		  [(null? collection-paths) 
@@ -153,29 +153,28 @@
 						   cp-contents)])
 			    (cond
 			     [(null? collections) (void)]
-			     [else (let* ([collection (car collections)]
-					  [coll-sym (string->symbol collection)])
+			     [else (let* ([collection (car collections)])
 				     (hash-table-get
 				      ht
-				      coll-sym
+				      collection
 				      (lambda ()
 					(let ([cc (collection->cc (list collection))])
 					  (when cc
 					    (hash-table-put! 
 					     ht
-					     coll-sym
+					     collection
 					     cc))))))
 				   (loop (cdr collections))])))
 			(loop (cdr collection-paths))])))
 	     (map
 	      (lambda (c)
-		(or (collection->cc c)
+		(or (collection->cc (map string->path c))
 		    (cannot-compile c)))
 	      x-specific-collections))
 	 (lambda (a b) (string-ci<? (cc-name a) (cc-name b)))))
 
-      (define re:making (regexp "making (.*) because "))
-      (define re:compiling (regexp "compiling: (.*)"))
+      (define re:making (byte-regexp #"making (.*) because "))
+      (define re:compiling (byte-regexp #"compiling: (.*)"))
 
       (define control-io-apply
 	(lambda (print-doing f args)
@@ -187,44 +186,45 @@
 		     [printed? #f]
 		     [on? #f]
 		     [dir-table (make-hash-table 'equal)]
-		     [line-accum ""]
+		     [line-accum #""]
 		     [op (make-custom-output-port 
 			  #f
 			  (lambda (s start end flush?)
-			    (let loop ([s (substring s start end)])
+			    (let loop ([s (subbytes s start end)])
 			      (if on?
-				  (let ([m (regexp-match-positions (string #\newline) s)])
+				  (let ([m (regexp-match-positions #rx#"\n" s)])
 				    (if m
 					(begin
 					  (set! on? #f)
 					  (when (verbose)
-					    (display (substring s 0 (add1 (caar m))) oop)
+					    (display (subbytes s 0 (add1 (caar m))) oop)
 					    (flush-output oop))
-					  (loop (substring s (add1 (caar m)) (string-length s))))
+					  (loop (subbytes s (add1 (caar m)))))
 					(when (verbose)
 					  (display s oop)
 					  (flush-output oop))))
-				  (let ([s (string-append line-accum s)])
+				  (let ([s (bytes-append line-accum s)])
 				    (let ([m (or (regexp-match-positions re:making s)
 						 (regexp-match-positions re:compiling s))])
 				      (unless m
 					(set! line-accum s)
-					(let ([m (regexp-match-positions #rx".*[\r\n]" line-accum)])
+					(let ([m (regexp-match-positions #rx#".*[\r\n]" line-accum)])
 					  (when m
-					    (set! line-accum (substring line-accum (cdar m))))))
+					    (set! line-accum (subbytes line-accum (cdar m))))))
 				      (when m
 					(unless printed?
 					  (set! printed? #t)
 					  (print-doing oop))
 					(set! on? #t)
 					(unless (verbose)
-					  (let ([path (path-only (substring s (caadr m) (cdadr m)))])
+					  (let ([path (path-only (bytes->path
+								  (subbytes s (caadr m) (cdadr m))))])
 					    (unless (hash-table-get dir-table path (lambda () #f))
 					      (hash-table-put! dir-table path #t)
 					      (print-doing oop path))))
 					(when (verbose)
 					  (display "  " oop)) ; indentation 
-					(loop (substring s (caar m) (string-length s))))))))
+					(loop (subbytes s (caar m))))))))
 			    (- end start))
 			  void
 			  void)])
@@ -243,19 +243,21 @@
 		     (map
 		      (lambda (subcol)
 			(or
-			 (collection->cc subcol)
+			 (collection->cc (map string->path subcol))
 			 (cannot-compile subcol)))
 		      (call-info info 'compile-subcollections
 				 ;; Default: subdirs with info.ss files
 				 (lambda ()
-				   (map (lambda (x) (append (cc-collection cc) (list x)))
-					(filter
-					 (lambda (p)
-					   (let ([d (build-path (cc-path cc) p)])
-					     (and (directory-exists? d)
-						  (file-exists?
-						   (build-path d "info.ss")))))
-					 (directory-list (cc-path cc)))))
+				   (map
+				    (lambda (l) (map path->string l))
+				    (map (lambda (x) (append (cc-collection cc) (list x)))
+					 (filter
+					  (lambda (p)
+					    (let ([d (build-path (cc-path cc) p)])
+					      (and (directory-exists? d)
+						   (file-exists?
+						    (build-path d "info.ss")))))
+					  (directory-list (cc-path cc))))))
 				 ;; Result checker:
 				 (lambda (x)
 				   (unless (and (list? x)
@@ -264,7 +266,7 @@
 						   (and (list? x)
 							(andmap
 							 (lambda (x)
-							   (and (string? x)
+							   (and (path-string? x)
 								(relative-path? x)))
 							 x)))
 						 x))
@@ -273,12 +275,12 @@
 		     (loop (cdr l)))))))
 
       (define (delete-file/record-dependency path dependencies)
-	(when (regexp-match-positions #rx"[.]dep$" path)
+	(when (regexp-match-positions #rx"[.]dep$" (path->bytes path))
 	  (let ([deps (with-handlers ([not-break-exn? (lambda (x) null)])
 			(with-input-from-file path read))])
 	    (when (and (pair? deps) (list? deps))
               (for-each (lambda (s)
-			  (when (string? s)
+			  (when (path-string? s)
 			    (hash-table-put! dependencies s #t)))
 			(map un-plthome-ify (cdr deps))))))
 	(delete-file path))
@@ -311,15 +313,15 @@
 		       (lambda (x)
 			 (unless (or (eq? x default)
 				     (and (list? x)
-					  (andmap string? x)))
-			   (error 'setup-plt "expected a list of strings for 'clean, got: ~s"
+					  (andmap path-string? x)))
+			   (error 'setup-plt "expected a list of path strings for 'clean, got: ~s"
 				  x))))]
 	       [printed? #f]
 	       [print-message
 		(lambda ()
 		  (unless printed?
 		    (set! printed? #t)
-		    (setup-printf "Deleting files for ~a at ~a" (cc-name cc) (cc-path cc))))])
+		    (setup-printf "Deleting files for ~a at ~a" (cc-name cc) (path->string (cc-path cc)))))])
 	  (for-each (lambda (path)
 		      (let ([full-path (build-path (cc-path cc) path)])
 			(cond
@@ -333,8 +335,6 @@
 			  (print-message)]
 			 [else (void)])))
 		    paths)))
-
-      (define re:suffix (regexp "[.].?.?.?$"))
 
       (when (clean)
 	(let ([dependencies (make-hash-table 'equal)])
@@ -353,7 +353,7 @@
 		 old-dependencies
 		 (lambda (file _)
 		   (let-values ([(dir name dir?) (split-path file)])
-		     (let ([base-name (regexp-replace re:suffix name "")])
+		     (let ([base-name (path-replace-suffix name #"")])
 		       (let ([zo (build-path dir "compiled" (format "~a.zo" base-name))]
 			     [dep (build-path dir "compiled" (format "~a.dep" base-name))])
 			 (when (and (file-exists? dep)
@@ -415,7 +415,7 @@
                                [(post)    'post-install-collection])
                              (lambda () (k #f))
                              (lambda (v)
-                               (unless (and (string? v)
+                               (unless (and (path-string? v)
                                             (relative-path? v))
                                  (error "result is not a relative path string: " v))
                                (let ([p (build-path (cc-path cc) v)])
@@ -428,7 +428,7 @@
                                    (error 'setup-plt
                                           "error loading installer: ~a"
                                           (if (exn? exn) (exn-message exn) exn)))])
-                             (dynamic-require `(lib ,fn ,@(cc-collection cc)) 
+                             (dynamic-require `(lib ,fn ,@(map path->string (cc-collection cc)))
                                               (case part
                                                 [(pre)     'pre-installer]
                                                 [(general) 'installer]
@@ -458,9 +458,10 @@
 				 [(p where)
 				  ;; Doing something specifically in "where"
 				  (setup-fprintf p "  in ~a" 
-						 (path->complete-path
-						  where
-						  (cc-path cc)))])
+						 (path->string
+						  (path->complete-path
+						   where
+						   (cc-path cc))))])
 				compile-collection
 				(cc-collection cc))
 			 (setup-printf "No more ~a to compile for ~a" 
@@ -474,7 +475,7 @@
       (when (make-launchers)
 	(let ([name-list
 	       (lambda (l)
-		 (unless (and (list? l) (andmap (lambda (x) (and (string? x) (relative-path? x))) l))
+		 (unless (and (list? l) (andmap (lambda (x) (and (path-string? x) (relative-path? x))) l))
 		   (error "result is not a list of relative path strings:" l)))]
               [flags-list
                (lambda (l)
@@ -514,8 +515,7 @@
                                        [aux (cons `(exe-name . ,mzln)
                                                   (build-aux-from-path
                                                    (build-path (apply collection-path (cc-collection cc))
-                                                               (regexp-replace "[.]..?.?$"
-                                                                               (or mzll mzln) ""))))])
+                                                               (path-replace-suffix(or mzll mzln) #""))))])
                                    (unless (up-to-date? p aux)
                                      (setup-printf "Installing ~a~a launcher ~a"
                                                    kind (if (eq? (current-launcher-variant) 'normal)
@@ -529,7 +529,8 @@
                                             ;; avoid cygwin bug):
                                             (list "-qmvL-" mzll (car (cc-collection cc)))
                                             (list "-qmve-"
-                                                  (format "~s" `(require (lib ,mzll ,@(cc-collection cc)))))))
+                                                  (format "~s" `(require (lib ,mzll ,@(map path->string 
+											   (cc-collection cc))))))))
                                       p
                                       aux))))
                                mzlns

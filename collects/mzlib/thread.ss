@@ -108,15 +108,15 @@
        (unless (output-port? dest)
 	 (raise-type-error 'copy-port "output-port" dest)))
      (cons dest dests))
-    (let ([s (make-string 4096)])
+    (let ([s (make-bytes 4096)])
       (let loop ()
-	(let ([c (read-string-avail! s src)])
+	(let ([c (read-bytes-avail! s src)])
 	  (unless (eof-object? c)
 	    (for-each
 	     (lambda (dest)
 	       (let loop ([start 0])
 		 (unless (= start c)
-		   (let ([c2 (write-string-avail s dest start c)])
+		   (let ([c2 (write-bytes-avail s dest start c)])
 		     (loop (+ start c2))))))
 	     (cons dest dests))
 	    (loop))))))
@@ -200,7 +200,7 @@
 	 ;;  and get rid of it if the result is eof
 	 (if (null? ports)
 	     eof
-	     (let ([n (read-string-avail!* str (car ports))])
+	     (let ([n (read-bytes-avail!* str (car ports))])
 	       (cond
 		[(eq? n 0) (car ports)]
 		[(eof-object? n)
@@ -214,7 +214,7 @@
 	 (let loop ([ports ports][skip skip])
 	   (if (null? ports)
 	       eof
-	       (let ([n (peek-string-avail!* str skip (car ports))])
+	       (let ([n (peek-bytes-avail!* str skip (car ports))])
 		 (cond
 		  [(eq? n 0) 
 		   ;; Not ready, yet.
@@ -232,9 +232,9 @@
 
   (define (convert-stream from from-port
 			  to to-port)
-    (let ([c (string-open-converter from to)]
-	  [in (make-string 4096)]
-	  [out (make-string 4096)])
+    (let ([c (bytes-open-converter from to)]
+	  [in (make-bytes 4096)]
+	  [out (make-bytes 4096)])
       (unless c
 	(error 'convert-stream "could not create converter from ~e to ~e"
 	       from to))
@@ -242,41 +242,41 @@
 	  void
 	  (lambda ()
 	    (let loop ([got 0])
-	      (let ([n (read-string-avail! in from-port got)])
+	      (let ([n (read-bytes-avail! in from-port got)])
 		(let ([got (+ got (if (eof-object? n)
 				      0
 				      n))])
-		  (let-values ([(wrote used ok?) (string-convert c in 0 got out)])
-		    (unless ok?
+		  (let-values ([(wrote used status) (bytes-convert c in 0 got out)])
+		    (when (eq? status 'error)
 		      (error 'convert-stream "conversion error"))
 		    (unless (zero? wrote)
-		      (write-string out to-port 0 wrote))
-		    (string-copy! in used in 0 got)
+		      (write-bytes out to-port 0 wrote))
+		    (bytes-copy! in used in 0 got)
 		    (if (eof-object? n)
 			(begin
 			  (unless (= got used)
 			    (error 'convert-stream "input stream ended with a partial conversion"))
-			  (let-values ([(wrote ok?) (string-convert-end c out)])
-			    (unless ok?
+			  (let-values ([(wrote status) (bytes-convert-end c out)])
+			    (when (eq? status 'error)
 			      (error 'convert-stream "conversion-end error"))
 			    (unless (zero? wrote)
-			      (write-string out to-port 0 wrote))
+			      (write-bytes out to-port 0 wrote))
 			    ;; Success
 			    (void)))
 			(loop (- got used))))))))
-	  (lambda () (string-close-converter c)))))
+	  (lambda () (bytes-close-converter c)))))
 
   ;; Helper for input-port-append; given a skip count
   ;;  and an input port, determine how many characters
   ;;  (up to upto) are left in the port. We figure this
   ;;  out using binary search.
   (define (compute-avail-to-skip upto p)
-    (let ([str (make-string 1)])
+    (let ([str (make-bytes 1)])
       (let loop ([upto upto][skip 0])
 	(if (zero? upto)
 	    skip
 	    (let* ([half (quotient upto 2)]
-		   [n (peek-string-avail!* str (+ skip half) p)])
+		   [n (peek-bytes-avail!* str (+ skip half) p)])
 	      (if (eq? n 1)
 		  (loop (- upto half 1) (+ skip half 1))
 		  (loop half skip)))))))
@@ -286,19 +286,19 @@
       (let ([got 0])
 	(make-custom-input-port
 	 (lambda (str)
-	   (let ([count (min (- limit got) (string-length str))])
+	   (let ([count (min (- limit got) (bytes-length str))])
 	     (if (zero? count)
 		 eof
-		 (let ([n (read-string-avail!* str port 0 count)])
+		 (let ([n (read-bytes-avail!* str port 0 count)])
 		   (cond
 		    [(eq? n 0) port]
 		    [(number? n) (set! got (+ got n)) n]
 		    [else n])))))
 	 (lambda (str skip)
-	   (let ([count (max 0 (min (- limit got skip) (string-length str)))])
+	   (let ([count (max 0 (min (- limit got skip) (bytes-length str)))])
 	     (if (zero? count)
 		 eof
-		 (let ([n (peek-string-avail!* str skip port 0 count)])
+		 (let ([n (peek-bytes-avail!* str skip port 0 count)])
 		   (if (eq? n 0)
 		       port
 		       n)))))

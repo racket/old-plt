@@ -212,13 +212,13 @@
      [(program arguments table finish finish-help help)
       (parse-command-line program arguments table finish finish-help help
 			  (lambda (flag)
-			    (error (string->symbol program) "unknown flag: ~s" flag)))]
+			    (error (string->symbol (bytes->string/locale program #\?)) "unknown flag: ~s" flag)))]
      [(program arguments table finish finish-help help unknown-flag)
-      (unless (string? program)
-	(raise-type-error 'parse-command-line "program name string" program))
+      (unless (or (string? program) (bytes? program))
+	(raise-type-error 'parse-command-line "program name string or byte string" program))
       (unless (and (vector? arguments)
-		   (andmap string? (vector->list arguments)))
-	(raise-type-error 'parse-command-line "argument vector of strings" arguments))
+		   (andmap bytes? (vector->list arguments)))
+	(raise-type-error 'parse-command-line "argument vector of byte strings" arguments))
       (unless (and (list? table)
 		   (let ([bad-table
 			  (lambda (reason)
@@ -405,7 +405,7 @@
 		      [c (length args)])
 		  (if (procedure-arity-includes? finish (add1 c))
 		      (apply finish options args)
-		      (error (string->symbol program)
+		      (error (string->symbol (format "~a" program))
 			     (format "expects~a on the command line, given ~a argument~a~a"
 				     (if (null? finish-help)
 					 " no arguments"
@@ -424,7 +424,9 @@
 				     (let loop ([args args])
 				       (if (null? args)
 					   ""
-					   (string-append (car args) " " (loop (cdr args))))))))))]
+					   (string-append (bytes->string/locale (car args) #\?)
+							  " " 
+							  (loop (cdr args))))))))))]
 	     [call-handler
 	      (lambda (handler flag args r-acc k)
 		(let* ([a (procedure-arity handler)]
@@ -436,7 +438,7 @@
 				(sub1 a)
 				remaining)])
 		  (if (< remaining needed)
-		      (error (string->symbol program)
+		      (error (string->symbol (format "~a" program))
 			     "the ~s flag needs ~a argument~a, but ~a~a provided"
 			     flag needed (if (> needed 1) "s" "")
                              (if (zero? remaining) "" "only ")
@@ -465,7 +467,7 @@
 		      (let ([set (caar table)])
 			(if (car set)
 			    (let ([flags (cdr set)])
-			      (error (string->symbol program)
+			      (error (string->symbol (format "~a" program))
 				     (let ([s (if (= 1 (length flags))
 						  (format "the ~a flag can only be specified once" (car flags))
 						  (format "only one instance of one flag from ~a is allowed" flags))])
@@ -485,7 +487,7 @@
 			    (set-car! set #t))))
 		    (call-handler (caddar table) flag args r-acc k)]
 		   [else (loop (cdr table))])))])
-	(let loop ([args (vector->list arguments)][r-acc null])
+	(let loop ([args (map (lambda (s) (bytes->string/locale s #\?)) (vector->list arguments))][r-acc null])
 	  (if (null? args)
 	      (done args r-acc)
 	      (let ([arg (car args)]

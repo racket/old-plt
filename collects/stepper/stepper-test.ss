@@ -1,5 +1,7 @@
 ; stepper-test.ss
 
+(require-library "errortrace.ss" "errortrace")
+
 (require-library "sig.ss" "stepper")
 (require-library "zsigs.ss" "zodiac")
 (require-library "sigs.ss" "zodiac")
@@ -34,9 +36,9 @@
 				    (ERROR : zodiac:interface^)
 				    PRETTY
 				    MZLIB-FILE)]
-	  [SHARED : stepper:shared^ ((require-library-unit/sig "unparser.ss" "stepper")
-				     ERROR
-				     ZODIAC)]
+	  [SHARED : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
+				     ZODIAC
+                                     ERROR)]
 	  [ANNOTATE : stepper:annotate^
 		    ((require-library-unit/sig "annotater.ss" "stepper")
 		     ZODIAC
@@ -47,10 +49,35 @@
 	  [RECONSTRUCT : stepper:reconstruct^ 
 		       ((require-library-unit/sig "reconstructr.ss" "stepper")
 			ZODIAC
+                        FUNCTION
 			ERROR
-			SHARED)])
+			SHARED)]
+          [STEPPER : stepper:stepper^
+                   ((require-library-unit/sig "stepperr.ss" "stepper")
+                    PRETTY
+                    ANNOTATE
+                    RECONSTRUCT)])
     (export (unit STEPPER))))
 
 (invoke-open-unit/sig stepper-test@)
 
-(define lookup (stepper:stepper-start "((lambda (x) x) (let ([x 3] [y 3]) (+ x y)))"))
+'(define lookup (stepper:stepper-start "((lambda (x) x) (let ([x 3] [y 3]) (+ x y)))"))
+
+(define (s) (stepper:stepper-step))
+
+'(stepper:stepper-start 
+  (define a 3)
+  (define b 4)
+  (define c (+ 4 3))
+  3)
+
+(stepper:stepper-start
+ "(define (fact n) (if (= n 0) 1 (* n (fact (- n 1)))))
+ (fact 4)")
+   
+             
+             
+                                   
+                     
+                     
+

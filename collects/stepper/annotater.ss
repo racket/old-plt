@@ -3,7 +3,7 @@
 	  mzlib:function^
 	  [e : stepper:error^]
 	  stepper:shared^
-	  stepper:reconstruct)
+	  stepper:reconstruct^)
   
     ; ANNOTATE SOURCE CODE
   
@@ -28,26 +28,37 @@
   (define if-temp (gensym "if-temp-"))
    
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
-  ; forms a new list which is the union of the sets.  the elements are 
-  ; compared using the first element of the varref
+  ; forms a new list which is the union of the sets.  when a top-level and a non-top-level
+  ; varref have the same name, we must keep the non-top-level one.
   
+  (define (varref-remove* a-set b-set)
+    (remove* a-set 
+             b-set 
+             (lambda (a-var b-var) 
+               (eq? (varref-var a-var)
+                    (varref-var b-var)))))
+    
+    (define (varref-elt-union a b-set)
+    (cond [(null? b-set)
+           (list a)]
+          [(eq? (varref-var a) (varref-var (car b-set)))
+           (cons
+            (if (varref-top-level? a)
+                (car b-set)
+                a)
+            (cdr b-set))]
+          [else
+           (cons (car b-set) (varref-elt-union a (cdr b-set)))]))
+  
+  (define (varref-set-pair-union a-set b-set)
+    (foldl varref-elt-union b-set a-set))
+           
   (define var-set-union
     (lambda args
-      (foldl (lambda (a b) 
-	       (append a (remove* a b (lambda (x y) 
-					(= (varref-var x)
-					   (varref-var y))))))
+      (foldl varref-set-pair-union
 	     null
 	     args)))
   
-  ; set-union test: (relies on current implementation of set-union) (and is broken now)
-  
-  #| (andmap (lambda (x) (apply equal? x))
-	  `((,(set-union) ,null)
-	    (,(set-union '(3 2 foo)) (3 2 foo))
-	    (,(set-union '(3 9 12 97 4) '(2 1 98 3 9) '(2 19 97 4))
-	     (3 9 12 97 4 2 1 98 19))))
-  |#
     
   #| .
      somehow, we need to translate zodiac structures back into scheme structures so that 
@@ -63,6 +74,19 @@
      right here, but it means I have to COPY CODE from aries.  In particular, I need this
      arglist->ilist function. Ick.
      |#
+  
+  (define make-improper
+    (lambda (combine)
+      (rec improper ;; `rec' is for the name in error messages
+	   (lambda (f list)
+	     (let improper-loop ([list list])
+	       (cond
+		 ((null? list) list)
+		 ((pair? list) (combine (f (car list))
+					(improper-loop (cdr list))))
+		 (else (f list))))))))
+  (define improper-map (make-improper cons))
+  (define improper-foreach (make-improper (lambda (x y) y)))
   
   ; check-for-keyword/both : (bool -> (z:varref -> void))
   
@@ -89,8 +113,6 @@
   
   (define check-for-keyword (check-for-keyword/both #t))
   (define check-for-keyword/proc (check-for-keyword/both #f))
-  
-  
 
   ; Here's more code copied directly from aries.  This is getting worse and worse.
   
@@ -117,29 +139,26 @@
       (values
        (lambda (parsed) (getter (z:parsed-back parsed)))
        (lambda (parsed) (setter (z:parsed-back parsed) #t)))))
-
-  ; debug-key: this key will be used to register the source expr with reconstructr.ss
-  ; and as a key for the continuation marks.
-  
-  (define debug-key (gensym "debug-key-"))
-    
+   
   (define (interlace a b)
-    (foldr (lambda (built a b)
+    (foldr (lambda (a b built)
              (cons a (cons b built)))
            null
            a
            b))
-    
+  
+  
   (define (read-exprs text)
-    (let ([reader (z:read text)])
+    (let ([reader (z:read (open-input-string text) 
+                          (z:make-location 1 1 0 "stepper-string"))])
       (let read-loop ([new-expr (reader)])
         (if (z:eof? new-expr)
             ()
             (cons new-expr (read-loop (reader)))))))
   
   (define (find-defined-vars expr)
-    (cond ([z:define-values? expr]
-           (map z:varref-var vars))
+    (cond ([z:define-values-form? expr]
+           (map z:varref-var (z:define-values-form-vars expr)))
           (else
            null)))
   
@@ -151,7 +170,10 @@
 
   (define (current-def-setter num)
     `(#%set! ,current-def-sym ,num))
-           
+  
+  (define (closure-key-maker closure)
+    closure)
+  
   ; debug-key: this key will be used as a key for the continuation marks.
   
   (define debug-key (gensym "debug-key-"))
@@ -230,11 +252,13 @@
     (local
 	(  
          (define my-break
-           `(lambda ()
-              (,break (current-continuation-marks ,debug-key)
+           `(#%lambda ()
+              (,break (current-continuation-marks (#%quote ,debug-key))
                      ,all-defs-list-sym
                      ,current-def-sym)))
          
+         
+  
          ; wrap creates the w-c-m expression.
   
          (define (wrap debug-info expr)
@@ -242,31 +266,33 @@
              `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
   
 
-         (define read-exprs (read-exprs text))
+         (define exprs-read (read-exprs text))
          
-         (define (find-read-expr offset)
-           (let search-exprs ([exprs read-exprs])
-             (let ([expr 
-                    (car (filter 
-                          (lambda (expr) 
-                            (< offset (z:location-offset (z:zodiac-finish expr))))
-                          exprs))])
-               (if (= offset (z:location-offset (z:zodiac-start expr)))
-                   expr
-                   (cond
-                     ((z:scalar? expr) (e:static-error "starting offset inside scalar:" offset))
-                     ((z:sequence? expr) 
-                      (let ([object (z:read-object expr)])
-                        (cond
-                          ((z:list? expr) (search-exprs object))
-                          ((z:vector? expr) 
-                           (search-exprs (vector->list object))) ; can source exprs be here?
-                          ((z:improper-list? expr)
-                           (search-exprs (search-exprs object))) ; can source exprs be here?
-                          (else (e:static-error "unknown expression type in sequence" expr)))))
-                     (else (e:static-error "unknown read type" expr)))))))
+         (define (find-read-expr expr)
+           (let ([offset (z:location-offset (z:zodiac-start expr))])
+             (let search-exprs ([exprs exprs-read])
+               (let* ([later-exprs (filter 
+                                    (lambda (expr) 
+                                      (<= offset (z:location-offset (z:zodiac-finish expr))))
+                                    exprs)]
+                      [expr 
+                       (car later-exprs)])
+                 (if (= offset (z:location-offset (z:zodiac-start expr)))
+                     expr
+                     (cond
+                       ((z:scalar? expr) (e:static-error "starting offset inside scalar:" offset))
+                       ((z:sequence? expr) 
+                        (let ([object (z:read-object expr)])
+                          (cond
+                            ((z:list? expr) (search-exprs object))
+                            ((z:vector? expr) 
+                             (search-exprs (vector->list object))) ; can source exprs be here?
+                            ((z:improper-list? expr)
+                             (search-exprs (search-exprs object))) ; can source exprs be here?
+                            (else (e:static-error "unknown expression type in sequence" expr)))))
+                       (else (e:static-error "unknown read type" expr))))))))
   
-         (define parsed-exprs (map z:scheme-expand read-exprs))  
+         (define parsed-exprs (map z:scheme-expand exprs-read))  
          
 	 ; annotate/inner takes an expression to annotate and a boolean
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
@@ -278,27 +304,33 @@
 	   
 	   ; translate-varref: (bool bool -> sexp (listof varref))
 	   
-	   (let ([tail-recur (lambda (expr) (annotate/inner expr on-spine? top-env))]
-                 [non-tail-recur (lambda (expr) (annotate/inner expr #f null))]
-                 [lambda-body-recur (lambda (expr) (annotate/inner expr #t null))]                 
-                 [translate-varref
-		  (lambda (maybe-undef? top-level?)
-		    (let* ([v (z:varref-var expr)]
-			   [real-v (if (z:top-level-varref? expr)
-				       v
-				       (z:binding-orig-name
-					(z:bound-varref-binding expr)))]
-			   [free-vars (list (make-varref v top-level?))]
-			   [debug-info (make-debug-info free-vars on-spine? expr null)]
-			   [annotated (if (and maybe-undef? (signal-undefined))
-					  `(#%if (#%eq? ,v ,the-undefined-value)
-					    (#%raise (,make-undefined
-						      ,(format undefined-error-format real-v)
-						      ((#%debug-info-handler))
-						      (#%quote ,v)))
-					    ,v)
-					  v)])
-		      (values (wrap debug-info annotated) free-vars)))])
+	   (let* ([tail-recur (lambda (expr) (annotate/inner expr on-spine? top-env))]
+                  [non-tail-recur (lambda (expr) (annotate/inner expr #f null))]
+                  [lambda-body-recur (lambda (expr) (annotate/inner expr #t null))]
+                  [make-debug-info-wrapper
+                   (lambda (vars bindings-needed source special-vars)
+                     (make-debug-info (var-set-union top-env vars)
+                                      bindings-needed
+                                      source
+                                      special-vars))]
+                  [translate-varref
+                   (lambda (maybe-undef? top-level?)
+                     (let* ([v (z:varref-var expr)]
+                            [real-v (if (z:top-level-varref? expr)
+                                        v
+                                        (z:binding-orig-name
+                                         (z:bound-varref-binding expr)))]
+                            [free-vars (list (make-varref real-v top-level?))]
+                            [debug-info (make-debug-info-wrapper free-vars on-spine? expr null)]
+                            [annotated (if (and maybe-undef? (signal-undefined))
+                                           `(#%if (#%eq? ,v ,the-undefined-value)
+                                             (#%raise (,make-undefined
+                                                       ,(format undefined-error-format real-v)
+                                                       ((#%debug-info-handler))
+                                                       (#%quote ,v)))
+                                             ,v)
+                                           v)])
+                       (values (wrap debug-info annotated) free-vars)))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -313,7 +345,7 @@
 		 (not (never-undefined? (z:bound-varref-binding expr)))
 		 #f)]
 	       
-               `	       [(z:top-level-varref? expr)
+               [(z:top-level-varref? expr)
 		(if (is-unit-bound? expr)
 		    (translate-varref #t #f)
 		    (begin
@@ -327,7 +359,7 @@
                   [val arg-varrefs (map (lambda (sym) (make-varref sym #f)) arg-sym-list)]
 		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
 		  [val pile-of-values
-		       (map (lambda (expr bound) 
+		       (map (lambda (expr) 
 			      (let-values ([(annotated free) (non-tail-recur expr)])
 				(list annotated free)))
 			    sub-exprs)]
@@ -336,9 +368,9 @@
 		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
 					`(#%set! ,arg-symbol ,annotated-sub-expr))
 				      arg-sym-list annotated-sub-exprs)]
-		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr null)]
+		  [val app-debug-info (make-debug-info-wrapper arg-varrefs on-spine? expr null)]
 		  [val final-app (wrap app-debug-info arg-sym-list)]
-		  [val debug-info (make-debug-info free-vars on-spine? expr arg-varref-list)]
+		  [val debug-info (make-debug-info-wrapper free-vars on-spine? expr arg-varrefs)]
 		  [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
 		 (values `(#%let ,let-clauses ,let-body) free-vars))]
 	       
@@ -353,9 +385,9 @@
 				  `(#%struct 
 				    ,(list raw-type annotated-super-expr)
 				    ,raw-fields)]
-                             [val debug-info (make-debug-info free-vars-super-expr on-spine? expr null)])
+                             [val debug-info (make-debug-info-wrapper free-vars-super-expr on-spine? expr null)])
 			    (values (wrap debug-info annotated) free-vars-super-expr))
-		      (values (wrap (make-debug-info null on-spine? expr null)
+		      (values (wrap (make-debug-info-wrapper null on-spine? expr null)
                                     `(#%struct ,raw-type ,raw-fields)) 
                               null)))]
 	       
@@ -368,7 +400,7 @@
 		  [val (values annotated-else free-vars-else) 
 		       (tail-recur (z:if-form-else expr))]
 		  ; in beginner-mode, we must insert the boolean-test
-		  [val annotated `(#%let (,if-temp ,annotated-test)
+		  [val annotated `(#%let ((,if-temp ,annotated-test))
 				   (#%if (#%boolean? ,if-temp)
 				    (#%if ,if-temp
 				     ,annotated-then
@@ -379,11 +411,11 @@
 					      ((#%debug-info-handler))
 					      ,if-temp))))]
 		  [val free-vars (var-set-union free-vars-test free-vars-then free-vars-else)]
-		  [val debug-info (make-debug-info free-vars on-spine? expr null)])
+		  [val debug-info (make-debug-info-wrapper free-vars on-spine? expr null)])
 		 (values (wrap debug-info annotated) free-vars))]
 	       
 	       [(z:quote-form? expr)
-		(values (wrap (make-debug-info null on-spine? expr null) 
+		(values (wrap (make-debug-info-wrapper null on-spine? expr null) 
 			      `(#%quote ,(read->raw (z:quote-form-expr expr))))
 			null)]
 	       
@@ -411,20 +443,26 @@
 	       [(z:case-lambda-form? expr)
 		(let* ([annotate-case
 			(lambda (arglist body)
-			  (let ([var-list (z:arglist-vars arglist)])
+			  (let ([var-list (map (lambda (var)
+                                                 (make-varref (z:binding-orig-name var) #f))
+                                               (z:arglist-vars arglist))])
 			    (let-values ([(annotated free-vars)
-					  (lambda-body-recur body #t)])
-			      (let ([new-free-vars (remq* var-list free-vars)]
-				    [new-annotated (list (arglist->ilist arglist) annotated)])
+					  (lambda-body-recur body)])
+                              (printf "var-list: ~a~n" (map varref-var var-list))
+                              (printf "free-vars: ~a~n" (map varref-var free-vars))
+			      (let* ([new-free-vars (varref-remove* var-list free-vars)]
+                                     [args (arglist->ilist arglist)]
+                                     [new-annotated (list (improper-map z:binding-var args) annotated)])
+                                (improper-foreach check-for-keyword args)
 				(list new-annotated new-free-vars)))))]
 		       [pile-of-results (map annotate-case 
 					     (z:case-lambda-form-args expr)
 					     (z:case-lambda-form-bodies expr))]
 		       [annotated-bodies (map car pile-of-results)]
-		       [annotated-case-lambda (list '#%case-lambda annotated-bodies)] 
+		       [annotated-case-lambda (cons '#%case-lambda annotated-bodies)] 
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
-		       [debug-info (make-debug-info new-free-vars null on-spine? expr null)]
-		       [closure-info (make-debug-info new-free-vars #t expr null)]
+		       [debug-info (make-debug-info-wrapper new-free-vars on-spine? expr null)]
+		       [closure-info (make-debug-info-wrapper new-free-vars #t expr null)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
 				       ; that closure-table-put! thing needs to be protected
 				       (,closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)
@@ -440,22 +478,28 @@
 		(print-struct #t)
 		(e:internal-error
 		 expr
-		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))])))
+		 (format "stepper:annotate/inner: unknown object to annotate, ~a~n" expr))]))))
          
          ; body of local
          
          (let* ([defined-top-vars (top-defs parsed-exprs)]
-                [top-environments (cons null
-                                        (build-list (- (length top-defs) 1) 
-                                                    (lambda (n) (flatten-take n defined-top-vars))))]
-                [annotated-exprs (map (lambda (expr top-env) (annotate/inner expr #t top-env)) 
+                [top-env-vars (build-list (length defined-top-vars)
+                                          (lambda (n) (flatten-take n defined-top-vars)))]
+                [top-env-varrefs (map (lambda (env) (map (lambda (var) (make-varref var #t)) env))
+                                      top-env-vars)]
+                [annotated-exprs (map (lambda (expr top-env) 
+                                        (let-values ([(annotated dont-care)
+                                                      (annotate/inner expr #t top-env)])
+                                          annotated)) 
                                       parsed-exprs
-                                      top-environments)]
+                                      top-env-varrefs)]
                 [top-vars-annotation `((#%define-values (,all-defs-list-sym ,current-def-sym)
                                         (values (#%quote ,defined-top-vars) #f)))]
-                [current-def-setters (build-list (length exprs) current-def-setter)]
-                [top-annotated-exprs (interlace current-def-setters parsed-exprs)])
-           (append top-vars-annotation top-annotated-exprs)))))
+                [current-def-setters (build-list (length parsed-exprs) current-def-setter)]
+                [top-annotated-exprs (interlace current-def-setters annotated-exprs)])
+           
+           (values (append top-vars-annotation top-annotated-exprs)
+                   parsed-exprs))))
       
   
 	 

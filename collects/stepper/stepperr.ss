@@ -5,7 +5,7 @@
   
   ; this will be good only for a single debugging thread, for now
   
-  (define exprs-list #f)
+  (define expr-list #f)
 
 
   (define break-info #f)
@@ -20,19 +20,24 @@
   (define (stepper-start text)
     (let-values ([(annotated exprs)
                   (a:annotate text break)])
-      (set! exprs-list exprs)
+      (set! expr-list exprs)
+      ; annotated
       (thread (lambda ()
-                (printf "result: ~a~n" (eval annotated))
+                (for-each eval annotated)
                 (semaphore-post break-sema)))
       (semaphore-wait break-sema)
-      (display-break-info)))
+      (display-break-info)
+  ))
   
   (define (stepper-step)
     (semaphore-post resume-sema)
     (semaphore-wait break-sema)
     (display-break-info))
   
+  (define (stepper-stop)
+    (printf "not implemented"))
+  
   (define (display-break-info)
-    (pretty-print (apply r:reconstruct expr-list break-info)))
+    (for-each pretty-print (apply r:reconstruct expr-list break-info)))
   
   )

@@ -1,4 +1,4 @@
-(define-signature stepper^
+(define-signature stepper:stepper^
   (stepper-start
    stepper-step
    stepper-stop))
@@ -11,20 +11,15 @@
    arglist->ilist 
    *unevaluated* 
    get-arg-symbol
-   (define-struct varref (var top-level?))
+   (struct varref (var top-level?))
    expr-read
    set-expr-read!
-   all-defs-list-sym
-   current-def-sym
    flatten-take))
 
 (define-signature stepper:annotate^
   (annotate))
 
 (define-signature stepper:reconstruct^
-  (closure-table-put! register-source reconstruct))
+  (closure-table-put! reconstruct))
 
-(define-signature stepper^
-  (annotate reconstruct))
-  
   

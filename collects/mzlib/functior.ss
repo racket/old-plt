@@ -85,7 +85,9 @@
 			 (if (null? (cdr l)) 
 			     (car l) 
 			     (until (map2 l))))])
-	 (until (split alox null))))))
+	 (if (null? alox)
+	     null
+	     (until (split alox null)))))))
 
   (define ignore-errors
     (polymorphic

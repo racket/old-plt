@@ -792,6 +792,11 @@ wxPSRgn *wxPSRgn_Intersect::Lift()
 
 char *wxPSRgn_Diff::GetString()
 {
+  /* Subtract by making the paths the reverse of each other,
+     so winding numbers will zero out in the overlap.
+     Doesn't work for multiple regions, and the reverse of
+     a path doesn't exclude the bondary enclosed by the
+     original path. */
   return MakeString("", "reversepath\n", "reversepath\n");
 }
 

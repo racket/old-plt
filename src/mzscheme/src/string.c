@@ -3789,13 +3789,12 @@ mzchar *scheme_utf16_to_ucs4(const unsigned short *text, int start, int end,
     wc = text[i];
     if ((wc & 0xD800) == 0xD800) {
       i++;
-      j++;
     }
     j++;
   }
 
   if (j + term_size >= bufsize)
-    buf = (mzchar *)scheme_malloc_atomic(j + term_size);
+    buf = (mzchar *)scheme_malloc_atomic((j + term_size) * sizeof(wchar_t));
 
   for (i = start, j = 0; i < end; i++) {
     wc = text[i];

@@ -47,8 +47,8 @@ mkbordyn.bat script requires bcc23.exe.)
 ========================================================================
 
 First install the Mac OS X Developer Tools from Apple. After
-installing, run `fixPrecomp' to speed up compilations. (You can
-safely run `fixPrecomp' multiple times.)
+installing, run `fixPrecomps' to speed up compilations. (You can
+safely run `fixPrecomps' multiple times.)
 
 Then follow the Unix instructions below. (The --enable-dynlib for
 `configure' is not currently supported for Mac OS X.) The output of

@@ -2684,9 +2684,14 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	fst = SCHEME_STX_CDR(e);
 	fm = SCHEME_STX_CDR(fm);
 	fm = scheme_append(scheme_flatten_syntax_list(fst, NULL), fm);
+	if (SCHEME_STX_NULLP(fm)) {
+	  e = NULL;
+	  break;
+	}
       } else
 	break;
     }
+    if (!e) break; /* (begin) expansion at end */
     
     if (SCHEME_STX_PAIRP(e)) {
       Scheme_Object *fst;

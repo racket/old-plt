@@ -8,7 +8,7 @@
 (unit/sig ()
   (import servlet^)
 
-  (define names '(search-height search-bg search-fg search-link))
+  (define names '(search-height search-bg search-fg search-link sys-link))
 
   (define complete-page	
     `(HTML 

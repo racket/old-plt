@@ -143,28 +143,55 @@ home/
   ...
     my-app/
       doc.txt
-      planet.txt
       my-app.ss
       graphic-for-my-app.png
       private/
          implementation.ss
 
-If you put an info.ss file into the root directory, the PLaneT system
-will recognize and use it when users download your package (see the PLT mzc:
-MzScheme Compiler Manual, chapter 7 for information on info.ss
-files). In particular, if your package has an info.ss file with a
-`name' field, PLaneT will compile .zo files for it upon installation
-onto a client's machine; otherwise it will not.
+2. CREATE INFO.SS AND DOC.TXT FILES [OPTIONAL]
 
-Once you've done that, create or make sure that two special files are
-included in the root directory: planet.txt and doc.txt. planet.txt should
-contain a short (2-3 sentence) description of what the package does; its
-contents will be included as a short summary of your package on the PLaneT
-web page. The doc.txt file should be whatever documentation you feel is
-appropriate for your package; its contents will be available as a link
-on your package's listing on the PLaneT web page.
+If you put a file named info.ss in your package's root directory, the
+PLaneT system will look in it for descriptive metadata about your
+package. The PLaneT system looks for two names in that file:
 
-2. BUILD A .PLT FILE
+The _'blurb field_
+
+If present, the blurb field should contain a list of xexprs that
+PLaneT will use as a short description of your project. This field
+is also used by the Help Desk.
+
+The _'primary-file field_
+
+If present, the primary-file field should be a string corresponding to
+the name (without path) of the main Scheme source file of your
+package. PLaneT will direct casual users of your library to require
+this file.
+
+In addition, PLaneT uses the setup-plt installer to install packages
+on client machines, so all the fields it looks for can be included. In
+particular, adding a name field indicates that the Scheme files in the
+package should be compiled during installation; it is probably a good
+idea to add it.
+
+An example info.ss file looks like this:
+
+(module info (lib "infotab.ss" "setup")
+  (define name "My Application")
+  (define blurb
+    (list "My application runs 60% faster on 20% less peanut "
+	  "butter. It even shows a fancy graphic!"))
+  (define primary-file "my-app.ss"))
+
+
+See the PLT mzc: MzScheme Compiler Manual, chapter 7 for more
+information on info.ss files.
+
+The other special file PLaneT looks for in the root directory of your
+package is doc.txt. Its contents should be documentation for your
+package. Its contents will be available as a link on your package's
+listing on the PLaneT web page.
+
+3. BUILD A .PLT FILE
 
 Run the function make-planet-archive from the util.ss module in the 
 planet collection with the name of the directory you've prepared as
@@ -183,7 +210,7 @@ details). The PLT file you create must be set to install in
 user-specified directory rather than in the collects directory or the
 user add-ons directory.
 
-3. SUBMIT THE PACKAGE
+4. SUBMIT THE PACKAGE
 
 E-mail the .plt file you built to jacobm+planet@plt-scheme.org If the
 package is an upgrade to a prior package, then tell me so and tell me

@@ -10,7 +10,7 @@
 
   (define the-configuration
     ;;; TODO: test load-configuration
-    (load-configuration "configuration-table"))
+    (load-configuration (expand-path "configuration-table")))
 
   (define the-port 8135)
   

@@ -19,16 +19,18 @@
   (define test2-output
     (string-append
       "<html><head><title>Title</title></head><body><h1>Title</h1><p>Current "
-      "path: " (build-path web-root "servlets") "</p></body></html>"))
+      "path: " (path->string (build-path web-root "servlets"))
+      "</p></body></html>"))
 
   (define test2-incremental-output
     (string-append
       "<html><head><title>Title</title></head><body><h1>Title</h1><p>Current "
       "path: "
-      (build-path
-        (collection-path "tests")
-        "web-server"
-        "scheme-units")
+      (path->string
+        (build-path
+          (collection-path "tests")
+          "web-server"
+          "scheme-units"))
       "</p></body></html>"))
 
   (define test3-output "blah blah plain text")
@@ -41,14 +43,16 @@
   (define test5-output
     (string-append
       "<html><head><title>Title</title></head><body><h1>Title</h1><p>ab</p>"
-      "<p>seed</p><p>Current path: " (build-path web-root "servlets")
+      "<p>seed</p><p>Current path: " (path->string
+                                       (build-path web-root "servlets"))
       "</p></body></html>"))
 
   (define test6-output "abseed")
 
   (define test7-output (build-path web-root "servlets"))
 
-  (define test8-output (string-append (build-path web-root "servlets")
+  (define test8-output (string-append (path->string
+                                        (build-path web-root "servlets"))
                                       "abseed"))
 
   (define test-servlets
@@ -136,6 +140,9 @@
                       test2-incremental-output
                       "text/html"))
       ;; Only the first two are tested incrementally.
+
+      ;;; TODO
+      ;;; - <form action="...?a=b;c=d" method="POST"> ... </form>
 
       ))
 

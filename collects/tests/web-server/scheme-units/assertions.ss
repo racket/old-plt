@@ -12,7 +12,7 @@
   (provide/contract
     (start-server (-> (-> any)))
     (full-url (string? . -> . url?))
-    (web-root string?)
+    (web-root path?)
     (input-port-equal? (input-port? input-port? . -> . boolean?))
     (THE-PORT number?)
     (THE-IP string?))
@@ -66,7 +66,7 @@
 
   ;; Start the Web server
   (define (start-server)
-      (serve (load-configuration "configuration-table") THE-PORT THE-IP))
+      (serve (load-configuration (expand-path "configuration-table")) THE-PORT THE-IP))
 
   ;; It is a HTML MIME header if the Content-type header exists as a string,
   ;; and is "text/html". In practice, it can be anything matching the regexp

@@ -1033,265 +1033,266 @@
 	
 	      (let ([vm2c-thunk
 		     (lambda ()
-		       (let ([c-port #f])
-			 (dynamic-wind 
-			  ;pre
-			  (lambda () (set! c-port (open-output-file c-output-path)))
-			  
-			  ;value
-			  (lambda ()
-			    (fprintf c-port "#define MZC_SRC_FILE ~s~n" input-name)
-			    (when (compiler:option:unsafe) (fprintf c-port "#define MZC_UNSAFE 1~n"))
-			    (when (compiler:option:disable-interrupts) (fprintf c-port "#define MZC_DISABLE_INTERRUPTS 1~n"))
-			    (when (compiler:option:fixnum-arithmetic) (fprintf c-port "#define MZC_FIXNUM 1~n"))
-			    
-			    (fprintf c-port "~n#include \"~ascheme.h\"~n"
-				     (if (compiler:option:compile-for-embedded)
-					 ""
-					 "e"))
-			    
-			    (unless (null? c-declares)
-			      (fprintf c-port "~n/* c-declare literals */~n~n")
-			      (for-each
-			       (lambda (c-declare)
-				 (fprintf c-port "~a~n" c-declare))
-			       (reverse c-declares))
-			      (fprintf c-port "~n/* done with c-declare literals */~n~n"))
+		       (parameterize ([read-case-sensitive #t]) ;; so symbols containing uppercase print like we want
+			 (let ([c-port #f])
+			   (dynamic-wind 
+					;pre
+			       (lambda () (set! c-port (open-output-file c-output-path)))
+			       
+					;value
+			       (lambda ()
+				 (fprintf c-port "#define MZC_SRC_FILE ~s~n" input-name)
+				 (when (compiler:option:unsafe) (fprintf c-port "#define MZC_UNSAFE 1~n"))
+				 (when (compiler:option:disable-interrupts) (fprintf c-port "#define MZC_DISABLE_INTERRUPTS 1~n"))
+				 (when (compiler:option:fixnum-arithmetic) (fprintf c-port "#define MZC_FIXNUM 1~n"))
+				 
+				 (fprintf c-port "~n#include \"~ascheme.h\"~n"
+					  (if (compiler:option:compile-for-embedded)
+					      ""
+					      "e"))
+				 
+				 (unless (null? c-declares)
+				   (fprintf c-port "~n/* c-declare literals */~n~n")
+				   (for-each
+				    (lambda (c-declare)
+				      (fprintf c-port "~a~n" c-declare))
+				    (reverse c-declares))
+				   (fprintf c-port "~n/* done with c-declare literals */~n~n"))
 
-			    (unless (null? c-lambdas)
-			      (fprintf c-port "~n/* c-lambda implementations */~n~n")
-			      (for-each
-			       (lambda (c-lambda)
-				 (let ([name (car c-lambda)]
-				       [body (cdr c-lambda)])
-				   (fprintf c-port "Scheme_Object *~a(int argc, Scheme_Object **argv) {\n"
-					    name)
-				   (fprintf c-port "~a~n" body)
-				   (fprintf c-port "}~n")))
-			       (reverse c-lambdas))
-			      (fprintf c-port "~n/* done with c-lambda implementations */~n~n"))
+				 (unless (null? c-lambdas)
+				   (fprintf c-port "~n/* c-lambda implementations */~n~n")
+				   (for-each
+				    (lambda (c-lambda)
+				      (let ([name (car c-lambda)]
+					    [body (cdr c-lambda)])
+					(fprintf c-port "Scheme_Object *~a(int argc, Scheme_Object **argv) {\n"
+						 name)
+					(fprintf c-port "~a~n" body)
+					(fprintf c-port "}~n")))
+				    (reverse c-lambdas))
+				   (fprintf c-port "~n/* done with c-lambda implementations */~n~n"))
 
-			    (fprintf c-port "#include \"mzc.h\"~n~n")
-			    (vm->c:emit-struct-definitions! (compiler:get-structs) c-port)
-			    (vm->c:emit-symbol-declarations! c-port)
-			    (vm->c:emit-inexact-declarations! c-port)
-			    (vm->c:emit-string-declarations! c-port)
-			    (vm->c:emit-prim-ref-declarations! c-port)
-			    (vm->c:emit-static-declarations! c-port)
-			    
-			    (let loop ([n 0])
-			      (unless (= n (compiler:get-total-vehicles))
-				(vm->c:emit-vehicle-declaration c-port n)
-				(loop (+ n 1))))
-			    (newline c-port)
-			    
-			    (unless (compiler:multi-o-constant-pool)
-			      (fprintf c-port "~nstatic void make_symbols()~n{~n")
-			      (vm->c:emit-symbol-definitions! c-port)
-			      (fprintf c-port "}~n"))
-			    
-			    (unless (zero? (const:get-inexact-counter))
-			      (fprintf c-port "~nstatic void make_inexacts()~n{~n")
-			      (vm->c:emit-inexact-definitions! c-port)
-			      (fprintf c-port "}~n"))
+				 (fprintf c-port "#include \"mzc.h\"~n~n")
+				 (vm->c:emit-struct-definitions! (compiler:get-structs) c-port)
+				 (vm->c:emit-symbol-declarations! c-port)
+				 (vm->c:emit-inexact-declarations! c-port)
+				 (vm->c:emit-string-declarations! c-port)
+				 (vm->c:emit-prim-ref-declarations! c-port)
+				 (vm->c:emit-static-declarations! c-port)
+				 
+				 (let loop ([n 0])
+				   (unless (= n (compiler:get-total-vehicles))
+				     (vm->c:emit-vehicle-declaration c-port n)
+				     (loop (+ n 1))))
+				 (newline c-port)
+				 
+				 (unless (compiler:multi-o-constant-pool)
+				   (fprintf c-port "~nstatic void make_symbols()~n{~n")
+				   (vm->c:emit-symbol-definitions! c-port)
+				   (fprintf c-port "}~n"))
+				 
+				 (unless (zero? (const:get-inexact-counter))
+				   (fprintf c-port "~nstatic void make_inexacts()~n{~n")
+				   (vm->c:emit-inexact-definitions! c-port)
+				   (fprintf c-port "}~n"))
 
-			    (fprintf c-port "~nstatic void gc_registration()~n{~n")
-			    (vm->c:emit-registration! c-port)
-			    (fprintf c-port "}~n")
+				 (fprintf c-port "~nstatic void gc_registration()~n{~n")
+				 (vm->c:emit-registration! c-port)
+				 (fprintf c-port "}~n")
 
-			    (fprintf c-port "~nstatic void init_prims(Scheme_Env * env)~n{~n")
-			    (vm->c:emit-prim-ref-definitions! c-port)
-			    (fprintf c-port "}~n")
-			    
-			    (unless (null? (compiler:get-case-lambdas))
-			      (fprintf c-port "~nstatic void init_cases_arities()~n{~n")
-			      (vm->c:emit-case-arities-definitions! c-port)
-			      (fprintf c-port "}~n"))
-			    (newline c-port)
+				 (fprintf c-port "~nstatic void init_prims(Scheme_Env * env)~n{~n")
+				 (vm->c:emit-prim-ref-definitions! c-port)
+				 (fprintf c-port "}~n")
+				 
+				 (unless (null? (compiler:get-case-lambdas))
+				   (fprintf c-port "~nstatic void init_cases_arities()~n{~n")
+				   (vm->c:emit-case-arities-definitions! c-port)
+				   (fprintf c-port "}~n"))
+				 (newline c-port)
 
-			    (let* ([codes (block-codes s:file-block)]
-				   [locals (map code-local-vars codes)]
-				   [globals (map code-global-vars codes)]
-				   [init-constants-count
-				    (if (zero? number-of-true-constants)
-					-1
-					(vm->c:emit-top-levels! "init_constants" #f #f #t number-of-true-constants
-								(block-source s:file-block)
-								locals globals
-								(block-max-arity s:file-block)
-								#f #f ; no module entries
-								c-port))]
-				   [invoke-counts
-				    (let loop ([i 0])
-				      (if (= i (get-num-module-invokes))
-					  null
-					  (cons
-					   (let loop ([syntax? #f])
-					     (cons
-					      (vm->c:emit-top-levels! (format "module~a_body_~a" 
-									      (if syntax? "_syntax" "")
-									      i)
-								      #f #f #f -1
-								      (block-source s:file-block)
-								      locals
-								      globals
-								      (block-max-arity s:file-block)
-								      i syntax?
-								      c-port)
-					      (if syntax? 
-						  null
-						  (loop #t))))
-					   (loop (add1 i)))))]
-				   [_ (let loop ([i 0][counts invoke-counts])
-					(unless (= i (get-num-module-invokes))
-					  (vm->c:emit-module-glue! c-port i (caar counts) (cadar counts))
-					  (loop (add1 i) (cdr counts))))]
-				   [top-level-count
-				    (vm->c:emit-top-levels! "top_level" #t #t #f -1
-							    (list-tail (block-source s:file-block) number-of-true-constants)
-							    (list-tail locals number-of-true-constants)
-							    (list-tail globals number-of-true-constants)
-							    (block-max-arity s:file-block)
-							    #f #f ; no module entries
-							    c-port)])
-			      (fprintf c-port
-				       "Scheme_Object * scheme_reload~a(Scheme_Env * env)~n{~n"
-				       compiler:setup-suffix)
-			      (fprintf c-port"~aScheme_Per_Load_Statics *PLS;~n"
-				       vm->c:indent-spaces)
-			      (fprintf c-port 
-				       "~aPLS = (Scheme_Per_Load_Statics *)scheme_malloc(sizeof(Scheme_Per_Load_Statics));~n"
-				       vm->c:indent-spaces)
-			      (let loop ([c 0])
-				(fprintf c-port "~a~atop_level_~a(env, PLS);~n" 
-					 vm->c:indent-spaces 
-					 (if (= c top-level-count) "return " "")
-					 c)
-				(unless (= c top-level-count)
-				  (loop (add1 c))))
-			      (fprintf c-port 
-				       "}~n~n")
+				 (let* ([codes (block-codes s:file-block)]
+					[locals (map code-local-vars codes)]
+					[globals (map code-global-vars codes)]
+					[init-constants-count
+					 (if (zero? number-of-true-constants)
+					     -1
+					     (vm->c:emit-top-levels! "init_constants" #f #f #t number-of-true-constants
+								     (block-source s:file-block)
+								     locals globals
+								     (block-max-arity s:file-block)
+								     #f #f ; no module entries
+								     c-port))]
+					[invoke-counts
+					 (let loop ([i 0])
+					   (if (= i (get-num-module-invokes))
+					       null
+					       (cons
+						(let loop ([syntax? #f])
+						  (cons
+						   (vm->c:emit-top-levels! (format "module~a_body_~a" 
+										   (if syntax? "_syntax" "")
+										   i)
+									   #f #f #f -1
+									   (block-source s:file-block)
+									   locals
+									   globals
+									   (block-max-arity s:file-block)
+									   i syntax?
+									   c-port)
+						   (if syntax? 
+						       null
+						       (loop #t))))
+						(loop (add1 i)))))]
+					[_ (let loop ([i 0][counts invoke-counts])
+					     (unless (= i (get-num-module-invokes))
+					       (vm->c:emit-module-glue! c-port i (caar counts) (cadar counts))
+					       (loop (add1 i) (cdr counts))))]
+					[top-level-count
+					 (vm->c:emit-top-levels! "top_level" #t #t #f -1
+								 (list-tail (block-source s:file-block) number-of-true-constants)
+								 (list-tail locals number-of-true-constants)
+								 (list-tail globals number-of-true-constants)
+								 (block-max-arity s:file-block)
+								 #f #f ; no module entries
+								 c-port)])
+				   (fprintf c-port
+					    "Scheme_Object * scheme_reload~a(Scheme_Env * env)~n{~n"
+					    compiler:setup-suffix)
+				   (fprintf c-port"~aScheme_Per_Load_Statics *PLS;~n"
+					    vm->c:indent-spaces)
+				   (fprintf c-port 
+					    "~aPLS = (Scheme_Per_Load_Statics *)scheme_malloc(sizeof(Scheme_Per_Load_Statics));~n"
+					    vm->c:indent-spaces)
+				   (let loop ([c 0])
+				     (fprintf c-port "~a~atop_level_~a(env, PLS);~n" 
+					      vm->c:indent-spaces 
+					      (if (= c top-level-count) "return " "")
+					      c)
+				     (unless (= c top-level-count)
+				       (loop (add1 c))))
+				   (fprintf c-port 
+					    "}~n~n")
 
-			      (fprintf c-port
-				       "~nvoid scheme_setup~a(Scheme_Env * env)~n{~n"
-				       compiler:setup-suffix)
-			      (fprintf c-port
-				       "~ascheme_set_tail_buffer_size(~a);~n"
-				       vm->c:indent-spaces
-				       s:max-arity)
-			      (fprintf c-port "~agc_registration();~n"
-				       vm->c:indent-spaces)
-			      (unless (compiler:multi-o-constant-pool)
-				(fprintf c-port "~amake_symbols();~n"
-					 vm->c:indent-spaces))
-			      (unless (zero? (const:get-inexact-counter))
-				(fprintf c-port "~amake_inexacts();~n"
-					 vm->c:indent-spaces))
-			      (fprintf c-port "~ainit_prims(env);~n"
-				       vm->c:indent-spaces)
-			      (unless (null? (compiler:get-case-lambdas))
-				(fprintf c-port "~ainit_cases_arities();~n"
-					 vm->c:indent-spaces))		       
+				   (fprintf c-port
+					    "~nvoid scheme_setup~a(Scheme_Env * env)~n{~n"
+					    compiler:setup-suffix)
+				   (fprintf c-port
+					    "~ascheme_set_tail_buffer_size(~a);~n"
+					    vm->c:indent-spaces
+					    s:max-arity)
+				   (fprintf c-port "~agc_registration();~n"
+					    vm->c:indent-spaces)
+				   (unless (compiler:multi-o-constant-pool)
+				     (fprintf c-port "~amake_symbols();~n"
+					      vm->c:indent-spaces))
+				   (unless (zero? (const:get-inexact-counter))
+				     (fprintf c-port "~amake_inexacts();~n"
+					      vm->c:indent-spaces))
+				   (fprintf c-port "~ainit_prims(env);~n"
+					    vm->c:indent-spaces)
+				   (unless (null? (compiler:get-case-lambdas))
+				     (fprintf c-port "~ainit_cases_arities();~n"
+					      vm->c:indent-spaces))		       
 
-			      (let loop ([c 0])
-				(unless (> c init-constants-count)
-				  (fprintf c-port "~ainit_constants_~a(env);~n" 
-					   vm->c:indent-spaces
-					   c)
-				  (loop (add1 c))))
+				   (let loop ([c 0])
+				     (unless (> c init-constants-count)
+				       (fprintf c-port "~ainit_constants_~a(env);~n" 
+						vm->c:indent-spaces
+						c)
+				       (loop (add1 c))))
 
-			      (fprintf c-port 
-				       "}~n~n")
-			      
-			      (when (string=? "" compiler:setup-suffix)
-				(fprintf c-port
-					 "~nScheme_Object * scheme_initialize(Scheme_Env * env)~n{~n")
-				(fprintf c-port "~ascheme_setup(env);~n"
-					 vm->c:indent-spaces)
-				(fprintf c-port "~areturn scheme_reload(env);~n"
-					 vm->c:indent-spaces)
-				(fprintf c-port 
-					 "}~n~n")))
+				   (fprintf c-port 
+					    "}~n~n")
+				   
+				   (when (string=? "" compiler:setup-suffix)
+				     (fprintf c-port
+					      "~nScheme_Object * scheme_initialize(Scheme_Env * env)~n{~n")
+				     (fprintf c-port "~ascheme_setup(env);~n"
+					      vm->c:indent-spaces)
+				     (fprintf c-port "~areturn scheme_reload(env);~n"
+					      vm->c:indent-spaces)
+				     (fprintf c-port 
+					      "}~n~n")))
 
-			    (let emit-vehicles ([vehicle-number 0])
-			      (unless (= vehicle-number (compiler:get-total-vehicles))
-				(let* ([vehicle (get-vehicle vehicle-number)]
-				       [lambda-list (vehicle-lambdas vehicle)])
-				  
-				  (vm->c:emit-vehicle-header c-port vehicle-number)
-				  (vm->c:emit-vehicle-prologue c-port vehicle)
-				  
-				  ; get the lambdas that appear in this vehicle
-				  
-				  ; sort the functions by index to get an optimal case statement
-				  ; even for stupid compilers
-				  (set! lambda-list
-					(quicksort lambda-list
-						   (lambda (l1 l2)
-						     (< (closure-code-label (get-annotation l1))
-							(closure-code-label (get-annotation l2))))))
-				  (for-each (lambda (L)
-					      (let ([code (get-annotation L)]
-						    [start (zodiac:zodiac-start L)])
-						(fprintf c-port "~a/* code body ~a ~a [~a,~a] */~n"
-							 vm->c:indent-spaces (closure-code-label code)
-							 (let ([n (closure-code-name code)])
-							   (if n
-							       (protect-comment 
-								(vm->c:extract-inferred-name n))
-							       ""))
-							 (zodiac:location-line start)
-							 (zodiac:location-column start))
-						(cond
-						 [(zodiac:case-lambda-form? L)
-						  (let-values ([(count suffix?) 
-								(vm->c:emit-function-prologue L c-port)])
-						    (let loop ([i 0])
-						      (unless (= i count)
-							(let* ([indent
-								(string-append
-								 vm->c:indent-spaces vm->c:indent-spaces
-								 (if suffix?  vm->c:indent-spaces ""))]
-							       [undefines
-								(vm->c:emit-case-prologue L i
-											  (lambda ()
-											    (if suffix?
-												(fprintf c-port "~a~a/* begin case ~a */~n~a~a{~n" 
-													 vm->c:indent-spaces vm->c:indent-spaces i
-													 vm->c:indent-spaces vm->c:indent-spaces)
-												(when (zero? i)
-												  (fprintf c-port "~a{~n" vm->c:indent-spaces))))
-											  (if suffix? (format "c~a" i) "")
-											  indent
-											  c-port)])
-							  (vm->c-expression (list-ref (zodiac:case-lambda-form-bodies L) i)
-									    code
-									    c-port
-									    (* (if suffix? 3 2) vm->c:indent-by)
-									    #f)
-							  (vm->c:emit-case-epilogue L i undefines indent c-port)
-							  (when suffix?
-							    (fprintf c-port "~a~a} /* end case ~a */~n" 
-								     vm->c:indent-spaces 
-								     vm->c:indent-spaces i)))
-							
-							(loop (add1 i))))
-						    (vm->c:emit-function-epilogue code 
-										  (if suffix? "" "}")
-										  c-port))]
-						 [else
-						  (compiler:internal-error
-						   L
-						   "vm2c: unknown closure type")])
-						(newline c-port)))
-					    lambda-list))
-				
-				(vm->c:emit-vehicle-epilogue c-port vehicle-number)
-				(newline c-port)
-				(emit-vehicles (+ 1 vehicle-number)))))
-		   
-			  ;post (dynamic wind cleanup)
-			  (lambda ()  (close-output-port c-port)))))])
+				 (let emit-vehicles ([vehicle-number 0])
+				   (unless (= vehicle-number (compiler:get-total-vehicles))
+				     (let* ([vehicle (get-vehicle vehicle-number)]
+					    [lambda-list (vehicle-lambdas vehicle)])
+				       
+				       (vm->c:emit-vehicle-header c-port vehicle-number)
+				       (vm->c:emit-vehicle-prologue c-port vehicle)
+				       
+				       ;; get the lambdas that appear in this vehicle
+				       
+				       ;; sort the functions by index to get an optimal case statement
+				       ;; even for stupid compilers
+				       (set! lambda-list
+					     (quicksort lambda-list
+							(lambda (l1 l2)
+							  (< (closure-code-label (get-annotation l1))
+							     (closure-code-label (get-annotation l2))))))
+				       (for-each (lambda (L)
+						   (let ([code (get-annotation L)]
+							 [start (zodiac:zodiac-start L)])
+						     (fprintf c-port "~a/* code body ~a ~a [~a,~a] */~n"
+							      vm->c:indent-spaces (closure-code-label code)
+							      (let ([n (closure-code-name code)])
+								(if n
+								    (protect-comment 
+								     (vm->c:extract-inferred-name n))
+								    ""))
+							      (zodiac:location-line start)
+							      (zodiac:location-column start))
+						     (cond
+						      [(zodiac:case-lambda-form? L)
+						       (let-values ([(count suffix?) 
+								     (vm->c:emit-function-prologue L c-port)])
+							 (let loop ([i 0])
+							   (unless (= i count)
+							     (let* ([indent
+								     (string-append
+								      vm->c:indent-spaces vm->c:indent-spaces
+								      (if suffix?  vm->c:indent-spaces ""))]
+								    [undefines
+								     (vm->c:emit-case-prologue L i
+											       (lambda ()
+												 (if suffix?
+												     (fprintf c-port "~a~a/* begin case ~a */~n~a~a{~n" 
+													      vm->c:indent-spaces vm->c:indent-spaces i
+													      vm->c:indent-spaces vm->c:indent-spaces)
+												     (when (zero? i)
+												       (fprintf c-port "~a{~n" vm->c:indent-spaces))))
+											       (if suffix? (format "c~a" i) "")
+											       indent
+											       c-port)])
+							       (vm->c-expression (list-ref (zodiac:case-lambda-form-bodies L) i)
+										 code
+										 c-port
+										 (* (if suffix? 3 2) vm->c:indent-by)
+										 #f)
+							       (vm->c:emit-case-epilogue L i undefines indent c-port)
+							       (when suffix?
+								 (fprintf c-port "~a~a} /* end case ~a */~n" 
+									  vm->c:indent-spaces 
+									  vm->c:indent-spaces i)))
+							     
+							     (loop (add1 i))))
+							 (vm->c:emit-function-epilogue code 
+										       (if suffix? "" "}")
+										       c-port))]
+						      [else
+						       (compiler:internal-error
+							L
+							"vm2c: unknown closure type")])
+						     (newline c-port)))
+						 lambda-list))
+				     
+				     (vm->c:emit-vehicle-epilogue c-port vehicle-number)
+				     (newline c-port)
+				     (emit-vehicles (+ 1 vehicle-number)))))
+			       
+			       ;; post (dynamic wind cleanup)
+			       (lambda ()  (close-output-port c-port))))))])
 		(with-handlers ([void (lambda (exn)
 					(delete-file c-output-path)
 					(raise exn))])

@@ -12,6 +12,7 @@
    (lib "framework.ss" "framework")
    (lib "parser.ss" "profj")
    (lib "readerr.ss" "syntax")
+   (lib "make-snipclass.ss" "test-suite" "private")
    "table.ss"
    "box-helpers.ss")
   
@@ -103,13 +104,20 @@
           (define/override (copy)
             (new example-box% (examples-to-copy examples)))
           
+          ;;;;;;;;;;
+          ;; Layout
+          
           (field [pb (new aligned-pasteboard%)])
           (send pb lock-alignment true)
-          (field
-           [main (new vertical-alignment% (parent pb))]
-           [header (new horizontal-alignment% (parent main))]
-           [icon (new snip-wrapper% (parent header) (snip (make-object image-snip%)))])
+          (field [main (new vertical-alignment% (parent pb))]
+                 [header (new horizontal-alignment% (parent main))])
+          
+          ;; Since I don't have an icon I'll just center this for now and leave out the image
+          (new horizontal-alignment% (parent header)) ; left spacer
+          #;(new snip-wrapper% (parent header) (snip (make-object image-snip%)))
           (new embedded-message% (parent header) (label "Examples"))
+          (new horizontal-alignment% (parent header)) ; right spacer
+          
           (field
            [examples (new (table example%)
                           (parent main)
@@ -125,7 +133,7 @@
           (send pb lock-alignment false)
           (set-snipclass sc)))
       
-      (define sc (make-snipclass example-box-snipclass% "example-box%"))
+      (define sc (make-snipclass example-box% "example-box%"))
       
       ;; An example layed out in a horizontal manner. Allows access to the pieces of an example.
       (define example%

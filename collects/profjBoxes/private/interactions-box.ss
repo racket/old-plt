@@ -154,8 +154,7 @@
           ;; Insert a new interaction after this interaction
           (define/public (make-new)
             (send (get-parent) add-new this)
-            (send (send (next) get-input) set-caret-owner
-                  false 'global))
+            (send (send (next) get-input) set-caret-owner false 'global))
           
           #;((is-a?/c editor-stream-out%) . -> . void?)
           ;; Writes the interaction to file

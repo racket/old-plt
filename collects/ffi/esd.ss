@@ -1,6 +1,6 @@
 (module esd mzscheme
 
-(require (lib "ffi.ss"))
+(require (lib "foreign.ss"))
 
 (define libesd (ffi-lib "libesd.so"))
 

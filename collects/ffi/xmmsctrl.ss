@@ -1,11 +1,6 @@
-#!/bin/sh
-#|
-exec mzscheme -r "$0" "$@"
-|#
-
 (module xmmsctrl mzscheme
 
-(require (lib "ffi.ss"))
+(require (lib "foreign.ss"))
 
 (define libxmms (ffi-lib "libxmms.so"))
 

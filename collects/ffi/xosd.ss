@@ -1,6 +1,6 @@
 (module xosd mzscheme
 
-(require (lib "ffi.ss"))
+(require (lib "foreign.ss"))
 
 (define libxosd (ffi-lib "libxosd.so"))
 

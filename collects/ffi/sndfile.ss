@@ -1,6 +1,6 @@
 (module sndfile mzscheme
 
-(require (lib "ffi.ss"))
+(require (lib "foreign.ss"))
 
 (define libsndfile (ffi-lib "libsndfile.so"))
 

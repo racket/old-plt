@@ -1,6 +1,6 @@
 (module magick mzscheme
 
-(require (lib "ffi.ss"))
+(require (lib "foreign.ss"))
 
 (define libwand (ffi-lib "libWand.so.6"))
 

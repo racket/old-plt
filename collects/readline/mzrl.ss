@@ -1,24 +1,24 @@
 (module mzrl mzscheme
 
-(require (lib "ffi.ss"))
+(require (lib "foreign.ss"))
 
 (define libtermcap  (ffi-lib "libtermcap.so")) ; needed
 (define libreadline (ffi-lib "libreadline.so"))
 
 (define* readline
-  (get-ffi-obj #"readline" libreadline (_fun _string -> _string/eof)))
+  (get-ffi-obj "readline" libreadline (_fun _string -> _string/eof)))
 
 (define* add-history
-  (get-ffi-obj #"add_history" libreadline (_fun _string -> _void)))
+  (get-ffi-obj "add_history" libreadline (_fun _string -> _void)))
 
 ;; Simple completion: use this with a (string -> list-of string) function that
 ;; returns the completions for a given string.  (should clean up bytes/string)
 (define* (set-completion-function! func)
   (if func
-    (set-ffi-obj! #"rl_completion_entry_function" libreadline
+    (set-ffi-obj! "rl_completion_entry_function" libreadline
                   (_fun _string _int -> _pointer)
                   (completion-function func))
-    (set-ffi-obj! #"rl_completion_entry_function" libreadline _pointer #f)))
+    (set-ffi-obj! "rl_completion_entry_function" libreadline _pointer #f)))
 (define (completion-function func)
   (let ([cur '()])
     (define (complete str state)
@@ -30,10 +30,10 @@
                (set! cur (cdr cur))))))
     complete))
 
-(set-ffi-obj! #"rl_readline_name" libreadline _string "mzscheme")
+(set-ffi-obj! "rl_readline_name" libreadline _string "mzscheme")
 
 ;; make it possible to run Scheme threads while waiting for input
-(set-ffi-obj! #"rl_event_hook" libreadline (_fun -> _int)
+(set-ffi-obj! "rl_event_hook" libreadline (_fun -> _int)
               (lambda () (sync/enable-break (current-input-port)) 0))
 
 )

@@ -172,6 +172,10 @@ static int default_wheel_amt;
 # define wxmeBORDER wxBORDER
 #endif
 
+#ifndef wx_x
+# define wxAPP_CLASS wxTheApp->wx_class
+#endif
+
 wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     int x, int y,
 			     int width, int height,

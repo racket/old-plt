@@ -970,21 +970,7 @@
 	    (send refocus focus))
 	  w))
       
-      (define display-text%
-        (class* text% (html-text<%>)
-          (inherit change-style
-                   set-clickback)
-          
-          (define/public (get-url) #f)
-          (define/public (set-title s) (void))
-          (define/public (add-link pos end-pos url-string)
-            (set-clickback pos end-pos (lambda (e start-pos eou-pos)
-                                         (send-url url-string))))
-          (define/public (add-tag label pos) (void))
-          (define/public (make-link-style pos endpos) 
-            (change-style url-delta pos endpos))
-          (define/public (add-scheme-callback pos endpos scheme) (void))
-          (super-instantiate ())))
+      (define display-text% (html-text-mixin text%))
       
       (define f (make-object sm-frame% mailbox-name #f FRAME-WIDTH FRAME-HEIGHT))
       (set! main-frame f)

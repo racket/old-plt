@@ -96,7 +96,17 @@ Follow the instructions in plt/src/mac/README.
     --prefix.
 
     The `configure' script accepts many other flags that adjust the
-    build process. Run `configure --help' for more information.
+    build process. Run `configure --help' for more information. In
+    addition, a specific compiler can be selected through environment
+    variables. For example, to select the SGI compilers for Irix
+    instead of gcc, run configure as
+
+         env CC=cc CXX=CC configure
+
+    For cross compilation, set the compiler variables to a compiler
+    for the target platform compiler, but also set CC_FOR_BUILD to a
+    compiler for the host platform (form building binaries to execute
+    during the build process).
 
  2. Run `make'.
 

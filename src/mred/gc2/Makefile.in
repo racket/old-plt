@@ -143,8 +143,8 @@ xsrc/Home.cc: $(WXDIR)/src/Utilities/Home.cc $(WXBDIR)/src/Utilities/Home.o $(XF
 	$(XFORM) $(WXDIR)/src/Utilities/Home.cc xsrc/Home.cc
 xsrc/Misc.cc: $(WXDIR)/src/Utilities/Misc.cc $(WXBDIR)/src/Utilities/Misc.o $(XFORMDEP)
 	$(XFORM) $(WXDIR)/src/Utilities/Misc.cc xsrc/Misc.cc
-xsrc/Net.cc: $(WXDIR)/src/Utilities/Net.cc $(WXBDIR)/src/Utilities/Net.o $(XFORMDEP)
-	$(XFORM) $(WXDIR)/src/Utilities/Net.cc xsrc/Net.cc
+xsrc/Net.c: $(WXDIR)/src/Utilities/Net.c $(WXBDIR)/src/Utilities/Net.o $(XFORMDEP)
+	$(XFORM) $(WXDIR)/src/Utilities/Net.c xsrc/Net.c
 xsrc/Path.cc: $(WXDIR)/src/Utilities/Path.cc $(WXBDIR)/src/Utilities/Path.o $(XFORMDEP)
 	$(XFORM) $(WXDIR)/src/Utilities/Path.cc xsrc/Path.cc
 xsrc/Resources.cc: $(WXDIR)/src/Utilities/Resources.cc $(WXBDIR)/src/Utilities/Resources.o $(XFORMDEP)
@@ -381,8 +381,8 @@ Home.o: xsrc/Home.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o Home.o xsrc/Home.cc
 Misc.o: xsrc/Misc.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o Misc.o xsrc/Misc.cc
-Net.o: xsrc/Net.cc
-	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o Net.o xsrc/Net.cc
+Net.o: xsrc/Net.c
+	$(CC) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o Net.o xsrc/Net.c
 Path.o: xsrc/Path.cc
 	$(CXX) -DGC2_JUST_MACROS $(GCPREINC) -c $(POSTFLAGS) -o Path.o xsrc/Path.cc
 Resources.o: xsrc/Resources.cc
@@ -559,7 +559,7 @@ XSRCS = xsrc/Window.cc \
   xsrc/GDI.cc \
   xsrc/Home.cc \
   xsrc/Misc.cc \
-  xsrc/Net.cc \
+  xsrc/Net.c \
   xsrc/Path.cc \
   xsrc/Resources.cc \
   xsrc/String.cc \

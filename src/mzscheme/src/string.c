@@ -3304,6 +3304,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
 			  (unsigned int *)r, ostart, ofinish,
 			  &amt_read, &amt_wrote, 
 			  1, 0, NULL, 1, c->permissive);
+	    amt_read -= istart;
 	    r[amt_wrote] = 0;
 	  }
 	} else if (!r)

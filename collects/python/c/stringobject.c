@@ -3124,7 +3124,10 @@ string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return str_subtype_new(type, args, kwds);
 	printf("string_new: type is PyString_Type\n");
 	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:str", kwlist, &x))
+	    {
+		printf("string_new: error parsing tuple and keywords, returning null\n");
 		return NULL;
+		}
 	printf("string_new: parsed arguments (x %s null)\n", x == NULL ? "is" : "is not");
 	if (x == NULL)
 		return PyString_FromString("");

@@ -160,14 +160,29 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
         int retval;
         va_list va;
 
+		printf("PyArg_ParseTupleAndKeywords: checking params\n");
+		if ( args ) sapply1("display", sapply1("py-object%->string", args));
+		else printf ("args are null");
+		sapply1("printf", scheme_make_string("~n"));
+		if ( keywords ) sapply1("display", sapply1("py-object%->string", keywords));
+		else printf ("keywords are null");
+		sapply1("printf", scheme_make_string("~n"));
+
+		PyTuple_Check(args);
+		printf("the tuple's ok\n");
+		PyDict_Check(keywords);
+		printf("so are the keywords\n");
+
         if ((args == NULL || !PyTuple_Check(args)) ||
             (keywords != NULL && !PyDict_Check(keywords)) ||
             format == NULL ||
             kwlist == NULL)
         {
+		printf("PyArg_ParseTupleAndKeywords: bad internal call\n");
                 PyErr_BadInternalCall();
                 return 0;
         }
+		printf("PyArg_ParseTupleAndKeywords: args, keywords, format, and kwlist are fine\n");
 
         va_start(va, kwlist);
         retval = vgetargskeywords(args, keywords, format, kwlist, &va);
@@ -190,11 +205,14 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
         char *msg, **p;
         PyObject *freelist = NULL;
 
+		printf("vgetargskeywords: ENTERED\n");
         assert(args != NULL && PyTuple_Check(args));
         assert(keywords == NULL || PyDict_Check(keywords));
         assert(format != NULL);
         assert(kwlist != NULL);
         assert(p_va != NULL);
+
+		printf("vgetargskeywords: passed assertions\n");
 
         /* Search the format:
            message <- error msg, if any (else NULL).
@@ -210,6 +228,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
         min = -1;
         max = 0;
         while ((i = *format++) != '\0') {
+          printf("vgetargskeywords: next iteration, i = %c\n", i);
                 if (isalpha(i) && i != 'e') {
                         max++;
                         if (*p == NULL) {
@@ -237,6 +256,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
                         return 0;
                 }
         }
+     printf("vgetargskeywords: finished first loop\n");
         format = formatsave;
         if (*p != NULL) {
                 PyErr_SetString(PyExc_RuntimeError,
@@ -255,6 +275,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
            its not clear when to use the term "keyword argument vs.
            keyword parameter in messages */
         if (nkeywords > 0) {
+		printf("vgetargskeywords: nkeywords > 0\n");
                 for (i = 0; i < nargs; i++) {
                         char *thiskw = kwlist[i];
                         if (thiskw == NULL)
@@ -277,6 +298,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
            required arguments that are supplied by keywords */
         len = nargs;
         if (nkeywords > 0 && nargs < min) {
+		printf("vgetargskeywords: nkeywords > 0 && nargs < min\n");
                 for (i = nargs; i < min; i++) {
                         if (PyDict_GetItemString(keywords, kwlist[i]))
                                 len++;
@@ -290,6 +312,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
            which are supplied, but don't match the required arguments
            are not included in the "%d given" part of the message */
         if (len < min || max < len) {
+		printf("vgetargskeywords: len < min || max < len\n");
                 if (message == NULL) {
                         PyOS_snprintf(msgbuf, sizeof(msgbuf),
                                       "%.200s%s takes %s %d argument%s "
@@ -323,14 +346,20 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
         if (nkeywords == 0)
                 return cleanreturn(1, freelist);
 
+		printf("vgetargskeywords: nkeywords != 0\n");
+
         /* convert the keyword arguments; this uses the format
            string where it was left after processing args */
         for (i = nargs; i < max; i++) {
+		printf("vgetargskeywords: next iteration of for i = nargs..max\n");
                 PyObject *item;
                 if (*format == '|')
                         format++;
+				printf("vgetargskeywords: kwlist[%d] = %s\n", i, kwlist[i]);
                 item = PyDict_GetItemString(keywords, kwlist[i]);
+				printf("vgetargskeywords: got item\n");
                 if (item != NULL) {
+				printf("vgetargskeywords: item is not null\n");
                         Py_INCREF(item);
                         msg = convertitem(item, &format, p_va, levels, msgbuf,
                                           sizeof(msgbuf), &freelist);
@@ -346,6 +375,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
                 else if (PyErr_Occurred())
                         return cleanreturn(0, freelist);
                 else {
+				printf("vgetargskeywords: item is null but no error occurred\n");
                         msg = skipitem(&format, p_va);
                         if (msg) {
                                 seterror(i+1, msg, levels, fname, message);
@@ -356,6 +386,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 
         /* make sure there are no extraneous keyword arguments */
         if (nkeywords > 0) {
+		printf("vgetargskeywords: nkeywords > 0 again?\n");
                 PyObject *key, *value;
                 int pos = 0;
                 while (PyDict_Next(keywords, &pos, &key, &value)) {
@@ -392,11 +423,12 @@ int PyArg_Parse(PyObject* args, char* format, ...)
 }
 
 
+/*
 int PyType_IsSubtype(PyTypeObject *t, PyTypeObject *st)
 {
   return sapply2("py-is-a?", t, st) != scheme_false;
 }
-
+*/
 
 /* Convert a single item. */
 
@@ -1432,3 +1464,5 @@ convertbuffer(PyObject *arg, void **p, char **errmsg)
         }
         return count;
 }
+
+

@@ -22,14 +22,18 @@ struct _typeobject;
 #define PYTYPEOBJECT struct _typeobject
 
   // these two should probably be something like SCHEME_HEAD
-  #define PyObject_HEAD Scheme_Type type; \
+  #define PyObject_HEAD Scheme_Type scheme_type; \
 	MZ_HASH_KEY_EX \
 	void* stype; \
         PYTYPEOBJECT * ob_type; \
-        Scheme_Object* dict; \
+        Scheme_Object* the_py_dict; \
         Scheme_Object* is_mutable;
 
         //Scheme_Object* slots[3];
+
+#define SPY_SCHEME_TYPE(s_o) (s_o)->scheme_type
+#define SCHEME_SET_TYPE(s_o, t) ((s_o)->scheme_type = (t))
+
 /*
 #define PyObject_HEAD   Scheme_Type type; \
   short keyex; \
@@ -76,7 +80,7 @@ typedef dScheme_Structure PyObject;
 
 //typedef Scheme_Object PyIntObject;
 //typedef Scheme_Object PySliceObject;
-typedef PyObject PyIntObject;
+//typedef PyObject PyIntObject;
 //typedef PyObject PySliceObject;
 
 //typedef Scheme_Object PyStringObject;
@@ -129,7 +133,7 @@ PyObject* py_number_to_hex_py_string(PyObject* num);
 PyObject* alloc_py_type(PYTYPEOBJECT * type, int size);
 PyObject* generic_repr(PyObject* obj);
 
-#define PyObject_TypeCheck(obj, type) (sapply2("py-is-a?", obj, type))
+#define PyObject_TypeCheck(obj, type) ((obj) && sapply2("py-is-a?", obj, type))
 
 
 
@@ -151,6 +155,7 @@ PyObject* generic_repr(PyObject* obj);
 
 #define PyAPI_FUNC(RTYPE) RTYPE
 #define PyAPI_DATA(RTYPE) extern RTYPE
+
 //#			if defined(__cplusplus)
 //#				define PyMODINIT_FUNC extern "C" __declspec(dllexport) void
 //#			else /* __cplusplus */
@@ -158,7 +163,41 @@ PyObject* generic_repr(PyObject* obj);
 //#			endif /* __cplusplus */
 #define PyMODINIT_FUNC void
 
-void Py_FatalError (char * message);
+/* from pydebug
+void Py_FatalError (const char * message);
+*/
+
+/* from pyport
+*/
+#define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
+#define Py_ARITHMETIC_RIGHT_SHIFT(TYPE, I, J) ((I) >> (J))
+#ifndef Py_HUGE_VAL
+#define Py_HUGE_VAL 99999
+#endif
+#define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE ||    \
+                                         (X) == Py_HUGE_VAL || \
+                                         (X) == -Py_HUGE_VAL))
+#define Py_ADJUST_ERANGE1(X)                                            \
+        do {                                                            \
+                if (errno == 0) {                                       \
+                        if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL)  \
+                                errno = ERANGE;                         \
+                }                                                       \
+                else if (errno == ERANGE && (X) == 0.0)                 \
+                        errno = 0;                                      \
+        } while(0)
+
+#define Py_ADJUST_ERANGE2(X, Y)                                         \
+        do {                                                            \
+                if ((X) == Py_HUGE_VAL || (X) == -Py_HUGE_VAL ||        \
+                    (Y) == Py_HUGE_VAL || (Y) == -Py_HUGE_VAL) {        \
+                                if (errno == 0)                         \
+                                        errno = ERANGE;                 \
+                }                                                       \
+                else if (errno == ERANGE)                               \
+                        errno = 0;                                      \
+        } while(0)
+
 
 #define PyMem_Malloc(count) (scheme_malloc(count))
 #define PyMem_MALLOC(count) PyMem_Malloc(count)
@@ -251,7 +290,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 #define Py_GT 4
 #define Py_GE 5
 
-#define PyObject_Repr generic_repr
+//#define PyObject_Repr generic_repr
 
 /*
 typedef PyObject * (*unaryfunc)(PyObject *);
@@ -354,7 +393,7 @@ typedef struct {
 
 // this should be in boolobject.h
 /* Don't use these directly */
-PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
+//PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 /* Use these macros */
 #define Py_False ((PyObject *) &_Py_ZeroStruct)
 #define Py_True ((PyObject *) &_Py_TrueStruct)
@@ -362,8 +401,13 @@ PyAPI_DATA(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 
 
 // this should be in longobject.h
-#define PyLong_Check(item) (sapply2("py-is-a?", item, slookup("py-number%")) != scheme_false)
-#define PyLong_AsLong PyInt_AsLong
+//#define PyLong_Check(item) (sapply2("py-is-a?", item, slookup("py-number%")) != scheme_false)
+//#define PyLong_AsLong PyInt_AsLong
+#define PyInt_FromInt(x) PyInt_FromLong((long)x)
+#define PyInt_AsInt PyInt_AsLong
+
+// maybe functionobject.h ?
+//#define PyFunction_Check(item) (sapply2("py-is-a?", item, slookup("py-function%")) != scheme_false)
 
 
 // this should be in sliceobject.h
@@ -408,14 +452,29 @@ PyObject* sapply1(const char* func_name, PyObject* arg);
 
 
 
+typedef unsigned int    Py_uintptr_t;
+typedef int             Py_intptr_t;
+
 #define WITHOUT_COMPLEX
 
+//#define SIZEOF_VOID_P sizeof(void*)
+#define SIZEOF_VOID_P 4
+#define SIZEOF_INT 4
+#define SIZEOF_LONG 4
+#define LONG_BIT (8 * SIZEOF_LONG)
+
+
+//#include <pyport.h>
+
+// std C stuff
+#include <errno.h>
+#include <stdlib.h>
 
 
 #include <object.h>
 PyObject* spy_ext_new_instance(PyTypeObject* type);
 // called by PyObject_INIT
-void spy_init_obj(PyObject* obj, PyTypeObject* py_type);
+PyObject* spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #include <abstract.h>
 #include <objimpl.h>
 #include <dictobject.h>
@@ -429,11 +488,36 @@ void spy_init_obj(PyObject* obj, PyTypeObject* py_type);
 #include <pystate.h>
 #include <pythonrun.h>
 #include <ceval.h>
+// some helpful cpython macros
+#include <pyfpe.h>
+
+#include <longobject.h>
+#include <floatobject.h>
 #include <intobject.h>
 #include <boolobject.h>
 
 #include <sliceobject.h>
 
 #include <cobject.h>
+
+#include <classobject.h>
+
+#include <structmember.h>
+#include <descrobject.h>
+
+#include <pydebug.h>
+#include <weakrefobject.h>
+
+#include <iterobject.h>
+
+#include <cellobject.h>
+
+#include <compile.h> // PyCodeObject
+#include <funcobject.h>
+
+
+#define _PyObject_GC_Malloc PyMem_Malloc
+#define PyOS_strtol strtol
+#define PyOS_strtoul strtoul
 
 #endif

@@ -20,13 +20,10 @@ _Py_TrueStruct and _Py_ZeroStruct below; don't use this.
 extern "C" {
 #endif
 
-// HACK
-/*
 typedef struct {
     PyObject_HEAD
     long ob_ival;
 } PyIntObject;
-*/
 
 PyAPI_DATA(PyTypeObject) PyInt_Type;
 
@@ -47,9 +44,7 @@ PyAPI_FUNC(unsigned PY_LONG_LONG) PyInt_AsUnsignedLongLongMask(PyObject *);
 PyAPI_FUNC(long) PyInt_GetMax(void);
 
 /* Macro, trading safety for speed */
-// HACK
-#define PyInt_AS_LONG PyInt_AsLong
-//#define PyInt_AS_LONG(op) (((PyIntObject *)(op))->ob_ival)
+#define PyInt_AS_LONG(op) (((PyIntObject *)(op))->ob_ival)
 
 /* These aren't really part of the Int object, but they're handy; the protos
  * are necessary for systems that need the magic of PyAPI_FUNC and that want

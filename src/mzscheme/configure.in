@@ -12,6 +12,9 @@ AC_ARG_ENABLE(sgc, ""  feature: sgc            use Senora GC instead of the Boeh
 AC_ARG_ENABLE(sgcdebug, ""  feature: sgcdebug       use Senora GC for debugging)
 AC_ARG_ENABLE(osthreads, ""  feature: osthreads      use OS threads to implement MzScheme threads)
 
+AC_ARG_ENABLE(float, ""  feature: float          include support for single-precision floats)
+AC_ARG_ENABLE(floatinstead, ""  feature: floatinstead   compile to use single-precision by default)
+
 AC_ARG_ENABLE(oskit, ""  feature: oskit          compile OSKit-based MzScheme kernel)
 AC_ARG_ENABLE(smalloskit, ""  feature: smalloskit     compile small OSKit-based MzScheme kernel)
 
@@ -19,9 +22,6 @@ AC_ARG_ENABLE(wbuild, ""  feature: wbuild         compile and use wbuild for .w 
 
 AC_ARG_ENABLE(gprof, ""  feature: gprof          compile for profiling with gprof (gcc only))
 AC_ARG_ENABLE(gcov, ""  feature: gcov           compile to gather gcov statistics (gcc only))
-
-AC_ARG_ENABLE(float, ""  feature: float          compile to support for single-precision floats)
-AC_ARG_ENABLE(floatinstead, ""  feature: floatinstead   compile to use single-precision by default)
 
 ###### Some flags imply other flags #######
 

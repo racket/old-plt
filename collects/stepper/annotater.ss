@@ -122,22 +122,14 @@
   ; and as a key for the continuation marks.
   
   (define debug-key (gensym "debug-key-"))
-  
-  (define (list-take n a-list)
-    (if (= 0 n)
-        null
-        (cons (car a-list)
-              (list-take (- n 1)
-                         (cdr a-list)))))
-  
-  (define (flatten-take n a-list)
-    (apply append (list-take n a-list)))
-  
+    
   (define (interlace a b)
     (foldr (lambda (built a b)
-             ;;;;;; I AM RIGHT HERE
-             
-  
+             (cons a (cons b built)))
+           null
+           a
+           b))
+    
   (define (read-exprs text)
     (let ([reader (z:read text)])
       (let read-loop ([new-expr (reader)])
@@ -156,19 +148,13 @@
   
   (define all-defs-list-sym (gensym "all-defs-list-"))
   (define current-def-sym (gensym "current-def-"))
-    
+
   (define (current-def-setter num)
     `(#%set! ,current-def-sym ,num))
            
   ; debug-key: this key will be used as a key for the continuation marks.
   
   (define debug-key (gensym "debug-key-"))
-  
-  ; wrap creates the w-c-m expression.
-  
-  (define (wrap debug-info expr)
-    (let ([with-break `(#%begin (,break) ,expr)])
-      `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
   
   ; make-debug-info takes a list of variables and an expression and
   ; creates a thunk closed over the expression and (if bindings-needed is true) 
@@ -242,7 +228,20 @@
   
   (define (annotate text break)
     (local
-	(
+	(  
+         (define my-break
+           `(lambda ()
+              (,break (current-continuation-marks ,debug-key)
+                     ,all-defs-list-sym
+                     ,current-def-sym)))
+         
+         ; wrap creates the w-c-m expression.
+  
+         (define (wrap debug-info expr)
+           (let ([with-break `(#%begin (,my-break) ,expr)])
+             `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
+  
+
          (define read-exprs (read-exprs text))
          
          (define (find-read-expr offset)
@@ -455,11 +454,8 @@
                 [top-vars-annotation `((#%define-values (,all-defs-list-sym ,current-def-sym)
                                         (values (#%quote ,defined-top-vars) #f)))]
                 [current-def-setters (build-list (length exprs) current-def-setter)]
-                [top-annotated-exprs (foldr (lambda (setter expr built)
-                                              (cons setter (cons expr built)))
-                                            current-def-setters
-                                            parsed-exprs)])
-           (append top-defines top-annotated-exprs)))))
+                [top-annotated-exprs (interlace current-def-setters parsed-exprs)])
+           (append top-vars-annotation top-annotated-exprs)))))
       
   
 	 

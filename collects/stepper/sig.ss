@@ -13,7 +13,10 @@
    get-arg-symbol
    (define-struct varref (var top-level?))
    expr-read
-   set-expr-read!))
+   set-expr-read!
+   all-defs-list-sym
+   current-def-sym
+   flatten-take))
 
 (define-signature stepper:annotate^
   (annotate))

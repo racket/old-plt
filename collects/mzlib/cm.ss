@@ -1,0 +1,116 @@
+(module cm mzscheme
+  (require (lib "moddep.ss" "syntax")
+           (lib "list.ss"))
+  
+  (provide trace)
+  
+  (define trace (make-parameter void))
+  (define indent (make-parameter ""))
+  
+  (define default-handler (current-load/use-compiled))
+  
+  (define up-to-date (make-parameter (make-hash-table 'equal)))
+  
+  (define my-max
+    (case-lambda
+      (() 0)
+      (x (apply max x))))
+  
+  (define (get-deps code path)
+    (let-values ([(imports fs-imports) (module-compiled-imports code)])
+      (map (lambda (x) 
+	     (resolve-module-path-index x path))
+	   (filter (lambda (x) (not (symbol? x))) (append imports fs-imports)))))
+  
+  (define (get-compilation-path path)
+    (let-values (((base name-suffix must-be-dir?) (split-path path)))
+      (let ((name (regexp-replace "\\..?.?.?$" name-suffix "")))
+        (cond
+          ((eq? 'relative base) (build-path "compiled" name))
+          (else (build-path base "compiled" name))))))
+  
+  (define (get-code-dir path)
+    (let-values (((base name-suffix must-be-dir?) (split-path path)))
+      (cond
+        ((eq? 'relative base) (build-path "compiled"))
+        (else (build-path base "compiled")))))
+  
+  (define (write-deps code path)
+    (let ((dep-path (string-append (get-compilation-path path) ".dep"))
+          (deps (get-deps code path)))
+      (let ((op (open-output-file dep-path 'replace)))
+        (write deps op)
+        (close-output-port op))))
+  
+  (define (compile-zo path)
+    ((trace) (format "~abegin compile: ~a" (indent) path))
+    (indent (format "  ~a" (indent)))
+    (let ((zo-name (string-append (get-compilation-path path) ".zo")))
+      (with-handlers ((void void))
+	(delete-file zo-name))
+      (let ((code (get-module-code path))
+	    (code-dir (get-code-dir path)))
+	(if (not (directory-exists? code-dir))
+	    (make-directory code-dir))
+	(let ((out (open-output-file zo-name 'replace)))
+	  (with-handlers ((not-break-exn? 
+                           (lambda (ex) 
+                             (close-output-port out)
+                             (delete-file zo-name)
+                             (let ((out (open-output-file (string-append (get-compilation-path path)
+                                                                         ".fail")
+                                                          'replace)))
+                               (close-output-port out))
+                             ((trace) (format "~afailure" (indent))))))
+	    (write code out)
+	    (close-output-port out))
+	  (write-deps code path))))
+    (indent (substring (indent) 2 (string-length (indent))))
+    ((trace) (format "~aend compile: ~a" (indent) path)))
+  
+  (define (get-compiled-time path)
+    (with-handlers ((exn:i/o:filesystem?
+                     (lambda (ex)
+                       (with-handlers ((exn:i/o:filesystem?
+                                        (lambda (ex) -inf.0)))
+                         (file-or-directory-modify-seconds (string-append (get-compilation-path path)
+                                                                          ".fail"))))))
+      (file-or-directory-modify-seconds (string-append (get-compilation-path path) ".zo"))))
+  
+  (define (compile-root path)
+    (let ((stamp (hash-table-get (up-to-date) path (lambda () #f))))
+      (cond
+        (stamp stamp)
+        (else
+         ((trace) (format "~acompiling-root: ~a" (indent) path))
+         (let ((path-zo-time (get-compiled-time path))
+               (path-time (file-or-directory-modify-seconds path)))
+           (cond
+             ((> path-time path-zo-time) (compile-zo path))
+             (else
+              (let ((deps (with-handlers ((exn:i/o:filesystem? (lambda (ex) #f)))
+                            (call-with-input-file (string-append (get-compilation-path path) ".dep")
+                              read))))
+                (cond
+                  ((not deps) (compile-zo path))
+                  ((> (apply my-max (map compile-root deps)) path-zo-time) (compile-zo path)))))))
+         (let ((stamp (get-compiled-time path)))
+           (hash-table-put! (up-to-date) path stamp)
+           stamp)))))
+  
+  
+  (define (make-load-handler clear-cache?)
+    (lambda (path mod-name)
+      ((trace) (format "~aloading: ~a ~a ~a" (indent) path mod-name clear-cache?))
+      (cond
+        ((not mod-name) (default-handler path mod-name))
+        (else 
+         (if (not (eq? 'none (use-compiled-file-kinds))) 
+             (parameterize ((current-load/use-compiled (make-load-handler #f)))
+               (compile-root path)))
+         (if clear-cache? (up-to-date (make-hash-table 'equal)))
+         (parameterize ((current-load/use-compiled default-handler))
+           (default-handler path mod-name))))))
+  
+  (current-load/use-compiled (make-load-handler #t))
+  )

@@ -3,8 +3,8 @@
   
   (require (lib "class.ss")
            (lib "errortrace.ss" "errortrace")
-           (lib "Comparable.ss" "drj" "libs" "java" "lang")
-           (lib "Serializable.ss" "drj" "libs" "java" "io"))
+           (lib "Comparable.ss" "profj" "libs" "java" "lang")
+           (lib "Serializable.ss" "profj" "libs" "java" "io"))
   (require "compile-lang-syntax.ss")
   
   ;Runtime needed code
@@ -58,8 +58,8 @@
         
         (public-final getClass)
         (define (getClass)
-          (error 'DrJava:getClass 
-                 (format "DrJava does not support getClass calls. ~e" 
+          (error 'ProfessorJ:getClass 
+                 (format "ProfessorJ does not support getClass calls. ~e" 
                          (send this toString))))
         
         (define/public (hashCode) (eq-hash-code this))

@@ -164,7 +164,7 @@
                (with-handlers ([void (lambda (x)  (printf "~a~n" (exn-message x)))])
                  (namespace-require 'mzscheme)
                  (namespace-require '(lib "class.ss"))
-                 (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "drj" "libs" "java")))))))
+                 (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java")))))))
           
           (define/public (render-value value settings port port-write) (write value port))
           (define/public (render-value/format value settings port port-write width) (write value port))
@@ -180,14 +180,14 @@
 
       
       (define full-lang% 
-        (java-lang-mixin 'full "Java" (list "DrJ" "Full Java") (list 1000 10 4) "Java 1.0 (some 1.1)"))
+        (java-lang-mixin 'full "Java" (list "ProfessorJ" "Full Java") (list 1000 10 4) "Java 1.0 (some 1.1)"))
       (define advanced-lang% 
         (java-lang-mixin 'advanced "Advanced Java" 
-                         (list "DrJ" "Advanced") (list 1000 10 3) "Java Advanced teaching language"))
+                         (list "ProfessorJ" "Advanced") (list 1000 10 3) "Java Advanced teaching language"))
       (define intermediate-lang% 
         (java-lang-mixin 'intermediate "Intermediate Java" 
-                         (list "DrJ" "Intermediate") (list 1000 10 2) "Java Intermediate teaching language"))
-      (define beginner-lang% (java-lang-mixin 'beginner "Beginner Java" (list "DrJ" "Beginner")
+                         (list "ProfessorJ" "Intermediate") (list 1000 10 2) "Java Intermediate teaching language"))
+      (define beginner-lang% (java-lang-mixin 'beginner "Beginner Java" (list "ProfessorJ" "Beginner")
                                               (list 1000 10 1) "Java Beginner teaching language"))
       ))
       

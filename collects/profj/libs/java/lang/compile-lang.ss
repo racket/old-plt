@@ -1,6 +1,6 @@
 #cs
 (module compile-lang mzscheme
-  (require (lib "compile.ss" "drj")
+  (require (lib "compile.ss" "profj")
            (lib "list.ss")
            (lib "file.ss")
            (lib "pretty.ss"))
@@ -80,7 +80,7 @@
   
   (define (get-keepable-reqs req names)
     (syntax-case req (lib file)
-      ((lib name "drj" "libs" "java" "lang")
+      ((lib name "profj" "libs" "java" "lang")
        (and (not (member-name (syntax-object->datum (syntax name)) (cdr names))) req))
       ((file name)
        (and (not (member-name (syntax-object->datum (syntax name)) (cdr names))) req))

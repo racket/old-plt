@@ -1,2 +1,2 @@
 (module info (lib "infotab.ss" "setup")
-  (define name "DrJ: parsers"))
+  (define name "ProfessorJ: parsers"))

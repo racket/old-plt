@@ -969,7 +969,7 @@
     (cons (build-path 'same)
           (get-preference 'classpath
                           (lambda ()
-                            (let ((libs (map (lambda (p) (build-path "drj" "libs"))
+                            (let ((libs (map (lambda (p) (build-path "profj" "libs"))
                                              (current-library-collection-paths))))
                               (put-preferences `(classpath) (list libs))
                               libs)))))

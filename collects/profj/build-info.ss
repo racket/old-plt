@@ -17,11 +17,11 @@
     (lambda (name path dir local?)
       (let* ((syn (lambda (acc) (datum->syntax-object #f acc #f)))
              (lib? (member (car dir) 
-                           (map (lambda (p) (build-path p "drj" "libs"))
+                           (map (lambda (p) (build-path p "profj" "libs"))
                                 (current-library-collection-paths))))
              (access (lambda (name)
                        (cond
-                         (lib? `(lib ,name "drj" "libs" ,@path))
+                         (lib? `(lib ,name "profj" "libs" ,@path))
                          ((and local? (not (to-file))) name)
                          (else `(file ,(build-path (apply build-path dir) name))))))
              (make-name (lambda ()
@@ -178,7 +178,7 @@
         (let ((class-path (cons (build-path 'same)
                                 (get-preference 'classpath
                                                 (lambda () 
-                                                  (let ((libs (map (lambda (p) (build-path p "drj" "libs"))
+                                                  (let ((libs (map (lambda (p) (build-path p "profj" "libs"))
                                                                    (current-library-collection-paths))))
                                                     (put-preferences `(classpath) (list libs))
                                                     libs))))))
@@ -204,7 +204,7 @@
            (class-list (map (lambda (fn) (substring fn 0 (- (string-length fn) 6)))
                             (filter (lambda (f) (equal? (filename-extension f) "jinfo"))
                                     (directory-list (build-path (apply build-path dir) "compiled")))))
-           (array (datum->syntax-object #f `(lib "array.ss" "drj" "libs" "java" "lang") #f)))
+           (array (datum->syntax-object #f `(lib "array.ss" "profj" "libs" "java" "lang") #f)))
       (send type-recs add-package-contents lang class-list)
       (for-each (lambda (c) (import-class c lang dir #f type-recs 'full #f)) class-list)
       (send type-recs add-require-syntax (list 'array) (list array array))
@@ -675,7 +675,7 @@
           (check-throws-match throws method cname over? type-recs)))
       
       (make-method-record name
-                          (check-method-modifiers level mods) ; need to add stuff about ctor
+                          (check-method-modifiers level mods (eq? 'ctor ret))
                           ret
                           parms
                           throws

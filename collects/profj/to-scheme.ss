@@ -347,7 +347,7 @@
       (values (if (> (length translated-defs) 1)
                   (cons (make-syntax #f `(module ,(module-name) mzscheme
                                                     (require (lib "class.ss")
-                                                             (prefix javaRuntime: (lib "runtime.scm" "drj" "libs" "java"))
+                                                             (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
                                                              ,@(translate-require reqs type-recs))
                                                     ,@(map car translated-defs))
                                               #f)
@@ -355,7 +355,7 @@
                   (list (make-syntax #f `(module ,(build-identifier (regexp-replace "-composite" (symbol->string (module-name)) ""))
                                                     mzscheme
                                                     (require (lib "class.ss")
-                                                             (prefix javaRuntime: (lib "runtime.scm" "drj" "libs" "java"))
+                                                             (prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))
                                                              ,@(translate-require (map (lambda (r) (list (def-file (car defs)) r))
                                                                                        (def-uses (car defs)))
                                                                                   type-recs))

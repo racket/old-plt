@@ -7,8 +7,8 @@
 #cs(module runtime mzscheme
   
   (require (lib "class.ss")
-           (lib "Object.ss" "drj" "libs" "java" "lang")
-           (lib "String.ss" "drj" "libs" "java" "lang"))
+           (lib "Object.ss" "profj" "libs" "java" "lang")
+           (lib "String.ss" "profj" "libs" "java" "lang"))
 
   (provide convert-to-string shift not-equal bitwise remainder and or quotient)
 

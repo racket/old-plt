@@ -4,6 +4,8 @@
  (require-library "sig.ss" "mred")
  (require-library "frameworks.ss" "framework"))
 
+(require-library "get-infos.ss" "setup")
+
 (define-signature help:doc-position^
   (user-defined-doc-position))
 

@@ -1,6 +1,7 @@
 (lambda (request fail)
   (case request
-    ((name) "SLaTeX")
+    [(name) "SLaTeX"]
+    [(help-desk-message) (format "Mz/Mr: ~s" `(require-library "slatex.ss" "slatex"))]
     [(blurb)
      (list "SLaTeX is an pre-processor for LaTeX that formats Scheme code. "
 	   "For more information, see "

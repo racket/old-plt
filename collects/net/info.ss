@@ -2,6 +2,7 @@
   (let ([elab (list "cgis.ss" "mails.ss" "nntps.ss" "pop3s.ss" "urls.ss"
 		    "smtps.ss" "heads.ss" "imaps.ss" "dnss.ss" "base64s.ss")])
     (case sym
+      [(help-desk-message) (format "Mz/Mr: ~s" `(require-library "net.ss" "net"))]
       [(name) "Net"]
       [(blurb)
        (list

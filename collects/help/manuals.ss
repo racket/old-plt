@@ -81,8 +81,8 @@
               (append
                (map
                 (lambda (doc-pair)
-                  (format "<LI> <A HREF=\"~a\">~a</A>~a"
-                          (fs-path->file://path (build-path doc-collection-path (car doc-pair) "index.htm"))
+                  (format "<LI> <A HREF=\"file:~a\">~a</A>~a"
+                          (build-path doc-collection-path (car doc-pair) "index.htm")
                           (cdr doc-pair)
                           (if (file-exists? (build-path doc-collection-path (car doc-pair) "hdindex"))
                               " (index installed)"

@@ -12,9 +12,10 @@
 			     function string file url mred)]
 	[search : help:search^ ((require-relative-library "search.ss")
 				doc-position function)]
+	[info : setup:info^ ((require-library "get-infor.ss" "setup"))]
 	[help : help:help-window^
 	      ((require-relative-library "helpwin.ss")
-	       search
+	       info search
 	       browser function string file url
 	       mred framework mixin)])
   (export (open help)

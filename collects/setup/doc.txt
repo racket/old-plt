@@ -287,3 +287,21 @@ initialized between them, e.g.:
                      ((require-library "setupr.ss" "setup")
                       OPTIONS ...)])
       ...)
+
+
+ _Getting fields from info.ss files_
+ -----------------------------------
+
+ The file get-info.ss defines 
+
+> (get-info collection-names) -> (union #f (symbol (-> TST) -> TST))
+
+   get-info accepts a list of strings naming a collection or
+   sub-collection. It returns #f if there is no info.ss file or if the
+   info.ss file has an error during loading. Otherwise, it returns a
+   procedure of two arguments. This procedure extracts the value bound to
+   the symbol from the info.ss procedure, or returns the result of the
+   thunk if the symbol isn't bound in the info.ss file.
+
+   get-info will print an error message if the info.ss has an error during
+   loading or when the info.ss procedure is called.

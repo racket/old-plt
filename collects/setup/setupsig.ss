@@ -4,7 +4,8 @@
  (require-library "dynexts.ss" "dynext")
  (require-library "functios.ss")
  (require-library "files.ss")
- (require-library "sig.ss" "compiler"))
+ (require-library "sig.ss" "compiler")
+ (require-relative-library "get-infos.ss"))
 
 (define-signature setup-option^
   (verbose

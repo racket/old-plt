@@ -276,8 +276,8 @@ Each index entry is a list of four values:
 See plt/collects/doc/mzscheme/hdindex for an example.
 
 
-The _'blurb_ field of the info.ss file
-- - - - - - - - - - - - - - - - - - - 
+The _'blurb field_ of the _info.ss_ file
+- - - - - - - - - - - - - - - - - - - - 
 
 The 'blurb field of the info.txt file should be a list of xexprs (see the
 xml documentation for information on the xexpr datatype) that correspond to
@@ -297,6 +297,15 @@ individual blurb field is this:
 where `name-of-collection' is the response of the 'name query to the
 info.ss file and `blurbs' is the response of the 'blurb query to the
 info.ss file.
+
+The _'help-desk-message field_ of the _info.ss_ file
+- - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This field must be a string that is displayed at the top of the Help Desk
+window, in green, when the doc.txt file of this collection is displayed. It
+should be a single line, describing how to load the library with a prefix
+specifing the applicable language levels.
+
 
 _Help Desk Entry Points_
 ========================

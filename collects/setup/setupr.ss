@@ -4,6 +4,7 @@
 
 (unit/sig ()
   (import setup-option^
+	  setup:info^
 	  mzlib:file^
 	  compiler^
 	  (compiler:option : compiler:option^)
@@ -57,15 +58,11 @@
 	(format "~a in ~a" name base))))
 
   (define (call-info info flag default test)
-    (with-handlers ([void (lambda (x) 
-			    (warning
-			     (format "Warning: error getting ~a info: ~~a"
-				     flag)
-			     x)
-			    default)])
-      (let ([v (info flag (lambda () default))])
-	(test v)
-	v)))
+    (if info
+	(let ([v (info flag (lambda () default))])
+	  (test v)
+	  v)
+	default))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;               Archive Unpacking              ;;
@@ -268,6 +265,21 @@
   (define-struct cc (collection path name info))
 
   (define collection->cc
+    (lambda (collection-p)
+      (let* ([info (get-info collection-p)] 
+	     [name (call-info info 'name #f
+			      (lambda (x)
+				(unless (string? x)
+				  (error "result is not a string:" x))))])
+	(and
+	 name
+	 (make-cc
+	  collection-p
+	  (apply collection-path collection-p)
+	  name
+	  info)))))
+
+  '(define collection->cc
     (lambda (collection-p)
       (with-handlers ([void (lambda (x) #f)])
 	(let ([dir (apply collection-path collection-p)])

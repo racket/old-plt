@@ -61,31 +61,33 @@
   (invoke-unit/sig
    (compound-unit/sig
     (import (SOPTION : setup-option^))
-    (link [STRING : mzlib:string^ ((require-library "stringr.ss"))]
-	  [FILE : mzlib:file^ ((require-library "filer.ss") STRING FUNCTION)]
-	  [FUNCTION : mzlib:function^ ((require-library "functior.ss"))]
-	  [COMPILE : mzlib:compile^ ((require-library "compiler.ss"))]
-	  [PRETTY-PRINT : mzlib:pretty-print^ ((require-library "prettyr.ss"))]
-	  [LAUNCHER : launcher-maker^ ((require-library "launcherr.ss" "launcher") FILE)]
-	  [DCOMPILE : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
-	  [DLINK : dynext:link^ ((require-library "linkr.ss" "dynext"))]
-	  [DFILE : dynext:file^ ((require-library "filer.ss" "dynext"))]
-	  [OPTION : compiler:option^ ((require-library "optionr.ss" "compiler"))]
-	  [COMPILER : compiler^ ((require-library "compiler.ss" "compiler")
-				 OPTION
-				 FUNCTION
-				 PRETTY-PRINT
-				 FILE
-				 STRING
-				 COMPILE
-				 DCOMPILE
-				 DLINK
-				 DFILE)]
-	  [SETUP : () ((require-relative-library "setupr.ss")
-		       SOPTION
-		       FILE
-		       COMPILER
-		       OPTION
-		       LAUNCHER)])
+    (link [string : mzlib:string^ ((require-library "stringr.ss"))]
+	  [file : mzlib:file^ ((require-library "filer.ss") string function)]
+	  [function : mzlib:function^ ((require-library "functior.ss"))]
+	  [compile : mzlib:compile^ ((require-library "compiler.ss"))]
+	  [pretty-print : mzlib:pretty-print^ ((require-library "prettyr.ss"))]
+	  [launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher") file)]
+	  [dcompile : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
+	  [dlink : dynext:link^ ((require-library "linkr.ss" "dynext"))]
+	  [dfile : dynext:file^ ((require-library "filer.ss" "dynext"))]
+	  [option : compiler:option^ ((require-library "optionr.ss" "compiler"))]
+	  [info : setup:info^ ((require-relative-library "get-infor.ss"))]
+	  [compiler : compiler^ ((require-library "compiler.ss" "compiler")
+				 option
+				 function
+				 pretty-print
+				 file
+				 string
+				 compile
+				 dcompile
+				 dlink
+				 dfile)]
+	  [setup : () ((require-relative-library "setupr.ss")
+		       soption
+		       info
+		       file
+		       compiler
+		       option
+		       launcher)])
     (export))
    setup-option^))

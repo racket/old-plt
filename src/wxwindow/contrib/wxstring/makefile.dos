@@ -1,0 +1,113 @@
+#
+# File:		makefile.dos
+# Author:	Stefan Hammes (stefan.hammes@urz.uni-heidelberg.de) / Julian Smart
+# Created:	1995
+# Updated:	
+#
+# "%W% %G%"
+#
+# Makefile : Builds wxString library for Windows 3.1
+
+# Change WXDIR or WXWIN to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXINC = $(WXDIR)\include
+
+WXSTRINGDIR = $(WXDIR)\contrib\wxstring
+WXSTRINGINC = $(WXSTRINGDIR)
+WXSTRINGLIB = $(WXSTRINGDIR)\wxstring.lib
+
+WXLIB = $(WXDIR)\lib\wx.lib
+
+LIBS=$(WXLIB) $(WXSTRINGLIB) oldnames llibce
+#LIBS=$(WXLIB) $(WXSTRINGLIB) oldnames libw llibcew llibce commdlg shell
+
+# Set this to nothing if using MS C++ 7
+ZOPTION=/Z7
+
+!ifndef FINAL
+FINAL=0
+!endif
+
+!ifndef DLL
+DLL=0
+!endif
+
+!ifndef DEBUG
+DEBUG=0
+!endif
+
+!ifndef OPTIONS
+OPTIONS=
+!endif
+
+!if "$(FINAL)" == "0"
+OPT = /Od
+DEBUG_FLAGS= /Zi $(ZOPTION)
+!else
+OPT = /Od
+DEBUG_FLAGS=
+!endif
+
+# do not use precompiled headers, because we only include 'wx_obj.h' and 'common.h'
+PRECOMP=
+INC = /I$(WXINC)\base /I$(WXINC)\msw
+
+!if "$(DLL)" == "0"
+CPPFLAGS= $(DEBUG_FLAGS) $(OPTIONS) $(INC) /DDEBUG=$(DEBUG) /AL /Gt4 /Gx- /W4 /G2sw $(OPT) /Dwx_msw $(PRECOMP)
+LINKFLAGS=/NOD /SEG:256 /ONERROR:NOEXE
+!else
+CPPFLAGS= $(DEBUG_FLAGS) $(OPTIONS) $(INC) /AL /Gt4 /Gx- /W4 /G2sw /GD $(OPT) /Dwx_msw $(PRECOMP)
+LINKFLAGS=/NOD /SEG:256 /ONERROR:NOEXE
+!endif
+
+OBJECTS = wxstrgnu.obj wxregex.obj
+
+all: $(WXSTRINGLIB)  
+
+demo: test.exe
+
+
+$(WXSTRINGLIB): $(OBJECTS)
+        erase $(WXSTRINGLIB)
+        lib /PAGESIZE:128 @<<
+$(WXSTRINGLIB)
+y
+$(OBJECTS)
+nul
+;
+<<
+
+wxstrgnu.obj: wxstrgnu.cc wxstrgnu.h wxregex.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wxregex.obj: wxregex.cc wxregex.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+
+# the testprogram will give a DOS executable for now
+
+test.exe:      $(WXDIR)\src\msw\dummy.obj $(WXLIB) $(WXSTRINGLIB) test.obj
+        link $(LINKFLAGS) @<<
+$(WXDIR)\src\msw\dummy.obj test.obj,
+test,
+NUL,
+$(LIBS)
+;
+<<
+
+test.obj:      test.cc wxstrgnu.h wxregex.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+clean:
+	erase *.obj
+	erase *.exe
+	erase *.lib
+	erase *.res
+
+# end of makefile.dos

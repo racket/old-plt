@@ -1,0 +1,135 @@
+#
+# Makefile : Builds wxWindows utils for Windows 3.1
+# and Borland C++ 3.1. This makefile calls makefile.bcc in the
+# utils subdirectories.
+
+# Change these if needed.
+WXDIR = l:\wx
+BOR_VER = 4
+
+!if "$(BOR_VER)" == "3.1"
+BCCDIR = f:\bc3
+!elif "$(BOR_VER)" == "4"
+BCCDIR = f:\bc4
+!endif
+
+!ifndef FINAL
+FINAL=1
+!endif
+
+PROLOGDIR = $(WXDIR)\utils\prologio
+PROLOGINC = $(PROLOGDIR)\src
+
+TREEDIR = $(WXDIR)\utils\wxtree
+TREEINC = $(TREEDIR)\src
+
+DIBDIR = $(WXDIR)\utils\dib
+DIBINC = $(DIBDIR)
+
+COLOURDIR = $(WXDIR)\utils\colours
+COLOURINC = $(COLOURDIR)
+
+RCDIR = $(WXDIR)\utils\rcparser
+RCINC = $(RCDIR)\src
+THISDIR = $(WXDIR)\utils
+WXBASEINC = $(WXDIR)\include\base
+WXINC = $(WXDIR)\include\msw
+
+CFG = $(THISDIR)\wxwin.cfg
+PCH = $(THISDIR)\wxwin.pch
+
+all:    wxwin.cfg
+        cd $(WXDIR)\utils\hytext\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\wxhelp\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\prologio\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\wxtree\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\rcparser\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\dib
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+#        cd $(WXDIR)\utils\colours
+#        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\wxgraph\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\wxbuild\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+#extra
+        cd $(WXDIR)\utils\wxanim\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\image\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\tex2rtf\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\mfutils\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\clockwrk\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils\wxpoem\src
+        make -f makefile.bcc -DBCCDIR=$(BCCDIR) -DCFG=$(CFG) -DWXWIN=$(WXDIR) -DFINAL=$(FINAL)
+        cd $(WXDIR)\utils
+
+clean:
+        cd $(WXDIR)\utils\hytext\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\wxhelp\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\prologio\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\wxtree\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\rcparser\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\dib
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+#        cd $(WXDIR)\utils\colours
+#        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\wxgraph\src
+        make -f makefile.bcc -DWXWIN=$(WXDIR) clean
+        cd $(WXDIR)\utils\wxbuild\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+#extra
+        cd $(WXDIR)\utils\wxanim\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\image\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\tex2rtf\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\mfutils\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\clockwrk\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils\wxpoem\src
+        make -f makefile.bcc -DWXDIR=$(WXDIR) clean
+        cd $(WXDIR)\utils
+        -erase $(PCH)
+
+wxwin.cfg: makefile.bcc
+        copy &&!
+-H=$(PCH)
+-3
+-P
+-Fc
+-d
+-w-hid
+-w-par
+-w-pia
+-w-aus
+-w-rch
+-ml
+-WE
+-Fs-
+-Vf
+-I$(WXBASEINC);$(WXINC);$(PROLOGINC);$(TREEINC);$(DIBINC);$(RCINC);$(COLOURINC);$(BCCDIR)\include
+-Dwx_msw
+! wxwin.cfg
+!if "$(BOR_VER)" == "3.1"
+        echo -Ff=4 >>wxwin.cfg
+!elif "$(BOR_VER)" == "4"
+        echo -Ff=512 >>wxwin.cfg
+        echo -dc >>wxwin.cfg
+!endif
+

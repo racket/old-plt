@@ -1,0 +1,98 @@
+#
+# File: 	makefile.b32
+# Author: Patrick Halke
+# Created:	1995
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds 32bit gauge library for Windows 3.1
+# and Borland C++ 4.x
+
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib
+WXINC = $(WXDIR)\include\msw
+WXBASESRC = $(WXDIR)\src\base
+WXBASEINC = $(WXDIR)\include\base
+
+!ifndef DEBUG
+DEBUG=0
+!endif
+
+!if "$(FINAL)" == "0"
+OPT = -Od
+DEBUG_FLAGS= -v -DDEBUG=$(DEBUG)
+!else
+OPT = -O2
+DEBUG_FLAGS = -DDEBUG=$(DEBUG)
+!endif
+
+CPPFLAGS=$(DEBUG_FLAGS) $(OPT) -DFOR_MSW @$(CFG)
+
+LIBTARGET= $(WXLIB)\xpm.lib
+
+.cc.obj:
+	bcc32 $(CPPFLAGS) -c {$< }
+
+.c.obj:
+	bcc32 $(CPPFLAGS) -P- -c {$< }
+
+OBJECTS = crbuffri.obj crdatfri.obj create.obj crifrbuf.obj crifrdat.obj\
+	data.obj hashtab.obj misc.obj parse.obj rdftodat.obj rdftoi.obj\
+	rgb.obj scan.obj simx.obj wrffrdat.obj wrffrp.obj wrffri.obj
+
+all:		$(LIBTARGET)
+
+$(LIBTARGET): $(OBJECTS)
+	erase $(LIBTARGET)
+	tlib $(LIBTARGET) /P32 @&&!
++$(OBJECTS:.obj =.obj +)
+!
+
+crbuffri.obj: libxpm.34b\lib\crbuffri.c
+
+crbuffrp.obj: libxpm.34b\lib\crbuffrp.c
+
+crdatfri.obj: libxpm.34b\lib\crdatfri.c
+
+crdatfrp.obj: libxpm.34b\lib\crdatfrp.c
+
+create.obj: libxpm.34b\lib\create.c
+
+crifrbuf.obj: libxpm.34b\lib\crifrbuf.c
+
+crifrdat.obj: libxpm.34b\lib\crifrdat.c
+
+crpfrbuf.obj: libxpm.34b\lib\crpfrbuf.c
+
+crpfrdat.obj: libxpm.34b\lib\crpfrdat.c
+
+data.obj: libxpm.34b\lib\data.c
+
+hashtab.obj: libxpm.34b\lib\hashtab.c
+
+misc.obj: libxpm.34b\lib\misc.c
+
+parse.obj: libxpm.34b\lib\parse.c
+
+rdftodat.obj: libxpm.34b\lib\rdftodat.c
+
+rdftoi.obj: libxpm.34b\lib\rdftoi.c
+
+rdftop.obj: libxpm.34b\lib\rdftop.c
+
+rgb.obj: libxpm.34b\lib\rgb.c
+
+scan.obj: libxpm.34b\lib\scan.c
+
+simx.obj: libxpm.34b\lib\simx.c
+
+wrffrdat.obj: libxpm.34b\lib\wrffrdat.c
+
+wrffri.obj: libxpm.34b\lib\wrffri.c
+
+wrffrp.obj: libxpm.34b\lib\wrffrp.c
+
+clean:
+				-erase *.obj $(LIBTARGET) *.exe *.res *.map *.rws

@@ -1,0 +1,78 @@
+#
+# File:		makefile.bcc
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds image.lib library
+
+# Change WXDIR to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib\wx.lib
+WXINC = $(WXDIR)\include
+
+CTL3DLIB = $(WXDIR)\contrib\ctl3d\ctl3dv2.lib
+FAFALIB = $(WXDIR)\contrib\fafa\fafa.lib
+ITSYLIB = $(WXDIR)\contrib\itsybits\itsy.lib
+
+DIBDIR = $(WXDIR)\utils\dib
+DIBLIB = $(DIBDIR)\dib.lib
+
+IMAGELIB = ..\lib\image.lib
+IMAGEDIR = $(WXDIR)\utils\image
+THISDIR = $(IMAGEDIR)\src
+
+INC=/I$(WXDIR)\include\base /I$(WXDIR)\include\msw /I$(DIBLIB)
+
+LIBS=$(WXLIB) $(DIBLIB) $(IMAGELIB) $(FAFALIB) $(ITSYLIB) $(CTL3DLIB) mathwl cwl import
+
+!if "$(FINAL)" == "0"
+LINKFLAGS=/v/Vt /Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -Od
+DEBUG_FLAGS= -v
+!else
+LINKFLAGS=/Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -O2
+DEBUG_FLAGS=
+!endif
+CPPFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+CFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+
+OBJECTS = test.obj
+IMAGEOBJECTS = wx_image.obj
+
+all:    $(IMAGELIB) test.exe
+
+.cc.obj:
+	bcc $(CPPFLAGS) -c {$< }
+
+$(IMAGELIB):      $(IMAGEOBJECTS)
+        erase $(IMAGELIB)
+        tlib /P128 @&&!
+$(IMAGELIB) &
++$(IMAGEOBJECTS:.obj =.obj +)
+!
+
+$(IMAGEOBJECTS):     wx_image.h
+
+test.res :      test.rc $(WXDIR)\include\msw\wx.rc
+    rc /i$(BCCDIR)\include /i$(WXDIR)\include\msw -r test
+
+test.exe:      test.obj test.def test.res $(HYPLIB)
+        tlink $(LINKFLAGS) @&&!
+c0wl.obj test.obj
+test
+nul
+$(LIBS)
+test.def
+!
+        rc -K test.res
+
+clean:
+        -erase *.obj
+        -erase *.exe
+        -erase *.lib
+        -erase ..\lib\*.lib

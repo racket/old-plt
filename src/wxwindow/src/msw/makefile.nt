@@ -1,0 +1,524 @@
+#
+# File:		makefile.nt
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds wxWindows library wx.lib for Windows 3.1
+# Arguments:
+#
+# FINAL=1 argument to nmake to build version with no debugging info.
+# DLL=1 builds a library (wxdll.lib) suitable for creating DLLs.
+#
+!include <..\ntwxwin.mak>
+
+INC=/I$(WXBASEINC) /I$(WXINC) /I$(WXDIR)\contrib\fafa /I$(WXDIR)\contrib\itsybits
+LIBTARGET= $(WXLIB)\wx.lib
+
+# Please set these according to the settings in wx_setup.h, so we can include
+# the appropriate libraries in wx.lib
+USE_CTL3D=0
+USE_FAFA=1
+USE_ITSYBITS=1
+USE_GAUGE=1
+USE_IMAGE_LOADING_IN_MSW=1
+USE_XPM_IN_MSW=1
+USE_WX_RESOURCES=1
+USE_RESOURCE_LOADING_IN_MSW=1
+USE_GNU_WXSTRING=1
+
+PERIPH_LIBS=
+PERIPH_TARGET=
+PERIPH_CLEAN_TARGET=
+
+!if "$(USE_CTL3D)" == "1"
+PERIPH_LIBS=$(WXDIR)\contrib\ctl3d\ctl3dv2.lib $(PERIPH_LIBS)
+!endif
+
+!if "$(USE_FAFA)" == "1"
+PERIPH_LIBS=$(WXDIR)\contrib\fafa\fafa.lib $(PERIPH_LIBS)
+PERIPH_TARGET=fafa $(PERIPH_TARGET)
+PERIPH_CLEAN_TARGET=clean_fafa $(PERIPH_CLEAN_TARGET)
+!endif
+
+!if "$(USE_ITSYBITS)" == "1"
+PERIPH_LIBS=$(WXDIR)\contrib\itsybits\itsy.lib $(PERIPH_LIBS)
+PERIPH_TARGET=itsy $(PERIPH_TARGET)
+PERIPH_CLEAN_TARGET=clean_itsy $(PERIPH_CLEAN_TARGET)
+!endif
+
+!if "$(USE_GAUGE)" == "1"
+PERIPH_LIBS=$(WXDIR)\contrib\gauge\gauge.lib $(PERIPH_LIBS)
+PERIPH_TARGET=gauge $(PERIPH_TARGET)
+PERIPH_CLEAN_TARGET=clean_gauge $(PERIPH_CLEAN_TARGET)
+!endif
+
+!if "$(USE_XPM_IN_MSW)" == "1"
+PERIPH_LIBS=$(WXDIR)\contrib\wxxpm\xpm.lib $(PERIPH_LIBS)
+PERIPH_TARGET=xpm $(PERIPH_TARGET)
+PERIPH_CLEAN_TARGET=clean_xpm $(PERIPH_CLEAN_TARGET)
+!endif
+
+!if "$(USE_IMAGE_LOADING_IN_MSW)" == "1"
+PERIPH_LIBS=$(WXDIR)\utils\dib\dib.lib $(PERIPH_LIBS)
+PERIPH_TARGET=dib $(PERIPH_TARGET)
+PERIPH_CLEAN_TARGET=clean_dib $(PERIPH_CLEAN_TARGET)
+!endif
+
+!if "$(USE_WX_RESOURCES)" == "1"
+PERIPH_LIBS=$(WXDIR)\utils\prologio\lib\prologio.lib $(PERIPH_LIBS)
+PERIPH_TARGET=prologio $(PERIPH_TARGET)
+PERIPH_CLEAN_TARGET=clean_proio $(PERIPH_CLEAN_TARGET)
+!endif
+
+!if "$(USE_RESOURCE_LOADING_IN_MSW)" == "1"
+PERIPH_LIBS=$(WXDIR)\utils\rcparser\lib\rcparser.lib $(PERIPH_LIBS)
+PERIPH_TARGET=rcparser $(PERIPH_TARGET)
+PERIPH_CLEAN_TARGET=clean_rcp $(PERIPH_CLEAN_TARGET)
+!endif
+
+!if "$(USE_GNU_WXSTRING)" == "1"
+PERIPH_LIBS=$(WXDIR)\contrib\wxstring\wxstring.lib $(PERIPH_LIBS)
+PERIPH_TARGET=wxstring $(PERIPH_TARGET)
+!endif
+
+
+BASEHEADERS = $(WXBASEINC)/common.h \
+  $(WXBASEINC)/wx_setup.h \
+  $(WXBASEINC)/wb_buttn.h \
+  $(WXBASEINC)/wb_canvs.h \
+  $(WXBASEINC)/wb_check.h \
+  $(WXBASEINC)/wb_choic.h \
+  $(WXBASEINC)/wb_dc.h \
+  $(WXBASEINC)/wb_dccan.h \
+  $(WXBASEINC)/wb_dcmem.h \
+  $(WXBASEINC)/wb_dialg.h \
+  $(WXBASEINC)/wb_frame.h \
+  $(WXBASEINC)/wb_gdi.h \
+  $(WXBASEINC)/wb_ipc.h \
+  $(WXBASEINC)/wb_ipcob.h \
+  $(WXBASEINC)/wb_item.h \
+  $(WXBASEINC)/wb_lbox.h \
+  $(WXBASEINC)/wb_main.h \
+  $(WXBASEINC)/wb_menu.h \
+  $(WXBASEINC)/wb_messg.h \
+  $(WXBASEINC)/wb_mf.h \
+  $(WXBASEINC)/wb_mnuit.h \
+  $(WXBASEINC)/wb_mtxt.h \
+  $(WXBASEINC)/wb_panel.h \
+  $(WXBASEINC)/wb_slidr.h \
+  $(WXBASEINC)/wb_text.h \
+  $(WXBASEINC)/wb_timer.h \
+  $(WXBASEINC)/wb_txt.h \
+  $(WXBASEINC)/wb_win.h \
+  $(WXBASEINC)/wx_res.h \
+  $(WXBASEINC)/wx_dcps.h \
+  $(WXBASEINC)/wx_form.h \
+  $(WXBASEINC)/wx_hash.h \
+  $(WXBASEINC)/wx_help.h \
+  $(WXBASEINC)/wx_list.h \
+  $(WXBASEINC)/wxstring.h \
+  $(WXBASEINC)/wx_obj.h \
+  $(WXBASEINC)/wx_stdev.h \
+  $(WXBASEINC)/wx_sysev.h \
+  $(WXBASEINC)/wx_types.h \
+  $(WXBASEINC)/wx_utils.h \
+  $(WXBASEINC)/wx_mgstr.h
+
+LOCALHEADERS = \
+  $(WXINC)/wx_buttn.h \
+  $(WXINC)/wx_canvs.h \
+  $(WXINC)/wx_check.h \
+  $(WXINC)/wx_choic.h \
+  $(WXINC)/wx_dc.h \
+  $(WXINC)/wx_dccan.h \
+  $(WXINC)/wx_dcmem.h \
+  $(WXINC)/wx_dialg.h \
+  $(WXINC)/wx_frame.h \
+  $(WXINC)/wx_gdi.h \
+  $(WXINC)/wx_ipc.h \
+  $(WXINC)/wx_ipcob.h \
+  $(WXINC)/wx_item.h \
+  $(WXINC)/wx_lbox.h \
+  $(WXINC)/wx_main.h \
+  $(WXINC)/wx_menu.h \
+  $(WXINC)/wx_messg.h \
+  $(WXINC)/wx_mf.h \
+  $(WXINC)/wx_mnuit.h \
+  $(WXINC)/wx_mtxt.h \
+  $(WXINC)/wx_panel.h \
+  $(WXINC)/wx_privt.h \
+  $(WXINC)/wx_slidr.h \
+  $(WXINC)/wx_text.h \
+  $(WXINC)/wx_timer.h \
+  $(WXINC)/wx_txt.h \
+  $(WXINC)/wx_win.h
+
+OBJECTS1 = wx_win.obj wx_frame.obj wx_panel.obj wx_utils.obj wx_main.obj wx_item.obj
+
+OBJECTS2 = wx_text.obj wx_gdi.obj wx_dialg.obj wx_canvs.obj wx_dc.obj wx_mf.obj # dde_ipc.obj
+
+OBJECTS3 = wx_ipc.obj wx_timer.obj wx_clipb.obj wx_vlbox.obj wx_stat.obj wx_scrol.obj wx_db.obj\
+ wx_cmdlg.obj
+
+OBJECTS4 = wx_buttn.obj wx_messg.obj wx_check.obj wx_choic.obj wx_rbox.obj wx_lbox.obj \
+ wx_group.obj wx_gauge.obj wx_txt.obj wx_mtxt.obj wx_slidr.obj wx_menu.obj
+
+OBJECTS = $(OBJECTS1) $(OBJECTS2) $(OBJECTS3) $(OBJECTS4)
+
+BASEOBJECTS1 = ..\base\wb_win.obj ..\base\wb_frame.obj ..\base\wb_panel.obj\
+  ..\base\wb_utils.obj ..\base\wb_main.obj
+
+BASEOBJECTS2 = ..\base\wb_item.obj ..\base\wb_list.obj ..\base\wb_obj.obj\
+  ..\base\wb_ps.obj ..\base\wxstring.obj ..\base\wx_mem.obj ..\base\wb_print.obj
+
+BASEOBJECTS3 = ..\base\wb_text.obj ..\base\wb_gdi.obj ..\base\wb_dialg.obj\
+  ..\base\wb_canvs.obj
+
+BASEOBJECTS4 = ..\base\wb_dc.obj ..\base\wb_mf.obj ..\base\wb_hash.obj\
+  ..\base\wb_ipc.obj ..\base\wb_data.obj ..\base\wb_cmdlg.obj ..\base\wx_date.obj\
+  ..\base\wx_time.obj ..\base\wx_frac.obj
+
+BASEOBJECTS5 = ..\base\wb_form.obj ..\base\wb_timer.obj ..\base\wb_help.obj ..\base\wx_enhdg.obj\
+  ..\base\wb_scrol.obj ..\base\wb_vlbox.obj ..\base\wb_stat.obj
+
+BASEOBJECTS6 = ..\base\wb_sysev.obj ..\base\wb_stdev.obj ..\base\wb_types.obj ..\base\wb_mgstr.obj \
+ ..\base\wb_res.obj ..\base\wx_lay.obj ..\base\wx_doc.obj ..\base\wx_tbar.obj ..\base\wx_bbar.obj
+
+BASEOBJECTS = $(BASEOBJECTS1) $(BASEOBJECTS2) $(BASEOBJECTS3)\
+  $(BASEOBJECTS4) $(BASEOBJECTS5) $(BASEOBJECTS6)
+
+
+all:    dummy.obj base $(OBJECTS) $(PERIPH_TARGET) $(LIBTARGET)
+
+base:
+        cd $(WXBASESRC)
+        nmake -f makefile.nt
+        cd $(WXSRC)
+
+$(LIBTARGET):      dummy.obj $(OBJECTS) $(BASEOBJECTS) $(PERIPH_LIBS)
+	-erase $(LIBTARGET)
+	$(implib) @<<
+-out:$@
+-machine:$(CPU)
+dummy.obj $(OBJECTS) $(BASEOBJECTS) $(PERIPH_LIBS)
+<<
+
+dummy.obj: dummy.cc $(LOCALHEADERS) $(BASEHEADERS) $(WXDIR)\include\base\wx.h
+        cl @<<
+$(CPPFLAGS) $(INC) $(PRECOMP) /c /Tp $*.cc
+<<
+
+dummydll.obj: dummydll.cc $(LOCALHEADERS) $(BASEHEADERS) $(WXDIR)\include\base\wx.h
+        cl @<<
+$(CPPFLAGS) $(INC) $(PRECOMP) /c /Tp $*.cc
+<<
+
+wx_obj.obj:     $(WXBASEINC)\wx_obj.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_win.obj:     $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h \
+  $(WXBASEINC)\wx_utils.h wx_win.cc $(WXINC)\wx_gdi.h $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_main.obj:   $(WXBASEINC)\common.h $(WXBASEINC)\wx_obj.h $(WXINC)\wx_frame.h $(WXBASEINC)\wx_utils.h \
+  $(WXINC)\wx_main.h wx_main.cc $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+main.obj:   main.cc
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_frame.obj:   $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h $(WXINC)\wx_frame.h wx_frame.cc\
+                $(WXBASEINC)\wx_stdev.h $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_panel.obj:   $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h $(WXINC)\wx_frame.h $(WXINC)\wx_panel.h\
+                wx_panel.cc $(WXBASEINC)\wx_stdev.h $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_text.obj:    $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h $(WXINC)\wx_frame.h $(WXINC)\wx_text.h\
+                wx_text.cc $(WXBASEINC)\wx_stdev.h $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_canvs.obj:    $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h $(WXINC)\wx_frame.h $(WXINC)\wx_canvs.h\
+                 wx_canvs.cc $(WXBASEINC)\wx_stdev.h $(WXINC)\wx_gdi.h\
+                 $(WXINC)\wx_dc.h $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_dc.obj:    $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h $(WXINC)\wx_frame.h $(WXINC)\wx_canvs.h\
+                 wx_dc.cc $(WXBASEINC)\wx_stdev.h $(WXINC)\wx_gdi.h $(WXINC)\wx_dc.h\
+	$(WXINC)/wx_dccan.h $(WXINC)/wx_dcmem.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_mf.obj:    $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h\
+                 wx_mf.cc $(WXBASEINC)\wx_stdev.h $(WXINC)\wx_gdi.h $(WXINC)\wx_mf.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_item.obj:    $(WXBASEINC)\common.h $(WXINC)\wx_win.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h $(WXINC)\wx_frame.h $(WXINC)\wx_item.h\
+                wx_item.cc $(WXBASEINC)\wx_stdev.h $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_utils.obj:   $(WXBASEINC)\common.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h wx_utils.cc
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_ipc.obj:   $(WXBASEINC)\common.h $(WXBASEINC)\wx_obj.h $(WXBASEINC)\wx_utils.h $(WXINC)\wx_ipc.h wx_ipc.cc
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_gdi.obj:   $(WXBASEINC)\common.h $(WXINC)\wx_gdi.h $(WXBASEINC)\wx_utils.h wx_gdi.cc
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_dialg.obj:   $(WXBASEINC)\common.h wx_dialg.cc $(WXINC)\wx_dialg.h $(WXINC)\wx_win.h\
+  $(WXBASEINC)\wx_utils.h $(WXINC)\wx_panel.h $(WXINC)\wx_privt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_timer.obj:   $(WXBASEINC)\common.h wx_timer.cc $(WXINC)\wx_timer.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_clipb.obj:   $(WXBASEINC)\common.h wx_clipb.cc $(WXINC)\wx_clipb.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_stat.obj:   $(WXBASEINC)\common.h wx_stat.cc $(WXINC)\wx_stat.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_vlbox.obj:   $(WXBASEINC)\common.h wx_vlbox.cc $(WXINC)\wx_vlbox.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_buttn.obj:   $(WXBASEINC)\common.h wx_buttn.cc $(WXINC)\wx_buttn.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_messg.obj:   $(WXBASEINC)\common.h wx_messg.cc $(WXINC)\wx_messg.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_check.obj:   $(WXBASEINC)\common.h wx_check.cc $(WXINC)\wx_check.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_choic.obj:   $(WXBASEINC)\common.h wx_choic.cc $(WXINC)\wx_choic.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_lbox.obj:   $(WXBASEINC)\common.h wx_lbox.cc $(WXINC)\wx_lbox.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_rbox.obj:   $(WXBASEINC)\common.h wx_rbox.cc $(WXINC)\wx_rbox.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_group.obj:   $(WXBASEINC)\common.h wx_group.cc $(WXINC)\wx_group.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_gauge.obj:   $(WXBASEINC)\common.h wx_gauge.cc $(WXINC)\wx_gauge.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_slidr.obj:   $(WXBASEINC)\common.h wx_slidr.cc $(WXINC)\wx_slidr.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_txt.obj:   $(WXBASEINC)\common.h wx_txt.cc $(WXINC)\wx_txt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_mtxt.obj:   $(WXBASEINC)\common.h wx_mtxt.cc $(WXINC)\wx_mtxt.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_menu.obj:   $(WXBASEINC)\common.h wx_menu.cc $(WXINC)\wx_menu.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_db.obj:   $(WXBASEINC)\common.h wx_db.cc $(WXINC)\wx_db.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+wx_cmdlg.obj:   $(WXBASEINC)\common.h wx_cmdlg.cc $(WXINC)\wx_cmdlg.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+dde_ipc.obj:  dde_ipc.c
+        cl @<<
+$(CPPFLAGS2) /c $*.c
+<<
+
+wx_scrol.obj:   $(WXBASEINC)\common.h wx_scrol.cc $(WXINC)\wx_scrol.h
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+$(WXINC)/wx_win.h:  $(WXBASEINC)/wb_win.h
+$(WXINC)/wx_main.h:  $(WXBASEINC)/wb_main.h
+$(WXINC)/wx_frame.h:  $(WXBASEINC)/wb_frame.h
+$(WXINC)/wx_panel.h:  $(WXBASEINC)/wb_panel.h
+$(WXINC)/wx_text.h:  $(WXBASEINC)/wb_text.h
+$(WXINC)/wx_dialg.h:  $(WXBASEINC)/wb_dialg.h
+$(WXINC)/wx_ipc.h:  $(WXBASEINC)/wb_ipc.h
+$(WXINC)/wx_gdi.h:  $(WXBASEINC)/wb_gdi.h
+$(WXINC)/wx_event.h:  $(WXBASEINC)/wb_event.h
+$(WXINC)/wx_canvs.h:  $(WXBASEINC)/wb_canvs.h
+$(WXINC)/wx_mf.h:  $(WXBASEINC)/wb_mf.h
+$(WXINC)/wx_item.h:  $(WXBASEINC)/wb_item.h
+$(WXINC)/wx_buttn.h:  $(WXBASEINC)/wb_buttn.h
+$(WXINC)/wx_messg.h:  $(WXBASEINC)/wb_messg.h
+$(WXINC)/wx_choic.h:  $(WXBASEINC)/wb_choic.h
+$(WXINC)/wx_check.h:  $(WXBASEINC)/wb_check.h
+$(WXINC)/wx_lbox.h:  $(WXBASEINC)/wb_lbox.h
+$(WXINC)/wx_txt.h:  $(WXBASEINC)/wb_txt.h
+$(WXINC)/wx_mtxt.h:  $(WXBASEINC)/wb_mtxt.h
+$(WXINC)/wx_slidr.h:  $(WXBASEINC)/wb_slidr.h
+$(WXINC)/wx_menu.h:  $(WXBASEINC)/wb_menu.h
+
+$(OBJECTS):	$(WXBASEINC)/wx_setup.h
+
+# Peripheral components
+
+fafa:
+    cd $(WXDIR)\contrib\fafa
+    nmake -f makefile.nt
+    cd $(WXDIR)\src\msw
+
+clean_fafa:
+    cd $(WXDIR)\contrib\fafa
+    nmake -f makefile.nt clean
+    cd $(WXDIR)\src\msw
+
+itsy:
+    cd $(WXDIR)\contrib\itsybits
+    nmake -f makefile.nt
+    cd $(WXDIR)\src\msw
+
+clean_itsy:
+    cd $(WXDIR)\contrib\itsybits
+    nmake -f makefile.nt clean
+    cd $(WXDIR)\src\msw
+
+gauge:
+    cd $(WXDIR)\contrib\gauge
+    nmake -f makefile.nt
+    cd $(WXDIR)\src\msw
+
+clean_gauge:
+    cd $(WXDIR)\contrib\gauge
+    nmake -f makefile.nt clean
+    cd $(WXDIR)\src\msw
+
+xpm:
+    cd $(WXDIR)\contrib\wxxpm
+    nmake -f makefile.nt
+    cd $(WXDIR)\src\msw
+
+clean_xpm:
+    cd $(WXDIR)\contrib\wxxpm
+    nmake -f makefile.nt clean
+    cd $(WXDIR)\src\msw
+
+dib:
+    cd $(WXDIR)\utils\dib
+    nmake -f makefile.nt
+    cd $(WXDIR)\src\msw
+
+clean_dib:
+    cd $(WXDIR)\utils\dib
+    nmake -f makefile.nt clean
+    cd $(WXDIR)\src\msw
+
+prologio:
+    cd $(WXDIR)\utils\prologio\src
+    nmake -f makefile.nt
+    cd $(WXDIR)\src\msw
+
+clean_proio:
+    cd $(WXDIR)\utils\prologio\src
+    nmake -f makefile.nt clean
+    cd $(WXDIR)\src\msw
+
+rcparser:
+    cd $(WXDIR)\utils\rcparser\src
+    nmake -f makefile.nt
+    cd $(WXDIR)\src\msw
+
+wxstring:
+    cd $(WXDIR)\contrib\wxstring
+    nmake -f makefile.nt OPTIONS="$(OPTIONS)" DEBUG="$(DEBUG)"
+    cd $(WXDIR)\src\msw
+
+clean_rcp:
+    cd $(WXDIR)\utils\rcparser\src
+    nmake -f makefile.nt clean
+    cd $(WXDIR)\src\msw
+
+clean: $(PERIPH_CLEAN_TARGET)
+        -erase *.obj
+        -erase $(LIBTARGET)
+        cd $(WXDIR)\src\base
+        -erase *.obj
+        cd $(WXDIR)\src\msw
+
+cleanall: clean
+
+# Don't clean things not affected by wxWin header changes
+cleanmost: clean_dib clean_rcp clean_proio
+        -erase *.obj
+        -erase $(LIBTARGET)
+        cd $(WXDIR)\src\base
+        -erase *.obj
+        cd $(WXDIR)\src\msw
+

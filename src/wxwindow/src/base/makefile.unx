@@ -1,0 +1,296 @@
+#
+# File:		makefile.unx
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "@(#)makefile.unx	1.2 5/9/94"
+#
+# Makefile for wxWindows: generates libwx_ol.a/libwx_motif.a
+
+WXDIR = ../..
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+
+OBJECTS = $(OBJDIR)/wb_data.$(OBJSUFF) \
+$(OBJDIR)/wb_main.$(OBJSUFF) $(OBJDIR)/wb_win.$(OBJSUFF) $(OBJDIR)/wb_frame.$(OBJSUFF) \
+$(OBJDIR)/wb_canvs.$(OBJSUFF) $(OBJDIR)/wb_panel.$(OBJSUFF) $(OBJDIR)/wb_item.$(OBJSUFF) \
+$(OBJDIR)/wb_text.$(OBJSUFF) $(OBJDIR)/wb_list.$(OBJSUFF) $(OBJDIR)/wb_utils.$(OBJSUFF) \
+$(OBJDIR)/wb_obj.$(OBJSUFF) $(OBJDIR)/wb_help.$(OBJSUFF) $(OBJDIR)/wb_gdi.$(OBJSUFF) \
+$(OBJDIR)/wb_dialg.$(OBJSUFF) $(OBJDIR)/wb_dc.$(OBJSUFF) $(OBJDIR)/wb_mf.$(OBJSUFF) $(OBJDIR)/wb_ipc.$(OBJSUFF) \
+$(OBJDIR)/wb_timer.$(OBJSUFF) $(OBJDIR)/wb_types.$(OBJSUFF) $(OBJDIR)/wb_sysev.$(OBJSUFF) \
+$(OBJDIR)/wb_form.$(OBJSUFF) $(OBJDIR)/wb_hash.$(OBJSUFF) $(OBJDIR)/wb_ps.$(OBJSUFF) \
+$(OBJDIR)/wb_stdev.$(OBJSUFF) $(OBJDIR)/wb_sysev.$(OBJSUFF) $(OBJDIR)/wb_mgstr.$(OBJSUFF) \
+$(OBJDIR)/wx_enhdg.$(OBJSUFF) $(OBJDIR)/wxstring.$(OBJSUFF) $(OBJDIR)/wb_res.$(OBJSUFF) \
+$(OBJDIR)/wb_scrol.$(OBJSUFF) $(OBJDIR)/wb_stat.$(OBJSUFF) $(OBJDIR)/wb_vlbox.$(OBJSUFF) \
+$(OBJDIR)/wx_lay.$(OBJSUFF) $(OBJDIR)/wb_print.$(OBJSUFF) $(OBJDIR)/wx_doc.$(OBJSUFF) \
+$(OBJDIR)/wx_tbar.$(OBJSUFF) $(OBJDIR)/wx_bbar.$(OBJSUFF) $(OBJDIR)/wx_mem.$(OBJSUFF)\
+$(OBJDIR)/wx_date.$(OBJSUFF) $(OBJDIR)/wb_cmdlg.$(OBJSUFF) $(OBJDIR)/wx_time.$(OBJSUFF)\
+$(OBJDIR)/wx_frac.$(OBJSUFF)
+
+all:    $(OBJDIR) $(OBJECTS)
+
+# Clear the default suffix list
+.SUFFIXES:
+
+motif:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_motif CC=$(CC) OPTIONS='$(OPTIONS)'\
+  DEBUGFLAGS='$(DEBUGFLAGS)' DEBUG='$(DEBUG)' WARN='$(WARN)' XLIB='$(XLIB)' XINCLUDE='$(XINCLUDE)'
+
+xview:
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview GUISUFFIX=_ol CC=$(CC) OPTIONS='$(OPTIONS)'\
+  DEBUG='$(DEBUG)' DEBUGFLAGS='$(DEBUGFLAGS)' WARN='$(WARN)' XLIB='$(XLIB)' XINCLUDE='$(XINCLUDE)'
+
+hp:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif DEBUGFLAGS='-g' DEBUG='$(DEBUG)' GUISUFFIX=_hp CC=CC WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)'
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+$(OBJECTS):	$(WXBASEINC)/common.h $(WXBASEINC)/wx_obj.h
+$(OBJDIR)/wb_win.$(OBJSUFF):	wb_win.$(SRCSUFF) $(WXINC)/wx_win.h $(WXBASEINC)/wx_obj.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_win.$(SRCSUFF)
+
+$(OBJDIR)/wb_data.$(OBJSUFF):	wb_data.$(SRCSUFF) $(WXBASEINC)/wx_obj.h $(WXBASEINC)/wb_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_data.$(SRCSUFF)
+
+$(OBJDIR)/wb_frame.$(OBJSUFF):	wb_frame.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_main.h $(WXBASEINC)/wb_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_frame.$(SRCSUFF)
+
+$(OBJDIR)/wb_panel.$(OBJSUFF):	wb_panel.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h \
+                $(WXINC)/wx_panel.h $(WXBASEINC)/wx_stdev.h $(WXBASEINC)/wx_list.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_panel.$(SRCSUFF)
+
+$(OBJDIR)/wb_canvs.$(OBJSUFF):	wb_canvs.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_canvs.h $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_gdi.h\
+                $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_canvs.$(SRCSUFF)
+
+$(OBJDIR)/wb_dc.$(OBJSUFF):        wb_dc.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_canvs.h $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_gdi.h\
+                $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_dc.$(SRCSUFF)
+
+$(OBJDIR)/wb_ps.$(OBJSUFF):        wb_ps.$(SRCSUFF) $(WXINC)/wx_win.h $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_ps.$(SRCSUFF)
+
+$(OBJDIR)/wb_mf.$(OBJSUFF):        wb_mf.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_canvs.h $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_gdi.h\
+                $(WXINC)/wx_mf.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_mf.$(SRCSUFF)
+
+$(OBJDIR)/wb_text.$(OBJSUFF):	wb_text.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_text.h $(WXBASEINC)/wx_stdev.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_text.$(SRCSUFF)
+
+$(OBJDIR)/wb_item.$(OBJSUFF):	wb_item.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_panel.h $(WXINC)/wx_item.h $(WXBASEINC)/wx_stdev.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_item.$(SRCSUFF)
+
+$(OBJDIR)/wb_main.$(OBJSUFF):	wb_main.$(SRCSUFF) $(WXINC)/wx_main.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_main.$(SRCSUFF)
+
+$(OBJDIR)/wb_obj.$(OBJSUFF):	wb_obj.$(SRCSUFF) $(WXBASEINC)/wx_obj.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_obj.$(SRCSUFF)
+
+# $(OBJDIR)/wb_event.$(OBJSUFF):     wb_event.$(SRCSUFF) $(WXBASEINC)/wx_stdev.h
+# 	$(CC) -c $(CPPFLAGS) -o $@ wb_event.$(SRCSUFF)
+
+$(OBJDIR)/wb_list.$(OBJSUFF):	wb_list.$(SRCSUFF) $(WXBASEINC)/wx_list.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_list.$(SRCSUFF)
+
+$(OBJDIR)/wxstring.$(OBJSUFF):	wxstring.$(SRCSUFF) $(WXBASEINC)/wxstring.h
+	$(CC) -c $(CPPFLAGS) -o $@ wxstring.$(SRCSUFF)
+
+$(OBJDIR)/wb_hash.$(OBJSUFF):      wb_hash.$(SRCSUFF) $(WXBASEINC)/wx_list.h $(WXBASEINC)/wx_hash.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_hash.$(SRCSUFF)
+
+$(OBJDIR)/wb_gdi.$(OBJSUFF):	wb_gdi.$(SRCSUFF) $(WXINC)/wx_gdi.h $(WXBASEINC)/wx_list.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_gdi.$(SRCSUFF)
+
+$(OBJDIR)/wb_ipc.$(OBJSUFF):	wb_ipc.$(SRCSUFF) $(WXINC)/wx_ipc.h $(WXBASEINC)/wx_obj.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_ipc.$(SRCSUFF)
+
+$(OBJDIR)/wb_dialg.$(OBJSUFF):	wb_dialg.$(SRCSUFF) $(WXINC)/wx_dialg.h $(WXINC)/wx_panel.h $(WXINC)/wx_win.h $(WXINC)/wx_item.h $(WXBASEINC)/wb_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_dialg.$(SRCSUFF)
+
+$(OBJDIR)/wb_form.$(OBJSUFF):      wb_form.$(SRCSUFF) $(WXBASEINC)/wx_form.h $(WXINC)/wx_panel.h $(WXINC)/wx_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_form.$(SRCSUFF)
+
+$(OBJDIR)/wb_timer.$(OBJSUFF):     wb_timer.$(SRCSUFF) $(WXINC)/wx_timer.h $(WXBASEINC)/wx_obj.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_timer.$(SRCSUFF)
+
+$(OBJDIR)/wb_help.$(OBJSUFF):	wb_help.$(SRCSUFF) $(WXBASEINC)/wx_help.h $(WXINC)/wx_ipc.h $(WXBASEINC)/wx_obj.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_help.$(SRCSUFF)
+
+$(OBJDIR)/wb_types.$(OBJSUFF):	wb_types.$(SRCSUFF) $(WXBASEINC)/wx_types.h $(WXBASEINC)/wx_obj.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_types.$(SRCSUFF)
+
+$(OBJDIR)/wb_mgstr.$(OBJSUFF):	wb_mgstr.$(SRCSUFF) $(WXBASEINC)/wx_mgstr.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_mgstr.$(SRCSUFF)
+
+$(OBJDIR)/wb_res.$(OBJSUFF):	wb_res.$(SRCSUFF) $(WXBASEINC)/wx_res.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_res.$(SRCSUFF)
+
+$(OBJDIR)/wb_sysev.$(OBJSUFF):	wb_sysev.$(SRCSUFF) $(WXBASEINC)/wx_sysev.h $(WXBASEINC)/wx_types.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_sysev.$(SRCSUFF)
+
+$(OBJDIR)/wb_stdev.$(OBJSUFF):	wb_stdev.$(SRCSUFF) $(WXBASEINC)/wx_sysev.h $(WXBASEINC)/wx_stdev.h $(WXBASEINC)/wx_types.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_stdev.$(SRCSUFF)
+
+$(OBJDIR)/wb_utils.$(OBJSUFF):     wb_utils.$(SRCSUFF) $(WXBASEINC)/wx_utils.h $(WXBASEINC)/wx_obj.h $(WXBASEINC)/wb_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_utils.$(SRCSUFF)
+
+$(OBJDIR)/wx_enhdg.$(OBJSUFF):     wx_enhdg.$(SRCSUFF) $(WXBASEINC)/wx_enhdg.h $(WXBASEINC)/wx_obj.h $(WXINC)/wx_dialg.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_enhdg.$(SRCSUFF)
+
+$(OBJDIR)/wb_scrol.$(OBJSUFF):     wb_scrol.$(SRCSUFF) $(WXBASEINC)/wb_scrol.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_scrol.$(SRCSUFF)
+
+$(OBJDIR)/wb_vlbox.$(OBJSUFF):     wb_vlbox.$(SRCSUFF) $(WXBASEINC)/wb_vlbox.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_vlbox.$(SRCSUFF)
+
+$(OBJDIR)/wb_stat.$(OBJSUFF):     wb_stat.$(SRCSUFF) $(WXBASEINC)/wb_stat.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_stat.$(SRCSUFF)
+
+$(OBJDIR)/wx_lay.$(OBJSUFF):     wx_lay.$(SRCSUFF) $(WXBASEINC)/wx_lay.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_lay.$(SRCSUFF)
+
+$(OBJDIR)/wb_print.$(OBJSUFF):     wb_print.$(SRCSUFF) $(WXBASEINC)/wx_print.h $(WXBASEINC)/wb_dialg.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_print.$(SRCSUFF)
+
+$(OBJDIR)/wx_doc.$(OBJSUFF):     wx_doc.$(SRCSUFF) $(WXBASEINC)/wx_doc.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_doc.$(SRCSUFF)
+
+$(OBJDIR)/wx_tbar.$(OBJSUFF):     wx_tbar.$(SRCSUFF) $(WXBASEINC)/wx_tbar.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_tbar.$(SRCSUFF)
+
+$(OBJDIR)/wx_bbar.$(OBJSUFF):     wx_bbar.$(SRCSUFF) $(WXBASEINC)/wx_bbar.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_bbar.$(SRCSUFF)
+
+$(OBJDIR)/wx_mem.$(OBJSUFF):     wx_mem.$(SRCSUFF) $(WXBASEINC)/wx_mem.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_mem.$(SRCSUFF)
+
+$(OBJDIR)/wb_cmdlg.$(OBJSUFF):     wb_cmdlg.$(SRCSUFF) $(WXBASEINC)/wb_cmdlg.h $(WXBASEINC)/wb_dialg.h
+	$(CC) -c $(CPPFLAGS) -o $@ wb_cmdlg.$(SRCSUFF)
+
+$(OBJDIR)/wx_date.$(OBJSUFF):     wx_date.$(SRCSUFF) $(WXBASEINC)/wx_date.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_date.$(SRCSUFF)
+
+$(OBJDIR)/wx_time.$(OBJSUFF):     wx_time.$(SRCSUFF) $(WXBASEINC)/wx_time.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_time.$(SRCSUFF)
+
+$(OBJDIR)/wx_frac.$(OBJSUFF):     wx_frac.$(SRCSUFF) $(WXBASEINC)/wx_frac.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_frac.$(SRCSUFF)
+
+$(WXINC)/wx_win.h:  $(WXBASEINC)/wb_win.h
+$(WXINC)/wx_main.h:  $(WXBASEINC)/wb_main.h
+$(WXINC)/wx_frame.h:  $(WXBASEINC)/wb_frame.h
+$(WXINC)/wx_panel.h:  $(WXBASEINC)/wb_panel.h
+$(WXINC)/wx_text.h:  $(WXBASEINC)/wb_text.h
+$(WXINC)/wx_dialg.h:  $(WXBASEINC)/wb_dialg.h
+$(WXINC)/wx_ipc.h:  $(WXBASEINC)/wb_ipc.h
+$(WXINC)/wx_gdi.h:  $(WXBASEINC)/wb_gdi.h
+$(WXINC)/wx_canvs.h:  $(WXBASEINC)/wb_canvs.h
+$(WXINC)/wx_mf.h:  $(WXBASEINC)/wb_mf.h
+$(WXINC)/wx_item.h:  $(WXBASEINC)/wb_item.h
+$(WXINC)/wx_buttn.h:  $(WXBASEINC)/wb_buttn.h
+$(WXINC)/wx_messg.h:  $(WXBASEINC)/wb_messg.h
+$(WXINC)/wx_choic.h:  $(WXBASEINC)/wb_choic.h
+$(WXINC)/wx_check.h:  $(WXBASEINC)/wb_check.h
+$(WXINC)/wx_lbox.h:  $(WXBASEINC)/wb_lbox.h
+$(WXINC)/wx_txt.h:  $(WXBASEINC)/wb_txt.h
+$(WXINC)/wx_mtxt.h:  $(WXBASEINC)/wb_mtxt.h
+$(WXINC)/wx_slidr.h:  $(WXBASEINC)/wb_slidr.h
+$(WXINC)/wx_menu.h:  $(WXBASEINC)/wb_menu.h
+$(WXBASEINC)/wx_enhdg.h:	$(WXINC)/wx_dialg.h
+
+$(OBJECTS):	$(WXBASEINC)/wx_setup.h
+
+docs:	ps xlp txt # html
+
+ps:	$(WXDIR)/docs/manual.ps $(WXDIR)/docs/referenc.ps faqps
+faqps:	$(WXDIR)/docs/faq.ps
+xlp:	$(WXDIR)/docs/wx.xlp $(WXDIR)/docs/faq.xlp
+txt:	$(WXDIR)/docs/faq.txt
+html:	$(WXDIR)/docs/wx_contents.html
+faqhtml:	$(WXDIR)/docs/faq_contents.html
+planhtml:	$(WXDIR)/docs/wxplan_contents.html
+planps:	$(WXDIR)/docs/wxplan.ps
+
+$(WXDIR)/docs/manual.dvi:	$(WXDIR)/docs/manual.tex $(WXDIR)/docs/body.tex
+	cd $(WXDIR)/docs; latex manual; latex manual; makeindex manual; bibtex manual; latex manual
+
+$(WXDIR)/docs/manual.ps:	$(WXDIR)/docs/manual.dvi
+	cd $(WXDIR)/docs; dvips -f -r < manual.dvi > manual.ps
+
+$(WXDIR)/docs/referenc.dvi:	$(WXDIR)/docs/referenc.tex $(WXDIR)/docs/classes.tex
+	cd $(WXDIR)/docs; latex referenc; latex referenc; makeindex referenc; latex referenc
+
+$(WXDIR)/docs/referenc.ps:	$(WXDIR)/docs/referenc.dvi
+	cd $(WXDIR)/docs; dvips -f -r < referenc.dvi > referenc.ps
+
+$(WXDIR)/docs/wx.xlp:	$(WXDIR)/docs/classes.tex $(WXDIR)/docs/manual.tex
+	cd ../../docs; tex2rtf manual.tex tmp.xlp -xlp -twice
+	sed -e "s/WXHELPCONTENTS/wxWindows Manual/g" < $(WXDIR)/docs/tmp.xlp > $(WXDIR)/docs/wx.xlp
+	/bin/rm -f $(WXDIR)/docs/tmp.xlp
+
+$(WXDIR)/docs/faq.xlp:	$(WXDIR)/docs/faq.tex
+	cd ../../docs; tex2rtf manual.tex tmp.xlp -xlp -twice
+	sed -e "s/WXHELPCONTENTS/wxWindows FAQ/g" < $(WXDIR)/docs/tmp.xlp > $(WXDIR)/docs/faq.xlp
+	/bin/rm -f $(WXDIR)/docs/tmp.xlp
+
+$(WXDIR)/docs/wx_contents.html:	$(WXDIR)/docs/classes.tex $(WXDIR)/docs/manual.tex
+	/bin/rm -f ../../docs/*.html
+	cd ../../docs; tex2rtf manual.tex wx.html -html -twice
+	/bin/cp ../../docs/*.html /user/11/jacs/html/wx/manual
+	/bin/rm ../../docs/*.html
+
+$(WXDIR)/docs/faq_contents.html:	$(WXDIR)/docs/faq.tex
+	/bin/rm -f ../../docs/*.html
+	cd ../../docs; tex2rtf faq.tex faq.html -html -twice
+	/bin/cp ../../docs/*.html /home/jacs/html/wx/faq
+	/bin/rm ../../docs/*.html
+
+$(WXDIR)/docs/wxplan_contents.html:	$(WXDIR)/docs/wxplan.tex
+	/bin/rm -f ../../docs/*.html
+	cd ../../docs; tex2rtf wxplan.tex wxplan.html -html -twice
+	/bin/cp ../../docs/*.html /home/jacs/html/wx/plan
+	/bin/rm ../../docs/*.html
+
+$(WXDIR)/docs/faq.dvi:	$(WXDIR)/docs/faq.tex
+	cd $(WXDIR)/docs; latex faq; latex faq; makeindex faq; latex faq
+
+$(WXDIR)/docs/faq.txt:	$(WXDIR)/docs/faq.dvi
+	cd ../../docs; dvi2tty faq.dvi > faq.txt
+
+$(WXDIR)/docs/faq.ps:	$(WXDIR)/docs/faq.dvi
+	cd $(WXDIR)/docs; dvips -f -r < faq.dvi > faq.ps
+
+$(WXDIR)/docs/wxplan.dvi:	$(WXDIR)/docs/wxplan.tex
+	cd $(WXDIR)/docs; latex wxplan; latex wxplan; latex wxplan
+
+$(WXDIR)/docs/wxplan.txt:	$(WXDIR)/docs/wxplan.dvi
+	cd ../../docs; dvi2tty wxplan.dvi > wxplan.txt
+
+$(WXDIR)/docs/wxplan.ps:	$(WXDIR)/docs/wxplan.dvi
+	cd $(WXDIR)/docs; dvips -f -r < wxplan.dvi > wxplan.ps
+
+alldocs:	docs
+	cd $(WXDIR)/utils/hytext/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/prologio/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/wxclips/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/wxhelp/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/tex2rtf/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/wxtree/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/wxgraph/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/wxbuild/src; $(MAKE) -f makefile.unx docs
+	cd $(WXDIR)/utils/clips2c/src; $(MAKE) -f makefile.unx docs
+
+clean:
+	rm -f $(OBJECTS) core $(WXLIB)

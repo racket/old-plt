@@ -1,0 +1,326 @@
+#
+# File:		makefile.unx
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "@(#)makefile.unx	1.2 5/9/94"
+#
+# Makefile for libwx.a
+
+# Replace this with your own path if necessary
+WXDIR = ../..
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
+
+# IMPORTANT: if you want to link in subsidiary libraries,
+# required for some optional parts of wxWindows, you must
+# set EXTRATARGETS and EXTRAOBJS to match the settings in wx_setup.h.
+# Having done this, you won't have to worry about linking them
+# into each application.
+#
+# Here's the full list.
+#   prologio: Required if using the wxWindows resource facility
+#               USE_WX_RESOURCES should be 1
+#   xmgauge:  Gauge class (required for Motif only)
+#               USE_GAUGE should be 1
+#   xpm:      XPM pixmap support
+#               USE_XPM_IN_X should be 1
+#   image:    GIF, BMP image reading
+#               USE_IMAGE_LOADING_IN_X should be 1
+#   wxstring: string class
+#               USE_GNU_WXSTRING should be 1
+#
+# Unfortunately, 'ar' doesn't like combining objects and libraries,
+# so we must identify all the objects from the subordinate libraries. Yuck!
+PROLOGSRC=../../utils/prologio/src/objects$(GUISUFFIX)
+PROLOGOBJS=$(PROLOGSRC)/read.$(OBJSUFF) $(PROLOGSRC)/prorpc.$(OBJSUFF) $(PROLOGSRC)/y_tab.$(OBJSUFF)
+
+IMAGESRC=../../utils/image/src/objects$(GUISUFFIX)
+IMAGEOBJS=$(IMAGESRC)/wx_24to8.$(OBJSUFF) $(IMAGESRC)/wx_gam.$(OBJSUFF) $(IMAGESRC)/wx_gifwr.$(OBJSUFF) $(IMAGESRC)/wx_img.$(OBJSUFF) \
+ $(IMAGESRC)/wx_pcx.$(OBJSUFF) $(IMAGESRC)/wx_xbm.$(OBJSUFF) $(IMAGESRC)/wx_bmp.$(OBJSUFF) $(IMAGESRC)/wx_gif.$(OBJSUFF) \
+ $(IMAGESRC)/wx_image.$(OBJSUFF) $(IMAGESRC)/wx_pbm.$(OBJSUFF) $(IMAGESRC)/wx_pm.$(OBJSUFF)
+
+GAUGESRC=../../contrib/xmgauge/objects$(GUISUFFIX)
+GAUGEOBJS=$(GAUGESRC)/gauge.$(OBJSUFF)
+
+XPMSRC=../../contrib/wxxpm/objects$(GUISUFFIX)
+XPMOBJS=$(XPMSRC)/crbuffri.$(OBJSUFF) $(XPMSRC)/crbuffrp.$(OBJSUFF) $(XPMSRC)/crdatfri.$(OBJSUFF) $(XPMSRC)/crdatfrp.$(OBJSUFF)\
+  $(XPMSRC)/create.$(OBJSUFF) $(XPMSRC)/crifrbuf.$(OBJSUFF) $(XPMSRC)/crifrdat.$(OBJSUFF) $(XPMSRC)/crpfrbuf.$(OBJSUFF) $(XPMSRC)/crpfrdat.$(OBJSUFF)\
+  $(XPMSRC)/data.$(OBJSUFF) $(XPMSRC)/hashtab.$(OBJSUFF) $(XPMSRC)/misc.$(OBJSUFF) $(XPMSRC)/parse.$(OBJSUFF) $(XPMSRC)/rdftodat.$(OBJSUFF)\
+  $(XPMSRC)/rdftoi.$(OBJSUFF) $(XPMSRC)/rdftop.$(OBJSUFF) $(XPMSRC)/rgb.$(OBJSUFF) $(XPMSRC)/scan.$(OBJSUFF) $(XPMSRC)/simx.$(OBJSUFF)\
+  $(XPMSRC)/wrffrdat.$(OBJSUFF) $(XPMSRC)/wrffri.$(OBJSUFF) $(XPMSRC)/wrffrp.$(OBJSUFF)
+
+WXSTRINGSRC=../../contrib/wxstring/objects$(GUISUFFIX)
+WXSTRINGOBJS=$(WXSTRINGSRC)/wxstrgnu.$(OBJSUFF) $(WXSTRINGSRC)/wxregex.$(OBJSUFF)
+
+#PROLOGLIB=../../utils/prologio/lib/libproio$(GUISUFFIX).a
+#XPMLIB=../../contrib/wxxpm/libxpm$(GUISUFFIX).a
+#GAUGELIB=../../contrib/xmgauge/libgauge$(GUISUFFIX).a
+#WXSTRINGLIB=../../contrib/wxstring/libwxstring$(GUISUFFIX).a
+#IMAGELIB=../../utils/image/lib/libimage$(GUISUFFIX).a
+
+# Subordinate library possibilities
+
+# *** CHANGE THESE TO YOUR REQUIREMENTS ***
+GAUGETARGET= gauge$(GUISUFFIX)
+EXTRATARGETS=xpm$(GUISUFFIX) image$(GUISUFFIX) $(GAUGETARGET) # prologio$(GUISUFFIX) wxstring$(GUISUFFIX)
+EXTRAOBJS= $(XPMOBJS) $(IMAGEOBJS) $(GAUGEOBJS) # $(PROLOGOBJS) $(WXSTRINGOBJS)
+
+OBJECTS = $(OBJDIR)/wx_main.$(OBJSUFF) $(OBJDIR)/main.$(OBJSUFF) $(OBJDIR)/wx_win.$(OBJSUFF) $(OBJDIR)/wx_frame.$(OBJSUFF)\
+ $(OBJDIR)/wx_canvs.$(OBJSUFF) $(OBJDIR)/wx_panel.$(OBJSUFF) $(OBJDIR)/wx_item.$(OBJSUFF)\
+ $(OBJDIR)/wx_clipb.$(OBJSUFF) $(OBJDIR)/wx_text.$(OBJSUFF) $(OBJDIR)/wx_utils.$(OBJSUFF) $(OBJDIR)/wx_mf.$(OBJSUFF)\
+ $(OBJDIR)/wx_gdi.$(OBJSUFF) $(OBJDIR)/wx_dialg.$(OBJSUFF) $(OBJDIR)/wx_dc.$(OBJSUFF) $(OBJDIR)/wx_ipc.$(OBJSUFF)\
+ $(OBJDIR)/wx_timer.$(OBJSUFF) $(OBJDIR)/wx_stat.$(OBJSUFF) $(OBJDIR)/wx_vlbox.$(OBJSUFF) $(OBJDIR)/wx_scrol.$(OBJSUFF)\
+ $(OBJDIR)/wx_buttn.$(OBJSUFF) $(OBJDIR)/wx_check.$(OBJSUFF) $(OBJDIR)/wx_choic.$(OBJSUFF) $(OBJDIR)/wx_gauge.$(OBJSUFF)\
+ $(OBJDIR)/wx_group.$(OBJSUFF) $(OBJDIR)/wx_lbox.$(OBJSUFF) $(OBJDIR)/wx_rbox.$(OBJSUFF) $(OBJDIR)/wx_slidr.$(OBJSUFF)\
+ $(OBJDIR)/wx_txt.$(OBJSUFF) $(OBJDIR)/wx_mtxt.$(OBJSUFF) $(OBJDIR)/wx_messg.$(OBJSUFF)\
+ $(OBJDIR)/wx_menu.$(OBJSUFF) $(OBJDIR)/wx_cmdlg.$(OBJSUFF)
+
+BASEOBJECTS = ../base/$(OBJDIR)/wb_win.$(OBJSUFF) ../base/$(OBJDIR)/wb_frame.$(OBJSUFF) ../base/$(OBJDIR)/wb_panel.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_utils.$(OBJSUFF) ../base/$(OBJDIR)/wb_main.$(OBJSUFF) ../base/$(OBJDIR)/wb_item.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_list.$(OBJSUFF) ../base/$(OBJDIR)/wxstring.$(OBJSUFF) ../base/$(OBJDIR)/wb_obj.$(OBJSUFF) ../base/$(OBJDIR)/wb_ps.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_text.$(OBJSUFF) ../base/$(OBJDIR)/wb_gdi.$(OBJSUFF) ../base/$(OBJDIR)/wb_dialg.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_canvs.$(OBJSUFF) ../base/$(OBJDIR)/wb_dc.$(OBJSUFF) ../base/$(OBJDIR)/wb_mf.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_hash.$(OBJSUFF) ../base/$(OBJDIR)/wb_ipc.$(OBJSUFF) ../base/$(OBJDIR)/wb_form.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_timer.$(OBJSUFF) ../base/$(OBJDIR)/wb_help.$(OBJSUFF) ../base/$(OBJDIR)/wb_types.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_sysev.$(OBJSUFF) ../base/$(OBJDIR)/wb_stdev.$(OBJSUFF) ../base/$(OBJDIR)/wb_mgstr.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wx_enhdg.$(OBJSUFF) ../base/$(OBJDIR)/wb_data.$(OBJSUFF) ../base/$(OBJDIR)/wb_res.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wb_stat.$(OBJSUFF) ../base/$(OBJDIR)/wb_scrol.$(OBJSUFF) ../base/$(OBJDIR)/wb_vlbox.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wx_lay.$(OBJSUFF) ../base/$(OBJDIR)/wb_print.$(OBJSUFF) ../base/$(OBJDIR)/wx_doc.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wx_tbar.$(OBJSUFF) ../base/$(OBJDIR)/wx_bbar.$(OBJSUFF) ../base/$(OBJDIR)/wx_mem.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wx_date.$(OBJSUFF) ../base/$(OBJDIR)/wb_cmdlg.$(OBJSUFF) ../base/$(OBJDIR)/wx_time.$(OBJSUFF)\
+  ../base/$(OBJDIR)/wx_frac.$(OBJSUFF)
+
+
+all:    base $(EXTRATARGETS) $(OBJDIR) $(WXLIB)
+
+# Clears all default suffixes
+.SUFFIXES:
+
+base:
+	cd $(WXDIR)/src/base; $(MAKE) -f makefile.unx GUI=$(GUI) GUISUFFIX=$(GUISUFFIX) CC=$(CC)\
+ OPTIONS='$(OPTIONS)' DEBUG='$(DEBUG)' DEBUGFLAGS='$(DEBUGFLAGS)' WARN='$(WARN)' XLIB='$(XLIB)' XINCLUDE='$(XINCLUDE)'
+
+
+$(WXLIB): $(BASEOBJECTS) $(OBJECTS) $(EXTRAOBJS)
+	ar $(AROPTIONS) $@ $(EXTRAOBJS) $(OBJECTS) $(BASEOBJECTS)
+	$(RANLIB) $@
+
+motif:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_motif CC=$(CC) OPTIONS='$(OPTIONS)'\
+ DEBUG='$(DEBUG)' DEBUGFLAGS='$(DEBUGFLAGS)' WARN='$(WARN)' XLIB='$(XLIB)' XINCLUDE='$(XINCLUDE)'
+
+xview:  $(OBJDIR) objects_ol/sb_scrol.o
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview GAUGEOBJS='' GAUGETARGET='' GUISUFFIX=_ol CC=$(CC)\
+ OPTIONS='$(OPTIONS)' DEBUG='$(DEBUG)' DEBUGFLAGS='$(DEBUGFLAGS)' WARN='$(WARN)' XLIB='$(XLIB)' XINCLUDE='$(XINCLUDE)'
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+hp:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUGFLAGS='-g' DEBUG='$(DEBUG)' WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)'
+
+# THE FOLLOWING IS FOR MAKING A DYNAMIC LIBRARY USING AT&T C++
+# DEBUGFLAGS = -ggdb -DDEBUG -v
+# CPPFLAGS =  -I/usr/openwin/include $(INC) -I$(WXDIR)/dummy -Dwx_xview $(DEBUGFLAGS) -fPIC
+# CFLAGS =   -v
+# LDFLAGS =  -L/usr/openwin/lib -L$(WXDIR)/lib
+# LDLIBS = -lwx -lxview -lolgx -lX11 -lm
+
+# $(WXDYNLIB):	$(OBJECTS)
+#	rm -f $@
+#	ld -o $@ -assert pure-text $(OBJECTS)
+
+$(OBJECTS):	$(WXBASEINC)/common.h $(WXBASEINC)/wx_obj.h
+$(OBJDIR)/wx_win.$(OBJSUFF):	wx_win.$(SRCSUFF) $(WXINC)/wx_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_win.$(SRCSUFF)
+
+$(OBJDIR)/wx_frame.$(OBJSUFF):	wx_frame.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_main.h $(WXBASEINC)/wb_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_frame.$(SRCSUFF)
+
+$(OBJDIR)/wx_panel.$(OBJSUFF):	wx_panel.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h \
+                $(WXINC)/wx_panel.h $(WXBASEINC)/wx_stdev.h $(WXBASEINC)/wx_list.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_panel.$(SRCSUFF)
+
+$(OBJDIR)/wx_canvs.$(OBJSUFF):	wx_canvs.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_canvs.h $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_gdi.h\
+                $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_canvs.$(SRCSUFF)
+
+$(OBJDIR)/wx_dc.$(OBJSUFF):        wx_dc.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_canvs.h $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_gdi.h\
+                $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h $(WXINC)/wx_dccan.h $(WXINC)/wx_dcmem.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_dc.$(SRCSUFF)
+
+$(OBJDIR)/wx_mf.$(OBJSUFF):        wx_mf.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_canvs.h $(WXBASEINC)/wx_stdev.h $(WXINC)/wx_gdi.h\
+                $(WXINC)/wx_mf.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_mf.$(SRCSUFF)
+
+$(OBJDIR)/wx_text.$(OBJSUFF):	wx_text.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_text.h $(WXBASEINC)/wx_stdev.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_text.$(SRCSUFF)
+
+$(OBJDIR)/wx_item.$(OBJSUFF):	wx_item.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
+                $(WXINC)/wx_panel.h $(WXINC)/wx_item.h $(WXBASEINC)/wx_stdev.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_item.$(SRCSUFF)
+
+$(OBJDIR)/wx_main.$(OBJSUFF):	wx_main.$(SRCSUFF) $(WXINC)/wx_main.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_main.$(SRCSUFF)
+
+$(OBJDIR)/main.$(OBJSUFF):	main.c
+	$(CCC) -c $(CPPFLAGS) -o $@ main.c
+
+$(OBJDIR)/wx_event.$(OBJSUFF):     wx_event.$(SRCSUFF) $(WXBASEINC)/wx_stdev.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_event.$(SRCSUFF)
+
+$(OBJDIR)/wx_gdi.$(OBJSUFF):	wx_gdi.$(SRCSUFF) $(WXINC)/wx_gdi.h $(WXBASEINC)/wx_list.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_gdi.$(SRCSUFF)
+
+$(OBJDIR)/wx_clipb.$(OBJSUFF):	wx_clipb.$(SRCSUFF) $(WXINC)/wx_clipb.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_clipb.$(SRCSUFF)
+
+$(OBJDIR)/wx_ipc.$(OBJSUFF):	wx_ipc.$(SRCSUFF) $(WXINC)/wx_ipc.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_ipc.$(SRCSUFF)
+
+$(OBJDIR)/wx_dialg.$(OBJSUFF):	wx_dialg.$(SRCSUFF) $(WXINC)/wx_dialg.h $(WXINC)/wx_panel.h $(WXINC)/wx_win.h $(WXINC)/wx_item.h $(WXBASEINC)/wb_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_dialg.$(SRCSUFF)
+
+$(OBJDIR)/wx_timer.$(OBJSUFF):     wx_timer.$(SRCSUFF) $(WXINC)/wx_timer.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_timer.$(SRCSUFF)
+
+$(OBJDIR)/wx_utils.$(OBJSUFF):     wx_utils.$(SRCSUFF) $(WXBASEINC)/wx_utils.h $(WXBASEINC)/wb_win.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_utils.$(SRCSUFF)
+
+$(OBJDIR)/wx_stat.$(OBJSUFF):     wx_stat.$(SRCSUFF) $(WXINC)/wx_stat.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_stat.$(SRCSUFF)
+
+$(OBJDIR)/wx_scrol.$(OBJSUFF):     wx_scrol.$(SRCSUFF) $(WXINC)/wx_scrol.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_scrol.$(SRCSUFF)
+
+$(OBJDIR)/wx_vlbox.$(OBJSUFF):     wx_vlbox.$(SRCSUFF) $(WXINC)/wx_vlbox.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_vlbox.$(SRCSUFF)
+
+$(OBJDIR)/wx_check.$(OBJSUFF):     wx_check.$(SRCSUFF) $(WXINC)/wx_check.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_check.$(SRCSUFF)
+
+$(OBJDIR)/wx_choic.$(OBJSUFF):     wx_choic.$(SRCSUFF) $(WXINC)/wx_choic.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_choic.$(SRCSUFF)
+
+$(OBJDIR)/wx_buttn.$(OBJSUFF):     wx_buttn.$(SRCSUFF) $(WXINC)/wx_buttn.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_buttn.$(SRCSUFF)
+
+$(OBJDIR)/wx_messg.$(OBJSUFF):     wx_messg.$(SRCSUFF) $(WXINC)/wx_messg.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_messg.$(SRCSUFF)
+
+$(OBJDIR)/wx_lbox.$(OBJSUFF):     wx_lbox.$(SRCSUFF) $(WXINC)/wx_lbox.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_lbox.$(SRCSUFF)
+
+$(OBJDIR)/wx_rbox.$(OBJSUFF):     wx_rbox.$(SRCSUFF) $(WXINC)/wx_rbox.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_rbox.$(SRCSUFF)
+
+$(OBJDIR)/wx_menu.$(OBJSUFF):     wx_menu.$(SRCSUFF) $(WXINC)/wx_menu.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_menu.$(SRCSUFF)
+
+$(OBJDIR)/wx_txt.$(OBJSUFF):     wx_txt.$(SRCSUFF) $(WXINC)/wx_txt.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_txt.$(SRCSUFF)
+
+$(OBJDIR)/wx_mtxt.$(OBJSUFF):     wx_mtxt.$(SRCSUFF) $(WXINC)/wx_mtxt.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_mtxt.$(SRCSUFF)
+
+$(OBJDIR)/wx_gauge.$(OBJSUFF):     wx_gauge.$(SRCSUFF) $(WXINC)/wx_gauge.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_gauge.$(SRCSUFF)
+
+$(OBJDIR)/wx_slidr.$(OBJSUFF):     wx_slidr.$(SRCSUFF) $(WXINC)/wx_slidr.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_slidr.$(SRCSUFF)
+
+$(OBJDIR)/wx_group.$(OBJSUFF):     wx_group.$(SRCSUFF) $(WXINC)/wx_group.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_group.$(SRCSUFF)
+
+$(OBJDIR)/wx_cmdlg.$(OBJSUFF):     wx_cmdlg.$(SRCSUFF) $(WXINC)/wx_cmdlg.h
+	$(CC) -c $(CPPFLAGS) -o $@ wx_cmdlg.$(SRCSUFF)
+
+objects_ol/sb_scrol.o:	sb_scrol.c
+	$(CCC) -c $(CPPFLAGS) -o $@ sb_scrol.c
+
+$(WXINC)/wx_win.h:  $(WXBASEINC)/wb_win.h
+$(WXINC)/wx_main.h:  $(WXBASEINC)/wb_main.h
+$(WXINC)/wx_frame.h:  $(WXBASEINC)/wb_frame.h
+$(WXINC)/wx_panel.h:  $(WXBASEINC)/wb_panel.h
+$(WXINC)/wx_text.h:  $(WXBASEINC)/wb_text.h
+$(WXINC)/wx_dialg.h:  $(WXBASEINC)/wb_dialg.h
+$(WXINC)/wx_ipc.h:  $(WXBASEINC)/wb_ipc.h
+$(WXINC)/wx_gdi.h:  $(WXBASEINC)/wb_gdi.h
+$(WXINC)/wx_canvs.h:  $(WXBASEINC)/wb_canvs.h
+$(WXINC)/wx_mf.h:  $(WXBASEINC)/wb_mf.h
+$(WXINC)/wx_item.h:  $(WXBASEINC)/wb_item.h
+$(WXINC)/wx_buttn.h:  $(WXBASEINC)/wb_buttn.h
+$(WXINC)/wx_messg.h:  $(WXBASEINC)/wb_messg.h
+$(WXINC)/wx_choic.h:  $(WXBASEINC)/wb_choic.h
+$(WXINC)/wx_check.h:  $(WXBASEINC)/wb_check.h
+$(WXINC)/wx_lbox.h:  $(WXBASEINC)/wb_lbox.h
+$(WXINC)/wx_txt.h:  $(WXBASEINC)/wb_txt.h
+$(WXINC)/wx_mtxt.h:  $(WXBASEINC)/wb_mtxt.h
+$(WXINC)/wx_slidr.h:  $(WXBASEINC)/wb_slidr.h
+$(WXINC)/wx_menu.h:  $(WXBASEINC)/wb_menu.h
+
+$(OBJECTS):	$(WXBASEINC)/wx_setup.h
+
+# .$(SRCSUFF).$(OBJSUFF):	
+#	$(CC) -c $(CPPFLAGS) -o $@ $*.$(SRCSUFF)
+
+# Extra targets
+prologio_ol:
+	cd ../../utils/prologio/src; $(MAKE) -f makefile.unx xview
+prologio_motif:
+	cd ../../utils/prologio/src; $(MAKE) -f makefile.unx motif
+prologio_hp:
+	cd ../../utils/prologio/src; $(MAKE) -f makefile.unx hp
+
+image_ol:
+	cd ../../utils/image/src; $(MAKE) -f makefile.unx xview
+image_motif:
+	cd ../../utils/image/src; $(MAKE) -f makefile.unx motif
+image_hp:
+	cd ../../utils/image/src; $(MAKE) -f makefile.unx hp
+
+xpm_ol:
+	cd ../../contrib/wxxpm; $(MAKE) -f makefile.unx xview
+xpm_motif:
+	cd ../../contrib/wxxpm; $(MAKE) -f makefile.unx motif
+xpm_hp:
+	cd ../../contrib/wxxpm; $(MAKE) -f makefile.unx hp
+
+gauge_motif:
+	cd ../../contrib/xmgauge; $(MAKE) -f makefile.unx motif
+gauge_hp:
+	cd ../../contrib/xmgauge; $(MAKE) -f makefile.unx hp
+
+# +++start steve161(09.04.1995): added for wxString in \contrib\wxstring
+wxstring_ol:
+	cd ../../contrib/wxstring; $(MAKE) -f makefile.unx xview
+wxstring_motif:
+	cd ../../contrib/wxstring; $(MAKE) -f makefile.unx motif
+wxstring_hp:
+	cd ../../contrib/wxstring; $(MAKE) -f makefile.unx hp
+clean:
+	echo OBSOLETE TARGET: You must specify cleanmotif or cleanol.
+
+cleaneach:
+	rm -f $(OBJECTS) $(BASEOBJECTS) $(EXTRAOBJS) $(WXDIR)/lib/libwx$(GUISUFFIX).a core
+
+clean_motif:
+	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleaneach 
+
+clean_ol:
+	$(MAKE) -f makefile.unx GUISUFFIX=_ol cleaneach 
+
+clean_hp:
+	$(MAKE) -f makefile.unx GUISUFFIX=_hp cleaneach 
+

@@ -1,0 +1,81 @@
+# Makefile : Builds wxImage library
+# Use FINAL=1 argument to nmake to build final version with no debugging
+# info
+
+# Set WXDIR for your system
+WXDIR = $(WX)
+WXLIB = $(WXDIR)\lib\wx.lib
+INC = /I$(WXDIR)\include\base /I$(WXDIR)\include\msw
+
+IMAGELIB = ..\lib\image.lib
+
+THISDIR = $(CWORK)\wx\develop\utils\image\src
+
+LIBS=$(WXLIB) $(IMAGELIB) oldnames libw llibcew commdlg shell
+
+
+!ifndef FINAL
+FINAL=0
+!endif
+
+PRECOMP=/YuWX.H 
+
+!if "$(FINAL)" == "0"
+CPPFLAGS=/AL /W3 /Zi /G2sw /Od /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+LINKFLAGS=/NOD /CO /ONERROR:NOEXE
+!else
+# /Ox for real FINAL version
+CPPFLAGS=/AL /W3 /G2sw /Od /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+LINKFLAGS=/NOD /ONERROR:NOEXE
+!endif
+
+OBJECTS = test.obj
+
+all:    $(IMAGELIB)
+
+wx:
+        cd $(WXDIR)\src
+        nmake -f makefile.dos $(WXLIB) FINAL=$(FINAL)
+        cd $(THISDIR)
+
+wxclean:
+        cd $(WXDIR)\src
+        nmake -f makefile.dos clean
+        cd $(THISDIR)
+
+$(IMAGELIB):      wx_image.obj
+        erase $(IMAGELIB)
+        lib  /PAGESIZE:128 @<<
+$(IMAGELIB)
+y
+wx_image.obj
+nul
+;
+<<
+
+wx_image.obj:      wx_image.h wx_image.cc
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+test.exe:      $(WXDIR)\src\dummy.obj $(WXLIB) $(IMAGELIB) test.obj test.def test.res
+        link $(LINKFLAGS) @<<
+$(WXDIR)\src\dummy.obj test.obj,
+test,
+NUL,
+$(LIBS),
+test.def
+;
+<<
+        rc -30 -K test.res
+
+test.obj:      test.h test.cc
+        cl @<<
+$(CPPFLAGS) /c /Tp $*.cc
+<<
+
+test.res :      test.rc $(WXDIR)\include\wx.rc
+    rc -r /i$(WXDIR)\include test
+
+clean:
+        -erase *.obj *.exe *.res *.map *.rws *.lib ..\lib\*.lib

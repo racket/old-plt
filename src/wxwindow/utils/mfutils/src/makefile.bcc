@@ -1,0 +1,70 @@
+#
+# File:         bormake\utils\mfutils\makefile.bcc
+# Author:       Julian Smart
+# Created:      1993
+# Updated:      
+# Copyright:    (c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds metafile (mfutils.lib) library.
+
+!if "$(BCCDIR)" == ""
+!error You must define the BCCDIR variable in autoexec.bat, e.g. BCCDIR=c:\bc4
+!endif
+
+!if "$(WXWIN)" == ""
+!error You must define the WXWIN variable in autoexec.bat, e.g. WXWIN=c:\wx
+!endif
+
+# Change WXDIR to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib\wx.lib
+WXINC = $(WXDIR)\include
+
+CFG=$(WXWIN)\src\wxwin.cfg
+
+MFUDIR = $(WXDIR)\utils\mfutils
+MFULIB = $(MFUDIR)\lib\mfutils.lib
+
+INC=/I$(WXDIR)\include\base /I$(WXDIR)\include\msw
+
+LIBS=$(WXLIB) $(MFULIB) mathwl cwl import
+FINAL = 1
+!ifndef FINAL
+FINAL=0
+!endif
+
+!if "$(FINAL)" == "0"
+LINKFLAGS=/v/Vt /Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -Od
+DEBUG_FLAGS= -v
+!else
+LINKFLAGS=/Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -O2
+DEBUG_FLAGS=
+!endif
+CPPFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+CFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+
+HEADERS = mfutils.h
+SOURCES = mfutils.cc
+OBJECTS = mfutils.obj
+
+all:    $(MFULIB)
+
+.cc.obj:
+	bcc $(CPPFLAGS) $(INC) -c {$< }
+
+$(MFULIB):      $(OBJECTS)
+		  erase $(MFULIB)
+	tlib /P128 @&&!
+$(MFULIB) &
++$(OBJECTS:.obj =.obj +)
+!
+
+clean:
+	-erase *.obj
+	-erase *.exe
+	-erase *.res
+	-erase *.lib

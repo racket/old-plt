@@ -1,0 +1,68 @@
+#
+# File:		makefile.dos
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds Gauge library for Windows 3.1
+
+!if "$(WXWIN)" == ""
+!error You must define the WXWIN variable in autoexec.bat, e.g. WXWIN=c:\wx
+!endif
+
+# Change WXDIR or WXWIN to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib\wx.lib
+WXINC = $(WXDIR)\include
+
+WXSTRINGDIR = $(WXDIR)\contrib\wxstring
+WXSTRINGINC = $(WXSTRINGDIR)
+WXSTRINGLIB = $(WXSTRINGDIR)\wxstring.lib
+CFG = $(WXDIR)\src\wxwin.cfg
+
+INC =
+
+LIBS=$(WXLIB) $(WXSTRINGLIB) libw llibcew commdlg ddeml shell
+
+!ifndef FINAL
+FINAL=0
+!endif
+
+!if "$(FINAL)" == "0"
+OPT = -Od
+DEBUG_FLAGS= -v
+!else
+OPT = -O2
+DEBUG_FLAGS =
+!endif
+CPPFLAGS=$(DEBUG_FLAGS) $(OPT) /I$(WXDIR)\contrib\wxstring @$(CFG)
+
+.cc.obj:
+        bcc $(CPPFLAGS) -c {$< }
+
+OBJECTS = wxstrgnu.obj wxregex.obj
+
+all:    $(WXSTRINGLIB)
+
+wx:
+        cd $(WXDIR)\src
+        make -f makefile.bcc $(WXLIB) FINAL=$(FINAL)
+
+$(WXSTRINGLIB):      $(OBJECTS)
+        erase $(WXSTRINGLIB)
+        tlib /P128 @&&!
+$(WXSTRINGLIB) &
++$(OBJECTS:.obj =.obj +)
+!
+
+wxstrgnu.obj: wxstrgnu.cc wxstrgnu.h wxregex.h
+
+wxregex.obj: wxregex.cc wxregex.h
+
+clean:
+        erase *.obj *.exe *.lib
+
+cleanall:	clean

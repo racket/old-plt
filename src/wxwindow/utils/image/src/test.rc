@@ -1,0 +1,3 @@
+rcinclude wx.rc
+
+aiai_icn ICON aiai.ico

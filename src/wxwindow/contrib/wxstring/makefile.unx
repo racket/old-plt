@@ -1,0 +1,97 @@
+#
+# File:		makefile.unx
+# Author:	Stefan Hammes
+# Created:	1995
+# Updated:	
+# Copyright:	(c) 1995
+#
+# "%W% %G%"
+#
+# Makefile for wxString example (UNIX).
+# Change the WXDIR directory, and CPPFLAGS and LDFLAGS, for your system.
+
+WXDIR = ../..
+
+# All common UNIX compiler flags and options are now in
+# this central makefile.
+include $(WXDIR)/src/make.env
+
+WXSTRINGDIR = $(WXDIR)/contrib/wxstring
+WXSTRINGLIB = $(WXSTRINGDIR)/libwxstring$(GUISUFFIX).a
+
+OBJECTS = $(OBJDIR)/wxstrgnu.$(OBJSUFF) $(OBJDIR)/wxregex.$(OBJSUFF)
+TESTOBJECTS = $(OBJDIR)/test.$(OBJSUFF)
+TESTPROGRAM = $(WXSTRINGDIR)/test$(GUISUFFIX)
+
+LDFLAGS =  $(XLIB) -L$(WXSTRINGDIR) -L$(WXDIR)/lib
+
+XVIEWLDLIBS = -lwxstring_ol -lwx_ol -lxview -lolgx -lX11 -lm $(COMPLIBS)
+MOTIFLDLIBS = -lwxstring_motif -lwx_motif -lXm -lXt -lX11 -lm $(COMPLIBS)
+HPLDLIBS = -lwxstring_hp -lwx_hp -lXm -lXt -lX11 -lm $(HPCOMPLIBS)
+# Default
+LDLIBS=$(MOTIFLDLIBS)
+
+all:	$(OBJDIR) $(WXSTRINGLIB)
+
+demo:	$(TESTPROGRAM)
+
+.SUFFIXES:
+
+# Comment this out if 'say' doesn't speak on your system, or make it beep perhaps!
+done:
+	say dun
+
+wx:
+	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx GUI=$(GUI)
+
+motif:
+#	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx motif OPT='$(OPT)'
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_motif OPT='$(OPT)' LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+demo_motif:
+	$(MAKE) -f makefile.unx all demo GUI=-Dwx_motif GUISUFFIX=_motif OPT='$(OPT)' LDLIBS='$(MOTIFLDLIBS)' XVIEW_LINK=
+
+xview:
+#	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx xview OPT='$(OPT)'
+	$(MAKE) -f makefile.unx GUI=-Dwx_xview OPT='$(OPT)'
+
+demo_ol:
+	$(MAKE) -f makefile.unx all demo GUI=-Dwx_xview OPT='$(OPT)'
+
+hp:
+	$(MAKE) -f makefile.unx GUI=-Dwx_motif GUISUFFIX=_hp CC=CC DEBUG='-g' OPT='' WARN='-w' \
+           XINCLUDE='$(HPXINCLUDE)' XLIB='$(HPXLIB)' XVIEW_LINK='' CCLEX='cc' \
+           LDLIBS='$(HPLDLIBS)'
+
+$(OBJDIR):
+	mkdir $(OBJDIR)
+
+$(WXSTRINGLIB): $(OBJECTS)	
+	rm -f $@
+	ar $(AROPTIONS) $@ $(OBJECTS)
+	$(RANLIB) $@
+
+$(OBJDIR)/wxstrgnu.$(OBJSUFF):	wxstrgnu.$(SRCSUFF) wxstrgnu.h wxregex.h
+	$(CC) -c $(CPPFLAGS) -o $@ wxstrgnu.$(SRCSUFF)
+
+$(OBJDIR)/wxregex.$(OBJSUFF):	wxregex.$(SRCSUFF) wxregex.h
+	$(CC) -c $(CPPFLAGS) -o $@ wxregex.$(SRCSUFF)
+
+$(OBJDIR)/test.$(OBJSUFF):   test.$(SRCSUFF) wxstrgnu.h wxregex.h
+	$(CC) -c $(CPPFLAGS) -o $@ test.$(SRCSUFF)
+
+$(TESTPROGRAM): $(OBJDIR)/test.$(OBJSUFF) $(WXLIB) $(WXSTRINGLIB) wxstrgnu.h
+	$(CC) $(CPPFLAGS) $(LDFLAGS) -o test$(GUISUFFIX) $(OBJDIR)/test.$(OBJSUFF) $(XVIEW_LINK) $(LDLIBS)
+
+cleaneach:
+	rm -f $(OBJECTS) test$(GUISUFFIX) $(WXSTRINGLIB) $(OBJDIR)/test.$(OBJSUFF) core
+
+clean_motif:
+	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleaneach 
+
+clean_ol:
+	$(MAKE) -f makefile.unx GUISUFFIX=_ol cleaneach 
+
+clean_hp:
+	$(MAKE) -f makefile.unx GUISUFFIX=_hp cleaneach 
+

@@ -1,0 +1,50 @@
+#************************************************************************
+# Makefile for wxGauge lib under VMS
+# we make only the object files, because libraries
+# cannot be added to libraries.
+#
+# by Stefan Hammes
+# (incomplete) update history:
+# 11.04.95
+#************************************************************************
+
+#************************************************************************
+# Definition section
+# (cave: definitions and includes must begin with ',')
+#************************************************************************
+
+APPOPTS = 
+APPDEFS = 
+APPINCS = 
+
+#************************************************************************
+# Module section
+#************************************************************************
+
+# Object modules of the application.
+OBJS = gauge.obj
+
+.include [--.src]makevms.env
+
+# main dependency
+all : $(OBJS)
+	@ Continue
+
+#	lib/create $(MAIN).olb *.obj
+#	- purge $(MAIN).olb
+
+main.exe : main.$(OBJ)
+    $(LINK) $(LINKFLAGS) /exec=main.exe main.$(OBJ),$(WXLIB)/lib,$(OPTSFILE)/option
+    - purge *.exe
+
+#************************************************************************
+# Header file depedencies following
+#************************************************************************
+gauge.obj :	gauge.c gauge.h gaugep.h
+	$(CXX) $(CFLAGS) /object=$*.$(OBJ) $*.c
+    - purge $*.$(OBJ)
+
+main.obj :		gauge.h main.c
+	$(CXX) $(CFLAGS) /object=$*.$(OBJ) $*.c
+    - purge $*.$(OBJ)
+

@@ -1,0 +1,270 @@
+#
+# File:		makefile.bcc
+# Author:	Julian Smart
+# Created:	1993
+# Updated:
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds wxWindows library wx.lib for Windows 3.1
+# and Borland C++ 3.1. This makefile calls makefile.bcc in msw and
+# base subdirectories.
+
+!if "$(BCCDIR)" == ""
+!error You must define the BCCDIR variable in autoexec.bat, e.g. BCCDIR=d:\bc4
+!endif
+
+!if "$(WXWIN)" == ""
+!error You must define the WXWIN variable in autoexec.bat, e.g. WXWIN=c:\wx
+!endif
+
+# Change these if needed.
+
+!ifndef DEBUG
+DEBUG=0
+!endif
+
+WXDIR = $(WXWIN)
+OPT = -O2 -D__win32s__
+DEBUG_FLAGS = -v -DDEBUG=$(DEBUG)
+BOR_VER = 4
+
+WXBASEINC = $(WXDIR)\include\base
+WXINC = $(WXDIR)\include\msw
+CFG = $(WXDIR)\src\wxwin32.cfg
+
+default:	wx
+
+all:	all_libs all_execs
+
+all_contribs:	fafa wxstring itsy gauge wxxpm
+
+all_utils:	xpmshow hytext wxhelp tex2rtf prologio wxtree wxgraph image\
+          wxbuild rcparser winstall dib colours #mfutils
+
+all_samples:	hello ipc form animate mdi minimal fractal vlist panel layout\
+          static printing toolbar buttnbar docview memcheck odbc
+
+all_execs:	xpmshow wxhelp tex2rtf wxbuild colours $(all_samples) #winstall
+
+all_libs:	dib fafa gauge hytext image itsy prologio rcparser wx wxgraph\
+          wxstring wxtree wxxpm mfutils
+
+wx:	$(CFG)
+	cd $(WXDIR)\src\msw
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+# CONTRIB
+fafa:	$(CFG)
+	cd $(WXDIR)\contrib\fafa
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+wxstring:	$(CFG)
+	cd $(WXDIR)\contrib\wxstring
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+itsy:	$(CFG)
+	cd $(WXDIR)\contrib\itsybits
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+gauge:	$(CFG)
+	cd $(WXDIR)\contrib\gauge
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+wxxpm:	$(CFG)
+	cd $(WXDIR)\contrib\wxxpm
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+# UTILS
+xpmshow:	$(CFG)
+	cd $(WXDIR)\utils\xpmshow\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+hytext:	$(CFG)
+	cd $(WXDIR)\utils\hytext\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+wxhelp:	$(CFG)
+	cd $(WXDIR)\utils\wxhelp\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+tex2rtf:	$(CFG)
+	cd $(WXDIR)\utils\tex2rtf\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+prologio:	$(CFG)
+	cd $(WXDIR)\utils\prologio\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+wxtree:	$(CFG)
+	cd $(WXDIR)\utils\wxtree\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+wxgraph:	$(CFG)
+	cd $(WXDIR)\utils\wxgraph\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+image:	$(CFG)
+	cd $(WXDIR)\utils\image\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+wxbuild:	$(CFG)
+	cd $(WXDIR)\utils\wxbuild\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+rcparser:	$(CFG)
+	cd $(WXDIR)\utils\rcparser\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+winstall:	$(CFG)
+	cd $(WXDIR)\utils\winstall\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+mfutils:	$(CFG)
+	cd $(WXDIR)\utils\mfutils\src
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+dib:	$(CFG)
+	cd $(WXDIR)\utils\dib
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+colours:	$(CFG)
+	cd $(WXDIR)\utils\colours
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+# SAMPLES
+hello:	$(CFG)
+	cd $(WXDIR)\samples\hello
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+ipc:	$(CFG)
+	cd $(WXDIR)\samples\ipc
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+form:	$(CFG)
+	cd $(WXDIR)\samples\form
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+animate:	$(CFG)
+	cd $(WXDIR)\samples\animate
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+mdi:	$(CFG)
+	cd $(WXDIR)\samples\mdi
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+minimal:	$(CFG)
+	cd $(WXDIR)\samples\minimal
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+fractal:	$(CFG)
+	cd $(WXDIR)\samples\fractal
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+vlist:	$(CFG)
+	cd $(WXDIR)\samples\vlist
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+panel:	$(CFG)
+	cd $(WXDIR)\samples\panel
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+layout:	$(CFG)
+	cd $(WXDIR)\samples\layout
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+static:	$(CFG)
+	cd $(WXDIR)\samples\static
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+printing:	$(CFG)
+	cd $(WXDIR)\samples\printing
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+toolbar:	$(CFG)
+	cd $(WXDIR)\samples\toolbar
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+buttnbar:	$(CFG)
+	cd $(WXDIR)\samples\buttnbar
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+docview:	$(CFG)
+	cd $(WXDIR)\samples\docview
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+memcheck:	$(CFG)
+	cd $(WXDIR)\samples\memcheck
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+odbc:	$(CFG)
+	cd $(WXDIR)\samples\odbc
+	make -f makefile.b32 -DCFG=$(CFG) -DFINAL=$(FINAL) -DBCCDIR=$(BCCDIR) -DWXWIN=$(WXDIR) -DDEBUG=$(DEBUG)
+	cd $(WXDIR)\src
+
+
+$(CFG): makefile.b32
+	copy &&!
+-H=xwindows.h
+-3
+-P
+-d
+-w-hid
+-w-par
+-w-pia
+-w-aus
+-w-rch
+-Oxt
+-WE
+
+-I$(WXBASEINC);$(WXINC);$(BCCDIR)\include
+-I$(WXDIR)\contrib\wxxpm\libxpm.34b\lib
+-I$(WXDIR)\contrib\fafa
+-I$(WXDIR)\contrib\itsybits
+-I$(WXDIR)\utils\rcparser\src
+-I$(WXDIR)\utils\prologio\src
+-I$(WXDIR)\utils\wxtree\src
+-I$(WXDIR)\utils\dib
+
+-L$(BCCDIR)\lib
+-Dwx_msw
+$(OPT)
+$(DEBUG_FLAGS)
+! $(CFG)

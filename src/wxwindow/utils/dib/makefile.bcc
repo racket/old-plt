@@ -1,0 +1,71 @@
+#
+# File:		makefile.bcc
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds dib.lib library.
+
+!if "$(BCCDIR)" == ""
+!error You must define the BCCDIR variable in autoexec.bat, e.g. BCCDIR=d:\bc4
+!endif
+
+!if "$(WXWIN)" == ""
+!error You must define the WXWIN variable in autoexec.bat, e.g. WXWIN=c:\wx
+!endif
+
+# Change WXDIR to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib\wx.lib
+WXINC = $(WXDIR)\include
+
+CFG=$(WXWIN)\src\wxwin.cfg
+
+DIBDIR = $(WXDIR)\utils\dib
+DIBLIB = $(DIBDIR)\dib.lib
+
+INC=/I$(WXDIR)\include\base /I$(WXDIR)\include\msw
+
+LIBS=$(WXLIB) $(DIBLIB) mathwl cwl import
+
+!ifndef FINAL
+FINAL=0
+!endif
+
+!if "$(FINAL)" == "0"
+LINKFLAGS=/v/Vt /Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -Od
+DEBUG_FLAGS= -v
+!else
+LINKFLAGS=/Twe /L$(WXDIR)\lib;$(BCCDIR)\lib
+OPT = -O2
+DEBUG_FLAGS=
+!endif
+CPPFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+CFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+
+HEADERS = dib.h
+SOURCES = dib.cc
+OBJECTS = dib.obj
+
+all:    $(DIBLIB)
+
+.cc.obj:
+	bcc $(CPPFLAGS) $(INC) -c {$< }
+
+$(DIBLIB):      $(OBJECTS)
+        erase $(DIBLIB)
+        tlib /P128 @&&!
+$(DIBLIB) &
++$(OBJECTS:.obj =.obj +)
+!
+
+clean:
+        -erase *.obj
+        -erase *.exe
+        -erase *.res
+        -erase *.lib
+

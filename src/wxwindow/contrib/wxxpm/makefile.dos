@@ -1,0 +1,209 @@
+#
+# File:		makefile.dos
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds wxXPM library for Windows 3.1
+
+# Change WXDIR/WXWIN to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib\wx.lib
+WXINC = $(WXDIR)\include
+
+XPMDIR = $(WXDIR)\contrib\wxxpm
+XPMINC = $(XPMDIR)\libxpm.34b\lib
+XPMLIB = $(XPMDIR)\xpm.lib
+
+DUMMY=$(WXDIR)\src\msw\dummy.obj
+
+THISDIR = $(XPMDIR)
+
+INC = /I$(WXDIR)\include\base /I$(WXDIR)\include\msw /I$(XPMINC) /I.
+
+LIBS=$(WXLIB) oldnames libw llibcew commdlg ddeml shell mmsystem
+
+# Set this to nothing if your compiler is MS C++ 7
+ZOPTION=/Z7
+
+!ifndef FINAL
+FINAL=0
+!endif
+
+PRECOMP=/YuWX.H 
+
+!if "$(FINAL)" == "0"
+OPT = /Od
+CPPFLAGS= /AL /Gt4 /W3 /Zi /G2sw /DFOR_MSW $(ZOPTION) $(OPT) /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+CFLAGS= /AL /Gt4 /W3 /Zi /G2sw  /DFOR_MSW $(ZOPTION) $(OPT) /Dwx_msw $(INC)
+# CFLAGS= /AL /W3 /Zi /G2sw /Od /DFOR_MSW /Dwx_msw
+LINKFLAGS=/LI /MAP /PACKC /PACKD /NOD /CO /FARCALL /SEG:1024
+# LINKFLAGS=/NOD /CO /SEG:256
+!else
+# /Ox for real FINAL version
+OPT = /Ox
+CPPFLAGS= /AL /Gt4 /W3 /Os /G2sw  /DFOR_MSW $(OPT) /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+CFLAGS= /AL /W3 /Zi /Os /G2sw /Dwx_msw /DFOR_MSW
+LINKFLAGS=/NOD /PACKC /PACKD /SEG:1024 /FARCALL /ONERROR:NOEXE
+!endif
+
+OBJDIR=.
+
+# xpmpixm.obj\
+XPMOBJECTS = 	$(OBJDIR)\crbuffri.obj\
+		$(OBJDIR)\crdatfri.obj\
+		$(OBJDIR)\create.obj $(OBJDIR)\crifrbuf.obj\
+		$(OBJDIR)\crifrdat.obj\
+		$(OBJDIR)\data.obj\
+		$(OBJDIR)\hashtab.obj $(OBJDIR)\misc.obj\
+		$(OBJDIR)\parse.obj $(OBJDIR)\rdftodat.obj\
+		$(OBJDIR)\rdftoi.obj\
+		$(OBJDIR)\rgb.obj $(OBJDIR)\scan.obj\
+		$(OBJDIR)\simx.obj $(OBJDIR)\wrffrdat.obj\
+		$(OBJDIR)\wrffrp.obj $(OBJDIR)\wrffri.obj
+
+all:    $(XPMLIB)
+
+wx:
+        cd $(WXDIR)\src\msw
+        nmake -f makefile.dos all FINAL=$(FINAL)
+        cd $(THISDIR)
+
+$(XPMLIB):      $(XPMOBJECTS)
+        erase $(XPMLIB)
+        lib /PAGESIZE:128 @<<
+$(XPMLIB)
+y
+$(XPMOBJECTS)
+nul
+;
+<<
+
+$(OBJDIR)\crbuffri.obj: libxpm.34b\lib\crbuffri.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crbuffri.c
+<<
+
+$(OBJDIR)\crbuffrp.obj: libxpm.34b\lib\crbuffrp.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crbuffrp.c
+<<
+
+$(OBJDIR)\crdatfri.obj: libxpm.34b\lib\crdatfri.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crdatfri.c
+<<
+
+$(OBJDIR)\crdatfrp.obj: libxpm.34b\lib\crdatfrp.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crdatfrp.c
+<<
+
+$(OBJDIR)\create.obj: libxpm.34b\lib\create.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\create.c
+<<
+
+$(OBJDIR)\crifrbuf.obj: libxpm.34b\lib\crifrbuf.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crifrbuf.c
+<<
+
+$(OBJDIR)\crifrdat.obj: libxpm.34b\lib\crifrdat.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crifrdat.c
+<<
+
+$(OBJDIR)\crpfrbuf.obj: libxpm.34b\lib\crpfrbuf.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crpfrbuf.c
+<<
+
+$(OBJDIR)\crpfrdat.obj: libxpm.34b\lib\crpfrdat.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\crpfrdat.c
+<<
+
+$(OBJDIR)\data.obj: libxpm.34b\lib\data.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\data.c
+<<
+
+$(OBJDIR)\hashtab.obj: libxpm.34b\lib\hashtab.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\hashtab.c
+<<
+
+$(OBJDIR)\misc.obj: libxpm.34b\lib\misc.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\misc.c
+<<
+
+$(OBJDIR)\parse.obj: libxpm.34b\lib\parse.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\parse.c
+<<
+
+$(OBJDIR)\rdftodat.obj: libxpm.34b\lib\rdftodat.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\rdftodat.c
+<<
+
+$(OBJDIR)\rdftoi.obj: libxpm.34b\lib\rdftoi.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\rdftoi.c
+<<
+
+$(OBJDIR)\rdftop.obj: libxpm.34b\lib\rdftop.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\rdftop.c
+<<
+
+$(OBJDIR)\rgb.obj: libxpm.34b\lib\rgb.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\rgb.c
+<<
+
+$(OBJDIR)\scan.obj: libxpm.34b\lib\scan.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\scan.c
+<<
+
+$(OBJDIR)\simx.obj: libxpm.34b\lib\simx.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\simx.c
+<<
+
+$(OBJDIR)\wrffrdat.obj: libxpm.34b\lib\wrffrdat.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\wrffrdat.c
+<<
+
+$(OBJDIR)\wrffri.obj: libxpm.34b\lib\wrffri.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\wrffri.c
+<<
+
+$(OBJDIR)\wrffrp.obj: libxpm.34b\lib\wrffrp.c
+	 	cl @<<
+$(CFLAGS) /c libxpm.34b\lib\wrffrp.c
+<<
+
+clean:
+        erase *.obj *.exe *.lib
+
+cleanall:	clean
+    cd $(WXDIR)\src\msw
+    nmake -f makefile.dos clean
+    cd $(WXDIR)\contrib\wxxpm
+
+cleanshow:
+    erase xpmshow.obj
+    cd $(WXDIR)\src\msw
+    nmake -f makefile.dos clean
+    cd $(WXDIR)\contrib\wxxpm
+
+

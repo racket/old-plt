@@ -1,0 +1,115 @@
+#
+# File:		makefile.dos
+# Author:	Julian Smart
+# Created:	1993
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds Metafile utilities mfutils.lib library for Windows 3.1
+
+# Change WXDIR/WXWIN to wherever wxWindows is found
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib\wx.lib $(WXDIR)\contrib\fafa\fafa.lib
+WXINC = $(WXDIR)\include
+
+MFDIR = $(WXDIR)\utils\mfutils
+MFINC = $(MFDIR)\src
+MFLIB = $(MFDIR)\lib\mfutils.lib
+
+DOCDIR = $(MFDIR)\docs
+DOCUTILSDIR = $(WXDIR)\utils\tex2rtf\src
+THISDIR = $(WXDIR)\utils\mfutils\src
+
+INC = /I$(WXDIR)\include\base /I$(WXDIR)\include\msw
+
+LIBS=$(WXLIB) $(MFLIB) libw llibcew commdlg ddeml shell ctl3dv2
+
+# Set this to nothing if using MS C++ 7
+ZOPTION=/Z7
+
+!ifndef FINAL
+FINAL=0
+!endif
+
+# Default is to output RTF for WinHelp
+!ifndef WINHELP
+WINHELP=-winhelp
+!endif
+
+PRECOMP=/YuWX.H 
+
+!if "$(FINAL)" == "0"
+OPT = /Od
+CPPFLAGS= /AL /W3 /Gt4 /Zi $(ZOPTION) /G2sw $(OPT) /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+CFLAGS= /AL /W3 /Zi /G2sw /Od /Dwx_msw
+LINKFLAGS=/NOD /CO /ONERROR:NOEXE
+!else
+# /Ox for real FINAL version
+OPT = /Ox
+CPPFLAGS= /AL /W3 /Gt4 /Zi /Os /G2sw $(OPT) /Dwx_msw $(INC) $(PRECOMP) /Fp$(WXDIR)\src\msw\wx.pch
+CFLAGS= /AL /W3 /Zi /Os /G2sw /Dwx_msw
+LINKFLAGS=/NOD /ONERROR:NOEXE
+!endif
+
+SOURCES = mfutils.cc
+HEADERS = mfutils.h
+OBJECTS = mfutils.obj
+
+all:    $(MFLIB)
+
+wx:
+        cd $(WXDIR)\src\msw
+        nmake -f makefile.dos $(WXLIB) FINAL=$(FINAL)
+        cd $(MFDIR)\src
+
+$(MFLIB):      $(OBJECTS)
+        erase $(MFLIB)
+        lib /PAGESIZE:128 @<<
+$(MFLIB)
+y
+$(OBJECTS)
+nul
+;
+<<
+
+$(OBJECTS):     $(MFINC)\mfutils.h
+
+mfutils.obj: mfutils.cc $(MFINC)\mfutils.h
+        cl @<<
+$(CPPFLAGS) /Od /c /Tp $*.cc
+<<
+
+# Making documents
+docs:   $(DOCDIR)/mfutils.hlp xlp htm
+htm:    $(DOCDIR)/mfutils.htm
+xlp:     $(DOCDIR)/mfutils.xlp
+rtf:    $(DOCDIR)/mfutils.rtf
+hlp:    $(DOCDIR)/mfutils.hlp
+
+$(DOCDIR)/mfutils.hlp:         $(DOCDIR)/mfutils.rtf $(DOCDIR)/mfutils.hpj
+        cd $(DOCDIR)
+        -erase mfutils.ph
+        hc mfutils
+        cd $(THISDIR)
+
+$(DOCDIR)/mfutils.rtf:         $(DOCDIR)/classes.tex $(DOCDIR)/manual.tex
+        cd $(DOCDIR)
+        -wx tex2rtf $(DOCDIR)\manual.tex $(DOCDIR)\mfutils.rtf -twice $(WINHELP)
+        cd $(THISDIR)
+
+$(DOCDIR)/mfutils.xlp:         $(DOCDIR)/manual.tex $(DOCDIR)/classes.tex
+        cd $(DOCDIR)
+        -wx tex2rtf $(DOCDIR)\manual.tex $(DOCDIR)\mfutils.xlp -twice -xlp
+        cd $(THISDIR)
+
+$(DOCDIR)/mfutils.html:         $(DOCDIR)/manual.tex $(DOCDIR)/classes.tex
+        cd $(DOCDIR)
+        -wx tex2rtf $(DOCDIR)\manual.tex $(DOCDIR)\mfutils.htm -twice -html
+        cd $(THISDIR)
+
+clean:
+        erase *.obj *.exe *.lib ..\lib\*.lib
+
+cleanall:	clean

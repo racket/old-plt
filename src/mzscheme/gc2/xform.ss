@@ -741,6 +741,7 @@
     (printf "#define GC_CAN_IGNORE /**/~n")
     ;; Another annotation to protect against GC conversion:
     (printf "#define HIDE_FROM_XFORM(x) x~n")
+    (printf "#define HIDE_NOTHING_FROM_XFORM() /**/~n")
     ;; In case a conversion is unnecessary where we have this annotation:
     (printf "#define START_XFORM_SKIP /**/~n")
     (printf "#define END_XFORM_SKIP /**/~n")
@@ -1220,6 +1221,15 @@
 	    (newline/indent indent)
 	    (display/indent v (tok-n v))
 	    (display/indent v " ")]
+	   [(and (eq? '|HIDE_FROM_XFORM| (tok-n v))
+		 (pair? (cdr e))
+		 (seq? (cadr e))
+		 (null? (seq->list (seq-in (cadr e)))))
+	    ;; This handles the case where we were trying to hide
+	    ;; something from xform, but the something macro-expanded
+	    ;; to nothing.  It happens, for example, in FreeBSD gcc
+	    ;; 2.95.x when hiding a va_end() use
+	    (display/indent v '|HIDE_NOTHING_FROM_XFORM|)]
 	   [else
 	    (if (string? (tok-n v))
 		(begin
@@ -1233,7 +1243,7 @@
 			 (pair? (cdr e))
 			 (string? (tok-n (cadr e)))
 			 (not (seq? (tok-n (cadr e)))))
-	       (display/indent v " "))
+	      (display/indent v " "))
 	    (when (and (eq? semi (tok-n v))
 		       semi-newlines?)
 	      (newline/indent indent))])

@@ -5,6 +5,7 @@
   (provide installer)
 
   (define (installer plthome)
-    (lang:installer plthome)
     (io:installer plthome)
+    (lang:installer plthome)
+;    (io:installer plthome)
     (util:installer plthome)))

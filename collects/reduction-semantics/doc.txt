@@ -155,6 +155,12 @@ example is this:
       ((lambda ((name x variable)) (name body e)) (name arg v))
       (lc-subst x arg body))
 
+> (reduction/cc language non-terminal pattern bodies ...)
+
+reduction/cc is like reduction, except that the reduction
+may occur anywhere in the compatible closure of the
+non-terminal.
+
 > replace : (any? hole-binding? any? . -> . any)
 
 The first argument to this function is an sexpression to

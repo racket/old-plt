@@ -7,66 +7,46 @@
 
 #include "escheme.h"
 
+#include "bstr.h"
+
+typedef struct _event_handler_entry_ { // entry in hash table
+  DISPID dispId;
+  Scheme_Object *handler;
+  FUNCDESC *pFuncDesc;
+  _event_handler_entry_ *next;
+} EVENT_HANDLER_ENTRY;
+
+const int EVENT_HANDLER_TBL_SIZE = 93;
+
 /////////////////////////////////////////////////////////////////////////////
 // CSink
 class ATL_NO_VTABLE CSink : 
-	public CComObjectRootEx<CComSingleThreadModel>,
+        public CComObjectRootEx<CComSingleThreadModel>,
 	public CComCoClass<CSink, &CLSID_Sink>,
 	public IDispatchImpl<ISink, &IID_ISink, &LIBID_MYSSINKLib>
 {
 
 private:
-  
   Scheme_Extension_Table *scheme_extension_table;
 
-  Scheme_Object *click_proc;  
-  Scheme_Object *dblclick_proc;  
-  Scheme_Object *keydown_proc;
-	Scheme_Object *keypress_proc;
-	Scheme_Object *keyup_proc;	
-	Scheme_Object *mousedown_proc;	
-	Scheme_Object *mousemove_proc;	
-	Scheme_Object *mouseup_proc;	
-	Scheme_Object *error_proc;	
-	Scheme_Object *readystatechange_proc;	
+  Scheme_Object *(*make_cy)(CY *);
+  Scheme_Object *(*make_date)(DATE *);
+  Scheme_Object *(*make_bool)(unsigned);
+  Scheme_Object *(*make_scode)(SCODE);
+  Scheme_Object *(*make_idispatch)(IDispatch *);
+  Scheme_Object *(*make_iunknown)(IUnknown *);
+  Scheme_Object *variantToSchemeObject(VARIANTARG *);
 
-  unsigned click_dispid;  
-  unsigned dblclick_dispid;  
-  unsigned keydown_dispid;
-	unsigned keypress_dispid;
-	unsigned keyup_dispid;	
-	unsigned mousedown_dispid;	
-	unsigned mousemove_dispid;	
-	unsigned mouseup_dispid;	
-	unsigned error_dispid;	
-	unsigned readystatechange_dispid;	
- 
+  int getHashValue(DISPID);
+
+  EVENT_HANDLER_ENTRY *newEventHandlerEntry(DISPID,Scheme_Object *,FUNCDESC *);
+  EVENT_HANDLER_ENTRY *lookupHandler(DISPID);
+
+  EVENT_HANDLER_ENTRY eventHandlerTable[EVENT_HANDLER_TBL_SIZE];
+
 public:
-	CSink()
-	{
-	  click_proc = NULL;
-    dblclick_proc = NULL;
-    keydown_proc = NULL;
-	  keypress_proc = NULL;
-	  keyup_proc = NULL;	
-	  mousedown_proc = NULL;	
-	  mousemove_proc = NULL;	
-	  mouseup_proc = NULL;	
-	  error_proc = NULL;	
-	  readystatechange_proc = NULL;	
-
-    click_dispid = 0xFFFFFDA8;
-    dblclick_dispid = 0xFFFFFDA7; 
-    keydown_dispid = 0xFFFFFDA6;
-	  keypress_dispid = 0xFFFFFDA5;
-	  keyup_dispid = 0xFFFFFDA4;	
-	  mousedown_dispid = 0xFFFFFDA3;	
-	  mousemove_dispid = 0xFFFFFDA2;	
-	  mouseup_dispid = 0xFFFFFDA1;	
-	  error_dispid = 0xFFFFFDA0;	
-	  readystatechange_dispid = 0xFFFFFD9F;
-    
-    }
+  CSink() {
+  }
 
 DECLARE_REGISTRY_RESOURCEID(IDR_SINK)
 
@@ -79,33 +59,20 @@ END_COM_MAP()
 
 // ISink
 public:
-	STDMETHOD(set_extension_table)(int);
+ STDMETHOD(set_extension_table)(int);
+ STDMETHOD(register_handler)(DISPID,int,int); 
 
-  // stock event handlers
-  
-  STDMETHOD(Click)();
-	STDMETHOD(DblClick)();
-	STDMETHOD(KeyDown)(short *,short);
-	STDMETHOD(KeyPress)(short *);
-	STDMETHOD(KeyUp)(short *,short);
-	STDMETHOD(MouseMove)(short,short,long,long);
-	STDMETHOD(MouseDown)(short,short,long,long);
-	STDMETHOD(MouseUp)(short,short,long,long);
-	STDMETHOD(Error)();
-	STDMETHOD(ReadyStateChange)(long);
+ STDMETHOD(set_make_cy)(int); 
+ STDMETHOD(set_make_date)(int); 
+ STDMETHOD(set_make_bool)(int); 
+ STDMETHOD(set_make_scode)(int); 
+ STDMETHOD(set_make_idispatch)(int); 
+ STDMETHOD(set_make_iunknown)(int); 
 
-  // stock event handler updaters
+//override IDispatch::Invoke()
 
- 	STDMETHOD(set_click_proc)(int);
- 	STDMETHOD(set_dblclick_proc)(int);
- 	STDMETHOD(set_keydown_proc)(int);
- 	STDMETHOD(set_keypress_proc)(int);
- 	STDMETHOD(set_keyup_proc)(int);
- 	STDMETHOD(set_mousedown_proc)(int);
- 	STDMETHOD(set_mousemove_proc)(int);
- 	STDMETHOD(set_mouseup_proc)(int);
- 	STDMETHOD(set_error_proc)(int);
- 	STDMETHOD(set_readystatechange_proc)(int);
+ STDMETHOD(Invoke)(DISPID,REFIID,LCID,WORD,
+		   DISPPARAMS*,VARIANT*,EXCEPINFO*,UINT*);
 };
 
 #endif //__SINK_H_

@@ -701,6 +701,7 @@
  (text-to-insert "Text to insert")
 
  (module-browser-filename-format "Full Filename: ~a (~a lines)")
+ (module-browser-root-filename "Root Filename: ~a")
  (module-browser-font-size-gauge-label "Font Size")
  (module-browser-progress-label "Module overview progress")
  (module-browser-adding-file "Adding file: ~a...")
@@ -708,5 +709,5 @@
  (module-browser-open-file-format "Open ~a")
  (module-browser "Module Browser") ;; frame title
  (module-browser... "Module Browser...") ;; menu item title
- 
+ (module-browser-error-expanding "Error expanding the program:\n\n~a")
  )

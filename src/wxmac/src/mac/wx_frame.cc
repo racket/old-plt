@@ -677,7 +677,7 @@ void wxFrame::SetTitle(char* title)
   {
     CFStringRef wtitle = CFStringCreateWithCString(NULL, title, kCFStringEncodingISOLatin1);
     SetWindowTitleWithCFString(theMacWindow, wtitle);
-    CFRelease(title);
+    CFRelease(wtitle);
   }
 }
 

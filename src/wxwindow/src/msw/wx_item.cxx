@@ -524,3 +524,15 @@ void wxSetWinFont(wxFont *buttonFont, HANDLE ms_handle)
     ReleaseDC((HWND)ms_handle,the_dc);
   }
 }
+
+void wxItem::SetFont(wxFont *f)
+{
+  if (!f)
+    f = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE)
+  font = f;
+}
+
+int wxGetControlFontSize()
+{
+  return 8;
+}

@@ -29,17 +29,19 @@ BOOL wxButton::MSWCommand(UINT param, WORD WXUNUSED(id))
 
 wxButton::wxButton(wxPanel *panel, wxFunction Function, char *label,
 		   int x, int y, int width, int height,
-                   long style, char *name):
+                   long style, wxFont *_font, char *name):
   wxbButton(panel, Function, label, x, y, width, height, style, name)
 {
+  SetFont(_font);
   Create(panel, Function, label, NULL, x, y, width, height, style, name);
 }
 
 wxButton::wxButton(wxPanel *panel, wxFunction Function, wxBitmap *bitmap,
 		   int x, int y, int width, int height,
-                   long style, char *name):
+                   long style, wxFont *_font, char *name):
   wxbButton(panel, Function, bitmap, x, y, width, height, style, name)
 {
+  SetFont(_font);
   Create(panel, Function, NULL, bitmap, x, y, width, height, style, name);
 }
 
@@ -104,7 +106,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
 
   SubclassControl(wx_button);
 
-  wxSetWinFont(buttonFont, ms_handle);
+  wxSetWinFont(font, ms_handle);
 
   SetSize(x, y, width, height);
 
@@ -191,7 +193,7 @@ void wxButton::SetSize(int x, int y, int width, int height, int sizeFlags)
   GetSize(&ww, &hh);
 
   GetWindowText(button, buf, 300);
-  GetTextExtent(buf, &current_width, &cyf,NULL,NULL,buttonFont);
+  GetTextExtent(buf, &current_width, &cyf,NULL,NULL,font);
 
   // If we're prepared to use the existing width, then...
   if (width == -1 && ((sizeFlags & wxSIZE_AUTO_WIDTH) != wxSIZE_AUTO_WIDTH))
@@ -200,7 +202,7 @@ void wxButton::SetSize(int x, int y, int width, int height, int sizeFlags)
   {
     int cx;
     int cy;
-    wxGetCharSize(button, &cx, &cy,buttonFont);
+    wxGetCharSize(button, &cx, &cy,font);
     actualWidth = (int)(current_width + 3*cx) ;
   }
   

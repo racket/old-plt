@@ -27,8 +27,7 @@ class wxbItem: public wxWindow
     wxbItem(wxPanel *pnl);
    ~wxbItem(void);
 
-   wxFont *buttonFont;
-   wxFont *labelFont;
+   wxFont *font;
 
    int labelPosition;
 
@@ -48,8 +47,7 @@ class wxbItem: public wxWindow
   // Places item in centre of panel - so can't be used BEFORE panel->Fit()
   void Centre(int direction = wxHORIZONTAL);
 
-  inline virtual wxFont  *GetLabelFont(void)        { return labelFont ; }
-  inline virtual wxFont  *GetButtonFont(void)       { return buttonFont ; }
+  inline wxFont   *GetFont(void) { return font ; }
 };
 
 #endif // wxb_itemh

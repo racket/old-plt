@@ -137,6 +137,8 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
+/* No longer used */
+
 // @INCLUDE wxs_icol.xci
 
 class os_wxPanel : public wxPanel {
@@ -421,94 +423,6 @@ void os_wxPanel::OnKillFocus()
   
      READY_TO_RETURN;
   }
-}
-
-static Scheme_Object *os_wxPanelGetLabelFont(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  class wxFont* r;
-  objscheme_check_valid(os_wxPanel_class, "get-label-font in panel%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxPanel *)((Scheme_Class_Object *)p[0])->primdata)->GetLabelFont());
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
-}
-
-static Scheme_Object *os_wxPanelSetLabelFont(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxPanel_class, "set-label-font in panel%", n, p);
-  class wxFont* x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+0], "set-label-font in panel%", 0));
-
-  
-  WITH_VAR_STACK(((wxPanel *)((Scheme_Class_Object *)p[0])->primdata)->SetLabelFont(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_void;
-}
-
-static Scheme_Object *os_wxPanelGetButtonFont(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  class wxFont* r;
-  objscheme_check_valid(os_wxPanel_class, "get-control-font in panel%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxPanel *)((Scheme_Class_Object *)p[0])->primdata)->GetButtonFont());
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
-}
-
-static Scheme_Object *os_wxPanelSetButtonFont(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxPanel_class, "set-control-font in panel%", n, p);
-  class wxFont* x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+0], "set-control-font in panel%", 0));
-
-  
-  WITH_VAR_STACK(((wxPanel *)((Scheme_Class_Object *)p[0])->primdata)->SetButtonFont(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_void;
 }
 
 static Scheme_Object *os_wxPanelGetLabelPosition(int n,  Scheme_Object *p[])
@@ -1014,12 +928,8 @@ void objscheme_setup_wxPanel(Scheme_Env *env)
 
   wxREGGLOB(os_wxPanel_class);
 
-  os_wxPanel_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "panel%", "window%", (Scheme_Method_Prim *)os_wxPanel_ConstructScheme, 17));
+  os_wxPanel_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "panel%", "window%", (Scheme_Method_Prim *)os_wxPanel_ConstructScheme, 13));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-font" " method", (Scheme_Method_Prim *)os_wxPanelGetLabelFont, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-font" " method", (Scheme_Method_Prim *)os_wxPanelSetLabelFont, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-control-font" " method", (Scheme_Method_Prim *)os_wxPanelGetButtonFont, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-control-font" " method", (Scheme_Method_Prim *)os_wxPanelSetButtonFont, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-position" " method", (Scheme_Method_Prim *)os_wxPanelGetLabelPosition, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-position" " method", (Scheme_Method_Prim *)os_wxPanelSetLabelPosition, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "on-char" " method", (Scheme_Method_Prim *)os_wxPanelOnChar, 1, 1));

@@ -198,27 +198,22 @@ static wxBitmap *icons[3];
 // create and destroy message
 //-----------------------------------------------------------------------------
 
-wxMessage::wxMessage(void) : wxItem()
-{
-    __type = wxTYPE_MESSAGE;
-}
-
 wxMessage::wxMessage(wxPanel *panel, char *message,
-		   int x, int y, long style, char *name) : wxItem()
+		   int x, int y, long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_MESSAGE;
     Create(panel, message, x, y, style, name);
 }
 
 wxMessage::wxMessage(wxPanel *panel, wxBitmap *bitmap,
-		   int x, int y, long style, char *name) : wxItem()
+		   int x, int y, long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_MESSAGE;
     Create(panel, bitmap, x, y, style, name);
 }
 
 wxMessage::wxMessage(wxPanel *panel, int iconId,
-		   int x, int y, long style, char *name) : wxItem()
+		   int x, int y, long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_MESSAGE;
     Create(panel, NULL, NULL, iconId, x, y, style, name);
@@ -288,9 +283,9 @@ Bool wxMessage::Create(wxPanel *panel,
 	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       label_font->GetInternalAAFont(),
+	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 XtNshrinkToFit, TRUE,
 	 XtNhighlightThickness, 0, XtNtraversalOn, FALSE,
@@ -320,9 +315,9 @@ Bool wxMessage::Create(wxPanel *panel,
 	 XtNmaskmap,     maskmap,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       label_font->GetInternalAAFont(),
+	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 XtNalignment,   wxALIGN_LEFT,
 	 XtNshrinkToFit, TRUE,

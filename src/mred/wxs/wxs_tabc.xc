@@ -15,7 +15,7 @@
 class wxTabChoice : public wxItem {
 public:
     wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-  	        int n, char **choices, int style);
+  	        int n, char **choices, int style, wxFont *fnt);
 
     int   GetSelection(void);
     int   Number(void);
@@ -29,7 +29,7 @@ public:
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-			 int n, char **choices, int style)
+			 int n, char **choices, int style, wxFont *fnt)
 {
 }
 
@@ -45,10 +45,10 @@ int wxTabChoice::ButtonFocus(int n) { return 0; }
 
 class wxGroupBox : public wxItem {
 public:
-    wxGroupBox(wxPanel *panel, char *label, int style);
+    wxGroupBox(wxPanel *panel, char *label, int style, wxFont *fnt);
 };
 
-wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
+wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style, wxFont *fnt)
 {
 }
 
@@ -76,7 +76,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 #define RANGECLASS wxTabChoice
 @INCLUDE range.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,-int=0,string[]=NULL/bList/ubList/cStringList///push,SYM[tabStyle]=0); : : ubCallbackSetup/glueListSet[string.3.4.3.METHODNAME("tab-group","initialization")]/glueCleanup[4]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,-int=0,string[]=NULL/bList/ubList/cStringList///push,SYM[tabStyle]=0,wxFont^=NULL); : : ubCallbackSetup/glueListSet[string.3.4.3.METHODNAME("tab-group","initialization")]/glueCleanup[4]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 
@@ -107,7 +107,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
 @SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 
-@CREATOR (wxPanel!,nstring,SYM[tabStyle]=0);
+@CREATOR (wxPanel!,nstring,SYM[tabStyle]=0,wxFont^=NULL);
 @INCLUDE wxs_item.xci
 
 @END

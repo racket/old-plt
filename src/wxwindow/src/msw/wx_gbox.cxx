@@ -13,7 +13,7 @@
 #define GROUP_CLASS      L"wxBUTTON"
 #define GROUP_FLAGS      (BS_GROUPBOX|WS_CHILD|WS_VISIBLE)
 
-wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
+wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style, wxFont *_font):
   wxItem(panel)
 {
   int x = 0, y = 0, width, height, nid;
@@ -23,6 +23,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
   HWND the_handle;
 
   __type = wxTYPE_GROUP_BOX;
+
+  SetFont(_font);
 
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;

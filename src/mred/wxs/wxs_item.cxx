@@ -312,15 +312,16 @@ static int istype_symset_iconID(Scheme_Object *v, const char *where) {
 
 
 
+
 class os_wxMessage : public wxMessage {
  public:
 
-  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
+  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, int x4 = 0, class wxFont* x5 = NULL, string x6 = "message"));
 #ifndef MZ_PRECISE_GC
-  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
+  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, int x4 = 0, class wxFont* x5 = NULL, string x6 = "message"));
 #endif
 #ifndef MZ_PRECISE_GC
-  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message"));
+  os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2 = -1, int x3 = -1, int x4 = 0, class wxFont* x5 = NULL, string x6 = "message"));
 #endif
   ~os_wxMessage();
   void OnDropFile(epathname x0);
@@ -346,21 +347,21 @@ void os_wxMessage::gcFixup() {
 
 static Scheme_Object *os_wxMessage_class;
 
-os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, string x1, int x2, int x3, int x4, string x5))
-CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
+os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, string x1, int x2, int x3, int x4, class wxFont* x5, string x6))
+CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5, x6))
 {
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2, int x3, int x4, string x5))
-CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
+os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, class wxBitmap* x1, int x2, int x3, int x4, class wxFont* x5, string x6))
+CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5, x6))
 {
 }
 #endif
 
 #ifndef MZ_PRECISE_GC
-os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, string x5))
-CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5))
+os_wxMessage::os_wxMessage CONSTRUCTOR_ARGS((class wxPanel* x0, int x1, int x2, int x3, int x4, class wxFont* x5, string x6))
+CONSTRUCTOR_INIT(: wxMessage(x0, x1, x2, x3, x4, x5, x6))
 {
 }
 #endif
@@ -596,6 +597,27 @@ void os_wxMessage::OnKillFocus()
   }
 }
 
+static Scheme_Object *os_wxMessageGetFont(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  class wxFont* r;
+  objscheme_check_valid(os_wxMessage_class, "get-font in message%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxMessage *)((Scheme_Class_Object *)p[0])->primdata)->GetFont());
+
+  
+  
+  READY_TO_RETURN;
+  return WITH_REMEMBERED_STACK(objscheme_bundle_wxFont(r));
+}
+
 static Scheme_Object *os_wxMessageSetLabel(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -815,17 +837,19 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     int x2;
     int x3;
     int x4;
-    string x5 INIT_NULLED_OUT;
+    class wxFont* x5 INIT_NULLED_OUT;
+    string x6 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(4);
+    SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x5);
+    VAR_STACK_PUSH(4, x6);
 
     
-    if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (icon label case)", POFFSET+2, POFFSET+6, n, p, 1));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+7))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (icon label case)", POFFSET+2, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (icon label case)", 0));
     x1 = WITH_VAR_STACK(unbundle_symset_iconID(p[POFFSET+1], "initialization in message% (icon label case)"));
     if (n > (POFFSET+2)) {
@@ -841,14 +865,18 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x4 = 0;
     if (n > (POFFSET+5)) {
-      x5 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+5], "initialization in message% (icon label case)"));
+      x5 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+5], "initialization in message% (icon label case)", 1));
     } else
-      x5 = "message";
+      x5 = NULL;
+    if (n > (POFFSET+6)) {
+      x6 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+6], "initialization in message% (icon label case)"));
+    } else
+      x6 = "message";
 
     
-    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5));
+    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5, x6));
 #endif
     realobj->__gc_external = (void *)p[0];
     
@@ -860,18 +888,20 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     int x2;
     int x3;
     int x4;
-    string x5 INIT_NULLED_OUT;
+    class wxFont* x5 INIT_NULLED_OUT;
+    string x6 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(5);
+    SETUP_VAR_STACK_PRE_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x1);
     VAR_STACK_PUSH(4, x5);
+    VAR_STACK_PUSH(5, x6);
 
     
-    if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (bitmap label case)", POFFSET+2, POFFSET+6, n, p, 1));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+7))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (bitmap label case)", POFFSET+2, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (bitmap label case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+1], "initialization in message% (bitmap label case)", 0));
     if (n > (POFFSET+2)) {
@@ -887,14 +917,18 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x4 = 0;
     if (n > (POFFSET+5)) {
-      x5 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+5], "initialization in message% (bitmap label case)"));
+      x5 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+5], "initialization in message% (bitmap label case)", 1));
     } else
-      x5 = "message";
+      x5 = NULL;
+    if (n > (POFFSET+6)) {
+      x6 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+6], "initialization in message% (bitmap label case)"));
+    } else
+      x6 = "message";
 
     { if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[POFFSET+1])); if (x1 && BM_SELECTED(x1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("message%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+1])); }
-    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5));
+    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5, x6));
 #endif
     realobj->__gc_external = (void *)p[0];
     
@@ -906,18 +940,20 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     int x2;
     int x3;
     int x4;
-    string x5 INIT_NULLED_OUT;
+    class wxFont* x5 INIT_NULLED_OUT;
+    string x6 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(5);
+    SETUP_VAR_STACK_PRE_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x1);
     VAR_STACK_PUSH(4, x5);
+    VAR_STACK_PUSH(5, x6);
 
     
-    if ((n < (POFFSET+2)) || (n > (POFFSET+6))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (string label case)", POFFSET+2, POFFSET+6, n, p, 1));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+7))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in message% (string label case)", POFFSET+2, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in message% (string label case)", 0));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "initialization in message% (string label case)"));
     if (n > (POFFSET+2)) {
@@ -933,14 +969,18 @@ static Scheme_Object *os_wxMessage_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x4 = 0;
     if (n > (POFFSET+5)) {
-      x5 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+5], "initialization in message% (string label case)"));
+      x5 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+5], "initialization in message% (string label case)", 1));
     } else
-      x5 = "message";
+      x5 = NULL;
+    if (n > (POFFSET+6)) {
+      x6 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+6], "initialization in message% (string label case)"));
+    } else
+      x6 = "message";
 
     
-    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+    realobj = WITH_VAR_STACK(new os_wxMessage CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5));
+    WITH_VAR_STACK(realobj->gcInit_wxMessage(x0, x1, x2, x3, x4, x5, x6));
 #endif
     realobj->__gc_external = (void *)p[0];
     
@@ -961,8 +1001,9 @@ void objscheme_setup_wxMessage(Scheme_Env *env)
 
   wxREGGLOB(os_wxMessage_class);
 
-  os_wxMessage_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "message%", "item%", (Scheme_Method_Prim *)os_wxMessage_ConstructScheme, 7));
+  os_wxMessage_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "message%", "item%", (Scheme_Method_Prim *)os_wxMessage_ConstructScheme, 8));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "get-font" " method", (Scheme_Method_Prim *)os_wxMessageGetFont, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "set-label" " method", (Scheme_Method_Prim *)os_wxMessageSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxMessageOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxMessagePreOnEvent, 2, 2));

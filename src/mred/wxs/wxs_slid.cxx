@@ -128,7 +128,7 @@ class os_wxSlider : public wxSlider {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxSlider CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7 = -1, int x8 = -1, int x9 = wxHORIZONTAL, string x10 = "slider"));
+  os_wxSlider CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7 = -1, int x8 = -1, int x9 = wxHORIZONTAL, class wxFont* x10 = NULL, string x11 = "slider"));
   ~os_wxSlider();
   void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -155,8 +155,8 @@ void os_wxSlider::gcFixup() {
 
 static Scheme_Object *os_wxSlider_class;
 
-os_wxSlider::os_wxSlider CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, int x9, string x10))
-CONSTRUCTOR_INIT(: wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10))
+os_wxSlider::os_wxSlider CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, int x8, int x9, class wxFont* x10, string x11))
+CONSTRUCTOR_INIT(: wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11))
 {
 }
 
@@ -609,18 +609,20 @@ static Scheme_Object *os_wxSlider_ConstructScheme(int n,  Scheme_Object *p[])
   int x7;
   int x8;
   int x9;
-  string x10 INIT_NULLED_OUT;
+  class wxFont* x10 INIT_NULLED_OUT;
+  string x11 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(5);
+  SETUP_VAR_STACK_PRE_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x2);
   VAR_STACK_PUSH(4, x10);
+  VAR_STACK_PUSH(5, x11);
 
   int cb_pos = 0;
-  if ((n < (POFFSET+7)) || (n > (POFFSET+11))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in slider%", POFFSET+7, POFFSET+11, n, p, 1));
+  if ((n < (POFFSET+7)) || (n > (POFFSET+12))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in slider%", POFFSET+7, POFFSET+12, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in slider%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in slider%"));
@@ -641,14 +643,18 @@ static Scheme_Object *os_wxSlider_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x9 = wxHORIZONTAL;
   if (n > (POFFSET+10)) {
-    x10 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+10], "initialization in slider%"));
+    x10 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+10], "initialization in slider%", 1));
   } else
-    x10 = "slider";
+    x10 = NULL;
+  if (n > (POFFSET+11)) {
+    x11 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+11], "initialization in slider%"));
+  } else
+    x11 = "slider";
 
   if (x3 < x4 || x5 < x3) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; given minimum: ", p[POFFSET+4]));if (x6 <= 0) x6 = 1;
-  realobj = WITH_VAR_STACK(new os_wxSlider CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)));
+  realobj = WITH_VAR_STACK(new os_wxSlider CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
+  WITH_VAR_STACK(realobj->gcInit_wxSlider(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
 #endif
   realobj->__gc_external = (void *)p[0];
   

@@ -34,10 +34,9 @@ class wxPanel;
 
 class wxGauge: public wxItem {
 public:
-    wxGauge(void);
     wxGauge(wxPanel *panel, char *label, int range,
 	    int x = -1, int y = -1, int width = -1, int height = -1,
-	    long style = wxHORIZONTAL, char *name = "gauge");
+	    long style = wxHORIZONTAL, wxFont *_font = NULL, char *name = "gauge");
 
     Bool Create(wxPanel *panel, char *label, int range,
 		int x = -1, int y = -1, int width = -1, int height = -1,

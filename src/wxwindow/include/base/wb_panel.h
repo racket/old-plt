@@ -46,9 +46,6 @@ class wxbPanel: public wxCanvas
   int initial_vspacing;
   Bool has_child;
 
-  wxFont *labelFont;
-  wxFont *buttonFont;
-
   wxbPanel(void);
   wxbPanel(wxWindow *window,
 	   int x=-1, int y=-1, int width=-1, int height=-1, long style=0,
@@ -58,12 +55,6 @@ class wxbPanel: public wxCanvas
   // Set current label position, i.e. will label be on top or to the left
   virtual void SetLabelPosition(int pos);  // wxHORIZONTAL or wxVERTICAL
   int GetLabelPosition(void);
-
-  wxFont *GetButtonFont(void) { return buttonFont; }
-  wxFont *GetLabelFont(void) { return labelFont; }
-
-  virtual void SetButtonFont(wxFont *font);
-  virtual void SetLabelFont(wxFont *font);
 
   wxObject *GetChild(int number);
 

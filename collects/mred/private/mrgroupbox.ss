@@ -15,7 +15,7 @@
 
   ;; Not exported from MrEd:
   (define group-box%
-    (class100 basic-control% (label parent [style null])
+    (class100 basic-control% (label parent [style null] [font #f])
       (override
 	[hidden-child? (lambda () #t)])
       (sequence
@@ -27,7 +27,8 @@
 					    style
 					    (mred->wx-container parent)
 					    label
-					    style))
+					    style
+					    (no-val->#f font)))
 		    (lambda ()
 		      (let ([cwho '(constructor group-box)])
 			(check-container-ready cwho parent)))

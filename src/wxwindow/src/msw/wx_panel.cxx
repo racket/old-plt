@@ -72,8 +72,6 @@ wxPanel::wxPanel(void)
   handle = NULL;
   has_child = FALSE;
   last_created = 0;
-  labelFont = NULL;
-  buttonFont = NULL;
 }
 
 // Constructor
@@ -100,11 +98,6 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
   if (wxSubType(parent->__type, wxTYPE_PANEL)) {
     wxPanel *parentPanel = (wxPanel *)parent;
     parentPanel->GetValidPosition(&x,&y);
-    labelFont = parentPanel->labelFont;
-    buttonFont = parentPanel->buttonFont;
-  } else {
-    labelFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
-    buttonFont = wxTheFontList->FindOrCreateFont(8, wxSYSTEM, wxNORMAL, wxNORMAL, FALSE);
   }
 
   cursor_x = PANEL_LEFT_MARGIN;

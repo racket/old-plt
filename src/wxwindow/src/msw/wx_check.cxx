@@ -25,16 +25,20 @@ BOOL wxCheckBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 
 // Single check box item
 wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction func, char *Title,
-                       int x, int y, int width, int height, long style, char *name):
+                       int x, int y, int width, int height, long style, 
+		       wxFont *_font, char *name):
   wxbCheckBox(panel, func, Title, x, y, width, height, style, name)
 {
+  SetFont(_font);
   Create(panel, func, Title, NULL, x, y, width, height, style, name);
 }
 
 wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
-                       int x, int y, int width, int height, long style, char *name):
+                       int x, int y, int width, int height, long style, 
+		       wxFont *_font, char *name):
   wxbCheckBox(panel, func, bitmap, x, y, width, height, style, name)
 {
+  SetFont(_font);
   Create(panel, func, NULL, bitmap, x, y, width, height, style, name);
 }
 
@@ -101,7 +105,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
 
   ms_handle = (HANDLE)wx_button;
 
-  wxSetWinFont(labelFont, ms_handle);
+  wxSetWinFont(font, ms_handle);
 
   SetSize(x, y, width, height);
 
@@ -188,10 +192,10 @@ void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
     y = currentY;
 
   if (checkWidth < 0) {
-    wxGetCharSize(button, &cx, &cy, labelFont);
+    wxGetCharSize(button, &cx, &cy, font);
 
     GetWindowText(button, buf, 300);
-    GetTextExtent(wxStripMenuCodes(buf), &current_width, &cyf,NULL,NULL,labelFont);
+    GetTextExtent(wxStripMenuCodes(buf), &current_width, &cyf,NULL,NULL,font);
     if (width < 0)
       width = (int)(current_width + RADIO_SIZE);
     if (height<0)

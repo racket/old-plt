@@ -48,9 +48,10 @@ BOOL wxChoice::MSWCommand(UINT param, WORD id)
 
 wxChoice::wxChoice(wxPanel *panel, wxFunction func, char *Title,
                    int x, int y, int width, int height, int N, char **Choices,
-                   long style, char *name):
+                   long style, wxFont *_font, char *name):
   wxbChoice(panel, func, Title, x, y, width, height, N, Choices, style, name)
 {
+  SetFont(_font);
   Create(panel, func, Title, x, y, width, height, N, Choices, style, name);
 }
 
@@ -98,7 +99,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 				   0, 0, 0, 0, cparent->handle, nid,
 				   wxhInstance, NULL);
 
-    wxSetWinFont(labelFont, (HANDLE)static_label);
+    wxSetWinFont(font, (HANDLE)static_label);
   } else
     static_label = NULL;
   
@@ -114,7 +115,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   SubclassControl(wx_combo);
 
-  wxSetWinFont(panel->buttonFont, ms_handle);
+  wxSetWinFont(panel->font, ms_handle);
 
   {
     int i;
@@ -225,7 +226,7 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
     GetSize(&width, &height);
 
-  wxGetCharSize((HWND)ms_handle, &cx, &cy, buttonFont);
+  wxGetCharSize((HWND)ms_handle, &cx, &cy, font);
 
   // Ignore height parameter because height doesn't
   // mean 'initially displayed' height, it refers to the
@@ -250,7 +251,7 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
       {
         char *s;
 	s = GetString(i);
-        GetTextExtent(s, &len, &ht, NULL, NULL,buttonFont);
+        GetTextExtent(s, &len, &ht, NULL, NULL,font);
         if ( len > longest) longest = len;
       }
 
@@ -265,10 +266,10 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (static_label)
   {
     // Find size of label
-    wxGetCharSize((HWND)ms_handle, &clx, &cly,labelFont);
+    wxGetCharSize((HWND)ms_handle, &clx, &cly,font);
     GetWindowTextW(static_label, (wchar_t *)wxBuffer, 300);
     GetTextExtent(wxNARROW_STRING((wchar_t*)wxBuffer), 
-		  &label_width, &label_height, NULL, NULL,labelFont);
+		  &label_width, &label_height, NULL, NULL,font);
 
     // Given size is total label + edit size, so find individual
     // control sizes on that basis.
@@ -401,7 +402,7 @@ void wxChoice::SetLabel(char *label)
       ::ScreenToClient(cparent->handle, &point);
     }
 
-    GetTextExtent(label, &w, &h, NULL, NULL,labelFont);
+    GetTextExtent(label, &w, &h, NULL, NULL,font);
     MoveWindow(static_label, point.x, point.y, (int)(w + 10), (int)h,
                TRUE);
     SetWindowTextW(static_label, wxWIDE_STRING(label));

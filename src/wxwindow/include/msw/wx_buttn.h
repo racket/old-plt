@@ -21,9 +21,9 @@ class wxButton: public wxbButton
 {
  public:
   wxButton(wxPanel *panel, wxFunction func, char *label, int x = -1, int y = -1,
-           int width = -1, int height = -1, long style = 0, char *name = "button");
+           int width = -1, int height = -1, long style = 0, wxFont *_font = NULL, char *name = "button");
   wxButton(wxPanel *panel, wxFunction func, wxBitmap *bitmap, int x = -1, int y = -1,
-           int width = -1, int height = -1, long style = 0, char *name = "button");
+           int width = -1, int height = -1, long style = 0, wxFont *_font = NULL, char *name = "button");
   ~wxButton(void);
 
   Bool Create(wxPanel *panel, wxFunction func, char *label, wxBitmap *bm, int x=-1, int y=-1,

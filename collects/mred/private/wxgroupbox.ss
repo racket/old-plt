@@ -5,6 +5,7 @@
 	   "lock.ss"
 	   "wx.ss"
 	   "const.ss"
+	   "gdi.ss"
 	   "helper.ss"
 	   "wxwindow.ss"
 	   "wxitem.ss"
@@ -16,12 +17,9 @@
 
   (define canvas-based-group-box%
     (class* wx-canvas%  (wx-group-box<%>)
-      (init mred proxy style parent label style-again)
+      (init mred proxy style parent label style-again _font)
 
-      (define font (let loop ([p parent])
-		     (if (not (p . is-a? . wx:window%))
-			 (loop (send p get-parent))
-			 (send p get-control-font))))
+      (define font (or _font normal-control-font))
       
       (inherit get-dc get-client-size get-mred
 	       set-min-width set-min-height

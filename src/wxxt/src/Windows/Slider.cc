@@ -38,16 +38,9 @@
 // create and destroy button
 //-----------------------------------------------------------------------------
 
-wxSlider::wxSlider(void) : wxItem()
-{
-    __type = wxTYPE_SLIDER;
-
-    minimum = maximum = value = 0;
-}
-
 wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label,
 		   int _value, int min_value, int max_value, int width,
-		   int x, int y, long style, char *name)
+		   int x, int y, long style, wxFont *_font, char *name) : wxItem(font)
 {
     __type = wxTYPE_SLIDER;
 
@@ -90,9 +83,9 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       label_font->GetInternalAAFont(),
+	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 XtNframeType,   XfwfSunken,
 	 XtNframeWidth,  2,

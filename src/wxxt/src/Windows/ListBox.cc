@@ -51,20 +51,9 @@ char *wxchoice_unprotect_amp(char *s);
 // create and destroy wxListBox
 //-----------------------------------------------------------------------------
 
-wxListBox::wxListBox(void) : wxItem()
-{
-    __type = wxTYPE_LIST_BOX;
-
-    AllowDoubleClick(TRUE);
-
-    choices = client_data = NULL;
-    num_choices = 0;
-    num_free = 0;
-}
-
 wxListBox::wxListBox(wxPanel *panel, wxFunction func, char *title,
 		     Bool multiple, int x, int y, int width, int height,
-		     int n, char **_choices, long style, char *name) : wxItem()
+		     int n, char **_choices, long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_LIST_BOX;
 
@@ -111,9 +100,9 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
 	 XtNhighlightThickness, 2,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       label_font->GetInternalAAFont(),
+	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 NULL);
     if (!(style & wxINVISIBLE))
@@ -166,7 +155,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
       double w, h;
       char *label_stripped;
       label_stripped = wxchoice_unprotect_amp(title);
-      GetTextExtent(label_stripped, &w, &h, NULL, NULL, label_font);
+      GetTextExtent(label_stripped, &w, &h, NULL, NULL, font);
       if (vert)
 	labelh = (long)h;
       else

@@ -14,7 +14,7 @@
 
   ;; Not exported from MrEd:
   (define tab-group%
-    (class100 basic-control% (label choices parent callback [style null])
+    (class100 basic-control% (label choices parent callback [style null] [font #f])
       (override
 	[hidden-child? (lambda () #t)])
       (sequence
@@ -31,7 +31,8 @@
 					    (wrap-callback callback)
 					    label
 					    choices
-					    style))
+					    style
+					    (no-val->#f font)))
 		    (lambda ()
 		      (let ([cwho '(constructor tab-group)])
 			(check-container-ready cwho parent)))

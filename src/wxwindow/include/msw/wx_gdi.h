@@ -203,4 +203,6 @@ class wxCursor: public wxBitmap
   ~wxCursor(void);
 };
 
+extern int wxGetControlFontSize();
+
 #endif // wx_gdih

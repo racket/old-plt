@@ -112,4 +112,6 @@ public:
 			     Bool sip = FALSE);
 };
 
+extern int wxGetControlFontSize();
+
 #endif // Font_h

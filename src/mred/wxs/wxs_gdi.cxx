@@ -5335,6 +5335,26 @@ static wxFontNameDirectory* wxGetTheFontNameDirectory()
 
 
 
+static Scheme_Object *wxGDIGlobalwxGetControlFontSize(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  r = WITH_VAR_STACK(wxGetControlFontSize());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_integer(r);
+}
+
 static Scheme_Object *wxGDIGlobalwxGetTheFontNameDirectory(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5440,6 +5460,8 @@ void objscheme_setup_wxGDIGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetControlFontSize, "get-control-font-size", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("get-control-font-size", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetTheFontNameDirectory, "get-the-font-name-directory", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-font-name-directory", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxGDIGlobalwxGetTheFontList, "get-the-font-list", 0, 0));

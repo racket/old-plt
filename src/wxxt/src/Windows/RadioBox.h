@@ -35,15 +35,16 @@ class wxPanel;
 
 class wxRadioBox : public wxItem {
 public:
-    wxRadioBox(void);
     wxRadioBox(wxPanel *panel, wxFunction func, char *label,
 	       int x = -1, int y = -1, int width = -1, int height = -1,
 	       int n = 0, char **choices = NULL,
-	       int num_rows=0, long style = 0, char *name = "radioBox");
+	       int num_rows=0, long style = 0, 
+	       wxFont *_font = NULL, char *name = "radioBox");
     wxRadioBox(wxPanel *panel, wxFunction func, char *label,
 	       int x = -1, int y = -1, int width = -1, int height = -1,
 	       int n = 0, wxBitmap **choices = NULL,
-	       int num_rows=0, long style = 0, char *name = "radioBox");
+	       int num_rows=0, long style = 0, 
+	       wxFont *_font = NULL, char *name = "radioBox");
     ~wxRadioBox(void);
 
     Bool Create(wxPanel *panel, wxFunction func, char *label,

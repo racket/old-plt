@@ -31,7 +31,7 @@ BOOL wxTabChoice::MSWCommand(UINT param, WORD WXUNUSED(id))
 
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-			 int n, char **choices, int style)
+			 int n, char **choices, int style, wxFont *_font)
   : wxItem(panel)
 {
   int x = 0, y = 0, i;
@@ -43,6 +43,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
   RECT prc;
 
   __type = wxTYPE_TAB_CHOICE;
+
+  SetFont(_font);
 
   icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
   icex.dwICC  = ICC_TAB_CLASSES;

@@ -42,17 +42,9 @@
 // create and destroy button
 //-----------------------------------------------------------------------------
 
-wxRadioBox::wxRadioBox(void) : wxItem()
-{
-    __type = wxTYPE_RADIO_BOX;
-
-    toggles     = NULL;
-    num_toggles = 0;
-}
-
 wxRadioBox::wxRadioBox(wxPanel *panel, wxFunction func, char *label,
 		       int x, int y, int width, int height, int n, char **choices,
-		       int num_rows, long style, char *name) : wxItem()
+		       int num_rows, long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_RADIO_BOX;
 
@@ -65,7 +57,7 @@ wxRadioBox::wxRadioBox(wxPanel *panel, wxFunction func, char *label,
 
 wxRadioBox::wxRadioBox(wxPanel *panel, wxFunction func, char *label,
 		       int x, int y, int width, int height, int n, wxBitmap **choices,
-		       int num_rows, long style, char *name) : wxItem()
+		       int num_rows, long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_RADIO_BOX;
 
@@ -126,9 +118,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   XtNalignment,   vert ? XfwfTop : XfwfLeft,
 			   XtNbackground,  wxGREY_PIXEL,
 			   XtNforeground,  wxBLACK_PIXEL,
-			   XtNfont,        label_font->GetInternalFont(),
+			   XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-			   XtNxfont,       label_font->GetInternalAAFont(),
+			   XtNxfont,       font->GetInternalAAFont(),
 #endif
 			   XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
 			   XtNframeWidth,  0,
@@ -178,7 +170,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     // resize enforcer
     XtVaGetValues(X->handle, XtNwidth, &ww, XtNheight, &hh, NULL);
     if (label)
-      GetTextExtent(label, &lw, &lh, NULL, NULL, label_font);
+      GetTextExtent(label, &lw, &lh, NULL, NULL, font);
     else {
       lw = lh = 0;
     }
@@ -254,9 +246,9 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 			   XtNalignment,   vert ? XfwfTop : XfwfLeft,
 			   XtNbackground,  wxGREY_PIXEL,
 			   XtNforeground,  wxBLACK_PIXEL,
-			   XtNfont,        label_font->GetInternalFont(),
+			   XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-			   XtNxfont,       label_font->GetInternalAAFont(),
+			   XtNxfont,       font->GetInternalAAFont(),
 #endif
 			   XtNframeType,   (style & wxFLAT) ? XfwfChiseled : XfwfSunken,
 			   XtNframeWidth,  0,
@@ -345,7 +337,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
     // resize enforcer
     XtVaGetValues(X->handle, XtNwidth, &ww, XtNheight, &hh, NULL);
     if (label)
-      GetTextExtent(label, &lw, &lh, NULL, NULL, label_font);
+      GetTextExtent(label, &lw, &lh, NULL, NULL, font);
     else {
       lw = lh = 0;
     }

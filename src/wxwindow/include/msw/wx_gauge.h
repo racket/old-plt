@@ -22,7 +22,8 @@ class wxGauge: public wxbGauge
   HWND static_label;
  public:
   wxGauge(wxPanel *panel, char *label, int range, int x = -1, int y = -1,
-           int width = -1, int height = -1, long style = 0, char *name = "gauge");
+           int width = -1, int height = -1, long style = 0, 
+	  wxFont *_font = NULL, char *name = "gauge");
   ~wxGauge(void);
   Bool Create(wxPanel *panel, char *label, int range, int x=-1, int y=-1,
            int width=-1, int height=-1, long style=0, char *name="gauge");

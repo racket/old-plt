@@ -34,12 +34,11 @@ class wxPanel;
 
 class wxListBox : public wxItem {
 public:
-    wxListBox(void);
     wxListBox(wxPanel *panel, wxFunction func, char *title,
 	      Bool Multiple = FALSE,
 	      int x = -1, int y = -1, int width = -1, int height = -1,
 	      int n = 0, char **Choices = NULL,
-	      long style = 0, char *name = "listBox");
+	      long style = 0, wxFont *_font = NULL, char *name = "listBox");
     ~wxListBox(void);
 
     // override parent methods

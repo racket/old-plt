@@ -5,6 +5,7 @@
 	   "lock.ss"
 	   "wx.ss"
 	   "const.ss"
+	   "gdi.ss"
 	   "helper.ss"
 	   "wxwindow.ss"
 	   "wxitem.ss"
@@ -20,7 +21,7 @@
 
   (define canvas-based-tab-group%
     (class* wx-canvas% (wx-tab-group<%>)
-      (init mred proxy style parent call-back label tab-labels style-again)
+      (init mred proxy style parent call-back label tab-labels style-again _font)
       
       (define callback call-back)
 
@@ -30,10 +31,7 @@
 
       (define current-focus-tab 0)
       
-      (define font (let loop ([p parent])
-		     (if (not (p . is-a? . wx:window%))
-			 (loop (send p get-parent))
-			 (send p get-control-font))))
+      (define font (or _font normal-control-font))
       
       (inherit get-dc get-client-size get-mred
 	       set-min-width set-min-height

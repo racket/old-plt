@@ -39,7 +39,7 @@ public:
     wxChoice(wxPanel *panel, wxFunction func, char *label,
 	     int x = -1, int y = -1, int width = -1, int height = -1,
 	     int n = 0, char **choices = NULL,
-	     long style = 0, char *name = "choice");
+	     long style = 0, wxFont *_font = NULL, char *name = "choice");
     ~wxChoice(void);
 
     Bool Create(wxPanel *panel, wxFunction func, char *label,

@@ -20,11 +20,11 @@ class wxMessage: public wxbMessage
 {
  public:
   wxMessage(wxPanel *panel, char *message, int x = -1, int y = -1,
-            long style = 0, char *name = "message");
+            long style = 0, wxFont *_font = NULL, char *name = "message");
   wxMessage(wxPanel *panel, wxBitmap *image, int x = -1, int y = -1,
-            long style = 0, char *name = "message");
+            long style = 0, wxFont *_font = NULL, char *name = "message");
   wxMessage(wxPanel *panel, int iconID, int x = -1, int y = -1,
-            long style = 0, char *name = "message");
+            long style = 0, wxFont *_font = NULL, char *name = "message");
   ~wxMessage(void);
 
   Bool Create(wxPanel *panel, char *message, wxBitmap *image, int iconID, int x, int y, long style);

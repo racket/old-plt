@@ -15,21 +15,24 @@
 static int icon_w, icon_h;
 static HICON icons[3];
 
-wxMessage::wxMessage(wxPanel *panel, char *label, int x, int y, long style, char *name):
+wxMessage::wxMessage(wxPanel *panel, char *label, int x, int y, long style, wxFont *_font, char *name):
   wxbMessage(panel, label, x, y, style, name)
 {
+  SetFont(_font);
   Create(panel, label, NULL, 0, x, y, style);
 }
 
-wxMessage::wxMessage(wxPanel *panel, wxBitmap *image, int x, int y, long style, char *name):
+wxMessage::wxMessage(wxPanel *panel, wxBitmap *image, int x, int y, long style, wxFont *_font, char *name):
   wxbMessage(panel, image, x, y, style, name)
 {
+  SetFont(_font);
   Create(panel, NULL, image, 0, x, y, style);
 }
   
-wxMessage::wxMessage(wxPanel *panel, int iconID, int x, int y, long style, char *name):
+wxMessage::wxMessage(wxPanel *panel, int iconID, int x, int y, long style, wxFont *_font, char *name):
   wxbMessage(panel, "<icon>", x, y, style, name)
 {
+  SetFont(_font);
   Create(panel, NULL, NULL, iconID, x, y, style);
 }
   
@@ -119,7 +122,7 @@ Bool wxMessage::Create(wxPanel *panel, char *label, wxBitmap *image, int iconID,
   SubclassControl(static_item);
 
   if (!image)
-    wxSetWinFont(labelFont, ms_handle);
+    wxSetWinFont(font, ms_handle);
 
   panel->GetValidPosition(&x, &y);
 
@@ -165,7 +168,7 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
     y = currentY;
 
   GetWindowText((HWND)ms_handle, buf, 300);
-  GetTextExtent(buf, &current_width, &cyf, NULL, NULL,labelFont);
+  GetTextExtent(buf, &current_width, &cyf, NULL, NULL,font);
 
   GetSize(&ww, &hh);
 

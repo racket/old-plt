@@ -15,7 +15,7 @@
 class wxGroupBox : public wxItem
 {
  public:
-  wxGroupBox(wxPanel *panel, char *label, long style);
+  wxGroupBox(wxPanel *panel, char *label, long style, wxFont *_font = NULL);
   ~wxGroupBox();
 
   void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO);

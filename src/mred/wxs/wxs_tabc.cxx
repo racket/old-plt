@@ -36,7 +36,7 @@
 class wxTabChoice : public wxItem {
 public:
     wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-  	        int n, char **choices, int style);
+  	        int n, char **choices, int style, wxFont *fnt);
 
     int   GetSelection(void);
     int   Number(void);
@@ -50,7 +50,7 @@ public:
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
-			 int n, char **choices, int style)
+			 int n, char **choices, int style, wxFont *fnt)
 {
 }
 
@@ -66,10 +66,10 @@ int wxTabChoice::ButtonFocus(int n) { return 0; }
 
 class wxGroupBox : public wxItem {
 public:
-    wxGroupBox(wxPanel *panel, char *label, int style);
+    wxGroupBox(wxPanel *panel, char *label, int style, wxFont *fnt);
 };
 
-wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
+wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style, wxFont *fnt)
 {
 }
 
@@ -276,7 +276,7 @@ class os_wxTabChoice : public wxTabChoice {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = 0, string* x4 = NULL, int x5 = 0));
+  os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = 0, string* x4 = NULL, int x5 = 0, class wxFont* x6 = NULL));
   ~os_wxTabChoice();
   void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -303,8 +303,8 @@ void os_wxTabChoice::gcFixup() {
 
 static Scheme_Object *os_wxTabChoice_class;
 
-os_wxTabChoice::os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, string* x4, int x5))
-CONSTRUCTOR_INIT(: wxTabChoice(x0, x1, x2, x3, x4, x5))
+os_wxTabChoice::os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, string* x4, int x5, class wxFont* x6))
+CONSTRUCTOR_INIT(: wxTabChoice(x0, x1, x2, x3, x4, x5, x6))
 {
 }
 
@@ -916,17 +916,19 @@ static Scheme_Object *os_wxTabChoice_ConstructScheme(int n,  Scheme_Object *p[])
   int x3;
   string* x4 INIT_NULLED_OUT;
   int x5;
+  class wxFont* x6 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(5);
+  SETUP_VAR_STACK_PRE_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x2);
   VAR_STACK_PUSH(4, x4);
+  VAR_STACK_PUSH(5, x6);
 
   int cb_pos = 0;
-  if ((n < (POFFSET+3)) || (n > (POFFSET+5))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in tab-group%", POFFSET+3, POFFSET+5, n, p, 1));
+  if ((n < (POFFSET+3)) || (n > (POFFSET+6))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in tab-group%", POFFSET+3, POFFSET+6, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in tab-group%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in tab-group%"));
@@ -938,11 +940,15 @@ static Scheme_Object *os_wxTabChoice_ConstructScheme(int n,  Scheme_Object *p[])
     x5 = WITH_VAR_STACK(unbundle_symset_tabStyle(p[POFFSET+4], "initialization in tab-group%"));
   } else
     x5 = 0;
+  if (n > (POFFSET+5)) {
+    x6 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+5], "initialization in tab-group%", 1));
+  } else
+    x6 = NULL;
 
   x4 = WITH_VAR_STACK(__MakestringArray((3+POFFSET < n) ? p[POFFSET+3] : scheme_null, &x3, METHODNAME("tab-group","initialization")));
-  realobj = WITH_VAR_STACK(new os_wxTabChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
+  realobj = WITH_VAR_STACK(new os_wxTabChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxTabChoice(x0, x1, x2, x3, x4, x5));
+  WITH_VAR_STACK(realobj->gcInit_wxTabChoice(x0, x1, x2, x3, x4, x5, x6));
 #endif
   realobj->__gc_external = (void *)p[0];
   delete[] x4;
@@ -1118,7 +1124,7 @@ static int unbundle_symset_groupBoxStyle(Scheme_Object *v, const char *where) {
 class os_wxGroupBox : public wxGroupBox {
  public:
 
-  os_wxGroupBox CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2 = 0));
+  os_wxGroupBox CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2 = 0, class wxFont* x3 = NULL));
   ~os_wxGroupBox();
   void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -1143,8 +1149,8 @@ void os_wxGroupBox::gcFixup() {
 
 static Scheme_Object *os_wxGroupBox_class;
 
-os_wxGroupBox::os_wxGroupBox CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2))
-CONSTRUCTOR_INIT(: wxGroupBox(x0, x1, x2))
+os_wxGroupBox::os_wxGroupBox CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2, class wxFont* x3))
+CONSTRUCTOR_INIT(: wxGroupBox(x0, x1, x2, x3))
 {
 }
 
@@ -1547,27 +1553,33 @@ static Scheme_Object *os_wxGroupBox_ConstructScheme(int n,  Scheme_Object *p[])
   class wxPanel* x0 INIT_NULLED_OUT;
   nstring x1 INIT_NULLED_OUT;
   int x2;
+  class wxFont* x3 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(4);
+  SETUP_VAR_STACK_PRE_REMEMBERED(5);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
+  VAR_STACK_PUSH(4, x3);
 
   
-  if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in group-box%", POFFSET+2, POFFSET+3, n, p, 1));
+  if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in group-box%", POFFSET+2, POFFSET+4, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in group-box%", 0));
   x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "initialization in group-box%"));
   if (n > (POFFSET+2)) {
     x2 = WITH_VAR_STACK(unbundle_symset_tabStyle(p[POFFSET+2], "initialization in group-box%"));
   } else
     x2 = 0;
+  if (n > (POFFSET+3)) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+3], "initialization in group-box%", 1));
+  } else
+    x3 = NULL;
 
   
-  realobj = WITH_VAR_STACK(new os_wxGroupBox CONSTRUCTOR_ARGS((x0, x1, x2)));
+  realobj = WITH_VAR_STACK(new os_wxGroupBox CONSTRUCTOR_ARGS((x0, x1, x2, x3)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxGroupBox(x0, x1, x2));
+  WITH_VAR_STACK(realobj->gcInit_wxGroupBox(x0, x1, x2, x3));
 #endif
   realobj->__gc_external = (void *)p[0];
   

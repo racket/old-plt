@@ -49,7 +49,7 @@ Visual *wx_common_use_visual;
 //-----------------------------------------------------------------------------
 
 wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
-		   int style, char *name, wxGLConfig *gl_cfg) : wxItem()
+		   int style, char *name, wxGLConfig *gl_cfg) : wxItem(NULL)
 {
     __type = wxTYPE_CANVAS;
 
@@ -78,7 +78,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 	 XtNtraversalTranslationDone, TRUE,
 	 XtNhighlightThickness, ((style & wxNO_CAPTION) ? 1 : 0),
 	 XtNframeWidth, 0,

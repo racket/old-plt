@@ -16,9 +16,10 @@
 
 wxGauge::wxGauge(wxPanel *panel, char *label,
 		 int range, int x, int y, int width, int height,
-		 long style, char *name):
+		 long style, wxFont *_font, char *name):
   wxbGauge(panel, label, range, x, y, width, height, style, name)
 {
+  SetFont(_font);
   Create(panel, label, range, x, y, width, height, style, name);
 }
 
@@ -62,7 +63,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				   wxhInstance, NULL);
 
-    wxSetWinFont(labelFont, (HANDLE)static_label);
+    wxSetWinFont(font, (HANDLE)static_label);
   } else
     static_label = NULL;
 
@@ -81,7 +82,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label,
 
   SendMessage(wx_button, PBM_SETRANGE, 0, MAKELPARAM(0, range));
 
-  wxSetWinFont(buttonFont, ms_handle);
+  wxSetWinFont(font, ms_handle);
 
   SetSize(x, y, width, height, wxSIZE_AUTO);
 
@@ -135,10 +136,10 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
 
   if (static_label) {
     // Find size of label
-    wxGetCharSize((HWND)ms_handle, &clx, &cly, labelFont);
+    wxGetCharSize((HWND)ms_handle, &clx, &cly, font);
     GetWindowTextW(static_label, (wchar_t *)wxBuffer, 300);
     GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t *)wxBuffer)), 
-		  &label_width, &label_height, NULL, NULL, labelFont);
+		  &label_width, &label_height, NULL, NULL, font);
 
     // Given size is total label + edit size, find individual
     // control sizes on that basis.
@@ -277,7 +278,7 @@ void wxGauge::SetLabel(char *label)
       ::ScreenToClient(cparent->handle, &point);
     }
 
-    GetTextExtent(label, &w, &h, NULL, NULL, labelFont);
+    GetTextExtent(label, &w, &h, NULL, NULL, font);
     MoveWindow(static_label, point.x, point.y, (int)(w + 10), (int)h,
                TRUE);
     SetWindowTextW(static_label, wxWIDE_STRING(label));

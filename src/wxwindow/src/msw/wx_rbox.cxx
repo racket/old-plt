@@ -123,10 +123,12 @@ wxRadioBox::wxRadioBox(wxPanel *panel, wxFunction func,
                        char *Title,
                        int x, int y, int width, int height,
                        int N, char **Choices,
-                       int MajorDim,long style, char *name):
+                       int MajorDim,long style, 
+		       wxFont *_font, char *name):
   wxbRadioBox(panel, func, Title, x, y, width, height, N, Choices,
               MajorDim, style, name)
 {
+  SetFont(_font);
   Create(panel, func, Title, x, y, width, height, N, Choices, NULL, MajorDim, style, name);
 }
 
@@ -138,10 +140,12 @@ wxRadioBox::wxRadioBox(wxPanel *panel, wxFunction func,
                        char *Title,
                        int x, int y, int width, int height,
                        int N, wxBitmap **Choices,
-                       int MajorDim,long style, char *name):
+                       int MajorDim,long style, 
+		       wxFont *_font, char *name):
   wxbRadioBox(panel, func, Title, x, y, width, height, N, Choices,
               MajorDim, style, name)
 {
+  SetFont(_font);
   Create(panel, func, Title, x, y, width, height, N, NULL, Choices, MajorDim, style, name);
 }
 
@@ -192,7 +196,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 				wxhInstance, NULL);
   }
 
-  wxSetWinFont(labelFont, ms_handle);
+  wxSetWinFont(font, ms_handle);
 
   SubclassControl((HWND)ms_handle);
   
@@ -270,7 +274,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
 
     scp = SubclassRadioButton(radioButtons[i], this, i);
     subControlPtrs[i] = scp;
-    wxSetWinFont(buttonFont, radioButtons[i]);
+    wxSetWinFont(font, radioButtons[i]);
     subControls[i] = newId;
   }
 
@@ -475,14 +479,14 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
   //  put maxHeight/2 space between each radio button.
   //  The label can be a different font from the rest.
 
-  wxGetCharSize(wnd, &cx1, &cy1, buttonFont);
+  wxGetCharSize(wnd, &cx1, &cy1, font);
 
   if ((style & HAS_LABEL)) {
     int char_width, ignored;
     GetWindowTextW((HWND)ms_handle, (wchar_t *)wxBuffer, 300);
     GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t*)wxBuffer)), 
-		  &label_width, &label_height, NULL, NULL, labelFont);
-    wxGetCharSize(wnd, &char_width, &ignored, labelFont);
+		  &label_width, &label_height, NULL, NULL, font);
+    wxGetCharSize(wnd, &char_width, &ignored, font);
   } else {
     label_height = 0;
     label_width = 0;
@@ -495,7 +499,7 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
       // It's a labelled toggle
       GetWindowTextW(radioButtons[i], (wchar_t *)wxBuffer, 300);
       GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t*)wxBuffer)), 
-		    &current_width, &cyf,NULL,NULL, buttonFont);
+		    &current_width, &cyf,NULL,NULL, font);
       eachWidth = (int)(current_width + RADIO_SIZE);
       eachHeight = (int)cyf;
     } else {
@@ -576,7 +580,7 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
       // It's a labeled item
       GetWindowTextW(radioButtons[i], (wchar_t *)wxBuffer, 300);
       GetTextExtent(wxStripMenuCodes(wxNARROW_STRING((wchar_t *)wxBuffer)), 
-		    &current_width, &cyf, NULL, NULL, buttonFont);
+		    &current_width, &cyf, NULL, NULL, font);
       eachWidth = (int)(current_width + RADIO_SIZE);
       eachHeight = (int)cyf;
     } else {

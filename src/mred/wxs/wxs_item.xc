@@ -37,13 +37,15 @@
 
 @CLASSBASE wxMessage "message" : "item"
 
-@CREATOR (wxPanel!,string,int=-1,int=-1,SYM[messageStyle]=0,string="message"); <> string label
-@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,string="message"); : : /CHECKOK[1.METHODNAME("message%","initialization")] <> bitmap label
-@CREATOR (wxPanel!,SYM[iconID],int=-1,int=-1,SYM[messageStyle]=0,string="message"); <> icon label
+@CREATOR (wxPanel!,string,int=-1,int=-1,SYM[messageStyle]=0,wxFont^=NULL,string="message"); <> string label
+@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,wxFont^=NULL,string="message"); : : /CHECKOK[1.METHODNAME("message%","initialization")] <> bitmap label
+@CREATOR (wxPanel!,SYM[iconID],int=-1,int=-1,SYM[messageStyle]=0,wxFont^=NULL,string="message"); <> icon label
 
 @INCLUDE wxs_item.xci
 
 @ "set-label" : void SetLabel(wxBitmap!) : : /CHECKOK[0.METHODNAME("message%","set-label")] <> bitmap label
 @ "set-label" : void SetLabel(string); <> string label
+
+@ "get-font" : wxFont! GetFont();
 
 @END

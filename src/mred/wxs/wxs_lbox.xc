@@ -57,7 +57,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,SYM[kind]=wxSINGLE,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList///push,SYM[style]=0,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|glueListSet[string.8.9.8.METHODNAME("list-box%","initialization")]/glueCleanup[9]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,SYM[kind]=wxSINGLE,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList///push,SYM[style]=0,wxFont^=NULL,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|glueListSet[string.8.9.8.METHODNAME("list-box%","initialization")]/glueCleanup[9]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 

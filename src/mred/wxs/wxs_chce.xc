@@ -27,7 +27,7 @@
 #define RANGECLASS wxChoice
 @INCLUDE range.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList///push,SYM[choiceStyle]=0,string="checkBox"); : : ubCallbackSetup/glueListSet[string.7.8.7.METHODNAME("choice%","initialization")]|NOZERO[5]|NOZERO[6]/glueCleanup[8]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList///push,SYM[choiceStyle]=0,wxFont^=NULL,string="checkBox"); : : ubCallbackSetup/glueListSet[string.7.8.7.METHODNAME("choice%","initialization")]|NOZERO[5]|NOZERO[6]/glueCleanup[8]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 

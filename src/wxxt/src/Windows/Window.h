@@ -170,6 +170,8 @@ public:
 
     wxWindow **GetWinSafeRef() { return saferef; }
 
+    wxFont *GetFont() { return font; }
+    
 protected:
     // create and destroy associated device context
     void CreateDC(void);

@@ -44,7 +44,7 @@ char *wxchoice_unprotect_amp(char *s);
 
 wxChoice::wxChoice(wxPanel *panel, wxFunction function, char *label,
 		   int x, int y, int width, int height,
-		   int n, char *choices[], long style, char *name) : wxItem()
+		   int n, char *choices[], long style, wxFont *_font, char *name) : wxItem(_font)
 {
   wxMenu *naya;
 
@@ -87,9 +87,9 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       label_font->GetInternalAAFont(),
+	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 XtNshrinkToFit, TRUE,
 	 NULL);
@@ -147,7 +147,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
 	double w, h;
 	char *label_stripped;
 	label_stripped = wxchoice_unprotect_amp(label);
-	GetTextExtent(label_stripped, &w, &h, NULL, NULL, label_font);
+	GetTextExtent(label_stripped, &w, &h, NULL, NULL, font);
 	labelw = w + 2; /* 2 for separation btw label and ctl */
       }
 

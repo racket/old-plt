@@ -34,14 +34,15 @@ class wxPanel;
 
 class wxSlider : public wxItem {
 public:
-    wxSlider(void);
     wxSlider(wxPanel *panel, wxFunction func, char *label,
 	     int value, int min_value, int max_value, int width,
-	     int x = -1, int y = -1, long style = wxHORIZONTAL, char *name = "slider");
+	     int x = -1, int y = -1, long style = wxHORIZONTAL, 
+	     wxFont *_font = NULL, char *name = "slider");
 
     Bool Create(wxPanel *panel, wxFunction func, char *label,
 		int value, int min_value, int max_value, int width,
-		int x = -1, int y = -1, long style = wxHORIZONTAL, char *name = "slider");
+		int x = -1, int y = -1, long style = wxHORIZONTAL, 
+		char *name = "slider");
 
     int   GetValue(void) { return value; }
     void  SetValue(int value);

@@ -44,7 +44,7 @@ class wxsGauge : public wxGauge
 
    wxsGauge(wxPanel *panel, char *label, int rng,
 	    int x, int y, int width, int height,
-	    long style, char *name);
+	    long style, wxFont *fnt, char *name);
 
    void SetRange(int r);
 
@@ -56,9 +56,9 @@ class wxsGauge : public wxGauge
 
 wxsGauge::wxsGauge(wxPanel *panel, char *label, int rng,
 		   int x = -1, int y = -1, int width = -1, int height = -1,
-		   long style = wxHORIZONTAL, char *name = "gauge")
+		   long style = wxHORIZONTAL, wxFont *fnt = NULL, char *name = "gauge")
 : wxGauge(panel, label, rng, x, y, width, height,
-	  style, name)
+	  style, fnt, name)
 {
   range = rng; pos = 0;
 }
@@ -142,7 +142,7 @@ static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {
 class os_wxsGauge : public wxsGauge {
  public:
 
-  os_wxsGauge CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = wxHORIZONTAL, string x8 = "gauge"));
+  os_wxsGauge CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = wxHORIZONTAL, class wxFont* x8 = NULL, string x9 = "gauge"));
   ~os_wxsGauge();
   void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -167,8 +167,8 @@ void os_wxsGauge::gcFixup() {
 
 static Scheme_Object *os_wxsGauge_class;
 
-os_wxsGauge::os_wxsGauge CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2, int x3, int x4, int x5, int x6, int x7, string x8))
-CONSTRUCTOR_INIT(: wxsGauge(x0, x1, x2, x3, x4, x5, x6, x7, x8))
+os_wxsGauge::os_wxsGauge CONSTRUCTOR_ARGS((class wxPanel* x0, nstring x1, int x2, int x3, int x4, int x5, int x6, int x7, class wxFont* x8, string x9))
+CONSTRUCTOR_INIT(: wxsGauge(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9))
 {
 }
 
@@ -662,18 +662,20 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(int n,  Scheme_Object *p[])
   int x5;
   int x6;
   int x7;
-  string x8 INIT_NULLED_OUT;
+  class wxFont* x8 INIT_NULLED_OUT;
+  string x9 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(5);
+  SETUP_VAR_STACK_PRE_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x1);
   VAR_STACK_PUSH(4, x8);
+  VAR_STACK_PUSH(5, x9);
 
   
-  if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in gauge%", POFFSET+3, POFFSET+9, n, p, 1));
+  if ((n < (POFFSET+3)) || (n > (POFFSET+10))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in gauge%", POFFSET+3, POFFSET+10, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in gauge%", 0));
   x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "initialization in gauge%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "initialization in gauge%"));
@@ -698,14 +700,18 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x7 = wxHORIZONTAL;
   if (n > (POFFSET+8)) {
-    x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+8], "initialization in gauge%"));
+    x8 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+8], "initialization in gauge%", 1));
   } else
-    x8 = "gauge";
+    x8 = NULL;
+  if (n > (POFFSET+9)) {
+    x9 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+9], "initialization in gauge%"));
+  } else
+    x9 = "gauge";
 
   if (!x5) x5 = -1;if (!x6) x6 = -1;
-  realobj = WITH_VAR_STACK(new os_wxsGauge CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+  realobj = WITH_VAR_STACK(new os_wxsGauge CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxsGauge(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+  WITH_VAR_STACK(realobj->gcInit_wxsGauge(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
 #endif
   realobj->__gc_external = (void *)p[0];
   

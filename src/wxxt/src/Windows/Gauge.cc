@@ -38,15 +38,9 @@
 // create and destroy gauge
 //-----------------------------------------------------------------------------
 
-wxGauge::wxGauge(void) : wxItem()
-{
-    __type = wxTYPE_GAUGE;
-
-    range = value = 0;
-}
-
 wxGauge::wxGauge(wxPanel *panel, char *label, int _range,
-		 int x, int y, int width, int height, long style, char *name)
+		 int x, int y, int width, int height, long style, 
+		 wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_GAUGE;
 
@@ -87,9 +81,9 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 	 XtNalignment,   vert ? XfwfTop : XfwfLeft,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       label_font->GetInternalAAFont(),
+	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 XtNtraversalOn, FALSE,
 	 XtNframeType,   XfwfSunken,
@@ -116,7 +110,7 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
     // panel positioning
 
     if (label)
-      GetTextExtent(label, &lw, &lh, NULL, NULL, label_font);
+      GetTextExtent(label, &lw, &lh, NULL, NULL, font);
     else
       lw = lh = 0;
     if (vert) {

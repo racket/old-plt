@@ -120,9 +120,9 @@ class os_wxButton : public wxButton {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button"));
+  os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, class wxFont* x8 = NULL, string x9 = "button"));
 #ifndef MZ_PRECISE_GC
-  os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button"));
+  os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, class wxFont* x8 = NULL, string x9 = "button"));
 #endif
   ~os_wxButton();
   void OnDropFile(epathname x0);
@@ -150,14 +150,14 @@ void os_wxButton::gcFixup() {
 
 static Scheme_Object *os_wxButton_class;
 
-os_wxButton::os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8))
-CONSTRUCTOR_INIT(: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8))
+os_wxButton::os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, class wxFont* x8, string x9))
+CONSTRUCTOR_INIT(: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9))
 {
 }
 
 #ifndef MZ_PRECISE_GC
-os_wxButton::os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, string x8))
-CONSTRUCTOR_INIT(: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8))
+os_wxButton::os_wxButton CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, class wxFont* x8, string x9))
+CONSTRUCTOR_INIT(: wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9))
 {
 }
 #endif
@@ -637,18 +637,20 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
     int x5;
     int x6;
     int x7;
-    string x8 INIT_NULLED_OUT;
+    class wxFont* x8 INIT_NULLED_OUT;
+    string x9 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(5);
+    SETUP_VAR_STACK_PRE_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x2);
     VAR_STACK_PUSH(4, x8);
+    VAR_STACK_PUSH(5, x9);
 
     int cb_pos = 0;
-    if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in button% (bitmap label case)", POFFSET+3, POFFSET+9, n, p, 1));
+    if ((n < (POFFSET+3)) || (n > (POFFSET+10))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in button% (bitmap label case)", POFFSET+3, POFFSET+10, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in button% (bitmap label case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+2], "initialization in button% (bitmap label case)", 0));
@@ -673,14 +675,18 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x7 = 0;
     if (n > (POFFSET+8)) {
-      x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+8], "initialization in button% (bitmap label case)"));
+      x8 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+8], "initialization in button% (bitmap label case)", 1));
     } else
-      x8 = "button";
+      x8 = NULL;
+    if (n > (POFFSET+9)) {
+      x9 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+9], "initialization in button% (bitmap label case)"));
+    } else
+      x9 = "button";
 
     { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[POFFSET+2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = WITH_VAR_STACK(new os_wxButton CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+    realobj = WITH_VAR_STACK(new os_wxButton CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+    WITH_VAR_STACK(realobj->gcInit_wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
 #endif
     realobj->__gc_external = (void *)p[0];
     
@@ -695,18 +701,20 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
     int x5;
     int x6;
     int x7;
-    string x8 INIT_NULLED_OUT;
+    class wxFont* x8 INIT_NULLED_OUT;
+    string x9 INIT_NULLED_OUT;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(5);
+    SETUP_VAR_STACK_PRE_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, realobj);
     VAR_STACK_PUSH(2, x0);
     VAR_STACK_PUSH(3, x2);
     VAR_STACK_PUSH(4, x8);
+    VAR_STACK_PUSH(5, x9);
 
     int cb_pos = 0;
-    if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("initialization in button% (string label case)", POFFSET+3, POFFSET+9, n, p, 1));
+    if ((n < (POFFSET+3)) || (n > (POFFSET+10))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in button% (string label case)", POFFSET+3, POFFSET+10, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in button% (string label case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+2], "initialization in button% (string label case)"));
@@ -731,14 +739,18 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x7 = 0;
     if (n > (POFFSET+8)) {
-      x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+8], "initialization in button% (string label case)"));
+      x8 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+8], "initialization in button% (string label case)", 1));
     } else
-      x8 = "button";
+      x8 = NULL;
+    if (n > (POFFSET+9)) {
+      x9 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+9], "initialization in button% (string label case)"));
+    } else
+      x9 = "button";
 
     if (!x5) x5 = -1;if (!x6) x6 = -1;
-    realobj = WITH_VAR_STACK(new os_wxButton CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
+    realobj = WITH_VAR_STACK(new os_wxButton CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9)));
 #ifdef MZ_PRECISE_GC
-    WITH_VAR_STACK(realobj->gcInit_wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8));
+    WITH_VAR_STACK(realobj->gcInit_wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
 #endif
     realobj->__gc_external = (void *)p[0];
     

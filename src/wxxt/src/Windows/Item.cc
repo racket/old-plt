@@ -38,10 +38,10 @@
 // wxItem constructor
 //-----------------------------------------------------------------------------
 
-wxItem::wxItem(void) : wxWindow()
+wxItem::wxItem(wxFont *_font) : wxWindow()
 { 
     __type = wxTYPE_ITEM;
-    label_font = wxSYSTEM_FONT;
+    font = (_font ? _font : wxSYSTEM_FONT);
     callback = NULL;
 };
 
@@ -57,8 +57,6 @@ void wxItem::ChainToPanel(wxPanel *panel, long _style, char *name)
     parent->AddChild(this);
 
     style       = _style;
-    font       = panel->GetButtonFont();
-    label_font = panel->GetLabelFont();
 }
 
 //-----------------------------------------------------------------------------

@@ -48,7 +48,6 @@ wxPanel::wxPanel(void) : wxWindow()
     __type = wxTYPE_PANEL;
 
     default_item = NULL;
-    label_font = wxSYSTEM_FONT;
     label_pos = wxHORIZONTAL;
     cursor_x = PANEL_HMARGIN;
     cursor_y = PANEL_VMARGIN;
@@ -63,7 +62,6 @@ wxPanel::wxPanel(wxWindow *panel, int x, int y, int width, int height,
     __type = wxTYPE_PANEL;
 
     default_item = NULL;
-    label_font = wxSYSTEM_FONT;
     label_pos = wxHORIZONTAL;
     cursor_x = PANEL_HMARGIN;
     cursor_y = PANEL_VMARGIN;
@@ -85,8 +83,6 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
     parent->AddChild(this);
 
     style         = _style;
-    label_font    = panel->GetLabelFont();
-    font          = panel->font;
 
     ph = parent->GetHandle();
 
@@ -95,7 +91,7 @@ Bool wxPanel::Create(wxPanel *panel, int x, int y, int width, int height,
 	(name, xfwfEnforcerWidgetClass, ph->handle,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
-	 XtNfont,        font->GetInternalFont(),
+	 XtNfont,        wxNORMAL_FONT->GetInternalFont(),
 	 XtNhighlightThickness, 0,
 	 NULL);
     if (!(style & wxINVISIBLE))

@@ -35,15 +35,14 @@ class wxPanel;
 
 class wxCheckBox: public wxItem {
 public:
-    wxCheckBox(void);
     ~wxCheckBox(void);
 
     wxCheckBox(wxPanel *panel, wxFunction func, char *label,
 	       int x=-1, int y=-1, int width=-1, int height=-1,
-	       long style=0, char *name="checkBox");
+	       long style=0, wxFont *_font = NULL, char *name="checkBox");
     wxCheckBox(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
 	       int x=-1, int y=-1, int width=-1, int height=-1,
-	       long style=0, char *name = "checkBox");
+	       long style=0, wxFont *_font = NULL, char *name = "checkBox");
     
     Bool Create(wxPanel *panel, wxFunction func, char *label,
 		int x=-1, int y=-1, int width=-1, int height=-1,

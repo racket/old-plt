@@ -26,7 +26,7 @@ class wxListBox: public wxbListBox
              Bool Multiple = wxSINGLE|wxNEEDED_SB,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
-             long style = 0, char *name = "listBox");
+             long style = 0, wxFont *_font = NULL, char *name = "listBox");
   ~wxListBox(void);
 
   Bool Create(wxPanel *panel, wxFunction func, char *Title, Bool Multiple = FALSE,

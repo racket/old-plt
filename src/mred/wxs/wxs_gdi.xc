@@ -417,5 +417,6 @@ static wxFontNameDirectory* wxGetTheFontNameDirectory()
 @ "get-the-pen-list" : wxPenList! wxGetThePenList()
 @ "get-the-font-list" : wxFontList! wxGetTheFontList()
 @ "get-the-font-name-directory" : wxFontNameDirectory! wxGetTheFontNameDirectory()
+@ "get-control-font-size" : int wxGetControlFontSize();
 
 @END

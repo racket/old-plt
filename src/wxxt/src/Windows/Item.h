@@ -38,7 +38,7 @@ class wxBitmap;
 
 class wxItem : public wxWindow {
 public:
-  wxItem(void);
+  wxItem(wxFont *_font = NULL);
   
   // chain panel<->item, copy colours, fonts, and style
   void ChainToPanel(wxPanel *parent, long style=0, char *name=NULL);
@@ -49,7 +49,6 @@ public:
 
 protected:
     wxFunction callback;
-    wxFont     *label_font;
 };
 
 extern char *wxGetCtlLabel(char *label);

@@ -35,15 +35,14 @@ class wxPanel;
 
 class wxMessage: public wxItem {
 public:
-    wxMessage(void);
     ~wxMessage(void);
 
     wxMessage(wxPanel *panel, char *label, int x=-1, int y=-1,
-	     long style=0, char *name="message");
+	     long style=0, wxFont *_font = NULL, char *name="message");
     wxMessage(wxPanel *panel, wxBitmap *bitmap, int x=-1, int y=-1,
-	     long style=0, char *name = "message");
+	     long style=0, wxFont *_font = NULL, char *name = "message");
     wxMessage(wxPanel *panel, int iconID, int x=-1, int y=-1,
-	     long style=0, char *name = "message");
+	     long style=0, wxFont *_font = NULL, char *name = "message");
     
     Bool Create(wxPanel *panel, char *label, int x=-1, int y=-1,
 		long style=0, char *name="message");

@@ -38,14 +38,9 @@
 // create and destroy button
 //-----------------------------------------------------------------------------
 
-wxCheckBox::wxCheckBox(void) : wxItem()
-{
-    __type = wxTYPE_CHECK_BOX;
-}
-
 wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction function, char *label,
 		       int x, int y, int width, int height,
-		       long style, char *name) : wxItem()
+		       long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_CHECK_BOX;
 
@@ -54,7 +49,7 @@ wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction function, char *label,
 
 wxCheckBox::wxCheckBox(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 		       int x, int y, int width, int height,
-		       long style, char *name) : wxItem()
+		       long style, wxFont *_font, char *name) : wxItem(_font)
 {
     __type = wxTYPE_CHECK_BOX;
 
@@ -81,9 +76,9 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, char *label,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 #ifdef WX_USE_XFT
-	 XtNxfont,       label_font->GetInternalAAFont(),
+	 XtNxfont,       font->GetInternalAAFont(),
 #endif
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
@@ -149,7 +144,7 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
 	 XtNbackground,  wxGREY_PIXEL,
 	 XtNforeground,  wxBLACK_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
-	 XtNfont,        label_font->GetInternalFont(),
+	 XtNfont,        font->GetInternalFont(),
 	 XtNshrinkToFit, (width < 0 || height < 0),
 	 NULL);
     if (!(style & wxINVISIBLE))

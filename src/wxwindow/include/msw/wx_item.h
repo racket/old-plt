@@ -53,6 +53,8 @@ class wxItem: public wxbItem
    // For ownerdraw items
    virtual Bool MSWOnDraw(DRAWITEMSTRUCT *WXUNUSED(item)) { return FALSE; };
    virtual Bool MSWOnMeasure(MEASUREITEMSTRUCT *WXUNUSED(item)) { return FALSE; };
+
+   void SetFont(wxFont *f);
 };
 
 long NewId(wxItem *i);

@@ -30,7 +30,7 @@ class wxSlider: public wxbSlider
 
   wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x = -1, int y = -1,
-           long style = wxHORIZONTAL, char *name = "slider");
+           long style = wxHORIZONTAL, wxFont *_font = NULL, char *name = "slider");
   ~wxSlider(void);
 
   Bool Create(wxPanel *panel, wxFunction func, char *label, int value,

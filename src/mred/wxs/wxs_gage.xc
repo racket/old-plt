@@ -18,7 +18,7 @@ class wxsGauge : public wxGauge
 
    wxsGauge(wxPanel *panel, char *label, int rng,
 	    int x, int y, int width, int height,
-	    long style, char *name);
+	    long style, wxFont *fnt, char *name);
 
    void SetRange(int r);
 
@@ -30,9 +30,9 @@ class wxsGauge : public wxGauge
 
 wxsGauge::wxsGauge(wxPanel *panel, char *label, int rng,
 		   int x = -1, int y = -1, int width = -1, int height = -1,
-		   long style = wxHORIZONTAL, char *name = "gauge")
+		   long style = wxHORIZONTAL, wxFont *fnt = NULL, char *name = "gauge")
 : wxGauge(panel, label, rng, x, y, width, height,
-	  style, name)
+	  style, fnt, name)
 {
   range = rng; pos = 0;
 }
@@ -70,7 +70,7 @@ START_XFORM_SKIP;
 
 @CLASSBASE wxsGauge "gauge" : "item"
 
-@CREATOR (wxPanel!,nstring,int,int=-1,int=-1,int=-1,int=-1,SYM[gaugeStyle]=wxHORIZONTAL,string="gauge"); : : /NOZERO[5]|NOZERO[6]//
+@CREATOR (wxPanel!,nstring,int,int=-1,int=-1,int=-1,int=-1,SYM[gaugeStyle]=wxHORIZONTAL,wxFont^=NULL,string="gauge"); : : /NOZERO[5]|NOZERO[6]//
 
 @INCLUDE wxs_item.xci
 

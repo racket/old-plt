@@ -33,7 +33,6 @@
 class wxButton;
 class wxColour;
 class wxCommandEvent;
-class wxFont;
 class wxItem;
 
 class wxPanel : public wxWindow {
@@ -50,10 +49,6 @@ public:
     virtual void  Fit(void);
     virtual void  Layout(void);
     // data retrieved from wxItem and it's children
-    wxFont    *GetButtonFont(void)      { return font; }
-    wxFont    *GetLabelFont(void)       { return label_font; }
-    void      SetButtonFont(wxFont *fnt)      { font = fnt; }
-    void      SetLabelFont(wxFont *font)       { label_font = font; }
     // position of labels
     int   GetLabelPosition(void)           { return label_pos; }
     void  SetLabelPosition(int position)   { label_pos = position; }
@@ -78,7 +73,6 @@ protected:
     friend class wxButton;	// allow access to default_item
 
     wxButton  *default_item;	// executed on default action
-    wxFont    *label_font;	// font for labels
     int       label_pos;	// where to put the label
     int       cursor_x, cursor_y,
 	      h_space, v_space,

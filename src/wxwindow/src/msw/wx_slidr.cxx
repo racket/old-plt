@@ -19,10 +19,11 @@ wxNonlockingHashTable *wxSliderList;
 
 wxSlider::wxSlider(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x, int y,
-           long style, char *name):
+           long style, wxFont *_font, char *name):
   wxbSlider(panel, func, label, value, min_value, max_value, width, x, y,
             style, name)
 {
+  SetFont(_font);
   Create(panel, func, label, value, min_value, max_value, width, x, y,
          style, name);
 }
@@ -51,7 +52,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);
 
-  wxGetCharSize(cparent->handle, &cx, &cy,buttonFont);
+  wxGetCharSize(cparent->handle, &cx, &cy,font);
 
   if (label)
     the_label = copystring(label);
@@ -68,7 +69,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 				   0, 0, 0, 0, cparent->handle, (HMENU)nid,
 				   wxhInstance, NULL);
 
-    wxSetWinFont(labelFont, (HANDLE)static_label);
+    wxSetWinFont(font, (HANDLE)static_label);
   } else
     static_label = NULL;
 
@@ -137,10 +138,10 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 #endif
 
   if (edit_value) {
-    wxSetWinFont(buttonFont, edit_value);
+    wxSetWinFont(font, edit_value);
 #if SHOW_MIN_MAX
-    wxSetWinFont(buttonFont, static_min);
-    wxSetWinFont(buttonFont, static_max);
+    wxSetWinFont(font, static_min);
+    wxSetWinFont(font, static_max);
 #endif
   }
 
@@ -299,7 +300,7 @@ void wxSlider::SetLabel(char *label)
       ::ScreenToClient(cparent->handle, &point);
     }
 
-    GetTextExtent(label, &w, &h, NULL, NULL,labelFont);
+    GetTextExtent(label, &w, &h, NULL, NULL,font);
     MoveWindow(static_label, point.x, point.y, (int)(w + 10), (int)h,
                TRUE);
     SetWindowTextW(static_label, wxWIDE_STRING(label));
@@ -388,7 +389,7 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (y == -1)
     y = currentY;
 
-  wxGetCharSize((HWND)ms_handle, &cx, &cy, buttonFont);
+  wxGetCharSize((HWND)ms_handle, &cx, &cy, font);
 
   if (edit_value) {
     ecx = cx;
@@ -403,14 +404,14 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 
 #if SHOW_MIN_MAX
   GetWindowText(static_min, buf, 300);
-  GetTextExtent(buf, &min_len, &cyf, NULL, NULL, buttonFont);
+  GetTextExtent(buf, &min_len, &cyf, NULL, NULL, font);
 #else
   min_len = 0;
 #endif
   
 #if SHOW_MIN_MAX
   GetWindowText(static_max, buf, 300);
-  GetTextExtent(buf, &max_len, &cyf, NULL, NULL, buttonFont);
+  GetTextExtent(buf, &max_len, &cyf, NULL, NULL, font);
 #else
   max_len = 0;
 #endif
@@ -418,9 +419,9 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
   if (edit_value) {
     double min_len, max_len;
     sprintf(buf, "%d", s_min);
-    GetTextExtent(buf, &min_len, &cyf, NULL, NULL, buttonFont);
+    GetTextExtent(buf, &min_len, &cyf, NULL, NULL, font);
     sprintf(buf, "%d", s_max);
-    GetTextExtent(buf, &max_len, &cyf, NULL, NULL, buttonFont);
+    GetTextExtent(buf, &max_len, &cyf, NULL, NULL, font);
     val_width = (int)(max(min_len, max_len));
   } else {
     val_width = 0;
@@ -428,9 +429,9 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 
   if (static_label) {
     wchar_t wbuf[300];
-    wxGetCharSize((HWND)ms_handle, &cxs, &cys, labelFont);
+    wxGetCharSize((HWND)ms_handle, &cxs, &cys, font);
     GetWindowTextW(static_label, wbuf, 300);
-    GetTextExtent(wxStripMenuCodes(wxNARROW_STRING(wbuf)), &label_width, &cyf, NULL, NULL, labelFont);
+    GetTextExtent(wxStripMenuCodes(wxNARROW_STRING(wbuf)), &label_width, &cyf, NULL, NULL, font);
   }
 
   if ((windowStyle & wxVERTICAL) != wxVERTICAL) {

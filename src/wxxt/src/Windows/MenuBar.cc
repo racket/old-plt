@@ -39,7 +39,7 @@
 // constructor and destructor
 //-----------------------------------------------------------------------------
 
-wxMenuBar::wxMenuBar(void) : wxItem()
+wxMenuBar::wxMenuBar(void) : wxItem(NULL)
 {
     __type = wxTYPE_MENU_BAR;
 

@@ -247,7 +247,7 @@ class os_wxChoice : public wxChoice {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, string x10 = "checkBox"));
+  os_wxChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, class wxFont* x10 = NULL, string x11 = "checkBox"));
   ~os_wxChoice();
   void OnDropFile(epathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -274,8 +274,8 @@ void os_wxChoice::gcFixup() {
 
 static Scheme_Object *os_wxChoice_class;
 
-os_wxChoice::os_wxChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, string x10))
-CONSTRUCTOR_INIT(: wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10))
+os_wxChoice::os_wxChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, class wxFont* x10, string x11))
+CONSTRUCTOR_INIT(: wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11))
 {
 }
 
@@ -792,19 +792,21 @@ static Scheme_Object *os_wxChoice_ConstructScheme(int n,  Scheme_Object *p[])
   int x7;
   string* x8 INIT_NULLED_OUT;
   int x9;
-  string x10 INIT_NULLED_OUT;
+  class wxFont* x10 INIT_NULLED_OUT;
+  string x11 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_PRE_REMEMBERED(6);
+  SETUP_VAR_STACK_PRE_REMEMBERED(7);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, realobj);
   VAR_STACK_PUSH(2, x0);
   VAR_STACK_PUSH(3, x2);
   VAR_STACK_PUSH(4, x8);
   VAR_STACK_PUSH(5, x10);
+  VAR_STACK_PUSH(6, x11);
 
   int cb_pos = 0;
-  if ((n < (POFFSET+3)) || (n > (POFFSET+10))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in choice%", POFFSET+3, POFFSET+10, n, p, 1));
+  if ((n < (POFFSET+3)) || (n > (POFFSET+11))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in choice%", POFFSET+3, POFFSET+11, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in choice%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in choice%"));
@@ -833,14 +835,18 @@ static Scheme_Object *os_wxChoice_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x9 = 0;
   if (n > (POFFSET+9)) {
-    x10 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+9], "initialization in choice%"));
+    x10 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+9], "initialization in choice%", 1));
   } else
-    x10 = "checkBox";
+    x10 = NULL;
+  if (n > (POFFSET+10)) {
+    x11 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+10], "initialization in choice%"));
+  } else
+    x11 = "checkBox";
 
   x8 = WITH_VAR_STACK(__MakestringArray((7+POFFSET < n) ? p[POFFSET+7] : scheme_null, &x7, METHODNAME("choice%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
-  realobj = WITH_VAR_STACK(new os_wxChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)));
+  realobj = WITH_VAR_STACK(new os_wxChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10));
+  WITH_VAR_STACK(realobj->gcInit_wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11));
 #endif
   realobj->__gc_external = (void *)p[0];
   delete[] x8;

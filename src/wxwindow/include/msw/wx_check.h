@@ -25,10 +25,10 @@ class wxCheckBox: public wxbCheckBox
 
   wxCheckBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
-             long style = 0, char *name = "checkBox");
+             long style = 0, wxFont *_font = NULL, char *name = "checkBox");
   wxCheckBox(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
              int x = -1, int y = -1, int width = -1, int height = -1,
-             long style = 0, char *name = "checkBox");
+             long style = 0, wxFont *_font = NULL, char *name = "checkBox");
   ~wxCheckBox(void);
 
   Bool Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *bitmap,

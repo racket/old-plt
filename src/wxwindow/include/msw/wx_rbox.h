@@ -32,7 +32,8 @@ class wxRadioBox: public wxbRadioBox
   wxRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x = -1, int y = -1, int width = -1, int height = -1,
              int N = 0, char **Choices = NULL,
-             int majorDim = 0, long style = wxHORIZONTAL, char *name = "radioBox");
+             int majorDim = 0, long style = wxHORIZONTAL, 
+	     wxFont *_font = NULL, char *name = "radioBox");
 
   virtual void ChangeToGray(Bool gray);
   void SetButton(int which, int value);
@@ -40,7 +41,8 @@ class wxRadioBox: public wxbRadioBox
   wxRadioBox(wxPanel *panel, wxFunction func, char *Title,
              int x, int y, int width, int height,
              int N, wxBitmap **Choices,
-             int majorDim = 0, long style = wxHORIZONTAL, char *name = "radioBox");
+             int majorDim = 0, long style = wxHORIZONTAL, 
+	     wxFont *_font = NULL, char *name = "radioBox");
 
   ~wxRadioBox(void);
 

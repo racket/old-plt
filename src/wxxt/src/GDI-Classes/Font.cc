@@ -984,3 +984,8 @@ static XFontStruct *wxLoadQueryNearestFont(const char *name,
 
   return font;
 }
+
+int wxGetControlFontSize()
+{
+  return wxNORMAL_FONT->GetPointSize();
+}

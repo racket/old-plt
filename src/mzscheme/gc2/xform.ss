@@ -143,7 +143,7 @@
   (define-struct (braces seq) ())
   (define-struct (callstage-parens parens) ())
   (define-struct (creation-parens parens) ())
-  (define-struct (call tok) (func args live tag)) ;; a converted function call
+  (define-struct (call tok) (func args live tag nonempty?)) ;; a converted function call
   (define-struct (block-push tok) (vars tag super-tag top?))
   (define-struct (note tok) (s))
 
@@ -792,7 +792,8 @@
 				new-vars 
 				pushed-vars 
 				num-calls 
-				num-noreturn-calls))
+				num-noreturn-calls
+				nonempty-calls?))
 
   ;; A function prototype record:
   (define-struct prototype (type args static? pointer? pointer?-determined?))
@@ -955,7 +956,8 @@
 			(live-var-info-new-vars live-vars)
 			(live-var-info-pushed-vars live-vars)
 			(live-var-info-num-calls live-vars)
-			(live-var-info-num-noreturn-calls live-vars)))
+			(live-var-info-num-noreturn-calls live-vars)
+			(live-var-info-nonempty-calls? live-vars)))
 
   (define gentag-count 0)
 
@@ -1146,7 +1148,7 @@
 	    (display/indent v (note-s v))
 	    (newline/indent indent)]
 	   [(call? v)
-	    (if (null? (call-live v))
+	    (if (not (call-nonempty? v))
 		(display/indent v "FUNCCALL_EMPTY(")
 		(if (and ordered? (prev-was-funcall? prevs))
 		    ;; Do fast version
@@ -2235,7 +2237,7 @@
 					 null)
 				     (lambda () null)
 				     ;; Initially, no live vars, no introduiced vars, etc.:
-				     (make-live-var-info #f -1 0 null null null 0 0) 
+				     (make-live-var-info #f -1 0 null null null 0 0 #f) 
 				     ;; Add PREPARE_VAR_STACK and ensure result return:
 				     (parse-proto-information
 				      e
@@ -2549,7 +2551,8 @@
 							     (live-var-info-new-vars live-vars)
 							     (live-var-info-pushed-vars live-vars)
 							     (live-var-info-num-calls live-vars)
-							     (live-var-info-num-noreturn-calls live-vars)))]
+							     (live-var-info-num-noreturn-calls live-vars)
+							     (live-var-info-nonempty-calls? live-vars)))]
 			   [(eq? (tok-n (caar body)) START_XFORM_SKIP)
 			    (let skip-loop ([body (cdr body)])
 			      (let*-values ([(end?) (eq? (tok-n (caar body)) END_XFORM_SKIP)]
@@ -2744,7 +2747,8 @@
 					      (live-var-info-new-vars live-vars)
 					      (live-var-info-pushed-vars live-vars)
 					      (live-var-info-num-calls live-vars)
-					      (live-var-info-num-noreturn-calls live-vars)))))))))))
+					      (live-var-info-num-noreturn-calls live-vars)
+					      (live-var-info-nonempty-calls? live-vars)))))))))))
 
   (define (body-var-decl? e)
     (and (pair? e)
@@ -2904,7 +2908,8 @@
 					       (live-var-info-new-vars live-vars))
 					 (live-var-info-pushed-vars live-vars)
 					 (live-var-info-num-calls live-vars)
-					 (live-var-info-num-noreturn-calls live-vars))))
+					 (live-var-info-num-noreturn-calls live-vars)
+					 (live-var-info-nonempty-calls? live-vars))))
 				(loop (cdr el) (cons (wrap e) new-args) setups new-vars 
 				      (if must-convert?
 					  ok-calls
@@ -3211,7 +3216,11 @@
 				       ;; non-returning -> don't need to push vars
 				       null]
 				      [else
-				       (live-var-info-vars orig-live-vars)])])
+				       (live-var-info-vars orig-live-vars)])]
+			[this-nonempty?
+			 (and (not non-returning?)
+			      (or (pair? pushed-vars)
+				  (live-var-info-nonempty-calls? live-vars)))])
 		   (loop rest-
 			 (let ([call (if (and (null? (cdr func))
 					      (memq (tok-n (car func)) non-gcing-functions))
@@ -3226,7 +3235,8 @@
 					  func
 					  args
 					  pushed-vars
-					  (live-var-info-tag orig-live-vars)))])
+					  (live-var-info-tag orig-live-vars)
+					  this-nonempty?))])
 			   (cons (if (null? setups)
 				     call
 				     (make-callstage-parens
@@ -3250,7 +3260,9 @@
 					       (append new-pushed old-pushed))
 					     (add1 (live-var-info-num-calls live-vars))
 					     (+ (if non-returning? 1 0)
-						(live-var-info-num-noreturn-calls live-vars)))))))))]
+						(live-var-info-num-noreturn-calls live-vars))
+					     (or this-nonempty?
+						 (live-var-info-nonempty-calls? live-vars)))))))))]
 	 [(eq? 'goto (tok-n (car e-)))
 	  ;; Goto - assume all vars are live
 	  (loop (cdr e-) (cons (car e-) result) 
@@ -3302,7 +3314,8 @@
 				     (live-var-info-new-vars live-vars))
 			       (live-var-info-pushed-vars live-vars)
 			       (live-var-info-num-calls live-vars)
-			       (live-var-info-num-noreturn-calls live-vars))))
+			       (live-var-info-num-noreturn-calls live-vars)
+			       (live-var-info-nonempty-calls? live-vars))))
 		      (begin
 			(when (and (not (null? assignee))
 				   (or (if (brackets? (car assignee))
@@ -3374,7 +3387,8 @@
 						 (live-var-info-new-vars live-vars)
 						 new-pushed-vars
 						 (live-var-info-num-calls live-vars)
-						 (live-var-info-num-noreturn-calls live-vars))))]
+						 (live-var-info-num-noreturn-calls live-vars)
+						 (live-var-info-nonempty-calls? live-vars))))]
 			[(restore-new-vars)
 			 (lambda (live-vars)
 			   (make-live-var-info (live-var-info-tag live-vars)
@@ -3384,7 +3398,8 @@
 					       orig-new-vars
 					       orig-pushed-vars
 					       (live-var-info-num-calls live-vars)
-					       (live-var-info-num-noreturn-calls live-vars)))]
+					       (live-var-info-num-noreturn-calls live-vars)
+					       (live-var-info-nonempty-calls? live-vars)))]
 			[(e live-vars rest extra)
 			 (cond
 			  [(and do? (not exit-with-error?))

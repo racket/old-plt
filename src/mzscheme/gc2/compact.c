@@ -1359,7 +1359,6 @@ void GC_mark(const void *p)
 	if (offset >= page->alloc_boundary) {
 	  /* Past allocation region. */
 	  CRASH(10);
-	  return;
 	}
 #endif
 
@@ -2536,6 +2535,7 @@ void GC_fixup(void *pp)
 	  }
 	}
 #endif
+	
 	if (offset < page->compact_boundary)
 	  r = (void *)(page->o.compact_to + v);
 	else

@@ -40,6 +40,17 @@
 		     (basis:setting-name x)))
            basis:settings))
 
+  (let ([frame-width 600]
+	[frame-height 650]
+	[window-trimming-upper-bound-width 20]
+	[window-trimming-upper-bound-height 50])
+    (let-values ([(w h) (get-display-size)])
+      (set! frame-width (min frame-width (- w window-trimming-upper-bound-width)))
+      (set! frame-height (min frame-height (- h window-trimming-upper-bound-height))))
+    (fw:preferences:set-default 'drscheme:unit-window-width frame-width number?)
+    (fw:preferences:set-default 'drscheme:unit-window-height frame-height number?))
+
+
   (fw:preferences:set-default 'drscheme:backtrace-window-width 400 number?)
   (fw:preferences:set-default 'drscheme:backtrace-window-height 300 number?)
 

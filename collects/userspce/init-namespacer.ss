@@ -9,7 +9,44 @@
   (define (init-namespace)
     (teachpack-thunk)
     (setup-primitives)
+    (add-extra-macros)
     (make-keywords))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;;                                               ;;;
+  ;;;                 Extra Macros                  ;;;
+  ;;;                                               ;;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+  (define extra-macros
+    (let ([names '(local
+		      split
+		    split*
+		    tprompt
+		    nand
+		    recur
+		    rec
+		    evcase
+		    reference-file
+		    polymorphic
+		    mrspidey:control 
+		    ;;type:
+		    :
+		    define-type
+		    define-constructor)]
+	  [namespace (make-namespace)])
+      (parameterize ([current-namespace namespace])
+	(require-library "macro.ss")
+	(require-library "spidey.ss")
+	(require-library "refer.ss")
+	(require-library "tmacro.ss" "graphics")
+	(map (lambda (x) (list x (global-defined-value x)))
+	     names))))
+
+  (define (add-extra-macros)
+    (when (init-params:setting-teaching-syntax? (init-params:current-setting))
+      (for-each (lambda (x) (apply global-defined-value x)) extra-macros)))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;;                                               ;;;

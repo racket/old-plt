@@ -150,6 +150,7 @@
 	      (lambda xxx
 		(let ([v (send compatible-with-student-languages get-value)])
 		  (basis:set-setting-teaching-primitives?! settings v)
+		  (basis:set-setting-teaching-syntax?! settings v)
 		  (basis:set-setting-case-sensitive?! settings v)
 		  (basis:set-setting-unmatched-cond/case-is-error?! settings v)
 		  (basis:set-setting-signal-undefined! settings v)
@@ -196,6 +197,11 @@
 	    (make-check-box basis:set-setting-teaching-primitives?!
 			    basis:setting-teaching-primitives?
 			    "Teaching language primitives"
+			    dynamic-panel)]
+	   [teaching-syntax?
+	    (make-check-box basis:set-setting-teaching-syntax?!
+			    basis:setting-teaching-syntax?
+			    "Teaching language syntax"
 			    dynamic-panel)]
 	   [printer-number->symbol
 	    (lambda (which)
@@ -273,6 +279,7 @@
 		     (compare-check-box unmatched-cond/case-is-error? basis:setting-unmatched-cond/case-is-error?)
 		     (compare-check-box signal-undefined basis:setting-signal-undefined)
 		     (compare-check-box teaching-primitives? basis:setting-teaching-primitives?)
+		     (compare-check-box teaching-syntax? basis:setting-teaching-syntax?)
 		     (compare-check-box sharing-printing? basis:setting-sharing-printing?)
 		     (compare-check-box whole/fractional-exact-numbers basis:setting-whole/fractional-exact-numbers)
 		     (compare-check-box booleans-as-true/false basis:setting-print-booleans-as-true/false)
@@ -297,6 +304,7 @@
 		(cond
 		 [(member (basis:setting-name v) language-choice-choices)
 		  (send teaching-primitives? enable #f)
+		  (send teaching-syntax? enable #f)
 		  (send language-choice-panel change-children
 			(lambda (l) (list language-choice)))
 		  (send language-choice set-string-selection (basis:setting-name v))
@@ -304,19 +312,21 @@
 		 [else
 		  (send language-choice set-string-selection full-scheme)
 
-		  (let ([teaching-primitives-ok?
+		  (let ([teaching-ok?
 			 (regexp-match re:mred (basis:setting-name v))])
-		    (send teaching-primitives? enable teaching-primitives-ok?)
+		    (send teaching-primitives? enable teaching-ok?)
+		    (send teaching-syntax? enable teaching-ok?)
 		    (send compatible-with-student-languages
 			  set-value
 			  (and zodiac?
-			       teaching-primitives-ok?
+			       teaching-ok?
 			       (basis:setting-case-sensitive? v)
 			       (basis:setting-unmatched-cond/case-is-error? v)
 			       (basis:setting-signal-undefined v)
-			       (basis:setting-teaching-primitives? v)))
+			       (basis:setting-teaching-primitives? v)
+			       (basis:setting-teaching-syntax? v)))
 		    (send compatible-with-student-languages enable
-			  (and teaching-primitives-ok? zodiac?)))
+			  (and teaching-ok? zodiac?)))
 		  
 		  (send language-choice-panel change-children
 			(lambda (l)
@@ -346,14 +356,16 @@
 		       basis:setting-print-booleans-as-true/false
 		       basis:setting-unmatched-cond/case-is-error?
 		       basis:setting-signal-undefined
-		       basis:setting-teaching-primitives?)
+		       basis:setting-teaching-primitives?
+		       basis:setting-teaching-syntax?)
 		 (list case-sensitive? 
 		       sharing-printing?
 		       whole/fractional-exact-numbers
 		       booleans-as-true/false
 		       unmatched-cond/case-is-error?
 		       signal-undefined
-		       teaching-primitives?))
+		       teaching-primitives?
+		       teaching-syntax?))
 
 		(send printing enable 1
 		      (not (eq? (basis:setting-vocabulary-symbol v) 'beginner)))

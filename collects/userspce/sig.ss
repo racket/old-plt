@@ -142,7 +142,7 @@
 		    printing
 		    use-pretty-printer?
 		    teaching-primitives?
-		    ))
+		    teaching-syntax?))
    make-setting/parse
 
    teaching-level?

@@ -337,7 +337,7 @@
   (define <%> (interface (fw:frame:editor<%> basics<%> fw:frame:text-info<%>)))
 
   (define -mixin
-    (mixin (fw:frame:editor<%> fw:frame:text-info<%> basics<%>) (<%>) (name)
+    (mixin (fw:frame:editor<%> fw:frame:text-info<%> basics<%>) (<%>) (name . args)
 
 
       (inherit get-editor)
@@ -391,7 +391,7 @@
       
       (inherit get-menu% get-menu-bar)
       (sequence 
-	(super-init name)
+	(apply super-init name args)
 	(set! show-menu (make-object (get-menu%) "&Show" (get-menu-bar))))
       
       (private

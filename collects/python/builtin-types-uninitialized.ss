@@ -36,6 +36,7 @@
   (define py-static-method% (immutable-type '|static method|))
   (define py-classmethod% (immutable-type 'classmethod))
   (define py-module% (immutable-type 'module))
+  (define py-slice% (immutable-type 'slice))
 
 
   (define (python-add-members node assoc-list)

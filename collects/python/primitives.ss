@@ -544,6 +544,11 @@
                                             (python-get-type-name py-none%)
                                             "instances")))))
   
+  (python-add-members py-slice%
+                      `((__init__ ,(opt-lambda (this lower upper [step py-none])
+                                     (python-set-member! this 'start lower)
+                                     (python-set-member! this 'stop upper)
+                                     (python-set-member! this 'step step)))))
   
   (define py-none (make-python-node py-none% (make-hash-table) #f))
   
@@ -590,17 +595,49 @@
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this
                                                                   scheme-list-key
-                                                                  v)))))
+                                                                  v)))
+                        (__getitem__ ,(py-lambda '__getitem__ (this key)
+                                                 (simple-get-item this key list->py-tuple% py-tuple%->list)))
+                        (__len__ ,(py-lambda '__len__ (this)
+                                             (number->py-number% (length (py-tuple%->list this)))))))
   
   (python-add-members py-list%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this
                                                                   scheme-list-key
                                                                   v)))
-                        (__getitem__ ,(py-lambda '__getitem__ (this i)
-                                                 (list-ref (py-list%->list this)
-                                                           (py-number%->number i))))))
-  
+                        (__getitem__ ,(py-lambda '__getitem__ (this key)
+                                                 (simple-get-item this key list->py-list% py-list%->list)))
+                        (__len__ ,(py-lambda '__len__ (this)
+                                             (number->py-number% (length (py-list%->list this)))))))
+                                                                          
+
+  (define (simple-get-item this key list-to-sequence sequence-to-list)
+  (cond
+                                                   [(py-is-a? key py-number%)
+                                                 (list-ref (sequence-to-list this)
+                                                           (py-number%->number key))]
+                                                   [(py-is-a? key py-slice%)
+                                                    (let* ([len (py-number%->number
+                                                                 (python-method-call this '__len__))]
+                                                           [start (py-number%->number
+                                                                   (python-get-member key
+                                                                                      'start))]
+                                                           [stop (min len
+                                                                      (py-number%->number
+                                                                       (python-get-member key
+                                                                                          'stop)))]
+                                                           [step (let ([s (python-get-member key 'step)])
+                                                                   (if (py-is? s py-none)
+                                                                       1
+                                                                       (py-number%->number s)))])
+                                                      (list-to-sequence
+                                                      (map (lambda (i)
+                                                             (python-method-call this '__getitem__
+                                                                                 (number->py-number% i)))
+                                                           (build-list (floor (/ (- stop start) step))
+                                                                       (lambda (i) (* (+ i start) step))))))]
+                                                   [else (error "Invalid key for __getitem__")]))
   (python-add-members py-dict%
                       `((__init__ ,(py-lambda '__init__ (this v)
                                               (python-set-member! this

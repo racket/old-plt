@@ -68,14 +68,13 @@
     (newline))
 
   
-  (define-syntax build-class-body-entry
-    (lambda (stx)
+  (define-syntax (build-class-body-entry stx)
       (datum->syntax-object stx
                             (syntax-case stx (define)
                               [(_ (define method-name procedure))
                                `(list ',(syntax method-name) ,(syntax procedure))])
                             stx
-                            stx)))
+                            stx))
        
 
   
@@ -89,8 +88,7 @@
                            #,(syntax then))])))
   
   
-  (define-syntax build-class-body
-    (lambda (stx)
+  (define-syntax (build-class-body stx)
       (datum->syntax-object
        stx
        `(list ,@(syntax-case stx (define)
@@ -110,6 +108,6 @@
                                [expr `(lambda () ,(syntax expr))])
                              d-or-e d-or-e))
                           defs-and-exprs))]))
-       stx stx)))
+       stx stx))
  
   )

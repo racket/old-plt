@@ -6,7 +6,8 @@
            classmethod
            int
            float
-           StringType
+           slice
+           str
            None
            NoneType
            type
@@ -20,18 +21,19 @@
   (define staticmethod py-static-method%)
   (define int py-int%)
   (define float py-float%)
-  (define StringType py-string%)
+  (define str py-string%)
   (define None py-none)
   (define NoneType py-none%)
   (define type py-type%)
   (define classmethod py-classmethod%)
+  (define slice py-slice%)
   
   (define (range i)
     (list->py-list%
      (build-list (py-number%->number i) number->py-number%)))
   
   (define (len l)
-    (number->py-number% (length (py-list%->list l))))
+    (python-method-call l '__len__))
   
   (define (py-sqrt n)
     (number->py-number% (sqrt (py-number%->number n))))

@@ -381,6 +381,22 @@
         (when upper (send upper set-bindings! enclosing-scope))
         (send expression set-bindings! enclosing-scope))
       
+      ;;daniel
+      (inherit ->orig-so)
+      ;; to do - check that expression evals to a python sequence
+      (define/override (to-scheme)
+        (->orig-so `(,(py-so 'python-method-call)
+                     ,(send expression to-scheme)
+                     '__getitem__
+                     (,(py-so 'py-create)
+                      ,(py-so 'py-slice%)
+                      ,(if lower
+                           (send lower to-scheme)
+                           `(,(py-so 'number->py-number) 0))
+                      ,(if upper
+                           (send upper to-scheme)
+                           `(,(py-so 'number->py-number) +inf.0))))))
+      
       (super-instantiate ())))
   
   ;; 5.3.4

@@ -1,0 +1,47 @@
+
+This is the PLT software package directory. 
+
+The standard location for this directory is:
+  /usr/local/lib/plt
+If this directory is elsewhere, then the environment variable PLTHOME
+must be set to the path of the "plt" directory.
+
+After unpacking this distribution, run the `install' script
+in the plt directory (while the plt directory is the current
+directory).
+
+For more information, see
+  http://www.cs.rice.edu/CS/PLT/packages/
+
+Executables
+-----------
+
+The main executables are:
+  ${PLTHOME}/drscheme/drscheme    (sh script)
+  ${PLTHOME}/mred/mred            (sh script)
+  ${PLTHOME}/mzscheme/mzscheme    (sh script)
+
+DrScheme relies on MrEd. You may not have some of these packages
+depending on which distribution you downloaded.
+
+The ${PLTHOME}/bin directory contains a link for each executable.
+
+The actual executable binaries for mred and mzscheme are in mred/.bin/
+and mzscheme/.bin/, respectively, in a platform-dependent
+subdirectory. The sh scripts pick an appropiate binary based on
+`uname`, so a single plt directory can be used in a multi-platform
+environment. (This causes problems for writing MzScheme scripts. See
+mzscheme/SCRIPTS for a clever trick.)
+
+Documentation
+-------------
+
+Most of the PLT documentation must be downloaded separately from the
+executables. (The exception is the DrScheme manual, which is accessed
+within DrScheme through the "Help" button.)
+
+HTML documentation for PLT software should be installed into
+${PLTHOME}/doc. For example, the DrScheme documenation should be in
+${PLTHOME}/doc/drscheme, with button icons in ${PLTHOME}/doc/icons.
+MrEd will automatically add sections installed here to its "Help"
+menu.

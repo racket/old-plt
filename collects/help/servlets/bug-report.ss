@@ -57,7 +57,7 @@
 	    (TR 
 	     (TD (FONT ((SIZE "+2")) (B "Send bug report to PLT")))
 	     (TD ((ALIGN "right")) 
-		 (A ((HREF "/doc/")) "Help Desk home"))))
+		 ,home-page)))
      (P)
      (FORM ((ACTION "/servlets/confirm-bug.ss")
 	    (METHOD "POST"))

@@ -30,7 +30,7 @@
 	    (TR 
 	     (TD (FONT ((SIZE "+2")) (B ,s)))
 	     (TD ((ALIGN "right")) 
-		 (A ((HREF "/doc/")) "Help Desk home")))))
+		 ,home-page))))
 
   (let* ([bindings (request-bindings initial-request)]
 	 [raw-bug-report-data (extract-binding/single 'bug-report-data bindings)]

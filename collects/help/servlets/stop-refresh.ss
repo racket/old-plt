@@ -16,8 +16,4 @@
       (BODY
 	(H2 (B ,(color-with "red" "Refresh of CVS manuals stopped")))
 	(P)
-	(A ((HREF "/doc/")
-	    (TARGET "_top")) "Help Desk home")))))
-
-
-
+	,home-page))))

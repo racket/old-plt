@@ -95,8 +95,8 @@
 		 (TR 
 		  (TD (FONT ((SIZE "+2")) (B "Confirm bug report")))
 		  (TD ((ALIGN "right")) 
-		      (A ((HREF "/doc/")) "Help Desk home"))))
-	  (P)
+		      ,home-page)))
+	  (P)	
 	  "Your bug report contains the "
 	  "information shown below.  Hit the \"Confirm\" button "
 	  "to finish.  Use the \"Back\" button on your browser " 
@@ -143,7 +143,6 @@
 		    ("Human language" language)
 		    ("Installed documentation" documentation)
 		    ("Installed collections" collections))))))])))
-
 
 
 

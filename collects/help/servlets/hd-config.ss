@@ -130,7 +130,7 @@
 				 (VALUE "Reset"))))))
 	     (P)
 	     (CENTER 
-	      (A ((HREF "/doc/")) "Help Desk home"))))))
+	      ,home-page)))))
   
   config-page)
 

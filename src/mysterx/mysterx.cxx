@@ -1304,7 +1304,7 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
 
   case VT_USERDEFINED :
 
-    s = "symbol";
+    s = "user-defined";
     break;
 
   default :
@@ -1577,7 +1577,7 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
   case VT_USERDEFINED : 
 
-    return SCHEME_SYMBOLP(val);
+    return TRUE;
 
   default :
 

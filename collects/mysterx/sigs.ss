@@ -103,6 +103,7 @@
    navigate
    go-back
    go-forward
+   refresh
    register-navigate-handler
    current-url
    current-document	

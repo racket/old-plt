@@ -1548,7 +1548,6 @@
 	    [navigate-sem (make-semaphore 0)]
 	    [navigate-mutex (make-semaphore 1)]
 	    [navigate-url #f]
-	    [port-mutex (make-semaphore 1)]
 	    [handler-sem (make-semaphore 1)]  ; protects *handler-table* and its contained hash tables
 	    [handler-wait (lambda () (semaphore-wait handler-sem))]
 	    [handler-post (lambda () (semaphore-post handler-sem))]
@@ -1604,6 +1603,8 @@
 	     (make-navigator mxprims:go-back 'go-back)]
 	    [go-forward
 	     (make-navigator mxprims:go-forward 'go-forward)]
+	    [refresh
+	     (lambda () (mxprims:refresh browser))]
 	    [current-url
 	     (lambda ()
 	       (mxprims:current-url browser))]

@@ -233,4 +233,38 @@
 (syntax-test #'(discard-context . (+ 1 2 3)))
 (syntax-test #'(discard-context keep-context + 1 2 3))
 
+;; ----------------------------------------
+
+(define-syntax (et-struct-info stx)
+  (syntax-case stx ()
+    [(_ id) #`(quote #,(syntax-local-value #'id))]))
+
+(let ([v (et-struct-info exn)])
+  (test '(struct:exn make-exn exn? (exn-continuation-marks exn-message) (#f #f) #t) values v))
+
+(let ([v (et-struct-info exn:break)])
+  (test '(struct:exn:break make-exn:break exn:break? (exn:break-continuation exn-continuation-marks exn-message) (#f #f #f) exn) values v))
+
+(let ([v (et-struct-info arity-at-least)])
+  (test '(struct:arity-at-least make-arity-at-least arity-at-least? 
+				(arity-at-least-value) (set-arity-at-least-value!) #t) 
+	values v))
+
+(let ()
+  (define-struct a (x y))
+  (let ([v (et-struct-info a)])
+    (test '(struct:a make-a a? (a-y a-x) (set-a-y! set-a-x!) #t) values v)
+    (let ()
+      (define-struct (b a) (z))
+      (let ([v (et-struct-info b)])
+	(test '(struct:b make-b b? (b-z a-y a-x) (set-b-z! set-a-y! set-a-x!) a) values v)))
+    (let ()
+      (define-struct (b exn) (z))
+      (let ([v (et-struct-info b)])
+	(test '(struct:b make-b b? (b-z exn-continuation-marks exn-message) (set-b-z! #f #f) exn) values v)))))
+    
+  
+
+;; ----------------------------------------
+
 (report-errs)

@@ -1,1 +1,1 @@
-#include "jconfig.mac"
+#include "jconfig-mac.h"

@@ -3,6 +3,7 @@
 
 (unit/sig userspace:basis^
   (import [import : userspace:basis-import^]
+	  [params : plt:userspace:params^]
 	  [zodiac : drscheme:zodiac^]
 	  [zodiac:interface : drscheme:interface^]
 	  [aries : plt:aries^]
@@ -25,8 +26,6 @@
   (define primitive-load (current-load))
   (define primitive-eval (current-eval))
 
-  (define <=-at-least-two-args (make-parameter #f))
-  (define eq?-only-compares-symbols (make-parameter #f))
   (define r4rs-style-printing (make-parameter #f))
   
   (define this-program (with-handlers ([void "mzscheme"]) (global-defined-value 'program)))
@@ -112,7 +111,7 @@
 	  (vector 'MzScheme (make-setting/parse
 			     `((use-zodiac? #f)
 			       (vocabulary-symbol mzscheme)
-			       (case-sensitive? #f)
+			       (case-sensitive? #t)
 			       (allow-set!-on-undefined? #f)
 			       (unmatched-cond/case-is-error? #f)
 			       (allow-improper-lists? #t)
@@ -131,7 +130,7 @@
 	  (vector '|MzScheme Debug| (make-setting/parse
 				     `((use-zodiac? #t)
 				       (vocabulary-symbol mzscheme-debug)
-				       (case-sensitive? #f)
+				       (case-sensitive? #t)
 				       (allow-set!-on-undefined? #f)
 				       (unmatched-cond/case-is-error? #f)
 				       (allow-improper-lists? #t)
@@ -489,6 +488,7 @@
 		   [current-output-port port])
       (drscheme-print/void value)))
 
+  (define ricedefs@ (require-library "ricedefr.ss" "userspce"))
 
     ;; initialize-parameters : custodian
     ;;                         (list-of symbols)
@@ -539,21 +539,24 @@
 	
 	(read-case-sensitive (setting-case-sensitive? setting))
 
-	;; this sets both the zodiac and the cons procedure setting,
-	;; via a dynamic link in basis.ss
-	(zodiac:allow-improper-lists (or (not (setting-use-zodiac? setting))
-					 (setting-allow-improper-lists? setting)))
-	;; Allow ` , and ,@ ? - FIXME!
-	(zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
-	
-	(eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
-	(<=-at-least-two-args (setting-<=-at-least-two-args setting))
-	
-	(zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
-
 	(aries:signal-undefined (setting-signal-undefined setting))
 	(aries:signal-not-boolean (setting-signal-not-boolean setting))
-	
+
+	;; Allow ` , and ,@ ? - FIXME!
+	(zodiac:allow-reader-quasiquote (setting-allow-reader-quasiquote? setting))
+	(zodiac:disallow-untagged-inexact-numbers (setting-disallow-untagged-inexact-numbers setting))
+
+	;; ricedefs
+	(let ([improper-lists?
+	       (or (not (setting-use-zodiac? setting))
+		   (setting-allow-improper-lists? setting))])
+	  (zodiac:allow-improper-lists improper-lists?)
+	  (params:allow-improper-lists improper-lists?))
+	(params:eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
+	(params:<=-at-least-two-args (setting-<=-at-least-two-args setting))
+	(invoke-open-unit/sig ricedefs@ #f (params : plt:userspace:params^))
+	;; end ricedefs
+
 	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))
 	(compile-allow-cond-fallthrough (not (setting-unmatched-cond/case-is-error? setting)))
 

@@ -16,9 +16,11 @@
   (link [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						   (import)
 						   (define in-mzscheme? #f)))]
+	[params : plt:userspace:params^ ((require-library "paramr.ss" "userspce"))]
 	[basis : userspace:basis^
 	       ((require-library "basis.ss" "userspce")
 		basis-import
+		params
 		zodiac
 		interface
 		aries

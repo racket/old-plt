@@ -2,7 +2,6 @@
 (module readr mzscheme
   (require (lib "unitsig.ss")
 	   (lib "class.ss")
-	   (lib "class100.ss")
            (lib "file.ss")
            (lib "etc.ss")
 	   (lib "mred-sig.ss" "mred")
@@ -637,34 +636,102 @@
 		   (send icon-mask ok?))
 	(set! icon #f))
       
+      (define sm-super-frame%
+        (frame:searchable-mixin
+         (frame:standard-menus-mixin
+          frame:basic%)))
+      
       (define sm-frame%
-	(class100 frame% args
+	(class sm-super-frame%
           (rename [super-on-subwindow-char on-subwindow-char])
           (inherit get-menu-bar set-icon)
-          (override
-            [on-size
-             (lambda (w h)
-               (put-pref 'sirmail:frame-width w)
-               (put-pref 'sirmail:frame-height h)
-               (update-frame-width))]
-            [can-close? (lambda () (send (get-menu-bar) is-enabled?))]
-            [on-close (lambda () (logout))]
-            [on-subwindow-char
-             (lambda (w e)
-               (or (and
-                    (send (send main-frame get-menu-bar) is-enabled?)
-                    (or (send global-keymap handle-key-event w e)
-                        (and (eq? #\tab (send e get-key-code))
-                             (member w (list header-list message))
-                             (send (if (eq? w message)
-                                       header-list
-                                       message)
-                                   focus))))
-                   (super-on-subwindow-char w e)))])
-          (sequence
-            (apply super-init args)
-            (when icon
-              (set-icon icon icon-mask 'both)))))
+
+          (define/override (file-menu:create-new?) #f)
+          (define/override (file-menu:create-open?) #f)
+          (define/override (file-menu:create-open-recent?) #f)
+          
+          (define/override (file-menu:between-save-as-and-print file-menu)
+            (make-object menu-item% "&Get New Mail" file-menu
+              (lambda (i e) (get-new-mail))
+              #\g)
+            (make-object menu-item% "&Download All" file-menu
+              (lambda (i e) (download-all))
+              #\l)
+            (make-object menu-item% "&New Message" file-menu
+              (lambda (i e) (start-new-mailer #f "" "" "" "" "" null))
+              #\m)
+            (make-object menu-item% "&Resume Message..." file-menu
+              (lambda (i e) 
+                (let ([file (get-file "Select message to resume"
+                                      main-frame)])
+                  (when file
+                    (start-new-mailer file "" "" "" "" "" null)))))
+            (instantiate menu-item% () 
+              (label "Send Queued Messages")
+              (parent file-menu)
+              (demand-callback
+               (lambda (menu-item) 
+                 (send menu-item enable (enqueued-messages?))))
+              (callback
+               (lambda (i e)
+                 (send-queued-messages))))
+            
+            (make-object separator-menu-item% file-menu)
+            (make-object menu-item% "&Save Message As..." file-menu
+              (lambda (i e)
+                (let ([f (put-file "Save message to"
+                                   main-frame)])
+                  (when f
+                    (send (send message get-editor) save-file f 'text))))))
+          
+          (define/override (file-menu:create-print?) #t)
+          (define/override (file-menu:print-callback i e)
+            (send (send message get-editor) print))
+          
+          (define/override (file-menu:between-print-and-close file-menu)
+            (make-object separator-menu-item% file-menu)
+            (set! mailboxes-menu (make-object menu% "&Open Mailbox" file-menu))
+            (make-object menu-item% "&Add Mailbox..." file-menu
+              (lambda (i e) (add-mailbox)))
+            (make-object separator-menu-item% file-menu)
+            (make-object menu-item% "D&isconnect" file-menu
+              (lambda (i e) 
+                (disconnect)
+                (send disconnected-msg show #t))
+              #\i))
+          
+          (define/override (file-menu:create-close?) #f)
+          (define/override (file-menu:quit-callback i e) (logout))
+          
+          (inherit get-edit-target-object)
+          (define/override (get-text-to-search) 
+            (or (get-edit-target-object)
+                (send message get-editor)))
+          
+          (rename [super-on-size on-size])
+          [define/override on-size
+            (lambda (w h)
+              (put-pref 'sirmail:frame-width w)
+              (put-pref 'sirmail:frame-height h)
+              (update-frame-width)
+              (super-on-size w h))]
+          [define/override can-close? (lambda () (send (get-menu-bar) is-enabled?))]
+          [define/override on-close (lambda () (logout))]
+          [define/override on-subwindow-char
+            (lambda (w e)
+              (or (and
+                   (send (send main-frame get-menu-bar) is-enabled?)
+                   (or (send global-keymap handle-key-event w e)
+                       (and (eq? #\tab (send e get-key-code))
+                            (member w (list header-list message))
+                            (send (if (eq? w message)
+                                      header-list
+                                      message)
+                                  focus))))
+                  (super-on-subwindow-char w e)))]
+          (super-instantiate ())
+          (when icon
+            (set-icon icon icon-mask 'both))))
       
       (define header-list%
 	(class hierarchical-list%
@@ -887,66 +954,64 @@
       (define body-pen (send the-pen-list find-or-create-pen "forest green" 0 'solid))
       (define body-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
       (define vertical-line-snip%
-	(class100 snip% ()
+	(class snip%
           (inherit set-snipclass get-style get-admin)
-          (private-field
+          (field
            [width 15]
            [height 10])
-          (override
-            [get-extent
-             (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
-               (for-each (lambda (box) (when box (set-box! box 0)))
-                         (list w-box h-box lspace-box rspace-box))
-               (let ([old-font (send dc get-font)])
-                 (send dc set-font (send (get-style) get-font))
-                 (let-values ([(w h descent ascent)
-                               (send dc get-text-extent "yxX")])
-                   (when w-box
-                     (set-box! w-box width))
-                   
-                   ;; add one here because I know the descent for the entire
-                   ;; line is going to be one more than the descent of the font.
-                   (when descent-box
-                     (set-box! descent-box (+ descent 1)))
-                   
-                   (when space-box
-                     (set-box! space-box ascent))
-                   (let ([text (and (get-admin)
-                                    (send (get-admin) get-editor))])
-                     
-                     ;; add 2 here because I know lines are two pixels taller
-                     ;; than the font. How do I know? I just know.
-                     (set! height (+ h 2))
-                     (when h-box
-                       (set-box! h-box (+ h 2)))
-                     
-                     (send dc set-font old-font)))))]
-            [draw
-             (lambda (dc x y left top right bottom dx dy draw-caret)
-               (let ([orig-pen (send dc get-pen)]
-                     [orig-brush (send dc get-brush)])
-                 (send dc set-pen body-pen)
-                 (send dc set-brush body-brush)
-                 
-                 (send dc draw-line 
-                       (+ x (quotient width 2))
-                       y
-                       (+ x (quotient width 2))
-                       (+ y (- height 1)))
-                 
-                 (send dc set-pen orig-pen)
-                 (send dc set-brush orig-brush)))]
-            [write
-             (lambda (s)
-               (void))]
-            [copy
-             (lambda ()
-               (let ([s (make-object vertical-line-snip%)])
-                 (send s set-style (get-style))
-                 s))])
-          (sequence
-            (super-init)
-            (set-snipclass vertical-line-snipclass))))
+          [define/override get-extent
+            (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
+              (for-each (lambda (box) (when box (set-box! box 0)))
+                        (list w-box h-box lspace-box rspace-box))
+              (let ([old-font (send dc get-font)])
+                (send dc set-font (send (get-style) get-font))
+                (let-values ([(w h descent ascent)
+                              (send dc get-text-extent "yxX")])
+                  (when w-box
+                    (set-box! w-box width))
+                  
+                  ;; add one here because I know the descent for the entire
+                  ;; line is going to be one more than the descent of the font.
+                  (when descent-box
+                    (set-box! descent-box (+ descent 1)))
+                  
+                  (when space-box
+                    (set-box! space-box ascent))
+                  (let ([text (and (get-admin)
+                                   (send (get-admin) get-editor))])
+                    
+                    ;; add 2 here because I know lines are two pixels taller
+                    ;; than the font. How do I know? I just know.
+                    (set! height (+ h 2))
+                    (when h-box
+                      (set-box! h-box (+ h 2)))
+                    
+                    (send dc set-font old-font)))))]
+          [define/override draw
+            (lambda (dc x y left top right bottom dx dy draw-caret)
+              (let ([orig-pen (send dc get-pen)]
+                    [orig-brush (send dc get-brush)])
+                (send dc set-pen body-pen)
+                (send dc set-brush body-brush)
+                
+                (send dc draw-line 
+                      (+ x (quotient width 2))
+                      y
+                      (+ x (quotient width 2))
+                      (+ y (- height 1)))
+                
+                (send dc set-pen orig-pen)
+                (send dc set-brush orig-brush)))]
+          [define/override write
+            (lambda (s)
+              (void))]
+          [define/override copy
+            (lambda ()
+              (let ([s (make-object vertical-line-snip%)])
+                (send s set-style (get-style))
+                s))]
+          (super-instantiate ())
+          (set-snipclass vertical-line-snipclass)))
       
       (define common-style-list #f)
       (define (single-style t)
@@ -1007,7 +1072,7 @@
 	(let ([s (apply format args)])
           (unless (equal? s last-status)
             (set! last-status s)
-            (send f set-status-text s))))
+            (send sm-frame set-status-text s))))
       
       (define can-poll? #t)
       
@@ -1025,11 +1090,11 @@
       
       (define display-text% (html-text-mixin text%))
       
-      (define f (make-object sm-frame% mailbox-name #f 
-                  (get-pref 'sirmail:frame-width)
-                  (get-pref 'sirmail:frame-height)))
-      (set! main-frame f)
-      (define sizing-panel (make-object panel:vertical-dragable% f))
+      (define sm-frame (make-object sm-frame% mailbox-name #f 
+                         (get-pref 'sirmail:frame-width)
+                         (get-pref 'sirmail:frame-height)))
+      (set! main-frame sm-frame)
+      (define sizing-panel (make-object panel:vertical-dragable% (send sm-frame get-area-container)))
       (define top-half (make-object vertical-panel% sizing-panel))
       (define button-panel (make-object horizontal-panel% top-half))
       (define header-list (make-object header-list% top-half))
@@ -1049,59 +1114,8 @@
 	    (send e set-autowrap-bitmap b)))
 	(send e lock #t))
       
-      (define mb (make-object menu-bar% f))
-      (define file-menu (make-object menu% "&File" mb))
-      (define edit-menu (make-object menu% "&Edit" mb))
+      (define mb (send sm-frame get-menu-bar))
       (define msg-menu (make-object menu% "&Message" mb))
-      (make-object menu-item% "&Get New Mail" file-menu
-        (lambda (i e) (get-new-mail))
-        #\G)
-      (make-object menu-item% "&Download All" file-menu
-        (lambda (i e) (download-all))
-        #\L)
-      
-      (make-object menu-item% "&New Message" file-menu
-		   (lambda (i e) (start-new-mailer #f "" "" "" "" "" null))
-		   #\M)
-      (make-object menu-item% "&Resume Message..." file-menu
-        (lambda (i e) 
-          (let ([file (get-file "Select message to resume"
-                                main-frame)])
-            (when file
-              (start-new-mailer file "" "" "" "" "" null)))))
-      (instantiate menu-item% () 
-        (label "Send Queued Messages")
-        (parent file-menu)
-        (demand-callback
-         (lambda (menu-item) 
-           (send menu-item enable (enqueued-messages?))))
-        (callback
-         (lambda (i e)
-           (send-queued-messages))))
-      
-      (make-object separator-menu-item% file-menu)
-      (make-object menu-item% "&Save Message As..." file-menu
-        (lambda (i e)
-          (let ([f (put-file "Save message to"
-                             main-frame)])
-            (when f
-              (send (send message get-editor) save-file f 'text)))))
-      (make-object menu-item% "&Print" file-menu
-        (lambda (i e) (send (send message get-editor) print))
-        #\P)
-      (make-object separator-menu-item% file-menu)
-      (define mailboxes-menu (make-object menu% "&Open Mailbox" file-menu))
-      (make-object menu-item% "&Add Mailbox..." file-menu
-        (lambda (i e) (add-mailbox)))
-      (make-object separator-menu-item% file-menu)
-      (make-object menu-item% "D&isconnect" file-menu
-        (lambda (i e) 
-          (disconnect)
-          (send disconnected-msg show #t))
-        #\I)
-      (make-object menu-item% "&Quit" file-menu
-        (lambda (i e) (logout))
-        #\Q)
       
       (make-object menu-item% "&Reply" msg-menu
 		   (lambda (i e) (do-reply #f quote-in-reply?))
@@ -1383,23 +1397,6 @@
                                         c)))))]))))
 	     (status ""))
 	   void)))
-      
-      (append-editor-operation-menu-items edit-menu #t)
-      ; Certain menu items are never useful since the window is read-only:
-      (for-each
-       (lambda (i)
-	 (when (and (is-a? i labelled-menu-item<%>)
-		    (member (send i get-plain-label) '("Undo" "Redo" "Paste" "Cut" "Clear")))
-	   (send i delete)))
-       (send edit-menu get-items))
-      ;; If there's a leftover top or bottom separator, drop it
-      (let ([items (send edit-menu get-items)])
-	(when ((car items) . is-a? . separator-menu-item%)
-	  (send (car items) delete))
-	(when ((car (last-pair items)) . is-a? . separator-menu-item%)
-	  (send (car (last-pair items)) delete)))
-      
-      (add-preferences-menu-items edit-menu)
 
       (define no-status-handler (lambda (x) (status "") (raise x)))
       
@@ -1443,6 +1440,12 @@
 		'truncate)
 	      (reset-mailboxes-menus)
 	      (status "Added mailbox")))))
+      
+      ;; goofy definition since this variable
+      ;; is initialized above and we don't want
+      ;; to clobber that initialization with 
+      ;; this one.
+      (define mailboxes-menu mailboxes-menu)
       
       (define (reset-mailboxes-menus)
 	(for-each
@@ -1650,9 +1653,9 @@
       
       (for-each add-message mailbox)
       
-      (send f create-status-line)
+      (send sm-frame create-status-line)
       
-      (send f show #t)
+      (send sm-frame show #t)
       (set! got-started? #t)
 
       (when (SORT)
@@ -1667,6 +1670,8 @@
 	  (send last select #t)
 	  (queue-callback (lambda () (send last scroll-to)))))
 
+      (frame:reorder-menus sm-frame)
+      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Message Parsing                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

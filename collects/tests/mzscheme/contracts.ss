@@ -4,13 +4,14 @@
   
 (SECTION 'contracts)
 
+  (parameterize ([error-print-width 200])
 (let ()
   ;; test/spec-passed : symbol sexp -> void
   ;; tests a passing specification
   (define (test/spec-passed name expression)
-    (test 'passed
-          eval
-	  `(let () ,expression 'passed)))
+    (test (void)
+          (let ([for-each-eval (lambda (l) (for-each eval l))]) for-each-eval)
+          (list expression '(void))))
   
   ;; test/spec-failed : symbol sexp string -> void
   ;; tests a failing specification with blame assigned to `blame'
@@ -21,12 +22,11 @@
 	     (and m (cadr m)))))
     (test blame
           failed-contract
-	  (eval
-	   `(with-handlers ([(lambda (x) (and (not-break-exn? x) (exn? x)))
-			     exn-message])
-	      ,expression
-	      'failed/expected-exn-got-normal-termination))))
-
+          (with-handlers ([(lambda (x) (and (not-break-exn? x) (exn? x)))
+                           exn-message])
+            (eval expression)
+            'failed/expected-exn-got-normal-termination)))
+  
   (test/spec-passed
    'contract-flat1 
    '(contract not #f 'pos 'neg))
@@ -457,6 +457,48 @@
    '(let ()
       (define/contract i (-> integer? integer?) (lambda (x) (i #t)))
       (i 1))
-   "<<unknown>>"))
+   "<<unknown>>")
+  
+  (test/spec-passed
+   'provide/contract1
+   '(let ()
+      (eval '(module contract-test-suite1 mzscheme
+               (require (lib "contracts.ss"))
+               (provide/contract (x integer?))
+               (define x 1)))
+      (eval '(require contract-test-suite1))
+      (eval 'x)))
+  
+  (test/spec-passed
+   'provide/contract2
+   '(let ()
+      (eval '(module contract-test-suite2 mzscheme
+               (require (lib "contracts.ss"))
+               (provide/contract)))
+      (eval '(require contract-test-suite2))))
+  
+  (test/spec-failed
+   'provide/contract3
+   '(let ()
+      (eval '(module contract-test-suite3 mzscheme
+               (require (lib "contracts.ss"))
+               (provide/contract (x integer?))
+               (define x #f)))
+      (eval '(require contract-test-suite3))
+      (eval 'x))
+   "contract-test-suite3")
+  
+  (test/spec-passed
+   'provide/contract4
+   '(let ()
+      (eval '(module contract-test-suite4 mzscheme
+               (require (lib "contracts.ss"))
+               (provide/contract (struct s ((a any?))))
+               (define-struct s (a))))
+      (eval '(require contract-test-suite4))
+      (eval '(list make-s s-a s? set-s-a!))))
+  
+  
+  ))
 
 (report-errs)

@@ -19,6 +19,7 @@
   
   (require (lib "class.ss"))
   (require (lib "contract-helpers.scm" "mzlib" "private"))
+  (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
   
   ;; (define/contract id contract expr)
   ;; defines `id' with `contract'; initially binding
@@ -93,99 +94,249 @@
       [(_ name contract-expr expr)
        (raise-syntax-error 'define/contract "expected identifier in first position"
                            define-stx
-                           (syntax name))]))
+                           (syntax name))])) 
   
-  (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
-  
-  ;; (provide/contract (id expr) ...)
+  ;; (provide/contract p/c-ele ...)
+  ;; p/c-ele = (id expr) | (struct (id expr) ...)
   ;; provides each `id' with the contract `expr'.
   (define-syntax (provide/contract provide-stx)
-    (syntax-case provide-stx ()
-      [(_) (raise-syntax-error 'provide/contract "must provide at least one id")]
-      [(_ (id ctrct) ...)
-       (andmap identifier? (syntax->list (syntax (id ...))))
-       (with-syntax ([(id-rename ...)
-                      (map (lambda (x)
-                             (datum->syntax-object
-                              provide-stx
-                              (string->symbol
-                               (format "provide/contract-id-~a-ACK-DONT_USE_ME"
-                                       (syntax-object->datum x)))))
-                           (syntax->list (syntax (id ...))))]
-                     [(contract-id ...)
-                      (map (lambda (x)
-                             (datum->syntax-object
-                              provide-stx
-                              (string->symbol
-                               (format "provide/contract-contract-id-~a-ACK-DONT_USE_ME"
-                                       (syntax-object->datum x)))))
-                           (syntax->list (syntax (id ...))))]
-                     [pos-module-source (datum->syntax-object
-                                         provide-stx
-                                         (string->symbol
-                                          (format 
-                                           "provide/contract-pos-module-source-~a-ACK-DONT_USE_ME"
-                                           (car (syntax->list (syntax (id ...)))))))]
-                     [pos-stx (datum->syntax-object provide-stx 'here)]
-                     [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)])
-         (syntax
-          (begin
-            (provide (rename id-rename id) ...)
-            (require (lib "contract-helpers.scm" "mzlib" "private"))
-            
-            (define pos-module-source (module-source-as-symbol #'pos-stx))
-            ;; this is here to check for unbound ids.
-            (if #f (begin (void) id ...))
-            
-            (define contract-id ctrct) ...
-            (define-syntax id-rename
-              (make-set!-transformer
-               (lambda (stx)
-                 (with-syntax ([neg-stx (datum->syntax-object stx 'here)])
-                   (syntax-case stx (set!)
-                     [(set! _ body) (raise-syntax-error
-                                     #f 
-                                     "cannot set! provide/contract identifier"
-                                     stx
-                                     (syntax _))]
-                     [(_ arg (... ...))
-                      (syntax 
-                       ((-contract contract-id
-                                   id
-                                   pos-module-source
-                                   (module-source-as-symbol #'neg-stx)
-                                   (quote-syntax _))
-                        arg
-                        (... ...)))]
-                     [_
-                      (identifier? (syntax _))
-                      (syntax 
-                       (-contract contract-id
-                                  id  
-                                  pos-module-source 
-                                  (module-source-as-symbol #'neg-stx)
-                                  (quote-syntax _)))])))))
-            ...)))]
-      [(_ clauses ...)
-       (for-each
-	(lambda (clause)
-	  (syntax-case clause ()
-	    [(x y)
-	     (identifier? (syntax x))
-	     (void)]
-	    [(x y)
-	     (raise-syntax-error
-	      'provide/contract
-	      "malformed clause (expected an identifier as first item in clause)"
-	      provide-stx
-	      (syntax x))]
-	    [_ (raise-syntax-error
-		'provide/contract
-		"malformed clause (expected two items in each clause)"
-		provide-stx
-		clause)]))
-	(syntax->list (syntax (clauses ...))))]))
-
+    (syntax-case provide-stx (struct)
+      [(_ p/c-ele ...)
+       (let ()
+         
+         ;; code-for-each-clause : (listof syntax) -> (listof syntax)
+         ;; constructs code for each clause of a provide/contract
+         (define (code-for-each-clause clauses)
+           (cond
+             [(null? clauses) null]
+             [else
+              (let ([clause (car clauses)])
+                (syntax-case clause (struct)
+                  [(struct struct-name ((field-name contract) ...))
+                   (and (identifier? (syntax struct-name))
+                        (andmap identifier? (syntax->list (syntax (field-name ...)))))
+                   (build-struct-code (syntax struct-name)
+                                      (syntax->list (syntax (field-name ...)))
+                                      (syntax->list (syntax (contract ...))))]                        
+                  [(struct name)
+                   (identifier? (syntax name))
+                   (raise-syntax-error 'provide/contract
+                                       "missing fields"
+                                       provide-stx
+                                       clause)]
+                  [(struct name (fields ...))
+                   (for-each (lambda (field)
+                               (syntax-case field ()
+                                 [(x y) 
+                                  (identifier? (syntax x)) 
+                                  (void)]
+                                 [(x y) 
+                                  (raise-syntax-error 'provide/contract
+                                                      "malformed struct field, expected identifier"
+                                                      provide-stx
+                                                      (syntax x))]
+                                 [else
+                                  (raise-syntax-error 'provide/contract
+                                                      "malformed struct field"
+                                                      provide-stx
+                                                      field)]))
+                             (syntax->list (syntax (fields ...))))
+                   
+                   ;; if we didn't find a bad field something is wrong!
+                   (raise-syntax-error 'provide/contract "internal error" provide-stx clause)]
+                  [(struct name . fields)
+                   (raise-syntax-error 'provide/contract
+                                       "malformed struct fields"
+                                       provide-stx
+                                       clause)]
+                  [(name contract)
+                   (identifier? (syntax name))
+                   (cons (code-for-one-id (syntax name) (syntax contract))
+                         (code-for-each-clause (cdr clauses)))]
+                  [(name contract)
+                   (raise-syntax-error 'provide/contract
+                                       "expected identifier"
+                                       provide-stx
+                                       (syntax name))]
+                  [unk
+                   (raise-syntax-error 'provide/contract
+                                       "malformed clause"
+                                       provide-stx
+                                       (syntax unk))]))]))
+         
+         ;; build-struct-code : syntax (listof syntax) (listof syntax) -> syntax
+         ;; constructs the code for a struct clause
+         (define (build-struct-code struct-name field-names field-contracts)
+           (let* ([field-contract-ids (map (lambda (field-name) 
+                                             (mangle-id field-name "provide/contract-field-contract"))
+                                           field-names)]
+                  [selector-ids (map (lambda (field-contract-id) 
+                                       (build-selector-id struct-name field-contract-id))
+                                     field-contract-ids)]
+                  [mutator-ids (map (lambda (field-contract-id) 
+                                      (build-mutator-id struct-name field-contract-id))
+                                    field-contract-ids)]
+                  [predicate-id (build-predicate-id struct-name)])
+             (with-syntax ([(selector-codes ...)
+                            (map (lambda (field-name field-contract-id) 
+                                   (code-for-one-id (build-selector-id struct-name 
+                                                                       field-contract-id)
+                                                    (build-selector-contract struct-name 
+                                                                             predicate-id
+                                                                             field-contract-id)))
+                                 field-names
+                                 field-contract-ids)]
+                           [(mutator-codes ...)
+                            (map (lambda (mutator-id field-contract-id)
+                                   (code-for-one-id mutator-id 
+                                                    (build-mutator-contract struct-name 
+                                                                            predicate-id
+                                                                            field-contract-id)))
+                                 mutator-ids
+                                 field-contract-ids)]
+                           [predicate-code (code-for-one-id predicate-id (syntax (-> any? boolean?)))]
+                           [constructor-code (code-for-one-id 
+                                              (build-constructor-id struct-name)
+                                              (build-constructor-contract field-contract-ids 
+                                                                          predicate-id))]
+                           [(field-contracts ...) field-contracts]
+                           [(field-contract-ids ...) field-contract-ids])
+               (syntax 
+                (begin
+                  (define field-contract-ids field-contracts) ...
+                  selector-codes ...
+                  mutator-codes ...
+                  predicate-code
+                  constructor-code)))))
+         
+         ;; build-constructor-contract : (listof syntax) syntax -> syntax
+         (define (build-constructor-contract field-contract-ids predicate-id)
+           (with-syntax ([(field-contract-ids ...) field-contract-ids]
+                         [predicate-id predicate-id])
+             (syntax (-> field-contract-ids ... predicate-id))))
+         
+         ;; build-selector-contract : syntax syntax -> syntax
+         ;; constructs the contract for a selector
+         (define (build-selector-contract struct-name predicate-id field-contract-id)
+           (with-syntax ([field-contract-id field-contract-id]
+                         [predicate-id predicate-id])
+             (syntax (-> predicate-id field-contract-id))))
+         
+         ;; build-mutator-contract : syntax syntax -> syntax
+         ;; constructs the contract for a selector
+         (define (build-mutator-contract struct-name predicate-id field-contract-id)
+           (with-syntax ([field-contract-id field-contract-id]
+                         [predicate-id predicate-id])
+             (syntax (-> predicate-id contract-id void?))))
+         
+         ;; build-constructor-id : syntax -> syntax
+         ;; constructs the name of the selector for a particular field of a struct
+         (define (build-constructor-id struct-name)
+           (datum->syntax-object
+            struct-name
+            (string->symbol
+             (string-append
+              "make-"
+              (symbol->string (syntax-object->datum struct-name))))))
+         
+         ;; build-predicate-id : syntax -> syntax
+         ;; constructs the name of the selector for a particular field of a struct
+         (define (build-predicate-id struct-name)
+           (datum->syntax-object
+            struct-name
+            (string->symbol
+             (string-append
+              (symbol->string (syntax-object->datum struct-name))
+              "?"))))
+         
+         ;; build-selector-id : syntax syntax -> syntax
+         ;; constructs the name of the selector for a particular field of a struct
+         (define (build-selector-id struct-name field-name)
+           (datum->syntax-object
+            struct-name
+            (string->symbol
+             (string-append
+              (symbol->string (syntax-object->datum struct-name))
+              "-"
+              (symbol->string (syntax-object->datum field-name))))))
+         
+         ;; build-mutator-id : syntax syntax -> syntax
+         ;; constructs the name of the selector for a particular field of a struct
+         (define (build-mutator-id struct-name field-name)
+           (datum->syntax-object
+            struct-name
+            (string->symbol
+             (string-append
+              "set-"
+              (symbol->string (syntax-object->datum struct-name))
+              "-"
+              (symbol->string (syntax-object->datum field-name))
+              "!"))))
+         
+         ;; code-for-one-id : syntax syntax -> syntax
+         ;; given the syntax for an identifier and a contract,
+         ;; builds a begin expression for the entire contract and provide
+         (define (code-for-one-id id ctrct)
+           (with-syntax ([id-rename (mangle-id id "provide/contract-id")]
+                         [contract-id (mangle-id id "provide/contract-contract-id")]
+                         [pos-module-source (mangle-id id "provide/contract-pos-module-source")]
+                         [pos-stx (datum->syntax-object provide-stx 'here)]
+                         [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)]
+                         [id id]
+                         [ctrct ctrct])
+             (syntax
+              (begin
+                (provide (rename id-rename id))
+                
+                ;; unbound id check
+                (if #f id)
+                (define pos-module-source (module-source-as-symbol #'pos-stx))
+                (define contract-id ctrct)
+                (define-syntax id-rename
+                  (make-set!-transformer
+                   (lambda (stx)
+                     (with-syntax ([neg-stx (datum->syntax-object stx 'here)])
+                       (syntax-case stx (set!)
+                         [(set! _ body) (raise-syntax-error
+                                         #f 
+                                         "cannot set! provide/contract identifier"
+                                         stx
+                                         (syntax _))]
+                         [(_ arg (... ...))
+                          (syntax 
+                           ((-contract contract-id
+                                       id
+                                       pos-module-source
+                                       (module-source-as-symbol #'neg-stx)
+                                       (quote-syntax _))
+                            arg
+                            (... ...)))]
+                         [_
+                          (identifier? (syntax _))
+                          (syntax 
+                           (-contract contract-id
+                                      id  
+                                      pos-module-source 
+                                      (module-source-as-symbol #'neg-stx)
+                                      (quote-syntax _)))])))))))))
+         
+         ;; mangle-id : syntax string -> syntax
+         ;; constructs a mangled name of an identifier from an identifier
+         ;; the name isn't fresh, so `id' must already be unique.
+         (define (mangle-id id prefix)
+           (datum->syntax-object
+            provide-stx
+            (string->symbol
+             (string-append
+              prefix
+              (format "-~a-ACK-DONT_USE_ME" (syntax-object->datum id))))))
+         
+         (with-syntax ([(bodies ...) (code-for-each-clause (syntax->list (syntax (p/c-ele ...))))])
+           (syntax 
+            (begin
+              (require (lib "contract-helpers.scm" "mzlib" "private"))
+              bodies ...))))]))
+  
   ;; raise-contract-error : (union syntax #f) symbol symbol string args ... -> alpha
   ;; doesn't return
   (define (raise-contract-error src-info to-blame other-party fmt . args)

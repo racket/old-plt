@@ -638,7 +638,7 @@
 		      expr)
 		    (create-top-level-varref id expr)))))
 	    (else
-	      (internal-error expr "Invalid resolution ~s" r))))))
+	      (internal-error expr "Invalid resolution in unit define-values: ~s" r))))))
 
     (add-micro-form 'set! unit-clauses-vocab-delta
       (let* ((kwd '(set!))
@@ -683,7 +683,7 @@
 		      expr)
 		    (create-top-level-varref id expr)))))
 	    (else
-	      (internal-error expr "Invalid resolution ~s" r))))))
+	      (internal-error expr "Invalid resolution in unit delta: ~s" r))))))
 
     (set! unit-clauses-vocab
       (merge-vocabulary (copy-vocabulary scheme-vocabulary)

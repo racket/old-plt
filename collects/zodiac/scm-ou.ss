@@ -6,45 +6,47 @@
       zodiac:scheme-core^ zodiac:scheme-main^
       zodiac:scheme-objects^ zodiac:scheme-units^)
 
-    (add-sym-micro scheme-vocabulary
-      (lambda (expr env attributes vocab)
-	(let ((r (resolve expr env vocab)))
-	  (cond
-	    ((lexical-binding? r)
-	      (create-lexical-varref r expr))
-	    ((top-level-resolution? r)
-	      (let ((id (z:read-object expr)))
-		(let ((top-level-space (get-attribute attributes 'top-levels)))
-		  (if top-level-space
-		    (create-top-level-varref/bind
-		      id
-		      (hash-table-get top-level-space id
-			(lambda ()
-			  (let ((b (box '())))
-			    (hash-table-put! top-level-space id b)
-			    b)))
-		      expr)
-		    (create-top-level-varref id expr)))))
-	    ((public-binding? r)
-	      (create-public-varref r expr))
-	    ((private-binding? r)
-	      (create-private-varref r expr))
-	    ((local-binding? r)
-	      (create-local-varref r expr))
-	    ((inherit-binding? r)
-	      (create-inherit-varref r expr))
-	    ((share-binding? r)
-	      (create-share-varref r expr))
-	    ((rename-binding? r)
-	      (create-rename-varref r expr))
-	    ((supervar-binding? r)
-	      (create-supervar-varref r expr))
-	    ((superinit-binding? r)
-	      (create-superinit-varref r expr))
-	    ((or (macro-resolution? r) (micro-resolution? r))
-	      (static-error expr
-		"Invalid use of keyword ~s" (z:symbol-orig-name expr)))
-	    (else
-	      (internal-error expr "Invalid resolution ~s" r))))))
+    (let ((handler
+	    (lambda (expr env attributes vocab)
+	      (let ((r (resolve expr env vocab)))
+		(cond
+		  ((lexical-binding? r)
+		    (create-lexical-varref r expr))
+		  ((top-level-resolution? r)
+		    (let ((id (z:read-object expr)))
+		      (let ((top-level-space (get-attribute attributes 'top-levels)))
+			(if top-level-space
+			  (create-top-level-varref/bind
+			    id
+			    (hash-table-get top-level-space id
+			      (lambda ()
+				(let ((b (box '())))
+				  (hash-table-put! top-level-space id b)
+				  b)))
+			    expr)
+			  (create-top-level-varref id expr)))))
+		  ((public-binding? r)
+		    (create-public-varref r expr))
+		  ((private-binding? r)
+		    (create-private-varref r expr))
+		  ((local-binding? r)
+		    (create-local-varref r expr))
+		  ((inherit-binding? r)
+		    (create-inherit-varref r expr))
+		  ((share-binding? r)
+		    (create-share-varref r expr))
+		  ((rename-binding? r)
+		    (create-rename-varref r expr))
+		  ((supervar-binding? r)
+		    (create-supervar-varref r expr))
+		  ((superinit-binding? r)
+		    (create-superinit-varref r expr))
+		  ((or (macro-resolution? r) (micro-resolution? r))
+		    (static-error expr
+		      "Invalid use of keyword ~s" (z:symbol-orig-name expr)))
+		  (else
+		    (internal-error expr "Invalid resolution in ou: ~s" r)))))))
+      (add-sym-micro scheme-vocabulary handler)
+      (add-sym-micro unit-clauses-vocab handler))
 
     ))

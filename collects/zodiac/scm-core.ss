@@ -135,7 +135,7 @@
 		      expr)
 		    (create-top-level-varref id expr)))))
 	    (else
-	      (internal-error expr "Invalid resolution ~s" r))))))
+	      (internal-error expr "Invalid resolution in core: ~s" r))))))
 
     (add-list-micro scheme-vocabulary
       (lambda (expr env attributes vocab)

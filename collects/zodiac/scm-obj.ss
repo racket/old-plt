@@ -5,14 +5,15 @@
       zodiac:expander^ zodiac:interface^)
 
     (define-struct (class*-form struct:parsed)
-      (this super-names super-exprs init-vars inst-clauses))
+      (this super-names super-exprs super-inits init-vars inst-clauses))
 
     (define create-class*-form
-      (lambda (this super-names super-exprs init-vars inst-clauses source)
+      (lambda (this super-names super-exprs super-inits
+		init-vars inst-clauses source)
 	(make-class*-form (z:zodiac-origin source)
 	  (z:zodiac-start source) (z:zodiac-finish source)
 	  (make-empty-back-box)
-	  this super-names super-exprs init-vars inst-clauses)))
+	  this super-names super-exprs super-inits init-vars inst-clauses)))
 
     (define-struct (supervar-binding struct:binding) ())
     (define-struct (superinit-binding struct:binding) ())
@@ -120,7 +121,7 @@
 	      (static-error expr
 		"Invalid use of keyword ~s" (z:symbol-orig-name expr)))
 	    (else
-	      (internal-error expr "Invalid resolution ~s" r))))))
+	      (internal-error expr "Invalid resolution in obj: ~s" r))))))
 
     ; ----------------------------------------------------------------------
 
@@ -586,7 +587,7 @@
 			  (proc:superinits (map
 					     (lambda (var+marks)
 					       (introduce-bound-id
-						 make-supervar-binding
+						 make-superinit-binding
 						 (lambda (s)
 						   (symbol-append s "-init"))
 						 (car var+marks)
@@ -636,6 +637,7 @@
 				 (car proc:this)
 				 (map car proc:supervars)
 				 parsed-supervals
+				 (map car proc:superinits)
 				 parsed-initvars
 				 (let ((expand-exprs
 					 (lambda (exprs)
@@ -757,31 +759,6 @@
 		    env attributes vocab))))
 	    (else
 	      (static-error expr "Malformed class"))))))
-
-    '(add-micro-form 'class-asi* scheme-vocabulary
-      (let* ((kwd '())
-	      (in-pattern '(class-asi* ((supervar superval) ...) body ...))
-	      (m&e (pat:make-match&env in-pattern kwd))
-	      (out-pattern '(class* ((supervar superval) ...) args
-			      body ...
-			      (sequence
-				(apply super-init args)
-				...))))
-	(lambda (expr env attributes vocab)
-	  (cond
-	    ((pat:match-against m&e expr env)
-	      =>
-	      (lambda (p-env)
-		(let* ((kwd-pos (pat:pexpand 'class-asi* p-env kwd))
-			(captured-super-inits
-			  (map (lambda (i)
-				 (introduce-identifier
-				   (symbol-append (z:read-object i) "-init")
-				   kwd-pos))
-			    (pat:pexpand '(supervar ...) p-env kwd))))
-		  ...)))
-	    (else
-	      (static-error "Malformed class-asi*"))))))
 
     ; ----------------------------------------------------------------------
 

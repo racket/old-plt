@@ -112,7 +112,8 @@
     (struct inherit-binding ())   create-inherit-binding+marks
     (struct share-binding ())     create-share-binding+marks
     (struct rename-binding ())    create-rename-binding+marks
-    (struct class*-form (this super-names super-exprs init-vars inst-clauses))
+    (struct class*-form (this super-names super-exprs super-inits
+			  init-vars inst-clauses))
     (struct public-clause (exports internals exprs))
     (struct private-clause (internals exprs))
     (struct local-clause (exports internals exprs))
@@ -132,7 +133,8 @@
     (struct unit-form (imports exports clauses))
     (struct compound-unit-form (imports links exports))
     (struct invoke-unit-form (unit variables))
-    (struct invoke-open-unit-form (unit name-specifier variables))))
+    (struct invoke-open-unit-form (unit name-specifier variables))
+    unit-clauses-vocab))
 
 (define-signature zodiac:scheme-objects+units^
   ())

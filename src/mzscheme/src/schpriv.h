@@ -319,7 +319,7 @@ typedef struct {
 } Scheme_Schedule_Info;
 
 void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
-			    Scheme_Object *wrap, Scheme_Object *nack);
+			    Scheme_Object *wrap, Scheme_Object *nack, int retry);
 
 typedef int (*Scheme_Ready_Fun_FPC)(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 

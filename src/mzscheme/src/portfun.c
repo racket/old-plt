@@ -845,7 +845,7 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 	    a[0] = val;
 	    a[1] = uip->closed_sema;
 	    val = scheme_make_waitable_set(2, a);
-	    scheme_set_wait_target(sinfo, val, (Scheme_Object *)port, NULL);
+	    scheme_set_wait_target(sinfo, val, (Scheme_Object *)port, NULL, 1);
 	  }
 	  return 0;
 	} else {
@@ -1027,7 +1027,7 @@ int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Sched
     val = scheme_apply(proc_for_waitable, 0, NULL);
 
     if (scheme_is_waitable(val)) {
-      scheme_set_wait_target(sinfo, val, (Scheme_Object *)port, NULL);
+      scheme_set_wait_target(sinfo, val, (Scheme_Object *)port, NULL, 1);
       return 0;
     } else
       return 1; /* non-waitable => ready */

@@ -273,6 +273,9 @@ static int check_sleep(int need_activity, int sleep_now);
 static void remove_thread(Scheme_Thread *r);
 static void exit_or_escape(Scheme_Thread *p);
 
+static int resume_suspend_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+static int dead_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
+
 static Scheme_Object *current_stats(int argc, Scheme_Object *args[]);
 
 static Scheme_Object **config_map;
@@ -429,6 +432,9 @@ void scheme_init_thread(Scheme_Env *env)
 			     env);
 
   register_thread_wait();
+  scheme_add_waitable(scheme_thread_suspend_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
+  scheme_add_waitable(scheme_thread_resume_type, (Scheme_Ready_Fun)resume_suspend_ready, NULL, NULL, 1);
+  scheme_add_waitable(scheme_thread_dead_type, (Scheme_Ready_Fun)dead_ready, NULL, NULL, 1);
 #endif
 
   scheme_add_global_constant("make-custodian",
@@ -1522,19 +1528,11 @@ static void thread_is_dead(Scheme_Thread *r)
 {
   if (r->dead_box) {
     Scheme_Object *o;
-    SCHEME_PINT_VAL(r->dead_box) = 1;
-    o = SCHEME_IPTR_VAL(r->dead_box);
+    o = SCHEME_PTR_VAL(r->dead_box);
     scheme_post_sema_all(o);
-    r->dead_box = NULL;
   }
-  if (r->suspended_box) {
-    SCHEME_PTR2_VAL(r->suspended_box) = NULL;
-    r->suspended_box = NULL;
-  }
-  if (r->resumed_box) {
-    SCHEME_PTR2_VAL(r->resumed_box) = NULL;
-    r->resumed_box = NULL;
-  }
+  r->suspended_box = NULL;
+  r->resumed_box = NULL;
   
   r->list_stack = NULL;
 
@@ -2934,6 +2932,12 @@ static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
   if (p->running & MZTHREAD_USER_SUSPENDED)
     return scheme_void;
 
+  p->resumed_box = NULL;
+  if (p->suspended_box) {
+    SCHEME_PTR2_VAL(p->suspended_box) = (Scheme_Object *)p;
+    scheme_post_sema_all(SCHEME_PTR1_VAL(p->suspended_box));
+  }
+
   if (!p->next) {
     /* p is the main thread, which we're not allowed to
        suspend in the normal way. */
@@ -2975,6 +2979,12 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
   if (!(p->running & MZTHREAD_USER_SUSPENDED))
     return scheme_void;
 
+  p->suspended_box = NULL;
+  if (p->resumed_box) {
+    SCHEME_PTR2_VAL(p->resumed_box) = (Scheme_Object *)p;
+    scheme_post_sema_all(SCHEME_PTR1_VAL(p->resumed_box));
+  }
+
   p->running -= MZTHREAD_USER_SUSPENDED;
 
   scheme_weak_resume_thread(p);
@@ -2982,19 +2992,102 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *args[])
+static Scheme_Object *make_thread_suspend(int argc, Scheme_Object *argv[])
 {
-  return scheme_void;
+  Scheme_Thread *p;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
+    scheme_wrong_type("thread-suspend-waitable", "thread", 0, argc, argv);
+
+  p = (Scheme_Thread *)argv[0];
+
+  if (!p->suspended_box) {
+    Scheme_Object *b;
+    b = scheme_alloc_object();
+    b->type = scheme_thread_suspend_type;
+    if (MZTHREAD_STILL_RUNNING(p->running) && (p->running & MZTHREAD_USER_SUSPENDED))
+      SCHEME_PTR2_VAL(b) = (Scheme_Object *)p;
+    else {
+      Scheme_Object *sema;
+      sema = scheme_make_sema(0);
+      SCHEME_PTR1_VAL(b) = sema;
+    }
+    p->suspended_box = b;
+  }
+
+  return p->suspended_box;
 }
 
-static Scheme_Object *make_thread_resume(int argc, Scheme_Object *args[])
+static Scheme_Object *make_thread_resume(int argc, Scheme_Object *argv[])
 {
-  return scheme_void;
+  Scheme_Thread *p;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
+    scheme_wrong_type("thread-resume-waitable", "thread", 0, argc, argv);
+
+  p = (Scheme_Thread *)argv[0];
+
+  if (!p->resumed_box) {
+    Scheme_Object *b;
+    b = scheme_alloc_object();
+    b->type = scheme_thread_resume_type;
+    if (MZTHREAD_STILL_RUNNING(p->running) && !(p->running & MZTHREAD_USER_SUSPENDED))
+      SCHEME_PTR2_VAL(b) = (Scheme_Object *)p;
+    else {
+      Scheme_Object *sema;
+      sema = scheme_make_sema(0);
+      SCHEME_PTR1_VAL(b) = sema;
+    }
+    p->resumed_box = b;
+  }
+
+  return p->resumed_box;
 }
 
-static Scheme_Object *make_thread_dead(int argc, Scheme_Object *args[])
+static int resume_suspend_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
 {
-  return scheme_void;
+  Scheme_Object *t;
+
+  t = SCHEME_PTR2_VAL(o);
+  if (t) {
+    scheme_set_wait_target(sinfo, o, t, NULL, 0);
+    return 1;
+  }
+
+  scheme_set_wait_target(sinfo, SCHEME_PTR1_VAL(o), o, NULL, 1);
+  return 0;
+}
+
+static Scheme_Object *make_thread_dead(int argc, Scheme_Object *argv[])
+{
+  Scheme_Thread *p;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
+    scheme_wrong_type("thread-resume-waitable", "thread", 0, argc, argv);
+
+  p = (Scheme_Thread *)argv[0];
+
+  if (!p->dead_box) {
+    Scheme_Object *b;
+    Scheme_Object *sema;
+
+    b = scheme_alloc_small_object();
+    b->type = scheme_thread_dead_type;
+    sema = scheme_make_sema(0);
+    SCHEME_PTR_VAL(b) = sema;
+    if (!MZTHREAD_STILL_RUNNING(p->running))
+      scheme_post_sema_all(sema);
+
+    p->dead_box = b;
+  }
+
+  return p->dead_box;
+}
+
+static int dead_ready(Scheme_Object *o, Scheme_Schedule_Info *sinfo)
+{
+  scheme_set_wait_target(sinfo, SCHEME_PTR_VAL(o), o, NULL, 1);
+  return 0;
 }
 
 /*========================================================================*/
@@ -3110,7 +3203,7 @@ static void *splice_ptr_array(void **a, int al, void **b, int bl, int i)
 }
 
 void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target, 
-			    Scheme_Object *wrap, Scheme_Object *nack)
+			    Scheme_Object *wrap, Scheme_Object *nack, int retry)
 /* Not ready, deferred to target. */
 {
   Waiting *waiting = (Waiting *)sinfo->current_waiting;
@@ -3176,10 +3269,12 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
     ww = find_waitable(target);
     waitable_set->ws[i] = ww;
   }
-  
-  /* Rewind one step to try new ones (or continue
-     if the set was empty). */
-  sinfo->w_i--;
+ 
+  if (retry) {
+    /* Rewind one step to try new ones (or continue
+       if the set was empty). */
+    sinfo->w_i--;
+  }
 }
 
 static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
@@ -3504,7 +3599,10 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
 	      o = scheme_apply(to_call, 1, args);
 	    }
 	    to_call = a;
-	  } else
+	  } else if (SAME_TYPE(scheme_thread_suspend_type, SCHEME_TYPE(a))
+		     || SAME_TYPE(scheme_thread_resume_type, SCHEME_TYPE(a)))
+	    o = SCHEME_PTR2_VAL(a);
+	  else
 	    o = a;
 	}
 

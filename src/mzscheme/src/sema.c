@@ -787,8 +787,7 @@ static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
   Scheme_Object *result;
 
   if (try_channel((Scheme_Sema *)ch, NULL, 0, &result)) {
-    scheme_set_wait_target(sinfo, result, NULL, NULL);
-    sinfo->w_i++; /* undo rewind */
+    scheme_set_wait_target(sinfo, result, NULL, NULL, 0);
     return 1;
   }
 

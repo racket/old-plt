@@ -3066,6 +3066,7 @@ int mark_udp_MARK(void *p) {
   Scheme_UDP *udp = (Scheme_UDP *)p;
 
   gcMARK(udp->previous_from_addr);
+  gcMARK(udp->mref);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP));
@@ -3075,6 +3076,7 @@ int mark_udp_FIXUP(void *p) {
   Scheme_UDP *udp = (Scheme_UDP *)p;
 
   gcFIXUP(udp->previous_from_addr);
+  gcFIXUP(udp->mref);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP));

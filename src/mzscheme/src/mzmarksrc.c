@@ -1218,6 +1218,7 @@ mark_udp {
   Scheme_UDP *udp = (Scheme_UDP *)p;
 
   gcMARK(udp->previous_from_addr);
+  gcMARK(udp->mref);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_UDP));

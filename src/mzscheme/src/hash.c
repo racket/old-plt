@@ -668,6 +668,9 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_macro_type, hash_general);
   PROC(scheme_box_type, hash_general);
   PROC(scheme_thread_type, hash_general);
+  PROC(scheme_thread_suspend_type, hash_general);
+  PROC(scheme_thread_resume_type, hash_general);
+  PROC(scheme_thread_dead_type, hash_general);
   PROC(scheme_structure_type, hash_general);
   PROC(scheme_proc_struct_type, hash_general);
   PROC(scheme_cont_mark_set_type, hash_general);

@@ -1,12 +1,14 @@
 - in the language dialog box, "allow set! on undefined" is ignored
 
-- in the lowest language level (define (f . x) x) is incorrectly a
-  syntax error.
-
-- breaking an infinite loop with printing can break but gives
-  a stray error message.
-
-- This expression actually defines x:
-  (define x (eval '(begin)))
+- printouts don't break, you must use `kill' to get out of an infinite
+  loop that does lots of printing.
 
 - check syntax doesn't traverse unit or class expressions
+
+- check syntax: identifiers with newlines in them have their arrows
+  start from funny places.
+
+- eval'ing images in drscheme is broken
+
+- backup files don't preserve file permissions
+

@@ -169,6 +169,8 @@ class wxCursor: public wxObject
   CursPtr cMacCustomCursor; // i.e., locally allocated
 };
 
+extern int wxGetControlFontSize();
+
 #endif // IN_CPROTO
 #endif // wx_gdih
 

@@ -70,8 +70,8 @@ wxMessage::wxMessage // Constructor (given parentPanel)
  int 		x,
  int			y,
  long		style,
- char*		windowName,
  wxFont         *_font,
+ char*		windowName,
  WXTYPE		objectType
  ) :
   wxbMessage(parentPanel, x, y, 0, 0, style, windowName)
@@ -141,6 +141,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
  int 		x,
  int			y,
  long		style,
+ wxFont         *_font,
  char*		windowName,
  WXTYPE		objectType
  ) :

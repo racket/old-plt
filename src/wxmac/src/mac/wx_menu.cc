@@ -164,7 +164,7 @@ wxMenu::wxMenu // Constructor (given objectType)
 {
   menuItems = new wxList();
 
-  SetFont(13, _font);
+  SetFont(_font, 13);
 
   Callback(function);
 

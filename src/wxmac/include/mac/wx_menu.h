@@ -48,7 +48,7 @@ public:
 	(
 		char*		Title = NULL,
 		wxFunction	func = NULL,
-                wxFont           *_font = NULL;
+                wxFont           *_font = NULL,
 		char*		windowName = "menu",
 		WXTYPE		objectType = wxTYPE_MENU
 	);

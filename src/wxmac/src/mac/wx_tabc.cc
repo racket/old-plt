@@ -67,12 +67,14 @@ static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Re
 
 //-----------------------------------------------------------------------------
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label, 
-			 int N, char **Choices, int style)
+			 int N, char **Choices, int style, wxFont *_font)
  : wxItem (panel, -1, -1, -1, -1, style,  "tab-choice")
 {
   int i;
   CGrafPtr theMacGrafPort;
   Rect boundsRect = {0, 0, 10, 10};
+
+  SetFont(_font, 13);
 
   Callback(function);
 

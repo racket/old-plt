@@ -64,7 +64,6 @@ class wxCheckBox: public wxbCheckBox
      int			width = -1,
      int			height = -1,
      long		style = 0,
-     wxFont             *_font = NULL,
      char*		windowName = "checkBox",
      WXTYPE		objectType = wxTYPE_CHECK_BOX
      );
@@ -79,6 +78,7 @@ class wxCheckBox: public wxbCheckBox
      int			width = -1,
      int			height = -1,
      long		style = 0,
+     wxFont             *_font = NULL,
      char*		windowName = "checkBox",
      WXTYPE		objectType = wxTYPE_CHECK_BOX
      );

@@ -28,7 +28,8 @@
 #define HSP			3	
 
 wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
-		 int width, int height, long style, char *name) :
+		 int width, int height, long style, wxFont *_font, 
+		 char *name) :
 		 wxbGauge(panel, label, _range, x, y, width, height, style, name)
 {
   double fWidth;
@@ -37,6 +38,8 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
   double fLeading;
   int lblh = 0;
   int lblw = 0;
+
+  SetFont(_font, 13);
   
   SetCurrentDC();
 

@@ -662,7 +662,6 @@ void wxFrame::CreateStatusLine(int number, char* name)
   cStatusText = new wxMessage(cStatusPanel, "");
   cStatusPanel->SetEraser(cEraser);
   cStatusText->SetEraser(cEraser);
-  cStatusText->SetFont(wxNORMAL_FONT);
   statusLineHeight = (int)(cStatusText->GetCharHeight() * nb_status);
   GetClientSize(&clientWidth, &clientHeight);
   cStatusText->SetWidthHeight(clientWidth, statusLineHeight);

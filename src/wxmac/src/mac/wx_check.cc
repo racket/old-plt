@@ -68,7 +68,6 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   Rect r = {0,0,0,0};
   CFStringRef title;
   SInt16 baselineOffset; // ignored
-  OSErr err;
 
   buttonBitmap = NULL;
   

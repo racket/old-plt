@@ -2,6 +2,8 @@
 #ifndef __mzscheme_gc_2__
 #define __mzscheme_gc_2__
 
+#ifndef GC2_JUST_MACROS
+
 # ifdef __cplusplus
 extern "C" {
 # endif
@@ -223,6 +225,8 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
    defined at that point). Currently, it's only used to clear
    finalizers (i.e., `f' is NULL). */
 
+void GC_finalization_weak_ptr(void **);
+
 /***************************************************************************/
 /* Cooperative GC                                                          */
 /***************************************************************************/
@@ -248,24 +252,24 @@ void GC_register_traverser(short tag, Traverse_Proc proc);
    procedure must be installed for each tag before a collection
    happens where an instance of the tag as been allocated. */
 
-#define gcMARK_HERE(mark, x) if (!((long)(x) & 0x1) \
-                                 && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
-                                 && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
-                               x = mark(x)
-/*
-   A macro that, given the mark procedure supplied to a traverser and
-   an l-value containing a pointer, marks the referenced memory as
-   live and updates the pointer as necessary (i.e., if it's GCable
-   memory that is moving). The `x' argument can appear in the macro's
-   output multiple times, and it can be a statement rather than a
-   expression. */
+/* #define gcMARK_HERE(mark, t, x) ... see below ... */
+/* A macro that, given the mark procedure supplied to a traverser, a
+   type, and an l-value containing a pointer, marks the referenced
+   memory as live and updates the pointer as necessary (i.e., if it's
+   GCable memory that is moving). The `x' argument can appear in the
+   macro's output multiple times, and it can be a statement rather
+   than a expression. */
 
-#define gcMARK(x) gcMARK_HERE(mark, x)
+/* #define gcMARK_TYPED(t, x) gcMARK_HERE(mark, t, x) */
 /*
-   Handy macro that assumes the macking procedure is bound to the
-   local variable `mark': */
+   Handy macro that assumes the marking procedure is bound to the
+   local variable `mark'. */
 
-#define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
+/* #define gcMARK(x) gcMARK_TYPED(void*, x) */
+/*
+   Handy macro that assumes that `void*' is a good type. */
+
+/* #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2) */
 /*
    Helpful macro for computing the return value in a traversal proc,
    which must be in words. */
@@ -306,5 +310,16 @@ extern void *GC_alloc_space, *GC_alloc_top;
 # ifdef __cplusplus
 };
 # endif
+
+#endif
+
+/* Macros: */
+#define gcMARK_HERE(mark, t, x) if (!((long)(x) & 0x1) \
+                                   && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
+                                   && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
+                                 x = (t)mark(x)
+#define gcMARK_TYPED(t, x) gcMARK_HERE(mark, t, x)
+#define gcMARK(x) gcMARK_TYPED(void*, x)
+#define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 
 #endif /* __mzscheme_gc_2__ */

@@ -1394,10 +1394,10 @@ sub PrintSpecificFunction
     print "$prefix  " . &ApplyMacros($glueprecall) . "\n";
 
     if ($iscreator) {
-	print "$prefix  realobj = new ${newclass}(obj";
+	print "$prefix  realobj = NEW_OBJECT(${newclass}, (obj";
 	print ", " if ($#paramtypes >= 0);
 	&PrintArgs();
-	print ");\n";
+	print "));\n";
 	print "$prefix  realobj->__gc_external = (void *)obj;\n";
 	print "$prefix  objscheme_note_creation(obj);\n";
     } elsif ($common) {

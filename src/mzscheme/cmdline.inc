@@ -412,8 +412,11 @@ static int run_from_cmd_line(int argc, char *argv[],
   }
 
   scheme_add_global("argv", sch_argv, global_env);
-  scheme_add_global("program", scheme_make_string(prog),
-		    global_env);
+  {	
+    char *ps;
+    ps = scheme_make_string(prog);
+    scheme_add_global("program", ps, global_env);
+  }
 
 #ifndef NO_FILE_SYSTEM_UTILS
   /* Setup path for "collects" collection directory: */

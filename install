@@ -172,7 +172,13 @@ exit
   (printf "  ~a/bin/setup-plt~n" plthome))
 
 (when zo?
-  (dynamic-require '(lib "setup.ss" "setup") #f))
+  ;; Need a new namespace to ensure that all modules
+  ;;  are compiled, including ones we've already loaded.
+  ;; We also need to re-enable compiled files, since
+  ;;  cm.ss checks on that flag.
+  (parameterize ([current-namespace (make-namespace)]
+		 [use-compiled-file-kinds 'all])
+    (dynamic-require '(lib "setup.ss" "setup") #f)))
 
 (printf "PLT installation done~a.~n" didnothing)
 (when (file-exists? "bin/drscheme")

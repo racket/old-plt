@@ -76,7 +76,7 @@
 			  [cmd (if cmd cmd (make-command cur-bid dir '()))]
 			  [path/coords (cons (make-cord x y) path/coords)]
 			  [weight (+ weight cur-weight)])
-		      (when (= depth 1)
+;		      (when (= depth 1)
 ;			(printf "Move to the ~a has weight ~a~n" (command-command cmd) cur-weight))
 		      (let ([northopt (make-qelt weight 'N x (add1 y) cmd path/coords)]
 			    [southopt (make-qelt weight 'S x (sub1 y) cmd path/coords)]

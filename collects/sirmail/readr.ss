@@ -1886,21 +1886,27 @@
 				     crlf)
 			     "")))
 	       (if quote-in-reply?
-		   (string-append
-		    (format "Quoting ~a:~a" 
-			    (let ([from (parse-iso-8859-1 (extract-field "From" h))])
-			      (let ([name (with-handlers ([void (lambda (x) #f)])
-					    (car (extract-addresses from 'name)))])
-				(or name "<unknown>")))
-			    crlf)
-		    "> "
-		    (let* ([s (splice (split body (string #\linefeed))
-				      (string-append (string #\linefeed) "> "))]
-			   [len (string-length s)])
-		      (if (and (>= len 2)
-			       (string=? "> " (substring s (- len 2) len)))
-			  (substring s 0 (- len 2))
-			  s)))
+                   (let ([date (parse-iso-8859-1 (extract-field "Date" h))]
+                         [name
+                          (with-handlers ([not-break-exn? (lambda (x) #f)])
+                            (let ([from (parse-iso-8859-1 (extract-field "From" h))])
+                              (car (extract-addresses from 'name))))])
+                     (string-append
+                      (cond
+                        [(and date name)
+                         (format "At ~a, ~a wrote:~a" date name crlf)]
+                        [name
+                         (format "Quoting ~a:~a" name crlf)]
+                        [else
+                         (format "Quoting <unknown>:~a" crlf)])
+                      "> "
+                      (let* ([s (splice (split body (string #\linefeed))
+                                        (string-append (string #\linefeed) "> "))]
+                             [len (string-length s)])
+                        (if (and (>= len 2)
+                                 (string=? "> " (substring s (- len 2) len)))
+                            (substring s 0 (- len 2))
+                            s))))
 		   "")
 	       null)))))
 

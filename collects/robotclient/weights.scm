@@ -299,7 +299,6 @@
                               (not (and (= (search-player-x (player-cur)) x) (= (search-player-y (player-cur)) y))) ))))
 
   (define (is-robot-within? x y n)
-    (player-cur (make-search-player x y #f #f #f #f))
     (let ([max-y (+ y n)]
           [max-x (+ x n)])
       (let loop ([cur-y (- y n)])
@@ -308,9 +307,11 @@
             (let loopx ([cur-x (- x n)])
               (if (> cur-x max-x)
                   (loop (+ 1 cur-y))
-                  (if (is-robot? (board) x y)
-                      #t
+                  (if (and (= 1 (get-robot (get-spot (board) x y)))
+                           (not (and (= x cur-x) (= y cur-y))))
+                      (begin (printf "Robot is within!~n") #t)
                       (loopx (+ 1 cur-x)))))))))
+  
 	(define-syntax wall?
 	  (syntax-rules ()
 			((_ board x y)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Bitmap.cc,v 1.5 1998/09/06 01:43:29 mflatt Exp $
+ * $Id: Bitmap.cc,v 1.6 1998/09/18 22:08:57 mflatt Exp $
  *
  * Purpose: bitmap classes to implement pixmaps, icons, and cursors
  *
@@ -118,6 +118,8 @@ wxBitmap::wxBitmap(char bits[], int w, int h)
 #if !WXGARBAGE_COLLECTION_ON
     wxTheBitmapList->Append(this);
 #endif
+
+    WXGC_IGNORE(selectedTo);
 }
 
 // create bitmap from file
@@ -134,6 +136,8 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 #if !WXGARBAGE_COLLECTION_ON
     wxTheBitmapList->Append(this);
 #endif
+
+    WXGC_IGNORE(selectedTo);
 }
 
 #if USE_XPM
@@ -175,6 +179,8 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem)) // anItem used for MOT
 #if !WXGARBAGE_COLLECTION_ON
     wxTheBitmapList->Append(this);
 #endif
+
+    WXGC_IGNORE(selectedTo);
 }
 
 #endif
@@ -193,6 +199,8 @@ wxBitmap::wxBitmap(int w, int h, Bool b_and_w)
 #if !WXGARBAGE_COLLECTION_ON
     wxTheBitmapList->Append(this);
 #endif
+
+    WXGC_IGNORE(selectedTo);
 }
 
 // destroy bitmap

@@ -478,7 +478,8 @@ typedef struct Scheme_Vector {
 /*========================================================================*/
 
 #define scheme_make_integer(i)    LONG_TO_OBJ ((OBJ_TO_LONG(i) << 1) | 0x1)
-#define scheme_make_character(ch) ((ch < 127) ? scheme_char_constants[(unsigned char)(ch)] : scheme_make_char(ch))
+#define scheme_make_character(ch) ((((mzchar)ch) < 256) ? scheme_char_constants[(unsigned char)(ch)] : scheme_make_char(ch))
+#define scheme_make_ascii_character(ch) scheme_char_constants[(unsigned char)(ch)];
 
 #define scheme_uchar_find(x) (scheme_uchar_table[x >> 21][(x >> 8) & 0x1FFF][x & 0xFF])
 

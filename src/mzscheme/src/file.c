@@ -159,7 +159,7 @@ static Scheme_Object *read_symbol, *write_symbol, *execute_symbol;
 
 static Scheme_Object *temp_dir_symbol, *home_dir_symbol, *pref_dir_symbol;
 static Scheme_Object *init_dir_symbol, *init_file_symbol, *sys_dir_symbol;
-static Scheme_Object *exec_file_symbol;
+static Scheme_Object *exec_file_symbol, *pref_file_symbol;
 
 static Scheme_Object *exec_cmd;
 
@@ -190,6 +190,7 @@ void scheme_init_file(Scheme_Env *env)
   REGISTER_SO(init_dir_symbol);
   REGISTER_SO(init_file_symbol);
   REGISTER_SO(sys_dir_symbol);
+  REGISTER_SO(pref_file_symbol);
   REGISTER_SO(exec_file_symbol);
 #endif
 
@@ -217,6 +218,7 @@ void scheme_init_file(Scheme_Env *env)
   init_dir_symbol = scheme_intern_symbol("init-dir");
   init_file_symbol = scheme_intern_symbol("init-file");
   sys_dir_symbol = scheme_intern_symbol("sys-dir");
+  pref_file_symbol = scheme_intern_symbol("pref-file");
   exec_file_symbol = scheme_intern_symbol("exec-file");
   
 # ifdef MACINTOSH_EVENTS
@@ -3743,6 +3745,7 @@ enum {
   id_temp_dir,
   id_home_dir,
   id_pref_dir,
+  id_pref_file,
   id_init_dir,
   id_init_file,
   id_sys_dir
@@ -3761,6 +3764,8 @@ find_system_path(int argc, Scheme_Object **argv)
     which = id_pref_dir;
   else if (argv[0] == init_dir_symbol)
     which = id_init_dir;
+  else if (argv[0] == pref_file_symbol)
+    which = id_pref_file;
   else if (argv[0] == init_file_symbol)
     which = id_init_file;
   else if (argv[0] == sys_dir_symbol)
@@ -3800,27 +3805,28 @@ find_system_path(int argc, Scheme_Object **argv)
     return CURRENT_WD();
   }
   
-#ifdef OS_X
-  if (which == id_pref_dir) {
-    return scheme_make_string(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL));
-  }
-#endif 
-    
   {
     /* Everything else is in ~: */
     Scheme_Object *home;
     int ends_in_slash;
 
-    home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
-
+#ifdef OS_X
+    if ((which == id_pref_dir) 
+	|| (which == id_pref_file)) {
+      home = scheme_make_string(scheme_expand_filename("~/Library/Preferences/", -1, NULL, NULL));
+    } else
+#endif 
+      home = scheme_make_string(scheme_expand_filename("~/", 2, NULL, NULL));
+    
     if ((which == id_pref_dir) || (which == id_init_dir) || (which == id_home_dir)) 
       return home;
 
     ends_in_slash = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == '/';
     
     if (which == id_init_file)
-      return scheme_append_string(home,
-				  scheme_make_string("/.mzschemerc" + ends_in_slash));
+      return scheme_append_string(home, scheme_make_string("/.mzschemerc" + ends_in_slash));
+    if (which == id_pref_file)
+      return scheme_append_string(home, scheme_make_string("/.plt-prefs.ss" + ends_in_slash));
   }
 #endif
 
@@ -3896,8 +3902,9 @@ find_system_path(int argc, Scheme_Object **argv)
     ends_in_slash = ((ends_in_slash == '/') || (ends_in_slash == '\\'));
 
     if (which == id_init_file)
-      return scheme_append_string(home,
-				  scheme_make_string("\\mzschemerc.ss" + ends_in_slash));
+      return scheme_append_string(home, scheme_make_string("\\mzschemerc.ss" + ends_in_slash));
+    if (which == id_pref_file)
+      return scheme_append_string(home, scheme_make_string("\\plt-prefs.ss" + ends_in_slash));
   }
 #endif
 
@@ -3952,8 +3959,9 @@ find_system_path(int argc, Scheme_Object **argv)
     ends_in_colon = (SCHEME_STR_VAL(home))[SCHEME_STRTAG_VAL(home) - 1] == ':';
     
     if (which == id_init_file)
-      return scheme_append_string(home,
-				  scheme_make_string(":mzschemerc.ss" + ends_in_colon));
+      return scheme_append_string(home, scheme_make_string(":mzschemerc.ss" + ends_in_colon));
+    if (which == id_pref_file)
+      return scheme_append_string(home, scheme_make_string(":pltprefs.ss" + ends_in_colon));
   }
 #endif
 

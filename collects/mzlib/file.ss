@@ -12,6 +12,9 @@
 	  make-temporary-file
 	  find-library
 
+	  get-preference
+	  put-preference
+
 	  call-with-input-file*
 	  call-with-output-file*)
 
@@ -246,6 +249,69 @@
 		  file
 		  #f))
 	    #f))]))
+
+  (define pref-box (make-weak-box #f)) ; non-weak box => need to save
+  (define (get-prefs)
+    (let ([f (if (weak-box? pref-box)
+		 (weak-box-value pref-box)
+		 (unbox pref-box))])
+      (or f
+	  (let ([f (let ([v (with-handlers ([not-break-exn? (lambda (x) null)])
+			      (with-input-from-file (find-system-path 'pref-file) 
+				read))])
+		     (if (and (list? v) 
+			      (andmap (lambda (x) 
+					(and (pair? x) 
+					     (pair? (cdr x))
+					     (null? (cddr x))))
+				      v))
+			 v
+			 null))])
+	    (set! pref-box (make-weak-box f))
+	    f))))
+
+  (define get-preference
+    (lambda (name fail-thunk)
+      (unless (symbol? name)
+	(raise-type-error
+	 'get-preference
+	 "symbol"
+	 name))
+      (unless (and (procedure? fail-thunk)
+		   (procedure-arity-includes? fail-thunk 0))
+	(raise-type-error
+	 'get-preference
+	 "procedure (arity 0)"
+	 fail-thunk))
+      (let ([f (get-prefs)])
+	(let ([m (assq name f)])
+	  (if m
+	      (cadr m)
+	      (fail-thunk))))))
+
+  (define put-preference
+    (lambda (name val save?)
+      (unless (symbol? name)
+	(raise-type-error
+	 'put-preference
+	 "symbol"
+	 name))
+      (let ([f (get-prefs)])
+	(let ([m (assq name f)])
+	  (if m
+	      (set-car! (cdr m) val)
+	      (set! f (cons (list name val) f))))
+	(set! pref-box (box f))
+	(when save?
+	  (with-output-to-file (find-system-path 'pref-file) 
+	    (lambda ()
+	      (parameterize ([read-case-sensitive #f]
+			     [print-struct #f])
+		(printf "(~n")
+		(for-each (lambda (a) (printf " ~s~n" a)) f)
+		(printf ")~n")))
+	    'truncate/replace)
+	  (set! pref-box (make-weak-box f))))))
 
   (define call-with-input-file*
     (lambda (file thunk . flags)

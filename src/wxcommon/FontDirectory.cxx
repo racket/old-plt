@@ -252,16 +252,14 @@ int wxFontNameDirectory::GetNewFontId(void)
   return (nextFontId++);
 }
 
-#ifdef wx_x
-# define GET_CLASS_NAME wxTheApp->GetClassName()
-#else
-# define GET_CLASS_NAME wxTheApp->wx_class
-#endif
+int wxGetPreference(const char *name, char *res, long len);
+
+static char pref_buf[1024];
 
 static void SearchResource(const char *prefix, const char **names, int count, char **v)
 {
   int k, i, j;
-  char resource[1024], **defaults, *internal, *cn;
+  char resource[1024], **defaults, *internal;
 
   k = 1 << count;
 
@@ -277,9 +275,10 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 	strcat(resource, "_");
     }
 
-    cn = GET_CLASS_NAME;
-    if (wxGetResource(cn, (char *)resource, v) && **v)
+    if (wxGetPreference((char *)resource, pref_buf, 1024) && *pref_buf) {
+      *v = pref_buf;
       return;
+    }
 
     if (!internal) {
       defaults = font_defaults;

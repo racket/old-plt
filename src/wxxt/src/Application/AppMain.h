@@ -66,4 +66,6 @@ extern void wxDoEvents();
 
 extern int wxEntry(int argc, char *argv[]);
 
+extern int wxGetPreference(const char *name, int *res);
+
 #endif // AppMain_h

@@ -1,4 +1,6 @@
 (
+ (drscheme "DrScheme")
+
  ;; Language dialog
  (language-dialog-title "Configure Language")
  (case-sensitive-label "Case sensitive")

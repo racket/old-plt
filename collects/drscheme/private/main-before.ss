@@ -70,8 +70,9 @@
 		     [marshalled-settings (second x)]
 		     [lang (ormap
 			    (lambda (x)
-			      (equal? lang-position
-				      (send x get-language-position)))
+			      (and (equal? lang-position
+					   (send x get-language-position))
+				   x))
 			    (drscheme:language:get-languages))])
 		(and lang
 		     (let ([settings (send lang unmarshall-settings marshalled-settings)])

@@ -45,7 +45,7 @@
         (let loop ()
           (let ([expr (reader)])
             (if (eof-object? expr)
-                (f (make-process-finish #f) void)
+                (f (make-process-finish) void)
                 (f expr loop)))))
       
       ;; like process-file, etc expect it reads the input from a text

@@ -17,6 +17,7 @@
 	  marshall-settings
           unmarshall-settings
           default-settings
+	  default-settings?
           
           front-end
 	  config-panel
@@ -30,6 +31,8 @@
 	  marshall-settings
           unmarshall-settings
           default-settings
+	  default-settings?
+
           get-module
 	  config-panel
 	  on-execute
@@ -57,10 +60,11 @@
 	  (init-field simple-module-based-language)
 	  (public get-module config-panel on-execute get-language-position 
                   render-value
-                  default-settings marshall-settings unmarshall-settings)
+                  default-settings? default-settings marshall-settings unmarshall-settings)
           (define (marshall-settings settings) settings)
           (define (unmarshall-settings printable) printable)
           (define (default-settings) 'no-settings)
+          (define (default-settings? x) (equal? x (default-settings)))
           (define (get-module)
             (send simple-module-based-language get-module))
           (define (config-panel parent)
@@ -70,7 +74,7 @@
             (initialize-module-based-language setting (get-module) run-in-user-thread))
 	  (define (get-language-position)
 	    (send simple-module-based-language get-language-position))
-          (define (render-value port value)
+          (define (render-value value port put-snip)
             (write value port))
 	  (super-instantiate ())))
       
@@ -81,13 +85,15 @@
 	  (init-field module-based-language)
 	  (public front-end config-panel on-execute get-language-position 
                   render-value
-                  default-settings marshall-settings unmarshall-settings)
+                  default-settings? default-settings marshall-settings unmarshall-settings)
           (define (marshall-settings settings)
             (send module-based-language marshall-settings settings))
           (define (unmarshall-settings printable)
             (send module-based-language unmarshall-settings printable))
           (define (default-settings)
             (send module-based-language default-settings))
+          (define (default-settings? x)
+            (send module-based-language default-settings? x))
           (define (front-end input settings)
             (lambda ()
               '...))
@@ -97,8 +103,8 @@
             (send module-based-language on-execute settings run-in-user-thread))
 	  (define (get-language-position)
 	    (send module-based-language get-language-position))
-          (define (render-value port value)
-            (send module-based-language render-value port value))
+          (define (render-value value port put-snip)
+            (send module-based-language render-value value port put-snip))
 	  (super-instantiate ())))
       
       (define (initialize-module-based-language setting module-spec run-in-user-thread)

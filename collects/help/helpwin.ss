@@ -109,7 +109,7 @@
 			       (lambda (search-func)
 				 (lambda (text type mode)
 				   (send (send search-text get-editor) erase)
-				   (do-lucky-search
+				   (search-func
 				    text 
 				    (case type
 				      [(keyword) 0]
@@ -127,10 +127,13 @@
 							      mode)]))))])
 			    (public
 			      [search-for-help/lucky
-			       (search-for-help/mumble do-lucky-search)]
+			       (lambda (text type mode)
+				 ((search-for-help/mumble do-lucky-search)
+				  text type mode))]
 			      [search-for-help
 			       (lambda (text type mode)
-				 (search-for-help/mumble run-search))]
+				 ((search-for-help/mumble run-search)
+				  text type mode))]
 
 			      [goto-url (lambda (url) (send results goto-url url #f))])
 			    

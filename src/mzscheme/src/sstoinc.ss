@@ -3,7 +3,7 @@
 
 (define DIGS-PER-LINE 20)
 
-(let loop ([])
+(let loop ()
   (let ([expr (read)])
     (unless (eof-object? expr)
       (let ([c (compile expr)]

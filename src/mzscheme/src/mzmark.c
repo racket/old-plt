@@ -3,7 +3,9 @@
 
 int variable_obj_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id));
+  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
 int variable_obj_MARK(void *p) {
@@ -13,7 +15,9 @@ int variable_obj_MARK(void *p) {
   gcMARK(b->val);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id));
+  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
 int variable_obj_FIXUP(void *p) {
@@ -23,7 +27,9 @@ int variable_obj_FIXUP(void *p) {
   gcFIXUP(b->val);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id));
+  ((((Scheme_Bucket_With_Flags *)b)->flags & GLOB_HAS_HOME_PTR)
+   ? gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Home)),
+   : gcBYTES_TO_WORDS(sizeof(Scheme_Bucket_With_Ref_Id)));
 }
 
 
@@ -1305,7 +1311,8 @@ int namespace_val_MARK(void *p) {
   Scheme_Env *e = (Scheme_Env *)p;
 
   gcMARK(e->globals);
-  gcMARK(e->loaded_libraries);
+  gcMARK(e->syntax);
+  gcMARK(e->modules);
   gcMARK(e->init);
 
   return
@@ -1316,7 +1323,8 @@ int namespace_val_FIXUP(void *p) {
   Scheme_Env *e = (Scheme_Env *)p;
 
   gcFIXUP(e->globals);
-  gcFIXUP(e->loaded_libraries);
+  gcFIXUP(e->syntax);
+  gcFIXUP(e->modules);
   gcFIXUP(e->init);
 
   return
@@ -1439,6 +1447,7 @@ int mark_const_binding_MARK(void *p) {
   Constant_Binding *b = (Constant_Binding *)p;
     
   gcMARK(b->name);
+  gcMARK(b->rename);
   gcMARK(b->val);
   gcMARK(b->next);
   
@@ -1450,6 +1459,7 @@ int mark_const_binding_FIXUP(void *p) {
   Constant_Binding *b = (Constant_Binding *)p;
     
   gcFIXUP(b->name);
+  gcFIXUP(b->rename);
   gcFIXUP(b->val);
   gcFIXUP(b->next);
   
@@ -2221,6 +2231,7 @@ int mark_load_handler_data_MARK(void *p) {
   gcMARK(d->config);
   gcMARK(d->port);
   gcMARK(d->p);
+  gcMARK(d->stxsrc);
 
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -2232,6 +2243,7 @@ int mark_load_handler_data_FIXUP(void *p) {
   gcFIXUP(d->config);
   gcFIXUP(d->port);
   gcFIXUP(d->p);
+  gcFIXUP(d->stxsrc);
 
   return
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
@@ -3111,6 +3123,7 @@ int mark_struct_type_val_MARK(void *p) {
     gcMARK(t->parent_types[i]);
   }
   gcMARK(t->type_name);
+  gcMARK(t->inspector);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -3125,6 +3138,7 @@ int mark_struct_type_val_FIXUP(void *p) {
     gcFIXUP(t->parent_types[i]);
   }
   gcFIXUP(t->type_name);
+  gcFIXUP(t->inspector);
 
   return
   gcBYTES_TO_WORDS((sizeof(Scheme_Struct_Type)
@@ -3143,6 +3157,7 @@ int mark_struct_info_val_MARK(void *p) {
   gcMARK(i->name);
   gcMARK(i->fields);
   gcMARK(i->parent_type_expr);
+  gcMARK(i->inspector_expr);
   gcMARK(i->memo_names);
 
   return
@@ -3155,6 +3170,7 @@ int mark_struct_info_val_FIXUP(void *p) {
   gcFIXUP(i->name);
   gcFIXUP(i->fields);
   gcFIXUP(i->parent_type_expr);
+  gcFIXUP(i->inspector_expr);
   gcFIXUP(i->memo_names);
 
   return

@@ -108,10 +108,12 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 #ifndef DONT_LOAD_INIT_FILE
   if (!fa->no_init_file) {
     char *filename;
-    filename = scheme_expand_filename(GET_INIT_FILENAME(fa->global_env), 
-				      -1, "startup", NULL);
-    if (scheme_file_exists(filename))
-      scheme_load(filename);
+    filename = GET_INIT_FILENAME(fa->global_env);
+    if (filename) {
+      filename = scheme_expand_filename(filename, -1, "startup", NULL);
+      if (scheme_file_exists(filename))
+	scheme_load(filename);
+    }
   }
 #endif /* DONT_LOAD_INIT_FILE */
 
@@ -165,31 +167,21 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
   return exit_val;
 }
 
+static void initial_imports(Scheme_Env *env)
+{
+  if (!scheme_setjmp(scheme_error_buf)) {
+    scheme_eval_string("(begin (import mzscheme) (import-for-syntax mzscheme))", 
+		       env);
+    scheme_eval_string("(current-module-name-resolver standard-module-name-resolver)",
+		       env);
+  }
+}
+
 #ifndef NO_FILE_SYSTEM_UTILS
 static void init_collection_paths(Scheme_Env *global_env)
 {		
   if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_eval_string("(current-library-collection-paths "
-		        "(path-list-string->path-list "
-		         "(or (getenv \"PLTCOLLECTS\") \"\")"
-		         "(or"
-		          "(ormap"
-		           "(lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list p))))"
-		           "(list"
-		            "(lambda () (let ((v (getenv \"PLTHOME\")))"
-		                          "(and v (build-path v \"collects\"))))"
-		            "(lambda () (find-executable-path program \"collects\"))"
-#ifdef UNIX_FILE_SYSTEM
-# ifdef USE_BEOS_SNOOZE
-		            "(lambda () \"/boot/apps/plt/collects\")"
-# else
-		            "(lambda () \"/usr/local/lib/plt/collects\")"
-# endif
-#endif
-#ifdef DOS_FILE_SYSTEM
-		            "(lambda () \"c:\\plt\\collects\")"
-#endif
-		          ")) null)))",
+    scheme_eval_string("(current-library-collection-paths (find-library-collection-paths))",
 		       global_env);
   }
 }
@@ -572,6 +564,8 @@ static int run_from_cmd_line(int argc, char *_argv[],
   scheme_setup_forced_exit();
 
   global_env = mk_basic_env();
+
+  initial_imports(global_env);
 
   sch_argv = scheme_make_vector(argc, scheme_null);
   for (i = 0; i < argc; i++) {

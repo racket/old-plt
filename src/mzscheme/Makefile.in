@@ -130,7 +130,6 @@ CSTARTUPDEST = cstartup.inc
 
 cmacro:
 	$(MAKE) $(srcdir)/src/$(CSTARTUPDEST)
-	$(MAKE) $(srcdir)/src/cunitsig.inc
 	$(MAKE) $(srcdir)/src/mzmark.c
 
 headers:
@@ -159,7 +158,7 @@ $(srcdir)/src/schexn.h: $(srcdir)/src/exnsrc.ss $(srcdir)/src/makeexn
 	mzscheme -gqr $(srcdir)/src/makeexn < $(srcdir)/src/exnsrc.ss > $(srcdir)/src/schexn.h
 
 $(srcdir)/src/$(CSTARTUPDEST): $(srcdir)/src/startup.ss $(srcdir)/src/schvers.h
-	mzscheme -gqrna $(srcdir)/src/sstoinc.ss $(CMACROEXTRA) < $(srcdir)/src/startup.ss > $(srcdir)/src/$(CSTARTUPDEST)
+	mzscheme -qr $(srcdir)/src/sstoinc.ss $(CMACROEXTRA) < $(srcdir)/src/startup.ss > $(srcdir)/src/$(CSTARTUPDEST)
 
 $(srcdir)/src/mzmark.c: $(srcdir)/src/mzmarksrc.c $(srcdir)/src/mkmark.ss
 	mzscheme -qr $(srcdir)/src/mkmark.ss < $(srcdir)/src/mzmarksrc.c > $(srcdir)/src/mzmark.c

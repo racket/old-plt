@@ -22,6 +22,7 @@
 */
 
 #include "schpriv.h"
+#include "schminc.h"
 
 /* On the Mac, 68K, store the built-in Scheme code as pc-relative */
 #if defined(__MWERKS__)
@@ -32,15 +33,13 @@
 
 void scheme_add_embedded_builtins(Scheme_Env *env)
 {
-#if 0
 #define EVAL_ONE_STR(str) scheme_eval_string(str, env)
 #define EVAL_ONE_SIZED_STR(str, len) scheme_eval_compiled_sized_string(str, len, env)
 
-#if USE_COMPILED_MACROS
+#if USE_COMPILED_STARTUP
 # include "cstartup.inc"
 #else
 # include "startup.inc"
-#endif
 #endif
 }
 

@@ -273,7 +273,7 @@ Scheme_Env *scheme_basic_env()
   return env;
 }
 
-#if USE_COMPILED_MACROS
+#if USE_COMPILED_STARTUP
 Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env)
 {
   Scheme_Object *port, *expr, *saved;
@@ -291,7 +291,7 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
 			      );
   scheme_set_param(config, MZCONFIG_ENV, saved);
 
-  return _scheme_eval_compiled(expr);
+  return _scheme_eval_compiled(expr, env);
 }
 #endif
 

@@ -1,22 +1,35 @@
+;; This file is converted to [c]startup.inc and evaluated by
+;; MzScheme's scheme_basic_env().
 
-;; Implements, in a non-bootstrapping way, all of the MzScheme syntax
+;; It implements, in a non-bootstrapping way, all of the MzScheme syntax
 ;; and "primitives" that are not implemented in the kernel.
 
-;; Do not use block comments (with #| and |#)
+;; Replace the content of this file to get a new set of initial module
+;; definitions, but beware that the stand-alone MzScheme program
+;; relies on some of the definitions. For example, it imports
+;; `mzscheme' into the initial namespace. (This is not an issue
+;; when using libmzscheme in an embedding application.)
+
+;; Do not use block comments (with #| and |#) in this file.
 
 ;;----------------------------------------------------------------------
 ;; basic syntax utilities
 
 (module .stx .kernel
 
-  ;; stx is an identifier?
-  (define-values (stx-symbol?)
+  ;; These utilities facilitate operations on syntax objects.
+  ;; A syntax object that represents a parenthesized sequence
+  ;; can contain a mixture of cons cells and syntax objects,
+  ;; hence the need for `stx-null?', `stx-car', etc.
+
+  ;; a syntax identifier?
+  (define-values (identifier?)
     (lambda (p)
       (if (syntax? p)
 	  (symbol? (syntax-e p))
 	  #f)))
 
-  ;; stx null or null?
+  ;; a syntax null?
   (define-values (stx-null?)
     (lambda (p)
       (if (null? p)
@@ -64,10 +77,6 @@
 	  (cdr p)
 	  (cdr (syntax-e p)))))
 
-  (define-values (stx-same?)
-    (lambda (a b)
-      (free-identifier=? a b)))
-
   ;; Flattens a syntax list into a list
   (define-values (stx->list)
     (lambda (e)
@@ -93,8 +102,8 @@
 			      flat-end))))
 		e)))))
 
-  (export stx-symbol? stx-null? stx-pair? stx-list?
-	  stx-car stx-cdr stx-same? stx->list))
+  (export identifier? stx-null? stx-pair? stx-list?
+	  stx-car stx-cdr stx->list))
 
 ;;----------------------------------------------------------------------
 ;; quasiquote
@@ -104,7 +113,7 @@
 
   (define-syntax quasiquote
     (lambda (in-form)
-      (if (stx-symbol? in-form)
+      (if (identifier? in-form)
 	  (raise-syntax-error 'quasiquote "bad syntax" in-form))
       (let-values
 	  (((form) (if (stx-pair? (stx-cdr in-form))
@@ -146,7 +155,7 @@
 		    (if (stx-pair? x)
 			(let-values
 			    (((first) (stx-car x)))
-			  (if (if (stx-same? first (quote-syntax unquote))
+			  (if (if (free-identifier=? first (quote-syntax unquote))
 				  (stx-list? x)
 				  #f)
 			      (let-values
@@ -161,11 +170,11 @@
 				(if (zero? level)
 				    (stx-car rest)
 				    (qq-list x (sub1 level))))
-			      (if (if (stx-same? first (quote-syntax quasiquote))
+			      (if (if (free-identifier=? first (quote-syntax quasiquote))
 				      (stx-list? x)
 				      #f)
 				  (qq-list x (add1 level))
-				  (if (if (stx-same? first (quote-syntax unquote-splicing))
+				  (if (if (free-identifier=? first (quote-syntax unquote-splicing))
 					  (stx-list? x)
 					  #f)
 				      (raise-syntax-error
@@ -173,8 +182,8 @@
 				       "invalid context within quasiquote"
 				       in-form)
 				      (if (if (stx-pair? first)
-					      (if (stx-same? (stx-car first)
-							     (quote-syntax unquote-splicing))
+					      (if (free-identifier=? (stx-car first)
+								     (quote-syntax unquote-splicing))
 						  (stx-list? first)
 						  #f)
 					      #f)
@@ -267,7 +276,7 @@
 
   (define-syntax or
     (lambda (x)
-      (if (stx-symbol? x)
+      (if (identifier? x)
 	  (raise-syntax-error 'or "bad syntax" x))
       (let ([e (stx-cdr x)])
 	(if (stx-null? e) 
@@ -305,7 +314,7 @@
 
   (define-syntax cond
     (lambda (in-form)
-      (if (stx-symbol? in-form)
+      (if (identifier? in-form)
 	  (raise-syntax-error 'cond "bad syntax" in-form))
       (datum->syntax
        (let ([form (stx-cdr in-form)]
@@ -327,11 +336,11 @@
 			  line)
 			 (let* ([test (stx-car line)]
 				[value (stx-cdr line)]
-				[else? (stx-same? test (quote-syntax else))])
+				[else? (free-identifier=? test (quote-syntax else))])
 			   (if (and else? (stx-pair? rest))
 			       (serror "bad syntax (`else' clause must be last)" line))
 			   (if (and (stx-pair? value)
-				    (stx-same? (stx-car value) (quote-syntax =>)))
+				    (free-identifier=? (stx-car value) (quote-syntax =>)))
 			       (if (and (stx-pair? (stx-cdr value))
 					(stx-null? (stx-cdr (stx-cdr value))))
 				   (let ([test (if else?
@@ -368,7 +377,7 @@
 
   (define-syntax define
     (lambda (code)
-      (if (or (stx-symbol? code)
+      (if (or (identifier? code)
 	      (not (stx-pair? (stx-cdr code))))
 	  (raise-syntax-error 'define "bad syntax" code))
       (let ([body (stx-cdr code)])
@@ -379,7 +388,7 @@
 	     code))
 	(let ([first (stx-car body)]) 
 	  (cond
-	   [(stx-symbol? first)
+	   [(identifier? first)
 	    (if (and (stx-pair? (stx-cdr body))
 		     (stx-null? (stx-cdr (stx-cdr body))))
 		(datum->syntax
@@ -398,10 +407,10 @@
 		(cond
 		 [(stx-null? l) #f]
 		 [(stx-pair? l) 
-		  (if (stx-symbol? (stx-car l))
+		  (if (identifier? (stx-car l))
 		      (loop (stx-cdr l))
 		      (bad-symbol (stx-car l)))]
-		 [(stx-symbol? l) #f]
+		 [(identifier? l) #f]
 		 [else (bad-symbol l)])))
 	    (datum->syntax
 	     `(define-values (,(stx-car first)) 
@@ -456,7 +465,7 @@
       (let ([l (syntax->list code)])
 	(if (and l
 		 (> (length l) 2)
-		 (stx-symbol? (cadr l)))
+		 (identifier? (cadr l)))
 	    (let ([var (cadr l)]
 		  [exprs (stx-cdr (stx-cdr code))])
 	      (datum->syntax
@@ -469,7 +478,7 @@
 
   (define-syntax define-struct
     (lambda (stx)
-      (if (stx-symbol? stx)
+      (if (identifier? stx)
 	  (raise-syntax-error 'define-struct "bad syntax" stx))
       (let ([body (stx->list (stx-cdr stx))])
 	(let ([syntax-error
@@ -503,19 +512,19 @@
 	      (syntax-error "empty declaration"))
 	  (or (= 2 (length body))
 	      (syntax-error "wrong number of parts"))
-	  (or (stx-symbol? (car body))
+	  (or (identifier? (car body))
 	      (and (stx-pair? (car body))
-		   (stx-symbol? (stx-car (car body)))
+		   (identifier? (stx-car (car body)))
 		   (stx-pair? (stx-cdr (car body)))
 		   (stx-null? (stx-cdr (stx-cdr (car body)))))
 	      (syntax-error "first part must be an identifier or identifier-expression pair"))
 	  (or (stx-list? (cadr body))
 	      (syntax-error "illegal use of `.' in field list"))
 	  (for-each (lambda (x) 
-		      (or (stx-symbol? x)
+		      (or (identifier? x)
 			  (syntax-error "field name not a identifier" x)))
 		    (stx->list (cadr body)))
-	  (let ([name (if (stx-symbol? (car body))
+	  (let ([name (if (identifier? (car body))
 			  (car body)
 			  (stx-car (car body)))]
 		[fields (stx->list (cadr body))])
@@ -643,7 +652,7 @@
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
-		   (stx-symbol? hd)
+		   (identifier? hd)
 		   (eq? (syntax-e hd) '...))
 	      (if (and (stx-pair? (stx-cdr p))
 		       (stx-null? (stx-cdr (stx-cdr p))))
@@ -672,12 +681,12 @@
 	       (if (stx-null? e)
 		   null
 		   (esc #f))))]
-       [(stx-symbol? p)
+       [(identifier? p)
 	(if (stx-memq p k)
 	    (if just-vars?
 		null
 		`(lambda (e esc)
-		   (if (stx-symbol? e)
+		   (if (identifier? e)
 		       (if (free-identifier=? e (quote-syntax ,p))
 			   null
 			   (esc #f))
@@ -732,6 +741,10 @@
   (define (get-match-vars p k)
     (make-match&env/extract-vars p k #t))
 
+  ;; Create an S-expression that applies
+  ;; rest to `e' and `esc'. Optimize
+  ;; ((lambda (e esc) E) V esc) to
+  ;; ((lambda (esc) E) V), etc.
   (define (app-e-esc rest)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
@@ -739,6 +752,8 @@
 	(caddr rest)
 	`(,rest e esc)))
 
+  ;; Create an S-expression that applies
+  ;; rest to e and `esc'. Optimize...
   (define (app-esc rest e)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
@@ -753,6 +768,8 @@
 	      `((lambda (e) ,r) ,e)))
 	`(,rest ,e esc)))
 
+  ;; Create an S-expression that appends
+  ;; e1 and e2. Optimize...
   (define (app-append e1 e2)
     (if (and (pair? e1)
 	     (eq? (car e1) 'list)
@@ -813,7 +830,7 @@
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
-		   (stx-symbol? hd)
+		   (identifier? hd)
 		   (eq? (syntax-e hd) '...))
 	      (if (and (stx-pair? (stx-cdr p))
 		       (stx-null? (stx-cdr (stx-cdr p))))
@@ -832,7 +849,7 @@
 		    `(lambda (r)
 		       ,(apply-cons (apply-to-r ehd) (apply-to-r etl) p))
 		    (cons ehd etl)))))]
-       [(stx-symbol? p)
+       [(identifier? p)
 	(if (stx-memq p k) 
 	    (if proto-r 
 		`(lambda (r) (quote-syntax ,p))
@@ -901,6 +918,9 @@
 	       [else (void)]))
 	    (apply append (hash-table-map ht (lambda (k v) v)))))))
 
+  ;; apply-to-r creates an S-expression that applies
+  ;; rest to `r', but it also optimizes ((lambda (r) E) r)
+  ;; as simply E.
   (define (apply-to-r rest)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
@@ -908,6 +928,12 @@
 	(caddr rest)
 	`(,rest r)))
 
+  ;; creates an S-expression that conses h and t,
+  ;; with optimizations. If h and t are quoted
+  ;; versions of the carand cdr of p, then return
+  ;; a quoted as the "optimization" --- one that
+  ;; is necessary to preserve the syntax wraps
+  ;; associated with p.
   (define (apply-cons h t p)
     (cond
      [(and (pair? h)
@@ -943,13 +969,13 @@
 	 [(stx-pair? p) 
 	  (let ([hd (stx-car p)])
 	    (if (and use-ellipses?
-		     (stx-symbol? hd)
+		     (identifier? hd)
 		     (eq? (syntax-e hd) '...)
 		     (stx-pair? (stx-cdr p)))
 		(sub (stx-car (stx-cdr p)) #f)
 		(append! (sub (stx-car p) use-ellipses?) 
 			 (sub (stx-cdr p) use-ellipses?))))]
-	 [(stx-symbol? p)
+	 [(identifier? p)
 	  (if (stx-memq p k) 
 	      '() 
 	      (list p))]
@@ -1062,7 +1088,7 @@
 	    [clauses (cdddr l)])
 	(for-each
 	 (lambda (lit)
-	   (unless (stx-symbol? lit)
+	   (unless (identifier? lit)
 	     (raise-syntax-error
 	      'syntax-case
 	      "literal is not a indentifier"
@@ -1262,6 +1288,9 @@
   (import .stxcase)
   (import-for-syntax .kernel .stxcase)
 
+  ;; Like syntax, but also takes a syntax object
+  ;; that supplies a source location for the
+  ;; resulting syntax object.
   (define-syntax syntax/loc
     (lambda (stx)
       (syntax-case stx ()
@@ -1275,7 +1304,7 @@
   (export syntax/loc))
 
 ;;----------------------------------------------------------------------
-;; with-syntax, generate-temporaries, identifier?
+;; with-syntax, generate-temporaries
 
 (module .with-syntax .kernel
   (import .stxcase .stx .small-scheme)
@@ -1297,11 +1326,7 @@
     (let ([l (stx->list l)])
       (map (lambda (x) (datum->syntax (gensym) #f #f)) l)))
 
-  (define (identifier? x)
-    (and (syntax? x)
-	 (symbol? (syntax-e x))))
-
-  (export with-syntax generate-temporaries identifier?))
+  (export with-syntax generate-temporaries))
 
 ;;----------------------------------------------------------------------
 ;; .stxcase-scheme: adds let-syntax, synatx-rules, and
@@ -1556,14 +1581,13 @@
   (export-indirect make-a-promise check-parameter-procedure)
   (export case do delay force promise?
 	  parameterize with-handlers set!-values
-	  let/cc let-struct fluid-let time
-	  (all-from .small-scheme)))
+	  let/cc let-struct fluid-let time))
 
 ;;----------------------------------------------------------------------
 ;; .misc : file utilities, etc. - remaining functions
 
 (module .misc .kernel
-  (import .more-scheme)
+  (import .more-scheme .small-scheme)
   
   (define rationalize
     (letrec ([check (lambda (x) 
@@ -1766,9 +1790,8 @@
 				(raise
 				 (make-exn:i/o:filesystem
 				  (string->immutable-string
-				   (format 
-				    "require-library: collection ~s does not have sub-collection: ~s in: ~s"
-				    c (car l) p))
+				   (format "require-library: collection ~s does not have sub-collection: ~s in: ~s"
+					   c (car l) p))
 				  (current-continuation-marks)
 				  nc
 				  #f)))))))
@@ -1892,7 +1915,7 @@
 
   (define -re:dir (regexp "(.+?)/+(.*)"))
   (define -module-hash-table-table (make-hash-table-weak)) ; weak map from namespace to module ht
-
+  
   (define standard-module-name-resolver
     (lambda (s)
       (let ([filename
@@ -1960,6 +1983,17 @@
 		;; Result is the module name:
 		modname)))))))
 
+  (define (find-library-collection-paths)
+    (path-list-string->path-list
+     (or (getenv "PLTCOLLECTS") "")
+     (or (ormap
+	  (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list p))))
+	  (list
+	   (lambda () (let ((v (getenv "PLTHOME")))
+			(and v (build-path v "collects"))))
+	   (lambda () (find-executable-path (find-system-path 'exec-file) "collects")))) 
+	 null)))
+
   ;; -------------------------------------------------------------------------
 
   (define (simple-return-primitive? v)
@@ -1982,7 +2016,7 @@
 	  path-list-string->path-list find-executable-path
 	  collection-path load-library load-relative-library load/use-compiled
 	  simple-return-primitive? port? not-break-exn?
-	  standard-module-name-resolver))
+	  standard-module-name-resolver find-library-collection-paths))
 
 ;;----------------------------------------------------------------------
 ;; mzscheme: export everything

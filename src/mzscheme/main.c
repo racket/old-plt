@@ -97,20 +97,15 @@ extern BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved);
 static char *get_init_filename(Scheme_Env *env)
 {
   Scheme_Object *f;
-  Scheme_Object *type;
-  Scheme_Object *path;
 
-  f = scheme_lookup_global(scheme_intern_symbol("find-system-path"), 
-			   env);
-  type = scheme_intern_symbol("init-file");
-  
-  if (f) {
-    path = _scheme_apply(f, 1, &type);
-
-    return SCHEME_STR_VAL(path);
-  } else {
-    return "no such file";
+  if (!scheme_setjmp(scheme_error_buf)) {
+    f = scheme_eval_string("(find-system-path 'init-file)", env);
+    
+    if (SCHEME_STRINGP(f))
+      return SCHEME_STR_VAL(f);
   }
+
+  return NULL;
 }
 #endif
 

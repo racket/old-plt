@@ -6,8 +6,13 @@
   (define black-pen (send the-pen-list find-or-create-pen "BLACK" 1 'solid))
   (define black-brush (send the-brush-list find-or-create-brush "BLACK" 'solid))
 
-  (define highlight-pen (send the-pen-list find-or-create-pen "SALMON" 1 'solid))
-  (define highlight-brush (send the-brush-list find-or-create-brush "SALMON" 'solid))
+  (define highlight-color "PALE GREEN")
+  (define highlight-pen (send the-pen-list find-or-create-pen highlight-color 1 'solid))
+  (define highlight-brush (send the-brush-list find-or-create-brush highlight-color 'solid))
+
+  (define line-color "CORNFLOWER BLUE")
+  (define line-pen (send the-pen-list find-or-create-pen line-color 1 'solid))
+  (define line-brush (send the-brush-list find-or-create-brush line-color 'solid))
 
   (define grid-pasteboard%
     (class pasteboard% (x-size y-size . args)
@@ -95,22 +100,31 @@
 	     (set! ignored-move? #f)))])
       (inherit find-next-selected-snip)
 
+      (public
+	[moved
+	 (lambda (l)
+	   (void))])
+
       (override
 	[after-interactive-move
 	 (lambda (event)
 	   (unless ignored-move?
-	     (let-values ([(cx cy) (pixel-xy->grid-xy (send event get-x) (send event get-y))])
-	       (let loop ([snip (find-next-selected-snip #f)])
-		 (when snip
-		   (if (valid-move? snip cx cy)
-		       (begin (send snip set-x cx)
-			      (send snip set-y cy)
-			      (animate-to snip cx cy)
-			      (invalidate-bitmap-cache)
-			      #t)
-		       (begin (bell)
-			      (animate-to snip (send snip get-x) (send snip get-y))))
-		   (loop (find-next-selected-snip snip)))))))])
+	     (let ([moved-snips
+		    (let-values ([(cx cy) (pixel-xy->grid-xy (send event get-x) (send event get-y))])
+		      (let loop ([snip (find-next-selected-snip #f)])
+			(if snip
+			    (if (valid-move? snip cx cy)
+				(begin (send snip set-x cx)
+				       (send snip set-y cy)
+				       (animate-to snip cx cy)
+				       (cons snip (loop (find-next-selected-snip snip))))
+				(begin (bell)
+				       (animate-to snip (send snip get-x) (send snip get-y))
+				       (loop (find-next-selected-snip snip))))
+			    null)))])
+	       (unless (null? moved-snips)
+		 (moved moved-snips)))
+	     (invalidate-bitmap-cache)))])
 
       (rename [super-on-paint on-paint])
       (inherit begin-edit-sequence end-edit-sequence)
@@ -120,17 +134,26 @@
 	  (let ([orig-pen (send dc get-pen)]
 		[orig-brush (send dc get-brush)])
 
-	    (when before
-	      (when cursor-x/y
-		(send dc set-pen highlight-pen)
-		(send dc set-brush highlight-brush)
-		(let ([snip (get-snip-at (car cursor-x/y) (cdr cursor-x/y))])
-		  (when snip
-		    (let ([spots (get-moves snip)])
-		      (for-each (lambda (spot)
-				  (let-values ([(x y w h) (grid-xy->pixel-xywh (car spot) (cdr spot))])
-				    (send dc draw-rectangle (+ x dx) (+ y dy) w h)))
-				spots))))))
+	    (when cursor-x/y
+	      (if before
+		  (begin (send dc set-pen highlight-pen)
+			 (send dc set-brush highlight-brush))
+		  (begin (send dc set-pen line-pen)
+			 (send dc set-brush line-brush)))
+	      (let ([snip (get-snip-at (car cursor-x/y) (cdr cursor-x/y))])
+		(when snip
+		  (let ([spots (get-moves snip)])
+		    (for-each (lambda (spot)
+				(let-values ([(x y w h) (grid-xy->pixel-xywh (car spot) (cdr spot))])
+				  (if before
+				      (send dc draw-rectangle (+ x dx) (+ y dy) w h)
+				      (let-values ([(fx fy fw fh) (grid-xy->pixel-xywh (car cursor-x/y) (cdr cursor-x/y))])
+					(send dc draw-line
+					      (+ fx (/ fw 2))
+					      (+ fy (/ fh 2))
+					      (+ x (/ w 2))
+					      (+ y (/ h 2)))))))
+			      spots)))))
 
 	    (when before
 	      (send dc set-pen black-pen)
@@ -180,14 +203,21 @@
       (public
 	[get-snip-at
 	 (lambda (x y)
+	   (let ([snips (get-all-snips-at x y)])
+	     (if (null? snips)
+		 #f
+		 (car snips))))]
+	
+	[get-all-snips-at
+	 (lambda (x y)
 	   (let loop ([snip (find-first-snip)])
 	     (cond
 	       [snip
 		(if (and (= x (send snip get-x))
 			 (= y (send snip get-y)))
-		    snip
+		    (cons snip (loop (send snip next)))
 		    (loop (send snip next)))]
-	       [else #f])))]
+	       [else null])))]
 
 	[insert-at
 	 (lambda (snip x y)

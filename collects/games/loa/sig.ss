@@ -9,7 +9,12 @@
 (define-signature loa^
   (loa-pasteboard%
    loa-canvas%
-   loa-checker%))
+   loa-checker%
+
+   get-connected-regions))
 
 (define-signature loa:utils^
   (vector-for-each))
+
+(define-signature loa:computer-player^
+  (computer-move))

@@ -760,6 +760,27 @@
             (fw:preferences:get 'framework:line-offsets)
             (fw:preferences:get 'framework:display-line-numbers)))]
         
+	[highlight-error
+	 (lambda (file start finish)
+	   (when (is-a? file fw:text:basic%)
+	     (send file begin-edit-sequence)
+	     (set! recent-error-text file)
+	     (wait-for-io-to-complete)
+	     (reset-highlighting)
+	     (set! error-range (cons start finish))
+	     (if color?
+		 (let ([reset (send file highlight-range start finish error-color #f #f 'high)])
+		   (set! reset-highlighting
+			 (lambda ()
+			   (unless inserting-prompt
+			     (set! error-range #f)
+			     (reset)
+			     (set! reset-highlighting void)))))
+		 (send file set-position start finish))
+	     (send file scroll-to-position start #f finish)
+	     (send file end-edit-sequence)
+	     (send (send file get-canvas) focus)))]
+
 	[report-error ; =Kernel=, =Handler=
 	 (lambda (start-location end-location type input-string exn)
 	   (let* ([start (zodiac:location-offset start-location)]
@@ -772,24 +793,7 @@
 				      input-string))])
 	     (report-unlocated-error message exn)
              (set! recent-error-text #f)
-	     (when (is-a? file mred:text%)
-	       (send file begin-edit-sequence)
-               (set! recent-error-text file)
-	       (wait-for-io-to-complete)
-               (reset-highlighting)
-               (set! error-range (cons start finish))
-               (if color?
-                   (let ([reset (send file highlight-range start finish error-color #f #f 'high)])
-                     (set! reset-highlighting
-                           (lambda ()
-                             (unless inserting-prompt
-                               (set! error-range #f)
-                               (reset)
-                               (set! reset-highlighting void)))))
-                   (send file set-position start finish))
-               (send file scroll-to-position start #f finish)
-	       (send file end-edit-sequence)
-	       (send (send file get-canvas) focus))))]
+	     (highlight-error file start finish)))]
 	[on-set-media void])
 
       (rename [super-on-insert on-insert]

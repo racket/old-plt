@@ -13,5 +13,6 @@
 	       core
 	       fw
 	       drscheme
+	       zodiac
 	       hierlist)])
   (export))

@@ -1,4 +1,4 @@
-;; $Id: gears.ss,v 1.5 2005/01/11 14:54:04 mflatt Exp $
+;; $Id: gears.ss,v 1.6 2005/01/11 21:58:29 mflatt Exp $
 ;;
 ;; This is a version of the venerable "gears" demo for PLT Scheme 200 using
 ;; Scott Owens' SGL OpenGL bindings.  It was ported from "glxgears.c" 1.3 from
@@ -338,7 +338,7 @@
 	  (set! step? #f)
 	  (queue-callback (lambda x (send this run))))))
 
-    (super-instantiate () (style '(gl no-autoclear)) (gl-config cfg))))
+    (super-instantiate () (style '(gl no-autoclear)))))
 (define (f)
   (let* ((f (make-object frame% "gears.ss" #f))
          (c (instantiate gears-canvas% (f) (min-width 300) (min-height 300))))

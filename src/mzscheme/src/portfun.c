@@ -2321,7 +2321,7 @@ do_write_string_avail(const char *who, int argc, Scheme_Object *argv[], int rare
     port = CURRENT_OUTPUT_PORT(scheme_config);
 
   putten = scheme_put_string(who, port, 
-			     SCHEME_STR_VAL(str), start, size + start,
+			     SCHEME_STR_VAL(str), start, size,
 			     rarely_block);
 
   if (putten < 0)

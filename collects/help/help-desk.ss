@@ -11,6 +11,7 @@
   ;  server, the start-help-server here may also launch the PLT browser
   (provide (rename server:start-help-server start-help-server)
 	   help-desk-browser
+           in-help-desk-navigate?
            search-for-docs
 	   goto-manual-link
 	   goto-hd-location))

@@ -2713,6 +2713,8 @@ void protect_old_mpages()
 /*                         modification tracking                              */
 /******************************************************************************/
 
+#if GENERATIONS
+
 static void designate_modified(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
@@ -2804,6 +2806,8 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 }
 # define NEED_SIGWIN
 #endif
+
+#endif /* GENERATIONS */
 
 /******************************************************************************/
 /*                              stack walking                                 */

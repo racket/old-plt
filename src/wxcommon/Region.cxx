@@ -1667,7 +1667,7 @@ Bool wxIntersectPathRgn::Install(long target, Bool reverse, Bool align)
     CGContextClip(CGCG);
   CGPathRelease(CGPATH);
   {
-    CGMutablePathRef *p;
+    CGMutablePathRef p;
     p = CGPathCreateMutable();
     CGPATH = p;
   }

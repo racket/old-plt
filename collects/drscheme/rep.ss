@@ -16,6 +16,8 @@
 
     (print-struct #t)
 
+    (define primitive-eval (current-eval))
+
     (error-display-handler
      (let ([p (current-parameterization)])
        (lambda (msg)
@@ -155,9 +157,7 @@
 	    [on-set-media void]
 	    [get-prompt (lambda () "> ")]
 	    
-
 	    [system-parameterization (current-parameterization)]
-	    [primitive-eval (current-eval)]
 	    [param #f]
 
 	    [current-thread-desc #f]
@@ -258,6 +258,9 @@
 									    (mred:message-box (format "~s" exn)
 											      "Uncaught Exception"))
 									(k #t))))])
+						   '(mred:message-box (format "~a" (require-library-use-compiled))
+								     "require-library-use-compiled")
+						   '(mred:message-box (format "~a" expr) "evalling")
 						   (primitive-eval expr)))))
 					   (lambda anss
 					     (let ([anss (let loop ([v anss])
@@ -341,17 +344,21 @@
 				(open-input-file filename))))
 		    (lambda ()
 		      (let ([reader (zodiac:read re-p loc)])
-			(let loop ([last (void)]
-				   [z-sexp (reader)])
-			  (if (zodiac:eof? z-sexp)
-			      last
-			      (loop (user-eval (aries:annotate
-						(call/nal
-						 zodiac:scheme-expand/nal
-						 zodiac:scheme-expand
-						 (expression: z-sexp)
-						 (parameterization: param))))
-				    (reader))))))
+			(let loop ([this-exp (reader)]
+				   [next-exp (reader)])
+			  (let ([go
+				 (lambda ()
+				   (user-eval (aries:annotate
+					       (call/nal
+						zodiac:scheme-expand/nal
+						zodiac:scheme-expand
+						(expression: this-exp)
+						(parameterization: param)))))])
+			    (cond
+			     [(zodiac:eof? this-exp) (void)]
+			     [(zodiac:eof? next-exp) (go)]
+			     [else (begin (go)
+					  (loop next-exp (reader)))])))))
 		    (lambda ()
 		      (when (input-port? re-p)
 			(close-input-port re-p)))))))])

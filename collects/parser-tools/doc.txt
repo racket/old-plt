@@ -52,6 +52,13 @@ Several values are also provided:
     current line
 > (position? x) the question associated with a position struct
 
+Each time the scheme code for lex is compiled (e.g. when a .ss file containing
+a (lex ...) is loaded/required) the lexer generator is run.  To avoid this
+overhead place the lexer generator into a module and compile the module to a 
+.zo with 'mzc -z filename'  Then place the resulting .zo file in a
+subdirectory named 'compiled'
+
+
 An example this read works for a subset of the R5RS scheme syntax:
 (the parser and define-tokens forms will be provided by the yacc module, when
 it is ready)

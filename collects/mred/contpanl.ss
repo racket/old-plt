@@ -673,6 +673,12 @@
 	   (case-lambda
 	    [() active]
 	    [(new-child)
+	     (unless (eq? this (send new-child get-parent))
+	       (error 'active-child
+		      (string-append
+		       "The child specified (~s) is not "
+		       "a child of this panel (~s)")
+		      new-child this))
 	     (unless (null? active) (send active show #f))
 	     (unless (null? new-child) (send new-child show #t))
 	     (set! active new-child)

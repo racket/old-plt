@@ -22,7 +22,6 @@
 */
 
 #include "schpriv.h"
-
 #include "schminc.h"
 
 #if defined(UNIX_LIMIT_STACK) || defined(UNIX_LIMIT_FDSET_SIZE)
@@ -86,8 +85,6 @@ static void register_traversers(void);
 
 static void hash_percent(const char *name, Scheme_Object *obj, 
 			 Scheme_Env *, int add);
-static void add_primitive_symbol(Scheme_Object *sym, Scheme_Object *obj, 
-				 Scheme_Env *env);
 
 static int hash_percent_buflen = 0;
 static char *hash_percent_buffer;
@@ -151,6 +148,7 @@ Scheme_Env *scheme_basic_env()
 
     scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env); 
     scheme_init_port_config();
+    scheme_init_port_fun_config();
     scheme_init_error_config();
 #ifndef NO_SCHEME_EXNS
     scheme_init_exn_config();
@@ -271,39 +269,6 @@ Scheme_Env *scheme_basic_env()
   return env;
 }
 
-static void primitive_syntax_through_scheme(const char *name, 
-					    Scheme_Env *env)
-{
-  Scheme_Object *hp, *sym;
-
-  hp = scheme_hash_percent_name(name, -1);
-  scheme_set_keyword(hp, env);
-
-  sym = scheme_intern_symbol(name);
-  scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
-}
-
-static void primitive_function_through_scheme(const char *name, 
-					      Scheme_Env *env)
-{
-  Scheme_Object *sym, *hp;
-
-  sym = scheme_intern_symbol(name);
-
-  hp = scheme_hash_percent_name(name, -1);
-  
-  add_primitive_symbol(hp, scheme_lookup_global(sym, env), env);
-
-  scheme_set_keyword(hp, env);
-}
-
-static void primitive_cond_through_scheme(const char *name, 
-					  Scheme_Env *env)
-{
-  primitive_syntax_through_scheme(name, env);
-  scheme_init_empty_cond(env);
-}
-
 #if USE_COMPILED_MACROS
 Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env)
 {
@@ -374,6 +339,7 @@ static void make_init_env(void)
   MZTIMEIT(list, scheme_init_list(env));
   MZTIMEIT(number, scheme_init_number(env));
   MZTIMEIT(port, scheme_init_port(env));
+  MZTIMEIT(port, scheme_init_port_fun(env));
   MZTIMEIT(string, scheme_init_string(env));
   MZTIMEIT(vector, scheme_init_vector(env));
   MZTIMEIT(char, scheme_init_char(env));
@@ -480,28 +446,18 @@ static void make_init_env(void)
   nllt = scheme_intern_symbol("current-loaded-library-table");
   scheme_add_global_symbol(nllt, scheme_make_prim(current_loaded_library_table), env);
 
-#define EVAL_ONE_STR(str) scheme_eval_string(str, env)
-#define EVAL_ONE_SIZED_STR(str, len) scheme_eval_compiled_sized_string(str, len, env)
-#define JUST_DEFINED(name) primitive_syntax_through_scheme(#name, env)
-#define JUST_DEFINED_FUNC(name) primitive_function_through_scheme(#name, env)
-#define JUST_DEFINED_KEY(name) primitive_syntax_through_scheme(#name, env)
-#define JUST_DEFINED_COND(name) primitive_cond_through_scheme(#name, env)
-#define JUST_DEFINED_QQ(name) JUST_DEFINED_KEY(name)
-
 #if USE_COMPILED_MACROS
-   if (builtin_ref_counter != EXPECTED_PRIM_COUNT) {
-     printf("Primitive count %d doesn't match expected count %d\n"
-	    "Turn off USE_COMPILED_MACROS in src/schminc.h\n",
-	    builtin_ref_counter, EXPECTED_PRIM_COUNT);
-     exit(-1);
-   }
-
-# include "cmacro.inc"
-#else
-# include "macro.inc"
+  if (builtin_ref_counter != EXPECTED_PRIM_COUNT) {
+    printf("Primitive count %d doesn't match expected count %d\n"
+	   "Turn off USE_COMPILED_MACROS in src/schminc.h\n",
+	   builtin_ref_counter, EXPECTED_PRIM_COUNT);
+    exit(-1);
+  }
 #endif
+   
+  scheme_add_embedded_builtins(env);
 
-   scheme_remove_global_symbol(nllt, env);
+  scheme_remove_global_symbol(nllt, env);
 
   scheme_init_format_procedure(env);
   scheme_init_rep(env);
@@ -579,10 +535,10 @@ Scheme_Env *scheme_min_env(Scheme_Comp_Env *env)
 
 #define get_globals(env) (env->globals)
 
-static void
-do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym, 
-		     Scheme_Object *obj, int constant,
-		     int primitive)
+void
+scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym, 
+			    Scheme_Object *obj, int constant,
+			    int primitive)
 {
   Scheme_Hash_Table *globals;
   Scheme_Bucket *b;
@@ -606,7 +562,7 @@ do_add_global(Scheme_Env *env, const char *name,
   Scheme_Object *sym;
   
   sym = scheme_intern_symbol(name);
-  do_add_global_symbol(env, sym, obj, constant, primitive);
+  scheme_do_add_global_symbol(env, sym, obj, constant, primitive);
 }
 
 void
@@ -619,14 +575,7 @@ void
 scheme_add_global_symbol(Scheme_Object *sym, Scheme_Object *obj, 
 			 Scheme_Env *env)
 {
-  do_add_global_symbol(env, sym, obj, 0, 0);
-}
-
-static void
-add_primitive_symbol(Scheme_Object *sym, Scheme_Object *obj, 
-		     Scheme_Env *env)
-{
-  do_add_global_symbol(env, sym, obj, 1, 1);
+  scheme_do_add_global_symbol(env, sym, obj, 0, 0);
 }
 
 void
@@ -691,7 +640,7 @@ void
 scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *obj, 
 				  Scheme_Env *env)
 {
-  do_add_global_symbol(env, name, obj, scheme_constant_builtins, 0);
+  scheme_do_add_global_symbol(env, name, obj, scheme_constant_builtins, 0);
 #ifndef NO_SEPARATE_HASH_PRECENT
   hash_percent(scheme_symbol_val(name), obj, env, 1);
 #endif
@@ -720,7 +669,7 @@ scheme_add_global_keyword(const char *name, Scheme_Object *obj,
 
   hp = scheme_hash_percent_name(name, -1);
 
-  do_add_global_symbol(env, hp, obj, 0, 0);
+  scheme_do_add_global_symbol(env, hp, obj, 0, 0);
   scheme_set_keyword(hp, env);
 
   sym = scheme_intern_symbol(name);  
@@ -775,7 +724,7 @@ static void hash_percent(const char *name, Scheme_Object *obj,
     Scheme_Hash_Table *globals = get_globals(env);
     globals->has_constants = 2;
 
-    do_add_global_symbol(env, sym, obj, 1, 1);
+    scheme_do_add_global_symbol(env, sym, obj, 1, 1);
 
     globals->has_constants = 1;
     

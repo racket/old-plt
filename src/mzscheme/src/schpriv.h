@@ -108,6 +108,7 @@ void scheme_init_symbol_type(Scheme_Env *env);
 void scheme_init_type(Scheme_Env *env);
 void scheme_init_list(Scheme_Env *env);
 void scheme_init_port(Scheme_Env *env);
+void scheme_init_port_fun(Scheme_Env *env);
 void scheme_init_file(Scheme_Env *env);
 void scheme_init_proc(Scheme_Env *env);
 void scheme_init_vector(Scheme_Env *env);
@@ -150,6 +151,7 @@ extern Scheme_Type_Reader *scheme_type_readers;
 extern Scheme_Type_Writer *scheme_type_writers;
 
 void scheme_init_port_config(void);
+void scheme_init_port_fun_config(void);
 void scheme_init_error_escape_proc(Scheme_Process *p);
 void scheme_init_error_config(void);
 #ifndef NO_SCHEME_EXNS
@@ -160,6 +162,12 @@ extern int scheme_builtin_ref_counter;
 
 Scheme_Object **scheme_make_builtin_references_table(void);
 Scheme_Object *scheme_make_local(Scheme_Type type, int pos);
+
+void scheme_add_embedded_builtins(Scheme_Env *env);
+void scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym, 
+				 Scheme_Object *obj, int constant,
+				 int primitive);
+Scheme_Object *scheme_init_unitsig(void);
 
 /*========================================================================*/
 /*                                constants                               */
@@ -177,6 +185,7 @@ extern Scheme_Object *scheme_begin_syntax;
 extern Scheme_Object *scheme_def_exit_proc;
 
 extern Scheme_Object *scheme_orig_stdout_port;
+extern Scheme_Object *scheme_orig_stdin_port;
 
 extern Scheme_Object *scheme_arity_at_least;
 
@@ -1321,6 +1330,70 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, Scheme_Obj
 #endif
 
 Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv);
+
+/*========================================================================*/
+/*                               Ports                                    */
+/*========================================================================*/
+
+typedef struct Scheme_Indexed_String {
+  MZTAG_IF_REQUIRED
+  char *string;
+  int size;
+  int index;
+  union { 
+    int hot; /* output port */
+    int pos; /* input port */
+  } u;
+} Scheme_Indexed_String;
+
+typedef struct {
+  MZTAG_IF_REQUIRED
+  unsigned char *buf;
+  long buflen;
+  int bufstart, bufend;
+  int eof;
+#ifdef MZ_REAL_THREADS
+  int num_waiting;
+  void *change_mutex;
+  Scheme_Object *wait_sem;
+#endif
+} Scheme_Pipe;
+
+extern Scheme_Object *scheme_string_input_port_type;
+extern Scheme_Object *scheme_string_output_port_type;
+extern Scheme_Object *scheme_user_input_port_type;
+extern Scheme_Object *scheme_user_output_port_type;
+extern Scheme_Object *scheme_pipe_read_port_type;
+extern Scheme_Object *scheme_pipe_write_port_type;
+
+void scheme_flush_orig_outputs(void);
+Scheme_Object *scheme_file_stream_port_p(int, Scheme_Object *[]);
+Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_write_string_avail(int argc, Scheme_Object *argv[]);
+
+Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
+					   void *data,
+					   int (*getc_fun)(Scheme_Input_Port*),
+					   int (*peekc_fun)(Scheme_Input_Port*),
+					   int (*char_ready_fun)(Scheme_Input_Port*),
+					   void (*close_fun)(Scheme_Input_Port*),
+					   void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+					   int must_close);
+
+#define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
+#define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)
+#define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: " kind " port is closed", who);
+
+typedef void (*Write_String_Fun)(char *str, long d, long len, struct Scheme_Output_Port *);
+typedef void (*Close_Fun_o)(struct Scheme_Output_Port *);
+
+typedef int (*Getc_Fun)(struct Scheme_Input_Port *port);
+typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
+typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
+typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
+typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
 
 /*========================================================================*/
 /*                         memory debugging                               */

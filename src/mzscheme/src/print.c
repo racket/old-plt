@@ -552,8 +552,6 @@ print_to_string(Scheme_Object *obj,
   return p->print_buffer;
 }
 
-typedef void (*Write_String_Fun)(char *str, long d, long len, struct Scheme_Output_Port *);
-
 static void 
 print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int escaped,
 	      long maxl, Scheme_Process *p, Scheme_Config *config)

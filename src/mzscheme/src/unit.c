@@ -2681,11 +2681,12 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
     pms = MALLOC_N(ParamMap *, n);
     data->param_maps = pms;
   }
+  vec = NULL;
   for (i = 0; i < n; i++) {
     c = data->param_counts[i];
     map = MALLOC_N_RT(ParamMap, c);
     data->param_maps[i] = map;
-    
+
     for (j = 0; j < c; j++) {
       if (d >= p) {
 	vec = SCHEME_CAR(maps);
@@ -2758,26 +2759,10 @@ static Scheme_Object *read_invoke_data(Scheme_Object *o)
 /* Unit/sig                                                           */
 /**********************************************************************/
 
-static void init_unitsig()
-{
-  Scheme_Env *env;
-  env = scheme_get_env(scheme_config);
-
-#define EVAL_ONE_STR(str) unitsig_macros = scheme_eval_string(str, env)
-#define EVAL_ONE_SIZED_STR(str, len) unitsig_macros = scheme_eval_compiled_sized_string(str, len, env)
-#define JUST_DEFINED(x) /**/
-
-#if USE_COMPILED_MACROS
-#include "cunitsig.inc"
-#else
-#include "unitsig.inc"
-#endif
-}
-
 static Scheme_Object *do_unitsig(void *which, int argc, Scheme_Object **argv)
 {
   if (!unitsig_macros)
-    init_unitsig();
+    unitsig_macros = scheme_init_unitsig();
 
   return _scheme_apply(SCHEME_VEC_ELS(unitsig_macros)[SCHEME_INT_VAL(which)],
 		       argc, argv);

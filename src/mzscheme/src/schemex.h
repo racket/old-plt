@@ -413,6 +413,7 @@ void (*scheme_fdclr)(void *fd, int pos);
 int (*scheme_fdisset)(void *fd, int pos);
 void (*scheme_add_fd_handle)(void *h, void *fds, int repost);
 void (*scheme_add_fd_eventmask)(void *fds, int mask);
+int (*scheme_return_eof_for_error)();
 /*========================================================================*/
 /*                        namespace/environment                           */
 /*========================================================================*/

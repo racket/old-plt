@@ -1,5 +1,41 @@
-;; 1st analysis phase of the compiler [lexical analysis]
+;; lexical analysis phase of the compiler
 ;; (c) 1996-7 Sebastian Good
+;; (c) 1997-8 PLT, Rice University
+
+;; For closures, variable sets, such as the free variables,
+;;  are computed.
+;; Constants are transformed into varrefs to top-level
+;;  constant definitions. A list of these is kept, and
+;;  code is generated to create the constants and prefixed
+;;  onto the output code. See also const.ss.
+;; Global and primitive varrefs are collected into a list,
+;;  so they can all be looked up once.
+;; Letrec expressions that don't just bind procedures are
+;;  changed to let+set!. Letrecs that remain after this
+;;  phase are well-behaved procedure binders.
+;; Some simple arity checks are performed, and return-arity
+;;  information is kept for closures. Ultimately, the return-
+;;  arity information is used to compile away some return
+;;  value count checks.
+;; Constants are propagated.
+;; Constant let-bound variables are eliminated (unless they
+;;   are improperly used in the let body).
+;; Procedure applications are inlined.
+;; Compounding and invoking structures are computed.
+
+;;; Annotatitons: ----------------------------------------------
+;;    binding - `binding' structure: UPDATED occasionally:
+;;         rec? field for letrec bindings
+;;         known-but-used? field for ill-used bindings
+;;    quote - zodiac:varref ( global var containing a constructed 
+;;         constant) or an immediate constant
+;;    app - `app' structure: UPDATED tail? flag
+;;    lambda - `procedure-code' structure
+;;    unit - `unit-code' structure: UPDATED with var set info
+;;    class - `class-code' structure: UPDATED with var set info
+;;    compound - `compound-info' structure
+;;    invoke - `invoke-info' structure
+;;; ------------------------------------------------------------
 
 (unit/sig
  compiler:analyze^
@@ -42,7 +78,7 @@
     (length compiler:interfaces)
     (set! compiler:interfaces (cons c compiler:interfaces))))
  
- (define compiler:max-arity-allowed 11739) ; this is a sane limit
+ (define compiler:max-arity-allowed 11739) ; meant to be a sane limit
  
  (define compiler:define-list null)
  (define compiler:per-load-define-list null)
@@ -64,7 +100,9 @@
    (set! compiler:local-define-list 
 	 (cons def compiler:local-define-list)))
 
- (define-struct case-info (body case-code global-vars used-vars captured-vars max-arity return-multi))
+ ;; Temporary structure used in building up case-lambda info
+ (define-struct case-info 
+   (body case-code global-vars used-vars captured-vars max-arity return-multi))
 
  (define (list->zodiac:quote l ast)
    (zodiac:make-quote-form
@@ -225,6 +263,9 @@
      [(#f) b-multi]
      [(possible) (or b-multi 'possible)]
      [(#t) #t]))
+
+ ;;----------------------------------------------------------------------
+ ;; INLINING
 
  ;; Only inline fairly simple things
  (define (expression-inline-cost body init-size)
@@ -415,6 +456,7 @@
 		      [else (loop (cdr argses) (cdr bodies))]))))))))
  
 
+ ;;----------------------------------------------------------------------
  ;; analyze-expression takes 4 arguments
  ;;  1) an AST to transform
  ;;  2) a set of bound variables (the lexical environment)
@@ -427,8 +469,9 @@
  ;;  4) global variables and mutable `constants' used in the expression [global-vars]
  ;;  5) local variables (including given bound set) that are used or captured by nested closures [used-vars]
  ;;  6) free and local variables that are captured by nested closures [captured-vars]
- ;;  7) maximum arity to a call made in this expression
- ;;  8) returns multiple values?: #t, 'possible, or #f
+ ;;  7) a list of `code' structures
+ ;;  8) maximum arity to a call made in this expression
+ ;;  9) returns multiple values?: #t, 'possible, or #f
  ;;
  (define analyze-expression!
    (lambda (ast bound-vars tail?)
@@ -437,6 +480,7 @@
 	   [captured-vars empty-set]
 	   [free-vars empty-set]
 	   [global-vars empty-set]
+	   [codes null]
 	   [max-arity 1])
        (letrec
 	   ([add-local-var! (lambda (var)
@@ -454,6 +498,8 @@
 	    [add-global-var! (lambda (var)
 			       (set! global-vars
 				     (set-union-singleton global-vars var)))]
+	    [add-child-code! (lambda (c)
+			       (set! codes (cons c codes)))]
 	    [register-arity! (lambda (n) (set! max-arity (max n max-arity)))]  
 	    [register-code-vars!
 	     (lambda (code)
@@ -464,7 +510,7 @@
 	       ; and local-vars. New captured variables are also
 	       ; added: free variables and captured variables in
 	       ; nested closures. (Captured variables are always
-	       ; a subset of free + local.)
+	       ; a subset of free + used.)
 	       (set! free-vars
 		     (set-union (set-minus (code-free-vars code)
 					   local-vars)
@@ -487,11 +533,13 @@
 			 (set-union (code-global-vars code) global-vars))))]
 	    [analyze-code-body!
 	     (lambda (ast locals tail? code)
+	       (add-child-code! code)
 	       (let-values ([(body free-vars
 				   local-vars 
 				   global-vars 
 				   used-vars
 				   captured-vars
+				   children
 				   L-max-arity
 				   multi)
 			     (analyze-expression! ast
@@ -508,10 +556,11 @@
 							  (code-used-vars code)))
 		 (set-code-captured-vars! code (set-union captured-vars
 							  (code-captured-vars code)))
-		 (set-code-max-arity! code (max L-max-arity
-						(code-max-arity code)))
-		 
-		 (set-code-return-multi! code multi)
+		 (set-code-children! code children)
+		 (for-each (lambda (c) (set-code-parent! c code)) children)
+		 (set-closure-code-max-arity! code (max L-max-arity
+							(closure-code-max-arity code)))
+		 (set-closure-code-return-multi! code multi)
 		 
 		 body))]
 	    [analyze-varref!
@@ -741,40 +790,55 @@
 		;;    we have information about what free variables they use	
 		;;
 		[(zodiac:case-lambda-form? ast)
-		 (let ([case-infos
-			(map
-			 (lambda (args body)
-			   (let ([args (zodiac:arglist-vars args)])
-			     
-			     (let-values 
-				 ([(lambda-body free-lambda-vars
-						local-lambda-vars 
-						global-lambda-vars 
-						used-lambda-vars
-						captured-lambda-vars
-						L-max-arity
-						multi)
-				   
-				   (analyze-expression! body
-							(improper-list->set args)
-							#t)])
-			       
-			       (let ([case-code (make-case-code free-lambda-vars
-								local-lambda-vars
-								global-lambda-vars
-								#f)])
-				 (make-case-info lambda-body case-code 
+		 (let* ([code
+			 (make-procedure-code empty-set empty-set empty-set empty-set empty-set
+					      'unknown-parent #f null
+					      #f #f #f #f 0 #f (get-annotation ast) ; ann. = name
+					      'unknown-case-infos #f)]
+			[case-infos
+			 (map
+			  (lambda (args body)
+			    (let ([args (zodiac:arglist-vars args)])
+			      
+			      (let-values 
+				  ([(lambda-body free-lambda-vars
+						 local-lambda-vars 
 						 global-lambda-vars 
-						 used-lambda-vars 
-						 captured-lambda-vars 
+						 used-lambda-vars
+						 captured-lambda-vars
+						 children-codes
 						 L-max-arity
-						 multi)))))
-			 (zodiac:case-lambda-form-args ast)
-			 (zodiac:case-lambda-form-bodies ast))])
-		   (let loop ([code (make-procedure-code empty-set empty-set empty-set empty-set empty-set
-							 #f #f #f #f 0 #f (get-annotation ast) ; ann. = name
-							 (map case-info-case-code case-infos) #f)]
-			      [l case-infos])
+						 multi)
+				    
+				    (analyze-expression! body
+							 (improper-list->set args)
+							 #t)])
+				
+				(let ([case-code (make-case-code
+						  free-lambda-vars
+						  local-lambda-vars
+						  global-lambda-vars
+						  used-lambda-vars
+						  captured-lambda-vars
+						  code #f children-codes
+						  #f)])
+				  (for-each (lambda (c) (set-code-case-parent! c case-code))
+					    children-codes)
+				  (make-case-info lambda-body case-code 
+						  global-lambda-vars
+						  used-lambda-vars 
+						  captured-lambda-vars 
+						  L-max-arity
+						  multi)))))
+			  (zodiac:case-lambda-form-args ast)
+			  (zodiac:case-lambda-form-bodies ast))]
+			[case-codes (map case-info-case-code case-infos)]
+			[all-children (apply append (map code-children case-codes))])
+		   (set-procedure-code-case-codes! code case-codes)
+		   (set-code-children! code all-children)
+		   (for-each (lambda (c) (set-code-parent! c code)) all-children)
+		   (add-child-code! code)
+		   (let loop ([l case-infos])
 		     (if (null? l)
 			 (begin
 			   ; set the body
@@ -789,27 +853,38 @@
 			   ; finally return it
 			   (values ast #f))
 			 
-			 (loop
-			  (make-procedure-code (set-union (case-code-free-vars
-							   (case-info-case-code (car l)))
-							  (code-free-vars code))
-					       (set-union (case-code-local-vars
-							   (case-info-case-code (car l)))
-							  (code-local-vars code))
-					       (set-union (case-info-global-vars (car l))
-							  (code-global-vars code))
-					       (set-union (case-info-used-vars (car l))
-							  (code-used-vars code))
-					       (set-union (case-info-captured-vars (car l))
-							  (code-captured-vars code))
-					       #f #f #f #f
-					       (max (code-max-arity code)
-						    (case-info-max-arity (car l)))
-					       (or-multi (code-return-multi code)
-							 (case-info-return-multi (car l)))
-					       (code-name code)
-					       (procedure-code-case-codes code) #f)
-			  (cdr l)))))]
+			 (begin
+			   (set-code-free-vars! 
+			    code
+			    (set-union (code-free-vars
+					(case-info-case-code (car l)))
+				       (code-free-vars code)))
+			   (set-code-local-vars! 
+			    code
+			    (set-union (code-local-vars
+					(case-info-case-code (car l)))
+				       (code-local-vars code)))
+			   (set-code-global-vars!
+			    code
+			    (set-union (case-info-global-vars (car l))
+				       (code-global-vars code)))
+			   (set-code-used-vars!
+			    code
+			    (set-union (case-info-used-vars (car l))
+				       (code-used-vars code)))
+			   (set-code-captured-vars!
+			    code
+			    (set-union (case-info-captured-vars (car l))
+				       (code-captured-vars code)))
+			   (set-closure-code-max-arity!
+			    code
+			    (max (closure-code-max-arity code)
+				 (case-info-max-arity (car l))))
+			   (set-closure-code-return-multi! 
+			    code
+			    (or-multi (closure-code-return-multi code)
+				      (case-info-return-multi (car l))))
+			   (loop (cdr l))))))]
 		
 		;;--------------------------------------------------------------
 		;; LET EXPRESSIONS
@@ -1361,6 +1436,7 @@
 		   global-vars
 		   locals-used
 		   captured-vars
+		   codes
 		   max-arity
 		   multi))))))
 

@@ -1,4 +1,6 @@
 ;; Library of functions for the compiler
+;; (c) 1996-7 Sebastian Good
+;; (c) 1997-8 PLT, Rice University
 
 (unit/sig
  compiler:library^
@@ -199,7 +201,14 @@
 			  #\_
 			  c))
 	  str))))
-     
+
+(define (protect-comment s)
+    (string-append
+     (regexp-replace* "[*]/"
+		      (regexp-replace* "/[*]" s "-")
+		      "-")
+     " "))
+
 (define (global-defined-value* v)
   (and v (global-defined-value v)))
 

@@ -1,8 +1,10 @@
 ;; VM Optimization pass
 ;; (c) 1996-7 Sebastian Good
-;;
-;; This pass only allows T & V statements to be expanded into multiple statments
-;; there is not a mechanism to expand R, A, or L expressions.
+;; (c) 1997-8 PLT, Rice University
+
+;; This pass only allows T & V statements to be expanded into multiple
+;; statments there is not a mechanism to expand R, A, or L
+;; expressions. (See vmscheme.ss.)
 
 (unit/sig
  compiler:vmopt^
@@ -62,7 +64,7 @@
 			      (and known
 				   (zodiac:case-lambda-form? known)
 				   (begin (set! L known) #t)
-				   (code-label 
+				   (closure-code-label 
 				    (get-annotation known))))]
 			   [(vm:deref? closure) (loop (vm:deref-var closure))]
 			   [else #f]))])
@@ -81,7 +83,7 @@
 			 (and L
 			      current-vehicle
 			      (= current-vehicle 
-				 (code-vehicle (get-annotation L))))])
+				 (closure-code-vehicle (get-annotation L))))])
 		    ((cond
 		       [(not current-lambda) unknown]
 		       [(not closure-label) unknown]
@@ -96,10 +98,10 @@
 		   ))))]
 	     [current-label
 	      (and current-lambda
-		   (code-label (get-annotation current-lambda)))]
+		   (closure-code-label (get-annotation current-lambda)))]
 	     [current-vehicle
 	      (and current-lambda
-		   (code-vehicle (get-annotation current-lambda)))]
+		   (closure-code-vehicle (get-annotation current-lambda)))]
 	     [new-locs empty-set]
 	     [add-local-var!
 	      (lambda (binding)
@@ -484,7 +486,8 @@
 				     [(cl-case arglist) (select-case L (vm:apply-argc ast))]
 				     [(check-known-sv)
 				      (lambda ()
-					(when (not (code-return-multi (get-annotation L)))
+					(when (not (closure-code-return-multi
+						    (get-annotation L)))
 					  ; Known proc returns a single value, so we can
 					  ; use the more efficient multi call form
 					  (set-vm:apply-multi?! ast #t)))])

@@ -1,10 +1,31 @@
 ;; A-Normalizer
 ;; (c) 1996-7 Sebastian Good
-;;
-;; This file contains an a-normalizer for Zodiac abstract
-;; syntax trees for Scheme.
-;; This linear time algorithm is adapted from "The Essence
-;; of Compiling with Continuations"(Flanagan/Sabry/Duba/Felleisen)
+;; (c) 1997-8 PLT, Rice University
+
+; This file contains an "a-normalizer" for Zodiac abstract
+;  syntax trees for Scheme.
+; This linear time algorithm is adapted from "The Essence
+;  of Compiling with Continuations"(Flanagan/Sabry/Duba/Felleisen)
+
+; For unknown historical reasons, this phase is implemented as a
+;  non-destructive procedure on ASTs.
+
+; An expressions is given a name when
+;  1) it is not already the RHS of a let-assignment
+;  2) it is not a tail expression
+;  3) the value is not known to be ignored
+; There's also a special hack for the test part of an
+;  `if' expression: it might be preserved as an
+;  application inlined in the `if' form.
+
+; After a-normalizations, all let expressions are "linearized": one
+;  binding clause for each let-values expression. (Of course, the
+;  single clause can bind multiple variables.) This linearization does
+;  not apply to letrec expressions.
+
+;;; Annotatitons: ----------------------------------------------
+;;    begin0 - lexical-binding for storing 0th expression
+;;; ------------------------------------------------------------
 
 (unit/sig
  compiler:anorm^
@@ -17,19 +38,15 @@
 	 mzlib:function^
 	 (mrspidey : compiler:mrspidey^))
 
-;; a-normalize is a pure function from a zodiac AST to another
-;; zodiac AST.  It can be applied at any stage in a program transformation.
-
 (define compiler:a-value?
   (one-of zodiac:quote-form? zodiac:varref?))
 
-(define parameterized-a-normalize
-  (lambda (a-value?)
+(define a-normalize
     (letrec ([linearize-let-values
 	      (lambda (ast)
 		(let ([vars (zodiac:let-values-form-vars ast)])
 		  (cond
-		    [(null? (cdr vars)) ast];to prevent N^2 behavior
+		    [(null? (cdr vars)) ast] ; to prevent N^2 behavior
 		    [else
 		     (let linear ([vars vars]
 				  [vals (zodiac:let-values-form-vals ast)])
@@ -56,7 +73,7 @@
 		(a-normalize
 		 ast
 		 (lambda (exp)
-		   (if (or (a-value? exp) (special-a-value? exp))
+		   (if (or (compiler:a-value? exp) (special-a-value? exp))
 		       (k exp)
 		       (let* ([tname (gensym)]
 			      [tbound (zodiac:make-lexical-binding
@@ -69,7 +86,10 @@
 			      [varref (zodiac:binding->lexical-varref tbound)])
 			 (mrspidey:copy-annotations! tbound exp)
 			 (mrspidey:copy-annotations! varref exp)
-			 (set-annotation! tbound #f) ; not mutable
+			 ; hack: #f annotation => not mutable, or anything else
+			 ; (The hack is resolved by the prephase:is-mutable?, etc.
+			 ; procedures.)
+			 (set-annotation! tbound #f) 
 			 (let ([body (k varref)])
 			   (mrspidey:copy-annotations!
 			    (zodiac:make-let-values-form
@@ -107,15 +127,8 @@
 			      a))
 			args))))]
 	     	     
-	     ;---------------------------------------------------------------------;
-	     ;=====================================================================;
-	     ;---------------------------------------------------------------------;
-	     ; PURELY FUNCTIONAL [ALLOCATING] FORM
-	     ;---------------------------------------------------------------------;
-	     ;=====================================================================;
-	     ;---------------------------------------------------------------------;
 
-	     [pure
+	     [a-normalize
 	      (lambda (ast k)
 		(when (compiler:option:debug)
 		  (zodiac:print-start! debug:port ast)
@@ -148,7 +161,7 @@
 		  ;;
 		  ;; (norm a-value) -> a-value
 		  ;;
-		  [(a-value? ast) (k ast)]
+		  [(compiler:a-value? ast) (k ast)]
 		  
 		  ;;--------------------------------------------------------------
 		  ;; LET EXPRESSIONS
@@ -469,264 +482,7 @@
 			interfaces
 			(zodiac:interface-form-variables ast)))))]
 
-		  [else (error 'a-normalize "unsupported ~a" ast)]))]
-	     
-	     ;---------------------------------------------------------------------;
-	     ;=====================================================================;
-	     ;---------------------------------------------------------------------;
-	     ; SIDE EFFECTING [MUTATING] FORM
-	     ;---------------------------------------------------------------------;
-	     ;=====================================================================;
-	     ;---------------------------------------------------------------------;
-	     
-	     [side-effecting
-	      (lambda (ast k)
-	
-		(cond 
-		  
-		  ;;----------------------------------------------------------------
-		  ;; LAMBDA EXPRESSIONS
-		  ;;
-		  [(zodiac:case-lambda-form? ast)
-		   (zodiac:set-case-lambda-form-bodies! ast 
-							(map
-							 (lambda (body)
-							   (a-normalize! body identity))
-							 (zodiac:case-lambda-form-bodies ast)))
-		   (k ast)]
-		  
-		  ;;--------------------------------------------------------------
-		  ;; A-VALUES
-		  ;;
-		  [(a-value? ast) (k ast)]
-		  
-		  ;;--------------------------------------------------------------
-		  ;; LET EXPRESSIONS
-		  ;;
-		  ;; important caveat: non single-value-binding lets will be
-		  ;; replaced, therefore introducing new unexpected structure
-		  ;;
-		  [(zodiac:let-values-form? ast)
-		   (if (null? (zodiac:let-values-form-vars ast))
-		       (a-normalize! (zodiac:let-values-form-body ast)
-				     k)
-		       (let ([linear (linearize-let-values ast)])
-			 (a-normalize!
-			  (car (zodiac:let-values-form-vals ast))
-			  (lambda (V)
-			    (set-car! (zodiac:let-values-form-vals ast) V)
-			    (zodiac:set-let-values-form-body! 
-			     linear
-			     (a-normalize! (zodiac:let-values-form-body linear)
-					   k))
-			    linear))))]
-				  
-		  ;;---------------------------------------------------------------
-		  ;; LETREC FORM
-		  ;; 
-		  ;;
-		  [(zodiac:letrec*-values-form? ast)
-		   (let ([vals (map (lambda (val) (a-normalize! val identity))
-				    (zodiac:letrec*-values-form-vals ast))])
-		     (zodiac:set-letrec*-values-form-vals! ast vals)
-		     (zodiac:set-letrec*-values-form-body! 
-		      ast
-		      (a-normalize!
-		       (zodiac:letrec*-values-form-body ast)
-		       k)))
-		   ast]
-		  
-		  ;;---------------------------------------------------------------
-		  ;; IF EXPRESSIONS
-		  ;;
-		  [(zodiac:if-form? ast)
-		   (normalize-name
-		    (zodiac:if-form-test ast)
-		    (lambda (test)
-		      (zodiac:set-if-form-test! ast test)
-		      (zodiac:set-if-form-then! ast 
-						(a-normalize! 
-						 (zodiac:if-form-then ast)
-						 identity))
-		      (zodiac:set-if-form-else! ast
-						(a-normalize! 
-						 (zodiac:if-form-else ast)
-						 identity))
-		      (k ast)))]
-		  
-		  ;;----------------------------------------------------------------
-		  ;; BEGIN EXPRESSIONS
-		  ;;
-		  [(zodiac:begin-form? ast)
-		   (map! (lambda (b) (a-normalize! b identity))
-			 (zodiac:begin-form-bodies ast))
-		   (k ast)]
-		  
-		  ;;----------------------------------------------------------------
-		  ;; BEGIN0 EXPRESSIONS
-		  ;;
-		  [(zodiac:begin0-form? ast)
-		   (let* ([tname (gensym)]
-			  [tbound (zodiac:make-lexical-binding
-				   (zodiac:zodiac-origin exp)
-				   (zodiac:zodiac-start exp)
-				   (zodiac:zodiac-finish exp)
-				   (make-empty-box)
-				   tname
-				   tname)])
-		     (set-annotation! ast tbound)
-		     (zodiac:set-begin0-form-first! 
-		      ast 
-		      (a-normalize! (zodiac:begin0-form-first ast) identity))
-		     (zodiac:set-begin0-form-rest! 
-		      ast 
-		      (a-normalize! (zodiac:begin0-form-rest ast) identity))
-		     ast)]
-		  
-		  ;;---------------------------------------------------------------
-		  ;; SET! EXPRESSIONS / DEFINE EXPRESSIONS
-		  ;;
-		  ;;    
-		  [(zodiac:set!-form? ast)
-		   (normalize-name
-		    (zodiac:set!-form-val ast)
-		    (lambda (norm-val)
-		      (zodiac:set-set!-form-val! ast norm-val)
-		      (k ast)))]
-	 
-		  [(zodiac:define-values-form? ast)
-		   (zodiac:set-define-values-form-val! 
-		    ast
-		    (a-normalize! (zodiac:define-values-form-val ast) identity))
-		   (k ast)]
- 
-		  ;;---------------------------------------------------------------
-		  ;; APPLICATIONS
-		  ;;
-		  [(zodiac:app? ast)
-		   (normalize-name 
-		    (zodiac:app-fun ast)
-		    (lambda (norm-fun)
-		      (normalize-name*
-		       (zodiac:app-args ast)
-		       (lambda (norm-terms)
-			 (zodiac:set-app-fun! ast norm-fun)
-			 (zodiac:set-app-args! ast norm-terms)
-			 (k ast)))))]
-		  
-		  ;;---------------------------------------------------------------
-		  ;; STRUCT
-		  ;;
-		  [(zodiac:struct-form? ast)
-		   (let ([super (zodiac:struct-form-super ast)])
-		     (if super
-			 (normalize-name
-			  super
-			  (lambda (norm-super)
-			    (zodiac:set-struct-form-super! ast norm-super)
-			    (k ast)))
-			 (k ast)))]
-		  
-		  
-		  ;;----------------------------------------------------------------
-		  ;; UNITS
-		  ;;
-		  [(zodiac:unit-form? ast)
-		   (zodiac:set-unit-form-clauses!
-		    ast
-		    (map (lambda (M) (a-normalize! M identity)) 
-			 (zodiac:unit-form-clauses ast)))
-		   (k ast)]
-		  
-		  ;;-------------------------------------------------------------------
-		  ;; COMPOUND UNIT
-		  ;;
-		  ;; nothing much to do except analyze the exprs
-		  ;;
-		  [(zodiac:compound-unit-form? ast)
-		   (let loop ([l (zodiac:compound-unit-form-links ast)])
-		     (if (null? l)
-			 (k ast)
-			 (let ([link (car l)])
-			   (normalize-name
-			    (cadr link)
-			    (lambda (norm-expr)
-			      (set-car! (cdr link) norm-expr)
-			      (loop (cdr l)))))))]
-
-		  ;;-----------------------------------------------------------
-		  ;; INVOKE
-		  ;;
-		  [(zodiac:invoke-form? ast)
-		   (normalize-name
-		    (zodiac:invoke-form-unit ast)
-		    (lambda (unit)
-		      (zodiac:set-invoke-form-unit! ast unit)
-		      (k ast)))]
-		  
-		  ;;-----------------------------------------------------------
-		  ;; CLASS
-		  ;;
-		  [(zodiac:class*/names-form? ast)
-		   (normalize-name
-		    (zodiac:class*/names-form-super-expr ast)
-		    (lambda (super-expr)
-		      (normalize-name*
-		       (zodiac:class*/names-form-interfaces ast)
-		       (lambda (interfaces)
-			 (zodiac:set-class*/names-form-super-expr! super-expr)
-			 (zodiac:set-class*/names-form-interfaces! interfaces)
-			 (zodiac:set-class*/names-form-init-vars! ast (a-normalize-init-args ast))
-			 (let ([l (zodiac:sequence-clause-exprs
-				   (car (zodiac:class*/names-form-inst-clauses ast)))])
-			   (set-car! l (a-normalize (car l) identity)))
-			 (k ast)))))]
-
-		  ;;-----------------------------------------------------------
-		  ;; INTERFACE
-		  ;;
-		  [(zodiac:interface-form? ast)
-		   (normalize-name*
-		    (zodiac:interface-form-super-exprs ast)
-		    (lambda (interfaces)
-		      (zodiac:set-interface-form-super-exprs!
-		       ast
-		       interfaces)
-		      (k ast)))]
-
-		  [else (error 'a-normalize! "~a not supported" ast)]))])
-		  
-
-      (values pure side-effecting))))
+		  [else (error 'a-normalize "unsupported ~a" ast)]))])
+      a-normalize))
       
-(define-values (a-normalize a-normalize!)
-   (parameterized-a-normalize compiler:a-value?))
-
 )
-
-#|
-
-(define (a-go . f)
-  (set! compiler:messages null)
-  (let ((p (if (null? f)
-	       (current-input-port)
-	       (open-input-file (car f)))))
-    (let ([reader (zodiac:read p)])
-      (let loop ()
-	(let ([i (reader)])
-	  (unless (zodiac:eof? i)
-	    (let ([j (prephase! (car (call/nal zodiac:scheme-expand-program/nal
-					       zodiac:scheme-expand-program
-					       (expressions: (list i)))))])
-	      (let ([a (a-normalize j identity)])
-		(pretty-print (zodiac:parsed->raw a))
-		(flush-output-port (current-output-port))
-		(compiler:report-messages! #f)
-		(set! compiler:messages null)
-		(let ([a! (a-normalize! j identity)])
-		  (pretty-print (zodiac:parsed->raw a!))
-		  (flush-output-port (current-output-port))
-		  (compiler:report-messages! #f)
-		  (set! compiler:messages null)
-		  (loop))))))))))
-|#

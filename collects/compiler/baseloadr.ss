@@ -154,7 +154,9 @@
 			  VEHICLE
 			  VMSTRUCTS
 			  DRIVER)]
-  [TOP-LEVEL : compiler:top-level^ ((require-relative-library-unit/sig "toplevel.ss"))]
+  [TOP-LEVEL : compiler:top-level^ ((require-relative-library-unit/sig "toplevel.ss")
+				    LIBRARY
+				    CSTRUCTS)]
   [DRIVER : compiler:driver^ ((require-relative-library-unit/sig "driver.ss")
 			      OPTIONS
 			      LIBRARY

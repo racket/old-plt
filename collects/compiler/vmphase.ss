@@ -1,5 +1,13 @@
 ;; Scheme->VMScheme conversion phase
 ;; (c) 1996-7 Sebastian Good
+;; (c) 1997-8 PLT, Rice University
+
+;; Takes a zodiac:* AST and produces a vm:* AST. Some
+;;  zodiac:* AST elements are still used, particularly
+;;  bindings and varrefs. 
+
+;; Well-applied known primitives are sometimes compiled
+;;  to macro uses (where the macros are defined in mzc.h).
 
 (unit/sig
  compiler:vmphase^
@@ -94,7 +102,8 @@
 (define (simple-tail-prim? prim)
   ; Since "simple" primitives don't end with a tail call,
   ;  there's no harm in calling them directly when
-  ;  they're in a tail position
+  ;  they're in a tail position. We avoid he overhead of
+  ;  a tail call this way.
   (and prim (simple-return-primitive? (global-defined-value prim))))
 
 ;; vm-phase takes 2 arguments:
@@ -172,7 +181,7 @@
 						      (make-vm:struct-ref #f #f #f 'data
 								(make-vm:deref #f #f #f 
 									       pointer)))))
-				(make-vm:immediate #f #f #f (code-label code))
+				(make-vm:immediate #f #f #f (closure-code-label code))
 				#f))))]
 
        [fill-env
@@ -213,7 +222,7 @@
 										    (make-vm:deref #f #f #f 
 												   pointer)))))
 				     var #f))))
-	       (let ([fields (let ([cr (code-closure-rep code)])
+	       (let ([fields (let ([cr (closure-code-rep code)])
 			       (if cr 
 				   (rep:struct-fields cr)
 				   null))])
@@ -420,9 +429,9 @@
 			      null
 			      (zodiac:letrec*-values-form-vals ast))]
 		   [codes (map get-annotation Ls)]
-		   [closure-reps (map code-closure-rep codes)]
-		   [closure-alloc-reps (map code-closure-alloc-rep codes)]
-		   [vehicles (map code-vehicle codes)]
+		   [closure-reps (map closure-code-rep codes)]
+		   [closure-alloc-reps (map closure-code-alloc-rep codes)]
+		   [vehicles (map closure-code-vehicle codes)]
 		   [new-bounds
 		    (map (lambda (closure-alloc-rep)
 			   (let* ([n (compiler:gensym)]
@@ -539,10 +548,10 @@
 	    (let* ([L (compiler:make-closure-lambda ast)]
 		   [name (compiler:make-closure-name ast)]
 		   [code (get-annotation L)]
-		   [label (code-label code)]
-		   [closure-rep (code-closure-rep code)]
-		   [closure-alloc-rep (code-closure-alloc-rep code)]
-		   [vehicle (code-vehicle code)]
+		   [label (closure-code-label code)]
+		   [closure-rep (closure-code-rep code)]
+		   [closure-alloc-rep (closure-code-alloc-rep code)]
+		   [vehicle (closure-code-vehicle code)]
 		   [n (compiler:gensym)]
 		   ; a variable in which to construct the closure
 		   [new-bound 
@@ -585,7 +594,7 @@
 							     (zodiac:zodiac-start ast)
 							     (zodiac:zodiac-finish ast)
 							     #f #f #f make-args)))])
-	      (set-code-label! code label)
+	      (set-closure-code-label! code label)
 	      (when new-bound
 		 (add-new-local! new-bound))
 	      `( ,@get-args
@@ -1003,13 +1012,3 @@
 	      new-locals))))
 
 )
-
-#|
-
-(define (vmphase-go f . o)
-  (set! driver:debug 'vmphase)
-  (apply s:compile (cons f (cons 'c-only o)))
-  driver:debug)
-	  
-	  
-|#

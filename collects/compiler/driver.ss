@@ -2,6 +2,56 @@
 ;; (c) 1996-7 Sebastian Good
 ;; (c) 1997-8 PLT, Rice University
 
+;; Scheme->C compilation Overview
+;; ------------------------------
+;;
+;; Compilation is performed in a number of phases,
+;;  each of which is implemented in its own unit:
+;;
+;;   1) Reading/parsing - Zodiac collection
+;;   2) SBA analysis (optional) - MrSpidey collection
+;;   3) Prephase - prephase.ss
+;;   4) A-normalization - anorm.ss
+;;   5) Known-value analysis - known.ss
+;;   6) Lexical analysis and inlining - analyze.ss
+;;   7) Closure conversion - closure.ss
+;;   8) Closure vechicle assignment - vehicle.ss
+;;   9) Representation choosing - rep.ss
+;;  10) Scheme to virtual machine translation - vmphase.ss
+;;  11) Optimizations on VM code - vmopt.ss
+;;  12) VM to C translation - vm2c.ss
+;;
+;; For more information about a phase, see the file
+;;  implementing that phase.
+;;
+;; All steps up to 10 work on a Scheme program, representated
+;;  as a zodiac AST. The AST produced by zodiac is destructively
+;;  modified by each phase (usually); mzc-specific information is
+;;  stored in the AST as ``annotations''. At the implementation file
+;;  for each phase, the annotations installed or changed by the phase
+;;  are listed.
+;;
+;; C code is compiled and linked via procedures provided by the
+;;  dynext collection.
+;;
+;; In this implementation, `var' is used for variable names in
+;;  confusing and inconsistent ways. There are two different
+;;  AST entities that could be called "var":
+;;     1) binding instances of variables, e.g., the formal
+;;        arguments of a lambda; these are always called
+;;        `bindings' in Zodiac terminology
+;;     2) bound instances of variables, e.g., a free variable 
+;;        in a sub-expression; these are always called
+;;        `varrefs' in Zodiac terminology.
+;;  Almost all information about a variable is stored with a
+;;   zodiac:binding AST node, and very little information is
+;;   stored with a zodiac:varref AST node.
+;;  To make matters worse, the name `binding' is overloaded.
+;;    `zodiac:binding' is the name of a Zodiac structure
+;;    type, and `binding' is also the name of the structure
+;;    type for annotations attached to zodiac:binding objects.
+
+
 (unit/sig compiler:driver^
   (import (compiler:option : compiler:option^)
 	  compiler:library^
@@ -29,31 +79,14 @@
 	  (mrspidey : compiler:mrspidey^))
   (rename (compile-extension* compile-extension))
   
-  (define driver:debug #f)
-  (define (driver:debug-when flag thunk)
-    (when (eq? driver:debug flag) 
-      (print-struct #t)
-      (thunk) 
-      (set! driver:debug #f)
-      (print-struct #f)
-      (error 'driver "stopped on debug dump")))
-  
   (define debug:file "dump.txt")
   (define debug:port #f)
-  
   (define debug
     (lambda x
       (when (and (compiler:option:debug) debug:port)
 	(apply fprintf (cons debug:port x))
 	(flush-output debug:port))))
   
-  (define (protect-comment s)
-    (string-append
-     (regexp-replace* "[*]/"
-		      (regexp-replace* "/[*]" s "-")
-		      "-")
-     " "))
-
   ;;----------------------------------------------------------------------------
   ;; FILE PROCESSING FUNCTIONS
   ;;
@@ -185,21 +218,36 @@
 	  (eval prefix))
 	(compiler:report-messages! #t))))
 
+  ;;----------------------------------------------------------------------
+  ;; Misc utils
+
   ; takes a list of a-normalized expressions and analyzes them
-  ; returns the analyzed code, a list of local variable lists, used variable lists, and captured variable lists
+  ; returns the analyzed code, a list of local variable lists, 
+  ; used variable lists, and captured variable lists
   (define s:analyze-source-list
     (lambda (source)
       (let loop ([sexps source] [source-acc null] 
 				[locals-acc null] [globals-acc null] [used-acc null] [captured-acc null]
+				[children-acc null]
 				[max-arity 0])
 	(if (null? sexps)
 	    (values (reverse! source-acc)
-		    (reverse! locals-acc)
-		    (reverse! globals-acc)
-		    (reverse! used-acc)
-		    (reverse! captured-acc)
+		    (map (lambda (loc glob used cap children)
+			   (make-code empty-set
+				      loc
+				      glob
+				      used
+				      cap
+				      #f
+				      #f
+				      children))
+			 (reverse! locals-acc)
+			 (reverse! globals-acc)
+			 (reverse! used-acc)
+			 (reverse! captured-acc)
+			 (reverse! children-acc))
 		    max-arity)
-	    (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars new-max-arity multi)
+	    (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars children new-max-arity multi)
 			  (analyze-expression! (car sexps) empty-set (null? (cdr sexps)))])
 	      (loop (cdr sexps) 
 		    (cons exp source-acc) 
@@ -207,28 +255,30 @@
 		    (cons global-vars globals-acc)
 		    (cons used-vars used-acc)
 		    (cons captured-vars captured-acc)
+		    (cons children children-acc)
 		    (max max-arity new-max-arity)))))))
 
   (define s:append-block-sources!
-    (case-lambda
-     [(file-block l) (s:append-block-sources! file-block l (map (lambda (s) empty-set) l))]
-     [(file-block l gl)
-      (set-block-local-vars!
+    (lambda (file-block l)
+      (set-block-codes!
        file-block
-       (append! (map (lambda (s) empty-set) l) (block-local-vars file-block)))
-      (set-block-global-vars!
-       file-block
-       (append! gl (block-global-vars file-block)))
-      (set-block-used-vars!
-       file-block
-       (append! (map (lambda (s) empty-set) l) (block-used-vars file-block)))
-      (set-block-captured-vars!
-       file-block
-       (append! (map (lambda (s) empty-set) l) (block-captured-vars file-block)))
+       (append!
+	(map
+	 (lambda (glob)
+	   (make-code empty-set
+		      empty-set
+		      empty-set
+		      empty-set
+		      empty-set
+		      #f #f null))
+	 l)
+	(block-codes file-block)))
       (set-block-source! 
        file-block
-       (append! l (block-source file-block)))]))
+       (append! l (block-source file-block)))))
 
+  ;;-------------------------------------------------------------------------------
+  ;; MrSpidey Per-unit analysis
   (define (wrap-unit-for-mrspidey expr)
     ;; Wrap the unit in an expression that drives to unknown all of the imports
     ;;  and arguments to exported functions.
@@ -356,7 +406,7 @@
   ;; File-level Block information
 
   (define s:file-block (make-empty-block))
-  (define s:max-arity 0) ; compilation wide max
+  (define s:max-arity 0) ; compilation-wide max
   (define s:register-max-arity!
     (lambda (n) (set! s:max-arity (max s:max-arity n))))
 
@@ -368,8 +418,6 @@
 
   ;;-----------------------------------------------------------------------------
   ;; THE MAIN DRIVING ROUTINE
-  ;;   Runs the phases in order, reporting errors
-  ;;
 
   (define (compile-extension* input-name dest-directory)
     (s:compile #f #f #f input-name dest-directory))
@@ -460,6 +508,7 @@
 	      ;;-----------------------------------------------------------------------
 	      ;; MrSpidey analyze
 	      
+	      ; -- whole-program analysis? ----------------------------------------
 	      (when (compiler:option:use-mrspidey)
 		(when (compiler:option:verbose) (printf " MrSpidey: analyzing~n"))
 
@@ -477,6 +526,7 @@
 	      
 		(compiler:report-messages! #t))
 
+	      ; -- per-unit analysis? ----------------------------------------
 	      (when (compiler:option:use-mrspidey-for-units)
 		(when (compiler:option:verbose) (printf " MrSpidey: analyzing units~n"))
 
@@ -520,9 +570,6 @@
 	      (compiler:report-messages! (not (compiler:option:test)))
 	      (when (compiler:option:test)
 		(printf "skipping over top-level expressions with errors...~n"))
-	      (driver:debug-when 
-	       'prephase
-	       (lambda () (pretty-print (block-source s:file-block))))
 	      
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 	      
@@ -540,9 +587,6 @@
 			(map (lambda (s) (a-normalize s identity)) 
 			     (block-source s:file-block))))])
 		(verbose-time anorm-thunk))
-	      (driver:debug-when 
-	       'a-norm
-	       (lambda () (pretty-print (block-source s:file-block))))
 	      
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
@@ -565,9 +609,6 @@
 		(verbose-time known-thunk))
 
 	      (compiler:report-messages! #t)
-	      (driver:debug-when 
-	       'known
-	       (lambda () (pretty-print (block-source s:file-block))))
 	      
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
@@ -584,15 +625,11 @@
 	      (compiler:init-define-lists!)
 	      (let ([bnorm-thunk
 		     (lambda ()
-		       (let-values ([(new-source new-local-vars new-global-vars
-						 new-used-vars new-captured-vars max-arity)
+		       (let-values ([(new-source new-codes max-arity)
 				     (s:analyze-source-list 
 				      (block-source s:file-block))])
 			 (set-block-source! s:file-block new-source)
-			 (set-block-local-vars! s:file-block new-local-vars)
-			 (set-block-global-vars! s:file-block new-global-vars)
-			 (set-block-used-vars! s:file-block new-used-vars)
-			 (set-block-captured-vars! s:file-block new-captured-vars)
+			 (set-block-codes! s:file-block new-codes)
 			 (block:register-max-arity! s:file-block max-arity)
 			 (s:register-max-arity! max-arity))
 		       
@@ -605,9 +642,6 @@
 						 compiler:per-load-define-list)))])
 		(verbose-time bnorm-thunk))
 	      (compiler:report-messages! #t)
-	      (driver:debug-when 
-	       'analyze
-	       (lambda () (pretty-print (block-source s:file-block))))
 	      
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 
@@ -624,48 +658,35 @@
 		       ;; close over but gloabls and per-load-constants) may be created.
 		       ;; Merge them into s:file-block just before the top-level expression
 		       ;; that the closure is a part of.
-		       (compiler:init-lambda-lists!)
+		       (compiler:init-closure-lists!)
 		       (let loop ([el (block-source s:file-block)]
-				  [ll (block-local-vars s:file-block)]
-				  [gl (block-global-vars s:file-block)]
-				  [ul (block-used-vars s:file-block)]
-				  [cl (block-captured-vars s:file-block)]
+				  [cl (block-codes s:file-block)]
 				  [e-acc null]
-				  [l-acc null]
-				  [g-acc null]
-				  [u-acc null]
 				  [c-acc null])
 			 (if (null? el)
 			     (begin
 			       (set-block-source! s:file-block (reverse e-acc))
-			       (set-block-local-vars! s:file-block (reverse l-acc))
-			       (set-block-global-vars! s:file-block (reverse g-acc))
-			       (set-block-used-vars! s:file-block (reverse u-acc))
-			       (set-block-captured-vars! s:file-block (reverse c-acc)))
+			       (set-block-codes! s:file-block (reverse c-acc)))
 			     (begin
 			       (compiler:init-once-closure-lists!)
 			       (let ([s (closure-expression! (car el))])
-				 (loop (cdr el) (cdr ll) (cdr gl) (cdr ul) (cdr cl)
+				 (loop (cdr el) (cdr cl)
 				       (append (list s)
 					       compiler:once-closures-list
 					       e-acc)
-				       (append (list (car ll))
-					       (map (lambda (s) empty-set) compiler:once-closures-list)
-					       l-acc)
-				       (append (list (car gl))
-					       compiler:once-closures-globals-list
-					       g-acc)
-				       (append (list (car ul))
-					       (map (lambda (s) empty-set) compiler:once-closures-list)
-					       u-acc)
 				       (append (list (car cl))
-					       (map (lambda (s) empty-set) compiler:once-closures-list)
+					       (map (lambda (globs) 
+						      (make-code empty-set
+								 empty-set
+								 globs
+								 empty-set
+								 empty-set
+								 #f #f null))
+						    compiler:once-closures-globals-list)
 					       c-acc)))))))])
-		(verbose-time closure-thunk))
-	      (driver:debug-when 
-	       'closure
-	       (lambda () (pretty-print (block-source s:file-block))))
 	      
+		(verbose-time closure-thunk))
+
 	      ;;-----------------------------------------------------------------------
 	      ;; Vehicle assignment
 	      ;;
@@ -682,7 +703,7 @@
 		     (map (lambda (body)
 			    (relate-lambdas! L body))
 			  (zodiac:case-lambda-form-bodies L))))
-		 compiler:lambda-list))
+		 compiler:closure-list))
 	      
 	      (when (eq? (compiler:option:vehicles) 'vehicles:units)
 		(compiler:fatal-error 
@@ -708,11 +729,13 @@
 		       (compiler:init-structs!)
 		       ; top-level
 		       (map
-			choose-binding-representations! 
-			(block-local-vars s:file-block)
-			(block-global-vars s:file-block)
-			(block-used-vars s:file-block)
-			(block-captured-vars s:file-block))
+			(lambda (c)
+			  (choose-binding-representations! 
+			   (code-local-vars c)
+			   (code-global-vars c)
+			   (code-used-vars c)
+			   (code-captured-vars c)))
+			(block-codes s:file-block))
 		       ; code-bodies
 		       (for-each (lambda (L)
 				   (let* ([code (get-annotation L)]
@@ -722,9 +745,9 @@
 					  [captured (code-captured-vars code)])
 				     (choose-binding-representations! locals globals used captured)
 				     (choose-closure-representation! code)))
-				 compiler:lambda-list))])
+				 compiler:closure-list))])
 		(verbose-time rep-thunk))
-	
+	      
 	      ;;-----------------------------------------------------------------------
 	      ;; Virtual Machine Scheme translation
 	      ;;   Here we turn our code into VM Scheme as we enter the arena of
@@ -738,7 +761,7 @@
 		       ; top-level.  The last expression will be in tail position and should
 		       ; return its value
 		       (let loop ([s (block-source s:file-block)]
-				  [l (block-local-vars s:file-block)])
+				  [l (block-codes s:file-block)])
 			 (unless (null? s)
 			   (let-values ([(vm new-locals)
 					 (vm-phase (car s) 
@@ -759,7 +782,7 @@
 							  ast)))
 						   (null? (cdr s)))])
 			     (set-car! s vm)
-			     (set-car! l (set-union new-locals (car l))))
+			     (add-code-local+used-vars! (car l) new-locals))
 			   (loop (cdr s) (cdr l))))
 		       ; code-bodies
 		       (for-each 
@@ -778,22 +801,19 @@
 						  (let loop ([l (zodiac:case-lambda-form-bodies L)]
 							     [case-codes (procedure-code-case-codes 
 									  (get-annotation L))]
-							     [vms null]
-							     [new-locs empty-set])
+							     [vms null])
 						    (if (null? l)
-							(values (reverse! vms) new-locs)
+							(values (reverse! vms) 
+								; empty: already added via case
+								empty-set) 
 							(let-values ([(vm new-locals)
 								      (vm-phase (car l) #t #f tail-pos #t)])
-							  (set-case-code-local-vars! 
+							  (add-code-local+used-vars! 
 							   (car case-codes)
-							   (set-union new-locals 
-								      (case-code-local-vars 
-								       (car case-codes))))
+							   new-locals )
 							  (loop (cdr l)
 								(cdr case-codes)
-								(cons vm vms) 
-								(set-union new-locals 
-									   new-locs)))))])
+								(cons vm vms)))))])
 				      (zodiac:set-case-lambda-form-bodies! L vms)
 				      new-locals)]
 				   [(zodiac:unit-form? L)
@@ -834,16 +854,11 @@
 				   [else (compiler:internal-error
 					  L
 					  "vmphase: unknown closure type")])])
-			    (set-code-local-vars! code
-						  (set-union new-locals 
-							     (code-local-vars code)))))
-			compiler:lambda-list))])
+			    (add-code-local+used-vars! code new-locals)))
+			compiler:closure-list))])
 		(verbose-time vmphase-thunk))
 
 	      (compiler:report-messages! #t)
-	      (driver:debug-when 
-	       'vmphase
-	       (lambda () (pretty-print (block-source s:file-block))))
 
 	      ;;-----------------------------------------------------------------------
 	      ;; Virtual Machine Optimization Pass
@@ -855,12 +870,12 @@
 		     (lambda ()
 		       ; top-level
 		       (let loop ([bl (block-source s:file-block)]
-				  [ll (block-local-vars s:file-block)])
+				  [cl (block-codes s:file-block)])
 			 (unless (null? bl)
 			   (let-values ([(b new-locs) ((vm-optimize! #f #f) (car bl))])
 			     (set-car! bl b)
-			     (set-car! ll (set-union new-locs (car ll))))
-			   (loop (cdr bl) (cdr ll))))
+			     (add-code-local+used-vars! (car cl) new-locs))
+			   (loop (cdr bl) (cdr cl))))
 		       
 		       ; code-bodies
 		       (for-each (lambda (L)
@@ -873,9 +888,8 @@
 					 (unless (null? bodies)
 					   (let-values ([(new-body new-locs) ((vm-optimize! L i) (car bodies))])
 					     (set-car! bodies new-body)
-					     (set-case-code-local-vars! (car case-codes)
-									(set-union new-locs (case-code-local-vars (car case-codes))))
-					     (set-code-local-vars! code (set-union new-locs (code-local-vars code)))
+					     (add-code-local+used-vars! (car case-codes)
+									new-locs)
 					     (loop (cdr bodies)
 						   (cdr case-codes)
 						   (add1 i)))))]
@@ -883,23 +897,23 @@
 				       (let-values ([(new-clauses new-locs)
 						     ((vm-optimize! L 0) (car (zodiac:unit-form-clauses L)))])
 					 (set-car! (zodiac:unit-form-clauses L) new-clauses)
-					 (set-code-local-vars! code (set-union new-locs (code-local-vars code))))]
+					 (add-code-local+used-vars! code new-locs))]
 				      [(zodiac:class*/names-form? L)
 				       (let ([s (zodiac:sequence-clause-exprs
 						 (car (zodiac:class*/names-form-inst-clauses L)))])
 					 (let-values ([(new-clauses new-locs) ((vm-optimize! L 0) (car s))])
 					   (set-car! s new-clauses)
-					   (set-code-local-vars! code (set-union new-locs (code-local-vars code)))))
+					   (add-code-local+used-vars! code new-locs)))
 				       (class-init-defaults-map!
 					L
 					(lambda (var ast)
 					  (let-values ([(new-expr new-locs) ((vm-optimize! L 0) ast)])
-					    (set-code-local-vars! code (set-union new-locs (code-local-vars code)))
+					    (add-code-local+used-vars! code new-locs)
 					    new-expr)))]
 				      [else (compiler:internal-error
 					     L
 					     "vmopt: unknown closure type")])))
-				 compiler:lambda-list))])
+				 compiler:closure-list))])
 		(verbose-time vmopt-thunk))
 		 
 	      (compiler:report-messages! #t)
@@ -988,20 +1002,22 @@
 			      (fprintf c-port "}~n"))
 			    (newline c-port)
 
-			    (let ([init-constants-count
+			    (let* ([codes (block-codes s:file-block)]
+				   [locals (map code-local-vars codes)]
+				   [globals (map code-global-vars codes)]
+				   [init-constants-count
 				   (if (zero? number-of-true-constants)
 				       -1
 				       (vm->c:emit-top-levels! "init_constants" #f #f number-of-true-constants
 							       (block-source s:file-block)
-							       (block-local-vars s:file-block)
-							       (block-global-vars s:file-block)
+							       locals globals
 							       (block-max-arity s:file-block)
 							       c-port))]
 				  [top-level-count
 				   (vm->c:emit-top-levels! "top_level" #t #t -1
 							   (list-tail (block-source s:file-block) number-of-true-constants)
-							   (list-tail (block-local-vars s:file-block) number-of-true-constants)
-							   (list-tail (block-global-vars s:file-block) number-of-true-constants)
+							   (list-tail locals number-of-true-constants)
+							   (list-tail globals number-of-true-constants)
 							   (block-max-arity s:file-block)
 							   c-port)])
 			      (fprintf c-port
@@ -1090,14 +1106,14 @@
 				  (set! lambda-list
 					(quicksort lambda-list
 						   (lambda (l1 l2)
-						     (< (code-label (get-annotation l1))
-							(code-label (get-annotation l2))))))
+						     (< (closure-code-label (get-annotation l1))
+							(closure-code-label (get-annotation l2))))))
 				  (for-each (lambda (L)
 					      (let ([code (get-annotation L)]
 						    [start (zodiac:zodiac-start L)])
 						(fprintf c-port "~a/* code body ~a ~a [~a,~a] */~n"
-							 vm->c:indent-spaces (code-label code)
-							 (let ([n (code-name code)])
+							 vm->c:indent-spaces (closure-code-label code)
+							 (let ([n (closure-code-name code)])
 							   (if n
 							       (protect-comment 
 								(vm->c:extract-inferred-name n))
@@ -1259,7 +1275,7 @@
 	;; clean up for the garbage collector
 	(compiler:init-define-lists!)
 	(const:init-tables!)
-	(compiler:init-lambda-lists!)
+	(compiler:init-closure-lists!)
 	(compiler:init-structs!)
 	(set! s:file-block #f)
 	(when (compiler:option:verbose)

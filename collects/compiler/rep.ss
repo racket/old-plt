@@ -1,5 +1,18 @@
 ;; Representation choosing phase of the the compiler
 ;; (c) 1996-7 Sebastian Good
+;; (c) 1997-8 PLT, Rice University
+
+; Chooses the representation of all bindings, and also
+;  closures.
+
+; Currently, all variables for Scheme values are represented
+;  as Scheme_Object* values. But representations are also
+;  chosen for closures and indirected Scheme variables, so
+;  not everything is a Scheme_Object*.
+
+;;; Annotatitons: ----------------------------------------------
+;;    binding - `binding' structure UPDATED: rep field set
+;;; ------------------------------------------------------------
 
 (unit/sig
  compiler:rep^
@@ -18,14 +31,15 @@
 ;;
 
 (define-struct rep:atomic (type))
- ; 'scheme-object
- ; 'scheme-bucket
- ; 'scheme-per-load-static
- ; 'label
- ; 'prim
- ; 'prim-case
- ; 'unit
- ; 'begin0-saver
+; Where type is one of: 
+;  'scheme-object 
+;  'scheme-bucket
+;  'scheme-per-load-static
+;  'label
+;  'prim
+;  'prim-case
+;  'unit
+;  'begin0-saver
 (define-struct rep:pointer (to))
 (define-struct rep:struct (name orig-name fields))
 (define-struct rep:struct-field (name orig-name rep))
@@ -125,7 +139,7 @@
 ;;
 ;; and returns no values
 ;;
-;; As a side effect, it sets the code-closure-rep field of the code structure
+;; As a side effect, it sets the closure-code-rep field of the code structure
 ;; based on its free variables.  It must be called _after_ binding
 ;; representations have been chosen
 ;;
@@ -202,18 +216,16 @@
 	(when alloc-struct
 	   (compiler:add-struct! alloc-struct))
 	
-	(set-code-closure-rep! code struct)
-	(set-code-closure-alloc-rep! code alloc-struct)))))
+	(set-closure-code-rep! code struct)
+	(set-closure-code-alloc-rep! code alloc-struct)))))
 
 )
-#|
 
+#|
 (define rep->sexp
   (lambda (rep)
     (cond
       [(rep:atomic? rep) (rep:atomic-type rep)]
       [(rep:pointer? rep) `(pointer ,(rep->sexp (rep:pointer-to rep)))]
       [(rep:struct? rep) `(struct)])))
-
-
 |#

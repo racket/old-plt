@@ -49,6 +49,7 @@
    compiler:gensym
    compiler:genlabel
    compiler:clean-string
+   protect-comment
    global-defined-value*
 
    compiler:label-number
@@ -68,14 +69,7 @@
    varref:inexact
    varref:env
    
-   (struct compiler:env-varref () (- make-compiler:env-varref))
-   compiler:make-env-varref
-   
-   (struct compiler:static-varref () (- make-compiler:static-varref))
-   compiler:make-static-varref
-   
    (struct compiler:make-closure (lambda free-vars args name))
-   
    
    (struct binding (rec?       ; part of a letrec recursive binding set
 		    mutable?   ; set!ed?
@@ -88,15 +82,17 @@
 		    rep))      ; reprsentation
    copy-binding
 
-   (struct code (free-vars local-vars global-vars used-vars captured-vars 
-			   closure-rep closure-alloc-rep label vehicle
-			   max-arity
-			   return-multi ; #f, #t, or 'possible
-			   name))
+   (struct code (free-vars local-vars global-vars used-vars captured-vars
+			   parent case-parent children))
+
+   (struct closure-code (rep alloc-rep label vehicle
+				     max-arity
+				     return-multi ; #f, #t, or 'possible
+				     name))
 
    (struct procedure-code (case-codes case-arities))
 
-   (struct case-code (free-vars local-vars global-vars has-continue?))
+   (struct case-code (has-continue?))
 
    (struct unit-code (defines   ; a list of lexical-bindings
 		       exports   ; a list of lexical-bindings
@@ -193,8 +189,7 @@
 
 
 (define-signature compiler:anorm^
-  (a-normalize
-   a-normalize!))
+  (a-normalize))
 
 (define-signature compiler:const^
   (const:init-tables!
@@ -262,10 +257,10 @@
    analyze-expression!))
 
 (define-signature compiler:closure^
-  (compiler:lambda-list
+  (compiler:closure-list
    compiler:once-closures-list
    compiler:once-closures-globals-list
-   compiler:init-lambda-lists!
+   compiler:init-closure-lists!
    compiler:init-once-closure-lists!
    closure-expression!))
 
@@ -384,9 +379,12 @@
    debug:port))
 
 (define-signature compiler:top-level^
-  ((struct block (source local-vars global-vars used-vars captured-vars max-arity))
+  ((struct block (source codes max-arity))
    make-empty-block
-   block:register-max-arity!))
+   block:register-max-arity!
+
+   add-code-local+used-vars!
+   remove-code-free-vars!))
 
 (define-signature compiler:vm2c^
   (vm->c:indent-by

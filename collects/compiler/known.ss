@@ -1,5 +1,24 @@
-;; 1st analysis phase of the compiler [lexical analysis]
+;; Known-value analysis
 ;; (c) 1996-7 Sebastian Good
+;; (c) 1997-8 PLT, Rice University
+
+;; Sets the the real annotation for zodiac:binding AST nodes,
+;; setting the known? and known-val fields as possible.
+
+;; Known-value analysis is used for constant propagation, but
+;;  more importantly, it's used for compiling tail recusrsion
+;;  as a goto. mzc can only compile tail recursion as a goto
+;;  when it knows the actual destination of the jump.
+
+;; Note that ``known'' means we know an AST that provides the
+;; value; this AST could be arbitrarily complex, so we really
+;; only know the value if the known AST is simple enough.
+
+;;; Annotatitons: ----------------------------------------------
+;;    binding - `binding' structure (replaces prephase 
+;;      binding-properties structure)
+;;    application - `app' structure
+;;; ------------------------------------------------------------
 
 (unit/sig compiler:known^
   (import (compiler:option : compiler:option^)
@@ -15,7 +34,7 @@
 	  mzlib:function^
 	  (mrspidey : compiler:mrspidey^))
   
-  ;; helper functions for analyze-expression!
+  ;; helper functions to create a binding annotation
   (define make-known-binding
     (lambda (bound val)
       (make-binding #f (prephase:is-mutable? bound) 
@@ -38,13 +57,16 @@
     (lambda (bound)
       (make-binding #f #f #f #f #f #f
 		    #f #f #f (make-rep:atomic 'begin0-saver))))
-  
+
+  ;; Determine whether a varref is a known primitive
   (define (analyze:prim-fun fun)
     (and (zodiac:top-level-varref? fun)
 	 (varref:has-attribute? fun varref:primitive)
 	 (primitive? (global-defined-value (zodiac:varref-var fun)))
 	 (zodiac:varref-var fun)))
 
+  ;; The valueable? predicate is used to determine how many variables
+  ;; are reliably set in a mutatlly-recusrive binding context.
   (define (analyze:valueable? v extra-known-bindings extra-unknown-bindings)
     (let loop ([v v][extra-known-bindings extra-known-bindings])
       (cond
@@ -104,7 +126,8 @@
 	  (and (memq fun '(#%void #%list #%cons #%vector #%char->integer))
 	       (andmap (lambda (v) (loop v extra-known-bindings)) args)))]
        [else #f])))
-  
+
+  ;; extract-value tries to extract a useful value from a known-value AST
   (define (extract-value v)
     (let extract-value ([v v])
       (cond
@@ -329,8 +352,6 @@
 		 ;;---------------------------------------------------------
 		 ;; DEFINE EXPRESSIONS
 		 ;;
-		 ;; defines are very tricky, eh what?
-		 ;;
 		 [(zodiac:define-values-form? ast)
 		  (zodiac:set-define-values-form-vars!
 		   ast
@@ -456,8 +477,6 @@
 		 ;;-----------------------------------------------------------
 		 ;; INVOKE
 		 ;;
-		 ;; mark bindings as unit/i-e and remember anchors
-		 ;; 
 		 [(zodiac:invoke-form? ast)
 		  (zodiac:set-invoke-form-unit!
 		   ast 

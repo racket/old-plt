@@ -1,6 +1,6 @@
 ;; VM Scheme -> C translation module
 ;; (c) 1996-7 Sebastian Good
-;; lots of messy immediate strings
+;; (c) 1997-8 PLT, Rice University
 
 (unit/sig
  compiler:vm2c^
@@ -312,7 +312,7 @@
 			    (compiler:paroptformals->arity (zodiac:class*/names-form-init-vars ast))])
 	     (fprintf port "~a  S.classAssemblies[~a] = scheme_make_class_assembly(~s, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, ~a, vehicle_~a);~n~a}~n"
 		      vm->c:indent-spaces pos
-		      (vm->c:extract-inferred-name (code-name code))
+		      (vm->c:extract-inferred-name (closure-code-name code))
 		      (length (zodiac:class*/names-form-interfaces ast))
 		      (length public-lookup-bindings)
 		      (if (null? public-lookup-bindings) "NULL" "pubs")
@@ -321,7 +321,7 @@
 		      (length rename-bindings)
 		      (if (null? rename-bindings) "NULL" "renames")
 		      mina  maxa
-		      (code-vehicle code)
+		      (closure-code-vehicle code)
 		      vm->c:indent-spaces)))))
        (loop (cdr l) (add1 pos)))))
 
@@ -665,7 +665,7 @@
 (define vm->c:emit-function-prologue
   (lambda (L port)
     (let* ([code (get-annotation L)]
-	   [label (code-label code)])
+	   [label (closure-code-label code)])
       (if (= 1 (length (zodiac:case-lambda-form-bodies L)))
 	  (values 1 #f)
 	  (begin
@@ -676,7 +676,7 @@
 		  (begin
 		    (fprintf port "~a~ascheme_case_lambda_wrong_count(~s, argc, argv, ~a"
 			     vm->c:indent-spaces vm->c:indent-spaces
-			     (vm->c:extract-inferred-name (code-name code))
+			     (vm->c:extract-inferred-name (closure-code-name code))
 			     (length (zodiac:case-lambda-form-args L)))
 		    (let loop ([l (zodiac:case-lambda-form-args L)])
 		      (unless (null? l)
@@ -721,7 +721,7 @@
 	  (let* ([var (if (pair? vars) (car vars) vars)]
 		 [vname (zodiac:binding-var var)]
 		 [name (vm->c:convert-symbol vname)]
-		 [fname (rep:find-field (code-closure-rep code) vname)])
+		 [fname (rep:find-field (closure-code-rep code) vname)])
 	    (fprintf port (if (compiler:option:unpack-environments)
 			      "~a~a = env->~a;~n"
 			      "#~adefine ~a env->~a~n")
@@ -755,7 +755,7 @@
 			    (cons "PLS" undefines))))
 		(let* ([vname var]
 		       [name (vm->c:convert-symbol (vm->c:bucket-name vname))]
-		       [fname (rep:find-field (code-closure-rep code) vname)])
+		       [fname (rep:find-field (closure-code-rep code) vname)])
 		  (fprintf port 
 			   (if (compiler:option:unpack-environments)
 			       "~aG~a = env->~a;~n"
@@ -772,11 +772,11 @@
   (lambda (L which pre-decl lsuffix indent port)
     (let* ([code (get-annotation L)]
 	   [case-code (list-ref (procedure-code-case-codes code) which)]
-	   [label (code-label code)]
+	   [label (closure-code-label code)]
 	   [undefines null]
 	   [used-free-set
 	    ; Only unpack anchors if they're captured
-	    (let* ([free-set (case-code-free-vars case-code)]
+	    (let* ([free-set (code-free-vars case-code)]
 		   [free-list (set->list free-set)]
 		   [captured-list (set->list (code-captured-vars code))]
 		   [uncaptured-anchor-set
@@ -798,33 +798,16 @@
       ; The local entry label
       (fprintf port "LOC~a~a:~n" label lsuffix)
       (pre-decl)
-      (vm->c:emit-local-variable-declarations! (case-code-local-vars case-code) indent port)
+      (vm->c:emit-local-variable-declarations! (code-local-vars case-code) indent port)
 
       (when (compiler:option:unpack-environments)
 	(vm->c:emit-local-variable-declarations! used-free-set indent port)
-	(vm->c:emit-local-bucket-declarations! (case-code-global-vars case-code) indent #f port))
+	(vm->c:emit-local-bucket-declarations! (code-global-vars case-code) indent #f port))
     
-      (let ([r (code-closure-rep code)])
+      (let ([r (closure-code-rep code)])
 	(when r
 	  (fprintf port "~aconst ~a * env;~n" indent (vm->c:convert-type-definition r))))
       
-#|
-      ; Registers to local vars
-      (let loop ([n 0] [args (zodiac:arglist-vars 
-			      (list-ref (zodiac:case-lambda-form-args L) which))])
-	(unless (null? args)
-	  (let ([arg (car args)])
-	    (fprintf port "~a~a = (~a)reg~a;~n"
-		     indent
-		     (vm->c:convert-symbol (zodiac:binding-var arg))
-		     ;(if (binding-boxed? (get-annotation arg))
-		     ;	 "*" "")
-		     (vm->c:convert-type-definition
-		      (binding-rep (get-annotation arg)))
-		     n)
-	    (loop (1+ n) (cdr args)))))
-|#
-
       ; Registers into local vars
       (let* ([args (zodiac:arglist-vars (list-ref (zodiac:case-lambda-form-args L) which))])
 	(vm->c:extract-arguments-into-variables!
@@ -848,7 +831,7 @@
       ; after the args have been done
       ; equate the local registers with the global argument registers
       ; starting with the env
-      (let ([r (code-closure-rep code)])
+      (let ([r (closure-code-rep code)])
 	(when r
 	  (fprintf port "~aenv = (~a *)void_param;~n"
 		   indent
@@ -866,14 +849,10 @@
       (set! undefines
 	    (append (vm->c:emit-extract-bucket-variables
 		     code
-		     (set->list (case-code-global-vars case-code))
+		     (set->list (code-global-vars case-code))
 		     indent port)
 		    undefines))
 
-;      (fprintf port "fprintf(stdout, \"Entering function [~a, ~a]\\n\");~n"
-;	       (zodiac:location-line (zodiac:zodiac-start L))
-;	       (zodiac:location-column (zodiac:zodiac-start L)))
-      
       (when (case-code-has-continue? case-code)
 	(fprintf port "~awhile(1)~n" indent))
 
@@ -886,7 +865,7 @@
 (define vm->c:emit-function-epilogue
   (lambda (code close port)
     (fprintf port "~a~a /* end of function body ~a */~n" 
-	     vm->c:indent-spaces close (code-label code))))
+	     vm->c:indent-spaces close (closure-code-label code))))
 
 (define vm->c:emit-unit-prologue
   (lambda (L indent port)
@@ -915,7 +894,7 @@
 	 (vm->c:emit-local-variable-declarations! (code-free-vars code) indent port)
 	 (vm->c:emit-local-bucket-declarations! (code-global-vars code) indent #f port))
 
-      (let ([r (code-closure-rep code)])
+      (let ([r (closure-code-rep code)])
 	(when r
 	   (fprintf port "~aconst ~a * env;~n"
 		    indent (vm->c:convert-type-definition r))))
@@ -945,7 +924,7 @@
 		 (cons (car l) (loop (cdr l))))))
        indent port)
 
-      (let ([r (code-closure-rep code)])
+      (let ([r (closure-code-rep code)])
 	(when r
 	   (fprintf port "~aenv = (~a *)u->data;~n"
 		    indent (vm->c:convert-type-definition r))))
@@ -991,7 +970,7 @@
 	 (vm->c:emit-local-variable-declarations! (code-free-vars code) indent port)
 	 (vm->c:emit-local-bucket-declarations! (code-global-vars code) indent #f port))
 
-      (let ([r (code-closure-rep code)])
+      (let ([r (closure-code-rep code)])
 	(when r
 	  (fprintf port "~aconst ~a * env;~n"
 		   indent (vm->c:convert-type-definition r))))
@@ -999,7 +978,7 @@
       (when any-defaults?
 	    (fprintf port "~aint arg_set_level = ~a;~n" indent (length args)))
 
-      (let ([r (code-closure-rep code)])
+      (let ([r (closure-code-rep code)])
 	(when r
 	  (fprintf port "~aenv = (~a *)data;~n"
 		   indent (vm->c:convert-type-definition r))))
@@ -1302,14 +1281,7 @@
 			   (= return-arity num-to-set))])
 		 (if (= num-to-set 1)		      
 		     
-		     (begin
-		       (process-set! (car vars) val #t)
-		       ; --- This is now handled by apply vs. apply-multi ---
-		       ; (unless return-arity-ok?
-		       ; (emit "; NO_MULTIPLE_VALUES(")
-		       ; (process-target! (car vars))
-		       ; (emit ")"))
-		       )
+		     (process-set! (car vars) val #t)
 		     
 		     (begin
 		       (emit "{ Scheme_Object * res = ")
@@ -1343,7 +1315,7 @@
 
 	 ;; (%args A ...) -> arg[0] = A; ...
 	 [(vm:args? ast)
-	  ;; MATTHEW: skip tail_buf setup if no args
+	  ;; skip tail_buf setup if no args
 	  (when (and (eq? arg-type:tail-arg (vm:args-type ast))
 		     (not (null? (vm:args-vals ast))))
 	    (emit-indentation)

@@ -154,7 +154,7 @@
 		   (make-wait-dialog 
 		    #f
 		    (string-constant 'please-wait)
-		    (string-constant 'checking-version-server)
+		    (string-constant 'connecting-version-server)
 		    (lambda ()
 		      (set! got-cancel? #t)
 		      (with-handlers 

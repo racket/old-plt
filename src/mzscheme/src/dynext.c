@@ -36,21 +36,18 @@
 #if defined(WINDOWS_DYNAMIC_LOAD)
 # include <windows.h>
 #endif
-#if defined(BEOS_IMAGE_DYNAMIC_LOAD)
-# include <be/kernel/image.h>
-#endif
 #if defined(CODEFRAGMENT_DYNAMIC_LOAD)
 # include <CodeFragments.h>
 static Boolean get_ext_file_spec(FSSpec *spec, const char *filename );
 static Boolean load_ext_file_spec(FSSpec *spec, CFragConnectionID *connID);
 #endif
 
-#if	defined(RTLD_NOW)
-#define	DLOPEN_MODE	RTLD_NOW
-#elif	defined(RTLD_LAZY)
-#define	DLOPEN_MODE	(RTLD_LAZY)
+#if defined(RTLD_NOW)
+# define DLOPEN_MODE (RTLD_NOW)
+#elif defined(RTLD_LAZY)
+# define DLOPEN_MODE (RTLD_LAZY)
 #else
-#define	DLOPEN_MODE	(1)
+# define DLOPEN_MODE (1)
 #endif
 
 #ifdef SHL_DYNAMIC_LOAD
@@ -97,9 +94,7 @@ Scheme_Extension_Table *scheme_extension_table;
 #ifndef UNIX_DYNAMIC_LOAD
 # ifndef WINDOWS_DYNAMIC_LOAD
 #  ifndef CODEFRAGMENT_DYNAMIC_LOAD
-#   ifndef BEOS_IMAGE_DYNAMIC_LOAD
-#    define NO_DYNAMIC_LOAD
-#   endif
+#   define NO_DYNAMIC_LOAD
 #  endif
 # endif
 #endif
@@ -123,8 +118,8 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
 #ifndef NO_DYNAMIC_LOAD
     REGISTER_SO(loaded_extensions);
     REGISTER_SO(fullpath_loaded_extensions);
-    loaded_extensions = scheme_make_hash_table(0);
-    fullpath_loaded_extensions = scheme_make_hash_table(0);
+    loaded_extensions = scheme_make_hash_table(SCHEME_hash_ptr);
+    fullpath_loaded_extensions = scheme_make_hash_table(SCHEME_hash_string);
 #endif
 
 #ifdef LINK_EXTENSIONS_BY_TABLE
@@ -253,7 +248,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Object *exp
 #endif
 
     f = (Setup_Procedure)dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize_internal");
-    
+
     if (!f) {
       const char *err;
       err = dlerror();
@@ -425,68 +420,6 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Object *exp
 		       scheme_make_string(filename),
 		       fail_err_symbol,
 		       "load-extension: could not load extension: \"%s\"",
-		       filename);
-#endif
-#if defined(BEOS_IMAGE_DYNAMIC_LOAD)
-    image_id image;
-    status_t status;
-    Setup_Procedure f;
-    char *vers;
-  
-    image = load_add_on(filename);
-    printf("loaded\n");
-    if (image <= 0)
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_string(filename),
-		       fail_err_symbol,
-		       "load-extension: could not load \"%s\" (%ld)",
-		       filename, image);
-    
-    handle = (void *)image;
-    
-    status = get_image_symbol(image, "scheme_initialize_internal",
-			      B_SYMBOL_TYPE_TEXT, (void **)&f);
-    
-    if (status != B_NO_ERROR)
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_string(filename),
-		       fail_err_symbol,
-		       "load-extension: \"%s\" is not an extension (%ld)",
-		       filename, status);
-    
-    vers = f(SSI_ARGS);
-    if (!vers || strcmp(vers, VERSION_AND_VARIANT))
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_string(filename),
-		       version_err_symbol,
-		       "load-extension: bad version %s (not %s) from \"%s\"",
-		       vers, VERSION_AND_VARIANT, filename);
-
-    status = get_image_symbol(image, "scheme_initialize",
-			      B_SYMBOL_TYPE_TEXT, (void **)&init_f);
-    if (status == B_NO_ERROR) {
-      status = get_image_symbol(image, "scheme_reload",
-				B_SYMBOL_TYPE_TEXT, (void **)&reload_f);
-      if (status == B_NO_ERROR) {
-	status = get_image_symbol(image, "scheme_module_name",
-				  B_SYMBOL_TYPE_TEXT, (void **)&modname_f);
-	if (status != B_NO_ERROR)
-	  modname_f = NULL;
-      } else
-	reload_f = NULL;
-    } else
-      init_f = NULL;
-    
-    if (status != B_NO_ERROR)
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		       scheme_make_string(filename),
-		       fail_err_symbol,
-		       "load-extension: no %s in \"%s\"", 
-		       (init_f 
-			? (reload_f
-			   ? "scheme_module_name"
-			   : "scheme_reload")
-			: "scheme_initialize"),
 		       filename);
 #endif
 #ifdef NO_DYNAMIC_LOAD

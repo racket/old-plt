@@ -419,76 +419,78 @@
       ;; string->url : str -> url
       (define string->url
         (lambda (string)
-          (let loop ((markers ascii-marker-list))
-            (unless (null? markers)
-              (vector-set! marker-locations (car markers) #f)
-              (loop (cdr markers))))
-          (let loop ((chars (string->list string)) (index 0))
-            (unless (null? chars)
-              (let ((first (car chars)))
-                (when (memq first marker-list)
-                  (let ((posn (char->integer first)))
-                    (unless (vector-ref marker-locations posn)
-                      (vector-set! marker-locations posn index)))))
-              (loop (cdr chars) (add1 index))))
-          (let
+          (with-handlers [(exn? (lambda (exn)
+                                  (url-error "Invalid URL string: ~s" string)))]
+	    (let loop ((markers ascii-marker-list))
+	      (unless (null? markers)
+		(vector-set! marker-locations (car markers) #f)
+		(loop (cdr markers))))
+	    (let loop ((chars (string->list string)) (index 0))
+	      (unless (null? chars)
+		(let ((first (car chars)))
+		  (when (memq first marker-list)
+		    (let ((posn (char->integer first)))
+		      (unless (vector-ref marker-locations posn)
+			(vector-set! marker-locations posn index)))))
+		(loop (cdr chars) (add1 index))))
+	    (let
               ((first-colon (first-position-of-marker #\:))
-               (first-semicolon (first-position-of-marker #\;))
-               (first-question (first-position-of-marker #\?))
-               (first-hash (first-position-of-marker #\#)))
-            (let
+		(first-semicolon (first-position-of-marker #\;))
+		(first-question (first-position-of-marker #\?))
+		(first-hash (first-position-of-marker #\#)))
+	      (let
                 ((scheme-start (and first-colon 0))
-                 (path-start (if first-colon (add1 first-colon) 0))
-                 (params-start (and first-semicolon (add1 first-semicolon)))
-                 (query-start (and first-question (add1 first-question)))
-                 (fragment-start (and first-hash (add1 first-hash))))
-              (let ((total-length (string-length string)))
-                (let*
+		  (path-start (if first-colon (add1 first-colon) 0))
+		  (params-start (and first-semicolon (add1 first-semicolon)))
+		  (query-start (and first-question (add1 first-question)))
+		  (fragment-start (and first-hash (add1 first-hash))))
+		(let ((total-length (string-length string)))
+		  (let*
                     ((scheme-finish (and scheme-start first-colon))
-                     (path-finish (if first-semicolon first-semicolon
-                                      (if first-question first-question
-                                          (if first-hash first-hash
-                                              total-length))))
-                     (fragment-finish (and fragment-start total-length))
-                     (query-finish (and query-start
-                                        (if first-hash first-hash
-                                            total-length)))
-                     (params-finish (and params-start
-                                         (if first-question first-question
-                                             (if first-hash first-hash
-                                                 total-length)))))
-                  (let ((scheme (and scheme-start
-                                     (substring string
-                                                scheme-start scheme-finish))))
-                    (if (and scheme
-                             (string=? scheme "file"))
+		      (path-finish (if first-semicolon first-semicolon
+				     (if first-question first-question
+				       (if first-hash first-hash
+					 total-length))))
+		      (fragment-finish (and fragment-start total-length))
+		      (query-finish (and query-start
+				      (if first-hash first-hash
+					total-length)))
+		      (params-finish (and params-start
+				       (if first-question first-question
+					 (if first-hash first-hash
+					   total-length)))))
+		    (let ((scheme (and scheme-start
+				    (substring string
+				      scheme-start scheme-finish))))
+		      (if (and scheme
+			    (string=? scheme "file"))
                         (let ((path (substring string path-start total-length)))
                           (if (or (relative-path? path)
-                                  (absolute-path? path))
-                              (make-url
-                               scheme
-                               #f			; host
-                               #f			; port
-                               path
-                               #f			; params
-                               #f			; query
-                               #f)			; fragment
-                              (url-error "scheme 'file' path ~s neither relative nor absolute" path)))
+				(absolute-path? path))
+			    (make-url
+			      scheme
+			      #f	; host
+			      #f	; port
+			      path
+			      #f	; params
+			      #f	; query
+			      #f)	; fragment
+			    (url-error "scheme 'file' path ~s neither relative nor absolute" path)))
                         (let-values (((host port path)
-                                      (parse-host/port/path
-                                       string path-start path-finish)))
+				       (parse-host/port/path
+					 string path-start path-finish)))
                           (make-url
-                           scheme
-                           host
-                           port
-                           path
-                           (and params-start
-                                (substring string params-start params-finish))
-                           (and query-start
-                                (substring string query-start query-finish))
-                           (and fragment-start
-                                (substring string fragment-start
-                                           fragment-finish))))))))))))
+			    scheme
+			    host
+			    port
+			    path
+			    (and params-start
+			      (substring string params-start params-finish))
+			    (and query-start
+			      (substring string query-start query-finish))
+			    (and fragment-start
+			      (substring string fragment-start
+				fragment-finish)))))))))))))
       
       ;; parse-host/port/path : str x num x num -> (str + #f) + (num + #f) + str
       (define parse-host/port/path

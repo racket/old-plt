@@ -41,7 +41,7 @@
 	    [menu : mred:menu^ (mred:menu@ debug (core function@))]
 	    [edit : mred:edit^ 
 		  (mred:edit@ debug finder path-utils mode scheme-paren
-			    keymap icon (core function@))]
+			    keymap icon preferences gui-utils (core function@))]
 	    [group : mred:group^ 
 		   (mred:group@ debug preferences editor-frame gui-utils
 			      exit autosave handler (core function@))]

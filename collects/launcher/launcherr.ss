@@ -301,19 +301,20 @@
         (error 'install-aliases "startup templates GoMz and GoMr are missing."))
       (unless (string=? (system-library-subpath) "68k-mac")   ; cannot use extensions on 68k mac
         (when (or (not (file-exists? extension))                             ; extension is missing altogether, or
-                  (and (file-exists? extension-source-file)                  ; extension source file is newer than extension
-                       (> (file-or-directory-modify-seconds extension-source-file)
-                          (file-or-directory-modify-seconds extension))
+                  (and (let ([extension-file-date (file-or-directory-modify-seconds extension)])
+                    (ormap (lambda (file) (and (file-exists? file)           ; extension is older than source file or apps
+                                               (> (file-or-directory-modify-seconds file) extension-file-date)))
+                           (list extension-source-file mz-app)))
                        (directory-exists? (build-path launcher-path "CVS")))); ... and this is a CVS tree
           (unless (file-exists? extension-source-file)
             (error 'maybe-install-aliases "need startup-setup.c to compile startup-setup.so extension"))
           (let ([obj-file (build-path launcher-path "startup-setup.o")])
             (c:compile-extension #t extension-source-file obj-file null)
             (l:link-extension #t (list obj-file) extension)))
-        (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (gomz, gomr, extension)
+        (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (starters, apps, extension)
                   (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
                     (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
-                           (list extension gomz gomr))))
+                           (list extension gomz gomr mz-app mr-app))))
           (let ([installation-result ((load-extension extension) mz-app mr-app gomz gomr)])
             (unless installation-result
               (error 'maybe-install-aliases "installing aliases failed"))
@@ -328,8 +329,10 @@
   ; 4. try with missing extension and source file (error)
   ; 5. try with source file newer than extension (success, recompiles extension, reinstalls)
   ; 5b. try with same exc. no CVS dir (success, does _not_ recompile extension, reinstalls)
+  ; 5c. try with mz-app newer than extension (success, recompiles extension, reinstalls)
+  ; 5d. try with same exc. no CVS dir (possible error, "extension compiled for earlier app")
   ; 6. try with missing marker file (success, reinstalls)
-  ; 7. try with marker file older than any of (gomz, gomr) (success, reinstalls)
+  ; 7. try with marker file older than any of (gomz, gomr, apps) (success, reinstalls)
   ; 8. try with everything all set (success, no action taken)
   
   ;; end of lazy install-aliases code for mac added by jbc 2000-6

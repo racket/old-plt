@@ -141,7 +141,10 @@
       [else
        (let ([first (first-q q)])
          (and (eq? (scanned-token first) jIDENTIFIER)
-              (eq? (scanned->symbol first) 'java)))]))
+              (eq? (scanned->symbol first) 'java)
+              (let ([dup (quick-dupq q)])
+                (deq! dup)
+                (eq? (scanned-token (deq! dup)) jIDENTIFIER))))]))
   
   ;;  eval-main: Repl Queue(Scanned) -> Void
   (define (eval-main repl q)

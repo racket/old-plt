@@ -97,11 +97,6 @@
 			       ,(make-sys-link
 				 "/servlets/hd-config.ss"
 				 "Configure Help Desk"
-				 "_top")
-			       'nbsp 'nbsp
-			       ,(make-sys-link
-				 "/servlets/shutdown.ss"
-				 "Shutdown Help Desk server"
 				 "_top"))))))
 		  (TD
 		   (TABLE ((BGCOLOR ,search-bg)

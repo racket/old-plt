@@ -416,20 +416,23 @@
 	  (else
 	    (static-error expr "Malformed if"))))))
 
+  ; Don't "simplify" this.  If replaced with a pattern match, it will
+  ; die when passed a quote form whose underlying object is an actual
+  ; Scheme value (as opposed to a struct:read), because the matcher
+  ; will attempt to extract the source locations of the underlying
+  ; object, which will fail in this case.
+
   (add-primitivized-micro-form 'quote scheme-vocabulary
-    (let* ((kwd '())
-	    (in-pattern '(_ body))
-	    (m&e (pat:make-match&env in-pattern kwd)))
-      (lambda (expr env attributes vocab)
-	(cond
-	  ((pat:match-against m&e expr env)
-	    =>
-	    (lambda (p-env)
-	      (create-quote-form
-		(pat:pexpand 'body p-env kwd)
-		expr)))
-	  (else
-	    (static-error expr "Malformed quote"))))))
+    (lambda (expr env attributes vocab)
+      (if (and (z:list? expr)
+	    (= 2 (z:sequence-length expr)))
+	(let ((contents (expose-list expr)))
+	  (if (and (z:symbol? (car contents))
+		(or (eq? 'quote (z:read-object (car contents)))
+		  (eq? '#%quote (z:read-object (car contents)))))
+	    (create-quote-form (cadr contents) expr)
+	    (static-error expr "Malformed quote")))
+	(static-error expr "Malformed quote"))))
 
   (when (language>=? 'side-effecting)
     (add-primitivized-micro-form 'set! scheme-vocabulary

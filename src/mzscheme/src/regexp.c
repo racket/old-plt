@@ -338,6 +338,11 @@ regcomp(char *expstr, rxpos exp, int explen)
       r->regmlen = len;
     }
   }
+
+#if 0
+  if (regcode > r->regsize + sizeof(regexp))
+    scheme_signal_error("regexp too large!");
+#endif
   
   return(r);
 }

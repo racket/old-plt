@@ -57,6 +57,7 @@
   (check-pre-defined-var
    check-global-defined
    global-lookup
+   true-false-printed?
    constructor-style-printing?
    abbreviate-cons-as-list?
    user-cons?

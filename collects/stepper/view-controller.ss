@@ -160,17 +160,24 @@
               [remaining-highlights null]
               [highlight-pop
                (lambda ()
-                 (begin0 (car remaining-highlights) (set! remaining-highlights (cdr remaining-highlights))))]
+                 (if (null? remaining-highlights)
+                     (error 'highlight-pop "no highlighted region to match placeholder")
+                     (begin0 (car remaining-highlights) 
+                             (set! remaining-highlights (cdr remaining-highlights))
+                             (stack-top-decide))))]
+              [next-is-placeholder? #f]
+              [stack-top-decide
+               (lambda ()
+                 (set! next-is-placeholder?
+                       (or (null? remaining-highlights)
+                           (confusable-value? (car remaining-highlights)))))]
               [format-sexp
                (lambda (sexp)
-                 (let ([real-print-hook (pretty-print-print-hook)]
-                       [placeholder-present? #f])
+                 (let ([real-print-hook (pretty-print-print-hook)])
                    (parameterize ([pretty-print-size-hook
                                    (lambda (value display? port)
-                                     (if (eq? value highlight-placeholder)
-                                         (begin
-                                           (set! placeholder-present? #t)
-                                           (string-length (format "~s" (car remaining-highlights))))
+                                     (if (eq? value highlight-placeholder) ; must be a confusable value
+                                         (string-length (format "~s" (car remaining-highlights)))
                                          (if (image? value)
                                              1   ; if there was a good way to calculate a image widths ...
                                              #f)))]
@@ -190,17 +197,18 @@
                                      0)]
                                   [pretty-print-pre-print-hook
                                    (lambda (value p)
-                                     (when (or (and (not placeholder-present?)
+                                     (when (or (and (not next-is-placeholder?)
+                                                    (not (null? remaining-highlights))
                                                     (eq? value (car remaining-highlights)))
                                                (eq? value highlight-placeholder))
                                        (set! highlight-begin (get-start-position))))]
                                   [pretty-print-post-print-hook
                                    (lambda (value p)
-                                     (when (or (and (not placeholder-present?)
+                                     (when (or (and (not next-is-placeholder?)
+                                                    (not (null? remaining-highlights))
                                                     (eq? value (car remaining-highlights)))
                                                (eq? value highlight-placeholder))
                                        (highlight-pop)
-                                       (set! placeholder-present? #f)
                                        (let ([highlight-end (get-start-position)])
                                          (unless highlight-begin
                                            (error 'format-whole-step "no highlight-begin to match highlight-end"))
@@ -213,7 +221,10 @@
               [advance-substitute
                (lambda (exp)
                  (letrec ([stack-copy remaining-highlights]
-                          [stack-pop (lambda () (begin0 (car stack-copy) (set! stack-copy (cdr stack-copy))))]
+                          [stack-pop (lambda () 
+                                       (if (null? stack-copy)
+                                           (error 'advance-substitute "no highlighted region to fill placeholder")
+                                           (begin0 (car stack-copy) (set! stack-copy (cdr stack-copy)))))]
                           [substitute
                            (lambda (exp)
                              (cond [(eq? exp highlight-placeholder)
@@ -242,34 +253,37 @@
                     (insert #\newline))
                   finished-exprs)
                  (insert (make-object separator-snip%))
-                 (when (not (eq? redex no-sexp))
+                 (when (not (eq? redex-list no-sexp))
                    (insert #\newline)
                    (reset-style)
                    (set! remaining-highlights redex-list)
+                   (stack-top-decide)
                    (set! highlight-color redex-highlight-color)
                    (unless (= (length exps) 1)
-                     (error 'format-sexp "wrong-length exp list in pre-step"))
+                     (error 'format-sexp "wrong length exp list in pre-step: ~s" exps))
                    (format-sexp (advance-substitute (car exps)))
-                   (unless (null? highlights-remaining)
+                   (unless (null? remaining-highlights)
                      (error 'format-whole-step "left-over highlights in pre-step"))
                    (insert #\newline)
                    (insert (make-object separator-snip%))
                    (insert #\newline))
-                 (cond [(not (eq? reduct no-sexp))
+                 (cond [(not (eq? reduct-list no-sexp))
                         (reset-style)
                         (set! remaining-highlights reduct-list)
+                        (stack-top-decide)
                         (set! highlight-color reduct-highlight-color)
                         (for-each
                          (lambda (exp) (format-sexp (advance-substitute exp)))
                          post-exps)
-                        (unless (null? highlights-remaining)
+                        (unless (null? remaining-highlights)
                           (error 'format-whole-step "left-over highlights in post-step"))]
                        [error-msg
                         (let ([before-error-msg (last-position)])
                           (reset-style)
                           (auto-wrap #t)
                           (insert error-msg)
-                          (change-style error-delta before-error-msg (last-position)))])
+                          (change-style error-delta before-error-msg (last-position))
+                          (insert #\newline))])
                  (unless (eq? after-exprs no-sexp)
                    (insert #\newline)
                    (insert (make-object separator-snip%))
@@ -284,16 +298,53 @@
                  (lock #t))])
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (f:scheme:get-style-list)))))
+
   
-  ;; DO SOME DAMN TEST CASES.
+;  (define (stepper-text-test . args)
+;    (let* ([new-frame (make-object frame% "test-frame")]
+;           [new-text (apply make-object stepper-text% args)]
+;           [new-canvas (make-object stepper-canvas% new-frame new-text)])
+;      (send new-canvas min-width 500)
+;      (send new-canvas min-height 100)
+;      (send new-frame show #t)))
+;  
+;  (stepper-text-test `((define x 3) 14)
+;                     `((* 13 ,highlight-placeholder))
+;                     `((* 15 16))
+;                     `(,highlight-placeholder (define y 4) 13 (+ ,highlight-placeholder ,highlight-placeholder) 13
+;                       298 (+ (x 398 ,highlight-placeholder) ,highlight-placeholder) ,highlight-placeholder)
+;                     `((+ 3 4) 13 #f (+ x 398) (x 398 (+ x 398)) #f)
+;                     #f
+;                     `((define y (+ 13 14)) 80))
+;  
+;  (stepper-text-test `()
+;                     `('uninteresting)
+;                     `()
+;                     `(13 ,highlight-placeholder)
+;                     `(13)
+;                     #f
+;                     `())
+;  
+;  (stepper-text-test `()
+;                     `('uninteresting)
+;                     `(too-many-fill-ins) `() `() #f `())
+;  
+;  (stepper-text-test `()
+;                     `(uninteresting)
+;                     `() `(,highlight-placeholder ,highlight-placeholder) `(too-few-fill-ins) #f `())
+;  
+;  (stepper-text-test `() `(uninteresting) `() no-sexp no-sexp "This is an error message" `((define x 3 4 5)))
+;  
+;  (stepper-text-test `() no-sexp no-sexp no-sexp no-sexp "This is another error message" `(poomp))
+  
    
   (define error-delta (make-object style-delta% 'change-style 'italic))
   (send error-delta set-delta-foreground "RED")
 
   (define test-dc (make-object bitmap-dc% (make-object bitmap% 1 1)))
-  (define result-highlight-color (make-object color% 255 255 255))
+  (define reduct-highlight-color (make-object color% 255 255 255))
   (define redex-highlight-color (make-object color% 255 255 255))
-  (send test-dc try-color (make-object color% 212 159 245) result-highlight-color)
+  (send test-dc try-color (make-object color% 212 159 245) reduct-highlight-color)
   (send test-dc try-color (make-object color% 193 251 181) redex-highlight-color)
 
   (define (stepper-wrapper drscheme-frame settings)
@@ -413,8 +464,8 @@
       (send button-panel stretchable-width #f)
       (send button-panel stretchable-height #f)
       (send canvas stretchable-height #t)
-      (send canvas min-width 400)
-      (send canvas min-height 100)
+      (send canvas min-width 500)
+      (send canvas min-height 500)
       (send previous-button enable #f)
       (send home-button enable #f)
       (send next-button enable #f)
@@ -424,15 +475,19 @@
       (send s-frame show #t)))
   
   (define beginner-level-name "Beginning Student")
+  (define intermediate-level-name "Intermediate Student")
       
   (define (stepper-go frame)
     (let ([settings (f:preferences:get d:language:settings-preferences-symbol)])
-      (if #f ; (not (string=? (d:basis:setting-name settings) beginner-level-name))
+      (if (not (or (string=? (d:basis:setting-name settings) beginner-level-name)
+                   (string=? (d:basis:setting-name settings) intermediate-level-name)))
           (message-box "Stepper" 
                        (format (string-append "Language level is set to \"~a\".~n"
-                                              "The Foot only works for the \"~a\" language level.~n")
+                                              "The stepper only works for the \"~a\" and the~n"
+                                              "\"~a\" language levels.~n")
                                (d:basis:setting-name settings)
-                               beginner-level-name)
+                               beginner-level-name
+                               intermediate-level-name)
                        #f 
                        '(ok))
           (stepper-wrapper frame settings)))))

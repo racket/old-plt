@@ -8,7 +8,8 @@
   
   (define check-pre-defined-var
     (lambda (ignored) #f))
-  
+
+  (define true-false-printed? 'fake)
   (define check-global-defined 'fake)
   (define global-lookup 'fake)
   (define constructor-style-printing? 'fake)

@@ -65,7 +65,6 @@
     (if (null? mark-list)
         (error 'lookup-binding "variable not found in environment: ~a" binding)
         (let* ([bindings (mark-bindings (car mark-list))]
-               [_ (printf "bindings on this mark: ~a~n" bindings)]
                [matches (filter (lambda (b)
                                   (eq? binding (mark-binding-binding b)))
                                 bindings)])

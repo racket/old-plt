@@ -199,7 +199,7 @@
          (define (late-let-break-wrap var-names lifted-name-gensyms expr)
            (if break
                (let* ([interlaced (apply append (map list var-names lifted-name-gensyms))])
-                 `(#%begin (,(make-break 'late-let-break) ,@interlaced) expr))
+                 `(#%begin (,(make-break 'late-let-break) ,@interlaced) ,expr))
                expr))
          
          (define (return-value-wrap expr)
@@ -229,7 +229,7 @@
                  (if (= offset (z:location-offset (z:zodiac-start expr)))
                      expr
                      (cond
-                       ((z:scalar? expr) (e:static-error "starting offset inside scalar:" offset))
+                       ((z:scalar? expr) (e:internal-error expr "starting offset inside scalar:" offset))
                        ((z:sequence? expr) 
                         (let ([object (z:read-object expr)])
                             (cond
@@ -238,8 +238,8 @@
                              (search-exprs (vector->list object))) ; can source exprs be here?
                             ((z:improper-list? expr)
                              (search-exprs (search-exprs object))) ; can source exprs be here? (is this a bug?)
-                            (else (e:static-error "unknown expression type in sequence" expr)))))
-                       (else (e:static-error "unknown read type" expr))))))))
+                            (else (e:internal-error expr "unknown expression type in sequence")))))
+                       (else (e:internal-error expr "unknown read type"))))))))
   
          (define (struct-procs-defined expr)
            (if (and (z:define-values-form? expr)
@@ -595,7 +595,7 @@
                         (values (expr-cheap-wrap `(#%letrec-values ,bindings ,annotated-body))
                                 free-bindings-outer))
                       (let* ([create-index-finder (lambda (binding)
-                                                    `(,binding-indexer binding))]
+                                                    `(,binding-indexer ,binding))]
                              [lifted-name-gensyms (map get-lifted-gensym binding-list)]
                              [outer-initialization
                               `((,(append lifted-name-gensyms binding-names) 
@@ -614,7 +614,7 @@
                               (wcm-wrap (make-debug-info expr 
                                                          (binding-set-union tail-bound binding-list)
                                                          (binding-set-union free-bindings-inner binding-list)
-                                                         binding-list ; advance warning
+                                                         null ; advance warning
                                                          'let-body)
                                         middle-begin)]
                              [whole-thing
@@ -728,7 +728,7 @@
                            free-bindings))]
                
                [(not cheap-wrap?)
-                (e:static-error "cannot annotate units or classes except in cheap-wrap mode")]
+                (e:internal-error expr "cannot annotate units or classes except in cheap-wrap mode")]
                
                [(z:unit-form? expr)
                 (let* ([imports (z:unit-form-imports expr)]

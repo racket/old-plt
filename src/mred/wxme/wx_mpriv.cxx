@@ -1314,6 +1314,8 @@ void wxMediaEdit::CheckMergeSnips(long start)
 	    /* Make *sure* that count is right */
 	    naya->count = c;
 
+	    revision_count++;
+
 	    naya = SnipSetAdmin(naya, snipAdmin);
 
 	    naya->line = line;

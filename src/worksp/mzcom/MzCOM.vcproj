@@ -42,11 +42,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib libmzsch.lib libmzgc.lib"
+				AdditionalDependencies="odbc32.lib odbccp32.lib wsock32.lib libmzschxxxxxxx.lib libmzgcxxxxxxx.lib"
 				OutputFile="../../../collects/mzcom/mzcom.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\libmzsch\Release,..\libmzgc\Release"
+				AdditionalLibraryDirectories="..\libmzsch\Release;..\libmzgc\Release"
 				ProgramDatabaseFile=".\Release/mzcom.pdb"
 				SubSystem="2"/>
 			<Tool
@@ -98,11 +98,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="libcmtd.lib odbc32.lib odbccp32.lib wsock32.lib libmzsch.lib libmzgc.lib"
+				AdditionalDependencies="libcmtd.lib odbc32.lib odbccp32.lib wsock32.lib libmzschxxxxxxx.lib libmzgcxxxxxxx.lib libmzgc.lib"
 				OutputFile="../../../collects/mzcom/mzcom.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
-				AdditionalLibraryDirectories="..\libmzsch\Release,..\libmzgc\Release"
+				AdditionalLibraryDirectories="..\libmzsch\Debug;..\libmzgc\Debug"
 				IgnoreDefaultLibraryNames="libcmt.lib"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Debug/mzcom.pdb"

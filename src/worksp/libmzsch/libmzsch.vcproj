@@ -37,13 +37,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzgc/Debug/libmzgc.lib odbc32.lib odbccp32.lib wsock32.lib"
+				AdditionalDependencies="../libmzgc/Debug/libmzgcxxxxxxx.lib odbc32.lib odbccp32.lib wsock32.lib"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Debug/libmzsch.pdb"
-				ImportLibrary=".\Debug/libmzsch.lib"/>
+				ImportLibrary=".\Debug/libmzschxxxxxxx.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
@@ -95,13 +95,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzgc/Release/libmzgc.lib odbc32.lib odbccp32.lib wsock32.lib"
+				AdditionalDependencies="../libmzgc/Release/libmzgcxxxxxxx.lib odbc32.lib odbccp32.lib wsock32.lib"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release/libmzsch.pdb"
-				ImportLibrary=".\Release/libmzsch.lib"/>
+				ImportLibrary=".\Release/libmzschxxxxxxx.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"

@@ -44,7 +44,7 @@
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Debug/libmzgc.pdb"
-				ImportLibrary=".\Debug/libmzgc.lib"/>
+				ImportLibrary=".\Debug/libmzgcxxxxxxx.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
@@ -103,7 +103,7 @@
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release/libmzgc.pdb"
-				ImportLibrary=".\Release/libmzgc.lib"/>
+				ImportLibrary=".\Release/libmzgcxxxxxxx.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"

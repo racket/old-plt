@@ -35,6 +35,8 @@
      "Dorai Sitaram, "
      "Mike Sperber, "
      "Francisco Solsona, "
+     "Neil W. Van Dyke, "
+     "Anton van Straaten, "
      "Stephanie Weirich, "
      "Noel Welsh, "
      "and "

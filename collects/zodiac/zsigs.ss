@@ -1,9 +1,8 @@
-;; Reader-File:  unit-sigs.ss
+;;
+;; $Id$
 ;;
 ;; The signatures for all scanner/reader units.
 ;;
-
-(require-library "unitsig.ss")
 
 ;;
 ;; Top-level zodiac structures (outside the hierarchy)

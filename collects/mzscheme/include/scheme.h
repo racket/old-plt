@@ -352,7 +352,6 @@ enum {
   MZCONFIG_OUTPUT_PORT,
   MZCONFIG_ERROR_PORT,
 
-  MZCONFIG_USER_BREAK_POLL_HANDLER,
   MZCONFIG_ENABLE_BREAK,
   MZCONFIG_ENABLE_EXCEPTION_BREAK,
 
@@ -549,7 +548,7 @@ typedef struct Scheme_Process {
     } k;
   } ku;
 
-  short checking_break;
+  short suspend_break;
   short external_break;
 
 #ifdef MZ_REAL_THREADS

@@ -225,6 +225,34 @@ int wx_trampolining;
 
 void MrEdDispatchEvent(MSG *msg)
 {
+  switch (msg->message) {
+  case WM_RBUTTONDOWN:
+  case WM_RBUTTONUP:
+  case WM_RBUTTONDBLCLK:
+  case WM_MBUTTONDOWN:
+  case WM_MBUTTONUP:
+  case WM_MBUTTONDBLCLK:
+  case WM_LBUTTONDOWN:
+  case WM_LBUTTONUP:
+  case WM_LBUTTONDBLCLK:
+  case WM_MOUSEMOVE:
+  case WM_MOUSEWHEEL:
+  case WM_NCLBUTTONDOWN:
+  case WM_NCRBUTTONDOWN:
+  case WM_NCMBUTTONDOWN:
+  case WM_NCLBUTTONDBLCLK:
+  case WM_NCRBUTTONDBLCLK:
+  case WM_NCMBUTTONDBLCLK:
+  case WM_NCMOUSEMOVE:
+  case WM_NCLBUTTONUP:
+  case WM_NCRBUTTONUP:
+  case WM_NCMBUTTONUP:
+    wxUnhideCursor();
+    break;
+  default:
+    break;
+  }
+
   if (WM_MRED_LEAVE && (msg->message == WM_MRED_LEAVE)) {
     /* Queued leave event */
     LeaveEvent *e = (LeaveEvent *)msg->lParam;

@@ -113,6 +113,7 @@ void wxEndBusyCursor(void);
 Bool wxIsBusy(void);
 
 void wxHideCursor(void);
+void wxUnhideCursor(void);
   
 /* Error message functions used by wxWindows */
 

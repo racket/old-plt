@@ -195,7 +195,7 @@
 				     (set! printed? #t)
 				     (print-doing oop))
 				   (unless (verbose)
-				     (let ([path (path-only path)])
+				     (let ([path (normal-case-path (path-only path))])
 				       (unless (hash-table-get dir-table path (lambda () #f))
 					 (hash-table-put! dir-table path #t)
 					 (print-doing oop path)))))])

@@ -389,8 +389,22 @@ Bool wxIsBusy(void)
   return (wxGetBusyState() > 0);
 }    
 
+static int hidden = 0;
+
 void wxHideCursor(void)
 {
+  if (!hidden) {
+    hidden = 1;
+    ShowCursor(FALSE);
+  }
+}
+
+void wxUnhideCursor(void)
+{
+  if (hidden) {
+    hidden = 0;
+    ShowCursor(TRUE);
+  }
 }
 
 /********************************************************************************/

@@ -187,9 +187,13 @@
              ((e) (> (car home) x))
              ((w) (< (car home) x))))))
   
+  (define (dist gx gy px py)
+    (+ (abs (- px gx))
+       (abs (- py gy))))
+  
   (define (nearest-home x y)
-    (car (car (quicksort (map (lambda (home)
-                                (cons (dist x y home) home))
+    (cdr (car (quicksort (map (lambda (home)
+                                (cons (dist x y (car home) (cdr home)) home))
                               (home-list))
                          (lambda (l r) (< (car l) (car r)))))))
   

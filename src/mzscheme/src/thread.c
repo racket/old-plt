@@ -2155,8 +2155,13 @@ int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object **  volatile argv)
 {
-  /* The main action here is buried in code to free temporary
-     bignum space on escapes. */
+  /* The main action here is buried in code to free temporary bignum
+     space on escapes. Aside from a thread kill, this is the only
+     place where we have to worry about freeing bignum space, because
+     kill and escape are the only possible actions within a bignum
+     calculaion. It is possible to have nested bignum calculations,
+     though (if the break handler performs bignum arithmetic), so
+     that's why we save and restore an old snapshot. */
   mz_jmp_buf savebuf;
   long save[4];
 

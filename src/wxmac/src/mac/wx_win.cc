@@ -2015,7 +2015,14 @@ wxCursor* wxWindow::SetCursor(wxCursor* cursor)
 }
 
 //-----------------------------------------------------------------------------
-void wxWindow::DragAcceptFiles(Bool accept) { } // Not implemented
+
+void wxWindow::DragAcceptFiles(Bool accept)
+{
+  wxFrame *f;
+
+  f = GetRootFrame();
+  f->AddDragAccept(this, accept);
+}
 
 //-----------------------------------------------------------------------------
 Bool wxWindow::IsMacWindow(void) { return FALSE; } // mac platform only

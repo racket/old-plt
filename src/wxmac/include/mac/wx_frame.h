@@ -44,6 +44,8 @@ class wxFrame: public wxbFrame
   wxFrame*      cSheetParent;
   wxFrame*      sheet;	/* child sheet */
 
+  wxChildList *drag_targets;
+
   ControlHandle bgControl;
 
   /*============================================================================= */
@@ -162,6 +164,9 @@ class wxFrame: public wxbFrame
   void GetSizeLimits(Rect *r);
 
   void Unfocus();
+
+  OSErr OnDrag(DragRef d);
+  void AddDragAccept(wxWindow *target, Bool on);
 
   /*============================================================================= */
   /* Protected methods */

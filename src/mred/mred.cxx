@@ -2001,7 +2001,7 @@ void MrEd_add_q_callback(char *who, int argc, Scheme_Object **argv)
 
 #if defined(wx_msw) || defined(wx_mac)
 
-static void MrEdQueueWindowCallback(wxWindow *wx_window, Scheme_Closed_Prim *scp)
+static void MrEdQueueWindowCallback(wxWindow *wx_window, Scheme_Closed_Prim *scp, void *data)
 {
   MrEdContext *c;
   Q_Callback *cb;
@@ -2030,7 +2030,7 @@ static void MrEdQueueWindowCallback(wxWindow *wx_window, Scheme_Closed_Prim *scp
     cb = cb->prev;
   }
 
-  p = scheme_make_closed_prim(scp, wx_window);
+  p = scheme_make_closed_prim(scp, data);
 
   cb = (Q_Callback*)scheme_malloc(sizeof(Q_Callback));
   cb->context = c;
@@ -2056,7 +2056,7 @@ static Scheme_Object *call_on_paint(void *d, int, Scheme_Object **argv)
 
 void MrEdQueuePaint(wxWindow *wx_window)
 {
-  MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_paint);
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_paint, wx_window);
 }
 
 static Scheme_Object *call_close(void *d, int, Scheme_Object **argv)
@@ -2071,7 +2071,7 @@ static Scheme_Object *call_close(void *d, int, Scheme_Object **argv)
 
 void MrEdQueueClose(wxWindow *wx_window)
 {
-  MrEdQueueWindowCallback(wx_window, CAST_SCP call_close);
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_close, wx_window);
 }
 
 static Scheme_Object *call_zoom(void *d, int, Scheme_Object **argv)
@@ -2085,7 +2085,7 @@ static Scheme_Object *call_zoom(void *d, int, Scheme_Object **argv)
 
 void MrEdQueueZoom(wxWindow *wx_window)
 {
-  MrEdQueueWindowCallback(wx_window, CAST_SCP call_zoom);
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_zoom, wx_window);
 }
 
 static Scheme_Object *call_on_size(void *d, int, Scheme_Object **argv)
@@ -2097,7 +2097,7 @@ static Scheme_Object *call_on_size(void *d, int, Scheme_Object **argv)
 
 void MrEdQueueOnSize(wxWindow *wx_window)
 {
-  MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_size);
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_size, wx_window);
 }
 
 # ifdef wx_mac
@@ -2110,7 +2110,21 @@ static Scheme_Object *call_unfocus(void *d, int, Scheme_Object **argv)
 
 void MrEdQueueUnfocus(wxWindow *wx_window)
 {
-  MrEdQueueWindowCallback(wx_window, CAST_SCP call_unfocus);
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_unfocus, wx_window);
+}
+
+static Scheme_Object *call_drop(void *d, int, Scheme_Object **argv)
+{
+  wxWindow *w = (wxWindow *)SCHEME_CAR((Scheme_Object *)d);
+  char *s = (char *)SCHEME_CDR((Scheme_Object *)d);
+  w->OnDropFile(s);
+  return scheme_void;
+}
+
+void MrEdQueueDrop(wxWindow *wx_window, char *s)
+{
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_drop, 
+			  scheme_make_pair((Scheme_Object *)wx_window, (Scheme_Object *)s));
 }
 # endif
 

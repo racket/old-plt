@@ -95,7 +95,6 @@ class wxWindow: public wxbWindow
   int 		cWindowHeight;
   int 		cWindowWidth;
  	
-
   /* For window area */
   wxArea* 	cParentArea; 	/* mac platform only */
   wxList* 		cAreas;	/* mac platform only */

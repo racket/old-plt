@@ -37,12 +37,15 @@ extern void MrEdQueuePaint(wxWindow *wx_window);
 extern void MrEdQueueClose(wxWindow *wx_window);
 extern void MrEdQueueZoom(wxWindow *wx_window);
 extern void MrEdQueueUnfocus(wxWindow *wx_window);
+extern void MrEdQueueDrop(wxWindow *wx_window, char *s);
 
 extern int wxsIsContextShutdown(void *cx);
 
 static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef, 
 				   EventRef inEvent, 
 				   void *inUserData);
+
+extern char *scheme_mac_spec_to_path(FSSpec *spec);
 
 //=============================================================================
 // Public constructors
@@ -1245,4 +1248,102 @@ wxFrame *wxFrame::GetRootFrame()
 ControlHandle wxFrame::GetRootControl(void)
 {
   return cMacControl;
+}
+
+//-----------------------------------------------------------------------------
+
+OSErr wxFrame::OnDrag(DragRef theDrag)
+{
+  Bool accepted = 0;
+  UInt16 n, i;
+  int x, y, w, h;
+  DragItemRef ref;
+  Rect bounds;
+  wxChildNode *node;
+  wxWindow *win;
+
+  if (CountDragItems(theDrag, &n) == noErr) {
+    for (i = 0; i < n; i++) {
+      if (GetDragItemReferenceNumber(theDrag, i + 1, &ref) == noErr) {
+	GetDragItemBounds(theDrag, ref, &bounds);
+
+	node = drag_targets->First();
+	while (node) {
+	  int hit;
+	  win = (wxWindow *)(node->Data());
+	  if (win->CanAcceptEvent()) {
+	    if (win == this)
+	      hit = 1;
+	    else {
+	      win->GetPosition(&x, &y);
+	      win->GetSize(&w, &h);
+	      hit = !((x + w < bounds.left) || (x > bounds.right)
+		      || (y + h < bounds.top) || (y > bounds.bottom));
+	    }
+	    if (hit) {
+	      HFSFlavor hfs;
+	      Size sz;
+	      sz = sizeof(HFSFlavor);
+	      if (GetFlavorData(theDrag, ref, 'hfs ', &hfs, &sz, 0) == noErr) {
+		char *f;
+		f = scheme_mac_spec_to_path(&hfs.fileSpec);
+		MrEdQueueDrop(win, f);
+		accepted = 1;
+	      }
+	      node = NULL;
+	    } else
+	      node = node->Next();
+	  } else
+	    node = node->Next();
+	}
+      }
+    }
+  }
+
+  if (!accepted)
+    return dragNotAcceptedErr;
+  else
+    return noErr;
+}
+
+static OSErr receiveHandler(WindowRef theWindow,  
+			    void *handlerRefCon,  
+			    DragRef theDrag)
+{
+  wxFrame *f;
+  long refcon;
+
+  refcon = GetWRefCon(theWindow);
+  
+  f = (wxFrame*)GET_SAFEREF(refcon);
+
+  return f->OnDrag(theDrag);
+}
+
+void wxFrame::AddDragAccept(wxWindow *target, Bool on)
+{
+  CGrafPtr graf;
+  WindowRef win;
+  
+  graf = cMacDC->macGrafPort();
+  win = GetWindowFromPort(graf);
+  
+  if (!drag_targets) {
+    if (!on)
+      return;
+
+    InstallReceiveHandler(receiveHandler, win, NULL);
+
+    drag_targets = new wxChildList();
+  }
+
+  if (!on) {
+    drag_targets->DeleteObject(target);
+    if (!drag_targets->Number()) {
+      drag_targets = NULL;
+      RemoveReceiveHandler(receiveHandler, win);
+    }
+  } else {
+    drag_targets->Append(target);
+  }
 }

@@ -38,20 +38,9 @@
 		     (thunk)))
 		  thread)))
 	    
-	    (define (number-open-windows)
-	      (parameterize ([current-eventspace user-eventspace])
-		   (length (get-top-level-windows))))
-
 	    (define (load-and-repl-done)
-	      (if (= 0 (number-open-windows))
-		  (exit)
-		  (thread
-		   (rec f
-			(lambda ()
-			  (sleep 1/2)
-			  (if (= 0 (number-open-windows))
-			      (exit)
-			      (f)))))))
+	      (yield 'wait)
+	      (exit))
 
 	    (define (initialize-userspace)
 	      (current-load drscheme:load-handler:drscheme-load-handler)

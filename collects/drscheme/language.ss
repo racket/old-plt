@@ -88,25 +88,16 @@
 	     [_1 (make-object mred:horizontal-panel% language-panel)]
 	     [show-specifics
 	      (lambda (bool)
-		(if bool
-		    (begin (send ok-panel change-children
-				 (lambda (l)
-				   (if (eq? (car l) hide-button)
-				       l
-				       (cons hide-button l))))
-			   (send main change-children
-				 (lambda (l)
-				   (list language-panel customization-panel ok-panel))))
-		    
-		    (begin
-		      (send ok-panel change-children
-			    (lambda (l)
-			      (if (eq? (car l) hide-button)
-				  (cdr l)
-				  l)))
-		      (send main change-children
-			    (lambda (l)
-			      (list language-panel ok-panel))))))]
+		(send ok-panel change-children
+		      (lambda (l)
+			(cons (if bool hide-button show-button)
+			      (remq hide-button
+				    (remq show-button l)))))
+		(send main change-children
+		      (lambda (l)
+			(if bool
+			    (list language-panel customization-panel ok-panel)
+			    (list language-panel ok-panel)))))]
 	     [language-choice (make-object mred:choice% language-panel
 					   (lambda (choice evt)
 					     (let ([which (send evt get-command-int)]
@@ -216,6 +207,9 @@
 	     [hide-button (make-object mred:button% ok-panel
 				       (lambda (button evt) (show-specifics #f))
 				       "Hide Details")]
+	     [show-button (make-object mred:button% ok-panel
+				       (lambda (button evt) (show-specifics #t))
+				       "Show Details")]
 	     [_3 (make-object mred:horizontal-panel% ok-panel)]
 	     [cancel-button (make-object mred:button% ok-panel (lambda (button evt) 
 								 (mred:read-user-preferences)

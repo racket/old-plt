@@ -467,6 +467,20 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
   if (HAS_SUBSTRUCT(obj, ssQUICKp)) {
     Scheme_Object *v;
 
+#ifdef DO_STACK_CHECK
+    {
+# include "mzstkchk.h"
+      {
+	scheme_current_thread->ku.k.p1 = (void *)obj;
+	scheme_current_thread->ku.k.p2 = (void *)ht;
+	scheme_current_thread->ku.k.p3 = (void *)counter;
+	scheme_current_thread->ku.k.p4 = (void *)p;
+	scheme_handle_stack_overflow(setup_graph_k);
+	return;
+      }
+    }
+#endif
+
     v = scheme_hash_get(ht, obj);
 
     if (!v)
@@ -481,19 +495,6 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
   } else
     return;
 
-#ifdef DO_STACK_CHECK
-  {
-# include "mzstkchk.h"
-    {
-      scheme_current_thread->ku.k.p1 = (void *)obj;
-      scheme_current_thread->ku.k.p2 = (void *)ht;
-      scheme_current_thread->ku.k.p3 = (void *)counter;
-      scheme_current_thread->ku.k.p4 = (void *)p;
-      scheme_handle_stack_overflow(setup_graph_k);
-      return;
-    }
-  }
-#endif
   SCHEME_USE_FUEL(1);
 
   if (SCHEME_PAIRP(obj)) {
@@ -893,6 +894,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     
     if (val) {
       if (val != 1) {
+	printf("%ld %lx\n", val, (long)obj);
 	if (compact) {
 	  print_escaped(p, notdisplay, obj, ht);
 	  return 1;

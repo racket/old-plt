@@ -2482,7 +2482,8 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   cp.orig_port = port;
   if ((got = scheme_get_chars(port, size, (char *)cp.start, 0)) != size)
     scheme_read_err(port, NULL, -1, -1, -1, -1, 0,
-		    "read (compiled): bad count: %ld != %ld");
+		    "read (compiled): bad count: %ld != %ld (started at %ld)",
+		    got, size, cp.base);
   rp = &cp;
 
   local_rename_memory = NULL;

@@ -1608,9 +1608,7 @@
       ;; annotate-original-keywords : syntax -> void
       ;; annotates the origin of the stx with style-name's style.
       (define (annotate-original-keywords stx)
-        (printf "annotate-original-keywords: ~s\n" (syntax-object->datum stx))
         (let ([origin (syntax-property stx 'origin)])
-          (printf "origin: ~s\n" origin)
           (when origin
             (let loop ([origin origin])
               (cond
@@ -1618,9 +1616,6 @@
                  (loop (car origin))
                  (loop (cdr origin))]
                 [(syntax? origin)
-                 (printf "annotate-original-keywords.2: ~s ~s\n" 
-                         (syntax-original? origin)
-                         (syntax-object->datum origin))
                  (when (syntax-original? origin)
                    (color origin keyword-style-str))])))))
       

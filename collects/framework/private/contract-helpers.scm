@@ -13,7 +13,8 @@
         [(symbol? src-module) src-module]
         [(module-path-index? src-module) 
 	 (let/ec k
-	   (resolve-module-path-index
-	    src-module
-	    (lambda () (k 'top-level))))]
+           (string->symbol
+            (resolve-module-path-index 
+             src-module
+             (lambda () (k 'top-level)))))]
         [else 'top-level]))))

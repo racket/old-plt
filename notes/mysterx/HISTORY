@@ -21,6 +21,9 @@ created mx-browser% class with methods
 constructor for mx-browser% takes same arguments
  as old constructor for mx-document%; style
  list may include 'scrollbars
+com-methods no longer returns methods inherited from 
+ IDispatch; results are alphabetically-sorted,
+ also true for com-get-properties, com-set-properties
 for COM event-handling procedures, added 
  check for ambiguous COM class; added 
  procedures set-coclass! and 

@@ -763,6 +763,9 @@ typedef struct Scheme_Thread {
   void **user_tls;
   int user_tls_size;
 
+  /* save thread-specific GMP state: */
+  long gmp_tls[6];
+
   struct Scheme_Thread_Custodian_Hop *mr_hop;
   Scheme_Custodian_Reference *mref;
 } Scheme_Thread;
@@ -1268,6 +1271,8 @@ MZ_EXTERN void scheme_register_static(void *ptr, long size);
 
 MZ_EXTERN void scheme_start_atomic(void);
 MZ_EXTERN void scheme_end_atomic(void);
+MZ_EXTERN void scheme_end_atomic_no_swap(void);
+MZ_EXTERN void (*scheme_on_atomic_timeout)(void);
 
 MZ_EXTERN void scheme_immediate_exit(int status);
 

@@ -518,24 +518,25 @@ static OSStatus paintControlHandler(EventHandlerCallRef inCallRef,
 	{
 	  RgnHandle hrgn;
 	  ControlRef controlRef;
-	  Rect bounds;
+	  wxWindow *wx_window;
+	  void *rc;
 	  ControlPartCode part;
 
 	  GetEventParameter(inEvent, kEventParamControlPart, typeControlPartCode,
 			    NULL, sizeof(ControlPartCode), NULL, &part);
-	  GetEventParameter(inEvent, kEventParamControlRegion, typeQDRgnHandle, NULL,
-			    sizeof(hrgn), NULL, &hrgn);
-
-	  controlRef = *(ControlRef*)data;
 
 	  if (part == kControlContentMetaPart
 	      || part == kControlStructureMetaPart
-	      /* || part == kControlOpaqueRegionMetaPart */) {
-	    GetControlBounds(controlRef, &bounds);
-	    bounds.right -= bounds.left;
-	    bounds.bottom -= bounds.top;
-	    bounds.left = bounds.top = 0;
-	    RectRgn(hrgn, &bounds);
+	      || part == kControlOpaqueRegionMetaPart) {
+	    controlRef = *(ControlRef*)data;
+	    rc = (void *)GetControlReference(controlRef);
+	    wx_window = (wxWindow *)GET_SAFEREF(rc);
+	    
+	    if (wx_window) {
+	      GetEventParameter(inEvent, kEventParamControlRegion, typeQDRgnHandle, NULL,
+			      sizeof(hrgn), NULL, &hrgn);
+	      wx_window->GetPaintControlRegion(hrgn, part == kControlOpaqueRegionMetaPart);
+	    }
 	  }
 	}
 	break;
@@ -547,13 +548,15 @@ static OSStatus paintControlHandler(EventHandlerCallRef inCallRef,
   return err;
 }
 
-void wxWindow::CreatePaintControl() 
+void wxWindow::CreatePaintControl(int inset) 
 {
   ControlHandle pane;
   Rect boundsRect;
   EventRef constructData;
   OSStatus err;
   int ox, oy;
+
+  control_inset_extent = inset;
   
   if (!paintControlClass) {
     EventTypeSpec       eventList[] = {
@@ -605,6 +608,30 @@ void wxWindow::CreatePaintControl()
   }
 
   ::ShowControl(cPaintControl);
+}
+
+void wxWindow::GetPaintControlRegion(RgnHandle hrgn, Bool opaquePart)
+{
+  Rect bounds;
+ 
+  if (!opaquePart) {
+    GetControlBounds(cPaintControl, &bounds);
+    bounds.right -= bounds.left;
+    bounds.bottom -= bounds.top;
+    bounds.left = bounds.top = 0;
+    RectRgn(hrgn, &bounds); 
+
+    if (control_inset_extent > 0) {
+      RgnHandle r;
+      InsetRect(&bounds, control_inset_extent, control_inset_extent);
+      r = NewRgn();
+      if (r) {
+	RectRgn(r, &bounds); 
+	DiffRgn(hrgn, r, hrgn);
+	DisposeRgn(r);
+      }
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------

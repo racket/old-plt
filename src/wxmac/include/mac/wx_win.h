@@ -104,6 +104,7 @@ class wxWindow: public wxbWindow
   ControlHandle cMacControl;
 
   ControlHandle cPaintControl;
+  int           control_inset_extent;
 
   /*============================================================================= */
   /* Public methods */
@@ -366,7 +367,8 @@ class wxWindow: public wxbWindow
 
   void FlushDisplay(void);
 
-  void CreatePaintControl(void);
+  void CreatePaintControl(int inset_extent = -1);
+  void GetPaintControlRegion(RgnHandle rgn, Bool opaquePart);
 	
  protected:
   /* ChildrenInternalGray is a local abstraction which calls

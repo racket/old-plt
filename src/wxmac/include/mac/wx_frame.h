@@ -44,6 +44,8 @@ class wxFrame: public wxbFrame
   wxFrame*      cSheetParent;
   wxFrame*      sheet;	/* child sheet */
 
+  ControlHandle bgControl;
+
   /*============================================================================= */
   /* Public methods */
   /*============================================================================= */

@@ -27,17 +27,14 @@ typedef       void    *wxChoice ;
 // Choice item
 class wxChoice: public wxbChoice
 {
-	Rect		TitleRect;
-	Rect		ValueRect;
-	Rect		CtlRect;
-	MenuHandle 	hDynMenu;
-	StringPtr	sTitle;
-	int			selection;
-	int			labelbase;			// number pixels from top to baseline
-	int			valuebase;			// ""
-	wxFont*		valueFont;
-	short		PopUpID;			// Mac Menu Mgr ID - never reused I hope
-	wxLabelArea*	cTitle;
+  MenuHandle 	hDynMenu;
+  StringPtr	sTitle;
+  int             selection;
+  int             labelbase;			// number pixels from top to baseline
+  int             valuebase;			// ""
+  wxFont*		valueFont;
+  short		PopUpID;			// Mac Menu Mgr ID - never reused I hope
+  wxLabelArea*	cTitle;
         
  public:
 

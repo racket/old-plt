@@ -39,7 +39,7 @@ wxRectBorder::wxRectBorder // Constructor (given parentArea)
   if (te_border) {
     cPaintFocus = -1;
   }
-  CreatePaintControl();
+  CreatePaintControl(margin);
 }
 
 //=============================================================================

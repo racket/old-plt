@@ -31,12 +31,6 @@ wxCommandEvent::wxCommandEvent(WXTYPE commandType)
   eventType = commandType;
 }
 
-static wxEvent *wxCommandEventConstructor(WXTYPE eventClass, WXTYPE eventType)
-{
-  return new wxCommandEvent(eventType);
-}
-
-
 wxPopupEvent::wxPopupEvent(void) : wxCommandEvent(wxEVENT_TYPE_MENU_SELECT)
 {
   __type = wxTYPE_POPUP_EVENT;
@@ -78,11 +72,6 @@ void wxMouseEvent::CopyFrom(wxMouseEvent* src)
   eventHandle = src->eventHandle;
 }
 
-
-static wxEvent *wxMouseEventConstructor(WXTYPE eventClass, WXTYPE eventType)
-{
-  return new wxMouseEvent(eventType);
-}
 
 Bool wxMouseEvent::ControlDown(void)
 {
@@ -292,11 +281,6 @@ wxKeyEvent::wxKeyEvent(WXTYPE type)
   altDown = FALSE;
   keyCode = 0;
   keyUpCode = WXK_PRESS;
-}
-
-static wxEvent *wxKeyEventConstructor(WXTYPE eventClass, WXTYPE eventType)
-{
-  return new wxKeyEvent(eventType);
 }
 
 Bool wxKeyEvent::ControlDown(void)

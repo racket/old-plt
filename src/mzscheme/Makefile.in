@@ -327,4 +327,4 @@ cygwin-install:
 	cd ..; echo 'LIBS=@LIBS@' >> $(WBUILDINFO)
 
 config:
-	autoconf $(srcdir)/configure.in | mzscheme -qr $(srcdir)/clean_ac.ss > $(srcdir)/../configure
+	autoconf $(srcdir)/configure.ac | mzscheme -qr $(srcdir)/clean_ac.ss > $(srcdir)/../configure

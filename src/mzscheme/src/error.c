@@ -53,6 +53,7 @@ static Scheme_Object *error_print_width(int, Scheme_Object *[]);
 static Scheme_Object *error_print_srcloc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_escape_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_display_proc(int, Scheme_Object *[]);
+static Scheme_Object *emergency_error_display_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_error_value_string_proc(int, Scheme_Object *[]);
 static Scheme_Object *def_exit_handler_proc(int, Scheme_Object *[]);
 
@@ -62,7 +63,7 @@ static Scheme_Object *nested_exn_handler(void *old_exn, int argc, Scheme_Object 
 
 static Scheme_Object *def_err_val_proc;
 static Scheme_Object *def_error_esc_proc;
-static Scheme_Object *default_display_handler;
+static Scheme_Object *default_display_handler, *emergency_display_handler;
 Scheme_Object *scheme_def_exit_proc;
 
 static char *init_buf(long *len, long *blen);
@@ -529,9 +530,14 @@ void scheme_init_error_config(void)
   scheme_set_root_param(MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
   
   REGISTER_SO(default_display_handler);
+  REGISTER_SO(emergency_display_handler);
   default_display_handler = scheme_make_prim_w_arity(def_error_display_proc,
 						     "default-error-display-handler",
 						     2, 2);
+  emergency_display_handler = scheme_make_prim_w_arity(emergency_error_display_proc,
+						       "emergency-error-display-handler",
+						       2, 2);
+  
   scheme_set_root_param(MZCONFIG_ERROR_DISPLAY_HANDLER, default_display_handler);
 
   scheme_set_root_param(MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
@@ -583,9 +589,14 @@ call_error(char *buffer, int len, Scheme_Object *exn)
     config = scheme_extend_config(orig_config,
 				  MZCONFIG_EXN_HANDLER,
 				  v);
-    config = scheme_extend_config(config,
-				  MZCONFIG_ERROR_DISPLAY_HANDLER,
-				  default_display_handler);
+    if (SAME_OBJ(display_handler, default_display_handler))
+      config = scheme_extend_config(config,
+				    MZCONFIG_ERROR_DISPLAY_HANDLER,
+				    emergency_display_handler);
+    else
+      config = scheme_extend_config(config,
+				    MZCONFIG_ERROR_DISPLAY_HANDLER,
+				    default_display_handler);
     
     scheme_push_continuation_frame(&cframe);
     scheme_install_config(config);
@@ -1851,6 +1862,24 @@ def_error_display_proc(int argc, Scheme_Object *argv[])
 			   SCHEME_BYTE_STRTAG_VAL(s),
 			   port);
   scheme_write_byte_string("\n", 1, port);
+
+  return scheme_void;
+}
+
+static Scheme_Object *
+emergency_error_display_proc(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *s;
+
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
+    scheme_wrong_type("emergency-error-display-handler", "string", 0, argc, argv);
+  /* don't care about argv[1] */
+
+  s = scheme_char_string_to_byte_string(argv[0]);
+
+  scheme_console_output(SCHEME_BYTE_STR_VAL(s),
+			SCHEME_BYTE_STRTAG_VAL(s));
+  scheme_console_output("\n", 1);
 
   return scheme_void;
 }

@@ -1,6 +1,3 @@
-;; replace zodiac-exn? with standard mzscheme syntax error exceptions
-;;       (is that already happening somehow?)
-
 (unit/sig userspace:basis^
   (import [import : userspace:basis-import^]
 	  [params : plt:userspace:params^]
@@ -170,8 +167,21 @@
   (define (snoc x y) (append y (list x)))
   
   ;; add-setting : (symbol setting -> void)
-  (define (add-setting setting)
-    (set! settings (snoc setting settings)))
+  (define add-setting
+    (case-lambda
+     [(setting) (add-setting setting (length settings))]
+     [(setting number)
+      (set! settings
+	    (let loop ([number number]
+		       [settings settings])
+	      (cond
+	       [(or (zero? number) (null? settings))
+		(cons setting settings)]
+	       [else
+		(cons
+		 (car settings)
+		 (loop (- number 1)
+		       (cdr settings)))])))]))
   
   ;; find-setting-named : string -> setting
   ;; effect: raises an exception if no setting named by the string exists

@@ -14,14 +14,16 @@
   ;; add the new settings
   (basis:add-setting 
    (let ([s (basis:copy-setting (basis:find-setting-named
-				 "Textual Full Scheme (MzScheme)"))])
-     (basis:set-setting-name! s "Graphical Full Scheme (MrEd)")
-     s))
-  (basis:add-setting 
-   (let ([s (basis:copy-setting (basis:find-setting-named
 				 "Textual Full Scheme without Debugging (MzScheme)"))])
      (basis:set-setting-name! s "Graphical Full Scheme without Debugging (MrEd)")
-     s))
+     s)
+   3)
+  (basis:add-setting 
+   (let ([s (basis:copy-setting (basis:find-setting-named
+				 "Textual Full Scheme (MzScheme)"))])
+     (basis:set-setting-name! s "Graphical Full Scheme (MrEd)")
+     s)
+   3)
 
   (fw:application:current-app-name "DrScheme")
   (fw:version:add-spec 'd 11)

@@ -84,7 +84,6 @@
 		 ;  the current namespace
 		 (let* ([signature 
 			 ; exploded -> flattened
-			 ; [Why doesn't MzScheme provide this?]
 			 (let ([sig (unit-with-signature-exports new-unit)])
 			   (let loop ([l (vector->list sig)][r null])
 			     (cond

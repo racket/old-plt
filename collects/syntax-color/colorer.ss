@@ -90,11 +90,13 @@
         (after-insert-or-delete text edit-start-pos (- change-length)))
         
       (define (after-insert-or-delete text edit-start-pos change-length)
-        (when (send text should-color?)
-          (when (> edit-start-pos 0)
+        (let ((buffer-start (send text get-buffer-start)))
+          (when (> edit-start-pos buffer-start)
             (set! edit-start-pos (sub1 edit-start-pos)))
           (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
                         (split (send text get-tokens) edit-start-pos)))
+            (when (< orig-token-start buffer-start)
+              (set! orig-token-start buffer-start))
             (let ((in (open-input-text-editor text orig-token-start 'end)))
               (re-tokenize in text orig-token-start valid-tree invalid-tree
                            (- (+ orig-token-end change-length) orig-token-start))))))

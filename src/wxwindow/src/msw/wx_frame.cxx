@@ -14,8 +14,6 @@
 
 #include "fafa.h"
 
-extern int wx_no_unicode;
-
 static HMENU emptyMenu;
 
 wxPen *wxStatusGreyPen = NULL;
@@ -1123,10 +1121,7 @@ void wxMDIFrame::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 
 long wxMDIFrame::DefWindowProc(UINT message, WPARAM wParam, LPARAM lParam)
 {
-  if (wx_no_unicode)
-    return ::DefFrameProc(handle, client_hwnd, message, wParam, lParam);
-  else
-    return ::DefFrameProcW(handle, client_hwnd, message, wParam, lParam);
+  return ::DefFrameProcW(handle, client_hwnd, message, wParam, lParam);
 }
 
 long wxMDIFrame::Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam)
@@ -1295,12 +1290,9 @@ BOOL wxMDIChild::OnCommand(WORD id, WORD cmd, HWND control)
 
 long wxMDIChild::DefWindowProc(UINT message, UINT wParam, LONG lParam)
 {
-  if (handle) {
-    if (wx_no_unicode)
-      return ::DefMDIChildProc(handle, message, wParam, lParam);
-    else
-      return ::DefMDIChildProcW(handle, message, wParam, lParam);
-  } else
+  if (handle)
+    return ::DefMDIChildProcW(handle, message, wParam, lParam);
+  else
     return 0;
 }
 

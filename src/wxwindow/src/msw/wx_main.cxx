@@ -32,7 +32,6 @@ extern FARPROC wxGenericControlSubClassProc;
 extern void wxWindowInit(void);
 
 long last_msg_time;
-int wx_no_unicode;
 
 char wxFrameClassName[]         = "wxFrameClass";
 char wxMDIFrameClassName[]      = "wxMDIFrameClass";
@@ -45,74 +44,42 @@ HICON wxSTD_FRAME_ICON = NULL;
 HFONT wxSTATUS_LINE_FONT = NULL;
 LRESULT APIENTRY wxWndProc(HWND, UINT, WPARAM, LPARAM);
 
-static void RegisterNoCursor(HINSTANCE hInstance, int no_uni, 
+static void RegisterNoCursor(HINSTANCE hInstance,
 			     char *src, char *dest, wchar_t *wsrc, wchar_t *wdest)
 {
-  if (no_uni) {
-    WNDCLASSEX c;
-
-    c.cbSize = sizeof(c);
-    if (!GetClassInfoEx(hInstance, src, &c))
-      wxFatalError("Can't get info for cursorless class");
-    c.lpszClassName = dest;
-    c.hCursor = NULL;
-    if (!RegisterClassEx(&c))
-      wxFatalError("Can't register cursorless class");
-  } else {
-    WNDCLASSEXW c;
+  WNDCLASSEXW c;
     
-    c.cbSize = sizeof(c);
-    if (!GetClassInfoExW(hInstance, wsrc, &c))
-      wxFatalError("Can't get info for cursorless class");
-    c.lpszClassName = wdest;
-    c.hCursor = NULL;
-    if (!RegisterClassExW(&c))
-      wxFatalError("Can't register cursorless class");
-  }
+  c.cbSize = sizeof(c);
+  if (!GetClassInfoExW(hInstance, wsrc, &c))
+    wxFatalError("Can't get info for cursorless class");
+  c.lpszClassName = wdest;
+  c.hCursor = NULL;
+  if (!RegisterClassExW(&c))
+    wxFatalError("Can't register cursorless class");
 }
 
-static void RegisterMyClass(HINSTANCE hInstance, int no_uni,
+static void RegisterMyClass(HINSTANCE hInstance,
 			    UINT style, HICON icon, HBRUSH bg, char *name)
 {
   int ok;
-
-  if (no_uni) {
-    WNDCLASS wndclass;
-
-    memset(&wndclass, 0, sizeof(WNDCLASS));
+  WNDCLASSW wndclass;
+  wchar_t *wname;
     
-    wndclass.style         = style;
-    wndclass.lpfnWndProc   = (WNDPROC)wxWndProc;
-    wndclass.cbClsExtra    = 0;
-    wndclass.cbWndExtra    = sizeof(DWORD);
-    wndclass.hInstance     = hInstance;
-    wndclass.hIcon         = wxSTD_FRAME_ICON;
-    wndclass.hCursor       = NULL;
-    wndclass.hbrBackground = bg;
-    wndclass.lpszMenuName  = NULL;
-    wndclass.lpszClassName = name;
+  memset(&wndclass, 0, sizeof(WNDCLASSW));
 
-    ok = RegisterClass(&wndclass);
-  } else {
-    WNDCLASSW wndclass;
-    wchar_t *wname;
-    
-    memset(&wndclass, 0, sizeof(WNDCLASSW));
+  wndclass.style         = style;
+  wndclass.lpfnWndProc   = (WNDPROC)wxWndProc;
+  wndclass.cbClsExtra    = 0;
+  wndclass.cbWndExtra    = sizeof(DWORD);
+  wndclass.hInstance     = hInstance;
+  wndclass.hIcon         = wxSTD_FRAME_ICON;
+  wndclass.hCursor       = NULL;
+  wndclass.hbrBackground = bg;
+  wndclass.lpszMenuName  = NULL;
+  wname = wxWIDE_STRING(name);
+  wndclass.lpszClassName = wname;
 
-    wndclass.style         = style;
-    wndclass.lpfnWndProc   = (WNDPROC)wxWndProc;
-    wndclass.cbClsExtra    = 0;
-    wndclass.cbWndExtra    = sizeof(DWORD);
-    wndclass.hInstance     = hInstance;
-    wndclass.hIcon         = wxSTD_FRAME_ICON;
-    wndclass.hCursor       = NULL;
-    wndclass.hbrBackground = bg;
-    wndclass.lpszMenuName  = NULL;
-    wname = wxWIDE_STRING(name);
-    wndclass.lpszClassName = wname;
-
-    ok = RegisterClassW(&wndclass);
-  }
+  ok = RegisterClassW(&wndclass);
 
   if (!ok)
     wxFatalError("Can't register window class");
@@ -135,33 +102,25 @@ void wxInitialize(HINSTANCE hInstance)
 				  "Arial");
 
   {
-    int no_uni;
-    OSVERSIONINFO info;
-
-    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&info);
-    no_uni = (info.dwPlatformId != VER_PLATFORM_WIN32_NT);
-    no_uni = 0;
-
-    RegisterMyClass(hInstance, no_uni,
+    RegisterMyClass(hInstance,
 		    CS_HREDRAW | CS_VREDRAW,
 		    wxSTD_FRAME_ICON,
 		    (HBRUSH)(COLOR_BTNFACE+1),
 		    wxFrameClassName);
 
-    RegisterMyClass(hInstance, no_uni,
+    RegisterMyClass(hInstance,
 		    CS_HREDRAW | CS_VREDRAW,
 		    wxSTD_FRAME_ICON,
 		    (HBRUSH)(COLOR_APPWORKSPACE+1),
 		    wxMDIFrameClassName);
 
-    RegisterMyClass(hInstance, no_uni,
+    RegisterMyClass(hInstance,
 		    CS_HREDRAW | CS_VREDRAW,
 		    wxSTD_FRAME_ICON,
 		    (HBRUSH)(COLOR_BTNFACE+1),
 		    wxMDIChildFrameClassName);
 
-    RegisterMyClass(hInstance, no_uni,
+    RegisterMyClass(hInstance,
 		    CS_HREDRAW | CS_VREDRAW,
 		    NULL,
 		    (HBRUSH)(COLOR_BTNFACE+1),
@@ -169,19 +128,17 @@ void wxInitialize(HINSTANCE hInstance)
 
     // Use CS_OWNDC to avoid messing about restoring the context
     // for every graphic operation.
-    RegisterMyClass(hInstance, no_uni,
+    RegisterMyClass(hInstance,
 		    CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS,
 		    NULL,
 		    (HBRUSH)(COLOR_WINDOW+1),
 		    wxCanvasClassName);
 
-    RegisterNoCursor(hInstance, no_uni, "BUTTON", "wxBUTTON", L"BUTTON", L"wxBUTTON");
-    RegisterNoCursor(hInstance, no_uni, "COMBOBOX", "wxCOMBOBOX", L"COMBOBOX", L"wxCOMBOBOX");
-    RegisterNoCursor(hInstance, no_uni, "LISTBOX", "wxLISTBOX", L"LISTBOX", L"wxLISTBOX");
-    RegisterNoCursor(hInstance, no_uni, "EDIT", "wxEDIT", L"EDIT", L"wxEDIT");
-    RegisterNoCursor(hInstance, no_uni, "STATIC", "wxSTATIC", L"STATIC", L"wxSTATIC");
-
-    wx_no_unicode = no_uni;
+    RegisterNoCursor(hInstance, "BUTTON", "wxBUTTON", L"BUTTON", L"wxBUTTON");
+    RegisterNoCursor(hInstance, "COMBOBOX", "wxCOMBOBOX", L"COMBOBOX", L"wxCOMBOBOX");
+    RegisterNoCursor(hInstance, "LISTBOX", "wxLISTBOX", L"LISTBOX", L"wxLISTBOX");
+    RegisterNoCursor(hInstance, "EDIT", "wxEDIT", L"EDIT", L"wxEDIT");
+    RegisterNoCursor(hInstance, "STATIC", "wxSTATIC", L"STATIC", L"wxSTATIC");
   }
 
   wxREGGLOB(wxWinHandleList);

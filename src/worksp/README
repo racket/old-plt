@@ -71,6 +71,12 @@ The make process for MrEd automatically builds
    png  - makes plt\src\worksp\jpeg\Release\png.lib
    zlib  - makes plt\src\worksp\jpeg\Release\zlib.lib
 
+In addition, building MzScheme executes
+   plt\src\mzscheme\dynsrc\mkmzdyn.bat
+which copies .exp, .obj, and .lib files into plt\lib\, and also copies
+uniplt_xxxxxxx.dll to plt\.  The DLL is used only under Windows
+95/98/Me for Unicode.
+
 To complete a build, run the versioning script described in the next
 section.
 
@@ -105,6 +111,7 @@ times. The resulting conversions are
                           -> plt\lib\win32\msvc\libmzsch<version>.lib
   plt\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib
                           -> plt\lib\win32\msvc\libmzgc<version>.lib
+  plt\uniplt_xxxxxxx.dll -> plt\uniplt_<version>.dll
 
 ----------------------------------------------------------------------
 Extra stuff for MzScheme and MrEd
@@ -116,12 +123,6 @@ and mzc.exe:
 
    mzstart - makes plt\collects\launcher\mzstart.exe
    mrstart - makes plt\collects\launcher\mrstart.exe
-
-You'll also want to install the libraries and object files
-for creating MzScheme extensions (or using mzc):
-
-   cd plt\src\mzscheme\dynsrc
-   mkmzdyn.bat (requires cl.exe and lib.exe in your path)
 
 Then, set up all the other executables (besides mred.exe
 and mzscheme.exe) by running

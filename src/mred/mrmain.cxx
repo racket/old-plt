@@ -626,7 +626,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR ignored
 	     So we use CharLower, instead. */
 	  int i;
 	  for (i = 0; i < l; i++) {
-	    CharLowerW(my_name + i);
+	    CharLowerW(my_name XFORM_OK_PLUS i);
 	  }
 	}
 	normalized_path = wchar_to_char(my_name, l);

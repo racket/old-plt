@@ -21,8 +21,6 @@
 extern "C" void scheme_start_atomic();
 extern "C" void scheme_end_atomic_no_swap();
 
-extern int wx_no_unicode;
-
 // Global variables
 static wxWindow *current_mouse_wnd = NULL;
 static void *current_mouse_context = NULL;
@@ -828,12 +826,8 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
       return 0;
     } else {
       wnd = wxFindWinFromHandle(hWnd);
-      if (!wnd) {
-	if (wx_no_unicode)
-	  return ::DefWindowProc(hWnd, message, wParam, lParam);
-	else
-	  return ::DefWindowProcW(hWnd, message, wParam, lParam);
-      }
+      if (!wnd)
+	return ::DefWindowProcW(hWnd, message, wParam, lParam);
     }
   }
 
@@ -914,12 +908,9 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
   case WM_PAINT:
     {
       if (!wnd->OnPaint()) {
-	if (dialog) {
-	  if (wx_no_unicode)
-	    retval = ::DefWindowProc(hWnd, message, wParam, lParam);
-	  else
-	    retval = ::DefWindowProcW(hWnd, message, wParam, lParam);
-	} else
+	if (dialog)
+	  retval = ::DefWindowProcW(hWnd, message, wParam, lParam);
+	else
 	  retval = wnd->DefWindowProc(message, wParam, lParam);
       } else if (dialog)
 	retval = 0;
@@ -1268,10 +1259,7 @@ LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam
   /* WM_NCHITTEST is extremely common, and we do nothing with it.
      Make handling fast, just in case. */
   if (message == WM_NCHITTEST) {
-    if (wx_no_unicode)
-      return ::DefWindowProc(hWnd, message, wParam, lParam);
-    else
-      return ::DefWindowProcW(hWnd, message, wParam, lParam);
+    return ::DefWindowProcW(hWnd, message, wParam, lParam);
   }
 
   /* See mredmsw.cxx: */
@@ -1674,10 +1662,7 @@ BOOL wxWnd::OnEraseBkgnd(HDC WXUNUSED(pDC))
 
 LONG wxWnd::DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam)
 {
-  if (wx_no_unicode)
-    return ::DefWindowProc(handle, nMsg, wParam, lParam);
-  else
-    return ::DefWindowProcW(handle, nMsg, wParam, lParam);
+  return ::DefWindowProcW(handle, nMsg, wParam, lParam);
 }
 
 LONG wxWnd::Propagate(UINT nMsg, WPARAM wParam, LPARAM lParam)

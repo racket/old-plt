@@ -46,10 +46,9 @@
      "Ian Barland, "
      "Tim Hanson, "
      "Philippe Meunier, "
+     "Jens Axel Søgaard, "
      "Francisco Solsona, "
      "and "
      "Reini Urban "
      "for their help translating DrScheme's GUI to other languages.")))
   
-
-

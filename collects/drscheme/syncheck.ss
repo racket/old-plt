@@ -898,7 +898,11 @@
                        requires
                        require-for-syntaxes
                        referenced-macros)])
-          (annotate-variables users-namespace binders non-require-varrefs non-require-referenced-macros tops))
+          (annotate-variables users-namespace
+                              binders
+                              non-require-varrefs
+                              non-require-referenced-macros
+                              tops))
         (annotate-bound-in-sources bound-in-sources))
 
       ;; annotate-require-vars :    (listof (cons boolean syntax[identifier]))
@@ -920,11 +924,11 @@
                     [else (let* ([varref/level (car varrefs/levels)]
                                  [high-level? (car varref/level)]
                                  [varref (cdr varref/level)]
-                                 [include?
+                                 [from-module?
                                   (if high-level?
                                       (annotate-require-var req-syn/tags varref #t)
                                       (annotate-require-var req/tags varref #f))])
-                            (if include?
+                            (if from-module?
                                 (loop (cdr varrefs/levels))
                                 (cons varref (loop (cdr varrefs/levels)))))]))]
 
@@ -932,7 +936,8 @@
                 (filter (annotate-macro req/tags #f)
                         (map cdr (filter (lambda (x) (not (car x))) referenced-macros)))]
 
-               ;; hopefully, this is the empty list (no idea if it ever can be non-empty or what it would mean...)
+               ;; hopefully, this is the empty list 
+               ;; (no idea if it ever can be non-empty or what it would mean...)
                [reduced-hl-referenced-macros
                 (filter (annotate-macro req-syn/tags #t)
                         (map cdr (filter car referenced-macros)))])

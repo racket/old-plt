@@ -24,11 +24,12 @@ static void FillZero(int *a, int *b) {
 # define wxGL_CONTEXT 0
 #endif
 
+#ifdef wx_msw
+# define USE_GL
+#endif
+
 static void wxSwapBuffers(wxCanvas* c)
 {
-#ifdef wx_msw
-  c->CanvasSwapBuffers();
-#endif
 #ifdef USE_GL
   c->CanvasSwapBuffers();
 #endif
@@ -36,21 +37,8 @@ static void wxSwapBuffers(wxCanvas* c)
 
 static void wxThisContextCurrent(wxCanvas* c)
 {
-#ifdef wx_msw
-  c->ThisContextCurrent();
-#endif
 #ifdef USE_GL
   c->ThisContextCurrent();
-#endif
-}
-
-static void wxPreviousContextCurrent(wxCanvas* c)
-{
-#ifdef wx_msw
-  c->PreviousContextCurrent();
-#endif
-#ifdef USE_GL
-  c->PreviousContextCurrent();
 #endif
 }
 
@@ -95,7 +83,6 @@ static void wxPreviousContextCurrent(wxCanvas* c)
 
 @ m "swap-buffers" : void wxSwapBuffers()
 @ m "this-context-current" : void wxThisContextCurrent()
-@ m "previous-context-current" : void wxPreviousContextCurrent()
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

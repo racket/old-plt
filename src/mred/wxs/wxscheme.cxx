@@ -156,6 +156,10 @@ extern "C" {
 
 };
 
+/***********************************************************************/
+/*                             gc bitmap                               */
+/***********************************************************************/
+
 #ifdef wx_x
 extern Display *MrEdGetXDisplay(void);
 #endif
@@ -315,6 +319,78 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
   return scheme_void;
 }
 
+/***********************************************************************/
+/*                             open gl                                 */
+/***********************************************************************/
+
+#ifdef wx_msw
+# define USE_GL
+#endif
+
+static int gl_param;
+
+#ifdef USE_GL
+
+static wxCanvas *prev_param;
+
+static Scheme_Object *on_thread_swap(Scheme_Object *)
+{
+  Scheme_Object *o;
+  wxCanvas *c;
+
+  o = scheme_get_param(scheme_config, gl_param);
+  if (SCHEME_TRUEP(o))
+    c = objscheme_unbundle_wxCanvas(o, NULL, 0);
+  else
+    c = NULL;
+ 
+  if (c != prev_param) {
+    prev_param = c;
+    if (c && (c->__type != -1))
+      c->ThisContextCurrent();
+  }
+
+  return NULL;
+}
+
+static void init_gl_mgr(void)
+{
+  wxREGGLOB(prev_param);
+  scheme_set_param(scheme_config, gl_param, scheme_false);
+  scheme_add_swap_callback(on_thread_swap, NULL);
+}
+
+#endif
+
+
+void wxscheme_early_gl_init(void)
+{
+  gl_param = scheme_new_param();
+}
+
+static Scheme_Object *canvas_p(int argc, Scheme_Object **argv)
+{
+  return argv[0];
+}
+
+static Scheme_Object *wxsCurrentGLContext(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *v;
+
+  v = scheme_param_config("current-gl-context",
+			  scheme_make_integer(gl_param),
+			  argc, argv,
+			  -1, canvas_p, "canvas", 1);
+
+  on_thread_swap(NULL);
+  
+  return v;
+}
+
+/***********************************************************************/
+/*                          color chooser                              */
+/***********************************************************************/
+
 #ifdef wx_msw
 static BOOL do_choose_color(void *data, HWND parent)
 {
@@ -444,6 +520,10 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
   return objscheme_bundle_wxColour(c);
 #endif
 }
+
+/***********************************************************************/
+/*                           font chooser                              */
+/***********************************************************************/
 
 #ifdef wx_msw
 static BOOL do_choose_font(void *data, HWND parent)
@@ -819,6 +899,10 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
   return first;
 }
 
+/***********************************************************************/
+/*                           panel color                               */
+/***********************************************************************/
+
 static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
 {
   wxColour *c;
@@ -838,64 +922,9 @@ static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
   return objscheme_bundle_wxColour(c);
 }
 
-/*
-#ifdef wx_mac
-#include <Sound.h>
-typedef struct AsyncSoundRec {
-  SndChannelPtr snd;
-  short file;
-  struct AsyncSoundRec *next;
-} AsyncSoundRec;
-
-static AsyncSoundRec *playing = NULL, *finished = NULL;
-
-static pascal void SoundFinished(SndChannelPtr snd)
-{
-  AsyncSoundRec **p = &playing;
-
-  while (*p) {
-    if ((*p)->snd == snd) {
-      AsyncSoundRec *r = (*p); 
-      (*p) = r->next;
-      r->next = finished;
-      finished = r;
-      return;
-    }
-  }
-}
-
-static FilePlayCompletionUPP SoundFinishedProc = NewFilePlayCompletionProc(SoundFinished);
-
-static int IsFinished(void *r)
-{
-  AsyncSoundRec *f = finished;
-  
-  while (f) {
-    if ((void *)f == r)
-      return 1;
-    f = f->next;
-  }
-  <
-  return 0;
-}
-
-extern "C" {
- 	 int scheme_mac_path_to_spec(const char *filename, FSSpec *spec);
-};
-
-void wxCheckFinishedSounds(void)
-{
-  while (finished) {
-    AsyncSoundRec *p = finished;
-    finished = finished->next;
-    
-    FSClose(p->file);
-    SndDisposeChannel(p->snd, FALSE);
-  }
-}
-# endif
-*/
-
+/***********************************************************************/
+/*                            play sound                               */
+/***********************************************************************/
 
 #ifndef wx_x
 
@@ -1099,6 +1128,10 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
 }
 #endif
 
+/***********************************************************************/
+/*                         constructor hooks                           */
+/***********************************************************************/
+
 wxMediaSnip *wxsMakeMediaSnip(wxMediaBuffer *useme,
 			      Bool border,
 			      int lm, int tm, int rm, int bm,
@@ -1202,6 +1235,10 @@ static Scheme_Object *SetDialogs(int, Scheme_Object *a[])
   return scheme_void;
 }
 
+/***********************************************************************/
+/*                          interapp hooks                             */
+/***********************************************************************/
+
 #ifdef wx_mac
 extern short wxMacDisableMods;
 #define SCK_ARG p
@@ -1262,33 +1299,34 @@ static Scheme_Object *ApplicationQuitProc(int n, Scheme_Object *p[])
   }
 }
 
-static Scheme_Object *Eventspace_p(int, Scheme_Object **argv)
+static Scheme_Object *SetExecuter(int, Scheme_Object *a[])
 {
-  return ((SCHEME_TYPE(argv[0]) == mred_eventspace_type)
-	  ? scheme_true
-	  : scheme_false);
+  wxREGGLOB(executer);
+  executer = a[0];
+  return scheme_void;
 }
 
-static Scheme_Object *wxSchemeCurrentEventspace(int argc, Scheme_Object **argv)
+void wxsExecute(char **argv)
 {
-  return scheme_param_config("current-eventspace", 
-			     scheme_make_integer(mred_eventspace_param),
-			     argc, argv,
-			     -1, Eventspace_p, "eventspace", 0);
+  int i, c;
+  Scheme_Object **a;
+
+  for (i = 0; argv[i]; i++) {
+  }
+
+  c = i;
+  a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
+
+  for (i = 0; i < c; i++) {
+    a[i] = scheme_make_string(argv[i]);
+  }
+
+  (void *)scheme_apply_multi(executer, c, a);
 }
 
-static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **argv)
-{
-  return scheme_param_config("event-dispatch-handler", 
-			     scheme_make_integer(mred_event_dispatch_param),
-			     argc, argv,
-			     1, NULL, NULL, 0);
-}
-
-static Scheme_Object *wxSchemeMakeEventspace(int, Scheme_Object **)
-{
-  return (Scheme_Object *)MrEdMakeEventspace((Scheme_Config *)NULL);
-}
+/***********************************************************************/
+/*                             ps-setup                                */
+/***********************************************************************/
 
 static Scheme_Object *PS_Setup_p(int, Scheme_Object **argv)
 {
@@ -1319,6 +1357,38 @@ static Scheme_Object *wxSchemeCurrentPSSetup(int argc, Scheme_Object **argv)
 			     scheme_make_integer(mred_ps_setup_param),
 			     argc, argv,
 			     -1, PS_Setup_p, "ps-setup% instance", 0);
+}
+
+/***********************************************************************/
+/*                            eventspaces                              */
+/***********************************************************************/
+
+static Scheme_Object *Eventspace_p(int, Scheme_Object **argv)
+{
+  return ((SCHEME_TYPE(argv[0]) == mred_eventspace_type)
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static Scheme_Object *wxSchemeCurrentEventspace(int argc, Scheme_Object **argv)
+{
+  return scheme_param_config("current-eventspace", 
+			     scheme_make_integer(mred_eventspace_param),
+			     argc, argv,
+			     -1, Eventspace_p, "eventspace", 0);
+}
+
+static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **argv)
+{
+  return scheme_param_config("event-dispatch-handler", 
+			     scheme_make_integer(mred_event_dispatch_param),
+			     argc, argv,
+			     1, NULL, NULL, 0);
+}
+
+static Scheme_Object *wxSchemeMakeEventspace(int, Scheme_Object **)
+{
+  return (Scheme_Object *)MrEdMakeEventspace((Scheme_Config *)NULL);
 }
 
 static Scheme_Object *queue_callback(int argc, Scheme_Object **argv)
@@ -1372,6 +1442,40 @@ static Scheme_Object *wxSchemeCheckForBreak(int, Scheme_Object **)
 	  : scheme_false);
 }
 
+static Scheme_Object *Shutdown_p(int argc, Scheme_Object **argv)
+{
+  Scheme_Type type = SCHEME_TYPE(argv[0]);
+
+  if (type == mred_eventspace_type) {
+    return wxsIsContextShutdown((void *)argv[0]) ? scheme_true : scheme_false;
+  }
+
+  scheme_wrong_type("eventspace-shutdown?", "eventspace", 0, argc, argv);
+  return NULL;
+}
+
+extern "C" {
+  MZ_EXTERN void scheme_start_atomic(void);
+  MZ_EXTERN void scheme_end_atomic(void);
+}
+
+static Scheme_Object *wxInAtomicRegion(int, Scheme_Object **argv)
+{
+  if (SCHEME_SEMAP(argv[0])) {
+    scheme_wait_sema(argv[0], 0);
+    /* MzScheme promises that no break or kill will happen
+       between receiving the semaphore post and returning to us. */
+    scheme_start_atomic();
+  } else
+    scheme_end_atomic();
+
+  return scheme_void;
+}
+
+/***********************************************************************/
+/*                         miscellaneous gui                           */
+/***********************************************************************/
+
 Scheme_Object *wxsLocationToWindow(int, Scheme_Object **a)
 {
   wxWindow *w;
@@ -1404,35 +1508,9 @@ static Scheme_Object *wLabelShortcutsVisible(int argc, Scheme_Object **argv)
 #endif
 }
 
-static Scheme_Object *Shutdown_p(int argc, Scheme_Object **argv)
-{
-  Scheme_Type type = SCHEME_TYPE(argv[0]);
-
-  if (type == mred_eventspace_type) {
-    return wxsIsContextShutdown((void *)argv[0]) ? scheme_true : scheme_false;
-  }
-
-  scheme_wrong_type("eventspace-shutdown?", "eventspace", 0, argc, argv);
-  return NULL;
-}
-
-extern "C" {
-  MZ_EXTERN void scheme_start_atomic(void);
-  MZ_EXTERN void scheme_end_atomic(void);
-}
-
-static Scheme_Object *wxInAtomicRegion(int, Scheme_Object **argv)
-{
-  if (SCHEME_SEMAP(argv[0])) {
-    scheme_wait_sema(argv[0], 0);
-    /* MzScheme promises that no break or kill will happen
-       between receiving the semaphore post and returning to us. */
-    scheme_start_atomic();
-  } else
-    scheme_end_atomic();
-
-  return scheme_void;
-}
+/***********************************************************************/
+/*                         files and directories                       */
+/***********************************************************************/
 
 #ifdef wx_mac
 extern "C" {
@@ -1596,6 +1674,10 @@ char *wxsFileDialog(char *message, char *default_path,
     return SCHEME_STR_VAL(r);
 }
 
+/***********************************************************************/
+/*                            dialog hooks                             */
+/***********************************************************************/
+
 extern wxPrintSetupData *wxGetThePrintSetupData();
 
 Bool wxsPrinterDialog(wxWindow *parent)
@@ -1649,11 +1731,18 @@ int wxsMessageBox(char *message, char *caption, long style, wxWindow *parent)
   return wxNO;
 }
 
+/***********************************************************************/
+/*                            image types                              */
+/***********************************************************************/
+
 int wxsGetImageType(char *fn)
 {
   FILE *f;
   int type;
-  unsigned char *expect = NULL;
+#ifndef MZ_PRECISE_GC
+# define GC_CAN_IGNORE /**/
+#endif
+  GC_CAN_IGNORE unsigned char *expect = NULL;
 
   f = fopen(fn, "r");
   if (f) {
@@ -1699,6 +1788,10 @@ int wxsGetImageType(char *fn)
 
   return type ? type : wxBITMAP_TYPE_XBM;
 }
+
+/***********************************************************************/
+/*                            preferences                              */
+/***********************************************************************/
 
 static char *pref_file_cache;
 static long pref_file_cache_size;
@@ -1950,30 +2043,9 @@ int wxGetPreference(const char *name, int *res)
   return 0;
 }
 
-static Scheme_Object *SetExecuter(int, Scheme_Object *a[])
-{
-  wxREGGLOB(executer);
-  executer = a[0];
-  return scheme_void;
-}
-
-void wxsExecute(char **argv)
-{
-  int i, c;
-  Scheme_Object **a;
-
-  for (i = 0; argv[i]; i++) {
-  }
-
-  c = i;
-  a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
-
-  for (i = 0; i < c; i++) {
-    a[i] = scheme_make_string(argv[i]);
-  }
-
-  (void *)scheme_apply_multi(executer, c, a);
-}
+/***********************************************************************/
+/*                            initialization                           */
+/***********************************************************************/
 
 static void wxScheme_Install(Scheme_Env *global_env)
 {
@@ -2162,6 +2234,15 @@ static void wxScheme_Install(Scheme_Env *global_env)
 			   scheme_make_prim_w_arity(SetDialogs,
 						    "set-dialogs",
 						    4, 4),
+			   global_env);
+
+#ifdef USE_GL
+  init_gl_mgr();
+#endif
+  scheme_install_xc_global("current-gl-context",
+			   scheme_register_parameter(wxsCurrentGLContext,
+						     "current-gl-context",
+						     gl_param),
 			   global_env);
 
   /* Order is important! Base class must be initialized before derived. */

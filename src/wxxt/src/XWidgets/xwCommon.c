@@ -11,7 +11,7 @@
 #include <X11/keysym.h>
 #include "wxAllocColor.h"
 #include "wxAllocColor.c"
-#include "gl.h"
+#include "wxgl.h"
 #include <./xwCommonP.h>
 #define focus_detail(detail) (detail ==NotifyAncestor ?"NotifyAncestor":detail ==NotifyVirtual ?"NotifyVirtual":detail ==NotifyInferior ?"NotifyInferior":detail ==NotifyNonlinear ?"NotifyNonlinear":detail ==NotifyNonlinearVirtual ?"NotifyNonlinearVirtual":detail ==NotifyPointer ?"NotifyPointer":detail ==NotifyPointerRoot ?"NotifyPointerRoot":detail ==NotifyDetailNone ?"NotifyDetailNone":"???")
 
@@ -661,7 +661,7 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 #endif
 {
 #ifdef USE_GL
-  if (gl_create_window)
+  if (wx_gl_create_window)
   {
     Display *dpy;
     int screen;
@@ -677,7 +677,7 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
                 	                   vi->visual, AllocNone);
     *mask = *mask | CWColormap;
     XtCreateWindow(self, InputOutput, vi->visual, *mask, attributes);
-    temp_visual_info = vi;
+    wx_temp_visual_info = vi;
   }
   else
   {

@@ -199,6 +199,8 @@ static Scheme_Object *nested_exn_handler;
 
 static Scheme_Object *closers;
 
+static Scheme_Object *thread_swap_callbacks;
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -1040,11 +1042,14 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
     REGISTER_SO(scheme_current_thread);
     REGISTER_SO(scheme_main_thread);
     REGISTER_SO(scheme_first_thread);
+    REGISTER_SO(thread_swap_callbacks);
 
     scheme_current_thread = process;
     scheme_first_thread = scheme_main_thread = process;
     process->prev = NULL;
     process->next = NULL;
+
+    thread_swap_callbacks = scheme_null;
 
     GC_collect_start_callback = get_ready_for_GC;
     GC_collect_end_callback = done_with_GC;
@@ -1280,6 +1285,16 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
     swapping = 0;
 #endif
     scheme_reset_locale();
+    {
+      Scheme_Object *l, *o;
+      Scheme_Closure_Func f;
+      for (l = thread_swap_callbacks; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	o = SCHEME_CAR(l);
+	f = SCHEME_CLOS_FUNC(o);
+	o = SCHEME_CLOS_DATA(o);
+	f(o);
+      }
+    }
   } else {
     swap_no_setjmp = 0;
 
@@ -1531,6 +1546,14 @@ static Scheme_Object *thread_wait(int argc, Scheme_Object *args[])
 static void register_thread_wait()
 {
   scheme_add_waitable(scheme_thread_type, thread_wait_done, NULL, NULL);
+}
+
+void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data)
+{
+  Scheme_Object *p;
+
+  p = scheme_make_pair((Scheme_Object *)f, data);
+  thread_swap_callbacks = scheme_make_pair(p, thread_swap_callbacks);
 }
 
 /**************************************************************************/
@@ -2087,7 +2110,9 @@ void scheme_break_thread(Scheme_Thread *p)
 }
 
 void scheme_thread_block(float sleep_time)
-/* Auto-resets p's blocking info if an escape occurs. */
+/* If we're blocked, `sleep_time' is a max sleep time,
+   not a min sleep time. Otherwise, it's a min & max sleep time.
+   This proc auto-resets p's blocking info if an escape occurs. */
 {
   long start, d;
   Scheme_Thread *next, *p = scheme_current_thread;
@@ -2253,7 +2278,19 @@ void scheme_thread_block(float sleep_time)
     if (d < 0)
       d = -d;
     if (d < (sleep_time * 1000)) {
-      goto swap_or_sleep;
+      /* Still have time to sleep if necessary, but make sure we're
+	 not ready (because maybe that's why we were swapped back in!) */
+      if (p->block_descriptor == -1) {
+	if (p->block_check) {
+	  Block_Check_Procedure f = p->block_check;
+	  if (f(p->blocker)) {
+	    sleep_time = 0;
+	  }
+	}
+      }
+
+      if (sleep_time > 0)
+	goto swap_or_sleep;
     }
   }
 

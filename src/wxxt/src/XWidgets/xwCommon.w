@@ -260,7 +260,7 @@ is positive.
 @proc realize
 {
 #ifdef USE_GL
-  if (gl_create_window)
+  if (wx_gl_create_window)
   {
     Display *dpy;
     int screen;
@@ -276,7 +276,7 @@ is positive.
                 	                   vi->visual, AllocNone);
     *mask = *mask | CWColormap;
     XtCreateWindow($, InputOutput, vi->visual, *mask, attributes);
-    temp_visual_info = vi;
+    wx_temp_visual_info = vi;
   }
   else
   {
@@ -1227,5 +1227,5 @@ highlight border with.
 @incl <X11/keysym.h>
 @incl "wxAllocColor.h"
 @incl "wxAllocColor.c"
-@incl "gl.h"
+@incl "wxgl.h"
 

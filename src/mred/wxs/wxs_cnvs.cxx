@@ -47,11 +47,12 @@ static void FillZero(int *a, int *b) {
 # define wxGL_CONTEXT 0
 #endif
 
+#ifdef wx_msw
+# define USE_GL
+#endif
+
 static void wxSwapBuffers(wxCanvas* c)
 {
-#ifdef wx_msw
-  c->CanvasSwapBuffers();
-#endif
 #ifdef USE_GL
   c->CanvasSwapBuffers();
 #endif
@@ -59,21 +60,8 @@ static void wxSwapBuffers(wxCanvas* c)
 
 static void wxThisContextCurrent(wxCanvas* c)
 {
-#ifdef wx_msw
-  c->ThisContextCurrent();
-#endif
 #ifdef USE_GL
   c->ThisContextCurrent();
-#endif
-}
-
-static void wxPreviousContextCurrent(wxCanvas* c)
-{
-#ifdef wx_msw
-  c->PreviousContextCurrent();
-#endif
-#ifdef USE_GL
-  c->PreviousContextCurrent();
 #endif
 }
 
@@ -695,25 +683,6 @@ static Scheme_Object *os_wxCanvasOnKillFocus(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCanvaswxPreviousContextCurrent(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxCanvas_class, "previous-context-current in canvas%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  WITH_VAR_STACK(wxPreviousContextCurrent(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)));
-
-  
-  
-  return scheme_void;
-}
-
 static Scheme_Object *os_wxCanvaswxThisContextCurrent(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -981,9 +950,9 @@ static Scheme_Object *os_wxCanvasViewStart(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }
@@ -1057,9 +1026,9 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }
@@ -1226,7 +1195,7 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 25));
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 24));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file" " method", os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event" " method", os_wxCanvasPreOnEvent, 2, 2));
@@ -1234,7 +1203,6 @@ void objscheme_setup_wxCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-size" " method", os_wxCanvasOnSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-set-focus" " method", os_wxCanvasOnSetFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-kill-focus" " method", os_wxCanvasOnKillFocus, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "previous-context-current" " method", os_wxCanvaswxPreviousContextCurrent, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "this-context-current" " method", os_wxCanvaswxThisContextCurrent, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "swap-buffers" " method", os_wxCanvaswxSwapBuffers, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-scroll" " method", os_wxCanvasOnScroll, 1, 1));

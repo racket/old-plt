@@ -30,7 +30,8 @@
     set-menu-tester
     location->window
     set-dialogs
-    set-executer)
+    set-executer
+    current-gl-context)
 
 )
 ;; end

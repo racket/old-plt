@@ -188,10 +188,11 @@ typedef struct Scheme_Object
       struct { void *ptr; int pint; } ptr_int_val;
       struct { void *ptr; long pint; } ptr_long_val;
       struct { struct Scheme_Object *car, *cdr; } pair_val;
-      struct { struct Scheme_Env *env; struct Scheme_Object *code; } closure_val;
       struct { short len; short *vec; } svector_val;
     } u;
 } Scheme_Object;
+
+typedef struct Scheme_Object *(*Scheme_Closure_Func)(struct Scheme_Object *);
 
 /* Scheme_Small_Object is used for several types of MzScheme values: */
 typedef struct {
@@ -492,8 +493,8 @@ typedef struct {
 #define SCHEME_PRIM(obj)     (((Scheme_Primitive_Proc *)(obj))->prim_val)
 #define SCHEME_CLSD_PRIM(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->prim_val)
 #define SCHEME_CLSD_PRIM_DATA(obj) (((Scheme_Closed_Primitive_Proc *)(obj))->data)
-#define SCHEME_CLOS_ENV(obj) ((obj)->u.closure_val.env)
-#define SCHEME_CLOS_CODE(obj) ((obj)->u.closure_val.code)
+#define SCHEME_CLOS_FUNC(obj) ((Scheme_Closure_Func)SCHEME_CAR(obj))
+#define SCHEME_CLOS_DATA(obj) SCHEME_CDR(obj)
 
 /*========================================================================*/
 /*                      hash tables and environments                      */

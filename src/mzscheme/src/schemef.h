@@ -110,6 +110,8 @@ MZ_EXTERN void scheme_add_waitable_through_sema(Scheme_Type type,
 						Scheme_Wait_Sema_Fun sema, 
 						Scheme_Wait_Filter_Fun filter);
 
+MZ_EXTERN void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data);
+
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/

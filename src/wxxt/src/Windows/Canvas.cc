@@ -34,6 +34,7 @@
 #define  Uses_ScrollWinWidget
 #define  Uses_CanvasWidget
 #include "widgets.h"
+#include "../XWidgets/wxgl.h"
 
 //-----------------------------------------------------------------------------
 // create and destroy canvas
@@ -51,8 +52,12 @@ wxCanvas::wxCanvas(wxWindow *parent, int x, int y, int width, int height,
 }
 
 #ifdef USE_GL
-int gl_create_window = 0;
-XVisualInfo* temp_visual_info = NULL;
+/* For communicating with xwCommon.w: */
+int wx_gl_create_window = 0;
+XVisualInfo* wx_temp_visual_info = NULL;
+
+static wxCanvas *current_gl_context = NULL;
+static int gl_registered;
 #endif
 
 Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
@@ -92,7 +97,7 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     X->scroll = wgt;
 #ifdef USE_GL
     if (style & wxGL_CONTEXT)
-      gl_create_window = 1;
+      wx_gl_create_window = 1;
 #endif
     // create canvas
     wgt = XtVaCreateManagedWidget
@@ -108,10 +113,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 #ifdef USE_GL
     if (style & wxGL_CONTEXT)
     {
-      gl_create_window = 0;
-      // I might need to free this or the XVisualInfo
+      wx_gl_create_window = 0;
       GLctxt = glXCreateContext(XtDisplay(X->handle), 
-				temp_visual_info,
+				wx_temp_visual_info,
 				NULL,
 				GL_TRUE);
     }
@@ -146,6 +150,20 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
     
     // ready
     return TRUE;
+}
+
+wxCanvas::~wxCanvas(void)
+{
+#ifdef USE_GL
+  if (this == current_gl_context) {
+    current_gl_context = NULL;
+    glXMakeCurrent(XtDisplay(X->handle), None, NULL);
+  }
+  if (GLctxt) {
+    glXDestroyContext(XtDisplay(X->handle), GLctxt);
+    GLctxt = NULL;
+  }
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -382,16 +400,22 @@ void wxCanvas::OnChar(wxKeyEvent *event)
 
 void wxCanvas::CanvasSwapBuffers(void)
 {
-  glXSwapBuffers(XtDisplay(X->handle), XtWindow(X->handle));
+  if (GLctxt) {
+    glXSwapBuffers(XtDisplay(X->handle), XtWindow(X->handle));
+  }
 }
 
 void wxCanvas::ThisContextCurrent(void)
 {
-  glXMakeCurrent(XtDisplay(X->handle), XtWindow(X->handle), GLctxt);
+  if (GLctxt) {
+    if (!gl_registered) {
+      wxREGGLOB(current_gl_context); 
+      gl_registered = 1;
+    }
+    
+    current_gl_context = this;
+    glXMakeCurrent(XtDisplay(X->handle), XtWindow(X->handle), GLctxt);
+  }
 }
 
-void wxCanvas::PreviousContextCurrent(void)
-{
-
-}
 #endif

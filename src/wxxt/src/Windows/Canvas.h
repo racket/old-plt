@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.h,v 1.7 2000/03/02 13:59:05 mflatt Exp $
+ * $Id: Canvas.h,v 1.8 2002/03/01 07:03:43 sowens Exp $
  *
  * Purpose: canvas panel item
  *
@@ -47,6 +47,7 @@ public:
     wxCanvas(wxWindow *parent,
 	    int x=-1, int y=-1, int width=-1, int height=-1,
 	    int style=0, char *name="canvas");
+    ~wxCanvas(void);
 
     Bool Create(wxPanel *parent,
 		int x=-1, int y=-1, int width=-1, int height=-1,
@@ -69,7 +70,6 @@ public:
 #ifdef USE_GL
     void CanvasSwapBuffers(void);
     void ThisContextCurrent(void);
-    void PreviousContextCurrent(void);
 #endif
 
 private:

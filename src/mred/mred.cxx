@@ -2631,6 +2631,8 @@ wxFrame *MrEdApp::OnInit(void)
 
   wxInitMedia();
 
+  wxscheme_early_gl_init();
+
   mred_run_from_cmd_line(argc, argv, setup_basic_env);
 
 #ifndef wx_x

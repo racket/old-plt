@@ -41,29 +41,33 @@
 	 [(box? v) (if (zero? depth)
 		       #&(....)
 		       (box (short-version (unbox v) (sub1 depth))))]
-	 [(pair? v) (cond
-		     [(zero? depth) '(....)]
-		     [(memq (syntax-e (car v)) '(#%datum #%app #%top))
-		      (short-version (cdr v) depth)]
-		     [else
-		      (cons (short-version (car v) (sub1 depth))
-			    (short-version (cdr v) (sub1 depth)))])]
+	 [(pair? v) 
+          (cond
+            [(zero? depth) '(....)]
+            [(memq (syntax-e (car v)) '(#%datum #%app #%top))
+             (short-version (cdr v) depth)]
+            [else
+             (cons (short-version (car v) (sub1 depth))
+                   (short-version (cdr v) (sub1 depth)))])]
 	 [(syntax? v) (short-version (syntax-e v) depth)]
 	 [else v]))
 
-      (define (make-st-mark stx) #`(quote (#,(short-version stx 10)
-					   #,(let ([s (let ([source (syntax-source stx)])
-							(cond
-							 [(string? source) source]
-							 [(path? source) (path->string source)]
-							 [(not source) #f]
-							 [else (format "~a" source)]))])
-					       (and s
-						    (string->symbol s)))
-					   #,(syntax-line stx)
-					   #,(syntax-column stx)
-					   #,(syntax-position stx)
-					   #,(syntax-span stx))))
+      (define (make-st-mark stx)
+        (unless (syntax? stx)
+          (error 'make-st-mark "expected syntax object as argument, got ~e" stx))
+        #`(quote (#,(short-version stx 10)
+                    #,(let ([s (let ([source (syntax-source stx)])
+                                 (cond
+                                   [(string? source) source]
+                                   [(path? source) (path->string source)]
+                                   [(not source) #f]
+                                   [else (format "~a" source)]))])
+                        (and s
+                             (string->symbol s)))
+                    #,(syntax-line stx)
+                    #,(syntax-column stx)
+                    #,(syntax-position stx)
+                    #,(syntax-span stx))))
       (define (st-mark-source src) (datum->syntax-object
 				    #f
 				    (car src)

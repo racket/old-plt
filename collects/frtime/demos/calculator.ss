@@ -1,6 +1,6 @@
-(module gui-demo2 (lib "frtime.ss" "frtime")
+(module calculator (lib "frtime.ss" "frtime")
   
-  (require (lib "gui.scm" "frtime")
+  (require (lib "gui.ss" "frtime")
            (lifted (lib "etc.ss") identity))
   
   (define op-names (list "+" "-" "*" "/"))

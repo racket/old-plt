@@ -1,6 +1,6 @@
-(module gui-demo1 (lib "frtime.ss" "frtime")
+(module pizza (lib "frtime.ss" "frtime")
   
-  (require (lib "gui.scm" "frtime"))
+  (require (lib "gui.ss" "frtime"))
   (provide (all-defined-except))
   
   (define kinds (list "New York" "Chicago" "California" "Hawaii"))

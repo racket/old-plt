@@ -1,4 +1,4 @@
-(module demo7b (lib "frtime.ss" "frtime")
+(module net-pong-client (lib "frtime.ss" "frtime")
 
   (require (lib "animation.ss" "frtime")
            (lib "list.ss" "frtime")

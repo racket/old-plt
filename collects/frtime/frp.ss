@@ -425,7 +425,7 @@
                                  (let loop ()
                                    (extract (lambda (the-event) proc (loop))
                                             streams))
-                                 ;(set! streams (map signal-value args))
+                                 (set! streams (map signal-value args))
                                  out)])
                    (apply proc->signal thunk args))))]))
   
@@ -455,7 +455,9 @@
                 (register ret init)
                 (set-signal-depth! ret (max (signal-depth ret)
                                             (add1 (safe-signal-depth init)))))
-              (value-now init)]
+              (if (signal? init)
+                  (signal-value init)
+                  init)]
              [(msg) e])
            e-b init)))))
   
@@ -467,11 +469,12 @@
   
   (define (once-e e)
     (let ([b true])
-      (event-processor
-       (when b
-         (set! b false)
-         (emit the-event))
-       (list e))))
+      (rec ret (event-processor
+                (when b
+                  (set! b false)
+                  (unregister ret e)
+                  (emit the-event))
+                (list e)))))
   
   ; behavior[a] -> event[a]
   (define (changes b)
@@ -525,7 +528,7 @@
        (emit the-event))
      (list e)))
   
-  (define nothing (string->uninterned-symbol "nothing"))
+  (define nothing (void));(string->uninterned-symbol "nothing"))
   
   (define (nothing? v) (eq? v nothing))
 
@@ -584,6 +587,9 @@
     (event-processor
      (emit (cons the-event (map value-now bs)))
      (list e)))
+
+  (define (snapshot/apply fn . args)
+    (apply fn (map value-now args)))
   
   ; (a b* -> c) event[a] signal[b]* -> event[c]
   (define (snapshot-map-e fn ev . bs)
@@ -982,15 +988,25 @@
     (! man (make-external-event (list (list rcvr val)))))
 
   (define (send-synchronous-event rcvr val)
+    (when (man?)
+      (error 'send-synchronous-event "already in frtime engine (would deadlock)"))
     (! man (make-external-event (list (list rcvr val) (list notifier (self)))))
     (receive [(? man?) (void)]))
 
   (define (send-synchronous-events rcvr-val-pairs)
+    (when (man?)
+      (error 'send-synchronous-events "already in frtime engine (would deadlock)"))
     (unless (ormap list? rcvr-val-pairs) (error "not list"))
     (unless (ormap signal? (map first rcvr-val-pairs)) (error "not signals"))
     (! man (make-external-event (cons (list notifier (self)) rcvr-val-pairs)))
     (receive [(? man?) (void)]))
 
+  (define (synchronize)
+    (when (man?)
+      (error 'synchronize "already in frtime engine (would deadlock)"))
+    (! man (make-external-event (list (list notifier (self)))))
+    (receive [(? man?) (void)]))
+  
   (define (curried-apply fn)
     (lambda (lis) (apply fn lis)))
   
@@ -1053,7 +1069,7 @@
              (set! current c)
              (let ([admin (get-admin)])
                (when admin
-                 (send admin needs-update this 0 0 1000 100)))))))
+                 (send admin needs-update this 0 0 2000 100)))))))
       (define/override (draw dc x y left top right bottom dx dy draw-caret)
         (send current draw dc x y left top right bottom dx dy draw-caret))
       (super-instantiate (" "))))
@@ -1147,14 +1163,14 @@
         (syntax (begin))
         (syntax->list (syntax clauses)))]))  
 
-  (define (ensure-no-signal-args val)
+  (define (ensure-no-signal-args val name)
     (if (procedure? val)
         (lambda args
           (cond
             [(find signal? args)
              =>
              (lambda (v)
-               (raise-type-error 'fun-name "not time-varying"
+               (raise-type-error name "not time-varying"
                                  (if (event? v)
                                      (format "#<event (last: ~a)>" (efirst (signal-value v)))
                                      (format "#<behavior: ~a>" (signal-value v)))))]
@@ -1171,7 +1187,7 @@
         (lambda (c prev)
           (syntax-case prev ()
             [(begin clause ...)
-             (syntax-case c (lifted lifted:nonstrict as-is:unchecked as-is)
+             (syntax-case c (lifted lifted:nonstrict as-is:unchecked as-is frlibs)
                [(lifted:nonstrict module . ids)
                 (with-syntax ([(fun-name ...) #'ids]
                               [(tmp-name ...) (generate-temporaries/loc stx #'ids)])
@@ -1198,12 +1214,16 @@
                   #'(begin
                       clause ...
                       (require (rename module tmp-name fun-name) ...)
-                      (define fun-name (ensure-no-signal-args tmp-name))
+                      (define fun-name (ensure-no-signal-args tmp-name 'fun-name))
                       ...))]
+               [(frlibs str ...)
+                #'(begin
+                    clause ...
+                    (require (lib str "frtime") ...))]
                [require-spec
-                (syntax (begin clause ... (require require-spec)))])]))
-        (syntax (begin))
-        (syntax->list (syntax clauses)))]))
+                #'(begin clause ... (require require-spec))])]))
+        #'(begin)
+        (syntax->list #'clauses))]))
   
   (define undefined?/lifted (lambda (arg) (lift false undefined? arg)))
   (define frp:pair? (lambda (arg) (lift true pair? arg)))

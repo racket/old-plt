@@ -163,8 +163,7 @@
       (if star?
           (let ((classes (send type-recs get-package-contents path (lambda () #f))))
             (if classes
-                (for-each (lambda (class) (send type-recs add-to-env class path file))
-                          classes)
+                (for-each (lambda (class) (send type-recs add-to-env class path file)) classes)
                 (let* ((dir (find-directory path err))
                        (classes (get-class-list dir)))
                   (for-each (lambda (class) 
@@ -246,16 +245,21 @@
   
   ;find-directory: (list string) ( -> void) -> (list string)
   (define (find-directory path fail)
-    (if (null? path) 
-        (list (build-path 'same))
-        (let ((class-path (get-classpath)))
-          (let loop ((paths class-path))
-            (cond
-              ((null? paths) (fail))
-              ((and (directory-exists? (build-path (car paths) 
-                                                   (apply build-path path))))
-               (cons (car paths) path))
-              (else (loop (cdr paths))))))))
+    (let ((class-path (get-classpath)))
+      (cond
+        ((null? path) (list (build-path 'same)))
+        ((and (scheme-ok?) (equal? (car path) "scheme")) 
+         (if (not (equal? (cadr path) "libs"))
+             (find-directory (cddr path) fail)
+             path))
+        (else
+         (let loop ((paths class-path))
+           (cond
+             ((null? paths) (fail))
+             ((and (directory-exists? (build-path (car paths) 
+                                                  (apply build-path path))))
+              (cons (car paths) path))
+             (else (loop (cdr paths)))))))))
 
   ;get-class-list: (list string) -> (list string)
   (define (get-class-list dir)

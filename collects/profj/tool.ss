@@ -767,7 +767,6 @@
                     (send text insert i-box)
                     (send text set-caret-owner i-box 'global)))))))
       
-      (interactions-box-test (lambda (obj) (is-a? obj java-interactions-box%)))
       (drscheme:get/extend:extend-unit-frame java-interactions-box-mixin)
       
       ))

@@ -1379,7 +1379,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 	s = sizeof(Scheme_Primitive_Proc);
     }	
     break;
-  case scheme_linked_closure_type:
+  case scheme_closure_type:
     {
       Scheme_Closure_Compilation_Data *data;
       Scheme_Object **vals;

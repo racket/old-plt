@@ -445,7 +445,7 @@ Scheme_Object *scheme_make_stx_w_offset(Scheme_Object *val,
 }
 
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col, long pos)
-/* Sets the "is graph" flag */
+     /* Sets the "is graph" flag */
 {
   Scheme_Object *tmp, *key;
 
@@ -463,7 +463,7 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col, lo
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
 				Scheme_Object *old,
 				Scheme_Object *origin)
-/* Maintain properties for an expanded expression */
+     /* Maintain properties for an expanded expression */
 {
   Scheme_Stx *nstx = (Scheme_Stx *)naya;
   Scheme_Stx *ostx = (Scheme_Stx *)old;

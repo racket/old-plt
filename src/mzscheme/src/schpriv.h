@@ -193,7 +193,6 @@ void scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
 /*                                constants                               */
 /*========================================================================*/
 
-extern Scheme_Object *scheme_void_func;
 extern Scheme_Object *scheme_values_func;
 
 extern Scheme_Object *scheme_not_prim;
@@ -1300,9 +1299,9 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *frame, short *size, short **ma
 void scheme_env_make_stx_closure_map(Scheme_Comp_Env *frame, short *size, short **map);
 int scheme_env_uses_toplevel(Scheme_Comp_Env *frame);
 
-Scheme_Object *scheme_make_linked_closure(Scheme_Thread *p, 
-					  Scheme_Object *compiled_code,
-					  int close);
+Scheme_Object *scheme_make_closure(Scheme_Thread *p, 
+				   Scheme_Object *compiled_code,
+				   int close);
 
 #define scheme_add_good_binding(i,v,f) (f->values[i] = v)
 

@@ -1144,11 +1144,12 @@ case_lambda_execute(Scheme_Object *expr)
   seqout->name = seqin->name;
 
   for (i = 0; i < seqin->count; i++) {
-    if (SAME_TYPE(SCHEME_TYPE(seqin->array[i]), scheme_linked_closure_type))
+    if (SAME_TYPE(SCHEME_TYPE(seqin->array[i]), scheme_closure_type)) {
+      /* An empty closure, created at compile time */
       seqout->array[i] = seqin->array[i];
-    else {
+    } else {
       Scheme_Object *lc;
-      lc = scheme_make_linked_closure(p, seqin->array[i], 1);
+      lc = scheme_make_closure(p, seqin->array[i], 1);
       seqout->array[i] = lc;
     }
   }

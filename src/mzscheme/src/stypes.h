@@ -37,7 +37,7 @@ enum {
   /* procedure types */
   scheme_prim_type,
   scheme_closed_prim_type,
-  scheme_linked_closure_type,
+  scheme_closure_type,
   scheme_case_closure_type,
   scheme_cont_type,
   scheme_escaping_cont_type,

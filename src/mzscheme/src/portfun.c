@@ -108,6 +108,10 @@ static short drh_cases[4] = { 1, 1, 3, 3};
 
 #define fail_err_symbol scheme_false
 
+/*========================================================================*/
+/*                             initialization                             */
+/*========================================================================*/
+
 void 
 scheme_init_port_fun(Scheme_Env *env)
 {

@@ -105,7 +105,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_void_type, "<void>");
   set_name(scheme_prim_type, "<primitive>");
   set_name(scheme_closed_prim_type, "<primitive-closure>");
-  set_name(scheme_linked_closure_type, "<procedure>");
+  set_name(scheme_closure_type, "<procedure>");
   set_name(scheme_cont_type, "<continuation>");
   set_name(scheme_tail_call_waiting_type, "<tail-call-waiting>");
   set_name(scheme_null_type, "<empty-list>");
@@ -373,7 +373,7 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_prim_type, prim_proc);
   GC_REG_TRAV(scheme_closed_prim_type, closed_prim_proc);
-  GC_REG_TRAV(scheme_linked_closure_type, linked_closure);
+  GC_REG_TRAV(scheme_closure_type, linked_closure);
   GC_REG_TRAV(scheme_case_closure_type, case_closure);
   GC_REG_TRAV(scheme_cont_type, cont_proc);
   GC_REG_TRAV(scheme_rt_dyn_wind, mark_dyn_wind);

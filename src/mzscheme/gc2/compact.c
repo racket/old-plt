@@ -957,13 +957,13 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
 
     if (tagged) {
       if (m->type != MTYPE_TAGGED) {
-	fprintf(stderr, "Not tagged: %x (%d)\n", 
+	fprintf(stderr, "Not tagged: %lx (%d)\n", 
 		(long)p, m->type);
 	CRASH();
       }
     } else {
       if (m->type != MTYPE_XTAGGED) {
-	fprintf(stderr, "Not xtagged: %x (%d)\n", 
+	fprintf(stderr, "Not xtagged: %lx (%d)\n", 
 		(long)p, m->type);
 	CRASH();
       }

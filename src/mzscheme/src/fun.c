@@ -1618,7 +1618,7 @@ apply(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
        int and_mode, int or_mode)
-     /* common code for `map', `for-each', `andmap' and `ormap'
+     /* common code for `map', `for-each', `andmap' and `ormap' */
 {
   int i, size = 0, l;
   int can_multi;

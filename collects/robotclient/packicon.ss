@@ -7,7 +7,18 @@
            make-robot-colors
            make-robot-icons)
   
+  (define transparent-pen (make-object pen% "black" 1 'transparent))
+  (define black-pen (make-object pen% "black" 1 'solid))
   (define black-brush (make-object brush% "black" 'solid))
+  
+  (define (adjust c adj)
+    (make-object color% (adj (send c red)) (adj (send c green)) (adj (send c blue))))
+  
+  (define (lighter c)
+    (adjust c (lambda (i) (- 255 (floor (* 3/4 (- 255 i)))))))
+      
+  (define (darker c)
+    (adjust c (lambda (i) (floor (* 3/4 i)))))
   
   (define (rel-color rel-weight)
     (make-object color% 
@@ -26,31 +37,36 @@
     (map rel-color (mk-rel-weights num-bins)))
   
   (define (mk-package color size)
-    (define pack-bm (make-object bitmap% size size))
-    (define pack-mask (make-object bitmap% size size #t))
+    (define half-size (add1 (quotient size 2)))
+    (define pack-bm (make-object bitmap% half-size half-size))
+    (define pack-mask (make-object bitmap% half-size half-size #t))
     (define dc (make-object bitmap-dc% pack-bm))
 
-    (define top (list (make-object point% (* size 1/2) (* size 1/4))
-                      (make-object point% (* size 3/4) (* size 3/8))
-                      (make-object point% (* size 1/2) (* size 1/2))
-                      (make-object point% (* size 1/4) (* size 3/8))))
-    (define right (list (make-object point% (* size 3/4) (* size 3/8))
-                        (make-object point% (* size 1/2) (* size 1/2))
-                        (make-object point% (* size 1/2) (* size 3/4))
-                        (make-object point% (* size 3/4) (* size 5/8))))
-    (define left (list (make-object point% (* size 1/4) (* size 3/8))
-                       (make-object point% (* size 1/2) (* size 1/2))
-                       (make-object point% (* size 1/2) (* size 3/4))
-                       (make-object point% (* size 1/4) (* size 5/8))))
+    (define top (list (make-object point% (* size 1/4) 0)
+                      (make-object point% (* size 1/2) (* size 1/8))
+                      (make-object point% (* size 1/4) (* size 1/4))
+                      (make-object point% 0 (* size 1/8))))
+    (define right (list (make-object point% (* size 1/2) (* size 1/8))
+                        (make-object point% (* size 1/4) (* size 1/4))
+                        (make-object point% (* size 1/4) (* size 1/2))
+                        (make-object point% (* size 1/2) (* size 3/8))))
+    (define left (list (make-object point% 0 (* size 1/8))
+                       (make-object point% (* size 1/4) (* size 1/4))
+                       (make-object point% (* size 1/4) (* size 1/2))
+                       (make-object point% 0 (* size 3/8))))
     
-    (define dx (* size 1/5))
-    (define dy (* size 1/5))
+    (define dx 0)
+    (define dy 0)
+    
+    (send dc set-pen transparent-pen)
     
     (send dc clear)
-    (send dc set-brush (make-object brush% color 'solid))
-    (send dc draw-polygon top dx dy)
+    (send dc set-brush (send the-brush-list find-or-create-brush color 'solid))
     (send dc draw-polygon left dx dy)
+    (send dc set-brush (send the-brush-list find-or-create-brush (darker color) 'solid))
     (send dc draw-polygon right dx dy)
+    (send dc set-brush (send the-brush-list find-or-create-brush (lighter color) 'solid))
+    (send dc draw-polygon top dx dy)
     
     (send dc set-bitmap pack-mask)
     (send dc clear)
@@ -82,33 +98,44 @@
   (define pi (atan 0 -1))
   
   (define (mk-robot color size)
-    (define robot-bm (make-object bitmap% size size))
-    (define robot-mask (make-object bitmap% size size #t))
+    (define half-size (quotient size 2))
+    (define 3/4-size (quotient (* 3 size) 4))
+    (define robot-bm (make-object bitmap% half-size 3/4-size))
+    (define robot-mask (make-object bitmap% half-size 3/4-size #t))
     (define dc (make-object bitmap-dc% robot-bm))
-    (define (draw-once)
-      (send dc draw-rectangle 
-            (* 1/10 size) (* 8/30 size)
-            (* 1/2 size) (* 11/20 size))
-      (send dc draw-arc 
-            (* 1/10 size) (* 3/10 size)
-            (* 1/2 size) (* 1/3 size)
-            pi (* 2 pi))
-      (send dc draw-ellipse 
+    (define (draw-once color?)
+      (send dc draw-ellipse
             (* 1/10 size) (* 1/10 size)
-            (* 1/2 size) (* 1/3 size))
-      (send dc draw-arc 
-            (* 1/10 size) (* 6/10 size)
-            (* 1/2 size) (* 1/3 size)
-            pi (* 2 pi)))
+            (* 2/5 size) (* 4/10 size))
+      (send dc draw-rectangle
+            (* 1/10 size) (* 3/10 size)
+            (* 2/5 size) (* 6/10 size))
+      (when color?
+        (send dc set-brush (send the-brush-list find-or-create-brush (lighter color) 'solid))
+        (send dc draw-rectangle
+              (* 1/10 size) (* 3/10 size)
+              (* 1/10 size) (* 6/10 size))
+        (send dc set-brush (send the-brush-list find-or-create-brush (darker color) 'solid))
+        (send dc draw-rectangle
+              (- half-size (floor (* 1/10 size))) (* 3/10 size)
+              (* 1/10 size) (* 6/10 size)))
+        
+      (send dc set-pen black-pen)
+      (send dc draw-line (- half-size (floor (* 2/10 size))) (* 1/5 size) 
+            (- half-size (floor (* 1/10 size))) (* 1/10 size))
+      (send dc draw-line (* 2/10 size) (* 1/5 size) (* 1/10 size) (* 1/10 size)))
+      
 
+    (send dc set-pen transparent-pen)
+    
     (send dc clear)
-    (send dc set-brush (make-object brush% color 'solid))
-    (draw-once)
+    (send dc set-brush (send the-brush-list find-or-create-brush color 'solid))
+    (draw-once #t)
     
     (send dc set-bitmap robot-mask)
     (send dc clear)
     (send dc set-brush black-brush)
-    (draw-once)
+    (draw-once #f)
     
     (send dc set-bitmap #f)
     (cons robot-bm robot-mask))

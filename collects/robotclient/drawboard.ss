@@ -25,7 +25,7 @@
   (define num-pack-icons 11)
   (define pack-colors (make-package-colors num-pack-icons))
 
-  (define-struct pack (icon pen id dest-x dest-y weight x y))
+  (define-struct pack (icon pen id dest-x dest-y weight x y owner))
   (define-struct robot (icon id x y))
 
   (define max-width 800)
@@ -135,7 +135,8 @@
                                           (sub1 (caddr (cddr pkg)))
                                           (cadddr (cddr pkg))
                                           (sub1 (cadr pkg))
-                                          (sub1 (caddr pkg)))))
+                                          (sub1 (caddr pkg))
+                                          #f)))
                            pkgs)))))
         (map (lambda (i) (send hlist delete-item i)) (send hlist get-items))
         (map (lambda (p) (let* ([i (send hlist new-list)]
@@ -179,29 +180,32 @@
              (get-status-lists)))
       
       (define/override (on-paint)
-        (send offscreen clear)
-        (let loop ([i 0])
-          (unless (= i width)
-            (let loop ([j 0])
-              (unless (= j height)
-                (draw-board-pos offscreen i j)
-                (loop (add1 j))))
-            (loop (add1 i))))
-        (for-each (lambda (pack)
-                    (draw-package offscreen pack))
-                  packages)
-        (for-each (lambda (robot)
-                    (draw-robot offscreen robot))
-                  robots)
-
-        (when active-i
-          (let-values ([(x y) (pos->location active-i active-j)])
-            (send offscreen set-pen red-pen)
-            (send offscreen set-brush transparent-brush)
-            (send offscreen draw-rectangle (- x 1) (- y 1) (+ cell-paint-size 2) (+ cell-paint-size 2))
-            (send offscreen set-pen transparent-pen)))
+        (let ([non-water-rgn (make-object region% offscreen)])
+          (send non-water-rgn set-rectangle 0 0 display-w display-h)
+          (send offscreen clear)
+          (let loop ([i 0])
+            (unless (= i width)
+              (let loop ([j 0])
+                (unless (= j height)
+                  (draw-board-pos offscreen i j non-water-rgn)
+                  (loop (add1 j))))
+              (loop (add1 i))))
+          (for-each (lambda (pack)
+                      (draw-package offscreen pack))
+                    packages)
+          (send offscreen set-clipping-region non-water-rgn)
+          (for-each (lambda (robot)
+                      (draw-robot offscreen robot))
+                    robots)
+          (send offscreen set-clipping-region #f)
+          (when active-i
+            (let-values ([(x y) (pos->location active-i active-j)])
+              (send offscreen set-pen red-pen)
+              (send offscreen set-brush transparent-brush)
+              (send offscreen draw-rectangle (- x 1) (- y 1) (+ cell-paint-size 2) (+ cell-paint-size 2))
+              (send offscreen set-pen transparent-pen)))
         
-        (send (get-dc) draw-bitmap offscreen-bm 0 0))
+          (send (get-dc) draw-bitmap offscreen-bm 0 0)))
       
       (define/private (pos->location i j)
         (values (add1 (* i scale)) (add1 (* (- height j 1) scale))))
@@ -210,26 +214,38 @@
         (values (min (max 0 (floor (/ (sub1 x) scale))) (sub1 width))
                 (- height (min (max 0 (floor (/ (sub1 y) scale))) (sub1 height)) 1)))
   
-      (define/private (draw-board-pos dc i j)
+      (define/private (draw-board-pos dc i j non-water-rgn)
         (let-values ([(cell) (vector-ref (vector-ref board j) i)]
                      [(x y) (pos->location i j)])
           (send dc set-brush
                 (case cell
-                  [(water) water-brush]
+                  [(water) 
+                   (let ([water-rgn (make-object region% dc)])
+                     (send water-rgn set-rectangle x y cell-paint-size cell-paint-size)
+                     (send non-water-rgn subtract water-rgn))
+                   water-brush]
                   [(wall) wall-brush]
                   [(plain) plain-brush]
                   [(base) base-brush]))
           (send dc draw-rectangle x y cell-paint-size cell-paint-size)))
   
+      (define margin 2)
+      
       (define/private (draw-package dc pack)
-        (let-values ([(x y) (pos->location (pack-x pack) (pack-y pack))])
-          (send dc draw-bitmap (car (pack-icon pack)) x y 
+        (let*-values ([(x y) (pos->location (pack-x pack) (pack-y pack))]
+                      [(icon) (car (pack-icon pack))]
+                      [(dy) (- cell-paint-size (send icon get-height) margin)]
+                      [(dx) (if (pack-owner pack)
+                                margin
+                                (- cell-paint-size (send icon get-width) margin))])
+          (send dc draw-bitmap icon (+ dx x) (+ y dy)
                 'solid black 
                 (cdr (pack-icon pack)))
           (let-values ([(dest-x dest-y) (pos->location (pack-dest-x pack) (pack-dest-y pack))]
-                       [(d) (* scale 7/10)])
+                       [(ddx) (/ (send icon get-width) 2)]
+                       [(ddy) (/ (send icon get-height) 2)])
             (send dc set-pen (pack-pen pack))
-            (send dc draw-line (+ x d) (+ y d) (+ dest-x d) (+ dest-y d))
+            (send dc draw-line (+ x ddx dx) (+ y ddy dy) (+ dest-x dx ddx) (+ dest-y dy ddy))
             (send dc set-pen transparent-pen))))
       
       (define/private (draw-robot dc robot)

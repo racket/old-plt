@@ -381,7 +381,7 @@
 
   /************** ALPHA/OSF1 with gcc ****************/
 
-# if (defined(__alpha) || defined(__alpha__)) && !defined(LINUX) && !defined(__NetBSD__)
+# if (defined(__alpha) || defined(__alpha__)) && !defined(linux) && !defined(__NetBSD__)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-osf1"
 

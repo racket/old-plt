@@ -186,10 +186,10 @@ gc2/xsrc/xcglue.c: ../mzscheme/utils/xcglue.c wxs/$(OBJDIR)/xcglue.o $(XFORMDEP)
 	$(XFORM) $< $@
 
 
-gc2/xsrc/mred.cc: mred.cxx $(XFORMDEP)
+gc2/xsrc/mred.cc: mred.cxx $(OBJDIR)/mred.o $(XFORMDEP)
 	$(XFORM) $< $@
 
-gc2/xsrc/mredx.cc: mredx.cxx $(XFORMDEP)
+gc2/xsrc/mredx.cc: mredx.cxx $(OBJDIR)/mredx.o $(XFORMDEP)
 	$(XFORM) $< $@
 
 gc2/xsrc/wxs_bmap.cc: wxs/wxs_bmap.cxx wxs/$(OBJDIR)/wxs_bmap.o $(XFORMDEP)

@@ -902,7 +902,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs,
       int phase;
 
       phse = scheme_lookup_in_table((Scheme_Hash_Table *)a, (const char *)phase_key);
-      phase = SCHEME_INT_VAL(phse) - phase_shift;
+      phase = SCHEME_INT_VAL(phse) + phase_shift;
 
       /* Already did this phase? */
       if (phase >= num_phases) {
@@ -1168,8 +1168,8 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w, int subs,
       SCHEME_VEC_ELS(vec)[0] = envname;
 
       for (i = 0; i < c; i++) {
-	name = SCHEME_VEC_ELS(vec)[1+i];
-	marks = SCHEME_VEC_ELS(vec)[1+c+i];
+	name = SCHEME_VEC_ELS(a)[1+i];
+	marks = SCHEME_VEC_ELS(a)[1+c+i];
 
 	s = scheme_make_stx(name, -1, -1, scheme_false);
 	((Scheme_Stx *)s)->wraps = marks;
@@ -1336,6 +1336,11 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     while (SCHEME_PAIRP(o)) {
       Scheme_Object *a;
       
+      if (wraps) {
+	if (!SCHEME_PAIRP(SCHEME_CAR(o)))
+	  break;
+      }
+
       if (ht && last) {
 	if ((long)scheme_lookup_in_table(ht, (const char *)o) != 1) {
 	  /* cdr is shared. Stop here. */

@@ -7,23 +7,25 @@
 The teachpack <code>draw.ss</code> provides a miniscule collection of 
 graphics functions:
 <menu>
-<li><code> start</code> : number number -> void; <br>
-opens a canvas
-<li><code> stop </code> : -> void (no arguments);  <br>
+<li><code> start</code> : Number Number -> true; <br>
+opens a canvas of specified size
+<li><code> start/cartesian-plane</code> : Number Number -> true; <br>
+opens a canvas of specified size and draws a Cartesian plane
+<li><code> stop </code> : -> true (no arguments);  <br>
 closes the canvas
-<li><code> draw-circle</code> : posn number symbol -> true; <br> 
+<li><code> draw-circle</code> : Posn Number Symbol -> true; <br> 
 draws a circle at posn with given radius and color
-<li><code> draw-solid-disk</code> : posn number symbol -> true; <br> 
+<li><code> draw-solid-disk</code> : Posn Number Symbol -> true; <br> 
 draws a disk at posn with given radius and color
-<li><code> draw-solid-rect</code> : posn number number symbol -> true; <br>
+<li><code> draw-solid-rect</code> : Posn Number Number Symbol -> true; <br>
 draws a rectangle at posn with given width, height, and color
-<li><code> draw-solid-line</code> : posn posn symbol -> true; <br>
+<li><code> draw-solid-line</code> : Posn Posn Symbol -> true; <br>
 draws a line from one posn to other
-<li><code> wait-for-mouse-click</code> : -> posn; <br>
+<li><code> wait-for-mouse-click</code> : -> Posn; <br>
 waits for the user to click on the mouse, within the window (the operation 
 is a quasi-constructor for posns)
 <br>
-<li><code> sleep-for-a-while</code> : number -> true; <br>
+<li><code> sleep-for-a-while</code> : Number -> true; <br>
 suspends evaluation for the given number of seconds 
 <br>
 <li>The following symbols are recognized as colors: 

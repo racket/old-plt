@@ -1081,9 +1081,12 @@ static void output_need_wakeup (Scheme_Object *port, void *fds)
   }
 }
 
-static int char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info *sinfo)
+int scheme_char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info *sinfo)
 {
   Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
+
+  if (ip->closed && sinfo->false_positive_ok)
+    return 1;
 
   if (SAME_OBJ(scheme_user_input_port_type, ip->sub_type)) {
     /* We can't call the normal char_ready because that runs Scheme
@@ -1100,7 +1103,7 @@ static int char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 static void register_port_wait()
 {
   scheme_add_waitable(scheme_input_port_type,
-		      (Scheme_Ready_Fun)char_ready_or_user_port_ready, scheme_need_wakeup, 
+		      (Scheme_Ready_Fun)scheme_char_ready_or_user_port_ready, scheme_need_wakeup, 
 		      waitable_input_port_p, 1);
   scheme_add_waitable(scheme_output_port_type,
 		      (Scheme_Ready_Fun)output_ready, output_need_wakeup, 
@@ -3151,6 +3154,9 @@ static long WindowsFDReader(Win_FD_Input_Thread *th);
 static void WindowsFDICleanup(Win_FD_Input_Thread *th);
 # endif
 
+/* forward decl: */
+static void fd_need_wakeup(Scheme_Input_Port *port, void *fds);
+
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
 static int try_get_fd_char(int fd, int *ready)
 {
@@ -3294,14 +3300,9 @@ static long fd_get_string(Scheme_Input_Port *port,
 	  return 0;
 	}
 
-	scheme_current_thread->block_descriptor = PORT_BLOCKED;
-	scheme_current_thread->blocker = (Scheme_Object *)port;
-	do {
-	  scheme_thread_block(0.0);
-	} while (!fd_char_ready(port));
-	scheme_current_thread->block_descriptor = NOT_BLOCKED;
-	scheme_current_thread->blocker = NULL;
-	scheme_current_thread->ran_some = 1;
+	scheme_block_until((Scheme_Ready_Fun)fd_char_ready, 
+			   (Scheme_Needs_Wakeup_Fun)fd_need_wakeup, 
+			   (Scheme_Object *)port, 0.0);
       }
 
       if (port->closed) {
@@ -3825,14 +3826,7 @@ static int osk_get_string(Scheme_Input_Port *port,
       return EOF;
     }
 
-    scheme_current_thread->block_descriptor = PORT_BLOCKED;
-    scheme_current_thread->blocker = (Scheme_Object *)port;
-    do {
-      scheme_thread_block(0.0);
-    } while (!osk_char_ready(port));
-    scheme_current_thread->block_descriptor = NOT_BLOCKED;
-    scheme_current_thread->blocker = NULL;
-    scheme_current_thread->ran_some = 1;
+    scheme_block_until(osk_char_ready, NULL, (Scheme_Object *)port, 0.0);
   }
 
   if (port->closed) {

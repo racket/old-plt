@@ -194,9 +194,9 @@
 #define scheme_post_sema (scheme_extension_table->scheme_post_sema)
 #define scheme_post_sema_all (scheme_extension_table->scheme_post_sema_all)
 #define scheme_wait_sema (scheme_extension_table->scheme_wait_sema)
-#define scheme_wait_semas (scheme_extension_table->scheme_wait_semas)
 #endif
 #define scheme_char_constants (scheme_extension_table->scheme_char_constants)
+#define scheme_make_channel (scheme_extension_table->scheme_make_channel)
 #define scheme_get_int_val (scheme_extension_table->scheme_get_int_val)
 #define scheme_get_unsigned_int_val (scheme_extension_table->scheme_get_unsigned_int_val)
 #define scheme_real_to_double (scheme_extension_table->scheme_real_to_double)

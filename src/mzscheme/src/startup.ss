@@ -2970,6 +2970,21 @@
       (raise-type-error 'make-guard-waitable "procedure (arity 0)" proc))
     (make-guard proc))
 
+  (define (channel-get ch)
+    (unless (channel? ch)
+      (raise-type-error 'channel-get "channel" ch))
+    (object-wait-multiple #f ch))
+
+  (define (channel-peek ch)
+    (unless (channel? ch)
+      (raise-type-error 'channel-peek "channel" ch))
+    (object-wait-multiple 0 ch))
+
+  (define (channel-put ch val)
+    (unless (channel? ch)
+      (raise-type-error 'channel-put "channel" ch))
+    (and (object-wait-multiple #f (make-channel-put-waitable ch val)) (void)))
+
   ;; -------------------------------------------------------------------------
 
   (define interaction-environment (lambda () (current-namespace)))
@@ -3042,6 +3057,7 @@
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled current-load/use-compiled
 	   port? not-break-exn? make-guard-waitable
+	   channel-get channel-peek channel-put
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment
 	   standard-module-name-resolver))

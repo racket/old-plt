@@ -672,6 +672,8 @@ void scheme_init_hash_key_procs(void)
   PROC(scheme_proc_struct_type, hash_general);
   PROC(scheme_cont_mark_set_type, hash_general);
   PROC(scheme_sema_type, hash_general);
+  PROC(scheme_channel_type, hash_general);
+  PROC(scheme_channel_put_type, hash_general);
   PROC(scheme_hash_table_type, hash_general);
   PROC(scheme_bucket_table_type, hash_general);
   PROC(scheme_weak_box_type, hash_general);

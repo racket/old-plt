@@ -1559,6 +1559,68 @@ int sema_val_FIXUP(void *p) {
 #define sema_val_IS_CONST_SIZE 1
 
 
+int channel_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel));
+}
+
+int channel_val_MARK(void *p) {
+  Scheme_Channel *s = (Scheme_Channel *)p;
+
+  gcMARK(s->get_first);
+  gcMARK(s->get_last);
+  gcMARK(s->put_first);
+  gcMARK(s->put_last);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel));
+}
+
+int channel_val_FIXUP(void *p) {
+  Scheme_Channel *s = (Scheme_Channel *)p;
+
+  gcFIXUP(s->get_first);
+  gcFIXUP(s->get_last);
+  gcFIXUP(s->put_first);
+  gcFIXUP(s->put_last);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel));
+}
+
+#define channel_val_IS_ATOMIC 0
+#define channel_val_IS_CONST_SIZE 1
+
+
+int channel_put_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Put));
+}
+
+int channel_put_val_MARK(void *p) {
+  Scheme_Channel_Put *s = (Scheme_Channel_Put *)p;
+
+  gcMARK(s->ch);
+  gcMARK(s->val);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Put));
+}
+
+int channel_put_val_FIXUP(void *p) {
+  Scheme_Channel_Put *s = (Scheme_Channel_Put *)p;
+
+  gcFIXUP(s->ch);
+  gcFIXUP(s->val);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Put));
+}
+
+#define channel_put_val_IS_ATOMIC 0
+#define channel_put_val_IS_CONST_SIZE 1
+
+
 int hash_table_val_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Hash_Table));
@@ -3517,6 +3579,7 @@ int mark_sema_waiter_MARK(void *p) {
   gcMARK(w->p);
   gcMARK(w->prev);
   gcMARK(w->next);
+  gcMARK(w->waiting);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
@@ -3528,6 +3591,7 @@ int mark_sema_waiter_FIXUP(void *p) {
   gcFIXUP(w->p);
   gcFIXUP(w->prev);
   gcFIXUP(w->next);
+  gcFIXUP(w->waiting);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));

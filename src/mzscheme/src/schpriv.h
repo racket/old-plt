@@ -860,24 +860,63 @@ extern unsigned long scheme_stack_boundary;
 typedef struct Scheme_Sema_Waiter {
   MZTAG_IF_REQUIRED
   Scheme_Thread *p;
-  int in_line;
+  char in_line, picked;
   struct Scheme_Sema_Waiter *prev, *next;
+  struct Waiting *waiting;
+  int waiting_i;
 } Scheme_Sema_Waiter;
 
 typedef struct Scheme_Sema {
   Scheme_Type type;
   MZ_HASH_KEY_EX
+  Scheme_Sema_Waiter *first, *last;
   long value;
   int unfair_count;
-  Scheme_Sema_Waiter *first, *last;
 } Scheme_Sema;
 
+typedef struct Scheme_Channel {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Sema_Waiter *put_first, *put_last;
+  Scheme_Sema_Waiter *get_first, *get_last;
+} Scheme_Channel;
+
+typedef struct Scheme_Channel_Put {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Channel *ch;
+  Scheme_Object *val;
+} Scheme_Channel_Put;
+
+#define GENERIC_BLOCKED -1
 #define NOT_BLOCKED 0
-#define PIPE_BLOCKED 1
-#define PORT_BLOCKED 2
-#define SEMA_BLOCKED 3
-#define EVENTLOOP_BLOCKED 4
-#define SLEEP_BLOCKED 10
+#define SLEEP_BLOCKED 1
+
+typedef struct Waitable_Set {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+
+  int argc;
+  Scheme_Object **argv; /* no waitable sets; nested sets get flattened */
+  struct Waitable **ws;
+} Waitable_Set;
+
+#define SCHEME_WAITSETP(o) SAME_TYPE(SCHEME_TYPE(o), scheme_waitable_set_type)
+
+typedef struct Waiting {
+  MZTAG_IF_REQUIRED
+  Waitable_Set *set;
+  int result;
+  long start_time;
+  float timeout;
+
+  Scheme_Object **wrapss;
+  Scheme_Object **nackss;
+
+  Scheme_Thread *disable_break; /* when result is set */
+} Waiting;
+
+int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting);
 
 /*========================================================================*/
 /*                                 numbers                                */
@@ -1957,6 +1996,8 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 
 int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo);
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *op, Scheme_Schedule_Info *sinfo);
+
+int scheme_char_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info *sinfo);
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
 #define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)

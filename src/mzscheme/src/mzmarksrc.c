@@ -593,6 +593,30 @@ sema_val {
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema));
 }
 
+channel_val {
+ mark:
+  Scheme_Channel *s = (Scheme_Channel *)p;
+
+  gcMARK(s->get_first);
+  gcMARK(s->get_last);
+  gcMARK(s->put_first);
+  gcMARK(s->put_last);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel));
+}
+
+channel_put_val {
+ mark:
+  Scheme_Channel_Put *s = (Scheme_Channel_Put *)p;
+
+  gcMARK(s->ch);
+  gcMARK(s->val);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Put));
+}
+
 hash_table_val {
  mark:
   Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p;
@@ -1405,6 +1429,7 @@ mark_sema_waiter {
   gcMARK(w->p);
   gcMARK(w->prev);
   gcMARK(w->next);
+  gcMARK(w->waiting);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));

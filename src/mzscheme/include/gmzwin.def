@@ -170,8 +170,8 @@ EXPORTS
  scheme_post_sema
  scheme_post_sema_all
  scheme_wait_sema
- scheme_wait_semas
  scheme_char_constants
+ scheme_make_channel
  scheme_get_int_val
  scheme_get_unsigned_int_val
  scheme_real_to_double

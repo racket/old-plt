@@ -2073,15 +2073,13 @@ static int check_sleep(int need_activity, int sleep_now)
 
       if (p->nestee) {
 	/* nothing */
-      } else if (p->block_descriptor == -1) {
+      } else if (p->block_descriptor == GENERIC_BLOCKED) {
 	if (p->block_needs_wakeup) {
 	  Scheme_Needs_Wakeup_Fun f = p->block_needs_wakeup;
 	  f(p->blocker, fds);
 	}
 	merge_time = (p->sleep_time > 0.0);
-      } else if (p->block_descriptor == PORT_BLOCKED)
-	scheme_need_wakeup(p->blocker, fds);
-      else if (p->block_descriptor == SLEEP_BLOCKED) {
+      } else if (p->block_descriptor == SLEEP_BLOCKED) {
 	merge_time = 1;
       }
 
@@ -2230,7 +2228,7 @@ static void raise_break(Scheme_Thread *p)
   block_check = p->block_check;
   block_needs_wakeup = p->block_needs_wakeup;
   
-  p->block_descriptor = 0;
+  p->block_descriptor = NOT_BLOCKED;
   p->blocker = NULL;
   p->block_check = NULL;
   p->block_needs_wakeup = NULL;
@@ -2374,7 +2372,7 @@ void scheme_thread_block(float sleep_time)
       } else if (next->external_break && scheme_can_break(next, next->config)) {
 	break;
       } else {
-	if (next->block_descriptor == -1) {
+	if (next->block_descriptor == GENERIC_BLOCKED) {
 	  if (next->block_check) {
 	    Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)next->block_check;
 	    Scheme_Schedule_Info sinfo;
@@ -2382,20 +2380,6 @@ void scheme_thread_block(float sleep_time)
 	    if (f(next->blocker, &sinfo))
 	      break;
 	  }
-	} else if (next->block_descriptor == EVENTLOOP_BLOCKED) {
-	  /* Can't use it. */
-	} else if (next->block_descriptor == SEMA_BLOCKED) {
-	  Scheme_Sema *sema = (Scheme_Sema *)next->blocker;
-	  if (sema->value)
-	    break;
-	} else if ((next->block_descriptor == PORT_BLOCKED)
-		   || (next->block_descriptor == PIPE_BLOCKED)) {
-	  int ready;
-	  scheme_internal_checking_char = 1;
-	  ready = scheme_char_ready(next->blocker);
-	  scheme_internal_checking_char = 0;
-	  if (ready)
-	    break;
 	} else if (next->block_descriptor == SLEEP_BLOCKED) {
 	  d = (scheme_get_milliseconds() - (long)next->block_start_sleep);
 	  if (d < 0)
@@ -2413,7 +2397,7 @@ void scheme_thread_block(float sleep_time)
     p->block_descriptor = SLEEP_BLOCKED;
     p->block_start_sleep = start;
     p->sleep_time = sleep_time;
-  } else if ((sleep_time > 0.0) && (p->block_descriptor == -1)) {
+  } else if ((sleep_time > 0.0) && (p->block_descriptor == GENERIC_BLOCKED)) {
     p->block_start_sleep = start;
     p->sleep_time = sleep_time;
   }
@@ -2457,7 +2441,7 @@ void scheme_thread_block(float sleep_time)
   if (p->block_descriptor == SLEEP_BLOCKED) {
     p->block_descriptor = NOT_BLOCKED;
     p->sleep_time = 0.0;
-  } else if (p->block_descriptor == -1) {
+  } else if (p->block_descriptor == GENERIC_BLOCKED) {
     p->sleep_time = 0.0;
   }
 
@@ -2485,7 +2469,7 @@ void scheme_thread_block(float sleep_time)
     if (d < (sleep_time * 1000)) {
       /* Still have time to sleep if necessary, but make sure we're
 	 not ready (because maybe that's why we were swapped back in!) */
-      if (p->block_descriptor == -1) {
+      if (p->block_descriptor == GENERIC_BLOCKED) {
 	if (p->block_check) {
 	  Scheme_Ready_Fun_FPC f = (Scheme_Ready_Fun_FPC)p->block_check;
 	  Scheme_Schedule_Info sinfo;
@@ -2553,7 +2537,7 @@ int scheme_block_until(Scheme_Ready_Fun _f, Scheme_Needs_Wakeup_Fun fdf,
       init_schedule_info(&sinfo, 0);
       scheme_thread_block(0.0);
     } else {
-      p->block_descriptor = -1;
+      p->block_descriptor = GENERIC_BLOCKED;
       p->blocker = (Scheme_Object *)data;
       p->block_check = (Scheme_Ready_Fun)f;
       p->block_needs_wakeup = fdf;
@@ -2803,30 +2787,6 @@ void scheme_pop_kill_action()
 /*                              waiting                                   */
 /*========================================================================*/
 
-typedef struct Waitable_Set {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-
-  int argc;
-  Scheme_Object **argv; /* no waitable sets; nested sets get flattened */
-  struct Waitable **ws;
-} Waitable_Set;
-
-#define SCHEME_WAITSETP(o) SAME_TYPE(SCHEME_TYPE(o), scheme_waitable_set_type)
-
-typedef struct Waiting {
-  MZTAG_IF_REQUIRED
-  Waitable_Set *set;
-  int result;
-  long start_time;
-  float timeout;
-
-  Scheme_Object **wrapss;
-  Scheme_Object **nackss;
-
-  Scheme_Thread *disable_break; /* when result is set */
-} Waiting;
-
 static void waiting_needs_wakeup(Scheme_Object *s, void *fds);
 
 typedef struct Waitable {
@@ -3010,7 +2970,7 @@ void scheme_set_wait_target(Scheme_Schedule_Info *sinfo, Scheme_Object *target,
 
 static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
 {
-  int i, redirections = 0;
+  int i, redirections = 0, all_semas = 1;
   Waitable *w;
   Scheme_Object *o;
   Scheme_Schedule_Info r_sinfo;
@@ -3034,6 +2994,9 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
     o = waitable_set->argv[i];
     w = waitable_set->ws[i];
     ready = w->ready;
+
+    if (!SCHEME_SEMAP(o) && !SCHEME_CHANNELP(o) && !SCHEME_CHANNEL_PUTP(o))
+      all_semas = 0;
 
     if (ready) {
       int yep;
@@ -3097,6 +3060,18 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
       d = -d;
     if (d >= (waiting->timeout * 1000))
       return 1;
+  } else if (all_semas) {
+    /* Try to block in a GCable way: */
+    if (sinfo->false_positive_ok) {
+      /* In scheduler. Swap us in so we can suspend. */
+      sinfo->potentially_false_positive = 1;
+      return 1;
+    } else {
+      /* Not in scheduler --- we're allowed to block via suspend,
+	 which makes the thread GCable. */
+      scheme_wait_semas_chs(waiting->set->argc, waiting->set->argv, 0, waiting);
+      return 1;
+    }
   }
 
   return 0;
@@ -3256,8 +3231,9 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
   if (!waitable_set)
     waitable_set = make_waitable_set(name, argc, argv, 1);
 
-  /* Check for another special case: waiting on a set of semaphores without a timeout. */
-  /* (Note that we check for this after waitable-set flattening.) */
+  /* Check for another special case: waiting on a set of semaphores
+     without a timeout. Use general code for channels.
+     (Note that we check for this case after waitable-set flattening.) */
   if (timeout < 0.0) {
     int i;
     for (i = waitable_set->argc; i--; ) {
@@ -3266,7 +3242,7 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
     }
     if (i < 0) {
       /* Hit the special case. */
-      i = scheme_wait_semas(waitable_set->argc, waitable_set->argv, 0);
+      i = scheme_wait_semas_chs(waitable_set->argc, waitable_set->argv, 0, NULL);
       if (i)
 	return waitable_set->argv[i - 1];
       else

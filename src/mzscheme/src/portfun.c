@@ -1202,13 +1202,8 @@ static long pipe_get_or_peek_string(Scheme_Input_Port *p,
     if (nonblock)
       return 0;
 
-    scheme_current_thread->block_descriptor = PIPE_BLOCKED;
-    scheme_current_thread->blocker = (Scheme_Object *)p;
-    while ((pipe->bufstart == pipe->bufend) && !pipe->eof) {
-      scheme_thread_block((float)0.0);
-    }
-    scheme_current_thread->block_descriptor = NOT_BLOCKED;
-    scheme_current_thread->ran_some = 1;
+    scheme_block_until((Scheme_Ready_Fun)scheme_char_ready_or_user_port_ready,
+		       NULL, (Scheme_Object *)p, 0.0);
 
     if (p->closed) {
       /* Another thread closed the input port while we were waiting. */

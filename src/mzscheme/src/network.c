@@ -1473,17 +1473,15 @@ static long tcp_get_string(Scheme_Input_Port *port,
       return 0;
 
 #ifdef USE_SOCKETS_TCP
-    scheme_current_thread->block_descriptor = PORT_BLOCKED;
-    scheme_current_thread->blocker = (Scheme_Object *)port;
-#endif
+    scheme_block_until((Scheme_Ready_Fun)scheme_char_ready_or_user_port_ready,
+		       scheme_need_wakeup,
+		       (Scheme_Object *)port,
+		       0.0);
+#else
     do {
       scheme_thread_block((float)0.0);
     } while (!tcp_char_ready(port));
-#ifdef USE_SOCKETS_TCP
-    scheme_current_thread->block_descriptor = NOT_BLOCKED;
-    scheme_current_thread->blocker = NULL;
 #endif
-    scheme_current_thread->ran_some = 1;
   }
 
   /* We assume that no other process has access to our sockets, so

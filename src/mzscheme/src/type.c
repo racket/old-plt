@@ -133,6 +133,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_bignum_type, "<bignum-integer>");
   set_name(scheme_escaping_cont_type, "<escape-continuation>");
   set_name(scheme_sema_type, "<semaphore>");
+  set_name(scheme_channel_type, "<channel>");
+  set_name(scheme_channel_put_type, "<channel-put>");
   set_name(scheme_hash_table_type, "<hash-table>");
   set_name(scheme_bucket_table_type, "<hash-table>");
   set_name(scheme_case_closure_type, "<procedure>");
@@ -188,6 +190,9 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_nack_waitable_type, "<waitable>");
   set_name(scheme_semaphore_repost_type, "<semaphore-peek>");
 
+  set_name(scheme_reserved_1_type, "<reserved1>");
+  set_name(scheme_reserved_2_type, "<reserved2>");
+  set_name(scheme_reserved_3_type, "<reserved3>");
   set_name(scheme_reserved_4_type, "<reserved4>");
 
   set_name(_scheme_values_types_, "<resurrected>");
@@ -431,6 +436,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_thread_type, thread_val);
   GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);
   GC_REG_TRAV(scheme_sema_type, sema_val);
+  GC_REG_TRAV(scheme_channel_type, channel_val);
+  GC_REG_TRAV(scheme_channel_put_type, channel_put_val);
   GC_REG_TRAV(scheme_semaphore_repost_type, small_object);
   GC_REG_TRAV(scheme_hash_table_type, hash_table_val);
   GC_REG_TRAV(scheme_bucket_table_type, bucket_table_val);

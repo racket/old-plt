@@ -29,6 +29,15 @@ static Scheme_Object *block_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p);
 static Scheme_Object *make_sema_repost(int n, Scheme_Object **p);
 
+static Scheme_Object *make_channel(int n, Scheme_Object **p);
+static Scheme_Object *make_channel_put(int n, Scheme_Object **p);
+static Scheme_Object *channel_p(int n, Scheme_Object **p);
+
+static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo);
+static int channel_put_ready(Scheme_Object *ch);
+
+static int pending_break(Scheme_Thread *p);
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -89,8 +98,26 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
+  scheme_add_global_constant("make-channel", 
+			     scheme_make_prim_w_arity(make_channel,
+						      "make-channel",
+						      0, 0), 
+			     env);
+  scheme_add_global_constant("make-channel-put-waitable", 
+			     scheme_make_prim_w_arity(make_channel_put,
+						      "make-channel-put-waitable",
+						      2, 2), 
+			     env);
+  scheme_add_global_constant("channel?", 
+			     scheme_make_folding_prim(channel_p,
+						      "channel?",
+						      1, 1, 1), 
+			     env);  
+
   scheme_add_waitable_through_sema(scheme_sema_type, sema_identity, NULL);
   scheme_add_waitable_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
+  scheme_add_waitable(scheme_channel_type, (Scheme_Ready_Fun)channel_get_ready, NULL, NULL, 1);
+  scheme_add_waitable(scheme_channel_put_type, channel_put_ready, NULL, NULL, 0);
 }
 
 Scheme_Object *scheme_make_sema(long v)
@@ -158,7 +185,7 @@ void scheme_post_sema(Scheme_Object *o)
   if (v > t->value) {
     t->value = v;
 
-    if (t->first) {
+    while (t->first) {
       Scheme_Sema_Waiter *w;
 
       w = t->first;
@@ -169,10 +196,25 @@ void scheme_post_sema(Scheme_Object *o)
       else
 	t->first->prev = NULL;
       
+      if ((!w->waiting || !w->waiting->result) && !pending_break(w->p)) {
+	if (w->waiting) {
+	  w->waiting->result = w->waiting_i + 1;
+	  if (w->waiting->disable_break)
+	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	}
+	w->picked = 1;
+	t->value -= 1;
+      }
+
       w->in_line = 0;
       w->prev = NULL;
       w->next = NULL;
-      scheme_weak_resume_thread(w->p);
+
+      if (w->picked) {
+	scheme_weak_resume_thread(w->p);
+	break;
+      }
+      /* otherwise, loop to find one we can wake up */
     }
 
     return;
@@ -233,6 +275,7 @@ static Scheme_Object *do_breakable_wait(void *data)
   }
 
   scheme_wait_sema(bw->sema, 0);
+
   return scheme_void;
 }
 
@@ -252,7 +295,7 @@ static int out_of_line(Scheme_Object *a)
   n = SCHEME_INT_VAL(((Scheme_Object **)a)[0]);
   for (i = 0; i < n; i++) {
     w = (((Scheme_Sema_Waiter ***)a)[1])[i];
-    if (!w->in_line)
+    if (w->picked)
       return 1;
   }
 
@@ -260,9 +303,9 @@ static int out_of_line(Scheme_Object *a)
   p = ((Scheme_Thread **)a)[2];
   if (p->external_break) {
     int v;
-    p->suspend_break = 0;
+    --p->suspend_break;
     v = scheme_can_break(p, p->config);
-    p->suspend_break = 1;
+    p->suspend_break++;
     if (v)
       return 1; 
   }
@@ -272,30 +315,160 @@ static int out_of_line(Scheme_Object *a)
 
 static void get_into_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
 {
+  Scheme_Sema_Waiter *last, *first;
+  
+  if (SCHEME_SEMAP(sema)) {
+    last = sema->last;
+    first = sema->first;
+  } else if (SCHEME_CHANNELP(sema)) {
+    last = ((Scheme_Channel *)sema)->get_last;
+    first = ((Scheme_Channel *)sema)->get_first;
+  } else {
+    last = ((Scheme_Channel_Put *)sema)->ch->put_last;
+    first = ((Scheme_Channel_Put *)sema)->ch->put_first;
+  }
+
   w->in_line = 1;
-  w->prev = sema->last;
-  if (sema->last)
-    sema->last->next = w;
+  w->picked = 0;
+  w->prev = last;
+  if (last)
+    last->next = w;
   else
-    sema->first = w;
-  sema->last = w;
+    first = w;
+  last = w;
   w->next = NULL;
+
+  if (SCHEME_SEMAP(sema)) {
+    sema->last = last;
+    sema->first = first;
+  } else if (SCHEME_CHANNELP(sema)) {
+    ((Scheme_Channel *)sema)->get_last = last;
+    ((Scheme_Channel *)sema)->get_first = first;
+  } else {
+    ((Scheme_Channel_Put *)sema)->ch->put_last = last;
+    ((Scheme_Channel_Put *)sema)->ch->put_first = first;
+  }
 }
 
 static void get_outof_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
 {
+  Scheme_Sema_Waiter *last, *first;
+
+  if (SCHEME_SEMAP(sema)) {
+    last = sema->last;
+    first = sema->first;
+  } else if (SCHEME_CHANNELP(sema)) {
+    last = ((Scheme_Channel *)sema)->get_last;
+    first = ((Scheme_Channel *)sema)->get_first;
+  } else {
+    last = ((Scheme_Channel_Put *)sema)->ch->put_last;
+    first = ((Scheme_Channel_Put *)sema)->ch->put_first;
+  }
+
   w->in_line = 0;
   if (w->prev)
     w->prev->next = w->next;
   else
-    sema->first = w->next;
+    first = w->next;
   if (w->next)
     w->next->prev = w->prev;
   else
-    sema->last = w->prev;
+    last = w->prev;
+
+  if (SCHEME_SEMAP(sema)) {
+    sema->last = last;
+    sema->first = first;
+  } else if (SCHEME_CHANNELP(sema)) {
+    ((Scheme_Channel *)sema)->get_last = last;
+    ((Scheme_Channel *)sema)->get_first = first;
+  } else {
+    ((Scheme_Channel_Put *)sema)->ch->put_last = last;
+    ((Scheme_Channel_Put *)sema)->ch->put_first = first;
+  }
 }
 
-int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
+static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Object **result)
+{
+  if (SCHEME_CHANNELP(sema)) {
+    Scheme_Channel *ch = (Scheme_Channel *)sema;
+    Scheme_Sema_Waiter *w = ch->put_first, *next;
+    int picked = 0;
+
+    while (w) {
+      if (w->waiting == waiting) {
+	/* can't synchronize with self */
+	w = w->next;
+      } else {
+	Scheme_Channel_Put *chp = (Scheme_Channel_Put *)w->waiting->set->argv[w->waiting_i];
+	
+	if (!w->waiting->result && !pending_break(w->p)) {
+	  w->picked = 1;
+	  w->waiting->result = w->waiting_i + 1;
+	  if (w->waiting->disable_break)
+	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	  if (result)
+	    *result = chp->val;
+	  if (waiting) {
+	    waiting->result = pos + 1;
+	    if (waiting->disable_break)
+	      scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	    waiting->set->argv[pos] = chp->val;
+	  }
+	  picked = 1;
+	  scheme_weak_resume_thread(w->p);
+	}
+	
+	next = w->next;
+	get_outof_line((Scheme_Sema *)chp, w);
+	w = next;
+	
+	if (picked)
+	  return 1;
+      }
+    }
+
+    return 0;
+  } else {
+    Scheme_Channel_Put *chp = (Scheme_Channel_Put *)sema;
+    Scheme_Sema_Waiter *w = chp->ch->get_first, *next;
+    int picked = 0;
+
+    while (w) {
+      if (w->waiting == waiting) {
+	/* can't synchronize with self */
+	w = w->next;
+      } else {
+	Scheme_Channel *ch = (Scheme_Channel *)w->waiting->set->argv[w->waiting_i];
+	
+	if (!w->waiting->result && !pending_break(w->p)) {
+	  w->picked = 1;
+	  w->waiting->set->argv[w->waiting_i] = chp->val;
+	  w->waiting->result = w->waiting_i + 1;
+	  if (w->waiting->disable_break)
+	    scheme_set_param(w->waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	  if (waiting) {
+	    waiting->result = pos + 1;
+	    if (waiting->disable_break)
+	      scheme_set_param(waiting->disable_break->config, MZCONFIG_ENABLE_BREAK, scheme_false);
+	  }
+	  picked = 1;
+	  scheme_weak_resume_thread(w->p);
+	}
+	
+	next = w->next;
+	get_outof_line((Scheme_Sema *)ch, w);
+	w = next;
+	
+	if (picked)
+	  return 1;
+      }
+    }
+
+    return 0;    
+  }
+}
+
+int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting)
 {
   Scheme_Sema **semas = (Scheme_Sema **)o;
   int v, i;
@@ -304,12 +477,16 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
     /* assert: n == 1 */
     Scheme_Sema *sema = semas[0];
     if (just_try > 0) {
-      if (sema->value) {
-	if (sema->value > 0)
-	  --sema->value;
-	v = 1;
-      } else
-	v = 0;
+      if (sema->type == scheme_sema_type) {
+	if (sema->value) {
+	  if (sema->value > 0)
+	    --sema->value;
+	  v = 1;
+	} else
+	  v = 0;
+      } else {
+	v = try_channel(sema, waiting, 0, NULL);
+      }
     } else {
       BreakableWait *bw;
       bw = MALLOC_ONE_RT(BreakableWait);
@@ -329,11 +506,14 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
     }
   } else {
     for (i = 0; i < n; i++) {
-      if (semas[i]->value) {
-	if (semas[i]->value > 0)
-	  --semas[i]->value;
+      if (semas[i]->type == scheme_sema_type) {
+	if (semas[i]->value) {
+	  if (semas[i]->value > 0)
+	    --semas[i]->value;
+	  break;
+	}
+      } else if (try_channel(semas[i], waiting, i, NULL))
 	break;
-      }
     }
 
     if (i >= n) {
@@ -347,6 +527,8 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
 	w->type = scheme_rt_sema_waiter;
 #endif
 	w->p = scheme_current_thread;
+	w->waiting = waiting;
+	w->waiting_i = i;
       }
       
       while (1) {
@@ -364,13 +546,13 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
 	  a = MALLOC_N(void*, 3);
 	  /* We're not allowed to suspend the main thread. Delay
 	     breaks so we get a chance to clean up. */
-	  scheme_current_thread->suspend_break = 1;
+	  scheme_current_thread->suspend_break++;
 	  a[0] = scheme_make_integer(n);
 	  a[1] = ws;
 	  a[2] = scheme_current_thread;
 	  
 	  scheme_block_until(out_of_line, NULL, (Scheme_Object *)a, (float)0.0);
-	  scheme_current_thread->suspend_break = 0;
+	  --scheme_current_thread->suspend_break;
 	} else {
 	  /* Mark the thread to indicate that we need to clean up
 	     if the thread is killed. */
@@ -382,52 +564,67 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
 	/* We've been resumed. But was it for the semaphore, or a signal? */
 	out_of_a_line = 0;
 	
-	for (i = 0; i < n; i++) {
-	  if (!ws[i]->in_line) {
-	    out_of_a_line = 1;
-	    if (semas[i]->value) {
-	      if (semas[i]->value > 0)
-		--(semas[i]->value);
-	      /* If we get the post, we must return WITHOUT BLOCKING. 
-		 MrEd, for example, depends on this special property, which insures
-		 that the thread can't be broken or killed between
-		 receiving the post and returning. */
+	/* If we get the post, we must return WITHOUT BLOCKING. 
+	   MrEd, for example, depends on this special property, which insures
+	   that the thread can't be broken or killed between
+	   receiving the post and returning. */
 
-	      break;
+	if (!waiting) {
+	  /* Poster can't be sure that we really will get it,
+	     so we have to decrement the sema count here. */
+	  for (i = 0; i < n; i++) {
+	    if (ws[i]->picked) {
+	      out_of_a_line = 1;
+	      if (semas[i]->value) {
+		if (semas[i]->value > 0)
+		  --(semas[i]->value);
+		break;
+	      }
 	    }
-	    /* otherwise, someone stole the post, so we keep looking */
+	  }
+	} else {
+	  if (waiting->result) {
+	    out_of_a_line = 1;
+	    i = waiting->result - 1;
+	  } else {
+	    out_of_a_line = 0;
+	    i = n;
 	  }
 	}
 
 	if (!out_of_a_line) {
-	  /* We weren't woken by any semaphore. Get out of line, block once 
+	  /* We weren't woken by any semaphore/channel. Get out of line, block once 
 	     (to handle breaks/kills) and then loop to get back into line. */
 	  for (i = 0; i < n; i++) {
-	    get_outof_line(semas[i], ws[i]);
-	  } 
+	    if (ws[i]->in_line)
+	      get_outof_line(semas[i], ws[i]);
+	  }
 	  
 	  scheme_thread_block(0); /* ok if it returns multiple times */ 
 	  /* [but why would it return multiple times?! there must have been a reason...] */
 	}
 
 	if (scheme_current_thread->running & MZTHREAD_KILLED) {
-	  /* We've been killed! Disown the semaphore post, then die by
-	     calling scheme_thread_block. */
+	  /* We've been killed! */
 	  i = -1;
 	}
 
-	/* We got a post from semas[i]. Did any later semaphore pick us? */
-	{
+	/* We got a post from semas[i], or we were killed. 
+	   Did any (other) semaphore pick us?
+	   (This only happens when waiting == NULL.) */
+	if (!waiting) {
 	  int j;
 
-	  for (j = i+1; j < n; j++) {
-	    if (!ws[j]->in_line) {
-	      if (semas[j]->value) {
-		/* Consume the value and repost, because no one else
-		   has been told to go, and we're accepting a different post. */
-		if (semas[j]->value > 0)
-		  --semas[j]->value;
-		scheme_post_sema((Scheme_Object *)(semas[j]));
+	  for (j = 0; j < n; j++) {
+	    if (j != i) {
+	      if (ws[j]->picked) {
+		if (semas[j]->value) {
+		  /* Consume the value and repost, because no one else
+		     has been told to go, and we're accepting a different post. */
+		  if (semas[j]->value > 0)
+		    --semas[j]->value;
+		  scheme_post_sema((Scheme_Object *)(semas[j]));
+		}
 	      }
 	    }
 	  }
@@ -464,7 +661,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 
   a[0] = o;
 
-  return scheme_wait_semas(1, a, just_try);
+  return scheme_wait_semas_chs(1, a, just_try, NULL);
 }
 
 static Scheme_Object *block_sema_p(int n, Scheme_Object **p)
@@ -493,6 +690,92 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
   scheme_wait_sema(p[0], -1);
 
   return scheme_void;
+}
+
+static int pending_break(Scheme_Thread *p)
+{
+  if (scheme_current_thread->running & MZTHREAD_KILLED)
+    return 1;
+  if (p->external_break) {
+    int v;
+
+    if (!p->next) {
+      /* if p is the main thread, it must have a suspension
+	 to block on a channel or semaphore: */
+      --p->suspend_break;
+    }
+
+    v = scheme_can_break(p, p->config);
+
+    if (!p->next)
+      p->suspend_break++;
+
+    return v;
+  }
+
+  return 0;
+}
+
+/**********************************************************************/
+/*                            Channels                                */
+/**********************************************************************/
+
+Scheme_Object *scheme_make_channel()
+{
+  Scheme_Channel *c;
+
+  c = MALLOC_ONE_TAGGED(Scheme_Channel);
+  c->type = scheme_channel_type;
+  
+  return (Scheme_Object *)c;
+}
+
+static Scheme_Object *make_channel(int n, Scheme_Object **p)
+{
+  return scheme_make_channel();
+}
+
+static Scheme_Object *make_channel_put(int argc, Scheme_Object **argv)
+{
+  Scheme_Channel_Put *cp;
+
+  if (!SCHEME_CHANNELP(argv[0]))
+    scheme_wrong_type("make-channel-put-waitable", "channel", 0, argc, argv);
+
+  cp = MALLOC_ONE_TAGGED(Scheme_Channel_Put);
+  cp->type = scheme_channel_put_type;
+  cp->ch = (Scheme_Channel *)argv[0];
+  cp->val = argv[1];
+
+  return (Scheme_Object *)cp;
+}
+
+static Scheme_Object *channel_p(int n, Scheme_Object **p)
+{
+  return (SCHEME_CHANNELP(p[0])
+	  ? scheme_true
+	  : scheme_false);
+}
+
+static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
+{
+  Scheme_Object *result;
+
+  if (try_channel((Scheme_Sema *)ch, NULL, 0, &result)) {
+    scheme_set_wait_target(sinfo, result, NULL, NULL);
+    sinfo->w_i++; /* undo rewind */
+    return 1;
+  }
+
+  return 0;
+}
+
+static int channel_put_ready(Scheme_Object *ch)
+{
+  if (try_channel((Scheme_Sema *)ch, NULL, 0, NULL))
+    return 1;
+  
+  return 0;
 }
 
 /**********************************************************************/

@@ -244,6 +244,13 @@
 	     (or (varref:has-attribute? ast varref:primitive)
 		 (varref:has-attribute? ast varref:static)))))
 
+  ;; Which expressions can we drop entirely (e.g., RHS of a let when the value is known)?
+  (define (can-drop-expression? ast)
+    (or (zodiac:quote-form? ast)
+	(zodiac:bound-varref? ast)
+	(and (zodiac:top-level-varref? ast)
+	     (varref:has-attribute? ast varref:static))))
+
   (define (extract-varref-known-val v)
     (let loop ([v v])
       (let ([binding (if (zodiac:binding? v)
@@ -940,6 +947,7 @@
 				     (not (binding-mutable? binding))
 				     known-val
 				     (can-propagate-constant? known-val)
+				     (can-drop-expression? val)
 				     ; can't eliminiate if used by invoke:
 				     (not (binding-unit-i/e? binding))
 				     ; can't eliminiate if a letrec->let variable

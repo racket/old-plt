@@ -31,6 +31,10 @@
 ;;  for each phase, the annotations installed or changed by the phase
 ;;  are listed.
 ;;
+;; All nodes in the AST must be unique, except for nodes representing
+;;  constant values. Don't even reuse varref or binding nodes within
+;;  an AST.
+;;
 ;; C code is compiled and linked via procedures provided by the
 ;;  dynext collection.
 ;;
@@ -50,6 +54,9 @@
 ;;    `zodiac:binding' is the name of a Zodiac structure
 ;;    type, and `binding' is also the name of the structure
 ;;    type for annotations attached to zodiac:binding objects.
+;;  If you create a new lexical binding, note that the procedure
+;;    zodiac:binding->lexical-varref will create varrefs to 
+;;    the binding.
 
 
 (unit/sig compiler:driver^

@@ -188,7 +188,8 @@
 			 (not (string=? "" rel-path))
 			 (char=? #\/ (string-ref rel-path 0)))
 			relative)
-		      ((not rel-path)	; Step 5
+		      ((or (not rel-path)	; Step 5
+                         (string=? rel-path ""))
 			(set-url-path! relative (url-path base))
 			(or (url-params relative)
 			  (set-url-params! relative (url-params base)))

@@ -298,17 +298,21 @@ Various common pieces of code that both the client and server need to access
   ;; tree-apply : (... -> tst) tree -> listof tst
   ;; applies f to every path from root to leaf and
   ;; accumulates all results in a list
-  (define (tree-apply f t)
-    (let loop ((t t)
-               (priors '()))
-      (cond
-        [(null? (branch-children t))
-         (list (apply f (reverse (cons (branch-node t) priors))))]
-        [else
-         (let ((args (cons (branch-node t) priors)))
-           (apply append
-                  (map (lambda (x) (loop x args)) (branch-children t))))])))
-
+  (define tree-apply
+    (opt-lambda (f t [depth 0])
+      (let loop ((t t)
+                 (priors '())
+                 (curr-depth 0))
+        (cond
+          [(null? (branch-children t))
+           (if (> curr-depth depth)
+               (list (apply f (reverse (cons (branch-node t) priors))))
+               '())]
+          [else
+           (let ((args (cons (branch-node t) priors)))
+             (apply append
+                    (map (lambda (x) (loop x args (add1 curr-depth))) (branch-children t))))]))))
+  
   ;; tree->list : tree[x] -> sexp-tree[x]
   (define (tree->list tree)
     (cons (branch-node tree) (map tree->list (branch-children tree)))))

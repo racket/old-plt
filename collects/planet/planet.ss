@@ -4,7 +4,6 @@ This module contains code that implements the `planet' command-line tool.
   
 PLANNED FEATURES:
   
-1. Download and setup a planet package without requiring it
 2. Remove a package from the cache
 3. Disable a package without removing it (disabling meaning
    that if it's a tool it won't start w/ DrScheme, etc)
@@ -13,14 +12,14 @@ PLANNED FEATURES:
   (require (lib "cmdline.ss")
            (lib "string.ss")
            (lib "file.ss")
+           (prefix list: (lib "list.ss"))
+           (lib "match.ss")
            
            "config.ss"
-           "resolver.ss") ;; the code I need should be pulled out into a common library
+           "resolver.ss" ;; the code I need should be pulled out into a common library
+           "util.ss") 
   
-  (define plt-files-to-install '())
-  (define to-install '())
-  (define to-remove '())
-  (define install-version (version))
+  (define actions '())
   
   (define (start)
 
@@ -33,28 +32,33 @@ PLANNED FEATURES:
      (once-any
       (("-f" "--file")
        plt-file owner maj min
-       "Installs local file <plt-file> as though it had been downloaded from the planet server. The installed package has path (planet (<owner> <plt-file's filename> <maj> <min>))"
-       (set! plt-files-to-install (cons (list plt-file owner maj min) plt-files-to-install)))
+       "Install local file <plt-file> as though it had been downloaded from the planet server. The installed package has path (planet (<owner> <plt-file's filename> <maj> <min>))"
+       (set! actions (cons (lambda () (install-plt-file plt-file owner maj min)) actions)))
       (("-i" "--install")
        pkg-spec
-       "Downloads and installs the package (require (planet \"file.ss\" <pkg-spec>)) would install"
-       (set! to-install (cons pkg-spec to-install)))
+       "Download and install the package (require (planet \"file.ss\" <pkg-spec>)) would install"
+       (set! actions (cons (lambda () (download/install pkg-spec)) actions)))
       (("-r" "--remove")
        owner pkg maj min
-       "Removes the specified package from the local cache"
-       (set! to-remove (cons (list owner pkg maj min) to-remove))))
-     #;(once-each
-        (("-v" "--version")
-         version
-         "Download and install packages for <version> (default: the current version)"
-         (set! install-version version))))
+       "Remove the specified package from the local cache"
+       (set! actions (cons (lambda () (remove owner pkg maj min)) actions)))
+      (("-U" "--unlink-all")
+       "Clear the linkage table, unlinking all packages and allowing upgrades"
+       (set! actions (cons unlink-all actions)))
+      (("-p" "--packages")
+       "List the packages installed in the local cache"
+       (set! actions (cons show-installed-packages actions)))
+      (("-l" "--linkage")
+       "List the current linkage table"
+       (set! actions (cons show-linkage actions)))
+      
+      ;; unimplemented so far:
+      #;(("-u" "--unlink")
+         module
+         "Remove all linkage the given module has, forcing it to upgrade"
+         ...)))
 
-    (for-each download/install to-install)
-    (for-each (lambda (argl) (apply install-plt-file argl)) plt-files-to-install)
-    
-    (unless (null? to-remove)
-      (printf "I would remove:\n")
-      (for-each (lambda (p) (printf "  ~s\n" p)) to-remove)))
+    (for-each (lambda (f) (f)) actions))
   
   ;; ============================================================
   ;; FEATURE IMPLEMENTATIONS
@@ -83,6 +87,53 @@ PLANNED FEATURES:
         (install-pkg fullspec file maj min))))
   
   
+  (define (remove owner pkg majstr minstr)
+    (let ((maj (string->number majstr))
+          (min (string->number minstr)))
+      (unless (and (integer? maj) (integer? min) (> maj 0) (>= min 0))
+        (fail "Invalid major/minor version"))
+      (remove-pkg owner pkg maj min)))
+        
+  (define (show-installed-packages)
+    (for-each 
+     (lambda (l) (apply printf "  ~a\t~a\t~a ~a\n" l))
+     (sort-by-criteria 
+      (map (lambda (x) (match x [(_ owner pkg _ maj min) (list owner pkg maj min)])) (get-installed-planet-archives))
+      (list string<? string=?)
+      (list string<? string=?)
+      (list < =)
+      (list < =))))
+  
+  (define (show-linkage)
+    (for-each
+     (lambda (module)
+       (printf "  ~a:\n" (car module))
+       (for-each 
+        (lambda (link) (apply printf "    ~a\t~a\t~a ~a\n" link))
+        (cdr module)))
+     (list:quicksort 
+      (current-linkage)
+      (lambda (a b) (string<? (symbol->string a) (symbol->string b))))))
+  
+  
+  
+  
+  ;; ------------------------------------------------------------
+  ;; Utility
+    
+  (define (sort-by-criteria l . criteria)
+    (list:quicksort
+     l
+     (lambda (a b)
+       (let loop ((a a) (b b) (c criteria))
+         (cond
+           [(null? a) #f]
+           [((caar c) (car a) (car b)) #t]
+           [(not ((cadar c) (car a) (car b))) #f]
+           [else (loop (cdr a) (cdr b) (cdr c))])))))
+
+  
+
   ;; ============================================================
   ;; start the program
   

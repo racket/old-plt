@@ -258,8 +258,6 @@ package version number, which is assigned by PLaneT, but may be useful
 to users.
 
 
-
-
 In addition, PLaneT uses the setup-plt installer to install packages
 on client machines, so most fields it looks for can be included with
 their usual effects. In particular, adding a name field indicates that

@@ -6,7 +6,11 @@
            (lib "match.ss")
            (prefix srfi1: (lib "1.ss" "srfi")))
 
-  (provide get-linkage add-linkage!)
+  (provide get-linkage 
+           add-linkage!
+           remove-linkage-to!
+           
+           remove-all-linkage!)
   
   ; ==========================================================================================
   ; PHASE 1: LINKAGE
@@ -39,17 +43,55 @@
          (get-linkage-table)
          key
          (lambda ()
-           (let ((pkg-as-list (list (pkg-name pkg)
-                                    (pkg-route pkg)
-                                    (pkg-maj pkg)
-                                    (pkg-min pkg)
-                                    (path->bytes (pkg-path pkg)))))
+           (let ((plist (pkg-as-list pkg)))
              (begin
-               (hash-table-put! (get-linkage-table) key pkg-as-list)
+               (hash-table-put! (get-linkage-table) key plist)
                (with-output-to-file (LINKAGE-FILE)
-                 (lambda () (write (list key pkg-as-list)))
+                 (lambda () (write (list key plist)))
                  'append)))))))
     pkg)
+  
+  ;; remove-linkage! string string nat nat -> void
+  ;; eliminates linkage to the given package
+  (define (remove-linkage-to! pkg)
+    (let ((l (get-linkage-table)))
+      
+      ;; first remove bad entries from the in-memory hash table
+      (hash-table-for-each 
+       l
+       (lambda (k v)
+         (match v
+           [(name route maj min _)
+            (when (and (equal? name (pkg-name pkg))
+                       (equal? route (pkg-route pkg))
+                       (= maj (pkg-maj pkg))
+                       (= min (pkg-min pkg)))
+              (hash-table-remove! l k))]
+           [_ (void)])))
+      
+      ;; now write the new table out to disk to keep it in sync
+      (with-output-to-file (LINKAGE-FILE)
+        (lambda ()
+          (printf "\n")
+          (hash-table-for-each 
+           l
+           (lambda (k v) (write (list k v)))))
+        'truncate/replace)))
+  
+  ;; kill the whole linkage-table
+  (define (remove-all-linkage!)
+    (with-output-to-file (LINKAGE-FILE)
+      (lambda () (printf "\n"))
+      'truncate/replace)
+    (set! LT #f))
+  
+  ;; pkg-as-list : PKG -> (list string string nat nat bytes[path])
+  (define (pkg-as-list pkg)
+    (list (pkg-name pkg)
+          (pkg-route pkg)
+          (pkg-maj pkg)
+          (pkg-min pkg)
+          (path->bytes (pkg-path pkg))))
   
   ; get-linkage : symbol FULL-PKG-SPEC -> PKG | #f
   ; returns the already-linked module location, or #f if there is none

@@ -1,6 +1,6 @@
 
   (compound-unit/sig
-    (import [params : plt:parameters^])
+    (import )
     (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 	  [rice : ricedefs^ ((reference-unit/sig "ricedefu.ss"))])
     (export (open (core pretty-print@))

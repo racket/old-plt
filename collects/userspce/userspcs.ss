@@ -1,6 +1,6 @@
 (reference-library "cores.ss")
 (reference "ricedefs.ss")
-(reference "sparams.ss")
+;(reference "sparams.ss")
 
 (define-signature plt:userspace^
   ((open mzlib:pretty-print^)

@@ -43,9 +43,9 @@
           (make-sec "Languages"
                     #rx"Language|MrEd"
                     '(#rx"Beginning Student" #rx"ProfessorJ Beginner"))
-          (make-sec "Tools" #rx"PLT DrScheme|mzc|TeX2page" '())
-          (make-sec "Libraries" #rx"SRFI|MzLib|Framework|PLT Miscellaneous|Teachpack" '())
-          (make-sec "Writing extensions" #rx"Tools|Inside" '())
+          (make-sec "Tools" #rx"PLT DrScheme|PLT mzc|TeX2page|Web Server|PLoT" '())
+          (make-sec "Libraries" #rx"SRFI|MzLib|Framework|PLT Miscellaneous|Teachpack|Swindle" '())
+          (make-sec "Writing extensions" #rx"Tools|Inside|Foreign" '())
           (make-sec "Other" #rx"" '())))
   
   (define (goto-manual-link cookie manual index-key)

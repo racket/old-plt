@@ -396,7 +396,7 @@ void writeNumericBuffer(SQL_NUMERIC_STRUCT *buffer,Scheme_Object *obj,
 Scheme_Object *readDateVal(SQL_DATE_STRUCT *buffer,long offset) {
   SQL_DATE_STRUCT *currVal;
 #else
-Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long offset) {
+Scheme_Object *readDateVal(DATE_STRUCT *buffer,long offset) {
   DATE_STRUCT *currVal;
 #endif
   Scheme_Object *argv[3];
@@ -405,6 +405,7 @@ Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long offset) {
   argv[0] = scheme_make_integer(currVal->year);
   argv[1] = scheme_make_integer_value_from_unsigned(currVal->month);
   argv[2] = scheme_make_integer_value_from_unsigned(currVal->day);
+
   return scheme_make_struct_instance(DATE_STRUCT_TYPE,sizeray(argv),argv);
 }
 

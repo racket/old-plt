@@ -2241,6 +2241,15 @@ void fault_handler(int sn, int code, struct sigcontext *sc, char *addr)
 #define NEED_SIGBUS
 #endif
 
+/* Solaris signal handler: */
+#if defined(sun)
+void fault_handler(int sn, struct siginfo *si, void *ctx)
+{
+  designate_modified(si->si_addr);
+}
+#define NEED_SIGSEGV
+#endif
+
 /**********************************************************************/
 
 #if SAFETY

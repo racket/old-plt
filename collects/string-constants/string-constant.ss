@@ -46,7 +46,7 @@
       
       (define available-string-constant-sets
         (list 
-         (make-sc "UNKEnglish" (get-string-constants "mt-string-constants.ss"))
+         ;(make-sc "UNKEnglish" (get-string-constants "mt-string-constants.ss"))
          (make-sc "English" (get-string-constants "english-string-constants.ss"))))
       
       (define first-string-constant-set (car available-string-constant-sets))

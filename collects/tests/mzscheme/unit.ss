@@ -450,10 +450,64 @@
 	(invoke-unit
 	 (unit
 	   (import)
-	   (export)
+	   (export define-values)
 	   (define define-values 10)
 	   define-values))))
 	
+; Escpecially for zodiac:
+(test '(b c 10 b a (c a b) (c b a) (c . c) (a) #t
+	  (nested-b a b c))
+      'invoke-w/shadowed-alot
+      (let ([a 'bad-a]
+	    [b 'bad-b]
+	    [c 'bad-c]
+	    [struct:d 'bad-d]
+	    [i 'bad-i])
+	(invoke-unit
+	 (unit
+	   (import)
+	   (export b)
+	   (define a 'a)
+	   (define b 'tmp-b)
+	   (begin
+	     (define c 'c)
+	     (define-struct d (w)))
+	   (define x '...)
+
+	   (define-struct (e struct:d) ())
+	   (set! b 'b)
+	   (set! x (cons c c))
+
+	   (define i (interface ()))
+
+	   (list
+	    (if (eq? a 'a)
+		b
+		c)
+	    (if (eq? a 'bad-a)
+		b
+		c)
+	    (d-w (make-e 10))
+	    (begin a b)
+	    (begin0 a b)
+	    (let ([ab (list a b)])
+	      (cons c ab))
+	    (letrec ([mk-ba (lambda ()
+			      (list b a))])
+	      (cons c (mk-ba)))
+	    x
+	    (with-continuation-mark 
+	     b a 
+	     (current-continuation-marks b))
+	    (interface? (interface (i)))
+	    (invoke-unit
+	     (unit
+	       (import w a)
+	       (export)
+	       (define b 'nested-b)
+	       (list b w a c))
+	     a b))))))
+
 ; Not ok if defining an imported name, but error should be about
 ; redefining an imported name. (This behavior is not actually tested.)
 (syntax-test '(unit 
@@ -466,7 +520,7 @@
 		(export)
 		(let () (define define-values 10) define-values)))
 
-;; Invoke-unit linking in let-baound variables
+;; Invoke-unit linking in let-bound variables
 (test '(the-x 10) 'invoke 
       (let ([x 'the-x])
 	(invoke-unit

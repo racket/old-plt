@@ -85,10 +85,21 @@
 
  (test '((1) (2) (1)) 'call/cc-restore-marks l))
 
+(define (p-equal? a b)
+  (let loop ([a a][b b])
+    (cond
+     [(eq? a b) #t]
+     [(equal? (car a) (car b))
+      (loop (cdr a) (cdr b))]
+     [else
+      (printf "a: ~s~n" a)
+      (printf "b: ~s~n" b)
+      #f])))
+
 ;; Create a deep stack with a deep mark stack
 (test #t
       'deep-stacks
-      (equal?
+      (p-equal?
        (let loop ([n 1000][l null])
 	 (if (zero? n)
 	     l

@@ -1,4 +1,5 @@
 #!/bin/sh
+string=? ; if [ "$PLTHOME" = "" ] ; then PLTHOME=/usr/local/lib/plt ; export PLTHOME ; fi
 string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
 
 (define doc? (and (= (vector-length argv) 1)

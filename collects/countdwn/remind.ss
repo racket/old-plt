@@ -1,5 +1,6 @@
 (unit/sig countdown^
-  (import mzlib:date^
+  (import [wx : wx^]
+	  mzlib:date^
 	  mzlib:thread^
 	  mzlib:function^
 	  mzlib:pretty-print^

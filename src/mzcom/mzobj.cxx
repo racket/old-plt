@@ -153,7 +153,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 		     "(#%lambda () (#%let ((v (#%getenv \"PLTHOME\"))) "
 		     "(#%and v (#%build-path v \"collects\")))) "
 		     "(#%lambda () (#%find-executable-path mzcom-dll \"..\")) "
-		     "(#%lambda () \"c:\\Program Files\\PLT\\collects\") "
+		     "(#%lambda () \"c:\\PLT\\collects\") "
 		     ")) #%null)))",
 		     env);
 

@@ -3713,8 +3713,7 @@ random_seed(int argc, Scheme_Object *argv[])
   long i = -1;
   Scheme_Object *o = argv[0];
 
-  if (SCHEME_INTP(o)) {
-    i = SCHEME_INT_VAL(o);
+  if (scheme_get_int_val(o,  &i)) {
     if (i > 2147483647)
       i = -1;
   }
@@ -3733,8 +3732,7 @@ sch_random(int argc, Scheme_Object *argv[])
   long i = -1, v;
   Scheme_Object *o = argv[0];
 
-  if (SCHEME_INTP(o)) {
-    i = SCHEME_INT_VAL(o);
+  if (scheme_get_int_val(o,  &i)) {
     if (i > 2147483647)
       i = -1;
   }
@@ -3744,7 +3742,7 @@ sch_random(int argc, Scheme_Object *argv[])
   
   v = sch_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
 
-  return scheme_make_integer(v);
+  return scheme_make_integer_value(v);
 }
 
 static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *argv[])

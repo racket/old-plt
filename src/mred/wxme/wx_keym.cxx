@@ -346,6 +346,7 @@ static struct {
 		{ "backspace", WXK_BACK },
 		{ "back", WXK_BACK },
 		{ "return", WXK_RETURN },
+		{ "enter", WXK_RETURN },
 		{ "tab", WXK_TAB },
 		{ "space", WXK_SPACE },
 		{ "right", WXK_RIGHT },

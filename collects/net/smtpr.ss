@@ -49,7 +49,7 @@
       (send-smtp-message server sender recipients header message-lines 25)]
      [(server sender recipients header message-lines pos)
       (when (null? recipients)
-	(error 'mysendmail "no recievers"))
+	(error 'send-smtp-message "no recievers"))
       (let-values ([(r w) (if debug-via-stdio?
 			      (values (current-input-port) (current-output-port))
 			      (tcp-connect server pos))])

@@ -1326,12 +1326,13 @@ static Scheme_Object *gen_compare(char *name, int pos,
 
   full_s = SCHEME_STR_VAL(argv[1]);
   save = full_s[endset];
-  full_s[endset] = 0;
+  if (save)
+    full_s[endset] = 0;
   s = full_s + offset;
+
 
   if (regexec(r, s)) {
     int i;
-    
     Scheme_Object *l = scheme_null;
 
     for (i = r->nsubexp; i--; ) {
@@ -1355,10 +1356,12 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	l = scheme_make_pair(scheme_false, l);
     }
 
-    full_s[endset] = save;
+    if (save)
+      full_s[endset] = save;
     return l;
   } else {
-    full_s[endset] = save;
+    if (save)
+      full_s[endset] = save;
     return scheme_false;
   }
 }

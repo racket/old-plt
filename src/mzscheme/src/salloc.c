@@ -1361,6 +1361,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_sema_type:
     s = sizeof(Scheme_Sema);
     break;
+  case scheme_channel_type:
+    s = sizeof(Scheme_Sema); /* BAD GUESS! */
+    break;
   case scheme_compilation_top_type:
     s = sizeof(Scheme_Compilation_Top);
     break;
@@ -1423,7 +1426,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_random_state_type:
     s = 130; /* wild guess */
     break;
-  case scheme_reserved_2_type:
   case scheme_reserved_3_type:
     s = 0; /* Not yet used */
     break;

@@ -26,8 +26,8 @@
     (semaphore-wait (channel-available c))
     (dequeue c))
   
-  ; channel-get-available : Channel (TST -> a) -> (U a Void)
-  (define (channel-get-available c k)
+  ; channel-get-available : Channel -> TST
+  (define (channel-get-available c)
     (when (semaphore-try-wait? (channel-available c))
       (dequeue c)))
   

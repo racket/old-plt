@@ -1203,18 +1203,18 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 					       kATSUQDBoldfaceTag,
 					       kATSUQDItalicTag,
 					       kATSUQDUnderlineTag,
+					       kATSUStyleRenderingOptionsTag,
 					       kATSUQDCondensedTag,
 					       kATSUQDExtendedTag,
-					       kATSUStyleRenderingOptionsTag,
                                                };
  GC_CAN_IGNORE ByteCount    theSizes[] = { sizeof(ATSUFontID),
 					   sizeof(Fixed),
 					   sizeof(Boolean),
 					   sizeof(Boolean),
 					   sizeof(Boolean),
-					   sizeof(Boolean),
-					   sizeof(Boolean),
 					   sizeof(ATSStyleRenderingOptions),
+					   sizeof(Boolean),
+					   sizeof(Boolean),
                                            };
  ATSUAttributeValuePtr theValues[ xNUM_TAGS /* = sizeof(theTags) / sizeof(ATSUAttributeTag) */ ];
  int tag_count;
@@ -1257,9 +1257,9 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  theValues[2] = &isBold;
  theValues[3] = &isItalic;
  theValues[4] = &isUnderline;
- theValues[5] = &isCondensed;
- theValues[6] = &isExtended;
- theValues[7] = &options;
+ theValues[5] = &options;
+ theValues[6] = &isCondensed;
+ theValues[7] = &isExtended;
 
  tag_count = xNUM_TAGS;
 

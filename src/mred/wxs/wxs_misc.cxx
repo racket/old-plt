@@ -63,22 +63,12 @@ void os_wxTimer::Notify()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxTimer_class, "notify", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxTimer::Notify();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxTimer::Notify();
   } else {
   
   
@@ -86,8 +76,6 @@ wxTimer::Notify();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -506,22 +494,12 @@ nstring os_wxClipboardClient::GetData(string x0, long* x1)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "get-data", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return NULL;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return NULL;
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -530,8 +508,6 @@ return NULL;
   v = scheme_apply(method, 1, p);
   if (SCHEME_STRINGP(v)) (*x1) = SCHEME_STRTAG_VAL(v);
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return (nstring)objscheme_unbundle_nullable_string(v, "get-data in clipboard-client%"", extracting return value");
   }
 }
@@ -540,22 +516,12 @@ void os_wxClipboardClient::BeingReplaced()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxClipboardClient_class, "on-replaced", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   
@@ -563,8 +529,6 @@ return;
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 

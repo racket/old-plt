@@ -115,8 +115,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "global-to-local" : void GlobalToLocal(float?,float?);
 @ "local-to-global" : void LocalToGlobal(float?,float?);
 
-@ v "get-dc" : wxDC^ GetDC();
-@ v "get-view-size" : void GetViewSize(nnfloat?,nnfloat?);
+@ "get-dc" : wxDC^ GetDC();
+@ "get-view-size" : void GetViewSize(nnfloat?,nnfloat?);
 
 @ "clear" : void Clear();
 @ "select-all" : void SelectAll();
@@ -196,18 +196,6 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 /* Called from plt/src/mred/wxme/wx_cgrec.cxx */
 int wxsSchemeUndo(void *f)
 {
-  jmp_buf savebuf;
-  int retval = 0;
-
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
-    retval = SCHEME_TRUEP(v);
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
-
-  return retval;
+  Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
+  return SCHEME_TRUEP(v);
 }

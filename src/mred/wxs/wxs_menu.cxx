@@ -460,7 +460,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
 {
   Scheme_Object *p[2];
   Scheme_Class_Object *obj;
-  jmp_buf savebuf;
 
   obj = (Scheme_Class_Object *)realobj->__gc_external;
 
@@ -472,14 +471,7 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   p[0] = (Scheme_Object *)obj;
   p[1] = objscheme_bundle_wxCommandEvent(&event);
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
+  scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
 }
 
 // wxMenuBar is really derived from wxItem

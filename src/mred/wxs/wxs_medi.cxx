@@ -529,8 +529,6 @@ class os_wxMediaBuffer : public wxMediaBuffer {
  public:
 
   ~os_wxMediaBuffer();
-  void GetViewSize(nnfloat* x0, nnfloat* x1);
-  class wxDC* GetDC();
   nstring PutFile(nstring x0, nstring x1);
   nstring GetFile(nstring x0);
   void AfterEditSequence();
@@ -585,95 +583,16 @@ os_wxMediaBuffer::~os_wxMediaBuffer()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-void os_wxMediaBuffer::GetViewSize(nnfloat* x0, nnfloat* x1)
-{
-  Scheme_Object *p[2];
-  Scheme_Object *v;
-  mz_jmp_buf savebuf;
-  Scheme_Object *method;
-  int sj;
-  static void *mcache = 0;
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-view-size", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::GetViewSize(x0, x1);
-  } else {
-  
-  p[0] = ((x0) ? objscheme_box(scheme_make_double((*x0))) : XC_SCHEME_NULL);
-  p[1] = ((x1) ? objscheme_box(scheme_make_double((*x1))) : XC_SCHEME_NULL);
-  
-
-  v = scheme_apply(method, 2, p);
-  
-  if (x0) *x0 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[0], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
-  if (x1) *x1 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box"", extracting boxed argument");
-  
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
-  }
-}
-
-class wxDC* os_wxMediaBuffer::GetDC()
-{
-  Scheme_Object **p = NULL;
-  Scheme_Object *v;
-  mz_jmp_buf savebuf;
-  Scheme_Object *method;
-  int sj;
-  static void *mcache = 0;
-
-  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-dc", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::GetDC();
-  } else {
-  
-  
-
-  v = scheme_apply(method, 0, p);
-  
-  
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
-  return objscheme_unbundle_wxDC(v, "get-dc in editor<%>"", extracting return value", 1);
-  }
-}
-
 nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "put-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::PutFile(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::PutFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -683,8 +602,6 @@ return wxMediaBuffer::PutFile(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return (nstring)objscheme_unbundle_nullable_string(v, "put-file in editor<%>"", extracting return value");
   }
 }
@@ -693,22 +610,12 @@ nstring os_wxMediaBuffer::GetFile(nstring x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::GetFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::GetFile(x0);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -717,8 +624,6 @@ return wxMediaBuffer::GetFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return (nstring)objscheme_unbundle_nullable_string(v, "get-file in editor<%>"", extracting return value");
   }
 }
@@ -727,22 +632,12 @@ void os_wxMediaBuffer::AfterEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-edit-sequence", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::AfterEditSequence();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::AfterEditSequence();
   } else {
   
   
@@ -750,8 +645,6 @@ wxMediaBuffer::AfterEditSequence();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -759,22 +652,12 @@ void os_wxMediaBuffer::OnEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-edit-sequence", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnEditSequence();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnEditSequence();
   } else {
   
   
@@ -782,8 +665,6 @@ wxMediaBuffer::OnEditSequence();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -791,22 +672,12 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-load-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::AfterLoadFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::AfterLoadFile(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -815,8 +686,6 @@ wxMediaBuffer::AfterLoadFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -824,22 +693,12 @@ void os_wxMediaBuffer::OnLoadFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-load-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnLoadFile(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnLoadFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -849,8 +708,6 @@ wxMediaBuffer::OnLoadFile(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -858,22 +715,12 @@ Bool os_wxMediaBuffer::CanLoadFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-load-file?", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::CanLoadFile(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::CanLoadFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -883,8 +730,6 @@ return wxMediaBuffer::CanLoadFile(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "can-load-file? in editor<%>"", extracting return value");
   }
 }
@@ -893,22 +738,12 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "after-save-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::AfterSaveFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::AfterSaveFile(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -917,8 +752,6 @@ wxMediaBuffer::AfterSaveFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -926,22 +759,12 @@ void os_wxMediaBuffer::OnSaveFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-save-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnSaveFile(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnSaveFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -951,8 +774,6 @@ wxMediaBuffer::OnSaveFile(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -960,22 +781,12 @@ Bool os_wxMediaBuffer::CanSaveFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "can-save-file?", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::CanSaveFile(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::CanSaveFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -985,8 +796,6 @@ return wxMediaBuffer::CanSaveFile(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "can-save-file? in editor<%>"", extracting return value");
   }
 }
@@ -995,22 +804,12 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-new-box", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::OnNewBox(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::OnNewBox(x0);
   } else {
   
   p[0] = bundle_symset_bufferType(x0);
@@ -1019,8 +818,6 @@ return wxMediaBuffer::OnNewBox(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_wxSnip(v, "on-new-box in editor<%>"", extracting return value", 0);
   }
 }
@@ -1029,22 +826,12 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, int x1, Bool x2,
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-new-image-snip", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -1056,8 +843,6 @@ return wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
   v = scheme_apply(method, 4, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_wxImageSnip(v, "on-new-image-snip in editor<%>"", extracting return value", 0);
   }
 }
@@ -1066,22 +851,12 @@ void os_wxMediaBuffer::InvalidateBitmapCache(float x0, float x1, float x2, float
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "invalidate-bitmap-cache", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = scheme_make_double(x0);
@@ -1093,8 +868,6 @@ return;
   v = scheme_apply(method, 4, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1102,22 +875,12 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
 {
   Scheme_Object *p[9];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-paint", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -1134,8 +897,6 @@ wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   v = scheme_apply(method, 9, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1143,22 +904,12 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "write-footers-to-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::WriteFootersToFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::WriteFootersToFile(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
@@ -1167,8 +918,6 @@ return wxMediaBuffer::WriteFootersToFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "write-footers-to-file in editor<%>"", extracting return value");
   }
 }
@@ -1177,22 +926,12 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "write-headers-to-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::WriteHeadersToFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::WriteHeadersToFile(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
@@ -1201,8 +940,6 @@ return wxMediaBuffer::WriteHeadersToFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "write-headers-to-file in editor<%>"", extracting return value");
   }
 }
@@ -1211,22 +948,12 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "read-footer-from-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::ReadFooterFromFile(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::ReadFooterFromFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
@@ -1236,8 +963,6 @@ return wxMediaBuffer::ReadFooterFromFile(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "read-footer-from-file in editor<%>"", extracting return value");
   }
 }
@@ -1246,22 +971,12 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "read-header-from-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxMediaBuffer::ReadHeaderFromFile(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxMediaBuffer::ReadHeaderFromFile(x0, x1);
   } else {
   
   p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
@@ -1271,8 +986,6 @@ return wxMediaBuffer::ReadHeaderFromFile(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "read-header-from-file in editor<%>"", extracting return value");
   }
 }
@@ -1281,22 +994,12 @@ void os_wxMediaBuffer::SetFilename(nstring x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-filename", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_string((char *)x0);
@@ -1306,8 +1009,6 @@ return;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1315,22 +1016,12 @@ Bool os_wxMediaBuffer::ReleaseSnip(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "release-snip", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return 0;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return 0;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1339,8 +1030,6 @@ return 0;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "release-snip in editor<%>"", extracting return value");
   }
 }
@@ -1349,22 +1038,12 @@ void os_wxMediaBuffer::SetModified(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-modified", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::SetModified(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::SetModified(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -1373,8 +1052,6 @@ wxMediaBuffer::SetModified(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1382,22 +1059,12 @@ void os_wxMediaBuffer::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-snip-data", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1407,8 +1074,6 @@ return;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1416,22 +1081,12 @@ class wxBufferData* os_wxMediaBuffer::GetSnipData(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "get-snip-data", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return 0;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return 0;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1440,8 +1095,6 @@ return 0;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_wxBufferData(v, "get-snip-data in editor<%>"", extracting return value", 1);
   }
 }
@@ -1450,22 +1103,12 @@ void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "needs-update", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1478,8 +1121,6 @@ return;
   v = scheme_apply(method, 5, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1487,22 +1128,12 @@ void os_wxMediaBuffer::Resized(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "resized", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1512,8 +1143,6 @@ return;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1521,22 +1150,12 @@ void os_wxMediaBuffer::SetCaretOwner(class wxSnip* x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "set-caret-owner", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1546,8 +1165,6 @@ return;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1555,22 +1172,12 @@ Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3
 {
   Scheme_Object *p[7];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "scroll-to", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return 0;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return 0;
   } else {
   
   p[0] = objscheme_bundle_wxSnip(x0);
@@ -1585,8 +1192,6 @@ return 0;
   v = scheme_apply(method, 7, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "scroll-to in editor<%>"", extracting return value");
   }
 }
@@ -1595,22 +1200,12 @@ void os_wxMediaBuffer::OnDisplaySize()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-display-size", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnDisplaySize();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnDisplaySize();
   } else {
   
   
@@ -1618,8 +1213,6 @@ wxMediaBuffer::OnDisplaySize();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1627,22 +1220,12 @@ void os_wxMediaBuffer::OnChange()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-change", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   
@@ -1650,8 +1233,6 @@ return;
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1659,22 +1240,12 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-focus", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnFocus(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnFocus(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -1683,8 +1254,6 @@ wxMediaBuffer::OnFocus(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1692,22 +1261,12 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-default-char", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
@@ -1716,8 +1275,6 @@ return;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1725,22 +1282,12 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-default-event", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
@@ -1749,8 +1296,6 @@ return;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1758,22 +1303,12 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-local-char", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnLocalChar(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnLocalChar(x0);
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
@@ -1782,8 +1317,6 @@ wxMediaBuffer::OnLocalChar(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1791,22 +1324,12 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-local-event", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxMediaBuffer::OnLocalEvent(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxMediaBuffer::OnLocalEvent(x0);
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
@@ -1815,8 +1338,6 @@ wxMediaBuffer::OnLocalEvent(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1824,22 +1345,12 @@ void os_wxMediaBuffer::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "size-cache-invalid", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   
@@ -1847,8 +1358,6 @@ return;
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1856,22 +1365,12 @@ void os_wxMediaBuffer::BlinkCaret()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "blink-caret", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   
@@ -1879,8 +1378,6 @@ return;
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1888,22 +1385,12 @@ void os_wxMediaBuffer::OwnCaret(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "own-caret", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -1912,8 +1399,6 @@ return;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1921,22 +1406,12 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "refresh", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = scheme_make_double(x0);
@@ -1949,8 +1424,6 @@ return;
   v = scheme_apply(method, 5, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1958,22 +1431,12 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "adjust-cursor", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return NULL;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return NULL;
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
@@ -1982,8 +1445,6 @@ return NULL;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_wxCursor(v, "adjust-cursor in editor<%>"", extracting return value", 1);
   }
 }
@@ -1992,22 +1453,12 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-char", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
@@ -2016,8 +1467,6 @@ return;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -2025,22 +1474,12 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-event", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
@@ -2049,8 +1488,6 @@ return;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -2058,22 +1495,12 @@ void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "copy-self-to", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return;
   } else {
   
   p[0] = objscheme_bundle_wxMediaBuffer(x0);
@@ -2082,8 +1509,6 @@ return;
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -2091,22 +1516,12 @@ class wxMediaBuffer* os_wxMediaBuffer::CopySelf()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "copy-self", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return 0;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return 0;
   } else {
   
   
@@ -2114,8 +1529,6 @@ return 0;
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_wxMediaBuffer(v, "copy-self in editor<%>"", extracting return value", 0);
   }
 }
@@ -2742,10 +2155,7 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(Scheme_Object *obj, int n,  Sc
     *x1 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[1], "get-view-size in editor<%>"), "get-view-size in editor<%>"", extracting boxed argument");
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::GetViewSize(x0, x1);
-  else
-    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetViewSize(x0, x1);
+  ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetViewSize(x0, x1);
 
   
   if (n > 0 && !XC_SCHEME_NULLP(p[0]))
@@ -2766,10 +2176,7 @@ static Scheme_Object *os_wxMediaBufferGetDC(Scheme_Object *obj, int n,  Scheme_O
   
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    r = ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::GetDC();
-  else
-    r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetDC();
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetDC();
 
   
   
@@ -5007,18 +4414,6 @@ void objscheme_setup_wxMediaGlobal(void *env)
 /* Called from plt/src/mred/wxme/wx_cgrec.cxx */
 int wxsSchemeUndo(void *f)
 {
-  jmp_buf savebuf;
-  int retval = 0;
-
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
-    retval = SCHEME_TRUEP(v);
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
-
-  return retval;
+  Scheme_Object *v = scheme_apply((Scheme_Object *)f, 0, NULL);
+  return SCHEME_TRUEP(v);
 }

@@ -28,24 +28,7 @@ static int capo_propagate_exn = 0;
 
 static void *DoCAPOCallback(void *data)
 {
-  jmp_buf savebuf;
-  void *r;
-
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf))
-    r = (void *)scheme_apply_multi((Scheme_Object *)data, 0, NULL);
-  else {
-    r = (void *)scheme_false;
-    capo_propagate_exn = 1;
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
-  /* Note that we don't call scheme_clear_escape() - we're going to
-     propagate the jump via capo_propagate_exn */
-
-  return r;
+  return (void *)scheme_apply_multi((Scheme_Object *)data, 0, NULL);
 }
 
 typedef void *(*CAPOFunc)(void*);
@@ -79,9 +62,7 @@ typedef void *(*CAPOFunc)(void*);
 @MACRO spAnything = _
 @MACRO spCAPOProc = (-> _)
 
-@MACRO PROPAGATEEXN = if (capo_propagate_exn) { capo_propagate_exn = 0; scheme_longjmp(scheme_error_buf, 1); }
-
-@ "call-as-primary-owner" : void[]/CastToSO//spAnything CallAsPrimaryOwner(CAPOFunc//ubTestFunc///spCAPOProc, -void[]//ubData); : : //PROPAGATEEXN
+@ "call-as-primary-owner" : void[]/CastToSO//spAnything CallAsPrimaryOwner(CAPOFunc//ubTestFunc///spCAPOProc, -void[]//ubData);
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci
@@ -235,24 +216,12 @@ static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent &event,
 {
   extern Scheme_Object *objscheme_bundle_wxEvent(wxEvent *);
   Scheme_Object *p[2], *obj;
-  Bool retval;
-  jmp_buf savebuf;
 
   p[0] = (Scheme_Object *)media;
   p[1] = objscheme_bundle_wxEvent(&event);
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    obj = scheme_apply(kctsr(data), 2, p);
-    retval = objscheme_unbundle_bool(obj, "Scheme key callback");
-  } else
-    retval = 0;
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
- 
-  return retval;
+  obj = scheme_apply(kctsr(data), 2, p);
+  return objscheme_unbundle_bool(obj, "Scheme key callback");
 }
 
 static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
@@ -261,26 +230,14 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
 {
   extern Scheme_Object *objscheme_bundle_wxKeyEvent(wxKeyEvent *);
   Scheme_Object *p[4], *obj;
-  Bool retval;
-  jmp_buf savebuf;
 
   p[0] = objscheme_bundle_string(s);
   p[1] = objscheme_bundle_wxKeymap(km);
   p[2] = (Scheme_Object *)media;
   p[3] = objscheme_bundle_wxKeyEvent(&event);
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    obj = scheme_apply(kctsr(data), 4, p);
-    retval = objscheme_unbundle_bool(obj, "Scheme grab-key callback");
-  } else
-    retval = 0;
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
-
-  return retval;
+  obj = scheme_apply(kctsr(data), 4, p);
+  return objscheme_unbundle_bool(obj, "Scheme grab-key callback");
 }
 
 static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
@@ -289,40 +246,19 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
 {
   extern Scheme_Object *objscheme_bundle_wxMouseEvent(wxMouseEvent *);
   Scheme_Object *p[3], *obj;
-  Bool retval;
-  jmp_buf savebuf;
 
   p[0] = objscheme_bundle_string(s);
   p[1] = objscheme_bundle_wxKeymap(km);
   p[2] = (Scheme_Object *)media;
   p[3] = objscheme_bundle_wxMouseEvent(&event);
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    obj = scheme_apply(kctsr(data), 4, p);
-    retval = objscheme_unbundle_bool(obj, "Scheme grab-mouse callback");
-  } else
-    retval = 0;
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
-
-  return retval;
+  obj = scheme_apply(kctsr(data), 4, p);
+  return objscheme_unbundle_bool(obj, "Scheme grab-mouse callback");
 }
 
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data)
 {
-  jmp_buf savebuf;
-
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_apply_multi(kctsr(data), 0, NULL);
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
+  scheme_apply_multi(kctsr(data), 0, NULL);
 }
 
 @INCLUDE wxs_bkt.xci

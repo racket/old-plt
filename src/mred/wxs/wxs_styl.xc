@@ -233,16 +233,9 @@ static void NotifyCallbackToScheme(wxStyle *, Scheme_Object *f);
 static void NotifyCallbackToScheme(wxStyle *s, Scheme_Object *f)
 {
   Scheme_Object *p[1];
-  jmp_buf savebuf;
 
   p[0] = s ? objscheme_bundle_wxStyle(s) : scheme_false;
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf))
-    scheme_apply_multi(f, 1, p);
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
+  scheme_apply_multi(f, 1, p);
 }
 

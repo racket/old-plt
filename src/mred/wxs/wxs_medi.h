@@ -1,5 +1,4 @@
 #ifndef WXS_SETUP_ONLY
-extern class wxDC *objscheme_unbundle_wxDC(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);

@@ -241,12 +241,8 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
 				      int reason,
 				      Scheme_Object *f)
 {
-  Scheme_Object *p[4], *s, *e;
-  jmp_buf savebuf;
+    Scheme_Object *p[4], *s, *e;
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
     p[0] = objscheme_bundle_wxMediaEdit(media);
     if (start)
       s = scheme_box(objscheme_bundle_integer(*start));
@@ -265,10 +261,6 @@ static void WordbreakCallbackToScheme(wxMediaEdit *media,
       *start = objscheme_unbundle_integer(scheme_unbox(s), "Scheme wordbreak callback");
     if (end)
       *end = objscheme_unbundle_integer(scheme_unbox(e), "Scheme wordbreak callback");
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
 }
 
 static void ClickbackToScheme(wxMediaEdit *media,
@@ -276,19 +268,12 @@ static void ClickbackToScheme(wxMediaEdit *media,
 			      Scheme_Object *f)
 {
   Scheme_Object *p[3];
-  jmp_buf savebuf;
 
   p[0] = objscheme_bundle_wxMediaEdit(media);
   p[1] = objscheme_bundle_integer(start);
   p[2] = objscheme_bundle_integer(end);
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf))
-    scheme_apply_multi(f, 3, p);
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
+  scheme_apply_multi(f, 3, p);
 }
 
 @END

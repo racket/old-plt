@@ -232,24 +232,9 @@ static void draw_gc_bm(int on)
 #endif
 }
 
-static Scheme_Object *raise_keymap_exn(void *data, int, Scheme_Object **)
-{
-  scheme_signal_error("%s", (char *)data);
-  return NULL;
-}
-
 void wxsKeymapError(char *s)
 {
-  Scheme_Object *kmerr;
-
-  kmerr = scheme_make_closed_prim(raise_keymap_exn, s);
-
-  jmp_buf savebuf;
-
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-  if (!scheme_setjmp(scheme_error_buf))
-    (void)scheme_apply(kmerr, 0, NULL);
-  COPY_JMPBUF(scheme_error_buf, savebuf);
+  scheme_signal_error("%s", s);
 }
 
 static void collect_start_callback(void)

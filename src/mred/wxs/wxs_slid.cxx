@@ -148,22 +148,12 @@ void os_wxSlider::OnDropFile(pathname x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSlider_class, "on-drop-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxSlider::OnDropFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxSlider::OnDropFile(x0);
   } else {
   
   p[0] = objscheme_bundle_pathname((char *)x0);
@@ -172,8 +162,6 @@ wxSlider::OnDropFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -181,22 +169,12 @@ Bool os_wxSlider::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSlider_class, "pre-on-event", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return FALSE;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
@@ -206,8 +184,6 @@ return FALSE;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "pre-on-event in slider%"", extracting return value");
   }
 }
@@ -216,22 +192,12 @@ Bool os_wxSlider::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSlider_class, "pre-on-char", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return FALSE;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
@@ -241,8 +207,6 @@ return FALSE;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "pre-on-char in slider%"", extracting return value");
   }
 }
@@ -251,22 +215,12 @@ void os_wxSlider::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSlider_class, "on-size", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxSlider::OnSize(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxSlider::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
@@ -276,8 +230,6 @@ wxSlider::OnSize(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -285,22 +237,12 @@ void os_wxSlider::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSlider_class, "on-set-focus", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxSlider::OnSetFocus();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxSlider::OnSetFocus();
   } else {
   
   
@@ -308,8 +250,6 @@ wxSlider::OnSetFocus();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -317,22 +257,12 @@ void os_wxSlider::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxSlider_class, "on-kill-focus", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxSlider::OnKillFocus();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxSlider::OnKillFocus();
   } else {
   
   
@@ -340,8 +270,6 @@ wxSlider::OnKillFocus();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -641,7 +569,6 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
 {
   Scheme_Object *p[2];
   Scheme_Class_Object *obj;
-  jmp_buf savebuf;
 
   obj = (Scheme_Class_Object *)realobj->__gc_external;
 
@@ -653,12 +580,5 @@ static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
   p[0] = (Scheme_Object *)obj;
   p[1] = objscheme_bundle_wxCommandEvent(&event);
 
-  COPY_JMPBUF(savebuf, scheme_error_buf);
-
-  if (!scheme_setjmp(scheme_error_buf)) {
-    scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
-  }
-
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-  scheme_clear_escape();
+  scheme_apply_multi(((CALLBACKCLASS *)obj->primdata)->callback_closure, 2, p);
 }

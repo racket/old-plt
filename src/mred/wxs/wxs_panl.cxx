@@ -190,22 +190,12 @@ void os_wxPanel::OnDropFile(pathname x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxPanel_class, "on-drop-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxPanel::OnDropFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxPanel::OnDropFile(x0);
   } else {
   
   p[0] = objscheme_bundle_pathname((char *)x0);
@@ -214,8 +204,6 @@ wxPanel::OnDropFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -223,22 +211,12 @@ Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxPanel_class, "pre-on-event", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return FALSE;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
@@ -248,8 +226,6 @@ return FALSE;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "pre-on-event in panel%"", extracting return value");
   }
 }
@@ -258,22 +234,12 @@ Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxPanel_class, "pre-on-char", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return FALSE;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
@@ -283,8 +249,6 @@ return FALSE;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "pre-on-char in panel%"", extracting return value");
   }
 }
@@ -293,22 +257,12 @@ void os_wxPanel::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxPanel_class, "on-size", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxPanel::OnSize(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxPanel::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
@@ -318,8 +272,6 @@ wxPanel::OnSize(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -327,22 +279,12 @@ void os_wxPanel::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxPanel_class, "on-set-focus", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxPanel::OnSetFocus();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxPanel::OnSetFocus();
   } else {
   
   
@@ -350,8 +292,6 @@ wxPanel::OnSetFocus();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -359,22 +299,12 @@ void os_wxPanel::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxPanel_class, "on-kill-focus", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxPanel::OnKillFocus();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxPanel::OnKillFocus();
   } else {
   
   
@@ -382,8 +312,6 @@ wxPanel::OnKillFocus();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1053,22 +981,12 @@ void os_wxDialogBox::OnDropFile(pathname x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "on-drop-file", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxDialogBox::OnDropFile(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxDialogBox::OnDropFile(x0);
   } else {
   
   p[0] = objscheme_bundle_pathname((char *)x0);
@@ -1077,8 +995,6 @@ wxDialogBox::OnDropFile(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1086,22 +1002,12 @@ Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "pre-on-event", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return FALSE;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
@@ -1111,8 +1017,6 @@ return FALSE;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "pre-on-event in dialog%"", extracting return value");
   }
 }
@@ -1121,22 +1025,12 @@ Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "pre-on-char", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return FALSE;
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return FALSE;
   } else {
   
   p[0] = objscheme_bundle_wxWindow(x0);
@@ -1146,8 +1040,6 @@ return FALSE;
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "pre-on-char in dialog%"", extracting return value");
   }
 }
@@ -1156,22 +1048,12 @@ void os_wxDialogBox::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "on-size", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxDialogBox::OnSize(x0, x1);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxDialogBox::OnSize(x0, x1);
   } else {
   
   p[0] = scheme_make_integer(x0);
@@ -1181,8 +1063,6 @@ wxDialogBox::OnSize(x0, x1);
   v = scheme_apply(method, 2, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1190,22 +1070,12 @@ void os_wxDialogBox::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "on-set-focus", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxDialogBox::OnSetFocus();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxDialogBox::OnSetFocus();
   } else {
   
   
@@ -1213,8 +1083,6 @@ wxDialogBox::OnSetFocus();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1222,22 +1090,12 @@ void os_wxDialogBox::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "on-kill-focus", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxDialogBox::OnKillFocus();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxDialogBox::OnKillFocus();
   } else {
   
   
@@ -1245,8 +1103,6 @@ wxDialogBox::OnKillFocus();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 
@@ -1254,22 +1110,12 @@ Bool os_wxDialogBox::OnClose()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "on-close", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-return wxDialogBox::OnClose();
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    return wxDialogBox::OnClose();
   } else {
   
   
@@ -1277,8 +1123,6 @@ return wxDialogBox::OnClose();
   v = scheme_apply(method, 0, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   return objscheme_unbundle_bool(v, "on-close in dialog%"", extracting return value");
   }
 }
@@ -1287,22 +1131,12 @@ void os_wxDialogBox::OnActivate(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  mz_jmp_buf savebuf;
   Scheme_Object *method;
-  int sj;
   static void *mcache = 0;
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "on-activate", &mcache);
-  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
-    COPY_JMPBUF(savebuf, scheme_error_buf);
-    sj = scheme_setjmp(scheme_error_buf);
-    if (sj) {
-      COPY_JMPBUF(scheme_error_buf, savebuf);
-      scheme_clear_escape();
-    }
-  } else sj = 1;
-  if (sj) {
-wxDialogBox::OnActivate(x0);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    wxDialogBox::OnActivate(x0);
   } else {
   
   p[0] = (x0 ? scheme_true : scheme_false);
@@ -1311,8 +1145,6 @@ wxDialogBox::OnActivate(x0);
   v = scheme_apply(method, 1, p);
   
   
-  COPY_JMPBUF(scheme_error_buf, savebuf);
-
   }
 }
 

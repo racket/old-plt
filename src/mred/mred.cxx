@@ -577,7 +577,12 @@ static void DoTimer(wxTimer *timer)
   once = timer->one_shot;
   timer->one_shot = -1;
 
-  timer->Notify();
+  mz_jmp_buf savebuf;
+
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+  if (!scheme_setjmp(scheme_error_buf))
+    timer->Notify();
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
   if (!once && (timer->one_shot == -1) && (timer->interval != -1))
     timer->Start(timer->interval, FALSE);
@@ -612,10 +617,14 @@ static void GoAhead(MrEdContext *c)
     DoTimer(timer);
   } else {
     MrEdEvent e;
-    
+    mz_jmp_buf savebuf;
+
     memcpy(&e, &c->event, sizeof(MrEdEvent));
     
-    MrEdDispatchEvent(&e);
+    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+    if (!scheme_setjmp(scheme_error_buf))
+      MrEdDispatchEvent(&e);
+    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
   }
 }
 
@@ -835,7 +844,7 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
     }
   }
    
-  /* We should never get here, now. */
+  /* We should never get here. */
   c->ready = 1;
   c->handler_running = NULL;
   this_thread->on_kill = NULL;

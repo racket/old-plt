@@ -189,6 +189,10 @@ Mac OS Classic (PowerPC only):
     value, then try step 3 again. After changing the --prefix value,
     it is not necessary to repeat steps 1 or 2.
 
+    If you build frequently from the CVS-based sources with
+    --enabled-shared, beware that you may accumlate many old, unused
+    versions of the dynamic libraries in plt/lib.
+
  4a. ONLY Cygwin: Create the other executables (besides mred.exe and
      mzscheme.exe) by running
         mzscheme.exe -mvqM- setup

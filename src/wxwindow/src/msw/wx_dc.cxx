@@ -2303,8 +2303,10 @@ void wxWinGL::Reset(HDC dc, int offscreen)
 	m_hGLRC = wglCreateContext(dc);
 	m_hDC = dc;
 
-	if (current_gl_context == this)
+	if (current_gl_context == this) {
+	  current_gl_context = NULL;
 	  ThisContextCurrent();
+	}
       }
     }
   }
@@ -2324,11 +2326,13 @@ void wxWinGL::SwapBuffers(void)
 
 void wxWinGL::ThisContextCurrent(void)
 {
-  current_gl_context = this;
-  if (m_hGLRC && m_hDC)
-    wglMakeCurrent(m_hDC, m_hGLRC);
-  else
-    wglMakeCurrent(NULL, NULL);
+  if (current_gl_context != this) {
+    current_gl_context = this;
+    if (m_hGLRC && m_hDC)
+      wglMakeCurrent(m_hDC, m_hGLRC);
+    else
+      wglMakeCurrent(NULL, NULL);
+  }
 }
 
 void wxWinGL::SetupPalette(PIXELFORMATDESCRIPTOR *pfd)
@@ -2380,4 +2384,10 @@ void wxWinGL::SetupPalette(PIXELFORMATDESCRIPTOR *pfd)
   cmap->ms_palette = hPalette;
   
   return cmap;
+}
+
+void wxGLNoContext()
+{
+  current_gl_context = NULL;
+  wglMakeCurrent(NULL, NULL);
 }

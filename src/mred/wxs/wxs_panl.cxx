@@ -124,6 +124,7 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
+
 // @ p "on-item-event" : void OnItemEvent(wxItem!,wxMouseEvent%); ## INTERACT_METHODS
 // @ p "on-item-left-click" : void OnItemLeftClick(wxItem!,int,int,int); ## INTERACT_METHODS
 // @ p "on-item-right-click" : void OnItemRightClick(wxItem!,int,int,int); ## INTERACT_METHODS
@@ -151,6 +152,7 @@ class os_wxPanel : public wxPanel {
   void OnEvent(class wxMouseEvent& x0);
   void OnPaint();
   void OnDefaultAction(class wxItem* x0);
+  void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -302,6 +304,39 @@ wxPanel::OnDefaultAction(x0);
   } else {
   
   p[0] = objscheme_bundle_wxItem(x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxPanel::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxPanel_class, "on-drop-file", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxPanel::OnDropFile(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_pathname((char *)x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -773,6 +808,27 @@ static Scheme_Object *os_wxPanelOnDefaultAction(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
+static Scheme_Object *os_wxPanelOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "panel%::on-drop-file");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxPanel *)((Scheme_Class_Object *)obj)->primdata)->wxPanel::OnDropFile(x0);
+  else
+    ((wxPanel *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxPanelPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1041,7 +1097,7 @@ void objscheme_setup_wxPanel(void *env)
 if (os_wxPanel_class) {
     objscheme_add_global_class(os_wxPanel_class, "panel%", env);
 } else {
-  os_wxPanel_class = objscheme_def_prim_class(env, "panel%", "canvas%", os_wxPanel_ConstructScheme, 24);
+  os_wxPanel_class = objscheme_def_prim_class(env, "panel%", "canvas%", os_wxPanel_ConstructScheme, 25);
 
   scheme_add_method_w_arity(os_wxPanel_class,"get-class-name",objscheme_classname_os_wxPanel, 0, 0);
 
@@ -1061,6 +1117,7 @@ if (os_wxPanel_class) {
  scheme_add_method_w_arity(os_wxPanel_class, "on-event", os_wxPanelOnEvent, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "on-paint", os_wxPanelOnPaint, 0, 0);
  scheme_add_method_w_arity(os_wxPanel_class, "on-default-action", os_wxPanelOnDefaultAction, 1, 1);
+ scheme_add_method_w_arity(os_wxPanel_class, "on-drop-file", os_wxPanelOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxPanel_class, "pre-on-event", os_wxPanelPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxPanel_class, "pre-on-char", os_wxPanelPreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxPanel_class, "on-size", os_wxPanelOnSize, 2, 2);
@@ -1191,6 +1248,7 @@ static Scheme_Object *bundle_symset_dialogStyle(int v) {
 
 
 
+
 // @ p "on-item-event" : void OnItemEvent(wxItem!,wxMouseEvent%); ## INTERACT_METHODS
 // @ p "on-item-left-click" : void OnItemLeftClick(wxItem!,int,int,int); ## INTERACT_METHODS
 // @ p "on-item-right-click" : void OnItemRightClick(wxItem!,int,int,int); ## INTERACT_METHODS
@@ -1208,6 +1266,7 @@ class os_wxDialogBox : public wxDialogBox {
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
   void OnPaint();
+  void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -1356,6 +1415,39 @@ wxDialogBox::OnPaint();
   
 
   v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxDialogBox::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxDialogBox_class, "on-drop-file", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxDialogBox::OnDropFile(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_pathname((char *)x0);
+  
+
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1680,6 +1772,27 @@ static Scheme_Object *os_wxDialogBoxOnPaint(Scheme_Object *obj, int n,  Scheme_O
 }
 
 #pragma argsused
+static Scheme_Object *os_wxDialogBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "dialog-box%::on-drop-file");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxDialogBox *)((Scheme_Class_Object *)obj)->primdata)->wxDialogBox::OnDropFile(x0);
+  else
+    ((wxDialogBox *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxDialogBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1899,7 +2012,7 @@ void objscheme_setup_wxDialogBox(void *env)
 if (os_wxDialogBox_class) {
     objscheme_add_global_class(os_wxDialogBox_class, "dialog-box%", env);
 } else {
-  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog-box%", "panel%", os_wxDialogBox_ConstructScheme, 12);
+  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog-box%", "panel%", os_wxDialogBox_ConstructScheme, 13);
 
   scheme_add_method_w_arity(os_wxDialogBox_class,"get-class-name",objscheme_classname_os_wxDialogBox, 0, 0);
 
@@ -1907,6 +2020,7 @@ if (os_wxDialogBox_class) {
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-char", os_wxDialogBoxOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-event", os_wxDialogBoxOnEvent, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-paint", os_wxDialogBoxOnPaint, 0, 0);
+ scheme_add_method_w_arity(os_wxDialogBox_class, "on-drop-file", os_wxDialogBoxOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxDialogBox_class, "pre-on-event", os_wxDialogBoxPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxDialogBox_class, "pre-on-char", os_wxDialogBoxPreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxDialogBox_class, "on-size", os_wxDialogBoxOnSize, 2, 2);

@@ -187,11 +187,13 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
+
 class os_wxFrame : public wxFrame {
  public:
 
   os_wxFrame(Scheme_Object * obj, class wxFrame* x0, string x1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = 0, string x7 = "frame");
   ~os_wxFrame();
+  void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -215,6 +217,39 @@ os_wxFrame::os_wxFrame(Scheme_Object * o, class wxFrame* x0, string x1, int x2, 
 os_wxFrame::~os_wxFrame()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+void os_wxFrame::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxFrame_class, "on-drop-file", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxFrame::OnDropFile(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_pathname((char *)x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
 }
 
 Bool os_wxFrame::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
@@ -482,6 +517,27 @@ wxFrame::OnActivate(x0);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   }
+}
+
+#pragma argsused
+static Scheme_Object *os_wxFrameOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "frame%::on-drop-file");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxFrame *)((Scheme_Class_Object *)obj)->primdata)->wxFrame::OnDropFile(x0);
+  else
+    ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
+
+  
+  
+  return scheme_void;
 }
 
 #pragma argsused
@@ -929,10 +985,11 @@ void objscheme_setup_wxFrame(void *env)
 if (os_wxFrame_class) {
     objscheme_add_global_class(os_wxFrame_class, "frame%", env);
 } else {
-  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 20);
+  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21);
 
   scheme_add_method_w_arity(os_wxFrame_class,"get-class-name",objscheme_classname_os_wxFrame, 0, 0);
 
+ scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxFrame_class, "pre-on-char", os_wxFramePreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxFrame_class, "on-size", os_wxFrameOnSize, 2, 2);

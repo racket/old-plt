@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.3 1998/08/08 03:33:00 mflatt Exp $
+ * $Id: wxDefines.h,v 1.4 1998/08/10 22:01:31 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -64,7 +64,7 @@ typedef short int WXTYPE;
 #define wxTYPE_FRAME           7
 
 #define wxTYPE_BUTTON          8
-#define wxTYPE_TEXT            9
+#define wxTYPE_POPUP_EVENT     9
 #define wxTYPE_MESSAGE         10
 #define wxTYPE_CHOICE          11
 #define wxTYPE_LIST_BOX        12

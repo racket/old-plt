@@ -1379,6 +1379,8 @@ sub PrintBundleVar
 	     || $paramtype eq 'nnlong' 
              || $paramtype eq 'Long') {
 	print "scheme_make_integer($var)";
+    } elsif ($paramtype eq 'ExactLong') {
+	print "scheme_make_integer_value($var)";
     } elsif (($paramtype eq 'float') || ($paramtype eq 'double')
 	     || ($paramtype eq 'Double')) {
 	print "scheme_make_double($var)";
@@ -1476,6 +1478,8 @@ sub PrintUnbundleVar
 	     || ($paramtype eq 'short') || ($paramtype eq 'long')
 	     || ($paramtype eq 'Long')) {
 	print "objscheme_unbundle_integer($var, $stop)";
+    } elsif ($paramtype eq 'ExactLong') {
+	print "objscheme_unbundle_ExactLong($var, $stop)";
     } elsif (($paramtype eq 'nnint') || ($paramtype eq 'nnlong')) {
 	print "objscheme_unbundle_nonnegative_integer($var, $stop)";
     } elsif (($paramtype eq 'float') || ($paramtype eq 'double')
@@ -1552,6 +1556,8 @@ sub NormalType {
 	$paramtype = $bool;
     } elsif ($paramtype eq 'Long') {
 	$paramtype = 'long';
+    } elsif ($paramtype eq 'ExactLong') {
+	$paramtype = 'ExactLong';
     } elsif ($paramtype eq 'Double') {
 	$paramtype = 'double';
     } elsif (substr($paramtype, 0, 3) eq 'SYM') {
@@ -1775,6 +1781,8 @@ sub PrintTypecheck
 	     || ($paramtype eq 'float') || ($paramtype eq 'nnfloat') 
 	     || ($paramtype eq 'double')) {
 	print "objscheme_istype_number($var, $stop)";
+    } elsif (($paramtype eq 'ExactLong')) {
+	print "objscheme_istype_ExactLong($var, $stop)";
     } elsif (($paramtype eq 'Long')) {
 	print "objscheme_istype_integer($var, $stop)";
     } elsif (($paramtype eq 'Double')) {

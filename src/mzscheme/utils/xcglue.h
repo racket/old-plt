@@ -13,6 +13,8 @@ extern "C"
 /*                   Utilites used by xctocc                      */
 /******************************************************************/
 
+typedef long ExactLong;
+
 void objscheme_init(Scheme_Env *env);
 
 void scheme_install_xc_global(char *name, Scheme_Object *val, void *env);
@@ -56,6 +58,7 @@ void objscheme_set_box(Scheme_Object *, Scheme_Object *);
 int objscheme_istype_bool(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_number(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_integer(Scheme_Object *, const char *stopifbad);
+int objscheme_istype_ExactLong(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_float(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_pair(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_string(Scheme_Object *, const char *stopifbad);
@@ -74,6 +77,7 @@ Scheme_Object *objscheme_bundle_generic(void *);
 void *objscheme_unbundle_generic(Scheme_Object *, const char *);
 long objscheme_unbundle_integer(Scheme_Object *, const char *);
 long objscheme_unbundle_nonnegative_integer(Scheme_Object *, const char *);
+ExactLong objscheme_unbundle_ExactLong(Scheme_Object *, const char *);
 double objscheme_unbundle_float(Scheme_Object *, const char *);
 double objscheme_unbundle_nonnegative_float(Scheme_Object *, const char *);
 int objscheme_unbundle_bool(Scheme_Object *, const char *);
@@ -86,6 +90,7 @@ char objscheme_unbundle_char(Scheme_Object *, const char *);
 #define objscheme_bundle_integer scheme_make_integer
 #define objscheme_bundle_long objscheme_bundle_integer
 #define objscheme_bundle_int objscheme_bundle_integer
+#define objscheme_bundle_ExactLong scheme_make_integer_value
 #define objscheme_bundle_float scheme_make_double
 #define objscheme_bundle_bool(x) ((x) ? scheme_true : scheme_false)
 #define objscheme_bundle_char scheme_make_char

@@ -23,6 +23,7 @@
  text-editor%
  pasteboard-editor%
  play-sound
+ display-size
  application-file-handler)
 
 

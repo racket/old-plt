@@ -425,7 +425,7 @@ os_wxPopupEvent::~os_wxPopupEvent()
 static Scheme_Object *objscheme_wxPopupEvent_GetmenuId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj;
-  int v;
+  ExactLong v;
 
   objscheme_check_valid(obj);
   if (n) scheme_wrong_count("get-menu-id", 0, 0, n, p);
@@ -435,18 +435,18 @@ static Scheme_Object *objscheme_wxPopupEvent_GetmenuId(Scheme_Object *obj, int n
   else
     v = ((wxPopupEvent *)cobj->primdata)->menuId;
 
-  return scheme_make_integer(v);
+  return scheme_make_integer_value(v);
 }
 
 static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   objscheme_check_valid(obj);
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
-  int v;
+  ExactLong v;
 
   if (n != 1) scheme_wrong_count("set-menu-id", 1, 1, n, p);
 
-  v = objscheme_unbundle_integer(p[0], "popup-event%::menu-id");
+  v = objscheme_unbundle_ExactLong(p[0], "popup-event%::menu-id");
   ((wxPopupEvent *)cobj->primdata)->menuId = v;
 
   return scheme_void;

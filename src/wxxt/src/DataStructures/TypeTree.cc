@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: TypeTree.cc,v 1.2 1996/01/10 23:46:28 markus Exp $
+ * $Id: TypeTree.cc,v 1.1.1.1 1997/12/22 17:28:46 mflatt Exp $
  *
  * Purpose: type tree
  *
@@ -43,10 +43,8 @@ static wxInitType init_types[] = {
     { wxTYPE_PANEL,		wxTYPE_WINDOW,		"panel"},
     { wxTYPE_FRAME,		wxTYPE_PANEL,		"frame"},
     { wxTYPE_DIALOG_BOX,	wxTYPE_FRAME,		"dialog-box"},
-    { wxTYPE_ENHANCED_DIALOG,	wxTYPE_DIALOG_BOX,	"enhanced-dialog"},
 
     { wxTYPE_BUTTON,		wxTYPE_ITEM,		"button"},
-    { wxTYPE_BUTTONBAR,		wxTYPE_TOOLBAR,		"buttonbar"},
     { wxTYPE_CHECK_BOX,		wxTYPE_ITEM,		"check-box"},
     { wxTYPE_CHOICE,		wxTYPE_ITEM,		"choice"},
     { wxTYPE_CANVAS,		wxTYPE_ITEM,		"canvas"},
@@ -57,14 +55,9 @@ static wxInitType init_types[] = {
     { wxTYPE_MENU,		wxTYPE_ANY,		"menu"},
     { wxTYPE_MENU_BAR,		wxTYPE_ITEM,		"menu-bar"},
     { wxTYPE_MESSAGE,		wxTYPE_ITEM,		"message"},
-    { wxTYPE_MULTI_TEXT,	wxTYPE_TEXT,		"multi-text"},
     { wxTYPE_RADIO_BOX,		wxTYPE_ITEM,		"radio-box"},
     { wxTYPE_SCROLL_BAR,	wxTYPE_ITEM,		"scrollbar"},
     { wxTYPE_SLIDER,		wxTYPE_ITEM,		"slider"},
-    { wxTYPE_TEXT,		wxTYPE_ITEM,		"text"},
-    { wxTYPE_TEXT_WINDOW,	wxTYPE_TEXT,		"text-window"},
-    { wxTYPE_TOOLBAR,		wxTYPE_ITEM,		"toolbar"},
-    { wxTYPE_VIRT_LIST_BOX,	wxTYPE_ITEM,		"virtual-list-box"},
 
     { wxTYPE_EVENT,		wxTYPE_ANY,		"event"},
     { wxTYPE_COMMAND_EVENT,	wxTYPE_EVENT,		"command-event"},
@@ -95,16 +88,6 @@ static wxInitType init_types[] = {
     { wxTYPE_LIST,		wxTYPE_ANY,		"list"},
     { wxTYPE_NODE,		wxTYPE_ANY,		"node"},
     { wxTYPE_STRING_LIST,	wxTYPE_LIST,		"string-list"},
-
-    { wxTYPE_DDE_SERVER,	wxTYPE_ANY,		"DDE-server"},
-    { wxTYPE_DDE_CLIENT,	wxTYPE_ANY,		"DDE-client"},
-    { wxTYPE_DDE_CONNECTION,	wxTYPE_ANY,		"DDE-connection"},
-    { wxTYPE_HELP_INSTANCE,	wxTYPE_ANY,		"wxHelp-instance"},
-
-    { wxTYPE_DATABASE,		wxTYPE_ANY,		"ODBC-database"},
-    { wxTYPE_RECORDSET,		wxTYPE_ANY,		"ODBC-recordset"},
-    { wxTYPE_QUERY_FIELD,	wxTYPE_ANY,		"ODBC-query-field"},
-    { wxTYPE_QUERY_COL,		wxTYPE_ANY,		"ODBC-query-col"},
 
     { wxTYPE_CONSTRAINTS,	wxTYPE_ANY,		"constraint-set"},
     { wxTYPE_TYPEDEF,		wxTYPE_ANY,		"type-record"},

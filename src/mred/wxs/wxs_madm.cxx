@@ -297,6 +297,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 
+
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
@@ -305,6 +306,7 @@ class os_wxMediaCanvas : public wxMediaCanvas {
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
   void OnPaint();
+  void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -418,6 +420,39 @@ wxMediaCanvas::OnPaint();
   
 
   v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaCanvas::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaCanvas_class, "on-drop-file", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMediaCanvas::OnDropFile(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_pathname((char *)x0);
+  
+
+  v = scheme_apply(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -648,6 +683,27 @@ static Scheme_Object *os_wxMediaCanvasOnPaint(Scheme_Object *obj, int n,  Scheme
     ((os_wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxMediaCanvas::OnPaint();
   else
     ((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnPaint();
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaCanvasOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "editor-canvas%::on-drop-file");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxMediaCanvas::OnDropFile(x0);
+  else
+    ((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
 
   
   
@@ -1003,13 +1059,14 @@ void objscheme_setup_wxMediaCanvas(void *env)
 if (os_wxMediaCanvas_class) {
     objscheme_add_global_class(os_wxMediaCanvas_class, "editor-canvas%", env);
 } else {
-  os_wxMediaCanvas_class = objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 18);
+  os_wxMediaCanvas_class = objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 19);
 
   scheme_add_method_w_arity(os_wxMediaCanvas_class,"get-class-name",objscheme_classname_os_wxMediaCanvas, 0, 0);
 
  scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char", os_wxMediaCanvasOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event", os_wxMediaCanvasOnEvent, 1, 1);
  scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-paint", os_wxMediaCanvasOnPaint, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-drop-file", os_wxMediaCanvasOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxMediaCanvas_class, "pre-on-event", os_wxMediaCanvasPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxMediaCanvas_class, "pre-on-char", os_wxMediaCanvasPreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-size", os_wxMediaCanvasOnSize, 2, 2);

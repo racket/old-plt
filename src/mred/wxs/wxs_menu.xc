@@ -25,20 +25,18 @@
 
 @CREATOR (nstring=NULL,wxFunction=NULL/bCallback/ubCallback/cCallback//spCallback); : : ubCallbackSetup///ubCallbackCreatorFinish
 
-@ "append" : void Append(int,string,wxMenu!,nstring=NULL); : : <> submenu
-@ "append" : void Append(int,string,nstring=NULL,bool=FALSE); : : <> string item
-@ "delete" : bool Delete(int); : :
+@ "append" : void Append(ExactLong,string,wxMenu!,nstring=NULL); : : <> submenu
+@ "append" : void Append(ExactLong,string,nstring=NULL,bool=FALSE); : : <> string item
+@ "delete" : bool Delete(ExactLong); : :
 @ "delete-by-position" : bool DeleteByPosition(int); : :
 @ "append-separator" : void AppendSeparator();
-@ "checked?" : bool Checked(int); : :
-@ "check" : void Check(int,bool); : :
-@ "enable" : void Enable(int,bool); : :
+@ "checked?" : bool Checked(ExactLong); : :
+@ "check" : void Check(ExactLong,bool); : :
+@ "enable" : void Enable(ExactLong,bool); : :
 @ "number" : int Number()
 
-@ "find-item" : int FindItem(string);
-
-@ "set-help-string" : void SetHelpString(int, nstring); : :
-@ "set-label" : void SetLabel(int, string); : :
+@ "set-help-string" : void SetHelpString(ExactLong, nstring); : :
+@ "set-label" : void SetLabel(ExactLong, string); : :
 @ "set-title" : void SetTitle(string);
 
 @END
@@ -69,8 +67,6 @@
 @ "enable-top" : void EnableTop(int,bool); : : /CHECKNEGVOID[0]
 @ "number" : int Number()
 
-@ "find-menu-item" : int FindMenuItem(string,string);
-
 @ "set-label-top" : void SetLabelTop(int, string); : : /CHECKNEGVOID[0]
 
 @END
@@ -82,12 +78,12 @@ public:
   wxsMenuItem(void) {
   }
 
-  int Id(void) {
-    return (int)this;
+  ExactLong Id(void) {
+    return (ExactLong)this;
   }
 };
 
-wxsMenuItem* wxsIdToMenuItem(int id)
+wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {
   return (wxsMenuItem *)id;
 }
@@ -96,13 +92,13 @@ wxsMenuItem* wxsIdToMenuItem(int id)
 
 @CREATOR ()
 
-@ "id" : int Id();
+@ "id" : ExactLong Id();
 
 @END
 
 
 @GLOBAL wxsMenuItemGlobal
 
-@ "id-to-menu-item" : wxsMenuItem! wxsIdToMenuItem(int);
+@ "id-to-menu-item" : wxsMenuItem! wxsIdToMenuItem(ExactLong);
 
 @END

@@ -30,7 +30,6 @@
  cursor%
  dc<%>
  display-depth
- display-size
  end-busy-cursor
  event%
  event-dispatch-handler

@@ -104,6 +104,7 @@ static void CB_TOSCHEME(CB_REALCLASS *obj, wxCommandEvent &event);
 
 
 
+
 class os_wxButton : public wxButton {
  public:
   Scheme_Object *callback_closure;
@@ -111,6 +112,7 @@ class os_wxButton : public wxButton {
   os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button");
   os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button");
   ~os_wxButton();
+  void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -139,6 +141,39 @@ os_wxButton::os_wxButton(Scheme_Object * o, class wxPanel* x0, wxFunction x1, cl
 os_wxButton::~os_wxButton()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+void os_wxButton::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxButton_class, "on-drop-file", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxButton::OnDropFile(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_pathname((char *)x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
 }
 
 Bool os_wxButton::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
@@ -342,6 +377,27 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
     
   }
 
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxButtonOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "button%::on-drop-file");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxButton *)((Scheme_Class_Object *)obj)->primdata)->wxButton::OnDropFile(x0);
+  else
+    ((wxButton *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
+
+  
+  
   return scheme_void;
 }
 
@@ -570,11 +626,12 @@ void objscheme_setup_wxButton(void *env)
 if (os_wxButton_class) {
     objscheme_add_global_class(os_wxButton_class, "button%", env);
 } else {
-  os_wxButton_class = objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7);
+  os_wxButton_class = objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 8);
 
   scheme_add_method_w_arity(os_wxButton_class,"get-class-name",objscheme_classname_os_wxButton, 0, 0);
 
  scheme_add_method(os_wxButton_class, "set-label", os_wxButtonSetLabel);
+ scheme_add_method_w_arity(os_wxButton_class, "on-drop-file", os_wxButtonOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxButton_class, "pre-on-event", os_wxButtonPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxButton_class, "pre-on-char", os_wxButtonPreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxButton_class, "on-size", os_wxButtonOnSize, 2, 2);

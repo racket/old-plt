@@ -247,6 +247,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 #define RANGECLASS wxListBox
 
 #define THISOBJECT ((RANGECLASS *)((Scheme_Class_Object *)obj)->primdata)
@@ -263,6 +264,7 @@ class os_wxListBox : public wxListBox {
 
   os_wxListBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = wxSINGLE, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = -1, int x8 = 0, string* x9 = NULL, int x10 = 0, string x11 = "button");
   ~os_wxListBox();
+  void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -283,6 +285,39 @@ os_wxListBox::os_wxListBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, 
 os_wxListBox::~os_wxListBox()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+void os_wxListBox::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxListBox_class, "on-drop-file", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxListBox::OnDropFile(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_pathname((char *)x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
 }
 
 Bool os_wxListBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
@@ -858,6 +893,27 @@ static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Obje
 }
 
 #pragma argsused
+static Scheme_Object *os_wxListBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "list-box%::on-drop-file");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxListBox *)((Scheme_Class_Object *)obj)->primdata)->wxListBox::OnDropFile(x0);
+  else
+    ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxListBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1044,7 +1100,7 @@ void objscheme_setup_wxListBox(void *env)
 if (os_wxListBox_class) {
     objscheme_add_global_class(os_wxListBox_class, "list-box%", env);
 } else {
-  os_wxListBox_class = objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 26);
+  os_wxListBox_class = objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 27);
 
   scheme_add_method_w_arity(os_wxListBox_class,"get-class-name",objscheme_classname_os_wxListBox, 0, 0);
 
@@ -1068,6 +1124,7 @@ if (os_wxListBox_class) {
  scheme_add_method_w_arity(os_wxListBox_class, "delete", os_wxListBoxDelete, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "clear", os_wxListBoxClear, 0, 0);
  scheme_add_method(os_wxListBox_class, "append", os_wxListBoxAppend);
+ scheme_add_method_w_arity(os_wxListBox_class, "on-drop-file", os_wxListBoxOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxListBox_class, "pre-on-event", os_wxListBoxPreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "pre-on-char", os_wxListBoxPreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "on-size", os_wxListBoxOnSize, 2, 2);

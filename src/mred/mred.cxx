@@ -6,7 +6,7 @@
  * Copyright:   (c) 1995-98, Matthew Flatt
  */
 
-#define WINDOW_STDIO 1
+#define WINDOW_STDIO 0
 
 /* wx_xt: */
 #define Uses_XtIntrinsic
@@ -882,14 +882,30 @@ static int check_initialized(Scheme_Object *)
 
 # define KEEP_GOING wxTheApp->keep_going
 
+#if WINDOW_STDIO
+static Scheme_Manager *main_manager;
+#endif
+
 void wxDoEvents()
 {
   /* When we get here, we are in the main dispatcher thread */
   if (!TheMrEdApp->initialized) {
     MrEdContext *c;
+#if WINDOW_STDIO
+    Scheme_Manager *m, *oldm;
+
+    oldm = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
+    m = scheme_make_manager(oldm);    
+    scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)m);
+    main_manager = m;
+#endif
 
     c = (MrEdContext *)MrEdMakeEventspace(NULL);
-    
+
+#if WINDOW_STDIO
+    scheme_set_param(scheme_config, MZCONFIG_MANAGER, (Scheme_Object *)oldm);
+#endif
+
     scheme_thread(scheme_make_closed_prim(handle_events,
 					  c), 
 		  c->main_config);
@@ -1846,10 +1862,10 @@ static void on_main_killed(Scheme_Process *p)
 {
   on_handler_killed(p);
   
-#ifdef WINDOW_STDIO
+#if WINDOW_STDIO
   if (have_stdio) {
-    
     stdio_kills_prog = 1;
+    scheme_close_managed(main_manager);
     return;
   }
 #endif

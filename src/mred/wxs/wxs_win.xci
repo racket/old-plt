@@ -7,3 +7,5 @@
 
 @ w "pre-on-char" : bool PreOnChar(wxWindow!,wxKeyEvent!);  : : : returnFALSE : returnFALSE : wxWindow
 @ w "pre-on-event" : bool PreOnEvent(wxWindow!,wxMouseEvent!);  : : : returnFALSE : returnFALSE : wxWindow
+
+@ w "on-drop-file" : void OnDropFile(pathname)

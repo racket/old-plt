@@ -43,7 +43,7 @@
 
 @CLASSID wxTYPE_POPUP_EVENT
 
-@IVAR "menu-id" : int menuId
+@IVAR "menu-id" : ExactLong menuId
 
 @END
 

@@ -99,7 +99,7 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
 
 /***************************************************************************/
 
-int objscheme_istype_bool(Scheme_Object *obj, const char *stopifbad)
+int objscheme_istype_bool(Scheme_Object *, const char *)
 {
   return 1; /* Anything can be a boolean */
 }
@@ -123,6 +123,18 @@ int objscheme_istype_integer(Scheme_Object *obj, const char *stopifbad)
     scheme_wrong_type(stopifbad, "fixnum", -1, 0, &obj);
   }
   return 0;
+}
+
+int objscheme_istype_ExactLong(Scheme_Object *obj, const char *stopifbad)
+{
+  long v;
+  if (!scheme_get_int_val(obj, &v)) {
+    if (stopifbad) {
+      scheme_wrong_type(stopifbad, "long fixnum", -1, 0, &obj);
+    }
+    return 0;
+  } else
+    return 1;
 }
 
 int objscheme_istype_float(Scheme_Object *obj, const char *stopifbad)
@@ -265,6 +277,17 @@ long objscheme_unbundle_nonnegative_integer(Scheme_Object *obj, const char *wher
   return v;
 }
 
+ExactLong objscheme_unbundle_ExactLong(Scheme_Object *obj, const char *where)
+{
+  long v;
+
+  if (!scheme_get_int_val(obj, &v))
+    (void)objscheme_istype_ExactLong(obj, where);
+
+  return v;
+}
+
+
 double objscheme_unbundle_float(Scheme_Object *obj, const char *where)
 {
   (void)objscheme_istype_number(obj, where);
@@ -369,7 +392,7 @@ void objscheme_set_box(Scheme_Object *b, Scheme_Object *v)
 
 /************************************************************************/
 
-void objscheme_note_creation(Scheme_Object *obj)
+void objscheme_note_creation(Scheme_Object *)
 {
   num_objects_allocated++;
 }
@@ -492,7 +515,7 @@ void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
   }
 }
 
-void objscheme_backpointer(void *obj)
+void objscheme_backpointer(void * /* obj */)
 {
 }
 

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.4 1998/08/10 22:01:32 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.5 1998/08/13 02:13:13 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1978,9 +1978,9 @@ IMPLEMENT_DYNAMIC_CLASS(wxPrintSetupData, wxObject)
 
 wxPrintSetupData::wxPrintSetupData(void)
 {
-    printer_command = NULL;
-    preview_command = NULL;
-    printer_flags = NULL;
+    printer_command = PS_PRINTER_COMMAND;
+    preview_command = PS_PREVIEW_COMMAND;
+    printer_flags = PS_PRINTER_OPTIONS;
     printer_orient = PS_PORTRAIT;
     printer_scale_x = 1.0;
     printer_scale_y = 1.0;

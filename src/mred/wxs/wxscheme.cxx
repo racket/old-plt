@@ -13,6 +13,7 @@
 #include "wx_main.h"
 #endif
 #include "wxsmred.h"
+#include "wx_dcps.h"
 
 #define WXS_SETUP_ONLY 1
 #include "wxs_obj.h"
@@ -79,6 +80,8 @@ static Scheme_Object *pref_dir_symbol, *pref_file_symbol,
   *setup_file_symbol, *init_file_symbol, *init_dir_symbol, 
   *temp_dir_symbol, *autosaves_file_symbol;
 
+static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user;
+
 #define INSTALL_COUNT 520
 
 static Scheme_Object *mred_unit;
@@ -93,9 +96,15 @@ typedef struct {
   } v[INSTALL_COUNT];
 } InstallRec;
 
-static void wxScheme_Invoke(Scheme_Env *)
+static void wxScheme_Invoke(Scheme_Env *env)
 {
   scheme_invoke_unit(mred_unit, 0, NULL, NULL, 1, NULL, 0, 0);
+
+  if (!get_file) {
+    get_file = scheme_lookup_global(scheme_intern_symbol("get-file"), env);
+    put_file = scheme_lookup_global(scheme_intern_symbol("put-file"), env);
+    get_ps_setup_from_user = scheme_lookup_global(scheme_intern_symbol("get-ps-setup-from-user"), env);
+  }
 }
 
 static Scheme_Object *wxsUnit_Init(Scheme_Object **boxes, Scheme_Object ** /* anchors */,
@@ -1185,16 +1194,45 @@ static Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   return scheme_void;
 }
 
-char *wxsPrinterDialog(char *message, char *default_path, 
-		       char *default_filename, char *default_extension, 
-		       int is_put, wxWindow *parent)
+char *wxsFileDialog(char *message, char *default_path, 
+		    char *default_filename, char *default_extension, 
+		    int is_put, wxWindow *parent)
 {
-  return NULL;
+  Scheme_Object *a[6], *r;
+  
+  a[0] = !message ? scheme_false : scheme_make_string(message);
+  a[1] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
+  a[2] = !default_path ? scheme_false : scheme_make_string(default_path);
+  a[3] = !default_filename ? scheme_false : scheme_make_string(default_filename);
+  a[4] = !default_extension ? scheme_false : scheme_make_string(default_extension);
+  a[5] = scheme_null;
+
+  r = scheme_apply(is_put ? put_file : get_file, 6, a);
+
+  if (SCHEME_FALSEP(r))
+    return NULL;
+  else
+    return SCHEME_STR_VAL(r);
 }
+
+extern wxPrintSetupData *wxGetThePrintSetupData();
 
 Bool wxsPrinterDialog(wxWindow *parent)
 {
-  return FALSE;
+  Scheme_Object *a[2], *r;
+  
+  a[0] = !parent ? scheme_false : objscheme_bundle_wxWindow(parent);
+  a[1] = scheme_null;
+
+  r = scheme_apply(get_ps_setup_from_user, 2, a);
+
+  if (SCHEME_FALSEP(r)) {
+    return 0;
+  } else {
+    wxPrintSetupData *p = objscheme_unbundle_wxPrintSetupData(r, NULL, 0);
+    *(wxGetThePrintSetupData()) = *p;
+    return 1;
+  }
 }
 
 static void wxScheme_Install(Scheme_Env *env, void *global_env)

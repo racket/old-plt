@@ -49,4 +49,4 @@
  get-text-from-user
  get-ps-setup-from-user
  play-sound
- application-file-handler)
+ get-display-size)

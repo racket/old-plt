@@ -61,7 +61,7 @@
 	     (COLS "2")
 	     (WIDTH "85%"))
 	    (TR 
-	     (TD (FONT ((SIZE "+2")) (B "Send bug report to PLT")))
+	     (TD (FONT ((SIZE "+2")) (B "Send a bug report to PLT")))
 	     (TD ((ALIGN "right")) 
 		 ,home-page)))
      (P)

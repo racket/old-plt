@@ -397,8 +397,10 @@ The _utils.ss_ module provides utilities helpful in implementing
   phrased suitably for the handin client.
 
 > (check-defined eval name) - checks whether `name' is defined in the
-  evaluator `eval', and raises an error if not (suitably phrased for
-  the handin client).  If it is defined, its value is returned.
+  evaluator `eval', and raises an error if not (suitably phrased for the
+  handin client).  If it is defined, its value is returned (warning: in
+  the beginner language level, procedure definitions are bound to syntax
+  objects).
 
 > (look-for-tests text name n) - inspects the given text% object to
   determine whether it contains at least `n' tests for the function

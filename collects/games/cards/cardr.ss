@@ -31,11 +31,27 @@
   (define ANIMATION-STEPS 5)
   (define ANIMATION-TIME 0.3)
 
-  (define-struct region (x y w h label callback hilite? decided-start? can-select?))
+  (define PRETTY-CARD-SEP-AMOUNT 5)
+
+  (define-struct region (x y w h label callback button? hilite? decided-start? can-select?))
 
   (define create-region
     (lambda (x y w h label callback)
-      (make-region x y w h label callback #f #f #f)))
+      (make-region x y w h label callback #f #f #f #f)))
+
+  (define make-button-region
+    (lambda (x y w h label callback)
+      (make-region x y w h label callback #t #f #f #f)))
+
+  (define red-brush
+    (send wx:the-brush-list
+	  find-or-create-brush
+	  "RED" wx:const-solid))
+
+  (define nice-font
+    (send wx:the-font-list
+	  find-or-create-font
+	  12 wx:const-decorative wx:const-default wx:const-bold))
 
   (define cards:pasteboard%
     (class mred:pasteboard% ()
@@ -64,7 +80,7 @@
 
 	    [selecting? #f]
 	    [dragging? #f]
-	    [useless-drag? #f]
+	    [bg-click? #f]
 	    [click-base null]
 	    [regions null]
 	    [get-snip-bounds
@@ -152,19 +168,22 @@
 		      (let-values ([(sx sy sw sh) (get-region-box region)]
 				   [(old-b) (send dc get-brush)])
 			(when (region-hilite? region)
-			  (send dc set-brush (send wx:the-brush-list
-						   find-or-create-brush
-						   "RED" wx:const-solid)))
+			  (send dc set-brush red-brush))
 			(send dc draw-rectangle (+ dx sx) (+ dy sy) sw sh)
 			(when (region-hilite? region)
 			  (send dc set-brush old-b))
 			(let ([xb (box 0)]
 			      [yb (box 0)]
-			      [text (region-label region)])
+			      [text (region-label region)]
+			      [old-f (send dc get-font)])
+			  (send dc set-font nice-font)
 			  (send dc get-text-extent text xb yb)
 			  (send dc draw-text text
 				(+ dx sx (/ (- sw (unbox xb)) 2))
-				(+ dy sy 5))))))
+				(if (region-button? region)
+				    (+ dy sy (/ (- sh (unbox yb)) 2))
+				    (+ dy sy 5)))
+			  (send dc set-font old-f)))))
 		  regions)))]
 	    [after-select
 	     (lambda (s on?)
@@ -259,7 +278,8 @@
 		 (when (and dragging? (not (null? click-base)) (send click-base user-can-move))
 		   (for-each
 		    (lambda (region)
-		      (when (and (region-callback region)
+		      (when (and (not (region-button? region))
+				 (region-callback region)
 				 (or (not (region-decided-start? region))
 				     (region-can-select? region)))
 			(let-values ([(sx sy sw sh) (get-region-box region)])
@@ -273,15 +293,47 @@
 			      (set-region-hilite?! region in?)
 			      (invalidate-bitmap-cache sx sy sw sh))))))
 		    regions))
-		 (if (send e button-down?)
-		     (if (null? s)
-			 (set! useless-drag? #t)
-			 (set! useless-drag? #f))
-		     (when (and useless-drag?
-				(not (send e dragging?)))
-			 (set! useless-drag? #f)))
-		 (unless useless-drag?
-		   (super-on-default-event e))
+		 (let ([was-bg? bg-click?])
+		   (if (send e button-down?)
+		       (if (null? s)
+			   (set! bg-click? #t)
+			   (set! bg-click? #f))
+		       (when (and bg-click?
+				  (not (send e dragging?)))
+			 (set! bg-click? #f)))
+		   (unless bg-click?
+		     (super-on-default-event e))
+		   (when bg-click?
+		     ; Check for clicking on a button region:
+		     (for-each
+		      (lambda (region)
+			(when (and (region-button? region)
+				   (region-callback region))
+			  (let-values ([(sx sy sw sh) (get-region-box region)])
+			    (let ([in? (and (<= sx lx (+ sx sw))
+					    (<= sy ly (+ sy sh)))])
+			      (unless (region-decided-start? region)
+				(set-region-decided-start?! region #t)
+				(set-region-can-select?! region in?))
+			      (when (and (not (eq? in? (region-hilite? region)))
+					 (region-can-select? region))
+				(set-region-hilite?! region in?)
+				(invalidate-bitmap-cache sx sy sw sh))))))
+		      regions))
+		   (when (and was-bg? (not bg-click?))
+		     ; Callback hilighted button:
+		     (for-each
+		      (lambda (region)
+			(when (region-button? region) 
+			  (set-region-decided-start?! region #f)
+			  (when (region-hilite? region)
+			    (semaphore-callback
+			     ; Call it outside the current edit sequence
+			     (make-semaphore 1)
+			     (lambda ()
+			       ((region-callback region))
+			       (unhilite-region region))))))
+		      regions)))
 		 (when (and (send e button-down?)
 			    (not (null? click-base))
 			    (not (send click-base user-can-move)))
@@ -694,14 +746,23 @@
 			[(len) (sub1 (length cards))]
 			[(cw ch) (values (send back get-width)
 					 (send back get-height))])
-	     (position-cards cards x y
-			     (lambda (p)
-			       (if (zero? len)
-				   (values (/ (- w cw) 2)
-					   (/ (- h ch) 2))
-				   (values (* (- len p) (/ (- w cw) len))
-					   (* (- len p) (/ (- h ch) len)))))
-			     set)))])
+	     (let* ([pretty (lambda (cw) (+ (* (add1 len) cw) (* len PRETTY-CARD-SEP-AMOUNT)))]
+		    [pw (pretty cw)]
+		    [ph (pretty ch)])
+	       (let-values ([(x w) (if (> w pw)
+				       (values (+ x (/ (- w pw) 2)) pw)
+				       (values x w))]
+			    [(y h) (if (> h ph)
+				       (values (+ y (/ (- h ph) 2)) ph)
+				       (values y h))])
+		 (position-cards cards x y
+				 (lambda (p)
+				   (if (zero? len)
+				       (values (/ (- w cw) 2)
+					       (/ (- h ch) 2))
+				       (values (* (- len p) (/ (- w cw) len))
+					       (* (- len p) (/ (- h ch) len)))))
+				 set)))))])
       (sequence
 	(super-init null title))
       (private

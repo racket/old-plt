@@ -36,6 +36,13 @@ plus a structure:
      The only mutator on the structure that is available is set-region-callback!.
      The structure created by make-region actually has extra hidden fields.
 
+  (make-button-region x y w h label callback) - returns a region like
+     one made by make-region, but the is drawn slightly differently and
+     it reacts differently to cards and the mouse. The label is drawn
+     in the middle of the box instead of at the top, and the callback is
+     called with no arguments when the user clicks the region (instead
+     of dragging cards to the region).
+
 Table methods:
    
    (send t add-card card x y) - adds card to the table with its top-left

@@ -6,7 +6,7 @@
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:get/extend : drscheme:get/extend^])
   
-  (mred:add-version-spec 'd 2)
+  (mred:add-version-spec 'd 3)
   
   ;; no more extension after this point
   (drscheme:get/extend:get-interactions-canvas%)

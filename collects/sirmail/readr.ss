@@ -1066,12 +1066,53 @@
 	  (send e end-edit-sequence)
 	  i))
       
-      (define last-status #f)
+      (define last-status "")
+      (define status-sema (make-semaphore 1))
       (define (status . args)
+        (semaphore-wait status-sema)
 	(let ([s (apply format args)])
           (unless (equal? s last-status)
             (set! last-status s)
-            (send sm-frame set-status-text s))))
+            (update-status-text)))
+        (semaphore-post status-sema))
+      
+      ;; update-status-text : -> void
+      ;; =any thread=
+      (define (update-status-text)
+        (send sm-frame set-status-text 
+              (if (equal? last-status "")
+                  (format "(~a bytes)"
+                          (format-number (current-memory-use)))
+                  (format "~a (~a bytes)"
+                          last-status
+                          (format-number (current-memory-use))))))
+      (thread
+       (lambda ()
+         (let loop ()
+           (semaphore-wait status-sema)
+           (when (object? sm-frame)
+             (update-status-text))
+           (semaphore-post status-sema)
+           (sleep 5)
+           (loop))))
+
+      ;; copied from framerok/private/frame.sss -- be sure to propogate fixes....
+      ;; or establish single point of control.
+      (define (format-number n)
+        (let loop ([n n])
+          (cond
+            [(<= n 1000) (number->string n)]
+            [else
+             (string-append 
+              (loop (quotient n 1000))
+              ","
+              (pad-to-3 (modulo n 1000)))])))
+      
+      (define (pad-to-3 n)
+        (cond
+          [(<= n 9) (format "00~a" n)]
+          [(<= n 99) (format "0~a" n)]
+          [else (number->string n)]))
       
       (define can-poll? #t)
       

@@ -520,6 +520,7 @@ void scheme_list_module_rename(Scheme_Object *src, Scheme_Hash_Table *ht);
 
 Scheme_Object *scheme_rename_to_stx(Scheme_Object *rn);
 Scheme_Object *scheme_stx_to_rename(Scheme_Object *stx);
+Scheme_Object *scheme_stx_shift_rename(Scheme_Object *mrn, Scheme_Object *old_midx, Scheme_Object *new_midx);
 
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);

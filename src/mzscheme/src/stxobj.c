@@ -755,20 +755,6 @@ void scheme_set_rename(Scheme_Object *rnm, int pos, Scheme_Object *oldname)
   }
 }
 
-Scheme_Object *scheme_rename_to_stx(Scheme_Object *rn)
-{
-  Scheme_Object *stx;
-  stx = scheme_make_stx(scheme_false, empty_srcloc, NULL); 
-  return scheme_add_rename(stx, rn);
-}
-
-Scheme_Object *scheme_stx_to_rename(Scheme_Object *stx)
-{
-  Scheme_Object *wraps;
-  wraps = ((Scheme_Stx *)stx)->wraps;
-  return SCHEME_CAR(wraps);
-}
-
 /******************** module renames ********************/
 
 Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_Table *marked_names)
@@ -836,9 +822,11 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
   scheme_hash_set(((Module_Renames *)mrn)->ht, localname, elem);
 }
 
-void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
+static void do_append_module_rename(Scheme_Object *src, Scheme_Object *dest,
+				    Scheme_Object *old_midx, Scheme_Object *new_midx)
 {
   Scheme_Hash_Table *ht, *hts;
+  Scheme_Object *v;
   int i;
 
   if (((Module_Renames *)src)->plus_kernel) {
@@ -853,7 +841,33 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
 
   for (i = hts->size; i--; ) {
     if (hts->vals[i]) {
-      scheme_hash_set(ht, hts->keys[i], hts->vals[i]);
+      v = hts->vals[i];
+      if (old_midx) {
+	/* Shift the modidx part */
+	if (SCHEME_PAIRP(v)) {
+	  if (SCHEME_PAIRP(SCHEME_CDR(v))) {
+	    /* (list* modidx exportname nominal_modidx nominal_exportname) */
+	    Scheme_Object *midx1, *midx2;
+	    midx1 = SCHEME_CAR(v);
+	    midx2 = SCHEME_CAR(SCHEME_CDDR(v));
+	    midx1 = scheme_modidx_shift(midx1, old_midx, new_midx);
+	    midx2 = scheme_modidx_shift(midx2, old_midx, new_midx);
+	    v = CONS(midx1, CONS(SCHEME_CADR(v), CONS(midx2, SCHEME_CDR(SCHEME_CDDR(v)))));
+	  } else if (SCHEME_IMMUTABLEP(v)) {
+	    /* (cons-immutable modidx nominal_modidx) */
+	    v = ICONS(scheme_modidx_shift(SCHEME_CAR(v), old_midx, new_midx),
+		      scheme_modidx_shift(SCHEME_CDR(v), old_midx, new_midx));
+	  } else {
+	    /* (cons modidx exportname) */
+	    v = CONS(scheme_modidx_shift(SCHEME_CAR(v), old_midx, new_midx),
+		     SCHEME_CDR(v));
+	  }
+	} else {
+	  /* modidx */
+	  v = scheme_modidx_shift(v, old_midx, new_midx);
+	}
+      }
+      scheme_hash_set(ht, hts->keys[i], v);
     }
   }
 
@@ -873,6 +887,11 @@ void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
       }
     } 
   }
+}
+
+void scheme_append_module_rename(Scheme_Object *src, Scheme_Object *dest)
+{
+  do_append_module_rename(src, dest, NULL, NULL);
 }
 
 void scheme_remove_module_rename(Scheme_Object *mrn,
@@ -898,6 +917,30 @@ void scheme_list_module_rename(Scheme_Object *src, Scheme_Hash_Table *ht)
   if (((Module_Renames *)src)->plus_kernel) {
     scheme_list_module_rename((Scheme_Object *)krn, ht);
   }
+}
+
+
+Scheme_Object *scheme_rename_to_stx(Scheme_Object *mrn)
+{
+  Scheme_Object *stx;
+  stx = scheme_make_stx(scheme_false, empty_srcloc, NULL); 
+  return scheme_add_rename(stx, mrn);
+}
+
+Scheme_Object *scheme_stx_to_rename(Scheme_Object *stx)
+{
+  Scheme_Object *wraps;
+  wraps = ((Scheme_Stx *)stx)->wraps;
+  return SCHEME_CAR(wraps);
+}
+
+Scheme_Object *scheme_stx_shift_rename(Scheme_Object *mrn, 
+				       Scheme_Object *old_midx, Scheme_Object *new_midx)
+{
+  Scheme_Object *nmrn;
+  nmrn = scheme_make_module_rename(0, 0, NULL);
+  do_append_module_rename(mrn, nmrn, old_midx, new_midx);
+  return nmrn;
 }
 
 /******************** wrap manipulations ********************/

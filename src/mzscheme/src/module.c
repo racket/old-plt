@@ -2268,6 +2268,21 @@ module_execute(Scheme_Object *data)
 	
 	nmidx = scheme_make_modidx(midx->path, midx->base, m->modname);
 	m->self_modidx = nmidx;
+
+	if (m->rn_stx && !SAME_OBJ(scheme_true, m->rn_stx)) {
+	  Scheme_Object *rn_stx, *rn;
+	  rn = scheme_stx_to_rename(m->rn_stx);
+	  rn = scheme_stx_shift_rename(rn, (Scheme_Object *)midx, nmidx);
+	  rn_stx = scheme_rename_to_stx(rn);
+	  m->rn_stx = rn_stx;
+	}
+	if (m->et_rn_stx && !SAME_OBJ(scheme_true, m->et_rn_stx)) {
+	  Scheme_Object *et_rn_stx, *rn;
+	  rn = scheme_stx_to_rename(m->et_rn_stx);
+	  rn = scheme_stx_shift_rename(rn, (Scheme_Object *)midx, nmidx);
+	  et_rn_stx = scheme_rename_to_stx(rn);
+	  m->et_rn_stx = et_rn_stx;
+	}
       }
     }
   }

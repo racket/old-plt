@@ -383,7 +383,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
     int ex_types[2];
     long ex_vals[2];
     int ex_pos = 0;
-    FcMatrix rot;
+    XftMatrix rot;
 
     wt = ((weight == wxBOLD)
 	  ? XFT_WEIGHT_BOLD
@@ -416,8 +416,8 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, int fontid, int fa
     }
 
     if (angle) {
-      FcMatrixInit(&rot);
-      FcMatrixRotate(&rot, cos(angle), sin(angle));
+      XftMatrixInit(&rot);
+      XftMatrixRotate(&rot, cos(angle), sin(angle));
       ex_vals[ex_pos] = (long)&rot;
       ex_types[ex_pos] = XftTypeMatrix;
       ex_tags[ex_pos++] = XFT_MATRIX;

@@ -35,7 +35,7 @@
   
   (define-struct thing (x y copy))
 
-  (define-struct (pack thing) (icon pen id dest-x dest-y weight owner home?))
+  (define-struct (pack thing) (icon home-icon pen id dest-x dest-y weight owner home?))
   (define-struct (robot thing) (icon dead-icon id packages money max-lift motion drop grab dead? moving? 
                                      bid bid-index score pos activity))
 
@@ -139,11 +139,11 @@
 			      32)))
       (define cell-paint-size (max 1 (sub1 scale)))                               
       
-      (define pack-icons (list->vector (make-package-icons cell-paint-size pack-colors)))
+      (define pack-iconses (list->vector (make-package-icons cell-paint-size pack-colors)))
       (define pack-arrow-pens (list->vector (map (lambda (color)
                                                    (make-object pen% color 1 'solid))
                                                  pack-colors)))
-      (define unknown-pack-icon (car (make-package-icons cell-paint-size (list unknown-pack-color))))
+      (define unknown-pack-icons (car (make-package-icons cell-paint-size (list unknown-pack-color))))
       
       (define robots null)
       
@@ -269,13 +269,15 @@
                                                                  (- max min))
                                                               (sub1 num-pack-icons))))])]
                                    [dest-x (pkg-dest-x pkg)]
-                                   [dest-y (pkg-dest-y pkg)])
+                                   [dest-y (pkg-dest-y pkg)]
+                                   [icons (if weight
+                                              (vector-ref pack-iconses rel-weight)
+                                              unknown-pack-icons)])
                                (make-pack (sub1 (pkg-x pkg)) ; sub1 for 0-indexed
                                           (sub1 (pkg-y pkg))
                                           #f ; copy
-                                          (if weight
-                                              (vector-ref pack-icons rel-weight)
-                                              unknown-pack-icon)
+                                          (car icons)
+                                          (cdr icons)
                                           (vector-ref pack-arrow-pens rel-weight)
                                           (pkg-id pkg)
                                           (and dest-x (sub1 dest-x))
@@ -571,7 +573,7 @@
       (define/private (copy-package p)
         (make-pack
          (thing-x p) (thing-y p) #f
-         (pack-icon p) (pack-pen p) (pack-id p) 
+         (pack-icon p) (pack-home-icon p) (pack-pen p) (pack-id p) 
          (pack-dest-x p) (pack-dest-y p) (pack-weight p) 
          (pack-owner p) (pack-home? p)))
     
@@ -755,7 +757,13 @@
               (send (send robot-list get-editor) end-edit-sequence)
               (send (send pack-list get-editor) begin-edit-sequence)
               (for-each (lambda (i)
-                          (set-pack-info (send i user-data) i))
+                          (let ([p (send i user-data)])
+                            (let ([snip (send (send i get-editor) find-first-snip)])
+                              (send snip set-label (if (pack-home? p)
+                                                       (car (pack-home-icon p))
+                                                       (car (pack-icon p)))
+                                    (format "~a" (pack-id p))))
+                            (set-pack-info p i)))
                         (send pack-list get-items))
               (send (send pack-list get-editor) end-edit-sequence)))))
           

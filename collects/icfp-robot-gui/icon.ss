@@ -9,6 +9,8 @@
            make-robot-icons
            icon-snip%)
   
+  (define transparent-brush (make-object brush% "black" 'transparent))
+
   (define transparent-pen (make-object pen% "black" 1 'transparent))
   (define black-pen (make-object pen% "black" 1 'solid))
   (define black-brush (make-object brush% "black" 'solid))
@@ -43,6 +45,7 @@
   (define (mk-package color size)
     (define half-size (add1 (quotient size 2)))
     (define pack-bm (make-object bitmap% half-size half-size))
+    (define empty-bm (make-object bitmap% half-size half-size))
     (define pack-mask (make-object bitmap% half-size half-size #t))
     (define dc (make-object bitmap-dc% pack-bm))
 
@@ -72,6 +75,17 @@
     (send dc set-brush (send the-brush-list find-or-create-brush (lighter color) 'solid))
     (send dc draw-polygon top dx dy)
     
+    (send dc set-bitmap empty-bm)
+    (send dc clear)
+    (send dc set-brush (send the-brush-list find-or-create-brush color 'solid))
+    (send dc draw-polygon left dx dy)
+    (send dc set-brush (send the-brush-list find-or-create-brush (darker color) 'solid))
+    (send dc draw-polygon right dx dy)
+    (send dc set-pen (send the-pen-list find-or-create-pen (lighter color) 1 'solid))
+    (send dc set-brush transparent-brush)
+    (send dc draw-polygon top dx dy)
+    (send dc set-pen transparent-pen)
+    
     (send dc set-bitmap pack-mask)
     (send dc clear)
     (send dc set-brush black-brush)
@@ -80,7 +94,8 @@
     (send dc draw-polygon right dx dy)
     
     (send dc set-bitmap #f)
-    (cons pack-bm pack-mask))
+    (cons (cons pack-bm pack-mask)
+          (cons empty-bm pack-mask)))
   
   (define (make-package-icons size colors)
     (map (lambda (color)

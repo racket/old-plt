@@ -16,7 +16,7 @@
   (define pack-file "~/tmp/packs") ; pkg configuartions available there, too
   
   (define robot-capacity 100)
-  (define start-money 10)
+  (define start-money 100)
   
   ;; -----------------------------------
   

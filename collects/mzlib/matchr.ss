@@ -172,8 +172,8 @@ val))]))
 [() match:error-control] [(v) (match:set-error-control v)])) (define
 match:error-control 'error) (define match:set-error-control (lambda
 (v) (if (memq v '(unspecified fail error match)) (set!
-match:error-control v) (error 'match:set-error-control "invalid
-setting: ~s" v)))) (define match:disjoint-predicates (cons 'null
+match:error-control v) (error 'match:set-error-control "invalid setting: ~s" v))))
+(define match:disjoint-predicates (cons 'null
 '(pair?  symbol?  boolean?  number?  string?  char?  procedure?
 vector?  box?)))  (define match:vector-structures '()) (define
 match:expanders (letrec ((genmatch (lambda (x clauses match-expr)
@@ -220,8 +220,7 @@ fail)) (cons '() (lambda (x) `((#%global-defined-value 'match:error)
 ,x)))) ((eq? match:error-control 'match) (let ((errf (gensym)) (arg
 (gensym))) (cons `((,errf (lambda (,arg) ((#%global-defined-value
 'match:error) ,arg ',match-expr)))) (lambda (x) `(,errf ,x))))) (else
-(match:syntax-err '(unspecified error fail match) "invalid value for
-match:error-control, legal values are"))))) (unreachable (lambda
+(match:syntax-err '(unspecified error fail match) "invalid value for match:error-control, legal values are"))))) (unreachable (lambda
 (plist match-expr) (for-each (lambda (x) (if (not (car (cddddr x)))
 (begin (display "Warning: unreachable pattern ") (display (car x))
 (display " in ") (display match-expr) (newline)))) plist)))

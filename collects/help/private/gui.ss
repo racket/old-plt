@@ -427,7 +427,7 @@
             
             (define grow-box-spacer (make-object grow-box-spacer-pane% choices-panel))
             (define (search-callback lucky?)
-              (let-values ([(manuals doc.txt?) (order-manuals (map car (find-doc-names)))])
+              (let-values ([(manuals doc.txt?) (order-manuals (map path->bytes (map car (find-doc-names))))])
                 (let ([url (make-results-url
                             (send search-field get-value)
                             (case (send search-where get-selection)
@@ -439,7 +439,7 @@
                               [(1) "containing-match"]
                               [(2) "regexp-match"])
                             lucky?
-                            manuals
+                            (map bytes->path manuals)
                             doc.txt?
                             (get-language-name))])
                   (send (send (get-hyper-panel) get-canvas) goto-url url #f))))
@@ -486,12 +486,12 @@
       
       (define (search-for-docs/in-frame fr search-string search-type match-type lucky? docs)
         (send fr show #t)
-        (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
+        (let-values ([(manuals doc.txt?) (send fr order-manuals (map path->bytes docs))])
           (goto-url (make-results-url search-string
                                       search-type 
                                       match-type
                                       lucky?
-                                      manuals
+                                      (map bytes->path manuals)
                                       doc.txt?
                                       (send fr get-language-name))
                     fr)))

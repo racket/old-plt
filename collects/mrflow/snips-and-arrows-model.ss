@@ -24,7 +24,7 @@
    )
   
   (provide
-   make-gui-model-state ; (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (listof symbol) -> gui-model-state
+   make-gui-model-state ; (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (listof symbol) (label label -> string) -> gui-model-state
    
    (rename get-related-labels-from-drscheme-new-pos-and-source
            get-related-labels-from-drscheme-pos-and-source) ; gui-model-state non-negative-exact-integer top -> (listof label)
@@ -43,7 +43,7 @@
    add-arrow ; gui-model-state label label boolean -> void
    remove-arrows ; gui-model-state label (union symbol boolean) boolean -> void
    remove-all-arrows ; gui-model-state -> void
-   for-each-arrow  ; gui-model-state (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean -> void) -> void
+   for-each-arrow  ; gui-model-state (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean string -> void) -> void
    get-parents-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
    get-children-tacked-arrows ; gui-model-state label -> non-negative-exact-integer
    
@@ -56,7 +56,7 @@
   
   ; DATA STRUCTURES
   ; label label boolean
-  (define-struct arrow (start-label end-label tacked?))
+  (define-struct arrow (start-label end-label tacked? color))
   
   ; exact-non-negative-integer
   (define-struct snip-group (size))
@@ -107,6 +107,8 @@
                                   get-span-from-label
                                   ; (listof symbol)
                                   snip-type-list
+                                  ; (label label -> string)
+                                  get-arrow-color-from-labels
                                   ))
   
   ; (label -> top)
@@ -119,7 +121,8 @@
           (lambda (get-source-from-label
                    get-mzscheme-position-from-label
                    get-span-from-label
-                   snip-type-list)
+                   snip-type-list
+                   get-arrow-color-from-labels)
             (let ([source-gui-data-by-source (assoc-set-make)])
               (real-make-gui-model-state
                source-gui-data-by-source
@@ -136,7 +139,8 @@
                    (if label-gui-data
                        (+ span (label-gui-data-span-change label-gui-data))
                        span)))
-               snip-type-list)))))
+               snip-type-list
+               get-arrow-color-from-labels)))))
   
   
   ; DRSCHEME / MZSCHEME CONVERSIONS
@@ -469,7 +473,10 @@
   ; gui-model-state label label boolean -> void
   ; add one arrow going from start-label to end-label, duh.
   (define (add-arrow gui-model-state start-label end-label tacked?)
-    (let ([new-arrow (make-arrow start-label end-label tacked?)])
+    (let ([new-arrow
+           (make-arrow
+            start-label end-label tacked?
+            ((gui-model-state-get-arrow-color-from-labels gui-model-state) start-label end-label))])
       (add-one-arrow-end gui-model-state
                          new-arrow
                          start-label
@@ -525,6 +532,8 @@
                   ;   us end up in such a situation.
                   ; The conclusion is: we never consider the case when the new arrow is
                   ; untacked because there's never anything to do in such a case.
+                  ; Note also that we don't care about the color since we know it is
+                  ; always the same.
                   (when new-arrow-tacked?
                     (if old-arrow-tacked?
                         ; can't tack an already tacked arrow
@@ -640,11 +649,11 @@
             (set-reset (label-gui-data-ending-arrows label-gui-data))))))))
   
   ; gui-model-state
-  ; (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean -> void)
+  ; (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer top top boolean string -> void)
   ; -> void
   ; applies f to each arrow. The args for f are: the left new-pos of the start label, the
   ; left new-pos of the end label, the corresponding spans, the start and end sources,
-  ; and whether the arrow is tacked or not.
+  ; whether the arrow is tacked or not, and the color.
   (define (for-each-arrow gui-model-state f)
     (let ([get-span-from-label (gui-model-state-get-span-from-label gui-model-state)]
           [get-source-from-label (gui-model-state-get-source-from-label gui-model-state)]
@@ -672,7 +681,8 @@
                                    (get-span-from-label end-label)
                                    start-source
                                    end-source
-                                   (arrow-tacked? arrow))))))))))))
+                                   (arrow-tacked? arrow)
+                                   (arrow-color arrow))))))))))))
   
   ; (label-gui-data -> (setof arrow)) -> (gui-model-state label -> non-negative-exact-integer)
   ; Given an arrow set selector (to select the arrows that start or end at the given label),

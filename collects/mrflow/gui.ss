@@ -60,7 +60,13 @@
       (define (phase2) cst:void)
       
       
-      ; GUI STYLES
+      (define mrflow-bitmap
+        (drscheme:unit:make-bitmap
+         (strcst:string-constant mrflow-button-title)
+         (build-path (collection-path "icons") "mrflow-small.bmp")))
+      
+      
+      ; TERM AND SNIP STYLES
       (define can-click-style-delta (make-object style-delta% 'change-weight 'bold))
       (send can-click-style-delta set-delta-foreground "purple")
       
@@ -86,37 +92,8 @@
           [(orange) (if (eq? style-delta red-style-delta) style-delta orange-style-delta)]
           [(green) style-delta]
           [else (error 'max-style-delta-by-name
-                       "MrFlow internal error; unknown style-delta ~a"
+                       "MrFlow internal error; incomparable style-delta ~a"
                        style-delta-name)]))
-      
-      ; box styles
-      (define error-box-style-delta (make-object style-delta%))
-      (send error-box-style-delta set-delta-foreground "red")
-      
-      (define type-box-style-delta (make-object style-delta%))
-      (send type-box-style-delta set-delta-foreground "blue")
-      
-      ; arrow styles
-      (define tacked-arrow-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
-      (define untacked-arrow-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
-      (define arrow-pen (send the-pen-list find-or-create-pen "BLUE" 1 'solid))
-      
-      (define mrflow-bitmap
-        (drscheme:unit:make-bitmap
-         (strcst:string-constant mrflow-button-title)
-         (build-path (collection-path "icons") "mrflow-small.bmp")))
-      
-      
-      ; INTERFACE FOR COLORING TEXT AND SNIPS
-      ; sba-state label -> exact-non-negative-integer
-      ; span conversation: for all graphical purposes, the span of a compound expression is 1,
-      ; to highlight only the opening parenthesis. Otherwise we might highlight subexpressions
-      ; with the wrong color.
-      (define (get-span-from-label sba-state label)
-        (if (or (sba:is-label-atom? label)
-                (not (null? (sba:get-errors-from-label sba-state label))))
-            (sba:get-span-from-label label)
-            1))
       
       ; sba-state  label -> style-delta%
       ; If the label has errors associated with it, we color the term with the color
@@ -129,20 +106,25 @@
                        (max-style-delta-by-name (err:sba-error-gravity sba-error) current-max-style-delta))
                      green-style-delta
                      errors))))
+
+      ; sba-state label -> exact-non-negative-integer
+      ; span conversation: for all graphical purposes, the span of a compound expression is 1,
+      ; to highlight only the opening parenthesis. Otherwise we might highlight subexpressions
+      ; with the wrong color.
+      (define (get-span-from-label sba-state label)
+        (if (or (sba:is-label-atom? label)
+                (not (null? (sba:get-errors-from-label sba-state label))))
+            (sba:get-span-from-label label)
+            1))
       
-      ; symbol -> style-delta%
-      (define (get-box-style-delta-from-snip-type type)
-        (case type
-          [(type) type-box-style-delta]
-          [(error) error-box-style-delta]
-          [else (error 'get-box-style-delta-from-snip-type
-                       "MrFlow internal error; unknown snip type: ~a"
-                       type)]))
-      
-      ; (listof symbol)
-      ; this describes the order in which snips of different types will appear after
-      ; insertion in the editor, from left to right, for a given label.
-      (define snip-type-list '(type error))
+      ; (listof (cons symbol style-delta%))
+      ; Lists the possible snip types and their corresponding colors.
+      ; For a given term that has snips of several different types, the snips will be
+      ; ordered from left to right in the editor in the same order as their types appear
+      ; in this list.
+      (define snip-types-and-styles
+        `((type . ,(send (make-object style-delta%) set-delta-foreground "blue"))
+          (error . ,(send (make-object style-delta%) set-delta-foreground "red"))))
       
       
       ; INTERFACE FOR MENUS
@@ -230,14 +212,11 @@
                                (lambda (labels) (error 'get-labels-to-rename-from-label "MrFlow internal error; renaming forbidden"))
                                (lambda (label) (get-style-delta-from-label sba-state label))
                                (lambda (menu labels) cst:void)
-                               get-box-style-delta-from-snip-type
                                get-menu-text-from-snip-type
                                (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
-                               snip-type-list
-                               #t
-                               tacked-arrow-brush
-                               untacked-arrow-brush
-                               arrow-pen)]
+                               snip-types-and-styles
+                               (lambda (start-label end-label) "blue") ; same as default
+                               #t)]
                              [sba-state (sba:make-sba-state register-label-with-gui)])
                       ; disable-evaluation will lock the editor, so before that we need
                       ; to make sure other tools have cleared their crap (note that this

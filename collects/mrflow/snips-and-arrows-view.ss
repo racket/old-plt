@@ -11,7 +11,7 @@
    )
   
   (provide
-   make-gui-view-state ; text% (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (label -> style-delta%) (symbol -> style-delta%) (listof symbol) boolean brush% brush% pen% -> gui-view-state
+   make-gui-view-state ; text% (label -> top) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (label -> style-delta%) (symbol -> style-delta%) (listof symbol) boolean (label label -> string) -> gui-view-state
    
    (rename gui-view-state-analysis-currently-modifying? analysis-currently-modifying?) ; gui-view-state -> boolean
    color-all-labels ; gui-view-state -> void
@@ -55,18 +55,12 @@
                                  analysis-currently-modifying?
                                  ; (label -> style-delta%)
                                  get-style-delta-from-label
-                                 ; (symbol -> style-delta%)
-                                 get-box-style-delta-from-snip-type
+                                 ; (listof (cons symbol style-delta%))
+                                 snip-types-and-styles
                                  ; style-delta%
                                  original-style
                                  ; boolean
                                  clear-colors-after-user-action?
-                                 ; brush%
-                                 tacked-arrow-brush
-                                 ; brush%
-                                 untacked-arrow-brush
-                                 ; pen%
-                                 arrow-pen
                                  ))
   
   ; text%
@@ -76,10 +70,8 @@
   ; (label -> style-delta%)
   ; (symbol -> style-delta%)
   ; (listof symbol)
+  ; (label label -> string)
   ; boolean
-  ; brush%
-  ; brush%
-  ; pen%
   ; -> gui-view-state
   (set! make-gui-view-state
         (let ([real-make-gui-view-state make-gui-view-state])
@@ -88,26 +80,21 @@
                    get-mzscheme-position-from-label
                    get-span-from-label
                    get-style-delta-from-label
-                   get-box-style-delta-from-snip-type
-                   snip-type-list
-                   clear-colors-after-user-action?
-                   tacked-arrow-brush
-                   untacked-arrow-brush
-                   arrow-pen)
+                   snip-types-and-styles
+                   get-arrow-color-from-labels
+                   clear-colors-after-user-action?)
             (real-make-gui-view-state (saam:make-gui-model-state get-source-from-label
                                                                  get-mzscheme-position-from-label
                                                                  get-span-from-label
-                                                                 snip-type-list)
+                                                                 (map car snip-types-and-styles)
+                                                                 get-arrow-color-from-labels)
                                       definitions-text
                                       get-source-from-label
                                       #f
                                       get-style-delta-from-label
-                                      get-box-style-delta-from-snip-type
+                                      snip-types-and-styles
                                       (send (fw:scheme:get-style-list) find-named-style "standard")
-                                      clear-colors-after-user-action?
-                                      tacked-arrow-brush
-                                      untacked-arrow-brush
-                                      arrow-pen))))
+                                      clear-colors-after-user-action?))))
   
   ; INTERFACE BETWEEN MODEL AND TOP MODULE
   ; gui-view-state non-negative-exact-integer top -> (listof label)
@@ -281,18 +268,17 @@
   ; redraws arrows during on-paint
   (define (redraw-arrows gui-view-state dc dx dy)
     (let ([top-source (gui-view-state-definitions-text gui-view-state)]
-          [arrow-pen (gui-view-state-arrow-pen gui-view-state)]
-          [tacked-arrow-brush (gui-view-state-tacked-arrow-brush gui-view-state)]
-          [untacked-arrow-brush (gui-view-state-untacked-arrow-brush gui-view-state)]
+          [untacked-arrow-brush (send the-brush-list find-or-create-brush "white" 'solid)]
           [old-pen (send dc get-pen)]
           [old-brush (send dc get-brush)])
-      (send dc set-pen arrow-pen)
       (saam:for-each-arrow (gui-view-state-gui-model-state gui-view-state)
                            (lambda (start-label-pos-left end-label-pos-left
                                                          start-label-span end-label-span
-                                                         start-source end-source tacked?)
+                                                         start-source end-source
+                                                         tacked? color)
+                             (send dc set-pen (send the-pen-list find-or-create-pen color 1 'solid))
                              (if tacked?
-                                 (send dc set-brush tacked-arrow-brush)
+                                 (send dc set-brush (send the-brush-list find-or-create-brush color 'solid))
                                  (send dc set-brush untacked-arrow-brush))
                              (draw-arrow start-label-pos-left
                                          (+ start-label-pos-left start-label-span)
@@ -304,7 +290,6 @@
                                          dc dx dy)))
       (send dc set-pen old-pen)
       (send dc set-brush old-brush)))
-  
   
   ; TEXT
   ; gui-view-state label string -> void
@@ -336,8 +321,8 @@
   ; We could get the source from the label, but there's no reason to bother...
   (define (add-snips gui-view-state label type source snips-content)
     (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
-    (let ([get-box-style-delta-from-snip-type
-           (gui-view-state-get-box-style-delta-from-snip-type gui-view-state)]
+    (let ([snip-style
+           (cdr (assq type (gui-view-state-snip-types-and-styles gui-view-state)))]
           [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
                                         label type source (length snips-content))])
       (send source begin-edit-sequence #f)
@@ -350,8 +335,7 @@
                     ; XXX bug here on Solaris, can be worked around
                     ; (invalidate-bitmap-cache gui-view-state)
                     ; see collects/test/tool2.ss
-                    (send source change-style
-                          (get-box-style-delta-from-snip-type type)
+                    (send source change-style snip-style
                           starting-pos (add1 starting-pos) #f)))
                 snips-content)
       (send source end-edit-sequence))

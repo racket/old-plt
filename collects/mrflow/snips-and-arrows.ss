@@ -522,34 +522,25 @@
            get-style-delta-from-label
            ; popup-menu% (listof label) -> void
            extend-menu-for-labels
-           ; (symbol -> style-delta%)
-           get-box-style-delta-from-snip-type
            ; (symbol -> string)
            get-menu-text-from-snip-type
            ; (symbol label -> (listof string))
            get-snip-text-from-snip-type-and-label
            ; (listof symbol)
-           snip-type-list
+           snip-types-and-styles
+           ; (label label -> string)
+           get-arrow-color-from-labels
            ; boolean
-           clear-colors-after-user-action?
-           ; brush%
-           tacked-arrow-brush
-           ; brush%
-           untacked-arrow-brush
-           ; pen%
-           arrow-pen)
+           clear-colors-after-user-action?)
     (let* ([gui-view-state (saav:make-gui-view-state
                             definitions-text
                             get-source-from-label
                             get-mzscheme-position-from-label
                             get-span-from-label
                             get-style-delta-from-label
-                            get-box-style-delta-from-snip-type
-                            snip-type-list
-                            clear-colors-after-user-action?
-                            tacked-arrow-brush
-                            untacked-arrow-brush
-                            arrow-pen)]
+                            snip-types-and-styles
+                            get-arrow-color-from-labels
+                            clear-colors-after-user-action?)]
            [gui-state (make-gui-state
                        gui-view-state
                        get-parents-from-label
@@ -605,25 +596,19 @@
                  (extand-menu-for-syntax-objects (lambda (menu stxs) cst:void))
                  
                  ; OPTIONAL snip stuff
-                 ; (symbol -> style-delta%)
-                 (get-box-style-delta-from-snip-type error-no-snips)
                  ; (symbol -> string)
                  (get-menu-text-from-snip-type error-no-snips)
                  ; (symbol syntax-object -> (listof string))
                  (get-snip-text-from-snip-type-and-syntax-object error-no-snips)
-                 ; (listof symbol)
-                 (snip-type-list '())
-                 
-                 ; boolean
-                 (clear-colors-after-user-action? #f)
+                 ; (listof (cons symbol style-delta%))
+                 (snip-types-and-styles '())
                  
                  ; OPTIONAL ARROW STUFF
-                 ; brush%
-                 (tacked-arrow-brush (send the-brush-list find-or-create-brush "BLUE" 'solid))
-                 ; brush%
-                 (untacked-arrow-brush (send the-brush-list find-or-create-brush "WHITE" 'solid))
-                 ; pen%
-                 (arrow-pen (send the-pen-list find-or-create-pen "BLUE" 1 'solid)))
+                 ; (label label -> string)
+                 (get-arrow-color-from-labels (lambda (start-label end-label) "blue"))
+                 
+                 ; boolean
+                 (clear-colors-after-user-action? #f))
       (make-register-label-with-gui
        definitions-text
        syntax-source
@@ -637,13 +622,10 @@
        get-syntax-objects-to-rename-from-syntax-objects
        get-style-delta-from-syntax-object
        extand-menu-for-syntax-objects
-       get-box-style-delta-from-snip-type
        get-menu-text-from-snip-type
        get-snip-text-from-snip-type-and-syntax-object
-       snip-type-list
-       clear-colors-after-user-action?
-       tacked-arrow-brush
-       untacked-arrow-brush
-       arrow-pen)))
+       snip-types-and-styles
+       get-arrow-color-from-labels
+       clear-colors-after-user-action?)))
   
   )

@@ -18,6 +18,10 @@
 # define inline _inline
 #endif
 
+#if defined(sparc) || defined(__sparc) || defined(__sparc__)
+# define ALIGN_DOUBLES
+#endif
+
 #include "msgprint.c"
 
 /*****************************************************************************/
@@ -387,11 +391,19 @@ static void *allocate_big(size_t sizeb, int type)
   return (void*)(NUM(bpage) + HEADER_SIZEB + WORD_SIZE);
 }
 
+#define ALIGN_DOUBLES
+#ifdef ALIGN_DOUBLES
+# define ALIGN_SIZE(sizew) ((sizew & 0x1) ? (sizew + 1) : sizew)
+#else
+# define ALIGN_SIZE(sizew) (sizew)
+#endif
+
 inline static void *allocate(size_t sizeb, int type)
 {
   if(sizeb) {
     size_t sizew = gcBYTES_TO_WORDS(sizeb) + 1;
 
+    sizew = ALIGN_SIZE(sizew);
     if(sizew < MAX_OBJECT_SIZEW) {
       struct objhead *info;
       void *retval = PTR(gen0_alloc_current);
@@ -408,6 +420,7 @@ inline static void *allocate(size_t sizeb, int type)
       info->type = type;
       info->size = sizew;
       SET_MTRACE_INFO(info, gcWORDS_TO_BYTES(sizew));
+      printf("Return value is %p\n", PTR(NUM(retval) + WORD_SIZE));
       return PTR(NUM(retval) + WORD_SIZE);
     } else return allocate_big(sizeb, type);
   } else return zero_sized;
@@ -1822,7 +1835,8 @@ inline static void repair_tagged_page(struct mpage *page)
   void **end = PPTR(NUM(page) + page->size);
 
   while(start < end) {
-    start++; start += fixup_table[*(unsigned short*)start](start);
+    fixup_table[*(unsigned short*)(start+1)](start+1);
+    start += ((struct objhead *)start)->size;
   }
 }
 
@@ -1845,7 +1859,7 @@ inline static void repair_tarray_page(struct mpage *page)
   
   while(start < end) {
     struct objhead *ohead = (struct objhead *)start;
-    void **tempend = start + ohead->size;
+    void **tempend = (start + ohead->size) - 1;
     unsigned short tag = *(unsigned short*)(++start);
     
     while(start < tempend)
@@ -1984,7 +1998,8 @@ inline static void mark_tagged_page(struct mpage *page)
   void **start = PPTR(NUM(page) + page->previous_size);
 
   while(start < PPTR(NUM(page) + page->size)) {
-    start++; start += mark_table[*(unsigned short*)start](start);
+    mark_table[*(unsigned short*)(start + 1)](start + 1);
+    start += ((struct objhead *)start)->size;
   }
 }
 
@@ -2005,7 +2020,7 @@ inline static void mark_tarray_page(struct mpage *page)
 
   while(start < PPTR(NUM(page) + page->size)) {
     struct objhead *info = (struct objhead *)start;
-    void **tempend = start + info->size;
+    void **tempend = (start + info->size) - 1;
     unsigned short tag = *(unsigned short*)(++start);
 
     while(start < tempend)

@@ -29,8 +29,8 @@
     (let-values ([(seconds minutes hours days) (apply values (how-long-ago-list diff))])
       (string-append
        (build-ele days "day" " ")
-       (build-ele minutes "minute" " ")
        (build-ele hours "hour" " ")
+       (build-ele minutes "minute" " ")
        (if minutes
            "and "
            "")

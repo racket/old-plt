@@ -506,6 +506,7 @@
  (full-languages "Language complet")
  (mred-lang-name "Graphique sans débuggage (MrEd)")
  (mzscheme-lang-name "Textuel sans débuggage (MzScheme)")
+ (r5rs-lang-name "R5RS sans débuggage")
  (unknown-debug-frame "[inconnu]")
  
  ;;; debug language
@@ -515,6 +516,7 @@
  (stack-frame-in-current-definitions "définitions")
  (mzscheme-w/debug "Textuel (MzScheme)")
  (mred-w/debug "Graphique (MrEd)")
+ (r5rs-w/debug "R5RS")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation terminée")

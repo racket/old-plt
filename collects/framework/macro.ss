@@ -5,27 +5,9 @@
                       (lib "struct.ss" "syntax")
                       (lib "list.ss"))
   
-  (provide mixin make-->vector make-make/parse)
+  (provide mixin make-->vector)
   
   (define-syntax (make-->vector stx)
-    (syntax-case stx ()
-      [(_ name) ; a struct type name
-       (identifier? (syntax name))
-       (let ([info (syntax-local-value (syntax name))])
-         (if (struct-declaration-info? info)
-             (with-syntax ([(accessor ...)
-                            (reverse
-                             (filter identifier? (list-ref info 3)))])
-               (syntax
-                (lambda (s)
-                  (vector (accessor s) ...))))
-             (raise-syntax-error
-              #f
-              "not a declared structure type name"
-              stx
-              (syntax name))))]))
-  
-  (define-syntax (make-make/parse stx)
     (syntax-case stx ()
       [(_ name) ; a struct type name
        (identifier? (syntax name))

@@ -253,15 +253,22 @@
            (make-object vertical-panel% main)
            main)))
       
-      (let ([make-simple
-	     (lambda (module position)
-	       (instantiate (drscheme:language:module-based-language->language-mixin
-                             (drscheme:language:simple-module-based-language->module-based-language-mixin
-                              drscheme:language:simple-module-based-language%))
-                 ()
-                 (module module)
-                 (language-position position)
-                 (teachpack-names null)))])
+      (let* ([use-copy-mixin
+              (lambda (%)
+                (class %
+                  (define/override (use-namespace-require/copy?) #t)
+                  (super-instantiate ())))]
+             [make-simple
+              (lambda (module position)
+                (instantiate 
+                    (use-copy-mixin
+                     (drscheme:language:module-based-language->language-mixin
+                      (drscheme:language:simple-module-based-language->module-based-language-mixin
+                       drscheme:language:simple-module-based-language%)))
+                  ()
+                  (module module)
+                  (language-position position)
+                  (teachpack-names null)))])
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mred.ss" "lang")
                       (list (string-constant full-languages)
@@ -269,7 +276,11 @@
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mzscheme.ss" "lang") 
                       (list (string-constant full-languages)
-                            (string-constant mzscheme-lang-name)))))
+                            (string-constant mzscheme-lang-name))))
+        (drscheme:language-configuration:add-language
+	 (make-simple '(lib "r5rs.ss" "lang")
+                      (list (string-constant full-languages)
+                            (string-constant r5rs-lang-name)))))
       
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 

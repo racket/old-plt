@@ -20,7 +20,7 @@
                          (symbol? pos-blame))
               (error 'contract "expected symbols as names for assigning blame, got: ~e and ~e"
                      neg-blame pos-blame))
-            (contract/internal type name pos-blame neg-blame)))])))
+            (contract/internal stx type name pos-blame neg-blame)))])))
 
   (define-syntax contract/internal
     (lambda (stx)
@@ -30,7 +30,7 @@
           [(null? (cdr lst)) null]
           [else (cons (car lst) (all-but-last (cdr lst)))]))
       (syntax-case stx ()
-	[(_ type name pos-blame neg-blame)
+	[(_ orig-stx type name pos-blame neg-blame)
          (and (identifier? (syntax name))
               (identifier? (syntax neg-blame))
               (identifier? (syntax pos-blame)))
@@ -42,8 +42,8 @@
                 (syntax
                  (if (procedure? name)
                      (lambda (ins ...)
-                       (let ([out (name (contract doms ins neg-blame pos-blame) ...)])
-                         (contract rng out pos-blame neg-blame)))
+                       (let ([out (name (contract/internal orig-stx doms ins neg-blame pos-blame) ...)])
+                         (contract/internal orig-stx rng out pos-blame neg-blame)))
                      (raise-error
                       pos-blame
                       "expected a procedure, got: ~e" name)))))]
@@ -77,5 +77,7 @@
                     (equal? (syntax-object->datum (syntax ->))
                             (syntax-object->datum (car (syntax-e (syntax type))))))
             (raise-syntax-error 
-             'contract
-             "unknown contract specification" (syntax type))])]))))
+             #f
+             "unknown contract specification"
+             stx
+             (syntax type))])]))))

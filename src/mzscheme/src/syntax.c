@@ -769,9 +769,8 @@ quote_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *re
 static Scheme_Object *
 quote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *first, *rest;
+  Scheme_Object *rest;
 
-  first = SCHEME_STX_CAR(form);
   rest = SCHEME_STX_CDR(form);
 
   if (!(SCHEME_STX_PAIRP(rest) && SCHEME_STX_NULLP(SCHEME_STX_CDR(rest))))
@@ -2646,12 +2645,9 @@ static Scheme_Object *
 unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   int len;
-  Scheme_Object *fn;
 
   if (rec)
     scheme_compile_rec_done_local(rec, drec);
-
-  fn = SCHEME_STX_CAR(form);
 
   len = check_form(form, form);
   if (len != 2)
@@ -2852,17 +2848,12 @@ define_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
 static Scheme_Object *
 define_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *names, *code, *fpart, *fn, *name;
+  Scheme_Object *names, *code, *fpart, *fn;
 
   scheme_prepare_exp_env(env->genv);
 
   scheme_define_parse(form, &names, &code, 1, env);
   
-  if (SCHEME_STX_PAIRP(names) && SCHEME_STX_NULLP(SCHEME_STX_CDR(names)))
-    name = SCHEME_STX_CAR(names);
-  else
-    name = scheme_false;
-
   env = scheme_new_expand_env(env->genv->exp_env, 0);
 
   fpart = scheme_expand_expr(code, env, depth, names);

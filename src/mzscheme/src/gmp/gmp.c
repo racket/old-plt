@@ -1139,10 +1139,10 @@ interpolate3 (A, B, C, D, E,
       tc += c < sc;
       /* TO DO: choose one of the following alternatives. */
 #if 1
-      sc = (mp_limb_t)((long)sc >> (BITS_PER_MP_LIMB - 1));
+      sc = (mp_limb_t)((mp_limb_signed_t)sc >> (BITS_PER_MP_LIMB - 1));
       sc += tc;
 #else
-      sc = tc - ((long)sc < 0L);
+      sc = tc - ((mp_limb_signed_t)sc < 0L);
 #endif
 
       /* sd has period 2. */

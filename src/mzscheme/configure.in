@@ -452,10 +452,8 @@ case $OS in
     ;;
 esac
 
-<<<<<<< configure.in
-=======
 fi
->>>>>>> 1.57
+
 ############## drop optimization flags ################
 
 if test "${enable_noopt}" = "yes" ; then

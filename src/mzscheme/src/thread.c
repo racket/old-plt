@@ -956,10 +956,8 @@ void scheme_close_managed(Scheme_Custodian *m)
    that is running us. If so, delay it to the very
    end. */
 {
-  Scheme_Thread *p;
-
 #ifndef NO_SCHEME_THREADS
-  if ((p = scheme_do_close_managed(m, NULL))) {
+  if (scheme_do_close_managed(m, NULL)) {
     /* Kill self */
     scheme_thread_block(0.0);
   }

@@ -857,7 +857,11 @@ typedef struct Scheme_Sema {
 
 /****** Bignums *******/
 
+#ifdef USE_LONG_LONG_FOR_BIGDIG
+typedef unsigned long long bigdig;
+#else
 typedef unsigned long bigdig;
+#endif
 
 typedef struct {
   Scheme_Type type;

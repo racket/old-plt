@@ -1579,7 +1579,6 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
 	   Scheme_Thread *p)
 {
   Scheme_Object *cdr;
-  int no_space_ok;
   int super_compact = 0;
 
   if (compact) {
@@ -1619,7 +1618,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
   } else
     print_this_string(p, "(", 0, 1);
 
-  no_space_ok = print(SCHEME_CAR(pair), notdisplay, compact, ht, symtab, rnht, p);
+  print(SCHEME_CAR(pair), notdisplay, compact, ht, symtab, rnht, p);
 
   cdr = SCHEME_CDR (pair);
   while (SCHEME_PAIRP(cdr)) {
@@ -1638,7 +1637,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
       print_compact(p, CPT_PAIR);
     if (!compact)
       print_this_string(p, " ", 0, 1);
-    no_space_ok = print(SCHEME_CAR(cdr), notdisplay, compact, ht, symtab, rnht, p);
+    print(SCHEME_CAR(cdr), notdisplay, compact, ht, symtab, rnht, p);
     cdr = SCHEME_CDR(cdr);
   }
 
@@ -1659,7 +1658,7 @@ print_vector(Scheme_Object *vec, int notdisplay, int compact,
 	     Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
 	     Scheme_Thread *p)
 {
-  int i, no_space_ok, size, common = 0;
+  int i, size, common = 0;
   Scheme_Object **elems;
 
   size = SCHEME_VEC_SIZE(vec);
@@ -1685,7 +1684,7 @@ print_vector(Scheme_Object *vec, int notdisplay, int compact,
   }
 
   for (i = 0; i < size; i++) {
-    no_space_ok = print(SCHEME_VEC_ELS(vec)[i], notdisplay, compact, ht, symtab, rnht, p);
+    print(SCHEME_VEC_ELS(vec)[i], notdisplay, compact, ht, symtab, rnht, p);
     if (i < (size - 1))
       if (!compact)
 	print_this_string(p, " ", 0, 1);

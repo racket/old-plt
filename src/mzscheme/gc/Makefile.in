@@ -39,7 +39,7 @@ CFLAGS= $(BASEFLAGS) @PROFFLAGS@ $(OPTIONS) -DNO_EXECUTE_PERMISSION -DSILENT -DO
 # part of the build process, i.e. on the build machine.  These will usually
 # be the same as CC and CFLAGS, except in a cross-compilation environment.
 # Note that HOSTCFLAGS should include any -D flags that affect thread support.
-HOSTCC=$(CC)
+HOSTCC=@CC_FOR_BUILD@
 HOSTCFLAGS=$(BASEFLAGS)
 
 # For dynamic library builds, it may be necessary to add flags to generate
@@ -383,7 +383,8 @@ c++: gc_cpp.o $(srcdir)/include/gc_cpp.h test_cpp
 	./test_cpp 1
 	echo > c++
 
-dyn_load_sunos53.o: dyn_load.c
+# PLTSCHEME: need $(srcdir):
+dyn_load_sunos53.o: $(srcdir)/dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c $(srcdir)/dyn_load.c -o $@
 
 # SunOS5 shared library version of the collector
@@ -594,3 +595,82 @@ user_namespace: $(SRCS)
 		sed s/_GC_/GC_/g < $$file > tmp; \
 		cp tmp $$file; \
 		done
+
+# PLTSCHEME: explicit targets to get $(srcdir) in place for non-gmake
+alloc.o: $(srcdir)/alloc.c
+	$(CC) $(CFLAGS) -c $(srcdir)/alloc.c
+
+reclaim.o: $(srcdir)/reclaim.c
+	$(CC) $(CFLAGS) -c $(srcdir)/reclaim.c
+
+allchblk.o: $(srcdir)/allchblk.c
+	$(CC) $(CFLAGS) -c $(srcdir)/allchblk.c
+
+misc.o: $(srcdir)/misc.c
+	$(CC) $(CFLAGS) -c $(srcdir)/misc.c
+
+os_dep.o: $(srcdir)/os_dep.c
+	$(CC) $(CFLAGS) -c $(srcdir)/os_dep.c
+
+headers.o: $(srcdir)/headers.c
+	$(CC) $(CFLAGS) -c $(srcdir)/headers.c
+
+mark.o: $(srcdir)/mark.c
+	$(CC) $(CFLAGS) -c $(srcdir)/mark.c
+
+obj_map.o: $(srcdir)/obj_map.c
+	$(CC) $(CFLAGS) -c $(srcdir)/obj_map.c
+
+blacklst.o: $(srcdir)/blacklst.c
+	$(CC) $(CFLAGS) -c $(srcdir)/blacklst.c
+
+finalize.o: $(srcdir)/finalize.c
+	$(CC) $(CFLAGS) -c $(srcdir)/finalize.c
+
+new_hblk.o: $(srcdir)/new_hblk.c
+	$(CC) $(CFLAGS) -c $(srcdir)/new_hblk.c
+
+dbg_mlc.o: $(srcdir)/dbg_mlc.c
+	$(CC) $(CFLAGS) -c $(srcdir)/dbg_mlc.c
+
+malloc.o: $(srcdir)/malloc.c
+	$(CC) $(CFLAGS) -c $(srcdir)/malloc.c
+
+stubborn.o: $(srcdir)/stubborn.c
+	$(CC) $(CFLAGS) -c $(srcdir)/stubborn.c
+
+checksums.o: $(srcdir)/checksums.c
+	$(CC) $(CFLAGS) -c $(srcdir)/checksums.c
+
+solaris_threads.o: $(srcdir)/solaris_threads.c
+	$(CC) $(CFLAGS) -c $(srcdir)/solaris_threads.c
+
+irix_threads.o: $(srcdir)/irix_threads.c
+	$(CC) $(CFLAGS) -c $(srcdir)/irix_threads.c
+
+linux_threads.o: $(srcdir)/linux_threads.c
+	$(CC) $(CFLAGS) -c $(srcdir)/linux_threads.c
+
+typd_mlc.o: $(srcdir)/typd_mlc.c
+	$(CC) $(CFLAGS) -c $(srcdir)/typd_mlc.c
+
+ptr_chck.o: $(srcdir)/ptr_chck.c
+	$(CC) $(CFLAGS) -c $(srcdir)/ptr_chck.c
+
+mallocx.o: $(srcdir)/mallocx.c
+	$(CC) $(CFLAGS) -c $(srcdir)/mallocx.c
+
+solaris_pthreads.o: $(srcdir)/solaris_pthreads.c
+	$(CC) $(CFLAGS) -c $(srcdir)/solaris_pthreads.c
+
+gcj_mlc.o: $(srcdir)/gcj_mlc.c
+	$(CC) $(CFLAGS) -c $(srcdir)/gcj_mlc.c
+
+specific.o: $(srcdir)/specific.c
+	$(CC) $(CFLAGS) -c $(srcdir)/specific.c
+
+gc_dlopen.o: $(srcdir)/gc_dlopen.c
+	$(CC) $(CFLAGS) -c $(srcdir)/gc_dlopen.c
+
+dyn_load.o: $(srcdir)/dyn_load.c
+	$(CC) $(CFLAGS) -c $(srcdir)/dyn_load.c

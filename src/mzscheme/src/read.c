@@ -983,12 +983,8 @@ read_list(Scheme_Object *port,
   while (1) {
     ch = skip_whitespace_comments(port, stxsrc);
     if (ch == EOF) {
-      char s[2];
-      s[0] = closer;
-      s[1] = 0;
       scheme_read_err(port, stxsrc, startline, startcol, start, SPAN(port, start), EOF, 
-		      "read: expected a '%c'",
-		      closer);
+		      "read: expected a '%c'", closer);
     }
 
     if (ch == closer) {
@@ -1339,16 +1335,13 @@ read_number_or_symbol(Scheme_Object *port,
   Scheme_Object *o;
   int ungetc_ok;
   Getc_Fun_r getc_special_ok_fun;
-  Getc_Fun_r getc_fun;
 
   ungetc_ok = scheme_peekc_is_ungetc(port);
 
   if (ungetc_ok) {
     getc_special_ok_fun = scheme_getc_special_ok;
-    getc_fun = scheme_getc;
   } else {
     getc_special_ok_fun = scheme_peekc_special_ok;
-    getc_fun = scheme_peekc;
   }
 
   i = 0;

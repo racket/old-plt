@@ -86,9 +86,10 @@ Follow the instructions in plt/src/mac/README.
     MzScheme and/or MrEd. The current directory at the time
     `configure' is run will be used as working space for building the
     executables (independent of --prefix). This build directory does
-    not have to be in the plt/ tree, even for an "in-place"
-    build. It's ok to run `configure' from its own directory, but it's
-    usually better to pick a separate build directory.
+    not have to be in the plt/ tree, even for an "in-place" build, as
+    long as you use GNU make when building MrEd. It's ok to run
+    `configure' from its own directory, but it's usually better to
+    pick a separate build directory.
 
     The --enable-dynlib flag works only when `configure' is called
     using an absolute path, or when an absolute path is provided with

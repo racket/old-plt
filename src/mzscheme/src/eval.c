@@ -613,11 +613,6 @@ int scheme_omittable_expr(Scheme_Object *o, int vals)
     goto try_again;
   }
 
-  if ((vtype == scheme_syntax_type)) {
-    int expd;
-    expd = SCHEME_PINT_VAL(o);
-  }
-
   if ((vtype == scheme_application_type)) {
     /* Look for multiple values */
     Scheme_App_Rec *app = (Scheme_App_Rec *)o;
@@ -1432,10 +1427,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    int internel_def_pos,
 					    Scheme_Object **current_val)
 {
-  Scheme_Object *name, *val, *orig;
+  Scheme_Object *name, *val;
   Scheme_Comp_Env *xenv = NULL;
-
-  orig = first;
 
  check_top:
   *current_val = NULL;
@@ -1538,7 +1531,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			   int depth, Scheme_Object *boundname,
 			   int app_position)
 {
-  Scheme_Object *name, *var, *rest, *stx, *normal;
+  Scheme_Object *name, *var, *stx, *normal;
   GC_CAN_IGNORE char *not_allowed;
 
  top:
@@ -1627,7 +1620,6 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   } else {
     name = SCHEME_STX_CAR(form);
-    rest = SCHEME_STX_CDR(form);
     if (SCHEME_STX_SYMBOLP(name)) {
       /* Check for macros: */
       var = scheme_lookup_binding(name, env, 
@@ -1968,11 +1960,7 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
 static Scheme_Object *
 top_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *c;
-
   check_top(scheme_expand_stx_string, form, env);
-
-  c = SCHEME_STX_CDR(form);
 
   return form;
 }
@@ -2010,11 +1998,6 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       return scheme_null;
     } else
       return forms;
-  }
-
-  if (SCHEME_STX_PAIRP(forms)) {
-    Scheme_Object *rest;
-    rest = SCHEME_STX_CDR(forms);
   }
 
  try_again:

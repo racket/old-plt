@@ -85,7 +85,6 @@ static void register_traversers(void);
 
 typedef Scheme_Object *(*Lazy_Macro_Fun)(Scheme_Object *, int);
 
-static int set_reference_ids = 0;
 static int builtin_ref_counter = 0;
 
 static int env_uid_counter;
@@ -290,7 +289,6 @@ static void make_init_env(void)
   scheme_initial_env = env;
 
   scheme_defining_primitives = 1;
-  set_reference_ids = 1;
   builtin_ref_counter = 0;
 
 #ifdef TIME_STARTUP_PROCESS
@@ -417,8 +415,6 @@ static void make_init_env(void)
   kernel_symbol = scheme_intern_symbol("#%kernel");
 
   MARK_START_TIME();
-
-  set_reference_ids = 0;
 
   scheme_finish_kernel(env);
 

@@ -59,10 +59,10 @@ END_XFORM_SKIP;
 
 Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
 {
-  Small_Bignum s1, onesmall;
+  Small_Bignum s1;
   int negate, log, times, i;
   FP_TYPE r;
-  Scheme_Object *n, *m, *one;
+  Scheme_Object *n, *m;
 
   r = 1;
 
@@ -95,7 +95,6 @@ Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
   r = pow(2.0, (FP_TYPE)log);
 
   n = scheme_make_small_bignum(0, &s1);
-  one = scheme_make_small_bignum(1, &onesmall);
 
   log++;
   while (log--) {

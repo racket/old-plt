@@ -403,6 +403,10 @@
 
 # define USE_TIMEZONE_AND_ALTZONE_VAR
 
+# ifdef _ABIN32
+#  define USE_LONG_LONG_FOR_BIGDIG
+# endif
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -1266,6 +1270,9 @@
     way for x86 machines. */
 
  /* SIXTY_FOUR_BIT_INTEGERS indicates that 'long's are 64-bits wide. */
+
+ /* USE_LONG_LONG_FOR_BIGDIG indicates that `long long' is available
+    and 64 bits wide (don't mix with SIXTY_FOUR_BIT_INTEGERS). */
 
  /* MACROMAN_CHAR_SET indicates that latin1-integer->char should convert
     Latin-1 values to MacRoman characters. */

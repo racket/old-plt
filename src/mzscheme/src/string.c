@@ -1689,10 +1689,9 @@ void machine_details(char *buff)
     if (scheme_file_exists(uname_locations[i])) {
       /* Try running it. */
       if (try_subproc(subprocess_proc, uname_locations[i])) {
-	Scheme_Object *sout, *sin, *serr, *subp;
+	Scheme_Object *sout, *sin, *serr;
 	long c;
 
-	subp = scheme_current_thread->ku.multiple.array[0];
 	sout = scheme_current_thread->ku.multiple.array[1];
 	sin = scheme_current_thread->ku.multiple.array[2];
 	serr = scheme_current_thread->ku.multiple.array[3];

@@ -57,22 +57,31 @@
 /* Used by gmp: */
 void scheme_bignum_use_fuel(long n);
 
-#ifdef SIXTY_FOUR_BIT_INTEGERS
-#define FIRST_BIT_MASK 0x8000000000000000
-#define SECOND_BIT_MASK 0x4000000000000000
-#define MAX_TWO_BIT_MASK 0xC000000000000000
-#define BIG_RADIX 18446744073709551616.0 /* = 0x10000000000000000 */
-#define ALL_ONES 0xFFFFFFFFFFFFFFFF
-#define WORD_SIZE 64
-#define SMALL_NUM_STR_LEN 20 /* conservatively low is OK */
+#if defined(SIXTY_FOUR_BIT_INTEGERS)
+# define FIRST_BIT_MASK 0x8000000000000000
+# define SECOND_BIT_MASK 0x4000000000000000
+# define MAX_TWO_BIT_MASK 0xC000000000000000
+# define SMALL_NUM_STR_LEN 20 /* conservatively low is OK */
 #else
-#define FIRST_BIT_MASK 0x80000000
-#define SECOND_BIT_MASK 0x40000000
-#define MAX_TWO_BIT_MASK 0xC0000000
-#define BIG_RADIX 4294967296.0 /* = 0x100000000 */
-#define ALL_ONES 0xFFFFFFFF
-#define WORD_SIZE 32
-#define SMALL_NUM_STR_LEN 10 /* conservatively low is OK */
+# define FIRST_BIT_MASK 0x80000000
+# define SECOND_BIT_MASK 0x40000000
+# define MAX_TWO_BIT_MASK 0xC0000000
+# define SMALL_NUM_STR_LEN 10 /* conservatively low is OK */
+#endif
+
+#if defined(USE_LONG_LONG_FOR_BIGDIG)
+# define TOP_BITS_MASK 0xFFFFFFFF00000000
+# define BOTTOM_BITS_MASK 0x00000000FFFFFFFF
+#endif
+
+#if defined(SIXTY_FOUR_BIT_INTEGERS) || defined(USE_LONG_LONG_FOR_BIGDIG)
+# define BIG_RADIX 18446744073709551616.0 /* = 0x10000000000000000 */
+# define ALL_ONES 0xFFFFFFFFFFFFFFFF
+# define WORD_SIZE 64
+#else
+# define BIG_RADIX 4294967296.0 /* = 0x100000000 */
+# define ALL_ONES 0xFFFFFFFF
+# define WORD_SIZE 32
 #endif
 
 static Scheme_Object *bignum_one;
@@ -117,19 +126,27 @@ START_XFORM_SKIP;
 
 Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 {
+  bigdig bv;
+
   o->o.type = scheme_bignum_type;
   SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
   if (v < 0)
-    v = -v;
+    bv = -v;
+  else
+    bv = v;
 
-  if (v == 0)
+#if defined(USE_LONG_LONG_FOR_BIGDIG)
+  bv = bv & BOTTOM_BITS_MASK;
+#endif
+
+  if (bv == 0)
     SCHEME_BIGLEN(&o->o) = 0;
   else
     SCHEME_BIGLEN(&o->o) = 1;
 
   SCHEME_BIGDIG(&o->o) = o->v;
 
-  o->v[0] = v;
+  o->v[0] = bv;
 
   return (Scheme_Object *)o;
 }
@@ -177,32 +194,32 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
 */
 int scheme_bignum_get_int_val(const Scheme_Object *o, long *v)
 {
-
-  if (SCHEME_BIGLEN(o) > 1)    /* won't fit in a tagged word */
+  if (SCHEME_BIGLEN(o) > 1) {    /* won't fit in a tagged word */
     return 0;
-  else if (SCHEME_BIGLEN(o) == 0) {
+  } else if (SCHEME_BIGLEN(o) == 0) {
     *v = 0;
     return 1;
+#ifdef USE_LONG_LONG_FOR_BIGDIG
+  } else if (SCHEME_BIGDIG(o)[0] & TOP_BITS_MASK) {
+    return 0;
+#endif
   } else if (SCHEME_BIGDIG(o)[0] == FIRST_BIT_MASK && !SCHEME_BIGPOS(o)) {
     /* Special case for the most negative number representable in a signed word */
     *v = SCHEME_BIGDIG(o)[0];
     return 1;
-  } else if ((SCHEME_BIGDIG(o)[0] & FIRST_BIT_MASK) != 0)/*Won't fit into a signed word */
+  } else if ((SCHEME_BIGDIG(o)[0] & FIRST_BIT_MASK) != 0) { /* Won't fit into a signed word */
     return 0;
-  else if (SCHEME_BIGPOS(o)) {
-    *v = SCHEME_BIGDIG(o)[0];
+  } else if (SCHEME_BIGPOS(o)) {
+    *v = (long)SCHEME_BIGDIG(o)[0];
     return 1;
   } else {
-    *v = -SCHEME_BIGDIG(o)[0];
+    *v = -((long)SCHEME_BIGDIG(o)[0]);
     return 1;
   }
 }
 
-/* 
-   I'm going to guess that we want to return anything that will fit into a 
-   full 32/64 bit unsigned word.
-*/
 int scheme_bignum_get_unsigned_int_val(const Scheme_Object *o, unsigned long *v)
+     /* We want to return anything that will fit into a `unsigned long'. */
 {
   if ((SCHEME_BIGLEN(o) > 1) || !SCHEME_BIGPOS(o))
     /* Won't fit into word, or not positive */
@@ -210,6 +227,10 @@ int scheme_bignum_get_unsigned_int_val(const Scheme_Object *o, unsigned long *v)
   else if (SCHEME_BIGLEN(o) == 0) {
     *v = 0;
     return 1;
+#ifdef USE_LONG_LONG_FOR_BIGDIG
+  } else if (SCHEME_BIGDIG(o)[0] & TOP_BITS_MASK) {
+    return 0;
+#endif
   } else {
     *v = SCHEME_BIGDIG(o)[0];
     return 1;
@@ -220,7 +241,7 @@ int scheme_bignum_get_unsigned_int_val(const Scheme_Object *o, unsigned long *v)
 Scheme_Object *scheme_bignum_normalize(const Scheme_Object *o)
 {
   long v;
-  
+
   if (!SCHEME_BIGNUMP(o))
     return (Scheme_Object *)o;
 
@@ -673,7 +694,7 @@ static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, i
   
   for (i = 0; i < res_alloc; ++i)
   {
-    long a_val, b_val, res_val;
+    bigdig a_val, b_val, res_val;
 
     a_val = a_digs[i];
     if (!a_pos)
@@ -784,8 +805,8 @@ Scheme_Object *scheme_bignum_not(const Scheme_Object *a)
 Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
 {
   Scheme_Object* o;
-  bigdig* res_digs, *n_digs, quick_digs[1];
-  long res_alloc, shift_words, shift_bits, i, j, n_size, shift_out;
+  bigdig* res_digs, *n_digs, quick_digs[1], shift_out;
+  long res_alloc, shift_words, shift_bits, i, j, n_size;
   SAFE_SPACE(nsd)
 
   n_size = SCHEME_BIGLEN(n);

@@ -2980,12 +2980,12 @@ static Scheme_Object *do_simplify_path(Scheme_Object *path, Scheme_Object *cycle
 	
 	/* Do one 'up: */
 	{
-	  Scheme_Object *next, *file;
+	  Scheme_Object *next;
 	  accum = SCHEME_CDR(accum);
-	  file = scheme_split_pathname(SCHEME_STR_VAL(result),
-				       SCHEME_STRTAG_VAL(result),
-				       &next,
-				       &isdir);
+	  scheme_split_pathname(SCHEME_STR_VAL(result),
+				SCHEME_STRTAG_VAL(result),
+				&next,
+				&isdir);
 	  if (!SCHEME_STRINGP(next)) {
 	    /* If result is already a root, we just drop the .. */
 	  } else

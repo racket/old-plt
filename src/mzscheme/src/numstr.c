@@ -316,15 +316,12 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   Scheme_Object *next_complain;
   int has_hash, has_expt, has_i, has_sign, has_at, saw_digit, saw_nonzero_digit;
   Scheme_Object *o;
-  const char *orig;
 #ifdef MZ_USE_SINGLE_FLOATS
   int single;
 #endif
 
   if (len < 0)
     len = strlen(str);
-
-  orig = str;
 
   delta = 0;
 

@@ -536,8 +536,7 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
     if (prim) {
       if (no_dup) {
 	/* Make sure it's not already here */
-	Finalization *fnx, *prev;
-	prev = NULL;
+	Finalization *fnx;
 	for (fnx = fns->prim_first; fnx; fnx = fnx->next) {
 	  if (fnx->f == fn->f && fnx->data == fn->data) {
 	    fn = NULL;

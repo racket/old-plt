@@ -854,7 +854,7 @@ static rxpos l_strchr(char *str, rxpos a, int l, int c)
  * Global work variables for regexec().
  */
 static char *reginstr;
-static rxpos reginput, reginput_start, reginput_end; /* String-input pointer. */
+static rxpos reginput, reginput_end; /* String-input pointer. */
 static rxpos regbol;		/* Beginning of input, for ^ check. */
 static rxpos *regstartp;	/* Pointer to startp array. */
 static rxpos *regendp;		/* Ditto for endp. */
@@ -948,7 +948,6 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
 
   reginstr = string;
   reginput = stringpos;
-  reginput_start = stringpos;
   reginput_end = stringpos + stringlen;
   regstartp = startp;
   regendp = endp;

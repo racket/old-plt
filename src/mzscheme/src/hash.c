@@ -566,13 +566,13 @@ static long hash_bignum(Scheme_Object *o)
 {
   int i = SCHEME_BIGLEN(o);
   bigdig *d = SCHEME_BIGDIG(o);
-  long k = 0;
+  bigdig k = 0;
   
   while (i--) {
     k += d[i];
   }
   
-  return k;
+  return (long)k;
 }
 
 void scheme_init_hash_key_procs(void)
@@ -706,13 +706,14 @@ long scheme_equal_hash_key(Scheme_Object *o)
     return k + ((long)(d * (1 << 30))) + e;
   } else if (t == scheme_bignum_type) {
     int i = SCHEME_BIGLEN(o);
-    bigdig *d = SCHEME_BIGDIG(o);
+    bigdig *d = SCHEME_BIGDIG(o), k2;
     
+    k2 = k;
     while (i--) {
-      k = (k << 3) + d[i];
+      k2 = (k2 << 3) + d[i];
     }
     
-    return k;
+    return (long)k2;
   } else if (t == scheme_rational_type) {
     k += scheme_equal_hash_key(scheme_rational_numerator(o));
     o = scheme_rational_denominator(o);

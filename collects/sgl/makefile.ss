@@ -24,29 +24,42 @@
   (define (delete/continue x)
     (with-handlers ([(lambda (x) #t) void])
       (delete-file x)))
+
+  (define (get-precompiled-path file.so)
+    (regexp-replace "(compiled)" file.so "precompiled"))
   
+  (define (do-copy file.so)
+    (let ([pre-compiled (get-precompiled-path file.so)])
+      (and (file-exists? pre-compiled)
+           (begin
+             (printf "  Copying ~a~n       to ~a~n" pre-compiled file.so)
+             (when (file-exists? file.so) 
+               (delete-file file.so))
+             (copy-file pre-compiled file.so)))))
+
   (define (compile-c-to-so file file.c file.so home)
-    (parameterize ((dynext:current-extension-compiler-flags
-                    (append
-                     (dynext:current-extension-compiler-flags)
-                     (case (system-type)
-                       ((windows) '("/FIwindows.h"))
-                       (else '()))))
-                   (dynext:current-standard-link-libraries
-                    (append
-                     (dynext:current-standard-link-libraries)
-                     (case (system-type)
-                       ((windows) (list "opengl32.lib" "glu32.lib"))
-                       (else '())))))
-      (let ((file.o (append-object-suffix file)))
-        (dynext:compile-extension #f 
-                                  file.c
-                                  file.o
-                                  `(,@X11-include ,(build-path home "collects" "compiler")))
-        (dynext:link-extension #f 
-                               (list file.o)
-                               file.so)
-        (delete/continue file.o))))
+    (unless (do-copy file.so)
+      (parameterize ((dynext:current-extension-compiler-flags
+                      (append
+                       (dynext:current-extension-compiler-flags)
+                       (case (system-type)
+                         ((windows) '("/FIwindows.h"))
+                         (else '()))))
+                     (dynext:current-standard-link-libraries
+                      (append
+                       (dynext:current-standard-link-libraries)
+                       (case (system-type)
+                         ((windows) (list "opengl32.lib" "glu32.lib"))
+                         (else '())))))
+        (let ((file.o (append-object-suffix file)))
+          (dynext:compile-extension #f 
+                                    file.c
+                                    file.o
+                                    `(,@X11-include ,(build-path home "collects" "compiler")))
+          (dynext:link-extension #f 
+                                 (list file.o)
+                                 file.so)
+          (delete/continue file.o)))))
     
   (define (build-names str)
     (list str
@@ -77,7 +90,11 @@
            (file.so (cadr names))
            (file.c (caddr names))
            (file.h (cadddr names)))
-      `((,file.so (,file.c ,file.h)
+      `((,file.so (,file.c ,file.h
+                   ,@(let ((p (get-precompiled-path file.so)))
+                       (cond
+                         ((file-exists? p) (list p))
+                         (else null))))
          ,(lambda () (compile-c-to-so file file.c file.so home)))
         (,file.c ("gl-vectors/gl-vector.c" ,@mz-headers)
          ,(lambda ()
@@ -97,7 +114,11 @@
                            (build-path "gl-vectors"
                                        (cadr (build-names v))))
                          vecs)))
-      `((,file.so (,file.c "gl-prims.h" ,@vec-sos ,@mz-headers)
+      `((,file.so (,file.c "gl-prims.h" ,@vec-sos ,@mz-headers
+                   ,@(let ((p (get-precompiled-path file.so)))
+                       (cond
+                         ((file-exists? p) (list p))
+                         (else null))))
                   ,(lambda ()
                      (compile-c-to-so file file.c file.so home))))))
       
@@ -121,8 +142,7 @@
        ("GLbyte" "byte" "scheme_get_int" "scheme_make_integer_value"))
       ("gl-boolean-vector"
        ("GLboolean" "boolean" "scheme_get_boolean" "scheme_make_boolean"))))
-  
-           
+             
   (define (pre-installer home)
     (parameterize ((current-directory (collection-path "sgl"))
 		   (make-print-reasons #f)

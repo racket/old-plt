@@ -11,4 +11,7 @@
 (define-macro recur recur)
 (define-macro rec rec)
 (define-macro evcase evcase)
+(define-macro nor nor)
+(define-macro nand nand)
 (define-macro signature->symbols signature->symbols)
+

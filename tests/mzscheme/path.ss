@@ -187,7 +187,7 @@
 ; Redefine these per-platform
 (define drives null)
 (define nondrive-roots (list "/"))
-(define a (list "a"))
+(define -a (list "a"))
 (define a/b (list "a/b" "a//b"))
 (define a/b/c (list "a/b/c" "a//b/c"))
 (define /a/b (list "/a/b"))
@@ -212,13 +212,13 @@
       (for-each
        (lambda (var)
 	 (eval `(set! ,var (add-slashes ,var))))
-       '(a a/b a/b/c /a/b a/../b a/./b a/../../b)))
+       '(-a a/b a/b/c /a/b a/../b a/./b a/../../b)))
 
 
 (when (eq? (system-type) 'macos)
       (set! drives null)
       (set! nondrive-roots (filesystem-root-list))
-      (set! a (list ":a"))
+      (set! -a (list ":a"))
 	  (set! a/b (list ":a:b"))
 	  (set! a/b/c (list ":a:b:c"))
       (set! /a/b (list "a:b"))
@@ -229,14 +229,14 @@
 
 (define roots (append drives nondrive-roots))
 
-(define a/ (map (lambda (s) (string-append s trail-sep)) a))
+(define a/ (map (lambda (s) (string-append s trail-sep)) -a))
 (define a/b/ (map (lambda (s) (string-append s trail-sep)) a/b))
 (define a/b/c/ (map (lambda (s) (string-append s trail-sep)) a/b/c))
 (define /a/b/ (map (lambda (s) (string-append s trail-sep)) /a/b))
 
 (define absols (append roots /a/b /a/b/))
 (define nondrive-absols (append nondrive-roots /a/b /a/b/))
-(define rels (append a a/ a/b a/b/ a/b/c a/b/c/ a/../b a/./b a/../../b))
+(define rels (append -a a/ a/b a/b/ a/b/c a/b/c/ a/../b a/./b a/../../b))
 
 (define i (lambda (x) x))
 

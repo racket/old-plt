@@ -14,11 +14,11 @@
 
   (define collect
     (lambda (base combine)
-      (local ((define C 
+      (letrec ([C 
 		(lambda (l)
 		  (cond
-		    ((null? l) base)
-		    (else (combine l (car l) (C (cdr l))))))))
+		   ((null? l) base)
+		   (else (combine l (car l) (C (cdr l))))))])
 	C)))
 
   (define filter

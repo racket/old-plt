@@ -10,7 +10,7 @@
   (define crlf (string #\return #\linefeed))
 
   (define (log . args)
-    '(apply printf args)
+    ; (apply printf args)
     (void))
 
   (define (starts-with? l n)
@@ -27,6 +27,7 @@
 	  [l (read-line r (if debug-via-stdio?
 			      'linefeed
 			      'return-linefeed))])
+      (log "server: ~a~n" l)
       (break-thread t) ; cancel timeout
       (if (eof-object? l)
 	  (error 'check-reply "got EOF")
@@ -100,7 +101,9 @@
 	  ;; After we send the ".", then only break in an emergency
 	  ((smtp-sending-end-of-message))
 
+	  (log "dot~n")
 	  (fprintf w ".~a" crlf)
+	  (flush-output w)
 	  (check-reply r 250)
 	  
 	  (log "quit~n")

@@ -28,6 +28,7 @@ Unreachable thread blocked on an unreachable semaphore is
  garbage-collectable
 Added channels
 Added current-memory-use
+Fixed weak hash table bug (could drop keys too soon)
 Changed TCP writes to block when the underlying implementation
  blocks, and removed tcp-port-send-waiting?
 Asynchronous breaks are now disabled during dynamic-wind

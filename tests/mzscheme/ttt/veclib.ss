@@ -10,13 +10,13 @@
   ;; 2 dimensional, square vectors
 
     (define collect
-    (lambda (base combine)
-      (local ((define C 
-		(lambda (l)
-		  (cond
-		    ((null? l) base)
-		    (else (combine l (car l) (C (cdr l))))))))
-	C)))
+      (lambda (base combine)
+	(define C 
+	  (lambda (l)
+	    (cond
+	     ((null? l) base)
+	     (else (combine l (car l) (C (cdr l)))))))
+	C))
     
   (define (make-2vec N element)
     (make-vector (* N N) element))

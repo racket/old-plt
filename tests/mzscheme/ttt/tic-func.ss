@@ -41,27 +41,28 @@
 (define tac (make-move (lambda (x) (tic x)) (lambda (x) (player x)) 'tac))
 
 (define make-players
-  (local ((define rest-of-fields
-	    (lambda (used-fields)
-	      (set-minus ALL-FIELDS used-fields))))
+  (let ()
+    (define rest-of-fields
+      (lambda (used-fields)
+	(set-minus ALL-FIELDS used-fields)))
     (lambda (player/opponent)
       (lambda (astate)
 	(map (lambda (counter-move)
 	       (let ((counter-x (car counter-move))
 		     (counter-y (cadr counter-move)))
 		 (cons (make-entry counter-x counter-y player/opponent)
-		   astate)))
-	  (rest-of-fields (map entry-field astate)))))))
+		       astate)))
+	     (rest-of-fields (map entry-field astate)))))))
 
 (define player (make-players PLAYER))
 
 (define opponent (make-players OPPONENT))
 
 (define terminal?
-  (local ((define filter-p/o
+  (let () (define filter-p/o
 	    (lambda (p/o astate)
 	      (map entry-field
-		(filter (lambda (x) (eq? (entry-who x) p/o)) astate)))))
+		(filter (lambda (x) (eq? (entry-who x) p/o)) astate))))
     (lambda (astate)
       (and (>= (length astate) 5)
 	(let ((PLAYERf (filter-p/o PLAYER astate))
@@ -72,7 +73,7 @@
 	    (ormap (lambda (ts) (subset? ts OPPONENTf)) TERMINAL-STATES)))))))
 
 (define print&remove-terminals
-  (local (
+  (let ()
 
 	  (define print-state1
 	    (lambda (x)
@@ -91,7 +92,7 @@
 	  (define print-state
 	    (lambda (x)
 	      ;(display ".")
-	      (void))))
+	      (void)))
 
     (collect null (lambda (_ astate rest)
 		    (if (terminal? astate)

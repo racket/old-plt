@@ -6,6 +6,8 @@
 	 recur
 	 rec
 	 evcase
+	 nor
+	 nand
 	 signature->symbols)
  
  (define send*
@@ -144,6 +146,9 @@
 		  [else (serror
 			 "bad syntax (body must contain a list of pairs)"
 			 tests)]))))))))
+
+ (define nor (lambda args `(#%not (#%or ,@args))))
+ (define nand (lambda args `(#%not (#%and ,@args))))
 
  (define signature->symbols
    (lambda (name)

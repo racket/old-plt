@@ -3,7 +3,7 @@
 
 (compound-unit/sig
   (import)
-  (link [core : mzlib:coreflat^ ((require-library "coreflatr.ss"))]
+  (link [core : mzlib:core-flat^ ((require-library "coreflatr.ss"))]
 	[turtles : turtles^ ((require-library "turtler.ss") (core : mzlib:function^))])
   (export
    (open core)

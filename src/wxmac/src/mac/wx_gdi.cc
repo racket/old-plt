@@ -622,14 +622,6 @@ void wxDisplaySize(int *width, int *height)
 	on the Mac, the wxBitMap needs to be a structure that will allow
 	us to redraw. Externally a wxBitmap is a picture (file or resource).
 	Internally, its an offscreen GWorld (and its pixmap).
-
-	We will have to extend the API so that parts of wxWindow (like
-	wx_buttn.cc) can draw a wxBitMap.
-
-	Also wxDC::DrawIcon might want to use this code.
-
-	Warning - might leak memory. 
-    wxTheBitmapList (is it needed?)
 */
 wxBitmap::wxBitmap(void)
 {
@@ -641,8 +633,6 @@ wxBitmap::wxBitmap(void)
   x_pixmap = NULL;
   selectedInto = NULL;
   WXGC_IGNORE(selectedInto);
-  // wxTheBitmapList->Append(this); 
-  //Create() should be used to add this to the list
 }
 
 //-----------------------------------------------------------------------------
@@ -736,10 +726,6 @@ wxBitmap::wxBitmap(int w, int h, Bool bandw)
 //-----------------------------------------------------------------------------
 wxBitmap::~wxBitmap(void)
 {
-#if !WXGARBAGE_COLLECTION_ON
-	wxTheBitmapList->DeleteObject(this);
-#endif
-	
 	if (selectedInto)
 		selectedInto->SelectObject(NULL);
 
@@ -781,9 +767,6 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
 	  ok = TRUE;
 	  x_pixmap = newGWorld;
 	  SetGWorld(saveport, savegw);
-#if !WXGARBAGE_COLLECTION_ON
-	  wxTheBitmapList->Append(this);  
-#endif
   }
   else {				// matt flatt suggests 
 	ok = FALSE;

@@ -14,6 +14,7 @@ wxMacDC::wxMacDC(CGrafPtr port)
 {
 	cMacGrafPort = port;
 	cCurrentUser = NULL;
+	WXGC_IGNORE(cCurrentUser);
 }
 
 //-----------------------------------------------------------------------------

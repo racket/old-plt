@@ -9,11 +9,43 @@
 # define PROGNAME "MzScheme"
 #endif
 
-int strlen(char *s)
+int strlen(char *s);
+int isspace(int c);
+
+static char *protect_arg(char *s)
 {
-  int i;
-  for (i = 0; s[i]; i++);
-  return i;
+  char *p, *r, *q;
+  int l;
+  int need_quote = 0;
+  int tick_count = 0;
+
+  for (p = s, l = 0; *p; p++, l++) {
+    if (*p == '\'')
+      tick_count++;
+    else if (isspace(*p) || *p == '"')
+      need_quote = 1;
+  }
+
+  if (!need_quote && !tick_count)
+    return s;
+
+  r = NewPtr(l + 4 * tick_count + 3);
+  p = r;
+  *(p++) = '\'';
+  for (q = s; *q; q++) {
+    if (*q == '\'') {
+      *(p++) = '\'';
+      *(p++) = '"';
+      *(p++) = '\'';
+      *(p++) = '"';
+      *(p++) = '\'';
+    } else
+      *(p++) = *q;
+  }
+  *(p++) = '\'';
+  *p = 0;
+
+  return r;
 }
 
 int main(void)
@@ -71,21 +103,22 @@ int main(void)
         /* Get command-line arguments here */
         Drop_GetArgs(&argc, &argv);
 
-		/* Read our own data fork to get the command line: */
-		GetAppParms(ourName, &rsrcRef_ignored, &appParam_ignored);
-		if (HOpenDF(dir.vRefNum, dir.parID, ourName, fsRdPerm, &file)) {
-		  storedlen = 0;
-		} else {
-		  long x = 1023;
-		  FSRead(file, &x, buffer);
-		  buffer[storedlen = x] = 0;
-		}
+	/* Read our own data fork to get the command line: */
+	GetAppParms(ourName, &rsrcRef_ignored, &appParam_ignored);
+	if (HOpenDF(dir.vRefNum, dir.parID, ourName, fsRdPerm, &file)) {
+	  storedlen = 0;
+	} else {
+	  long x = 1023;
+	  FSRead(file, &x, buffer);
+	  buffer[storedlen = x] = 0;
+	}
 		
-		/* Compute size of args from command-line */
-		givenlen = 0;
-		for (i = 1; i < argc; i++) {
-		  givenlen += strlen(argv[i]) + 3; /* open quote, space, close quote */
-		}
+	/* Compute size of args from command-line */
+	givenlen = 0;
+	for (i = 1; i < argc; i++) {
+	  argv[i] = protect_arg(argv[i]);
+	  givenlen += strlen(argv[i]) + 1; /* add space */
+	}
 
         app = (AppParameters *)NewPtr(sizeof(AppParameters) + storedlen + givenlen);
         app->theMsgEvent.what = kHighLevelEvent;
@@ -112,14 +145,14 @@ int main(void)
         rec.launchAppParameters = app;
         
         switch (LaunchApplication(&rec)) {
-         case noErr:
-           return 0;
-         case memFullErr:
-           reason = "\pThere is not enough memory available.";
-           break;
-         default:
-           reason = "\pIs there enough memory available?";
-           break;
+	case noErr:
+	  return 0;
+	case memFullErr:
+	  reason = "\pThere is not enough memory available.";
+	  break;
+	default:
+	  reason = "\pIs there enough memory available?";
+	  break;
         }
         
         /* Startup error */
@@ -135,17 +168,9 @@ int main(void)
   
   /* Didn't find it */
   ParamText("\pCould not find " PROGNAME " in the same folder. ("
-  	        PROGNAME " is needed to run this program.)", 
-  	        NULL, NULL, NULL);
+	    PROGNAME " is needed to run this program.)", 
+	    NULL, NULL, NULL);
   Alert(128, NULL);
-}
-
-extern char *scheme_strdup(char *s)
-{
-  int l = strlen(s) + 1;
-  char *r = NewPtr(l);
-  BlockMove(s, r, l);
-  return s;
 }
 
 void Drop_Runtime(char **, int)
@@ -157,6 +182,22 @@ void Drop_Quit(void)
 }
 
 
+/********** Reimplemented/copied here to save space in the binary: ********/
+
+int strlen(char *s)
+{
+  int i;
+  for (i = 0; s[i]; i++);
+  return i;
+}
+
+int isspace(int c)
+{
+  return ((c == ' ') 
+	  || (c == '\t')
+	  || (c == '\n')
+	  || (c == '\r'));
+}
 
 char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
 {
@@ -179,24 +220,24 @@ char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
     pbrec.hFileInfo.ioVRefNum = vref;
     pbrec.hFileInfo.ioDirID = dirID;
     pbrec.hFileInfo.ioFDirIndex = -1;
-	if (PBGetCatInfo(&pbrec, 0))
-	  return NULL;
+    if (PBGetCatInfo(&pbrec, 0))
+      return NULL;
 	
-	if (size + buf[0] + 1 > alloced) {
-	   char *old;
+    if (size + buf[0] + 1 > alloced) {
+      char *old;
 	   
-	   alloced *= 2;
-	   old = (char *)NewPtr(alloced + 1);
-	   BlockMove(s, old, size);
-	}
+      alloced *= 2;
+      old = (char *)NewPtr(alloced + 1);
+      BlockMove(s, old, size);
+    }
 
     s[size++] = ':';
     for (i = buf[0]; i; i--)
       s[size++] = buf[i];
 	  
-	dirID = pbrec.dirInfo.ioDrParID;
-	if (dirID == 1)
-	  break;
+    dirID = pbrec.dirInfo.ioDrParID;
+    if (dirID == 1)
+      break;
   }
   
   if (alloced < QUICK_BUF_SIZE) {
@@ -204,13 +245,13 @@ char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
     for (j = 0, i = size; i--; j++)
       s[j] = qbuf[i];
   } else {
-  	int save;
+    int save;
   	
-  	for (i = 0, j = size - 1; i < j; i++, j--) {
-  	  save = s[i];
-  	  s[i] = s[j];
-  	  s[j] = save;
-  	}
+    for (i = 0, j = size - 1; i < j; i++, j--) {
+      save = s[i];
+      s[i] = s[j];
+      s[j] = save;
+    }
   }
   
   s[size] = 0;

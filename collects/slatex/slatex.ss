@@ -20,6 +20,7 @@
 	(case (system-type)
 	  [(macos)
 	   (system "OTEX")
+	   ;(send-event "OTEX" "misc" "acvt")
 	   (send-event "OTEX" "aevt" "odoc" (vector 'file file))]
 	   [(windows unix)
 	    (system (format "latex ~a" file))])))))

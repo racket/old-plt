@@ -1,0 +1,37 @@
+program     ::= defn* e
+
+defn        ::= (CLASS cname cname (field*) method*)
+
+field       ::= (type fname)
+
+method      ::= (type mdname (arg*) expr)
+
+arg         ::= (type argname)
+
+expr        ::= NULL
+              | integer literal
+              | TRUE
+              | FALSE
+              | argname
+              | THIS
+              | (NEW cname)
+              | (REF expr fname)
+              | (SET expr fname expr)
+              | (SEND expr mdname expr*)
+              | (CAST cname expr)
+              | (LET argname expr expr)
+              | (bprim expr expr)
+              | (uprim expr)
+              | (IF expr expr expr)
+
+bprim       ::= + | - | * | == | AND | OR
+uprim       ::= ZERO? | NULL? | NOT
+
+type        ::= INT | BOOL | cname
+cname       ::= id
+fname       ::= id
+mdname      ::= id
+argname     ::= id
+
+id          ::= any symbol except reserved words (those which appear in
+                captials above)

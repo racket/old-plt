@@ -117,7 +117,7 @@
           (let ((old-breaks (break-enabled)))
             (break-enabled #f)
             (cond
-              ((not (eq? 'eof type))
+              ((and invalid-tokens-start (not (eq? 'eof type)))
                (let ((len (- new-token-end new-token-start)))
                  (set! current-pos (+ len current-pos))
                  (sync-invalid)

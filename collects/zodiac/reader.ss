@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:reader-code@
-;;  $Id: reader.ss,v 1.7 1999/03/12 17:22:30 mflatt Exp $
+;;  $Id: reader.ss,v 1.8 2000/05/28 03:47:31 shriram Exp $
 ;;
 ;;  Zodiac Reader  July 96
 ;;  mwk, plt group, Rice university.
@@ -207,7 +207,16 @@
 						 [else ",@"]))))
                            (read-quote  type  token)]
                           [(eq?  type  'period) 
-                           (make-period  (zodiac-start  token))]
+			   (if (allow-improper-lists)
+			       (make-period  (zodiac-start  token))
+			       (let ([period-sym '|.|])
+				 (zodiac:make-symbol 
+				  (zodiac-origin token)
+				  (zodiac-start token)
+				  (zodiac-finish token)
+				  period-sym
+				  period-sym
+				  '(-1))))]
                           [(eq?  type  'box)  (read-box  token)]
                           [(or (eq?  type  'circular-obj)
                                (eq?  type  'circular-ref))

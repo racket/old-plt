@@ -1,4 +1,4 @@
-; $Id: link.ss,v 1.17 2000/01/02 23:28:25 robby Exp $
+; $Id: link2.ss,v 1.1 2000/05/28 03:47:31 shriram Exp $
 
 (compound-unit/sig 
   (import
@@ -52,7 +52,8 @@
       ((require-relative-library-unit/sig "scm-main.ss")
 	MISC TOP-STRUCTS SCAN-PARMS
 	READ-STRUCTS READ-CODE SEXP
-	PATTERN SCHEME-CORE BACK-PROTOCOL EXPANDER INTERFACE)]
+	PATTERN SCHEME-CORE BACK-PROTOCOL EXPANDER INTERFACE
+	MZLIB-FILE)]
     [SCHEME-SPIDEY : zodiac:scheme-mrspidey^
       ((require-relative-library-unit/sig "scm-spdy.ss")
 	MISC TOP-STRUCTS SCAN-PARMS READ-STRUCTS READ-CODE SEXP PATTERN

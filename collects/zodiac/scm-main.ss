@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.218 2000/06/23 00:48:44 shriram Exp $
+; $Id: scm-main.ss,v 1.219 2000/06/23 21:15:05 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -6,7 +6,8 @@
     (z : zodiac:reader-structs^)
     (z : zodiac:reader-code^)
     zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
-    zodiac:back-protocol^ zodiac:expander^ zodiac:interface^)
+    zodiac:back-protocol^ zodiac:expander^ zodiac:interface^
+    mzlib:file^)
 
   ; ----------------------------------------------------------------------
 
@@ -2077,12 +2078,15 @@
     (and p
 	 (let-values ([(base name dir?) (split-path p)])
 	   (build-path base name))))
-    (define mzlib-directory (with-handlers ([void void])
-			    (norm-path (collection-path "mzlib"))))
   (define (get-on-demand-form name vocab)
     (let ([dir (norm-path (current-load-relative-directory))])
-      (and (equal? dir mzlib-directory)
-	   (find-on-demand-form name vocab))))
+      (and (equal?
+	     (normalize-path (normal-case-path dir))
+	     (normalize-path
+	       (normal-case-path
+		 (with-handlers ([void void])
+		   (norm-path (collection-path "mzlib"))))))
+	(find-on-demand-form name vocab))))
 
   (add-primitivized-micro-form 'define-macro common-vocabulary
     (let* ((kwd '())

@@ -50,7 +50,7 @@
  (bug-report-field-tools "Tools")
  (bug-report-field-docs-installed "Docs Installed")
  (bug-report-field-language "Language")
- (bug-report-field-teachpacks "TeachPacks")
+ (bug-report-field-teachpacks "Teachpacks")
  (bug-report-field-collections "Collections")
  (bug-report-field-human-language "Human Language")
  (bug-report-field-version "Version")
@@ -586,18 +586,18 @@
  (show-fraction-view "View as fraction")
  (show-more-decimal-places "Show more decimal places")
  
- ;;; TeachPack messages
- (select-a-teachpack "Select a TeachPack")
- (clear-teachpack "Clear ~a TeachPack")
- (teachpack-error-label "DrScheme - TeachPack error")
- (teachpack-dne/cant-read "The TeachPack file ~a does not exist or is not readable.")
- (teachpack-didnt-load "The TeachPack file ~a did not load properly.")
- (teachpack-error-invoke "The TeachPack file ~a raised an error when invoked.")
- (add-teachpack-menu-item-label "Add TeachPack...")
- (clear-all-teachpacks-menu-item-label "Clear All TeachPacks")
- (teachpack-not-only-one-import "The TeachPack unit/sig in ~a must have exactly one import.")
- (drscheme-teachpack-message-title "DrScheme TeachPack")
- (already-added-teachpack "Already added ~a TeachPack")
+ ;;; Teachpack messages
+ (select-a-teachpack "Select a Teachpack")
+ (clear-teachpack "Clear ~a Teachpack")
+ (teachpack-error-label "DrScheme - Teachpack error")
+ (teachpack-dne/cant-read "The teachpack file ~a does not exist or is not readable.")
+ (teachpack-didnt-load "The teachpack file ~a did not load properly.")
+ (teachpack-error-invoke "The teachpack file ~a raised an error when invoked.")
+ (add-teachpack-menu-item-label "Add Teachpack...")
+ (clear-all-teachpacks-menu-item-label "Clear All Teachpacks")
+ (teachpack-not-only-one-import "The teachpack unit/sig in ~a must have exactly one import.")
+ (drscheme-teachpack-message-title "DrScheme Teachpack")
+ (already-added-teachpack "Already added ~a teachpack")
  
  ;;; Language dialog
  (introduction-to-language-dialog
@@ -699,7 +699,7 @@
  ;;; welcoming message in repl
  (language "Language")
  (custom "custom")
- (teachpack "TeachPack")
+ (teachpack "Teachpack")
  (welcome-to "Welcome to")
  (version "version")
  

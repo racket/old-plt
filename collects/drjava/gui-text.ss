@@ -126,6 +126,7 @@
         ""
         (format "~n~a"
                 (cond
+		  [(char? val) (char->integer val)]
                   [(number? val) val]
                   [(eq? val #t) "true"]
                   [(eq? val #f) "false"]

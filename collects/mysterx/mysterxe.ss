@@ -76,10 +76,10 @@
   (define (com-get-property obj . path)
     (cond 
      [(null? path) 
-      (error 'com-get-property*
+      (error 'com-get-property
 	     "Expected one or more property names (strings)")]
      [(null? (cdr path))
-	     (com-get-property obj (car path))]
+	     (mxprims:com-get-property obj (car path))]
      [else (apply com-get-property
 		  (mxprims:com-get-property obj (car path))
 		  (cdr path))]))
@@ -88,12 +88,12 @@
     (cond 
      [(or (null? path-and-value) 
 	  (null? (cdr path-and-value)))
-      (error 'com-set-property*!
+      (error 'com-set-property!
 	     "Expected one or more property names (strings) and a value")]
      [(null? (cddr path-and-value))
-      (com-set-property! obj (car path-and-value) (cadr path-and-value))]
-     [else (apply com-set-property*!
-		  (mxprims:com-set-property! obj (car path-and-value))
+      (mxprims:com-set-property! obj (car path-and-value) (cadr path-and-value))]
+     [else (apply com-set-property!
+		  (mxprims:com-get-property obj (car path-and-value))
 		  (cdr path-and-value))]))
 
   ;; style-related procedures 

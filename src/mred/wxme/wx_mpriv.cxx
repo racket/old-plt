@@ -2513,6 +2513,9 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     wxBrush *brush;
     wxFont *font;
     wxColour *fg, *bg, *col;
+#ifndef NO_GET_CLIPPING_REGION
+    wxRegion *rgn;
+#endif
 
     if (ps)
       skipBox = this;
@@ -2526,7 +2529,6 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     bg = new wxColour(col);
 
 #ifndef NO_GET_CLIPPING_REGION
-    wxRegion *rgn;
     rgn = dc->GetClippingRegion();
     dc->SetClippingRect(left - x, top - y, width, height);
 #endif

@@ -6,7 +6,7 @@
 
 ; the browser with the calendar
 
-(define calwb (make-object mx-browser% "Calendar control" 350 400 100 100 '(scrollbars)))
+(define calwb (make-object mx-browser% "Calendar control" 350 400 100 100 '(scrollbars visible)))
 (define caldoc (send calwb current-document))
 
 (send caldoc insert-html 
@@ -22,7 +22,7 @@
 (define cal (car (send caldoc objects)))
 
 ; the control panel document 
-(define ctrlwb (make-object mx-browser% "Control Panel" 180 350 600 300 '()))
+(define ctrlwb (make-object mx-browser% "Control Panel" 180 350 600 300 '(visible)))
 (define ctrldoc (send ctrlwb current-document))
 
 (send ctrldoc insert-html 

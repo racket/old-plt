@@ -217,6 +217,7 @@ static void AdjustFontDefaults(void)
 	font_defaults[i+1] = "Tahoma";
       }
     }
+  }
 #endif
 }
 

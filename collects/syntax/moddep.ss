@@ -378,9 +378,16 @@
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
 	  (collapse-module-path path 
-				(if base
-				    (collapse-module-path-index base relto-mp)
-				    relto-mp))
+				(cond
+				 [(symbol? base)
+				  (let ([s (symbol->string base)])
+				    (if (and ((string-length s) . > . 0)
+					     (char=? #\, (string-ref s 0)))
+					`(file ,(substring s 1 (string-length s)))
+					relto-mp))]
+				 [(module-path-index? base)
+				  (collapse-module-path-index base relto-mp)]
+				 [else relto-mp]))
 	  relto-mp)))
 
   (define (show-import-tree module-path)

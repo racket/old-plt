@@ -418,4 +418,9 @@
 	       (export)
 	       (define define-values 10)))
 
+(test #t unit? (unit 
+		(import define-values) 
+		(export)
+		(let () (define define-values 10) define-values)))
+
 (report-errs)

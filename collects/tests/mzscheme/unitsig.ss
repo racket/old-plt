@@ -464,8 +464,12 @@
 ; Not ok if defining an imported name, but error should be about
 ; redefining an imported name. (This behavior is not actually tested.)
 (syntax-test '(unit/sig ()
-	       (import (define-values) )
+	       (import (define-values))
 	       (define define-values 17)))
+
+(test #t unit/sig? (unit/sig ()
+		     (import (define-values))
+		     (let () (define define-values 10) define-values)))
 
 (report-errs)
 

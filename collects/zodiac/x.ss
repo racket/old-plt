@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.42 1998/05/15 04:17:33 shriram Exp $
+; $Id: x.ss,v 1.43 1998/05/17 02:43:32 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -286,7 +286,7 @@
     (lambda (id env vocab)
       (let ((name (z:read-object id)) (marks (z:symbol-marks id)))
 	(or (resolve-in-env name marks env)
-	  (resolve-in-global name vocab)))))
+	  (resolve-in-vocabulary name vocab)))))
 
   (define resolve-in-env
     (lambda (name marks env)
@@ -295,7 +295,7 @@
 	  (let ((w (assoc marks v)))	; marks-equal?
 	    (and w (cdr w)))))))
 
-  (define resolve-in-global
+  (define resolve-in-vocabulary
     (let ((top-level-resolution (make-top-level-resolution 'dummy #f))) ; name-eq?
       (lambda (name vocab)
 	(let loop ((vocab vocab))

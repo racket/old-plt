@@ -6,9 +6,7 @@
   (provide scheme-lexer)
    
   (define-lex-abbrevs
-
-   [alphabetic (: (- "a" "z") (- "A" "Z"))]
-   
+      
    ;; For case insensitivity
    [a (: "a" "A")]
    [b (: "b" "B")]
@@ -43,7 +41,7 @@
    [digit10 digit]
    [digit16 (: digit10 (- "a" "f") (- "A" "F"))]
 
-   [whitespace (: #\newline #\return #\tab #\space #\vtab #\page)]
+   [scheme-whitespace (: #\newline #\return #\tab #\space #\vtab #\page)]
    [line-comment (@ ";" (* (^ #\newline)))]
 
    
@@ -57,7 +55,7 @@
                 (@ "U" digit16 digit16 digit16 digit16 digit16 digit16 digit16)
                 (@ "U" digit16 digit16 digit16 digit16 digit16 digit16 digit16 digit16))]
 
-   [character (: (@ "#\\" (^))
+   [character (: (@ "#\\" any-char)
                  (@ "#\\" character-name)
                  (@ "#\\" (- "0" "3") digit8 digit8)
                  (@ "#\\" unicode))]
@@ -101,7 +99,7 @@
 
    [bad-str (@ (? "#rx") (? "#") "\"" 
                (* (: (^ "\"" "\\")
-                     (@ "\\" (^))))
+                     (@ "\\" any-char)))
                (? (: "\\" "\"")))]
    [num2 (@ prefix2 complex2)]
    [complex2 (: real2
@@ -207,9 +205,9 @@
    
    [script (@ "#!" (* (: (^ #\newline) (@ #\\ #\newline))))]
 
-   [identifier-delims (: "\"" "," "'" "`" "(" ")" "[" "]" "{" "}" ";" whitespace)]
+   [identifier-delims (: "\"" "," "'" "`" "(" ")" "[" "]" "{" "}" ";" scheme-whitespace)]
    [identifier-chars (^ (: identifier-delims "\\" "|"))]
-   [identifier-escapes (: (@ "\\" (^))
+   [identifier-escapes (: (@ "\\" any-char)
                           (@ "|" (* (^ "|")) "|"))]
    [identifier-start (: identifier-escapes
                         (^ (: identifier-delims "\\" "|" "#"))
@@ -241,7 +239,7 @@
     (lexer
      ["#|" (values 1 end-pos)]
      ["|#" (values -1 end-pos)]
-     [(~ (@ (&) "|#" (&))) (get-next-comment input-port)]
+     [(~ (@ any-string "|#" any-string)) (get-next-comment input-port)]
      [(eof) (values 'eof end-pos)]
      [(special)
       (get-next-comment input-port)]
@@ -262,7 +260,7 @@
   
   (define scheme-lexer
     (lexer
-     [(+ whitespace) (ret lexeme 'white-space #f start-pos end-pos)]
+     [(+ scheme-whitespace) (ret lexeme 'white-space #f start-pos end-pos)]
      [(: "#t" "#f" "#T" "#F" num2 num8 num10 num16 character)
       (ret lexeme 'constant #f start-pos end-pos)]
      [str (ret lexeme 'string #f start-pos end-pos)]
@@ -290,7 +288,7 @@
       (ret "" 'no-color #f start-pos end-pos)]
      [(eof) (values lexeme 'eof #f #f #f)]
      [(: bad-char bad-str bad-id) (ret lexeme 'error #f start-pos end-pos)]
-     [(^) (extend-error lexeme start-pos end-pos input-port)]))
+     [any-char (extend-error lexeme start-pos end-pos input-port)]))
   
   (define (extend-error lexeme start end in)
     (if (memq (peek-char-or-special in)

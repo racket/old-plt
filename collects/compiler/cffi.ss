@@ -83,7 +83,8 @@
 					     (if (pair? type)
 						 (values #f
 							 (format "(SCHEME_FALSEP(~~a) ~
-                                                                  || (SCHEME_CPTRP(~a) && SCHEME_BYTE_STRINGP(SCHEME_CPTR_TYPE(~a)) && !strcmp(SCHEME_BYTE_STR_VAL(SCHEME_CPTR_TYPE(~a)), ~s)))"
+                                                                  || (SCHEME_CPTRP(~a) && SCHEME_BYTE_STRINGP(SCHEME_CPTR_TYPE(~a)) ~
+                                                                      && !strcmp(SCHEME_BYTE_STR_VAL(SCHEME_CPTR_TYPE(~a)), ~s)))"
 								 scheme-var scheme-var scheme-var (cadr type))
 							 (format "(SCHEME_TRUEP(~~a) ? SCHEME_CPTR_VAL(~a) : NULL)"
 								 scheme-var)
@@ -138,13 +139,13 @@
 								    scheme-var)
 							    (format "(SCHEME_FALSEP(~~a) ? NULL : SCHEME_BYTE_STR_VAL(~a))" 
 								    scheme-var)
-							    "string or #f"
+							    "byte string or #f"
 							    #f)]
 						   [(nonnull-char-string)
 						    (values #f
 							    "SCHEME_BYTE_STRINGP(~a)"
 							    "SCHEME_BYTE_STR_VAL(~a)" 
-							    "string"
+							    "byte string"
 							    #f)]
 						   [else (error 'cffi "bad type for arg: ~a" type)]))])
 				 (string-append
@@ -160,7 +161,7 @@
 	  [build-scheme-value (lambda (type scheme-var c-var)
 				(let ([builder
 				       (if (pair? type)
-					   (format "(~a ? scheme_make_cptr(~~a, scheme_make_string(~s)) : scheme_false)" 
+					   (format "(~a ? scheme_make_cptr(~~a, scheme_make_byte_string(~s)) : scheme_false)" 
 						   c-var
 						   (cadr type))
 					   (case type
@@ -172,12 +173,12 @@
 					     [(unsigned-int unsigned-long)
 					      "scheme_make_integer_value_from_unsigned(~a)"]
 					     [(char-string)
-					      (format "(~~a ? scheme_make_string(~a) : scheme_false)"
+					      (format "(~~a ? scheme_make_byte_string(~a) : scheme_false)"
 						      c-var)]
 					     [(float double)
 					      "scheme_make_double(~a)"]
 					     [(nonnull-char-string)
-					      "scheme_make_string(~a)"]
+					      "scheme_make_byte_string(~a)"]
 					     [(scheme-object) "~a"]
 					     [else (error 'cffi "bad type for result: ~a" type)]))])
 				  (format "  ~a = ~a;\n"

@@ -255,13 +255,14 @@
       ;; 19.8.3
       (MethodDeclaration
        [(MethodHeader MethodBody) (make-method (method-modifiers $1)
-                                                   (method-type $1)
-                                                   (method-type-parms $1)
-                                                   (method-name $1)
-                                                   (method-parms $1)
-                                                   (method-throws $1)
-                                                   $2
-                                                   (build-src 2))])
+                                               (method-type $1)
+                                               (method-type-parms $1)
+                                               (method-name $1)
+                                               (method-parms $1)
+                                               (method-throws $1)
+                                               $2
+                                               #f
+                                               (build-src 2))])
 
       (MethodHeader
        [(Modifiers Type MethodDeclarator Throws) (construct-method-header $1 null $2 $3 $4)]
@@ -318,10 +319,10 @@
       (ConstructorDeclaration
        [(Modifiers ConstructorDeclarator Throws ConstructorBody)
 	(make-method $1 (make-type-spec 'ctor 0 (build-src 4)) null (car $2) 
-                         (cadr $2) $3 $4 (build-src 4))]
+                         (cadr $2) $3 $4 #f (build-src 4))]
        [(ConstructorDeclarator Throws ConstructorBody)
 	(make-method null (make-type-spec 'ctor 0 (build-src 3)) null (car $1)
-                         (cadr $1) $2 $3 (build-src 3))])
+                         (cadr $1) $2 $3 #f (build-src 3))])
       
       (ConstructorDeclarator
        [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3))]
@@ -628,8 +629,8 @@
        [(continue SEMI_COLON) (make-continue #f (build-src 2))])
        
       (ReturnStatement
-       [(return Expression SEMI_COLON) (make-return $2 (build-src 3))]
-       [(return SEMI_COLON) (make-return #f (build-src 2))])
+       [(return Expression SEMI_COLON) (make-return $2 #f (build-src 3))]
+       [(return SEMI_COLON) (make-return #f #f (build-src 2))])
       
       (ThrowStatement
        [(throw Expression SEMI_COLON) (make-throw $2 (build-src 1) (build-src 3))])

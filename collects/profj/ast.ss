@@ -87,8 +87,8 @@
   ;;(make-array-init (list (U expression array-init)) src)
   (p-define-struct array-init (vals src))
   
-  ;;(make-method (list modifier) type-spec (list gj-info) id (list var-decl) (list name) Statement src)
-  (p-define-struct method (modifiers type type-parms name parms throws body src))
+  ;;(make-method (list modifier) type-spec (list gj-info) id (list var-decl) (list name) Statement bool src)
+  (p-define-struct method (modifiers type type-parms name parms throws body all-tail? src))
   
   ;;(make-initialize bool block src)
   (p-define-struct initialize (static block src))
@@ -128,8 +128,8 @@
   ;(make-throw Expression src src)
   (p-define-struct throw (expr key-src src))
 
-  ;(make-return Expression src)
-  (p-define-struct return (expr src))
+  ;(make-return Expression boolean src)
+  (p-define-struct return (expr in-tail? src))
   
   ;(make-while Expression Statement src)
   (p-define-struct while (cond loop src))
@@ -179,7 +179,8 @@
           (post-expr? stmt)
           (pre-expr? stmt)
           (unary? stmt)
-          (assignment? stmt))))
+          (assignment? stmt)
+          (class-alloc? stmt))))
   
   ;(make-expr (U symbol ??) src)
   (p-define-struct expr (types src)) 

@@ -193,6 +193,7 @@
                                           (method-parms $1)
                                           (method-throws $1)
                                           $2
+                                          #t
                                           (build-src 2))]
        [(MethodHeader SEMI_COLON) (make-method (method-modifiers $1)
                                                (method-type $1)
@@ -200,6 +201,7 @@
                                                (method-name $1)
                                                (method-parms $1)
                                                (method-throws $1)
+                                               #f
                                                #f
                                                (build-src 2))])
       
@@ -223,7 +225,7 @@
       (ConstructorDeclaration
        [(ConstructorDeclarator ConstructorBody)
 	(make-method (list (make-modifier 'public #f)) (make-type-spec 'ctor 0 (build-src 2)) null (car $1)
-                     (cadr $1) null $2 (build-src 2))])
+                     (cadr $1) null $2 #t (build-src 2))])
       
       (ConstructorDeclarator
        [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3))]
@@ -272,7 +274,7 @@
 	(make-ifS $3 $5 $7 (build-src 1) (build-src 7))])
       
       (ReturnStatement
-       [(return Expression SEMI_COLON) (make-return $2 (build-src 3))])
+       [(return Expression SEMI_COLON) (make-return $2 #t (build-src 3))])
       
       ;; 19.12
       (Primary

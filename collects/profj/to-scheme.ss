@@ -544,6 +544,7 @@
                                                                   (method-name m)
                                                                   (method-parms m)
                                                                   (method-body m)
+                                                                  (method-all-tail? m)
                                                                   (method-src m)
                                                                   (> depth 0)
                                                                   depth
@@ -832,8 +833,8 @@
                                      (map field-type (method-parms (car methods))))))
              (make-method-names (cdr methods) minus-methods type-recs)))))
   
-  ;translate-method: type-spec (list symbol) id (list parm) statement src bool int type-records -> syntax
-  (define (translate-method type modifiers id parms block src inner? depth type-recs)
+  ;translate-method: type-spec (list symbol) id (list parm) statement bool src bool int type-records -> syntax
+  (define (translate-method type modifiers id parms block all-tail? src inner? depth type-recs)
     (let* ((final (final? modifiers))
            (ctor? (constructor? (id-string id)))
            (method-string ((if ctor? build-constructor-name build-method-name)
@@ -852,11 +853,13 @@
                          `(begin
                             (rename (,(build-identifier (string-append "super." method-string)), method-name))
                             (,definition ,method-name
-                             ,(translate-method-body method-string parms block modifiers type ctor? inner? depth type-recs)))
+                             ,(translate-method-body method-string parms block modifiers type 
+                                                     all-tail? ctor? inner? depth type-recs)))
                          (build-src src))
           (create-syntax #f
                          `(,definition ,method-name 
-                           ,(translate-method-body method-string parms block modifiers type ctor? inner? depth type-recs))
+                           ,(translate-method-body method-string parms block modifiers type 
+                                                   all-tail? ctor? inner? depth type-recs))
                          (build-src src)))))
   
   ;make-static-method-names: (list method) type-recs -> (list string)
@@ -880,6 +883,7 @@
                                                           (method-body method)
                                                           (map modifier-kind (method-modifiers method))
                                                           (method-type method)
+                                                          (method-all-tail? method)
                                                           #f
                                                           #f
                                                           0
@@ -889,8 +893,8 @@
   
   (define static-method (make-parameter #f))
   
-  ;translate-method-body (list field) statement (list symbol) type-spec bool bool int type-record -> syntax
-  (define (translate-method-body method-name parms block modifiers rtype ctor? inner? depth type-recs)
+  ;translate-method-body (list field) statement (list symbol) type-spec bool bool bool int type-record -> syntax
+  (define (translate-method-body method-name parms block modifiers rtype all-tail? ctor? inner? depth type-recs)
     (let ((parms (translate-parms parms))
           (void? (eq? (type-spec-name rtype) 'void))
           (native? (memq 'native modifiers))
@@ -924,6 +928,9 @@
                          (let/ec return-k
                            ,(translate-statement block type-recs)
                            (void))))
+                     ((and block (not void?) all-tail?)
+                      `(lambda ,parms
+                         ,(translate-statement block type-recs)))
                      ((and block (not void?))
                       `(lambda ,parms
                          (let/ec return-k
@@ -1077,6 +1084,7 @@
          (translate-return (if (return-expr statement)
                                (translate-expression (return-expr statement))
                                (make-syntax #f '(void) #f))
+                           (return-in-tail? statement)
                            (return-src statement)))
         ((while? statement)
          (translate-while (translate-expression (while-cond statement))
@@ -1144,9 +1152,9 @@
   
   ;return -> call to a continuation 
   ;Presently a no-op in the interactions window, although this is incorrect for advanced and full
-  ;translate-return: syntax src -> syntax
-  (define (translate-return expr src)
-    (if (interactions?)
+  ;translate-return: syntax bool src -> syntax
+  (define (translate-return expr in-tail? src)
+    (if (or (interactions?) in-tail?)
         (make-syntax #f expr #f)
         (make-syntax #f `(return-k ,expr) (build-src src))))
   

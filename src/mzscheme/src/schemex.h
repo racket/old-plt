@@ -538,6 +538,13 @@ Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype, void *dat
 						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
+Scheme_Object *(*scheme_get_event_via_get)(Scheme_Input_Port *port,
+						  char *buffer, long offset, long size,
+						  int byte_or_special);
+Scheme_Object *(*scheme_write_event_via_write)(Scheme_Output_Port *port,
+						      const char *str, long offset, long size);
+Scheme_Object *(*scheme_write_special_event_via_write_special)(Scheme_Output_Port *port, 
+								      Scheme_Object *special);
 Scheme_Object *(*scheme_open_input_file)(const char *name, const char *who);
 Scheme_Object *(*scheme_open_output_file)(const char *name, const char *who);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
@@ -694,7 +701,10 @@ long (*scheme_get_process_milliseconds)(void);
 char *(*scheme_banner)(void);
 char *(*scheme_version)(void);
 int (*scheme_check_proc_arity)(const char *where, int a,
-			    int which, int argc, Scheme_Object **argv);
+				      int which, int argc, Scheme_Object **argv);
+int (*scheme_check_proc_arity2)(const char *where, int a,
+				       int which, int argc, Scheme_Object **argv,
+				       int false_ok);
 char *(*scheme_make_provided_string)(Scheme_Object *o, int count, int *len);
 char *(*scheme_make_args_string)(char *s, int which, int argc, Scheme_Object **argv, long *len);
 void (*scheme_no_dumps)(char *why);

@@ -645,6 +645,14 @@ MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype, vo
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
 
+MZ_EXTERN Scheme_Object *scheme_get_event_via_get(Scheme_Input_Port *port,
+						  char *buffer, long offset, long size,
+						  int byte_or_special);
+MZ_EXTERN Scheme_Object *scheme_write_event_via_write(Scheme_Output_Port *port,
+						      const char *str, long offset, long size);
+MZ_EXTERN Scheme_Object *scheme_write_special_event_via_write_special(Scheme_Output_Port *port, 
+								      Scheme_Object *special);
+
 MZ_EXTERN Scheme_Object *scheme_open_input_file(const char *name, const char *who);
 MZ_EXTERN Scheme_Object *scheme_open_output_file(const char *name, const char *who);
 
@@ -850,7 +858,10 @@ MZ_EXTERN char *scheme_banner(void);
 MZ_EXTERN char *scheme_version(void);
 
 MZ_EXTERN int scheme_check_proc_arity(const char *where, int a,
-			    int which, int argc, Scheme_Object **argv);
+				      int which, int argc, Scheme_Object **argv);
+MZ_EXTERN int scheme_check_proc_arity2(const char *where, int a,
+				       int which, int argc, Scheme_Object **argv,
+				       int false_ok);
 
 MZ_EXTERN char *scheme_make_provided_string(Scheme_Object *o, int count, int *len);
 MZ_EXTERN char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv, long *len);

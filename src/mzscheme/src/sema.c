@@ -22,6 +22,8 @@
 
 #ifndef NO_SCHEME_THREADS
 
+Scheme_Object *scheme_always_ready_evt;
+
 static Scheme_Object *make_sema(int n, Scheme_Object **p);
 static Scheme_Object *semap(int n, Scheme_Object **p);
 static Scheme_Object *hit_sema(int n, Scheme_Object **p);
@@ -135,9 +137,10 @@ void scheme_init_sema(Scheme_Env *env)
 						      1, 1), 
 			     env);
 
-  o = scheme_alloc_small_object();
-  o->type = scheme_always_evt_type;
-  scheme_add_global_constant("always-evt", o, env);
+  REGISTER_SO(scheme_always_ready_evt);
+  scheme_always_ready_evt = scheme_alloc_small_object();
+  scheme_always_ready_evt->type = scheme_always_evt_type;
+  scheme_add_global_constant("always-evt", scheme_always_ready_evt, env);
 
   o = scheme_alloc_small_object();
   o->type = scheme_never_evt_type;

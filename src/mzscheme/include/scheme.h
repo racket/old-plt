@@ -1035,7 +1035,7 @@ typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Need_Wakeup_Input_Fun)(Scheme_Input_Port *, void *);
 
 typedef Scheme_Object *(*Scheme_Write_String_Evt_Fun)(Scheme_Output_Port *,
-							   const char *str, long offset, long size);
+						      const char *str, long offset, long size);
 typedef long (*Scheme_Write_String_Fun)(Scheme_Output_Port *,
 					const char *str, long offset, long size,
 					int rarely_block);

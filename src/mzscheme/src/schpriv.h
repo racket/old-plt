@@ -956,6 +956,9 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Syncing *synci
 Scheme_Object *scheme_make_sema_repost(Scheme_Object *sema);
 
 Scheme_Object *scheme_wrap_evt(int argc, Scheme_Object *argv[]);
+Scheme_Object *scheme_poll_evt(int argc, Scheme_Object *argv[]);
+
+extern Scheme_Object *scheme_always_ready_evt;
 
 void scheme_get_outof_line(Scheme_Channel_Syncer *ch_w);
 

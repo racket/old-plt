@@ -1985,6 +1985,14 @@ static void rw_evt_wakeup(Scheme_Object *_rww, void *fds)
   }
 }
 
+Scheme_Object *scheme_get_event_via_get(Scheme_Input_Port *port,
+					char *buffer, long offset, long size,
+					int byte_or_special)
+{
+  return make_read_write_evt(scheme_read_evt_type,
+			     (Scheme_Object *)port, NULL, 
+			     buffer, offset, size);
+}
 
 Scheme_Object *scheme_make_read_evt(const char *who, Scheme_Object *port,
 				    char *str, long start, long size,
@@ -1993,26 +2001,69 @@ Scheme_Object *scheme_make_read_evt(const char *who, Scheme_Object *port,
 {
   Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
 
-  if (!peek && ip->get_string_evt_fun) {
-    Scheme_Get_String_Evt_Fun gse;
-    gse = ip->get_string_evt_fun;
-    return gse(ip, str, start, size, byte_or_special);
-  } else if (peek && ip->peek_string_evt_fun) {
-    Scheme_Peek_String_Evt_Fun pse;
-    pse = ip->peek_string_evt_fun;
-    return pse(ip, str, start, size, peek_skip, byte_or_special);
+  if (!peek) {
+    if (ip->get_string_evt_fun) {
+      Scheme_Get_String_Evt_Fun gse;
+      gse = ip->get_string_evt_fun;
+      return gse(ip, str, start, size, byte_or_special);
+    } else {
+      scheme_arg_mismatch((str 
+			   ? "read-bytes-avail!-evt"
+			   : (byte_or_special
+			      ? "read-byte-evt"
+			      : "read-byte-or-special-evt")),
+			  "port does not support atomic reads: ",
+			  port);
+      return NULL;
+    }
+  } else {
+    if (ip->peek_string_evt_fun) {
+      Scheme_Peek_String_Evt_Fun pse;
+      pse = ip->peek_string_evt_fun;
+      return pse(ip, str, start, size, peek_skip, byte_or_special);
+    } else {
+      return make_read_write_evt(scheme_peek_evt_type,
+				 port, peek_skip, str, start, size);
+    }
   }
-
-  return make_read_write_evt((peek 
-			      ? scheme_peek_evt_type
-			      : scheme_read_evt_type), 
-			     port, peek_skip, str, start, size);
 }
 
+Scheme_Object *scheme_write_event_via_write(Scheme_Output_Port *port,
+					    const char *str, long offset, long size)
+{
+  return make_read_write_evt(scheme_write_evt_type, (Scheme_Object *)port, NULL, 
+			     (char *)str, offset, size);
+}
+
+Scheme_Object *scheme_write_special_event_via_write_special(Scheme_Output_Port *port, 
+							    Scheme_Object *special)
+{
+  return make_read_write_evt(scheme_write_evt_type, (Scheme_Object *)port, special, 
+			     NULL, 0, 1);
+}
+	
 Scheme_Object *scheme_make_write_evt(const char *who, Scheme_Object *port,
 				     Scheme_Object *special, char *str, long start, long size)
 {
-  return make_read_write_evt(scheme_write_evt_type, port, special, str, start, size);
+  Scheme_Output_Port *op = (Scheme_Output_Port *)port;
+
+  if (!special) {
+    if (op->write_string_evt_fun) {
+      Scheme_Write_String_Evt_Fun wse;
+      wse = op->write_string_evt_fun;
+      return wse(op, str, start, size);
+    }
+  } else {
+    if (op->write_special_evt_fun) {
+      Scheme_Write_Special_Evt_Fun wse = op->write_special_evt_fun;
+      return wse(op, special);
+    }
+  }
+
+  scheme_arg_mismatch("write-bytes-avail-evt",
+		      "port does not support atomic writes: ",
+		      port);
+  return NULL;
 }
 
 void
@@ -3530,7 +3581,7 @@ _scheme_make_named_file_input_port(FILE *fp, Scheme_Object *name, int regfile)
   ip = scheme_make_input_port(file_input_port_type,
 			      fip,
 			      name,
-			      NULL,
+			      scheme_get_event_via_get,
 			      file_get_string,
 			      NULL,
 			      NULL,
@@ -4027,7 +4078,7 @@ make_fd_input_port(int fd, Scheme_Object *name, int regfile, int win_textmode, i
   ip = scheme_make_input_port(fd_input_port_type,
 			      fip,
 			      name,
-			      NULL,
+			      scheme_get_event_via_get,
 			      fd_get_string,
 			      NULL,
 			      NULL,
@@ -4325,7 +4376,7 @@ make_oskit_console_input_port()
   ip = scheme_make_input_port(oskit_console_input_port_type,
 			      osk,
 			      scheme_intern_symbol("stdin"),
-			      NULL,
+			      scheme_get_event_via_get,
 			      osk_get_string,
 			      NULL,
 			      NULL,
@@ -4428,7 +4479,7 @@ scheme_make_file_output_port(FILE *fp)
   return (Scheme_Object *)scheme_make_output_port(file_output_port_type,
 						  fop,
 						  scheme_intern_symbol("file"),
-						  NULL,
+						  scheme_write_event_via_write,
 						  file_write_string,
 						  NULL,
 						  file_close_output,
@@ -5163,7 +5214,7 @@ make_fd_output_port(int fd, Scheme_Object *name, int regfile, int win_textmode, 
   the_port = (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
 						      fop,
 						      name,
-						      NULL,
+						      scheme_write_event_via_write,
 						      fd_write_string,
 						      (Scheme_Out_Ready_Fun)fd_write_ready,
 						      fd_close_output,

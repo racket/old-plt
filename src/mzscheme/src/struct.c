@@ -71,7 +71,6 @@ static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]
 static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[]);
-static Scheme_Object *poll_evt(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -233,23 +232,23 @@ scheme_init_struct (Scheme_Env *env)
     scheme_add_global_constant("prop:evt", evt_property, env);
 
     scheme_add_evt(scheme_structure_type,
-			(Scheme_Ready_Fun)evt_struct_is_ready,
-			NULL,
-			is_evt_struct, 1);
+		   (Scheme_Ready_Fun)evt_struct_is_ready,
+		   NULL,
+		   is_evt_struct, 1);
   }
 
   scheme_add_evt(scheme_wrapped_evt_type,
-		      (Scheme_Ready_Fun)wrapped_evt_is_ready,
-		      NULL, NULL, 1);
+		 (Scheme_Ready_Fun)wrapped_evt_is_ready,
+		 NULL, NULL, 1);
   scheme_add_evt(scheme_nack_guard_evt_type,
-		      (Scheme_Ready_Fun)nack_guard_evt_is_ready,
-		      NULL, NULL, 1);
+		 (Scheme_Ready_Fun)nack_guard_evt_is_ready,
+		 NULL, NULL, 1);
   scheme_add_evt(scheme_nack_evt_type,
-		      (Scheme_Ready_Fun)nack_evt_is_ready,
-		      NULL, NULL, 1);
+		 (Scheme_Ready_Fun)nack_evt_is_ready,
+		 NULL, NULL, 1);
   scheme_add_evt(scheme_poll_evt_type,
-		      (Scheme_Ready_Fun)poll_evt_is_ready,
-		      NULL, NULL, 1);
+		 (Scheme_Ready_Fun)poll_evt_is_ready,
+		 NULL, NULL, 1);
 
   /*** basic interface ****/
 
@@ -289,7 +288,7 @@ scheme_init_struct (Scheme_Env *env)
 						      1, 1),
 			     env);
   scheme_add_global_constant("poll-guard-evt",
-			     scheme_make_prim_w_arity(poll_evt,
+			     scheme_make_prim_w_arity(scheme_poll_evt,
 						      "poll-guard-evt",
 						      1, 1),
 			     env);
@@ -1411,7 +1410,7 @@ static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[])
   return (Scheme_Object *)nw;
 }
 
-static Scheme_Object *poll_evt(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_poll_evt(int argc, Scheme_Object *argv[])
 {
   Nack_Guard_Evt *nw;
 

@@ -1523,8 +1523,9 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
   return scheme_true;
 }
 
-int scheme_check_proc_arity(const char *where, int a,
-			     int which, int argc, Scheme_Object **argv)
+int scheme_check_proc_arity2(const char *where, int a,
+			     int which, int argc, Scheme_Object **argv,
+			     int false_ok)
 {
   Scheme_Object *p;
 
@@ -1533,11 +1534,16 @@ int scheme_check_proc_arity(const char *where, int a,
   else
     p = argv[which];
 
+  if (false_ok && SCHEME_FALSEP(p))
+    return 1;
+
   if (!SCHEME_PROCP(p) || SCHEME_FALSEP(get_or_check_arity(p, a))) {
     if (where) {
-      char buffer[50];
+      char buffer[60];
 
-      sprintf(buffer, "procedure (arity %d)", a);
+      sprintf(buffer, "procedure (arity %d)%s", 
+	      a,
+	      false_ok ? " or #f" : "");
 
       scheme_wrong_type(where, buffer, which, argc, argv);
     } else
@@ -1545,6 +1551,12 @@ int scheme_check_proc_arity(const char *where, int a,
   }
 
   return 1;
+}
+
+int scheme_check_proc_arity(const char *where, int a,
+			    int which, int argc, Scheme_Object **argv)
+{
+  return scheme_check_proc_arity2(where, a, which, argc, argv, 0);
 }
 
 /*========================================================================*/

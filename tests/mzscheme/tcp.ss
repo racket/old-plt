@@ -35,12 +35,12 @@
 	      (loop v)))))))
 
 (define (twrite connect)
-  (let-values ([(t) (thread (lambda ()
+  (let-values ([(r w close) (connect)]
+	       [(t) (thread (lambda ()
 			      (let loop ()
 				(sleep 1)
 				(printf "tick~n")
-				(loop))))]
-	       [(r w close) (connect)])
+				(loop))))])
     (let ([done (lambda ()
 		  (close-output-port w)
 		  (close-input-port r)

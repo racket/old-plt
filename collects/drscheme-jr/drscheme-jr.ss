@@ -385,7 +385,8 @@
    (compound-unit/sig
      (import [mz : prims^]
              [basis : plt:basis^]
-             [mzlib : mzlib:core^])
+             [mzlib : mzlib:core^]
+	     [zodiac : zodiac:system^])
      (link
       [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
       [settings : drscheme-jr:settings^

@@ -4,7 +4,8 @@
   (unit/sig drscheme-jr:settings^
     (import [prims : prims^]
 	    [basis : plt:basis^]
-	    [mzlib : mzlib:core^])
+	    [mzlib : mzlib:core^]
+	    [zodiac : zodiac:system^])
     
     (basis:teachpack-changed teachpacks)
 

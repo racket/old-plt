@@ -30,7 +30,40 @@
    tmp-launcher)
   (let-values ([(l-in l-out l-pid l-err l-proc) (apply values (process* tmp-launcher))]
 	       [(in out) (tcp-accept listener)])
-    (let ([got (read in)])
+    (let* ([sema (make-semaphore 0)]
+	   [skip-break? #f]
+	   [to-be-broken (current-thread)]
+	   [thrd-timeout
+	    (thread
+	     (lambda ()
+	       (sleep 60)
+	       (semaphore-wait sema)
+	       (break-thread to-be-broken)
+	       (semaphore-post sema)))]
+	   [make-thrd-port
+	    (lambda (tag port)
+	      (thread
+	       (lambda ()
+		 (let loop ()
+		   (let ([l (with-handlers ([(lambda (x) #t)
+					     (lambda (x) eof)])
+			      (read-line port))])
+		     (unless (eof-object? l)
+		       (printf "~a>> ~a~n" tag l)
+		       (loop)))))))]
+	   [_ (begin (make-thrd-port "stdout" l-in)
+		     (make-thrd-port "stderr" l-err))]
+	   [got (with-handlers ([(lambda (x) #f)
+				 (lambda (x)
+				   (exn-message x))])
+		  (semaphore-post sema)
+		  (begin0
+		   (read in)
+		   (semaphore-wait sema)))])
+      (break-thread thrd-timeout)
+      (close-input-port l-in)
+      (close-input-port l-err)
+      (close-output-port l-out)
       (unless (equal? expected got)
 	(error test "expected ~s, got ~s" expected got)))))
 
@@ -79,13 +112,13 @@
 
 (teachpackless-test)
 
-;(teachpack-test "Graphical (MrEd)" void)
-;(teachpack-test "Textual (MzScheme)" void)
-;(teachpack-test "Textual without Debugging (MzScheme)" void)
-;(teachpack-test "Graphical without Debugging (MrEd)" void)
-;(teachpack-test "Beginning Student" void)
-;(teachpack-test "Intermediate Student" void)
-;(teachpack-test "Advanced Student" void)
+(teachpack-test "Graphical (MrEd)" void)
+(teachpack-test "Textual (MzScheme)" void)
+(teachpack-test "Textual without Debugging (MzScheme)" void)
+(teachpack-test "Graphical without Debugging (MrEd)" void)
+(teachpack-test "Beginning Student" void)
+(teachpack-test "Intermediate Student" void)
+(teachpack-test "Advanced Student" void)
 
 (teachpack-test "Beginning Student"
 		(lambda ()

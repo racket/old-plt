@@ -1,3 +1,5 @@
+(require-library "load-handlers.ss" "drscheme")
+(require-library "guiutils.ss" "framework")
 
 (let* ([main-unit
 	(let ([settings settings]
@@ -8,7 +10,8 @@
 	    (import [prims : prims^]
 		    [basis : plt:basis^]
 		    [mzlib : mzlib:core^]
-		    mred^)
+		    mred^
+		    [drscheme:load-handler : drscheme:load-handler^])
 	    
 	    (basis:teachpack-changed teachpacks)
 
@@ -48,7 +51,7 @@
 			      (f)))))))
 
 	    (define (initialize-userspace)
-	      ;; add mred to the namespace
+	      (current-load drscheme:load-handler:drscheme-load-handler)
 	      (global-define-values/invoke-unit/sig mred^ mred@))
 
 	    (define setting (apply basis:make-setting (cdr (vector->list settings))))
@@ -56,7 +59,16 @@
   (compound-unit/sig
     (import [prims : prims^]
 	    [basis : plt:basis^]
-	    [mzlib : mzlib:core^])
+	    [mzlib : mzlib:core^]
+	    [zodiac : zodiac:system^])
     (link [mred : mred^ (mred@)]
-	  [main : drscheme-jr:settings^ (main-unit prims basis mzlib mred)])
+	  [gui-utils : framework:gui-utils^ ((require-library "guiutilsr.ss" "framework")
+					     mred)]
+	  [load-handler : drscheme:load-handler^
+			((require-library "load-handler.ss" "drscheme")
+			 mred
+			 zodiac
+			 basis
+			 gui-utils)]
+	  [main : drscheme-jr:settings^ (main-unit prims basis mzlib mred load-handler)])
     (export (open main))))

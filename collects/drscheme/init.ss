@@ -20,6 +20,4 @@
 		    [current-custodian system-custodian])
        (display msg)
        (newline)
-       (mred:message-box "Internal Error"
-			 msg)))))
-  
+       (mred:message-box "Internal Error" msg)))))

@@ -171,15 +171,15 @@
 						  (mzlib string)
 						  (mzlib function))]
 	   [interface : drscheme:interface^
-		      ((require-library-unit/sig "interface.ss" "userspce") aries drzodiac)]
-	   [drzodiac : zodiac:system^
+		      ((require-library-unit/sig "interface.ss" "userspce") aries zodiac)]
+	   [zodiac : zodiac:system^
 		     ((require-library-unit/sig "link2.ss" "zodiac")
 		      (interface : zodiac:interface^)
 		      (mzlib pretty-print)
 		      (mzlib file))]
 	   [aries : plt:aries^ ((require-library-unit/sig "link-jr.ss" "stepper")
                                 mzlib
-				(drzodiac : zodiac:system^)
+				zodiac
                                 (interface : zodiac:interface^))]
 	   [basis-import : plt:basis-import^ ((unit/sig plt:basis-import^
 						(import)
@@ -192,7 +192,7 @@
 		  ((require-library-unit/sig "basis.ss" "userspce")
 		   basis-import
 		   params
-		   drzodiac
+		   zodiac
 		   interface
 		   aries
 		   print-convert
@@ -201,10 +201,11 @@
            
            [settings : drscheme-jr:settings^
                      (settings-unit mz
-                                    basis
-                                    mzlib)]
+				    basis
+                                    mzlib
+				    zodiac)]
 	   [dr-jr : () (dr-jrU
-			(drzodiac : zodiac:system^)
+			zodiac
 			print-convert
 			basis
 			(mzlib pretty-print)

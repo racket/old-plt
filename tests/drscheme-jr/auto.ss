@@ -157,10 +157,8 @@
   (expect (format "Language: ~a" language)
 	  (read-line out))
   (expect-prompt)
-<<<<<<< auto.ss
-=======
 
->>>>>>> 1.21
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
   (invoke-unit/sig (load-relateive "all-tests.scm")
                    test-environment^)

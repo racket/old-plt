@@ -9,7 +9,7 @@
 			   [init : drscheme:init^]
 			   [interface : drscheme:interface^]
 			   [graph : drscheme:graph^]
-			   [help-desk : help:start-help-desk^]
+			   [help-desk : help:drscheme-interface^]
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
   (link [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
@@ -29,7 +29,8 @@
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
-	      interface init snip language app frame basis edit)]
+	      interface init snip language app frame basis edit
+              help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
 		mred mzlib framework

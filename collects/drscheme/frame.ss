@@ -4,29 +4,10 @@
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:app : drscheme:app^]
-	  [help : help:start-help-desk^]
+	  [help : help:drscheme-interface^]
 	  [zodiac : drscheme:zodiac^])
   
   (rename [-mixin mixin])
-
-  (define help-desk
-    (let ([help-desk-frame #f])
-      (case-lambda
-       [()
-	(mred:begin-busy-cursor)
-	(set! help-desk-frame (help:start-help-desk 
-			       (lambda ()
-				 (drscheme:unit:open-drscheme-window))))
-	(mred:end-busy-cursor)]
-       [(key)
-	(let ([turn-cursor-off? (not help-desk-frame)])
-	  (if help-desk-frame
-	      (send help-desk-frame show #t)
-	      (begin (mred:begin-busy-cursor)
-		     (help-desk)))
-	  (send help-desk-frame search-for-help key 'keyword+index 'exact)
-	  (when turn-cursor-off?
-	    (mred:end-busy-cursor)))])))
 
   (define basics<%> (interface (fw:frame:standard-menus<%>)))
 
@@ -39,14 +20,20 @@
 	    "Help Desk"
 	    help-menu
 	    (lambda (item evt)
-	      (help-desk))))]
-      ;[file-menu:new-string (lambda () "Unit")]
+	      (help:help-desk))))]
+       [file-menu:new-string (lambda () "")]
        [file-menu:new
 	(lambda (item evt)
 	  (drscheme:unit:open-drscheme-window))]
        [file-menu:open (lambda (item evt) (fw:handler:open-file) #t)]
        [file-menu:open-string (lambda () "")]
-       ;[file-menu:between-open-and-save (lambda (item evt) '(help:open-url))]
+       [file-menu:between-open-and-revert
+        (lambda (file-menu) 
+          (make-object mred:menu-item% 
+                       "Open URL..."
+                       file-menu
+                       (lambda (item evt)
+                         (help:open-url this))))]
        [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
        [help-menu:about-string (lambda () "DrScheme")])
       

@@ -2,8 +2,9 @@
  (require-library "sig.ss" "mred")
  (require-library "frameworks.ss" "framework"))
 
-(define-signature help:start-help-desk^
-  (start-help-desk))
+(define-signature help:drscheme-interface^
+  (help-desk
+   open-url))
 
 (begin-elaboration-time
  (require-relative-library "search-sig.ss"))

@@ -99,7 +99,7 @@
   (mixin (basic<%>)
          (standard-menus<%>)
          args
-         (inherit get-menu-bar can-close? on-close show)
+         (inherit get-menu-bar can-close? on-close show get-edit-target-object)
          (sequence (apply super-init args))
          (public (get-menu% (lambda () menu%)))
          (public (get-menu-item% (lambda () menu-item%)))
@@ -166,53 +166,86 @@
                  (file-menu:quit-string (lambda () ""))
                  (file-menu:quit-help-string (lambda () "Quit")))
          (public (file-menu:after-quit (lambda (menu) (void))))
-         (public (edit-menu:undo #f)
+         (public (edit-menu:undo
+                  (lambda (menu evt)
+                    (let ((edit (get-edit-target-object)))
+                      (when (and edit (is-a? edit editor<%>))
+                        (send edit do-edit-operation 'undo)))
+                    #t))
                  (edit-menu:get-undo-item (lambda () edit-menu:undo-item))
                  (edit-menu:undo-string (lambda () ""))
                  (edit-menu:undo-help-string
                   (lambda () "Undo the most recent action")))
-         (public (edit-menu:redo #f)
+         (public (edit-menu:redo
+                  (lambda (menu evt)
+                    (let ((edit (get-edit-target-object)))
+                      (when (and edit (is-a? edit editor<%>))
+                        (send edit do-edit-operation 'redo)))
+                    #t))
                  (edit-menu:get-redo-item (lambda () edit-menu:redo-item))
                  (edit-menu:redo-string (lambda () ""))
                  (edit-menu:redo-help-string
                   (lambda () "Redo the most recent undo")))
-         (public (edit-menu:between-redo-and-cut (lambda (menu) (void))))
-         (public (edit-menu:cut #f)
+         (public (edit-menu:between-redo-and-cut
+                  (lambda (menu) (make-object separator-menu-item% menu))))
+         (public (edit-menu:cut
+                  (lambda (menu evt)
+                    (let ((edit (get-edit-target-object)))
+                      (when (and edit (is-a? edit editor<%>))
+                        (send edit do-edit-operation 'cut)))
+                    #t))
                  (edit-menu:get-cut-item (lambda () edit-menu:cut-item))
                  (edit-menu:cut-string (lambda () ""))
                  (edit-menu:cut-help-string (lambda () "Cut the selection")))
          (public (edit-menu:between-cut-and-copy (lambda (menu) (void))))
-         (public (edit-menu:copy #f)
+         (public (edit-menu:copy
+                  (lambda (menu evt)
+                    (let ((edit (get-edit-target-object)))
+                      (when (and edit (is-a? edit editor<%>))
+                        (send edit do-edit-operation 'copy)))
+                    #t))
                  (edit-menu:get-copy-item (lambda () edit-menu:copy-item))
                  (edit-menu:copy-string (lambda () ""))
                  (edit-menu:copy-help-string (lambda () "Copy the selection")))
          (public (edit-menu:between-copy-and-paste (lambda (menu) (void))))
-         (public (edit-menu:paste #f)
+         (public (edit-menu:paste
+                  (lambda (menu evt)
+                    (let ((edit (get-edit-target-object)))
+                      (when (and edit (is-a? edit editor<%>))
+                        (send edit do-edit-operation 'paste)))
+                    #t))
                  (edit-menu:get-paste-item (lambda () edit-menu:paste-item))
                  (edit-menu:paste-string (lambda () ""))
                  (edit-menu:paste-help-string
                   (lambda ()
                     "Paste the most recent copy or cut over the selection")))
          (public (edit-menu:between-paste-and-clear (lambda (menu) (void))))
-         (public (edit-menu:clear #f)
+         (public (edit-menu:clear
+                  (lambda (menu evt)
+                    (let ((edit (get-edit-target-object)))
+                      (when (and edit (is-a? edit editor<%>))
+                        (send edit do-edit-operation 'clear)))
+                    #t))
                  (edit-menu:get-clear-item (lambda () edit-menu:clear-item))
                  (edit-menu:clear-string (lambda () ""))
                  (edit-menu:clear-help-string
                   (lambda () "Clear the selection without affecting paste")))
          (public (edit-menu:between-clear-and-select-all
                   (lambda (menu) (void))))
-         (public (edit-menu:select-all #f)
+         (public (edit-menu:select-all
+                  (lambda (menu evt)
+                    (let ((edit (get-edit-target-object)))
+                      (when (and edit (is-a? edit editor<%>))
+                        (send edit do-edit-operation 'select-all)))
+                    #t))
                  (edit-menu:get-select-all-item
                   (lambda () edit-menu:select-all-item))
                  (edit-menu:select-all-string (lambda () ""))
                  (edit-menu:select-all-help-string
                   (lambda () "Select the entire document")))
          (public (edit-menu:between-select-all-and-find
-                  (lambda (menu) (void))))
-         (public (edit-menu:find
-                  (lambda (item control)
-                    (send this move-to-search-or-search)
-                    #t))
+                  (lambda (menu) (make-object separator-menu-item% menu))))
+         (public (edit-menu:find #f)
                  (edit-menu:get-find-item (lambda () edit-menu:find-item))
                  (edit-menu:find-string (lambda () ""))
                  (edit-menu:find-help-string

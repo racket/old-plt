@@ -5,13 +5,14 @@
 
 	[url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
 
-	[help : help:start-help-desk^ ((require-library "start-help-desk.ss" "help")
-				       (mzlib function)
-				       (mzlib string)
-				       (mzlib file)
-				       url
-				       (mred : mred^)
-				       framework)]
+	[help : help:drscheme-interface^ ((require-library "start-help-desk.ss" "help")
+                                          (mzlib function)
+                                          (mzlib string)
+                                          (mzlib file)
+                                          url
+                                          (mred : mred^)
+                                          framework
+                                          (export* frame))]
 
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^

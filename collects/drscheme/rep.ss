@@ -12,7 +12,8 @@
 	  [drscheme:app : drscheme:app^]
 	  [drscheme:frame : drscheme:frame^]
 	  [basis : userspace:basis^]
-	  [drscheme:edit : drscheme:edit^])
+	  [drscheme:edit : drscheme:edit^]
+          [help : help:drscheme-interface^])
 
   ;; Max length of output queue (user's thread blocks if the
   ;; queue is full):
@@ -678,7 +679,7 @@
 			     (change-style click-delta var-start var-end)
 			     (set-clickback var-start var-end
 					    (lambda x
-					      (drscheme:frame:help-desk var))))))]
+					      (help:help-desk var))))))]
 		      [else
 		       (let ([bind-to-help
 			      (lambda (regexp s)
@@ -692,7 +693,7 @@
 					(set-clickback
 					 var-start var-end
 					 (lambda x
-					   (drscheme:frame:help-desk var)))
+					   (help:help-desk var)))
 					prefix)
 				      #f)))])
 			 (let loop ([s s])

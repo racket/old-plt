@@ -423,7 +423,7 @@
                         [(1) "containing-match"]
                         [(2) "regexp-match"])
                       lucky?)])
-            
+           (printf "url: ~s\n" url) 
             ;; have to use `send this' since I don't know yet
             ;; *which* (unit) instantiation of the hyper panel I might
             ;; be overriding and so I don't know the particular

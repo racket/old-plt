@@ -63,7 +63,7 @@ extern int GC_is_marked(void *);
 #define get_copy(s_c) (((CopiedStack *)s_c)->_stack_copy)
 
 #define MALLOC_LINK() MALLOC_ONE_ATOMIC(CopiedStack*)
-#ifdef USE_SENORA_GC
+#ifdef USE_TAGGED_ALLOCATION
 extern void *scheme_malloc_stack(size_t);
 # define MALLOC_STACK(size) scheme_malloc_stack(size)
 #else

@@ -283,6 +283,7 @@ clean:
 	/bin/rm -f tests/*~
 	/bin/rm -f objects/*/*.o *~ Makefile.bak utils/*~ include/*~ ../collects/mzlib/*~ core
 	/bin/rm -f aixdlfcn/dlfcn.o aixdlfcn/libdl.a 
+	/bin/rm -f $(LIBDIR)/mzdyn.o $(LIBDIR)/libgc.a $(LIBDIR)/libmzscheme.a
 	cd gc; $(XMAKE) clean
 	cd sgc; $(XMAKE) clean
 	cd src; $(XMAKE) clean

@@ -15,7 +15,7 @@
 ;; Load the hierarchical list implementation
 (require-library "hierlist.ss" "hierlist")
 
-(let show-recipe ([file "rec:overview"][title "Recipes Overview"])
+(let show-recipe ([file "overview"][title "Recipes Overview"])
 
   (define steps (with-input-from-file 
 		    (build-path (collection-path "doc")

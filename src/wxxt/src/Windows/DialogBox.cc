@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DialogBox.cc,v 1.2 1998/07/03 21:17:31 mflatt Exp $
+ * $Id: DialogBox.cc,v 1.3 1998/07/03 21:50:52 mflatt Exp $
  *
  * Purpose: dialog box
  *
@@ -88,80 +88,42 @@ Bool wxDialogBox::Show(Bool show)
 
     // handle modality
     if (show) {
-	if (modal) {
-	    if (modal_showing)
-		return TRUE;
-
-	    modal_showing = TRUE;
-
-#if 1
-	    wxWindow *saveModal;
-	    saveModal = wxGetModalWindow(this);
-	    wxPutModalWindow(this, this);
-
-	    wxList disabled_windows;
-	    wxNode *node;
-	    wxChildNode *cnode;
-
-	    for (cnode = wxTopLevelFrames(this)->First(); cnode; cnode = cnode->Next()) {
-	      wxWindow *w = (wxWindow *)cnode->Data();
-	      if (w && w != this && cnode->IsShown()) {
-		disabled_windows.Append(w);
-		w->InternalEnable(FALSE);
-	      }
-	    }
-
-	    wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
-
-	    wxPutModalWindow(this, saveModal);
-
-	    for (node = disabled_windows.First(); node; node = node->Next()) {
-	      wxWindow *w = (wxWindow *)node->Data();
-	      w->InternalEnable(TRUE);
-	    }
-#else
-	    wxModalShowingStack.Insert((wxObject*)TRUE);
-	    wxModalFrames.Insert(this);
-
-	    XtAddGrab(X->frame, TRUE, FALSE);
-
-	    while ((wxModalShowingStack.Number() > 0)
-	    && (Bool)wxModalShowingStack.First()->Data()) {
-		XEvent event;
-		XtAppNextEvent(wxAPP_CONTEXT, &event);
-		XtDispatchEvent(&event);
-		wxDoNextEvent();
-	    }
-	    // Remove modal dialog flag from stack
-	    wxNode *node = wxModalShowingStack.First();
-	    if (node) {
-		delete node;
-		delete wxModalFrames.First();
-	    }
-#endif
-	} else
-	    modal_showing = FALSE;
-    } else {
-#if 0
+      if (modal) {
 	if (modal_showing)
-	    XtRemoveGrab(X->frame);
-#endif
-
+	  return TRUE;
+	
+	modal_showing = TRUE;
+	
+	wxPushModalWindow(this, this);
+	
+	wxList disabled_windows;
+	wxNode *node;
+	wxChildNode *cnode;
+	
+	for (cnode = wxTopLevelFrames(this)->First(); cnode; cnode = cnode->Next()) {
+	  wxWindow *w = (wxWindow *)cnode->Data();
+	  if (w && w != this && cnode->IsShown()) {
+	    disabled_windows.Append(w);
+	    w->InternalEnable(FALSE);
+	  }
+	}
+	
+	wxDispatchEventsUntil(CheckDialogShowing, (void *)this);
+	
+	wxPopModalWindow(this, this);
+	
+	for (node = disabled_windows.First(); node; node = node->Next()) {
+	  wxWindow *w = (wxWindow *)node->Data();
+	  w->InternalEnable(TRUE);
+	}
+      } else
 	modal_showing = FALSE;
-
-#if 0
-	wxNode *node = wxModalShowingStack.First();
-	if (node)
-	    node->SetData((wxObject *)FALSE);
-#endif
-	XFlush(XtDisplay(wxAPP_TOPLEVEL));
-	XSync(XtDisplay(wxAPP_TOPLEVEL), FALSE);
+    } else {
+      modal_showing = FALSE;
+      XFlush(XtDisplay(wxAPP_TOPLEVEL));
+      XSync(XtDisplay(wxAPP_TOPLEVEL), FALSE);
     }
-#if 0
-    // Now process all events, to ensure widget destruction
-    wxFlushEvents();
-#endif
-
+    
     return TRUE;
 }
 

@@ -719,7 +719,7 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #define scheme_overflow_cont (scheme_current_process->overflow_cont)
 
 #define scheme_error_buf (scheme_current_process->error_buf)
-#define scheme_jumping_to_continuation (scheme_current_process->jumping_to_continuation)
+#define scheme_jumping_to_continuation (scheme_current_process->cjs.jumping_to_continuation)
 #define scheme_config (scheme_current_process->config)
 
 #define scheme_multiple_count (scheme_current_process->ku.multiple.count)

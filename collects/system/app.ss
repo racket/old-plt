@@ -7,4 +7,5 @@
 			(let ([ce (send console get-edit)])
 			  (send ce eval-and-display s)
 			  (send ce insert-prompt)
-			  #t))))
+			  #t)))
+  (define startup (lambda args (for-each mred:edit-file args))))

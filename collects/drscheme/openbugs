@@ -1,7 +1,3 @@
-- callbacks from user-created windows with type errors will
-  generate internal error messages, even though they are bone-fide 
-  user of drscheme errors.
-
 - in the language dialog box, "allow set! on undefined" is ignored
 
 - in the lowest language level (define (f . x) x) is incorrectly a
@@ -9,3 +5,6 @@
 
 - breaking an infinite loop with printing can break but gives
   a stray error message.
+
+- This expression actually defines x:
+  (define x (eval '(begin)))

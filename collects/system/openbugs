@@ -31,8 +31,10 @@ It only shows up when you insert into the buffer.
   of the viewport, but is ignored by at least
   draw-line into that viewport.
 	
-- you cannot break (read)
+- you cannot break (read), and (read) busy-waits
 
-- pathnames are normalized to early and can cause automouter problems
+- pathnames should be normalized to early and can cause automouter problems
 
 - control-l doesn't get the horizontal direction right.
+
+- editor frames aren't gc'd when modified and search is open

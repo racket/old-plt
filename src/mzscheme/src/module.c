@@ -341,7 +341,7 @@ Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Sch
 			  "broken compiled code: cannot find prepared module's syntax");
 
     val = scheme_lookup_in_table(ht, (char *)name);
-    if (val && SCHEME_PAIRP(val)) {
+    if (val && !SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)) {
       /* A pair indicates a lazy expstart: */
       finish_expstart_module(val, ht, env);
       val = scheme_lookup_in_table(ht, (char *)name);

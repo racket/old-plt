@@ -2,13 +2,15 @@
 _MysterX_
 =========
 
- MysterX is a toolkit for building Windows applications from
- ActiveX and COM components, using Scheme as glue code.  Dynamic 
- HTML is used for component presentation and event-handling.  
- MysterX  requires Internet Explorer 4 or 5 (IE) to be installed.
- Distributed COM (DCOM) for your version of Windows is also 
- required.  Windows NT comes with DCOM, while versions of
- DCOM for Windows 95 and 98 are made available separately.  
+ MysterX is a toolkit for building Windows
+ applications from ActiveX and COM components,
+ using Scheme as glue code.  Dynamic HTML is used
+ for component presentation and event-handling.
+ MysterX requires Internet Explorer 4 or 5 (IE) to
+ be installed.  Distributed COM (DCOM) for your
+ version of Windows is also required.  Windows NT
+ comes with DCOM, while versions of DCOM for
+ Windows 95 and 98 are made available separately.
  IE is available for download from Microsoft at
 
    http://www.microsoft.com/windows/ie/download/windows.htm
@@ -20,132 +22,160 @@ _MysterX_
  Installation
  ------------
 
- Three Windows .DLL's support low-level operations in MysterX.  
- Two of them, myspage.dll and myssink.dll, may need to be 
- installed in the Registry, by entering `REGSVR32 <name-of-DLL>'.  
- REGSVR32 is a Windows utility usually found in the Windows 
- System directory.  The .DLL's are found in the dlls subdirectory 
- of the MysterX collection.  Ordinarily, the PLT installation 
- program registers these .DLL's, but if the files are copied, or 
- Windows is installed in an unusual disk location, manual registration 
- becomes necessary.  The third .DLL,  mxmain.dll, is loaded as a 
- MzScheme extension by the file `mysterx.ss' in the mysterx 
- collection. 
+ Three Windows .DLL's support low-level operations
+ in MysterX.  Two of them, myspage.dll and
+ myssink.dll, may need to be installed in the
+ Registry, by entering `REGSVR32 <name-of-DLL>'.
+ REGSVR32 is a Windows utility usually found in
+ the Windows System directory.  The .DLL's are
+ found in the dlls subdirectory of the MysterX
+ collection.  Ordinarily, the PLT installation
+ program registers these .DLL's, but if the files
+ are copied, or Windows is installed in an unusual
+ disk location, manual registration becomes
+ necessary.  The third .DLL, mxmain.dll, is loaded
+ as a MzScheme extension by the file `mysterx.ss'
+ in the mysterx collection.
 
  Loading
  -------
 
- There are two ways to load MysterX.  The first is to treat
- MysterX as a library:  
+ There are two ways to load MysterX.  The first is
+ to treat MysterX as a library:
 
   (require-library "mysterx.ss" "mysterx")
 
- makes available the procedures listed here.  The other way
- to load MysterX uses a signed unit: 
+ makes available the procedures listed here.  The
+ other way to load MysterX uses a signed unit:
 
   (require-library "mysterxu.ss" "mysterx")
 
- binds `mysterx@' to the unit, with signature `mysterx^',
- which is defined in the file `sigs.ss' in the mysterx collection.
- This unit can be invoked or imported into other units as needed.
+ binds `mysterx@' to the unit, with signature
+ `mysterx^', which is defined in the file
+ `sigs.ss' in the mysterx collection.  This unit
+ can be invoked or imported into other units as
+ needed.
 
  Using the xml collection
  ------------------------
 
- Several MysterX procedures take HTML strings as input.  
- The xml collection provides procedures that convert Scheme
- syntax into XML strings.  You may find using these procedures 
- useful in creating HTML strings for use by MysterX. 
+ Several MysterX procedures take HTML strings as
+ input.  The xml collection provides procedures
+ that convert Scheme syntax into XML strings.  You
+ may find using these procedures useful in
+ creating HTML strings for use by MysterX.
 
  Documents
  ---------
 
- A MysterX application consists of one or more documents, which are
- instances of the class mx-document%. 
+ A MysterX application consists of one or more
+ documents, which are instances of the class
+ mx-document%.
 
 > mx-document% :: (make-object mx-document% label width height x y style-list)
 
-  Creates an instance of a MysterX document.  `label' is a string for the 
-  document caption, with default "MysterX".  `width', `height', `x', and 
-  `y' give the size and placement of the document on the desktop, 
-  with defaults provided by Windows if omitted.  `style-list' may contain 
-  any of the symbols 'iconize, 'maximize, 'no-caption, 'no-system-menu, 
-  and 'no-thick-border.
+  Creates an instance of a MysterX document.
+  `label' is a string for the document caption,
+  with default "MysterX".  `width', `height', `x',
+  and `y' give the size and placement of the
+  document on the desktop, with defaults provided
+  by Windows if omitted.  `style-list' may contain
+  any of the symbols 'iconize, 'maximize,
+  'no-caption, 'no-system-menu, and
+  'no-thick-border.
 
   Methods
   -------
 
 > show :: (send an-mx-document show b)
 
-  If `b' is #f, the document window is hidden.  Otherwise, the window is shown.
+  If `b' is #f, the document window is hidden.
+  Otherwise, the window is shown.
 
 > insert-html :: (send an-mx-document insert-html html)
 
-  Inserts the specified HTML string at the beginning of the document.
+  Inserts the specified HTML string at the
+  beginning of the document.
 
 > append-html :: (send an-mx-document append-html html)
 
-  Append the specified HTML string at the end of the document.
+  Appends the specified HTML string at the end of
+  the document.
 
 > replace-html :: (send an-mx-document replace-html html)
 
-  Replace the current HTML in the document with the specified HTML string.
+  Replace the current HTML in the document with
+  the specified HTML string.
 
 > objects :: (send an-mx-document objects)
 
-  Returns a list of COM objects, including ActiveX controls, that occur in the
-  document.  The order of the objects is the same as in the document.
+  Returns a list of COM objects, including ActiveX
+  controls, that occur in the document.  The order
+  of the objects is the same as in the document.
 
 > register-event-handler :: (send an-mx-document register-event-handler an-mx-element f)
 
-  Registers an event handler `f', a procedure that takes an <mx-event>, 
-  for the HTML element `an-mx-element'. `f' may have any output type, though 
-  its result is discarded.
+  Registers an event handler `f', a procedure that
+  takes an <mx-event>, for the HTML element
+  `an-mx-element'. `f' may have any output type,
+  though its result is discarded.
   
 > unregister-event-handler :: (send an-mx-document unregister-event-handler an-mx-element)
 
-  Unregisters an event handler for an HTML element in the document.
+  Unregisters an event handler for an HTML element
+  in the document.
 
 > handle-events :: (send an-mx-document handle-events)
 
-  Handles events using the registered event handlers.  The event handlers
-  are called in a thread separate from the main MzScheme REPL.
+  Handles events using the registered event
+  handlers.  The event handlers are called in a
+  thread separate from the main MzScheme REPL.
 
 > stop-handling-events :: (send an-mx-document stop-handling-events)
 
-  Kills the thread currently handling events for the document.
+  Kills the thread currently handling events for
+  the document.
 
 > insert-object :: (send an-mx-document insert-object coclass width height [size])
 
-  Inserts a COM object with class `coclass' at the beginning of the 
-  document.  `width' and `height' are exact integers.  The optional 
-  `size' argument gives an interpretation for the width and height.  
-  By default, size is 'pixels, but may also be 'percent, indicating that 
-  the width and height are a fixed percentage of the document window size.
-  An instance of <com-object> is returned.
+  Inserts a COM object with class `coclass' at the
+  beginning of the document.  `width' and `height'
+  are exact integers.  The optional `size'
+  argument gives an interpretation for the width
+  and height.  By default, size is 'pixels, but
+  may also be 'percent, indicating that the width
+  and height are a fixed percentage of the
+  document window size.  An instance of
+  <com-object> is returned.
 
 > append-object :: (send an-mx-document append-object coclass)
 
-  Append a COM object with class `coclass' to the end of the document.  
-  `width' and `height' are exact integers.  The optional 
-  `size' argument gives an interpretation for the width and height.  
-  By default, size is 'pixels, but may also be 'percent, indicating that 
-  the width and height are a fixed percentage of the document window size.
-  An instance of <com-object> is returned.
+  Append a COM object with class `coclass' to the
+  end of the document.  `width' and `height' are
+  exact integers.  The optional `size' argument
+  gives an interpretation for the width and
+  height.  By default, size is 'pixels, but may
+  also be 'percent, indicating that the width and
+  height are a fixed percentage of the document
+  window size.  An instance of <com-object> is
+  returned.
 
 > find-element :: (send an-mx-document find-element tag id)
 
-  Returns an instance of mx-element%, an object which encapsulates
-  an HTML element.  `tag' is a string naming an HTML tag, and
-  `id' is a string naming the id attribute of the HTML element.
+  Returns an instance of mx-element%, an object
+  which encapsulates an HTML element.  `tag' is a
+  string naming an HTML tag, and `id' is a string
+  naming the id attribute of the HTML element.
 
   HTML events
   -----------
 
-  MysterX HTML events are generated by mouse and keyboard interaction 
-  with HTML elements in a document.  HTML events are instances of the 
-  class mx-event%.  The action that generated an event can be determined 
-  by the following predicates, only one of which may hold:
+  MysterX HTML events are generated by mouse and
+  keyboard interaction with HTML elements in a
+  document.  HTML events are instances of the
+  class mx-event%.  The action that generated an
+  event can be determined by the following
+  predicates, only one of which may hold:
 
 > keypress? :: (send an-mx-event keypress?)
 > keydown? :: (send an-mx-event event-keydown?) 
@@ -159,17 +189,18 @@ _MysterX_
 > dblclick? :: (send an-mx-event dblclick?)
 > error? :: (send an-mx-event error?)
   
-  Events have attributes that give detail about the event.
+  Events have attributes that give detail about
+  the event.
 
 > tag :: (send an-mx-event tag)
 
-  Returns a string indicating the HTML tag of the element where the 
-  event occurred.
+  Returns a string indicating the HTML tag of the
+  element where the event occurred.
 
 > id :: (send an-mx-event id)
 
-  Returns a string indicating the identifier of the HTML element where
-  the event occurred.
+  Returns a string indicating the identifier of
+  the HTML element where the event occurred.
 
 > from-tag :: (send an-mx-event from-tag)
 
@@ -445,6 +476,57 @@ the ITypeInfo interface.
  where num is a number, and units is a symbol.  The valid symbols
  for the units field are those in '(em ex cm mm in pt pc px).
  
+ Colors
+ ------
+
+ Many element properties represent colors.  In
+ HTML, colors may be represented by an RGB string,
+ which contains 7 characters.  The first character
+ is #, the rest are hexadecimal digits (0-9 and
+ A-F).  The first two digits are for the red
+ component of the color, the middle two for the
+ green component, and the last two for the blue
+ component.  For example, "#FFFFFF" is white,
+ "#000000" is black, and "#00FF00" is green.
+
+ There are also predefined color names.  The
+ "-native" methods use these names in strings,
+ while their nonnative counterpart methods use the
+ names as symbols.  The predefined color names are:
+
+  aliceblue antiquewhite aqua aquamarine azure
+  beige bisque black blanchedalmond blue
+  blueviolet brown burlywood cadetblue chartreuse
+  chocolate coral cornflower cornsilk crimson cyan
+  darkblue darkcyan darkgoldenrod darkgray
+  darkgreen darkkhaki darkmagenta darkolivegreen
+  darkorange darkorchid darkred darksalmon
+  darkseagreen darkslateblue darkslategray
+  darkturquoise darkviolet deeppink deepskyblue
+  dimgray dodgerblue firebrick floralwhite
+  forestgreen fuchsia gainsboro ghostwhite gold
+  goldenrod gray green greenyellow honeydew
+  hotpink indianred indigo ivory khaki lavender
+  lavenderblush lawngreen lemonchiffon lightblue
+  lightcoral lightcyan lightgoldenrodyellow
+  lightgreen lightgray lightpink lightsalmon
+  lightseagreen lightskyblue lightslategray
+  lightsteelblue lightyellow lime limegreen linen
+  magenta maroon mediumaquamarine mediumblue
+  mediumorchid mediumpurple mediumseagreen
+  mediumslateblue mediumspringgreen
+  mediumturquoise mediumvioletred midnightblue
+  mintcream mistyrose moccasin navajowhite navy
+  oldlace olive olivedrab orange orangered orchid
+  palegoldenrod palegreen paleturquoise
+  palevioletred papayawhip peachpuff peru pink
+  plum powderblue purple red rosybrown royalblue
+  saddlebrown salmon sandybrown seagreen seashell
+  sienna silver skyblue slateblue slategray snow
+  springgreen steelblue tan teal thistle tomato
+  turquoise violet wheat white whitesmoke yellow
+  yellowgreen
+
 > insert-html :: (send an-mx-element insert-html html)
 
   Places the HTML given by the string `html' before the element.
@@ -539,7 +621,7 @@ the ITypeInfo interface.
 
 > set-font-style! :: (send an-mx-element set-font-style! fs)
 
-  Set the element's font style to the string `fs', which 
+  Sets the element's font style to the string `fs', which 
   should be one of "normal", "italic", or "oblique". 
 
 > font-variant :: (send an-mx-element font-variant)
@@ -607,6 +689,38 @@ the ITypeInfo interface.
   See the "-native" versions of the methods of these properties
   for syntax of the constituent substrings.
 
+> font-size :: (send an-mx-element font-size)
+
+  Retrieves the CSS font-size for the element.  See
+  `set-font-size!' for possible values.  Raises an
+  error if the property has not been set.
+
+> font-size-native :: (send an-mx-element font-size-native)
+
+  Retrieves the CSS font-size for the element.  See
+  `set-font-size!' for possible values.  Raises an
+  error if the property has not been set.
+
+> set-font-size! :: (send an-mx-element set-font-size! fs)
+
+  Sets the element's CSS font-size using `fs', which may 
+  be any of 1) an symbol in the list '(xx-small x-small small medium 
+  large x-large xx-large); 2) a symbol in the list '(larger smaller), 
+  indicating a size relative to a parent element; 3) an instance
+  of the css-length structure, or 4) an instance of the css-percentage
+  structure, where the perecentage is relative to the parent element's
+  font-size.
+
+> set-font-size-native! :: (send an-mx-element set-font-size-native! fs)
+
+  Sets the element's CSS font-size using `fs', which may 
+  be any of 1) a string indicating an absolute size, one
+  of "xx-small", "x-small", "small", "medium", "large", "x-large", or 
+  "xx-large"; 2) a string indicating a size relative to a parent
+  element, either "larger" or "smaller"; 3) a CSS length; or
+  4) a CSS percentage, considered relative to the parent element's
+  font-size.
+
 > background-native :: (send an-mx-element background-native)   
 
   Retrieves a string indicating the CSS background-color, 
@@ -633,12 +747,12 @@ the ITypeInfo interface.
 
 > set-background-image! :: (send an-mx-element set-background-image! bi)   
 
-  Set the element's CSS background-image using the value `bi',
+  Sets the element's CSS background-image using the value `bi',
   which is either 'none, or of the form "url(url-string)".
 
 > set-background-image-native! :: (send an-mx-element set-background-image-native! bi)   
 
-  Set the element's CSS background-image using the string `bi',
+  Sets the element's CSS background-image using the string `bi',
   which is either "none", or of the form "url(url-string)".
 
 > background-repeat :: (send an-mx-element background-repeat)   
@@ -655,12 +769,12 @@ the ITypeInfo interface.
 
 > set-background-repeat! :: (send an-mx-element set-background-repeat! br)
 
-  Set the element's CSS background-repeat using the symbol `br',
+  Sets the element's CSS background-repeat using the symbol `br',
   which must be from the list '(no-repeat repeat repeat-x repeat-y).
 
 > set-background-repeat-native! :: (send an-mx-element set-background-repeat-native! br)
 
-  Set the element's CSS background-repeat using the string `br',
+  Sets the element's CSS background-repeat using the string `br',
   which must be from the list '("no-repeat" "repeat" "repeat-x" "repeat-y").
 
 > background-position :: (send an-mx-element background-position)   
@@ -668,14 +782,14 @@ the ITypeInfo interface.
   Retrieves a string indicating the CSS background-position for the
   element.
 
-> background-position-native :: (send an-mx-element background-position)   
+> background-position-native :: (send an-mx-element background-position-native)   
 
   Retrieves a string indicating the CSS background-position for the
   element.
 
 > set-background-position! :: (send an-mx-element set-background-position! bp)
 
-  Set the element's CSS background-position using `bp',
+  Sets the element's CSS background-position using `bp',
   which either 1) a single css-length, a css-percentage, or a 
   symbol from the list '(left center right), in which case the 
   property applies to the horizontal position; or 2) a two-element 
@@ -687,7 +801,7 @@ the ITypeInfo interface.
 
 > set-background-position-native! :: (send an-mx-element set-background-position-native! bp)
 
-  Set the element's CSS background-position using the string `bp',
+  Sets the element's CSS background-position using the string `bp',
   which may be either 1) a CSS percentage, a CSS length
   or a string from '("left" "center" "right") or 2) two substrings
   separated by spaces, where either substring may be a CSS percentage
@@ -712,799 +826,1752 @@ the ITypeInfo interface.
 
 > set-text-decoration! :: (send an-mx-element set-text-decoration! td)
 
-  Set the element's CSS text-decoration using the list `td',
+  Sets the element's CSS text-decoration using the list `td',
   which contains symbols drawn from 
   '(none underline overline line-through blink).
 
 > set-text-decoration-native! :: (send an-mx-element set-text-decoration-native! td)
 
-  Set the element's CSS text-decoration using the string `td',
+  Sets the element's CSS text-decoration using the string `td',
   which contains space-separated substrings drawn from 
   '("none" "underline" "overline" "line-through" "blink").
 
-*** start here ***
-
 > text-transform :: (send an-mx-element text-transform)
 
-  Retrieves a string indicating the CSS text-decoration for the
-  element.
+  Retrieves a symbol indicating the CSS text-transform for the
+  element, from the list '(none capitalize uppercase lowercase).
+
+> text-transform-native :: (send an-mx-element text-transform-native)
+
+  Retrieves a string indicating the CSS text-transform for the
+  element, from the list '("none" "capitalize" "uppercase" "lowercase").
 
 > set-text-transform! :: (send an-mx-element set-text-transform! tt)
 
-  Set the element's CSS text-transform using the string `tt',
-  which is one of "capitalize", "lowercase", or "uppercase".
+  Sets the element's CSS text-transform using the symbol `tt',
+  which is from the list '(none capitalize lowercase uppercase).
+
+> set-text-transform-native! :: (send an-mx-element set-text-transform-native! tt)
+
+  Sets the element's CSS text-transform using the string `tt',
+  which is one of "none", "capitalize", "lowercase", or "uppercase".
 
 > text-align :: (send an-mx-element text-align)
 
+  Retrieves a symbol indicating the CSS text-align for the
+  element, from the list '(left right center justify).
+
+> text-align-native :: (send an-mx-element text-align-native)
+
   Retrieves a string indicating the CSS text-align for the
-  element.
+  element, from the list '("left" "right" "center" "justify").
 
 > set-text-align! :: (send an-mx-element set-text-align! ta)
 
-  Set the element's CSS text-transform using the string `ta',
-  which is one of "left", "right", or "center", or "justify".
+  Sets the element's CSS text-transform using the symbol `ta',
+  which is from the list '(left right center justify).
+
+> set-text-align-native! :: (send an-mx-element set-text-align-native! ta)
+
+  Sets the element's CSS text-transform using the string `ta',
+  which is from the list '("left" "right" "center" "justify").
 
 > margin :: (send an-mx-element margin)
 
+  Retrieves a list indicating the CSS margin for the
+  element.  The list contains one to four elements,
+  each either 'auto, a css-length, or a css-percentage.
+
+> margin-native :: (send an-mx-element margin-native)
+
   Retrieves a string indicating the CSS margin for the
-  element.
+  element.  The string contains one to four substrings, each
+  either "auto", a CSS length, or a CSS percentage.
 
 > set-margin! :: (send an-mx-element set-margin! marg)
 
-  Set the element's CSS margin using the string `marg', which
+  Sets the element's CSS margin using the list `marg', which
+  consists of a list of one to four entries, each of 
+  which is a css-length, css-percentage, or 'auto.
+
+> set-margin-native! :: (send an-mx-element set-margin-native! marg)
+
+  Sets the element's CSS margin using the string `marg', which
   consists of one to four space-separated entries, each of 
-  which contains a CSS length or percentage, or "auto".
+  which is a CSS length, CSS percentage, or "auto".
 
 > padding :: (send an-mx-element padding)
 
+  Retrieves a list indicating the CSS padding for the
+  element.  The list contains one to four elements, each
+  a css-length or a css-percentage.
+
+> padding-native :: (send an-mx-element padding-native)
+
   Retrieves a string indicating the CSS padding for the
-  element.
+  element.  The string consists of one to four CSS lengths
+  or CSS percentages, separated by spaces.
 
 > set-padding! :: (send an-mx-element set-padding! pad)
 
-  Set the element's CSS padding using the string `pad', which
+  Sets the element's CSS padding using the list `pad'.  Each
+  element of the list is either a css-length or a css-percentage.
+
+> set-padding-native! :: (send an-mx-element set-padding-native! pad)
+
+  Sets the element's CSS padding using the string `pad', which
   consists of one to four space-separated entries, each of 
-  which contains a CSS length or percentage.
+  which is a CSS length or percentage.
 
 > border :: (send an-mx-element border)
 
-  Retrieves a string describing the CSS border for the
-  element.
+  Retrieves a list describing the CSS border for the element.
+  Each element of the list describes a width, style, or color.
+  A width may be in '(medium thin thick) or a css-length.  
+  A style is in '(none dotted dashed solid double groove 
+  ridge inset outset).  A color is a symbol indicating a
+  color or an RGB string.
+
+> border-native :: (send an-mx-element border-native)
+
+  Retrieves a string describing the CSS border for
+  the element.  The string may contain
+  space-separated values indicating a width,
+  style, and color.  A width may be in '("medium"
+  "thin" "thick") or a CSS length.  A style is in
+  '("none" "dotted" "dashed" "solid" "double"
+  "groove" "ridge" "inset" "outset").  A color is
+  an HTML color or RGB string.
 
 > set-border! :: (send an-mx-element set-border! border)
 
-  Set the element's CSS border using the string `border', which
-  consists of a border-width, a border-style, and a color.
-  See the border-width and border-style entries for valid
-  values.
+  Sets the element's CSS border using the list
+  `border', which may contain a width, a style,
+  and a color.  The width may be in '(medium thin
+  thick) or a css-length.  The style is in '(none
+  dotted dashed solid double groove ridge inset
+  outset).  A color is a symbol indicating an HTML
+  color or an RGB string.
+
+> set-border-native! :: (send an-mx-element set-border-native! border)
+
+  Sets the element's CSS border using the string
+  `border', which may contain a width, style, and
+  color.  The string may contain space-separated
+  values indicating a width, style, and color.  A
+  width may be in '("medium" "thin" "thick") or a
+  CSS length.  A style is in '("none" "dotted"
+  "dashed" "solid" "double" "groove" "ridge"
+  "inset" "outset").  A color is an HTML color
+  symbol or RGB string.
 
 > border-top :: (send an-mx-element border-top)
 
-  Retrieves a string describing the CSS border-top for the
-  element.
+  Retrieves a list describing the CSS border-top
+  for the element.  See the method `border' for a
+  description of the list.
+
+> border-top-native :: (send an-mx-element border-top-native)
+
+  Retrieves a string describing the CSS border-top
+  for the element.  See the method `border-native'
+  for a description of the string.
 
 > set-border-top! :: (send an-mx-element set-border-top! bt)
 
-  Set the element's CSS border-top using the string `bt', which
-  consists of a border-width, a border-style, and a color.
-  See the border-width and border-style entries for valid
-  values.
+  Sets the element's CSS border-top using the list
+  `bt'.  See the method `set-border!' for a
+  description of the list.
+
+> set-border-top-native! :: (send an-mx-element set-border-top-native! bt)
+
+  Sets the element's CSS border-top using the
+  string `bt'.  See the method
+  `set-border-native!' for a description of the
+  list.
 
 > border-bottom :: (send an-mx-element border-bottom)
 
-  Retrieves a string describing the CSS border-bottom for the
-  element.
+  Retrieves a list describing the CSS
+  border-bottom for the element.  See the method
+  `border' for a description of the list.
 
-> set-border-bottom! :: (send an-mx-element set-border-bottom! bt)
+> border-bottom-native :: (send an-mx-element border-bottom-native)
 
-  Set the element's CSS border-bottom using the string `bt', which
-  consists of a border-width, a border-style, and a color.
-  See the border-width and border-style entries for valid
-  values.
+  Retrieves a string describing the CSS
+  border-bottom for the element.  See the method
+  `border-native' for a description of the string.
+
+> set-border-bottom! :: (send an-mx-element set-border-bottom! bb)
+
+  Sets the element's CSS border-bottom using the
+  list `bb'.  See the method `set-border!' for a
+  description of the list.
+
+> set-border-bottom-native! :: (send an-mx-element set-border-bottom-native! bb)
+
+  Sets the element's CSS border-bottom using the
+  string `bb'.  See the method
+  `set-border-native!' for a description of the
+  list.
 
 > border-left :: (send an-mx-element border-left)
 
-  Retrieves a string describing the CSS border-left for the
-  element.
+  Retrieves a list describing the CSS border-left
+  for the element.  See the method `border' for a
+  description of the list.
 
-> set-border-left! :: (send an-mx-element set-border-left! bt)
+> border-left-native :: (send an-mx-element border-left-native)
 
-  Set the element's CSS border-left using the string `bt', which
-  consists of a border-width, a border-style, and a color.
-  See the border-width and border-style entries for valid
-  values.
+  Retrieves a string describing the CSS
+  border-left for the element.  See the method
+  `border-native' for a description of the string.
+
+> set-border-left! :: (send an-mx-element set-border-left! bl)
+
+  Sets the element's CSS border-left using the
+  list `bl'.  See the method `set-border!' for a
+  description of the list.
+
+> set-border-left-native! :: (send an-mx-element set-border-left-native! bl)
+
+  Sets the element's CSS border-left using the
+  string `bl'.  See the method
+  `set-border-native!' for a description of the
+  list.
 
 > border-right :: (send an-mx-element border-right)
 
-  Retrieves a string describing the CSS border-right for the
-  element.
+  Retrieves a list describing the CSS border-right
+  for the element.  See the method `border' for a
+  description of the list.
 
-> set-border-right! :: (send an-mx-element set-border-right! bt)
+> border-right-native :: (send an-mx-element border-right-native)
 
-  Set the element's CSS border-right using the string `bt', which
-  consists of a border-width, a border-style, and a color.
-  See the border-width and border-style entries for valid
-  values.
+  Retrieves a string describing the CSS
+  border-right for the element.  See the method
+  `border-native' for a description of the string.
+
+> set-border-right! :: (send an-mx-element set-border-right! br)
+
+  Sets the element's CSS border-right using the
+  list `br'.  See the method `set-border!' for a
+  description of the list.
+
+> set-border-right-native! :: (send an-mx-element set-border-right-native! br)
+
+  Sets the element's CSS border-right using the
+  string `br'.  See the method
+  `set-border-native!' for a description of the
+  list.
 
 > border-color :: (send an-mx-element border-color)
 
-  Retrieves a string describing the CSS border-color for the
-  element.
+  Retrieves a list of one to four elements in
+  which each element is either a symbol indicating
+  an HTML color or an RGB string.  If the list
+  contains just one element, it applies to all
+  four sides.  If there are two, the first is for
+  top and bottom, the other for left and right.
+  If there are three, they are for top, left and
+  right, and bottom.
+
+> border-color-native :: (send an-mx-element border-color-native)
+
+  Retrieves a string in which describing the CSS
+  border-color for the element.  The string
+  contains one to four space-separated substrings
+  indicating a color.  If there is just one color,
+  it applies to all four sides.  If there are two,
+  the first is for top and bottom, the other for
+  left and right.  If there are three, they are
+  for top, left and right, and bottom.
 
 > set-border-color! :: (send an-mx-element set-border-color! bc)
 
-  Set the element's CSS border-color using the string `bc', which
-  consists of one to four colors, separated by spaces.
+  Sets the element's CSS border-color using the
+  list `bc', which has one to four elements, each
+  of which is either a symbol indicating an HTML
+  color, or an RGB string.  If there is just one
+  element, it applies to all four sides.  If there
+  are two, the first is for top and bottom, the
+  second for left and right.  If there are three,
+  they are for top, left and right, and bottom.
+
+> set-border-color-native! :: (send an-mx-element set-border-color-native! bc)
+
+  Sets the element's CSS border-color using the
+  string `bc', which consists of one to four HTML
+  colors, separated by spaces.  If there is just
+  one color, it applies to all four sides.  If
+  there are two, the first is for top and bottom,
+  the second for left and right.  If there are
+  three, they are for top, left and right, and
+  bottom.
 
 > border-width :: (send an-mx-element border-width)
 
-  Retrieves a string describing the CSS border-width for the
-  element.
+  Retrieves a list of one to four elements, each
+  of which is either a css-length, or a symbol
+  from '(medium thin thick).  If only one width is
+  given, it applies to all four sides.  If two are
+  given, the first is for top and bottom, the
+  second for left and right.  If three are given,
+  the first is for top, the second for left and
+  right, the third for bottom.
+
+> border-width-native :: (send an-mx-element border-width-native)
+
+  Retrieves a string describing the CSS
+  border-width for the element.  The string
+  contains one to four substrings, each of which
+  is either a CSS length, or a string from
+  '("medium" "thin" "thick").  If only one width
+  is given, it applies to all four sides.  If two
+  are given, the first is for top and bottom, the
+  second for left and right.  If three are given,
+  the first is for top, the second for left and
+  right, the third for bottom.
 
 > set-border-width! :: (send an-mx-element set-border-width! bw)
 
-  Set the element's CSS border-color using the string `bw', which
-  consists of one to four space-separated entries, each of
-  which is a CSS length, or one of "thin", "medium", or "thick".
+  Sets the element's CSS border-color using the
+  list `bw', which may contain one to four
+  elements, each of which is either a css-length,
+  or a symbol from '(thin medium thick).  If only
+  one width is given, it applies to all four
+  sides.  If two are given, the first is for top
+  and bottom, the second for left and right.  If
+  three are given, the first is for top, the
+  second for left and right, the third for bottom.
+
+> set-border-width-native! :: (send an-mx-element set-border-width-native! bw)
+
+  Sets the element's CSS border-color using the
+  string `bw', which consists of one to four
+  space-separated substrings, each of which is
+  either a CSS length or a string from '("thin"
+  "medium" "thick").  If only one width is given,
+  it applies to all four sides.  If two are given,
+  the first is for top and bottom, the second for
+  left and right.  If three are given, the first
+  is for top, the second for left and right, the
+  third for bottom.
 
 > border-style :: (send an-mx-element border-style)
 
-  Retrieves a string describing the CSS border-style for the
-  element.
+  Retrieves a symbol describing the CSS
+  border-style for the element.  The symbol is
+  from '(none dotted dashed solid double groove
+  ridge inset outset).
+
+> border-style-native :: (send an-mx-element border-style-native)
+
+  Retrieves a string describing the CSS
+  border-style for the element.  The string is
+  from '("none" "dotted" "dashed" "solid" "double"
+  "groove" "ridge" "inset" "outset").
 
 > set-border-style! :: (send an-mx-element set-border-style! bs)
 
-  Set the element's CSS border-style using the string `bs', which
-  is one of "none", "solid", "double", "groove", "ridge", "inset", or 
-  "outset".  
+  Sets the element's CSS border-style using the
+  symbol `bs', which is from '(none dotted dashed
+  solid double groove ridge inset outset).
+
+> set-border-style-native! :: (send an-mx-element set-border-style-native! bs)
+
+  Sets the element's CSS border-style using the
+  string `bs', which is from '("none" "dotted"
+  "dashed" "solid" "double" "groove" "ridge"
+  "inset" "outset").
 
 > border-top-style :: (send an-mx-element border-top-style)
 
-  Retrieves a string describing the CSS border-top-style for the
-  element.
+  Retrieves a symbol describing the CSS
+  border-top-style for the element.  See
+  border-style for possible values.
+
+> border-top-style-native :: (send an-mx-element border-top-style-native)
+
+  Retrieves a string describing the CSS
+  border-top-style for the element.  See
+  border-style-native for possible values.
 
 > set-border-top-style! :: (send an-mx-element set-border-top-style! bts)
 
-  Set the element's CSS border-top-style using the string `bts', which
-  is one of "none", "solid", "double", "groove", "ridge", "inset", or 
-  "outset".  
+  Sets the element's CSS border-top-style using
+  the symbol `bts'.  See set-border-style! for
+  possible values.
+
+> set-border-top-style-native! :: (send an-mx-element set-border-top-style-native! bts)
+
+  Sets the element's CSS border-top-style using
+  the string `bts'.  See set-border-style-native!
+  for possible values.
 
 > border-bottom-style :: (send an-mx-element border-bottom-style)
 
-  Retrieves a string describing the CSS border-bottom-style for the
-  element.
+  Retrieves a symbol describing the CSS
+  border-bottom-style for the element.  See
+  border-style for possible values.
+
+> border-bottom-style-native :: (send an-mx-element border-bottom-style-native)
+
+  Retrieves a string describing the CSS
+  border-bottom-style for the element.  See
+  border-style-native for possible values.
 
 > set-border-bottom-style! :: (send an-mx-element set-border-bottom-style! bbs)
 
-  Set the element's CSS border-bottom-style using the string `bbs', which
-  is one of "none", "solid", "double", "groove", "ridge", "inset", or 
-  "outset".  
+  Sets the element's CSS border-bottom-style using
+  the symbol `bbs'.  See set-border-style! for
+  possible values.
+
+> set-border-bottom-style-native! :: (send an-mx-element set-border-bottom-style-native! bbs)
+
+  Sets the element's CSS border-bottom-style using
+  the string `bbs'.  See set-border-style-native!
+  for possible values.
 
 > border-left-style :: (send an-mx-element border-left-style)
 
-  Retrieves a string describing the CSS border-left-style for the
-  element.
+  Retrieves a symbol describing the CSS
+  border-left-style for the element.  See
+  border-style for possible values.
+
+> border-left-style-native :: (send an-mx-element border-left-style-native)
+
+  Retrieves a string describing the CSS
+  border-left-style for the element.  See
+  border-style-native for possible values.
 
 > set-border-left-style! :: (send an-mx-element set-border-left-style! bls)
 
-  Set the element's CSS border-left-style using the string `bls', which
-  is one of "none", "solid", "double", "groove", "ridge", "inset", or 
-  "outset".  
+  Sets the element's CSS border-left-style using
+  the string `bls'.  See set-border-style! for
+  possible values.
+
+> set-border-left-style-native! :: (send an-mx-element set-border-left-style-native! bls)
+
+  Sets the element's CSS border-left-style using
+  the string `bls'.  See set-border-style-native!
+  for possible values.
 
 > border-right-style :: (send an-mx-element border-right-style)
 
-  Retrieves a string describing the CSS border-right-style for the
-  element.
+  Retrieves a symbol describing the CSS
+  border-right-style for the element.  See
+  border-style for possible values.
+
+> border-right-style-native :: (send an-mx-element border-right-style-native)
+
+  Retrieves a string describing the CSS
+  border-right-style for the element.  See
+  border-style-native for possible values.
 
 > set-border-right-style! :: (send an-mx-element set-border-right-style! brs)
 
-  Set the element's CSS border-right-style using the string `brs', which
-  is one of "none", "solid", "double", "groove", "ridge", "inset", or 
-  "outset".  
+  Sets the element's CSS border-right-style using
+  the symbol `brs'.  See set-border-style! for
+  possible values.
+
+> set-border-right-style! :: (send an-mx-element set-border-right-style! brs)
+
+  Sets the element's CSS border-right-style using
+  the string `brs'.  See set-border-style-native!
+  for possible values.
 
 > style-float :: (send an-mx-element style-float)
 
-  Retrieves a string describing the CSS style-float for the
-  element.
+  Retrieves a symbol describing the CSS
+  style-float for the element, one of '(none left
+  right).
+
+> style-float-native :: (send an-mx-element style-float-native)
+
+  Retrieves a string describing the CSS
+  style-float for the element, one of '("none"
+  "left" "right").
 
 > set-style-float! :: (send an-mx-element set-style-float! sf)
 
-  Set the element's CSS style-float using the string `sf', which
-  is one of "none", "left", or "right".
+  Sets the element's CSS style-float using the
+  symbol `sf', which is one of '(none left right).
+
+> set-style-float-native! :: (send an-mx-element set-style-float-native! sf)
+
+  Sets the element's CSS style-float using the
+  string `sf', which is one of '("none" "left"
+  "right").
 
 > clear :: (send an-mx-element clear)
 
-  Retrieves a string describing the CSS clear for the
-  element.
+  Retrieves a symbol describing the CSS clear for
+  the element, which is one of '(none left right
+  both).
+
+> clear-native :: (send an-mx-element clear-native)
+
+  Retrieves a string describing the CSS clear for
+  the element, which is one of '("none" "left"
+  "right" "both").
 
 > set-clear! :: (send an-mx-element set-clear! clr)
 
-  Set the element's CSS clear using the string `clr', which
-  is one of "left", "right", or "both".
+  Sets the element's CSS clear using the symbol
+  `clr', which is one of '(none left right both).
+
+> set-clear-native! :: (send an-mx-element set-clear-native! clr)
+
+  Sets the element's CSS clear using the string
+  `clr', which is one of '("none" "left" "right"
+  "both").
 
 > display :: (send an-mx-element display)
 
-  Retrieves a string describing the CSS clear for the
-  element.
+  Retrieves a symbol describing the CSS clear for
+  the element, which is one of '(block none inline
+  list-item table-header-group
+  table-footer-group).
+
+> display-native :: (send an-mx-element display-native)
+
+  Retrieves a string describing the CSS clear for
+  the element, which is one of '("block" "none"
+  "inline" "list-item" "table-header-group"
+  "table-footer-group").
 
 > set-display! :: (send an-mx-element set-display! dpy)
 
-  Set the element's CSS display using the string `dpy', which
-  is one of "none", "block", "inline", or "list-item".
+  Sets the element's CSS display using the symbol
+  `dpy', which is one of '(block none inline
+  list-item table-header-group
+  table-footer-group).
+
+> set-display-native! :: (send an-mx-element set-display-native! dpy)
+
+  Sets the element's CSS display using the string
+  `dpy', which is one of '("block" "none" "inline"
+  "list-item" "table-header-group"
+  "table-footer-group").
 
 > visibility :: (send an-mx-element visibility)
 
-  Retrieves a string describing the CSS visibility for the
-  element.
+  Retrieves a symbol describing the CSS visibility
+  for the element, which is one of '(inherit
+  visible hidden).
+
+> visibility-native :: (send an-mx-element visibility-native)
+
+  Retrieves a string describing the CSS visibility
+  for the element, which is one of '("inherit"
+  "visible" "hidden").
 
 > set-visibility! :: (send an-mx-element set-visibility! vis)
 
-  Set the element's CSS visibility using the string `vis', which
-  is one of "visible", "hidden", or "inherit".
+  Sets the element's CSS visibility using the
+  symbol `vis', which is one of '(inherit visible
+  hidden).
+
+> set-visibility-native! :: (send an-mx-element set-visibility-native! vis)
+
+  Sets the element's CSS visibility using the
+  string `vis', which is one of '("inherit"
+  "visible" "hidden").
 
 > list-style-type :: (send an-mx-element list-style-type)
 
-  Retrieves a string describing the CSS list-style-type for the
-  element.
+  Retrieves a symbol describing the CSS
+  list-style-type for the element, one of '(disc
+  circle square decimal lower-roman upper-roman
+  lower-alpha upper-alpha none).
 
-> set-list-style-type! :: (send an-mx-element set-list-style-type! lst)
+> list-style-type-native :: (send an-mx-element list-style-type-native)
 
-  Set the element's CSS list-style-type using the string `lst', which
-  is one of "disk", "circle", "square", "decimal", "lower-roman",   
-  "upper-roman", "lower-alpha", "upper-alpha", or "none".  
+  Retrieves a string describing the CSS
+  list-style-type for the element, one of '("disc"
+  "circle" "square" "decimal" "lower-roman"
+  "upper-roman" "lower-alpha" "upper-alpha"
+  "none").
+
+> set-list-style-type! :: (send an-mx-element set-list-style-type! sty)
+
+  Sets the element's CSS list-style-type using the
+  symbol `sty', which is one of '(disc circle
+  square decimal lower-roman upper-roman
+  lower-alpha upper-alpha none).
+
+> set-list-style-type-native! :: (send an-mx-element set-list-style-type-native! lst)
+
+  Sets the element's CSS list-style-type using the
+  string `sty', which is one of '("disc" "circle"
+  "square" "decimal" "lower-roman" "upper-roman"
+  "lower-alpha" "upper-alpha" "none").
 
 > list-style-position :: (send an-mx-element list-style-position)
 
-  Retrieves a string describing the CSS list-style-position for the
-  element.
+  Retrieves a symbol describing the CSS
+  list-style-position for the element, one of
+  '(outside inside).
+
+> list-style-position-native :: (send an-mx-element list-style-position-native)
+
+  Retrieves a string describing the CSS
+  list-style-position for the element, one of
+  '("outside" "inside").
 
 > set-list-style-position! :: (send an-mx-element set-list-style-position! pos)
 
-  Set the element's CSS list-style-position using the string `pos', which
-  is either "inside" or "outside".
+  Sets the element's CSS list-style-position using
+  the symbol `pos', which is one of '(outside
+  inside).
+
+> set-list-style-position-native! :: (send an-mx-element set-list-style-position-native! pos)
+
+  Sets the element's CSS list-style-position using
+  the string `pos', which is one of '("outside"
+  "inside").
 
 > list-style-image :: (send an-mx-element list-style-image)
 
-  Retrieves a string describing the CSS list-style-image for the
-  element.
+  Retrieves a string describing the CSS
+  list-style-image for the element, which is
+  either "none" or a URL.
+
+> list-style-image-native :: (send an-mx-element list-style-image-native)
+
+  Retrieves a string describing the CSS
+  list-style-image for the element, which is
+  either "none" or of the form "url(url-string)".
 
 > set-list-style-image! :: (send an-mx-element set-list-style-image! image)
 
-  Set the element's CSS list-style-image using the string `image', which
-  is either "none" or of the form "url(url-string)".
+  Sets the element's CSS list-style-image using
+  the string `image', which is either "none" or a
+  URL.
+
+> set-list-style-image-native! :: (send an-mx-element set-list-style-image-native! image)
+
+  Sets the element's CSS list-style-image using
+  the string `image', which is either "none" or of
+  the form "url(url-string)".
 
 > list-style :: (send an-mx-element list-style)
 
-  Retrieves a string describing the CSS list-style for the
-  element.
+  Retrieves a list of one to three values
+  describing the CSS list-style for the element.
+  Each value in the list is as the values returned
+  by the methods list-style-type,
+  list-style-position, and list-style-image.  The
+  values may appear in any order.
+
+> list-style-native :: (send an-mx-element list-style-native)
+
+  Retrieves a string with one to three substrings
+  describing the CSS list-style for the element.
+  Each substring is of the form of the strings
+  returned by the methods list-style-type-native,
+  list-style-position-native, and
+  list-style-image-native.  The substrings may
+  appear in any order.
 
 > set-list-style! :: (send an-mx-element set-list-style! ls)
 
-  Set the element's CSS list-style using the string `ls', which
-  consists of a list-style-type, list-style-image, and list-style-position.
+  Sets the element's CSS list-style using the list
+  `ls', which contains one to three elements, each
+  of which is of the form of the possible
+  arguments to set-list-style-type!,
+  set-list-style-image!, and
+  set-list-style-position!.
 
-> whitespace :: (send an-mx-element whitespace)
+> set-list-style-native! :: (send an-mx-element set-list-style-native! ls)
 
-  Retrieves a string describing the CSS whitespace for the
-  element.
-
-> set-whitespace! :: (send an-mx-element set-whitespace! ws)
-
-  Set the element's CSS whitespace using the string `ws', which
-  is one of "normal", "nowrap", or "pre".
+  Sets the element's CSS list-style using the
+  string `ls', which contains one to three
+  space-separated substrings.  Each substring is
+  of the form of the possible arguments to
+  set-list-style-type-native!,
+  set-list-style-image-native!, and
+  set-list-style-position-native!.
 
 > position :: (send an-mx-element position)
 
-  Retrieves a string describing the CSS position for the
-  element, which is either "absolute", "relative", or "static".
+  Retrieves a symbol describing the CSS position
+  for the element, which is one of '(absolute
+  relative static).
+
+> position-native :: (send an-mx-element position-native)
+
+  Retrieves a string describing the CSS position
+  for the element, which is one of '("absolute"
+  "relative" "static").
 
 > overflow :: (send an-mx-element overflow)
 
-  Retrieves a string describing the CSS overflow for the
-  element.
+  Retrieves a symbol describing the CSS overflow
+  for the element, which is one of '(visible
+  scroll hidden auto).
+
+> overflow-native :: (send an-mx-element overflow-native)
+
+  Retrieves a string describing the CSS overflow
+  for the element, which is one of '("visible"
+  "scroll" "hidden" "auto").
 
 > set-overflow! :: (send an-mx-element set-overflow! of)
 
-  Sets the element's CSS overflow using the string `of', 
-  which is either "none", "clip", or "scroll".
+  Sets the element's CSS overflow using the symbol
+  `of', which is one of '(visible scroll hidden
+  auto).
+
+> set-overflow-native! :: (send an-mx-element set-overflow-native! of)
+
+  Sets the element's CSS overflow using the string
+  `of', which is one of '("visible" "scroll"
+  "hidden" "auto").
 
 > pagebreak-before :: (send an-mx-element pagebreak-before)
 
-  Retrieves a string describing the CSS pagebreak-before for the
-  element.
+  Retrieves a symbol describing the CSS
+  pagebreak-before for the element, which is one
+  of '(always auto none).
+
+> pagebreak-before-native :: (send an-mx-element pagebreak-before-native)
+
+  Retrieves a string describing the CSS
+  pagebreak-before for the element, which is one
+  of '("always" "auto" "").  Note that unlike most
+  other "-native" properties, the empty string
+  does not mean the property has not been set.
 
 > set-pagebreak-before! :: (send an-mx-element set-pagebreak-before! pbb)
 
-  Sets the element's CSS pagebreak-before using the string `pbb', 
-  which is either "auto", "always", "left", or "right".
+  Sets the element's CSS pagebreak-before using
+  the symbol `pbb', which is one of '(always auto
+  none).
+
+> set-pagebreak-before-native! :: (send an-mx-element set-pagebreak-before-native! pbb)
+
+  Sets the element's CSS pagebreak-before using
+  the string `pbb', which is one of '("always"
+  "auto" "").  Note that the empty string is a
+  valid value.
 
 > pagebreak-after :: (send an-mx-element pagebreak-after)
 
-  Retrieves a string describing the CSS pagebreak-after for the
-  element.
+  Retrieves a symbol describing the CSS
+  pagebreak-after for the element, which is one of
+  '(always auto none).
+
+> pagebreak-after-native :: (send an-mx-element pagebreak-after-native)
+
+  Retrieves a string describing the CSS
+  pagebreak-after for the element, which is one of
+  '("always" "auto" "").  Note that unlike most
+  other "-native" properties, the empty string
+  does not mean the property has not been set.
 
 > set-pagebreak-after! :: (send an-mx-element set-pagebreak-after! pba)
 
-  Sets the element's CSS pagebreak-after using the string `pbb', 
-  which is either "auto", "always", "left", or "right".
+  Sets the element's CSS pagebreak-after using the
+  symbol `pbb', which is one of '(always auto
+  none).
 
-> css-text :: (send an-mx-element css-text)
+> set-pagebreak-after-native! :: (send an-mx-element set-pagebreak-after-native! pba)
 
-  Retrieves a string describing the CSS text for the
-  element.
+  Sets the element's CSS pagebreak-after using the
+  string `pbb', which is one of '("always" "auto"
+  "").  Note that the empty string is a valid
+  value.
 
-> set-css-text! :: (send an-mx-element set-css-text! txt)
+> css-text-native :: (send an-mx-element css-text-native)
 
-  Sets the element's CSS text using the string `txt'.
+  Retrieves a string describing the CSS text for
+  the element.
+
+> set-css-text-native! :: (send an-mx-element set-css-text-native! txt)
+
+  Sets the element's CSS text using the string
+  `txt'.
 
 > cursor :: (send an-mx-element cursor)
 
-  Retrieves a string describing the CSS cursor for the
-  element.
+  Retrieves a symbol describing the CSS cursor for
+  the element, one of '(auto crosshair default
+  hand move n-resize ne-resize nw-resize s-resize
+  se-resize sw-resize e-resize w-resize text wait
+  help).
+
+> cursor-native :: (send an-mx-element cursor-native)
+
+  Retrieves a string describing the CSS cursor for
+  the element, one of '("auto" "crosshair"
+  "default" "hand" "move" "n-resize" "ne-resize"
+  "nw-resize" "s-resize" "se-resize" "sw-resize"
+  "e-resize" "w-resize" "text" "wait" "help").
 
 > set-cursor! :: (send an-mx-element set-cursor! csr)
 
-  Sets the element's CSS cursor using the string `csr', which
-  is one of "auto", "crosshair", "default", "hand", "move", 
-  "*-resize", "text", or "wait".  
+  Sets the element's CSS cursor using the symbol
+  `csr', which is one of '(auto crosshair default
+  hand move n-resize ne-resize nw-resize s-resize
+  se-resize sw-resize e-resize w-resize text wait
+  help).
+
+> set-cursor-native! :: (send an-mx-element set-cursor-native! csr)
+
+  Sets the element's CSS cursor using the string
+  `csr', which is one of '("auto" "crosshair"
+  "default" "hand" "move" "n-resize" "ne-resize"
+  "nw-resize" "s-resize" "se-resize" "sw-resize"
+  "e-resize" "w-resize" "text" "wait" "help").
 
 > clip :: (send an-mx-element clip)
 
-  Retrieves a string describing the CSS clip for the
-  element.
+  Retrieves a value describing the CSS clip for
+  the element.  The value is either 'auto, or a
+  list of four values for the top, right, bottom,
+  and left edges.  In the list, each value is
+  either 'auto or a css-length.
+
+> clip-native :: (send an-mx-element clip-native)
+
+  Retrieves a string describing the CSS clip for
+  the element.  The string is either "auto" or of
+  the form "rect(top right bottom left)", where
+  the edges are either "auto" or CSS lengths.
 
 > set-clip! :: (send an-mx-element set-clip! clp)
 
-  Sets the element's CSS clip using the string `clp', which
-  is either a CSS length or "auto".
+  Sets the element's CSS clip using the value
+  `clp'.  The value is either 'auto, or a list of
+  four values for the top, right, bottom, and left
+  edges.  In the list, each value is either 'auto
+  or a css-length.
+
+> set-clip-native! :: (send an-mx-element set-clip-native! clp)
+
+  Sets the element's CSS clip using the string
+  `clp'.  The string is either "auto" or of the
+  form "rect(top right bottom left)", where the
+  edges are either "auto" or CSS lengths.
 
 > filter :: (send an-mx-element filter)
 
-  Retrieves a string describing the CSS filter for the
-  element.
+  Retrieves a list describing the CSS filter for
+  the element.  The list is of the form
+  (filter-name (opt val) ...).  See the method
+  set-filter! for the filters and their options.
+
+> filter-native :: (send an-mx-element filter-native)
+
+  Retrieves a string describing the CSS filter for
+  the element.  The string is of the form
+  "filter-name(opt=val,...)"  or simply
+  "filter-name".  See the Internet Explorer SDK
+  for more information about filters and their
+  options.
 
 > set-filter! :: (send an-mx-element set-filter! flt)
 
-  Sets the element's CSS filter using the string `flt'. A description
-  of filters is beyond the scope of this documentation.  See 
-  the Internet Explorer SDK for more information.
+  Sets the element's CSS filter using the list
+  `flt', which is of the form (filter-name (opt
+  val) ...).  For all filters, any of its options
+  may be omitted.  The filters and their options
+  are
+
+  filter           option              value      
+  -----            ------              -----
+  alpha            enabled             boolean
+                   finish-opacity      n exact, 0 <= n <= 100
+	           opacity             n exact, 0 <= n <= 100
+                   start-x             exact number
+                   start-y             exact number 
+	           finish-x            exact number
+                   finish-y            exact number
+                   style               in '(uniform linear
+                                            radial rectangular)
+  blend-trans      enable              boolean
+                   duration            number
+                   status              in '(stopped applied playing)
+  blur             add                 boolean
+                   enabled             boolean
+                   direction           in '(0 45 90 135 180 
+                                       225 270 315)
+                   strength	           exact n, 1 <= n <= 100
+  chroma           enabled             boolean
+                   color               RGB string
+  drop-shadow      enabled             boolean
+                   off-x               exact number
+                   off-y               exact number  
+  flip-horizontal  enabled             boolean
+  flip-vertical    enabled             boolean 
+  glow             enabled             boolean
+                   color               RGB string
+                   strength            exact n, 1 <= n <= 100  
+  gray             enabled             boolean
+  invert           enabled             boolean 
+  light            enabled             boolean 
+  mask             enabled             boolean
+                   color               RGB string
+  redirect         enabled             boolean
+  reveal-trans     enabled             boolean
+                   duration            number
+                   status              in '(stopped applied playing)
+  shadow           enabled             boolean
+                   color               RGB string
+                   direction           in '(0 45 90 135 180 
+                                       225 270 315)   
+  wave             enabled             boolean
+                   freq                number n, n >= 0
+                   light-strength      exact n, 1 <= n <= 100
+  x-ray            enabled             boolean
+
+> set-filter-native! :: (send an-mx-element set-filter-native! flt)
+
+  Sets the element's CSS filter using the string
+  `flt'.  The string is of the form
+  "filter-name(opt=val,...)"  or simply
+  "filter-name".  See the Internet Explorer SDK
+  for more information on filters and their
+  options.
 
 > style-string :: (send an-mx-element style-string)
 
-  Retrieves a string describing the complete CSS description for the
-  element.
+  Retrieves a string describing the complete CSS
+  description for the element.
 
 > text-decoration-none :: (send an-mx-element text-decoration-none)
 
-  Retrieves the CSS text-decoration-none for the element.
+  Retrieves the CSS text-decoration-none, a
+  boolean value, for the element.
 
 > set-text-decoration-none! :: (send an-mx-element set-text-decoration-none! tdn)
 
-  Sets the element's CSS text-decoration-none using `tdn'.
-  If `tdn' is #f, the value is false, otherwise it is 
-  considered true.
+  Sets the element's CSS text-decoration-none
+  using `tdn'.  If `tdn' is #f, the value is
+  false, otherwise it is considered true.
 
 > text-decoration-underline :: (send an-mx-element text-decoration-underline)
 
-  Retrieves the CSS text-decoration-underline for the element.
+  Retrieves the CSS text-decoration-underline, a
+  boolean value, for the element.
 
 > set-text-decoration-underline! :: (send an-mx-element set-text-decoration-underline! tdu)
 
-  Sets the element's CSS text-decoration-underline using `tdu'.
-  If `tdn' is #f, the value is false, otherwise it is 
-  considered true.
+  Sets the element's CSS text-decoration-underline
+  using `tdu'.  If `tdn' is #f, the value is
+  false, otherwise it is considered true.
 
 > text-decoration-overline :: (send an-mx-element text-decoration-overline)
 
-  Retrieves the CSS text-decoration-overline for the element.
+  Retrieves the CSS text-decoration-overline, a
+  boolean value, for the element.
 
 > set-text-decoration-overline! :: (send an-mx-element set-text-decoration-overline! tdo)
 
-  Sets the element's CSS text-decoration-overline using `tdo'.
-  If `tdn' is #f, the value is false, otherwise it is 
-  considered true.
+  Sets the element's CSS text-decoration-overline
+  using `tdo'.  If `tdn' is #f, the value is
+  false, otherwise it is considered true.
 
 > text-decoration-linethrough :: (send an-mx-element text-decoration-linethrough)
 
-  Retrieves the CSS text-decoration-linethrough for the element.
+  Retrieves the CSS text-decoration-linethrough, a
+  boolean value, for the element.
 
 > set-text-decoration-linethrough! :: (send an-mx-element set-text-decoration-linethrough! tdlt)
 
-  Sets the element's CSS text-decoration-linethrough using `tdlt'.
-  If `tdn' is #f, the value is false, otherwise it is 
+  Sets the element's CSS
+  text-decoration-linethrough using `tdlt'.  If
+  `tdn' is #f, the value is false, otherwise it is
   considered true.
 
 > text-decoration-blink :: (send an-mx-element text-decoration-blink)
 
-  Retrieves the CSS text-decoration-blink for the element.
+  Retrieves the CSS text-decoration-blink, a
+  boolean value, for the element.
 
 > set-text-decoration-blink! :: (send an-mx-element set-text-decoration-blink! bl)
 
-  Sets the element's CSS text-decoration-blink using `bl'.
-  If `tdn' is #f, the value is false, otherwise it is 
-  considered true.
+  Sets the element's CSS text-decoration-blink
+  using `bl'.  If `tdn' is #f, the value is false,
+  otherwise it is considered true.
 
 > pixel-top :: (send an-mx-element pixel-top)
 
-  Retrieves the CSS pixel-top for the element.
+  Retrieves the CSS pixel-top, an integer, for the
+  element.
 
 > set-pixel-top! :: (send an-mx-element set-pixel-top! pt)
 
-  Sets the element's CSS pixel-top using `pt', which is
-  an integer.
+  Sets the element's CSS pixel-top using `pt',
+  which is an integer.
 
 > pixel-left :: (send an-mx-element pixel-left)
 
-  Retrieves the CSS pixel-left for the element.
+  Retrieves the CSS pixel-left, an integer, for
+  the element.
 
 > set-pixel-left! :: (send an-mx-element set-pixel-left! pl)
 
-  Sets the element's CSS pixel-left using `pl', which is
-  an integer.
+  Sets the element's CSS pixel-left using `pl',
+  which is an integer.
 
 > pixel-width :: (send an-mx-element pixel-width)
 
-  Retrieves the CSS pixel-width for the element.
+  Retrieves the CSS pixel-width, an integer, for
+  the element.
 
 > set-pixel-width! :: (send an-mx-element set-pixel-width! pw)
 
-  Sets the element's CSS pixel-width using `pw', which is
-  an integer.
+  Sets the element's CSS pixel-width using `pw',
+  which is an integer.
 
 > pixel-height :: (send an-mx-element pixel-height)
 
-  Retrieves the CSS pixel-height for the element.
+  Retrieves the CSS pixel-height, an integer, for
+  the element.
 
 > set-pixel-height! :: (send an-mx-element set-pixel-height! ph)
 
-  Sets the element's CSS pixel-height using `ph', which is
-  an integer.
+  Sets the element's CSS pixel-height using `ph',
+  which is an integer.
 
 > pos-top :: (send an-mx-element pos-top)
 
-  Retrieves the CSS pos-top for the element.
+  Retrieves the CSS pos-top, an inexact number,
+  for the element.
 
 > set-pos-top! :: (send an-mx-element set-pos-top! pt)
 
-  Sets the element's CSS pos-top using `pt', which is
-  a floating-point value.
+  Sets the element's CSS pos-top using `pt', which
+  is an inexact number.
 
 > pos-left :: (send an-mx-element pos-left)
 
-  Retrieves the CSS pos-left for the element.
+  Retrieves the CSS pos-left, an inexact number,
+  for the element.
 
 > set-pos-left! :: (send an-mx-element set-pos-left! pl)
 
-  Sets the element's CSS pos-left using `pl', which is
-  a floating-point value.
+  Sets the element's CSS pos-left using `pl',
+  which is an inexact number.
 
 > pos-width :: (send an-mx-element pos-width)
 
-  Retrieves the CSS pos-width for the element.
+  Retrieves the CSS pos-width, an inexact number,
+  for the element.
 
 > set-pos-width! :: (send an-mx-element set-pos-width! pw)
 
-  Sets the element's CSS pos-width using `pw', which is
-  a floating-point value.
+  Sets the element's CSS pos-width using `pw',
+  which is an inexact number.
 
 > pos-height :: (send an-mx-element pos-height)
 
-  Retrieves the CSS pos-height for the element.
+  Retrieves the CSS pos-height, an inexact number,
+  for the element.
 
 > set-pos-height! :: (send an-mx-element set-pos-height! ph)
 
-  Sets the element's CSS pos-height using `ph', which is
-  a floating-point value.
-
-> font-size :: (send an-mx-element font-size)
-
-  Retrieves the CSS font-size for the element.  See
-  `set-font-size!' for possible values.  Raises an
-  error if the property has not been set.
-
-> font-size-native :: (send an-mx-element font-size-native)
-
-  Retrieves the CSS font-size for the element.
-
-> set-font-size! :: (send an-mx-element set-font-size! fs)
-
-  Sets the element's CSS font-size using `fs', which may 
-  be any of 1) an symbol in the list '(xx-small x-small small medium 
-  large x-large xx-large); 2) a symbol in the list '(larger smaller), 
-  indicating a size relative to a parent element; 3) an instance
-  of the css-length structure, or 4) an instance of the css-percentage
-  structure, where the perecentage is relative to the parent element's
-  font-size.
-
-> set-font-size-native! :: (send an-mx-element set-font-size-native! fs)
-
-  Sets the element's CSS font-size using `fs', which may 
-  be any of 1) a string indicating an absolute size, one
-  of "xx-small", "x-small", "small", "medium", "large", "x-large", or 
-  "xx-large"; 2) a string indicating a size relative to a parent
-  element, either "larger" or "smaller"; 3) a CSS length; or
-  4) a CSS percentage, considered relative to the parent element's
-  font-size.
+  Sets the element's CSS pos-height using `ph',
+  which is an inexact number.
 
 > color :: (send an-mx-element color)
 
-  Retrieves the CSS color for the element.
+  Retrieves the CSS color for the element, either
+  a symbol indicating the name of a color, or an
+  RGB string.
+
+> color-native :: (send an-mx-element color-native)
+
+  Retrieves a string indicating the CSS color for
+  the element.  The string either names a color or
+  is an RGB string.
 
 > set-color! :: (send an-mx-element set-color! col)
 
-  Sets the element's CSS color using `col', which may be 
-  a string indicating a color name, an integer describing 
-  an RGB value, or a string encoding an RGB value.
+  Sets the element's CSS color using `col', which
+  may be a string indicating a color name, an
+  integer describing an RGB value, or a string
+  encoding an RGB value.
+
+> set-color-native! :: (send an-mx-element set-color-native! col)
+
+  Sets the element's CSS color using the string
+  `col', which may be a color name or an RGB
+  string.
 
 > background-color :: (send an-mx-element background-color)
 
-  Retrieves the CSS background-color for the element.
+  Retrieves a string indicating the CSS
+  background-color for the element.  The string
+  either names a color or is an RGB string.
+
+> background-color-native :: (send an-mx-element background-color-native)
+
+  Retrieves a string indicating the CSS
+  background-color for the element.  The string
+  either names a color or is an RGB string.
 
 > set-background-color! :: (send an-mx-element set-background-color! bc)
 
-  Sets the element's CSS background-color using `bc', which may be 
-  a string indicating a color name, an integer describing 
-  an RGB value, or a string encoding an RGB value.
+  Sets the element's CSS background-color using
+  `bc', which may be a string indicating a color
+  name, an integer describing an RGB value, or a
+  string encoding an RGB value.
+
+> set-background-color-native! :: (send an-mx-element set-background-color-native! bc)
+
+  Sets the element's CSS background-color using
+  the string `bc', which may be a color name or an
+  RGB string.
 
 > background-position-x :: (send an-mx-element background-position-x)
 
-  Retrieves the CSS background-position-x for the element.
+  Retrieves the CSS background-position-x for the
+  element.  The value is either a css-length, a
+  css-percentage, or a symbol in '(left center
+  right).
+
+> background-position-x-native :: (send an-mx-element background-position-x-native)
+
+  Retrieves the CSS background-position-x for the
+  element, a string which is either a CSS length,
+  a CSS percentage, or in '("left" "center"
+  "right").
 
 > set-background-position-x! :: (send an-mx-element set-background-position-x! bpx)
 
-  Set the element's background-position-x using the string `bpx',
-  which is either: 1) one or two CSS percentages or lengths, 
-  or 2) one of "top", "center", or "bottom", followed by one 
-  of "left", "center", or "right".
+  Sets the element's background-position-x using
+  `bpx', which is either a css-length, a
+  css-percentage, or a symbol in '(left center
+  right).
+
+> set-background-position-x-native! :: (send an-mx-element set-background-position-x-native! bpx)
+
+  Sets the element's background-position-x using
+  the string `bpx', which is either a CSS length,
+  a CSS percentage, or or one of '("left" "center"
+  "right").
 
 > background-position-y :: (send an-mx-element background-position-y)
 
-  Retrieves the CSS background-position-y for the element.
+  Retrieves the CSS background-position-y for the
+  element.  The value is either a css-length, a
+  css-percentage, or a symbol in '(top center
+  bottom).
+
+> background-position-y-native :: (send an-mx-element background-position-y-native)
+
+  Retrieves the CSS background-position-y for the
+  element, a string which is either a CSS length,
+  a CSS percentage, or in '("top" "center"
+  "bottom").
 
 > set-background-position-y! :: (send an-mx-element set-background-position-y! bpy)
 
-  Set the element's background-position-y using the string `bpy',
-  which is either: 1) one or two CSS percentages or lengths, 
-  or 2) one of "top", "center", or "bottom", followed by one 
-  of "left", "center", or "right".
+  Sets the element's background-position-y using
+  `bpy', which is either a css-length, a
+  css-percentage, or a symbol in '(top center
+  bottom).
+
+> set-background-position-y-native! :: (send an-mx-element set-background-position-y-native! bpy)
+
+  Sets the element's background-position-y using
+  the string `bpy', which is either a CSS length,
+  a CSS percentage, or or one of '("top" "center"
+  "bottom").
 
 > letter-spacing :: (send an-mx-element letter-spacing)
 
-  Retrieves the CSS letter-spacing for the element.
+  Retrieves the CSS letter-spacing for the
+  element, either a css-length or 'normal.
+
+> letter-spacing-native :: (send an-mx-element letter-spacing-native)
+
+  Retrieves the CSS letter-spacing for the
+  element.  The value is a string that is either a
+  CSS length or "normal".
 
 > set-letter-spacing! :: (send an-mx-element set-letter-spacing! ls)
 
-  Set the element's letter-spacing using `ls', which 
-  may be either "normal" or a CSS length.
+  Sets the element's letter-spacing using `ls',
+  which is either a css-length or 'normal.
+
+> set-letter-spacing-native! :: (send an-mx-element set-letter-spacing-native! ls)
+
+  Sets the element's letter-spacing using the
+  string `ls', which is either a CSS length or
+  "normal".
 
 > vertical-align :: (send an-mx-element vertical-align)
 
-  Retrieves the CSS vertical-align for the element.
+  Retrieves the CSS vertical-align for the
+  element.  The value is a symbol in '(baseline
+  sub super top middle bottom text-top text-bottom
+  ).
+
+> vertical-align-native :: (send an-mx-element vertical-align-native)
+
+  Retrieves the CSS vertical-align for the
+  element.  The value is a string in '("baseline"
+  "sub" "super" "top" "middle" "bottom" "text-top"
+  "text-bottom").
 
 > set-vertical-align! :: (send an-mx-element set-vertical-align! va)
 
-  Set the element's letter-spacing using `va', which 
-  is one of "baseline", "middle", "sub", "super", "text-top",   
-  "text-bottom", "top", or "bottom".
+  Sets the element's CSS vertical-align using
+  `va', which is a symbol in '(baseline sub super
+  top middle bottom text-top text-bottom ).
+
+> set-vertical-align-native! :: (send an-mx-element set-vertical-align-native! va)
+
+  Sets the element's letter-spacing using `va',
+  which is a string in '("baseline" "sub" "super"
+  "top" "middle" "bottom" "text-top"
+  "text-bottom").
 
 > text-indent :: (send an-mx-element text-indent)
 
   Retrieves the CSS text-indent for the element.
+  The value is either a css-length or a
+  css-percentage.
+
+> text-indent-native :: (send an-mx-element text-indent-native)
+
+  Retrieves the CSS text-indent for the element.
+  The value is a string that is either a CSS
+  length or a CSS percentage.
 
 > set-text-indent! :: (send an-mx-element set-text-indent! ti)
 
-  Set the element's text-indent using `ti', which 
-  is either a CSS length, or a CSS percentage relative
-  to the parent element's text indent.
+  Sets the element's text-indent using `ti', which
+  is either a css-length a css-percentage.
+
+> set-text-indent-native! :: (send an-mx-element set-text-indent-native! ti)
+
+  Sets the element's text-indent using the string
+  `ti', which is either a CSS length or a CSS
+  percentage.
 
 > line-height :: (send an-mx-element line-height)
 
   Retrieves the CSS line-height for the element.
+  The value is either a css-length, a
+  css-percentage, or 'normal.
+
+> line-height-native :: (send an-mx-element line-height-native)
+
+  Retrieves the CSS line-height for the element.
+  The value is a string that is either a CSS
+  length, a CSS percentage, or "normal".
 
 > set-line-height! :: (send an-mx-element set-line-height! lh)
 
-  Sets the element's line-height using `lh', which 
-  is either "normal", a CSS length, a floating-point number, or 
-  a CSS percentage relative to the parent element's line height.
+  Sets the element's line-height using `lh', which
+  is either a css-length, a css-percentage, or
+  'normal.
+
+> set-line-height-native! :: (send an-mx-element set-line-height-native! lh)
+
+  Sets the element's line-height using the string
+  `lh', which is either a CSS length, a CSS
+  percentage, or "normal".
 
 > margin-top :: (send an-mx-element margin-top)
 
-  Retrieves the CSS line-height for the element.
+  Retrieves the CSS margin-top for the element.
+  The value is a css-length, a css-percentage, or
+  'auto.
+
+> margin-top-native :: (send an-mx-element margin-top-native)
+
+  Retrieves the CSS margin-top for the element.
+  The value is a string that is a CSS length, a
+  CSS percentage, or "auto".
 
 > set-margin-top! :: (send an-mx-element set-margin-top! mt)
 
-  Sets the element's margin-top using `mt', which 
-  is either "auto", a CSS length, or a CSS percentage.
+  Sets the element's margin-top using `mt', which
+  is a css-length, a css-percentage, or 'auto.
+
+> set-margin-top-native! :: (send an-mx-element set-margin-top-native! mt)
+
+  Sets the element's margin-top using the string
+  `mt', which is a CSS length, a CSS percentage,
+  or "auto".
 
 > margin-bottom :: (send an-mx-element margin-bottom)
 
-  Retrieves the CSS line-height for the element.
+  Retrieves the CSS margin-bottom for the element.
+  The value is a css-length, a css-percentage, or
+  'auto.
+
+> margin-bottom-native :: (send an-mx-element margin-bottom-native)
+
+  Retrieves the CSS margin-bottom for the element.
+  The value is a string that is a CSS length, a
+  CSS percentage, or "auto".
 
 > set-margin-bottom! :: (send an-mx-element set-margin-bottom! mb)
 
-  Sets the element's margin-bottom using `mb', which 
-  is either "auto", a CSS length, or a CSS percentage.
+  Sets the element's margin-bottom using `mb',
+  which is a css-length, a css-percentage, or
+  'auto.
+
+> set-margin-bottom-native! :: (send an-mx-element set-margin-bottom-native! mb)
+
+  Sets the element's margin-bottom using the
+  string `mb', which is a CSS length, a CSS
+  percentage, or "auto".
 
 > margin-left :: (send an-mx-element margin-left)
 
-  Retrieves the CSS line-height for the element.
+  Retrieves the CSS margin-left for the element.
+  The value is a css-length, a css-percentage, or
+  'auto.
+
+> margin-left-native :: (send an-mx-element margin-left-native)
+
+  Retrieves the CSS margin-left for the element.
+  The value is a string that is a CSS length, a
+  CSS percentage, or "auto".
 
 > set-margin-left! :: (send an-mx-element set-margin-left! ml)
 
-  Sets the element's margin-left using `ml', which 
-  is either "auto", a CSS length, or a CSS percentage.
+  Sets the element's margin-left using `ml', which
+  is a css-length, a css-percentage, or 'auto.
+
+> set-margin-left-native! :: (send an-mx-element set-margin-left-native! ml)
+
+  Sets the element's margin-left using the string
+  `ml', which is a CSS length, a CSS percentage,
+  or "auto".
 
 > margin-right :: (send an-mx-element margin-right)
 
-  Retrieves the CSS line-height for the element.
+  Retrieves the CSS margin-right for the element.
+  The value is a css-length, a css-percentage, or
+  'auto.
+
+> margin-right-native :: (send an-mx-element margin-right-native)
+
+  Retrieves the CSS margin-right for the element.
+  The value is a string that is a CSS length, a
+  CSS percentage, or "auto".
 
 > set-margin-right! :: (send an-mx-element set-margin-right! mr)
 
-  Sets the element's margin-right using `mr', which 
-  is either "auto", a CSS length, or a CSS percentage.
+  Sets the element's margin-right using `mr',
+  which is a css-length, a css-percentage, or
+  'auto.
+
+> set-margin-right-native! :: (send an-mx-element set-margin-right-native! mr)
+
+  Sets the element's margin-right using the string
+  `mr', which is a CSS length, a CSS percentage,
+  or "auto".
 
 > padding-top :: (send an-mx-element padding-top)
 
   Retrieves the CSS padding-top for the element.
+  The value is a css-length or css-percentage.
 
-> set-padding-top! :: (send an-mx-element set-padding-top! mt)
+> padding-top-native :: (send an-mx-element padding-top-native)
 
-  Sets the element's padding-top using `mt', which 
-  is either a CSS length or a CSS percentage.
+  Retrieves the CSS padding-top for the element.
+  The value is a string that is a CSS length or
+  CSS percentage.
+
+> set-padding-top! :: (send an-mx-element set-padding-top! pt)
+
+  Sets the element's padding-top using `pt', which
+  is either a css-length or a css-percentage.
+
+> set-padding-top-native! :: (send an-mx-element set-padding-top-native! pt)
+
+  Sets the element's padding-top using `pt', a
+  string that is either a CSS length or a CSS
+  percentage.
 
 > padding-bottom :: (send an-mx-element padding-bottom)
 
-  Retrieves the CSS padding-bottom for the element.
+  Retrieves the CSS padding-bottom for the
+  element.  The value is a css-length or a
+  css-percentage.
 
-> set-padding-bottom! :: (send an-mx-element set-padding-bottom! mb)
+> padding-bottom-native :: (send an-mx-element padding-bottom-native)
 
-  Sets the element's padding-bottom using `mb', which 
-  is either a CSS length or a CSS percentage.
+  Retrieves the CSS padding-bottom for the
+  element.  The value is a string that is a CSS
+  length or a CSS percentage.
+
+> set-padding-bottom! :: (send an-mx-element set-padding-bottom! pb)
+
+  Sets the element's padding-bottom using `pb',
+  which is either a css-length or a
+  css-percentage.
+
+> set-padding-bottom-native! :: (send an-mx-element set-padding-bottom-native! pb)
+
+  Sets the element's padding-bottom using `pb', a
+  string that is either a CSS length or a CSS
+  percentage.
 
 > padding-left :: (send an-mx-element padding-left)
 
   Retrieves the CSS padding-left for the element.
+  The value is a css-length or a css-percentage.
 
-> set-padding-left! :: (send an-mx-element set-padding-left! ml)
+> padding-left-native :: (send an-mx-element padding-left-native)
 
-  Sets the element's padding-left using `ml', which 
-  is either a CSS length or a CSS percentage.
+  Retrieves the CSS padding-left for the element.
+  The value is a string that is a CSS length or a
+  CSS percentage.
+
+> set-padding-left! :: (send an-mx-element set-padding-left! pl)
+
+  Sets the element's padding-left using `pl',
+  which is either a css-length or a
+  css-percentage.
+
+> set-padding-left-native! :: (send an-mx-element set-padding-left-native! pl)
+
+  Sets the element's padding-left using `pl', a
+  string that is either a CSS length or a CSS
+  percentage.
 
 > padding-right :: (send an-mx-element padding-right)
 
   Retrieves the CSS padding-right for the element.
+  The value is a css-length or a css-percentage.
 
-> set-padding-right! :: (send an-mx-element set-padding-right! mr)
+> padding-right-native :: (send an-mx-element padding-right-native)
 
-  Sets the element's padding-right using `mr', which 
-  is either a CSS length or a CSS percentage.
+  Retrieves the CSS padding-right for the element.
+  The value is a string that is a CSS length or a
+  CSS percentage.
+
+> set-padding-right! :: (send an-mx-element set-padding-right! pr)
+
+  Sets the element's padding-right using `pr',
+  which is either a css-length or a
+  css-percentage.
+
+> set-padding-right-native! :: (send an-mx-element set-padding-right-native! pr)
+
+  Sets the element's padding-right using `pr',
+  which is either a CSS length or a CSS
+  percentage.
 
 > border-top-color :: (send an-mx-element border-top-color)
 
-  Retrieves the CSS border-top-color for the element.
+  Retrieves the CSS border-top-color for the
+  element.  The value is either a symbol
+  indicating a color name or an RGB string.
+
+> border-top-color-native :: (send an-mx-element border-top-color-native)
+
+  Retrieves a string indicating the CSS
+  border-top-color for the element.  The string is
+  either the name of a color or an RGB string.
 
 > set-border-top-color! :: (send an-mx-element set-border-top-color! btc)
 
-  Sets the element's border-top-color using `btc', which 
-  may be a string giving the name of a color, an integer
-  with an RGB value, or a string encoding of an RGB value.
+  Sets the element's border-top-color using the
+  string `btc', which is either a symbol
+  indicating the name of a color or an RGB string.
+
+> set-border-top-color-native! :: (send an-mx-element set-border-top-color-native! btc)
+
+  Sets the element's border-top-color using the
+  string `btc', which is either the name of a
+  color or an RGB string.
 
 > border-bottom-color :: (send an-mx-element border-bottom-color)
 
-  Retrieves the CSS border-bottom-color for the element.
+  Retrieves the CSS border-bottom-color for the
+  element.  The value is either a symbol
+  indicating a color name or an RGB string.
+
+> border-bottom-color-native :: (send an-mx-element border-bottom-color-native)
+
+  Retrieves the CSS border-bottom-color for the
+  element.  The value is a string that is either a
+  color name or an RGB string.
 
 > set-border-bottom-color! :: (send an-mx-element set-border-bottom-color! btc)
 
-  Sets the element's border-bottom-color using `btc', which 
-  may be a string giving the name of a color, an integer
-  with an RGB value, or a string encoding of an RGB value.
+  Sets the element's border-bottom-color using
+  `btc', which either a symbol indicating a color
+  name, or an RGB string.
+
+> set-border-bottom-color-native! :: (send an-mx-element set-border-bottom-color-native! btc)
+
+  Sets the element's border-bottom-color using
+  `btc', a string that is either a color name or
+  an RGB string.
 
 > border-left-color :: (send an-mx-element border-left-color)
 
-  Retrieves the CSS border-left-color for the element.
+  Retrieves the CSS border-left-color for the
+  element.  The value is either a symbol
+  indicating a color name or an RGB string.
+
+> border-left-color-native :: (send an-mx-element border-left-color-native)
+
+  Retrieves the CSS border-left-color for the
+  element.  The value is a string that is either a
+  color name or RGB string.
 
 > set-border-left-color! :: (send an-mx-element set-border-left-color! btc)
 
-  Sets the element's border-left-color using `btc', which 
-  may be a string giving the name of a color, an integer
-  with an RGB value, or a string encoding of an RGB value.
+  Sets the element's border-left-color using
+  `btc', which is either a symbol indicating a
+  color name or an RGB string.
+
+> set-border-left-color-native! :: (send an-mx-element set-border-left-color-native! btc)
+
+  Sets the element's border-left-color using the
+  string `btc', which is either a color name or
+  RGB string.
 
 > border-right-color :: (send an-mx-element border-right-color)
 
-  Retrieves the CSS border-right-color for the element.
+  Retrieves the CSS border-right-color for the
+  element.  The value is either a symbol
+  indicating a color name or an RGB string.
+
+> border-right-color-native :: (send an-mx-element border-right-color-native)
+
+  Retrieves the CSS border-right-color for the
+  element.  The value is a string indicating a
+  color name or an RGB string.
 
 > set-border-right-color! :: (send an-mx-element set-border-right-color! btc)
 
-  Sets the element's border-right-color using `btc', which 
-  may be a string giving the name of a color, an integer
-  with an RGB value, or a string encoding of an RGB value.
+  Sets the element's border-right-color using
+  `btc', which is either a symbol indicating a
+  color name or an RGB string.
+
+> set-border-right-color-native! :: (send an-mx-element set-border-right-color-native! btc)
+
+  Sets the element's border-right-color using the
+  string `btc', which is either a color name or
+  RGB string.
 
 > border-top-width :: (send an-mx-element border-top-width)
 
-  Retrieves a string describing the CSS border-top-width for the
-  element.
+  Retrieves a value describing the CSS
+  border-top-width for the element.  The value is
+  either a css-length or a symbol, one of '(medium
+  thin thick).
+
+> border-top-width-native :: (send an-mx-element border-top-width-native)
+
+  Retrieves a string describing the CSS
+  border-top-width for the element.  The string is
+  either a CSS length or one of '("medium" "thin"
+  "thick").
 
 > set-border-top-width! :: (send an-mx-element set-border-top-width! btw)
 
-  Set the element's CSS border-top-width using the string `btw', 
-  which is either a CSS length, or one of "thin", "medium", or "thick".
+  Sets the element's CSS border-top-width using
+  `btw', which is either a css-length, or a symbol
+  in '(thin medium thick).
+
+> set-border-top-width-native! :: (send an-mx-element set-border-top-width-native! btw)
+
+  Sets the element's CSS border-top-width using
+  the string `btw', which is either a CSS length,
+  or in '("thin" "medium" "thick").
 
 > border-bottom-width :: (send an-mx-element border-bottom-width)
 
-  Retrieves a string describing the CSS border-bottom-width for the
-  element.
+  Retrieves a value describing the CSS
+  border-bottom-width for the element.  The value
+  is either a css-length or a symbol in '(medium
+  thin thick).
+
+> border-bottom-width-native :: (send an-mx-element border-bottom-width-native)
+
+  Retrieves a string describing the CSS
+  border-bottom-width for the element.  The string
+  is either a CSS length or in '("thin" "medium"
+  "thick").
 
 > set-border-bottom-width! :: (send an-mx-element set-border-bottom-width! bbw)
 
-  Set the element's CSS border-bottom-width using the string `bbw', 
-  which is either a CSS length, or one of "thin", "medium", or "thick".
+  Sets the element's CSS border-bottom-width using
+  the value `bbw', which is either a css-length,
+  or a symbol in '(thin medium thick).
+
+> set-border-bottom-width-native! :: (send an-mx-element set-border-bottom-width-native! bbw)
+
+  Sets the element's CSS border-bottom-width using
+  the string `bbw', which is either a CSS length
+  or in '("thin" "medium" "thick").
 
 > border-left-width :: (send an-mx-element border-left-width)
 
-  Retrieves a string describing the CSS border-left-width for the
-  element.
+  Retrieves a value describing the CSS
+  border-left-width for the element.  The value is
+  either a css-length or a symbol in '(thin medium
+  thick).
+
+> border-left-width-native :: (send an-mx-element border-left-width-native)
+
+  Retrieves a string describing the CSS
+  border-left-width for the element.  The string
+  is either a CSS length or in '("thin" "medium"
+  "thick").
 
 > set-border-left-width! :: (send an-mx-element set-border-left-width! blw)
 
-  Set the element's CSS border-left-width using the string `blw', 
-  which is either a CSS length, or one of "thin", "medium", or "thick".
+  Sets the element's CSS border-left-width using
+  `blw', which is either a css-length or a symbol
+  in '(thin medium thick).
+
+> set-border-left-width-native! :: (send an-mx-element set-border-left-width-native! blw)
+
+  Sets the element's CSS border-left-width using
+  the string `blw', which is either a CSS length
+  or in '("thin" "medium" "thick").
 
 > border-right-width :: (send an-mx-element border-right-width)
 
-  Retrieves a string describing the CSS border-right-width for the
-  element.
+  Retrieves a value describing the CSS
+  border-right-width for the element.  The value
+  is either a css-length or a symbol in '(thin
+  medium thick).
+
+> border-right-width-native :: (send an-mx-element border-right-width-native)
+
+  Retrieves a string describing the CSS
+  border-right-width for the element.  The string
+  is either a CSS length or in '("thin" "medium"
+  "thick").
 
 > set-border-right-width! :: (send an-mx-element set-border-right-width! brw)
 
-  Set the element's CSS border-right-width using the string `brw', 
-  which is either a CSS length, or one of "thin", "medium", or "thick".
+  Sets the element's CSS border-right-width using
+  `brw', which is either a css-length or a symbol
+  in '(thin medium thick).
+
+> set-border-right-width-native! :: (send an-mx-element set-border-right-width-native! brw)
+
+  Sets the element's CSS border-right-width using
+  the string `brw', which is either a CSS length
+  or in '("thin" "medium" "thick").
 
 > width :: (send an-mx-element width)
 
-  Retrieves a string describing the CSS width for the
-  element.
+  Retrieves a value describing the CSS width for
+  the element.  The value is a css-length, a
+  css-percentage, or 'auto.
+
+> width-native :: (send an-mx-element width-native)
+
+  Retrieves a string describing the CSS width for
+  the element.  The string is a CSS length, a CSS
+  percentage, or "auto".
 
 > set-width! :: (send an-mx-element set-width! w)
 
-  Set the element's CSS width using `w', which may be 
-  either "auto", a CSS length, or a CSS percentage.
+  Sets the element's CSS width using `w', which
+  may be a css-length, a css-percentage, or 'auto.
+
+> set-width-native! :: (send an-mx-element set-width-native! w)
+
+  Sets the element's CSS width using `w', which
+  may be a CSS length, a CSS percentage, or
+  "auto".
 
 > height :: (send an-mx-element height)
 
-  Retrieves a string describing the CSS height for the
-  element.
+  Retrieves a value describing the CSS height for
+  the element.  The value is a css-length, a
+  css-percentage, or 'auto.
+
+> height-native :: (send an-mx-element height-native)
+
+  Retrieves a string describing the CSS height for
+  the element.  The string is a CSS length, a CSS
+  percentage, or "auto".
 
 > set-height! :: (send an-mx-element set-height! h)
 
-  Set the element's CSS height using `h', which may be 
-  either "auto", a CSS length, or a CSS percentage.
+  Sets the element's CSS height using `h', which
+  may be css-length, a css-percentage, or 'auto.
+
+> set-height-native! :: (send an-mx-element set-height-native! h)
+
+  Sets the element's CSS height using `h', which
+  may be CSS length, a CSS percentage, or "auto".
 
 > top :: (send an-mx-element top)
 
-  Retrieves a string describing the CSS top for the
-  element.
+  Retrieves a value describing the CSS topt for
+  the element.  The value is a css-length, a
+  css-percentage, or 'auto.
+
+> top-native :: (send an-mx-element top-native)
+
+  Retrieves a string describing the CSS top for
+  the element.  The string is a CSS length, a CSS
+  percentage, or "auto".
 
 > set-top! :: (send an-mx-element set-top! t)
 
-  Set the element's CSS top using `t', which may be 
-  either "auto", a CSS length, or a CSS percentage.
+  Sets the element's CSS top using `t', which may
+  be css-length, a css-percentage, or 'auto.
+
+> set-top-native! :: (send an-mx-element set-top-native! t)
+
+  Sets the element's CSS top using `t', which may
+  be CSS length, a CSS percentage, or "auto".
 
 > left :: (send an-mx-element left)
 
-  Retrieves a string describing the CSS left for the
-  element.
+  Retrieves a string describing the CSS left for
+  the element.  The string is a CSS length, a CSS
+  percentage, or "auto".
+
+> left-native :: (send an-mx-element left-native)
+
+  Retrieves a string describing the CSS left for
+  the element.  The string is a CSS length, a CSS
+  percentage, or "auto".
 
 > set-left! :: (send an-mx-element set-left! l)
 
-  Set the element's CSS left using `l', which may be 
-  either "auto", a CSS length, or a CSS percentage.
+  Sets the element's CSS left using `l', which may
+  be css-length, a css-percentage, or 'auto.
+
+> set-left-native! :: (send an-mx-element set-left-native! l)
+
+  Sets the element's CSS left using `l', which may
+  be CSS length, a CSS percentage, or "auto".
 
 > z-index :: (send an-mx-element z-index)
 
-  Retrieves a string describing the CSS z-index for the
-  element.
+  Retrieves a value describing the CSS z-index for
+  the element.  The value is either an integer or
+  'auto.
+
+> z-index-native :: (send an-mx-element z-index-native)
+
+  Retrieves a value describing the CSS z-index for
+  the element.  The value is either an integer or
+  "auto".
 
 > set-z-index! :: (send an-mx-element set-z-index! zi)
 
-  Set the element's CSS z-index using `zi', which may be 
-  either "auto" or an integer.
+  Sets the element's CSS z-index using `zi', which
+  may be either an integer or 'auto.
+
+> set-z-index-native! :: (send an-mx-element set-z-index-native! zi)
+
+  Sets the element's CSS z-index using `zi', which
+  may be either an integer or "auto".

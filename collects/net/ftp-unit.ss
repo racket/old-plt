@@ -5,7 +5,7 @@
   ;;   06-06-2002
   (require (lib "date.ss")
 	   (lib "file.ss")
-	   (lib "thread.ss")
+	   (lib "port.ss")
 	   "ftp-sig.ss"
            (lib "unitsig.ss"))
 

@@ -897,7 +897,7 @@ EXCEPTIONS -----------------------------------------------------------
 
 PROCEDURES -----------------------------------------------------------
 
-> (imap-connect server-string username-string password-string mailbox-string) 
+> (imap-connect server-string username-str/bytes password-str/bytes mailbox-str/bytes) 
    -> three values: imap, message count, recent message count
 
   Establishes an IMAP connection to the given server using the given
@@ -908,9 +908,10 @@ PROCEDURES -----------------------------------------------------------
 
   See also `imap-port-number', below.
 
-  A user's primary mailbox is always called "INBOX".
+  A user's primary mailbox is always called "INBOX". (Capitalization
+  doesn't matther for that keyword.)
 
-> (imap-connect* in-port out-port username-string password-string mailbox-string) 
+> (imap-connect* in-port out-port username-str/bytes password-str/bytes mailbox-str/bytes) 
    -> three values: imap, message count, recent message count
 
   Like `imap-connect', but given input and output ports instead of a
@@ -926,7 +927,7 @@ PROCEDURES -----------------------------------------------------------
   Closes an IMAP connection forcefully (i.e., without send a close
   message to the server). A forced disconnect never fails.
 
-> (imap-reselect imap mailbox-string)
+> (imap-reselect imap mailbox-str/bytes)
   -> two values: message count and recent message count
 
   De-selects the mailbox currently selected by the connection and
@@ -939,18 +940,18 @@ PROCEDURES -----------------------------------------------------------
   determine whether a mailbox has changed at all (e.g., via a copy
   instead of a move).
 
-> (imap-examine imap mailbox-string)
+> (imap-examine imap mailbox-str/bytes)
   -> two values: message count and recent message count
 
   Like `imap-reselect', but the mailbox is selected as read-only.
 
-> (imap-noop imap mailbox-string)
+> (imap-noop imap mailbox-str/bytes)
   -> two values: message count or #f and recent message count or #f
 
   Potentially returns information like `imap-reselect', but without
   changing the mailbox selection.
 
-> (imap-status imap mailbox-string status-symbol-list)
+> (imap-status imap mailbox-str/bytes status-symbol-list)
   -> list of status values
 
   Requests information about a mailbox from the server. The
@@ -973,7 +974,7 @@ PROCEDURES -----------------------------------------------------------
 
     * 'uid - value is an integer
     * 'header - value is a header (string; see the head package)
-    * 'body - value is a string (with CRLF-separated lines)
+    * 'body - value is a byte string (with CRLF-separated lines)
     * 'flags - value is a list of imap flags
     
   The return value is a list of entry items in parallel to
@@ -982,9 +983,9 @@ PROCEDURES -----------------------------------------------------------
 
   Example:
     (imap-get-message imap '(1 3 5) '(uid header))
-    ; => ((107 "From: larry@stooges.com ...")
-          (110 "From: moe@stooges.com ...")
-          (112 "From: curly@stooges.com ..."))
+    ; => ((107 #"From: larry@stooges.com ...")
+          (110 #"From: moe@stooges.com ...")
+          (112 #"From: curly@stooges.com ..."))
 
 > (imap-flag->symbol imap-flag) -> symbol
 > (symbol->imap-flag symbol) -> imap-flag
@@ -1039,24 +1040,24 @@ PROCEDURES -----------------------------------------------------------
   Purges every message currently marked with the '|\Deleted| flag from
   the mailbox.
 
-> (imap-copy imap msg-num-list dest-mailbox-string) -> void
+> (imap-copy imap msg-num-list dest-mailbox-str/bytes) -> void
 
   Copies the specified messages from the currently selected mailbox to
   the specified mailbox.
 
-> (imap-append imap mailbox-string message-string) -> void
+> (imap-append imap mailbox-string message-str/bytes) -> void
 
   Adds a new message (containing message-string) to the given mailbox
 
-> (imap-mailbox-exists? imap mailbox-string) -> bool
+> (imap-mailbox-exists? imap mailbox-str/bytes) -> bool
 
   Returns #t if the specified mailbox exists, #f otherwise.
 
-> (imap-create-mailbox imap mailbox-string) -> void
+> (imap-create-mailbox imap mailbox-str/bytes) -> void
 
   Creates the specified mailbox. (It must not exist already.)
 
-> (imap-list-child-mailboxes imap mailbox-string [delimiter-string])
+> (imap-list-child-mailboxes imap mailbox-str/bytes [delimiter-str/bytes])
   -> list of mailbox-info lists
 
   Returns information about sub-mailboxes of the given mailbox.  If
@@ -1070,13 +1071,13 @@ PROCEDURES -----------------------------------------------------------
     * a list of imap flags for the mailbox
     * the mailbox's name
 
-> (imap-get-hierarchy-delimiter imap) -> string
+> (imap-get-hierarchy-delimiter imap) -> bytes
 
   Returns the server-specific string that is used as a separator in
   mailbox path names.
 
-> (imap-mailbox-flags imap mailbox-string)
-  ->list of imap flags
+> (imap-mailbox-flags imap mailbox-str/bytes)
+  -> list of imap flags
   
   Returns a list of imap flags for the given mailbox.
   

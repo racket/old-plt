@@ -20,7 +20,7 @@
                 (eq? (system-type) 'macosx))
 	    (let loop ((paths sendmail-search-path))
 	      (if (null? paths)
-		  (raise (make-exn:misc:unsupported
+		  (raise (make-exn:fail:unsupported
 			  "unable to find sendmail on this Unix variant"
 			  (current-continuation-marks)))
 		  (let ((p (build-path (car paths) "sendmail")))
@@ -28,7 +28,7 @@
 			     (memq 'execute (file-or-directory-permissions p)))
 			p
 			(loop (cdr paths))))))
-	    (raise (make-exn:misc:unsupported
+	    (raise (make-exn:fail:unsupported
 		    "sendmail only available under Unix"
 		    (current-continuation-marks)))))
 

@@ -140,40 +140,60 @@
 				eol-k eop-k)
 			  (error 'imap-read "failure reading atom: ~a" s)))])])))
 
+      (define (get-response r id info-handler continuation-handler)
+	(let loop ()
+	  (let ([l (read-bytes-line r eol)])
+	    ;; (log "raw-reply: ~s~n" l)
+	    (cond
+	     [(and id (starts-with? l id))
+	      (let ([reply (imap-read (skip l id) r)])
+		(log "response: ~a~n" reply)
+		reply)]
+	     [(starts-with? l #"* ")
+	      (let ([info (imap-read (skip l 2) r)])
+		(log "info: ~s~n" info)
+		(info-handler info))
+	      (loop)]
+	     [(starts-with? l #"+ ")
+	      (if (null? continuation-handler)
+		  (error 'imap-send "unexpected continuation request: ~a" l)
+		  ((car continuation-handler) loop (imap-read (skip l 2) r)))]
+	     [else
+	      (log-warning "warning: unexpected response for ~a: ~a~n" id l)
+	      (loop)]))))
+
+      ;; A cmd is
+      ;;  * (box v) - send v literally via ~a
+      ;;  * string or bytes - protect as necessary
+      ;;  * (cons cmd null) - same as cmd
+      ;;  * (cons cmd cmd) - send cmd, space, cmd
+
       (define (imap-send r w cmd info-handler . continuation-handler)
 	(let ([id (make-msg-id)])
 	  (log "sending ~a~a~n" id cmd)
-	  (fprintf w "~a~a\r\n" id cmd)
-	  (let loop ()
-	    (let ([l (read-bytes-line r eol)])
-	      ;; (log "raw-reply: ~s~n" l)
-	      (cond
-	       [(starts-with? l id)
-		(let ([reply (imap-read (skip l id) r)])
-		  (log "response: ~a~n" reply)
-		  reply)]
-	       [(starts-with? l #"* ")
-		(let ([info (imap-read (skip l 2) r)])
-		  (log "info: ~s~n" info)
-		  (info-handler info))
-		(loop)]
-	       [(starts-with? l #"+ ")
-                (if (null? continuation-handler)
-                    (error 'imap-send "unexpected continuation request: ~a" l)
-                    (begin
-                      ((car continuation-handler) (imap-read (skip l 2) r))
-                      (loop)))]
-	       [else
-		(log-warning "warning: unexpected response for ~a: ~a" id l)
-		(loop)])))))
-
-      ;; str/bytes->arg is still not quite right.  It should use {n}crnl prefixes.
-      (define (str/bytes->arg s)
-	(if (or (regexp-match #rx#"[ *]" s)
-                (equal? s "")
-		(equal? s #""))
-	    (format "\"~a\"" s)
-	    s))
+	  (fprintf w "~a" id)
+	  (let loop ([cmd cmd])
+	    (cond
+	     [(box? cmd) (fprintf w "~a" (unbox cmd))]
+	     [(string? cmd) (loop (string->bytes/utf-8 cmd))]
+	     [(bytes? cmd) (if (or (regexp-match #rx#"[ *\"\r\n]" cmd)
+				   (equal? cmd #""))
+			       (if (regexp-match #rx#"[\"\r\n]" cmd)
+				   (begin
+				     ;; Have to send size, then continue if the
+				     ;;  server consents
+				     (fprintf w "{~a}\r\n" (bytes-length cmd))
+				     (get-response r #f void (list (lambda (gloop data) (void))))
+				     ;; Continue by writing the data
+				     (write-bytes cmd w))
+				   (fprintf w "\"~a\"" cmd))
+			       (fprintf w "~a" cmd))]
+	     [(and (pair? cmd) (null? (cdr cmd))) (loop (car cmd))]
+	     [(pair? cmd) (begin (loop (car cmd))
+				 (fprintf w " ")
+				 (loop (cdr cmd)))]))
+	  (fprintf w "\r\n")
+	  (get-response r id info-handler continuation-handler)))
 
       (define (check-ok reply)
 	(unless (and (pair? reply)
@@ -192,10 +212,7 @@
 			    (raise x))])
 	  
 	  (check-ok (imap-send r w "NOOP" void))
-	  (let ([reply (imap-send r w (format "LOGIN ~a ~a" 
-					(str/bytes->arg username) 
-					(str/bytes->arg password)) 
-			 void)])
+	  (let ([reply (imap-send r w (list "LOGIN" username password) void)])
 	    (if (and (pair? reply) (tag-eq? 'NO (car reply)))
 		(error 'imap-connect "username or password rejected by server: ~s" reply)
 		(check-ok reply)))
@@ -208,7 +225,7 @@
 		init-recent)))))
 
       (define (imap-connect server username password inbox)
-					; => imap count-k recent-k
+	;; => imap count-k recent-k
 	(let-values ([(r w) (if debug-via-stdio?
 				(begin
 				  (printf "stdin == ~a~n" server)
@@ -217,22 +234,22 @@
 	  (imap-connect* r w username password inbox)))
       
       (define (imap-reselect imap inbox)
-        (imap-selectish-command imap (format "SELECT ~a" (str/bytes->arg inbox))))
+        (imap-selectish-command imap (list "SELECT" inbox)))
 	
       (define (imap-examine imap inbox)
-	(imap-selectish-command imap (format "EXAMINE ~a" (str/bytes->arg inbox))))
+	(imap-selectish-command imap (list "EXAMINE" inbox)))
 
       ;; returns (values #f #f) if no change since last check
       (define (imap-noop imap)
         (imap-selectish-command imap "NOOP"))
 
       ;; icky name, someone think of something better!
-      (define (imap-selectish-command imap command-string)
+      (define (imap-selectish-command imap cmd)
         (let ([r (imap-connection-r imap)]
               [w (imap-connection-w imap)])
           (let ([init-count #f]
                 [init-recent #f])
-            (check-ok (imap-send r w command-string
+            (check-ok (imap-send r w cmd
                                 (lambda (i)
                                   (when (and (list? i) (= 2 (length i)))
                                     (cond
@@ -251,7 +268,8 @@
 	(let ([r (imap-connection-r imap)]
 	      [w (imap-connection-w imap)])
 	  (let ([results null])
-	    (check-ok (imap-send r w (format "STATUS ~a ~a" (str/bytes->arg inbox) flags)
+	    (check-ok (imap-send r w (list "STATUS" inbox 
+					   (box (format "~a" flags)))
 				 (lambda (i)
 				   (when (and (list? i) (= 3 (length i))
 					      (tag-eq? (car i) 'STATUS))
@@ -292,9 +310,11 @@
 	  (if (null? msgs)
 	      null
 	      (let ([results null])
-		(imap-send r w (format "FETCH ~a (~a)"
-				       (splice msgs ",")
-				       (splice (map (lambda (f) (cadr (assoc f field-names))) field-list) " "))
+		(imap-send r w (list "FETCH"
+				     (box (splice msgs ","))
+				     (box
+				      (format "(~a)"
+					      (splice (map (lambda (f) (cadr (assoc f field-names))) field-list) " "))))
 			   (lambda (i)
 			     (when (and (list? i) (<= 2 (length i))
 					(tag-eq? (cadr i) 'FETCH))
@@ -322,17 +342,17 @@
 	      [w (imap-connection-w imap)])
 	  (check-ok 
 	   (imap-send r w 
-		      (format "STORE ~a ~a ~a"
-			      (splice msgs ",")
-			      (case mode
-				[(+) "+FLAGS.SILENT"]
-				[(-) "-FLAGS.SILENT"]
-				[(!) "FLAGS.SILENT"]			    
-				[else (raise-type-error
-				       'imap-store
-				       "mode: '!, '+, or '-"
-				       mode)])
-			      flags)
+		      (list "STORE"
+			    (box (splice msgs ","))
+			    (case mode
+			      [(+) "+FLAGS.SILENT"]
+			      [(-) "-FLAGS.SILENT"]
+			      [(!) "FLAGS.SILENT"]			    
+			      [else (raise-type-error
+				     'imap-store
+				     "mode: '!, '+, or '-"
+				     mode)])
+			    (box (format "~a" flags)))
 		      void))))
 
       (define (imap-copy imap msgs dest-mailbox)
@@ -340,20 +360,26 @@
 	      [w (imap-connection-w imap)])
 	  (check-ok 
 	   (imap-send r w
-		      (format "COPY ~a ~a"
-			      (splice msgs ",")
-			      (str/bytes->arg dest-mailbox))
+		      (list "COPY"
+			    (box (splice msgs ","))
+			    dest-mailbox)
 		      void))))
       
       (define (imap-append imap dest-mailbox msg)
         (let ([r (imap-connection-r imap)]
-              [w (imap-connection-w imap)])
+              [w (imap-connection-w imap)]
+	      [msg (if (bytes? msg)
+		       msg
+		       (string->bytes/utf-8 msg))])
           (check-ok
-           (imap-send r w (format "APPEND ~a (\\Seen) {~a}"
-                                  dest-mailbox (string-length msg))
+           (imap-send r w (list "APPEND"
+				dest-mailbox
+				(box "(\\Seen)")
+				(box (format "{~a}" (bytes-length msg))))
                       void
-                      (lambda (contin)
-                        (fprintf w "~a~n" msg))))))
+                      (lambda (loop contin)
+                        (fprintf w "~a\r\n" msg)
+			(loop))))))
                       
       
       (define (imap-expunge imap)
@@ -367,7 +393,9 @@
 	      [w (imap-connection-w imap)]
 	      [exists? #f])
 	  (check-ok (imap-send r w 
-			       (format "LIST \"\" ~s" (str/bytes->arg mailbox))
+			       (list "LIST"
+				     ""
+				     mailbox)
 			       (lambda (i)
 				 (when (and (pair? i)
 					    (tag-eq? (car i) 'LIST))
@@ -379,7 +407,7 @@
 	      [w (imap-connection-w imap)])
 	  (check-ok 
 	   (imap-send r w 
-		      (format "CREATE ~a" (str/bytes->arg mailbox))
+		      (list "CREATE" mailbox)
 		      void))))
       
       (define (imap-get-hierarchy-delimiter imap)
@@ -387,7 +415,7 @@
 	       [w (imap-connection-w imap)]
 	       [result #f])
 	  (check-ok
-	   (imap-send r w "LIST \"\" \"\""
+	   (imap-send r w (list "LIST" "" "")
 		      (lambda (x)
 			(set! result (caddr x)))))
 	  result))
@@ -423,7 +451,7 @@
                [w (imap-connection-w imap)]
                [sub-folders null])
           (check-ok
-           (imap-send r w (format "LIST \"\" ~a" (str/bytes->arg pattern))
+           (imap-send r w (list "LIST" "" pattern)
                       (lambda (x)
                         (let ([flags (cadr x)]
                               [name (cadddr x)])

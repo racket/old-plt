@@ -63,9 +63,14 @@
     (define get-list/sym/lit-micro
       (lambda (kwd)
 	(lambda (vocab)
-	  (hash-table-get (vocabulary-record-this vocab)
-	    kwd
-	    (lambda () #f)))))
+	  (let loop ((vocab vocab))
+	    (hash-table-get (vocabulary-record-this vocab)
+	      kwd
+	      (lambda ()
+		(let ((v (vocabulary-record-rest vocab)))
+		  (if v
+		    (loop v)
+		    #f))))))))
 
     (define get-list-micro (get-list/sym/lit-micro list-micro-kwd))
     (define get-ilist-micro (get-list/sym/lit-micro ilist-micro-kwd))
@@ -76,10 +81,10 @@
 
     (define expand-expr
       (lambda (expr env attributes vocab)
-	(printf "Expanding~n") (pretty-print (sexp->raw expr))
+;	(printf "Expanding~n") (pretty-print (sexp->raw expr))
 ;	(printf "Expanding~n") (pretty-print expr)
 ;	(printf "Expanding~n") (display expr)
-	(printf "Expanding in ~s~n" (get-vocabulary-name vocab))
+;	(printf "Expanding in ~s~n" (get-vocabulary-name vocab))
 ;	(printf "in vocabulary~n") (print-env vocab)
 ;	(printf "in~n") (print-env env) (newline)
 	(cond

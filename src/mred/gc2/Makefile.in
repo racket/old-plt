@@ -211,8 +211,8 @@ xsrc/wx_cgrec.cc: $(srcdir)/../wxme/wx_cgrec.cxx ../wxme/wx_cgrec.o $(XFORMDEP)
 xsrc/wxscheme.cc: $(srcdir)/../wxs/wxscheme.cxx ../wxs/wxscheme.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../wxs/wxscheme.cxx xsrc/wxscheme.cc
 
-xsrc/xcglue.c: $(srcdir)/../mzscheme/utils/xcglue.c ../wxs/xcglue.o $(XFORMDEP)
-	$(XFORM) $(srcdir)/../mzscheme/utils/xcglue.c xsrc/xcglue.c
+xsrc/xcglue.c: $(srcdir)/../../mzscheme/utils/xcglue.c ../wxs/xcglue.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../../mzscheme/utils/xcglue.c xsrc/xcglue.c
 
 
 xsrc/mred.cc: $(srcdir)/../mred.cxx ../mred.o $(XFORMDEP)
@@ -489,8 +489,8 @@ mredx.o: xsrc/mredx.cc
 xcglue.o: xsrc/xcglue.c
 	$(CC) -DGC2_JUST_MACROS $(GCPREINC) -c $(CFLAGS) -o xcglue.o xsrc/xcglue.c
 
-wxGC.o: $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../mzscheme/gc2.h $(srcdir)/../mzscheme/src/stypes.h
-	$(CXX) -DMZ_PRECISE_GC -I$(srcdir)/../mzscheme/ $(CPPFLAGS) -c -o wxGC.o $(srcdir)/../wxcommon/wxGC.cxx
+wxGC.o: $(srcdir)/../../wxcommon/wxGC.cxx $(srcdir)/../../mzscheme/gc2/gc2.h $(srcdir)/../../mzscheme/src/stypes.h
+	$(CXX) -DMZ_PRECISE_GC -I$(srcdir)/../../mzscheme/gc2/ $(CPPFLAGS) -c -o wxGC.o $(srcdir)/../../wxcommon/wxGC.cxx
 
 XSRCS = xsrc/Window.cc \
   xsrc/Button.cc \
@@ -730,70 +730,70 @@ XOBJS = Window.o \
   wxGC.o
 
 
-MZOBJS = ../mzscheme/salloc.o \
-	../mzscheme/bignum.o \
-	../mzscheme/bool.o \
-	../mzscheme/builtin.o \
-	../mzscheme/char.o \
-	../mzscheme/complex.o \
-	../mzscheme/dynext.o \
-	../mzscheme/env.o \
-	../mzscheme/error.o \
-	../mzscheme/eval.o \
-	../mzscheme/file.o \
-	../mzscheme/fun.o \
-	../mzscheme/hash.o \
-	../mzscheme/image.o \
-	../mzscheme/list.o \
-	../mzscheme/network.o \
-	../mzscheme/numarith.o \
-	../mzscheme/number.o \
-	../mzscheme/numcomp.o \
-	../mzscheme/numstr.o \
-        ../mzscheme/objclass.o \
-        ../mzscheme/object.o \
-	../mzscheme/port.o \
-	../mzscheme/portfun.o \
-	../mzscheme/print.o \
-	../mzscheme/process.o \
-	../mzscheme/promise.o \
-        ../mzscheme/rational.o \
-	../mzscheme/read.o \
-	../mzscheme/regexp.o \
-	../mzscheme/sema.o \
-	../mzscheme/setjmpup.o \
-	../mzscheme/string.o \
-	../mzscheme/struct.o \
-	../mzscheme/symbol.o \
-	../mzscheme/syntax.o \
-	../mzscheme/type.o \
-        ../mzscheme/unit.o \
-        ../mzscheme/unitsig.o \
-	../mzscheme/vector.o \
-	../mzscheme/gc2.o
+MZOBJS = ../../mzscheme/gc2/salloc.o \
+	../../mzscheme/gc2/bignum.o \
+	../../mzscheme/gc2/bool.o \
+	../../mzscheme/gc2/builtin.o \
+	../../mzscheme/gc2/char.o \
+	../../mzscheme/gc2/complex.o \
+	../../mzscheme/gc2/dynext.o \
+	../../mzscheme/gc2/env.o \
+	../../mzscheme/gc2/error.o \
+	../../mzscheme/gc2/eval.o \
+	../../mzscheme/gc2/file.o \
+	../../mzscheme/gc2/fun.o \
+	../../mzscheme/gc2/hash.o \
+	../../mzscheme/gc2/image.o \
+	../../mzscheme/gc2/list.o \
+	../../mzscheme/gc2/network.o \
+	../../mzscheme/gc2/numarith.o \
+	../../mzscheme/gc2/number.o \
+	../../mzscheme/gc2/numcomp.o \
+	../../mzscheme/gc2/numstr.o \
+        ../../mzscheme/gc2/objclass.o \
+        ../../mzscheme/gc2/object.o \
+	../../mzscheme/gc2/port.o \
+	../../mzscheme/gc2/portfun.o \
+	../../mzscheme/gc2/print.o \
+	../../mzscheme/gc2/process.o \
+	../../mzscheme/gc2/promise.o \
+        ../../mzscheme/gc2/rational.o \
+	../../mzscheme/gc2/read.o \
+	../../mzscheme/gc2/regexp.o \
+	../../mzscheme/gc2/sema.o \
+	../../mzscheme/gc2/setjmpup.o \
+	../../mzscheme/gc2/string.o \
+	../../mzscheme/gc2/struct.o \
+	../../mzscheme/gc2/symbol.o \
+	../../mzscheme/gc2/syntax.o \
+	../../mzscheme/gc2/type.o \
+        ../../mzscheme/gc2/unit.o \
+        ../../mzscheme/gc2/unitsig.o \
+	../../mzscheme/gc2/vector.o \
+	../../mzscheme/gc2/gc2.o
 
-XWOBJS = ../wxxt/src/XWidgets/xwArrow.o \
-    ../wxxt/src/XWidgets/xwCommon.o \
-    ../wxxt/src/XWidgets/xwHScrollb.o \
-    ../wxxt/src/XWidgets/xwRowCol.o \
-    ../wxxt/src/XWidgets/xwSlider2.o \
-    ../wxxt/src/XWidgets/xwVScrollb.o \
-    ../wxxt/src/XWidgets/xwBoard.o \
-    ../wxxt/src/XWidgets/xwEnforcer.o \
-    ../wxxt/src/XWidgets/xwLabel.o \
-    ../wxxt/src/XWidgets/xwScrollText.o \
-    ../wxxt/src/XWidgets/xwTabString.o \
-    ../wxxt/src/XWidgets/xwscroll.o \
-    ../wxxt/src/XWidgets/xwButton.o \
-    ../wxxt/src/XWidgets/xwFrame.o \
-    ../wxxt/src/XWidgets/xwMenu.o \
-    ../wxxt/src/XWidgets/xwScrollWin.o \
-    ../wxxt/src/XWidgets/xwToggle.o \
-    ../wxxt/src/XWidgets/xwCanvas.o \
-    ../wxxt/src/XWidgets/xwGroup.o \
-    ../wxxt/src/XWidgets/xwMultiList.o \
-    ../wxxt/src/XWidgets/xwScrollbar.o \
-    ../wxxt/src/XWidgets/xwTools3d.o
+XWOBJS = ../../wxxt/src/XWidgets/xwArrow.o \
+    ../../wxxt/src/XWidgets/xwCommon.o \
+    ../../wxxt/src/XWidgets/xwHScrollb.o \
+    ../../wxxt/src/XWidgets/xwRowCol.o \
+    ../../wxxt/src/XWidgets/xwSlider2.o \
+    ../../wxxt/src/XWidgets/xwVScrollb.o \
+    ../../wxxt/src/XWidgets/xwBoard.o \
+    ../../wxxt/src/XWidgets/xwEnforcer.o \
+    ../../wxxt/src/XWidgets/xwLabel.o \
+    ../../wxxt/src/XWidgets/xwScrollText.o \
+    ../../wxxt/src/XWidgets/xwTabString.o \
+    ../../wxxt/src/XWidgets/xwscroll.o \
+    ../../wxxt/src/XWidgets/xwButton.o \
+    ../../wxxt/src/XWidgets/xwFrame.o \
+    ../../wxxt/src/XWidgets/xwMenu.o \
+    ../../wxxt/src/XWidgets/xwScrollWin.o \
+    ../../wxxt/src/XWidgets/xwToggle.o \
+    ../../wxxt/src/XWidgets/xwCanvas.o \
+    ../../wxxt/src/XWidgets/xwGroup.o \
+    ../../wxxt/src/XWidgets/xwMultiList.o \
+    ../../wxxt/src/XWidgets/xwScrollbar.o \
+    ../../wxxt/src/XWidgets/xwTools3d.o
 
 xform: $(XSRCS) xcglue.c
 

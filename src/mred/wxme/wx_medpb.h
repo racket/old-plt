@@ -40,6 +40,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   long FindScrollLine(float y);
 
   wxMediaBuffer *CopySelf(void);
+  void CopySelfTo(wxMediaBuffer *b);
   float GetDescent(void);
   float GetSpace(void);
   char *GetFlattenedText(long *got=NULL);

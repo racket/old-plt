@@ -24,6 +24,7 @@ extern Scheme_Object *objscheme_bundle_wxMouseEvent(class wxMouseEvent *);
 extern class wxCursor *objscheme_unbundle_wxCursor(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxKeyEvent(class wxKeyEvent *);
 extern Scheme_Object *objscheme_bundle_wxMouseEvent(class wxMouseEvent *);
+extern Scheme_Object *objscheme_bundle_wxMediaBuffer(class wxMediaBuffer *);
 extern Scheme_Object *objscheme_bundle_wxSnip(class wxSnip *);
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
 extern class wxMediaStreamOut *objscheme_unbundle_wxMediaStreamOut(Scheme_Object *, const char *, int);
@@ -68,6 +69,7 @@ extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, cons
 extern Scheme_Object *objscheme_bundle_wxCursor(class wxCursor *);
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
+extern class wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char *, int);
 extern class wxSnip *objscheme_unbundle_wxSnip(Scheme_Object *, const char *, int);
 extern class wxStyleDelta *objscheme_unbundle_wxStyleDelta(Scheme_Object *, const char *, int);
 #endif

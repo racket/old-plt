@@ -88,6 +88,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 
 
 
+
 // X are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
 
@@ -168,6 +169,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
+  void CopySelfTo(class wxMediaBuffer* x0);
 };
 
 Scheme_Object *os_wxMediaBuffer_class;
@@ -1425,6 +1427,37 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent& x0)
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "copy-self-to", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+  } else sj = 1;
+  if (sj) {
+    if (method && !OBJSCHEME_PRIM_METHOD(method))
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+    return;
+  } else {
+  
+  p[0] = objscheme_bundle_wxMediaBuffer(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -3695,6 +3728,27 @@ static Scheme_Object *os_wxMediaBufferOnEvent(Scheme_Object *obj, int n,  Scheme
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaBufferCopySelfTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxMediaBuffer* x0;
+
+  
+  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "wx:media-buffer%::copy-self-to", 0);
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->CopySelfTo(x0);
+  else
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->CopySelfTo(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaBufferKill(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -3866,7 +3920,7 @@ void objscheme_setup_wxMediaBuffer(void *env)
 if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class,  "wx:media-buffer%", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "wx:media-buffer%", "wx:object%", NULL, 111);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "wx:media-buffer%", "wx:object%", NULL, 112);
 
   scheme_add_method_w_arity(os_wxMediaBuffer_class,"get-class-name",objscheme_classname_os_wxMediaBuffer, 0, 0);
 
@@ -3972,6 +4026,7 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "adjust-cursor", os_wxMediaBufferAdjustCursor, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-char", os_wxMediaBufferOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-event", os_wxMediaBufferOnEvent, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "copy-self-to", os_wxMediaBufferCopySelfTo, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "kill", os_wxMediaBufferKill, 0, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "paste", os_wxMediaBufferPaste, 0, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "copy", os_wxMediaBufferCopy, 0, 2);

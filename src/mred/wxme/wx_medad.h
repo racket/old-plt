@@ -171,6 +171,7 @@ class wxMediaBuffer : public wxObject
   virtual long FindScrollLine(float y) = 0;
 
   virtual wxMediaBuffer *CopySelf(void) = 0;
+  virtual void CopySelfTo(wxMediaBuffer *b);
   virtual float GetDescent(void) = 0;
   virtual float GetSpace(void) = 0;
   virtual char *GetFlattenedText(long *got = NULL) = 0;

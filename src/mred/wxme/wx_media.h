@@ -128,7 +128,8 @@ class wxMediaEdit : public wxMediaBuffer
   ~wxMediaEdit();
 
   wxMediaBuffer *CopySelf(void);
-
+  void CopySelfTo(wxMediaBuffer *b);
+  
   /* Usually called by wxMediaAdmin */
   virtual void OnEvent(wxMouseEvent &event);
   virtual void OnChar(wxKeyEvent &event);

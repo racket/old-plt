@@ -142,6 +142,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 			
 
 
@@ -377,6 +378,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
+  void CopySelfTo(class wxMediaBuffer* x0);
 };
 
 Scheme_Object *os_wxMediaEdit_class;
@@ -2088,6 +2090,37 @@ void os_wxMediaEdit::OnEvent(class wxMouseEvent& x0)
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaEdit::CopySelfTo(class wxMediaBuffer* x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "copy-self-to", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+  } else sj = 1;
+  if (sj) {
+    if (method && !OBJSCHEME_PRIM_METHOD(method))
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+    wxMediaEdit::CopySelfTo(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_wxMediaBuffer(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -5454,6 +5487,27 @@ static Scheme_Object *os_wxMediaEditOnEvent(Scheme_Object *obj, int n,  Scheme_O
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaEditCopySelfTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxMediaBuffer* x0;
+
+  
+  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "wx:media-edit%::copy-self-to", 0);
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->wxMediaEdit::CopySelfTo(x0);
+  else
+    ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->CopySelfTo(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxMediaEdit *realobj;
@@ -5495,7 +5549,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class,  "wx:media-edit%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "wx:media-edit%", "wx:media-buffer%", os_wxMediaEdit_ConstructScheme, 123);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "wx:media-edit%", "wx:media-buffer%", os_wxMediaEdit_ConstructScheme, 124);
 
   scheme_add_method_w_arity(os_wxMediaEdit_class,"get-class-name",objscheme_classname_os_wxMediaEdit, 0, 0);
 
@@ -5621,6 +5675,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "adjust-cursor", os_wxMediaEditAdjustCursor, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-char", os_wxMediaEditOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-event", os_wxMediaEditOnEvent, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "copy-self-to", os_wxMediaEditCopySelfTo, 1, 1);
 
 
   scheme_made_class(os_wxMediaEdit_class);

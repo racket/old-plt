@@ -56,6 +56,7 @@
 
 
 
+
   
 
 
@@ -131,6 +132,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   class wxCursor* AdjustCursor(class wxMouseEvent& x0);
   void OnChar(class wxKeyEvent& x0);
   void OnEvent(class wxMouseEvent& x0);
+  void CopySelfTo(class wxMediaBuffer* x0);
 };
 
 Scheme_Object *os_wxMediaPasteboard_class;
@@ -1988,6 +1990,37 @@ void os_wxMediaPasteboard::OnEvent(class wxMouseEvent& x0)
   } else {
   
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
+}
+
+void os_wxMediaPasteboard::CopySelfTo(class wxMediaBuffer* x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "copy-self-to", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+  } else sj = 1;
+  if (sj) {
+    if (method && !OBJSCHEME_PRIM_METHOD(method))
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+    wxMediaPasteboard::CopySelfTo(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_wxMediaBuffer(x0);
   
 
   v = scheme_apply(method, 1, p);
@@ -4131,6 +4164,27 @@ static Scheme_Object *os_wxMediaPasteboardOnEvent(Scheme_Object *obj, int n,  Sc
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaPasteboardCopySelfTo(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  class wxMediaBuffer* x0;
+
+  
+  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "wx:media-pasteboard%::copy-self-to", 0);
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::CopySelfTo(x0);
+  else
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->CopySelfTo(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardKill(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4255,7 +4309,7 @@ void objscheme_setup_wxMediaPasteboard(void *env)
 if (os_wxMediaPasteboard_class) {
     objscheme_add_global_class(os_wxMediaPasteboard_class,  "wx:media-pasteboard%", env);
 } else {
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "wx:media-pasteboard%", "wx:media-buffer%", os_wxMediaPasteboard_ConstructScheme, 93);
+  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "wx:media-pasteboard%", "wx:media-buffer%", os_wxMediaPasteboard_ConstructScheme, 94);
 
   scheme_add_method_w_arity(os_wxMediaPasteboard_class,"get-class-name",objscheme_classname_os_wxMediaPasteboard, 0, 0);
 
@@ -4347,6 +4401,7 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "adjust-cursor", os_wxMediaPasteboardAdjustCursor, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-char", os_wxMediaPasteboardOnChar, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-event", os_wxMediaPasteboardOnEvent, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy-self-to", os_wxMediaPasteboardCopySelfTo, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "kill", os_wxMediaPasteboardKill, 0, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "paste", os_wxMediaPasteboardPaste, 0, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "copy", os_wxMediaPasteboardCopy, 0, 2);

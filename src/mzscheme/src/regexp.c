@@ -2748,7 +2748,9 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
     source = SCHEME_BYTE_STR_VAL(bs);
     sourcelen = SCHEME_BYTE_STRTAG_VAL(bs);
     if (r->is_utf8)
-    was_non_byte = 1;
+      was_non_byte = 1;
+    else
+      was_non_byte = 0;
   } else {
     source = SCHEME_BYTE_STR_VAL(argv[1]);
     sourcelen = SCHEME_BYTE_STRTAG_VAL(argv[1]);

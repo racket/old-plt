@@ -2354,6 +2354,7 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
 
   if (argc && !SCHEME_INPORTP(argv[0]))
     scheme_wrong_type(who, "input-port", 0, argc, argv);
+
   if (argc > 1) {
     Scheme_Object *v = argv[1];
     if (SAME_OBJ(v, any_symbol)) {
@@ -2383,10 +2384,13 @@ do_read_line (int as_bytes, const char *who, int argc, Scheme_Object *argv[])
     scheme_flush_orig_outputs();
 
   if (as_bytes) {
+    buf = NULL;
     bbuf = (char *)onstack;
     size *= sizeof(mzchar);
-  } else
+  } else {
+    bbuf = NULL;
     buf = onstack;
+  }
 
   while (1) {
     if (as_bytes)

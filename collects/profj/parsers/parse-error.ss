@@ -55,11 +55,11 @@
                   (let ((next (getter)))
                     (if (id-token? (get-tok next))
                         (parse-field first-tok next 'start getter)
-                        (parse-expression first-tok next 'name getter #f))))
+                        (parse-expression first-tok next 'name getter #f #f))))
                  (else
                   (if (prim-type? (get-tok first-tok))
                       (parse-field first-tok (getter) 'start getter)
-                      (parse-expression null first-tok 'start getter #f))))))
+                      (parse-expression null first-tok 'start getter #f #f))))))
           
           (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
@@ -91,11 +91,11 @@
                   (let ((next (getter)))
                     (if (id-token? (get-tok next))
                         (parse-statement first-tok next 'local getter #t #f #f)
-                        (parse-expression first-tok next 'name getter #t))))
+                        (parse-expression first-tok next 'name getter #t #f))))
                  (else
                   (if (prim-type? (get-tok first-tok))
                       (parse-statement null first-tok 'start getter #t #f #f)
-                      (parse-expression null first-tok 'start getter #t))))))
+                      (parse-expression null first-tok 'start getter #t #f))))))
           (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
               (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
@@ -132,11 +132,11 @@
                   (let ((next (getter)))
                     (if (id-token? (get-tok next))
                         (parse-statement first-tok next 'local getter #t #f #f)
-                        (parse-expression first-tok next 'name getter #t)))) 
+                        (parse-expression first-tok next 'name getter #t #f)))) 
                  (else 
                   (if (prim-type? (get-tok first-tok))
                       (parse-statement null first-tok 'start getter #t #f #f)
-                      (parse-expression null first-tok 'start getter #t))))))
+                      (parse-expression null first-tok 'start getter #t #f))))))
           (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
               (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
@@ -667,7 +667,7 @@
                      ((and (advanced?) (o-brace? (get-tok assign-exp)))
                       (parse-members next (parse-array-init assign-exp (getter) 'start getter) 'field-init-end getter #f just-method?))
                      (else
-                      (parse-members next (parse-expression null assign-exp 'start getter #f) 'field-init-end getter #f just-method?)))))
+                      (parse-members next (parse-expression null assign-exp 'start getter #f #f) 'field-init-end getter #f just-method?)))))
                 ((o-paren? n-tok) (parse-members next (getter) 'method-parms getter abstract-method? just-method?))
                 ((open-separator? n-tok) 
                  (parse-error (format "Method parameters must begin with ( found ~a" n-out) srt ne))
@@ -732,7 +732,7 @@
                      ((and (advanced?) (o-brace? (get-tok assign-exp)))
                       (parse-members next (parse-array-init assign-exp (getter) 'start getter) 'field-init-end getter #f just-method?))
                      (else
-                      (parse-members next (parse-expression null assign-exp 'start getter #f) 'field-init-end getter #f just-method?)))))
+                      (parse-members next (parse-expression null assign-exp 'start getter #f #f) 'field-init-end getter #f just-method?)))))
                 ((id-token? n-tok)
                  (parse-error (format "Fields must be separated by commas, ~a not allowed" n-out) srt ne))
                 (else (parse-error (format "Expected ; to end field, or more field names, found ~a" n-out) srt ne)))))
@@ -1073,7 +1073,7 @@
            ((O_BRACE) (parse-array-init pre (parse-array-init cur-tok (getter) 'start getter) 'comma-or-end getter))
            ((C_BRACE) (getter))
            ((SEMI_COLON) (parse-error "Expected a '}' to close array before ending field" ps end))
-           (else (parse-array-init pre (parse-expression null cur-tok 'start getter #f) 'comma-or-end getter))))
+           (else (parse-array-init pre (parse-expression null cur-tok 'start getter #f #f) 'comma-or-end getter))))
         ((comma-or-end)
          (case kind
            ((EOF) (parse-error "Expected ',' for more expressions of the array or '}' to end it" ps pe))
@@ -1088,7 +1088,7 @@
                 ((o-brace? next-tok)
                  (parse-array-init pre (parse-array-init next (getter) 'start getter) 'comma-or-end getter))
                 (else
-                 (parse-array-init pre (parse-expression null next 'start getter #f) 'comma-or-end getter)))))
+                 (parse-array-init pre (parse-expression null next 'start getter #f #f) 'comma-or-end getter)))))
            (else
             (parse-error (format "Items of the array must be separated by ',' or end with '}' to close the array. Found ~a" out)
                          ps end)))))))
@@ -1121,7 +1121,7 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression for this declaration" start end)
-                  (parse-field cur-tok (parse-expression cur-tok next 'start getter #f) 'end getter))))
+                  (parse-field cur-tok (parse-expression cur-tok next 'start getter #f #f) 'end getter))))
            ((COMMA)
             (parse-error "Expected an assignment of the given name to a value, found ',' which is not allowed here."
                          ps end))
@@ -1340,7 +1340,7 @@
                   (parse-error (format "Expected a ';' after constructor call, found ~a" (format-out (get-tok next)))
                                start (get-end next)))))
            (else 
-            (parse-ctor-call cur-tok (parse-expression pre cur-tok 'start getter #f) 'more-args getter))))
+            (parse-ctor-call cur-tok (parse-expression pre cur-tok 'start getter #f #f) 'more-args getter))))
         ((more-args)
          (case kind
            ((EOF) (parse-error "Expected constructor arguments or )" ps pe))
@@ -1349,7 +1349,7 @@
             (let ((next (getter)))
               (if (comma? (get-tok next))
                   (parse-error "Found ',,' Only one comma is needed to separate arguments" start (get-end next))
-                  (parse-ctor-call cur-tok (parse-expression cur-tok next 'start getter #f) 'more-args getter))))
+                  (parse-ctor-call cur-tok (parse-expression cur-tok next 'start getter #f #f) 'more-args getter))))
            (else 
             (if (close-separator? tok)
                 (parse-error (format "Expected ) to close constructor arguments, found ~a" out) start end)
@@ -1412,7 +1412,7 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression after = for field initialization" start end)
-                  (parse-beginner-ctor-body cur-tok (parse-expression null next 'start getter #f) 'assign-end getter))))
+                  (parse-beginner-ctor-body cur-tok (parse-expression null next 'start getter #f #f) 'assign-end getter))))
            (else (parse-error (format "Expected = to be used in initializing the field, found ~a" out) start end))))
         ((assign-end)
          (cond
@@ -1455,7 +1455,7 @@
                                   "Expected expression for return") 
                               start end))
                 ((and (or (advanced?) (intermediate?)) (semi-colon? (get-tok next))) (getter))
-                (else (parse-statement cur-tok (parse-expression null next 'start getter #f) 
+                (else (parse-statement cur-tok (parse-expression null next 'start getter #f #f) 
                                        'return getter id-ok? ctor? super-seen?)))))
            ((IDENTIFIER)
             (if (beginner?)
@@ -1534,13 +1534,13 @@
                                     start ne))))
                    (else (parse-error (format "Expected ~a.name, found ~a instead of '.'" kind (format-out next-tok)) ns ne)))))
               ;Intermediate
-              ((new) (parse-statement cur-tok (parse-expression cur-tok (getter) 'alloc-start getter #f)
+              ((new) (parse-statement cur-tok (parse-expression cur-tok (getter) 'alloc-start getter #f #f)
                                       'end-exp getter id-ok? ctor? super-seen?))
               ;Intermediate
               ((O_PAREN) 
                (parse-statement cur-tok 
-                                (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f)
-                                                  'c-paren getter #f)
+                                (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f #f)
+                                                  'c-paren getter #f #f)
                                 'end-exp getter id-ok? ctor? super-seen?))
               ;Intermediate
               ((O_BRACE) 
@@ -1570,7 +1570,7 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error (format "Expected conditional expression for 'if'") start end)
-                  (parse-statement cur-tok (parse-expression null next 'start getter #f) 
+                  (parse-statement cur-tok (parse-expression null next 'start getter #f #f) 
                                    'if-then getter id-ok? ctor? super-seen?))))
            (else 
             (parse-error (format "Conditional expression for 'if' must be started with '(', found ~a" out) start end))))
@@ -1627,8 +1627,8 @@
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression after '=' for assignment" start end)
                   (parse-statement cur-tok 
-                                   (parse-expression null next 'start getter #f) 'assign-end getter id-ok? ctor? super-seen?))))
-           ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter #f)
+                                   (parse-expression null next 'start getter #f #f) 'assign-end getter id-ok? ctor? super-seen?))))
+           ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter #f #t)
                                        'end-exp getter id-ok? ctor? super-seen?))
            (else 
             (cond
@@ -1637,7 +1637,7 @@
                       (next-tok (get-tok next)))
                  (if (eof? next-tok) 
                      (parse-error "Expected an index for array" start end)
-                     (let* ((afterOB (parse-expression cur-tok next 'start getter #f))
+                     (let* ((afterOB (parse-expression cur-tok next 'start getter #f #f))
                             (afterOB-tok (get-tok afterOB)))
                        (if (eof? afterOB-tok)
                            (parse-error "Expected a ']' to end array index" start (get-end afterOB))
@@ -1656,13 +1656,13 @@
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression after '=' for assignment" start end)
                   (parse-statement cur-tok 
-                                   (parse-expression null next 'start getter #f) 'assign-end getter id-ok? ctor? super-seen?))))
+                                   (parse-expression null next 'start getter #f #f) 'assign-end getter id-ok? ctor? super-seen?))))
            ((O_BRACKET)
             (let* ((next (getter))
                    (next-tok (get-tok next)))
               (if (eof? next-tok) 
                   (parse-error "Expected an index for array" start end)
-                  (let* ((afterOB (parse-expression cur-tok next 'start getter #f))
+                  (let* ((afterOB (parse-expression cur-tok next 'start getter #f #f))
                          (afterOB-tok (get-tok afterOB)))
                     (if (eof? afterOB-tok)
                         (parse-error "Expected a ']' to end array index" start (get-end afterOB))
@@ -1741,7 +1741,7 @@
                       (parse-statement next (parse-array-init assign-exp (getter) 'start getter) 'local-init-end getter #t ctor?
                                        super-seen?))
                      (else
-                      (parse-statement next (parse-expression null assign-exp 'start getter #f) 
+                      (parse-statement next (parse-expression null assign-exp 'start getter #f #f) 
                                        'local-init-end getter #t ctor? super-seen?)))))
                 ((id-token? n-tok)
                  (parse-error (format "Variables must be separated by commas, ~a not allowed" n-out) start ne))
@@ -1779,7 +1779,7 @@
                  (let ((assign-exp (getter)))
                    (if (eof? (get-tok assign-exp))
                        (parse-error (format "Expected an expression to bind to ~a" (token-value tok)) start end)
-                       (parse-statement next (parse-expression null assign-exp 'start getter #f) 
+                       (parse-statement next (parse-expression null assign-exp 'start getter #f #f) 
                                         'local-init-end getter id-ok? ctor? super-seen?))))
                 ((id-token? n-tok)
                  (parse-error (format "Variables must be separated by commas, ~a not allowed" n-out) start ne))
@@ -1830,7 +1830,7 @@
                       (parse-error "Expected a condition expression after '('" (get-start next) (get-end next)))
                      ((c-paren? afterO-tok) (getter))
                      (else
-                      (parse-statement afterO (parse-expression null afterO 'start getter #f) 'do-while-close
+                      (parse-statement afterO (parse-expression null afterO 'start getter #f #f) 'do-while-close
                                        getter id-ok? ctor? super-seen?)))))
                 (else
                  (parse-error 
@@ -1864,7 +1864,7 @@
                 ((c-paren? next-tok)
                  (parse-statement next (getter) 'start getter #f ctor? super-seen?))
                 (else
-                 (parse-statement cur-tok (parse-expression null next 'start getter #f) 
+                 (parse-statement cur-tok (parse-expression null next 'start getter #f #f) 
                                   'while-close getter id-ok? ctor? super-seen?)))))
            (else (parse-error (format "Expected a '(' to begin while condition, found ~a" out) ps end))))
         ;Advanced
@@ -1905,7 +1905,7 @@
            ((semi-colon? tok)
             (parse-for cur-tok (getter) 'past-inits getter ctor? super-seen?))
            (else (parse-for pre 
-                            (parse-expression pre cur-tok 'start getter #f)
+                            (parse-expression pre cur-tok 'start getter #f #f)
                             'statement-expr-first getter ctor? super-seen?))))
         ((init-or-exp)
          (case kind
@@ -1916,12 +1916,12 @@
             (parse-for pre (parse-statement pre cur-tok 'local getter #t ctor? super-seen?) 
                        'past-inits getter ctor? super-seen?))
            (else
-            (parse-for pre (parse-expression pre cur-tok 'start getter #f) 
+            (parse-for pre (parse-expression pre cur-tok 'start getter #f #f) 
                        'statement-expr-first getter ctor? super-seen?))))
         ((statement-expr-first)
          (case kind
            ((EOF) (parse-error "Expected remainder of 'for'" ps pe))
-           ((COMMA) (parse-for cur-tok (parse-expression cur-tok (getter) 'start getter #f) 'statement-expr-first 
+           ((COMMA) (parse-for cur-tok (parse-expression cur-tok (getter) 'start getter #f #f) 'statement-expr-first 
                                getter ctor? super-seen?))
            ((SEMI_COLON)
             (parse-for cur-tok (getter) 'past-inits getter ctor? super-seen?))
@@ -1939,7 +1939,7 @@
                 ((eof? (get-tok next)) (parse-error "Expected the rest of 'for'" start end))
                 ((semi-colon? (get-tok next)) (parse-for cur-tok next 'end-condition getter 
                                                          ctor? super-seen?))
-                (else (parse-for cur-tok (parse-expression cur-tok next 'start getter #f) 
+                (else (parse-for cur-tok (parse-expression cur-tok next 'start getter #f #f) 
                                  'end-condition getter ctor? super-seen?)))))))
         ((end-condition)
          (case kind
@@ -1952,7 +1952,7 @@
            ((EOF) (parse-error "Expected a ')' to end the pre-statement portion of 'for'" ps pe))
            ((C_PAREN) (getter))
            (else
-            (parse-for pre (parse-expression pre cur-tok 'start getter #f)
+            (parse-for pre (parse-expression pre cur-tok 'start getter #f #f)
                        'statement-expr-snd getter ctor? super-seen?))))
         ((statement-expr-snd)
          (case kind
@@ -1962,13 +1962,13 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression after ','" start end)
-                  (parse-for cur-tok (parse-expression cur-tok next 'start getter #f)
+                  (parse-for cur-tok (parse-expression cur-tok next 'start getter #f #f)
                              'statement-expr-snd getter ctor? super-seen?))))
            (else (parse-error (format "Expected a ')' or a ','. Found ~a which is not allowed" out) start end))))
         )))
                  
-  ;parse-expression: token token state (->token) bool -> token
-  (define (parse-expression pre cur-tok state getter statement-ok?)
+  ;parse-expression: token token state (->token) bool bool -> token
+  (define (parse-expression pre cur-tok state getter statement-ok? stmt-exp?)
 ;    (printf "parse-expression state ~a pre ~a cur-tok ~a statement-ok? ~a ~n" state pre cur-tok statement-ok?)
     (let* ((tok (get-tok cur-tok))
            (kind (get-token-name tok))
@@ -1983,34 +1983,34 @@
            ((EOF) (parse-error "Expected an expression" ps pe))
            ((~ ! -) (parse-expression cur-tok 
                                       (parse-expression cur-tok (getter) 'start getter #f) 
-                                      'op-or-end getter statement-ok?))
+                                      'op-or-end getter statement-ok? stmt-exp?))
            ((+)
             (if (or (advanced?) (intermediate?))
-                (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f) 
-                                  'op-or-end getter statement-ok?)
+                (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f stmt-exp?) 
+                                  'op-or-end getter statement-ok? stmt-exp?)
                 (parse-error "Expected an expression, + cannot begin an expression" start end)))
            ;Advanced
            ((++ --)
             (if (advanced?)
                 (parse-expression cur-tok 
-                                  (parse-expression cur-tok (getter) 'start getter #f)
-                                  'dot-op-or-end getter statement-ok?)
+                                  (parse-expression cur-tok (getter) 'start getter #f #f)
+                                  'dot-op-or-end getter statement-ok? stmt-exp?)
                 (parse-error (format "Expected an expression, ~a is not the valid beginning of an expression" out)
                              start end)))
            ((NULL_LIT) 
             (if (or (advanced?) (intermediate?))
-                (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok?)
+                (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok? stmt-exp?)
                 (parse-error "Expected an expression. null may not be used here" start end)))
            ((TRUE_LIT FALSE_LIT STRING_LIT CHAR_LIT INTEGER_LIT 
                       LONG_LIT FLOAT_LIT DOUBLE_LIT this super)
-            (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok?))
+            (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok? stmt-exp?))
            ((O_PAREN)
             (if (or (advanced?) (intermediate?))
-                (parse-expression cur-tok (getter) 'cast-or-parened getter statement-ok?)
-                (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f) 
+                (parse-expression cur-tok (getter) 'cast-or-parened getter statement-ok? stmt-exp?)
+                (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f stmt-exp?) 
                                   'c-paren getter statement-ok?)))
-           ((new) (parse-expression cur-tok (getter) 'alloc-start getter statement-ok?))
-           ((IDENTIFIER) (parse-expression cur-tok (getter) 'name getter statement-ok?))
+           ((new) (parse-expression cur-tok (getter) 'alloc-start getter statement-ok? stmt-exp?))
+           ((IDENTIFIER) (parse-expression cur-tok (getter) 'name getter statement-ok? stmt-exp?))
            ((STRING_ERROR)
             (if (eq? 'STRING_NEWLINE (get-token-name (caddr (token-value tok))))
                 (parse-error (format "A string must be contained all on one line, and end in '~a'" #\") start end)
@@ -2019,14 +2019,18 @@
             (parse-error (format "Expected an expression, ~a is not the valid beginning of an expression" out) start end))))
         ;Advanced
         ((op-or-end)
-         (cond
-           ((bin-operator? tok) (parse-expression cur-tok (getter) 'start getter #f))
-           ((and (advanced?) (unary-end? tok)) (parse-expression cur-tok (getter) 'op-or-end getter statement-ok?))
-           ((and (advanced?) (if-exp? tok))
-            (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f) 'if-exp-colon getter #f))
-           ((and (advanced?) (o-bracket? tok)) (parse-expression cur-tok (getter) 'array-acc getter statement-ok?))
-           ((and (advanced?) (instanceof-token? tok)) (parse-expression cur-tok (getter) 'instanceof getter #f))
-           (else cur-tok)))
+         (if stmt-exp?
+             (cond
+               ((and (advanced?) (unary-end? tok)) (getter))
+               (else cur-tok))
+             (cond
+               ((bin-operator? tok) (parse-expression cur-tok (getter) 'start getter #f stmt-exp?))
+               ((and (advanced?) (unary-end? tok)) (parse-expression cur-tok (getter) 'op-or-end getter statement-ok? stmt-exp?))
+               ((and (advanced?) (if-exp? tok))
+                (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f stmt-exp?) 'if-exp-colon getter #f stmt-exp?))
+               ((and (advanced?) (o-bracket? tok)) (parse-expression cur-tok (getter) 'array-acc getter statement-ok? stmt-exp?))
+               ((and (advanced?) (instanceof-token? tok)) (parse-expression cur-tok (getter) 'instanceof getter #f stmt-exp?))
+               (else cur-tok))))
         ((dot-op-or-end)
            (cond
              ((dot? tok) 
@@ -2040,21 +2044,22 @@
                    (let ((afterID (getter)))
                      (cond
                        ((o-paren? (get-tok afterID))
-                        (parse-expression next afterID 'method-call-args getter statement-ok?))
+                        (parse-expression next afterID 'method-call-args getter statement-ok? stmt-exp?))
                        ((teaching-assignment-operator? (get-tok afterID))
-                        (parse-expression next (parse-expression afterID (getter) 'start getter #f)
+                        (parse-expression next (parse-expression afterID (getter) 'start getter #f stmt-exp?)
                                           'assign-end getter statement-ok?))
-                       (else (parse-expression next afterID 'dot-op-or-end getter statement-ok?)))))
+                       (else (parse-expression next afterID 'dot-op-or-end getter statement-ok? stmt-exp?)))))
                   ((keyword? next-tok) 
                    (parse-error (format "Expected a method name, reserved name ~a may not be a method name" name) ns ne))
                   (else (parse-error (format "Expected a method name, found ~a" (format-out next-tok)) ns ne)))))
-             ((bin-operator? tok) (parse-expression cur-tok (getter) 'start getter #f))
+             (stmt-exp? (parse-expression pre cur-tok 'op-or-end getter #f stmt-exp?))
+             ((bin-operator? tok) (parse-expression cur-tok (getter) 'start getter #f stmt-exp?))
              ;Advanced
-             ((and (advanced?) (unary-end? tok)) (parse-expression cur-tok (getter) 'op-or-end getter statement-ok?))
+             ((and (advanced?) (unary-end? tok)) (parse-expression cur-tok (getter) 'op-or-end getter statement-ok? stmt-exp?))
              ((and (advanced?) (if-exp? tok))
-              (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f) 'if-exp-colon getter #f))
-             ((and (advanced?) (o-bracket? tok)) (parse-expression cur-tok (getter) 'array-acc getter statement-ok?))
-             ((and (advanced?) (instanceof-token? tok)) (parse-expression cur-tok (getter) 'instanceof getter #f))
+              (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f) 'if-exp-colon getter #f stmt-exp?))
+             ((and (advanced?) (o-bracket? tok)) (parse-expression cur-tok (getter) 'array-acc getter statement-ok? stmt-exp?))
+             ((and (advanced?) (instanceof-token? tok)) (parse-expression cur-tok (getter) 'instanceof getter #f stmt-exp?))
              (else cur-tok)))
         ;Advanced
         ((array-acc)
@@ -2062,7 +2067,7 @@
            ((eof? tok) (parse-error "Expected expression for accessing array" start end))
            ((c-bracket? tok) 
             (parse-error "Expected an expression for accessing array, inbetween [ and ]" ps end))
-           (else (parse-expression pre (parse-expression pre cur-tok 'start getter #f) 'c-bracket getter statement-ok?))))
+           (else (parse-expression pre (parse-expression pre cur-tok 'start getter #f) 'c-bracket getter statement-ok? stmt-exp?))))
         ;Advanced
         ((c-bracket)
          (case kind
@@ -2071,8 +2076,8 @@
             (let ((next (getter)))
               (if (teaching-assignment-operator? (get-tok next))
                   (parse-expression next (parse-expression next (getter) 'start getter #f) 
-                                    'assign-end getter statement-ok?)
-                  (parse-expression cur-tok next 'dot-op-or-end getter statement-ok?))))
+                                    'assign-end getter statement-ok? stmt-exp?)
+                  (parse-expression cur-tok next 'dot-op-or-end getter statement-ok? stmt-exp?))))
            (else (parse-error (format "Expected ] to end array access. Found ~a" out) ps end))))
         ;Advanced
         ((c-bracket-empty-ok)
@@ -2083,10 +2088,10 @@
               (if (o-bracket? (get-tok next))
                   (let ((afterOB (getter)))
                     (if (c-bracket? (get-tok afterOB))
-                        (parse-expression next afterOB 'c-bracket-empty getter statement-ok?)
-                        (parse-expression next (parse-expression next afterOB 'start getter #f) 
-                                          'c-bracket-empty-ok getter statement-ok?)))
-                  (parse-expression cur-tok next 'dot-op-or-end getter statement-ok?))))
+                        (parse-expression next afterOB 'c-bracket-empty getter statement-ok? stmt-exp?)
+                        (parse-expression next (parse-expression next afterOB 'start getter #f stmt-exp?) 
+                                          'c-bracket-empty-ok getter statement-ok? stmt-exp?)))
+                  (parse-expression cur-tok next 'dot-op-or-end getter statement-ok? stmt-exp?))))
            (else
             (parse-error (format "Expected ] to end array size specification. Found ~a" out) ps end))))
         ;Advanced
@@ -2096,26 +2101,26 @@
            ((C_BRACKET) 
             (let ((next (getter)))
               (if (o-bracket? (get-tok next))
-                  (parse-expression next (getter) 'c-bracket-empty getter statement-ok?)
-                  (parse-expression cur-tok next 'dot-op-or-end getter statement-ok?))))
+                  (parse-expression next (getter) 'c-bracket-empty getter statement-ok? stmt-exp?)
+                  (parse-expression cur-tok next 'dot-op-or-end getter statement-ok? stmt-exp?))))
            (else (parse-error (format "Expected ] to end array specification. Found ~a" out) ps end))))
         ;Intermediate
         ((cast-or-parened)
          (cond
            ((eof? tok) (parse-error "Expected a name or expression and a )" ps pe))
-           ((prim-type? tok) (parse-expression pre (getter) 'cast getter statement-ok?))
-           ((id-token? tok) (parse-expression pre (getter) 'cast-or-parened-close getter statement-ok?))
-           (else (parse-expression pre (parse-expression pre cur-tok 'start getter #f) 'c-paren getter statement-ok?))))
+           ((prim-type? tok) (parse-expression pre (getter) 'cast getter statement-ok? stmt-exp?))
+           ((id-token? tok) (parse-expression pre (getter) 'cast-or-parened-close getter statement-ok? stmt-exp?))
+           (else (parse-expression pre (parse-expression pre cur-tok 'start getter #f) 'c-paren getter statement-ok? stmt-exp?))))
         ;Intermediate
         ((cast)
          (cond
            ((eof? tok) (parse-error "cast must have close paren and additional expression" ps pe))
-           ((c-paren? tok) (parse-expression cur-tok (getter) 'start getter #f))
+           ((c-paren? tok) (parse-expression cur-tok (getter) 'start getter #f stmt-exp?))
            ((and (advanced?) (o-bracket? tok))
             (let ((next (getter)))
               (cond
                 ((eof? (get-tok next)) (parse-error "cast to array must have ]" start end))
-                ((c-bracket? (get-tok next)) (parse-expression next (getter) 'cast getter statement-ok?))
+                ((c-bracket? (get-tok next)) (parse-expression next (getter) 'cast getter statement-ok? stmt-exp?))
                 (else (parse-error (format "cast to array must have ]. ~a is not allowed" (format-out (get-tok next)))
                                    start (get-end next))))))
            (else (parse-error (format "cast must have close paren, found ~a instead" out) ps end))))
@@ -2128,29 +2133,29 @@
                    (next-tok (get-tok next)))
               (case (get-token-name next-tok)
                 ((~ ! - + TRUE_LIT FALSE_LIT STRING_LIT CHAR_LIT INTEGER_LIT 
-                      LONG_LIT FLOAT_LIT DOUBLE_LIT this O_PAREN new IDENTIFIER)
-                 (parse-expression cur-tok next 'start getter #f))
+                      LONG_LIT FLOAT_LIT DOUBLE_LIT this O_PAREN new IDENTIFIER super)
+                 (parse-expression cur-tok next 'start getter #f stmt-exp?))
                 ((NULL_LIT)
                  (if (or (advanced?) (intermediate?))
-                     (parse-expression cur-tok next 'start getter #f)
-                     (parse-expression cur-tok next 'dot-op-or-end getter #f)))
-                (else (parse-expression cur-tok next 'dot-op-or-end getter #f)))))
+                     (parse-expression cur-tok next 'start getter #f stmt-exp?)
+                     (parse-expression cur-tok next 'dot-op-or-end getter #f stmt-exp?)))
+                (else (parse-expression cur-tok next 'dot-op-or-end getter #f stmt-exp?)))))
            ((and (advanced?) (o-bracket? tok))
             (let* ((next (getter))
                    (next-tok (get-tok next)))
               (cond
                 ((eof? (get-tok next)) 
                  (parse-error "cast to array must have ], array access must have expression" start end))
-                ((c-bracket? (get-tok next)) (parse-expression next (getter) 'cast getter statement-ok?))
+                ((c-bracket? (get-tok next)) (parse-expression next (getter) 'cast getter statement-ok? stmt-exp?))
                 (else (parse-expression cur-tok 
-                                        (parse-expression cur-tok next 'array-acc getter #f)
-                                        'c-paren getter statement-ok?)))))
-           (else (parse-expression pre (parse-expression pre cur-tok 'name getter #f) 'c-paren getter statement-ok?))))
+                                        (parse-expression cur-tok next 'array-acc getter #f stmt-exp?)
+                                        'c-paren getter statement-ok? stmt-exp?)))))
+           (else (parse-expression pre (parse-expression pre cur-tok 'name getter #f) 'c-paren getter statement-ok? stmt-exp?))))
 ;           (else (parse-error (format "Expected a ')', found ~a" out) ps end))))
         ((c-paren)
          (cond
            ((eof? tok) (parse-error "Expected a )" ps pe))
-           ((c-paren? tok) (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok?))
+           ((c-paren? tok) (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok? stmt-exp?))
            (else (parse-error (format "Expression in parens must have an operator or a close paren, found ~a instead" out) ps end))))
         ;Advanced
         ((instanceof)
@@ -2159,9 +2164,9 @@
            ((id-token? tok)
             (let ((next (getter)))
               (if (dot? (get-tok next))
-                  (parse-expression next (parse-name (getter) getter #f) 'instanceof-array getter statement-ok?)
-                  (parse-expression cur-tok next 'op-or-end getter statement-ok?))))
-           ((prim-type? tok) (parse-expression cur-tok (getter) 'instanceof-array getter statement-ok?))
+                  (parse-expression next (parse-name (getter) getter #f) 'instanceof-array getter statement-ok? stmt-exp?)
+                  (parse-expression cur-tok next 'op-or-end getter statement-ok? stmt-exp?))))
+           ((prim-type? tok) (parse-expression cur-tok (getter) 'instanceof-array getter statement-ok? stmt-exp?))
            ((keyword? tok) 
             (parse-error (format "Expected a type for instanceof comparison, found ~a which is not the name of a type" out) 
                          start end)) 
@@ -2172,17 +2177,17 @@
            ((O_BRACKET) 
             (let ((next (getter)))
               (if (c-bracket? (get-tok next))
-                  (parse-expression next (getter) 'instanceof-array getter statement-ok?)
+                  (parse-expression next (getter) 'instanceof-array getter statement-ok? stmt-exp?)
                   (parse-error (format "Array types are of the form type[], expected ] found ~a" 
                                        (format-out (get-tok next)))
                                start (get-end next)))))
-           (else (parse-expression pre cur-tok 'op-or-end getter statement-ok?))))
+           (else (parse-expression pre cur-tok 'op-or-end getter statement-ok? stmt-exp?))))
         ;Advanced
         ((if-exp-colon)
          (cond
            ((eof? tok) (parse-error "Expected a :" ps pe))
            ((colon? tok) 
-            (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f)
+            (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f stmt-exp?)
                               'op-or-end getter statement-ok?))
            (else (parse-error (format "Expected a : found ~a" out) start end))))
         ((alloc-start)
@@ -2206,13 +2211,13 @@
                     (parse-error "Expected (argument, ...) for an object creation, '.' may not appear here"
                                  (get-start next) (get-end next)))
                    ((advanced?)
-                    (parse-expression cur-tok (parse-name (getter) getter #f) 'alloc-open getter statement-ok?))
+                    (parse-expression cur-tok (parse-name (getter) getter #f) 'alloc-open getter statement-ok? stmt-exp?))
                    (else
-                    (parse-expression cur-tok (parse-name (getter) getter #f) 'class-args-start getter statement-ok?))))
-                ((o-paren? next-tok) (parse-expression cur-tok next 'class-args-start getter statement-ok?))
+                    (parse-expression cur-tok (parse-name (getter) getter #f) 'class-args-start getter statement-ok? stmt-exp?))))
+                ((o-paren? next-tok) (parse-expression cur-tok next 'class-args-start getter statement-ok? stmt-exp?))
                 ;Advanced
                 ((and (advanced?) (o-bracket? next-tok))
-                 (parse-expression next (getter) 'array-size getter statement-ok?))
+                 (parse-expression next (getter) 'array-size getter statement-ok? stmt-exp?))
                 ((c-paren? next-tok)
                  (parse-error (format "Expected ( to begin constructor arguments for ~a" out) (get-start pre) end))
                 ((open-separator? next-tok) 
@@ -2235,7 +2240,7 @@
               (cond
                 ((eof? next-tok) (parse-error "Expected a size for the array" start end))
                 ((o-bracket? next-tok)
-                 (parse-expression next (getter) 'array-size getter statement-ok?))
+                 (parse-expression next (getter) 'array-size getter statement-ok? stmt-exp?))
                 (else (parse-error (format "Expected a [ to begin array size, found ~a" (format-out next-tok))
                                    start (get-end next))))))
            ((keyword? tok)
@@ -2252,8 +2257,8 @@
         ((alloc-open)
          (case kind
            ((EOF) (parse-error "Expected a ( to begin constructor arguments or [ to specify array size" ps pe))
-           ((O_PAREN) (parse-expression pre cur-tok 'class-args-start getter statement-ok?))
-           ((O_BRACKET) (parse-expression cur-tok (getter) 'array-size getter statement-ok?))
+           ((O_PAREN) (parse-expression pre cur-tok 'class-args-start getter statement-ok? stmt-exp?))
+           ((O_BRACKET) (parse-expression cur-tok (getter) 'array-size getter statement-ok? stmt-exp?))
            (else (parse-error (format "Expected a ( to begin constructor arguments or [ to specify size, found ~a" out)
                               ps end))))
         ;Advanced
@@ -2262,8 +2267,8 @@
            ((EOF) (parse-error "Expected a size for the array" ps pe))
            ((C_BRACKET) (parse-error "Array allocation must have an expresion for its size. Found ]" ps end))
            (else 
-            (parse-expression pre (parse-expression pre cur-tok 'start getter #f) 
-                              'c-bracket-empty-ok getter statement-ok?))))
+            (parse-expression pre (parse-expression pre cur-tok 'start getter #f stmt-exp?) 
+                              'c-bracket-empty-ok getter statement-ok? stmt-exp?))))
         ((class-args-start)
          (case kind
            ((EOF) (parse-error "Expected constructor arguments starting with (" ps pe))
@@ -2272,31 +2277,31 @@
                    (next-tok (get-tok next)))
               (cond
                 ((eof? next-tok) (parse-error "Expected constructor arguments or )" start end))
-                ((c-paren? next-tok) (parse-expression next (getter) 'dot-op-or-end getter statement-ok?))
-                (else (parse-expression next (parse-expression cur-tok next 'start getter #f) 
+                ((c-paren? next-tok) (parse-expression next (getter) 'dot-op-or-end getter statement-ok? stmt-exp?))
+                (else (parse-expression next (parse-expression cur-tok next 'start getter #f stmt-exp?) 
                                         'class-args getter statement-ok?)))))
            (else (parse-error (format "Expected constructor arguments, starting with (, found ~a" out) start end))))
         ((class-args)
          (case kind
            ((EOF) (parse-error "Expected constructor arguments or )" ps pe))
-           ((C_PAREN) (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok?))
+           ((C_PAREN) (parse-expression cur-tok (getter) 'dot-op-or-end getter statement-ok? stmt-exp?))
            ((COMMA)
             (let ((next (getter)))
               (if (comma? (get-tok next))
                   (parse-error "Found ',,' Only one comma is needed to separate arguments" start (get-end next))
-                  (parse-expression cur-tok (parse-expression cur-tok next 'start getter #f) 
-                                    'class-args getter statement-ok?))))
+                  (parse-expression cur-tok (parse-expression cur-tok next 'start getter #f stmt-exp?) 
+                                    'class-args getter statement-ok? stmt-exp?))))
            (else
             (if (close-separator? tok)
                 (parse-error (format "Expected ) to close constructor arguments, found ~a" out) start end)
                 (parse-error (format "A ',' is required between expressions in a constructor call, found ~a" out) start end)))))
         ((name)
          (case kind
-           ((PERIOD) (parse-expression cur-tok (parse-name (getter) getter #f) 'name getter statement-ok?))
-           ((O_PAREN) (parse-expression pre cur-tok 'method-call-args getter statement-ok?))
-           ((=) (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f) 
-                                  'assign-end getter statement-ok?))
-           (else (parse-expression pre cur-tok 'op-or-end getter statement-ok?))))
+           ((PERIOD) (parse-expression cur-tok (parse-name (getter) getter #f) 'name getter statement-ok? stmt-exp?))
+           ((O_PAREN) (parse-expression pre cur-tok 'method-call-args getter statement-ok? stmt-exp?))
+           ((=) (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter #f stmt-exp?) 
+                                  'assign-end getter statement-ok? stmt-exp?))
+           (else (parse-expression pre cur-tok 'op-or-end getter statement-ok? stmt-exp?))))
         ((method-call-args)
          (case kind
            ((EOF) (parse-error "Expected method arguments starting with (" ps pe))
@@ -2308,8 +2313,8 @@
                  (let ((after-c (getter)))
                    (if (and statement-ok? (or (advanced?) (intermediate?) (semi-colon? (get-tok after-c))))
                        (getter)
-                       (parse-expression next-tok after-c 'dot-op-or-end getter statement-ok?))))
-                (else (parse-expression cur-tok (parse-expression cur-tok next-tok 'start getter #f)
+                       (parse-expression next-tok after-c 'dot-op-or-end getter statement-ok? stmt-exp?))))
+                (else (parse-expression cur-tok (parse-expression cur-tok next-tok 'start getter #f stmt-exp?)
                                         'method-args getter statement-ok?)))))
            (else (parse-error (format "Expected method arguments in parens, found ~a" out) start end))))
         ((method-args)
@@ -2319,13 +2324,13 @@
             (let ((after-c (getter)))
               (if (and statement-ok? (or (advanced?) (intermediate?) (semi-colon? (get-tok after-c))))
                   (getter)
-                  (parse-expression cur-tok after-c 'dot-op-or-end getter statement-ok?))))
+                  (parse-expression cur-tok after-c 'dot-op-or-end getter statement-ok? stmt-exp?))))
            ((COMMA) 
             (let ((next (getter)))
               (if (comma? (get-tok next))
                   (parse-error "Found ',,' Only one comma is needed to separate arguments" start (get-end next))
-                  (parse-expression cur-tok (parse-expression cur-tok next 'start getter #f) 
-                                    'method-args getter statement-ok?))))
+                  (parse-expression cur-tok (parse-expression cur-tok next 'start getter #f stmt-exp?) 
+                                    'method-args getter statement-ok? stmt-exp?))))
            (else 
             (if (close-separator? tok)
                 (parse-error (format "Expected ) to close method arguments, found ~a" out) start end)

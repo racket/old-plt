@@ -640,14 +640,29 @@
     (or (null? fields)
         (and (field-member? (car fields) (cdr fields))
              (let ((f (find-member (car fields) members level type-recs)))
-               (field-name-error 'field (field-name f) level (field-src f))))
+               (if (method? f)
+                   (field-name-error 'inherited-conflict-method
+                                     (method-name f)
+                                     level
+                                     (method-src f))
+                   (field-name-error 'field (field-name f) level (field-src f)))))
         (and (memq level '(beginner intermediate))
              (or (and (shared-name? (car fields) methods)
                       (let ((f (find-member (car fields) members level type-recs)))
-                        (field-name-error 'method (field-name f) level (field-src f))))
+                        (if (method? f)
+                            (field-name-error 'inherited-conflict-method
+                                              (method-name f)
+                                              level
+                                              (method-src f))
+                            (field-name-error 'method (field-name f) level (field-src f)))))
                  (and (shared-class-name? (car fields) (send type-recs get-class-env))
                       (let ((f (find-member (car fields) members level type-recs)))
-                        (field-name-error 'class (field-name f) level (field-src f))))))
+                        (if (method? f)
+                            (field-name-error 'inherited-conflict-method
+                                              (method-name f)
+                                              level
+                                              (method-src f))
+                            (field-name-error 'class (field-name f) level (field-src f)))))))
         (valid-field-names? (cdr fields) members methods level type-recs)))
   
   ;field-member: field-record (list field-record) -> bool
@@ -671,8 +686,10 @@
                       (car classes))
              (shared-class-name? member (cdr classes)))))
   
+  ;find-member: (U field-record method-record) (list member) symbol type-records -> member
   (define (find-member member-record members level type-recs)
     (when (null? members)
+      (printf "~a~n" member-record)
       (error 'internal-error "Find-member given a member that is not contained in the member list"))
     (cond
       ((and (field-record? member-record)
@@ -696,6 +713,12 @@
                         (type-spec-to-type (method-type (car members)) (method-record-class member-record) level type-recs)))
            (car members)
            (find-member member-record (cdr members) level type-recs)))
+      ((memq level '(beginner intermediate advanced))
+       (let ((given-name ((if (field-record? member-record) field-record-name method-record-name) member-record))
+             (looking-at (id-string ((if (field? (car members)) field-name method-name) (car members)))))
+         (if (equal? given-name looking-at)
+             (car members)
+             (find-member member-record (cdr members) level type-recs))))
       (else
        (find-member member-record (cdr members) level type-recs))))
   
@@ -705,38 +728,59 @@
         (and (method-member? (car methods) (cdr methods) level)
              (let ((m (find-member (car methods) members level type-recs))
                    (class (method-record-class (car methods))))
-               (method-error 'repeated 
+               (if (field? m)
+                   (method-error 'inherited-conflict-field
+                                 (field-name m)
+                                 null
+                                 (car class)
+                                 (field-src m)
+                                 #f)
+                   (method-error 'repeated 
                              (method-name m)
                              (map (lambda (t)
                                     (type-spec-to-type (field-type t) class level type-recs))
                                   (method-parms m))
                              (car class)
                              (method-src m)
-                             (eq? (method-record-rtype (car methods)) 'ctor))))
+                             (eq? (method-record-rtype (car methods)) 'ctor)))))
         (and (equal? (method-record-name (car methods)) 
                      (method-record-class (car methods)))
              (not (eq? (method-record-rtype (car methods)) 'ctor))
              (let ((m (find-member (car methods) members level type-recs))
                    (class (method-record-class (car methods))))
-               (method-error 'ctor-ret-value 
-                             (method-name m)
-                             (map (lambda (t) (type-spec-to-type (field-type t) class level type-recs))
-                                  (method-parms m))
-                             (car class)
-                             (method-src m)
-                             #f)))
+               (if (field? m)
+                   (method-error 'inherited-conflict-field
+                                 (field-name m)
+                                 null
+                                 (car class)
+                                 (field-src m)
+                                 #f)
+                   (method-error 'ctor-ret-value 
+                                 (method-name m)
+                                 (map (lambda (t) (type-spec-to-type (field-type t) class level type-recs))
+                                      (method-parms m))
+                                 (car class)
+                                 (method-src m)
+                                 #f))))
         (and (memq level `(beginner intermediate))
              (not (eq? (method-record-rtype (car methods)) 'ctor))
              (shared-class-name? (car methods) (send type-recs get-class-env))
              (let ((m (find-member (car methods) members level type-recs))
                    (class (method-record-class (car methods))))
-               (method-error 'class-name
-                             (method-name m)
-                             (map (lambda (t) (type-spec-to-type (field-type t) class level type-recs))
-                                  (method-parms m))
-                             (car class)
-                             (method-src m)
-                             (eq? (method-record-rtype (car methods)) 'ctor))))
+               (if (field? m)
+                   (method-error 'inherited-conflict-field
+                                 (field-name m)
+                                 null
+                                 (car class)
+                                 (field-src m)
+                                 #f)
+                   (method-error 'class-name
+                                 (method-name m)
+                                 (map (lambda (t) (type-spec-to-type (field-type t) class level type-recs))
+                                      (method-parms m))
+                                 (car class)
+                                 (method-src m)
+                                 (eq? (method-record-rtype (car methods)) 'ctor)))))
         (valid-method-sigs? (cdr methods) members level type-recs)))
   
   (define (method-member? method methods level)
@@ -798,14 +842,21 @@
                                 level)
              (let ((method (find-member (car methods) members level type-recs))
                    (class (class-record-name record)))
-               (method-error 'conflict
-                             (method-name method)
-                             (map (lambda (t)
-                                    (type-spec-to-type (field-type t) class level type-recs))
-                                  (method-parms method))
-                             (car class)
-                             (method-src method)
-                             #f)))
+               (if (field? method)
+                   (method-error 'inherited-conflict-field
+                                 (field-name method)
+                                 null
+                                 (car class)
+                                 (field-src method)
+                                 #f)
+                   (method-error 'conflict
+                                 (method-name method)
+                                 (map (lambda (t)
+                                        (type-spec-to-type (field-type t) class level type-recs))
+                                      (method-parms method))
+                                 (car class)
+                                 (method-src method)
+                                 #f))))
         (check-for-conflicts (cdr methods) record members level type-recs)))
   
   ;class-fully-implemented? class-record id (list class-record) (list id) (list method) symbol -> bool
@@ -1245,27 +1296,30 @@
 
   ;method-error: symbol id (list type) string src bool -> void
   (define (method-error kind name parms class src ctor?)
-    (let ((m-name (method-name->ext-name (id-string name) parms)))
-      (raise-error 
-       m-name
-       (case kind
-         ((illegal-abstract)
-          (format 
-           "Abstract method ~a is not allowed in non-abstract class ~a, abstract methods must be in abstract classes" 
-           m-name class))
-         ((repeated)
-          (format "~a ~a has already been written in this class (~a) and cannot be written again" 
-                  (if ctor? "Constructor" "Method") m-name class))
-         ((inherit-conflict)
-          (format "Inherited method ~a from ~a conflicts with another method of the same name" m-name class))
-         ((conflict)
-          (format "Method ~a conflicts with a method inherited from ~a" m-name class))
-         ((not-implement) (format "Method ~a from ~a should be implemented and was not" m-name class))
-         ((ctor-ret-value)
-          (format "Constructor ~a for class ~a has a return type, which is not allowed" m-name class))
-         ((class-name)
-          (format "Method ~a from ~a has the same name as a class, which is not allowed" m-name class)))
-       m-name src)))
+    (if (eq? kind 'inherited-conflict-field)
+        (let ((n (id->ext-name name)))
+          (raise-error n (format "Field ~a conflicts with a method of the same name from ~a" n class) n src))
+        (let ((m-name (method-name->ext-name (id-string name) parms)))
+          (raise-error 
+           m-name
+           (case kind
+             ((illegal-abstract)
+              (format 
+               "Abstract method ~a is not allowed in non-abstract class ~a, abstract methods must be in abstract classes" 
+               m-name class))
+             ((repeated)
+              (format "~a ~a has already been written in this class (~a) and cannot be written again" 
+                      (if ctor? "Constructor" "Method") m-name class))
+             ((inherit-conflict)
+              (format "Inherited method ~a from ~a conflicts with another method of the same name" m-name class))
+             ((conflict)
+              (format "Method ~a conflicts with a method inherited from ~a" m-name class))
+             ((not-implement) (format "Method ~a from ~a should be implemented and was not" m-name class))
+             ((ctor-ret-value)
+              (format "Constructor ~a for class ~a has a return type, which is not allowed" m-name class))
+             ((class-name)
+              (format "Method ~a from ~a has the same name as a class, which is not allowed" m-name class)))
+           m-name src))))
 
   ;inherited-overload-error: string (list type) (list type) src -> void
   (define (inherited-overload-error name new-type inherit-type src)
@@ -1396,7 +1450,9 @@
                       (format "~a has been declared as a field and a method, which is not allowed" n))
                      ((class) 
                       (format "~a has been declared as a field and a ~a, which is not allowed" n
-                              (if (eq? level 'intermediate) "class or interface" "class"))))
+                              (if (eq? level 'intermediate) "class or interface" "class")))
+                     ((inherited-conflict-method)
+                      (format "Method ~a conflicts with an inherited field of the same name" n)))
                    n src)))
   
   ;import-error: name src -> void

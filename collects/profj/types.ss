@@ -170,7 +170,7 @@
   (define interactions-record (make-class-record (list "interactions") null #f #f null null null null null))
   
   ;; (make-field-record string (list symbol) bool (list string) type)
-  (define-struct field-record (name modifiers init? class type))
+  (define-struct field-record (name modifiers init? class type) (make-inspector))
   
   ;; (make-method-record string (list symbol) type (list type) (list type) (U bool method-record) string)
   (define-struct method-record (name modifiers rtype atypes throws override class) (make-inspector))

@@ -1712,7 +1712,7 @@
                              (lambda (kind)
                                (if (error-file-exists? (method-record-class (car methods)) type-recs)
                                    (call-provided-error (id-string name) args kind)
-                                   (teaching-call-error kind name args exp-type src methods)))))
+                                   (teaching-call-error kind #f name args exp-type src methods)))))
                         (resolve-overloading methods
                                              args
                                              (lambda () (teaching-error 'number))
@@ -1818,7 +1818,7 @@
                                    (lambda (kind)
                                      (if (error-file-exists? class-record type-recs)
                                          (call-provided-error (id-string (name-id name)) args kind)
-                                         (teaching-call-error kind (name-id name) args #f src methods)))))
+                                         (teaching-call-error kind #t (name-id name) args #f src methods)))))
                               (resolve-overloading methods
                                                    args
                                                    (lambda () (teaching-error 'number))
@@ -2280,7 +2280,7 @@
   (define (beginner-method-access-error name src)
     (let ((n (id->ext-name name)))
       (raise-error n
-                   (format "method ~a from the current class must be call on 'this'" n)
+                   (format "method ~a from the current class must be called on 'this'" n)
                    n src)))
 
   
@@ -2293,7 +2293,7 @@
   
   ;ctor-called-error: type id src -> void
   (define (ctor-called-error exp name src)
-    (let ((t (type->ext-name exp))
+    (let ((t (if exp (type->ext-name exp) "the current class"))
           (n (id->ext-name name)))
       (raise-error n
                    (format "Constructor ~a from ~a cannot be used as a method" n t)
@@ -2347,22 +2347,25 @@
                               n e awitht (map type->ext-name (cdr atypes)) (car givens) (type->ext-name (car atypes)))))
                    n src)))
 
-  ;teaching-call-error: symbol id (list type) type src (list method-record) -> void
-  (define (teaching-call-error kind name args exp-type src methods)
+  ;teaching-call-error: symbol bool id (list type) type src (list method-record) -> void
+  (define (teaching-call-error kind ctor? name args exp-type src methods)
     (let* ((method-args (map method-record-atypes (remove-overridden methods)))
-           (predominant-number (get-most-occuring-length method-args))
-           (type-lists (get-string-of-types (filter (lambda (a) (= (length a) predominant-number)) method-args))))
-      (let ((n (id->ext-name name))
-            (e (get-call-type exp-type))
-            (givens (get-string-of-types (list args))))
+           (non-array-type-list (filter (lambda (arg-list)
+                                          (andmap (lambda (a) (not (array-type? a))) arg-list)) method-args))
+           (predominant-number (get-most-occuring-length non-array-type-list))
+           (type-lists (get-string-of-types (filter (lambda (a) (= (length a) predominant-number)) non-array-type-list))))
+      (let* ((n (id->ext-name name))
+             (e (get-call-type exp-type))
+             (givens (get-string-of-types (list args)))
+             (front (if ctor? "constructor for" (format "method ~a from" n))))
         (raise-error n
                      (case kind
                        ((number)
-                        (format "method ~a from ~a expects ~a arguments with type(s) ~a. Given ~a"
-                                n e predominant-number type-lists givens))
+                        (format "~a ~a expects ~a arguments with type(s) ~a. Given ~a"
+                                front e predominant-number type-lists givens))
                        (else
-                        (format "method ~a from ~a expects arguments with type(s) ~a. Given ~a"
-                                n e type-lists givens)))
+                        (format "~a ~a expects arguments with type(s) ~a. Given ~a"
+                                front e type-lists givens)))
                      n src))))
   
   ;remove-overridden: (list method-record) -> (list method-record)
@@ -2370,8 +2373,12 @@
     (letrec ((remove?
               (lambda (method methods)
                   (and (not (null? methods))
-                       (or (andmap (lambda (x) x) (map type=? (method-record-atypes method) 
-                                                       (method-record-atypes (car methods))))
+                       (or (and
+                            (= (length (method-record-atypes method))
+                               (length (method-record-atypes (car methods))))
+                            (andmap (lambda (x) x) (map type=? 
+                                                        (method-record-atypes method) 
+                                                        (method-record-atypes (car methods)))))
                            (remove? method (cdr methods))))))
              (remove
               (lambda (methods)

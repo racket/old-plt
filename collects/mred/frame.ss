@@ -36,17 +36,25 @@
       (class mred:container:frame% args
 	(rename [super-on-frame-active on-frame-active]
 		[super-pre-on-char pre-on-char]
+		[super-on-close on-close]
 		[super-pre-on-event pre-on-event])
 	(sequence (mred:debug:printf 'creation "creating a frame"))
+	(rename [super-show show])
 	(public
 	  [get-panel% (lambda () mred:container:vertical-panel%)]
+	  [show
+	   (lambda (on?)
+	     (when on?
+	       (unless (member this (send mred:group:the-frame-group get-frames))
+		 (send mred:group:the-frame-group insert-frame this)))
+	     (super-show on?))]
 	  [on-close
 	   (lambda ()
-	     (send mred:group:the-frame-group remove-frame this))])
+	     (and (send mred:group:the-frame-group remove-frame this)
+		  (super-on-close)))])
 	(sequence 
 	  (mred:debug:printf 'super-init "before empty-frame%")
 	  (apply super-init args)
-	  (send mred:group:the-frame-group insert-frame this)
 	  (mred:debug:printf 'super-init "after empty-frame%"))
 	(public
 	  [on-frame-active

@@ -26,7 +26,7 @@
    right with optimization. */
 #pragma optimize("", off)
 
-int scheme_setjmp(mz_jmp_buf b)
+int scheme_mz_setjmp(mz_jmp_buf b)
 {
   __asm {
 	mov ECX, [EBP+4]
@@ -43,7 +43,7 @@ int scheme_setjmp(mz_jmp_buf b)
   return 0;
 }
 
-void scheme_longjmp(mz_jmp_buf b, int v)
+void scheme_mz_longjmp(mz_jmp_buf b, int v)
 {
   __asm {
 	mov EAX, [EBP+12]

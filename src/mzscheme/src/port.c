@@ -3300,7 +3300,7 @@ static int fd_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
 	}
       }
 #else
-      if (1 || fip->regfile) {
+      if (fip->regfile) {
 	do {
 	  bc = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
 	} while ((bc == -1) && (errno == EINTR));

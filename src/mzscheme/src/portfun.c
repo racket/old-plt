@@ -822,7 +822,7 @@ static int pipe_getc(Scheme_Input_Port *p, int *nonblock, int *eof_on_error)
     }
   }
   
-  if (pipe->eof)
+  if (pipe->bufstart == pipe->bufend)
     c = EOF;
   else {
     c = pipe->buf[pipe->bufstart];

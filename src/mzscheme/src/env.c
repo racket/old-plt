@@ -1261,8 +1261,8 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
 static Scheme_Object *make_uid()
 {
   char name[20];
-  env_uid_counter++;
-  sprintf(name, "env%d", env_uid_counter);
+
+  sprintf(name, "env%d", env_uid_counter++);
   return scheme_make_symbol(name); /* uninterned! */
 }
 

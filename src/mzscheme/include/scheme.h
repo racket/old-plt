@@ -560,9 +560,19 @@ typedef struct Scheme_Env Scheme_Env;
 /*========================================================================*/
 
 #ifdef USE_MZ_SETJMP
-typedef long mz_jmp_buf[8];
+typedef long mz_pre_jmp_buf[8];
 #else
-# define mz_jmp_buf jmp_buf
+# define mz_pre_jmp_buf jmp_buf
+#endif
+
+#ifdef MZ_PRECISE_GC
+typedef struct {
+  mz_pre_jmp_buf jb;
+  void **gcvs;
+  void *gcvs_cnt;
+} mz_jmp_buf;
+#else
+# define mz_jmp_buf mz_pre_jmp_buf
 #endif
 
 /* Like setjmp & longjmp, but you can jmp to a deeper stack position */
@@ -1031,13 +1041,16 @@ MZ_EXTERN Scheme_Object *scheme_eval_waiting;
 #define scheme_break_waiting(p) (p->external_break)
 
 #ifndef USE_MZ_SETJMP
-# ifdef JMP_BUF_IS_JMPBUF
-#  define scheme_longjmp(b, v) longjmp(&b, v)
-#  define scheme_setjmp(b) setjmp(&b)
-# else
-#  define scheme_longjmp(b, v) longjmp(b, v)
-#  define scheme_setjmp(b) setjmp(b)
-# endif
+# define scheme_mz_longjmp(b, v) longjmp(b, v)
+# define scheme_mz_setjmp(b) setjmp(b)
+#endif
+
+#ifdef MZ_PRECISE_GC
+# define scheme_longjmp(b, v) (GC_variable_stack = (b).gcvs, GC_variable_stack[1] = (b).gcvs_cnt, scheme_mz_longjmp((b).jb, v))
+# define scheme_setjmp(b)     ((b).gcvs = GC_variable_stack, (b).gcvs_cnt = GC_variable_stack[1], scheme_mz_setjmp((b).jb))
+#else
+# define scheme_longjmp(b, v) scheme_mz_longjmp(b, v)
+# define scheme_setjmp(b) scheme_mz_setjmp(b)
 #endif
 
 /*========================================================================*/

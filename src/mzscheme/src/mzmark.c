@@ -1982,18 +1982,21 @@ int mark_comp_env_MARK(void *p) {
 int mark_comp_env_FIXUP(void *p) {
   Scheme_Full_Comp_Env *e = (Scheme_Full_Comp_Env *)p;
 
-  gcFIXUP(e->base.uid);
   gcFIXUP(e->base.genv);
+  gcFIXUP(e->base.prefix);
   gcFIXUP(e->base.next);
   gcFIXUP(e->base.values);
   gcFIXUP(e->base.renames);
-  gcFIXUP(e->base.prefix);
+  gcFIXUP(e->base.uid);
+  gcFIXUP(e->base.uids);
+  gcFIXUP(e->base.dup_check);
   
   gcFIXUP(e->data.stat_dists);
   gcFIXUP(e->data.sd_depths);
   gcFIXUP(e->data.stxes_used);
   gcFIXUP(e->data.const_names);
   gcFIXUP(e->data.const_vals);
+  gcFIXUP(e->data.const_uids);
   gcFIXUP(e->data.use);
 
   return

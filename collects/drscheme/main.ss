@@ -1,5 +1,6 @@
 (unit/sig drscheme:main^
   (import [top-level : (program argv get-dropped-files)]
+          mred^
 	  [fw : framework^]
 	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
@@ -7,7 +8,8 @@
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:get/extend : drscheme:get/extend^]
 	  [basis : plt:basis^]
-	  mzlib:function^)
+	  mzlib:function^
+          mzlib:file^)
 
 
   (fw:finder:default-extension "scm")
@@ -29,7 +31,7 @@
    3)
 
   (fw:application:current-app-name "DrScheme")
-  (fw:version:add-spec 'd 9)
+  (fw:version:add-spec 'd 10)
   
   
   ;; no more extension after this point
@@ -54,11 +56,32 @@
 	  (send (ivar frame interactions-canvas) focus)))
       (send frame show #t)))
 
-  (let ([files-to-open (append (reverse (top-level:get-dropped-files))
-			       (reverse (vector->list top-level:argv)))])
-    (if (null? files-to-open)
+  (define (remove-duplicates files)
+    (let loop ([files files])
+      (cond
+        [(null? files) null]
+        [else (if (member (car files) (cdr files))
+                  (loop (cdr files))
+                  (cons (car files) (loop (cdr files))))])))
+
+  (let* ([files-to-open (append (reverse (top-level:get-dropped-files))
+                                (reverse (vector->list top-level:argv)))]
+         [normalized/filtered
+          (let loop ([files files-to-open])
+            (cond
+              [(null? files) null]
+              [else (let ([file (car files)])
+                      (if (file-exists? file)
+                          (cons (normalize-path file) (loop (cdr files)))
+                          (begin
+                            (message-box
+                             "DrScheme"
+                             (format "Cannot open ~a becuase it does not exist" file))
+                            (loop (cdr files)))))]))]
+         [no-dups (remove-duplicates normalized/filtered)])
+    (if (null? no-dups)
 	(make-basic)
-	(for-each drscheme:unit:open-drscheme-window files-to-open)))
+	(for-each drscheme:unit:open-drscheme-window no-dups)))
 
 
   ;;

@@ -55,6 +55,7 @@
 
 	[main : drscheme:main^ ((require-relative-library "main.ss")
 				top-level
+                                mred
 				framework
 				(mzlib pretty-print)
 				print-convert
@@ -62,7 +63,8 @@
 				(export* unit)
 				(export* get/extend)
 				(export* basis)
-				(mzlib function))])
+				(mzlib function)
+                                (mzlib file))])
   (export (unit init)
 	  (unit mzlib)
 	  (unit mred)

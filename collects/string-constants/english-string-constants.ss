@@ -449,6 +449,7 @@ please adhere to these guidelines:
  (choose-color "Choose Color") ; in prefs dialog
  (online-coloring-active "Color syntax interactively")
  (open-files-in-tabs "Open files in separate tabs (not separate windows)")
+ (show-interactions-on-execute "Automatically open interactions window when running a program")
  (limit-interactions-size "Limit interactions size")
 
  ; title of the color choosing dialog

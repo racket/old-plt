@@ -1,6 +1,7 @@
 (module macro mzscheme
   (require (lib "class.ss"))
-  (require-for-syntax (lib "class.ss"))
+  (require-for-syntax (lib "class.ss")
+		      (lib "stx.ss" "syntax"))
   
   (provide mixin)
 
@@ -15,12 +16,15 @@
 			 append
 			 (map (lambda (stx)
 				(syntax->list
-				 (syntax-case stx ()
+				 (syntax-case stx (inherit rename override)
 				   [(inherit names ...) (syntax (names ...))]
 				   [(rename [x names] ...) (syntax (names ...))]
 				   [(override [names bodies] ...) (syntax (names ...))]
 				   [else (syntax ())])))
-			      (syntax->list (syntax (clauses ...)))))])
+			      (syntax->list (syntax (clauses ...)))))]
+
+		       ;; new syntax system mumbo jumbo to bind super-init and this
+		       [class* (datum->syntax 'class* stx (stx-car stx))])
 	   (syntax
 	    (let ([from-ids from] ...)
 	      (let ([to-ids to] ...)

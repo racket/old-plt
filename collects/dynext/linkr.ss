@@ -106,7 +106,8 @@
 					"init.o"
 					"fixup.o"))
 			(map file (list "mzdyn.exp"
-					"mzdyn.obj"))))])
+					"mzdyn.obj"
+					"mzscheme.lib"))))])
      (lambda (l)
        (unless (and (list? l) (andmap string? l))
 	 (raise-type-error 'current-standard-link-libraries "list of strings" l))

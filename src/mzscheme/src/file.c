@@ -124,6 +124,8 @@ long scheme_creator_id = 'MzSc';
 
 #define TO_PATH(x) (SCHEME_PATHP(x) ? x : scheme_char_string_to_path(x))
 
+extern int scheme_stupid_windows_machine;
+
 /* local */
 static Scheme_Object *path_p(int argc, Scheme_Object **argv);
 static Scheme_Object *path_to_string(int argc, Scheme_Object **argv);
@@ -1706,16 +1708,20 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
       *isdir = 1;
 
     copy = scheme_malloc_atomic(len + 14);
-    copy[0] = '\\';
-    copy[1] = '\\';
-    copy[2] = '?';
-    copy[3] = '\\';
-    copy[4] = 'U';
-    copy[5] = 'N';
-    copy[6] = 'C';
-    copy[7] = '\\';
-    memcpy(copy + 8, dirname + 2, len - 2);
-    len += 8;
+    if (scheme_stupid_windows_machine) {
+      memcpy(copy, dirname, len);
+    } else {
+      copy[0] = '\\';
+      copy[1] = '\\';
+      copy[2] = '?';
+      copy[3] = '\\';
+      copy[4] = 'U';
+      copy[5] = 'N';
+      copy[6] = 'C';
+      copy[7] = '\\';
+      memcpy(copy + 8, dirname + 2, len - 2);
+      len += 6;
+    }
     if (!IS_A_SEP(copy[len - 1])) {
       copy[len] = '\\';
       len++;
@@ -3577,23 +3583,29 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
       is_unc = 1;
     nf = scheme_normal_path_seps(filename, &len);
     pattern = (char *)scheme_malloc_atomic(len + 14);
-    pattern[0] = '\\';
-    pattern[1] = '\\';
-    pattern[2] = '?';
-    pattern[3] = '\\';
-    if (is_unc) {
-      pattern[4] = 'U';
-      pattern[5] = 'N';
-      pattern[6] = 'C';
-      pattern[7] = '\\';
-      d = 8;
-      nd = 2;
-    } else {
-      d = 4;
+    
+    if (scheme_stupid_windows_machine) {
+      d = 0;
       nd = 0;
+    } else {
+      pattern[0] = '\\';
+      pattern[1] = '\\';
+      pattern[2] = '?';
+      pattern[3] = '\\';
+      if (is_unc) {
+	pattern[4] = 'U';
+	pattern[5] = 'N';
+	pattern[6] = 'C';
+	pattern[7] = '\\';
+	d = 8;
+	nd = 2;
+      } else {
+	d = 4;
+	nd = 0;
+      }
     }
     memcpy(pattern + d, nf + nd, len - nd);
-    len += d;
+    len += (d - nd);
     if (len && !IS_A_SEP(pattern[len - 1]))
       pattern[len++] = '\\';      
     memcpy(pattern + len, "*.*", 4);

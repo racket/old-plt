@@ -230,11 +230,17 @@
 		 (super-append menu name)
 		 (set! menus (#%append menus (list menu)))
 		 (send menu set-menu-bar this)))]
+	    [get-nth-menu
+	     (lambda (pos)
+	       (if (< pos (length menus))
+		   (list-ref menus pos)
+		   (error 'get-nth-menu "arg too large, got: ~a, only ~ a menus."
+			  pos (length menus))))]
 	    [delete
 	     (opt-lambda (menu [pos 0])
 	       (if (null? menu)
-		   (if (< pos (length menus))
-		       (delete (list-ref menus pos)))
+		   (when (< pos (length menus))
+		     (delete (list-ref menus pos)))
 		   (when (member menu menus)
 		     (super-delete menu)
 		     (send menu set-menu-bar #f)

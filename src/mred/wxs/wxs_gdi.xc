@@ -342,9 +342,8 @@ static inline int Identity(wxFontNameDirectory *, int v)
 @ "set-afm-name" : void SetAFMName(int,SYM[weight],SYM[style],string);
 
 @ "get-new-font-id" :   int GetNewFontId()
-@ "initialize" : void Initialize(int,SYM[family],string);
 
-@ "get-font-id" : int GetFontId(string);
+@ "get-font-id" : int GetFontId(string,SYM[family]);
 @ "get-face-name" : nstring GetFontName(int);
 @ "get-family" : SYM[family] GetFamily(int);
 

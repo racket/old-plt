@@ -1204,6 +1204,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaFace(Scheme_Object *obj, int n,  Sc
   class wxStyleDelta* r;
   objscheme_check_valid(obj);
   string x0;
+  int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1212,9 +1213,13 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaFace(Scheme_Object *obj, int n,  Sc
 
   
   x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "set-delta-face in style-delta%"));
+  if (n > 1) {
+    x1 = WITH_VAR_STACK(unbundle_symset_family(p[1], "set-delta-face in style-delta%"));
+  } else
+    x1 = wxDEFAULT;
 
   
-  r = WITH_VAR_STACK(((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDeltaFace(x0));
+  r = WITH_VAR_STACK(((wxStyleDelta *)((Scheme_Class_Object *)obj)->primdata)->SetDeltaFace(x0, x1));
 
   
   
@@ -2067,7 +2072,7 @@ void objscheme_setup_wxStyleDelta(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "equal?", os_wxStyleDeltaEqual, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-foreground", os_wxStyleDeltaSetDeltaForeground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-background", os_wxStyleDeltaSetDeltaBackground, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-face", os_wxStyleDeltaSetDeltaFace, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta-face", os_wxStyleDeltaSetDeltaFace, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "set-delta", os_wxStyleDeltaSetDelta, 0, 2));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class,"get-family", objscheme_wxStyleDelta_Getfamily, 0, 0));

@@ -91,7 +91,7 @@ class wxStyleDelta : public wxObject
   ~wxStyleDelta();
 
   wxStyleDelta *SetDelta(int changeCommand, int param = 0);
-  wxStyleDelta *SetDeltaFace(char *name);
+  wxStyleDelta *SetDeltaFace(char *name, int family = wxDEFAULT);
   wxStyleDelta *SetDeltaBackground(char *name);
   wxStyleDelta *SetDeltaBackground(wxColour *colour);
   wxStyleDelta *SetDeltaForeground(char *name);

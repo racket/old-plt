@@ -138,7 +138,7 @@
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeSize],rint[0|255]); <> size
 @ "set-delta" : wxStyleDelta! SetDelta(SYM[changeAlign],SYM[align]); <> size
 
-@ "set-delta-face" : wxStyleDelta! SetDeltaFace(string);
+@ "set-delta-face" : wxStyleDelta! SetDeltaFace(string,SYM[family]=wxDEFAULT);
 @ "set-delta-background" : wxStyleDelta! SetDeltaBackground(string); <> color name
 @ "set-delta-background" : wxStyleDelta! SetDeltaBackground(wxColour!); <> colour%
 @ "set-delta-foreground" : wxStyleDelta! SetDeltaForeground(string); <> color name

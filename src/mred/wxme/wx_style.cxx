@@ -350,9 +350,9 @@ Bool wxStyleDelta::Collapse(wxStyleDelta *deltaIn)
 
   if (family == wxBASE) {
     family = deltaIn->family;
-  }
-  if (!face) {
-    face = deltaIn->face;
+    if (!face) {
+      face = deltaIn->face;
+    }
   }
 
   if (styleOn == wxBASE && styleOff == wxBASE) {

@@ -512,6 +512,18 @@ int wxCanvasDC::LogicalToDeviceY(float y) { return YLOG2DEV(y); }
 int wxCanvasDC::LogicalToDeviceYRel(float y) { return YLOG2DEVREL(y); }
 
 //-----------------------------------------------------------------------------
+float wxCanvasDC::FLogicalToDeviceX(float x) { return XLOG2DEV(x); }
+
+//-----------------------------------------------------------------------------
+float wxCanvasDC::FLogicalToDeviceXRel(float x) { return XLOG2DEVREL(x); }
+
+//-----------------------------------------------------------------------------
+float wxCanvasDC::FLogicalToDeviceY(float y) { return YLOG2DEV(y); }
+
+//-----------------------------------------------------------------------------
+float wxCanvasDC::FLogicalToDeviceYRel(float y) { return YLOG2DEVREL(y); }
+
+//-----------------------------------------------------------------------------
 void wxCanvasDC::wxMacSetClip(void)
 {
 	SetCurrentDC();

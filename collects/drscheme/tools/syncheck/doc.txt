@@ -1,4 +1,4 @@
-_default-style.ss_
+_default-style.ss_ 
 
   This file, when loaded, returns an association list
   mapping from naming various syntactic categories. 
@@ -11,13 +11,11 @@ _default-style.ss_
       constant
       comment
       base
-      
 
-  The `base' category applies to "everything else", mostly parens.
+  The `base' category applies to "everything else" (mostly parens).
   
   The symbols map to elements of this type:
   
-    
    (cons (union string
                 (list number number number))
          (listof (union 'slant 'bold 'underline)))
@@ -26,8 +24,16 @@ _default-style.ss_
    The first element in the list is the color of the text. If it
    is a string, it is expected to name a color and if it is a
    list, the values in the list are the red, green, and blue
-   components of the color. The rest of the list contains the
-   style attributes, either italic aka slant, bold, or underlined.
+   components of the color, ranging from 0 to 255.
+   The rest of the list contains the style attributes, either 
+   italic (represented by slant), bold, or underlined.
+   
+   default-style.ss can be loaded with:
+   
+      (require-library "default-style.ss"
+                       "drscheme" 
+                       "tools" 
+                       "syncheck")
 
 _Check Syntax colors_
    
@@ -39,6 +45,6 @@ _Check Syntax colors_
    `drscheme:check-syntax:' to the front of the symbol.
    For example, to get the preference for keywords, use:
    
-      (preferences:get 'drschem:check-syntax:keyword)
+      (preferences:get 'drscheme:check-syntax:keyword)
       
    This returns a style delta.

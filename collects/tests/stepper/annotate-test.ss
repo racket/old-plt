@@ -2,8 +2,11 @@
 (require (prefix kernel: (lib "kerncase.ss" "syntax")))
 (require (lib "syncheck-debug.ss" "drscheme" "private"))
 (require (lib "marks.ss" "stepper" "private"))
+(require "tests-common.ss")
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
+
+(reset-namespaces) 
 
 (SECTION 'stepper-annotater)
 
@@ -102,15 +105,8 @@
 (test '((if (#%app verify-boolean (#%datum . 3) 'if) (#%datum . 4) (#%datum . 5)))
       map syntax-object->datum (wrap-expand-unwrap (list #'(if 3 4 5)) '(lib "htdp-beginner.ss" "lang")))
          
-(define break void)
-
-(define (annotate-exprs stx-list)
-  (let loop ([env annotate:initial-env-package] [stxs stx-list])
-    (if (null? stxs)
-        null
-        (let*-values ([(annotated new-env)
-                       (annotate:annotate (expand (car stxs)) env break 'foot-wrap)])
-          (cons annotated (loop new-env (cdr stxs)))))))
+(define (annotate-exprs-no-break stx-list)
+  (annotate-exprs (map expand stx-list) void))
 
 (define (namespace-annotate-expr stx namespace)
   ;(when (syntax? stx)
@@ -146,7 +142,7 @@
 ; test case:
 (test #t 
       (lambda ()
-        (syntax-case (syntax-object->datum (strip-outer-lambda (car (annotate-exprs (list #'(lambda (a b c) 3))))))
+        (syntax-case  (strip-outer-lambda (car (annotate-exprs-no-break (list #'(lambda (a b c) 3)))))
           (with-continuation-mark lambda quote-syntax #%datum)
           [(with-continuation-mark 
             key
@@ -168,7 +164,7 @@
 
 (test 'a syntax-e
       (strip-return-value-wrap 
-       (syntax-case (car (annotate-exprs (list #'a))) (with-continuation-mark begin)
+       (syntax-case (car (annotate-exprs-no-break (list #'a))) (with-continuation-mark begin)
          [(with-continuation-mark
            key-0
            mark-0
@@ -232,8 +228,8 @@
                             (begin
                               . begin-bodies))))
                        debug-mark-3)))
-                    (begin (test (void) check-mark (syntax debug-mark-1) '(+ a) 'all)
-                           (test (void) check-mark (syntax debug-mark-3) '(+ a) 'all))])))
+                    (begin (test (void) check-mark (syntax debug-mark-1) '(a) 'all)
+                           (test (void) check-mark (syntax debug-mark-3) '(a) 'all))])))
         
         ; improper arg-list:
         (list (list #'(lambda (a b . c) (begin b c)))
@@ -308,57 +304,65 @@
         (list (list #'(lambda (a b c d) (if (a b) (a c) (a d))))
               (lambda (stx)
                 (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values begin let)
-                  [(with-continuation-mark
-                    debug-key_1
-                    debug-mark-1
-                    (begin
-                      pre-break-1
-                      (let ([test-0 (let-values temp-bindings
-                                      (with-continuation-mark
-                                       debug-key_2
-                                       debug-mark-test
-                                       . test-clauses))])
-                        (begin (break-0)
-                               (if test-1
-                                   (let-values temp-bindings_2
-                                     (with-continuation-mark
-                                      debug-key_3
-                                      debug-mark-then
-                                      . then-clauses))
-                                   (let-values temp-bindings-3
-                                     (with-continuation-mark
-                                      debug-key-4
-                                      debug-mark-else
-                                      . else-clauses)))))))
+                  [(let ([test-0 *unevaluated*-0])
+                     (with-continuation-mark
+                      debug-key_1
+                      debug-mark-1
+                      (begin
+                        pre-break-1
+                        (begin
+                          (set! test-1 (let-values temp-bindings
+                                         (with-continuation-mark
+                                          debug-key_2
+                                          debug-mark-test
+                                          . test-clauses)))
+                          (break-0)
+                          (if test-2
+                              (let-values temp-bindings_2
+                                (with-continuation-mark
+                                 debug-key_3
+                                 debug-mark-then
+                                 . then-clauses))
+                              (let-values temp-bindings-3
+                                (with-continuation-mark
+                                 debug-key-4
+                                 debug-mark-else
+                                 . else-clauses)))))))
                    (begin
-                     (test 'test-var syntax-e (syntax test-0))
-                     (test 'test-var syntax-e (syntax test-1))
-                     (test (void) check-mark (syntax debug-mark-1) '(a b c d) '())
-                     (test (void) check-mark (syntax debug-mark-test) '() '(a b c d))
-                     (test (void) check-mark (syntax debug-mark-then) '(a c) '(b d))
-                     (test (void) check-mark (syntax debug-mark-else) '(a d) '(b c)))])))
+                     (test 'if-temp syntax-e (syntax test-0))
+                     (test 'if-temp syntax-e (syntax test-1))
+                     (test 'if-temp syntax-e (syntax test-2))
+                     (test (void) check-mark (syntax debug-mark-1) '(a b c d if-temp) '())
+                     (test (void) check-mark (syntax debug-mark-test) '() '(a b c d if-temp))
+                     (test (void) check-mark (syntax debug-mark-then) '(a c) '(b d if-temp))
+                     (test (void) check-mark (syntax debug-mark-else) '(a d) '(b c if-temp)))])))
         
         ; one-armed if
         (list (list #'(lambda (a b c) (if (begin a b) (begin a c))))
               (lambda (stx)
                 (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values begin)
-                  [(with-continuation-mark
-                    debug-key-1
-                    debug-mark-1
-                    (begin
-                      pre-break-1
+                  [(let ([test-0 *unevaluated*-0])
+                     (with-continuation-mark
+                      debug-key-1
+                      debug-mark-1
                       (begin
-                        break-0
-                        (if (with-continuation-mark
-                             debug-key_2
-                             debug-mark-test
-                             . test-clauses)
-                            (with-continuation-mark
-                             debug-key_3
-                             debug-mark-then
-                             . then-clauses)))))
+                        pre-break-1
+                        (begin
+                          (set! test-1 (with-continuation-mark
+                                        debug-key_2
+                                        debug-mark-test
+                                        . test-clauses))
+                          (break-0)
+                          (if test-2
+                              (with-continuation-mark
+                               debug-key_3
+                               debug-mark-then
+                               . then-clauses))))))
                    (begin
-                     (test (void) check-mark (syntax debug-mark-1) '(a b c) 'all)
+                     (test 'if-temp syntax-e (syntax test-0))
+                     (test 'if-temp syntax-e (syntax test-1))
+                     (test 'if-temp syntax-e (syntax test-2))
+                     (test (void) check-mark (syntax debug-mark-1) '(a b c if-temp) 'all)
                      (test (void) check-mark (syntax debug-mark-test) '() 'all)
                      (test (void) check-mark (syntax debug-mark-then) '(a c ) 'all))])))
         
@@ -596,7 +600,7 @@
                    (begin
                      (test 'a syntax-e (syntax sym-0))
                      (test 'b syntax-e (syntax sym-1))
-                     (test (void) check-mark (syntax mark-0) '(b) 'all))])))
+                     (test (void) check-mark (syntax mark-0) '() 'all))])))
         
         ; top-level vars
         (list (list #'a)
@@ -609,7 +613,7 @@
                       break-0
                       body))
                    (begin
-                     (test (void) check-mark (syntax mark-0) '(a) 'all)
+                     (test (void) check-mark (syntax mark-0) '() 'all)
                      (test 'a syntax-e (strip-return-value-wrap (syntax body))))])))
         
         ; lexical vars
@@ -666,7 +670,7 @@
         ))
 
 (for-each (lambda (test-case)
-            ((cadr test-case) (car (annotate-exprs (car test-case)))))
+            ((cadr test-case) (car (annotate-exprs-no-break (car test-case)))))
           test-cases)
 
 (define mz-namespace (current-namespace))
@@ -699,8 +703,10 @@
 ;     (test 'or-part syntax-e (syntax or-part-1))
 ;     (test 'let-bound syntax-property (syntax or-part-1) 'stepper-binding-type))])
 
+(parameterize ([current-namespace beginner-namespace])
+  (err/rt-test (eval (car (annotate-exprs-no-break (string->stx-list "(define first 3)")))) exn:user?))
 
-;(test 7 eval (car (annotate-exprs (list #'(begin (+ 3 4) (+ 4 5))))))
-;(test 9 eval (car (annotate-exprs (list #'(begin (+ 3 4) (+ 4 5))))))
+;(test 7 eval (car (annotate-exprs-no-break (list #'(begin (+ 3 4) (+ 4 5))))))
+;(test 9 eval (car (annotate-exprs-no-break (list #'(begin (+ 3 4) (+ 4 5))))))
 
 (report-errs)

@@ -8,10 +8,13 @@
 (require (lib "marks.ss" "stepper" "private"))
 (require (lib "class.ss"))
 (require (lib "etc.ss"))
+(require "tests-common.ss")
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
 (SECTION 'stepper-reconstruct)
+
+(reset-namespaces)
 
 ; this following code is probably a good idea, but not right now. For now, I just want
 ; to get the stepper working.
@@ -82,23 +85,6 @@
                (collector #f (list (unbox expr-box) mark-list break-kind returned-value-list)))
               (else (error 'break "unexpected break-kind: ~a" break-kind))))))))
 
-; : ((listof syntax?) box (recon-result recon-result -> (void)) -> (listof syntax)
-(define (annotate-exprs stx-list expr-box action)
-  (let* ([break (make-break action expr-box)]) 
-    (let loop ([env (annotate:make-initial-env-package)] [stx-list stx-list])
-      (if (null? stx-list)
-          null
-          (let*-values ([(annotated new-env)
-                         (annotate:annotate (car stx-list) env break 'foot-wrap)])
-            (cons annotated (loop new-env (cdr stx-list))))))))
-
-; : (string -> (listof syntax)
-(define (string->stx-list stx)
-  (let ([port (open-input-string stx)])
-    (let loop ([first-stx (read-syntax 'test-program port)])
-      (if (eof-object? first-stx)
-          null
-          (cons first-stx (loop (read-syntax 'test-program port)))))))
   
 (define (test-sequence stx expected-queue expected-completed namespace)
   (let/ec k
@@ -116,7 +102,7 @@
       (parameterize ([current-namespace namespace])
         (let* ([stx-list (string->stx-list stx)]
                [expanded (map expand stx-list)]
-               [annotated (annotate-exprs expanded expr-box action)]
+               [annotated (annotate-exprs expanded (make-break action expr-box))]
                [eval-expr (lambda (expanded annotated)
                             (set-box! expr-box expanded)
                             (reconstruct:reconstruct-completed expanded (eval annotated)))])
@@ -129,29 +115,14 @@
   (parameterize ([current-namespace namespace])
     (map annotate:top-level-rewrite (map expand (string->stx-list stx)))))
 
-(define mz-namespace (current-namespace))
 (define mz-render-settings fake-mz-render-settings)
 (define (test-mz-sequence source-list result-list)
   (reconstruct:set-render-settings! mz-render-settings)
   (test-sequence source-list result-list #f mz-namespace))
 
-(define beginner-namespace
-  (let ([new-namespace (make-namespace 'empty)])
-    (parameterize ([current-namespace new-namespace])
-      (namespace-attach-module mz-namespace 'mzscheme)
-      (namespace-require '(lib "htdp-beginner.ss" "lang")))
-    new-namespace))
-
 (define (test-beginner-sequence source-list result-list completed-list)
   (reconstruct:set-render-settings! fake-beginner-render-settings)
   (test-sequence source-list result-list completed-list beginner-namespace))
-
-(define beginner-wla-namespace
-  (let ([new-namespace (make-namespace 'empty)])
-    (parameterize ([current-namespace new-namespace])
-      (namespace-attach-module mz-namespace 'mzscheme)
-      (namespace-require '(lib "htdp-beginner-abbr.ss" "lang")))
-    new-namespace))
 
 (define (test-beginner-wla-sequence source-list result-list completed-list)
   (reconstruct:set-render-settings! fake-beginner-wla-render-settings)

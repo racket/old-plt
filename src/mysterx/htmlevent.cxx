@@ -23,23 +23,23 @@ Scheme_Object *hash_table_put;
 Scheme_Object *hash_table_remove;
 Scheme_Object *make_hash_table;
 
-static BOOL html_event_available(MX_Document_Object *doc) {
+static BOOL html_event_available(MX_Browser_Object *browser) {
   VARIANT_BOOL val;
 
   val = 0;
-  doc->pIEventQueue->get_EventAvailable(&val);
+  browser->pIEventQueue->get_EventAvailable(&val);
 
   return val;
 }
 
-static void html_event_sem_fun(MX_Document_Object *doc,void *fds) {
+static void html_event_sem_fun(MX_Browser_Object *browser,void *fds) {
   scheme_add_fd_eventmask(fds,QS_ALLEVENTS);
-  scheme_add_fd_handle(doc->readSem,fds,TRUE); 
+  scheme_add_fd_handle(browser->readSem,fds,TRUE); 
 }
 
 Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("block-until-event","mx-document",0,argc,argv) ;
+  if (MX_BROWSERP(argv[0]) == FALSE) {
+    scheme_wrong_type("block-until-event","mx-browser",0,argc,argv) ;
   }
 
   scheme_block_until((int (*)(Scheme_Object *))html_event_available,
@@ -277,11 +277,11 @@ Scheme_Object *mx_get_event(int argc,Scheme_Object **argv) {
   IEventQueue *pEventQueue;
   MX_Event *event_object;
   
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-get-event","mx-document",0,argc,argv) ;
+  if (MX_BROWSERP(argv[0]) == FALSE) {
+    scheme_wrong_type("mx-get-event","mx-browser",0,argc,argv) ;
   }
 
-  pEventQueue = MX_DOCUMENT_EVENTQUEUE(argv[0]);
+  pEventQueue = MX_BROWSER_EVENTQUEUE(argv[0]);
 
   pEvent = NULL; // DCOM requires this for some reason
 

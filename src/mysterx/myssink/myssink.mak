@@ -10,13 +10,15 @@ RSC_PROJ=/l 0x409 /fo"myssink.res"
 REGSVR32=regsvr32	
 
 LINK32=link.exe
-LINK32_FLAGS=d:\plt\collects\mzscheme\lib\win32\i386\msvc\mzdyn.obj kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib ..\mysc\mysc.lib /nologo /subsystem:windows /dll /incremental:no /machine:I386 /def:myssink.def /out:myssink.dll
+LINK32_FLAGS=d:\plt\collects\mzscheme\lib\win32\i386\msvc\mzdyn.obj kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib \
+..\mysc\mysc.lib \
+/nologo /subsystem:windows /dll /incremental:no /machine:I386 /def:myssink.def /out:myssink.dll
 DEF_FILE=myssink.def
 LINK32_OBJS= myssink.obj sink.obj comtypes.obj stdafx.obj myssink.res
 
 all : myssink.tlb myssink.dll myssink.h myssink_i.c
 
-myssink.dll : $(DEF_FILE) $(LINK32_OBJS)
+myssink.dll : $(DEF_FILE) $(LINK32_OBJS) ..\mysc\mysc.lib
 	$(LINK32) $(LINK32_FLAGS) $(LINK32_OBJS)
 	copy myssink.dll ..\..\..\collects\mysterx\dlls
 	$(REGSVR32) /s ..\..\..\collects\mysterx\dlls\myssink.dll

@@ -1,5 +1,9 @@
 // mysterx.h
 
+#ifndef _SINKTBL_
+#include "sinktbl.h"
+#endif
+
 #define sizeray(x) (sizeof(x)/sizeof(*x))
 
 #define MX_PRIM_DECL(f) Scheme_Object *f(int,Scheme_Object **)
@@ -91,13 +95,20 @@ typedef struct _mx_com_data_ {
   }; 
 } MX_COM_Data_Object;
 
-typedef struct _com_document_ {
+typedef struct _com_browser_ {
   Scheme_Type type;
   BOOL released;
   HWND hwnd;
-  IHTMLDocument2 *pIHTMLDocument2;
+  IWebBrowser2 *pIWebBrowser2;
+  ISink *pISink;
   IEventQueue *pIEventQueue;
   HANDLE readSem;
+} MX_Browser_Object;
+
+typedef struct _com_document_ {
+  Scheme_Type type;
+  BOOL released;
+  IHTMLDocument2 *pIHTMLDocument2;
 } MX_Document_Object;
 
 typedef struct _mx_element_ {
@@ -127,25 +138,25 @@ typedef enum _mx_html_where_ {
   insert,append
 } MX_HTML_WHERE;
   
-typedef struct _document_window_ { // parameters a la MrEd frame% class
+typedef struct _browser_window_ { // parameters a la MrEd frame% class
   char *label;
   int width;
   int height;
   int x;
   int y;
   DWORD style;
-} DOCUMENT_WINDOW;
+} BROWSER_WINDOW;
 
-typedef struct _document_window_init_ {
-  DOCUMENT_WINDOW docWindow;
+typedef struct _browser_window_init_ {
+  BROWSER_WINDOW browserWindow;
   IStream **ppIStream; // for passing COM interface back to main thread
-} DOCUMENT_WINDOW_INIT;
+} BROWSER_WINDOW_INIT;
 
-typedef struct _document_window_style_option {
+typedef struct _browser_window_style_option {
   char *name;
   DWORD bits;
   BOOL enable;
-} DOCUMENT_WINDOW_STYLE_OPTION;
+} BROWSER_WINDOW_STYLE_OPTION;
 
 // dummy type for "subtyping"
 // a managed object has a Scheme_Type, followed by a released flag
@@ -157,41 +168,48 @@ typedef struct _managed_obj_ {
 
 #define MX_MANAGED_OBJ_RELEASED(o) (((MX_MANAGED_OBJ *)o)->released)
 
-#define MX_COM_OBJP(o) (!SCHEME_INTP(o) && o->type == mx_com_object_type)
+#define TYPE_PRED(o,ty) (!SCHEME_INTP(o) && o->type == ty)
+
+#define MX_COM_OBJP(o) TYPE_PRED(o,mx_com_object_type)
 #define MX_COM_OBJ_VAL(o) (((MX_COM_Object *)o)->pIDispatch)
 #define MX_COM_OBJ_CONNECTIONPOINT(o) (((MX_COM_Object *)o)->pIConnectionPoint)
 #define MX_COM_OBJ_TYPEINFO(o) (((MX_COM_Object *)o)->pITypeInfo)
 #define MX_COM_OBJ_EVENTTYPEINFO(o) (((MX_COM_Object *)o)->pEventTypeInfo)
 #define MX_COM_OBJ_EVENTSINK(o) (((MX_COM_Object *)o)->pISink)
 
-#define MX_COM_TYPEP(o) (!SCHEME_INTP(o) && o->type == mx_com_type_type)
+#define MX_COM_TYPEP(o) TYPE_PRED(o,mx_com_type_type)
 #define MX_COM_TYPE_VAL(o) (((MX_COM_Type *)o)->pITypeInfo)
 
-#define MX_DOCUMENTP(o) (!SCHEME_INTP(o) && o->type == mx_document_type)
+#define MX_DOCUMENTP(o) TYPE_PRED(o,mx_document_type)
 #define MX_DOCUMENT_VAL(o) (((MX_Document_Object *)o)->pIHTMLDocument2)
-#define MX_DOCUMENT_EVENTQUEUE(o) (((MX_Document_Object *)o)->pIEventQueue)
 
-#define MX_ELEMENTP(o) (!SCHEME_INTP(o) && o->type == mx_element_type)
+#define MX_BROWSERP(o) TYPE_PRED(o,mx_browser_type)
+#define MX_BROWSER_VAL(o) (((MX_Browser_Object *)o)->pIWebBrowser2)
+#define MX_BROWSER_EVENTQUEUE(o) (((MX_Browser_Object *)o)->pIEventQueue)
+#define MX_BROWSER_SINK(o) (((MX_Browser_Object *)o)->pISink)
+
+#define MX_ELEMENTP(o) TYPE_PRED(o,mx_element_type)
 #define MX_ELEMENT_VALIDITY(o) (((MX_Element *)o)->valid)
 #define MX_ELEMENT_VAL(o) (((MX_Element *)o)->pIHTMLElement)
 
-#define MX_EVENTP(o) (!SCHEME_INTP(o) && o->type == mx_event_type)
+#define MX_EVENTP(o) TYPE_PRED(o,mx_event_type)
 #define MX_EVENT_VAL(o) (((MX_Event *)o)->pEvent)
 
-#define MX_CYP(o) (!SCHEME_INTP(o) && o->type == mx_com_cy_type)
+#define MX_CYP(o) TYPE_PRED(o,mx_com_cy_type)
 #define MX_CY_VAL(o) (((MX_COM_Data_Object *)o)->cy)
 
-#define MX_DATEP(o) (!SCHEME_INTP(o) && o->type == mx_com_date_type)
+#define MX_DATEP(o) TYPE_PRED(o,mx_com_date_type)
 #define MX_DATE_VAL(o) (((MX_COM_Data_Object *)o)->date)
 
-#define MX_SCODEP(o) (!SCHEME_INTP(o) && o->type == mx_com_scode_type)
+#define MX_SCODEP(o) TYPE_PRED(o,mx_com_scode_type)
 #define MX_SCODE_VAL(o) (((MX_COM_Data_Object *)o)->scode)
 
-#define MX_IUNKNOWNP(o) (!SCHEME_INTP(o) && o->type == mx_com_iunknown_type)
+#define MX_IUNKNOWNP(o) TYPE_PRED(o,mx_com_iunknown_type)
 #define MX_IUNKNOWN_VAL(o) (((MX_COM_Data_Object *)o)->pIUnknown)
 
 extern Scheme_Type mx_com_object_type; 
 extern Scheme_Type mx_com_type_type; 
+extern Scheme_Type mx_browser_type;
 extern Scheme_Type mx_document_type;
 extern Scheme_Type mx_element_type;
 extern Scheme_Type mx_event_type;
@@ -231,6 +249,31 @@ SCODE mx_scode_val(Scheme_Object *);
 IDispatch *mx_comobj_val(Scheme_Object *);
 IUnknown *mx_iunknown_val(Scheme_Object *);
 
+// browsers
+
+MX_PRIM_DECL(mx_navigate);
+MX_PRIM_DECL(mx_go_back);
+MX_PRIM_DECL(mx_go_forward);
+MX_PRIM_DECL(mx_register_navigate_handler);
+MX_PRIM_DECL(mx_unregister_navigate_handler);
+MX_PRIM_DECL(mx_make_browser);
+MX_PRIM_DECL(mx_browser_show);
+MX_PRIM_DECL(mx_current_document);
+
+// documents
+
+MX_PRIM_DECL(mx_find_element);
+MX_PRIM_DECL(mx_find_element_by_id_or_name);
+MX_PRIM_DECL(mx_document_objects);
+MX_PRIM_DECL(mx_coclass_to_html);
+MX_PRIM_DECL(mx_insert_html);
+MX_PRIM_DECL(mx_append_html);
+MX_PRIM_DECL(mx_replace_html);
+MX_PRIM_DECL(mx_get_event);
+MX_PRIM_DECL(mx_document_pred);
+
+// COM
+
 MX_PRIM_DECL(mx_com_terminate);
 MX_PRIM_DECL(mx_com_invoke);
 MX_PRIM_DECL(mx_com_set_property);
@@ -255,14 +298,6 @@ MX_PRIM_DECL(mx_com_register_event_handler);
 MX_PRIM_DECL(mx_com_unregister_event_handler);
 MX_PRIM_DECL(mx_all_controls);
 MX_PRIM_DECL(mx_all_coclasses);
-MX_PRIM_DECL(mx_find_element);
-MX_PRIM_DECL(mx_document_objects);
-MX_PRIM_DECL(mx_coclass_to_html);
-MX_PRIM_DECL(mx_insert_html);
-MX_PRIM_DECL(mx_append_html);
-MX_PRIM_DECL(mx_replace_html);
-MX_PRIM_DECL(mx_get_event);
-MX_PRIM_DECL(mx_document_pred);
 
 // elements
 
@@ -486,12 +521,13 @@ MX_PRIM_DECL(mx_event_dblclick_pred);
 MX_PRIM_DECL(mx_event_error_pred);
 MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_process_win_events);
-MX_PRIM_DECL(mx_make_document);
-MX_PRIM_DECL(mx_document_show);
 MX_PRIM_DECL(mx_release_type_table);
   
+void browserHwndMsgLoop(LPVOID);
 void mx_register_com_object(Scheme_Object *,IDispatch *);
 void mx_register_simple_com_object(Scheme_Object *,IUnknown *);
+void scheme_release_browser(void *,void *);
+void scheme_release_document(void *,void *);
 void codedComError(char *,HRESULT);
 IHTMLElementCollection *getBodyElementsWithTag(IHTMLElement *,char *);
 IDispatch *getElementInCollection(IHTMLElementCollection *,int);
@@ -505,8 +541,18 @@ void initEventNames(void);
 IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *);
 CLSID getCLSIDFromString(const char *);
 ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);
+void signalCodedEventSinkError(char *,HRESULT);
 
 // array procedures
 
 Scheme_Object *safeArrayToSchemeVector(SAFEARRAY *);
 SAFEARRAY *schemeVectorToSafeArray(Scheme_Object *);
+
+extern MYSSINK_TABLE myssink_table;
+extern HINSTANCE hInstance;
+extern HICON hIcon;
+extern HANDLE browserHwndMutex;
+extern HANDLE createHwndSem;
+extern HANDLE eventSinkMutex;
+extern HWND browserHwnd;
+

@@ -8,6 +8,8 @@
 #include "sink.h"
 #include "comtypes.h"
 
+Scheme_Extension_Table *scheme_extension_table;
+
 /////////////////////////////////////////////////////////////////////////////
 // CSink
 
@@ -239,6 +241,10 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
     pVariantArg->punkVal->AddRef();
     return scheme_box(make_iunknown(pVariantArg->punkVal));
+
+  case VT_VARIANT | VT_BYREF:
+
+    return scheme_box(this->variantToSchemeObject(pVariantArg->pvarVal));
 
   default :
     

@@ -17,7 +17,7 @@ Scheme_Object *BSTRToSchemeString(BSTR bstr) {
   WideCharToMultiByte(CP_ACP,(DWORD)0,bstr,len + 1,
 		      buff,len,
 		      NULL,NULL);
- 
+
   return scheme_make_string(buff);
 }
 

@@ -25,7 +25,7 @@ class ATL_NO_VTABLE CSink :
 {
 
 private:
-  Scheme_Extension_Table *scheme_extension_table;
+  //  Scheme_Extension_Table *scheme_extension_table;
   MYSSINK_TABLE *myssink_table;
 
   Scheme_Object *variantToSchemeObject(VARIANTARG *);

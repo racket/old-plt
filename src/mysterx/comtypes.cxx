@@ -23,6 +23,7 @@
 
 Scheme_Type mx_com_object_type;     
 Scheme_Type mx_com_type_type;     
+Scheme_Type mx_browser_type;
 Scheme_Type mx_document_type;
 Scheme_Type mx_element_type;
 Scheme_Type mx_event_type;

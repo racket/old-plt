@@ -1,9 +1,4 @@
-// myssink.cpp : Implementation of DLL Exports.
-
-
-// Note: Proxy/Stub Information
-//      To build a separate proxy/stub DLL, 
-//      run nmake -f myssinkps.mk in the project directory.
+// myssink.cxx : Implementation of DLL Exports.
 
 #include "stdafx.h"
 #include "resource.h"

@@ -1,5 +1,9 @@
 // sinktbl.h
 
+#ifndef _SINKTBL_
+#define _SINKTBL_
+#endif
+
 typedef struct _myssink_table_ {
   Scheme_Object *(*pmake_cy)(CY *);
   Scheme_Object *(*pmake_date)(DATE *);

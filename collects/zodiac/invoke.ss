@@ -13,6 +13,8 @@
     (define dynamic-error
       (default-error-handler 'run-time-error))))
 
+(plt:require-library "sparamu.ss")
+
 (define zodiac:invoke-system
   (lambda ()
     (invoke-open-unit/sig
@@ -23,7 +25,10 @@
 	    (zodiac:default-interface@))
 	  (PARAMETERS : plt:parameters^
 	    (plt:mzscheme-parameters@))
-	  (SYSTEM : zodiac:system^ (zodiac:system@ INTERFACE PARAMETERS)))
+	  (PRETTY : mzlib:pretty-print^
+	    (mzlib:pretty-print@))
+	  (SYSTEM : zodiac:system^
+	    (zodiac:system@ INTERFACE PARAMETERS PRETTY)))
 	(export (open SYSTEM) (open INTERFACE)))
       zodiac)))
 
@@ -58,20 +63,3 @@
 			  (zodiac:parsed->raw e)
 			  e)))))
 		(read-eval-print-loop)))))))))
-
-(define zodiac:old-see
-  (opt-lambda ((show-raw? #t))
-    (zodiac:invoke-system)
-    (let loop ()
-      (printf "e> ")
-      (flush-output)
-      (let ((r ((zodiac:read))))
-	(if (zodiac:eof? r)
-	  (newline)
-	  (begin
-	    (newline)
-	    (pretty-print
-	      (let ((e (car (zodiac:scheme-expand-program (list r)))))
-		(if show-raw? (zodiac:parsed->raw e) e)))
-	    (newline)
-	    (loop)))))))

@@ -79,17 +79,17 @@
   (define get-sym-micro (get-list/sym/lit-micro sym-micro-kwd))
   (define get-lit-micro (get-list/sym/lit-micro lit-micro-kwd))
 
-					; ----------------------------------------------------------------------
+  ; ----------------------------------------------------------------------
 
   (define expand-expr
     (lambda (expr env attributes vocab)
-					;	(printf "Expanding~n") (pretty-print (sexp->raw expr))
-					;	(printf "Expanding~n") (pretty-print expr) (newline)
-					;	(printf "Expanding~n") (display expr)
-					;	(printf "in ~s~n" (get-vocabulary-name vocab))
-					;	(printf "in vocabulary~n") (print-env vocab)
-					;	(printf "in attributes~n") (hash-table-map attributes cons)
-					;	(printf "in~n") (print-env env) (newline)
+      ; (printf "Expanding~n") (pretty-print (sexp->raw expr))
+      ;	(printf "Expanding~n") (pretty-print expr) (newline)
+      ;	(printf "Expanding~n") (display expr)
+      ;	(printf "in ~s~n" (get-vocabulary-name vocab))
+      ;	(printf "in vocabulary~n") (print-env vocab)
+      ;	(printf "in attributes~n") (hash-table-map attributes cons)
+      ;	(printf "in~n") (print-env env) (newline)
       (cond
 	((z:symbol? expr)
 	  (let ((sym-expander (get-sym-micro vocab)))

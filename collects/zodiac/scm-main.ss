@@ -1578,10 +1578,15 @@
 		  (static-error expr "Malformed begin-elaboration-time"))
 		(expand-expr
 		  (structurize-syntax
-		    (with-parameterization
-		      zodiac-user-parameterization
-		      (lambda ()
-			(eval `(begin ,@(map sexp->raw exprs)))))
+		    (with-handlers
+		      ((exn? (lambda (exn)
+			       (static-error expr
+				 "Exception at elaboration time: ~a"
+				 (exn-message exn)))))
+		      (with-parameterization
+			zodiac-user-parameterization
+			(lambda ()
+			  (eval `(begin ,@(map sexp->raw exprs))))))
 		    expr)
 		  env attributes vocab))))
 	  (else

@@ -1087,6 +1087,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
 }
 
 static wchar_t gl_buf[QUICK_UBUF_SIZE];
+static char classes_buf[QUICK_UBUF_SIZE];
 static int dxes_buf[QUICK_UBUF_SIZE];
 
 static DWORD draw_meas(wchar_t *s, long len, HDC hdc, int combine,
@@ -1098,10 +1099,17 @@ static DWORD draw_meas(wchar_t *s, long len, HDC hdc, int combine,
   DWORD sz, flags;
   int *dxes;
 
-  if (len < QUICK_UBUF_SIZE) 
+ if (!len) return 0;
+
+  if (len < QUICK_UBUF_SIZE) {
     gl = gl_buf;
-  else
+    classes = classes_buf;
+  } else {
     gl = new WXGC_ATOMIC wchar_t[len];
+    classes = new WXGC_ATOMIC char[len];
+  }
+  gl[0] = 0;
+
   if (draw) {
     if (len < QUICK_UBUF_SIZE) 
       dxes = dxes_buf;
@@ -1120,15 +1128,17 @@ static DWORD draw_meas(wchar_t *s, long len, HDC hdc, int combine,
   gcp.nGlyphs = len;
 
   if (combine) {
-    flags = GetFontLanguageInfo(hdc);
-    flags &= FLI_MASK;
-  } else
-    flags = 0;
+    flags = (GCP_DIACRITIC | GCP_USEKERNING | GCP_LIGATE | GCP_REORDER | GCP_GLYPHSHAPE);
+  } else {
+    flags = GCP_SYMSWAPOFF | GCP_DISPLAYZWG;
+  }
 
   sz = GetCharacterPlacementW(hdc, s, len, 0, &gcp, flags);
 
-  if (draw) {
-    ExtTextOutW(hdc, x, y, bg ? ETO_OPAQUE : 0, NULL, gl, gcp.nGlyphs, dxes);
+  if (draw && gcp.nGlyphs) {
+    ExtTextOutW(hdc, x, y, 
+		(bg ? ETO_OPAQUE : 0) | ETO_GLYPH_INDEX,
+		NULL, gl, gcp.nGlyphs, dxes);
   }
 
   return sz;
@@ -1183,15 +1193,13 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
 		 1, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1),
 		 ((current_bk_mode != wxTRANSPARENT) && (angle == 0.0)));
 
-  (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), ustring, len);
-
   if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
 
   DoneDC(dc);
 
   w = HIWORD(sz);
-  w = LOWORD(sz);
+  h = LOWORD(sz);
   
   CalcBoundingBox((float)x, (float)y);
   CalcBoundingBox((float)(x + w), (float)(y + h));

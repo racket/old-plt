@@ -1206,6 +1206,8 @@
 (error-test '(sqrt "a"))
 (arity-test sqrt 1 1)
 
+(define (z-round c) (make-rectangular (round (real-part c)) (round (imag-part c))))
+
 (test -13/64-21/16i expt -3/4+7/8i 2)
 (let ([v (expt -3/4+7/8i 2+3i)])
   (test 3826.0 floor (* 10000000 (real-part v)))
@@ -1220,12 +1222,12 @@
 (test 707.0 floor (* 1000 (expt 1/2 1/2)))
 (test 707.0 floor (* 1000 (expt 1/2 0.5)))
 (test 707.0 floor (* 1000 (expt 0.5 1/2)))
-(test 1.0+1.7320508075688772i expt -8 1/3)
-(test 1.0+1.7320508075688772i expt -8.0 1/3)
-(test 1.0110504196966759+1.7095928950497579i expt -8 0.33)
-(test 1.0110504196966759+1.7095928950497579i expt -8.0 0.33)
-(test 1.0842150814913512+0.2905145555072514i expt 1+i 1/3)
-(test 0.25-0.4330127018922193i expt -8 -1/3)
+(test 100.0+173.0i z-round (* 100 (expt -8 1/3)))
+(test 100.0+173.0i z-round (* 100 (expt -8.0 1/3)))
+(test 101.0+171.0i z-round (* 100 (expt -8 0.33)))
+(test 101.0+171.0i z-round (* 100 (expt -8.0 0.33)))
+(test 108.0+29.0i z-round (* 100 (expt 1+i 1/3)))
+(test 25.0-43.0i z-round (* 100 (expt -8 -1/3)))
 
 (test +inf.0 expt 2 +inf.0)
 (test +inf.0 expt +inf.0 10)
@@ -1362,8 +1364,6 @@
 (error-test '(atan 1 "a"))
 (error-test '(atan 1 2+i))
 (arity-test atan 1 2)
-
-(define (z-round c) (make-rectangular (round (real-part c)) (round (imag-part c))))
 
 (test 3166.+1960.i  z-round (* 1000 (sin 1+2i)))
 (test -3166.-1960.i  z-round (* 1000 (sin -1-2i)))

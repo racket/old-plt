@@ -45,7 +45,8 @@
                  (callback 
                   (lambda (menu event)
                     (let*-values
-                        ([(b class-as-info) (get-class-info)]
+                        ([(editor) (get-edit-target-object)]
+			 [(b class-as-info) (get-class-info)]
                          [(class-as-strn) (if (boolean? class-as-info) 
                                               "" 
                                               (apply make-what class-as-info))]
@@ -54,8 +55,8 @@
                                               "/*~n~a~n*/~n~n"
                                               (draw-what (car class-as-info)))
                                              "")])
-			(send (get-edit-target-object) insert class-as-dia)
-			(send (get-edit-target-object) insert class-as-strn))))))
+			(send editor insert class-as-dia)
+			(send editor insert class-as-strn))))))
 
           (make-menu-item% insert-java-class get-class-info make-class class-draw)
           (make-menu-item% insert-java-union get-union-info make-union dt-draw)

@@ -35,6 +35,8 @@
 #define  Uses_ScrollWinWidget
 #include "widgets.h"
 
+#include <ctype.h>
+
 // don't allocate or free for every append or del
 #define LIST_CHUNK_SIZE	20
 #define MULTILIST	((XfwfMultiListWidget)(X->handle))
@@ -70,6 +72,8 @@ wxListBox::wxListBox(wxPanel *panel, wxFunction func, char *title,
     choices = client_data = NULL;
     num_choices = 0;
     num_free = 0;
+    typepos = 0;
+    typetime = 0;
 
     Create(panel, func, title, multiple, x, y, width, height,
 	   n, _choices, style, name);
@@ -541,6 +545,8 @@ void wxListBox::EventCallback(Widget WXUNUSED(w),
 #endif
 }
 
+extern void wxBell(void);
+
 void wxListBox::OnChar(wxKeyEvent *e)
 {
   int delta = 0;
@@ -563,6 +569,59 @@ void wxListBox::OnChar(wxKeyEvent *e)
     break;
   case WXK_END:
     delta = num_choices;
+    break;
+  default:
+    if ((e->keyCode < 0)
+	|| (e->keyCode > 255)
+	|| !isprint(e->keyCode))
+      return;
+
+    if (e->timeStamp && typetime 
+	&& (e->timeStamp - typetime < 500))
+      typepos++;
+    else
+      typepos = 0;
+    if (typepos == 16) {
+      wxBell();
+      typepos = 15;
+      return;
+    }
+    typetime = e->timeStamp;
+    typing[typepos] = e->keyCode;
+    /* Try to find it */
+    {
+      int *sels;
+      int n;
+      n = GetSelections(&sels);
+      if (n <= 1) {
+	int i, start;
+	if (n)
+	  start = sels[0];
+	else
+	  start = 0;
+	for (i = 0; i < num_choices; i++) {
+	  char *s;
+	  int j;
+	  s = GetString((start + i) % num_choices);
+	  for (j = 0; j <= typepos; j++) {
+	    if (toupper(typing[j]) != toupper(s[j]))
+	      break;
+	  }
+	  if (j > typepos) {
+	    if (n)
+	      delta = ((start + i) % num_choices) - start;
+	    else
+	      delta = i + 1;
+	    break;
+	  }
+	}
+	
+	if (i == num_choices) {
+	  wxBell();
+	  return;
+	}
+      }
+    }
     break;
   }
 

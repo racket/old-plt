@@ -598,6 +598,7 @@ enum wxRelationship {
 #define wxOVERWRITE_PROMPT	0x0004
 #define wxHIDE_READONLY		0x0008
 #define wxSHOW_HIDDEN		0x0010
+#define wxMULTIOPEN             0x0020
 
 #define wxCHOICE_HEIGHT		150
 #define wxCHOICE_WIDTH		200

@@ -316,27 +316,28 @@ EventHandling/EvtHandler.o:\
 	$(srcdir)/EventHandling/EvtHandler.h
 
 GDI-Classes/Bitmap.o:\
-	$(srcdir)/GDI-Classes/Bitmap.cc \
+	$(srcdir)/GDI-Classes/Bitmap.cc $(srcdir)/DeviceContexts/DC.h $(srcdir)/DeviceContexts/MemoryDC.h \
 	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
 	$(srcdir)/GDI-Classes/Bitmap.h $(srcdir)/GDI-Classes/Colour.h
 
 GDI-Classes/Colour.o:\
-	$(srcdir)/GDI-Classes/Colour.cc \
+	$(srcdir)/GDI-Classes/Colour.cc $(srcdir)/DeviceContexts/DC.h \
 	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
 	$(srcdir)/GDI-Classes/Colour.h
 
 GDI-Classes/Font.o:\
 	$(srcdir)/GDI-Classes/Font.cc $(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h \
-	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/GDI-Classes/Font.h \
+	$(srcdir)/../../wxcommon/wx_list.h $(srcdir)/GDI-Classes/Font.h $(srcdir)/DeviceContexts/DC.h \
 	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h
 
 GDI-Classes/FontDirectory.o:\
 	$(srcdir)/GDI-Classes/FontDirectory.cc $(srcdir)/../../wxcommon/FontDirectory.cxx \
 	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
-	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h
+	$(srcdir)/GDI-Classes/FontDirectory.h $(srcdir)/../../wxcommon/FontDirectory.h \
+	$(srcdir)/DeviceContexts/DC.h
 
 GDI-Classes/Pen+Brush.o:\
-	$(srcdir)/GDI-Classes/Pen+Brush.cc \
+	$(srcdir)/GDI-Classes/Pen+Brush.cc  $(srcdir)/DeviceContexts/DC.h \
 	$(srcdir)/DataStructures/Object.h $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h \
 	$(srcdir)/GDI-Classes/Colour.h $(srcdir)/GDI-Classes/Pen+Brush.h \
         $(srcdir)/../../wxcommon/Region.h $(srcdir)/../../wxcommon/Region.cxx

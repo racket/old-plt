@@ -91,6 +91,10 @@ private:
     char    **choices;
     char    **client_data;
     int     num_choices, num_free;
+
+    char    typing[16];
+    int     typepos;
+    long    typetime;
 };
 
 #endif // ListBox_h

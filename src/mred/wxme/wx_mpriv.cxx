@@ -2841,6 +2841,19 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       line = line->next;
     }
 
+    if ((h < H) && (i < numValidLines) && (line->h > H)) {
+      /* We'll have to break it up anyway. Start now? */
+      int pos;
+      float py;
+      pos = FindScrollLine(y + H);
+      py = ScrollLineLocation(pos);
+      if (py > y + h) {
+	h += line->h;
+	i++;
+	line = line->next;
+      }
+    }
+
     if (h > H) {
       /* Only happens if we have something that's too big to fit on a page. */
       /* Look for internal scroll positions */

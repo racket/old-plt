@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: Object.cc,v 1.3 1999/11/19 16:28:10 mflatt Exp $
  *
  * Purpose: Top level object and memory debugging for wxWindows
  *

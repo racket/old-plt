@@ -269,6 +269,8 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 #endif
     if (checking_for_break)
       return FALSE;
+    else if (just_this_one)
+      return FALSE;
     else {
       /* Toplevel without context; handle in the main context: */
       if (args)

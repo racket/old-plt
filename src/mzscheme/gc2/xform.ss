@@ -873,8 +873,11 @@
 		      (list->seq
 		       (append
 			body-e
-			(if (eq? name 'gc_marking)
+			(if (or (eq? name 'gc_marking)
+				(assq gcMark (c++-class-prototyped cl)))
+			    ;; Don't add to gc_marking or to a class that has it
 			    null
+
 			    ;; Add init-var decls and gcMARK method:
 			    (append
 			     (list

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Object.h,v 1.4 1999/11/21 00:08:47 mflatt Exp $
+ * $Id: Object.h,v 1.5 1999/11/24 21:20:19 mflatt Exp $
  *
  * Purpose: Top level object and memory debugging for wxWindows
  *
@@ -33,8 +33,6 @@
 //-----------------------------------------------------------------------------
 // wxObject: top level object
 //-----------------------------------------------------------------------------
-
-#include "../../wxcommon/wxGC.h"
 
 #ifdef MZ_PRECISE_GC
 # define WXGC_IGNORE(ptr) GC_finalization_weak_ptr((void **)&(ptr))

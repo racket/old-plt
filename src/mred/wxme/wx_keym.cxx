@@ -1005,7 +1005,7 @@ void wxKeymap::ChainToKeymap(wxKeymap *km, Bool prefix)
 #ifdef MZ_PRECISE_GC
   {
     wxKeymap **kma;
-    kma = GC_malloc(sizeof(wxKeymap*) * (chainCount + 1));
+    kma = (wxKeymap **)GC_malloc(sizeof(wxKeymap*) * (chainCount + 1));
     chainTo = kma;
   }
 #else

@@ -51,8 +51,8 @@ class wxRegion : public wxObject
   void Cleanup();
 
   /* PS Stuff */
-  wxRegion& operator<<(const char *s);
-  wxRegion& operator<<(double d);
+  void Put(const char *s);
+  void Put(double d);
 };
 
 class wxPSRgn : public wxObject

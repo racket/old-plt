@@ -407,6 +407,8 @@ XSRCS = gc2/Window.cc \
   gc2/mred.cc \
   gc2/mredx.cc
 
-XOBJS = ${XSRCS:.cc/=$(OBJDIR)/.o}
+XOBJS = ${XSRCS:gc2/%.cc=gc2/$(OBJDIR)/%.o}
 
 xform: $(XSRCS)
+
+mred2k: $(XOBJS)

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wx.h,v 1.4 1999/11/12 17:27:43 mflatt Exp $
+ * $Id: wx.h,v 1.5 1999/11/21 00:08:46 mflatt Exp $
  *
  * Purpose: wxWindows Xt-port main include file
  *
@@ -58,6 +58,8 @@
 #include <Application/GlobalData.h>
 #include <Dialogs/Dialogs.h>
 #include <Utilities/Utilities.h>
+
+#include "../../wxcommon/wxGC.h"
 
 #endif // wx_h
 

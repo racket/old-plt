@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cxx,v 1.4 1999/11/21 00:09:16 mflatt Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.5 1999/11/24 21:20:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -540,9 +540,11 @@ Bool wxChildList::DeleteObject(wxObject *object)
   int i;
 
   for (i = 0; i < size; i++) {
-    if (nodes[i] && (nodes[i]->Data() == object)) {
-      nodes[i]->strong = NULL;
-      nodes[i]->weak = NULL;
+    wxChildNode *node;
+    node = nodes[i];
+    if (node && (node->Data() == object)) {
+      node->strong = NULL;
+      node->weak = NULL;
       nodes[i] = NULL;
       n--;
 
@@ -558,9 +560,11 @@ Bool wxChildList::DeleteNode(wxChildNode *node)
   int i;
 
   for (i = 0; i < size; i++) {
-    if (nodes[i] == node) {
-      nodes[i]->strong = NULL;
-      nodes[i]->weak = NULL;
+    wxChildNode *nodei;
+    nodei = nodes[i];
+    if (nodei == node) {
+      nodei->strong = NULL;
+      nodei->weak = NULL;
       nodes[i] = NULL;
       n--;
 
@@ -616,10 +620,9 @@ void wxChildList::Show(wxObject *object, int show)
   int i;
 
   for (i = 0; i < size; i++) {
-    if (nodes[i] && (nodes[i]->Data() == object)) {
-      wxChildNode *node;
-      node = nodes[i];
-
+    wxChildNode *node;
+    node = nodes[i];
+    if (node && (node->Data() == object)) {
       if (show > 0) {
 	if (node->strong)
 	  return;
@@ -653,10 +656,9 @@ Bool wxChildList::IsShown(wxObject *object)
   int i;
 
   for (i = 0; i < size; i++) {
-    if (nodes[i] && (nodes[i]->Data() == object)) {
-      wxChildNode *node;
-      node = nodes[i];
-
+    wxChildNode *node;
+    node = nodes[i];
+    if (node && (node->Data() == object)) {
       return (node->strong) ? TRUE : FALSE;
     }
   }

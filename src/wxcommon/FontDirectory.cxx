@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cxx,v 1.4 1999/11/19 22:02:46 mflatt Exp $
+ * $Id: FontDirectory.cxx,v 1.5 1999/11/24 21:20:31 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -187,7 +187,26 @@ class wxSuffixMap {
   void Initialize(const char *, const char *, int weight, int style);
 
   wxSuffixMap();
+
+#ifdef MZ_PRECISE_GC
+  int gcMark(Mark_Proc mark);
+#endif
 };
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+int wxSuffixMap::gcMark(Mark_Proc mark) {
+  if (mark) {
+    int i, j;
+    for (i = 0; i < wxNUM_WEIGHTS; i++)
+      for (j = 0; j < wxNUM_STYLES; j++) {
+	gcMARK_TYPED(char *, map[i][j]);
+      }
+  }
+  return gcBYTES_TO_WORDS(sizeof(*this));
+}
+END_XFORM_SKIP;
+#endif
 
 wxSuffixMap::wxSuffixMap() {
   int i, j;
@@ -291,8 +310,11 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
     }
   }
 
-  if (internal)
-    *v = copystring(internal);
+  if (internal) {
+    char *s;
+    s = copystring(internal);
+    *v = s;
+  }
 }
 
 void wxInitializeFontNameDirectory(void)

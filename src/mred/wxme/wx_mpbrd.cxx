@@ -44,6 +44,7 @@ int wxmeGetDoubleClickThreshold();
   
 static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
 {
+  /* FIXME: key should be address instead of long */
   wxNode *n;
   n = snipLocationList->Find((long)s);
   if (n)
@@ -51,8 +52,13 @@ static wxSnipLocation *DoXSnipLoc(wxList *snipLocationList, wxSnip *s)
   else
     return NULL;
 }
-#define SnipLoc(snip) ((wxSnipLocation *)snipLocationList->Find((long)snip)->Data())
+
 #define XSnipLoc(snip) DoXSnipLoc(snipLocationList, snip)
+#ifdef MZ_PRECISE_GC
+# define SnipLoc(snip) XSnipLoc(snip)
+# else
+# define SnipLoc(snip) ((wxSnipLocation *)snipLocationList->Find((long)snip)->Data())
+#endif
 
 inline Bool Inbox(float lx, float x)
 { 
@@ -1609,7 +1615,11 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
     }
   }
 
-  styleList->BasicStyle()->SwitchTo(dc, oldstyle);
+  {
+    wxStyle *bs;
+    bs = styleList->BasicStyle();
+    bs->SwitchTo(dc, oldstyle);
+  }
 
   OnPaint(FALSE, dc, cx, cy, cr, cb, dx, dy, 
 	  (show_caret && !caretSnip)

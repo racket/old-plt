@@ -76,7 +76,7 @@ static wxMediaXClipboardClient *TheMediaXClipboardClient;
 
 typedef wxChangeRecord *wxChangeRecordPtr;
 #ifdef MZ_PRECISE_GC
-# define MALLOC_CRP(n) (wxChangeRecordPtr **)GC_malloc(sizeof(void*) * n)
+# define MALLOC_CRP(n) (wxChangeRecordPtr *)GC_malloc(sizeof(void*) * n)
 #else
 # define MALLOC_CRP(n) new wxChangeRecordPtr[n]
 #endif
@@ -1397,7 +1397,6 @@ void wxMediaBuffer::Redo(void)
 # define delete_cgrec(x)  delete x
 #endif
 
-
 static void wxmeClearUndos(wxChangeRecord **changes, int *start, int *end,
 			   int maxUndos)
 {
@@ -1529,6 +1528,7 @@ int wxMediaBuffer::GetMaxUndoHistory()
 /****************************************************************/
 
 class  CopyRingElem {
+public:
   wxList *buffer1, *buffer2;
   wxStyleList *style;
   wxBufferData *data;
@@ -1636,20 +1636,16 @@ void wxMediaBuffer::FreeOldCopies(void)
 
   if (copyRingMax > copyRingPos) {
     /* Delete current ring occupant: */
-    copyRing[copyRingPos].buffer1->DeleteContents(TRUE);
-    delete copyRing[copyRingPos].buffer1;
-    copyRing[copyRingPos].buffer2->DeleteContents(TRUE);
-    delete copyRing[copyRingPos].buffer2;
+    wxList *dl;
+    dl = copyRing[copyRingPos].buffer1;
+    dl->DeleteContents(TRUE);
+    delete dl;
+    dl = copyRing[copyRingPos].buffer2;
+    dl->DeleteContents(TRUE);
+    delete dl;
 
     if (copyRing[copyRingPos].data)
-      delete copyRing[copyRingPos].data;
-    if (copyRing[copyRingPos].style) {
-      copyRing[copyRingPos].style->AdjustUsage(FALSE);
-#ifndef WXGARBAGE_COLLECTION_ON
-      if (!copyRing[copyRingPos].style->IsUsed())
-	delete copyRing[copyRingPos].style;
-#endif
-    }
+      delete (copyRing[copyRingPos].data);
   }
 
   copyRing[copyRingPos].buffer1 = wxmb_commonCopyBuffer;
@@ -2053,12 +2049,16 @@ void wxMediaBuffer::SetModified(Bool mod)
     /* Get rid of undos that reset the modification state. */
     int i;
     for (i = changes_end; i != changes_start; ) {
+      wxChangeRecord *cr;
       i = (i - 1 + maxUndos) % maxUndos;
-      changes[i]->DropSetUnmodified();
+      cr = changes[i];
+      cr->DropSetUnmodified();
     }
     for (i = redochanges_end; i != redochanges_start; ) {
+      wxChangeRecord *cr;
       i = (i - 1 + maxUndos) % maxUndos;
-      redochanges[i]->DropSetUnmodified();
+      cr = redochanges[i];
+      cr->DropSetUnmodified();
     }
   }
 }

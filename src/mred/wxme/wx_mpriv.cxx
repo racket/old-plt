@@ -1428,7 +1428,9 @@ void wxMediaEdit::SetClickbackHilited(wxClickback *click, Bool on)
       PerformUndoList(click->unhilite);
 
       for (node = click->unhilite->First(); node; node = node->Next()) {
-	delete (wxChangeRecord *)node->Data();
+	wxChangeRecord *cr;
+	cr = (wxChangeRecord *)node->Data();
+	delete cr;
       }
   
       delete click->unhilite;
@@ -2198,7 +2200,11 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
     ycounter += line->h;
   }
 
-  styleList->BasicStyle()->SwitchTo(dc, oldStyle);
+  {
+    wxStyle *bs;
+    bs = styleList->BasicStyle();
+    bs->SwitchTo(dc, oldStyle);
+  }
 
   if ((show_caret == wxSNIP_DRAW_SHOW_CARET) && !caretSnip)
     if (!line && extraLine)
@@ -2639,14 +2645,16 @@ void wxMediaEdit::CaretOn(void)
 /* 8.5" x 11" Paper, 0.5" Margin; usually not used */
 static long page_width = 612, page_height = 792;
 
-#define wxGetPrinterOrientation() wxGetThePrintSetupData()->GetPrinterOrientation()
+#define wxGetPrinterOrientation(local) (local = wxGetThePrintSetupData(), local->GetPrinterOrientation())
 
 void wxmeGetDefaultSize(float *w, float *h)
 {
+  wxPrintSetupData *psd;
+
   *w = page_width;
   *h = page_height;
 
-  if (wxGetPrinterOrientation() != PS_PORTRAIT)  {
+  if (wxGetPrinterOrientation(psd) != PS_PORTRAIT)  {
     float tmp;
     
     tmp = *h;
@@ -2657,12 +2665,16 @@ void wxmeGetDefaultSize(float *w, float *h)
 
 void wxGetMediaPrintMargin(long *hm, long *vm)
 {
-  wxGetThePrintSetupData()->GetEditorMargin(hm, vm);
+  wxPrintSetupData *psd;
+  psd = wxGetThePrintSetupData();
+  psd->GetEditorMargin(hm, vm);
 }
 
 void wxSetMediaPrintMargin(long hm, long vm)
 {
-  wxGetThePrintSetupData()->SetEditorMargin(hm, vm);
+  wxPrintSetupData *psd;
+  psd = wxGetThePrintSetupData();
+  psd->SetEditorMargin(hm, vm);
 }
 
 class SaveSizeInfo {
@@ -2761,6 +2773,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
   long vm, hm;
   int i, this_page = 1;
   wxMediaLine *line;
+  wxPrintSetupData *psd;
 
   if (flowLocked)
     return;
@@ -2773,7 +2786,7 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
     W = page_width;
     H = page_height;
 
-    if (wxGetPrinterOrientation() != PS_PORTRAIT)  {
+    if (wxGetPrinterOrientation(psd) != PS_PORTRAIT)  {
       float tmp;
       
       tmp = H;

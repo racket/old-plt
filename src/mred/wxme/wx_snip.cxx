@@ -1602,7 +1602,9 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
     snip->SetTightTextFit(1);
   
   if (media) {
-    media->GetStyleList()->Clear();
+    wxStyleList *sl;
+    sl = media->GetStyleList();
+    sl->Clear();
     media->ReadFromFile(f);
   } else
     snip->SetMedia(NULL);

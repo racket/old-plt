@@ -286,7 +286,11 @@ void wxMediaCanvas::OnSize(int w, int h)
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
   DestroyClippingRegion();
 #endif
-  GetDC()->Clear();
+  {
+    wxDC *adc;
+    adc = GetDC();
+    adc->Clear();
+  }
 #endif
 
 #ifdef NO_GET_CLIPPING_REGION
@@ -535,8 +539,11 @@ void wxMediaCanvas::OnPaint(void)
       GetView(&x, &y, &w, &h);
       Redraw(x, y, w, h);
     }
-  } else
-    GetDC()->Clear();
+  } else {
+    wxDC *adc;
+    adc = GetDC();
+    adc->Clear();
+  }
   
   wxCanvas::OnPaint();
 }
@@ -699,8 +706,12 @@ void wxMediaCanvas::Redraw(float localx, float localy, float fw, float fh)
   if (!fakeYScroll)
     clipw -= SB_WIDTH;
 #endif
-  GetDC()->SetClippingRect(XMARGIN, YMARGIN,
-			   clipw - 2 * XMARGIN, cliph - 2 * YMARGIN);
+  {
+    wxDC *adc;
+    adc = GetDC();
+    adc->SetClippingRect(XMARGIN, YMARGIN,
+			 clipw - 2 * XMARGIN, cliph - 2 * YMARGIN);
+  }
 #endif
   
   GetView(&x, &y, &w, &h);
@@ -916,8 +927,11 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       x = y = 0;
       hnumScrolls = vnumScrolls = 0;
       vspp = hspp = 1;
-      if (!media)
-	GetDC()->Clear();
+      if (!media) {
+	wxDC *adc;
+	adc = GetDC();
+	adc->Clear();
+      }
     }    
 
     if (scrollWidth != hnumScrolls || scrollHeight != vnumScrolls

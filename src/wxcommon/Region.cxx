@@ -65,11 +65,11 @@ void wxRegion::SetRectangle(float x, float y, float width, float height)
     height = -height;
 
     ps = new wxPSRgn_Atomic("", "rect");
-    *this << x << " " << y << " moveto\n";
-    *this << (x + width) << " " << y << " lineto\n";
-    *this << (x + width) << " " << (y - height) << " lineto\n";
-    *this << x << " " <<  (y - height) << " lineto\n";
-    *this << "closepath\n";
+    Put(x); Put(" "); Put(y); Put(" moveto\n");
+    Put(x + width); Put(" "); Put(y); Put(" lineto\n");
+    Put(x + width); Put(" "); Put(y - height); Put(" lineto\n");
+    Put(x); Put(" "); Put(y - height); Put(" lineto\n");
+    Put("closepath\n");
 
     /* So bitmap-based region is right */
     y  = -y;
@@ -208,10 +208,10 @@ void wxRegion::SetEllipse(float x, float y, float width, float height)
     height = -height;
 
     ps = new wxPSRgn_Atomic("", "ellipse");
-    *this << (x + width / 2) << " " << (y - height / 2) << " moveto\n";
-    *this << (x + width / 2) << " " << (y - height / 2) << " ";
-    *this << (width / 2) << " " << (height / 2) << " 0 360 ellipse\n";
-    *this << "closepath\n";
+    Put(x + width / 2); Put(" "); Put(y - height / 2); Put(" moveto\n");
+    Put(x + width / 2); Put(" "); Put(y - height / 2); Put(" ");
+    Put(width / 2); Put(" "); Put(height / 2); Put(" 0 360 ellipse\n");
+    Put("closepath\n");
 
     /* So bitmap-based region is right */
     y = -y;
@@ -312,11 +312,11 @@ void wxRegion::SetPolygon(int n, wxPoint points[], float xoffset, float yoffset,
 
   if (is_ps) {
     ps = new wxPSRgn_Atomic("", "poly");
-    *this << fpoints[0].x << " " << fpoints[0].y  << " moveto\n";
+    Put(fpoints[0].x); Put(" "); Put(fpoints[0].y); Put(" moveto\n");
     for (i = 1; i < n; i++) {
-      *this << fpoints[i].x << " " << fpoints[i].y  << " lineto\n";
+      Put(fpoints[i].x); Put(" "); Put(fpoints[i].y); Put(" lineto\n");
     }
-    *this << "closepath\n";
+    Put("closepath\n");
 
     /* So bitmap-based region is right */
     for (i = 0; i < n; i++) {
@@ -641,7 +641,7 @@ Bool wxRegion::Empty()
 #endif
 }
 
-wxRegion& wxRegion::operator<<(const char *s)
+void wxRegion::Put(const char *s)
 {
   long l, psl;
   char *naya;
@@ -655,15 +655,13 @@ wxRegion& wxRegion::operator<<(const char *s)
   naya[psl + l] = 0;
   
   ((wxPSRgn_Atomic *)ps)->s = naya;
-
-  return *this;
 }
 
-wxRegion& wxRegion::operator<<(double d)
+void wxRegion::Put(double d)
 {
   char s[100];
   sprintf(s, "%f", d);
-  return *this << s;
+  Put(s);
 }
 
 /***************************************************************************************/

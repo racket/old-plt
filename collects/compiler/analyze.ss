@@ -168,12 +168,13 @@
     (if (analyze:valueable? (zodiac:set!-form-val v) extra-known-bindings)
 	(let* ([var (zodiac:set!-form-var v)]
 	       [binding (get-annotation (zodiac:bound-varref-binding var))])
-	  (set-binding-known?! binding #t)
-	  ; The known `value' may be a quote form that hasn't yet been analyzed
-	  ; (to obtain a constant varref). In this case, it will be cleaned
-	  ; up by setting the constant as the annotation for the quote form
-	  ; and using this annotation at constant-folding time
-	  (set-binding-val! binding (extract-value (zodiac:set!-form-val v)))
+	  (unless (binding-mutable? binding)
+	    (set-binding-known?! binding #t)
+	    ; The known `value' may be a quote form that hasn't yet been analyzed
+	    ; (to obtain a constant varref). In this case, it will be cleaned
+	    ; up by setting the constant as the annotation for the quote form
+	    ; and using this annotation at constant-folding time
+	    (set-binding-val! binding (extract-value (zodiac:set!-form-val v))))
 	  #t)
 	#f)]
    
@@ -1047,10 +1048,10 @@
 		   ;; all bindings are known up to the first non-valuable expression
 		   ;; in the unit
 		   (let ([not-valueable 
-			  (lambda (context v)
+			  (lambda (v)
 			    (compiler:warning 
 			     v
-			     (format "end known unit values (at ~a)" context)))])
+			     "end known definitions in unit"))])
 		     (let loop ([l (let ([v (car (zodiac:unit-form-clauses ast))])
 				     (if (zodiac:begin-form? v)
 					 (zodiac:begin-form-bodies v)
@@ -1059,7 +1060,7 @@
 		         (let eloop ([v (car l)][extra-known-bindings imports])
 			   (cond
 			    [(analyze:valueable? v extra-known-bindings) (loop (cdr l))]
-			    [else (not-valueable "expression" v)])))))
+			    [else (not-valueable v)])))))
 
 		   ;; recur on the body
 		   (let ([body (analyze-code-body! body

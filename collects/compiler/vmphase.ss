@@ -71,11 +71,15 @@
 			     [(#%append) (and (argc=? 2) "MZC_APPEND")]
 			     [(#%car) "MZC_CAR"]
 			     [(#%cdr) "MZC_CDR"]
+			     [(#%set-car!) "MZC_SET_CAR"]
+			     [(#%set-cdr!) "MZC_SET_CDR"]
 			     [(#%vector-ref) "MZC_VECTOR_REF"]
 			     [(#%vector-set!) "MZC_VECTOR_SET"]
 			     [(#%char->integer) "MZC_CHAR_TO_INTEGER"]
 			     [(#%add1) "MZC_ADD1"]
 			     [(#%sub1) "MZC_SUB1"]
+			     [(#%+) (and (argc=? 2) "MZC_PLUS2")]
+			     [(#%-) (and (argc=? 2) "MZC_MINUS2")]
 			     [else #f])])
 	      (if special
 		  (prim-k special #f)

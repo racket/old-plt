@@ -367,7 +367,7 @@ static void CRASH(int where)
   abort();
 }
 
-static int just_checking, the_size;
+static int just_checking;
 #endif
 
 #include "my_qsort.c"
@@ -1017,63 +1017,22 @@ static void **prev_ptr, **prev_prev_ptr, **prev_prev_prev_ptr;
 static void **prev_var_stack;
 #endif
 
+static void set_alloc_boundary(void *p, MPage *page)
+{
+  long offset;
+
+  offset = OBJ_OFFSET(p);
+  if (offset) {
+    if (!page)
+      page = find_page(p);
+    page->alloc_boundary = offset;
+    SET_OBJ_HEAD(p, UNTAGGED_EOM_HEAD);
+  }
+}
+
 static void init_mpage(void **p, MPage *page)
 {
-  void **top;
-
-#if GENERATIONS
-  if (!(page->flags & MFLAG_MODIFIED)) {
-    if (generations_available) {
-      if (page->flags & MFLAG_BIGBLOCK)
-	protect_pages(page->block_start, page->u.size, 1);
-      else
-	protect_pages(page->block_start, MPAGE_SIZE, 1);
-    }
-  }
-#endif
-
   page->flags = (page->flags & NONCOLOR_MASK);
-  page->alloc_boundary = MPAGE_WORDS;
-
-  top = p + MPAGE_WORDS;
-
-  while (p < top) {
-    long size;
-
-    size = (OBJ_HEAD(p) & OBJ_SIZE_MASK) + 1;
-
-    if (size == UNTAGGED_EOM) {
-      /* Remember empty space for prop:  */
-      page->alloc_boundary = OBJ_OFFSET(p);
-      
-      break;
-    }
-
-#if CHECKS
-    if (0 && page->type == MTYPE_XTAGGED) {
-      just_checking = 1;
-      GC_mark_xtagged(p + 1);
-      just_checking = 0;
-    }
-
-    the_size = size;
-#endif
-
-    SET_OBJ_HEAD(p, OBJ_HEAD(p) & ~(OBJ_COLOR_MASK | OBJ_OFFSET_MASK));
-
-    p += size;
-  } 
-
-#if GENERATIONS
-  if (!(page->flags & MFLAG_MODIFIED)) {
-    if (generations_available) {
-      if (page->flags & MFLAG_BIGBLOCK)
-	protect_pages(page->block_start, page->u.size, 0);
-      else
-	protect_pages(page->block_start, MPAGE_SIZE, 0);
-    }
-  }
-#endif
 
   inited_pages++;
 }
@@ -2154,9 +2113,9 @@ static void compact_mpage(void **p, MPage *page)
 	}
 #endif
       } else {
-	if (after_last_dest_set && (OBJ_OFFSET(after_last_dest_set))) {
+	if (after_last_dest_set) {
 	  /* Set EOM, in case this is the end of writing to dest and some space is left */
-	  SET_OBJ_HEAD(after_last_dest_set, UNTAGGED_EOM_HEAD);
+	  set_alloc_boundary(after_last_dest_set, NULL);
 	  after_last_dest_set = NULL;
 	}
 	dest = OBJ_PAGE_START(p) + dest_offset;
@@ -2164,6 +2123,8 @@ static void compact_mpage(void **p, MPage *page)
 	after_this_dest_set = dest + size;
 	to_near = 1;
       }
+      /* Clear marks, etc.: */
+      SET_OBJ_HEAD(dest, size-1);
     }
 #if CHECKS
     prev_ptr = p;
@@ -2173,12 +2134,10 @@ static void compact_mpage(void **p, MPage *page)
   }
 
   /* Set EOM, in case this is the end of writing to dest and some space is left */
-  if (after_last_dest_set && OBJ_OFFSET(after_last_dest_set)) {
-    SET_OBJ_HEAD(after_last_dest_set, UNTAGGED_EOM_HEAD);
-  }
-  if (after_this_dest_set && OBJ_OFFSET(after_this_dest_set)) {
-    SET_OBJ_HEAD(after_this_dest_set, UNTAGGED_EOM_HEAD);
-  }
+  if (after_last_dest_set)
+    set_alloc_boundary(after_last_dest_set, NULL);
+  if (after_this_dest_set)
+    set_alloc_boundary(after_this_dest_set, page);
 
   if (!to_near) {
     /* Nothing left in here. Reset color to white: */
@@ -3025,7 +2984,7 @@ static void set_ending_tags(void)
 #if NOISY
       GCPRINT(GCOUTF, "End tagI: %lx\n", sets[i]->low);
 #endif
-      *(long *)sets[i]->low = UNTAGGED_EOM - 1;
+      set_alloc_boundary(sets[i]->low, sets[i]->malloc_page);
     }
   }
 }
@@ -3994,8 +3953,7 @@ static gcINLINE void *malloc_generic(size_t size_in_bytes, mtype_t mtype, MSet *
   m = set->low;
   naya = set->low + size_in_words + 1;
   if (naya >= set->high) {
-    if (set->low < set->high)
-      *(long *)set->low = UNTAGGED_EOM - 1;
+    set_alloc_boundary(set->low, set->malloc_page);
     new_page(mtype, 0, set);
     return malloc_generic(size_in_words << LOG_WORD_SIZE, mtype, set);
   }

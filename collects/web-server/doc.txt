@@ -190,6 +190,44 @@ extracting information from Web requests and building Web responses also
 become available through the teachpack.
 
 
+File locations
+==============
+
+By default, the configuration tool organizes files containing the Web server's
+configurations, documents, and servlets in one directory tree per virtual host.
+The organization of files follows:
+
+web-directory
+  configuration-table
+  default-web-root
+    conf
+      servlet-error.html
+      forbidden.html
+      servlet-refresh.html
+      passwords-refresh.html
+      not-found.html
+      protocol-error.html
+    htdocs
+      Defaults
+	index.html
+	documentation
+	  ...
+    log
+    passwords
+    servlets
+      configure.ss
+  my-other-host
+    conf ...
+    htdocs ...
+    log
+    passwords
+    servlets
+      configure.ss
+  still-another-host ...
+
+Files may be relocated or shared between hosts by editing the boring details
+for that host using the configuration tool.
+
 Semi-Internal Functions
 =======================
 

@@ -2,6 +2,7 @@
 
 moved Windows event loop from mx-document% class
   initialization to unit
+moved .DLL's to compiled/native/win32/i386
 
 100, August 17, 1999
 

@@ -3,7 +3,7 @@
   (require "config.ss"
            (prefix server: "server-config.ss")
            "private/planet-shared.ss"
-           (lib "list.ss")
+           (lib "file.ss")
            (lib "pack.ss" "setup"))
 
   #| The util collection provides a number of useful functions for interacting with the PLaneT system. |#
@@ -29,7 +29,10 @@
            (cdr
             (tree->list
              (filter-tree-by-pattern
-              (directory->tree (server:planet-server-repository) (lambda (x) (not (regexp-match ".*/CVS$" x))))
+              (directory->tree (server:planet-server-repository) 
+                               (lambda (x) 
+                                 (let ((filename (file-name-from-path x)))
+                                   (not (memv filename (list "CVS" (server:metainfo-file)))))))
               (list id id id id string->number string->number))))))
 
   ;; current-linkage : -> ((symbol (package-name nat nat) ...) ...)

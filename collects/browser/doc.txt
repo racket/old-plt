@@ -21,9 +21,9 @@ a string, it is parsed as a new HTML document. Thus, where the use
 clicks on "Nowhere", the result is a new page that says "This goes
 nowhere."
 
-The browser also comment forms containing MZSCHEME=sexpr specially.
-Whereas the <A MZSCHEME=sexpr>...</A> form executes the expression
-when the user clicks, the MZSCHEME expression in a comment is executed
+The browser also treats comment forms containing MZSCHEME=sexpr specially.
+Whereas the <A MZSCHEME=sexpr>...</A> form executes the expression when the
+user clicks, the MZSCHEME expression in a comment is executed
 immediately. If the result is a string, the comment is replaced in the
 input HTML stream with the content of the string. Thus,
 

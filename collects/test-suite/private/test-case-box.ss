@@ -113,7 +113,7 @@
                                                 update-stx
                                                 set-actuals-stx)))
                            (with-syntax ([exp-stx (text->syntax-object expected #f)]
-                                         [pred-stx (text->syntax-object predicate #'beginner-equal?)])
+                                         [pred-stx (text->syntax-object predicate beginner-equal?)])
                              (syntax/loc (datum->syntax-object
                                           false 'ignored (list source line column position 1))
                                (test-case pred-stx
@@ -491,21 +491,31 @@
   ;; a snip which will display a pass/fail result
   (define result-snip%
     (class image-snip%
-      (inherit load-file)
+      (inherit set-bitmap)
       (init-field [status 'unknown])
       ;; ((symbols 'pass 'fail 'unknown 'disabled) . -> . void?)
       ;; updates the image with the icon representing one of three results
       (define/public (update value)
-        (load-file
-         (test-icon
-          (case value
-            [(pass) "small-check-mark.jpeg"]
-            [(fail) "small-cross.jpeg"]
-            [(unknown) "small-empty.gif"]
-            [(disabled) "small-no.gif"]))))
+	(set-bitmap
+	 (memoize value
+		  (lambda ()
+		    (make-object bitmap%
+				 (test-icon
+				  (case value
+				    [(pass) "small-check-mark.jpeg"]
+				    [(fail) "small-cross.jpeg"]
+				    [(unknown) "small-empty.gif"]
+				    [(disabled) "small-no.gif"])))))))
       
       (super-new)
       (update status)))
+
+  (define memory (make-hash-table 'equal))
+  (define (memoize k thunk)
+    (hash-table-get memory k (lambda ()
+			       (let ([v (thunk)]) 
+				 (hash-table-put! memory k v)
+				 v))))
   
   #;(string? . -> . string?)
   ;; A path to the icon given a file name

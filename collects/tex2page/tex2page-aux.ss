@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2005-03-06")
+(define *tex2page-version* "2005-03-07")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -74,6 +74,12 @@
 (define *last-modified* "Last modified")
 
 (define *html-conversion-by* "HTML conversion by")
+
+(define *doctype*
+  (string-append
+    "html public "
+    "\"-//W3C//DTD HTML 4.01 Transitional//EN\" "
+    "\"http://www.w3.org/TR/html4/loose.dtd\""))
 
 (define *scheme-version* (string-append "MzScheme " (version)))
 
@@ -279,8 +285,6 @@
 (define *html-page* #f)
 
 (define *html-page-count* #f)
-
-(define *html-slideshow?* #f)
 
 (define *ignore-timestamp?* #f)
 
@@ -3650,6 +3654,12 @@
                 ((no-in-text-image) (set! *use-image-for-intext-math?* #f)))
               (loop))))))))
 
+(define do-htmldoctype
+  (lambda ()
+    (let ((d (get-peeled-group)))
+      (when (string=? d "") (set! d 'none))
+      (write-aux `(!doctype ,d)))))
+
 (define do-htmlcolophon
   (lambda ()
     (call-with-input-string/buffered
@@ -3809,10 +3819,10 @@
 
 (define output-html-preamble
   (lambda ()
-    (unless *html-slideshow?*
-      (emit "<!doctype html public ")
-      (emit "\"-//W3C//DTD HTML 4.01 Transitional//EN\" ")
-      (emit "\"http://www.w3.org/TR/html4/loose.dtd\">")
+    (when (string? *doctype*)
+      (emit "<!doctype ")
+      (emit *doctype*)
+      (emit ">")
       (emit-newline))
     (emit "<html>")
     (emit-newline)
@@ -7363,7 +7373,7 @@
 
 (define !external-labels (lambda (f) #f))
 
-(define !html-slideshow (lambda () (set! *html-slideshow?* #t)))
+(define !doctype (lambda (d) (set! *doctype* d)))
 
 (define !colophon
   (lambda (x)
@@ -7436,9 +7446,9 @@
                        ((!colophon) !colophon)
                        ((!default-title) !default-title)
                        ((!definitely-latex) !definitely-latex)
+                       ((!doctype) !doctype)
                        ((!external-labels) !external-labels)
                        ((!html-head) !html-head)
-                       ((!html-slideshow) !html-slideshow)
                        ((!index) !index)
                        ((!index-page) !index-page)
                        ((!infructuous-calls-to-tex2page)
@@ -8048,6 +8058,8 @@
 (tex-def-prim "\\htmladvancedentities" html-advanced-entities)
 
 (tex-def-prim "\\htmlcolophon" do-htmlcolophon)
+
+(tex-def-prim "\\htmldoctype" do-htmldoctype)
 
 (tex-def-prim "\\htmlgif" (lambda () (do-htmlimg "htmlgif")))
 
@@ -9050,6 +9062,7 @@
        (*current-tex2page-input* #f)
        (*current-source-file* #f)
        (*display-justification* 'center)
+       (*doctype* *doctype*)
        (*dotted-counters* (make-table 'equ string=?))
        (*dumping-nontex?* #f)
        (*equation-number* #f)

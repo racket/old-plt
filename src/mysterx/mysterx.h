@@ -272,7 +272,8 @@ MX_PRIM_DECL(mx_com_method_type);
 MX_PRIM_DECL(mx_com_get_property_type);
 MX_PRIM_DECL(mx_com_set_property_type);
 MX_PRIM_DECL(mx_com_event_type);
-MX_PRIM_DECL(mx_cocreate_instance);
+MX_PRIM_DECL(mx_cocreate_instance_from_coclass);
+MX_PRIM_DECL(mx_cocreate_instance_from_progid);
 MX_PRIM_DECL(mx_com_object_eq);
 MX_PRIM_DECL(mx_com_object_pred);
 MX_PRIM_DECL(mx_com_register_object);
@@ -525,7 +526,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *);
 void marshallSchemeValueToVariant(Scheme_Object *,VARIANTARG *);
 void initEventNames(void);
 IHTMLElement *findBodyElement(IHTMLDocument2 *,char *,char *);
-CLSID getCLSIDFromString(const char *);
+CLSID getCLSIDFromCoClass(const char *);
 ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *);
 void signalCodedEventSinkError(char *,HRESULT);
 

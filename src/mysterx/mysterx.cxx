@@ -95,7 +95,8 @@ static MX_PRIM mxPrims[] = {
   
   // COM objects
   
-  { mx_cocreate_instance,"cocreate-instance",1,1 },
+  { mx_cocreate_instance_from_coclass,"cocreate-instance-from-coclass",1,1 },
+  { mx_cocreate_instance_from_progid,"cocreate-instance-from-progid",1,1 },
   { mx_com_object_pred,"com-object?",1,1 },
   { mx_com_object_eq,"com-object-eq?",2,2 },
   { mx_com_register_object,"com-register-object",1,1 },  
@@ -646,25 +647,19 @@ void codedComError(char *s,HRESULT hr) {
   }
 }
 
-Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
+Scheme_Object *do_cocreate_instance(CLSID clsId,char *name) {
   HRESULT hr;
-  char *coclass;
-  CLSID clsId;
   IDispatch *pIDispatch;
   MX_COM_Object *com_object;
-  
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("cocreate-instance","string",0,argc,argv);
-  }
-  
-  coclass = SCHEME_STR_VAL(argv[0]);
-  clsId = getCLSIDFromString(coclass);
   
   hr = CoCreateInstance(clsId,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
 			IID_IDispatch,(void **)&pIDispatch);
   
   if (hr != ERROR_SUCCESS) {
-    codedComError("Unable to create instance",hr);
+    char errBuff[2048];
+    sprintf(errBuff,"cocreate-instance: Unable to create instance of %s",
+	    name);
+    codedComError(errBuff,hr);
   }
   
   com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
@@ -682,6 +677,47 @@ Scheme_Object *mx_cocreate_instance(int argc,Scheme_Object **argv) {
   
   return (Scheme_Object *)com_object;
 }
+
+Scheme_Object *mx_cocreate_instance_from_coclass(int argc,Scheme_Object **argv) {
+  char *coclass;
+  CLSID clsId;
+  
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("cocreate-instance-from-coclass","string",0,argc,argv);
+  }
+  
+  coclass = SCHEME_STR_VAL(argv[0]);
+  clsId = getCLSIDFromCoClass(coclass);
+
+  return do_cocreate_instance(clsId,coclass);
+}  
+
+Scheme_Object *mx_cocreate_instance_from_progid(int argc,
+						 Scheme_Object **argv) {
+  HRESULT hr;
+  char *progId;
+  CLSID clsId;
+  BSTR wideProgId;
+
+  if (SCHEME_STRINGP(argv[0]) == FALSE) {
+    scheme_wrong_type("cocreate-instance-from-progid","string",0,argc,argv);
+  }
+
+  progId = SCHEME_STR_VAL(argv[0]);
+  
+  wideProgId = schemeStringToBSTR(argv[0]);
+
+  hr = CLSIDFromProgID(wideProgId,&clsId);
+
+  if (hr != S_OK) {
+    char errBuff[2048];
+    sprintf(errBuff,"cocreate-instance-from-progid: Error retrieving CLSID from ProgID %s",
+	    progId);
+    codedComError(errBuff,hr);
+  }
+
+  return do_cocreate_instance(clsId,progId);
+}  
 
 ITypeInfo *typeInfoFromComObject(MX_COM_Object *obj) {
   HRESULT hr;
@@ -882,20 +918,24 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   hr = pIDispatch->QueryInterface(IID_IConnectionPointContainer,(void **)&pIConnectionPointContainer); 
   
   if (hr != S_OK || pIConnectionPointContainer == NULL) {
-    signalCodedEventSinkError("Unable to get COM object connection point container",hr);
+    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
+			      "Unable to get COM object connection point "
+			      "container",hr);
   }
   
   pITypeInfo = eventTypeInfoFromComObject(obj);
   
   if (pITypeInfo == NULL) {
     ReleaseSemaphore(eventSinkMutex,1,NULL);
-    scheme_signal_error("Unable to get type information for events");
+    scheme_signal_error("cocreate-instance-from-{coclass,progid}: "
+			"Unable to get type information for events");
   }
   
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
   
   if (hr != S_OK || pTypeAttr == NULL) {
-    signalCodedEventSinkError("Unable to get type attributes for events",hr);
+    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
+			      "Unable to get type attributes for events",hr);
   }
   
   hr = pIConnectionPointContainer->FindConnectionPoint(pTypeAttr->guid,&pIConnectionPoint);
@@ -904,20 +944,23 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   pIConnectionPointContainer->Release();
   
   if (hr != S_OK || pIConnectionPoint == NULL) {
-    signalCodedEventSinkError("Unable to find COM object connection point",hr);
+    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
+			      "Unable to find COM object connection point",hr);
   }
   
   hr = CoCreateInstance(CLSID_Sink,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
 			IID_IUnknown,(void **)&pIUnknown);
   
   if (hr != S_OK || pIUnknown == NULL) {
-    signalCodedEventSinkError("Unable to create sink object",hr);
+    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
+			      "Unable to create sink object",hr);
   }
   
   hr = pIUnknown->QueryInterface(IID_ISink,(void **)&pISink);
   
   if (hr != S_OK || pISink == NULL) {
-    signalCodedEventSinkError("Unable to find sink interface",hr);
+    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
+			      "Unable to find sink interface",hr);
   }
   
   pISink->set_extension_table((int)scheme_extension_table); // COM won't take a function ptr
@@ -929,7 +972,8 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
   pIUnknown->Release();
   
   if (hr != S_OK) {
-    signalCodedEventSinkError("Unable to connect sink to connection point",hr);
+    signalCodedEventSinkError("cocreate-instance-from-{coclass,progid}: "
+			      "Unable to connect sink to connection point",hr);
   }
   
   obj->pEventTypeInfo = pITypeInfo;
@@ -3252,7 +3296,7 @@ Scheme_Object *mx_document_objects(int argc,Scheme_Object **argv) {
   return retval;
 }
 
-CLSID getCLSIDFromString(const char *name) { // linear search through Registry
+CLSID getCLSIDFromCoClass(const char *name) { 
   HKEY hkey,hsubkey;
   LONG result;
   FILETIME fileTime;
@@ -3561,7 +3605,7 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
   sprintf(widthBuff,format,SCHEME_INT_VAL(argv[1]));
   sprintf(heightBuff,format,SCHEME_INT_VAL(argv[2]));
 
-  clsid = getCLSIDFromString(controlName);
+  clsid = getCLSIDFromCoClass(controlName);
   
   if (memcmp(&clsid,&emptyClsid,sizeof(CLSID)) == 0) {
     scheme_signal_error("Control not found");  

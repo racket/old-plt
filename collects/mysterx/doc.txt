@@ -319,12 +319,12 @@ _MysterX_
 > alt-key :: (send an-mx-event alt-key)
 
   Returns #t if the Alt key was pressed when the 
-  even was generated, #f otherwise.
+  event was generated, #f otherwise.
 
 > ctrl-key :: (send an-mx-event ctrl-key)
 
   Returns #t if the Ctrl key was pressed when the 
-  even was generated, #f otherwise. 
+  event was generated, #f otherwise. 
 
 > from-tag :: (send an-mx-event from-tag)
 
@@ -355,7 +355,7 @@ _MysterX_
 > shift-key :: (send an-mx-event shift-key)
 
   Returns #t if the Shift key was pressed when the 
-  even was generated, #f otherwise.
+  event was generated, #f otherwise.
 
 > tag :: (send an-mx-event tag)
 

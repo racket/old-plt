@@ -66,15 +66,16 @@
 ;;			      (package-y p)
 ;;			      (package-weight p)))
 ;;		      packages))
-      (cond
+      (time
+       (cond
         ((null? packages) (fix-home!)))
-      (cond
+       (cond
         (baseline? (send-command (compute-baseline-move packages robots) out))
         (else
          (send-command (compute-move packages robots) out)))
-      (let ((robots (read-response! update-score
-                                    packages
-                                    in 
-				    gui?)))
-        (loop (read-packages in) robots))))
+       (let ((robots (read-response! update-score
+				     packages
+				     in 
+				     gui?)))))
+      (loop (read-packages in) robots)))
   )

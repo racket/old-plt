@@ -21,6 +21,8 @@
   All rights reserved.
 */
 
+#pragma optimize("", off)
+
 /* This file contains 
 
         * the main eval-apply loop, in scheme_do_eval()
@@ -3952,6 +3954,8 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 {
   Scheme_Type type;
 
+#define goto_top scheme_validate_expr(port, expr, stack, depth, delta, num_toplevels)
+
  top:
   type = SCHEME_TYPE(expr);
 
@@ -4007,7 +4011,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 
       for (i = 0; i < n; i++) {
 	scheme_validate_expr(port, app->args[i], stack, depth, delta, num_toplevels);
-	memset(stack, VALID_NOT, delta);
+	memset(stack, VALID_NOT, delta + n - 1);
       }
     }
     break;
@@ -4025,7 +4029,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       }
 
       expr = seq->array[cnt - 1];
-      goto top;
+      goto_top;
     }
     break;
   case scheme_branch_type:
@@ -4037,7 +4041,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       scheme_validate_expr(port, b->tbranch, stack, depth, delta, num_toplevels);
       memset(stack, VALID_NOT, delta);
       expr = b->fbranch;
-      goto top;
+      goto_top;
     }
     break;
   case scheme_with_cont_mark_type:
@@ -4049,29 +4053,40 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       scheme_validate_expr(port, wcm->val, stack, depth, delta, num_toplevels);
       memset(stack, VALID_NOT, delta);
       expr = wcm->body;
-      goto top;
+      goto_top;
     }
     break;
-  case scheme_compiled_unclosed_procedure_type:
+  case scheme_unclosed_procedure_type:
     {
       Scheme_Closure_Compilation_Data *data = (Scheme_Closure_Compilation_Data *)expr;
-      int i, cnt, p;
+      int i, cnt, p, sz, base;
       short *map;
       char *new_stack;
       
-      cnt = data->closure_size;
+      sz = data->max_let_depth + data->num_params;
       map = data->closure_map;
 
-      new_stack = scheme_malloc_atomic(cnt);
-      
+      new_stack = scheme_malloc_atomic(sz);
+
+      cnt = data->num_params;
+      base = sz - cnt;
+      for (i = 0; i < cnt; i++) {
+	new_stack[i + base] = VALID_VAL;
+      }
+
+      cnt = data->closure_size;
+      base = base - cnt;
+
       for (i = 0; i < cnt; i++) {
 	p = map[i] + delta;
 	if ((p < 0) || (p > depth) || (stack[p] == VALID_NOT))
 	  scheme_ill_formed_code(port);
-	new_stack[i] = stack[p];
+	new_stack[i + base] = stack[p];
       }
 
-      scheme_validate_expr(port, data->code, new_stack, cnt, 0, num_toplevels);
+      memset(new_stack, VALID_NOT, base);
+
+      scheme_validate_expr(port, data->code, new_stack, sz, base, num_toplevels);
     }
     break;
   case scheme_let_value_type:
@@ -4097,9 +4112,9 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 
 	  /* Check for wrappers on the RHS that box the `i'th result: */
 	  for (rhs = lv->value; 
-	       SAME_TYPE(SCHEME_TYPE(rhs), scheme_syntax_type) && (SCHEME_PINT_VAL(expr) == BOXVAL_EXPD);
-	       rhs = SCHEME_CDR((Scheme_Object *)SCHEME_IPTR_VAL(expr))) {
-	    int j = SCHEME_INT_VAL(SCHEME_CAR((Scheme_Object *)SCHEME_IPTR_VAL(expr)));
+	       SAME_TYPE(SCHEME_TYPE(rhs), scheme_syntax_type) && (SCHEME_PINT_VAL(rhs) == BOXVAL_EXPD);
+	       rhs = SCHEME_CDR((Scheme_Object *)SCHEME_IPTR_VAL(rhs))) {
+	    int j = SCHEME_INT_VAL(SCHEME_CAR((Scheme_Object *)SCHEME_IPTR_VAL(rhs)));
 
 	    if (j == i) {
 	      stack[p] = VALID_BOX;
@@ -4110,7 +4125,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       }
 
       expr = lv->body;
-      goto top;
+      goto_top;
     }
     break;
   case scheme_let_void_type:
@@ -4131,7 +4146,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	delta -= c;
 
       expr = lv->body;
-      goto top;
+      goto_top;
     }
     break;
   case scheme_letrec_type:
@@ -4141,7 +4156,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 
       c = l->count;
       
-      if ((c < 0) || (c > delta))
+      if ((c < 0) || (c + delta >= depth))
 	scheme_ill_formed_code(port);
 
       for (i = 0; i < c; i++) {
@@ -4150,7 +4165,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       }
 
       for (i = 0; i < c; i++) {
-	stack[--delta] = VALID_VAL;
+	stack[delta + i] = VALID_VAL;
       }
 
       for (i = 0; i < c; i++) {
@@ -4158,7 +4173,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
       }
 
       expr = l->body;
-      goto top;
+      goto_top;
     }
     break;
   case scheme_let_one_type:
@@ -4170,14 +4185,14 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	scheme_ill_formed_code(port);
 
       expr = lo->value;
-      goto top;
+      goto_top;
     }
     break;
   default:
     /* All values are definitely ok, except pre-closed closures: */
     if (SAME_TYPE(type, scheme_closure_type)) {
       expr = SCHEME_COMPILED_CLOS_CODE(expr);
-      goto top;
+      goto_top;
     }
     break;
   }

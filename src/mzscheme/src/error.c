@@ -135,9 +135,11 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 #ifdef MZ_PRECISE_GC
   /* Since we might malloc, move all pointers into a local array. */
 
-  va_list args2 = args;
+  va_list args2;
   int pp = 0;
   void *ptrs[100];
+
+  memcpy(&args2, &args, sizeof(args));
 
   memset(ptrs, 0, 100 * sizeof(void *));
   for (j = 0; msg[j]; j++) {

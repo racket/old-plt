@@ -84,6 +84,7 @@ static int unbundle_symset_kind(Scheme_Object *v, const char *where) {
 
 static Scheme_Object *style_wxALWAYS_SB_sym = NULL;
 static Scheme_Object *style_wxHSCROLL_sym = NULL;
+static Scheme_Object *style_wxINVISIBLE_sym = NULL;
 
 static void init_symset_style(void) {
   REMEMBER_VAR_STACK();
@@ -91,12 +92,14 @@ static void init_symset_style(void) {
   style_wxALWAYS_SB_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("always-vscroll"));
   wxREGGLOB(style_wxHSCROLL_sym);
   style_wxHSCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hscroll"));
+  wxREGGLOB(style_wxINVISIBLE_sym);
+  style_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!style_wxHSCROLL_sym) WITH_VAR_STACK(init_symset_style());
+  if (!style_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_style());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -104,6 +107,7 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (i == style_wxALWAYS_SB_sym) { result = result | wxALWAYS_SB; }
   else if (i == style_wxHSCROLL_sym) { result = result | wxHSCROLL; }
+  else if (i == style_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

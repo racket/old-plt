@@ -63,6 +63,7 @@ START_XFORM_SKIP;
 @BEGINSYMBOLS gaugeStyle > > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
+@SYM "inactive" : wxINVISIBLE
 @ENDSYMBOLS
 
 @CLASSBASE wxsGauge "gauge" : "item"

@@ -210,6 +210,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();
 
   return TRUE;

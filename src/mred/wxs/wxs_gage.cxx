@@ -88,6 +88,7 @@ START_XFORM_SKIP;
 
 static Scheme_Object *gaugeStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *gaugeStyle_wxHORIZONTAL_sym = NULL;
+static Scheme_Object *gaugeStyle_wxINVISIBLE_sym = NULL;
 
 static void init_symset_gaugeStyle(void) {
   REMEMBER_VAR_STACK();
@@ -95,12 +96,14 @@ static void init_symset_gaugeStyle(void) {
   gaugeStyle_wxVERTICAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical"));
   wxREGGLOB(gaugeStyle_wxHORIZONTAL_sym);
   gaugeStyle_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
+  wxREGGLOB(gaugeStyle_wxINVISIBLE_sym);
+  gaugeStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!gaugeStyle_wxHORIZONTAL_sym) WITH_VAR_STACK(init_symset_gaugeStyle());
+  if (!gaugeStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_gaugeStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -108,6 +111,7 @@ static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (i == gaugeStyle_wxVERTICAL_sym) { result = result | wxVERTICAL; }
   else if (i == gaugeStyle_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
+  else if (i == gaugeStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

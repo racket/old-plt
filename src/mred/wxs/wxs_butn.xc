@@ -9,6 +9,7 @@
 
 @BEGINSYMBOLS buttonStyle > > PRED BUNDLE
 @SYM "border" : 1
+@SYM "inactive" : wxINVISIBLE
 @ENDSYMBOLS
 
 @CLASSBASE wxButton "button":"item"

@@ -33,16 +33,50 @@
 START_XFORM_SKIP;
 #endif
 
-static int istype_symset_choiceStyle(Scheme_Object *v, const char *where) {
-  if SCHEME_NULLP(v) return 1;
-  if (where) scheme_wrong_type(where, "choiceStyle symbol list", -1, 0, &v);
-  return 0;
+static Scheme_Object *choiceStyle_wxINVISIBLE_sym = NULL;
+
+static void init_symset_choiceStyle(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(choiceStyle_wxINVISIBLE_sym);
+  choiceStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_choiceStyle(Scheme_Object *v, const char *where) {
-  istype_symset_choiceStyle(v, where);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!choiceStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_choiceStyle());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == choiceStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "choiceStyle symbol list", -1, 0, &v));
   return 0;
 }
+
+static int istype_symset_choiceStyle(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!choiceStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_choiceStyle());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == choiceStyle_wxINVISIBLE_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "choiceStyle symbol list", -1, 0, &v));
+  return 0;
+}
+
 
 
 

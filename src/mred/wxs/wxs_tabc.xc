@@ -50,7 +50,11 @@ void wxTabChoice::Delete(int which) { }
 
 @MACRO cStringList = (SCHEME_LISTP({x}) && (XC_SCHEME_NULLP({x}) || SCHEME_STRINGP(SCHEME_CAR({x}))))
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,-int=0,string[]=NULL/bList/ubList/cStringList///push); : : ubCallbackSetup/glueListSet[string.3.4.3.METHODNAME("tab-group","initialization")]/glueCleanup[4]/ubCallbackCreatorFinish
+@BEGINSYMBOLS tabStyle > > PRED BUNDLE
+@SYM "inactive" : wxINVISIBLE
+@ENDSYMBOLS
+
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback/nopush,nstring,-int=0,string[]=NULL/bList/ubList/cStringList///push,SYM[tabStyle]=0); : : ubCallbackSetup/glueListSet[string.3.4.3.METHODNAME("tab-group","initialization")]/glueCleanup[4]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 

@@ -28,6 +28,7 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @SYM "no-vscroll" : wxMCANVAS_NO_V_SCROLL
 @SYM "hide-hscroll" : wxMCANVAS_HIDE_H_SCROLL
 @SYM "hide-vscroll" : wxMCANVAS_HIDE_V_SCROLL
+@SYM "inactive" : wxINVISIBLE
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci

@@ -38,6 +38,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @BEGINSYMBOLS style > > PRED BUNDLE
 @SYM "always-vscroll" : wxALWAYS_SB    
 @SYM "hscroll" : wxHSCROLL
+@SYM "inactive" : wxINVISIBLE
 @ENDSYMBOLS
 
 @CLASSBASE wxListBox "list-box":"item"

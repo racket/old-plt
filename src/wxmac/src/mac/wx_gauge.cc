@@ -110,6 +110,8 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();  
 }
 

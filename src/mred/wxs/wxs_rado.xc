@@ -10,6 +10,7 @@
 @BEGINSYMBOLS radioboxStyle >  > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
+@SYM "inactive" : wxINVISIBLE
 @ENDSYMBOLS
 
 @CLASSBASE wxRadioBox "radio-box":"item"

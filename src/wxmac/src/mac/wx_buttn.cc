@@ -104,13 +104,15 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   ::EmbedControl(cMacControl, GetRootControl());
 
   if (style & 1) OnSetDefault(TRUE);
-
+  
   {
     wxWindow *p;
     p = GetParent();
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();
 }
 
@@ -169,15 +171,19 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
   cWindowWidth = bounds.right;
   OffsetRect(&bounds,SetOriginX,SetOriginY);
 
+  if (style & 1) OnSetDefault(TRUE);
+
   {
     wxWindow *p;
     p = GetParent();
     if (p->IsHidden())
       DoShow(FALSE);
-    else {
+    else if (!(style & wxINVISIBLE)) {
       ::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
     }
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
 
   InitInternalGray();
 }

@@ -228,6 +228,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();
 
   OnClientAreaDSize(1, 1, 1, 1);

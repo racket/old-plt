@@ -210,16 +210,50 @@ class wxItem *objscheme_unbundle_wxItem(Scheme_Object *obj, const char *where, i
 }
 
 
-static int istype_symset_messageStyle(Scheme_Object *v, const char *where) {
-  if SCHEME_NULLP(v) return 1;
-  if (where) scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v);
-  return 0;
+static Scheme_Object *messageStyle_wxINVISIBLE_sym = NULL;
+
+static void init_symset_messageStyle(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(messageStyle_wxINVISIBLE_sym);
+  messageStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
-  istype_symset_messageStyle(v, where);
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!messageStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_messageStyle());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == messageStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v));
   return 0;
 }
+
+static int istype_symset_messageStyle(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!messageStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_messageStyle());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == messageStyle_wxINVISIBLE_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v));
+  return 0;
+}
+
 
 static Scheme_Object *iconID_wxMSGICON_APP_sym = NULL;
 static Scheme_Object *iconID_wxMSGICON_WARNING_sym = NULL;

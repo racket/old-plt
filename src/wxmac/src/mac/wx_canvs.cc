@@ -133,6 +133,8 @@ void wxCanvas::InitDefaults(void)
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (cStyle & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();
 }
 

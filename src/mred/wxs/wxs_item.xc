@@ -26,6 +26,7 @@
 @END
 
 @BEGINSYMBOLS messageStyle > > BUNDLE
+@SYM "inactive" : wxINVISIBLE
 @ENDSYMBOLS
 
 @BEGINSYMBOLS iconID > ONE > BUNDLE

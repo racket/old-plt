@@ -34,23 +34,27 @@ START_XFORM_SKIP;
 #endif
 
 static Scheme_Object *buttonStyle_1_sym = NULL;
+static Scheme_Object *buttonStyle_wxINVISIBLE_sym = NULL;
 
 static void init_symset_buttonStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(buttonStyle_1_sym);
   buttonStyle_1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("border"));
+  wxREGGLOB(buttonStyle_wxINVISIBLE_sym);
+  buttonStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!buttonStyle_1_sym) WITH_VAR_STACK(init_symset_buttonStyle());
+  if (!buttonStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_buttonStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
   else if (i == buttonStyle_1_sym) { result = result | 1; }
+  else if (i == buttonStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

@@ -208,6 +208,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();
 	
   return TRUE;

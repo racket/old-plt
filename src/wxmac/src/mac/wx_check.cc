@@ -101,6 +101,8 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();
 }
 
@@ -139,16 +141,20 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
     if (cWindowHeight < IC_MIN_HEIGHT)
       cWindowHeight = IC_MIN_HEIGHT;
     OffsetRect(&bounds,SetOriginX,SetOriginY);
-  
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+
+    {
+      wxWindow*p;
+      p = GetParent();
+      if (p->IsHidden())
+	DoShow(FALSE);
+      else if (!(style & wxINVISIBLE)) {
+	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+      }
+    }
+    if (style & wxINVISIBLE)
+      Show(FALSE);
   }
 
-  {
-    wxWindow*p;
-    p = GetParent();
-    if (p->IsHidden())
-      DoShow(FALSE);
-  }
   InitInternalGray();
 }
 

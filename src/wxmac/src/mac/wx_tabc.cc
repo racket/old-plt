@@ -56,8 +56,8 @@ static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Re
 
 //-----------------------------------------------------------------------------
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label, 
-			 int N, char **Choices)
- : wxItem (panel, -1, -1, -1, -1, 0,  "tab-choice")
+			 int N, char **Choices, int style)
+ : wxItem (panel, -1, -1, -1, -1, style,  "tab-choice")
 {
   int i;
   CGrafPtr theMacGrafPort;
@@ -110,6 +110,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    Show(FALSE);
   InitInternalGray();
 }
 

@@ -38,6 +38,7 @@ START_XFORM_SKIP;
 static Scheme_Object *sliderStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *sliderStyle_wxHORIZONTAL_sym = NULL;
 static Scheme_Object *sliderStyle_wxPLAIN_SLIDER_sym = NULL;
+static Scheme_Object *sliderStyle_wxINVISIBLE_sym = NULL;
 
 static void init_symset_sliderStyle(void) {
   REMEMBER_VAR_STACK();
@@ -47,12 +48,14 @@ static void init_symset_sliderStyle(void) {
   sliderStyle_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
   wxREGGLOB(sliderStyle_wxPLAIN_SLIDER_sym);
   sliderStyle_wxPLAIN_SLIDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("plain"));
+  wxREGGLOB(sliderStyle_wxINVISIBLE_sym);
+  sliderStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!sliderStyle_wxPLAIN_SLIDER_sym) WITH_VAR_STACK(init_symset_sliderStyle());
+  if (!sliderStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_sliderStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -61,6 +64,7 @@ static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
   else if (i == sliderStyle_wxVERTICAL_sym) { result = result | wxVERTICAL; }
   else if (i == sliderStyle_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
   else if (i == sliderStyle_wxPLAIN_SLIDER_sym) { result = result | wxPLAIN_SLIDER; }
+  else if (i == sliderStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

@@ -72,6 +72,7 @@ static Scheme_Object *canvasStyle_wxBORDER_sym = NULL;
 static Scheme_Object *canvasStyle_wxVSCROLL_sym = NULL;
 static Scheme_Object *canvasStyle_wxHSCROLL_sym = NULL;
 static Scheme_Object *canvasStyle_wxGL_CONTEXT_sym = NULL;
+static Scheme_Object *canvasStyle_wxINVISIBLE_sym = NULL;
 
 static void init_symset_canvasStyle(void) {
   REMEMBER_VAR_STACK();
@@ -83,12 +84,14 @@ static void init_symset_canvasStyle(void) {
   canvasStyle_wxHSCROLL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("hscroll"));
   wxREGGLOB(canvasStyle_wxGL_CONTEXT_sym);
   canvasStyle_wxGL_CONTEXT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("gl"));
+  wxREGGLOB(canvasStyle_wxINVISIBLE_sym);
+  canvasStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!canvasStyle_wxGL_CONTEXT_sym) WITH_VAR_STACK(init_symset_canvasStyle());
+  if (!canvasStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_canvasStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -98,6 +101,7 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   else if (i == canvasStyle_wxVSCROLL_sym) { result = result | wxVSCROLL; }
   else if (i == canvasStyle_wxHSCROLL_sym) { result = result | wxHSCROLL; }
   else if (i == canvasStyle_wxGL_CONTEXT_sym) { result = result | wxGL_CONTEXT; }
+  else if (i == canvasStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

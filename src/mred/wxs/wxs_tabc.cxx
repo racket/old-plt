@@ -197,6 +197,33 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+static Scheme_Object *tabStyle_wxINVISIBLE_sym = NULL;
+
+static void init_symset_tabStyle(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(tabStyle_wxINVISIBLE_sym);
+  tabStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
+}
+
+static int unbundle_symset_tabStyle(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!tabStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_tabStyle());
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == tabStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "tabStyle symbol list", -1, 0, &v));
+  return 0;
+}
+
+
 
 
 
@@ -211,7 +238,7 @@ class os_wxTabChoice : public wxTabChoice {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = 0, string* x4 = NULL));
+  os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3 = 0, string* x4 = NULL, int x5 = 0));
   ~os_wxTabChoice();
   void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -238,8 +265,8 @@ void os_wxTabChoice::gcFixup() {
 
 static Scheme_Object *os_wxTabChoice_class;
 
-os_wxTabChoice::os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, string* x4))
-CONSTRUCTOR_INIT(: wxTabChoice(x0, x1, x2, x3, x4))
+os_wxTabChoice::os_wxTabChoice CONSTRUCTOR_ARGS((class wxPanel* x0, wxFunction x1, nstring x2, int x3, string* x4, int x5))
+CONSTRUCTOR_INIT(: wxTabChoice(x0, x1, x2, x3, x4, x5))
 {
 }
 
@@ -737,6 +764,7 @@ static Scheme_Object *os_wxTabChoice_ConstructScheme(int n,  Scheme_Object *p[])
   nstring x2 INIT_NULLED_OUT;
   int x3;
   string* x4 INIT_NULLED_OUT;
+  int x5;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(5);
   VAR_STACK_PUSH(0, p);
@@ -746,8 +774,8 @@ static Scheme_Object *os_wxTabChoice_ConstructScheme(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(4, x4);
 
   int cb_pos = 0;
-  if ((n < (POFFSET+3)) || (n > (POFFSET+4))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in tab-group%", POFFSET+3, POFFSET+4, n, p, 1));
+  if ((n < (POFFSET+3)) || (n > (POFFSET+5))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in tab-group%", POFFSET+3, POFFSET+5, n, p, 1));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in tab-group%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in tab-group%"));
@@ -755,11 +783,15 @@ static Scheme_Object *os_wxTabChoice_ConstructScheme(int n,  Scheme_Object *p[])
     x4 = NULL;
   } else
     x4 = NULL;
+  if (n > (POFFSET+4)) {
+    x5 = WITH_VAR_STACK(unbundle_symset_tabStyle(p[POFFSET+4], "initialization in tab-group%"));
+  } else
+    x5 = 0;
 
   x4 = WITH_VAR_STACK(__MakestringArray((3+POFFSET < n) ? p[POFFSET+3] : scheme_null, &x3, METHODNAME("tab-group","initialization")));
-  realobj = WITH_VAR_STACK(new os_wxTabChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4)));
+  realobj = WITH_VAR_STACK(new os_wxTabChoice CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxTabChoice(x0, x1, x2, x3, x4));
+  WITH_VAR_STACK(realobj->gcInit_wxTabChoice(x0, x1, x2, x3, x4, x5));
 #endif
   realobj->__gc_external = (void *)p[0];
   delete[] x4;

@@ -87,10 +87,7 @@ typedef short int WXTYPE;
 #define wxRETAINED         0x00000080
 #define wxEDITABLE         0x00000200
 #define wxREADONLY         0x00000400
-
-// wxText style flags
-#define wxPROCESS_ENTER    0x00001000
-#define wxPASSWORD         0x00002000
+#define wxINVISIBLE        0x00000800
 
 // Use native implementation, e.g. Text EDIT control for wxTextWindow
 // under MSW

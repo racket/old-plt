@@ -17,6 +17,7 @@
 
 @BEGINSYMBOLS panelStyle > > PRED BUNDLE
 @SYM "border" : wxBORDER
+@SYM "inactive" : wxINVISIBLE
 @ENDSYMBOLS
 
 @INCLUDE wxs_ornt.xci

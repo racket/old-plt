@@ -42,23 +42,27 @@ START_XFORM_SKIP;
 #endif
 
 static Scheme_Object *panelStyle_wxBORDER_sym = NULL;
+static Scheme_Object *panelStyle_wxINVISIBLE_sym = NULL;
 
 static void init_symset_panelStyle(void) {
   REMEMBER_VAR_STACK();
   wxREGGLOB(panelStyle_wxBORDER_sym);
   panelStyle_wxBORDER_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("border"));
+  wxREGGLOB(panelStyle_wxINVISIBLE_sym);
+  panelStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("inactive"));
 }
 
 static int unbundle_symset_panelStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!panelStyle_wxBORDER_sym) WITH_VAR_STACK(init_symset_panelStyle());
+  if (!panelStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_panelStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
   else if (i == panelStyle_wxBORDER_sym) { result = result | wxBORDER; }
+  else if (i == panelStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

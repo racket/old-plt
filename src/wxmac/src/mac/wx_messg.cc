@@ -118,6 +118,8 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
       if (p->IsHidden())
 	DoShow(FALSE);
     }
+    if (style & wxINVISIBLE)
+      Show(FALSE);
     InitInternalGray();
   } else
     CreateWxMessage("<bad-image>");
@@ -173,6 +175,8 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
       if (p->IsHidden())
 	DoShow(FALSE);
     }
+    if (style & wxINVISIBLE)
+      Show(FALSE);
     InitInternalGray();
   } else
     CreateWxMessage("<icon-missing>");
@@ -235,6 +239,8 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (cStyle & wxINVISIBLE)
+    Show(FALSE);
 
   InitInternalGray();
 }

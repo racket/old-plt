@@ -114,6 +114,8 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    wxItem::Show(FALSE);
   InitInternalGray();
 }
 
@@ -184,6 +186,8 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
     if (p->IsHidden())
       DoShow(FALSE);
   }
+  if (style & wxINVISIBLE)
+    wxItem::Show(FALSE);
   InitInternalGray();
 }
 

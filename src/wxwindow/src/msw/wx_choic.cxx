@@ -313,13 +313,9 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
     }
   }
 
-  // Choice drop-down list depends on number of items (limited to 10)
+  // Choice drop-down list depends on number of items (limited to 4 < x < 10)
   if (height <= 0)
-  {
-    if (no_strings == 0)
-      height = (int)(EDIT_CONTROL_FACTOR*cy*10.0);
-    else height = (int)(EDIT_CONTROL_FACTOR*cy*(min(10, no_strings) + 1));
-  }
+    height = (int)(EDIT_CONTROL_FACTOR*cy*(min(10, max(4, no_strings)) + 1));
 
   if (static_label)
   {

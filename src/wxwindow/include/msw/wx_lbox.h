@@ -45,7 +45,8 @@ class wxListBox: public wxbListBox
   void Set(int N, char *Choices[]);
   int FindString(char *s);
   void Clear(void);
-  void SetSelection(int N, Bool select = TRUE);
+  void SetSelection(int N, Bool select = TRUE, Bool one = FALSE);
+  void SetOneSelection(int N);
 
   virtual void ChangeToGray(Bool gray);
 

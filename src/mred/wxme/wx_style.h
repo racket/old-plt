@@ -53,6 +53,7 @@ class wxMultColour : public wxObject
 {
  public:
   float r, g, b;
+  wxMultColour() : wxObject(WXGC_NO_CLEANUP) {}
   void Get(float *r, float *g, float *b);
   void Set(float r, float g, float b);
 };
@@ -61,6 +62,7 @@ class wxAddColour : public wxObject
 {
  public:
   short r, g, b;
+  wxAddColour() : wxObject(WXGC_NO_CLEANUP) {}
   void Get(short *r, short *g, short *b);
   void Set(short r, short g, short b);
 };

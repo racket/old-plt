@@ -51,7 +51,7 @@ class wxCanvas: public wxbCanvas
   void Scroll(int x_pos, int y_pos);
   void GetScrollUnitsPerPage(int *x_page, int *y_page);
 
-  void ViewStart(int *x, int *y);
+  void ViewStart(int *x, int *y, Bool sb = FALSE);
 
   // Actual size in pixels when scrolling is taken into account
   void GetVirtualSize(int *x, int *y);

@@ -290,18 +290,25 @@ void wxListBox::Clear(void)
   SendMessage((HWND)ms_handle, LB_SETHORIZONTALEXTENT, LOWORD(0), 0L);
 }
 
-void wxListBox::SetSelection(int N, Bool select)
+void wxListBox::SetSelection(int N, Bool select, Bool one)
 {
   if ((N < 0) || (N >= Number()))
     return;
 
   if (multiple != wxSINGLE) {
+    if (one)
+      SendMessage((HWND)ms_handle, LB_SELITEMRANGE, 0, MAKELPARAM(0, Number()));
     SendMessage((HWND)ms_handle, LB_SETSEL, select, N);
   } else {
     if (!select)
       N = -1; /* -1 => deselect current */
     SendMessage((HWND)ms_handle, LB_SETCURSEL, N, 0);
   }
+}
+
+void wxListBox::SetOneSelection(int N)
+{
+  SetSelection(N, TRUE, TRUE);
 }
 
 Bool wxListBox::Selected(int N)

@@ -499,6 +499,7 @@ static unsigned char ColourNum(float v)
 }
 
 wxStyle::wxStyle()
+: wxObject(WXGC_NO_CLEANUP)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_STYLE;
@@ -506,9 +507,12 @@ wxStyle::wxStyle()
 
   textMetricDC = NULL;
 
+#if 0
+  /* (styles are not finalized any more) */
   WXGC_IGNORE(styleList);
   WXGC_IGNORE(baseStyle);
   WXGC_IGNORE(textMetricDC);
+#endif
 
   joinStyle = FALSE;
 }

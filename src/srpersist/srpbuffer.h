@@ -18,3 +18,13 @@ extern Scheme_Object *dayToSecondIntervalStructType;
 extern Scheme_Object *hourToMinuteIntervalStructType;
 extern Scheme_Object *hourToSecondIntervalStructType;
 extern Scheme_Object *minuteToSecondIntervalStructType;
+
+#if (ODBCVER >= 0x0300)
+SQLUINTEGER *getIntervalYear(SQL_INTERVAL_STRUCT *);
+SQLUINTEGER *getIntervalMonth(SQL_INTERVAL_STRUCT *);
+SQLUINTEGER *getIntervalDay(SQL_INTERVAL_STRUCT *);
+SQLUINTEGER *getIntervalHour(SQL_INTERVAL_STRUCT *);
+SQLUINTEGER *getIntervalMinute(SQL_INTERVAL_STRUCT *);
+SQLUINTEGER *getIntervalSecond(SQL_INTERVAL_STRUCT *);
+#endif
+

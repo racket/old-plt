@@ -42,6 +42,7 @@ typedef struct _sql_hstmt_ {
   SQLHDBC hstmt;
 } SRP_SQL_HSTMT;
 
+#if (ODBCVER >= 0x300)
 typedef enum _desctype_ {
   APD,ARD,IPD,IRD,EXPLICIT
 } DESCTYPE;
@@ -51,6 +52,7 @@ typedef struct _sql_hdesc_ {
   DESCTYPE descType;
   SQLHDESC hdesc;
 } SRP_SQL_HDESC;
+#endif
 
 typedef struct _sql_boxed_uint_ {
   Scheme_Type type;
@@ -81,12 +83,14 @@ typedef struct _sql_row_status_ {
   SQLUSMALLINT *values;
 } SRP_SQL_ROW_STATUS;
 
+#if (ODBCVER >= 0x300)
 typedef struct _sql_array_status_ {
   Scheme_Type type;
   SQLHDESC hdesc;
   DESCTYPE descType;
   SQLUSMALLINT *values;
 } SRP_SQL_ARRAY_STATUS;
+#endif
 
 typedef struct _sql_binding_offset_ {
   Scheme_Type type;
@@ -109,10 +113,12 @@ typedef struct _sql_op_parms_ {
   SQLUSMALLINT *values;
 } SRP_SQL_OP_PARMS;
 
+#if (ODBCVER >= 0x0350)
 typedef struct _sql_guid_ {
   Scheme_Type type;
   SQLGUID guid;
 } SRP_SQL_GUID;
+#endif
 
 #define SQL_HENVP(o) (!SCHEME_INTP(o) && o->type == sql_henv_type) 
 #define SQL_HENV_VAL(o) (((SRP_SQL_HENV *)o)->henv)

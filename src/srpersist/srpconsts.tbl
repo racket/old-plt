@@ -22,16 +22,20 @@ SRP_NAMED_CONSTANT concurrencyBits[] = {
   { "sql-concur-values", SQL_CONCUR_VALUES },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT cursorScrollableBits[] = {
   { "sql-nonscrollable", SQL_NONSCROLLABLE },
   { "sql-scrollable", SQL_SCROLLABLE },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT stmtCursorSensitivityBits[] = {
   { "sql-unspecified", SQL_UNSPECIFIED },
   { "sql-insensitive", SQL_INSENSITIVE },
   { "sql-sensitive", SQL_SENSITIVE },
 };
+#endif
 
 SRP_NAMED_CONSTANT cursorTypeBits[] = {
   { "sql-cursor-forward-only", SQL_CURSOR_FORWARD_ONLY },
@@ -45,9 +49,11 @@ SRP_NAMED_CONSTANT noscanBits[] = {
   { "sql-noscan-on ", SQL_NOSCAN_ON },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT paramBindTypeBits[] = {
   { "sql-param-bind-by-column", SQL_PARAM_BIND_BY_COLUMN },
 };
+#endif
 
 SRP_NAMED_CONSTANT retrieveDataBits[] = {
  { "sql-rd-on", SQL_RD_ON },
@@ -64,12 +70,15 @@ SRP_NAMED_CONSTANT simulateCursorBits[] = {
   { "sql-sc-unique ", SQL_SC_UNIQUE },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT useBookmarksBits[] = {
  { "sql-ub-off", SQL_UB_OFF },
  { "sql-ub-variable", SQL_UB_VARIABLE },
  { "sql-ub-fixed", SQL_UB_FIXED },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_BITS_DICT namedStmtAttributes[] = {
   { "sql-attr-async-enable", asyncEnableBits, sizeray(asyncEnableBits) },
   { "sql-attr-concurrency", concurrencyBits, sizeray(concurrencyBits) },
@@ -83,7 +92,9 @@ SRP_NAMED_BITS_DICT namedStmtAttributes[] = {
   { "sql-attr-simulate-cursor", simulateCursorBits, sizeray(simulateCursorBits) },
   { "sql-attr-use-bookmarks", useBookmarksBits, sizeray(useBookmarksBits) },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
 { "sql-attr-app-param-desc", SQL_ATTR_APP_PARAM_DESC, hdesc },
 { "sql-attr-app-row-desc", SQL_ATTR_APP_ROW_DESC, hdesc },
@@ -119,9 +130,30 @@ SRP_NAMED_TYPED_CONSTANT stmtAttributes[] = {
 { "sql-attr-simulate-cursor", SQL_ATTR_SIMULATE_CURSOR, nameduinteger },
 { "sql-attr-use-bookmarks", SQL_ATTR_USE_BOOKMARKS, nameduinteger },
 };
+#endif
+
+SRP_NAMED_CONSTANT useBookmarksOptionBits[] = {
+ { "sql-ub-off", SQL_UB_OFF },
+ { "sql-ub-on", SQL_UB_ON },
+};
+
+// most of the bit tables are shared with namedStmtAttributes
+// useBookmarksOptionBits is not, because values changed in ODBC 3.0
+
+SRP_NAMED_BITS_DICT namedStmtOptions[] = {
+  { "sql-async-enable", asyncEnableBits, sizeray(asyncEnableBits) },
+  { "sql-bind-type", rowBindTypeBits, sizeray(rowBindTypeBits) },
+  { "sql-concurrency", concurrencyBits, sizeray(concurrencyBits) },
+  { "sql-cursor-type", cursorTypeBits, sizeray(cursorTypeBits) },
+  { "sql-noscan", noscanBits, sizeray(noscanBits) },
+  { "sql-retrieve-data", retrieveDataBits, sizeray(retrieveDataBits) },
+  { "sql-simulate-cursor", simulateCursorBits, sizeray(simulateCursorBits) },
+  { "sql-use-bookmarks", useBookmarksOptionBits, sizeray(useBookmarksOptionBits) },
+};
 
 SRP_NAMED_TYPED_CONSTANT stmtOptions[] = {
 { "sql-async-enable", SQL_ASYNC_ENABLE, nameduinteger },
+{ "sql-bind-type", SQL_BIND_TYPE, possiblynameduinteger },
 { "sql-concurrency", SQL_CONCURRENCY, nameduinteger },
 { "sql-cursor-type", SQL_CURSOR_TYPE, nameduinteger },
 { "sql-keyset-size", SQL_KEYSET_SIZE, sqluinteger },
@@ -136,48 +168,51 @@ SRP_NAMED_TYPED_CONSTANT stmtOptions[] = {
 };
 
 SRP_NAMED_CONSTANT sqlFunctions[] = {
-  { "sql-api-all-functions",SQL_API_ALL_FUNCTIONS},
+#if (ODBCVER >= 0x0300) 
   { "sql-api-odbc3-all-functions",SQL_API_ODBC3_ALL_FUNCTIONS},
   { "sql-api-sqlallochandle",SQL_API_SQLALLOCHANDLE},
   { "sql-api-sqlgetdescfield",SQL_API_SQLGETDESCFIELD},
-  { "sql-api-sqlbindcol", SQL_API_SQLBINDCOL },
   { "sql-api-sqlgetdescrec", SQL_API_SQLGETDESCREC },
-  { "sql-api-sqlcancel", SQL_API_SQLCANCEL },
   { "sql-api-sqlgetdiagfield", SQL_API_SQLGETDIAGFIELD },
   { "sql-api-sqlclosecursor", SQL_API_SQLCLOSECURSOR },
   { "sql-api-sqlgetdiagrec", SQL_API_SQLGETDIAGREC },
   { "sql-api-sqlcolattribute", SQL_API_SQLCOLATTRIBUTE },
   { "sql-api-sqlgetenvattr", SQL_API_SQLGETENVATTR },
+  { "sql-api-sqlcopydesc", SQL_API_SQLCOPYDESC },
+  { "sql-api-sqlgetstmtattr", SQL_API_SQLGETSTMTATTR },
+  { "sql-api-sqlendtran", SQL_API_SQLENDTRAN },
+  { "sql-api-sqlsetconnectattr", SQL_API_SQLSETCONNECTATTR },
+  { "sql-api-sqlfetchscroll", SQL_API_SQLFETCHSCROLL },
+  { "sql-api-sqlfreehandle", SQL_API_SQLFREEHANDLE },
+  { "sql-api-sqlgetconnectattr", SQL_API_SQLGETCONNECTATTR },
+  { "sql-api-sqlsetdescfield", SQL_API_SQLSETDESCFIELD },
+  { "sql-api-sqlsetdescrec", SQL_API_SQLSETDESCREC },
+  { "sql-api-sqlsetenvattr", SQL_API_SQLSETENVATTR },
+  { "sql-api-sqlsetstmtattr", SQL_API_SQLSETSTMTATTR },
+  { "sql-api-sqlbulkoperations", SQL_API_SQLBULKOPERATIONS },
+#endif
+  { "sql-api-all-functions",SQL_API_ALL_FUNCTIONS},
+  { "sql-api-sqlbindcol", SQL_API_SQLBINDCOL },
+  { "sql-api-sqlcancel", SQL_API_SQLCANCEL },
   { "sql-api-sqlconnect", SQL_API_SQLCONNECT },
   { "sql-api-sqlgetfunctions", SQL_API_SQLGETFUNCTIONS },
-  { "sql-api-sqlcopydesc", SQL_API_SQLCOPYDESC },
   { "sql-api-sqlgetinfo", SQL_API_SQLGETINFO },
   { "sql-api-sqldatasources", SQL_API_SQLDATASOURCES },
-  { "sql-api-sqlgetstmtattr", SQL_API_SQLGETSTMTATTR },
   { "sql-api-sqldescribecol", SQL_API_SQLDESCRIBECOL },
   { "sql-api-sqlgettypeinfo", SQL_API_SQLGETTYPEINFO },
   { "sql-api-sqldisconnect", SQL_API_SQLDISCONNECT },
   { "sql-api-sqlnumresultcols", SQL_API_SQLNUMRESULTCOLS },
   { "sql-api-sqldrivers", SQL_API_SQLDRIVERS },
   { "sql-api-sqlparamdata", SQL_API_SQLPARAMDATA },
-  { "sql-api-sqlendtran", SQL_API_SQLENDTRAN },
   { "sql-api-sqlprepare", SQL_API_SQLPREPARE },
   { "sql-api-sqlexecdirect", SQL_API_SQLEXECDIRECT },
   { "sql-api-sqlputdata", SQL_API_SQLPUTDATA },
   { "sql-api-sqlexecute", SQL_API_SQLEXECUTE },
   { "sql-api-sqlrowcount", SQL_API_SQLROWCOUNT },
   { "sql-api-sqlfetch", SQL_API_SQLFETCH },
-  { "sql-api-sqlsetconnectattr", SQL_API_SQLSETCONNECTATTR },
-  { "sql-api-sqlfetchscroll", SQL_API_SQLFETCHSCROLL },
   { "sql-api-sqlsetcursorname", SQL_API_SQLSETCURSORNAME },
-  { "sql-api-sqlfreehandle", SQL_API_SQLFREEHANDLE },
-  { "sql-api-sqlsetdescfield", SQL_API_SQLSETDESCFIELD },
   { "sql-api-sqlfreestmt", SQL_API_SQLFREESTMT },
-  { "sql-api-sqlsetdescrec", SQL_API_SQLSETDESCREC },
-  { "sql-api-sqlgetconnectattr", SQL_API_SQLGETCONNECTATTR },
-  { "sql-api-sqlsetenvattr", SQL_API_SQLSETENVATTR },
   { "sql-api-sqlgetcursorname", SQL_API_SQLGETCURSORNAME },
-  { "sql-api-sqlsetstmtattr", SQL_API_SQLSETSTMTATTR },
   { "sql-api-sqlgetdata", SQL_API_SQLGETDATA },
   { "sql-api-sqlcolumns", SQL_API_SQLCOLUMNS },
   { "sql-api-sqlstatistics", SQL_API_SQLSTATISTICS },
@@ -187,7 +222,6 @@ SRP_NAMED_CONSTANT sqlFunctions[] = {
   { "sql-api-sqlnativesql", SQL_API_SQLNATIVESQL },
   { "sql-api-sqlbrowseconnect", SQL_API_SQLBROWSECONNECT },
   { "sql-api-sqlnumparams", SQL_API_SQLNUMPARAMS },
-  { "sql-api-sqlbulkoperations", SQL_API_SQLBULKOPERATIONS },
   { "sql-api-sqlprimarykeys", SQL_API_SQLPRIMARYKEYS },
   { "sql-api-sqlcolumnprivileges", SQL_API_SQLCOLUMNPRIVILEGES },
   { "sql-api-sqlprocedurecolumns", SQL_API_SQLPROCEDURECOLUMNS },
@@ -200,35 +234,46 @@ SRP_NAMED_CONSTANT sqlFunctions[] = {
   { "sql-api-sqlmoreresults", SQL_API_SQLMORERESULTS },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_TYPED_CONSTANT envAttributes[]= {
   { "sql-attr-connection-pooling", SQL_ATTR_CONNECTION_POOLING, nameduinteger },
   { "sql-attr-cp-match", SQL_ATTR_CP_MATCH, nameduinteger },
   { "sql-attr-odbc-version", SQL_ATTR_ODBC_VERSION, nameduinteger },
   { "sql-attr-output-nts", SQL_ATTR_OUTPUT_NTS, sqlbool },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT connectionPoolingBits[] = {
   { "sql-cp-off", SQL_CP_OFF },
   { "sql-cp-one-per-driver", SQL_CP_ONE_PER_DRIVER },
   { "sql-cp-one-per-henv", SQL_CP_ONE_PER_HENV },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT cpMatchBits[] = {
   { "sql-cp-strict-match", SQL_CP_STRICT_MATCH },
   { "sql-cp-relaxed-match", SQL_CP_RELAXED_MATCH },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT odbcVersionBits[] = {
   { "sql-ov-odbc3", SQL_OV_ODBC3 },
   { "sql-ov-odbc2", SQL_OV_ODBC2 },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_BITS_DICT namedEnvAttrIntegers[] = {
   { "sql-attr-connection-pooling", connectionPoolingBits, sizeray(connectionPoolingBits) },
   { "sql-attr-cp-match", cpMatchBits, sizeray(cpMatchBits) },
   { "sql-attr-odbc-version", odbcVersionBits, sizeray(odbcVersionBits) },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_TYPED_CONSTANT diagFields[] = {
   { "sql-diag-dynamic-function",SQL_DIAG_DYNAMIC_FUNCTION, string },
   { "sql-diag-connection-name", SQL_DIAG_CONNECTION_NAME, string },
@@ -246,22 +291,30 @@ SRP_NAMED_TYPED_CONSTANT diagFields[] = {
   { "sql-diag-row-number", SQL_DIAG_ROW_NUMBER, possiblynamedinteger },
   { "sql-diag-returncode", SQL_DIAG_RETURNCODE, sqlreturn },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT SQLColNumbers[] = {
   { "sql-no-column-number",SQL_NO_COLUMN_NUMBER },
   { "sql-column-number-unknown",SQL_COLUMN_NUMBER_UNKNOWN },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT SQLRowNumbers[] = {
   { "sql-no-row-number",SQL_NO_ROW_NUMBER },
   { "sql-row-number-unknown",SQL_ROW_NUMBER_UNKNOWN },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_BITS_DICT namedDiagFieldIntegers[] = {
   { "sql-diag-column-number", SQLColNumbers, sizeray(SQLColNumbers) },
   { "sql-diag-row-number", SQLRowNumbers, sizeray(SQLRowNumbers) },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT datetimeIntervalCodes[] = {
   // Datetime types
 
@@ -284,13 +337,17 @@ SRP_NAMED_CONSTANT datetimeIntervalCodes[] = {
   { "sql-code-year",SQL_CODE_YEAR },
   { "sql-code-year-to-month",SQL_CODE_YEAR_TO_MONTH },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT SQLDescParameterTypes[] = {
   { "sql-param-input", SQL_PARAM_INPUT },
   { "sql-param-output", SQL_PARAM_OUTPUT },
   { "sql-param-input-output", SQL_PARAM_INPUT_OUTPUT },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT SQLDescSearchable[] = {
   { "sql-searchable", SQL_SEARCHABLE },
   { "sql-pred-char", SQL_PRED_CHAR },
@@ -300,12 +357,16 @@ SRP_NAMED_CONSTANT SQLDescSearchable[] = {
   { "sql-pred-none", SQL_PRED_NONE },
   { "sql-unsearchable", SQL_UNSEARCHABLE },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT SQLDescUnnamed[] = {
   { "sql-named", SQL_NAMED },
   { "sql-unnamed", SQL_UNNAMED },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_CONSTANT descDataTypes[] = {
   { "sql-char", SQL_CHAR },
   { "sql-varchar", SQL_VARCHAR },
@@ -331,9 +392,13 @@ SRP_NAMED_CONSTANT descDataTypes[] = {
   { "sql-type-time", SQL_TYPE_TIME },
   { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
   { "sql-interval", SQL_INTERVAL },
+#if (ODBCVER >= 0x0350)
   { "sql-guid", SQL_GUID },
+#endif
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_TYPED_CONSTANT settableConnectionAttributes[] = {
   { "sql-attr-access-mode", SQL_ATTR_ACCESS_MODE, nameduinteger },
   { "sql-attr-async-enable", SQL_ATTR_ASYNC_ENABLE, nameduinteger },
@@ -351,11 +416,14 @@ SRP_NAMED_TYPED_CONSTANT settableConnectionAttributes[] = {
   { "sql-attr-translate-option", SQL_ATTR_TRANSLATE_OPTION, sqluinteger },
   { "sql-attr-txn-isolation", SQL_ATTR_TXN_ISOLATION, nameduinteger },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_TYPED_CONSTANT readOnlyConnectionAttributes[] = {
   { "sql-attr-auto-ipd", SQL_ATTR_AUTO_IPD, sqlbool },
   { "sql-attr-connection-dead", SQL_ATTR_CONNECTION_DEAD, nameduinteger },
 };
+#endif
 
 SRP_NAMED_CONSTANT accessModeBits[] = {
   { "sql-mode-read-only", SQL_MODE_READ_ONLY },	
@@ -390,6 +458,7 @@ SRP_NAMED_CONSTANT txnIsolationBits[] = {
   { "sql-txn-serializable", SQL_TXN_SERIALIZABLE },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_BITS_DICT namedConnectAttrIntegers[] = {
   { "sql-attr-access-mode", accessModeBits, sizeray(accessModeBits) },
   { "sql-attr-async-enable", asyncEnableBits, sizeray(asyncEnableBits) },
@@ -399,12 +468,40 @@ SRP_NAMED_BITS_DICT namedConnectAttrIntegers[] = {
   { "sql-attr-connection-dead", connectionDeadBits, sizeray(connectionDeadBits) },
   { "sql-attr-txn-isolation", txnIsolationBits, sizeray(txnIsolationBits) },
 };
+#endif
+
+// the bit tables are shared with namedConnectAttrIntegers
+
+SRP_NAMED_BITS_DICT namedConnectOptionIntegers[] = {
+  { "sql-access-mode", accessModeBits, sizeray(accessModeBits) },
+  { "sql-autocommit", autocommitBits, sizeray(autocommitBits) },
+  { "sql-odbc-cursors", odbcCursorsBits, sizeray(odbcCursorsBits) },
+  { "sql-opt-trace", traceBits, sizeray(traceBits) },
+  { "sql-txn-isolation", txnIsolationBits, sizeray(txnIsolationBits) },
+};
+
+SRP_NAMED_TYPED_CONSTANT connectionOptions[] = {
+  { "sql-access-mode", SQL_ACCESS_MODE, nameduinteger },
+  { "sql-autocommit", SQL_AUTOCOMMIT, nameduinteger },
+  { "sql-current-qualifier", SQL_CURRENT_QUALIFIER, string },
+  { "sql-login-timeout", SQL_LOGIN_TIMEOUT, sqluinteger },
+  { "sql-odbc-cursors", SQL_ODBC_CURSORS, nameduinteger },
+  { "sql-opt-trace", SQL_OPT_TRACE, nameduinteger },
+  { "sql-opt-tracefile", SQL_OPT_TRACEFILE, string },
+  { "sql-packet-size", SQL_PACKET_SIZE, sqluinteger },
+  { "sql-quiet-mode", SQL_QUIET_MODE, sqluinteger },
+  { "sql-translate-dll",SQL_TRANSLATE_DLL, string },
+  { "sql-translate-option",SQL_TRANSLATE_OPTION, sqluinteger },
+  { "sql-txn-isolation", SQL_TXN_ISOLATION, nameduinteger },
+};
 
 SRP_NAMED_SMALL_CONSTANT fetchDirections[] = {
   { "sql-fetch-next", SQL_FETCH_NEXT },
   { "sql-fetch-first", SQL_FETCH_FIRST },
+#if (ODBCVER >= 0x0300)
   { "sql-fetch-first-user", SQL_FETCH_FIRST_USER },
   { "sql-fetch-first-system", SQL_FETCH_FIRST_SYSTEM },
+#endif
 };
 
 SRP_NAMED_SMALL_CONSTANT fetchScrolls[] = {
@@ -417,26 +514,13 @@ SRP_NAMED_SMALL_CONSTANT fetchScrolls[] = {
   { "sql-fetch-bookmark", SQL_FETCH_BOOKMARK },
 };
 
-SRP_NAMED_SMALL_CONSTANT buffLenTypes[] = {
-  { "sql-is-pointer", SQL_IS_POINTER },
-  { "sql-is-integer", SQL_IS_INTEGER },
-  { "sql-is-uinteger", SQL_IS_UINTEGER },
-  { "sql-is-smallint", SQL_IS_SMALLINT }, 
-  { "sql-is-usmallint",  SQL_IS_USMALLINT },
-};
-
 SRP_NAMED_SMALL_CONSTANT CDataTypes[] = {
-  { "sql-c-char", SQL_C_CHAR },
-  { "sql-c-long", SQL_C_LONG },
-  { "sql-c-short", SQL_C_SHORT },
-  { "sql-c-float", SQL_C_FLOAT },
-  { "sql-c-double", SQL_C_DOUBLE },
+#if (ODBCVER >= 0x300)
   { "sql-c-numeric", SQL_C_NUMERIC },
-  { "sql-c-date", SQL_C_DATE },
   { "sql-c-timestamp", SQL_C_TIMESTAMP },
+  { "sql-c-type-timestamp", SQL_C_TYPE_TIMESTAMP },
   { "sql-c-type-date", SQL_C_TYPE_DATE },
   { "sql-c-type-time", SQL_C_TYPE_TIME },
-  { "sql-c-type-timestamp", SQL_C_TYPE_TIMESTAMP },
   { "sql-c-interval-year", SQL_C_INTERVAL_YEAR },
   { "sql-c-interval-month", SQL_C_INTERVAL_MONTH },
   { "sql-c-interval-day", SQL_C_INTERVAL_DAY },
@@ -450,10 +534,21 @@ SRP_NAMED_SMALL_CONSTANT CDataTypes[] = {
   { "sql-c-interval-hour-to-minute", SQL_C_INTERVAL_HOUR_TO_MINUTE },
   { "sql-c-interval-hour-to-second", SQL_C_INTERVAL_HOUR_TO_SECOND },
   { "sql-c-interval-minute-to-second", SQL_C_INTERVAL_MINUTE_TO_SECOND },
-  { "sql-c-binary", SQL_C_BINARY },
-  { "sql-c-bit", SQL_C_BIT },
   { "sql-c-sbigint", SQL_C_SBIGINT },
   { "sql-c-ubigint", SQL_C_UBIGINT },
+  { "sql-c-varbookmark", SQL_C_VARBOOKMARK },
+#endif
+#if (ODBCVER >= 0x0350)
+  { "sql-c-guid", SQL_C_GUID },
+#endif
+  { "sql-c-char", SQL_C_CHAR },
+  { "sql-c-long", SQL_C_LONG },
+  { "sql-c-short", SQL_C_SHORT },
+  { "sql-c-float", SQL_C_FLOAT },
+  { "sql-c-double", SQL_C_DOUBLE },
+  { "sql-c-date", SQL_C_DATE },
+  { "sql-c-binary", SQL_C_BINARY },
+  { "sql-c-bit", SQL_C_BIT },
   { "sql-c-tinyint", SQL_C_TINYINT },
   { "sql-c-slong", SQL_C_SLONG },
   { "sql-c-sshort", SQL_C_SSHORT },
@@ -462,11 +557,17 @@ SRP_NAMED_SMALL_CONSTANT CDataTypes[] = {
   { "sql-c-ushort", SQL_C_USHORT },
   { "sql-c-utinyint", SQL_C_UTINYINT },
   { "sql-c-bookmark", SQL_C_BOOKMARK },
-  { "sql-c-guid", SQL_C_GUID },
-  { "sql-c-varbookmark", SQL_C_VARBOOKMARK },
 };
 
 SRP_NAMED_SMALL_CONSTANT SQLDataTypes[] = {
+#if (ODBCVER >= 0x0300)
+  { "sql-type-date", SQL_TYPE_DATE },
+  { "sql-type-time", SQL_TYPE_TIME },
+  { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
+#endif
+#if (ODBCVER >= 0x0350)
+  { "sql-guid", SQL_GUID },
+#endif
   { "sql-char", SQL_CHAR },
   { "sql-varchar", SQL_VARCHAR },
   { "sql-longvarchar", SQL_LONGVARCHAR },
@@ -486,9 +587,6 @@ SRP_NAMED_SMALL_CONSTANT SQLDataTypes[] = {
   { "sql-binary", SQL_BINARY },
   { "sql-varbinary", SQL_VARBINARY },
   { "sql-longvarbinary", SQL_LONGVARBINARY },
-  { "sql-type-date", SQL_TYPE_DATE },
-  { "sql-type-time", SQL_TYPE_TIME },
-  { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
   { "sql-interval-year", SQL_INTERVAL_YEAR },
   { "sql-interval-year-to-month", SQL_INTERVAL_YEAR_TO_MONTH },
   { "sql-interval-hour", SQL_INTERVAL_HOUR },
@@ -499,7 +597,6 @@ SRP_NAMED_SMALL_CONSTANT SQLDataTypes[] = {
   { "sql-interval-hour-to-minute", SQL_INTERVAL_HOUR_TO_MINUTE },
   { "sql-interval-hour-to-second", SQL_INTERVAL_HOUR_TO_SECOND },
   { "sql-interval-minute-to-second", SQL_INTERVAL_MINUTE_TO_SECOND },
-  { "sql-guid", SQL_GUID },
 };
 
 SRP_NAMED_CONSTANT descNullableBits[] = {
@@ -509,6 +606,16 @@ SRP_NAMED_CONSTANT descNullableBits[] = {
 };
 
 SRP_NAMED_CONSTANT SQLColDataTypes[] = {
+#if (ODBCVER >= 0x0300)	
+  { "sql-type-date", SQL_TYPE_DATE },
+  { "sql-type-time", SQL_TYPE_TIME },
+  { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
+  { "sql-datetime", SQL_DATETIME },
+  { "sql-interval", SQL_INTERVAL },
+#endif
+#if (ODBCVER >= 0x0350)	
+  { "sql-guid", SQL_GUID },
+#endif
   { "sql-char", SQL_CHAR },
   { "sql-varchar", SQL_VARCHAR },
   { "sql-longvarchar", SQL_LONGVARCHAR },
@@ -528,11 +635,6 @@ SRP_NAMED_CONSTANT SQLColDataTypes[] = {
   { "sql-binary", SQL_BINARY },
   { "sql-varbinary", SQL_VARBINARY },
   { "sql-longvarbinary", SQL_LONGVARBINARY },
-  { "sql-datetime", SQL_DATETIME },
-  { "sql-type-date", SQL_TYPE_DATE },
-  { "sql-type-time", SQL_TYPE_TIME },
-  { "sql-type-timestamp", SQL_TYPE_TIMESTAMP },
-  { "sql-interval", SQL_INTERVAL },
   { "sql-interval-year", SQL_INTERVAL_YEAR },
   { "sql-interval-year-to-month", SQL_INTERVAL_YEAR_TO_MONTH },
   { "sql-interval-hour", SQL_INTERVAL_HOUR },
@@ -543,7 +645,6 @@ SRP_NAMED_CONSTANT SQLColDataTypes[] = {
   { "sql-interval-hour-to-minute", SQL_INTERVAL_HOUR_TO_MINUTE },
   { "sql-interval-hour-to-second", SQL_INTERVAL_HOUR_TO_SECOND },
   { "sql-interval-minute-to-second", SQL_INTERVAL_MINUTE_TO_SECOND },
-  { "sql-guid", SQL_GUID },
 };
 
 SRP_NAMED_CONSTANT descUpdatableBits[] = {
@@ -552,17 +653,21 @@ SRP_NAMED_CONSTANT descUpdatableBits[] = {
   { "sql-attr-readwrite-unknown", SQL_ATTR_READWRITE_UNKNOWN },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_BITS_DICT namedFieldDescriptors[] = {
-  { "sql-desc-concise-type",SQLColDataTypes, sizeray(SQLColDataTypes) },
   { "sql-desc-datetime-interval-code",datetimeIntervalCodes,sizeray(datetimeIntervalCodes) },
-  { "sql-desc-nullable",descNullableBits,sizeray(descNullableBits) },
   { "sql-desc-parameter-type",SQLDescParameterTypes,sizeray(SQLDescParameterTypes) },
   { "sql-desc-searchable",SQLDescSearchable,sizeray(SQLDescSearchable) },
   { "sql-desc-type",descDataTypes,sizeray(descDataTypes) },
   { "sql-desc-unnamed",SQLDescUnnamed, sizeray(SQLDescUnnamed) },
+  { "sql-desc-concise-type",SQLColDataTypes, sizeray(SQLColDataTypes) },
+  { "sql-desc-nullable",descNullableBits,sizeray(descNullableBits) },
   { "sql-desc-updatable",descUpdatableBits,sizeray(descUpdatableBits) },
 };
 
+#endif
+
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_TYPED_CONSTANT fieldDescriptors[] = {
   
   // header fields
@@ -579,10 +684,10 @@ SRP_NAMED_TYPED_CONSTANT fieldDescriptors[] = {
 
   { "sql-desc-auto-unique-value", SQL_DESC_AUTO_UNIQUE_VALUE, sqlinteger },
   { "sql-desc-base-column-name", SQL_DESC_BASE_COLUMN_NAME, string },
-  { "sql-desc-base-table-name ", SQL_DESC_BASE_TABLE_NAME, string },
   { "sql-desc-case-sensitive", SQL_DESC_CASE_SENSITIVE, sqlbool },
-  { "sql-desc-catalog-name", SQL_DESC_CATALOG_NAME, string },
   { "sql-desc-concise-type",  SQL_DESC_CONCISE_TYPE, namedinteger },
+  { "sql-desc-base-table-name ", SQL_DESC_BASE_TABLE_NAME, string },
+  { "sql-desc-catalog-name", SQL_DESC_CATALOG_NAME, string },
   { "sql-desc-data-ptr", SQL_DESC_DATA_PTR, sqlbuffer },
   { "sql-desc-datetime-interval-code", SQL_DESC_DATETIME_INTERVAL_CODE, namedinteger },
   { "sql-desc-datetime-interval-precision", SQL_DESC_DATETIME_INTERVAL_PRECISION, sqlinteger },
@@ -601,7 +706,9 @@ SRP_NAMED_TYPED_CONSTANT fieldDescriptors[] = {
   { "sql-desc-octet-length-ptr", SQL_DESC_OCTET_LENGTH_PTR, octetlength },
   { "sql-desc-parameter-type", SQL_DESC_PARAMETER_TYPE, namedinteger },
   { "sql-desc-precision", SQL_DESC_PRECISION, sqlsmallint },
+#if ODBCVER >= 0x0350
   { "sql-desc-rowver", SQL_DESC_ROWVER, sqlbool },
+#endif
   { "sql-desc-scale", SQL_DESC_SCALE, sqlsmallint },
   { "sql-desc-schema-name", SQL_DESC_SCHEMA_NAME, string },
   { "sql-desc-searchable", SQL_DESC_SEARCHABLE, namedinteger },
@@ -612,16 +719,20 @@ SRP_NAMED_TYPED_CONSTANT fieldDescriptors[] = {
   { "sql-desc-unsigned", SQL_DESC_UNSIGNED, sqlbool },
   { "sql-desc-updatable", SQL_DESC_UPDATABLE, namedinteger },
 };
+#endif
 
 // SQLColAttribute - no 's'
 
 SRP_NAMED_CONSTANT descSearchableBits[] = {
+#if (ODBVER >= 0x0300)
   { "sql-pred-none", SQL_PRED_NONE },
   { "sql-pred-char", SQL_PRED_CHAR },
   { "sql-pred-basic", SQL_PRED_BASIC },
+#endif
   { "sql-pred-searchable", SQL_PRED_SEARCHABLE },
 };
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_BITS_DICT namedColAttrIntegers[] = {
   { "sql-desc-concise-type", SQLColDataTypes, sizeray(SQLColDataTypes) },
   { "sql-desc-nullable", descNullableBits, sizeray(descNullableBits) },
@@ -630,7 +741,9 @@ SRP_NAMED_BITS_DICT namedColAttrIntegers[] = {
   { "sql-desc-unnamed", SQLDescUnnamed, sizeray(SQLDescUnnamed) },
   { "sql-desc-updatable", descUpdatableBits, sizeray(descUpdatableBits) },
 };
+#endif
 
+#if (ODBCVER >= 0x0300)
 SRP_NAMED_TYPED_CONSTANT colAttributes[] = {
   { "sql-desc-count", SQL_DESC_COUNT, sqlinteger },
   { "sql-desc-auto-unique-value", SQL_DESC_AUTO_UNIQUE_VALUE, sqlbool },
@@ -662,6 +775,7 @@ SRP_NAMED_TYPED_CONSTANT colAttributes[] = {
   { "sql-desc-unsigned", SQL_DESC_UNSIGNED, sqlbool },
   { "sql-desc-updatable", SQL_DESC_UPDATABLE, namedinteger },
 };
+#endif
 
 // SQLColAttributes - with an 's'
 

@@ -49,8 +49,8 @@
 
 #define NO_BIT_NAME "sql-unknown-number"
 
-#ifndef WIN32
-typedef long BOOL
+#if (ODBCVER >= 0x0300)
+typedef SQLUINTEGER *(*INTERVAL_FIELD_ACCESSOR)(SQL_INTERVAL_STRUCT *); 
 #endif
 
 typedef enum _return_code_ {
@@ -83,7 +83,7 @@ typedef struct _srp_struct_ {
 
 typedef struct _named_constant_ {
   char *scheme_name;
-  SQLUINTEGER val;
+  SQLINTEGER val;
 } SRP_NAMED_CONSTANT;
 
 typedef struct _named_small_constant_ {
@@ -123,7 +123,7 @@ typedef  enum _const_type_ {
 
 typedef struct _named_typed_constant_ {
   char *scheme_name;
-  SQLUINTEGER val;
+  SQLINTEGER val;
   SRP_CONST_TYPE type;
 } SRP_NAMED_TYPED_CONSTANT;
 
@@ -159,16 +159,31 @@ Scheme_Object *readFloatBuffer(float *,long);
 void writeFloatBuffer(float *,Scheme_Object *);
 Scheme_Object *readDoubleBuffer(double *,long);
 void writeDoubleBuffer(double *,Scheme_Object *);
+
+#if (ODBCVER >= 0x0300)
 Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *,long);
 void writeNumericBuffer(SQL_NUMERIC_STRUCT *,Scheme_Object *);
-Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long);
+Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long);
 void writeDateBuffer(SQL_DATE_STRUCT *,Scheme_Object *);
-Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long);
-void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *,Scheme_Object *);
-Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long);
+Scheme_Object *readTimeBuffer(SQL_TIME_STRUCT *buffer,long);
 void writeTimeBuffer(SQL_TIME_STRUCT *,Scheme_Object *);
+Scheme_Object *readTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,long);
+void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *,Scheme_Object *);
+#else
+Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long);
+void writeDateBuffer(DATE_STRUCT *,Scheme_Object *);
+Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long);
+void writeTimeBuffer(TIME_STRUCT *,Scheme_Object *);
+Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long);
+void writeTimeStampBuffer(TIMESTAMP_STRUCT *,Scheme_Object *);
+#endif
+
+#if (ODBCVER >= 0x0350)
 Scheme_Object *readGuidBuffer(SQLGUID *buffer,long);
 void writeGuidBuffer(SQLGUID *,Scheme_Object *);
+#endif
+
+#if (ODBCVER >= 0x0300)
 Scheme_Object *readIntervalYearBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readIntervalMonthBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readIntervalDayBuffer(SQL_INTERVAL_STRUCT *buffer,long);
@@ -182,18 +197,24 @@ Scheme_Object *readIntervalDaySecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readIntervalHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
 Scheme_Object *readIntervalMinuteSecondBuffer(SQL_INTERVAL_STRUCT *buffer,long);
+#endif
+
 Scheme_Object *readBinaryBuffer(char *buffer,long);
 void writeBinaryBuffer(char *buffer,Scheme_Object *);
 Scheme_Object *readBitBuffer(unsigned char *buffer,long);
 void writeBitBuffer(char *buffer,Scheme_Object *);
-Scheme_Object *readBigIntBuffer(_int64 *buffer,long);
-void writeBigIntBuffer(_int64 *buffer,Scheme_Object *);
-Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long);
-void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *);
 Scheme_Object *readTinyBuffer(char *buffer,long);
 void writeTinyBuffer(char *buffer,Scheme_Object *);
 Scheme_Object *readUTinyBuffer(unsigned char *buffer,long);
 void writeUTinyBuffer(unsigned char *buffer,Scheme_Object *);
+
+#ifdef WIN32
+Scheme_Object *readBigIntBuffer(_int64 *buffer,long);
+void writeBigIntBuffer(_int64 *buffer,Scheme_Object *);
+Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long);
+void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *);
+#endif
+
 
 // utilities
 
@@ -271,6 +292,7 @@ SRP_PRIM_DECL(srp_SQLTransact);
 
      // from SQLEXT.H)
 	
+SRP_PRIM_DECL(srp_SQLBulkOperations);
 SRP_PRIM_DECL(srp_SQLDriverConnect);
 SRP_PRIM_DECL(srp_SQLBrowseConnect);
 SRP_PRIM_DECL(srp_SQLColAttributes);

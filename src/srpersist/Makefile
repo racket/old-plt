@@ -1,4 +1,45 @@
-# Makefile for srpersist.dll
+# Makefile for srpersist.so on Unix boxes
 
-all : 
-	nmake /f srpersist.mak
+# change to ODBC version supported by driver manager
+ODBCVER=0x0250
+
+# static library that implements driver manager
+DRIVER_MGR_LIB=iodbc
+
+# installation directory
+LIBDIR=/home/scheme/Database/lib
+
+MZC=../../bin/mzc 
+
+CPP=gcc 
+CPP_FLAGS=-DODBCVER=$(ODBCVER) -I. -I../mzscheme/include -c
+
+OBJS=srpersist.o srpbuffer.o srptypes.o
+
+ARCH=`archsys`
+ 
+NATIVE_DIR=../../collects/srpersist/compiled/native/$(ARCH)
+
+.cxx.o ::
+	$(CPP) $(CPP_FLAGS) $<  
+
+all : srpersist.so
+
+install : srpersist.so 
+	mkdir -p $(NATIVE_DIR)
+	cp -p srpersist.so $(NATIVE_DIR)/
+
+srpersist.so : $(OBJS)
+	$(MZC) --ld srpersist.so $(OBJS) -L$(LIBDIR) -l$(DRIVER_MGR_LIB)
+
+srpersist.o : srpersist.cxx srptypes.h srpbuffer.h srpersist.h srpprims.tbl \
+	srpstructs.tbl srpexns.tbl srpconsts.tbl srpinfo.tbl srpbitmask.tbl
+	$(CPP) $(CPP_FLAGS) srpersist.cxx
+	
+srpbuffer.o : srpbuffer.cxx srptypes.h srpbuffer.h srpersist.h
+	$(CPP) $(CPP_FLAGS) srpbuffer.cxx
+
+srptypes.o : srptypes.cxx srptypes.h srpersist.h
+	$(CPP) $(CPP_FLAGS) srptypes.cxx
+
+

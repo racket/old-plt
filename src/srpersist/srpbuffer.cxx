@@ -1,7 +1,22 @@
 // srpbuffer.cxx
 
+#include <ctype.h>
+
 #ifdef WIN32
 #include <windows.h>
+#else
+#define FALSE (0)
+#define TRUE  (1)
+typedef bool BOOL;
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned long DWORD;
+// dummy typedefs -- only used in trace API, not ODBC as such
+typedef void * LPWSTR; 
+typedef void VOID; 
+typedef int CHAR; 
+typedef int WCHAR; 
+typedef int GUID; 
 #endif
 
 #include <sql.h>
@@ -13,8 +28,6 @@
 #include "srptypes.h"
 #include "srpbuffer.h"
 #include "srpersist.h"
-
-typedef SQLUINTEGER (*INTERVAL_ACCESSOR)(SQL_INTERVAL_STRUCT *); 
 
 Scheme_Object *readCharBuffer(char *buffer,long numElts) {
   return scheme_make_sized_string(buffer,numElts,TRUE);
@@ -216,6 +229,7 @@ void writeDoubleBuffer(double *buffer,Scheme_Object *obj) {
   }
 }
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *buffer,long numElts) {
   Scheme_Object *retval,*numStruct,*digits;
   Scheme_Object *argv[4];
@@ -257,7 +271,9 @@ Scheme_Object *readNumericBuffer(SQL_NUMERIC_STRUCT *buffer,long numElts) {
 
   return retval;
 }
+#endif
 
+#if ODBCVER >= 0x0300 
 void writeNumericBuffer(SQL_NUMERIC_STRUCT *buffer,Scheme_Object *obj) {
   Scheme_Object *currList,*currVal;
   Scheme_Object *precision,*scale,*sign,*val;
@@ -329,11 +345,20 @@ void writeNumericBuffer(SQL_NUMERIC_STRUCT *buffer,Scheme_Object *obj) {
     currList = SCHEME_CDR(currList);
   }
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long numElts) {
+#else
+Scheme_Object *readDateBuffer(DATE_STRUCT *buffer,long numElts) {
+#endif
   Scheme_Object *retval,*dateStruct;
   Scheme_Object *argv[3];
+#if (ODBCVER >= 0x0300)
   SQL_DATE_STRUCT *currVal;
+#else
+  DATE_STRUCT *currVal;
+#endif
   long i;
 
   retval = scheme_null;
@@ -350,10 +375,10 @@ Scheme_Object *readDateBuffer(SQL_DATE_STRUCT *buffer,long numElts) {
   return retval;
 }
 
-void writeDateBuffer(SQL_DATE_STRUCT *buffer,Scheme_Object *obj) {
+void writeDateBuffer(DATE_STRUCT *buffer,Scheme_Object *obj) {
   Scheme_Object *currList,*currVal;
   Scheme_Object *year,*month,*day;
-  SQL_DATE_STRUCT *currBuff;
+  DATE_STRUCT *currBuff;
   long i;
 
   currList = obj;
@@ -387,10 +412,18 @@ void writeDateBuffer(SQL_DATE_STRUCT *buffer,Scheme_Object *obj) {
   }
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *readTimeBuffer(SQL_TIME_STRUCT *buffer,long numElts) {
+#else
+Scheme_Object *readTimeBuffer(TIME_STRUCT *buffer,long numElts) {
+#endif
   Scheme_Object *retval,*timeStruct;
   Scheme_Object *argv[3];
+#if (ODBCVER >= 0x0300)
   SQL_TIME_STRUCT *currVal;
+#else
+  TIME_STRUCT *currVal;
+#endif
   long i;
 
   retval = scheme_null;
@@ -407,10 +440,18 @@ Scheme_Object *readTimeBuffer(SQL_TIME_STRUCT *buffer,long numElts) {
   return retval;
 }
 
+#if (ODBCVER >= 0x0300)
 void writeTimeBuffer(SQL_TIME_STRUCT *buffer,Scheme_Object *obj) {
+#else
+void writeTimeBuffer(TIME_STRUCT *buffer,Scheme_Object *obj) {
+#endif
   Scheme_Object *currList,*currVal;
   Scheme_Object *hour,*minute,*second;
+#if (ODBCVER >= 0x0300)
   SQL_TIME_STRUCT *currBuff;
+#else
+  TIME_STRUCT *currBuff;
+#endif
   long i;
 
   currList = obj;
@@ -444,10 +485,18 @@ void writeTimeBuffer(SQL_TIME_STRUCT *buffer,Scheme_Object *obj) {
   }
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *readTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,long numElts) {
+#else
+Scheme_Object *readTimeStampBuffer(TIMESTAMP_STRUCT *buffer,long numElts) {
+#endif
   Scheme_Object *retval,*timeStampStruct;
   Scheme_Object *argv[7];
+#if (ODBCVER >= 0x0300)
   SQL_TIMESTAMP_STRUCT *currVal;
+#else
+  TIMESTAMP_STRUCT *currVal;
+#endif
   long i;
 
   retval = scheme_null;
@@ -468,10 +517,19 @@ Scheme_Object *readTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,long numElts) {
   return retval;
 }
 
+
+#if ODBCVER >= 0x0300 
 void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,Scheme_Object *obj) {
+#else
+void writeTimeStampBuffer(TIMESTAMP_STRUCT *buffer,Scheme_Object *obj) {
+#endif
   Scheme_Object *currList,*currVal;
   Scheme_Object *year,*month,*day,*hour,*minute,*second,*fraction;
+#if ODBCVER >= 0x0300
   SQL_TIMESTAMP_STRUCT *currBuff;
+#else
+  TIMESTAMP_STRUCT *currBuff;
+#endif
   SQLUINTEGER fractionVal;
   long i;
 
@@ -535,6 +593,7 @@ void writeTimeStampBuffer(SQL_TIMESTAMP_STRUCT *buffer,Scheme_Object *obj) {
   }
 }
 
+#if ODBCVER >= 0x0350 
 Scheme_Object *readGuidBuffer(SQLGUID *buffer,long numElts) {
   Scheme_Object *retval,*guidStruct;
   Scheme_Object *argv[4];
@@ -560,7 +619,9 @@ Scheme_Object *readGuidBuffer(SQLGUID *buffer,long numElts) {
 
   return retval;
 }
+#endif
 
+#if ODBCVER >= 0x0350 
 void writeGuidBuffer(SQLGUID *buffer,Scheme_Object *obj) {
   Scheme_Object *currList,*currVal;
   Scheme_Object *Data1,*Data2,*Data3,*Data4;
@@ -616,11 +677,13 @@ void writeGuidBuffer(SQLGUID *buffer,Scheme_Object *obj) {
     currList = SCHEME_CDR(currList);
   }
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalBuffer(SQL_INTERVAL_STRUCT *buffer,
 				  long numElts,
 				  Scheme_Object *structType,
-				  INTERVAL_ACCESSOR *fs,
+				  INTERVAL_FIELD_ACCESSOR *fs,
 				  size_t numAcc) {
   Scheme_Object *retval,*theStruct;
   Scheme_Object *argv[3];
@@ -634,7 +697,7 @@ Scheme_Object *readIntervalBuffer(SQL_INTERVAL_STRUCT *buffer,
     currVal = buffer + i;
     argv[0] = scheme_make_integer(currVal->interval_sign);
     for (j = 0; j < numAcc; j++) {
-      argv[j+1] = scheme_make_integer_value_from_unsigned(fs[j](currVal));
+      argv[j+1] = scheme_make_integer_value_from_unsigned(*(fs[j](currVal)));
     }
     theStruct = scheme_make_struct_instance(structType,numAcc+1,argv);
     retval = scheme_make_pair(theStruct,retval);
@@ -642,135 +705,174 @@ Scheme_Object *readIntervalBuffer(SQL_INTERVAL_STRUCT *buffer,
 
   return retval;
 }
+#endif
 
-SQLUINTEGER getIntervalYear(SQL_INTERVAL_STRUCT *p) {
-  return p->intval.year_month.year;
+#if ODBCVER >= 0x0300
+SQLUINTEGER *getIntervalYear(SQL_INTERVAL_STRUCT *p) {
+  return &p->intval.year_month.year;
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalYearBuffer(SQL_INTERVAL_STRUCT *buffer,
 				      long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalYear };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalYear };
   return readIntervalBuffer(buffer,numElts,YEAR_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
-SQLUINTEGER getIntervalMonth(SQL_INTERVAL_STRUCT *p) {
-  return p->intval.year_month.month;
+#if ODBCVER >= 0x0300
+SQLUINTEGER *getIntervalMonth(SQL_INTERVAL_STRUCT *p) {
+  return &p->intval.year_month.month;
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalMonthBuffer(SQL_INTERVAL_STRUCT *buffer,
 				       long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalMonth };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalMonth };
   return readIntervalBuffer(buffer,numElts,MONTH_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
-SQLUINTEGER getIntervalDay(SQL_INTERVAL_STRUCT *p) {
-  return p->intval.day_second.day;
+#if ODBCVER >= 0x0300
+SQLUINTEGER *getIntervalDay(SQL_INTERVAL_STRUCT *p) {
+  return &p->intval.day_second.day;
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDayBuffer(SQL_INTERVAL_STRUCT *buffer,
 				       long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalDay };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay };
   return readIntervalBuffer(buffer,numElts,DAY_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
-SQLUINTEGER getIntervalHour(SQL_INTERVAL_STRUCT *p) {
-  return p->intval.day_second.hour;
+#if ODBCVER >= 0x0300
+SQLUINTEGER *getIntervalHour(SQL_INTERVAL_STRUCT *p) {
+  return &p->intval.day_second.hour;
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalHourBuffer(SQL_INTERVAL_STRUCT *buffer,
 				      long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalHour };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalHour };
   return readIntervalBuffer(buffer,numElts,HOUR_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
-SQLUINTEGER getIntervalMinute(SQL_INTERVAL_STRUCT *p) {
-  return p->intval.day_second.minute;
+#if ODBCVER >= 0x0300
+SQLUINTEGER *getIntervalMinute(SQL_INTERVAL_STRUCT *p) {
+  return &p->intval.day_second.minute;
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
 					long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalMinute };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalMinute };
   return readIntervalBuffer(buffer,numElts,MINUTE_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
-SQLUINTEGER getIntervalSecond(SQL_INTERVAL_STRUCT *p) {
-  return p->intval.day_second.second;
+#if ODBCVER >= 0x0300
+SQLUINTEGER *getIntervalSecond(SQL_INTERVAL_STRUCT *p) {
+  return &p->intval.day_second.second;
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalSecondBuffer(SQL_INTERVAL_STRUCT *buffer,
 					long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalSecond };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalSecond };
   return readIntervalBuffer(buffer,numElts,SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalYearMonthBuffer(SQL_INTERVAL_STRUCT *buffer,
 					   long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalYear,getIntervalMonth };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalYear,getIntervalMonth };
 
   return readIntervalBuffer(buffer,numElts,
 			    YEAR_TO_MONTH_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDayHourBuffer(SQL_INTERVAL_STRUCT *buffer,
 					 long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalDay,getIntervalHour }; 
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour }; 
 
   return readIntervalBuffer(buffer,numElts,
 			    DAY_TO_HOUR_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDayMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
 					   long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalDay,getIntervalHour, getIntervalMinute }; 
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour, getIntervalMinute }; 
 
   return readIntervalBuffer(buffer,numElts,
 			    DAY_TO_MINUTE_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalDaySecondBuffer(SQL_INTERVAL_STRUCT *buffer,
 					   long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalDay,getIntervalHour, 
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalDay,getIntervalHour, 
 			      getIntervalMinute,getIntervalSecond }; 
 
   return readIntervalBuffer(buffer,numElts,
 			    DAY_TO_SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalHourMinuteBuffer(SQL_INTERVAL_STRUCT *buffer,
 					    long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalHour,getIntervalMinute };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalHour,getIntervalMinute };
 
   return readIntervalBuffer(buffer,numElts,
 			    HOUR_TO_MINUTE_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalHourSecondBuffer(SQL_INTERVAL_STRUCT *buffer,
 					    long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalHour,getIntervalMinute, getIntervalSecond };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalHour,getIntervalMinute, getIntervalSecond };
 
   return readIntervalBuffer(buffer,numElts,
 			    HOUR_TO_SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
+#if ODBCVER >= 0x0300
 Scheme_Object *readIntervalMinuteSecondBuffer(SQL_INTERVAL_STRUCT *buffer,
 					      long numElts) {
-  INTERVAL_ACCESSOR acc[] = { getIntervalMinute,getIntervalSecond };
+  INTERVAL_FIELD_ACCESSOR acc[] = { getIntervalMinute,getIntervalSecond };
   return readIntervalBuffer(buffer,numElts,
 			    MINUTE_TO_SECOND_INTERVAL_STRUCT_TYPE,
 			    acc,sizeray(acc));
 }
+#endif
 
 Scheme_Object *readBinaryBuffer(char *buffer,long numElts) {
   Scheme_Object *retval;
@@ -866,6 +968,7 @@ void writeBitBuffer(char *buffer,Scheme_Object *obj) {
   }
 }
 
+#ifdef WIN32 
 Scheme_Object *readBigIntBuffer(_int64 *buffer,long numElts) {
   Scheme_Object *retval,*bigLo,*bigHi;
   char bigBuff[25];
@@ -887,7 +990,9 @@ Scheme_Object *readBigIntBuffer(_int64 *buffer,long numElts) {
 
   return retval;
 }
+#endif
 
+#ifdef WIN32
 void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj) {
   Scheme_Object *currList,*currVal;
   long i;
@@ -938,7 +1043,9 @@ void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj) {
     currList = SCHEME_CDR(currList);
   }
 }
+#endif
 
+#ifdef WIN32
 Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long numElts) {
   Scheme_Object *retval,*bigLo,*bigHi;
   char bigBuff[25];
@@ -960,7 +1067,9 @@ Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long numElts) {
 
   return retval;
 }
+#endif
 
+#ifdef WIN32
 unsigned _int64 _atoui64(char *s) {
   unsigned _int64 retval;
 
@@ -974,7 +1083,9 @@ unsigned _int64 _atoui64(char *s) {
 
   return retval;
 }
+#endif
 
+#ifdef WIN32
 void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj) {
   Scheme_Object *currList,*currVal;
   long i;
@@ -1026,6 +1137,7 @@ void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj) {
     currList = SCHEME_CDR(currList);
   }
 }
+#endif
 
 Scheme_Object *readTinyBuffer(char *buffer,long numElts) {
   Scheme_Object *retval;

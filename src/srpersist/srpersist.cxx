@@ -4,14 +4,34 @@
 
 #include <limits.h>
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 
 #ifdef WIN32
 #include <windows.h>
+#else
+#define FALSE (0)
+#define TRUE  (1)
+typedef bool BOOL;
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned long DWORD;
+// dummy typedefs -- only used in trace API, not ODBC as such
+typedef void * LPWSTR; 
+typedef void VOID; 
+typedef int CHAR; 
+typedef int WCHAR; 
+typedef int GUID; 
 #endif
+
+// Microsoft ODBC SDK include files
+// obtainable as part of Data Access SDK
+//  at http://www.microsoft.com/data/
 
 #include <sql.h>
 #include <sqlext.h>
 #include <sqltypes.h>
+#include <sqlucode.h>
 
 #include "escheme.h"
 
@@ -26,9 +46,6 @@
 #include "srpinfo.tbl"
 #include "srpbitmask.tbl"
 
-#ifndef WIN32
-typedef boolean BOOL
-#endif
 
 static Scheme_Unit *srp_unit;  // the unit returned by the extension 
 
@@ -54,6 +71,33 @@ static Scheme_Object *make_still_executing_exn;
    Drivers need not return NULL-terminated strings.
 
 */
+
+#ifndef WIN32
+char *strlwr(char *s) {
+  char *p;
+
+  p = s;
+
+  while (*p) {
+    *p++ = tolower(*p);
+  }
+
+  return p;
+}
+
+int stricmp(char *s1,char *s2) {
+  char *buff1 = (char *)scheme_malloc(strlen(s1) + 1);
+  char *buff2 = (char *)scheme_malloc(strlen(s2) + 1);
+
+  strcpy(buff1,s1);
+  strcpy(buff2,s2);
+
+  strlwr(buff1);
+  strlwr(buff2);
+
+  return strcmp(buff1,buff2);
+}  
+#endif
 
 int keyConstCmp(char *s,SRP_NAMED_CONSTANT *p) {
   return stricmp(s,p->scheme_name);
@@ -91,12 +135,12 @@ SQLUINTEGER findBitByNameInDict(char *intName,SRP_NAMED_CONSTANT *entry,size_t n
   size_t i;
 
   for (i = 0; i < numBits; i++,entry++) {
-    if (strcmpi(entry->scheme_name,intName) == 0) {
+    if (stricmp(entry->scheme_name,intName) == 0) {
       return entry->val;
     }
   } 
 
-  return -1;  // appears to be unused in ODBC header files
+  return (SQLUINTEGER)(-1);  // appears to be unused in ODBC header files
 }
 
 char *findSmallIntName(char *name,SQLUSMALLINT value,
@@ -165,8 +209,9 @@ Scheme_Object *bitsListFromBitMask(char *name,SQLUINTEGER bits) {
   return retval;
 }
 
+#if (ODBCVER >= 0x0300)
 void SchemeObjectToHandle(Scheme_Object *obj,
-			  HANDLE *handle,SQLSMALLINT *handleType) {
+			  SQLHANDLE *handle,SQLSMALLINT *handleType) {
 
   if (SQL_HENVP(obj)) {
     *handle = SQL_HENV_VAL(obj);
@@ -185,6 +230,7 @@ void SchemeObjectToHandle(Scheme_Object *obj,
     *handleType = SQL_HANDLE_DESC;
   }
 }
+#endif
 
 int sizeofCDataType(SQLSMALLINT type) {
   switch (type) {
@@ -209,13 +255,19 @@ int sizeofCDataType(SQLSMALLINT type) {
     return sizeof(signed char);
   case SQL_C_UTINYINT :
     return sizeof(unsigned char);
+
+#ifdef WIN32
   case SQL_C_SBIGINT :
     return sizeof(_int64);
   case SQL_C_UBIGINT :
     return sizeof(unsigned _int64);
+#endif
+
   case SQL_C_BINARY :
     // SQL_C_VARBOOKMARK has same value
     return sizeof(unsigned char *);
+
+#if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_DATE :
     return sizeof(DATE_STRUCT);
   case SQL_C_TYPE_TIME :
@@ -224,8 +276,6 @@ int sizeofCDataType(SQLSMALLINT type) {
     return sizeof(TIMESTAMP_STRUCT);
   case SQL_C_NUMERIC :
     return sizeof(SQL_NUMERIC_STRUCT);
-  case SQL_C_GUID :
-    return sizeof(SQLGUID);
   case SQL_C_INTERVAL_YEAR :
   case SQL_C_INTERVAL_MONTH :
   case SQL_C_INTERVAL_DAY :
@@ -240,6 +290,11 @@ int sizeofCDataType(SQLSMALLINT type) {
   case SQL_C_INTERVAL_HOUR_TO_SECOND :
   case SQL_C_INTERVAL_MINUTE_TO_SECOND :
     return sizeof(SQL_INTERVAL_STRUCT);
+#endif
+#if ODBCVER >= 0x0350
+  case SQL_C_GUID :
+    return sizeof(SQLGUID);
+#endif
   }
   
   scheme_signal_error("Unknown C data type constant: %X",(int)type);
@@ -335,6 +390,7 @@ Scheme_Object *srp_make_indicator(int argc,Scheme_Object **argv) {
   return (Scheme_Object *)retval;
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
   SQLUINTEGER i;
   SQLUSMALLINT *values;
@@ -370,6 +426,7 @@ Scheme_Object *srp_read_op_parms(int argc,Scheme_Object **argv) {
   return retval;
 
 }
+#endif
 
 Scheme_Object *srp_read_indicator(int argc,Scheme_Object **argv) {
   SQLINTEGER value;
@@ -388,8 +445,10 @@ Scheme_Object *srp_read_indicator(int argc,Scheme_Object **argv) {
     return scheme_intern_symbol("sql-null-data");
   case SQL_NTS :
     return scheme_intern_symbol("sql-nts");
+#if (ODBCVER >= 0x0300)
   case SQL_COLUMN_IGNORE :
     return scheme_intern_symbol("sql-column-ignore");
+#endif
   case SQL_DATA_AT_EXEC :
     return scheme_intern_symbol("sql-data-at-exec");
   }
@@ -428,7 +487,7 @@ Scheme_Object *srp_set_indicator(int argc,Scheme_Object **argv) {
 
   lenString = SCHEME_SYM_VAL(argv[1]);
 
-  if (strcmpi(lenString,"sql-len-data-at-exec") == 0) {
+  if (stricmp(lenString,"sql-len-data-at-exec") == 0) {
     int execVal;
 
     if (argc != 3) {
@@ -453,16 +512,18 @@ Scheme_Object *srp_set_indicator(int argc,Scheme_Object **argv) {
 			  lenString);
   }
 
-  if (strcmpi(lenString,"sql-nts") == 0) {
+  if (stricmp(lenString,"sql-nts") == 0) {
     indicator->value = SQL_NTS;
   }
-  else if (strcmpi(lenString,"sql-null-data") == 0) {
+  else if (stricmp(lenString,"sql-null-data") == 0) {
     indicator->value = SQL_NULL_DATA;
   }
-  else if (strcmpi(lenString,"sql-column-ignore") == 0) {
+#if (ODBCVER >= 0x0300)
+  else if (stricmp(lenString,"sql-column-ignore") == 0) {
     indicator->value = SQL_COLUMN_IGNORE;
   }
-  else if (strcmpi(lenString,"sql-data-at-exec") == 0) {
+#endif
+  else if (stricmp(lenString,"sql-data-at-exec") == 0) {
     indicator->value = SQL_DATA_AT_EXEC;
   }
   else {
@@ -501,6 +562,7 @@ Scheme_Object *srp_read_row_status(int argc,Scheme_Object **argv) {
 
 }
 
+#if (ODBCVER >= 0x0300)
 char *APDArrayStatusToString(SQLUSMALLINT status) {
   switch(status) {
   case SQL_PARAM_PROCEED :
@@ -512,7 +574,9 @@ char *APDArrayStatusToString(SQLUSMALLINT status) {
   }
   return NULL;
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 char *IPDArrayStatusToString(SQLUSMALLINT status) {
   switch(status) {
   case SQL_PARAM_SUCCESS :
@@ -530,7 +594,9 @@ char *IPDArrayStatusToString(SQLUSMALLINT status) {
   }
   return NULL;
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 char *ARDArrayStatusToString(SQLUSMALLINT status) {
   switch(status) {
   case SQL_ROW_PROCEED :
@@ -542,7 +608,9 @@ char *ARDArrayStatusToString(SQLUSMALLINT status) {
   }
   return NULL;
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 char *IRDArrayStatusToString(SQLUSMALLINT status) {
   switch(status) {
   case SQL_ROW_SUCCESS :
@@ -564,7 +632,9 @@ char *IRDArrayStatusToString(SQLUSMALLINT status) {
   }
   return NULL;
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_read_array_status(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLUSMALLINT *values;
@@ -672,11 +742,12 @@ Scheme_Object *srp_read_array_status(int argc,Scheme_Object **argv) {
   return retval;
 
 }
+#endif
 
 Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
   SRP_SQL_BUFFER *retval;
   char *typeName;
-  SRP_NAMED_CONSTANT *p;
+  SRP_NAMED_SMALL_CONSTANT *p;
   long numElts;
 
   if (SCHEME_SYMBOLP(argv[0]) == FALSE) {
@@ -689,7 +760,7 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
 
   typeName = SCHEME_SYM_VAL(argv[0]);
 
-  p = namedConstSearch(typeName,CDataTypes);
+  p = namedSmallConstSearch(typeName,CDataTypes);
   
   if (p == NULL) {
     scheme_signal_error("sql-make-buffer: invalid C type: %s",typeName);
@@ -753,17 +824,32 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
     return readFloatBuffer((float *)buffer,numElts);
   case SQL_C_DOUBLE :
     return readDoubleBuffer((double *)buffer,numElts);
+#if (ODBCVER >= 0x0300)
   case SQL_C_NUMERIC :
     return readNumericBuffer((SQL_NUMERIC_STRUCT *)buffer,numElts);
+#endif
   case SQL_C_DATE :
+#if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_DATE :
+    return readDateBuffer((SQL_DATE_STRUCT *)buffer,numElts);
+#else
     return readDateBuffer((DATE_STRUCT *)buffer,numElts);
+#endif
   case SQL_C_TIME :
+#if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIME :
+    return readTimeBuffer((SQL_TIME_STRUCT *)buffer,numElts);
+#else
     return readTimeBuffer((TIME_STRUCT *)buffer,numElts);
+#endif
   case SQL_C_TIMESTAMP :
+#if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIMESTAMP :
+    return readTimeStampBuffer((SQL_TIMESTAMP_STRUCT *)buffer,numElts);
+#else
     return readTimeStampBuffer((TIMESTAMP_STRUCT *)buffer,numElts);
+#endif
+#if (ODBCVER >= 0x0300)
   case SQL_C_INTERVAL_YEAR :
     return readIntervalYearBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
   case SQL_C_INTERVAL_MONTH :
@@ -790,22 +876,29 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
     return readIntervalHourSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
   case SQL_C_INTERVAL_MINUTE_TO_SECOND :
     return readIntervalMinuteSecondBuffer((SQL_INTERVAL_STRUCT *)buffer,numElts);
+#endif
   case SQL_C_BINARY :
     // SQL_C_VARBOOKMARK is the same
     return readBinaryBuffer((char *)buffer,numElts);
   case SQL_C_BIT :
     return readBitBuffer((unsigned char *)buffer,numElts);
+
+#ifdef WIN32
   case SQL_C_SBIGINT :
     return readBigIntBuffer((_int64 *)buffer,numElts);
   case SQL_C_UBIGINT :
     return readUBigIntBuffer((unsigned _int64 *)buffer,numElts);
+#endif
+
   case SQL_C_STINYINT :
   case SQL_C_TINYINT :
     return readTinyBuffer((char *)buffer,numElts);
   case SQL_C_UTINYINT :
     return readUTinyBuffer((unsigned char *)buffer,numElts);
+#if (ODBCVER >= 0x0350)
   case SQL_C_GUID :
     return readGuidBuffer((SQLGUID *)buffer,numElts);
+#endif
   }
 
   scheme_signal_error("Unknown buffer C data type: %X",CDataType);
@@ -905,8 +998,7 @@ BOOL checkIsPredList(Scheme_Object *o,BOOL (*p)(Scheme_Object *),long numElts) {
   return TRUE;
 }
 
-typedef unsigned long *(*INTERVAL_FIELD_ACCESSOR)(SQL_INTERVAL_STRUCT *); 
-
+#if (ODBCVER >= 0x0300)
 void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
 			 SQLINTERVAL intervalType,
 			 short numFields,
@@ -949,38 +1041,17 @@ void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
     currList = SCHEME_CDR(currList);
   }
 }
-
-unsigned long *getIntervalYear(SQL_INTERVAL_STRUCT *p) {
-  return &p->intval.year_month.year;
-} 
-
-unsigned long *getIntervalMonth(SQL_INTERVAL_STRUCT *p) {
-  return &p->intval.year_month.month;
-} 
-
-unsigned long *getIntervalDay(SQL_INTERVAL_STRUCT *p) {
-  return &p->intval.day_second.day;
-} 
-
-unsigned long *getIntervalHour(SQL_INTERVAL_STRUCT *p) {
-  return &p->intval.day_second.hour;
-} 
-
-unsigned long *getIntervalMinute(SQL_INTERVAL_STRUCT *p) {
-  return &p->intval.day_second.minute;
-} 
-
-unsigned long *getIntervalSecond(SQL_INTERVAL_STRUCT *p) {
-  return &p->intval.day_second.second;
-} 
+#endif
 
 Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   SQLSMALLINT CDataType;
   void *buffer;
   long numElts;
   Scheme_Object *accessors[5];
+#if (ODBCVER >= 0x0300)
   INTERVAL_FIELD_ACCESSOR fields[5];
-  
+#endif  
+
   if (SQL_BUFFERP(argv[0]) == FALSE) {
     scheme_wrong_type("sql-write-buffer","int",0,argc,argv);
   } 
@@ -1053,6 +1124,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
     checkIsPredList(argv[1],schemeIntP,numElts);
     writeUTinyBuffer((unsigned char *)buffer,argv[1]); 
 
+#ifdef WIN32
   case SQL_C_SBIGINT :
 
     checkIsPredList(argv[1],schemeExactIntegerP,numElts);
@@ -1062,6 +1134,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     checkIsPredList(argv[1],schemeExactIntegerP,numElts);
     writeUBigIntBuffer((unsigned _int64 *)buffer,argv[1]); 
+#endif
 
   case SQL_C_FLOAT :
 
@@ -1077,43 +1150,59 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     break;
 
+#if (ODBCVER >= 0x0300)
   case SQL_C_NUMERIC :
 
     checkIsPredList(argv[1],schemeNumericP,numElts);
     writeNumericBuffer((SQL_NUMERIC_STRUCT *)buffer,argv[1]); 
 
     break;
+#endif
 
   case SQL_C_DATE :
+#if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_DATE :
-
     checkIsPredList(argv[1],schemeDateP,numElts);
     writeDateBuffer((SQL_DATE_STRUCT *)buffer,argv[1]); 
+#else
+    checkIsPredList(argv[1],schemeDateP,numElts);
+    writeDateBuffer((DATE_STRUCT *)buffer,argv[1]); 
+#endif
 
     break;
 
   case SQL_C_TIME :
+#if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIME :
-
     checkIsPredList(argv[1],schemeTimeP,numElts);
     writeTimeBuffer((SQL_TIME_STRUCT *)buffer,argv[1]); 
+#else
+    checkIsPredList(argv[1],schemeTimeP,numElts);
+    writeTimeBuffer((TIME_STRUCT *)buffer,argv[1]); 
+#endif
 
     break;
 
   case SQL_C_TIMESTAMP :
+#if (ODBCVER >= 0x0300)
   case SQL_C_TYPE_TIMESTAMP :
-
     checkIsPredList(argv[1],schemeTimeP,numElts);
     writeTimeStampBuffer((SQL_TIMESTAMP_STRUCT *)buffer,argv[1]); 
+#else
+    checkIsPredList(argv[1],schemeTimeP,numElts);
+    writeTimeStampBuffer((TIMESTAMP_STRUCT *)buffer,argv[1]); 
+#endif
 
     break;
 
+#if (ODBCVER >= 0x0350)
   case SQL_C_GUID :
 
     checkIsPredList(argv[1],schemeGuidP,numElts);
     writeGuidBuffer((SQLGUID *)buffer,argv[1]); 
 
     break;
+#endif
 
   case SQL_C_BIT :
 
@@ -1136,6 +1225,8 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     break;
 
+
+#if (ODBCVER >= 0x0300)
   case SQL_C_INTERVAL_YEAR :
 
     accessors[0] = YEAR_INTERVAL_YEAR;
@@ -1309,6 +1400,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 			accessors,fields);
 
     break;
+#endif /* ODBCVER >= 0x0300 */
 
   }
 
@@ -1494,6 +1586,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
   case SQL_NEED_DATA :
     return need_data;
 
+#if (ODBCVER >= 0x0300)
   case SQL_NO_DATA :
 
     sprintf(buff,"SQL_NO_DATA error in %s",f);
@@ -1506,6 +1599,7 @@ RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
     scheme_apply(scheme_raise,1,&exn_object);
 
     break;
+#endif
 
   case SQL_INVALID_HANDLE :
 
@@ -1563,8 +1657,10 @@ char *sqlReturnToString(SQLRETURN sr) {
   case SQL_SUCCESS :
     return "sql-success";
 
+#if (ODBCVER >= 0x0300)
   case SQL_NO_DATA :
     return "sql-no-data";
+#endif
 
   case SQL_INVALID_HANDLE :
     return "sql-invalid-handle";
@@ -1619,7 +1715,7 @@ Scheme_Object *srp_SQLAllocConnect(int argc,Scheme_Object **argv) {
   RETURN_CODE retcode;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
-    scheme_wrong_type("alloc-connect","sql_henv",0,argc,argv);
+    scheme_wrong_type("alloc-connect","sql-henv",0,argc,argv);
   }
 
   envHandle = SQL_HENV_VAL(argv[0]);
@@ -1652,6 +1748,7 @@ Scheme_Object *srp_SQLAllocEnv(int argc,Scheme_Object **argv) {
   sql_return((Scheme_Object *)retval,retcode,"alloc-env");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   char *handleTypeString;
@@ -1755,6 +1852,7 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 
   return scheme_void; // unreachable
 }
+#endif
 
 Scheme_Object *srp_SQLAllocStmt(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -1764,7 +1862,7 @@ Scheme_Object *srp_SQLAllocStmt(int argc,Scheme_Object **argv) {
   RETURN_CODE retcode;
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
-    scheme_wrong_type("alloc-stmt","sql_hdbc",0,argc,argv);
+    scheme_wrong_type("alloc-stmt","sql-hdbc",0,argc,argv);
   }
 
   connectHandle = SQL_HDBC_VAL(argv[0]);
@@ -1791,7 +1889,7 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
   RETURN_CODE retcode;
 
   if (SQL_HSTMTP(argv[0]) == FALSE) {
-    scheme_wrong_type("bind-col","sql_hstmt",0,argc,argv);
+    scheme_wrong_type("bind-col","sql-hstmt",0,argc,argv);
   }
 
   if (isUnsignedSmallInt(argv[1]) == FALSE) {
@@ -1823,6 +1921,7 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"bind-col");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -1852,16 +1951,12 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
     scheme_wrong_type("bind-param","int",3,argc,argv);
   }
    
-  if (isSmallInt(argv[4]) == FALSE) {
-    scheme_wrong_type("bind-param","int",4,argc,argv);
+  if (SQL_BUFFERP(argv[4]) == FALSE) {
+    scheme_wrong_type("bind-param","sql-buffer",4,argc,argv);
   }
    
-  if (SQL_BUFFERP(argv[5]) == FALSE) {
-    scheme_wrong_type("bind-param","sql-buffer",5,argc,argv);
-  }
-   
-  if (SQL_INDICATORP(argv[6]) == FALSE) {
-    scheme_wrong_type("bind-param","sql-indicator",6,argc,argv);
+  if (SQL_INDICATORP(argv[5]) == FALSE) {
+    scheme_wrong_type("bind-param","sql-indicator",5,argc,argv);
   }
    
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
@@ -1880,13 +1975,44 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
 
   scheme_get_unsigned_int_val(argv[3],&lengthPrecision);
 
-  decimalDigits = (short)SCHEME_INT_VAL(argv[4]);
+  CTypeVal = SQL_BUFFER_CTYPE(argv[4]);
 
-  CTypeVal = SQL_BUFFER_CTYPE(argv[5]);
+  buffer = SQL_BUFFER_VAL(argv[4]);
 
-  buffer = SQL_BUFFER_VAL(argv[5]);
+  indicator = SQL_INDICATOR_VAL(argv[5]);
 
-  indicator = SQL_INDICATOR_VAL(argv[6]);
+  switch(SQLTypeVal) {
+
+  case SQL_DECIMAL :
+  case SQL_NUMERIC :
+  case SQL_TIME :
+  case SQL_TIMESTAMP :
+  case SQL_TYPE_TIME :
+  case SQL_INTERVAL_SECOND :
+  case SQL_INTERVAL_DAY_TO_SECOND :
+  case SQL_INTERVAL_HOUR_TO_SECOND :
+  case SQL_INTERVAL_MINUTE_TO_SECOND :
+
+      // need Decimals
+
+      if (argc != 7) {
+	scheme_wrong_count("sql-bind-parameter",7,7,argc,argv);
+      }
+
+      if (isSmallInt(argv[6]) == FALSE) {
+	scheme_wrong_type("bind-param","small-int",6,argc,argv);
+      }
+
+      decimalDigits = (SQLSMALLINT)SCHEME_INT_VAL(argv[6]);
+
+      break;
+
+
+  default :
+
+    decimalDigits = 0;
+    break;
+  }
 
   sr = SQLBindParam(stmtHandle,paramNum,CTypeVal,SQLTypeVal,
 		    lengthPrecision,decimalDigits,buffer,
@@ -1896,6 +2022,7 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"bind-param");
 }
+#endif
 
 Scheme_Object *srp_SQLCancel(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -1915,6 +2042,7 @@ Scheme_Object *srp_SQLCancel(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"cancel");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLCloseCursor(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -1932,7 +2060,9 @@ Scheme_Object *srp_SQLCloseCursor(int argc,Scheme_Object **argv) {
   
   sql_return(scheme_void,retcode,"close-cancel");
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -2016,6 +2146,7 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
 
   return scheme_void; // unreachable
 }
+#endif
 
 Scheme_Object *srp_SQLColumns(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2102,6 +2233,7 @@ Scheme_Object *srp_SQLConnect(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"connect");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLCopyDesc(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDESC srcDescHandle,targetDescHandle;
@@ -2123,6 +2255,7 @@ Scheme_Object *srp_SQLCopyDesc(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"copy-desc");
 }
+#endif
 
 Scheme_Object *srp_SQLDataSources(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2247,6 +2380,7 @@ Scheme_Object *srp_SQLDisconnect(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"disconnect");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLEndTran(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLSMALLINT actionType;
@@ -2285,6 +2419,7 @@ Scheme_Object *srp_SQLEndTran(int argc,Scheme_Object **argv) {
   
   sql_return(scheme_void,retcode,"end-tran");
 }
+#endif
 
 Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2299,26 +2434,44 @@ Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
   Scheme_Object *retval;
 
   if (SQL_HENVP(argv[0]) == FALSE) {
-    scheme_wrong_type("error","sql-henv",0,argc,argv);
+    scheme_wrong_type("sql-error","sql-henv",0,argc,argv);
   }
 
-  if (SQL_HDBCP(argv[1]) == FALSE) {
-    scheme_wrong_type("error","sql-hdbc",1,argc,argv);
+  if (SQL_HDBCP(argv[1]) == FALSE && SCHEME_SYMBOLP(argv[1]) == FALSE) {
+    scheme_wrong_type("sql-error","sql-hdbc or symbol",1,argc,argv);
   }
 
-  if (SQL_HSTMTP(argv[2]) == FALSE) {
-    scheme_wrong_type("error","sql-hstmt",2,argc,argv);
+  if (SQL_HSTMTP(argv[2]) == FALSE && SCHEME_SYMBOLP(argv[2]) == FALSE) {
+    scheme_wrong_type("sql-error","sql-hstmt or symbol",2,argc,argv);
   }
 
   envHandle = SQL_HENV_VAL(argv[0]);
-  connectionHandle = SQL_HDBC_VAL(argv[1]);
-  stmtHandle = SQL_HSTMT_VAL(argv[2]);
+
+  if (SCHEME_SYMBOLP(argv[1])) {
+    if (stricmp(SCHEME_SYM_VAL(argv[1]),"sql-null-hdbc")) {
+      scheme_signal_error("sql-error: 'sql-null-hdbc is only valid symbol for 2nd argument");
+    }
+    connectionHandle = SQL_NULL_HDBC;
+  }
+  else {
+    connectionHandle = SQL_HDBC_VAL(argv[1]);
+  }
+
+  if (SCHEME_SYMBOLP(argv[2])) {
+    if (stricmp(SCHEME_SYM_VAL(argv[2]),"sql-null-hstmt")) {
+      scheme_signal_error("sql-error: 'sql-null-hstmt is only valid symbol for 3rd argument");
+    }
+    stmtHandle = SQL_NULL_HSTMT;
+  }
+  else {
+    stmtHandle = SQL_HSTMT_VAL(argv[2]);
+  }
 
   sr = SQLError(envHandle,connectionHandle,stmtHandle,
 		state,&nativeError,
 		text,sizeof(text),&textLen);
 		
-  retcode = checkSQLReturn(sr,"error");
+  retcode = checkSQLReturn(sr,"sql-error");
 
   retval = scheme_null;
   retval = scheme_make_pair(scheme_make_sized_string((char *)text,textLen,TRUE),
@@ -2328,7 +2481,7 @@ Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
   retval = scheme_make_pair(scheme_make_string((const char *)state),
 			    retval);
 
-  sql_return(retval,retcode,"error");
+  sql_return(retval,retcode,"sql-error");
 }
 
 Scheme_Object *srp_SQLExecDirect(int argc,Scheme_Object **argv) {
@@ -2393,6 +2546,7 @@ Scheme_Object *srp_SQLFetch(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"fetch");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -2445,6 +2599,7 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"fetch-scroll");
 }
+#endif
 
 Scheme_Object *srp_SQLFreeConnect(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2482,6 +2637,7 @@ Scheme_Object *srp_SQLFreeEnv(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"free-env");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLFreeHandle(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   RETURN_CODE retcode;
@@ -2508,6 +2664,7 @@ Scheme_Object *srp_SQLFreeHandle(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"free-handle");
 }
+#endif
 
 Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2544,9 +2701,10 @@ Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"free-stmt");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
-  HDBC connectionHandle;
+  SQLHDBC connectionHandle;
   SQLINTEGER attribute;
   char *attributeString;
   SRP_CONST_TYPE attributeType;
@@ -2623,10 +2781,11 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
   
   return scheme_void; // for compiler
 }
+#endif
 
 Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
-  HDBC connectionHandle;
+  SQLHDBC connectionHandle;
   SQLUSMALLINT option;
   char *optionString;
   SRP_CONST_TYPE optionType;
@@ -2646,18 +2805,11 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
 
   optionString = SCHEME_SYM_VAL(argv[1]);
 
-  // need to check settable and read-only options
-
-  p = namedTypedConstSearch(optionString,settableConnectionAttributes);
+  p = namedTypedConstSearch(optionString,connectionOptions);
   
   if (p == NULL) {
-
-    p = namedTypedConstSearch(optionString,readOnlyConnectionAttributes);
-
-    if (p == NULL) {
-      scheme_signal_error("sql-get-connect-option: invalid option: %s",
-			  optionString);
-    }
+    scheme_signal_error("sql-get-connect-option: invalid option: %s",
+			optionString);
   }
 
   option = (SQLUSMALLINT)(p->val);
@@ -2666,13 +2818,6 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
   connectionHandle = SQL_HDBC_VAL(argv[0]);
 
   switch(optionType) {
-
-  case sqlbool :
-
-    sr = SQLGetConnectOption(connectionHandle,option,&number);
-    retcode = checkSQLReturn(sr,"get-connect-option");  			 
-    retval = (number == SQL_FALSE) ? scheme_false : scheme_true;
-    sql_return(retval,retcode,"get-connect-option");
 
   case string :
 
@@ -2693,8 +2838,8 @@ Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
     sr = SQLGetConnectOption(connectionHandle,option,&number);
     retcode = checkSQLReturn(sr,"get-connect-option");  			 
     retval = scheme_intern_symbol(findIntegerName(optionString,number,
-						namedConnectAttrIntegers,
-						sizeray(namedConnectAttrIntegers)));
+						  namedConnectOptionIntegers,
+						  sizeray(namedConnectOptionIntegers)));
     sql_return(retval,retcode,"get-connect-option");
 
   case bitmask :
@@ -2771,6 +2916,7 @@ Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"get-data");
 }
 
+#if (ODBCVER >= 0x300)
 Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDESC descHandle;
@@ -2988,8 +3134,10 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
   }
 
   return scheme_void;
-}
+} 
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDESC descHandle;
@@ -3059,7 +3207,9 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
   
   sql_return(retval,retcode,"get-desc-rec");
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLSMALLINT handleType;
@@ -3169,7 +3319,9 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
   return scheme_void;
 
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetDiagRec(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLSMALLINT handleType;
@@ -3217,7 +3369,9 @@ Scheme_Object *srp_SQLGetDiagRec(int argc,Scheme_Object **argv) {
 
   sql_return(retval,retcode,"get-diag-rec");
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHENV envHandle;
@@ -3283,13 +3437,18 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
 
   return scheme_void; // unreachable
 }
+#endif
 
 Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDBC connectionHandle;
   SQLUSMALLINT function;
   char *functionString;
+#if (ODBCVER >= 0x0300)
   SQLUSMALLINT supported[SQL_API_ODBC3_ALL_FUNCTIONS_SIZE];
+#else
+  SQLUSMALLINT supported[sizeray(sqlFunctions)];
+#endif
   SRP_NAMED_SMALL_CONSTANT *p;  
   RETURN_CODE retcode;
   int i;
@@ -3329,7 +3488,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
     for (i = 0; i < sizeray(sqlFunctions); i++) {
       ndx = sqlFunctions[i].val;
       if (ndx < 100) { // valid ODBC 2 function
-	if (supported[ndx] == SQL_TRUE) {
+	if (supported[ndx]) { // rely on SQL_FALSE == 0
 	  value = scheme_true;
 	}
 	else {
@@ -3343,6 +3502,7 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
 
     sql_return(retval,retcode,"get-functions");
   }
+#if (ODBVER >= 0x0300)
   else if (function == SQL_API_ODBC3_ALL_FUNCTIONS) {
     Scheme_Object *value;
     Scheme_Object *retval;
@@ -3364,7 +3524,8 @@ Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
     sql_return(retval,retcode,"get-functions");
 
   }
-  else if (*supported == SQL_TRUE) {
+#endif
+  else if (*supported) { // rely on SQL_FALSE == 0
     sql_return(scheme_true,retcode,"get-functions");
   }
   
@@ -3382,12 +3543,17 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   SRP_NAMED_TYPED_CONSTANT *p;    
   SQLUSMALLINT usmallint_value;
   SQLUINTEGER uinteger_value;
+#if (ODBCVER >= 0x0300)
+  SQLHDESC retDescHandle;
+#endif
   SQLHDBC retConnectHandle;
   SQLHENV retEnvHandle;
-  SQLHDESC retDescHandle;
   SQLHSTMT retStmtHandle;
   Scheme_Object *retval;
   RETURN_CODE retcode;
+
+
+
 
   if (SQL_HDBCP(argv[0]) == FALSE) {
     scheme_wrong_type("get-info","sql-hdbc",0,argc,argv);
@@ -3412,7 +3578,8 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   connectionHandle = SQL_HDBC_VAL(argv[0]);
 
   if (argc == 3) {
-    if (strcmpi(infoNameString,"sql-driver-hdesc") == 0) {
+#if (ODBCVER >= 0x0300)
+    if (stricmp(infoNameString,"sql-driver-hdesc") == 0) {
       if (SQL_HDESCP(argv[2]) == FALSE) {
 	scheme_wrong_type("get-info","sql-hdesc",2,argc,argv);
       }
@@ -3420,12 +3587,14 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
       retDescHandle = SQL_HDBC_VAL(argv[2]);
 
     }
-    else if (strcmpi(infoNameString,"sql-driver-hstmt") == 0) {
+    else 
+#endif
+    if (stricmp(infoNameString,"sql-driver-hstmt") == 0) {
       if (SQL_HSTMTP(argv[2]) == FALSE) {
 	scheme_wrong_type("get-info","sql-hstmt",2,argc,argv);
       }
       
-      retDescHandle = SQL_HSTMT_VAL(argv[2]);
+      retStmtHandle = SQL_HSTMT_VAL(argv[2]);
 
     }
     else {
@@ -3559,6 +3728,7 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
 
     }
 
+#if (ODBCVER >= 0x0300)
   case hdesc :
     
     {
@@ -3576,12 +3746,14 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
       sql_return((Scheme_Object *)retval,retcode,"get-info");
 
     }
+#endif
 
   }
 
   return scheme_void;  // unreachable
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -3755,6 +3927,7 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
 
   return scheme_void; // unreachable
 }
+#endif
 
 Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -3804,13 +3977,6 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
     sql_return(scheme_make_integer_value_from_unsigned(number),
 	       retcode,"get-stmt-option");
 
-  case sqlbool :
-
-    sr = SQLGetStmtOption(stmtHandle,option,&number);
-    retcode = checkSQLReturn(sr,"get-stmt-option");
-    sql_return((number == SQL_FALSE) ? scheme_false : scheme_true,
-	       retcode,"get-stmt-option");
-
   case nameduinteger :
 
     sr = SQLGetStmtOption(stmtHandle,option,&number);
@@ -3818,8 +3984,8 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
 
     retval = 
       scheme_intern_symbol(findIntegerName(optionString,number,
-					   namedStmtAttributes,
-					   sizeray(namedStmtAttributes)));
+					   namedStmtOptions,
+					   sizeray(namedStmtOptions)));
     sql_return(retval,retcode,"get-stmt-option");
     
   case possiblynameduinteger :
@@ -3830,8 +3996,8 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
     retcode = checkSQLReturn(sr,"get-stmt-option");
 
     attrName = findIntegerName(optionString,number,
-			       namedStmtAttributes,
-			       sizeray(namedStmtAttributes));
+			       namedStmtOptions,
+			       sizeray(namedStmtOptions));
 
     if (strcmp(attrName,NO_BIT_NAME) == 0) {
       return scheme_make_integer_value_from_unsigned(number);
@@ -3839,91 +4005,9 @@ Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
 
     sql_return(scheme_intern_symbol(attrName),retcode,"get-stmt-option");
 
-  case rowstatus :
-    
-    SRP_SQL_ROW_STATUS *rowStatus;
-
-    sr = SQLGetStmtOption(stmtHandle,option,&smallnumpointer);
-    retcode = checkSQLReturn(sr,"get-stmt-option");
-
-    // need to keep rowStatus around until cursor closed
-    // conservatively, make it uncollectable
-
-    rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_eternal(sizeof(SRP_SQL_ROW_STATUS));
-    rowStatus->type = sql_row_status_type;
-    rowStatus->numRows = 0;
-    rowStatus->values = smallnumpointer;
-
-    sql_return((Scheme_Object *)rowStatus,retcode,"get-stmt-option");
-
-  case sqlboxeduint :
-
-    { SRP_SQL_BOXED_UINT *retval;
-
-      sr = SQLGetStmtOption(stmtHandle,option,&numpointer);
-      retcode = checkSQLReturn(sr,"get-stmt-option");
-
-      retval = (SRP_SQL_BOXED_UINT *)scheme_malloc(sizeof(SRP_SQL_BOXED_UINT));
-      retval->type = sql_boxed_uint_type;
-      retval->pointer = numpointer;
-
-      sql_return((Scheme_Object *)retval,retcode,"get-stmt-option");
-    }
-
-  case hdesc :
-
-    { SRP_SQL_HDESC *retval;
-
-      sr = SQLGetStmtOption(stmtHandle,option,&number);
-      retcode = checkSQLReturn(sr,"get-stmt-option");
-
-      retval = (SRP_SQL_HDESC *)scheme_malloc(sizeof(SRP_SQL_HDESC));
-      retval->type = sql_hdesc_type;
-
-      switch(option) {
-
-      case SQL_ATTR_APP_PARAM_DESC :
-	retval->descType = APD;
-	break;
-      case SQL_ATTR_APP_ROW_DESC :
-	retval->descType = ARD;
-	break;
-      case SQL_ATTR_IMP_PARAM_DESC :
-	retval->descType = IPD;
-	break;
-      case SQL_ATTR_IMP_ROW_DESC :
-	retval->descType = IRD;
-	break;
-      default :
-	scheme_signal_error("get-stmt-option: unknown hdesc type");
-      }
-      
-      retval->hdesc = (SQLHDESC)number;
-
-      sql_return((Scheme_Object *)retval,retcode,"get-stmt-option");
-    }
-
-  case opparms :  
-
-    { SRP_SQL_OP_PARMS *retval;
-      SQLUINTEGER paramSetSize;
-
-      sr = SQLGetStmtOption(stmtHandle,SQL_ATTR_PARAMSET_SIZE,&paramSetSize);
-      retcode = checkSQLReturn(sr,"get-stmt-option");
-      
-      sr = SQLGetStmtOption(stmtHandle,option,&smallnumpointer);
-      checkSQLReturn(sr,"get-stmt-option");
-    
-      retval = (SRP_SQL_OP_PARMS *)scheme_malloc(sizeof(SRP_SQL_OP_PARMS));
-      retval->type = sql_op_parms_type;
-      retval->paramSetSize = paramSetSize;
-      retval->values = smallnumpointer;
-
-      sql_return((Scheme_Object *)retval,retcode,"get-stmt-option");
-    }
   }
 
-  scheme_signal_error("sql-get-stmt-attr: invalid option type: %X",
+  scheme_signal_error("get-stmt-option: invalid option type: %X",
 		      optionType);
 
   return scheme_void; // unreachable
@@ -4088,6 +4172,7 @@ Scheme_Object *srp_SQLRowCount(int argc,Scheme_Object **argv) {
 	     retcode,"row-count");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDBC connectionHandle;
@@ -4198,6 +4283,7 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
 
   return scheme_void; // unreachable
 }
+#endif
 
 Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -4220,10 +4306,10 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
 
   optionString = SCHEME_SYM_VAL(argv[1]);
 
-  p = namedTypedConstSearch(optionString,settableConnectionAttributes);
+  p = namedTypedConstSearch(optionString,connectionOptions);
 
   if (p == NULL) {
-    scheme_signal_error("sql-set-connect-option: invalid connection option: %s",
+    scheme_signal_error("set-connect-option: invalid connection option: %s",
 			optionString);
   }
 
@@ -4233,19 +4319,6 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
   connectionHandle = SQL_HDBC_VAL(argv[0]);
 
   switch(optionType) {
-
-  case sqlbool :
-
-    SQLUINTEGER boolVal;
-
-    // treat non-#f as true
-
-    boolVal = (argv[2] == scheme_false) ? SQL_FALSE : SQL_TRUE;
-
-    sr = SQLSetConnectAttr(connectionHandle,option,(SQLPOINTER)boolVal,0);
-    retcode = checkSQLReturn(sr,"set-connect-option");
-
-    sql_return(scheme_void,retcode,"set-connect-option");
 
   case sqluinteger :
 
@@ -4259,7 +4332,7 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
       scheme_signal_error("sql-set-connect-option: numeric value too big");
     }
 
-    sr = SQLSetConnectAttr(connectionHandle,option,(SQLPOINTER)number,0);
+    sr = SQLSetConnectOption(connectionHandle,option,number);
     retcode = checkSQLReturn(sr,"set-connect-option");
 
     sql_return(scheme_void,retcode,"set-connect-option");
@@ -4273,15 +4346,15 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
     optionValString = SCHEME_SYM_VAL(argv[2]);
 
     val = findNamedInteger(optionString,optionValString,
-			   namedConnectAttrIntegers,
-			   sizeray(namedConnectAttrIntegers));
+			   namedConnectOptionIntegers,
+			   sizeray(namedConnectOptionIntegers));
 
     if (val == -1) {
       scheme_signal_error("sql-set-connect-option: unknown option value: %s",
 			  optionValString);
     }
 
-    sr = SQLSetConnectAttr(connectionHandle,option,(SQLPOINTER)val,0);
+    sr = SQLSetConnectOption(connectionHandle,option,val);
     retcode = checkSQLReturn(sr,"set-connect-option");
 
     sql_return(scheme_void,retcode,"set-connect-option");
@@ -4289,16 +4362,14 @@ Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
   case string :
 
     SQLCHAR *s;
-    SQLINTEGER len;
 
     if (SCHEME_STRINGP(argv[2]) == FALSE) { 
       scheme_wrong_type("set-connect-option","string",2,argc,argv);
     }
 
     s = (SQLCHAR *)SCHEME_STR_VAL(argv[2]);
-    len = SCHEME_STRLEN_VAL(argv[2]);
 
-    sr = SQLSetConnectAttr(connectionHandle,option,s,len);
+    sr = SQLSetConnectOption(connectionHandle,option,(SQLUINTEGER)s);
     retcode = checkSQLReturn(sr,"set-connect-option");
 
     sql_return(scheme_void,retcode,"set-connect-option");
@@ -4336,6 +4407,7 @@ Scheme_Object *srp_SQLSetCursorName(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"set-cursor-name");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDESC descHandle;
@@ -4528,7 +4600,9 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"set-desc-field");
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHDESC descHandle;
@@ -4628,7 +4702,9 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"set-desc-rec");
 }
+#endif
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHENV envHandle;
@@ -4706,6 +4782,7 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
 
   return scheme_void; // unreachable
 }
+#endif
 
 Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -4803,6 +4880,7 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"set-param");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -4953,7 +5031,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
       scheme_wrong_type("set-stmt-attr","sql-hdesc",2,argc,argv);
     }
 
-    sr = SQLSetStmtAttr(stmtHandle,attribute,SQL_HDESC_VAL(argv[2]),0);
+    sr = SQLSetStmtAttr(stmtHandle,attribute,(SQLPOINTER)SQL_HDESC_VAL(argv[2]),0);
     retcode = checkSQLReturn(sr,"get-stmt-attr");
 
     sql_return(scheme_void,retcode,"get-stmt-attr");
@@ -4987,6 +5065,7 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
 
   return scheme_void; // unreachable
 }
+#endif
 
 Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -5041,20 +5120,6 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
 
     sql_return(scheme_void,retcode,"set-stmt-option");
 
-  case sqlbool :
-
-    if (argv[2] == scheme_false) {
-      boolVal = SQL_FALSE;
-    }
-    else {
-      boolVal = SQL_TRUE;
-    }
-
-    sr = SQLSetStmtOption(stmtHandle,option,boolVal);
-    retcode = checkSQLReturn(sr,"set-stmt-option");
-
-    sql_return(scheme_void,retcode,"set-stmt-option");
-
   case nameduinteger :
 
     if (SCHEME_SYMBOLP(argv[2]) == FALSE) {
@@ -5064,10 +5129,10 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     optionValString = SCHEME_SYM_VAL(argv[2]);
 
     val = findNamedInteger(optionString,optionValString,
-			   namedStmtAttributes,sizeray(namedStmtAttributes));
+			   namedStmtOptions,sizeray(namedStmtOptions));
 
     if (val == -1) {
-      scheme_signal_error("sql-set-stmt-option: unknown option value: %s",
+      scheme_signal_error("set-stmt-option: unknown option value: %s",
 			  optionValString);
     }
 
@@ -5083,7 +5148,7 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
       optionValString = SCHEME_SYM_VAL(argv[2]);
 
       val = findNamedInteger(optionString,optionValString,
-			     namedStmtAttributes,sizeray(namedStmtAttributes));
+			     namedStmtOptions,sizeray(namedStmtOptions));
 
       if (val == -1) {
 	scheme_signal_error("sql-set-stmt-option: unknown option value: %s",
@@ -5102,62 +5167,6 @@ Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
     else {
       scheme_wrong_type("set-stmt-option","int or symbol",2,argc,argv);
     }
-
-    retcode = checkSQLReturn(sr,"set-stmt-option");
-
-    sql_return(scheme_void,retcode,"set-stmt-option");
-
-  case rowstatus :
-    
-    if (SQL_ROW_STATUSP(argv[2]) == FALSE) {
-      scheme_wrong_type("set-stmt-option","sql-row-status",2,argc,argv);
-    }
-
-    sr = SQLSetStmtOption(stmtHandle,option,(SQLUINTEGER)SQL_ROW_STATUS_VAL(argv[2]));
-
-    retcode = checkSQLReturn(sr,"set-stmt-option");
-
-    sql_return(scheme_void,retcode,"set-stmt-option");
-
-  case sqlboxeduint :
-
-    if (SQL_BOXED_UINTP(argv[2]) == FALSE) {
-      scheme_wrong_type("set-stmt-option","sql-boxed-uint",2,argc,argv);
-    }
-
-    sr = SQLSetStmtOption(stmtHandle,option,(SQLUINTEGER)SQL_BOXED_UINT_VAL(argv[2]));
-    
-    retcode = checkSQLReturn(sr,"get-stmt-option");
-
-    sql_return(scheme_void,retcode,"get-stmt-option");
-
-  case hdesc :
-
-    if (SQL_HDESCP(argv[2]) == FALSE) {
-      scheme_wrong_type("set-stmt-option","sql-hdesc",2,argc,argv);
-    }
-
-    sr = SQLSetStmtAttr(stmtHandle,option,SQL_HDESC_VAL(argv[2]),0);
-    retcode = checkSQLReturn(sr,"get-stmt-option");
-
-    sql_return(scheme_void,retcode,"get-stmt-option");
-
-  case opparms :  
-
-    if (SQL_OP_PARMSP(argv[2]) == FALSE) {
-      scheme_wrong_type("set-stmt-option","sql-op-parms",2,argc,argv);
-    }
-
-    sr = SQLGetStmtOption(stmtHandle,SQL_ATTR_PARAMSET_SIZE,&paramSetSize);
-    checkSQLReturn(sr,"get-stmt-option");
-
-    if (paramSetSize != SQL_OP_PARMS_LEN(argv[2])) {
-      scheme_signal_error("Lengnth of operational parameters does not "
-			  "match current number of parameters");
-
-    } 
-      
-    sr = SQLSetStmtOption(stmtHandle,option,(SQLUINTEGER)SQL_OP_PARMS_VAL(argv[2]));
 
     retcode = checkSQLReturn(sr,"set-stmt-option");
 
@@ -5372,8 +5381,11 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
   }
 
   for (i = 1; i <= 2; i++) {
-    if (SCHEME_STRINGP(argv[i]) == FALSE && 
-	SCHEME_SYMBOLP(argv[i]) == FALSE) {
+    if (SCHEME_STRINGP(argv[i]) == FALSE
+#if ODBCVER >= 0x0300
+	&& SCHEME_SYMBOLP(argv[i]) == FALSE
+#endif
+	) {
       scheme_wrong_type("tables","string or symbol",i,argc,argv);
     }
   }
@@ -5382,13 +5394,17 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
     scheme_wrong_type("tables","string or symbol",i,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[4]) == FALSE && 
-      SCHEME_SYMBOLP(argv[4]) == FALSE) {
+  if (SCHEME_STRINGP(argv[4]) == FALSE 
+#if ODBVER >= 0x0300
+      && SCHEME_SYMBOLP(argv[4]) == FALSE
+#endif
+      ) {
     scheme_wrong_type("tables","string or symbol",4,argc,argv);
   }
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
 
+#if (ODBCVER >= 0x0300)
   if (SCHEME_SYMBOLP(argv[1])) {
     char *catalogNameString;
 
@@ -5405,7 +5421,12 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
     catalogName = (SQLCHAR *)SCHEME_STR_VAL(argv[1]);
     catalogNameLen = SCHEME_STRLEN_VAL(argv[1]);
   }
+#else
+  catalogName = (SQLCHAR *)SCHEME_STR_VAL(argv[1]);
+  catalogNameLen = SCHEME_STRLEN_VAL(argv[1]);
+#endif
 
+#if (ODBCVER >= 0x0300)
   if (SCHEME_SYMBOLP(argv[2])) {
     char *schemaNameString;
 
@@ -5422,10 +5443,15 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
     schemaName = (SQLCHAR *)SCHEME_STR_VAL(argv[2]);
     schemaNameLen = SCHEME_STRLEN_VAL(argv[2]);
   }
+#else 
+  schemaName = (SQLCHAR *)SCHEME_STR_VAL(argv[2]);
+  schemaNameLen = SCHEME_STRLEN_VAL(argv[2]);
+#endif
 
   tableName = (SQLCHAR *)SCHEME_STR_VAL(argv[3]);
   tableNameLen = SCHEME_STRLEN_VAL(argv[3]);
 
+#if (ODBCVER >= 0x0300)
   if (SCHEME_SYMBOLP(argv[4])) {
     char *tableTypeString;
 
@@ -5442,6 +5468,10 @@ Scheme_Object *srp_SQLTables(int argc,Scheme_Object **argv) {
     tableType = (SQLCHAR *)SCHEME_STR_VAL(argv[4]);
     tableTypeLen = SCHEME_STRLEN_VAL(argv[4]);
   }
+#else
+  tableType = (SQLCHAR *)SCHEME_STR_VAL(argv[4]);
+  tableTypeLen = SCHEME_STRLEN_VAL(argv[4]);
+#endif
 
   sr = SQLTables(stmtHandle,
 		 catalogName,catalogNameLen,
@@ -5557,7 +5587,11 @@ Scheme_Object *srp_SQLDriverConnect(int argc,Scheme_Object **argv) {
   inConnectStringLen = SCHEME_STRLEN_VAL(argv[1]);
   
   sr = SQLDriverConnect(connectionHandle,
+#ifdef WIN32			
 			GetDesktopWindow(),
+#else
+			NULL,
+#endif
 			inConnectString,inConnectStringLen,
 			outConnectString,sizeray(outConnectString),
 			&actualLen,completion);
@@ -5601,6 +5635,7 @@ Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
   sql_return(retval,retcode,"browse-connect");
 }
 
+#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -5643,6 +5678,7 @@ Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"bulk-operations");
 }
+#endif
 
 Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -5686,27 +5722,24 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
 
   case sqlbool :
 
-    bufflen = SQL_IS_INTEGER;
-    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
-			 buff,bufflen,&actualLen,&numBuffer);
+    sr = SQLColAttributes(stmtHandle,colNumber,fieldId,
+			  buff,0,&actualLen,&numBuffer);
     retcode = checkSQLReturn(sr,"col-attributes");		       
-    sql_return((numBuffer == SQL_FALSE) ? scheme_false : scheme_true,
+    sql_return(numBuffer ? scheme_true : scheme_false,
 	       retcode,"col-attributes");
 
   case sqlinteger :
 
-    bufflen = SQL_IS_INTEGER;
-    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
-			 buff,bufflen,&actualLen,&numBuffer);
+    sr = SQLColAttributes(stmtHandle,colNumber,fieldId,
+			  buff,0,&actualLen,&numBuffer);
     retcode = checkSQLReturn(sr,"col-attributes");		       
     sql_return(scheme_make_integer_value((long)numBuffer),
 	       retcode,"col-attributes");		       
 
   case namedinteger :
 
-    bufflen = SQL_IS_INTEGER;
-    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
-			 buff,bufflen,&actualLen,&numBuffer);
+    sr = SQLColAttributes(stmtHandle,colNumber,fieldId,
+			  buff,0,&actualLen,&numBuffer);
     retcode = checkSQLReturn(sr,"col-attributes");		       
 
     retval = 
@@ -5718,8 +5751,8 @@ Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
   case string :
 
     bufflen = sizeof(buff);
-    sr = SQLColAttribute(stmtHandle,colNumber,fieldId,
-			 buff,bufflen,&actualLen,&numBuffer);
+    sr = SQLColAttributes(stmtHandle,colNumber,fieldId,
+			  buff,bufflen,&actualLen,&numBuffer);
     retcode = checkSQLReturn(sr,"col-attributes");		       
     sql_return(scheme_make_sized_string(buff,actualLen,TRUE),
 	       retcode,"col-attributes"); 
@@ -5884,9 +5917,13 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
 
   stmtHandle = SQL_HSTMT_VAL(argv[0]);
 
+#if (ODBCVER >= 0x0300)
   sr = SQLGetStmtAttr(stmtHandle,SQL_ATTR_MAX_ROWS,&maxRows,0,&actualLen);
-
   checkSQLReturn(sr,"get-stmt-attr");
+#else
+  sr = SQLGetStmtOption(stmtHandle,SQL_MAX_ROWS,&maxRows);
+  checkSQLReturn(sr,"get-stmt-option");
+#endif
 
   // need to keep rowStatus around until cursor closed
   // conservatively, make it uncollectable
@@ -6299,6 +6336,7 @@ Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
   sql_return(scheme_void,retcode,"table-privileges");    
 }
 
+#if (ODBCVER >= 0x0200)
 Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHENV envHandle;
@@ -6349,7 +6387,9 @@ Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
 					       
   sql_return(retval,retcode,"drivers");    
 }
+#endif
 
+#if (ODBCVER >= 0x0200)
 Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
@@ -6427,7 +6467,9 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   case SQL_NUMERIC :
   case SQL_TIME :
   case SQL_TIMESTAMP :
+#if ODBCVER >= 0x0300
   case SQL_TYPE_TIME :
+#endif
   case SQL_INTERVAL_SECOND :
   case SQL_INTERVAL_DAY_TO_SECOND :
   case SQL_INTERVAL_HOUR_TO_SECOND :
@@ -6471,10 +6513,11 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
 
   sql_return(scheme_void,retcode,"bind-param");
 }
+#endif
 
 Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
-  HSTMT stmtHandle;
+  SQLHSTMT stmtHandle;
   SQLUSMALLINT concur;
   char *concurString;
   SQLINTEGER keyset;
@@ -6690,46 +6733,55 @@ void initGlobals(Scheme_Env *env) {
 
 void sortConsts(void) {
 
-  namedBitsDictSort(namedInfoSmallInts);
-  namedBitsDictSort(namedInfoIntegers);
+#if (ODBCVER >= 0x0300)
+  namedBitsDictSort(namedStmtAttributes);
   namedBitsDictSort(namedColAttrIntegers);
-  namedBitsDictSort(namedColAttrsIntegers);
   namedBitsDictSort(namedConnectAttrIntegers);
   namedBitsDictSort(namedEnvAttrIntegers);
-  namedBitsDictSort(bitMaskTable);
   namedBitsDictSort(namedFieldDescriptors);
   namedBitsDictSort(namedDiagFieldIntegers);
+#endif
 
-  namedTypedConstSort(sqlInfo);
+  namedBitsDictSort(namedStmtOptions);
+  namedBitsDictSort(namedInfoSmallInts);
+  namedBitsDictSort(namedInfoIntegers);
+  namedBitsDictSort(namedColAttrsIntegers);
+  namedBitsDictSort(namedConnectOptionIntegers);
+  namedBitsDictSort(bitMaskTable);
+
+#if (ODBCVER >= 0x0300)
   namedTypedConstSort(colAttributes);
-  namedTypedConstSort(colAttributesOld);
   namedTypedConstSort(fieldDescriptors);
   namedTypedConstSort(settableConnectionAttributes);
   namedTypedConstSort(readOnlyConnectionAttributes);
   namedTypedConstSort(envAttributes);
   namedTypedConstSort(stmtAttributes);
+#endif
+
+  namedTypedConstSort(sqlInfo);
+  namedTypedConstSort(colAttributesOld);
+  namedTypedConstSort(connectionOptions);
   namedTypedConstSort(stmtOptions);
 
-  namedConstSort(sqlFunctions);
+#if (ODBCVER >= 0x0300)
   namedConstSort(diagFields);
+  namedConstSort(descDataTypes);
+  namedConstSort(SQLDescUnnamed);
+  namedConstSort(SQLDescSearchable);
+  namedConstSort(datetimeIntervalCodes);
+#endif
+
+  namedConstSort(sqlFunctions);
   namedConstSort(fetchOrientation);
   namedConstSort(fetchScrolls);
   namedConstSort(scrollConcurrency);
   namedConstSort(scrollCursor);
   namedConstSort(fetchDirections);
-  namedConstSort(buffLenTypes);
   namedConstSort(posOperations);
   namedConstSort(lockTypes);
   namedConstSort(stmtFreeOptions);
   namedConstSort(CDataTypes);
   namedConstSort(SQLDataTypes);
-  namedConstSort(descDataTypes);
-  namedConstSort(SQLDescUnnamed);
-  namedConstSort(SQLDescSearchable);
-  namedConstSort(SQLDescParameterTypes);
-  namedConstSort(datetimeIntervalCodes);
-  namedConstSort(SQLColNumbers);
-  namedConstSort(SQLRowNumbers);
 }
 
 Scheme_Object *scheme_initialize(Scheme_Env *env) {

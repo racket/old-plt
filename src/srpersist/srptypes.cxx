@@ -4,6 +4,19 @@
 
 #ifdef WIN32
 #include <windows.h>
+#else
+#define FALSE (0)
+#define TRUE  (1)
+typedef bool BOOL;
+typedef unsigned char BYTE;
+typedef unsigned short WORD;
+typedef unsigned long DWORD;
+// dummy typedefs -- only used in trace API, not ODBC as such
+typedef void * LPWSTR; 
+typedef void VOID; 
+typedef int CHAR; 
+typedef int WCHAR; 
+typedef int GUID; 
 #endif
 
 #include <sql.h>

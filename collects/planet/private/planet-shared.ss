@@ -242,9 +242,16 @@ Various common pieces of code that both the client and server need to access
   ;; tree[X] ::= (make-branch X (listof tree[X])
   (define-struct branch (node children) (make-inspector))
   
-  ;; directory->tree : directory (string -> bool) -> tree[string]
+  (define-struct (exn:fail:filesystem:no-directory exn:fail:filesystem) (dir))
+  
+  ;; directory->tree : directory (string -> bool) -> tree[string] | #f
   (define directory->tree
     (opt-lambda (directory valid-dir? [max-depth #f])
+      (unless (directory-exists? directory)
+        (raise (make-exn:fail:filesystem:no-directory 
+                "Directory ~s does not exist"
+                (current-continuation-marks)
+                directory)))
       (let-values ([(path name _) (split-path directory)])
         (let* ((files (directory-list directory))
                (files (map (lambda (d) (build-path directory d)) files))

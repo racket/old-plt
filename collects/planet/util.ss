@@ -27,18 +27,18 @@
   ;; get-installed-planet-dirs : -> listof path[absolute, dir]
   ;; directories of all installed planet archives
   (define (get-installed-planet-archives)
-    (tree-apply 
-     (lambda (rep-name owner package maj min) 
-       (let ((x (list 
-        (build-path (CACHE-DIR) owner package (number->string maj) (number->string min))
-        owner
-        package
-        '()
-        maj 
-        min)))
-         (printf "returning ~s\n" x)
-         x))
-     (repository-tree)))
+    (with-handlers ((exn:fail:filesystem:no-directory? (lambda (e) '())))
+      (tree-apply 
+       (lambda (rep-name owner package maj min) 
+         (let ((x (list 
+                   (build-path (CACHE-DIR) owner package (number->string maj) (number->string min))
+                   owner
+                   package
+                   '()
+                   maj 
+                   min)))
+           x))
+       (repository-tree))))
 
   ;; current-linkage : -> ((symbol (package-name nat nat) ...) ...)
   ;; gives the current "linkage table"; a table that links modules to particular versions

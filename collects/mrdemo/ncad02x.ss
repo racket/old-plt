@@ -48,7 +48,7 @@
 
 (define ncad@
   (unit/sig ()
-    (import (wx : wx^) (mred : mred^))
+    (import mred^)
     
     (define ncad:stand-alone #f)
     (define (error-msg txt) ())  ;; redefined in GUI
@@ -998,36 +998,35 @@
 	  (release-function x y)))
     
     
-    (define my-frame% mred:frame%)
+    (define my-frame% frame%)
     
     (define my-canvas%
-      (class-asi mred:canvas%
-		  (private
-		    (which-button 0))
-		  (rename [super-on-paint on-paint])
-		  (public
-		    (on-paint
-		     (lambda ()
-		       (update-display #t #f)
-		       (super-on-paint)))
-		    (on-event
-		     (lambda (event)
-		       (let ((which-button
-			      (cond ((send event button? 1) 1)
-				    ((send event button? 2) 2)
-				    (else 3)))
-			     (x (send event get-x))
-			     (y (send event get-y)))
-			 (cond ((send event button-down? -1)
-				(set! current-mouse-button which-button)
-				(press-function-b x y))
-			       ((send event button-up? -1)
-				(release-function-b x y)
-				(set! current-mouse-button #f))
-			       ((and current-mouse-button
-				     (send event dragging?))
-				(drag-function-b x y))
-			       (else #f))))))))
+      (class canvas% args
+	     (rename [super-on-paint on-paint])
+	     (override
+	       (on-paint
+		(lambda ()
+		  (update-display #t #f)
+		  (super-on-paint)))
+	       (on-event
+		(lambda (event)
+		  (let ((x (send event get-x))
+			(y (send event get-y)))
+		    (cond ((send event button-down?)
+			   (set! current-mouse-button
+				 (cond ((send event button-down? 'left) 1)
+				       ((send event button-down? 'middle) 2)
+				       (else 3)))
+			   (press-function-b x y))
+			  ((send event button-up?)
+			   (release-function-b x y)
+			   (set! current-mouse-button #f))
+			  ((and current-mouse-button
+				(send event dragging?))
+			   (drag-function-b x y))
+			  (else #f))))))
+	     (sequence
+	       (apply super-init args))))
     
     (define this-session ())
     
@@ -1041,7 +1040,7 @@
 		      (ivar this-session select-pen)))
     
     (define session%
-      (class () ()
+      (class object% ()
 	(sequence
 	  (set! this-session this))
 	(public
@@ -1050,19 +1049,18 @@
 	  (CANVAS-HEIGHT 300)
 	  (a-frame
 	   (make-object my-frame%
-			'() ; No parent frame
 			"NanoCAD v0.2" ; The frame's title
-			-1 -1 ; Use the default position
+			#f ; No parent frame
 			FRAME-WIDTH (+ PANEL-HEIGHT CANVAS-HEIGHT)))
 	  (main-panel
-	   (make-object mred:vertical-panel% a-frame))
+	   (make-object vertical-panel% a-frame))
 	  (b-panel
-	   (make-object mred:horizontal-panel% main-panel))
+	   (make-object horizontal-panel% main-panel))
 	  (c-panel
-	   (make-object mred:horizontal-panel% main-panel))
+	   (make-object horizontal-panel% main-panel))
 	  (rb-panel
-	   (let ([p (make-object mred:horizontal-panel% main-panel)])
-	     (send p set-label-position wx:const-vertical)
+	   (let ([p (make-object horizontal-panel% main-panel)])
+	     (send p set-label-position 'vertical)
 	     p))
 	  (canvas
 	   (make-object my-canvas% main-panel))
@@ -1080,40 +1078,39 @@
 			     atom-color
 			     select-pen)))
 	  (carbon-brush
-	   (make-object wx:brush% "BLACK" wx:const-solid))
+	   (make-object brush% "BLACK" 'solid))
 	  (hydrogen-brush
-	   (make-object wx:brush% "WHITE" wx:const-solid))
+	   (make-object brush% "WHITE" 'solid))
 	  (oxygen-brush
-	   (make-object wx:brush% "RED" wx:const-solid))
+	   (make-object brush% "RED" 'solid))
 	  (nitrogen-brush
-	   (make-object wx:brush% "BLUE" wx:const-solid))
+	   (make-object brush% "BLUE" 'solid))
 	  
 	  (normal-pen
-	   (make-object wx:pen% "BLACK" 1 wx:const-solid))
+	   (make-object pen% "BLACK" 1 'solid))
 	  (double-bond-pen
-	   (make-object wx:pen% "BLACK" 3 wx:const-solid))
+	   (make-object pen% "BLACK" 3 'solid))
 	  (triple-bond-pen
-	   (make-object wx:pen% "BLACK" 5 wx:const-solid))
+	   (make-object pen% "BLACK" 5 'solid))
 	  (force-vector-pen
-	   (make-object wx:pen% "RED" 1 wx:const-solid))
+	   (make-object pen% "RED" 1 'solid))
 	  
 	  (load-button
-	   (make-object mred:button%
+	   (make-object button% "Load"
 			b-panel
 			(lambda (self event)
-			  (let ((file-name (wx:file-selector "")))
+			  (let ((file-name (get-file)))
 			    (if (not (null? file-name))
 				(let ((inf (open-input-file file-name)))
 				  (set-structure (read inf))
 				  (close-input-port inf)
 				  (set! need-to-resetup-terms #t)
-				  (internal-update #t)))))
-			"Load"))
+				  (internal-update #t)))))))
 	  (save-button
-	   (make-object mred:button%
+	   (make-object button% "Save"
 			b-panel
 			(lambda (self event)
-			  (let ((file-name (wx:file-selector "")))
+			  (let ((file-name (put-file)))
 			    (if (not (null? file-name))
 				(let ()
 				  (delete-file file-name)
@@ -1129,13 +1126,12 @@
 					 (cadr s))
 				    (fprintf outf "))~%")
 				    (close-output-port outf)
-				    (internal-update #t))))))
-			"Save"))
+				    (internal-update #t))))))))
 	  (save-xyz-button
-	   (make-object mred:button%
+	   (make-object button% "SaveXYZ"
 			b-panel
 			(lambda (self event)
-			  (let ((file-name (wx:file-selector "")))
+			  (let ((file-name (put-file)))
 			    (if (not (null? file-name))
 				(let ()
 				  (delete-file file-name)
@@ -1152,50 +1148,45 @@
 					       (vector-ref (cadar L) 1)
 					       (- (vector-ref (cadar L) 2))))
 				    (close-output-port outf)
-				    (internal-update #t))))))
-			"SaveXYZ"))
+				    (internal-update #t))))))))
 	  (clear-button
-	   (make-object mred:button%
+	   (make-object button% "Clear"
 			b-panel
 			(lambda (self event)
 			  (set! atom-list ())
 			  (set! bond-list ())
 			  (set! term-list ())
-			  (internal-update #t))
-			"Clear"))
+			  (internal-update #t))))
 	  (emin-button
-	   (make-object mred:button%
+	   (make-object button% "Emin"
 			b-panel
 			(lambda (self event)
-			  (emin-step))
-			"Emin"))
+			  (emin-step))))
 	  (quit-button
-	   (make-object mred:button%
+	   (make-object button% "Quit"
 			b-panel
 			(lambda (self event)
-			  (send canvas-dc end-drawing)
-			  (send a-frame show #f))
-			"Quit")))
+			  (send a-frame show #f)))))
 	(private
 	  (show-forces-checkbox
-	   (make-object mred:check-box%
+	   (make-object check-box%
+			"Show Force Vectors"
 			c-panel
 			(lambda (self event)
-			  (set! draw-force-vectors (send event checked?))
-			  (internal-update #t))
-			"Show Force Vectors"))
+			  (set! draw-force-vectors (send self get-value))
+			  (internal-update #t))))
 	  (use-torsion-checkbox
-	   (make-object mred:check-box%
+	   (make-object check-box%
+			"Use Torsion Forces"
 			c-panel
 			(lambda (self event)
-			  (set! use-torsion-forces (send event checked?)))
-			"Use Torsion Forces"))
+			  (set! use-torsion-forces (send self get-value)))))
 	  (use-vdw-checkbox
-	   (make-object mred:check-box%
+	   (make-object check-box% 
+			"Use VDW Forces"
 			c-panel
 			(lambda (self event)
-			  (set! use-vdw-forces (send event checked?)))
-			"Use VDW Forces")))
+			  (set! use-vdw-forces (send self get-value))))))
 	(public
 	  (select-pen
 	   (lambda (dc n)
@@ -1208,16 +1199,16 @@
 	   (lambda (dc element)
 	     (case element
 	       ((0 1 2 3) (send dc set-brush carbon-brush))
-	       ((4)         (send dc set-brush hydrogen-brush))
+	       ((4)       (send dc set-brush hydrogen-brush))
 	       ((5 6)     (send dc set-brush oxygen-brush))
 	       (else      (send dc set-brush nitrogen-brush))))))
 	(private
 	  (rb-sub-panel%
-	   (class mred:panel% args
+	   (class panel% args
 	     (inherit set-label-position)
 	     (sequence
 	       (apply super-init args)
-	       (set-label-position wx:const-vertical))))
+	       (set-label-position 'vertical))))
 	  (set-mode
 	   (lambda (n)
 	     (case n
@@ -1240,72 +1231,67 @@
 		  (set! drag-function do-nothing)
 		  (set! release-function deletebond-release)))))
 	  (mode-selector
-	   (make-object mred:radio-box%
+	   (make-object radio-box%
+			"Tool"
+			(list "Rotate" "MoveAtom" "AddAtom" "DeleteAtom"
+			      "AddBond" "DeleteBond")
 			(make-object rb-sub-panel% rb-panel)
 			(lambda (self event)
-			  (let ((n (send event get-command-int)))
-			    (set-mode n)))
-			"Tool"
-			-1 -1 -1 -1
-			(list "Rotate" "MoveAtom" "AddAtom" "DeleteAtom"
-			      "AddBond" "DeleteBond")))
+			  (let ((n (send self get-selection)))
+			    (set-mode n)))))
 	  (element-selector
-	   (make-object mred:radio-box%
+	   (make-object radio-box%
+			"Atom"
+			(list "Carbon" "Hydrogen" "Oxygen" "Nitrogen")
 			(make-object rb-sub-panel% rb-panel)
 			(lambda (self event)
 			  (send mode-selector set-selection 2)
 			  (set-mode 2)
-			  (let ((n (send event get-command-int)))
+			  (let ((n (send self get-selection)))
 			    (case n
 			      ((0) (set! current-element 0))
 			      ((1) (set! current-element 4))
 			      ((2) (set! current-element 5))
-			      (else (set! current-element 7)))))
-			"Atom"
-			-1 -1 -1 -1
-			(list "Carbon" "Hydrogen" "Oxygen" "Nitrogen")))
+			      (else (set! current-element 7)))))))
 	  (bond-order-selector
-	   (make-object mred:radio-box%
+	   (make-object radio-box%
+			"Bond"
+			(list "Single" "Double" "Triple")
 			(make-object rb-sub-panel% rb-panel)
 			(lambda (self event)
 			  (send mode-selector set-selection 4)
 			  (set-mode 4)
-			  (let ((n (send event get-command-int)))
-			    (set! bond-order (+ n 1))))
-			"Bond"
-			-1 -1 -1 -1
-			(list "Single" "Double" "Triple")))
+			  (let ((n (send self get-selection)))
+			    (set! bond-order (+ n 1))))))
 	  (zoom-factor
-	   (make-object mred:radio-box%
+	   (make-object radio-box%
+			"Zoom"
+			(list "10" "25" "50" "100")
 			(make-object rb-sub-panel% rb-panel)
 			(lambda (self event)
-			  (let ((n (send event get-command-int)))
+			  (let ((n (send self get-selection)))
 			    (case n
 			      ((0) (set-scale-factor 10.0))
 			      ((1) (set-scale-factor 25.0))
 			      ((2) (set-scale-factor 50.0))
 			      (else (set-scale-factor 100.0))))
 			  (set! atom-drawing-radius (* 0.6 scale-factor))
-			  (internal-update #t))
-			"Zoom"
-			-1 -1 -1 -1
-			(list "10" "25" "50" "100")))
+			  (internal-update #t))))
 	  (emin-convergence
-	   (make-object mred:radio-box%
+	   (make-object radio-box%
+			"Emin"
+			(list "Stable" "Fast")
 			(make-object rb-sub-panel% rb-panel)
 			(lambda (self event)
 			  (let ((n (send event get-command-int)))
 			    (case n
 			      ((0) (set! emin-factor stable-emin-factor))
-			      (else (set! emin-factor fast-emin-factor)))))
-			"Emin"
-			-1 -1 -1 -1
-			(list "Stable" "Fast"))))
+			      (else (set! emin-factor fast-emin-factor))))))))
 	(sequence
 	  (send main-panel border 0)
 	  (for-each
 	   (lambda (panel)
-	     (send panel stretchable-in-y #f)
+	     (send panel stretchable-height #f)
 	     (send panel border 0))
 	   (list b-panel c-panel rb-panel))
 	  (set! error-msg
@@ -1314,9 +1300,10 @@
 	  (set-scale-factor 25.0)
 	  (send zoom-factor set-selection 1)
 	  (send use-vdw-checkbox set-value #t)
-	  (send a-frame show #t))))
+	  (send a-frame show #t)
+	  (super-init))))
     
-    (define offscreen-dc (make-object wx:memory-dc%))
+    (define offscreen-dc (make-object bitmap-dc%))
     (define offscreen-dc-width -1)
     (define offscreen-dc-height -1)
     
@@ -1329,8 +1316,8 @@
 			    select-pen)
       (when (and smooth (not (and (= canvas-width offscreen-dc-width)
 				  (= canvas-height offscreen-dc-height))))
-	(let ([bm (make-object wx:bitmap% canvas-width canvas-height)])
-	  (send offscreen-dc select-object bm)
+	(let ([bm (make-object bitmap% canvas-width canvas-height)])
+	  (send offscreen-dc set-bitmap bm)
 	  (set! offscreen-dc-width canvas-width)
 	  (set! offscreen-dc-height canvas-height)))
       (let ([draw-dc (if (and smooth (send offscreen-dc ok?)) offscreen-dc canvas-dc)])
@@ -1383,13 +1370,10 @@
 			 (+ (caddr z) center-x)
 			 (+ (cadddr z) center-y)))
 		 (wireframe-drawing-list)))
-	(if smooth
-	    (send canvas-dc blit 0 0 canvas-width canvas-height offscreen-dc 0 0))))
+	(when smooth
+	  (send canvas-dc draw-bitmap (send offscreen-dc get-bitmap) 0 0))))
     
     (make-object session%)))
 
-(define (ncad:go)
-  (invoke-unit/sig ncad@ (wx : wx^) (mred : mred^)))
-
-
+(invoke-unit/sig ncad@ mred^)
 

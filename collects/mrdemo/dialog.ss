@@ -9,7 +9,14 @@
     ; set `result', but the default should be the value for
     ; `cancel' in case the user closes the dialog via a close
     ; box or by typing ESC.
-    (letrec ([dialog (make-object dialog% "Favorite Color")]
+    (letrec ([dialog (make-object dialog% "Favorite Color"
+				  ; No parent frame:
+				  #f 
+				  ; Pick a reasonable starting size;
+				  ;  on some platforms it's not
+				  ;  resizeable, but it's always big
+				  ;  enough to see the content
+				  200 100)]
 	     [list (make-object list-box% "Pick some colors:" 
 				'("Red" "Green" "Blue" "Fucia")
 				dialog
@@ -45,7 +52,9 @@
 				(pair? (send list get-selections))))]
 	     [cancel (make-object button% "Cancel" h-pane
 				  (lambda (b e)
-				    (send dislog show #f)))])
+				    (send dialog show #f)))])
+      ; Ok/cancel should be right-aligned:
+      (send h-pane set-alignment 'right 'center)
       (enable-ok)
       (send dialog show #t)
       ; `Show' for a dialog handles events and doesn't return until

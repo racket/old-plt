@@ -40,13 +40,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzsch/release/libmzsch.lib ../libmzgc/release/libmzgc.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib"
+				AdditionalDependencies="../libmzsch/Release/libmzschxxxxxxx.lib ../libmzgc/Release/libmzgcxxxxxxx.lib ../wxs/Release/wxs.lib ../wxme/Release/wxme.lib ../wxutils/Release/wxutils.lib ../jpeg/release/jpeg.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Release/libmred.pdb"
-				ImportLibrary=".\Release/libmred.lib"/>
+				ImportLibrary=".\Release/libmredxxxxxxx.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"
@@ -97,13 +97,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="../libmzsch/debug/libmzsch.lib ../libmzgc/debug/libmzgc.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib"
+				AdditionalDependencies="../libmzsch/Debug/libmzschxxxxxxx.lib ../libmzgc/Debug/libmzgcxxxxxxx.lib ../wxs/Debug/wxs.lib ../wxme/Debug/wxme.lib ../wxutils/Debug/wxutils.lib ../jpeg/debug/jpeg.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib"
 				OutputFile="../../../$(ProjectName)xxxxxxx.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile=".\Debug/libmred.pdb"
-				ImportLibrary=".\Debug/libmred.lib"/>
+				ImportLibrary=".\Debug/libmredxxxxxxx.lib"/>
 			<Tool
 				Name="VCMIDLTool"
 				PreprocessorDefinitions="NDEBUG"

@@ -1,4 +1,14 @@
 
+103/3:
+
+ * Unix: fixed bug in writing/closing file-stream output ports; if an
+   error occurred during write, the port was permanently locked, so
+   all port operations blocked.
+
+ * Fixed blocking on output to a limited port with a closed read
+   end; already-blocked threads are now released when the read end is
+   closed.
+
 103/2:
 
  * Changed order of first two arguments to `process[*]/ports' and

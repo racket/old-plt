@@ -3917,6 +3917,7 @@ static int flush_fd(Scheme_Output_Port *op,
 	  scheme_current_process->private_on_kill = NULL;
 	  scheme_current_process->private_kill_data = NULL;
 	} else {
+	  fop->flushing = 0;
 	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			   op,
 			   "error writing to stream port (%e)",

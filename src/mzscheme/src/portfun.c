@@ -831,7 +831,7 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
 #ifdef MZ_REAL_THREADS
 	SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
 #endif
-	if (avail)
+	if (avail || pipe->eof)
 	  goto try_again;
 
 	my_sema = scheme_make_sema(0);
@@ -953,6 +953,8 @@ static void pipe_in_close(Scheme_Input_Port *p)
 #endif
 
   pipe->eof = 1;
+
+  scheme_pipe_did_read(pipe);
 
 #ifdef MZ_REAL_THREADS
   while (pipe->num_waiting) {

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.168 1999/01/16 15:37:41 mflatt Exp $
+; $Id: scm-main.ss,v 1.169 1999/01/16 15:47:06 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1416,8 +1416,8 @@
 
   (define case-macro
       (let* ((kwd-1 '(else))
-	      (in-pattern-1 '(_ val (else b ...)))
-	      (out-pattern-1 '(begin val b ...))
+	      (in-pattern-1 '(_ val (else b0 b ...)))
+	      (out-pattern-1 '(begin val b0 b ...))
 	      (kwd-2 '())
 	      (in-pattern-2 '(_ val))
 	      (out-pattern-2-signal-error
@@ -1426,10 +1426,10 @@
 			    ,debug-info-handler-expression)))
 	      (out-pattern-2-no-error
 		'(begin val (#%void)))
-	      (in-pattern-3 '(_ val ((keys ...) b ...) rest ...))
+	      (in-pattern-3 '(_ val ((keys ...) b0 b ...) rest ...))
 	      (out-pattern-3 '(let ((tmp val))
 				(if (#%memv tmp (quote (keys ...)))
-				  (begin b ...)
+				  (begin b0 b ...)
 				  (case tmp rest ...))))
 	      (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
 	      (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))

@@ -1,5 +1,4 @@
 /*
- * regcomp and regexec -- regsub and regerror are elsewhere
  * @(#)regexp.c	1.3 of 18 April 87
  *
  *	Copyright (c) 1986 by University of Toronto.
@@ -22,6 +21,13 @@
  * Beware that some of this code is subtly aware of the way operator
  * precedence is structured in regular expressions.  Serious changes in
  * regular-expression syntax might require a total rethink.
+ *
+ * Revised for PLT MzScheme, 1995-2000
+ * Notable changes:
+ *   Removed hardwired limits on parenthesis nesting
+ *   Changed to index-based instead of pointer-based (better for GC)
+ *   Added non-greedy operators *?, +?, and ??
+ *   Added MzScheme glue
  *
  * from Vladimir Tsyshevsky:
  *  additional optional parameter `offset' in `regexp-match'
@@ -1035,12 +1041,16 @@ regmatch(rxpos prog)
     }
       break;
     case ANYOF:
-      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), OPLEN(OPERAND(scan)), reginstr[reginput]) == -1))
+      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
+						OPLEN(OPERAND(scan)), 
+						reginstr[reginput]) == -1))
 	return(0);
       reginput++;
       break;
     case ANYBUT:
-      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), OPLEN(OPERAND(scan)), reginstr[reginput]) != -1))
+      if (reginput == reginput_end || (l_strchr(regstr, OPSTR(OPERAND(scan)), 
+						OPLEN(OPERAND(scan)), 
+						reginstr[reginput]) != -1))
 	return(0);
       reginput++;
       break;
@@ -1206,13 +1216,15 @@ regrepeat(rxpos p)
     }
     break;
   case ANYOF:
-    while (scan != reginput_end && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) != -1)) {
+    while (scan != reginput_end 
+	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) != -1)) {
       count++;
       scan++;
     }
     break;
   case ANYBUT:
-    while (scan != reginput_end && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) == -1)) {
+    while (scan != reginput_end 
+	   && (l_strchr(regstr, OPSTR(opnd), OPLEN(opnd), reginstr[scan]) == -1)) {
       count++;
       scan++;
     }
@@ -1488,7 +1500,8 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
       char *insert;
       long len, end, startpd, endpd;
       
-      insert = regsub(r, SCHEME_STR_VAL(argv[2]), SCHEME_STRTAG_VAL(argv[2]), &len, source, startp, endp);
+      insert = regsub(r, SCHEME_STR_VAL(argv[2]), SCHEME_STRTAG_VAL(argv[2]), &len, 
+		      source, startp, endp);
       
       end = SCHEME_STRTAG_VAL(argv[1]);
       

@@ -2229,7 +2229,8 @@ int wxWindow::MaybeMetalDrag(wxMouseEvent *event)
 {
   /* Maybe drag metal frame... */
   if (event->ButtonDown(1)) {
-    wxFrame *f = GetRootFrame();
+    wxFrame *f;
+    f = GetRootFrame();
     if (f->GetWindowStyleFlag() & wxMETAL) {
       int x = event->x, y = event->y;
       Point start;

@@ -57,7 +57,7 @@ class wxMediaStreamOutFileBase : public wxMediaStreamOutBase
 
 class wxMediaStreamInStringBase : public wxMediaStreamInBase
 {
-  char *string;
+  char *a_string;
   long len;
   long pos;
   Bool bad;
@@ -74,7 +74,7 @@ class wxMediaStreamInStringBase : public wxMediaStreamInBase
 
 class wxMediaStreamOutStringBase : public wxMediaStreamOutBase
 {
-  char *string;
+  char *a_string;
   long len, alloc;
   long pos;
   Bool bad;

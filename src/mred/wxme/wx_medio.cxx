@@ -198,7 +198,7 @@ void wxMediaStreamOutFileBase::Write(char *data, long len)
 
 wxMediaStreamInStringBase::wxMediaStreamInStringBase(char *s, long l)
 {
-  string = s;
+  a_string = s;
   len = l;
   pos = 0;
   bad = FALSE;
@@ -244,7 +244,7 @@ long wxMediaStreamInStringBase::Read(char *data, long l)
     l = len - pos;
   }
 
-  memcpy(data, string + pos, l);
+  memcpy(data, a_string + pos, l);
   pos += l;
 
   return l;
@@ -256,7 +256,7 @@ wxMediaStreamOutStringBase::wxMediaStreamOutStringBase()
 {
   alloc = 50;
   len = pos = 0;
-  string = new char[alloc];
+  a_string = new char[alloc];
   bad = FALSE;
 }
 
@@ -267,7 +267,7 @@ wxMediaStreamOutStringBase::~wxMediaStreamOutStringBase()
 char *wxMediaStreamOutStringBase::GetString(long *l)
 {
   *l = len;
-  return string;
+  return a_string;
 }
 
 long wxMediaStreamOutStringBase::Tell(void)
@@ -293,14 +293,14 @@ Bool wxMediaStreamOutStringBase::Bad(void)
 void wxMediaStreamOutStringBase::Write(char *data, long l)
 {
   if (l + pos > alloc) {
-    char *old = string;
+    char *old = a_string;
 
     alloc = (alloc * 2) + l;
-    string = new char[alloc];
-    memcpy(string, old, len);
+    a_string = new char[alloc];
+    memcpy(a_string, old, len);
   }
 
-  memcpy(string + pos, data, l);
+  memcpy(a_string + pos, data, l);
   pos += l;
   if (len < pos)
     len = pos;

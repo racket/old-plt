@@ -176,8 +176,8 @@
   (define-struct unreg (inf sup))
   
   ; an external event; val is passed to recip's thunk
-  (define-struct external-event (val recip))
-  
+  (define-struct external-event (recip-val-pairs ret))
+
   ; update the given signal at the given time
   (define-struct alarm (time signal))
   
@@ -578,46 +578,19 @@
       [(b a) (update1 b a)]))
   
   (define-values (iq-enqueue iq-dequeue iq-empty?)
-    (let ([heap (make-heap
-                 (lambda (b1 b2)
-                   (< (signal-depth b1)
-                      (signal-depth b2)))
+    (let* ([depth
+            (lambda (msg)
+              (if (signal? msg) 
+                  (signal-depth msg)
+                  0))]
+           [heap (make-heap
+                 (lambda (b1 b2) (< (depth b1) (depth b2)))
                  eq?)])
       (values
        (lambda (b) (heap-insert heap b))
        (lambda () (heap-pop heap))
        (lambda () (heap-empty? heap)))))
   
-;  (define-values (iq-enqueue iq-dequeue iq-empty?)
-;    (let* ([treap (make-treap -)]
-;           [enq (treap 'enqueue)])
-;      (values
-;       (lambda (b)
-;         (enq (signal-depth b) b))
-;       (lambda ()
-;         (treap 'dequeue))
-;       (lambda ()
-;         (treap 'empty?)))))
-  
-;  (define-values (iq-enqueue iq-dequeue iq-empty?)
-;    (let* ([treap (make-treap -)]
-;           [put (treap 'put!)]
-;           [get (treap 'get)])
-;      (values
-;       (let ([cell (cons #f empty)])
-;         (lambda (b)
-;           (let ([depth (signal-depth b)])
-;             (put depth (cons b (rest (get depth (lambda () cell))))))))
-;       (lambda ()
-;         (let* ([depth&bhvrs (treap 'get-min)]
-;                [bhvrs (rest depth&bhvrs)])
-;           (if (empty? (rest bhvrs))
-;               (treap 'delete-min!)
-;               (put (first depth&bhvrs) (rest bhvrs)))
-;           (first bhvrs)))
-;       (lambda ()
-;         (treap 'empty?)))))
-
   ; *** will have to change ... ***
   (define (propagate b)
     (let ([empty-boxes 0]
@@ -692,88 +665,137 @@
                         (! tid (list 'remote-reg man sym))
                         ret))))
   
-  ; the manager of all signals and event streams
-  (define man
-    (spawn/name
-     'frp-man
-     (let ([alarm-q (make-treap -)]
-           [named-providers (make-hash-table)]
-           [cur-beh #f])
-       (let outer ()
-         (with-handlers ([exn?
-                          (lambda (exn)
-                            (! (self) (make-external-event (list exn cur-beh) exceptions))
-                            (when (behavior? cur-beh)
-                              (undef cur-beh))
-                            (outer))])
-           (let loop ()
-             ; should rewrite this entire block:
-             ; (1) extract messages until none waiting (or N ms elapse?)
-             ; (2) extract alarms
-             ; (3) process internal queue until empty
-             (if (iq-empty?)
-                 ; no internal updates
-                 (let ([timeout (if (alarm-q 'empty?)
-                                    #f
-                                    (- (first (alarm-q 'get-min))
-                                       (current-milliseconds)))])
-                   (receive
-                    [after
-                     timeout
-                     (let inner ()
-                       (when (not (alarm-q 'empty?))
-                         (let ([next (alarm-q 'get-min)])
-                           (when (>= (current-milliseconds) (first next))
-                             (alarm-q 'delete-min!)
-                             (for-each
-                              (lambda (wb)
-                                (let ([beh (weak-box-value wb)])
-                                  (when (and beh (not (signal-stale? beh)))
-                                    (set-signal-stale?! beh #t)
-                                    (iq-enqueue beh))))
-                              (rest next))
-                             (inner)))))]
-                    [(? signal? b)
-                     (set! cur-beh b)
-                     (update0 b)
-                     (set! cur-beh #f)]
-                    [($ external-event val recip)
-                     ; should this really be here?
-                     (set! cur-beh recip)
-                     (update1 recip val)
-                     (set! cur-beh #f)]
-                    [($ alarm ms beh)
-                     (when (> ms 1073741824)
-                       (set! ms (- ms 2147483647)))
-                     (let* ([prev ((alarm-q 'get) ms (lambda () (cons ms empty)))]
-                            [new (cons (make-weak-box beh) (rest prev))])
-                       ((alarm-q 'put!) ms new))]
-                    [($ reg inf sup ret)
-                     (register inf sup)
-                     (! ret man)]
-                    [($ unreg inf sup) (unregister inf sup)]
-                    [('bind sym evt)
-                     (let ([forwarder+listeners (cons #f empty)])
-                       (set-car! forwarder+listeners
-                                 (event-forwarder sym evt forwarder+listeners))
-                       (hash-table-put! named-providers sym forwarder+listeners))]
-                    [('remote-reg tid sym)
-                     (let ([f+l (hash-table-get named-providers sym)])
-                       (when (not (member tid (rest f+l)))
-                         (set-rest! f+l (cons tid (rest f+l)))))]
-                    [('remote-evt sym val) ; should probably set cur-beh here too (?)
-                     (update (hash-table-get named-dependents sym (lambda () dummy)) val)]
-                    [x (fprintf (current-error-port) "msg not understood: ~a~n" x)]))
-                 ; internal updates
-                 (let ([b (iq-dequeue)])
-                   (set! cur-beh b)
-                   (update b)
-                   (set! cur-beh #f)))
-             (loop)))))))
+  (define-values (alarms-enqueue alarms-dequeue-beh alarms-peak-ms alarms-empty?)
+    (let ([heap (make-heap (lambda (a b) (< (first a) (first  b))) eq?)])
+      (values (lambda (ms beh) (heap-insert heap (list ms beh)))
+              (lambda () (match (heap-pop heap) [(ms beh) beh]))
+              (lambda () (match (heap-peak heap) [(ms beh) ms]))
+              (lambda () (heap-empty? heap)))))
   
   (define exceptions
     (event-receiver))
   
+  ;; the manager of all signals and event streams
+  (define man
+    (spawn/name
+     'frp-man
+     (let ([named-providers (make-hash-table)]
+           [cur-beh #f])
+       (let outer ()
+         (with-handlers ([exn?
+                          (lambda (exn)
+                            (! (self) (make-external-event (list (list exceptions (list exn cur-beh))) #f))
+                            (when (behavior? cur-beh)
+                              (undef cur-beh))
+                            (outer))])
+           (let inner ()
+             (define do-update
+               (case-lambda 
+                 [(b) 
+                  (set! cur-beh b)
+                  (update0 b)
+                  (set! cur-beh #f)]
+                 [(b v)
+                  (set! cur-beh b)
+                  (update1 b v)
+                  (set! cur-beh #f)]))
+             
+             (define (process-update-msg msg)
+               ; (printf "processing update msg: ~a~n" (value-now msg))
+               (cond
+                [(signal? msg) (do-update msg)]
+                [(list? msg) (do-update (first msg) (second msg))]))
+
+             (define (engine-msg? msg)
+               (match msg
+                      [($ alarm ms beh) #t]
+                      [($ reg inf sup ret) #t]
+                      [($ unreg inf sup) #t]
+                      [('bind sym evt) #t]
+                      [('remote-reg tid sym) #t]
+                      [('remote-evt sym val) #t]))
+
+             (define (process-engine-msg msg)
+               (match msg
+                      [($ alarm ms beh)
+                       (when (> ms 1073741824)
+                         (set! ms (- ms 2147483647)))
+                       (alarms-enqueue ms (make-weak-box beh))]
+                      [($ reg inf sup ret)
+                       (register inf sup)
+                       (! ret man)]
+                      [($ unreg inf sup)
+                       (unregister inf sup)]
+                      [('bind sym evt)
+                       (let ([forwarder+listeners (cons #f empty)])
+                         (set-car! forwarder+listeners
+                                   (event-forwarder sym evt forwarder+listeners))
+                         (hash-table-put! named-providers sym forwarder+listeners))]
+                      [('remote-reg tid sym)
+                       (let ([f+l (hash-table-get named-providers sym)])
+                         (when (not (member tid (rest f+l)))
+                           (set-rest! f+l (cons tid (rest f+l)))))]
+                      [('remote-evt sym val) ; should probably set cur-beh here too (?)
+                       (do-update (hash-table-get named-dependents sym (lambda () dummy)) val)]))
+             
+             (define (harvest-external-events)
+               (let loop ([to-notify empty])
+                 (receive [after (cond
+                                  [(not (iq-empty?)) 0]
+                                  [(not (alarms-empty?)) (- (alarms-peak-ms)
+                                                            (current-milliseconds))]
+                                  [else #f])
+                                 to-notify]
+                   [(? signal? b) 
+                    (iq-enqueue b)
+                    (loop to-notify)]
+                   [($ external-event recip-val-pairs ret)
+                    (for-each iq-enqueue recip-val-pairs)
+                    (if ret
+                        (loop (cons ret to-notify))
+                        (loop to-notify))]
+                   [(? engine-msg? msg) 
+                    (process-engine-msg msg)
+                    (loop to-notify)]
+                   [msg 
+                    (fprintf (current-error-port)
+                             "msg not understood: ~a~n"
+                             msg)
+                    (loop to-notify)])))
+             
+             (define (is-timer-ready?)
+               (and (not (alarms-empty?))
+                    (>= (current-milliseconds) 
+                        (alarms-peak-ms))))
+             
+             (define (process-timers)
+               (let loop ()
+                 (when (is-timer-ready?)
+                   (let ([beh (weak-box-value (alarms-dequeue-beh))])
+                     (when (and beh (not (signal-stale? beh)))
+                       ; (printf "enqueueing alarm~n")
+                       (set-signal-stale?! beh #t)
+                       (iq-enqueue beh)))
+                   (loop))))
+
+             (define (process-internal-events)
+               (let loop ()
+                 (unless (iq-empty?)
+                   (process-update-msg (iq-dequeue))
+                   (loop))))
+
+             (define (notify-of-idle to-notify)
+               (for-each
+                (lambda (threadid) (! threadid man))
+                to-notify))
+             
+             (let ([to-notify (harvest-external-events)])
+               (process-timers)
+               (process-internal-events)
+               (notify-of-idle to-notify))
+
+             (inner)))))))
+
   (define dummy
     (proc->signal void))
   
@@ -910,6 +932,9 @@
                       result))])
       (proc->signal thunk b)))
   
+  (define (man? v)
+    (eq? v man))
+
   ; new-cell : behavior[a] -> behavior[a] (cell)
   (define new-cell
     (opt-lambda ([init undefined])
@@ -917,11 +942,21 @@
     
   ; set-cell! : cell[a] a -> void
   (define (set-cell! ref beh)
-    (! man (make-external-event beh ((signal-thunk ref) #t))))
+    (! man (make-external-event (list (list ((signal-thunk ref) #t) beh)) #f)))
   
-  (define (send-event rcvr evt)
-    (! man (make-external-event evt rcvr)))
-  
+  (define (send-event rcvr val)
+    (! man (make-external-event (list (list rcvr val)) #f)))
+
+  (define (send-synchronous-event rcvr val)
+    (! man (make-external-event (list (list rcvr val)) (self)))
+    (receive [(? man?) (void)]))
+
+  (define (send-synchronous-events rcvr-val-pairs)
+    (unless (ormap list? rcvr-val-pairs) (error "not list"))
+    (unless (ormap signal? (map first rcvr-val-pairs)) (error "not signals"))
+    (! man (make-external-event rcvr-val-pairs (self)))
+    (receive [(? man?) (void)]))
+
   (define (curried-apply fn)
     (lambda (lis) (apply fn lis)))
   
@@ -1065,7 +1100,19 @@
         (syntax (begin))
         (syntax->list (syntax clauses)))]))  
 
-    
+  (define (ensure-no-signal-args val)
+    (if (procedure? val)
+        (lambda args
+          (cond
+            [(find signal? args)
+             =>
+             (lambda (v)
+               (raise-type-error 'fun-name "not time-varying"
+                                 (if (event? v)
+                                     (format "#<event (last: ~a)>" (efirst (signal-value v)))
+                                     (format "#<behavior: ~a>" (signal-value v)))))]
+            [else (apply val args)]))))
+  
   (define-syntax (frp:require stx)
     (define (generate-temporaries/loc st ids)
       (map (lambda (id)
@@ -1104,18 +1151,7 @@
                   #'(begin
                       clause ...
                       (require (rename module tmp-name fun-name) ...)
-                      (define fun-name
-                        (if (procedure? tmp-name)
-                            (lambda args
-                              (cond
-                               [(find signal? args) =>
-                                (lambda (v)
-                                  (raise-type-error 'fun-name "not time-varying"
-                                                    (if (event? v)
-                                                        (format "#<event (last: ~a)>" (efirst (signal-value v)))
-                                                        (format "#<behavior: ~a>" (signal-value v)))))]
-                               [else (apply tmp-name args)]))
-                            tmp-name))
+                      (define fun-name (ensure-no-signal-args tmp-name))
                       ...))]
                [require-spec
                 (syntax (begin clause ... (require require-spec)))])]))

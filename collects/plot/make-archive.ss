@@ -59,7 +59,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -mgrq $0 "$@"
 (define src-structure
   '(("src")				
     ("src" "fit")
-    ("src" "tmp")
+    ("src" "all")
     ("src" "docs")))
 
 (define plot-target-dir

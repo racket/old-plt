@@ -109,7 +109,7 @@
                  (else '("-DHAVE_LIBPNG" "-DPLD_png")))))]
           (let*
               [(plot-src-dir 
-                (build-path here "src" "tmp"))
+                (build-path here "src" "all"))
                (plot-c-files               
                 (map
                  (lambda (f)

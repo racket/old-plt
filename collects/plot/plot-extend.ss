@@ -16,18 +16,18 @@
                        (symbol->string (syntax-e ident)))) ))
     (syntax-case stx ()
       [(_ name data view ((var default) ...) body)
-       #'(r-lambda-internal-test name data view ((var default) ...) () body)]
+       #'(r-lambda-internal name data view ((var default) ...) () body)]
       [(_ name data view (field ...) ((var default) ...) body)
        (let ((accessors (map (lambda (f) (join-identifier 'get- f)) (syntax-e #'(field ...)))))
          (with-syntax (((getter ...) accessors))
-           #'(r-lambda-internal-test name data view ((var default) ...) ((field getter) ...) body)))]))
+           #'(r-lambda-internal name data view ((var default) ...) ((field getter) ...) body)))]))
 
- #|
-  (define-syntax r-lambda-internal-test    
+  #|
+  (define-syntax r-lambda-internal-test
     (syntax-rules ()
       [(_ name data view ((var default) ...) ((value accessor) ...) body)
-       (define-syntax name 
-         (lambda (stx-2)           
+       (define-syntax name
+         (lambda (stx-2)
            (define (find-val sym lst)
              (cond 
                [(null? lst) #f]
@@ -35,7 +35,7 @@
                 (cadr (syntax-object->datum (car lst)))]
                [else
                 (find-val sym (cdr lst))]))
-           
+
            ;; there is probably a better way to do this
            (define (subst-names original overrides)             
              (map
@@ -71,38 +71,48 @@
                         (let ((value (send view accessor)) ...)
                           body)))))])))]))
 |#
-    (define-syntax r-lambda-internal-test    
-      (syntax-rules ()
-        [(_ name data view ((var default) ...) ((value accessor) ...) body)
-         (define-syntax name 
-           (lambda (stx-2)                    
-             (syntax-case stx-2 ()
-               [(_ val)
-                #'(let ((var default) ...
-                        (data val))
-                    (lambda (view)
-                      (let ((value (send view accessor)) ...)
-                        body)))]
-               [(_ val (override-name override-value) (... ...) )              
-                (let ((new-overrides 
-                       (map 
-                        (lambda (pair) 
-                          (datum->syntax-object 
-                           #'((var default) ...)
-                           (syntax-object->datum pair)))                        
-                        (syntax-e #'((override-name override-value) (... ...))))))
-                  (with-syntax ((((new-name new-override) (... ...)) new-overrides))
-                    #'(let ((var default) ...
+  (define-syntax r-lambda-internal
+    (syntax-rules ()
+      [(_ name data view ((var default) ...) ((value accessor) ...) body)
+       (define-syntax name
+         (lambda (stx-2)
+           (syntax-case stx-2 ()
+             [(_ val)
+              #'(let ((var default) ...
+                      (data val))
+                  (lambda (view)
+                    (let ((value (send view accessor)) ...)
+                      body)))]
+             [(_ val (override-name override-value) (... ...) )
+              (let ((overrides
+                     (map
+                      (lambda (stx)
+                        (let ((pair (syntax-e stx)))
+                          (list
+                           (syntax-e (car pair))
+                           (cadr pair))))
+                      (syntax-e #'((override-name override-value) (... ...))))))
+                (let ((new-defaults
+                       (map
+                        (lambda (a-default)
+                          (let ((def-name (syntax-e (car (syntax-e a-default)))))
+                            (cond
+                             [(assq def-name overrides) =>
+                              (lambda (new-val)
+                                (datum->syntax-object
+                                 a-default        ;   ...
+                                 (list (car (syntax-e a-default))
+                                       (cadr new-val))))]
+                               [else a-default])))
+                          (syntax-e #'((var default) ...)))))
+                  (with-syntax ((((var-new default-new) (... ...)) new-defaults))
+                    #'(let ((var-new default-new) (... ...)
                             (data val))
-                        (let
-                            ((new-name override-value) (... ...))                          
-                          (lambda (view)
-                            (let ((value (send view accessor)) ...)
-                              body))))))])))])) 
-
-  
-  (provide 
-   define-plot-type   
+                        (lambda (view)
+                          (let ((value (send view accessor)) ...)
+                            body))))))])))]))
+  (provide
+   define-plot-type
    (all-from (lib "view.ss" "plot"))
    (all-from (lib "renderer-helpers.ss" "plot"))))
 

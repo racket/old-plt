@@ -178,7 +178,8 @@ provides a few additional functions helpful for constructing servlets:
   Servlets may easily implement password based authentication by extracting
   password information from the HTTP headers.  The return value is either a
   pair consisting of the username and password from the headers or #f if no
-  password was provided.
+  password was provided.  This only extracts the provided username and
+  password.  The servlet must perform any desired checking.
 
 
 For small example servlets, look in the "examples" directory in

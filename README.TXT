@@ -46,7 +46,7 @@ plt\collects\doc to the Help menu.
 Release Notes
 -------------
 
-The release notes for this version are in plt\notes\release\51.html.
+The release notes for this version are in plt\notes\releases\51.html.
 More specific notes can be found in sub-directories of plt\notes.
 
 More Information

@@ -241,9 +241,11 @@ void *(*scheme_lookup_in_table)(Scheme_Bucket_Table *table, const char *key);
 Scheme_Bucket *(*scheme_bucket_from_table)(Scheme_Bucket_Table *table, const char *key);
 int (*scheme_bucket_table_equal)(Scheme_Bucket_Table *t1, Scheme_Bucket_Table *t2);
 Scheme_Hash_Table *(*scheme_make_hash_table)(int type);
+Scheme_Hash_Table *(*scheme_make_hash_table_equal)();
 void (*scheme_hash_set)(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object *val);
 Scheme_Object *(*scheme_hash_get)(Scheme_Hash_Table *table, Scheme_Object *key);
 int (*scheme_hash_table_equal)(Scheme_Hash_Table *t1, Scheme_Hash_Table *t2);
+int (*scheme_is_hash_table_equal)(Scheme_Object *o);
 /*========================================================================*/
 /*                   basic Scheme value constructors                      */
 /*========================================================================*/

@@ -1,3 +1,5 @@
+(require-library "sig.ss" "browser2")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;TEST CASES inside render-html-test.ss
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -737,6 +739,7 @@
           (define initpos (send a-text get-start-position))
           (define (finalpos) (send a-text get-start-position))
           (define href (get-attribute-value attributes 'href ""))
+          (define base-path (get-base-path))
           (define a-url (if (and (string-ci=? "file" (url-scheme base-path))
                                  (> (string-length href) 0)
                                  (char=? #\# (string-ref href 0)))
@@ -758,19 +761,13 @@
                          (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start))]
                     [(and (string-ci=? "file" (url-scheme a-url))
                           (char=? #\# (string-ref href 0)))
-                     (send a-text erase)
-                     (set! base-path a-url)
-                     (set! local-anchors empty)
-                     (render-html a-text (call/input-url a-url get-pure-port html:read-html))
+                     (browse-url a-url)
                      (set! target-location (get-anchor-location (substring href 1 (string-length href))))
                      (if (boolean? target-location)
                          (void)
                          (send a-text scroll-to-position target-location #f (+ (send a-text last-position) target-location) 'start))]
                     [else
-                     (send a-text erase)
-                     (set! base-path a-url)
-                     (set! local-anchors empty)
-                     (render-html a-text (call/input-url a-url get-pure-port html:read-html))
+                     (browse-url a-url)
                      (set! target-location (get-anchor-location (url-fragment a-url)))
                      (if (boolean? target-location)
                          (void)
@@ -815,7 +812,8 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-Contents-of-a : text% Contents-of-a -> void
-; Calls render-Label or render-G7.
+; Ensures that the rendered Contents-of-a are padded with one space
+; to the left
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-Contents-of-a a-text Contents)
   (cond [(html:label? Contents) (render-label Contents)]
@@ -1371,25 +1369,29 @@
             (local [(define attribs (html:html-element-attributes a-li))
                     (define a-lo-G2 (html:html-full-content a-li))
                     (define value (get-attribute-value attribs 'value default-value))]
-              (send a-text insert the-tab)
+              (send a-text insert #\tab)
               (send a-text insert value)
               (if (empty? a-lo-G2)
-                  (number->string (add1 (string->number value)))
                   (begin
+                    (write "first")
+                    (number->string (add1 (string->number value))))
+                  (begin
+                    (write "second")
                     (render-G2 a-text (first a-lo-G2))
                     (for-each (lambda (a-G2)
                                 (render-G2 a-text a-G2))
                               (rest a-lo-G2))
                     (send a-text insert #\newline)
                     (number->string (add1 (string->number value)))))))
-          ; helper : (listof LI) string -> void
-          ; Renders the list of LI, using init as the first item's ordering.
-          (define (helper listof-LI init)
+          
+          ; render-lo-li : (listof LI) string int -> void
+          ; Renders the list of LI, using init as the first item's ordering, inserting num-tabs of tabs to indent.
+          (define (render-lo-li listof-LI init num-tabs)
             (cond [(empty? listof-LI) (void)]
-                  [else (helper (rest listof-LI)
-                                (render-li-with-tab (first listof-LI) init))]))]
+                  [else (render-lo-li (rest listof-LI)
+                                      (render-li-with-tab (first listof-LI) init num-tabs))]))]
     (if (not (zero? num-elts))
-        (helper alo-LI start)
+        (render-lo-li alo-LI start 0)
         (void))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1432,14 +1434,15 @@
 (define (render-pcdata text a-pcdata)
   (define initpos (send text get-start-position))
   (local [(define start (send text last-position))
-          (define loc (string->list (pcdata-string a-pcdata)))
-          (define stripped-newline-loc (filter (lambda (achar)
-                                                 (not (char=? #\newline achar)))
-                                               loc))
-          (define fresh-string (list->string stripped-newline-loc))]
+          (define fresh-string (pcdata-string a-pcdata))]
+;    (printf "1> fresh-string : ~s~n" fresh-string)
     (set! fresh-string (regexp-replace* (regexp "  *") fresh-string " "))
-    (set! fresh-string (regexp-replace* (regexp "
-    ") fresh-string ""))
+;    (printf "3> fresh-string : ~s~n" fresh-string)
+    (set! fresh-string (regexp-replace* (regexp (string-append (char->string #\newline) (char->string #\newline) "*")) fresh-string " "))
+;    (printf "4> fresh-string : ~s~n" fresh-string)
+    (set! fresh-string (regexp-replace* (regexp "  *") fresh-string " "))
+;    (printf "5> fresh-string : ~s~n" fresh-string)
+
     (send text insert fresh-string)
     (send text change-style base-style-delta start (send text last-position))))
 
@@ -1587,7 +1590,12 @@
 ; render-title : text% title -> void
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (render-title a-text a-title)
-  (show-internal-error-once "render-title not yet implemented"))
+  (local [(define title-contents (html:html-full-content a-title))]
+    (cond [(empty? title-contents) (void)]
+          [else (set-frame-label (apply string-append
+                                        (map (lambda (pcdata)
+                                               (pcdata-string pcdata))
+                                             title-contents)))])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; render-tfoot : text% tfoot -> void

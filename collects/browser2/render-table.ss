@@ -1,4 +1,3 @@
-
 ; See tables-test.ss for TEST CASES.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -60,8 +59,9 @@
       [can-resize? (lambda (snip w h) #f)]
       [can-move-to? (lambda (snip x y dragging)
                       #f)]
-      [can-select? (lambda (snip on?)
-                     #f)])
+;      [can-select? (lambda (snip on?)
+;                     #f)])
+      )
     (sequence (super-init))))
 
 ; The pasteboard used to get snip sizes for cell widths/heights during

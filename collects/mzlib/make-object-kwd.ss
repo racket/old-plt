@@ -1,0 +1,104 @@
+(define-macro make-object/kwd
+  (let ([real-args-table (make-hash-table)])
+    (hash-table-put!
+     real-args-table
+     frame%
+     `((label) (parent #f) (width #f) (height #f) (x #f) (y #f) (style ())))
+    (hash-table-put! real-args-table horizontal-panel% `((parent) (style ())))
+    (hash-table-put! real-args-table vertical-panel% `((parent) (style ())))
+    (hash-table-put! real-args-table canvas% `((parent) (style ())))
+    (hash-table-put! real-args-table button% `((label) (parent) (callback) (style) (style ())))
+    
+    (lambda (c . kwd-pairs)
+      (unless (andmap (lambda (kwd)
+			(list? kwd)
+			(= 2 (length kwd))
+			(symbol? (car kwd)))
+		      kwd-pairs)
+	(error 'make-object/kwd "malformed keywords"))
+      (let* ([kwd-gensyms (map (lambda (x) (gensym "make-object/kwd")) kwd-pairs)]
+	     [class-gensym (gensym "make-object/kwd/class")]
+	     [kwds (map car kwd-pairs)]
+	     [get-kwds (map (lambda (x) (string->symbol
+					 (string-append
+					  "get-"
+					  (symbol->string x))))
+			    kwds)]
+	     [set-kwds (map (lambda (x) (string->symbol
+					 (string-append
+					  "set-"
+					  (symbol->string x))))
+			    kwds)]
+	     [validate-keyword-before-object-creation
+	      (lambda (kwd set-kwd get-kwd)
+		`(begin
+		   (unless (or (memq ',kwd names)
+			       (and (memq ',get-kwd names)
+				    (memq ',set-kwd names)))
+		     (error 'make-object/kwd "keyword ~a not available in class ~e"
+			    ',kwd ,class-gensym))))]
+
+	     [construct/validate-arguments
+	      (lambda ()
+		`(let ([arg/defaults (hash-table-get ,real-args-table ,class-gensym (lambda () #f))])
+		   (unless arg/defaults
+		     (error 'make-object/kwd "unknown class: ~e" ,class-gensym))
+		   (map (lambda (arg/default)
+			  (cond
+			   [(let loop ([kwd-pairs (list ,@(map (lambda (x)
+								 `(list ',(car x)
+									(lambda () ,(cadr x))))
+							       kwd-pairs))])
+			      (cond
+			       [(null? kwd-pairs) #f]
+			       [else (let ([kwd-pair (car kwd-pairs)])
+				       (if (eq? (car kwd-pair) (car arg/default))
+					   ((cadr kwd-pair))
+					   (loop (cdr kwd-pairs))))]))
+			    =>
+			    (lambda (x) x)]
+			   [(not (null? (cdr arg/default)))
+			    (cadr arg/default)]
+			   [else
+			    (error 'make-object/kwd "required keyword left unspecified: ~a"
+				   (car arg/default))]))
+			arg/defaults)))]
+
+	     [validate/invoke-keyword-after-object-creation
+	      (lambda (gen kwd get-kwd set-kwd)
+		`(cond
+		  [(memq ,set-kwd names)
+		   (unless (equal? 1 (arity (ivar ,set-kwd obj)))
+		     (error 'make-object/kwd "keyword ~a not available in class ~e"
+			    ',kwd ,class-gensym))
+		   (send obj ,set-kwd ,gen)]
+		  [(memq ,kwd names)
+		   (unless (equal? '(0 1) (arity (ivar ,kwd obj)))
+		     (error 'make-object/kwd "keyword ~a not available in class ~e"
+			    ',kwd ,class-gensym))
+		   (send obj ,kwd ,gen)]))])
+	`(let ([,class-gensym ,c]
+	       ,@(map (lambda (gen kwd) `[,gen ,(cadr kwd)]) kwd-gensyms kwd-pairs))
+	   (let ([names (interface->ivar-names (class->interface ,class-gensym))])
+	     (begin ,@(map (lambda (gen get-kwd set-kwd)
+			     (validate-keyword-before-object-creation
+			      gen get-kwd set-kwd))
+			   kwd-gensyms
+			   set-kwds
+			   get-kwds))
+	     (let ([obj (apply make-object ,class-gensym ,(construct/validate-arguments))])
+	       (begin ,@(map (lambda (gen kwd get-kwd set-kwd)
+			       (validate/invoke-keyword-after-object-creation
+				gen kwd get-kwd set-kwd))
+			     kwd-gensyms
+			     kwds
+			     get-kwds
+			     set-kwds))
+	       obj)))))))
+
+(require-library "pretty.ss")
+(pretty-print
+ (expand-defmacro-once `(make-object/kwd frame% (label "frame"))))
+
+(define f (make-object/kwd frame% (label "frame")))
+(send f show #t)

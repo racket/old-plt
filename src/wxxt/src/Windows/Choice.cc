@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.14 1999/10/08 04:33:18 mflatt Exp $
+ * $Id: Choice.cc,v 1.15 1999/10/08 04:36:35 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -36,7 +36,7 @@
 #define  Uses_LabelWidget
 #include "widgets.h"
 
-static char *unprotect_amp(char *s);
+char *wxchoice_unprotect_amp(char *s);
 
 //-----------------------------------------------------------------------------
 // create and destroy button
@@ -120,7 +120,7 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
       float maxw = 0, labelw = 0;
       for (int i = 0; i < n; i++) {
 	float w, h;
-	GetTextExtent(choices[i], &w, &h, NULL, NULL, label_font);
+	GetTextExtent(choices[i], &w, &h, NULL, NULL, font);
 	if (w > maxw)
 	  maxw = w;
       }
@@ -128,8 +128,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
       if (label && !vert) {
 	float w, h;
 	char *label_stripped;
-	label_stripped = unprotect_amp(label);
-	GetTextExtent(label_stripped, &w, &h, NULL, NULL, font);
+	label_stripped = wxchoice_unprotect_amp(label);
+	GetTextExtent(label_stripped, &w, &h, NULL, NULL, label_font);
 	labelw = w + 2; /* 2 for separation btw label and ctl */
       }
 
@@ -206,7 +206,7 @@ static char *protect_amp(char *s)
     return s;
 }
 
-static char *unprotect_amp(char *s)
+char *wxchoice_unprotect_amp(char *s)
 {
   if (strchr(s, '&')) {
     /* strip "&&" */
@@ -260,14 +260,14 @@ char *wxChoice::GetString(int n)
 {
   char *s = choice_menu->GetLabel(n);
 
-  return s ? unprotect_amp(s) : (char *)NULL;
+  return s ? wxchoice_unprotect_amp(s) : (char *)NULL;
 }
 
 char *wxChoice::GetStringSelection(void)
 {
   char *s = choice_menu->GetLabel(selection);
   
-  return s ? unprotect_amp(s) : (char *)NULL;
+  return s ? wxchoice_unprotect_amp(s) : (char *)NULL;
 }
 
 void wxChoice::SetSelection(int n)

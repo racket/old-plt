@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: ListBox.cc,v 1.13 1999/01/09 18:15:02 mflatt Exp $
+ * $Id: ListBox.cc,v 1.14 1999/08/14 00:38:11 mflatt Exp $
  *
  * Purpose: list box panel item
  *
@@ -42,6 +42,8 @@
 
 #define wxLIST_BOX_WIDTH	70
 #define wxLIST_BOX_HEIGHT	50
+
+char *wxchoice_unprotect_amp(char *s);
 
 //-----------------------------------------------------------------------------
 // create and destroy wxListBox
@@ -128,9 +130,21 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     XtAddCallback(X->handle, XtNcallback,
 		  wxListBox::EventCallback,  (XtPointer)this);
 
+    long labelw = 0, labelh = 0;
+    if (title) {
+      float w, h;
+      char *label_stripped;
+      label_stripped = wxchoice_unprotect_amp(title);
+      GetTextExtent(label_stripped, &w, &h, NULL, NULL, label_font);
+      if (vert)
+	labelh = (long)h;
+      else
+	labelw = (long)w;
+    }
+
     panel->PositionItem(this, x, y,
-			(width  > -1 ? width  : wxLIST_BOX_WIDTH),
-			(height > -1 ? height : wxLIST_BOX_HEIGHT));
+			(width  > -1 ? width  : (wxLIST_BOX_WIDTH + labelw)),
+			(height > -1 ? height : (wxLIST_BOX_HEIGHT + labelh)));
     AddEventHandlers();
 
     XtVaSetValues(X->handle, XtNwidth, 0, NULL);

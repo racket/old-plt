@@ -1669,6 +1669,14 @@
 				 (if for-mod? "phase_shift" "0")
 				 (if for-mod? "self_modidx" "NULL")))]
 		   
+		   ;; HACK! - abused constants to communicate
+		   ;;  a direct call to scheme_eval_compiled_string():
+		   [(compiled-string? (zodiac:zread-object ast))
+		    (let ([cs (zodiac:zread-object ast)])
+		      (emit-expr "scheme_eval_compiled_sized_string(STRING_~a, ~a, NULL)"
+				 (compiled-string-id cs)
+				 (compiled-string-len cs)))]
+		   
 		   [else (compiler:internal-error
 			  ast
 			  (format "vm:build-constant: not supported ~a" ast))]))]

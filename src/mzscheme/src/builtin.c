@@ -31,7 +31,6 @@
 #endif
 #endif
 
-#if USE_COMPILED_STARTUP
 Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Scheme_Env *env)
 {
   Scheme_Object *port, *expr, *saved;
@@ -41,13 +40,13 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
   port = scheme_make_sized_string_input_port(str, -len); /* negative means it's constant */
 
   saved = scheme_get_param(config, MZCONFIG_ENV);
+  if (!env) env = (Scheme_Env *)saved;
   scheme_set_param(config, MZCONFIG_ENV, (Scheme_Object *)env);
   expr = scheme_internal_read(port, NULL, 1, 1);
   scheme_set_param(config, MZCONFIG_ENV, saved);
 
   return _scheme_eval_compiled(expr, env);
 }
-#endif
 
 void scheme_add_embedded_builtins(Scheme_Env *env)
 {

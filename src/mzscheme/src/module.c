@@ -1660,7 +1660,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Obj
     cenv->syntax = menv->syntax;
     cenv->exp_env = exp_env;    
 
-    ivk(cenv, menv->phase, menv->module->self_modidx, menv->module->body);
+    ivk(cenv, menv->phase, menv->link_midx, menv->module->body);
   } else {
     Resolve_Prefix *rp;
 
@@ -1724,7 +1724,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
   if (menv->module->prim_body) {
     Scheme_Invoke_Proc ivk = menv->module->prim_body;
-    ivk(menv, menv->phase, menv->module->self_modidx, m->body);
+    ivk(menv, menv->phase, menv->link_midx, m->body);
   } else {
     eval_module_body(menv);
   }

@@ -303,6 +303,46 @@
 		  (remember-immutable-vector constructor elems const))
 		const))))
 
+      (define (big-and-simple? stx size)
+	(cond
+	 [(null? stx) (zero? size)]
+	 [(stx-pair? stx)
+	  (and (big-and-simple? (stx-car stx) 0)
+	       (big-and-simple? (stx-cdr stx) (sub1 size)))]
+	 [(vector? (syntax-e stx))
+	  (let ([len (vector-length (syntax-e stx))])
+	    (and (len . >= . size)
+		 (let loop ([i 0])
+		   (or (= i len)
+		       (and (big-and-simple? (vector-ref (syntax-e stx) i) 0)
+			    (loop (add1 i)))))))]
+	 [(and (zero? size)
+	       (or (number? (syntax-e stx))
+		   (string? (syntax-e stx))
+		   (symbol? (syntax-e stx))
+		   (boolean? (syntax-e stx))
+		   (null? (syntax-e stx))))]
+	 [else #f]))
+	 
+      (define-struct compiled-string (id len))
+
+      (define (construct-big-constant ast stx known-immutable?)
+	(let* ([s (let ([p (open-output-string)])
+		    (write (compile `(quote ,stx)) p)
+		    (get-output-string p))]
+	       [id (const:intern-string s)])
+	  (let ([const (compiler:add-const!
+			(compiler:re-quote
+			 (zodiac:make-zread
+			  (datum->syntax-object
+			   #f
+			   ;; HACK!
+			   (make-compiled-string id (string-length s)))))
+			(if known-immutable?
+			    varref:static
+			    varref:per-load-static))])
+	    const)))
+
       (define compiler:construct-const-code!
 	(lambda (ast known-immutable?)
 	  (cond
@@ -353,6 +393,10 @@
 					(hash-table-put! const:number-table sym num)
 					num))))))]
 
+	   ;; big constants?
+	   [(big-and-simple? (zodiac:zodiac-stx ast) 20)
+	    (construct-big-constant ast (zodiac:zodiac-stx ast) known-immutable?)]
+	   
 	   ;; lists
 	   [(stx-list? (zodiac:zodiac-stx ast))
 	    (construct-vector-constant ast 'list known-immutable?)]
@@ -361,13 +405,13 @@
 	   [(pair? (zodiac:zread-object ast))
 	    (construct-vector-constant ast 'list* known-immutable?)]
 
-	   ;; vectors
-	   [(vector? (zodiac:zread-object ast))
-	    (construct-vector-constant ast 'vector known-immutable?)]
-
 	   [(void? (zodiac:zread-object ast))
 	    (zodiac:make-special-constant 'void)]
 
+	   ;; vectors
+	   [(vector? (zodiac:zread-object ast))
+	    (construct-vector-constant ast 'vector known-immutable?)]
+	   
 	   ;; comes from module paths in analyze:
 	   [(module-path-index? (zodiac:zread-object ast))
 	    (let-values ([(path base) (module-path-index-split (zodiac:zread-object ast))])

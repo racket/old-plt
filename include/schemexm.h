@@ -108,6 +108,7 @@
 #define scheme_eval_compiled_stx_string (scheme_extension_table->scheme_eval_compiled_stx_string)
 #define scheme_load_compiled_stx_string (scheme_extension_table->scheme_load_compiled_stx_string)
 #define scheme_compiled_stx_symbol (scheme_extension_table->scheme_compiled_stx_symbol)
+#define scheme_eval_compiled_sized_string (scheme_extension_table->scheme_eval_compiled_sized_string)
 #ifndef SCHEME_NO_GC
 # ifndef SCHEME_NO_GC_PROTO
 #define GC_malloc (scheme_extension_table->GC_malloc)

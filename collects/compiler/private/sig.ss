@@ -200,7 +200,9 @@
      const:finish-syntax-constants!
 
      (struct syntax-string (str mi uposes ustart id))
-     const:get-syntax-strings))
+     const:get-syntax-strings
+
+     (struct compiled-string (id len))))
 
   (provide compiler:rep^)
   (define-signature compiler:rep^

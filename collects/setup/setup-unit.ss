@@ -279,7 +279,9 @@
 		       info
 		       'clean
 		       (lambda ()
-			 (list "compiled" (build-path "compiled" "native" (system-library-subpath))))
+			 (list "compiled" 
+			       (build-path "compiled" "native")
+			       (build-path "compiled" "native" (system-library-subpath))))
 		       (lambda (x)
 			 (unless (or (eq? x default)
 				     (and (list? x)

@@ -205,7 +205,9 @@
 				    normal-case-path
 				    (directory-list)))])
 			(make-collection
-			 (info 'name (lambda () (error 'compile-collection "info did not provide a name")))
+			 ((or info (lambda (a f) (f)))
+			  'name 
+			  (lambda () (error 'compile-collection "info did not provide a name for collection: ~e" cp)))
 			 (remove*
 			  (map normal-case-path
 			       (info 

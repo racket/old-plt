@@ -1,4 +1,6 @@
 
+(define re:archive-file (regexp ".plt$"))
+
 (parameterize ([require-library-use-compiled #f])
   (require-library "cmdline.ss"))
 
@@ -11,7 +13,7 @@
 (define make-launchers (make-parameter #t))
 (define call-install (make-parameter #t))
 
-(define specific-collections
+(define-values (specific-collections archives)
   (parse-command-line
    "compile-plt"
    argv
@@ -44,26 +46,223 @@
 	  (make-verbose #t)
 	  (compiler-verbose #t))
        ("See make and compiler verbose messages")]))
-   (lambda (accum . specifics) (map list specifics))
-   '("collection")
+   (lambda (accum . args) 
+     (let loop ([l args][colls null][archives null])
+       (cond
+	[(null? l)
+	 (values (reverse colls) (reverse archives))]
+	[(regexp-match re:archive-file (car l))
+	 (loop (cdr l) colls (cons (car l) archives))]
+	[else
+	 (loop (cdr l) (cons (list (car l)) colls) archives)])))
+   '("collection-or-archive")
    (lambda (s)
      (display s)
-     (printf "If no <collection> is specified, all collections are compiled~n")
+     (printf "If no <collection-or-archive> is specified, all collections are compiled~n")
      (exit 0))))
 
-(define-struct cc (collection path name info))
+(define plthome
+  (or (getenv "PLTHOME")
+      (let ([dir (collection-path "mzlib")])
+	(and dir
+	     (let-values ([(base name dir?) (split-path dir)])
+		    (and (string? base)
+		      (let-values ([(base name dir?) (split-path base)])
+			(and (string? base)
+			     (complete-path? base)
+			     base))))))))
+
+(printf "PLT home directory is ~a~n" plthome)
+
+(define (warning s x)
+  (printf s
+	  (if (exn? x)
+	      (exn-message x)
+	      x)))
 
 (define (call-info info flag default test)
   (with-handlers ([void (lambda (x) 
-			  (printf "Warning: error getting ~a info: ~a~n"
-				  flag
-				  (if (exn? x)
-				      (exn-message x)
-				      x))
+			  (warning
+			   (format "Warning: error getting ~a info: ~~a~n"
+				   flag)
+			   x)
 			  default)])
      (let ([v (info flag (lambda () default))])
        (test v)
        v)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;               Archive Unpacking              ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (port64->port p)
+  (let* ([waiting 0]
+	 [waiting-bits 0]
+	 [at-eof? #f]
+	 [push
+	  (lambda (v)
+	    (set! waiting (+ (arithmetic-shift waiting 6) v))
+	    (set! waiting-bits (+ waiting-bits 6)))])
+    (make-input-port
+     (lambda ()
+       (let loop ()
+	 (if (>= waiting-bits 8)
+	     (begin0
+	      (integer->char (arithmetic-shift waiting (- 8 waiting-bits)))
+	      (set! waiting-bits (- waiting-bits 8))
+	      (set! waiting (bitwise-and waiting (sub1 (arithmetic-shift 1 waiting-bits)))))
+	     (let* ([c (read-char p)]
+		    [n (char->integer c)])
+	       (cond
+		[(<= (#%char->integer #\A) n (#%char->integer #\Z)) (push (- n (#%char->integer #\A)))]
+		[(<= (#%char->integer #\a) n (#%char->integer #\z)) (push (+ 26 (- n (#%char->integer #\a))))]
+		[(<= (#%char->integer #\0) n (#%char->integer #\9)) (push (+ 52 (- n (#%char->integer #\0))))]
+		[(= (#%char->integer #\+) n) (push 62)]
+		[(= (#%char->integer #\/) n) (push 63)]
+		[(= (#%char->integer #\=) n) (set! at-eof? #t)])
+	       (loop)))))
+     (lambda ()
+       (or at-eof? (char-ready? p)))
+     void)))
+
+(define (port64gz->port p64gz)
+  (require-library "inflate.ss")
+  ; Inflate in a thread so the whole input isn't read at once
+  (let*-values ([(pgz) (port64->port p64gz)]
+		[(waiting?) #f]
+		[(ready) (make-semaphore)]
+		[(read-pipe write-pipe) (make-pipe)]
+		[(out) (make-output-port
+			(lambda (s)
+			  (set! waiting? #t)
+			  (semaphore-wait ready)
+			  (set! waiting? #f)
+			  (display s write-pipe))
+			(lambda ()
+			  (close-output-port write-pipe)))]
+		[(get) (make-input-port
+			(lambda ()
+			  (if (char-ready? read-pipe)
+			      (read-char read-pipe)
+			      (begin
+				(semaphore-post ready)
+				(read-char read-pipe))))
+			(lambda ()
+			  (or (char-ready? read-pipe) waiting?))
+			(lambda ()
+			  (close-input-port read-pipe)))])
+    (thread (lambda () 
+	      (with-handlers ([void (lambda (x)
+				      (warning "Warning: unpacking error: ~a~n" x))])
+                (gunzip-through-ports pgz out))
+	      (close-output-port out)))
+    get))
+
+(define (unmztar p filter)
+  (require-library "file.ss" "dynext")
+  (let loop ()
+    (let ([kind (read p)])
+      (unless (eof-object? kind)
+       (case kind
+	 [(dir) (let ([s (read p)])
+		  (unless (relative-path? s)
+		    (error "expected a directory name relative path string, got" s))
+		  (when (filter s plthome)
+		   (let ([d (build-path plthome s)])
+		     (unless (directory-exists? d)
+		       (when (verbose)
+			 (printf "  making directory ~a~n" d))
+		       (make-directory* d)))))]
+	 [(file) (let ([s (read p)])
+		   (unless (relative-path? s)
+		    (error "expected a file name relative path string, got" s))
+		   (let ([len (read p)])
+		     (unless (and (number? len) (integer? len))
+		       (error "expected a file name size, got" len))
+		     (let ([write? (filter s plthome)]
+			   [path (build-path plthome s)])
+		       (let ([out (and write?
+				       (not (file-exists? path))
+				       (open-output-file path))])
+			 (when (and write? (not out))
+			   (printf "Warning: ~a already exists; skipping~n" path))
+			 (when (and out (verbose))
+			    (printf "  unpacking ~a~n" path))
+			 ; Find starting *
+			 (let loop ()
+			   (let ([c (read-char p)])
+			     (cond
+			      [(char=? c #\*) (void)] ; found it
+			      [(char-whitespace? c) (loop)]
+			      [(eof-object? c) (void)] ; signal the error below
+			      [else (error 
+				     (format
+				      "unexpected character setting up ~a, looking for #\*"
+				      path)
+				     c)])))
+			 ; Copy file data
+			 (let loop ([n len])
+			   (unless (zero? n)
+			     (let ([c (read-char p)])
+			       (when (eof-object? c)
+				  (error (format 
+					  "unexpected end-of-file while ~a ~a"
+					   (if out "unpacking" "skipping")
+					   path)))
+			       (when out
+				  (write-char c out)))
+			     (loop (sub1 n))))
+			 (when out
+			    (close-output-port out))))))]
+	 [else (error "unknown file tag" kind)])
+       (loop)))))
+
+(define (unpack-archive archive)
+  (with-handlers ([void
+		   (lambda (x)
+		     (warning (format "Warning: error unpacking ~a: ~~a~n"
+				      archive)
+			      x)
+		     null)])
+   (call-with-input-file
+    archive
+    (lambda (p64)
+      (let* ([p (port64gz->port p64)]
+	     [n (make-namespace)]
+	     [info (eval (read p) n)])
+	(unless (and (procedure? info)
+		     (procedure-arity-includes? info 2))
+	  (error "expected a procedure of arity 2, got" info))
+	(let ([name (call-info info 'name #f (lambda (n) 
+					       (unless (string? n)
+						 (if name
+						     (error "couldn't find the package name")
+						     (error "expected a string")))))]
+	      [unpacker (call-info info 'unpacker #f (lambda (n) 
+						       (unless (eq? n 'mzscheme)
+							 (error "unpacker isn't mzscheme:" n))))])
+	  (unless (and name unpacker)
+	     (error "bad name or unpacker"))
+	  (printf "Unpacking ~a from ~a~n" name archive)
+	  (let ([u (eval (read p) n)])
+	    (unless (unit? u)
+	       (error "expected a unit, got" u))
+	    (let ([plthome plthome]
+		  [unmztar (lambda (filter)
+			     (unmztar p filter))])
+	      (invoke-unit u plthome unmztar)))))))))
+
+(set! specific-collections
+      (apply 
+       append
+       specific-collections
+       (map unpack-archive archives)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;           Collection Compilation             ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-struct cc (collection path name info))
 
 (define collection->cc
   (lambda (collection-p)
@@ -76,10 +275,7 @@
 			 (lambda (x) #f)]
 			[void
 			 (lambda (x)
-			   (printf "Warning: error loading info.ss: ~a~n"
-				   (if (exn? x)
-				       (exn-message x)
-				       x)))])
+			   (warning "Warning: error loading info.ss: ~a~n" x))])
 	   (let* ([info (parameterize ([require-library-use-compiled #f])
 			  (apply require-library "info.ss" collection-p))]
 		  [name (call-info info 'name #f
@@ -295,6 +491,16 @@
 	    collections-to-compile))
 
 (when (call-install)
-  (for-each (lambda (cc)
-	      (call-info (cc-info cc) 'install-collection void void))
-	    collections-to-compile))
+  (let ()
+    (for-each (lambda (cc)
+		(let ([t (call-info (cc-info cc) 'install-collection void
+				    (lambda (p)
+				      (unless (and (procedure? p)
+						   (procedure-arity-includes? p 1))
+					      (error "result is not a procedure of arity 1"))))])
+		  (with-handlers ([void (lambda (x)
+					  (warning "Warning: error running installer: ~a"
+						   x))])
+		     (t plthome))))
+	      collections-to-compile)))
+

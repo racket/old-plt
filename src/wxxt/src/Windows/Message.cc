@@ -302,7 +302,7 @@ Bool wxMessage::Create(wxPanel *panel,
     // create widget
     if (bitmap) {
       lblT = XtNpixmap;
-      lblV = (void *)GETPIXMAP(bitmap);
+      lblV = bitmap->GetLabelPixmap();
     } else {
       lblT = XtNlabel;
       lblV = label;
@@ -354,6 +354,7 @@ wxMessage::~wxMessage()
 {
   if (bm_label) {
     --bm_label->selectedIntoDC;
+    bm_label->ReleaseLabel();
     XtVaSetValues(X->handle, XtNpixmap, NULL, XtNmaskmap, NULL, NULL);
   }
   if (bm_label_mask) {
@@ -398,6 +399,7 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
     Pixmap pm, mpm;
 
     --bm_label->selectedIntoDC;
+    bm_label->ReleaseLabel();
     if (bm_label_mask) {
       --bm_label_mask->selectedIntoDC;
       bm_label_mask = NULL;
@@ -408,7 +410,7 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 
     bm_label_mask = CheckMask(bm_label);
 
-    pm = GETPIXMAP(bitmap);
+    pm = (Pixmap)bitmap->GetLabelPixmap();
     if (bm_label_mask)
       mpm = GETPIXMAP(bm_label_mask);
     else

@@ -307,7 +307,7 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func, char *label,
 	achoice = choices[i];
 	if (achoice->Ok() && (achoice->selectedIntoDC >= 0)) {
 	  kind = XtNpixmap;
-	  label = (void *)GETPIXMAP(achoice);
+	  label = achoice->GetLabelPixmap();
 	  bm_labels[i] = achoice;
 	  achoice->selectedIntoDC++;
 	  achoice = CheckMask(bm_labels[i]);
@@ -383,6 +383,7 @@ wxRadioBox::~wxRadioBox(void)
       if (bm_labels[i]) {
 	wxBitmap *bm = bm_labels[i];
 	--bm->selectedIntoDC;
+	bm->ReleaseLabel();
 	XtVaSetValues(((Widget*)toggles)[i], 
 		      XtNpixmap, NULL, 
 		      XtNmaskmap, NULL, 
@@ -493,6 +494,7 @@ void wxRadioBox::SetLabel(int item, wxBitmap *bitmap)
 
     obm = bm_labels[item];
     --obm->selectedIntoDC;
+    obm->ReleaseLabel();
     obm = bm_label_masks[item];
     if (obm)
       --obm->selectedIntoDC;
@@ -503,7 +505,7 @@ void wxRadioBox::SetLabel(int item, wxBitmap *bitmap)
     obm = CheckMask(bitmap);
     bm_label_masks[item] = obm;
 
-    pm = GETPIXMAP(bitmap);
+    pm = (Pixmap)bitmap->GetLabelPixmap();
     if (obm)
       mpm = GETPIXMAP(obm);
     else

@@ -99,8 +99,15 @@ wxBitmap *wxItem::CheckMask(wxBitmap *bm)
     return NULL;
 
   mbm = bm->GetMask();
-  if (mbm 
-      && (mbm->GetWidth() == bm->GetWidth())
+  if (!mbm)
+    return NULL;
+
+  /* If no X render and non-mono mask, then we have to manually apply
+     the alpha mask. See wxBitmap::GetLabelPixmap(). */
+  if (!wxXRenderHere() && (mbm->GetDepth() != 1))
+    return NULL;
+
+  if ((mbm->GetWidth() == bm->GetWidth())
       && (mbm->GetHeight() == bm->GetHeight())) {
     if (mbm->selectedIntoDC >= 0) {
       if (mbm->GetDepth() > 1) {

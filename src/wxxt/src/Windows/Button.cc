@@ -153,7 +153,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction function, wxBitmap *bitmap,
       XtManageChild(wgt);
     X->frame = wgt;
     // create widget
-    pm = GETPIXMAP(bitmap);
+    pm = (Pixmap)bitmap->GetLabelPixmap();
     if (bm_label_mask)
       mpm = GETPIXMAP(bm_label_mask);
     else
@@ -189,6 +189,7 @@ wxButton::~wxButton(void)
 {
   if (bm_label) {
     --bm_label->selectedIntoDC;
+    bm_label->ReleaseLabel();
     XtVaSetValues(X->handle, XtNpixmap, NULL, XtNmaskmap, NULL, NULL);
   }
   if (bm_label_mask) {
@@ -231,6 +232,7 @@ void wxButton::SetLabel(wxBitmap *bitmap)
     Pixmap pm, mpm;
 
     --bm_label->selectedIntoDC;
+    bm_label->ReleaseLabel();
     if (bm_label_mask) {
       --bm_label_mask->selectedIntoDC;
       bm_label_mask = NULL;
@@ -241,7 +243,7 @@ void wxButton::SetLabel(wxBitmap *bitmap)
 
     bm_label_mask = CheckMask(bm_label);
 
-    pm = GETPIXMAP(bitmap);
+    pm = (Pixmap)bitmap->GetLabelPixmap();
     if (bm_label_mask)
       mpm = GETPIXMAP(bm_label_mask);
     else

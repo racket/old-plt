@@ -81,11 +81,15 @@ public:
   wxBitmap *GetMaskBit();
   void FreeMaskBit();
 
+  void *GetLabelPixmap();
+  void ReleaseLabel();
+
 public:
     wxBitmap_Xintern *Xbitmap;
     wxColourMap      *cmap;
     wxBitmap         *loaded_mask;
     wxBitmap         *maskBit;
+    wxBitmap         *label_bm;
 
 public:
     int selectedIntoDC;

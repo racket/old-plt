@@ -527,6 +527,56 @@ void wxscheme_early_gl_init(void)
 #endif
 }
 
+
+/***********************************************************************/
+/*                            blit util                                */
+/***********************************************************************/
+
+#if defined(wx_msw) || defined(wx_xt)
+
+void wxAlphaBlit(wxBitmap *label_bm, wxBitmap *bm, wxBitmap *loaded_mask, 
+		 int br, int bg, int bb)
+{
+  int i, j, w, h;
+  wxMemoryDC *src, *mask, *dest;
+
+  w = label_bm->GetWidth();
+  h = label_bm->GetHeight();
+
+  dest = new wxMemoryDC();
+  src = new wxMemoryDC(1);
+  mask = new wxMemoryDC(1);
+      
+  dest->SelectObject(label_bm);
+  src->SelectObject(bm);
+  mask->SelectObject(loaded_mask);
+      
+  src->BeginGetPixelFast(0, 0, w, h);
+  mask->BeginGetPixelFast(0, 0, w, h);
+  dest->BeginSetPixelFast(0, 0, w, h);
+  for (i = 0; i < w; i++) {
+    for (j = 0; j < h; j++) {
+      int sr, sg, sb, mr, mg, mb, ialpha;
+      src->GetPixelFast(i, j, &sr, &sg, &sb);
+      mask->GetPixelFast(i, j, &mr, &mg, &mb);
+      ialpha = (mr + mg + mb) / 3;
+      mr = ((ialpha * br) + ((255 - ialpha) * sr)) / 255;
+      mg = ((ialpha * bg) + ((255 - ialpha) * sg)) / 255;
+      mb = ((ialpha * bb) + ((255 - ialpha) * sb)) / 255;
+      dest->SetPixelFast(i, j, mr, mg, mb);
+    }
+  }
+  mask->EndGetPixelFast();
+  src->EndGetPixelFast();
+  dest->EndSetPixelFast();
+
+  src->SelectObject(NULL);
+  mask->SelectObject(NULL);
+  dest->SelectObject(NULL);
+}
+
+#endif
+
 /***********************************************************************/
 /*                          color chooser                              */
 /***********************************************************************/

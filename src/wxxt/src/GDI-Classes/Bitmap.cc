@@ -53,6 +53,9 @@ extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
 extern int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg);
 extern int wx_write_png(char *file_name, wxBitmap *bm);
 
+extern void wxAlphaBlit(wxBitmap *label_bm, wxBitmap *bm, wxBitmap *loaded_mask, 
+			int br, int bg, int bb);
+
 // hints for what to free in wxBitmap::Destroy()
 enum {
     __BITMAP_NORMAL,	// <-- no special data
@@ -637,49 +640,13 @@ void *wxBitmap::GetLabelPixmap()
     h = GetHeight();
     label_bm = new wxBitmap(w, h, 0);
     if (label_bm->Ok()) {
-      int i, j;
-      wxMemoryDC *src, *mask, *dest;
-      int br, bg, bb;
-
       if (selectedTo)
 	selectedTo->EndSetPixel();
       if (loaded_mask->selectedTo)
 	loaded_mask->selectedTo->EndSetPixel();
 
-      dest = new wxMemoryDC();
-      src = new wxMemoryDC(1);
-      mask = new wxMemoryDC(1);
-      
-      dest->SelectObject(label_bm);
-      src->SelectObject(this);
-      mask->SelectObject(loaded_mask);
-      
-      br = wxGREY->Red();
-      bg = wxGREY->Green();
-      bb = wxGREY->Blue();
-
-      src->BeginGetPixelFast(0, 0, w, h);
-      mask->BeginGetPixelFast(0, 0, w, h);
-      dest->BeginSetPixelFast(0, 0, w, h);
-      for (i = 0; i < w; i++) {
-	for (j = 0; j < h; j++) {
-	  int sr, sg, sb, mr, mg, mb, ialpha;
-	  src->GetPixelFast(i, j, &sr, &sg, &sb);
-	  mask->GetPixelFast(i, j, &mr, &mg, &mb);
-	  ialpha = (mr + mg + mb) / 3;
-	  mr = ((ialpha * br) + ((255 - ialpha) * sr)) / 255;
-	  mg = ((ialpha * bg) + ((255 - ialpha) * sg)) / 255;
-	  mb = ((ialpha * bb) + ((255 - ialpha) * sb)) / 255;
-	  dest->SetPixelFast(i, j, mr, mg, mb);
-	}
-      }
-      mask->EndGetPixelFast();
-      src->EndGetPixelFast();
-      dest->EndSetPixelFast();
-
-      src->SelectObject(NULL);
-      mask->SelectObject(NULL);
-      dest->SelectObject(NULL);
+      wxAlphaBlit(label_bm, this, loaded_mask, 
+		  wxGREY->Red(), wxGREY->Green(), wxGREY->Blue());
     } else
       label_bm = NULL;
   }

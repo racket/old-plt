@@ -16,28 +16,29 @@
       (inherit insert get-style-list set-style-list change-style highlight-range last-position lock erase
                begin-edit-sequence end-edit-sequence get-start-position select-all clear get-canvas)
       (public [reset-pretty-print-width
-               (when has-value?
-                 (let ([canvas (get-canvas)])
-                   (let-values ([(width height) (send canvas get-client-size)])
-                     (let* ([style (send (get-style-list) find-named-style "Standard")]
-                            [char-width (send style get-text-width (send canvas get-dc))]
-                            [width (floor (/ (- width 18) char-width))])
-                       (reformat-value width)))))]
+               (lambda ()
+                 (when has-value?
+                   (let ([canvas (get-canvas)])
+                     (let-values ([(width height) (send canvas get-client-size)])
+                       (let* ([style (send (get-style-list) find-named-style "Standard")]
+                              [char-width (send style get-text-width (send canvas get-dc))]
+                              [width (floor (/ (- width 18) char-width))])
+                         (reformat-value width))))))]
               
               [set-value!
                (lambda (new-value)
-                 (set! value new-value)
+                 (set! d-value new-value)
                  (set! has-value? #t)
                  (set! pretty-printed-width #f)
                  (reset-pretty-print-width))]
               
               [clear-value!
                (lambda ()
-                 (set! value 'bad-value)
+                 (set! d-value 'bad-value)
                  (set! has-value? #f)
                  (clear))])
       
-      (private [value 'bad-value]
+      (private [d-value 'bad-value]
                [has-value?  #f]
                [print-converted (pc:print-convert value)]
                [pretty-printed-width #f]               
@@ -135,10 +136,11 @@
   (define (highlight-location-text zodiac)
     (when clear-highlight-thunk (clear-highlight-thunk))
     (let* ([source (z:location-file (z:zodiac-start zodiac))])
-      (when (is-drscheme-definitions-editor? source)
-        (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
-               [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
-          (set! clear-highlight-thunk (send source highlight-range start-offset finish-offset debug-highlight-color))))))
+      (if (is-drscheme-definitions-editor? source)
+          (let* ([start-offset (z:location-offset (z:zodiac-start zodiac))]
+                 [finish-offset (z:location-offset (z:zodiac-finish zodiac))])
+            (send source highlight-range start-offset (+ finish-offset 1) debug-highlight-color #f))
+          #f)))
   
   (define debugger%
     (class object% ()
@@ -150,7 +152,8 @@
                      (let ([selections (send listbox get-selections)])
                        (when (not (null? selections))
                          (let ([frame-info (send listbox get-data (car selections))])
-                           (highlight-location-text (frame-info-source frame-info))
+                           (when clear-highlight-thunk (clear-highlight-thunk))
+                           (set! clear-highlight-thunk (highlight-location-text (frame-info-source frame-info)))
                            (display-bindings frame-info)))))))]                
                
                [binding-listbox-callback
@@ -163,7 +166,9 @@
                
                [continue-callback
                 (lambda (button event)
-                  (send button-panel enable #f)
+                  (send frame show #f)
+                  (when clear-highlight-thunk
+                    (clear-highlight-thunk))
                   (if break-semaphore
                       (begin (semaphore-post break-semaphore)
                              (set! break-semaphore #f))
@@ -183,6 +188,8 @@
                                   (map marks:mark-binding-value (frame-info-bindings frame-info))))
                       (send binding-listbox enable #f)))])
       
+      (sequence (super-init))
+      
       (private [frame (make-object debugger-frame% this)]
                [area-container (send frame get-area-container)]
                [button-panel (make-object m:horizontal-panel% area-container)]
@@ -191,10 +198,12 @@
                [binding-listbox (make-object m:list-box% "bindings" () listbox-panel binding-listbox-callback '(single))]
                [interactions-canvas (make-object m:editor-canvas% area-container)]
                [value-text (make-object value-text%)]
-               [break-semaphore #f])
+               [break-semaphore #f]
+               [clear-highlight-thunk #f])
       
       (sequence (send button-panel stretchable-height #f)
-                (make-object m:button% "continue" button-panel continue-callback))
+                (make-object m:button% "continue" button-panel continue-callback)
+                (send interactions-canvas set-editor value-text))
       
       (public [on-size-frame
                (lambda ()
@@ -214,7 +223,6 @@
                (lambda (frame-info-list semaphore)
                  (set! break-semaphore semaphore)
                  (send frame show #t)
-                 (send button-panel enable #t)
                  (send value-text clear-value!)
                  (let* ([location-list (map (function:compose find-location-text frame-info-source) frame-info-list)])
                    (send level-listbox clear)
@@ -276,7 +284,7 @@
                                                          annotate:debug-key)]
            [new-semaphore (make-semaphore)])
       (when (null? break-info-list)
-        (error 'breakpoint "no marks to debug"))
+        (error 'breakpoint "no marks to debug (could be in No Debugging mode?)"))
       (parameterize
           ([m:current-eventspace drscheme-eventspace])
         (m:queue-callback 

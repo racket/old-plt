@@ -57,15 +57,17 @@ class os_wxTimer : public wxTimer {
   ~os_wxTimer();
   void Notify();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxTimer::gcMark(Mark_Proc mark) {
-  wxTimer::gcMark(mark);
-  if (mark) {
-  }
+void os_wxTimer::gcMark() {
+  wxTimer::gcMark();
+}
+void os_wxTimer::gcFixup() {
+  wxTimer::gcFixup();
 }
 #endif
 
@@ -348,15 +350,17 @@ class os_wxClipboard : public wxClipboard {
 
   ~os_wxClipboard();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxClipboard::gcMark(Mark_Proc mark) {
-  wxClipboard::gcMark(mark);
-  if (mark) {
-  }
+void os_wxClipboard::gcMark() {
+  wxClipboard::gcMark();
+}
+void os_wxClipboard::gcFixup() {
+  wxClipboard::gcFixup();
 }
 #endif
 
@@ -590,15 +594,17 @@ class os_wxClipboardClient : public wxClipboardClient {
   nstring GetData(string x0, long* x1);
   void BeingReplaced();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxClipboardClient::gcMark(Mark_Proc mark) {
-  wxClipboardClient::gcMark(mark);
-  if (mark) {
-  }
+void os_wxClipboardClient::gcMark() {
+  wxClipboardClient::gcMark();
+}
+void os_wxClipboardClient::gcFixup() {
+  wxClipboardClient::gcFixup();
 }
 #endif
 
@@ -962,15 +968,17 @@ class os_wxPrintSetupData : public wxPrintSetupData {
   os_wxPrintSetupData CONSTRUCTOR_ARGS(());
   ~os_wxPrintSetupData();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxPrintSetupData::gcMark(Mark_Proc mark) {
-  wxPrintSetupData::gcMark(mark);
-  if (mark) {
-  }
+void os_wxPrintSetupData::gcMark() {
+  wxPrintSetupData::gcMark();
+}
+void os_wxPrintSetupData::gcFixup() {
+  wxPrintSetupData::gcFixup();
 }
 #endif
 

@@ -317,16 +317,19 @@ class os_wxRadioBox : public wxRadioBox {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxRadioBox::gcMark(Mark_Proc mark) {
-  wxRadioBox::gcMark(mark);
-  if (mark) {
-    gcMARK_TYPED(Scheme_Object *, callback_closure);
-  }
+void os_wxRadioBox::gcMark() {
+  wxRadioBox::gcMark();
+  gcMARK_TYPED(Scheme_Object *, callback_closure);
+}
+void os_wxRadioBox::gcFixup() {
+  wxRadioBox::gcFixup();
+  gcFIXUP_TYPED(Scheme_Object *, callback_closure);
 }
 #endif
 

@@ -46,15 +46,17 @@ class os_wxItem : public wxItem {
 
   ~os_wxItem();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxItem::gcMark(Mark_Proc mark) {
-  wxItem::gcMark(mark);
-  if (mark) {
-  }
+void os_wxItem::gcMark() {
+  wxItem::gcMark();
+}
+void os_wxItem::gcFixup() {
+  wxItem::gcFixup();
 }
 #endif
 
@@ -244,15 +246,17 @@ class os_wxMessage : public wxMessage {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMessage::gcMark(Mark_Proc mark) {
-  wxMessage::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMessage::gcMark() {
+  wxMessage::gcMark();
+}
+void os_wxMessage::gcFixup() {
+  wxMessage::gcFixup();
 }
 #endif
 

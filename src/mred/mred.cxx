@@ -221,46 +221,92 @@ static void remove_q_callbacks(MrEdContext *c);
 
 START_XFORM_SKIP;
 
-static int mark_eventspace_val(void *p, Mark_Proc mark)
+static int size_eventspace_val(void *p)
+{
+  return gcBYTES_TO_WORDS(sizeof(MrEdContext));
+}
+
+static int mark_eventspace_val(void *p)
 {
   MrEdContext *c = (MrEdContext *)p;
 
-  if (mark) {
-    gcMARK_TYPED(Scheme_Process *, c->handler_running);
-    gcMARK_TYPED(MrEdFinalizedContext *, c->finalized);
+  gcMARK_TYPED(Scheme_Process *, c->handler_running);
+  gcMARK_TYPED(MrEdFinalizedContext *, c->finalized);
 
-    gcMARK_TYPED(wxChildList *, c->topLevelWindowList);
-    gcMARK_TYPED(wxStandardSnipClassList *, c->snipClassList);
-    gcMARK_TYPED(wxBufferDataClassList *, c->bufferDataClassList);
-    gcMARK_TYPED(wxWindow *, c->modal_window);
-    gcMARK_TYPED(MrEd_Saved_Modal *, c->modal_stack);
+  gcMARK_TYPED(wxChildList *, c->topLevelWindowList);
+  gcMARK_TYPED(wxStandardSnipClassList *, c->snipClassList);
+  gcMARK_TYPED(wxBufferDataClassList *, c->bufferDataClassList);
+  gcMARK_TYPED(wxWindow *, c->modal_window);
+  gcMARK_TYPED(MrEd_Saved_Modal *, c->modal_stack);
 
-    gcMARK_TYPED(Scheme_Config *, c->main_config);
+  gcMARK_TYPED(Scheme_Config *, c->main_config);
 
-    gcMARK_TYPED(wxTimer *, c->timer);
+  gcMARK_TYPED(wxTimer *, c->timer);
 
-    gcMARK_TYPED(void *, c->alt_data);
+  gcMARK_TYPED(void *, c->alt_data);
 
-    gcMARK_TYPED(MrEdContext *, c->next);
+  gcMARK_TYPED(MrEdContext *, c->next);
 
 #ifdef wx_msw
-    gcMARK_TYPED(struct LeaveEvent *, c->queued_leaves);
+  gcMARK_TYPED(struct LeaveEvent *, c->queued_leaves);
 #endif
 
-    gcMARK_TYPED(Context_Manager_Hop *, c->mr_hop);
-    gcMARK_TYPED(Scheme_Manager_Reference *, c->mref);
-  }
+  gcMARK_TYPED(Context_Manager_Hop *, c->mr_hop);
+  gcMARK_TYPED(Scheme_Manager_Reference *, c->mref);
 
   return gcBYTES_TO_WORDS(sizeof(MrEdContext));
 }
 
-static int mark_eventspace_hop_val(void *p, Mark_Proc mark)
+static int fixup_eventspace_val(void *p)
+{
+  MrEdContext *c = (MrEdContext *)p;
+
+  gcFIXUP_TYPED(Scheme_Process *, c->handler_running);
+  gcFIXUP_TYPED(MrEdFinalizedContext *, c->finalized);
+
+  gcFIXUP_TYPED(wxChildList *, c->topLevelWindowList);
+  gcFIXUP_TYPED(wxStandardSnipClassList *, c->snipClassList);
+  gcFIXUP_TYPED(wxBufferDataClassList *, c->bufferDataClassList);
+  gcFIXUP_TYPED(wxWindow *, c->modal_window);
+  gcFIXUP_TYPED(MrEd_Saved_Modal *, c->modal_stack);
+
+  gcFIXUP_TYPED(Scheme_Config *, c->main_config);
+
+  gcFIXUP_TYPED(wxTimer *, c->timer);
+
+  gcFIXUP_TYPED(void *, c->alt_data);
+
+  gcFIXUP_TYPED(MrEdContext *, c->next);
+
+#ifdef wx_msw
+  gcFIXUP_TYPED(struct LeaveEvent *, c->queued_leaves);
+#endif
+
+  gcFIXUP_TYPED(Context_Manager_Hop *, c->mr_hop);
+  gcFIXUP_TYPED(Scheme_Manager_Reference *, c->mref);
+
+  return gcBYTES_TO_WORDS(sizeof(MrEdContext));
+}
+
+static int size_eventspace_hop_val(void *p)
+{
+  return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
+}
+
+static int mark_eventspace_hop_val(void *p)
 {
   Context_Manager_Hop *c = (Context_Manager_Hop *)p;
 
-  if (mark) {
-    gcMARK_TYPED(MrEdContext *, c->context);
-  }
+  gcMARK_TYPED(MrEdContext *, c->context);
+
+  return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
+}
+
+static int fixup_eventspace_hop_val(void *p)
+{
+  Context_Manager_Hop *c = (Context_Manager_Hop *)p;
+
+  gcFIXUP_TYPED(MrEdContext *, c->context);
 
   return gcBYTES_TO_WORDS(sizeof(Context_Manager_Hop));
 }
@@ -2341,8 +2387,14 @@ wxFrame *MrEdApp::OnInit(void)
   mred_eventspace_type = scheme_make_type("<eventspace>");
 #ifdef MZ_PRECISE_GC
   mred_eventspace_hop_type = scheme_make_type("<internal:eventspace-hop>");
-  GC_register_traverser(mred_eventspace_type, mark_eventspace_val);
-  GC_register_traverser(mred_eventspace_hop_type, mark_eventspace_hop_val);
+  GC_register_traversers(mred_eventspace_type, 
+			 size_eventspace_val, 
+			 mark_eventspace_val, 
+			 fixup_eventspace_val);
+  GC_register_traversers(mred_eventspace_hop_type, 
+			 size_eventspace_hop_val,
+			 mark_eventspace_hop_val,
+			 fixup_eventspace_hop_val);
 #endif
 
 #ifdef MZ_PRECISE_GC

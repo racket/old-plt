@@ -363,15 +363,17 @@ class os_wxDC : public wxDC {
 
   ~os_wxDC();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxDC::gcMark(Mark_Proc mark) {
-  wxDC::gcMark(mark);
-  if (mark) {
-  }
+void os_wxDC::gcMark() {
+  wxDC::gcMark();
+}
+void os_wxDC::gcFixup() {
+  wxDC::gcFixup();
 }
 #endif
 
@@ -1586,15 +1588,17 @@ class os_wxMemoryDC : public wxMemoryDC {
   os_wxMemoryDC CONSTRUCTOR_ARGS(());
   ~os_wxMemoryDC();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMemoryDC::gcMark(Mark_Proc mark) {
-  wxMemoryDC::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMemoryDC::gcMark() {
+  wxMemoryDC::gcMark();
+}
+void os_wxMemoryDC::gcFixup() {
+  wxMemoryDC::gcFixup();
 }
 #endif
 
@@ -1829,15 +1833,17 @@ class os_wxPostScriptDC : public wxPostScriptDC {
   os_wxPostScriptDC CONSTRUCTOR_ARGS((Bool x0 = TRUE));
   ~os_wxPostScriptDC();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxPostScriptDC::gcMark(Mark_Proc mark) {
-  wxPostScriptDC::gcMark(mark);
-  if (mark) {
-  }
+void os_wxPostScriptDC::gcMark() {
+  wxPostScriptDC::gcMark();
+}
+void os_wxPostScriptDC::gcFixup() {
+  wxPostScriptDC::gcFixup();
 }
 #endif
 
@@ -2010,15 +2016,17 @@ class os_basePrinterDC : public basePrinterDC {
   os_basePrinterDC CONSTRUCTOR_ARGS(());
   ~os_basePrinterDC();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_basePrinterDC::gcMark(Mark_Proc mark) {
-  basePrinterDC::gcMark(mark);
-  if (mark) {
-  }
+void os_basePrinterDC::gcMark() {
+  basePrinterDC::gcMark();
+}
+void os_basePrinterDC::gcFixup() {
+  basePrinterDC::gcFixup();
 }
 #endif
 

@@ -204,7 +204,7 @@ static int fixup_cpp_object(void *p)
   return size + 1;
 }
 
-static int size_cpp_array_object(void *p);
+static int size_cpp_array_object(void *p)
 {
   short orig_size = ((short *)p)[1];
 
@@ -240,12 +240,12 @@ static int do_cpp_array_object(void *p, int fixup)
 
 static int mark_cpp_array_object(void *p)
 {
-  return do_cpp_array_object(void *p, 0)
+  return do_cpp_array_object(p, 0);
 }
 
-static int mark_cpp_array_object(void *p)
+static int fixup_cpp_array_object(void *p)
 {
-  return do_cpp_array_object(void *p, 1)
+  return do_cpp_array_object(p, 1);
 }
 
 static int size_preallocated_object(void *p)

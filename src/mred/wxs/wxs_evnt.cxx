@@ -39,15 +39,17 @@ class os_wxEvent : public wxEvent {
   os_wxEvent CONSTRUCTOR_ARGS(());
   ~os_wxEvent();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxEvent::gcMark(Mark_Proc mark) {
-  wxEvent::gcMark(mark);
-  if (mark) {
-  }
+void os_wxEvent::gcMark() {
+  wxEvent::gcMark();
+}
+void os_wxEvent::gcFixup() {
+  wxEvent::gcFixup();
 }
 #endif
 
@@ -283,15 +285,17 @@ class os_wxCommandEvent : public wxCommandEvent {
   os_wxCommandEvent CONSTRUCTOR_ARGS((int x0));
   ~os_wxCommandEvent();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxCommandEvent::gcMark(Mark_Proc mark) {
-  wxCommandEvent::gcMark(mark);
-  if (mark) {
-  }
+void os_wxCommandEvent::gcMark() {
+  wxCommandEvent::gcMark();
+}
+void os_wxCommandEvent::gcFixup() {
+  wxCommandEvent::gcFixup();
 }
 #endif
 
@@ -459,15 +463,17 @@ class os_wxPopupEvent : public wxPopupEvent {
   os_wxPopupEvent CONSTRUCTOR_ARGS(());
   ~os_wxPopupEvent();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxPopupEvent::gcMark(Mark_Proc mark) {
-  wxPopupEvent::gcMark(mark);
-  if (mark) {
-  }
+void os_wxPopupEvent::gcMark() {
+  wxPopupEvent::gcMark();
+}
+void os_wxPopupEvent::gcFixup() {
+  wxPopupEvent::gcFixup();
 }
 #endif
 
@@ -722,15 +728,17 @@ class os_wxScrollEvent : public wxScrollEvent {
   os_wxScrollEvent CONSTRUCTOR_ARGS(());
   ~os_wxScrollEvent();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxScrollEvent::gcMark(Mark_Proc mark) {
-  wxScrollEvent::gcMark(mark);
-  if (mark) {
-  }
+void os_wxScrollEvent::gcMark() {
+  wxScrollEvent::gcMark();
+}
+void os_wxScrollEvent::gcFixup() {
+  wxScrollEvent::gcFixup();
 }
 #endif
 
@@ -1319,15 +1327,17 @@ class os_wxKeyEvent : public wxKeyEvent {
   os_wxKeyEvent CONSTRUCTOR_ARGS((int x0 = wxEVENT_TYPE_CHAR));
   ~os_wxKeyEvent();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxKeyEvent::gcMark(Mark_Proc mark) {
-  wxKeyEvent::gcMark(mark);
-  if (mark) {
-  }
+void os_wxKeyEvent::gcMark() {
+  wxKeyEvent::gcMark();
+}
+void os_wxKeyEvent::gcFixup() {
+  wxKeyEvent::gcFixup();
 }
 #endif
 
@@ -1802,15 +1812,17 @@ class os_wxMouseEvent : public wxMouseEvent {
   os_wxMouseEvent CONSTRUCTOR_ARGS((int x0));
   ~os_wxMouseEvent();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMouseEvent::gcMark(Mark_Proc mark) {
-  wxMouseEvent::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMouseEvent::gcMark() {
+  wxMouseEvent::gcMark();
+}
+void os_wxMouseEvent::gcFixup() {
+  wxMouseEvent::gcFixup();
 }
 #endif
 

@@ -194,16 +194,19 @@ class os_wxChoice : public wxChoice {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxChoice::gcMark(Mark_Proc mark) {
-  wxChoice::gcMark(mark);
-  if (mark) {
-    gcMARK_TYPED(Scheme_Object *, callback_closure);
-  }
+void os_wxChoice::gcMark() {
+  wxChoice::gcMark();
+  gcMARK_TYPED(Scheme_Object *, callback_closure);
+}
+void os_wxChoice::gcFixup() {
+  wxChoice::gcFixup();
+  gcFIXUP_TYPED(Scheme_Object *, callback_closure);
 }
 #endif
 

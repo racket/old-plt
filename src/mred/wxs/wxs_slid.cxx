@@ -121,16 +121,19 @@ class os_wxSlider : public wxSlider {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxSlider::gcMark(Mark_Proc mark) {
-  wxSlider::gcMark(mark);
-  if (mark) {
-    gcMARK_TYPED(Scheme_Object *, callback_closure);
-  }
+void os_wxSlider::gcMark() {
+  wxSlider::gcMark();
+  gcMARK_TYPED(Scheme_Object *, callback_closure);
+}
+void os_wxSlider::gcFixup() {
+  wxSlider::gcFixup();
+  gcFIXUP_TYPED(Scheme_Object *, callback_closure);
 }
 #endif
 

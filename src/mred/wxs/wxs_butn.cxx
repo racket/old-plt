@@ -115,16 +115,19 @@ class os_wxButton : public wxButton {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxButton::gcMark(Mark_Proc mark) {
-  wxButton::gcMark(mark);
-  if (mark) {
-    gcMARK_TYPED(Scheme_Object *, callback_closure);
-  }
+void os_wxButton::gcMark() {
+  wxButton::gcMark();
+  gcMARK_TYPED(Scheme_Object *, callback_closure);
+}
+void os_wxButton::gcFixup() {
+  wxButton::gcFixup();
+  gcFIXUP_TYPED(Scheme_Object *, callback_closure);
 }
 #endif
 

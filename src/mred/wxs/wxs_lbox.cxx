@@ -267,16 +267,19 @@ class os_wxListBox : public wxListBox {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxListBox::gcMark(Mark_Proc mark) {
-  wxListBox::gcMark(mark);
-  if (mark) {
-    gcMARK_TYPED(Scheme_Object *, callback_closure);
-  }
+void os_wxListBox::gcMark() {
+  wxListBox::gcMark();
+  gcMARK_TYPED(Scheme_Object *, callback_closure);
+}
+void os_wxListBox::gcFixup() {
+  wxListBox::gcFixup();
+  gcFIXUP_TYPED(Scheme_Object *, callback_closure);
 }
 #endif
 

@@ -152,15 +152,17 @@ class os_wxCanvas : public wxCanvas {
   void OnEvent(class wxMouseEvent* x0);
   void OnPaint();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxCanvas::gcMark(Mark_Proc mark) {
-  wxCanvas::gcMark(mark);
-  if (mark) {
-  }
+void os_wxCanvas::gcMark() {
+  wxCanvas::gcMark();
+}
+void os_wxCanvas::gcFixup() {
+  wxCanvas::gcFixup();
 }
 #endif
 

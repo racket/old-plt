@@ -956,16 +956,19 @@ class os_wxMediaEdit : public wxMediaEdit {
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaEdit::gcMark(Mark_Proc mark) {
-  wxMediaEdit::gcMark(mark);
-  if (mark) {
-    gcMARK_TYPED(Scheme_Object *, scroll_closure);
-  }
+void os_wxMediaEdit::gcMark() {
+  wxMediaEdit::gcMark();
+  gcMARK_TYPED(Scheme_Object *, scroll_closure);
+}
+void os_wxMediaEdit::gcFixup() {
+  wxMediaEdit::gcFixup();
+  gcFIXUP_TYPED(Scheme_Object *, scroll_closure);
 }
 #endif
 

@@ -195,15 +195,17 @@ class os_wxMediaCanvas : public wxMediaCanvas {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaCanvas::gcMark(Mark_Proc mark) {
-  wxMediaCanvas::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaCanvas::gcMark() {
+  wxMediaCanvas::gcMark();
+}
+void os_wxMediaCanvas::gcFixup() {
+  wxMediaCanvas::gcFixup();
 }
 #endif
 
@@ -1132,15 +1134,17 @@ class os_wxMediaAdmin : public wxMediaAdmin {
   void GetView(float* x0, float* x1, nnfloat* x2, nnfloat* x3, Bool x4 = FALSE);
   class wxDC* GetDC(float* x0 = NULL, float* x1 = NULL);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaAdmin::gcMark(Mark_Proc mark) {
-  wxMediaAdmin::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaAdmin::gcMark() {
+  wxMediaAdmin::gcMark();
+}
+void os_wxMediaAdmin::gcFixup() {
+  wxMediaAdmin::gcFixup();
 }
 #endif
 
@@ -1938,15 +1942,17 @@ class os_wxMediaSnipMediaAdmin : public wxMediaSnipMediaAdmin {
 
   ~os_wxMediaSnipMediaAdmin();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaSnipMediaAdmin::gcMark(Mark_Proc mark) {
-  wxMediaSnipMediaAdmin::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaSnipMediaAdmin::gcMark() {
+  wxMediaSnipMediaAdmin::gcMark();
+}
+void os_wxMediaSnipMediaAdmin::gcFixup() {
+  wxMediaSnipMediaAdmin::gcFixup();
 }
 #endif
 
@@ -2079,15 +2085,17 @@ class os_wxSnipAdmin : public wxSnipAdmin {
   class wxDC* GetDC();
   class wxMediaBuffer* GetMedia();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxSnipAdmin::gcMark(Mark_Proc mark) {
-  wxSnipAdmin::gcMark(mark);
-  if (mark) {
-  }
+void os_wxSnipAdmin::gcMark() {
+  wxSnipAdmin::gcMark();
+}
+void os_wxSnipAdmin::gcFixup() {
+  wxSnipAdmin::gcFixup();
 }
 #endif
 
@@ -2974,15 +2982,17 @@ class os_wxSnipClass : public wxSnipClass {
   Bool ReadHeader(class wxMediaStreamIn* x0);
   class wxSnip* Read(class wxMediaStreamIn* x0);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxSnipClass::gcMark(Mark_Proc mark) {
-  wxSnipClass::gcMark(mark);
-  if (mark) {
-  }
+void os_wxSnipClass::gcMark() {
+  wxSnipClass::gcMark();
+}
+void os_wxSnipClass::gcFixup() {
+  wxSnipClass::gcFixup();
 }
 #endif
 
@@ -3390,15 +3400,17 @@ class os_wxSnipClassList : public wxSnipClassList {
 
   ~os_wxSnipClassList();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxSnipClassList::gcMark(Mark_Proc mark) {
-  wxSnipClassList::gcMark(mark);
-  if (mark) {
-  }
+void os_wxSnipClassList::gcMark() {
+  wxSnipClassList::gcMark();
+}
+void os_wxSnipClassList::gcFixup() {
+  wxSnipClassList::gcFixup();
 }
 #endif
 
@@ -3636,15 +3648,17 @@ class os_wxKeymap : public wxKeymap {
   Bool HandleMouseEvent(UNKNOWN_OBJ x0, class wxMouseEvent* x1);
   Bool HandleKeyEvent(UNKNOWN_OBJ x0, class wxKeyEvent* x1);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxKeymap::gcMark(Mark_Proc mark) {
-  wxKeymap::gcMark(mark);
-  if (mark) {
-  }
+void os_wxKeymap::gcMark() {
+  wxKeymap::gcMark();
+}
+void os_wxKeymap::gcFixup() {
+  wxKeymap::gcFixup();
 }
 #endif
 
@@ -4358,15 +4372,17 @@ class os_wxMediaWordbreakMap : public wxMediaWordbreakMap {
   os_wxMediaWordbreakMap CONSTRUCTOR_ARGS(());
   ~os_wxMediaWordbreakMap();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaWordbreakMap::gcMark(Mark_Proc mark) {
-  wxMediaWordbreakMap::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaWordbreakMap::gcMark() {
+  wxMediaWordbreakMap::gcMark();
+}
+void os_wxMediaWordbreakMap::gcFixup() {
+  wxMediaWordbreakMap::gcFixup();
 }
 #endif
 

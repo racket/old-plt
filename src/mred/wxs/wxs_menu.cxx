@@ -92,16 +92,19 @@ class os_wxMenu : public wxMenu {
   os_wxMenu CONSTRUCTOR_ARGS((nstring x0 = NULL, wxFunction x1 = NULL));
   ~os_wxMenu();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMenu::gcMark(Mark_Proc mark) {
-  wxMenu::gcMark(mark);
-  if (mark) {
-    gcMARK_TYPED(Scheme_Object *, callback_closure);
-  }
+void os_wxMenu::gcMark() {
+  wxMenu::gcMark();
+  gcMARK_TYPED(Scheme_Object *, callback_closure);
+}
+void os_wxMenu::gcFixup() {
+  wxMenu::gcFixup();
+  gcFIXUP_TYPED(Scheme_Object *, callback_closure);
 }
 #endif
 
@@ -611,15 +614,17 @@ class os_wxMenuBar : public wxMenuBar {
   os_wxMenuBar CONSTRUCTOR_ARGS(());
   ~os_wxMenuBar();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMenuBar::gcMark(Mark_Proc mark) {
-  wxMenuBar::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMenuBar::gcMark() {
+  wxMenuBar::gcMark();
+}
+void os_wxMenuBar::gcFixup() {
+  wxMenuBar::gcFixup();
 }
 #endif
 
@@ -929,15 +934,17 @@ class os_wxsMenuItem : public wxsMenuItem {
   os_wxsMenuItem CONSTRUCTOR_ARGS(());
   ~os_wxsMenuItem();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxsMenuItem::gcMark(Mark_Proc mark) {
-  wxsMenuItem::gcMark(mark);
-  if (mark) {
-  }
+void os_wxsMenuItem::gcMark() {
+  wxsMenuItem::gcMark();
+}
+void os_wxsMenuItem::gcFixup() {
+  wxsMenuItem::gcFixup();
 }
 #endif
 

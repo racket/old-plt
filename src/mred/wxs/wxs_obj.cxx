@@ -38,15 +38,17 @@ class os_wxObject : public wxObject {
   os_wxObject CONSTRUCTOR_ARGS(());
   ~os_wxObject();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxObject::gcMark(Mark_Proc mark) {
-  wxObject::gcMark(mark);
-  if (mark) {
-  }
+void os_wxObject::gcMark() {
+  wxObject::gcMark();
+}
+void os_wxObject::gcFixup() {
+  wxObject::gcFixup();
 }
 #endif
 

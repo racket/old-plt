@@ -282,15 +282,17 @@ class os_wxSnip : public wxSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxSnip::gcMark(Mark_Proc mark) {
-  wxSnip::gcMark(mark);
-  if (mark) {
-  }
+void os_wxSnip::gcMark() {
+  wxSnip::gcMark();
+}
+void os_wxSnip::gcFixup() {
+  wxSnip::gcFixup();
 }
 #endif
 
@@ -2180,15 +2182,17 @@ class os_wxTextSnip : public wxTextSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxTextSnip::gcMark(Mark_Proc mark) {
-  wxTextSnip::gcMark(mark);
-  if (mark) {
-  }
+void os_wxTextSnip::gcMark() {
+  wxTextSnip::gcMark();
+}
+void os_wxTextSnip::gcFixup() {
+  wxTextSnip::gcFixup();
 }
 #endif
 
@@ -3902,15 +3906,17 @@ class os_wxTabSnip : public wxTabSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxTabSnip::gcMark(Mark_Proc mark) {
-  wxTabSnip::gcMark(mark);
-  if (mark) {
-  }
+void os_wxTabSnip::gcMark() {
+  wxTabSnip::gcMark();
+}
+void os_wxTabSnip::gcFixup() {
+  wxTabSnip::gcFixup();
 }
 #endif
 
@@ -5596,15 +5602,17 @@ class os_wxImageSnip : public wxImageSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxImageSnip::gcMark(Mark_Proc mark) {
-  wxImageSnip::gcMark(mark);
-  if (mark) {
-  }
+void os_wxImageSnip::gcMark() {
+  wxImageSnip::gcMark();
+}
+void os_wxImageSnip::gcFixup() {
+  wxImageSnip::gcFixup();
 }
 #endif
 
@@ -7424,15 +7432,17 @@ class os_wxMediaSnip : public wxMediaSnip {
   float PartialOffset(class wxDC* x0, float x1, float x2, nnlong x3);
   void GetExtent(class wxDC* x0, float x1, float x2, nnfloat* x3 = NULL, nnfloat* x4 = NULL, nnfloat* x5 = NULL, nnfloat* x6 = NULL, nnfloat* x7 = NULL, nnfloat* x8 = NULL);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaSnip::gcMark(Mark_Proc mark) {
-  wxMediaSnip::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaSnip::gcMark() {
+  wxMediaSnip::gcMark();
+}
+void os_wxMediaSnip::gcFixup() {
+  wxMediaSnip::gcFixup();
 }
 #endif
 
@@ -9551,15 +9561,17 @@ class os_wxBufferDataClass : public wxBufferDataClass {
   ~os_wxBufferDataClass();
   class wxBufferData* Read(class wxMediaStreamIn* x0);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxBufferDataClass::gcMark(Mark_Proc mark) {
-  wxBufferDataClass::gcMark(mark);
-  if (mark) {
-  }
+void os_wxBufferDataClass::gcMark() {
+  wxBufferDataClass::gcMark();
+}
+void os_wxBufferDataClass::gcFixup() {
+  wxBufferDataClass::gcFixup();
 }
 #endif
 
@@ -9784,15 +9796,17 @@ class os_wxBufferDataClassList : public wxBufferDataClassList {
 
   ~os_wxBufferDataClassList();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxBufferDataClassList::gcMark(Mark_Proc mark) {
-  wxBufferDataClassList::gcMark(mark);
-  if (mark) {
-  }
+void os_wxBufferDataClassList::gcMark() {
+  wxBufferDataClassList::gcMark();
+}
+void os_wxBufferDataClassList::gcFixup() {
+  wxBufferDataClassList::gcFixup();
 }
 #endif
 
@@ -10027,15 +10041,17 @@ class os_wxBufferData : public wxBufferData {
   ~os_wxBufferData();
   Bool Write(class wxMediaStreamOut* x0);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxBufferData::gcMark(Mark_Proc mark) {
-  wxBufferData::gcMark(mark);
-  if (mark) {
-  }
+void os_wxBufferData::gcMark() {
+  wxBufferData::gcMark();
+}
+void os_wxBufferData::gcFixup() {
+  wxBufferData::gcFixup();
 }
 #endif
 

@@ -186,23 +186,29 @@ sub DoPrintClass
 
     if (!$global && !$common) {
 	print "#ifdef MZ_PRECISE_GC\n";
-	print "  void gcMark(Mark_Proc mark);\n";
+	print "  void gcMark();\n";
+	print "  void gcFixup();\n";
 	print "#endif\n";
 
 	print "};\n\n";
 
 	print "#ifdef MZ_PRECISE_GC\n";
-	print "void ${newclass}::gcMark(Mark_Proc mark) {\n";
-	print "  ${oldclass}::gcMark(mark);\n";
-	print "  if (mark) {\n";
-
+	print "void ${newclass}::gcMark() {\n";
+	print "  ${oldclass}::gcMark();\n";
 	foreach $var (@vars) {
 	    if ($var =~ /(.*[*])(.*);/) {
-		print "    gcMARK_TYPED($1, $2);\n";
+		print "  gcMARK_TYPED($1, $2);\n";
 	    }
 	}
-
-	print "  }\n";
+	print "}\n";
+	
+	print "void ${newclass}::gcFixup() {\n";
+	print "  ${oldclass}::gcFixup();\n";
+	foreach $var (@vars) {
+	    if ($var =~ /(.*[*])(.*);/) {
+		print "  gcFIXUP_TYPED($1, $2);\n";
+	    }
+	}
 	print "}\n";
 	print "#endif\n\n";
 

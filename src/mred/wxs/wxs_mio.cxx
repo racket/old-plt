@@ -191,15 +191,17 @@ class os_wxMediaStreamInBase : public wxMediaStreamInBase {
   void Seek(nnlong x0);
   long Tell();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaStreamInBase::gcMark(Mark_Proc mark) {
-  wxMediaStreamInBase::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaStreamInBase::gcMark() {
+  wxMediaStreamInBase::gcMark();
+}
+void os_wxMediaStreamInBase::gcFixup() {
+  wxMediaStreamInBase::gcFixup();
 }
 #endif
 
@@ -618,15 +620,17 @@ class os_wxMediaStreamOutBase : public wxMediaStreamOutBase {
   void Seek(nnlong x0);
   long Tell();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaStreamOutBase::gcMark(Mark_Proc mark) {
-  wxMediaStreamOutBase::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaStreamOutBase::gcMark() {
+  wxMediaStreamOutBase::gcMark();
+}
+void os_wxMediaStreamOutBase::gcFixup() {
+  wxMediaStreamOutBase::gcFixup();
 }
 #endif
 
@@ -983,15 +987,17 @@ class os_wxMediaStreamInStringBase : public wxMediaStreamInStringBase {
   os_wxMediaStreamInStringBase CONSTRUCTOR_ARGS((string x0, long x1));
   ~os_wxMediaStreamInStringBase();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaStreamInStringBase::gcMark(Mark_Proc mark) {
-  wxMediaStreamInStringBase::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaStreamInStringBase::gcMark() {
+  wxMediaStreamInStringBase::gcMark();
+}
+void os_wxMediaStreamInStringBase::gcFixup() {
+  wxMediaStreamInStringBase::gcFixup();
 }
 #endif
 
@@ -1125,15 +1131,17 @@ class os_wxMediaStreamOutStringBase : public wxMediaStreamOutStringBase {
   os_wxMediaStreamOutStringBase CONSTRUCTOR_ARGS(());
   ~os_wxMediaStreamOutStringBase();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaStreamOutStringBase::gcMark(Mark_Proc mark) {
-  wxMediaStreamOutStringBase::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaStreamOutStringBase::gcMark() {
+  wxMediaStreamOutStringBase::gcMark();
+}
+void os_wxMediaStreamOutStringBase::gcFixup() {
+  wxMediaStreamOutStringBase::gcFixup();
 }
 #endif
 
@@ -1308,15 +1316,17 @@ class os_wxMediaStreamIn : public wxMediaStreamIn {
   os_wxMediaStreamIn CONSTRUCTOR_ARGS((class wxMediaStreamInBase* x0));
   ~os_wxMediaStreamIn();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaStreamIn::gcMark(Mark_Proc mark) {
-  wxMediaStreamIn::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaStreamIn::gcMark() {
+  wxMediaStreamIn::gcMark();
+}
+void os_wxMediaStreamIn::gcFixup() {
+  wxMediaStreamIn::gcFixup();
 }
 #endif
 
@@ -1808,15 +1818,17 @@ class os_wxMediaStreamOut : public wxMediaStreamOut {
   os_wxMediaStreamOut CONSTRUCTOR_ARGS((class wxMediaStreamOutBase* x0));
   ~os_wxMediaStreamOut();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaStreamOut::gcMark(Mark_Proc mark) {
-  wxMediaStreamOut::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaStreamOut::gcMark() {
+  wxMediaStreamOut::gcMark();
+}
+void os_wxMediaStreamOut::gcFixup() {
+  wxMediaStreamOut::gcFixup();
 }
 #endif
 

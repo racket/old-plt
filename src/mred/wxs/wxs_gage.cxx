@@ -135,15 +135,17 @@ class os_wxsGauge : public wxsGauge {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxsGauge::gcMark(Mark_Proc mark) {
-  wxsGauge::gcMark(mark);
-  if (mark) {
-  }
+void os_wxsGauge::gcMark() {
+  wxsGauge::gcMark();
+}
+void os_wxsGauge::gcFixup() {
+  wxsGauge::gcFixup();
 }
 #endif
 

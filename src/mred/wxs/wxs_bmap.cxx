@@ -145,15 +145,17 @@ class os_wxBitmap : public wxBitmap {
 #endif
   ~os_wxBitmap();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxBitmap::gcMark(Mark_Proc mark) {
-  wxBitmap::gcMark(mark);
-  if (mark) {
-  }
+void os_wxBitmap::gcMark() {
+  wxBitmap::gcMark();
+}
+void os_wxBitmap::gcFixup() {
+  wxBitmap::gcFixup();
 }
 #endif
 

@@ -276,15 +276,17 @@ class os_wxFont : public wxFont {
 #endif
   ~os_wxFont();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxFont::gcMark(Mark_Proc mark) {
-  wxFont::gcMark(mark);
-  if (mark) {
-  }
+void os_wxFont::gcMark() {
+  wxFont::gcMark();
+}
+void os_wxFont::gcFixup() {
+  wxFont::gcFixup();
 }
 #endif
 
@@ -655,15 +657,17 @@ class os_wxFontList : public wxFontList {
   os_wxFontList CONSTRUCTOR_ARGS(());
   ~os_wxFontList();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxFontList::gcMark(Mark_Proc mark) {
-  wxFontList::gcMark(mark);
-  if (mark) {
-  }
+void os_wxFontList::gcMark() {
+  wxFontList::gcMark();
+}
+void os_wxFontList::gcFixup() {
+  wxFontList::gcFixup();
 }
 #endif
 
@@ -884,15 +888,17 @@ class os_wxColour : public wxColour {
 #endif
   ~os_wxColour();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxColour::gcMark(Mark_Proc mark) {
-  wxColour::gcMark(mark);
-  if (mark) {
-  }
+void os_wxColour::gcMark() {
+  wxColour::gcMark();
+}
+void os_wxColour::gcFixup() {
+  wxColour::gcFixup();
 }
 #endif
 
@@ -1243,15 +1249,17 @@ class os_wxColourDatabase : public wxColourDatabase {
 
   ~os_wxColourDatabase();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxColourDatabase::gcMark(Mark_Proc mark) {
-  wxColourDatabase::gcMark(mark);
-  if (mark) {
-  }
+void os_wxColourDatabase::gcMark() {
+  wxColourDatabase::gcMark();
+}
+void os_wxColourDatabase::gcFixup() {
+  wxColourDatabase::gcFixup();
 }
 #endif
 
@@ -1381,15 +1389,17 @@ class os_wxPoint : public wxPoint {
 #endif
   ~os_wxPoint();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxPoint::gcMark(Mark_Proc mark) {
-  wxPoint::gcMark(mark);
-  if (mark) {
-  }
+void os_wxPoint::gcMark() {
+  wxPoint::gcMark();
+}
+void os_wxPoint::gcFixup() {
+  wxPoint::gcFixup();
 }
 #endif
 
@@ -1703,15 +1713,17 @@ class os_wxBrush : public wxBrush {
 #endif
   ~os_wxBrush();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxBrush::gcMark(Mark_Proc mark) {
-  wxBrush::gcMark(mark);
-  if (mark) {
-  }
+void os_wxBrush::gcMark() {
+  wxBrush::gcMark();
+}
+void os_wxBrush::gcFixup() {
+  wxBrush::gcFixup();
 }
 #endif
 
@@ -2093,15 +2105,17 @@ class os_wxBrushList : public wxBrushList {
   os_wxBrushList CONSTRUCTOR_ARGS(());
   ~os_wxBrushList();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxBrushList::gcMark(Mark_Proc mark) {
-  wxBrushList::gcMark(mark);
-  if (mark) {
-  }
+void os_wxBrushList::gcMark() {
+  wxBrushList::gcMark();
+}
+void os_wxBrushList::gcFixup() {
+  wxBrushList::gcFixup();
 }
 #endif
 
@@ -2449,15 +2463,17 @@ class os_wxPen : public wxPen {
 #endif
   ~os_wxPen();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxPen::gcMark(Mark_Proc mark) {
-  wxPen::gcMark(mark);
-  if (mark) {
-  }
+void os_wxPen::gcMark() {
+  wxPen::gcMark();
+}
+void os_wxPen::gcFixup() {
+  wxPen::gcFixup();
 }
 #endif
 
@@ -2979,15 +2995,17 @@ class os_wxPenList : public wxPenList {
   os_wxPenList CONSTRUCTOR_ARGS(());
   ~os_wxPenList();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxPenList::gcMark(Mark_Proc mark) {
-  wxPenList::gcMark(mark);
-  if (mark) {
-  }
+void os_wxPenList::gcMark() {
+  wxPenList::gcMark();
+}
+void os_wxPenList::gcFixup() {
+  wxPenList::gcFixup();
 }
 #endif
 
@@ -3253,15 +3271,17 @@ class os_wxCursor : public wxCursor {
 #endif
   ~os_wxCursor();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxCursor::gcMark(Mark_Proc mark) {
-  wxCursor::gcMark(mark);
-  if (mark) {
-  }
+void os_wxCursor::gcMark() {
+  wxCursor::gcMark();
+}
+void os_wxCursor::gcFixup() {
+  wxCursor::gcFixup();
 }
 #endif
 
@@ -3603,15 +3623,17 @@ class os_wxRegion : public wxRegion {
   os_wxRegion CONSTRUCTOR_ARGS((class wxDC* x0));
   ~os_wxRegion();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxRegion::gcMark(Mark_Proc mark) {
-  wxRegion::gcMark(mark);
-  if (mark) {
-  }
+void os_wxRegion::gcMark() {
+  wxRegion::gcMark();
+}
+void os_wxRegion::gcFixup() {
+  wxRegion::gcFixup();
 }
 #endif
 
@@ -4056,15 +4078,17 @@ class os_wxFontNameDirectory : public wxFontNameDirectory {
 
   ~os_wxFontNameDirectory();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxFontNameDirectory::gcMark(Mark_Proc mark) {
-  wxFontNameDirectory::gcMark(mark);
-  if (mark) {
-  }
+void os_wxFontNameDirectory::gcMark() {
+  wxFontNameDirectory::gcMark();
+}
+void os_wxFontNameDirectory::gcFixup() {
+  wxFontNameDirectory::gcFixup();
 }
 #endif
 

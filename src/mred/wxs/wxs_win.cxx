@@ -155,15 +155,17 @@ class os_wxWindow : public wxWindow {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxWindow::gcMark(Mark_Proc mark) {
-  wxWindow::gcMark(mark);
-  if (mark) {
-  }
+void os_wxWindow::gcMark() {
+  wxWindow::gcMark();
+}
+void os_wxWindow::gcFixup() {
+  wxWindow::gcFixup();
 }
 #endif
 

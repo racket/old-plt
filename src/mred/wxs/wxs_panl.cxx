@@ -148,15 +148,17 @@ class os_wxPanel : public wxPanel {
   void OnSetFocus();
   void OnKillFocus();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxPanel::gcMark(Mark_Proc mark) {
-  wxPanel::gcMark(mark);
-  if (mark) {
-  }
+void os_wxPanel::gcMark() {
+  wxPanel::gcMark();
+}
+void os_wxPanel::gcFixup() {
+  wxPanel::gcFixup();
 }
 #endif
 
@@ -1146,15 +1148,17 @@ class os_wxDialogBox : public wxDialogBox {
   Bool OnClose();
   void OnActivate(Bool x0);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxDialogBox::gcMark(Mark_Proc mark) {
-  wxDialogBox::gcMark(mark);
-  if (mark) {
-  }
+void os_wxDialogBox::gcMark() {
+  wxDialogBox::gcMark();
+}
+void os_wxDialogBox::gcFixup() {
+  wxDialogBox::gcFixup();
 }
 #endif
 

@@ -423,15 +423,17 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void CopySelfTo(class wxMediaBuffer* x0);
   class wxMediaBuffer* CopySelf();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMediaPasteboard::gcMark(Mark_Proc mark) {
-  wxMediaPasteboard::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMediaPasteboard::gcMark() {
+  wxMediaPasteboard::gcMark();
+}
+void os_wxMediaPasteboard::gcFixup() {
+  wxMediaPasteboard::gcFixup();
 }
 #endif
 

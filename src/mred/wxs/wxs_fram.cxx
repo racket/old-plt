@@ -163,15 +163,17 @@ class os_wxFrame : public wxFrame {
   Bool OnClose();
   void OnActivate(Bool x0);
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxFrame::gcMark(Mark_Proc mark) {
-  wxFrame::gcMark(mark);
-  if (mark) {
-  }
+void os_wxFrame::gcMark() {
+  wxFrame::gcMark();
+}
+void os_wxFrame::gcFixup() {
+  wxFrame::gcFixup();
 }
 #endif
 

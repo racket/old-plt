@@ -39,15 +39,17 @@ class os_wxMultColour : public wxMultColour {
 
   ~os_wxMultColour();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxMultColour::gcMark(Mark_Proc mark) {
-  wxMultColour::gcMark(mark);
-  if (mark) {
-  }
+void os_wxMultColour::gcMark() {
+  wxMultColour::gcMark();
+}
+void os_wxMultColour::gcFixup() {
+  wxMultColour::gcFixup();
 }
 #endif
 
@@ -314,15 +316,17 @@ class os_wxAddColour : public wxAddColour {
 
   ~os_wxAddColour();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxAddColour::gcMark(Mark_Proc mark) {
-  wxAddColour::gcMark(mark);
-  if (mark) {
-  }
+void os_wxAddColour::gcMark() {
+  wxAddColour::gcMark();
+}
+void os_wxAddColour::gcFixup() {
+  wxAddColour::gcFixup();
 }
 #endif
 
@@ -1014,15 +1018,17 @@ class os_wxStyleDelta : public wxStyleDelta {
   os_wxStyleDelta CONSTRUCTOR_ARGS((int x0 = wxCHANGE_NOTHING, int x1 = 0));
   ~os_wxStyleDelta();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxStyleDelta::gcMark(Mark_Proc mark) {
-  wxStyleDelta::gcMark(mark);
-  if (mark) {
-  }
+void os_wxStyleDelta::gcMark() {
+  wxStyleDelta::gcMark();
+}
+void os_wxStyleDelta::gcFixup() {
+  wxStyleDelta::gcFixup();
 }
 #endif
 
@@ -2230,15 +2236,17 @@ class os_wxStyle : public wxStyle {
 
   ~os_wxStyle();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxStyle::gcMark(Mark_Proc mark) {
-  wxStyle::gcMark(mark);
-  if (mark) {
-  }
+void os_wxStyle::gcMark() {
+  wxStyle::gcMark();
+}
+void os_wxStyle::gcFixup() {
+  wxStyle::gcFixup();
 }
 #endif
 
@@ -2906,15 +2914,17 @@ class os_wxStyleList : public wxStyleList {
   os_wxStyleList CONSTRUCTOR_ARGS(());
   ~os_wxStyleList();
 #ifdef MZ_PRECISE_GC
-  void gcMark(Mark_Proc mark);
+  void gcMark();
+  void gcFixup();
 #endif
 };
 
 #ifdef MZ_PRECISE_GC
-void os_wxStyleList::gcMark(Mark_Proc mark) {
-  wxStyleList::gcMark(mark);
-  if (mark) {
-  }
+void os_wxStyleList::gcMark() {
+  wxStyleList::gcMark();
+}
+void os_wxStyleList::gcFixup() {
+  wxStyleList::gcFixup();
 }
 #endif
 

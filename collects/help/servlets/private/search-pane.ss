@@ -30,7 +30,6 @@
 	 (eq? (caddr opt) '*)))
 
   (define (make-option curr opt)
-    (printf "curr: ~a~n" curr)
     (let* ([val (car opt)]
 	   [value-attrib `(VALUE ,val)]
 	   [attribs (if (or (and curr

@@ -93,13 +93,15 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 	 XtNhideVScrollbar, TRUE,
 	 XtNtraversalTranslationDone, TRUE,
 	 XtNframeWidth, ((style & wxBORDER) ? 1 : 0),
-	 XtNedgeBars, !(style & wxBORDER),
+	 XtNedgeBars, TRUE,
 	 XtNframeType, XfwfPlain,
 	 XtNshadowWidth, 0,
-	 XtNshadowScheme, XfwfBlack,
+	 XtNshadowScheme, XfwfColor,
 	 XtNhighlightThickness, 0,
 	 XtNspacing, 0,
 	 XtNbackground,  wxGREY_PIXEL,
+	 XtNforeground,  wxDARK_GREY_PIXEL,
+	 XtNbottomShadowColor, wxDARK_GREY_PIXEL,
 	 XtNhighlightColor, wxCTL_HIGHLIGHT_PIXEL,
 	 XtNlocation, ((style & wxCOMBO_SIDE) ? "0 0 1.0 - 16 1.0" : "0 0 1.0 1.0"),
 	 NULL);
@@ -422,6 +424,9 @@ void wxCanvas::ChangeToGray(Bool gray)
 {
   if (X->extra)
     XtVaSetValues(X->extra, XtNdrawgrayArrow, (Boolean)gray, NULL);
+  if (GetWindowStyleFlag() & wxVSCROLL) {
+    XtVaSetValues(X->scroll, XtNforeground, gray ? wxGREY_PIXEL : wxDARK_GREY_PIXEL, NULL);
+  }
   wxItem::ChangeToGray(gray);
 }
 

@@ -85,6 +85,7 @@ static void compute_sizes(self)Widget self;
     int selfw, selfh, framew, frameh, vsheight, hswidth;
     Dimension help;
     Position selfx, selfy;
+    int edgeX;
 
     xfwfBoardClassRec.xfwfCommon_class.compute_inside(self, &selfx, &selfy, &selfw, &selfh);
     if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar)
@@ -95,30 +96,31 @@ static void compute_sizes(self)Widget self;
 	hswidth = (int)selfw - 3 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth;
     else
 	hswidth = (int)selfw - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing;
+    edgeX = (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? 1 + ((XfwfScrolledWindowWidget)self)->xfwfFrame.frameWidth : 0);
     XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll, XtNhighlightThickness, &help, NULL);
     if (help > ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing) help = 0;
     help += ((XfwfScrolledWindowWidget)self)->xfwfFrame.frameWidth;
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.vscroll,
-		      selfx + selfw - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? 1 : 0),
+		      selfx + selfw - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + edgeX,
 		      selfy + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
-		      max(1, vsheight + 2*help),
+		      max(1, vsheight + 2*help + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar ? 0 : edgeX)),
 		      0);
     XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll, XtNhighlightThickness, &help, NULL);
     if (help > ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing) help = 0;
     help += ((XfwfScrolledWindowWidget)self)->xfwfFrame.frameWidth;
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hscroll,
-		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
-		      selfy + selfh - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? 1 : 0),
-		      max(1, hswidth + 2*help),
+		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing /* - help */,
+		      selfy + selfh - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + edgeX,
+		      max(1, hswidth + 2*help + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar ? 0 : edgeX)),
 		      ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth,
 		      0);
     XtVaGetValues(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.frame, XtNhighlightThickness, &help, NULL);
     if (help > ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing) help = 0;
     framew = selfw - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + 2 * help;
     frameh = selfh - 2 * ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + 2 * help;
-    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar) framew -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? -1 : 0);
-    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar) frameh -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing + (((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.edgeBars ? -1 : 0);
+    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideVScrollbar) framew -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - edgeX;
+    if (! ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.hideHScrollbar) frameh -= ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.scrollbarWidth + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - edgeX;
     XtConfigureWidget(((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.frame,
 		      selfx + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,
 		      selfy + ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.spacing - help,

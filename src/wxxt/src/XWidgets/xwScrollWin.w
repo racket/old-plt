@@ -379,6 +379,7 @@ to configure the children.
     int selfw, selfh, framew, frameh, vsheight, hswidth;
     Dimension help;
     Position selfx, selfy;
+    int edgeX;
 
     #compute_inside($, &selfx, &selfy, &selfw, &selfh);
     if (! $hideHScrollbar)
@@ -389,30 +390,31 @@ to configure the children.
 	hswidth = (int)selfw - 3 * $spacing - $scrollbarWidth;
     else
 	hswidth = (int)selfw - 2 * $spacing;
+    edgeX = ($edgeBars ? 1 + $frameWidth : 0);
     XtVaGetValues($vscroll, XtNhighlightThickness, &help, NULL);
     if (help > $spacing) help = 0;
     help += $frameWidth;
     XtConfigureWidget($vscroll,
-		      selfx + selfw - $spacing - $scrollbarWidth + ($edgeBars ? 1 : 0),
+		      selfx + selfw - $spacing - $scrollbarWidth + edgeX,
 		      selfy + $spacing - help,
 		      $scrollbarWidth,
-		      max(1, vsheight + 2*help),
+		      max(1, vsheight + 2*help + ($hideHScrollbar ? 0 : edgeX)),
 		      0);
     XtVaGetValues($hscroll, XtNhighlightThickness, &help, NULL);
     if (help > $spacing) help = 0;
     help += $frameWidth;
     XtConfigureWidget($hscroll,
-		      $spacing - help,
-		      selfy + selfh - $spacing - $scrollbarWidth + ($edgeBars ? 1 : 0),
-		      max(1, hswidth + 2*help),
+		      $spacing /* - help */,
+		      selfy + selfh - $spacing - $scrollbarWidth + edgeX,
+		      max(1, hswidth + 2*help + ($hideVScrollbar ? 0 : edgeX)),
 		      $scrollbarWidth,
 		      0);
     XtVaGetValues($frame, XtNhighlightThickness, &help, NULL);
     if (help > $spacing) help = 0;
     framew = selfw - 2 * $spacing + 2 * help;
     frameh = selfh - 2 * $spacing + 2 * help;
-    if (! $hideVScrollbar) framew -= $scrollbarWidth + $spacing + ($edgeBars ? -1 : 0);
-    if (! $hideHScrollbar) frameh -= $scrollbarWidth + $spacing + ($edgeBars ? -1 : 0);
+    if (! $hideVScrollbar) framew -= $scrollbarWidth + $spacing - edgeX;
+    if (! $hideHScrollbar) frameh -= $scrollbarWidth + $spacing - edgeX;
     XtConfigureWidget($frame,
 		      selfx + $spacing - help,
 		      selfy + $spacing - help,

@@ -186,7 +186,7 @@ static int default_wheel_amt;
                 + ((style & (wxMCANVAS_NO_V_SCROLL | wxMCANVAS_HIDE_V_SCROLL)) ? 0 : wxVSCROLL)
 
 #ifdef wx_x
-# define wxmeBORDER wxNO_CAPTION
+# define wxmeBORDER wxBORDER
 # define wxCONTROL_BORDER 0
 #else
 # define wxmeBORDER wxBORDER

@@ -13,7 +13,7 @@
 #include "wxs_evnt.h"
 
 #ifndef wxCONTROL_BORDER
-# define wxCONTROL_BORDER 0
+# define wxCONTROL_BORDER wxBORDER
 #endif
 
 @MACRO rNULL = return NULL;

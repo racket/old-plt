@@ -257,35 +257,35 @@
 		(choose-mode))))))
 
     (define (set-level level)
-      (let ([p (ormap (lambda (s)
-			(and (let ([a (map char-downcase (string->list level))]
-				   [b (map char-downcase (string->list (car s)))])
-			       (let loop ([b b])
-				 (and (pair? b)
-				      (or (let loop ([a a][b b])
-					    (or (null? a)
-						(and (pair? b)
-						     (char=? (car a) (car b))
-						     (loop (cdr a) (cdr b)))))
-					  (loop (cdr b))))))
-			     s))
-		      (map (lambda (s)
-			     (list (basis:setting-name s)
-				   s))
-			   basis:settings))])
+      (let ([p (find-level level)])
 	(if (and p (not (member level omit-languages)))
 	    (set! setting (basis:copy-setting (cadr p)))
 	    (bad-arguments "bad language name: ~s" level))))
 
-    (define (make-implies-string vocab-symbol)
-      (let ([impl-setting (if vocab-symbol
-			      (let ([a (assoc vocab-symbol (map (lambda (x) 
-								  (list (string->symbol (basis:setting-name x))
-									x))
-								basis:settings))])
+    (define (find-level level)
+      (ormap (lambda (s)
+	       (and (let ([a (map char-downcase (string->list level))]
+			  [b (map char-downcase (string->list (car s)))])
+		      (let loop ([b b])
+			(and (pair? b)
+			     (or (let loop ([a a][b b])
+				   (or (null? a)
+				       (and (pair? b)
+					    (char=? (car a) (car b))
+					    (loop (cdr a) (cdr b)))))
+				 (loop (cdr b))))))
+		    s))
+	     (map (lambda (s)
+		    (list (basis:setting-name s)
+			  s))
+		  basis:settings)))
+
+    (define (make-implies-string vocab-name)
+      (let ([impl-setting (if vocab-name
+			      (let ([a (find-level vocab-name)])
 				(unless a
-				  (error 'DrScheme\ Jr "unknown level: ~a~n" vocab-symbol))
-				(vector-ref (mzlib:function:second a) 1))
+				  (error 'DrScheme\ Jr "unknown level: ~a~n" vocab-name))
+				(cadr a))
 			      setting)])
 	(fluid-let ([setting impl-setting])
 	  (let* ([on/off (lambda (x) (if x "on" "off"))]
@@ -367,7 +367,7 @@
 	   ,(lambda (_ level)
 	      (printf "~a implies the following flags: ~a~n" 
 		      level
-		      (make-implies-string (string->symbol level)))
+		      (make-implies-string level))
 	      (exit 0))
 	   ("Show the flags implied by a particular language" "language")]])
        (case-lambda 

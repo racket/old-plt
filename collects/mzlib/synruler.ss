@@ -122,7 +122,7 @@
 	      (let qq ([x form][level 0])
 		(cond
 		 [(pair? x)
-		  (let ([first (qq (car x) level)])
+		  (let ([first (hyg:untag-no-tags (car x) al)])
 		    (cond
 		     [(and (eq? first 'unquote) (list? x))
 		      (let ([rest (cdr x)])
@@ -143,7 +143,7 @@
 		       "invalid context within quasiquote"
 		       (list 'quasiquote (hyg:untag-no-tags form al)))]
 		     [(pair? first)
-		      (let ([car-first (qq (car first) level)])
+		      (let ([car-first (hyg:untag-no-tags (car first) al)])
 			(if (and (eq? car-first 'unquote-splicing)
 				 (list? first))
 			    (let ([rest (cdr first)])
@@ -155,9 +155,9 @@
 				   (list 'quasiquote (hyg:untag-no-tags form al)))
 				  (list (list 'unquote-splicing
 					      (if (zero? level)
-						  (hyg:untag (cadr rest) al tmps)
-						  (qq (cadr rest) (sub1 level)))
-					      (qq (cdr x) level)))))
+						  (hyg:untag (car rest) al tmps)
+						  (qq (car rest) (sub1 level))))
+					(qq (cdr x) level))))
 			    (cons (cons car-first
 					(qq (cdr first) level))
 				  (qq (cdr x) level))))]

@@ -8,7 +8,7 @@
    
    (define (with-mark mark expr)
      `(#%with-continuation-mark
-       (#%quote ,key) (#%quote ,mark)
+       (#%quote ,key) (#%quote (,current-file . ,mark))
        ,expr))
    
    (define (make-annotate top?)
@@ -117,10 +117,26 @@
 	      (newline p)
 	      (for-each
 	       (lambda (m)
-		 (fprintf p "  ~e~n" m))
+		 (fprintf p "  ~e in ~a~n" 
+			  (cdr m)
+			  (let ([file (car m)])
+			    (if file
+				file
+				"UNKNOWN"))))
 	       (exn-debug-info x))
 	      ((error-escape-handler)))
 	    (orig x)))))
+
+   (define current-file #f)
+
+   (current-load
+    (let ([load (current-load)])
+      (lambda (f)
+	(let ([cf current-file])
+	  (dynamic-wind
+	   (lambda () (set! current-file f))
+	   (lambda () (load f))
+	   (lambda () (set! current-file cf)))))))
    
    (debug-info-handler
     (lambda () (current-continuation-marks key)))))

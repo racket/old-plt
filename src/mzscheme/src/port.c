@@ -194,7 +194,7 @@ typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
   int fd;                   /* fd is really a HANDLE in Windows */
   long bufcount, buffpos;
-  char flushing, regfile, flush;
+  char flushing, regfile, flush, textmode;
   unsigned char *buffer;
 
 # ifdef WINDOWS_FILE_HANDLES
@@ -299,8 +299,8 @@ OS_SEMAPHORE_TYPE scheme_break_semaphore;
 #endif
 
 #ifdef MZ_FDS
-static Scheme_Object *make_fd_input_port(int fd, const char *filename, int regfile);
-static Scheme_Object *make_fd_output_port(int fd, int regfile);
+static Scheme_Object *make_fd_input_port(int fd, const char *filename, int regfile, int textmode);
+static Scheme_Object *make_fd_output_port(int fd, int regfile, int textmode);
 #endif
 #ifdef USE_OSKIT_CONSOLE
 static Scheme_Object *make_oskit_console_input_port();
@@ -449,9 +449,9 @@ scheme_init_port (Scheme_Env *env)
 #else
 # ifdef MZ_FDS
 #  ifdef WINDOWS_FILE_HANDLES
-			    : make_fd_input_port((int)GetStdHandle(STD_INPUT_HANDLE), "STDIN", 0)
+			    : make_fd_input_port((int)GetStdHandle(STD_INPUT_HANDLE), "STDIN", 0, 0)
 #  else
-			    : make_fd_input_port(0, "STDIN", 0)
+			    : make_fd_input_port(0, "STDIN", 0, 0)
 #  endif
 # else
 			    : scheme_make_named_file_input_port(stdin, "STDIN")
@@ -463,9 +463,9 @@ scheme_init_port (Scheme_Env *env)
 			     ? scheme_make_stdout()
 #ifdef MZ_FDS
 # ifdef WINDOWS_FILE_HANDLES
-			     : make_fd_output_port((int)GetStdHandle(STD_OUTPUT_HANDLE), 0)
+			     : make_fd_output_port((int)GetStdHandle(STD_OUTPUT_HANDLE), 0, 0)
 # else
-			     : make_fd_output_port(1, 0)
+			     : make_fd_output_port(1, 0, 0)
 # endif
 #else
 			     : scheme_make_file_output_port(stdout)
@@ -476,9 +476,9 @@ scheme_init_port (Scheme_Env *env)
 			     ? scheme_make_stderr()
 #ifdef MZ_FDS
 # ifdef WINDOWS_FILE_HANDLES
-			     : make_fd_output_port((int)GetStdHandle(STD_ERROR_HANDLE), 0)
+			     : make_fd_output_port((int)GetStdHandle(STD_ERROR_HANDLE), 0, 0)
 # else
-			     : make_fd_output_port(2, 0)
+			     : make_fd_output_port(2, 0, 0)
 # endif
 #else
 			     : scheme_make_file_output_port(stderr)
@@ -1214,7 +1214,8 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       got += fread(buffer + offset + got, 1, size, f);
 #ifdef MZ_FDS
     } else if (SAME_OBJ(ip->sub_type, fd_input_port_type)
-	       && ((Scheme_FD *)ip->port_data)->regfile) {
+	       && ((Scheme_FD *)ip->port_data)->regfile
+	       && !((Scheme_FD *)ip->port_data)->textmode) {
       Scheme_FD *fip = (Scheme_FD *)ip->port_data;
       int n;
 
@@ -2168,7 +2169,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     } else {
       regfile = S_ISREG(buf.st_mode);
       scheme_file_open_count++;
-      result = make_fd_input_port(fd, filename, regfile);
+      result = make_fd_input_port(fd, filename, regfile, 0);
     }
   }
 #else
@@ -2186,7 +2187,13 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   } else
     regfile = (GetFileType(fd) == FILE_TYPE_DISK);
 
-  result = make_fd_input_port((int)fd, filename, regfile);
+  if ((mode[1] == 't') && !regfile) {
+    CloseHandle(fd);
+    filename_exn(name, "cannot use text-mode on a non-file device", filename, 0);
+    return NULL;
+  }
+
+  result = make_fd_input_port((int)fd, filename, regfile, mode[1] == 't');
 # else
   if (scheme_directory_exists(filename)) {
     filename_exn(name, "cannot open directory as a file", filename, 0);
@@ -2375,8 +2382,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   fstat(fd, &buf);
   regfile = S_ISREG(buf.st_mode);
   scheme_file_open_count++;
-  return make_fd_output_port(fd, regfile);
-
+  return make_fd_output_port(fd, regfile, 0);
 #else
 # ifdef WINDOWS_FILE_HANDLES
   if (!existsok)
@@ -2447,6 +2453,12 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 
   regfile = (GetFileType(fd) == FILE_TYPE_DISK);
 
+  if ((mode[1] == 't') && !regfile) {
+    CloseHandle(fd);
+    filename_exn(name, "cannot use text-mode on a non-file device", filename, 0);
+    return NULL;
+  }
+
   if (regfile && (existsok == -1)) {
     if (mode[0] == 'a')
       SetFilePointer(fd, 0, NULL, FILE_END);
@@ -2454,7 +2466,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
       SetEndOfFile(fd);
   }
 
-  return make_fd_output_port((int)fd, regfile);
+  return make_fd_output_port((int)fd, regfile, mode[1] == 't');
 # else
 
   if (scheme_directory_exists(filename)) {
@@ -3214,11 +3226,18 @@ static int fd_getc(Scheme_Input_Port *port)
     if (!fip->th) {
       /* We can read directly. This must be a regular file, where
 	 reading never blocks. */
-      DWORD rgot;
+      DWORD rgot, delta;
 
       rgot = MZPORT_FD_BUFFSIZE;
 
-      if (ReadFile((HANDLE)fip->fd, fip->buffer, rgot, &rgot, NULL)) {
+      /* Pending CR in text mode? */
+      if (fip->textmode == 2) {
+	delta = 1;
+	rgot--;
+      } else
+	delta = 0;
+
+      if (ReadFile((HANDLE)fip->fd, fip->buffer + delta, rgot, &rgot, NULL)) {
 	bc = rgot;
       } else {
 	bc = -1;
@@ -3340,7 +3359,7 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 }
 
 static Scheme_Object *
-make_fd_input_port(int fd, const char *filename, int regfile)
+make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode)
 {
   Scheme_Input_Port *ip;
   Scheme_FD *fip;
@@ -3358,6 +3377,7 @@ make_fd_input_port(int fd, const char *filename, int regfile)
   fip->bufcount = 0;
 
   fip->regfile = regfile;
+  fip->textmode = win_textmode;
 
   ip = _scheme_make_input_port(fd_input_port_type,
 			       fip,
@@ -4291,7 +4311,7 @@ fd_close_output(Scheme_Output_Port *port)
 }
 
 static Scheme_Object *
-make_fd_output_port(int fd, int regfile)
+make_fd_output_port(int fd, int regfile, int textmode)
 {
   Scheme_FD *fop;
   unsigned char *bfr;
@@ -4315,6 +4335,7 @@ make_fd_output_port(int fd, int regfile)
 #endif
   
   fop->regfile = regfile;
+  fop->textmode = win_textmode;
 
   /* No buffering for stderr: */
   fop->flush = ((fd == 2) ? MZ_FLUSH_ALWAYS : MZ_FLUSH_BY_LINE);
@@ -5198,9 +5219,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*        Create new port objects       */
   /*--------------------------------------*/
 
-  in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0));
+  in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0, 0));
   out = (out ? out : make_fd_output_port(to_subprocess[1], 0));
-  err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0));
+  err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0, 0));
 
   /*--------------------------------------*/
   /*          Return result info          */

@@ -1,4 +1,11 @@
-;; requires the advanced language level
+(module turex mzscheme
+  (require (lib "math.ss")
+	   (lib "etc.ss")
+	   (lib "turtle.ss" "graphics"))
+  (provide regular-poly regular-polys radial-turtles spaced-turtles
+	   spokes spyro-gyra neato graphics-bexam serp-size serp serp-nosplit
+	   koch-size koch-split koch-draw lorenz lorenz1 peano-size
+	   peano-position-turtle peano fern-size fern1 fern2 gapped-lines)
 
 (define (regular-poly sides radius)
   (local [(define theta (/ (* 2 pi) sides))
@@ -301,3 +308,4 @@
      (spaced-turtles gaps)
      (turn/radians (/ pi 2))
      (erase (* 4 (expt 2 lines))))))
+)

@@ -1,7 +1,17 @@
+(module turtle-unit mzscheme
+  (require (lib "unitsig.ss")
+	   (lib "mred-sig.ss" "mred")
+	   (lib "class.ss")
+	   (lib "class100.ss")
+	   (lib "list.ss")
+	   (lib "etc.ss")
+	   "turtle-sig.ss")
+  (provide turtle@)
+
+  (define turtle@
 (unit/sig turtle^
-  (import [mred : mred^]
-	  mzlib:function^)
-  
+  (import [mred : mred^])
+
   (define turtles:window #f)
   (define turtles:shown? #f)
 
@@ -20,17 +30,22 @@
   (define turtle-style 'triangle)
   
   (define plot-window%
-    (class mred:frame% (name width height)
+    (class100 mred:frame% (name width height)
+ 
+     (private-field
+       [bitmap (make-object mred:bitmap% width height #t)])      
+
       (inherit show)
-      (public 
-	[bitmap (make-object mred:bitmap% width height #t)])
-      (private
+      (private-field
 	[memory-dc (make-object mred:bitmap-dc%)]
 	[pl (make-object mred:point% 0 0)]
 	[pr (make-object mred:point% 0 0)]
 	[ph (make-object mred:point% 0 0)]
 	[points (list pl pr ph)])
       (public
+        [get-canvas
+	 (lambda ()
+	   canvas)]
 	[flip-icons
 	 (lambda ()
 	   (case turtle-style
@@ -72,17 +87,6 @@
 		(send dc set-pen b-pen))]
 	     [else
 	      (void)]))]
-	[canvas% 
-	 (class mred:canvas% args
-	   (inherit get-dc)
-	   (override
-             [on-paint
-              (lambda ()
-                (let ([dc (get-dc)])
-                  (send dc clear)
-                  (send dc draw-bitmap (send memory-dc get-bitmap) 0 0)
-                  (flip-icons)))])
-           (sequence (apply super-init args)))]
 	[clear
 	 (lambda () 
 	   (send memory-dc clear)
@@ -94,7 +98,7 @@
       
       (public
 	[on-menu-command (lambda (op) (turtles #f))])
-      (private
+      (private-field
 	[menu-bar (make-object mred:menu-bar% this)]
 	[file-menu (make-object mred:menu% "File" menu-bar)])
       (sequence 
@@ -113,33 +117,37 @@
 	[save-turtle-bitmap
 	 (lambda (fn type)
 	   (send bitmap save-file fn type))])
+
+      (private-field
+        [canvas% 
+	 (class100 mred:canvas% args
+	   (inherit get-dc)
+	   (override
+	    [on-paint
+	     (lambda ()
+	       (let ([dc (get-dc)])
+		 (send dc clear)
+		 (send dc draw-bitmap (send memory-dc get-bitmap) 0 0)
+		 (flip-icons)))])
+	   (sequence (apply super-init args)))]
+	[canvas (make-object canvas% this)]
+	[dc (send canvas get-dc)])
       
       (public
-	[canvas (make-object canvas% this)]
-	[wipe-line (let* ([dc (send canvas get-dc)]
-			  [dc-line (ivar memory-dc draw-line)]
-			  [canvas-line (ivar dc draw-line)]
-			  [dc-pen (ivar memory-dc set-pen)]
-			  [canvas-pen (ivar dc set-pen)])
-		     (lambda (a b c d)
-		       (dc-pen w-pen)
-		       (canvas-pen w-pen)
-		       (dc-line a b c d)
-		       (canvas-line a b c d)
-		       (dc-pen b-pen)
-		       (canvas-pen b-pen)))]
-	[draw-line (let* ([dc (send canvas get-dc)]
-			  [dc-line (ivar memory-dc draw-line)]
-			  [canvas-line (ivar dc draw-line)]
-			  [dc-pen (ivar memory-dc set-pen)]
-			  [canvas-pen (ivar dc set-pen)])
-		     (lambda (a b c d)
-		       (dc-line a b c d)
-		       (canvas-line a b c d)))])
+	[wipe-line (lambda (a b c d)
+		     (send memory-dc set-pen w-pen)
+		     (send dc set-pen w-pen)
+		     (send memory-dc draw-line a b c d)
+		     (send dc draw-line a b c d)
+		     (send memory-dc set-pen b-pen)
+		     (send dc set-pen b-pen))]
+	[draw-line (lambda (a b c d)
+		     (send memory-dc draw-line a b c d)
+		     (send dc draw-line a b c d))])
       (sequence
 	(send canvas min-width width)
 	(send canvas min-height height)
-	(clear))))
+	(send this clear))))
   
   (define turtle-window-size
     (let-values ([(w h) (mred:get-display-size)]
@@ -205,13 +213,13 @@
 		"Turtles"
 		turtle-window-size
 		turtle-window-size))
-	(set! inner-line (ivar turtles:window draw-line))
-	(set! inner-wipe-line (ivar turtles:window wipe-line))
-	(set! inner-clear-window (ivar turtles:window clear))
-	(set! inner-save-turtle-bitmap (ivar turtles:window save-turtle-bitmap))
-	(set! flip-icons (ivar turtles:window flip-icons)))
+	(set! inner-line (lambda x (send turtles:window draw-line . x)))
+	(set! inner-wipe-line (lambda x (send turtles:window wipe-line . x)))
+	(set! inner-clear-window (lambda x (send turtles:window clear . x)))
+	(set! inner-save-turtle-bitmap (lambda x (send turtles:window save-turtle-bitmap . x)))
+	(set! flip-icons (lambda x (send turtles:window flip-icons . x))))
       (send turtles:window show x)
-      (ivar turtles:window canvas)]))
+      (send turtles:window get-canvas)]))
   
   (define clear 
     (lambda ()
@@ -425,7 +433,7 @@
   ;; used to test printing
   (define (display-lines-in-drawing)
     (let* ([lines-in-drawing-canvas%
-	    (class mred:canvas% (frame)
+	    (class100 mred:canvas% (frame)
 	      (inherit get-dc)
 	      (override
 	       [on-paint
@@ -458,4 +466,4 @@
        (mred:message-box "Turtles"
 			 "Printing is not supported on this platform")]))
 
-)
+)))

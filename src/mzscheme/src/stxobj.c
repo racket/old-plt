@@ -1392,16 +1392,18 @@ Scheme_Object *scheme_stx_extract_certs(Scheme_Object *o, Scheme_Object *base_ce
 }
 
 Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env *menv, 
-			       Scheme_Object *plus_stx, Scheme_Object *mkey)
+			       Scheme_Object *plus_stx_or_certs, Scheme_Object *key)
      /* If `name' is module-bound, add the module's certification.
 	Also copy any certifications from plus_stx. */
 {
-  if (plus_stx) {
-    if (((Scheme_Stx *)plus_stx)->certs) {
-      Scheme_Cert *certs;
-      certs = ((Scheme_Stx *)plus_stx)->certs;
-      o = add_certs(o, certs, NULL, 1);
-    }
+  if (plus_stx_or_certs) {
+    Scheme_Cert *certs;
+    if (SCHEME_STXP(plus_stx_or_certs))
+      certs = ((Scheme_Stx *)plus_stx_or_certs)->certs;
+    else
+      certs = (Scheme_Cert *)plus_stx_or_certs;
+    if (certs)
+      o = add_certs(o, certs, key, 1);
   }
 
   if (menv && !menv->module->no_cert) {
@@ -1423,7 +1425,7 @@ Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env
     }
 
     cert = cons_cert(mark, menv->link_midx ? menv->link_midx : menv->module->src_modidx, 
-		     menv->module->insp, mkey, cert);
+		     menv->module->insp, key, cert);
     res->certs = cert;
     
     o = (Scheme_Object *)res;

@@ -527,6 +527,8 @@ static void make_init_env(void)
   scheme_install_type_reader(scheme_toplevel_type, read_toplevel);
   scheme_install_type_writer(scheme_variable_type, write_variable);
   scheme_install_type_reader(scheme_variable_type, read_variable);
+  scheme_install_type_writer(scheme_module_variable_type, write_variable);
+  scheme_install_type_reader(scheme_module_variable_type, read_variable);
   scheme_install_type_writer(scheme_local_type, write_local);
   scheme_install_type_reader(scheme_local_type, read_local);
   scheme_install_type_writer(scheme_local_unbox_type, write_local);
@@ -3040,10 +3042,13 @@ local_certify(int argc, Scheme_Object *argv[])
   if (!SCHEME_STXP(s))
     scheme_wrong_type("syntax-local-certify", "syntax", 0, argc, argv);
   
-  if (scheme_current_thread->current_local_menv) {
+  if (scheme_current_thread->current_local_menv
+      || scheme_current_thread->current_local_certs) {
     Scheme_Env *menv = scheme_current_thread->current_local_menv;
-    if (menv->module)
-      s = scheme_stx_cert(s, scheme_false, menv, NULL, (argc > 1) ? argv[1] : NULL);
+    s = scheme_stx_cert(s, scheme_false, 
+			(menv && menv->module) ? menv : NULL,
+			scheme_current_thread->current_local_certs,
+			(argc > 1) ? argv[1] : NULL);
   }
 
   return s;
@@ -3157,26 +3162,34 @@ static Scheme_Object *read_toplevel(Scheme_Object *obj)
 
 static Scheme_Object *write_variable(Scheme_Object *obj)
 {
-  Scheme_Env *home;
-  Scheme_Object *sym;
-  Scheme_Module *m;
+  if (SAME_TYPE(scheme_variable_type, SCHEME_TYPE(obj))) {
+    Scheme_Object *sym;
+    Scheme_Env *home;
+    Scheme_Module *m;
+    
+    sym = (Scheme_Object *)(SCHEME_VAR_BUCKET(obj))->key;
+    
+    home = ((Scheme_Bucket_With_Home *)obj)->home;
+    m = home->module;
+    
+    /* If we get a writeable variable (instead of a module variable),
+       it must be a reference to a module referenced directly by its
+       a symbolic name (i.e., no path). */
+    
+    if (m) {
+      sym = scheme_make_pair(m->modname, sym);
+      if (home->mod_phase)
+	sym = scheme_make_pair(scheme_make_integer(home->mod_phase), sym);
+    }
 
-  sym = (Scheme_Object *)(SCHEME_VAR_BUCKET(obj))->key;
+    return sym;
+  } else {
+    Module_Variable *mv = (Module_Variable *)obj;
 
-  home = ((Scheme_Bucket_With_Home *)obj)->home;
-  m = home->module;
-
-  /* If we get a writeable variable (instead of a module variable),
-     it must be a reference to a module referenced directly by its
-     a symbolic name (i.e., no path). */
-
-  if (m) {
-    sym = scheme_make_pair(m->modname, sym);
-    if (home->mod_phase)
-      sym = scheme_make_pair(scheme_make_integer(home->mod_phase), sym);
+    return scheme_make_pair(scheme_make_integer(mv->mod_phase),
+			    scheme_make_pair(mv->modidx,
+					     mv->sym));
   }
-
-  return sym;
 }
 
 static Scheme_Object *read_variable(Scheme_Object *obj)
@@ -3219,7 +3232,7 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
       
       mv->modidx = modname;
       mv->sym = varname;
-      mv->insp = insp; /* FIXME: scheme_true means "trust me"! */
+      mv->insp = insp;
       mv->pos = -1;
       mv->mod_phase = mod_phase;
 

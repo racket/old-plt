@@ -642,7 +642,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
     data->flags |= CLOS_FOLDABLE;
 
   if (!data->closure_size)
-    /* If only global frame is needed, go ahead and finialize closure */
+    /* If the closure is empty, go ahead and finalize closure */
     return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
   else
     return (Scheme_Object *)data;
@@ -2824,7 +2824,7 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
     data->flags |= CLOS_FOLDABLE;
 
   if (!data->closure_size)
-    /* If the closure is empty, go ahead and finialize */
+    /* If the closure is empty, go ahead and finalize */
     return scheme_make_linked_closure(NULL, (Scheme_Object *)data, 0);
   else
     return (Scheme_Object *)data;

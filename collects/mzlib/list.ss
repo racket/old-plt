@@ -120,13 +120,18 @@
      (lambda (item list)
        (remove item list eqv?))))
   
-  (define remove* 
+  (define remove*
     (polymorphic
      (case-lambda
       [(l r equal?)
-       (if (null? l)
-           r
-           (remove* (cdr l) (remove (car l) r equal?) equal?))]
+       (cond 
+	[(null? r) null]
+	[else (let ([first-r (car r)])
+		(let loop ([l-rest l])
+		  (cond 
+		   [(null? l-rest) (cons first-r (remove* l (cdr r) equal?))]
+		   [(equal? (car l-rest) first-r) (remove* l (cdr r) equal?)]
+		   [else (loop (cdr l-rest))])))])]
       [(l r) (remove* l r equal?)])))
   
   (define remq*

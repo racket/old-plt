@@ -55,7 +55,7 @@ END
 
 VS_VERSION_INFO VERSIONINFO
  FILEVERSION 1,0,0,1
- PRODUCTVERSION 103,0,0,1
+ PRODUCTVERSION 200,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -75,13 +75,13 @@ BEGIN
             VALUE "FileDescription", "MzCOM Module\0"
             VALUE "FileVersion", "1, 0, 0, 1\0"
             VALUE "InternalName", "MzCOM\0"
-            VALUE "LegalCopyright", "Copyright 2000 PLT (Paul Steckler)\0"
+            VALUE "LegalCopyright", "Copyright 2000-2002 PLT (Paul Steckler)\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OLESelfRegister", "\0"
             VALUE "OriginalFilename", "MzCOM.EXE\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "MzCOM Module\0"
-            VALUE "ProductVersion", "103, 0, 0, 1\0"
+            VALUE "ProductVersion", "200, 0, 0, 1\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -114,12 +114,12 @@ FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,76,69,50,14,BS_CENTER
     CTEXT           "MzCOM v. 200",IDC_STATIC,71,8,61,8
-    CTEXT           "Copyright (c) 2000-2001 PLT (Paul Steckler)",IDC_STATIC,
+    CTEXT           "Copyright (c) 2000-2002 PLT (Paul Steckler)",IDC_STATIC,
                     41,20,146,9
     CTEXT           "MzScheme v. 200",IDC_STATIC,64,35,75,8
-    CTEXT           "Copyright (c) 1995-2001 PLT (Matthew Flatt)",IDC_STATIC,
+    CTEXT           "Copyright (c) 1995-2002 PLT (Matthew Flatt)",IDC_STATIC,
                     30,47,143,8
-    ICON            MZICON,IDC_STATIC,11,16,21,20
+    ICON            MZICON,IDC_STATIC,11,16,20,20
 END
 
 

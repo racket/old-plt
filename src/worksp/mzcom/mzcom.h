@@ -2,9 +2,9 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Mon Apr 23 14:13:10 2001
+/* at Thu Dec 06 14:25:55 2001
  */
-/* Compiler settings for E:\plt-200\plt\src\mzcom\mzcom.idl:
+/* Compiler settings for F:\plt\src\mzcom\mzcom.idl:
     Os (OptLev=s), W1, Zp8, env=Win32, ms_ext, c_ext
     error checks: allocation ref bounds_check enum stub_data 
 */

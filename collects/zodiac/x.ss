@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.35 1997/08/23 23:22:04 shriram Exp $
+; $Id: x.ss,v 1.36 1997/09/10 17:56:46 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -222,26 +222,20 @@
 	  (internal-error expr
 	    "Invalid body: ~s" expr)))))
 
-  (define zodiac-user-parameterization (current-parameterization))
+  (define m3-elaboration-evaluator #f)
 
   (define expand
     (lambda/nal zodiac:expand/nal
-      (set! zodiac-user-parameterization params)
-      (begin0
-	(expand-expr expr (make-new-environment) attr vocab)
-	(set! zodiac-user-parameterization #f) ; for GC
-	)))
+      (fluid-let ((m3-elaboration-evaluator elaboration-eval))
+	(expand-expr expr (make-new-environment) attr vocab))))
 
   (define expand-program
     (lambda/nal zodiac:expand-program/nal
-      (set! zodiac-user-parameterization params)
-      (put-attribute attr 'top-levels (make-hash-table))
-      (begin0
+      (fluid-let ((m3-elaboration-evaluator elaboration-eval))
+	(put-attribute attr 'top-levels (make-hash-table))
 	(map (lambda (expr)
 	       (expand-expr expr (make-new-environment) attr vocab))
-	  exprs)
-	(set! zodiac-user-parameterization #f) ; for GC
-	)))
+	  exprs))))
 
   ; ----------------------------------------------------------------------
 

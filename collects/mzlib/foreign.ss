@@ -464,7 +464,7 @@
                  post: (x => (cblock->vector x t n)))]))
 
 ;; _bytes or (_bytes o n) is for a memory block represented as a Scheme string.
-;; _bytes is just like a string, and (_bytes o n) is for pre-malloc of the
+;; _bytes is just like a byte-string, and (_bytes o n) is for pre-malloc of the
 ;; string.  There is no need for other modes: i or io would be just like _bytes
 ;; since the string carries its size information (so there is no real need for
 ;; the `o', but it's there for consistency with the above macros).

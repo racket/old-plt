@@ -116,7 +116,7 @@
                [annotated (annotate-exprs expanded expr-box action)]
                [eval-expr (lambda (expanded annotated)
                             (set-box! expr-box expanded)
-                            (reconstruct-completed expanded (eval annotated)))])
+                            (reconstruct:reconstruct-completed expanded (eval annotated)))])
           (if expected-completed
               (test expected-completed map eval-expr expanded annotated)
               (map eval-expr expanded annotated))

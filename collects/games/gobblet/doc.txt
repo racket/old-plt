@@ -98,12 +98,12 @@ replying the same move might lead to a different result. You can
 disable an auto-player at any point by unchecking the corresponding
 "Auto-Play" checkbox.
 
-Important: In the 3x3 game with the default configuration, you CANNOT
-win as yellow against the auto-player (if the auto-player is allowed
-to play red from the start of the game). In other words, red has a
-forced win in the 3x3 game, and the smart auto-player knows the path
-to victory. You might have a chance to beat the red player if you
-change the mode to "Ok" instead of "Smart" in the "Auto-Play Options"
-dialog.
+Important: In the 3x3 game, you CANNOT win as yellow against the smart
+auto-player (if the auto-player is allowed to play red from the start
+of the game). In other words, red has a forced win in the 3x3 game,
+and the smart auto-player knows the path to victory. You might have a
+chance to beat the red player in the default mode, though, which is
+represented by the "Ok" choice (instead of "Smart") in the "Auto-Play
+Options" dialog.
 
 Configure the auto-player by clicking the "Auto-Play Options" button.

@@ -313,15 +313,15 @@ static int
 ScanTransparentColor(XpmColor *color, unsigned int cpp, XpmAttributes *attributes)
 {
     char *s;
-    unsigned int a, b, c;
+    unsigned int b;
 
     /* first get a character string */
     a = 0;
     if (!(s = color->string = (char *) XpmMalloc(cpp + 1)))
 	return (XpmNoMemory);
-    *s++ = printable[c = a % MAXPRINTABLE];
+    *s++ = printable[0];
     for (b = 1; b < cpp; b++, s++)
-	*s = printable[c = ((a - c) / MAXPRINTABLE) % MAXPRINTABLE];
+      *s = printable[0];
     *s = '\0';
 
     /* then retreive related info from the attributes if any */
@@ -404,9 +404,13 @@ ScanOtherColors(Display *display, XpmColor *colors, int ncolors, Pixel *pixels,
 	    XpmFree(xcolors);
 	    return (XpmNoMemory);
 	}
-	*s++ = printable[c = i2 % MAXPRINTABLE];
-	for (j = 1; j < cpp; j++, s++)
-	    *s = printable[c = ((i2 - c) / MAXPRINTABLE) % MAXPRINTABLE];
+	c = i2 % MAXPRINTABLE;
+	*s++ = printable[c];
+	for (j = 1; j < cpp; j++, s++) {
+	  i2 = (i2 - c) / MAXPRINTABLE;
+	  c = i2 % MAXPRINTABLE;
+	  *s = printable[c];
+	}
 	*s = '\0';
 
 	xcolor->pixel = *pixels;

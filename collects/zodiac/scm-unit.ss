@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.62 1998/04/21 02:59:57 robby Exp $
+; $Id: scm-unit.ss,v 1.63 1998/05/15 04:17:32 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -318,16 +318,18 @@
 					 (lambda ()
 					   (internal-error
 					    entry
-					    "Can't find box in check-unresolved-vars"))))])
+					    "Can't find box in get-unresolved-vars"))))])
 			(set-top-level-varref/bind-slot!
 			 (unresolved-varref u)
 			 box)))
+		    (loop (cdr remaining) unr))
+		  ((import-id? entry)
 		    (loop (cdr remaining) unr))
 		  ((not entry)
 		    (loop (cdr remaining) (cons u unr)))
 		  (else
 		    (internal-error entry
-		      "Invalid in check-unresolved-vars"))))))))))
+		      "Invalid in get-unresolved-vars"))))))))))
 
   ; ----------------------------------------------------------------------
 
@@ -784,7 +786,6 @@
 				   (expand-expr v env
 				     attributes vocab))
 			      vars)))
-		    (pretty-print vars)
 		    (set-top-level-status attributes top-level?)
 		    (create-invoke-open-unit-form
 		      expr-expr

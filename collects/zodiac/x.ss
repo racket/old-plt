@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.41 1998/05/11 18:59:21 shriram Exp $
+; $Id: x.ss,v 1.42 1998/05/15 04:17:33 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -127,15 +127,16 @@
 
   (define expand-expr
     (lambda (expr env attributes vocab)
-      ; (printf "Expanding~n") (pretty-print (sexp->raw expr))
+      ; (printf "Expanding in ~s:~n" (get-vocabulary-name vocab))
+      ;   (pretty-print (sexp->raw expr)) (newline)
       ; (printf "top-level-status: ~s~n" (get-top-level-status attributes))
-      ; (printf "Expanding~n~s~n~n" (sexp->raw expr))
       ; (printf "Expanding~n") (pretty-print expr) (newline)
       ; (printf "Expanding~n") (display expr) (newline) (newline)
       ; (printf "in ~s~n" (get-vocabulary-name vocab))
       ;	(printf "in vocabulary~n") (print-env vocab)
       ;	(printf "in attributes~n") (hash-table-map attributes cons)
-      ;	(printf "in~n") (print-env env) (newline)
+      ;	(printf "in~n") (print-env env)
+      ; (newline)
       (cond
 	((z:symbol? expr)
 	  (let ((sym-expander (get-sym-micro vocab)))

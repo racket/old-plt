@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.152 1998/05/10 19:16:59 shriram Exp $
+; $Id: scm-main.ss,v 1.153 1998/05/15 04:17:31 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1706,7 +1706,7 @@
 				    env attributes vocab)
 				  parsed->raw
 				  kwd-symbol))
-			      expr '(-1))
+			      expr)
 			    env attributes vocab))))
 		    (else
 		      (static-error expr

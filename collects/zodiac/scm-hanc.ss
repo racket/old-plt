@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.49 1998/05/15 07:33:24 shriram Exp $
+; $Id: scm-hanc.ss,v 1.50 1998/05/15 21:34:03 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -786,12 +786,15 @@
 			(sign-unit:exports (expand-expr in:signature env
 					     attributes u/s-sign-exports-vocab)))
 		  (expand-expr
-		    ;; We don't use '(-1) as the third argument to structurize-syntax
-		    ;; since the prim-unit:{imports,exports} are raw sexp's which get
-		    ;; undesirably marked in the process, leading to imports not
-		    ;; matching against uses in the body.  This should be remedied by
-		    ;; making these values structurized, so that the remainder can
-		    ;; also be structurized with impunity and '(-1) can be used.
+		    ;; We don't use '(-1) as the third argument to
+		    ;; structurize-syntax since the
+		    ;; prim-unit:{imports,exports} are raw sexp's
+		    ;; which get undesirably marked in the process,
+		    ;; leading to imports not matching against uses in
+		    ;; the body.  This should be remedied by making
+		    ;; these values structurized, so that the
+		    ;; remainder can also be structurized with
+		    ;; impunity and '(-1) can be used.
 		    (structurize-syntax
 		      `(#%make-unit-with-signature
 			 (#%unit

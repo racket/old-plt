@@ -17,8 +17,6 @@
 ;  (provide/contract
 ;   [read-request-line (input-port? . -> . symbol? bytes? bytes? bytes?)])
 
-  (define myprint printf)
-  
   ; lowercase-symbol! : (union string bytes) -> symbol
   (define (lowercase-symbol! s)
     (let ([s (if (bytes? s)
@@ -66,7 +64,6 @@
   
   ; read-headers : iport -> (listof (cons symbol bytes))
   (define (read-headers in)
-    (myprint "read-headers~n")
     (let read-header ()
       (let ([l (read-bytes-line in 'any)])
         (cond
@@ -107,7 +104,6 @@
   ;;    or will be identified via a header (RFC 2616 SECTION 5.1.2)
   
   (define (get-host uri headers)
-    (myprint "get-host~n")
     (let ([lower!
            (lambda (s)
              (string-lowercase! s)
@@ -202,7 +198,6 @@
   ;; connection symbol url host -> (union (listof (list symbol string)) #f)
   (define read-bindings
     (lambda (conn meth uri headers)
-      (myprint "read-bindings~n")
       (case meth
         [(get) (url-query uri)]
         [(post)

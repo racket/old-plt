@@ -14,8 +14,6 @@
            output-page/port
            )
 
-(define myprint printf)
-  
   ;; **************************************************
   ;; output-headers:
   
@@ -23,7 +21,6 @@
   (define output-headers
     (case-lambda
       [(conn code message extras seconds mime)
-       (myprint "output-headers~n")
        (let ([out (connection-o-port conn)])
          (for-each (lambda (line)
                      (for-each (lambda (word) (display word out)) line)
@@ -78,13 +75,11 @@
   
   ; report-error : connection method response -> void
   (define (report-error conn method response)
-    (myprint "report-error~n")
     (output-page/port conn (decapitate method response)))
   
   ; decapitate : method response -> response
   ; to remove the body if the method is 'head
   (define (decapitate method response)
-    (myprint "decapitate~n")
     (if (eq? method 'head)
         (cond
           [(response/full? response)
@@ -102,7 +97,6 @@
   
   ; output-page/port : connection response -> void
   (define (output-page/port conn page)
-    (myprint "output-page/port~n")
     (let ([out (connection-o-port conn)]
           [close (connection-close? conn)])
       ; double check what happens on erronious servlet output

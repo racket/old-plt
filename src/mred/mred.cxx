@@ -505,8 +505,18 @@ Scheme_Object *MrEdGetFrameList(void)
     wxChildNode *node;
     for (node = c->topLevelWindowList->First(); node; node = node->Next()) {
       wxObject *o = node->Data();
-      if (node->IsShown())
+      if (node->IsShown()) {
+#ifdef wx_mac
+	/* Mac: some frames really represent dialogs. Any modal frame is
+	   a dialog, so extract its only child. */
+	if (((wxFrame *)o)->IsModal()) {
+	  wxChildNode *node2 = ((wxFrame *)o)->GetChildren()->First();
+	  if (node2)
+	    o = node2->Data();
+	}
+#endif
 	l = scheme_make_pair(objscheme_bundle_wxObject(o), l);
+      }
     }
   }
 

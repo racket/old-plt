@@ -649,8 +649,6 @@
  (unknown-debug-frame "[unknown]")
  
  (module-language-one-line-summary "Language with module as the only construct")
- (bad-module-language-specs
-  "The drscheme-language-position and drscheme-language-modules specifications aren't correct. Expected (listof (cons string (listof string))) and (listof (listof string)) respectively, where the lengths drscheme-language-position and drscheme-language-module lists are the same. Got ~e and ~e")
   
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")

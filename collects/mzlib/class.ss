@@ -900,7 +900,7 @@
 		    defn-or-expr
 		    ...)))])))
 
-  (define-syntaxes (private* public* override*)
+  (define-syntaxes (private* public* public-final* override* override-final*)
     (let ([mk
 	   (lambda (who decl-form)
 	     (lambda (stx)
@@ -932,9 +932,11 @@
       (values
        (mk 'private* (syntax private))
        (mk 'public* (syntax public))
-       (mk 'override* (syntax override)))))
+       (mk 'public-final* (syntax public-final))
+       (mk 'override* (syntax override))
+       (mk 'override-final* (syntax override-final)))))
 
-  (define-syntaxes (define/private define/public define/override)
+  (define-syntaxes (define/private define/public define/public-final define/override define/override-final)
     (let ([mk
 	   (lambda (who decl-form)
 	     (lambda (stx)
@@ -981,7 +983,9 @@
       (values
        (mk 'define/private (syntax private))
        (mk 'define/public (syntax public))
-       (mk 'define/override (syntax override)))))
+       (mk 'define/public-final (syntax public-final))
+       (mk 'define/override (syntax override))
+       (mk 'define/override-final (syntax override-final)))))
 
   (define-syntax (define-local-member-name stx)
     (syntax-case stx ()
@@ -2149,8 +2153,8 @@
 	   object% object?
 	   make-object instantiate
 	   send send/apply send* class-field-accessor class-field-mutator with-method
-	   private* public* override*
-	   define/private define/public define/override
+	   private* public*  public-final* override* override-final*
+	   define/private define/public define/public-final define/override define/override-final
 	   define-local-member-name
 	   (rename generic/form generic) (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?

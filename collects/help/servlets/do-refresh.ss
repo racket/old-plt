@@ -43,4 +43,4 @@
        (delete-directory/r tmp-directory)
        (show (xexpr->string `(B "Done refreshing CVS manuals")))
        (show "</PRE></BODY></HTML>")
-       (semaphore-post refresh-semaphore)))))
+       (semaphore-post refresh-semaphore))))

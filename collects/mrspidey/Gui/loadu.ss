@@ -16,7 +16,7 @@
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
 
-(define-signature mrspidey-gui^ (spidey))
+(require-relative-library "sigs.ss")
 
 (define mrspidey-gui@
   (unit/sig mrspidey-gui^

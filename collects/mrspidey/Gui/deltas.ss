@@ -30,7 +30,7 @@
 
 (define delta-eval-namespace (make-namespace))
 (parameterize ([current-namespace delta-eval-namespace])
-    (invoke-open-unit/sig wx@ wx))
+    (invoke-open-unit/sig wx:wx@ wx))
 
 (define delta-add-string! 
   (lambda (delta string)

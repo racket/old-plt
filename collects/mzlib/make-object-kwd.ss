@@ -7,7 +7,7 @@
     (hash-table-put! real-args-table horizontal-panel% `((parent) (style ())))
     (hash-table-put! real-args-table vertical-panel% `((parent) (style ())))
     (hash-table-put! real-args-table canvas% `((parent) (style ())))
-    (hash-table-put! real-args-table button% `((label) (parent) (callback) (style) (style ())))
+    (hash-table-put! real-args-table button% `((label) (parent) (callback) (style ())))
     
     (lambda (c . kwd-pairs)
       (unless (andmap (lambda (kwd)
@@ -16,7 +16,7 @@
 			(symbol? (car kwd)))
 		      kwd-pairs)
 	(error 'make-object/kwd "malformed keywords"))
-      (let* ([kwd-gensyms (map (lambda (x) (gensym "make-object/kwd")) kwd-pairs)]
+      (let* ([kwd-gensyms (map (lambda (x) (gensym "make-object/kwd/kwd")) kwd-pairs)]
 	     [class-gensym (gensym "make-object/kwd/class")]
 	     [kwds (map car kwd-pairs)]
 	     [get-kwds (map (lambda (x) (string->symbol
@@ -67,13 +67,13 @@
 	     [validate/invoke-keyword-after-object-creation
 	      (lambda (gen kwd get-kwd set-kwd)
 		`(cond
-		  [(memq ,set-kwd names)
-		   (unless (equal? 1 (arity (ivar ,set-kwd obj)))
+		  [(memq ',set-kwd names)
+		   (unless (equal? 1 (arity (ivar obj ,set-kwd)))
 		     (error 'make-object/kwd "keyword ~a not available in class ~e"
 			    ',kwd ,class-gensym))
 		   (send obj ,set-kwd ,gen)]
-		  [(memq ,kwd names)
-		   (unless (equal? '(0 1) (arity (ivar ,kwd obj)))
+		  [(memq ',kwd names)
+		   (unless (equal? '(0 1) (arity (ivar obj ,kwd)))
 		     (error 'make-object/kwd "keyword ~a not available in class ~e"
 			    ',kwd ,class-gensym))
 		   (send obj ,kwd ,gen)]))])
@@ -83,7 +83,7 @@
 	     (begin ,@(map (lambda (gen get-kwd set-kwd)
 			     (validate-keyword-before-object-creation
 			      gen get-kwd set-kwd))
-			   kwd-gensyms
+			   kwds
 			   set-kwds
 			   get-kwds))
 	     (let ([obj (apply make-object ,class-gensym ,(construct/validate-arguments))])
@@ -96,9 +96,11 @@
 			     set-kwds))
 	       obj)))))))
 
-(require-library "pretty.ss")
-(pretty-print
- (expand-defmacro-once `(make-object/kwd frame% (label "frame"))))
 
-(define f (make-object/kwd frame% (label "frame")))
+(define f (make-object/kwd frame% (label "frame") (height 100)))
+(define hp (make-object/kwd horizontal-panel% (style '(border)) (parent f)))
+(define c (make-object/kwd canvas%
+			   (stretchable-width #f)
+			   (parent hp)
+			   (cursor (make-object cursor% 'hand))))
 (send f show #t)

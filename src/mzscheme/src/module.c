@@ -126,7 +126,7 @@ static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
 #define MODCHAIN_TABLE(p) ((Scheme_Hash_Table *)(SCHEME_VEC_ELS(p)[0]))
 
-stativ void make_list_immutable(Scheme_Object *l) {
+static void make_list_immutable(Scheme_Object *l) {
   for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
     if (SCHEME_MUTABLEP(l))
       SCHEME_SET_IMMUTABLE(l);
@@ -886,7 +886,7 @@ static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])
     if (SAME_TYPE(SCHEME_TYPE(c->code), scheme_syntax_type)
 	&& (SCHEME_PINT_VAL(c->code) == MODULE_EXPD)) {
       Scheme_Module *m = (Scheme_Module *)SCHEME_IPTR_VAL(c->code);
-      Scheme_Object *a[2], *l;
+      Scheme_Object *a[2];
       
       /* Ensure that the lists are immutable: */
       make_list_immutable(m->requires);

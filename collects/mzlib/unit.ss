@@ -247,13 +247,19 @@
 					       all-expanded))])
 			   ;; Build up set! redirection chain:
 			   (with-syntax ([redirections
-					  (map
-					   (lambda (varloc)
-					     (with-syntax ([(var loc) varloc])
-					       (syntax
-						[var (make-id-mapper (quote-syntax (unbox loc)))])))
-					   (syntax->list 
-					    (syntax ((ivar iloc) ... (expname eloc) ...))))]
+					  (let ([varlocs 
+						 (syntax->list 
+						  (syntax ((ivar iloc) ... (expname eloc) ...)))])
+					    (with-syntax ([vars (map stx-car varlocs)]
+							  [rhss
+							   (map
+							    (lambda (varloc)
+							      (with-syntax ([(var loc) varloc])
+								(syntax
+								 (make-id-mapper (quote-syntax (unbox loc))))))
+							    varlocs)])
+					      (syntax
+					       ([vars (values . rhss)]))))]
 					 [num-imports (datum->syntax-object
 						       (quote-syntax here)
 						       (length (syntax->list (syntax (iloc ...))))
@@ -269,7 +275,7 @@
 				    (list (vector eloc ...)
 					  (lambda (iloc ...)
 					    (let ([intname undefined] ...)
-					      (letrec-syntax redirections
+					      (letrec-syntaxes redirections
 						(void) ; in case the body would be empty
 						defn&expr ...))))))))))))))))))])))
   

@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 250)
 
-(define mred:debug:turned-on (box (list 'startup 'invoke)))
+(define mred:debug:turned-on (box (list 'load 'startup 'invoke)))
 
 (define mred:debug@
   (let* ([debug-env (getenv "MREDDEBUG")])
@@ -12,8 +12,9 @@
 
       (define on? (and debug-env (string=? debug-env "on")))
 
-      (when on? (print-struct #t))
-
+      (when on? 
+	(print-struct #t))
+	
       (define turn-on (lambda (s) (set-box! 
 				   (global-defined-value 'mred:debug:turned-on)
 				   (cons s (unbox (global-defined-value 'mred:debug:turned-on))))))
@@ -36,6 +37,15 @@
       (define exit? #t))))
 
 (invoke-open-unit mred:debug@ mred:debug)
+
+(when mred:debug:on?
+  (let ([old-handler (current-load)])
+    (current-load (lambda (x)
+		    (flush-output (current-output-port))
+		    (flush-output (current-error-port))
+		    (mred:debug:printf 'load "Loading ~a..."
+			     (build-path (current-directory) x))
+		    (old-handler x)))))
 
 (define mred:debug:new-eval (void))
 (define mred:debug:new-console (void))  
@@ -70,7 +80,6 @@
 (define mred:system-source-directory (current-directory))
 (constant-name 'mred:system-source-directory)
 
-(mred:debug:printf 'startup "Loading mzlib...")
 (let ([libdir
        (let ([try-dir (build-path (current-directory) 'up "mzlib")])
 	 (if (directory-exists? try-dir)
@@ -137,7 +146,6 @@
 			 (file-modify-seconds zo-file))
 		     zo-file]
 		    [else ss-file])])
-	(mred:debug:printf 'startup "Loading ~a..." file)
 	(load/cd file)
 	#t))))
 
@@ -252,14 +260,11 @@
 				(if (eq? wx:platform 'windows)
 				    "mredrc.ss"
 				    ".mredrc"))])
-      (mred:debug:printf 'startup "user-setup; loading ~a..." file)
-      (if (file-exists? file)
-	  (let ([orig-escape (error-escape-handler)])
-	    (catch-errors (lambda (s)
-			    (wx:message-box s "Error"))
-			  (lambda ()
-			    (orig-escape))
-			  (load-with-cd file)))))))
+      (when (file-exists? file)
+	(let ([orig-escape (error-escape-handler)])
+	  (catch-errors (lambda (s) (wx:message-box s "Error"))
+			(lambda () (orig-escape))
+			(load/cd file)))))))
 
 (when (eq? wx:platform 'unix)
   (let* ([default-path "/usr/local/transcript-4.0/lib/"]

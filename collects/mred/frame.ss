@@ -44,9 +44,9 @@
 	(public
 	  [pre-on-char
 	   (lambda (receiver event)
-	     (let ([ans '(send keymap handle-key-event this event)])
+	     (let ([ans (send keymap handle-key-event this event)])
 	       '(printf "handled keyevent? ~a~n" ans)
-	       (or #f
+	       (or ans
 		   (super-pre-on-char receiver event))))]
 	  [pre-on-eventt
 	   (lambda (receiver event)
@@ -203,7 +203,7 @@
 	     (lambda ()
 	       (let ([mb (super-make-menu-bar)]
 		     [join (opt-lambda (base special [suffix ""])
-			     (if (string=? base "")
+			     (if (string=? special "")
 				 (string-append base suffix)
 				 (string-append base " " special suffix)))])
 		 (set! file-menu (make-menu))

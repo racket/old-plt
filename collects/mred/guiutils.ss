@@ -103,49 +103,47 @@
 	(let* ([result (void)]
 	       [dialog%
 		(class wx:dialog-box% ()
-		       (inherit show new-line fit tab center)
-		       (private
-			[on-dont-save
-			 (lambda args
-			   (set! result 'continue)
-			   (show #f))]
-			[on-save-now
-			 (lambda rags
-			   (set! result 'save)
-			   (show #f))]
-			[on-cancel
-			 (lambda args
-			   (set! result 'cancel)
-			   (show #f))])
-		       (sequence
-			 (super-init () "Warning" #t)
-			 (let ([msg
-				(make-object wx:message% this
-					     (string-append "The file \""
-							    filename
-							    "\" is not saved."))])
-			   (new-line)
-			   
-			   (make-object wx:button% this
-					on-dont-save 
-					(string-append action " anyway"))
-			   
-			   (tab 50)
-			   
-			   (let ([now (make-object wx:button% this
-						   on-save-now "Save")])
-			     (if (not can-save-now?)
-				 (send now show #f)))
-			   
-			   (make-object wx:button% this
-					on-cancel "Cancel")
-			   (fit)
-			   
-			   (send msg center wx:const-horizontal))
-			 
-			 (center wx:const-both)
-			 
-			 (show #t)))])
+		  (inherit show new-line fit tab center)
+		  (private
+		    [on-dont-save
+		     (lambda args
+		       (set! result 'continue)
+		       (show #f))]
+		    [on-save-now
+		     (lambda rags
+		       (set! result 'save)
+		       (show #f))]
+		    [on-cancel
+		     (lambda args
+		       (set! result 'cancel)
+		       (show #f))])
+		  (sequence
+		    (super-init () "Warning" #t)
+		    (let ([msg
+			   (make-object wx:message% this
+					(string-append "The file \""
+						       filename
+						       "\" is not saved."))])
+		      (new-line)
+		      (make-object wx:button% this
+				   on-dont-save 
+				   (string-append action " anyway"))
+		      
+		      (tab 50)
+		      (let ([now (make-object wx:button% this
+					      on-save-now "Save")]
+			    [cancel (make-object wx:button% this
+						 on-cancel "Cancel")])
+			(if (not can-save-now?)
+			    (begin (send cancel set-focus)
+				   (send now show #f))
+			    (send now set-focus)))
+		      (fit)
+		      (send msg center wx:const-horizontal))
+		    
+		    (center wx:const-both)
+		    
+		    (show #t)))])
 	  (make-object dialog%)
 	  result)))
     
@@ -171,5 +169,4 @@
        "A4 210 x 297 mm"
        "A3 297 x 420 mm"
        "Letter 8 1/2 x 11 in"
-       "Legal 8 1/2 x 14 in"))
-    ))
+       "Legal 8 1/2 x 14 in"))))

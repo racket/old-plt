@@ -263,7 +263,7 @@
 	       (send (active-edit) set-position
 		     0 (send (active-edit) last-position)))]
 
-	    [edit-menu:between-select-all-and-preferences
+	    [edit-menu:between-find-and-preferences
 	     (lambda (edit-menu)
 	       (send edit-menu append-separator)
 	       (send edit-menu append-item "Insert Text Box"

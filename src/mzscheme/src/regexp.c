@@ -245,7 +245,7 @@ static regexp *
 regcomp(char *expstr, rxpos exp, int explen)
 {
   regexp *r;
-  rxpos scan;
+  rxpos scan, next;
   rxpos longest;
   int len;
   int flags;
@@ -294,7 +294,8 @@ regcomp(char *expstr, rxpos exp, int explen)
   r->regmust = -1;
   r->regmlen = 0;
   scan = (r->program+1) - (char *)r;    /* First BRANCH. */
-  if (OP(regnext(scan)) == END) {	/* Only one top-level choice. */
+  next = regnext(scan);
+  if (OP(next) == END) {	/* Only one top-level choice. */
     scan = OPERAND(scan);
     
     /* Starting-point info. */
@@ -884,7 +885,7 @@ regexec(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp,
     slen = stringlen;
     while ((spos = l_strchr(string, spos, slen, ((char *)prog + prog->regmust)[0])) != -1) {
       int i, l = prog->regmlen;
-      char *p = ((char *)prog + prog->regmust);
+      GC_CAN_IGNORE char *p = ((char *)prog + prog->regmust); /* ASSUMING NO GC HERE! */
       slen = stringlen - (spos - stringpos);
       for (i = 0; (i < l) && (i < slen); i++) {
 	if (string[spos + i] != p[i])
@@ -935,8 +936,7 @@ static int			/* 0 failure, 1 success */
 regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp)
 {
   int i;
-  rxpos *sp;
-  rxpos *ep;
+  GC_CAN_IGNORE rxpos *sp, *ep;
 
   reginstr = string;
   reginput = stringpos;
@@ -945,6 +945,7 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
   regstartp = startp;
   regendp = endp;
 
+  /* ASSUMING NO GC in this loop: */ 
   sp = startp;
   ep = endp;
   for (i = prog->nsubexp; i > 0; i--) {

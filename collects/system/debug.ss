@@ -77,23 +77,6 @@
 (define-macro mred:debug:turn-on mred:debug:turn-on)
 (define-macro mred:debug:turn-off mred:debug:turn-off)
 
-'(define-macro mred:dv
-  (lambda args
-    (let ([string
-	   (let loop ([string ""] [args args])
-	     (cond
-	      [(null? args) string]
-	      [else 
-	       (unless (symbol? (car args))
-		 (error 'mred:dv 
-			"only accepts symbols as arguments"))
-	       (loop 
-		(string-append string 
-			       (symbol->string (car args))
-			       ": ~s ")
-		(cdr args))]))])
-      `(mred:debug:printf 'dv ,string ,@args))))
-
 (mred:debug:when (list 'compile 'compile-and-exit 'load)
   (letrec* ([old-handler (current-load)]
 	    [offset-string "  "]
@@ -123,20 +106,24 @@
 				  (mred:debug:printf 'load "~amzlib; skip: ~a" indent-string x))
 				ans))])
 		      (mred:debug:printf 'load "~aLoading ~a..." indent-string file)
-		      (let* ([answer
+		      (let* ([indent
+			      (lambda ()
+				(set! indent-string (string-append offset-string indent-string)))]
+			     [outdent
+			      (lambda ()
+				(set! indent-string
+				      (substring indent-string
+						 0
+						 (max (- (string-length indent-string)
+							 (string-length offset-string))
+						      0))))]
+			     [answer
 			      (dynamic-wind
-			       (lambda ()
-				 (set! indent-string (string-append offset-string indent-string)))
+			       indent
 			       (lambda () (call-with-values
 					   (lambda () (old-handler f))
 					   list))
-			       (lambda ()
-				 (set! indent-string
-				       (substring indent-string
-						  0
-						  (max (- (string-length indent-string)
-							  (string-length offset-string))
-						       0)))))]
+			       outdent)]
 			     [len (string-length file)]
 			     [basename (substring file 0 (- len 3))]
 			     [suffix (substring file (- len 3) len)]
@@ -157,8 +144,11 @@
 					    (file-modify-seconds file)))
 				    (not (mzlib? file)))
 			   (mred:debug:printf 'load "~aCompiling ~a..." indent-string file)
+			   (indent)
 			   (with-handlers ((void error-handler))
 					  (compile-file file zo '(preserve-elaborations))
-					  #t)))
+					  #t)
+			   (outdent)
+			   (mred:debug:printf 'load "~aCompiled ~a." indent-string file)))
 			(mred:debug:printf 'load "~aLoaded ~a." indent-string file)
 			(apply values answer)))))))

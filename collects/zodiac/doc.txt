@@ -19,7 +19,7 @@ The unit/sig way:
   Link time:
    (require-library-unit/sig "link.ss" "zodiac")
    Imports:
-      zodiac:interface^
+      zodiac:interface^ ; see "Error Handlers" below
       mzlib:pretty-print^
       mzlib:file^
    Exports:
@@ -77,6 +77,11 @@ user-macro-body-evaluator - parameter for the evaluator used to
 
 Error Handlers
 --------------
+
+Zodiac relies on two error handles that are provided by the
+ zodiac:interface^ import: internal-error (for when things go wrong in
+ zodiac that should never go wrong) and static-error (for input errors
+ during read or expand).
 
 A zodiac error handler takes a zodiac AST followed by format-style
  arguments. For example:

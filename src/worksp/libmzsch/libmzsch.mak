@@ -91,6 +91,7 @@ CLEAN :
 	-@erase "$(INTDIR)\thread.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\types.obj"
+	-@erase "$(INTDIR)\uniplt.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\vector.obj"
@@ -109,7 +110,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzgc/Release/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
+LINK32_FLAGS=../libmzgc/Release/libmzgcxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
@@ -153,6 +154,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\types.obj" \
+	"$(INTDIR)\uniplt.obj" \
 	"$(INTDIR)\vector.obj" \
 	"$(INTDIR)\win32.obj" \
 	"..\libmzgc\Release\libmzgcxxxxxxx.lib"
@@ -224,6 +226,7 @@ CLEAN :
 	-@erase "$(INTDIR)\thread.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\types.obj"
+	-@erase "$(INTDIR)\uniplt.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\vector.obj"
@@ -243,7 +246,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzgc/Debug/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
+LINK32_FLAGS=../libmzgc/Debug/libmzgcxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /nodefaultlib:"kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib" /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \
@@ -287,6 +290,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\types.obj" \
+	"$(INTDIR)\uniplt.obj" \
 	"$(INTDIR)\vector.obj" \
 	"$(INTDIR)\win32.obj" \
 	"..\libmzgc\Debug\libmzgcxxxxxxx.lib"
@@ -589,6 +593,12 @@ SOURCE=..\..\Mzscheme\Src\Type.c
 SOURCE=..\..\foreign\libffi_msvc\types.c
 
 "$(INTDIR)\types.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\mzscheme\uniplt.c
+
+"$(INTDIR)\uniplt.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

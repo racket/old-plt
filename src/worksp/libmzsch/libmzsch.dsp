@@ -53,7 +53,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ../libmzgc/Release/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll"
+# ADD LINK32 ../libmzgc/Release/libmzgcxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll"
+# SUBTRACT LINK32 /pdb:none /nodefaultlib
 
 !ELSEIF  "$(CFG)" == "libmzsch - Win32 Debug"
 
@@ -80,7 +81,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 ../libmzgc/Release/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmzsch.dll"
-# ADD LINK32 ../libmzgc/Debug/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll"
+# ADD LINK32 ../libmzgc/Debug/libmzgcxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /debug /machine:I386 /nodefaultlib:"kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib" /out:"../../../libmzschxxxxxxx.dll"
+# SUBTRACT LINK32 /pdb:none /nodefaultlib
 
 !ENDIF 
 
@@ -258,6 +260,10 @@ SOURCE=..\..\Mzscheme\Src\Type.c
 # Begin Source File
 
 SOURCE=..\..\foreign\libffi_msvc\types.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\mzscheme\uniplt.c
 # End Source File
 # Begin Source File
 

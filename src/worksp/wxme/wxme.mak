@@ -25,6 +25,9 @@ NULL=
 NULL=nul
 !ENDIF 
 
+CPP=cl.exe
+RSC=rc.exe
+
 !IF  "$(CFG)" == "wxme - Win32 Release"
 
 OUTDIR=.\Release
@@ -59,40 +62,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
 CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxcommon\jpeg" /I "..\jpeg" /I "..\..\wxcommon\zlib" /D "NDEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "GC_DLL" /Fp"$(INTDIR)\wxme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxme.bsc" 
 BSC32_SBRS= \
@@ -155,8 +125,36 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
 CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxcommon\jpeg" /I "..\jpeg" /I "..\..\wxcommon\zlib" /D "DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "GC_DLL" /Fp"$(INTDIR)\wxme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxme.bsc" 
+BSC32_SBRS= \
+	
+LIB32=link.exe -lib
+LIB32_FLAGS=/nologo /out:"$(OUTDIR)\wxme.lib" 
+LIB32_OBJS= \
+	"$(INTDIR)\WX_CGREC.obj" \
+	"$(INTDIR)\WX_KEYM.obj" \
+	"$(INTDIR)\WX_MBUF.obj" \
+	"$(INTDIR)\WX_MEDAD.obj" \
+	"$(INTDIR)\WX_MEDIA.obj" \
+	"$(INTDIR)\WX_MEDIO.obj" \
+	"$(INTDIR)\WX_MLINE.obj" \
+	"$(INTDIR)\WX_MPBRD.obj" \
+	"$(INTDIR)\WX_MPRIV.obj" \
+	"$(INTDIR)\WX_MSNIP.obj" \
+	"$(INTDIR)\WX_SNIP.obj" \
+	"$(INTDIR)\WX_STYLE.obj" \
+	"$(INTDIR)\wxGC.obj" \
+	"$(INTDIR)\wxJPEG.obj" \
+	"$(INTDIR)\xcglue.obj"
+
+"$(OUTDIR)\wxme.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
+    $(LIB32) @<<
+  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
+<<
+
+!ENDIF 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -187,37 +185,6 @@ CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\
    $(CPP) @<<
    $(CPP_PROJ) $< 
 <<
-
-RSC=rc.exe
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\wxme.bsc" 
-BSC32_SBRS= \
-	
-LIB32=link.exe -lib
-LIB32_FLAGS=/nologo /out:"$(OUTDIR)\wxme.lib" 
-LIB32_OBJS= \
-	"$(INTDIR)\WX_CGREC.obj" \
-	"$(INTDIR)\WX_KEYM.obj" \
-	"$(INTDIR)\WX_MBUF.obj" \
-	"$(INTDIR)\WX_MEDAD.obj" \
-	"$(INTDIR)\WX_MEDIA.obj" \
-	"$(INTDIR)\WX_MEDIO.obj" \
-	"$(INTDIR)\WX_MLINE.obj" \
-	"$(INTDIR)\WX_MPBRD.obj" \
-	"$(INTDIR)\WX_MPRIV.obj" \
-	"$(INTDIR)\WX_MSNIP.obj" \
-	"$(INTDIR)\WX_SNIP.obj" \
-	"$(INTDIR)\WX_STYLE.obj" \
-	"$(INTDIR)\wxGC.obj" \
-	"$(INTDIR)\wxJPEG.obj" \
-	"$(INTDIR)\xcglue.obj"
-
-"$(OUTDIR)\wxme.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
-    $(LIB32) @<<
-  $(LIB32_FLAGS) $(DEF_FLAGS) $(LIB32_OBJS)
-<<
-
-!ENDIF 
 
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"

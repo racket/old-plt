@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 ..\libmred\Release\libmredxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib ..\libmzgc\Release\libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib comctl32.lib /nologo /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
+# ADD LINK32 ..\libmred\Release\libmredxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib ..\libmzgc\Release\libmzgcxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib comctl32.lib /nologo /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
 # SUBTRACT LINK32 /incremental:yes
 
 !ELSEIF  "$(CFG)" == "mred - Win32 Debug"
@@ -82,7 +82,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 ..\libmred\Release\libmred.lib ..\libmzsch\Release\libmzsch.lib ..\libmzgc\Release\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
 # SUBTRACT BASE LINK32 /incremental:yes
-# ADD LINK32 ..\libmred\Debug\libmredxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib ..\libmzgc\Debug\libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib comctl32.lib /nologo /subsystem:windows /incremental:yes /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
+# ADD LINK32 ..\libmred\Debug\libmredxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib ..\libmzgc\Debug\libmzgcxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib comctl32.lib /nologo /subsystem:windows /incremental:yes /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
 
 !ENDIF 
 
@@ -96,17 +96,14 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\Mred.rc
-
-!IF  "$(CFG)" == "mred - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
-
-!ENDIF 
-
 # End Source File
 # Begin Source File
 
 SOURCE=..\..\mred\mrmain.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\mzscheme\uniplt.c
 # End Source File
 # End Group
 # Begin Group "Header Files"

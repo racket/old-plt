@@ -53,7 +53,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 ../libmzsch/release/libmzschxxxxxxx.lib ../libmzgc/release/libmzgcxxxxxxx.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib ../png/release/png.lib ../zlib/release/zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll"
+# ADD LINK32 ../libmzsch/release/libmzschxxxxxxx.lib ../libmzgc/release/libmzgcxxxxxxx.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib ../png/release/png.lib ../zlib/release/zlib.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll"
 # SUBTRACT LINK32 /pdb:none
 
 !ELSEIF  "$(CFG)" == "libmred - Win32 Debug"
@@ -82,7 +82,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 ../libmzsch/release/libmzsch.lib ../libmzgc/release/libmzgc.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /debug /machine:I386 /out:"../../../libmred.dll"
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 ../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib ../png/debug/png.lib ../zlib/debug/zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:yes /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll"
+# ADD LINK32 ../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib ../png/debug/png.lib ../zlib/debug/zlib.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:yes /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll"
 # SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
@@ -101,6 +101,10 @@ SOURCE=..\..\mred\MRED.cxx
 # Begin Source File
 
 SOURCE=..\..\mred\MREDMSW.cxx
+# End Source File
+# Begin Source File
+
+SOURCE=..\mzscheme\uniplt.c
 # End Source File
 # End Group
 # Begin Group "Header Files"

@@ -53,6 +53,7 @@ CLEAN :
 !ENDIF 
 	-@erase "$(INTDIR)\Main.obj"
 	-@erase "$(INTDIR)\mzscheme.res"
+	-@erase "$(INTDIR)\uniplt.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\MzScheme.exe"
@@ -70,9 +71,10 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmzgc\Release\libmzgcxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"$(OUTDIR)\MzScheme.exe" 
+LINK32_FLAGS=..\libmzgc\Release\libmzgcxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"$(OUTDIR)\MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\Main.obj" \
+	"$(INTDIR)\uniplt.obj" \
 	"$(INTDIR)\mzscheme.res" \
 	"$(OUTDIR)\src\worksp\libmzsch\Release\libmzschxxxxxxx.lib" \
 	"$(OUTDIR)\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib"
@@ -119,6 +121,7 @@ CLEAN :
 !ENDIF 
 	-@erase "$(INTDIR)\Main.obj"
 	-@erase "$(INTDIR)\mzscheme.res"
+	-@erase "$(INTDIR)\uniplt.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\MzScheme.pdb"
@@ -133,9 +136,10 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"..\..\..\MzScheme.exe" 
+LINK32_FLAGS=..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /nodefaultlib:"kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib" /out:"..\..\..\MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\Main.obj" \
+	"$(INTDIR)\uniplt.obj" \
 	"$(INTDIR)\mzscheme.res" \
 	"..\libmzsch\Debug\libmzschxxxxxxx.lib" \
 	"..\libmzgc\Debug\libmzgcxxxxxxx.lib"
@@ -212,27 +216,32 @@ SOURCE=.\mzscheme.rc
 	$(RSC) $(RSC_PROJ) $(SOURCE)
 
 
+SOURCE=.\uniplt.c
+
+"$(INTDIR)\uniplt.obj" : $(SOURCE) "$(INTDIR)"
+
+
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 "libmzsch - Win32 Release" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Release" 
    cd "..\mzscheme"
 
 "libmzsch - Win32 ReleaseCLEAN" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 "libmzsch - Win32 Debug" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Debug" 
    cd "..\mzscheme"
 
 "libmzsch - Win32 DebugCLEAN" : 
-   cd "..\libmzsch"
+   cd "\Matthew\plt\src\worksp\libmzsch"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzsch.mak CFG="libmzsch - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
@@ -241,24 +250,24 @@ SOURCE=.\mzscheme.rc
 !IF  "$(CFG)" == "mzscheme - Win32 Release"
 
 "libmzgc - Win32 Release" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" 
    cd "..\mzscheme"
 
 "libmzgc - Win32 ReleaseCLEAN" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 "libmzgc - Win32 Debug" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" 
    cd "..\mzscheme"
 
 "libmzgc - Win32 DebugCLEAN" : 
-   cd "..\libmzgc"
+   cd "\Matthew\plt\src\worksp\libmzgc"
    $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" RECURSE=1 CLEAN 
    cd "..\mzscheme"
 

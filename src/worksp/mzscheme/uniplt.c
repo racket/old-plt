@@ -1,5 +1,7 @@
 
 #include <windows.h>
+#include <stdio.h>
+#include "../../mzscheme/src/schvers.h"
 
 HMODULE LoadUnicowsProc(void)
 {
@@ -14,7 +16,7 @@ HMODULE LoadUnicowsProc(void)
   s[18] = 0;
   m = LoadLibraryA(s);
   if (!m)
-    m = LoadLibraryA("uniplt_xxxxxxx.dll")
+    m = LoadLibraryA("uniplt_xxxxxxx.dll");
   return m;
 }
 

@@ -50,8 +50,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /machine:I386
-# ADD LINK32 ..\libmzgc\Release\libmzgcxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\MzScheme.exe"
-# SUBTRACT LINK32 /pdb:none
+# ADD LINK32 ..\libmzgc\Release\libmzgcxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\MzScheme.exe"
+# SUBTRACT LINK32 /pdb:none /nodefaultlib
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
 PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
@@ -81,7 +81,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 ..\libmzgc\Release\libmzgc.lib ..\libmzsch\Release\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\MzScheme.exe"
 # SUBTRACT BASE LINK32 /pdb:none
-# ADD LINK32 ..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /out:"..\..\..\MzScheme.exe"
+# ADD LINK32 ..\libmzgc\Debug\libmzgcxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /debug /machine:I386 /nodefaultlib:"kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib" /out:"..\..\..\MzScheme.exe"
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
@@ -104,6 +104,10 @@ SOURCE=..\..\Mzscheme\Main.c
 # Begin Source File
 
 SOURCE=.\mzscheme.rc
+# End Source File
+# Begin Source File
+
+SOURCE=.\uniplt.c
 # End Source File
 # End Group
 # Begin Group "Header Files"

@@ -25,6 +25,10 @@ NULL=
 NULL=nul
 !ENDIF 
 
+CPP=cl.exe
+MTL=midl.exe
+RSC=rc.exe
+
 !IF  "$(CFG)" == "libmzgc - Win32 Release"
 
 OUTDIR=.\Release
@@ -51,6 +55,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Os_dep.obj"
 	-@erase "$(INTDIR)\Reclaim.obj"
 	-@erase "$(INTDIR)\Stubborn.obj"
+	-@erase "$(INTDIR)\uniplt.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\win32_threads.obj"
@@ -62,48 +67,13 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
 CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "../../mzscheme/gc/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_BUILD" /D "SILENT" /D "OLD_BLOCK_ALLOC" /D "LARGE_CONFIG" /D "ATOMIC_UNCOLLECTABLE" /D INITIAL_MARK_STACK_SIZE=8192 /D "GC_DLL" /Fp"$(INTDIR)\libmzgc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL=midl.exe
-MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC=rc.exe
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzgc.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzgcxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzgcxxxxxxx.dll" /implib:"$(OUTDIR)\libmzgcxxxxxxx.lib" 
+LINK32_FLAGS=unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzgcxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzgcxxxxxxx.dll" /implib:"$(OUTDIR)\libmzgcxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Allchblk.obj" \
 	"$(INTDIR)\Alloc.obj" \
@@ -122,6 +92,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\Os_dep.obj" \
 	"$(INTDIR)\Reclaim.obj" \
 	"$(INTDIR)\Stubborn.obj" \
+	"$(INTDIR)\uniplt.obj" \
 	"$(INTDIR)\win32_threads.obj"
 
 "..\..\..\libmzgcxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
@@ -155,6 +126,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Os_dep.obj"
 	-@erase "$(INTDIR)\Reclaim.obj"
 	-@erase "$(INTDIR)\Stubborn.obj"
+	-@erase "$(INTDIR)\uniplt.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\win32_threads.obj"
@@ -167,8 +139,40 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
 CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "../../mzscheme/gc/include" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_BUILD" /D "MD_LIB_MAIN" /D "SILENT" /D "OLD_BLOCK_ALLOC" /D "LARGE_CONFIG" /D "ATOMIC_UNCOLLECTABLE" /D INITIAL_MARK_STACK_SIZE=8192 /D "GC_DLL" /Fp"$(INTDIR)\libmzgc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzgc.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=unicows.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzgcxxxxxxx.pdb" /debug /machine:I386 /nodefaultlib:"kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib" /out:"../../../libmzgcxxxxxxx.dll" /implib:"$(OUTDIR)\libmzgcxxxxxxx.lib" 
+LINK32_OBJS= \
+	"$(INTDIR)\Allchblk.obj" \
+	"$(INTDIR)\Alloc.obj" \
+	"$(INTDIR)\Blacklst.obj" \
+	"$(INTDIR)\Dyn_load.obj" \
+	"$(INTDIR)\Finalize.obj" \
+	"$(INTDIR)\Headers.obj" \
+	"$(INTDIR)\Mach_dep.obj" \
+	"$(INTDIR)\Malloc.obj" \
+	"$(INTDIR)\Mallocx.obj" \
+	"$(INTDIR)\Mark.obj" \
+	"$(INTDIR)\Mark_rts.obj" \
+	"$(INTDIR)\Misc.obj" \
+	"$(INTDIR)\New_hblk.obj" \
+	"$(INTDIR)\Obj_map.obj" \
+	"$(INTDIR)\Os_dep.obj" \
+	"$(INTDIR)\Reclaim.obj" \
+	"$(INTDIR)\Stubborn.obj" \
+	"$(INTDIR)\uniplt.obj" \
+	"$(INTDIR)\win32_threads.obj"
+
+"..\..\..\libmzgcxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ENDIF 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -200,42 +204,7 @@ CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "../../mzscheme/gc/include" /D "WIN32" 
    $(CPP_PROJ) $< 
 <<
 
-MTL=midl.exe
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC=rc.exe
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzgc.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzgcxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzgcxxxxxxx.dll" /implib:"$(OUTDIR)\libmzgcxxxxxxx.lib" 
-LINK32_OBJS= \
-	"$(INTDIR)\Allchblk.obj" \
-	"$(INTDIR)\Alloc.obj" \
-	"$(INTDIR)\Blacklst.obj" \
-	"$(INTDIR)\Dyn_load.obj" \
-	"$(INTDIR)\Finalize.obj" \
-	"$(INTDIR)\Headers.obj" \
-	"$(INTDIR)\Mach_dep.obj" \
-	"$(INTDIR)\Malloc.obj" \
-	"$(INTDIR)\Mallocx.obj" \
-	"$(INTDIR)\Mark.obj" \
-	"$(INTDIR)\Mark_rts.obj" \
-	"$(INTDIR)\Misc.obj" \
-	"$(INTDIR)\New_hblk.obj" \
-	"$(INTDIR)\Obj_map.obj" \
-	"$(INTDIR)\Os_dep.obj" \
-	"$(INTDIR)\Reclaim.obj" \
-	"$(INTDIR)\Stubborn.obj" \
-	"$(INTDIR)\win32_threads.obj"
-
-"..\..\..\libmzgcxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-!ENDIF 
-
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("libmzgc.dep")
@@ -346,6 +315,12 @@ SOURCE=..\..\Mzscheme\Gc\Reclaim.c
 SOURCE=..\..\Mzscheme\Gc\Stubborn.c
 
 "$(INTDIR)\Stubborn.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\mzscheme\uniplt.c
+
+"$(INTDIR)\uniplt.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

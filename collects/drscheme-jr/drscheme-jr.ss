@@ -1,12 +1,12 @@
 (reference-library "macro.ss")
+(reference-library "cmdline.ss")
 
-(define annotate? (not (equal? (getenv "MZRICESKIPARIES") "yes")))
 
-;; get stdin character positions right.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                      Debugging                         ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; be sure to update the mzlib shell script if this changes
-;; can I add flags to mzscheme?
-
+(define annotate? (not (equal? (getenv "DRSCHEMEJRSKIPARIES") "yes")))
 (when (getenv "MREDDEBUG")
   (letrec* ([old-handler (current-load)]
 	    [offset-string "  "]
@@ -29,46 +29,133 @@
 						  (string-length offset-string))
 					       0))))))))))
 
-(define image-dir (vector-ref argv 0))
-(define sys-dir (vector-ref argv 1))
-(define dump-image? (string=? (vector-ref argv 2) "y"))
-(define argv-in (list->vector (cdddr (vector->list argv))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;              Flag and Language Definitions             ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define syntax-level 'advanced)
-(define use-print-convert? (and (defined? 'mzrice:print-convert)
-				mzrice:print-convert))
-(define signal-undef #t)
-(read-case-sensitive #t)
-(compile-allow-set!-undefined #t)
-(compile-allow-cond-fallthrough #f)
+(define use-print-convert (make-parameter #f))
+(define signal-undef (make-parameter #f))
+(define allow-.-lists (make-parameter #f))
+(define eq?-only-on-syms (make-parameter #f))
+(define cond-is-boolean (make-parameter #f))
+(define inexact-needs-#i (make-parameter #f))
+(define print-with-list (make-parameter #f))
+(define print-with-sharing (make-parameter #f))
 
-(define no-arguments-given? #t)
+;; Flag definitions
 
-(define simple-args
+(define flags
   (list
-   (list '--print-convert (lambda () (set! use-print-convert? #t)))
-   (list '--no-print-convert (lambda () (set! use-print-convert? #f)))
-   (list '--case-sens read-case-sensitive #t)
-   (list '--case-insens read-case-sensitive #f)
-   (list '--set-undef compile-allow-set!-undefined #t)
-   (list '--no-set-undef compile-allow-set!-undefined #f)
-   (list '--auto-else compile-allow-cond-fallthrough #t)
-   (list '--no-auto-else compile-allow-cond-fallthrough #f)
-   (list '--signal-undef (lambda () (set! signal-undef #t)))
-   (list '--no-signal-undef (lambda () (set! signal-undef #f)))))
+   (list "--case-sens"
+	 read-case-sensitive
+	 "case-sensitive symbols and variables")
+   (list "--set-undef"
+	 compile-allow-set!-undefined
+	 "set! on undefined variables")
+   (list "--auto-else"
+	 compile-allow-cond-fallthrough
+	 "auto `else' clause in `cond' and `case'")
+   (list "--signal-undef"
+	 signal-undef
+	 "error if using #<undefined> variable")
+   (list "--eq-syms"
+	 eq?-only-on-syms
+	 "eq? only for symbols")
+   (list "--improper-lists"
+	 allow-.-lists
+	 "improper lists")
+   (list "--boolean-conds"
+	 cond-is-boolean
+	 "conditionals must be #t or #f")
+   (list "--tag-inexacts"
+	 inexact-needs-#i
+	 "#i required for inexact numbers")
+   (list "--print-convert"
+	 use-print-convert
+	 "`read'able printing")
+   (list "--print-list"
+	 print-with-list
+	 "`list' in `read'able printing")
+   (list "--print-sharing"
+	 print-with-sharing
+	 "sharing in `read'able printing")))
 
-(define (bad-arguments s . args)
-  (printf "MzRice error: ~a~n" (apply format s args))
-  (exit -1))
+;; Mapping from language to flag settings
 
 (define language-levels
-  '(("Beginner" core #t)
-    ("Intermediate" structured #t)
-    ("Advanced" side-effecting #t)
-    ("R4RS+" advanced #f)))
+  '(("Beginner" core)
+    ("Intermediate" structured)
+    ("Advanced" side-effecting)
+    ("R4RS+" advanced)))
+
+(define (install-level)
+  (read-case-sensitive #t)
+  (use-print-convert #t)
+  (signal-undef #t)
+  (compile-allow-set!-undefined #f)
+  (compile-allow-cond-fallthrough #f)
+  (allow-.-lists #f)
+  (cond-is-boolean #f)
+  (eq?-only-on-syms #t)
+  (inexact-needs-#i #f)
+  (print-with-list #t)
+  (print-with-sharing #t)
+  (case syntax-level
+    [(core)
+     (cond-is-boolean #t)
+     (inexact-needs-#i #t)
+     (print-with-sharing #f)]
+    [(structured)
+     (cond-is-boolean #t)
+     (inexact-needs-#i #t)
+     (print-with-sharing #f)]
+    [(side-effecting)
+     (void)]
+    [(advanced)
+     (eq?-only-on-syms #f)
+     (allow-.-lists #t)
+     (use-print-convert #f)
+     (compile-allow-set!-undefined #t)]
+    [else #f]))
+
+;; Initialize to R4RS+ settings
+(install-level)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                 Setting the Flags                      ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (get-argv-file)
+  (case (system-type)
+    [(unix) "~/.drscheme-jr.settings"]
+    [(macos) (build-path (find-executable-path program "DrScheme Jr")
+			 "DrScheme Jr Settings")]
+    [(windows) (build-path (find-executable-path program "DrScheme Jr.exe")
+			   "DrScheme Jr Settings.txt")]))
+
+(with-handlers ([void void])
+  (with-input-from-file (get-argv-file)
+    (lambda ()
+      (let ([l (read)]
+	    [s (read)])
+	(when (memq l (map (lambda (l) (cadr l)) language-levels))
+	   (set! syntax-level l))
+	(for-each
+	 (lambda (entry)
+	   (let ([tag (car entry)]
+		 [value (cdr entry)])
+	     (let ([a (assoc tag flags)])
+	       (when a
+		  ((cadr a) value)))))
+	 s)))))
+
+(define (bad-arguments s . args)
+  (printf "DrScheme Jr error: ~a~n" (apply format s args))
+  (exit -1))
 
 (define (choose-mode)
-  (printf "Choose a language level:~n")
+  (printf "Choose a language:~n")
   (let loop ([n 1][l language-levels])
     (if (null? l)
 	(printf "[~a]? " (sub1 n))
@@ -83,66 +170,109 @@
 			[x (read p)])
 		   (and (eof-object? (read p)) x)))])
       (if (or (eof-object? v) (and (number? v) (<= 1 v len)))
-	  (list '--level (string->symbol
-			  (car (list-ref language-levels
-					 (if (eof-object? v)
-					     (sub1 len)
-					     (sub1 v))))))
+	  (set-level (string->symbol
+		      (car (list-ref language-levels
+				     (if (eof-object? v)
+					 (sub1 len)
+					 (sub1 v))))))
 	  (begin
 	    (printf "Please answer 1, 2, 3, or 4~n")
 	    (choose-mode))))))
 
+(define (set-level level)
+  (let ([p (assoc level (map (lambda (p)
+			       (list (string->symbol (car p)) (cadr p)))
+			     language-levels))])
+    (if p
+	(begin
+	  (set! syntax-level (cadr p))
+	  (install-level))
+	(bad-arguments "bad level name: ~s" level))))
+
+(define (make-implies-string level)
+  (let ([orig syntax-level]
+	[s (lambda (v) (if v "on" "off"))])
+    (set! syntax-level level)
+    (install-level)
+    (let ([s (apply
+	      string-append
+	      (map
+	       (lambda (f)
+		 (format "~n                     ~a ~a" 
+			 (car f)
+			 (s ((cadr f)))))
+	       flags))])
+      (set! syntax-level orig)
+      (install-level)
+      s)))
+
+(define (on? v)
+  (cond
+   [(string=? v "on") #t]
+   [(string=? v "off") #f]
+   [else (bad-arguments "expected `on' or `off', given: ~a" v)]))
+
+(define (make-on/off s)
+  (list (format "Enable/disable ~a" s)
+	"on/off"))
+
 (define user-argv
-  (let loop ([l (map string->symbol (vector->list argv-in))])
-    (if (null? l)
-	#()
-	(case (car l)
-	  [(--choose) (set! no-arguments-given? #f)
-		      (loop (append (choose-mode) (cdr l)))]
-	  [(--level) (set! no-arguments-given? #f)
-		     (if (null? (cdr l))
-			 (bad-arguments "--level flag expects level name")
-			 (let ([level (cadr l)])
-			   (let ([p (assoc level (map (lambda (p)
-							(list (string->symbol (car p)) (cadr p) (caddr p)))
-						      language-levels))])
-			     (if p
-				 (begin
-				   (set! syntax-level (cadr p))
-				   (when (caddr p)
-					 (set! use-print-convert? #t))
-				   (loop (cddr l)))
-				 (bad-arguments "bad level name: ~s" level)))))]
-	  [(--help) (printf (string-append
-			     "MzRice flags:~n  --help~n"
-			     "  --level <level>, where <level> is in: ~a~n"
-			     (apply string-append
-				    (map (lambda (l)
-					   (if (caddr l)
-					       (format "      ~a imples --print-convert~n"
-						       (car l))
-					       ""))
-					 language-levels))
-			     "~a  --choose~n  --~n")
-			    (map car language-levels)
-			    (let loop ([l simple-args])
-			      (if (null? l)
-				  ""
-				  (string-append
-				   (format "  ~s~n" (caar l))
-				   (loop (cdr l))))))
-		    (exit 0)]
-	  [(--) (list->vector (cdr l))]
-	  [else (let ([f (assq (car l) simple-args)])
-		  (if f
-		      (begin
-			(set! no-arguments-given? #f)
-			(apply (cadr f) (cddr f))
-			(loop (cdr l)))
-		      (let ([s (symbol->string (car l))])
-			(if (char=? (string-ref s 0) #\-)
-			    (bad-arguments "bad flag: ~s" (car l))
-			    (list->vector l)))))]))))
+  (parse-command-line
+   "DrScheme Jr"
+   argv
+   `([multi
+      ,@(map
+	 (lambda (f)
+	   `[(,(car f))
+	     ,(lambda (_ v) ((cadr f) (on? v)))
+	     ,(make-on/off (caddr f))])
+	 flags)]
+     [once-each
+      [("-l" "--language")
+       ,(lambda (_ level)
+	  (set-level (string->symbol level)))
+       (,(format "Set the language, one of:~n          ~a"
+		 (apply string-append
+			(map (lambda (l)
+			       (format " ~a" (car l)))
+			     language-levels)))
+	"language")]
+      [("--choose")
+       ,(lambda (_)
+	  (choose-mode))
+       ("Interactively choose the language level")]
+      [("--save")
+       ,(lambda (_)
+	  (with-output-to-file (get-argv-file)
+	    (lambda ()
+	      (write syntax-level)
+	      (newline)
+	      (write (map (lambda (s)
+			    (cons (car s)
+				  ((cadr s))))
+			  flags))
+	      (newline))
+	    'truncate/replace))
+       (,(format "Save current settings to ~a" (get-argv-file)))]
+      [("--lhelp")
+       ,(lambda (_ level)
+	  (set-level (string->symbol level))
+	  (printf "~a implies the following flags: ~a~n" 
+		  level
+		  (make-implies-string syntax-level))
+	  (exit))
+       ("Show the flags implies by a particular language" "language")]])
+   (lambda (accum . rest) rest)
+   '("arg")
+   (lambda (s)
+     (display s)
+     (printf " If ~a exists, it initializes the language settings.~n"
+	     (get-argv-file))
+     (exit 0))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;                     DrScheme Jr                        ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (reference-library "mzlib.ss")
 (reference-library "pretty.ss")
@@ -239,7 +369,7 @@
 (define system-parameterization (current-parameterization))
 
 (define prompt-read
-  (let ([prompt (if use-print-convert?
+  (let ([prompt (if (use-print-convert)
 		    "|- "
 		    "> ")])
     (lambda ()
@@ -270,7 +400,7 @@
 
 (print-struct #t)
 (error-print-width 200)
-(aries:signal-undefined signal-undef)
+(aries:signal-undefined (signal-undef))
 
 (define exception-handler
   (lambda (exn)
@@ -287,19 +417,19 @@
 					 "~a"
 					 (exn-message exn))]))))
 
-(define mzrice-print (if use-print-convert?
-			 (compose pretty-print-handler print-convert)
-			 pretty-print-handler))
+(define drscheme-jr-print (if (use-print-convert)
+			      (compose pretty-print-handler print-convert)
+			      pretty-print-handler))
 
 (show-sharing #t)
 (constructor-style-printing #t)
 (quasi-read-style-printing #t)
 
-(define mzrice-user-vocabulary
+(define drscheme-jr-user-vocabulary
   (zodiac:create-vocabulary 'scheme-w/-user-defined-macros-vocab
 			    zodiac:scheme-vocabulary))
 
-(define mzrice-expand-eval
+(define drscheme-jr-expand-eval
   (let ([primitive-eval (current-eval)])
     (lambda (x)
       (let* ([annotated
@@ -308,7 +438,7 @@
 		  (let* ([expanded (call/nal zodiac:scheme-expand/nal
 					     zodiac:scheme-expand
 					     (expression: x)
-					     (vocabulary: mzrice-user-vocabulary))]
+					     (vocabulary: drscheme-jr-user-vocabulary))]
 			 [_ '(printf "expanded: ~a~n~n" expanded)]
 			 [annotated (if annotate?
 					(aries:annotate expanded)
@@ -317,7 +447,7 @@
 		    annotated)))])
 	(primitive-eval annotated)))))
 
-(define mzrice-eval
+(define drscheme-jr-eval
   (lambda (x)
     '(printf "eval; x: ~a~n~n" x)
     (let ([read 
@@ -325,11 +455,11 @@
 	     (lambda ()
 	       (let* ([z (or (unbox aries:error-box)
 			     (let ([loc (zodiac:make-location 0 0 0 'eval)])
-			       (zodiac:make-zodiac 'mzrice-eval loc loc)))]
+			       (zodiac:make-zodiac 'drscheme-jr-eval loc loc)))]
 		      [read (zodiac:structurize-syntax x z)])
 		 '(printf "eval; read: ~a~n~n" read)
 		 read)))])
-      (mzrice-expand-eval read))))
+      (drscheme-jr-expand-eval read))))
 
 (define load-dir/path
   (lambda (f)
@@ -337,7 +467,7 @@
 		  (split-path (path->complete-path f (current-directory)))))
       base)))
 
-(define mzrice-load
+(define drscheme-jr-load
   (let ([zo-file?
 	 (lambda (f)
 	   (let ([l (string-length f)])
@@ -379,8 +509,8 @@
 			     [next (read)])
 		    (cond
 		      [(zodiac:eof? this) (void)]
-		      [(zodiac:eof? next) (mzrice-expand-eval this)]
-		      [else (begin (mzrice-expand-eval this)
+		      [(zodiac:eof? next) (drscheme-jr-expand-eval this)]
+		      [else (begin (drscheme-jr-expand-eval this)
 				   (loop next (read)))]))))))))))
 
 (define parameterization (make-parameterization))
@@ -404,38 +534,22 @@
 		       (open userspace))))])
     (lambda ()
       (current-namespace namespace)
-      (eval `(#%define argv ,user-argv))
+      (eval `(#%define argv ,(list->vector user-argv)))
       (eval `(#%define read/zodiac ,read/zodiac))
       (invoke-open-unit u@)
-      (eval `(allow-improper-lists ,(eq? syntax-level 'advanced)))
-      (eval `(eq?-only-compares-symbols ,(and (member syntax-level '(core structured)) #t)))
+      (eval `(allow-improper-lists ,(allow-.-lists)))
+      (eval `(eq?-only-compares-symbols ,(eq?-only-on-syms)))
       (current-prompt-read prompt-read)
       (debug-info-handler debug-info)
-      (current-print mzrice-print)
+      (current-print drscheme-jr-print)
       (current-exception-handler exception-handler)
-      (current-load mzrice-load) 
-      (current-eval mzrice-eval))))
+      (current-load drscheme-jr-load) 
+      (current-eval drscheme-jr-eval))))
 
 (define (go)
-  (when (and no-arguments-given? dump-image?)
-    (with-handlers ([void void]) ; If it fails, no matter
-      (unless (directory-exists? image-dir)
-        (make-directory image-dir))
-      (let ([dir (build-path image-dir sys-dir)])
-        (unless (directory-exists? dir)
-	  (make-directory dir))
-	(let ([file (build-path dir "mzrice")])
-	  (let ([argv
-		 (write-image-to-file 
-		  file 
-		  (lambda () user-argv))])
-	    (with-parameterization parameterization
-	      (lambda ()
-               (eval `(#%define argv ,argv)))))))))
-  
-  (printf "Welcome to MzRice version ~a, Copyright (c) 1995-98 PLT~n"
+  (printf "Welcome to DrScheme Jr version ~a, Copyright (c) 1995-98 PLT~n"
 	  (version))
-  (printf "Vocabulary: ~a~n"
+  (printf "Language: ~a~n"
 	  (cadr (assoc params:check-syntax-level
 		       (map (lambda (p) (list (cadr p) (car p))) language-levels))))
   

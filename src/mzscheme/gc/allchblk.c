@@ -727,3 +727,16 @@ signed_word size;
     GC_add_to_fl(hbp, hhdr);    
 }
 
+
+/* MATTHEW: GC_register_allch_statics */
+/* See call in GC_init_inner (misc.c) for details. */
+void GC_register_allch_statics(void)
+{
+#define REG(p) GC_add_roots((char *)&p, (char *)(((char *)&p) + sizeof(p) + 1))
+
+  REG(GC_freehblk_ptr);
+  REG(GC_hblkfreelist);
+
+  REG(GC_obj_kinds);
+  REG(GC_arrays);
+}

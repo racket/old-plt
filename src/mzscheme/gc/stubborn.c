@@ -315,3 +315,14 @@ GC_PTR p;
 
 
 #endif
+
+
+/* MATTHEW: GC_register_stubborn_statics */
+/* See call in GC_init_inner (misc.c) for details. */
+void GC_register_stubborn_statics(void)
+{
+#define REG(p) GC_add_roots((char *)&p, (char *)(((char *)&p) + sizeof(p) + 1))
+  REG(GC_changing_list_current);
+  REG(GC_changing_list_limit);
+  REG(GC_changing_list_start);
+}

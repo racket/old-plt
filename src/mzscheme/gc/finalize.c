@@ -998,3 +998,16 @@ int GC_invoke_finalizers()
     return(result);
 }
 
+
+/* MATTHEW: GC_register_fnl_statics */
+/* See call in GC_init_inner (misc.c) for details. */
+void GC_register_fnl_statics(void)
+{
+#define REG(p) GC_add_roots((char *)&p, (char *)(((char *)&p) + sizeof(p) + 1))
+
+  REG(GC_finalize_now);
+  REG(GC_fo_entries);
+  REG(dl_head);
+  REG(fo_head);
+  REG(late_dl);
+}

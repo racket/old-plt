@@ -2672,7 +2672,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
 
   /* In case it's not yet set in the main thread... */
-  scheme_ensure_stack_start((Scheme_Process *)np, &failure);
+  scheme_ensure_stack_start((Scheme_Process *)np, (int *)&failure);
   
   np->list_stack = p->list_stack;
   np->list_stack_pos = p->list_stack_pos;

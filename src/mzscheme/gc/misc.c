@@ -409,6 +409,12 @@ void GC_init()
     extern void GC_init_win32();
 #endif
 
+/* MATTHEW: see calls in GC_init_inner */
+extern void GC_register_fnl_statics(void);
+extern void GC_register_allch_statics(void);
+extern void GC_register_bl_statics(void);
+extern void GC_register_stubborn_statics(void);
+
 extern void GC_setpagesize();
 
 void GC_init_inner()
@@ -506,6 +512,16 @@ void GC_init_inner()
                        (ptr_t)(((char *)&GC_arrays) + sizeof(GC_arrays)), 
                        FALSE);
 #endif
+
+    /* MATTHEW: for platforms where we don't want to try to find the
+       static variables, we explicitly register the GC's statics. */
+    if (1) {
+      GC_register_fnl_statics();
+      GC_register_allch_statics();
+      GC_register_bl_statics();
+      GC_register_stubborn_statics();
+    }
+
 
     /* Add initial guess of root sets.  Do this first, since sbrk(0)	*/
     /* might be used.							*/

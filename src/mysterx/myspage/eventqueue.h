@@ -42,6 +42,7 @@ public:
 	  STDMETHOD(QueueEvent)(IEvent *pEvent);
 	  STDMETHOD(GetEvent)(IEvent **ppEvent);
 	  STDMETHOD(GetReaderSemaphore)(int *);
+	  STDMETHOD(BlockUntilWinEvent)(void);
 	  STDMETHOD(set_extension_table)(int);
 };
 

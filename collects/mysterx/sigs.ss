@@ -256,7 +256,8 @@
    event-click?
    event-dblclick?
    event-error?
-   block-until-event))
+   block-until-event
+   block-until-win-event))
 	
 
 

@@ -441,6 +441,7 @@ MX_PRIM_DECL(mx_event_click_pred);
 MX_PRIM_DECL(mx_event_dblclick_pred);
 MX_PRIM_DECL(mx_event_error_pred);
 MX_PRIM_DECL(mx_block_until_event);
+MX_PRIM_DECL(mx_block_until_win_event);
 MX_PRIM_DECL(mx_make_document);
 MX_PRIM_DECL(mx_document_show);
   

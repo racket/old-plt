@@ -2,7 +2,7 @@
 
 
 /* File created by MIDL compiler version 5.01.0164 */
-/* at Tue Jun 08 12:58:13 1999
+/* at Tue Jun 08 18:15:29 1999
  */
 /* Compiler settings for myspage.idl:
     Oicf (OptLev=i2), W1, Zp8, env=Win32, ms_ext, c_ext
@@ -1168,6 +1168,8 @@ EXTERN_C const IID IID_IEventQueue;
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE GetReaderSemaphore( 
             int __RPC_FAR *__MIDL_0021) = 0;
         
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE BlockUntilWinEvent( void) = 0;
+        
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE set_extension_table( 
             int __MIDL_0022) = 0;
         
@@ -1234,6 +1236,9 @@ EXTERN_C const IID IID_IEventQueue;
             IEventQueue __RPC_FAR * This,
             int __RPC_FAR *__MIDL_0021);
         
+        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *BlockUntilWinEvent )( 
+            IEventQueue __RPC_FAR * This);
+        
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE __RPC_FAR *set_extension_table )( 
             IEventQueue __RPC_FAR * This,
             int __MIDL_0022);
@@ -1287,6 +1292,9 @@ EXTERN_C const IID IID_IEventQueue;
 #define IEventQueue_GetReaderSemaphore(This,__MIDL_0021)	\
     (This)->lpVtbl -> GetReaderSemaphore(This,__MIDL_0021)
 
+#define IEventQueue_BlockUntilWinEvent(This)	\
+    (This)->lpVtbl -> BlockUntilWinEvent(This)
+
 #define IEventQueue_set_extension_table(This,__MIDL_0022)	\
     (This)->lpVtbl -> set_extension_table(This,__MIDL_0022)
 
@@ -1330,6 +1338,17 @@ void __RPC_STUB IEventQueue_QueueEvent_Stub(
 
 
 void __RPC_STUB IEventQueue_GetReaderSemaphore_Stub(
+    IRpcStubBuffer *This,
+    IRpcChannelBuffer *_pRpcChannelBuffer,
+    PRPC_MESSAGE _pRpcMessage,
+    DWORD *_pdwStubPhase);
+
+
+/* [helpstring][id] */ HRESULT STDMETHODCALLTYPE IEventQueue_BlockUntilWinEvent_Proxy( 
+    IEventQueue __RPC_FAR * This);
+
+
+void __RPC_STUB IEventQueue_BlockUntilWinEvent_Stub(
     IRpcStubBuffer *This,
     IRpcChannelBuffer *_pRpcChannelBuffer,
     PRPC_MESSAGE _pRpcMessage,

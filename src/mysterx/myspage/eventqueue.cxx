@@ -87,6 +87,13 @@ STDMETHODIMP CEventQueue::GetReaderSemaphore(int *pReadSem) {
   return S_OK;
 }
 
+STDMETHODIMP CEventQueue::BlockUntilWinEvent(void) {
+  MsgWaitForMultipleObjects(0,NULL,FALSE,10,
+			    QS_ALLINPUT | QS_ALLPOSTMESSAGE); 
+
+  return S_OK;
+}
+
 STDMETHODIMP CEventQueue::set_extension_table(int p)
 {
   scheme_extension_table = (Scheme_Extension_Table *)p;

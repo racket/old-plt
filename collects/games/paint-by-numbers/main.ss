@@ -10,13 +10,18 @@
   (include "problems.ss")
 
   (define semaphore (make-semaphore 0))
+  (define sema-frames-open 0)
   (define sema-frame%
     (class frame% (name)
       (override
        [on-close
 	(lambda ()
-	  (semaphore-post semaphore))])
-      (sequence (super-init name))))
+	  (set! sema-frames-open (- sema-frames-open 1))
+	  (when (zero? sema-frames-open)
+	    (semaphore-post semaphore)))])
+      (sequence
+	(set! sema-frames-open (+ sema-frames-open 1))
+	(super-init name))))
   
   (define game-name "Paint by Numbers")
 
@@ -25,12 +30,16 @@
   (define menu-bar (make-object menu-bar% frame))
   (define file-menu (make-object menu% "File" menu-bar))
   (make-object menu-item% "Open..." file-menu (lambda (_1 _2) (open)) #\o)
-  (define save-item (make-object menu-item% "Save..." file-menu (lambda (_1 _2) (save)) #\s))
+  (make-object menu-item% "Save..." file-menu (lambda (_1 _2) (save)) #\s)
   (make-object menu-item% "Save As..." file-menu (lambda (_1 _2) (save-as)))
   (make-object menu-item% "Close" file-menu (lambda (_1 _2) (close)) #\w)
   (define edit-menu (make-object menu% "Edit" menu-bar))
   (make-object menu-item% "Undo" edit-menu (lambda (_1 _2) (send canvas undo)) #\z)
   (make-object menu-item% "Redo" edit-menu (lambda (_1 _2) (send canvas redo)) #\y)
+  (define pbn-menu (make-object menu% "Nonogram" menu-bar))
+  (make-object menu-item% "Solve" pbn-menu (lambda (_1 _2) (solve)) #\l)
+  (make-object menu-item% "Show Mistakes" pbn-menu (lambda (_1 _2) (show-wrong)) #\h)
+  (make-object menu-item% "Design a puzzle" pbn-menu (lambda (_1 _2) (editor)) #\r)
 
   (define top-panel (make-object horizontal-panel% frame))
   (define choice (make-object choice%
@@ -42,16 +51,19 @@
 
   (define button-panel (make-object vertical-panel% top-panel))
   
+  (define (solve)
+    (send canvas all-unknown)
+    (send canvas on-paint)
+    (SOLVE:solve
+     (problem-rows problem)
+     (problem-cols problem)))
+
   (define solve-button
     (make-object button%
       "Solve"
       button-panel
       (lambda (button evt)
-	(send canvas all-unknown)
-	(send canvas on-paint)
-	(SOLVE:solve
-	 (problem-rows problem)
-	 (problem-cols problem)))))
+	(solve))))
 
   (define wrong-button
     (make-object button%
@@ -82,7 +94,6 @@
 
   (define (do-save filename)
     (update-filename filename)
-    (send save-item enable #t)
     (call-with-output-file filename
       (lambda (port)
 	(pretty-print
@@ -95,8 +106,9 @@
       'truncate))
 
   (define (save)
-    (when filename
-      (do-save filename)))
+    (if filename
+	(do-save filename)
+	(save-as)))
 
   (define (save-as)
     (let ([filename (put-file)])
@@ -116,7 +128,6 @@
 	    
   (define (set-problem prlmb)
     (update-filename #f)
-    (send save-item enable #f)
     (send wrong-button enable (problem-solution prlmb))
     (send frame change-children (lambda (x) (list top-panel)))
     (send frame stretchable-width #f)
@@ -180,6 +191,39 @@
 		(set-entry m n 'wrong)))
 	    (loop (- j 1))))
 	(loop (- i 1)))))
+
+  (define (editor)
+    (let* ([biggest 35]
+	   [default 15]
+	   [d (make-object dialog% "Size")]
+	   [m (make-object message% "How big should the designer be?" d)]
+	   [wp (make-object horizontal-panel% d)]
+	   [wm (make-object message% "Width" wp)]
+	   [gw (make-object slider% #f 1 biggest wp void default)]
+	   [hp (make-object horizontal-panel% d)]
+	   [hm (make-object message% "Height" hp)]
+	   [gh (make-object slider% #f 1 biggest hp void default)]
+	   [bp (make-object horizontal-panel% d)]
+	   [cancelled? #f]
+	   [cancel (make-object button% "Cancel" bp (lambda (_1 _2)
+						      (set! cancelled? #t)
+						      (send d show #f)))]
+	   [ok (make-object button% "OK" bp (lambda (_1 _2) (send d show #f)) '(border))])
+
+      (let ([label-width (max (send wm get-width)
+			      (send hm get-width))])
+	(send wm min-width label-width)
+	(send hm min-width label-width))
+
+      (send bp set-alignment 'right 'center)
+      
+      (send d show #t)
+      (unless cancelled?
+	(let ([f (make-object sema-frame% "Designer")])
+	  (make-object GUI:design-paint-by-numbers-canvas% f
+		       (send gw get-value)
+		       (send gh get-value))
+	  (send f show #t)))))
 
   (send frame show #t)
   (yield semaphore))

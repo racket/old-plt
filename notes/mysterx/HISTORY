@@ -5,6 +5,7 @@ made changes for IE5:
   coclass->html and {insert,append}-object methods
     of mx-document% and mx-element% take width, height
     arguments
+added call to CoUninitialize() from exit handler
   
 100alpha4, July 15, 1999
 

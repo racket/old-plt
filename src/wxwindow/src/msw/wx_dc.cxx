@@ -1118,10 +1118,10 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     for (i = 0, extra = 0; i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
       if (v > 0xFFFF) {
-	v - = 0x10000;
-	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
+	v -= 0x10000;
+	unicode[i+extra] = 0xD800 | ((v >> 10) & 0x3FF);
 	extra++;
-	unicode[i+extra] = 0xDC000000 | (v & 0x3FF);
+	unicode[i+extra] = 0xDC00 | (v & 0x3FF);
       } else
 	unicode[i+extra] = v;
     }

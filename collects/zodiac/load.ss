@@ -19,5 +19,8 @@
 		     "lib" "require.ss")))
 (plt:require-library "sparams.ss")
 
+(define zodiac:system@
+  (reference-unit/sig "link.ss"))
+
 (reference "zsigs.ss")
 (reference "sigs.ss")

@@ -8,7 +8,8 @@
   (define-struct (:-form struct:parsed) (exp type))
   (define-struct (type:-form struct:parsed) (type attrs))
   (define-struct (st:control-form struct:parsed) (para val))
-  (define-struct (reference-unit-form struct:parsed) (file cd kind signed?))
+  (define-struct (reference-unit-form struct:parsed)
+    (file cd kind signed? library?))
   (define-struct (define-type-form struct:parsed) (sym type))
   (define-struct (define-constructor-form struct:parsed) (sym modes))
 
@@ -41,11 +42,11 @@
 	para val)))
 
   (define create-reference-unit-form
-    (lambda (file cd kind signed? source)
+    (lambda (file cd kind signed? library? source)
       (make-reference-unit-form (z:zodiac-origin source)
 	(z:zodiac-start source) (z:zodiac-finish source)
 	(make-empty-back-box)
-	file cd kind signed?)))
+	file cd kind signed? library?)))
 
   (define create-define-type-form
     (lambda (sym type source)

@@ -507,7 +507,7 @@
 		  (gw s1)))))]
 
 	  [this-err-write/exn
-	   (let* ([raw-symbol-chars "a-z/*!>:-"]
+	   (let* ([raw-symbol-chars "a-z/*!?>:-"]
 		  [symbol-chars (format "[~a]" raw-symbol-chars)]
 		  [not-symbol-chars (format "[^~a]" raw-symbol-chars)]
 		  [fallthru-regexp (regexp (format "^()(~a*): " symbol-chars))]
@@ -1762,6 +1762,7 @@
   (define transparent-io-edit% 
     (make-transparent-io-edit%
      (make-console-edit%
-      fw:text:searching%)))
+      (fw:scheme:text-mixin
+       fw:text:searching%))))
   
   (define edit% (make-edit% (make-console-edit% fw:scheme:text%))))

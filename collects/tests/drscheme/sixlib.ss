@@ -1,13 +1,18 @@
 (require-library "macro.ss")
 (require-library "graphic.ss" "graphics")
-(error)
 (open-graphics)
 
-(let ([vp (open-pixmap "snip test" 100 100)])
-  ((draw-string vp) (make-posn 20 30) "flipped rect")
-  ((flip-solid-rectangle vp) (make-posn 10 10) 80 80)
-  (viewport->snip vp))
+;; test rgb selectors
+(let* ([fraction 1/5]
+       [test 
+        (list
+         (rgb-red (make-rgb fraction 0 0))
+         (rgb-green (make-rgb 0 fraction 0))
+         (rgb-blue (make-rgb 0 0 fraction)))])
+  (unless (equal? (list fraction fraction fraction) test)
+    (error 'color-construction "wrong: ~s" test)))
 
+;; test basic operations
 (let ([v (open-viewport "Tester" 200 200)])
   ((draw-string v) (make-posn 0 20) "Reversed X; click to continue")
   ((draw-string v) (make-posn 0 40) "(busy-waiting right now!)")
@@ -71,6 +76,21 @@
   (get-mouse-click v)
 
   (close-viewport v))
+
+;; test scaling
+(let ([v (open-viewport "Scale Test" 200 200)])
+  ((draw-line v) (make-posn 0 0) (make-posn 200 200))
+  ((draw-string v) (make-posn 10 100) "click to scale to 1/2")
+  (get-mouse-click v)
+  (set-viewport-scale v 1/2)
+  (get-mouse-click v)
+  (close-viewport v))
+  
+;; test snips
+(let ([vp (open-pixmap "snip test" 100 100)])
+  ((draw-string vp) (make-posn 20 30) "flipped rect")
+  ((flip-solid-rectangle vp) (make-posn 10 10) 80 80)
+  (viewport->snip vp))
 
 (let ([v (open-viewport "Color Tester" 100 200)])
   ((draw-solid-rectangle v) (make-posn 10 10) 80 80 (make-rgb 1 0 0))
@@ -151,15 +171,6 @@
 		    (loop (+ x (car ((get-string-size v) s)))))]
        [else (loop x)])))
   (close-viewport v))
-
-(let* ([fraction 1/5]
-       [test 
-        (list
-         (rgb-red (make-rgb fraction 0 0))
-         (rgb-green (make-rgb 0 fraction 0))
-         (rgb-blue (make-rgb 0 0 fraction)))])
-  (unless (equal? (list fraction fraction fraction) test)
-    (error 'color-construction "wrong: ~s" test)))
 
 (close-graphics)
 

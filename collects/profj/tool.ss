@@ -1,8 +1,4 @@
-;Kathryn Gray
-;January 2002
-;Modified from tool.ss for Algol60
 #cs
-
 (module tool mzscheme
   (require (lib "tool.ss" "drscheme")
            (lib "mred.ss" "mred")
@@ -69,13 +65,11 @@
                                     get-text
                                     (drscheme:language:text/pos-start input)
                                     (drscheme:language:text/pos-end input)))
-                             text))])
-              
+                             text))])              
               (let ((main-mod #f)
                     (require? #f)
                     (name-to-require #f)
                     (modules null))
-                
                 (lambda ()
                   (let ((end? (eof-object? (peek-char port))))
                     (cond
@@ -116,6 +110,7 @@
                                     (drscheme:language:text/pos-start input)
                                     (drscheme:language:text/pos-end input)))
                              text))])
+              (interactions-offset (drscheme:language:text/pos-start input))
               (lambda ()
                 (if (eof-object? (peek-char port))
                     eof
@@ -151,7 +146,7 @@
                           (order (cdr mod-lists))))))
               
           (define/public (get-style-delta) #f)
-          (define/public (get-language-position) (cons (string-constant teaching-languages) position))
+          (define/public (get-language-position) (cons (string-constant experimental-languages) position))
           (define/public (get-language-numbers) numbers)
           (define/public (get-language-name) name)
           (define/public (get-language-url) #f)

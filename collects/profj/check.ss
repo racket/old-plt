@@ -142,7 +142,7 @@
                            (check-method member field-env type-recs current-class)))
                       ((initialize? member)
                        (if (initialize-static member)
-                           (check-statement (initialize-block member) null type-recs current-class)
+                           (check-statement (initialize-block member) null field-env type-recs current-class)
                            (check-statement (initialize-block member) field-env type-recs current-class)))
                       ((var-init? member)
                        (check-var-init (var-init-init member) field-env type-recs current-class))

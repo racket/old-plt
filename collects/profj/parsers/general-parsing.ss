@@ -4,6 +4,7 @@
   (require (lib "lex.ss" "parser-tools"))
   
   (require "../ast.ss")
+  (require "../parameters.ss")
   
   (provide (all-defined))
 
@@ -11,20 +12,6 @@
   
   (define file-name (make-parameter null))
   
-  ;;Java language definition section 19.3
-  (define literals
-    `(Literal
-      [(INTEGER_LIT) (make-literal 'int (build-src 1) $1)]
-      [(LONG_LIT) (make-literal 'long (build-src 1) $1)]
-      [(FLOAT_LIT) (make-literal 'float (build-src 1) $1)]
-      [(DOUBLE_LIT) (make-literal 'double (build-src 1)  $1)]
-      [(TRUE_LIT) (make-literal 'boolean (build-src 1) #t)]
-      [(FALSE_LIT) (make-literal 'boolean (build-src 1) #f)]
-      [(CHAR_LIT) (make-literal 'char (build-src 1) $1)]
-      [(STRING_LIT) (make-literal 'string (build-src 1) $1)]
-      [(NULL_LIT) (make-literal 'null (build-src 1) #f)]))
-  
-
   ;;Methods used by all parsers
   (define-syntax (build-src stx)
     (syntax-case stx ()
@@ -44,7 +31,7 @@
          (syntax
           (make-src (position-line start-pos)
                     (position-col start-pos)
-                    (position-offset start-pos)
+                    (+ (position-offset start-pos) (interactions-offset))
                     (- (position-offset end-pos)
                        (position-offset start-pos))))))))
   

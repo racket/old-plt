@@ -3,7 +3,8 @@
 
   (require "general-parsing.ss"
            "lexer.ss"
-           "../ast.ss")
+           "../ast.ss"
+           "../parameters.ss")
   
   (require (lib "yacc.ss" "parser-tools")
            (lib "lex.ss" "parser-tools")
@@ -26,7 +27,7 @@
                                 (file-name)
                                 (position-line start-pos)
                                 (position-col start-pos)
-                                (position-offset start-pos)
+                                (+ (position-offset start-pos) (interactions-offset))
                                 (- (position-offset end-pos)
                                    (position-offset start-pos)))))
 

@@ -1,9 +1,6 @@
 (module parameters mzscheme
   (provide (all-defined))
   
-  ;Stores type info for known packages
-  (define type-table (make-parameter null))
-
   ;Stores syntax-oddness for datum->syntax-object
   (define syntax-location (make-parameter #f))
   
@@ -18,5 +15,8 @@
   
   ;Stores a boolean indicating if compilation is directed at a file
   (define to-file (make-parameter #f))
+  
+  ;Stores an integer offset for interactions offset
+  (define interactions-offset (make-parameter 0))
   
   ) 

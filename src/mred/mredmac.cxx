@@ -47,8 +47,10 @@ static int QueueTransferredEvent(EventRecord *e);
 void MrEdInitFirstContext(MrEdContext *)
 {
 #ifdef OS_X
-	// result ignored:
-	InstallAEventHandler();
+  // result ignored:
+  InstallAEventHandler();
+  
+  mainQueue = GetMainEventQueue();
 #endif
 #ifdef MACINTOSH_EVENTS
   scheme_handle_aewait_event = (void (*)(EventRecord*))QueueTransferredEvent;
@@ -57,7 +59,7 @@ void MrEdInitFirstContext(MrEdContext *)
 
 void MrEdInitNewContext(MrEdContext *)
 {
-}
+} 
 
 void MrEdDestroyContext(MrEdFinalizedContext *)
 {
@@ -108,7 +110,7 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
  */
 
 /* question: does the carbon event manager call ReleaseEvent() for you, even if you 
- * handle the event yourself?
+ * handle the event yourself? I believe it does.
  */
  
 #ifdef OS_X
@@ -123,16 +125,17 @@ OSErr QueueMrEdCarbonEvent(EventRef e)
 {
   OSErr err;
   
-  if (mainQueue == NULL) {
-    mainQueue = GetMainEventQueue();
-  }
-  
   err = PostEventToQueue(eventRef, mainQueue, kEventPriorityStandard);
   if (err != noErr) {
   	return err;
   }
 }
 
+/* after installing this Apple Event Handler, the main event loop should never even see
+ * the apple events coming in.  One possible concern is that we should be calling WNE every
+ * once in a while to make sure that the OS gets to dispatch these calls.
+ */
+ 
 OSStatus myAEventHandler(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData)
 {
 	EventRecord e;
@@ -153,6 +156,25 @@ OSErr InstallAEventHandler()
     return InstallEventHandler(target,NewEventHandlerUPP(myAEventHandler),1,&typeSpec,NULL,NULL);
 }
 
+
+/* EventFinder: If only C featured closures, this typdef wouldn't be necessary.  EventFinder is
+ * the procedure which is applied to each of the events in the queue, looking for a match.  Since
+ * C doesn't have closures, the search invoker accepts a void * which is passed along to EventFinder.
+ */
+ 
+typedef struct {
+	MrEdContext *c;
+	UInt32 eventClass;
+	UInt32 eventKind;
+}  EventFinderClosure;
+
+Bool EventFinder(EventRef inEvent, EventFinderClosure *closure)
+{
+  
+}
+
+EventComparatorUPP EventFinderUPP = NewEventComparatorUPP(EventFinder);
+ 
 #else
 
 #include "mredmacclassic.inc"
@@ -227,6 +249,10 @@ static int GetMods(void)
   return mods;
 }
 
+/* the cont_event_context is used to keep information about mouse-downs around so
+ * that later mouse-ups can be properly handled.
+ */
+ 
 static MrEdContext *cont_event_context;
 static WindowPtr cont_event_context_window;
 static Point last_mouse;
@@ -244,6 +270,9 @@ int MrEdGetNextEvent(int check_only, int current_only,
 #ifndef OS_X
   MrQueueElem *osq, *next;
   MrQueueElem *q;
+#else
+  EventRef eRef;  
+  EventFinderClosure eventFinderClosure;
 #endif
   EventRecord *e, ebuf;
   MrEdContext *c, *keyOk, *fc, *foundc;
@@ -257,6 +286,10 @@ int MrEdGetNextEvent(int check_only, int current_only,
   
   c = current_only ? MrEdGetContext() : NULL;
   
+#ifdef OS_X
+  eventFinderClosure.c = c;
+#endif
+    
   keyOk = KeyOk(current_only);
   
 #ifdef RECORD_HISTORY
@@ -269,8 +302,10 @@ int MrEdGetNextEvent(int check_only, int current_only,
     if (!StillDown())
       kill_context = 1;
 
+#ifndef OS_X
   if (!TransferQueue(0))
     kill_context = 0;
+#endif
     
   if (cont_event_context)
     if (!WindowStillHere(cont_event_context_window))
@@ -293,7 +328,12 @@ int MrEdGetNextEvent(int check_only, int current_only,
 #endif
        TEToScrap();
      }
-     
+
+#ifndef OS_X
+	 /* for OS_X, activate events are automatically generated for the frontmost
+	  * window in an application when that application comes to the front.
+	  */
+	       
      WindowPtr front = FrontWindow();
   
      if (front) {
@@ -317,10 +357,22 @@ int MrEdGetNextEvent(int check_only, int current_only,
       if (we_are_front)
         wxSetCursor(NULL); /* reset cursor */
     }
+#endif // !defined(OS_X)     
   }
 #endif
   
   /* First, service leave events: */
+#ifdef OS_X
+
+  eventFinderClosure.eventClass = kEventClassMrEd;
+  eventFinderClosure.eventKind = kEventMrEdLeave;
+  eRef = FindSpecificEventInQueue(mainQueue,eventFinderUPP,&eventFinderClosure);
+
+  
+
+
+
+#else // OS_X  
   for (q = first; q; q = q->next) {
     switch (q->event.what) {
     case leaveEvt:
@@ -352,6 +404,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
       }
     }
   }
+#endif // OS_X  
   
   /* Next, service mouse & key events: */
   osq = first;
@@ -721,7 +774,7 @@ void MrEdMacSleep(float secs)
   RgnHandle rgn = NULL;
 #endif
     
-  if (WaitNextEvent(0, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
+  if (WaitNextEvent(everyEvent, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
     QueueTransferredEvent(&e);
 }
 

@@ -19,6 +19,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_messg.h"
 #include "wx_main.h"
 #include "wx_buttn.h"
+#include "wx_macevents.h"
 #ifndef OS_X
   #include <StandardFile.h>
   #include <TextUtils.h>

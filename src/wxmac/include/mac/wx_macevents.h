@@ -7,10 +7,11 @@ extern OSErr QueueMrEdCarbonEvent(EventRef e);
 
 extern UInt32 kEventClassMrEd;
 extern UInt32 kEventMrEdLeave;
+extern UInt32 typeWxWindowPtr;
 
 #else
 
-extern int QueueMrEdEvent(EventRecord *e);
+extern void QueueMrEdEvent(EventRecord *e);
 
 #endif
 

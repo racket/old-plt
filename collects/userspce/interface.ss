@@ -3,6 +3,8 @@
   
   (define-struct zodiac-exn (message start-location end-location type))
   
+  (define mark-key (make-parameter (gensym)))
+
   (define zodiac-phase #f)
   (define (set-zodiac-phase sym)
     (unless (or (not sym)
@@ -15,10 +17,12 @@
   (define dispatch-report
     (lambda (string object)
       (raise
-       (case zodiac-phase
-	 [(expander) (make-exn:syntax string object #f)]
-	 [(reader) (make-exn:read string object #f)]
-	 [else (make-exn:user string object)]))))
+       (with-continuation-mark 
+	(mark-key) object
+	(case zodiac-phase
+	  [(expander) (make-exn:syntax string (current-continuation-marks) #f)]
+	  [(reader) (make-exn:read string (current-continuation-marks) #f)]
+	  [else (make-exn:user string (current-continuation-marks))])))))
   
   ;; report-error : symbol -> (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
   ;; escapes

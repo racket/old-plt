@@ -105,7 +105,8 @@
 (define-signature drscheme:interface^ 
   ((open zodiac:interface^)
    set-zodiac-phase
-   (struct zodiac-exn (message start-location end-location type))))
+   (struct zodiac-exn (message start-location end-location type))
+   mark-key))
 
 (define-signature drscheme:exported-zodiac^ zodiac:system^)
 

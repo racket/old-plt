@@ -25,6 +25,8 @@
   (define primitive-load (current-load))
   (define primitive-eval (current-eval))
 
+  (zodiac:interface:mark-key aries:w-c-m-key)
+
   (define r4rs-style-printing (make-parameter #f))
   
   (define this-program (with-handlers ([void (lambda (x) "mzscheme")])

@@ -13,15 +13,16 @@ That's enough if the SCHEME_LIBRARY_PATH environment variable is
 defined, or if slib is installed as an "slib" collection (i.e., in an
 "slib" directory in the same location as the "mzlib" directory).
 
-Note that slib is not integerated with MzScheme's module system; slib
-works in the top-level environment through it's own "feature" system.
+Note that slib is not integerated with MzScheme's module system.
+Instead, slib works in the top-level environment, and it provides its
+own "feature" system.
 
 
 The initialization file contains one system-dependent setting:
 `most-positive-fixnum' is bound to a value that is precisely correct
 for 32-bit architectures. The precise value for a 64-bit architcture
-is in the file, but commented out. The only danger in using the 32-bit
-value for a 64-bit architecture is a decrease in performance.
+is in the file, but commented out. The only problem with using the
+32-bit value for a 64-bit architecture is a decrease in performance.
 
 No other changes should be necessary. Send patches to
 scheme@cs.rice.edu.

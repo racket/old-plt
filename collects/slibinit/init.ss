@@ -9,9 +9,9 @@
 ; -- produced by Shriram Krishnamurthi <shriram@cs.rice.edu>,
 ; Mon Feb 10 12:03:53 CST 1997
 
-(require-library "pretty.ss")
+(require (lib "pretty.ss"))
 (unless (memq (system-type) '(unix beos))
-  (require-library "date.ss"))
+  (namespace-require '(lib "date.ss")))
 
 ;;; (software-type) should be set to the generic operating system type.
 ;;; UNIX, VMS, MACOS, AMIGA and MS-DOS are supported.
@@ -33,7 +33,7 @@
 ;;; page; or false if there isn't one.
 
 (define (scheme-implementation-home-page)
-  "http://www.cs.rice.edu/CS/PLT/mzscheme/")
+  "http://www.plt-scheme.org/")
 
 ;;; (scheme-implementation-version) should return a string describing
 ;;; the version the scheme implementation loading this file.
@@ -115,8 +115,8 @@
 					;CALL-WITH-OUTPUT-STRING
 ;	transcript			;TRANSCRIPT-ON and TRANSCRIPT-OFF
 	char-ready?
-;	macro				;has R4RS high level macros
-	defmacro			;has Common Lisp DEFMACRO
+	macro				;has R4RS high level macros
+;	defmacro			;has Common Lisp DEFMACRO
 	eval				;SLIB:EVAL is single argument eval
 ;	record				;has user defined data structures
 	values				;proposed multiple values
@@ -143,17 +143,9 @@
 	current-time			;returns time in seconds since 1/1/1970
 	))
 
-;;; Compatibility code added by Shriram.
-
-(define-macro defmacro
-  (lambda (name params . body)
-    `(define-macro ,name
-       (lambda ,params
-	 ,@body))))
-
 (define program-arguments
   (lambda ()
-    (vector->list argv)))
+    (vector->list (current-command-line-arguments))))
 
 (define current-time
   ;; Gives time since 1/1/1970 ...
@@ -238,20 +230,18 @@
       (string->symbol
        (string-append "slib:G" (number->string *gensym-counter*))))))
 
-(define defmacro? macro?)
-
 (define (macroexpand-1 x)
   ;; Slib expects macroexpand-1 to return an `eq?' value if there's nothing
   ;;  to expand. MzScheme returns an `equal?' value, instead.
   ;; Of course, using will equal? is bad if the input contains cycles.
   ;;  We assume that slib-based code won't try to use MzScheme's graph input
   ;;  syntax, since it isn't standard.
-  (let ([xx (expand-defmacro-once x)])
+  (let ([xx (expand-once x)])
     (if (equal? xx x)
 	x
 	xx)))
 
-(define macroexpand expand-defmacro)
+(define macroexpand (lambda (s) (syntax-object->datum (expand s))))
 
 (define base:eval slib:eval)
 (define (defmacro:expand* x) (macroexpand x))

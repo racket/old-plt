@@ -81,6 +81,22 @@
           (define/public (set-printing-parameters settings thunk)
             (parameterize ([pc:booleans-as-true/false #t]
                            [pc:abbreviate-cons-as-list (get-abbreviate-cons-as-list)]
+                           [pretty-print-print-hook
+                            (let ([oh (pretty-print-print-hook)])
+                              (lambda (val write? port)
+                                (cond
+                                  [(or (is-a? val image-snip%)
+                                       (is-a? val cache-image-snip%))
+                                   (display image-string port)]
+                                  [else (oh val write? port)])))]
+                           [pretty-print-size-hook
+                            (let ([oh (pretty-print-size-hook)])
+                              (lambda (val write? port)
+                                (cond
+                                  [(or (is-a? val image-snip%)
+                                       (is-a? val cache-image-snip%))
+                                   (string-length image-string)]
+                                  [else (oh val write? port)])))]
                            [pretty-print-show-inexactness #t]
                            [pretty-print-exact-as-decimal #t]
                            [pc:use-named/undefined-handler

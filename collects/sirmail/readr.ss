@@ -249,7 +249,7 @@
 	(set! initialized? #t)
 	(set! new-messages? #f)
 	(set! current-next-uid next-uid)
-	(send new-mail-msg show #f))
+	(show-new-mail-msg))
 
       ;; Syncs `mailbox' with the server
       (define (update-local)
@@ -344,11 +344,11 @@
 	  (set! new-messages? (not (= next-uid current-next-uid))))
 	(if new-messages?
 	    (begin
-	      (send new-mail-msg show #t)
+	      (show-new-mail-msg)
 	      (status "New mail")
 	      #t)
 	    (begin
-	      (send new-mail-msg show #f)
+	      (hide-new-mail-msg)
 	      (status "No new mail")
 	      #f))
 	new-messages?)
@@ -1477,17 +1477,52 @@
       (define (display-message-count n)
 	(send mailbox-message set-label (format "~a: ~a" mailbox-name n)))
       (display-message-count (length mailbox))
-      (define-values (new-mail-msg disconnected-msg)
-	(let ([font (send disable-button-panel get-label-font)])
-	  (send disable-button-panel set-label-font 
-		(make-object font% 
-                  (send font get-point-size)
-                  'system 'normal 'bold))
-	  (let ([m (make-object message% "  New Mail!" disable-button-panel)]
+      (define new-mail-message%
+        (class canvas%
+          (inherit get-dc get-client-size get-parent)
+          (init-field font)
+          (define message "<<unset>>")
+          (define/override (on-paint)
+            (let ([dc (get-dc)])
+              (send dc set-font font)
+              (let-values ([(w h) (get-client-size)]
+                           [(tw th ta td) (send dc get-text-extent message)])
+                (send dc set-pen (send the-pen-list find-or-create-pen (get-panel-background) 1 'transparent))
+                (send dc set-brush (send the-brush-list find-or-create-brush (get-panel-background) 'panel))
+                (send dc draw-rectangle 0 0 w h)
+                (send dc draw-text message
+                      (- (/ w 2) (/ tw 2))
+                      (- (/ h 2) (/ th 2))))))
+          (define/public (set-message n)
+            (set! message 
+                  (cond
+                    [(n . <= . 50) "New Mail!"]
+                    [(n . <= . 200) "New Mail"]
+                    [else "New Mail!@#$%"]))
+            (update-min-width))
+          (inherit min-width)
+          (define/private (update-min-width)
+            (let-values ([(w h d s) (send (get-dc) get-text-extent message font)])
+              (min-width (inexact->exact (ceiling w)))))
+          (super-instantiate ())
+          (update-min-width)
+          (inherit stretchable-width)
+          (stretchable-width #f)))
+      (define-values (show-new-mail-msg hide-new-mail-msg disconnected-msg)
+	(let* ([orig-font (send disable-button-panel get-label-font)]
+               [font (make-object font% (send orig-font get-point-size) 'system 'normal 'bold)])
+	  (send disable-button-panel set-label-font font)
+	  (let ([spacer (make-object message% "  " disable-button-panel)]
+                [m (make-object new-mail-message% font disable-button-panel)]
 		[d (make-object message% "Disconnected" disable-button-panel)])
 	    (send disable-button-panel set-label-font font)
 	    (send m show #f)
-	    (values m d))))
+	    (values (lambda () 
+                      (send m set-message (length mailbox))
+                      (send m show #t))
+                    (lambda () (send m show #f))
+                    d))))
+              
 
       ;; Optional GC icon (lots of work for this little thing!)
       (when (get-pref 'sirmail:show-gc-icon)

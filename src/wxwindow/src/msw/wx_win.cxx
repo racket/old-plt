@@ -2637,7 +2637,7 @@ void wxWindow::SetScrollRange(int orient, int range)
 {
   wxWnd *wnd = (wxWnd *)handle;
   HWND hWnd;
-  int wOrient, page;
+  int wOrient, page, vis;
   SCROLLINFO info;
 
   if (wnd->calcScrolledOffset) return;
@@ -2649,8 +2649,10 @@ void wxWindow::SetScrollRange(int orient, int range)
     
   if (orient == wxHORIZONTAL) {
     page = wnd->xscroll_lines_per_page;
+    vis = wnd->x_scroll_visible;
   } else {
     page = wnd->yscroll_lines_per_page;
+    vis = wnd->y_scroll_visible;
   }
 
   info.cbSize = sizeof(SCROLLINFO);
@@ -2658,7 +2660,7 @@ void wxWindow::SetScrollRange(int orient, int range)
   info.nMin = 0;
   info.nMax = range + page - 1;
 
-  info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
+  info.fMask = SIF_PAGE | SIF_RANGE | (vis ? SIF_DISABLENOSCROLL : 0);
 
   hWnd = GetHWND();
 
@@ -2677,7 +2679,7 @@ void wxWindow::SetScrollPage(int orient, int page)
   wxWnd *wnd = (wxWnd *)handle;
   SCROLLINFO info;
   HWND hWnd;
-  int dir, range;
+  int dir, range, vis;
 
   if (wnd->calcScrolledOffset) return;
 
@@ -2685,17 +2687,19 @@ void wxWindow::SetScrollPage(int orient, int page)
     dir = SB_HORZ;    
     range = wnd->xscroll_lines;
     wnd->xscroll_lines_per_page = page;
+    vis = wnd->x_scroll_visible;
   } else {
     dir = SB_VERT;
     range = wnd->yscroll_lines;
     wnd->yscroll_lines_per_page = page;
+    vis = wnd->y_scroll_visible;
   }
 
   info.cbSize = sizeof(SCROLLINFO);
   info.nPage = page;
   info.nMin = 0;
   info.nMax = range + page - 1;
-  info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
+  info.fMask = SIF_PAGE | SIF_RANGE | (vis ? SIF_DISABLENOSCROLL : 0);
 
   hWnd = GetHWND();
   if (hWnd) {

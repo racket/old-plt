@@ -25,8 +25,7 @@ public:
     UINT last_msg;
     WPARAM last_wparam;
     LPARAM last_lparam;
-    Bool x_scrolling_enabled;
-    Bool y_scrolling_enabled;
+    char x_scrolling_enabled, y_scrolling_enabled, x_scroll_visible, y_scroll_visible;
     Bool calcScrolledOffset; // If TRUE, wxCanvasDC uses scrolled offsets
 
     int xscroll_pixels_per_line;

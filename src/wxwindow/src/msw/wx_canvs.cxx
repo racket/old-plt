@@ -93,6 +93,12 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   if (style & wxINVISIBLE)
     Show(FALSE);
 
+  {
+    wxWnd *wnd = (wxWnd *)handle;
+    wnd->x_scrolling_enabled = ((style & wxHSCROLL) ? 1 : 0);
+    wnd->y_scrolling_enabled = ((style & wxVSCROLL) ? 1 : 0);
+  }
+
   return TRUE;
 }
 
@@ -193,8 +199,13 @@ SetScrollbars (int horizontal, int vertical,
     if (!h) h = 1;
     
     hinfo.cbSize = vinfo.cbSize = sizeof(SCROLLINFO);
-    hinfo.fMask = vinfo.fMask = SIF_PAGE | SIF_RANGE | SIF_POS | SIF_DISABLENOSCROLL;
+    hinfo.fMask = vinfo.fMask = SIF_PAGE | SIF_RANGE | SIF_POS;
     hinfo.nMin = vinfo.nMin = 0;
+
+    if (wnd->x_scroll_visible)
+      hinfo.fMask |= SIF_DISABLENOSCROLL;
+    if (wnd->y_scroll_visible)
+      vinfo.fMask |= SIF_DISABLENOSCROLL;
     
     // Recalculate scroll bar range and position
     // ShowScrollBar(handle, SB_HORZ, wnd->xscroll_lines > 0);
@@ -212,8 +223,6 @@ SetScrollbars (int horizontal, int vertical,
 	wnd->xscroll_lines_per_page = x_page;
       }
 
-      hinfo.fMask |= SIF_DISABLENOSCROLL;
-      
       if (setVirtualSize) {
 	int nMaxWidth = wnd->xscroll_lines;
 	nHscrollMax = (nMaxWidth - w);
@@ -255,8 +264,6 @@ SetScrollbars (int horizontal, int vertical,
 	wnd->yscroll_lines_per_page = y_page;
       }
       
-      vinfo.fMask |= SIF_DISABLENOSCROLL;
-      
       if (setVirtualSize) {
 	int nMaxHeight = wnd->yscroll_lines;
 	nVscrollMax = (nMaxHeight - h);
@@ -282,10 +289,12 @@ SetScrollbars (int horizontal, int vertical,
       vinfo.nMax = 0;
     }
     
-    if (GetWindowStyleFlag() & wxVSCROLL)
+    if (GetWindowStyleFlag() & wxVSCROLL) {
       ::SetScrollInfo(wnd->handle, SB_VERT, &vinfo, TRUE);
-    if (GetWindowStyleFlag() & wxHSCROLL)
+    }
+    if (GetWindowStyleFlag() & wxHSCROLL) {
       ::SetScrollInfo(wnd->handle, SB_HORZ, &hinfo, TRUE);
+    }
     
     InvalidateRect (wnd->handle, NULL, TRUE);
     UpdateWindow (wnd->handle);
@@ -356,14 +365,10 @@ void wxCanvas::EnableScrolling (Bool x_scroll, Bool y_scroll)
 {
   wxWnd *wnd = (wxWnd *)handle;
 
-  if (x_scroll != wnd->x_scrolling_enabled) {
-    wnd->x_scrolling_enabled = x_scroll;
-    ShowScrollBar(wnd->handle, SB_HORZ, x_scroll);
-  }
-  if (y_scroll != wnd->x_scrolling_enabled) {
-    wnd->y_scrolling_enabled = y_scroll;
-    ShowScrollBar(wnd->handle, SB_VERT, y_scroll);
-  }
+  ShowScrollBar(wnd->handle, SB_HORZ, x_scroll);
+  ShowScrollBar(wnd->handle, SB_VERT, y_scroll);
+  wnd->x_scroll_visible = x_scroll;
+  wnd->y_scroll_visible = y_scroll;
 }
 
 void wxCanvas::GetVirtualSize (int *x, int *y)

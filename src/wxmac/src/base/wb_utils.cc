@@ -90,35 +90,22 @@ StringToLong (char *s, long *number)
 char *
 wxFileNameFromPath (char *path)
 {
-  if (path)
-    {
-      register char *tcp;
-
-      tcp = path + strlen (path);
-      while (--tcp >= path)
-	{
-	  if (
-#ifdef wx_mac /* MATTHEW: [5] Mac */
-	      *tcp == ':'
+  if (path) {
+    register char *tcp;
+    
+    tcp = path + strlen (path);
+    while (--tcp >= path) {
+      if (
+#ifdef OS_X
+	  (*tcp == '/')
 #else
-	      *tcp == '/' 
-#ifdef wx_msw /* MATTHEW: [5] DOS only */
-	      || *tcp == '\\'
+	  (*tcp == ':')
 #endif
-#endif
-#ifdef VMS
-	      || *tcp == ':' || *tcp == ']')
-#else
-	    )
-#endif
-	  return tcp + 1;
-    }			/* while */
-#ifdef wx_msw
-  if (isalpha (*path) && *(path + 1) == ':')
-    return path + 2;
-#endif
-}
-return path;
+	  )
+	return tcp + 1;
+    }
+  }
+  return path;
 }
 
 // Return just the directory, or NULL if no directory
@@ -146,13 +133,10 @@ wxPathOnly (char *path)
       while (!done && i > -1)
 	{
 	  if (
-#ifdef wx_mac /* MATTHEW: [5] Mac */
-	      path[i] == ':'
+#ifdef OS_X
+	      path[i] == '/'
 #else
-	      path[i] == '/' 
-#ifdef wx_msw /* MATTHEW: [5] DOS only */
-	      || path[i] == '\\'
-#endif
+	      path[i] == ':'
 #endif
 	      )
 	    {
@@ -162,30 +146,6 @@ wxPathOnly (char *path)
 	    }
 	  else i --;
 	}
-
-      /* there's a bug here somewhere, so replaced with my original code.
-	 char *tcp;
-	 // scan back
-	 for (tcp = &buf[strlen (buf) - 1]; tcp >= buf; tcp--)
-	 {
-	 // Search for Unix or Dos path sep {'\\', '/'}
-	 if (*tcp == '\\' || *tcp == '/')
-	 {
-	 *tcp = '\0';
-	 return buf;
-	 }
-	 }			// for()
-	 */
-#ifdef wx_msw
-      // Try Drive specifier
-      if (isalpha (buf[0]) && buf[1] == ':')
-	{
-	  // A:junk --> A:. (since A:.\junk Not A:\junk)
-	  buf[2] = '.';
-	  buf[3] = '\0';
-	  return buf;
-	}
-#endif
     }
 
   return NULL;

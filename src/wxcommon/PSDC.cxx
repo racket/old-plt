@@ -366,8 +366,15 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive, wxWindow *parent, Bool useP
   } else if (mode == PS_FILE) {
     char *file;
     file = interactive ? (char *)NULL : wxThePrintSetupData->GetPrinterFile();
-    if (!file)
-      file = wxSaveFileSelector("PostScript", "ps");
+    if (!file) {
+      char *dir = NULL;
+      file = wxThePrintSetupData->GetPrinterFile();
+      if (file) {
+	dir = wxPathOnly(file);
+	file = wxFileNameFromPath(file);
+      }
+      file = wxFileSelector("Save PostScript As", dir, file, "ps", NULL, wxSAVE, parent, -1, -1);
+    }
     if (!file) {
       ok = FALSE;
       return FALSE;

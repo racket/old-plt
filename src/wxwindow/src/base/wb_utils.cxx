@@ -77,10 +77,10 @@ wxFileNameFromPath (char *path)
 	{
 	  if (*tcp == '/' 
 	      || *tcp == '\\')
-	    return tcp + 1;
+	    return copystring(tcp + 1);
 	}			/* while */
       if (isalpha (*path) && *(path + 1) == ':')
-	return path + 2;
+	return copystring(path + 2);
     }
   return path;
 }

@@ -99,7 +99,7 @@ The html-eval-ok parameter controls the evaluation of
    only in an instance of a class created with `hyper-canvas-mixin'
    (described below).
 
-   The mixin adds the following instance variables:
+   The mixin adds the following methods:
 
 >   map-shift-style :: (send o map-shift-style start end shift-style)
      Maps the given style over the given range

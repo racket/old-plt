@@ -1,4 +1,4 @@
-/* $Id: fit.h,v 1.1 2003/08/15 22:17:49 cozmic Exp $ */
+/* $Id: fit.h,v 1.2 2003/10/27 02:35:27 cozmic Exp $ */
 
 /* GNUPLOT - fit.h */
 
@@ -32,6 +32,7 @@
 
 #include <scheme.h>
 
+MZ_DLLEXPORT
 double * do_fit(Scheme_Object * function,
 		int n_values,
 		double * x_values,
@@ -42,9 +43,7 @@ double * do_fit(Scheme_Object * function,
 		double * parameters);
 
 
-double get_rms();
-double get_varience();
-double * get_asym_error();
-double * get_asym_error_percent();
-     
-
+MZ_DLLEXPORT double get_rms();
+MZ_DLLEXPORT double get_varience();
+MZ_DLLEXPORT double * get_asym_error();
+MZ_DLLEXPORT double * get_asym_error_percent();

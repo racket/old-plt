@@ -1,4 +1,4 @@
-#include <escheme.h>
+#include <scheme.h>
 
 /*  NOTICE: Change of Copyright Status
  *
@@ -141,16 +141,16 @@ double varience = 0;
 double *asym_error;
 double *asym_error_percent;
 
-double get_rms()
+MZ_DLLEXPORT double get_rms()
 {return rms;}
 
-double get_varience()
+MZ_DLLEXPORT double get_varience()
 {return varience;}
 
-double * get_asym_error()
+MZ_DLLEXPORT double * get_asym_error()
 {return asym_error;}
 
-double * get_asym_error_percent()
+MZ_DLLEXPORT double * get_asym_error_percent()
 {return asym_error_percent;}
 
 
@@ -668,6 +668,7 @@ lambda	  : %g\n\n%s parameter values\n\n",
 /*****************************************************************
     Interface to scheme
 *****************************************************************/
+MZ_DLLEXPORT
 double * do_fit(Scheme_Object * function,
 		int n_values,
 		double * x_values,

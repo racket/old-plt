@@ -1,5 +1,5 @@
 #ifndef lint
-static char *RCSid = "$Id: matrix.c,v 1.1 2003/08/13 19:45:21 cozmic Exp $";
+static char *RCSid = "$Id: matrix.c,v 1.1 2003/08/15 22:17:50 cozmic Exp $";
 #endif
 
 /*  NOTICE: Change of Copyright Status
@@ -55,6 +55,7 @@ static int fsign (double x);
 /*****************************************************************
     first straightforward vector and matrix allocation functions
 *****************************************************************/
+MZ_DLLEXPORT
 double *vec (n)
 int n;
 {
@@ -67,6 +68,7 @@ int n;
 }
 
 
+MZ_DLLEXPORT
 double **matr (rows, cols)
 int rows;
 int cols;
@@ -94,6 +96,7 @@ double **m;
 }
 
 
+MZ_DLLEXPORT
 double *redim_vec (v, n)
 double **v;
 int n;
@@ -105,6 +108,7 @@ int n;
     return *v;
 }
 
+MZ_DLLEXPORT
 void redim_ivec (v, n)
 int **v;
 int n;
@@ -143,6 +147,7 @@ static int fsign(x)
 
 *****************************************************************/
 
+MZ_DLLEXPORT
 void Givens (C, d, x, r, N, n, want_r)
 double **C;
 double *d;
@@ -241,6 +246,7 @@ int want_r;
  * Will only calculate the lower triangle of I, as it is symmetric 
  */
 
+MZ_DLLEXPORT
 void Invert_RtR ( R, I, n)
 double **R;
 double **I;

@@ -11,7 +11,7 @@ CXX = @CXX@
 LINKER = $(CXX)
 PERL = @PERL@
 RANLIB = @RANLIB@
-AR = @AR@
+AR = @STATIC_AR@
 ARFLAGS = @ARFLAGS@
 OPTIONS = @OPTIONS@ @MROPTIONS@
 COMPFLAGS = @CFLAGS@ @PROFFLAGS@
@@ -33,11 +33,11 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @C
 LDFLAGS = $(XLIB)
 ###########################
 
-OBJECTS = wx_style.o wx_keym.o wx_mbuf.o \
-          wx_media.o wx_mpriv.o wx_msnip.o \
-          wx_mline.o wx_mpbrd.o \
-          wx_medad.o wx_snip.o wx_cgrec.o \
-          wx_medio.o
+OBJECTS = wx_style.@LTO@ wx_keym.@LTO@ wx_mbuf.@LTO@ \
+          wx_media.@LTO@ wx_mpriv.@LTO@ wx_msnip.@LTO@ \
+          wx_mline.@LTO@ wx_mpbrd.@LTO@ \
+          wx_medad.@LTO@ wx_snip.@LTO@ wx_cgrec.@LTO@ \
+          wx_medio.@LTO@
 
 OBJECTHEADER_wx_xt = $(srcdir)/../../wxxt/src/DataStructures/Object.h
 PENBRUSHHEADER_wx_xt = $(srcdir)/../../wxxt/src/GDI-Classes/Pen+Brush.h
@@ -65,9 +65,9 @@ HEADERS = $(srcdir)/wx_media.h $(srcdir)/wx_medad.h $(srcdir)/wx_cgrec.h \
           $(srcdir)/wx_medio.h $(srcdir)/wx_style.h \
           $(ALLHEADERS) $(WINDOWHEADER) $(DCHEADER) $(STDEVHEADER)
 
-libwxme.a: $(OBJECTS)
-	$(AR) $(ARFLAGS) libwxme.a $(OBJECTS)
-	$(RANLIB) libwxme.a
+libwxme.@LIBSFX@: $(OBJECTS)
+	$(AR) $(ARFLAGS) libwxme.@LIBSFX@ $(OBJECTS)
+	$(RANLIB) libwxme.@LIBSFX@
 
 LOCALFLAGS_wx_xt = @WX_MMD_FLAG@
 LOCALFLAGS_wx_mac = -MMD -DWX_CARBON
@@ -75,49 +75,49 @@ LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
 MCC = $(CXX) @USE_WXPRECOMP@ $(CXXFLAGS) $(LOCALFLAGS) -c
 
-wx_media.o : $(srcdir)/wx_media.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h \
+wx_media.@LTO@ : $(srcdir)/wx_media.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h \
                        $(srcdir)/wx_mpriv.h $(srcdir)/wx_mline.h
-	$(MCC) $(srcdir)/wx_media.cxx -o wx_media.o
+	$(MCC) $(srcdir)/wx_media.cxx -o wx_media.@LTO@
 
-wx_mpriv.o : $(srcdir)/wx_mpriv.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_mpriv.h \
+wx_mpriv.@LTO@ : $(srcdir)/wx_mpriv.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_mpriv.h \
                        $(srcdir)/wx_mline.h $(srcdir)/wx_gcrct.h $(PENBRUSHHEADER)
-	$(MCC) $(srcdir)/wx_mpriv.cxx -o wx_mpriv.o
+	$(MCC) $(srcdir)/wx_mpriv.cxx -o wx_mpriv.@LTO@
 
-wx_msnip.o : $(srcdir)/wx_msnip.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h \
+wx_msnip.@LTO@ : $(srcdir)/wx_msnip.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h \
                        $(srcdir)/wx_mpriv.h $(srcdir)/wx_gcrct.h
-	$(MCC) $(srcdir)/wx_msnip.cxx -o wx_msnip.o
+	$(MCC) $(srcdir)/wx_msnip.cxx -o wx_msnip.@LTO@
 
-wx_mline.o : $(srcdir)/wx_mline.cxx $(srcdir)/wx_mline.h $(srcdir)/wx_snip.h $(HEADERS)
-	$(MCC) $(srcdir)/wx_mline.cxx -o wx_mline.o
+wx_mline.@LTO@ : $(srcdir)/wx_mline.cxx $(srcdir)/wx_mline.h $(srcdir)/wx_snip.h $(HEADERS)
+	$(MCC) $(srcdir)/wx_mline.cxx -o wx_mline.@LTO@
 
-wx_mpbrd.o : $(srcdir)/wx_mpbrd.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_medpb.h \
+wx_mpbrd.@LTO@ : $(srcdir)/wx_mpbrd.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/wx_medpb.h \
                         $(PENBRUSHHEADER)
-	$(MCC) $(srcdir)/wx_mpbrd.cxx -o wx_mpbrd.o
+	$(MCC) $(srcdir)/wx_mpbrd.cxx -o wx_mpbrd.@LTO@
 
-wx_medad.o : $(srcdir)/wx_medad.cxx $(HEADERS) $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h
-	$(MCC) $(srcdir)/wx_medad.cxx -o wx_medad.o
+wx_medad.@LTO@ : $(srcdir)/wx_medad.cxx $(HEADERS) $(srcdir)/wx_snip.h $(srcdir)/wx_madm.h
+	$(MCC) $(srcdir)/wx_medad.cxx -o wx_medad.@LTO@
 
-wx_mbuf.o : $(srcdir)/wx_mbuf.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/../../wxcommon/PSDC.h
-	$(MCC) $(srcdir)/wx_mbuf.cxx -o wx_mbuf.o
+wx_mbuf.@LTO@ : $(srcdir)/wx_mbuf.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h $(srcdir)/../../wxcommon/PSDC.h
+	$(MCC) $(srcdir)/wx_mbuf.cxx -o wx_mbuf.@LTO@
 
-wx_snip.o : $(srcdir)/wx_snip.cxx $(HEADERS) $(srcdir)/wx_gcrct.h
-	$(MCC) $(srcdir)/wx_snip.cxx -o wx_snip.o
+wx_snip.@LTO@ : $(srcdir)/wx_snip.cxx $(HEADERS) $(srcdir)/wx_gcrct.h
+	$(MCC) $(srcdir)/wx_snip.cxx -o wx_snip.@LTO@
 
-wx_cgrec.o : $(srcdir)/wx_cgrec.cxx $(HEADERS) $(srcdir)/wx_snip.h
-	$(MCC) $(srcdir)/wx_cgrec.cxx -o wx_cgrec.o
+wx_cgrec.@LTO@ : $(srcdir)/wx_cgrec.cxx $(HEADERS) $(srcdir)/wx_snip.h
+	$(MCC) $(srcdir)/wx_cgrec.cxx -o wx_cgrec.@LTO@
 
-wx_keym.o : $(srcdir)/wx_keym.cxx $(srcdir)/wx_keym.h $(ALLHEADERS)
-	$(MCC) $(srcdir)/wx_keym.cxx -o wx_keym.o
+wx_keym.@LTO@ : $(srcdir)/wx_keym.cxx $(srcdir)/wx_keym.h $(ALLHEADERS)
+	$(MCC) $(srcdir)/wx_keym.cxx -o wx_keym.@LTO@
 
-wx_medio.o : $(srcdir)/wx_medio.cxx $(srcdir)/wx_medio.h $(ALLHEADERS)
-	$(MCC) $(srcdir)/wx_medio.cxx -o wx_medio.o
+wx_medio.@LTO@ : $(srcdir)/wx_medio.cxx $(srcdir)/wx_medio.h $(ALLHEADERS)
+	$(MCC) $(srcdir)/wx_medio.cxx -o wx_medio.@LTO@
 
-wx_style.o : $(srcdir)/wx_style.cxx $(srcdir)/wx_style.h $(srcdir)/wx_medio.h $(ALLHEADERS) \
+wx_style.@LTO@ : $(srcdir)/wx_style.cxx $(srcdir)/wx_style.h $(srcdir)/wx_medio.h $(ALLHEADERS) \
                        $(DCHEADER) $(PENBRUSHHEADER)
-	$(MCC) $(srcdir)/wx_style.cxx -o wx_style.o 
+	$(MCC) $(srcdir)/wx_style.cxx -o wx_style.@LTO@ 
 
 clean:
-	rm -f *.o *.a *.d *~ core
+	rm -f *.@LTO@ *.@LIBSFX@ *.d *~ core
 
 
 @INCLUDEDEP@ wx_style.d

@@ -79,6 +79,8 @@ fi
 
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
+  enable_libpng=no
+  enable_libjpeg=no
 fi
 
 enable_quartz=no
@@ -554,40 +556,6 @@ if test "${enable_noopt}" = "yes" ; then
   CXXFLAGS=`echo "$CXXFLAGS" | awk "$AWKPRG"`
 fi
 
-############## libtool ################
-
-if test "${enable_dynlib}" = "yes" ; then
-  enable_shared=yes
-fi
-
-if test "${enable_shared}" = "yes" ; then
-  echo "Configuring libtool"
-  if test ! -d "lt" ; then
-    mkdir "lt"
-  fi
-  abssrcdir=`(cd ${srcdir}; pwd)`
-  (cd lt; sh ${abssrcdir}/lt/configure --enable-shared)
-  LTDIR=`pwd`/lt
-  absprefix=`(cd ${prefix}; pwd)`
-  AR="${LTDIR}/libtool $CC -rpath ${absprefix}/lib -o"
-  ARFLAGS=""
-  RANLIB=":"
-  CC="${LTDIR}/libtool $CC"
-  LIBSFX=la
-  MREDLINKER="${LTDIR}/libtool $CXX"
-  WXLIBS=WXLIBSDYN
-  ICP="${LTDIR}/libtool cp"
-  MRLIBINSTALL="install-lib"
-  LIBFINISH="${LTDIR}/libtool --finish"
-else
-  LIBSFX=a
-  MREDLINKER="$CXX"
-  WXLIBS=WXLIBSNORM
-  ICP=cp
-  MRLIBINSTALL="install-no-lib"
-  LIBFINISH=echo
-fi
-
 ################ X OpenGL ##################
 
 if test "${enable_gl}" = "maybe" ; then  
@@ -738,6 +706,47 @@ if test "${enable_libjpeg}" = "yes" ; then
   fi
 fi
 
+############## libtool ################
+
+if test "${enable_dynlib}" = "yes" ; then
+  enable_shared=yes
+fi
+
+if test "${enable_shared}" = "yes" ; then
+  echo "Configuring libtool"
+  if test ! -d "lt" ; then
+    mkdir "lt"
+  fi
+  abssrcdir=`(cd ${srcdir}; pwd)`
+  (cd lt; sh ${abssrcdir}/lt/configure --enable-shared --disable-static)
+  LTDIR=`pwd`/lt
+  absprefix=`(cd ${prefix}; pwd)`
+  AR="${LTDIR}/libtool --mode=link $CC -rpath ${absprefix}/lib -o"
+  STATIC_AR="${LTDIR}/libtool --mode=link $CC -o"
+  ARFLAGS=""
+  RANLIB=":"
+  MZLINKER="${LTDIR}/libtool --mode=link $CC"
+  MREDLINKER="${LTDIR}/libtool --mode=link $CXX"
+  CC="${LTDIR}/libtool --mode=compile $CC"
+  CXX="${LTDIR}/libtool --mode=compile $CXX"
+  LIBSFX=la
+  WXLIBS=WXLIBSDYN
+  ICP="${LTDIR}/libtool --mode=install cp"
+  MRLIBINSTALL="install-lib"
+  LIBFINISH="${LTDIR}/libtool --mode=finish"
+  LTO="lo"
+else
+  LIBSFX=a
+  MREDLINKER="$CXX"
+  WXLIBS=WXLIBSNORM
+  ICP=cp
+  MRLIBINSTALL="install-no-lib"
+  LIBFINISH=echo
+  LTO="o"
+  MZLINKER="$CC"
+  STATIC_AR="$AR"
+fi
+
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"
@@ -754,10 +763,12 @@ AC_SUBST(PERL)
 AC_SUBST(AS)
 AC_SUBST(RANLIB)
 AC_SUBST(AR)
+AC_SUBST(STATIC_AR)
 AC_SUBST(ARFLAGS)
 AC_SUBST(WBUILD)
 AC_SUBST(CC_FOR_BUILD)
 AC_SUBST(REZ)
+AC_SUBST(MZLINKER)
 
 AC_SUBST(x_includes)
 AC_SUBST(x_libraries)
@@ -807,6 +818,8 @@ AC_SUBST(PNG_A)
 
 AC_SUBST(OSKHOME)
 AC_SUBST(EXTRA_OSK_LIBS)
+
+AC_SUBST(LTO)
 
 mk_needed_dir()
 {

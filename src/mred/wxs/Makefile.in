@@ -11,7 +11,7 @@ CXX = @CXX@
 LINKER = $(CXX)
 PERL = @PERL@
 RANLIB = @RANLIB@
-AR = @AR@
+AR = @STATIC_AR@
 ARFLAGS = @ARFLAGS@
 OPTIONS = @OPTIONS@ @MROPTIONS@
 XINCLUDE = @X_CFLAGS@
@@ -88,11 +88,11 @@ PENBRUSHHEADER = $(PENBRUSHHEADER_@WXVARIANT@)
 LISTBOXHEADER = $(LISTBOXHEADER_@WXVARIANT@)
 CLIPBHEADER = $(CLIPBHEADER_@WXVARIANT@)
 
-OBJECTS = xcglue.o wxs_bmap.o wxs_butn.o wxs_chce.o wxs_ckbx.o wxs_cnvs.o \
-          wxs_dc.o wxs_evnt.o wxs_fram.o wxs_gage.o wxs_gdi.o wxs_glob.o \
-          wxs_item.o wxs_lbox.o wxs_madm.o wxs_mede.o wxs_medi.o wxs_menu.o \
-          wxs_mio.o wxs_misc.o wxs_mpb.o wxs_obj.o wxs_panl.o wxs_rado.o wxs_slid.o \
-          wxs_snip.o wxs_styl.o wxs_tabc.o wxs_win.o wxscheme.o
+OBJECTS = xcglue.@LTO@ wxs_bmap.@LTO@ wxs_butn.@LTO@ wxs_chce.@LTO@ wxs_ckbx.@LTO@ wxs_cnvs.@LTO@ \
+          wxs_dc.@LTO@ wxs_evnt.@LTO@ wxs_fram.@LTO@ wxs_gage.@LTO@ wxs_gdi.@LTO@ wxs_glob.@LTO@ \
+          wxs_item.@LTO@ wxs_lbox.@LTO@ wxs_madm.@LTO@ wxs_mede.@LTO@ wxs_medi.@LTO@ wxs_menu.@LTO@ \
+          wxs_mio.@LTO@ wxs_misc.@LTO@ wxs_mpb.@LTO@ wxs_obj.@LTO@ wxs_panl.@LTO@ wxs_rado.@LTO@ wxs_slid.@LTO@ \
+          wxs_snip.@LTO@ wxs_styl.@LTO@ wxs_tabc.@LTO@ wxs_win.@LTO@ wxscheme.@LTO@
 
 SOURCES = $(srcdir)/wxs_bmap.cxx $(srcdir)/wxs_butn.cxx $(srcdir)/wxs_chce.cxx $(srcdir)/wxs_ckbx.cxx \
           $(srcdir)/wxs_cnvs.cxx $(srcdir)/wxs_dc.cxx $(srcdir)/wxs_evnt.cxx $(srcdir)/wxs_fram.cxx \
@@ -120,11 +120,11 @@ SSDESCS = $(srcdir)/wxs_obj.ss $(srcdir)/wxs_win.ss $(srcdir)/wxs_item.ss $(srcd
           $(srcdir)/wxs_panl.ss $(srcdir)/wxs_rado.ss $(srcdir)/wxs_slid.ss \
           $(srcdir)/wxs_snip.ss $(srcdir)/wxs_styl.ss $(srcdir)/wxs_tabc.ss
 
-all: libwxscheme.a
+all: libwxscheme.@LIBSFX@
 
-libwxscheme.a : $(OBJECTS) 
-	$(AR) $(ARFLAGS) libwxscheme.a $(OBJECTS)
-	$(RANLIB) libwxscheme.a
+libwxscheme.@LIBSFX@ : $(OBJECTS) 
+	$(AR) $(ARFLAGS) libwxscheme.@LIBSFX@ $(OBJECTS)
+	$(RANLIB) libwxscheme.@LIBSFX@
 
 test-file:
 	rm -f $(srcdir)/../../../tests/mred/tests.ss
@@ -140,7 +140,7 @@ ss: $(SSDESCS)
 ccsources: $(SOURCES)
 
 clean:
-	rm -f *.o *.a *.d
+	rm -f *.@LTO@ *.@LIBSFX@ *.d
 
 repatriate:
 	mv $(HIDEDIR)/wxs_objects/objects .
@@ -214,68 +214,68 @@ $(srcdir)/wxs_win.cxx : $(srcdir)/wxs_win.xc $(srcdir)/wxs_win.xci $(XCDEPEND)
 
 WXSCC = $(CXX) @USE_WXPRECOMP@ $(WXSCXXFLAGS) $(CXXDEPFLAGS) $(LOCALFLAGS) -c
 
-wxscheme.o : $(srcdir)/wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(DCHEADERS) $(srcdir)/wxsmred.h
-	$(WXSCC) $(srcdir)/wxscheme.cxx -o wxscheme.o 
+wxscheme.@LTO@ : $(srcdir)/wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(DCHEADERS) $(srcdir)/wxsmred.h
+	$(WXSCC) $(srcdir)/wxscheme.cxx -o wxscheme.@LTO@ 
 
-xcglue.o : $(srcdir)/../../mzscheme/utils/xcglue.c $(srcdir)/../../mzscheme/utils/xcglue.h $(WXSCHEMEHEADERS)
-	$(CC) $(WXSCFLAGS) $(CDEPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../../mzscheme/utils/xcglue.c -o xcglue.o
+xcglue.@LTO@ : $(srcdir)/../../mzscheme/utils/xcglue.c $(srcdir)/../../mzscheme/utils/xcglue.h $(WXSCHEMEHEADERS)
+	$(CC) $(WXSCFLAGS) $(CDEPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../../mzscheme/utils/xcglue.c -o xcglue.@LTO@
 
-wxs_bmap.o : $(srcdir)/wxs_bmap.cxx $(WXSCHEMEHEADERS)
-	$(WXSCC) $(srcdir)/wxs_bmap.cxx -o wxs_bmap.o
-wxs_butn.o : $(srcdir)/wxs_butn.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(BUTTONHEADER)
-	$(WXSCC) $(srcdir)/wxs_butn.cxx -o wxs_butn.o
-wxs_chce.o : $(srcdir)/wxs_chce.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_chce.cxx -o wxs_chce.o
-wxs_ckbx.o : $(srcdir)/wxs_ckbx.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(CHECKBOXHEADER)
-	$(WXSCC) $(srcdir)/wxs_ckbx.cxx -o wxs_ckbx.o
-wxs_cnvs.o : $(srcdir)/wxs_cnvs.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_cnvs.cxx -o wxs_cnvs.o
-wxs_dc.o : $(srcdir)/wxs_dc.cxx $(WXSCHEMEHEADERS) $(DCHEADERS)
-	$(WXSCC) $(srcdir)/wxs_dc.cxx -o wxs_dc.o
-wxs_evnt.o : $(srcdir)/wxs_evnt.cxx $(WXSCHEMEHEADERS)
-	$(WXSCC) $(srcdir)/wxs_evnt.cxx -o wxs_evnt.o
-wxs_fram.o : $(srcdir)/wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(FRAMEHEADER)
-	$(WXSCC) $(srcdir)/wxs_fram.cxx -o wxs_fram.o
-wxs_gage.o : $(srcdir)/wxs_gage.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_gage.cxx -o wxs_gage.o
-wxs_gdi.o : $(srcdir)/wxs_gdi.cxx $(WXSCHEMEHEADERS) $(PENBRUSHHEADER)
-	$(WXSCC) $(srcdir)/wxs_gdi.cxx -o wxs_gdi.o
-wxs_glob.o : $(srcdir)/wxs_glob.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_glob.cxx -o wxs_glob.o
-wxs_item.o : $(srcdir)/wxs_item.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_item.cxx -o wxs_item.o
-wxs_lbox.o : $(srcdir)/wxs_lbox.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)  $(LISTBOXHEADER)
-	$(WXSCC) $(srcdir)/wxs_lbox.cxx -o wxs_lbox.o
-wxs_madm.o : $(srcdir)/wxs_madm.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
-	$(WXSCC) $(srcdir)/wxs_madm.cxx -o wxs_madm.o
-wxs_medi.o : $(srcdir)/wxs_medi.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
-	$(WXSCC) $(srcdir)/wxs_medi.cxx -o wxs_medi.o
-wxs_mede.o : $(srcdir)/wxs_mede.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
-	$(WXSCC) $(srcdir)/wxs_mede.cxx -o wxs_mede.o
-wxs_menu.o : $(srcdir)/wxs_menu.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_menu.cxx -o wxs_menu.o
-wxs_mio.o : $(srcdir)/wxs_mio.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_mio.cxx -o wxs_mio.o
-wxs_misc.o : $(srcdir)/wxs_misc.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(CLIPBHEADER)
-	$(WXSCC) $(srcdir)/wxs_misc.cxx -o wxs_misc.o
-wxs_mpb.o : $(srcdir)/wxs_mpb.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(srcdir)/../wxme/wx_medpb.h $(MAINDCHEADERS)
-	$(WXSCC) $(srcdir)/wxs_mpb.cxx -o wxs_mpb.o
-wxs_obj.o : $(srcdir)/wxs_obj.cxx $(WXSCHEMEHEADERS)
-	$(WXSCC) $(srcdir)/wxs_obj.cxx -o wxs_obj.o
-wxs_panl.o : $(srcdir)/wxs_panl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_panl.cxx -o wxs_panl.o
-wxs_rado.o : $(srcdir)/wxs_rado.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_rado.cxx -o wxs_rado.o
-wxs_slid.o : $(srcdir)/wxs_slid.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_slid.cxx -o wxs_slid.o
-wxs_snip.o : $(srcdir)/wxs_snip.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
-	$(WXSCC) $(srcdir)/wxs_snip.cxx -o wxs_snip.o
-wxs_styl.o : $(srcdir)/wxs_styl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir)/../wxme/wx_style.h $(MAINDCHEADERS)
-	$(WXSCC) $(srcdir)/wxs_styl.cxx -o wxs_styl.o
-wxs_tabc.o : $(srcdir)/wxs_tabc.cxx $(WXSCHEMEHEADERS) $(TABCDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_tabc.cxx -o wxs_tabc.o
-wxs_win.o : $(srcdir)/wxs_win.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
-	$(WXSCC) $(srcdir)/wxs_win.cxx -o wxs_win.o
+wxs_bmap.@LTO@ : $(srcdir)/wxs_bmap.cxx $(WXSCHEMEHEADERS)
+	$(WXSCC) $(srcdir)/wxs_bmap.cxx -o wxs_bmap.@LTO@
+wxs_butn.@LTO@ : $(srcdir)/wxs_butn.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(BUTTONHEADER)
+	$(WXSCC) $(srcdir)/wxs_butn.cxx -o wxs_butn.@LTO@
+wxs_chce.@LTO@ : $(srcdir)/wxs_chce.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_chce.cxx -o wxs_chce.@LTO@
+wxs_ckbx.@LTO@ : $(srcdir)/wxs_ckbx.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(CHECKBOXHEADER)
+	$(WXSCC) $(srcdir)/wxs_ckbx.cxx -o wxs_ckbx.@LTO@
+wxs_cnvs.@LTO@ : $(srcdir)/wxs_cnvs.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_cnvs.cxx -o wxs_cnvs.@LTO@
+wxs_dc.@LTO@ : $(srcdir)/wxs_dc.cxx $(WXSCHEMEHEADERS) $(DCHEADERS)
+	$(WXSCC) $(srcdir)/wxs_dc.cxx -o wxs_dc.@LTO@
+wxs_evnt.@LTO@ : $(srcdir)/wxs_evnt.cxx $(WXSCHEMEHEADERS)
+	$(WXSCC) $(srcdir)/wxs_evnt.cxx -o wxs_evnt.@LTO@
+wxs_fram.@LTO@ : $(srcdir)/wxs_fram.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(FRAMEHEADER)
+	$(WXSCC) $(srcdir)/wxs_fram.cxx -o wxs_fram.@LTO@
+wxs_gage.@LTO@ : $(srcdir)/wxs_gage.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_gage.cxx -o wxs_gage.@LTO@
+wxs_gdi.@LTO@ : $(srcdir)/wxs_gdi.cxx $(WXSCHEMEHEADERS) $(PENBRUSHHEADER)
+	$(WXSCC) $(srcdir)/wxs_gdi.cxx -o wxs_gdi.@LTO@
+wxs_glob.@LTO@ : $(srcdir)/wxs_glob.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_glob.cxx -o wxs_glob.@LTO@
+wxs_item.@LTO@ : $(srcdir)/wxs_item.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_item.cxx -o wxs_item.@LTO@
+wxs_lbox.@LTO@ : $(srcdir)/wxs_lbox.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)  $(LISTBOXHEADER)
+	$(WXSCC) $(srcdir)/wxs_lbox.cxx -o wxs_lbox.@LTO@
+wxs_madm.@LTO@ : $(srcdir)/wxs_madm.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
+	$(WXSCC) $(srcdir)/wxs_madm.cxx -o wxs_madm.@LTO@
+wxs_medi.@LTO@ : $(srcdir)/wxs_medi.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
+	$(WXSCC) $(srcdir)/wxs_medi.cxx -o wxs_medi.@LTO@
+wxs_mede.@LTO@ : $(srcdir)/wxs_mede.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
+	$(WXSCC) $(srcdir)/wxs_mede.cxx -o wxs_mede.@LTO@
+wxs_menu.@LTO@ : $(srcdir)/wxs_menu.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_menu.cxx -o wxs_menu.@LTO@
+wxs_mio.@LTO@ : $(srcdir)/wxs_mio.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_mio.cxx -o wxs_mio.@LTO@
+wxs_misc.@LTO@ : $(srcdir)/wxs_misc.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(CLIPBHEADER)
+	$(WXSCC) $(srcdir)/wxs_misc.cxx -o wxs_misc.@LTO@
+wxs_mpb.@LTO@ : $(srcdir)/wxs_mpb.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(srcdir)/../wxme/wx_medpb.h $(MAINDCHEADERS)
+	$(WXSCC) $(srcdir)/wxs_mpb.cxx -o wxs_mpb.@LTO@
+wxs_obj.@LTO@ : $(srcdir)/wxs_obj.cxx $(WXSCHEMEHEADERS)
+	$(WXSCC) $(srcdir)/wxs_obj.cxx -o wxs_obj.@LTO@
+wxs_panl.@LTO@ : $(srcdir)/wxs_panl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_panl.cxx -o wxs_panl.@LTO@
+wxs_rado.@LTO@ : $(srcdir)/wxs_rado.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_rado.cxx -o wxs_rado.@LTO@
+wxs_slid.@LTO@ : $(srcdir)/wxs_slid.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_slid.cxx -o wxs_slid.@LTO@
+wxs_snip.@LTO@ : $(srcdir)/wxs_snip.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(WINDOWHEADERS) $(MAINDCHEADERS)
+	$(WXSCC) $(srcdir)/wxs_snip.cxx -o wxs_snip.@LTO@
+wxs_styl.@LTO@ : $(srcdir)/wxs_styl.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS) $(srcdir)/../wxme/wx_style.h $(MAINDCHEADERS)
+	$(WXSCC) $(srcdir)/wxs_styl.cxx -o wxs_styl.@LTO@
+wxs_tabc.@LTO@ : $(srcdir)/wxs_tabc.cxx $(WXSCHEMEHEADERS) $(TABCDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_tabc.cxx -o wxs_tabc.@LTO@
+wxs_win.@LTO@ : $(srcdir)/wxs_win.cxx $(WXSCHEMEHEADERS) $(WINDOWHEADERS)
+	$(WXSCC) $(srcdir)/wxs_win.cxx -o wxs_win.@LTO@
 
 $(srcdir)/wxs_bmap.ss : $(srcdir)/wxs_bmap.cxx
 $(srcdir)/wxs_butn.ss : $(srcdir)/wxs_butn.cxx

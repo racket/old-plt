@@ -69,26 +69,26 @@ g-c:
 	cd @GCDIR@; $(MAKE) ../libmzgc.@LIBSFX@ 
 
 sproc-extra-lib:
-	cd @GCDIR@; $(MAKE) sproc.o
-	$(MAKE) sproc.o
+	cd @GCDIR@; $(MAKE) sproc.@LTO@
+	$(MAKE) sproc.@LTO@
 
 gc.@LIBSFX@: 
-	$(AR) $(ARFLAGS) @GCDIR@/gc.@LIBSFX@ @GCDIR@/*.o
+	$(AR) $(ARFLAGS) @GCDIR@/gc.@LIBSFX@ @GCDIR@/*.@LTO@
 
 mzlibrary:
 	cd src; $(MAKE) all 
 	$(MAKE) libmzscheme.@LIBSFX@
 
-libmzscheme.@LIBSFX@: src/*.o
-	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.o
+libmzscheme.@LIBSFX@: src/*.@LTO@
+	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.@LTO@
 	$(RANLIB) libmzscheme.@LIBSFX@
 
 # Irix sproc, only
-sproc.o: @GCDIR@/sproc.o
-	cp @GCDIR@/sproc.o sproc.o
+sproc.@LTO@: @GCDIR@/sproc.@LTO@
+	cp @GCDIR@/sproc.@LTO@ sproc.@LTO@
 
-mzscheme@NOT_OSX@: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o $(SPECIALIZINGOBJECTS)
-	$(CC) -o mzscheme main.o $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LDFLAGS@ @LIBS@
+mzscheme@NOT_OSX@: libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.@LTO@ $(SPECIALIZINGOBJECTS)
+	@MZLINKER@ -o mzscheme main.@LTO@ $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LDFLAGS@ @LIBS@
 
 @INCLUDEDEP@ @srcdir@/../mac/version.mak
 
@@ -102,34 +102,34 @@ $(MZFW): libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
 	rm -f PLT_MzScheme.framework/PLT_MzScheme
 	ln -s Versions/$(FWVERSION)/PLT_MzScheme PLT_MzScheme.framework/PLT_MzScheme
 
-mzscheme@OSX@: $(MZFW) main.o
-	$(CC) -o mzscheme main.o -F. -framework PLT_MzScheme
+mzscheme@OSX@: $(MZFW) main.@LTO@
+	$(CC) -o mzscheme main.@LTO@ -F. -framework PLT_MzScheme
 
 # OSKit-based MzScheme
-mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o
-	$(LD) -Ttext 100000 $(LDFLAGS) @OSKHOME@/lib/oskit/multiboot.o \
-		-o mzscheme.multiboot main.o -L. -lmzscheme -lgc \
+mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.@LTO@
+	$(LD) -Ttext 100000 $(LDFLAGS) @OSKHOME@/lib/oskit/multiboot.@LTO@ \
+		-o mzscheme.multiboot main.@LTO@ -L. -lmzscheme -lgc \
                 -L@OSKHOME@/lib -loskit_kern -loskit_clientos @EXTRA_OSK_LIBS@ \
                 -loskit_freebsd_c -loskit_c -loskit_lmm \
                 -loskit_freebsd_m -loskit_memfs -loskit_fsnamespace  \
                 -loskit_dev -loskit_com \
                 -loskit_kern -loskit_freebsd_c -loskit_c \
-		@OSKHOME@/lib/oskit/crtn.o
+		@OSKHOME@/lib/oskit/crtn.@LTO@
 
-main.o: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/src/stypes.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
-	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.o
+main.@LTO@: $(srcdir)/main.c $(srcdir)/include/scheme.h $(srcdir)/sconfig.h $(srcdir)/src/stypes.h $(srcdir)/cmdline.inc $(srcdir)/oskglue.inc
+	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -c $(srcdir)/main.c -o main.@LTO@
 
-main_ee.o: main.o
-	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.o
+main_ee.@LTO@: main.@LTO@
+	$(CC) @CFLAGS@ @COMPFLAGS@ @PREFLAGS@ @PROFFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/include -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/main.c -o main_ee.@LTO@
 
 ee-main:
-	$(MAKE) main_ee.o
+	$(MAKE) main_ee.@LTO@
 
-ee-app: $(MZSCHEME) main_ee.o
-	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(CC) $(MAIN_CFLAGS_NODBG) -o $(EEAPP) main_ee.o $(EEOBJECTS) $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@ ; fi
+ee-app: $(MZSCHEME) main_ee.@LTO@
+	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(CC) $(MAIN_CFLAGS_NODBG) -o $(EEAPP) main_ee.@LTO@ $(EEOBJECTS) $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LIBS@ ; fi
 
-testext.o: testext.c
-	$(CC) $(MAIN_CFLAGS) -I/home/scheme/plt/compiler/ -c testext.c -o testext.o
+testext.@LTO@: testext.c
+	$(CC) $(MAIN_CFLAGS) -I/home/scheme/plt/compiler/ -c testext.c -o testext.@LTO@
 
 mzstart.exe: $(srcdir)/dynsrc/start.c
 	$(CC) @CFLAGS@ -o mzstart.exe $(srcdir)/dynsrc/start.c
@@ -200,8 +200,8 @@ palmos:
 clean@NOT_OSX@:
 	/bin/rm -rf tmp[123456789] tests/tmp[123456789] tests/sub[123]
 	/bin/rm -f tests/*~
-	/bin/rm -f *.o core
-	/bin/rm -f mzdyn.o libmzgc.@LIBSFX@ libmzscheme.@LIBSFX@ libdl.a mzscheme mzscheme.multiboot
+	/bin/rm -f *.@LTO@ core
+	/bin/rm -f mzdyn.@LTO@ libmzgc.@LIBSFX@ libmzscheme.@LIBSFX@ libdl.a mzscheme mzscheme.multiboot
 	/bin/rm -f include/macosxpre
 	/bin/rm -f include/macosxpre.p
 	cd gc; $(MAKE) clean
@@ -220,7 +220,7 @@ install:
 
 install-3m-basic:
 	cd ..; cp mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
-	cd ..; cp mzscheme/mzdyn3m.o $(prefix)/lib/mzdyn3m.o
+	cd ..; cp mzscheme/mzdyn3m.@LTO@ $(prefix)/lib/mzdyn3m.@LTO@
 
 install-3m@NOT_OSX@:
 	$(MAKE) install-3m-basic
@@ -237,7 +237,7 @@ normal-install:
 	cd ..; rm -f $(prefix)/bin/mzscheme
 	cd ..; $(ICP) mzscheme/mzscheme $(prefix)/bin/mzscheme
 	cd ..; if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
-	cd ..; cp mzscheme/mzdyn.o $(LIBIDIR)/mzdyn.o
+	cd ..; cp mzscheme/mzdyn.@LTO@ $(LIBIDIR)/mzdyn.@LTO@
 	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
 	cd ..; $(ICP) mzscheme/libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
 	cd ..; echo 'CC=@CC@' > $(BUILDINFO)

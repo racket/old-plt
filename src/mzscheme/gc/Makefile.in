@@ -225,13 +225,13 @@ ARFLAGS= @ARFLAGS@
 RANLIB= @RANLIB@
 
 
-OBJS= alloc.o reclaim.o allchblk.o misc.o mach_dep.o os_dep.o mark_rts.o headers.o mark.o obj_map.o blacklst.o finalize.o new_hblk.o dbg_mlc.o malloc.o stubborn.o checksums.o solaris_threads.o irix_threads.o linux_threads.o typd_mlc.o ptr_chck.o mallocx.o solaris_pthreads.o gcj_mlc.o specific.o gc_dlopen.o
+OBJS= alloc.@LTO@ reclaim.@LTO@ allchblk.@LTO@ misc.@LTO@ mach_dep.@LTO@ os_dep.@LTO@ mark_rts.@LTO@ headers.@LTO@ mark.@LTO@ obj_map.@LTO@ blacklst.@LTO@ finalize.@LTO@ new_hblk.@LTO@ dbg_mlc.@LTO@ malloc.@LTO@ stubborn.@LTO@ checksums.@LTO@ solaris_threads.@LTO@ irix_threads.@LTO@ linux_threads.@LTO@ typd_mlc.@LTO@ ptr_chck.@LTO@ mallocx.@LTO@ solaris_pthreads.@LTO@ gcj_mlc.@LTO@ specific.@LTO@ gc_dlopen.@LTO@
 
 CSRCS= reclaim.c allchblk.c misc.c alloc.c mach_dep.c os_dep.c mark_rts.c headers.c mark.c obj_map.c pcr_interface.c blacklst.c finalize.c new_hblk.c real_malloc.c dyn_load.c dbg_mlc.c malloc.c stubborn.c checksums.c solaris_threads.c irix_threads.c linux_threads.c typd_mlc.c ptr_chck.c mallocx.c solaris_pthreads.c gcj_mlc.c specific.c gc_dlopen.c
 
 CORD_SRCS=  cord/cordbscs.c cord/cordxtra.c cord/cordprnt.c cord/de.c cord/cordtest.c include/cord.h include/ec.h include/private/cord_pos.h cord/de_win.c cord/de_win.h cord/de_cmds.h cord/de_win.ICO cord/de_win.RC
 
-CORD_OBJS=  cord/cordbscs.o cord/cordxtra.o cord/cordprnt.o
+CORD_OBJS=  cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ cord/cordprnt.@LTO@
 
 SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     sparc_mach_dep.s include/gc.h include/gc_typed.h \
@@ -250,7 +250,7 @@ SRCS= $(CSRCS) mips_sgi_mach_dep.s rs6000_mach_dep.s alpha_mach_dep.s \
     include/leak_detector.h include/gc_amiga_redirects.h \
     include/gc_pthread_redirects.h $(CORD_SRCS)
 
-DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.OS2 \
+DOC_FILES= README.QUICK doc/README.Mac doc/README.MacOSX doc/README.@LTO@S2 \
 	doc/README.amiga doc/README.cords doc/debugging.html \
 	doc/README.dj doc/README.hp doc/README.linux doc/README.rs6000 \
 	doc/README.sgi doc/README.solaris2 doc/README.uts \
@@ -315,37 +315,37 @@ BSD-pkg-install: BSD-pkg-all
 
 pcr: PCR-Makefile include/private/gc_private.h include/private/gc_hdrs.h \
 include/private/gc_locks.h include/gc.h include/private/gcconfig.h \
-mach_dep.o $(SRCS)
+mach_dep.@LTO@ $(SRCS)
 	$(MAKE) -f PCR-Makefile depend
 	$(MAKE) -f PCR-Makefile
 
-$(OBJS) tests/test.o dyn_load.o dyn_load_sunos53.o: \
+$(OBJS) tests/test.@LTO@ dyn_load.@LTO@ dyn_load_sunos53.@LTO@: \
     $(srcdir)/include/private/gc_priv.h \
     $(srcdir)/include/private/gc_hdrs.h $(srcdir)/include/private/gc_locks.h \
     $(srcdir)/include/gc.h \
     $(srcdir)/include/private/gcconfig.h $(srcdir)/include/gc_typed.h
 # The dependency on Makefile is needed.  Changing
 # options such as -DSILENT affects the size of GC_arrays,
-# invalidating all .o files that rely on gc_priv.h
+# invalidating all .@LTO@ files that rely on gc_priv.h
 
-mark.o typd_mlc.o finalize.o ptr_chck.o: $(srcdir)/include/gc_mark.h $(srcdir)/include/private/gc_pmark.h
+mark.@LTO@ typd_mlc.@LTO@ finalize.@LTO@ ptr_chck.@LTO@: $(srcdir)/include/gc_mark.h $(srcdir)/include/private/gc_pmark.h
 
-specific.o linux_threads.o: $(srcdir)/include/private/specific.h
+specific.@LTO@ linux_threads.@LTO@: $(srcdir)/include/private/specific.h
 
-solaris_threads.o solaris_pthreads.o: $(srcdir)/include/private/solaris_threads.h
+solaris_threads.@LTO@ solaris_pthreads.@LTO@: $(srcdir)/include/private/solaris_threads.h
 
-dbg_mlc.o gcj_mlc.o: $(srcdir)/include/private/dbg_mlc.h
+dbg_mlc.@LTO@ gcj_mlc.@LTO@: $(srcdir)/include/private/dbg_mlc.h
 
-tests/test.o: tests $(srcdir)/tests/test.c
+tests/test.@LTO@: tests $(srcdir)/tests/test.c
 	$(CC) $(CFLAGS) -c $(srcdir)/tests/test.c
-	mv test.o tests/test.o
+	mv test.@LTO@ tests/test.@LTO@
 
 tests:
 	mkdir tests
 
 # PLTSCHEME: make ../libmzgc.a, and use $(AR), $(RANLIB), and @LIBSFX@:
-base_lib ../libmzgc.@LIBSFX@: $(OBJS) dyn_load.o $(UTILS)
-	$(AR) $(ARFLAGS) ../libmzgc.@LIBSFX@ $(OBJS) dyn_load.o
+base_lib ../libmzgc.@LIBSFX@: $(OBJS) dyn_load.@LTO@ $(UTILS)
+	$(AR) $(ARFLAGS) ../libmzgc.@LIBSFX@ $(OBJS) dyn_load.@LTO@
 	$(RANLIB) ../libmzgc.@LIBSFX@
 
 cords: $(CORD_OBJS) cord/cordtest $(UTILS)
@@ -357,14 +357,14 @@ cords: $(CORD_OBJS) cord/cordtest $(UTILS)
 	./if_not_there dont_ar_3 $(AR) ru gc.a $(CORD_OBJS)
 	./if_not_there dont_ar_3 $(RANLIB) gc.a || cat /dev/null
 
-gc_cpp.o: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h # Makefile
+gc_cpp.@LTO@: $(srcdir)/gc_cpp.cc $(srcdir)/include/gc_cpp.h $(srcdir)/include/gc.h # Makefile
 	$(CXX) -c $(CXXFLAGS) $(srcdir)/gc_cpp.cc
 
-test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.o $(srcdir)/include/gc.h \
+test_cpp: $(srcdir)/tests/test_cpp.cc $(srcdir)/include/gc_cpp.h gc_cpp.@LTO@ $(srcdir)/include/gc.h \
 base_lib $(UTILS)
 	rm -f test_cpp
-	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a -ldld `./threadlibs`
-	./if_not_there test_cpp $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.o gc.a `./threadlibs`
+	./if_mach HP_PA HPUX $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.@LTO@ gc.a -ldld `./threadlibs`
+	./if_not_there test_cpp $(CXX) $(CXXFLAGS) -o test_cpp $(srcdir)/tests/test_cpp.cc gc_cpp.@LTO@ gc.a `./threadlibs`
 
 c++-t: c++
 	./test_cpp 1
@@ -372,44 +372,44 @@ c++-t: c++
 c++-nt: c++
 	@echo "Use ./test_cpp 1 to test the leak library"
 
-c++: gc_cpp.o $(srcdir)/include/gc_cpp.h test_cpp
+c++: gc_cpp.@LTO@ $(srcdir)/include/gc_cpp.h test_cpp
 	rm -f dont_ar_4
 	./if_mach SPARC SUNOS5 touch dont_ar_4
-	./if_mach SPARC SUNOS5 $(AR) rus gc.a gc_cpp.o
+	./if_mach SPARC SUNOS5 $(AR) rus gc.a gc_cpp.@LTO@
 	./if_mach M68K AMIGA touch dont_ar_4
-	./if_mach M68K AMIGA $(AR) -vrus gc.a gc_cpp.o
-	./if_not_there dont_ar_4 $(AR) ru gc.a gc_cpp.o
+	./if_mach M68K AMIGA $(AR) -vrus gc.a gc_cpp.@LTO@
+	./if_not_there dont_ar_4 $(AR) ru gc.a gc_cpp.@LTO@
 	./if_not_there dont_ar_4 $(RANLIB) gc.a || cat /dev/null
 	./test_cpp 1
 	echo > c++
 
 # PLTSCHEME: need $(srcdir):
-dyn_load_sunos53.o: $(srcdir)/dyn_load.c
+dyn_load_sunos53.@LTO@: $(srcdir)/dyn_load.c
 	$(CC) $(CFLAGS) -DSUNOS53_SHARED_LIB -c $(srcdir)/dyn_load.c -o $@
 
 # SunOS5 shared library version of the collector
-sunos5gc.so: $(OBJS) dyn_load_sunos53.o
-	$(CC) -G -o sunos5gc.so $(OBJS) dyn_load_sunos53.o -ldl
+sunos5gc.so: $(OBJS) dyn_load_sunos53.@LTO@
+	$(CC) -G -o sunos5gc.so $(OBJS) dyn_load_sunos53.@LTO@ -ldl
 	ln sunos5gc.so libgc.so
 
 # Alpha/OSF shared library version of the collector
 libalphagc.so: $(OBJS)
-	ld -shared -o libalphagc.so $(OBJS) dyn_load.o -lc
+	ld -shared -o libalphagc.so $(OBJS) dyn_load.@LTO@ -lc
 	ln libalphagc.so libgc.so
 
 # IRIX shared library version of the collector
-libirixgc.so: $(OBJS) dyn_load.o
-	ld -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) dyn_load.o -lc
+libirixgc.so: $(OBJS) dyn_load.@LTO@
+	ld -shared $(ABI_FLAG) -o libirixgc.so $(OBJS) dyn_load.@LTO@ -lc
 	ln libirixgc.so libgc.so
 
 # Linux shared library version of the collector
-liblinuxgc.so: $(OBJS) dyn_load.o
-	gcc -shared -o liblinuxgc.so $(OBJS) dyn_load.o
+liblinuxgc.so: $(OBJS) dyn_load.@LTO@
+	gcc -shared -o liblinuxgc.so $(OBJS) dyn_load.@LTO@
 	ln liblinuxgc.so libgc.so
 
 # Alternative Linux rule.  This is preferable, but is likely to break the
 # Makefile for some non-linux platforms.
-# LIBOBJS= $(patsubst %.o, %.lo, $(OBJS))
+# LIBOBJS= $(patsubst %.@LTO@, %.lo, $(OBJS))
 #
 #.SUFFIXES: .lo $(SUFFIXES)
 #
@@ -420,47 +420,47 @@ liblinuxgc.so: $(OBJS) dyn_load.o
 # 	gcc -shared -Wl,-soname=libgc.so.0 -o libgc.so.0 $(LIBOBJS) dyn_load.lo
 #	touch liblinuxgc.so
 
-mach_dep.o: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s \
+mach_dep.@LTO@: $(srcdir)/mach_dep.c $(srcdir)/mips_sgi_mach_dep.s $(srcdir)/mips_ultrix_mach_dep.s \
             $(srcdir)/rs6000_mach_dep.s $(srcdir)/powerpc_macosx_mach_dep.s $(UTILS)
-	rm -f mach_dep.o
-	./if_mach MIPS IRIX5 $(AS) -o mach_dep.o $(srcdir)/mips_sgi_mach_dep.s
-	./if_mach MIPS RISCOS $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach MIPS ULTRIX $(AS) -o mach_dep.o $(srcdir)/mips_ultrix_mach_dep.s
-	./if_mach RS6000 "" $(AS) -o mach_dep.o $(srcdir)/rs6000_mach_dep.s
-	./if_mach POWERPC MACOSX $(AS) -o mach_dep.o $(srcdir)/powerpc_macosx_mach_dep.s
-#	./if_mach ALPHA "" $(AS) -o mach_dep.o $(srcdir)/alpha_mach_dep.s
+	rm -f mach_dep.@LTO@
+	./if_mach MIPS IRIX5 $(AS) -o mach_dep.@LTO@ $(srcdir)/mips_sgi_mach_dep.s
+	./if_mach MIPS RISCOS $(AS) -o mach_dep.@LTO@ $(srcdir)/mips_ultrix_mach_dep.s
+	./if_mach MIPS ULTRIX $(AS) -o mach_dep.@LTO@ $(srcdir)/mips_ultrix_mach_dep.s
+	./if_mach RS6000 "" $(AS) -o mach_dep.@LTO@ $(srcdir)/rs6000_mach_dep.s
+	./if_mach POWERPC MACOSX $(AS) -o mach_dep.@LTO@ $(srcdir)/powerpc_macosx_mach_dep.s
+#	./if_mach ALPHA "" $(AS) -o mach_dep.@LTO@ $(srcdir)/alpha_mach_dep.s
 #	alpha_mach_dep.s assumes that pointers are not saved in fp registers.
 #	Gcc on a 21264 can spill pointers to fp registers.  Oops.
-	./if_mach SPARC SUNOS5 $(AS) -o mach_dep.o $(srcdir)/sparc_mach_dep.s
-	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
-	./if_mach SPARC OPENBSD $(AS) -o mach_dep.o $(srcdir)/sparc_sunos4_mach_dep.s
-	./if_mach SPARC NETBSD $(AS) -o mach_dep.o $(srcdir)/sparc_netbsd_mach_dep.s
-	./if_not_there mach_dep.o $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
+	./if_mach SPARC SUNOS5 $(AS) -o mach_dep.@LTO@ $(srcdir)/sparc_mach_dep.s
+	./if_mach SPARC SUNOS4 $(AS) -o mach_dep.@LTO@ $(srcdir)/sparc_sunos4_mach_dep.s
+	./if_mach SPARC OPENBSD $(AS) -o mach_dep.@LTO@ $(srcdir)/sparc_sunos4_mach_dep.s
+	./if_mach SPARC NETBSD $(AS) -o mach_dep.@LTO@ $(srcdir)/sparc_netbsd_mach_dep.s
+	./if_not_there mach_dep.@LTO@ $(CC) -c $(SPECIALCFLAGS) $(srcdir)/mach_dep.c
 
-mark_rts.o: $(srcdir)/mark_rts.c $(UTILS)
-	rm -f mark_rts.o
+mark_rts.@LTO@: $(srcdir)/mark_rts.c $(UTILS)
+	rm -f mark_rts.@LTO@
 	-./if_mach ALPHA OSF1 $(CC) -c $(CFLAGS) -Wo,-notail $(srcdir)/mark_rts.c
-	./if_not_there mark_rts.o $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
+	./if_not_there mark_rts.@LTO@ $(CC) -c $(CFLAGS) $(srcdir)/mark_rts.c
 #	Work-around for DEC optimizer tail recursion elimination bug.
 #  The ALPHA-specific line should be removed if gcc is used.
 
-alloc.o: version.h
+alloc.@LTO@: version.h
 
 cord:
 	mkdir cord
 
-cord/cordbscs.o: cord $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
+cord/cordbscs.@LTO@: cord $(srcdir)/cord/cordbscs.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordbscs.c
-	mv cordbscs.o cord/cordbscs.o
+	mv cordbscs.@LTO@ cord/cordbscs.@LTO@
 #  not all compilers understand -o filename
 
-cord/cordxtra.o: cord $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
+cord/cordxtra.@LTO@: cord $(srcdir)/cord/cordxtra.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordxtra.c
-	mv cordxtra.o cord/cordxtra.o
+	mv cordxtra.@LTO@ cord/cordxtra.@LTO@
 
-cord/cordprnt.o: cord $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
+cord/cordprnt.@LTO@: cord $(srcdir)/cord/cordprnt.c $(CORD_INCLUDE_FILES)
 	$(CC) $(CFLAGS) -c -I$(srcdir) $(srcdir)/cord/cordprnt.c
-	mv cordprnt.o cord/cordprnt.o
+	mv cordprnt.@LTO@ cord/cordprnt.@LTO@
 
 cord/cordtest: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a $(UTILS)
 	rm -f cord/cordtest
@@ -469,17 +469,17 @@ cord/cordtest: $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a $(UTILS)
 	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
 	./if_not_there cord/cordtest $(CC) $(CFLAGS) -o cord/cordtest $(srcdir)/cord/cordtest.c $(CORD_OBJS) gc.a `./threadlibs`
 
-cord/de: $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(UTILS)
+cord/de: $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a $(UTILS)
 	rm -f cord/de
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -lucb `./threadlibs`
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) -ldld `./threadlibs`
-	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
-	./if_mach POWERPC MACOSX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a
-	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
-	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
-	./if_mach IA64 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a -lcurses
-	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.o cord/cordxtra.o gc.a $(CURSES) `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a $(CURSES) -lucb `./threadlibs`
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a $(CURSES) -ldld `./threadlibs`
+	./if_mach RS6000 "" $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a -lcurses
+	./if_mach POWERPC MACOSX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a
+	./if_mach I386 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a -lcurses `./threadlibs`
+	./if_mach ALPHA LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a -lcurses `./threadlibs`
+	./if_mach IA64 LINUX $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a -lcurses `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a -lcurses
+	./if_not_there cord/de $(CC) $(CFLAGS) -o cord/de $(srcdir)/cord/de.c cord/cordbscs.@LTO@ cord/cordxtra.@LTO@ gc.a $(CURSES) `./threadlibs`
 
 if_mach: $(srcdir)/if_mach.c $(srcdir)/include/private/gcconfig.h
 	$(HOSTCC) $(HOSTCFLAGS) -o if_mach $(srcdir)/if_mach.c
@@ -491,17 +491,17 @@ if_not_there: $(srcdir)/if_not_there.c
 	$(HOSTCC) $(HOSTCFLAGS) -o if_not_there $(srcdir)/if_not_there.c
 
 clean: 
-	rm -f gc.a *.o *.exe tests/*.o gctest gctest_dyn_link test_cpp \
-	      setjmp_test  mon.out gmon.out a.out core if_not_there if_mach \
+	rm -f gc.a *.@LTO@ *.exe tests/*.@LTO@ gctest gctest_dyn_link test_cpp \
+	      setjmp_test  mon.@LTO@ut gmon.@LTO@ut a.@LTO@ut core if_not_there if_mach \
 	      threadlibs $(CORD_OBJS) cord/cordtest cord/de
 	-rm -f *~
 
-gctest: tests/test.o gc.a $(UTILS)
+gctest: tests/test.@LTO@ gc.a $(UTILS)
 	rm -f gctest
-	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest  tests/test.o gc.a -lucb
-	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest  tests/test.o gc.a -ldld `./threadlibs`
-	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest  tests/test.o gc.a `./threadlibs`
-	./if_not_there gctest $(CC) $(CFLAGS) -o gctest tests/test.o gc.a `./threadlibs`
+	./if_mach SPARC DRSNX $(CC) $(CFLAGS) -o gctest  tests/test.@LTO@ gc.a -lucb
+	./if_mach HP_PA HPUX $(CC) $(CFLAGS) -o gctest  tests/test.@LTO@ gc.a -ldld `./threadlibs`
+	./if_mach M68K AMIGA $(CC) $(CFLAGS) -UGC_AMIGA_MAKINGLIB -o gctest  tests/test.@LTO@ gc.a `./threadlibs`
+	./if_not_there gctest $(CC) $(CFLAGS) -o gctest tests/test.@LTO@ gc.a `./threadlibs`
 
 # If an optimized setjmp_test generates a segmentation fault,
 # odds are your compiler is broken.  Gctest may still work.
@@ -524,7 +524,7 @@ gcname: $(srcdir)/gcname.c $(srcdir)/version.h
 	$(CC) -o gcname $(srcdir)/gcname.c
 
 gc.tar: $(SRCS) $(DOC_FILES) $(OTHER_FILES) add_gc_prefix gcname
-	cp Makefile Makefile.old
+	cp Makefile Makefile.@LTO@ld
 	cp Makefile.direct Makefile
 	rm -f `./gcname`
 	ln -s . `./gcname`
@@ -565,19 +565,19 @@ lint: $(CSRCS) tests/test.c
 # Currently works only under SunOS5.  Requires GC_INIT call from statically
 # loaded client code.
 ABSDIR = `pwd`
-gctest_dyn_link: tests/test.o libgc.so
-	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o gctest_dyn_link tests/test.o -lgc -ldl -lthread
+gctest_dyn_link: tests/test.@LTO@ libgc.so
+	$(CC) -L$(ABSDIR) -R$(ABSDIR) -o gctest_dyn_link tests/test.@LTO@ -lgc -ldl -lthread
 
-gctest_irix_dyn_link: tests/test.o libirixgc.so
-	$(CC) -L$(ABSDIR) -o gctest_irix_dyn_link tests/test.o -lirixgc
+gctest_irix_dyn_link: tests/test.@LTO@ libirixgc.so
+	$(CC) -L$(ABSDIR) -o gctest_irix_dyn_link tests/test.@LTO@ -lirixgc
 
 # The following appear to be dead, especially since libgc_globals.h
 # is apparently lost.
-test_dll.o: tests/test.c libgc_globals.h
-	$(CC) $(CFLAGS) -DGC_USE_DLL -c tests/test.c -o test_dll.o
+test_dll.@LTO@: tests/test.c libgc_globals.h
+	$(CC) $(CFLAGS) -DGC_USE_DLL -c tests/test.c -o test_dll.@LTO@
 
-test_dll: test_dll.o libgc_dll.a libgc.dll
-	$(CC) test_dll.o -L$(ABSDIR) -lgc_dll -o test_dll
+test_dll: test_dll.@LTO@ libgc_dll.a libgc.dll
+	$(CC) test_dll.@LTO@ -L$(ABSDIR) -lgc_dll -o test_dll
 
 SYM_PREFIX-libgc=GC
 
@@ -597,80 +597,80 @@ user_namespace: $(SRCS)
 		done
 
 # PLTSCHEME: explicit targets to get $(srcdir) in place for non-gmake
-alloc.o: $(srcdir)/alloc.c
+alloc.@LTO@: $(srcdir)/alloc.c
 	$(CC) $(CFLAGS) -c $(srcdir)/alloc.c
 
-reclaim.o: $(srcdir)/reclaim.c
+reclaim.@LTO@: $(srcdir)/reclaim.c
 	$(CC) $(CFLAGS) -c $(srcdir)/reclaim.c
 
-allchblk.o: $(srcdir)/allchblk.c
+allchblk.@LTO@: $(srcdir)/allchblk.c
 	$(CC) $(CFLAGS) -c $(srcdir)/allchblk.c
 
-misc.o: $(srcdir)/misc.c
+misc.@LTO@: $(srcdir)/misc.c
 	$(CC) $(CFLAGS) -c $(srcdir)/misc.c
 
-os_dep.o: $(srcdir)/os_dep.c
+os_dep.@LTO@: $(srcdir)/os_dep.c
 	$(CC) $(CFLAGS) -c $(srcdir)/os_dep.c
 
-headers.o: $(srcdir)/headers.c
+headers.@LTO@: $(srcdir)/headers.c
 	$(CC) $(CFLAGS) -c $(srcdir)/headers.c
 
-mark.o: $(srcdir)/mark.c
+mark.@LTO@: $(srcdir)/mark.c
 	$(CC) $(CFLAGS) -c $(srcdir)/mark.c
 
-obj_map.o: $(srcdir)/obj_map.c
+obj_map.@LTO@: $(srcdir)/obj_map.c
 	$(CC) $(CFLAGS) -c $(srcdir)/obj_map.c
 
-blacklst.o: $(srcdir)/blacklst.c
+blacklst.@LTO@: $(srcdir)/blacklst.c
 	$(CC) $(CFLAGS) -c $(srcdir)/blacklst.c
 
-finalize.o: $(srcdir)/finalize.c
+finalize.@LTO@: $(srcdir)/finalize.c
 	$(CC) $(CFLAGS) -c $(srcdir)/finalize.c
 
-new_hblk.o: $(srcdir)/new_hblk.c
+new_hblk.@LTO@: $(srcdir)/new_hblk.c
 	$(CC) $(CFLAGS) -c $(srcdir)/new_hblk.c
 
-dbg_mlc.o: $(srcdir)/dbg_mlc.c
+dbg_mlc.@LTO@: $(srcdir)/dbg_mlc.c
 	$(CC) $(CFLAGS) -c $(srcdir)/dbg_mlc.c
 
-malloc.o: $(srcdir)/malloc.c
+malloc.@LTO@: $(srcdir)/malloc.c
 	$(CC) $(CFLAGS) -c $(srcdir)/malloc.c
 
-stubborn.o: $(srcdir)/stubborn.c
+stubborn.@LTO@: $(srcdir)/stubborn.c
 	$(CC) $(CFLAGS) -c $(srcdir)/stubborn.c
 
-checksums.o: $(srcdir)/checksums.c
+checksums.@LTO@: $(srcdir)/checksums.c
 	$(CC) $(CFLAGS) -c $(srcdir)/checksums.c
 
-solaris_threads.o: $(srcdir)/solaris_threads.c
+solaris_threads.@LTO@: $(srcdir)/solaris_threads.c
 	$(CC) $(CFLAGS) -c $(srcdir)/solaris_threads.c
 
-irix_threads.o: $(srcdir)/irix_threads.c
+irix_threads.@LTO@: $(srcdir)/irix_threads.c
 	$(CC) $(CFLAGS) -c $(srcdir)/irix_threads.c
 
-linux_threads.o: $(srcdir)/linux_threads.c
+linux_threads.@LTO@: $(srcdir)/linux_threads.c
 	$(CC) $(CFLAGS) -c $(srcdir)/linux_threads.c
 
-typd_mlc.o: $(srcdir)/typd_mlc.c
+typd_mlc.@LTO@: $(srcdir)/typd_mlc.c
 	$(CC) $(CFLAGS) -c $(srcdir)/typd_mlc.c
 
-ptr_chck.o: $(srcdir)/ptr_chck.c
+ptr_chck.@LTO@: $(srcdir)/ptr_chck.c
 	$(CC) $(CFLAGS) -c $(srcdir)/ptr_chck.c
 
-mallocx.o: $(srcdir)/mallocx.c
+mallocx.@LTO@: $(srcdir)/mallocx.c
 	$(CC) $(CFLAGS) -c $(srcdir)/mallocx.c
 
-solaris_pthreads.o: $(srcdir)/solaris_pthreads.c
+solaris_pthreads.@LTO@: $(srcdir)/solaris_pthreads.c
 	$(CC) $(CFLAGS) -c $(srcdir)/solaris_pthreads.c
 
-gcj_mlc.o: $(srcdir)/gcj_mlc.c
+gcj_mlc.@LTO@: $(srcdir)/gcj_mlc.c
 	$(CC) $(CFLAGS) -c $(srcdir)/gcj_mlc.c
 
-specific.o: $(srcdir)/specific.c
+specific.@LTO@: $(srcdir)/specific.c
 	$(CC) $(CFLAGS) -c $(srcdir)/specific.c
 
-gc_dlopen.o: $(srcdir)/gc_dlopen.c
+gc_dlopen.@LTO@: $(srcdir)/gc_dlopen.c
 	$(CC) $(CFLAGS) -c $(srcdir)/gc_dlopen.c
 
-dyn_load.o: $(srcdir)/dyn_load.c
+dyn_load.@LTO@: $(srcdir)/dyn_load.c
 	$(CC) $(CFLAGS) -c $(srcdir)/dyn_load.c

@@ -25,50 +25,50 @@ CFLAGS=@CFLAGS@ @PREFLAGS@ @COMPFLAGS@ @OPTIONS@ @MROPTIONS@ $(ZLIBINC)
 
 RANLIB=@RANLIB@
 
-OBJS = png.o pngset.o pngget.o pngrutil.o pngtrans.o pngwutil.o \
-	pngread.o pngrio.o pngwio.o pngwrite.o pngrtran.o \
-	pngwtran.o pngmem.o pngerror.o pngpread.o
+OBJS = png.@LTO@ pngset.@LTO@ pngget.@LTO@ pngrutil.@LTO@ pngtrans.@LTO@ pngwutil.@LTO@ \
+	pngread.@LTO@ pngrio.@LTO@ pngwio.@LTO@ pngwrite.@LTO@ pngrtran.@LTO@ \
+	pngwtran.@LTO@ pngmem.@LTO@ pngerror.@LTO@ pngpread.@LTO@
 
-all: libpng.a pngtest
+all: libpng.@LIBSFX@ pngtest
 
-libpng.a: $(OBJS)
-	@AR@ @ARFLAGS@ $@  $(OBJS)
+libpng.@LIBSFX@: $(OBJS)
+	@STATIC_AR@ @ARFLAGS@ $@  $(OBJS)
 	$(RANLIB) $@
 
 clean:
-	rm -f *.o libpng.a pngtest pngout.png
+	rm -f *.@LTO@ libpng.@LIBSFX@ pngtest pngout.png
 
 PNG_CC=$(CC) $(CFLAGS) -c
 
-png.o: $(srcdir)/png.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/png.c -o png.o
-pngerror.o: $(srcdir)/pngerror.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngerror.c -o pngerror.o
-pngrio.o: $(srcdir)/pngrio.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngrio.c -o pngrio.o
-pngwio.o: $(srcdir)/pngwio.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngwio.c -o pngwio.o
-pngmem.o: $(srcdir)/pngmem.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngmem.c -o pngmem.o
-pngset.o: $(srcdir)/pngset.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngset.c -o pngset.o
-pngget.o: $(srcdir)/pngget.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngget.c -o pngget.o
-pngread.o: $(srcdir)/pngread.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngread.c -o pngread.o
-pngrtran.o: $(srcdir)/pngrtran.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngrtran.c -o pngrtran.o
-pngrutil.o: $(srcdir)/pngrutil.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngrutil.c -o pngrutil.o
-pngtest.o: $(srcdir)/pngtest.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngtest.c -o pngtest.o
-pngtrans.o: $(srcdir)/pngtrans.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngtrans.c -o pngtrans.o
-pngwrite.o: $(srcdir)/pngwrite.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngwrite.c -o pngwrite.o
-pngwtran.o: $(srcdir)/pngwtran.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngwtran.c -o pngwtran.o
-pngwutil.o: $(srcdir)/pngwutil.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngwutil.c -o pngwutil.o
-pngpread.o: $(srcdir)/pngpread.c $(srcdir)/png.h $(srcdir)/pngconf.h
-	$(PNG_CC) $(srcdir)/pngpread.c -o pngpread.o
+png.@LTO@: $(srcdir)/png.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/png.c -o png.@LTO@
+pngerror.@LTO@: $(srcdir)/pngerror.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngerror.c -o pngerror.@LTO@
+pngrio.@LTO@: $(srcdir)/pngrio.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngrio.c -o pngrio.@LTO@
+pngwio.@LTO@: $(srcdir)/pngwio.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngwio.c -o pngwio.@LTO@
+pngmem.@LTO@: $(srcdir)/pngmem.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngmem.c -o pngmem.@LTO@
+pngset.@LTO@: $(srcdir)/pngset.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngset.c -o pngset.@LTO@
+pngget.@LTO@: $(srcdir)/pngget.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngget.c -o pngget.@LTO@
+pngread.@LTO@: $(srcdir)/pngread.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngread.c -o pngread.@LTO@
+pngrtran.@LTO@: $(srcdir)/pngrtran.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngrtran.c -o pngrtran.@LTO@
+pngrutil.@LTO@: $(srcdir)/pngrutil.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngrutil.c -o pngrutil.@LTO@
+pngtest.@LTO@: $(srcdir)/pngtest.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngtest.c -o pngtest.@LTO@
+pngtrans.@LTO@: $(srcdir)/pngtrans.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngtrans.c -o pngtrans.@LTO@
+pngwrite.@LTO@: $(srcdir)/pngwrite.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngwrite.c -o pngwrite.@LTO@
+pngwtran.@LTO@: $(srcdir)/pngwtran.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngwtran.c -o pngwtran.@LTO@
+pngwutil.@LTO@: $(srcdir)/pngwutil.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngwutil.c -o pngwutil.@LTO@
+pngpread.@LTO@: $(srcdir)/pngpread.c $(srcdir)/png.h $(srcdir)/pngconf.h
+	$(PNG_CC) $(srcdir)/pngpread.c -o pngpread.@LTO@

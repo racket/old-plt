@@ -35,7 +35,7 @@ CXX = @CXX@
 LINKER = $(CXX)
 PERL = @PERL@
 RANLIB = @RANLIB@
-AR = @AR@
+AR = @STATIC_AR@
 ARFLAGS = @ARFLAGS@
 OPTIONS = @OPTIONS@ @MROPTIONS@
 COMPFLAGS = @CFLAGS@
@@ -57,82 +57,82 @@ XPMCC = $(CC)
 
 XPM_CC = $(XPMCC) $(CFLAGS) -c
 
-OBJS= data.o create.o misc.o rgb.o \
-      scan.o parse.o hashtab.o \
-      WrFFrP.o RdFToP.o CrPFrDat.o CrDatFrP.o \
-      WrFFrI.o RdFToI.o CrIFrDat.o CrDatFrI.o \
-      CrIFrBuf.o CrPFrBuf.o CrBufFrI.o CrBufFrP.o \
-      RdFToDat.o WrFFrDat.o \
-      Attrib.o CrIFrP.o CrPFrI.o Image.o \
-      Info.o RdFToBuf.o WrFFrBuf.o
+OBJS= data.@LTO@ create.@LTO@ misc.@LTO@ rgb.@LTO@ \
+      scan.@LTO@ parse.@LTO@ hashtab.@LTO@ \
+      WrFFrP.@LTO@ RdFToP.@LTO@ CrPFrDat.@LTO@ CrDatFrP.@LTO@ \
+      WrFFrI.@LTO@ RdFToI.@LTO@ CrIFrDat.@LTO@ CrDatFrI.@LTO@ \
+      CrIFrBuf.@LTO@ CrPFrBuf.@LTO@ CrBufFrI.@LTO@ CrBufFrP.@LTO@ \
+      RdFToDat.@LTO@ WrFFrDat.@LTO@ \
+      Attrib.@LTO@ CrIFrP.@LTO@ CrPFrI.@LTO@ Image.@LTO@ \
+      Info.@LTO@ RdFToBuf.@LTO@ WrFFrBuf.@LTO@
 
-all: libXpm.a
+all: libXpm.@LIBSFX@
 
 clean: 
-	rm -f *.o libXpm.a
+	rm -f *.@LTO@ libXpm.@LIBSFX@
 
-libXpm.a: $(OBJS)
-	$(AR) $(ARFLAGS) libXpm.a $(OBJS)
-	$(RANLIB) libXpm.a
+libXpm.@LIBSFX@: $(OBJS)
+	$(AR) $(ARFLAGS) libXpm.@LIBSFX@ $(OBJS)
+	$(RANLIB) libXpm.@LIBSFX@
 
 # Other dependencies.
-CrBufFrI.o:
-	$(XPM_CC) $(srcdir)/CrBufFrI.c -o CrBufFrI.o
-CrBufFrP.o:
-	$(XPM_CC) $(srcdir)/CrBufFrP.c -o CrBufFrP.o
-CrDatFrI.o:
-	$(XPM_CC) $(srcdir)/CrDatFrI.c -o CrDatFrI.o
-CrDatFrP.o:
-	$(XPM_CC) $(srcdir)/CrDatFrP.c -o CrDatFrP.o
-CrDatFI.o:
-	$(XPM_CC) $(srcdir)/CrDatFI.c -o CrDatFI.o
-CrDatFP.o:
-	$(XPM_CC) $(srcdir)/CrDatFP.c -o CrDatFP.o
-CrIFrBuf.o:
-	$(XPM_CC) $(srcdir)/CrIFrBuf.c -o CrIFrBuf.o
-CrIFrDat.o:
-	$(XPM_CC) $(srcdir)/CrIFrDat.c -o CrIFrDat.o
-CrPFrBuf.o:
-	$(XPM_CC) $(srcdir)/CrPFrBuf.c -o CrPFrBuf.o
-CrPFrDat.o:
-	$(XPM_CC) $(srcdir)/CrPFrDat.c -o CrPFrDat.o
-RdFToDat.o:
-	$(XPM_CC) $(srcdir)/RdFToDat.c -o RdFToDat.o
-RdFToI.o:
-	$(XPM_CC) $(srcdir)/RdFToI.c -o RdFToI.o
-RdFToP.o:
-	$(XPM_CC) $(srcdir)/RdFToP.c -o RdFToP.o
-WrFFrDat.o:
-	$(XPM_CC) $(srcdir)/WrFFrDat.c -o WrFFrDat.o
-WrFFrI.o:
-	$(XPM_CC) $(srcdir)/WrFFrI.c -o WrFFrI.o
-WrFFrP.o:
-	$(XPM_CC) $(srcdir)/WrFFrP.c -o WrFFrP.o
-create.o:
-	$(XPM_CC) $(srcdir)/create.c -o create.o
-data.o:
-	$(XPM_CC) $(srcdir)/data.c -o data.o
-hashtab.o:
-	$(XPM_CC) $(srcdir)/hashtab.c -o hashtab.o
-misc.o:
-	$(XPM_CC) $(srcdir)/misc.c -o misc.o
-parse.o:
-	$(XPM_CC) $(srcdir)/parse.c -o parse.o
-rgb.o:
-	$(XPM_CC) $(srcdir)/rgb.c -o rgb.o
-scan.o: $(srcdir)/scan.c
-	$(XPM_CC) $(srcdir)/scan.c -o scan.o
-Attrib.o:
-	$(XPM_CC) $(srcdir)/Attrib.c -o Attrib.o
-CrIFrP.o:
-	$(XPM_CC) $(srcdir)/CrIFrP.c -o CrIFrP.o
-CrPFrI.o:
-	$(XPM_CC) $(srcdir)/CrPFrI.c -o CrPFrI.o
-Image.o:
-	$(XPM_CC) $(srcdir)/Image.c -o Image.o
-Info.o:
-	$(XPM_CC) $(srcdir)/Info.c -o Info.o
-RdFToBuf.o:
-	$(XPM_CC) $(srcdir)/RdFToBuf.c -o RdFToBuf.o
-WrFFrBuf.o:
-	$(XPM_CC) $(srcdir)/WrFFrBuf.c -o WrFFrBuf.o
+CrBufFrI.@LTO@:
+	$(XPM_CC) $(srcdir)/CrBufFrI.c -o CrBufFrI.@LTO@
+CrBufFrP.@LTO@:
+	$(XPM_CC) $(srcdir)/CrBufFrP.c -o CrBufFrP.@LTO@
+CrDatFrI.@LTO@:
+	$(XPM_CC) $(srcdir)/CrDatFrI.c -o CrDatFrI.@LTO@
+CrDatFrP.@LTO@:
+	$(XPM_CC) $(srcdir)/CrDatFrP.c -o CrDatFrP.@LTO@
+CrDatFI.@LTO@:
+	$(XPM_CC) $(srcdir)/CrDatFI.c -o CrDatFI.@LTO@
+CrDatFP.@LTO@:
+	$(XPM_CC) $(srcdir)/CrDatFP.c -o CrDatFP.@LTO@
+CrIFrBuf.@LTO@:
+	$(XPM_CC) $(srcdir)/CrIFrBuf.c -o CrIFrBuf.@LTO@
+CrIFrDat.@LTO@:
+	$(XPM_CC) $(srcdir)/CrIFrDat.c -o CrIFrDat.@LTO@
+CrPFrBuf.@LTO@:
+	$(XPM_CC) $(srcdir)/CrPFrBuf.c -o CrPFrBuf.@LTO@
+CrPFrDat.@LTO@:
+	$(XPM_CC) $(srcdir)/CrPFrDat.c -o CrPFrDat.@LTO@
+RdFToDat.@LTO@:
+	$(XPM_CC) $(srcdir)/RdFToDat.c -o RdFToDat.@LTO@
+RdFToI.@LTO@:
+	$(XPM_CC) $(srcdir)/RdFToI.c -o RdFToI.@LTO@
+RdFToP.@LTO@:
+	$(XPM_CC) $(srcdir)/RdFToP.c -o RdFToP.@LTO@
+WrFFrDat.@LTO@:
+	$(XPM_CC) $(srcdir)/WrFFrDat.c -o WrFFrDat.@LTO@
+WrFFrI.@LTO@:
+	$(XPM_CC) $(srcdir)/WrFFrI.c -o WrFFrI.@LTO@
+WrFFrP.@LTO@:
+	$(XPM_CC) $(srcdir)/WrFFrP.c -o WrFFrP.@LTO@
+create.@LTO@:
+	$(XPM_CC) $(srcdir)/create.c -o create.@LTO@
+data.@LTO@:
+	$(XPM_CC) $(srcdir)/data.c -o data.@LTO@
+hashtab.@LTO@:
+	$(XPM_CC) $(srcdir)/hashtab.c -o hashtab.@LTO@
+misc.@LTO@:
+	$(XPM_CC) $(srcdir)/misc.c -o misc.@LTO@
+parse.@LTO@:
+	$(XPM_CC) $(srcdir)/parse.c -o parse.@LTO@
+rgb.@LTO@:
+	$(XPM_CC) $(srcdir)/rgb.c -o rgb.@LTO@
+scan.@LTO@: $(srcdir)/scan.c
+	$(XPM_CC) $(srcdir)/scan.c -o scan.@LTO@
+Attrib.@LTO@:
+	$(XPM_CC) $(srcdir)/Attrib.c -o Attrib.@LTO@
+CrIFrP.@LTO@:
+	$(XPM_CC) $(srcdir)/CrIFrP.c -o CrIFrP.@LTO@
+CrPFrI.@LTO@:
+	$(XPM_CC) $(srcdir)/CrPFrI.c -o CrPFrI.@LTO@
+Image.@LTO@:
+	$(XPM_CC) $(srcdir)/Image.c -o Image.@LTO@
+Info.@LTO@:
+	$(XPM_CC) $(srcdir)/Info.c -o Info.@LTO@
+RdFToBuf.@LTO@:
+	$(XPM_CC) $(srcdir)/RdFToBuf.c -o RdFToBuf.@LTO@
+WrFFrBuf.@LTO@:
+	$(XPM_CC) $(srcdir)/WrFFrBuf.c -o WrFFrBuf.@LTO@

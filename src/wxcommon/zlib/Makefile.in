@@ -18,25 +18,25 @@ CC=@CC@
 CFLAGS=@CFLAGS@ @PREFLAGS@ @COMPFLAGS@ @OPTIONS@ @MROPTIONS@
 
 VER=1.1.4
-LIBS=libz.a
+LIBS=libz.@LIBSFX@
 SHAREDLIB=libz.so
 
-AR=@AR@ @ARFLAGS@
+AR=@STATIC_AR@ @ARFLAGS@
 RANLIB=@RANLIB@
 SHELL=/bin/sh
 
-OBJS = adler32.o compress.o crc32.o gzio.o uncompr.o deflate.o trees.o \
-       zutil.o inflate.o infblock.o inftrees.o infcodes.o infutil.o inffast.o
+OBJS = adler32.@LTO@ compress.@LTO@ crc32.@LTO@ gzio.@LTO@ uncompr.@LTO@ deflate.@LTO@ trees.@LTO@ \
+       zutil.@LTO@ inflate.@LTO@ infblock.@LTO@ inftrees.@LTO@ infcodes.@LTO@ infutil.@LTO@ inffast.@LTO@
 
 OBJA =
-# to use the asm code: make OBJA=match.o
+# to use the asm code: make OBJA=match.@LTO@
 
-TEST_OBJS = example.o minigzip.o
+TEST_OBJS = example.@LTO@ minigzip.@LTO@
 
 DISTFILES = README FAQ INDEX ChangeLog configure Make*[a-z0-9] *.[ch] *.mms \
   algorithm.txt zlib.3 zlib.html \
   msdos/Make*[a-z0-9] msdos/zlib.def msdos/zlib.rc \
-  nt/Make*[a-z0-9] nt/zlib.dnt amiga/Make*.??? os2/M*.os2 os2/zlib.def \
+  nt/Make*[a-z0-9] nt/zlib.dnt amiga/Make*.??? os2/M*.@LTO@s2 os2/zlib.def \
   contrib/RE*.contrib contrib/*.txt contrib/asm386/*.asm contrib/asm386/*.c \
   contrib/asm386/*.bat contrib/asm386/zlibvc.d?? contrib/asm[56]86/*.?86 \
   contrib/asm[56]86/*.S contrib/iostream/*.cpp \
@@ -45,48 +45,48 @@ DISTFILES = README FAQ INDEX ChangeLog configure Make*[a-z0-9] *.[ch] *.mms \
   contrib/minizip/[CM]*[pe] contrib/minizip/*.[ch] contrib/minizip/*.[td]?? \
   contrib/delphi*/*.???
 
-libz.a: $(OBJS) $(OBJA)
+libz.@LIBSFX@: $(OBJS) $(OBJA)
 	$(AR) $@ $(OBJS) $(OBJA)
 	-@ ($(RANLIB) $@ || true) >/dev/null 2>&1
 
 clean:
-	rm -f *.o *~ example minigzip libz.a libz.so* foo.gz so_locations \
+	rm -f *.@LTO@ *~ example minigzip libz.@LIBSFX@ libz.so* foo.gz so_locations \
 	   _match.s maketree
 
 ZLIB_CC=$(CC) $(CFLAGS) -c
 
-adler32.o: $(srcdir)/adler32.c $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/adler32.c -o adler32.o
-compress.o: $(srcdir)/compress.c $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/compress.c -o compress.o
-crc32.o: $(srcdir)/crc32.c $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/crc32.c -o crc32.o
-deflate.o: $(srcdir)/deflate.c $(srcdir)/deflate.h $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/deflate.c -o deflate.o
-example.o: $(srcdir)/example.c $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/example.c -o example.o
-gzio.o: $(srcdir)/gzio.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/gzio.c -o gzio.o
-infblock.o: $(srcdir)/infblock.c $(srcdir)/infblock.h $(srcdir)/inftrees.h $(srcdir)/infcodes.h $(srcdir)/infutil.h $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/infblock.c -o infblock.o
-infcodes.o: $(srcdir)/infcodes.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h \
+adler32.@LTO@: $(srcdir)/adler32.c $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/adler32.c -o adler32.@LTO@
+compress.@LTO@: $(srcdir)/compress.c $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/compress.c -o compress.@LTO@
+crc32.@LTO@: $(srcdir)/crc32.c $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/crc32.c -o crc32.@LTO@
+deflate.@LTO@: $(srcdir)/deflate.c $(srcdir)/deflate.h $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/deflate.c -o deflate.@LTO@
+example.@LTO@: $(srcdir)/example.c $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/example.c -o example.@LTO@
+gzio.@LTO@: $(srcdir)/gzio.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/gzio.c -o gzio.@LTO@
+infblock.@LTO@: $(srcdir)/infblock.c $(srcdir)/infblock.h $(srcdir)/inftrees.h $(srcdir)/infcodes.h $(srcdir)/infutil.h $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/infblock.c -o infblock.@LTO@
+infcodes.@LTO@: $(srcdir)/infcodes.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h \
             $(srcdir)/infcodes.c $(srcdir)/inftrees.h $(srcdir)/infblock.h $(srcdir)/infcodes.h $(srcdir)/infutil.h $(srcdir)/inffast.h
-	$(ZLIB_CC) $(srcdir)/infcodes.c -o infcodes.o
-inffast.o: $(srcdir)/inffast.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/inftrees.h \
+	$(ZLIB_CC) $(srcdir)/infcodes.c -o infcodes.@LTO@
+inffast.@LTO@: $(srcdir)/inffast.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/inftrees.h \
            $(srcdir)/infblock.h $(srcdir)/infcodes.h $(srcdir)/infutil.h $(srcdir)/inffast.h
-	$(ZLIB_CC) $(srcdir)/inffast.c -o inffast.o
-inflate.o: $(srcdir)/inflate.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/infblock.h
-	$(ZLIB_CC) $(srcdir)/inflate.c -o inflate.o
-inftrees.o: $(srcdir)/inftrees.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/inftrees.h
-	$(ZLIB_CC) $(srcdir)/inftrees.c -o inftrees.o
-infutil.o: $(srcdir)/infutil.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/infblock.h \
+	$(ZLIB_CC) $(srcdir)/inffast.c -o inffast.@LTO@
+inflate.@LTO@: $(srcdir)/inflate.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/infblock.h
+	$(ZLIB_CC) $(srcdir)/inflate.c -o inflate.@LTO@
+inftrees.@LTO@: $(srcdir)/inftrees.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/inftrees.h
+	$(ZLIB_CC) $(srcdir)/inftrees.c -o inftrees.@LTO@
+infutil.@LTO@: $(srcdir)/infutil.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/infblock.h \
            $(srcdir)/inftrees.h $(srcdir)/infcodes.h $(srcdir)/infutil.h
-	$(ZLIB_CC) $(srcdir)/infutil.c -o infutil.o
-minigzip.o: $(srcdir)/minigzip.c  $(srcdir)/zlib.h $(srcdir)/zconf.h 
-	$(ZLIB_CC) $(srcdir)/minigzip.c -o minigzip.o
-trees.o: $(srcdir)/trees.c $(srcdir)/deflate.h $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/trees.h
-	$(ZLIB_CC) $(srcdir)/trees.c -o trees.o
-uncompr.o: $(srcdir)/uncompr.c $(srcdir)/zlib.h $(srcdir)/zconf.h
-	$(ZLIB_CC) $(srcdir)/uncompr.c -o uncompr.o
-zutil.o: $(srcdir)/zutil.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h  
-	$(ZLIB_CC) $(srcdir)/zutil.c -o zutil.o
+	$(ZLIB_CC) $(srcdir)/infutil.c -o infutil.@LTO@
+minigzip.@LTO@: $(srcdir)/minigzip.c  $(srcdir)/zlib.h $(srcdir)/zconf.h 
+	$(ZLIB_CC) $(srcdir)/minigzip.c -o minigzip.@LTO@
+trees.@LTO@: $(srcdir)/trees.c $(srcdir)/deflate.h $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h $(srcdir)/trees.h
+	$(ZLIB_CC) $(srcdir)/trees.c -o trees.@LTO@
+uncompr.@LTO@: $(srcdir)/uncompr.c $(srcdir)/zlib.h $(srcdir)/zconf.h
+	$(ZLIB_CC) $(srcdir)/uncompr.c -o uncompr.@LTO@
+zutil.@LTO@: $(srcdir)/zutil.c $(srcdir)/zutil.h $(srcdir)/zlib.h $(srcdir)/zconf.h  
+	$(ZLIB_CC) $(srcdir)/zutil.c -o zutil.@LTO@

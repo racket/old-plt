@@ -309,7 +309,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all $subbuilds"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR ARFLAGS WBUILD CC_FOR_BUILD REZ x_includes x_libraries OPTIONS MZOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP CXX CXXFLAGS ac_ct_CXX CXXCPP RANLIB ac_ct_RANLIB PERL X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS EGREP PREFLAGS COMPFLAGS PROFFLAGS AS AR STATIC_AR ARFLAGS WBUILD CC_FOR_BUILD REZ MZLINKER x_includes x_libraries OPTIONS MZOPTIONS GC2OPTIONS MROPTIONS GCDIR MZBINTARGET MZINSTALLTARGET EXTRA_GMP_OBJ OSX NOT_OSX FRAMEWORK_INSTALL_DIR MREDLINKER LIBSFX WXLIBS WXVARIANT ICP MRLIBINSTALL LIBFINISH MAKE_MRED MAKE_MRED3M MAKE_MREDINSTALL MAKE_MREDINSTALL3M MAKE_WBUILD MAKE_COPYTREE MAKE_FINISH WXPRECOMP USE_WXPRECOMP INCLUDEDEP WX_MMD_FLAG JPEG_A JPEG_INC ZLIB_A ZLIB_INC PNG_A OSKHOME EXTRA_OSK_LIBS LTO subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1463,6 +1463,8 @@ fi
 
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
+  enable_libpng=no
+  enable_libjpeg=no
 fi
 
 enable_quartz=no
@@ -5180,40 +5182,6 @@ if test "${enable_noopt}" = "yes" ; then
   CXXFLAGS=`echo "$CXXFLAGS" | awk "$AWKPRG"`
 fi
 
-############## libtool ################
-
-if test "${enable_dynlib}" = "yes" ; then
-  enable_shared=yes
-fi
-
-if test "${enable_shared}" = "yes" ; then
-  echo "Configuring libtool"
-  if test ! -d "lt" ; then
-    mkdir "lt"
-  fi
-  abssrcdir=`(cd ${srcdir}; pwd)`
-  (cd lt; sh ${abssrcdir}/lt/configure --enable-shared --disable-static)
-  LTDIR=`pwd`/lt
-  absprefix=`(cd ${prefix}; pwd)`
-  AR="${LTDIR}/libtool $CC -rpath ${absprefix}/lib -o"
-  ARFLAGS=""
-  RANLIB=":"
-  CC="${LTDIR}/libtool $CC"
-  LIBSFX=la
-  MREDLINKER="${LTDIR}/libtool $CXX"
-  WXLIBS=WXLIBSDYN
-  ICP="${LTDIR}/libtool cp"
-  MRLIBINSTALL="install-lib"
-  LIBFINISH="${LTDIR}/libtool --finish"
-else
-  LIBSFX=a
-  MREDLINKER="$CXX"
-  WXLIBS=WXLIBSNORM
-  ICP=cp
-  MRLIBINSTALL="install-no-lib"
-  LIBFINISH=echo
-fi
-
 ################ X OpenGL ##################
 
 if test "${enable_gl}" = "maybe" ; then
@@ -6691,9 +6659,54 @@ fi
   fi
 fi
 
+############## libtool ################
+
+if test "${enable_dynlib}" = "yes" ; then
+  enable_shared=yes
+fi
+
+if test "${enable_shared}" = "yes" ; then
+  echo "Configuring libtool"
+  if test ! -d "lt" ; then
+    mkdir "lt"
+  fi
+  abssrcdir=`(cd ${srcdir}; pwd)`
+  (cd lt; sh ${abssrcdir}/lt/configure --enable-shared --disable-static)
+  LTDIR=`pwd`/lt
+  absprefix=`(cd ${prefix}; pwd)`
+  AR="${LTDIR}/libtool --mode=link $CC -rpath ${absprefix}/lib -o"
+  STATIC_AR="${LTDIR}/libtool --mode=link $CC -o"
+  ARFLAGS=""
+  RANLIB=":"
+  MZLINKER="${LTDIR}/libtool --mode=link $CC"
+  MREDLINKER="${LTDIR}/libtool --mode=link $CXX"
+  CC="${LTDIR}/libtool --mode=compile $CC"
+  CXX="${LTDIR}/libtool --mode=compile $CXX"
+  LIBSFX=la
+  WXLIBS=WXLIBSDYN
+  ICP="${LTDIR}/libtool --mode=install cp"
+  MRLIBINSTALL="install-lib"
+  LIBFINISH="${LTDIR}/libtool --mode=finish"
+  LTO="lo"
+else
+  LIBSFX=a
+  MREDLINKER="$CXX"
+  WXLIBS=WXLIBSNORM
+  ICP=cp
+  MRLIBINSTALL="install-no-lib"
+  LIBFINISH=echo
+  LTO="o"
+  MZLINKER="$CC"
+  STATIC_AR="$AR"
+fi
+
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"
+
+
+
+
 
 
 
@@ -7503,10 +7516,12 @@ s,@COMPFLAGS@,$COMPFLAGS,;t t
 s,@PROFFLAGS@,$PROFFLAGS,;t t
 s,@AS@,$AS,;t t
 s,@AR@,$AR,;t t
+s,@STATIC_AR@,$STATIC_AR,;t t
 s,@ARFLAGS@,$ARFLAGS,;t t
 s,@WBUILD@,$WBUILD,;t t
 s,@CC_FOR_BUILD@,$CC_FOR_BUILD,;t t
 s,@REZ@,$REZ,;t t
+s,@MZLINKER@,$MZLINKER,;t t
 s,@x_includes@,$x_includes,;t t
 s,@x_libraries@,$x_libraries,;t t
 s,@OPTIONS@,$OPTIONS,;t t
@@ -7545,6 +7560,7 @@ s,@ZLIB_INC@,$ZLIB_INC,;t t
 s,@PNG_A@,$PNG_A,;t t
 s,@OSKHOME@,$OSKHOME,;t t
 s,@EXTRA_OSK_LIBS@,$EXTRA_OSK_LIBS,;t t
+s,@LTO@,$LTO,;t t
 s,@subdirs@,$subdirs,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t

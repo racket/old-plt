@@ -12,7 +12,7 @@ CXX = @CXX@
 LINKER = $(CXX)
 PERL = @PERL@
 RANLIB = @RANLIB@
-AR = @AR@
+AR = @STATIC_AR@
 ARFLAGS = @ARFLAGS@
 OPTIONS = @OPTIONS@ @MROPTIONS@
 COMPFLAGS = @CFLAGS@
@@ -30,10 +30,10 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt @COMPFLAGS@ @PROFFLAGS@ @CFLAGS@ 
 LDFLAGS = $(XLIB)
 ###########################
 
-IMAGELIB = libimage_xt.a
-OBJECTS = wx_image.o wx_img.o wx_gif.o wx_gifwr.o \
-          wx_gam.o wx_pbm.o wx_24to8.o wx_pm.o \
-          wx_xbm.o wx_bmp.o wx_pcx.o
+IMAGELIB = libimage_xt.@LIBSFX@
+OBJECTS = wx_image.@LTO@ wx_img.@LTO@ wx_gif.@LTO@ wx_gifwr.@LTO@ \
+          wx_gam.@LTO@ wx_pbm.@LTO@ wx_24to8.@LTO@ wx_pm.@LTO@ \
+          wx_xbm.@LTO@ wx_bmp.@LTO@ wx_pcx.@LTO@
 
 GLOBALDEPS = $(srcdir)/../../../src/DataStructures/Object.h $(srcdir)/../../../../wxcommon/wxGC.h
 
@@ -46,38 +46,38 @@ $(IMAGELIB): $(OBJECTS)
 	$(AR) $(ARFLAGS) $@ $(OBJECTS)
 	$(RANLIB) $@
 
-wx_image.o:	$(srcdir)/wx_image.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_image.@LTO@:	$(srcdir)/wx_image.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_image.cc
 
 
-wx_img.o:	$(srcdir)/wx_img.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_img.@LTO@:	$(srcdir)/wx_img.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_img.cc
 
-wx_gif.o:	$(srcdir)/wx_gif.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_gif.@LTO@:	$(srcdir)/wx_gif.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_gif.cc
 
-wx_gifwr.o:	$(srcdir)/wx_gifwr.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_gifwr.@LTO@:	$(srcdir)/wx_gifwr.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_gifwr.cc
 
-wx_gam.o:	$(srcdir)/wx_gam.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_gam.@LTO@:	$(srcdir)/wx_gam.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_gam.cc
 
-wx_pbm.o:	$(srcdir)/wx_pbm.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_pbm.@LTO@:	$(srcdir)/wx_pbm.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_pbm.cc
 
-wx_bmp.o:	$(srcdir)/wx_bmp.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_bmp.@LTO@:	$(srcdir)/wx_bmp.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_bmp.cc
 
-wx_pcx.o:	$(srcdir)/wx_pcx.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_pcx.@LTO@:	$(srcdir)/wx_pcx.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_pcx.cc
 
-wx_xbm.o:	$(srcdir)/wx_xbm.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_xbm.@LTO@:	$(srcdir)/wx_xbm.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_xbm.cc
 
-wx_pm.o:	$(srcdir)/wx_pm.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_pm.@LTO@:	$(srcdir)/wx_pm.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_pm.cc
 
-wx_24to8.o:	$(srcdir)/wx_24to8.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
+wx_24to8.@LTO@:	$(srcdir)/wx_24to8.cc $(srcdir)/wx_image.h $(srcdir)/wx_imgx.h $(GLOBALDEPS)
 	$(CXX) -c $(ICXXFLAGS) -o $@ $(srcdir)/wx_24to8.cc
 
 cleaneach:

@@ -195,7 +195,7 @@
 		[use-final-indices (get-indices use-final-ids)]
 		[replace-indices (get-indices replace-ids)]
 		[new-indices (get-indices new-ids)]
-		[method-prim-vec (make-vector width (and primitive #f))])
+		[method-prim-vec (make-vector width (and primitive #t))])
 
 	    ;; Copy super's method prim flags:
 	    (let ([svec (class-method-prim-vec super)])

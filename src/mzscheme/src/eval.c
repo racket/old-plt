@@ -1023,13 +1023,15 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
 
   menv = scheme_module_access(modname, info);
   
-  if (!menv) {
+#if 0
+  if (!menv && info->phase) {
     /* The failure might be due a laziness in imported-syntax
        execution. Force all laziness at the prior level 
        and try again. */
     scheme_module_force_lazy(info);
     menv = scheme_module_access(modname, info);
   }
+#endif
 
   if (!menv) {
     scheme_wrong_syntax("link", NULL, varname,

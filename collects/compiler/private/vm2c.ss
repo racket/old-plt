@@ -33,20 +33,15 @@
       (define vm->c:indent-spaces
 	(make-string vm->c:indent-by #\space))
 
-      (define vm->c:bucket-names null)
-      (define vm->c:make-bucket-names!
-	(lambda (symbols)
-	  (set! vm->c:bucket-names
-		(map (lambda (s)
-		       (compiler:get-symbol-const! #f s)
-		       (list s (symbol-append 'GL (compiler:gensym) s)))
-		     symbols))))
+      (define (vm->c:generate-modglob-name m s)
+	(let ([name (symbol-append 'GL (compiler:gensym) (or m '||) '_ s)])
+	  (compiler:get-symbol-const! #f name) ;; generates symbol const
+	  name))
+
       (define vm->c:bucket-name
-	(lambda (symbol)
-	  (let ([b (assq symbol vm->c:bucket-names)])
-	    (if b
-		(cadr b)
-		(compiler:internal-error #f (format "vm->c:bucket-name: no bucket for ~a" symbol))))))
+	(lambda (mod var)
+	  ;; Shouldn't generate any new names:
+	  (compiler:add-global-varref! mod var #f)))
 
       (define (vm->c:SYMBOLS-name)
 	(if (compiler:multi-o-constant-pool)
@@ -119,6 +114,7 @@
 			(fprintf port "  Scheme_Object * ~a;~n"
 				 (vm->c:convert-symbol 
 				  (vm->c:bucket-name
+				   '#%kernel
 				   a))))
 		      (set->list (compiler:get-primitive-refs)))
 	    (fprintf port "} P;~n")
@@ -131,7 +127,7 @@
 	    (for-each (lambda (a)
 			(fprintf port "~aP.~a = scheme_global_bucket(~a, env)->val;~n"
 				 vm->c:indent-spaces
-				 (vm->c:convert-symbol (vm->c:bucket-name a))
+				 (vm->c:convert-symbol (vm->c:bucket-name '#%kernel a))
 				 (vm->c:make-symbol-const-string (compiler:get-symbol-const! #f a))))
 		      (set->list (compiler:get-primitive-refs))))))
 
@@ -437,7 +433,7 @@
 			    indent))
 		 (fprintf port "~aScheme_Bucket * G~a;~n"
 			  indent
-			  (vm->c:convert-symbol (vm->c:bucket-name var)))))
+			  (vm->c:convert-symbol var))))
 	   (set->list globals))))
 
       (define vm->c:emit-bucket-lookups!
@@ -445,7 +441,7 @@
 	  (for-each 
 	   (lambda (var)
 	     (unless (const:per-load-statics-table? var)
-	       (let ([name (vm->c:convert-symbol (vm->c:bucket-name var))])
+	       (let ([name (vm->c:convert-symbol var)])
 		 (fprintf port "~aG~a = scheme_global_bucket(~a, SCHEME_CURRENT_ENV(pr));~n"
 			  indent 
 			  name 
@@ -624,7 +620,7 @@
 
       (define vm->c:emit-extract-bucket-variables
 	(lambda (code vars indent port)
-					; pull bucket variables into registers
+	  ;; pull bucket variables into registers
 	  (let loop ([vars vars][undefines null])
 	    (if (null? vars)
 		undefines
@@ -641,7 +637,7 @@
 				  undefines
 				  (cons "PLS" undefines))))
 		      (let* ([vname var]
-			     [name (vm->c:convert-symbol (vm->c:bucket-name vname))]
+			     [name (vm->c:convert-symbol vname)]
 			     [fname (rep:find-field (closure-code-rep code) vname)])
 			(fprintf port 
 				 (if (compiler:option:unpack-environments)
@@ -925,9 +921,7 @@
 			     [(eq? type target-type:lexical) 
 			      (process target indent-level #f #t)]
 			     [(eq? type target-type:global)
-			      (let ([bucket-name (vm->c:convert-symbol
-						  (vm->c:bucket-name
-						   target))])
+			      (let ([bucket-name (vm->c:convert-symbol target)])
 				(emit "G~a->val" bucket-name))]
 			     [else (compiler:internal-error 
 				    #f
@@ -938,8 +932,7 @@
 			    (if mode
 				(begin
 				  (emit "scheme_set_global_bucket(~s, " (car mode))
-				  (emit "G~a, " (vm->c:convert-symbol
-						 (vm->c:bucket-name (cdr target))))
+				  (emit "G~a, " (vm->c:convert-symbol (cdr target)))
 				  (if process-val? 
 				      (process val indent-level #f #t)
 				      (emit val))
@@ -1098,8 +1091,7 @@
 	       [(vm:check-global? ast)
 		(emit-expr (format "CHECK_GLOBAL_BOUND(G~a)"
 				   (vm->c:convert-symbol
-				    (vm->c:bucket-name
-				     (vm:check-global-var ast)))))]
+				    (vm:check-global-var ast))))]
 	       
 	       ;; with-continuation-mark
 	       [(vm:wcm-mark!? ast)
@@ -1184,15 +1176,13 @@
 	       [(vm:global-varref? ast)
 		(emit-expr "GLOBAL_VARREF(G~a)"
 			   (vm->c:convert-symbol
-			    (vm->c:bucket-name
-			     (vm:global-varref-var ast))))]
+			    (vm:global-varref-var ast)))]
 
 	       ;; (global-varref x) --> Gx
 	       [(vm:bucket? ast)
 		(emit-expr "G~a"
 			   (vm->c:convert-symbol
-			    (vm->c:bucket-name
-			     (vm:bucket-var ast))))]
+			    (vm:bucket-var ast)))]
 
 	       [(vm:per-load-statics-table? ast)
 		(emit-expr "PLS")]
@@ -1275,9 +1265,7 @@
 	       ;; (primitive-varref x) -> x->val
 	       [(vm:primitive-varref? ast)
 		(emit-expr "P.~a"
-			   (vm->c:convert-symbol
-			    (vm->c:bucket-name
-			     (vm:primitive-varref-var ast))))]
+			   (vm->c:convert-symbol (vm:primitive-varref-var ast)))]
 	       
 	       ;; (symbol-varref x) -> symbols[x]
 	       [(vm:symbol-varref? ast)

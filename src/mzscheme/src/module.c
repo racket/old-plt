@@ -680,6 +680,7 @@ void scheme_module_force_lazy(Scheme_Env *env)
   mht = MODCHAIN_TABLE(SCHEME_VEC_ELS(env->modchain)[2]);
 
   mbs = mht->buckets;
+  
   for (mi = mht->size; mi--; ) {
     Scheme_Bucket *mb = mbs[mi];
     if (mb && mb->val) {

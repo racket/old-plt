@@ -117,6 +117,7 @@
 				    KNOWN
 				    CONST
 				    REP
+				    VM2C
 				    DRIVER
 				    SPIDEY)]
       [LIFT : compiler:lift^ (lift@
@@ -127,6 +128,7 @@
 			      ZLAYER
 			      KNOWN
 			      TOP-LEVEL
+			      ANALYZE
 			      CONST
 			      CLOSURE
 			      DRIVER)]
@@ -168,6 +170,7 @@
 				    CSTRUCTS
 				    ZODIAC
 				    ZLAYER
+				    ANALYZE
 				    CONST
 				    VMSTRUCTS
 				    REP

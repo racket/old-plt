@@ -58,14 +58,33 @@
 	      compiler:known^
 	      compiler:const^
 	      compiler:rep^
+	      compiler:vm2c^
 	      compiler:driver^
 	      (mrspidey : compiler:mrspidey^))
       
       (define compiler:global-symbols (make-hash-table))
       (define compiler:add-global-varref!
-	(lambda (varref)
-	  (let ([v (zodiac:varref-var varref)])
-	    (hash-table-put! compiler:global-symbols v v))))
+	(case-lambda 
+	 [(varref) (compiler:add-global-varref!
+		    (zodiac:top-level-varref-module varref)
+		    (zodiac:varref-var varref)
+		    #t)]
+	 [(m v gen-ok?)
+	  (let ([t (hash-table-get compiler:global-symbols m
+				   (lambda ()
+				     (let ([t (make-hash-table)])
+				       (hash-table-put! compiler:global-symbols m t)
+				       t)))])
+	    (hash-table-get t v
+			    (lambda ()
+			      ;; vm->c function also generates a symbol constant:
+			      (let ([n (vm->c:generate-modglob-name m v)])
+				(unless gen-ok?
+				  (compiler:internal-error
+				   #f
+				   "unexpected global name generation"))
+				(hash-table-put! t v n)
+				n))))]))
       (define (compiler:get-global-symbols) compiler:global-symbols)
 
       (define compiler:primitive-refs empty-set)
@@ -701,7 +720,7 @@
 		       [(varref:has-attribute? ast varref:static)
 			(void)]
 		       [else
-			(add-global-var! (zodiac:varref-var ast))])
+			(add-global-var! (compiler:add-global-varref! ast))])
 		      (compiler:add-global-varref! ast)
 		      ast]
 		     

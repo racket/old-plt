@@ -40,6 +40,7 @@
 	      compiler:zlayer^
 	      compiler:known^
 	      compiler:top-level^
+	      compiler:analyze^
 	      compiler:const^
 	      compiler:closure^
 	      compiler:driver^)
@@ -297,7 +298,7 @@
 			(add-global! const:the-per-load-statics-table)]
 		       [(varref:has-attribute? ast varref:static)
 			(void)]
-		       [else (add-global! (zodiac:varref-var ast))])
+		       [else (add-global! (compiler:add-primitive-varref! ast))])
 		      
 		      ast]
 		     

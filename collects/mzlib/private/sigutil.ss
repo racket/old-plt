@@ -143,7 +143,7 @@
 		      (let ([name (syntax name)]
 			    [fields (syntax->list (syntax (field ...)))]
 			    [omissions (syntax->list (syntax (omission ...)))])
-			(unless (identifier? (syntax name))
+			(unless (identifier? name)
 			  (syntax-error who expr
 					"struct name is not an identifier"
 					name))

@@ -204,8 +204,8 @@
 			  stx
 			  (mk-back)
 			  (if (pair? b)
-			       (cdr b)
-			       (syntax-e stx))
+			      (cdr b)
+			      (syntax-e stx))
 			  (and (pair? b) (car b))
 			  (get-slot stx slot-table)))))]
 

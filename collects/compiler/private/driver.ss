@@ -903,10 +903,6 @@
 	
 	      (let ([vm2c-thunk
 		     (lambda ()
-		       ;; set up bucket names - adds new symbols
-		       (vm->c:make-bucket-names! (hash-table-map (compiler:get-global-symbols)
-								 (lambda (x y) x)))
-		       
 		       (let ([c-port #f])
 			 (dynamic-wind 
 			  ;pre

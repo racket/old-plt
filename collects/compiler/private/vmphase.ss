@@ -28,6 +28,7 @@
 	      compiler:cstructs^
 	      (zodiac : zodiac^)
 	      compiler:zlayer^
+	      compiler:analyze^
 	      compiler:const^
 	      compiler:vmstructs^
 	      compiler:rep^
@@ -212,7 +213,7 @@
 			   (let* ([var (if (const:per-load-statics-table? 
 					    (rep:struct-field-orig-name field))
 					   (make-vm:per-load-statics-table #f)
-					   (make-vm:bucket #f var))])
+					   (make-vm:bucket #f (compiler:add-global-varref! #f var #t)))])
 			     (make-vm:set! #f 
 					   (list (cons
 						  target-type:lexical
@@ -624,7 +625,7 @@
 			  (make-vm:set!		     
 			   (zodiac:zodiac-stx ast)
 			   (list (if (zodiac:top-level-varref? var)
-				     (cons target-type:global (zodiac:varref-var var))
+				     (cons target-type:global (compiler:add-global-varref! var))
 				     (cons target-type:lexical 
 					   (convert var
 						    #f
@@ -684,7 +685,7 @@
 					(make-vm:set! #f
 						      (map (lambda (v)
 							     (cons target-type:global
-								   (zodiac:varref-var v)))
+								   (compiler:add-primitive-varref! v)))
 							   vars)
 						      val (list "define-values" 1))))
 				     #f
@@ -885,6 +886,9 @@
 		  (let* ([ignore-ast (lambda (maker)
 				       (lambda (a d ast)
 					 (maker a d)))]
+			 [convert-global (lambda (maker)
+					   (lambda (a d ast)
+					     (maker a (compiler:add-global-varref! ast))))]
 			 [maker 
 			  (cond
 			   [(top-level-varref/bind-from-lift? ast)
@@ -894,9 +898,9 @@
 				   make-vm:static-varref-from-lift)
 			       a d (top-level-varref/bind-from-lift-lambda ast)))]
 			   [(varref:has-attribute? ast varref:per-load-static)
-			    (ignore-ast make-vm:per-load-static-varref)]
+			    (convert-global make-vm:per-load-static-varref)]
 			   [(varref:has-attribute? ast varref:primitive)
-			    (ignore-ast make-vm:primitive-varref)]
+			    (convert-global make-vm:primitive-varref)]
 			   [(varref:has-attribute? ast varref:symbol)
 			    (ignore-ast make-vm:symbol-varref)]
 			   [(varref:has-attribute? ast varref:inexact)
@@ -904,7 +908,7 @@
 			   [(varref:has-attribute? ast varref:static)
 			    (ignore-ast make-vm:static-varref)]
 			   [else
-			    (ignore-ast make-vm:global-varref)])])
+			    (convert-global make-vm:global-varref)])])
 		    (let ([ref (maker #f (zodiac:varref-var ast) ast)])
 		      (if tail-pos
 			  (leaf (tail-pos ref))

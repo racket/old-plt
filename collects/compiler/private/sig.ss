@@ -368,12 +368,13 @@
 
   (export compiler:vm2c^)
   (define-signature compiler:vm2c^
-    (vm->c:indent-by
+    (vm->c:generate-modglob-name
+
+     vm->c:indent-by
      vm->c:indent-spaces
 
      vm->c:extract-inferred-name
 
-     vm->c:make-bucket-names!
      vm->c:emit-symbol-list!
      vm->c:emit-symbol-declarations!
      vm->c:emit-symbol-definitions!

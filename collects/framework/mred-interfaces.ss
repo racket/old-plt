@@ -550,19 +550,19 @@
                           get-size-mult
                           set-delta-face
                           set-transparent-text-backing-off
+                          get-transparent-text-backing-off
                           set-face
                           set-family
                           set-delta
                           collapse
-                          get-transparent-text-backing-off
-                          set-transparent-text-backing-on
                           get-transparent-text-backing-on
                           set-delta-background
                           set-delta-foreground
                           copy
                           get-family
                           get-face
-                          equal?))
+                          equal?
+                          set-transparent-text-backing-on))
                       ($$string-snip<%>
                         (interface
                           ()

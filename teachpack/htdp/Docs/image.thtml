@@ -44,6 +44,8 @@ pinholes in the top-left corner.
  on the pinhole, the second image's pinhole is lined up with an offset from the 
  first image's pinhole. The two coordinates specify how far down and to the right 
  the offset should be.
+ The pinhole of the resulting image is the same place as the pinhole
+ in the first image.
 </menu>
 
 After an image has been built up using overlays, it is

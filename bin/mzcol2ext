@@ -1,9 +1,0 @@
-#!/bin/sh
- 
-# This script sets PLTHOME if it isn't set already
- 
-if [ "$PLTHOME" = '' ] ; then
-  PLTHOME=/usr/local/lib/plt
-fi
-
-exec ${PLTHOME}/bin/mzscheme -mqve '(require-library "col2ext.ss" "make")' -- ${1+"$@"}

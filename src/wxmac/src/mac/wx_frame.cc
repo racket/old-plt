@@ -850,7 +850,10 @@ void wxFrame::Show(Bool show)
 #else
 		wxTopLevelWindows(ContextWindow())->Show(this, show);
 #endif
-		if (cFocusWindow) cFocusWindow->OnKillFocus();
+		if (cFocusWindow) {
+		  cFocusWindow->OnKillFocus();
+		  cFocusWindow = NULL;
+		}
 		::HideWindow(theMacWindow);
     }
 }

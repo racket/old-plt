@@ -515,9 +515,12 @@
  (autosave-details "Details")
  (autosave-recover "Recover")
  (autosave-unknown-filename "<<unknown>>")
- (autosave-autosave-label "Autosave file:")
- (autosave-original-label "Original file:")
- 
+ (autosave-autosave-label: "Autosave file:")
+ (autosave-original-label: "Original file:")
+ (autosave-autosave-label "Autosave file")
+ (autosave-original-label "Original file")
+ (autosave-compare-files "Compare autosave files")
+
  ;;; file modified warning
  (file-has-been-modified
   "The file has beeen modified since it was last saved. Overwrite the modifications?")

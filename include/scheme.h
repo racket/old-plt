@@ -340,6 +340,9 @@ typedef struct Scheme_Vector {
 
 #define SCHEME_STXP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_stx_type)
 
+#define SCHEME_UDPP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_type)
+#define SCHEME_UDP_WAITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_udp_waitable_type)
+
 #define SCHEME_CPTRP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_c_pointer_type)
 
 #define SCHEME_MUTABLEP(obj) (!((obj)->keyex & 0x1))

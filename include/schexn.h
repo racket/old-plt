@@ -23,6 +23,7 @@ enum {
   MZEXN_I_O_PORT_CLOSED,
   MZEXN_I_O_FILESYSTEM,
   MZEXN_I_O_TCP,
+  MZEXN_I_O_UDP,
   MZEXN_THREAD,
   MZEXN_MODULE,
   MZEXN_BREAK,
@@ -61,13 +62,14 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0, NULL, 14 },
   { 4, NULL, NULL, 0, NULL, 13 },
   { 2, NULL, NULL, 0, NULL, 13 },
+  { 2, NULL, NULL, 0, NULL, 13 },
   { 2, NULL, NULL, 0, NULL, 0 },
   { 2, NULL, NULL, 0, NULL, 0 },
   { 3, NULL, NULL, 0, NULL, 0 },
   { 3, NULL, NULL, 0, NULL, 0 },
   { 2, NULL, NULL, 0, NULL, 0 },
-  { 2, NULL, NULL, 0, NULL, 24 },
-  { 2, NULL, NULL, 0, NULL, 24 }
+  { 2, NULL, NULL, 0, NULL, 25 },
+  { 2, NULL, NULL, 0, NULL, 25 }
 };
 #else
 static exn_rec *exn_table;
@@ -99,6 +101,7 @@ static exn_rec *exn_table;
   exn_table[MZEXN_I_O_PORT_CLOSED].args = 3;
   exn_table[MZEXN_I_O_FILESYSTEM].args = 4;
   exn_table[MZEXN_I_O_TCP].args = 2;
+  exn_table[MZEXN_I_O_UDP].args = 2;
   exn_table[MZEXN_THREAD].args = 2;
   exn_table[MZEXN_MODULE].args = 2;
   exn_table[MZEXN_BREAK].args = 3;
@@ -148,6 +151,7 @@ static const char *MZEXN_SPECIAL_COMMENT_FIELDS[1] = { "width" };
   SETUP_STRUCT(MZEXN_I_O_PORT_CLOSED, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:closed", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_FILESYSTEM, EXN_PARENT(MZEXN_I_O), "exn:i/o:filesystem", 2, MZEXN_I_O_FILESYSTEM_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_TCP, EXN_PARENT(MZEXN_I_O), "exn:i/o:tcp", 0, NULL)
+  SETUP_STRUCT(MZEXN_I_O_UDP, EXN_PARENT(MZEXN_I_O), "exn:i/o:udp", 0, NULL)
   SETUP_STRUCT(MZEXN_THREAD, EXN_PARENT(MZEXN), "exn:thread", 0, NULL)
   SETUP_STRUCT(MZEXN_MODULE, EXN_PARENT(MZEXN), "exn:module", 0, NULL)
   SETUP_STRUCT(MZEXN_BREAK, EXN_PARENT(MZEXN), "exn:break", 1, MZEXN_BREAK_FIELDS)

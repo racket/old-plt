@@ -105,21 +105,21 @@ enum {
   scheme_begin0_sequence_type,
   scheme_rename_table_type,
   scheme_module_type,
-  scheme_svector_type,
-  scheme_lazy_macro_type, /* 90 */
+  scheme_svector_type, /* 90 */
+  scheme_lazy_macro_type,
   scheme_resolve_prefix_type,
   scheme_security_guard_type,
   scheme_indent_type,
+  scheme_udp_type,
+  scheme_udp_waitable_type,
 
-  scheme_reserved_3_type,
-  scheme_reserved_4_type,
   scheme_reserved_5_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,
 
-  scheme_rt_comp_env, /* 100 */
-  scheme_rt_constant_binding,
+  scheme_rt_comp_env,
+  scheme_rt_constant_binding, /* 100 */
   scheme_rt_resolve_info,
   scheme_rt_compile_info,
   scheme_rt_cont_mark,
@@ -128,8 +128,8 @@ enum {
   scheme_rt_reply_item,
   scheme_rt_closure_info,
   scheme_rt_overflow,
-  scheme_rt_dyn_wind_cell, /* 110 */
-  scheme_rt_cont_mark_chain,
+  scheme_rt_dyn_wind_cell,
+  scheme_rt_cont_mark_chain, /* 110 */
   scheme_rt_dyn_wind_info,
   scheme_rt_dyn_wind,
   scheme_rt_dup_check,
@@ -138,8 +138,8 @@ enum {
   scheme_rt_input_fd,
   scheme_rt_oskit_console_input,
   scheme_rt_tested_input_file,
-  scheme_rt_tested_output_file, /* 120 */
-  scheme_rt_indexed_string,
+  scheme_rt_tested_output_file,
+  scheme_rt_indexed_string, /* 120 */
   scheme_rt_output_file,
   scheme_rt_load_handler_data,
   scheme_rt_load_data,
@@ -148,8 +148,8 @@ enum {
   scheme_rt_system_child,
   scheme_rt_tcp,
   scheme_rt_write_data,
-  scheme_rt_tcp_select_info, /* 130 */
-  scheme_rt_namespace_option,
+  scheme_rt_tcp_select_info,
+  scheme_rt_namespace_option, /* 130 */
   scheme_rt_param_data, 
   scheme_rt_will,
   scheme_rt_will_registration,
@@ -158,8 +158,8 @@ enum {
   scheme_rt_struct_proc_info,
   scheme_rt_linker_name,
   scheme_rt_param_map,
-  scheme_rt_finalization, /* 140 */
-  scheme_rt_finalizations,
+  scheme_rt_finalization,
+  scheme_rt_finalizations, /* 140 */
   scheme_rt_cpp_object,
   scheme_rt_cpp_array_object,
   scheme_rt_stack_object, 
@@ -168,8 +168,8 @@ enum {
   scheme_rt_breakable,
   scheme_rt_srcloc,
   scheme_rt_waitable,
-  scheme_rt_waiting, /* 150 */
-  scheme_rt_comp_prefix,
+  scheme_rt_waiting,
+  scheme_rt_comp_prefix, /* 150 */
   scheme_rt_user_input, 
   scheme_rt_user_output,
   scheme_rt_compact_port,

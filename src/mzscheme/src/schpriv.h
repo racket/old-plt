@@ -1863,8 +1863,8 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
 
 int scheme_byte_string_has_null(Scheme_Object *o);
 int scheme_any_string_has_null(Scheme_Object *o);
-#define BYTE_STRING_W_NO_NULLS "byte-string (with no null characters)"
-#define STRING_OR_BYTE_STRING_W_NO_NULLS "string or byte-string (with no null characters)"
+#define CHAR_STRING_W_NO_NULLS "string (with no nul characters)"
+#define STRING_OR_BYTE_STRING_W_NO_NULLS "string or byte string (with no nul characters)"
 
 Scheme_Object *scheme_do_exit(int argc, Scheme_Object *argv[]);
 
@@ -2011,6 +2011,7 @@ extern int scheme_force_port_closed;
 
 void scheme_flush_orig_outputs(void);
 Scheme_Object *scheme_file_stream_port_p(int, Scheme_Object *[]);
+Scheme_Object *scheme_terminal_port_p(int, Scheme_Object *[]);
 Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[], int and_read);
 Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);

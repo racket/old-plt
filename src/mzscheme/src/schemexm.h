@@ -203,6 +203,7 @@
 #define scheme_make_sized_utf8_string (scheme_extension_table->scheme_make_sized_utf8_string)
 #define scheme_make_sized_offset_utf8_string (scheme_extension_table->scheme_make_sized_offset_utf8_string)
 #define scheme_make_immutable_sized_utf8_string (scheme_extension_table->scheme_make_immutable_sized_utf8_string)
+#define scheme_make_locale_string (scheme_extension_table->scheme_make_locale_string)
 #define scheme_char_string_to_byte_string (scheme_extension_table->scheme_char_string_to_byte_string)
 #define scheme_byte_string_to_char_string (scheme_extension_table->scheme_byte_string_to_char_string)
 #define scheme_char_string_to_byte_string_locale (scheme_extension_table->scheme_char_string_to_byte_string_locale)
@@ -225,6 +226,7 @@
 #define scheme_make_float (scheme_extension_table->scheme_make_float)
 #endif
 #define scheme_make_char (scheme_extension_table->scheme_make_char)
+#define scheme_make_char_or_nul (scheme_extension_table->scheme_make_char_or_nul)
 #define scheme_make_sema (scheme_extension_table->scheme_make_sema)
 #define scheme_post_sema (scheme_extension_table->scheme_post_sema)
 #define scheme_post_sema_all (scheme_extension_table->scheme_post_sema_all)

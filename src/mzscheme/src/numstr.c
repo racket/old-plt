@@ -82,24 +82,24 @@ void scheme_init_numstr(Scheme_Env *env)
 						      1, 3, 1),
 			     env);
 
-  scheme_add_global_constant("integer-byte-string->integer", 
+  scheme_add_global_constant("integer-bytes->integer", 
 			     scheme_make_folding_prim(bytes_to_integer,
-						      "integer-byte-string->integer", 
+						      "integer-bytes->integer", 
 						      2, 3, 1),
 			     env);
-  scheme_add_global_constant("integer->integer-byte-string", 
+  scheme_add_global_constant("integer->integer-bytes", 
 			     scheme_make_prim_w_arity(integer_to_bytes,
-						      "integer->integer-byte-string", 
+						      "integer->integer-bytes", 
 						      3, 5),
 			     env);
-  scheme_add_global_constant("floating-point-byte-string->real", 
+  scheme_add_global_constant("floating-point-bytes->real", 
 			     scheme_make_folding_prim(bytes_to_real,
-						      "floating-point-byte-string->real",
+						      "floating-point-bytes->real",
 						      1, 2, 1),
 			     env);
-  scheme_add_global_constant("real->floating-point-byte-string",
+  scheme_add_global_constant("real->floating-point-bytes",
 			     scheme_make_prim_w_arity(real_to_bytes,
-						      "real->floating-point-byte-string",
+						      "real->floating-point-bytes",
 						      2, 4),
 			     env);
   scheme_add_global_constant("system-big-endian?",
@@ -1549,7 +1549,7 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
     slen = SCHEME_BYTE_STRLEN_VAL(argv[0]);
 
   if ((slen != 2)  && (slen != 4) && (slen != 8))
-    scheme_wrong_type("integer-byte-string->integer", "byte-string (2, 4, or 8 bytes)", 0, argc, argv);
+    scheme_wrong_type("integer-bytes->integer", "byte string (2, 4, or 8 bytes)", 0, argc, argv);
 
   str = SCHEME_BYTE_STR_VAL(argv[0]);
 
@@ -1628,14 +1628,14 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
 
   n = argv[0];
   if (!SCHEME_INTP(n) && !SCHEME_BIGNUMP(n))
-    scheme_wrong_type("integer->integer-byte-string", "exact integer", 0, argc, argv);
+    scheme_wrong_type("integer->integer-bytes", "exact integer", 0, argc, argv);
 
   if (SCHEME_INTP(argv[1]))
     size = SCHEME_INT_VAL(argv[1]);
   else
     size = 0;
   if ((size != 2) && (size != 4) &&(size != 8))
-    scheme_wrong_type("integer->integer-byte-string", "exact 2, 4, or 8", 1, argc, argv);
+    scheme_wrong_type("integer->integer-bytes", "exact 2, 4, or 8", 1, argc, argv);
 
   sgned = SCHEME_TRUEP(argv[2]);
   if (argc > 3)
@@ -1647,7 +1647,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
     s = scheme_make_sized_byte_string("12345678", size, 1);
   
   if (!SCHEME_MUTABLE_BYTE_STRINGP(s))
-    scheme_wrong_type("integer->integer-byte-string", "mutable-byte-string", 4, argc, argv);
+    scheme_wrong_type("integer->integer-bytes", "mutable byte string", 4, argc, argv);
 
   /* Check for mismatch: number doesn't fit */
   if (size == 2) {
@@ -1712,7 +1712,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   if (bad) {
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     n,
-		     "integer->integer-byte-string: integer does not fit into %d %ssigned bytes: %V",
+		     "integer->integer-bytes: integer does not fit into %d %ssigned bytes: %V",
 		     size, (sgned ? "" : "un"), n);
     return NULL;
   }
@@ -1722,7 +1722,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   if (size != SCHEME_BYTE_STRLEN_VAL(s)) {
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     s,
-		     "integer->integer-byte-string: string size %d does not match indicated %d-byte length: %V",
+		     "integer->integer-bytes: string size %d does not match indicated %d-byte length: %V",
 		     SCHEME_BYTE_STRLEN_VAL(s), size, s);
     return NULL;
   }
@@ -1814,7 +1814,7 @@ static Scheme_Object *bytes_to_real (int argc, Scheme_Object *argv[])
     slen = SCHEME_BYTE_STRLEN_VAL(argv[0]);
 
   if ((slen != 4) && (slen != 8))
-    scheme_wrong_type("floating-point-byte-string->real", "byte-string (4 or 8 bytes)", 0, argc, argv);
+    scheme_wrong_type("floating-point-bytes->real", "byte string (4 or 8 bytes)", 0, argc, argv);
 
   str = SCHEME_BYTE_STR_VAL(argv[0]);
 
@@ -1861,14 +1861,14 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
 
   n = argv[0];
   if (!SCHEME_REALP(n))
-    scheme_wrong_type("real->floating-point-byte-string", "real number", 0, argc, argv);
+    scheme_wrong_type("real->floating-point-bytes", "real number", 0, argc, argv);
 
   if (SCHEME_INTP(argv[1]))
     size = SCHEME_INT_VAL(argv[1]);
   else
     size = 0;
   if ((size != 2) && (size != 4) &&(size != 8))
-    scheme_wrong_type("real->floating-point-byte-string", "exact 4 or 8", 1, argc, argv);
+    scheme_wrong_type("real->floating-point-bytes", "exact 4 or 8", 1, argc, argv);
 
   if (argc > 2)
     bigend = SCHEME_TRUEP(argv[2]);
@@ -1879,12 +1879,12 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
     s = scheme_make_sized_byte_string("12345678", size, 1);
   
   if (!SCHEME_MUTABLE_BYTE_STRINGP(s))
-    scheme_wrong_type("real->floating-point-byte-string", "mutable-byte-string", 3, argc, argv);
+    scheme_wrong_type("real->floating-point-bytes", "mutable byte string", 3, argc, argv);
 
   if (size != SCHEME_BYTE_STRLEN_VAL(s)) {
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     s,
-		     "real->floating-point-byte-string: string size %d does not match indicated %d-byte length: %V",
+		     "real->floating-point-bytes: string size %d does not match indicated %d-byte length: %V",
 		     SCHEME_BYTE_STRLEN_VAL(s), size, s);
     return NULL;
   }

@@ -391,6 +391,8 @@ MZ_EXTERN Scheme_Object *scheme_make_sized_utf8_string(char *chars, long len);
 MZ_EXTERN Scheme_Object *scheme_make_sized_offset_utf8_string(char *chars, long d, long len);
 MZ_EXTERN Scheme_Object *scheme_make_immutable_sized_utf8_string(char *chars, long len);
 
+MZ_EXTERN Scheme_Object *scheme_make_locale_string(const char *chars);
+
 MZ_EXTERN Scheme_Object *scheme_char_string_to_byte_string(Scheme_Object *s);
 MZ_EXTERN Scheme_Object *scheme_byte_string_to_char_string(Scheme_Object *s);
 MZ_EXTERN Scheme_Object *scheme_char_string_to_byte_string_locale(Scheme_Object *s);
@@ -415,6 +417,7 @@ MZ_EXTERN Scheme_Object *scheme_make_double(double d);
 MZ_EXTERN Scheme_Object *scheme_make_float(float f) ;
 #endif
 MZ_EXTERN Scheme_Object *scheme_make_char(mzchar ch);
+MZ_EXTERN Scheme_Object *scheme_make_char_or_nul(mzchar ch);
 MZ_EXTERN Scheme_Object *scheme_make_sema(long v);
 MZ_EXTERN void scheme_post_sema(Scheme_Object *o);
 MZ_EXTERN void scheme_post_sema_all(Scheme_Object *o);

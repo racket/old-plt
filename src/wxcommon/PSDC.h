@@ -177,6 +177,8 @@ class wxPostScriptDC: public wxDC
   void SetTextForeground(wxColour *col);
   void TryColour(wxColour *src, wxColour *dest);
 
+  Bool GlyphAvailable(int c, wxFont *f = NULL);
+
   virtual Bool Ok() { return ok; }
 };
 

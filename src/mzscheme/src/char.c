@@ -251,6 +251,18 @@ Scheme_Object *scheme_make_char(mzchar ch)
   return o;
 }
 
+Scheme_Object *scheme_make_char_or_nul(mzchar v)
+{
+  if ((v >= 0) 
+      && (v <= 0x7FFFFFFF)
+      && (v != 0xFFFE)
+      && (v != 0xFFFF)
+      && ((v < 0xD800) || (v > 0xDFFF)))
+    return scheme_make_char(v);
+
+  return scheme_char_constants[0];
+}
+
 /* locals */
 
 static Scheme_Object *

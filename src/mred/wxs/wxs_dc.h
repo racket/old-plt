@@ -1,4 +1,5 @@
 #ifndef WXS_SETUP_ONLY
+extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxGL(class wxGL *);
 extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);
 extern Scheme_Object *objscheme_bundle_wxColour(class wxColour *);

@@ -4367,7 +4367,7 @@ static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  char r;
+  mzchar r;
   objscheme_check_valid(os_wxMediaEdit_class, "get-character in text%", n, p);
   nnlong x0;
 

@@ -741,6 +741,12 @@ scheme_make_utf8_string(const char *chars)
   return scheme_make_sized_offset_utf8_string((char *)chars, 0, -1);
 }
 
+Scheme_Object *
+scheme_make_locale_string(const char *chars)
+{
+  return scheme_byte_string_to_char_string_locale(scheme_make_byte_string((char *)chars));
+}
+
 /**********************************************************************/
 /*                         index helpers                              */
 /**********************************************************************/
@@ -1006,7 +1012,7 @@ do_byte_string_to_char_string_locale(const char *who,
   char *us;
   long olen;
 
-  if (!iconv_open)
+  if (!nl_langinfo || !scheme_locale_on)
     return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm);
 
   if (istart < ifinish) {
@@ -1127,7 +1133,7 @@ do_char_string_to_byte_string_locale(const char *who,
   char *s;
   long olen;
 
-  if (!iconv_open)
+  if (!nl_langinfo || !scheme_locale_on)
     return do_char_string_to_byte_string(cstr, istart, ifinish);
 
   if (istart < ifinish) {
@@ -1741,16 +1747,12 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
 {
   char *s;
   Scheme_Object *bs;
-
-  if ((!SCHEME_BYTE_STRINGP(argv[0]) 
-       && !SCHEME_CHAR_STRINGP(argv[0]) )
+  
+  if (!SCHEME_CHAR_STRINGP(argv[0])
       || scheme_any_string_has_null(argv[0]))
-    scheme_wrong_type("getenv", STRING_OR_BYTE_STRING_W_NO_NULLS, 0, argc, argv);
+    scheme_wrong_type("getenv", CHAR_STRING_W_NO_NULLS, 0, argc, argv);
 
-  if (SCHEME_CHAR_STRINGP(argv[0]))
-    bs = scheme_char_string_to_byte_string(argv[0]);
-  else
-    bs = argv[0];
+  bs = scheme_char_string_to_byte_string_locale(argv[0]);
 
 #ifdef GETENV_FUNCTION
   s = getenv(SCHEME_BYTE_STR_VAL(bs));
@@ -1765,7 +1767,7 @@ static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
 #endif
 
   if (s)
-    return scheme_make_byte_string(s);
+    return scheme_make_locale_string(s);
 
   return scheme_false;
 }
@@ -1776,27 +1778,18 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
   long varlen, vallen;
   Scheme_Object *bs;
 
-  if ((!SCHEME_BYTE_STRINGP(argv[0]) 
-       && !SCHEME_CHAR_STRINGP(argv[0]))
+  if (!SCHEME_CHAR_STRINGP(argv[0])
       || scheme_any_string_has_null(argv[0]))
-    scheme_wrong_type("putenv", STRING_OR_BYTE_STRING_W_NO_NULLS, 0, argc, argv);
-  if ((!SCHEME_BYTE_STRINGP(argv[1]) 
-       && !SCHEME_CHAR_STRINGP(argv[1]))
+    scheme_wrong_type("putenv", CHAR_STRING_W_NO_NULLS, 0, argc, argv);
+  if (!SCHEME_CHAR_STRINGP(argv[1])
       || scheme_any_string_has_null(argv[1]))
-    scheme_wrong_type("putenv", STRING_OR_BYTE_STRING_W_NO_NULLS, 1, argc, argv);
+    scheme_wrong_type("putenv", CHAR_STRING_W_NO_NULLS, 1, argc, argv);
 
-  if (SCHEME_BYTE_STRINGP(argv[0]))
-    var = SCHEME_BYTE_STR_VAL(argv[0]);
-  else {
-    bs = scheme_char_string_to_byte_string(argv[0]);
-    var = SCHEME_BYTE_STR_VAL(bs);
-  }
-  if (SCHEME_BYTE_STRINGP(argv[1]))
-    val = SCHEME_BYTE_STR_VAL(argv[1]);
-  else {
-    bs = scheme_char_string_to_byte_string(argv[1]);
-    val = SCHEME_BYTE_STR_VAL(bs);
-  }
+  bs = scheme_char_string_to_byte_string_locale(argv[0]);
+  var = SCHEME_BYTE_STR_VAL(bs);
+  
+  bs = scheme_char_string_to_byte_string_locale(argv[1]);
+  val = SCHEME_BYTE_STR_VAL(bs);
 
   varlen = strlen(var);
   vallen = strlen(val);
@@ -1892,7 +1885,7 @@ static Scheme_Object *ok_cmdline(int argc, Scheme_Object **argv)
       return vec;
 
     for (i = 0; i < size; i++) {
-      if (!SCHEME_BYTE_STRINGP(SCHEME_VEC_ELS(vec)[i]))
+      if (!SCHEME_CHAR_STRINGP(SCHEME_VEC_ELS(vec)[i]))
 	return NULL;
     }
     
@@ -1902,9 +1895,9 @@ static Scheme_Object *ok_cmdline(int argc, Scheme_Object **argv)
       SCHEME_SET_VECTOR_IMMUTABLE(vec2);
     for (i = 0; i < size; i++) {
       str = SCHEME_VEC_ELS(vec)[i];
-      if (!SCHEME_IMMUTABLE_BYTE_STRINGP(str)) {
-	str = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(str), SCHEME_BYTE_STRLEN_VAL(str), 0);
-	SCHEME_SET_BYTE_STRING_IMMUTABLE(str);
+      if (!SCHEME_IMMUTABLE_CHAR_STRINGP(str)) {
+	str = scheme_make_sized_char_string(SCHEME_CHAR_STR_VAL(str), SCHEME_CHAR_STRLEN_VAL(str), 0);
+	SCHEME_SET_CHAR_STRING_IMMUTABLE(str);
       }
       SCHEME_VEC_ELS(vec2)[i] = str;
     }
@@ -1968,6 +1961,9 @@ static char *do_convert(iconv_t cd,
 			char *out, int od, int iolen, 
 			/* if grow, then reallocate when out isn't big enough */
 			int grow, 
+			/* if add_end_shift, add a shift sequence to the end;
+			   not useful if in is already NULL to indicate a shift */
+			int add_end_shift,
 			/* extra specifies the length of a terminator, 
 			   not included in iolen or *oolen */
 			int extra,
@@ -2012,7 +2008,8 @@ static char *do_convert(iconv_t cd,
   /* The converter is ready. Allocate out space, if necessary */
 
   if (!out) {
-    iolen = iilen;
+    if (iolen <= 0)
+      iolen = iilen;
     out = (char *)scheme_malloc_atomic(iolen + extra);
     od = 0;
   }
@@ -2025,6 +2022,8 @@ static char *do_convert(iconv_t cd,
      for the sake of precise GC */
   dip = 0;
   dop = 0;
+  if (!in)
+    add_end_shift = 0;
 
   while (1) {
     ip = in XFORM_OK_PLUS id + dip;
@@ -2072,14 +2071,23 @@ static char *do_convert(iconv_t cd,
 	return out;
       }
     } else {
-      /* All done. */
-      *status = 0;
-      if (close_it)
-	iconv_close(cd);
-      while (extra--) {
-	out[od + dop + extra] = 0;
+      /* All done... */
+      if (add_end_shift) {
+	add_end_shift = 0;
+	in = NULL;
+	dip = 0;
+	id = 0;
+	il = 0; /* should be redundant */
+	oilen = NULL; /* so it doesn't get set to 0 */
+      } else {
+	*status = 0;
+	if (close_it)
+	  iconv_close(cd);
+	while (extra--) {
+	  out[od + dop + extra] = 0;
+	}
+	return out;
       }
-      return out;
     }
   }
 }
@@ -2113,8 +2121,8 @@ static char *string_to_from_locale(int to_bytes,
     /* We might have conversion errors... */
     c = do_convert(cd, NULL, NULL, 
 		   (char *)in, (to_bytes ? 4 : 1) * delta, (to_bytes ? 4 : 1) * len,
-		   NULL, 0, 0,
-		   1 /* grow */, (to_bytes ? 1 : 4) /* terminator size */,
+		   NULL, 0, (to_bytes ? 1 : 4) * (len + 1),
+		   1 /* grow */, 1, (to_bytes ? 1 : 4) /* terminator size */,
 		   &used, &clen,
 		   &status);
     
@@ -2146,7 +2154,7 @@ static char *string_to_from_locale(int to_bytes,
     if (to_bytes) {
       one = scheme_make_sized_byte_string(c, clen, 0);
     } else {
-      one = scheme_make_sized_char_string((mzchar *)c, clen >> 4, 0);
+      one = scheme_make_sized_char_string((mzchar *)c, clen >> 2, 0);
     }
 
     parts = scheme_make_pair(one, parts);
@@ -2307,13 +2315,13 @@ int mz_locale_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
       c1 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
 		      s1, d1 * 4, 4 * l1,
 		      buf1, 0, MZ_SC_BUF_SIZE - 1,
-		      1 /* grow */, 1 /* terminator size */,
+		      1 /* grow */, 0, 1 /* terminator size */,
 		      &used1, &clen1,
 		      &status);
       c2 = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
 		      s2, d2 * 4, 4 * l2,
 		      buf2, 0, MZ_SC_BUF_SIZE - 1,
-		      1 /* grow */, 1 /* terminator size */,
+		      1 /* grow */, 0, 1 /* terminator size */,
 		      &used2, &clen2,
 		      &status);
 
@@ -2533,7 +2541,7 @@ mzchar *do_locale_recase(int to_up, mzchar *in, int delta, int len, long *olen)
     c = do_convert((iconv_t)-1, MZ_UCS4_NAME, NULL, 
 		   (char *)in, 4 * delta, 4 * len,
 		   buf, 0, MZ_SC_BUF_SIZE - 1,
-		   1 /* grow */, 1 /* terminator size */,
+		   1 /* grow */, 0, 1 /* terminator size */,
 		   &used, &clen,
 		   &status);
 
@@ -2550,7 +2558,7 @@ mzchar *do_locale_recase(int to_up, mzchar *in, int delta, int len, long *olen)
     c = do_convert((iconv_t)-1, NULL, MZ_UCS4_NAME,
 		   c, 0, clen,
 		   NULL, 0, 0,
-		   1 /* grow */, sizeof(mzchar) /* terminator size */,
+		   1 /* grow */, 0, sizeof(mzchar) /* terminator size */,
 		   &used, &clen,
 		   &status);
 
@@ -3040,6 +3048,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
 		   instr, istart, ifinish-istart,
 		   r, ostart, ofinish-ostart,
 		   !r, /* grow? */
+		   0,
 		   (r ? 0 : 1), /* terminator */
 		   &amt_read, &amt_wrote,
 		   &status);
@@ -3725,6 +3734,7 @@ static char *uname_locations[] = { "/bin/uname",
 				      just in case... */
 				   "/sbin/uname",
 				   "/usr/sbin/uname",
+				   "/usr/local/bin/uname",
 				   "/usr/local/uname",
 				   NULL };
 
@@ -3736,8 +3746,8 @@ static int try_subproc(Scheme_Object *subprocess_proc, char *prog)
     a[0] = scheme_false;
     a[1] = scheme_false;
     a[2] = scheme_false;
-    a[3] = scheme_make_byte_string(prog);
-    a[4] = scheme_make_byte_string("-a");
+    a[3] = scheme_make_locale_string(prog);
+    a[4] = scheme_make_locale_string("-a");
     _scheme_apply_multi(subprocess_proc, 5, a);
     return 1;
   } else {

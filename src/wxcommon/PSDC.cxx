@@ -1358,6 +1358,10 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
   }
 }
 
+Bool wxPostScriptDC::GlyphAvailable(int c, wxFont *f)
+{
+  return TRUE;
+}
 
 void wxPostScriptDC::SetBackground (wxColour * c)
 {

@@ -242,6 +242,8 @@ public:
     void GetDeviceOrigin(float *x, float *y) 
       { *x = device_origin_x; *y = device_origin_y; }
 
+    virtual Bool GlyphAvailable(int c, wxFont *f = NULL) = 0;
+
 #ifdef USE_GL
     virtual wxGL *GetGL();
 #endif

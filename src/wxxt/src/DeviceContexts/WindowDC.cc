@@ -47,8 +47,6 @@
 # endif
 #endif
 
-#define wxXftCharExists XftGlyphExists
-
 #define  UseXtRegions
 #include "wx_rgn.h"
 
@@ -1916,7 +1914,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
       wxFontStruct *this_time, *this_time_no_rotate, *no_rotate;
       int partlen, try_sub;
 
-      try_sub = current_font->HasAASubstitutions();
+      try_sub = 1;
 
       while(textlen) {
 	if (angle != 0.0)
@@ -1931,7 +1929,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 	  this_time_no_rotate = no_rotate;
 	  while (1) {
 	    cval = text[dt];
-	    if (!wxXftCharExists(DPY, this_time, cval)) {
+	    if (!XftGlyphExists(DPY, this_time, cval)) {
 	      this_time = (wxFontStruct*)current_font->GetNextAASubstitution(index++, scale_x, scale_y, angle);
 	      if (!this_time) {
 		this_time = xfontinfo;
@@ -1944,6 +1942,16 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 		this_time_no_rotate = this_time;
 	    } else
 	      break;
+	  }
+	  
+	  /* Get a longer range that won't need a substitution */
+	  if (this_time == xfontinfo) {
+	    while (partlen < textlen) {
+	      cval = text[dt + partlen];
+	      if (!XftGlyphExists(DPY, this_time, cval))
+		break;
+	      partlen++;
+	    }
 	  }
 	} else {
 	  partlen = textlen;
@@ -1983,6 +1991,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 	  double quadrant, pie = 3.14159;
 	  int the_x, the_y, i;
 	  XFontStruct *zfontinfo;
+	  XChar2b *text2b;
 	  
 	  zfontinfo = fontinfo;
 	  fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, scale_y, angle);
@@ -1995,16 +2004,20 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 	  dev_y += (int)((double)ascent * ca);
 	  dev_x += (int)((double)ascent * sa);
 
-	  /* FIXME: this isn't right for wide characters. */
 	  offset = 0.0;
+	  text2b = (XChar2b *)text;
 	  for (i = 0; i < textlen; i++) {
-	    int charno = text[dt];
-	    int char_metric_offset = charno - fontinfo->min_char_or_byte2;
-	  
+	    int char_metric_offset;
+
+	    char_metric_offset = ((text2b[dt].byte1 - zfontinfo->min_byte1)
+				  * (zfontinfo->max_char_or_byte2 - zfontinfo->min_char_or_byte2 + 1)
+				  - zfontinfo->min_char_or_byte2
+				  + text2b[dt].byte2);
+	    
 	    the_x = (int)((double)dev_x + offset * ca);
 	    the_y = (int)((double)dev_y - offset * sa);
 	    
-	    XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, ((XChar2b *)text) + dt, 1);
+	    XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, text2b + dt, 1);
 	    dt++;
 	  	    
 	    offset += (double)(zfontinfo->per_char ?
@@ -2093,7 +2106,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
     if ((font_to_use->GetFamily() == wxSYMBOL)) {
       XlateSym(s, dt, textlen);
     }
-    try_sub = font_to_use->HasAASubstitutions();
+    try_sub = 1;
 
     w = 0;
 
@@ -2104,7 +2117,7 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 	this_time = xfontinfo;
 	while (1) {
 	  cval = s[dt];
-	  if (!wxXftCharExists(DPY, this_time, cval)) {
+	  if (!XftGlyphExists(DPY, this_time, cval)) {
 	    this_time = (wxFontStruct*)font_to_use->GetNextAASubstitution(index++, scale_x, scale_y, 0.0);
 	    if (!this_time) {
 	      this_time = xfontinfo;
@@ -2112,6 +2125,16 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
 	    }
 	  } else
 	    break;
+	}
+
+	/* Get a longer range that won't need a substitution */
+	if (this_time == xfontinfo) {
+	  while (partlen < textlen) {
+	    cval = s[dt + partlen];
+	    if (!XftGlyphExists(DPY, this_time, cval))
+	      break;
+	    partlen++;
+	  }
 	}
       } else {
 	partlen = textlen;
@@ -2148,6 +2171,14 @@ void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *
   }
   if (_topspace)
     *_topspace = 0.0;
+}
+
+Bool wxWindowDC::GlyphAvailable(int c, wxFont *font)
+{
+  if (!font)
+    font = current_font;
+
+  return font->ScreenGlyphAvailable(c);
 }
 
 void wxWindowDC::SetFont(wxFont *font)

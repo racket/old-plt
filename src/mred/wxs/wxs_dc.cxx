@@ -529,6 +529,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
 
 
+
 class os_wxDC : public wxDC {
  public:
 
@@ -554,6 +555,35 @@ static Scheme_Object *os_wxDC_interface;
 os_wxDC::~os_wxDC()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+static Scheme_Object *os_wxDCGlyphAvailable(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxDC_class, "glyph-exists? in dc<%>", n, p);
+  mzchar x0;
+  class wxFont* x1 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x1);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "glyph-exists? in dc<%>"));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+1], "glyph-exists? in dc<%>", 1));
+  } else
+    x1 = NULL;
+
+  
+  r = WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->GlyphAvailable(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxDCEndPage(int n,  Scheme_Object *p[])
@@ -1727,8 +1757,9 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   wxREGGLOB(os_wxDC_class);
   wxREGGLOB(os_wxDC_interface);
 
-  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 45));
+  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 46));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "glyph-exists?" " method", (Scheme_Method_Prim *)os_wxDCGlyphAvailable, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-page" " method", (Scheme_Method_Prim *)os_wxDCEndPage, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-doc" " method", (Scheme_Method_Prim *)os_wxDCEndDoc, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "start-page" " method", (Scheme_Method_Prim *)os_wxDCStartPage, 0, 0));

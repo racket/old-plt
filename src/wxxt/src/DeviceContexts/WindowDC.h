@@ -171,6 +171,8 @@ public:
 
     void FillPrivateColor(wxColour *c);
 
+    virtual Bool GlyphAvailable(int c, wxFont *f = NULL);
+
     virtual Bool Ok(void);
 
 #ifdef WX_USE_XRENDER

@@ -1947,8 +1947,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 # endif
 #endif
 
-  if (!SCHEME_PATH_STRINGP(argv[0]))
-    scheme_wrong_type("tcp-connect", SCHEME_PATH_STRING_STR, 0, argc, argv);
+  if (!SCHEME_CHAR_STRINGP(argv[0]))
+    scheme_wrong_type("tcp-connect", "string", 0, argc, argv);
   if (!CHECK_PORT_ID(argv[1]))
     scheme_wrong_type("tcp-connect", PORT_ID_TYPE, 1, argc, argv);
 
@@ -2185,8 +2185,8 @@ tcp_listen(int argc, Scheme_Object *argv[])
   if (argc > 2)
     reuse = SCHEME_TRUEP(argv[2]);
   if (argc > 3) {
-    if (!SCHEME_PATH_STRINGP(argv[3]) && !SCHEME_FALSEP(argv[3]))
-      scheme_wrong_type("tcp-connect", SCHEME_PATH_STRING_STR " or #f", 3, argc, argv);
+    if (!SCHEME_CHAR_STRINGP(argv[3]) && !SCHEME_FALSEP(argv[3]))
+      scheme_wrong_type("tcp-connect", "string or #f", 3, argc, argv);
   }
     
 #ifdef USE_TCP
@@ -2199,14 +2199,9 @@ tcp_listen(int argc, Scheme_Object *argv[])
   else
     backlog = 4;
   if (argc > 3) {
-    if (SCHEME_BYTE_STRINGP(argv[3]))
-      address = SCHEME_BYTE_STR_VAL(argv[3]);
-    else if (SCHEME_CHAR_STRINGP(argv[3])) {
-      Scheme_Object *bs;
-      bs = scheme_char_string_to_byte_string(argv[3]);
-      address = SCHEME_BYTE_STR_VAL(bs);
-    } else
-      address = NULL;
+    Scheme_Object *bs;
+    bs = scheme_char_string_to_byte_string(argv[3]);
+    address = SCHEME_BYTE_STR_VAL(bs);
   } else
     address = NULL;
 
@@ -2798,12 +2793,12 @@ static Scheme_Object *
 udp_close(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_UDPP(argv[0]))
-    scheme_wrong_type("udp-close", "udp-socket", 0, argc, argv);
+    scheme_wrong_type("udp-close", "udp socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
   if (udp_close_it(argv[0])) {
     scheme_raise_exn(MZEXN_I_O_UDP,
-		     "udp-close: udp-socket was already closed");
+		     "udp-close: udp socket was already closed");
     return NULL;
   }
 #endif
@@ -2821,7 +2816,7 @@ static Scheme_Object *
 udp_bound_p(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_UDPP(argv[0]))
-    scheme_wrong_type("udp-bound?", "udp-socket", 0, argc, argv);
+    scheme_wrong_type("udp-bound?", "udp socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
   return (((Scheme_UDP *)argv[0])->bound ? scheme_true : scheme_false);
@@ -2834,7 +2829,7 @@ static Scheme_Object *
 udp_connected_p(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_UDPP(argv[0]))
-    scheme_wrong_type("udp-connected?", "udp-socket", 0, argc, argv);
+    scheme_wrong_type("udp-connected?", "udp socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
   return (((Scheme_UDP *)argv[0])->connected ? scheme_true : scheme_false);
@@ -2856,22 +2851,18 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
 #endif
 
   if (!SCHEME_UDPP(argv[0]))
-    scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+    scheme_wrong_type(name, "udp socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
-  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_PATH_STRINGP(argv[1]))
-    scheme_wrong_type(name, (do_bind ? SCHEME_PATH_STRING_STR " or #f" : "string"), 1, argc, argv);
+  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_CHAR_STRINGP(argv[1]))
+    scheme_wrong_type(name, (do_bind ? "string or #f" : "string"), 1, argc, argv);
   if ((do_bind || !SCHEME_FALSEP(argv[2])) && !CHECK_PORT_ID(argv[2]))
     scheme_wrong_type(name, (do_bind ? PORT_ID_TYPE : PORT_ID_TYPE " or #f"), 2, argc, argv);
 		      
   if (SCHEME_TRUEP(argv[1])) {
-    if (SCHEME_BYTE_STRINGP(argv[1]))
-      address = SCHEME_BYTE_STR_VAL(argv[1]);
-    else {
-      Scheme_Object *bs;
-      bs = scheme_char_string_to_byte_string(argv[1]);
-      address = SCHEME_BYTE_STR_VAL(bs);
-    }
+    Scheme_Object *bs;
+    bs = scheme_char_string_to_byte_string(argv[1]);
+    address = SCHEME_BYTE_STR_VAL(bs);
   } else
     address = NULL;
   if (SCHEME_TRUEP(argv[2]))
@@ -3037,12 +3028,12 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
 #endif
 
   if (!SCHEME_UDPP(argv[0]))
-    scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+    scheme_wrong_type(name, "udp socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
   if (with_addr) {
-    if (!SCHEME_PATH_STRINGP(argv[1]))
-      scheme_wrong_type(name, SCHEME_PATH_STRING_STR, 1, argc, argv);
+    if (!SCHEME_CHAR_STRINGP(argv[1]))
+      scheme_wrong_type(name, "string", 1, argc, argv);
     if (!CHECK_PORT_ID(argv[2]))
       scheme_wrong_type(name, PORT_ID_TYPE, 2, argc, argv);
     delta = 0;
@@ -3050,20 +3041,16 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
     delta = -2;
 
   if (!SCHEME_BYTE_STRINGP(argv[3 + delta]))
-    scheme_wrong_type(name, "byte-string", 3 + delta, argc, argv);
+    scheme_wrong_type(name, "byte string", 3 + delta, argc, argv);
   
   scheme_get_substring_indices(name, argv[3 + delta], 
 			       argc, argv,
 			       4 + delta, 5 + delta, &start, &end);
 
   if (with_addr) {
-    if (SCHEME_BYTE_STRINGP(argv[1]))
-      address = SCHEME_BYTE_STR_VAL(argv[1]);
-    else {
-      Scheme_Object *bs;
-      bs = scheme_char_string_to_byte_string(argv[1]);
-      address = SCHEME_BYTE_STR_VAL(bs);
-    }
+    Scheme_Object *bs;
+    bs = scheme_char_string_to_byte_string(argv[1]);
+    address = SCHEME_BYTE_STR_VAL(bs);
     origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
 
     scheme_security_check_network(name, address, origid, 1);
@@ -3238,10 +3225,10 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 #endif
 
   if (!SCHEME_UDPP(argv[0]))
-    scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+    scheme_wrong_type(name, "udp socket", 0, argc, argv);
 #ifdef UDP_IS_SUPPORTED
   if (!SCHEME_BYTE_STRINGP(argv[1]) || !SCHEME_MUTABLEP(argv[1]))
-      scheme_wrong_type(name, "mutable-byte-string", 1, argc, argv);
+      scheme_wrong_type(name, "mutable byte string", 1, argc, argv);
   
   scheme_get_substring_indices(name, argv[1], 
 			       argc, argv,
@@ -3345,7 +3332,7 @@ static Scheme_Object *make_udp_waitable(const char *name, int argc, Scheme_Objec
 #endif
 
   if (!SCHEME_UDPP(argv[0]))
-    scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+    scheme_wrong_type(name, "udp socket", 0, argc, argv);
 
 #ifdef UDP_IS_SUPPORTED
   uw = MALLOC_ONE_TAGGED(Scheme_UDP_Waitable);

@@ -1168,13 +1168,13 @@ static void raise_null_error(const char *name, Scheme_Object *path, const char *
     scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     path,
 		     path_err_symbol,
-		     "%s: path%s is empty", 
+		     "%s: path string%s is empty", 
 		     name, mod);
   else
     scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     path,
 		     path_err_symbol,
-		     "%s: path%s contains a null character: %Q", 
+		     "%s: path string%s contains a null character: %Q", 
 		     name, mod, 
 		     path);
 }
@@ -3405,19 +3405,26 @@ static Scheme_Object *expand_path(int argc, Scheme_Object *argv[])
 static Scheme_Object *normal_path_case(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *bs;
+  int len;
+  char *s;
 
   if (!SCHEME_PATH_STRINGP(argv[0]))
     scheme_wrong_type("normal-case-path", SCHEME_PATH_STRING_STR, 0, argc, argv);
 
   bs = TO_PATH(argv[0]);
 
+  s = SCHEME_PATH_VAL(argv[0]);
+  len = SCHEME_PATH_LEN(argv[0]);
+
+  if (has_null(s, len))
+    raise_null_error("normal-case-path", argv[0], "");
+
 #ifdef UNIX_FILE_SYSTEM
   return bs;
 #else
   {
-    int len = SCHEME_PATH_LEN(bs);
     char *nc;
-    nc = scheme_normal_path_case(SCHEME_PATH_VAL(bs), &len);
+    nc = scheme_normal_path_case(s, &len);
     return scheme_make_sized_path(nc, len, 0);
   }
 #endif

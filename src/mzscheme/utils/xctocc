@@ -2102,7 +2102,7 @@ sub PrintBundleVar
 	print ", $wvs(objscheme_box(sbox_tmp)))";
     } elsif ($paramtype eq 'bool') {
 	print "($var ? scheme_true : scheme_false)";
-    } elsif ($paramtype eq 'char') {
+    } elsif ($paramtype eq 'char' || $paramtype eq 'mzchar') {
 	print "scheme_make_char($var)";
     } elsif ($paramtype eq 'uchar') {
 	print "scheme_make_char((char)$var)";
@@ -2192,7 +2192,7 @@ sub ParamIsPointer
 	return 1;
     } elsif ($paramtype eq 'bool') {
 	return 0;
-    } elsif ($paramtype eq 'char') {
+    } elsif ($paramtype eq 'char' || $paramtype eq 'mzchar') {
 	return 0;
     } elsif ($paramtype eq 'uchar') {
 	return 0;
@@ -2314,7 +2314,7 @@ sub PrintUnbundleVar
 	print ")";
     } elsif ($paramtype eq 'bool') {
 	print "WITH_VAR_STACK(objscheme_unbundle_bool(${var}, $stop))";
-    } elsif ($paramtype eq 'char') {
+    } elsif ($paramtype eq 'char' || $paramtype eq 'mzchar') {
 	print "WITH_VAR_STACK(objscheme_unbundle_char(${var}, $stop))";
     } elsif ($paramtype eq 'uchar') {
 	print "((unsigned char)WITH_VAR_STACK(objscheme_unbundle_char(${var}, $stop)))";
@@ -2702,7 +2702,7 @@ sub PrintTypecheck
 	&PrintTypecheck($var, $paramtype);
     } elsif ($paramtype eq 'bool') {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_bool($var, $stop))";
-    } elsif ($paramtype eq 'char' || $paramtype eq 'uchar') {
+    } elsif ($paramtype eq 'char' || $paramtype eq 'mzchar' || $paramtype eq 'uchar') {
 	print "WITH_REMEMBERED_STACK(objscheme_istype_char($var, $stop))";
     } elsif (($paramtype eq 'int') || ($paramtype eq 'unsigned') 
 	     || ($paramtype eq 'nnint') || ($paramtype eq 'nnlong') 
@@ -3036,7 +3036,7 @@ sub PrintSymSet
 		print "  case $v: return ${name}_${v}_sym;\n";
 	    }
 	    if ($char) {
-		print "  default: return ((v >= 0) && (v <= 255)) ? scheme_make_character(v) : scheme_make_character(0);\n";
+		print "  default: return scheme_make_char_or_nul(v);\n";
 	    } else {
 		print "  default: return NULL;\n";
 	    }

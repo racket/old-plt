@@ -69,14 +69,16 @@
 
 @ "get-font-id" : int GetFontId();
 
+@ "screen-glyph-exists?" : bool ScreenGlyphAvailable(mzchar)
+
 @END
 
 @CLASSBASE wxFontList "font-list":"object"
 
 @CREATOR ();
 
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> family id
-@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style],SYM[weight],bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> font name
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],SYM[family],SYM[style]=wxNORMAL,SYM[weight]=wxNORMAL,bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> family id
+@ "find-or-create-font" : wxFont! FindOrCreateFont(rint[1|255],cstring,SYM[family],SYM[style]=wxNORMAL,SYM[weight]=wxNORMAL,bool=0,SYM[smoothing]=wxSMOOTHING_DEFAULT,bool=0) <> font name
 
 @END
 

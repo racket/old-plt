@@ -60,6 +60,7 @@
 
 #ifdef WX_USE_XFT
 #include <X11/Xft/Xft.h>
+extern char **wxGetCompleteFaceList(int *_len);
 #endif
 
 #ifdef wx_mac
@@ -1153,40 +1154,18 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
      front. */
 #ifdef WX_USE_XFT
   {
-    XftFontSet *fs;
-    int i, len, ssize;
-    char *s, *copy, buf[256];
+    char **fl;
+    int len, i;
 
-    if (mono_only) {
-      fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), 
-			XFT_SPACING, XftTypeInteger, XFT_MONO,
-			NULL, 
-			XFT_FAMILY, NULL);
-    } else
-      fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), NULL, XFT_FAMILY, NULL);
+    fl = wxGetCompleteFaceList(&len);
 
-    for (i = 0; i < fs->nfont; i++) {
-      s = buf;
-      ssize = 256;
-      do {
-	if (XftNameUnparse(fs->fonts[i], s, ssize))
-	  break;
-	ssize *= 2;
-	s = new WXGC_ATOMIC char[ssize];
-      } while (1);
-      /* Add a space at the fton to indicate "Xft" */
-      len = strlen(s);
-      copy = new WXGC_ATOMIC char[len + 2];
-      memcpy(copy + 1, s, len + 1);
-      copy[0] = ' ';
-      first = scheme_make_pair(scheme_make_sized_utf8_string(copy, len + 1), first);
+    for (i = 0; i < len; i++) {
+      first = scheme_make_pair(scheme_make_utf8_string(fl[i]), first);
     }
 
     first = scheme_make_pair(scheme_make_utf8_string(" Sans"), first);
     first = scheme_make_pair(scheme_make_utf8_string(" Serif"), first);
     first = scheme_make_pair(scheme_make_utf8_string(" Monospace"), first);
-
-    XftFontSetDestroy(fs);
   }
 #endif
 

@@ -1542,8 +1542,8 @@ long scheme_get_char_string(const char *who,
 	read_string_byte_buffer = s;
 	return total_got;
       }
-      offset += glen;
-      size -= glen;
+      offset += ulen;
+      size -= ulen;
       leftover = (got + leftover) - ulen;
       if (leftover)
 	memmove(s, s + ulen, leftover);
@@ -2425,6 +2425,54 @@ Scheme_Object *scheme_file_identity(int argc, Scheme_Object *argv[])
   return scheme_get_fd_identity(p, fd);
 }
 
+Scheme_Object *scheme_terminal_port_p(int argc, Scheme_Object *argv[])
+{
+  long fd = 0;
+  int fd_ok = 0;
+  Scheme_Object *p;
+
+  p = argv[0];
+
+  if (SCHEME_INPORTP(p)) {
+    Scheme_Input_Port *ip = (Scheme_Input_Port *)p;
+
+    if (ip->closed)
+      return scheme_false;
+
+    if (SAME_OBJ(ip->sub_type, file_input_port_type)) {
+      fd = MSC_IZE(fileno)((FILE *)((Scheme_Input_File *)ip->port_data)->f);
+      fd_ok = 1;
+    }
+#ifdef MZ_FDS
+    else if (SAME_OBJ(ip->sub_type, fd_input_port_type)) {
+      fd = ((Scheme_FD *)ip->port_data)->fd;
+      fd_ok = 1;
+    }
+#endif
+  } else if (SCHEME_OUTPORTP(p)) {
+    Scheme_Output_Port *op = (Scheme_Output_Port *)p;
+
+    if (op->closed)
+      return scheme_false;
+
+    if (SAME_OBJ(op->sub_type, file_output_port_type))  {
+      fd = MSC_IZE (fileno)((FILE *)((Scheme_Output_File *)op->port_data)->f);
+      fd_ok = 1;
+    }
+#ifdef MZ_FDS
+    else if (SAME_OBJ(op->sub_type, fd_output_port_type))  {
+      fd = ((Scheme_FD *)op->port_data)->fd;
+      fd_ok = 1;
+    }
+#endif
+  }
+
+  if (!fd_ok)
+    return scheme_false;
+
+  return isatty(fd) ? scheme_true : scheme_false;
+}
+
 static void filename_exn(char *name, char *msg, char *filename, int err)
 {
   char *dir, *drive;
@@ -2449,7 +2497,7 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
   post = dir ? "\"" : "";
 
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-		   scheme_make_byte_string(filename),
+		   scheme_make_path(filename),
 		   fail_err_symbol,
 		   "%s: %s: \"%q\"%s%q%s (" FILENAME_EXN_E ")",
 		   name, msg, filename,
@@ -5603,9 +5651,10 @@ static long mz_spawnv(char *command, const char * const *argv,
   else
     cr_flag = 0;
 
-  if (CreateProcess(command, cmdline, NULL, NULL, 1 /*inherit*/,
-		    cr_flag, NULL, NULL,
-		    &startup, &info)) {
+  if (CreateProcessW(WIDE_STRING_COPY(command), WDIE_STRING_COPY(cmdline), 
+		     NULL, NULL, 1 /*inherit*/,
+		     cr_flag, NULL, NULL,
+		     &startup, &info)) {
     CloseHandle(info.hThread);
     *pid = info.dwProcessId;
     return (long)info.hProcess;
@@ -5744,9 +5793,13 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
   if ((c == 6) && SAME_OBJ(args[4], exact_symbol)) {
     argv[2] = NULL;
-    if (!SCHEME_BYTE_STRINGP(args[5]) || scheme_byte_string_has_null(args[5]))
-      scheme_wrong_type(name, BYTE_STRING_W_NO_NULLS, 5, c, args);
-    argv[1] = SCHEME_BYTE_STR_VAL(args[5]);
+    if (!SCHEME_CHAR_STRINGP(args[5]) || scheme_any_string_has_null(args[5]))
+      scheme_wrong_type(name, CHAR_STRING_W_NO_NULLS, 5, c, args);
+    {
+      Scheme_Object *bs;
+      bs = scheme_char_string_to_byte_string(args[5]);
+      argv[1] = SCHEME_BYTE_STR_VAL(bs);
+    }
 #ifdef WINDOWS_PROCESSES
     exact_cmdline = 1;
 #else
@@ -5757,9 +5810,13 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #endif
   } else {
     for (i = 4; i < c; i++) {
-      if (!SCHEME_BYTE_STRINGP(args[i]) || scheme_byte_string_has_null(args[i]))
-	scheme_wrong_type(name, BYTE_STRING_W_NO_NULLS, i, c, args);
-      argv[i - 3] = SCHEME_BYTE_STR_VAL(args[i]);
+      if (!SCHEME_CHAR_STRINGP(args[i]) || scheme_any_string_has_null(args[i]))
+	scheme_wrong_type(name, CHAR_STRING_W_NO_NULLS, i, c, args);
+      {
+	Scheme_Object *bs;
+	bs = scheme_char_string_to_byte_string_locale(args[i]);
+	argv[i - 3] = SCHEME_BYTE_STR_VAL(bs);
+      }
     }
     argv[c - 3] = NULL;
   }
@@ -5950,7 +6007,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       }
 
       /* Set real CWD */
-      scheme_os_setcwd(SCHEME_BYTE_STR_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);
+      scheme_os_setcwd(SCHEME_PATH_VAL(scheme_get_param(scheme_config, MZCONFIG_CURRENT_DIRECTORY)), 0);
 
       /* Exec new process */
 
@@ -6067,11 +6124,11 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 	Scheme_Object *bs;
 	if (!SCHEME_PATH_STRINGP(args[3]))
 	  scheme_wrong_type(name, SCHEME_PATH_STRING_STR, 3, c, args);
-	if (SCHEME_BYTE_STRINGP(args[3]))
+	if (SCHEME_PATHP(args[3]))
 	  bs = args[3];
 	else
-	  bs = scheme_char_string_to_byte_string(args[3]);
-	if (strcmp(SCHEME_STR_VAL(bs), "by-id"))
+	  bs = scheme_char_string_to_path(args[3]);
+	if (strcmp(SCHEME_PATH_VAL(bs), "by-id"))
 	  scheme_arg_mismatch(name,
 			      "in five-argument mode on this platform, the 4th argument must be \"by-id\": ",
 			      args[3]);

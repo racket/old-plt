@@ -1178,7 +1178,7 @@ char *objscheme_unbundle_nullable_write_pathname(Scheme_Object *obj, const char 
     
 }
 
-char objscheme_unbundle_char(Scheme_Object *obj, const char *where)
+mzchar objscheme_unbundle_char(Scheme_Object *obj, const char *where)
 {
   (void)objscheme_istype_char(obj, where);
   return SCHEME_CHAR_VAL(obj);

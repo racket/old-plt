@@ -2780,11 +2780,15 @@
 
   (define -re:suffix (byte-regexp #"([.][^.]*|)$"))  
   (define (path-replace-suffix s sfx)
-    (unless (path? s)
-      (raise-type-error 'path-replace-suffix "path" 0 s sfx))
+    (unless (path-string? s)
+      (raise-type-error 'path-replace-suffix "path or valid-path string" 0 s sfx))
     (unless (bytes? sfx)
       (raise-type-error 'path-replace-suffix "bytes" 1 s sfx))
-    (bytes->path (regexp-replace -re:suffix (path->bytes s) sfx)))
+    (bytes->path (regexp-replace -re:suffix 
+				 (path->bytes (if (string? s)
+						  (string->path s)
+						  s))
+				 sfx)))
   
   (define rationalize
     (letrec ([check (lambda (x) 
@@ -2903,8 +2907,9 @@
 	(unless (or (bytes? s)
 		    (string? s))
 	  (raise-type-error 'path-list-string->path-list "byte string or string" s))
-	(unless (list? default)
-	  (raise-type-error 'path-list-string->path-list "list" default))
+	(unless (and (list? default)
+		     (andmap path? default))
+	  (raise-type-error 'path-list-string->path-list "list of paths" default))
 	(let loop ([s (if (string? s)
 			  (string->bytes/utf-8 s)
 			  s)])
@@ -2924,7 +2929,7 @@
 		(lambda (exec-name)
                   (if libpath
 		      (let-values ([(base name isdir?) (split-path exec-name)])
-			(if (bytes? base)
+			(if (path? base)
 			    (let ([lib (build-path base libpath)])
 			      (if (or (directory-exists? lib) 
 				      (file-exists? lib))
@@ -2940,7 +2945,7 @@
 	(if (and (relative-path? program)
 		 (let-values ([(base name dir?) (split-path program)])
 		   (eq? base 'relative)))
-	    (let ([paths-str (getenv #"PATH")]
+	    (let ([paths-str (getenv "PATH")]
 		  [win-add (lambda (s) (if (eq? (system-type) 'windows) 
 					   (cons (bytes->path #".") s) 
 					   s))])
@@ -3184,7 +3189,8 @@
 		    [(eq? (car s) 'file)
 		     (and (= (length s) 2)
 			  (let ([p (cadr s)])
-			    (and (path-string? p)
+			    (and (string? p)
+				 (path-string? p)
 				 (path->complete-path p (get-dir)))))]
 		    [else #f])])
 	      (unless (path? filename)
@@ -3275,7 +3281,7 @@
     
   (define (find-library-collection-paths)
     (path-list-string->path-list
-     (or (getenv #"PLTCOLLECTS") #"")
+     (or (getenv "PLTCOLLECTS") "")
      (cons
       (build-path (find-system-path 'addon-dir)
 		  (version)
@@ -3283,8 +3289,8 @@
       (or (ormap
 	   (lambda (f) (let ([p (f)]) (and p (directory-exists? p) (list (simplify-path p)))))
 	   (list
-	    (lambda () (let ((v (getenv #"PLTHOME")))
-			 (and v (build-path (bytes->path v) "collects"))))
+	    (lambda () (let ((v (getenv "PLTHOME")))
+			 (and v (build-path v "collects"))))
 	    (lambda () (find-executable-path (find-system-path 'exec-file) "collects"))
 	    ;; When binary is in bin/ subdir:
 	    (lambda () (find-executable-path (find-system-path 'exec-file) (build-path 'up "collects")))

@@ -251,6 +251,7 @@ static Scheme_Object *bundle_symset_smoothing(int v) {
 
 
 
+
 class os_wxFont : public wxFont {
  public:
 
@@ -301,6 +302,29 @@ CONSTRUCTOR_INIT(: wxFont(x0, x1, x2, x3, x4, x5, x6, x7))
 os_wxFont::~os_wxFont()
 {
     objscheme_destroy(this, (Scheme_Object *) __gc_external);
+}
+
+static Scheme_Object *os_wxFontScreenGlyphAvailable(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxFont_class, "screen-glyph-exists? in font%", n, p);
+  mzchar x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "screen-glyph-exists? in font%"));
+
+  
+  r = WITH_VAR_STACK(((wxFont *)((Scheme_Class_Object *)p[0])->primdata)->ScreenGlyphAvailable(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxFontGetFontId(int n,  Scheme_Object *p[])
@@ -619,8 +643,9 @@ void objscheme_setup_wxFont(Scheme_Env *env)
 
   wxREGGLOB(os_wxFont_class);
 
-  os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", (Scheme_Method_Prim *)os_wxFont_ConstructScheme, 9));
+  os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", (Scheme_Method_Prim *)os_wxFont_ConstructScheme, 10));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "screen-glyph-exists?" " method", (Scheme_Method_Prim *)os_wxFontScreenGlyphAvailable, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id" " method", (Scheme_Method_Prim *)os_wxFontGetFontId, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-size-in-pixels" " method", (Scheme_Method_Prim *)os_wxFontGetSizeInPixels, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxFontGetUnderlined, 0, 0));
@@ -752,12 +777,18 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
     VAR_STACK_PUSH(1, r);
 
     
-    if ((n < (POFFSET+4)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (family id case)", POFFSET+4, POFFSET+7, n, p, 1));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+7))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (family id case)", POFFSET+2, POFFSET+7, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "find-or-create-font in font-list% (family id case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+1], "find-or-create-font in font-list% (family id case)"));
-    x2 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+2], "find-or-create-font in font-list% (family id case)"));
-    x3 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+3], "find-or-create-font in font-list% (family id case)"));
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+2], "find-or-create-font in font-list% (family id case)"));
+    } else
+      x2 = wxNORMAL;
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+3], "find-or-create-font in font-list% (family id case)"));
+    } else
+      x3 = wxNORMAL;
     if (n > (POFFSET+4)) {
       x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "find-or-create-font in font-list% (family id case)"));
     } else
@@ -793,13 +824,19 @@ static Scheme_Object *os_wxFontListFindOrCreateFont(int n,  Scheme_Object *p[])
     VAR_STACK_PUSH(2, x1);
 
     
-    if ((n < (POFFSET+5)) || (n > (POFFSET+8))) 
-      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (font name case)", POFFSET+5, POFFSET+8, n, p, 1));
+    if ((n < (POFFSET+3)) || (n > (POFFSET+8))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("find-or-create-font in font-list% (font name case)", POFFSET+3, POFFSET+8, n, p, 1));
     x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 255, "find-or-create-font in font-list% (font name case)"));
     x1 = (cstring)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "find-or-create-font in font-list% (font name case)"));
     x2 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+2], "find-or-create-font in font-list% (font name case)"));
-    x3 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+3], "find-or-create-font in font-list% (font name case)"));
-    x4 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+4], "find-or-create-font in font-list% (font name case)"));
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+3], "find-or-create-font in font-list% (font name case)"));
+    } else
+      x3 = wxNORMAL;
+    if (n > (POFFSET+4)) {
+      x4 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+4], "find-or-create-font in font-list% (font name case)"));
+    } else
+      x4 = wxNORMAL;
     if (n > (POFFSET+5)) {
       x5 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+5], "find-or-create-font in font-list% (font name case)"));
     } else
@@ -863,7 +900,7 @@ void objscheme_setup_wxFontList(Scheme_Env *env)
 
   os_wxFontList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font-list%", "object%", (Scheme_Method_Prim *)os_wxFontList_ConstructScheme, 1));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font" " method", (Scheme_Method_Prim *)os_wxFontListFindOrCreateFont, 4, 8));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFontList_class, "find-or-create-font" " method", (Scheme_Method_Prim *)os_wxFontListFindOrCreateFont, 2, 8));
 
 
   WITH_VAR_STACK(scheme_made_class(os_wxFontList_class));

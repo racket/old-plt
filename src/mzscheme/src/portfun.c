@@ -235,6 +235,11 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "file-stream-port?", 
 						      1, 1, 1), 
 			     env);
+  scheme_add_global_constant("terminal-port?", 
+			     scheme_make_folding_prim(scheme_terminal_port_p, 
+						      "terminal-port?", 
+						      1, 1, 1), 
+			     env);
   
   scheme_add_global_constant("current-input-port", 
 			     scheme_register_parameter(current_input_port,
@@ -1360,7 +1365,7 @@ static long pipe_get_or_peek_bytes(Scheme_Input_Port *p,
 
       /* Copy it */
       memcpy(buffer + offset, pipe->buf + bs, n);
-
+      
       /* Fix up indices */
       bs += n;
       if (bs == pipe->buflen)

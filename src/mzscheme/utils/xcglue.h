@@ -147,7 +147,7 @@ char *objscheme_unbundle_epathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_epathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_xpathname(Scheme_Object *, const char *);
 char *objscheme_unbundle_nullable_xpathname(Scheme_Object *, const char *);
-char objscheme_unbundle_char(Scheme_Object *, const char *);
+mzchar objscheme_unbundle_char(Scheme_Object *, const char *);
 
 #define objscheme_bundle_integer scheme_make_integer
 #define objscheme_bundle_long objscheme_bundle_integer

@@ -50,18 +50,72 @@ char *wx_font_spec [] = {
 };
 
 // local function prototypes
-static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float scale_y,
+static XFontStruct *wxLoadQueryNearestFont(const char *main_screen_name,
+					   int point_size, float scale_x, float scale_y,
 					   int fontid, int family,
 					   int style, int weight, 
 					   Bool underlined, Bool size_in_pixels,
 					   float angle);
 #ifdef WX_USE_XFT
-static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, float scale_x, float scale_y,
+static wxFontStruct *wxLoadQueryNearestAAFont(const char *main_screen_name,
+					      int point_size, float scale_x, float scale_y,
 					      int fontid, int family,
 					      int style, int weight, 
 					      Bool underlined, int smoothing, 
 					      Bool size_in_pixels,
 					      float angle);
+#endif
+
+//-----------------------------------------------------------------------------
+// Face list for substitutions
+//-----------------------------------------------------------------------------
+
+#ifdef WX_USE_XFT
+
+XftFontSet *fs;
+
+static int complete_face_list_size;
+static char **complete_face_list;
+
+char **wxGetCompleteFaceList(int *_len)
+{
+  char buf[256], *s, *copy;
+  int ssize, i, len;
+
+  if (complete_face_list) {
+    if (_len)
+      *_len = complete_face_list_size;
+    return complete_face_list;
+  }
+
+  fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), NULL, XFT_FAMILY, NULL);
+
+  complete_face_list_size = fs->nfont;
+  wxREGGLOB(complete_face_list);
+  complete_face_list = new char*[complete_face_list_size];
+
+  for (i = 0; i < fs->nfont; i++) {
+    s = buf;
+    ssize = 256;
+    do {
+      if (XftNameUnparse(fs->fonts[i], s, ssize))
+	break;
+      ssize *= 2;
+      s = new WXGC_ATOMIC char[ssize];
+    } while (1);
+
+    /* Add a space at the fton to indicate "Xft" */
+    len = strlen(s);
+    copy = new WXGC_ATOMIC char[len + 2];
+    memcpy(copy + 1, s, len + 1);
+    copy[0] = ' ';
+    complete_face_list[i] = copy;
+  }
+  XftFontSetDestroy(fs);
+
+  return wxGetCompleteFaceList(_len);
+}
+
 #endif
 
 //-----------------------------------------------------------------------------
@@ -126,6 +180,8 @@ void wxFont::InitFont(void)
   sl = new wxList(wxKEY_STRING, FALSE);
   scaled_xft_fonts = sl;
 #endif
+
+  main_screen_name = wxTheFontNameDirectory->GetScreenName(font_id, weight, style);
 }
 
 wxFont::~wxFont(void)
@@ -196,6 +252,66 @@ char *wxFont::GetFaceString(void)
   }
 }
 
+Bool wxFont::ScreenGlyphAvailable(int c)
+{
+  XFontStruct *fontinfo;
+#ifdef WX_USE_XFT
+  wxFontStruct *xfontinfo;
+#endif
+  unsigned int byte1, byte2;
+  int char_metric_offset;
+
+#ifdef WX_USE_XFT
+  xfontinfo = (wxFontStruct*)GetInternalAAFont(1.0, 1.0);
+  if (xfontinfo)
+    fontinfo = NULL;
+  else
+#endif
+    fontinfo = (XFontStruct*)GetInternalFont(1.0, 1.0);
+
+# ifdef WX_USE_XFT
+  if (xfontinfo) {
+    int index = 1;
+    while (1) {
+      if (XftGlyphExists(wxAPP_DISPLAY, xfontinfo, c))
+	return TRUE;
+      
+      xfontinfo = (wxFontStruct*)GetNextAASubstitution(index++, 1.0, 1.0, 0.0);
+      if (!xfontinfo)
+	return FALSE;
+    }
+  }
+#endif
+
+  byte2 = c & 0xff;
+  byte1 = c >> 8;
+
+  if ((byte1 < fontinfo->min_byte1) 
+      || (byte1 > fontinfo->max_byte1))
+    return FALSE;
+
+  if ((byte2 < fontinfo->min_char_or_byte2) 
+      || (byte2 > fontinfo->max_char_or_byte2)) {
+    return FALSE;
+  }
+
+  if (fontinfo->all_chars_exist
+      || !fontinfo->per_char)
+    return TRUE;
+
+  char_metric_offset = ((byte1 - fontinfo->min_byte1)
+			* (fontinfo->max_char_or_byte2 - fontinfo->min_char_or_byte2 + 1)
+			- fontinfo->min_char_or_byte2
+			+ byte2);
+
+  if (!fontinfo->per_char[char_metric_offset].width
+      && !fontinfo->per_char[char_metric_offset].ascent
+      && !fontinfo->per_char[char_metric_offset].descent)
+    return FALSE;
+  
+  return TRUE;
+}
+
 //-----------------------------------------------------------------------------
 // rotation
 //-----------------------------------------------------------------------------
@@ -257,7 +373,8 @@ void *wxFont::GetInternalFont(float scale_x, float scale_y, float angle)
   if ((node = scaled_xfonts->Find(sbuf))) {
     xfont = (XFontStruct*)node->Data();
   } else {
-    xfont = wxLoadQueryNearestFont(point_size, scale_x, scale_y, 
+    xfont = wxLoadQueryNearestFont(main_screen_name,
+				   point_size, scale_x, scale_y, 
 				   font_id, family, style, weight,
 				   underlined, size_in_pixels, angle);
     scaled_xfonts->Append(sbuf, (wxObject*)xfont);
@@ -290,7 +407,8 @@ void *wxFont::GetInternalAAFont(float scale_x, float scale_y, float angle)
     if ((node = scaled_xft_fonts->Find(sbuf))) {
       xft_font = (wxFontStruct*)node->Data();
     } else {
-      xft_font = wxLoadQueryNearestAAFont(point_size, scale_x, scale_y, 
+      xft_font = wxLoadQueryNearestAAFont(main_screen_name,
+					  point_size, scale_x, scale_y, 
 					  font_id, family, style, weight,
 					  underlined, smoothing, size_in_pixels, angle);
 
@@ -315,8 +433,9 @@ int wxFont::HasAASubstitutions()
 {
   char *name;
   int i;
-  
-  name = wxTheFontNameDirectory->GetScreenName(font_id, weight, style);
+
+  name = main_screen_name;
+
   if (name[0] == ' ') {
     for (i = 1; name[i]; i++) {
       if (name[i] == ',')
@@ -345,7 +464,8 @@ void *wxFont::GetNextAASubstitution(int index, float scale_x, float scale_y, flo
     char *name, *next_name;
     int i, c = 0, len;
     
-    name = wxTheFontNameDirectory->GetScreenName(font_id, weight, style);
+    name = main_screen_name;
+
     for (i = 0; name[i]; i++) {
       if (name[i] == ',') {
 	c++;
@@ -353,14 +473,18 @@ void *wxFont::GetNextAASubstitution(int index, float scale_x, float scale_y, flo
 	  break;
       }
     }
-    if (!name[i])
-      return NULL;
-
-    i++;
-    len = strlen(name XFORM_OK_PLUS i);
-    next_name = new char[len + 2];
-    memcpy(next_name + 1, name + i, len + 1);
-    next_name[0] = ' ';
+    if (!name[i]) {
+      wxGetCompleteFaceList(NULL);
+      if (index - c >= complete_face_list_size)
+	return NULL;
+      next_name = complete_face_list[index - c];
+    } else {
+      i++;
+      len = strlen(name XFORM_OK_PLUS i);
+      next_name = new char[len + 2];
+      memcpy(next_name + 1, name + i, len + 1);
+      next_name[0] = ' ';
+    }
 
     subs = new wxFont(point_size, next_name, family, style, weight,
 		      underlined, smoothing, size_in_pixels);
@@ -449,16 +573,14 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, const char *Face,
 
 #ifdef WX_USE_XFT
 
-static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, float scale_x, float scale_y,
+static wxFontStruct *wxLoadQueryNearestAAFont(const char *name,
+					      int point_size, float scale_x, float scale_y,
 					      int fontid, int family,
 					      int style, int weight,
 					      Bool underlined, int smoothing, Bool sip,
 					      float angle)
 {
-  char *name;
   wxFontStruct *fs;
-
-  name = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
 
   if (name && (name[0] != ' '))
     /* Not an Xft font name */
@@ -548,17 +670,18 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, float scale_x, flo
 
 #endif
 
-static XFontStruct *wxLoadQueryFont(int point_size, float scale_x, float scale_y,
+static XFontStruct *wxLoadQueryFont(const char *name,
+				    int point_size, float scale_x, float scale_y,
 				    int fontid, int style,
 				    int weight, Bool underlined, 
 				    int si_try_again, Bool sip, float angle)
 {
   char *buffer;
-  char *name;
   long len, i, found = 0;
   XFontStruct *s;
 
-  name = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
+  if (!name)
+    name = wxTheFontNameDirectory->GetScreenName(fontid, weight, style);
 
   if (!name)
     name = "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*";
@@ -591,11 +714,11 @@ static XFontStruct *wxLoadQueryFont(int point_size, float scale_x, float scale_y
       char *rename;
       rename = new char[len + 1];
       memcpy(rename, name, len + 1);
+      rename[found-3] = '%';
+      rename[found-2] = 'd';
+      rename[found-1] = '-';
+      rename[found] = '*';
       name = rename;
-      name[found-3] = '%';
-      name[found-2] = 'd';
-      name[found-1] = '-';
-      name[found] = '*';
     } else
       sip = 0;
   } else
@@ -644,7 +767,7 @@ static XFontStruct *wxLoadQueryFont(int point_size, float scale_x, float scale_y
 
   if (!s && si_try_again && ((style == wxSLANT) || (style == wxITALIC))) {
     /* Try slant/italic instead of italic/slant: */
-    s = wxLoadQueryFont(point_size, scale_x, scale_y, 
+    s = wxLoadQueryFont(NULL, point_size, scale_x, scale_y, 
 			fontid, (style == wxSLANT) ? wxITALIC : wxSLANT, 
 			weight, underlined, 
 			0, sip, angle);
@@ -653,7 +776,8 @@ static XFontStruct *wxLoadQueryFont(int point_size, float scale_x, float scale_y
   return s;
 }
 
-static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float scale_y,
+static XFontStruct *wxLoadQueryNearestFont(const char *name,
+					   int point_size, float scale_x, float scale_y,
 					   int fontid, int family,
 					   int style, int weight,
 					   Bool underlined, Bool sip, float angle)
@@ -663,7 +787,7 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float 
 
   while (1) {
 
-    font = wxLoadQueryFont(point_size, scale_x, scale_y, 
+    font = wxLoadQueryFont(name, point_size, scale_x, scale_y, 
 			   fontid, style, weight, underlined, 
 			   1, sip, angle);
 
@@ -674,27 +798,27 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, float scale_x, float 
       int i;
 
       // Try plain style
-      font = wxLoadQueryFont(point_size, scale_x, scale_y, 
+      font = wxLoadQueryFont(NULL, point_size, scale_x, scale_y, 
 			     fontid, wxNORMAL, wxNORMAL_WEIGHT, underlined, 
 			     1, sip, angle);
 
       // Search for smaller size (approx.)
       for (i=point_size-1; !font && i >= 1 && i >= min_size; i -= 1) {
-	font = wxLoadQueryFont(i, scale_x, scale_y,
+	font = wxLoadQueryFont(name, i, scale_x, scale_y,
 			       fontid, style, weight, underlined, 
 			       1, sip, angle);
 	if (!font)
-	  font = wxLoadQueryFont(i, scale_x, scale_y, fontid,
+	  font = wxLoadQueryFont(NULL, i, scale_x, scale_y, fontid,
 				 wxNORMAL, wxNORMAL_WEIGHT, underlined, 
 				 1, sip, angle);
       }
       // Search for larger size (approx.)
       for (i=point_size+1; !font && i <= max_size; i += 1) {
-	font = wxLoadQueryFont(i, scale_x, scale_y, 
+	font = wxLoadQueryFont(name, i, scale_x, scale_y, 
 			       fontid, style, weight, underlined, 
 			       1, sip, angle);
 	if (!font)
-	  font = wxLoadQueryFont(i, scale_x, scale_y, 
+	  font = wxLoadQueryFont(NULL, i, scale_x, scale_y, 
 				 fontid,  wxNORMAL, wxNORMAL_WEIGHT, underlined, 
 				 1, sip, angle);
       }

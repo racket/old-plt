@@ -1453,7 +1453,7 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
   case WXK_WHEEL_DOWN: return keyCode_WXK_WHEEL_DOWN_sym;
   case WXK_PRESS: return keyCode_WXK_PRESS_sym;
   case WXK_RELEASE: return keyCode_WXK_RELEASE_sym;
-  default: return ((v >= 0) && (v <= 255)) ? scheme_make_character(v) : scheme_make_character(0);
+  default: return scheme_make_char_or_nul(v);
   }
 }
 

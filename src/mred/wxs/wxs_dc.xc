@@ -348,6 +348,8 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 @ Q "end-doc" : void EndDoc(); : : /CheckOk[METHODNAME("dc<%>","end-doc-line")]
 @ Q "end-page" : void EndPage(); : : /CheckOk[METHODNAME("dc<%>","end-page")]
 
+@ "glyph-exists?" : bool GlyphAvailable(mzchar,wxFont^=NULL)
+
 @END
 
 @MACRO STRINGENOUGH[who] = if (SCHEME_BYTE_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%",<who>), "byte string too short: ", p[4+POFFSET]));

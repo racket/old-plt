@@ -176,6 +176,7 @@ scheme_make_utf8_string
 scheme_make_sized_utf8_string
 scheme_make_sized_offset_utf8_string
 scheme_make_immutable_sized_utf8_string
+scheme_make_locale_string
 scheme_char_string_to_byte_string
 scheme_byte_string_to_char_string
 scheme_char_string_to_byte_string_locale
@@ -195,6 +196,7 @@ scheme_make_integer_value_from_long_long
 scheme_make_integer_value_from_unsigned_long_long
 scheme_make_double
 scheme_make_char
+scheme_make_char_or_nul
 scheme_make_sema
 scheme_post_sema
 scheme_post_sema_all

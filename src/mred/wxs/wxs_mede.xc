@@ -192,7 +192,7 @@
 @MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_char_string(r, <len>, 0))
 
 @ "get-text" : mzstring/makeNoCopyString[_x4] GetText(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
-@ "get-character" : char GetCharacter(nnlong);
+@ "get-character" : mzchar GetCharacter(nnlong);
 
 @ "read-from-file" : bool ReadFromFile(wxMediaStreamIn!,nnls[start],bool=FALSE); <> with position
 @ "write-to-file" : bool WriteToFile(wxMediaStreamOut!,nnlong,nnls[eof]=-1); <> with position

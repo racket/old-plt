@@ -64,6 +64,8 @@ public:
     int   GetSmoothing(void)     { return smoothing; }
     int   GetSizeInPixels(void)  { return size_in_pixels; }
 
+    Bool  ScreenGlyphAvailable(int c);
+
     wxFont *GetRotated(float angle);
     int CanRotate();
 
@@ -88,6 +90,7 @@ private:
     int    font_id;
     int    smoothing;
     float  rotation;
+    char   *main_screen_name;
 };
 
 class wxFontList : public wxObject {

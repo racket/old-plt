@@ -1679,67 +1679,67 @@
                 (set! prompt-position (combine prompt-position len)))))
           
           (define resetting? #f)
-          [define set-resetting (lambda (v) (set! resetting? v))]
+          (define set-resetting (lambda (v) (set! resetting? v)))
           
-          [define can-insert?
+          (define can-insert?
             (lambda (start len)
-              (can-something super-can-insert? start len))]
-          [define can-delete?
+              (can-something super-can-insert? start len)))
+          (define can-delete?
             (lambda (start len)
-              (can-something super-can-delete? start len))]
-          [define can-change-style?
+              (can-something super-can-delete? start len)))
+          (define can-change-style?
             (lambda (start len)
-              (can-something super-can-change-style? start len))]
-          [define after-insert
+              (can-something super-can-change-style? start len)))
+          (define after-insert
             (lambda (start len)
               (after-something + start len)
-              (super-after-insert start len))]
-          [define after-delete
+              (super-after-insert start len)))
+          (define after-delete
             (lambda (start len)
               (after-something - start len)
-              (super-after-delete start len))]
-          [define after-change-style
+              (super-after-delete start len)))
+          (define after-change-style
             (lambda (start len)
               (after-something (lambda (start len) start) start len)
-              (super-after-change-style start len))]
-          [define on-edit-sequence
+              (super-after-change-style start len)))
+          (define on-edit-sequence
             (lambda ()
-              (super-on-edit-sequence))]
-          [define after-edit-sequence
+              (super-on-edit-sequence)))
+          (define after-edit-sequence
             (lambda ()
-              (super-after-edit-sequence))]
-          [define after-set-position
+              (super-after-edit-sequence)))
+          (define after-set-position
             (lambda ()
-              (super-after-set-position))]
+              (super-after-set-position)))
           
-          [define last-str (lambda (l)
+          (define last-str (lambda (l)
                              (if (null? (cdr l))
                                  (car l)
-                                 (last-str (cdr l))))]
+                                 (last-str (cdr l)))))
           
-          [define prompt-mode? #f]
-          [define set-prompt-mode (lambda (x) (set! prompt-mode? x))]
-          [define get-prompt (lambda () "> ")]
-          [define prompt-position 0]
-          [define set-prompt-position (lambda (v) (set! prompt-position v))]
-          [define find-prompt 
+          (define prompt-mode? #f)
+          (define set-prompt-mode (lambda (x) (set! prompt-mode? x)))
+          (define get-prompt (lambda () "> "))
+          (define prompt-position 0)
+          (define set-prompt-position (lambda (v) (set! prompt-position v)))
+          (define find-prompt 
             (lambda (pos) 
               (if (> pos prompt-position)
                   prompt-position
-                  0))]
-          [define auto-save? #f]
-          [define balance-required
+                  0)))
+          (define auto-save? #f)
+          (define balance-required
             (let ([v #t])
               (case-lambda
                [() v]
-               [(x) (set! v x)]))]
+               [(x) (set! v x)])))
           
-          [define previous-expr-pos -1]
-          [define previous-expr-positions null]
-          [define clear-previous-expr-positions
+          (define previous-expr-pos -1)
+          (define previous-expr-positions null)
+          (define clear-previous-expr-positions
             (lambda ()
-              (set! previous-expr-positions null))]
-          [define copy-previous-expr
+              (set! previous-expr-positions null)))
+          (define copy-previous-expr
             (lambda ()
               (let ([snip/strings (list-ref (fw:preferences:get
                                              'mred:console-previous-exprs) 
@@ -1755,8 +1755,8 @@
                                     prompt-position))
                           snip/strings)
                 (set-position (last-position))
-                (end-edit-sequence)))]
-          [define copy-next-previous-expr
+                (end-edit-sequence))))
+          (define copy-next-previous-expr
             (lambda ()
               (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
                 (unless (null? previous-exprs)
@@ -1764,8 +1764,8 @@
                         (if (< (add1 previous-expr-pos) (length previous-exprs))
                             (add1 previous-expr-pos)
                             0))
-                  (copy-previous-expr))))]
-          [define copy-prev-previous-expr
+                  (copy-previous-expr)))))
+          (define copy-prev-previous-expr
             (lambda ()
               (let ([previous-exprs (fw:preferences:get 'mred:console-previous-exprs)])
                 (unless (null? previous-exprs)
@@ -1773,9 +1773,9 @@
                         (if (<= previous-expr-pos 0)
                             (sub1 (length previous-exprs))
                             (sub1 previous-expr-pos)))
-                  (copy-previous-expr))))]
+                  (copy-previous-expr)))))
           
-          [define do-save-and-eval
+          (define do-save-and-eval
             (lambda (start end)
               (split-snip start)
               (split-snip end)
@@ -1801,9 +1801,9 @@
                                 (list snips)
                                 (cons (car l) (loop (cdr l))))))])
                   (fw:preferences:set 'mred:console-previous-exprs new-previous-exprs))
-                (do-eval start end)))]
+                (do-eval start end))))
           
-          [define reset-pretty-print-width
+          (define reset-pretty-print-width
             (lambda ()
               (let* ([standard (send (get-style-list) find-named-style "Standard")])
                 (when standard
@@ -1822,18 +1822,18 @@
                            [new-columns (max min-columns 
                                              (floor (/ width char-width)))])
                       (send dc set-font old-font)
-                      (mzlib:pretty-print:pretty-print-columns new-columns))))))]
-          [define do-eval
+                      (mzlib:pretty-print:pretty-print-columns new-columns)))))))
+          (define do-eval
             (lambda (start end)
-              (error 'do-eval "abstract method"))]
-          [define do-pre-eval
+              (error 'do-eval "abstract method")))
+          (define do-pre-eval
             (lambda ()
-              (ready-non-prompt))]
-          [define do-post-eval
+              (ready-non-prompt)))
+          (define do-post-eval
             (lambda ()
-              (insert-prompt))]
+              (insert-prompt)))
           
-          [define only-spaces-after
+          (define only-spaces-after
             (lambda (pos)
               (let ([last (last-position)])
                 (let loop ([pos pos])
@@ -1842,11 +1842,11 @@
                       (let ([c (get-character pos)])
                         (if (char-whitespace? c)
                             (loop (add1 pos))
-                            #f))))))]
+                            #f)))))))
           
-          [define eval-busy? (lambda () #f)]
+          (define eval-busy? (lambda () #f))
           
-          [define on-local-char
+          (define on-local-char
             (lambda (key)
               (let ([start (get-start-position)]
                     [end (get-end-position)]
@@ -1905,10 +1905,10 @@
                            (copy-to-end/set-position match start)
                            (end-edit-sequence))
                          (super-on-local-char key)))]
-                  [else (super-on-local-char key)])))]
+                  [else (super-on-local-char key)]))))
           
-          [define inserting-prompt #f]
-          [define insert-prompt
+          (define inserting-prompt #f)
+          (define insert-prompt
             (lambda ()
               (set! prompt-mode? #t)
               (fluid-let ([inserting-prompt #t])
@@ -1928,11 +1928,11 @@
                   (set! prompt-position (last-position))
                   ;(clear-undos)
                   (end-edit-sequence)
-                  (scroll-to-position start-selection #f (last-position) 'start))))]
-          [define reset-console
+                  (scroll-to-position start-selection #f (last-position) 'start)))))
+          (define reset-console
             (lambda ()
-              (void))]
-          [define ready-non-prompt
+              (void)))
+          (define ready-non-prompt
             (lambda ()
               (when prompt-mode?
                 (set! prompt-mode? #f)
@@ -1941,10 +1941,10 @@
                   (lock #f)
                   (insert #\newline (last-position))
                   (lock c-locked)	   
-                  (end-edit-sequence))))]	  
-          [define initialize-console
+                  (end-edit-sequence)))))	  
+          (define initialize-console
             (lambda ()
-              #t)]
+              #t))
           (apply super-init args)))))
   
   (define make-transparent-io-text%

@@ -109,19 +109,9 @@ A Response is one of the following:
    all the fields are the same as for response/full, except
    - body is a ((string -> void) -> void)
      In other words, body is a function that accepts an output function.
-
- > (make-html-response/incremental body)
-   Is not a response, but a helper functions that supplies default values
-   appropriate for html to make-response/incremental.  For example,
-   the following response pauses 10 seconds between displaying paragraphs.
-
-   (make-html-response/incremental
-    (lambda (output-chunk)
-      (output-chunk "<html><head><title>")
-      (output-chunk "my-title</title></head>\n")
-      (output-chunk "<body><p>The first paragraph</p>\n")
-      (sleep 10)
-      (output-chunk "<p>The second paragraph</p></body></html>\n")))
+     Since each string sent to the browser includes headers for reliable
+     transmission, sending fewer larger strings generates less network
+     traffic.  Also see make-html-response/incremental in the helpers section.
 
 Evaluating (require (lib "servlet-sig.ss" "web-server")) loads
 the servlet^ signature consisting of the following imports:
@@ -198,6 +188,20 @@ provides a few additional functions helpful for constructing servlets:
   pair consisting of the username and password from the headers or #f if no
   password was provided.  This only extracts the provided username and
   password.  The servlet must perform any desired checking.
+
+ > (make-html-response/incremental body)
+   This builds a response/incremental given the same body as the full
+   structure constructor, but with default values for the other fields
+   appropriate for html.  For example, the following response pauses 10
+   seconds between displaying paragraphs.
+
+   (make-html-response/incremental
+    (lambda (output-chunk)
+      (output-chunk "<html><head><title>")
+      (output-chunk "my-title</title></head>\n")
+      (output-chunk "<body><p>The first paragraph</p>\n")
+      (sleep 10)
+      (output-chunk "<p>The second paragraph</p></body></html>\n")))
 
 
 For small example servlets, look in the "examples" directory in

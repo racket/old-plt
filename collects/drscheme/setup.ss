@@ -9,6 +9,7 @@
     (define allow-set!-on-undefined? (case pref
 				       [(advanced) #t]
 				       [else #f]))
+    (define unmatched-cond/case-is-error? #t)
     (define allow-improper-lists? (case pref
 				       [(advanced) #t]
 				       [else #f]))

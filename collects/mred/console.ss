@@ -11,6 +11,7 @@
 	    [mred:gui-utils : mred:gui-utils^]
 	    [mred:scheme-mode : mred:scheme-mode^]
 	    [mred:scheme-paren : mred:scheme-paren^]
+	    [mred:icon : mred:icon^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:string : mzlib:string^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
@@ -69,6 +70,8 @@
 	(class super% args
 	       (inherit begin-edit-sequence
 			end-edit-sequence
+			position-line
+			line-location
 			set-position
 			insert
 			delete
@@ -84,6 +87,7 @@
 			get-canvas
 			get-style-list)
 	       (rename [super-on-local-char on-local-char]
+		       [super-on-paint on-paint]
 		       [super-after-insert after-insert]
 		       [super-after-delete after-delete])
 	       (private old-stdout
@@ -456,14 +460,48 @@
 		   (if (or resetting?
 			   (and prompt-mode? (< start prompt-position)))
 		       (set! prompt-position (- prompt-position len)))
-		   (super-after-delete start len))]
-		[reset-console
+		   (super-after-delete start len))])
+
+	  (private
+	    [reset-console-location #f])
+	  (public
+	    [reset-console
 		 (lambda ()
-		   (set! resetting? #t)
-		   (set! prompt-mode? #f)
-		   (erase)
-		   (set! resetting? #f))]
-		
+		   (let* ([delta (make-object wx:style-delta%)]
+			  [color-add (send delta get-foreground-add)]
+			  [color-mult (send delta get-foreground-mult)]
+			  [last-pos (max 0
+					 (- prompt-position
+					    (string-length (get-prompt))))])
+		     (set! resetting? #t)
+		     (if (< (wx:display-depth) 8)
+			 (begin (set! reset-console-location
+				      (line-location
+				       (position-line prompt-position)
+				       #t))
+				(send (get-canvas) force-redraw))
+			 (begin (send color-mult set 0 0 0)
+				(send color-add set 127 127 127)
+				(change-style delta 0 last-pos)))
+		     (set! resetting? #f)))]		
+		[on-paint
+		 (lambda (before dc left top right bottom dx dy draw-caret)
+		   (super-on-paint before dc left top right bottom dx dy draw-caret)
+		   (when (and (not before) reset-console-location)
+		     (let ([old-pen (send dc get-pen)]
+			   [old-brush (send dc get-brush)]
+			   [pen (make-object wx:pen% "BLACK" 1 wx:const-solid)]
+			   [brush (make-object wx:brush% "BLACK" wx:const-stipple)]
+			   [old-logical (send dc get-logical-function)])
+		       (send brush set-stipple mred:icon:paren-highlight-bitmap)
+		       (send dc set-pen pen)
+		       (send dc set-brush brush)
+		       (send dc set-logical-function wx:const-xor)
+		       (send dc draw-rectangle dx dy right
+			     (+ dx reset-console-location))
+		       (send dc set-pen old-pen)
+		       (send dc set-brush old-brush)
+		       (send dc set-logical-function old-logical))))]
 		[ready-non-prompt
 		 (lambda ()
 		   (when prompt-mode?

@@ -42,8 +42,8 @@
   (drscheme:get/extend:get-interactions-canvas%)
   (drscheme:get/extend:get-definitions-canvas%)
   (drscheme:get/extend:get-unit-frame%)
-  (drscheme:get/extend:get-interactions-edit%)
-  (drscheme:get/extend:get-definitions-edit%)
+  (drscheme:get/extend:get-interactions-text%)
+  (drscheme:get/extend:get-definitions-text%)
 
   ;; the initial window doesn't set the 
   ;; unit object's state correctly, yet.
@@ -51,8 +51,8 @@
     (let* ([frame (drscheme:unit:open-drscheme-window)])
 
       (unless (fw:preferences:get 'drscheme:repl-always-active)
-	(let* ([interactions-edit (ivar frame interactions-edit)]
-	       [definitions-edit (ivar frame interactions-edit)]
+	(let* ([interactions-edit (ivar frame interactions-text)]
+	       [definitions-edit (ivar frame interactions-text)]
 	       [filename (send definitions-edit get-filename)])
 	  (unless filename
 	    (send interactions-edit reset-console)

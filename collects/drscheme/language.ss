@@ -229,7 +229,7 @@
 					       for-each-frame 
 					       (lambda (frame)
 						 (when (is-a? frame drscheme:unit:frame%)
-						   (let ([edit (ivar frame definitions-edit)])
+						   (let ([edit (ivar frame definitions-text)])
 						     (when (is-a? edit mred:editor<%>)
 						       (send edit language-changed))))))
 					 (update-to v)))])

@@ -30,12 +30,12 @@
 	[aries : plt:aries^ ((require-library "ariesr.ss" "cogen")
 			     zodiac
 			     (interface : zodiac:interface^))]
-	[edit : drscheme:edit^ ((require-relative-library "edit.ss") framework aries zodiac)]
+	[text : drscheme:text^ ((require-relative-library "edit.ss") framework aries zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]
 	[export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib framework print-convert app
-				     edit language snip
+				     text language snip
 				     init interface graph
 				     help aries zodiac)]
 	[language : drscheme:language^
@@ -78,7 +78,7 @@
 	  (unit language drscheme:language)
 	  (unit interface drscheme:interface)
 	  (unit zodiac zodiac)
-	  (unit edit drscheme:edit)
+	  (unit text drscheme:text)
 	  (unit snip drscheme:snip)
 	  (unit export* drscheme:export)
 	  (unit tool drscheme:tool)

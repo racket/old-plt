@@ -43,8 +43,8 @@
   (define-values (extend-unit-frame% get-unit-frame%)
     (make-extender drscheme:unit:frame%))
 
-  (define-values (extend-interactions-edit% get-interactions-edit%)
-    (make-extender drscheme:rep:edit%))
+  (define-values (extend-interactions-text% get-interactions-text%)
+    (make-extender drscheme:rep:text%))
 	     
-  (define-values (extend-definitions-edit% get-definitions-edit%)
-    (make-extender drscheme:unit:definitions-edit%)))
+  (define-values (extend-definitions-text% get-definitions-text%)
+    (make-extender drscheme:unit:definitions-text%)))

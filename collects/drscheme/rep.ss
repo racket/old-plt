@@ -12,7 +12,7 @@
 	  [drscheme:app : drscheme:app^]
 	  [drscheme:frame : drscheme:frame^]
 	  [basis : userspace:basis^]
-	  [drscheme:edit : drscheme:edit^]
+	  [drscheme:text : drscheme:text^]
           [help : help:drscheme-interface^])
 
   ;; Max length of output queue (user's thread blocks if the
@@ -28,11 +28,11 @@
   (define setup-scheme-interaction-mode-keymap
     (lambda (keymap)
       (send keymap add-function "put-previous-sexp"
-	    (lambda (edit event) 
-	      (send edit copy-prev-previous-expr)))
+	    (lambda (text event) 
+	      (send text copy-prev-previous-expr)))
       (send keymap add-function "put-next-sexp"
-	    (lambda (edit event) 
-	      (send edit copy-next-previous-expr)))
+	    (lambda (text event) 
+	      (send text copy-next-previous-expr)))
 
       (fw:keymap:send-map-function-meta keymap "p" "put-previous-sexp")
       (fw:keymap:send-map-function-meta keymap "n" "put-next-sexp")))
@@ -124,19 +124,19 @@
     
   (define exception-reporting-rep (make-parameter #f))
 
-  (define (process-edit/zodiac edit f start end annotate?)
+  (define (process-text/zodiac text f start end annotate?)
     (let ([setting (basis:current-setting)])
       (basis:process/zodiac
        (parameterize ([read-case-sensitive (basis:setting-case-sensitive?
 					    setting)])
-	 (zodiac:read (fw:gui-utils:read-snips/chars-from-buffer edit start end)
-		      (zodiac:make-location 0 0 start edit)
+	 (zodiac:read (fw:gui-utils:read-snips/chars-from-buffer text start end)
+		      (zodiac:make-location 0 0 start text)
 		      #t 1))
        f
        annotate?)))
 
-  (define (process-edit/no-zodiac edit f start end)
-    (let* ([buffer-thunk (fw:gui-utils:read-snips/chars-from-buffer edit start end)]
+  (define (process-text/no-zodiac text f start end)
+    (let* ([buffer-thunk (fw:gui-utils:read-snips/chars-from-buffer text start end)]
 	   [snip-string (string->list " 'non-string-snip ")]
 	   [port-thunk (let ([from-snip null])
 			 (rec port-thunk
@@ -267,7 +267,7 @@
   (define error-color (make-object mred:color% "PINK"))
   (define color? (<= 8 (mred:get-display-depth)))
   
-  (define (make-edit% super%)
+  (define (make-text% super%)
     (class super% args
       (inherit insert change-style
 	       clear-undos set-caret-owner
@@ -340,44 +340,44 @@
 
 	(inherit get-admin set-prompt-position get-canvases find-snip)
 	(public
-	  [transparent-edit #f]
+	  [transparent-text #f]
 	  [transparent-snip #f]
 	  [cleanup-transparent-io ; =Kernel=, =Handler=
 	   (lambda ()
-	     (when transparent-edit
+	     (when transparent-text
 	       (set! saved-newline? #f) 
-	       (send transparent-edit shutdown)
+	       (send transparent-text shutdown)
 	       (set-position (last-position))
 	       (set-caret-owner #f)
 	       (let ([a (get-admin)])
 		 (when a
 		   (send a grab-caret)))
-	       (send transparent-edit lock #t)
-	       (set! transparent-edit #f)
+	       (send transparent-text lock #t)
+	       (set! transparent-text #f)
 	       (drop-fetcher)))]
 
 	[init-transparent-io ; =Kernel=, =Handler=
 	 (lambda (grab-focus?)
 	   (begin-edit-sequence)
-	   (if transparent-edit
+	   (if transparent-text
 	       (when grab-focus?
-		 (let ([a (send transparent-edit get-admin)])
+		 (let ([a (send transparent-text get-admin)])
 		   (when a
 		     (send a grab-caret))))
 	       (init-transparent-io-do-work grab-focus?))
 	   (when  (eq? (current-thread) user-thread)
 	     (set-caret-owner transparent-snip 'display))
 	   (end-edit-sequence)
-	   transparent-edit)]
+	   transparent-text)]
 
 	[init-transparent-input ; =Kernel=, =Handler=
 	 (lambda ()
-	   (let ([edit (init-transparent-io #t)])
+	   (let ([text (init-transparent-io #t)])
 	     (mred:yield) ; to flush output and set `saved-newline?'
 	     (when saved-newline?
 	       (this-out-write "")
 	       (mred:yield)) ; flush output again
-	     edit))]
+	     text))]
 
 	[init-transparent-io-do-work  ; =Kernel=, =Handler=
 	 (lambda (grab-focus?)
@@ -385,10 +385,10 @@
 	     (begin-edit-sequence)
 	     (lock #f)
 	     (let ([starting-at-prompt-mode? prompt-mode?])
-	       (set! transparent-edit (make-object transparent-io-edit%))
+	       (set! transparent-text (make-object transparent-io-text%))
 
-	       (send transparent-edit auto-wrap #t)
-	       (send transparent-edit balance-required #f)
+	       (send transparent-text auto-wrap #t)
+	       (send transparent-text balance-required #f)
 
 	       ;; ensure that there is a newline before the snip is inserted
 	       (unless (member 'hard-newline
@@ -398,14 +398,14 @@
 	       (when starting-at-prompt-mode?
 		 (set-prompt-mode #f))
 
-	       (let ([snip (make-object mred:editor-snip% transparent-edit)])
+	       (let ([snip (make-object mred:editor-snip% transparent-text)])
 		 (set! transparent-snip snip)
 		 (insert snip (last-position) (last-position) #f)
 		 (insert (string #\newline) (last-position) (last-position) #f)
 		 (for-each (lambda (c) (send c add-wide-snip snip))
 			   (get-canvases)))
 	       (when grab-focus?
-		 (let ([a (send transparent-edit get-admin)])
+		 (let ([a (send transparent-text get-admin)])
 		   (when a
 		     (send a grab-caret)))))
 	     (lock c-locked?)
@@ -432,8 +432,8 @@
 		       (queue-system-callback
 			ut
 			(lambda () ; =Kernel=, =Handler=
-			  (let ([edit (init-transparent-input)])
-			    (set! char-fetched (send edit fetch-char)))
+			  (let ([text (init-transparent-input)])
+			    (set! char-fetched (send text fetch-char)))
 			  (semaphore-post char-fetched-sema))))
 		     ; Wait for a char, allow breaks:
 		     (with-handlers ([void (lambda (x)
@@ -479,8 +479,8 @@
 		  (queue-system-callback
 		   ut
 		   (lambda () ; =Kernel=, =Handler=
-		     (let ([edit (init-transparent-input)])
-		       (set! answer (send edit check-char-ready?)))
+		     (let ([text (init-transparent-input)])
+		       (set! answer (send text check-char-ready?)))
 		     (semaphore-post s)))
 		  ; enable-break in case the thread dies and the callback never 
 		  ;  happens:
@@ -517,7 +517,7 @@
 
 	  [io-semaphore (make-semaphore 1)]
 	  [io-collected-thunks null] ; protected by semaphore
-	  [io-collected-edits null] ; always set in the kernel's handler thread
+	  [io-collected-texts null] ; always set in the kernel's handler thread
 	  [run-io-collected-thunks ; =Kernel=, =Handler=
 	   (lambda ()
 	     ;; also need to start edit-sequence in any affected
@@ -530,12 +530,12 @@
 	       (begin-edit-sequence)
 	       (for-each (lambda (t) (semaphore-post limiting-sema) (t))
 			 (reverse io-thunks))
-	       (for-each (lambda (e) (send e end-edit-sequence)) io-collected-edits)
+	       (for-each (lambda (e) (send e end-edit-sequence)) io-collected-texts)
 	       (unless (null? io-thunks)
 		 (scroll-to-position (last-position)))
 	       (end-edit-sequence)
 	       
-	       (set! io-collected-edits null)))]
+	       (set! io-collected-texts null)))]
 
 	  [wait-for-io-to-complete ; =Kernel=, =Handler=
 	   (lambda ()
@@ -576,36 +576,36 @@
 
 	(public
 	  [generic-write ; =Kernel=, =Handler=
-	   (lambda (edit s style-func)
+	   (lambda (text s style-func)
 	     
-	     (let ([add-edit
-		    (lambda (edit)
-		      (unless (or (eq? this edit)
-				  (member edit io-collected-edits))
-			(set! io-collected-edits (cons edit io-collected-edits))
-			(send edit begin-edit-sequence)))])
-	       (add-edit edit))
+	     (let ([add-text
+		    (lambda (text)
+		      (unless (or (eq? this text)
+				  (member text io-collected-texts))
+			(set! io-collected-texts (cons text io-collected-texts))
+			(send text begin-edit-sequence)))])
+	       (add-text text))
 	     
 	     (when prompt-mode?
 	       (insert (string #\newline) (last-position) (last-position) #f)
 	       (set-prompt-mode #f))
 
-	     (let* ([start (send edit last-position)]
-		    [c-locked? (send edit locked?)])
-	       (send edit begin-edit-sequence)
-	       (send edit lock #f)
-	       (send edit insert
+	     (let* ([start (send text last-position)]
+		    [c-locked? (send text locked?)])
+	       (send text begin-edit-sequence)
+	       (send text lock #f)
+	       (send text insert
 		     (if (is-a? s mred:original:snip%)
 			 (send s copy)
 			 s)
 		     start
 		     start
 		     #t)
-	       (let ([end (send edit last-position)])
+	       (let ([end (send text last-position)])
 		 (style-func start end)
-		 (send edit set-prompt-position end))
-	       (send edit lock c-locked?)
-	       (send edit end-edit-sequence)))]
+		 (send text set-prompt-position end))
+	       (send text lock c-locked?)
+	       (send text end-edit-sequence)))]
 	  [generic-close void]
 	  
 	  [saved-newline? #f]
@@ -624,7 +624,7 @@
 	   (lambda (s) ; = User=
 	     (queue-output
 	      (lambda () ; =Kernel=, =Handler=
-		(let* ([edit (init-transparent-io #f)]
+		(let* ([text (init-transparent-io #f)]
 		       [old-saved-newline? saved-newline?]
 		       [len (and (string? s)
 				 (string-length s))]
@@ -640,10 +640,10 @@
 		       [gw
 			(lambda (s)
 			  (generic-write
-			   edit
+			   text
 			   s
 			   (lambda (start end)
-			     (send edit change-style output-delta start end))))])
+			     (send text change-style output-delta start end))))])
 		  (when old-saved-newline?
 		    (gw (string #\newline)))
 		  (gw s1)))))]
@@ -781,16 +781,16 @@
 	[report-unlocated-error ; =Kernel=
 	 (lambda (message exn)
 	   (let* ([frame (get-top-level-window)]
-		  [interactions-edit (ivar frame interactions-edit)])
+		  [interactions-text (ivar frame interactions-text)])
 	     (send frame ensure-interactions-shown)
-	     (let ([locked? (send interactions-edit locked?)])
-	       (send interactions-edit begin-edit-sequence)
-	       (send interactions-edit lock #f)
-	       (send interactions-edit this-err-write/exn
+	     (let ([locked? (send interactions-text locked?)])
+	       (send interactions-text begin-edit-sequence)
+	       (send interactions-text lock #f)
+	       (send interactions-text this-err-write/exn
 		     (string-append message (string #\newline))
 		     exn)
-	       (send interactions-edit lock locked?)
-	       (send interactions-edit end-edit-sequence))))]
+	       (send interactions-text lock locked?)
+	       (send interactions-text end-edit-sequence))))]
 
         [reset-highlighting void]
 	[report-error ; =Kernel=, =Handler=
@@ -834,11 +834,11 @@
            (super-on-delete x y))])
 
       (public
-	[process-edit ; =User=, =Handler=, =No-Breaks=
-	 (lambda (edit fn start end annotate?)
+	[process-text ; =User=, =Handler=, =No-Breaks=
+	 (lambda (text fn start end annotate?)
 	   (if (basis:zodiac-vocabulary? user-setting)
-	       (process-edit/zodiac edit fn start end annotate?)
-	       (process-edit/no-zodiac edit fn start end)))]
+	       (process-text/zodiac text fn start end annotate?)
+	       (process-text/no-zodiac text fn start end)))]
 	[process-file
 	 (lambda (filename fn annotate?)
 	   (if (basis:zodiac-vocabulary? user-setting)
@@ -891,14 +891,14 @@
 	       (collect-garbage)
 	       (set! count 0))
 	     (let* ([frame (get-top-level-window)]
-		    [definitions-edit (ivar frame definitions-edit)]
-		    [already-warned? (ivar definitions-edit already-warned?)]
-		    [needs-execution? (ivar definitions-edit needs-execution?)])
+		    [definitions-text (ivar frame definitions-text)]
+		    [already-warned? (ivar definitions-text already-warned?)]
+		    [needs-execution? (ivar definitions-text needs-execution?)])
 	       (when (if (fw:preferences:get 'drscheme:execute-warning-once)
 			 (and (not already-warned?)
 			      needs-execution?)
 			 needs-execution?)
-		 (send definitions-edit already-warned)
+		 (send definitions-text already-warned)
 		 (insert-warning)))
 	     (do-many-buffer-evals this start end)))])
       (public
@@ -932,7 +932,7 @@
 	   (send (get-top-level-window) enable-evaluation))])
       (public
 	[do-many-buffer-evals ; =Kernel=, =Handler=
-	 (lambda (edit start end)
+	 (lambda (text start end)
 	   (send (get-top-level-window) disable-evaluation)
 	   (cleanup-transparent-io)
 	   (reset-pretty-print-width)
@@ -952,9 +952,9 @@
 	       (lambda () ; =User=, =Handler=, =No-Breaks=
 		 ; This procedure must also ensure that breaks are off before
 		 ;  returning or escaping.
-		 (process-edit
+		 (process-text
 		  ; BUG: is it possible that a macro turns on breaking?
-		  edit
+		  text
 		  (lambda (expr recur) ; =User=, =Handler=, =No-Breaks=
 		    (cond
 		     [(basis:process-finish? expr)
@@ -1245,11 +1245,11 @@
 					       (lambda x x)))
 					(recur)])))])
 			     (apply values 
-				    (let ([edit (make-object drscheme:edit:edit%)])
-				      (send edit load-file filename)
-				      (process-edit edit process-sexps
+				    (let ([text (make-object drscheme:text:text%)])
+				      (send text load-file filename)
+				      (process-text text process-sexps
 						    0 
-						    (send edit last-position)
+						    (send text last-position)
 						    #t))))
 			   (userspace-load filename))))))
 	     
@@ -1271,7 +1271,7 @@
 		    (let/ec k
 		      (unless (get-top-level-window)
 			(k drscheme:init:first-dir))
-		      (let*-values ([(filename) (send (ivar (get-top-level-window) definitions-edit)
+		      (let*-values ([(filename) (send (ivar (get-top-level-window) definitions-text)
 						      get-filename)]
 				    [(normalized) (if (string? filename)
 						      (mzlib:file:normalize-path filename)
@@ -1393,7 +1393,7 @@
 			    click-delta))
 	 
 	   (if (or (fw:preferences:get 'drscheme:repl-always-active)
-		   (not (send (ivar (get-top-level-window) interactions-edit) get-filename)))
+		   (not (send (ivar (get-top-level-window) interactions-text) get-filename)))
 	       (reset-console)
 	       (begin 
 		 (insert-delta "Execute has not been clicked." warning-style-delta)
@@ -1402,7 +1402,7 @@
 	(set-display/write-handlers)
 	(apply super-init args))))
 
-  (define make-console-edit%
+  (define make-console-text%
     (lambda (super%)
       (class super% args
 	(inherit position-line position-location
@@ -1765,7 +1765,7 @@
 	(sequence
 	  (apply super-init args)))))
   
-  (define make-transparent-io-edit%
+  (define make-transparent-io-text%
     (lambda (super%)
       (class super% args
 	(inherit change-style prompt-position set-prompt-position
@@ -1892,10 +1892,10 @@
 	  (apply super-init args)
 	  (insert-prompt)))))
 
-  (define transparent-io-edit% 
-    (make-transparent-io-edit%
-     (make-console-edit%
+  (define transparent-io-text% 
+    (make-transparent-io-text%
+     (make-console-text%
       (fw:scheme:text-mixin
        fw:text:searching%))))
   
-  (define edit% (make-edit% (make-console-edit% fw:scheme:text%))))
+  (define text% (make-text% (make-console-text% fw:scheme:text%))))

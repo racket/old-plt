@@ -3,7 +3,7 @@
 			   [framework : framework^]
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
-			   [edit : drscheme:edit^]
+			   [text : drscheme:text^]
 			   [language : drscheme:language^]
 			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
@@ -29,7 +29,7 @@
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
 	      mred mzlib framework print-convert zodiac
-	      interface init snip language app frame basis edit
+	      interface init snip language app frame basis text
               help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
@@ -38,7 +38,7 @@
 		help-desk zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
-	   mred mzlib framework app frame edit rep
+	   mred mzlib framework app frame text rep
 	   language get/extend graph)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^

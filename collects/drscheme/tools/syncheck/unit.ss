@@ -260,7 +260,7 @@
   (define untacked-brush (send mred:the-brush-list find-or-create-brush "WHITE" 'solid))
   (define the-pen (send mred:the-pen-list find-or-create-pen "BLUE" 1 'solid))
   
-  (define make-graphics:media-edit%
+  (define make-graphics-text%
     (lambda (super%)
       (let* ([pi (* 2 (asin 1))]
 	     [arrow-head-angle (/ pi 8)]
@@ -486,7 +486,7 @@
   (define make-new-unit-frame%
     (lambda (super%)
       (class super% args
-	(inherit button-panel definitions-edit interactions-edit)
+	(inherit button-panel definitions-text interactions-text)
 	
 	(rename [super-disable-evaluation disable-evaluation]
 		[super-enable-evaluation enable-evaluation])
@@ -504,14 +504,14 @@
 	(public
 	  [syncheck:clear-highlighting
 	   (lambda ()
-	     (let* ([list (send definitions-edit get-style-list)]
+	     (let* ([list (send definitions-text get-style-list)]
 		    [style (send list find-named-style "Standard")])
-	       (send* definitions-edit
+	       (send* definitions-text
 		 (syncheck:clear-arrows)
 		 (syncheck:init-arrows))
 	       (if style
-		   (send definitions-edit
-			 change-style style 0 (send definitions-edit last-position))
+		   (send definitions-text
+			 change-style style 0 (send definitions-text last-position))
 		   (printf "Warning: couldn't find Standard style~n"))))]
 	  [syncheck:enable-checking
 	   (lambda (on?)
@@ -527,12 +527,12 @@
 	       (or (eq? who 'source) (eq? who 'reader))))]
 	  [button-callback
 	   (lambda ()
-	     (if (ivar interactions-edit user-thread)
-		 (letrec ([add-arrow (ivar definitions-edit syncheck:add-arrow)]
-			  [find-string (ivar definitions-edit find-string)]
+	     (if (ivar interactions-text user-thread)
+		 (letrec ([add-arrow (ivar definitions-text syncheck:add-arrow)]
+			  [find-string (ivar definitions-text find-string)]
 			  [change-style (lambda (s x y)
-					  ((ivar definitions-edit change-style) s x y))]
-			  [get-char (ivar definitions-edit get-character)]
+					  ((ivar definitions-text change-style) s x y))]
+			  [get-char (ivar definitions-text get-character)]
 			  [find-next-whitespace
 			   (lambda (start)
 			     (let* ([find (lambda (s)
@@ -560,7 +560,7 @@
 			  [top-level-varrefs null]
 			  [defineds (make-hash-table)]
 			  [local-bindings (make-hash-table)]
-			  [style-list (send definitions-edit get-style-list)]
+			  [style-list (send definitions-text get-style-list)]
 			  [bound-style (send style-list find-named-style "mzprizm:bound variable")]
 			  [unbound-style (send style-list find-named-style "mzprizm:unbound variable")]
 			  [primitive-style (send style-list find-named-style "mzprizm:primitive")]
@@ -570,7 +570,7 @@
 			   (lambda (occurrances input-name)
 			     (dynamic-wind
 			      (lambda ()
-				(send definitions-edit begin-edit-sequence))
+				(send definitions-text begin-edit-sequence))
 			      (lambda ()
 				(let* ([new-name (format "~a" (string->symbol input-name))]
 				       [sorted (mzlib:function:quicksort
@@ -581,13 +581,13 @@
 				       [rename-one
 					(lambda (z)
 					  (begin0
-					   (send definitions-edit insert new-name
+					   (send definitions-text insert new-name
 						 (zodiac:location-offset (zodiac:zodiac-start z))
 						 (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))))])
 				  (for-each rename-one sorted))
 				(button-callback))
 			      (lambda ()
-				(send definitions-edit end-edit-sequence))))]
+				(send definitions-text end-edit-sequence))))]
 			  [color-loop
 			   (lambda (zodiac-ast)
 			     (let* ([z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
@@ -786,9 +786,9 @@
 		      (lambda ()
 			(mred:begin-busy-cursor)
 			(set! mod-flag
-			      (send definitions-edit is-modified?))
-			(send definitions-edit set-styles-fixed #f)
-			(send definitions-edit begin-edit-sequence #f))
+			      (send definitions-text is-modified?))
+			(send definitions-text set-styles-fixed #f)
+			(send definitions-text begin-edit-sequence #f))
 		      (lambda ()
 			; reset all of the buffer to the default style
 			; and clear out arrows
@@ -801,7 +801,7 @@
 			      [error #f]
 			      [debug #f]
 			      [msg #f])
-			  (send interactions-edit
+			  (send interactions-text
 				run-in-evaluation-thread
 				(rec check-syntax-in-evaluation-thread
 				     (lambda ()
@@ -815,13 +815,13 @@
 							   (set! error-raised? #t)
 							   (semaphore-post semaphore))]
 							[error-escape-handler k])
-					   (drscheme:rep:process-edit/zodiac
-					    definitions-edit
+					   (drscheme:rep:process-text/zodiac
+					    definitions-text
 					    (lambda (expr recur)
 					      (cond
 					       [(drscheme:basis:process-finish? expr)
 						(when (drscheme:basis:process-finish-error? expr)
-						  (send interactions-edit insert-prompt))
+						  (send interactions-text insert-prompt))
 						(semaphore-post semaphore)]
 					       [(not (zodiac:zodiac? expr))
 						(recur)]
@@ -829,39 +829,11 @@
 						(color-loop expr)
 						(recur)]))
 					    0
-					    (send definitions-edit last-position)
+					    (send definitions-text last-position)
 					    #f))))))
 			  (semaphore-wait semaphore)
 			  (when error-raised?
-			    (let ([hilite-canvas
-				   (and debug
-					(let* ([start-location (zodiac:zodiac-start debug)]
-					       [end-location (zodiac:zodiac-finish debug)]
-					       [start (zodiac:location-offset start-location)]
-					       [end (add1 (zodiac:location-offset end-location))])
-					  (send definitions-edit set-position start end #f #t 'local)
-					  (send definitions-edit get-canvas)))])
-			      (when hilite-canvas
-				(send definitions-edit end-edit-sequence)
-				(send hilite-canvas focus)
-				(send hilite-canvas force-display-focus #t))
-			      (mred:message-box
-			       "exception during syntax checking"
-			       (let ([string-port (open-output-string)])
-				 (when (and (defined? 'print-error-trace)
-					    (exn? error))
-				   (newline string-port)
-				   ((global-defined-value 'print-error-trace)
-				    string-port
-				    error))
-				 (string-append 
-				  (if (exn? error)
-				    (exn-message error)
-				    (format "~s" error))
-				  (get-output-string string-port))))
-			      (when hilite-canvas
-				(send definitions-edit begin-edit-sequence #f)
-				(send hilite-canvas force-display-focus #f)))))
+				(send interactions-text report-located-error msg debug error)))
 			
 			; color the top-level varrefs
 			(let ([built-in?
@@ -902,10 +874,10 @@
 					 (add1 (zodiac:location-offset (zodiac:zodiac-finish var))))))
 				    top-level-varrefs)))
 		      (lambda () ; post part of dynamic wind
-			(send definitions-edit end-edit-sequence)
+			(send definitions-text end-edit-sequence)
 			(unless mod-flag
-			  (send definitions-edit set-modified #f))
-			(send definitions-edit set-styles-fixed #t)
+			  (send definitions-text set-modified #f))
+			(send definitions-text set-styles-fixed #t)
 			(mred:end-busy-cursor)))))
 		 (mred:message-box "Check Syntax"
 				   "Cannot check syntax until REPL is active. Click Execute")))])
@@ -918,14 +890,14 @@
 			button-panel
 			(lambda (button evt) (button-callback)))])
 	(sequence
-	  (send definitions-edit set-styles-fixed #t)
+	  (send definitions-text set-styles-fixed #t)
 	  (send check-syntax-button show button-visible?)
 	  (send button-panel change-children
 		(lambda (l)
 		  (cons check-syntax-button
 			(mzlib:function:remove check-syntax-button l))))))))
   
-  (define (make-syncheck-interactions-edit% super%)
+  (define (make-syncheck-interactions-text% super%)
     (class-asi super%
       (rename [super-reset-console reset-console])
       (inherit get-top-level-window user-setting)
@@ -938,6 +910,6 @@
 		(drscheme:basis:zodiac-vocabulary? user-setting)))])))
   
   
-  (drscheme:get/extend:extend-definitions-edit% make-graphics:media-edit%)
+  (drscheme:get/extend:extend-definitions-text% make-graphics-text%)
   (drscheme:get/extend:extend-unit-frame% make-new-unit-frame%)
-  (drscheme:get/extend:extend-interactions-edit% make-syncheck-interactions-edit%))
+  (drscheme:get/extend:extend-interactions-text% make-syncheck-interactions-text%))

@@ -37,6 +37,10 @@
     
     ; default spacing between items.
     (define const-default-spacing 2)
+
+    ; default margins:
+    (define const-default-x-margin 2)
+    (define const-default-y-margin 2)
     
     ; default spacing around edge of panel
     (define const-default-border 0)
@@ -51,7 +55,9 @@
     ;  x-stretch/y-stretch: booleans which indicate whether the child can
     ;    stretch in the appropriate direction to fill otherwise empty
     ;    space. 
-    (define-struct child-info (x-posn y-posn x-min y-min
+    (define-struct child-info (x-posn y-posn 
+				      x-min y-min ; includes margins!
+				      x-margin y-margin
 				      x-stretch y-stretch))
     
     ; get-two-int-values: a wrapper around functions that need to return
@@ -118,7 +124,7 @@
     ;; Actually, Richard, it seems to me like good design -Robby.
 
     (define make-item%
-      (lambda (item% stretch-x stretch-y make-default-size)
+      (lambda (item% x-margin y-margin stretch-x stretch-y make-default-size)
 	(class item% args
 	  (inherit
 	    get-width
@@ -152,6 +158,9 @@
 	    [default-x-stretch stretch-x]
 	    [default-y-stretch stretch-y]
 
+	    [default-x-margin-width x-margin]
+	    [default-y-margin-height y-margin]
+
 	    ; default-x: gets/sets default x position.  Errors out if new
 	    ; value is not a real number; forces a redraw upon a set.
 	    [default-x
@@ -184,6 +193,19 @@
 	      this 0 non-negative-number?
 	      (lambda (val)
 		(error 'user-min-height
+		       "Expected a non-negative real; received ~s" val)))]
+
+	    [x-margin-width
+	     (make-item-param
+	      this default-x-margin-width non-negative-number?
+	      (lambda (val)
+		(error 'x-margin-width
+		       "Expected a non-negative real; received ~s" val)))]
+	    [y-margin-height
+	     (make-item-param
+	      this default-y-margin-height non-negative-number?
+	      (lambda (val)
+		(error 'y-margin-height
 		       "Expected a non-negative real; received ~s" val)))]
 	    
 	    ; stretchable-in-x: gets/sets horiz stretchability property.
@@ -230,6 +252,7 @@
 	       (let* ([min-size (get-min-size)]
 		      [result (make-child-info (default-x) (default-y)
 					       (car min-size) (cadr min-size)
+					       (x-margin-width) (y-margin-height)
 					       (stretchable-in-x)
 					       (stretchable-in-y))])
 		 (mred:debug:printf 
@@ -294,15 +317,14 @@
 		'container-child-get-min-size
 		"container-child-get-min-size; object ~s;  "
 		object-ID)
-	       (mred:debug:printf
-		'container-child-get-min-size
-		"container-child-get-min-size: Result:  ~s"
-		(list
-		 (max min-width (user-min-width))
-		 (max min-height (user-min-height))))
-	       (list
-		(max min-width (user-min-width))
-		(max min-height (user-min-height))))])
+	       (let ([w (+ (* 2 (x-margin-width)) (max min-width (user-min-width)))]
+		     [h (+ (* 2 (y-margin-height)) (max min-height (user-min-height)))])
+		 (mred:debug:printf
+		  'container-child-get-min-size
+		  "container-child-get-min-size: Result:  ~s"
+		  (list w h))
+		 (list w h)))])
+
 	  (sequence
 	    (mred:debug:printf 'container-child-init
 			       "container-child-init: Args to super-init: ~s"
@@ -365,16 +387,24 @@
     ; these next definitions descend classes from the children of wx:item%
     ; which can be inserted into panel% objects.
     (define button%
-      (make-item% wx:button% #f #f standard-make-default-size))
+      (make-item% wx:button% 
+		  const-default-x-margin const-default-y-margin 
+		  #f #f standard-make-default-size))
     
     (define check-box%
-      (make-item% wx:check-box% #f #f standard-make-default-size))
+      (make-item% wx:check-box% 
+		  const-default-x-margin const-default-y-margin 
+		  #f #f standard-make-default-size))
     
     (define choice%
-      (make-item% wx:choice% #t #f standard-make-default-size))
+      (make-item% wx:choice% 
+		  const-default-x-margin const-default-y-margin 
+		  #t #f standard-make-default-size))
     
     (define gauge%
-      (class (make-item% wx:gauge% #t #f list) args
+      (class (make-item% wx:gauge% 
+			 const-default-x-margin const-default-y-margin 
+			 #t #f list) args
 	(inherit
 	  get-client-size
 	  get-width
@@ -462,7 +492,9 @@
 		   new-args)))))
     
     (define list-box%
-      (make-item% wx:list-box% #t #t
+      (make-item% wx:list-box% 
+		  const-default-x-margin const-default-y-margin 
+		  #t #t
 		  (opt-lambda (parent callback label
 				      [multiple-selection wx:const-single]
 				      [x const-default-posn]
@@ -473,16 +505,22 @@
 			   const-default-size const-default-size args))))
     
     (define message%
-      (make-item% wx:message% #f #f list))
+      (make-item% wx:message% 
+		  const-default-x-margin const-default-y-margin 
+		  #f #f list))
     ; we don't need to process the size args at all cause there aren't
     ; any. Therefore, we just need to bundle the args up in a list.  list
     ; already does that.
     
     (define radio-box%
-      (make-item% wx:radio-box% #f #f standard-make-default-size))
+      (make-item% wx:radio-box% 
+		  const-default-x-margin const-default-y-margin 
+		  #f #f standard-make-default-size))
     
     (define slider%
-      (class (make-item% wx:slider% #f #f list) args
+      (class (make-item% wx:slider% 
+			 const-default-x-margin const-default-y-margin 
+			 #f #f list) args
 	(inherit
 	  min-width
 	  min-height
@@ -580,7 +618,9 @@
 		 args))))
     
     (define text%;; for now
-      (make-item% wx:text% #t #f
+      (make-item% wx:text% 
+		  const-default-x-margin const-default-y-margin 
+		  #t #f
 		  (opt-lambda (parent callback label
 				      [val ""]
 				      [x const-default-posn]
@@ -591,7 +631,9 @@
 			   const-default-size const-default-size args))))
     
     (define multi-text%
-      (make-item% wx:multi-text% #t #t
+      (make-item% wx:multi-text% 
+		  const-default-x-margin const-default-y-margin 
+		  #t #t
 		  (opt-lambda (parent callback label
 				      [val ""]
 				      [x const-default-posn]
@@ -612,8 +654,8 @@
 			  [h canvas-default-size] . args)
 	(list* parent x y canvas-default-size canvas-default-size args)))
     
-    (define canvas% (make-item% wx:canvas% #t #t canvas-args))
+    (define canvas% (make-item% wx:canvas% 0 0 #t #t canvas-args))
     (define media-canvas% (make-item%
 			   mred:connections:connections-media-canvas%
-			   #t #t canvas-args))
-    (define text-window% (make-item% wx:text-window% #t #t canvas-args))))
+			   0 0 #t #t canvas-args))
+    (define text-window% (make-item% wx:text-window% 0 0 #t #t canvas-args))))

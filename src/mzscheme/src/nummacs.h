@@ -336,6 +336,12 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
   return 0; \
 }
 
+#ifdef NAN_EQUALS_ANYTHING
+# define GR_NAN_CHK(n2) MZ_IS_NAN(SCHEME_FLOAT_VAL(n2))
+#else
+# define GR_NAN_CHK(n2) 0
+#endif
+
 #define GEN_IDENT(x) x
 #define GEN_OMIT(x) 
 #define GEN_FIRST_ONLY(x, y) x
@@ -344,7 +350,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 #define GEN_SCHEME_BOOL_APPLY(x, y, z) SCHEME_TRUEP(x(1, (Scheme_Object **)&y))
 
 #define GEN_RETURN_0(x) x return zeroi;
-#define GEN_RETURN_0_USUALLY(x) x if (!SCHEME_FLOATP(n2) || (SCHEME_FLOAT_VAL(n2) != 0)) return zeroi;
+#define GEN_RETURN_0_USUALLY(x) x if (!SCHEME_FLOATP(n2) || GR_NAN_CHK(n2) || (SCHEME_FLOAT_VAL(n2) != 0)) return zeroi;
 #define GEN_RETURN_1(x) x return scheme_make_integer(1);
 #define GEN_RETURN_N1(x) x return (Scheme_Object *)n1;
 #define GEN_RETURN_N2(x) x return (Scheme_Object *)n2;

@@ -1638,7 +1638,11 @@ scheme_expt(int argc, Scheme_Object *argv[])
     /* real power of inexact zero? */
     /* (Shouldn't have to do this, but pow() is especially unreliable.) */
     double d = SCHEME_FLOAT_VAL(n);
-    if (d == 0.0) {
+    if ((d == 0.0)
+#ifdef NAN_EQUALS_ANYTHING
+	&& !MZ_IS_NAN(d)
+#endif
+	) {
       if (SCHEME_REALP(e)) {
 	int norm = 0;
 

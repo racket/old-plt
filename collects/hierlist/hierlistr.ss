@@ -1,19 +1,18 @@
-(unit/sig mred:hier:hierlist^
-  (import (mred : mred^)
-	  (wx : wx^))
+(unit/sig hierlist^
+  (import mred^)
 
-  (define transparent (make-object wx:brush% "WHITE" wx:const-transparent))
-  (define transparent-pen (make-object wx:pen% "WHITE" 1 wx:const-transparent))
-  (define gray (make-object wx:brush% "GREY" wx:const-solid))
-  (define blue (make-object wx:brush% "BLUE" wx:const-solid))
-  (define black (make-object wx:brush% "BLACK" wx:const-solid))
-  (define arrow-cursor (make-object wx:cursor% wx:const-cursor-arrow))
+  (define transparent (make-object brush% "WHITE" 'transparent))
+  (define transparent-pen (make-object pen% "WHITE" 1 'transparent))
+  (define gray (make-object brush% "GREY" 'solid))
+  (define blue (make-object brush% "BLUE" 'solid))
+  (define black-xor (make-object brush% "BLACK" 'xor))
+  (define arrow-cursor (make-object cursor% 'arrow))
 
   ; Private arrow snip class:
-  (define arrow-snip-class (make-object wx:snip-class%))
+  (define arrow-snip-class (make-object snip-class%))
   (send arrow-snip-class set-classname "hier-arrow")
   (define arrow-snip%
-    (class wx:snip% (click-callback)
+    (class snip% (click-callback)
       (inherit get-admin set-flags get-flags set-count set-snipclass get-style)
       (rename [super-get-extent get-extent])
       (private 
@@ -34,13 +33,13 @@
 		    [sz (if (even? s) s (sub1 s))]
 		    [offset (ceiling (* (/ (- 1 width-fraction) 2) sz))]
 		    [width (floor (* width-fraction sz))])
-	       (set! right-points (list (make-object wx:point% offset voffset)
-					(make-object wx:point% offset (+ voffset sz))
-					(make-object wx:point% (+ offset width) (+ voffset (quotient sz 2)))))
+	       (set! right-points (list (make-object point% offset voffset)
+					(make-object point% offset (+ voffset sz))
+					(make-object point% (+ offset width) (+ voffset (quotient sz 2)))))
 	       (set! down-points 
-		     (list (make-object wx:point% 0 (+ voffset offset))
-			   (make-object wx:point% sz (+ voffset offset))
-			   (make-object wx:point% (quotient sz 2) (+ width offset voffset)))))))])
+		     (list (make-object point% 0 (+ voffset offset))
+			   (make-object point% sz (+ voffset offset))
+			   (make-object point% (quotient sz 2) (+ width offset voffset)))))))])
       (private
 	[get-width (lambda () (+ 2 size))]
 	[get-height (lambda () (+ 2 size))]
@@ -48,14 +47,14 @@
 	[update
 	 (lambda ()
 	   (send (get-admin) needs-update this 0 0 (get-width) (get-height)))])
-      (public
+      (override
 	[get-extent (lambda (dc x y w h descent space lspace rspace)
 		      (super-get-extent dc x y w h descent space lspace rspace)
 		      (unless size (set-sizes dc))
-		      (unless (null? w) (set-box! w (get-width)))
-		      (unless (null? h) (set-box! h (get-height)))
-		      (unless (null? descent) (set-box! descent 2))
-		      (unless (null? space) (set-box! space 0)))]
+		      (when w (set-box! w (get-width)))
+		      (when h (set-box! h (get-height)))
+		      (when descent (set-box! descent 2))
+		      (when space (set-box! space 0)))]
 	[partial-offset (lambda (dc x y len)
 			  (unless size (set-sizes dc))
 			  (if (zero? len)
@@ -100,25 +99,26 @@
 	      [else (when clicked?
 		      (set! clicked? #f)
 		      (update))])))]
+	[copy (lambda () (make-object arrow-snip% click-callback))])
+      (public
 	[on (case-lambda 
 	     [(v) (set! on? v) (update)]
-	     [() on?])]
-	[copy (lambda () (make-object arrow-snip% click-callback))])
+	     [() on?])])
       (sequence
 	(super-init)
 	(set-snipclass arrow-snip-class)
 	(set-count 1)
-	(set-flags (+ (get-flags) wx:const-snip-handles-events)))))
+	(set-flags (cons 'handles-events (get-flags))))))
 
   ; Hack to get whitespace matching width of arrow: derive a new
   ; class that overrides the `draw' method to do nothing. 
   (define whitespace-snip%
     (class arrow-snip% ()
-      (public [draw void])
+      (override [draw void])
       (sequence (super-init void))))
 
   ; 
-  (define item-keymap (make-object wx:keymap%))
+  (define item-keymap (make-object keymap%))
   (send item-keymap add-mouse-function "select"
 	(lambda (edit event) (if (send event button-down?) (send edit select #t))))
   (send item-keymap add-mouse-function "double-select"
@@ -138,8 +138,9 @@
 
   (define hierarchical-list-compound-item%
     (class hierarchical-list-item% (snip)
+      (override
+	[get-buffer (lambda () (send snip get-title-buffer))])
       (public
-	[get-buffer (lambda () (send snip get-title-buffer))]
 	[new-item (lambda () 
 		    (begin0
 		     (send (send snip get-content-buffer) new-item)
@@ -156,8 +157,8 @@
 	(super-init snip))))
 
   ; Buffer for a single list item
-  (define mred:hierarchical-item-buffer%
-    (class wx:media-edit% (top top-select item snip)
+  (define hierarchical-item-text%
+    (class text% (top top-select item snip)
       (inherit set-max-undo-history hide-caret
 	       last-position set-position set-keymap
 	       invalidate-bitmap-cache)
@@ -167,24 +168,24 @@
 	[is-selected? (lambda () selected?)]
 	[show-select (lambda (on?)
 		       (set! selected? on?)
-		       (invalidate-bitmap-cache))]
+		       (invalidate-bitmap-cache))])
+      (override
 	[on-paint
 	 (lambda (pre? dc left top right bottom dx dy caret)
 	   (if (and (not pre?) selected?)
 	       (let ([b (send dc get-brush)]
-		     [p (send dc get-pen)]
-		     [f (send dc get-logical-function)])
-		 (send dc set-brush black)
+		     [p (send dc get-pen)])
+		 (send dc set-brush black-xor)
 		 (send dc set-pen transparent-pen)
-		 (send dc set-logical-function wx:const-xor)
 		 (send dc draw-rectangle (+ dx left) (+ dy top) (- right left) (- bottom top))
-		 (send dc set-logical-function f)
 		 (send dc set-pen p)
-		 (send dc set-brush b))))]
+		 (send dc set-brush b))))])
+      (public
 	[select (lambda (on?)
 		  (unless (eq? (not selected?) (not on?))
 		    (top-select (if on? item #f) snip)))]
-	[double-select (lambda () (send top double-select item))]
+	[double-select (lambda () (send top double-select item))])
+      (override
 	[on-default-char void]
 	[on-default-event void])
       (sequence
@@ -194,7 +195,7 @@
 	(set-keymap item-keymap))))
 
   ; Buffer for a compound list item (and the top-level list)
-  (define (make-hierarchical-list-buffer% super%)
+  (define (make-hierarchical-list-text% super%)
     (class super% (top top-select)
       (inherit set-max-undo-history hide-caret
 	       last-position insert delete line-start-position line-end-position
@@ -217,9 +218,9 @@
 	[deselect-all 
 	 (lambda () (for-each (lambda (x) (send x deselect-all)) children))]
 	[new-item 
-	 (lambda () (insert-item mred:hierarchical-item-snip% #t))]
+	 (lambda () (insert-item hierarchical-item-snip% #t))]
 	[new-list
-	 (lambda () (insert-item mred:hierarchical-list-snip% #f))]
+	 (lambda () (insert-item hierarchical-list-snip% #f))]
 	[get-items (lambda () (map (lambda (x) (send x get-item)) children))]
 	[delete-item
 	 (lambda (i)
@@ -232,7 +233,8 @@
 	       (let ([s (line-start-position pos)]
 		     [e (line-end-position pos)])
 		 (delete (if (zero? s) s (sub1 s)) (if (zero? s) (add1 e) e)))]
-	      [else (loop (add1 pos) (cdr l) (cons (car l) others))])))]
+	      [else (loop (add1 pos) (cdr l) (cons (car l) others))])))])
+      (override
 	[on-default-char void]
 	[on-default-event void])
       (sequence
@@ -240,14 +242,13 @@
 	(hide-caret #t)
 	(set-max-undo-history 0))))
 
-  (define mred:top-hierarchical-list-buffer% (make-hierarchical-list-buffer% mred:media-edit%))
-  (define mred:hierarchical-list-buffer% (make-hierarchical-list-buffer% wx:media-edit%))
+  (define hierarchical-list-text% (make-hierarchical-list-text% text%))
 
   ; Snip for a single list item
-  (define mred:hierarchical-item-snip%
-    (class wx:media-snip% (top top-select)
+  (define hierarchical-item-snip%
+    (class editor-snip% (top top-select)
       (public
-	[get-item-buffer% (lambda () mred:hierarchical-item-buffer%)]
+	[get-item-text% (lambda () hierarchical-item-text%)]
 	[select (lambda (on?) (send item-buffer select on?))]
 	[deselect-all (lambda () (select #f))]
 	[show-select (lambda (on?) (send item-buffer show-select on?))]
@@ -255,20 +256,21 @@
 	[get-item (lambda () item)])
       (private
 	[item (make-object hierarchical-list-item% this)]
-	[item-buffer (make-object (get-item-buffer%) top top-select item this)])
+	[item-buffer (make-object (get-item-text%) top top-select item this)])
       (sequence
 	(super-init item-buffer #f 0 0 0 0 0 0 0 0))))
 
   ; Snip for a compound list item
-  (define mred:hierarchical-list-snip%
-    (class wx:media-snip% (top top-select [title #f][content #f])
+  (define hierarchical-list-snip%
+    (class editor-snip% (top top-select [title #f][content #f])
       (public
-	[get-main-buffer% (lambda () (class-asi wx:media-edit% 
-						(public
-						 [on-default-char void]
-						 [on-default-event void])))]
-	[get-title-buffer% (lambda () mred:hierarchical-item-buffer%)]
-	[get-content-buffer% (lambda () mred:hierarchical-list-buffer%)]
+	[get-main-text% (lambda () (class text% args
+				       (override
+					 [on-default-char void]
+					 [on-default-event void])
+				       (sequence (apply super-init args))))]
+	[get-title-text% (lambda () hierarchical-item-text%)]
+	[get-content-text% (lambda () hierarchical-list-text%)]
 	[get-arrow-snip% (lambda () arrow-snip%)]
 	[select (lambda (on?)
 		  (if on?
@@ -282,12 +284,11 @@
 			     (when was-empty?
 				   (set! was-empty? #f)
 				   (set! was-non-empty? #t)
-				   (send* main-buffer
-				     (begin-edit-sequence)
-				     (insert #\newline 2)
-				     (insert whitespace 3)
-				     (insert content-snip 4)
-				     (end-edit-sequence))))]
+				   (send main-buffer begin-edit-sequence)
+				   (send main-buffer insert #\newline 2)
+				   (send main-buffer insert whitespace 3)
+				   (send main-buffer insert content-snip 4)
+				   (send main-buffer end-edit-sequence)))]
 	[check-empty-now (lambda ()
 			   (when (and was-non-empty? 
 				      (zero? (send content-buffer last-position)))
@@ -303,10 +304,9 @@
 			      (set! was-empty? #t)
 			      (begin
 				(set! was-non-empty? #t)
-				(send* main-buffer
-				       (insert #\newline 2)
-				       (insert whitespace 3)
-				       (insert content-snip 4))))
+				(send main-buffer insert #\newline 2)
+				(send main-buffer insert whitespace 3)
+				(send main-buffer insert content-snip 4)))
 			  (send main-buffer end-edit-sequence))
 			(begin
 			  (set! was-empty? #f)
@@ -323,11 +323,11 @@
         [was-empty? #f]
 	[was-non-empty? #f]
 	[item (make-object hierarchical-list-compound-item% this)]
-	[main-buffer (make-object (get-main-buffer%))]
-	[title-buffer (make-object (get-title-buffer%) top top-select item this)]
-	[content-buffer (make-object (get-content-buffer%) top top-select)]
-	[title-snip (make-object wx:media-snip% title-buffer #f 0 0 0 0 0 0 0 0)]
-	[content-snip (make-object wx:media-snip% content-buffer #f 4 0 0 0 0 0 0 0)]
+	[main-buffer (make-object (get-main-text%))]
+	[title-buffer (make-object (get-title-text%) top top-select item this)]
+	[content-buffer (make-object (get-content-text%) top top-select)]
+	[title-snip (make-object editor-snip% title-buffer #f 0 0 0 0 0 0 0 0)]
+	[content-snip (make-object editor-snip% content-buffer #f 4 0 0 0 0 0 0 0)]
 	[arrow (make-object arrow-snip% on-arrow)]
 	[whitespace (make-object whitespace-snip%)])
       (sequence
@@ -340,8 +340,8 @@
 	(send main-buffer insert title-snip))))
 
   (define hierarchical-list%
-    (class mred:media-canvas% (parent)
-      (inherit user-min-width user-min-height)
+    (class editor-canvas% (parent)
+      (inherit min-width min-height)
       (public
 	[get-selected (lambda () selected-item)]
 	[item-opened void]
@@ -360,14 +360,11 @@
 		       (set! selected-item item)
 		       (when selected (send selected show-select #t))
 		       (select item)))]
-	[top-buffer (make-object mred:top-hierarchical-list-buffer% this do-select)]
+	[top-buffer (make-object hierarchical-list-text% this do-select)]
 	[selected #f]
 	[selected-item #f])
       (sequence
-	(super-init parent -1 -1 -1 -1 "media-canvas"
-		    wx:const-mcanvas-no-h-scroll
-		    4
-		    top-buffer)
+	(super-init parent top-buffer '(no-hscroll))
 	(send top-buffer set-cursor arrow-cursor) 
-	(user-min-width 150)
-	(user-min-height 200)))))
+	(min-width 150)
+	(min-height 200)))))

@@ -126,8 +126,8 @@ increased to make room for the indicators.
     $saveLeftMargin = $leftMargin;
 
     if ($xfont) {
-      if (!$indicatorSize || $indicatorSize > ((wxExtFont)$xfont)->ascent)
-	$indicatorSize = ((wxExtFont)$xfont)->ascent;
+      if (!$indicatorSize || $indicatorSize > wx_ASCENT($font, ((wxExtFont)$xfont)))
+	$indicatorSize = wx_ASCENT($font, ((wxExtFont)$xfont));
     } else {
       if (!$indicatorSize || $indicatorSize > $font->ascent)
 	$indicatorSize = $font->ascent + 2;

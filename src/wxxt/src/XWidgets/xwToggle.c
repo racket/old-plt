@@ -263,8 +263,8 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     ((XfwfToggleWidget)self)->xfwfToggle.saveLeftMargin = ((XfwfToggleWidget)self)->xfwfLabel.leftMargin;
 
     if (((XfwfToggleWidget)self)->xfwfLabel.xfont) {
-      if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > ((wxExtFont)((XfwfToggleWidget)self)->xfwfLabel.xfont)->ascent)
-	((XfwfToggleWidget)self)->xfwfToggle.indicatorSize = ((wxExtFont)((XfwfToggleWidget)self)->xfwfLabel.xfont)->ascent;
+      if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > wx_ASCENT(((XfwfToggleWidget)self)->xfwfLabel.font, ((wxExtFont)((XfwfToggleWidget)self)->xfwfLabel.xfont)))
+	((XfwfToggleWidget)self)->xfwfToggle.indicatorSize = wx_ASCENT(((XfwfToggleWidget)self)->xfwfLabel.font, ((wxExtFont)((XfwfToggleWidget)self)->xfwfLabel.xfont));
     } else {
       if (!((XfwfToggleWidget)self)->xfwfToggle.indicatorSize || ((XfwfToggleWidget)self)->xfwfToggle.indicatorSize > ((XfwfToggleWidget)self)->xfwfLabel.font->ascent)
 	((XfwfToggleWidget)self)->xfwfToggle.indicatorSize = ((XfwfToggleWidget)self)->xfwfLabel.font->ascent + 2;

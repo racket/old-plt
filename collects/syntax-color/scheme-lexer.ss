@@ -8,14 +8,49 @@
   (define-lex-abbrevs
    [any (- #\000 #\377)]
    [letter (: (- "a" "z") (- "A" "Z"))]
+   [a (: "a" "A")]
+   [b (: "b" "B")]
+   [c (: "c" "C")]
+   [d (: "d" "D")]
+   [e (: "e" "E")]
+   [f (: "f" "F")]
+   [g (: "g" "G")]
+   [h (: "h" "H")]
+   [i (: "i" "I")]
+   [j (: "j" "J")]
+   [k (: "k" "K")]
+   [l (: "l" "L")]
+   [m (: "m" "M")]
+   [n (: "n" "N")]
+   [o (: "o" "O")]
+   [p (: "p" "P")]
+   [q (: "q" "Q")]
+   [r (: "r" "R")]
+   [s (: "s" "S")]
+   [t (: "t" "T")]
+   [u (: "u" "U")]
+   [v (: "v" "V")]
+   [w (: "w" "W")]
+   [x (: "x" "X")]
+   [y (: "y" "Y")]
+   [z (: "z" "Z")]
    [digit (- "0" "9")]
    [whitespace (: #\newline #\return #\tab #\space #\vtab)]
    [line-comment (@ ";" (* (^ #\newline)) (: #\newline (eof)))]
    [character (: (@ "#\\" any)
                  (@ "#\\" character-name)
                  (@ "#\\" (- "0" "3") (- "0" "7") (- "0" "7")))]
-   [character-name (: "space" "newline" "nul" "null" "backspace" "tab" "linefeed"
-                      "vtab" "page" "return" "rubout")]
+   [character-name (: (@ s p a c e)
+                      (@ n e w l i n e)
+                      (@ n u l) 
+                      (@ n u l l)
+                      (@ b a c k s p a c e)
+                      (@ t a b)
+                      (@ l i n e f e e d)
+                      (@ v t a b)
+                      (@ p a g e)
+                      (@ r e t u r n)
+                      (@ r u b o u t))]
    [bad-char (: "#\\" (^ identifier-delims) (+ (^ identifier-delims)))]
    [str (@ (: "" "#rx") "\"" (* string-element) "\"")]
    
@@ -45,14 +80,14 @@
    [num2 (@ prefix2 complex2)]
    [complex2 (: real2
                 (@ real2 "@" real2)
-                (@ real2 "+" (: special-numbers ureal2) "i")
-                (@ real2 "-" (: special-numbers ureal2) "i")
-                (@ real2 "+i")
-                (@ real2 "-i")
-                (@ "+" (: special-numbers ureal2) "i")
-                (@ "-" (: special-numbers ureal2) "i")
-                (@ "+i")
-                (@ "-i"))]
+                (@ real2 "+" (: special-numbers ureal2) i)
+                (@ real2 "-" (: special-numbers ureal2) i)
+                (@ real2 "+" i)
+                (@ real2 "-" i)
+                (@ "+" (: special-numbers ureal2) i)
+                (@ "-" (: special-numbers ureal2) i)
+                (@ "+" i)
+                (@ "-" i))]
    [real2 (: (@ sign ureal2)
              (@ (: "+" "-") special-numbers))]
    [decimal2 (: (@ uinteger2 suffix2)
@@ -67,14 +102,14 @@
    [num8 (@ prefix8 complex8)]
    [complex8 (: real8
                 (@ real8 "@" real8)
-                (@ real8 "+" (: special-numbers ureal8) "i")
-                (@ real8 "-" (: special-numbers ureal8) "i")
-                (@ real8 "+i")
-                (@ real8 "-i")
-                (@ "+" (: special-numbers ureal8) "i")
-                (@ "-" (: special-numbers ureal8) "i")
-                (@ "+i")
-                (@ "-i"))]
+                (@ real8 "+" (: special-numbers ureal8) i)
+                (@ real8 "-" (: special-numbers ureal8) i)
+                (@ real8 "+" i)
+                (@ real8 "-" i)
+                (@ "+" (: special-numbers ureal8) i)
+                (@ "-" (: special-numbers ureal8) i)
+                (@ "+" i)
+                (@ "-" i))]
    [real8 (: (@ sign ureal8)
              (@ (: "+" "-") special-numbers))]
    [decimal8 (: (@ uinteger8 suffix8)
@@ -89,14 +124,14 @@
    [num10 (@ prefix10 complex10)]
    [complex10 (: real10
                  (@ real10 "@" real10)
-                 (@ real10 "+" (: special-numbers ureal10) "i")
-                 (@ real10 "-" (: special-numbers ureal10) "i")
-                 (@ real10 "+i")
-                 (@ real10 "-i")
-                 (@ "+" (: special-numbers ureal10) "i")
-                 (@ "-" (: special-numbers ureal10) "i")
-                 (@ "+i")
-                 (@ "-i"))]
+                 (@ real10 "+" (: special-numbers ureal10) i)
+                 (@ real10 "-" (: special-numbers ureal10) i)
+                 (@ real10 "+" i)
+                 (@ real10 "-" i)
+                 (@ "+" (: special-numbers ureal10) i)
+                 (@ "-" (: special-numbers ureal10) i)
+                 (@ "+" i)
+                 (@ "-" i))]
    [real10 (: (@ sign ureal10)
               (@ (: "+" "-") special-numbers))]
    [decimal10 (: (@ uinteger10 suffix10)
@@ -111,14 +146,14 @@
    [num16 (@ prefix16 complex16)]
    [complex16 (: real16
                  (@ real16 "@" real16)
-                 (@ real16 "+" (: special-numbers ureal16) "i")
-                 (@ real16 "-" (: special-numbers ureal16) "i")
-                 (@ real16 "+i")
-                 (@ real16 "-i")
-                 (@ "+" (: special-numbers ureal16) "i")
-                 (@ "-" (: special-numbers ureal16) "i")
-                 (@ "+i")
-                 (@ "-i"))]
+                 (@ real16 "+" (: special-numbers ureal16) i)
+                 (@ real16 "-" (: special-numbers ureal16) i)
+                 (@ real16 "+" i)
+                 (@ real16 "-" i)
+                 (@ "+" (: special-numbers ureal16) i)
+                 (@ "-" (: special-numbers ureal16) i)
+                 (@ "+" i)
+                 (@ "-" i))]
    [real16 (: (@ sign ureal16)
               (@ (: "+" "-") special-numbers))]
    [decimal16 (: (@ uinteger16 suffix16)
@@ -130,19 +165,19 @@
    [prefix16 (: (@ radix16 exactness)
                 (@ exactness radix16))]   
    
-   [special-numbers (: "nan.0" "inf.0")]
+   [special-numbers (: (@ n a n ".0")(@ i n f ".0"))]
    
    [suffix2 (: "" (@ exponent-marker sign (* digit2)))]
    [suffix8 (: "" (@ exponent-marker sign (* digit8)))]
    [suffix10 (: "" (@ exponent-marker sign (* digit10)))]
    [suffix16 (: "" (@ exponent-marker sign (* digit16)))]
-   [exponent-marker (: "e" "s" "f" "d" "l")]
+   [exponent-marker (: e s f d l)]
    [sign (: "" "+" "-")]
-   [exactness (: "" "#i" "#e")]
-   [radix2 "#b"]
-   [radix8 "#o"]
-   [radix10 (: "" "#d")]
-   [radix16 "#x"]
+   [exactness (: "" "#i" "#e" "#I" "#E")]
+   [radix2 (: "#b" "#B")]
+   [radix8 (: "#o" "#O")]
+   [radix10 (: "" "#d" "#D")]
+   [radix16 (: "#x" "#X")]
    [digit2 (: "0" "1")]
    [digit8 (- "0" "7")]
    [digit10 digit]
@@ -150,7 +185,7 @@
    
    [script (@ "#!" (* (: (^ #\newline) (@ #\\ #\newline))))]
    
-   [bad-num (@ (: "#o" "#b" "#x") (* (^ identifier-delims)))]
+   [bad-num (@ (: "#o" "#b" "#x" "#O" "#B" "#X") (* (^ identifier-delims)))]
    
    
    [identifier-delims (: "\"" "," "'" "`" "(" ")" "[" "]" "{" "}" ";" whitespace)]
@@ -172,7 +207,7 @@
    [bad-id (@ bad-id-start
             (* (: bad-id-escapes identifier-chars)))]
    
-   [reader-command (: "#cs" "#ci" "#hash(" "#hasheq(")]
+   [reader-command (: (@ "#" c s) (@ "#" c i) "#hash(" "#hasheq(")]
    [sharing (: (@ "#" uinteger10 "=")
                (@ "#" uinteger10 "#"))])
   
@@ -199,7 +234,7 @@
   (define scheme-lexer
     (lexer
      [(+ whitespace) (ret 'white-space start-pos end-pos)]
-     [(: "#t" "#f" num2 num8 num10 num16 character)
+     [(: "#t" "#f" "#T" "#F" num2 num8 num10 num16 character)
       (ret 'literal start-pos end-pos)]
      [str (ret 'string start-pos end-pos)]
      [(: "#;" line-comment) (ret 'comment start-pos end-pos)]

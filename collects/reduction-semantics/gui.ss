@@ -20,7 +20,7 @@
   
   (define initial-font-size
     (make-parameter
-     (send (send (send (scheme:get-style-list) 
+     (send (send (send (editor:get-standard-style-list) 
                        find-named-style
                        "Standard")
                  get-font)
@@ -90,7 +90,8 @@
       ;; set-font-size : number -> void
       ;; =eventspace main thread=
       (define (set-font-size size)
-        (let* ([scheme-standard (send (scheme:get-style-list) find-named-style "Standard")]
+        (let* ([scheme-standard (send (editor:get-standard-style-list) find-named-style
+				      "Standard")]
                [scheme-delta (make-object style-delta%)])
           (send scheme-standard get-delta scheme-delta)
           (send scheme-delta set-size-mult 0)
@@ -281,7 +282,7 @@
               (when ed-ad
                 (let ([dc (send ed get-dc)]
                       [wb (box 0)]
-                      [std-style (send (scheme:get-style-list) find-named-style "Standard")])
+                      [std-style (send (editor:get-standard-style-list) find-named-style "Standard")])
                   (send ed-ad get-view #f #f wb #f)
                   (let-values ([(tw _1 _2 _3) (send dc get-text-extent "w"
                                                     (and std-style

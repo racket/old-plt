@@ -649,7 +649,7 @@
           (define/override (get-position) 'left-top)
 
           (define/public (read-special source line column position)
-            (raise (make-special-comment "msg" (current-continuation-marks) 1)))
+            (raise (make-special-comment 1)))
           
           (super-instantiate ())
           (inherit set-snipclass get-editor)

@@ -708,6 +708,13 @@ user_close_output (Scheme_Output_Port *port)
 /*                               pipe ports                               */
 /*========================================================================*/
 
+#ifdef MZ_REAL_THREADS
+static do_unlock_mutx(void *m)
+{
+  SCHEME_UNLOCK_MUTEX(m);
+}
+#endif
+
 static int pipe_getc(Scheme_Input_Port *p)
 {
   Scheme_Pipe *pipe;
@@ -723,7 +730,7 @@ static int pipe_getc(Scheme_Input_Port *p)
     SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
     SCHEME_SEMA_DOWN(pipe->wait_sem);
     SCHEME_LOCK_MUTEX(pipe->change_mutex);
-    BEGIN_ESCAPEABLE(SCHEME_UNLOCK_MUTEX(pipe->change_mutex));
+    BEGIN_ESCAPEABLE(do_unlock_mutex, pipe->change_mutex);
     scheme_process_block(0);
     END_ESCAPEABLE();
   }

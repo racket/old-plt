@@ -3381,10 +3381,9 @@ typedef struct {
 #endif
 } Tested_Output_File;
 
-static void release_inuse_lock(Scheme_Process *p)
+static void release_inuse_lock(void *data)
 {
-  Tested_Output_File *top;
-  top = (Tested_Output_File *)p->private_kill_data;
+  top = (Tested_Output_File *)data;
   top->inuse = 0;
 }
 
@@ -3481,7 +3480,6 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
 {
   long len = llen, d = dd;
   Tested_Output_File * volatile top;
-  mz_jmp_buf savebuf;
 
   if (!len)
     return;
@@ -3523,22 +3521,10 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
       RELEASE_SEMAPHORE(top->sema);
     }
 
-    /* Need to block; messy because we're holding a lock. */
-    scheme_current_process->private_on_kill = release_inuse_lock;
-    scheme_current_process->private_kill_data = top;
-    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-    if (scheme_setjmp(scheme_error_buf)) {
-      /* Exception; release the lock: */
-      top->inuse = 0;
-      scheme_current_process->private_on_kill = NULL;
-      scheme_longjmp(savebuf, 1);
-      return;
-    } else {
-      wait_until_file_done(port);
-    }
-    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-    scheme_current_process->private_on_kill = NULL;
-    scheme_current_process->private_kill_data = NULL;
+    /* Need to block; remember that we're holding a lock. */
+    BEGIN_ESCAPEABLE(release_inuse_lock, top);
+    wait_until_file_done(port);
+    END_ESCAPEABLE();
 
     if (top->err_no) {
       top->inuse = 0;
@@ -3847,11 +3833,11 @@ fd_write_need_wakeup(Scheme_Object *port, void *fds)
   MZ_FD_SET(n, (fd_set *)fds2);
 }
 
-static void release_flushing_lock(Scheme_Process *p)
+static void release_flushing_lock(void *_fop)
 {
   Scheme_FD *fop;
 
-  fop = (Scheme_FD *)p->private_kill_data;
+  fop = (Scheme_FD *)_fop;
 
   fop->flushing = 0;
 }
@@ -3901,26 +3887,12 @@ static int flush_fd(Scheme_Output_Port *op,
 	  /* Don't signal exn or wait. Just give up. */
 	  return 0;
 	} else if (errsaved == EAGAIN) {
-	  /* Need to block; messy because we're holding a lock. */
-	  mz_jmp_buf savebuf;
-	  
-	  scheme_current_process->private_on_kill = release_flushing_lock;
-	  scheme_current_process->private_kill_data = fop;
-	  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
-	  if (scheme_setjmp(scheme_error_buf)) {
-	    /* Exception; release the lock: */
-	    fop->flushing = 0;
-	    scheme_current_process->private_on_kill = NULL;
-	    scheme_longjmp(savebuf, 1);
-	  } else {
-	    /* BLOCK */
-	    scheme_block_until(fd_write_ready, 
-			       fd_write_need_wakeup, 
-			       (Scheme_Object *)op, 0.0);
-	  }
-	  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
-	  scheme_current_process->private_on_kill = NULL;
-	  scheme_current_process->private_kill_data = NULL;
+	  /* Need to block; remember that we're holding a lock. */
+	  BEGIN_ESCAPEABLE(release_flushing_lock, fop);
+	  scheme_block_until(fd_write_ready, 
+			     fd_write_need_wakeup, 
+			     (Scheme_Object *)op, 0.0);
+	  END_ESCAPEABLE();
 	} else {
 	  fop->flushing = 0;
 	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,

@@ -622,14 +622,20 @@ typedef struct Scheme_Overflow {
   mz_jmp_buf savebuf; /* save old error buffer here */
 } Scheme_Overflow;
 
-# define BEGIN_ESCAPEABLE(onbreak) \
+typedef void (*Scheme_Kill_Action_Func)(void *);
+void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d);
+void scheme_pop_kill_action();
+
+# define BEGIN_ESCAPEABLE(func, data) \
     { mz_jmp_buf savebuf; \
+      scheme_push_kill_action((Scheme_Kill_Action_Func)func, (void *)data); \
       memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
       if (scheme_setjmp(scheme_error_buf)) { \
-        onbreak; \
+        func(data); \
         scheme_longjmp(savebuf, 1); \
       } else {
 # define END_ESCAPEABLE() \
+      scheme_pop_kill_action(); \
       memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); } }
 
 #if defined(UNIX_FIND_STACK_BOUNDS) || defined(WINDOWS_FIND_STACK_BOUNDS) \

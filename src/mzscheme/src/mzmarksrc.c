@@ -504,6 +504,7 @@ process_val {
   
   gcMARK(pr->kill_data);
   gcMARK(pr->private_kill_data);
+  gcMARK(pr->private_kill_next);
   
   gcMARK(pr->user_tls);
   

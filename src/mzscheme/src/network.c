@@ -648,6 +648,11 @@ static void mac_tcp_close(Scheme_Tcp *data, int cls, int rel)
   }
 }
 
+static void mac_tcp_close_all(Scheme_Tcp *data)
+{
+  mac_tcp_close(data, 1, 1);
+}
+
 static int mac_tcp_listen(int id, Scheme_Tcp **_data)
 {
   TCPiopbX *xpb;
@@ -1074,7 +1079,7 @@ static int tcp_getc(Scheme_Input_Port *port)
       PBControlAsync((ParamBlockRec*)pb);
     }
 
-    BEGIN_ESCAPEABLE(scheme_post_sema(data->tcp.lock));
+    BEGIN_ESCAPEABLE(scheme_post_sema, data->tcp.lock);
     scheme_block_until(tcp_check_read, tcp_read_needs_wakeup, pb, 0);
     END_ESCAPEABLE();
 
@@ -1423,6 +1428,14 @@ make_tcp_output_port(void *data)
 #  define MZ_PF_INET PF_INET
 # endif
 
+#ifdef USE_SOCKETS_TCP
+static int closesocket_w_decrement(tcp_t s)
+{
+  closesocket(s);
+  --scheme_file_open_count;
+}
+#endif
+
 static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 {
   char * volatile address = "", * volatile errmsg = "";
@@ -1496,7 +1509,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
       goto tcp_close_and_error;
     }
     
-    BEGIN_ESCAPEABLE(mac_tcp_close(data, 1, 1));
+    BEGIN_ESCAPEABLE(mac_tcp_close_all, data);
     scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, pb, 0);
     END_ESCAPEABLE();
     
@@ -1568,7 +1581,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	scheme_file_open_count++;
 	
 	if (inprogress) {
-          BEGIN_ESCAPEABLE(closesocket(s); --scheme_file_open_count);
+          BEGIN_ESCAPEABLE(closesocket_w_decrement, s);
 	  status = scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)s, (float)0.0);
 	  END_ESCAPEABLE();
 	  if (status == 1) {

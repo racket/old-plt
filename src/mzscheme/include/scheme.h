@@ -671,8 +671,9 @@ typedef struct Scheme_Process {
   void *kill_data;
 
   /* MzScheme use only: */
-  void (*private_on_kill)(struct Scheme_Process *p);
+  void (*private_on_kill)(void *);
   void *private_kill_data;
+  void **private_kill_next; /* array of three pointers */
 
   void **user_tls;
   int user_tls_size;

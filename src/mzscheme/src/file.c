@@ -2979,7 +2979,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
     }
     counter++;
     if (!(counter & 0x15)) {
-      BEGIN_ESCAPEABLE(FIND_CLOSE(hfile));
+      BEGIN_ESCAPEABLE(FIND_CLOSE, hfile);
       scheme_process_block(0);
       END_ESCAPEABLE();
     }
@@ -3015,7 +3015,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 
     counter++;
     if (!(counter & 0xF)) {
-      BEGIN_ESCAPEABLE(closedir(dir));
+      BEGIN_ESCAPEABLE(closedir, dir);
       scheme_process_block(0);
       END_ESCAPEABLE();
     }

@@ -2540,8 +2540,18 @@ static int do_kill_thread(Scheme_Process *p)
 
   scheme_weak_resume_thread(p);
 
-  if (p->private_on_kill)
-    p->private_on_kill(p);
+  while (p->private_on_kill) {
+    p->private_on_kill(p->private_kill_data);
+    if (p->private_kill_next) {
+      p->private_on_kill = (Scheme_Kill_Action_Func)p->private_kill_next[0];
+      p->private_kill_data = p->private_kill_next[1];
+      p->private_kill_next = (void **)p->private_kill_next[2];
+    } else {
+      p->private_on_kill = NULL;
+      p->private_kill_data = NULL;
+    }
+  }
+
   if (p->on_kill)
     p->on_kill(p);
 
@@ -2618,6 +2628,37 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 #endif
+
+void scheme_push_kill_action(Scheme_Kill_Action_Func f, void *d)
+{
+  Scheme_Process *p = scheme_current_process;
+
+  if (p->private_on_kill) {
+    void **next;
+    next = MALLOC_N(void *, 3);
+    next[0] = (void *)p->private_on_kill;
+    next[1] = p->private_kill_data;
+    next[2] = (void *)p->private_kill_next;
+    p->private_kill_next = next;
+  }
+
+  p->private_on_kill = f;
+  p->private_kill_data = d;
+}
+
+void scheme_pop_kill_action()
+{
+  Scheme_Process *p = scheme_current_process;
+
+  if (p->private_kill_next) {
+    p->private_on_kill = (Scheme_Kill_Action_Func)p->private_kill_next[0];
+    p->private_kill_data = p->private_kill_next[1];
+    p->private_kill_next = (void **)p->private_kill_next[2];
+  } else {
+    p->private_on_kill = NULL;
+    p->private_kill_data = NULL;
+  }
+}
 
 /*========================================================================*/
 /*                              parameters                                */
@@ -3434,7 +3475,7 @@ END_XFORM_SKIP;
 
 void scheme_real_sema_down(void *sema)
 {
-  /* >>>> BUG! SIGNAL RACE CONDITION HERE! <<<<
+  /* >>>> FIXME: SIGNAL RACE CONDITION HERE! <<<<
      We try to make problems rare by checking breaks
      just before blocking, but this is inherently wrong.
      A signal might happen after we check flags but

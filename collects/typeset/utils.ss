@@ -1,4 +1,4 @@
-(unit/sig typeset:utils^
+(unit/sig ()
   (import mred^
 	  framework^
 	  typeset:utils-input^)
@@ -290,60 +290,62 @@
   ;; greek : (union char string number) -> snip
   ;; renders the alphabetic characters in the argument into greek letters
   (define greek
-    (let ([delta (make-object style-delta%)])
-      (send delta set-family 'symbol)
-      (letrec ([style (send the-style-list find-or-create-style 
-			    (send the-style-list find-named-style "Basic")
-			    delta)]
-	       [font (send style get-font)]
-	       [snipclass
-		(make-object (class snip-class% ()
-			       (override
-				[read
-				 (lambda (stream-in)
-				   (make-object greek-snip% (send stream-in get-string)))])
-			       (sequence (super-init))))]
-	       [greek-snip%
-		(class snip% (str)
-		  (inherit get-style)
-		  (override
-		   [write
-		    (lambda (stream-out)
-		      (send stream-out << str))]
-		   [get-extent
-		    (lambda (dc x y wb hb descentb spaceb lspace rspace)
-		      (let-values ([(width height descent ascent)
-				    (send dc get-text-extent str font)])
-			(set-box/f! wb (max 0 width))
-			(set-box/f! hb (max 0 height))
-			(set-box/f! descentb (max 0 descent))
-			(set-box/f! spaceb (max 0 ascent))
-			(set-box/f! lspace 0)
-			(set-box/f! rspace 0)))]
-		   [draw
-		    (lambda (dc x y left top right bottom dx dy draw-caret)
-		      (let ([old-font (send dc get-font)])
-			(send dc set-font font)
-			(send dc draw-text str x y)
-			(send dc set-font old-font)))]
-		   [copy
-		    (lambda ()
-		      (let ([snip (make-object greek-snip% str)])
-			(send snip set-style (get-style))
-			snip))])
-		  (inherit set-snipclass)
-		  (sequence
-		    (super-init)
-		    (set-snipclass snipclass)))])
-	(send snipclass set-version 1)
-	(send snipclass set-classname "robby:greek")
-	(send (get-the-snip-class-list) add snipclass)
-	(lambda (in)
-	  (let ([str (cond
-		      [(string? in) in]
-		      [(char? in) (string in)]
-		      [(number? in) (string (integer->char in))])])
-	    (make-object greek-snip% str))))))
+    (letrec ([snipclass
+	      (make-object (class snip-class% ()
+			     (override
+			       [read
+				(lambda (stream-in)
+				  (make-object greek-snip%
+				    (send stream-in get-string)
+				    (send stream-in get-number)))])
+			     (sequence (super-init))))]
+	     [greek-snip%
+	      (class snip% (str size)
+		(inherit get-style)
+		(private
+		  [font
+		   (send the-font-list find-or-create-font
+			 size 'symbol 'normal 'normal #f)])
+		(override
+		  [write
+		   (lambda (stream-out)
+		     (send stream-out << str)
+		     (send stream-out << size))]
+		  [get-extent
+		   (lambda (dc x y wb hb descentb spaceb lspace rspace)
+		     (let-values ([(width height descent ascent)
+				   (send dc get-text-extent str font)])
+		       (set-box/f! wb (max 0 width))
+		       (set-box/f! hb (max 0 height))
+		       (set-box/f! descentb (max 0 descent))
+		       (set-box/f! spaceb (max 0 ascent))
+		       (set-box/f! lspace 0)
+		       (set-box/f! rspace 0)))]
+		  [draw
+		   (lambda (dc x y left top right bottom dx dy draw-caret)
+		     (let ([old-font (send dc get-font)])
+		       (send dc set-font font)
+		       (send dc draw-text str x y)
+		       (send dc set-font old-font)))]
+		  [copy
+		   (lambda ()
+		     (let ([snip (make-object greek-snip% str size)])
+		       (send snip set-style (get-style))
+		       snip))])
+		(inherit set-snipclass)
+		(sequence
+		  (super-init)
+		  (set-snipclass snipclass)))])
+
+      (send snipclass set-version 1)
+      (send snipclass set-classname "robby:greek")
+      (send (get-the-snip-class-list) add snipclass)
+      (lambda (in)
+	(let ([str (cond
+		    [(string? in) in]
+		    [(char? in) (string in)]
+		    [(number? in) (string (integer->char in))])])
+	  (make-object greek-snip% str (typeset-size))))))
   
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -885,7 +887,7 @@
 	    (-g-arrow g-arrow) (-bg-arrow bg-arrow)
 	    (-checked-arrow checked-arrow)
 	    (-blank-arrow blank-arrow)
-	    (-typset-size typeset-size))
+	    (-typeset-size typeset-size))
 
     (define -single-bracket single-bracket) 
     (define -double-bracket double-bracket)

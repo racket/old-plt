@@ -14,6 +14,8 @@
    position
    sup sub
    postscript
+
+   typeset-size
    
    arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)) ;; these should move out
 

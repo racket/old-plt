@@ -158,7 +158,7 @@
 
     (set-brush (find-or-create-brush "black" 'solid))
 
-    (let loop ([dx dx][dy dy][l l][color "black"])
+    (let loop ([dx dx][dy dy][l l])
       (unless (null? l)
 	(let ([x (car l)])
 	  (if (string? x)
@@ -166,8 +166,7 @@
 	      (case (car x)
 		[(offset) (loop (+ dx (cadr x))
 				(+ dy (caddr x))
-				(cadddr x)
-				color)]
+				(cadddr x))]
 		[(line vector)
 		 (let ([xs (cadr x)]
 		       [ys (caddr x)]
@@ -198,14 +197,20 @@
 			      (- h+top (+ dy (list-ref x 6))))]
 		[(with-color)
 		 (if b&w?
-		     (loop dx dy (caddr x) color)
+		     (loop dx dy (caddr x))
 		     (let ([p (get-pen)]
 			   [b (get-brush)]
 			   [fg (get-text-foreground)])
-		       (set-pen (find-or-create-pen (cadr x) (send p get-width) 'solid))
-		       (set-brush (find-or-create-brush (cadr x) 'solid))
-		       (set-text-foreground (send the-color-database find-color (cadr x)))
-		       (loop dx dy (caddr x) (cadr x))
+                       (let* ([requested-color (send the-color-database find-color (cadr x))]
+                              [color (or requested-color 
+                                         (send the-color-database find-color "BLACK"))])
+                         (unless requested-color
+                           (fprintf (current-error-port)
+                                    "WARNING: couldn't find color: ~s~n" (cadr x)))
+                         (set-pen (find-or-create-pen color (send p get-width) 'solid))
+                         (set-brush (find-or-create-brush color 'solid))
+                         (set-text-foreground color))
+		       (loop dx dy (caddr x))
 		       (set-pen p)
 		       (set-brush b)
 		       (set-text-foreground fg)))]
@@ -218,12 +223,12 @@
 							1
 							0))
 						'solid))
-		   (loop dx dy (caddr x) color)
+		   (loop dx dy (caddr x))
 		   (set-pen p))]
 		[(prog)
 		 ((cadr x) dc dx (- h+top dy (caddr x)))]
-		[else (error 'rander "unknown command: ~a~n" x)])))
-	(loop dx dy (cdr l) color))))
+		[else (error 'render "unknown command: ~a~n" x)])))
+	(loop dx dy (cdr l)))))
 
   (define (make-pict-drawer p)
     (let ([cmds (pict->command-list p)])

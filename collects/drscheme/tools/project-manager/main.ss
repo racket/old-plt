@@ -949,9 +949,10 @@
 	       (for-each (lambda (file)
 			   (write
 			    (cond
-			     [(eq? (car file) 'build-path)
-			      `(load ,file)]
-			     [else file])
+                              [(eq? (car file) 'build-path)
+                               `(load-relative (build-path ,@(map print-convert (cdr file))))]
+			     [else 
+                              file])
 			    port)
 			   (newline port))
 			 files))

@@ -71,6 +71,7 @@
 	       (inherit begin-edit-sequence
 			end-edit-sequence
 			position-line
+			position-location
 			line-location
 			set-position
 			insert
@@ -85,9 +86,12 @@
 			erase
 			set-mode
 			get-canvas
+			invalidate-bitmap-cache
+			get-extent
 			get-style-list)
 	       (rename [super-on-local-char on-local-char]
 		       [super-on-paint on-paint]
+		       [super-after-set-size-constraint after-set-size-constraint]
 		       [super-after-insert after-insert]
 		       [super-after-delete after-delete])
 	       (private old-stdout
@@ -463,58 +467,80 @@
 		   (super-after-delete start len))])
 
 	  (private
+	    [reset-console-start-position 0]
+	    [reset-console-end-position #f]
+	    [reset-console-end-location #f]
 	    [reset-console-start-location #f]
-	    [reset-console-end-location #f])
+	    [reset-console-locations
+	     (lambda ()
+	       (when reset-console-end-position
+		 (set! reset-console-end-location
+		       (line-location (position-line reset-console-end-position) #f)))
+	       (when reset-console-start-position
+		 (set! reset-console-start-location
+		       (line-location (position-line reset-console-start-position) #f)))
+	       (when (and reset-console-start-location reset-console-end-location)
+		 (wx:message-box "2")
+		 (invalidate-bitmap-cache 0 reset-console-start-location
+					  -1 (- reset-console-end-location
+						reset-console-start-location))		 
+		 (wx:message-box "2")))])
 	  (public
-	    [set-last-header-line
-	     (lambda (l)
-	       (printf "set-last-header-line to ~a (loc ~a)~n" l
-		       (line-location l #t))
-	       (set! reset-console-start-location
-		     (line-location l #t)))]
+	    [set-last-header-position
+	     (lambda (p)
+	       (set! reset-console-start-position p)
+	       (reset-console-locations))]
+	    [after-set-size-constraint
+	     (lambda ()
+	       (super-after-set-size-constraint)
+	       (reset-console-locations))]
 	    [reset-console
-		 (lambda ()
-		   (let* ([delta (make-object wx:style-delta%)]
-			  [color-add (send delta get-foreground-add)]
-			  [color-mult (send delta get-foreground-mult)]
-			  [last-pos (max 0
-					 (- prompt-position
-					    (string-length (get-prompt))))])
-		     (set! resetting? #t)
-		     (if (< (wx:display-depth) 8)
-			 (begin (send color-mult set 0 0 0)
-				(send color-add set 127 127 127)
-				(change-style delta 0 last-pos))
-			 (begin (set! reset-console-end-location
-				      (line-location
-				       (position-line prompt-position)
-				       #t))
-				(send (get-canvas) force-redraw)))
-		     (set! resetting? #f)))]		
-		[on-paint
-		 (lambda (before dc left top right bottom dx dy draw-caret)
-		   (super-on-paint before dc left top right bottom dx dy draw-caret)
-		   (when (and (not before) 
-			      reset-console-start-location
-			      reset-console-end-location)
-		     (let ([old-pen (send dc get-pen)]
-			   [old-brush (send dc get-brush)]
-			   [pen (make-object wx:pen% "BLACK" 1 wx:const-stipple)]
-			   [brush (make-object wx:brush% "BLACK" wx:const-stipple)]
-			   [old-logical (send dc get-logical-function)])
-		       (send pen set-stipple mred:icon:reset-console-bitmap)
-		       (send brush set-stipple mred:icon:reset-console-bitmap)
-		       (send dc set-pen pen)
-		       (send dc set-brush brush)
-		       (send dc set-logical-function wx:const-xor)
-		       (send dc draw-rectangle 
-			     left
-			     (+ dy reset-console-start-location)
-			     right
-			     (+ dy reset-console-end-location))
-		       (send dc set-pen old-pen)
-		       (send dc set-brush old-brush)
-		       (send dc set-logical-function old-logical))))]
+	     (let* ([delta (make-object wx:style-delta%)]
+		    [color-add (send delta get-foreground-add)]
+		    [color-mult (send delta get-foreground-mult)])
+	       (send color-mult set 0 0 0)
+	       (send color-add set 127 127 127)
+	       (lambda ()
+		 (when (number? prompt-position)
+		   (set! reset-console-end-position prompt-position))
+		 (set! resetting? #t)
+		 (if (< (wx:display-depth) 8)
+		     (begin (reset-console-locations)
+			    (send (get-canvas) force-redraw))
+		     (when reset-console-end-position
+		       (change-style delta reset-console-start-position 
+				     reset-console-end-position)))
+		 (set! resetting? #f)))]
+	    [on-paint
+	     (lambda (before dc left top right bottom dx dy draw-caret)
+	       (super-on-paint before dc left top right bottom
+			       dx dy draw-caret)
+	       (when (and (not before) 
+			  reset-console-start-location
+			  reset-console-end-location)
+		 (let* ([old-pen (send dc get-pen)]
+			[old-brush (send dc get-brush)]
+			[old-logical (send dc get-logical-function)]
+			[pen (make-object wx:pen% "BLACK" 1
+					  wx:const-transparent)]
+			[brush (make-object wx:brush% "BLACK" 
+					    wx:const-stipple)]
+			[x dx]
+			[y (+ dy reset-console-start-location)]
+			[width (begin (get-extent #1=#&0 null)
+				      (unbox #1#))]
+			[_ (wx:message-box "1")]
+			[height  (- reset-console-end-location
+				    reset-console-start-location)])
+		   (wx:message-box "1")
+		   (send brush set-stipple mred:icon:reset-console-bitmap)
+		   (send dc set-pen pen)
+		   (send dc set-brush brush)
+		   (send dc set-logical-function wx:const-xor)
+		   (send dc draw-rectangle x y width height)
+		   (send dc set-pen old-pen)
+		   (send dc set-brush old-brush)
+		   (send dc set-logical-function old-logical))))]
 		[ready-non-prompt
 		 (lambda ()
 		   (when prompt-mode?
@@ -635,9 +661,7 @@
 	    ; Welcome message and initial prompt:
 	    (when mssg
 	      (send edit insert mssg)
-	      (send edit set-last-header-line
-		    (send edit position-line 
-			  (send edit get-end-position)))
+	      (send edit set-last-header-position (send edit get-end-position))
 	      
 	      (mred:gui-utils:local-busy-cursor 
 	       canvas

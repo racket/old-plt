@@ -102,6 +102,7 @@
 (define-signature mred:exit^
   (insert-exit-callback
    remove-exit-callback
+   run-exit-callbacks
    exit))
 
 (define-signature mred:gui-utils^

@@ -84,7 +84,7 @@
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
 	     [drscheme : drscheme^
 	       (drscheme@ mred mzlib zodiac interface print-convert params)])
-       (export (unit mred)
+       (export (open mred)
 	       (open mzlib)
 	       (open print-convert)
 	       (open drscheme)

@@ -20,7 +20,7 @@
 	    [autoload : mred:autoload^
 		      (mred:autoload@ debug preferences (core file@))]
 	    [autosave : mred:autosave^
-		      (mred:autosave@ debug preferences)]
+		      (mred:autosave@ debug exit preferences)]
 	    [mode : mred:mode^
 		  (mred:mode@ debug keymap)]
 	    [handler : mred:handler^

@@ -47,7 +47,7 @@
 			  [continue (lambda (y)
 				      (mred:debug:printf 'load "Loading ~a..." y)
 				      (old-handler y))])
-		      (if (and (eq? mred:debug:on? 'compile)
+		      (if (and (or (eq? mred:debug:on? 'compile) (eq? mred:debug:on? 'compile-and-exit))
 			       (string=? ".ss" (substring file
 							  (- (string-length file) 3)
 							  (string-length file))))
@@ -70,7 +70,7 @@
 				(continue file))))
 			(continue file)))))))
 
-(define mred:debug:new-eval (void))
+(define mred:debug:new-eval #f)
 (define mred:debug:new-console (void))  
 (define mred:debug:carryover-ids 
   (list 'mred:system-source-directory
@@ -79,6 +79,8 @@
 (define mred:debug:make-new-console
   (if mred:debug:on? 
       (lambda ()
+	(when mred:debug:new-eval
+	  (mred:debug:new-eval '(mred:run-exit-callbacks)))
 	(set! mred:debug:new-eval (make-eval 'wx))
 	(set! mred:make-application@ mred:non-unit-make-application@)
 	(load-recent "link")
@@ -230,6 +232,8 @@
 		   files-to-open)
 	 (when mred:non-unit-startup?
 	   (set! mred:console (mred:startup)))
+	 (when (eq? mred:debug:on? 'compile-and-exit)
+	   (wx:exit))
 	 mred:console]
 	[else 
 	 (let ([arg (car args)]

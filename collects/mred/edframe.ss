@@ -287,14 +287,16 @@
 			 (send (active-canvas) force-redraw))))
 	       (send edit-menu append-separator))]
 
+	    [allow-font-menu? #t]
 	  [make-menu-bar
 	   (lambda ()
-	     (let ([mb (super-make-menu-bar)]
-		   [font-menu (make-menu)])
-	       (send mb append font-menu "Fon&t")
-	       (set! font-offset (send (make-object wx:media-edit%)
-				       append-font-items 
-				       font-menu 0))
+	     (let ([mb (super-make-menu-bar)])
+	       (when allow-font-menu?
+		 (let ([font-menu (make-menu)])
+		   (send mb append font-menu "Fon&t")
+		   (set! font-offset (send (make-object wx:media-edit%)
+					   append-font-items 
+					   font-menu 0))))
 	       mb))])
 	  (sequence
 	    (mred:debug:printf 'super-init "before mred:editor-frame%")

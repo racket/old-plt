@@ -51,7 +51,8 @@
 	       (let/ec k
 		 (with-handlers ([(lambda (x) #t)
 				  (lambda (x) #f)])
-		   (let ([info (require-library "info.ss" collection)])
+		   (let ([info (parameterize ([require-library-use-compiled #f])
+				   (require-library "info.ss" collection))])
 		     (for-each 
 		      (lambda (sym) (info sym (lambda () (k #f))))
 		      '(name compile-prefix))

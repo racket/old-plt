@@ -24,7 +24,7 @@ MA 02111-1307, USA. */
 
 #include "gmp.h"
 #include "gmp-impl.h"
-#include "longlong.h"
+#include "gmplonglong.h"
 
 static const int mp_bits_per_limb = BITS_PER_MP_LIMB;
 static const int __gmp_0 = 0;

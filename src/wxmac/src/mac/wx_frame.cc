@@ -518,6 +518,26 @@ void wxFrame::ShowAsActive(Bool flag)
  	if (!flag)
  		::EraseRect(&growRect);
  	::InvalRect(&growRect);
+ 	
+ 	if (!cFocusWindow && children) {
+		wxChildNode *node = children->First();
+		while (node) {
+			wxWindow *win = (wxWindow *)node->Data();
+			if (win->WantsFocus() && win->CanAcceptEvent()) {
+				cFocusWindow = win;
+				break;
+			}
+			node = node->Next();
+		}
+	}
+
+	if (cFocusWindow && this != cFocusWindow)
+    {
+		if (flag)
+		  cFocusWindow->OnSetFocus();
+		else
+		  cFocusWindow->OnKillFocus();
+	}
 }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -742,6 +762,7 @@ void wxFrame::Show(Bool show)
 #endif
 		::ShowWindow(theMacWindow);
  		::SelectWindow(theMacWindow); 
+ 		
  		if (cMacDC->currentUser() == this)
 			/* b/c may be optimized for hidden: */
 			cMacDC->setCurrentUser(NULL);
@@ -789,26 +810,6 @@ void wxFrame::SetFocusWindow(wxWindow* window)
 //-----------------------------------------------------------------------------
 void wxFrame::OnActivate(Bool active)
 {
-	if (!cFocusWindow && children) {
-		wxChildNode *node = children->First();
-		while (node) {
-			wxWindow *win = (wxWindow *)node->Data();
-			if (win->WantsFocus() && win->CanAcceptEvent()) {
-				cFocusWindow = win;
-				break;
-			}
-			node = node->Next();
-		}
-	}
-
-	if (cFocusWindow && this != cFocusWindow)
-    {
-		if (active)
-		  cFocusWindow->OnSetFocus();
-		else
-		  cFocusWindow->OnKillFocus();
-	}
-
 	wxWindow::OnActivate(active);
 }
 
@@ -819,19 +820,31 @@ void wxFrame::LoadAccelerators(char* table) { } // Not Applicable for Mac platfo
 void wxFrame::Paint(void)
 {
 	SetCurrentDC();
-	RgnHandle rgn, subrgn;
+	RgnHandle rgn, subrgn, borderRgn = NULL;
 	if (rgn = NewRgn()) {
 		if (subrgn = NewRgn()) {
+		  if (!(cStyle & wxRESIZE_BORDER) || (borderRgn = NewRgn())) {
+		    if (borderRgn) {
+              int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
+	          int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
+              Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
+              RectRgn(borderRgn, &growRect);
+		    }
 		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight);
 			AddWhiteRgn(subrgn);
 			DiffRgn(rgn, subrgn, rgn);
+			DiffRgn(rgn, borderRgn, rgn);
 			EraseRgn(rgn);
 			RGBColor save;
 			GetForeColor(&save);
 			ForeColor(whiteColor);
+			DiffRgn(subrgn, borderRgn, subrgn);
 			PaintRgn(subrgn);
 			RGBForeColor(&save);
-			DisposeRgn(subrgn);
+			if (borderRgn)
+			  DisposeRgn(borderRgn);
+		  }
+		  DisposeRgn(subrgn);
 		}
 		DisposeRgn(subrgn);
 	}

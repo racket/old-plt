@@ -111,57 +111,6 @@ extern void wxCheckFinishedSounds(void);
 
 int wxApp::MainLoop(void)
 {
-#if 0
-	long sleepTime = 60;
-	wxNode *tmnode = gTimerList.First();
-	if (Button() || tmnode) // WCH: kludge; programmer should control amount of sleep time
-		sleepTime = 1; 		// if mouse down or timers exist then want quick response
-	else
-		sleepTime = GetDblTime(); // if front window has TE record
-
-	Bool gotEvent = WaitNextEvent(everyEvent, &cCurrentEvent,
-									sleepTime, cMacCursorRgn);
-	// ::SystemTask();
-
-	// Check for Timers that need to fire
-	while (tmnode) {
-		wxTimer *timer = (wxTimer *)tmnode->Data();
-		UInt32 nowticks = TickCount();
-		if (timer->milli && (timer->fireTime <= nowticks))
-		{
-			// its Time to go
-			timer->Notify();
-			if (timer->oneShot)
-			{
-				delete tmnode;
-				tmnode = gTimerList.First(); // start over again 
-			} 
-			else
-			{	// reset the future time
-				timer->fireTime = nowticks + (timer->milli / (1000 / CLOCKS_PER_SEC));
-				tmnode = tmnode->Next();
-			}
-		}
-		else
-		{
-			tmnode = tmnode->Next();
-		}
-	}
-	if (gotEvent)
-	{
-		Dispatch();
-	}
-	else 
-	{
-		DoIdle();
-#ifdef USE_IPC
-		void DoIPCIdle();
-
-		DoIPCIdle();
-#endif
-	}
-#endif
-
 	wxDoEvents();
 
 	return 0;

@@ -565,21 +565,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
     return TRUE;
   }
   
-  if (keyOk) {
-     if ((check_only && EventAvail(autoKeyMask, event))
-         || (!check_only && GetNextEvent(autoKeyMask, event))) {
-     	if (which)
-     	  *which = keyOk;
-
-#ifdef RECORD_HISTORY
-	fprintf(history, "autokey\n");
-	fflush(history);
-#endif
-
-     	return TRUE;
-     }
-  }
-  
   // TransferQueue(0);
     
   /* Try activate and high-level events: */

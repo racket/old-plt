@@ -255,6 +255,8 @@ void wxScrollBar::ShowAsActive(Bool flag) // mac platform only
  			//		Rect controlRect   (**cMacControl).contrlRect;
  			//		::InvalRect(&controlRect);
  			::HideControl(cMacControl);
+ 			Rect controlRect = (**cMacControl).contrlRect;
+			::InvalRect(&controlRect);
  		}
 	   // OLD: ::HiliteControl(cMacControl, flag ? kActiveControl : kInactiveControl);
 	

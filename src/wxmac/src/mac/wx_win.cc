@@ -1209,18 +1209,6 @@ void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* desc
 void wxWindow::Activate(Bool flag) // mac platform only
 {
 	ShowAsActive(flag);
-	OnActivate(flag);
-}
-
-//-----------------------------------------------------------------------------
-void wxWindow::ShowAsActive(Bool flag) // mac platform only
-{
-	// default is to do nothing
-}
-
-//-----------------------------------------------------------------------------
-void wxWindow::OnActivate(Bool flag) // mac platform only
-{
 	wxNode* areaNode = cAreas.First();
 	while (areaNode)
 	{
@@ -1234,6 +1222,18 @@ void wxWindow::OnActivate(Bool flag) // mac platform only
 		}
 		areaNode = areaNode->Next();
 	}
+	OnActivate(flag);
+}
+
+//-----------------------------------------------------------------------------
+void wxWindow::ShowAsActive(Bool flag) // mac platform only
+{
+	// default is to do nothing
+}
+
+//-----------------------------------------------------------------------------
+void wxWindow::OnActivate(Bool flag) // mac platform only
+{
 }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

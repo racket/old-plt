@@ -44,8 +44,8 @@
 	(public
 	  [pre-on-char
 	   (lambda (receiver event)
-	     (let ([ans (send keymap handle-key-event this event)])
-	       (or ans
+	     (let ([ans '(send keymap handle-key-event this event)])
+	       (or #f
 		   (super-pre-on-char receiver event))))]
 	  [pre-on-eventt
 	   (lambda (receiver event)

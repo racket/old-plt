@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_hash.cxx,v 1.1 1999/11/12 17:21:42 mflatt Exp $
+ * RCS_ID:	$Id: wb_hash.cxx,v 1.2 1999/11/12 22:33:04 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -25,7 +25,7 @@
 #include <string.h>
 #include <stdarg.h>
 
-wxHashTable::wxHashTable (int the_key_type, int size)
+wxHashTable::wxHashTable (int, int size)
 {
   __type = wxTYPE_HASH_TABLE;
   n = size;

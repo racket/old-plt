@@ -16,7 +16,7 @@ include xtmake.env
 #
 # Motif Release 1.2
 #
-#   $RCSfile: GNUmakefile,v $ $Revision: 1.1 $ $Date: 1999/11/12 21:50:26 $
+#   $RCSfile: GNUmakefile,v $ $Revision: 1.2 $ $Date: 1999/11/12 22:50:48 $
 
 # -------------------------------------------------------------------------
 # Makefile generated from "Imake.tmpl" and </tmp/IIf.a07519>
@@ -47,7 +47,7 @@ include xtmake.env
 #
 # Motif Release 1.2.2
 #
-#   $RCSfile: GNUmakefile,v $ $Revision: 1.1 $ $Date: 1999/11/12 21:50:26 $
+#   $RCSfile: GNUmakefile,v $ $Revision: 1.2 $ $Date: 1999/11/12 22:50:48 $
 # platform:  $XConsortium: sun.cf,v 1.72.1.1 92/03/18 13:13:37 rws Exp $
 
 # operating system:  SunOS 4.1.3
@@ -307,14 +307,14 @@ DataStructures/$(OBJDIR)/TypeTree.o:\
 	DataStructures/Object.h ../../wxcommon/wx_list.h \
 	../../wxcommon/wx_hash.h DataStructures/TypeTree.h
 
-DataStructures/wb_$(OBJDIR)/wb_hash.o:\
-	DataStructures/wb_hash.cc \
+DataStructures/$(OBJDIR)/wb_hash.o:\
+	DataStructures/wb_hash.cc ../../wxcommon/wb_hash.cxx \
 	DataStructures/Object.h ../../wxcommon/wx_list.h \
 	../../wxcommon/wx_hash.h
 
-DataStructures/wb_$(OBJDIR)/wb_list.o:\
-	DataStructures/wb_list.cc DataStructures/Object.h \
-	../../wxcommon/wx_list.h
+DataStructures/$(OBJDIR)/wb_list.o:\
+	DataStructures/wb_list.cc ../../wxcommon/wb_list.cxx \
+	DataStructures/Object.h ../../wxcommon/wx_list.h
 
 DeviceContexts/$(OBJDIR)/DC.o:\
 	DeviceContexts/DC.cc DataStructures/Object.h \

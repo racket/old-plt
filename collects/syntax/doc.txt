@@ -105,7 +105,7 @@ _toplevel.ss_: helper for moduleless compilation and expansion
 _struct.ss_: generating the same names as `define-struct'
 ======================================================================
 
-> (build-struct-names name-id field-ids omit-sel? omit-set?) -
+> (build-struct-names name-id field-ids omit-sel? omit-set? [src-stx]) -
   generates the names bound by `define-struct' given an identifier for
   the struct type name and a list of identifiers for the field
   names. The result is a list of identifiers:
@@ -120,6 +120,9 @@ _struct.ss_: generating the same names as `define-struct'
   If `omit-sel?' is true, then the selector names are omitted from the
   result list. If `omit-set?' is true, then the setter names are
   omitted from the result list.
+
+  The default src-stx is #f; it is used to provide a source location
+  to the generated identifiers.
 
 > (build-struct-generation name-id field-ids omit-sel? omit-set?) -
   takes the same arguments as `build-struct-names' and generates an

@@ -1696,6 +1696,7 @@ char *scheme_normal_path_case(char *si, int *_len)
   memcpy(s, si, len + 1);
 
   for (i = 0; i < len; i++) {
+    /* FIXME: this use of tolower probably interacts badly with locales */
     s[i] = tolower(s[i]);
 #  ifdef DOS_FILE_SYSTEM
     if (s[i] == '/')

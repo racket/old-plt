@@ -222,12 +222,12 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
    if (!SCHEME_CHARP(argv[0]))      \
      scheme_wrong_type(#scheme_name, "character", 0, argc, argv);     \
    prev = ((unsigned char)SCHEME_CHAR_VAL(argv[0]));     \
-   if (uc) { prev = toupper(prev); }     \
+   if (uc && ((prev <= 127) || scheme_locale_on)) { prev = toupper(prev); }     \
    for (i = 1; i < argc; i++) {     \
      if (!SCHEME_CHARP(argv[i]))      \
        scheme_wrong_type(#scheme_name, "character", i, argc, argv);     \
      c = ((unsigned char)SCHEME_CHAR_VAL(argv[i]));     \
-     if (uc) { c = toupper(c); }     \
+     if (uc && ((c <= 127) || scheme_locale_on)) { c = toupper(c); } \
      if (!eq && mzCAN_LOCALE && loc) { \
         char a[2], b[2]; a[1] = 0; b[1] = 0; a[0] = (char)prev; b[0] = (char)c; \
         if (!(strcoll(a, b) comp 0)) rv = scheme_false; \

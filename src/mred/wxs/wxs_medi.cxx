@@ -2159,7 +2159,7 @@ static Scheme_Object *os_wxMediaBufferBeginWriteHeaderFooterToFile(int n,  Schem
 
   
   if (n > (POFFSET+2))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], scheme_make_integer(_x2)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x2); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
   return (r ? scheme_true : scheme_false);
 }
@@ -2296,7 +2296,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], (_x0 ? scheme_true : scheme_false)));
+    { Scheme_Object *sbv_ = (_x0 ? scheme_true : scheme_false); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
@@ -2803,9 +2803,9 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }
@@ -2859,9 +2859,9 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }
@@ -2895,9 +2895,9 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }
@@ -3074,9 +3074,9 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(int n,  Scheme_Object *p[]
 
   
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   if (n > (POFFSET+2) && !XC_SCHEME_NULLP(p[POFFSET+2]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], WITH_VAR_STACK(scheme_make_double(_x2))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
   return (r ? scheme_true : scheme_false);
 }
@@ -3450,9 +3450,9 @@ static Scheme_Object *os_wxMediaBufferGetExtent(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1) && !XC_SCHEME_NULLP(p[POFFSET+1]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }
@@ -5351,9 +5351,9 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
 
   
   if (n > (0+0) && !XC_SCHEME_NULLP(p[0+0]))
-    WITH_VAR_STACK(objscheme_set_box(p[0+0], scheme_make_integer(_x0)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[0+0], sbv_)); } 
   if (n > (0+1) && !XC_SCHEME_NULLP(p[0+1]))
-    WITH_VAR_STACK(objscheme_set_box(p[0+1], scheme_make_integer(_x1)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[0+1], sbv_)); } 
   
   return scheme_void;
 }

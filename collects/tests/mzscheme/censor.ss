@@ -9,7 +9,7 @@
 			 null
 			 (let ([c (car s)])
 			   (cond
-			    [(and (not (char-whitespace? c)) (or (char<=? c #\space) (char>=? c #\200)))
+			    [(and (not (char-whitespace? c)) (or (<= (char->integer c) 32) (>= (char->integer c) #o200)))
 			     (append (cons #\{ (string->list 
 						(number->string 
 						 (char->integer c))))

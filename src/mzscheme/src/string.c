@@ -862,7 +862,10 @@ static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, i
        endres, then continue. Unfortunately, we
        do too much work if an earlier part of the
        string (tested later) determines the result,
-       but hopefully nul characters are rare. */
+       but hopefully nul characters are rare. 
+
+       We assume that strcoll() always treats shorter
+       as <, (i.e., "abc" is always less than "abcd"). */
     int v;
 
     while (l1--) {
@@ -951,8 +954,10 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
     
     a = *(str1++);
     b = *(str2++);
-    a = toupper(a);
-    b = toupper(b);
+    if ((a <= 127) ||scheme_locale_on)
+      a = toupper(a);
+    if ((b <= 127) || scheme_locale_on)
+      b = toupper(b);
 
     a = a - b;
     if (a)

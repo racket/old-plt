@@ -1869,7 +1869,6 @@ int wxGetPreference(const char *name, char *res, long len)
 
 		  if (c == '"') {
 		    closer = '"';
-		    c = cgetc();
 		    i = 0;
 		  } else {
 		    res[0] = c;

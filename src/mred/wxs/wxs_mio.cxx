@@ -1487,7 +1487,7 @@ static Scheme_Object *os_wxMediaStreamInGET(int n,  Scheme_Object *p[])
 
     
     if (n > (POFFSET+0))
-      WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+      { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
     
   } else  {
     double _x0;
@@ -1508,7 +1508,7 @@ static Scheme_Object *os_wxMediaStreamInGET(int n,  Scheme_Object *p[])
 
     
     if (n > (POFFSET+0))
-      WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+      { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
     
   }
 
@@ -1577,7 +1577,7 @@ static Scheme_Object *os_wxMediaStreamInGetFixed(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxMediaStreamIn(r));
 }
@@ -1610,7 +1610,7 @@ static Scheme_Object *os_wxMediaStreamInGetString(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0) && !XC_SCHEME_NULLP(p[POFFSET+0]))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   
   return (r ? scheme_make_sized_string(r, _x0 - 1, 0) : XC_SCHEME_NULL);
 }
@@ -1642,7 +1642,7 @@ static Scheme_Object *os_wxMediaStreamInGet(int n,  Scheme_Object *p[])
 
     
     if (n > (POFFSET+0))
-      WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+      { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
     
   } else  {
     double _x0;
@@ -1663,7 +1663,7 @@ static Scheme_Object *os_wxMediaStreamInGet(int n,  Scheme_Object *p[])
 
     
     if (n > (POFFSET+0))
-      WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+      { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
     
   }
 

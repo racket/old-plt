@@ -324,7 +324,7 @@ scheme_intern_symbol(const char *name)
     for (i = 0; i < len; i++) {
       int c = name[i];
 
-      /* if (isupper(c)) */
+      if ((c <= 127) || scheme_locale_on)
 	c = tolower(c);
 
       naya[i] = c;

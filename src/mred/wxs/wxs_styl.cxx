@@ -112,11 +112,11 @@ static Scheme_Object *os_wxMultColourGet(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   if (n > (POFFSET+2))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], WITH_VAR_STACK(scheme_make_double(_x2))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
   return scheme_void;
 }
@@ -385,11 +385,11 @@ static Scheme_Object *os_wxAddColourGet(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   if (n > (POFFSET+2))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], scheme_make_integer(_x2)));
+    { Scheme_Object *sbv_ = scheme_make_integer(_x2); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
   return scheme_void;
 }

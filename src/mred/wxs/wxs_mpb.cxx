@@ -3130,9 +3130,9 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(int n,  Scheme
 
   
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   if (n > (POFFSET+2))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], WITH_VAR_STACK(scheme_make_double(_x2))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
   return scheme_void;
 }
@@ -3166,9 +3166,9 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(int n,  Scheme_O
 
   
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   if (n > (POFFSET+2))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], WITH_VAR_STACK(scheme_make_double(_x2))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x2)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], sbv_)); } 
   
   return scheme_void;
 }
@@ -3199,9 +3199,9 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMouse(int n,  Scheme_
 
   
   if (n > (POFFSET+0))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }
@@ -3772,9 +3772,9 @@ static Scheme_Object *os_wxMediaPasteboardGetCenter(int n,  Scheme_Object *p[])
 
   
   if (n > (POFFSET+0))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], WITH_VAR_STACK(scheme_make_double(_x0))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x0)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], sbv_)); } 
   if (n > (POFFSET+1))
-    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+    { Scheme_Object *sbv_ = WITH_VAR_STACK(scheme_make_double(_x1)); WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], sbv_)); } 
   
   return scheme_void;
 }

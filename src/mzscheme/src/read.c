@@ -1407,7 +1407,7 @@ read_number_or_symbol(Scheme_Object *port,
       memcpy(buf, oldbuf, oldsize);
     }
 
-    if (!case_sens && !quoted && !running_quote)
+    if (!case_sens && !quoted && !running_quote && ((ch <= 127) || scheme_locale_on))
       ch = tolower(ch);
 
     buf[i++] = ch;

@@ -68,9 +68,6 @@ static void string_hash_indices(void *_key, long *_h, long *_h2)
   h2 = h = i = 0;
   while (key[i]) {
     int c = key[i++];
-    if (!scheme_case_sensitive)
-      if (isupper(c))
-	c = tolower(c);
     h += (h << 5) + h + c;
     h2 += c;
   }

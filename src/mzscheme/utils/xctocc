@@ -2523,10 +2523,10 @@ sub PrintBundledEffects
 		$pos = $paramnum - $offset;
 		print "$prefix  if (n > ($POFFSET+$pos)";
 		print " && !XC_SCHEME_NULLP(p[$POFFSET+$pos])" if &CanBeNull($paramtype);
-		print ")\n$prefix    WITH_VAR_STACK(objscheme_set_box(p[$POFFSET+$pos], ";
+		print ")\n$prefix    { Scheme_Object *sbv_ = ";
 		substr($paramtype, -1) = '';
 		&PrintBundleVar("_x${paramnum}", $paramtype, 'WITH_VAR_STACK', $bundle);
-		print "));\n";
+		print "; WITH_VAR_STACK(objscheme_set_box(p[$POFFSET+$pos], sbv_)); } \n";
 	    }
 	} else {
 	    $offset += 1;

@@ -116,7 +116,7 @@
 		  (require-library "core.ss")
 		  (require-library "pconvert.ss")
 		  (load (build-path mred:system-source-directory "sig.ss"))
-		  (invoke-open-unit ,(mred:make-invokable-unit) mred))))
+		  (invoke-open-unit ,(mred:make-invokable-unit) #f))))
 	mred:debug:new-eval)
       (lambda () (void))))
 
@@ -204,8 +204,8 @@
 	       [trigger : mzlib:trigger^ (mzlib:trigger@)]
 	       [mred : mred^ (mred@ core trigger application)]
 	       [application : mred:application^ (application mred core)])
-	 (export (open mred)
-		 (open application)))))))
+	 (export (unit mred)
+		 (unit application mred)))))))
 
 ;; one of these two definitions will be redefined by the application
 (define mred:make-invokable-unit mred:make-mred-invokable-unit)
@@ -229,7 +229,7 @@
   (lambda ()
     (set! mred:non-unit-startup? #t)
     (set! mred:make-application@ mred:non-unit-make-application@)
-    (invoke-open-unit (mred:make-invokable-unit) mred)
+    (invoke-open-unit (mred:make-invokable-unit) #f)
     (when mred:load-user-setup?
       (mred:user-setup))))
 
@@ -246,7 +246,7 @@
 	 (when (eq? mred:debug:on? 'compile-and-exit)
 	   (wx:exit))
 	 (unless mred:non-unit-startup?
-	   (invoke-open-unit (mred:make-invokable-unit) mred)
+	   (invoke-open-unit (mred:make-invokable-unit) #f)
 	   (when mred:load-user-setup?
 	     (mred:user-setup)))
 	 (for-each (lambda (s) (thread (lambda () (mred:edit-file s))))

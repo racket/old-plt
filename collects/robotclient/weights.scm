@@ -135,7 +135,14 @@
                                  1
                                  (round bid)) ptod null))]
 	   [(eq? mtype 'p)
-	    (let* ([ptop (most-of (wleft p) (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1 x y) (pack-val p2 x y)))))]
+	    (let* ([spack 
+                    (begin
+                      (printf "list-of-pack:~a~n" list-of-pack)
+                      (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1 x y) (pack-val p2 x y)))))]
+                   [ptop
+                    (begin
+                      (printf "spack:~a~n" spack)
+                    (most-of (wleft p) spack))]
 		   [weight (begin (printf "ptop:~a~n" ptop)
                              (* (pickup-value)
 			      (if (null? ptop)

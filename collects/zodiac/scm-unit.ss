@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.75 1999/02/02 19:33:15 mflatt Exp $
+; $Id: scm-unit.ss,v 1.76 1999/02/02 21:03:25 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -119,10 +119,11 @@
 
   (define remove/update-unresolved-attribute
     (lambda (attributes unresolveds)
-      (let ((left-unresolveds (cdr (get-attribute attributes
-				     'unresolved-unit-vars))))
+      (let ((left-unresolveds
+	     (cdr (get-attribute attributes
+				 'unresolved-unit-vars))))
 	(if (null? left-unresolveds)
-	  (begin
+	    (begin
 	    (put-attribute attributes 'unresolved-unit-vars null)
 	    (unless (null? unresolveds)
 	      (static-error (unresolved-id (car unresolveds))

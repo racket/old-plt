@@ -15,7 +15,7 @@ import "ocidl.idl";
 	]
 	interface IMzObj : IDispatch
 	{
-		[id(1), helpstring("method Eval")] HRESULT Eval(BSTR,[out,retval]LPBSTR);
+		[id(1), helpstring("method Eval")] HRESULT Eval(BSTR input,[out,retval]LPBSTR output);
 	};
 
 [
@@ -36,7 +36,7 @@ library MZCOMLib
 	{
 		properties:
 		methods:
-		[id(1), helpstring("method Exn")] void Exn(BSTR);
+		[id(1), helpstring("method Exn")] void Exn(BSTR msg);
 	};
 
 	[

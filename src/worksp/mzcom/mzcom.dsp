@@ -144,6 +144,10 @@ SOURCE=..\..\mzcom\stdafx.cxx
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
+SOURCE=.\MzCOMCP.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\mzcom\MzObj.h
 # End Source File
 # Begin Source File

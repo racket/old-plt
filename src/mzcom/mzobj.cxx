@@ -183,9 +183,9 @@ CMzObj::~CMzObj(void) {
   }
 }
 
-void CMzObj::RaiseExn(const OLECHAR *s) {
+void CMzObj::RaiseExn(const OLECHAR *msg) {
   BSTR bstr;
-  bstr = SysAllocString(s);
+  bstr = SysAllocString(msg);
   Fire_Exn(bstr);
   SysFreeString(bstr);
 }

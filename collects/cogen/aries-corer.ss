@@ -145,7 +145,7 @@
   
   (define annotate/both
     (lambda (top-level-env)
-      (lambda (expr)
+      (lambda (expr ignored)
 	(cond
 	  [(z:bound-varref? expr)
 	   (translate-bound-varref 

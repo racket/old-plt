@@ -13,6 +13,20 @@
 					   0
 					   (sub1 (loop (sub1 n))))))
 
+(test 0 'deep-recursion-escape/ec
+      (let/ec k
+	(let loop ([n proc-depth])
+	  (if (zero? n)
+	      (k 0)
+	      (sub1 (loop (sub1 n)))))))
+
+(test 0 'deep-recursion-escape/cc
+      (let/cc k
+	(let loop ([n proc-depth])
+	  (if (zero? n)
+	      (k 0)
+	      (sub1 (loop (sub1 n)))))))
+
 (define paren-port
   (let* ([depth 50000]
 	 [closing? #f]

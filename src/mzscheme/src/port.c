@@ -2063,18 +2063,28 @@ static void direct_cons_putchar(int c) { }
 typedef struct {
   int count, size, ready;
   unsigned char *buffer;
+  osk_console_input *next; /* typeahead */
 } osk_console_input;
 
 static int
 osk_char_ready (Scheme_Input_Port *port)
 {
-  osk_console_input *osk;
+  osk_console_input *osk, *orig;
   int k;
 
-  osk = (osk_console_input *)port->port_data;
+  osk = orig = (osk_console_input *)port->port_data;
 
-  if (osk->ready)
-    return 1;
+  while (osk->ready) {
+    if (osk->next)
+      osk = osk->next;
+    else {
+      osk->next = MALLOC_ONE(osk_console_input);
+      osk = osk->next;
+      osk->count = osk->size = osk->ready = 0;
+      osk->buffer = NULL;
+      osk->next = NULL;
+    }
+  }
 
   k = direct_cons_trygetchar();
   k = convert_scan_code(k); /* defined in pc_keys.inc; handles ctl-alt-del */
@@ -2110,7 +2120,7 @@ osk_char_ready (Scheme_Input_Port *port)
     }
   }
 
-  if (osk->ready)
+  if (orig->ready)
     return 1;
   else
     return 0;
@@ -2142,8 +2152,14 @@ static int osk_getc(Scheme_Input_Port *port)
 
   c = osk->buffer[osk->ready - 1];
   osk->ready++;
-  if (osk->ready > osk->count)
-    osk->ready = osk->count = 0;
+  if (osk->ready > osk->count) {
+    if (osk->next) {
+      /* Copy typeahead to here */
+      osk_console_input *next = osk->next;
+      memcpy(osk, next, sizeof(osk_console_input));
+    } else
+      osk->ready = osk->count = 0;
+  }
 
   return c;
 }
@@ -2176,6 +2192,8 @@ make_oskit_console_input_port()
   osk = (osk_console_input *)scheme_malloc(sizeof(osk_console_input));
 
   osk->count = osk->size = osk->ready = 0;
+  osk->buffer = NULL;
+  osk->next = NULL;
 
 # ifdef OSKIT_TEST
   REGISTER_SO(normal_stdin);
@@ -2194,6 +2212,11 @@ make_oskit_console_input_port()
   ip->name = "STDIN";
   
   return (Scheme_Object *)ip;
+}
+
+void scheme_check_keyboard_input(void)
+{
+  osk_char_ready(scheme_orig_stdin_port);
 }
 
 #endif

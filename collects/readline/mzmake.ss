@@ -17,6 +17,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 (define search-path
   (list "/usr"
 	"/usr/local/gnu"
+	;; Hack for NU PLT
+        "/arch/gnu/packages/readline-4.2"
 	;; Hack for the author's convenience:
 	(format "/home/mflatt/proj/readline-2.1/~a" mach-id)))
 

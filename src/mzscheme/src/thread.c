@@ -2909,7 +2909,7 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
 
   if (argc == 2 && SCHEME_FALSEP(argv[0]) && SCHEME_SEMAP(argv[1])) {
     scheme_wait_sema(argv[1], 0);
-    return scheme_void;
+    return argv[1];
   }
 
   if ((argc == 2) && SCHEME_FALSEP(argv[0]))

@@ -4,13 +4,13 @@
 
 (define mred:hyper-frame@
   (unit/sig mred:hyper-frame^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mred:hyper-edit : mred:hyper-edit^]
-	     [unit mred:hyper-dialog : mred:hyper-dialog^]
-	     [unit mred:frame : mred:frame^]
-	     [unit mred:canvas : mred:canvas^]
-	     [unit mred:group : mred:group^]
-	     [unit mred:handler : mred:handler^]))
+    (import [mred:debug : mred:debug^]
+	    [mred:hyper-edit : mred:hyper-edit^]
+	    [mred:hyper-dialog : mred:hyper-dialog^]
+	    [mred:frame : mred:frame^]
+	    [mred:canvas : mred:canvas^]
+	    [mred:group : mred:group^]
+	    [mred:handler : mred:handler^])
 	    
     (mred:debug:printf 'invoke "mred:hyper-frame@")
 

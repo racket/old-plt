@@ -4,11 +4,11 @@
 
 (define mred:hyper-edit@
   (unit/sig mred:hyper-edit^
-    (import ([unit mred:debug : mred:debug^]
-	     [unit mred:edit : mred:edit^]
-	     [unit mred:hyper-dialog : mred:hyper-dialog^]
-	     [unit mzlib:file : mzlib:file^]
-	     [unit mzlib:string : mzlib:string^]))
+    (import [mred:debug : mred:debug^]
+	    [mred:edit : mred:edit^]
+	    [mred:hyper-dialog : mred:hyper-dialog^]
+	    [mzlib:file : mzlib:file^]
+	    [mzlib:string : mzlib:string^])
 	    
     (mred:debug:printf 'invoke "mred:hyper-edit@")
 

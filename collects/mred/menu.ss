@@ -105,14 +105,16 @@
 				 [else (error 'mred:menu% "append-item: last arg (key) must be either #f, a procedure or a string. Args were: ~a"
 					      (list label callback help checkable? key))])]
 		      [this-key (key-proc wx:platform)]
+		      [platforms (list 'unix  'windows  'macintosh)]
 		      [label-with-key (if this-key 
 					  (string-append label 
 							 (string #\tab) 
 							 (parse-key this-key))
 					  label)]
 		      [id (append -1 label-with-key help checkable?)])
-		 (unless menu-bar
-		   (error 'mred:menu% "append-item: must add the menu to a menubar before appending items"))
+		 (when (and (not menu-bar)
+			    (ormap key-proc platforms))
+		   (error 'mred:menu% "append-item: must add the menu to a menubar before appending items when keybings are involved"))
 		 (set! callbacks (cons (cons id callback) callbacks))
 		 (for-each (let ([keymap-string (string-append "append-item:" (number->string id) "/")])
 			     (lambda (symbol)
@@ -122,15 +124,14 @@
 				   (let ([name (string-append keymap-string key)])
 				     (send keymap add-key-function name (lambda (x y) (callback)))
 				     (send keymap map-function key name))))))
-			   (list 'unix  'windows  'macintosh))
+			   platforms)
 		 id))]
 	    [append-menu
 	     (opt-lambda (label menu [help ()])
 	       (let ([id (append -1 label menu help)])
 		 (set! submenus (cons (cons id menu) submenus))
-		 (if menu-bar
-		     (send menu set-menu-bar menu-bar)
-		     (error 'mred:menu% "must set the menubar before adding any submenus"))
+		 (when menu-bar
+		   (send menu set-menu-bar menu-bar))
 		 id))]
 	    [append-check-set
 	     (opt-lambda (name-tag-list callback [initial 0] [help ()])

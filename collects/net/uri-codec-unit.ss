@@ -200,8 +200,21 @@
       (define (form-urlencoded-decode str)
         (decode form-urlencoded-decoding-vector str))
 
-      ;; listof (cons symbol string) -> string
+      ;; listof (cons string string) -> string
+      ;; http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
       (define alist->form-urlencoded
+        (match-lambda
+         [() ""]
+         [((name . value))
+          (string-append (form-urlencoded-encode name)
+                         "="
+                         (form-urlencoded-encode value))]
+         [((name . value) . rest)
+          (string-append (form-urlencoded-encode name)
+                         "="
+                         (form-urlencoded-encode value)
+                         ";"
+                         (alist->form-urlencoded rest))]))
         (lambda (args)
           (let* ([format-one
                   (lambda (arg)
@@ -216,14 +229,15 @@
                            [(null? args) null]
                            [(null? (cdr args)) (list (format-one (car args)))]
                            [else (list* (format-one (car args))
-                                        "&"
+                                        ";"
                                         (loop (cdr args)))]))])
             (apply string-append strs))))
 
-      ;; string -> listof (cons string string)
+      ;; string -> listof (cons string string)  
+      ;; http://www.w3.org/TR/html401/appendix/notes.html#ampersands-in-uris
       (define (form-urlencoded->alist str)
         (define key-regexp (regexp "[^=]*"))
-        (define value-regexp (regexp "[^&]*"))
+        (define value-regexp (regexp "[^&;]*"))
         (define (next-key str start)
           (if (>= start (string-length str))
               #f

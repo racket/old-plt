@@ -10,7 +10,7 @@
 		   (read-accept-compiled #t)
 		   (read-accept-bar-quote #t)
 		   (read-accept-graph #t)
-		   (read-decimal-as-inexact #f)
+		   (read-decimal-as-inexact #t)
 		   (read-dot-as-symbol #f)
 		   (read-accept-quasiquote #t))
       (thunk)))

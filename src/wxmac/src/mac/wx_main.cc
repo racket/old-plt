@@ -49,6 +49,10 @@ extern void wxCheckATSUCapability();
 
 FSSpec wx_app_spec;
 
+#ifndef OS_X
+extern "C" void exit(int c);
+#endif
+
 //-----------------------------------------------------------------------------
 int wxEntry(int argc, char* argv[])
 {

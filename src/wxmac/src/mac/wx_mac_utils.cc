@@ -53,7 +53,11 @@ void wxFatalError(const char* msg, const char* title)
 	    "\p",
 	    "\p");	
   StopAlert(100, NULL); 		// WCH: must redo this
+#ifdef OS_X
   abort();
+#else
+  ExitToShell();
+#endif
 }
 
 //-----------------------------------------------------------------------------

@@ -95,8 +95,7 @@ Mac OS Classic (PowerPC only):
 
   Depending on how you obtained the source, you may need to force the
   source code files to have the type TEXT. The "textify.ss" program in
-  ":mac:mpw" will do this for you, but it requires a Mac OS X MzScheme
-  with Apple's Developer Tools installed.]
+  ":mac:mpw" will do this for you, but it requires a Mac OS X MrEd.]
 
  `buildprogram all' generates three files:
 

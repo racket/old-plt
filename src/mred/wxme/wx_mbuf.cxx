@@ -2500,11 +2500,7 @@ void wxMediaSetFileCreatorType(char *file, Bool is_binary)
       spec_ok = 0;
     else if (!err) {
       err = FSGetCatalogInfo(&ref, kFSCatInfoNone, NULL, NULL, &spec, NULL);
-      if (!err) {
-	err = FSpGetFInfo(&spec, &info);
-	spec_ok = !err;
-      } else
-	spec_ok = 0;
+      spec_ok = !err;
     } else
       spec_ok = 0;
   }

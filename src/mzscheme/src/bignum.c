@@ -918,7 +918,7 @@ char *scheme_bignum_to_allocated_string(const Scheme_Object *b, int radix, int a
       str2 = (unsigned char *)scheme_malloc_atomic(2);
       str2[0] = '0';
       str2[1] = 0;
-      return str2;
+      return (char *)str2;
     } else
       return "0";
   }
@@ -966,7 +966,7 @@ char *scheme_bignum_to_allocated_string(const Scheme_Object *b, int radix, int a
       str2 = (unsigned char *)scheme_malloc_atomic(2);
       str2[0] = '0';
       str2[1] = 0;
-      return str2;
+      return (char *)str2;
     } else
       return "0";
   } else

@@ -279,7 +279,7 @@ class wxCallbackInfo {
 public:
   char *initial_directory;
   char *force_extension;
-} ;
+};
 
 static void ExtensionCallback(NavEventCallbackMessage callBackSelector, 
 			      NavCBRecPtr callBackParms, 
@@ -356,6 +356,9 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 	  AEDisposeDesc(&there);
 	}
 
+	if (!dir)
+	  printf("NoDir! %d\n", err);
+
 	if (dir) {
 	  AlertStdAlertParamRec rec;
 	  SInt16 which;
@@ -379,8 +382,7 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 			      &which);
 
 	  if (which == kAlertStdAlertCancelButton) {
-	    callBackParms->eventData.itemHit = -1;
-	    return;
+	    /* ??????? */
 	  }
 	}
       }
@@ -505,19 +507,19 @@ char *wxFileSelector(char *message, char *default_path,
     }
 
     wxSetCursor(wxSTANDARD_CURSOR);
-    
-    // run the dialog (ApplicationModal doesn't return until user closes dialog):
+
+    // run the dialog (AppModal doesn't return until user closes dialog):
     if (NavDialogRun(outDialog) != noErr) {
       if (default_filename)
-        CFRelease(dialogOptions.saveFileName);
+	CFRelease(dialogOptions.saveFileName);
       if (message)
-        CFRelease(dialogOptions.message);
+	CFRelease(dialogOptions.message);
       NavDialogDispose(outDialog);
       wxTheApp->AdjustCursor();
       return NULL;
     }
-
-    if (dialogOptions.modality == kWindowModalityWindowModal) {
+    
+    if (dialogOptions.modality != kWindowModalityAppModal) {
       RunAppModalLoopForWindow(NavDialogGetWindow(outDialog));
     }
 
@@ -549,7 +551,7 @@ char *wxFileSelector(char *message, char *default_path,
     }
     
     // parse the results
-    char		*temp;
+    char *temp;
 
     if (flags & wxMULTIOPEN) {
       long count, index;

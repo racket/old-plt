@@ -83,7 +83,7 @@ int wxEntry(int argc, char* argv[])
 
   wxGetOriginalAppFSSpec(&wx_app_spec);
 
-  void wxCheckATSUCapability();
+  wxCheckATSUCapability();
 
   wxTheApp->OnInit();
   

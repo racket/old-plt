@@ -127,7 +127,7 @@ void wxCheckATSUCapability()
 #ifdef OS_X
   SInt32 res;
   Gestalt(gestaltATSUVersion, &res);
-  if ((res >> 16) <  7 /* gestaltATSUUpdate6 */)
+  if (res <  (7 << 16) /* gestaltATSUUpdate6 */)
     always_use_atsu = 0;
 #endif
 }
@@ -231,7 +231,13 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
     /* it's all ASCII, where MacRoman == Latin-1 */
     /* so *x is right */
   } else if (text) {
-    if (qd_spacing || !ALWAYS_USE_ATSU) {
+    if (!qd_spacing || ALWAYS_USE_ATSU) {
+      *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
+			      1, 1, 
+			      txFont, fsize, txFace,
+			      again, qd_spacing);
+      again = 1;
+    } else {
       /* Need to split the string into parts */
       *x = 0;
       while (theStrlen) {
@@ -264,12 +270,6 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
 	  again = 1;
 	}
       }
-    } else {
-      *x = DrawMeasLatin1Text(text, d, theStrlen, bit16,
-			      1, 1, 
-			      txFont, fsize, txFace,
-			      again, qd_spacing);
-      again = 1;
     }
   }
 

@@ -30,6 +30,19 @@
 			  x)
 			(and x #t)))))
 
+(define serialize-tex-picts
+  (make-parameter #f
+		  (lambda (x)
+		    (and x #t))))
+
+(define tex-series-prefix
+  (make-parameter #f
+		  (lambda (s)
+		    (when s
+		      (unless (string? s)
+			(raise-type-error 'tex-series-prefix "string or #f" s)))
+		    s)))
+
 (define-struct pict (draw ; drawing instructions
 		     width ; total width
 		     height ; total height >= ascent + desecnt
@@ -176,14 +189,24 @@
 	(list->string (cons prefix s))
 	(loop (arithmetic-shift n -6)
 	      (cons (vector-ref digits (bitwise-and 63 n)) s)))))
+(define serial-number 0)
+(define (serialize s)
+  (cond
+   [(serialize-tex-picts)
+    (set! serial-number (add1 serial-number))
+    (format "~a.~a" serial-number s)]
+   [(tex-series-prefix)
+    (format "~a.~a" (tex-series-prefix) s)]
+   [else s]))
 (define (make-label s)
   (string->symbol
-   (number->base-64-string
-    #\T
-    (let loop ([l (string->list s)][n 0])
-      (if (null? l)
-	  n
-	  (loop (cdr l) (+ (arithmetic-shift n 7) (char->integer (car l)))))))))
+   (serialize
+    (number->base-64-string
+     #\T
+     (let loop ([l (string->list s)][n 0])
+       (if (null? l)
+	   n
+	   (loop (cdr l) (+ (arithmetic-shift n 7) (char->integer (car l))))))))))
 
 (define tex
   (case-lambda

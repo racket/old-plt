@@ -10,6 +10,9 @@
    using-pict2e-package
 
    draw-bezier-lines
+
+   tex-series-prefix
+   serialize-tex-picts
    
    black-and-white
 

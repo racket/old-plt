@@ -355,15 +355,19 @@
 	    [display-prompt
 	     (lambda ()
 	       (display "> ")
-	       (flush-output))])
+	       (flush-output))]
+	    [input #f])
 	(error-escape-handler (lambda () (escape-k #t)))
 	(let outer-loop ()
 	  (when (let/ec k
 		  (display-prompt)
 		  (fluid-let ([escape-k k])
+		    (unless input
+		      (set! input
+			    (zodiac:read (current-input-port)
+					 (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))))
 		    (basis:process/zodiac
-		     (zodiac:read (current-input-port)
-				  (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))
+		     input
 		     (lambda (sexp loop)
 		       (unless (basis:process-finish? sexp)
 			 (mzlib:thread:dynamic-enable-break

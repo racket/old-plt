@@ -4,7 +4,7 @@
 	  help:search^)
   
   (define html-prefix "http://www.cs.rice.edu/CS/PLT/unreleased/")
-  (define collects-prefix "http://www.cs.rice.edu/~robby/plt/")
+  (define collects-prefix "http://www.cs.rice.edu/~robby/plt/collects/")
 
   (define re:html (regexp "^.*plt/collects/doc/(.*)$"))
   (define re:collects (regexp "^.*plt/collects/(.*)$"))
@@ -18,18 +18,18 @@
 
   (define (build-url page label)
     (let ([join
-	   (lambda (prefix after)
-	     (if (and after
-		      (not (string=? after "")))
+	   (lambda (prefix after label)
+	     (if (and label
+		      (not (string=? label "")))
 		 (format "~a~a#~a" prefix after label)
 		 (format "~a~a" prefix after)))])
       (cond
 	[(regexp-match re:html page)
 	 =>
-	 (lambda (m) (join html-prefix (cadr m)))]
+	 (lambda (m) (join html-prefix (cadr m) label))]
 	[(regexp-match re:collects page)
 	 =>
-	 (lambda (m) (join collects-prefix (cadr m)))]
+	 (lambda (m) (join collects-prefix (cadr m) #f))]
 	[else page])))
 
   (define (find-start key name)

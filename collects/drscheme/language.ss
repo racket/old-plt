@@ -92,7 +92,7 @@
 		 name
 		 hp
 		 (lambda (check-box evt)
-		   (let ([i (send evt checked?)]
+		   (let ([i (send check-box get-value)]
 			 [s (fw:preferences:get 'drscheme:settings)])
 		     (set-setting! s i)
 		     (fw:preferences:set 'drscheme:settings s)))))
@@ -306,6 +306,8 @@
 		       whole/fractional-exact-numbers
 		       abbreviate-cons-as-list?))
 	    (reset-choice))])
+      (send f stretchable-width #f)
+      (send f stretchable-height #f)
       (send language-choice stretchable-width #f)
       (send printing stretchable-width #f)
       (send vocab stretchable-width #f)

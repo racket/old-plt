@@ -1,6 +1,8 @@
 
 (module moddep mzscheme
-  (require (lib "etc.ss"))
+  (require (lib "etc.ss")
+           (lib "resolver.ss" "planet"))
+  
 
   (provide moddep-current-open-input-file)
   (define moddep-current-open-input-file
@@ -154,8 +156,8 @@
 	   [(date>=? zo path-d)
 	    (read-one zo #f)]
 	   ;; Otherwise, use source if it exists
-	   [path-d
-	    (with-dir (lambda () (compiler (read-one path #t))))]
+	   [path-d 
+            (with-dir (lambda () (compiler (read-one path #t))))]
 	   ;; No source --- maybe there's an .so?
 	   [(and (not path-d)
 		 (date>=? so path-d))
@@ -251,6 +253,14 @@
 			    (cddr s)))])
 	    (let ([p (apply collection-path cols)])
 	      (build-path p (cadr s))))]
+         [(eq? (car s) 'planet)
+          (let ((module-id
+                 (cond
+                   [(path? relto)
+                    (string->symbol (string-append "," (path->string (path->complete-path relto))))]
+                   [else #f])))
+            (let-values ([(path pkg) (get-planet-module-path/pkg s module-id #f)])
+              path))]
 	 [else #f]))))
 
   (define (resolve-module-path-index mpi relto)

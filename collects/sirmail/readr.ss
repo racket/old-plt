@@ -877,43 +877,46 @@
       
       (define (header-changing-action downloads? go)
 	(let ([old-mailbox mailbox])
-	  (go)
-	  (let ([items (send header-list get-items)]
-		[selected (send header-list get-selected)]
-		[need-del-selection? #f]
-		[set-selection? #f])
-	    (send (send header-list get-editor) begin-edit-sequence)
-	    (for-each
-	     (lambda (i)
-	       (let ([a (assoc (send i user-data) mailbox)])
-		 (if a
-		     (begin ; Message still here
-		       (when (and downloads? (message-downloaded? a))
-			 (apply-style i read-delta))
-		       (when need-del-selection?
-			 (set! need-del-selection? #f)
-			 (send i select #t)))
-		     (begin ; Message gone
-		       (when (eq? i selected)
-			 (set! need-del-selection? #t))
-		       (when (eq? i current-selected)
-			 (let ([e (send message get-editor)])
-			   (send e lock #f)
-			   (send e erase)
-			   (send e lock #t))
-			 (set-current-selected #f))
-		       (send header-list delete-item i)))))
-	     items)
-	    (for-each
-	     (lambda (m)
-	       (unless (assoc (message-uid m) old-mailbox)
-		 (let ([i (add-message m)])
-		   (unless set-selection?
-		     (set! set-selection? #t)
-		     (send i select #t)
-		     (send i scroll-to)))))
-	     mailbox)
-	    (send (send header-list get-editor) end-edit-sequence))))
+	  (dynamic-wind
+	   void
+	   go
+	   (lambda ()
+	     (let ([items (send header-list get-items)]
+		   [selected (send header-list get-selected)]
+		   [need-del-selection? #f]
+		   [set-selection? #f])
+	       (send (send header-list get-editor) begin-edit-sequence)
+	       (for-each
+		(lambda (i)
+		  (let ([a (assoc (send i user-data) mailbox)])
+		    (if a
+			(begin ; Message still here
+			  (when (and downloads? (message-downloaded? a))
+				(apply-style i read-delta))
+			  (when need-del-selection?
+				(set! need-del-selection? #f)
+				(send i select #t)))
+			(begin ; Message gone
+			  (when (eq? i selected)
+				(set! need-del-selection? #t))
+			  (when (eq? i current-selected)
+				(let ([e (send message get-editor)])
+				  (send e lock #f)
+				  (send e erase)
+				  (send e lock #t))
+				(set-current-selected #f))
+			  (send header-list delete-item i)))))
+		items)
+	       (for-each
+		(lambda (m)
+		  (unless (assoc (message-uid m) old-mailbox)
+			  (let ([i (add-message m)])
+			    (unless set-selection?
+				    (set! set-selection? #t)
+				    (send i select #t)
+				    (send i scroll-to)))))
+		mailbox)
+	       (send (send header-list get-editor) end-edit-sequence))))))
       
       (define (get-new-mail)
 	(with-handlers ([void
@@ -1822,15 +1825,13 @@
 	      (with-handlers ([exn:break?
 			       (lambda (x) "<interrupted>")])
 		(break-ok)
-		(for-each (lambda (message)
-			    (with-handlers ([exn:break?
-					     (lambda (x)
-					       (void))])
-			      (let ([uid (message-uid message)])
-				(break-bad)
-				(get-body uid)
-				(break-ok))))
-			  mailbox)))
+		(with-handlers ([exn:break? (lambda (x) (void))])
+	           (for-each (lambda (message)
+			       (let ([uid (message-uid message)])
+				 (break-bad)
+				 (get-body uid)
+				 (break-ok)))
+			     mailbox))))
 	    void))))
       
       (send header-list focus)

@@ -11,6 +11,31 @@
 
   (include "various-programs.ss")
 
+  (define fixed-faces
+    (let* ([canvas (make-object canvas% (make-object frame% "bogus"))]
+	   [dc (send canvas get-dc)])
+      (let loop ([faces (get-face-list)])
+	(cond
+	 [(null? faces) null]
+	 [else (let* ([face (car faces)]
+		      [font (make-object font% 12 face 'default 'normal 'normal #f)])
+		 (let*-values ([(wi _1 _2 _3) (send dc get-text-extent "i" font)]
+			       [(ww _1 _2 _3) (send dc get-text-extent "w" font)])
+		   (if (= ww wi)
+		       (cons face (loop (cdr faces)))
+		       (loop (cdr faces)))))]))))
+
+  (framework:preferences:set-default
+   'drscheme:font-name
+   (or (send the-font-name-directory get-face-name
+	     (send the-font-name-directory
+		   find-family-default-font-id
+		   'modern))
+       (if (null? (car fixed-faces))
+	   #f
+	   fixed-faces))
+   (lambda (x) (or (string? x) (not x))))
+
   (framework:preferences:set-default
    'drscheme:font-size
    (let ([b (box 0)])
@@ -18,14 +43,6 @@
 	 (unbox b)
 	 12))
    (lambda (x) (and (number? x) (exact? x) (= x (floor x)))))
-
-  (framework:preferences:set-default
-   'drscheme:font-name
-   (send the-font-name-directory get-face-name
-	 (send the-font-name-directory
-	       find-family-default-font-id
-	       'modern))
-   string?)
 
   (define (set-font-size size)
     (let* ([scheme-standard (send (framework:scheme:get-style-list)
@@ -48,20 +65,6 @@
 
   (set-font-size (framework:preferences:get 'drscheme:font-size))
   (set-font-name (framework:preferences:get 'drscheme:font-name))
-
-  (define fixed-faces
-    (let* ([canvas (make-object canvas% (make-object frame% "bogus"))]
-	   [dc (send canvas get-dc)])
-      (let loop ([faces (get-face-list)])
-	(cond
-	 [(null? faces) null]
-	 [else (let* ([face (car faces)]
-		      [font (make-object font% 12 face 'default 'normal 'normal #f)])
-		 (let*-values ([(wi _1 _2 _3) (send dc get-text-extent "i" font)]
-			       [(ww _1 _2 _3) (send dc get-text-extent "w" font)])
-		   (if (= ww wi)
-		       (cons face (loop (cdr faces)))
-		       (loop (cdr faces)))))]))))
 
   (framework:preferences:add-panel
    "Font"

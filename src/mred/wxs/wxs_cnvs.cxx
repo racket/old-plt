@@ -50,10 +50,17 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
-static void wxSetBackgroundToGray(wxCanvas *c)
+static Bool wxSetBackgroundToGray(wxCanvas *c)
 {
 #ifdef wx_xt
   c->SetBackgroundToGray();
+  return TRUE;
+#endif
+#ifdef wx_mac
+  return c->SetAsControl();
+#endif
+#ifdef wx_msw
+  return TRUE;
 #endif
 }
 
@@ -805,6 +812,7 @@ static Scheme_Object *os_wxCanvaswxSetBackgroundToGray(int n,  Scheme_Object *p[
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
+  Bool r;
   objscheme_check_valid(os_wxCanvas_class, "set-background-to-gray in canvas%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -813,12 +821,12 @@ static Scheme_Object *os_wxCanvaswxSetBackgroundToGray(int n,  Scheme_Object *p[
   
 
   
-  WITH_VAR_STACK(wxSetBackgroundToGray(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)));
+  r = WITH_VAR_STACK(wxSetBackgroundToGray(((wxCanvas *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
   READY_TO_RETURN;
-  return scheme_void;
+  return (r ? scheme_true : scheme_false);
 }
 
 static Scheme_Object *os_wxCanvasOnScroll(int n,  Scheme_Object *p[])

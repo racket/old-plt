@@ -24,10 +24,17 @@ static void FillZero(int *a, int *b) {
   *a = *b = 0;
 }
 
-static void wxSetBackgroundToGray(wxCanvas *c)
+static Bool wxSetBackgroundToGray(wxCanvas *c)
 {
 #ifdef wx_xt
   c->SetBackgroundToGray();
+  return TRUE;
+#endif
+#ifdef wx_mac
+  return c->SetAsControl();
+#endif
+#ifdef wx_msw
+  return TRUE;
 #endif
 }
 
@@ -89,7 +96,7 @@ static void wxSetResizeCorner(wxCanvas *c, Bool v)
 
 @ v "on-scroll" : void OnScroll(wxScrollEvent!); : JMPDECL/SETJMP/RESETJMP : / PANELREDIRECT[return scheme_void]
 
-@ m "set-background-to-gray" : void wxSetBackgroundToGray()
+@ m "set-background-to-gray" : bool wxSetBackgroundToGray()
 
 @ "set-canvas-background" : void SetCanvasBackground(wxColour^);
 @ "get-canvas-background" : wxColour^ GetCanvasBackground();

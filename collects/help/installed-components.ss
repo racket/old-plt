@@ -44,7 +44,7 @@
   ;; builds the xexpr for a collection, based on its name a blurb
   (define (get-blurb collection)
     (let/ec k
-      (let ([proc (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
+      (let ([proc (with-handlers ([(lambda (x) (not (exn:break? x)))
                                    (lambda (x) #f)])
                     (get-info (list collection)))])
         (unless proc

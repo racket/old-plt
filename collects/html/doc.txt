@@ -14,11 +14,13 @@ Functions:
 HTML Structures:
 ================
 
-Pc-data, Entity, and Attribute are defined in the XML documentation.
+Pcdata, Entity, and Attribute are defined in the XML documentation.
 
-> Html-content = Html-element | Pc-data | Entity
+> Html-content = Html-element | Pcdata | Entity
 
-> Html-element = any of the structures below
+> Html-element = any of the structures below which all inherit from
+  (define-struct html-element (attributes content))
+  without adding any additional fields.
 
 A Html is
 (make-html (listof Attribute) (listof Contents-of-html))

@@ -28,7 +28,7 @@
   (define (peel-f toss? to-toss acc0)
     (foldr (lambda (x acc)
              (if (toss? x)
-                 (append (html-element-content x) acc)
+                 (append (html-full-content x) acc)
                  (cons x acc)))
            acc0
            to-toss))

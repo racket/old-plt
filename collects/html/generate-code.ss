@@ -28,8 +28,8 @@
          (append
           (list
            '(define-struct html-element (attributes))
-           `(define-struct (html-element/content struct:html-element) (content)))
-          (map (lambda (x) `(define-struct (,x struct:html-element/content) ()))
+           `(define-struct (html-full struct:html-element) (content)))
+          (map (lambda (x) `(define-struct (,x struct:html-full) ()))
                non-empty-names)
           (map (lambda (x)
                  `(define-struct (,x struct:html-element) ()))

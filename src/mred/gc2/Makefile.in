@@ -1,5 +1,6 @@
 
 srcdir = @srcdir@
+builddir = @builddir@
 
 # for version.mak:
 mainsrcdir = @srcdir@/../..
@@ -9,6 +10,7 @@ WXDIR = $(srcdir)/../../wxxt
 WXMACDIR = $(srcdir)/../../wxmac/src
 
 PLTSRCDIR = $(srcdir)/../..
+PLTBUILDDIR = $(builddir)/../..
 
 ###########################
 #      Common Macros      #
@@ -32,7 +34,7 @@ WXINC_wx_xt = -I$(PLTSRCDIR)/wxxt/src/AIAI-include -I$(PLTSRCDIR)/wxxt/src
 WXINC_wx_mac = -I$(PLTSRCDIR)/wxmac/include/base -I$(PLTSRCDIR)/wxmac/include/mac -I$(PLTSRCDIR)/wxcommon -I$(PLTSRCDIR)/a-list/c-headers/
 
 WXINC = $(WXINC_@WXVARIANT@)
-NOGCINC = $(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
+NOGCINC = $(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTBUILDDIR)/mzscheme/ -I$(PLTSRCDIR)/mzscheme/include/
 INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
 CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CXXFLAGS@ @PREFLAGS@
 CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) @COMPFLAGS@ @PROFFLAGS@ @CFLAGS@ @PREFLAGS@

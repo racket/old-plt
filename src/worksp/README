@@ -44,15 +44,20 @@ To build MrEd, make the MrEd project:
    plt\src\worksp\mred - makes plt\mred.exe
 
 The make processes for MzScheme and MzCOM automatically build the following:
-   gc - makes plt\src\worksp\gc\Release\gc.lib
-   mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
+   libmzgc - makes plt\libmzgc.dll and
+                   plt\src\worksp\libmzgc\Release\libmzgc.lib
+   mzsrc - makes plt\libmzsch.dll and
+                 plt\src\worksp\mzsrc\Release\mzsrc.lib
 
 The make process for MrEd automatically builds the following:
-   gc - makes plt\src\worksp\gc\Release\gc.lib
-   mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
-   wxutils - makes ... you get the idea
-   wxwin
-   wxs
+   libmzgc - as above
+   libmzsch - as above
+   libmred - makes plt\libmred.dll and
+                   plt\src\worksp\libmred\Release\libmred.lib
+   wxutils - makes plt\src\worksp\wxutils\Release\wxutils.lib
+   wxwin - makes plt\src\worksp\wxwin\Release\wxwin.lib
+   wxs  - makes plt\src\worksp\wxs\Release\wxs.lib
+   wxme  - makes plt\src\worksp\wxme\Release\wxme.lib
 
 ----------------------------------------------------------------------
 Extra stuff for MzScheme and MrEd
@@ -77,30 +82,13 @@ add -n to the end of the above command.)
 Embedding MzScheme
 ----------------------------------------------------------------------
 
+The MzScheme DLLs can be used within an embedding application.
+
 The libraries
-    plt\src\worksp\mzsrc\Release\mzsrc.lib
-    plt\src\worksp\gc\Release\gc.lib
-which are created by the mzsrc and gc projects, correspond to the
-libmzscheme.a and libgc.a libraries under Unix. See the "Inside PLT
-MzScheme" manual for more information about using these libraries
-to embed MzScheme in another application.
+    plt\src\worksp\libmzsch\Release\libmzsch.lib
+    plt\src\worksp\libmzgc\Release\libmzgc.lib
+which are created by the mzsrc and gc projects, provide linking
+inforomation for using the libmzsch.dll and libmzgc.dll DLLs.
 
-----------------------------------------------------------------------
-Project Configurations
-----------------------------------------------------------------------
-
-The MzScheme, MzCOM, and MrEd projects are distributed to compile using
-"Release" as the default configuration.  Most of the projects support
-several configurations:
-
-  * Debug - less optimization to make debugging easier
-  * Threads - use Windows threads to implement MzScheme threads
-  * SGC - debugging with the SGC collector; links to SGC's
-          Debug library, not its Release library
-  * MT DLL - links to the standard C library as a DLL, rather than
-             statically
-
-Of course, the mzscheme Debug configuration works with the Debug
-configurations of mzsrc and gc, etc.  MzCOM has only a Release
-and Debug configuration.
-
+See the "Inside PLT MzScheme" manual for more information about using
+these libraries to embed MzScheme in an application.

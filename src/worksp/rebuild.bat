@@ -27,11 +27,6 @@ rem cd mysterx
 rem nmake
 rem cd ..
 
-rem ************* DYNSRC *******************
-cd  mzscheme\dynsrc
-call mkmzdyn.bat
-cd ..\..\..
-
 rem ************* SETUP *******************
 mzscheme.exe -mvqL- setup.ss setup
 rem errors:

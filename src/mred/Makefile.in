@@ -32,9 +32,6 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
-# system name for installation
-INSTALLSYS = `$(srcdir)/../../bin/archsys`
-
 MREDLDFLAGS = $(LDFLAGS)
 WXLIBSNORM = mred.o mredx.o wxGC.o wxJPEG.o wxs/libwxscheme.a wxme/libwxme.a ../wxxt/src/libwx_xt.a ../wxxt/contrib/xpm/lib/libXpm.a ../wxxt/utils/image/src/libimage_xt.a ../wxcommon/jpeg/libjpeg.a
 WXLIBSDYN = libmred.@LIBSFX@

@@ -68,9 +68,12 @@
 				       (quote-syntax init-rest)
 				       (quote-syntax field)
 				       (quote-syntax init-field)
+				       (quote-syntax inherit-field)
 				       (quote-syntax private)
 				       (quote-syntax public)
 				       (quote-syntax override)
+				       (quote-syntax public-final)
+				       (quote-syntax override-final)
 				       (quote-syntax rename)
 				       (quote-syntax inherit)
 				       this-id
@@ -83,7 +86,10 @@
 
 	     ;; ------ Basic syntax checks -----
 	     (for-each (lambda (stx)
-			 (syntax-case stx (init init-rest field init-field private public override rename inherit)
+			 (syntax-case stx (init init-rest field init-field inherit-field
+						private public override 
+						public-final override-final
+						rename inherit)
 			   [(form idp ...)
 			    (ormap (lambda (f) (module-identifier=? (syntax form) f))
 				   (list (quote-syntax init)
@@ -121,6 +127,14 @@
 				      (syntax->list (syntax (idp ...))))]
 			   [(field . rest)
 			    (bad "ill-formed field clause" stx)]
+			   [(inherit-field id ...)
+			    (for-each
+			     (lambda (id)
+			       (unless (identifier? id)
+				 (bad "inherit-field element is not an identifier" id)))
+			     (syntax->list (syntax (id ...))))]
+			   [(inherit-field . rest)
+			    (bad "ill-formed inherit-field clause" stx)]
 			   [(private id ...)
 			    (for-each
 			     (lambda (id)
@@ -133,6 +147,8 @@
 			    (ormap (lambda (f) (module-identifier=? (syntax form) f))
 				   (list (quote-syntax public)
 					 (quote-syntax override)
+					 (quote-syntax public-final)
+					 (quote-syntax override-final)
 					 (quote-syntax inherit)))
 			    (let ([form (syntax-e (syntax form))])
 			      (for-each
@@ -151,6 +167,10 @@
 			    (bad "ill-formed public clause" stx)]
 			   [(override . rest)
 			    (bad "ill-formed override clause" stx)]
+			   [(public-final . rest)
+			    (bad "ill-formed public-final clause" stx)]
+			   [(override-final . rest)
+			    (bad "ill-formed override-final clause" stx)]
 			   [(inherit . rest)
 			    (bad "ill-formed inherit clause" stx)]
 			   [(rename idp ...)
@@ -203,14 +223,20 @@
 							   #f))]
 		     [plain-fields (flatten values (extract (list (quote-syntax field)) #f))]
 		     [plain-init-fields (flatten values (extract (list (quote-syntax init-field)) #f))]
+		     [inherit-fields (flatten values (extract (list (quote-syntax inherit-field)) #f))]
 		     [privates (flatten pair (extract (list (quote-syntax private)) #f))]
 		     [publics (flatten pair (extract (list (quote-syntax public)) #f))]
 		     [overrides (flatten pair (extract (list (quote-syntax override)) #f))]
+		     [public-finals (flatten pair (extract (list (quote-syntax public-final)) #f))]
+		     [override-finals (flatten pair (extract (list (quote-syntax override-final)) #f))]
 		     [renames (flatten pair (extract (list (quote-syntax rename)) #f))]
 		     [inherits (flatten pair (extract (list (quote-syntax inherit)) #f))]
-		     [exprs (extract (list (quote-syntax private)
+		     [exprs (extract (list (quote-syntax inherit-field)
+					   (quote-syntax private)
 					   (quote-syntax public)
 					   (quote-syntax override)
+					   (quote-syntax public-final)
+					   (quote-syntax override-final)
 					   (quote-syntax rename)
 					   (quote-syntax inherit))
 				     #t)])
@@ -233,7 +259,9 @@
 		 
 		 ;; ----- Extract method definitions; check that they look like procs -----
 		 ;;  Optionally transform them, can expand even if not transforming.
-		 (let* ([local-public-names (map car (append publics overrides))]
+		 (let* ([local-public-normal-names (map car (append publics overrides))]
+			[local-public-names (append (map car (append public-finals override-finals))
+						    local-public-normal-names)]
 			[local-method-names (append (map car privates) local-public-names)]
 			[proc-shape (lambda (name expr xforms)
 				      ;; expands an expression so we can check whether
@@ -419,6 +447,7 @@
 					       i
 					       (stx-car i)))
 					 (append plain-fields plain-init-fields))]
+			   [inherit-field-names inherit-fields]
 			   [plain-init-names (map
 					      (lambda (i)
 						(if (identifier? i)
@@ -430,6 +459,7 @@
 				   (append defined-method-names
 					   private-field-names
 					   field-names
+					   inherit-field-names
 					   plain-init-names
 					   (map car inherits)
 					   (map car renames)
@@ -454,7 +484,7 @@
 			    (let ([l (hash-table-get ht (syntax-e pubovr-name) (lambda () null))])
 			      (unless (ormap (lambda (i) (bound-identifier=? i pubovr-name)) l)
 				(bad 
-				 "method not defined for private, public, or override declaration"
+				 "method declared but not defined"
 				 pubovr-name))))
 			  local-method-names))
 		       
@@ -519,7 +549,13 @@
 				       [(rename-temp ...) (generate-temporaries (map car renames))]
 				       [(private-name ...) (map car privates)]
 				       [(private-temp ...) (generate-temporaries (map car privates))]
-				       [(method-name ...) (append local-public-names
+				       [(public-final-name ...) (map car public-finals)]
+				       [(override-final-name ...) (map car override-finals)]
+				       [(public-final-temp ...) (generate-temporaries 
+								 (map car public-finals))]
+				       [(override-final-temp ...) (generate-temporaries 
+								   (map car override-finals))]
+				       [(method-name ...) (append local-public-normal-names
 								  (map car inherits))]
 				       [(method-accessor ...) (generate-temporaries
 							       (map car
@@ -530,15 +566,18 @@
 							      (map (lambda (id)
 								     (format "get-~a"
 									     (syntax-e id)))
-								   (append field-names
+								   (append inherit-field-names
+									   field-names
 									   private-field-names)))]
 				       [(field-mutator ...) (generate-temporaries
 							     (map (lambda (id)
 								    (format "set-~a!"
 									    (syntax-e id)))
-								  (append field-names
+								  (append inherit-field-names
+									  field-names
 									  private-field-names)))]
-				       [(all-field ...) (append field-names
+				       [(all-field ...) (append inherit-field-names
+								field-names
 								private-field-names)]
 				       [(plain-init-name ...) (map (lambda (i)
 								     (if (identifier? i)
@@ -565,6 +604,14 @@
 				      [private-name
 				       (make-direct-method-map (quote-syntax this-id)
 							       (quote-syntax private-temp))]
+				      ...
+				      [public-final-name
+				       (make-direct-method-map (quote-syntax this-id)
+							       (quote-syntax public-final-temp))]
+				      ...
+				      [override-final-name
+				       (make-direct-method-map (quote-syntax this-id)
+							       (quote-syntax override-final-temp))]
 				      ...)))]
 				 [extra-init-mappings
 				  (with-syntax ([super-instantiate-id super-instantiate-id]
@@ -591,6 +638,8 @@
 			       ;; ---- build final result ----
 			       (with-syntax ([public-names (map cdr publics)]
 					     [override-names (map cdr overrides)]
+					     [public-final-names (map cdr public-finals)]
+					     [override-final-names (map cdr override-finals)]
 					     [rename-names (map cdr renames)]
 					     [inherit-names (map cdr inherits)]
 					     [num-fields (datum->syntax-object
@@ -605,6 +654,7 @@
 							       (append
 								plain-fields
 								plain-init-fields))]
+					     [inherit-field-names inherit-field-names]
 					     [init-names (if (null? init-rest-decls)
 							     (map (lambda (i)
 								    (if (identifier? i)
@@ -615,6 +665,8 @@
 					     [(private-method ...) (map (find-method private-methods) (map car privates))]
 					     [public-methods (map (find-method methods) (map car publics))]
 					     [override-methods (map (find-method methods) (map car overrides))]
+					     [(public-final-method ...) (map (find-method methods) (map car public-finals))]
+					     [(override-final-method ...) (map (find-method methods) (map car override-finals))]
 					     [mappings mappings]
 					     [exprs exprs]
 					     [this-id this-id]
@@ -629,25 +681,33 @@
 				     'name superclass interfaces
 				     ;; Field count:
 				     num-fields
-				     ;; Public field names:
+				     ;; Field names:
 				     (quote field-names)
+				     (quote inherit-field-names)
 				     ;; Method names:
 				     (quote rename-names)
+				     (quote public-final-names)
 				     (quote public-names)
+				     (quote override-final-names)
 				     (quote override-names)
 				     (quote inherit-names)
+				     (quote (public-final-name ... override-final-name ...))
 				     ;; Init arg names (in order)
 				     (quote init-names)
 				     ;; Methods (when given needed super-methods, etc.):
-				     (lambda (field-accessor ...
+				     (lambda (field-accessor ...  ; inherit, public, private
 							     field-mutator ...
 							     rename-temp ...
 							     method-accessor ...) ; public, override, inherit
 				       (letrec ([private-temp private-method]
+						...
+						[public-final-temp public-final-method]
+						...
+						[override-final-temp override-final-method]
 						...)
 					 (values
-					  (list . public-methods)
-					  (list . override-methods)
+					  (list public-final-temp ... . public-methods)
+					  (list override-final-temp ... . override-methods)
 					  ;; Initialization
 					  (lambda (this-id super-id init-args)
 					    (letrec-syntax ([super-instantiate-id
@@ -661,6 +721,7 @@
 						(let ([plain-init-name undefined]
 						      ...)
 						  (letrec-syntax mappings
+						    (void) ; in case the body is empty
 						    . exprs))))))))
 				     #f)))))))))))))))])))
 
@@ -703,7 +764,8 @@
 			method-ids     ; reverse-ordered list of public method names
 
 			methods        ; vector of methods
-			prim-flags     ; vector: #t means primitive-implemented
+			meth-flags     ; vector: #f => primitive-implemented
+                                       ;         'final => final
 
 			field-width    ; total number of fields
 			field-ht       ; maps public field names to (cons accessor mutator)
@@ -722,22 +784,26 @@
 			no-super-init?); #t => no super-init needed
                     insp)
 
-  (define (compose-class name               ; symbol
-			 super              ; class
-			 interfaces         ; list of interfaces
+  (define (compose-class name                ; symbol
+			 super               ; class
+			 interfaces          ; list of interfaces
 
-			 num-fields         ; total fields (public & private)
-			 public-field-names ; list of symbols (shorter than num-fields)
+			 num-fields          ; total fields (public & private)
+			 public-field-names  ; list of symbols (shorter than num-fields)
+			 inherit-field-names ; list of symbols (not included in num-fields)
 			 
-			 rename-names       ; list of symbols
-			 public-names
-			 override-names
+			 rename-names        ; list of symbols
+			 public-final-names
+			 public-normal-names
+			 override-final-names
+			 override-normal-names
 			 inherit-names
+			 final-names         ; subset of public + override
 
-			 init-args          ; list of symbols in order
+			 init-args           ; list of symbols in order
 			 
-			 make-methods       ; takes field and method accessors
-			 make-struct:prim)  ; see "primitive classes", below
+			 make-methods        ; takes field and method accessors
+			 make-struct:prim)   ; see "primitive classes", below
 
     ;; -- Check superclass --
     (unless (class? super)
@@ -745,19 +811,22 @@
 		 super
 		 (for-class name)))
     ;; -- Create new class's name --
-    (let ([name (or name
-		    (let ([s (class-name super)])
-		      (and s 
-			   (not (eq? super object%))
-			   (if (symbol? s)
-			       (format "derived-from-~a" s)
-			       s))))]
-	  ;; Mis utilities
-	  [no-new-methods? (null? public-names)]
-	  [no-method-changes? (and (null? public-names)
-				   (null? override-names))]
-	  [no-new-fields? (null? public-field-names)]
-	  [xappend (lambda (a b) (if (null? b) a (append a b)))])
+    (let* ([name (or name
+		     (let ([s (class-name super)])
+		       (and s 
+			    (not (eq? super object%))
+			    (if (symbol? s)
+				(format "derived-from-~a" s)
+				s))))]
+	   ;; Combine method lists
+	   [public-names (append public-final-names public-normal-names)]
+	   [override-names (append override-final-names override-normal-names)]
+	   ;; Mis utilities
+	   [no-new-methods? (null? public-names)]
+	   [no-method-changes? (and (null? public-names)
+				    (null? override-names))]
+	   [no-new-fields? (null? public-field-names)]
+	   [xappend (lambda (a b) (if (null? b) a (append a b)))])
 
       ;; -- Check interfaces ---
       (for-each
@@ -811,6 +880,14 @@
 	      (hash-table-put! field-ht (car ids) p)
 	      (loop (cdr ids) (add1 p)))))
 
+	;; Check that superclass has expected fields
+	(for-each (lambda (id)
+		    (unless (hash-table-get field-ht id (lambda () #f))
+		      (obj-error 'class*/names "superclass does not provide field: ~a~a" 
+				 id
+				 (for-class name))))
+		  inherit-field-names)
+
 	;; Check that superclass has expected methods, and get indices
 	(let ([get-indices
 	       (lambda (ids)
@@ -828,8 +905,10 @@
 	      [field-width (+ (class-field-width super) num-fields)])
 	  (let ([rename-indices (get-indices rename-names)]
 		[inherit-indices (get-indices inherit-names)]
-		[replace-indices (get-indices override-names)]
-		[new-indices (get-indices public-names)])
+		[replace-final-indices (get-indices override-final-names)]
+		[replace-normal-indices (get-indices override-normal-names)]
+		[new-final-indices (get-indices public-final-names)]
+		[new-normal-indices (get-indices public-normal-names)])
 
 	    ;; -- Check that all interfaces are satisfied --
 	    (for-each
@@ -872,15 +951,15 @@
 		   [methods (if no-method-changes?
 				(class-methods super)
 				(make-vector method-width))]
-		   [prim-flags (if no-method-changes?
-				   (class-prim-flags super)
+		   [meth-flags (if no-method-changes?
+				   (class-meth-flags super)
 				   (make-vector method-width))]
 		   [c (class-make name
 				  (add1 (class-pos super))
 				  (list->vector (append (vector->list (class-supers super)) (list #f)))
 				  i
 				  method-width method-ht method-names
-				  methods prim-flags
+				  methods meth-flags
 				  field-width field-ht field-names
 				  'struct:object 'object? 'make-object 'field-ref 'field-set!
 				  init-args
@@ -896,9 +975,9 @@
 				   (set-box! box (hash-table-get method-ht (unbox box))))
 				 (let ([c (object-ref obj)]
 				       [n (unbox box)])
-				   (if (vector-ref (class-prim-flags c) n)
-				       #f
-				       (vector-ref (class-methods c) n))))])
+				   (if (vector-ref (class-meth-flags c) n)
+				       (vector-ref (class-methods c) n)
+				       #f)))])
 	      (vector-set! (class-supers c) (add1 (class-pos super)) c)
 
 	      ;; --- Make the new object struct ---
@@ -962,8 +1041,12 @@
 							 (cdr field-ids)
 							 field-ids)))))])
 				  (values
-				   (mk make-struct-field-accessor object-field-ref)
-				   (mk make-struct-field-mutator object-field-set!))))])
+				   (append (map (lambda (id) (make-class-field-accessor super id))
+						inherit-field-names)
+					   (mk make-struct-field-accessor object-field-ref))
+				   (append (map (lambda (id) (make-class-field-mutator super id))
+						inherit-field-names)
+					   (mk make-struct-field-mutator object-field-set!)))))])
 		  ;; -- Reset field table to register accessor and mutator info --
 		  ;;  There are more accessors and mutators than public fields...
 		  (let loop ([ids public-field-names][pos 0])
@@ -979,8 +1062,8 @@
 		    (let ([method-accessors (map (lambda (index)
 						   (lambda (obj)
 						     (vector-ref (class-methods (object-ref obj)) index)))
-						 (append new-indices
-							 replace-indices
+						 (append new-normal-indices
+							 replace-normal-indices
 							 inherit-indices))])
 		      
 		      ;; -- Get new methods and initializers --
@@ -997,19 +1080,29 @@
 			   (class-method-ht super)
 			   (lambda (name index)
 			     (vector-set! methods index (vector-ref (class-methods super) index))
-			     (vector-set! prim-flags index (vector-ref (class-prim-flags super) index)))))
+			     (vector-set! meth-flags index (vector-ref (class-meth-flags super) index)))))
 			;; Add new methods:
 			(for-each (lambda (index method)
 				    (vector-set! methods index method)
-				    (vector-set! prim-flags index (and make-struct:prim #t)))
-				  new-indices
+				    (vector-set! meth-flags index (not make-struct:prim)))
+				  (append new-final-indices new-normal-indices)
 				  new-methods)
 			;; Override old methods:
-			(for-each (lambda (index method)
+			(for-each (lambda (index method id)
+				    (when (eq? 'final (vector-ref meth-flags index))
+				      (obj-error 'class*/names 
+						 "cannot override final method: ~a~a"
+						 id
+						 (for-class name)))
 				    (vector-set! methods index method)
-				    (vector-set! prim-flags index (and make-struct:prim #t)))
-				  replace-indices
-				  override-methods)
+				    (vector-set! meth-flags index (not make-struct:prim)))
+				  (append replace-final-indices replace-normal-indices)
+				  override-methods
+				  override-names)
+			;; Mark final methods:
+			(for-each (lambda (id)
+				    (vector-set! meth-flags (hash-table-get method-ht id) 'final))
+				  final-names)
 
 			;; --- Install initializer into class ---
 			(set-class-init! c init)
@@ -1479,12 +1572,13 @@
 		   (or super object%)
 		   null
 		   
-		   0 null ; no fields
+		   0 null null ; no fields
 
 		   null ; no renames
-		   new-names
-		   override-names
+		   null new-names
+		   null override-names
 		   null ; no inherits
+		   null ; no finals
 		   
 		   #f ; => init args by position only
 			 

@@ -1441,7 +1441,7 @@ static Bool IsCaptureAncestorArea(wxArea *area)
   return FALSE;
 }
 
-Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
+Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent, int *metal_drag_ok)
 { 
   // For point expressed in parent area c.s., seek deepest sub-window containing it
   Bool result = FALSE;
@@ -1450,8 +1450,21 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
   wxArea* hitArea;
   wxNode* areaNode;
 
-  if (!IsEnable())
-    return FALSE;
+  if (!IsEnable()) {
+    if (!*metal_drag_ok) {
+      return FALSE;
+    } else {
+      /* If the frame is metal, we need to look more closely
+	 to determine whether a disabled control was clicked, in which case
+	 we don't want to drag the frame. */
+      wxFrame *f;
+      f = GetRootFrame();
+      if (!(f->GetWindowStyleFlag() & wxMETAL)) {
+	return FALSE;
+      }
+      *metal_drag_ok = -1;
+    }
+  }
 
   hitX = (int)(mouseEvent->x - cWindowX); // window c.s.
   hitY = (int)(mouseEvent->y - cWindowY); // window c.s.
@@ -1494,14 +1507,17 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 	childWindowNode = wl->First();
 	while (childWindowNode && !result) {
 	  childWindow = (wxWindow*)childWindowNode->Data();
-	  result = childWindow->SeekMouseEventArea(areaMouseEvent);
+	  result = childWindow->SeekMouseEventArea(areaMouseEvent, metal_drag_ok);
 	  if (!result)
 	    childWindowNode = childWindowNode->Next();
 	}
       }
       
       if (!result) {
-	if (capThis || (hitArea == ClientArea() && CanAcceptEvent())) {
+	if (capThis || ((hitArea == ClientArea())
+			&& (AdjustMetalDragOk(metal_drag_ok),
+			    CanAcceptEvent())
+			&& (*metal_drag_ok >= 0))) {
 	  result = TRUE;
 
 	  if (wxSubType(__type, wxTYPE_CANVAS)
@@ -1523,7 +1539,7 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
 
 	    /* PreOnEvent could disable the target... */
 	    if (!IsGray())
-	      OnEvent(areaMouseEvent);
+	      OnEventCheckMetal(areaMouseEvent, *metal_drag_ok);
 	  }
 	}
       }
@@ -1552,6 +1568,17 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
   }
   
   return result;
+}
+
+void wxWindow::OnEventCheckMetal(wxMouseEvent *event, int metal_drag_ok)
+{
+  OnEvent(event);
+}
+
+void wxWindow::AdjustMetalDragOk(int *metal_drag_ok)
+{
+  if (!cHidden)
+    *metal_drag_ok = 0;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

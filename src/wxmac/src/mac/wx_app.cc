@@ -442,7 +442,7 @@ void wxApp::doMacMouseUp(void)
 	  wxArea* frameParentArea;
 	  wxMouseEvent *theMouseEvent;
 	  Bool rightButton;
-	  int type;
+	  int type, metal_drag_ok = 1;
 
 	  frameParentArea = macWxFrame->ParentArea();
 	  frameParentArea->ScreenToArea(&hitX, &hitY);
@@ -465,7 +465,7 @@ void wxApp::doMacMouseUp(void)
 	  theMouseEvent->y = hitY;
 	  theMouseEvent->timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
 
-	  macWxFrame->SeekMouseEventArea(theMouseEvent);
+	  macWxFrame->SeekMouseEventArea(theMouseEvent, &metal_drag_ok);
 	}
     }
 }
@@ -519,13 +519,14 @@ void wxApp::doMacMouseMotion(void)
 	{
 	  int hitX = cCurrentEvent.where.h; // screen window c.s.
 	  int hitY = cCurrentEvent.where.v; // screen window c.s.
+	  int metal_drag_ok = 1;
 	  wxArea* frameParentArea;
 	  frameParentArea = macWxFrame->ParentArea();
 	  frameParentArea->ScreenToArea(&hitX, &hitY);
 	  theMouseEvent->x = hitX; // frame parent area c.s.
 	  theMouseEvent->y = hitY; // frame parent area c.s.
 
-	  macWxFrame->SeekMouseEventArea(theMouseEvent);
+	  macWxFrame->SeekMouseEventArea(theMouseEvent, &metal_drag_ok);
 	}
     }
 }
@@ -1137,6 +1138,7 @@ void wxApp::doMacContentClick(wxFrame* frame)
   wxArea* frameParentArea;
   WXTYPE mouseEventType = rightButton ? wxEVENT_TYPE_RIGHT_DOWN : wxEVENT_TYPE_LEFT_DOWN;
   int hitX, hitY;
+  int metal_drag_ok = 1;
 
   theMouseEvent = new wxMouseEvent(mouseEventType);
   theMouseEvent->leftDown = !rightButton;
@@ -1159,7 +1161,7 @@ void wxApp::doMacContentClick(wxFrame* frame)
   // Best just to re-calculate the position before processing an event.
   frame->wxMacRecalcNewSize(FALSE);
 
-  frame->SeekMouseEventArea(theMouseEvent);
+  frame->SeekMouseEventArea(theMouseEvent, &metal_drag_ok);
 }
 
 //-----------------------------------------------------------------------------

@@ -313,8 +313,9 @@ class wxWindow: public wxbWindow
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Mouse methods */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-  virtual Bool SeekMouseEventArea(wxMouseEvent *mouseEvent); /* mac platform only */
-  virtual Bool AdjustCursor(int mouseX, int mouseY); /* mac platform only - GRW */
+  virtual Bool SeekMouseEventArea(wxMouseEvent *mouseEvent, int *metal_drag_ok);
+  virtual Bool AdjustCursor(int mouseX, int mouseY);
+  virtual void AdjustMetalDragOk(int *metal_drag_ok);
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Other methods */
@@ -325,6 +326,8 @@ class wxWindow: public wxbWindow
 	
   virtual Bool PreOnEvent(wxWindow *win, wxMouseEvent *event);
   virtual Bool PreOnChar(wxWindow *win, wxKeyEvent *event);
+
+  virtual void OnEventCheckMetal(wxMouseEvent *event, int metal_drag_ok);
 
   virtual void Show(Bool);
 

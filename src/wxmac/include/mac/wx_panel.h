@@ -145,7 +145,8 @@ public:
 	void DoShow(Bool show);
 	void Paint(void);
 	virtual void OnChar(wxKeyEvent *event);
-	virtual void OnEvent(wxMouseEvent *event);
+	virtual void OnEventCheckMetal(wxMouseEvent *event, int metal_drag_ok);
+	virtual void AdjustMetalDragOk(int *metal_drag_ok);
 
  	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	// Tree methods

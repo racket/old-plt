@@ -428,13 +428,17 @@ void wxPanel::OnChar(wxKeyEvent *event)
 {
 }
 
-void wxPanel::OnEvent(wxMouseEvent *event)
+void wxPanel::OnEventCheckMetal(wxMouseEvent *event, int metal_drag_ok)
 {
-  if (MaybeMetalDrag(event)) 
+  if (metal_drag_ok && MaybeMetalDrag(event)) 
     return;
-  wxbPanel::OnEvent(event);
+  wxbPanel::OnEventCheckMetal(event, metal_drag_ok);
 }
 
+void wxPanel::AdjustMetalDragOk(int *metal_drag_ok)
+{
+  /* A panel is transparent to metal-dragging clicks */
+}
 
 Bool wxPanel::WantsFocus()
 {

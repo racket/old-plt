@@ -270,7 +270,7 @@ void wxRadioButton::Paint(void)
 	  
 	  state.state = (trackState
 			 ? kThemeStatePressed
-			 : ((cEnable && cActive) ? kThemeStateActive : kThemeStateInactive));
+			 : ((cEnable && cActive && !internal_gray) ? kThemeStateActive : kThemeStateInactive));
 	  state.value = bitmapState ? kThemeButtonOn : kThemeButtonOff;
 	  state.adornment = kThemeAdornmentNone;
 	  

@@ -43,7 +43,7 @@ or other games installed as sub-collections of the "games" collection
    into straight and 3- or 4-of-a-kind sets to win. On each turn, you
    can either draw from the deck or from the discard pile, then you
    must discard one of your own cards. [The computer player is
-   smart.]
+   fairly smart.]
 
                                               - by Matthew
 
@@ -89,7 +89,8 @@ sub-collection to load for the game. The library must export a
 `game-unit' unsigned unit (see MzLib's `unit' form); the unit is
 invoked with no imports to start the game. The `name' field of the
 info.ss file is used to label the game-starting button in the game
-console.
+console, and the icon is loaded as a file in the sub-collection whose
+name macthes the sub-collection name plus a ".png" suffix.
 
 To implement card games, see the documentation for the "cards"
 sub-collection of the "games" collection.

@@ -59,6 +59,7 @@
 #define IVAR_IN_CLASS "ivar-in-class?"
 #define IVAR_IN_INTERFACE "ivar-in-interface?"
 #define OBJECT_CLASS "object-class"
+#define NULL_CLASS "object%"
 
 #define SUPER_INIT "super-init"
 
@@ -408,7 +409,7 @@ static Scheme_Object *NullClass(void)
     null_class->cmethod_source_map = NULL;
     null_class->contributes_cmethods = FALSE;
 
-    null_class->defname = NULL;
+    null_class->defname = scheme_intern_symbol(NULL_CLASS);
     
     null_class->closure_saved = NULL;
     null_class->closure_size = 0;
@@ -1171,9 +1172,6 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
   else
     superobj = data->super_expr;
 
-  if (SCHEME_NULLP(superobj))
-    superobj = NullClass();
-  
   if (!SCHEME_CLASSP(superobj)) {
     scheme_raise_exn(MZEXN_OBJECT,
 		     CLASS_STAR ": superclass expression returned "
@@ -2979,7 +2977,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
     else
       irec->init_level = 0;
   } else if (((sclass->priminit == pi_NOT) || (sclass->priminit == pi_NOT_OVER_CPP)) && (irec->init_level >= level)) {
-    if (sclass->superclass->pos) {
+    if (sclass->superclass->pos > -1) {
       const char *cl = get_class_name((Scheme_Object *)sclass, " in class: ");
 
       scheme_raise_exn(MZEXN_OBJECT,
@@ -3747,6 +3745,10 @@ void scheme_init_object(Scheme_Env *env)
 			     scheme_make_folding_prim(ObjectClass, 
 						      OBJECT_CLASS,
 						      1, 1, 1), 
+			     env);
+
+  scheme_add_global_constant(NULL_CLASS,
+			     NullClass(),
 			     env);
 
 #if ADD_TEST_PRIM_OBJ

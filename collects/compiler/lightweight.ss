@@ -151,7 +151,7 @@
  ; default action at a given node
 
  (define zactor%
-   (class null ()
+   (class object% ()
 	  (public 
 
 	   ; default
@@ -854,7 +854,7 @@
  ; at different kinds of Zodiac nodes
 
  (define zolder%
-   (class null ()
+   (class object% ()
 	  (public 
 	   [default-folder (lambda (ast . results-from-subterms) 
 			     (compiler:internal-error 'zolder%:default-folder

@@ -135,7 +135,7 @@
       get-editor is-selected? select user-data))
 
   (define hierarchical-list-item%
-    (class* null (hierarchical-list-item<%>) (snip)
+    (class* object% (hierarchical-list-item<%>) (snip)
       (private
 	[data #f])
       (public

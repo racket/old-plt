@@ -159,6 +159,18 @@ typedef struct {
 
 #endif
 
+static char *copy_vers(char *vers)
+{
+  if (vers) {
+    int len = strlen(vers);
+    char *vcopy;
+    vcopy = (char *)scheme_malloc_atomic(len + 1);
+    memcpy(vcopy, vers, len + 1);
+    return vcopy;
+  } else
+    return NULL;
+}
+
 static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
 {
 #ifndef NO_DYNAMIC_LOAD
@@ -215,15 +227,18 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     f = (char*(*)(SSI_ARG_TYPES))dlsym(dl, SO_SYMBOL_PREFIX "scheme_initialize_internal");
     
     if (!f) {
+      char *err = dlerror();
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: \"%s\" is not an extension (%s)", 
-		       filename, dlerror());
+		       filename, err);
     }
 
     vers = f(SSI_ARGS);
     if (!vers || strcmp(vers, VERSION)) {
+      /* Copy, because we're going to unload the extension: */
+      vers = copy_vers(vers);
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
@@ -235,12 +250,13 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     reload_f = (Scheme_Object*(*)(Scheme_Env*))dlsym(dl, SO_SYMBOL_PREFIX "scheme_reload");
     
     if (!init_f || !reload_f) {
+      char *err = dlerror();
       dlclose(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: no %s in \"%s\" (%s)",
 		       init_f ? "scheme_reload" : "scheme_initialize",
-		       filename, dlerror());
+		       filename, err);
     }
 #endif
 #if defined(WINDOWS_DYNAMIC_LOAD)
@@ -259,15 +275,18 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     f = (char*(*)(SSI_ARG_TYPES))GetProcAddress(dl, "scheme_initialize_internal");
     
     if (!f) {
+      long err = GetLastError();
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       "load-extension: \"%s\" is not an extension (%ld)",
-		       filename, GetLastError());
+		       filename, err);
     }
     
     vers = (f)(SSI_ARGS);
     if (!vers || strcmp(vers, VERSION)) {
+      /* Copy, because we're going to unload the extension: */
+      vers = copy_vers(vers);
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),

@@ -144,7 +144,8 @@
    (let ([cwd (current-directory)])
      (parameterize ([current-namespace namespace]) 
       (with-handlers ([void (lambda (exn)
-			      (delete-file (path->complete-path dest cwd))
+			      (with-handlers ([void void])
+				(delete-file (path->complete-path dest cwd)))
 			      (raise exn))])
         (compile-file src dest
 		      '(use-current-namespace

@@ -24,6 +24,14 @@ draws a line from one posn to other
 <li><code> wait-for-mouse-click</code> : -> Posn; <br>
 waits for the user to click on the mouse, within the window (the operation 
 is a quasi-constructor for posns)
+<li><code> get-key-event</code> : -> false or Character or Symbol ; <br>
+checks whether the user has pressed a key within the window; its result is 
+<ol> 
+ <li><code>false</code>, if the user didn't press a key;  
+ <li><code>Character</code>, if the user pressed an alphanumeric key; 
+ <li><code>Symbol</code>, if the user pressed, for example, an arror key: 
+ <code>'up</code> <code>'down</code>  <code>'left</code> <code>'right</code>
+</ol>
 <br>
 <li><code> sleep-for-a-while</code> : Number -> true; <br>
 suspends evaluation for the given number of seconds 
@@ -65,5 +73,9 @@ The color argument for all functions are optional.
 <br>
 This session opens a window, draws a red disk, clears it, sleeps for a second, 
 and then repeats. The last expression closes the canvas. 
+
+See <tt>http://www.ccs.neu.edu/home/matthias/HtDP/Extended/</tt>
+for an example on how to use <code>get-key-event</code>. The program is 
+the basis for an extended exercise under development.
 
 #include foot.tinc

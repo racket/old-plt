@@ -327,7 +327,7 @@ int sizeofCDataType(SQLSMALLINT type) {
 }
 
 unsigned short getHashValue(void *address) {
-  return ((unsigned short)address >> 4) % BUFFER_TBL_SIZE;
+  return ((unsigned short)(unsigned int)address >> 4) % BUFFER_TBL_SIZE;
 }
 
 void addToBufferTable(void *address,SRP_SQL_BUFFER *buffer) {

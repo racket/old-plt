@@ -1,5 +1,7 @@
 (module htdp-langs mzscheme
   (require (lib "string-constant.ss" "string-constants")
+           (lib "pretty.ss")
+           (prefix pc: (lib "pconvert.ss"))
            (lib "unitsig.ss")
            (lib "class.ss")
            (lib "tool.ss" "drscheme")
@@ -30,8 +32,10 @@
       ;; changes the default settings and sets a few more paramters during `on-execute'
       (define (module-based-language-extension super%)
         (class* super% ()
-          (override default-settings on-execute)
-          (rename [super-on-execute on-execute])
+          (override default-settings on-execute render-value/format render-value)
+          (rename [super-on-execute on-execute]
+                  [super-render-value/format render-value/format]
+                  [super-render-value render-value])
           (inherit sharing-printing abbreviate-cons-as-list)
           
           (define (default-settings)
@@ -42,7 +46,28 @@
                (insert-newlines #t))))
           
           (define (on-execute settings run-in-user-thread)
+            (run-in-user-thread
+             (lambda ()
+               (read-decimal-as-inexact #f)
+               (read-dot-as-symbol #t)))
             (super-on-execute settings run-in-user-thread))
+
+          (define (set-printing-parameters thunk)
+            (parameterize ([pc:booleans-as-true/false #t]
+                           [pc:abbreviate-cons-as-list (abbreviate-cons-as-list)]
+                           [pretty-print-show-inexactness #t]
+                           [pretty-print-.-symbol-without-bars #t])
+              (thunk)))
+          
+          (define (render-value/format value settings port put-snip)
+            (set-printing-parameters
+             (lambda ()
+               (super-render-value/format value settings port put-snip))))
+          
+          (define (render-value value settings port put-snip)
+            (set-printing-parameters
+             (lambda ()
+               (super-render-value value settings port put-snip))))
           
           (super-instantiate ())))
 

@@ -92,11 +92,17 @@
                                       [font (make-object font% 12 face 'default 'normal 'normal #f)])
                                  (let*-values ([(wi _1 _2 _3) (send dc get-text-extent "i" font)]
                                                [(ww _1 _2 _3) (send dc get-text-extent "w" font)])
-                                   (if (= ww wi)
+                                   (if (and (= ww wi) 
+                                            (not (zero? ww)))
                                        (cons face (loop (cdr faces)))
                                        (loop (cdr faces)))))]))])
                (set! get-fixed-faces (lambda () ans))
                ans))]))
+      
+      (define get-all-faces
+        (cond
+          [(eq? (system-type) 'unix) #f]
+          [else (lambda () (get-face-list))]))
       
       (define default-font-name (get-family-builtin-face 'modern))
       
@@ -169,8 +175,7 @@
                                (preferences:set 
                                 'drscheme:font-name
                                 (send font-name get-string-selection))))])
-                      (send choice set-string-selection
-                            (preferences:get 'drscheme:font-name))
+                      (send choice set-string-selection (preferences:get 'drscheme:font-name))
                       choice)]
                    [else
                     (make-object button%
@@ -247,16 +252,18 @@
            main)))
       
       (let ([make-simple
-	     (lambda (lang ps)
-	       (make-object drscheme:language-tower:module-based-language->language%
-		 (make-object drscheme:language-tower:simple-module-based-language->module-based-language%
-		   (make-object drscheme:language-tower:simple-module-based-language%
-		     lang
-		     ps))))])
+	     (lambda (module position)
+	       (instantiate (drscheme:language-tower:module-based-language->language-mixin
+                             (drscheme:language-tower:simple-module-based-language->module-based-language-mixin
+                              drscheme:language-tower:simple-module-based-language%))
+                 ()
+                 (module module)
+                 (language-position position)
+                 (teachpack-names null)))])
 	(drscheme:language:add-language
-	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical (MrEd)")))
+	 (make-simple '(lib "full-mzscheme.ss" "lang") '("Full" "Textual (MzScheme)")))
 	(drscheme:language:add-language
-	 (make-simple 'mzscheme '("Full" "Textual (MzScheme)"))))
+	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical (MrEd)"))))
       
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 

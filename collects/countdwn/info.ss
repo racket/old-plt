@@ -1,24 +1,8 @@
-(lambda (request failure)
-  (case request
-    [(name) "Countdown"]
-    [(app-unit-library) "link.ss"]
-    [(app-sig-library) "sig.ss"]
-    [(splash-max) 84]
-    [(splash-depth) 6]
-    [(compile-prefix) '(begin (require-library "sig.ss" "mred") (require-library "sig.ss" "countdwn"))]
-    [(compile-omit-files) (list "sig.ss")]
-    [(compile-elaboration-zos) (list "sig.ss")]
+(module info (lib "infotab.ss" "setup")
+  (define name "Countdown")
+  (define blurb
+    (list
+     "Countdown keeps track of the minute and second of approaching or past events. "))
 
-    [(blurb)
-     (list
-      "Countdown keeps track of the minute and second of approaching or past events. ")]
-
-    [(install-collection)
-     (lambda (x)
-       (require-library "launcher.ss" "launcher")
-       (make-mred-launcher (list "-magqvL" "run.ss" "countdwn")
-			   (mred-program-launcher-path "Countdown")))]
-
-    [(splash-image-path) (with-handlers ([void (lambda (x) "mred.gif")])
-			   (build-path (collection-path "countdwn") "button.gif"))]
-    [else (failure)]))
+  (define mred-launcher-libraries (list "run.ss"))
+  (define mred-launcher-names "Countdown"))

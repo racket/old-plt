@@ -1,5 +1,5 @@
 ;;
-;; $Id: test-unit.ss,v 1.4 2001/03/11 00:02:02 robby Exp $
+;; $Id: test-unit.ss,v 1.5 2001/03/19 04:30:26 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -268,8 +268,8 @@
 	 (let* ([active-frame (get-active-frame)]
 		[_ (unless active-frame
 		     (error object-tag
-				"could not find object: ~a, no active frame" 
-				b-desc))]
+                            "could not find object: ~a, no active frame" 
+                            b-desc))]
 		[found
 		 (let loop ([panel active-frame])
 		   (ormap (lambda (child)
@@ -277,15 +277,18 @@
 			      [(and (is-a? child obj-class)
 				    (equal? (send child get-label) b-desc))
 			       child]
-			      [(is-a? child mred:area-container<%>) (loop child)]
+			      [(is-a? child mred:area-container-window<%>) 
+                               (and (send child is-shown?)
+                                    (loop child))]
+                              [(is-a? child mred:area-container<%>) 
+                               (loop child)]
 			      [else #f]))
 			  (send panel get-children)))])
-	   (if found
-	       found
+	   (or found
 	       (error object-tag 
-			  "no object of class ~a named ~e in active frame"
-			  obj-class
-			  b-desc)))]
+                      "no object of class ~a named ~e in active frame"
+                      obj-class
+                      b-desc)))]
 	[(is-a? b-desc obj-class) b-desc]
 	[else (error 
 	       object-tag

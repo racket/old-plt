@@ -1,3 +1,4 @@
+
 (module language-tower mzscheme
   (require "drsig.ss"
            (lib "string-constant.ss" "string-constants")
@@ -50,26 +51,26 @@
       (define simple-module-based-language<%>
 	(interface ()
 	  get-module
-          get-language-position))
+          get-language-position
+          get-teachpack-names))
       
       (define simple-module-based-language%
         (class* object% (simple-module-based-language<%>)
-          (init-field module language-position)
-          (public get-module get-language-position)
+          (init-field module language-position teachpack-names)
+          (public get-module get-language-position get-teachpack-names)
           (define (get-module) module)
 	  (define (get-language-position) language-position)
+          (define (get-teachpack-names) teachpack-names)
 	  (super-instantiate ())))
       
       ;; simple-module-based-language->module-based-language : module-based-language<%>
       ;; transforms a simple-module-based-language into a module-based-language<%>
-      (define simple-module-based-language->module-based-language%
-	(class* object% (module-based-language<%>)
-	  (init-field simple-module-based-language)
-	  (public get-module config-panel on-execute get-teachpack-names 
-                  get-language-position 
+      (define (simple-module-based-language->module-based-language-mixin super%)
+	(class* super% (module-based-language<%>)
+	  (public config-panel on-execute 
                   render-value/format render-value
                   default-settings? default-settings marshall-settings unmarshall-settings)
-	  (define the-default-settings (make-simple-settings #f 'write #f #t))
+          (inherit get-module)
           (define (marshall-settings settings)
 	    (simple-settings->vector settings))
           (define (unmarshall-settings printable)
@@ -77,20 +78,17 @@
 		 (= (vector-length printable)
 		    (+ (procedure-arity make-simple-settings) 1))
 		 (apply make-simple-settings (cdr (vector->list printable)))))
-          (define (default-settings) the-default-settings)
-          (define (default-settings? x) (equal? x the-default-settings))
-          (define (get-module)
-            (send simple-module-based-language get-module))
-          (define (get-teachpack-names) 
-            ;; might like to find a list of names exported by the module here,
-            ;; but that's not really possible, right?
-            null)
-          (define (config-panel _parent settings)
-	    (simple-module-based-language-config-panel _parent settings))
+          (define (default-settings) 
+            (make-simple-settings/parse
+             '((case-sensitive #f)
+               (printing-style write)
+               (show-sharing #f)
+               (insert-newlines #t))))
+          (define (default-settings? x) (equal? x (default-settings)))
+          (define (config-panel parent)
+	    (simple-module-based-language-config-panel parent))
 	  (define (on-execute setting run-in-user-thread)
 	    (initialize-simple-module-based-language setting (get-module) run-in-user-thread))
-	  (define (get-language-position)
-	    (send simple-module-based-language get-language-position))
           (define (render-value/format value settings port put-snip)
             (simple-module-based-language-render-value/format value settings port put-snip))
           (define (render-value value settings port put-snip)
@@ -103,10 +101,10 @@
       ;;  show-sharing    : boolean
       ;;  insert-newlines : boolean
       (define-struct/parse simple-settings
-	(case-sensitive printing-style show-sharing insert-newlines))
+                           (case-sensitive printing-style show-sharing insert-newlines))
 
-      ;; simple-module-based-language-config-panel : parent settings -> (-> settings)
-      (define (simple-module-based-language-config-panel _parent settings)
+      ;; simple-module-based-language-config-panel : parent -> (case-> (-> settings) (settings -> void))
+      (define (simple-module-based-language-config-panel _parent)
 	(let* ([parent (make-object vertical-panel% _parent)]
 	       
 	       [input-msg (make-object message% (string-constant input-syntax) parent)]
@@ -114,7 +112,7 @@
 	       
 	       [output-msg (make-object message% (string-constant output-syntax) parent)]
 	       [output-panel (make-object vertical-panel% parent '(border))]
-
+               
 	       [case-sensitive (make-object check-box%
 				 (string-constant case-sensitive-label)
 				 input-panel
@@ -136,32 +134,22 @@
 				  void)])
 	  
 	  ;; set the characteristics of the GUI
+          (send _parent set-alignment 'center 'center)
 	  (send parent stretchable-height #f)
 	  (send parent stretchable-width #f)
+          (send parent set-alignment 'center 'center)
 	  (send output-panel stretchable-width #f)
 	  (send output-panel set-alignment 'left 'center)
           
-          (send parent set-alignment 'center 'center)
-
           (send parent reflow-container)
 	  (let*-values ([(iw) (send input-panel get-width)]
                         [(ow) (send output-panel get-width)]
                         [(w) (max iw ow)])
             (send input-panel min-width w)
             (send output-panel min-width w))
-
-	  ;; update the GUI to the input settings
-	  (send case-sensitive set-value (simple-settings-case-sensitive settings))
-	  (send output-style set-selection
-		(case (simple-settings-printing-style settings)
-		  [(constructor) 0]
-		  [(quasiquote) 1]
-		  [(write) 2]))
-	  (send show-sharing set-value (simple-settings-show-sharing settings))
-	  (send insert-newlines set-value (simple-settings-insert-newlines settings))          
           
-	  ;; procedure to extract the settings from the GUI
-	  (lambda ()
+	  (case-lambda
+           [()
 	    (make-simple-settings
 	     (send case-sensitive get-value)
 	     (case (send output-style get-selection)
@@ -169,7 +157,16 @@
 	       [(1) 'quasiquote]
 	       [(2) 'write])
 	     (send show-sharing get-value)
-	     (send insert-newlines get-value)))))
+	     (send insert-newlines get-value))]
+           [(settings)
+            (send case-sensitive set-value (simple-settings-case-sensitive settings))
+            (send output-style set-selection
+                  (case (simple-settings-printing-style settings)
+                    [(constructor) 0]
+                    [(quasiquote) 1]
+                    [(write) 2]))
+            (send show-sharing set-value (simple-settings-show-sharing settings))
+            (send insert-newlines set-value (simple-settings-insert-newlines settings))])))
 
       ;; simple-module-based-language-render-value/format : TST settings port (union #f (snip% -> void)) -> void
       (define (simple-module-based-language-render-value/format value settings port put-snip)
@@ -215,48 +212,36 @@
           (run-in-user-thread
            (lambda ()
              (namespace-attach-module orig-namespace lang-name)
-             (namespace-require lang-name)
+             (namespace-require module-spec)
              (read-case-sensitive (simple-settings-case-sensitive settings))))))
       
       ;; module-based-language->language : language<%>
       ;; given a module-based-language, implements a language
-      (define module-based-language->language%
-	(class* object% (language<%>)
-	  (init-field module-based-language)
-	  (public front-end config-panel on-execute get-teachpack-names
-                  get-language-position 
-                  render-value/format render-value
-                  default-settings? default-settings marshall-settings unmarshall-settings)
-          (define (marshall-settings settings)
-            (send module-based-language marshall-settings settings))
-          (define (unmarshall-settings printable)
-            (send module-based-language unmarshall-settings printable))
-          (define (default-settings)
-            (send module-based-language default-settings))
-          (define (default-settings? x)
-            (send module-based-language default-settings? x))
+      (define (module-based-language->language-mixin super%)
+	(class* super% (language<%>)
+	  (public front-end)
           (define (front-end input settings)
             (module-based-language-front-end input settings))
-          (define (config-panel panel settings)
-            (send module-based-language config-panel panel settings))
-          (define (on-execute settings run-in-user-thread)
-            (send module-based-language on-execute settings run-in-user-thread))
-          (define (get-teachpack-names)
-            (send module-based-language get-teachpack-names))
-	  (define (get-language-position)
-	    (send module-based-language get-language-position))
-          (define (render-value/format value settings port put-snip)
-            (send module-based-language render-value/format value settings port put-snip))
-          (define (render-value value settings port put-snip)
-            (send module-based-language render-value value settings port put-snip))
-	  (super-instantiate ())))
+          (super-instantiate ())))
       
       ;; module-based-language-front-end : (input settings -> (-> (union sexp syntax eof)))
       (define (module-based-language-front-end input settings)
         (let-values ([(port source offset line col)
                       (cond
-                        [(string? input) 
-                         (values (open-input-file input) input 0 0 0)]
+                        [(string? input)
+                         (let ([skip-first-line? 
+                                (let* ([tmp (open-input-file input)]
+                                       [c1 (read-char tmp)]
+                                       [c2 (read-char tmp)])
+                                  (begin0
+                                    (and (char=? c1 #\#)
+                                         (char=? c2 #\!))
+                                    (close-input-port tmp)))])
+                           (let ([port (open-input-file input)])
+                             (if skip-first-line?
+                                 (begin (read-line port 'any)
+                                        (values port input (file-position port) 1 0))
+                                 (values port input 0 0 0))))]
                         [else 
                          (let* ([text (drscheme:rep:text/pos-text input)]
                                 [start (drscheme:rep:text/pos-start input)]

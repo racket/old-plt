@@ -465,7 +465,7 @@
                                                        (let ([m (regexp-match re:mzlib-notes s)])
                                                          (and m
                                                               (format
-                                                               "Mz/Mr: load with (require-library \"~a.ss\")"
+                                                               "Mz/Mr: load with (require (lib \"~a.ss\"))"
                                                                (cadr m)))))
                                                      l)])
                                            (if lib

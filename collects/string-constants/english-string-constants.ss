@@ -9,11 +9,18 @@
  ;; misc
  (definitions-modified 
   "The definitions text has been modified in the file-system; please save or revert the definitions text.")
+ (drscheme-internal-error "DrScheme Internal Error")
 
  ;; tools
  (invalid-tool-spec "The tool specification in collection ~a's info.ss file is invalid. Expected either a string or a non-empty list of strings, got: ~e")
  (error-loading-tool-title "DrScheme - Error loading tool ~s; ~s")
  (error-invoking-tool-title "Error invoking tool ~s;~s")
+ (tool-tool-names-same-length
+  "expected `tool-names' and `tools' to be lists of the same length, in info.ss file for ~s, got ~e and ~e")
+ (tool-tool-icons-same-length
+  "expected `tool-icons' and `tools' to be lists of the same length, in info.ss file for ~s, got ~e and ~e")
+ (error-getting-info-tool
+  "error loading info.ss file for ~s")
  
  ;; define popup menu
  (end-of-buffer-define "<< end of buffer >>")
@@ -81,12 +88,14 @@
  (insert-fraction-menu-item-label "Insert Fraction...")
  
  ;; TeachPack messages
- (clear-teachpack "Clear ~a Teachpack")
+ (select-a-teachpack "Select a TeachPack")
+ (clear-teachpack "Clear ~a TeachPack")
  (teachpack-error-label "DrScheme - TeachPack error")
  (teachpack-dne/cant-read "The TeachPack file ~a does not exist or is not readable.")
  (teachpack-didnt-load "The TeachPack file ~a did not load properly.")
  (teachpack-error-invoke "The TeachPack file ~a raised an error when invoked.")
- 
+ (add-teachpack-menu-item-label "Add Teachpack...")
+ (clear-all-teachpacks-menu-item-label "Clear All Teachpacks")
  
  ;; Language dialog
  (language-dialog-title "Configure Language")
@@ -101,6 +110,10 @@
  (output-syntax "Output Syntax")
  (whole/fractional-exact-numbers-label "Print numbers as fractions")
  (booleans-as-true/false-label "Print booleans using true and false")
+ (show-details-button-label "Show Details")
+ (hide-details-button-label "Hide Details")
+ (choose-language-menu-item-label "Choose Language...")
+ (revert-to-language-defaults "Revert to Language Defaults")
  
  ;; repl stuff
  (evaluation-terminated "Evaluation Terminated")

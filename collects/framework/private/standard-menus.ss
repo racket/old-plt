@@ -149,119 +149,182 @@
   (mixin
    (basic<%>)
    (standard-menus<%>)
-   args
    (inherit on-menu-char on-traverse-char)
-   (private-field
-     (remove-prefs-callback
-       (preferences:add-callback
-         'framework:menu-bindings
-         (lambda (p v)
-           (let ((mb (get-menu-bar)))
-             (let loop ((menu (get-menu-bar)))
-               (cond
-                ((is-a? menu menu-item-container<%>)
-                 (for-each loop (send menu get-items)))
-                ((is-a? menu selectable-menu-item<%>)
-                 (when (is-a? menu menu:can-restore<%>)
-                   (if v
-                     (send menu restore-keybinding)
-                     (send menu set-shortcut #f)))))))))))
+   (define remove-prefs-callback
+     (preferences:add-callback
+       'framework:menu-bindings
+       (lambda (p v)
+         (let ((mb (get-menu-bar)))
+           (let loop ((menu (get-menu-bar)))
+             (cond
+              ((is-a? menu menu-item-container<%>)
+               (for-each loop (send menu get-items)))
+              ((is-a? menu selectable-menu-item<%>)
+               (when (is-a? menu menu:can-restore<%>)
+                 (if v
+                   (send menu restore-keybinding)
+                   (send menu set-shortcut #f))))))))))
    (inherit get-menu-bar show can-close? get-edit-target-object)
-   (override (on-close (lambda () (remove-prefs-callback) (super-on-close))))
-   (public (get-menu% (lambda () menu%)))
-   (public (get-menu-item% (lambda () menu:can-restore-menu-item%)))
+   (override on-close)
+   (define on-close (lambda () (remove-prefs-callback) (super-on-close)))
+   (public get-menu%)
+   (define get-menu% (lambda () menu%))
+   (public get-menu-item%)
+   (define get-menu-item% (lambda () menu:can-restore-menu-item%))
+   (public get-checkable-menu-item%)
+   (define get-checkable-menu-item%
+     (lambda () menu:can-restore-checkable-menu-item%))
+   (public get-file-menu)
+   (define get-file-menu (lambda () file-menu))
+   (public get-edit-menu)
+   (define get-edit-menu (lambda () edit-menu))
+   (public get-help-menu)
+   (define get-help-menu (lambda () help-menu))
    (public
-    (get-checkable-menu-item%
-     (lambda () menu:can-restore-checkable-menu-item%)))
-   (public (get-file-menu (lambda () file-menu)))
-   (sequence (void))
-   (public (get-edit-menu (lambda () edit-menu)))
-   (sequence (void))
-   (public (get-help-menu (lambda () help-menu)))
-   (sequence (void))
+    file-menu:new-callback
+    file-menu:get-new-item
+    file-menu:new-string
+    file-menu:new-help-string
+    file-menu:new-on-demand
+    file-menu:create-new?)
+   (define file-menu:new-callback
+     (lambda (item control) (handler:edit-file #f) #t))
+   (define file-menu:get-new-item (lambda () file-menu:new-item))
+   (define file-menu:new-string (lambda () ""))
+   (define file-menu:new-help-string (lambda () "Open a new file"))
+   (define file-menu:new-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-new? (lambda () #t))
+   (public file-menu:between-new-and-open)
+   (define file-menu:between-new-and-open (lambda (menu) (void)))
    (public
-    (file-menu:new-callback (lambda (item control) (handler:edit-file #f) #t))
-    (file-menu:get-new-item (lambda () file-menu:new-item))
-    (file-menu:new-string (lambda () ""))
-    (file-menu:new-help-string (lambda () "Open a new file"))
-    (file-menu:new-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-new? (lambda () #t)))
-   (public (file-menu:between-new-and-open (lambda (menu) (void))))
+    file-menu:open-callback
+    file-menu:get-open-item
+    file-menu:open-string
+    file-menu:open-help-string
+    file-menu:open-on-demand
+    file-menu:create-open?)
+   (define file-menu:open-callback
+     (lambda (item control) (handler:open-file) #t))
+   (define file-menu:get-open-item (lambda () file-menu:open-item))
+   (define file-menu:open-string (lambda () ""))
+   (define file-menu:open-help-string (lambda () "Open a file from disk"))
+   (define file-menu:open-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-open? (lambda () #t))
+   (public file-menu:between-open-and-revert)
+   (define file-menu:between-open-and-revert (lambda (menu) (void)))
    (public
-    (file-menu:open-callback (lambda (item control) (handler:open-file) #t))
-    (file-menu:get-open-item (lambda () file-menu:open-item))
-    (file-menu:open-string (lambda () ""))
-    (file-menu:open-help-string (lambda () "Open a file from disk"))
-    (file-menu:open-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-open? (lambda () #t)))
-   (public (file-menu:between-open-and-revert (lambda (menu) (void))))
-   (public
-    (file-menu:revert-callback (lambda (x y) (void)))
-    (file-menu:get-revert-item (lambda () file-menu:revert-item))
-    (file-menu:revert-string (lambda () ""))
-    (file-menu:revert-help-string
+    file-menu:revert-callback
+    file-menu:get-revert-item
+    file-menu:revert-string
+    file-menu:revert-help-string
+    file-menu:revert-on-demand
+    file-menu:create-revert?)
+   (define file-menu:revert-callback (lambda (x y) (void)))
+   (define file-menu:get-revert-item (lambda () file-menu:revert-item))
+   (define file-menu:revert-string (lambda () ""))
+   (define file-menu:revert-help-string
      (lambda () "Revert this file to the copy on disk"))
-    (file-menu:revert-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-revert? (lambda () #f)))
-   (public (file-menu:between-revert-and-save (lambda (menu) (void))))
+   (define file-menu:revert-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-revert? (lambda () #f))
+   (public file-menu:between-revert-and-save)
+   (define file-menu:between-revert-and-save (lambda (menu) (void)))
    (public
-    (file-menu:save-callback (lambda (x y) (void)))
-    (file-menu:get-save-item (lambda () file-menu:save-item))
-    (file-menu:save-string (lambda () ""))
-    (file-menu:save-help-string (lambda () "Save this file to disk"))
-    (file-menu:save-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-save? (lambda () #f)))
+    file-menu:save-callback
+    file-menu:get-save-item
+    file-menu:save-string
+    file-menu:save-help-string
+    file-menu:save-on-demand
+    file-menu:create-save?)
+   (define file-menu:save-callback (lambda (x y) (void)))
+   (define file-menu:get-save-item (lambda () file-menu:save-item))
+   (define file-menu:save-string (lambda () ""))
+   (define file-menu:save-help-string (lambda () "Save this file to disk"))
+   (define file-menu:save-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-save? (lambda () #f))
    (public
-    (file-menu:save-as-callback (lambda (x y) (void)))
-    (file-menu:get-save-as-item (lambda () file-menu:save-as-item))
-    (file-menu:save-as-string (lambda () ""))
-    (file-menu:save-as-help-string
+    file-menu:save-as-callback
+    file-menu:get-save-as-item
+    file-menu:save-as-string
+    file-menu:save-as-help-string
+    file-menu:save-as-on-demand
+    file-menu:create-save-as?)
+   (define file-menu:save-as-callback (lambda (x y) (void)))
+   (define file-menu:get-save-as-item (lambda () file-menu:save-as-item))
+   (define file-menu:save-as-string (lambda () ""))
+   (define file-menu:save-as-help-string
      (lambda () "Prompt for a filename and save this file to disk"))
-    (file-menu:save-as-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-save-as? (lambda () #f)))
+   (define file-menu:save-as-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-save-as? (lambda () #f))
+   (public file-menu:between-save-as-and-print)
+   (define file-menu:between-save-as-and-print
+     (lambda (menu) (make-object separator-menu-item% menu)))
    (public
-    (file-menu:between-save-as-and-print
-     (lambda (menu) (make-object separator-menu-item% menu))))
+    file-menu:print-callback
+    file-menu:get-print-item
+    file-menu:print-string
+    file-menu:print-help-string
+    file-menu:print-on-demand
+    file-menu:create-print?)
+   (define file-menu:print-callback (lambda (x y) (void)))
+   (define file-menu:get-print-item (lambda () file-menu:print-item))
+   (define file-menu:print-string (lambda () ""))
+   (define file-menu:print-help-string (lambda () "Print this file"))
+   (define file-menu:print-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-print? (lambda () #f))
+   (public file-menu:between-print-and-close)
+   (define file-menu:between-print-and-close
+     (lambda (menu) (make-object separator-menu-item% menu)))
    (public
-    (file-menu:print-callback (lambda (x y) (void)))
-    (file-menu:get-print-item (lambda () file-menu:print-item))
-    (file-menu:print-string (lambda () ""))
-    (file-menu:print-help-string (lambda () "Print this file"))
-    (file-menu:print-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-print? (lambda () #f)))
-   (public
-    (file-menu:between-print-and-close
-     (lambda (menu) (make-object separator-menu-item% menu))))
-   (public
-    (file-menu:close-callback
+    file-menu:close-callback
+    file-menu:get-close-item
+    file-menu:close-string
+    file-menu:close-help-string
+    file-menu:close-on-demand
+    file-menu:create-close?)
+   (define file-menu:close-callback
      (lambda (item control) (when (can-close?) (on-close) (show #f)) #t))
-    (file-menu:get-close-item (lambda () file-menu:close-item))
-    (file-menu:close-string (lambda () ""))
-    (file-menu:close-help-string (lambda () "Close this file"))
-    (file-menu:close-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-close? (lambda () #t)))
-   (public (file-menu:between-close-and-quit (lambda (menu) (void))))
+   (define file-menu:get-close-item (lambda () file-menu:close-item))
+   (define file-menu:close-string (lambda () ""))
+   (define file-menu:close-help-string (lambda () "Close this file"))
+   (define file-menu:close-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-close? (lambda () #t))
+   (public file-menu:between-close-and-quit)
+   (define file-menu:between-close-and-quit (lambda (menu) (void)))
    (public
-    (file-menu:quit-callback
+    file-menu:quit-callback
+    file-menu:get-quit-item
+    file-menu:quit-string
+    file-menu:quit-help-string
+    file-menu:quit-on-demand
+    file-menu:create-quit?)
+   (define file-menu:quit-callback
      (lambda (item control)
        (parameterize ((exit:frame-exiting this)) (exit:exit))))
-    (file-menu:get-quit-item (lambda () file-menu:quit-item))
-    (file-menu:quit-string (lambda () ""))
-    (file-menu:quit-help-string (lambda () "Quit"))
-    (file-menu:quit-on-demand (lambda (menu-item) (void)))
-    (file-menu:create-quit? (lambda () #t)))
-   (public (file-menu:after-quit (lambda (menu) (void))))
+   (define file-menu:get-quit-item (lambda () file-menu:quit-item))
+   (define file-menu:quit-string (lambda () ""))
+   (define file-menu:quit-help-string (lambda () "Quit"))
+   (define file-menu:quit-on-demand (lambda (menu-item) (void)))
+   (define file-menu:create-quit? (lambda () #t))
+   (public file-menu:after-quit)
+   (define file-menu:after-quit (lambda (menu) (void)))
    (public
-    (edit-menu:undo-callback
+    edit-menu:undo-callback
+    edit-menu:get-undo-item
+    edit-menu:undo-string
+    edit-menu:undo-help-string
+    edit-menu:undo-on-demand
+    edit-menu:create-undo?)
+   (define edit-menu:undo-callback
      (lambda (menu evt)
        (let ((edit (get-edit-target-object)))
          (when (and edit (is-a? edit editor<%>))
            (send edit do-edit-operation 'undo)))
        #t))
-    (edit-menu:get-undo-item (lambda () edit-menu:undo-item))
-    (edit-menu:undo-string (lambda () ""))
-    (edit-menu:undo-help-string (lambda () "Undo the most recent action"))
-    (edit-menu:undo-on-demand
+   (define edit-menu:get-undo-item (lambda () edit-menu:undo-item))
+   (define edit-menu:undo-string (lambda () ""))
+   (define edit-menu:undo-help-string
+     (lambda () "Undo the most recent action"))
+   (define edit-menu:undo-on-demand
      (lambda (item)
        (let* ((editor (get-edit-target-object))
               (enable?
@@ -269,18 +332,24 @@
                      (is-a? editor editor<%>)
                      (send editor can-do-edit-operation? 'undo))))
          (send item enable enable?))))
-    (edit-menu:create-undo? (lambda () #t)))
+   (define edit-menu:create-undo? (lambda () #t))
    (public
-    (edit-menu:redo-callback
+    edit-menu:redo-callback
+    edit-menu:get-redo-item
+    edit-menu:redo-string
+    edit-menu:redo-help-string
+    edit-menu:redo-on-demand
+    edit-menu:create-redo?)
+   (define edit-menu:redo-callback
      (lambda (menu evt)
        (let ((edit (get-edit-target-object)))
          (when (and edit (is-a? edit editor<%>))
            (send edit do-edit-operation 'redo)))
        #t))
-    (edit-menu:get-redo-item (lambda () edit-menu:redo-item))
-    (edit-menu:redo-string (lambda () ""))
-    (edit-menu:redo-help-string (lambda () "Redo the most recent undo"))
-    (edit-menu:redo-on-demand
+   (define edit-menu:get-redo-item (lambda () edit-menu:redo-item))
+   (define edit-menu:redo-string (lambda () ""))
+   (define edit-menu:redo-help-string (lambda () "Redo the most recent undo"))
+   (define edit-menu:redo-on-demand
      (lambda (item)
        (let* ((editor (get-edit-target-object))
               (enable?
@@ -288,21 +357,27 @@
                      (is-a? editor editor<%>)
                      (send editor can-do-edit-operation? 'redo))))
          (send item enable enable?))))
-    (edit-menu:create-redo? (lambda () #t)))
+   (define edit-menu:create-redo? (lambda () #t))
+   (public edit-menu:between-redo-and-cut)
+   (define edit-menu:between-redo-and-cut
+     (lambda (menu) (make-object separator-menu-item% menu)))
    (public
-    (edit-menu:between-redo-and-cut
-     (lambda (menu) (make-object separator-menu-item% menu))))
-   (public
-    (edit-menu:cut-callback
+    edit-menu:cut-callback
+    edit-menu:get-cut-item
+    edit-menu:cut-string
+    edit-menu:cut-help-string
+    edit-menu:cut-on-demand
+    edit-menu:create-cut?)
+   (define edit-menu:cut-callback
      (lambda (menu evt)
        (let ((edit (get-edit-target-object)))
          (when (and edit (is-a? edit editor<%>))
            (send edit do-edit-operation 'cut)))
        #t))
-    (edit-menu:get-cut-item (lambda () edit-menu:cut-item))
-    (edit-menu:cut-string (lambda () ""))
-    (edit-menu:cut-help-string (lambda () "Cut the selection"))
-    (edit-menu:cut-on-demand
+   (define edit-menu:get-cut-item (lambda () edit-menu:cut-item))
+   (define edit-menu:cut-string (lambda () ""))
+   (define edit-menu:cut-help-string (lambda () "Cut the selection"))
+   (define edit-menu:cut-on-demand
      (lambda (item)
        (let* ((editor (get-edit-target-object))
               (enable?
@@ -310,19 +385,26 @@
                      (is-a? editor editor<%>)
                      (send editor can-do-edit-operation? 'cut))))
          (send item enable enable?))))
-    (edit-menu:create-cut? (lambda () #t)))
-   (public (edit-menu:between-cut-and-copy (lambda (menu) (void))))
+   (define edit-menu:create-cut? (lambda () #t))
+   (public edit-menu:between-cut-and-copy)
+   (define edit-menu:between-cut-and-copy (lambda (menu) (void)))
    (public
-    (edit-menu:copy-callback
+    edit-menu:copy-callback
+    edit-menu:get-copy-item
+    edit-menu:copy-string
+    edit-menu:copy-help-string
+    edit-menu:copy-on-demand
+    edit-menu:create-copy?)
+   (define edit-menu:copy-callback
      (lambda (menu evt)
        (let ((edit (get-edit-target-object)))
          (when (and edit (is-a? edit editor<%>))
            (send edit do-edit-operation 'copy)))
        #t))
-    (edit-menu:get-copy-item (lambda () edit-menu:copy-item))
-    (edit-menu:copy-string (lambda () ""))
-    (edit-menu:copy-help-string (lambda () "Copy the selection"))
-    (edit-menu:copy-on-demand
+   (define edit-menu:get-copy-item (lambda () edit-menu:copy-item))
+   (define edit-menu:copy-string (lambda () ""))
+   (define edit-menu:copy-help-string (lambda () "Copy the selection"))
+   (define edit-menu:copy-on-demand
      (lambda (item)
        (let* ((editor (get-edit-target-object))
               (enable?
@@ -330,20 +412,27 @@
                      (is-a? editor editor<%>)
                      (send editor can-do-edit-operation? 'copy))))
          (send item enable enable?))))
-    (edit-menu:create-copy? (lambda () #t)))
-   (public (edit-menu:between-copy-and-paste (lambda (menu) (void))))
+   (define edit-menu:create-copy? (lambda () #t))
+   (public edit-menu:between-copy-and-paste)
+   (define edit-menu:between-copy-and-paste (lambda (menu) (void)))
    (public
-    (edit-menu:paste-callback
+    edit-menu:paste-callback
+    edit-menu:get-paste-item
+    edit-menu:paste-string
+    edit-menu:paste-help-string
+    edit-menu:paste-on-demand
+    edit-menu:create-paste?)
+   (define edit-menu:paste-callback
      (lambda (menu evt)
        (let ((edit (get-edit-target-object)))
          (when (and edit (is-a? edit editor<%>))
            (send edit do-edit-operation 'paste)))
        #t))
-    (edit-menu:get-paste-item (lambda () edit-menu:paste-item))
-    (edit-menu:paste-string (lambda () ""))
-    (edit-menu:paste-help-string
+   (define edit-menu:get-paste-item (lambda () edit-menu:paste-item))
+   (define edit-menu:paste-string (lambda () ""))
+   (define edit-menu:paste-help-string
      (lambda () "Paste the most recent copy or cut over the selection"))
-    (edit-menu:paste-on-demand
+   (define edit-menu:paste-on-demand
      (lambda (item)
        (let* ((editor (get-edit-target-object))
               (enable?
@@ -351,20 +440,27 @@
                      (is-a? editor editor<%>)
                      (send editor can-do-edit-operation? 'paste))))
          (send item enable enable?))))
-    (edit-menu:create-paste? (lambda () #t)))
-   (public (edit-menu:between-paste-and-clear (lambda (menu) (void))))
+   (define edit-menu:create-paste? (lambda () #t))
+   (public edit-menu:between-paste-and-clear)
+   (define edit-menu:between-paste-and-clear (lambda (menu) (void)))
    (public
-    (edit-menu:clear-callback
+    edit-menu:clear-callback
+    edit-menu:get-clear-item
+    edit-menu:clear-string
+    edit-menu:clear-help-string
+    edit-menu:clear-on-demand
+    edit-menu:create-clear?)
+   (define edit-menu:clear-callback
      (lambda (menu evt)
        (let ((edit (get-edit-target-object)))
          (when (and edit (is-a? edit editor<%>))
            (send edit do-edit-operation 'clear)))
        #t))
-    (edit-menu:get-clear-item (lambda () edit-menu:clear-item))
-    (edit-menu:clear-string (lambda () ""))
-    (edit-menu:clear-help-string
+   (define edit-menu:get-clear-item (lambda () edit-menu:clear-item))
+   (define edit-menu:clear-string (lambda () ""))
+   (define edit-menu:clear-help-string
      (lambda () "Clear the selection without affecting paste"))
-    (edit-menu:clear-on-demand
+   (define edit-menu:clear-on-demand
      (lambda (item)
        (let* ((editor (get-edit-target-object))
               (enable?
@@ -372,19 +468,27 @@
                      (is-a? editor editor<%>)
                      (send editor can-do-edit-operation? 'clear))))
          (send item enable enable?))))
-    (edit-menu:create-clear? (lambda () #t)))
-   (public (edit-menu:between-clear-and-select-all (lambda (menu) (void))))
+   (define edit-menu:create-clear? (lambda () #t))
+   (public edit-menu:between-clear-and-select-all)
+   (define edit-menu:between-clear-and-select-all (lambda (menu) (void)))
    (public
-    (edit-menu:select-all-callback
+    edit-menu:select-all-callback
+    edit-menu:get-select-all-item
+    edit-menu:select-all-string
+    edit-menu:select-all-help-string
+    edit-menu:select-all-on-demand
+    edit-menu:create-select-all?)
+   (define edit-menu:select-all-callback
      (lambda (menu evt)
        (let ((edit (get-edit-target-object)))
          (when (and edit (is-a? edit editor<%>))
            (send edit do-edit-operation 'select-all)))
        #t))
-    (edit-menu:get-select-all-item (lambda () edit-menu:select-all-item))
-    (edit-menu:select-all-string (lambda () ""))
-    (edit-menu:select-all-help-string (lambda () "Select the entire document"))
-    (edit-menu:select-all-on-demand
+   (define edit-menu:get-select-all-item (lambda () edit-menu:select-all-item))
+   (define edit-menu:select-all-string (lambda () ""))
+   (define edit-menu:select-all-help-string
+     (lambda () "Select the entire document"))
+   (define edit-menu:select-all-on-demand
      (lambda (item)
        (let* ((editor (get-edit-target-object))
               (enable?
@@ -392,629 +496,557 @@
                      (is-a? editor editor<%>)
                      (send editor can-do-edit-operation? 'select-all))))
          (send item enable enable?))))
-    (edit-menu:create-select-all? (lambda () #t)))
+   (define edit-menu:create-select-all? (lambda () #t))
+   (public edit-menu:between-select-all-and-find)
+   (define edit-menu:between-select-all-and-find
+     (lambda (menu) (make-object separator-menu-item% menu)))
    (public
-    (edit-menu:between-select-all-and-find
-     (lambda (menu) (make-object separator-menu-item% menu))))
-   (public
-    (edit-menu:find-callback (lambda (x y) (void)))
-    (edit-menu:get-find-item (lambda () edit-menu:find-item))
-    (edit-menu:find-string (lambda () ""))
-    (edit-menu:find-help-string
+    edit-menu:find-callback
+    edit-menu:get-find-item
+    edit-menu:find-string
+    edit-menu:find-help-string
+    edit-menu:find-on-demand
+    edit-menu:create-find?)
+   (define edit-menu:find-callback (lambda (x y) (void)))
+   (define edit-menu:get-find-item (lambda () edit-menu:find-item))
+   (define edit-menu:find-string (lambda () ""))
+   (define edit-menu:find-help-string
      (lambda () "Search for a string in the window"))
-    (edit-menu:find-on-demand
+   (define edit-menu:find-on-demand
      (lambda (item)
        (send item enable
          (let
           ((target (get-edit-target-object)))
           (and target (is-a? target editor<%>))))))
-    (edit-menu:create-find? (lambda () #f)))
+   (define edit-menu:create-find? (lambda () #f))
    (public
-    (edit-menu:find-again-callback (lambda (x y) (void)))
-    (edit-menu:get-find-again-item (lambda () edit-menu:find-again-item))
-    (edit-menu:find-again-string (lambda () ""))
-    (edit-menu:find-again-help-string
+    edit-menu:find-again-callback
+    edit-menu:get-find-again-item
+    edit-menu:find-again-string
+    edit-menu:find-again-help-string
+    edit-menu:find-again-on-demand
+    edit-menu:create-find-again?)
+   (define edit-menu:find-again-callback (lambda (x y) (void)))
+   (define edit-menu:get-find-again-item (lambda () edit-menu:find-again-item))
+   (define edit-menu:find-again-string (lambda () ""))
+   (define edit-menu:find-again-help-string
      (lambda () "Search for the same string as before"))
-    (edit-menu:find-again-on-demand
+   (define edit-menu:find-again-on-demand
      (lambda (item)
        (send item enable
          (let
           ((target (get-edit-target-object)))
           (and target (is-a? target editor<%>))))))
-    (edit-menu:create-find-again? (lambda () #f)))
+   (define edit-menu:create-find-again? (lambda () #f))
    (public
-    (edit-menu:replace-and-find-again-callback (lambda (x y) (void)))
-    (edit-menu:get-replace-and-find-again-item
+    edit-menu:replace-and-find-again-callback
+    edit-menu:get-replace-and-find-again-item
+    edit-menu:replace-and-find-again-string
+    edit-menu:replace-and-find-again-help-string
+    edit-menu:replace-and-find-again-on-demand
+    edit-menu:create-replace-and-find-again?)
+   (define edit-menu:replace-and-find-again-callback (lambda (x y) (void)))
+   (define edit-menu:get-replace-and-find-again-item
      (lambda () edit-menu:replace-and-find-again-item))
-    (edit-menu:replace-and-find-again-string (lambda () ""))
-    (edit-menu:replace-and-find-again-help-string
+   (define edit-menu:replace-and-find-again-string (lambda () ""))
+   (define edit-menu:replace-and-find-again-help-string
      (lambda ()
        "Replace the current text and search for the same string as before"))
-    (edit-menu:replace-and-find-again-on-demand
+   (define edit-menu:replace-and-find-again-on-demand
      (lambda (item)
        (send item enable
          (let
           ((target (get-edit-target-object)))
           (and target (is-a? target editor<%>))))))
-    (edit-menu:create-replace-and-find-again? (lambda () #f)))
+   (define edit-menu:create-replace-and-find-again? (lambda () #f))
+   (public edit-menu:between-find-and-preferences)
+   (define edit-menu:between-find-and-preferences
+     (lambda (menu) (make-object separator-menu-item% menu)))
    (public
-    (edit-menu:between-find-and-preferences
-     (lambda (menu) (make-object separator-menu-item% menu))))
-   (public
-    (edit-menu:preferences-callback
+    edit-menu:preferences-callback
+    edit-menu:get-preferences-item
+    edit-menu:preferences-string
+    edit-menu:preferences-help-string
+    edit-menu:preferences-on-demand
+    edit-menu:create-preferences?)
+   (define edit-menu:preferences-callback
      (lambda (item control) (preferences:show-dialog) #t))
-    (edit-menu:get-preferences-item (lambda () edit-menu:preferences-item))
-    (edit-menu:preferences-string (lambda () ""))
-    (edit-menu:preferences-help-string (lambda () "Configure the preferences"))
-    (edit-menu:preferences-on-demand (lambda (menu-item) (void)))
-    (edit-menu:create-preferences? (lambda () #t)))
-   (public (edit-menu:after-preferences (lambda (menu) (void))))
-   (public (help-menu:before-about (lambda (menu) (void))))
+   (define edit-menu:get-preferences-item
+     (lambda () edit-menu:preferences-item))
+   (define edit-menu:preferences-string (lambda () ""))
+   (define edit-menu:preferences-help-string
+     (lambda () "Configure the preferences"))
+   (define edit-menu:preferences-on-demand (lambda (menu-item) (void)))
+   (define edit-menu:create-preferences? (lambda () #t))
+   (public edit-menu:after-preferences)
+   (define edit-menu:after-preferences (lambda (menu) (void)))
+   (public help-menu:before-about)
+   (define help-menu:before-about (lambda (menu) (void)))
    (public
-    (help-menu:about-callback (lambda (x y) (void)))
-    (help-menu:get-about-item (lambda () help-menu:about-item))
-    (help-menu:about-string (lambda () ""))
-    (help-menu:about-help-string
+    help-menu:about-callback
+    help-menu:get-about-item
+    help-menu:about-string
+    help-menu:about-help-string
+    help-menu:about-on-demand
+    help-menu:create-about?)
+   (define help-menu:about-callback (lambda (x y) (void)))
+   (define help-menu:get-about-item (lambda () help-menu:about-item))
+   (define help-menu:about-string (lambda () ""))
+   (define help-menu:about-help-string
      (lambda () "Learn something about this application"))
-    (help-menu:about-on-demand (lambda (menu-item) (void)))
-    (help-menu:create-about? (lambda () #f)))
-   (public (help-menu:after-about (lambda (menu) (void))))
-   (sequence (apply super-init args))
+   (define help-menu:about-on-demand (lambda (menu-item) (void)))
+   (define help-menu:create-about? (lambda () #f))
+   (public help-menu:after-about)
+   (define help-menu:after-about (lambda (menu) (void)))
+   (super-instantiate ())
    (rename (super-on-close on-close))
-   (sequence (void))
-   (sequence (void))
-   (sequence (void))
-   (sequence (void))
-   (private-field
-     (file-menu
-       (make-object (get-menu%)
-         (if (eq? (system-type) 'windows) "&File" "F&ile")
-         (get-menu-bar))))
-   (sequence (void))
-   (private-field (edit-menu (make-object (get-menu%) "&Edit" (get-menu-bar))))
-   (sequence (void))
-   (private-field (help-menu (make-object (get-menu%) "&Help" (get-menu-bar))))
-   (private-field
-     (file-menu:new-item
-       (and (file-menu:create-new?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:new-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:new-string)) (base "&New") (suffix ""))
+   (define file-menu
+     (make-object (get-menu%)
+       (if (eq? (system-type) 'windows) "&File" "F&ile")
+       (get-menu-bar)))
+   (define edit-menu (make-object (get-menu%) "&Edit" (get-menu-bar)))
+   (define help-menu (make-object (get-menu%) "&Help" (get-menu-bar)))
+   (define file-menu:new-item
+     (and (file-menu:create-new?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:new-string)) (base "&New") (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:new-callback
-                  (lambda (item evt) (file-menu:new-callback item evt))))
-               file-menu:new-callback)
-              #\n
-              (file-menu:new-help-string)))))
-   (sequence (file-menu:between-new-and-open (get-file-menu)))
-   (private-field
-     (file-menu:open-item
-       (and (file-menu:create-open?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:open-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:open-string))
-                (base "&Open")
-                (suffix "..."))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:new-callback
+                      (lambda (item evt) (file-menu:new-callback item evt))))
+                file-menu:new-callback))
+            (shortcut #\n)
+            (help (file-menu:new-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:new-on-demand menu-item))))))
+   (file-menu:between-new-and-open (get-file-menu))
+   (define file-menu:open-item
+     (and (file-menu:create-open?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:open-string))
+                   (base "&Open")
+                   (suffix "..."))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:open-callback
-                  (lambda (item evt) (file-menu:open-callback item evt))))
-               file-menu:open-callback)
-              #\o
-              (file-menu:open-help-string)))))
-   (sequence (file-menu:between-open-and-revert (get-file-menu)))
-   (private-field
-     (file-menu:revert-item
-       (and (file-menu:create-revert?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:revert-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:revert-string))
-                (base "&Revert")
-                (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:open-callback
+                      (lambda (item evt) (file-menu:open-callback item evt))))
+                file-menu:open-callback))
+            (shortcut #\o)
+            (help (file-menu:open-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:open-on-demand menu-item))))))
+   (file-menu:between-open-and-revert (get-file-menu))
+   (define file-menu:revert-item
+     (and (file-menu:create-revert?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:revert-string))
+                   (base "&Revert")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:revert-callback
-                  (lambda (item evt) (file-menu:revert-callback item evt))))
-               file-menu:revert-callback)
-              #f
-              (file-menu:revert-help-string)))))
-   (sequence (file-menu:between-revert-and-save (get-file-menu)))
-   (private-field
-     (file-menu:save-item
-       (and (file-menu:create-save?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:save-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:save-string)) (base "&Save") (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:revert-callback
+                      (lambda (item evt)
+                        (file-menu:revert-callback item evt))))
+                file-menu:revert-callback))
+            (shortcut #f)
+            (help (file-menu:revert-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:revert-on-demand menu-item))))))
+   (file-menu:between-revert-and-save (get-file-menu))
+   (define file-menu:save-item
+     (and (file-menu:create-save?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:save-string))
+                   (base "&Save")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:save-callback
-                  (lambda (item evt) (file-menu:save-callback item evt))))
-               file-menu:save-callback)
-              #\s
-              (file-menu:save-help-string)))))
-   (private-field
-     (file-menu:save-as-item
-       (and (file-menu:create-save-as?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:save-as-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:save-as-string))
-                (base "Save")
-                (suffix " &As..."))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:save-callback
+                      (lambda (item evt) (file-menu:save-callback item evt))))
+                file-menu:save-callback))
+            (shortcut #\s)
+            (help (file-menu:save-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:save-on-demand menu-item))))))
+   (define file-menu:save-as-item
+     (and (file-menu:create-save-as?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:save-as-string))
+                   (base "Save")
+                   (suffix " &As..."))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:save-as-callback
-                  (lambda (item evt) (file-menu:save-as-callback item evt))))
-               file-menu:save-as-callback)
-              #f
-              (file-menu:save-as-help-string)))))
-   (sequence (file-menu:between-save-as-and-print (get-file-menu)))
-   (private-field
-     (file-menu:print-item
-       (and (file-menu:create-print?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:print-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:print-string))
-                (base "&Print")
-                (suffix "..."))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:save-as-callback
+                      (lambda (item evt)
+                        (file-menu:save-as-callback item evt))))
+                file-menu:save-as-callback))
+            (shortcut #f)
+            (help (file-menu:save-as-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:save-as-on-demand menu-item))))))
+   (file-menu:between-save-as-and-print (get-file-menu))
+   (define file-menu:print-item
+     (and (file-menu:create-print?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:print-string))
+                   (base "&Print")
+                   (suffix "..."))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:print-callback
-                  (lambda (item evt) (file-menu:print-callback item evt))))
-               file-menu:print-callback)
-              #\p
-              (file-menu:print-help-string)))))
-   (sequence (file-menu:between-print-and-close (get-file-menu)))
-   (private-field
-     (file-menu:close-item
-       (and (file-menu:create-close?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:close-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:close-string)) (base "&Close") (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:print-callback
+                      (lambda (item evt) (file-menu:print-callback item evt))))
+                file-menu:print-callback))
+            (shortcut #\p)
+            (help (file-menu:print-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:print-on-demand menu-item))))))
+   (file-menu:between-print-and-close (get-file-menu))
+   (define file-menu:close-item
+     (and (file-menu:create-close?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:close-string))
+                   (base "&Close")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:close-callback
-                  (lambda (item evt) (file-menu:close-callback item evt))))
-               file-menu:close-callback)
-              #\w
-              (file-menu:close-help-string)))))
-   (sequence (file-menu:between-close-and-quit (get-file-menu)))
-   (private-field
-     (file-menu:quit-item
-       (and (file-menu:create-quit?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (file-menu:quit-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (file-menu:quit-string))
-                (base (if (eq? (system-type) 'windows) "E&xit" "Quit"))
-                (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:close-callback
+                      (lambda (item evt) (file-menu:close-callback item evt))))
+                file-menu:close-callback))
+            (shortcut #\w)
+            (help (file-menu:close-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:close-on-demand menu-item))))))
+   (file-menu:between-close-and-quit (get-file-menu))
+   (define file-menu:quit-item
+     (and (file-menu:create-quit?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (file-menu:quit-string))
+                   (base (if (eq? (system-type) 'windows) "E&xit" "Quit"))
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              file-menu
-              (let
-               ((file-menu:quit-callback
-                  (lambda (item evt) (file-menu:quit-callback item evt))))
-               file-menu:quit-callback)
-              #\q
-              (file-menu:quit-help-string)))))
-   (sequence (file-menu:after-quit (get-file-menu)))
-   (private-field
-     (edit-menu:undo-item
-       (and (edit-menu:create-undo?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:undo-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:undo-string)) (base "&Undo") (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent file-menu)
+            (callback
+              (let ((file-menu:quit-callback
+                      (lambda (item evt) (file-menu:quit-callback item evt))))
+                file-menu:quit-callback))
+            (shortcut #\q)
+            (help (file-menu:quit-help-string))
+            (demand-callback
+              (lambda (menu-item) (file-menu:quit-on-demand menu-item))))))
+   (file-menu:after-quit (get-file-menu))
+   (define edit-menu:undo-item
+     (and (edit-menu:create-undo?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:undo-string))
+                   (base "&Undo")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:undo-callback
-                  (lambda (item evt) (edit-menu:undo-callback item evt))))
-               edit-menu:undo-callback)
-              #\z
-              (edit-menu:undo-help-string)))))
-   (private-field
-     (edit-menu:redo-item
-       (and (edit-menu:create-redo?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:redo-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:redo-string)) (base "&Redo") (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:undo-callback
+                      (lambda (item evt) (edit-menu:undo-callback item evt))))
+                edit-menu:undo-callback))
+            (shortcut #\z)
+            (help (edit-menu:undo-help-string))
+            (demand-callback
+              (lambda (menu-item) (edit-menu:undo-on-demand menu-item))))))
+   (define edit-menu:redo-item
+     (and (edit-menu:create-redo?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:redo-string))
+                   (base "&Redo")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:redo-callback
-                  (lambda (item evt) (edit-menu:redo-callback item evt))))
-               edit-menu:redo-callback)
-              #\y
-              (edit-menu:redo-help-string)))))
-   (sequence (edit-menu:between-redo-and-cut (get-edit-menu)))
-   (private-field
-     (edit-menu:cut-item
-       (and (edit-menu:create-cut?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:cut-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:cut-string)) (base "Cu&t") (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:redo-callback
+                      (lambda (item evt) (edit-menu:redo-callback item evt))))
+                edit-menu:redo-callback))
+            (shortcut #\y)
+            (help (edit-menu:redo-help-string))
+            (demand-callback
+              (lambda (menu-item) (edit-menu:redo-on-demand menu-item))))))
+   (edit-menu:between-redo-and-cut (get-edit-menu))
+   (define edit-menu:cut-item
+     (and (edit-menu:create-cut?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:cut-string)) (base "Cu&t") (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:cut-callback
-                  (lambda (item evt) (edit-menu:cut-callback item evt))))
-               edit-menu:cut-callback)
-              #\x
-              (edit-menu:cut-help-string)))))
-   (sequence (edit-menu:between-cut-and-copy (get-edit-menu)))
-   (private-field
-     (edit-menu:copy-item
-       (and (edit-menu:create-copy?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:copy-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:copy-string)) (base "&Copy") (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:cut-callback
+                      (lambda (item evt) (edit-menu:cut-callback item evt))))
+                edit-menu:cut-callback))
+            (shortcut #\x)
+            (help (edit-menu:cut-help-string))
+            (demand-callback
+              (lambda (menu-item) (edit-menu:cut-on-demand menu-item))))))
+   (edit-menu:between-cut-and-copy (get-edit-menu))
+   (define edit-menu:copy-item
+     (and (edit-menu:create-copy?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:copy-string))
+                   (base "&Copy")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:copy-callback
-                  (lambda (item evt) (edit-menu:copy-callback item evt))))
-               edit-menu:copy-callback)
-              #\c
-              (edit-menu:copy-help-string)))))
-   (sequence (edit-menu:between-copy-and-paste (get-edit-menu)))
-   (private-field
-     (edit-menu:paste-item
-       (and (edit-menu:create-paste?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:paste-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:paste-string)) (base "&Paste") (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:copy-callback
+                      (lambda (item evt) (edit-menu:copy-callback item evt))))
+                edit-menu:copy-callback))
+            (shortcut #\c)
+            (help (edit-menu:copy-help-string))
+            (demand-callback
+              (lambda (menu-item) (edit-menu:copy-on-demand menu-item))))))
+   (edit-menu:between-copy-and-paste (get-edit-menu))
+   (define edit-menu:paste-item
+     (and (edit-menu:create-paste?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:paste-string))
+                   (base "&Paste")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:paste-callback
-                  (lambda (item evt) (edit-menu:paste-callback item evt))))
-               edit-menu:paste-callback)
-              #\v
-              (edit-menu:paste-help-string)))))
-   (sequence (edit-menu:between-paste-and-clear (get-edit-menu)))
-   (private-field
-     (edit-menu:clear-item
-       (and (edit-menu:create-clear?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:clear-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:clear-string))
-                (base (if (eq? (system-type) 'macos) "Clear" "&Delete"))
-                (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:paste-callback
+                      (lambda (item evt) (edit-menu:paste-callback item evt))))
+                edit-menu:paste-callback))
+            (shortcut #\v)
+            (help (edit-menu:paste-help-string))
+            (demand-callback
+              (lambda (menu-item) (edit-menu:paste-on-demand menu-item))))))
+   (edit-menu:between-paste-and-clear (get-edit-menu))
+   (define edit-menu:clear-item
+     (and (edit-menu:create-clear?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:clear-string))
+                   (base (if (eq? (system-type) 'macos) "Clear" "&Delete"))
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:clear-callback
-                  (lambda (item evt) (edit-menu:clear-callback item evt))))
-               edit-menu:clear-callback)
-              #f
-              (edit-menu:clear-help-string)))))
-   (sequence (edit-menu:between-clear-and-select-all (get-edit-menu)))
-   (private-field
-     (edit-menu:select-all-item
-       (and (edit-menu:create-select-all?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:select-all-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:select-all-string))
-                (base "Select A&ll")
-                (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:clear-callback
+                      (lambda (item evt) (edit-menu:clear-callback item evt))))
+                edit-menu:clear-callback))
+            (shortcut #f)
+            (help (edit-menu:clear-help-string))
+            (demand-callback
+              (lambda (menu-item) (edit-menu:clear-on-demand menu-item))))))
+   (edit-menu:between-clear-and-select-all (get-edit-menu))
+   (define edit-menu:select-all-item
+     (and (edit-menu:create-select-all?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:select-all-string))
+                   (base "Select A&ll")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:select-all-callback
-                  (lambda (item evt)
-                    (edit-menu:select-all-callback item evt))))
-               edit-menu:select-all-callback)
-              #\a
-              (edit-menu:select-all-help-string)))))
-   (sequence (edit-menu:between-select-all-and-find (get-edit-menu)))
-   (private-field
-     (edit-menu:find-item
-       (and (edit-menu:create-find?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:find-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:find-string)) (base "Find") (suffix "..."))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:select-all-callback
+                      (lambda (item evt)
+                        (edit-menu:select-all-callback item evt))))
+                edit-menu:select-all-callback))
+            (shortcut #\a)
+            (help (edit-menu:select-all-help-string))
+            (demand-callback
+              (lambda (menu-item)
+                (edit-menu:select-all-on-demand menu-item))))))
+   (edit-menu:between-select-all-and-find (get-edit-menu))
+   (define edit-menu:find-item
+     (and (edit-menu:create-find?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:find-string))
+                   (base "Find")
+                   (suffix "..."))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:find-callback
-                  (lambda (item evt) (edit-menu:find-callback item evt))))
-               edit-menu:find-callback)
-              #\f
-              (edit-menu:find-help-string)))))
-   (private-field
-     (edit-menu:find-again-item
-       (and (edit-menu:create-find-again?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:find-again-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:find-again-string))
-                (base "Find Again")
-                (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:find-callback
+                      (lambda (item evt) (edit-menu:find-callback item evt))))
+                edit-menu:find-callback))
+            (shortcut #\f)
+            (help (edit-menu:find-help-string))
+            (demand-callback
+              (lambda (menu-item) (edit-menu:find-on-demand menu-item))))))
+   (define edit-menu:find-again-item
+     (and (edit-menu:create-find-again?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:find-again-string))
+                   (base "Find Again")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:find-again-callback
-                  (lambda (item evt)
-                    (edit-menu:find-again-callback item evt))))
-               edit-menu:find-again-callback)
-              #\g
-              (edit-menu:find-again-help-string)))))
-   (private-field
-     (edit-menu:replace-and-find-again-item
-       (and (edit-menu:create-replace-and-find-again?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:replace-and-find-again-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:replace-and-find-again-string))
-                (base "Replace && Find Again")
-                (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:find-again-callback
+                      (lambda (item evt)
+                        (edit-menu:find-again-callback item evt))))
+                edit-menu:find-again-callback))
+            (shortcut #\g)
+            (help (edit-menu:find-again-help-string))
+            (demand-callback
+              (lambda (menu-item)
+                (edit-menu:find-again-on-demand menu-item))))))
+   (define edit-menu:replace-and-find-again-item
+     (and (edit-menu:create-replace-and-find-again?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:replace-and-find-again-string))
+                   (base "Replace && Find Again")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:replace-and-find-again-callback
-                  (lambda (item evt)
-                    (edit-menu:replace-and-find-again-callback item evt))))
-               edit-menu:replace-and-find-again-callback)
-              #\h
-              (edit-menu:replace-and-find-again-help-string)))))
-   (sequence (edit-menu:between-find-and-preferences (get-edit-menu)))
-   (private-field
-     (edit-menu:preferences-item
-       (and (edit-menu:create-preferences?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (edit-menu:preferences-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (edit-menu:preferences-string))
-                (base "Preferences...")
-                (suffix ""))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:replace-and-find-again-callback
+                      (lambda (item evt)
+                        (edit-menu:replace-and-find-again-callback item evt))))
+                edit-menu:replace-and-find-again-callback))
+            (shortcut #\h)
+            (help (edit-menu:replace-and-find-again-help-string))
+            (demand-callback
+              (lambda (menu-item)
+                (edit-menu:replace-and-find-again-on-demand menu-item))))))
+   (edit-menu:between-find-and-preferences (get-edit-menu))
+   (define edit-menu:preferences-item
+     (and (edit-menu:create-preferences?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (edit-menu:preferences-string))
+                   (base "Preferences...")
+                   (suffix ""))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              edit-menu
-              (let
-               ((edit-menu:preferences-callback
-                  (lambda (item evt)
-                    (edit-menu:preferences-callback item evt))))
-               edit-menu:preferences-callback)
-              #f
-              (edit-menu:preferences-help-string)))))
-   (sequence (edit-menu:after-preferences (get-edit-menu)))
-   (sequence (help-menu:before-about (get-help-menu)))
-   (private-field
-     (help-menu:about-item
-       (and (help-menu:create-about?)
-            (make-object (class100
-               (get-menu-item%)
-               args
-               (rename (super-on-demand on-demand))
-               (override
-                 (on-demand
-                   (lambda ()
-                     (help-menu:about-on-demand this)
-                     (super-on-demand))))
-               (sequence (apply super-init args)))
-              (let
-               ((special (help-menu:about-string))
-                (base "About ")
-                (suffix "..."))
+                 (string-append base " " special suffix))))
+            (parent edit-menu)
+            (callback
+              (let ((edit-menu:preferences-callback
+                      (lambda (item evt)
+                        (edit-menu:preferences-callback item evt))))
+                edit-menu:preferences-callback))
+            (shortcut #\;)
+            (help (edit-menu:preferences-help-string))
+            (demand-callback
+              (lambda (menu-item)
+                (edit-menu:preferences-on-demand menu-item))))))
+   (edit-menu:after-preferences (get-edit-menu))
+   (help-menu:before-about (get-help-menu))
+   (define help-menu:about-item
+     (and (help-menu:create-about?)
+          (instantiate
+            (get-menu-item%)
+            ()
+            (label
+             (let ((special (help-menu:about-string))
+                   (base "About ")
+                   (suffix "..."))
                (if (string=? special "")
                  (string-append base suffix)
-                 (string-append base " " special suffix)))
-              help-menu
-              (let
-               ((help-menu:about-callback
-                  (lambda (item evt) (help-menu:about-callback item evt))))
-               help-menu:about-callback)
-              #f
-              (help-menu:about-help-string)))))
-   (sequence (help-menu:after-about (get-help-menu)))
-   (sequence (reorder-menus this))))
+                 (string-append base " " special suffix))))
+            (parent help-menu)
+            (callback
+              (let ((help-menu:about-callback
+                      (lambda (item evt) (help-menu:about-callback item evt))))
+                help-menu:about-callback))
+            (shortcut #f)
+            (help (help-menu:about-help-string))
+            (demand-callback
+              (lambda (menu-item) (help-menu:about-on-demand menu-item))))))
+   (help-menu:after-about (get-help-menu))
+   (reorder-menus this)))

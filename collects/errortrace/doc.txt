@@ -169,8 +169,9 @@ The import signature contains these names:
   with `with-continuation-mark'. The first argument is the source
   expressions and the second is the expression to be wrapped.
 
-> profile-point : (syntax -> syntax)
+> profile-point : (syntax ?? ?? ?? ?? -> syntax)
 
   This procedure is called by annotate and annotate-top to wrap
-  expressions with profile collecting information. Using the
-  identity means no profiling information should be collected.
+  expressions with profile collecting information. 
+  Returning the first argument means no profiling information
+  is collected.

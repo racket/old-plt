@@ -273,9 +273,9 @@
 			      (lambda (expr build-unnamed)
 				(let ([answer (object-name expr)])
 				  (if answer
-				      (if (eq? (with-handlers ([not-break-exn?
-								(lambda (x) #f)])
-						 (namespace-variable-binding answer))
+				      (if (eq? (with-handlers ([not-break-exn? 
+                                                                (lambda (x) #f)])
+						 (eval answer))
 					       expr)
 					  answer
 					  (build-unnamed))

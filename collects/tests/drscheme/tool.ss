@@ -13,12 +13,7 @@
 
   (define tool@
     (unit/sig ()
-      (import [drscheme:frame^ : drscheme:frame^]
-              [drscheme:unit^ : drscheme:unit^]
-              [drscheme:rep : drscheme:rep^]
-              [drscheme:get/extend : drscheme:get/extend^]
-              [drscheme:language-tower : drscheme:language-tower^]
-              [drscheme:language : drscheme:language^])
+      (import drscheme:tool^)
       
       (define test-thread
         (let ([kill-old void])

@@ -261,9 +261,9 @@
                  (language-position position)
                  (teachpack-names null)))])
 	(drscheme:language:add-language
-	 (make-simple '(lib "full-mzscheme.ss" "lang") '("Full" "Textual (MzScheme)")))
+	 (make-simple '(lib "full-mzscheme.ss" "lang") '("Full" "Textual without debugging (MzScheme)")))
 	(drscheme:language:add-language
-	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical (MrEd)"))))
+	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical without debugging (MrEd)"))))
       
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 

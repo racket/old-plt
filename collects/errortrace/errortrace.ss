@@ -64,25 +64,24 @@
   ;; Profiling instrumenter
 
   (define (profile-point body name expr env trans?)
-    (let ([body (map (lambda (e) (annotate e env trans?)) (stx->list body))])
-      (if (profiling-enabled)
-          (let ([key (gensym)])
-            (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
-	    (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
-			  [start (datum->syntax-object #f (gensym) (quote-syntax here))]
-			  [profile-key (datum->syntax-object #f profile-key (quote-syntax here))]
-			  [register-profile-start register-profile-start]
-			  [register-profile-done register-profile-done])
-	      (with-syntax ([rest 
-			     (insert-at-tail*
-			      (syntax (register-profile-done 'key start))
-			      body
-			      trans?)])
-		(syntax
-		 ((let ([start (register-profile-start 'key)])
-		    (with-continuation-mark 'profile-key 'key
-		      (begin . rest))))))))
-          body)))
+    (if (profiling-enabled)
+        (let ([key (gensym)])
+          (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
+          (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
+                        [start (datum->syntax-object #f (gensym) (quote-syntax here))]
+                        [profile-key (datum->syntax-object #f profile-key (quote-syntax here))]
+                        [register-profile-start register-profile-start]
+                        [register-profile-done register-profile-done])
+            (with-syntax ([rest 
+                           (insert-at-tail*
+                            (syntax (register-profile-done 'key start))
+                            body
+                            trans?)])
+              (syntax
+               ((let ([start (register-profile-start 'key)])
+                  (with-continuation-mark 'profile-key 'key
+                                          (begin . rest))))))))
+        body))
   
   (define (insert-at-tail* e exprs trans?)
     (if (stx-null? (stx-cdr exprs))
@@ -175,12 +174,12 @@
    (let* ([orig (current-eval)]
           [errortrace-eval-handler
            (lambda (e)
-	     (let* ([a (if (or (compiled-expression? (if (syntax? e) 
-							 (syntax-e e) 
-							 e))
-			       (not (instrumenting-enabled)))
-			   e
-			   (annotate-top (expand e) null #f))])
+	     (let ([a (if (or (compiled-expression? (if (syntax? e) 
+                                                        (syntax-e e) 
+                                                        e))
+                              (not (instrumenting-enabled)))
+                          e
+                          (annotate-top (expand e) null #f))])
 	       (orig a)))])
      errortrace-eval-handler))
   

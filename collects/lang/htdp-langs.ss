@@ -12,12 +12,7 @@
   
   (define tool@
     (unit/sig () 
-      (import [drscheme:frame^ : drscheme:frame^]
-              [drscheme:unit^ : drscheme:unit^]
-              [drscheme:rep : drscheme:rep^]
-              [drscheme:get/extend : drscheme:get/extend^]
-              [drscheme:language-tower : drscheme:language-tower^]
-              [drscheme:language : drscheme:language^])
+      (import drscheme:tool^)
       
       (define htdp-language<%>
         (interface ()
@@ -78,20 +73,21 @@
                    (drscheme:language-tower:simple-module-based-language->module-based-language-mixin
                     class%)))])
           (drscheme:language:add-language
-           (make-object %))))
+           (make-object %)
+           #t)))
 
       (add-htdp-language
-       (class* object% (htdp-language<%>)
+       (class* object% (htdp-language<%>) 
          (public get-module
                  get-language-position
                  sharing-printing
                  abbreviate-cons-as-list
                  get-teachpack-names)
-         (define (get-module) '(lib "beginner.ss" "lang"))
-         (define (get-language-position) '("How to Design Programs" "Beginning Student"))
-         (define (sharing-printing) #f)
-         (define (abbreviate-cons-as-list) #f)
-         (define (get-teachpack-names) '(make-posn posn-x posn-y posn?))
+         (define (get-module) '(lib "advanced.ss" "lang"))
+         (define (get-language-position) '("How to Design Programs" "Advanced Student"))
+         (define (sharing-printing) #t)
+         (define (abbreviate-cons-as-list) #t)
+         (define (get-teachpack-names) '(make-posn posn-x posn-y posn? set-posn-x! set-posn-y!))
          (super-instantiate ())))
       
       (add-htdp-language
@@ -109,15 +105,15 @@
          (super-instantiate ())))
       
       (add-htdp-language
-       (class* object% (htdp-language<%>) 
+       (class* object% (htdp-language<%>)
          (public get-module
                  get-language-position
                  sharing-printing
                  abbreviate-cons-as-list
                  get-teachpack-names)
-         (define (get-module) '(lib "advanced.ss" "lang"))
-         (define (get-language-position) '("How to Design Programs" "Advanced Student"))
-         (define (sharing-printing) #t)
-         (define (abbreviate-cons-as-list) #t)
-         (define (get-teachpack-names) '(make-posn posn-x posn-y posn? set-posn-x! set-posn-y!))
+         (define (get-module) '(lib "beginner.ss" "lang"))
+         (define (get-language-position) '("How to Design Programs" "Beginning Student"))
+         (define (sharing-printing) #f)
+         (define (abbreviate-cons-as-list) #f)
+         (define (get-teachpack-names) '(make-posn posn-x posn-y posn?))
          (super-instantiate ()))))))

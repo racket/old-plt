@@ -22,7 +22,7 @@
                        [else (cons (stx-car v) (loop (stx-cdr v)))]))])
           (with-syntax ([body
                          (profile-point 
-                          body
+                          (map (lambda (e) (annotate e env trans?)) (stx->list body))
                           name expr env
                           trans?)]
                         [args args])
@@ -186,7 +186,8 @@
                               [(if . body)
                                (annotate-seq env trans? expr (syntax if) (syntax body) annotate)]
                               [(with-continuation-mark . body)
-                               (annotate-seq env trans? expr (syntax with-continuation-mark) (syntax body) annotate)]
+                               (annotate-seq 
+                                env trans? expr (syntax with-continuation-mark) (syntax body) annotate)]
                               
 	;; Wrap whole application, plus subexpressions
                               [(#%app . body)

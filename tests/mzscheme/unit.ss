@@ -353,6 +353,17 @@
 (test #t unit? u2)
 (test 5 'invoke-unit-in-unit (invoke-unit u2))
 
+
+(syntax-test '(define u
+		(invoke-unit
+		 (unit 
+		  (import) (export)
+		  (define x 10)
+		  x
+		  (unit (import) (export)
+			apple
+			x)))))
+
 ; Units and objects combined:
 
 (define u@ 

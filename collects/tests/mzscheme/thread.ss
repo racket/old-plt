@@ -66,6 +66,16 @@
 (sleep SLEEP-TIME)
 (test #t eq? start result)
 
+(let ([kept-going? #f])
+  (let ([c (make-custodian)])
+    (parameterize ([current-custodian c])
+     (thread-wait
+      (thread
+       (lambda ()
+	 (custodian-shutdown-all c)
+	 (set! kept-going? #t))))))
+  (test #f 'kept-going-after-shutdown? kept-going?))
+
 (error-test `(parameterize ([current-custodian cm]) (kill-thread (current-thread)))
 	    exn:misc:thread:kill?)
 

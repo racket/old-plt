@@ -520,4 +520,12 @@
 (arity-test getenv 1 1)
 (arity-test putenv 2 2)
 
+(arity-test read-eval-print-loop 0 0)
+(test (void) 'r-e-p-l-return 
+      (parameterize ([current-input-port (make-input-port
+					  (lambda () eof)
+					  void
+					  void)])
+	   (read-eval-print-loop)))
+
 (report-errs)

@@ -157,6 +157,8 @@
 	
 	(cons exn:misc:constant? (cons exn:misc:constant-id symbol?))))
 
+(define mz-test-syntax-errors-allowed? #t)
+
 (define thunk-error-test
   (case-lambda 
    [(th expr) (thunk-error-test th expr exn:application:type?)]
@@ -176,6 +178,10 @@
 			 (when (and exn? (not (exn? e)))
 			       (printf " WRONG EXN TYPE: ~s " e)
 			       (record-error (list e 'exn-type expr)))
+			 (when (and (exn:syntax? e)
+				    (not mz-test-syntax-errors-allowed?))
+			       (printf " LATE SYNTAX EXN: ~s " e)
+			       (record-error (list e 'exn-late expr)))
 
 			 (for-each
 			  (lambda (row)

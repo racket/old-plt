@@ -1,6 +1,6 @@
 
 (if (not (defined? 'SECTION))
-    (load "testing.ss"))
+    (load-relative "testing.ss"))
 
 (test 0 'with-handlers (with-handlers () 0))
 (test 1 'with-handlers (with-handlers ([void void]) 1))

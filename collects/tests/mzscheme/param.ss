@@ -422,19 +422,28 @@
 (test #f = 577 main-pw)
 
 (test #t = main-pw (blocking-thread (lambda () (error-print-width))))
+; Check branch handler use for thread and copying built-in and added
+;   parameters when making a parameterization without sharing
+(define another-user-param (make-parameter 'orig))
 (parameterize ([parameterization-branch-handler
 		(lambda ()
 		  (make-parameterization p1))])
-    (test #t equal? '(577 578 578)
+    (test #t equal? '(577 orig 578 new 578 new)
 	    (blocking-thread 
 	     (lambda () 
 	       (list
 		(begin0 
 		 (error-print-width)
 		 (error-print-width 578))
+		(begin0 
+		 (another-user-param)
+		 (another-user-param 'new))
 		(error-print-width)
+		(another-user-param)
 		(blocking-thread ; this thread made with p1's branch handler, which is the default one
-		 (lambda () (error-print-width)))))))
+		 (lambda () (error-print-width)))
+		(blocking-thread ; this thread made with p1's branch handler, which is the default one
+		 (lambda () (another-user-param)))))))
     (test #t = main-pw (error-print-width)))
 
 (test #t = main-pw (error-print-width))

@@ -143,6 +143,10 @@
 (test #t unit/sig? (compound-unit/sig (import (i : a)) (link (b@ : b (b@))) (export (open b@))))
 (test #t unit/sig? (compound-unit/sig (import (i : a)) (link (b@ : b (b@))) (export (open (b@ : b)))))
 
+(test #t unit/sig? (compound-unit/sig (import)
+		      (link [compound-unit : () ((unit/sig () (import) 10))])
+		      (export)))
+
 ; Include:
 
 (define i1@
@@ -244,7 +248,6 @@
 
   (define m2-3@
     (compound-unit/sig
-     
      (import)
      (link [O@ : m2-1^ (m2-1@)]
 	   [T@ : m2-2^ (m2-2@ O@)])

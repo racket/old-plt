@@ -1,5 +1,7 @@
 #!/bin/sh
 
+PLTCOLLECTS=`pwd`/..:$PLTCOLLECTS
+
 if [ "`basename $0`" = "go" ]; then
     TOOL=""
 else

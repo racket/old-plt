@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.49 1997/12/02 20:44:33 mflatt Exp shriram $
+; $Id: scm-unit.ss,v 1.50 1997/12/02 21:34:48 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -704,6 +704,15 @@
 			      (vars (pat:pexpand '(var ...)
 				      p-env kwd))
 			      (_ (map valid-syntactic-id? vars))
+			      (_ (for-each
+				   (lambda (var)
+				     (let ((r (resolve var env vocab)))
+				       (when (or (micro-resolution? r)
+					       (macro-resolution? r))
+					 (static-error var
+					   "Cannot bind keyword ~s"
+					   (z:symbol-orig-name var)))))
+				   vars))
 			      (out (handler expr env attributes
 				     vocab p-env vars)))
 			(set-top-level-status attributes

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.140 1998/02/26 16:53:04 shriram Exp $
+; $Id: scm-main.ss,v 1.141 1998/02/26 16:55:28 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1472,8 +1472,12 @@
   (when (language>=? 'side-effecting)
     (add-primitivized-macro-form 'with-handlers scheme-vocabulary
       (let* ((kwd '())
-	      (in-pattern '(_ ((pred handler) ...) body ...))
-	      (out-pattern
+	      (in-pattern-1 (if (language<=? 'structured)
+			      '(_ () b) '(_ () b ...)))
+	      (out-pattern-1 (if (language<=? 'structured)
+			       'b '(begin b ...)))
+	      (in-pattern-2 '(_ ((pred handler) ...) body ...))
+	      (out-pattern-2
 		'((#%call/ec
 		    (lambda (k)
 		      (let ((handlers (#%list
@@ -1483,22 +1487,24 @@
 			  ((#%current-exception-handler
 			     (lambda (e)
 			       (k
-				 (let loop ((handlers handlers))
-				   (cond
-				     ((#%null? handlers)
-				       (lambda () (#%raise e)))
-				     (((#%caar handlers) e)
-				       (lambda () ((#%cdar handlers) e)))
-				     (else
-				       (loop (#%cdr handlers)))))))))
+				 (lambda ()
+				   (let loop ((handlers handlers))
+				     (cond
+				       ((#%null? handlers)
+					 (#%raise e))
+				       (((#%caar handlers) e)
+					 ((#%cdar handlers) e))
+				       (else
+					 (loop (#%cdr handlers))))))))))
 			  (#%call-with-values
 			    (lambda () body ...)
 			    (lambda args
-			      (k
-				(lambda () (#%apply #%values args)))))))))))
-	      (m&e (pat:make-match&env in-pattern kwd)))
+			      (lambda () (#%apply #%values args))))))))))
+	      (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	      (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	(lambda (expr env)
-	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+	  (or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd env)
+	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	    (static-error expr "Malformed with-handlers"))))))
 
   (add-primitivized-micro-form 'define-macro scheme-vocabulary

@@ -1,6 +1,7 @@
 (module utils mzscheme
   (require (lib "class.ss")
-	   (lib "mred.ss" "mred"))
+	   (lib "mred.ss" "mred")
+	   (lib "posn.ss" "lang"))
 
   (provide unpack-submission
 	   
@@ -98,9 +99,13 @@
   ;; Execution ----------------------------------------
 
   (define (make-evaluator language teachpacks)
-    (let ([ns (make-namespace-with-mred 'empty)])
+    (let ([ns (make-namespace-with-mred 'empty)]
+	  [orig-ns (current-namespace)]
+	  [posn-module ((current-module-name-resolver) '(lib "posn.ss" "lang") #f #f)])
       (parameterize ([current-namespace ns]
-		     [read-case-sensitive #t])
+		     [read-case-sensitive #t]
+		     [read-decimal-as-inexact #f])
+	(namespace-attach-module orig-ns posn-module)
 	(parameterize ([current-eventspace (make-eventspace)])
 	  (namespace-require `(lib ,(case language
 				      [(beginner) "htdp-beginner.ss"]
@@ -135,7 +140,9 @@
 
   (define (evaluate-all source port eval)
     (let loop ()
-      (let ([expr (read-syntax source port)])
+      (let ([expr (parameterize ([read-case-sensitive #t]
+				 [read-decimal-as-inexact #f])
+		    (read-syntax source port))])
 	(unless (eof-object? expr)
 	  (eval expr)
 	  (loop)))))

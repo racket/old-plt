@@ -39,7 +39,7 @@
 	    (host-root ,(build-path (collection-path "handin-server") "status-web-root"))
 	    (log-file-path ,(build-path (current-directory) "web-status-log.ss"))
 	    (file-root "htdocs")
-	    (servlet-root same)
+	    (servlet-root ,(build-path (collection-path "handin-server") "status-web-root"))
 	    (password-authentication ,(build-path (current-directory) "web-status-passwords")))))
 	(virtual-host-table)))
 

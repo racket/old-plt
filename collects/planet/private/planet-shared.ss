@@ -207,6 +207,20 @@ THINGS TO DO FOR PLANET IN GENERAL
       (for-each (lambda (item) (hash-table-put! ht (car item) (cadr item))) asl)
       ht))
   
+  (define (categorize f l)
+    (let ((h (make-hash-table)))
+      (begin
+        (for-each
+         (lambda (x) 
+           (let ((key (f x)))
+             (hash-table-put! h
+                              key
+                              (cons x (hash-table-get h key (lambda () null))))))
+         l)
+        (hash-table-map h list))))
+  
+  (define (drop-last l) (reverse (cdr (reverse l))))
+  
   (define read-all
     (case-lambda
       [() (read-all (current-input-port))]

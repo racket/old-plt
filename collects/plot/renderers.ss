@@ -11,11 +11,12 @@
                                              (width 1) 
                                              (mode 'standard) 
                                              (mapping 'cartesian)
-                                             (t-min -5) (t-max 5))
-      
+                                             (t-min -5) (t-max 5))      
       (let*
-          ((t-min (if (or (eq? mapping 'polar) (eq? mode 'parametric)) t-min x-min))
-           (t-max (if (or (eq? mapping 'polar)(eq? mode 'parametric))  t-max x-max))  ; maybe let-values?
+          ((t-min (if (or (eq? mapping 'polar) (eq? mode 'parametric))
+                      t-min x-min))
+           (t-max (if (or (eq? mapping 'polar)(eq? mode 'parametric))
+                      t-max x-max))  ; maybe let-values?
            (points
             (case mode
               ((standard) (map (lambda (x) (vector x (func x))) 
@@ -40,7 +41,8 @@
              (y-mins (map (lambda (y e) (- y e)) y-list e-list ))
              (y-maxs (map (lambda (y e) (+ y e)) y-list e-list )))              
         (send 2dplotview set-line-color color)
-        (send 2dplotview plot-y-errors (map vector (map vector-x errs) y-mins y-maxs))))
+        (send 2dplotview plot-y-errors (map vector (map vector-x errs)
+                                            y-mins y-maxs))))
   
 
   ; field : (vector -> vector) [number] [symbol] [number] [symbol] -> (2dplotview -> nothing)
@@ -58,8 +60,13 @@
              (new-results 
               (case style                  
                 [(real) results]
-                [(scaled) (scale-vectors results (sample-size samples x-min x-max) (sample-size samples y-min y-max))]
-                [(normalized) (normalize-vectors results (sample-size samples x-min x-max) (sample-size samples y-min y-max))]
+                [(scaled) (scale-vectors results
+                                         (sample-size samples x-min x-max)
+                                         (sample-size samples y-min y-max))]
+                [(normalized) (normalize-vectors
+                               results
+                               (sample-size samples x-min x-max)
+                               (sample-size samples y-min y-max))]
                 [else (error (string-append "Unknown vector field style passed to field-renderer: " (symbol->string style)))])))
         (send* 2dplotview  
           (set-line-color color) (set-line-width width)
@@ -84,7 +91,8 @@
   ; shade : (number number -> number) [number] [symbol] [number] [number / listof-number] ->  (2dplotview -> nothing)
   ; renders a shade plot given function and shade levels    
   (define-plot-type shade
-                    fun3d 2dplotview (x-min x-max y-min y-max) ((samples 50) (levels 10))
+                    fun3d 2dplotview (x-min x-max y-min y-max)
+                    ((samples 50) (levels 10))
       (let* ((x-vals (x-values samples x-min x-max))
              (y-vals (x-values samples y-min y-max))
              (grid (zgrid fun3d x-vals y-vals samples))
@@ -115,7 +123,8 @@
   ;; 3D PLOTTERS
   ; plot a surface
   (define-plot-type surface 
-     fun3d 3dplotview (x-min x-max y-min y-max) ((samples 50) (color 'black) (width '1))
+     fun3d 3dplotview (x-min x-max y-min y-max)
+     ((samples 50) (color 'black) (width '1))
       (let* ((x-vals (x-values samples x-min x-max))
              (y-vals (x-values samples y-min y-max))
              (grid (zgrid fun3d x-vals y-vals samples)))
@@ -124,8 +133,9 @@
             (plot-surface x-vals y-vals grid))))
   
   (define-plot-type mesh3d
-     fun3d 3dplotview (x-min x-max y-min y-max z-min z-max) ((samples 50)  (width '1) 
-                                                 (levels 10) (color #t) (lines #t) (contours #t) (sides #f))
+     fun3d 3dplotview (x-min x-max y-min y-max z-min z-max)
+     ((samples 50) (width '1) (levels 10) (color #t) (lines #t)
+      (contours #t) (sides #f))
       (let* ((x-vals (x-values samples x-min x-max))
              (y-vals (x-values samples y-min y-max))
              (grid (zgrid fun3d x-vals y-vals samples))

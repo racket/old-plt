@@ -63,8 +63,8 @@
        renderer)
       
       (fields-with-accessors
-       (height 600)
-       (width 800)
+       (height 300)
+       (width 400)
        (x-min -5)
        (x-max 5)
        (y-min -5)
@@ -79,8 +79,8 @@
        )   
      
       (define bitmap #f)
-      (define x-size 800)
-      (define y-size 600)
+      (define x-size 400)
+      (define y-size 300)
      
       (inherit 
         set-bitmap

@@ -79,9 +79,9 @@
 (plot (mix
        (points (map vector times vals) (symobol 'square) (color 'black))
        (error-bars experemental-data)
-       (line (fit-result-function result)))
+       (line (fit-result-function result) (color 'green)))
       (x-min -5) (x-max 40)
       (y-min -40) (y-max 50))
        
 (fit-result-final-params result)
-(pretty-print result)
+;(pretty-print result)

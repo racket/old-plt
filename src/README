@@ -197,7 +197,7 @@ OpenGL, Unix, and pthreads
 On some Unix systems, programs that use the OpenGL library must also
 link to pthreads. To use MrEd's OpenGL support on these systems, MrEd
 must be configured with the --enable-pthread option. Unfortunately,
-MzScheme's normal stack handling and use of singals (for its own
+MzScheme's normal stack handling and use of signals (for its own
 thread scheduling) do not interact well with pthreads. Thus, when
 pthreads are enabled, MzScheme and MrEd cannot use interupt timers,
 and the stack is limited to 1MB. These restrictions can degrade
@@ -205,10 +205,10 @@ performance and thread-responsiveness.
 
 If `configure' detects that OpenGL requires -lpthread for linking,
 and if --enable-pthread is not specified, `configure' prints a warning
-and disables GL support.  On some systems, including at least FreeBSD
+and disables GL support. On some systems, including at least FreeBSD
 with the MESA GL implementation (but not the NVIDIA implementation,
 which does not need pthreads), `configure' cannot detect the need for
-pthreads.  On these platforms, GL support will be included in MrEd,
+pthreads. On these platforms, GL support will be included in MrEd,
 but it will not work properly unless --enable-pthread is specified.
 
 ========================================================================

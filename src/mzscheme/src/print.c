@@ -51,6 +51,7 @@ typedef struct Scheme_Print_Params {
   char print_unreadable;
   char can_read_pipe_quote;
   char case_sens;
+  char honu_mode;
   Scheme_Object *inspector;
 
   /* Used during `display' and `write': */
@@ -673,6 +674,8 @@ print_to_string(Scheme_Object *obj,
   params.can_read_pipe_quote = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CASE_SENS);
   params.case_sens = SCHEME_TRUEP(v);
+  v = scheme_get_param(config, MZCONFIG_HONU_MODE);
+  params.honu_mode = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_INSPECTOR);
   params.inspector = v;
 

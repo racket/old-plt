@@ -69,6 +69,7 @@ static Scheme_Object *print_box(int, Scheme_Object *[]);
 static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 static Scheme_Object *print_hash_table(int, Scheme_Object *[]);
 static Scheme_Object *print_unreadable(int, Scheme_Object *[]);
+static Scheme_Object *read_print_honu(int, Scheme_Object *[]);
 
 #define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
 
@@ -418,6 +419,12 @@ void scheme_init_read(Scheme_Env *env)
 						       MZCONFIG_PRINT_UNREADABLE),
 			     env);
 
+  scheme_add_global_constant("read-print-honu",
+			     scheme_register_parameter(read_print_honu,
+						       "read-print-honu",
+						       MZCONFIG_HONU_MODE),
+			     env);
+
 }
 
 void scheme_alloc_list_stack(Scheme_Thread *p)
@@ -563,6 +570,12 @@ static Scheme_Object *
 print_unreadable(int argc, Scheme_Object *argv[])
 {
   DO_CHAR_PARAM("print-unreadable", MZCONFIG_PRINT_UNREADABLE);
+}
+
+static Scheme_Object *
+read_print_honu(int argc, Scheme_Object *argv[])
+{
+  DO_CHAR_PARAM("read-print-honu", MZCONFIG_HONU_MODE);
 }
 
 /*========================================================================*/
@@ -1549,7 +1562,8 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   params.can_read_quasi = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CAN_READ_DOT);
   params.can_read_dot = SCHEME_TRUEP(v);
-  params.honu_mode = 0;
+  v = scheme_get_param(config, MZCONFIG_HONU_MODE);
+  params.honu_mode = SCHEME_TRUEP(v);
 
   ht = MALLOC_N(Scheme_Hash_Table *, 1);
   do {

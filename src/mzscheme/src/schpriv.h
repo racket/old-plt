@@ -2180,7 +2180,7 @@ int scheme_byte_ready_or_user_port_ready(Scheme_Object *p, Scheme_Schedule_Info 
 /*========================================================================*/
 
 #ifdef MEMORY_COUNTING_ON
-extern Scheme_Bucket_Table *scheme_symbol_table;
+extern Scheme_Hash_Table *scheme_symbol_table;
 extern long scheme_type_table_count;
 extern long scheme_misc_count;
 

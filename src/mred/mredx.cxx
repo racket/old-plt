@@ -31,6 +31,8 @@ static Widget *grab_stack, grabber;
 static int grab_stack_pos = 0, grab_stack_size = 0;
 #define WSTACK_INC 3
 
+wxWindow *wxLocationToWindow(int x, int y);
+
 extern "C" {
   void wxAddGrab(Widget w)
     {
@@ -141,6 +143,8 @@ Window GetEventWindow(XEvent *e)
   return window;
 }
 
+static unsigned long lastUngrabTime;
+
 static Bool CheckPred(Display *display, XEvent *e, char *args)
 {
   Window window;
@@ -164,6 +168,40 @@ static Bool CheckPred(Display *display, XEvent *e, char *args)
 #endif
   } else
     widget = 0;
+
+  /* Check for mouse-down events outside the indicated window.  That
+     might indicate a mouse grab gone awry, and we need to fix it.
+     The only legitimate grabs that operate on other windows are with
+     menus, and those have no wx counterpart. */
+  if (widget && (e->type == ButtonPress)) {
+    /* lastUngrabTime keeps us from checking the same events
+       over and over again. */
+    if (e->xbutton.time > lastUngrabTime) {
+      Window root;
+      int x, y;
+      unsigned w, h, b, d;
+      
+      XGetGeometry(XtDisplay(widget), e->xbutton.window, 
+		   &root, &x, &y, &w, &h,
+		   &b, &d);
+      if ((e->xbutton.x < 0) || (e->xbutton.y < 0)
+	  || ((unsigned int)e->xbutton.x > w) || ((unsigned int)e->xbutton.y > h)) {
+	/* Looks bad, but is it a click in a MrEd window
+	   that we could care about? */
+
+	wxWindow *w;
+	w = wxLocationToWindow(e->xbutton.x_root, e->xbutton.y_root);
+	
+	if (w) {
+	  /* Looks like we need to ungrab */
+	  XUngrabPointer(XtDisplay(widget), 0);
+	  XUngrabKeyboard(XtDisplay(widget), 0);
+	}
+      }
+      
+      lastUngrabTime = e->xbutton.time;
+    }
+  }
 
   if (widget) {
     Widget parent;
@@ -350,6 +388,8 @@ void MrEdDispatchEvent(XEvent *event)
 	|| (type == ButtonPress)
 	|| (type == ButtonRelease)
 	|| (type == MotionNotify)
+	|| (type == EnterNotify)
+	|| (type == LeaveNotify)
 	|| ((type == ClientMessage)
 	    && !strcmp(XGetAtomName(d, event->xclient.message_type), "WM_PROTOCOLS")
 	    && !strcmp(XGetAtomName(d, event->xclient.data.l[0]), "WM_DELETE_WINDOW"))) {

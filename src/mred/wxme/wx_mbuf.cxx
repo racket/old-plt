@@ -1558,10 +1558,17 @@ int wxMediaBuffer::GetMaxUndoHistory()
 
 /****************************************************************/
 
+/* Copy and the copy ring: the current clipboard content is stored in
+   wxmb_commonCopyBuffer, etc. To implement the copy ring, then when a
+   copy is started, we moved the wxmb_commonCopyBuffer, etc. values
+   into a copy ring. Yanking from the ring swaps the values in
+   wxmb_commonCopyBuffer, etc.  and the ring values and adjust the
+   pointer into the ring. */
+
 static int copyDepth = 0;
 
 static int copyRingSize = 30;
-static int copyRingPos = 0, copyRingMax = 0;
+static int copyRingPos = 0, copyRingMax = 0, copyRingDest = 0;
 
 static wxList **copyRingBuffer1, **copyRingBuffer2;
 static wxStyleList **copyRingStyle;
@@ -1618,7 +1625,7 @@ void wxMediaBuffer::CopyRingNext(void)
     return;
 
   copyRingPos = copyRingPos - 1;
-  if (copyRingPos < 1)
+  if (copyRingPos < 0)
     copyRingPos = copyRingMax - 1;
   
   temp = wxmb_commonCopyBuffer;
@@ -1654,7 +1661,7 @@ void wxMediaBuffer::FreeOldCopies(void)
     return;
 
   if (copyDepth > 1) {
-    /* Delete current ring occupant: */
+    /* Delete current "ring" occupant: */
     wxmb_commonCopyBuffer->DeleteContents(TRUE);
     DELETE_OBJ wxmb_commonCopyBuffer;
     wxmb_commonCopyBuffer2->DeleteContents(TRUE);
@@ -1673,42 +1680,42 @@ void wxMediaBuffer::FreeOldCopies(void)
     return;
   }
 
-  if (copyRingMax > copyRingPos) {
-    /* Delete current ring occupant: */
+  if (copyRingMax > copyRingDest) {
+    /* No more space: delete current ring occupant: */
     wxList *dl;
-    dl = copyRingBuffer1[copyRingPos];
+    dl = copyRingBuffer1[copyRingDest];
     dl->DeleteContents(TRUE);
     DELETE_OBJ dl;
-    dl = copyRingBuffer2[copyRingPos];
+    dl = copyRingBuffer2[copyRingDest];
     dl->DeleteContents(TRUE);
     DELETE_OBJ dl;
-
-    if (copyRingData[copyRingPos]) {
+    
+    if (copyRingData[copyRingDest]) {
       wxBufferData *data;
-      data = copyRingData[copyRingPos];
+      data = copyRingData[copyRingDest];
       DELETE_OBJ data;
     }
   }
 
-  copyRingBuffer1[copyRingPos] = wxmb_commonCopyBuffer;
-  copyRingBuffer2[copyRingPos] = wxmb_commonCopyBuffer2;
+  copyRingBuffer1[copyRingDest] = wxmb_commonCopyBuffer;
+  copyRingBuffer2[copyRingDest] = wxmb_commonCopyBuffer2;
   
   wxmb_commonCopyBuffer = new wxList(wxKEY_NONE, FALSE);
   wxmb_commonCopyBuffer2 = new wxList(wxKEY_NONE, FALSE);
 
-  copyRingData[copyRingPos] = wxmb_commonCopyRegionData;
+  copyRingData[copyRingDest] = wxmb_commonCopyRegionData;
   wxmb_commonCopyRegionData = NULL;
 
-  copyRingStyle[copyRingPos] = wxmb_copyStyleList;
+  copyRingStyle[copyRingDest] = wxmb_copyStyleList;
   wxmb_copyStyleList = NULL;
 
-  copyRingPos++;
-  if (copyRingMax < copyRingPos)
-    copyRingMax = copyRingPos;
-  if (copyRingPos >= copyRingSize)
-    copyRingPos = 0;
-  if (copyRingMax >= copyRingSize)
-    copyRingMax = 0;
+  copyRingDest++;
+  if (copyRingMax < copyRingDest)
+    copyRingMax = copyRingDest;
+  if (copyRingDest >= copyRingSize)
+    copyRingDest = 0;
+
+  copyRingPos = copyRingDest;
 }
 
 void wxMediaBuffer::InstallCopyBuffer(long time, wxStyleList *sl)

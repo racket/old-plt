@@ -328,7 +328,7 @@
                      ;;;    
 
 
-(drscheme:snip:make-repeating-decimal-snip
+(drscheme:number-snip:make-repeating-decimal-snip
  (number? boolean? . -> . (is-a?/c snip%))
  (num show-prefix?)
 
@@ -338,10 +338,10 @@
 "on the number."
 ""
 "See also"
-"@flink drscheme:snip:make-fraction-snip %"
+"@flink drscheme:number-snip:make-fraction-snip %"
 ".")
 
-(drscheme:snip:make-fraction-snip
+(drscheme:number-snip:make-fraction-snip
   (number? boolean? . -> . (is-a?/c snip%))
   (num show-prefix-in-decimal-view?)
 
@@ -351,7 +351,7 @@
 "on the number in the decimal state"
 ""
 "See also"
-"@flink drscheme:snip:make-repeating-decimal-snip %"
+"@flink drscheme:number-snip:make-repeating-decimal-snip %"
 ".")
 
 
@@ -420,6 +420,34 @@
               ;;;    
 
 
+(drscheme:rep:get-error-ranges
+ (-> (union false? (cons/p (list/p any? number? number?) (listof (list/p any? number? number?)))))
+ ()
+ "Returns the currently highlighted error range, or \\scheme|#f|"
+ "if there is none.")
+
+(drscheme:rep:reset-error-ranges
+ (-> void?)
+ ()
+ "Clears the current error highlighting.")
+
+(drscheme:rep:insert-error-in-text
+ ((is-a?/c text%) (is-a?/c drscheme:rep:text<%>) string? exn? (union false? (and/f string? directory-exists?)) . -> . void?)
+ (text msg exn dir)
+ "Formats and inserts the error message described by"
+ "\\var{msg} and \\var{exn} into the text% object \\var{text}."
+ "The \\var{msg} and \\var{exn} arguments are expected to"
+ "come from the"
+ "\\MzLink{mz:p:error-print-source-location}{\\scheme|error-display-handler|},"
+ "when the"
+ "\\MzLink{mz:p:error-print-source-location}{\\scheme|error-print-source-location|}"
+ "parameter is set to \\scheme|#f|."
+ ""
+ "The \\var{user-dir} argument is the current directory of"
+ "the program where the error occurred. If it is a string,"
+ "it is used to shorten the path the file where the error"
+ "occurred.")
+ 
 (drscheme:rep:exn:locs?
  (any? . -> . boolean?)
  (val)
@@ -912,34 +940,6 @@
  "Returns the starting position of this text,"
  "skipping over \\#! if there is one. If there"
  "is no \\#!, returns 0.")
-
-(drscheme:language:open-input-text
- ((is-a?/c text%) (>=/c 0) (>=/c 0) 
-  . -> .
-  input-port?)
- (text start end)
-
-"Returns a port that reads from the \\var{text}, starting"
-"at position \\var{start} and ending at"
-"position \\var{end}. "
-""
-"If \\var{ignore-hash-bang?} is \\#t, and the"
-"first line begins with the characters \\#!,"
-"then the first line is ignored."
-""
-"Any non-\\iscmclass{string-snip} snips in the text that"
-"implement the"
-"@ilink drscheme:snip:special"
-"interface use the "
-"@ilink drscheme:snip:special read-special"
-"method to extract a syntax object. Then, that object is"
-"returned from the \\rawscm{read-special} function of the"
-"result port."
-""
-"If a non-\\iscmclass{string-snip} snip is encountered that"
-"does not implement that interface, it is returned directly"
-"from the \\rawscm{read-special} frunction for the resulting"
-"port. Thus, it is treated like a constant in the program.")
 
 (drscheme:language:text/pos-text
  (drscheme:language:text/pos? . -> . (is-a?/c text%))

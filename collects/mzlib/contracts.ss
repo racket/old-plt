@@ -192,7 +192,7 @@
                          pos-blame
                          a-contract 
                          name))
-                (check-contract a-contract name pos-blame neg-blame src-info)))))])))
+                (check-contract a-contract name pos-blame neg-blame src-info #f)))))])))
   
   (define-syntaxes (-> ->* ->d ->d* case->)
     (let ()
@@ -245,7 +245,7 @@
 			      (syntax
 			       ((arg-x ...)
 				(val
-				 (check-contract dom-x arg-x neg-blame pos-blame src-info)
+				 (check-contract dom-x arg-x neg-blame pos-blame src-info #f)
 				 ...)))))
 			  (lambda (stx)
 			    (->*make-body stx)))))))))]))
@@ -288,14 +288,15 @@
                    ((arg-x ...)
                     (let-values ([(res-x ...)
                                   (val
-                                   (check-contract dom-x arg-x neg-blame pos-blame src-info)
+                                   (check-contract dom-x arg-x neg-blame pos-blame src-info #f)
                                    ...)])
                       (values (check-contract
                                rng-x 
                                res-x
                                pos-blame
                                neg-blame
-                               src-info)
+                               src-info
+                               #f)
                               ...))))))))]
           [(_ (dom ...) rest (rng ...))
            (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]
@@ -335,15 +336,16 @@
                     (let-values ([(res-x ...)
                                   (apply
                                    val
-                                   (check-contract dom-x arg-x neg-blame pos-blame src-info)
+                                   (check-contract dom-x arg-x neg-blame pos-blame src-info #f)
                                    ...
-                                   (check-contract dom-rest-x rest-arg-x neg-blame pos-blame src-info))])
+                                   (check-contract dom-rest-x rest-arg-x neg-blame pos-blame src-info #f))])
                       (values (check-contract
                                rng-x 
                                res-x
                                pos-blame
                                neg-blame
-                               src-info)
+                               src-info
+                               #f)
                               ...))))))))]))
       
       ;; ->d/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
@@ -392,10 +394,11 @@
                                  rng-contract))
                         (check-contract 
                          rng-contract
-                         (val (check-contract dom-x arg-x neg-blame pos-blame src-info) ...)
+                         (val (check-contract dom-x arg-x neg-blame pos-blame src-info #f) ...)
                          pos-blame
                          neg-blame
-                         src-info)))))))))]))
+                         src-info
+                         #f)))))))))]))
       
       ;; ->d*/h : stx -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
       (define (->d*/h stx)
@@ -440,7 +443,7 @@
                        (call-with-values
                         (lambda ()
                           (val
-                           (check-contract dom-x arg-x neg-blame pos-blame src-info)
+                           (check-contract dom-x arg-x neg-blame pos-blame src-info #f)
                            ...))
                         (lambda results
                           (unless (= (length results) (length rng-contracts))
@@ -455,7 +458,8 @@
                                    result
                                    pos-blame
                                    neg-blame
-                                   src-info))
+                                   src-info
+                                   #f))
                                 rng-contracts
                                 results))))))))))))]
           [(_ (dom ...) rest rng-mk)
@@ -500,9 +504,9 @@
                         (lambda ()
                           (apply 
                            val
-                           (check-contract dom-x arg-x neg-blame pos-blame src-info)
+                           (check-contract dom-x arg-x neg-blame pos-blame src-info #f)
                            ...
-                           (check-contract dom-rest-x rest-arg-x neg-blame pos-blame src-info)))
+                           (check-contract dom-rest-x rest-arg-x neg-blame pos-blame src-info #f)))
                         (lambda results
                           (unless (= (length results) (length rng-contracts))
                             (error '->d* 
@@ -516,7 +520,8 @@
                                    result
                                    pos-blame
                                    neg-blame
-                                   src-info))
+                                   src-info 
+                                   #f))
                                 rng-contracts
                                 results))))))))))))]))
 
@@ -658,8 +663,9 @@
                  (and (procedure? val)
                       (procedure-arity-includes? val 1))))])
       contract?))
-  
-  (define (check-contract contract val pos neg src-info)
+
+  ;; check-contract : contract any symbol symbol syntax (union false? string?)
+  (define (check-contract contract val pos neg src-info extra-message)
     (cond
       [(contract? contract)
        ((contract-f contract) val pos neg src-info)]
@@ -680,9 +686,12 @@
             src-info
             pos
 	    neg
-            "~agiven: ~e"
+            "~agiven: ~e~a"
 	    (predicate->type-name contract)
-	    val))]))
+	    val
+            (if extra-message
+                extra-message
+                "")))]))
 
   ;; predicate->type-name : function -> string
   ;; if the function has a name and the name ends

@@ -646,39 +646,16 @@
             (send* report-error-text
               (begin-edit-sequence)
               (lock #f)
-              (erase)
-              (insert message)
-              (change-style
-               report-error-style
-               0
-               (send report-error-text last-position))
+              (erase))
+            
+            (drscheme:rep:insert-error-in-text report-error-text (get-interactions-text) message exn #f)
+            
+            (send* report-error-text
               (set-position 0 0)
               (lock #t)
               (end-edit-sequence))
 
-            (show-error-report)
-            
-            (let ([do-highlight
-                   (lambda (src start span)
-                     (when (and (is-a? src fw:text:basic<%>)
-                                (number? start)
-                                (number? span))
-                       (send (get-interactions-text) highlight-error
-                             src
-                             (- start 1)
-                             (+ start span -1))))])
-              (cond
-                [(exn:read? exn)
-                 (do-highlight (exn:read-source exn)
-                               (exn:read-position exn)
-                               (exn:read-span exn))]
-                [(exn:syntax? exn)
-                 (let ([stx (exn:syntax-expr exn)])
-                   (when stx
-                     (do-highlight (syntax-source stx)
-                                   (syntax-position stx)
-                                   (syntax-span stx))))]
-                [else (void)])))
+            (show-error-report))
           
           (rename [super-make-root-area-container make-root-area-container])
           (field
@@ -797,7 +774,7 @@
                                                       (report-error msg exn)
                                                       ;; tell uncaught-expception-raised to cleanup
                                                       (semaphore-post error-display-semaphore))))))
-                        ;; (error-print-source-location #f) ; need to build code to render error first
+                        (error-print-source-location #f) ; need to build code to render error first
                         (current-exception-handler
                          (let ([oh (current-exception-handler)])
                            (lambda (exn)
@@ -808,7 +785,7 @@
 			(set! user-directory (current-directory)) ;; set by set-directory above
                         (set! user-namespace (current-namespace)))])
                 (disable-evaluation) ;; this locks the editor, so must be outside.
-                (send definitions-text begin-edit-sequence)
+                (send definitions-text begin-edit-sequence #f)
                 (with-lock/edit-sequence
                  (lambda ()
                    (clear-annotations)

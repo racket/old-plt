@@ -317,10 +317,12 @@
                                   (cond
                                     [(not answer)
                                      (build-unnamed)]
-                                    [(eq? (with-handlers ([not-break-exn? 
-                                                           (lambda (x) #f)])
-                                            (eval answer))
-                                          expr)
+                                    [(let/ec k
+				       (eq?
+					(namespace-variable-value
+					 answer
+					 (lambda () (k #f)))
+					expr))
                                      answer]
                                     [((use-named/undefined-handler) expr)
                                      ((named/undefined-handler) expr)]

@@ -558,6 +558,8 @@
  (break-menu-item-help-string "Break the current evaluation")
  (kill-menu-item-label "Kill")
  (kill-menu-item-help-string "Kill the current evaluation")
+ (clear-error-highlight-menu-item-label "Clear Error Highlight")
+ (clear-error-highlight-item-help-string "Removes the pink error highlighting")
  (reindent-menu-item-label "&Reindent")
  (reindent-all-menu-item-label "Reindent &All")
  (comment-out-menu-item-label "&Comment Out")

@@ -1,6 +1,6 @@
 #!/bin/sh
 #|
-exec mzscheme3m -vt "$0" "$@" -e '(test-memory)'
+exec mzscheme -vt "$0" "$@" -e '(test-memory)'
 |#
 
 ;; Drive the servlet using HTTP, with a new connection for every page request.
@@ -18,7 +18,7 @@ exec mzscheme3m -vt "$0" "$@" -e '(test-memory)'
 
   (provide test-memory)
 
-  (define *SERVER-URL* "http://syrma.ccs.neu.edu:8125")
+  (define *SERVER-URL* "http://subra.ccs.neu.edu:8125")
   (define *SERVLET-URL* (string-append *SERVER-URL* "/servlets/submit.ss"))
 
   (define (test-memory)
@@ -57,8 +57,8 @@ exec mzscheme3m -vt "$0" "$@" -e '(test-memory)'
         get-pure-port
         (compose (post-process-page
                    (string-append
-                     "username=The+Test+Username&"
-                     "password=The+Test+Password"))
+                     "username=student one&"
+                     "password=password"))
                  form->k-url
                  pre-process-page))
       get-pure-port

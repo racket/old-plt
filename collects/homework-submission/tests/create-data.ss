@@ -39,7 +39,8 @@
              "AND number = 'TTT000'"))
     (db-do (string-append
              "DELETE FROM people WHERE name LIKE 'Person %' "
-             "AND neu_id = 111223333 AND username LIKE 'person %' "
+             "AND neu_id = 111223333 AND (username LIKE 'staff %' "
+             "OR username LIKE 'student %' OR username LIKE 'instructor %') "
              "AND password = crypt('password',password)"))
     ;; course_people and partners are taken care of beause they depend on
     ;; courses and people.
@@ -47,7 +48,7 @@
 
   ;; Set up the database into some known state:
   ;; - A course
-  ;; - Four students and one non-students in this course
+  ;; - Four students, one instructor, and one non-student in this course
   ;; - Two of the students are partners
   ;; - Two past-due assignments for the course
   ;; - Two upcoming assignments for the course
@@ -65,42 +66,42 @@
       (db-do
         (string-append
           "INSERT INTO people (name, neu_id, username, password) "
-          "VALUES ('Person one', 111223333, 'person one', "
+          "VALUES ('Person one', 111223333, 'student one', "
           "crypt('password',gen_salt('md5')))"))
       (set! pid1 (db-currval "people")))
     (begin
       (db-do
         (string-append
           "INSERT INTO people (name, neu_id, username, password) "
-          "VALUES ('Person two', 111223333, 'person two', "
+          "VALUES ('Person two', 111223333, 'student two', "
           "crypt('password',gen_salt('md5')))"))
       (set! pid2 (db-currval "people")))
     (begin
       (db-do
         (string-append
           "INSERT INTO people (name, neu_id, username, password) "
-          "VALUES ('Person three', 111223333, 'person three', "
+          "VALUES ('Person three', 111223333, 'student three', "
           "crypt('password',gen_salt('md5')))"))
       (set! pid3 (db-currval "people")))
     (begin
       (db-do
         (string-append
           "INSERT INTO people (name, neu_id, username, password) "
-          "VALUES ('Person four', 111223333, 'person four', "
+          "VALUES ('Person four', 111223333, 'student four', "
           "crypt('password',gen_salt('md5')))"))
       (set! pid4 (db-currval "people")))
     (begin
       (db-do
         (string-append
           "INSERT INTO people (name, neu_id, username, password) "
-          "VALUES ('Person five', 111223333, 'person five', "
+          "VALUES ('Person five', 111223333, 'staff one', "
           "crypt('password',gen_salt('md5')))"))
       (set! pid5 (db-currval "people")))
     (begin
       (db-do
         (string-append
           "INSERT INTO people (name, neu_id, username, password) "
-          "VALUES ('Person six', 111223333, 'person six', "
+          "VALUES ('Person six', 111223333, 'instructor one', "
           "crypt('password',gen_salt('md5')))"))
       (set! pid6 (db-currval "people")))
 
@@ -115,7 +116,18 @@
             n cid)))
       (list pid1 pid2 pid3 pid4))
 
-    ;; One non-students
+    ;; One instructor
+    (for-each
+      (lambda (n)
+        (db-do
+          (format
+            (string-append
+              "INSERT INTO course_people (person_id, course_id, position) "
+              "VALUES (~a, ~a,'instructor')")
+            n cid)))
+      (list pid6))
+
+    ;; One non-student
     (for-each
       (lambda (n)
         (db-do

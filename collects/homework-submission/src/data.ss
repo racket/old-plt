@@ -22,7 +22,16 @@
      partner-id submission-date submission grade comment)
     (make-inspector))
 
+  ;; A Partnership is a
+  ;; (make-partnership Number (listof String) Boolean)
+  (define-struct partnership
+    (id members can-submit?)
+    (make-inspector))
+
   (provide/contract
+    (struct partnership ((id number?)
+                         (members (listof string?))
+                         (can-submit? boolean?)))
     (struct assignment ((id number?)
                         (name string?)
                         (due string?)

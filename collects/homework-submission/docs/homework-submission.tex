@@ -9,54 +9,76 @@
 
 \maketitle
 
-Revision 6.
+Revision 8.
 
 \section{Overview}\label{sec:overview}
 
 The homework submission servlet is a tool for students to electronically submit
 homework assignments. It supports username and password authentication,
 changing passwords, logging out, account creation, and courses, a separation of
-students from non-students, partnerships, assignments, and file submission.
-Future goals are task assignment, and online grading.
+students from non-students, partnerships, assignments, file submission, student
+creation, and instructor-level partnership management.  Future goals are task
+assignment, and online grading.
 
 \section{Use Cases}\label{sec:usecases}
 
 The servlet currently supports users logging in with a valid username and
 password, changing their password, selecting a course, adding a partner if
-possible, viewing assignments, submitting homework, and logging out. They can
-also create an account if they have not already done so.
+possible, viewing assignments, submitting homework, creating a student, and
+logging out. They can also create an account if they have not already done so.
 
 \subsection{Supported Use Cases}\label{subsec:detailed-usecases}
 
 \begin{itemize}
-\item{A user enters an invalid username and/or password pair.}
-\item{A user logs in, then logs out.}
-\item{A user logs in, then closes the Web browser.}
-\item{A user logs in, logs out, uses the back button once, then logs out again.}
-\item{A user logs in, sucessfully changes his or her password, then logs out.}
-\item{A user logs in, attempts to change his or her password, enters an invalid
-old password, then logs out.}
-\item{A user logs in, attempts to change his or her password, enters an invalid
-old password, sucessfully enters the correct data and changes his or her password,
-then logs out.}
-\item{A user logs in, attempts to change his or her password, enters mismatched
-new passwords, then logs out.}
-\item{A user logs in, attempts to change his or her password, enters mismatched
-new passwords, sucessfully enters the correct data and changes his or her password,
-then logs out.}
-\item{A user logs in, selects a course in which he or she is a student, goes to
-  the partnership page, adds a partner, logs out.}
-\item{A user logs in, selects a course in which he or she is a student, goes to
-  the partnership page, sees existing partners, logs out.}
-\item{A user logs in, selects a course in which he or she is a student, has a
-  partner, views the assignments page, submits a homework, logs out.}
-\item{The Web server is restarted by the TA or instructor.}
+  \item{A user enters an invalid username and/or password pair.}
+  \item{A user logs in, then logs out.}
+  \item{A user logs in, then closes the Web browser.}
+  \item{A user logs in, logs out, uses the back button once, then logs out
+    again.}
+  \item{A user logs in, sucessfully changes his or her password, then logs out.}
+  \item{A user logs in, attempts to change his or her password, enters an
+    invalid old password, then logs out.}
+  \item{A user logs in, attempts to change his or her password, enters an
+    invalid old password, sucessfully enters the correct data and changes his
+    or her password, then logs out.}
+  \item{A user logs in, attempts to change his or her password, enters
+    mismatched new passwords, then logs out.}
+  \item{A user logs in, attempts to change his or her password, enters
+    mismatched new passwords, sucessfully enters the correct data and changes
+    his or her password, then logs out.}
+  \item{A user logs in, selects a course in which he or she is a student, goes
+    to the partnership page, adds a partner, logs out.}
+  \item{A user logs in, selects a course in which he or she is a student, goes
+    to the partnership page, sees existing partners, logs out.}
+  \item{A user logs in, selects a course in which he or she is a student, has a
+    partner, views the assignments page, submits a homework, logs out.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Add/Drop Student'', adds a student to the database and to the
+    course.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Add/Drop Student'', adds a student to the course that is already
+    in the database.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Add/Drop Student'', drops a student.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Partnerships'', merges two or more partnerships.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Partnerships'', breaks two or more partnerships.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Partnerships'', toggles the submission bit for one or more
+    partnerships.}
+  \item{The Web server is restarted by the TA or instructor.}
 \end{itemize}
 
 \subsubsection{New Use Cases}\label{subsubsec:newusecases}
 \begin{itemize}
-\item{A user logs in, selects a course in which he or she is a student, has a
-  partner, views the assignments page, submits a homework, logs out.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Partnerships'', merges two or more partnerships.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Partnerships'', breaks two or more partnerships.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Partnerships'', toggles the submission bit for one or more
+    partnerships.}
 \end{itemize}
 
 \section{Goals}\label{sec:goals}
@@ -64,7 +86,7 @@ then logs out.}
 The feature goals of this iteration are:
 
 \begin{itemize}
-\item{Homework submission.}
+  \item{Instructors manage partnerships.}
 \end{itemize}
 
 \section{Architecture}\label{sec:arch}
@@ -179,6 +201,19 @@ page-student-assignments : (page? session? (listof assignment?))
 \end{verbatim}
 The assignments which the student either has due or had due.
 
+\begin{verbatim}
+page-instructor-manage-students : (page? session?
+                                    (listof (cons/c string? number?))
+                                    (listof (cons/c string? number?)))
+\end{verbatim}
+The students in the course, who may be dropped; the students not in the course,
+who may be added.
+
+\begin{verbatim}
+page-instructor-partnerships : (page? session? (listof partnership?))
+\end{verbatim}
+Merge or break partnerships, or disallow or allow partners to submit.
+
 \subsubsection{Transitions}\label{subsubsec:transitions}
 
 A transition is a procedure used to move between pages. There are two categories
@@ -261,6 +296,16 @@ transition-view-description : (string? symbol? . -> . transition?)
 Direct transition to the description for an assignment.
 
 \begin{verbatim}
+transition-manage-students : (session? . -> . transition?
+\end{verbatim}
+Direct transition to the student management page for an instructor.
+
+\begin{verbatim}
+transition-manage-partnerships : (session? . -> . transition?)
+\end{verbatim}
+Direct transition to the partnership management page for an instructor.
+
+\begin{verbatim}
 transition-log-in : transition?
 \end{verbatim}
 Action transition to the logged-in page.
@@ -302,9 +347,45 @@ management page.
 transition-submit-assignment : (number? session? . -> . transition?)
 \end{verbatim}
 Action transition to the assignments page.
-Action: upload the homework and store it in the database.
+Action: Upload the homework and store it in the database.
 If the student can submit an assignment, store the file on the filesystem and
 update the database. Send the assignments page.
+
+\begin{verbatim}
+transition-add-a-student : (session? . -> . transition?)
+\end{verbatim}
+Action transition to the student management page for instructors.
+Action: Put the entered student into the course.
+Add the entered student to the database if he or she is not already there. Add
+the person to the people in the course as a student. Send the student
+management page for instructors.
+
+\begin{verbatim}
+transition-add-students : (session? . -> . transition?)
+\end{verbatim}
+Action transition to the student management page for instructors.
+Action: Put the selected students in the course.
+Add the selected students to the people in the course, then send the student
+management page for instructors.
+
+\begin{verbatim}
+transition-drop-students : (session? . -> . transition?)
+\end{verbatim}
+Action transition to the student management page for instructors.
+Action: Drop the selected students from the course.
+Delete the person from the course, then send the student management page for
+instructors.
+
+\begin{verbatim}
+transition-update-partnerships : (session? . -> . transition?)
+\end{verbatim}
+Action transition to the partnership management page for instructors.
+Action: Either merge, break, or toggle submission for the partnerships.
+If the action is ``merge'', then merge the selected partnerships and mark them
+all as allowed to submit. If the action is ``break'', then break the selected
+partnerships and mark them as not allowed to submit. If the action is
+``toggle'', then toggle the submission bit for each selected partnership. Send
+the partnership management page.
 
 \subsubsection{Scheduler}\label{subsubsec:scheduler}
 
@@ -417,25 +498,32 @@ The following tests must pass, using the simulated server framework, as a
 student and non-student:
 
 \begin{itemize}
-\item{A user enters an invalid username and/or password.}
-\item{A user logs in, then logs out.}
-\item{A user logs in, then closes the Web browser.}
-\item{A user logs in, logs out, goes back to the logged-in page, and logs out
-  again.}
-\item{A user logs in, sucessfully changes his or her password, then logs out.}
-\item{A user logs in, attempts to change his or her password, enters an invalid
-  old password, then enters mismatched new passwords, then sucessfully changes
-  his or her password, then logs out.}
-\item{A user attempts to create an account, enters the wrong Northeastern ID,
-  then enters a taken username, then enters mismatched passwords, then succeeds
-  in creating an account, then logs out.}
-\item{A user logs in, selects a course in which he or she is a student, goes
-  to the partnership management page, adds a partner, logs out.}
-\item{A user logs in, selects a course in which he or she is a student, goes
-  to the partnership management page, views the existing partners, logs out.}
-\item{A user logs in, selects a course in which he or she is a student, creates
-  a partnership, views assignments, submits an assignment, views its contents,
-  logs out.}
+  \item{A user enters an invalid username and/or password.}
+  \item{A user logs in, then logs out.}
+  \item{A user logs in, then closes the Web browser.}
+  \item{A user logs in, logs out, goes back to the logged-in page, and logs out
+    again.}
+  \item{A user logs in, sucessfully changes his or her password, then logs out.}
+  \item{A user logs in, attempts to change his or her password, enters an
+    invalid old password, then enters mismatched new passwords, then
+    sucessfully changes his or her password, then logs out.}
+  \item{A user attempts to create an account, enters the wrong Northeastern ID,
+    then enters a taken username, then enters mismatched passwords, then
+    succeeds in creating an account, then logs out.}
+  \item{A user logs in, selects a course in which he or she is a student, goes
+    to the partnership management page, adds a partner, logs out.}
+  \item{A user logs in, selects a course in which he or she is a student, goes
+    to the partnership management page, views the existing partners, logs out.}
+  \item{A user logs in, selects a course in which he or she is a student,
+    creates a partnership, views assignments, submits an assignment, views its
+    contents, logs out.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Add/Drop Student'', adds a student to the database and to the
+    course, adds a student to the course that is already in the database, drops
+    a student, then logs out.}
+  \item{A user logs in, selects a course in which he or she is an instructor,
+    selects ``Partnerships'', merges two or more partnerships, breaks those
+    partnerships, toggles the submission bits for those and other partnerships.}
 \end{itemize}
 
 %%% Note yet done. Not sure how best to do this, either.

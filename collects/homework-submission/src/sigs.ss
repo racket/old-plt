@@ -12,7 +12,10 @@
      page-student-main
      page-student-partners
      page-non-student-main
+     page-instructor-main
      page-student-assignments
+     page-instructor-manage-students
+     page-instructor-manage-partnerships
      ))
 
   (define-signature transitions^
@@ -33,6 +36,12 @@
      transition-view-submission
      transition-student-assignments
      transition-submit-assignment
+     transition-manage-students
+     transition-add-a-student
+     transition-add-students
+     transition-drop-students
+     transition-update-partnerships
+     transition-manage-partnerships
      ))
 
   )

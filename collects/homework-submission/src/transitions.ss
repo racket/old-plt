@@ -97,6 +97,25 @@
       (define-transition (transition-view-submission a)
         (send/back (list "text/plain" (read-file (assignment-submission a)))))
 
+      ;; Direct transition to the student management page for instructors.
+      (define-transition (transition-manage-students session)
+        (send/suspend/callback
+          (page-instructor-manage-students
+            session
+            (schedule (lambda () (backend-students-in-course
+                                   (course-id (session-course session)))))
+            (schedule (lambda () (backend-students-not-in-course
+                                   (course-id (session-course session))))))))
+
+      ;; Direct transition to the partnership management page for instructors.
+      (define-transition (transition-manage-partnerships session)
+        (send/suspend/callback
+          (page-instructor-manage-partnerships
+            session
+            (schedule (lambda ()
+                        (backend-partnerships/course
+                          (course-id (session-course session))))))))
+
       ;; Action transition to the logged-in page.
       ;; ACTION: check that the username and password pair are correct.
       ;; If the username and password match, send page-courses; otherwise
@@ -310,6 +329,101 @@
                        "partners."))
                    ))))
 
+      ;; Action transition to the student management page for instructors.
+      ;; Action: Put the selected students in the course.
+      ;; Add the selected students to the people in the course, then send the
+      ;; student management page for instructors.
+      (define-action-transition (transition-add-students session)
+        (id)
+        (let ((cid (course-id (session-course session))))
+          (schedule-transaction
+            (lambda ()
+              (for-each
+                (lambda (pid)
+                  (backend-add-to-course! (string->number pid) cid 'student))
+                (if (list? id) id (list id)))))
+          (send/suspend/callback
+            (page-instructor-manage-students
+              session
+              (schedule (lambda () (backend-students-in-course cid)))
+              (schedule (lambda () (backend-students-not-in-course cid)))))))
+
+      ;; Action transition to the student management page for instructors.
+      ;; Action: Put the entered student into the course.
+      ;; Add the entered student to the database if he or she is not already
+      ;; there. Add the person to the people in the course as a student. Send
+      ;; the student management page for instructors.
+      (define-action-transition (transition-add-a-student session)
+        (name neu-id)
+        (let ((cid (course-id (session-course session))))
+          (schedule-transaction
+            (lambda ()
+              (backend-add-person&course-person!
+                name (string->number neu-id) cid 'student)))
+          (send/suspend/callback
+            (page-instructor-manage-students
+              session
+              (schedule (lambda () (backend-students-in-course cid)))
+              (schedule (lambda () (backend-students-not-in-course cid)))))))
+
+      ;; Action transition to the student management page for instructors.
+      ;; Action: Drop the selected students from the course.
+      ;; Delete the person from the course, then send the student management
+      ;; page for instructors.
+      (define-action-transition (transition-drop-students session)
+        (id)
+        (let ((cid (course-id (session-course session))))
+          (schedule-transaction
+            (lambda () (for-each
+                         (lambda (pid) (backend-drop! (string->number pid) cid))
+                         (if (list? id) id (list id)))))
+          (send/suspend/callback
+            (page-instructor-manage-students
+              session
+              (schedule (lambda () (backend-students-in-course cid)))
+              (schedule (lambda () (backend-students-not-in-course cid)))))))
+
+      ;; Action transition to the partnership management page for instructors.
+      ;; Action: Either merge, break, or toggle submission for the partnerships.
+      ;; If the action is ``merge'', then merge the selected partnerships and
+      ;; mark them all as allowed to submit. If the action is ``break'', then
+      ;; break the selected partnerships and mark them as not allowed to
+      ;; submit.  If the action is ``toggle'', then toggle the submission bit
+      ;; for each selected partnership. Send the partnership management page.
+      (define-action-transition (transition-update-partnerships session)
+        (action id)
+        (cond
+          ( (string=? action "Merge")
+            (when (list? id)
+              (schedule-transaction
+                (lambda ()
+                  (backend-merge-partnerships! (map string->number id))))) )
+          ( (string=? action "Break")
+            (schedule-transaction
+              (lambda ()
+                (if (list? id)
+                  (for-each
+                    (lambda (pid)
+                      (backend-break-partnership! (string->number pid)))
+                            id)
+                  (backend-break-partnership! (string->number id))))) )
+          ( (string=? action "Toggle Submission")
+            (schedule-transaction
+              (lambda ()
+                (if (list? id)
+                  (for-each 
+                    (lambda (pid)
+                      (backend-toggle-submission! (string->number pid)))
+                    id)
+                  (backend-toggle-submission! (string->number id))))) ))
+        (send/suspend/callback
+          (page-instructor-manage-partnerships
+            session
+            (schedule
+              (lambda ()
+                (backend-partnerships/course
+                  (course-id (session-course session))))))))
+
       ;; **** Helpers ****
 
       ;; Go to the main page for the position.
@@ -328,6 +442,8 @@
             (case (course-position c)
               ( (student)
                 (send/suspend/callback (page-student-main session message)) )
+              ( (instructor)
+                (send/suspend/callback (page-instructor-main session message)) )
               ( else 
                 (send/suspend/callback
                   (page-non-student-main session message)) )))))
@@ -382,13 +498,22 @@
             (f)
             (backend-db-commit))))))
 
+  ;; Either extract-bindings or extract-binding/single, depending on which
+  ;; is probably needed.
+  (define (extract-binding n bs)
+    (let ((ebs (extract-bindings n bs)))
+      (cond ( (null? ebs) (error 'extract-binding/single
+                                 "~a not found in ~a" n bs) )
+            ( (null? (cdr ebs)) (car ebs) )
+            ( else ebs ))))
+
   ;; Extract the values from the bindings in the request and use them in
   ;; the bodies.
   (define-syntax let/bindings
     (syntax-rules ()
       ((_ req (name ...) . body)
        (let ((req-var (request-bindings req)))
-         (let ((name (extract-binding/single 'name req-var)) ...)
+         (let ((name (extract-binding 'name req-var)) ...)
            . body)))))
 
   ;; A direct transition takes a request, but ignores it.

@@ -1,0 +1,50 @@
+HOMEWORK SUBMISSION SERVLET
+===========================
+
+The homework submission servlet is a tool for students to electronically submit
+homework assignments. It supports username and password authentication,
+changing passwords, logging out, account creation, and courses, a separation of
+students from non-students, partnerships, assignments, file submission, student
+creation, and instructor-level partnership management.  Future goals are task
+assignment, and online grading.
+
+RUNNING
+=======
+
+To run the homework submission servlet the following tasks need to be done:
+
+ * The database must be set up and running (see DATABASE).
+ * The PLT Web server must be configured and running (see WEB SERVER).
+ * The use-case tests must pass and the concurrency tests must indicate that
+   the servlet will run stable on the system (see TESTS).
+
+DATABASE
+--------
+
+The DBMS is PostgreSQL 7 or compatible. It must be configured such that the Web 
+server can connect to it remotely (via the file data/pg_hba.conf), and
+contrib/pgcrypto must be installed. For example, append to data/pg_hba.conf:
+
+ host    all         csu211      129.10.117.161    255.255.255.255   trust
+
+The username `csu211' must be able to connect to the database `homework' with 
+no password.
+
+To create the tables, use the file etc/tables.sql as follows:
+
+ psql -h $DB_HOSTNAME -p $PORT -U csu211 homework < tables.sql
+
+WEB SERVER
+----------
+
+Configure the Web server's port in the configuration file. Copy the file 
+`submit.ss' to the Web server's servlet root (`servlets/').
+
+TESTS
+-----
+
+To test that the servlet will work as expected, run `tests/test-servlet.ss' . 
+To test memory usage, run `tests/test-memory.ss'; this will loop over the same 
+action repeatedly, so kill it when you either get bored or notice that it uses 
+too much memory. `tests/test-concurrency.ss' will test that the servlet can 
+handle multiple concurrent users.

@@ -8,6 +8,7 @@
   (require (lib "unitsig.ss")
            (lib "etc.ss")
            (lib "list.ss")
+           (lib "13.ss" "srfi")
            "widgets.ss"
            "sigs.ss"
            "data.ss")
@@ -34,6 +35,17 @@
           "You Are Logged In As A Student"
           (p (hyperlink (transition-student-assignments session) "Assignments"))
           (p (hyperlink (transition-student-partners session) "Partners"))
+          (p (hyperlink (transition-courses session) "Courses"))
+          (p (hyperlink (transition-change-password session) "Change Password"))
+          (p (hyperlink transition-log-out "Logout"))))
+
+      ;; Confirm the instructor has logged in.
+      (define page-instructor-main
+        (page (session)
+          "You Are Logged In As An Instructor"
+          (p (hyperlink (transition-manage-students session) "Add/Drop Student"))
+          (p (hyperlink (transition-manage-partnerships session)
+                        "Partnerships"))
           (p (hyperlink (transition-courses session) "Courses"))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
@@ -164,6 +176,65 @@
               past-due))
           (p (hyperlink (transition-student-partners session) "Partners"))
           (p (hyperlink (transition-courses session) "Courses"))
+          (p (hyperlink (transition-change-password session) "Change Password"))
+          (p (hyperlink transition-log-out "Logout"))))
+
+      ;; An instructor manages the students in his or her course.
+      (define page-instructor-manage-students
+        (page (session students non-students)
+          "Manage Students"
+          '(h2 "Add Students")
+          (form (transition-add-students session) '()
+                `(select ((name "id") (id "id") (multiple "YES"))
+                         ,@(map
+                             (lambda (s)
+                               `(option ((value ,(number->string (cdr s))))
+                                        ,(car s)))
+                             non-students))
+                (submit-button "Add"))
+          (form (transition-add-a-student session) '()
+                (text-input "Last name" "name")
+                (text-input "Last four digits of Northeastern ID" "neu-id")
+                (submit-button "Add"))
+          '(h2 "Drop Students")
+          (form (transition-drop-students session) '()
+                `(select ((name "id") (id "id") (multiple "YES"))
+                         ,@(map
+                             (lambda (s)
+                               `(option ((value ,(number->string (cdr s))))
+                                        ,(car s)))
+                             students))
+                (submit-button "Drop"))
+          (p (hyperlink (transition-manage-partnerships session)
+                        "Partnerships"))
+          (p (hyperlink (transition-change-password session) "Change Password"))
+          (p (hyperlink transition-log-out "Logout"))))
+
+      ;; An instructor manages the partnerships in his or her course.
+      (define page-instructor-manage-partnerships
+        (page (session partnerships)
+          "Partnerships"
+          (form (transition-update-partnerships session) '()
+                (html-table
+                  "Partnerships and their ability to submit assignments"
+                  (list "Select" "Names" "Can Submit?")
+                  (map
+                    (lambda (partnership)
+                      `(tr
+                         (td (input ((type "checkbox")
+                                     (name "id")
+                                     (value ,(number->string
+                                               (partnership-id partnership))))))
+                         (th ,(string-join
+                                (partnership-members partnership) ", "))
+                         (td ,(if (partnership-can-submit? partnership)
+                                "Yes" "No"))))
+                    partnerships))
+                (submit-button "Merge")
+                (submit-button "Break")
+                (submit-button "Toggle Submission"))
+          (p (hyperlink (transition-manage-students session)
+                        "Add/Drop Student"))
           (p (hyperlink (transition-change-password session) "Change Password"))
           (p (hyperlink transition-log-out "Logout"))))
 

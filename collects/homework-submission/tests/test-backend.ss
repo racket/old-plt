@@ -35,13 +35,13 @@ exec mzscheme -r "$0" "$@"
     (make-test-case
       "courses for a student"
       (assert-equal?
-        (courses "person one")
+        (courses "student one")
         (list (make-course cid "The Test Course" "TTT000" 'student #t #t))))
 
     (make-test-case
       "courses for a non-student"
       (assert-equal?
-        (courses "person five")
+        (courses "staff one")
         (list (make-course cid "The Test Course" "TTT000" 'instructor #f #f))))
 
     (make-test-case
@@ -61,12 +61,12 @@ exec mzscheme -r "$0" "$@"
       (assert-equal? (can-submit? pid3 cid) #f))
 
     (make-test-case
-      "user-in-course? for a person that is in the course"
-      (assert-equal? (user-in-course? "person five" cid) #t))
+      "user-in-course? for a student that is in the course"
+      (assert-equal? (user-in-course? "staff one" cid) #t))
 
     (make-test-case
-      "user-in-course? for a person that is not in the course"
-      (assert-equal? (user-in-course? "person six" cid) #f))
+      "user-in-course? for a student that is not in the course"
+      (assert-equal? (user-in-course? "staff two" cid) #f))
 
     (make-test-case
       "can-add-partner? for a student who can add a partner"
@@ -86,7 +86,7 @@ exec mzscheme -r "$0" "$@"
 
     (make-test-case
       "add-partner! for a student"
-      (assert-db (add-partner! pid3 cid "person four")
+      (assert-db (add-partner! pid3 cid "student four")
                  (format
                    (string-append
                      "SELECT 't' FROM partners pt "

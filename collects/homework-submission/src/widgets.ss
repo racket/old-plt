@@ -92,7 +92,7 @@
   ;; A submit button, which might be titled.
   (define submit-button
     (opt-lambda ((label "Next"))
-      `(p (input ((type "submit") (value ,label))))))
+      `(p (input ((type "submit") (value ,label) (name "action"))))))
 
   ;; actions-list : (List (cons String (String -> Xexpr))) -> Xexpr
   ;; A list of actions that can be done, and what to do when they are done.

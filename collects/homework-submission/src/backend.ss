@@ -19,12 +19,12 @@
     (update-password! (string? string? . -> . any))
     (name/neu-id-match? (string? number? . -> . boolean?))
     (username-taken? (string? . -> . boolean?))
-    (create-account! (string? number? string? string? . -> . any))
+    (create-account! (string? number? string? string? . -> . any)) ;;; ?
     (db-rollback (-> any))
     (db-commit (-> any))
     (db-begin (-> any))
-    (destroy-user! (string? . -> . any))
-    (add-user! (string? number? . -> . any))
+    (destroy-user! (string? . -> . any)) ;;; ?
+    (add-user! (string? number? . -> . any)) ;;; ?
     (has-username? (string? number? . -> . boolean?))
     (courses (string? . -> . (listof course?)))
     (can-add-partner? (number? number? . -> . boolean?))
@@ -38,20 +38,31 @@
     (submission-filename (number? number? number? . -> . path?))
     (store-submission/file! (path? string? . -> . any))
     (store-submission/db! (number? number? path? . -> . any))
+    (add-to-course! (number? number? symbol? . -> . any))
+    (students-in-course (number? . -> . (listof (cons/c string? number?))))
+    (students-not-in-course (number? . -> . (listof (cons/c string? number?))))
+    (add-person&course-person! (string? number? number? symbol? . -> . any))
+    (drop! (number? number? . -> . any))
+    (merge-partnerships! ((listof number?) . -> . any))
+    (break-partnership! (number? . -> . any))
+    (toggle-submission! (number? . -> . any))
+    (partnerships/course (number? . -> . (listof partnership?)))
     )
 
   (provide *connection*)
 
   (define *connection*
-    (let ((db-connection (connect "subra.ccs.neu.edu" 8432 #"homework" #"csu211")))
+    ;; "homework" is the production database
+    ;; "homework_test" is the testing database
+    (let ((db-connection (connect "subra.ccs.neu.edu" 8432 #"homework_test" #"csu211")))
       ;; Convert the data to the correct types
       (send db-connection use-type-conversions #t)
       db-connection))
 
   ;; Transactions.
-  (define (db-rollback) (send *connection* exec "ROLLBACK"))
-  (define (db-commit)   (send *connection* exec "COMMIT"))
-  (define (db-begin)    (send *connection* exec "BEGIN"))
+  (define (db-rollback) (db-do "ROLLBACK"))
+  (define (db-commit)   (db-do "COMMIT"))
+  (define (db-begin)    (db-do "BEGIN"))
 
   ;; Does the username and password exist in the database? The password passed
   ;; in here is not yet encrypted; this procedure encrypts it, then checks that.
@@ -62,12 +73,12 @@
 
   ;; Update the password database with the new password, encrypted.
   (define (update-password! username password)
-    (send *connection* exec
-          (format
-            (string-append "UPDATE people "
-                           "SET password = crypt('~a',gen_salt('md5')) "
-                           "WHERE username = '~a'")
-            (dbify password) (dbify username))))
+    (db-do
+      (format
+        (string-append "UPDATE people "
+                       "SET password = crypt('~a',gen_salt('md5')) "
+                       "WHERE username = '~a'")
+        (dbify password) (dbify username))))
 
   ;; Is the name and NEU ID a pair in the database?
   (define (name/neu-id-match? name neu-id)
@@ -81,25 +92,25 @@
   ;; Create an account with the given name, NEU ID, username, and password. It
   ;; is assumed that the account can be created.
   (define (create-account! name neu-id username password)
-    (send *connection* exec
-          (format
-            (string-append
-              "UPDATE people SET username = '~a', "
-              "password = crypt('~a',gen_salt('md5')) "
-              "WHERE name = '~a' AND neu_id = ~a")
-            (dbify username) (dbify password) (dbify name) neu-id)))
+    (db-do
+      (format
+        (string-append
+          "UPDATE people SET username = '~a', "
+          "password = crypt('~a',gen_salt('md5')) "
+          "WHERE name = '~a' AND neu_id = ~a")
+        (dbify username) (dbify password) (dbify name) neu-id)))
 
   ;; Totally annihilate a user from the database. NOTE: Does this belong here?
   (define (destroy-user! username)
-    (send *connection* exec
-          (format "DELETE FROM people WHERE username = '~a'"
-                  (dbify username))))
+    (db-do
+      (format "DELETE FROM people WHERE username = '~a'"
+              (dbify username))))
 
   ;; Add a person's name and ID to the database.
   (define (add-user! name neu-id)
-    (send *connection* exec
-          (format "INSERT INTO people (name, neu_id) VALUES ('~a',~a)"
-                  (dbify name) neu-id)))
+    (db-do
+      (format "INSERT INTO people (name, neu_id) VALUES ('~a',~a)"
+              (dbify name) neu-id)))
 
   ;; Does this user already have a username?
   (define (has-username? name neu-id)
@@ -193,30 +204,30 @@
                           "GROUP BY c.default_partnership_size "
                           "HAVING c.default_partnership_size = (max(pt.partner_id) + 1) ")
                         cid sid p-sid))))
-      (send *connection* exec
-            (format
-              (string-append
-                "UPDATE partners SET ended = now() "
-                "WHERE course_id = ~a "
-                "AND ended IS NULL "
-                "AND (student_id = ~a OR student_id = ~a)")
-              cid sid p-sid))
-      (send *connection* exec
-            (format
-              (string-append
-                "INSERT INTO partners "
-                "(student_id, partner_id, course_id, created, can_submit) "
-                "VALUES (~a, (SELECT max(partner_id) + 1 FROM partners), "
-                "~a, now(), '~a')")
-              sid cid (if can-submit? 't 'f)))
-      (send *connection* exec
-            (format
-              (string-append
-                "INSERT INTO partners "
-                "(student_id, partner_id, course_id, created, can_submit) "
-                "VALUES (~a, (SELECT max(partner_id) FROM partners), "
-                "~a, now(), '~a')")
-              p-sid cid (if can-submit? 't 'f)))))
+      (db-do
+        (format
+          (string-append
+            "UPDATE partners SET ended = now() "
+            "WHERE course_id = ~a "
+            "AND ended IS NULL "
+            "AND (student_id = ~a OR student_id = ~a)")
+          cid sid p-sid))
+      (db-do
+        (format
+          (string-append
+            "INSERT INTO partners "
+            "(student_id, partner_id, course_id, created, can_submit) "
+            "VALUES (~a, (SELECT max(partner_id) + 1 FROM partners), "
+            "~a, now(), '~a')")
+          sid cid (if can-submit? 't 'f)))
+      (db-do
+        (format
+          (string-append
+            "INSERT INTO partners "
+            "(student_id, partner_id, course_id, created, can_submit) "
+            "VALUES (~a, (SELECT max(partner_id) FROM partners), "
+            "~a, now(), '~a')")
+          p-sid cid (if can-submit? 't 'f)))))
 
   ;; A student can submit assignments if the can_submit field is true.
   (define (can-submit? sid cid)
@@ -308,37 +319,170 @@
   (define (store-submission/db! pid aid filename)
     (if (exists? "assignment_grades"
                  (format "assignment_id = ~a AND partner_id = ~a" aid pid))
-      (send *connection* exec
+      (db-do
+        (format
+          (string-append
+            "UPDATE assignment_grades SET submission = '~a', "
+            "submission_date = now() "
+            "WHERE assignment_id = ~a AND partner_id = ~a")
+          (dbify (path->string filename)) aid pid))
+      (db-do
+        (format
+          (string-append
+            "INSERT INTO assignment_grades "
+            "(assignment_id, partner_id, submission) "
+            "VALUES (~a,~a,'~a')")
+          aid pid (dbify (path->string filename))))))
+
+  ;; Put a person in a course.
+  (define (add-to-course! pid cid position)
+    (db-do
+      (format
+        (string-append
+          "INSERT INTO course_people (person_id, course_id, position) "
+          "VALUES (~a,~a,'~a')")
+        pid cid position))
+    ;; Maintain the invariant. TODO: Make DB do this.
+    (when (equal? position 'student)
+      (db-do
+        (format
+          (string-append
+            "INSERT INTO partners "
+            "(student_id, partner_id, course_id, created, can_submit) "
+            "VALUES (~a, (SELECT max(partner_id) FROM partners), ~a, now(), "
+            "(SELECT default_partnership_size = 1 FROM courses WHERE id = ~a))")
+          pid cid cid))))
+
+  ;; The students in a course.
+  (define (students-in-course cid)
+    (query
+      (format
+        (string-append
+          "SELECT p.name, p.id FROM people p "
+          "JOIN course_people c_p ON c_p.person_id = p.id "
+          "WHERE c_p.course_id = ~a")
+        cid)
+      (lambda (rs)
+        (map (lambda (v) (cons (bytes->string/utf-8 (vector-ref v 0))
+                               (vector-ref v 1)))
+             (RecordSet-rows rs)))))
+
+  ;; The students not in a course, but otherwise in the database.
+  (define (students-not-in-course cid)
+    (query
+      (format
+        (string-append
+          "SELECT p.id FROM people p "
+          "JOIN course_people c_p ON c_p.person_id = p.id "
+          "WHERE c_p.course_id != ~a")
+        cid)
+      (lambda (rs)
+        (map (lambda (v) (cons (bytes->string/utf-8 (vector-ref v 0))
+                               (vector-ref v 1)))
+             (RecordSet-rows rs)))))
+
+  ;; Put a person into the database, then add him or her to a course.
+  (define (add-person&course-person! name neu-id cid position)
+    (db-do
+      (format "INSERT INTO people (name, neu_id) VALUES ('~a', ~a)"
+              (dbify name) neu-id))
+    (add-to-course!
+      (send *connection* query-value "SELECT currval('people_id_seq')")
+      cid position))
+
+  ;; Drop a person from a course.
+  (define (drop! pid cid)
+    (db-do
+      (format
+        "DELETE FROM course_people WHERE person_id = ~a AND course_id = ~a"
+        pid cid)))
+
+  ;; Combine all the partnerships into one new partnership.
+  (define (merge-partnerships! pids)
+    (let ((new-pid (send *connection* query-value
+                         "SELECT max(partner_id) + 1 FROM partners")))
+      (for-each
+        (lambda (pid)
+          (db-do
             (format
               (string-append
-                "UPDATE assignment_grades SET submission = '~a' "
-                "WHERE assignment_id = ~a AND partner_id = ~a")
-              (dbify (path->string filename)) aid pid))
-      (send *connection* exec
+                "INSERT INTO partners "
+                "(student_id, partner_id, course_id, created, can_submit) "
+                "SELECT student_id, ~a, course_id, now(), 't' "
+                "FROM partners WHERE partner_id = ~a")
+              new-pid pid))
+          (db-do
+            (format
+              "UPDATE partners SET ended = now() WHERE partner_id = ~a"
+              pid)))
+        pids)))
+
+  ;; Put each member of a partnership into the singleton partnership.
+  (define (break-partnership! pid)
+    (let ((cid (send *connection* query-value
+                     (format
+                       "SELECT DISTINCT course_id FROM partners WHERE partner_id = ~a"
+                       pid))))
+      (let loop ((new-pid (send *connection* query-value
+                                "SELECT max(partner_id) + 1 FROM partners"))
+                 (sids (send *connection* query-list
+                             (format
+                               "SELECT student_id FROM partners WHERE partner_id = ~a"
+                               pid))))
+        (unless (null? sids)
+          (db-do
             (format
               (string-append
-                "INSERT INTO assignment_grades "
-                "(assignment_id, partner_id, submission) "
-                "VALUES (~a,~a,'~a')")
-              aid pid (dbify (path->string filename))))))
+                "INSERT INTO partners "
+                "(student_id, partner_id, course_id, created, can_submit) "
+                "VALUES (~a, ~a, ~a, now(), 'f')")
+              (car sids) new-pid cid))
+          (loop (add1 new-pid) (cdr sids)))))
+    (db-do
+      (format "UPDATE partners SET ended = now() WHERE partner_id = ~a" pid)))
+
+  ;; Allow the partnership to submit if they were not able to, and the other
+  ;; way around.
+  (define (toggle-submission! pid)
+    (db-do
+      (format
+        "UPDATE partners SET can_submit = not(can_submit) WHERE partner_id = ~a"
+        pid)))
+
+  ;; The partnerships in the course.
+  (define (partnerships/course cid)
+    (let ((pids (send *connection* query-list
+                      (format
+                        (string-append
+                          "SELECT DISTINCT partner_id FROM partners "
+                          "WHERE course_id = ~a AND ended IS NULL")
+                        cid))))
+      (map
+        (lambda (pid)
+          (query
+            (format
+              (string-append
+                "SELECT DISTINCT p.name, pt.can_submit "
+                "FROM partners pt "
+                "JOIN people p ON p.id = pt.student_id "
+                "WHERE pt.partner_id = ~a AND pt.ended IS NULL "
+                "GROUP BY pt.partner_id, p.name, pt.can_submit, pt.ended "
+                "ORDER BY p.name")
+              pid)
+            (lambda (rs)
+              (let ((r (RecordSet-rows rs)))
+                (make-partnership
+                  pid
+                  (map (lambda (v) (bytes->string/utf-8 (vector-ref v 0))) r)
+                  (vector-ref (car r) 1))))))
+        pids)))
 
   ;; ******************************************************************
 
   ;; Assignments for a student in a course where the due date has not yet
   ;; exipred.
   (define (select-structure sql vector->struct)
-    (let ((q (send *connection* query sql)))
-      (cond
-        ( (RecordSet? q)
-          (map vector->struct (RecordSet-rows q)) )
-        ( (ErrorResult? q)
-          (raise (make-exn:fail (string->immutable-string
-                                  (format "An error occured: ~s~n"
-                                          (ErrorResult-message q)))
-                                (current-continuation-marks))) )
-        ( else (raise (make-exn:fail (string->immutable-string
-                                       (format "Unknown error: ~s~n" q))
-                                     (current-continuation-marks))) ))))
+    (query sql (lambda (rs) (map vector->struct (RecordSet-rows rs)))))
 
   ;; Convert a row represented as a vector into a course.
   (define (row->course r)
@@ -364,6 +508,10 @@
                      (value/null (vector-ref r 10) #f)
                      (value/null (vector-ref r 11) #f)))
 
+  ;; Execute a SQL statement.
+  (define (db-do sql)
+    (send *connection* exec sql))
+
   ;; The value if it is not sql-null, or some default value.
   (define (value/null v d)
     (cond
@@ -374,10 +522,15 @@
   ;; exists? : String String -> Boolean
   ;; Is something known and existant in the database?
   (define (exists? table where)
-    (let ((q (send *connection* query
-                   (string-append "SELECT 1 FROM " table " WHERE " where))))
+    (query (string-append "SELECT 1 FROM " table " WHERE " where)
+           (lambda (q) (not (= (length (RecordSet-rows q)) 0)))))
+
+  ;; recordset-value : String (RecordSet -> X) -> X
+  ;; Something useful from the query.
+  (define (query sql f)
+    (let ((q (send *connection* query sql)))
       (cond
-        ( (RecordSet? q) (not (= (length (RecordSet-rows q)) 0)) )
+        ( (RecordSet? q) (f q) )
         ( (ErrorResult? q) (raise (make-exn:fail
                                     (string->immutable-string
                                       (bytes->string/utf-8
@@ -385,7 +538,7 @@
                                     (current-continuation-marks))) )
         ( else (raise (make-exn:fail (string->immutable-string
                                        (format "Got: ~s~n" q))
-                                    (current-continuation-marks))) ))))
+                                     (current-continuation-marks))) ))))
 
   ;; dbify : String -> String
   ;; Escape any non-SQL-safe characters

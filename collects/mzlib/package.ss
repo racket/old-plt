@@ -91,7 +91,7 @@
   
     (define (single stx def-vals)
       (let-values ([(id rhs) (normalize-definition stx #'lambda)])
-	(quasisyntax/loc stx (#,def-vals (id) #,rhs))))
+	(quasisyntax/loc stx (#,def-vals (#,id) #,rhs))))
 
     (define (define*-syntax/proc stx)
       (single stx #'define*-syntaxes))

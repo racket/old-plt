@@ -369,7 +369,7 @@
  (default-fonts "Polices par défaut")
  
  ; should have entire alphabet
- (font-example-string "aàbcçdeéêèfghiîjklmnoôpqrstuûvwxyz") 
+ (font-example-string "aâàbcçdeéêèëfghiîjklmnoôpqrstuûùvwxyz")
  
  (change-font-button-label "Changer")
  (fonts "Polices")

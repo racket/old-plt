@@ -213,7 +213,7 @@
 ;	     (pretty-print (format "current newboundtype: ~a" (car tdlist)))
 	     (if (null? tdlist)
 		 null
-		 (cons (cons (syntax-object->datum (car (car tdlist))) (make-usertype (syntax-object->datum (car (car tdlist))) (ast:type_declaration-params (cdr (car tdlist))))) (newboundtypes (cdr tdlist)))))
+		 (cons (cons (syntax-object->datum (car (car tdlist))) (make-usertype (syntax-object->datum (car (car tdlist))) (car (convert-list (map make-tvar (ast:type_declaration-params (cdr (car tdlist)))) null null)))) (newboundtypes (cdr tdlist)))))
 
 		       
 	   (define (typecheck-typedecl td boundlist)
@@ -452,7 +452,13 @@
 		     (make-<tuple> (map typecheck-type ctlist (repeat boundlist (length ctlist))))]
 		    [($ ast:ptyp_constr name ctlist)
 ;		     (pretty-print (format "ptyp_constr ~a ~a" (unlongident name) ctlist))
-		     (let* ([fconstructor (constructor-lookup (unlongident name))])
+		     (let* ([cexists (get-type (unlongident name) boundlist)]
+			    [fconstructor (if cexists
+					      (car (convert-tvars cexists null))
+					      (constructor-lookup (unlongident name)))]
+;			    [foobar (pretty-print (format "constructor-lookup: ~a" (unlongident name)))]
+			    )
+			   
 		       (if fconstructor
 			   (cond
 			    [(tconstructor? fconstructor)
@@ -463,10 +469,14 @@
 				 (if (unify (tconstructor-argtype) (typecheck-type (car ctlist) boundlist) (at (car ctlist) (ast:core_type-src (car ctlist))))
 				     (tconstructor-result fconstructor)))]
 				       
-			       
-;			      [(and (istype? "arrow" fconstructor)
-;				    (syntax-object->datum `(and ,@(map unify (map typecheck-type ctlist) (get-arglist fconstructor)))))
-;			       fconstructor]
+
+			    [(usertype? fconstructor)
+			     (if (null? (usertype-params fconstructor))
+				 (if (null? ctlist)
+				     fconstructor
+				     (raise-syntax-error #f (format "Constructor ~a(~a) expects no arguments but got:~a" (usertype-name fconstructor) (usertype-params fconstructor) ctlist) (at asttype (ast:core_type-src asttype))))
+				 (if (andmap unify (usertype-params fconstructor) (car (convert-list (map typecheck-type ctlist (repeat boundlist (length ctlist))) null null)) (repeat (at (car ctlist) (ast:core_type-src (car ctlist))) (length ctlist)))
+				     fconstructor))]
 			    [(equal? (unlongident name) "list")
 			       
 			       (make-tlist (typecheck-type (car ctlist) boundlist))]
@@ -474,11 +484,8 @@
 			     fconstructor
 			       ]
 			    [else
-			     (raise-syntax-error #f (format "~a takes no arguments but was given ~a" (car fconstructor)  ctlist) (at asttype (ast:core_type-src asttype)))])
-			   (let* ([cexists (get-type (unlongident name) boundlist)])
-			     (if cexists
-				 cexists
-			       (raise-syntax-error #f (format "Unknown constructor: ~a. Boundlist: ~a" (unlongident name) boundlist) (at asttype (ast:core_type-src asttype)))))) )]
+			     (raise-syntax-error #f (format "~a takes no arguments but was given ~a" fconstructor  ctlist) (at asttype (ast:core_type-src asttype)))])
+			   (raise-syntax-error #f (format "Unknown constructor: ~a. Boundlist: ~a" (unlongident name) boundlist) (at asttype (ast:core_type-src asttype)))))]
 		    [($ ast:ptyp_variant rfl abool ll)
 		     'comeslater
 		     ;; Need to implement this!!!

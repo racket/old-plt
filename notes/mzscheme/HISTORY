@@ -1,10 +1,10 @@
 Version 51, ??, 1998
 Changed load/use-compiled: searches for .zo files in
-  a "compiled/" subdirectory, and searches for .so/.dll
-  files in (build-path "compiled" (system-library-subpath))
+ a "compiled/" subdirectory, and searches for .so/.dll
+ files in (build-path "compiled" (system-library-subpath))
 Changed load and current-load/default-load-handler: `load'
-  now sets the current-load-relative-directory, so a load
-  handler does not need to set this parameter
+ now sets the current-load-relative-directory, so a load
+ handler does not need to set this parameter
 Added current-load-extension (load-extension handler)
 Unix: fixed file-or-directory-permissions for group-based 
  permissions when the group is not the current group (but
@@ -21,7 +21,9 @@ The delete-file and rename-file functions now reliably work
  on links rather than the destination of the link (now fixed
  for MacOS and documented this way)
 Fixed rename-file: works for directories too, but the
-  destination file/directory cannot exist already.
+ destination file/directory cannot exist already.
+Added a new mode flag for open-output-file et al.:
+ 'truncate/replace tries 'truncate then 'replace
 Changed initial setting of current-library-collection-paths
 Unit definitions and embedded definitions are not allowed
  to shadow syntax or macro names; this restriction resolves

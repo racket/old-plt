@@ -72,7 +72,9 @@
 			   (lambda (bx event)
 			     (match
 			      (list-ref (param '?)
-					(send bx get-selection))
+					(if (send bx get-value)
+					    1
+					    0))
 			      [(tag . _) 
 			       (param tag)
 			       (preferences:set sym tag)])))]

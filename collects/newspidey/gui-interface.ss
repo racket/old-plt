@@ -48,6 +48,7 @@
     (let ([set-vars (find-loc offset cgp:*location-list*)])
       (if (null? set-vars)
           #f
+          ;; of course, we throw most of the list away, for now... XXX
           (car set-vars)))))
 
 ;; symbol -> Type
@@ -113,8 +114,6 @@
          [(boolean? val) (if val "true" "false")]
          [(void? val) "void"]
          [else (error 'pp-type "unknown constant type ~a" type)]))]
-    
-    
     [(type:Type-Struct? type)
      (string-append
       "(struct:"
@@ -125,7 +124,7 @@
       ")")]
     [(type:Type-Empty? type)
      "empty"]
-    [else (error "pptype: unknown type: ~a" type)]))
+    [else (error 'pp-type "unknown type: ~a" type)]))
 
 ;; symbol -> (listof symbol)
 ;; returns list of children of set-var (represented as symbol)
@@ -158,6 +157,6 @@
         [(mzlib:symbol=? sym 'procedure)
          (type:Type-Arrow? type)]
         ;; XXX struct ?
-        [else (error "has=member?: unknown predicate: ~a" sym)])))
+        [else (error 'has-member? "unknown predicate: ~a" sym)])))
 
   ) ;; unit/sig

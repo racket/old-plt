@@ -26,6 +26,7 @@
           (map (lambda (term) (cgp:derive-top-term-constraints '() term))
                terms)
           (cgp:propagate-constraints)
+          
           (tr:init-set-var-to-type)
           (tr:type-reduce-rec-bindings)
           (for-each da:debug-arity terms)

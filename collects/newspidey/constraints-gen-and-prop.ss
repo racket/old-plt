@@ -227,19 +227,19 @@
 ;; symbol number -> void
 ;; add (list number symbol) to the list of locations, in sorted order
 (define (add-to-location-list sym offset)
-  (letrec (;; symbol number (listof (list number symbol)) -> (listof (list number symbol))
-           [sort-loc (lambda (sym offset l)
-                       (if (null? l)
-                           (list (list offset sym))
-                           ;; in case of equality, add after the existing
-                           ;; one => top term appears first for a given
-                           ;; offset ?
-                           (if (< offset (caar l))
-                               (cons (list offset sym)
-                                     l)
-                               (cons (car l)
-                                     (sort-loc sym offset (cdr l))))))])
-    (set! *location-list* (sort-loc sym offset *location-list*))))
+;  (letrec (;; symbol number (listof (list number symbol)) -> (listof (list number symbol))
+;           [sort-loc (lambda (sym offset l)
+;                       (if (null? l)
+;                           (list (list offset sym))
+;                           ;; in case of equality, add after the existing
+;                           ;; one => top term appears first for a given
+;                           ;; offset ?
+;                           (if (< offset (caar l))
+;                               (cons (list offset sym)
+;                                     l)
+;                               (cons (car l)
+;                                     (sort-loc sym offset (cdr l))))))])
+    (set! *location-list* (cons (list offset sym) *location-list*)))
 
 ;; symbol zodiac:parsed -> void
 (define (associate-set-var-and-term alpha term)
@@ -315,7 +315,7 @@
     (string-append "sym:" (symbol->string v))]
    [(null? v) "empty-list"]
    [(void? v) "void"]
-   [else (error (format "Unknown value: ~a" v))]))
+   [else (error 'scalar->string "unknown value: ~a" v)]))
 
 ;; (nonempty-listof string) -> string
 (define (make-hash-string . strings)
@@ -388,7 +388,7 @@
        (apply make-hash-string
         "struct:" (symbol->string (setexp:Struct-name val))
         (map setexp:Set-var-name (setexp:Struct-fields val)))]
-      [else (error (format "Unknown set expression: ~a" val))])))
+      [else (error 'set-exp->string "unknown set expression: ~a" val)])))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; constraint hash table manipulation
 
@@ -576,7 +576,9 @@
     (cond
       [(zodiac:quote-form? term)
        (add-constraint-with-bounds (setexp:make-Const (zodiac:read-object (zodiac:quote-form-expr term))) alpha #t)]
-      [(zodiac:lambda-varref? term)
+      ;; note: a lambda-varref is also a lexical-varref, and a lambda-binding is also a lexical-binding.
+      ;; so what works for let-bound variables here also works for lambda-bound variables.
+      [(zodiac:lexical-varref? term)
        (let* ([name (zodiac:binding-orig-name (zodiac:bound-varref-binding term))]
               [set-var (lookup-in-env Gamma name)])
          ;;(printf "set-var: ~a~nGamma: ~a~nterm: ~a~n" set-var Gamma (zodiac:binding-orig-name (zodiac:bound-varref-binding term)))
@@ -877,8 +879,25 @@
                    [else-alpha (derive-top-term-constraints Gamma else)])
                (add-constraint-with-bounds then-alpha alpha #t)
                (add-constraint-with-bounds else-alpha alpha #t))))]
+      [(zodiac:let-values-form? term)
+       (let* ([vars (map (lambda (binding-list)
+                           (if (not (= (length binding-list) 1))
+                               (error 'derive-top-term-constraints "let-values not supported")
+                               (car binding-list)))
+                         (zodiac:let-values-form-vars term))]
+              [vars-names (map zodiac:binding-orig-name vars)]
+              [alphas-vars (map (lambda (_) (gen-set-var)) vars-names)]
+              [vals (zodiac:let-values-form-vals term)]
+              [alphas-vals (map (lambda (t) (derive-top-term-constraints Gamma t)) vals)]
+              [body (zodiac:let-values-form-body term)]
+              [alpha-body (derive-top-term-constraints (spidey-extend-env Gamma vars-names alphas-vars) body)])
+         (for-each (lambda (alpha-var alpha-val var)
+                     (add-constraint-with-bounds alpha-val alpha-var #t)
+                     (associate-set-var-and-term (setexp:Set-var-name alpha-var) var))
+                   alphas-vars alphas-vals vars)
+         (add-constraint-with-bounds alpha-body alpha #t))]
       [else (error 'derive-top-term-constraints "unknown term ~a~n" term)]
-           )
+      )
     alpha))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; misc

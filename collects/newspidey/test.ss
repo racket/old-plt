@@ -115,3 +115,24 @@
 (if #t 1 2)
 
 (car (if #f (cons 1 '()) 2))
+
+(let ([a 1]
+      [b (lambda (x) x)])
+  (b a))
+
+;(define b5 (lambda (x) x))
+;(b5 b5)
+
+(let ([b (lambda (x) x)])
+  b)
+;(let ([b (lambda (x) x)])
+;  (b b))
+
+(let ([a ((lambda (x y) y) 1 cons)] ;; cons
+      [b (lambda (x) x)]) ;; Id
+  (let ([c ((lambda (x) x) a)] ;; cons
+        [e (lambda (x) x)]  ;; Id
+        [f (lambda (x) x)]) ;; Id. can't apply b directly to itself below => infinite type
+    (let ([d ((e b) (b f))]) ;; Id, f flows into b twice, because the result of (b f) is f and the result of (e b) is b
+      (d c)))) ;; cons
+

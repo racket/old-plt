@@ -2,6 +2,14 @@
 ;; see TR 00-359 for a description of a similar algorithm
 ;; some details differ here 
 
+;; The following code shoes that there's a bug somewhere in this type reconstruction algorithm.
+;; e should have an infinite type (e is aplied to the first Id to which e is then applied), but
+;; the algorithm computes a finite type with setvars in it. Most of the time, when given a program
+;; with an infinite type, the algo produces void. So the bug doesn't always show up...
+;;((lambda (e)
+;;   (((e (lambda (x) x)) ((lambda (x) x) e)) 1))
+;; (lambda (x) x))
+
 (unit/sig newspidey:type-reconstruction^
   (import [mzlib : mzlib:core-flat^]
           [setexp : newspidey:datadef-setexp^]
@@ -191,6 +199,7 @@
                                  (type:make-Type-Struct (setexp:Struct-name struct)
                                                         (setexp:Struct-fields struct)))
                                structs)))])
+    ;;(printf "omega-c: ~a~nomega-cons: ~a~nomega-arrow: ~a~nomega-struct: ~a~n~n" omega-c omega-cons omega-arrow omega-struct)
     (type:make-Type-Union (list omega-c omega-cons omega-arrow omega-struct))))
   
 ; (listof type) -> type
@@ -273,7 +282,7 @@
        (remove-duplicates-eq
         (map-and-flatten (type:Type-Struct-fields type)))]
       [(type:Type-Empty? type) '()]
-      [else (error "extract-set-vars: unknown type: ~a~n" type)])))
+      [else (error 'extract-set-vars "unknown type: ~a~n" type)])))
 
 
 ; implements type reduction rules
@@ -336,7 +345,7 @@
      (type:make-Type-Struct (type:Type-Struct-name type)
                             (map type-reduce (type:Type-Struct-fields type)))]
     [(type:Type-Empty? type) type]
-    [else (error "type-reduce: unknown type: ~a~n" type)]))
+    [else (error 'type-reduce "unknown type: ~a~n" type)]))
 
 ; type sym type -> type
 (define (type-subst type alpha omega)
@@ -374,6 +383,6 @@
                                  (type:Type-Struct-fields type)))]
     [(setexp:Const? type) type]
     [(type:Type-Empty? type) type]
-    [else (error "type-subst: unknown type: ~a~n" type)]))
+    [else (error 'type-subst "unknown type: ~a~n" type)]))
 
   ) ;; unit/sig

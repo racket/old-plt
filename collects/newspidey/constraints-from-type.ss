@@ -136,7 +136,7 @@
                                   (make-Type-Var-Set-Vars 
                                    (cons set-var (Type-Var-Set-Vars-neg set-vars))
                                    (Type-Var-Set-Vars-pos set-vars)))))
-           (error 'create-set-vars-lists "type var not specified in a scheme")))]
+           (error 'create-set-vars-lists "type var not specified in a scheme: ~a" name)))]
     [(type:Type-Cons? type)
      (create-set-vars-lists type-vars->set-vars (type:Type-Cons-car type) vars flag type-var->set-var)
      (create-set-vars-lists type-vars->set-vars (type:Type-Cons-cdr type) vars flag type-var->set-var)]

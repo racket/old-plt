@@ -13,7 +13,7 @@
 (define (debug-arity term)
   (cond
     [(zodiac:quote-form? term) (void)]
-    [(zodiac:lambda-varref? term) (void)]
+    [(zodiac:lexical-varref? term) (void)] ;; includes lambda-varref
     [(zodiac:top-level-varref/bind/unit? term) (void)]
     [(zodiac:define-values-form? term)
      (if (zodiac:struct-form? (zodiac:define-values-form-val term))
@@ -52,6 +52,11 @@
        (debug-arity test)
        (debug-arity then)
        (debug-arity else))]
+    [(zodiac:let-values-form? term)
+     (let ([vals (zodiac:let-values-form-vals term)]
+           [body (zodiac:let-values-form-body term)])
+       (for-each debug-arity vals)
+       (debug-arity body))]
     [else (error 'debug-arity "unknown term ~a~n" term)]))
 
   ) ;; unit/sig

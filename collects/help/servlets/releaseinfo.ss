@@ -7,6 +7,8 @@
 (unit/sig ()
   (import servlet^)
 
+ (report-errors-to-browser send/finish)
+
  (define (link-stuff url txt)
    `(LI (B (A ((HREF ,url)) ,txt))))
 

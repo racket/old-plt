@@ -18,6 +18,7 @@
 			  (if (cvs?) "pre-release" vno)
 			  manual)]
 	 [remote-connections? (unbox remote-box)])
+
     `(HTML
       (HEAD ,hd-css
             ,@hd-links 
@@ -57,6 +58,8 @@
 
 (unit/sig ()
   (import servlet^)
+
+  (report-errors-to-browser send/finish)
 
   (let ([bindings (request-bindings initial-request)])
     (no-manual (extract-binding/single 'manual 

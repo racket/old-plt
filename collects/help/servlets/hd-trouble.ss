@@ -13,6 +13,8 @@
    send/finish
    (url-path (request-uri initial-request)))
 
+  (report-errors-to-browser send/finish)
+
   `(HTML 
     (HEAD
      (TITLE "Troubleshooting PLT Help Desk")

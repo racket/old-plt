@@ -8,6 +8,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   ; names as sent from FORM
   (define names '(search-bg search-fg search-link))
   ; names of corresponding preferences

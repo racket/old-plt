@@ -13,6 +13,8 @@
    send/finish
    (url-path (request-uri initial-request)))
 
+  (report-errors-to-browser send/finish)
+
   (put-prefs (list 'plt:hd:use-frames)
 	     (list (if (use-frames?) "false" "true")))	
 

@@ -6,6 +6,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (let ([bindings (request-bindings initial-request)])
     `(HTML 
       (HEAD ,hd-css

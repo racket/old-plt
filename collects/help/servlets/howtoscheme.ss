@@ -5,6 +5,9 @@
 
 (unit/sig ()
   (import servlet^)
+
+  (report-errors-to-browser send/finish)
+
   `(HTML 
     (TITLE "Software")
     (HEAD ,hd-css

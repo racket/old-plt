@@ -5,8 +5,12 @@
 
 (unit/sig ()
   (import servlet^)
+
+  (report-errors-to-browser send/finish)
+
   ; signal that external browser succeeded
   (post-start-semaphore)
+
   (let* ([bindings (request-bindings initial-request)]
          [url (with-handlers
 	       ([void (lambda _ "/servlets/home.ss")])

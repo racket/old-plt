@@ -5,6 +5,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (list
    "text/html"	 
    (find-manuals)))

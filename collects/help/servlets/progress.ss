@@ -11,6 +11,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (make-html-response/incremental
    (lambda (show)
      (show "<HTML>")

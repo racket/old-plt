@@ -20,6 +20,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   ; doc subcollection name -> boolean
   (define installed-table #f)
 

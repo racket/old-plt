@@ -11,6 +11,8 @@
 
   (adjust-timeout! +inf.0)
 
+  (report-errors-to-browser send/finish)
+
   (define (search-bg)
     (get-pref/default 'plt:hd:search-bg search-bg-default))
 

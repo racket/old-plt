@@ -8,6 +8,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (let* ([bindings (request-bindings initial-request)]
 	 [tmp-dir (extract-binding/single 'tmp-dir bindings)])
     (delete-directory/r tmp-dir)

@@ -7,6 +7,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (let* ([bindings (request-bindings initial-request)]
 	 [offset (with-handlers
 		  ((void (lambda _ #f)))

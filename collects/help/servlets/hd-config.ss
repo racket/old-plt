@@ -19,6 +19,8 @@
    send/finish
    (url-path (request-uri initial-request)))
 
+  (report-errors-to-browser send/finish)
+
   (define search-height 
     (get-pref/default 'plt:hd:search-height search-height-default))
   (define search-bg-color 

@@ -11,6 +11,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (adjust-timeout! +inf.0)
 
   (define bug-report-recipient "bugs")

@@ -8,6 +8,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (define (make-results-url 
 	   search-string search-type match-type lucky?)
     (format  

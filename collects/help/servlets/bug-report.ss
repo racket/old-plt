@@ -9,6 +9,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   (define remote? (unbox remote-box))
 
   (define (get-pref/remote sym)

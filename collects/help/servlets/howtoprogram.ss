@@ -7,6 +7,8 @@
 (unit/sig ()
   (import servlet^)
 
+  (report-errors-to-browser send/finish)
+
   `(HTML 
     (TITLE "Program Design")
     (HEAD ,hd-css

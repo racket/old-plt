@@ -15,6 +15,8 @@
    send/finish
    (url-path (request-uri initial-request)))
 
+  (report-errors-to-browser send/finish)
+
   (make-html-response/incremental
    (lambda (show)
      (reset-progress-semaphore!) 

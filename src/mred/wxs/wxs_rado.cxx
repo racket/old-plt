@@ -679,29 +679,6 @@ static Scheme_Object *os_wxRadioBoxEnable(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxRadioBoxGetString(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  nstring r;
-  objscheme_check_valid(os_wxRadioBox_class, "get-string in radio-box%", n, p);
-  int x0;
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "get-string in radio-box%"));
-
-  if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
-  r = WITH_VAR_STACK(((wxRadioBox *)((Scheme_Class_Object *)p[0])->primdata)->GetString(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
-}
-
 static Scheme_Object *os_wxRadioBoxSetSelection(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -717,29 +694,6 @@ static Scheme_Object *os_wxRadioBoxSetSelection(int n,  Scheme_Object *p[])
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   WITH_VAR_STACK(((wxRadioBox *)((Scheme_Class_Object *)p[0])->primdata)->SetSelection(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_void;
-}
-
-static Scheme_Object *os_wxRadioBoxSetStringSelection(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxRadioBox_class, "set-string-selection in radio-box%", n, p);
-  string x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-string-selection in radio-box%"));
-
-  
-  WITH_VAR_STACK(((wxRadioBox *)((Scheme_Class_Object *)p[0])->primdata)->SetStringSelection(x0));
 
   
   
@@ -768,27 +722,6 @@ static Scheme_Object *os_wxRadioBoxNumber(int n,  Scheme_Object *p[])
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxRadioBoxGetStringSelection(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  nstring r;
-  objscheme_check_valid(os_wxRadioBox_class, "get-string-selection in radio-box%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxRadioBox *)((Scheme_Class_Object *)p[0])->primdata)->GetStringSelection());
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
-}
-
 static Scheme_Object *os_wxRadioBoxGetSelection(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -803,30 +736,6 @@ static Scheme_Object *os_wxRadioBoxGetSelection(int n,  Scheme_Object *p[])
 
   
   r = WITH_VAR_STACK(((wxRadioBox *)((Scheme_Class_Object *)p[0])->primdata)->GetSelection());
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_make_integer(r);
-}
-
-static Scheme_Object *os_wxRadioBoxFindString(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  int r;
-  objscheme_check_valid(os_wxRadioBox_class, "find-string in radio-box%", n, p);
-  string x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "find-string in radio-box%"));
-
-  
-  r = WITH_VAR_STACK(((wxRadioBox *)((Scheme_Class_Object *)p[0])->primdata)->FindString(x0));
 
   
   
@@ -1139,17 +1048,13 @@ void objscheme_setup_wxRadioBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxRadioBox_class);
 
-  os_wxRadioBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "radio-box%", "item%", (Scheme_Method_Prim *)os_wxRadioBox_ConstructScheme, 15));
+  os_wxRadioBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "radio-box%", "item%", (Scheme_Method_Prim *)os_wxRadioBox_ConstructScheme, 11));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "button-focus" " method", (Scheme_Method_Prim *)os_wxRadioBoxButtonFocus, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "enable" " method", (Scheme_Method_Prim *)os_wxRadioBoxEnable, 1, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-string" " method", (Scheme_Method_Prim *)os_wxRadioBoxGetString, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "set-selection" " method", (Scheme_Method_Prim *)os_wxRadioBoxSetSelection, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "set-string-selection" " method", (Scheme_Method_Prim *)os_wxRadioBoxSetStringSelection, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "number" " method", (Scheme_Method_Prim *)os_wxRadioBoxNumber, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-string-selection" " method", (Scheme_Method_Prim *)os_wxRadioBoxGetStringSelection, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "get-selection" " method", (Scheme_Method_Prim *)os_wxRadioBoxGetSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "find-string" " method", (Scheme_Method_Prim *)os_wxRadioBoxFindString, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "on-drop-file" " method", (Scheme_Method_Prim *)os_wxRadioBoxOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "pre-on-event" " method", (Scheme_Method_Prim *)os_wxRadioBoxPreOnEvent, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "pre-on-char" " method", (Scheme_Method_Prim *)os_wxRadioBoxPreOnChar, 2, 2));

@@ -46,13 +46,9 @@
 #define RANGECLASS wxRadioBox
 @INCLUDE range.xci
 
-@ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
-@ "get-string-selection" : nstring GetStringSelection();
 @ "number" : int Number()
-@ "set-string-selection" : void SetStringSelection(string);
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
-@ "get-string" : nstring GetString(int);  : : /RANGERET[0.XC_SCHEME_NULL]
 
 @ "enable" : void Enable(int,bool); : : /RANGE[0] <> single-button
 @ "enable" : void Enable(bool); <> all-buttons

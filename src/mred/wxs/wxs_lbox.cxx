@@ -589,30 +589,6 @@ static Scheme_Object *os_wxListBoxGetString(int n,  Scheme_Object *p[])
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
-static Scheme_Object *os_wxListBoxSetStringSelection(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxListBox_class, "set-string-selection in list-box%", n, p);
-  string x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-string-selection in list-box%"));
-
-  
-  r = WITH_VAR_STACK(((wxListBox *)((Scheme_Class_Object *)p[0])->primdata)->SetStringSelection(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return (r ? scheme_true : scheme_false);
-}
-
 static Scheme_Object *os_wxListBoxSetFirstItem(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -764,30 +740,6 @@ static Scheme_Object *os_wxListBoxGetSelection(int n,  Scheme_Object *p[])
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxListBoxFindString(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  int r;
-  objscheme_check_valid(os_wxListBox_class, "find-string in list-box%", n, p);
-  string x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "find-string in list-box%"));
-
-  
-  r = WITH_VAR_STACK(((wxListBox *)((Scheme_Class_Object *)p[0])->primdata)->FindString(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_make_integer(r);
-}
-
 static Scheme_Object *os_wxListBoxSetClientData(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -834,27 +786,6 @@ static Scheme_Object *os_wxListBoxGetClientData(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   return ((r) ? ((Scheme_Object *)r) : XC_SCHEME_NULL);
-}
-
-static Scheme_Object *os_wxListBoxGetStringSelection(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  nstring r;
-  objscheme_check_valid(os_wxListBox_class, "get-string-selection in list-box%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxListBox *)((Scheme_Class_Object *)p[0])->primdata)->GetStringSelection());
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 static Scheme_Object *os_wxListBoxSelected(int n,  Scheme_Object *p[])
@@ -1269,11 +1200,10 @@ void objscheme_setup_wxListBox(Scheme_Env *env)
 
   wxREGGLOB(os_wxListBox_class);
 
-  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", (Scheme_Method_Prim *)os_wxListBox_ConstructScheme, 26));
+  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", (Scheme_Method_Prim *)os_wxListBox_ConstructScheme, 23));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string" " method", (Scheme_Method_Prim *)os_wxListBoxSetString, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string" " method", (Scheme_Method_Prim *)os_wxListBoxGetString, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string-selection" " method", (Scheme_Method_Prim *)os_wxListBoxSetStringSelection, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-first-visible-item" " method", (Scheme_Method_Prim *)os_wxListBoxSetFirstItem, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set" " method", (Scheme_Method_Prim *)os_wxListBoxSet, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-selections" " method", (Scheme_Method_Prim *)os_wxListBoxGetSelectionList, 0, 0));
@@ -1281,10 +1211,8 @@ void objscheme_setup_wxListBox(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "number-of-visible-items" " method", (Scheme_Method_Prim *)os_wxListBoxNumberOfVisibleItems, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "number" " method", (Scheme_Method_Prim *)os_wxListBoxNumber, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-selection" " method", (Scheme_Method_Prim *)os_wxListBoxGetSelection, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "find-string" " method", (Scheme_Method_Prim *)os_wxListBoxFindString, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-data" " method", (Scheme_Method_Prim *)os_wxListBoxSetClientData, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-data" " method", (Scheme_Method_Prim *)os_wxListBoxGetClientData, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string-selection" " method", (Scheme_Method_Prim *)os_wxListBoxGetStringSelection, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "selected?" " method", (Scheme_Method_Prim *)os_wxListBoxSelected, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-selection" " method", (Scheme_Method_Prim *)os_wxListBoxSetOneSelection, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "select" " method", (Scheme_Method_Prim *)os_wxListBoxSetSelection, 1, 2));

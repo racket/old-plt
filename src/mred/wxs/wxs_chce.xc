@@ -34,12 +34,9 @@
 @ "append" : void Append(string);
 @ "clear" : void Clear();
 @ "number" : int Number()
-@ "find-string" : int FindString(string);
 @ "get-selection" : int GetSelection();
 @ "get-string-selection" : nstring GetStringSelection();
 @ "set-selection" : void SetSelection(int); : : /RANGE[0]
-@ "set-string-selection" : bool SetStringSelection(string);
-@ "get-string" : nstring GetString(int); : : /RANGERET[0.XC_SCHEME_NULL]
 
 @END
 

@@ -354,6 +354,15 @@
 (arity-test get-shared 1 2)
 (arity-test print-convert-expr 3 3)
 (test 'null print-convert '())
-(parameterize ([empty-list-name 'empty])
-  (test 'empty print-convert '()))
+
+(let ([pc
+       (lambda (pv)
+         (lambda (x)
+           (parameterize ([booleans-as-true/false pv])
+             (print-convert x))))])
+  (test 'false (pc #t) #f)
+  (test 'true (pc #t) #t)
+  (test #f (pc #f) #f)
+  (test #t (pc #f) #t))
+
 (report-errs)

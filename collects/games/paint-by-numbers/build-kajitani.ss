@@ -55,12 +55,17 @@ string=? ; exec mzscheme -qr $0
      
 (printf "stats by email~n")
 (let ([total 0])
-  (hash-table-for-each 
-   email-ht
-   (lambda (k v)
-     (let ([len (length v)])
-       (set! total (+ len total))
-       (printf "~s ~s~n" k len))))
+  (for-each 
+   (lambda (x)
+     (let ([k (car x)]
+	   [v (cadr x)])
+       (let ([len (length v)])
+	 (set! total (+ len total))
+	 (printf "~s ~s~n" k len))))
+   (quicksort (hash-table-map email-ht list)
+	      (lambda (x y) (> (length (cadr x)) (length (cadr y))))))
+
+  
   (printf "total: ~s~n" total))
 
 (define (build-solutionless-kajitani kaj-set)

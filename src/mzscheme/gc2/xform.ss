@@ -5,7 +5,8 @@
 (define file-in (cadr cmd-line))
 (define file-out (caddr cmd-line))
 
-; (require-library "errortrace.ss" "errortrace")
+(require-library "function.ss")
+(require-library "errortrace.ss" "errortrace")
 
 (unless (system (format "~a -DMZ_PRECISE_GC ~a ~a | ctok > xtmp"
 			cpp
@@ -49,7 +50,9 @@
 (define-struct (struct-array-type struct:struct-type) (count))
 (define-struct (union-type struct:vtype) ())
 
-(define-struct live-var-info (maxlive vars))
+(define-struct live-var-info (maxlive vars new-vars))
+
+(define-struct prototype (type pointer? pointer?-determined?))
 
 (define e (let ([source #f])
 	    (letrec ([translate
@@ -203,7 +206,8 @@
 (define (top-level e)
   (cond
    [(prototype? e) 
-    (when label? (printf "/* PROTO */~n"))
+    (let ([name (register-proto-information e)])
+      (when label? (printf "/* PROTO ~a */~n" name)))
     e]
    [(typedef? e)
     (when label? (printf "/* TYPEDEF */~n"))
@@ -253,6 +257,30 @@
   (let ([l (length e)])
     (and (> l 2)
 	 (eq? semi (tok-n (list-ref e (sub1 l)))))))
+
+(define prototyped null)
+
+(define (register-proto-information e)
+  (let loop ([e e][type null])
+    (if (parens? (cadr e))
+	(let ([name (tok-n (car e))]
+	      [type (reverse! type)])
+	  (set! prototyped (cons (cons name (make-prototype type #f #f))
+				 prototyped))
+	  name)
+	(loop (cdr e) (cons (car e) type)))))
+
+(define (prototype-for-pointer? m)
+  (let ([name (car m)]
+	[proto (cdr m)])
+    (unless (prototype-pointer?-determined? proto)
+      (let ([e (append (prototype-type proto)
+		       (list (make-tok name #f #f #f)
+			     (make-tok semi #f #f #f)))])
+	(let ([vars (get-pointer-vars e "PROTODEF" #f)])
+	  (set-prototype-pointer?! proto (not (null? vars)))
+	  (set-prototype-pointer?-determined?! proto #t))))
+    (prototype-pointer? proto)))
 
 (define pointer-types '())
 (define struct-defs '())
@@ -437,7 +465,7 @@
 	(tok-file body-v)
 	(seq-close body-v)
 	(let-values ([(body-e live-vars)
-		      (convert-body body-e arg-vars (make-live-var-info 0 null) #t)])
+		      (convert-body body-e arg-vars (make-live-var-info 0 null null) #t)])
 	  body-e))))))
 
 (define (convert-body body-e extra-vars live-vars setup-stack?)
@@ -464,7 +492,9 @@
 			  (if (null? body)
 			      ;; Start with 0 maxlive in case we want to check whether anything
 			      ;;  was pushed in the block
-			      (values null (make-live-var-info 0 (live-var-info-vars live-vars)))
+			      (values null (make-live-var-info 0 
+							       (live-var-info-vars live-vars)
+							       (live-var-info-new-vars live-vars)))
 			      (let*-values ([(rest live-vars) (loop (cdr body))]
 					    [(e live-vars)
 					     (convert-function-calls (car body)
@@ -479,6 +509,9 @@
 		      (list (append (if label?
 					(list (make-note 'note #f #f #f (format "/* PTRVARS: ~a */" (map car vars))))
 					null)
+				    (if setup-stack?
+					(apply append (live-var-info-new-vars live-vars))
+					null)
 				    (if (and setup-stack? (positive? (live-var-info-maxlive live-vars)))
 					(list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
 										(live-var-info-maxlive live-vars))))
@@ -486,9 +519,10 @@
 		      body-x))
 		    (make-live-var-info (max orig-maxlive
 					     (live-var-info-maxlive live-vars))
-					(live-var-info-vars live-vars))))))))
+					(live-var-info-vars live-vars)
+					(live-var-info-new-vars live-vars))))))))
 
-(define (looks-like-call e-)
+(define (looks-like-call? e-)
   ;; e- is a reversed expression
   (and (parens? (car e-))
        ;; Something precedes
@@ -500,12 +534,13 @@
 					 return sizeof if for while else switch case
 					 __asm __asm__ __volatile __volatile__ __extension__
 					 ;; These are functions, but they don't trigger GC:
-					 strcpy strlen memcpy cos sin exp pow log sqrt atan2)))
+					 strcpy strlen memcpy cos sin exp pow log sqrt atan2
+					 floor ceil round)))
        (not (string? (tok-n (cadr e-))))
        ;; Look back one more for if, etc. if preceeding is paren
        (not (and (parens? (cadr e-))
 		 (not (null? (cddr e-)))
-		 (memq (tok-n (caddr e-)) '(if while for)))))
+		 (memq (tok-n (caddr e-)) '(if while for))))))
 
 (define (cast-or-call e- cast-k call-k)
   ;; Looks like a function call, although we don't know the
@@ -529,9 +564,81 @@
 	(call-k))))
 
 (define (lift-out-calls args live-vars)
-  
+  (let ([e (seq-in args)])
+    (if (null? e)
+	(values null args null null live-vars)
+	(let ([el (body->lines e #t)])
+	  (let loop ([el el]
+		     [new-args null][setups null][new-vars null]
+		     [ok-calls null][must-convert? #f][live-vars live-vars])
+	    (cond
+	     [(null? el)
+	      (if (null? new-vars)
+		  (values null args null ok-calls live-vars)
+		  (values
+		   setups
+		   (make-parens
+		    "(" (tok-line args) (tok-col args) (tok-file args) ")"
+		    (apply append (reverse! new-args)))
+		   new-vars
+		   ok-calls
+		   live-vars))]
+	     [(let ([e- (let ([e- (reverse (car el))])
+			  (if (null? (cdr el))
+			      e-
+			      (cdr e-)))]) ; skip comma
+		(and (looks-like-call? e-)
+		     (cast-or-call e- (lambda () #f) (lambda () (cons (and (null? (cddr e-)) 
+									   (cadr e-))
+								      (car e-))))))
+	      => (lambda (call-form)
+		   (let* ([call-func (car call-form)]
+			  [call-args (cdr call-form)]
+			  [p-m (and must-convert?
+				    call-func
+				    (assq (tok-n call-func) prototyped))])
+		     (if (and p-m
+			      (prototype-for-pointer? p-m))
+			 (let ([new-var (gensym '__funcarg)])
+			   (loop (cdr el)
+				 (cons (append
+					(list (make-tok new-var #f #f #f))
+					(if (null? (cdr el))
+					    null
+					    (list (make-tok '|,| #f #f #f))))
+				       new-args)
+				 (cons (let ([e (car el)])
+					 (if (null? (cdr el))
+					     ;; Add comma
+					     (append e (list (make-tok '|,| #f #f #f)))
+					     e))
+				       setups)
+				 (cons new-var new-vars)
+				 ok-calls
+				 #t
+				 (make-live-var-info
+				  (live-var-info-maxlive live-vars)
+				  (live-var-info-vars live-vars)
+				  (cons (append (prototype-type (cdr p-m))
+						(list
+						 (make-tok new-var #f #f #f)
+						 (make-tok semi #f #f #f)))
+					(live-var-info-new-vars live-vars)))))
+			 (loop (cdr el) (cons (car el) new-args) setups new-vars 
+			       (if must-convert?
+				   ok-calls
+				   (cons call-args ok-calls))
+			       #t
+			       live-vars))))]
+	     [(and (= (length (car el)) 2)
+		   (or (string? (tok-n (caar el)))
+		       (number? (tok-n (caar el)))))
+	      ;; Constant => still no need to lift..
+	      (loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls must-convert? live-vars)]
+	     [else
+	      (loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls #t live-vars)]))))))
 
-(define (convert-function-calls e vars live-vars complain?)
+(define (convert-function-calls e vars live-vars complain-not-in)
   ;; e is a single statement
   ;; Reverse to calculate live vars as we go.
   ;; Also, it's easier to look for parens and then inspect preceeding
@@ -547,7 +654,7 @@
 	 (lambda ()
 	   ;; It's a cast:
 	   (let-values ([(v live-vars)
-			 (convert-paren-interior (car e-) vars live-vars)])
+			 (convert-paren-interior (car e-) vars live-vars #t)])
 	     (loop (cddr e-)
 		   (list* (cadr e-) v result)
 		   live-vars)))
@@ -570,7 +677,9 @@
 			     (let-values ([(func rest-) (loop (cddr e-))])
 			       (values (list* (car e-) (cadr e-) func) rest-))]
 			    [else (values (list (car e-)) (cdr e-))]))])
-	     (when complain?
+	     (when (and complain-not-in
+			(or (not (pair? complain-not-in))
+			    (not (memq args complain-not-in))))
 	       (error 'xform "Mondo complexo. Bad place for function call, line ~a."
 		      (tok-line (car func))))
 	     ;; Lift out function calls as arguments. (Can re-order code.
@@ -578,51 +687,77 @@
 	     ;; Calls are replaced by varaibles, and setup code generated that
 	     ;; assigns to the variables.
 	     (let*-values ([(orig-live-vars) live-vars]
-			   [(setups args new-vars)
+			   [(setups args new-vars ok-calls live-vars)
 			    ;; Split args into setup (calls) and args.
 			    ;; List newly-created vars (in order) in new-vars.
+			    ;; Make sure each setup ends with a comma.
 			    (lift-out-calls args live-vars)]
 			   [(args live-vars)
-			    (convert-paren-interior args vars live-vars)]
+			    (convert-paren-interior args vars 
+						    (make-live-var-info 
+						     (live-var-info-maxlive live-vars)
+						     (append (map (lambda (x)
+								    (cons x (make-vtype)))
+								  new-vars)
+							     (live-var-info-vars live-vars))
+						     (live-var-info-new-vars live-vars))
+						    ok-calls)]
 			   [(func live-vars)
 			    (convert-function-calls (reverse func) vars live-vars #t)]
 			   ;; Process lifted-out function calls:
 			   [(setups live-vars)
-			    (let loop ([setups setups][result null][live-vars live-vars])
+			    (let loop ([setups setups][new-vars new-vars][result null][live-vars live-vars])
 			      (if (null? setups)
 				  (values result live-vars)
 				  (let-values ([(setup live-vars)
-						(convert-function-calls (car setups) vars live-vars #f)])
-				    (loop (cdr setups) 
-					  (cons (cons var '= setup)
+						(convert-function-calls (car setups) vars 
+									;; Remove var for this one:
+									(make-live-var-info 
+									 (live-var-info-maxlive live-vars)
+									 (remove (car new-vars)
+										 (live-var-info-vars live-vars)
+										 (lambda (a b)
+										   (eq? a (car b))))
+									 (live-var-info-new-vars live-vars))
+									#f)])
+				    (loop (cdr setups)
+					  (cdr new-vars)
+					  (cons (list* (make-tok (car new-vars) #f #f #f)
+						       (make-tok '= #f #f #f)
+						       setup)
 						result)
 					  live-vars))))])
 	       ;; Put everything back together. Lifted out calls go into a sequence
 	       ;;  before the main function call.
 	       (loop rest-
-		     (cons (make-parens
-			    "(" #f #f #f ")"
-			    (append
-			     setups
-			     (list
-			      (make-call
-			       "func call"
-			       #f
-			       #f
-			       #f
-			       func
-			       args
-			       (live-var-info-vars orig-live-vars)))))
-			   result)
+		     (let ([call (make-call
+				  "func call"
+				  #f
+				  #f
+				  #f
+				  func
+				  args
+				  (live-var-info-vars orig-live-vars))])
+		       (cons (if (null? setups)
+				 call
+				 (make-parens
+				  "(" #f #f #f ")"
+				  (append
+				   (apply append setups)
+				   (list call))))
+			     result))
 		     (make-live-var-info (max (apply + (map (lambda (x)
 							      (get-variable-size (cdr x)))
-							       (live-var-info-vars orig-live-vars)))
+							    (live-var-info-vars orig-live-vars)))
 					      (live-var-info-maxlive live-vars))
-					 (live-var-info-vars live-vars)))))))]
+					 (live-var-info-vars live-vars)
+					 (live-var-info-new-vars live-vars)))))))]
        [(eq? 'goto (tok-n (car e-)))
 	;; Goto - assume all vars are live
 	(loop (cdr e-) (cons (car e-) result) 
-	      (make-live-var-info (live-var-info-maxlive live-vars) vars))]
+	      (make-live-var-info (live-var-info-maxlive live-vars)
+				  vars 
+				  (live-var-info-new-vars live-vars)))]
        [(braces? (car e-))
 	(let*-values ([(v) (car e-)]
 		      [(e live-vars) (convert-body (seq-in v) vars live-vars #f)])
@@ -643,7 +778,8 @@
 					 (cons (car l) (loop (cdr l)))]
 					[else (loop (cdr l))]))])
 		  (make-live-var-info (live-var-info-maxlive live-vars)
-				      new-live-vars))))]
+				      new-live-vars
+				      (live-var-info-new-vars live-vars)))))]
        [(seq? (car e-))
 	;; Do nested body:
 	(let-values ([(v live-vars)
@@ -656,10 +792,11 @@
 	      (cons (car e-) result)
 	      (make-live-var-info (live-var-info-maxlive live-vars)
 				  (cons (assq (tok-n (car e-)) vars)
-					(live-var-info-vars live-vars))))]
+					(live-var-info-vars live-vars))
+				  (live-var-info-new-vars live-vars)))]
        [else (loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
-(define (convert-seq-interior v comma-sep? vars live-vars complain?)
+(define (convert-seq-interior v comma-sep? vars live-vars complain-not-in)
   (let ([e (seq-in v)])
     (let ([el (body->lines e comma-sep?)])
       (let-values ([(el live-vars)
@@ -668,7 +805,7 @@
 			  (values null live-vars)
 			  (let-values ([(rest live-vars) (loop (cdr el))])
 			    (let-values ([(e live-vars)
-					  (convert-function-calls (car el) vars live-vars complain?)])
+					  (convert-function-calls (car el) vars live-vars complain-not-in)])
 			      (values (cons e rest) live-vars)))))])
 	(values ((get-constructor v)
 		 (tok-n v)
@@ -679,8 +816,8 @@
 		 (apply append el))
 		live-vars)))))
 
-(define (convert-paren-interior v vars live-vars)
-  (convert-seq-interior v #t vars live-vars #t))
+(define (convert-paren-interior v vars live-vars complain-not-in)
+  (convert-seq-interior v #t vars live-vars complain-not-in))
 
 (define (split-decls el)
   (let loop ([el el][decls null])

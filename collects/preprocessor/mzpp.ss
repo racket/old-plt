@@ -108,11 +108,11 @@
   (open))
 
 (define (pp-repl)
-  (define (loop x)
-    (unless (eof-object? x)
-      (apply show (call-with-values (lambda () (eval x)) list))
-      (loop (read))))
-  (loop (read)))
+  (let loop ()
+    (let ([x (read)])
+      (unless (eof-object? x)
+        (call-with-values (lambda () (eval x)) show)
+        (loop)))))
 
 (define (run files)
   (define (do-files)

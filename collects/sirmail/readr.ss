@@ -784,18 +784,19 @@
                 
                 (let ([old-clip (send dc get-clipping-region)])
                   (send dc set-clipping-rect x y (+ FROM-WIDTH (/ first-gap 2) (- line-space)) h)
-                  (send dc draw-text from (+ x left-edge-space) y)
+                  (send dc draw-text from (+ x left-edge-space) y #t)
                   (send dc set-clipping-rect 
                         (+ x FROM-WIDTH (/ first-gap 2) line-space)
                         y 
                         (+ SUBJECT-WIDTH (/ second-gap 2) (- line-space))
                         h)
-                  (send dc draw-text subject (+ x FROM-WIDTH (/ first-gap 2) line-space) y)
+                  (send dc draw-text subject (+ x FROM-WIDTH (/ first-gap 2) line-space) y #t)
                   (send dc set-clipping-region old-clip)
                   (send dc draw-text
                         uid 
                         (+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2) line-space)
-                        y))
+                        y
+			#t))
                   
 		(let ([p (send dc get-pen)])
 		  (send dc set-pen body-pen)
@@ -1730,7 +1731,8 @@
                 (send dc draw-rectangle 0 0 w h)
                 (send dc draw-text message
                       (- (/ w 2) (/ tw 2))
-                      (- (/ h 2) (/ th 2))))))
+                      (- (/ h 2) (/ th 2))
+		      #t))))
           (define/public (set-message n)
             (set! message 
                   (cond

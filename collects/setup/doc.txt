@@ -268,17 +268,17 @@ The _getinfo.ss_ module defines the following functions:
 
 > (get-info collection-names) -> (union #f (symbol (-> TST) -> TST))
 
-   get-info accepts a list of strings naming a collection or
-   sub-collection. It calls get-info/full with the full path
-   corresponding to the named collection.
+   Accepts a list of strings naming a collection or sub-collection,
+   and calls `get-info/full' with the full path corresponding to the
+   named collection.
 
 > (get-info/full path) -> (union #f (symbol (-> TST) -> TST))
 
-   get-info accepts a path to a directory. It returns #f if
-   there is no "info.ss" file in the directory. If the
-   "info.ss" file has the wrong shape (i.e., not a module
-   using (lib "infotab.ss" "setup")), or if the "info.ss"
-   file fails to load, then an exception is raised.
+   Accepts a path to a directory. It returns #f if there is no
+   "info.ss" file in the directory. If the "info.ss" file has the
+   wrong shape (i.e., not a module using (lib "infotab.ss" "setup")),
+   or if the "info.ss" file fails to load, then an exception is
+   raised.
 
    Otherwise, `get-info' returns an info procedure of one or two
    arguments. The first argument to the info procedure is always a
@@ -288,6 +288,14 @@ The _getinfo.ss_ module defines the following functions:
    name is not defined, and the result of the info procedure is the
    result of the thunk in that case. If the name is not defined and no
    thunk is provided, then an exception is raised.
+
+> (find-relevant-collections list-of-sym) -> list-of-collection-names
+
+   Returns a list of list of strings identifying collections whose
+   "info.ss" file defines one or more of the given symbols. The result
+   is based on a cache that is computed by Setup PLT and stored in the
+   "info-domain" sub-directory of each collection directory (as
+   determined by the PLT_COLLECTION_PATHS environment variable, etc.).
 
 
 _.plt_ Archive Internals

@@ -2056,14 +2056,10 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 	if (h > line->bottombase)
 	  h = (int)line->bottombase;
 
-#ifndef WXME_FOR_MRED
-# define wxCOLOR wxCOPY
-#endif
-
 	dc->Blit(maxWidth + dx - 1, bottombase - h + dy, 
 		 wrapBitmapWidth, h,
 		 autoWrapBitmap, 0, 0,
-		 wxCOLOR);
+		 wxSOLID, &oldStyle->GetForeground());
       }
     }
 

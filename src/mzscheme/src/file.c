@@ -70,7 +70,11 @@
 #ifdef DOS_FILE_SYSTEM
 # include <windows.h>
 # include <shlobj.h>
-# include <sys/utime.h>
+# ifdef __BORLANDC__
+#  include <utime.h>
+# else
+#  include <sys/utime.h>
+# endif
 #endif
 #ifdef NO_ERRNO_GLOBAL
 # define errno -1

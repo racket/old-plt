@@ -34,6 +34,12 @@ MA 02111-1307, USA. */
 # endif
 #endif
 
+#if defined(__BORLANDC__)
+# ifndef __STDC__
+#  define __STDC__ 1
+# endif
+#endif
+
 #if defined (__mips) && defined (_ABIN32)
 /* Force the use of 64-bit limbs for all 64-bit MIPS CPUs if ABI permits.  */
 #define _LONG_LONG_LIMB

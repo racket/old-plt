@@ -649,7 +649,7 @@
                                             ;; Common case (simpler parsing for Windows to
                                             ;; avoid cygwin bug):
                                             (list "-qmvL-" mzll (path->string (car (cc-collection cc))))
-                                            (list "-qmvt-" (format "~a" (path->string (build-path (cc-path cc) mzll)))))))
+                                            (list "-qmvt-" (format "~a" (path->string (build-path (cc-path cc) mzll))))))
                                       p
                                       aux))))
                                mzlns

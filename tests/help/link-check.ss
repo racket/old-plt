@@ -6,7 +6,7 @@
 
   (provide run-link-checker)
 
-  (define hd-cookie (start-help-server))
+  (define hd-cookie (start-help-server #f #f))
   (define hd-port (hd-cookie->port hd-cookie))
 
   (define servlet-format 

@@ -20,7 +20,9 @@
                                 'ankle-wrap
                                 'cheap-wrap)
                             annotation-style))
-                  opts-list))])
+                  (if (null? opts-list)
+                      '((no-temps-for-varrefs))
+                      opts-list)))])
 	(car annotateds)))
 
   (define extract-zodiac-locations marks:extract-zodiac-locations)

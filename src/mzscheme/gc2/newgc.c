@@ -5,169 +5,2188 @@
 
    Please see full copyright in the documentation
    Search for "FIXME" for possible improvement points
-
 */
-#include <stdlib.h> /* for malloc and friends*/
-#include <stdio.h> /* for printf, fprintf, stdout and friends*/
-#include <string.h> /* for memmove*/
-#include "gc2.h" /* need this for the headers*/
-#include "../src/schpriv.h" /* needed for Scheme_Custodian*/
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include "gc2.h"
+#include "../src/schpriv.h"
 
-/* 
-   There are four possible schemes for memory accounting, and it's
-   necessary to choose which one to use at compile time. The base
-   is the minimal version, ACCOUNT_INPLACE.
+#warning "This collector is incompatible with the GL extension."
+#warning "If you haven't already, rerun configure with '--disable-gl'"
 
-   ACCNT_OFF: Do no memory accounting.
-   ACCNT_INPLACE: Do memory accounting inside the objects; this
-                    adds little in the way of space requirements
-                    but doesn't do a very good job of accounting
-   ACCNT_EXTERNAL: The linear time algorithm. This adds an extra
-                     word to each tagged object, which can have bad
-                     effects on memory use
-   ACCNT_PRECISE: A superlinear algorithm that computes exact 
-                    accounting information, but is slow and uses (as
-                    above) an extra word per tagged object.
-*/
-#if !defined(ACCNT_OFF) && !defined(ACCNT_EXTERNAL) && !defined(ACCNT_PRECISE)
-# define ACCNT_INPLACE
+/* To do accounting, turn on this: */
+#define NEWGC_ACCNT
+
+/* To do precise accounting, turn on this: */
+/* #define NEWGC_PRECISE */
+
+/* To make things very slow and create very large files, uncomment this: */
+/* #define NEWGC_DEBUG */
+
+#ifdef NEWGC_DEBUG
+#include <stdarg.h>
+FILE *debug;
+void GCDBG(char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  vfprintf(debug, format, ap);
+  va_end(ap);
+  fflush(debug);
+}
+#else
+#define GCDBG(x, ...) {}
 #endif
 
-/*
-  The collector can work in non-generational and generational mode.
-  It is highly suggested that generations be used, not only for 
-  efficiency but also because it's better tested.
-  
-  If you don't want generations, uncomment the #define below. It is
-  highly suggested that you not modify the number, however.
-*/
-#define GENERATIONS		16
+/* #defines you can change without definately breaking the collector */
+#define MAX_HEAP_SIZE		(1024*1024*1024) /* FIXME: Should be syscall*/
+#define GEN0_SIZE		(8 * 1024 * 1024)
+#define OT_INIT_SIZE		5
+#define OT_ADD_SIZE		10
 
-/*
-  These are somewhat tuned values which inform us about when the
-  collector should run. You probably shouldn't mess with these 
-  unless you know what you're doing
-*/
-#define INIT_HEAP_LIMIT		2000000
-#define HEAP_GROW_FACTOR	1.5
-#define HEAP_GROW_ADD		500000
-
-/*
-  Information about the size of certain system stats. 
-*/
+/* #defines you can change which will break the collector */
 #define LOG_WORD_SIZE		2
 #define LOG_MPAGE_SIZE		14
-#define MAX_HEAP_SIZE		(1024*1024*1024) /* FIXME: Should be syscall*/
+#define GENERATIONS		3
+#define MPAGE_TAGGED		0
+#define MPAGE_ATOMIC		1
+#define MPAGE_ARRAY		2
+#define MPAGE_TARRAY		3
+#define MPAGE_XTAGGED		4
+#define MPAGE_BIG		5
+#define MPAGE_TYPES		6
 
-/*
-  Some typedefs
-*/
-typedef unsigned long UWORD;
+typedef unsigned char bool;
 typedef unsigned short Type_Tag;
-typedef struct MPage {
-  struct MPage *next; 
-#ifdef ACCNT_INPLACE
-  unsigned long owner;
+#define true			1
+#define false			0
+
+static void *malloc_pages(size_t len, size_t align);
+static void free_pages(void *p, size_t len);
+static void flush_freed_pages(void);
+static void protect_pages(void *p, size_t len, int rw);
+static void *bpage_malloc(size_t sizeb, int type, int tgen);
+static void gc_collect(int full);
+static void pmap_add(void *page);
+static void pmap_remove(void *page);
+static void rq_add(int pri, short type, void *obj);
+static bool mark_p(void *p);
+static bool ot_subset_p(short owner1, short owner2);
+static void old_init(void);
+
+static unsigned long gc_numcollects = 0;
+static unsigned int gc_cycle = 0;
+static unsigned int gc_topgen = 0;
+#ifdef NEWGC_ACCNT
+static unsigned short gc_owner = 0;
+# ifdef NEWGC_PRECISE
+static bool gc_markprecise = false;
+# endif
 #endif
-  struct {
-    unsigned char type : 3;
-    unsigned char gen : 4; 
-    unsigned char bigpage : 1;
-    unsigned char bpointers : 1;
-    unsigned char mark : 2;
-  } flags;
+static bool gc_deny = 0;
+
+/*****************************************************************************
+ * Owner information structures and primitives
+ *****************************************************************************/
+struct owner_list {
+  short owner;
+  struct owner_list *next;
+};
+
+struct cust_list {
+  Scheme_Custodian *cust;
+  struct cust_list *next;
+};
+
+struct union_list {
+  short owner;
+  short result;
+  struct union_list *next;
+};
+
+struct otentry {
+  Scheme_Custodian *creator;
+  unsigned long memuse[GENERATIONS];
+  struct cust_list *custs;
+  struct union_list *unions;
+};
+
+static struct otentry **ot_table = NULL;
+static unsigned short ot_top = 0;
+
+static bool ol_member_p(struct owner_list *ol, short owner) {
+  while(ol) 
+    if(ol->owner == owner) return true;
+    else ol = ol->next;
+  return false;
+}
+
+static struct owner_list *ol_add(struct owner_list *ol, short owner) {
+  struct owner_list *retval = malloc(sizeof(struct owner_list));
+  retval->owner = owner;
+  retval->next = ol;
+  return retval;
+}
+
+static struct owner_list *ol_sort(struct owner_list *ol) {
+  if(!ol || !ol->next) return ol;
+  else {
+    struct owner_list **table;
+    struct owner_list *temp;
+    short lslen = 0;
+    short i;
+    bool changed = 1;
+    
+    for(temp = ol; temp; temp = temp->next)
+      lslen += 1;
+    table = malloc(lslen * sizeof(struct owner_list *));
+    for(temp = ol, i = 0; temp; temp = temp->next, i++)
+      table[i] = temp;
+    lslen -= 1; /* save a few cycles at the cost of confusion. YAY! */
+    while(changed) {
+      changed = 0;
+      for(i = 0; i < lslen; i++) {
+	if(ot_subset_p(table[i]->owner, table[i+1]->owner)) {
+	  temp = table[i];
+	  table[i] = table[i+1];
+	  table[i+1] = temp;
+	  changed = 1;
+	}
+      }
+    }
+    for(i = 0; i < lslen; i++) 
+      table[i]->next = table[i+1];
+    table[lslen]->next = NULL;
+    temp = table[0];
+    free(table);
+    return temp;
+  }
+}
+
+static bool cl_member_p(struct cust_list *cl, Scheme_Custodian *c) {
+  while(cl)
+    if(cl->cust == c) return true;
+    else cl = cl->next;
+  return false;
+}
+
+static struct cust_list *cl_add(struct cust_list *cl, Scheme_Custodian *c) {
+  struct cust_list *retval = malloc(sizeof(struct cust_list));
+  retval->cust = c;
+  retval->next = cl;
+  return retval;
+}
+
+static bool ot_subset_p(short owner1, short owner2) {
+  struct cust_list *clist;
+
+  for(clist = ot_table[owner1]->custs; clist; clist = clist->next)
+    if(!cl_member_p(ot_table[owner2]->custs, clist->cust))
+      return 0;
+  return 1;
+}
+
+static short ot_addentry(Scheme_Custodian *cust) {
+  short i;
+
+  for(i = 0; i < ot_top; i++) 
+    if(!ot_table[i]) {
+      ot_table[i] = malloc(sizeof(struct otentry));
+      ot_table[i]->creator = cust;
+      ot_table[i]->custs = NULL;
+      ot_table[i]->unions = NULL;
+      while(cust) {
+	Scheme_Object *box = (Scheme_Object*)cust->parent;
+	ot_table[i]->custs = cl_add(ot_table[i]->custs, cust);
+	cust = box ? (Scheme_Custodian*)box->u.two_ptr_val.ptr1 : NULL;
+      }
+      return i;
+    }
+
+  ot_top += OT_ADD_SIZE;
+  ot_table = realloc(ot_table, ot_top * sizeof(struct otentry *));
+  bzero( (void*)((unsigned long)ot_table + ((ot_top - OT_ADD_SIZE)
+					    * sizeof(struct otentry*))),
+	 OT_ADD_SIZE * sizeof(struct otentry *));
+  return ot_addentry(cust);
+}
+
+static short ot_convert(Scheme_Custodian *cust) {
+  short i;
+
+  for(i = 0; i < ot_top; i++)
+    if(ot_table[i] && (ot_table[i]->creator == cust))
+      return i;
+  return ot_addentry(cust);
+}
+
+static short ot_current() {
+  if(scheme_current_thread && scheme_current_thread->config) {
+    Scheme_Custodian *c =
+      (Scheme_Custodian*)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+    return ot_convert(c);
+  } else return 0;
+}
+
+static short ot_union(short own1, short own2) {
+  struct union_list *ulist;
+  short res;
+
+  if(own1 > own2) return ot_union(own2, own1); /* this just simplifies life */
+/*   if(own1 == own2) { printf("Unioning the same sets?!\n"); abort(); } */
+/*   if(!ot_table[own1]) { printf("Unioning bad own1!\n"); abort(); } */
+/*   if(!ot_table[own2]) { printf("Unioning bad own2!\n"); abort(); } */
+  
+  for(ulist = ot_table[own1]->unions; ulist; ulist = ulist->next)
+    if(ulist->owner == own2) return ulist->result;
+
+  /* we've never unioned these before */
+  if(ot_subset_p(own1, own2)) {
+    res = own2;
+  } else if(ot_subset_p(own2, own1)) {
+    res = own1;
+  } else {
+    bool done = false;
+    while(!done) {
+      for(res = 0; res < ot_top; res++)
+	if(!ot_table[res]) {
+	  struct cust_list *custs;
+
+	  done = true;
+	  ot_table[res] = malloc(sizeof(struct otentry));
+	  ot_table[res]->creator = NULL;
+	  ot_table[res]->custs = NULL;
+	  ot_table[res]->unions = NULL;
+	  for(custs = ot_table[own1]->custs; custs; custs = custs->next)
+	    if(!cl_member_p(ot_table[res]->custs, custs->cust))
+	      ot_table[res]->custs = cl_add(ot_table[res]->custs, custs->cust);
+	  for(custs = ot_table[own2]->custs; custs; custs = custs->next)
+	    if(!cl_member_p(ot_table[res]->custs, custs->cust))
+	      ot_table[res]->custs = cl_add(ot_table[res]->custs, custs->cust);
+	  break;
+	}
+      if(!done) {
+	ot_top += OT_ADD_SIZE;
+	ot_table = realloc(ot_table, ot_top * sizeof(struct otentry *));
+	bzero( (void*)((unsigned long)ot_table + ((ot_top - OT_ADD_SIZE)
+						  * sizeof(struct otentry*))),
+	       OT_ADD_SIZE * sizeof(struct otentry *));
+      }
+    }
+  }
+  
+  ulist = malloc(sizeof(struct union_list));
+  ulist->owner = own2;
+  ulist->result = res;
+  ulist->next = ot_table[own1]->unions;
+  ot_table[own1]->unions = ulist;
+  return res;
+}
+
+static unsigned long ot_memuse(Scheme_Custodian *c) {
+  unsigned long retval = 0;
+  short i, j;
+
+  for(i = 0; i < ot_top; i++) 
+    if(ot_table[i] && cl_member_p(ot_table[i]->custs, c))
+      for(j = 0; j < GENERATIONS; j++)
+	retval += ot_table[i]->memuse[j];
+  return retval;
+}
+
+static void ot_fixup(void) {
+  struct cust_list *temp;
+  short i;
+
+  for(i = 0; i < ot_top; i++)
+    if(ot_table[i]) {
+      if(!mark_p(ot_table[i]->creator)) ot_table[i]->creator = NULL;
+      else GC_fixup(&(ot_table[i]->creator));
+      for(temp = ot_table[i]->custs; temp; temp = temp->next)
+	if(!mark_p(temp->cust)) temp->cust = NULL;
+        else gcFIXUP(temp->cust);
+    }
+}
+
+static void ot_collectprep() {
+  unsigned short i, j;
+
+  for(i = 0; i < ot_top; i++)
+    if(ot_table[i])
+      for(j = 0; j <= gc_topgen; j++)
+	ot_table[i]->memuse[j] = 0;
+}
+
+static void ot_accnt(unsigned short owner, short gen, unsigned long size) {
+  ot_table[owner]->memuse[gen] += size;
+}
+
+/*****************************************************************************
+ * Root structures and primitives
+ *****************************************************************************/
+
+struct root {
+  short owner;
+  void **start;
+  void **end;
+  bool nothing_new;
+  struct root *next;
+};
+
+struct root *roots = NULL;
+
+void GC_add_roots(void *start, void *end) {
+  struct root *newroot = malloc(sizeof(struct root));
+  newroot->owner = ot_current();
+  newroot->start = (void**)start;
+  newroot->end = (void**)end;
+  newroot->next = roots;
+  roots = newroot;
+}
+
+static struct owner_list *roots_get_owners(struct owner_list *ol) {
+  struct root *work;
+
+  for(work = roots; work; work = work->next)
+    if(!ol_member_p(ol, work->owner))
+      ol = ol_add(ol, work->owner);
+  return ol;
+}
+
+static void roots_mark(short owner) {
+  struct root *work;
+
+  for(work = roots; work; work = work->next)
+    if(work->owner == owner) {
+      void **start = work->start;
+      while(start < work->end) {
+	gcMARK(*(start++));
+      }
+    }
+}
+
+static void roots_fixup(void) {
+  struct root *work;
+
+  for(work = roots; work; work = work->next) {
+    void **start = work->start;
+    while(start < work->end) gcFIXUP(*(start++));
+  }
+}
+
+/*****************************************************************************
+ * Memory allocation (midlevel)
+ *****************************************************************************/
+#define MPAGE_SIZE		(1 << LOG_MPAGE_SIZE)
+#define PAGES_IN_HEAP		(MAX_HEAP_SIZE / MPAGE_SIZE)
+#define MAX_USED_PAGES		(PAGES_IN_HEAP / 2)
+
+struct mpage_list {
+  void *mpage;
+  struct mpage_list *next;
+};
+
+static unsigned long mla_usedpages = 0;
+static struct mpage_list *mla_freedpages = NULL;
+
+static void *mla_malloc(size_t size) {
+  unsigned long numpages = (size/MPAGE_SIZE)+(((size%MPAGE_SIZE)==0) ? 0 : 1);
+
+  if((numpages == 1) && mla_freedpages) {
+    struct mpage_list *temp = mla_freedpages;
+    void *retval = temp->mpage;
+    void **start = (void**)retval; 
+    void **end = (void**)((unsigned long)retval + size); 
+    mla_freedpages = temp->next;
+    free(temp);
+    while(start < end) *(start++) = NULL; 
+    /* Timing benefits:
+
+       bzero call:
+18.114u 1.740s 0:23.91 83.0%    906+12178k 0+11io 93pf+0w (quiet.ss)
+18.047u 1.740s 0:23.68 83.5%    906+12183k 0+11io 0pf+0w (quiet.ss)
+17.927u 1.832s 0:23.70 83.3%    909+12221k 0+11io 0pf+0w (quiet.ss)
+18.029av (quiet.ss)
+       Custom loop:
+17.945u 1.899s 0:23.98 82.6%    905+12167k 0+11io 93pf+0w (quiet.ss)
+18.125u 1.684s 0:23.74 83.4%    905+12166k 0+11io 0pf+0w (quiet.ss)
+17.999u 1.808s 0:23.78 83.2%    909+12216k 0+11io 0pf+0w (quiet.ss)
+18.023av (quiet.ss)
+    */
+/*     bzero(retval, MPAGE_SIZE); */
+    return retval;
+  }
+
+  mla_usedpages += numpages;
+  if(mla_usedpages > MAX_USED_PAGES) {
+    gc_collect(0);
+    if(mla_usedpages > MAX_USED_PAGES) {
+      gc_collect(1);
+      if(mla_usedpages > MAX_USED_PAGES) {
+	if(GC_out_of_memory) GC_out_of_memory();
+	fprintf(stderr, "Out of memory\n");
+	abort();
+      }
+    }
+  }
+
+  return malloc_pages(size, MPAGE_SIZE);
+}
+
+static void mla_free(void *page, size_t size, int bigpage) {
+  if(bigpage) {
+    unsigned long numpages = (size/MPAGE_SIZE)+(((size%MPAGE_SIZE)==0)?0:1);
+    mla_usedpages -= numpages;
+    free_pages(page, size);
+  } else {
+    struct mpage_list *temp = malloc(sizeof(struct mpage_list));
+    temp->mpage = page;
+    temp->next = mla_freedpages;
+    mla_freedpages = temp;
+  }
+}
+
+static unsigned long mla_memfree(void) {
+  return (MAX_USED_PAGES - mla_usedpages) * MPAGE_SIZE;
+}
+
+/*****************************************************************************
+ * Memory allocation (toplevel)
+ *****************************************************************************/
+#define BITS_PER_WORD			((1 << LOG_WORD_SIZE) * 8)
+#define OBJ_LOG_MAX_SIZE		(LOG_MPAGE_SIZE - 2)
+#define OBJ_MAX_SIZE			(1 << OBJ_LOG_MAX_SIZE)
+#define OBJ_MAX_WORD_SIZE		gcBYTES_TO_WORDS(OBJ_MAX_SIZE)
+
+static void **tla_heap = NULL;
+static void **tla_regions = NULL;
+static void **tla_regione = NULL;
+
+struct objhead {
+  unsigned int owner : (BITS_PER_WORD - (5 + OBJ_LOG_MAX_SIZE));
+  unsigned int type : 3;
+  unsigned int mark : 1;
+  unsigned int markf : 1;
+  unsigned int size : OBJ_LOG_MAX_SIZE;
+};
+
+char zero_sized[4];
+
+#define allocate(t) { \
+  size_t size_in_words = gcBYTES_TO_WORDS(size_in_bytes) + 1;\
+  void *retval = tla_regions; \
+  if(size_in_words == 1) return zero_sized; \
+  if(size_in_words >= OBJ_MAX_WORD_SIZE) \
+    return bpage_malloc(gcWORDS_TO_BYTES(size_in_words), t, 0); \
+  tla_regions += size_in_words; \
+  if(tla_regions >= tla_regione) { \
+    tla_regions -= size_in_words; \
+    gc_collect(0); \
+    retval = tla_regions;\
+    tla_regions += size_in_words; \
+  }\
+  ((struct objhead *)retval)->type = t; \
+  ((struct objhead *)retval)->size = size_in_words; \
+  return (void*)((unsigned long)retval + 4); }
+
+void *GC_malloc(size_t size_in_bytes) { allocate(MPAGE_ARRAY); }
+void *GC_malloc_one_tagged(size_t size_in_bytes) { allocate(MPAGE_TAGGED); }
+void *GC_malloc_one_xtagged(size_t size_in_bytes) { allocate(MPAGE_XTAGGED); }
+void *GC_malloc_array_tagged(size_t size_in_bytes) { allocate(MPAGE_TARRAY); }
+void *GC_malloc_atomic(size_t size_in_bytes) { allocate(MPAGE_ATOMIC); }
+void *GC_malloc_atomic_uncollectable(size_t size) { return malloc(size); }
+
+#define tla_member_p(p) (((unsigned long)p >= (unsigned long)tla_heap) && ((unsigned long)p < (unsigned long)tla_regions))
+
+/*****************************************************************************
+ * Memory allocation (gclevel)
+ *****************************************************************************/
+
+struct mpage {
   unsigned int size;
-  unsigned int former_size;
-} MPage;
+  unsigned int psize;
+  unsigned char gen;
+  unsigned char bpointers;
+  unsigned char bigpage;
+  unsigned char type;
+  struct mpage *next;
+};
 
-/* 
-   Some simple macros 
+#define PAGE_HEADER_SIZEW	gcBYTES_TO_WORDS(sizeof(struct mpage))
+#define PAGE_HEADER_SIZE	gcWORDS_TO_BYTES(PAGE_HEADER_SIZEW)
+#define INCGEN(x)		(((x + 1) == GENERATIONS) ? x : (x + 1))
+
+static struct mpage *gen[GENERATIONS][MPAGE_TYPES] = {{NULL, NULL, NULL,
+						       NULL, NULL, NULL},
+						      {NULL, NULL, NULL,
+						       NULL, NULL, NULL},
+						      {NULL, NULL, NULL,
+						       NULL, NULL, NULL}};
+
+static void *copy_bits(void *oldptr, unsigned long sizew, int type, int tgen) {
+  unsigned long sizeb = gcWORDS_TO_BYTES(sizew);
+  struct mpage *work = gen[tgen][type];
+  void *retval;
+
+  /* Timing benefits:
+     This loop searches the entire list to find if there's a place to
+     put the object:
+12.884u 1.590s 0:18.56 77.9%    908+12225k 0+11io 96pf+0w
+13.013u 1.456s 0:18.63 77.6%    910+12260k 0+11io 0pf+0w
+13.143u 1.466s 0:18.77 77.7%    912+12286k 0+11io 0pf+0w
+     This loop simply looks at the first page.
+12.887u 1.637s 0:18.59 78.0%    912+12285k 0+11io 96pf+0w
+12.678u 1.832s 0:18.76 77.2%    919+12373k 0+11io 0pf+0w
+12.835u 1.633s 0:18.67 77.4%    913+12298k 0+11io 0pf+0w
+  */
+
+/*   while(work && ((work->size + sizeb) >= MPAGE_SIZE))  */
+/*     work = work->next;  */
+
+  if(work && ((work->size + sizeb) < MPAGE_SIZE)) {
+/*   if(work) {  */
+/* Timing benefits:
+   Custom copy:
+13.082u 1.509s 0:18.54 78.6%    910+12251k 0+11io 0pf+0w
+12.966u 1.523s 0:18.44 78.5%    906+12196k 0+11io 0pf+0w
+12.860u 1.557s 0:18.44 78.1%    906+12196k 0+11io 0pf+0w
+   LibC MemCpy:
+13.094u 1.384s 0:18.51 78.1%    910+12247k 0+11io 96pf+0w
+13.225u 1.309s 0:18.56 78.2%    909+12237k 0+11io 0pf+0w
+13.050u 1.428s 0:18.43 78.5%    906+12199k 0+11io 0pf+0w
 */
-#define INCGEN(x)		((x==(GENERATIONS-1)) ? x : (x + 1))            
-#define PAGE_HEADER_SIZE	gcWORDS_TO_BYTES(gcBYTES_TO_WORDS(sizeof(MPage)))
+    void **startfrom = oldptr, **startto, **endfrom; 
+    startto =  retval = (void*)((unsigned long)work + work->size);
+    endfrom = startfrom + sizew; 
+    while(startfrom < endfrom) *(startto++) = *(startfrom++); 
+/*     memcpy(retval, oldptr, sizeb); */
+    work->size += sizeb;
+    return retval;
+  } else {
+    void **startfrom = oldptr, **startto, **endfrom; 
+    work = (struct mpage *)mla_malloc(MPAGE_SIZE);
+    GCDBG("Allocated pages %p\n", work);
+    work->next = gen[tgen][type];
+    work->gen = tgen;
+    work->type = type;
+    work->size = PAGE_HEADER_SIZE + sizeb;
+    work->psize = PAGE_HEADER_SIZE;
+    pmap_add(work);
+    gen[tgen][type] = work;
+    startto = retval = (void*)((unsigned long)work + PAGE_HEADER_SIZE);
+    endfrom = startfrom + sizew; 
+    while(startfrom < endfrom) *(startto++) = *(startfrom++); 
+/*     memcpy(retval, oldptr, sizeb); */
+    return retval;
+  }
+}
 
+/*****************************************************************************
+ * Page mapping structures and routines
+ *****************************************************************************/
+#define DEAD_BITS	LOG_MPAGE_SIZE
+#define USEFUL_BITS	(BITS_PER_WORD - DEAD_BITS)
+#define FLINDEX_SIZE	(USEFUL_BITS >> 1)
+#define FLINDEX_SHIFT	(BITS_PER_WORD - FLINDEX_SIZE)
+#define SLINDEX_SIZE	(USEFUL_BITS - FLINDEX_SIZE)
+#define SLINDEX_SHIFT	DEAD_BITS
+#define SLINDEX_MASK	((1 << SLINDEX_SIZE) - 1)
+#define FLINDEX(x)	((unsigned long)x >> FLINDEX_SHIFT)
+#define SLINDEX(x)	(((unsigned long)x >> SLINDEX_SHIFT) & SLINDEX_MASK)
 
-/*
-  Some unavoidably needed forward declarations
-*/
-void init(void);
-void garbage_collect(int force_full);
-int is_marked(void *p);
+static struct mpage *pmap[1 << FLINDEX_SIZE][1 << SLINDEX_SIZE];
 
-/*
-  Tags for the objects defined in here
-*/
-#define _num_tags			260
+static void pmap_add(void *page) {
+  struct mpage *mpage = (struct mpage *)page;
+  long size_left = mpage->bigpage ? mpage->size : MPAGE_SIZE;
+
+  while(size_left > 0) {
+    pmap[FLINDEX(page)][SLINDEX(page)] = mpage;
+    size_left -= MPAGE_SIZE;
+    page += MPAGE_SIZE;
+  }
+}
+
+static void pmap_remove(void *page) {
+  struct mpage *mpage = (struct mpage *)page;
+  long size_left = mpage->bigpage ? mpage->size : MPAGE_SIZE;
+  
+  GCDBG("Removing page %p (bpage %i, size %i)\n", 
+	mpage, mpage->bigpage, mpage->size);
+  while(size_left > 0) {
+    pmap[FLINDEX(page)][SLINDEX(page)] = NULL;
+    size_left -= MPAGE_SIZE;
+    page += MPAGE_SIZE;
+  }
+}
+
+#define pmap_find(p)		(pmap[FLINDEX(p)][SLINDEX(p)])
+
+/*****************************************************************************
+ * Big page routines 
+ *****************************************************************************/
+
+static unsigned long bpage_g0size = 0; 
+
+static void *bpage_malloc(size_t sizeb, int type, int tgen) {
+  unsigned long sizew = gcBYTES_TO_WORDS(sizeb) + 1;
+  struct mpage *bpage;
+
+  /* without this there is a slight flaw in which if someone only
+     allocates bigpages, they can completely avoid collection. bad! */
+  if( (bpage_g0size + ((unsigned long)tla_regions - (unsigned long)tla_heap))
+      > GEN0_SIZE)
+    gc_collect(0);
+    
+  sizeb = gcWORDS_TO_BYTES(sizew);
+  bpage_g0size += sizeb;
+  bpage = mla_malloc(PAGE_HEADER_SIZE + sizeb);
+  GCDBG("Allocating bigpage %p of size %li, type %i, gen %i\n",
+	bpage, sizeb, type, tgen);
+  bpage->size = PAGE_HEADER_SIZE + sizeb;
+  bpage->psize = PAGE_HEADER_SIZE;
+  bpage->gen = tgen;
+  bpage->bigpage = 1;
+  bpage->type = type;
+  pmap_add(bpage);
+  bpage->next = gen[tgen][MPAGE_BIG];
+  gen[tgen][MPAGE_BIG] = bpage;
+  return (void*)((unsigned long)bpage + PAGE_HEADER_SIZE + 4);
+}
+
+void *GC_malloc_allow_interior(size_t size) {
+  return bpage_malloc(size, MPAGE_ARRAY, 0);
+}
+
+/*****************************************************************************
+ * Memory accounting 
+ *****************************************************************************/
+#define RQ_TYPE_ACCNT		2
+
+struct accnthook {
+  short type;
+  short owner;
+  Scheme_Custodian *cust;
+  unsigned long bytes;
+  Scheme_Object *func;
+  struct accnthook *next;
+};
+
+static struct accnthook *accnthooks = NULL;
+static unsigned long accnt_requires = 0;
+
+long GC_get_memory_use(void *c) {
+  if(!c) {
+    unsigned long retval = GEN0_SIZE;
+    struct mpage *page;
+    int g, type;
+    
+    for(g = 0; g < GENERATIONS; g++) 
+      for(type = 0; type < MPAGE_TYPES; type++)
+	for(page = gen[g][type]; page; page = page->next)
+	  retval += page->size;
+    return retval;
+  } else {
+    unsigned long retval = 0;
+    unsigned short i, j;
+
+    for(i = 0; i < ot_top; i++) 
+      if(ot_table[i] && cl_member_p(ot_table[i]->custs, c)) 
+	for(j = 0; j < GENERATIONS; j++) 
+	  retval += ot_table[i]->memuse[j];
+    return retval;
+  }
+}
+
+int GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {
+  struct accnthook *work = (struct accnthook*)malloc(sizeof(struct accnthook));
+  work->type = type;
+  work->owner = ot_current();
+  work->cust = cust;
+  work->bytes = b;
+  work->func = f;
+  work->next = accnthooks;
+  accnthooks = work;
+  if(type == MZACCT_REQUIRE) accnt_requires += b;
+  return 1;
+}
+
+static struct owner_list *accnt_get_owners(struct owner_list *ol) {
+  struct accnthook *work;
+
+  for(work = accnthooks; work; work = work->next)
+    if(!ol_member_p(ol, work->owner))
+      ol = ol_add(ol, work->owner);
+  return ol;
+}
+
+static void accnt_mark(short owner) {
+  struct accnthook *work;
+  
+  for(work = accnthooks; work; work = work->next)
+    if(work->owner == owner) gcMARK(work->func);
+}
+
+static void accnt_fixup(void) {
+  struct accnthook *cur = accnthooks, *prev = NULL;
+
+  while(cur) {
+    if((!mark_p(cur->cust) && (cur->type == MZACCT_LIMIT))
+       || !ot_table[cur->owner]) {
+      if(cur->type == MZACCT_REQUIRE) accnt_requires -= cur->bytes;
+      if(prev) { prev->next = cur->next; free(cur); cur = prev->next; }
+      else { accnthooks = cur->next; free(cur); cur = accnthooks; }
+    } else {
+      gcFIXUP(cur->cust); gcFIXUP(cur->func);
+      if((cur->type == MZACCT_REQUIRE) && (mla_memfree() < accnt_requires)) {
+	if(prev) prev->next = cur->next;
+	else accnthooks = cur->next;
+	rq_add(0, RQ_TYPE_ACCNT, cur);
+	cur = cur->next;
+      } else if((cur->type == MZACCT_LIMIT) && 
+		(ot_memuse(cur->cust) >= cur->bytes)) {
+	if(prev) prev->next = cur->next;
+	else accnthooks = cur->next;
+	rq_add(0, RQ_TYPE_ACCNT, cur);
+	cur = cur->next;
+      } else {
+	prev = cur; 
+	cur = cur->next;
+      }
+    }
+  }
+}
+
+/*****************************************************************************
+ * Weak box structure and functions
+ *****************************************************************************/
+struct weakbox {
+  Type_Tag tag;
+  short keyex;
+  void *val;
+  void **secondary_erase;
+  int soffset;
+  struct weakbox *next;
+}; 
+
+Type_Tag weak_box_tag = 42;
+static struct weakbox *weak_boxes = NULL;
+
+int size_weak_box(void *p) { 
+  return gcBYTES_TO_WORDS(sizeof(struct weakbox)); 
+}
+
+int mark_weak_box(void *p) {
+  struct weakbox *wb = (struct weakbox *)p;
+  gcMARK(wb->secondary_erase);
+  if(wb->val) {
+    wb->next = weak_boxes;
+    weak_boxes = wb;
+  }
+  return gcBYTES_TO_WORDS(sizeof(struct weakbox));
+}
+
+int fixup_weak_box(void *p) {
+  struct weakbox *wb = (struct weakbox *)p;
+  GCDBG("Fixing up weak box\n");
+  gcFIXUP(wb->secondary_erase);
+  if(!mark_p(wb->val)) {
+    wb->val = NULL;
+    if(wb->secondary_erase)
+      *(wb->secondary_erase + wb->soffset) = NULL;
+    wb->secondary_erase = NULL;
+  } else gcFIXUP(wb->val);
+  return gcBYTES_TO_WORDS(sizeof(struct weakbox));
+}
+
+void *GC_malloc_weak_box(void *p, void **secondary, int soffset) {
+  struct weakbox *w = 
+    (struct weakbox *)GC_malloc_one_tagged(sizeof(struct weakbox));
+  w->tag = weak_box_tag;
+  w->val = p;
+  w->secondary_erase = secondary;
+  w->soffset = soffset;
+  return w;
+}
+
+/*****************************************************************************
+ * Weak array structure and functions
+ *****************************************************************************/
+
 #define gc_weak_array_tag		256
 
+struct weakarray {
+  Type_Tag type;
+  short keyex;
+  long count;
+  void *replace_val;
+  struct weakarray *next;
+  void *data[1];
+};
 
-/*
-  Callbacks to do various things with tagged objects
-*/
-Size_Proc size_table[_num_tags];
-Mark_Proc mark_table[_num_tags];
-Fixup_Proc fixup_table[_num_tags];
+static struct weakarray *weak_arrays = NULL;
 
-/*
-  Some necessary top-level variables
-*/
+int size_weak_array(void *p) {
+  struct weakarray *wa = (struct weakarray *)p;
+  return gcBYTES_TO_WORDS(sizeof(struct weakarray) +
+			  ((wa->count - 1) * sizeof(void *)));
+}
+
+int mark_weak_array(void *p) {
+  struct weakarray *wa = (struct weakarray *)p;
+  gcMARK(wa->replace_val);
+  wa->next = weak_arrays;
+  weak_arrays = wa;
+  return gcBYTES_TO_WORDS(sizeof(struct weakarray) +
+			  ((wa->count - 1) * sizeof(void *)));
+}
+
+int fixup_weak_array(void *p) {
+  struct weakarray *wa = (struct weakarray *)p;
+  int i;
+  void **data;
+  gcFIXUP(wa->replace_val);
+  data = wa->data;
+  for(i = wa->count; i--; ) {
+    if(data[i] && !mark_p(data[i])) {
+      data[i] = wa->replace_val; 
+    } else if(data[i]) gcFIXUP(data[i]);
+  }
+  return gcBYTES_TO_WORDS(sizeof(struct weakarray) +
+			  ((wa->count - 1) * sizeof(void *)));
+}
+
+void *GC_malloc_weak_array(size_t sizeb, void *replace_val) {
+  struct weakarray *wa =
+    (struct weakarray *)GC_malloc_one_tagged(sizeb + sizeof(struct weakarray)
+					     - sizeof (void*));
+  wa->type = gc_weak_array_tag;
+  wa->replace_val = replace_val;
+  wa->count = (sizeb >> LOG_WORD_SIZE);
+  return wa;
+}
+
+/*****************************************************************************
+ * Immobile box structures and routines
+ *****************************************************************************/
+struct immobile {
+  void *p;
+  short owner;
+  struct immobile *next;
+};
+
+static struct immobile *immobiles = NULL;
+
+static struct owner_list *imm_get_owners(struct owner_list *ol) {
+  struct immobile *work;
+
+  for(work = immobiles; work; work = work->next) 
+    if(!ol_member_p(ol, work->owner))
+      ol = ol_add(ol, work->owner);
+  return ol;
+}
+
+static void imm_mark(short owner) {
+  struct immobile *work;
+  for(work = immobiles; work; work = work->next)
+    if(work->owner == owner) gcMARK(work->p);
+}
+
+static void imm_fixup(void) {
+  struct immobile *work;
+  for(work = immobiles; work; work = work->next)
+    gcFIXUP(work->p);
+}
+
+void **GC_malloc_immobile_box(void *p) {
+  struct immobile *ib = malloc(sizeof(struct immobile));
+  ib->p = p;
+  ib->owner = ot_current();
+  ib->next = immobiles;
+  immobiles = ib;
+  return (void**)ib;
+}
+
+void GC_free_immobile_box(void **b) {
+  struct immobile *cur, *prev;
+
+  for(prev = NULL, cur = immobiles; cur; prev = cur, cur = cur->next) {
+    if(cur == (struct immobile *)b) {
+      if(prev) prev->next = cur->next;
+      else immobiles = cur->next;
+      return;
+    }
+  }
+}
+
+/*****************************************************************************
+ * Finalization
+ *****************************************************************************/
+#define RQ_TYPE_FINAL		1		
+
+struct fnl {
+  char eager_level;
+  char tagged;
+  void *p;
+  void (*f)(void *p, void *data);
+  void *data;
+  short owner;
+  struct fnl *next;
+};
+
+struct weakfnl {
+  void *p;
+  int offset;
+  void *saved;
+  struct weakfnl *next;
+};
+
+static struct fnl *fnls = NULL;
+static struct weakfnl *weakfnls = NULL;
+
+void GC_set_finalizer(void *p, int tagged, int level,
+		      void (*f)(void *p, void *data),
+		      void *data, void (**oldf)(void *p, void *data),
+		      void **olddata)
+{
+  struct mpage *page = pmap_find(p);
+  struct fnl *fnl, *prev;
+
+  if(!page && !tla_member_p(p)) {
+    /* this item is never collected */
+    if(oldf) *oldf = NULL;
+    if(olddata) *olddata = NULL;
+    return;
+  }
+
+  fnl = fnls; prev = NULL;
+  while(fnl) {
+    if(fnl->p == p) {
+      if(oldf) *oldf = fnl->f;
+      if(olddata) *olddata = fnl->data;
+      fnl->owner = ot_current();
+      if(f) {
+	fnl->f = f;
+	fnl->data = data;
+	fnl->eager_level = level;
+      } else {
+	if(prev) prev->next = fnl->next;
+	else fnls = fnl->next;
+	return;
+      }
+      return;
+    } else { prev = fnl; fnl = fnl->next; }
+  }
+
+  /* this is new */
+  if(oldf) *oldf = NULL;
+  if(olddata) *olddata = NULL;
+  if(!f) return;
+  fnl = malloc(sizeof(struct fnl));
+  fnl->next = fnls;
+  fnl->p = p;
+  fnl->f = f;
+  fnl->data = data;
+  fnl->eager_level = level;
+  fnl->tagged = tagged;
+  fnl->owner = ot_current();
+  fnls = fnl;
+}
+
+void GC_finalization_weak_ptr(void **p, int offset) {
+  struct weakfnl *wl;
+  
+  wl = malloc(sizeof(struct weakfnl));
+  wl->p = p;
+  wl->next = weakfnls;
+  wl->offset = offset * sizeof(void*);
+  weakfnls = wl;
+}
+
+static struct owner_list *fnl_get_owners(struct owner_list *ol) {
+  struct fnl *fnl;
+
+  for(fnl = fnls; fnl; fnl = fnl->next) 
+    if(!ol_member_p(ol, fnl->owner)) 
+      ol = ol_add(ol, fnl->owner);
+  return ol;
+}
+
+static struct owner_list *wfnl_get_owners(struct owner_list *ol) {
+  return ol;
+}
+
+static void fnl_mark(short owner) {
+  struct fnl *fnl;
+
+  for(fnl = fnls; fnl; fnl = fnl->next)
+    if(fnl->owner == owner) {
+      gcMARK(fnl->data);
+      if(!mark_p(fnl)) {
+	gcMARK(fnl->p);
+	if( ((struct objhead *)((unsigned long)fnl->p - 4))->mark ) {
+	  ((struct objhead *)((unsigned long)fnl->p - 4))->markf = 1;
+	  ((struct objhead *)((unsigned long)fnl->p - 4))->mark = 0;
+	}
+      }
+    }
+}
+
+static void wfnl_mark(short owner) {
+  return;
+}
+
+static void fnl_fixup(void) {
+  struct fnl *fnl, *prev;
+
+  fnl = fnls; prev = NULL;
+  while(fnl) {
+    struct objhead *phead = (struct objhead *)((unsigned long)fnl->p - 4);
+    gcFIXUP(fnl->data);
+    gcFIXUP(fnl->p);
+    if(phead->markf && !phead->mark) {
+      rq_add(fnl->eager_level, RQ_TYPE_FINAL, fnl);
+      if(prev) prev->next = fnl->next;
+      else fnls = fnl->next;
+      fnl = fnl->next;
+    } else { prev = fnl; fnl = fnl->next; }
+  }
+}
+
+static void wfnl_fixup(void) {
+  struct weakfnl *cur = weakfnls, *prev = NULL;
+  
+  while(cur) {
+    if(!mark_p(cur->p)) {
+      cur->p = NULL;
+      if(prev) { prev->next = cur->next; cur = prev->next; }
+      else { weakfnls = cur->next; cur = weakfnls; }
+      /* FIXME: free cur here? */
+    } else {
+      gcFIXUP(cur->p);
+      prev = cur;
+      cur = cur->next;
+    }
+  }
+}
+
+/* weak finals are evil, bad and wrong. they are the scourge of this
+   particular collector writer. I hate them. */
+static void wfnl_clear_weaks() {
+  struct weakfnl *cur;
+
+  for(cur = weakfnls; cur; cur = cur->next) {
+    cur->saved = *(void**)((unsigned long)cur->p + cur->offset);
+    if(mark_p(cur->p)) 
+      *(void**)((unsigned long)GC_resolve(cur->p) + cur->offset) = NULL;
+    else
+      *(void**)((unsigned long)cur->p + cur->offset) = NULL;
+  }
+}
+
+static void wfnl_reset_weaks() {
+  struct weakfnl *cur;
+
+  for(cur = weakfnls; cur; cur = cur->next) {
+    gcMARK(cur->saved);
+    if(mark_p(cur->p))
+      *(void**)((unsigned long)GC_resolve(cur->p) + cur->offset) = cur->saved;
+    else
+      *(void**)((unsigned long)cur->p + cur->offset) = cur->saved;
+  }
+}
+
+/*****************************************************************************
+ * Run queue structures and functions
+ *****************************************************************************/
+struct rqentry {
+  short type;
+  void *obj;
+  struct rqentry *next;
+};
+
+static struct rqentry *run_queue[4];
+
+static void rq_add(int pri, short type, void *obj) {
+  struct rqentry *newrqe = malloc(sizeof(struct rqentry));
+  struct rqentry *temp = run_queue[pri]; 
+
+  newrqe->type = type;
+  newrqe->obj = obj;
+  newrqe->next = NULL;
+  while(temp && temp->next) temp = temp->next;
+  if(temp) temp->next = newrqe;
+  else run_queue[pri] = newrqe;
+}
+
+static void rq_run() {
+  struct rqentry *work;
+  int i;
+
+  for(i = 0; i < 4; i++) 
+    for(work = run_queue[i]; work; work = run_queue[i]) {
+      void **gcs = GC_variable_stack;
+      run_queue[i] = work->next;
+      if(work->type == RQ_TYPE_FINAL) {
+	struct fnl *f = (struct fnl *)work->obj;
+ 	if(i != 3) f->f(f->p, f->data);
+/* 	f->f(f->p, f->data); */
+	free(f);
+	free(work);
+      } else {
+	struct accnthook *ah = (struct accnthook *)work->obj;
+	_scheme_apply(ah->func, 0, NULL);
+	free(ah);
+	free(work);
+      }
+      GC_variable_stack = gcs;
+    }
+}
+
+
+/*****************************************************************************
+ * Initialization
+ *****************************************************************************/
+#define _num_tags			257
+
+static Size_Proc size_table[_num_tags];
+static Mark_Proc mark_table[_num_tags];
+static Fixup_Proc fixup_table[_num_tags];
+static bool atomic_table[_num_tags];
+
 void **GC_variable_stack;
 void *stack_base;
-int gc_deny = 0;
-#ifdef GENERATIONS
-int mark_gen = 0;
-#endif
-#ifndef ACCNT_OFF
-int mark_owner = 0;
-#endif
 
-
-/*
-  OS Memory routines, wrapped in all sorts of ifdefs so that we get what
-  we need in a somewhat standard manner.
-*/
-
-#if _WIN32 /* Windows */
-
-void *malloc_pages(size_t len, size_t alignment) {
-  return (void *)VirtualAlloc(NULL, len, MEM_COMMIT | MEM_RESERVE, 
-			      PAGE_READWRITE);
+void GC_set_stack_base(void *base) {
+  stack_base = base;
 }
- 
-void free_pages(void *p, size_t len) {
+
+unsigned long GC_get_stack_base(void) {
+  return (unsigned long)stack_base;
+}
+
+void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, 
+			    Fixup_Proc fixup, int is_constant_size, 
+			    int is_atomic) {
+  size_table[tag] = size;
+  mark_table[tag] = mark;
+  fixup_table[tag] = fixup;
+  atomic_table[tag] = is_atomic;
+}
+
+
+void GC_init_type_tags(int count, int weakbox) {
+  static int initialized = 0;
+
+  if(!initialized) {
+    ot_table = malloc(OT_INIT_SIZE * sizeof(struct otentry *));
+    tla_heap = tla_regions = malloc(GEN0_SIZE);
+    tla_regione = (void**)((unsigned long)tla_regions + GEN0_SIZE);
+    GC_register_traversers(weakbox, size_weak_box, mark_weak_box,
+			   fixup_weak_box, 0, 0);
+    GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array,
+			   fixup_weak_array, 0, 0);
+    old_init();
+    GC_add_roots(&weakfnls, (char*)&weakfnls + sizeof(weakfnls) + 1);
+#ifdef NEWGC_DEBUG
+    debug = fopen("log", "w");
+#endif
+    initialized = 1;
+  }
+  weak_box_tag = weakbox;
+}
+
+/*****************************************************************************
+ * Marking routines
+ *****************************************************************************/
+static bool mark_p(void *p) {
+  if(!p) return false;
+  if(tla_member_p(p)) {
+    return ((struct objhead *)((unsigned long)p - 4))->mark 
+      ||((struct objhead *)((unsigned long)p - 4))->markf;
+  } else {
+    struct mpage *page = pmap_find(p);
+    if(!page) return false;
+    if(page->gen > gc_topgen) return true;
+    return ((struct objhead *)((unsigned long)p - 4))->mark 
+      ||((struct objhead *)((unsigned long)p - 4))->markf;
+  }
+}
+
+/* static bool mark_pure_p(void *p) { */
+/*   if(!p) return false; */
+/*   if(tla_member_p(p)) { */
+/*     return ((struct objhead *)((unsigned long)p - 4))->mark; */
+/*   } else { */
+/*     struct mpage *page = pmap_find(p); */
+/*     if(page->gen > gc_topgen) return true; */
+/*     return ((struct objhead *)((unsigned long)p - 4))->mark; */
+/*   } */
+/* } */
+
+static bool mark_final_p(void *p) {
+  if(!p) return false;
+  if(tla_member_p(p)) {
+    return ((struct objhead *)((unsigned long)p - 4))->markf;
+  } else {
+    struct mpage *page = pmap_find(p);
+    if(page->gen > gc_topgen) return true;
+    return ((struct objhead *)((unsigned long)p - 4))->markf;
+  }
+}
+
+static void mark_propbig(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE + 4);
+  void **end = (void**)((unsigned long)page + page->size);
+  
+#ifdef NEWGC_ACCNT
+  gc_owner = ((struct objhead *)((unsigned long)page + PAGE_HEADER_SIZE))->owner;
+#endif
+  switch(page->type) {
+    case MPAGE_TAGGED: mark_table[*(Type_Tag*)start](start); break;
+    case MPAGE_ATOMIC: break;
+    case MPAGE_ARRAY: while(start < end) GC_mark(*(start++)); break;
+    case MPAGE_TARRAY: {
+      Type_Tag tag = *(Type_Tag*)start;
+      while(start < end) start += mark_table[tag](start);
+      break;
+    }
+    case MPAGE_XTAGGED: GC_mark_xtagged(start); break;
+  }
+}
+
+#ifdef NEWGC_PRECISE
+static void precise_reprop(void *p, struct mpage *page, short owner) {
+  bool old_gc_markp = gc_markprecise;
+  /*   printf("precise_reprop(%p, %p, %i)\n", p, page, owner); fflush(stdout); */
+  gc_markprecise = true;
+  gc_owner = owner;
+  if(page->bigpage) {
+    ((struct objhead *)((unsigned long)page+PAGE_HEADER_SIZE))->owner = owner;
+    mark_propbig(page);
+  } else {
+    ((struct objhead *)((unsigned long)p - 4))->owner = owner;
+    switch(page->type) {
+      case MPAGE_TAGGED: mark_table[*(Type_Tag*)p](p); break;
+      case MPAGE_ATOMIC: break;
+      case MPAGE_ARRAY: {
+	unsigned long size = ((struct objhead *)((unsigned long)p - 4))->size;
+	void **start = (void**)p;
+	while(--size) GC_mark(*(start++));
+	break;
+      }
+      case MPAGE_TARRAY: {
+	Type_Tag tag = *(Type_Tag*)p;
+	void **start = (void**)p;
+	void **end = start + ((struct objhead *)((unsigned long)p - 4))->size;
+	while(start < end) start += mark_table[tag](start);
+	break;
+      }
+      case MPAGE_XTAGGED: GC_mark_xtagged(p);
+    }
+  }
+  gc_markprecise = old_gc_markp;
+}
+
+static void precise_mark(const void *p) {
+  /* mark_p() isn't acceptable here because it returns true for objects
+     which are in a generation higher than we're dealing with, and we
+     don't want to chase pointers in high generations */
+  if(!tla_member_p(p) && !pmap_find(p)) return;
+  if(((struct objhead *)((unsigned long)p - 4))->mark 
+     ||((struct objhead *)((unsigned long)p - 4))->markf) {
+    struct mpage *ppage = pmap_find(p);
+    if(ppage && ppage->bigpage) {
+      struct objhead *info = 
+	(struct objhead *)((unsigned long)ppage + PAGE_HEADER_SIZE);
+      if(info->owner != gc_owner) {
+	info->owner = ot_union(info->owner, gc_owner);
+	precise_reprop(ppage, ppage, info->owner);
+      }
+    } else {
+      void *newp = *(void**)p;
+      struct mpage *page = pmap_find(newp);
+      struct objhead *info = (struct objhead *)((unsigned long)newp - 4);
+      if(info->owner != gc_owner) {
+	info->owner = ot_union(info->owner, gc_owner);
+	precise_reprop(newp, page, info->owner);
+      }
+    }
+  }
+}
+#endif
+
+void GC_mark(const void *p) {
+  if(!p || ((unsigned long)p & 0x1)) return;
+#ifdef NEWGC_PRECISE
+  if(gc_markprecise) { precise_mark(p); return; }
+#endif
+  if(tla_member_p(p)) {
+    if(!mark_p((void*)p)) {
+      void *startobj = (void*)((unsigned long)p - 4);
+      struct objhead *ohead = (struct objhead *)startobj;
+      unsigned long size = ohead->size;
+      unsigned short type = ohead->type;
+      void *newplace;
+      
+      if(type == MPAGE_TAGGED) {
+	if(atomic_table[*(Type_Tag*)p]) {
+	  type = MPAGE_ATOMIC;
+	}
+      }
+
+      newplace = copy_bits(startobj, size, type, 1);
+      GCDBG("MARK: moved %p to %p, size %li, type %i, gen 1\n",
+	    p, newplace, size, type);
+      ohead->mark = 1;
+      *(void**)p = (void*)((unsigned long)newplace + 4);
+#ifdef NEWGC_ACCNT
+      ohead = (struct objhead *)newplace;
+      ohead->owner = gc_owner;
+      ot_accnt(gc_owner, 1, gcWORDS_TO_BYTES(size));
+#endif
+    } else if(mark_final_p((void*)p)) {
+      ((struct objhead *)((unsigned long)p - 4))->mark = 1;
+#ifdef NEWGC_ACCNT
+      {
+	void *newp = *(void**)p;
+	struct objhead *newinfo = (struct objhead *)((unsigned long)newp - 4);
+	if(newinfo->owner != gc_owner) {
+	  newinfo->owner = ot_union(newinfo->owner, gc_owner);
+# ifdef NEWGC_PRECISE
+	  {
+	    struct mpage *page = pmap_find(newp);
+	    if(newp < (void*)((unsigned long)page + page->psize)) {
+	      precise_reprop(newp, page, newinfo->owner);
+	    }
+	  }
+# endif	  
+	}
+      }
+#endif
+    }
+#ifdef NEWGC_ACCNT
+    else {
+      void *newp = *(void**)p;
+      struct objhead *newinfo = (struct objhead *)((unsigned long)newp - 4);
+      if(newinfo->owner != gc_owner) {
+	newinfo->owner = ot_union(newinfo->owner, gc_owner);
+# ifdef NEWGC_PRECISE
+	{
+	  struct mpage *page = pmap_find(newp);
+	  if(newp < (void*)((unsigned long)page + page->psize)) {
+	    precise_reprop(newp, page, newinfo->owner);
+	  }
+	}
+# endif
+      }
+    }
+#endif
+  } else {
+    struct mpage *page = pmap_find(p);
+    if(!page) return;
+    if(page->gen > gc_topgen) return;
+    if(page->bigpage) {
+      GCDBG("Marking big page %p (page->bigpage = %i)\n", page, page->bigpage);
+      if(page->bigpage == 1) {
+#ifdef NEWGC_ACCNT
+	((struct objhead *)((unsigned long)page + PAGE_HEADER_SIZE))->owner
+	  = gc_owner;
+	ot_accnt(gc_owner, INCGEN(page->gen), page->size);
+#endif
+	page->bigpage++;
+	mark_propbig(page);
+      }
+#ifdef NEWGC_ACCNT
+      else {
+	struct objhead *info = 
+	  (struct objhead *)((unsigned long)page + PAGE_HEADER_SIZE);
+	if(info->owner != gc_owner) {
+	  info->owner = ot_union(info->owner, gc_owner);
+# ifdef NEWGC_PRECISE
+	  precise_reprop(page, page, info->owner);
+# endif
+	}
+      }
+#endif
+    } else {
+      if(!mark_p((void*)p)) {
+	void *startobj = (void*)((unsigned long)p - 4);
+	struct objhead *ohead = (struct objhead *)startobj;
+	unsigned long size = ohead->size;
+	unsigned short type = ohead->type;
+	void *newplace = copy_bits(startobj, size, type, INCGEN(page->gen));
+	GCDBG("MARK: moved %p to %p, size %li, type %i, gen %i\n",
+	      p, newplace, size, type, INCGEN(page->gen));
+	ohead->mark = 1;
+	*(void**)p = (void*)((unsigned long)newplace + 4);
+#ifdef NEWGC_ACCNT
+	ohead = (struct objhead *)newplace;
+	ohead->owner = gc_owner;
+	ot_accnt(gc_owner, INCGEN(page->gen), gcWORDS_TO_BYTES(size));
+#endif
+      } else if(mark_final_p((void*)p)) {
+	((struct objhead *)((unsigned long)p - 4))->mark = 1;
+#ifdef NEWGC_ACCNT
+	{
+	  void *newp = *(void**)p;
+	  struct objhead *newinfo = (struct objhead *)((unsigned long)newp-4);
+	  if(newinfo->owner != gc_owner) {
+	    newinfo->owner = ot_union(newinfo->owner, gc_owner);
+# ifdef NEWGC_PRECISE
+	    {
+	      struct mpage *page = pmap_find(newp);
+	      if(newp < (void*)((unsigned long)page + page->psize))
+		precise_reprop(newp, page, newinfo->owner);
+	    }
+# endif
+	  }
+	}
+#endif
+      }
+#ifdef NEWGC_ACCNT
+      else {
+	void *newp = *(void**)p;
+	struct objhead *newinfo = (struct objhead *)((unsigned long)newp - 4);
+	if(newinfo->owner != gc_owner) {
+	  newinfo->owner = ot_union(newinfo->owner, gc_owner);
+# ifdef NEWGC_PRECISE
+	  {
+	    struct mpage *page = pmap_find(newp);
+	    if(newp < (void*)((unsigned long)page + page->psize))
+	      precise_reprop(newp, page, newinfo->owner);
+	  }
+# endif
+	}
+      }
+#endif
+    }
+  }
+}
+
+static void mark_proptagged(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + page->psize);
+  while(start < (void**)((unsigned long)page + page->size)) {
+#ifdef NEWGC_ACCNT    
+    struct objhead *info = (struct objhead *)start++;
+    gc_owner = info->owner;
+#else
+    start++;
+#endif
+    start += mark_table[*(Type_Tag*)start](start);
+  }
+}
+
+static void mark_proparray(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + page->psize);
+  while(start < (void**)((unsigned long)page + page->size)) {
+    struct objhead *info = (struct objhead *)start++;
+    unsigned long size = info->size;
+#ifdef NEWGC_ACCNT
+    gc_owner = info->owner;
+#endif
+    while(--size) GC_mark(*(start++));
+  }
+}
+
+static void mark_proptarray(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + page->psize);
+  while(start < (void**)((unsigned long)page + page->size)) {
+    struct objhead *info = (struct objhead *)start;
+    void **tempend = start + info->size;
+    Type_Tag tag = *(Type_Tag*)(++start);
+#ifdef NEWGC_ACCNT
+    gc_owner = info->owner;
+#endif
+    while(start < tempend) start += mark_table[tag](start);
+  }
+}
+
+static void mark_propxtagged(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + page->psize);
+  while(start < (void**)((unsigned long)page + page->size)) {
+    struct objhead *info = (struct objhead *)start;
+    unsigned long size = info->size;
+#ifdef NEWGC_ACCNT
+    gc_owner = info->owner;
+#endif
+    GC_mark_xtagged(start + 1);
+    start += size;
+  }
+}
+
+static void mark_propogate(void) {
+  struct mpage *page;
+  short i, j;
+  short topgenp1 = INCGEN(gc_topgen);
+  bool changed = true;
+
+  while(changed) {
+    changed = false;
+    GCDBG("Starting propogation loop\n");
+    for(i = 1; i <= topgenp1; i++) {
+      GCDBG("Propogating from generation %i\n", i);
+      for(j = 0; j < MPAGE_TYPES; j++) {
+	GCDBG("Propogating from type %i\n", j);
+	for(page = gen[i][j]; page && (page->size != page->psize); page = page->next) {
+	  GCDBG("Deciding whether to propogate %p\n", page);
+	  if(page->psize != page->size) {
+	    GCDBG("Propogating page %p\n", page);
+	    if(j == MPAGE_BIG) {
+	      mark_propbig(page);
+	    } else {
+	      switch(page->type) {
+	      case MPAGE_TAGGED: mark_proptagged(page); break;
+	      case MPAGE_ATOMIC: break;
+	      case MPAGE_ARRAY: mark_proparray(page); break;
+	      case MPAGE_TARRAY: mark_proptarray(page); break;
+	      case MPAGE_XTAGGED: mark_propxtagged(page); break;
+	      }
+	    }
+	    page->psize = page->size;
+	    changed = true;
+	  }
+	}
+      }
+    }
+  }
+}
+
+void GC_mark_variable_stack(void **passed_stack,
+			    long delta,
+			    void *limit)
+{
+  void **var_stack = passed_stack;
+  long size, count;
+  void ***p, **a;
+
+  GCDBG("Marking variable stack %p\n", var_stack);
+  while (var_stack) {
+    var_stack = (void **)((char *)var_stack + delta);
+    if (var_stack == limit)
+      return;
+
+    size = *(long *)(var_stack + 1); 
+    p = (void ***)(var_stack + 2);
+    while (size--) {
+      a = *p;
+      if (!a) {
+	/* Array */
+	count = ((long *)p)[2];
+	a = ((void ***)p)[1];
+	p += 2;
+	size -= 2;
+	a = (void **)((char *)a + delta);
+	while (count--) {
+	  GCDBG("Marking stack item %p\n", *a);
+	  gcMARK(*a);
+	  a++;
+	}
+      } else {
+	a = (void **)((char *)a + delta);
+	GCDBG("Marking stack item2 %p\n", *a);
+	gcMARK(*a);
+      }
+      p++;
+    }
+
+    var_stack = *var_stack;
+  }
+  GCDBG("Done marking stack\n");
+}
+
+
+/*****************************************************************************
+ * Fixup routines
+ *****************************************************************************/
+
+void *GC_resolve(void *p) {
+  if(tla_member_p(p)) {
+    if(((struct objhead *)((unsigned long)p - 4))->mark) return *(void**)p;
+    else return p;
+  } else {
+    struct mpage *page = pmap_find(p);
+    if(!page) return p;
+    if(((struct objhead *)((unsigned long)p - 4))->mark) return *(void**)p;
+    else return p;
+  }
+}
+
+void GC_fixup(void *pp) {
+  void *p = *(void**)pp;
+  struct mpage *ppage;
+  short gen = 1;
+
+  if(!p || ((long)p & 0x1)) return;
+  if(tla_member_p(p)) {
+/*     struct objhead *info = (struct objhead *)((unsigned long)p - 4); */
+/*     if(info->mark || info->markf) { */
+      *(void**)pp = *(void**)p;
+/*     } else { printf("fixup of unmarked tla!\n"); abort(); } */
+  } else {
+    struct mpage *page = pmap_find(p);
+    if(page) {
+      if(page->bigpage) gen = page->gen; else {
+	struct objhead *info = (struct objhead *)((unsigned long)p - 4);
+	if(info->mark || info->markf) {
+	  void **newloc = *(void**)p;
+	  struct mpage *newpage = pmap_find(newloc);
+	  *(void**)pp = newloc;
+	  if(!newpage) return; /* happens from finalizers */
+	  gen = newpage->gen;
+	}
+      }
+    } else return;
+  }
+  
+  ppage = pmap_find(pp);
+  if(ppage && (ppage->gen > gen)) ppage->bpointers = 1;
+}
+
+static void fixup_bpage(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE + 4);
+  void **end = (void**)((unsigned long)page + page->size);
+
+  GCDBG("Fixing up bigpage %p, type %i. start = %p, end = %p\n",
+	page, page->type, start, end);
+  switch(page->type) {
+    case MPAGE_TAGGED: fixup_table[*(Type_Tag*)start](start); break;
+    case MPAGE_ATOMIC: break;
+    case MPAGE_ARRAY: while(start < end) gcFIXUP(*(start++)); break;
+    case MPAGE_TARRAY: {
+      Type_Tag tag = *(Type_Tag*)start;
+      while(start < end) start += fixup_table[tag](start);
+      break;
+    }
+    case MPAGE_XTAGGED: GC_fixup_xtagged(start); break;
+  }
+}
+
+static void fixup_tagged(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+  void **end = (void**)((unsigned long)page + page->size);
+  
+  while(start < end) {
+    start++;
+    GCDBG("Fixing tagged (%i) item %p\n", *(Type_Tag*)start, start);
+    start += fixup_table[*(Type_Tag*)start](start);
+  }
+}
+
+static void fixup_array(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+  void **end = (void**)((unsigned long)page + page->size);
+  
+  while(start < end) {
+    struct objhead *ohead = (struct objhead *)start++;
+    unsigned long size = ohead->size;
+    GCDBG("Fixing up array item %p\n", start);
+    while(--size) gcFIXUP(*(start++));
+  }
+}
+
+static void fixup_tarray(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+  void **end = (void**)((unsigned long)page + page->size);
+
+  while(start < end) {
+    struct objhead *ohead = (struct objhead *)start;
+    unsigned long size = ohead->size;
+    void **tempend = start + size;
+    Type_Tag tag = *(Type_Tag*)(++start);
+    GCDBG("Fixing up tagged (%i) array %p\n", tag, start);
+    while(start < tempend) start += fixup_table[tag](start);
+  }
+}
+
+static void fixup_xtagged(struct mpage *page) {
+  void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+  void **end = (void**)((unsigned long)page + page->size);
+
+  while(start < end) {
+    struct objhead *ohead = (struct objhead *)start;
+    unsigned long size = ohead->size;
+    GC_fixup_xtagged(start + 1);
+    start += size;
+  }
+}
+
+static void fixup_heap(void) {
+  struct mpage *page;
+  short i, j;
+  short topgenp1 = INCGEN(gc_topgen);
+
+  for(i = 0; i <= topgenp1; i++) 
+    for(j = 0; j < MPAGE_TYPES; j++)
+      for(page = gen[i][j]; page; page = page->next) {
+	switch(j) {
+	  case MPAGE_TAGGED: fixup_tagged(page); break;
+	  case MPAGE_ATOMIC: break;
+	  case MPAGE_ARRAY: fixup_array(page); break;
+	  case MPAGE_TARRAY: fixup_tarray(page); break;
+	  case MPAGE_XTAGGED: fixup_xtagged(page); break;
+	  case MPAGE_BIG: fixup_bpage(page); break;
+	}
+	page->psize = page->size;
+      }
+  for(i = topgenp1 + 1; i < GENERATIONS; i++) 
+    for(j = 0; j < MPAGE_TYPES; j++)
+      for(page = gen[i][j]; page; page = page->next) {
+	if(page->bpointers) {
+	  switch(j) {
+ 	    case MPAGE_TAGGED: fixup_tagged(page); break;
+	    case MPAGE_ATOMIC: break;
+	    case MPAGE_ARRAY: fixup_array(page); break;
+	    case MPAGE_TARRAY: fixup_tarray(page); break;
+	    case MPAGE_XTAGGED: fixup_xtagged(page); break;
+	    case MPAGE_BIG: fixup_bpage(page); break;
+	  }
+	  page->psize = page->size;
+	}
+      }
+}
+
+void GC_fixup_variable_stack(void **var_stack,
+			     long delta,
+			     void *limit)
+{
+  long size, count;
+  void ***p, **a;
+
+  while (var_stack) {
+    var_stack = (void **)((char *)var_stack + delta);
+    if (var_stack == limit)
+      return;
+
+    size = *(long *)(var_stack + 1);
+    p = (void ***)(var_stack + 2);
+    while (size--) {
+      a = *p;
+      if (!a) {
+	/* Array */
+	count = ((long *)p)[2];
+	a = ((void ***)p)[1];
+	p += 2;
+	size -= 2;
+	a = (void **)((char *)a + delta);
+	while (count--) {
+	  gcFIXUP(*a);
+	  a++;
+	}
+      } else {
+	a = (void **)((char *)a + delta);
+	gcFIXUP(*a);
+      }
+      p++;
+    }
+
+    var_stack = *var_stack;
+  }
+}
+
+/*****************************************************************************
+ * Routines having to do with older generations
+ *****************************************************************************/
+void designate_modified(void *p) {
+  struct mpage *page = pmap_find(p);
+  if(page != NULL) {
+    protect_pages(page, page->size, 1);
+    page->bpointers = 1;
+  } else {
+    fprintf(stderr, "Seg fault (internal error) at %p\n", p);
+    abort();
+  }
+}
+
+static void old_protect(void) {
+  struct mpage *work;
+  int i, j;
+
+  for(i = 1; i < GENERATIONS; i++)
+    for(j = 0; j < MPAGE_TYPES; j++)
+      for(work = gen[i][j]; work; work = work->next)
+	if(work->type != MPAGE_ATOMIC)
+	  protect_pages(work, work->size, 0);
+}
+
+#if defined(linux)
+# include <signal.h>
+void fault_handler(int sn, struct sigcontext sc)
+{
+  designate_modified((void *)sc.cr2);
+  signal(SIGSEGV, (void (*)(int))fault_handler);
+}
+# define NEED_SIGSEGV
+#endif
+
+/* FreeBSD signal handler: */
+#if defined(__FreeBSD__)
+# include <signal.h>
+void fault_handler(int sn, int code, struct sigcontext *sc, char *addr)
+{
+  designate_modified(addr);
+}
+# define NEED_SIGBUS
+#endif
+
+/* Solaris signal handler: */
+#if defined(sun)
+# include <signal.h>
+void fault_handler(int sn, struct siginfo *si, void *ctx)
+{
+  designate_modified(si->si_addr);
+}
+# define NEED_SIGACTION
+#endif
+
+/* Windows signal handler: */
+#if defined(_WIN32)
+LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e) 
+{
+  if ((e->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
+      && (e->ExceptionRecord->ExceptionInformation[0] == 1)) {
+    designate_modified((void *)e->ExceptionRecord->ExceptionInformation[1]);
+
+    return EXCEPTION_CONTINUE_EXECUTION;
+  } else
+    return EXCEPTION_CONTINUE_SEARCH;
+}
+# define NEED_SIGWIN
+#endif
+
+static void old_init(void) {
+# ifdef NEED_SIGSEGV
+    signal(SIGSEGV, (void (*)(int))fault_handler);
+# endif
+# ifdef NEED_SIGBUS
+    signal(SIGBUS, (void (*)(int))fault_handler);
+# endif
+# ifdef NEED_SIGACTION
+    {
+      struct sigaction act, oact;
+      act.sa_sigaction = fault_handler;
+      sigemptyset(&act.sa_mask);
+      act.sa_flags = SA_SIGINFO;
+      sigaction(SIGSEGV, &act, &oact);
+    }
+# endif
+# ifdef NEED_SIGWIN
+    SetUnhandledExceptionFilter(fault_handler);
+# endif
+}
+
+static void old_mark(void) {
+  struct mpage *page;
+  short i, j;
+  
+  for(i = gc_topgen + 1; i < GENERATIONS; i++) 
+    for(j = 0; j < MPAGE_TYPES; j++)
+      for(page = gen[i][j]; page; page = page->next)
+ 	if(page->bpointers) {
+	  switch(j) {
+  	    case MPAGE_TAGGED: {
+	      void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+	      void **end = (void**)((unsigned long)page + page->psize);
+	      while(start < end) {
+#ifdef NEWGC_ACCNT
+		struct objhead *info = (struct objhead *)start++;
+		gc_owner = info->owner;
+#else
+		start++; 
+#endif
+		start += mark_table[*(Type_Tag*)start](start);
+	      }
+	      break;
+	    }
+	    case MPAGE_ATOMIC: break;
+	    case MPAGE_ARRAY: {
+	      void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+	      void **end = (void**)((unsigned long)page + page->psize);
+	      while(start < end) {
+		struct objhead *info = (struct objhead *)start++;
+		unsigned long size = info->size;
+#ifdef NEWGC_ACCNT
+		gc_owner = info->owner;
+#endif
+		while(--size) GC_mark(*(start++));
+	      }
+	      break;
+	    }
+	    case MPAGE_TARRAY: {
+	      void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+	      void **end = (void**)((unsigned long)page + page->psize);
+	      while(start < end) {
+		struct objhead *info = (struct objhead *)start;
+		void **tempend = start + info->size;
+		Type_Tag tag = *(Type_Tag*)(++start);
+#ifdef NEWGC_ACCNT
+		gc_owner = info->owner;
+#endif
+		while(start < tempend) start += mark_table[tag](start);
+	      }
+	      break;
+	    }
+  	    case MPAGE_XTAGGED: {
+	      void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
+	      void **end = (void**)((unsigned long)page + page->psize);
+	      while(start < end) {
+		struct objhead *info = (struct objhead *)start;
+		unsigned long size = info->size;
+#ifdef NEWGC_ACCNT
+		gc_owner = info->owner;
+#endif
+		GC_mark_xtagged(start + 1);
+		start += size;
+	      }
+	      break;
+	    }
+	    case MPAGE_BIG: mark_propbig(page); break;
+	  }
+ 	} 
+}
+
+/*****************************************************************************
+ * Collection routines
+ *****************************************************************************/
+
+static struct mpage *gc_pages = NULL;
+
+static void gc_runcycle(int force_full) {
+  gc_numcollects += 1;
+  gc_cycle += 1;
+  if(force_full) {
+    gc_topgen = 2; 
+    gc_cycle = 0;
+  } else if(gc_cycle < 12) {
+    gc_topgen = 0;
+  } else if(gc_cycle < 15) {
+    gc_topgen = 1;
+  } else {
+    gc_topgen = 2;
+    gc_cycle = 0;
+  }
+}
+
+static void gc_list_len(void) {
+  unsigned long len = 0;
+  struct mpage *page = gc_pages;
+  while(page) { len++; page = page->next; }
+  GCDBG("gc_page list length = %li\n", len);
+}
+
+static void gc_prepare(void) {
+  short i, j;
+
+  gc_pages = NULL;
+  for(i = 0; i <= gc_topgen; i++) 
+    for(j = 0; j < MPAGE_TYPES; j++) {
+      struct mpage *work = gen[i][j];
+      while(work) {
+	struct mpage *next = work->next;
+	if(work->bigpage)
+	  GCDBG("Adding bpage %p to list\n", work);
+	protect_pages(work, work->size, 1);
+	work->next = gc_pages;
+	gc_pages = work;
+	work = next;
+      }
+      gen[i][j] = NULL;
+    }
+  gc_list_len();
+  ot_collectprep();
+}
+
+static void gc_cleanup(void) {
+  struct mpage *work = gc_pages, *prev = NULL;
+    
+  gc_list_len();
+  /* first, we need to see if we need to move any bpages out and
+     fix them */
+  while(work) {
+    if(work->bigpage > 1) {
+      if(prev) prev->next = work->next;
+      else gc_pages = work->next;
+
+      work->gen = INCGEN(work->gen);
+      work->next = gen[work->gen][MPAGE_BIG];
+      gen[work->gen][MPAGE_BIG] = work;
+      fixup_bpage(work);
+      work->bigpage = 1;
+
+      if(prev) work = prev->next;
+      else work = gc_pages;
+    } else {
+      prev = work;
+      work = work->next;
+    }
+  }
+
+  /* now we need to delete everything we didn't save */
+  work = gc_pages;
+  while(work) {
+    struct mpage *temp = work;
+
+    work = work->next;
+    if(temp->bigpage) {
+      pmap_remove(temp);
+      protect_pages(temp, temp->size, 1);
+      mla_free(temp, temp->size, 1);
+    } else {
+      pmap_remove(temp);
+      protect_pages(temp, MPAGE_SIZE, 1);
+      mla_free(temp, MPAGE_SIZE, 0);
+    }
+  }
+  {
+    void **work = tla_heap;
+    while(work <= tla_regions) *(work++) = NULL;
+  }
+/*   bzero(tla_heap, (unsigned long)tla_regions - (unsigned long)tla_heap); */
+  bpage_g0size = 0;
+  tla_regions = tla_heap;
+  old_protect();
+  flush_freed_pages();
+}
+
+#ifdef NEWGC_DEBUG
+static void debug_dump_heap(void) {
+  struct mpage *page;
+  struct root *root;
+  void **start = tla_heap;
+  void **end = tla_regions;
+  short i, j;
+
+  GCDBG("Dumped heap for collection %li, cycle %i, topgen %i\n",
+	gc_numcollects, gc_cycle, gc_topgen);
+
+  for(root = roots; root; root = root->next)
+    GCDBG("%p - %p (owner %i)\n", root->start, root->end, root->owner);
+  GCDBG("Gen0: %p - %p\n", tla_heap, tla_regions);
+  while(start < end) {
+    GCDBG("%8p: %08lx %08lx %08lx %08lx %08lx %08lx %08lx %08lx\n",
+	  start, (unsigned long)*start, (unsigned long)*(start + 1),
+	  (unsigned long)*(start + 2), (unsigned long)*(start + 3),
+	  (unsigned long)*(start + 4), (unsigned long)*(start + 5),
+	  (unsigned long)*(start + 6), (unsigned long)*(start + 7));
+    start += 8;
+  }
+  for(i = 0; i < GENERATIONS; i++) 
+    for(j = 0; j < MPAGE_TYPES; j++) 
+      for(page = gen[i][j]; page; page = page->next) {
+	GCDBG("Page %p (type %i, bigpage %i, gen %i)\n",
+	      page, page->type, page->bigpage, page->gen);
+	start = (void**)page;
+	end = (void**)((unsigned long)page + page->size);
+	while(start < end) {
+	  GCDBG("%8p: %08lx %08lx %08lx %08lx %08lx %08lx %08lx %08lx\n",
+		start, (unsigned long)*start, (unsigned long)*(start + 1),
+		(unsigned long)*(start + 2), (unsigned long)*(start + 3),
+		(unsigned long)*(start + 4), (unsigned long)*(start + 5),
+		(unsigned long)*(start + 6), (unsigned long)*(start + 7));
+	  start += 8;
+	}
+      }  
+}
+#endif
+
+static void gc_collect(int force_full) {
+  if(!gc_deny) {
+    short curown = ot_current();
+    struct owner_list *ol = ol_add(NULL, curown);
+    
+    gc_runcycle(force_full);
+/*     printf("Running collection %li (topgen = %i)\n", gc_numcollects, */
+/* 	   gc_topgen); */
+    if(GC_collect_start_callback) GC_collect_start_callback();
+
+#ifdef NEWGC_DEBUG
+    debug_dump_heap();
+#endif
+    gc_prepare();
+    /* compute the owner list */
+    ol = roots_get_owners(ol);
+    ol = accnt_get_owners(ol);
+    ol = imm_get_owners(ol);
+    ol = fnl_get_owners(ol);
+    ol = wfnl_get_owners(ol);
+    /* sort the owner list */
+    ol = ol_sort(ol);
+
+    if(gc_topgen == 2) wfnl_clear_weaks();
+    /* mark the roots from the owner list */
+    while(ol) {
+      struct owner_list *next = ol->next;
+      GCDBG("Owner %i\n", ol->owner);
+
+#ifdef NEWGC_ACCNT
+      gc_owner = ol->owner;
+#endif
+      GCDBG("Marking roots\n"); roots_mark(ol->owner);
+      GCDBG("Marking accnt\n"); accnt_mark(ol->owner);
+      GCDBG("Marking immobiles\n"); imm_mark(ol->owner);
+      GCDBG("Marking finals\n"); fnl_mark(ol->owner);
+      GCDBG("Marking weak finals\n"); wfnl_mark(ol->owner);
+      GCDBG("Marking stack\n");
+      if(ol->owner == curown)
+	GC_mark_variable_stack(GC_variable_stack, 0,
+			       (void*)(GC_get_thread_stack_base
+				       ? GC_get_thread_stack_base()
+
+				       : (unsigned long)stack_base));
+      free(ol);
+      ol = next;
+    }
+    GCDBG("Marking old pointers\n"); old_mark();
+
+    /* propogate */
+    GCDBG("Propogating marks\n"); mark_propogate();
+    if(gc_topgen == 2) {
+      wfnl_reset_weaks();
+      mark_propogate();
+    }
+
+    /* repair */
+    GCDBG("Fixing up owners\n"); ot_fixup();
+    GCDBG("Fixing up roots\n"); roots_fixup();
+    /* accnt_fixup must be after ot_fixup */
+    GCDBG("Fixing up accnt stuff\n"); accnt_fixup();
+    GCDBG("Fixing up immobiles\n"); imm_fixup();
+    GCDBG("Fixing up finals\n"); fnl_fixup();
+    GCDBG("Fixing up weak finals\n"); wfnl_fixup();
+    GCDBG("Fixing up stack\n");
+    GC_fixup_variable_stack(GC_variable_stack, 0,
+			    (void*)(GC_get_thread_stack_base
+				    ? GC_get_thread_stack_base()
+				    : (unsigned long)stack_base));
+    GCDBG("Fixing up heap\n"); fixup_heap();
+    GCDBG("Cleaning up\n");gc_cleanup();
+
+    if(GC_collect_start_callback) GC_collect_end_callback();
+    rq_run();
+  }
+}
+
+void GC_gcollect() { gc_collect(1); }
+
+/*****************************************************************************
+ * Memory allocation (system level)
+ *****************************************************************************/
+#if _WIN32
+static void *malloc_pages(size_t len, size_t align) {
+  return VirtualAlloc(NULL, len, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
+}
+
+static void *free_pages(void *p, size_t len) {
   VirtualFree(p, 0, MEM_RELEASE);
 }
 
-void flush_freed_pages(void) {}
+static void flush_freed_pages(void) {}
 
-void protect_pages(void *p, size_t len, int writeable) {
+static void protect_pages(void *p, size_t len, int rw) {
   DWORD old;
-  VirtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
+  VirtualProtect(p, len, rw ? PAGE_READWRITE : PAGE_READONLY, &old);
 }
-
-# define MALLOCATOR_DEFINED
-#endif /* Windows */
-
-#if OSKIT /* OSKit */
-# include <oskit/c/malloc.h>
-
-void *malloc_pages(size_t len, size_t alignment) {
-  void *p;
-  p = smemalign(alignment, len);
-  memset(p, 0, len);
-  return p;
-}
-
-void free_pages(void *p, size_t len) {
-  sfree(p, len);
-}
-
-void flush_freed_pages(void) {}
-
-# define MALLOCATOR_DEFINED
-#endif /* OSKit */
-
-#ifndef MALLOCATOR_DEFINED /* Default: mmap */
+#else
 # include <unistd.h>
 # include <fcntl.h>
 # include <sys/types.h>
@@ -247,13 +2266,12 @@ long blockfree_sizes[BLOCKFREE_CACHE_SIZE];
 void free_pages(void *p, size_t len)
 {
   int i;
-
+  
   /* Round up to nearest page: */
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
   /* Try to free pages in larger blocks, since the OS may be slow. */
-
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
     if (p == blockfree_ptrs[i] + blockfree_sizes[i]) {
       blockfree_sizes[i] += len;
@@ -301,2862 +2319,78 @@ void protect_pages(void *p, size_t len, int writeable)
   if (len & (page_size - 1)) {
     len += page_size - (len & (page_size - 1));
   }
-
+  if(!writeable)
+    GCDBG("Protecting %p through %p\n", p, p + len);
   mprotect(p, len, (writeable ? (PROT_READ | PROT_WRITE) : PROT_READ));
 }
-
-#endif
-
-/*
-  The mid-level allocator. A couple routines which add a layer between the
-  OS stuff we just did and the allocators used by the system below. It adds
-  a little complication but makes it easier to keep track of some information
-*/
-#define MPAGE_SIZE		(1 << LOG_MPAGE_SIZE)
-#define PAGES_IN_HEAP		(MAX_HEAP_SIZE / MPAGE_SIZE)
-#define MAX_USED_PAGES		(PAGES_IN_HEAP / 2)
-
-UWORD used_pages = 0;
-
-/* 
-   You might think keeping pages around for reallocation would be
-   a nice little win here. I thought so too, but timing trials don't
-   show any difference.
-*/
-
-inline void *malloc_mempages(UWORD size) {
-  UWORD numpages = (size / MPAGE_SIZE) + (((size % MPAGE_SIZE) == 0) ? 0 : 1);
-  void *m;
-  int i = 5;
-  
-  if((used_pages + numpages) > MAX_USED_PAGES) {
-    garbage_collect(0);
-    if((used_pages + numpages) > MAX_USED_PAGES) {
-      garbage_collect(1);
-      if((used_pages + numpages) > MAX_USED_PAGES) {
-	if (GC_out_of_memory)
-	  GC_out_of_memory();
-	
-	printf("Out of memory\n");
-	abort();
-      }
-    }
-  }
-
-  while (i--) {
-    m = malloc_pages(size, MPAGE_SIZE);
-    if (m) {
-      /* bzero(m, size); */
-      used_pages += numpages;
-      return m;
-    } else garbage_collect(1);
-  }
-
-  if (GC_out_of_memory)
-    GC_out_of_memory();
-  
-  printf("Out of memory\n");
-  abort();
-  return NULL;
-}
-
-inline void free_mempages(MPage *page) {
-  UWORD numpages = (page->size/MPAGE_SIZE)+(((page->size%MPAGE_SIZE)==0)?0:1);
-  free_pages(page, page->size);
-  used_pages -= numpages;
-}
-
-#define midlevel_room_left()	((MAX_USED_PAGES - used_pages) * MPAGE_SIZE)
-/* static UWORD midlevel_room_left(void) { */
-/*   return (MAX_USED_PAGES - used_pages) * MPAGE_SIZE; */
-/* } */
-
-/*
-  The MPage routines, including the two main allocators
-*/
-#define MPAGE_SIZE	        (1 << LOG_MPAGE_SIZE)
-
-/* 
-   The types for the pages
-*/
-#define MPAGE_TAGGED			0
-#define MPAGE_ATOMIC			1
-#define MPAGE_ARRAY			2
-#define MPAGE_TARRAY			3
-#define MPAGE_XTAGGED			4
-
-
-#define OFFSET_BITS		(LOG_MPAGE_SIZE - LOG_WORD_SIZE)
-#define OWNER_BITS		((1 << (LOG_WORD_SIZE+3)) - (OFFSET_BITS + 1))
-
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-/*
-  In either of the external owner set schemes, each object has some
-  information about it tacked onto the front which contains information
-  about the objects size, whether it's marked and its owner. 
-*/
-typedef struct ObjHeader {
-  unsigned int owner : OWNER_BITS;
-  unsigned int mark : 1;
-  unsigned int size : OFFSET_BITS;
-} ObjHeader;
-#else
-/*
-  In the non-external owner set schemes, we still need a word up front
-  for untagged objects but don't need it for tagged objects; this also
-  somewhat complicates marking, for which the following macros are used
-*/
-#define TAGGED_MARKED_P(x)	((x) & (1 << 15))
-#define TAGGED_MARK(x)		((x) | (1 << 15))
-#define TAGGED_UNMARK(x)	((x) & ~(1 << 15))
-#define UNTAGGED_MARKED_P(x)	((x) & (1 << 31))
-#define UNTAGGED_MARK(x)	((x) | (1 << 31))
-#define UNTAGGED_UNMARK(x)	((x) & ~(1 << 31))
-#endif
-
-/*
-  This is a little table of the generations, which allows for easy, quick
-  access.
-*/
-#ifdef GENERATIONS
-MPage *gen[GENERATIONS][6];
-#else
-MPage *gen[1][6];
-#endif
-
-/*
-  This is the list of pages we're collecting
-*/
-MPage *collect_pages = NULL;
-
-/* 
-   For those strange places where someone wants an object of size zero,
-   here's what we return:
-*/
-char zero_sized[4];
-
-/* 
-   this is a constant which defines the maximum size for an object which
-   is going to be allocated to a normal page
-*/
-#define MAX_NORMAL_SIZE		(MPAGE_SIZE - PAGE_HEADER_SIZE)
-
-/*
-  Information about our current heap size, all in bytes
-*/
-UWORD heap_size = 0;
-UWORD size_to_collect_at = INIT_HEAP_LIMIT;
-
-/*
-  Often we need to look up what page a given pointer is on. Since we
-  do this a lot, the added efficiency of the following makes up for
-  the somewhat huge space inefficiencies we're adding here
-*/
-#define WORD_SIZE_IN_BITS	(1 << (LOG_WORD_SIZE + 3))
-#define DEAD_BITS		LOG_MPAGE_SIZE
-#define USEFUL_BITS		(WORD_SIZE_IN_BITS - DEAD_BITS)
-#define FLINDEX_SIZE		(USEFUL_BITS >> 1)
-#define FLINDEX_SHIFT		(WORD_SIZE_IN_BITS - FLINDEX_SIZE)
-#define SLINDEX_SIZE		(USEFUL_BITS - FLINDEX_SIZE)
-#define SLINDEX_SHIFT		DEAD_BITS
-#define SLINDEX_MASK		((1 << SLINDEX_SIZE) - 1)
-#define FLINDEX(x)		((UWORD)x >> FLINDEX_SHIFT)
-#define SLINDEX(x)		(((UWORD)x >> SLINDEX_SHIFT) & SLINDEX_MASK)
-
-MPage *mpage_map[1 << FLINDEX_SIZE][1 << SLINDEX_SIZE];
-
-void add_to_page_map(MPage *work) {
-  MPage *cur = work;
-  long size_left = work->flags.bigpage ? work->size : MPAGE_SIZE;
-  
-  while(size_left > 0) {
-    mpage_map[FLINDEX(cur)][SLINDEX(cur)] = work;
-    size_left -= MPAGE_SIZE;
-    cur = (MPage*)((UWORD)cur + MPAGE_SIZE);
-  }
-}
-
-#define find_page(p)		(mpage_map[FLINDEX(p)][SLINDEX(p)])
-
-void rem_from_page_map(MPage *work) {
-  MPage *cur = work;
-  long size_left = work->flags.bigpage ? work->size : MPAGE_SIZE;
-
-  while(size_left > 0) {
-    mpage_map[FLINDEX(cur)][SLINDEX(cur)] = NULL;
-    size_left -= MPAGE_SIZE;
-    cur = (MPage*)((UWORD)cur + MPAGE_SIZE);
-  }
-}
-
-/* 
-   When we start up, the mpage_map variable is not guaranteed by the
-   C standard to be zero-filled. Therefor, we have to make sure what
-   we have is clean. Unfortunately, since running init() is not 
-   necessarily triggered by the first allocation, we may have to go
-   back and readd some pages
-*/
-void initialize_mpage_subsystem(void) {
-  MPage *work;
-  int i;
-
-  bzero(mpage_map, (1<<FLINDEX_SIZE)*(1<<SLINDEX_SIZE)*sizeof(MPage*));
-  /* now go back and fix things up*/
-  for(i = 0; i < 6; i++) {
-    for(work = gen[0][i]; work; work = work->next) {
-      add_to_page_map(work);
-    }
-  }
-}
-
-/* 
-   This is the "main" allocator, in that it is used by all the hooks into
-   the external system. It's declared 'inline', which may blow up space 
-   usage but hopefully will cut down on some time.
-*/
-inline void *alloc_new_bits(size_t size_in_bytes, int type, int force_big) {
-  MPage *page;
-  void *retval;
-  long size_in_words = gcBYTES_TO_WORDS(size_in_bytes);
-
-  if(!size_in_bytes) {
-    return zero_sized;
-  }
-
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-  /* 
-     If we're keeping external owner information, we always want to
-     add a word for this.
-  */
-  size_in_words += 1;
-#else
-  /* 
-     Otherwise, we only want to add one if this is an untagged object
-  */
-  if(type) size_in_words += 1;
-#endif
-
-  size_in_bytes = gcWORDS_TO_BYTES(size_in_words);
-
-  /* see if we should stop and do a collection */
-  heap_size += size_in_bytes;
-  if(heap_size > size_to_collect_at)
-    garbage_collect(0);
-
-  /* see if we should be allocating this as a big page or a normal page */
-  if((size_in_bytes > MAX_NORMAL_SIZE) || force_big) {
-    page = (MPage*)malloc_mempages(size_in_bytes+PAGE_HEADER_SIZE);
-    page->next = gen[0][5];
-/*  page->owner = 0 */
-/*  page->flags.gen = 0; */
-    page->flags.bigpage = 1;
-    page->flags.type = type;
-/*  page->flags.mark = 0; */
-    page->size = size_in_bytes + PAGE_HEADER_SIZE;
-/*  page->former_size = 0; */
-    add_to_page_map(page);
-    gen[0][5] = page;
-    retval = (void*)((UWORD)page + PAGE_HEADER_SIZE);
-  } else {
-    page = gen[0][type];
-
-    /* FIXME: Choose which one to use! */
-    while(page && ((page->size + size_in_bytes) >= MPAGE_SIZE))
-      page = page->next;
-/*     if(page && ((page->size + size_in_bytes) >= MPAGE_SIZE)) */
-/*       page = NULL; */
-
-    if(page) {
-      /* add this to a pre-existing page */
-      retval = (void*)((UWORD)page + page->size);
-      page->size += size_in_bytes;
-    } else {
-      /* we need to add a new page */
-      page = (MPage*)malloc_mempages(MPAGE_SIZE);
-      page->next = gen[0][type];
-/*    page->owner = 0; */
-/*    page->flags.bigpage = 0; */
-      page->flags.type = type;
-/*    page->flags.mark = 0; */
-      page->size = PAGE_HEADER_SIZE + size_in_bytes;
-/*    page->former_size = 0; */
-      add_to_page_map(page);
-      gen[0][type] = page;
-      retval = (void*)((UWORD)page + PAGE_HEADER_SIZE);
-    }
-  }
-  
-/*
-  If we need header information, add it and bump the pointer
-*/
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
- {
-   ObjHeader *info = (ObjHeader*)retval;
-   info->owner = 0; /* FIXME: Use a real owner? */
-   info->mark = 0;
-   info->size = size_in_words;
-   retval = (void*)((UWORD)retval + 4);
- }
-#else
-  if(type) {
-    *(UWORD*)retval = size_in_words;
-    retval = (void*)((UWORD)retval + 4);
-  }
-#endif
-
-  return retval;
-}
-
-/* this is a performance hack, and a serious one at that.*/
-typedef struct MPageList {
-  MPage *page;
-  struct MPageList *next;
-} MPageList;
-
-MPageList *mucked_pages = NULL;
-
-void add_to_mucked_pages(MPage *page) {
-  MPageList *work = mucked_pages, *prev = NULL;
-
-  if(work) {
-    while(work) {
-      if(work->page == page) {
-	if(prev) {
-	  prev->next = work->next;
-	  work->next = mucked_pages;
-	  mucked_pages = work;
-	} 
-	return;
-      } else {
-	prev = work;
-	work = work->next;
-      }
-    }
-    work = (MPageList*)malloc(sizeof(MPageList));
-    work->page = page;
-    work->next = mucked_pages;
-    mucked_pages = work;
-  } else {
-    mucked_pages = (MPageList*)malloc(sizeof(MPageList));
-    mucked_pages->page = page;
-    mucked_pages->next = NULL;
-  }
-}
-
-/*
-  This is the "allocator" used by the mark phase of the collector to
-  create new space in the to-space. It tries a little harder to not
-  fragment than the previous one, you'll notice
-*/
-/* FIXME: inline? */
-void *copy_bits(void *oldptr, UWORD size_in_words, int type, int tgen
-#ifdef ACCNT_INPLACE
-		, UWORD owner 
-#endif
-		) 
-{
-  UWORD size_in_bytes = gcWORDS_TO_BYTES(size_in_words);
-  MPage *work = gen[tgen][type];
-  void *retval;
-
-#ifdef ACCNT_INPLACE
-  while(work && !(((work->size + size_in_bytes) < MPAGE_SIZE)
-		  && (work->owner == owner)))
-    work = work->next;
-#else
-  while(work && ((work->size + size_in_bytes) >= MPAGE_SIZE)) 
-    work = work->next;
-#endif
-
-  if(work) {
-    /* We're putting this on a pre-existing page. Good */
-    retval = (void*)((UWORD)work + work->size);
-    memcpy(retval, oldptr, size_in_bytes);
-    work->size += size_in_bytes;
-    add_to_mucked_pages(work);
-    return retval;
-  } else {
-    /* We need to add a new page */
-    work = (MPage*)malloc_mempages(MPAGE_SIZE);
-    work->next = gen[tgen][type];
-#ifdef ACCNT_INPLACE
-    work->owner = owner;
-#endif
-    work->flags.gen = tgen;
-/*  work->flags.bigpage = 0; */
-    work->flags.type = type;
-/*  work->flags.mark = 0; */
-    work->size = PAGE_HEADER_SIZE + size_in_bytes;
-    work->former_size = PAGE_HEADER_SIZE;
-    add_to_page_map(work);
-    gen[tgen][type] = work;
-    retval = (void*)((UWORD)work + PAGE_HEADER_SIZE);
-    memcpy(retval, oldptr, size_in_bytes);
-    add_to_mucked_pages(work);
-    return retval;
-  }
-}
-
-char *flags_to_strtype(MPage *page) {
-  if(page->flags.bigpage) {
-    switch(page->flags.type) {
-    case MPAGE_TAGGED: return "BTGD";
-    case MPAGE_ATOMIC: return "BATM";
-    case MPAGE_ARRAY: return "BARR";
-    case MPAGE_TARRAY: return "BTAR";
-    case MPAGE_XTAGGED: return "BXTG";
-    }
-  } else {
-    switch(page->flags.type) {
-    case MPAGE_TAGGED: return "TAGD";
-    case MPAGE_ATOMIC: return "ATOM";
-    case MPAGE_ARRAY: return "ARRY";
-    case MPAGE_TARRAY: return "TARR";
-    case MPAGE_XTAGGED: return "XTGD";
-    }
-  }
-  return "XXXX";
-}
-
-void dump_mpage_information(FILE *file) {
-  MPage *work;
-  int i = 0, j;
-  char *format = "%10p                  %2i      %5i    %3s (%i)\n";
-  UWORD pages = 0, possible = 0;
-
-  fprintf(file, "Memory page information:\n");
-  fprintf(file, "Page:                       Gen:   Size:    Type:\n");
-  fprintf(file, "-------------------------------------------------\n");
-#ifdef GENERATIONS  
-  for(i = 0; i < GENERATIONS; i++) {
-#endif
-    for(j = 0; j < 6; j++) {
-      for(work = gen[i][j]; work; work = work->next) {
-	fprintf(file, format, work, work->flags.gen, work->size, 
-		flags_to_strtype(work), work->flags.bpointers);
-	pages++;
-	if(work->flags.bigpage) {
-	  int blocks = (work->size/MPAGE_SIZE)+(((work->size%MPAGE_SIZE)>0)?1:0);
-	  possible += (blocks * MPAGE_SIZE);
-	} else possible += MPAGE_SIZE;
-      }
-    }
-#ifdef GENERATIONS
-  }
-#endif
-  fprintf(file, "\n");
-  fprintf(file, "%li pages using %li of %li bytes (%2.1f%% wasted)\n",
-	  pages, heap_size, 
-	  possible, 100 - (((float)heap_size / (float)possible) * 100));
-}
-
-/*
-  The routines and data structures to implement owner sets. 
-*/
-
-#ifndef ACCNT_OFF
-
-typedef struct CustodianList {
-  Scheme_Custodian *cust;
-  struct CustodianList *next;
-} CustodianList;
-
-typedef struct UnionList {
-  unsigned int with_owner;
-  unsigned int result;
-  struct UnionList *next;
-} UnionList;
-
-typedef struct OwnerTableEntry {
-  Scheme_Custodian *creator;
-  CustodianList *custs;
-  UnionList *unions;
-  UWORD mem_use[GENERATIONS];
-} OwnerTableEntry;
-
-OwnerTableEntry **owner_table = NULL;
-int owner_table_top = 0;
-
-#define OWNER_TABLE_ADD_SIZE		10
-#define INIT_OWNER_TABLE_SIZE		5
-
-void dump_ownerset_information(FILE *file) {
-  UWORD size = 0;
-  int i;
-
-  fprintf(file, "\nOwner Set Information:\n");
-  fprintf(file, "Owner table entry:         Type:         Memory usage:\n");
-  fprintf(file, "--------------------------------------------------------\n");
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i]) {
-      int j;
-      long memsize = 0;
-      for(j = 0; j < GENERATIONS; j++) {
-	memsize += owner_table[i]->mem_use[j];
-      }
-      fprintf(file, "%010i                 %10s    %li\n", i,
-	      owner_table[i]->creator ? "Singular  " : "Unioned   ",
-	      memsize);
-    }
-  }
-
-  /* compute the amount of space we're using to cope with all this */
-  size += owner_table_top * sizeof(OwnerTableEntry*);
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i]) {
-      CustodianList *clist;
-      UnionList *ulist;
-
-      size += sizeof(OwnerTableEntry);
-      for(clist = owner_table[i]->custs; clist; clist = clist->next) 
-	size += sizeof(CustodianList);
-      for(ulist = owner_table[i]->unions; ulist; ulist = ulist->next)
-	size += sizeof(UnionList);
-    }
-  }
-
-  fprintf(file, "\nOwner table contains %i entries\n", owner_table_top);
-  fprintf(file, "Memory accounting information uses %li bytes\n", size);
-}
-
-UWORD custodian_to_ownerset(Scheme_Custodian *cust) {
-  CustodianList *custs = NULL;
-  Scheme_Custodian *cur = cust;
-  UWORD i, j;
-
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i] && (owner_table[i]->creator == cust)) {
-      return i;
-    }
-  }
-
-  for(i = 0; i < owner_table_top; i++) 
-    if(!owner_table[i]) break;
-
-  if(i >= owner_table_top) {
-    /* there wasn't currently enough room for this entry, so we need
-       to allocate more room. First we need to check that we don't
-       already have too many entries */
-    i = owner_table_top;
-
-    owner_table_top += OWNER_TABLE_ADD_SIZE;
-    if(owner_table_top >= (1 << OWNER_BITS)) {
-      fprintf(stderr, "No more room for custodians. Accounting is dying.\n");
-      return 0;
-    }
-    owner_table = realloc(owner_table, owner_table_top
-			  * sizeof(OwnerTableEntry*));
-    bzero(&(owner_table[i]), OWNER_TABLE_ADD_SIZE * sizeof(OwnerTableEntry*));
-  }
-
-  while(cur) {
-    CustodianList *temp = (CustodianList*)malloc(sizeof(CustodianList));
-    Scheme_Object *box;
-    temp->cust = cur;
-    temp->next = custs;
-    custs = temp;
-    box = (Scheme_Object*)cur->parent;
-    cur = box ? (Scheme_Custodian*)box->u.two_ptr_val.ptr1 : NULL;
-  }
-  
-  owner_table[i] = (OwnerTableEntry*)malloc(sizeof(OwnerTableEntry));
-  owner_table[i]->creator = cust;
-  owner_table[i]->custs = custs;
-  owner_table[i]->unions = NULL;
-  for(j = 0; j < GENERATIONS; j++) {
-    owner_table[i]->mem_use[j] = 0;
-  }
-
-  return i;
-}
-
-#define ownerset_account_memory(o, g, s) owner_table[o]->mem_use[g] += s
-
-int ownerset_member_p(Scheme_Custodian *cust, UWORD set) {
-  CustodianList *work;
-
-  for(work = owner_table[set]->custs; work; work = work->next) {
-    if(work->cust == cust) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
-int ownerset_subset_p(UWORD set1, UWORD set2) {
-  CustodianList *work;
-
-  for(work = owner_table[set1]->custs; work; work = work->next) {
-    if(!ownerset_member_p(work->cust, set2)) {
-      return 0;
-    }
-  }
-  return 1;
-}
-
-int ownerset_union(UWORD set1, UWORD set2) {
-  UnionList *work;
-  UWORD res;
-  
-  work = owner_table[set1]->unions;
-  while(work) {
-    if(work->with_owner == set2) {
-      return work->result;
-    } else work = work->next;
-  }
-
-  /* damn, this isn't memoized. See if one is a subset of the other */
-  if(ownerset_subset_p(set1, set2)) {
-    /* yup. 1 is a subset of 2 */
-    res = set2;
-  } else if(ownerset_subset_p(set2, set1)) {
-    /* yup. 2 is a subset of 1 */
-    res = set1;
-  } else {
-    /* nope. */
-    CustodianList *work = NULL;
-    CustodianList *combo = NULL;
-    UWORD i;
-
-    /* add every element in set2 */
-    for(work = owner_table[set2]->custs; work; work = work->next) {
-      CustodianList *temp = (CustodianList*)malloc(sizeof(CustodianList));
-      temp->cust = work->cust;
-      temp->next = combo;
-      combo = temp;
-    }
-    /* add every element in set1 that's not in set2 */
-    for(work = owner_table[set1]->custs; work; work = work->next) {
-      if(!ownerset_member_p(work->cust, set2)) {
-	CustodianList *temp = (CustodianList*)malloc(sizeof(CustodianList));
-	temp->cust = work->cust;
-	temp->next = combo;
-	combo = temp;
-      }
-    }
-
-    for(res = 0; res < owner_table_top; res++)
-      if(!owner_table[res]) break;
-    
-    if(res >= owner_table_top) {
-      /* there wasn't currently enough room for this entry, so we need
-	 to allocate more room. First we need to check that we don't
-	 already have too many entries */
-      res = owner_table_top;
-
-      owner_table_top += OWNER_TABLE_ADD_SIZE;
-      if(owner_table_top >= (1 << OWNER_BITS)) {
-	fprintf(stderr, "No more room for custodians. Accounting is dying.\n");
-	return 0;
-      }
-      owner_table = realloc(owner_table, owner_table_top
-			    * sizeof(OwnerTableEntry*));
-      bzero(&(owner_table[res]), OWNER_TABLE_ADD_SIZE 
-	                       * sizeof(OwnerTableEntry*));
-    }
-
-    owner_table[res] = (OwnerTableEntry*)malloc(sizeof(OwnerTableEntry));
-    owner_table[res]->creator = NULL;
-    owner_table[res]->custs = combo;
-    owner_table[res]->unions = NULL;
-    for(i = 0; i < GENERATIONS; i++) {
-      owner_table[res]->mem_use[i] = 0;
-    }
-  }
-
-  /* res is now the correct resultant value. Tack on some things 
-     so that we can just pull this as memoized next time */
-  work = (UnionList*)malloc(sizeof(UnionList));
-  work->with_owner = set2;
-  work->result = res;
-  work->next = owner_table[set1]->unions;
-  owner_table[set1]->unions = work;
-  work = (UnionList*)malloc(sizeof(UnionList));
-  work->with_owner = set1;
-  work->result = res;
-  work->next = owner_table[set2]->unions;
-  owner_table[set2]->unions = work;
-  
-  /* now that's all taken care of, so return */
-
-  return res;
-}
-
-#define ownerset_eq(own1,own2)		(own1 == own2)
-
-UWORD current_owner() { 
-  static int initialized = 0;
-  
-  if(initialized) {
-    Scheme_Custodian *c;
-    c = (Scheme_Custodian*)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
-    return custodian_to_ownerset(c);
-  } else if(scheme_current_thread && scheme_current_thread->config) {
-    OwnerTableEntry *oldent = owner_table[0];
-    UWORD res;
-    
-    initialized = 1;
-    owner_table[0] = NULL;
-    res = current_owner();
-    owner_table[0]->mem_use[0] = oldent->mem_use[0];
-    free(oldent);
-    init();
-    return res;
-  } else {
-    if(!owner_table) {
-      UWORD i;
-
-      owner_table = (OwnerTableEntry**)malloc(INIT_OWNER_TABLE_SIZE
-					      * sizeof(OwnerTableEntry*));
-      bzero(owner_table, INIT_OWNER_TABLE_SIZE * sizeof(OwnerTableEntry*));
-      owner_table[0] = (OwnerTableEntry*)malloc(sizeof(OwnerTableEntry));
-      owner_table[0]->creator = NULL;
-      owner_table[0]->custs = NULL;
-      owner_table[0]->unions = NULL;
-      for(i = 0; i < GENERATIONS; i++) {
-	owner_table[0]->mem_use[i] = 0;
-      }
-      owner_table_top = INIT_OWNER_TABLE_SIZE;
-    }
-    return 0;
-  }
-}
-
-void prep_ownerset_information(int mark_gen) {
-  UWORD i, j;
-
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i]) {
-      for(j = 0; j <= mark_gen; j++) {
-	owner_table[i]->mem_use[j] = 0;
-      }
-    }
-  }
-}
-
-
-void ownerset_delete(UWORD i) {
-  CustodianList *ctemp = owner_table[i]->custs;
-  UnionList *utemp = owner_table[i]->unions;
-
-  while(ctemp) {
-    CustodianList *temp = ctemp;
-    ctemp = ctemp->next;
-    free(temp);
-  }
-  while(utemp) {
-    UnionList *temp = utemp;
-    utemp = utemp->next;
-    free(temp);
-  }
-  free(owner_table[i]);
-  owner_table[i] = NULL;
-}
-
-void fixup_ownersets() {
-  UWORD i;
-
-  /* First, clear out any entries whose creators are custodians which
-     no longer exist and fixup the ones that do */
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i] && owner_table[i]->creator) {
-      if(is_marked(owner_table[i]->creator)) {
-	gcFIXUP(owner_table[i]->creator);
-      } else {
-	ownerset_delete(i);
-      }
-    }
-  }
-
-  /* Then clear out all the entries that contain unmarked custodians
-     in their list and/or fixup the good custodians */
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i]) {
-      CustodianList *temp = owner_table[i]->custs;
-      owner_table[i]->custs = NULL;
-
-      while(temp) {
-	CustodianList *next = temp->next;
-	if(is_marked(temp->cust)) {
-	  gcFIXUP(temp->cust);
-	  temp->next = owner_table[i]->custs;
-	  owner_table[i]->custs = NULL;
-	} 
-	temp = next;
-      }
-      if(!owner_table[i]->creator && !owner_table[i]->custs) {
-	ownerset_delete(i);
-      }
-    }
-  }
-
-  /* Finally, clear out any unions that involve a set we've nulled out*/
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i]) {
-      UnionList *temp = owner_table[i]->unions;
-      UnionList *prev = NULL;
-      
-      while(temp) {
-	if(!owner_table[temp->with_owner] || !owner_table[temp->result]) {
-	  if(prev) {
-	    UnionList *cur = temp;
-	    prev->next = temp = temp->next;
-	    free(cur);
-	  } else {
-	    UnionList *cur = temp;
-	    owner_table[i]->unions = temp = temp->next;
-	    free(cur);
-	  }
-	} else temp = temp->next;
-      }
-    }
-  }
-}
-
-UWORD get_custodian_mem_usage(Scheme_Custodian *cust) {
-  UWORD i;
-  long res = 0;
-
-  for(i = 0; i < owner_table_top; i++) {
-    if(owner_table[i]) {
-      if(ownerset_member_p(cust, i)) {
-	UWORD j;
-	for(j = 0; j < GENERATIONS; j++) {
-	  res += owner_table[i]->mem_use[j];
-	}
-      }
-    }
-  }
-  return res;
-}
-
-#endif /* (#ifndef ACCNT_OFF) */
-
-/* 
-   The hooks into the accounting system
-*/
-
-typedef struct AccountHook {
-  unsigned short type; 
-  int owner;
-  Scheme_Custodian *cust;
-  unsigned long bytes;
-  Scheme_Object *f;
-  struct AccountHook *next;
-} AccountHook;
-
-AccountHook *account_hooks = NULL;
-UWORD total_requires = 0;
-
-void mark_account_hooks(void) {
-#ifndef ACCNT_OFF
-  AccountHook *cur = account_hooks;
-  
-  while(cur) {
-    mark_owner = cur->owner;
-    gcMARK(cur->f);
-    cur = cur->next;
-  }
-#endif
-}
-
-void fixup_account_hooks(void) {
-#ifndef ACCNT_OFF
-  AccountHook *cur, *prev;
-
-  cur = account_hooks;
-  prev = NULL;
-  while(cur) {
-    if((!is_marked(cur->cust) && (cur->type == MZACCT_LIMIT))
-       || !owner_table[cur->owner]) {
-      if(cur->type == MZACCT_REQUIRE) {
-	total_requires -= cur->bytes;
-      }
-      if(prev) {
-	prev->next = cur->next;
-	free(cur);
-	cur = prev->next;
-      } else {
-	account_hooks = cur->next;
-	free(cur);
-	cur = account_hooks;
-      }
-    } else {
-      gcFIXUP(cur->cust);
-      gcFIXUP(cur->f);
-      prev = cur;
-      cur = cur->next;
-    }
-  }
-#endif
-}
-
-void run_applicable_account_hooks(void) {
-#ifndef ACCNT_OFF
-  AccountHook *cur;
-
-  for(cur = account_hooks; cur; cur = cur->next) {
-    if(cur->type == MZACCT_REQUIRE) {
-      if(midlevel_room_left() <= total_requires) {
-	_scheme_apply(cur->f, 0, NULL);
-      }
-    } else if(cur->type == MZACCT_LIMIT) {
-      if(get_custodian_mem_usage(cur->cust) >= cur->bytes) {
-	_scheme_apply(cur->f, 0, NULL);
-      }
-    } else {
-      fprintf(stderr, "Unknown type on account hook (%i)\n", cur->type);
-      abort();
-    }
-  }
-#endif
-}
-
-/*
-  These are the routines which do marking. This is a bit complicated due
-  to the fact that we're allowing for different levels of accounting.
-*/
-#define MARK_WHITE	0
-#define MARK_GRAY	1
-#define MARK_BLACK	2
-
-int is_marked(void *p) {
-  MPage *page = find_page(p);
-
-  if(!page) return 0;
-#ifdef GENERATIONS
-  if(page->flags.gen > mark_gen) return 1;
-#endif
-  if(page->flags.bigpage) return page->flags.mark;
-
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-  {
-    ObjHeader *info = (ObjHeader*)((UWORD)p - 4);
-    return info->mark;
-  }
-#else
-  if(page->flags.type) {
-    UWORD size = *(UWORD*)((UWORD)p - 4);
-    return UNTAGGED_MARKED_P(size);
-  } else {
-    Type_Tag tag = *(Type_Tag*)p;
-    return TAGGED_MARKED_P(tag);
-  }
-#endif
-}
-
-#ifdef ACCNT_PRECISE
-void propogate_bpage_marks(MPage *page);
-int marking_precise = 0;
-
-/* This is the retrace routine when we're doing precise accounting */
-void retrace_owner_computation(void *p) {
-  marking_precise = 1;
-  GC_mark(p);
-  marking_precise = 0;
-}
-
-void mark_precise(void *p) {
-  MPage *page;
-
-  if(!p || ((UWORD)p & 0x1)) return;
-  page = find_page(p);
-  if(!page) return;
-  
-  if(page->flags.bigpage) {
-    ObjHeader *info = (ObjHeader*)((UWORD)page + PAGE_HEADER_SIZE);
-    switch(page->flags.mark) {
-      case MARK_WHITE: return;
-      case MARK_GRAY: info->owner = ownerset_union(info->owner, mark_owner); break;
-      case MARK_BLACK: 
-	info->owner = ownerset_union(info->owner, mark_owner);
-	propogate_bpage_marks(page);
-	break;
-    }
-  } else {
-    ObjHeader *info = (ObjHeader*)((UWORD)p - 4);
-    if(info->mark) {
-      void *newp = *(void**)p;
-      ObjHeader *newinfo = (ObjHeader*)((UWORD)newp - 4);
-      mark_owner = newinfo->owner = ownerset_union(newinfo->owner, mark_owner);
-      switch(page->flags.type) {
-        case MPAGE_TAGGED: mark_table[*(Type_Tag*)newp](newp); break;
-        case MPAGE_ATOMIC: break;
-        case MPAGE_ARRAY: {
-	  void **start = (void**)newp;
-	  void **end = start + info->size;
-	  while(start < end) GC_mark(*(start++)); break;
-	}
-        case MPAGE_TARRAY: {
-	  void **start = (void**)newp;
-	  void **end = start + info->size;
-	  Type_Tag tag = *(Type_Tag*)newp;
-	  while(start < end) {
-	    start += mark_table[tag](start);
-	  }
-	  break;
-	}
-        case MPAGE_XTAGGED: GC_mark_xtagged(newp); break;
-      }
-    }
-  }
-}
-#endif
-
-void GC_mark(const void *p) {
-  MPage *page;
-
-  if(!p || ((UWORD)p & 0x1))
-    return;
-
-  /* 
-     if we can't find the page, either this is a pointer that's not into
-     our heap or into an older generation. In either case, we don't need
-     to do anything.
-  */
-  page = find_page((void*)p);
-  if(!page) return;
-#ifdef GENERATIONS
-  if(page->flags.gen > mark_gen) return;
-#endif
-
-#ifdef ACCNT_PRECISE
-  if(marking_precise) { mark_precise((void*)p); return; }
-#endif
-  if(page->flags.bigpage) {
-    /*
-      We're on a bigpage. We need to mark this, figure out whatever needs
-      to be done for the owner information, and then move this page from
-      the collect_pages list and onto the proper, saved list
-     */
-    switch(page->flags.mark) {
-      case MARK_WHITE: {
-	MPage *temp = collect_pages;
-
-#ifndef ACCNT_OFF
-# ifdef ACCNT_INPLACE
-	temp->owner = mark_owner;
-# else
-	((ObjHeader*)((UWORD)page + PAGE_HEADER_SIZE))->owner = mark_owner;
-# endif
-#endif	
-	page->flags.mark = MARK_GRAY;
-	page->flags.gen = INCGEN(page->flags.gen);
-#ifndef ACCNT_OFF
-	ownerset_account_memory(mark_owner, page->flags.gen, page->size);
-#endif
-	while(temp && (temp->next != page)) 
-	  temp = temp->next;
-	if(temp) {
-	  temp->next = page->next;
-	  page->next = gen[page->flags.gen][5];
-	  gen[page->flags.gen][5] = page;
-	} else if(collect_pages == page) {
-	  collect_pages = page->next;
-	  page->next = gen[page->flags.gen][5];
-	  gen[page->flags.gen][5] = page;
-	} else {
-	  fprintf(stderr, "Unexpected case in mark of big page (%p)!\n", page);
-	  abort();
-	}
-	add_to_mucked_pages(page);
-	break;
-      }
-
-      case MARK_GRAY: {
-#ifndef ACCNT_OFF
-	UWORD owner;
-# ifdef ACCNT_INPLACE
-	owner = page->owner;
-# else
-	owner = ((ObjHeader*)((UWORD)page + PAGE_HEADER_SIZE))->owner;
-# endif	
-	if(!ownerset_eq(owner, mark_owner)) {
-	  ownerset_account_memory(owner, page->flags.gen, -page->size);
-	  owner = ownerset_union(owner, mark_owner);
-# ifdef ACCNT_INPLACE
-	  page->owner = owner;
-# else
-	  ((ObjHeader*)((UWORD)page + PAGE_HEADER_SIZE))->owner = owner;
-# endif	
-	  ownerset_account_memory(owner, page->flags.gen, page->size);
-	}
-#endif
-      }
-	
-      case MARK_BLACK: {
-#ifndef ACCNT_OFF
-	UWORD owner;
-# ifdef ACCNT_INPLACE
-	owner = page->owner;
-# else
-	owner = ((ObjHeader*)((UWORD)page + PAGE_HEADER_SIZE))->owner;
-# endif	
-	if(!ownerset_eq(owner, mark_owner)) {
-	  ownerset_account_memory(owner, page->flags.gen, -page->size);
-	  owner = ownerset_union(owner, mark_owner);
-# ifdef ACCNT_INPLACE
-	  page->owner = owner;
-# else
-	  ((ObjHeader*)((UWORD)page + PAGE_HEADER_SIZE))->owner = owner;
-# endif	
-	  ownerset_account_memory(owner, page->flags.gen, page->size);
-# ifdef ACCNT_PRECISE
-	  mark_owner = owner;
-	  retrace_owner_computation((void*)p);
-# endif
-	}
-#endif
-      }
-    }
-  } else {
-    int marked;
-#if defined(ACCNT_PRECISE) || defined(ACCNT_EXTERNAL)
-    marked = ((ObjHeader*)((UWORD)p - 4))->mark;
-#else
-    if(page->flags.type) {
-      marked = UNTAGGED_MARKED_P(*(UWORD*)((UWORD)p - 4));
-    } else {
-      marked = TAGGED_MARKED_P(*(Type_Tag*)p);
-    }
-#endif    
-    if(marked) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-      /* we've already marked this. However, don't think this lets us
-	 get off free; we still have some work to do. Pull up the
-	 forward */
-      void *newplace = *(void**)p;
-      ObjHeader *newinfo = (ObjHeader*)((UWORD)newplace - 4);
-
-      /* see if the owners are the same. If they are, we don't need to
-	 worry about anything. If they aren't, we've got some issues */
-      if(!ownerset_eq(newinfo->owner, mark_owner)) {
-	/* crap. well, regardless we're going to use the right owner */
-	ownerset_account_memory(newinfo->owner, INCGEN(mark_gen),
-				-newinfo->size);
-	newinfo->owner = ownerset_union(newinfo->owner, mark_owner);
-	ownerset_account_memory(newinfo->owner, INCGEN(mark_gen),
-				newinfo->size);
-	/* now the question is whether or not we're going to fix the 
-	   owners in anything downstream. Leave that up to whoever
-	   built the system*/
-# ifdef ACCNT_PRECISE
-	mark_owner = newinfo->owner;
-	retrace_owner_computation(newplace);
-# endif
-      }
-#endif
-    } else {
-      /* we've never marked this. this is the "simple" case */
-      void *startobj, *newplace;
-      UWORD size;
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-      size = ((ObjHeader*)((UWORD)p - 4))->size;
-      startobj = (void*)((UWORD)p - 4);
-#else
-      if(page->flags.type) {
-	size = *(UWORD*)((UWORD)p - 4);
-	startobj = (void*)((UWORD)p - 4);
-      } else {
-	size = size_table[*(Type_Tag*)p]((void*)p);
-	startobj = (void*)p;
-      }
-#endif
-      newplace = copy_bits(startobj, size, page->flags.type, INCGEN(page->flags.gen)			   
-#ifdef ACCNT_INPLACE
-			   , mark_owner
-#endif
-			   );
-#ifndef ACCNT_OFF
-      ownerset_account_memory(mark_owner, INCGEN(page->flags.gen), 
-			      gcWORDS_TO_BYTES(size));
-#endif
-
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-      {
-	ObjHeader *info = (ObjHeader*)startobj;
-	/* fix the header*/
-	info->mark = 1;
-	info->owner = mark_owner;
-	ownerset_account_memory(mark_owner, INCGEN(mark_gen), info->size);
-	/* set in the forward*/
-	*(void**)p = (void*)((UWORD)newplace + 4);
-      }
-#else 
-      if(page->flags.type) {
-	*(UWORD*)startobj = UNTAGGED_MARK(size);
-	*(void**)p = (void*)((UWORD)newplace + 4);
-      } else {
-	*(Type_Tag*)p = TAGGED_MARK(*(Type_Tag*)p);
-	*(void**)((UWORD)p + 4) = newplace;
-      }
-#endif
-    }
-  }
-}
-
-void propogate_bpage_marks(MPage *page) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE + 4);
-#else
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE + (page->flags.type?4:0));
-#endif
-  void **end = (void**)((UWORD)page + page->size);
-
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-  mark_owner = ((ObjHeader*)((UWORD)start - 4))->owner;
-#else
-# ifdef ACCNT_INPLACE  
-  mark_owner = page->owner;
-# endif
-#endif
-
-  switch(page->flags.type) {
-    case MPAGE_TAGGED: mark_table[*(Type_Tag*)start](start); break;
-    case MPAGE_ATOMIC: break;
-    case MPAGE_ARRAY: while(start < end) GC_mark(*(start++)); break;
-    case MPAGE_TARRAY: {
-      Type_Tag tag = *(Type_Tag*)start;
-      while(start < end) {
-	start += mark_table[tag](start);
-      }
-      break;
-    }
-    case MPAGE_XTAGGED: GC_mark_xtagged(start); break;
-  }
-}
-
-void propogate_tagged_marks(MPage *page) {
-  void **start = (void**)((UWORD)page + page->former_size);
-  
-#ifdef ACCNT_INPLACE
-  mark_owner = page->owner;
-#endif
-  while(start < (void**)((UWORD)page + page->size)) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)start++;
-    mark_owner = info->owner;
-#endif
-    start += mark_table[*(Type_Tag*)start](start);
-  }
-  page->former_size = page->size;
-}
-
-void propogate_array_marks(MPage *page) {
-  void **start = (void**)((UWORD)page + page->former_size);
-
-#ifdef ACCNT_INPLACE
-  mark_owner = page->owner;
-#endif
-  while(start < (void**)((UWORD)page + page->size)) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)start++;
-    UWORD size = info->size;
-    mark_owner = info->owner;
-#else
-    UWORD size = *(UWORD*)start++;
-#endif
-    while(--size) {
-      GC_mark(*(start++));
-    }
-  }
-  page->former_size = page->size;
-}
-
-void propogate_tarray_marks(MPage *page) {
-  void **start = (void**)((UWORD)page + page->former_size);
-
-#ifdef ACCNT_INPLACE
-  mark_owner = page->owner;
-#endif  
-  while(start < (void**)((UWORD)page + page->size)) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)start;
-    void **tempend = start + info->size;
-    Type_Tag tag = *(Type_Tag*)(++start);
-    mark_owner = info->owner;
-#else
-    UWORD size = *(UWORD*)start;
-    void **tempend = start + size;
-    Type_Tag tag = *(Type_Tag*)(++start);
-#endif
-    while(start < tempend) {
-      start += mark_table[tag](start);
-    }
-  }
-  page->former_size = page->size;
-}
-
-void propogate_xtagged_marks(MPage *page) {
-  void **start = (void**)((UWORD)page + page->former_size);
-
-#ifdef ACCNT_INPLACE
-  mark_owner = page->owner;
-#endif			
-  while(start < (void**)((UWORD)page + page->size)) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)start;
-    UWORD size = info->size;
-    mark_owner = info->owner;
-#else
-    UWORD size = *(UWORD*)start;
 #endif
-    GC_mark_xtagged(start + 1);
-    start += size;
-  }
-  page->former_size = page->size;
-}
-
-inline void propogate_mpage_marks(MPage *page) {
-  if(page->flags.bigpage) {
-    abort();
-  }
-  switch(page->flags.type) {
-  case MPAGE_TAGGED: propogate_tagged_marks(page); break;
-  case MPAGE_ATOMIC: page->former_size = page->size; break;
-  case MPAGE_ARRAY: propogate_array_marks(page); break;
-  case MPAGE_TARRAY: propogate_tarray_marks(page); break;
-  case MPAGE_XTAGGED: propogate_xtagged_marks(page); break;
-  default:
-    printf("INTERNAL ERROR: really bad case in propogate_mpage_marks (%p)",
-	   page);
-    abort();
-  }
-}
-
-void propogate_all_mpages(void) {
-  MPageList *mucked, *temp;
-  MPage *work;
-
-  while(mucked_pages) {
-    mucked = mucked_pages;
-    mucked_pages = NULL;
-    while(mucked) {
-      work = mucked->page;
-      /* we have to do slightly different things dependent on whether this*/
-      /* is a bigpage or a normal page.*/
-      if(work->flags.bigpage) {
-	/* if we're a bigpage, we only propogate those pages we've marked*/
-	/* as gray. */
-	if(work->flags.mark == MARK_GRAY) {
-	  /* Luckily, we can use the the propogation routine as*/
-	  /* long as we make sure 'former_size' is PAGE_HEADER_SIZE*/
-	  work->flags.mark = MARK_BLACK;
-	  /*work->former_size = PAGE_HEADER_SIZE;*/
-	  propogate_bpage_marks(work);
-	}
-      } else {
-	/* if we're a normal page, we only need to propogate those pages*/
-	/* that have been added on to. this means only the pages where*/
-	/* former_size < size.*/
-	if(work->former_size < work->size) {
-	  propogate_mpage_marks(work);
-	}
-      } /* if*/
-      temp = mucked;
-      mucked = mucked->next;
-      free(temp);
-    }
-  } /* while*/
-}
-
-/*
-  Immobile boxes: their structure in implementation
-*/
-
-typedef struct ImmobileBox {
-  void *p;
-  int owner; /* this needs to be second or Window.cc dies*/
-  struct ImmobileBox *next;
-} ImmobileBox;
-
-ImmobileBox *immobile_boxes = NULL;
-
-void mark_immobile_boxes(void) {
-  ImmobileBox *ibox = immobile_boxes;
-  while(ibox) {
-#ifndef ACCNT_OFF    
-    mark_owner = ibox->owner;
-#endif
-    GC_mark(ibox->p);
-    ibox = ibox->next;
-  }
-}
-
-void fixup_immobile_boxes(void) {
-  ImmobileBox *ibox = immobile_boxes;
-
-  while(ibox) {
-    gcFIXUP(ibox->p);
-    ibox = ibox->next;
-  }
-}
-
-void initialize_immobile_subsystem(void) {
-  ImmobileBox *ibox = immobile_boxes;
-  while(ibox) {
-#ifndef ACCNT_OFF
-    ibox->owner = current_owner();
-#endif
-    ibox = ibox->next;
-  }
-}
-
-/*
-  Roots. Roots are a pain in the rear, because we'd like to merge them
-  in order to save a little energy.
-*/
-
-typedef struct Root {
-  void **start; /* the start of this set of root pointers*/
-  void **end; /* the end of this set of root pointers*/
-  struct Root *next; /* the next set of root pointers*/
-} Root;
-
-typedef struct RootSet {
-  UWORD owner; /* the owner set associated with this set of roots*/
-  Root *roots; /* the actual roots*/
-  struct RootSet *next; /* the next RootSet*/
-} RootSet;
-
-RootSet *roots = NULL;
-
-void add_root(void *start, void *end, UWORD owner) {
-  RootSet *work = roots;
-  int done = 0;
-
-  /* search to see if we already have a root set for this owner*/
-  while(work && !done) {
-    done = (work->owner == owner);
-    if(!done) work = work->next;
-  }
-
-  if(done) {
-    /* A root set for this owner already exists. This is a rather 
-       complicated case, since we have to insert the root into the
-       array while watching for overlaps.*/
-    Root *cur = work->roots, *prev = NULL;
-
-    /* First off, search for roughly the appropriate place to put this
-       new root */
-    while(cur && ((UWORD)cur->start < (UWORD)start)) {
-      prev = cur;
-      cur = cur->next;
-    }
-
-    /* there are several possible case for us at this point. We need
-       to treat each one separately. */
-    /* FIXME: Some of these cases could probably be collapsed */
-    if(cur && prev) {
-      /* we're somewhere in the middle of the list, so we need to
-	 check for overlap on both sides. This is the most complicated
-	 case as we actually have four more possible subcases.*/
-      if(((UWORD)prev->end >= (UWORD)start) 
-	 && ((UWORD)cur->start <= (UWORD)end)) {
-	/* this root joins these two adjacent roots, which is nice because
-	   it frees up a little memory. We use prev for the modified root
-	   for no particular reason. */
-	prev->end = cur->end;
-	prev->next = cur->next;
-	free(cur);
-      } else if((UWORD)prev->end >= (UWORD)start) {
-	/* this root and the root at 'prev' overlap, so we only need to
-	   modify the previous one. Note that technically there is the
-	   possibility that this item is completely subsumed by the extant
-	   root. */
-	prev->end = ((UWORD)prev->end < (UWORD)end) ? (void**)end : prev->end;
-      } else if((UWORD)cur->start <= (UWORD)end) {
-	/* this root and the root at 'cur' overlap, so we only need to
-	   modify the current one. Again we check for subsumption. */
-	cur->start = ((UWORD)cur->start>(UWORD)start)?(void**)start:cur->start;
-      } else {
-	/* this root is completely new.*/
-	Root *newroot = (Root*)malloc(sizeof(Root));
-	newroot->start = (void**)start;
-	newroot->end = (void**)end;
-	newroot->next = cur;
-	prev->next = newroot;
-      }
-    } else if(cur) {
-      /* we're at the very front of the list. Thus we only need to check
-	 for overlap to the "right" of us (further down the list) */
-      if((UWORD)end >= (UWORD)cur->start) {
-	/* these do overlap, so we munge the start pointer of the pre-extant
-	   root and we're done. */
-	cur->start = (void**)start;
-      } else {
-	/* these do not overlap, so we have to add in this new root to
-	   the set.*/
-	prev = (Root*)malloc(sizeof(Root));
-	prev->start = (void**)start;
-	prev->end = (void**)end;
-	prev->next = cur;
-	work->roots = prev;
-      }
-    } else if(prev) {
-      /* we're at the very end of the list. Thus we only need to check
-	 for overlap to the "left" of us (further up the list)*/
-      if((UWORD)prev->end >= (UWORD)start) {
-	/* these do overlap, so we munge the end pointer of the pre-extant*/
-	/* root and we're done.*/
-	prev->end = (void**)end;
-      } else {
-	/* these do not overlap, so we're "safe" and should just add this
-	   to the end.*/
-	cur = (Root*)malloc(sizeof(Root));
-	cur->start = (void**)start;
-	cur->end = (void**)end;
-	cur->next = NULL;
-	prev->next = cur;
-      }
-    } else {
-      /* there was no list. This should never happen, so scream and
-	 die.*/
-      printf("SERIOUS INTERNAL ERROR: Attempt to add root to null root set!\n");
-      abort();
-    }
-  } else {
-    /* There is no root set for this owner, so we add one. This is the
-       easy case for this routine. */
-    work = (RootSet*)malloc(sizeof(RootSet));
-    work->owner = owner;
-    work->roots = (Root*)malloc(sizeof(Root));
-    work->roots->start = (void**)start;
-    work->roots->end = (void**)end;
-    work->roots->next = NULL;
-    work->next = roots;
-    roots = work;
-  }
-}
-
-/* this routine marks all the roots for us. this is called by the collector
-   to start things off */
-void mark_roots(void) {
-  RootSet *rtsets;
-  Root *rts;
-
-  for(rtsets = roots; rtsets; rtsets = rtsets->next) {
-#ifndef ACCNT_OFF
-    int owner = rtsets->owner;
-#endif
-    for(rts = rtsets->roots; rts; rts = rts->next) {
-      void **start = rts->start;
-      void **end = rts->end;
-      while(start < end) {
-#ifndef ACCNT_OFF
-	mark_owner = owner;
-#endif
-	GC_mark(*start);
-	start++;
-      }
-    }
-  }
-}
-
-/* this routine fixes up all the roots for us in the last stages of 
-   collection */
-void fixup_roots(void) {
-  RootSet *rtsets = roots;
-  Root *rts;
-
-  
-  for(rtsets = roots; rtsets; rtsets = rtsets->next) {
-#ifndef ACCNT_OFF
-    if(!owner_table[rtsets->owner]) {
-      rtsets->owner = 0;
-    }
-#endif
-    for(rts = rtsets->roots; rts; rts = rts->next) {
-      void **start = rts->start;
-      void **end = rts->end;
-      while(start < end) {
-	gcFIXUP(*start);
-	start++;
-      }
-    }
-  }
-}
-
-/* this routine dumps information about the roots to the given file
-   handle. this is used in the main dump routine plus in debugging. */
-void dump_root_information(FILE *file) {
-  RootSet *rtsets;
-  Root *rts;
-
-  fprintf(file, "Root information:\n");
-  for(rtsets = roots; rtsets; rtsets = rtsets->next) {
-    for(rts = rtsets->roots; rts; rts = rts->next) {
-      fprintf(file, "[%10p - %10p] Owner = %li\n", 
-	      rts->start, rts->end, rtsets->owner);
-    }
-  }
-  fprintf(file, "\n");
-}
-
-/* since there's an unfortunate period in the very beginning where 
-   we don't know who owns what, this little function is called to
-   fix a little munging we've done*/
-void initialize_roots_subsystem(void) {
-  RootSet *rtsets = roots;
-  
-  if(rtsets) {
-#ifndef ACCNT_OFF
-    rtsets->owner = current_owner();
-#endif
-    if(rtsets->next) {
-      printf("SERIOUS INTERNAL ERROR: More than one set before init_roots!\n");
-      abort();
-    }
-  }
-}
-
-/*
-  Weak boxes and arrays: Their structure and implementation
-*/
-
-typedef struct WeakArray {
-  Type_Tag type;
-  short keyex;
-  long count;
-  void *replace_val;
-  struct WeakArray *next;
-  void *data[1];
-} WeakArray;
-
-WeakArray *weak_arrays;
-
-int size_weak_array(void *p) {
-  WeakArray *a = (WeakArray *)p;
-  return gcBYTES_TO_WORDS(sizeof(WeakArray)+((a->count - 1) * sizeof(void *)));
-}
-
-int mark_weak_array(void *p) {
-  WeakArray *a = (WeakArray *)p;
-  gcMARK(a->replace_val);
-  a->next = weak_arrays;
-  weak_arrays = a;
-  return gcBYTES_TO_WORDS(sizeof(WeakArray)+((a->count - 1) * sizeof(void *)));
-}
-
-int fixup_weak_array(void *p) {
-  WeakArray *a = (WeakArray *)p;
-  int i;
-  void **data;
-  gcFIXUP(a->replace_val);
-  data = a->data;
-  for (i = a->count; i--; ) {
-    if (data[i])
-      gcFIXUP(data[i]);
-  }
-  return gcBYTES_TO_WORDS(sizeof(WeakArray)+((a->count - 1) * sizeof(void *)));
-}
-
-void clean_up_weak_arrays(void) {
-  WeakArray *wa;
-  for(wa = weak_arrays; wa; wa = wa->next) {
-    void **data;
-    int i;
-    data = wa->data;
-    for(i = wa->count; i--; ) {
-      void *p = data[i];
-      if(p && !is_marked(p)) {
-	data[i] = wa->replace_val;
-      }
-    }
-  }
-}
-
-typedef struct WeakBox {
-  /* The first three fields are mandated by the GC spec: */
-  Type_Tag type;
-  short keyex;
-  void *val;
-  /* The rest is up to us: */
-  void **secondary_erase;
-  int soffset;
-  struct WeakBox *next;
-} WeakBox;
-
-Type_Tag weak_box_tag = 42; /* set by MzScheme*/
-WeakBox *weak_boxes;
-
-int size_weak_box(void *p) {
-  return gcBYTES_TO_WORDS(sizeof(WeakBox));
-}
-
-int mark_weak_box(void *p) {
-  WeakBox *wb = (WeakBox *)p;
-    
-  gcMARK(wb->secondary_erase);
-
-  if (wb->val) {
-    wb->next = weak_boxes;
-    weak_boxes = wb;
-  }
-
-  return gcBYTES_TO_WORDS(sizeof(WeakBox));
-}
-
-int fixup_weak_box(void *p) {
-  WeakBox *wb = (WeakBox *)p;
-    
-  gcFIXUP(wb->secondary_erase);
-  gcFIXUP(wb->val);
-
-  return gcBYTES_TO_WORDS(sizeof(WeakBox));
-}
-
-
-/* after collection we want to kill out the pointers in the weak box*/
-/* list that have died.*/
-void clean_up_weak_boxes(void) {
-  WeakBox *wb;
-  for(wb = weak_boxes; wb; wb = wb->next) {
-    if(!is_marked(wb->val)) {
-      wb->val = NULL;
-      if(wb->secondary_erase) {
-	if(is_marked(wb->secondary_erase)) {
-	  *((void**)GC_resolve(wb->secondary_erase) + wb->soffset) = NULL;
-	} else *(wb->secondary_erase + wb->soffset) = NULL;
-	wb->secondary_erase = NULL;
-      }
-    }
-  }
-}
-
-void initialize_weak_subsystem() {
-  GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, 
-			 fixup_weak_box);
-  GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, 
-			 fixup_weak_array);
-}
-
-/*
-  Finalizers: their structure and implementation
- */
-
-typedef struct Fnl {
-  char eager_level;
-  char tagged;
-  void *p;
-  void (*f)(void *p, void *data);
-  void *data;
-  struct Fnl *next;
-} Fnl;
-
-static Fnl *fnls = NULL;
-static Fnl *run_queue = NULL;
-static Fnl *last_in_queue = NULL;
-
-void mark_finalizer(Fnl *fnl) {
-  gcMARK(fnl->next);
-  gcMARK(fnl->data);
-  /* !eager_level => queued for run: */
-  if (!fnl->eager_level) {
-    gcMARK(fnl->p);
-  }
-}
-
-void fixup_finalizer(Fnl *fnl) {
-  gcFIXUP(fnl->next);
-  gcFIXUP(fnl->data);
-  gcFIXUP(fnl->p);
-}
-
-typedef struct Fnl_Weak_Link {
-  void *p;
-  int offset;
-  void *saved;
-  struct Fnl_Weak_Link *next;
-} Fnl_Weak_Link;
-
-Fnl_Weak_Link *fnl_weaks;
-
-void mark_finalizer_weak_link(Fnl_Weak_Link *wl) {
-  gcMARK(wl->next);
-}
-
-void fixup_finalizer_weak_link(Fnl_Weak_Link *wl) {
-  gcFIXUP(wl->next);
-  gcFIXUP(wl->p);
-}
-
-/* after collection we need to run through our list of finals and */
-/* clear out weak links that have died*/
-void clean_up_weak_finals(void) {
-  Fnl_Weak_Link *wl, *prev, *next;
-
-  prev = NULL;
-  for(wl = fnl_weaks; wl; wl = next) {
-    next = wl->next;
-    if(!is_marked(wl->p)) {
-      /* will be collected, so remove the link*/
-      wl->p = NULL;
-      if(prev) prev->next = next;
-      else fnl_weaks = next;
-    } else prev = wl;
-  }
-}
-
-void initialize_final_subsystem() {
-  GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
-  GC_add_roots(&fnl_weaks, (char *)&fnl_weaks + sizeof(fnl_weaks) + 1);
-  GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
-  GC_add_roots(&last_in_queue, 
-	       (char *)&last_in_queue + sizeof(last_in_queue) + 1);
-}
-
-/*
-  Repairs. After we've marked everything, we're going to have a lot of pointers
-  int tospace pointin to fromspace. These routines fix all that stuff for us
-*/
-
-void repair_bpage_ptrs(MPage *page) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE + 4);
-#else
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE + (page->flags.type?4:0));
-#endif
-  void **end = (void**)((UWORD)page + page->size);
-
-  switch(page->flags.type) {
-    case MPAGE_TAGGED: fixup_table[*(Type_Tag*)start](start); break;
-    case MPAGE_ATOMIC: break;
-    case MPAGE_ARRAY: while(start < end) gcFIXUP(*(start++)); break;
-    case MPAGE_TARRAY: {
-      Type_Tag tag = *(Type_Tag*)start;
-      while(start < end) {
-	start += fixup_table[tag](start);
-      }
-      break;
-    }
-    case MPAGE_XTAGGED: GC_fixup_xtagged(start); break;
-  }
-}
-
-void repair_tagged_ptrs(MPage *page) {
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
-  void **end = (void**)((UWORD)page + page->size);
-
-  while(start < end) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    start++;
-#endif
-    start += fixup_table[*(Type_Tag*)start](start);
-  }
-}
-
-void repair_array_ptrs(MPage *page) {
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
-  void **end = (void**)((UWORD)page + page->size);
-  
-  while(start < end) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)start++;
-    UWORD size = info->size;
-    info->mark = 0;
-#else
-    UWORD size = *(UWORD*)start++;
-#endif
-    while(--size)
-      gcFIXUP(*(start++));
-  }
-}
-
-void repair_tarray_ptrs(MPage *page) {
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
-  void **end = (void**)((UWORD)page + page->size);
-  
-  while(start < end) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)start;
-    UWORD size = info->size;
-    info->mark = 0;
-#else
-    UWORD size = *(UWORD*)start;
-#endif
-    {
-      void **tempend = start + size;
-      Type_Tag tag = *(Type_Tag*)(++start);
-      while(start < tempend)
-	start += fixup_table[tag](start);
-    }
-  }
-}
-
-void repair_xtagged_ptrs(MPage *page) {
-  void **start = (void**)((UWORD)page + PAGE_HEADER_SIZE);
-  void **end = (void**)((UWORD)page + page->size);
-
-  while(start < end) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)start;
-    UWORD size = info->size;
-    info->mark = 0;
-#else
-    UWORD size = *(UWORD*)start;
-#endif
-    GC_fixup_xtagged(start+1);
-    start += size;
-  }
-}
-
-inline void repair_mpage_ptrs(MPage *page) {
-  page->flags.mark = MARK_WHITE;
-  if(page->flags.bigpage) {
-    repair_bpage_ptrs(page);
-    return;
-  }
-  switch(page->flags.type) {
-  case MPAGE_TAGGED: repair_tagged_ptrs(page); break;
-  case MPAGE_ATOMIC: break;
-  case MPAGE_ARRAY: repair_array_ptrs(page); break;
-  case MPAGE_TARRAY: repair_tarray_ptrs(page); break;
-  case MPAGE_XTAGGED: repair_xtagged_ptrs(page); break;
-  default:
-    printf("INTERNAL ERROR: really bad case in repair_mpage_ptrs (%p)\n",
-	   page);
-    abort();
-  }
-}
-
-/* 
-   this is the routine called by garbage_collect to repair all the pointers.
-   note that this not only has to repair all the pointers in the new pages,
-   but also all the pointers in the older generations which were modified
-*/
-void repair_mpages(void) {
-  MPage *work;
-  int i, j;
-  int new_top_gen = INCGEN(mark_gen);
-  int old_start_gen = new_top_gen + 1;
-
-  /* repair all the new pages*/
-  for(i = 1; i <= new_top_gen; i++) {
-    for(j = 0; j < 6; j++) {
-      for(work = gen[i][j]; work; work = work->next) {
-	/* note that this routine works just as well for big and normal pages*/
-	repair_mpage_ptrs(work);
-      }
-    }
-  }
-  /* repair the old, modded pages*/
-  for(i = old_start_gen; i < GENERATIONS; i++) {
-    for(j = 0; j < 6; j++) {
-      for(work = gen[i][j]; work; work = work->next) {
-	/* note that this routine works just as well for big and normal pages*/
-	repair_mpage_ptrs(work);
-      }
-    }
-  }
-}
-
-/* 
-   Older generation modifications. This is the stuff that deals with
-   modifications to older generations, if we're using a generational
-   collector
-*/
-
-#ifdef GENERATIONS
-void designate_modified(void *p) {
-  MPage *page;
-  page = find_page(p);
-  if(page) {
-    protect_pages(page, page->size, 1);
-    page->flags.bpointers = 1;
-  } else {
-    fprintf(stderr, "Seg fault (internal error) at %p\n", p);
-    abort();
-  }  
-}
-#endif
-
-void protect_older_pages(void) {
-#ifdef GENERATIONS
-  MPage *work;
-  int i, j;
-
-  for(i = 1; i < GENERATIONS; i++) {
-    for(j = 0; j < 6; j++) {
-      if(j != MPAGE_ATOMIC) { 
-	for(work = gen[i][j]; work; work = work->next) {
-	  if(work->flags.type != MPAGE_ATOMIC) {
-	    protect_pages(work, work->size, 0);
-	  }
-	}
-      }
-    }
-  }
-#endif
-}
-
-
-/* when we start collection, we want to run the marks that are included in*/
-/* modified pages. for the purposes of owner tests, we assume that the */
-/* info on the page is correct. */
-void run_older_marks(int top_gen) {
-#ifdef GENERATIONS
-  MPage *work;
-  int i, j;
-  
-  for(i = top_gen + 1; i < GENERATIONS; i++) {
-    for(j = 0; j < 6; j++) {
-      if(j != MPAGE_ATOMIC) {
-	for(work = gen[i][j]; work; work = work->next) {
-	  if(work->flags.bpointers) {
-	    work->former_size = PAGE_HEADER_SIZE;
-	    if(work->flags.bigpage) {
-	      propogate_bpage_marks(work);
-	    } else propogate_mpage_marks(work);
- 	  } 
-	}
-      }
-    }
-  }
-#endif
-}
-
-#ifdef GENERATIONS
-#if defined(linux)
-# include <signal.h>
-void fault_handler(int sn, struct sigcontext sc)
-{
-  designate_modified((void *)sc.cr2);
-  signal(SIGSEGV, (void (*)(int))fault_handler);
-}
-# define NEED_SIGSEGV
-#endif
-
-/* FreeBSD signal handler: */
-#if defined(__FreeBSD__)
-# include <signal.h>
-void fault_handler(int sn, int code, struct sigcontext *sc, char *addr)
-{
-  designate_modified(addr);
-}
-# define NEED_SIGBUS
-#endif
-
-/* Solaris signal handler: */
-#if defined(sun)
-# include <signal.h>
-void fault_handler(int sn, struct siginfo *si, void *ctx)
-{
-  designate_modified(si->si_addr);
-}
-# define NEED_SIGACTION
-#endif
-
-/* Windows signal handler: */
-#if defined(_WIN32)
-LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e) 
-{
-  if ((e->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION)
-      && (e->ExceptionRecord->ExceptionInformation[0] == 1)) {
-    designate_modified((void *)e->ExceptionRecord->ExceptionInformation[1]);
-
-    return EXCEPTION_CONTINUE_EXECUTION;
-  } else
-    return EXCEPTION_CONTINUE_SEARCH;
-}
-# define NEED_SIGWIN
-#endif
-#endif
-
-void initialize_memory_protection_subsystem(void) {
-#ifdef GENERATIONS
-# ifdef NEED_SIGSEGV
-    signal(SIGSEGV, (void (*)(int))fault_handler);
-# endif
-# ifdef NEED_SIGBUS
-    signal(SIGBUS, (void (*)(int))fault_handler);
-# endif
-# ifdef NEED_SIGACTION
-    {
-      struct sigaction act, oact;
-      act.sa_sigaction = fault_handler;
-      sigemptyset(&act.sa_mask);
-      act.sa_flags = SA_SIGINFO;
-      sigaction(SIGSEGV, &act, &oact);
-    }
-# endif
-# ifdef NEED_SIGWIN
-    SetUnhandledExceptionFilter(fault_handler);
-# endif
-#endif
-}
-
-/* 
-   These are a few helper routines, and then the collector proper
-*/
-
-void shunt_off_collecting_pages(int top_gen) {
-  MPage *work;
-  int i, j;
-
-  collect_pages = NULL;
-  for(i = 0; i <= top_gen; i++) {
-    for(j = 0; j < 6; j++) {
-      work = gen[i][j];
-      while(work && work->next) {
-	work = work->next;
-      }
-      if(work) {
-	work->next = collect_pages;
-	collect_pages = gen[i][j];
-	gen[i][j] = NULL;
-      }
-    }
-  }
-  for(work = collect_pages; work; work = work->next) 
-    work->flags.mark = MARK_WHITE;
-}
-
-void rebuild_broken_final_list(void) {
-  Fnl *f = fnls, *prev = NULL;
-  Fnl_Weak_Link *wl = fnl_weaks, *prevwl = NULL;
-  
-  while(f) {
-    if(is_marked(f)) {
-      if(prev) {
-	f = GC_resolve(f);
-	prev->next = f;
-	prev = f;
-	f = f->next;
-      } else {
-	fnls = GC_resolve(f);
-	prev = fnls;
-	f = fnls->next;
-      }
-    } else {
-      prev = f;
-      f = f->next;
-    }
-  }
-  while(wl) {
-    if(is_marked(wl)) {
-      if(prevwl) {
-	wl = GC_resolve(wl);
-	prevwl->next = wl;
-	prevwl = wl;
-	wl = wl->next;
-      } else {
-	fnl_weaks = GC_resolve(wl);
-	prevwl = fnl_weaks;
-	wl = fnl_weaks->next;
-      }
-    } else {
-      prevwl = wl;
-      wl = wl->next;
-    }
-  }
-}
-
-void free_dead_pages(void) {
-  MPage *work, *next;
-
-  for(work = collect_pages; work; work = next) {
-    next = work->next;
-    rem_from_page_map(work);
-    protect_pages(work, work->flags.bigpage ? work->size : MPAGE_SIZE, 1);
-    free_mempages(work);
-  }
-  flush_freed_pages();
-  collect_pages = NULL;
-  mucked_pages = NULL;
-}
-
-void recalculate_heap_size(void) {
-  MPage *work;
-  int i, j;
-
-  heap_size = 0;
-  for(i = 1; i < GENERATIONS; i++) {
-    for(j = 0; j < 6; j++) {
-      for(work = gen[i][j]; work; work = work->next) {
-	heap_size += work->size;
-      }
-    }
-  }
-}
-
-void garbage_collect(int force_full) {
-  static UWORD collection = 0;
-  int did_fnls;
-
-  if(!gc_deny) {
-
-#ifdef ACCNT_OFF
-    if(collection == 0) {
-      init();
-    }
-#endif
-#ifdef GENERATIONS
-    {
-      int modded = collection % 16;
-      if(force_full || (modded >= 14)) {
-	mark_gen = GENERATIONS - 1;
-      } else if(modded >= 11) {
-	mark_gen = (GENERATIONS / 2);
-      } else if(modded >= 8) {
-	mark_gen = (GENERATIONS / 5);
-      } else mark_gen = 0;
-    }
-#endif    
-    collection++;
-
-    /* printf("Collection number %li (mark_gen = %i)\n", collection, mark_gen);*/
-    fflush(stdout);
-    /* notify MzScheme that we're about to collect*/
-    if(GC_collect_start_callback)
-      GC_collect_start_callback();
-
-    /* we don't want collections happening while we're collecting!*/
-    gc_deny = 1;
-    
-    /* initialize the weak and final stuff*/
-    weak_boxes = NULL;
-    weak_arrays = NULL;
-    did_fnls = 0;
-    
-    /* Now we move all the pages we're collecting to a more centralized*/
-    /* location. This helps much later down the line. */
-    shunt_off_collecting_pages(mark_gen);
-#ifndef ACCNT_OFF
-    prep_ownerset_information(mark_gen);
-#endif
-
-    /* Now to the actual collection. First we need to mark off our base*/
-    /* pointers, which amounts to the immobile boxes, the roots and */
-    /* the current stack*/
-    run_older_marks(mark_gen);
-    mark_immobile_boxes();
-    mark_roots();
-    mark_account_hooks();
-#ifndef ACCNT_OFF
-    mark_owner = current_owner();
-#endif
-    GC_mark_variable_stack(GC_variable_stack, 0, 
-			   (void*)(GC_get_thread_stack_base
-				   ? GC_get_thread_stack_base() 
-				   : (UWORD)stack_base));
-
-    { 
-      /* Need to do the finals here since we don't do them via tags
-         any more */
-      Fnl *f;
-      Fnl_Weak_Link *wl;
-      for(f = fnls; f; f = f->next) mark_finalizer(f);
-      for(f = run_queue; f; f = f->next) mark_finalizer(f);
-      for(wl = fnl_weaks; wl; wl = wl->next) mark_finalizer_weak_link(wl);
-    } 
-    /* once we're done with this, it's on to propogation. Unfortunately*/
-    /* this isn't as easy as one might think because of finalizers. To*/
-    /* be honest I (Adam) don't fully understand how this works. Ask*/
-    /* Matthew.*/
-    while(1) {
-      /* first propogate out of the marks we already have*/
-      propogate_all_mpages();
-
-      /* this is a copying collector, so at this point the linked lists*/
-      /* we normally use to trace through finalizers is trashed. So we */
-      /* have to fix them before we do anything else*/
-      rebuild_broken_final_list();
-
-      if((did_fnls >= 3) || !fnls) {
-	if(did_fnls == 3) {
-	  /* Finish up ordered finalization*/
-	  Fnl *f, *next, *prev;
-	  Fnl_Weak_Link *wl;
-	  
-	  /* Enqueue and mark level 3 finalizers that still haven't been */
-	  /* marked. */
-	  prev = NULL;
-	  for(f = fnls; f; f = next) {
-	    next = f->next;
-	    if(f->eager_level == 3) {
-	      if(!is_marked(f->p)) {
-#ifndef ACCNT_OFF
-		mark_owner = current_owner();
-#endif
-		gcMARK(f->p);
-
-		if(prev) prev->next = next;
-		else fnls = next;
-		
-		f->eager_level = 0; /* indicates this has been queued*/
-		f->next = NULL;
-		if(last_in_queue) {
-		  last_in_queue->next = f;
-		  last_in_queue = f;
-		} else {
-		  run_queue = last_in_queue = f;
-		}
-	      } else {
-		prev = f;
-	      }
-	    }
-	  }
-	  
-	  /* restores zeroed out weak links, marking as we go*/
-	  for(wl = fnl_weaks; wl; wl = wl->next) {
-	    void *wp = (void*)wl->p;
-
-	    if(is_marked(wp)) {
-	      /* for the purposes of this, we account the saved pointer*/
-	      /* to the holder of the weak link*/
-#if defined(MARK_EXTERNAL) || defined(MARK_PRECISE)
-	      mark_owner = ((ObjHeader*)((UWORD)wp - 4))->owner;
-#endif
-	      gcMARK(wl->saved);
-	    }
-	    /* this is a little gotcha. if we've moved wp, the change in*/
-	    /* pointer hasn't shown here yet and we need to have this set*/
-	    /* run in both places (?). FIXME: not sure about this both*/
-	    /* business*/
-	    if(is_marked(wp)) {
-	      *(void**)((char*)GC_resolve(wp) + wl->offset) = wl->saved;
-	    }
-	    *(void**)((char*)wp + wl->offset) = wl->saved;
-	  }
-
-	  /* we have to mark one more time, because restoring a weak link*/
-	  /* may have made something reachable*/
-	  did_fnls++;
-	} else break;
-      } else {
-	int eager_level = did_fnls+1;
-
-	if(eager_level == 3) {
-	  /* Ordered finalization*/
-	  Fnl *f;
-	  Fnl_Weak_Link *wl;
-
-	  /* Zero out weak links for ordered finalization*/
-	  for(wl = fnl_weaks; wl; wl = wl->next) {
-	    void *wp = (void*)wl->p;
-	    wl->saved = *(void**)((char*)wp + wl->offset);
-	    *(void**)((char*)wp + wl->offset) = NULL;
-	  }
-
-	  /* Mark content of not-yet-marked finalized objects, but don't*/
-	  /* mark the finalized objects themselves*/
-	  for(f = fnls; f; f = f->next) {
-	    if(f->eager_level == 3) {
-	      if(!is_marked(f->p)) {
-		/* not yet marked. mark the content*/
-#if defined(MARK_EXTERNAL) || defined(MARK_PRECISE)
-		mark_owner = current_owner();
-#endif
-		if(f->tagged) {
-		  Type_Tag tag = *(Type_Tag*)f->p;
-		  mark_table[tag](f->p);
-		} else {
-		  GC_mark_xtagged(f->p);
-		}
-	      }
-	    }
-	  }
-	} else {
-	  /* unordered finalization*/
-	  Fnl *f, *prev, *queue;
-
-	  f = fnls;
-	  prev = NULL;
-	  queue = NULL;
-
-	  while(f) {
-	    if(f->eager_level == eager_level) {
-	      if(!is_marked(f->p)) {
-		/* not yet marked. move finalization to run queue*/
-		Fnl *next = f->next;
-		
-		if(prev) prev->next = next;
-		else fnls = next;
-		
-		f->eager_level = 0; /* indicating queuednessness (=))*/
-
-		f->next = NULL;
-		if(last_in_queue) {
-		  last_in_queue->next = f;
-		  last_in_queue = f;
-		} else {
-		  run_queue = last_in_queue = f;
-		}
-		if(!queue) queue = f;
-		f = next;
-	      } else {
-		prev = f;
-		f = f->next;
-	      }
-	    } else {
-	      prev = f;
-	      f = f->next;
-	    }
-	  }
-
-	  /* Mark items added to run queue*/
-	  f = queue;
-	  while(f) {
-	    /* FIXME: this is probably not the thing to do*/
-#if defined(MARK_EXTERNAL) || defined(MARK_PRECISE)
-	    mark_owner = current_owner();
-#endif
-	    gcMARK(f->p);
-	    f = f->next;
-	  }
-	}
-
-	did_fnls++;
-      }
-    }
-    
-    /* we're done. amazing. so now we have to go back and fix all the things*/
-    /* we've broken.*/
-#ifndef ACCNT_OFF
-    fixup_ownersets();
-#endif
-    clean_up_weak_boxes();
-    clean_up_weak_arrays();
-    clean_up_weak_finals();
-    repair_mpages();
-    fixup_immobile_boxes();
-    fixup_account_hooks();
-    fixup_roots();
-    GC_fixup_variable_stack(GC_variable_stack, 0, 
-			    (void*)(GC_get_thread_stack_base
-				    ? GC_get_thread_stack_base()
-				    : (UWORD)stack_base));
-    {
-      /* Again, do this here as they're no longer tagged */
-      Fnl *f;
-      Fnl_Weak_Link *wl;
-      for(f = fnls; f; f = f->next) fixup_finalizer(f);
-      for(f = run_queue; f; f = f->next) fixup_finalizer(f);
-      for(wl = fnl_weaks; wl; wl = wl->next) fixup_finalizer_weak_link(wl);
-    }
-
-    free_dead_pages();
-    protect_older_pages();
-    recalculate_heap_size();
-    /* recalculate how much space we're using*/
-    size_to_collect_at = (UWORD)((heap_size * HEAP_GROW_FACTOR) + HEAP_GROW_ADD);
-
-    /* we can now run collections again*/
-    gc_deny = 0;
-
-    /* notify MzScheme that we're done with collection now*/
-    if(GC_collect_end_callback) 
-      GC_collect_end_callback();
-
-/*     debug_dump_heap(collection, mark_gen, 0); */
-
-    /* and finally run the finalization routines. */
-    while(run_queue) {
-      Fnl *f;
-      void **gcs;
-      
-      f = run_queue;
-      run_queue = run_queue->next;
-      if(!run_queue) last_in_queue = NULL;
-      gcs = GC_variable_stack;
-      f->f(f->p, f->data);
-      GC_variable_stack = gcs;
-    }
-    
-    run_applicable_account_hooks();
-  }
-}
-
-/*
-  The initialization routine
-*/
-
-void init(void) {
-  initialize_roots_subsystem();
-  initialize_mpage_subsystem();
-  initialize_immobile_subsystem();
-  initialize_memory_protection_subsystem();
-  initialize_final_subsystem();
-  initialize_weak_subsystem();
-}
-
-/* 
-   API Conversions: the implementations of the APIs given the above stuff
-*/
-
-void GC_set_stack_base(void *base) {
-  stack_base = base;
-}
-unsigned long GC_get_stack_base(void) {
-  return (unsigned long)stack_base;
-}
-
-void GC_add_roots(void *start, void *end) {
-#ifdef ACCNT_OFF
-  add_root(start, end, 0);
-#else
-  add_root(start, end, current_owner());
-#endif
-}
-
-void GC_init_type_tags(int count, int weakbox) {
-  weak_box_tag = weakbox;
-}
-
-void GC_dump(void) {
-  dump_root_information(stderr);
-  dump_mpage_information(stderr);
-#ifndef ACCNT_OFF
-  dump_ownerset_information(stderr);
-#endif
-}
-
-long GC_get_memory_use(void *c) {
-#ifndef ACCNT_OFF
-  Scheme_Custodian *cust = (Scheme_Custodian*)c; 
-
-  if(cust) 
-    return get_custodian_mem_usage(cust);
-  else 
-    return heap_size;
-#else
-  return heap_size;
-#endif
-}
-
-void GC_gcollect(void) {
-  garbage_collect(1);
-}
-
-void *GC_malloc(size_t size_in_bytes) {
-  return alloc_new_bits(size_in_bytes, MPAGE_ARRAY, 0);
-}
-
-void *GC_malloc_one_tagged(size_t size_in_bytes) {
-  return alloc_new_bits(size_in_bytes, MPAGE_TAGGED, 0);
-}
-
-void *GC_malloc_one_xtagged(size_t size_in_bytes) {
-  return alloc_new_bits(size_in_bytes, MPAGE_XTAGGED, 0);
-}
-
-void *GC_malloc_array_tagged(size_t size_in_bytes) {
-  return alloc_new_bits(size_in_bytes, MPAGE_TARRAY, 0);
-}
-
-void *GC_malloc_atomic(size_t size_in_bytes) {
-  return alloc_new_bits(size_in_bytes, MPAGE_ATOMIC, 0);
-}
-
-void *GC_malloc_atomic_uncollectable(size_t size_in_bytes) {
-  return malloc(size_in_bytes);
-}
-
-void *GC_malloc_allow_interior(size_t size_in_bytes) {
-  return alloc_new_bits(size_in_bytes, MPAGE_ARRAY, 1);
-}
 
-void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val) {
-  WeakArray *w;
-  gc_deny = 1;
-  w = (WeakArray*)GC_malloc_one_tagged(size_in_bytes + sizeof(WeakArray)
-				       - sizeof(void*));
-  gc_deny = 0;
-  w->type = gc_weak_array_tag;
-  w->replace_val = replace_val;
-  w->count = (size_in_bytes >> 2);
-  return w;
-}
+/*****************************************************************************
+ * Miscellaneous routines
+ *****************************************************************************/
 
 void GC_free(void *p) {}
 
-void *GC_malloc_weak_box(void *p, void **secondary, int soffset) {
-  WeakBox *w;
-  gc_deny = 1;
-  w = (WeakBox*)GC_malloc_one_tagged(sizeof(WeakBox));
-  gc_deny = 0;
-  w->type = weak_box_tag;
-  w->val = p;
-  w->secondary_erase = secondary;
-  w->soffset = soffset;
-  return w;
-}
+static char *type_name[MPAGE_TYPES] = { "tagged",
+					"atomic",
+					"array",
+					"tagged array",
+					"xtagged",
+					"big" };
+void GC_dump() {
+  unsigned long gen0_bigs = 0, gen0_bigs_size = 0, i;
+  unsigned long own_memuse = 0;
+  unsigned short num_owners = 0;
+  struct mpage *page;
 
-void **GC_malloc_immobile_box(void *p) {
-  ImmobileBox *ibox = (ImmobileBox*)malloc(sizeof(ImmobileBox));
-#ifndef ACCNT_OFF
-  ibox->owner = current_owner();
-#endif
-  ibox->p = p;
-  ibox->next = immobile_boxes;
-  immobile_boxes = ibox;
-  return (void**)ibox;
-}
+  for(page = gen[0][MPAGE_BIG]; page; page = page->next)
+    { gen0_bigs += 1; gen0_bigs_size += page->size; }
+  fprintf(stderr, 
+	  "Generation 0: %li of %li bytes used (+ %li in %li bigpages)\n",
+	  ((unsigned long)tla_regions - (unsigned long)tla_heap), 
+	  (unsigned long)GEN0_SIZE, gen0_bigs_size, gen0_bigs);
+  for(i = 1; i < GENERATIONS; i++) {
+    unsigned long pages = 0, size = 0, j;
+    unsigned long tpages[MPAGE_TYPES] = { 0, 0, 0, 0, 0, 0 };
+    unsigned long tsize[MPAGE_TYPES] = { 0, 0, 0, 0, 0, 0 };
 
-void GC_free_immobile_box(void **b) {
-  ImmobileBox *ibox = (ImmobileBox*)b;
-  ImmobileBox *cur, *prev;
-
-  if(!ibox)
-    return;
-
-  cur = immobile_boxes;
-  prev = NULL;
-  while(cur) {
-    if(cur == ibox) {
-      if(prev) {
-	prev->next = cur->next;
-      } else {
-	immobile_boxes = cur->next;
+    for(j = 0; j < MPAGE_TYPES; j++) 
+      for(page = gen[i][j]; page; page = page->next) {
+	pages += 1; size += page->size;
+	tpages[j] += 1; tsize[j] += page->size;
       }
-      free(ibox);
-      return;
-    } else {
-      prev = cur;
-      cur = cur->next;
-    }
-  }
-}
-
-int GC_set_account_hook(int type, void *cust, unsigned long b, void *f) {
-  AccountHook *work = (AccountHook*)malloc(sizeof(AccountHook));
-  work->type = type;
-#ifndef ACCNT_OFF
-  work->owner = current_owner();
-#endif
-  work->cust = cust;
-  work->bytes = b;
-  work->f = f;
-  work->next = account_hooks;
-  account_hooks = work;
-  if(type == MZACCT_REQUIRE)
-    total_requires += b;
-  return 1;
-}
-
-void GC_set_finalizer(void *p, int tagged, int level, 
-		      void (*f)(void *p, void *data), 
-		      void *data, void (**oldf)(void *p, void *data), 
-		      void **olddata)
-{
-  Fnl *fnl, *prev;
-
-  {
-    MPage *page;
-    page = find_page(p);
-    if (!page) {
-      /* Never collected. Don't finalize it. */
-      if (oldf) *oldf = NULL;
-      if (olddata) *olddata = NULL;
-      return;
+    fprintf(stderr, "Generation %li: %li bytes used in %li pages\n",
+	    i, size, pages);
+    if(size) {
+      for(j = 0; j < MPAGE_TYPES; j++) {
+	fprintf(stderr, "   ... %li %s pages (%li bytes, %2.2f%%)\n",
+		tpages[j], type_name[j], tsize[j],
+		100.0 * ((float)tsize[j] / (float)size));
+      }
     }
   }
 
-  fnl = fnls;
-  prev = NULL;
-  while (fnl) {
-    if (fnl->p == p) {
-      if (oldf) *oldf = fnl->f;
-      if (olddata) *olddata = fnl->data;
-      if (f) {
-	fnl->f = f;
-	fnl->data = data;
-	fnl->eager_level = level;
-      } else {
-	if (prev)
-	  prev->next = fnl->next;
-	else
-	  fnls = fnl->next;
-	return;
-      }
-      return;
-    } else {
-      prev = fnl;
-      fnl = fnl->next;
+  for(i = 0; i < ot_top; i++)
+    if(ot_table[i]) {
+      struct cust_list *cl;
+      struct union_list *ul;
+
+      num_owners++;
+      own_memuse += sizeof(struct otentry);
+      for(cl = ot_table[i]->custs; cl; cl = cl->next)
+	own_memuse += sizeof(struct cust_list);
+      for(ul = ot_table[i]->unions; ul; ul = ul->next)
+	own_memuse += sizeof(struct union_list);
     }
-  }
-  
-  if (oldf) *oldf = NULL;
-  if (olddata) *olddata = NULL;
-
-  if (!f)
-    return;
-
-  gc_deny = 1;
-  fnl = GC_malloc_atomic(sizeof(Fnl));
-  gc_deny = 0;
-  fnl->next = fnls;
-  fnl->p = p;
-  fnl->f = f;
-  fnl->data = data;
-  fnl->eager_level = level;
-  fnl->tagged = tagged;
-  fnls = fnl;
+  own_memuse = ot_top * sizeof(struct otentry *);
+  fprintf(stderr, "Tracking %i owners\n", num_owners);
+  fprintf(stderr, "   ... owner table top = %i\n", ot_top);
+  fprintf(stderr, "   ... using %li bytes in owner system\n", own_memuse);
 }
 
-void GC_finalization_weak_ptr(void **p, int offset)
-{
-  Fnl_Weak_Link *wl;
-  gc_deny = 1;
-  wl = (Fnl_Weak_Link *)GC_malloc_atomic(sizeof(Fnl_Weak_Link));
-  gc_deny = 0;
-  wl->p = p;
-  wl->next = fnl_weaks;
-  wl->offset = offset * sizeof(void*);
-  fnl_weaks = wl;
-}
-
-void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, 
-			    Fixup_Proc fixup) {
-  size_table[tag] = size;
-  mark_table[tag] = mark;
-  fixup_table[tag] = fixup;
-}
-
-void *GC_resolve(void *p) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-  ObjHeader *info = (ObjHeader*)((UWORD)p - 4);
-
-  if(info->mark)
-    return *(void**)p;
-  else
-    return p;
-#else
-  MPage *page = find_page(p);
-
-  if(!page) return p;
-  if(page->flags.type) {
-    if(UNTAGGED_MARKED_P(*(UWORD*)((UWORD)p - 4))) {
-      return *(void**)p;
-    } else return p;
-  } else {
-    if(TAGGED_MARKED_P(*(Type_Tag*)p)) {
-      return *(void**)((UWORD)p + 4);
-    } else return p;
-  }
-#endif
-}
-
-void GC_fixup(void *pp) {
-  void *p = *(void**)pp;
-  MPage *page;
-
-  if(!p)
-    return;
-  if((long)p & 0x1)
-    return;
-
-  page = find_page(p);
-
-  if(page && !page->flags.bigpage) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-    ObjHeader *info = (ObjHeader*)((UWORD)p - 4);
-    int marked = info->mark;
-#else
-    int marked = page->flags.type ? UNTAGGED_MARKED_P(*(UWORD*)((UWORD)(p -4)))
-                            : TAGGED_MARKED_P(*(Type_Tag*)p);
-#endif
-
-#ifdef GENERATIONS
-    if(page->flags.gen > INCGEN(mark_gen)) return;
-#endif
-
-    if(marked) {
-#if defined(ACCNT_EXTERNAL) || defined(ACCNT_PRECISE)
-      void *newloc = *(void**)p;
-#else
-      void *newloc = *(void**)((UWORD)p + (page->flags.type ? 0 : 4));
-#endif
-      MPage *mypage = find_page(pp);
-      
-      *(void**)pp = newloc;
-#ifdef GENERATIONS
-      if(mypage) {
-	MPage *newlocpage = find_page(newloc);
-	if(mypage->flags.gen > newlocpage->flags.gen) {
-	  mypage->flags.bpointers = 1;
-	}
-      }
-#endif
-    } 
-  }
-}
-
-/* Called to mark the current stack. See README for more details*/
-void GC_mark_variable_stack(void **var_stack, long delta, void *limit) {
-  long size, count;
-  void ***p, **a;
-
-  while (var_stack) {
-    var_stack = (void **)((char *)var_stack + delta);
-    if (var_stack == limit)
-      return;
-
-    size = *(long *)(var_stack + 1);
-    p = (void ***)(var_stack + 2);
-    
-    while (size--) {
-      a = *p;
-      if (!a) {
-	/* Array */
-	count = ((long *)p)[2];
-	a = ((void ***)p)[1];
-	p += 2;
-	size -= 2;
-	a = (void **)((char *)a + delta);
-	while (count--) {
-	  gcMARK(*a);
-	  a++;
-	}
-      } else {
-	a = (void **)((char *)a + delta);
-	gcMARK(*a);
-      }
-      p++;
-    }
-
-    var_stack = *var_stack;
-  }
-}
-
-/* Called to fix up the current stack. See README for more details*/
-void GC_fixup_variable_stack(void **var_stack, long delta, void *limit) {
-  long size, count;
-  void ***p, **a;
-
-  while (var_stack) {
-    var_stack = (void **)((char *)var_stack + delta);
-    if (var_stack == limit)
-      return;
-
-    size = *(long *)(var_stack + 1);
-
-    p = (void ***)(var_stack + 2);
-    
-    while (size--) {
-      a = *p;
-      if (!a) {
-	/* Array */
-	count = ((long *)p)[2];
-	a = ((void ***)p)[1];
-	p += 2;
-	size -= 2;
-	a = (void **)((char *)a + delta);
-	while (count--) {
-	  gcFIXUP(*a);
-	  a++;
-	}
-      } else {
-	a = (void **)((char *)a + delta);
-	gcFIXUP(*a);
-      }
-      p++;
-    }
-
-    var_stack = *var_stack;
-  }
-}
+/*****************************************************************************
+ * Callbacks
+ *****************************************************************************/
 
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
@@ -3164,4 +2398,3 @@ void (*GC_out_of_memory)(void);
 unsigned long (*GC_get_thread_stack_base)(void);
 void (*GC_mark_xtagged)(void *obj);
 void (*GC_fixup_xtagged)(void *obj);
-

@@ -23,18 +23,18 @@
    make-gui-model-state ; (non-negative-exact-integer -> label) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) -> gui-model-state
    (rename get-label-from-drscheme-new-pos get-label-from-drscheme-pos) ; gui-model-state non-negative-exact-integer -> (union #f label)
    (rename get-related-label-from-drscheme-new-pos get-related-label-from-drscheme-pos) ; gui-model-state non-negative-exact-integer -> (union #f label)
+   (rename gui-model-state-get-span-from-label get-get-span-from-label-from-model-state) ; gui-model-state -> (label -> exact-non-negative-integer)
    after-insert ; gui-model-state exact-non-negative-integer exact-non-negative-integer -> void
    after-delete ; gui-model-state exact-non-negative-integer exact-non-negative-integer -> void
    add-arrow ; gui-model-state label label boolean -> void
    for-each-arrow ; gui-model-state (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer boolean -> void) -> void
    remove-arrows ; gui-model-state label (union symbol boolean) boolean -> void
-   remove-all-arrows ; gui-model-state -> void
    get-parents-tacked-arrows  ; gui-model-state label -> non-negative-exact-integer
    get-children-tacked-arrows  ; gui-model-state label -> non-negative-exact-integer
    label-has-snips-of-this-type? ; gui-model-state label symbol -> boolean
    add-snips ; gui-model-state label symbol non-negative-exact-integer -> non-negative-exact-integer
    remove-inserted-snips ; gui-model-state label symbol -> (value non-negative-exact-integer non-negative-exact-integer)
-   remove-all-snips ; gui-model-state -> (listof non-negative-exact-integer)
+   remove-all-snips-and-arrows ; gui-model-state -> (listof non-negative-exact-integer)
    )
   
   ; DATA STRUCTURES
@@ -44,10 +44,7 @@
   ; exact-non-negative-integer exact-non-negative-integer
   (define-struct snip-group (left-new-pos size))
   
-  ; (assoc-setof symbol snip-group)
-  (define-struct snips-groups (by-type))
-  
-  ; position (setof arrow) (setof arrow)
+  ; position exact-integer (assoc-setof symbol snip-group) (setof arrow) (setof arrow)
   ; We could recompute left-new-pos on the fly (from the MzScheme
   ; pos from the label itself and old-pos->new-pos) each time we needed to repaint,
   ; but in practice we repaint much more often then we add snips, so we keep the pos
@@ -58,13 +55,14 @@
   ; set for its start label, and once in the "ending-arrows" set for its end label.
   ; We need this because we need to be able to click at the end of an arrow and
   ; remove it if necessary.
-  (define-struct label-gui-data (left-new-pos starting-arrows ending-arrows))
+  (define-struct label-gui-data (left-new-pos
+                                 span-change
+                                 snip-groups-by-type
+                                 starting-arrows
+                                 ending-arrows))
   
-  (define-struct gui-model-state (; (assoc-setof label label-gui-data) (assoc-setof label snips-groups)
-                                  ; arrows and snips are fairly independant so we keep them in two
-                                  ; separate hash tables, even though they use the same keys
-                                  arrows
-                                  snips
+  (define-struct gui-model-state (; (assoc-setof label label-gui-data)
+                                  label-gui-data-by-label
                                   ; (non-negative-exact-integer -> label)
                                   get-label-from-mzscheme-position
                                   ; (label -> non-negative-exact-integer)
@@ -85,12 +83,19 @@
                    get-mzscheme-position-from-label
                    get-span-from-label
                    type-list)
-            (real-make-gui-model-state (asset:make-assoc-set)
-                                       (asset:make-assoc-set)
-                                       get-label-from-mzscheme-position
-                                       get-mzscheme-position-from-label
-                                       get-span-from-label
-                                       type-list))))
+            (let ([label-gui-data-by-label (asset:make-assoc-set)])
+              (real-make-gui-model-state label-gui-data-by-label
+                                         get-label-from-mzscheme-position
+                                         get-mzscheme-position-from-label
+                                         (lambda (label)
+                                           (let ([span (get-span-from-label label)]
+                                                 [label-gui-data
+                                                  (asset:assoc-set-get label-gui-data-by-label
+                                                                       label cst:thunk-false)])
+                                             (if label-gui-data
+                                                 (+ span (label-gui-data-span-change label-gui-data))
+                                                 span)))
+                                         type-list)))))
   
   
   ; DRSCHEME / MZSCHEME CONVERSIONS
@@ -151,12 +156,12 @@
           [get-mzscheme-position-from-label
            (gui-model-state-get-mzscheme-position-from-label gui-model-state)])
       (asset:assoc-set-for-each
-       (gui-model-state-snips gui-model-state)
-       (lambda (label snips-groups)
+       (gui-model-state-label-gui-data-by-label gui-model-state)
+       (lambda (label label-gui-data)
          (when (<= (mzscheme-pos->drscheme-pos (get-mzscheme-position-from-label label))
                    old-pos)
            (asset:assoc-set-for-each
-            (snips-groups-by-type snips-groups)
+            (label-gui-data-snip-groups-by-type label-gui-data)
             (lambda (type snip-group)
               (set! new-pos (+ new-pos (snip-group-size snip-group))))))))
       new-pos))
@@ -174,21 +179,23 @@
   (define (new-pos->old-pos gui-model-state new-pos)
     (let ([old-pos new-pos])
       (asset:assoc-set-for-each
-       (gui-model-state-snips gui-model-state)
-       (lambda (label snips-groups)
+       (gui-model-state-label-gui-data-by-label gui-model-state)
+       (lambda (label label-gui-data)
          (asset:assoc-set-for-each
-          (snips-groups-by-type snips-groups)
+          (label-gui-data-snip-groups-by-type label-gui-data)
           (lambda (type snip-group)
-            (let* ([left-new-pos (snip-group-left-new-pos snip-group)]
+            (let* ([snip-group-left-new-pos (snip-group-left-new-pos snip-group)]
                    [size (snip-group-size snip-group)]
-                   [right-new-pos (+ left-new-pos size)])
+                   [snip-group-right-new-pos (+ snip-group-left-new-pos size)])
               (cond
                 ; whole group of snips is on the left of new-pos
-                [(< right-new-pos new-pos) (set! old-pos (- old-pos size))]
+                [(< snip-group-right-new-pos new-pos)
+                 (set! old-pos (- old-pos size))]
                 ; if we arrive here, it means new-pos is somewhere in the middle of the
                 ; current group of snips, so the number of snips of this group that's on
-                ; the left of new-pos is (- new-pos left-new-pos).
-                [(< left-new-pos new-pos) (set! old-pos (- old-pos (- new-pos left-new-pos)))]
+                ; the left of new-pos is (- new-pos snip-group-left-new-pos).
+                [(< snip-group-left-new-pos new-pos)
+                 (set! old-pos (- old-pos (- new-pos snip-group-left-new-pos)))]
                 ; else the whole group of snips is on the right of the new-pos, so do nothing
                 ))))))
       old-pos))
@@ -200,19 +207,41 @@
   (define (move-poss gui-model-state start len add)
     (let ([move-pos (lambda (pos) (if (< pos start) pos (add pos len)))])
       (asset:assoc-set-for-each
-       (gui-model-state-arrows gui-model-state)
+       (gui-model-state-label-gui-data-by-label gui-model-state)
        (lambda (label label-gui-data)
-         (set-label-gui-data-left-new-pos! label-gui-data (move-pos (label-gui-data-left-new-pos label-gui-data)))))
-      (asset:assoc-set-for-each
-       (gui-model-state-snips gui-model-state)
-       (lambda (label snips-groups)
+         (set-label-gui-data-left-new-pos! label-gui-data (move-pos (label-gui-data-left-new-pos label-gui-data)))
          (asset:assoc-set-for-each
-          (snips-groups-by-type snips-groups)
+          (label-gui-data-snip-groups-by-type label-gui-data)
           (lambda (type snip-group)
-            (set-snip-group-left-new-pos! snip-group (move-pos (snip-group-left-new-pos snip-group)))))))
-      cst:void))
+            (set-snip-group-left-new-pos! snip-group (move-pos (snip-group-left-new-pos snip-group))))))))
+    cst:void)
   
+  ; gui-model-state label exact-integer -> void
+  ; modify the span of a label and move snips on the right
+  (define (resize-label gui-model-state label change)
+    (let* ([label-gui-data-by-label (gui-model-state-label-gui-data-by-label gui-model-state)]
+           [label-gui-data (asset:assoc-set-get label-gui-data-by-label label cst:thunk-false)])
+      (if label-gui-data
+          (begin
+            (set-label-gui-data-span-change!
+             label-gui-data
+             (+ change (label-gui-data-span-change label-gui-data)))
+            (move-poss gui-model-state (label-gui-data-left-new-pos label-gui-data) change +))
+          (let ([left-new-pos (old-pos->new-pos gui-model-state
+                                                (mzscheme-pos->drscheme-pos
+                                                 ((gui-model-state-get-mzscheme-position-from-label
+                                                   gui-model-state)
+                                                  label)))])
+            (asset:assoc-set-set label-gui-data-by-label
+                                 label
+                                 (make-label-gui-data left-new-pos
+                                                      change
+                                                      (asset:make-assoc-set)
+                                                      (set:make-set)
+                                                      (set:make-set)))
+            (move-poss gui-model-state left-new-pos change +)))))
   
+
   ; EVENTS
   ; simulates user's actions. Of course all the snips and arrows will be deleted as soon
   ; a user modifies the definition window, but we still neep to update the snip
@@ -229,10 +258,10 @@
   ; ARROWS
   ; gui-model-state label label boolean -> void
   (define (add-arrow gui-model-state start-label end-label tacked?)
-    (let* ([displayed-arrows (gui-model-state-arrows gui-model-state)]
+    (let* ([label-gui-data-by-label (gui-model-state-label-gui-data-by-label gui-model-state)]
            [new-arrow (make-arrow start-label end-label tacked?)]
-           [start-label-gui-data (asset:assoc-set-get displayed-arrows start-label cst:thunk-false)]
-           [end-label-gui-data (asset:assoc-set-get displayed-arrows end-label cst:thunk-false)]
+           [start-label-gui-data (asset:assoc-set-get label-gui-data-by-label start-label cst:thunk-false)]
+           [end-label-gui-data (asset:assoc-set-get label-gui-data-by-label end-label cst:thunk-false)]
            [get-mzscheme-position-from-label
             (gui-model-state-get-mzscheme-position-from-label gui-model-state)])
       (if (and start-label-gui-data end-label-gui-data)
@@ -267,9 +296,11 @@
                 (let ([new-pos (old-pos->new-pos gui-model-state
                                                  (mzscheme-pos->drscheme-pos
                                                   (get-mzscheme-position-from-label start-label)))])
-                  (asset:assoc-set-set displayed-arrows
+                  (asset:assoc-set-set label-gui-data-by-label
                                        start-label
                                        (make-label-gui-data new-pos
+                                                            0
+                                                            (asset:make-assoc-set)
                                                             (set:set-set (set:make-set) new-arrow)
                                                             (set:make-set)))))
             (if end-label-gui-data
@@ -277,9 +308,11 @@
                 (let ([new-pos (old-pos->new-pos gui-model-state
                                                  (mzscheme-pos->drscheme-pos
                                                   (get-mzscheme-position-from-label end-label)))])
-                  (asset:assoc-set-set displayed-arrows
+                  (asset:assoc-set-set label-gui-data-by-label
                                        end-label
                                        (make-label-gui-data new-pos
+                                                            0
+                                                            (asset:make-assoc-set)
                                                             (set:make-set)
                                                             (set:set-set (set:make-set) new-arrow)))))
             cst:void))))
@@ -288,32 +321,32 @@
   ; remove arrows starting at given label AND arrows ending at same given label
   ; Note that assoc-set-get will fail if we try to remove non-existant arrows...
   (define (remove-arrows gui-model-state start-label tacked? exn?)
-    (let* ([displayed-arrows (gui-model-state-arrows gui-model-state)]
+    (let* ([label-gui-data-by-label (gui-model-state-label-gui-data-by-label gui-model-state)]
            [start-label-gui-data
             (if exn?
-                (asset:assoc-set-get displayed-arrows start-label)
-                (asset:assoc-set-get displayed-arrows start-label cst:thunk-false))])
+                (asset:assoc-set-get label-gui-data-by-label start-label)
+                (asset:assoc-set-get label-gui-data-by-label start-label cst:thunk-false))])
       ; at this point, if the key was not found, either exn? was true and an exception
       ; was raised, or it was false and start-label-gui-data is false
       (when start-label-gui-data
-        (remove-both-ends gui-model-state
+        (remove-both-ends label-gui-data-by-label
                           (label-gui-data-starting-arrows start-label-gui-data)
                           tacked?
                           arrow-end-label
                           label-gui-data-ending-arrows)
-        (remove-both-ends gui-model-state
+        (remove-both-ends label-gui-data-by-label
                           (label-gui-data-ending-arrows start-label-gui-data)
                           tacked?
                           arrow-start-label
                           label-gui-data-starting-arrows)))
     cst:void)
   
-  ; gui-model-state (setof arrow) (union symbol boolean)
+  ; (assoc-setof label label-gui-data) (setof arrow) (union symbol boolean)
   ; (arrow -> label) (label-gui-data -> (setof arrow))
   ; -> (setof arrow)
   ; remove arrows starting at given label OR arrows ending at given
   ; label (depending on selectors/settors)
-  (define (remove-both-ends gui-model-state set tacked? select-other-end-label select-other-end-set)
+  (define (remove-both-ends label-gui-data-by-label set tacked? select-other-end-label select-other-end-set)
     (if (eq? tacked? 'all)
         ; remove all the other ends and reset this end
         ; we could do without this case and use the set-filter way used in the "else" case
@@ -321,30 +354,26 @@
         ; and removing each arrow from the set one by one, we just reset the whole thing.
         (begin
           (set:set-for-each set (lambda (arrow)
-                                  (remove-other-end gui-model-state arrow select-other-end-label select-other-end-set)))
+                                  (remove-other-end label-gui-data-by-label arrow select-other-end-label select-other-end-set)))
           (set:set-reset set))
         ; remove other end while filtering this set
         (set:set-filter set
                         (lambda (arrow)
                           (if (eq? tacked? (arrow-tacked? arrow))
                               (begin
-                                (remove-other-end gui-model-state arrow select-other-end-label select-other-end-set)
+                                (remove-other-end label-gui-data-by-label arrow select-other-end-label select-other-end-set)
                                 #f)
                               #t))
                         'same)))
   
-  ; gui-model-state arrow (arrow -> label) (label-gui-data -> (setof arrow))
+  ; (assoc-setof label label-gui-data) arrow (arrow -> label) (label-gui-data -> (setof arrow))
   ; -> (setof arrow)
   ; removes one arrow structure reference corresponding to the remote end of the arrow we
   ; are removing in remove-both-ends above.
-  (define (remove-other-end gui-model-state arrow select-other-end-label select-other-end-set)
-    (set:set-remove (select-other-end-set (asset:assoc-set-get (gui-model-state-arrows gui-model-state)
+  (define (remove-other-end label-gui-data-by-label arrow select-other-end-label select-other-end-set)
+    (set:set-remove (select-other-end-set (asset:assoc-set-get label-gui-data-by-label
                                                                (select-other-end-label arrow)))
                     arrow))
-  
-  ; gui-model-state -> void
-  (define (remove-all-arrows gui-model-state)
-    (set-gui-model-state-arrows! gui-model-state (asset:make-assoc-set)))
   
   ; gui-model-state
   ; (non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer non-negative-exact-integer boolean -> void)
@@ -354,9 +383,9 @@
   ; or not.
   (define (for-each-arrow gui-model-state f)
     (let ([get-span-from-label (gui-model-state-get-span-from-label gui-model-state)]
-          [all-arrows (gui-model-state-arrows gui-model-state)])
+          [label-gui-data-by-label (gui-model-state-label-gui-data-by-label gui-model-state)])
       (asset:assoc-set-for-each
-       all-arrows
+       label-gui-data-by-label
        (lambda (start-label start-label-gui-data)
          (let ([start-label-pos (label-gui-data-left-new-pos start-label-gui-data)]
                [start-label-span (get-span-from-label start-label)]
@@ -366,7 +395,8 @@
                              (lambda (arrow)
                                (let ([end-label (arrow-end-label arrow)])
                                  (f start-label-pos
-                                    (label-gui-data-left-new-pos (asset:assoc-set-get all-arrows end-label))
+                                    (label-gui-data-left-new-pos
+                                     (asset:assoc-set-get label-gui-data-by-label end-label))
                                     start-label-span
                                     (get-span-from-label end-label)
                                     (arrow-tacked? arrow))))))))))
@@ -376,8 +406,9 @@
   ; returns a function that will count how many of these arrows are tacked
   (define (get-relative-tacked-arrows arrow-set-selector)
     (lambda (gui-model-state label)
-      (let* ([displayed-arrows (gui-model-state-arrows gui-model-state)]
-             [label-gui-data (asset:assoc-set-get displayed-arrows label cst:thunk-false)])
+      (let ([label-gui-data (asset:assoc-set-get
+                             (gui-model-state-label-gui-data-by-label gui-model-state)
+                             label cst:thunk-false)])
         (if label-gui-data
             (set:set-cardinality (set:set-filter (arrow-set-selector label-gui-data) arrow-tacked?))
             0))))
@@ -391,14 +422,15 @@
   ; SNIPS
   ; gui-model-state label symbol -> boolean
   (define (label-has-snips-of-this-type? gui-model-state label type)
-    (let* ([inserted-snips (gui-model-state-snips gui-model-state)]
-           [snips-groups (asset:assoc-set-get inserted-snips label cst:thunk-false)])
-      (if snips-groups
-          (asset:assoc-set-in? (snips-groups-by-type snips-groups) type)
+    (let ([label-gui-data (asset:assoc-set-get
+                           (gui-model-state-label-gui-data-by-label gui-model-state)
+                           label cst:thunk-false)])
+      (if label-gui-data
+          (asset:assoc-set-in? (label-gui-data-snip-groups-by-type label-gui-data) type)
           #f)))
   
   ; (assoc-setof symbol (setof exact-non-negative-integer)) symbol (listof symbol) -> non-negative-exact-integer
-  (define (get-number-of-snips-on-right-from-type snips-groups-by-type type type-list)
+  (define (get-number-of-snips-on-right-from-type snip-groups-by-type type type-list)
     (let ([snip-types-on-right 
            (let ([types (memq type type-list)])
              (if types
@@ -412,7 +444,7 @@
             number-of-snips-on-right
             (loop (cdr snip-types-on-right)
                   (+ number-of-snips-on-right
-                     (let ([snip-group (asset:assoc-set-get snips-groups-by-type (car snip-types-on-right) cst:thunk-false)])
+                     (let ([snip-group (asset:assoc-set-get snip-groups-by-type (car snip-types-on-right) cst:thunk-false)])
                        (if snip-group
                            (snip-group-size snip-group)
                            0))))))))
@@ -421,50 +453,56 @@
   ; updates state (move existing snips and add new ones) and returns the position where
   ; the snips should be inserted in the text
   (define (add-snips gui-model-state label type number-of-snips)
-    (let* ([inserted-snips (gui-model-state-snips gui-model-state)]
-           [snips-groups (asset:assoc-set-get inserted-snips label cst:thunk-false)]
+    (let* ([label-gui-data-by-label (gui-model-state-label-gui-data-by-label gui-model-state)]
+           [label-gui-data (asset:assoc-set-get label-gui-data-by-label label cst:thunk-false)]
            [get-mzscheme-position-from-label
             (gui-model-state-get-mzscheme-position-from-label gui-model-state)]
            [label-starting-pos
             (old-pos->new-pos gui-model-state
                               (mzscheme-pos->drscheme-pos
                                (get-mzscheme-position-from-label label)))])
-      (if snips-groups
-          ; the label has already some snips attached to it.
-          (let* ([snips-groups-by-type (snips-groups-by-type snips-groups)]
+      (if label-gui-data
+          ; the label might already have some snips attached to it.
+          (let* ([snip-groups-by-type (label-gui-data-snip-groups-by-type label-gui-data)]
                  [insertion-starting-pos
                   (- label-starting-pos
                      (get-number-of-snips-on-right-from-type
-                      snips-groups-by-type type (gui-model-state-type-list gui-model-state)))])
+                      snip-groups-by-type type (gui-model-state-type-list gui-model-state)))])
             (move-poss gui-model-state insertion-starting-pos number-of-snips +)
-            (if (asset:assoc-set-in? snips-groups-by-type type)
+            (if (asset:assoc-set-in? snip-groups-by-type type)
                 ; type already present, but, for a given label and type, we can have only one
                 ; group of snips
                 (error 'add-snips gui-model-state
                        "snips-and-arrows internal error; label ~a has already a snip group of type ~a"
                        label type)
                 ; new snip type for this label
-                (asset:assoc-set-set snips-groups-by-type type (make-snip-group insertion-starting-pos number-of-snips)))
+                (asset:assoc-set-set snip-groups-by-type type (make-snip-group insertion-starting-pos number-of-snips)))
             insertion-starting-pos)
-          ; create new snips-groups associative set for that label
+          ; create new label-gui-data for that label
           (begin
             (move-poss gui-model-state label-starting-pos number-of-snips +)
             (asset:assoc-set-set
-             inserted-snips
+             label-gui-data-by-label
              label
-             (make-snips-groups
-              (asset:assoc-set-set (asset:make-assoc-set)
-                                   type (make-snip-group label-starting-pos number-of-snips))))
+             (make-label-gui-data (+ label-starting-pos number-of-snips)
+                                  0
+                                  (asset:assoc-set-set (asset:make-assoc-set)
+                                                       type
+                                                       (make-snip-group label-starting-pos
+                                                                        number-of-snips))
+                                  (set:make-set)
+                                  (set:make-set)))
             label-starting-pos))))
   
   ; gui-model-state label symbol -> (value non-negative-exact-integer non-negative-exact-integer)
   ; removes all snips for a given label and type, move remaining snips, and returns the interval
   ; to delete in the editor
   (define (remove-inserted-snips gui-model-state label type)
-    (let ([snips-groups (asset:assoc-set-get (gui-model-state-snips gui-model-state) label cst:thunk-false)])
-      (if snips-groups
-          (let* ([snips-groups-by-type (snips-groups-by-type snips-groups)]
-                 [snip-group (asset:assoc-set-get snips-groups-by-type type cst:thunk-false)])
+    (let* ([label-gui-data-by-label (gui-model-state-label-gui-data-by-label gui-model-state)]
+           [label-gui-data (asset:assoc-set-get label-gui-data-by-label label cst:thunk-false)])
+      (if label-gui-data
+          (let* ([snip-groups-by-type (label-gui-data-snip-groups-by-type label-gui-data)]
+                 [snip-group (asset:assoc-set-get snip-groups-by-type type cst:thunk-false)])
             (if snip-group
                 (let* ([size (snip-group-size snip-group)]
                        [get-mzscheme-position-from-label
@@ -476,8 +514,8 @@
                        [deletion-ending-pos
                         (- label-starting-pos
                            (get-number-of-snips-on-right-from-type
-                            snips-groups-by-type type (gui-model-state-type-list gui-model-state)))])
-                  (asset:assoc-set-remove snips-groups-by-type type)
+                            snip-groups-by-type type (gui-model-state-type-list gui-model-state)))])
+                  (asset:assoc-set-remove snip-groups-by-type type)
                   (move-poss gui-model-state deletion-ending-pos size -)
                   (values (- deletion-ending-pos size) deletion-ending-pos)
                   )
@@ -486,27 +524,27 @@
                 (error 'remove-inserted-snips
                        "snips-and-arrows internal error; label ~a has no snip group of type ~a"
                        label type)))
-          ; label has no snips at all associated with it, delete nothing
+          ; label has no label-gui-data at all associated with it, delete nothing
           ; this should normally not happen, because no menu should be available for this
           (error 'remove-inserted-snips
                  "snips-and-arrows internal error; label ~a has no snip group at all, let alone of type ~a"
                  label type))))
   
   ; gui-model-state -> (listof (cons non-negative-exact-integer non-negative-exact-integer))
-  ; returns the position of all the existing snip groups
-  (define (remove-all-snips gui-model-state)
+  ; returns the position of all the existing snip groups after deleting all snips and arrows
+  (define (remove-all-snips-and-arrows gui-model-state)
     (let ([all-snip-groups (asset:assoc-set-fold
-                            (gui-model-state-snips gui-model-state)
-                            (lambda (label snips-groups acc)
+                            (gui-model-state-label-gui-data-by-label gui-model-state)
+                            (lambda (label label-gui-data acc)
                               (asset:assoc-set-fold
-                               (snips-groups-by-type snips-groups)
+                               (label-gui-data-snip-groups-by-type label-gui-data)
                                (lambda (type snip-group acc)
                                  (cons (cons (snip-group-left-new-pos snip-group)
                                              (snip-group-size snip-group))
                                        acc))
                                acc))
                             '())])
-      (set-gui-model-state-snips! gui-model-state (asset:make-assoc-set))
+      (asset:assoc-set-reset (gui-model-state-label-gui-data-by-label gui-model-state))
       all-snip-groups))
   
   )

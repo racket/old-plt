@@ -46,8 +46,6 @@
                                  ; be wrapped to prevent an infinite loop.
                                  analysis-currently-inserting?
                                  analysis-currently-deleting?
-                                 ; (label -> non-negative-exact-integer)
-                                 get-span-from-label
                                  ; (label -> style-delta%)
                                  get-style-delta-from-label
                                  ; (symbol -> style-delta%)
@@ -75,7 +73,6 @@
                                                       #f
                                                       #f
                                                       #f
-                                                      get-span-from-label
                                                       get-style-delta-from-label
                                                       get-box-style-delta-from-snip-type)
                                  (saam:make-gui-model-state get-label-from-mzscheme-position
@@ -122,7 +119,10 @@
     (let* ([gui-model-state (gui-state-gui-model-state gui-state)]
            [gui-view-state (gui-state-gui-view-state gui-state)]
            [this (gui-view-state-this gui-view-state)]
-           [get-span-from-label (gui-view-state-get-span-from-label gui-view-state)]
+           ; we assume the model's state doesn't change throughout the coloring phase
+           ; (i.e. the user doesn't start changing stuff while we color). If that's not
+           ; true, then we'll need to lock the editor during coloring
+           [get-span-from-label (saam:get-get-span-from-label-from-model-state gui-model-state)]
            [get-style-delta-from-label (gui-view-state-get-style-delta-from-label gui-view-state)])
       (send this begin-edit-sequence #f)
       (let ([last-pos (send this last-position)])
@@ -139,19 +139,10 @@
       (set-gui-view-state-text-modified?! gui-view-state #t)))
   
   ; gui-state -> void
-  ; we clear arrows first, so we don't have to recompute any positions after removing
-  ; the snips
-  (define (clear-all-snips-and-arrows gui-state)
-    (clear-arrows gui-state)
-    (clear-snips gui-state)
-    (set-gui-view-state-text-modified?! (gui-state-gui-view-state gui-state) #f)
-    )
-  
-  ; gui-state -> void
   ; remove all snips, group by group. We sort first, to make sure we remove snips from
   ; bottom to top. If we removed snips in any other order, we would have to recompute the
   ; positions of the remaining snips each time we removed one.
-  (define (clear-snips gui-state)
+  (define (clear-all-snips-and-arrows gui-state)
     (let* ([gui-model-state (gui-state-gui-model-state gui-state)]
            [gui-view-state (gui-state-gui-view-state gui-state)]
            [this (gui-view-state-this gui-view-state)])
@@ -161,20 +152,14 @@
        (lambda (snip-group-pos&size-pair)
          (let ([pos (car snip-group-pos&size-pair)])
            (send this delete pos (+ pos (cdr snip-group-pos&size-pair)) #f)))
-       (quicksort (saam:remove-all-snips gui-model-state)
+       (quicksort (saam:remove-all-snips-and-arrows gui-model-state)
                   (lambda (snip-group-pos&size-pair1 snip-group-pos&size-pair2)
                     (> (car snip-group-pos&size-pair1) (car snip-group-pos&size-pair2)))))
       (send this end-edit-sequence)
+      (send this invalidate-bitmap-cache)
+      (set-gui-view-state-text-modified?! gui-view-state #f)
       (set-gui-view-state-analysis-currently-deleting?! gui-view-state #f)))
-  
-  ; gui-state -> void
-  (define (clear-arrows gui-state)
-    (let* ([gui-model-state (gui-state-gui-model-state gui-state)]
-           [gui-view-state (gui-state-gui-view-state gui-state)]
-           [this (gui-view-state-this gui-view-state)])
-      (saam:remove-all-arrows gui-model-state)
-      (send this invalidate-bitmap-cache)))
-  
+    
   
   ; EDITOR EVENTS INTERACTION
   ; gui-state exact-non-negative-integer exact-non-negative-integer -> void

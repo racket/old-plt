@@ -16,6 +16,7 @@
    (lib "embedded-gui.ss" "embedded-gui")
    (lib "string-constant.ss" "string-constants")
    "text-syntax-object.ss"
+   "print-to-text.ss"
    "test-case.ss")
   
   (define-signature test-case-box^ (test-case-box% phase1 phase2))
@@ -126,33 +127,9 @@
           #;((is-a?/c expand-program%) (listof any?) . -> . void?)
           ;; set the text in the actual field to the value given
           (define (set-actuals vals)
-            (unless (empty? vals)
-              (send* actual
-                (lock false)
-                (begin-edit-sequence)
-                (erase))
-              (send (send (get-admin) get-editor) begin-edit-sequence)
-              (let ([port
-                     (make-output-port
-                      'set-actuals
-                      always-evt
-                      (lambda (s start end block? enable-breaks?)
-                        (send actual insert
-                              (list->string
-                               (map integer->char
-                                    (bytes->list (subbytes s start end)))))
-                        (- end start))
-                      void)])
-                (print (first vals) port)
-                (for-each
-                 (lambda (val)
-                   (newline port)
-                   (print val port))
-                 (rest vals)))
-              (send (send (get-admin) get-editor) end-edit-sequence)
-              (send* actual
-                (end-edit-sequence)
-                (lock true))))
+            (send (send (get-admin) get-editor) begin-edit-sequence)
+            (print-to-text actual vals)
+            (send (send (get-admin) get-editor) end-edit-sequence))
           
           ;;;;;;;;;;
           ;; Saving and Copying

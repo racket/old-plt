@@ -1018,20 +1018,18 @@ enum {
 typedef struct Scheme_Input_Port Scheme_Input_Port;
 typedef struct Scheme_Output_Port Scheme_Output_Port;
 
-typedef Scheme_Object *(*Scheme_Get_String_Evt_Fun)(Scheme_Input_Port *port,
-						    char *buffer, long offset, long size,
-						    int byte_or_special);
 typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      char *buffer, long offset, long size,
-				      int nonblock);
-typedef Scheme_Object *(*Scheme_Peek_String_Evt_Fun)(Scheme_Input_Port *port,
-						     char *buffer, long offset, long size,
-						     Scheme_Object *skip,
-						     int byte_or_special);
+				      int nonblock, Scheme_Object *unless);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port,
 				       char *buffer, long offset, long size,
 				       Scheme_Object *skip,
-				       int nonblock);
+				       int nonblock, Scheme_Object *unless);
+typedef Scheme_Object *(*Scheme_Progress_Evt_Fun)(Scheme_Input_Port *port);
+typedef int (*Scheme_Peeked_Read_Fun)(Scheme_Input_Port *port,
+				      long amount,
+				      Scheme_Object *unless_evt,
+				      Scheme_Object *target_ch);
 typedef int (*Scheme_In_Ready_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);
 typedef void (*Scheme_Need_Wakeup_Input_Fun)(Scheme_Input_Port *, void *);
@@ -1055,22 +1053,24 @@ struct Scheme_Input_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
-  Scheme_Get_String_Evt_Fun get_string_evt_fun;
   Scheme_Get_String_Fun get_string_fun;
-  Scheme_Peek_String_Evt_Fun peek_string_evt_fun;
   Scheme_Peek_String_Fun peek_string_fun;
+  Scheme_Progress_Evt_Fun progress_evt_fun;
+  Scheme_Peeked_Read_Fun peeked_read_fun;
   Scheme_In_Ready_Fun byte_ready_fun;
   Scheme_Close_Input_Fun close_fun;
   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun;
   Scheme_Object *read_handler;
   Scheme_Object *name;
   Scheme_Object *peeked_read, *peeked_write;
+  Scheme_Object *progress_evt, *input_lock, *input_giveup;
   unsigned char ungotten[24];
   int ungotten_count;
-  Scheme_Object *special, *ungotten_special, *special_width;
+  Scheme_Object *special, *ungotten_special;
   long position, readpos, lineNumber, charsSinceNewline, utf8cont;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
+  Scheme_Object *unless, *unless_cache;
   struct Scheme_Output_Port *output_half;
 };
 
@@ -1101,6 +1101,7 @@ struct Scheme_Output_Port
 #define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
 
 #define SCHEME_SPECIAL (-2)
+#define SCHEME_UNLESS_READY (-3)
 
 /*========================================================================*/
 /*                              exceptions                                */

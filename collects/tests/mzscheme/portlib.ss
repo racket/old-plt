@@ -41,7 +41,6 @@
 		(loop (add1 n))))))])
   (do-tests '("apple" "banana"))
   (do-tests '("ax" "b" "cz")))
-
-	   
+   
 ;; 
-(make-input-port/read-to-peek name read fast-peek close)
+#; (make-input-port/read-to-peek name read fast-peek close)

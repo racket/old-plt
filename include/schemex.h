@@ -86,6 +86,12 @@ void (*scheme_weak_resume_thread)(Scheme_Thread *p);
 int (*scheme_block_until)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, float);
 int (*scheme_block_until_enable_break)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun, Scheme_Object *, 
 					      float, int enable);
+int (*scheme_block_until_unless)(Scheme_Ready_Fun f, Scheme_Needs_Wakeup_Fun fdf,
+					Scheme_Object *data, float delay, 
+					Scheme_Object *unless,
+					int enable_break);
+void (*scheme_wait_input_allowed)(Scheme_Input_Port *port, int nonblock);
+int (*scheme_unless_ready)(Scheme_Object *unless);
 int (*scheme_in_main_thread)(void);
 void (*scheme_cancel_sleep)(void);
 Scheme_Object *(*scheme_make_thread_cell)(Scheme_Object *def_val, int inherited);
@@ -374,6 +380,7 @@ void (*scheme_post_sema_all)(Scheme_Object *o);
 int (*scheme_wait_sema)(Scheme_Object *o, int just_try);
 Scheme_Object **scheme_char_constants;
 Scheme_Object *(*scheme_make_channel)();
+Scheme_Object *(*scheme_make_channel_put_evt)(Scheme_Object *ch, Scheme_Object *v);
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);
 int (*scheme_get_unsigned_int_val)(Scheme_Object *o, unsigned long *v);
 double (*scheme_real_to_double)(Scheme_Object *r);
@@ -491,11 +498,11 @@ int (*scheme_get_byte)(Scheme_Object *port);
 int (*scheme_peekc)(Scheme_Object *port);
 int (*scheme_peek_byte)(Scheme_Object *port);
 int (*scheme_peekc_skip)(Scheme_Object *port, Scheme_Object *skip);
-int (*scheme_peek_byte_skip)(Scheme_Object *port, Scheme_Object *skip);
+int (*scheme_peek_byte_skip)(Scheme_Object *port, Scheme_Object *skip, Scheme_Object *unless_evt);
 int (*scheme_getc_special_ok)(Scheme_Object *port);
 int (*scheme_get_byte_special_ok)(Scheme_Object *port);
 int (*scheme_peekc_special_ok)(Scheme_Object *port);
-int (*scheme_peek_byte_special_ok_skip)(Scheme_Object *port, Scheme_Object *skip);
+int (*scheme_peek_byte_special_ok_skip)(Scheme_Object *port, Scheme_Object *skip, Scheme_Object *unless_evt);
 int (*scheme_peekc_special_ok_skip)(Scheme_Object *port, Scheme_Object *skip);
 void (*scheme_ungetc)(int ch, Scheme_Object *port);
 int (*scheme_byte_ready)(Scheme_Object *port);
@@ -507,6 +514,17 @@ long (*scheme_get_byte_string)(const char *who,
 				      char *buffer, long offset, long size,
 				      int only_avail,
 				      int peek, Scheme_Object *peek_skip);
+long (*scheme_get_byte_string_unless)(const char *who,
+					     Scheme_Object *port,
+					     char *buffer, long offset, long size,
+					     int only_avail,
+					     int peek, Scheme_Object *peek_skip,
+					     Scheme_Object *unless_evt);
+Scheme_Object *(*scheme_progress_evt)(Scheme_Object *port);
+int (*scheme_peeked_read)(Scheme_Object *port,
+				 long size,
+				 Scheme_Object *unless_evt,
+				 Scheme_Object *target_evt);
 long (*scheme_get_char_string)(const char *who,
 				      Scheme_Object *port,
 				      mzchar *buffer, long offset, long size,
@@ -529,10 +547,10 @@ Scheme_Object *(*scheme_make_write_evt)(const char *who, Scheme_Object *port,
 Scheme_Object *(*scheme_make_port_type)(const char *name);
 Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
 						    Scheme_Object *name,
-						    Scheme_Get_String_Evt_Fun get_byte_string_evt_fun,
 						    Scheme_Get_String_Fun get_byte_string_fun,
-						    Scheme_Peek_String_Evt_Fun peek_string_evt_fun,
 						    Scheme_Peek_String_Fun peek_string_fun,
+						    Scheme_Progress_Evt_Fun progress_evt_fun,
+						    Scheme_Peeked_Read_Fun peeked_read_fun,
 						    Scheme_In_Ready_Fun byte_ready_fun,
 						    Scheme_Close_Input_Fun close_fun,
 						    Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
@@ -547,13 +565,11 @@ Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype, void *dat
 						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
-Scheme_Object *(*scheme_get_evt_via_get)(Scheme_Input_Port *port,
-						char *buffer, long offset, long size,
-						int byte_or_special);
-Scheme_Object *(*scheme_peek_evt_via_peek)(Scheme_Input_Port *port, 
-						  char *buffer, long offset, long size,
-						  Scheme_Object *skip,
-						  int byte_or_special);
+Scheme_Object *(*scheme_progress_evt_via_get)(Scheme_Input_Port *port);
+int (*scheme_peeked_read_via_get)(Scheme_Input_Port *port,
+					 long size,
+					 Scheme_Object *unless_evt,
+					 Scheme_Object *target_ch);
 Scheme_Object *(*scheme_write_evt_via_write)(Scheme_Output_Port *port,
 						    const char *str, long offset, long size);
 Scheme_Object *(*scheme_write_special_evt_via_write_special)(Scheme_Output_Port *port, 

@@ -20,7 +20,7 @@
     
     (mred:set-preference-default 'drscheme:library-file #f (lambda (x)
 							     (or (not x)
-								 (eq? x #t))))
+								 (string? x))))
     (mred:add-preference-callback 
      'drscheme:library-file
      (lambda (p v)

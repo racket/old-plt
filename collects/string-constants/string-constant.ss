@@ -59,7 +59,7 @@
          (make-sc 'spanish (get-string-constants "spanish-string-constants.ss"))
          (make-sc 'french (get-string-constants "french-string-constants.ss"))
          (make-sc 'german (get-string-constants "german-string-constants.ss"))
-         (make-sc 'dutch (get-string-constants "dutch-string-constants.ss"))
+         ;(make-sc 'dutch (get-string-constants "dutch-string-constants.ss"))
          (make-sc 'danish (get-string-constants "danish-string-constants.ss"))))
       
       (define first-string-constant-set (car available-string-constant-sets))

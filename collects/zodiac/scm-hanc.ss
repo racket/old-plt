@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.40 1997/12/01 16:26:14 shriram Exp mflatt $
+; $Id: scm-hanc.ss,v 1.41 1997/12/04 21:34:06 mflatt Exp mflatt $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -86,7 +86,7 @@
     (list->vector
      (map
       (lambda (e)
-	(if (symbol? e)
+	(if (or (z:symbol? e) (symbol? e))
 	    e
 	    (named-sig-list->named-sig-vector e)))
       l))))
@@ -1849,7 +1849,7 @@
 			   '(invoke)
 			   (#%list unit)
 			   '(#())
-			   '(,(map (lambda (l) (map named-sig-list->named-sig-vector l)) proc:linkage)))
+			   '(,(map named-sig-list->named-sig-vector proc:linkage)))
 			 (invoke-unit
 			   (#%unit-with-signature-unit unit)
 			   ,@proc:imports))
@@ -1899,7 +1899,7 @@
 			   '(invoke)
 			   (#%list unit)
 			   '(#())
-			   '(,(map (lambda (l) (map named-sig-list->named-sig-vector l)) proc:linkage)))
+			   '(,(map named-sig-list->named-sig-vector proc:linkage)))
 			 (invoke-open-unit
 			   (#%unit-with-signature-unit unit)
 			   ,in:name-spec

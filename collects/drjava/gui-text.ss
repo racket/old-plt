@@ -344,21 +344,27 @@
       (k top-editor repl-editor)))
   
   ;; build-bitmap : Bitmap% String -> Bitmap%
-  (define (build-bitmap icon text)
-    (let-values ([(width height _ __)
-                  (send (make-object bitmap-dc% (make-object bitmap% 1 1))
-                        get-text-extent text)])
-      (let* ([icon-width (send icon get-width)]
-             [text-height (inexact->exact height)]
-             [total-height (max text-height (send icon get-height))]
-             [big (make-object bitmap% (+ (inexact->exact width) icon-width) total-height)]
-             [big-dc (make-object bitmap-dc% big)])
-        (send big-dc clear)
-        (send big-dc draw-bitmap icon 0 0)
-        (send big-dc draw-text text icon-width (/ (- total-height text-height) 2))
-        
-        (send big-dc set-bitmap #f)
-        big)))
+  (define build-bitmap
+    (let* ([font (make-object font% 12 'system 'normal 'normal)]
+           [border 3]
+           [border*2 (* border 2)])
+      (lambda (icon text)
+        (let-values ([(width height _ __)
+                      (send (make-object bitmap-dc% (make-object bitmap% 1 1))
+                            get-text-extent text font)])
+          (let* ([icon-width (+ border*2 (send icon get-width))]
+                 [text-height (inexact->exact height)]
+                 [total-height (+ border*2
+                                  (max text-height (send icon get-height)))]
+                 [big (make-object bitmap% (+ icon-width (inexact->exact width) border) total-height)]
+                 [big-dc (make-object bitmap-dc% big)])
+            (send big-dc clear)
+            (send big-dc draw-bitmap icon border border)
+            (send big-dc set-font font)
+            (send big-dc draw-text text icon-width (/ (- total-height text-height) 2))
+            
+            (send big-dc set-bitmap #f)
+            big)))))
   
   ;; compile-string : String jobject(Env) -> Void
   (define (compile-string source env)

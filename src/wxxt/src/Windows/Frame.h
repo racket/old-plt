@@ -51,10 +51,10 @@ public:
     virtual void  GetClientSize(int *width, int *height);
     virtual void  SetClientSize(int width, int height);
     virtual void  SetSize(int width, int height)
-		{ Configure(-1, -1, width, height); }
+		{ Configure(-1, -1, width, height, 0); }
     virtual void  SetSize(int x, int y, int width, int height,
-			  int WXUNUSED(flags=wxSIZE_AUTO))
-		{ Configure(x, y, width, height); }
+			  int flags=wxSIZE_AUTO)
+		{ Configure(x, y, width, height, flags); }
     // status line
     void  CreateStatusLine(int number=1, char *name = "status_line");
     void  SetStatusText(char *text, int number=0);

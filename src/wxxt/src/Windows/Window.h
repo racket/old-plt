@@ -86,7 +86,7 @@ public:
     // set & query size and position of wxWindow
     virtual void  Centre(int direction = wxBOTH);
     virtual void  ClientToScreen(int *x, int *y);
-    virtual void  Configure(int x, int y, int width, int height);
+    virtual void  Configure(int x, int y, int width, int height, int flags);
     virtual void  GetClientSize(int *width, int *height);
     virtual void  GetPosition(int *x, int *y);
     virtual void  GetSize(int *width, int *height);

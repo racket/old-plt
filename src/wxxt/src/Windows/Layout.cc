@@ -590,7 +590,8 @@ void wxWindow::Layout(void)
 	    && wxLC_MEM(constr->width, done) && wxLC_MEM(constr->height, done)) {
 	    // Configure calls OnSize()
 	    child->Configure(wxLC_MEM(constr->left, value),  wxLC_MEM(constr->top, value),
-			     wxLC_MEM(constr->width, value), wxLC_MEM(constr->height, value));
+			     wxLC_MEM(constr->width, value), wxLC_MEM(constr->height, value),
+			     wxPOS_USE_MINUS_ONE);
 	    // layout child
 	    child->Layout();
 	}

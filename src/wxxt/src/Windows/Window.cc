@@ -298,7 +298,7 @@ void wxWindow::ClientToScreen(int *x, int *y)
   }
 }
 
-void wxWindow::Configure(int x, int y, int width, int height)
+void wxWindow::Configure(int x, int y, int width, int height, int flags)
 {
     Arg    args[4];
     int    i = 0;
@@ -329,9 +329,11 @@ void wxWindow::Configure(int x, int y, int width, int height)
 
     XtVaGetValues(X->frame, XtNx, &cx, XtNy, &cy, XtNwidth, &cw, XtNheight, &ch, NULL);
 
-    if ((x > -1) && ((Position)(x + _xoff) != cx))
+    if (((x > -1) || ((flags & wxPOS_USE_MINUS_ONE) && (x > wxDEFAULT_POSITION)))
+	&& ((Position)(x + _xoff) != cx))
       { args[i].name = XtNx; args[i].value = (Position)(x+_xoff); ++i; }
-    if ((y > -1) && ((Position)(y + _yoff) != cy))
+    if (((y > -1) || ((flags & wxPOS_USE_MINUS_ONE) && (y > wxDEFAULT_POSITION)))
+	&& ((Position)(y + _yoff) != cy))
       { args[i].name = XtNy; args[i].value = (Position)(y+_yoff); ++i; }
     if ((width > -1) && ((Dimension)width != cw))
       { args[i].name = XtNwidth; args[i].value = (Dimension)width; ++i; }
@@ -462,7 +464,7 @@ void wxWindow::SetSize(int x, int y, int width, int height, int flags)
   else
     wxLC_MEM(constraints->height, AsIs());
 
-  Configure(x, y, width, height);
+  Configure(x, y, width, height, flags);
 }
 
 //-----------------------------------------------------------------------------

@@ -102,11 +102,11 @@ Bool wxPrinterDC::Blit(float xdest, float ydest, float width, float height,
         GrafPtr theMacGrafPort = (GrafPtr)cMacDC->macGrafPort();
         BitMap *dstbm;
         PixMapHandle destpixh;
-        if ((((CGrafPtr)theMacGrafPort)->portVersion & 0xC000) != 0xC000) {
+        if (((theMacGrafPort)->portVersion & 0xC000) != 0xC000) {
           destpixh = NULL;
           dstbm = (BitMap *) &((GrafPtr)(cMacDC->macGrafPort()))->portBits;
         } else {
-          destpixh = ((CGrafPtr)theMacGrafPort)->portPixMap;
+          destpixh = (theMacGrafPort)->portPixMap;
 		  ::LockPixels(destpixh);
 		  dstbm = (BitMap *)(* destpixh);
         }

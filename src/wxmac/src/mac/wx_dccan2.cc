@@ -596,7 +596,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		Rect destr = {y, x, y+h, x+w };
                 OffsetRect(&destr,SetOriginX,SetOriginY);
 		
-		CGrafPtr theMacGrafPort = (CGrafPtr)cMacDC->macGrafPort();
+		CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
                 const BitMap *dstbm;
                 PixMapHandle destpixh;

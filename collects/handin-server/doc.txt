@@ -35,20 +35,21 @@ Client Customization
 
 To customize the client:
 
-  1. Rename (of make a copy of) the "handin-client" collection
+  1. Rename (or make a copy of) the "handin-client" collection
      directory that is distibuted with this server. The new name
-     should describe your class fairly uniquely to students. For
-     example, "uu-cpsc2010" is a good name for CPSC 2010 at the
-     University of Utah.
+     should describe your class fairly uniquely. For example,
+     "uu-cpsc2010" is a good name for CPSC 2010 at the University of
+     Utah.
 
   2. Edit the first four definitions of "info.ss" in your renamed
      collection directory:
 
        * For `name', choose a name for the handin tool as it will
-         appear in DrScheme's interface (e.g., for the "Manage XXX..."
-         menu item). Again, make the name specific to the course, in
-         case a student installs multiple handin tools.  It's a good
-         idea to use "Handin" as the last part of the name.
+         appear in DrScheme's interface (e.g., the "XXX" for the
+         "Manage XXX..."  menu item). Again, make the name specific to
+         the course, in case a student installs multiple handin tools.
+         It's a good idea to use "Handin" as the last part of the
+         name, as in "2010 Handin".
 
        * For `collection', use the name that you chose for your
          collection directory (i.e., whatever you changed
@@ -58,30 +59,33 @@ To customize the client:
          running to accept handin submissions.
 
        * For `port', use the port number where the server will be
-         running to accept handin submissions. (The default is fine.)
+         running to accept handin submissions. (The default is
+         probably fine.)
 
    3. Replace "icon.png" in your renamed directory with a new 32x32
-      icon. This icon is displayed on startup, and it is displayed on
-      teh "Handin" button. Again, choosing a distinct icon is
-      important for students who install multiple handin tools.
+      icon. This icon is displayed on startup with DrScheme's splash
+      screen, and it is included at half size on the "Handin"
+      button. Again, choose a distinct icon for the sake of students
+      who install multiple handin tools.
 
    4. Replace "server-cert.pem" in your renamed directory with a
       server certificate. The file "server-cert.pem" in
       "handin-client" collection is ok for testing, but the point of
       this certificate is to make handins secure, so you should
       generate a new (self-certifying) certificate and keep its key
-      private.
+      private. (See server setup, below.)
 
    5. Run
            mzc --collection-plt <name>.plt <name>
-
-      where <name> is the name that you chose for your (i.e., whatever
-      you changed "handin-client" to).
+      where <name> is the name that you chose for your directory
+      (i.e., whatever you changed "handin-client" to).
 
    6. Distribute <name>.plt to students for installation into their
       copies of DrScheme. The students need not have access to the
-      DrScheme installation directory; the tool will be installed in
-      the student's personal space on the filesystem.
+      DrScheme installation directory; the tool will be installed on
+      the filesystem in the student's personal space. If you want to
+      install it once on a shared installation, use setup-plt with the
+      --all-users flag.
 
 
 Server Setup
@@ -90,36 +94,38 @@ Server Setup
 Quick start for testing:
 ------------------------
 
- 1. Create a new directory
- 2. Copy "server-cert.pem" from "handin-client" to the new directory
-       NOTE: for real use, you need a new certificate
- 3. Copy "private-key.pem" from "handin-server" to the new directory
-       NOTE: for real use, you need a new key
+ 1. Create a new directory.
+ 2. Copy "server-cert.pem" from "handin-client" to the new directory.
+       NOTE: for real use, you need a new certificate.
+ 3. Copy "private-key.pem" from "handin-server" to the new directory.
+       NOTE: for real use, you need a new key.
  4. Create a file "users.ss" with the following content:
        ((tester ("pw" "Chester Tester" "123")))
- 5. Make an "active" subdirectory in your new directory
- 6. Make a "test" subdirectory in "active"
+ 5. Make an "active" subdirectory in your new directory.
+ 6. Make a "test" subdirectory in "active".
 
  7. In your new directory, run
         mred -mvqM handin-server
      
  8. Start DrScheme, click "Handin", handin as "tester" with
-    password "pw"
+    password "pw".
 
-Details:
---------
+Details and permament setup:
+----------------------------
 
 The server must be run from a directory that is specially prepared to
-host the server. This directory must contain the following files and
-directories:
+host the server. This directory contains the following files and
+sub-directories:
 
-  * server-cert.pem --- the server's certificate; to create a
+  * server-cert.pem --- the server's certificate. To create a
     ceritificate and key with openssl:
 
      openssl req -new -nodes -x509 -days 365 -out server-cert.pem 
                  -keyout private-key.pem 
 
-  * private-key.pem --- the private key to go with "server-cert.pem"
+  * private-key.pem --- the private key to go with "server-cert.pem".
+    Whereas "server-cert.pem" gets distributed to students with the
+    handin client, "private-key.pem" is kept private.
 
   * config.ss (optional) --- configuration options. The file format
     is 
@@ -158,25 +164,34 @@ directories:
     "users.ss" file can be updated by the server with new users. It
     can always be updated by the server to change password.
 
-  * active/ --- sub-directory for active assignments; a list of these
-    directory names is sent to client tools, and a student selects
-    from this list. The list is built once when the server starts.
+  * active/ --- sub-directory for active assignments. A list of active
+    assignments is sent to a client tool when a student clicks
+    "Handin". The student then selects from the list. The list of
+    active assignments is built once by the server when it starts.
 
     Within each directory, the student id is used for a sub-directory
-    name. Within the sub-directory are "handin0", etc., for each
-    student who submits an assignment.
+    name. Within each student sub-directory are "handin0", etc., for
+    each student who submits an assignment. (The most recent handin is
+    called "handin0", "handin1" is an older submission for the same
+    assignment, etc.)
 
- * active/<assignment>/checker.ss (optional) --- a module that exports
-   a `checker' function. This function receives two strings. The first
-   is a username and the second is the user's submission as a
-   string. (See also `unpack-submission' from "util.ss", below.) To
-   reject the submission, the `checker' function can raise an
-   exception; the exception message will be relayed back to the user.
+    Each "handin0", etc. file contains a copy of the student's
+    definitions and interactions windows. The file is in a binary
+    format that can be parsed with `unpack-submission' from "utils.ss"
+    (see below).
 
-The server currently provides to mechanism for a graceful
-shutdown. Terminiating the server should at worst annoy a student in
-the same way as a network outage. In particular, no data should be
-lost.
+  * active/<assignment>/checker.ss (optional) --- a module that
+    exports a `checker' function. This function receives two
+    strings. The first is a username and the second is the user's
+    submission as a string. (See also `unpack-submission' from
+    "util.ss", below.) To reject the submission, the `checker'
+    function can raise an exception; the exception message will be
+    relayed back to the student.
+
+The server currently provides to mechanism for a graceful shutdown,
+but terminiating the server is no worse than a network outage. (In
+particular, no data should be lost.) To reconfigure the server (e.g.,
+to change the set of active assignments), stop it and restart it.
 
 The client and server are designed with the expectation that network
 problems and timeouts will be common. The tool always provides a

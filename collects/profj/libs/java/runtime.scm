@@ -14,20 +14,19 @@
   (provide convert-to-string shift not-equal bitwise remainder and or quotient)
   
   ;convert-to-string: (U string int real bool char Object) -> string
-  (define convert-to-string
-    (lambda (data)
-      (cond
-       ((string? data) (make-java-string data))
-       ((number? data) (make-java-string (number->string data)))
-       ((boolean? data) 
-	(make-java-string (if data
-                              "true"
-                              "false")))
-       ((char? data) (make-java-string (string data)))
-       ((is-a? data ObjectI) (send data toString))
-       ((is-a? data object%) (make-java-string "SchemeObject"))
-       (else (error 'JavaRuntime:Internal_Error:convert-to-string
-                    (format "Convert to string given unsupported data: ~s" data))))))
+  (define (convert-to-string data)
+    (cond
+      ((string? data) (make-java-string data))
+      ((number? data) (make-java-string (number->string data)))
+      ((boolean? data) 
+       (make-java-string (if data
+                             "true"
+                             "false")))
+      ((char? data) (make-java-string (string data)))
+      ((is-a? data ObjectI) (send data toString))
+      ((is-a? data object%) (make-java-string "SchemeObject"))
+      (else (error 'JavaRuntime:Internal_Error:convert-to-string
+                   (format "Convert to string given unsupported data: ~s" data)))))
   
   ;Performs arithmetic shifts on the given integers. 
   ;shift: symbol int int -> int

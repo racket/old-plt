@@ -1159,7 +1159,7 @@
                                              (field-lookup-error (if class? 'class-name 
                                                                      (if method? 'method-name 'not-found))
                                                                  (string->symbol fname)
-                                                                 (make-ref-type name null)
+                                                                 (make-ref-type (car name) null)
                                                                  src)))))))
            (set-field-access-access! acc (make-var-access 
                                           (memq 'static (field-record-modifiers record))
@@ -1283,7 +1283,7 @@
             (if (car found?)
                 (list (get-record (send type-recs get-class-record (car found?)) type-recs)
                       (cdr found?))
-                (class-lookup-error (cadr found?) (id-src (car accs))))))))
+                (class-lookup-error (caadr found?) (id-src (car accs))))))))
     
   ;find-static: (list id) (list id) -> (list (U #f (list id)) (list string)))
   (define (find-static test-path remainder)
@@ -1343,7 +1343,7 @@
                     (unless (equal? (class-record-name record) c-class)
                       (send type-recs add-req (make-req (car (class-record-name record))
                                                         (cdr (class-record-name record)))))
-                    (get-method-records name record))
+                    (get-method-records (id-string name) record))
                   (if (and (= (length (access-name expr)) 1)
                            (with-handlers ((exn:syntax? (lambda (exn) #f)))
                              (type-exists? (id-string (car (access-name expr)))
@@ -2109,10 +2109,10 @@
   ;implicit import error
   ;class-lookup-error: string src -> void
   (define (class-lookup-error class src)
-    (raise-error class
+    (raise-error (string->symbol class)
                  (format "Implicit import of class ~a failed as this class does not exist at the specified location"
                          class)
-                 class src))
+                 (string->symbol class) src))
   
   (define check-location (make-parameter #f))
   

@@ -1095,7 +1095,7 @@
 	      (static-error expr "else allowed only in last position"))
 	    (lambda () #f)
 	    env)
-	  (if (compile-auto-cond-else)
+	  (if (compile-allow-cond-fallthrough)
 	    (pat:match-and-rewrite expr m&e-3
 	      out-pattern-3-no-error kwd-1 env)
 	    (pat:match-and-rewrite expr m&e-3
@@ -1143,7 +1143,7 @@
 	    (m&e-3 (pat:make-match&env in-pattern-3 kwd-2)))
       (lambda (expr env)
 	(or (pat:match-and-rewrite expr m&e-1 out-pattern-1 kwd-1 env)
-	  (if (compile-auto-cond-else)
+	  (if (compile-allow-cond-fallthrough)
 	    (pat:match-and-rewrite expr m&e-2
 	      out-pattern-2-no-error kwd-2 env)
 	    (pat:match-and-rewrite expr m&e-2

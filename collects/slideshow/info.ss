@@ -6,4 +6,4 @@
   (define tools (list '("tool.ss")))
   (define tool-names (list "Slideshow"))
   (define compile-omit-files
-    (list "tutorial-show.ss" "initial-ones.ss")))
+    (list "tutorial-show.ss" "initial-ones.ss" "pict-snipclass.ss")))

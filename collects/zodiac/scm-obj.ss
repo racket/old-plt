@@ -73,9 +73,9 @@
     (define-struct local-clause (exports internals exprs))
     (define-struct inherit-clause (inheriteds))
     (define-struct (inherit-from-clause struct:inherit-clause) (super))
-    (define-struct rename-clause (internals inheriteds))
+    (define-struct rename-clause (internals imports))
     (define-struct (rename-from-clause struct:rename-clause) (super))
-    (define-struct share-clause (exports internals inheriteds))
+    (define-struct share-clause (exports internals imports))
     (define-struct (share-from-clause struct:share-clause) (super))
     (define-struct sequence-clause (exprs))
 
@@ -130,11 +130,11 @@
     (define-struct (local-entry struct:ivar-entry) (exports exprs))
     (define-struct (inherit-entry struct:ivar-entry) ())
     (define-struct (inherit-from-entry struct:ivar-entry) (super))
-    (define-struct (rename-entry struct:ivar-entry) (inheriteds))
-    (define-struct (rename-from-entry struct:ivar-entry) (inheriteds super))
-    (define-struct (share-entry struct:ivar-entry) (exports inheriteds))
+    (define-struct (rename-entry struct:ivar-entry) (imports))
+    (define-struct (rename-from-entry struct:ivar-entry) (imports super))
+    (define-struct (share-entry struct:ivar-entry) (exports imports))
     (define-struct (share-from-entry struct:ivar-entry)
-      (exports inheriteds super))
+      (exports imports super))
 
     (define-struct sequence-entry (exprs))
 
@@ -681,14 +681,14 @@
 					 ((rename-entry? e)
 					   (make-rename-clause
 					     (map car (ivar-entry-bindings e))
-					     (rename-entry-inheriteds e)))
+					     (rename-entry-imports e)))
 					 ((rename-from-entry? e)
 					   (flag-non-supervar
 					     (rename-from-entry-super e)
 					     env)
 					   (make-rename-from-clause
 					     (map car (ivar-entry-bindings e))
-					     (rename-from-entry-inheriteds e)
+					     (rename-from-entry-imports e)
 					     (car
 					       (expand-exprs
 						 (list
@@ -697,7 +697,7 @@
 					   (make-share-clause
 					     (share-entry-exports e)
 					     (map car (ivar-entry-bindings e))
-					     (share-entry-inheriteds e)))
+					     (share-entry-imports e)))
 					 ((share-from-entry? e)
 					   (flag-non-supervar
 					     (share-from-entry-super e)
@@ -705,7 +705,7 @@
 					   (make-share-from-clause
 					     (share-from-entry-exports e)
 					     (map car (ivar-entry-bindings e))
-					     (share-from-entry-inheriteds e)
+					     (share-from-entry-imports e)
 					     (car
 					       (expand-exprs
 						 (list
@@ -899,13 +899,13 @@
 			   ,@(map (lambda (internal inherited)
 				    `(,(p->r internal) ,(sexp->raw inherited)))
 			       (rename-clause-internals clause)
-			       (rename-clause-inheriteds clause))))
+			       (rename-clause-imports clause))))
 		      ((rename-clause? clause)
 			`(rename
 			   ,@(map (lambda (internal inherited)
 				    `(,(p->r internal) ,(sexp->raw inherited)))
 			       (rename-clause-internals clause)
-			       (rename-clause-inheriteds clause))))
+			       (rename-clause-imports clause))))
 		      ((share-from-clause? clause)
 			`(share-from
 			   ,(p->r (share-from-clause-super clause))
@@ -914,7 +914,7 @@
 				       ,(sexp->raw inherited)))
 			       (share-clause-internals clause)
 			       (share-clause-exports clause)
-			       (share-clause-inheriteds clause))))
+			       (share-clause-imports clause))))
 		      ((share-clause? clause)
 			`(share
 			   ,@(map (lambda (internal export inherited)
@@ -922,7 +922,7 @@
 				       ,(sexp->raw inherited)))
 			       (share-clause-internals clause)
 			       (share-clause-exports clause)
-			       (share-clause-inheriteds clause))))
+			       (share-clause-imports clause))))
 		      ((sequence-clause? clause)
 			`(sequence
 			   ,@(map p->r (sequence-clause-exprs clause))))))

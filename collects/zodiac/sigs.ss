@@ -118,9 +118,9 @@
     (struct local-clause (exports internals exprs))
     (struct inherit-clause (inheriteds))
     (struct inherit-from-clause (super))
-    (struct rename-clause (internals inheriteds))
+    (struct rename-clause (internals imports))
     (struct rename-from-clause (super))
-    (struct share-clause (exports internals inheriteds))
+    (struct share-clause (exports internals imports))
     (struct share-from-clause (super))
     (struct sequence-clause (exprs))))
 

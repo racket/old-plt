@@ -415,6 +415,7 @@
 			 (pat:pexpand '(link-body ...) p-env kwd))
 		       (in:export-clauses
 			 (pat:pexpand '(export-clause ...) p-env kwd)))
+		  (distinct-valid-syntactic-id/s? in:link-tags)
 		  (make-vars-attribute attributes)
 		  (let*
 		    ((proc:imports (map (lambda (e)
@@ -423,6 +424,7 @@
 				      in:imports))
 		      (_ (extend-env proc:imports env))
 		      (_ (register-links in:link-tags attributes))
+		      (raw-link-clauses (map z:read-object in:link-tags))
 		      (proc:link-clauses
 			(map (lambda (link-tag link-body)
 			       (let ((expanded-body
@@ -437,11 +439,21 @@
 				     (if (null? args)
 				       (cons link-tag
 					 (cons unit-expr unit-args))
-				       (if (and (pair? (car args))
-					     (eq? this-tag
-					       (z:read-object (caar args))))
-					 (static-error (caar args)
-					   "Self-import not allowed")
+				       (begin
+					 (if (pair? (car args))
+					   (let ((arg (caar args)))
+					     (if (z:symbol? arg)
+					       (let ((arg-name
+						       (z:read-object arg)))
+						 (if (eq? this-tag arg-name)
+						   (static-error arg
+						     "Self-import not allowed")
+						   (if (not (memq arg-name
+							      raw-link-clauses))
+						     (static-error arg
+						       "Not a valid tag"))))
+					       (static-error arg
+						 "Tag must be a symbol"))))
 					 (loop (cdr args))))))))
 			  in:link-tags in:link-bodies))
 		      (proc:export-clauses

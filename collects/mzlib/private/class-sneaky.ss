@@ -2522,8 +2522,8 @@ substitutability is checked properly.
         
         cls)))
   
-  (define (create-proxy cls o . methods)
-    o)
+  ; extract-vtable : object -> (vectorof method-proc[this args ... -> res])
+  (define (extract-vtable o) (class-methods (object-ref o)))
   
   ;;--------------------------------------------------------------------
   ;;  misc utils

@@ -890,6 +890,7 @@
       
       ;; expand-field/mtd-spec : stx -> (union mtd fld)
       (define (expand-field/mtd-spec f/m-stx)
+        (printf "expand-field/mtd-spec: ~s\n" f/m-stx)
         (syntax-case f/m-stx (field)
           #|
           [(field field-name ctc)
@@ -1009,10 +1010,12 @@
       (syntax-case stx ()
         [(_ (name mtd) ...)
          (andmap identifier? (syntax->list (syntax (name ...))))
-         (let* ([mtd/flds (map expand-field/mtd-spec (syntax->list (syntax (mtd ...))))]
+         (let* ([_ (printf "1\n")]
+                [mtd/flds (map expand-field/mtd-spec (syntax->list (syntax (mtd ...))))]
 		[mtds (filter mtd? mtd/flds)]
 		;[flds (filter fld? mtd/flds)]
 		)
+           (printf "2\n")
            (with-syntax ([(method-var ...) (generate-temporaries mtds)]
                          [(method/app-var ...) (generate-temporaries mtds)]
                          [(method-ctc-stx ...) (map mtd-ctc-stx mtds)]

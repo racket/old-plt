@@ -13,6 +13,11 @@
 		  (lambda (x)
 		    (and x #t))))
 
+(define use-old-connect
+  (make-parameter #f
+		  (lambda (x)
+		    (and x #t))))
+
 (define draw-bezier-lines
   (make-parameter #f
 		  (lambda (x)
@@ -742,32 +747,34 @@
   (case-lambda
    [(x1 y1 x2 y2) (connect x1 y1 x2 y2 #f)]
    [(x1 y1 x2 y2 arrow?)
-    (let loop ([dd (if (draw-bezier-lines) 0 1)])
-      (if (> dd (if (draw-bezier-lines) 0 4))
-	  ; give up
-	  (if (draw-bezier-lines)
-	      (let* ([get-len (lambda () (sqrt (+ (* (- x1 x2) (- x1 x2))
-						  (* (- y1 y2)  (- y1 y2)))))]
-		     [c (if (procedure? (draw-bezier-lines))
-			   ((draw-bezier-lines) (get-len))
-			   #f)])
-		`(qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2))
-	      (let ([xd (- x2 x1)])
-		`(put ,x1 ,y1 (line ,(if (negative? xd) -1 1) 0 ,(abs xd)))))
-	  (let-values ([(s l) (find-slope (- x2 x1) (- y2 y1) 
-					  (if (using-pict2e-package)
-					      +inf.0
-					      (if arrow? 4 6))
-					  dd dd)])
-		      (if s
-			  (let-values ([(lh lv ll) (parse-slope s l)])
-				      `(put ,x1 ,y1 (,(if arrow? 'vector 'line) ,lh ,lv ,ll)))
-			  (loop (add1 dd))))))]))
+    (if (or (use-old-connect) (draw-bezier-lines))
+	(~connect 'r +inf.0 x1 y1 x2 y2 arrow?)
+	(let loop ([dd (if (draw-bezier-lines) 0 1)])
+	  (if (> dd (if (draw-bezier-lines) 0 4))
+	      ; give up
+	      (if (draw-bezier-lines)
+		  (let* ([get-len (lambda () (sqrt (+ (* (- x1 x2) (- x1 x2))
+						      (* (- y1 y2)  (- y1 y2)))))]
+			 [c (if (procedure? (draw-bezier-lines))
+				((draw-bezier-lines) (get-len))
+				#f)])
+		    `(qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2))
+		  (let ([xd (- x2 x1)])
+		    `(put ,x1 ,y1 (line ,(if (negative? xd) -1 1) 0 ,(abs xd)))))
+	      (let-values ([(s l) (find-slope (- x2 x1) (- y2 y1) 
+					      (if (using-pict2e-package)
+						  +inf.0
+						  (if arrow? 4 6))
+					      dd dd)])
+		(if s
+		    (let-values ([(lh lv ll) (parse-slope s l)])
+		      `(put ,x1 ,y1 (,(if arrow? 'vector 'line) ,lh ,lv ,ll)))
+		    (loop (add1 dd)))))))]))
 
 (define ~connect 
   (case-lambda
-   [(exact x1 y1 x2 y2 close-enough) (~connect exact x1 y1 x2 y2 close-enough #f)]
-   [(exact x1 y1 x2 y2 close-enough arrow?)
+   [(exact close-enough x1 y1 x2 y2) (~connect exact close-enough x1 y1 x2 y2 #f)]
+   [(exact close-enough x1 y1 x2 y2 arrow?)
     (if (= x2 x1)
 	; "infinite" slope
 	(let ([dy (- y2 y1)])
@@ -775,8 +782,8 @@
 	(let ([real-slope (/ (- y2 y1) (- x2 x1))]
 	      [split (lambda (xm ym)
 		       (append
-			(~connect xm ym x1 y1 close-enough #f)
-			(~connect xm ym x2 y2 close-enough arrow?)))])
+			(~connect exact close-enough xm ym x1 y1 #f)
+			(~connect exact close-enough xm ym x2 y2 arrow?)))])
 	  (if (or (>= real-slope (if arrow? 7/8 11/12))
 		  (<= real-slope (if arrow? -7/8 -11/12)))
 	      ; rounds to "infinite" slope
@@ -795,15 +802,21 @@
 				  (loop (rationalize real-slope (car tolerances))
 					(cdr tolerances))))]
 		     [exact-x? (or (eq? exact 'x) (zero? slope))]
-		     [dx (if exact-x?
-			     (- x2 x1)
-			     (* (/ 1 slope) (- y2 y1)))]
-		     [dy (* slope dx)])
+		     [r (sqrt (+ (* (- x1 x2) (- x1 x2)) (* (- y1 y2) (- y1 y2))))]
+		     [dx (cond
+			  [exact-x? (- x2 x1)]
+			  [(eq? exact 'r) (truncate (* r (let ([d (denominator slope)]
+							       [n (numerator slope)])
+							   (/ d (sqrt (+ (* d d) (* n n)))))))]
+			  [else (truncate (* (/ slope) (- y2 y1)))])]
+		     [dy (truncate (* slope dx))])
 		(if (or (and exact-x?
 			     (> (abs (- dy (- y2 y1))) close-enough))
-			(and (not exact-x?)
-			     (> (abs (- dx (- x2 x1))) close-enough)))
-		    (if exact-x?
+			(and (not exact-x?) (eq? exact 'y)
+			     (> (abs (- dx (- x2 x1))) close-enough))
+			(and (not exact-x?) (eq? exact 'y)
+			     (> (abs (- (sqrt (+ (* dx dx) (* dy dy))) r)) close-enough)))
+		    (if (or exact-x? (eq? exact 'r))
 			(let ([xm (truncate (quotient (+ x1 x2) 2))]) 
 			  (split xm (+ y1 (truncate (* slope (- xm x1))))))
 			(let ([ym (truncate (quotient (+ y1 y2) 2))]) 
@@ -854,6 +867,10 @@
 			       (append (apply ~connect 'y (cdr c))
 				       translated)
 			       children)]
+	    [(connect~xy) (loop rest
+				(append (apply ~connect 'r (cdr c))
+					translated)
+				children)]
 	    [(curve) (loop rest
 			   (let ([x1 (cadr c)]
 				 [y1 (caddr c)]

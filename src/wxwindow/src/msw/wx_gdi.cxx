@@ -18,6 +18,8 @@
 #include "wximgfil.h"
 #include "wximgxbm.h"
 
+#pragma optimize("", off);
+
 // Resource counting
 #if 0
 int pen_count, brush_count, font_count, bitmap_count;
@@ -115,53 +117,55 @@ wxFont::~wxFont()
   COUNT_M(font_count);
 }
 
-#if 0
-typedef ???? (WINAPI *wxGET_GLYPH_INDICES_PROC)(HANDLE, HDC, ???);
-static wxGET_GLYPH_INDICES_PROC wxGetGlyphIndices;
-static int indices_tried = 0;
-#endif
+typedef struct wxWCRANGE {
+  WCHAR wcLow;
+  USHORT cGlyphs;
+} wxWCRANGE;
+typedef struct {  
+  DWORD cbThis;
+  DWORD flAccel;
+  DWORD cGlyphsSupported; 
+  DWORD cRanges;  
+  wxWCRANGE ranges[1]; 
+} wxGLYPHSET;
+typedef DWORD (WINAPI *wxGET_FONT_UNICODE_RANGES_PROC)(HDC, wxGLYPHSET*);
+static wxGET_FONT_UNICODE_RANGES_PROC wxGetFontUnicodeRanges;
+static int gfur_tried = 0;
 
 static int glyph_exists_in_selected_font(HDC hdc, int c)
 {
-#if 0
-  GCP_RESULTSW gcp;
-  wchar_t s[2], gl[2];
-  char classes[2];
-  DWORD ok;
-  
-  s[0] = c;
-  s[1] = 1;
-
-  if (!indices_tried) {
+  if (!gfur_tried) {
     HMODULE hm;
-    hm = LoadLibrary("XXX.dll");
+    hm = LoadLibrary("gdi32.dll");
     if (hm) {
-      wxGetGlyphIndices = (wxGET_GLYPH_INDICES_PROC)GetProcAddress(hm, "GetGlyphIndicesW");
+      wxGetFontUnicodeRanges = (wxGET_FONT_UNICODE_RANGES_PROC)GetProcAddress(hm, "GetFontUnicodeRanges");
     }
-    indices_tried = 1;
+    gfur_tried = 1;
   }
 
-  if (wxGetGlyphIndices) {
-    
+  if (wxGetFontUnicodeRanges) {
+    DWORD sz;
+    sz = wxGetFontUnicodeRanges(hdc, NULL);
+    if (sz && (sz < 4096)) {
+      wxGLYPHSET *gs;
+      char *bytes;
+      int i;
+      bytes = new WXGC_ATOMIC char[sz];
+      gs = (wxGLYPHSET *)bytes;
+      gs->cbThis = sz;
+      wxGetFontUnicodeRanges(hdc, gs);
+      for (i = 0; i < gs->cRanges; i++) {
+	if (gs->ranges[i].wcLow <= c
+	    && ((gs->ranges[i].wcLow + gs->ranges[i].cGlyphs) > c))
+	  return 1;
+      }
+    }
+    return 0;
   } else {
-    gcp.lStructSize = sizeof(GCP_RESULTSW);
-    gcp.lpOutString = NULL;
-    gcp.lpDx = NULL;
-    gcp.lpCaretPos = NULL;
-    gcp.lpOrder = NULL;
-    gcp.lpClass = classes;
-    gcp.lpGlyphs = gl;
-    gcp.nGlyphs = 2;
-    
-    ok = GetCharacterPlacementW(hdc, s, 2, 0, &gcp,
-				FLI_MASK & GetFontLanguageInfo(hdc));
-    
-    return (ok 
-	    && (gcp.nGlyphs == 2)
-	    && (gl[0] != gl[1]));
+    /* GetFontUnicodeRanges isn't available. Give up,
+       and assume that the character is here. */
+    return 1;
   }
-#endif
-  return 1;
 }
 
 typedef struct {
@@ -169,23 +173,24 @@ typedef struct {
   int c;
 } GlyphFindData;
 
-static int CALLBACK glyph_exists(ENUMLOGFONT FAR* lpelf, 
-				 NEWTEXTMETRIC FAR* lpntm, 
+static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf, 
+				 NEWTEXTMETRICW FAR* lpntm, 
 				 DWORD type, 
 				 LPARAM _data)
 {
-#if 0
   GlyphFindData *gfd = (GlyphFindData *)_data;
 
-  if (0) {
+  if (((lpntm->tmFirstChar <= gfd->c)
+       && (lpntm->tmLastChar >= gfd->c))) {
+    /* This font might work. Let's try it... */
     HFONT old, cfont;
     int ok;
 
-    cfont = CreateFont(&lpelf->elfLogFont);
+    cfont = CreateFontIndirectW(&lpelf->elfLogFont);
 
     old = (HFONT)::SelectObject(gfd->hdc, cfont);
 
-    ok = glyph_exists_in_selected_font(gfd->hdc, gdf->c);
+    ok = glyph_exists_in_selected_font(gfd->hdc, gfd->c);
 
     ::SelectObject(gfd->hdc, old);
 
@@ -194,10 +199,7 @@ static int CALLBACK glyph_exists(ENUMLOGFONT FAR* lpelf,
     if (ok)
       return 0;
   }
-
   return 1;
-#endif
-  return 0;
 }
 
 Bool wxFont::GlyphAvailable(int c, HDC hdc)
@@ -207,7 +209,7 @@ Bool wxFont::GlyphAvailable(int c, HDC hdc)
   gfd.hdc = hdc;
   gfd.c = c;
 
-  return !EnumFontFamilies(hdc, NULL, (FONTENUMPROC)glyph_exists, (LPARAM)&gfd);
+  return !EnumFontFamiliesW(hdc, NULL, (FONTENUMPROCW)glyph_exists, (LPARAM)&gfd);
 }
 
 Bool wxFont::ScreenGlyphAvailable(int c)

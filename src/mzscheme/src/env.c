@@ -140,8 +140,7 @@ Scheme_Env *scheme_basic_env()
     scheme_init_error_escape_proc(scheme_current_process);
 
     env = scheme_make_empty_env();
-    scheme_import_from_original_env(env, 1);
-    scheme_copy_from_original_env(env);
+    scheme_import_from_original_env(env, 0);
     
     scheme_prepare_exp_env(env);
     scheme_import_from_original_env(env->exp_env, 0);
@@ -251,8 +250,7 @@ Scheme_Env *scheme_basic_env()
   make_init_env();
 
   env = scheme_make_empty_env();
-  scheme_import_from_original_env(env, 1);
-  scheme_copy_from_original_env(env);
+  scheme_import_from_original_env(env, 0);
 
   scheme_prepare_exp_env(env);
   scheme_import_from_original_env(env->exp_env, 0);
@@ -618,6 +616,8 @@ void scheme_copy_from_original_env(Scheme_Env *env)
       }
 
       scheme_add_global_constant_symbol(name, val, env);
+
+      scheme_shadow(env, name, 0);
     }
   }
 }

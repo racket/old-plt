@@ -328,7 +328,6 @@ void scheme_add_bucket_to_table(Scheme_Hash_Table *table, Scheme_Bucket *b);
 Scheme_Bucket *scheme_bucket_or_null_from_table (Scheme_Hash_Table *table, const char *key, int add);
 
 void scheme_import_from_original_env(Scheme_Env *env, int syntax_only);
-void scheme_copy_from_original_env(Scheme_Env *env);
 
 /*========================================================================*/
 /*                              structs                                   */

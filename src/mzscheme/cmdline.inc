@@ -185,6 +185,8 @@ static void initial_imports(Scheme_Env *env)
 		       env);
     scheme_eval_string("(current-module-name-resolver standard-module-name-resolver)",
 		       env);
+
+    scheme_copy_from_original_env(env); /* makes new (mutable) vars for `cons', etc. */
   }
 }
 

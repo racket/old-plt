@@ -292,6 +292,7 @@
 #define scheme_return_eof_for_error (scheme_extension_table->scheme_return_eof_for_error)
 #define scheme_make_namespace (scheme_extension_table->scheme_make_namespace)
 #define scheme_add_namespace_option (scheme_extension_table->scheme_add_namespace_option)
+#define scheme_copy_from_original_env (scheme_extension_table->scheme_copy_from_original_env)
 #define scheme_add_global (scheme_extension_table->scheme_add_global)
 #define scheme_add_global_keyword (scheme_extension_table->scheme_add_global_keyword)
 #define scheme_add_global_constant (scheme_extension_table->scheme_add_global_constant)

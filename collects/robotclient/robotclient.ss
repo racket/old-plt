@@ -25,7 +25,7 @@
   
   (send drawn install-robots&packages
         ;; Each robot is (list id x y money max-lift (list pkg-id ...))
-        '((1 2 2 1000 100 ())
+        '((1 2 2 1000 100 (7))
           (2 7 4 1000 120 (4 5))
           (3 8 8 1000 50 (3))
           (4 2 1 1000 60 ())
@@ -38,7 +38,8 @@
           (2 9 2 3 6 80)
           (1 5 5 4 4 100)
           (4 7 4 7 3 100)
-          (5 7 4 3 2 60)))
+          (5 7 4 3 2 60)
+          (7 2 2 1 1 20)))
   
   (send drawn queue-robot-actions
         ;; Each robot action is (list id bid (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
@@ -47,7 +48,8 @@
           (3 10 (drop 3))
           (7 10 n)
           (6 10 w)
-          (8 10 e)))
+          (8 10 e)
+          (1 1 e)))
         
   (define times 0)
   
@@ -59,6 +61,9 @@
                                           (3 10 (drop 3))
                                           (7 10 n)
                                           (6 10 w)
+                                          ,@(if (< times 2)
+                                                '((1 1 s))
+                                                null)
                                           ,@(if (< times 3)
                                                 '((8 10 e))
                                                 null)))))

@@ -311,7 +311,7 @@
         (when f
           (let loop ([i 1])
             (unless (> i animate-steps)
-              (let ([continue? (f i)])
+              (let ([continue? (f i (= i animate-steps))])
                 (sleep/yield 0.1)
                 (update)
                 (when continue?
@@ -351,7 +351,7 @@
                                          (set-robot-drop! r #f)
                                          (set-robot-grab! r #f)
                                          (loop push-r motion #t)) ;; returns an animation step
-                                       (lambda (i) #f))]) ;; #f "means nothing to animate"
+                                       (lambda (i last?) #f))]) ;; #f "means nothing to animate"
                              (let* ([on-board? (and (< -1 nx width)
                                                     (< -1 ny height))]
                                     [cell (if (and push-r (find-robot nx ny)) ;; still a robot there?
@@ -366,30 +366,36 @@
                                              (set-robot-money! r (max 0 (- (robot-money r) (robot-bid r))))
                                              (set-robot-bid! r 0)))]
                                     [drop/grab (lambda (r random-drop)
-                                                 (when (robot-grab r)
-                                                   (for-each (lambda (pkg)
-                                                               (when (and (not (pack-owner pkg))
-                                                                          (not (pack-home? pkg))
-                                                                          (= (pack-x pkg) (robot-x r))
-                                                                          (= (pack-y pkg) (robot-y r))
-                                                                          (>= (robot-max-lift r) (pack-weight pkg)))
-                                                                 (set-pack-owner! pkg r)
-                                                                 (set-robot-packages! r (cons pkg (robot-packages r)))))
-                                                             (robot-grab r))
-                                                   (set-robot-grab! r #f))
-                                                 (when (or (robot-drop r) random-drop)
-                                                   (for-each (lambda (pkg)
-                                                               (when (eq? r (pack-owner pkg))
-                                                                 (when (and (= (pack-x pkg) (pack-dest-x pkg))
-                                                                            (= (pack-y pkg) (pack-dest-y pkg)))
-                                                                   (set-pack-home?! pkg #t)
-                                                                   (set-robot-score! r (+ (robot-score r)
-                                                                                          (pack-weight pkg))))
-                                                                 (set-pack-owner! pkg #f)
-                                                                 (set-robot-packages! r (remq pkg (robot-packages r)))))
-                                                             (append (or (robot-drop r) null)
-                                                                     (or random-drop null)))
-                                                   (set-robot-drop! r #f)))]
+                                                 ;; Returns a list of pkgs dropped b/c the robot is dead
+                                                 (let ([drop-by-death (and (robot-dead? r)
+                                                                           (pair? (robot-packages r))
+                                                                           (robot-packages r))])
+                                                   (when (robot-grab r)
+                                                     (for-each (lambda (pkg)
+                                                                 (when (and (not (pack-owner pkg))
+                                                                            (not (pack-home? pkg))
+                                                                            (= (pack-x pkg) (robot-x r))
+                                                                            (= (pack-y pkg) (robot-y r))
+                                                                            (>= (robot-max-lift r) (pack-weight pkg)))
+                                                                   (set-pack-owner! pkg r)
+                                                                   (set-robot-packages! r (cons pkg (robot-packages r)))))
+                                                               (robot-grab r))
+                                                     (set-robot-grab! r #f))
+                                                   (when (or (robot-drop r) random-drop drop-by-death)
+                                                     (for-each (lambda (pkg)
+                                                                 (when (eq? r (pack-owner pkg))
+                                                                   (when (and (= (pack-x pkg) (pack-dest-x pkg))
+                                                                              (= (pack-y pkg) (pack-dest-y pkg)))
+                                                                     (set-pack-home?! pkg #t)
+                                                                     (set-robot-score! r (+ (robot-score r)
+                                                                                            (pack-weight pkg))))
+                                                                   (set-pack-owner! pkg #f)
+                                                                   (set-robot-packages! r (remq pkg (robot-packages r)))))
+                                                               (append (or (robot-drop r) null)
+                                                                       (or random-drop null)
+                                                                       (or drop-by-death null))))
+                                                   (set-robot-drop! r #f)
+                                                   drop-by-death))]
                                     [random-drop (and pushed?
                                                       (not (null? (robot-packages r)))
                                                       (list (list-ref (robot-packages r) 
@@ -400,29 +406,36 @@
                                      (if (or (positive? (robot-bid r))
                                              (robot-grab r)
                                              (robot-drop r))
-                                         (lambda (i)
+                                         (lambda (i last?)
                                            (bid r)
                                            (drop/grab r random-drop)
-                                           (sub-animate i))
+                                           (when sub-animate
+                                             (sub-animate i last?)))
                                          #f)) ;; nothing at all to do
                                    (begin
-                                     (when (eq? cell 'water)
-                                       (set-robot-dead?! r #t))
                                      (let ([x (robot-x r)]
                                            [y (robot-y r)])
-                                       (lambda (i)
+                                       (lambda (i last?)
+                                         (when last?
+                                           (when (eq? cell 'water)
+                                             (set-robot-dead?! r #t)))
                                          (bid r)
-                                         (drop/grab r random-drop)
-                                         (sub-animate i)
-                                         (set-robot-moving?! r #f)
-                                         (let ([nx (+ x (* (- nx x) (/ i animate-steps)))]
-                                               [ny (+ y (* (- ny y) (/ i animate-steps)))])
-                                           (set-robot-x! r nx)
-                                           (set-robot-y! r ny)
-                                           (for-each (lambda (pkg)
-                                                       (set-pack-x! pkg nx)
-                                                       (set-pack-y! pkg ny))
-                                                     (robot-packages r)))
+                                         (let ([dead-drop (drop/grab r random-drop)])
+                                           (sub-animate i last?)
+                                           (set-robot-moving?! r #f)
+                                           (let ([nx (+ x (* (- nx x) (/ i animate-steps)))]
+                                                 [ny (+ y (* (- ny y) (/ i animate-steps)))])
+                                             (set-robot-x! r nx)
+                                             (set-robot-y! r ny)
+                                             (for-each (lambda (pkg)
+                                                         (set-pack-x! pkg nx)
+                                                         (set-pack-y! pkg ny))
+                                                       (append (robot-packages r)
+                                                               ;; Need to move anything we may have dropped
+                                                               ;;  while moving into water
+                                                               (if (and dead-drop (eq? cell 'water))
+                                                                   dead-drop
+                                                                   null)))))
                                          #t)))))))))))
                   actions)
         (set! actions null)

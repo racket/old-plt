@@ -9,49 +9,33 @@ The Games program lets you select one of the games distributed by PLT,
 or other games installed as sub-collections of the "games" collection
 (see below).
 
- * _Same_ - The object is to score points by removing dots from the
+ * Aces - A solitaire card game. Click the "Help" button in Aces for
+   more details.
+
+                                              - by Robby
+
+ * Same - The object is to score points by removing dots from the
    board. Click the "Help" button in Same for more details.
 
                                               - by Robby
 
- * _Go Fish_ (against two computer players) - The children's card game
-   where you try to get rid of all you cards by forming pairs. The
-   status line at the bottom of the window provides instructions as
-   you go. [The computer players are not smart.]
+ * Go Fish (against two computer players) - The children's card game
+   where you try to get rid of all you cards by forming pairs.
 
                                               - by Matthew
 
  * Crazy 8s : The card game where you try to get rid of all you cards
-   by matching the top card in the discard pile. Choose "Help" for
-   details.
+   by matching the top card in the discard pile. Click "Help" in the
+   game for details.
 
                                               - by Matthew
 
- * _Blackjack_ - Standard rules, plus the following specifics:
-
-      - 1 player (not counting the dealer)
-      - 4 decks, reshuffled after 3/4 of the cards are used
-      - Dealer stands on soft 17s
-      - Splitting is allowed only on the first two cards, and only if
-        they are equal; 10 and the face cards are all considered equal
-        for splitting
-      - Doubling is allowed on all unsplit hands, not on split hands
-      - No blackjacks after splitting
-      - No surrender
-      - No insurance
-      - No maximum under-21 hand size
-      - Dealer's second card is not revealed if the player busts (or
-        both halves of a split hand bust)
+ * Blackjack : Standard rules. Click "Help" in the game for specifics.
 
                                               - by Matthew
 
- * _Rummy_ (against the computer) - A simple variant of Rummy: put all
-   cards in your hand into straights (3 or more cards) and 3- or
-   4-of-a-kind sets to win. Each card must be used in one set. On each
-   turn, you can either draw from the deck or from the top of the
-   discard pile, then you must discard one of your own cards. Aces can
-   be used in both A-2-3 sequences and Q-K-A sequences. [The computer
-   player is fairly smart.]
+ * Rummy (against one computer player) - A simple variant of the
+   popular card game. Click "Help" in the game for details.
 
                                               - by Matthew
 
@@ -63,7 +47,7 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Matthew
 
- * _Paint by Number_ - A logic game. Click the "Help" button in Paint
+ * Paint by Numbers - A logic game. Click the "Help" button in Paint
    by Numbers for more details.
 
                                               - by Robby
@@ -73,7 +57,7 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Robby
 
- * _Pousse_ - A game similar to tic-tac-toe, but tokens are pushed
+ * Pousse - A game similar to tic-tac-toe, but tokens are pushed
    onto the board and can move other pieces. Click the "Help" button
    in Pousse for more details. You can install your own player
    programs. (This game was part of the 1998 ICFP programming
@@ -81,12 +65,12 @@ or other games installed as sub-collections of the "games" collection
 
                                               - by Matthew
 
- * _GCalc_ - Not really a game, but a demonstration of "concrete
+ * GCalc - Not really a game, but a demonstration of "concrete
    abstractions".  See
      http://www.grame.fr/Research/GCalcul/Graphic_Calculus.html
      ftp://ftp.grame.fr/pub/Documents/ICMC94LambdaCalc.pdf
-   for the theoretic details, and see the doc.txt file for usage
-   instructions.
+   for the theoretic details, and right-click anywhere in the game
+   for instructions.
 
                                               - by Eli
 

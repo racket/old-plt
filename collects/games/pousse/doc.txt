@@ -1,4 +1,6 @@
-_Pousse_ (French for "push", pronounced "poo-ss") is a 2 person game,
+To play _Pousse_, run the "Games" application.
+
+Pousse (French for "push", pronounced "poo-ss") is a 2 person game,
 played on an N by N board (usually 4x4).  Initially the board is
 empty, and the players take turns inserting one marker of their color
 (X or O) on the board.  The color X always goes first.  The columns

@@ -214,6 +214,20 @@ Table methods: [in addition to standard frame% methods]
 > animated :: (send t animated) - returns #t is animation is on.
 > animated :: (send t animated on?) - enables/disables animation.
 
+> create-status-pane :: (send t create-status-pane) - creates a
+        pane with a status message (initially empty) and returns
+        the pane so that you can add additional controls
+> set-status :: (send t set-status str) - sets the text message
+        in the status pane
+> add-help-button :: (send t add-help-button pane coll-path str tt?) -
+        adds a "Help" button to the give pane, where clicking the
+        button opens a new window to display "doc.txt" from the given
+        collection (where `coll-path' is a list of strings to select
+        the collection). The `str' is used for the help window title.
+        If `tt?' is true, then "doc.txt" is displayed verbatim,
+        otherwise any line of the form "** ... **" is deleted, and
+        other lines are pargraph-flowed to fit the help window.
+
 
 Card methods:
 -------------

@@ -1,4 +1,4 @@
-To play _Same_, run the Games application.
+** To play _Same_, run the Games application. **
 
 The object of Same is to score points by removing dots from the
 board. To remove a dot, click on it. As long as there is another dot

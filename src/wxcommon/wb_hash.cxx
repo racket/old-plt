@@ -25,6 +25,7 @@
 #include <stdarg.h>
 
 wxHashTable::wxHashTable (int, int size)
+ : wxObject(WXGC_NO_CLEANUP)
 {
   int i;
   wxList **ll;

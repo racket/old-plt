@@ -250,9 +250,9 @@ Various common pieces of code that both the client and server need to access
   
   (define-struct (exn:fail:filesystem:no-directory exn:fail:filesystem) (dir))
   
-  ;; directory->tree : directory (string -> bool) -> tree[string] | #f
+  ;; directory->tree : directory (string -> bool) [nat | bool] [path->X] -> tree[X] | #f
   (define directory->tree
-    (opt-lambda (directory valid-dir? [max-depth #f])
+    (opt-lambda (directory valid-dir? [max-depth #f] [path->x path->string])
       (unless (directory-exists? directory)
         (raise (make-exn:fail:filesystem:no-directory 
                 "Directory ~s does not exist"
@@ -263,7 +263,7 @@ Various common pieces of code that both the client and server need to access
                (files (map (lambda (d) (build-path directory d)) files))
                (files (filter (lambda (d) (and (directory-exists? d) (valid-dir? d))) files)))
           (make-branch 
-           (path->string name)
+           (path->x name)
            ;; NOTE: the above line should not use path->string. I don't have time to track this down though
            (if (equal? max-depth 0) 
                '()
@@ -308,11 +308,7 @@ Various common pieces of code that both the client and server need to access
          (let ((args (cons (branch-node t) priors)))
            (apply append
                   (map (lambda (x) (loop x args)) (branch-children t))))])))
-      
-               
-    
-    
-  
+
   ;; tree->list : tree[x] -> sexp-tree[x]
   (define (tree->list tree)
     (cons (branch-node tree) (map tree->list (branch-children tree)))))

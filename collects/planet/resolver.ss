@@ -150,14 +150,17 @@ an appropriate subdirectory.
            "private/planet-shared.ss"
            "private/linkage.ss")
 
-  (provide (rename resolver planet-module-name-resolver))
+  (provide (rename resolver planet-module-name-resolver)
+           pkg-spec->full-pkg-spec
+           get-package-from-cache
+           get-package-from-server
+           install-pkg)
 
   (define install? (make-parameter #t)) ;; if #f, will not install packages and instead give an error
 
   ;; ensure these directories exist
   (make-directory* (PLANET-DIR))
   (make-directory* (CACHE-DIR))
-  
   
   (define (resolver spec module-path stx)
     (establish-diamond-property-monitor)
@@ -295,7 +298,6 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                   "Internal PLaneT error: trying to install already-installed package" 
                   (current-continuation-marks)))
           (begin
-            (make-directory* the-dir)
             (let* ((null-out (open-output-nowhere))
                    (outport
                     (if (LOG-FILE)
@@ -307,8 +309,7 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                         (pkg-spec-name pkg)
                         (current-time))
                 (install-planet-package path the-dir (list owner (pkg-spec-name pkg) extra-path maj min)))
-            
-            (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir))))))
+              (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir))))))
          
   ; download-package : FULL-PKG-SPEC -> RESPONSE
   ; RESPONSE ::= (list #f string) | (list #t path[file] Nat Nat)
@@ -389,4 +390,22 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
   ; UTILITY
   ; A few small utility functions
 
-  (define (last l) (car (last-pair l))))
+  (define (last l) (car (last-pair l)))
+  
+  ;; make-directory*/paths : path -> (listof path)
+  ;; like make-directory*, but returns what directories it actually created
+  (define (make-directory*/paths dir)
+    (let ((dir (if (string? dir) (string->path dir) dir)))
+      (let-values ([(base name dir?) (split-path dir)])
+        (cond
+          [(directory-exists? dir)
+           '()]
+          [(directory-exists? base)
+           (make-directory dir)
+           (list dir)]
+          [else
+           (let ((dirs (make-directory*/paths base)))
+             (make-directory dir)
+             (cons dir dirs))]))))
+  
+  )

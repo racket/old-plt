@@ -3,7 +3,8 @@
   (require "config.ss"
            "private/planet-shared.ss"
            (lib "pack.ss" "setup")
-           (lib "contract.ss"))
+           (lib "contract.ss")
+           (lib "file.ss"))
 
   #| The util collection provides a number of useful functions for interacting with the PLaneT system. |#
   
@@ -12,7 +13,7 @@
    current-linkage
    make-planet-archive
    get-installed-planet-archives)
-    
+  
   (define (repository-tree)
     (define (id x) x)
     (filter-tree-by-pattern
@@ -49,7 +50,7 @@
       (map
        (lambda (x) (cons (car x) (map (lambda (y) (drop-last (cadr y))) (cdr x))))
        buckets)))
-       
+  
   ;; make-planet-archive: directory [file] -> file
   ;; Makes a .plt archive file suitable for PLaneT whose contents are
   ;; all files in the given directory and returns that file's name.
@@ -73,4 +74,4 @@
                  'file
                  #f
                  #f))
-         (build-path dir archive-name))])))
+         (build-path (find-system-path 'temp-dir) archive-name))])))

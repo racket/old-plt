@@ -1,7 +1,6 @@
 (module config mzscheme
   
-  (require "private/planet-shared.ss"
-           (lib "etc.ss"))
+  (require "private/planet-shared.ss")
   
   (define-parameters (PLANET-SERVER-NAME       "planet.plt-scheme.org")
                      (PLANET-SERVER-PORT       270)

@@ -1,4 +1,27 @@
 
+Version 102/4:
+
+
+ * Fixed number reader to allow +inf.0, -inf.0, and +nan.0 in complex
+   constants. For example, +inf.0-inf.0i is now a legal constant.
+   This fix was necessary to ensure that all printable numbers are
+   readable.
+
+ * To simplify (sortof) MzScheme's number syntax, fixed number reader
+   to allow hexadecimal numbers containing `.'  and/or `s'/`l'-based
+   exponents. Prompted by PR 823.
+
+   This change allows some interesting numbers, to say the least. One
+   of my favorites is `#e#x+e.s+e@-e.l-e'.
+
+ * Found and fixed some subtle bugs in detecting exact-zero cases
+   (such as 0@7.0) and in reporting divide-by-zero cases (such as
+   1/0@0).
+
+Version 102/3:
+
+ * Precise GC fixes
+
 Version 102/2:
 
  * Fixed `kill-thread' on a thread that hasn't performed any work,
@@ -18,6 +41,11 @@ Version 102/1:
 
 Version 101, ??
 Added read-decimal-as-inexact parameter
+Fixed number reader to allow +inf.0, -inf.0, and +nan.0 in
+ complex constants
+Fixed number reader to allow hexadecimal numbers containing `.'
+ and/or `s'/`l'-based exponents; note that `#e#x+e.s+e@-e.l-e'
+ is a number(!)
 Inside MzScheme: scheme_basic_env() initializes break-enabled
  to #f instead of #t
 

@@ -8,6 +8,8 @@ initialization file (tested with version 2d2).
 To use slib in MzScheme:
 
   (load (build-path (collection-path "slibinit") "init.ss"))
+or
+  (require (lib "load.ss" "slibinit"))
 
 That's enough if the SCHEME_LIBRARY_PATH environment variable is
 defined, or if slib is installed as an "slib" collection (i.e., in an
@@ -15,7 +17,7 @@ defined, or if slib is installed as an "slib" collection (i.e., in an
 
 Note that slib is not integerated with MzScheme's module system.
 Instead, slib works in the top-level environment, and it provides its
-own "feature" system.
+own "feature" system that re-defines `require'.
 
 
 The initialization file contains one system-dependent setting:

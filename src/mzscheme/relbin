@@ -13,7 +13,7 @@ fi
 
 if [ "-self" = "$1" ] ; then
   shift
-  FARHOST=`hostname`
+  FARHOST=localhost
 else
   FARHOST=asia
 fi

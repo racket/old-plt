@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.1 1996/01/10 14:57:09 markus Exp $
+ * $Id: Frame.cc,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -40,6 +40,10 @@
 #define  Uses_ShellWidget
 #define  Uses_BoardWidget
 #include "widgets.h"
+
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 //-----------------------------------------------------------------------------
 // create and destroy frame
@@ -370,6 +374,33 @@ void wxFrame::Command(int id)
     GetEventHandler()->OnMenuCommand(id);
 }
 
+static void ForceFocus(Widget frame)
+{
+  static int force_focus = 0;
+
+  if (!force_focus) {
+    wxGetResource(wxTheApp->wx_class, "forceFocus", &force_focus);
+    force_focus = !force_focus ? -1 : 1;
+  }
+
+  if (force_focus > 0) {
+    Window current;
+    int old_revert;
+    XGetInputFocus(XtDisplay(frame), &current, &old_revert);
+    if (current != PointerRoot) {
+      XFlush(XtDisplay(frame));
+      XGrabServer(XtDisplay(frame));
+      
+      XWindowAttributes attrib;
+      XGetWindowAttributes(XtDisplay(frame), XtWindow(frame), &attrib);
+      if (attrib.map_state == IsViewable)
+	XSetInputFocus(XtDisplay(frame), XtWindow(frame),
+		       RevertToNone, CurrentTime);
+    }
+    XUngrabServer(XtDisplay(frame));
+  }
+}
+
 Bool wxFrame::Show(Bool show)
 {
   if (parent)
@@ -380,45 +411,23 @@ Bool wxFrame::Show(Bool show)
       /* Make sure window isn't iconized: */
       Iconize(FALSE);
       XRaiseWindow(XtDisplay(X->frame), XtWindow(X->frame));
+      ForceFocus(X->frame);      
     }
     return TRUE;
   }
 
-#if 0
-  // adjust list of top level frames
-  if (show)
-    wxTopLevelFrames(this)->Append(this);
-  else
-    wxTopLevelFrames(this)->DeleteObject(this);
-#else
   wxTopLevelFrames(this)->Show(this, show);
-#endif
 
   SetShown(show);
   if (show) {
-    /* MATTHEW: deleted realization */
-    
-    /* MATTHEW: [5] Changed to Popup/Popdown to Map/Unmap */
-#if 0
-    XtPopup(X->frame, XtGrabNone);
-#else
     XtMapWidget(X->frame);
     XRaiseWindow(XtDisplay(X->frame), XtWindow(X->frame));
-#endif
-
-    /* MATTHEW: No! */
-    /* XSetInputFocus(XtDisplay(X->frame), None, RevertToNone, CurrentTime); */
+    ForceFocus(X->frame);
   } else {
-    /* MATTHEW: No! */
-    /* XSetInputFocus(XtDisplay(X->frame), None,
-       RevertToNone, CurrentTime); */
-#if 0
-    XtPopdown(X->frame);
-#else
+    /* XWithdrawWindow does the right thing for iconified windows */
     XWithdrawWindow(XtDisplay(X->frame), XtWindow(X->frame), 
 		    XScreenNumberOfScreen(XtScreen(X->frame)));
     XtUnmapWidget(X->frame);
-#endif
   }
 
 #if 0

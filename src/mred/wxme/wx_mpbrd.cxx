@@ -1412,6 +1412,8 @@ wxSnip *wxMediaPasteboard::FindNextSelectedSnip(wxSnip *start)
 
 /***************************************************************************/
 
+static wxMediaPasteboard *skipBox = NULL;
+
 void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy, 
 			     float cx, float cy, float cw, float ch, 
 			     int show_caret)
@@ -1435,7 +1437,7 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
   dcr = dcx + cw;
   dcb = dcy + ch;
 
-  {
+  if (skipBox != this) {
     wxPen *savePen = dc->GetPen();
     wxBrush *saveBrush = dc->GetBrush();
 
@@ -2722,23 +2724,104 @@ void wxMediaPasteboard::AfterInteractiveResize(wxSnip *)
 
 /************************************************************************/
 
+extern void wxmeGetDefaultSize(float *w, float *h);
+
 void *wxMediaPasteboard::BeginPrint(wxDC *, Bool)
 {
+  SizeCacheInvalid();  
   return NULL;
 }
 
 void wxMediaPasteboard::EndPrint(wxDC *, void *)
 {
+  SizeCacheInvalid();
 }
 
-Bool wxMediaPasteboard::HasPrintPage(wxDC *, int)
+Bool wxMediaPasteboard::HasPrintPage(wxDC *dc, int p)
 {
-  return FALSE;
+  float H, W, h, w;
+  long hm, vm, hcount, vcount;
+
+  CheckRecalc();
+
+  dc->GetSize(&W, &H);
+  if (!W || !H)
+    wxmeGetDefaultSize(&W, &H);
+  wxGetMediaPrintMargin(&hm, &vm);
+  W -= 2 * hm;
+  H -= 2 * vm;
+
+  GetExtent(&w, &h);
+
+  hcount = (long)(w / W);
+  if (hcount * W < w)
+    hcount++;
+
+  vcount = (long)(h / H);
+  if (vcount * H < h)
+    vcount++;
+
+  return (p <= (hcount * vcount));
 }
 
-void wxMediaPasteboard::PrintToDC(wxDC *, int)
+void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
 {
+  float H, W, FH, FW, h, w;
+  long hm, vm, hcount, vcount, hpos, vpos, startpage, endpage, p;
 
+  CheckRecalc();
+
+  dc->GetSize(&W, &H);
+  if (!W || !H)
+    wxmeGetDefaultSize(&W, &H);
+  FH = H;
+  FW = W;
+  wxGetMediaPrintMargin(&hm, &vm);
+  W -= 2 * hm;
+  H -= 2 * vm;
+
+  GetExtent(&w, &h);
+
+  hcount = (long)(w / W);
+  if (hcount * W < w)
+    hcount++;
+
+  vcount = (long)(h / H);
+  if (vcount * H < h)
+    vcount++;
+
+  if (page < 0) {
+    startpage = 1;
+    endpage = hcount * vcount;
+  } else {
+    startpage = endpage = page;
+  }
+
+  for (p = startpage; p <= endpage; p++) {
+    float x, y;
+
+    vpos = (p - 1) / hcount;
+    hpos = (p - 1) % hcount;
+
+    x = hpos * W;
+    y = vpos * H;
+
+    if (page < 0)
+      dc->StartPage();
+    
+    /* Establish page size: */
+    dc->DrawLine(0, 0, 0, 0);
+    dc->DrawLine(FW, FH, FW, FH);
+
+    skipBox = this;
+    Draw(dc, -x + hm, -y + vm,
+	 x, y, x + W, y + H,
+	 FALSE);
+    skipBox = NULL;
+
+    if (page < 0)
+      dc->EndPage();    
+  }
 }
 
 /************************************************************************/

@@ -1752,7 +1752,7 @@ wxBitmap *wxMediaEdit::SetAutowrapBitmap(wxBitmap *bm)
   return old;
 }
 
-static skipBox = FALSE;
+static wxMediaEdit *skipBox = NULL;
 static wxPen *caretPen = NULL;
 
 /* This does the actual drawing */
@@ -1853,7 +1853,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
   line = lineRoot->FindLocation(starty);
 
-  if (!skipBox) {
+  if (skipBox != this) {
     wxPen *savePen = dc->GetPen();
     wxBrush *saveBrush = dc->GetBrush();
 
@@ -1934,7 +1934,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
       /* The rules for hiliting are surprisingly complicated: */
 
-      if (hiliteOn && !skipBox
+      if (hiliteOn && (skipBox != this)
 	  && (show_xsel
 	      || (!caretSnip
 		  && ((show_caret == wxSNIP_DRAW_SHOW_CARET)
@@ -2394,7 +2394,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 #endif
   } else {
     if (ps)
-      skipBox = TRUE;
+      skipBox = this;
 
     wxPen *pen;
     wxBrush *brush;
@@ -2446,7 +2446,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 #endif
 
     if (ps)
-      skipBox = FALSE;
+      skipBox = NULL;
   }
 
   if (changed) {
@@ -2576,6 +2576,20 @@ static long page_width = 612, page_height = 792;
 /* Printing margins: */
 static long h_margin = 36, v_margin = 36;
 
+void wxmeGetDefaultSize(float *w, float *h)
+{
+  *w = page_width;
+  *h = page_height;
+
+  if (wxGetPrinterOrientation() != PS_PORTRAIT)  {
+    float tmp;
+    
+    tmp = *h;
+    *h = *w;
+    *w = tmp;
+  }
+}
+
 void wxGetMediaPrintMargin(long *hm, long *vm)
 {
   if (hm)
@@ -2651,18 +2665,8 @@ Bool wxMediaEdit::HasPrintPage(wxDC *dc, int page)
 
   dc->GetSize(&W, &H);
 
-  if (!W || !H) {
-    W = page_width;
-    H = page_height;
-
-    if (wxGetPrinterOrientation() != PS_PORTRAIT)  {
-      float tmp;
-      
-      tmp = H;
-      H = W;
-      W = tmp;
-    }
-  }
+  if (!W || !H)
+    wxmeGetDefaultSize(&W, &H);
 
   line = firstLine;
   for (i = 0; i < numValidLines; this_page++) {
@@ -2730,10 +2734,10 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       dc->DrawLine(0, 0, 0, 0);
       dc->DrawLine(FW, FH, FW, FH);
       
-      skipBox = TRUE;
+      skipBox = this;
       Redraw(dc, y + (i ? 1 : 0), y + h, 0, W, -y + v_margin, h_margin, 
 	     wxSNIP_DRAW_NO_CARET, 0);
-      skipBox = FALSE;
+      skipBox = NULL;
       
       if (page < 0)
 	dc->EndPage();

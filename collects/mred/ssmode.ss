@@ -312,9 +312,11 @@
 			 (cond
 			   [end-pos
 			    (let ([right-paren-string (get-right-paren end-pos)])
-			      (send* edit 
-				(insert right-paren-string)
-				(flash-on (- end-pos (string-length right-paren-string)) end-pos)))]
+			      (if right-paren-string
+				  (send* edit 
+					 (insert right-paren-string)
+					 (flash-on (- end-pos (string-length right-paren-string)) end-pos))
+				  (send edit insert (integer->char code))))]
 			   [else (send edit insert (integer->char code))]))
 		       (send edit insert (integer->char code)))
 		   #t)))]

@@ -19,19 +19,20 @@
 			  signal-undefined
 			  signal-not-boolean
 			  eq?-only-compares-symbols?
+			  read-exact-numbers
 			  printing))
   
   (define settings
-    (list (list 'Beginner (make-setting #t 'core #t #f #t #f #f #f #t #t #t
+    (list (list 'Beginner (make-setting #t 'core #t #f #t #f #f #f #t #t #t #t
 					'constructor-style))
 	  (list 'Intermediate (make-setting #t 'structured
-					    #t #f #t #f #f #t #t #t #t
+					    #t #f #t #f #f #t #t #t #t #t
 					    'constructor-style))
 	  (list 'Advanced (make-setting #t 'side-effecting
-					#t #f #t #f #t #t #t #f #f
+					#t #f #t #f #t #t #t #f #t #f
 					'constructor-style))
 	  (list 'Quasi-R4RS (make-setting #t 'advanced
-					  #t #t #t #t #f #t #t #f #f
+					  #t #t #t #t #f #t #t #f #f #f
 					  'r4rs-style))))
   
   (define (setting-name setting)
@@ -88,6 +89,8 @@
 	
 	(eq?-only-compares-symbols (setting-eq?-only-compares-symbols? pref))
 	
+	(zodiac:read-exact-numbers (setting-read-exact-numbers pref))
+
 	(aries:signal-undefined (setting-signal-undefined pref))
 	(aries:signal-not-boolean (setting-signal-not-boolean pref))
 	
@@ -233,6 +236,11 @@
 			    setting-eq?-only-compares-symbols?
 			    "Eq? only compares symbols"
 			    dynamic-panel)]
+	   [read-exact-numbers
+	    (make-check-box set-setting-read-exact-numbers!
+			    setting-read-exact-numbers
+			    "Decimal numbers are read as exact numbers"
+			    dynamic-panel)]
 	   [printer-number->symbol
 	    (lambda (which)
 	      (case which
@@ -294,6 +302,7 @@
 		     (compare-check-box signal-undefined setting-signal-undefined)
 		     (compare-check-box signal-not-boolean setting-signal-not-boolean)
 		     (compare-check-box eq?-only-compares-symbols? setting-eq?-only-compares-symbols?)
+		     (compare-check-box read-exact-numbers setting-read-exact-numbers)
 		     (compare-check-box allow-improper-lists? setting-allow-improper-lists?)
 		     (compare-check-box sharing-printing? setting-sharing-printing?)
 		     (compare-check-box abbreviate-cons-as-list? setting-abbreviate-cons-as-list?)
@@ -338,6 +347,7 @@
 			 setting-unmatched-cond/case-is-error?
 			 setting-signal-undefined
 			 setting-signal-not-boolean
+			 setting-read-exact-numbers
 			 setting-eq?-only-compares-symbols?
 			 setting-allow-improper-lists?
 			 setting-sharing-printing?
@@ -347,6 +357,7 @@
 			 unmatched-cond/case-is-error?
 			 signal-undefined
 			 signal-not-boolean
+			 read-exact-numbers
 			 eq?-only-compares-symbols?
 			 allow-improper-lists?
 			 sharing-printing?

@@ -59,7 +59,7 @@
 		  (and search-start
 		    (cons search-start search-finish))
 		  (and fragment-start
-		    (search fragment-start fragment-finish)))))))))
+		    (cons fragment-start fragment-finish)))))))))
 
     (define decompose-path
       (lambda (sub-url)

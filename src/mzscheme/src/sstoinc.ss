@@ -7,6 +7,9 @@
 
 (require mzscheme)
 
+;; Uncomment to disable src->src optimization:
+; (define (optimize x) x)
+
 (let loop ()
   (let ([expr (read)])
     (unless (eof-object? expr)

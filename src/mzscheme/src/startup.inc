@@ -1984,7 +1984,7 @@
 " write-image-to-file))))"
 "(define(port? x)(or(input-port? x)(output-port? x)))"
 "(define(not-break-exn? x)(not(exn:misc:user-break? x)))"
-"(define interaction-environment current-namespace)"
+"(define interaction-environment(lambda()(current-namespace)))"
 "(define(scheme-report-environment n)"
 "(unless(= n 5)"
 " (raise-type-error 'scheme-report-environment \"5\" n))"

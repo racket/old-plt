@@ -2234,10 +2234,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (scheme_stx_proper_list_length(e) < 0)
 	    scheme_wrong_syntax("provide", e, form, "bad syntax (" IMPROPER_LIST_FORM ")");
 
-	  for (l = SCHEME_STX_CDR(e); !SCHEME_NULLP(l); l = SCHEME_STX_CDR(l)) {
+	  for (l = SCHEME_STX_CDR(e); !SCHEME_STX_NULLP(l); l = SCHEME_STX_CDR(l)) {
 	    Scheme_Object *a, *midx;
 
-	    a = SCHEME_CAR(l);
+	    a = SCHEME_STX_CAR(l);
 
 	    if (SCHEME_STX_SYMBOLP(a)) {
 	      /* <id> */

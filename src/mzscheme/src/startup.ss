@@ -2257,7 +2257,7 @@
 
   ;; -------------------------------------------------------------------------
 
-  (define interaction-environment current-namespace)
+  (define interaction-environment (lambda () (current-namespace)))
 
   (define (scheme-report-environment n)
     (unless (= n 5)
@@ -2390,4 +2390,3 @@
   (require-for-syntax mzscheme))
 
 (current-module-name-resolver standard-module-name-resolver)
-

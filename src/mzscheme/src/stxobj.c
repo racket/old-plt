@@ -1308,9 +1308,25 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
 
 static int same_list(Scheme_Object *a, Scheme_Object *b)
 {
+  Scheme_Object *a1, *b1;
+
   while (SCHEME_PAIRP(a) && SCHEME_PAIRP(b)) {
-    if (!SAME_OBJ(SCHEME_CAR(a), SCHEME_CAR(b)))
-      return 0;
+    a1 = SCHEME_CAR(a);
+    b1 = SCHEME_CAR(b);
+    
+    if (!SAME_OBJ(a1, b1)) {
+      if (SCHEME_TYPE(a1) != SCHEME_TYPE(b1))
+	return 0;
+
+      if (SCHEME_BOXP(a1)) {
+	a1 = SCHEME_PTR_VAL(a1);
+	b1 = SCHEME_PTR_VAL(b1);
+      }
+
+      if (!SAME_OBJ(a1, b1))
+	return 0;
+    }
+
     a = SCHEME_CDR(a);
     b = SCHEME_CDR(b);
   }
@@ -1318,42 +1334,25 @@ static int same_list(Scheme_Object *a, Scheme_Object *b)
   return SCHEME_NULLP(a) && SCHEME_NULLP(b);
 }
 
-
 static Scheme_Object *wraps_to_datum(Scheme_Object *w_in, 
-				     int subs, long lazy_prefix,
 				     Scheme_Hash_Table *rns)
 {
-  Scheme_Object *stack, *a, *w = w_in;
-  int is_in_module = 0;
-
-  if (subs) {
-    return scheme_make_pair(scheme_make_integer(lazy_prefix),
-			    wraps_to_datum(w, 0, 0, rns));
-  }
+  Scheme_Object *stack, *a, *w = w_in, *tables = scheme_null;
 
   a = scheme_hash_get(rns, w_in);
   if (a)
-    return a;
-  /* We didn't find a pointer match for this wrap, but double-check
-     for a wrap set that is equivalent: */
-  {
-    int i;
-
-    for (i = rns->size; i--; ) {
-      if (rns->vals[i]) {
-	if (same_list(rns->keys[i], w_in))
-	  return rns->vals[i];
-      }
-    }
-  }
+    return SCHEME_CAR(a);
 
   stack = scheme_null;
 
   while (!SCHEME_NULLP(w)) {
     a = SCHEME_CAR(w);
     if (SCHEME_NUMBERP(a)) {
-      /* Mark numbers change to parenthesized */
-      stack = scheme_make_pair(scheme_make_pair(a, scheme_null), stack);
+      /* Mark numbers get parenthesized */
+      if (SCHEME_PAIRP(SCHEME_CDR(w)) && SAME_OBJ(a, SCHEME_CADR(w)))
+	w = SCHEME_CDR(w); /* delete cancelled mark */
+      else
+	stack = scheme_make_pair(scheme_make_pair(a, scheme_null), stack);
     } else if (SCHEME_VECTORP(a)) {
       Scheme_Object *local_key;
 
@@ -1398,39 +1397,112 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       Module_Renames *mrn = (Module_Renames *)a;
       
       if (mrn->nonmodule) {
-	stack = scheme_make_pair(((mrn->phase == 0)
-				  ? scheme_true
-				  : scheme_false), 
-				 stack);
-      } else {
-	Scheme_Object *local_key;
+	/* Check for later nonmodule rename at the same phase: */
+	Scheme_Object *l;
 	
-	is_in_module = 1;
-
-	local_key = scheme_hash_get(rns, (Scheme_Object *)mrn);
-	if (local_key) {
-	  stack = scheme_make_pair(local_key, stack);
-	} else {
-	  /* Convert hash table to list: */
-	  int i;
-	  Scheme_Object *l = scheme_null, *v;
-	    
-	  for (i = mrn->ht->size; i--; ) {
-	    if (mrn->ht->vals[i]) {
-	      v = mrn->ht->vals[i];
-	      l = scheme_make_pair(scheme_make_pair(mrn->ht->keys[i], v), l);
+	for (l = SCHEME_CDR(w); !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	  if (SCHEME_RENAMESP(SCHEME_CAR(l))) {
+	    Module_Renames *lrn = (Module_Renames *)SCHEME_CAR(l);
+	    if (lrn->nonmodule && (lrn->phase == mrn->phase)) {
+	      /* mrn is redundant */
+	      break;
 	    }
 	  }
+	}
 
-	  local_key = scheme_make_integer(rns->count);
-	  scheme_hash_set(rns, a, local_key);
+	if (SCHEME_NULLP(l)) {
+	  stack = scheme_make_pair(((mrn->phase == 0)
+				    ? scheme_true
+				    : scheme_false), 
+				   stack);
+	}
+      } else {
+	/* Is this table redundant, given some earlier one? */
+	int redundant = 0;
 
-	  l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
-	  if (mrn->plus_kernel)
-	    l = scheme_make_pair(scheme_true,l);
-	  l = scheme_make_pair(local_key, l);
+	{
+	  Scheme_Object *l;
+
+	  for (l = tables; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	    Module_Renames *prev = (Module_Renames *)SCHEME_CAR(l);
+
+	    if ((prev->phase == mrn->phase)
+		&& (prev->plus_kernel == mrn->plus_kernel)
+		&& (prev->ht->count == mrn->ht->count)) {
+	      int i;
+	      
+	      for (i = mrn->ht->size; i--; ) {
+		if (mrn->ht->vals[i]) {
+		  if (!scheme_hash_get(prev->ht, mrn->ht->keys[i]))
+		    break;
+		}
+	      }
+	      if (i < 0) {
+		for (i = prev->ht->size; i--; ) {
+		  if (prev->ht->vals[i]) {
+		    Scheme_Object *pv, *mv;
+		    pv = prev->ht->vals[i];
+		    mv = scheme_hash_get(mrn->ht, prev->ht->keys[i]);
+		    /* pv and mv are either modidx or (cons modidx ext) */
+		    if (!mv)
+		      break;
+		    else if (SCHEME_TYPE(pv) != SCHEME_TYPE(mv))
+		      break;
+		    else if (SCHEME_PAIRP(mv)
+			     && !SAME_OBJ(SCHEME_CDR(mv), SCHEME_CDR(pv)))
+		      break;
+		    else {
+		      if (SCHEME_PAIRP(mv)) {
+			mv = SCHEME_CAR(mv);
+			pv = SCHEME_CAR(pv);
+		      }
+
+		      /* Check for modidx equivalence: */
+		      if (!SAME_OBJ(((Scheme_Modidx *)mv)->resolved,
+				    ((Scheme_Modidx *)pv)->resolved))
+			break;
+		    }
+		  }
+		}
+
+		if (i < 0) {
+		  redundant = 1;
+		}
+	      }
+	    }
+	  }
+	}
+	
+	if (!redundant) {
+	  Scheme_Object *local_key;
+	  
+	  tables = scheme_make_pair((Scheme_Object *)mrn, tables);
+	  
+	  local_key = scheme_hash_get(rns, (Scheme_Object *)mrn);
+	  if (local_key) {
+	    stack = scheme_make_pair(local_key, stack);
+	  } else {
+	    /* Convert hash table to list: */
+	    int i;
+	    Scheme_Object *l = scheme_null, *v;
 	    
-	  stack = scheme_make_pair(l, stack);
+	    for (i = mrn->ht->size; i--; ) {
+	      if (mrn->ht->vals[i]) {
+		v = mrn->ht->vals[i];
+		l = scheme_make_pair(scheme_make_pair(mrn->ht->keys[i], v), l);
+	      }
+	    }
+	    
+	    local_key = scheme_make_integer(rns->count);
+	    scheme_hash_set(rns, a, local_key);
+	    
+	    l = scheme_make_pair(scheme_make_integer(mrn->phase), l);
+	    if (mrn->plus_kernel)
+	      l = scheme_make_pair(scheme_true,l);
+	    l = scheme_make_pair(local_key, l);
+	    
+	    stack = scheme_make_pair(l, stack);
+	  }
 	}
       }
     } else if (SCHEME_SYMBOLP(a)) {
@@ -1450,9 +1522,24 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     w = SCHEME_CDR(w);
   }
 
+  /* Double-check for equivalent list in table (after simplificiation: */
+  {
+    int i;
+
+    for (i = rns->size; i--; ) {
+      if (rns->vals[i]) {
+	if (SCHEME_PAIRP(rns->vals[i])) {
+	  if (same_list(SCHEME_CDR(rns->vals[i]), stack)) {
+	    return SCHEME_CAR(rns->vals[i]);
+	  }
+	}
+      }
+    }
+  }
+
   /* Create a key for this wrap set: */
   a = scheme_make_integer(rns->count);
-  scheme_hash_set(rns, w_in, a);
+  scheme_hash_set(rns, w_in, scheme_make_pair(a, stack));
   
   return scheme_make_pair(a, stack);
 }
@@ -1524,7 +1611,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
   } else 
     ph = NULL;
 
-  if (with_marks == 1) {
+  if (with_marks) {
     /* Propagate marks: */
     scheme_stx_content((Scheme_Object *)stx);
   }
@@ -1575,10 +1662,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
     result = v;
 
   if (with_marks > 1)
-    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, 
-						     HAS_SUBSTX(stx->val),
-						     stx->lazy_prefix,
-						     rns));
+    result = scheme_make_pair(result, wraps_to_datum(stx->wraps, rns));
 
   if (ph)
     SCHEME_PTR_VAL(ph) = result;
@@ -1991,13 +2075,6 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     result = scheme_make_stx(result, stx_src->line, stx_src->col, stx_src->src, NULL);
 
   if (wraps) {
-    if (HAS_SUBSTX(SCHEME_STX_VAL(result))) {
-      if (!SCHEME_NULLP(wraps)) {
-	((Scheme_Stx *)result)->lazy_prefix = SCHEME_INT_VAL(SCHEME_CAR(wraps));
-	wraps = SCHEME_CDR(wraps);
-      }
-    }
-
     wraps = datum_to_wraps(wraps, (Scheme_Hash_Table *)stx_wraps);
     ((Scheme_Stx *)result)->wraps = wraps;
   } else if (SCHEME_FALSEP((Scheme_Object *)stx_wraps)) {

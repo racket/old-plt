@@ -46,7 +46,7 @@
 	     (lambda (s)
 	       (if (or (regexp-match (string #\space #\newline #\tab #\return) s)
 		       (regexp-match "\"" s)
-		       (regexp-match "\\" s))
+		       (regexp-match "\\\\" s))
 		   (list->string
 		    (let loop ([l (string->list s)][wrote-slash 0])
 		      (case (car l)
@@ -162,9 +162,12 @@
  (define l-home (if (eq? (system-type) 'unix)
 		    (build-path plthome "bin")
 		    plthome))
+ (define (sfx file) (if (eq? (system-type) 'windows)
+			(string-append file ".exe")
+			file))
  
  (define (install-mred-program-launcher collection name)
-   (make-mred-program-launcher collection (build-path l-home name)))
+   (make-mred-program-launcher collection (build-path l-home (sfx name))))
 
  (define (install-mzscheme-program-launcher file collection name)
-   (make-mzscheme-program-launcher file collection (build-path l-home name))))
+   (make-mzscheme-program-launcher file collection (build-path l-home (sfx name)))))

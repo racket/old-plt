@@ -147,11 +147,15 @@
 	  0 (send e last-position)))
 
   ;; make-text-field : string panel number symbol boolean
-  ;;                   ((union #f ???) (union #f ???) string -> boolean)
+  ;;                   ((union #f string) (union #f top-level-window<%>) string -> boolean)
   ;;                   (any -> string)
   ;;                   (string -> any)
   ;;                -> void
   ;; sets up a text field for a preference
+  ;; The 3rd-to-last argument checks the validity of the field content.If
+  ;;  a string is provided, then a top-level-window<%> is also provded, and
+  ;;  the checking function should tell the user why the field-value string
+  ;;  is bad if it is bad.
   ;; the last two arguments convert between the string representation (as shown in the text field)
   ;; and the preferences's actual Scheme value.
   (define (make-text-field label panel width-num pref optional? check-value val->str str->val)
@@ -162,20 +166,27 @@
 				(lambda (c e)
 				  (let ([on? (send c get-value)])
 				    (send t enable on?)
-				    (preferences:set
-				     pref
-				     (and on?
-					  (send t get-value))))))))
-
+				    (if on?
+					(t-cb t e)
+					(begin
+					  ;; remove all need-check registrations, if any:
+					  (let loop ()
+					    (let ([a (assq t needs-check)])
+					      (when a
+						(set! needs-check (remq a needs-check))
+						(loop))))
+					  (preferences:set pref #f))))))))
+    (define t-cb (lambda (t e)
+		   (let* ([s (send t get-value)])
+		     (if (check-value #f #f s)
+			 (preferences:set pref (str->val s))
+			 (begin
+			   (set! needs-check (cons (list t label check-value) needs-check))
+			   (set-hilite (send t get-editor) #t))))))
     (define t (make-object text-field% 
-			   (if optional? #f label) (or p0 panel)
-			   (lambda (t e)
-			     (let* ([s (send t get-value)])
-			       (if (check-value #f #f s)
-				   (preferences:set pref (str->val s))
-				   (begin
-				     (set! needs-check (cons (list t label check-value) needs-check))
-				     (set-hilite (send t get-editor) #t)))))
+			   (if optional? #f label) 
+			   (or p0 panel)
+			   t-cb
 			   (make-string width-num #\space)))
     (send t set-value (let ([v (preferences:get pref)])
                         (if v
@@ -298,15 +309,50 @@
   (define (check-host-address/port/multi who tl s)
     (check-address is-host-address+port-list? who tl s #t #t))
 
-  ;; check-biff-delay : (union #f ???) (union #f ???) string -> boolean
+  ;; check-biff-delay : (union #f string) (union #f parent) string -> boolean
   ;; checks to see if the string in the biff delay field makes
   ;; sense as an exact integer between 1 and 3600
   (define (check-biff-delay who tl s)
     (let ([n (string->number s)])
-      (and (number? n)
-           (integer? n)
-           (exact? n)
-           (<= 1 n 3600))))
+      (or (and (number? n)
+	       (integer? n)
+	       (exact? n)
+	       (<= 1 n 3600))
+	  (begin
+	    (when who
+	      (message-box
+	       "Preference Error"
+	       (format (string-append
+			"The biff delay must be an exact integer between 1 and 3600.~n"
+			"You provided:~n"
+			"  ~a")
+		       s)
+	       tl
+	       '(ok stop)))
+	    #f))))
+
+  
+  ;; check-message-size : (union #f string) (union #f parent) string -> boolean
+  ;; checks to see if the string in the download-max-size field makes
+  ;; sense as an exact positive integer
+  (define (check-message-size who tl s)
+    (let ([n (string->number s)])
+      (or (and (number? n)
+	       (integer? n)
+	       (exact? n)
+	       (positive? n))
+	  (begin
+	    (when who
+	      (message-box
+	       "Preference Error"
+	       (format (string-append
+			"The message size must be an exact, positive integer.~n"
+			"You provided:~n"
+			"  ~a")
+		       s)
+	       tl
+	       '(ok stop)))
+	    #f))))
   
   (define (check-user-address who tl s)
     (with-handlers ([not-break-exn? 
@@ -412,6 +458,10 @@
       (make-text-field "Folder List Root" p 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
 
       (make-text-field "Biff Delay" p 5 'sirmail:biff-delay #t check-biff-delay number->string string->number)
+
+      (make-text-field "Verify Download of Messages Larger Than" p 5 
+		       'sirmail:warn-download-size #t 
+		       check-message-size number->string string->number)
 
       (make-file/directory-button #f #f p
 				  'sirmail:auto-file-table-file

@@ -174,25 +174,27 @@
                             
                             ;; New connection
                             (begin
-                              (unless (get-PASSWORD)
-                                (let ([p (get-text-from-user "Password" 
-                                                             (format "Password for ~a:" (USERNAME))
-							     main-frame
-							     ""
-							     '(password))])
-                                  (unless p (error 'connect "connection cancelled"))
-                                  (set-PASSWORD p)))
-                              (let*-values ([(imap count new) (let-values ([(server port-no)
-									    (parse-server-name (IMAP-SERVER) 143)])
-								(parameterize ([imap-port-number port-no])
-								  (imap-connect server (USERNAME) (get-PASSWORD) mailbox-name)))]
-                                            [(uid-l) (imap-status imap mailbox-name '(uidnext))])
-                                (status "(Connected, ~a messages)" count)
-                                (set! connection imap)
-                                (set! message-count count)
-                                (set! next-uid (car uid-l))
-                                (send disconnected-msg show #f)
-                                (values imap count new next-uid))))])])
+			      (let ([pw (or (get-PASSWORD)
+					    (let ([p (get-text-from-user "Password" 
+									 (format "Password for ~a:" (USERNAME))
+									 main-frame
+									 ""
+									 '(password))])
+					      (unless p (error 'connect "connection cancelled"))
+					      p))])
+				(let*-values ([(imap count new) (let-values ([(server port-no)
+									      (parse-server-name (IMAP-SERVER) 143)])
+								  (parameterize ([imap-port-number port-no])
+								    (imap-connect server (USERNAME) pw mailbox-name)))]
+					      [(uid-l) (imap-status imap mailbox-name '(uidnext))])
+                                  (unless (get-PASSWORD)
+				    (set-PASSWORD pw))
+				  (status "(Connected, ~a messages)" count)
+				  (set! connection imap)
+				  (set! message-count count)
+				  (set! next-uid (car uid-l))
+				  (send disconnected-msg show #f)
+				  (values imap count new next-uid)))))])])
 	     connect)
 	   (lambda ()
 	     (when connection

@@ -515,6 +515,8 @@
  (autosave-details "Details")
  (autosave-recover "Recover")
  (autosave-unknown-filename "<<unknown>>")
+ (autosave-autosave-label "Autosave file:")
+ (autosave-original-label "Original file:")
  
  ;;; file modified warning
  (file-has-been-modified

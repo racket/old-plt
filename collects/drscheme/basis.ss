@@ -40,7 +40,7 @@
 	     (set! library-unit #f)))))
     
     (define add-basis
-      (let ([plt:userspace@ (reference-library-unit/sig "gusrspcr.ss" "userspce")])
+      (let ([plt:userspace@ (reference-library-unit/sig "gusrspcr.ss" "gusrspce")])
 	(lambda (n eventspace custodian)
 	  (let* ([l@
 		  (unit/sig ()

@@ -14,11 +14,18 @@ next section.
 >  ((compile-extensions expr) scheme-file-list dest-dir)
 
       `(compile-extension expr)' returns a compiler that is initialized with
-      the elaboration-time expression `expr'.  The compiler takes a list
-      of Scheme files and compiles each of them to an extension, placing
-      the resulting extensions in the directory specified by `dest-dir'.
-      If `dest-dir' is #f, each extension is placed in the same directory
-      as its source file.
+      the elaboration-time expression `expr'.
+
+      If `expr' is #f, then no compilation namespace is created, and
+      expressions in the files are assumed to compile
+      independently. Otherwise, a namespace is created for evaluating
+      the expression and compiling files, and the expanstion-time part
+      of each expression is evaluated before it is compiled.
+
+      The compiler takes a list of Scheme files and compiles each of
+      them to an extension, placing the resulting extensions in the
+      directory specified by `dest-dir'.  If `dest-dir' is #f, each
+      extension is placed in the same directory as its source file.
 
 >  ((compile-extensions-to-c expr) scheme-file-list dest-dir)
 
@@ -36,12 +43,17 @@ next section.
 
 >  ((compile-extension-parts expr) scheme-file-list dest-dir)
 
-      `(compile-extension expr)' returns a compiler that is initialized with
-      the elaboration-time expression `expr'.  The compiler takes a list
-      of Scheme files and compiles each of them to a linkable object and
-      a .kp (constant pool) file, placing the resulting objects and .kp files
-      in the directory specified by `dest-dir'.  If `dest-dir' is #f, each object 
-      and .kp file is placed in the same directory as its source file.
+      `(compile-extension-parts expr)' returns a compiler that is
+      initialized with the elaboration-time expression `expr'.
+
+      See `compile-extension' above for information about the effect
+      of `expr'.
+
+      The compiler takes a list of Scheme files and compiles each of
+      them to a linkable object and a .kp (constant pool) file,
+      placing the resulting objects and .kp files in the directory
+      specified by `dest-dir'.  If `dest-dir' is #f, each object and
+      .kp file is placed in the same directory as its source file.
  
 >  ((compile-extension-parts-to-c expr)  scheme-file-list dest-dir)
 
@@ -73,9 +85,10 @@ next section.
 >  ((compile-zos expr) scheme-file-list dest-dir)
 
       `(compile-zos expr)' returns a compiler that is initialized with
-      the elaboration-time expression `expr'; if `expr' is #f, then no
-      compilation namespace is created, otherwise a namespace is
-      created for evaluating the expression and compiling files.
+      the elaboration-time expression `expr'.
+
+      See `compile-extension' above for information about the effect
+      of `expr'.
 
       The returned compiler takes a list of Scheme files and compiles
       each of them to a .zo file, placing the resulting .zo files in
@@ -165,10 +178,8 @@ next section.
 Options for the Compiler
 ========================
 
-To set options for the compile.ss extension compiler, load the
-libray _option.ss_.  (This library is automatically loaded by
-compile.ss, but it can also be loaded earlier.) Options are set by
-the following parameters:
+To set options for the _compile.ss_ extension compiler, use the
+_option.ss_ module. Options are set by the following parameters:
 
 > verbose - #t causes the compiler to print
      verbose messages about its operations.  Default = #f.
@@ -256,7 +267,7 @@ _sig.ss_ library.
 
 The signed unit requires the following imports:
 
-   compiler:option^ - From sig.ss
+   compiler:option^ - From sig.ss, impl by _option-unit.ss_ or _option.ss_
    dynext:compile^ - From the `dynext' collection
    dynext:link^
    dynext:file^
@@ -267,61 +278,53 @@ Low-level Extension Compiler and Linker
 =======================================
 
 The high-level compile.ss interface relies on low-level
-implementations of the extension compiler and linker.  (Of course, .zo
-compilation is handled by MzLib's compile.ss library.)
+implementations of the extension compiler and linker.
 
-The _loadr.ss_ and _ldr.ss_ libraries define unit/sigs for the
-low-level extension compiler and multi-file linker.  The _load.ss_
-library opens these units into the current namespace with the prefix
-`mzc:'.
+The _comp-unit.ss_ and _ld-unit.ss_ libraries define unit/sigs for the
+low-level extension compiler and multi-file linker,
+> ld@
+and
+> comp@
+respectively.
 
-The low-level functions are:
+The low-level compiler functions from comp@ are:
 
-> (mzc:eval-compile-prefix expr) - Evaluates an elaboration-time
+> (eval-compile-prefix expr) - Evaluates an elaboration-time
     S-expression `expr'.  Future calls to mzc:compile-XXX will see the
     effects of the elaboration expression.
 
-> (mzc:compile-extension scheme-source dest-dir) - Compiles a
+> (compile-extension scheme-source dest-dir) - Compiles a
     single Scheme file to an extension.
 
-> (mzc:compile-extension-to-c scheme-source dest-dir) - Compiles
+> (compile-extension-to-c scheme-source dest-dir) - Compiles
     a single Scheme file to a .c file.
 
-> (mzc:compile-c-extension c-source dest-dir) - Compiles a single .c
+> (compile-c-extension c-source dest-dir) - Compiles a single .c
     file to an extension.
 
-> (mzc:compile-extension-part scheme-source dest-dir) - Compiles a
+> (compile-extension-part scheme-source dest-dir) - Compiles a
     single Scheme file to a compiled object and .kp file toward a
     multi-file extension.
 
-> (mzc:compile-extension-part-to-c scheme-source dest-dir) - Compiles
+> (compile-extension-part-to-c scheme-source dest-dir) - Compiles
     a single Scheme file to .c and .kp files towards a multi-file
     extension.
 
-> (mzc:compile-c-extension-part c-source dest-dir) - Compiles a single
+> (compile-c-extension-part c-source dest-dir) - Compiles a single
     .c file to a compiled object towards a multi-file extension.
 
-> (mzc:link-extension object-and-kp-file-list dest-dir) - Links
+The low-level linker functions from ld@ are:
+
+> (link-extension object-and-kp-file-list dest-dir) - Links
     compiled object and .kp files into a multi-file extension.
 
-All but the last function are from the loadr.ss unit, and the
-last one is from ldr.ss.  The loadr.ss unit/sig requires the
-following imports:
-   mzlib:function^
-   mzlib:pretty-print^
-   mzlib:file^
+
+Both unit/sigs requires the following imports:
+
    dynext:compile^ - From the `dynext' collection
    dynext:link^
    dynext:file^
-   compiler:option^ - from optionr.ss or option.ss (the latter
-                      uses a `compiler:option:' prefix)
-and the ldr.ss unit/sig requires the following imports:
-   dynext:compile^ - From the `dynext' collection
-   dynext:link^
-   dynext:file^
-   mzlib:function^
-   compiler:option^ - from optionr.ss or option.ss (the latter
-                      uses a `compiler:option:' prefix)
+   compiler:option^ - From sig.ss, impl by _option-unit.ss_ or _option.ss_
 
 ---------------------------------------------------------------------------
 

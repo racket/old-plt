@@ -1020,7 +1020,7 @@
   ;; the next two are used in the initial wizard dialog.
   ;; Note that vc-wizard-check-prompt can (should) have newlines so
   ;; it will not make the dialog too wide.
-  ; vc-wizard-check-note goes here
+  (vc-wizard-check-note "La version des logiciels que vous êtes en train d'installer n'est peut-être pas la dernière.~nSi vous le voulez DrScheme peut regarder pour une version plus récente.")
   (vc-wizard-check-button "Regarder !")
   (vc-update-check "Vérification des mises à jour")
   (vc-please-wait "Veuillez patienter")

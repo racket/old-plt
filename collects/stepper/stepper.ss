@@ -4,7 +4,7 @@
   (import (core : mzlib:core^)
           (framework : framework^)
           (print-convert : mzlib:print-convert^)
-          (mred : mred-interfaces^)
+          (mred : mred^)
           (drscheme : drscheme:export^)
           (zodiac : zodiac:system^))
   (link [ERROR : stepper:error^ ((unit/sig stepper:error^

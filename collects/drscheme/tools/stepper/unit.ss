@@ -1,5 +1,5 @@
 (unit/sig ()
-  (import [mred : mred-interfaces^]
+  (import [mred : mred^]
           mzlib:core^
           [fw : framework^]
           mzlib:print-convert^
@@ -28,7 +28,7 @@
                   mzlib:core^
                   (fw : framework^)
                   mzlib:print-convert^
-                  (mred : mred-interfaces^)
+                  (mred : mred^)
                   (drscheme : drscheme:export^)
                   zodiac:system^))
            (send f show #f)

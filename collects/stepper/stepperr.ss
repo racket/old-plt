@@ -1,7 +1,7 @@
 (unit/sig stepper:settings^
   (import [z : zodiac:system^]
           mzlib:pretty-print^
-          mred-interfaces^
+          mred^
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
           [e : stepper:error^]

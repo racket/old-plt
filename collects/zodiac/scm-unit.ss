@@ -757,6 +757,6 @@
       (merge-vocabulary (copy-vocabulary scheme-vocabulary)
 	unit-clauses-vocab-delta))
 
-;    (include "scm-hanc.ss")
+    (include "scm-hanc.ss")
 
     ))

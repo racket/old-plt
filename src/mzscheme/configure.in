@@ -305,13 +305,16 @@ case $OS in
     else
       MZBINTARGET=macosx-cc-bin
     fi
+
+    # NB: This assumes that dlcompat is installed.
+    CFLAGS="$CFLAGS -I/sw/include/ "
+
     if test "${enable_quartz}" = "yes" ; then
       # don't use X Libraries: 
-      LIBS="-framework Carbon"
+      LIBS="-framework Carbon -L/sw/lib/ -ldl "
     else
-      # NB: This assumes that dlcompat is installed.
-      CFLAGS="$CFLAGS -DXONX -I/sw/include/"
-      LIBS="-framework Carbon -L/sw/lib/ $LIBS -ldl"
+      CFLAGS="$CFLAGS -DXONX "
+      LIBS="-framework Carbon -L/sw/lib/ $LIBS -ldl "
     fi
     ;;
   *)

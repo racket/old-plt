@@ -25,7 +25,7 @@
 
 /* To do precise accounting, turn on this. You *must* have defined both
    NEWGC_ACCNT and NEWGC_USE_HEADER for this to work. */
-/* #define NEWGC_PRECISE */
+#define NEWGC_PRECISE
 
 /* To make things very slow and create very large files, turn on this: */
 /* #define NEWGC_DEBUG */
@@ -43,7 +43,7 @@ inline void GCDBG(char *format, ...) {
 #endif
 
 /* #defines you can change without definately breaking the collector */
-#define GEN0_SIZE		(16 * 1024 * 1024)
+#define GEN0_SIZE		(8 * 1024 * 1024)
 #define OT_INIT_SIZE		5
 #define OT_ADD_SIZE		10
 
@@ -596,6 +596,75 @@ static void roots_fixup(void) {
 }
 
 /*****************************************************************************
+ * Thread list routines
+ *****************************************************************************/
+#ifdef NEWGC_ACCNT
+struct thread_list {
+  void *thread;
+  void *next;
+};
+
+static struct thread_list *thread_list = NULL;
+
+void GC_register_thread(void *t) {
+  struct thread_list *tlist = malloc(sizeof(struct thread_list));
+  tlist->thread = t;
+  tlist->next = thread_list;
+  thread_list = tlist;
+}
+
+/* return a list of the owners referenced from the roots set */
+static struct owner_list *threads_get_owners(struct owner_list *ol) {
+  struct thread_list *tlist;
+  for(tlist = thread_list; tlist; tlist = tlist->next) {
+    Scheme_Thread *t = (Scheme_Thread*)tlist->thread;
+    short owner;
+    if(t->config && t->config->configs) 
+      owner = 
+	ot_convert((Scheme_Custodian*)t->config->configs[MZCONFIG_CUSTODIAN]);
+    else owner = 0;
+    if(!ol_member_p(ol, owner))
+      ol = ol_add(ol, owner);
+  }
+  return ol;
+}
+    
+static void threads_mark(unsigned short owner) {
+  struct thread_list *tlist;
+  for(tlist = thread_list; tlist; tlist = tlist->next) {
+    Scheme_Thread *t = (Scheme_Thread*)tlist->thread;
+    short curown;
+    if(t->config && t->config->configs) 
+      curown = 
+	ot_convert((Scheme_Custodian*)t->config->configs[MZCONFIG_CUSTODIAN]);
+    else curown = 0;
+    if(owner == curown) {
+      thread_val_mark(tlist->thread);
+    }
+  }
+}
+
+static void threads_fixup() {
+  struct thread_list *tlist = thread_list, *next;
+
+  thread_list = NULL;
+  while(tlist) {
+    next = tlist->next;
+    if(!mark_p(tlist->thread)) {
+      free(tlist);
+    } else {
+      gcFIXUP(tlist->thread);
+      tlist->next = thread_list;
+      thread_list = tlist;
+    }
+    tlist = next;
+  }
+}
+#else
+void GC_register_thread(void *t) {}
+#endif
+
+/*****************************************************************************
  * Memory allocation (midlevel)
  *****************************************************************************/
 
@@ -745,9 +814,6 @@ struct mpage {
   unsigned char bpointers;
   unsigned char bigpage;
   unsigned char type;
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-  unsigned short owner;
-#endif
   struct mpage *next;
 };
 
@@ -765,24 +831,14 @@ static struct mpage *gen[GENERATIONS][MPAGE_TYPES] = {{NULL, NULL, NULL,
 /* create a pointer into a page of the given type and generation (and possibly
    owner), allocate sizew words for it and copy the object located in oldptr
    to that location. return the new pointer. */
-static void *copy_bits(void *oldptr, unsigned long sizew, int type, int tgen
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-		       , unsigned short owner
-#endif
-		       ) {
+static void *copy_bits(void *oldptr, unsigned long sizew, int type, int tgen) {
   unsigned long sizeb = gcWORDS_TO_BYTES(sizew);
   struct mpage *work = gen[tgen][type];
   void *retval;
 
   /* try to find a previously extant place to put this */
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-  while(work && !(((work->size + sizeb) < MPAGE_SIZE) &&
-		  (work->owner == owner)))
-    work = work->next;
-#else
   while(work && ((work->size + sizeb) >= MPAGE_SIZE))  
     work = work->next;  
-#endif
   if(work) {
     void **startfrom = oldptr, **startto, **endfrom; 
     startto =  retval = (void*)((unsigned long)work + work->size);
@@ -798,9 +854,6 @@ static void *copy_bits(void *oldptr, unsigned long sizew, int type, int tgen
     work->type = type;
     work->size = PAGE_HEADER_SIZE + sizeb;
     work->psize = PAGE_HEADER_SIZE;
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-    work->owner = owner;
-#endif
     pmap_add(work);
     gen[tgen][type] = work;
     startto = retval = (void*)((unsigned long)work + PAGE_HEADER_SIZE);
@@ -866,8 +919,10 @@ inline void *bpage_malloc(size_t sizeb, int type, int tgen) {
   /* without this there is a slight flaw in which if someone only
      allocates bigpages, they can completely avoid collection. bad! */
   if( (bpage_g0size + ((unsigned long)tla_regions - (unsigned long)tla_heap))
-      > GEN0_SIZE)
+      > GEN0_SIZE) {
     gc_collect(0);
+    bpage_g0size = 0;
+  }
     
   sizeb = gcWORDS_TO_BYTES(sizew);
   bpage_g0size += sizeb;
@@ -1384,7 +1439,7 @@ void GC_set_finalizer(void *p, int tagged, int level,
   if(oldf) *oldf = NULL;
   if(olddata) *olddata = NULL;
   if(!f) return;
-  fnl = malloc(sizeof(struct fnl));
+  fnl = GC_malloc_atomic(sizeof(struct fnl));
   fnl->next = fnls;
   fnl->p = p;
   fnl->f = f;
@@ -1401,7 +1456,7 @@ void GC_set_finalizer(void *p, int tagged, int level,
 void GC_finalization_weak_ptr(void **p, int offset) {
   struct weakfnl *wl;
   
-  wl = malloc(sizeof(struct weakfnl));
+  wl = GC_malloc_atomic(sizeof(struct weakfnl));
   wl->p = p;
   wl->next = weakfnls;
   wl->offset = offset * sizeof(void*);
@@ -1435,6 +1490,7 @@ static void fnl_mark(short owner) {
 #ifdef NEWGC_ACCNT
     if(fnl->owner == owner) {
 #endif
+      gcMARK(fnl);
       gcMARK(fnl->data);
       if(!mark_p(fnl->p)) {
 	gcMARK(fnl->p);
@@ -1452,7 +1508,11 @@ static void fnl_mark(short owner) {
 
 /* mark the weak finalizers */
 static void wfnl_mark(short owner) {
-  return;
+  struct weakfnl *wfnl; 
+  int i = 0;
+  for(wfnl = weakfnls; wfnl; wfnl = wfnl->next) {
+    gcMARK(wfnl); i++;
+  }
 }
 
 /* fixup the finalizers. if its pointer died, add the finalizer to the run
@@ -1460,11 +1520,13 @@ static void wfnl_mark(short owner) {
 static void fnl_fixup(void) {
   struct fnl *fnl, *prev;
 
+  gcFIXUP(fnls);
   fnl = fnls; prev = NULL;
   while(fnl) {
     struct objhead *phead = (struct objhead *)((unsigned long)fnl->p - 4);
     gcFIXUP(fnl->data);
     gcFIXUP(fnl->p);
+    gcFIXUP(fnl->next);
     if(phead->markf && !phead->mark) {
       rq_add(fnl->eager_level, RQ_TYPE_FINAL, fnl);
       if(prev) prev->next = fnl->next;
@@ -1476,9 +1538,12 @@ static void fnl_fixup(void) {
 
 /* fixup the weak finalizers */
 static void wfnl_fixup(void) {
-  struct weakfnl *cur = weakfnls, *prev = NULL;
+  struct weakfnl *cur, *prev;
   
+  gcFIXUP(weakfnls);
+  cur = weakfnls; prev = NULL;
   while(cur) {
+    gcFIXUP(cur->next);
     if(!mark_p(cur->p)) {
       cur->p = NULL;
       if(prev) { prev->next = cur->next; cur = prev->next; }
@@ -1511,6 +1576,7 @@ static void wfnl_reset_weaks() {
   struct weakfnl *cur;
 
   for(cur = weakfnls; cur; cur = cur->next) {
+    cur = *(void**)cur;
     gcMARK(cur->saved);
     if(mark_p(cur->p))
       *(void**)((unsigned long)GC_resolve(cur->p) + cur->offset) = cur->saved;
@@ -1529,6 +1595,50 @@ struct rqentry {
 };
 
 static struct rqentry *run_queue[4];
+
+static void rq_mark() {
+  struct rqentry *ent;
+  int i;
+  
+  for(i = 0; i < 4; i++)
+    for(ent = run_queue[i]; ent; ent = ent->next)
+      if(ent->type == RQ_TYPE_FINAL) {
+	struct fnl *fnl = (struct fnl *)ent->obj;
+	gcMARK(fnl);
+	gcMARK(fnl->f);
+	gcMARK(fnl->p);
+	gcMARK(fnl->data);
+      } else {
+#ifdef NEWGC_ACCNT
+	struct accnthook *hook = (struct accnthook *)ent->obj;
+	gcMARK(hook->cust);
+	gcMARK(hook->cust_to_kill);
+#endif
+      }
+}
+
+static void rq_fixup() {
+  struct rqentry *ent;
+  int i;
+  
+  for(i = 0; i < 4; i++) {
+    for(ent = run_queue[i]; ent; ent = ent->next) {
+      gcFIXUP(ent->obj);
+      if(ent->type == RQ_TYPE_FINAL) {
+	struct fnl *fnl = (struct fnl *)ent->obj;
+	gcFIXUP(fnl->f);
+	gcFIXUP(fnl->p);
+	gcFIXUP(fnl->data);
+      } else {
+#ifdef NEWGC_ACCNT
+	struct accnthook *hook = (struct accnthook *)ent->obj;
+	gcFIXUP(hook->cust);
+	gcFIXUP(hook->cust_to_kill);
+#endif
+      }
+    }
+  }
+}
 
 /* add an item to the run queue */
 static void rq_add(int pri, short type, void *obj) {
@@ -1556,7 +1666,6 @@ static void rq_run() {
 	struct fnl *f = (struct fnl *)work->obj;
  	if(i != 3) f->f(f->p, f->data);
 /* 	f->f(f->p, f->data); */
-	free(f);
 	free(work);
       } else {
 #ifdef NEWGC_ACCNT
@@ -1711,7 +1820,6 @@ void GC_init_type_tags(int count, int weakbox) {
     GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array,
 			   fixup_weak_array, 0, 0);
     old_init();
-    GC_add_roots(&weakfnls, (char*)&weakfnls + sizeof(weakfnls) + 1);
 #ifdef NEWGC_DEBUG
     debug = fopen("log", "w");
 #endif
@@ -1740,8 +1848,8 @@ inline bool mark_p(void *p) {
 static void mark_propbig(struct mpage *page) {
   void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE + 4);
   void **end = (void**)((unsigned long)page + page->size);
-  
-#ifdef NEWGC_USE_HEADER
+
+#ifdef NEWGC_ACCNT  
   gc_owner = ((struct objhead *)((unsigned long)page + PAGE_HEADER_SIZE))->owner;
 #endif
   switch(page->type) {
@@ -1821,13 +1929,6 @@ inline void mark_owner_reprocess(const void *p) {
 #define mark_owner_reprocess(p) { }
 #endif
 
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER) 
-#define copy_object(p, size, type, gen) copy_bits(p, size, type, gen, gc_owner)
-#else
-#define copy_object(p, size, type, gen) copy_bits(p, size, type, gen)
-#endif
-
-
 inline void mark_normal(struct mpage *page, const void *p) {
   struct objhead *info = (struct objhead *)((unsigned long)p - 4);
   if(info->mark) {
@@ -1846,16 +1947,14 @@ inline void mark_normal(struct mpage *page, const void *p) {
 	info->type = MPAGE_ATOMIC;
 	type = MPAGE_ATOMIC;
       }
-    newplace = copy_object((void*)info, info->size, type, gen);
+    newplace = copy_bits((void*)info, info->size, type, gen);
 /*     GCDBG("Moved %p (size %i) to %p\n", info, info->size, newplace); */
     info->mark = 1;
     *(void**)p = (void*)((unsigned long)newplace + 4);
 #ifdef NEWGC_ACCNT
     ot_accnt(gc_owner, gen, gcWORDS_TO_BYTES(info->size));
-#endif    
-#ifdef NEWGC_USE_HEADER
     ((struct objhead *)newplace)->owner = gc_owner;
-#endif
+#endif    
   }
 }
 
@@ -1863,8 +1962,6 @@ inline void mark_bigpage(struct mpage *page, const void *p) {
   if(page->bigpage == 1) {
 #ifdef NEWGC_ACCNT
     ot_accnt(gc_owner, INCGEN(page->gen), page->size);
-#endif
-#ifdef NEWGC_USE_HEADER
     ((struct objhead *)((unsigned long)page + PAGE_HEADER_SIZE))->owner
       = gc_owner;
 #endif
@@ -1905,11 +2002,8 @@ void GC_mark(const void *p) {
   
 static void mark_proptagged(struct mpage *page) {
   void **start = (void**)((unsigned long)page + page->psize);
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-  gc_owner = page->owner;
-#endif
   while(start < (void**)((unsigned long)page + page->size)) {
-#ifdef NEWGC_USE_HEADER    
+#ifdef NEWGC_ACCNT
     struct objhead *info = (struct objhead *)start++;
     gc_owner = info->owner;
 #else
@@ -1921,13 +2015,10 @@ static void mark_proptagged(struct mpage *page) {
 
 static void mark_proparray(struct mpage *page) {
   void **start = (void**)((unsigned long)page + page->psize);
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-  gc_owner = page->owner;
-#endif
   while(start < (void**)((unsigned long)page + page->size)) {
     struct objhead *info = (struct objhead *)start++;
     unsigned long size = info->size;
-#ifdef NEWGC_USE_HEADER
+#ifdef NEWGC_USE_ACCNT
     gc_owner = info->owner;
 #endif
     while(--size) GC_mark(*(start++));
@@ -1936,14 +2027,11 @@ static void mark_proparray(struct mpage *page) {
 
 static void mark_proptarray(struct mpage *page) {
   void **start = (void**)((unsigned long)page + page->psize);
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-  gc_owner = page->owner;
-#endif
   while(start < (void**)((unsigned long)page + page->size)) {
     struct objhead *info = (struct objhead *)start;
     void **tempend = start + info->size;
     Type_Tag tag = *(Type_Tag*)(++start);
-#ifdef NEWGC_USE_HEADER
+#ifdef NEWGC_ACCNT
     gc_owner = info->owner;
 #endif
     while(start < tempend) start += mark_table[tag](start);
@@ -1952,13 +2040,10 @@ static void mark_proptarray(struct mpage *page) {
 
 static void mark_propxtagged(struct mpage *page) {
   void **start = (void**)((unsigned long)page + page->psize);
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-  gc_owner = page->owner;
-#endif
   while(start < (void**)((unsigned long)page + page->size)) {
     struct objhead *info = (struct objhead *)start;
     unsigned long size = info->size;
-#ifdef NEWGC_USE_HEADER
+#ifdef NEWGC_ACCNT
     gc_owner = info->owner;
 #endif
     GC_mark_xtagged(start + 1);
@@ -2072,6 +2157,9 @@ static void fixup_tagged(struct mpage *page) {
   void **end = (void**)((unsigned long)page + page->size);
   
   while(start < end) {
+    if( ((struct objhead *)start)->markf
+	|| ((struct objhead *)start)->mark )
+      printf("Mark from other place was retained!\n");
     start++;
     start += fixup_table[*(Type_Tag*)start](start);
   }
@@ -2243,9 +2331,6 @@ static void old_mark(void) {
   struct mpage *page;
   short i, j;
 
-#if defined(NEWGC_ACCNT) && !defined(NEWGC_USE_HEADER)
-  gc_owner = 0;
-#endif
   for(i = gc_topgen + 1; i < GENERATIONS; i++) 
     for(j = 0; j < MPAGE_TYPES; j++)
       for(page = gen[i][j]; page; page = page->next)
@@ -2255,7 +2340,7 @@ static void old_mark(void) {
 	      void **start = (void**)((unsigned long)page + PAGE_HEADER_SIZE);
 	      void **end = (void**)((unsigned long)page + page->psize);
 	      while(start < end) {
-#ifdef NEWGC_USE_HEADER
+#ifdef NEWGC_ACCNT
 		struct objhead *info = (struct objhead *)start++;
 		gc_owner = info->owner;
 #else
@@ -2272,7 +2357,7 @@ static void old_mark(void) {
 	      while(start < end) {
 		struct objhead *info = (struct objhead *)start++;
 		unsigned long size = info->size;
-#ifdef NEWGC_USE_HEADER
+#ifdef NEWGC_ACCNT
 		gc_owner = info->owner;
 #endif
 		while(--size) GC_mark(*(start++));
@@ -2286,7 +2371,7 @@ static void old_mark(void) {
 		struct objhead *info = (struct objhead *)start;
 		void **tempend = start + info->size;
 		Type_Tag tag = *(Type_Tag*)(++start);
-#ifdef NEWGC_USE_HEADER
+#ifdef NEWGC_ACCNT
 		gc_owner = info->owner;
 #endif
 		while(start < tempend) start += mark_table[tag](start);
@@ -2299,7 +2384,7 @@ static void old_mark(void) {
 	      while(start < end) {
 		struct objhead *info = (struct objhead *)start;
 		unsigned long size = info->size;
-#ifdef NEWGC_USE_HEADER
+#ifdef NEWGC_ACCNT
 		gc_owner = info->owner;
 #endif
 		GC_mark_xtagged(start + 1);
@@ -2459,9 +2544,13 @@ static void gc_collect(int force_full) {
     if(GC_collect_start_callback) GC_collect_start_callback();
 
     gc_prepare();
+/*     printf("Collection #%li (topgen %i, tla_heap %p, tla_regions %p)\n",  */
+/* 	   gc_numcollects, gc_topgen, tla_heap, tla_regions); fflush(stdout); */
 /*     debug_dump_heap(); */
+    rq_mark();
 #ifdef NEWGC_ACCNT
     /* compute the owner list */
+    ol = threads_get_owners(ol);
     ol = roots_get_owners(ol);
     ol = accnt_get_owners(ol);
     ol = imm_get_owners(ol);
@@ -2475,10 +2564,11 @@ static void gc_collect(int force_full) {
     old_mark();
     for(temp = ol; temp; temp = temp->next) {
       gc_owner = temp->owner; 
-      roots_mark(temp->owner);
-      accnt_mark(temp->owner);
-      imm_mark(temp->owner);
-      fnl_mark(temp->owner);
+      threads_mark(temp->owner);
+      roots_mark(temp->owner); 
+      accnt_mark(temp->owner); 
+      imm_mark(temp->owner); 
+      fnl_mark(temp->owner); 
       wfnl_mark(temp->owner);
       if(temp->owner == curown)
 	GC_mark_variable_stack(GC_variable_stack, 0, 
@@ -2510,16 +2600,18 @@ static void gc_collect(int force_full) {
 
     /* repair */
 #ifdef NEWGC_ACCNT
-    ot_fixup(ol);
-    ol_free(ol);
+    ot_fixup(ol); 
+    ol_free(ol); 
+    threads_fixup();
 #endif
-    roots_fixup();
+    rq_fixup(); 
+    roots_fixup(); 
 #ifdef NEWGC_ACCNT
     /* accnt_fixup must be after ot_fixup */
-    accnt_fixup();
+    accnt_fixup(); 
 #endif
-    imm_fixup();
-    fnl_fixup();
+    imm_fixup(); 
+    fnl_fixup(); 
     wfnl_fixup();
     GC_fixup_variable_stack(GC_variable_stack, 0,
 			    (void*)(GC_get_thread_stack_base
@@ -2530,6 +2622,7 @@ static void gc_collect(int force_full) {
 
     if(GC_collect_start_callback) GC_collect_end_callback();
     rq_run();
+/*     printf("done\n"); fflush(stdout); */
   }
 }
 

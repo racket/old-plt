@@ -475,8 +475,11 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
     b->val = val;
   else {
     scheme_raise_exn(MZEXN_VARIABLE, b->key,
-		     "%s: cannot set undefined identifier: %S",
+		     "%s: cannot set %s identifier: %S",
 		     who,
+		     (((Scheme_Bucket_With_Home *)b)->home->module
+		      ?  "uninitialized module" 
+		      : "undefined"),
 		     (Scheme_Object *)b->key);
     
   }

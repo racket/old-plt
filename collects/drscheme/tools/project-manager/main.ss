@@ -13,28 +13,19 @@
 	  [zodiac : zodiac:system^]
 	  [hierlist : hierlist^])
 
-  (define my-explode-path
-    (lambda (orig-path)
-      (let ([absolute? (absolute-path? orig-path)]
-            [answer
-             (let loop ([path orig-path]
-                        [rest '()])
-               (let-values ([(base name dir?) (split-path path)])
-                 (cond
-                   [(eq? base 'relative)
-                    (cons name rest)]
-                   [(not base)
-                    (cons name rest)]
-                   [(string? base)
-                    (loop base (cons name rest))]
-                   [else
-                    (error 'explode-path "input was not in normal form: ~s" orig-path)])))])
-        (if (and (eq? (system-type) 'macos)
-                 absolute?
-                 (not (null? answer)))
-            (cons (string-append (car answer) ":")
-                  (cdr answer))
-            answer))))
+  (define (my-explode-path orig-path)
+    (let loop ([path orig-path]
+	       [rest '()])
+      (let-values ([(base name dir?) (split-path path)])
+	(cond
+	 [(eq? base 'relative)
+	  (cons name rest)]
+	 [(not base)
+	  (cons name rest)]
+	 [(string? base)
+	  (loop base (cons name rest))]
+	 [else
+	  (error 'explode-path "input was not in normal form: ~s" orig-path)]))))
 
   (define init-directory (current-directory))
 
@@ -638,7 +629,6 @@
       (define (swap-abs/rel-file)
         (let* ([index (send files-list-box get-selection)]
                [file (list-ref files index)]
-               [fp (cadr file)]
                [path (apply build-path (cdr file))]
                [new-path
                 (cond

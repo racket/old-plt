@@ -43,7 +43,8 @@
 	       mred mzlib print-convert zodiac (language : plt:parameters^)
 	       export)]
 	[app : drscheme:app^ ((reference-unit/sig "app.ss")
-			      (export drscheme:unit) 
-			      (export drscheme:frame)
+			      (export unit) 
+			      (export frame)
+			      (export parameters)
 			      mred mzlib)])
   (export (open app)))

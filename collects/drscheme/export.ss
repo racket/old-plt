@@ -13,10 +13,13 @@
 	[unit : drscheme:unit^
 	  ((reference-unit/sig "unit.ss")
 	   mred mzlib setup compound-unit frame edit rep
-	   language)]
+	   language parameters)]
 	[compound-unit : drscheme:compound-unit^
 	  ((reference-unit/sig "cunit.ss")
-	   mred mzlib unit frame)])
-  (export (unit frame drscheme:frame)
-	  (unit unit drscheme:unit)
-	  (unit compound-unit drscheme:compound-unit)))
+	   mred mzlib unit frame)]
+	[parameters : drscheme:parameters^
+		    ((reference-unit/sig "params.ss") mred unit rep)])
+  (export (unit frame)
+	  (unit unit)
+	  (unit compound-unit)
+	  (unit parameters)))

@@ -279,17 +279,9 @@
 				  (after user-code-error?))))))
 			  threads-queue))
 		   (semaphore-post protect-threads-queue))))]
-	    [do-eval
-	     (lambda (start end)
-	       (do-many-buffer-evals this start end
-				     (lambda () 
-				       (wx:begin-busy-cursor)
-				       (do-pre-eval))
-				     (lambda () 
-				       (wx:end-busy-cursor)
-				       (do-post-eval))))]
+	    [do-eval (lambda (start end) (do-many-buffer-evals this start end))]
 	    [do-many-buffer-evals
-	     (lambda (edit start end pre post)
+	     (lambda (edit start end)
 	       (let* ([loc (zodiac:make-location 0 0 start edit)]
 		      [reader (zodiac:read 
 			       (mred:read-snips/chars-from-buffer edit start end)
@@ -320,7 +312,7 @@
 						(cleanup)
 						(loop)))))))))))])
 	  (public
-	    [do-load
+	    [userspace-load
 	     (lambda (filename)
 	       (let* ([p (open-input-file filename)]
 		      [chars (list (read-char p) (read-char p) (read-char p) (read-char p))])
@@ -358,7 +350,7 @@
 				 (current-output-port this-out)
 				 (current-error-port this-err)
 				 (current-input-port this-in)
-				 (current-load do-load)
+				 (current-load userspace-load)
 				 (current-eval userspace-eval)
 				 (set! current-thread-directory
 				       (current-directory))))

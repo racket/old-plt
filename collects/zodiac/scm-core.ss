@@ -122,14 +122,17 @@
     (add-list-micro scheme-vocabulary
       (lambda (expr env attributes vocab)
 	(let ((contents (expose-list expr)))
-	  (when (null? contents)
-	    (static-error expr "Empty combination is a syntax error"))
-	  (let ((bodies
-		  (map
-		    (lambda (e)
-		      (expand-expr e env attributes vocab))
-		    contents)))
-	    (create-app (car bodies) (cdr bodies) expr)))))
+	  (if (null? contents)
+	    (if (language>=? 'advanced)
+	      (expand-expr (structurize-syntax `(quote ,expr) expr)
+		env attributes vocab)
+	      (static-error expr "Empty combination is a syntax error"))
+	    (let ((bodies
+		    (map
+		      (lambda (e)
+			(expand-expr e env attributes vocab))
+		      contents)))
+	      (create-app (car bodies) (cdr bodies) expr))))))
 
     (define lexically-resolved?
       (lambda (expr env)
@@ -374,7 +377,7 @@
 		  (optarglist-vars optarglist))))
 	  (cond
 	    ((sym-optarglist? optarglist)
-	      (make-sym-arglist result))
+	      (make-sym-optarglist result))
 	    ((list-optarglist? optarglist)
 	      (make-list-optarglist result))
 	    ((ilist-optarglist? optarglist)

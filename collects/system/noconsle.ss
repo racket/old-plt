@@ -9,8 +9,10 @@
 (define mred:make-application@
   (lambda ()
     (unit/sig mred:application^
-      (import [mred@ : mred^]
-	      [core@ : mzlib:core^])
-      (define console-frame #f)
+      (import [mred : mred^]
+	      [core : mzlib:core^])
+      (define console #f)
       (define eval-string (lambda (s) (eval (read (open-input-string s)))))
+      (display mred:welcome-message)
+      (newline)
       (thread read-eval-print-loop))))

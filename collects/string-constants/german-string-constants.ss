@@ -213,7 +213,7 @@
  (default-fonts "Vorgabe Schriftarten")
  
  ; should have entire alphabet
- (font-example-string "The quick brown fox jumped over the lazy dogs.") ; oops, have to look this up; there is a German analog
+ (font-example-string "Zwölf Boxkämpfer jagen Victor quer über den großen Sylter Deich")
 
  (change-font-button-label "Ändern")
  (fonts "Schriftarten")

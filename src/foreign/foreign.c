@@ -1252,7 +1252,9 @@ static void* scheme_to_c(Scheme_Object *type, void *dst,
       if (!SCHEME_FFIANYPTRP(val))
         scheme_wrong_type("Scheme->C", "pointer", 0, 1, &val);
       if (basetype_p == NULL) {
-        memcpy(dst, SCHEME_FFIANYPTR_VAL(val), CTYPE_PRIMTYPE(type)->size);
+        void* p = SCHEME_FFIANYPTR_VAL(val);
+        if (p == NULL) scheme_signal_error("FFI pointer value was NULL.");
+        memcpy(dst, p, CTYPE_PRIMTYPE(type)->size);
         return NULL;
       } else {
         *basetype_p = FOREIGN_struct;
@@ -1891,6 +1893,10 @@ typedef struct closure_and_cif_struct {
 /* free the above */
 void free_cl_cif_args(void *ignored, void *p)
 {
+  scheme_warning("Releaseing cl+cif+args %V %V (%d)",
+                 ignored,
+                 (((closure_and_cif*)p)->data),
+                 SAME_OBJ(ignored,(((closure_and_cif*)p)->data)));
 #ifdef MZ_PRECISE_GC
   GC_free_immobile_box((void**)(((closure_and_cif*)p)->data));
 #endif

@@ -1178,7 +1178,12 @@ wxTextSnip *wxMediaEdit::InsertTextSnip(long start, wxStyle *style)
       && (gsnip->flags & wxSNIP_NEWLINE)
       && !(gsnip->flags & wxSNIP_HARD_NEWLINE)) {
     /* We want the snip on the same line as the preceeding snip: */
-    InsertSnip(gsnip->next, snip);
+    if (gsnip->next)
+      InsertSnip(gsnip->next, snip);
+    else
+      AppendSnip(snip);
+    gsnip->flags -= wxSNIP_NEWLINE;
+    snip->flags |= wxSNIP_NEWLINE;
     snip->line = gsnip->line;
     snip->line->lastSnip = snip;
   } else {

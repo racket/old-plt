@@ -3,7 +3,7 @@
   (require (lib "mred.ss" "mred")
            (lib "class.ss"))
 
-  (provide gui%)
+  (provide gui% parse-input)
   
   (define (get-new-player line)
     (let ((strnum (substring line 23 (string-length line))))
@@ -108,8 +108,6 @@
            l)
           (display-board (reverse (vector->list b)))))
       (super-instantiate ())))
-
-  (parse-input (current-input-port))
 
   )
 

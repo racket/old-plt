@@ -2,6 +2,7 @@
   
   (require "array2d.ss"
 	   "client-parameters.ss"
+           (lib "class.ss")
            (lib "list.ss")
            (lib "lex.ss" "parser-tools")
            (lib "yacc.ss" "parser-tools"))
@@ -183,7 +184,7 @@
                                ((number? i) (token-NUM i))
                                (else 'EOF))))))))
           
-  (define (read-initial-response! in gui?)
+  (define (read-initial-response! in)
     (let* ((responses
             (filter (lambda (x)
                       (eq? 'X (response-name x)))
@@ -199,10 +200,6 @@
                     (set-spot (board) x y (set-robot (get-spot (board) x y))))
                   (hash-table-put! (robot-table) (robot-id robot) robot))
                 robots)
-      (cond
-       (gui?
-	((dynamic-require "gui-client.ss" 'initialize)
-	 (board-width) (board-height) (board) robots)))
       (robot-indexes (remove-dups (map robot-id robots)))))
     
   (define (remove-dups loi)
@@ -231,7 +228,7 @@
              (find-dead alive (cdr all))))))
   
   
-  (define (read-response! add-score packages in gui?)
+  (define (read-response! add-score packages in)
     (let* ((responses (read-response in))
            (flat-responses (apply append responses))
            (alive-robots (remove-dups (map (lambda (x) 
@@ -241,36 +238,6 @@
             (find-dead alive-robots (robot-indexes)))
            (package-table (make-hash-table)))
       ;(printf "~a~n" responses)
-      (cond
-       (gui?
-	((dynamic-require "gui-client.ss" 'update)
-	 (map (lambda (r)
-		(let ((good-responses
-		       (filter (lambda (r)
-				 (not (eq? 'x (response-name r))))
-			       r)))
-		  (case (response-name (car good-responses))
-		    ((n s w e) (list (response-id (car good-responses)) 
-				     0
-				     (response-name (car good-responses))))
-		    ((p) (list (response-id (car good-responses))
-			       0
-			       (cons 'pick
-				     (map response-arg
-					  (filter (lambda (x)
-						    (eq? 'P (response-name x)))
-						  good-responses)))))
-		    ((d) (list (response-id (car good-responses))
-			       0
-			       (cons 'drop
-				     (map response-arg
-					  (filter (lambda (x)
-						    (eq? 'D (response-name x)))
-						  good-responses))))))))
-	      (filter (lambda (rl)
-			(not (eq? 'nothing (response-name (car rl)))))
-		      responses))
-	 packages)))
 	
       (for-each
        (lambda (p)
@@ -344,7 +311,15 @@
 	   (hash-table-put! (robot-table) (robot-id new-robot) new-robot)))
        flat-responses)
       (robot-indexes alive-robots)
-      (map (lambda (id) (hash-table-get (robot-table) id)) (robot-indexes))))
+      (let ((robots (map (lambda (id) (hash-table-get (robot-table) id))
+                         (robot-indexes))))
+        (cond
+          ((gui) (send (gui) set-robots (map (lambda (robot)
+                                               (list (robot-id robot)
+                                                     (robot-x robot)
+                                                     (robot-y robot)))
+                                             robots))))
+        robots)))
   
   (define (read-good-char in)
     (let ((c (read-char in)))
@@ -353,6 +328,27 @@
         (else (read-good-char in)))))
 
         
+  (define (compute-gui-board b)
+    (let loop ((i 1))
+      (cond
+        ((> i (board-height)) null)
+        (else
+         (cons
+          (let ((s (make-string (board-width))))
+            (let loop ((j 1))
+              (cond
+                ((> j (board-width)) (void))
+                (else
+                 (string-set! s 
+                              (sub1 j)
+                              (case (get-type (get-spot b j i))
+                                ((0) #\.)
+                                ((1) #\~)
+                                ((2) #\#)
+                                ((3) #\@)))
+                 (loop (add1 j))))))
+          (loop (add1 i)))))))
+  
   (define (read-board! input gui?)
     (robot-indexes null)
     (robot-table (make-hash-table))
@@ -378,8 +374,11 @@
     (player-capacity (read input))
     (player-money (read input))
     (player-initial-money (player-money))
+    (cond
+      (gui? (gui (make-object (dynamic-require "simple-gui.ss" 'gui%)
+                   (compute-gui-board (board)) (board-width) (board-height)))))
     (read-line input)
-    (read-initial-response! input gui?))
+    (read-initial-response! input))
     
   (define (fix-home!)
     (let ((spot (get-spot (board) (get-player-x) (get-player-y))))

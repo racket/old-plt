@@ -29,7 +29,7 @@
 	      (newline output)
 	      (read-board! input gui?)
 	      (do-turn (lambda (x) (score (+ (score) x))) 
-		       baseline? gui? input output)))))))
+		       baseline? input output)))))))
 
   (define (read-packages in)
     (let* ((x (read-line in))
@@ -66,7 +66,7 @@
        
   
   
-  (define (do-turn update-score baseline? gui? in out)
+  (define (do-turn update-score baseline? in out)
     (let loop ((packages (read-packages in))
                (robots null))
 ;;      (printf "~a~n" (map
@@ -98,7 +98,6 @@
           (send-command command out))))
       (let ((robots (read-response! update-score
 				    packages
-				    in 
-				    gui?)))
+				    in)))
 	(loop (read-packages in) robots))))
   )

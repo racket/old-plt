@@ -58,6 +58,9 @@ this tool:
 >                 iswim-grammar : compiled-lang?
 >                 M? : (any? . -> . boolean?)
 >                 V? : (M? . -> . boolean?)
+>                 o1? : (M? . -> . boolean?)
+>                 o2? : (M? . -> . boolean?)
+>                 on? : (M? . -> . boolean?)
 >                 iswim-subst : (M? symbol? M? . -> . M?)
                Reductions:
 >                 beta_v : red?
@@ -73,7 +76,13 @@ this tool:
 >                 snd : M?
 >                 Y_v : M?
 >                 sum : M?
-               Helper:
+               Helpers:
+>                 delta*1 : (o1? V? . -> . (union false? V?))
+                     delta as a function for unary operations.
+>                 delta*2 : (o2? V? V? . -> . (union false? V?))
+                     delta as a function for binary operations.
+>                 delta*n : (on? (listof V?) . -> . (union false? V?))
+                     delta as a function for any operation.
 >                 function-reduce* : ((listof red?)
                                       any?
                                       (any? . -> . boolean?)
@@ -270,6 +279,14 @@ argument. It returns the replaced term.
 
 Reduce accepts a list of reductions, a term, and returns a
 list of terms that the term reduces to.
+
+> language->predicate : (compiled-lang?
+                         symbol?
+                         . -> . 
+                         (any? . -> . boolean?))
+
+Takes a language and a non-terminal name and produces
+a predicate that matches instances of the non-terminal.
 
 > match-pattern : (compiled-pattern 
                    any?

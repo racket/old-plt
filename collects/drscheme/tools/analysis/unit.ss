@@ -12,4 +12,4 @@
     
     (define name "Static Debugger")
 
-    (include "../backward.ss"))
+    (include (begin-elaboration-time (build-path 'up "backward.ss"))))

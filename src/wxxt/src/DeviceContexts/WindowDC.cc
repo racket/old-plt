@@ -2257,7 +2257,7 @@ void wxWindowDC::BeginSetPixel(int mini, int near_i, int near_j)
        in a large bitmap, we first try to get a small piece
        of the bitmap in "mini" mode. If we need more, then we'll
        jump to "whole-image" mode. */
-#   define wxMINI_SIZE 20
+#   define wxMINI_SIZE 8
     if (w > wxMINI_SIZE) {
       if (ni < (wxMINI_SIZE / 2))
 	dx = 0;

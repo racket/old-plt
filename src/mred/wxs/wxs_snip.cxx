@@ -1977,7 +1977,7 @@ static Scheme_Object *objscheme_wxSnip_Getcount(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxSnip_class, "get-count in snip%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-count in snip%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-count in snip%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxSnip *)cobj->primdata)->wxSnip::count;
@@ -1994,7 +1994,7 @@ static Scheme_Object *objscheme_wxSnip_Getflags(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxSnip_class, "get-flags in snip%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-flags in snip%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-flags in snip%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxSnip *)cobj->primdata)->wxSnip::flags;
@@ -2011,7 +2011,7 @@ static Scheme_Object *objscheme_wxSnip_Getstyle(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxSnip_class, "get-style in snip%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-style in snip%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-style in snip%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxSnip *)cobj->primdata)->wxSnip::style;
@@ -2028,7 +2028,7 @@ static Scheme_Object *objscheme_wxSnip_Getsnipclass(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxSnip_class, "get-snipclass in snip%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-snipclass in snip%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-snipclass in snip%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxSnip *)cobj->primdata)->wxSnip::snipclass;
@@ -2046,7 +2046,7 @@ static Scheme_Object *objscheme_wxSnip_Setsnipclass(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxSnip_class, "set-snipclass in snip%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-snipclass in snip%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-snipclass in snip%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_wxSnipClass(p[POFFSET], "set-snipclass in snip%", 1));
   ((wxSnip *)cobj->primdata)->snipclass = v;
@@ -2067,7 +2067,7 @@ static Scheme_Object *os_wxSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in snip%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in snip%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxSnip CONSTRUCTOR_ARGS(()));
@@ -3839,7 +3839,7 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in string-snip% (initial string case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in string-snip% (initial string case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in string-snip% (initial string case)"));
 
     x1 = SCHEME_STRLEN_VAL(p[POFFSET]);
@@ -3859,7 +3859,7 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+1))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in string-snip% (initial size case)", POFFSET+POFFSET, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in string-snip% (initial size case)", POFFSET+POFFSET, POFFSET+1, n, p, 0));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "initialization in string-snip% (initial size case)"));
     } else
@@ -5558,7 +5558,7 @@ static Scheme_Object *os_wxTabSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in tab-snip%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in tab-snip%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxTabSnip CONSTRUCTOR_ARGS(()));
@@ -7468,7 +7468,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in image-snip% (bitmap case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (bitmap case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "initialization in image-snip% (bitmap case)", 0));
 
     { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("image-snip%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
@@ -7492,7 +7492,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in image-snip% (filename case)", POFFSET+POFFSET, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in image-snip% (filename case)", POFFSET+POFFSET, POFFSET+4, n, p, 0));
     if (n > (POFFSET+0)) {
       x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "initialization in image-snip% (filename case)"));
     } else
@@ -9688,7 +9688,7 @@ static Scheme_Object *os_wxMediaSnip_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n > (POFFSET+14))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-snip%", POFFSET+POFFSET, POFFSET+14, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-snip%", POFFSET+POFFSET, POFFSET+14, n, p, 0));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaBuffer(p[POFFSET+0], "initialization in editor-snip%", 1));
   } else
@@ -9979,7 +9979,7 @@ static Scheme_Object *objscheme_wxBufferDataClass_Getclassname(int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxBufferDataClass_class, "get-classname in editor-data-class%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-classname in editor-data-class%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-classname in editor-data-class%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxBufferDataClass *)cobj->primdata)->wxBufferDataClass::classname;
@@ -9997,7 +9997,7 @@ static Scheme_Object *objscheme_wxBufferDataClass_Setclassname(int n,  Scheme_Ob
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxBufferDataClass_class, "set-classname in editor-data-class%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-classname in editor-data-class%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-classname in editor-data-class%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET], "set-classname in editor-data-class%"));
   ((wxBufferDataClass *)cobj->primdata)->classname = v;
@@ -10018,7 +10018,7 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(int n,  Scheme_Object
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-data-class%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-data-class%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxBufferDataClass CONSTRUCTOR_ARGS(()));
@@ -10472,7 +10472,7 @@ static Scheme_Object *objscheme_wxBufferData_Getdataclass(int n,  Scheme_Object 
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxBufferData_class, "get-dataclass in editor-data%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-dataclass in editor-data%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-dataclass in editor-data%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxBufferData *)cobj->primdata)->wxBufferData::dataclass;
@@ -10490,7 +10490,7 @@ static Scheme_Object *objscheme_wxBufferData_Setdataclass(int n,  Scheme_Object 
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxBufferData_class, "set-dataclass in editor-data%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-dataclass in editor-data%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-dataclass in editor-data%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_wxBufferDataClass(p[POFFSET], "set-dataclass in editor-data%", 1));
   ((wxBufferData *)cobj->primdata)->dataclass = v;
@@ -10505,7 +10505,7 @@ static Scheme_Object *objscheme_wxBufferData_Getnext(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxBufferData_class, "get-next in editor-data%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-next in editor-data%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-next in editor-data%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxBufferData *)cobj->primdata)->wxBufferData::next;
@@ -10528,7 +10528,7 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(int n,  Scheme_Object *p[]
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-data%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in editor-data%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxBufferData CONSTRUCTOR_ARGS(()));

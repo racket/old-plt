@@ -128,7 +128,7 @@ static Scheme_Object *objscheme_wxMultColour_Getr(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMultColour_class, "get-r in mult-color%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-r in mult-color%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-r in mult-color%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxMultColour *)cobj->primdata)->wxMultColour::r;
@@ -146,7 +146,7 @@ static Scheme_Object *objscheme_wxMultColour_Setr(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMultColour_class, "set-r in mult-color%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-r in mult-color%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-r in mult-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-r in mult-color%"));
   ((wxMultColour *)cobj->primdata)->r = v;
@@ -161,7 +161,7 @@ static Scheme_Object *objscheme_wxMultColour_Getg(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMultColour_class, "get-g in mult-color%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-g in mult-color%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-g in mult-color%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxMultColour *)cobj->primdata)->wxMultColour::g;
@@ -179,7 +179,7 @@ static Scheme_Object *objscheme_wxMultColour_Setg(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMultColour_class, "set-g in mult-color%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-g in mult-color%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-g in mult-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-g in mult-color%"));
   ((wxMultColour *)cobj->primdata)->g = v;
@@ -194,7 +194,7 @@ static Scheme_Object *objscheme_wxMultColour_Getb(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMultColour_class, "get-b in mult-color%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-b in mult-color%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-b in mult-color%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxMultColour *)cobj->primdata)->wxMultColour::b;
@@ -212,7 +212,7 @@ static Scheme_Object *objscheme_wxMultColour_Setb(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMultColour_class, "set-b in mult-color%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-b in mult-color%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-b in mult-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-b in mult-color%"));
   ((wxMultColour *)cobj->primdata)->b = v;
@@ -401,7 +401,7 @@ static Scheme_Object *objscheme_wxAddColour_Getr(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxAddColour_class, "get-r in add-color%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-r in add-color%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-r in add-color%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxAddColour *)cobj->primdata)->wxAddColour::r;
@@ -419,7 +419,7 @@ static Scheme_Object *objscheme_wxAddColour_Setr(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxAddColour_class, "set-r in add-color%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-r in add-color%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-r in add-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], -1000, 1000, "set-r in add-color%"));
   ((wxAddColour *)cobj->primdata)->r = v;
@@ -434,7 +434,7 @@ static Scheme_Object *objscheme_wxAddColour_Getg(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxAddColour_class, "get-g in add-color%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-g in add-color%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-g in add-color%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxAddColour *)cobj->primdata)->wxAddColour::g;
@@ -452,7 +452,7 @@ static Scheme_Object *objscheme_wxAddColour_Setg(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxAddColour_class, "set-g in add-color%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-g in add-color%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-g in add-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], -1000, 1000, "set-g in add-color%"));
   ((wxAddColour *)cobj->primdata)->g = v;
@@ -467,7 +467,7 @@ static Scheme_Object *objscheme_wxAddColour_Getb(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxAddColour_class, "get-b in add-color%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-b in add-color%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-b in add-color%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxAddColour *)cobj->primdata)->wxAddColour::b;
@@ -485,7 +485,7 @@ static Scheme_Object *objscheme_wxAddColour_Setb(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxAddColour_class, "set-b in add-color%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-b in add-color%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-b in add-color%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], -1000, 1000, "set-b in add-color%"));
   ((wxAddColour *)cobj->primdata)->b = v;
@@ -1122,7 +1122,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(int n,  Scheme_Object *p
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta-foreground in style-delta% (color name case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta-foreground in style-delta% (color name case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-delta-foreground in style-delta% (color name case)"));
 
     
@@ -1140,7 +1140,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(int n,  Scheme_Object *p
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta-foreground in style-delta% (colour% case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta-foreground in style-delta% (colour% case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-delta-foreground in style-delta% (colour% case)", 0));
 
     
@@ -1171,7 +1171,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(int n,  Scheme_Object *p
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta-background in style-delta% (color name case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta-background in style-delta% (color name case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-delta-background in style-delta% (color name case)"));
 
     
@@ -1189,7 +1189,7 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(int n,  Scheme_Object *p
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta-background in style-delta% (colour% case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta-background in style-delta% (colour% case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+0], "set-delta-background in style-delta% (colour% case)", 0));
 
     
@@ -1248,7 +1248,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta in style-delta% (family case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (family case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeFam(p[POFFSET+0], "set-delta in style-delta% (family case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+1], "set-delta in style-delta% (family case)"));
 
@@ -1267,7 +1267,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta in style-delta% (style case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (style case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeStyle(p[POFFSET+0], "set-delta in style-delta% (style case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+1], "set-delta in style-delta% (style case)"));
 
@@ -1286,7 +1286,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta in style-delta% (weight case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (weight case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeWeight(p[POFFSET+0], "set-delta in style-delta% (weight case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+1], "set-delta in style-delta% (weight case)"));
 
@@ -1305,7 +1305,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta in style-delta% (underline case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (underline case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeUnderline(p[POFFSET+0], "set-delta in style-delta% (underline case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "set-delta in style-delta% (underline case)"));
 
@@ -1324,7 +1324,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeSize(p[POFFSET+0], "set-delta in style-delta% (size case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 0, 255, "set-delta in style-delta% (size case)"));
 
@@ -1343,7 +1343,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeAlign(p[POFFSET+0], "set-delta in style-delta% (size case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_align(p[POFFSET+1], "set-delta in style-delta% (size case)"));
 
@@ -1362,7 +1362,7 @@ static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+1))) 
-      WITH_VAR_STACK(scheme_wrong_count("set-delta in style-delta% (no change argument case)", POFFSET+POFFSET, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("set-delta in style-delta% (no change argument case)", POFFSET+POFFSET, POFFSET+1, n, p, 0));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(unbundle_symset_changeNoArg(p[POFFSET+0], "set-delta in style-delta% (no change argument case)"));
     } else
@@ -1385,7 +1385,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Getfamily(int n,  Scheme_Object *p[
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-family in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-family in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-family in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::family;
@@ -1403,7 +1403,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Setfamily(int n,  Scheme_Object *p[
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-family in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-family in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-family in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET], "set-family in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->family = v;
@@ -1418,7 +1418,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Getface(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-face in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-face in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-face in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::face;
@@ -1436,7 +1436,7 @@ static Scheme_Object *objscheme_wxStyleDelta_Setface(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-face in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-face in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-face in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET], "set-face in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->face = v;
@@ -1451,7 +1451,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetsizeMult(int n,  Scheme_Object *
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-size-mult in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-size-mult in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-size-mult in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::sizeMult;
@@ -1469,7 +1469,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetsizeMult(int n,  Scheme_Object *
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-size-mult in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-size-mult in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-size-mult in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-size-mult in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->sizeMult = v;
@@ -1484,7 +1484,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetsizeAdd(int n,  Scheme_Object *p
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-size-add in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-size-add in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-size-add in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::sizeAdd;
@@ -1502,7 +1502,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetsizeAdd(int n,  Scheme_Object *p
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-size-add in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-size-add in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-size-add in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET], 0, 255, "set-size-add in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->sizeAdd = v;
@@ -1517,7 +1517,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetweightOn(int n,  Scheme_Object *
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-weight-on in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-weight-on in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-weight-on in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::weightOn;
@@ -1535,7 +1535,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetweightOn(int n,  Scheme_Object *
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-weight-on in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-weight-on in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-weight-on in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET], "set-weight-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->weightOn = v;
@@ -1550,7 +1550,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetweightOff(int n,  Scheme_Object 
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-weight-off in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-weight-off in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-weight-off in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::weightOff;
@@ -1568,7 +1568,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetweightOff(int n,  Scheme_Object 
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-weight-off in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-weight-off in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-weight-off in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET], "set-weight-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->weightOff = v;
@@ -1583,7 +1583,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetstyleOn(int n,  Scheme_Object *p
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-style-on in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-style-on in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-style-on in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::styleOn;
@@ -1601,7 +1601,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetstyleOn(int n,  Scheme_Object *p
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-style-on in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-style-on in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-style-on in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET], "set-style-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->styleOn = v;
@@ -1616,7 +1616,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetstyleOff(int n,  Scheme_Object *
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-style-off in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-style-off in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-style-off in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::styleOff;
@@ -1634,7 +1634,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetstyleOff(int n,  Scheme_Object *
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-style-off in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-style-off in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-style-off in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET], "set-style-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->styleOff = v;
@@ -1649,7 +1649,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetunderlinedOn(int n,  Scheme_Obje
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-underlined-on in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-underlined-on in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-underlined-on in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::underlinedOn;
@@ -1667,7 +1667,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetunderlinedOn(int n,  Scheme_Obje
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-underlined-on in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-underlined-on in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-underlined-on in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-underlined-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->underlinedOn = v;
@@ -1682,7 +1682,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetunderlinedOff(int n,  Scheme_Obj
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-underlined-off in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-underlined-off in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-underlined-off in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::underlinedOff;
@@ -1700,7 +1700,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetunderlinedOff(int n,  Scheme_Obj
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-underlined-off in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-underlined-off in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-underlined-off in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-underlined-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->underlinedOff = v;
@@ -1715,7 +1715,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GettransparentTextBackingOn(int n, 
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-transparent-text-backing-on in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-transparent-text-backing-on in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-transparent-text-backing-on in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::transparentTextBackingOn;
@@ -1733,7 +1733,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SettransparentTextBackingOn(int n, 
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-transparent-text-backing-on in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-transparent-text-backing-on in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-transparent-text-backing-on in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-transparent-text-backing-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->transparentTextBackingOn = v;
@@ -1748,7 +1748,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GettransparentTextBackingOff(int n,
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-transparent-text-backing-off in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-transparent-text-backing-off in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-transparent-text-backing-off in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::transparentTextBackingOff;
@@ -1766,7 +1766,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SettransparentTextBackingOff(int n,
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-transparent-text-backing-off in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-transparent-text-backing-off in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-transparent-text-backing-off in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET], "set-transparent-text-backing-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->transparentTextBackingOff = v;
@@ -1781,7 +1781,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetforegroundMult(int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-foreground-mult in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-foreground-mult in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-foreground-mult in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::foregroundMult;
@@ -1798,7 +1798,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetbackgroundMult(int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-background-mult in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-background-mult in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-background-mult in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::backgroundMult;
@@ -1815,7 +1815,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetforegroundAdd(int n,  Scheme_Obj
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-foreground-add in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-foreground-add in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-foreground-add in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::foregroundAdd;
@@ -1832,7 +1832,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetbackgroundAdd(int n,  Scheme_Obj
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-background-add in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-background-add in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-background-add in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::backgroundAdd;
@@ -1849,7 +1849,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetalignmentOn(int n,  Scheme_Objec
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-alignment-on in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-alignment-on in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-alignment-on in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::alignmentOn;
@@ -1867,7 +1867,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOn(int n,  Scheme_Objec
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-alignment-on in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-alignment-on in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-alignment-on in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(unbundle_symset_align(p[POFFSET], "set-alignment-on in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->alignmentOn = v;
@@ -1882,7 +1882,7 @@ static Scheme_Object *objscheme_wxStyleDelta_GetalignmentOff(int n,  Scheme_Obje
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxStyleDelta_class, "get-alignment-off in style-delta%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-alignment-off in style-delta%", POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count_m("get-alignment-off in style-delta%", POFFSET, POFFSET, n, p, 1));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxStyleDelta *)cobj->primdata)->wxStyleDelta::alignmentOff;
@@ -1900,7 +1900,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(int n,  Scheme_Obje
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxStyleDelta_class, "set-alignment-off in style-delta%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-alignment-off in style-delta%", POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count_m("set-alignment-off in style-delta%", POFFSET+1, POFFSET+1, n, p, 1));
 
   v = WITH_VAR_STACK(unbundle_symset_align(p[POFFSET], "set-alignment-off in style-delta%"));
   ((wxStyleDelta *)cobj->primdata)->alignmentOff = v;
@@ -1924,7 +1924,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeAlign(p[POFFSET+0], "initialization in style-delta% (size case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_align(p[POFFSET+1], "initialization in style-delta% (size case)"));
 
@@ -1946,7 +1946,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (size case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeSize(p[POFFSET+0], "initialization in style-delta% (size case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 0, 255, "initialization in style-delta% (size case)"));
 
@@ -1968,7 +1968,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in style-delta% (underline case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (underline case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeUnderline(p[POFFSET+0], "initialization in style-delta% (underline case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "initialization in style-delta% (underline case)"));
 
@@ -1990,7 +1990,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in style-delta% (weight case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (weight case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeWeight(p[POFFSET+0], "initialization in style-delta% (weight case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_weight(p[POFFSET+1], "initialization in style-delta% (weight case)"));
 
@@ -2012,7 +2012,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in style-delta% (style case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (style case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeStyle(p[POFFSET+0], "initialization in style-delta% (style case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_style(p[POFFSET+1], "initialization in style-delta% (style case)"));
 
@@ -2034,7 +2034,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in style-delta% (family case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (family case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(unbundle_symset_changeFam(p[POFFSET+0], "initialization in style-delta% (family case)"));
     x1 = WITH_VAR_STACK(unbundle_symset_family(p[POFFSET+1], "initialization in style-delta% (family case)"));
 
@@ -2056,7 +2056,7 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[]
 
     
     if ((n > (POFFSET+1))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in style-delta% (no change argument case)", POFFSET+POFFSET, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-delta% (no change argument case)", POFFSET+POFFSET, POFFSET+1, n, p, 0));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(unbundle_symset_changeNoArg(p[POFFSET+0], "initialization in style-delta% (no change argument case)"));
     } else
@@ -3175,7 +3175,7 @@ static Scheme_Object *os_wxStyleList_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in style-list%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in style-list%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxStyleList CONSTRUCTOR_ARGS(()));

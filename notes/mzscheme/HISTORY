@@ -2,6 +2,21 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.20:
+
+ * Added `letrec-syntaxes+values', and changed the expansion of
+   internal defines to use the new form so that a sequence of internal
+   `define' and `define-syntax' defininitions create a single,
+   mutually recursive scope (as in Chez).
+
+ * Changed the `datum->syntax-object' interface for position lists.
+
+ * Fixed `write' on symbols with uppercase characters to quote the
+   characters.
+
+ * Fixed reader error messages to use `error-print-source-location'
+   and GNU-style source locations.
+
 Version 199.19:
 
  * Removed `make-hash-table-weak', and changed `make-hash-table' to

@@ -621,7 +621,7 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in gauge%", POFFSET+3, POFFSET+9, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in gauge%", POFFSET+3, POFFSET+9, n, p, 0));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in gauge%", 0));
   x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "initialization in gauge%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "initialization in gauge%"));

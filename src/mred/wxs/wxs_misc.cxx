@@ -214,7 +214,7 @@ static Scheme_Object *os_wxTimer_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in timer%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in timer%", POFFSET+0, POFFSET+0, n, p, 0));
 
   WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("timer%","initialization")));
   realobj = WITH_VAR_STACK(new os_wxTimer CONSTRUCTOR_ARGS(()));
@@ -858,7 +858,7 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(int n,  Scheme_Object
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in clipboard-client%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in clipboard-client%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxClipboardClient CONSTRUCTOR_ARGS(()));
@@ -1653,7 +1653,7 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(int n,  Scheme_Object 
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in ps-setup%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in ps-setup%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxPrintSetupData CONSTRUCTOR_ARGS(()));

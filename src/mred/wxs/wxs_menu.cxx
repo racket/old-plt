@@ -381,7 +381,7 @@ static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+3)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("append in menu% (submenu case)", POFFSET+3, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("append in menu% (submenu case)", POFFSET+3, POFFSET+4, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "append in menu% (submenu case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "append in menu% (submenu case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[POFFSET+2], "append in menu% (submenu case)", 0));
@@ -408,7 +408,7 @@ static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("append in menu% (string item case)", POFFSET+2, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("append in menu% (string item case)", POFFSET+2, POFFSET+4, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "append in menu% (string item case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "append in menu% (string item case)"));
     if (n > (POFFSET+2)) {
@@ -446,7 +446,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(int n,  Scheme_Object *p[])
 
   int cb_pos = 0;
   if ((n > (POFFSET+2))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu%", POFFSET+POFFSET, POFFSET+2, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in menu%", POFFSET+POFFSET, POFFSET+2, n, p, 0));
   if (n > (POFFSET+0)) {
     x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "initialization in menu%"));
   } else
@@ -756,7 +756,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in menu-bar%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS(()));
@@ -971,7 +971,7 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-item%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in menu-item%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxsMenuItem CONSTRUCTOR_ARGS(()));

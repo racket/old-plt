@@ -570,7 +570,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(int n,  Scheme_Object *p[])
 
   int cb_pos = 0;
   if ((n < (POFFSET+7)) || (n > (POFFSET+11))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in slider%", POFFSET+7, POFFSET+11, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in slider%", POFFSET+7, POFFSET+11, n, p, 0));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in slider%", 0));
   x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "initialization in slider%"));

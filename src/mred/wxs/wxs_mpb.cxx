@@ -3862,7 +3862,7 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("add-selected in pasteboard% (snip% case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("add-selected in pasteboard% (snip% case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "add-selected in pasteboard% (snip% case)", 0));
 
     
@@ -3881,7 +3881,7 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+4)) 
-      WITH_VAR_STACK(scheme_wrong_count("add-selected in pasteboard% (rectangle case)", POFFSET+4, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("add-selected in pasteboard% (rectangle case)", POFFSET+4, POFFSET+4, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "add-selected in pasteboard% (rectangle case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "add-selected in pasteboard% (rectangle case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "add-selected in pasteboard% (rectangle case)"));
@@ -3937,7 +3937,7 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("change-style in pasteboard% (style-delta% and snip% case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("change-style in pasteboard% (style-delta% and snip% case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyleDelta(p[POFFSET+0], "change-style in pasteboard% (style-delta% and snip% case)", 1));
     x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "change-style in pasteboard% (style-delta% and snip% case)", 1));
 
@@ -3955,7 +3955,7 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(int n,  Scheme_Object *p[]
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("change-style in pasteboard% (style-delta% without position or snip% case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("change-style in pasteboard% (style-delta% without position or snip% case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyleDelta(p[POFFSET+0], "change-style in pasteboard% (style-delta% without position or snip% case)", 1));
 
     
@@ -3974,7 +3974,7 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(int n,  Scheme_Object *p[]
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
-      WITH_VAR_STACK(scheme_wrong_count("change-style in pasteboard% (style% case)", POFFSET+1, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("change-style in pasteboard% (style% case)", POFFSET+1, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyle(p[POFFSET+0], "change-style in pasteboard% (style% case)", 1));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "change-style in pasteboard% (style% case)", 1));
@@ -4130,7 +4130,7 @@ static Scheme_Object *os_wxMediaPasteboardMove(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+3)) 
-      WITH_VAR_STACK(scheme_wrong_count("move in pasteboard% (snip% case)", POFFSET+3, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("move in pasteboard% (snip% case)", POFFSET+3, POFFSET+3, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "move in pasteboard% (snip% case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "move in pasteboard% (snip% case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "move in pasteboard% (snip% case)"));
@@ -4149,7 +4149,7 @@ static Scheme_Object *os_wxMediaPasteboardMove(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("move in pasteboard% (without snip% case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("move in pasteboard% (without snip% case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "move in pasteboard% (without snip% case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "move in pasteboard% (without snip% case)"));
 
@@ -4296,7 +4296,7 @@ static Scheme_Object *os_wxMediaPasteboardDelete(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("delete in pasteboard% (snip% case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("delete in pasteboard% (snip% case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "delete in pasteboard% (snip% case)", 0));
 
     
@@ -4311,7 +4311,7 @@ static Scheme_Object *os_wxMediaPasteboardDelete(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+0)) 
-      WITH_VAR_STACK(scheme_wrong_count("delete in pasteboard% (no argument case)", POFFSET+0, POFFSET+0, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("delete in pasteboard% (no argument case)", POFFSET+0, POFFSET+0, n, p, 0));
 
     
     WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->Delete());
@@ -4341,7 +4341,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+3)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in pasteboard% (snip% with location case)", POFFSET+3, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("insert in pasteboard% (snip% with location case)", POFFSET+3, POFFSET+3, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "insert in pasteboard% (snip% with location case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "insert in pasteboard% (snip% with location case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "insert in pasteboard% (snip% with location case)"));
@@ -4364,7 +4364,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+4)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in pasteboard% (snip% with before-snip% and location case)", POFFSET+4, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("insert in pasteboard% (snip% with before-snip% and location case)", POFFSET+4, POFFSET+4, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "insert in pasteboard% (snip% with before-snip% and location case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "insert in pasteboard% (snip% with before-snip% and location case)", 1));
     x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "insert in pasteboard% (snip% with before-snip% and location case)"));
@@ -4386,7 +4386,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in pasteboard% (snip% with before-snip% case)", POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("insert in pasteboard% (snip% with before-snip% case)", POFFSET+2, POFFSET+2, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "insert in pasteboard% (snip% with before-snip% case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "insert in pasteboard% (snip% with before-snip% case)", 1));
 
@@ -4404,7 +4404,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in pasteboard% (snip% without position case)", POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count_m("insert in pasteboard% (snip% without position case)", POFFSET+1, POFFSET+1, n, p, 0));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "insert in pasteboard% (snip% without position case)", 0));
 
     
@@ -5793,7 +5793,7 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(int n,  Scheme_Object
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in pasteboard%", POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in pasteboard%", POFFSET+0, POFFSET+0, n, p, 0));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaPasteboard CONSTRUCTOR_ARGS(()));

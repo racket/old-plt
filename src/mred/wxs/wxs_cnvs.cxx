@@ -1169,7 +1169,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in canvas%", POFFSET+1, POFFSET+7, n, p));
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in canvas%", POFFSET+1, POFFSET+7, n, p, 0));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in canvas%", 0));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in canvas%"));

@@ -29,19 +29,5 @@
            (lambda (view)
              (let ((value (send view accessor)) ...)
                body))))]))
-  
-  
-  ; this is used for the 'plot and 'plot3d functions
-  ; maybe should be replaced by instantiate
-  (define-syntax lookup-lambda
-    (syntax-rules ()
-      [(_ ((var default) ...) body)
-       (lookup-lambda unused unused2 ((var default) ...) body)]
-      [(_ args items ((var default) ...) body)
-       (lambda [args . items]
-         (let ((var (cond [(assq 'var args) => cadr]
-                          [else default]))
-               ...)
-           body))]))
-  
-  (provide lookup-lambda r-lambda ))
+    
+  (provide r-lambda ))

@@ -11,10 +11,7 @@
       (send* 2dplotview 
         (set-line-color color) (set-line-width width)
         (plot-line (map (lambda (x) (vector x (func x))) 
-                        (x-values 
-                         samples 
-                         (send 2dplotview get-x-min)
-                         (send 2dplotview get-x-max)))))))
+                        (x-values samples x-min x-max))))))
   
     ; error-bars : (listof (vector x y err)) [symbol] -> (2dplotview -> nothing)
   (define error-bars

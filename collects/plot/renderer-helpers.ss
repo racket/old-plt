@@ -28,15 +28,12 @@
   (define (x-values samples x-min x-max)
     (let ((ss (sample-size samples x-min x-max)))
       (build-list samples (lambda (x) (+ x-min (* x ss))))))
-
-  
-
   
   ; normalze-vector : posn number number -> posn
   (define (normalize-vector vec x-sample-size y-sample-size)
     (let* ((size (vector-magnitude vec)))
       (vector (* (/ (vector-x vec) size) x-sample-size 9/10)
-                 (* (/ (vector-y vec) size) y-sample-size 9/10))))
+              (* (/ (vector-y vec) size) y-sample-size 9/10))))
       
   ; normalize-vector : listof-posn number number -> listolf-posn
   (define (normalize-vectors deltas x-sample-size y-sample-size)
@@ -51,7 +48,7 @@
   (define (xy-list samples x-min x-max y-min y-max)
     (let* ((x-vals (x-values samples x-min x-max))
            (y-vals (x-values samples y-min y-max)))      
-      (foldr append '() (map (lambda (x) (make-column x y-vals)) x-vals))))
+      (apply append (map (lambda (x) (make-column x y-vals)) x-vals))))
   
   ; zgrid : (number number -> number) listof-number listof-number -> listof-listof number
   (define (zgrid func x-vals y-vals samples)

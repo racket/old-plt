@@ -273,24 +273,6 @@ typedef struct
   ; colormap 0 and 1 stuff
   ; plcol0, plcol1
 
-  ; do something
-  (define (do-something)
-    (pl-set-device "jpeg")
-    (pl-set-output-file "test3.jpeg")
-    (pl-set-colormap0-index 0 255 255 255) ; white
-    (pl-init-plot)
-    (pl-set-colormap0-index 0 0 0 0) ; black
-    (pl-select-colormap0-index 0) ; black
-    
-    (pl-set-plot-environment -5 5 -5 5 1 1)
-    (pl-set-labels "x" "y" "a plot")          
-    (pl-plot-segment 0 0 1 1)
-    (pl-plot-line 5 '(1 2 2.5 (/ 1 4) 3 4) '(1 2 3 4 5))
-    (pl-select-colormap0-index 10)
-    (pl-plot-segment 1 1 2 2)
-    (pl-set-line-width 10)
-    (pl-plot-segment 3 3 4 4)
-    (pl-finish-plot))
   
   (provide
    (all-defined))

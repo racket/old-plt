@@ -112,8 +112,8 @@
 
 @ "get-top-line-base" : float GetTopLineBase(); : : : : XrZERO
 
-@MACRO setStringLen[i.s] = x<i> = SCHEME_STRTAG_VAL(p[<s>]);
-@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[<i>]));
+@MACRO setStringLen[i.s] = x<i> = SCHEME_STRTAG_VAL(p[POFFSET+<s>]);
+@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[POFFSET+<s>]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+<i>]));
 
 @ "insert" : void Insert(-long,string,nnlong,nnls[same]=-1,bool=TRUE);  : : /setStringLen[0.0] <> string and position
 @ "insert" : void Insert(-long,string);  : : /setStringLen[0.0] <> string without position
@@ -241,11 +241,11 @@
 static void WordbreakCallbackToScheme(wxMediaEdit *,long*,long*,int,Scheme_Object *);
 
 @MACRO ubCallback = (wxWordbreakFunc)WordbreakCallbackToScheme
-@MACRO ubData = p[0]
+@MACRO ubData = p[POFFSET]
 @MACRO spCallback = (wxMediaEdit-object (box num) (box num) num -> void)
 
 @MACRO ubCallback2 = (wxClickbackFunc)ClickbackToScheme
-@MACRO ubData2 = p[2]
+@MACRO ubData2 = p[POFFSET+2]
 @MACRO cCallback2 = SCHEME_PROCP({x})
 @MACRO spCallback2 = (wxMediaEdit-object num num -> void)
 

@@ -21,7 +21,7 @@
 @MACRO cAnything = 1
 
 extern Bool wxsCheckIsPopupMenu(void *m);
-@MACRO CHECKMENU[n.p] = if (!wxsCheckIsPopupMenu(p[<p>])) scheme_wrong_type(<n>, "popup-menu% object", <p>, n, p);
+@MACRO CHECKMENU[n.p] = if (!wxsCheckIsPopupMenu(p[POFFSET+<p>])) scheme_wrong_type(<n>, "popup-menu% object", <p>+POFFSET, n, p);
 
 @BEGINSYMBOLS style > > PRED BUNDLE
 @SYM "no-hscroll" : wxMCANVAS_NO_H_SCROLL
@@ -64,7 +64,7 @@ typedef void *(*CAPOFunc)(void*);
 
 @MACRO CastToSO = (Scheme_Object*){x}
 @MACRO ubTestFunc = DoCAPOCallback
-@MACRO ubData = p[0]
+@MACRO ubData = p[POFFSET]
 @MACRO spAnything = _
 @MACRO spCAPOProc = (-> _)
 
@@ -179,7 +179,7 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 @MACRO ubData = NULL
 
-@MACRO ubSetData[n.m] = kctsr(cb) = p[<n>]; x<m> = (void *)cb;
+@MACRO ubSetData[n.m] = kctsr(cb) = p[POFFSET+<n>]; x<m> = (void *)cb;
 
 @CREATOR ();
 

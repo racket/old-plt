@@ -47,7 +47,7 @@
 # define COLORMAP_CREATE 1
 #endif
 
-@MACRO CHECKMUT[TYPE.what.who] = if (!((<TYPE> *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", <who>, <what>, <what>));
+@MACRO CHECKMUT[TYPE.what.who] = if (!((<TYPE> *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsMutable()) WITH_VAR_STACK(scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", <who>, <what>, <what>));
 
 @CLASSBASE wxFont "font":"object"
 
@@ -200,8 +200,8 @@
 @SYM "butt" : wxCAP_BUTT
 @ENDSYMBOLS
 
-@MACRO CHECKBW[p.who] = if (x<p> && (x<p>->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "bitmap is not monochrome: ", p[<p>]));
-@MACRO CHECKEIGHT[p.who] = if (x<p> && ((x<p>->GetWidth() != 8) || (x<p>->GetHeight() != 8))) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "bitmap is not 8x8: ", p[<p>]));
+@MACRO CHECKBW[p.who] = if (x<p> && (x<p>->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "bitmap is not monochrome: ", p[POFFSET+<p>]));
+@MACRO CHECKEIGHT[p.who] = if (x<p> && ((x<p>->GetWidth() != 8) || (x<p>->GetHeight() != 8))) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "bitmap is not 8x8: ", p[POFFSET+<p>]));
 
 @CLASSBASE wxPen "pen" : "object"
 
@@ -299,7 +299,7 @@ static void *RgnBoundingBox(wxRegion *r)
 
 @INCLUDE wxs_drws.xci
 
-@MACRO CheckRgn[p.who] = if (x<p>->GetDC() != ((wxRegion *)((Scheme_Class_Object *)obj)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>",<who>), "provided region's dc does not match this region's dc: ", p[<p>]);
+@MACRO CheckRgn[p.who] = if (x<p>->GetDC() != ((wxRegion *)((Scheme_Class_Object *)THEOBJ)->primdata)->GetDC()) scheme_arg_mismatch(METHODNAME("region<%>",<who>), "provided region's dc does not match this region's dc: ", p[POFFSET+<p>]);
 
 @CLASSBASE wxRegion "region" : "object"
 

@@ -190,12 +190,12 @@ os_wxBitmap::~os_wxBitmap()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmapSaveFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxBitmap_class, "save-file in bitmap%", n, p);
   pathname x0 INIT_NULLED_OUT;
   int x1;
 
@@ -205,23 +205,23 @@ static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Obj
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[0], "save-file in bitmap%"));
-  x1 = WITH_VAR_STACK(unbundle_symset_saveBitmapType(p[1], "save-file in bitmap%"));
+  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "save-file in bitmap%"));
+  x1 = WITH_VAR_STACK(unbundle_symset_saveBitmapType(p[POFFSET+1], "save-file in bitmap%"));
 
   
-  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->SaveFile(x0, x1));
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->SaveFile(x0, x1));
 
   if (1) WITH_VAR_STACK(scheme_process_block(0.0));
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmapLoadFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxBitmap_class, "load-file in bitmap%", n, p);
   pathname x0 INIT_NULLED_OUT;
   int x1;
 
@@ -231,26 +231,26 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[0], "load-file in bitmap%"));
-  if (n > 1) {
-    x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[1], "load-file in bitmap%"));
+  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "load-file in bitmap%"));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "load-file in bitmap%"));
   } else
     x1 = 0;
 
   
-  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1));
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->LoadFile(x0, x1));
 
   if (r) WITH_VAR_STACK(scheme_process_block(0.0));
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxBitmapIsColor(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmapIsColor(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxBitmap_class, "is-color? in bitmap%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -259,19 +259,19 @@ static Scheme_Object *os_wxBitmapIsColor(Scheme_Object *obj, int n,  Scheme_Obje
   
 
   
-  r = WITH_VAR_STACK(IsColor(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)));
+  r = WITH_VAR_STACK(IsColor(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxBitmapOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmapOk(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxBitmap_class, "ok? in bitmap%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -280,19 +280,19 @@ static Scheme_Object *os_wxBitmapOk(Scheme_Object *obj, int n,  Scheme_Object *p
   
 
   
-  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->Ok());
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->Ok());
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxBitmapGetWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmapGetWidth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxBitmap_class, "get-width in bitmap%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -301,19 +301,19 @@ static Scheme_Object *os_wxBitmapGetWidth(Scheme_Object *obj, int n,  Scheme_Obj
   
 
   
-  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->GetWidth());
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->GetWidth());
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxBitmapGetHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmapGetHeight(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxBitmap_class, "get-height in bitmap%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -322,19 +322,19 @@ static Scheme_Object *os_wxBitmapGetHeight(Scheme_Object *obj, int n,  Scheme_Ob
   
 
   
-  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->GetHeight());
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->GetHeight());
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxBitmapGetDepth(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmapGetDepth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxBitmap_class, "get-depth in bitmap%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -343,21 +343,21 @@ static Scheme_Object *os_wxBitmapGetDepth(Scheme_Object *obj, int n,  Scheme_Obj
   
 
   
-  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->GetDepth());
+  r = WITH_VAR_STACK(((wxBitmap *)((Scheme_Class_Object *)p[0])->primdata)->GetDepth());
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxBitmap_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
   PRE_VAR_STACK_PUSH(0, obj);
   PRE_VAR_STACK_PUSH(1, p);
   os_wxBitmap *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+0], NULL))) {
     int x0;
     int x1;
     Bool x2;
@@ -368,12 +368,12 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     VAR_STACK_PUSH(2, realobj);
 
     
-    if ((n < 2) ||(n > 3)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (width/height case)", 2, 3, n, p));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[0], 1, 10000, "initialization in bitmap% (width/height case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (width/height case)"));
-    if (n > 2) {
-      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[2], "initialization in bitmap% (width/height case)"));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
+      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (width/height case)", POFFSET+2, POFFSET+3, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+0], 1, 10000, "initialization in bitmap% (width/height case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (width/height case)"));
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in bitmap% (width/height case)"));
     } else
       x2 = 0;
 
@@ -382,11 +382,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
 #endif
-    realobj->__gc_external = (void *)obj;
-    objscheme_note_creation(obj);
+    realobj->__gc_external = (void *)p[0];
     
     
-  } else if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
+  } else if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[POFFSET+1], NULL))) {
     string x0 INIT_NULLED_OUT;
     int x1;
     int x2;
@@ -398,19 +397,18 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     VAR_STACK_PUSH(3, x0);
 
     
-    if (n != 3) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (datastring case)", 3, 3, n, p));
-    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "initialization in bitmap% (datastring case)"));
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 1, 10000, "initialization in bitmap% (datastring case)"));
-    x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 1, 10000, "initialization in bitmap% (datastring case)"));
+    if (n != (POFFSET+3)) 
+      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (datastring case)", POFFSET+3, POFFSET+3, n, p));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "initialization in bitmap% (datastring case)"));
+    x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 1, 10000, "initialization in bitmap% (datastring case)"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 1, 10000, "initialization in bitmap% (datastring case)"));
 
-    if (SCHEME_STRTAG_VAL(p[0]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[0]));
+    if (SCHEME_STRTAG_VAL(p[POFFSET]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[POFFSET]));
     realobj = WITH_VAR_STACK(new os_wxBitmap CONSTRUCTOR_ARGS((x0, x1, x2)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1, x2));
 #endif
-    realobj->__gc_external = (void *)obj;
-    objscheme_note_creation(obj);
+    realobj->__gc_external = (void *)p[0];
     
     
   } else  {
@@ -424,11 +422,11 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     VAR_STACK_PUSH(3, x0);
 
     
-    if ((n < 1) ||(n > 2)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (pathname case)", 1, 2, n, p));
-    x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[0], "initialization in bitmap% (pathname case)"));
-    if (n > 1) {
-      x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[1], "initialization in bitmap% (pathname case)"));
+    if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
+      WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap% (pathname case)", POFFSET+1, POFFSET+2, n, p));
+    x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "initialization in bitmap% (pathname case)"));
+    if (n > (POFFSET+1)) {
+      x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "initialization in bitmap% (pathname case)"));
     } else
       x1 = 0;
 
@@ -437,16 +435,15 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxBitmap(x0, x1));
 #endif
-    realobj->__gc_external = (void *)obj;
-    objscheme_note_creation(obj);
+    realobj->__gc_external = (void *)p[0];
     if (realobj->Ok()) WITH_VAR_STACK(scheme_process_block(0.0));
     
   }
 
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(obj, &((Scheme_Class_Object *)obj)->primdata));
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  return scheme_void;
 }
 
 void objscheme_setup_wxBitmap(void *env)
@@ -476,8 +473,8 @@ int objscheme_istype_wxBitmap(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxBitmap_class))
+  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
+      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxBitmap_class))
     return 1;
   else {
     if (!stop)
@@ -521,7 +518,7 @@ class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *obj, const char *wher
 
   (void)objscheme_istype_wxBitmap(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
   if (o->primflag)
     return (os_wxBitmap *)o->primdata;
   else

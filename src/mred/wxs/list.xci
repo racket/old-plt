@@ -36,9 +36,9 @@
 @MACRO ubList = NULL
 @MACRO cList = SCHEME_LISTP({x})
 
-@MACRO glueListSet[type.list.array.cnt.who] = x<array> = WITH_VAR_STACK(__Make<type>Array((<list> < n) ? p[<list>] : scheme_null, &x<cnt>, <who>));
-@MACRO glueUncountedListSet[type.list.array.who] = x<array> = WITH_VAR_STACK(__Make<type>Array((<array> < n) ? p[<list>] : scheme_null, NULL, <who>));
-@MACRO methListSet[type.list.array.cnt] = p[<list>] = WITH_VAR_STACK(__Make<type>List(x<array>, x<cnt>));
+@MACRO glueListSet[type.list.array.cnt.who] = x<array> = WITH_VAR_STACK(__Make<type>Array((<list> < n) ? p[POFFSET+<list>] : scheme_null, &x<cnt>, <who>));
+@MACRO glueUncountedListSet[type.list.array.who] = x<array> = WITH_VAR_STACK(__Make<type>Array((<array> < n) ? p[POFFSET+<list>] : scheme_null, NULL, <who>));
+@MACRO methListSet[type.list.array.cnt] = p[POFFSET+<list>] = WITH_VAR_STACK(__Make<type>List(x<array>, x<cnt>));
 
 @MACRO glueCleanup[array] = delete[] x<array>;
 

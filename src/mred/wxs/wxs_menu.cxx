@@ -120,11 +120,11 @@ os_wxMenu::~os_wxMenu()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-static Scheme_Object *os_wxMenumenuSelect(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenumenuSelect(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "select in menu%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -133,18 +133,18 @@ static Scheme_Object *os_wxMenumenuSelect(Scheme_Object *obj, int n,  Scheme_Obj
   
 
   
-  WITH_VAR_STACK(menuSelect(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)));
+  WITH_VAR_STACK(menuSelect(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuSetTitle(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuSetTitle(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "set-title in menu%", n, p);
   string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -153,21 +153,21 @@ static Scheme_Object *os_wxMenuSetTitle(Scheme_Object *obj, int n,  Scheme_Objec
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "set-title in menu%"));
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-title in menu%"));
 
   
-  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->SetTitle(x0));
+  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->SetTitle(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuSetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuSetLabel(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "set-label in menu%", n, p);
   ExactLong x0;
   string x1 INIT_NULLED_OUT;
 
@@ -177,22 +177,22 @@ static Scheme_Object *os_wxMenuSetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   VAR_STACK_PUSH(2, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "set-label in menu%"));
-  x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "set-label in menu%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "set-label in menu%"));
+  x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "set-label in menu%"));
 
   
-  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0, x1));
+  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->SetLabel(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuSetHelpString(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuSetHelpString(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "set-help-string in menu%", n, p);
   ExactLong x0;
   nstring x1 INIT_NULLED_OUT;
 
@@ -202,23 +202,23 @@ static Scheme_Object *os_wxMenuSetHelpString(Scheme_Object *obj, int n,  Scheme_
   VAR_STACK_PUSH(2, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "set-help-string in menu%"));
-  x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[1], "set-help-string in menu%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "set-help-string in menu%"));
+  x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "set-help-string in menu%"));
 
   
-  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->SetHelpString(x0, x1));
+  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->SetHelpString(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuNumber(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "number in menu%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -227,18 +227,18 @@ static Scheme_Object *os_wxMenuNumber(Scheme_Object *obj, int n,  Scheme_Object 
   
 
   
-  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Number());
+  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->Number());
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxMenuEnable(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuEnable(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "enable in menu%", n, p);
   ExactLong x0;
   Bool x1;
 
@@ -247,22 +247,22 @@ static Scheme_Object *os_wxMenuEnable(Scheme_Object *obj, int n,  Scheme_Object 
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "enable in menu%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "enable in menu%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "enable in menu%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "enable in menu%"));
 
   
-  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Enable(x0, x1));
+  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->Enable(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuCheck(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuCheck(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "check in menu%", n, p);
   ExactLong x0;
   Bool x1;
 
@@ -271,23 +271,23 @@ static Scheme_Object *os_wxMenuCheck(Scheme_Object *obj, int n,  Scheme_Object *
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "check in menu%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "check in menu%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "check in menu%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "check in menu%"));
 
   
-  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Check(x0, x1));
+  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->Check(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuChecked(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuChecked(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "checked? in menu%", n, p);
   ExactLong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -295,21 +295,21 @@ static Scheme_Object *os_wxMenuChecked(Scheme_Object *obj, int n,  Scheme_Object
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "checked? in menu%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "checked? in menu%"));
 
   
-  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Checked(x0));
+  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->Checked(x0));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxMenuAppendSeparator(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuAppendSeparator(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "append-separator in menu%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -318,19 +318,19 @@ static Scheme_Object *os_wxMenuAppendSeparator(Scheme_Object *obj, int n,  Schem
   
 
   
-  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->AppendSeparator());
+  WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->AppendSeparator());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuDeleteByPosition(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuDeleteByPosition(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "delete-by-position in menu%", n, p);
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -338,22 +338,22 @@ static Scheme_Object *os_wxMenuDeleteByPosition(Scheme_Object *obj, int n,  Sche
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "delete-by-position in menu%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "delete-by-position in menu%"));
 
   
-  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->DeleteByPosition(x0));
+  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->DeleteByPosition(x0));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxMenuDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuDelete(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenu_class, "delete in menu%", n, p);
   ExactLong x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -361,25 +361,25 @@ static Scheme_Object *os_wxMenuDelete(Scheme_Object *obj, int n,  Scheme_Object 
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "delete in menu%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "delete in menu%"));
 
   
-  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Delete(x0));
+  r = WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->Delete(x0));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   SETUP_PRE_VAR_STACK(2);
   PRE_VAR_STACK_PUSH(0, p);
   PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
-  if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_wxMenu(p[2], NULL, 0))) {
+  objscheme_check_valid(os_wxMenu_class, "append in menu%", n, p);
+  if ((n >= (POFFSET+3)) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[POFFSET+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_wxMenu(p[POFFSET+2], NULL, 0))) {
     ExactLong x0;
     string x1 INIT_NULLED_OUT;
     class wxMenu* x2 INIT_NULLED_OUT;
@@ -393,18 +393,18 @@ static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object 
     VAR_STACK_PUSH(4, x3);
 
     
-    if ((n < 3) ||(n > 4)) 
-      WITH_VAR_STACK(scheme_wrong_count("append in menu% (submenu case)", 3, 4, n, p));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "append in menu% (submenu case)"));
-    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "append in menu% (submenu case)"));
-    x2 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[2], "append in menu% (submenu case)", 0));
-    if (n > 3) {
-      x3 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[3], "append in menu% (submenu case)"));
+    if ((n < (POFFSET+3)) || (n > (POFFSET+4))) 
+      WITH_VAR_STACK(scheme_wrong_count("append in menu% (submenu case)", POFFSET+3, POFFSET+4, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "append in menu% (submenu case)"));
+    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "append in menu% (submenu case)"));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[POFFSET+2], "append in menu% (submenu case)", 0));
+    if (n > (POFFSET+3)) {
+      x3 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+3], "append in menu% (submenu case)"));
     } else
       x3 = NULL;
 
     
-    WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Append(x0, x1, x2, x3));
+    WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->Append(x0, x1, x2, x3));
 
     
     
@@ -421,21 +421,21 @@ static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object 
     VAR_STACK_PUSH(3, x2);
 
     
-    if ((n < 2) ||(n > 4)) 
-      WITH_VAR_STACK(scheme_wrong_count("append in menu% (string item case)", 2, 4, n, p));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "append in menu% (string item case)"));
-    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "append in menu% (string item case)"));
-    if (n > 2) {
-      x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[2], "append in menu% (string item case)"));
+    if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
+      WITH_VAR_STACK(scheme_wrong_count("append in menu% (string item case)", POFFSET+2, POFFSET+4, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "append in menu% (string item case)"));
+    x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "append in menu% (string item case)"));
+    if (n > (POFFSET+2)) {
+      x2 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+2], "append in menu% (string item case)"));
     } else
       x2 = NULL;
-    if (n > 3) {
-      x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[3], "append in menu% (string item case)"));
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "append in menu% (string item case)"));
     } else
       x3 = FALSE;
 
     
-    WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)obj)->primdata)->Append(x0, x1, x2, x3));
+    WITH_VAR_STACK(((wxMenu *)((Scheme_Class_Object *)p[0])->primdata)->Append(x0, x1, x2, x3));
 
     
     
@@ -444,7 +444,7 @@ static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object 
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenu_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
@@ -460,14 +460,14 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
   VAR_STACK_PUSH(3, x0);
 
   int cb_pos = 0;
-  if ((n > 2)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu%", 0, 2, n, p));
-  if (n > 0) {
-    x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[0], "initialization in menu%"));
+  if ((n > (POFFSET+2))) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in menu%", POFFSET+POFFSET, POFFSET+2, n, p));
+  if (n > (POFFSET+0)) {
+    x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "initialization in menu%"));
   } else
     x0 = NULL;
-  if (n > 1) {
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
+  if (n > (POFFSET+1)) {
+    x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
   } else
     x1 = NULL;
 
@@ -476,14 +476,13 @@ static Scheme_Object *os_wxMenu_ConstructScheme(Scheme_Object *obj, int n,  Sche
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxMenu(x0, x1));
 #endif
-  realobj->__gc_external = (void *)obj;
-  objscheme_note_creation(obj);
+  realobj->__gc_external = (void *)p[0];
   
-  realobj->callback_closure = p[cb_pos];
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(obj, &((Scheme_Class_Object *)obj)->primdata));
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
+  realobj->callback_closure = p[POFFSET+cb_pos];
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  return scheme_void;
 }
 
 void objscheme_setup_wxMenu(void *env)
@@ -518,8 +517,8 @@ int objscheme_istype_wxMenu(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMenu_class))
+  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
+      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMenu_class))
     return 1;
   else {
     if (!stop)
@@ -563,7 +562,7 @@ class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *obj, const char *where, i
 
   (void)objscheme_istype_wxMenu(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
   if (o->primflag)
     return (os_wxMenu *)o->primdata;
   else
@@ -640,11 +639,11 @@ os_wxMenuBar::~os_wxMenuBar()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-static Scheme_Object *os_wxMenuBarSetLabelTop(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuBarSetLabelTop(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenuBar_class, "set-label-top in menu-bar%", n, p);
   int x0;
   string x1 INIT_NULLED_OUT;
 
@@ -654,23 +653,23 @@ static Scheme_Object *os_wxMenuBarSetLabelTop(Scheme_Object *obj, int n,  Scheme
   VAR_STACK_PUSH(2, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-label-top in menu-bar%"));
-  x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "set-label-top in menu-bar%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "set-label-top in menu-bar%"));
+  x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "set-label-top in menu-bar%"));
 
   if (x0 < 0) return scheme_void;
-  WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->SetLabelTop(x0, x1));
+  WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)p[0])->primdata)->SetLabelTop(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuBarNumber(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuBarNumber(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenuBar_class, "number in menu-bar%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -679,18 +678,18 @@ static Scheme_Object *os_wxMenuBarNumber(Scheme_Object *obj, int n,  Scheme_Obje
   
 
   
-  r = WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->Number());
+  r = WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)p[0])->primdata)->Number());
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxMenuBarEnableTop(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuBarEnableTop(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenuBar_class, "enable-top in menu-bar%", n, p);
   int x0;
   Bool x1;
 
@@ -699,23 +698,23 @@ static Scheme_Object *os_wxMenuBarEnableTop(Scheme_Object *obj, int n,  Scheme_O
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "enable-top in menu-bar%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[1], "enable-top in menu-bar%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "enable-top in menu-bar%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "enable-top in menu-bar%"));
 
   if (x0 < 0) return scheme_void;
-  WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->EnableTop(x0, x1));
+  WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)p[0])->primdata)->EnableTop(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuBarDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuBarDelete(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenuBar_class, "delete in menu-bar%", n, p);
   class wxMenu* x0 INIT_NULLED_OUT;
   int x1;
 
@@ -725,25 +724,25 @@ static Scheme_Object *os_wxMenuBarDelete(Scheme_Object *obj, int n,  Scheme_Obje
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[0], "delete in menu-bar%", 1));
-  if (n > 1) {
-    x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[1], "delete in menu-bar%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[POFFSET+0], "delete in menu-bar%", 1));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "delete in menu-bar%"));
   } else
     x1 = 0;
 
   
-  r = WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->Delete(x0, x1));
+  r = WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)p[0])->primdata)->Delete(x0, x1));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxMenuBarAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuBarAppend(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxMenuBar_class, "append in menu-bar%", n, p);
   class wxMenu* x0 INIT_NULLED_OUT;
   string x1 INIT_NULLED_OUT;
 
@@ -754,18 +753,18 @@ static Scheme_Object *os_wxMenuBarAppend(Scheme_Object *obj, int n,  Scheme_Obje
   VAR_STACK_PUSH(3, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[0], "append in menu-bar%", 0));
-  x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[1], "append in menu-bar%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[POFFSET+0], "append in menu-bar%", 0));
+  x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "append in menu-bar%"));
 
   
-  WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)obj)->primdata)->Append(x0, x1));
+  WITH_VAR_STACK(((wxMenuBar *)((Scheme_Class_Object *)p[0])->primdata)->Append(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMenuBar_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
@@ -778,22 +777,21 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
   VAR_STACK_PUSH(2, realobj);
 
   
-  if (n != 0) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar%", 0, 0, n, p));
+  if (n != (POFFSET+0)) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS(()));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxMenuBar());
 #endif
-  realobj->__gc_external = (void *)obj;
-  objscheme_note_creation(obj);
+  realobj->__gc_external = (void *)p[0];
   
   
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(obj, &((Scheme_Class_Object *)obj)->primdata));
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  return scheme_void;
 }
 
 void objscheme_setup_wxMenuBar(void *env)
@@ -821,8 +819,8 @@ int objscheme_istype_wxMenuBar(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxMenuBar_class))
+  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
+      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxMenuBar_class))
     return 1;
   else {
     if (!stop)
@@ -866,7 +864,7 @@ class wxMenuBar *objscheme_unbundle_wxMenuBar(Scheme_Object *obj, const char *wh
 
   (void)objscheme_istype_wxMenuBar(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
   if (o->primflag)
     return (os_wxMenuBar *)o->primdata;
   else
@@ -963,12 +961,12 @@ os_wxsMenuItem::~os_wxsMenuItem()
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
 }
 
-static Scheme_Object *os_wxsMenuItemId(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxsMenuItemId(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   ExactLong r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxsMenuItem_class, "id in menu-item%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -977,14 +975,14 @@ static Scheme_Object *os_wxsMenuItemId(Scheme_Object *obj, int n,  Scheme_Object
   
 
   
-  r = WITH_VAR_STACK(((wxsMenuItem *)((Scheme_Class_Object *)obj)->primdata)->Id());
+  r = WITH_VAR_STACK(((wxsMenuItem *)((Scheme_Class_Object *)p[0])->primdata)->Id());
 
   
   
   return WITH_REMEMBERED_STACK(scheme_make_integer_value(r));
 }
 
-static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxsMenuItem_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
@@ -997,22 +995,21 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n, 
   VAR_STACK_PUSH(2, realobj);
 
   
-  if (n != 0) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-item%", 0, 0, n, p));
+  if (n != (POFFSET+0)) 
+    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-item%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxsMenuItem CONSTRUCTOR_ARGS(()));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxsMenuItem());
 #endif
-  realobj->__gc_external = (void *)obj;
-  objscheme_note_creation(obj);
+  realobj->__gc_external = (void *)p[0];
   
   
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(obj, &((Scheme_Class_Object *)obj)->primdata));
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  return scheme_void;
 }
 
 void objscheme_setup_wxsMenuItem(void *env)
@@ -1036,8 +1033,8 @@ int objscheme_istype_wxsMenuItem(Scheme_Object *obj, const char *stop, int nullO
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxsMenuItem_class))
+  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
+      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxsMenuItem_class))
     return 1;
   else {
     if (!stop)
@@ -1081,7 +1078,7 @@ class wxsMenuItem *objscheme_unbundle_wxsMenuItem(Scheme_Object *obj, const char
 
   (void)objscheme_istype_wxsMenuItem(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
   if (o->primflag)
     return (os_wxsMenuItem *)o->primdata;
   else
@@ -1103,7 +1100,7 @@ static Scheme_Object *wxsMenuItemGlobalwxsIdToMenuItem(int n,  Scheme_Object *p[
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[0], "id-to-menu-item in menu-item%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "id-to-menu-item in menu-item%"));
 
   
   r = WITH_VAR_STACK(wxsIdToMenuItem(x0));

@@ -134,7 +134,7 @@ os_wxCheckBox::~os_wxCheckBox()
 
 void os_wxCheckBox::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -145,7 +145,7 @@ void os_wxCheckBox::OnDropFile(pathname x0)
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
@@ -155,10 +155,11 @@ void os_wxCheckBox::OnDropFile(pathname x0)
     ASSELF wxCheckBox::OnDropFile(x0);
   } else {
   mz_jmp_buf savebuf;
-  p[0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
@@ -166,7 +167,7 @@ void os_wxCheckBox::OnDropFile(pathname x0)
 
 Bool os_wxCheckBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -177,7 +178,7 @@ Bool os_wxCheckBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   VAR_STACK_PUSH(5, x0);
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
@@ -188,11 +189,12 @@ Bool os_wxCheckBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
     return FALSE;
   } else {
   mz_jmp_buf savebuf;
-  p[0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
-  p[1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in check-box%"", extracting return value"));
@@ -201,7 +203,7 @@ Bool os_wxCheckBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxCheckBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -212,7 +214,7 @@ Bool os_wxCheckBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   VAR_STACK_PUSH(5, x0);
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
@@ -223,11 +225,12 @@ Bool os_wxCheckBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
     return FALSE;
   } else {
   mz_jmp_buf savebuf;
-  p[0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
-  p[1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in check-box%"", extracting return value"));
@@ -236,7 +239,7 @@ Bool os_wxCheckBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxCheckBox::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -247,7 +250,7 @@ void os_wxCheckBox::OnSize(int x0, int x1)
   SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxCheckBox_class, "on-size", &mcache);
@@ -256,11 +259,12 @@ void os_wxCheckBox::OnSize(int x0, int x1)
     ASSELF wxCheckBox::OnSize(x0, x1);
   } else {
   
-  p[0] = scheme_make_integer(x0);
-  p[1] = scheme_make_integer(x1);
+  p[POFFSET+0] = scheme_make_integer(x0);
+  p[POFFSET+1] = scheme_make_integer(x1);
   
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
   }
@@ -268,7 +272,7 @@ void os_wxCheckBox::OnSize(int x0, int x1)
 
 void os_wxCheckBox::OnSetFocus()
 {
-  Scheme_Object **p = NULL;
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -276,9 +280,10 @@ void os_wxCheckBox::OnSetFocus()
 #endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(2);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxCheckBox_class, "on-set-focus", &mcache);
@@ -288,8 +293,9 @@ void os_wxCheckBox::OnSetFocus()
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
@@ -297,7 +303,7 @@ void os_wxCheckBox::OnSetFocus()
 
 void os_wxCheckBox::OnKillFocus()
 {
-  Scheme_Object **p = NULL;
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -305,9 +311,10 @@ void os_wxCheckBox::OnKillFocus()
 #endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(2);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxCheckBox_class, "on-kill-focus", &mcache);
@@ -317,22 +324,23 @@ void os_wxCheckBox::OnKillFocus()
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
 
-static Scheme_Object *os_wxCheckBoxSetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxSetLabel(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   SETUP_PRE_VAR_STACK(2);
   PRE_VAR_STACK_PUSH(0, p);
   PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
-  if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[0], NULL, 0))) {
+  objscheme_check_valid(os_wxCheckBox_class, "set-label in check-box%", n, p);
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+0], NULL, 0))) {
     class wxBitmap* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -341,12 +349,12 @@ static Scheme_Object *os_wxCheckBoxSetLabel(Scheme_Object *obj, int n,  Scheme_O
     VAR_STACK_PUSH(2, x0);
 
     
-    if (n != 1) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (bitmap label case)", 1, 1, n, p));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[0], "set-label in check-box% (bitmap label case)", 0));
+    if (n != (POFFSET+1)) 
+      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (bitmap label case)", POFFSET+1, POFFSET+1, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-label in check-box% (bitmap label case)", 0));
 
-    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), "bad bitmap: ", p[0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[0])); }
-    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0));
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
+    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->SetLabel(x0));
 
     
     
@@ -359,12 +367,12 @@ static Scheme_Object *os_wxCheckBoxSetLabel(Scheme_Object *obj, int n,  Scheme_O
     VAR_STACK_PUSH(2, x0);
 
     
-    if (n != 1) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (string label case)", 1, 1, n, p));
-    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "set-label in check-box% (string label case)"));
+    if (n != (POFFSET+1)) 
+      WITH_VAR_STACK(scheme_wrong_count("set-label in check-box% (string label case)", POFFSET+1, POFFSET+1, n, p));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-label in check-box% (string label case)"));
 
     
-    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0));
+    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->SetLabel(x0));
 
     
     
@@ -373,11 +381,11 @@ static Scheme_Object *os_wxCheckBoxSetLabel(Scheme_Object *obj, int n,  Scheme_O
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCheckBoxSetValue(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxSetValue(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "set-value in check-box%", n, p);
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -385,22 +393,22 @@ static Scheme_Object *os_wxCheckBoxSetValue(Scheme_Object *obj, int n,  Scheme_O
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-value in check-box%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "set-value in check-box%"));
 
   
-  WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->SetValue(x0));
+  WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->SetValue(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCheckBoxGetValue(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxGetValue(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "get-value in check-box%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -409,18 +417,18 @@ static Scheme_Object *os_wxCheckBoxGetValue(Scheme_Object *obj, int n,  Scheme_O
   
 
   
-  r = WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->GetValue());
+  r = WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->GetValue());
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxCheckBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxOnDropFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "on-drop-file in check-box%", n, p);
   pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -429,25 +437,25 @@ static Scheme_Object *os_wxCheckBoxOnDropFile(Scheme_Object *obj, int n,  Scheme
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[0], "on-drop-file in check-box%"));
+  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in check-box%"));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->wxCheckBox::OnDropFile(x0));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->wxCheckBox::OnDropFile(x0));
   else
-    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0));
+    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->OnDropFile(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCheckBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxPreOnEvent(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "pre-on-event in check-box%", n, p);
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxMouseEvent* x1 INIT_NULLED_OUT;
 
@@ -458,26 +466,26 @@ static Scheme_Object *os_wxCheckBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme
   VAR_STACK_PUSH(3, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[0], "pre-on-event in check-box%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in check-box%", 0));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-event in check-box%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[POFFSET+1], "pre-on-event in check-box%", 0));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    r = WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)-> wxWindow::PreOnEvent(x0, x1));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)-> wxWindow::PreOnEvent(x0, x1));
   else
-    r = WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->PreOnEvent(x0, x1));
+    r = WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->PreOnEvent(x0, x1));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxCheckBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxPreOnChar(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "pre-on-char in check-box%", n, p);
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxKeyEvent* x1 INIT_NULLED_OUT;
 
@@ -488,25 +496,25 @@ static Scheme_Object *os_wxCheckBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_
   VAR_STACK_PUSH(3, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[0], "pre-on-char in check-box%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in check-box%", 0));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-char in check-box%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[POFFSET+1], "pre-on-char in check-box%", 0));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    r = WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)-> wxWindow::PreOnChar(x0, x1));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)-> wxWindow::PreOnChar(x0, x1));
   else
-    r = WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->PreOnChar(x0, x1));
+    r = WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->PreOnChar(x0, x1));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxCheckBoxOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxOnSize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "on-size in check-box%", n, p);
   int x0;
   int x1;
 
@@ -515,25 +523,25 @@ static Scheme_Object *os_wxCheckBoxOnSize(Scheme_Object *obj, int n,  Scheme_Obj
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in check-box%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[1], "on-size in check-box%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "on-size in check-box%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "on-size in check-box%"));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->wxCheckBox::OnSize(x0, x1));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->wxCheckBox::OnSize(x0, x1));
   else
-    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->OnSize(x0, x1));
+    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->OnSize(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCheckBoxOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxOnSetFocus(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "on-set-focus in check-box%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -542,21 +550,21 @@ static Scheme_Object *os_wxCheckBoxOnSetFocus(Scheme_Object *obj, int n,  Scheme
   
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->wxCheckBox::OnSetFocus());
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->wxCheckBox::OnSetFocus());
   else
-    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->OnSetFocus());
+    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->OnSetFocus());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCheckBoxOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBoxOnKillFocus(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxCheckBox_class, "on-kill-focus in check-box%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -565,24 +573,24 @@ static Scheme_Object *os_wxCheckBoxOnKillFocus(Scheme_Object *obj, int n,  Schem
   
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->wxCheckBox::OnKillFocus());
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->wxCheckBox::OnKillFocus());
   else
-    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->OnKillFocus());
+    WITH_VAR_STACK(((wxCheckBox *)((Scheme_Class_Object *)p[0])->primdata)->OnKillFocus());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(2);
   PRE_VAR_STACK_PUSH(0, obj);
   PRE_VAR_STACK_PUSH(1, p);
   os_wxCheckBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0)) && (SCHEME_NULLP(p[1]) || WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[2], NULL, 0))) {
+  if ((n >= (POFFSET+3)) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[POFFSET+0], NULL, 0)) && (SCHEME_NULLP(p[POFFSET+1]) || WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+2], NULL, 0))) {
     class wxPanel* x0 INIT_NULLED_OUT;
     wxFunction x1;
     class wxBitmap* x2 INIT_NULLED_OUT;
@@ -602,45 +610,44 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     VAR_STACK_PUSH(5, x8);
 
     int cb_pos = 0;
-    if ((n < 3) ||(n > 9)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (bitmap label case)", 3, 9, n, p));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in check-box% (bitmap label case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[2], "initialization in check-box% (bitmap label case)", 0));
-    if (n > 3) {
-      x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in check-box% (bitmap label case)"));
+    if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
+      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (bitmap label case)", POFFSET+3, POFFSET+9, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in check-box% (bitmap label case)", 0));
+    x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+2], "initialization in check-box% (bitmap label case)", 0));
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+3], "initialization in check-box% (bitmap label case)"));
     } else
       x3 = -1;
-    if (n > 4) {
-      x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "initialization in check-box% (bitmap label case)"));
+    if (n > (POFFSET+4)) {
+      x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+4], "initialization in check-box% (bitmap label case)"));
     } else
       x4 = -1;
-    if (n > 5) {
-      x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[5], "initialization in check-box% (bitmap label case)"));
+    if (n > (POFFSET+5)) {
+      x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+5], "initialization in check-box% (bitmap label case)"));
     } else
       x5 = -1;
-    if (n > 6) {
-      x6 = WITH_VAR_STACK(objscheme_unbundle_integer(p[6], "initialization in check-box% (bitmap label case)"));
+    if (n > (POFFSET+6)) {
+      x6 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+6], "initialization in check-box% (bitmap label case)"));
     } else
       x6 = -1;
-    if (n > 7) {
-      x7 = WITH_VAR_STACK(unbundle_symset_checkboxStyle(p[7], "initialization in check-box% (bitmap label case)"));
+    if (n > (POFFSET+7)) {
+      x7 = WITH_VAR_STACK(unbundle_symset_checkboxStyle(p[POFFSET+7], "initialization in check-box% (bitmap label case)"));
     } else
       x7 = 0;
-    if (n > 8) {
-      x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[8], "initialization in check-box% (bitmap label case)"));
+    if (n > (POFFSET+8)) {
+      x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+8], "initialization in check-box% (bitmap label case)"));
     } else
       x8 = "checkBox";
 
-    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bad bitmap: ", p[2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
+    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bad bitmap: ", p[POFFSET+2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("check-box%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = WITH_VAR_STACK(new os_wxCheckBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8));
 #endif
-    realobj->__gc_external = (void *)obj;
-    objscheme_note_creation(obj);
+    realobj->__gc_external = (void *)p[0];
     
-    realobj->callback_closure = p[cb_pos];
+    realobj->callback_closure = p[POFFSET+cb_pos];
   } else  {
     class wxPanel* x0 INIT_NULLED_OUT;
     wxFunction x1;
@@ -661,33 +668,33 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     VAR_STACK_PUSH(5, x8);
 
     int cb_pos = 0;
-    if ((n < 3) ||(n > 9)) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (string label case)", 3, 9, n, p));
-    x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[0], "initialization in check-box% (string label case)", 0));
-    x1 = (SCHEME_NULLP(p[1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[2], "initialization in check-box% (string label case)"));
-    if (n > 3) {
-      x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "initialization in check-box% (string label case)"));
+    if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
+      WITH_VAR_STACK(scheme_wrong_count("initialization in check-box% (string label case)", POFFSET+3, POFFSET+9, n, p));
+    x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in check-box% (string label case)", 0));
+    x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
+    x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+2], "initialization in check-box% (string label case)"));
+    if (n > (POFFSET+3)) {
+      x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+3], "initialization in check-box% (string label case)"));
     } else
       x3 = -1;
-    if (n > 4) {
-      x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[4], "initialization in check-box% (string label case)"));
+    if (n > (POFFSET+4)) {
+      x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+4], "initialization in check-box% (string label case)"));
     } else
       x4 = -1;
-    if (n > 5) {
-      x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[5], "initialization in check-box% (string label case)"));
+    if (n > (POFFSET+5)) {
+      x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+5], "initialization in check-box% (string label case)"));
     } else
       x5 = -1;
-    if (n > 6) {
-      x6 = WITH_VAR_STACK(objscheme_unbundle_integer(p[6], "initialization in check-box% (string label case)"));
+    if (n > (POFFSET+6)) {
+      x6 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+6], "initialization in check-box% (string label case)"));
     } else
       x6 = -1;
-    if (n > 7) {
-      x7 = WITH_VAR_STACK(unbundle_symset_checkboxStyle(p[7], "initialization in check-box% (string label case)"));
+    if (n > (POFFSET+7)) {
+      x7 = WITH_VAR_STACK(unbundle_symset_checkboxStyle(p[POFFSET+7], "initialization in check-box% (string label case)"));
     } else
       x7 = 0;
-    if (n > 8) {
-      x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[8], "initialization in check-box% (string label case)"));
+    if (n > (POFFSET+8)) {
+      x8 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+8], "initialization in check-box% (string label case)"));
     } else
       x8 = "checkBox";
 
@@ -696,16 +703,15 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8));
 #endif
-    realobj->__gc_external = (void *)obj;
-    objscheme_note_creation(obj);
+    realobj->__gc_external = (void *)p[0];
     
-    realobj->callback_closure = p[cb_pos];
+    realobj->callback_closure = p[POFFSET+cb_pos];
   }
 
-  ((Scheme_Class_Object *)obj)->primdata = realobj;
-  WITH_REMEMBERED_STACK(objscheme_register_primpointer(obj, &((Scheme_Class_Object *)obj)->primdata));
-  ((Scheme_Class_Object *)obj)->primflag = 1;
-  return obj;
+  ((Scheme_Class_Object *)p[0])->primdata = realobj;
+  WITH_REMEMBERED_STACK(objscheme_register_primpointer(p[0], &((Scheme_Class_Object *)p[0])->primdata));
+  ((Scheme_Class_Object *)p[0])->primflag = 1;
+  return scheme_void;
 }
 
 void objscheme_setup_wxCheckBox(void *env)
@@ -737,8 +743,8 @@ int objscheme_istype_wxCheckBox(Scheme_Object *obj, const char *stop, int nullOK
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxCheckBox_class))
+  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
+      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxCheckBox_class))
     return 1;
   else {
     if (!stop)
@@ -782,7 +788,7 @@ class wxCheckBox *objscheme_unbundle_wxCheckBox(Scheme_Object *obj, const char *
 
   (void)objscheme_istype_wxCheckBox(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
   if (o->primflag)
     return (os_wxCheckBox *)o->primdata;
   else

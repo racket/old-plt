@@ -128,7 +128,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 }
 #endif
 
-@MACRO checkPSMode[cn] = WITH_VAR_STACK(check_ps_mode(x<cn>, p[<cn>]));
+@MACRO checkPSMode[cn] = WITH_VAR_STACK(check_ps_mode(x<cn>, p[POFFSET+<cn>]));
 
 @CLASSBASE wxPrintSetupData "ps-setup" : "object"
 

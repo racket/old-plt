@@ -29,7 +29,7 @@ static void FillZero(int *a, int *b) {
 @INCLUDE wxs_ornt.xci
 
 /* Handle cases in Xt that are a problem because a wxPanel isn't really a wxCanvas */
-@MACRO PANELREDIRECT[x] = if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { <x>; }
+@MACRO PANELREDIRECT[x] = if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)THEOBJ)->primdata)) { <x>; }
 
 @CLASSBASE wxCanvas "canvas":"window"
 

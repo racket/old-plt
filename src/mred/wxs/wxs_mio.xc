@@ -68,10 +68,10 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 }
 
 @MACRO setNULL = NULL
-@MACRO arrayToVector = p[0] = ArrayToVector(x0, NULL, x1);
-@MACRO copyArrayToVector = ArrayToVector(x0, p[0], x1);
-@MACRO vectorToArray = x0 = VectorToArray(NULL, p[0], &x1);
-@MACRO copyVectorToArray = VectorToArray(x0, p[0], &x1);
+@MACRO arrayToVector = p[POFFSET] = ArrayToVector(x0, NULL, x1);
+@MACRO copyArrayToVector = ArrayToVector(x0, p[POFFSET], x1);
+@MACRO vectorToArray = x0 = VectorToArray(NULL, p[POFFSET], &x1);
+@MACRO copyVectorToArray = VectorToArray(x0, p[POFFSET], &x1);
 
 @CREATOR ();
 
@@ -97,7 +97,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 
 @CLASSBASE wxMediaStreamInStringBase "editor-stream-in-string-base" : "editor-stream-in-base"
 
-@MACRO setStringSize[ss.cn] = x<cn> = SCHEME_STRTAG_VAL(p[<ss>]);
+@MACRO setStringSize[ss.cn] = x<cn> = SCHEME_STRTAG_VAL(p[POFFSET+<ss>]);
 
 @CREATOR (string,-long); : : /setStringSize[0.1]
 

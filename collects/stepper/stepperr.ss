@@ -18,6 +18,9 @@
   
   ; HASH SOURCE LOCATIONS: 
   
+  ; (define (position->key position) ... how the heck do I define this?
+  
+    
   (define-values (source-table-build source-table-lookup)
     (let ([source-table #f])
       (values
@@ -195,6 +198,12 @@
   ; okay, here's _still_more_ copied code, and now I'm inserting it first to preserve
   ; its ordering in aries.
   
+  (define read->raw
+    (lambda (read)
+      (if (z:zodiac? read)
+	  (z:sexp->raw read)
+	  read)))
+  
   (define check-for-keyword/both
     (lambda (disallow-procedures?)
       (lambda (id)
@@ -284,7 +293,7 @@
   ; indicating whether this expression lies on the evaluation spine.  It returns two things;
   ; an annotated expression, and a list of the bound variables which occur free.
   
-  (define (annotate expr bound-vars on-spine)
+  (define (annotate expr on-spine?)
 
     (let ([translate-varref
 	   (lambda (maybe-undef?)
@@ -293,10 +302,8 @@
 				v
 				(z:binding-orig-name
 				 (z:bound-varref-binding expr)))]
-		    [free-vars (if (memq? v bound-vars)
-				   (list v)
-				   null)]
-		    [debug-info (make-debug-info free-vars on-spine expr)]
+		    [free-vars (list v)]
+		    [debug-info (make-debug-info free-vars on-spine? expr)]
 		    [annotated (if (and maybe-undef? (signal-undefined))
 				   `(#%if (#%eq? ,v ,the-undefined-value)
 				     (#%raise (,make-undefined
@@ -310,37 +317,64 @@
 
       (cond
 	
-	[(z:case-lambda-form? expr)
-	 (let* ([annotate-case
-		 (lambda (arglist body)
-		   (let ([var-list (z:arglist-vars arglist)])
-		     (let-values ([(annotated free-vars)
-				   (annotate body (set-union var-list bound-vars) #t)])
-		       (let ([new-free-vars (remq* var-list free-vars)]
-			     [new-annotated (list (arglist->ilist arglist) annotated)])
-			 (list new-annotated new-free-vars)))))]
-		[pile-of-results (map annotate-case 
-				      (z:case-lambda-form-args expr)
-				      (z:case-lambda-form-bodies expr))]
-		[annotated-bodies (map car pile-of-results)]
-		[annotated-case-lambda (list '#%case-lambda annotated-bodies)] 
-		[free-vars (apply set-union (map cadr pile-of-results))]
-		[debug-info (make-debug-info free-vars null on-spine expr)]
-		[closure-info (make-debug-info free-vars mutated-vars #t expr)]
-		[hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
-				(closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)
-				,closure-temp)])
-	   (values (wrap debug-info hash-wrapped)
-		   new-free-vars))]
+	; the variable forms 
+
+	[(z:bound-varref? expr)
+	 (translate-varref 
+	  expr
+	  (not (never-undefined? (z:bound-varref-binding expr)))
+	  on-spine?)]
+	
+	[(z:top-level-varref? expr)
+	 (if (is-unit-bound? expr)
+	     (translate-varref expr #t on-spine?)
+	     (begin
+	       (check-for-keyword/proc expr)
+	       (translate-varref expr #f on-spine?)))]
+	
+	[(app? expr)
+	 (let+
+	  ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
+	   [val arg-sym-list (build-list (length sub-exprs) get-arg-symbol)]
+	   [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
+	   [val pile-of-values
+		(map (lambda (expr bound) 
+		       (let-values ([(annotated free) (annotate expr #f)])
+			 (list annotated free)))
+		     sub-exprs)]
+	   [val annotated-sub-exprs (map car pile-of-values)]
+	   [val free-vars (apply set-union (map cadr pile-of-values))]
+	   [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
+				 `(#%set! ,arg-symbol ,annotated-sub-expr))
+			       arg-sym-list annotated-sub-exprs)]
+	   [val app-debug-info (make-debug-info arg-sym-list on-spine? expr)]
+	   [val final-app (wrap app-debug-info arg-sym-list)]
+	   [val debug-info (make-debug-info (set-union arg-sym-list free-vars) on-spine? expr)]
+	   [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
+	  (values `(#%let ,let-clauses ,let-body) free-vars))]
+	
+	[(z:struct-form? expr)
+	 (let ([super-expr (z:struct-form-super expr)]
+	       [raw-type (read->raw (z:struct-form-type expr))]
+	       [raw-fields (map read->raw (z:struct-form-fields expr))])
+	   (if super-expr
+	       (let+ ([val (values annotated-super-expr free-vars-super-expr) 
+			   (annotate super-expr on-spine?)]
+		      [val annotated
+			   `(#%struct 
+			     ,(list raw-type annotated-super-expr)
+			     ,raw-fields)])
+		     (values annotated free-vars-super-expr))
+	       (values `(#%struct ,raw-type ,raw-fields))))]
 	
 	[(z:if-form? expr) 
 	 (let+
 	  ([val (values annotated-test free-vars-test) 
-		(annotate (z:if-form-test expr) bound-vars #f)]
+		(annotate (z:if-form-test expr) #f)]
 	   [val (values annotated-then free-vars-then) 
-		(annotate (z:if-form-then expr) bound-vars on-spine)]
+		(annotate (z:if-form-then expr) on-spine?)]
 	   [val (values annotated-else free-vars-else) 
-		(annotate (z:if-form-else expr) bound-vars on-spine)]
+		(annotate (z:if-form-else expr) on-spine?)]
 	   ; in beginner-mode, we must insert the boolean-test
 	   [val annotated `(#%let (,if-temp ,annotated-test)
 			    (#%if (#%boolean? ,if-temp)
@@ -353,44 +387,56 @@
 				       ((#%debug-info-handler))
 				       ,if-temp))))]
 	   [val free-vars (set-union free-vars-test free-vars-then free-vars-else)]
-	   [val debug-info (make-debug-info free-vars on-spine expr)])
+	   [val debug-info (make-debug-info free-vars on-spine? expr)])
 	  (values (wrap debug-info annotated) free-vars))]
 	
-	[(app? expr)
-	 (let+
-	  ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
-	   [val arg-sym-list (build-list (length sub-exprs) get-arg-symbol)]
-	   [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
-	   [val pile-of-values
-		(map (lambda (expr bound) 
-		       (annotate expr bound #f))
-		     sub-exprs)]
-	   [val annotated-sub-exprs (map car pile-of-values)]
-	   [val free-vars (apply set-union (map cadr pile-of-values))]
-	   [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
-				 `(#%set! ,arg-symbol ,annotated-sub-expr))
-			       arg-sym-list annotated-sub-exprs)]
-	   [val app-debug-info (make-debug-info arg-sym-list on-spine expr)]
-	   [val final-app (wrap app-debug-info arg-sym-list)]
-	   [val debug-info (make-debug-info (set-union arg-sym-list free-vars) on-spine expr)]
-	   [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
-	  (values `(let ,let-clauses ,let-body) free-vars))]
-
-	; the variable form 
-
-	[(z:bound-varref? expr)
-	 (translate-varref 
-	  expr
-	  (not (never-undefined? (z:bound-varref-binding expr)))
-	  on-spine)]
+	[(z:quote-form? expr)
+	 (values (wrap (make-debug-info null on-spine? expr) 
+		       `(#%quote ,(read->raw (z:quote-form-expr expr))))
+		 null)]
 	
-	[(z:top-level-varref? expr)
-	 (if (is-unit-bound? expr)
-	     (translate-varref expr #t on-spine)
-	     (begin
-	       (check-for-keyword/proc expr)
-	       (translate-varref expr #f on-spine)))]
-
+	; there is no begin, begin0, or let in beginner. but can they be generated? 
+	; for instance by macros? Maybe.
+	
+	[(z:define-values-form? expr)
+	 (let+ ([val vars (z:define-values-form-vars expr)]
+		[val _ (map check-for-keyword vars)]
+		[val var-names (map z:varref-var vars)]
+		[val (values annotated-val free-vars-val)
+		     (annotate (z:define-values-form-val expr) on-spine)]
+		[val free-vars (remq* var-names free-vars-val)]
+		[val annotated `(#%define-values ,var-names ,annotated-val)])
+	       (values annotated free-vars))]
+	
+	; there is no set! in beginner level
+	
+	[(z:case-lambda-form? expr)
+	 (let* ([annotate-case
+		 (lambda (arglist body)
+		   (let ([var-list (z:arglist-vars arglist)])
+		     (let-values ([(annotated free-vars)
+				   (annotate body #t)])
+		       (let ([new-free-vars (remq* var-list free-vars)]
+			     [new-annotated (list (arglist->ilist arglist) annotated)])
+			 (list new-annotated new-free-vars)))))]
+		[pile-of-results (map annotate-case 
+				      (z:case-lambda-form-args expr)
+				      (z:case-lambda-form-bodies expr))]
+		[annotated-bodies (map car pile-of-results)]
+		[annotated-case-lambda (list '#%case-lambda annotated-bodies)] 
+		[free-vars (apply set-union (map cadr pile-of-results))]
+		[debug-info (make-debug-info free-vars null on-spine? expr)]
+		[closure-info (make-debug-info free-vars mutated-vars #t expr)]
+		[hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
+				; that closure-table-put! thing needs to be protected
+				(closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)
+				,closure-temp)])
+	   (values (wrap debug-info hash-wrapped)
+		   new-free-vars))]
+	
+	; by fiat, I'm going to declare that there's no with-continuation-mark in beginner level.
+	
+	; there are _definitely_ no units or classes
 	; I AM RIGHT HERE
 	 
 	 ; other constants

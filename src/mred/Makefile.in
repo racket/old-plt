@@ -38,6 +38,8 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
+MREDLINKER = @MREDLINKER@
+
 EXTRALDFLAGS_wx_xt =
 EXTRALDFLAGS_wx_mac = -framework QuickTime
 MREDLDFLAGS = $(LDFLAGS) $(EXTRALDFLAGS_@WXVARIANT@)
@@ -90,7 +92,7 @@ EXTRASETUP_wx_xt =
 EXTRASETUP_wx_mac = MrEd.app
 
 $(LINKRESULT) : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB) $(EXTRASETUP_@WXVARIANT@)
-	$(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(LINKRESULT) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
+	$(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(LINKRESULT) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
 
 libmred.@LIBSFX@: $(WXLIBSNORM)
 	$(AR) $(ARFLAGS) libmred.@LIBSFX@ $(WXLIBSNORM)
@@ -100,7 +102,7 @@ MrEd.app:
 
 
 ee-app: mred mred_ee.o
-	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(LINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mred_ee.o mredx.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi
+	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mred_ee.o mredx.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi
 
 sunos4-static: dl_stub.o
 	$(MAKE) mred MRSTATIC=-static  MRSTATIC_STUB='dl_stub.o' LDNONSTATICLIBS=''

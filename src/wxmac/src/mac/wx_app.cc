@@ -286,14 +286,18 @@ void wxApp::doMacMouseDown(void)
 	  ::SelectWindow(w);
 	}
 
+#ifdef OS_X
 	/* It's possible that the modal window is a sheet
 	   in f... allow move operations. */
 	if (((windowPart == inDrag) || (windowPart == inCollapseBox))
 	    && (f->sheet == modal))
 	  modal = NULL;
+#endif
 
-	if (modal)
+	if (modal) {
+	  SysBeep(0);
 	  return;
+	}
       }
     }
   }

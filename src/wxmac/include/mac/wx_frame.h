@@ -143,7 +143,8 @@ class wxFrame: public wxbFrame
 
   WindowPtr macWindow(void);
 
-  wxFrame *GetSheetParent(); /* cSheetParent or self */
+  wxFrame *GetSheetParent(); /* NULL or self */
+  wxFrame *GetSheetChild(); /* NULL or child frame  */
 
   /*============================================================================= */
   /* Protected methods */

@@ -631,9 +631,8 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 	    cont_event_context = NULL;
 	  } else if (fc && fc->modal_window) {
 	    wxFrame *mfr;
-	    SysBeep(0);
-	    cont_event_context = NULL;
 	    mfr = (wxFrame *)fc->modal_window;
+	    cont_event_context = NULL;
 	    SelectWindow(mfr->macWindow());
 	  }
 	}

@@ -794,7 +794,7 @@ void wxFrame::Show(Bool show)
   theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
 #ifdef OS_X
-    if (cSheetParent) {
+    if (cSheetParent && !cSheetParent->sheet) {
       WindowPtr pwin;
       CGrafPtr graf;
 
@@ -820,7 +820,7 @@ void wxFrame::Show(Bool show)
       cFocusWindow = NULL;
     }
 #ifdef OS_X
-    if (cSheetParent) {
+    if (cSheetParent && (cSheetParent->sheet == this)) {
       WindowPtr pwin;
       CGrafPtr graf;
 
@@ -848,6 +848,15 @@ wxFrame *wxFrame::GetSheetParent()
   else
 #endif
     return this;
+}
+
+wxFrame *wxFrame::GetSheetChild()
+{
+#ifdef OS_X
+  return sheet;
+#else
+  return NULL;
+#endif
 }
 
 //-----------------------------------------------------------------------------

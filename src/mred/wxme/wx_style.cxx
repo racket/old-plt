@@ -1289,17 +1289,23 @@ wxStyle *wxStyleList::MapIndexToStyle(wxMediaStream *s, int i, long listId)
   wxStyleListLink *ssl;
 
   for (ssl = s->ssl; ssl; ssl = ssl->next) {
-    if (ssl->listId == listId
+    if (ssl->listId == listId) {
+      if (ssl->basic == basic) {
 	// If basic changes, that means list was cleared
-	&& ssl->basic == basic) {
-      if (ssl->styleMap && i < ssl->numMappedStyles)
-	return ssl->styleMap[i];
-      else
+	if (ssl->styleMap && i < ssl->numMappedStyles)
+	  return ssl->styleMap[i];
+	else {
+	  wxmeError("Bad style index for snip.");
+	  return basic;
+	}
+      } else {
+	wxmeError("Can't resolve style index; style list has been cleared.");
 	return basic;
+      }
     }
   }
 
-  wxmeError("Bad style index for snip.");
+  wxmeError("Bad style list index for snip.");
 
   return basic;
 }
@@ -1480,6 +1486,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
   ssl = new wxStyleListLink;
   ssl->styleList = styleList;
   ssl->listId = listId;
+  ssl->basic = styleList->BasicStyle();
   ssl->next = f->ssl;
   f->ssl = ssl;
 

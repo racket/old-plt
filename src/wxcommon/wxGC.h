@@ -63,7 +63,7 @@ extern void GC_cpp_delete(class gc *);
 
 
 #ifdef MZ_PRECISE_GC
-# ifdef defined(sparc) || defined(__sparc) || defined(__sparc__)
+# if defined(sparc) || defined(__sparc) || defined(__sparc__)
 #  define gcALIGN_DOUBLE 1
 typedef double AlignedType;
 # else

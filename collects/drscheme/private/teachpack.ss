@@ -149,5 +149,5 @@
           
           ;; should check for error trace and use that here (somehow)
           (if (exn? exn)
-              (exn-message exn)
+              (format "~a" (exn-message exn))
               (format "uncaught exception: ~s" exn))))))))

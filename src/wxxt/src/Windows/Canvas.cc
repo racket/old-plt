@@ -162,7 +162,6 @@ wxCanvas::~wxCanvas(void)
     glXMakeCurrent(XtDisplay(X->handle), None, NULL);
   }
   if (GLctxt) {
-    printf("here\n");
     glXDestroyContext(XtDisplay(X->handle), GLctxt);
     GLctxt = NULL;
   }

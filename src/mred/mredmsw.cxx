@@ -80,12 +80,46 @@ static MrEdContext *GetContext(HWND hwnd)
     return NULL;
 }
 
+/**********************************************************************/
+/* The LetOtherThreadsRun callback is installed whenever MrEd is *not*
+   checking for events. In that case, if some Windows call contains
+   its own event loop (e.g., menu selection or scrollbar handling),
+   then LetOtherThreadsRun is called every X milliseconds to give
+   other MrEd threads a chance to run. */
+
+static UINT sleep_thread_timer_id;
+static void StartSleepThreadTimer(void);
+
+void CALLBACK LetOtherThreadsRun(HWND, UINT, UINT, DWORD)
+{
+  sleep_thread_timer_id = 0;
+  scheme_process_block(0.0);
+  StartSleepThreadTimer();
+}
+
+void StopSleepThreadTimer(void)
+{
+  if (sleep_thread_timer_id) {
+    KillTimer(NULL, sleep_thread_timer_id);
+    sleep_thread_timer_id = 0;
+  }
+}
+
+static void StartSleepThreadTimer(void)
+{
+  StopSleepThreadTimer();
+  sleep_thread_timer_id = SetTimer(0, NULL, 100, LetOtherThreadsRun);
+}
+
 typedef struct {
   MrEdContext *c, *c_return;
   MSG *msg;
   int remove;
   HWND wnd;
 } CheckInfo;
+
+/* End of LetOtherThreadsRun callback */
+/**********************************************************************/
 
 static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
 {
@@ -121,6 +155,7 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
 {
   MSG backup;
   CheckInfo info;
+  int result = 0;
 
   if (!msg)
     msg = &backup;
@@ -129,13 +164,17 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
   info.msg = msg;
   info.remove = remove;
 
+  StopSleepThreadTimer();
+
   if (!EnumWindows((WNDENUMPROC)CheckWindow, (LPARAM)&info)) {
     if (c_return)
       *c_return = info.c_return;
-    return TRUE;
+    result = 1;
   }
 
-  return FALSE;
+  StartSleepThreadTimer();
+
+  return result;
 }
 
 int MrEdGetNextEvent(int check_only, int current_only, 
@@ -176,8 +215,8 @@ int MrEdCheckForBreak(void)
   if (MrEdGetContext() != GetContext(w))
     return 0;
 
-  SHORT hit = 0x8000;
-  SHORT hitnow = 0x0001;
+  SHORT hit = (SHORT)0x8000;
+  SHORT hitnow = (SHORT)0x0001;
   SHORT c = GetAsyncKeyState('C');
 #if BREAKING_REQUIRES_SHIFT
   SHORT shift = GetAsyncKeyState(VK_SHIFT);
@@ -208,6 +247,8 @@ void MrEdMSWSleep(float secs, void *fds)
   if (wxCheckMousePosition())
     return;
  
+  StopSleepThreadTimer();
+
   if (secs > 0)
     msecs = (DWORD)(secs * 1000);
   else
@@ -283,6 +324,8 @@ void MrEdMSWSleep(float secs, void *fds)
     if (secs)
       KillTimer(NULL, id);
   }
+
+  StartSleepThreadTimer();
 }
 
 void wxQueueLeaveEvent(void *ctx, wxWindow *wnd, int x, int y, int flags)

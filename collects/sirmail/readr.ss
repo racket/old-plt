@@ -1931,9 +1931,10 @@
 		   => (lambda (m)
 			(format "~a(~a):~a"
 				(substring s 0 2)
-				(add1 (string->number (cadr m)))
-				(caddr m)))]
+				(add1 (string->number (caddr m)))
+				(cadddr m)))]
 		  [(regexp-match "^[Rr][Ee]:" s) s]
+                  [(regexp-match "^[Aa][Nn][Tt][Ww][Oo][Rr][Tt]:" s) s]
 		  [else (string-append "Re: " s)]))
 	       (let ([id (extract-field "Message-Id" h)]
 		     [refs (extract-field "References" h)])

@@ -148,27 +148,11 @@ install:
 # Sanity checks for Precise GC #
 ################################
 
-GC2DIR = gc2
-XFORM = gcc -E $(INC) $(XINCLUDE) 
-CTOK = | ../mzscheme/gc2/ctok > 
-
-TEST_BEGIN = cd gc2; mzscheme -r ../../mzscheme/gc2/xform.ss \\\#f
-TEST_END = tmp
-
-$(GC2DIR)/wx_media: wxme/$(OBJDIR)/wx_media.o
-	$(XFORM) wxme/wx_media.cxx $(CTOK) $(GC2DIR)/wx_media
-
-$(GC2DIR)/wx_mpriv: wxme/$(OBJDIR)/wx_mpriv.o
-	$(XFORM) wxme/wx_mpriv.cxx $(CTOK) $(GC2DIR)/wx_mpriv
-
-$(GC2DIR)/Window: $(WXDIR)/src/Windows/Window.cc
-	$(XFORM) -I$(WXDIR)/src/XWidgets $(WXDIR)/src/Windows/Window.cc $(CTOK) $(GC2DIR)/Window
-
-test_deps: $(GC2DIR)/wx_media $(GC2DIR)/wx_mpriv $(GC2DIR)/Window
+XFORM = ../mzscheme/$(MZBUILDDIR)mzscheme -rq ../mzscheme/gc2/xform.ss "gcc -E $(INC) -I$(WXDIR)/src/XWidgets $(XINCLUDE)"
 
 test:
 	$(MAKE)
-	$(MAKE) test_deps
-	$(TEST_BEGIN) wx_media $(TEST_END)
-	$(TEST_BEGIN) Window $(TEST_END)
-	$(TEST_BEGIN) wx_mpriv $(TEST_END)
+	$(MAKE) xform
+
+xform:
+	$(XFORM) $(WXDIR)/src/Windows/Window.cc gc2/Window.cc

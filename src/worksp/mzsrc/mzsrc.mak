@@ -95,9 +95,9 @@ CLEAN :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\plt\mzscheme\include" /I "..\..\plt\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\plt\mzscheme\include" /I\
- "..\..\plt\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D\
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
+CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I\
+ "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D\
  "MZWINCONSOLE" /Fp"$(INTDIR)/mzsrc.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=Release/
 CPP_SBRS=
@@ -210,9 +210,9 @@ CLEAN :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
 # ADD BASE CPP /nologo /W3 /GX /Z7 /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /c
-# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /I "..\..\plt\mzscheme\include" /I "..\..\plt\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
-CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\plt\mzscheme\include" /I\
- "..\..\plt\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D\
+# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
+CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /I\
+ "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D\
  "MZWINCONSOLE" /Fp"$(INTDIR)/mzsrc.pch" /YX /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=Debug/
 CPP_SBRS=
@@ -324,10 +324,10 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-# ADD BASE CPP /nologo /W3 /GX /Zi /Od /I "c:\Matthew\plt\mzscheme\include" /I "C:\Matthew\plt\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
-# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /I "..\..\plt\mzscheme\include" /I "..\..\plt\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /YX /c
-CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\plt\mzscheme\include" /I\
- "..\..\plt\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D\
+# ADD BASE CPP /nologo /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
+# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /YX /c
+CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /I\
+ "..\..\mzscheme\sgc" /D "_DEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D\
  "MZWINCONSOLE" /D SGC_STD_DEBUGGING=1 /Fp"$(INTDIR)/mzsrc.pch" /YX\
  /Fo"$(INTDIR)/" /Fd"$(INTDIR)/" /c 
 CPP_OBJS=SGC/
@@ -440,10 +440,10 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-# ADD BASE CPP /nologo /W3 /GX /Zi /O2 /I "..\..\plt\mzscheme\include" /I "..\..\plt\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
-# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\plt\mzscheme\include" /I "..\..\plt\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
-CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\plt\mzscheme\include" /I\
- "..\..\plt\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS"\
+# ADD BASE CPP /nologo /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
+# ADD CPP /nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS" /D "__STDC__" /D "MZWINCONSOLE" /YX /c
+CPP_PROJ=/nologo /MT /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I\
+ "..\..\mzscheme\gc" /D "NDEBUG" /D "WIN32" /D "WIN32_THREADS" /D "_WINDOWS"\
  /D "__STDC__" /D "MZWINCONSOLE" /Fp"$(INTDIR)/mzsrc.pch" /YX /Fo"$(INTDIR)/"\
  /Fd"$(INTDIR)/" /c 
 CPP_OBJS=Threads/

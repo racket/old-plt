@@ -535,7 +535,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-# ADD BASE CPP /nologo /W3 /Z7 /Od /I "c:\Matthew\wxwindow\include\base" /I "c:\Matthew\wxwindow\include\msw" /I ":\Matthew\wxwindow\src\base" /I "c:\Matthew\wxwindow\src\msw" /I "c:\Matthew\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "c:\Matthew\mzscheme\gc" /I "c:\Matthew\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /YX"wx.h" /c
+# ADD BASE CPP /nologo /W3 /Z7 /Od /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\mzscheme\gc" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /YX"wx.h" /c
 # ADD CPP /nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I ".\..\..\wxwindow\src\base" /I "..\..\wxwindow\src\msw" /I "..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib" /I "..\..\wxWindow\contrib\fafa" /D "_DEBUG" /D "WINNT" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "FOR_MSW" /D WX_NORMALIZED_PS_FONTS=1 /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNT" /YX"wx.h" /c
 CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\sgc" /I\
  "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I\

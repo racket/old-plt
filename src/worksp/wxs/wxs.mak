@@ -308,7 +308,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-# ADD BASE CPP /nologo /W3 /Gm /Zi /Od /I "c:\matthew\wxwindow\include\base" /I "c:\Matthew\wxwindow\include\msw" /I "c:\Matthew\mzscheme\include" /I "c:\Matthew\mzscheme\gc" /I "c:\Matthew\mred\wxme" /I "c:\Matthew\mzscheme\utils" /D "__DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /YX /c
+# ADD BASE CPP /nologo /W3 /Gm /Zi /Od /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "__DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /YX /c
 # ADD CPP /nologo /MTd /W3 /Gm /Zi /Od /I "..\..\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "__DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /D "USE_SENORA_GC" /YX"wx.h" /c
 CPP_PROJ=/nologo /MTd /W3 /Gm /Zi /Od /I "..\..\mzscheme\sgc" /I\
  "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I\

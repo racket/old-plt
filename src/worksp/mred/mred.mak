@@ -351,7 +351,7 @@ CLEAN :
 "$(INTDIR)" :
     if not exist "$(INTDIR)/$(NULL)" mkdir "$(INTDIR)"
 
-# ADD BASE CPP /nologo /W3 /Gm /Zi /Od /I "c:\matthew\wxwindow\include\base" /I "c:\Matthew\wxwindow\include\msw" /I "c:\Matthew\mred\mzscheme\include" /I "c:\Matthew\mred\mzscheme\gc" /I "c:\Matthew\mred\wxme" /I "c:\Matthew\mred\mzscheme\utils" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /FR /YX /c
+# ADD BASE CPP /nologo /W3 /Gm /Zi /Od /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mred\mzscheme\include" /I "..\..\mred\mzscheme\gc" /I "..\..\mred\wxme" /I "..\..\mred\mzscheme\utils" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /FR /YX /c
 # ADD CPP /nologo /MTd /W3 /Gm /Zi /Od /I "..\..\mred\mzscheme\sgc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mred\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mred\mzscheme\utils" /D "_DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "WXS_CANT_ASSIGN_STRUCTURES" /D "WINNT" /D "__WINDOWS__" /D "WXME_FOR_MRED" /D "USE_SENORA_GC" /D "USE_WXOBJECT_TRACE_COUNTER" /FR /YX /c
 CPP_PROJ=/nologo /MTd /W3 /Gm /Zi /Od /I "..\..\mred\mzscheme\sgc" /I\
  "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I\
@@ -365,7 +365,7 @@ CPP_SBRS=SGC/
 # ADD BASE MTL /nologo /D "_DEBUG" /win32
 # ADD MTL /nologo /D "_DEBUG" /win32
 MTL_PROJ=/nologo /D "_DEBUG" /win32 
-# ADD BASE RSC /l 0x409 /i "c:\matthew\wxwindow\include\msw" /i "c:\matthew\wxwindow\contrib\fafa" /d "_DEBUG"
+# ADD BASE RSC /l 0x409 /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG"
 # ADD RSC /l 0x409 /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "_DEBUG"
 RSC_PROJ=/l 0x409 /fo"$(INTDIR)/Mred.res" /i "..\..\wxwindow\include\msw" /i\
  "..\..\wxwindow\contrib\fafa" /d "_DEBUG" 

@@ -192,7 +192,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-# ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /I "c:\Matthew\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
+# ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /YX /c
 # ADD CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D SGC_STD_DEBUGGING=1 /YX /c
 CPP_PROJ=/nologo /MTd /W3 /Gm /GX /Zi /Od /I "..\..\mzscheme\include" /D\
  "WIN32" /D "_DEBUG" /D "_CONSOLE" /D SGC_STD_DEBUGGING=1\

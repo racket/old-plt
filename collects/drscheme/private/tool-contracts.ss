@@ -99,7 +99,7 @@
 "\\scheme{#t}."
 ""
 "This function calls"
-"@ilink drscheme:language:language expand-program/complete-program"
+"@ilink drscheme:language:language front-end/complete-program"
 "to expand the program."
 ""
 "The first argument to \\var{iter} is the expanded program"

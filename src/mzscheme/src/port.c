@@ -4038,6 +4038,8 @@ static int subp_done(Scheme_Object *sci)
   if (sci) {
     if (GetExitCodeProcess((HANDLE)sci, &w))
       return w != STILL_ACTIVE;
+	else
+	  return 1;
   } else
     return 1;
 #endif
@@ -6212,7 +6214,7 @@ static void default_sleep(float v, void *fds)
       }
       rps[count] = 0;
 #ifdef WIN32_THREADS
-      break_sema = (HANDLE)scheme_win32_get_break_semaphore(scheme_current_process->th);
+      break_sema = (HANDLE)scheme_win32_get_break_semaphore(scheme_current_process->thread);
 #else
       break_sema = scheme_break_semaphore;
 #endif

@@ -68,6 +68,15 @@
 # include "simpledrop.h"
 #endif
 
+#ifdef WIN32_THREADS
+/* Only set up for Boehm GC that thinks it's a DLL: */
+#include <windows.h>
+# define GC_THINKS_ITS_A_DLL_BUT_ISNT
+#endif
+#ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
+extern BOOL WINAPI DllMain(HINSTANCE inst, ULONG reason, LPVOID reserved);
+#endif
+
 /* #define NO_GCING */
 
 #if defined(_IBMR2)
@@ -359,6 +368,10 @@ int main(int argc, char **argv)
 
 #ifdef USE_SENORA_GC
   GC_set_stack_base(mzscheme_stack_start);
+#endif
+
+#ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
+  DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
 #endif
 
   scheme_actual_main = actual_main;

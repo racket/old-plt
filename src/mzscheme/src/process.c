@@ -529,12 +529,6 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
   Scheme_Process *process;
   int prefix = 0;
 
-#ifdef WIN32_THREADS
-# ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
-  DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
-# endif
-#endif
-
   process = MALLOC_ONE_TAGGED(Scheme_Process);
 
   process->type = scheme_process_type;
@@ -3663,6 +3657,9 @@ void scheme_win32_create_thread(void (*f)(void *), void *data,
     WaitForSingleObject(cl->stack_set, INFINITE);
 
 # ifdef WINDOWS_FIND_STACK_BOUNDS
+#  ifndef STACK_SAFETY_MARGIN
+#   define STACK_SAFETY_MARGIN 50000
+#  endif
     *stackend = ((unsigned long)cl->stack + (STACK_SAFETY_MARGIN - 0x100000));
 # else
     >> not implemented <<
@@ -3717,6 +3714,30 @@ struct Scheme_Process *scheme_win32_get_current_process()
 void scheme_win32_set_current_process(struct Scheme_Process *p)
 {
   TlsSetValue(tls, (LPVOID)p);
+}
+
+void *scheme_win32_make_mutex()
+{
+  CRITICAL_SECTION *m;
+  m = (CRITICAL_SECTION *)scheme_malloc_atomic(sizeof(CRITICAL_SECTION));
+  InitializeCriticalSection(m);
+
+  return (void *)m;
+}
+
+void scheme_win32_free_mutex(void *m)
+{
+  DeleteCriticalSection((CRITICAL_SECTION *)m);
+}
+
+void scheme_win32_lock_mutex(void *m)
+{
+  EnterCriticalSection((CRITICAL_SECTION *)m);
+}
+
+void scheme_win32_unlock_mutex(void *m)
+{
+  LeaveCriticalSection((CRITICAL_SECTION *)m);
 }
 
 void *scheme_win32_make_semaphore(int init)

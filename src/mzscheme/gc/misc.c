@@ -40,7 +40,8 @@
 	  mutex_t GC_allocate_ml;	/* Implicitly initialized.	*/
 #	else
 #          ifdef WIN32_THREADS
-	      GC_API CRITICAL_SECTION GC_allocate_ml;
+              /* MATTHEW: MzScheme fakes DLL-ness. No GC_API here. */
+	      /* GC_API */ CRITICAL_SECTION GC_allocate_ml;
 #          else
 #             if defined(IRIX_THREADS) || defined(LINUX_THREADS)
 #		ifdef UNDEFINED

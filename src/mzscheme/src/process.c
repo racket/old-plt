@@ -2682,6 +2682,18 @@ static Scheme_Object *make_new_config(Scheme_Config *base, Scheme_Object *defsha
 	  scheme_add_to_table(config->extensions, (const char *)key, defval, 0);
       }
     }
+  } else if (base->extensions) {
+    Scheme_Bucket **bs = base->extensions->buckets;
+    int i = base->extensions->size;
+    
+    if (!config->extensions)
+      config->extensions = scheme_hash_table(2, SCHEME_hash_weak_ptr, 0, 0);
+    
+    while (i--) {
+      Scheme_Bucket *b = bs[i];
+      if (b && b->val && b->key && *(void **)b->key)
+	scheme_add_to_table(config->extensions, *(const char **)b->key, b->val, 0);
+    }
   }
 
   config->parent = MALLOC_ONE_ATOMIC(Scheme_Config*);

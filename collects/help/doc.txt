@@ -34,8 +34,9 @@ exists.  Otherwise, an error occurs.
 
 > help-desk-browser : hd-cookie -> void
 
-Starts the Help Desk browser.  The `hd-cookie' argument is 
-obtained from `start-help-server', described below.
+Starts the Help Desk browser on the Help Desk home page.  The 
+`hd-cookie' argument is obtained from `start-help-server', described 
+below.
 
 The following functions are provided by both `help-desk-mz.ss' and
 `help-desk.ss'.  These functions rely only on MzScheme:

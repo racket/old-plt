@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.10 1998/10/19 03:49:54 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.11 1998/12/01 19:01:53 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -26,6 +26,8 @@ FARPROC wxGenericControlSubClassProc = 0;
 
 wxNonlockingHashTable *wxControlHandleList = NULL;
 wxNonlockingHashTable *wxItemIdList = NULL;
+
+extern int wx_choice_dropped;
 
 extern void wxEntered(wxWindow *w, int x, int y, int flags);
 
@@ -278,7 +280,12 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
       }
       break;
     case WM_SETFOCUS:
-      item->OnSetFocus();
+      {
+	wxWindow *p = item->GetTopLevel();
+	p->focusWindow = item;
+
+	item->OnSetFocus();
+      }
       break;
     case WM_KILLFOCUS:
       item->OnKillFocus();
@@ -354,22 +361,32 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 
       break;
 
-#ifdef CATCH_ALT_KEY
     case WM_SYSKEYDOWN:
-#endif
-    case WM_KEYDOWN:
+      if ((wParam == VK_MENU) || (wParam == VK_F4)) { /* F4 is close */
+	return 1;
+      }
+    case WM_KEYDOWN:  /* ^^^ fallthrough */
       if (!((wParam != VK_ESCAPE) 
 	    && (wParam != VK_SPACE) 
 	    && (wParam != VK_RETURN)
 	    && (wParam != VK_TAB)
-	    && (wParam != VK_DELETE)))
-	/* Already covered by WM_CHAR */
+	    && (wParam != VK_DELETE))) {
+	/* Don't call pre-on-char for a ENTER press when
+	   a choice menu is dropped-down */
+	if (wx_choice_dropped)
+	  if (wParam == VK_RETURN)
+	    return 1;
+	
+	/* Otherwise, already covered by WM_CHAR */
 	return 0;
+      }
 
-#ifdef CATCH_ALT_KEY
-    case WM_SYSCHAR:
-#endif
-    case WM_CHAR: // Always an ASCII character
+    case WM_SYSCHAR: /* ^^^ fallthrough */
+      if (message == WM_SYSCHAR) {
+	if (wParam == VK_MENU)
+	  return 1;
+      }
+    case WM_CHAR:  /* ^^^ fallthrough */
       {
 	int id = wParam;
 	int tempControlDown = FALSE;
@@ -404,7 +421,7 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	  if (tempControlDown || (::GetKeyState(VK_CONTROL) >> 1))
 	    event.controlDown = TRUE;
 	  if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
-	    event.altDown = TRUE;
+	    event.metaDown = TRUE;
 	  
 	  event.keyCode = id;
 	  event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
@@ -417,8 +434,16 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	  pt.y -= rect.top;
 	  event.x = (float)pt.x;
 	  event.y = (float)pt.y;
-	  
+
+	  /* Don't call pre-on-char for a ENTER press when
+	     a choice menu is dropped-down */
+	  if (wx_choice_dropped)
+	    if (event.keyCode == 13)
+	      return 1;
+
 	  if (item->CallPreOnChar(item, &event))
+	    return 0;
+	  else if (event.metaDown)
 	    return 0;
 	}
       }

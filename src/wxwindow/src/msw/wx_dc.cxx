@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.15 1998/10/03 17:04:53 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.16 1998/11/05 22:18:32 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1402,6 +1402,15 @@ void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
   result = GetNearestColor(dc, RGB(src->Red(), src->Blue(), src->Green()));
   dest->Set(GetRValue(result), GetGValue(result), GetBValue(result));
   DoneDC(dc);
+}
+
+Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
+			wxBitmap *source, float xsrc, float ysrc)
+{
+  if (blit_dc)
+    return Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
+  else
+    return FALSE;
 }
 
 IMPLEMENT_CLASS(wxPrinterDC, wxDC)

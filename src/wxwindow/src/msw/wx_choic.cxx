@@ -22,8 +22,15 @@
 
 extern Bool wxIsPrimEventspace();
 
+int wx_choice_dropped;
+
 BOOL wxChoice::MSWCommand(UINT param, WORD id)
 {
+  if (param == CBN_DROPDOWN)
+    wx_choice_dropped = TRUE;
+  if (param == CBN_CLOSEUP)
+    wx_choice_dropped = FALSE;
+
   if (param == CBN_SELENDOK)
   {
    /* Callback possibly via popup window, which does not

@@ -37,6 +37,9 @@ class wxCanvasDC: public wxbCanvasDC
 
   void GetSize(float *width, float *height);
 
+  Bool GCBlit(float xdest, float ydest, float width, float height,
+	      wxBitmap *source, float xsrc, float ysrc);
+
   ~wxCanvasDC(void);
 };
 

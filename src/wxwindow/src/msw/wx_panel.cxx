@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cxx,v 1.4 1998/08/10 12:53:32 mflatt Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.5 1998/10/20 18:51:03 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -56,11 +56,14 @@ LONG wxPanelWnd::DefWindowProc(UINT nMsg, UINT wParam, LONG lParam)
 
 BOOL wxPanelWnd::ProcessMessage(MSG* pMsg)
 {
+#if 0
   wxWindow *w = wx_window->FindItemByHWND(::GetFocus());
 
   if (w && !wxSubType(w->__type, wxTYPE_CANVAS))
     return ::IsDialogMessage(handle, pMsg);
   else
+#endif
+
     return FALSE;
 }
 

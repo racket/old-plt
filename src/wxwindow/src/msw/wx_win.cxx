@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.19 1998/11/05 22:18:32 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.20 1998/12/01 19:01:53 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -32,6 +32,7 @@
 #include <math.h>
 #include <shellapi.h>
 
+#define CATCH_ALT_KEY
 
 #define SIGNED_WORD short
 
@@ -272,12 +273,19 @@ wxWindow::~wxWindow(void)
   children = NULL;
 }
 
-void wxWindow::SetFocus(void)
+wxWindow *wxWindow::GetTopLevel()
 {
-  wxWindow *p = GetParent();
+  wxWindow *p = this;
   while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
 		|| wxSubType(p->__type, wxTYPE_DIALOG_BOX)))
     p = p->GetParent();
+  
+  return p;
+}
+
+void wxWindow::SetFocus(void)
+{
+  wxWindow *p = GetTopLevel();
   
   // If the frame/dialog is not active, just set the focus
   //  locally.
@@ -301,6 +309,18 @@ Bool wxWindow::IsGray(void)
   return !winEnabled || internal_gray_disabled;
 }
 
+void wxWindow::DoEnableWindow(int on)
+{
+  HWND hWnd = GetHWND();
+  if (hWnd)
+    ::EnableWindow(hWnd, (BOOL)on); 
+  if (!on) {
+    wxWindow *p = GetTopLevel();
+    if (p->focusWindow == this)
+      p->SetFocus();
+  }
+}
+
 void wxWindow::InternalEnable(Bool enable, Bool gray)
 {
   Bool do_something;
@@ -319,9 +339,7 @@ void wxWindow::InternalEnable(Bool enable, Bool gray)
   }
 
   if (do_something && winEnabled) {
-    HWND hWnd = GetHWND();
-    if (hWnd)
-      ::EnableWindow(hWnd, (BOOL)enable);
+    DoEnableWindow((BOOL)enable);
   }
 
   if ((!!internal_gray_disabled != !!start_igd) && winEnabled)
@@ -336,9 +354,7 @@ void wxWindow::Enable(Bool enable)
   winEnabled = enable;
   
   if (!internal_disabled) {
-    HWND hWnd = GetHWND();
-    if (hWnd)
-      ::EnableWindow(hWnd, (BOOL)enable);
+    DoEnableWindow((BOOL)enable);
   }
 
   /* Doing handle sensitive makes it gray: */
@@ -428,6 +444,11 @@ void wxWindow::GetPosition(int *x, int *y)
   }
   *x = point.x;
   *y = point.y;
+
+  if (*x < -10000)
+    *x = -10000;
+  if (*y < -10000)
+    *y = -10000;
 }
 
 void wxWindow::ScreenToClient(int *x, int *y)
@@ -965,21 +986,10 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
             wnd->OnMenuSelect((WORD)wParam, flags, sysmenu);
             break;
         }
-        case WM_DRAWITEM:
-        {
-          if (wnd)
-            retval = wnd->OnDrawItem((int)wParam, (DRAWITEMSTRUCT *)lParam);
-          break;
-        }
-        case WM_MEASUREITEM:
-        {
-          if (wnd)
-            retval = wnd->OnMeasureItem((int)wParam, (MEASUREITEMSTRUCT *)lParam);
-          break;
-        }
-#ifdef CATCH_ALT_KEY
         case WM_SYSKEYDOWN:
-#endif
+	  if ((wParam == VK_MENU) || (wParam == VK_F4)) { /* F4 is close */
+	    goto default_action;
+	  }
         case WM_KEYDOWN:
         {
             if (wParam == VK_SHIFT)
@@ -1005,9 +1015,10 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
               wxControlDown = FALSE;
             break;
         }
-#ifdef CATCH_ALT_KEY
         case WM_SYSCHAR:
-#endif
+	  if (wParam == VK_MENU) {
+	    goto default_action;
+	  }
         case WM_CHAR:
         {
           wnd->OnChar((WORD)wParam, lParam, TRUE);
@@ -1124,11 +1135,12 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
         case WM_ERASEBKGND:
         {
           // Prevents flicker when dragging
-          if (IsIconic(hWnd)) retval = 1;
-
-			 else if (!wnd->OnEraseBkgnd((HDC)wParam))
+          if (IsIconic(hWnd))
+	    retval = 1;
+	  else if (!wnd->OnEraseBkgnd((HDC)wParam))
             retval = wnd->DefWindowProc(message, wParam, lParam );
-          else retval = 1;
+          else
+	    retval = 1;
           break;
         }
         case WM_MDIACTIVATE:
@@ -1186,20 +1198,8 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
 	  break;
         }
 	
-	/*
-	   #if HAVE_SOCKET
-	   case WM_TIMER:
-	   {
-	   __ddeUnblock(hWnd, wParam);
-	   break;
-	   }
-	   
-	   case ASYNC_SELECT_MESSAGE:
-	   retval = ddeWindowProc(hWnd,message,wParam,lParam);
-	   #endif
-	   */
-	
       default:
+  default_action:
 	if (wnd)
 	  retval = wnd->DefWindowProc(message, wParam, lParam );
 	else retval = DefWindowProc( hWnd, message, wParam, lParam );
@@ -1236,8 +1236,7 @@ LONG APIENTRY _EXPORT
   else if (message == WM_INITDIALOG)
     return 0;
 
-  switch (message)
-  {
+  switch (message) {
 #if CTL3D
         case WM_SETTEXT:
         case WM_NCPAINT:
@@ -1289,33 +1288,22 @@ LONG APIENTRY _EXPORT
 	    break;
         case WM_SIZE:
         {
-            if (wnd)
-            {
-              int width = LOWORD(lParam);
-              int height = HIWORD(lParam);
+	  if (wnd) {
+	    int width = LOWORD(lParam);
+	    int height = HIWORD(lParam);
 
+	    // Find the difference between the entire window (title bar and all)
+	    // and the client area; add this to the new client size
+	    RECT rect, rect2;
+	    GetClientRect(hWnd, &rect);
+	    GetWindowRect(hWnd, &rect2);
 
-              // Find the difference between the entire window (title bar and all)
-
-              // and the client area; add this to the new client size
-
-  			  RECT rect, rect2;
-
-			  GetClientRect(hWnd, &rect);
-
-              GetWindowRect(hWnd, &rect2);
-
-
-
-			  int actual_width = rect2.right - rect2.left - rect.right + width;
-
-              int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
-
-              wnd->OnSize(actual_width, actual_height, wParam);
-
-            }
-            else return FALSE;
-            break;
+	    int actual_width = rect2.right - rect2.left - rect.right + width;
+	    int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
+	    wnd->OnSize(actual_width, actual_height, wParam);
+	  }
+	  else return FALSE;
+	  break;
         }
 /*
         case WM_DESTROY:
@@ -1419,9 +1407,10 @@ LONG APIENTRY _EXPORT
             wnd->OnMouseMove(x, y, wParam);
             break;
         }
-#ifdef CATCH_ALT_KEY
         case WM_SYSKEYDOWN:
-#endif
+	  if (wParam == VK_MENU) {
+	    break;
+	  }
         case WM_KEYDOWN:
         {
             if (wParam == VK_SHIFT)
@@ -1444,9 +1433,10 @@ LONG APIENTRY _EXPORT
               wxControlDown = FALSE;
             break;
         }
-#ifdef CATCH_ALT_KEY
         case WM_SYSCHAR:
-#endif
+	  if (wParam == VK_MENU) {
+	    break;
+	  }
         case WM_CHAR:
         {
           wnd->OnChar((WORD)wParam, lParam, TRUE);
@@ -1585,73 +1575,43 @@ LONG APIENTRY _EXPORT
             break;
 	}
       case WM_QUERYENDSESSION:
-
 	{
-
 	  // Same as WM_CLOSE, but inverted results. Thx Microsoft :-)
-
 	  /* MATTHEW: [11] */
-
 #if WXGARBAGE_COLLECTION_ON
-
-	  if (wnd->OnClose())
-
-	    {
-
-	      if (wnd->wx_window) wnd->wx_window->Show(FALSE);
-
-	    }
-
+	  if (wnd->OnClose()) {
+	    if (wnd->wx_window)
+	      wnd->wx_window->Show(FALSE);
+	  }
 	  return 0;
-
 #else
-
 	  retval = wnd->OnClose();
-
 #endif
-
 	  break;
-
 	}
-
       case WM_CLOSE:
-
 	{
-
 	  if (wnd->OnClose())
-
 	    /* MATTHEW: [11] */
-
 #if WXGARBAGE_COLLECTION_ON
-
 	    {
-
-	      if (wnd->wx_window) wnd->wx_window->Show(FALSE);
-
+	      if (wnd->wx_window)
+		wnd->wx_window->Show(FALSE);
 	    }
-
 	  return 1;
-
 #else
-
 	  retval = 0L;
-
 	  else
-
 	    retval = 1L;
-
 #endif
-
 	  break;
-
         }
 
         default:
-        {
-          return FALSE;
-	}
-    }
-    return FALSE;
+          return 0;
+  }
+
+  return 0;
 }
 
 wxNonlockingHashTable *wxWinHandleList = NULL;
@@ -1716,13 +1676,9 @@ wxWnd::~wxWnd(void)
 #endif
 
   if (wx_window) {
-    wxWindow *p = wx_window->GetParent();
-    while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
-	          || wxSubType(p->__type, wxTYPE_DIALOG_BOX)))
-	p = p->GetParent();
-    if (p)
-      if (p->focusWindow == wx_window)
-	p->focusWindow = NULL;
+    wxWindow *p = wx_window->GetTopLevel();
+    if (p->focusWindow == wx_window)
+      p->focusWindow = NULL;
   }
 }
 
@@ -1827,45 +1783,36 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
 
 #ifndef USE_SEP_WIN_MANAGER
 	 handle = ::CreateDialog(wxhInstance, dialog_template, hParent,
-									 (DLGPROC)wxDlgProc);
+				 (DLGPROC)wxDlgProc);
 #else
 	 wxwmCreateDialog r;
 
 	 r.hparent = hParent;
 	 r.dialog_template = dialog_template;
-    r.proc = (DLGPROC)wxDlgProc;
+	 r.proc = (DLGPROC)wxDlgProc;
 	 wxwmMessage(WXM_CREATE_DIALOG, (LPARAM)&r);
 	 handle = r.result;
 #endif
-/*
-	 DLGPROC dlgproc = (DLGPROC)MakeProcInstance((DLGPROC)wxWndProc, wxhInstance);
 
-	 handle = ::CreateDialog(wxhInstance, dialog_template, hParent,
-									 (DLGPROC)dlgproc);
-*/
 	 if (handle == 0)
-		 MessageBox(NULL, "Can't find dummy dialog template!\nCheck resource include path for finding wx.rc.",
-						"wxWindows Error", MB_ICONEXCLAMATION | MB_OK);
+	   MessageBox(NULL, "Can't find dummy dialog template!\nCheck resource include path for finding wx.rc.",
+		      "wxWindows Error", MB_ICONEXCLAMATION | MB_OK);
 	 else MoveWindow(handle, x1, y1, w2, h2, FALSE);
-  }
-  else
-  {
-	 handle = wxwmCreateWindowEx(extendedStyle, wclass,
-					 title,
-					 style,
-					 x1, y1,
-					 w2, h2,
-					 hParent, NULL, wxhInstance,
-					 NULL);
-
-	 if (handle == 0)
-	 {
-		 char buf[300];
-		 sprintf(buf, "Can't create window of class %s (%u)!",
-			wclass, GetLastError());
-		 wxFatalError(buf,
-						"Fatal wxWindows Error");
-	 }
+  } else {
+    handle = wxwmCreateWindowEx(extendedStyle, wclass,
+				title,
+				style,
+				x1, y1,
+				w2, h2,
+				hParent, NULL, wxhInstance,
+				NULL);
+    
+    if (handle == 0) {
+      char buf[300];
+      sprintf(buf, "Can't create window of class %s (%u)!",
+	      wclass, GetLastError());
+      wxFatalError(buf, "Fatal wxWindows Error");
+    }
   }
   wxWndHook = NULL;
   wxWinHandleList->Append((long)handle, this);
@@ -1941,24 +1888,19 @@ BOOL wxWnd::OnActivate(BOOL state, BOOL WXUNUSED(minimized), HWND WXUNUSED(activ
 BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
 {
   if (wx_window) {
-    wxWindow *p = wx_window->GetParent();
-    while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
-		  || wxSubType(p->__type, wxTYPE_DIALOG_BOX)))
-      p = p->GetParent();
-
-    if (p)
-      p->focusWindow = wx_window;
-
+    wxWindow *p = wx_window->GetTopLevel();
+    p->focusWindow = wx_window;
+    
     // Deal with caret
-    if (wx_window->caretEnabled && (wx_window->caretWidth > 0) && (wx_window->caretHeight > 0))
-    {
+    if (wx_window->caretEnabled && (wx_window->caretWidth > 0) 
+	&& (wx_window->caretHeight > 0)) {
       ::CreateCaret(wx_window->GetHWND(), NULL, wx_window->caretWidth, wx_window->caretHeight);
       if (wx_window->caretShown)
-        ::ShowCaret(wx_window->GetHWND());
+	::ShowCaret(wx_window->GetHWND());
     }
     
     wx_window->GetEventHandler()->OnSetFocus();
-
+    
     return TRUE;
   } else 
     return FALSE;
@@ -2001,32 +1943,6 @@ void wxWnd::OnDropFiles(WPARAM wParam)
   if (wx_window)
     for (wIndex=0; wIndex < (int)gwFilesDropped; wIndex++) 
       wx_window->GetEventHandler()->OnDropFile(files[wIndex]);
-}
-
-BOOL wxWnd::OnDrawItem(int id, DRAWITEMSTRUCT *itemStruct)
-{
-  wxWindow *item = wx_window->FindItem(id);
-#if USE_DYNAMIC_CLASSES
-  if (item && item->IsKindOf(CLASSINFO(wxItem)))
-  {
-    return ((wxItem *)item)->MSWOnDraw(itemStruct);
-  }
-  else
-#endif
-    return FALSE;
-}
-
-BOOL wxWnd::OnMeasureItem(int id, MEASUREITEMSTRUCT *itemStruct)
-{
-  wxWindow *item = wx_window->FindItem(id);
-#if USE_DYNAMIC_CLASSES
-  if (item && item->IsKindOf(CLASSINFO(wxItem)))
-  {
-    return ((wxItem *)item)->MSWOnMeasure(itemStruct);
-  }
-  else
-#endif
-    return FALSE;
 }
 
 void wxWnd::OnVScroll(WORD WXUNUSED(code), WORD WXUNUSED(pos), HWND WXUNUSED(control))
@@ -2802,7 +2718,7 @@ void wxWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     if (tempControlDown || (::GetKeyState(VK_CONTROL) >> 1))
       event.controlDown = TRUE;
     if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
-      event.altDown = TRUE;
+      event.metaDown = TRUE;
 
     event.keyCode = id;
     event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
@@ -3271,7 +3187,14 @@ void wxWindow::OnScroll(wxScrollEvent& event)
 void wxWindow::SetScrollPos(int orient, int pos)
 {
   wxWnd *wnd = (wxWnd *)handle;
-  if (wnd->calcScrolledOffset) return;
+
+  if (orient < 0) {
+    /* Hack to avoid calcScrolledOffset check */
+    orient = -orient;
+  } else {
+    if (wnd->calcScrolledOffset)
+      return;
+  }
 
   int wOrient;
   if (orient == wxHORIZONTAL)
@@ -3449,13 +3372,25 @@ void wxWindow::OnSize(int w, int h)
 
 Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *evt)
 {
-  wxWindow *p = win->GetParent();
+  wxWindow *p;
+  if (wxSubType(win->__type, wxTYPE_FRAME)
+      || wxSubType(win->__type, wxTYPE_DIALOG_BOX))
+    p = NULL;
+  else
+    p = win->GetParent();
+
   return ((p && CallPreOnEvent(p, evt)) || win->PreOnEvent(this, evt));
 }
 
 Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *evt)
 {
-  wxWindow *p = win->GetParent();
+  wxWindow *p;
+  if (wxSubType(win->__type, wxTYPE_FRAME)
+      || wxSubType(win->__type, wxTYPE_DIALOG_BOX))
+    p = NULL;
+  else
+    p = win->GetParent();
+
   return ((p && CallPreOnChar(p, evt)) || win->PreOnChar(this, evt));
 }
 
@@ -3467,48 +3402,6 @@ Bool wxWindow::PreOnEvent(wxWindow *, wxMouseEvent *)
 Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)
 {
   return FALSE;
-}
-
-// Caret manipulation
-void wxWindow::CreateCaret(int w, int h)
-{
-  caretWidth = w;
-  caretHeight = h;
-  caretEnabled = TRUE;
-}
-
-void wxWindow::CreateCaret(wxBitmap *WXUNUSED(bitmap))
-{
-  // Not implemented
-}
-
-void wxWindow::ShowCaret(Bool show)
-{
-  if (caretEnabled) {
-    if (show)
-      ::ShowCaret(GetHWND());
-    else
-      ::HideCaret(GetHWND());
-    caretShown = show;
-  }
-}
-
-void wxWindow::DestroyCaret(void)
-{
-  caretEnabled = FALSE;
-}
-
-void wxWindow::SetCaretPos(int x, int y)
-{
-  ::SetCaretPos(x, y);
-}
-
-void wxWindow::GetCaretPos(int *x, int *y)
-{
-  POINT point;
-  ::GetCaretPos(&point);
-  *x = point.x;
-  *y = point.y;
 }
 
 wxWindow *wxGetActiveWindow(void)
@@ -3559,7 +3452,7 @@ int APIENTRY _EXPORT
       wxKeyEvent &event = *_event;
 
       if ((HIWORD(lParam) & KF_ALTDOWN) == KF_ALTDOWN)
-        event.altDown = TRUE;
+        event.metaDown = TRUE;
           
       event.keyCode = id;
       event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */

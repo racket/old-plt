@@ -140,9 +140,6 @@ public:
     virtual BOOL OnActivate(BOOL flag, BOOL minimized, HWND activate);
     virtual BOOL OnMDIActivate(BOOL flag, HWND activate, HWND deactivate);
 
-    virtual BOOL OnDrawItem(int id, DRAWITEMSTRUCT *item);
-    virtual BOOL OnMeasureItem(int id, MEASUREITEMSTRUCT *item);
-
     virtual LONG DefWindowProc(UINT nMsg, WPARAM wParam, LPARAM lParam);
     virtual BOOL ProcessMessage(MSG* pMsg);
     virtual void DestroyWindow(void);

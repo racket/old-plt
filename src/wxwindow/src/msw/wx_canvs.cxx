@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.4 1998/11/05 22:18:32 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.5 1998/11/18 22:05:14 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -74,16 +74,13 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
     msflags |= WS_BORDER;
   msflags |= WS_CHILD | WS_VISIBLE;
   if (style & wxHSCROLL)
-	  msflags |= WS_HSCROLL;
+    msflags |= WS_HSCROLL;
   if (style & wxVSCROLL)
-	  msflags |= WS_VSCROLL;
+    msflags |= WS_VSCROLL;
 
   wxCanvasWnd *wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags);
   wnd->SetBackgroundBrush((HBRUSH)GetStockObject(WHITE_BRUSH), FALSE);
   wnd->background_colour = RGB(255, 255, 255);
-#if DEBUG > 1
-  wxDebugMsg ("wxCanvas::Create: stock white background_brush is %X\n", wnd->background_brush);
-#endif
   handle = (char *) wnd;
 
   if (parent)
@@ -107,9 +104,6 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 
 wxCanvas::~wxCanvas (void)
 {
-#if DEBUG > 1
-  wxDebugMsg("About to select old objects for canvas dc %X\n", wx_dc);
-#endif
   // NB THIS CODE RELIES on destructor ordering:
   // this must be called BEFORE the window is destroyed.
   // This may not be true for some compilers (Borland?)
@@ -202,6 +196,9 @@ SetScrollbars (int horizontal, int vertical,
     GetClientRect(wnd->handle, &rect);
     w = rect.right - rect.left;
     h = rect.bottom - rect.top;
+
+    if (!w) w = 1;
+    if (!h) h = 1;
     
     SCROLLINFO hinfo, vinfo;
     hinfo.cbSize = vinfo.cbSize = sizeof(SCROLLINFO);
@@ -213,22 +210,27 @@ SetScrollbars (int horizontal, int vertical,
     if (horizontal > 0)	{
       h_is_on = 1;
       
-      wnd->xscroll_pixels_per_line = horizontal;
-      wnd->xscroll_lines = x_length;
-      wnd->xscroll_lines_per_page = x_page;
-      
+      if (setVirtualSize) {
+	wnd->xscroll_pixels_per_line = 1;
+	wnd->xscroll_lines = (x_length * horizontal);
+      } else {
+	wnd->xscroll_pixels_per_line = horizontal;
+	wnd->xscroll_lines = x_length;
+	wnd->xscroll_lines_per_page = x_page;
+      }
+
       hinfo.fMask |= SIF_DISABLENOSCROLL;
       
       int nHscrollMax;
       if (setVirtualSize) {
-	int nMaxWidth = wnd->xscroll_lines * wnd->xscroll_pixels_per_line;
-	nHscrollMax = (int)ceil((double)(nMaxWidth - w) / wnd->xscroll_pixels_per_line);
+	int nMaxWidth = wnd->xscroll_lines;
+	nHscrollMax = (nMaxWidth - w);
 	nHscrollMax = max(0, nHscrollMax);
+	wnd->xscroll_lines_per_page = nHscrollMax ? w : 1;
       } else
 	nHscrollMax = wnd->xscroll_lines;
 
-      wnd->xscroll_position = x_pos;
-      wnd->xscroll_position = min (nHscrollMax, wnd->xscroll_position);
+      wnd->xscroll_position = min(nHscrollMax, x_pos);
       
       hinfo.nPos = wnd->xscroll_position;
       hinfo.nPage = wnd->xscroll_lines_per_page;
@@ -250,22 +252,27 @@ SetScrollbars (int horizontal, int vertical,
     if (vertical > 0) {
       v_is_on = 1;
       
-      wnd->yscroll_pixels_per_line = vertical;
-      wnd->yscroll_lines = y_length;
-      wnd->yscroll_lines_per_page = y_page;
+      if (setVirtualSize) {
+	wnd->yscroll_pixels_per_line = 1;
+	wnd->yscroll_lines = (y_length * vertical);
+      } else {
+	wnd->yscroll_pixels_per_line = vertical;
+	wnd->yscroll_lines = y_length;
+	wnd->yscroll_lines_per_page = y_page;
+      }
       
       vinfo.fMask |= SIF_DISABLENOSCROLL;
       
       int nVscrollMax;
       if (setVirtualSize) {
-	int nMaxHeight = wnd->yscroll_lines * wnd->yscroll_pixels_per_line;
-	nVscrollMax = (int)ceil((double)(nMaxHeight - h) / wnd->yscroll_pixels_per_line);
+	int nMaxHeight = wnd->yscroll_lines;
+	nVscrollMax = (nMaxHeight - h);
 	nVscrollMax = max(nVscrollMax, 0);
+	wnd->yscroll_lines_per_page = nVscrollMax ? h : 1;
       } else
 	nVscrollMax  = wnd->yscroll_lines;
       
-      wnd->yscroll_position = y_pos;
-      wnd->yscroll_position = min (nVscrollMax, wnd->yscroll_position);
+      wnd->yscroll_position = min (nVscrollMax, y_pos);
       
       vinfo.nPos = wnd->yscroll_position;
       vinfo.nPage = wnd->yscroll_lines_per_page;
@@ -307,10 +314,49 @@ void wxCanvas::GetScrollUnitsPerPage (int *x_page, int *y_page)
  */
 void wxCanvas::Scroll (int x_pos, int y_pos)
 {
- if (x_pos > -1)
-    SetScrollPos(wxHORIZONTAL, x_pos);
- if (y_pos > -1)
-    SetScrollPos(wxVERTICAL, y_pos);
+  if (x_pos > -1)
+    SetScrollPos(-wxHORIZONTAL, x_pos);
+  if (y_pos > -1)
+    SetScrollPos(-wxVERTICAL, y_pos);
+}
+
+void wxCanvas::ScrollPercent(float x, float y)
+{
+  wxWnd *wnd = (wxWnd *) handle;
+  if (!wnd) return;
+
+  if (!wnd->calcScrolledOffset) {
+    /* Not managing  - do nothing */
+  } else {
+    /* Managing */
+    int xp, yp, vw, vh, cw, ch;
+    GetVirtualSize(&vw, &vh);
+    GetClientSize(&cw, &ch);
+
+    if (vw > cw)
+      vw -= cw;
+    else
+      vw = 0;
+    if (vh > ch)
+      vh -= ch;
+    else
+      vh = 0;
+
+    if (x >= 0)
+      xp = (int)floor(x * vw);
+    else
+      xp = -1;
+
+    if (y >= 0)
+      yp = (int)floor(y * vh);
+    else
+      yp = -1;
+
+    Scroll(xp, yp);
+
+    if ((xp > 0) || (yp > 0))
+      Refresh();
+  }
 }
 
 void wxCanvas::EnableScrolling (Bool x_scroll, Bool y_scroll)
@@ -360,8 +406,13 @@ void wxCanvas::WarpPointer (int x_pos, int y_pos)
 void wxCanvas::ViewStart(int *x, int *y, Bool)
 {
   wxWnd *wnd = (wxWnd *) handle;
-  *x = wnd->xscroll_position;
-  *y = wnd->yscroll_position;
+
+  if (!wnd->calcScrolledOffset) {
+    *x = *y = 0;
+  } else {
+    *x = wnd->xscroll_position;
+    *y = wnd->yscroll_position;
+  }
 }
 
 void wxWnd::DeviceToLogical (float *x, float *y)

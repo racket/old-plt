@@ -113,13 +113,8 @@ class wxWindow: public wxbWindow
   int GetScrollRange(int orient);
   int GetScrollPage(int orient);
 
-  // Caret manipulation
-  void CreateCaret(int w, int h);
-  void CreateCaret(wxBitmap *bitmap);
-  void DestroyCaret(void);
-  void ShowCaret(Bool show);
-  void SetCaretPos(int x, int y);
-  void GetCaretPos(int *x, int *y);
+  wxWindow *GetTopLevel();
+  void DoEnableWindow(int on);
 
   // The default implementation sets scroll ranges, if any
   void OnSize(int w, int h);

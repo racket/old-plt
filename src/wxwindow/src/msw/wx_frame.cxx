@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.6 1998/09/18 23:09:48 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.7 1998/10/19 03:49:54 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -311,6 +311,11 @@ void wxFrame::GetPosition(int *x, int *y)
   }
   *x = point.x;
   *y = point.y;
+
+  if (*x < -10000)
+    *x = -10000;
+  if (*y < -10000)
+    *y = -10000;
 }
 
 void wxFrame::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
@@ -340,11 +345,10 @@ Bool wxFrame::Show(Bool show)
 
   int cshow;
   if (show)
-    cshow = SW_SHOW;
+    cshow = SW_RESTORE; /* Show + uniconize */
   else
     cshow = SW_HIDE;
   
-#if WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
   if (show)  {
     if (!wxModelessWindows.Member(this))
       wxModelessWindows.Append(this);
@@ -355,36 +359,25 @@ Bool wxFrame::Show(Bool show)
   if (window_parent) {
     window_parent->GetChildren()->Show(this, show);
   } else {
-# if 0
-    if (show) {
-      if (!wxTopLevelWindows(this)->Member(this))
-	wxTopLevelWindows(this)->Append(this);
-    } else
-      wxTopLevelWindows(this)->DeleteObject(this);
-# else
     wxTopLevelWindows(this)->Show(this, show);
-# endif
   }
-#endif  
 
-  if (!show)
-    {
-      // Try to highlight the correct window (the parent)
-      HWND hWndParent = 0;
-      if (GetParent())
-	{
-	  hWndParent = GetParent()->GetHWND();
-	  if (hWndParent)
-		 wxwmBringWindowToTop(hWndParent);
-	}
+  if (!show) {
+    // Try to highlight the correct window (the parent)
+    HWND hWndParent = 0;
+    if (GetParent()) {
+      hWndParent = GetParent()->GetHWND();
+      if (hWndParent)
+	wxwmBringWindowToTop(hWndParent);
     }
+  }
   
   ShowWindow(GetHWND(), cshow);
-  if (show)
-  {
-	 wxwmBringWindowToTop(GetHWND());
+  if (show) {
+    wxwmBringWindowToTop(GetHWND());
     OnActivate(TRUE);
   }
+
   return TRUE;
 }
 
@@ -905,10 +898,12 @@ void wxFrameWnd::OnMenuSelect(WORD nItem, WORD nFlags, HMENU hSysMenu)
 
 BOOL wxFrameWnd::ProcessMessage(MSG* pMsg)
 {
+#if 0
   if (accelerator_table != NULL &&
       ::TranslateAccelerator(handle, (HACCEL)accelerator_table, pMsg))
     return TRUE;
-  
+#endif
+
   return FALSE;
 }
 

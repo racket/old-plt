@@ -237,6 +237,37 @@ int wxMenu::Number()
   return no_items;
 }
 
+void wxMenu::SelectMenu(void)
+{
+  wxMenuBar *mb = menu_bar;
+  if (mb) {
+    if (mb->menu_bar_frame) {
+      int i;
+      for (i = 0; i < mb->n; i++) {
+	if (mb->menus[i] == this) {
+	  int key = 0;
+	  char *s = mb->titles[i];
+	  while (*s) {
+	    if (*s == '&') {
+	      key = s[1];
+	      break;
+	    }
+	  }
+	  if (key) {
+	    wxWnd *wnd = (wxWnd *)mb->menu_bar_frame->handle;
+	    if ((key >= 'A') && (key <= 'Z'))
+	      key += 32;
+	    if (wnd) {
+	      wnd->DefWindowProc(WM_SYSKEYDOWN, key, 1 << 29);
+	      wnd->DefWindowProc(WM_SYSCHAR, key, 1 << 29);
+	    }
+	  }
+	}
+      }
+    }
+  }
+}
+
 void wxMenu::Enable(long Id, Bool Flag)
 {
   int ms_flag;

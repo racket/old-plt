@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.5 1998/08/10 12:53:32 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.6 1998/08/26 19:05:26 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -94,15 +94,13 @@ LONG wxDialogWnd::DefWindowProc(UINT nMsg, UINT wParam, LONG lParam)
 
 BOOL wxDialogWnd::ProcessMessage(MSG* pMsg)
 {
+#if 0
   wxWindow *w = wx_window->FindItemByHWND(::GetFocus());
 
-
-
   if (w && !wxSubType(w->__type, wxTYPE_CANVAS))
-
     return ::IsDialogMessage(handle, pMsg);
-
   else
+#endif
 
     return FALSE;
 }
@@ -338,6 +336,11 @@ void wxDialogBox::GetPosition(int *x, int *y)
 
   *x = rect.left;
   *y = rect.top;
+
+  if (*x < -10000)
+    *x = -10000;
+  if (*y < -10000)
+    *y = -10000;
 }
 
 extern void wxDispatchEventsUntil(int (*f)(void *), void *data);

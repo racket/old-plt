@@ -56,6 +56,8 @@ class wxMenu: public wxbMenu
 
   int Number(void);
 
+  void SelectMenu(void);
+
   wxMenuItem *FindItemForMenuId(WORD menuId);
 
   BOOL MSWCommand(UINT param, WORD id);

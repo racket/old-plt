@@ -1094,7 +1094,10 @@ static void MrEdSleep(float secs, void *fds)
 /*                                wxTimer                                   */
 /****************************************************************************/
 
-wxTimer::wxTimer(void) : wxObject(WXGC_NO_CLEANUP)
+wxTimer::wxTimer(void)
+#ifdef wx_xt
+ : wxObject(WXGC_NO_CLEANUP)
+#endif
 {
   __type = wxTYPE_TIMER;
 

@@ -14,6 +14,7 @@
            (lib "class.ss")
            (lib "list.ss")
            (lib "toplevel.ss" "syntax")
+           (lib "kerncase.ss" "syntax")
            (prefix drscheme:arrow: "arrow.ss")
            (prefix fw: (lib "framework.ss" "framework"))
            (lib "mred.ss" "mred"))
@@ -1591,11 +1592,7 @@
             (set! varrefs (flatten-bis-tree #t (syntax-property sexp 'bound-in-source) varrefs))
             (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
-              (syntax-case* sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
-                                   quote quote-syntax with-continuation-mark 
-                                   #%app #%datum #%top #%plain-module-begin
-                                   define-values define-syntaxes module
-                                   require require-for-syntax provide)
+              (kernel-syntax-case sexp
                 (if high-level? module-transformer-identifier=? module-identifier=?)
                 [(lambda args bodies ...)
                  (begin
@@ -2031,7 +2028,7 @@
                      [datum (syntax-object->datum stx)])
 	    (unless (hash-table-get ht datum (lambda () #f))
 	      (hash-table-put! ht datum #t)
-	      (cond
+              (cond
 	       [(pair? stx) 
 		(loop (car stx) (car datum))
 		(loop (cdr stx) (cdr datum))]

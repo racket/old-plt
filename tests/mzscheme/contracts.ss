@@ -164,7 +164,43 @@
                'neg)
      1 2 'bad)
    "neg")
-
+  
+  (test/spec-passed
+   'contract-arrow-values1
+   '(let-values ([(a b) ((contract (-> integer? (values integer? integer?))
+                                   (lambda (x) (values x x))
+                                   'pos
+                                   'neg)
+                         2)])
+      1))
+  
+  (test/spec-failed
+   'contract-arrow-values2
+   '((contract (-> integer? (values integer? integer?))
+               (lambda (x) (values x x))
+               'pos
+               'neg)
+     #f)
+   "neg")
+  
+  (test/spec-failed
+   'contract-arrow-values3
+   '((contract (-> integer? (values integer? integer?))
+               (lambda (x) (values 1 #t))
+               'pos
+               'neg)
+     1)
+   "pos")
+  
+  (test/spec-failed
+   'contract-arrow-values4
+   '((contract (-> (integer?) (values integer? integer?))
+               (lambda (x) (values #t 1))
+               'pos
+               'neg)
+     1)
+   "pos")
+  
   (test/spec-failed
    'contract-d1
    '(contract (integer? . ->d . (lambda (x) (lambda (y) (= x y))))
@@ -855,6 +891,17 @@
      1)
    "pos")
   
+  (test/spec-passed 
+   'class-contract/prim
+   '(make-object 
+        (class (contract (class-contract/prim)
+                         (class object% (init x) (init y) (init z) (super-make-object))
+                         'pos-c
+                         'neg-c)
+          (init-rest x)
+          (apply super-make-object x))
+      1 2 3))
+  
   (test/spec-failed
    'class-contract=>1
    '(let* ([c% (contract (class-contract (public m ((>=/c 10) . -> . (>=/c 10))))
@@ -879,8 +926,7 @@
                          'pos-d
                          'neg-d)])
       (send (make-object d%) m 100))
-   "pos-d")
-  
+   "pos-d")  
   
   (test/spec-passed/result
    'class-contract=>2
@@ -894,8 +940,7 @@
             (is-a? (make-object wd%) (class->interface wc%))
             (is-a? (instantiate wd% ()) wc%)
             (is-a? (instantiate wd% ()) (class->interface wc%))))
-   (list #t #t #t #t #t #t))
-  
+   (list #t #t #t #t #t #t))  
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;

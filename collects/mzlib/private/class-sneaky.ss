@@ -1,4 +1,23 @@
+#|
 
+This file provides all the same names as the class.ss module,
+plus one more:
+
+  (class*/names-sneaky ...)
+
+This form is just the same as class*/names, except that for
+these primitives:
+
+  is-a?
+  subclass?
+  class->interface
+
+it behaves like its superclass, rather than being a new
+class. This is intended for the contract library only, since
+it needs to be able to create wrapper classes that act just
+like the original classes.
+
+|#
 (module class-sneaky mzscheme
   (require (lib "list.ss")
            (lib "etc.ss"))

@@ -1,7 +1,7 @@
 (module contract-helpers mzscheme
 
   (provide module-source-as-symbol build-src-loc-string)
-
+    
   ;; build-src-loc-string : syntax -> string
   (define (build-src-loc-string stx)
     (let ([source (syntax-source stx)]

@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkr.ss,v 1.1 1998/08/31 18:25:43 robby Exp $
+;; $Id: frameworkr.ss,v 1.2 1998/08/31 21:35:41 robby Exp $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^])
@@ -32,14 +32,11 @@
 	[pasteboard : framework:pasteboard^ ((require-library "pasteboard.ss") editor)]
 	[text : framework:text^ ((require-library "text.ss") editor)]
 	[gui-utils : mred:gui-utils^ ((require-unit/sig "guiutils.ss"))]
-	
-	; stopped here 
-	
 	[finder : mred:finder^
-		((require-unit/sig "finder.ss") wx 
-		 (minimal constants) (minimal container) preferences
-		 gui-utils edit canvas
-		 (core string@) (core function@) (core file@))]
+		((require-unit/sig "finder.ss") preferences
+		 gui-utils
+		 (core string) (core function) (core file))]
+
 	[group : mred:group^ 
 	       ((require-unit/sig "group.ss") wx 
 		(minimal constants) preferences editor-frame gui-utils

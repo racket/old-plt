@@ -1912,12 +1912,12 @@
 (test #f 'generator-not-preserved (equal? x (list (random 10) (random 20) (random 30))))
 (test #t pseudo-random-generator? (make-pseudo-random-generator))
 (test #t pseudo-random-generator? (current-pseudo-random-generator))
-(test #t pseudo-random-generator? (current-wait-pseudo-random-generator))
+(test #t pseudo-random-generator? (current-sync-pseudo-random-generator))
 (test #f pseudo-random-generator? 10)
 (arity-test pseudo-random-generator? 1 1)
 (arity-test make-pseudo-random-generator 0 0)
 (arity-test current-pseudo-random-generator 0 1)
-(arity-test current-wait-pseudo-random-generator 0 1)
+(arity-test current-sync-pseudo-random-generator 0 1)
 (err/rt-test (current-pseudo-random-generator 10))
 
 

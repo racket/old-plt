@@ -2858,7 +2858,7 @@ scheme_extract_one_cc_mark(Scheme_Object *mark_set, Scheme_Object *key)
     return (Scheme_Object *)scheme_current_thread->init_config;
   }
   if (key == scheme_break_enabled_key) {
-    return (Scheme_Object *)scheme_current_thread->init_break_cell;
+    return scheme_current_thread->init_break_cell;
   }
   
   return NULL;

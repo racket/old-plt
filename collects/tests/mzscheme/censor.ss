@@ -21,12 +21,12 @@
 			    [else
 			     (cons c (loop (cdr s)))]))))))])
     (let* ([oldp (current-output-port)]
-	   [cp (make-custom-output-port
-		#f
-		(lambda (s start end flush?)
+	   [cp (make-output-port
+		'censor
+		oldp
+		(lambda (s start end nonblock? breakable?)
 		  (display (censor (subbytes s start end)) oldp)
 		  (- end start))
-		void
 		void)])
       (dynamic-wind
        (lambda () (current-output-port cp))

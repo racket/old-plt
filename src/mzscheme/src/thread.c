@@ -2106,7 +2106,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
     swap_no_setjmp = 0;
 
     /* We're leaving... */
-    {
+    if (scheme_current_thread->init_break_cell) {
       int cb;
       cb = scheme_can_break(scheme_current_thread);
       scheme_current_thread->can_break_at_swap = cb;
@@ -2215,6 +2215,8 @@ static void thread_is_dead(Scheme_Thread *r)
 
   r->dw = NULL;
   r->init_config = NULL;
+  r->cell_values = NULL;
+  r->init_break_cell = NULL;
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
 
@@ -2427,6 +2429,12 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 	sym = scheme_intern_exact_symbol(s, len);
       child->name = sym;
     }
+  }
+
+  {
+    Scheme_Object *v;
+    v = scheme_thread_cell_get(break_cell, cells);
+    child->can_break_at_swap = SCHEME_TRUEP(v);
   }
 
   if (!normal_kill)
@@ -2788,8 +2796,11 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   }
   {
     int cb;
+    Scheme_Object *bc;
     cb = scheme_can_break(p);
     p->can_break_at_swap = cb;
+    bc = scheme_current_break_cell();
+    np->init_break_cell = bc;
   }
   np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
   /* others 0ed already by allocation */
@@ -5011,12 +5022,12 @@ static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[],
       /* Hit the special case. */
       i = scheme_wait_semas_chs(evt_set->argc, evt_set->argv, 0, NULL);
 
-      /* In case a break appeared after we received a post,
-	 check for a break, because scheme_wait_semas_chs() won't: */
-      scheme_check_break_now();
-
       if (with_break) {
-	scheme_pop_break_enable(&cframe, 0);
+	scheme_pop_break_enable(&cframe, 1);
+      } else {
+	/* In case a break appeared after we received a post,
+	   check for a break, because scheme_wait_semas_chs() won't: */
+	scheme_check_break_now();
       }
 
       if (i)

@@ -73,13 +73,13 @@
   (define dynamic-enable-break
     (polymorphic
      (lambda (thunk)
-       (parameterize ([break-enabled #t])
+       (parameterize-break #t
 	 (thunk)))))
   
   (define dynamic-disable-break
     (polymorphic
      (lambda (thunk)
-       (parameterize ([break-enabled #f])
+       (parameterize-break #f
 	 (thunk)))))
   
   (define make-single-threader
@@ -113,7 +113,7 @@
 		  (let ([c (make-custodian)])
 		    (parameterize ([current-custodian c])
 		      ;; disable breaks during session set-up...
-		      (parameterize ([break-enabled #f])
+		      (parameterize-break #f
 			;; ... but enable breaks while blocked on an accept:
 			(let-values ([(r w) ((if can-break?
 						 tcp-accept/enable-break

@@ -34,12 +34,12 @@
 	    [(char=? #\` c) (test '`b readstr (string #\a c #\b))]
 	    [(char=? #\, c) (test ',b readstr (string #\a c #\b))]
 	    [else
-	     (test (string->symbol (string #\a (char-downcase c) #\b))
+	     (test (string->symbol (string #\a c #\b))
 		   'readstr
 		   (with-handlers ([void 
 				    (lambda (x) 
-				      (string->symbol (string #\a (char-downcase c) #\b)))])
-		     (readstr (string #\a c #\b))))]))
+				      (string->symbol (string #\a c #\b)))])
+		     (readstr (string #\a c0 #\b))))]))
 	 (loop (add1 n)))))))
 
 (err/rt-test (readstr ")") exn:fail:read?)
@@ -441,10 +441,10 @@
 (test 'a 'quote '\a)
 (test '|\a| 'quote '\\a)
 (test 'a 'quote '||||a||)
-(test (string->symbol "aaa") 'quote 'aAa)
-(test (string->symbol "aAa") 'quote 'A\AA)
-(test (string->symbol "aAa") 'quote '|aAa|)
-(test (string->symbol "aAa") 'quote 'A|A|A)
+#ci(test (string->symbol "aaa") 'quote 'aAa)
+#ci(test (string->symbol "aAa") 'quote 'A\AA)
+#ci(test (string->symbol "aAa") 'quote '|aAa|)
+#ci(test (string->symbol "aAa") 'quote 'A|A|A)
 
 (load-relative "numstrs.ss")
 (let loop ([l number-table])
@@ -460,9 +460,9 @@
     (loop (cdr l))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Test mis-stream EOF
+;; Test mid-stream EOF
 
-(let ()
+(define (test-mid-stream-eof use-peek?)
   (define chars (map (lambda (x)
 		       (if (char? x) (char->integer x) x))
 		     (append
@@ -473,7 +473,8 @@
 		      (string->list "(a) (b)")
 		      (list eof)
 		      (string->list "eof"))))
-  (define cp (make-custom-input-port
+  (define cp (make-input-port
+	      'mid-stream
 	      (lambda (b)
 		(if (null? chars)
 		    eof
@@ -485,7 +486,19 @@
 		       [else
 			(bytes-set! b 0 c)
 			1]))))
-	      #f
+	      (and use-peek?
+		   (lambda (b skip)
+		     (when (positive? skip)
+		       (error 'ouch!))
+		     (if (null? chars)
+			 eof
+			 (let ([c (car chars)])
+			   (cond 
+			    [(eof-object? c)
+			     eof]
+			    [else
+			     (bytes-set! b 0 c)
+			     1])))))
 	      void))
   (define (f) (read cp))
 
@@ -501,6 +514,9 @@
   (test 'eof f)
   (test eof f)
   (test eof f))
+
+(test-mid-stream-eof #f)
+(test-mid-stream-eof #t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test non-character results for getc
@@ -518,41 +534,56 @@
   ;; The `special-size' arg meansures the size (in char
   ;;  positions) of a non-string special literal.
   (let* ([pos 0]
-	 [incpos! (lambda () (set! pos (add1 pos)))])
-    (make-custom-input-port
+	 [incpos! (lambda () (set! pos (add1 pos)))]
+	 [read-one (lambda (str)
+		     (let loop ([s stream][p pos])
+		       (if (null? s)
+			   eof
+			   (let ([i (car s)])
+			     (if (bytes? i)
+				 (if ((bytes-length i) . > . p)
+				     (begin
+				       (incpos!)
+				       (bytes-set! str 0 (bytes-ref i p))
+				       1)
+				     (loop (cdr s) (- p (bytes-length i))))
+				 ;; a special:
+				 (cond
+				  [(zero? p) (incpos!)
+				   (cons
+				    (cond
+				     [(eq? i special-comment)
+				      (special-size i)]
+				     [(number? i)
+				      i]
+				     [else (special-size i)])
+				    (lambda (where line col pos)
+				      (check-pos where line col pos)
+				      (cond
+				       [(symbol? i) (i)]
+				       [(eq? i special-comment)
+					(make-special-comment i)]
+				       [(number? i)
+					(if (inexact? i)
+					    (make-special-comment i)
+					    'aha)]
+				       [else i])))]
+				  [else (loop (cdr s) (sub1 p))]))))))])
+    (make-input-port
+     'specializer
      ;; Non-blocking read string:
      (lambda (str)
-       (let loop ([s stream][p pos])
-	 (if (null? s)
-	     eof
-	     (let ([i (car s)])
-	       (if (bytes? i)
-		   (if ((bytes-length i) . > . p)
-		       (begin
-			(incpos!)
-			(bytes-set! str 0 (bytes-ref i p))
-			1)
-		       (loop (cdr s) (- p (bytes-length i))))
-		   ;; a special:
-		   (cond
-		    [(zero? p) (incpos!)
-		     (lambda (where line col pos)
-		       (check-pos where line col pos)
-		       (cond
-			[(symbol? i) (i)]
-			[(eq? i special-comment)
-			 (raise (make-special-comment
-				 (special-size i)))]
-			[(number? i)
-			 (if (inexact? i)
-			     (raise (make-special-comment
-				     i))
-			     (values 'aha i))]
-			[else
-			 (values i (special-size i))]))]
-		    [else (loop (cdr s) (sub1 p))]))))))
+       (read-one str))
      ;; Peek char
-     #f
+     (lambda (str skip)
+       (let ([old-p pos])
+	 (let loop ([skip skip])
+	   (unless (zero? skip)
+	     (read-one str)
+	     (loop (sub1 skip))))
+	 (begin0
+	  (read-one str)
+	  (set! pos old-p))))
      ;; Close proc
      (lambda () #t))))
 
@@ -606,9 +637,9 @@
 		    #"))")
 		  special-size
 		  (lambda (w l c p)
-		    (test #f 'no-place w)
-		    (test 1 'no-place l)
-		    (test (and p (sub1 p)) 'no-place c)
+		    (test #f 'no-place1 w)
+		    (test 1 'no-place2 l)
+		    (test (and p (sub1 p)) 'no-place3 c)
 		    (test #f not (memq p '(7 15)))))]
        [_ (port-count-lines! p)]
        [v (read p)])
@@ -624,9 +655,9 @@
 		    #"))")
 		  special-size
 		  (lambda (w l c p)
-		    (test l 'no-place l)
-		    (test #f 'no-place w)
-		    (test 0 'no-place c)
+		    (test l 'no-place4 l)
+		    (test #f 'no-place5 w)
+		    (test 0 'no-place6 c)
 		    (test #f not (memq p '(7 15)))
 		    (test #f not (memq l '(2 3)))))]
        [_ (port-count-lines! p)]
@@ -644,7 +675,7 @@
 		  special-size
 		  (lambda (w l c p)
 		    (test 'dk 'dk-place w)
-		    (test 8 'no-place l)
+		    (test 8 'no-place7 l)
 		    (test p + c 631)
 		    (test #f not (memq p '(707 715)))))]
        [_ (port-count-lines! p)]
@@ -671,8 +702,8 @@
 		      100)
 		    (lambda (w l c p)
 		      (test 'dk 'dk-place w)
-		    (test #f 'no-place l)
-		    (test #f 'no-place c)
+		    (test #f 'no-place8 l)
+		    (test #f 'no-place9 c)
 		    (test 7 'place p)))]
 	 [v (read-syntax 'dk p)]
 	 [l (syntax->list v)])
@@ -686,9 +717,9 @@
 			#" end))")
 		      (lambda (x) 100)
 		    (lambda (w l c p)
-		      (test #f 'no-place w)
-		      (test #f 'no-place l)
-		      (test #f 'no-place c)
+		      (test #f 'no-place10 w)
+		      (test #f 'no-place11 l)
+		      (test #f 'no-place12 c)
 		      (test 7 'place p)))]
 	   [v (read p)])
       (test `(list (list ,a-special ,b-special end) end) values v))))
@@ -702,8 +733,8 @@
 		    100)
 		  (lambda (w l c p)
 		    (test 'dk 'dk-place w)
-		    (test #f 'no-place l)
-		    (test #f 'no-place c)
+		    (test #f 'no-place13 l)
+		    (test #f 'no-place14 c)
 		    (test 7 'place p)))]
        [v (read-syntax 'dk p)]
        [l (syntax->list v)])
@@ -754,14 +785,12 @@
   (test #\x peek-char-or-special p)
   (test 0 file-position p)
   (test #\x peek-char-or-special p 0)
-  (test 'special peek-char-or-special p 1)
-  (test 'too-far 'peek-too-far (with-handlers ([exn:application:mismatch? (lambda (x)
-									    'too-far)])
-				 (peek-char-or-special p 2)))
+  (test a-special peek-char-or-special p 1)
+  (test #\y peek-char-or-special p 2)
   (test 0 file-position p)
   (test #\x read-char-or-special p)
   (test 1 file-position p)
-  (test 'special peek-char-or-special p)
+  (test a-special peek-char-or-special p)
   (test 1 file-position p)
   (test a-special read-char-or-special p)
   (test 6 file-position p)

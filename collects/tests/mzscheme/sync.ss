@@ -11,23 +11,23 @@
 ;;  Semaphore peeks
 
 (let* ([s (make-semaphore)]
-       [p (make-semaphore-peek s)]
+       [p (semaphore-peek-evt s)]
        [ch (make-channel)])
-  (test #f object-wait-multiple 0 s p)
-  (test #f object-wait-multiple 0 s p)
+  (test #f sync/timeout 0 s p)
+  (test #f sync/timeout 0 s p)
   (semaphore-post s)
-  (test p object-wait-multiple 0 p)
-  (test p object-wait-multiple #f p)
-  (test s object-wait-multiple #f s)
-  (test #f object-wait-multiple 0 p)
+  (test p sync/timeout 0 p)
+  (test p sync p)
+  (test s sync s)
+  (test #f sync/timeout 0 p)
   (thread (lambda () (sleep SYNC-SLEEP-DELAY) (semaphore-post s)))
-  (test p object-wait-multiple #f p)
-  (test p object-wait-multiple #f p)
-  (test s object-wait-multiple #f s)
-  (test #f object-wait-multiple 0 p)
-  (thread (lambda () (object-wait-multiple 0 p) (channel-put ch 7)))
-  (thread (lambda () (object-wait-multiple 0 p) (channel-put ch 7)))
-  (thread (lambda () (object-wait-multiple 0 p) (channel-put ch 7)))
+  (test p sync p)
+  (test p sync p)
+  (test s sync s)
+  (test #f sync/timeout 0 p)
+  (thread (lambda () (sync/timeout 0 p) (channel-put ch 7)))
+  (thread (lambda () (sync/timeout 0 p) (channel-put ch 7)))
+  (thread (lambda () (sync/timeout 0 p) (channel-put ch 7)))
   (semaphore-post s)
   (test 7 channel-get ch)
   (test 7 channel-get ch)
@@ -38,9 +38,9 @@
   (test 9 channel-try-get ch)
   (test #f channel-try-get ch))
 
-(arity-test make-semaphore-peek 1 1)
-(err/rt-test (make-semaphore-peek #f))
-(err/rt-test (make-semaphore-peek (make-semaphore-peek (make-semaphore))))
+(arity-test semaphore-peek-evt 1 1)
+(err/rt-test (semaphore-peek-evt #f))
+(err/rt-test (semaphore-peek-evt (semaphore-peek-evt (make-semaphore))))
 
 ;; ----------------------------------------
 ;; Channels
@@ -49,19 +49,19 @@
 
 (let ([c (make-channel)]
       [v 'nope])
-  (test #f object-wait-multiple 0 c)
+  (test #f sync/timeout 0 c)
   (thread (lambda () (sleep SYNC-SLEEP-DELAY) (set! v (channel-get c))))
   (test (void) channel-put c 10)
   (sleep)
   (test 10 'thread-v v)
   (thread (lambda () (sleep SYNC-SLEEP-DELAY) (channel-put c 11)))
-  (test #f object-wait-multiple 0 c)
-  (test 11 object-wait-multiple #f c)
-  (let ([p (make-channel-put-waitable c 45)])
-    (thread (lambda () (sleep SYNC-SLEEP-DELAY) (set! v (object-wait-multiple #f c))))
-    (test #f object-wait-multiple 0 p)
-    (test p object-wait-multiple #f p)
-    (test #f object-wait-multiple 0 p)
+  (test #f sync/timeout 0 c)
+  (test 11 sync c)
+  (let ([p (channel-put-evt c 45)])
+    (thread (lambda () (sleep SYNC-SLEEP-DELAY) (set! v (sync c))))
+    (test #f sync/timeout 0 p)
+    (test p sync p)
+    (test #f sync/timeout 0 p)
     (sleep)
     (test 45 'thread-v v))
   ;;;;; Make sure break/kill before action => break/kill only
@@ -73,7 +73,7 @@
 		 (sleep)
 		 (test #t thread-running? t)
 		 (test (void) break-thread t)
-		 (test #f object-wait-multiple 0 (make-channel-put-waitable c 32))
+		 (test #f sync/timeout 0 (channel-put-evt c 32))
 		 (sleep)
 		 (test #f thread-running? t)
 		 (test 45 'old-v v)))])
@@ -86,7 +86,7 @@
 		 (sleep)
 		 (test #t thread-running? t)
 		 (test (void) break-thread t)
-		 (test #f object-wait-multiple 0 c)
+		 (test #f sync/timeout 0 c)
 		 (sleep)
 		 (test #f thread-running? t)))])
     (try break-thread)
@@ -100,7 +100,7 @@
   (test 77
 	'broken
 	(with-handlers ([exn:break? (lambda (x) 77)])
-	  (object-wait-multiple #f (make-channel-put-waitable c 32))))
+	  (sync (channel-put-evt c 32))))
   (test 45 'old-v v)
   (channel-put c 89)
   (sleep)
@@ -114,231 +114,231 @@
   (test 99
 	'broken
 	(with-handlers ([exn:break? (lambda (x) 99)])
-	  (object-wait-multiple #f c)))
-  (test 66 object-wait-multiple 0 c)
+	  (sync c)))
+  (test 66 sync/timeout 0 c)
 
   ;;; Can't sync with self!
-  (test #f object-wait-multiple 0 c (make-channel-put-waitable c 100))
+  (test #f sync/timeout 0 c (channel-put-evt c 100))
   ;; Test cross sync:
   (let ([c2 (make-channel)]
 	[ok-result? (lambda (r)
-		      (or (eq? r 100) (object-waitable? r)))])
-    (thread (lambda () (channel-put c2 (object-wait-multiple #f c (make-channel-put-waitable c 100)))))
-    (thread (lambda () (channel-put c2 (object-wait-multiple #f c (make-channel-put-waitable c 100)))))
+		      (or (eq? r 100) (evt? r)))])
+    (thread (lambda () (channel-put c2 (sync c (channel-put-evt c 100)))))
+    (thread (lambda () (channel-put c2 (sync c (channel-put-evt c 100)))))
     (test #t ok-result? (channel-get c2))
     (test #t ok-result? (channel-get c2))))
 
 ;; ----------------------------------------
 ;; Alarms
 
-(test #f object-wait-multiple 0.1 (make-alarm-waitable (+ (current-inexact-milliseconds) 200)))
-(test 'ok object-wait-multiple 0.1 
-      (make-wrapped-waitable
-       (make-alarm-waitable (+ (current-inexact-milliseconds) 50))
+(test #f sync/timeout 0.1 (alarm-evt (+ (current-inexact-milliseconds) 200)))
+(test 'ok sync/timeout 0.1 
+      (convert-evt
+       (alarm-evt (+ (current-inexact-milliseconds) 50))
        (lambda (x) 'ok)))
-(test 'ok object-wait-multiple 100
-      (make-wrapped-waitable
-       (make-alarm-waitable (+ (current-inexact-milliseconds) 50))
+(test 'ok sync/timeout 100
+      (convert-evt
+       (alarm-evt (+ (current-inexact-milliseconds) 50))
        (lambda (x) 'ok)))
 
 ;; ----------------------------------------
 ;; Waitable sets
 
-(err/rt-test (waitables->waitable-set 7))
-(err/rt-test (waitables->waitable-set (make-semaphore) 7))
+(err/rt-test (choice-evt 7))
+(err/rt-test (choice-evt (make-semaphore) 7))
 
-(arity-test waitables->waitable-set 0 -1)
+(arity-test choice-evt 0 -1)
 
-(test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set))
-(test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set) (waitables->waitable-set))
-(test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set (waitables->waitable-set) (waitables->waitable-set)))
+(test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt))
+(test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt) (choice-evt))
+(test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt (choice-evt) (choice-evt)))
 
 (let ([s1 (make-semaphore)]
       [s2 (make-semaphore)]
       [s3 (make-semaphore)])
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
+  (test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 s2 s3))
   (semaphore-post s2)
-  (test s2 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
-  (let ([set (waitables->waitable-set s1 s2 s3)])
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
+  (test s2 sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 s2 s3))
+  (test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 s2 s3))
+  (let ([set (choice-evt s1 s2 s3)])
+    (test #f sync/timeout SYNC-SLEEP-DELAY set)
     (semaphore-post s2)
-    (test s2 object-wait-multiple SYNC-SLEEP-DELAY set)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set))
+    (test s2 sync/timeout SYNC-SLEEP-DELAY set)
+    (test #f sync/timeout SYNC-SLEEP-DELAY set))
   (thread (lambda () (sleep) (semaphore-post s3)))
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2 s3))
+  (test s3 sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 s2 s3))
+  (test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 s2 s3))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY s1 (waitables->waitable-set s2 s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY s1 (waitables->waitable-set s2 s3))
+  (test s3 sync/timeout SYNC-SLEEP-DELAY s1 (choice-evt s2 s3))
+  (test #f sync/timeout SYNC-SLEEP-DELAY s1 (choice-evt s2 s3))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2) s3)
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 s2) s3)
-  (let ([set (waitables->waitable-set s1 s2)])
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY s1 set s3)
+  (test s3 sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 s2) s3)
+  (test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 s2) s3)
+  (let ([set (choice-evt s1 s2)])
+    (test #f sync/timeout SYNC-SLEEP-DELAY s1 set s3)
     (semaphore-post s2)
-    (test s2 object-wait-multiple SYNC-SLEEP-DELAY set s3)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 (waitables->waitable-set s2 s3)))
+    (test s2 sync/timeout SYNC-SLEEP-DELAY set s3)
+    (test #f sync/timeout SYNC-SLEEP-DELAY set s3))
+  (test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 (choice-evt s2 s3)))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 (waitables->waitable-set s2 s3)))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set s1 (waitables->waitable-set s2 s3)))
+  (test s3 sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 (choice-evt s2 s3)))
+  (test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt s1 (choice-evt s2 s3)))
   (semaphore-post s3)
-  (test s3 object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set (waitables->waitable-set s1 s2) s3))
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY (waitables->waitable-set (waitables->waitable-set s1 s2) s3))
-  (let ([set (waitables->waitable-set s1 (waitables->waitable-set s2 s3))])
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
+  (test s3 sync/timeout SYNC-SLEEP-DELAY (choice-evt (choice-evt s1 s2) s3))
+  (test #f sync/timeout SYNC-SLEEP-DELAY (choice-evt (choice-evt s1 s2) s3))
+  (let ([set (choice-evt s1 (choice-evt s2 s3))])
+    (test #f sync/timeout SYNC-SLEEP-DELAY set)
     (semaphore-post s3)
-    (test s3 object-wait-multiple SYNC-SLEEP-DELAY set)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set))
+    (test s3 sync/timeout SYNC-SLEEP-DELAY set)
+    (test #f sync/timeout SYNC-SLEEP-DELAY set))
   
   (let* ([c (make-channel)]
-	 [set (waitables->waitable-set s1 s2 c)])
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
+	 [set (choice-evt s1 s2 c)])
+    (test #f sync/timeout SYNC-SLEEP-DELAY set)
     (thread (lambda () (channel-put c 12)))
-    (test 12 object-wait-multiple SYNC-SLEEP-DELAY set)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
-    (let* ([p (make-channel-put-waitable c 85)]
-	   [set (waitables->waitable-set s1 s2 p)])
-      (test #f object-wait-multiple SYNC-SLEEP-DELAY set)
+    (test 12 sync/timeout SYNC-SLEEP-DELAY set)
+    (test #f sync/timeout SYNC-SLEEP-DELAY set)
+    (let* ([p (channel-put-evt c 85)]
+	   [set (choice-evt s1 s2 p)])
+      (test #f sync/timeout SYNC-SLEEP-DELAY set)
       (thread (lambda () (channel-get c)))
-      (test p object-wait-multiple SYNC-SLEEP-DELAY set)
-      (test #f object-wait-multiple SYNC-SLEEP-DELAY set))))
+      (test p sync/timeout SYNC-SLEEP-DELAY set)
+      (test #f sync/timeout SYNC-SLEEP-DELAY set))))
 
-(test 77 object-wait-multiple 
+(test 77 sync/timeout 
       #f 
-      (make-wrapped-waitable (make-semaphore) void) 
-      (make-guard-waitable 
+      (convert-evt (make-semaphore) void) 
+      (guard-evt 
        (lambda () 
-	 (waitables->waitable-set 
+	 (choice-evt 
 	  (make-semaphore) (make-semaphore) (make-semaphore) (make-semaphore) 
 	  (make-semaphore) (make-semaphore) (make-semaphore) (make-semaphore) 
 	  (let ([sema (make-semaphore 1)])
-	    (make-wrapped-waitable sema (lambda (x)
+	    (convert-evt sema (lambda (x)
 					  (test sema values x)
 					  77)))))))
 
 ;; More alarms:
 (let ([make-delay
        (lambda (amt)
-	 (make-guard-waitable
+	 (guard-evt
 	  (lambda ()
-	    (make-wrapped-waitable
-	     (make-alarm-waitable (+ (current-inexact-milliseconds) (* 1000 amt)))
+	    (convert-evt
+	     (alarm-evt (+ (current-inexact-milliseconds) (* 1000 amt)))
 	     (lambda (v) amt)))))])
-  (test #f object-wait-multiple 0.1 (make-delay 0.15) (make-delay 0.2))
-  (test 0.15 object-wait-multiple 18 (make-delay 0.15) (make-delay 0.2))
-  (test 0.15 object-wait-multiple 18 (make-delay 0.2) (make-delay 0.15))
-  (test 0.15 object-wait-multiple 0.18 (make-delay 0.15) (make-delay 0.2))
-  (test 0.15 object-wait-multiple 18 
-	(waitables->waitable-set (make-delay 0.2) (make-delay 0.15))))
+  (test #f sync/timeout 0.1 (make-delay 0.15) (make-delay 0.2))
+  (test 0.15 sync/timeout 18 (make-delay 0.15) (make-delay 0.2))
+  (test 0.15 sync/timeout 18 (make-delay 0.2) (make-delay 0.15))
+  (test 0.15 sync/timeout 0.18 (make-delay 0.15) (make-delay 0.2))
+  (test 0.15 sync/timeout 18 
+	(choice-evt (make-delay 0.2) (make-delay 0.15))))
 
 ;; ----------------------------------------
 ;; Wrapped waitables
 
-(arity-test make-wrapped-waitable 2 2)
+(arity-test convert-evt 2 2)
 
-(err/rt-test (make-wrapped-waitable 1 void))
-(err/rt-test (make-wrapped-waitable (make-semaphore) 10))
-(err/rt-test (make-wrapped-waitable (make-semaphore) (lambda () 10)))
+(err/rt-test (convert-evt 1 void))
+(err/rt-test (convert-evt (make-semaphore) 10))
+(err/rt-test (convert-evt (make-semaphore) (lambda () 10)))
 
-(test 17 object-wait-multiple #f (make-wrapped-waitable (make-semaphore 1) (lambda (sema) 17)))
-(test 17 object-wait-multiple #f (waitables->waitable-set
+(test 17 sync (convert-evt (make-semaphore 1) (lambda (sema) 17)))
+(test 17 sync (choice-evt
 				  (make-semaphore)
-				  (make-wrapped-waitable (make-semaphore 1) (lambda (sema) 17))))
-(test #t object-wait-multiple #f (make-wrapped-waitable (make-semaphore 1) semaphore?))
+				  (convert-evt (make-semaphore 1) (lambda (sema) 17))))
+(test #t sync (convert-evt (make-semaphore 1) semaphore?))
 (test 18 'sync
       (let ([n 17]
 	    [s (make-semaphore)])
 	(thread (lambda () (sleep SYNC-SLEEP-DELAY) (semaphore-post s)))
-	(object-wait-multiple #f 
-			      (make-wrapped-waitable 
+	(sync 
+			      (convert-evt 
 			       s 
 			       (lambda (sema) (set! n (add1 n)) n))
-			      (make-wrapped-waitable 
+			      (convert-evt 
 			       s 
 			       (lambda (sema) (set! n (add1 n)) n)))))
 
 (let ([c (make-channel)])
   (thread (lambda () (channel-put c 76)))
-  (test 77 object-wait-multiple #f (make-wrapped-waitable c add1)))
+  (test 77 sync (convert-evt c add1)))
 
-(test 78 object-wait-multiple #f 
-      (make-wrapped-waitable (waitables->waitable-set (make-semaphore 1) (make-semaphore 1))
+(test 78 sync 
+      (convert-evt (choice-evt (make-semaphore 1) (make-semaphore 1))
 			     (lambda (x) 78)))
 
 ;; ----------------------------------------
 ;; Nack waitables
 
-(arity-test make-nack-guard-waitable 1 1)
-(arity-test make-guard-waitable 1 1)
+(arity-test nack-guard-evt 1 1)
+(arity-test guard-evt 1 1)
 
-(err/rt-test (make-nack-guard-waitable 10))
-(err/rt-test (make-nack-guard-waitable (lambda () 10)))
-(err/rt-test (make-guard-waitable 10))
-(err/rt-test (make-guard-waitable (lambda (x) 10)))
+(err/rt-test (nack-guard-evt 10))
+(err/rt-test (nack-guard-evt (lambda () 10)))
+(err/rt-test (guard-evt 10))
+(err/rt-test (guard-evt (lambda (x) 10)))
 
 (let ([s (make-semaphore 1)]
       [nack-try-wait? (lambda (n)
-			(let ([v (object-wait-multiple 0 n)])
+			(let ([v (sync/timeout 0 n)])
 			  (when v
 			    (test #t void? v)
-			    (test (void) object-wait-multiple #f n))
+			    (test (void) sync n))
 			  (and v #t)))])
-  (test s object-wait-multiple #f (make-nack-guard-waitable (lambda (nack) s)))
+  (test s sync (nack-guard-evt (lambda (nack) s)))
   (test #f semaphore-try-wait? s)
   (semaphore-post s)
   (let ([v #f])
-    (test #f object-wait-multiple 0
-	  (make-nack-guard-waitable (lambda (nack) 
+    (test #f sync/timeout 0
+	  (nack-guard-evt (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
     (test #t nack-try-wait? v)
     (set! v #f)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY
-	  (make-nack-guard-waitable (lambda (nack) 
+    (test #f sync/timeout SYNC-SLEEP-DELAY
+	  (nack-guard-evt (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
     (test #t nack-try-wait? v)
     (set! v #f)
-    (test #f object-wait-multiple 0
-	  (make-nack-guard-waitable (lambda (nack) 
+    (test #f sync/timeout 0
+	  (nack-guard-evt (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore)))
-	  (make-nack-guard-waitable (lambda (nack) 
+	  (nack-guard-evt (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
     (test #t nack-try-wait? v)
     (set! v #f)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY
-	  (make-nack-guard-waitable (lambda (nack) 
+    (test #f sync/timeout SYNC-SLEEP-DELAY
+	  (nack-guard-evt (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore)))
-	  (make-nack-guard-waitable (lambda (nack) 
+	  (nack-guard-evt (lambda (nack) 
 				      (set! v nack)
 				      (make-semaphore))))
     (test #t nack-try-wait? v)
     (set! v #f)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY
-	  (waitables->waitable-set 
-	   (make-nack-guard-waitable (lambda (nack) 
+    (test #f sync/timeout SYNC-SLEEP-DELAY
+	  (choice-evt 
+	   (nack-guard-evt (lambda (nack) 
 				       (set! v nack)
 				       (make-semaphore)))
-	   (make-nack-guard-waitable (lambda (nack) 
+	   (nack-guard-evt (lambda (nack) 
 				       (set! v nack)
 				       (make-semaphore)))))
     (test #t nack-try-wait? v)
     (set! v #f)
-    (test s object-wait-multiple 0
-	  (make-nack-guard-waitable (lambda (nack) 
+    (test s sync/timeout 0
+	  (nack-guard-evt (lambda (nack) 
 				      (set! v nack)
 				      s)))
     (test #f nack-try-wait? v) ; ... but not an exception!
     (semaphore-post s)
     (set! v #f)
     (let loop ()
-      (test s object-wait-multiple 0
-	    (make-nack-guard-waitable (lambda (nack) 
+      (test s sync/timeout 0
+	    (nack-guard-evt (lambda (nack) 
 					(set! v nack)
 					(make-semaphore)))
 	    s)
@@ -349,11 +349,11 @@
 	    (loop))))
     (set! v #f)
     (let loop ()
-      (err/rt-test (object-wait-multiple 0
-					 (make-nack-guard-waitable (lambda (nack) 
+      (err/rt-test (sync/timeout 0
+					 (nack-guard-evt (lambda (nack) 
 								     (set! v nack)
 								     (make-semaphore)))
-					 (make-nack-guard-waitable (lambda (nack)
+					 (nack-guard-evt (lambda (nack)
 								     (/ 1 0))))
 		   exn:fail:contract:divide-by-zero?)
       (if v
@@ -361,10 +361,10 @@
 	  (loop)))
     (set! v #f)
     (let loop ()
-      (err/rt-test (object-wait-multiple 0
-					 (make-nack-guard-waitable (lambda (nack)
+      (err/rt-test (sync/timeout 0
+					 (nack-guard-evt (lambda (nack)
 								     (/ 10 0)))
-					 (make-nack-guard-waitable (lambda (nack) 
+					 (nack-guard-evt (lambda (nack) 
 								     (set! v nack)
 								     (make-semaphore))))
 		   exn:fail:contract:divide-by-zero?)
@@ -374,11 +374,11 @@
 	    (loop))
 	  (test #t not v)))
     (set! v null)
-    (test #f object-wait-multiple 0
-	  (make-nack-guard-waitable (lambda (nack) 
+    (test #f sync/timeout 0
+	  (nack-guard-evt (lambda (nack) 
 				(set! v (cons nack v))
 				(make-semaphore)))
-	  (make-nack-guard-waitable (lambda (nack) 
+	  (nack-guard-evt (lambda (nack) 
 				(set! v (cons nack v))
 				(make-semaphore))))
     (test '(#t #t) map nack-try-wait? v)
@@ -387,9 +387,9 @@
     (set! v #f)
     (let* ([ready (make-semaphore)]
 	   [t (thread (lambda ()
-			(object-wait-multiple 
+			(sync/timeout 
 			 #f
-			 (make-nack-guard-waitable
+			 (nack-guard-evt
 			  (lambda (nack)
 			    (set! v nack)
 			    (semaphore-post ready)
@@ -400,38 +400,38 @@
 		       
 
 (let ([s (make-semaphore 1)])
-  (test s object-wait-multiple 0 (make-guard-waitable (lambda () s))))
+  (test s sync/timeout 0 (guard-evt (lambda () s))))
 
 (let ([v #f])
-  (test #f object-wait-multiple 0
-	(make-nack-guard-waitable
+  (test #f sync/timeout 0
+	(nack-guard-evt
 	 (lambda (nack)
 	   (set! v nack)
-	   (waitables->waitable-set (make-semaphore) (make-semaphore)))))
-  (test (void) object-wait-multiple 0 v))
+	   (choice-evt (make-semaphore) (make-semaphore)))))
+  (test (void) sync/timeout 0 v))
 
 ;; ----------------------------------------
 ;; Poll waitables
 
-(arity-test make-poll-guard-waitable 1 1)
+(arity-test poll-guard-evt 1 1)
 
-(err/rt-test (make-poll-guard-waitable 10))
-(err/rt-test (make-poll-guard-waitable (lambda () 10)))
+(err/rt-test (poll-guard-evt 10))
+(err/rt-test (poll-guard-evt (lambda () 10)))
 
-(let ([s (make-semaphore-peek (make-semaphore 1))])
-  (test s object-wait-multiple 0 (make-poll-guard-waitable (lambda (poll?)
+(let ([s (semaphore-peek-evt (make-semaphore 1))])
+  (test s sync/timeout 0 (poll-guard-evt (lambda (poll?)
 							     (test #t values poll?)
 							     s)))
-  (test s object-wait-multiple #f (make-poll-guard-waitable (lambda (poll?)
+  (test s sync (poll-guard-evt (lambda (poll?)
 							      (test #f values poll?)
 							      s)))
-  (test s object-wait-multiple 0 (waitables->waitable-set
-				  (make-poll-guard-waitable (lambda (poll?)
+  (test s sync/timeout 0 (choice-evt
+				  (poll-guard-evt (lambda (poll?)
 							      (test #t values poll?)
 							      s))
 				  (make-semaphore)))
-  (test s object-wait-multiple #f (waitables->waitable-set
-				   (make-poll-guard-waitable (lambda (poll?)
+  (test s sync (choice-evt
+				   (poll-guard-evt (lambda (poll?)
 							       (test #f values poll?)
 							       s))
 				   (make-semaphore))))
@@ -440,19 +440,19 @@
 ;; Structures as waitables
 
 ;; Bad property value:
-(err/rt-test (make-struct-type 'wt #f 2 0 #f (list (cons prop:waitable -1))) exn:application:mismatch?)
+(err/rt-test (make-struct-type 'wt #f 2 0 #f (list (cons prop:evt -1))) exn:application:mismatch?)
 ;; slot index 1 not immutable:
-(err/rt-test (make-struct-type 'wt #f 2 0 #f (list (cons prop:waitable 1))) exn:application:mismatch?)
+(err/rt-test (make-struct-type 'wt #f 2 0 #f (list (cons prop:evt 1))) exn:application:mismatch?)
 
 (define-values (struct:wt make-wt wt? wt-ref wt-set!)
-  (make-struct-type 'wt #f 2 0 #f (list (cons prop:waitable 1)) (make-inspector) #f '(1)))
+  (make-struct-type 'wt #f 2 0 #f (list (cons prop:evt 1)) (make-inspector) #f '(1)))
 
 (let ([always-ready (make-wt #f (lambda (self) #t))]
       [always-stuck (make-wt 1 2)])
-  (test always-ready object-wait-multiple #f always-ready)
-  (test always-ready object-wait-multiple 0 always-ready)
-  (test #f object-wait-multiple 0 always-stuck)
-  (test #f object-wait-multiple SYNC-SLEEP-DELAY always-stuck))
+  (test always-ready sync always-ready)
+  (test always-ready sync/timeout 0 always-ready)
+  (test #f sync/timeout 0 always-stuck)
+  (test #f sync/timeout SYNC-SLEEP-DELAY always-stuck))
 
 ;; Check whether something that takes at least SYNC-SLEEP-DELAY
 ;;  seconds in fact takes roughly that much CPU time. We
@@ -480,11 +480,11 @@
   (let ([sema (make-semaphore)])
     (letrec-values ([(sema-ready-part get-sema-result) (wrap-sema sema sema (lambda () sema-ready))]
 		    [(sema-ready) (make-wt 1 sema-ready-part)])
-      (test #f 'initial-sema (object-wait-multiple 0 sema-ready))
+      (test #f 'initial-sema (sync/timeout 0 sema-ready))
       (semaphore-post sema)
-      (test (get-sema-result) object-wait-multiple 0 sema-ready)
+      (test (get-sema-result) sync/timeout 0 sema-ready)
       (test #f semaphore-try-wait? sema)
-      (test #f object-wait-multiple 0 sema-ready)
+      (test #f sync/timeout 0 sema-ready)
       (semaphore-post sema)
       (let ()
 	(define (non-busy-wait waitable get-result)
@@ -493,16 +493,16 @@
 	     (thread (lambda ()
 		       (sleep SYNC-BUSY-DELAY)
 		       (semaphore-post sema)))
-	     (test (get-result) object-wait-multiple #f waitable))
+	     (test (get-result) sync waitable))
 	   #f)
-	  (test #f object-wait-multiple 0 waitable)
+	  (test #f sync/timeout 0 waitable)
 	  (semaphore-post sema)
-	  (test (get-result) object-wait-multiple #f waitable)
-	  (test #f object-wait-multiple 0 waitable)
+	  (test (get-result) sync waitable)
+	  (test #f sync/timeout 0 waitable)
 	  (semaphore-post sema)
-	  (test (get-result) object-wait-multiple #f waitable)
+	  (test (get-result) sync waitable)
 	  (test #f semaphore-try-wait? sema)
-	  (test #f object-wait-multiple 0 waitable))
+	  (test #f sync/timeout 0 waitable))
 	(non-busy-wait sema-ready get-sema-result)
 	(semaphore-post sema)
 	(letrec-values ([(wrapped-part get-wrapped-result)
@@ -515,7 +515,7 @@
 (test-good-waitable (lambda (x x-result get-self)
 		      (values x (lambda () x-result))))
 (test-good-waitable (lambda (x x-result get-self)
-		      (let ([ws (waitables->waitable-set
+		      (let ([ws (choice-evt
 				 x
 				 (make-wt 99 (lambda (self) (make-semaphore))))])
 			(values ws (lambda () x-result)))))
@@ -528,7 +528,7 @@
 				 wt))])
    (thread (lambda () (sleep (/ SYNC-BUSY-DELAY 2)) (set! wt s)))
    (lambda ()
-     (test #f object-wait-multiple SYNC-BUSY-DELAY wt)))
+     (test #f sync/timeout SYNC-BUSY-DELAY wt)))
  #t)
 
 ;; ----------------------------------------
@@ -548,29 +548,29 @@
 			  void)])
     (make-waitable-unready ready-waitable)
     (test #f char-ready? bad-stuck-port)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY bad-stuck-port)
+    (test #f sync/timeout SYNC-SLEEP-DELAY bad-stuck-port)
     (test 0 read-bytes-avail!* (make-bytes 10) bad-stuck-port)
     (set! go? #t)
     (test #t char-ready? bad-stuck-port)
-    (test bad-stuck-port object-wait-multiple SYNC-SLEEP-DELAY bad-stuck-port)
+    (test bad-stuck-port sync/timeout SYNC-SLEEP-DELAY bad-stuck-port)
     (test #t positive? (read-bytes-avail!* (make-bytes 10) bad-stuck-port))
     (set! go? #f)
     (test #f char-ready? bad-stuck-port)
-    (test #f object-wait-multiple SYNC-SLEEP-DELAY bad-stuck-port)
+    (test #f sync/timeout SYNC-SLEEP-DELAY bad-stuck-port)
     (test 0 read-bytes-avail!* (make-bytes 10) bad-stuck-port)
     (set! ready-waitable 0)
-    (test #f object-wait-multiple 0 bad-stuck-port)
-    (test #f object-wait-multiple 0 bad-stuck-port)
+    (test #f sync/timeout 0 bad-stuck-port)
+    (test #f sync/timeout 0 bad-stuck-port)
     (check-busy-wait
      (lambda ()
-       (test #f object-wait-multiple SYNC-BUSY-DELAY bad-stuck-port))
+       (test #f sync/timeout SYNC-BUSY-DELAY bad-stuck-port))
      #t)
     (check-busy-wait
      (lambda ()
        (thread (lambda ()
 		 (sleep SYNC-BUSY-DELAY)
 		 (set! go? #t)))
-       (test bad-stuck-port object-wait-multiple (* 3 SYNC-BUSY-DELAY) bad-stuck-port))
+       (test bad-stuck-port sync/timeout (* 3 SYNC-BUSY-DELAY) bad-stuck-port))
      #t)))
 
 (test-stuck-port (make-semaphore 1) semaphore-try-wait? semaphore-post)
@@ -610,13 +610,13 @@
 	 [s20 (make-semaphore 1)]
 	 [wt1 (stack-em 1 s1)]
 	 [wt20 (stack-em 20 s20)])
-    (test s1 object-wait-multiple 0 wt1)
-    (test s20 object-wait-multiple 0 wt20)
+    (test s1 sync/timeout 0 wt1)
+    (test s20 sync/timeout 0 wt20)
     (test #f semaphore-try-wait? s1)
     (test #f semaphore-try-wait? s20)
     (let ([t20
 	   (thread (lambda ()
-		     (test s20 object-wait-multiple 1.0 wt20)))])
+		     (test s20 sync/timeout 1.0 wt20)))])
       (let loop ([n 20])
 	(unless (zero? n)
 	  (sleep)
@@ -628,45 +628,45 @@
 ;; ----------------------------------------
 ;;  Thread suspend, resume, and dead waitables
 
-(let ([d (thread-dead-waitable (thread void))])
-  (test d object-wait-multiple #f d))
+(let ([d (thread-dead-evt (thread void))])
+  (test d sync d))
 
 (let* ([sema (make-semaphore)]
        [t (thread (lambda () (semaphore-wait sema)))]
-       [r (thread-resume-waitable t)]
-       [s (thread-suspend-waitable t)])
-  (test #f object-wait-multiple 0 t s)
-  (test t object-wait-multiple 0 t s r)
-  (test t object-wait-multiple 0 r)
+       [r (thread-resume-evt t)]
+       [s (thread-suspend-evt t)])
+  (test #f sync/timeout 0 t s)
+  (test t sync/timeout 0 t s r)
+  (test t sync/timeout 0 r)
   (thread-suspend t)
-  (test t object-wait-multiple 0 r)
-  (test t object-wait-multiple 0 s)
-  (let* ([r (thread-resume-waitable t)]
-	 [s (thread-suspend-waitable t)])
-    (test #f object-wait-multiple 0 t r)
-    (test t object-wait-multiple 0 t s r)
-    (test t object-wait-multiple 0 s)
+  (test t sync/timeout 0 r)
+  (test t sync/timeout 0 s)
+  (let* ([r (thread-resume-evt t)]
+	 [s (thread-suspend-evt t)])
+    (test #f sync/timeout 0 t r)
+    (test t sync/timeout 0 t s r)
+    (test t sync/timeout 0 s)
     (thread-resume t)
-    (test t object-wait-multiple 0 s)
-    (test t object-wait-multiple 0 r)
-    (let* ([s (thread-suspend-waitable t)])
+    (test t sync/timeout 0 s)
+    (test t sync/timeout 0 r)
+    (let* ([s (thread-suspend-evt t)])
       (thread (lambda () (sleep SYNC-SLEEP-DELAY) (thread-suspend t)))
-      (test #f object-wait-multiple 0 s)
-      (test t object-wait-multiple #f s)
-      (let* ([r (thread-resume-waitable t)]
-	     [d (thread-dead-waitable t)])
+      (test #f sync/timeout 0 s)
+      (test t sync s)
+      (let* ([r (thread-resume-evt t)]
+	     [d (thread-dead-evt t)])
 	(thread (lambda () (sleep SYNC-SLEEP-DELAY) (thread-resume t)))
-	(test #f object-wait-multiple 0 r)
-	(test t object-wait-multiple #f r)
+	(test #f sync/timeout 0 r)
+	(test t sync r)
 
-	(test #f object-wait-multiple 0 d)
+	(test #f sync/timeout 0 d)
 	(semaphore-post sema)
-	(test d object-wait-multiple #f d)
-	(test t object-wait-multiple #f r)
-	(test t object-wait-multiple #f s)
-	(test #f object-wait-multiple 0 (thread-resume-waitable t))
-	(test #f object-wait-multiple 0 (thread-suspend-waitable t))
-	(test d thread-dead-waitable t)))))
+	(test d sync d)
+	(test t sync r)
+	(test t sync s)
+	(test #f sync/timeout 0 (thread-resume-evt t))
+	(test #f sync/timeout 0 (thread-suspend-evt t))
+	(test d thread-dead-evt t)))))
 
 ;; ----------------------------------------
 ;;  Garbage collection
@@ -693,18 +693,18 @@
 
 (check-threads-gcable 'sema (lambda () (semaphore-wait (make-semaphore))))
 (define (check/combine c)
-  (check-threads-gcable 'semaw (lambda () (object-wait-multiple #f (c (make-semaphore)))))
-  (check-threads-gcable 'semap (lambda () (object-wait-multiple #f (c (make-semaphore-peek (make-semaphore))))))
-  (check-threads-gcable 'ch (lambda () (object-wait-multiple #f (c (make-channel)))))
-  (check-threads-gcable 'chput (lambda () (object-wait-multiple #f (c (make-channel-put-waitable (make-channel) 10)))))
-  (check-threads-gcable 'wrapped (lambda () (object-wait-multiple #f (c (make-wrapped-waitable (make-semaphore) void)))))
-  (check-threads-gcable 'guard (lambda () (object-wait-multiple #f (c (make-guard-waitable (lambda () (make-semaphore)))))))
-  (check-threads-gcable 'nack (lambda () (object-wait-multiple #f (c (make-nack-guard-waitable (lambda (nack) (make-semaphore)))))))
-  (check-threads-gcable 'poll (lambda () (object-wait-multiple #f (c (make-poll-guard-waitable (lambda (poll?) (make-semaphore))))))))
+  (check-threads-gcable 'semaw (lambda () (sync (c (make-semaphore)))))
+  (check-threads-gcable 'semap (lambda () (sync (c (semaphore-peek-evt (make-semaphore))))))
+  (check-threads-gcable 'ch (lambda () (sync (c (make-channel)))))
+  (check-threads-gcable 'chput (lambda () (sync (c (channel-put-evt (make-channel) 10)))))
+  (check-threads-gcable 'wrapped (lambda () (sync (c (convert-evt (make-semaphore) void)))))
+  (check-threads-gcable 'guard (lambda () (sync (c (guard-evt (lambda () (make-semaphore)))))))
+  (check-threads-gcable 'nack (lambda () (sync (c (nack-guard-evt (lambda (nack) (make-semaphore)))))))
+  (check-threads-gcable 'poll (lambda () (sync (c (poll-guard-evt (lambda (poll?) (make-semaphore))))))))
 (check/combine values)
-(check/combine (lambda (x) (waitables->waitable-set x (make-semaphore))))
-(check/combine (lambda (x) (waitables->waitable-set (make-semaphore) x)))
-(check/combine (lambda (x) (waitables->waitable-set (make-semaphore) x)))
+(check/combine (lambda (x) (choice-evt x (make-semaphore))))
+(check/combine (lambda (x) (choice-evt (make-semaphore) x)))
+(check/combine (lambda (x) (choice-evt (make-semaphore) x)))
 
 (check-threads-gcable 'nested (lambda () (call-in-nested-thread (lambda () (semaphore-wait (make-semaphore))))))
 (check-threads-gcable 'suspended (lambda () (thread-suspend (current-thread))))
@@ -712,10 +712,10 @@
 
 (check-threads-gcable 'resume (lambda () (let ([t (thread (lambda () (sleep 10)))])
 					   (thread-suspend t)
-					   (object-wait-multiple #f (thread-resume-waitable t)))))
+					   (sync (thread-resume-evt t)))))
 (check-threads-gcable 'suspend (lambda () (let ([t (thread (lambda () (semaphore-wait (make-semaphore))))])
-					    (object-wait-multiple #f (thread-suspend-waitable t)))))
-(check-threads-gcable 'suspend-self (lambda () (object-wait-multiple #f (thread-suspend-waitable (current-thread)))))
+					    (sync (thread-suspend-evt t)))))
+(check-threads-gcable 'suspend-self (lambda () (sync (thread-suspend-evt (current-thread)))))
 
 ;; ----------------------------------------
 ;;  Fairness in wait selection
@@ -728,12 +728,12 @@
 		     (if (zero? n)
 			 r-n
 			 (loop (sub1 n) (+ r-n
-					   (if (eq? r (object-wait-multiple #f t1 t2))
+					   (if (eq? r (sync t1 t2))
 					       1
 					       0)))))
 		   max))])
-  (let ([t1 (make-semaphore-peek (make-semaphore 1))]
-	[t2 (make-semaphore-peek (make-semaphore 1))])
+  (let ([t1 (semaphore-peek-evt (make-semaphore 1))]
+	[t2 (semaphore-peek-evt (make-semaphore 1))])
     (let-values ([(r w) (make-pipe)])
       (fprintf w "Hi!~n")
       ;; Between 20% and 80% is fair, and surely < 20% or > 80% is unlikely
@@ -741,9 +741,9 @@
       (try t1 t2 t2 20 80)
       (try t1 w w 20 80)
       (try w t1 w 20 80)
-      (try t1 (waitables->waitable-set t2 w) t1 10 50)
-      (try t1 (waitables->waitable-set t2 w) w 10 50)
-      (try (waitables->waitable-set t2 w) t1 w 10 50))))
+      (try t1 (choice-evt t2 w) t1 10 50)
+      (try t1 (choice-evt t2 w) w 10 50)
+      (try (choice-evt t2 w) t1 w 10 50))))
 
 ;; ----------------------------------------
 ;;  No starvation, despite hack to increase throughput for
@@ -766,10 +766,10 @@
       [s2 (make-semaphore)])
   (define t1
     (thread (lambda ()
-	      (semaphore-post (object-wait-multiple #f s1 s2)))))
+	      (semaphore-post (sync s1 s2)))))
   (define t2
     (thread (lambda ()
-	      (semaphore-post (object-wait-multiple #f s1 s2)))))
+	      (semaphore-post (sync s1 s2)))))
   (let loop ()
     (sleep)
     (semaphore-post s1)

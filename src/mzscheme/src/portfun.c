@@ -1232,7 +1232,7 @@ wrap_user_read_evt(Scheme_Object *evt,
 
   a[0] = evt;
   a[1] = wrapper;
-  return scheme_wrap_evt(2, a);
+  return scheme_convert_evt(2, a);
 }
 
 static Scheme_Object * 
@@ -1566,7 +1566,7 @@ user_write_bytes_evt(Scheme_Output_Port *port,
 
   a[0] = val;
   a[1] = wrapper;
-  return scheme_wrap_evt(2, a);
+  return scheme_convert_evt(2, a);
 }
 
 static void

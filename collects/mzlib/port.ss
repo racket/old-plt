@@ -15,7 +15,7 @@
       (make-output-port 
        name
        always-evt
-       (lambda (s start end non-block?) (- end start))
+       (lambda (s start end non-block? breakable?) (- end start))
        void
        (lambda (special non-block?) #t)
        (lambda (s start end) (wrap-evt
@@ -84,12 +84,11 @@
        (semaphore-peek-evt lock-semaphore)
        (lambda (x) 0)))
     (define (read-it s)
-      (parameterize ([break-enabled #f])
-	(call-with-semaphore
-	 lock-semaphore
-	 (lambda ()
-	   (do-read-it s))
-	 try-again)))
+      (call-with-semaphore
+       lock-semaphore
+       (lambda ()
+	 (do-read-it s))
+       try-again))
     (define (do-read-it s)
       (if (char-ready? peeked-r)
 	  (read-bytes-avail!* s peeked-r)
@@ -111,12 +110,11 @@
 		      (when (null? special-peeked)
 			(set! special-peeked-tail #f))))])))
     (define (peek-it s skip)
-      (parameterize ([break-enabled #f])
-	(call-with-semaphore
-	 lock-semaphore
-	 (lambda ()
-	   (do-peek-it s skip))
-	 try-again)))
+      (call-with-semaphore
+       lock-semaphore
+       (lambda ()
+	 (do-peek-it s skip))
+       try-again))
     (define (do-peek-it s skip)
       (let ([v (peek-bytes-avail!* s skip peeked-r)])
 	(if (zero? v)

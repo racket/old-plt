@@ -327,12 +327,14 @@
 		  [nl-sema (make-semaphore 1)]
 		  [ready? #f]
 		  [nl? #f])
-	      (make-custom-input-port 
+	      (make-input-port
+	       'read-line/expire
 	       (lambda (s) 
 		 (let ([c (if nl?
 			      (if ready?
 				  #\newline
-				  nl-sema)
+				  (convert-evt nl-sema
+					       (lambda (x) 0)))
 			      (begin
 				(set! nl? #t)
 				(semaphore-try-wait? nl-sema)
@@ -463,7 +465,7 @@
 (test #t exn:thread? (chain 1))
 (test-stream '(os ms mpre is ibreak))
 
-(parameterize ([break-enabled #f])
+(parameterize-break #f
   (test #t exn:thread? (chain 1))
   (test-stream '(os ms mpre is ie))
   (test (void) 'discard-break
@@ -487,7 +489,7 @@
 (test #t exn:thread? (chain (lambda (t1 get-c) (kill-thread t1))))
 (test-stream '(os ms mpre is ibreak))
 
-(parameterize ([break-enabled #f])
+(parameterize-break #f
   (test #t exn:thread? (let ([t (current-thread)])
 			 (chain (lambda (t1 get-c)
 				  (custodian-shutdown-all (get-c 1))
@@ -518,8 +520,8 @@
 (let ([s (make-semaphore 1)]
       [s2 (make-semaphore 1)])
   (let ([w (list
-	    (object-wait-multiple #f s s2)
-	    (object-wait-multiple #f s s2))])
+	    (sync s s2)
+	    (sync s s2))])
     (test #t 'both (or (equal? w (list s s2))
 		       (equal? w (list s2 s))))
     (test #f semaphore-try-wait? s)
@@ -531,8 +533,8 @@
       [s2 (make-semaphore 1)])
   (let-values ([(r w) (make-pipe)])
     (let ([w (list
-	      (object-wait-multiple #f s r s2)
-	      (object-wait-multiple #f s r s2))])
+	      (sync s r s2)
+	      (sync s r s2))])
       (test #t 'both (or (equal? w (list s s2))
 			 (equal? w (list s2 s))))
       (test #f semaphore-try-wait? s)
@@ -543,7 +545,7 @@
       [portnum (+ 40000 (random 100))]) ; so parallel tests work ok
   (let ([t (thread
 	    (lambda ()
-	      (object-wait-multiple #f s-t)))]
+	      (sync s-t)))]
 	[l (tcp-listen portnum 5 #t)]
 	[orig-thread (current-thread)])
     (let-values ([(r w) (make-pipe)])
@@ -561,71 +563,71 @@
 	  (test 'break 'broken-wait v)))
 
       (define (try-all-blocked)
-	(test #f object-wait-multiple 0.05 s t l r))
+	(test #f sync/timeout 0.05 s t l r))
 
-      (try-all-blocked* object-wait-multiple)
-      (try-all-blocked* object-wait-multiple/enable-break)
-      (parameterize ([break-enabled #f])
-	(try-all-blocked* object-wait-multiple/enable-break))
+      (try-all-blocked* sync/timeout)
+      (try-all-blocked* sync/timeout/enable-break)
+      (parameterize-break #f
+	(try-all-blocked* sync/timeout/enable-break))
 
       (display #\x w)
-      (test r object-wait-multiple #f s t l r)
-      (test r object-wait-multiple #f s t l r)
+      (test r sync s t l r)
+      (test r sync s t l r)
       (peek-char r)
-      (test r object-wait-multiple #f s t l r)
+      (test r sync s t l r)
       (read-char r)
       (try-all-blocked)
 	  
       ;; pipe write always available, since no limit:
-      (test w object-wait-multiple #f s t l r w)
+      (test w sync s t l r w)
 
       (semaphore-post s)
-      (test s object-wait-multiple #f s t l r)
+      (test s sync s t l r)
       (try-all-blocked)
 
       (semaphore-post s-t)
-      (test t object-wait-multiple #f s t l r)
-      (test t object-wait-multiple #f s t l r)
+      (test t sync s t l r)
+      (test t sync s t l r)
 
       (set! t (thread (lambda () (semaphore-wait (make-semaphore)))))
 
       (let-values ([(cr cw) (tcp-connect "localhost" portnum)])
-	(test l object-wait-multiple #f s t l r)
-	(test l object-wait-multiple #f s t l r)
+	(test l sync s t l r)
+	(test l sync s t l r)
 
 	(let-values ([(sr sw) (tcp-accept l)])
 	  (try-all-blocked)
 
 	  (close-output-port w)
-	  (test r object-wait-multiple #f s t l r)
-	  (test r object-wait-multiple #f s t l r)
+	  (test r sync s t l r)
+	  (test r sync s t l r)
 
 	  (set! r cr)
 	  (try-all-blocked)
 
 	  (display #\y sw)
-	  (test cr object-wait-multiple #f s t l sr cr)
+	  (test cr sync s t l sr cr)
 	  (read-char cr)
 	  (try-all-blocked)
-	  (test sw object-wait-multiple #f s t l sr cr sw)
+	  (test sw sync s t l sr cr sw)
 	  
 	  (display #\z cw)
-	  (test sr object-wait-multiple #f s t l sr cr)
+	  (test sr sync s t l sr cr)
 	  (read-char sr)
 	  (try-all-blocked)
-	  (test cw object-wait-multiple #f s t l sr cr cw)
+	  (test cw sync s t l sr cr cw)
 
 	  ;; Fill up output buffer:
-	  (test sw object-wait-multiple 0 sw)
+	  (test sw sync/timeout 0 sw)
 	  (test #t
 		positive?
 		(let loop ([n 0])
-		  (if (and (object-wait-multiple 0 sw)
+		  (if (and (sync/timeout 0 sw)
 			   (= 4096 (write-bytes-avail (make-bytes 4096 (char->integer #\x)) sw)))
 		      (loop (add1 n))
 		      n)))
-	  (test #f object-wait-multiple 0 sw sr)
-	  (test cr object-wait-multiple 0 sw sr cr)
+	  (test #f sync/timeout 0 sw sr)
+	  (test cr sync/timeout 0 sw sr cr)
 	  ;; Flush cr:
 	  (let ([s (make-bytes 4096)])
 	    (let loop ()
@@ -634,33 +636,33 @@
 		(loop))))
 
 	  (close-output-port sw)
-	  (test cr object-wait-multiple #f s t l sr cr)
-	  (test cr object-wait-multiple #f s t l sr cr)
+	  (test cr sync s t l sr cr)
+	  (test cr sync s t l sr cr)
 
 	  (close-output-port cw)
-	  (test sr object-wait-multiple #f s t l sr))))
+	  (test sr sync s t l sr))))
     (tcp-close l)))
 
 ;; Test limited pipe output waiting:
 (let-values ([(r w) (make-pipe 5000)])
-  (test #f object-wait-multiple 0 r)
-  (test w object-wait-multiple 0 r w)
+  (test #f sync/timeout 0 r)
+  (test w sync/timeout 0 r w)
   (display (make-bytes 4999 (char->integer #\x)) w)
-  (test w object-wait-multiple 0 w)
+  (test w sync/timeout 0 w)
   (display #\y w)
-  (test #f object-wait-multiple 0 w)
+  (test #f sync/timeout 0 w)
   (test 0 write-bytes-avail* #"hello" w)
-  (test r object-wait-multiple 0 r w)
+  (test r sync/timeout 0 r w)
   (read-char r)
-  (test w object-wait-multiple 0 w)
+  (test w sync/timeout 0 w)
   (display #\z w)
-  (test #f object-wait-multiple 0 w)
+  (test #f sync/timeout 0 w)
   (read-bytes 5000 r)
-  (test #f object-wait-multiple 0 r)
-  (test w object-wait-multiple 0 r w)
+  (test #f sync/timeout 0 r)
+  (test w sync/timeout 0 r w)
   (display (make-bytes 5000 (char->integer #\x)) w)
-  (test r object-wait-multiple 0 r w)
-  (test #f object-wait-multiple 0 w))
+  (test r sync/timeout 0 r w)
+  (test #f sync/timeout 0 w))
 
 ;; ----------------------------------------
 ;; Suspend and resume
@@ -728,7 +730,7 @@
 
 ;; Breaking/killing:
 (define /dev/null-for-err
-  (make-custom-output-port #f (lambda (s start end ?) (- end start)) void void))
+  (make-output-port 'dev/null always-evt (lambda (s start end ? ??) (- end start)) void void))
 (for-each
  (lambda (sleep0)
    (test (list 'start-sleep0 sleep0) values (list 'start-sleep0 sleep0))
@@ -763,7 +765,7 @@
 		(sleep2)
 		;; keep trying to resume until the thread stops:
 		(let loop ()
-		  (unless (object-wait-multiple 0 t2)
+		  (unless (sync/timeout 0 t2)
 		    (thread-resume t2)
 		    (loop)))
 		(thread-wait t2)
@@ -777,7 +779,8 @@
 				   (thread (lambda () 
 					     (wait)
 					     (sleep0)
-					     (set! v 99))))])
+					     (set! v 99)
+					     (fprintf (current-error-port) "Thread shouldn't get here! ~a~n" (break-enabled)))))])
 			 (sleep1)
 			 (thread-suspend t2)
 			 (post)
@@ -808,7 +811,7 @@
 			     (wait)
 			     (sleep0)
 			     (set! v 99)
-			     (fprintf (current-error-port) "Shouldn't get here!~n"))))))])
+			     (fprintf (current-error-port) "Shouldn't get here! ~a~n" (break-enabled)))))))])
 	      (test 'sema-block values 'sema-block)
 	      (let ([s (make-semaphore)])
 		(w-block (lambda () (semaphore-post s))
@@ -817,21 +820,21 @@
 	       (lambda (init)
 		 (test (list 'sema-block/enable-break init) values (list 'sema-block/enable-break init))
 		 (let ([s (make-semaphore)])
-		   (parameterize ([break-enabled init])
+		   (parameterize-break init
 		     (w-block (lambda () (semaphore-post s))
 			      (lambda () (semaphore-wait/enable-break s))))))
 	       '(#t #f))
 	      (test 'ch-block values 'ch-block)
 	      (let ([ch (make-channel)])
 		(w-block (lambda () (thread (lambda () (channel-put ch 10))))
-			 (lambda () (object-wait-multiple #f (make-semaphore) ch))))
+			 (lambda () (sync (make-semaphore) ch))))
 	      (for-each
 	       (lambda (init)
 		 (test (list 'ch-block/enable-break init) values (list 'ch-block/enable-break init))
 		 (let ([ch (make-channel)])
-		   (parameterize ([break-enabled #f])
+		   (parameterize-break #f
 		     (w-block (lambda () (thread (lambda () (channel-put ch 10))))
-			      (lambda () (object-wait-multiple/enable-break #f (make-semaphore) ch))))))
+			      (lambda () (sync/timeout/enable-break #f (make-semaphore) ch))))))
 	       '(#t #f))))])
      (define BKT-SLEEP-TIME (/ SLEEP-TIME 4))
      (goes void void break-thread)
@@ -911,13 +914,13 @@
 	     (custodian-shutdown-all c)
 	     (test #f thread-running? t)
 	     (test (not resumable?) thread-dead? t)
-	     (test (and resumable? t) object-wait-multiple 0 (thread-suspend-waitable t))
+	     (test (and resumable? t) sync/timeout 0 (thread-suspend-evt t))
 	     (check-inc #f)
-	     (let ([r (thread-resume-waitable t)])
-	       (test #f object-wait-multiple 0 r)
+	     (let ([r (thread-resume-evt t)])
+	       (test #f sync/timeout 0 r)
 	       (set! c (make-custodian))
 	       (thread-resume t c)
-	       (test (and resumable? t) object-wait-multiple 0 r))
+	       (test (and resumable? t) sync/timeout 0 r))
 	     (test resumable? thread-running? t)
 	     (when resumable?
 	       (check-inc #t)

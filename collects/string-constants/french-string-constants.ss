@@ -759,7 +759,11 @@
  
  (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
 
+ (mrflow-using-default-language-title "Language par défaut utilisé")
+ (mrflow-using-default-language "Le language actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé à la place.")
  (mrflow-button-title "Analyzer")
+ (mrflow-unknown-style-error-title "Style de boîte inconnu")
+ (mrflow-unknown-style-error "Style de boîte inconnu: ~a")
  (mrflow-coloring-error-title "Couleur inconnue")
  (mrflow-coloring-error "Pas de style défini pour la couleur: ~a")
  (mrflow-popup-menu-show-type "Montrer le type")

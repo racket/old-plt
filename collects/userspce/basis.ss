@@ -455,7 +455,7 @@
 	    (dh (format "~a" (exn-message exn)) debug exn))
 	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
-    ((error-display-handler) "Exception handler didn't escape")
+    ((error-display-handler) "Exception handler did not escape")
     ((bottom-escape-handler)))
   
   ;; drscheme-error-value->string-handler : TST number -> string

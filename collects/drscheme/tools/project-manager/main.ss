@@ -219,7 +219,6 @@
       (define collection-paths #f)
 
       (define project-custodian (make-custodian))
-      (define drs-eventspace (current-eventspace))
 
       (define (show-error/open-file msg zodiac)
 	(let* ([dialog (make-object dialog% (format "Error running project ~a" project-name) this 400 200)]
@@ -393,14 +392,13 @@
 
       (define (execute-project)
 	(when (offer-to-save-files)
-	  (let ([orig-eventspace (current-eventspace)]
-		[orig-exn-handler (current-exception-handler)])
-	    (shutdown-project)
-	    (set! project-custodian (make-custodian))
+	  (shutdown-project)
+	  (set! project-custodian (make-custodian))
 
-	    (let ([collection-paths (get-collection-paths)])
-	      (parameterize ([current-custodian project-custodian])
-		(parameterize ([current-eventspace (make-eventspace)])
+	  (let ([collection-paths (get-collection-paths)])
+	    (parameterize ([current-custodian project-custodian])
+	      (let ([project-eventspace (make-eventspace)])
+		(parameterize ([current-eventspace project-eventspace])
 		  (queue-callback
 		   (lambda ()
 		     (when collection-paths
@@ -410,6 +408,23 @@
 		     (exit-handler
 		      (lambda x
 			(custodian-shutdown-all project-custodian)))
+
+
+		     (let* ([error-escape-k #f]
+			    [project-manager-bottom-escape-handler
+			     (lambda ()
+			       (error-escape-k))]
+			    [primitive-event-dispatch-handler (event-dispatch-handler)]
+			    [project-manager-event-dispatch-handler
+			     (lambda (eventspace)
+			       (if (eq? eventspace project-eventspace)
+				   (let/ec k
+				     (set! error-escape-k k)
+				     (primitive-event-dispatch-handler eventspace))
+				   (primitive-event-dispatch-handler)))])
+		       (drscheme:basis:bottom-escape-handler project-manager-bottom-escape-handler)
+		       (event-dispatch-handler
+			project-manager-event-dispatch-handler))
 
 		     (drscheme:basis:error-display/debug-handler
 		      (let ([project-manager-error-display/debug-handler

@@ -14,9 +14,11 @@ string=? ; exec mzscheme -qr $0
                                                        "raw-kajitani")
 		       read))
 
-(define allowed-emails (call-with-input-file (build-path (collection-path "games" "paint-by-numbers")
-                                                         "allowed-email")
-                        read))
+(define allowed-emails
+  (map (lambda (x) (if (list? x) (car x) x))
+       (call-with-input-file (build-path (collection-path "games" "paint-by-numbers")
+					 "allowed-email")
+	 read)))
 
 (define counters (make-hash-table))
 

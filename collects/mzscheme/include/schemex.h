@@ -334,8 +334,10 @@ void (*scheme_flush_output)(Scheme_Object *port);
 char *(*scheme_format)(char *format, int flen, int argc, Scheme_Object **argv, int *rlen);
 void (*scheme_printf)(char *format, int flen, int argc, Scheme_Object **argv);
 int (*scheme_getc)(Scheme_Object *port);
+int (*scheme_peekc)(Scheme_Object *port);
 void (*scheme_ungetc)(int ch, Scheme_Object *port);
 int (*scheme_char_ready)(Scheme_Object *port);
+int (*scheme_peekc_is_ungetc)(Scheme_Object *port);
 void (*scheme_need_wakeup)(Scheme_Object *port, void *fds);
 long (*scheme_get_chars)(Scheme_Object *port, long size, char *buffer);
 long (*scheme_tell)(Scheme_Object *port);
@@ -347,6 +349,7 @@ int (*scheme_are_all_chars_ready)(Scheme_Object *port);
 Scheme_Object *(*scheme_make_port_type)(const char *name);
 Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
 					  int (*getc_fun)(Scheme_Input_Port*),
+					  int (*peekc_fun)(Scheme_Input_Port*),
 					  int (*char_ready_fun)
 					  (Scheme_Input_Port*),
 					  void (*close_fun)

@@ -18,7 +18,8 @@ not to forget: teachpakcs
            (lib "class.ss")
            (lib "list.ss")
            (lib "tool.ss" "drscheme")
-           (lib "mred.ss" "mred"))
+           (lib "mred.ss" "mred")
+           (lib "bday.ss" "framework" "private"))
   
   (provide tool@)
   
@@ -401,6 +402,13 @@ not to forget: teachpakcs
       ;; the key used to put information on the continuation
       (define cm-key (gensym 'teaching-languages-continuation-mark-key))
       
+      (define mf-note
+        (let ([bitmap
+               (make-object bitmap%
+                 (build-path (collection-path "icons") "mf.gif"))])
+          (and (send bitmap ok?)
+               (make-object image-snip% bitmap))))
+      
       ;; teaching-languages-error-display-handler : 
       ;;    (string (union TST exn) -> void) -> string exn -> void
       ;; adds in the bug icon, if there are contexts to display
@@ -416,6 +424,29 @@ not to forget: teachpakcs
                              [src (car first-cms)])
                         src)))]
                  [else #f])])
+          
+          (let ([rep (drscheme:rep:current-rep)])
+            (when (and rep
+                       mf-note
+                       (eq? (current-error-port) (send rep get-this-err))
+                       (mf-bday?))
+              (send rep queue-output
+                    (lambda ()
+                      (let ([locked? (send rep is-locked?)])
+                        (send rep begin-edit-sequence)
+                        (send rep lock #f)
+                        (let ([before (send rep last-position)])
+                          (send rep insert (send mf-note copy) before before)
+                          (let ([after (send rep last-position)])
+                            (send rep insert #\space after after)
+                            (send rep set-clickback before after
+                                  (lambda (txt start end)
+                                    (message-box 
+                                     (string-constant happy-birthday-matthias)
+                                     (string-constant happy-birthday-matthias))))))
+                        (send rep lock locked?)
+                        (send rep end-edit-sequence))))))
+          
           (when (string? src)
             (display src (current-error-port))
             (display ": " (current-error-port))))

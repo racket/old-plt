@@ -1,7 +1,7 @@
 ! MrEd resources:
 
 !  Font names
-mred.ScreenDefaultBase: *-courier
+mred.ScreenDefaultBase: *-lucida
 mred.ScreenModernBase: misc-fixed
 mred.ScreenDecorativeBase: *-helvetica
 mred.ScreenScriptBase: *-charter
@@ -13,10 +13,6 @@ mred.defaultFontSize: 12
 
 !  Time between clicks for a double-click
 mred.doubleClickTime:   500
-
-!  Standard system's console (uncomment it to use)
-! *MrEdConsole.geometry: +40+40
-
 
 !  Indigo Magic look & feel
 ! MrEd*useSchemes: all

@@ -14,11 +14,11 @@ MrEd's font system is designed to appear to work gracefully across
 platforms to a naive MrEd user. It is also designed to provide
 complete configuration control to a knowledgeable user (this may be
 especially necessary under X Windows). These are somewhat
-contradictory goals, and leave MrEd with a somewhat complex font
+contradictory goals, and they leave MrEd with a somewhat complex font
 system.
 
-Terminology will be developed here to explain the working of the font
-system, but do not expect these terms to be used by the MrEd
+We'll develop terminology here to explain the working of the font
+system, but don't expect these terms to be used by the MrEd
 toolbox. The toolbox is designed to do what a programmer or user
 probably wanted using names that a programmer or user would probably
 understand intuitively.
@@ -381,7 +381,7 @@ X Windows only:
  ScreenItalic: i
  ScreenSlant: o
  
- ScreenDefaultBase: misc-fixed
+ ScreenDefaultBase: *-lucida
  ScreenRomanBase: *-times
  ScreenDecorativeBase: *-helvetica
  ScreenModernBase: *-courier

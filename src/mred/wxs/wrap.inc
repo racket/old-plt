@@ -4420,6 +4420,7 @@
 " '(hide-vscroll"
 " hide-hscroll)))))"
 "(sequence"
+"(send e set-paste-text-only #t)"
 "(send e auto-wrap"
 "(and"
 " multi?"

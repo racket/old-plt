@@ -62,7 +62,7 @@ Scheme_Object *scheme_make_config(Scheme_Config *base);
 Scheme_Object *scheme_branch_config(void);
 int scheme_new_param(void);
 
-Scheme_Object *scheme_param_config(char *name, long pos,
+Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 				   int argc, Scheme_Object **argv,
 				   int arity, 
 				   Scheme_Prim *check, char *expected,

@@ -38,6 +38,12 @@
 # define USE_MEMORY_TRACING 
 #endif
 
+#ifdef MZ_PRECISE_GC
+# define MUST_REGISTER_GLOBALS
+# define MZTAG_REQUIRED
+# undef UNIX_IMAGE_DUMPS
+#endif
+
 #ifdef USE_SENORA_GC
 # define MUST_REGISTER_GLOBALS
 # undef UNIX_IMAGE_DUMPS
@@ -45,6 +51,12 @@
 
 #ifdef USE_SINGLE_FLOATS
 # define MZ_USE_SINGLE_FLOATS
+#endif
+
+#ifdef MZ_PRECISE_GC
+# define MZ_HASH_KEY_EX  short keyex;
+#else
+# define MZ_HASH_KEY_EX /**/
 #endif
 
 #include <stdio.h>
@@ -84,6 +96,7 @@ typedef struct Scheme_Bucket
 typedef struct Scheme_Hash_Table
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int size, count, step;
   Scheme_Bucket **buckets;
   char has_constants, forever, weak;
@@ -104,7 +117,7 @@ enum {
 typedef struct Scheme_Env
 {
   Scheme_Type type; /* scheme_namespace_type */
-  short no_keywords;
+  short no_keywords; /* only low-bit used; rest is hash key for precise gc */
   Scheme_Hash_Table *globals;
   Scheme_Hash_Table *loaded_libraries;
   struct Scheme_Comp_Env *init; /* initial compilation environment */
@@ -124,6 +137,7 @@ typedef struct Scheme_Object
 {
   Scheme_Type type; /* Anything that starts with a type field
 		       can be a Scheme_Object */
+  MZ_HASH_KEY_EX
   union
     {
       struct { char *string_val; int tag_val; } str_val;
@@ -143,6 +157,7 @@ typedef struct Scheme_Object
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   union {
     char char_val;
     Scheme_Object *ptr_value;
@@ -154,12 +169,14 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   double double_val;
 } Scheme_Double;
 
 #ifdef MZ_USE_SINGLE_FLOATS
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   float float_val;
 } Scheme_Float;
 #endif
@@ -228,42 +245,50 @@ typedef struct {
    (rec)->cases = cses, \
    rec)
 
-typedef struct Scheme_Debugging_Info {
-  Scheme_Object *src;
-} Scheme_Debugging_Info;
-
 typedef struct Scheme_Symbol {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int len;
   char s[1];
 } Scheme_Symbol;
 
 typedef struct Scheme_Vector {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int size;
   Scheme_Object *els[1];
 } Scheme_Vector;
 
+#ifdef MZ_PRECISE_GC
+typedef struct GC_Weak_Box Scheme_Weak_Box;
+#endif
+
 typedef void Scheme_Close_Manager_Client(Scheme_Object *o, void *data);
+#ifdef MZ_PRECISE_GC
+typedef struct Scheme_Weak_Box Scheme_Manager_Reference;
+#else
 typedef struct Scheme_Manager *Scheme_Manager_Reference;
+#endif
 
 typedef struct Scheme_Manager {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   int count, alloc;
   Scheme_Object ***boxes;
   Scheme_Manager_Reference **mrefs;
   Scheme_Close_Manager_Client **closers;
   void **data;
 
-  /* atomic indirections: */
-  struct Scheme_Manager **parent;
-  struct Scheme_Manager **sibling;
-  struct Scheme_Manager **children;
+  /* weak indirections: */
+  Scheme_Manager_Reference *parent;
+  Scheme_Manager_Reference *sibling;
+  Scheme_Manager_Reference *children;
 } Scheme_Manager;
 
 typedef struct Scheme_Input_Port
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short closed;
   Scheme_Object *sub_type;
   Scheme_Manager_Reference *mref;
@@ -287,6 +312,7 @@ typedef struct Scheme_Input_Port
 typedef struct Scheme_Output_Port
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short closed;
   Scheme_Object *sub_type;
   Scheme_Manager_Reference *mref;
@@ -304,6 +330,7 @@ typedef struct Scheme_Output_Port
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   struct Scheme_Object *sclass;
   /* The following fields are only here for instances of classes
      created with scheme_make_class(): */
@@ -314,6 +341,7 @@ typedef struct {
 
 typedef struct Scheme_Unit {
   Scheme_Type type;        /* scheme_unit_type */
+  MZ_HASH_KEY_EX
   short num_imports;       /* num expected import args */
   short num_exports;       /* num exported vars */
   Scheme_Object **exports; /* names of exported */
@@ -345,6 +373,10 @@ typedef struct Scheme_Jumpup_Buf {
   long stack_size, stack_max_size;
   struct Scheme_Jumpup_Buf *cont;
   mz_jmp_buf buf;
+#ifdef MZ_PRECISE_GC
+  void *gc_var_stack;
+  int gc_var_count;
+#endif
 } Scheme_Jumpup_Buf;
 
 enum {
@@ -414,6 +446,7 @@ enum {
 
 typedef struct Scheme_Config {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Hash_Table *extensions;
   Scheme_Object *configs[1];
 } Scheme_Config;
@@ -439,6 +472,7 @@ typedef struct Scheme_Continuation_Jump_State {
 
 typedef struct Scheme_Process {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
 
   struct Scheme_Process *next;
   struct Scheme_Process *prev;
@@ -583,16 +617,16 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 
 /* This file defines all the built-in types */
 #ifdef INCLUDE_WITHOUT_PATHS
-#include "stypes.h"
+# include "stypes.h"
 #else
-#include "../src/stypes.h"
+# include "../src/stypes.h"
 #endif
 
 /* This file includes the MZEXN constants */
 #ifdef INCLUDE_WITHOUT_PATHS
-#include "schexn.h"
+# include "schexn.h"
 #else
-#include "../src/schexn.h"
+# include "../src/schexn.h"
 #endif
 
 #if defined(DETECT_WIN32_CONSOLE_STDIN) || defined(WINDOWS_PROCESSES)
@@ -642,19 +676,19 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 
 /* Value-access macros */
 #ifdef FAST_NUMBERS
-#define SCHEME_TYPE(obj)     (SCHEME_INTP(obj)?(Scheme_Type)scheme_integer_type:(obj)->type)
-#define _SCHEME_TYPE(obj) ((obj)->type) /* unsafe version */
+# define SCHEME_TYPE(obj)     (SCHEME_INTP(obj)?(Scheme_Type)scheme_integer_type:(obj)->type)
+# define _SCHEME_TYPE(obj) ((obj)->type) /* unsafe version */
 #else
-#define SCHEME_TYPE(obj)     ((obj)->type)
-#define _SCHEME_TYPE SCHEME_TYPE
+# define SCHEME_TYPE(obj)     ((obj)->type)
+# define _SCHEME_TYPE SCHEME_TYPE
 #endif
 
 
 #define SCHEME_CHAR_VAL(obj) (((Scheme_Small_Object *)(obj))->u.char_val)
 #ifdef FAST_NUMBERS
-#define SCHEME_INT_VAL(obj)  (((long)(obj))>>1)
+# define SCHEME_INT_VAL(obj)  (((long)(obj))>>1)
 #else
-#define SCHEME_INT_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.int_val)
+# define SCHEME_INT_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.int_val)
 #endif
 #define SCHEME_DBL_VAL(obj)  (((Scheme_Double *)(obj))->double_val)
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -697,18 +731,22 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
 #define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
 #define SCHEME_VAR_BUCKET(obj) ((Scheme_Bucket *)(obj))
-#define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
+#ifdef MZ_PRECISE_GC
+# define SCHEME_ENVBOX_VAL(obj)  SCHEME_PTR_VAL(obj)
+#else
+# define SCHEME_ENVBOX_VAL(obj)  (*((Scheme_Object **)(obj)))
+#endif
 
 #define SCHEME_ASSERT(expr,msg) ((expr) ? 1 : (scheme_signal_error(msg), 0))
 
 #if !SCHEME_DIRECT_EMBEDDED
-#ifdef MZ_REAL_THREADS
-#define scheme_current_process (scheme_get_current_process())
-#else
-#ifdef LINK_EXTENSIONS_BY_TABLE
-#define scheme_current_process (*scheme_current_process_ptr)
-#endif
-#endif
+# ifdef MZ_REAL_THREADS
+#  define scheme_current_process (scheme_get_current_process())
+# else
+#  ifdef LINK_EXTENSIONS_BY_TABLE
+#   define scheme_current_process (*scheme_current_process_ptr)
+#  endif
+# endif
 #endif
 
 #define scheme_eval_wait_expr (scheme_current_process->ku.eval.wait_expr)
@@ -778,17 +816,17 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #define _scheme_tail_apply_no_copy(f, n, args) _scheme_tail_apply_no_copy_wp(f, n, args, scheme_current_process)
 
 #ifndef MZ_REAL_THREADS
-#define scheme_process_block_w_process(t,p) scheme_process_block(t)
+# define scheme_process_block_w_process(t,p) scheme_process_block(t)
 #else
-#define scheme_process_block(t) scheme_process_block_w_process(t,scheme_current_process)
+# define scheme_process_block(t) scheme_process_block_w_process(t,scheme_current_process)
 #endif
 
 #if !SCHEME_DIRECT_EMBEDDED
-#ifndef MZ_REAL_THREADS
-#ifdef LINK_EXTENSIONS_BY_TABLE
-#define scheme_fuel_counter (*scheme_fuel_counter_ptr)
-#endif
-#endif
+# ifndef MZ_REAL_THREADS
+#  ifdef LINK_EXTENSIONS_BY_TABLE
+#   define scheme_fuel_counter (*scheme_fuel_counter_ptr)
+#  endif
+# endif
 #endif
 
 #ifdef MZ_REAL_THREADS
@@ -824,41 +862,60 @@ extern Scheme_Object *scheme_eval_waiting;
 
 #ifdef SCHEME_NO_GC
 void *scheme_malloc(size_t size);
-#define scheme_malloc_atomic scheme_malloc
-#define scheme_malloc_stubborn scheme_malloc
-#define scheme_malloc_uncollectable scheme_malloc
+# define scheme_malloc_atomic scheme_malloc
+# define scheme_malloc_stubborn scheme_malloc
+# define scheme_malloc_uncollectable scheme_malloc
 #else
-#define scheme_malloc GC_malloc
-#define scheme_malloc_atomic GC_malloc_atomic
-#define scheme_malloc_stubborn GC_malloc_stubborn
-#define scheme_malloc_uncollectable GC_malloc_uncollectable
+# define scheme_malloc GC_malloc
+# define scheme_malloc_atomic GC_malloc_atomic
+# define scheme_malloc_stubborn GC_malloc_stubborn
+# define scheme_malloc_uncollectable GC_malloc_uncollectable
 #endif
 
 #ifdef USE_MEMORY_TRACING
-#define USE_TAGGED_ALLOCATION
-#define MEMORY_COUNTING_ON
+# define USE_TAGGED_ALLOCATION
+# define MEMORY_COUNTING_ON
 #endif
 
-#ifdef USE_TAGGED_ALLOCATION
+#ifdef MZ_PRECISE_GC
+# ifdef INCLUDE_WITHOUT_PATHS
+#  include "gc2.h"
+# else
+#  include "../gc2/gc2.h"
+# endif
+# define scheme_malloc_tagged GC_malloc_one_tagged
+# define scheme_malloc_array_tagged GC_malloc_array_tagged
+# define scheme_malloc_atomic_tagged GC_malloc_atomic_tagged
+# define scheme_malloc_stubborn_tagged GC_malloc_one_stubborn_tagged
+# define scheme_malloc_eternal_tagged GC_malloc_eternal_tagged
+# define scheme_malloc_uncollectable_tagged GC_malloc_uncollectable_tagged
+# define scheme_malloc_envunbox GC_malloc_one_tagged
+# define scheme_malloc_weak GC_malloc_weak
+# define scheme_malloc_weak_tagged GC_malloc_one_weak_tagged
+#else
+# ifdef USE_TAGGED_ALLOCATION
 extern void *scheme_malloc_tagged(size_t);
+#  define scheme_malloc_array_tagged scheme_malloc
 extern void *scheme_malloc_atomic_tagged(size_t);
 extern void *scheme_malloc_stubborn_tagged(size_t);
 extern void *scheme_malloc_eternal_tagged(size_t);
 extern void *scheme_malloc_uncollectable_tagged(size_t);
 extern void *scheme_malloc_envunbox(size_t);
-#else
-#define scheme_malloc_tagged scheme_malloc
-#define scheme_malloc_atomic_tagged scheme_malloc_atomic
-#define scheme_malloc_stubborn_tagged scheme_malloc_stubborn
-#define scheme_malloc_eternal_tagged scheme_malloc_eternal
-#define scheme_malloc_uncollectable_tagged scheme_malloc_uncollectable
-#define scheme_malloc_envunbox scheme_malloc
+# else
+#  define scheme_malloc_tagged scheme_malloc
+#  define scheme_malloc_array_tagged scheme_malloc
+#  define scheme_malloc_atomic_tagged scheme_malloc_atomic
+#  define scheme_malloc_stubborn_tagged scheme_malloc_stubborn
+#  define scheme_malloc_eternal_tagged scheme_malloc_eternal
+#  define scheme_malloc_uncollectable_tagged scheme_malloc_uncollectable
+#  define scheme_malloc_envunbox scheme_malloc
+# endif
 #endif
 
 #ifdef FAST_NUMBERS
-#define scheme_make_integer(i) ((Scheme_Object *)((((long)i) << 1) | 0x1))
+# define scheme_make_integer(i) ((Scheme_Object *)((((long)i) << 1) | 0x1))
 #else
-#define scheme_make_integer scheme_make_integer_value
+# define scheme_make_integer scheme_make_integer_value
 #endif
 #define scheme_make_character(ch) (scheme_char_constants[(unsigned char)(ch)])
 
@@ -893,7 +950,7 @@ extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */
 
 #ifdef MZ_REAL_THREADS
 Scheme_Process *scheme_get_current_process();
-#define scheme_current_process (SCHEME_GET_CURRENT_PROCESS())
+# define scheme_current_process (SCHEME_GET_CURRENT_PROCESS())
 #else
 extern Scheme_Process *scheme_current_process;
 #endif
@@ -940,9 +997,9 @@ extern int (*scheme_actual_main)(int argc, char **argv);
 
 /* All functions & global constants prototyped here */
 #ifdef INCLUDE_WITHOUT_PATHS
-#include "schemef.h"
+# include "schemef.h"
 #else
-#include "../src/schemef.h"
+# include "../src/schemef.h"
 #endif
 
 #else

@@ -40,4 +40,7 @@ Robby</fontfamily></excerpt>=
  (interact-with-drscheme-in-language "Interact with DrScheme in Traditional Chinese")
  (welcome-to-drscheme-version/language "\u6b61\u8fce\u4f7f\u7528 DrScheme, version ~a, ~a")
  (welcome-to-drscheme "\u6b61\u8fce\u4f7f\u7528 DrScheme")
- (welcome-to "\u6b61\u8fce\u4f7f\u7528"))
+ (welcome-to "\u6b61\u8fce\u4f7f\u7528")
+ (wizard-next "\u4e0b\u4e00\u6b65")
+ (wizard-back "\u4e0a\u4e00\u6b65"))
+

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.2 1998/08/10 18:02:51 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.3 1998/09/18 23:09:51 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -37,6 +37,8 @@ static const char sccsid[] = "@(#)wx_dc.cc	1.2 5/9/94";
 #pragma implementation "wx_dcpan.h"
 #pragma implementation "wx_dcmem.h"
 #endif
+
+#include "wx_rgn.h"
 
 /* Moved here to avoid platform-detection hacks include conflicts */
 #include "wx_obj.h"
@@ -183,10 +185,8 @@ wxCanvasDC::wxCanvasDC (void)
   pixmapWidth = 0;
   pixmapHeight = 0;
   display = wxGetDisplay(); /* MATTHEW: [13] */
-  clipping = FALSE;
 
   current_reg = NULL;
-  user_reg = NULL;
   onpaint_reg = NULL;
 
   device = wxDEVICE_CANVAS;
@@ -226,12 +226,9 @@ wxCanvasDC::wxCanvasDC (void)
   current_style = -1;
   current_fill = -1;
 
-  current_logical_function = wxCOPY;
-
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = wxWHITE_BRUSH;
-  current_background_brush->Lock(1);
+  current_background_color = *wxWHITE;
 
   current_text_foreground = *wxBLACK;
   current_text_background = *wxWHITE;
@@ -252,7 +249,6 @@ wxCanvasDC:: wxCanvasDC (wxCanvas * the_canvas):wxbCanvasDC (the_canvas)
 
   canvas = the_canvas;
   WXGC_IGNORE(canvas);
-  clipping = FALSE;
   display = canvas->GetXDisplay();
   selected_pixmap = NULL;
   pixmap = XtWindow((Widget)canvas->handle); /* MATTHEW: [15] */
@@ -262,7 +258,6 @@ wxCanvasDC:: wxCanvasDC (wxCanvas * the_canvas):wxbCanvasDC (the_canvas)
   pixmapHeight = 0;
 
   current_reg = NULL;
-  user_reg = NULL;
   onpaint_reg = NULL;
 
   min_x = 0;
@@ -305,15 +300,13 @@ wxCanvasDC:: wxCanvasDC (wxCanvas * the_canvas):wxbCanvasDC (the_canvas)
   current_pen_cap = -1;
   current_pen_nb_dash = -1;
   current_pen_dash = NULL;
-  current_logical_function = wxCOPY;
   current_stipple = NULL;
   current_style = -1;
   current_fill = -1;
 
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = wxWHITE_BRUSH;
-  current_background_brush->Lock(1);
+  current_background_color = *wxWHITE;
 
   current_text_foreground = *wxBLACK;
   current_text_background = *wxWHITE;
@@ -334,7 +327,6 @@ wxCanvasDC::~wxCanvasDC (void)
 
   if (current_pen) current_pen->Lock(-1);
   if (current_brush) current_brush->Lock(-1);
-  if (current_background_brush) current_background_brush->Lock(-1);
 
   if (gc)
     XFreeGC (display, gc);
@@ -357,15 +349,15 @@ void wxCanvasDC:: SetCanvasClipping (void)
   if (current_reg)
     XDestroyRegion (current_reg);
 
-  if (user_reg || onpaint_reg)
-    current_reg = XCreateRegion ();
+  if (clipping || onpaint_reg)
+    current_reg = XCreateRegion();
   else
     current_reg = NULL;
 
-  if (onpaint_reg && user_reg)
-    XIntersectRegion (onpaint_reg, user_reg, current_reg);
-  else if (user_reg)
-    XIntersectRegion (user_reg, user_reg, current_reg);
+  if (onpaint_reg && clipping)
+    XIntersectRegion (onpaint_reg, clipping->rgn, current_reg);
+  else if (clipping)
+    XIntersectRegion (clipping->rgn, clipping->rgn, current_reg);
   else if (onpaint_reg)
     XIntersectRegion (onpaint_reg, onpaint_reg, current_reg);
 
@@ -396,58 +388,22 @@ void wxCanvasDC:: GetClippingBox (float *x, float *y, float *w, float *h)
     *x = *y = *w = *h = 0;
 }
 
-void wxCanvasDC:: SetClippingRegion (float cx, float cy, float cw, float ch)
+void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
 {
-  if (cw < 0)
-    cw = 0;
-  if (ch < 0)
-    ch = 0;
-
-  /* MATTHEW: [8] Remove WX_GC_CF */
-  if (user_reg)
-    XDestroyRegion (user_reg);
-  user_reg = XCreateRegion ();
-  XRectangle r;
-  r.x = XLOG2DEV (cx);
-  r.y = YLOG2DEV (cy);
-  r.width = XLOG2DEVREL(cw);
-  r.height = YLOG2DEVREL(ch);
-  XUnionRectWithRegion (&r, user_reg, user_reg);
-  SetCanvasClipping ();
-
-  // Needs to work differently for Pixmap: without this,
-  // there's a nasty display bug. 8/12/94
+  clipping = new wxRegion(this);
+  clipping->SetRectangle(cx, cy, cw, ch);
+  SetCanvasClipping();
 }
 
-void wxCanvasDC:: DestroyClippingRegion (void)
+void wxCanvasDC::SetClippingRegion(wxRegion *r)
 {
-/***
-old code, not using optimized Regions
-
-        XGCValues gc_val;
-        gc_val.clip_mask = None;
-        XChangeGC(display, gc, GCClipMask, &gc_val);
-#ifdef wx_xview
-        if (canvas && canvas->xrects)
-          XSetClipRectangles(display, gc, 0, 0, canvas->xrects->rect_array,
-                           canvas->xrects->count, Unsorted);
-#endif
-***/
-
-  if (user_reg)
-    XDestroyRegion (user_reg);
-  user_reg = NULL;
-  SetCanvasClipping ();
+  clipping = r;
+  SetCanvasClipping();
 }
 
-/* MATTHEW: [8] */
-void wxCanvasDC:: GetClippingRegion(float *x, float *y, float *w, float *h)
+wxRegion *wxCanvasDC::GetClippingRegion()
 {
-  if (!current_reg) {
-    *x = *y = 0;
-    *w = *h = -1;
-  } else
-    GetClippingBox(x, y, w, h);
+  return clipping;
 }
 
 void wxCanvasDC::GetSize(float *w, float *h)
@@ -486,7 +442,7 @@ void wxCanvasDC:: Clear (void)
   /* MATTHEW: [13] Implement GetPixel */
   FreeGetPixelCache();
 
-  SetBrush (current_background_brush);
+  SetBrush(wxTheBrushList->FindOrCreateBrush(current_background_color, wxSOLID));
   XFillRectangle (display, pixmap, gc, 0, 0, w, h);
 
   /* MATTHEW: [9] restore */
@@ -1454,9 +1410,7 @@ void wxCanvasDC::SetPen (wxPen * pen)
       XSetFillStyle (display, gc, fill_style);
     }
 
-  // must test current_logical_function, because it involves background!
-  if (!same_colour || !dcOptimize 
-      || ((current_logical_function == wxXOR) || (autoSetting & 0x2)))
+  if (!same_colour || !dcOptimize)
     {
       int pixel = -1;
       if (pen->GetStyle () == wxTRANSPARENT)
@@ -1493,7 +1447,7 @@ void wxCanvasDC::SetPen (wxPen * pen)
       // Finally, set the GC to the required colour
       if (pixel > -1)
 	{
-	  if (current_logical_function == wxXOR)
+	  if (pen->GetStyle() == wxXOR)
 	    {
 	      XGCValues values;
 	      XGetGCValues (display, gc, GCBackground, &values);
@@ -1641,8 +1595,7 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
       }
     }
 
-  // must test current_logical_function, because it involves background!
-  if (!same_colour || !dcOptimize || current_logical_function == wxXOR)
+  if (!same_colour || !dcOptimize)
     {
       int pixel = -1;
       if (current_stipple)
@@ -1677,7 +1630,7 @@ void wxCanvasDC:: SetBrush (wxBrush * brush)
       if (pixel > -1)
 	{
 	  // Finally, set the GC to the required colour
-	  if (current_logical_function == wxXOR)
+	  if (brush->GetStyle() == wxXOR)
 	    {
 	      XGCValues values;
 	      XGetGCValues (display, gc, GCBackground, &values);
@@ -1954,10 +1907,6 @@ void wxCanvasDC:: SetLogicalFunction (int function)
 {
   int x_function;
 
-  /* MATTHEW: [9] */
-  if (current_logical_function == function)
-    return;
-
   switch (function)
     {
     case wxCLEAR:
@@ -2012,12 +1961,6 @@ void wxCanvasDC:: SetLogicalFunction (int function)
     }
 
   XSetFunction(display, gc, x_function);
-
-  if ((current_logical_function == wxXOR) != (function == wxXOR))
-    /* MATTHEW: [9] Need to redo pen simply */
-    autoSetting |= 0x2;
-
-  current_logical_function = function;
 }
 
 Bool wxCanvasDC:: StartDoc (char *)
@@ -2297,9 +2240,6 @@ Bool wxCanvasDC:: Blit (float xdest, float ydest, float width, float height,
 
   if (pixmap && source->Ok())
     {
-      /* MATTHEW: [9] */
-      int orig = current_logical_function;
-
       SetLogicalFunction (rop);
 
       /* MATTHEW: [9] Need to use the current pen: */
@@ -2382,7 +2322,6 @@ wxMemoryDC::wxMemoryDC (Bool ro)
   ok = FALSE;
   title = NULL;
 
-  current_logical_function = wxCOPY;
   font = NULL;
   min_x = 0;
   min_y = 0;

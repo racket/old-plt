@@ -50,9 +50,7 @@ class wxCanvasDC: public wxbCanvasDC
   int pixmapHeight;
   Bool color;
 
-  Region current_reg,
-         onpaint_reg,
-         user_reg;
+  Region current_reg, onpaint_reg;
 
 #ifdef wx_motif
   XFontStruct *xfont; /* MATTHEW: [4] Need to remember real font */
@@ -93,7 +91,6 @@ class wxCanvasDC: public wxbCanvasDC
   ~wxCanvasDC(void);
 
   void SetCanvasClipping() ;
-  void GetClippingBox(float *x,float *y,float *w,float *h) ;
 
   void GetSize(float *w, float *h);
 
@@ -136,10 +133,9 @@ class wxCanvasDC: public wxbCanvasDC
   void SetBrush(wxBrush *brush);
   void SetColourMap(wxColourMap *cmap);
   void SetBackground(wxColour *c);
-  void SetClippingRegion(float x, float y, float width, float height);
-  /* MATTHEW: [8] */
-  void GetClippingRegion(float *x, float *y, float *width, float *height);
-  void DestroyClippingRegion(void);
+  void SetClippingRect(float x, float y, float width, float height);
+  wxRegion *GetClippingRegion();
+  void SetClippingRegion(wxRegion *);
 
   float GetCharHeight(void);
   float GetCharWidth(void);

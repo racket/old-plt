@@ -309,18 +309,11 @@ wxstring_motif:
 	cd ../../contrib/wxstring; $(MAKE) -f makefile.unx motif
 wxstring_hp:
 	cd ../../contrib/wxstring; $(MAKE) -f makefile.unx hp
+
 clean:
-	echo OBSOLETE TARGET: You must specify cleanmotif or cleanol.
+	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleaneach 
 
 cleaneach:
 	rm -f $(OBJECTS) $(BASEOBJECTS) $(EXTRAOBJS) $(WXDIR)/lib/libwx$(GUISUFFIX).a core
-
-clean_motif:
-	$(MAKE) -f makefile.unx GUISUFFIX=_motif cleaneach 
-
-clean_ol:
-	$(MAKE) -f makefile.unx GUISUFFIX=_ol cleaneach 
-
-clean_hp:
-	$(MAKE) -f makefile.unx GUISUFFIX=_hp cleaneach 
+	cd ../base; $(MAKE) -f makefile.unx clean
 

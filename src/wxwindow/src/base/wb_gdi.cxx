@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.8 1998/09/15 23:23:03 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.9 1998/09/21 05:21:15 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -379,8 +379,8 @@ void wxColourDatabase::Initialize (void)
   APPEND_C ("MEDIUM VIOLET RED", new wxColour (219, 112, 147));
   APPEND_C ("MIDNIGHT BLUE", new wxColour (47, 47, 79));
   APPEND_C ("NAVY", new wxColour (35, 35, 142));
-  APPEND_C ("ORANGE", new wxColour (204, 50, 50));
-  APPEND_C ("ORANGE RED", new wxColour (255, 0, 127));
+  APPEND_C ("ORANGE", new wxColour (204, 165, 0));
+  APPEND_C ("ORANGE RED", new wxColour (255, 127, 0));
   APPEND_C ("ORCHID", new wxColour (219, 112, 219));
   APPEND_C ("PALE GREEN", new wxColour (143, 188, 143));
   APPEND_C ("PINK", new wxColour (188, 143, 234));

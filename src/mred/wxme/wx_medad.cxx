@@ -764,7 +764,7 @@ Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
 	// fits, need to shift down into view:
 	|| (fh <= ih && localy < y) 
 	// doesn't fit, no conflicting bias, can shift up to see more:
-	|| (fh > ih && bias != 1 && y < localy)) 
+	|| (fh > ih && bias != 1 && localy < y)) 
       sy = media->FindScrollLine(find_dy + localy) - scrollOffset;
     else if (// doesn't fit, bias is set:
 	     (bias == 1 && fh > ih) 
@@ -791,7 +791,7 @@ Bool wxMediaCanvas::ScrollTo(float localx, float localy, float fw, float fh,
     if (hpixelsPerScroll) {
       if ((bias == -1 && fw > iw)
 	  || (fw < iw && localx < x)
-	  || (fw > iw && bias != 1 && x < localx))
+	  || (fw > iw && bias != 1 && localx < x))
 	sx = (int)(localx / hpixelsPerScroll);
       else if ((bias == 1 && fw > iw)
 	       || (fw < iw && x + iw < localx + fw)

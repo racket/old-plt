@@ -975,8 +975,8 @@ void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
     MoveWindow(client_hwnd, 0, ctop, cwidth, cheight, TRUE);
 
     frame->PositionStatusWindow();
-  }
-  else (void)DefWindowProc(last_msg, last_wparam, last_lparam);
+  } else 
+    (void)DefWindowProc(last_msg, last_wparam, last_lparam);
 
   if (wx_window && wx_window->handle)
     wx_window->OnSize(bad_x, bad_y);

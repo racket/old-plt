@@ -41,7 +41,7 @@ wxDialogWnd::wxDialogWnd(wxWnd *parent, wxWindow *wx_win,
 
 LONG wxDialogWnd::DefWindowProc(UINT nMsg, UINT wParam, LONG lParam)
 {
-  return ::DefWindowProc(handle, nMsg, wParam, lParam);
+  return FALSE; /* Not processed */
 }
 
 BOOL wxDialogWnd::ProcessMessage(MSG* pMsg)
@@ -325,7 +325,6 @@ char *wxDialogBox::GetTitle(void)
 
 void wxDialogBox::SystemMenu(void)
 {
-  wxWnd *wnd = (wxWnd *)handle;
-  wnd->DefWindowProc(WM_SYSKEYDOWN, ' ', 1 << 29);
-  wnd->DefWindowProc(WM_SYSCHAR, ' ', 1 << 29);
+  ::DefWindowProc(GetHWND(), WM_SYSKEYDOWN, ' ', 1 << 29);
+  ::DefWindowProc(GetHWND(), WM_SYSCHAR, ' ', 1 << 29);
 }

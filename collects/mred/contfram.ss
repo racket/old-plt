@@ -160,13 +160,23 @@
 	    ;          pass now to superclass's show.
 	    [show
 	     (lambda (now)
+	       (mred:debug:printf
+		'container-frame-show
+		"container-frame-show: entering; arg ~s" now)
 	       (if now
 		   (unless perform-updates
 		     (set! perform-updates #t)
 		     (if pending-redraws
-			 (force-redraw)
+			 (begin
+			   (mred:debug:printf
+			    'container-frame-show
+			    "Container-frame-show: forcing redraw")
+			   (force-redraw))
 			 (set! pending-redraws #f)))
 		   (set! perform-updates #f))
+	       (mred:debug:printf
+		'container-frame-show
+		"Container-frame-show: passing arg to super-show")
 	       (super-show now))]
 	    
 	    [set-size

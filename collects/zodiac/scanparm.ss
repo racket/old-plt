@@ -1,6 +1,6 @@
 ;;
 ;;  zodiac:scanner-parameters@
-;;  $Id$
+;;  $Id: scanparm.ss,v 1.1 1997/02/25 16:08:31 krentel Exp krentel $
 ;;
 ;;  Scanner/Reader Parameters.
 ;;
@@ -22,6 +22,7 @@
    (define  nul       0)
    (define  backsp    8)
    (define  tab       9)
+   (define  vtab     11)
    (define  page     12)
    (define  return   13)
    (define  rubout  127)
@@ -30,10 +31,10 @@
    
    (define  scan:self-delim-symbols  (list #\{ #\} ))
    
-   (define  scan:newline-list  (list  page  return  newline))
+   (define  scan:newline-list  (list  page  vtab  return  newline))
    (define  scan:tab-list      (list  tab))
    (define  scan:whitespace-list
-     (list  space  newline  tab  page  return))
+     (list  space  newline  tab  vtab  page  return))
 
    (define  scan:delim-list
      (append  scan:whitespace-list
@@ -50,6 +51,7 @@
        ("null"       ,nul)
        ("backspace"  ,backsp)
        ("tab"        ,tab)
+       ("vtab"       ,vtab)
        ("page"       ,page)
        ("return"     ,return)
        ("rubout"     ,rubout)))

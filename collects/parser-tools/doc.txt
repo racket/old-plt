@@ -214,83 +214,9 @@ filename'.  This should create a .zo file in the 'compiled'
 subdirectory.
 
 
-As example of both lex and yacc here is a read function that works for
-a subset of the R5RS scheme syntax: (and must read an entire file)
 
-
-#cs
-(module simple-read mzscheme
-  
-  (require (lib "lex.ss" "parser-tools")
-	   (lib "yacc.ss" "parser-tools"))
-  
-  (provide simple-read)
-  
-  (define-tokens value-tokens (BOOL CHARACTER SYM STRNG))
-  (define-empty-tokens grouping-tokens (OPEN CLOSE HASHOPEN IMPROPER EOF))
-  
-  (define read-lexer
-    (lexer
-     [(: #\newline #\space #\tab (comment)) 
-      (read-lexer lex-buf)]
-     ["#t" 
-      (token-BOOL #t)]
-     ["#f" 
-      (token-BOOL #f)]
-     [(@ "#\\" (- #\000 #\377))
-      (token-CHARACTER (caddr (string->list (get-lexeme))))]
-     ["#\\space" 
-      (token-CHARACTER #\space)]
-     ["#\\newline" 
-      (token-CHARACTER #\newline)]
-     [(: (@ (initial) (* (subsequent))) + - "...")
-      (token-SYM (string->symbol (get-lexeme)))]
-     [#\" 
-      (token-STRNG (list->string (get-string-token lex-buf)))]
-     [#\(
-      'OPEN]
-     [#\)
-      'CLOSE]
-     ["#("
-      'HASHOPEN]
-     ["."
-      'IMPROPER]
-     [(eof)
-      'EOF]))
-  
-  (define get-string-token
-    (lexer
-     [(^ #\" #\\) (cons (car (string->list (get-lexeme)))
-			(get-string-token lex-buf))]
-     [(@ #\\ #\\) (cons #\\ (get-string-token lex-buf))]
-     [(@ #\\ #\") (cons #\" (get-string-token lex-buf))]
-     [#\" null]))
-  
-  
-  (define-lex-abbrevs
-   [initial (: (- a z) (- #\A #\Z) ! $ % & * / : < = > ? ^ _ ~)]
-   [subsequent (: (initial) (digit) + - #\. @)]
-   [digit (- #\0 #\9)]
-   [comment (@ #\; (* (^ #\newline)) #\newline)]) 
-  
-  (define read-parser
-    (parser 
-     (start sexp-list)
-     (debug "read-table")
-     (error (lambda (x) (error 'read-error)))
-     (tokens value-tokens grouping-tokens)
-     (end EOF)
-     (grammar
-      (sexp [(SYM) $1]
-            [(OPEN sexp-list CLOSE) $2])
-      (sexp-list [() null]
-                 [(sexp sexp-list) (cons $1 $2)]))))
-  
-  (define (simple-read input-port)
-    (let ((ip (make-lex-buf input-port)))
-      (read-parser (lambda () (read-lexer ip))))))
-
-
+Annotated examples are in the examples subdirectory of the parser-tools
+collection directory.
 
 TODO:
 lexer:
@@ -322,3 +248,4 @@ Error check the use of error productions
 both:
 Code documentation
 Increase runtime speed
+Add more information for check syntax

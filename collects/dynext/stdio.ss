@@ -44,6 +44,6 @@
      (close-output-port out)
 
      (unless (eq? (control 'status) 'done-ok)
-	     (error (if quiet?
-			(unbox collect-output)
-			"command failed"))))))
+       (error (if quiet?
+		  (unbox collect-output)
+		  "command failed"))))))

@@ -39,8 +39,8 @@
 		       "Only warn once when executions and interactions are not synchronized")
        (make-check-box 'drscheme:open-all-files-in-scheme-mode
 		       "Open all files as Scheme programs")
-       (make-check-box 'drscheme:repl-active-after-execution
-		       "Read-eval-print loop only active only after first execution")
+       (make-check-box 'drscheme:repl-always-active
+		       "Read-eval-print loop always active")
        (make-object mred:vertical-panel% main)
        main))))
        

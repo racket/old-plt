@@ -17,7 +17,19 @@
     (make-object drscheme:compound-unit:frame% #f #f))
 
   (define (make-basic)
-    (send (make-object (drscheme:parameters:current-frame%) #f #f) show #t))
+    (let ([frame (make-object (drscheme:parameters:current-frame%) #f #f)])
+      (unless (mred:get-preference 'drscheme:repl-always-active)
+	(let* ([interactions-edit (ivar frame interactions-edit)]
+	       [definitions-edit (ivar frame interactions-edit)]
+	       [filename (send definitions-edit get-filename)])
+	  (when (null? filename)
+	    (send interactions-edit reset-console)
+	    (send interactions-edit enable-autoprompt)
+	    (send interactions-edit insert-prompt)
+	    (send (ivar frame show-menu) check (ivar frame interactions-id) #t)
+	    (send frame update-shown)
+	    (send (ivar frame interactions-canvas) set-focus))))
+      (send frame show #t)))
 
   (let ([files-to-open (reverse (vector->list I:argv))])
     (if (null? files-to-open)

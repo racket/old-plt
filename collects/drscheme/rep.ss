@@ -116,54 +116,7 @@
 
   (define-struct process/zodiac-finish (error?))
 
-  (define consumer-thread
-    (case-lambda
-     [(f) (consumer-thread f void)]
-     [(f init)
-      (unless (procedure? f) (raise-type-error 'consumer-thread "procedure" f))
-      (let ([sema (make-semaphore 0)]
-            [protect (make-semaphore 1)]
-            [front-state null]
-            [back-state null])
-        (values 
-         (thread
-          (letrec ([loop
-                    (lambda ()
-                      (semaphore-wait sema)
-                      (let ([local-state
-                             (begin
-                               (semaphore-wait protect)
-                               (if (null? back-state)
-                                   (let ([new-front (reverse front-state)])
-                                     (set! back-state (cdr new-front))
-                                     (set! front-state null)
-                                     (semaphore-post protect)
-                                     (car new-front))
-                                   (begin0
-				     (car back-state)
-				     (set! back-state (cdr back-state))
-				     (semaphore-post protect))))])
-			(apply f local-state)
-			(loop)))])
-            (lambda ()
-              (init)
-              (loop))))
-         (lambda new-state
-           (let ([num (length new-state)])
-             (unless (procedure-arity-includes? f num) 
-	       (raise 
-		(make-exn:application:arity
-		 (format "<procedure-from-consumer-thread>: consumer procedure arity is ~e; provided ~s argument~a"
-			 (arity f) num (if (= 1 num) "" "s"))
-		 ((debug-info-handler))
-		 num
-		 (arity f)))))
-           (semaphore-wait protect)
-           (set! front-state (cons new-state front-state))
-           (semaphore-post protect)
-           (semaphore-post sema))))]))
-  
-  (mred:set-preference-default 'drscheme:repl-active-after-execution #t boolean?)
+  (mred:set-preference-default 'drscheme:repl-always-active #f boolean?)
 
   (define make-edit%
     (lambda (super%)
@@ -610,7 +563,8 @@
 		      (error-escape-handler escape-handler))])
 	       (let-values ([(evaluation-thread2 run-in-evaluation-thread2)
 			     (parameterize ([current-custodian user-custodian])
-			       (consumer-thread run-function init-eval-thread))])
+			       (mzlib:thread@:consumer-thread
+				run-function init-eval-thread))])
 		 (set! run-in-evaluation-thread run-in-evaluation-thread2)
 		 (set! evaluation-thread evaluation-thread2))))])
 	(public
@@ -683,6 +637,7 @@
 	     (custodian-shutdown-all user-custodian)
 	     (when evaluation-thread
 	       (kill-thread evaluation-thread)))]
+	  [repl-initially-active? #f] 
 	  [reset-console
 	   (let ([first-dir (current-directory)])
 	     (lambda ()
@@ -734,7 +689,8 @@
 		   'drscheme:settings)))
 		    RED-DELTA)
 	       (insert-delta (format ".~n") WELCOME-DELTA)
-	       (super-reset-console)))]
+	       (super-reset-console)
+	       (set! repl-initially-active? #t)))]
 	  [initialize-console
 	   (lambda ()
 	     (super-initialize-console)
@@ -750,11 +706,11 @@
 				CLICK-DELTA)))
 	     (set-last-header-position (get-end-position))
 
-	     (if (mred:get-preference 'drscheme:repl-active-after-execution)
+	     (if (mred:get-preference 'drscheme:repl-always-active)
+		 (reset-console)
 		 (begin 
 		   (insert-delta "Execute has not been clicked." WARNING-STYLE-DELTA)
-		   (lock #t))
-		 (reset-console)))])
+		   (lock #t))))])
 	
 	(sequence
 	  (mred:debug:printf 'super-init "before drscheme:rep:edit")

@@ -1,5 +1,5 @@
-MzCOM
-=====
+_MzCOM_
+=======
 
 This directory contains the files for MzCOM, a COM 
 class wrapper for MzScheme.
@@ -49,20 +49,17 @@ COM environments.  MzCOM is compiled as a "dual-mode"
 class, meaning its methods may be called directly or by
 using OLE Automation.
 
-To access collections from MzCOM, evaluate 
-
-  (current-library-collection-paths '("<dir1>" ...))
-
-to tell MzCOM where to find collections.
-
-
 Methods
 -------
 
-MzCOM has two methods, About() and Eval().
+MzCOM has two methods.
+
+> About() 
 
 About() takes no arguments and displays an informational 
 dialog.
+
+> Eval()
 
 Eval() takes and returns BSTR's (BASIC strings).  The
 returned value is the result of evaluating the input
@@ -75,10 +72,22 @@ Eval(), and use the procedures in subsequent calls.
 Events
 ------
 
-MzCOM has a single event, Error().  
+MzCOM has a single event.
+
+> Error()
 
 The Error() event is passed a BSTR (BASIC string)
 that explains the error.  
+
+Collections
+-----------
+
+To access collections from MzCOM, you should 
+set either the PLTHOME or PLTCOLLECTS environment
+variables before loading MzCOM.  By default,
+MzCOM looks for collections in
+
+  C:\Program Files\PLT\collects
 
 Evaluation thread
 -----------------
@@ -91,6 +100,12 @@ primary MzScheme thread, as in
 
 then the evaluator Win32 thread is also killed.  
 When that happens, subsequent calls to Eval() will fail.
+
+Limitations
+-----------
+
+You can load at most one MzCOM object per Win32 process.
+If you try to load more than one, a crash is likely.
 
 Contact us
 ----------

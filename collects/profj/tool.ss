@@ -567,7 +567,6 @@
           (define/public (get-comment) "// ")
           (define/public (get-mesg) "Convert to text comment")
 
-          (define/override (get-position) 'left-top)
           (rename [super-get-text get-text])
           (define/override get-text
             (opt-lambda (offset num [flattened? #t])
@@ -653,6 +652,7 @@
           (define/override (make-editor) (new text:keymap%))
           (define/override (make-snip) (make-object java-comment-box%))
           (define/override (get-corner-bitmap) comment-gif)
+          (define/override (get-position) 'left-top)
 
            (define/public (read-one-special index source line column position)
             (raise (make-exn:special-comment "msg" (current-continuation-marks) 1)))
@@ -679,7 +679,8 @@
       (drscheme:get/extend:extend-unit-frame java-comment-box-mixin)
       
       ;;Java interactions box
-      (define ji-gif (include-bitmap (lib "java-interactions-box.gif" "icons")))
+      #;(define ji-gif (include-bitmap (lib "java-interactions-box.gif" "icons")))
+      (define ji-gif (include-bitmap (lib "j.gif" "icons")))
       
       (define snipclass-java-interactions%
         (class decorated-editor-snipclass%

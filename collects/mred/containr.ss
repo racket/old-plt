@@ -1,3 +1,5 @@
+; TEST dialog-box%, single-panel%!!!
+
 ; resizes too small really confuse things, since client sizes wrap (-2
 ; becomes 65534.  Matthew knows; I'm waiting to hear from him before I do
 ; anything.)
@@ -11,21 +13,44 @@
 
 ;-----------------------------------------------------------------------
 
-; define list of exported ID's
+; exported ID's:
+;  const-default-size
+;  const-default-posn
+;  const-default-spacing
+;  make-child-info, etc.
+;  frame%
+;  dialog-box%
+;  button%
+;  check-box%
+;  choice%
+;  gauge%
+;  list-box%
+;  message%
+;  radio-box%
+;  slider%
+;  text-window%
+;  text%
+;  multi-text%
+;  panel%
+;  horizontal-panel%
+;  vertical-panel%
+;  single-panel%
 
 (define mred:container@
   (unit/s mred:container^
     (import [mred:debug mred:debug^]
 	    [mzlib:function mzlib:function^])
-    ; this constant is used by several MrEd primitives to signify the default
-    ; size of an object.
     
     (mred:debug:printf 'invoke "mred:container@")
     
+    ; redo printfs so we don't have to deal with the symbol stuff all the
+    ; time.
     (define printf 
       (lambda args
-	(apply mred:debug:printf (cons `container args))))
+	(apply mred:debug:printf (cons 'container args))))
 
+    ; this constant is used by several MrEd primitives to signify the default
+    ; size of an object.
     (define const-default-size -1)
     (define const-default-posn -1)  ;; ditto for position.
 
@@ -86,6 +111,35 @@
 	    set-size)
 	  
 	  (private
+
+	    ; store minimum size of item.  Since we no longer support label
+	    ; changes, this will never change, so we don't have to maintain
+            ; a validity indicator.
+	    min-width
+	    min-height
+	    
+	    ; the "default position" of the object; defined to be the
+            ; creation position of the object.
+	    default-x
+	    default-y
+
+	    ; sets the default position fields of the object based on the
+            ; object's current position.  Designed to be called from the
+	    ; object's constructor.
+	    [set-default-posn
+	      (lambda ()
+		(set! default-x (get-x))
+		(set! default-y (get-y)))]
+	    
+	    ; creates a parameter function with some added functionality
+	    ; input: init-value: initial value for the param (moved to #t
+	    ;          if not boolean).
+	    ;        function-name: a symbol, intended to be the name of
+	    ;          the created function (used in error).
+	    ; returns: a function which behaves exactly like the result of
+	    ;   make-parameter (out of mzlib); if the argument is not
+	    ;   boolean, it is interpreted as #t; after the parameter is
+	    ;   set, force-redraw is called.
 	    [make-stretchable-parameter
 	      (lambda (init-value function-name)
 		(let ([parm-value init-value])
@@ -104,17 +158,6 @@
 	    ; a unique numeric ID for the object (for debugging).
 	    object-ID
 	    
-	    ; store minimum size of item.  Since we no longer support label
-	    ; changes, this will never change, so we don't have to maintain
-            ; a validity indicator.
-	    min-width
-	    min-height
-	    
-	    ; the "default position" of the object; defined to be the
-            ; creation position of the object.
-	    default-x
-	    default-y
-
 	    ; stretchable-in-x?: gets/sets horiz stretchability property.
 	    ; input: either nothing or a boolean.
 	    ; returns: (if nothing passed in) current stretchability
@@ -136,18 +179,13 @@
 	    ; intended to be called by item's parent upon resize.
 	    [get-info
 	      (lambda ()
-		(printf "Entering get-info; object ~s~n" object-ID)
+		(printf "Entering get-info; object ~s" object-ID)
 		(let* ([min-size (get-min-size)]
 		       [result (make-child-info default-x default-y
 				 (car min-size) (cadr min-size)
 				 (stretchable-in-x?) (stretchable-in-y?))])
-		  (printf "Result: ~s~n" result)
+		  (printf "Result: ~s" result)
 		  result))]
-	    
-	    [set-default-posn
-	      (lambda ()
-		(set! default-x (get-x))
-		(set! default-y (get-y)))]
 	    
 	    ; force-redraw: unconditionally trigger redraw.
 	    ; input: none
@@ -157,7 +195,7 @@
 	    ;   invalid.
 	    [force-redraw
 	      (lambda ()
-		(printf "Entering force-redraw; object ~s~n" object-ID)
+		(printf "Entering force-redraw; object ~s" object-ID)
 		(let ([parent (get-parent)])
 		  (unless (null? parent)
 		    (send parent force-redraw))))]
@@ -169,7 +207,7 @@
 	    [get-min-size
 	      (lambda ()
 		(printf "get-min-size; object ~s;  " object-ID)
-		(printf "Result:  ~s~n" (list min-width min-height))
+		(printf "Result:  ~s" (list min-width min-height))
 		(list min-width min-height))])
 	  (sequence
 	    (apply super-init (apply make-default-size args))
@@ -295,33 +333,36 @@
 	  get-height
 	  get-client-size
 	  get-parent)
-	
-	(public
-	  
-	  ; list of panel's contents.
-	  [children null]
-	  
-	  ; list of child-info structs corresponding to the children.  (#f
-	  ;  if no longer valid.)
-	  [children-info null]
+
+	(private
 	  
 	  ; cache to prevent on-size from recomputing its result every
 	  ; time. when curr-width is #f, cache invalid.
 	  curr-width
 	  curr-height
 	  
+	  ; list of panel's contents.
+	  [children null]
+	  
+	  ; list of child-info structs corresponding to the children.  (#f
+	  ;  if no longer valid.)
+	  [children-info null])
+	
+	(public
+	  
 	  ; add-child: adds an existing child to the panel.
 	  ; input: new-child: item% descendant to add
 	  ;        adder-function: a function which takes a item% and a
 	  ;          list of item%s and returns a list of item%s.
+	  ;        show?: #t to show child immediately, else #f.
 	  ; returns: nothing
 	  ; effects: sets children to list returned by adder-function
 	  ;          forces redraw of window.
 	  [add-child
-	    (lambda (new-child adder-function)
+	    (opt-lambda (new-child adder-function [show? #t])
 	      (unless (memq new-child children)
 		(set! children (adder-function new-child children))
-		(send new-child show #t)
+		(send new-child show show?)
 		(force-redraw)))]
 	  
 	  ; delete-child: removes a child from the panel.
@@ -333,6 +374,17 @@
 	      (send child show #f)
 	      (add-child child mzlib:function:remq))]
 	  
+	  ; returns a copy of the list of children (so nobody can do
+	  ; set-cdr! and screw us over).
+	  [get-children
+	    (letrec ([copy-list
+		       (lambda (l)
+			 (if (null? l)
+			     null
+			     (cons (car l) (copy-list (cdr l)))))])
+	      (lambda ()
+		(copy-list children)))]
+	  
 	  ; get-children-info: returns children info list, recomputing it
 	  ;   if needed.
 	  ; input: none
@@ -340,9 +392,9 @@
 	  ; effects: upon exit, children-info is eq? to result.
 	  [get-children-info
 	    (lambda ()
-	      (printf "Entering get-children-info; object ~s~n" object-ID)
+	      (printf "Entering get-children-info; object ~s" object-ID)
 	      (unless children-info
-		(printf "Recomputing children info~n")
+		(printf "Recomputing children info")
 		(set! children-info (map (lambda (child)
 					   (send child get-info))
 				      children)))
@@ -355,7 +407,7 @@
 	  ;   itself and all of its children.
 	  [force-redraw
 	    (lambda ()
-	      (printf "Entering force-redraw; object ~s~n" object-ID)
+	      (printf "Entering force-redraw; object ~s" object-ID)
 	      (set! children-info #f)
 	      (set! curr-width #f)
 	      (let ([parent (get-parent)])
@@ -400,17 +452,17 @@
 	  [on-size
 	    (lambda (new-width new-height)
 	      (printf "Entering on-size; object ID ~s;  " object-ID)
-	      (printf "New size: ~s x ~s~n" new-width new-height)
+	      (printf "New size: ~s x ~s" new-width new-height)
 	      (let-values ([(client-width client-height)
 			    (get-two-int-results get-client-size)])
-		(printf "Client size: ~s x ~s~n" client-width client-height)
+		(printf "Client size: ~s x ~s" client-width client-height)
 		(unless (and (number? curr-width)
 			  (number? curr-height)
 			  (= client-width curr-width)
 			  (= client-height curr-height))
 		  (set! curr-width client-width)
 		  (set! curr-height client-height)
-		  (printf "On-size is forcing a redraw.~n")
+		  (printf "On-size is forcing a redraw.")
 		  (redraw client-width client-height))))]
 	  
 	  ; redraw: redraws panel and all children
@@ -443,20 +495,23 @@
 	    get-width
 	    get-height
 	    get-client-size)
-	  (public
-	    
-	    object-ID
-	    
+
+	  (private
+
 	    ; pointer to panel in the frame for use in on-size
 	    [panel null]
+	  (public
 	    
-	    ; insert-panel: update above pointer.
+	    ; a unique ID for the object for debugging purposes.
+	    object-ID
+	    
+	    ; insert-panel: update panel pointer.
 	    ; input: new-panel: panel in frame (descendant of
-	    ;   panel%) 
+	    ;   mred:panel%) 
 	    ; returns: nothing
 	    ; effects: sets panel to new-panel
 	    ;          if new-panel is not a descendant of
-	    ;            panel%, calls error; panel not updated.
+	    ;            mred:panel%, calls error; panel not updated.
 	    [insert-panel
 	      (lambda (new-panel)
 		(if (is-a? new-panel panel%)
@@ -480,7 +535,7 @@
 	    ;            independantly.
 	    [on-size
 	      (lambda (new-width new-height)
-		(printf "FRAME: Entered frame's on-size; args ~s ~s~n"
+		(printf "FRAME: Entered frame's on-size; args ~s ~s"
 		  new-width new-height)
 		(unless (null? panel)
 		  (let ([p-x (box 0)]
@@ -530,20 +585,22 @@
 			   ; quantities.
 			   [f-width (+ new-w delta-w)]
 			   [f-height (+ new-h delta-h)])
-		      (printf "FRAME: panel client ~s x ~s~n"
+		      (printf "FRAME: panel client ~s x ~s"
 			p-client-width p-client-height)
-		      (printf "FRAME: size differences: ~s, ~s~n"
+		      (printf "FRAME: size differences: ~s, ~s"
 			delta-w delta-h)
-		      (printf "FRAME: New size: ~s x ~s~n"
+		      (printf "FRAME: New size: ~s x ~s"
 			new-w new-h)
-		      (send panel set-size -1 -1
+		      (send panel set-size const-default-posn
+			const-default-posn
 			(+ (- f-width delta-w) p-delta-w)
 			(+ (- f-height delta-h) p-delta-h))
 		      (unless (and (= new-width f-width)
 				(= new-height f-height))
 			(printf "FRAME: Resizing to ~s x ~s" f-width f-height)
-			(set-size -1 -1 f-width f-height)))))
-		(printf "FRAME: Leaving onsize at the end.~n"))])
+			(set-size const-default-posn const-default-posn
+			  f-width f-height)))))
+		(printf "FRAME: Leaving onsize at the end."))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)
@@ -573,14 +630,14 @@
 		   (lambda (kid-info x-accum y-accum)
 		     (if (null? kid-info)
 			 (begin
-			   (printf "Result: ~s~n" (list x-accum y-accum))
+			   (printf "Result: ~s" (list x-accum y-accum))
 			   (list x-accum y-accum))
 			 (let ([curr-info (car kid-info)])
 			   (gs-help (cdr kid-info)
 			     (compute-x x-accum spacing curr-info)
 			     (compute-y y-accum spacing curr-info)))))])
 	  (lambda ()
-	    (printf "Entering get-min-size; object ~s~n" (ivar container
+	    (printf "Entering get-min-size; object ~s" (ivar container
 							   object-ID))
 	    (gs-help (send container get-children-info)
 	      spacing spacing)))))
@@ -709,13 +766,13 @@
 		    [minor-info (get-minor-info kid-info)])
 		(printf "Inside redraw; object ~s;  "
 		  (ivar container object-ID))
-		(printf "Arguments: ~s ~s~n" width height)
+		(printf "Arguments: ~s ~s" width height)
 		(printf "# stretchable: ~s;  Extra space: ~s;  "
 		  num-stretchable extra-space)
-		(printf "space / stretchable: ~s~nMajor Info: ~s~n"
+		(printf "space / stretchable: ~sMajor Info: ~s"
 		  extra-per-stretchable major-info)
-		(printf "minor info: ~s~n" minor-info)
-		(move-children (ivar container children)
+		(printf "minor info: ~s" minor-info)
+		(move-children (send container get-children)
 		  (get-h-info major-info minor-info)
 		  (get-v-info major-info minor-info))))))))
     
@@ -781,7 +838,10 @@
 	
 	(inherit
 	  force-redraw
-	  children)
+	  get-children)
+
+	(rename
+	  [super-add add-child])
 
 	(public
 	  
@@ -790,19 +850,12 @@
 	  
 	  [add-child
 	    (lambda (new-child adder-function)
-	      (unless (memq new-child children)
-		(set! children (adder-function new-child children))
-		(send new-child show #f)
-		(force-redraw)))]
-	  [delete-child
-	    (lambda (child)
-	      (send child show #f)
-	      (add-child child mzlib:function:remq))]
+	      (super-add new-child adder-function #f))]
 	  [active-child
 	    (case-lambda
 	      [() active]
 	      [(new-child)
-	       (unless (memq new-child children)
+	       (unless (memq new-child (get-children))
 		 (add-child new-child add-at-end))
 	       (send active show #f)
 	       (send new-child show #t)

@@ -4,8 +4,9 @@
   (provide cond-expand)
   (define-syntax
    cond-expand
-   (syntax-rules (srfi-7
-		  srfi-28
+   (syntax-rules (srfi-25
+                  srfi-7
+                  srfi-28
                   srfi-26
                   srfi-23
                   srfi-19
@@ -26,6 +27,8 @@
                   not
                   else
                   srfi-0)
+     ((cond-expand (srfi-25 body ...) more-clauses ...)
+      (begin (require (lib "25.ss" "srfi")) body ...))
      ((cond-expand (srfi-7 body ...) more-clauses ...)
       (begin (require (lib "7.ss" "srfi")) body ...))
      ((cond-expand (srfi-28 body ...) more-clauses ...)

@@ -397,7 +397,8 @@ struct hblk;	/* See below.	*/
                                     + GC_page_size-1)
 #   else
 #     if defined(NEXT) || defined(MACOSX) || defined(DOS4GW) || \
-	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC))
+	 (defined(AMIGA) && !defined(GC_AMIGA_FASTALLOC)) || \
+	 (defined(SUNOS5) && !defined(USE_MMAP))
 #       define GET_MEM(bytes) HBLKPTR((size_t) \
 				      calloc(1, (size_t)bytes + GC_page_size) \
                                       + GC_page_size-1)
@@ -444,18 +445,21 @@ struct hblk;	/* See below.	*/
 /* clear on that point).  Standard malloc implementations are usually	*/
 /* neither interruptable nor thread-safe, and thus correspond to	*/
 /* empty definitions.							*/
+/* It probably doesn't make any sense to declare these to be nonempty	*/
+/* if the code is being optimized, since signal safety relies on some	*/
+/* ordering constraints that are typically not obeyed by optimizing	*/
+/* compilers.								*/
 # ifdef PCR
 #   define DISABLE_SIGNALS() \
 		 PCR_Th_SetSigMask(PCR_allSigsBlocked,&GC_old_sig_mask)
 #   define ENABLE_SIGNALS() \
 		PCR_Th_SetSigMask(&GC_old_sig_mask, NIL)
 # else
-#   if defined(SRC_M3) || defined(AMIGA) || defined(SOLARIS_THREADS) \
+#   if defined(THREADS) || defined(AMIGA)  \
 	|| defined(MSWIN32) || defined(MSWINCE) || defined(MACOS) \
-	|| defined(DJGPP) || defined(NO_SIGNALS) || defined(IRIX_THREADS) \
-	|| defined(LINUX_THREADS) 
+	|| defined(DJGPP) || defined(NO_SIGNALS) 
 			/* Also useful for debugging.		*/
-	/* Should probably use thr_sigsetmask for SOLARIS_THREADS. */
+	/* Should probably use thr_sigsetmask for GC_SOLARIS_THREADS. */
 #     define DISABLE_SIGNALS()
 #     define ENABLE_SIGNALS()
 #   else
@@ -480,9 +484,8 @@ struct hblk;	/* See below.	*/
  				   PCR_allSigsBlocked, \
  				   PCR_waitForever);
 # else
-#   if defined(SOLARIS_THREADS) || defined(WIN32_THREADS) \
-	|| defined(IRIX_THREADS) || defined(LINUX_THREADS) \
-	|| defined(HPUX_THREADS)
+#   if defined(GC_SOLARIS_THREADS) || defined(GC_WIN32_THREADS) \
+	|| defined(GC_PTHREADS)
       void GC_stop_world();
       void GC_start_world();
 #     define STOP_WORLD() GC_stop_world()
@@ -567,7 +570,8 @@ extern GC_warn_proc GC_current_warn_proc;
 # ifdef SMALL_CONFIG
 #   define CPP_LOG_HBLKSIZE 10
 # else
-#   if CPP_WORDSZ == 32
+#   if (CPP_WORDSZ == 32) || (defined(HPUX) && defined(HP_PA))
+      /* HPUX/PA seems to use 4K pages with the 64 bit ABI */
 #     define CPP_LOG_HBLKSIZE 12
 #   else
 #     define CPP_LOG_HBLKSIZE 13
@@ -1354,7 +1358,7 @@ void GC_push_selected GC_PROTO(( \
 #endif
                                 /* Do either of the above, depending	*/
 				/* on the third arg.			*/
-GC_API void GC_push_all_stack GC_PROTO((ptr_t b, ptr_t t));
+void GC_push_all_stack GC_PROTO((ptr_t b, ptr_t t));
 				    /* As above, but consider		*/
 				    /*  interior pointers as valid  	*/
 void GC_push_all_eager GC_PROTO((ptr_t b, ptr_t t));
@@ -1384,21 +1388,21 @@ void GC_push_current_stack GC_PROTO((ptr_t cold_gc_frame));
   			/* stack for scanning.				*/
 void GC_push_roots GC_PROTO((GC_bool all, ptr_t cold_gc_frame));
   			/* Push all or dirty roots.	*/
-GC_API void (*GC_push_other_roots) GC_PROTO((void));
+extern void (*GC_push_other_roots) GC_PROTO((void));
   			/* Push system or application specific roots	*/
   			/* onto the mark stack.  In some environments	*/
   			/* (e.g. threads environments) this is		*/
   			/* predfined to be non-zero.  A client supplied */
   			/* replacement should also call the original	*/
   			/* function.					*/
-GC_API void GC_push_gc_structures GC_PROTO((void));
+extern void GC_push_gc_structures GC_PROTO((void));
 			/* Push GC internal roots.  These are normally	*/
 			/* included in the static data segment, and 	*/
 			/* Thus implicitly pushed.  But we must do this	*/
 			/* explicitly if normal root processing is 	*/
 			/* disabled.  Calls the following:		*/
-	GC_API void GC_push_finalizer_structures GC_PROTO((void));
-	GC_API void GC_push_stubborn_structures GC_PROTO((void));
+	extern void GC_push_finalizer_structures GC_PROTO((void));
+	extern void GC_push_stubborn_structures GC_PROTO((void));
 #	ifdef THREADS
 	  extern void GC_push_thread_structures GC_PROTO((void));
 #	endif
@@ -1473,7 +1477,7 @@ void GC_register_dynamic_libraries GC_PROTO((void));
   		/* Add dynamic library data sections to the root set. */
   
 /* Machine dependent startup routines */
-GC_API ptr_t GC_get_stack_base GC_PROTO((void));	/* Cold end of stack */
+ptr_t GC_get_stack_base GC_PROTO((void));	/* Cold end of stack */
 #ifdef IA64
   ptr_t GC_get_register_stack_base GC_PROTO((void));
   					/* Cold end of register stack.	*/
@@ -1786,7 +1790,7 @@ void GC_print_block_list GC_PROTO((void));
 void GC_print_hblkfreelist GC_PROTO((void));
 void GC_print_heap_sects GC_PROTO((void));
 void GC_print_static_roots GC_PROTO((void));
-GC_API void GC_dump GC_PROTO((void));
+void GC_dump GC_PROTO((void));
 
 #ifdef KEEP_BACK_PTRS
    void GC_store_back_pointer(ptr_t source, ptr_t dest);
@@ -1904,8 +1908,7 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
 		/* some other reason.					*/
 # endif /* PARALLEL_MARK */
 
-# if defined(LINUX_THREADS) || defined(IRIX_THREADS) \
-     || defined(HPUX_THREADS) || defined(OSF1_THREADS)
+# if defined(GC_PTHREADS) && !defined(GC_SOLARIS_THREADS)
   /* We define the thread suspension signal here, so that we can refer	*/
   /* to it in the dirty bit implementation, if necessary.  Ideally we	*/
   /* would allocate a (real-time ?) signal using the standard mechanism.*/
@@ -1913,16 +1916,16 @@ void GC_err_puts GC_PROTO((GC_CONST char *s));
   /* in Linux glibc, but it's not exported.)  Thus we continue to use	*/
   /* the same hard-coded signals we've always used.			*/
 #  if !defined(SIG_SUSPEND)
-#   if defined(LINUX_THREADS)
+#   if defined(GC_LINUX_THREADS)
 #    if defined(SPARC) && !defined(SIGPWR)
        /* SPARC/Linux doesn't properly define SIGPWR in <signal.h>.
         * It is aliased to SIGLOST in asm/signal.h, though.		*/
 #      define SIG_SUSPEND SIGLOST
 #    else
-       /* Linuxthreads uses SIGUSR1 and SIGUSR2.			*/
+       /* Linuxthreads itself uses SIGUSR1 and SIGUSR2.			*/
 #      define SIG_SUSPEND SIGPWR
 #    endif
-#   else  /* !LINUX_THREADS */
+#   else  /* !GC_LINUX_THREADS */
 #    define SIG_SUSPEND _SIGRTMIN + 6
 #   endif
 #  endif /* !SIG_SUSPEND */

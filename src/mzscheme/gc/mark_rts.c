@@ -259,7 +259,7 @@ GC_bool tmp;
     n_root_sets++;
 }
 
-static roots_were_cleared = FALSE;
+static GC_bool roots_were_cleared = FALSE;
 
 void GC_clear_roots GC_PROTO((void))
 {
@@ -513,8 +513,6 @@ void GC_push_gc_structures GC_PROTO((void))
   void GC_mark_thread_local_free_lists();
 #endif
 
-#include "include/private/gc_pmark.h"
-
 /*
  * Call the mark routines (GC_tl_push for a single pointer, GC_push_conditional
  * on groups of pointers) on every top level accessible pointer.
@@ -530,21 +528,6 @@ ptr_t cold_gc_frame;
 {
     register int i;
 
-    /*
-     * push registers - i.e., call GC_push_one(r) for each
-     * register contents r.
-     */
-#   ifdef USE_GENERIC_PUSH_REGS
-	GC_generic_push_regs(cold_gc_frame);
-	 /* PLTSCHEME: this isn't right! but it's better than nothing */
-	if (GC_mark_stack_top
-	    >= GC_mark_stack_limit - INITIAL_MARK_STACK_SIZE/2) {
-	  MARK_FROM_MARK_STACK();
-	}
-#   else
-        GC_push_regs(); /* usually defined in machine_dep.c */
-#   endif
-        
     /*
      * Next push static data.  This must happen early on, since it's
      * not robust against mark stack overflow.
@@ -578,23 +561,35 @@ ptr_t cold_gc_frame;
 #      endif
 
     /*
-     * Now traverse stacks.
+     * Now traverse stacks, and mark from register contents.
+     * These must be done last, since they can legitimately overflow
+     * the mark stack.
      */
-#   if !defined(USE_GENERIC_PUSH_REGS)
+#   ifdef USE_GENERIC_PUSH_REGS
+	GC_generic_push_regs(cold_gc_frame);
+	/* Also pushes stack, so that we catch callee-save registers	*/
+	/* saved inside the GC_push_regs frame.				*/
+#   else
+       /*
+        * push registers - i.e., call GC_push_one(r) for each
+        * register contents r.
+        */
+        GC_push_regs(); /* usually defined in machine_dep.c */
 	GC_push_current_stack(cold_gc_frame);
-	/* IN the threads case, this only pushes collector frames.      */
-	/* In the USE_GENERIC_PUSH_REGS case, this is done inside	*/
-	/* GC_push_regs, so that we catch callee-save registers saved	*/
-	/* inside the GC_push_regs frame.				*/
-	/* In the case of linux threads on Ia64, the hot section of	*/
+	/* In the threads case, this only pushes collector frames.      */
+	/* In the case of linux threads on IA64, the hot section of	*/
 	/* the main stack is marked here, but the register stack	*/
 	/* backing store is handled in the threads-specific code.	*/
 #   endif
     if (GC_push_other_roots != 0) (*GC_push_other_roots)();
     	/* In the threads case, this also pushes thread stacks.	*/
+        /* Note that without interior pointer recognition lots	*/
+    	/* of stuff may have been pushed already, and this	*/
+    	/* should be careful about mark stack overflows.	*/
     /* PLTSCHEME: hook for last roots; need to mark copies of the stack */
     if (GC_push_last_roots != 0) (*GC_push_last_roots)();
 }
+
 
 /* PLTSCHEME */
 void GC_flush_mark_stack()

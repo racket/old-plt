@@ -5,14 +5,20 @@
 	(list "Analyzer" (build-path "drscheme" "spidstub"))
 
 ;;          this is the example tool.
-;	(list "Toy" (build-path "drscheme" "toy"))
+	(list "Toy" (build-path "drscheme" "toy"))
 
 	))
 
 (define drscheme:tool@
   (unit/sig drscheme:tool^
-    (import mred^ mzlib:core^ mzlib:print-convert^ 
-	    zodiac:system^ drscheme:export^ plt:parameters^)
+    (import mred^
+	    mzlib:core^
+	    mzlib:print-convert^ 
+	    zodiac:system^
+	    plt:parameters^
+	    [drscheme:frame : drscheme:frame^]
+	    [drscheme:unit : drscheme:unit^]
+	    [drscheme:compound-unit : drscheme:compound-unit^])
 
     (debug:printf 'invoke "drscheme:tool@")
 
@@ -129,23 +135,26 @@
 	     [params : plt:parameters^ (drscheme:parameters@ mred basis)]
 	     [zodiac : zodiac:system^ (zodiac:system@ interface params)]
 	     [aries : plt:aries^ (plt:aries@ zodiac interface)]
+	     [edit : drscheme:edit^ (drscheme:edit@ mred aries zodiac)]
 	     [setup : drscheme:setup^ (drscheme:setup@ mred mzlib)]
 	     [tool : drscheme:tool^ 
-		   (drscheme:tool@ mred mzlib print-convert zodiac
-				 (frame : drscheme:export^) params)]
+		   (drscheme:tool@ mred mzlib print-convert zodiac params
+				   frame unit compound-unit)]
 	     [rep : drscheme:rep^
 		    (drscheme:rep@ mred mzlib print-convert
 				     params aries zodiac
 				     interface app basis)]
 	     [frame : drscheme:frame^
-		    (drscheme:frame@ mred mzlib rep basis
-				   setup tool compound-unit)]
+		    (drscheme:frame@ mred mzlib basis
+				   setup tool unit
+				   compound-unit zodiac)]
 	     [unit : drscheme:unit^
 		    (drscheme:unit@ mred mzlib basis 
-				  setup compound-unit tool frame)]
+				  setup compound-unit
+				  tool frame edit rep)]
 	     [compound-unit : drscheme:compound-unit^
 		    (drscheme:compound-unit@ mred mzlib unit frame)]
-	     [app : drscheme:app^ (drscheme:application@ frame mred mzlib)])
+	     [app : drscheme:app^ (drscheme:application@ unit frame mred mzlib)])
        (export (unit mred)
 	       (unit app mred)
 	       (open mzlib)

@@ -17,7 +17,7 @@ The initialization file contains one system-dependent setting:
 `most-positive-fixnum' is bound to a value that is precisely correct
 for 32-bit architectures. The precise value for a 64-bit architcture
 is in the file, but commented out. The only danger in using the 32-bit
-value is a decrease in performance.
+value for a 64-bit architecture is a decrease in performance.
 
 No other changes should be necessary. Send patches to
 scheme@cs.rice.edu.

@@ -175,6 +175,8 @@ The servlet-helpers module, required with
   (require (lib "servlet-helpers.ss" "web-server"))
 provides a few additional functions helpful for constructing servlets:
 
+An environment is a (listof (cons symbol string)), as before.
+
 > extract-binding/single : sym environment -> str
   This extracts a single value associated with sym in the form bindings.
   If multiple or zero values are associated with the name, it raises an

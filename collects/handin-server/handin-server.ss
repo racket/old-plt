@@ -3,7 +3,8 @@
   (require (lib "thread.ss")
 	   (lib "mzssl.ss" "openssl")
 	   (lib "file.ss")
-	   (lib "date.ss"))
+	   (lib "date.ss")
+	   "md5.ss")
 
   (define log-port (open-output-file "log.ss" 'append))
 
@@ -133,7 +134,7 @@
       (unless (check-id id)
 	(error 'handin "id has wrong format: ~a; need ~a for id" id ID-DESC))
       (put-user (string->symbol username)
-		(list passwd id full-name))
+		(list (md5 passwd) id full-name))
       (fprintf w "ok~n")))
   
   (define (change-user-passwd username r-safe w old-user-data)
@@ -142,7 +143,7 @@
       (unless (string? new-passwd)
 	(error 'handin "bad password-change request"))
       (put-user (string->symbol username)
-		(cons new-passwd (cdr old-user-data)))
+		(cons (md5 new-passwd) (cdr old-user-data)))
       (fprintf w "ok~n")))
 
   (define (accept-submission-or-update active-assignments r r-safe w)
@@ -165,7 +166,8 @@
 	  (LOG "create user: ~a" username)
 	  (add-new-user username r-safe w)]
 	 [(and user-data
-	       (equal? passwd (car user-data)))
+	       (string? passwd)
+	       (equal? (md5 passwd) (car user-data)))
 	  (LOG "login: ~a" username)
 	  (let ([assignment (read r-safe)])
 	    (LOG "assignment for ~a: ~a" username assignment)

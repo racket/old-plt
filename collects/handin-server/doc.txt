@@ -92,6 +92,10 @@ To customize the client:
          running to accept handin submissions. (The default is
          probably fine.)
 
+      Optionally uncomment and edit the next two definitions,
+      `web-menu-name' and `web-address', to add an item to the "Help"
+      menu that opens a (course-specific) web page.
+
    3. Replace "icon.png" in your renamed directory with a new 32x32
       icon. This icon is displayed on startup with DrScheme's splash
       screen, and it is included at half size on the "Handin"

@@ -4,7 +4,9 @@
 	   (lib "unitsig.ss")
 	   (lib "tool.ss" "drscheme")
 	   (lib "etc.ss")
+	   (lib "file.ss")
 	   (lib "framework.ss" "framework")
+	   (lib "sendurl.ss" "net")
 	   "client.ss"
 	   "info.ss"
 	   ;; Temporary hack for test suite in separate window:
@@ -12,10 +14,14 @@
 
   (provide tool@)
 
+  (define uninstalled? #f)
+
   (define server (#%info-lookup 'server))
   (define port-no (#%info-lookup 'port-no))
   (define handin-name (#%info-lookup 'name))
   (define this-collection (#%info-lookup 'collection))
+  (define web-menu-name (#%info-lookup 'web-menu-name (lambda () #f)))
+  (define web-address (#%info-lookup 'web-address (lambda () #f)))
 
   (preferences:set-default 'submit:username "" string?)
   (define (remembered-user)
@@ -209,58 +215,111 @@
 			   [parent this]
 			   [stretchable-width #t]))
 
-       (define (mk-txt label parent)
+       (define tabs (new tab-panel%
+			 [parent this]
+			 [choices '("Change Password"
+				    "New User"
+				    "Uninstall")]
+			 [callback
+			  (lambda (tp e)
+			    (send single active-child
+				  (list-ref 
+				   (list old-user-box
+					 new-user-box
+					 uninstall-box)
+				   (send tabs get-selection))))]))
+
+       (define single (new panel:single%
+			   [parent tabs]))
+
+       (define (mk-txt label parent activate-ok)
 	 (new text-field%
 	      [label label]
 	      [parent parent]
 	      [callback (lambda (t e) (activate-ok))]
 	      [stretchable-width #t]))
 
-       (define username (mk-txt "Username:" this))
-       (send username set-value (remembered-user))
-       (define new-user? (new check-box%
-			      [label "New User"]
-			      [parent this]
-			      [callback (lambda (t e) (activate-ok))]))
-
-       (define (mk-passwd label parent)
+       (define (mk-passwd label parent activate-ok)
 	 (new text-field%
 	      [label label]
 	      [parent parent]
 	      [callback (lambda (t e) (activate-ok))]
 	      [style '(single password)]
 	      [stretchable-width #t]))
+       
+       (define (non-empty? t)
+	 (not (string=? "" (send t get-value))))
 
-       (define old-user-box (new group-box-panel%
-				 [label "Change Password"]
-				 [parent this]))
-       (define old-passwd (mk-passwd "Old:" old-user-box))
-       (define new-passwd (mk-passwd "New:" old-user-box))
-       (define confirm-passwd (mk-passwd "New again:" old-user-box))
+       (define (activate-change)
+	 (send change-button enable
+	       (and (non-empty? old-username)
+		    (non-empty? old-passwd)
+		    (non-empty? new-passwd)
+		    (non-empty? confirm-passwd))))
+       (define old-user-box (new vertical-panel%
+				 [parent single]
+				 [alignment '(center center)]))
+       (define old-username (mk-txt "Username:" old-user-box activate-change))
+       (send old-username set-value (remembered-user))
        
-       (define new-user-box (new group-box-panel%
-				 [label "New Information"]
-				 [parent this]))
-       (define full-name (mk-txt "Full Name:" new-user-box))
-       (define student-id (mk-txt "ID:" new-user-box))
-       (define add-passwd (mk-passwd "Password:" new-user-box))
+       (define old-passwd (mk-passwd "Old:" old-user-box activate-change))
+       (define new-passwd (mk-passwd "New:" old-user-box activate-change))
+       (define confirm-passwd (mk-passwd "New again:" old-user-box activate-change))
+       (define change-button (new button%
+				  [label "Set Password"]
+				  [parent old-user-box]
+				  [callback
+				   (lambda (b e)
+				     (do-change/add #f old-username b e))]
+				  [style '(border)]))
+
+       (define (activate-new)
+	 (send new-button enable
+	       (and (non-empty? new-username)
+		    (non-empty? full-name)
+		    (non-empty? student-id)
+		    (non-empty? add-passwd))))
+       (define new-user-box (new vertical-panel%
+				 [parent single]
+				 [alignment '(center center)]))
+       (define new-username (mk-txt "Username:" new-user-box activate-new))
+       (send new-username set-value (remembered-user))
+       (define full-name (mk-txt "Full Name:" new-user-box activate-new))
+       (define student-id (mk-txt "ID:" new-user-box activate-new))
+       (define add-passwd (mk-passwd "Password:" new-user-box activate-new))
+       (define new-button (new button%
+			       [label "Add User"]
+			       [parent new-user-box]
+			       [callback
+				(lambda (b e)
+				  (do-change/add #t new-username b e))]
+			       [style '(border)]))
        
-       (define (activate-ok)
-	 (let ([new? (send new-user? get-value)]
-	       [non-empty? (lambda (t)
-			     (not (string=? "" (send t get-value))))])
-	   (send new-user-box enable new?)
-	   (send old-user-box enable (not new?))
-	   (send ok enable
-		 (and (non-empty? username)
-		      (if new?
-			  (and (non-empty? full-name)
-			       (non-empty? student-id)
-			       (non-empty? add-passwd))
-			  (and (non-empty? old-passwd)
-			       (non-empty? new-passwd)
-			       (non-empty? confirm-passwd)))))))
-       
+       (define uninstall-box (new vertical-panel%
+				 [parent single]
+				 [alignment '(center center)]))
+       (define uninstall-button (new button%
+				     [label (format "Uninstall ~a" handin-name)]
+				     [parent uninstall-box]
+				     [callback
+				      (lambda (b e)
+					(let ([dir (collection-path this-collection)])
+					  (with-handlers ([void (lambda (exn)
+								  (report-error
+								   "Uninstall failed."
+								   exn))])
+					    (delete-directory/files dir)
+					    (set! uninstalled? #t)
+					    (send uninstall-button enable #f)
+					    (message-box
+					     "Uninstall"
+					     (format
+					      "The ~a tool has been uninstalled. ~a~a"
+					      handin-name
+					      "The Handin button and associated menu items"
+					      " will not appear after you restart DrScheme.")))))]))
+       (send uninstall-button enable (not uninstalled?))
+
        (define (report-error tag exn)
 	 (queue-callback
 	  (lambda ()
@@ -275,10 +334,7 @@
 			 s
 			 (format "~e" s))))
 	       this)
-	      (set! comm-cust (make-custodian))
-	      (send username enable #t)
-	      (send new-user? enable #t)
-	      (activate-ok)))))
+	      (set! comm-cust (make-custodian))))))
 
        (define comm-cust (make-custodian))
 
@@ -286,48 +342,6 @@
 				 [parent this]
 				 [stretchable-height #f]))
        (make-object vertical-pane% button-panel) ; spacer
-       (define ok (new button%
-		       [label "Send"]
-		       [parent button-panel]
-		       [callback (lambda (b e)
-				   (let ([new? (send new-user? get-value)])
-				     (if (and (not new?)
-					      (not (string=? (send new-passwd get-value)
-							     (send confirm-passwd get-value))))
-					 (message-box "Password Error"
-						      "The \"New\" and \"New again\" passwords are not the same.")
-					 (begin
-					   (send ok enable #f)
-					   (send username enable #f)
-					   (send new-user? enable #f)
-					   (send new-user-box enable #f)
-					   (send old-user-box enable #f)
-					   (parameterize ([current-custodian comm-cust])
-					     (thread
-					      (lambda ()
-						(with-handlers ([void (lambda (exn)
-									(report-error
-									 "Update failed."
-									 exn))])
-						  (remember-user (send username get-value))
-						  (send status set-label "Making secure connection...")
-						  (let-values ([(h l) (connect)])						    
-						    (send status set-label "Updating server...")
-						    (if new?
-							(submit-addition
-							 h
-							 (send username get-value)
-							 (send full-name get-value)
-							 (send student-id get-value)
-							 (send add-passwd get-value))
-							(submit-password-change
-							 h
-							 (send username get-value)
-							 (send old-passwd get-value)
-							 (send new-passwd get-value))))
-						  (send status set-label "Success.")
-						  (send cancel set-label "Close")))))))))]
-		       [style '(border)]))
        (define cancel  (new button%
 			    [label "Cancel"]
 			    [parent button-panel]
@@ -335,7 +349,61 @@
 					(custodian-shutdown-all comm-cust)
 					(show #f))]))
 
-       (activate-ok)
+       ;; Too-long fields can't damage the server, but they might
+       ;;  result in confusing errors due to safety cut-offs on
+       ;;  the server side.
+       (define (check-length field size name k)
+	 (when ((string-length (send field get-value)) . > . size)
+	   (message-box "Error"
+			(format "The ~a must be no longer than ~a characters."
+				name size))
+	   (k (void))))
+
+       (define (do-change/add new? username b e)
+	 (let/ec k
+	   (unless new?
+	     (check-length new-passwd 50 "New password" k)
+	     (when (not (string=? (send new-passwd get-value)
+				  (send confirm-passwd get-value)))
+	       (message-box "Password Error"
+			    "The \"New\" and \"New again\" passwords are not the same.")
+	       (k (void))))
+	   (when new?
+	     (check-length username 50 "Username" k)
+	     (check-length full-name 100 "Full Name" k)
+	     (check-length student-id 100 "ID" k)
+	     (check-length add-passwd 50 "Password" k))
+	   (send tabs enable #f)
+	   (parameterize ([current-custodian comm-cust])
+	     (thread
+	      (lambda ()
+		(with-handlers ([void (lambda (exn)
+					(report-error
+					 "Update failed."
+					 exn))])
+		  (remember-user (send username get-value))
+		  (send status set-label "Making secure connection...")
+		  (let-values ([(h l) (connect)])						    
+		    (send status set-label "Updating server...")
+		    (if new?
+			(submit-addition
+			 h
+			 (send username get-value)
+			 (send full-name get-value)
+			 (send student-id get-value)
+			 (send add-passwd get-value))
+			(submit-password-change
+			 h
+			 (send username get-value)
+			 (send old-passwd get-value)
+			 (send new-passwd get-value))))
+		  (send status set-label "Success.")
+		  (send cancel set-label "Close")))))))
+
+       (send new-user-box show #f)
+       (send uninstall-box show #f)
+       (activate-new)
+       (activate-change)
        (show #t))))
 
   (define (scale-by-half file)
@@ -399,6 +467,17 @@
 		 (parent file-menu)
 		 (callback (lambda (m e) (manage-handin-account))))
             (super-file-menu:between-open-and-revert file-menu))	  
+	  
+	  (rename (super-help-menu:after-about help-menu:after-about))
+          (define/override (help-menu:after-about menu)
+	    (when web-menu-name
+	      (new menu-item%
+		   (label web-menu-name)
+		   (parent menu)
+		   (callback (lambda (item evt)
+			       (send-url web-address)))))
+            (super-help-menu:after-about menu))
+
 	  (define button
 	    (new button% 
 		 [label (tool-button-label this)]

@@ -321,7 +321,8 @@
 				       (eq?
 					(namespace-variable-value
 					 answer
-					 (lambda () (k #f)))
+					 #t
+                                         (lambda () (k #f)))
 					expr))
                                      answer]
                                     [((use-named/undefined-handler) expr)

@@ -96,7 +96,7 @@
                        "(set-delta wx:const-change-underline 1)"))
 (define uncheck-delta
   (make-resource-delta "uncheck-delta"
-                       "(set-delta-foreground \"FORESTGREEN\")"
+                       "(set-delta-foreground \"FOREST GREEN\")"
                        ""))
 
 (define check-link-delta

@@ -86,13 +86,15 @@
                   [(save) (send edit save-file)]
                   [(continue) #t]
                   [else #f])))
-            (with-handlers
-              ([ (lambda (x) (eq? x 'mrspidey-raise))
-                 (lambda (x) (void))])
-              (send spidey run-mrspidey (send edit get-filename))))
+            (with-handlers ([(lambda (x) (eq? x 'mrspidey-raise))
+			     (lambda (x) (void))])
+              (let*-values ([(filename) (send edit get-filename)]
+			    [(dir name is-dir) (split-path (path->complete-path filename))])
+		(parameterize ([current-load-relative-directory dir])
+		  (send spidey run-mrspidey filename)))))
           (mred:message-box
-            "MrSpidey can only process programs that are saved to a file"
-            "MrSpidey Error"))))))
+	   "MrSpidey can only process programs that are saved to a file"
+	   "MrSpidey Error"))))))
 
 ;; ----------------------------------------------------------------------
 

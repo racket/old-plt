@@ -657,7 +657,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   /* A thread points to a lot of stuff, so it's bad to put a finalization
      on it, which is what registering with a manager does. Instead, we
      register a weak indirection with the manager. That way, the thread
-     (and anything it poitns to) can be collected a GC cycle earlier. */
+     (and anything it points to) can be collected one GC cycle earlier. */
   process->mr_hop = MALLOC_ONE_ATOMIC(Scheme_Process_Manager_Hop);
   process->mr_hop->type = scheme_process_type;
   process->mr_hop->p = process;
@@ -1228,8 +1228,6 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   child = make_process(NULL, config, mgr);
 
   child->stack_start = child_start;
-
-  scheme_init_error_escape_proc(child);
   
 #ifndef MZ_REAL_THREADS
   if (do_atomic)

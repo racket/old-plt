@@ -1710,6 +1710,7 @@ Module file: _tcp-redirect.ss_ - provides the `tcp-redirect-function
              _tcp-unit.ss_ - defines _tcp@_ which implements
                              net:tcp^ using the MzScheme functions of
                              the same name
+             ssl-tcp-unit.ss - see below
 
 PROCEDURES -----------------------------------------------------------
 
@@ -1723,6 +1724,41 @@ PROCEDURES -----------------------------------------------------------
   connections to "127.0.0.1", the unit's implementation does not use
   TCP connections, but instead uses internal buffered channels. Such
   channels behave exactly as TCP listeners and ports.
+
+==========================================================================
+_SSL redirect__
+==========================================================================
+
+The _ssl-tcp-unit.ss_ library provides `make-ssl-tcp@', which returns
+a unit that implements net:tcp^ from "tcp-sig.ss"
+
+PROCEDURES -----------------------------------------------------------
+
+> (make-ssl-tcp@ 
+   server-cert-file server-key-file server-root-cert-files 
+   server-suggest-auth-file
+   client-cert-file client-key-file client-root-cert-files)
+
+  Returns a unit that implements net:tcp^ using the SSL functions from
+  (lib "mzssl.ss" "openssl"). The arguments to `make-ssl-tcp@' control
+  the certificates and keys uses by server and client connections:
+ 
+    `server-cert-file' - a PEM file for a server's certyificate; #f means
+     no certificate (which is unlikely to work with any SSL client)
+    `server-key-file' - a private key PEM to go with `server-cert-file';
+     #f means no key (which is likely renders a certificate useless)
+    `server-root-cert-files' - a list of PEM files for trusted root
+     ceritifcates; #f disables verification of peer client certificates
+
+    `server-suggest-auth-file' - PEM file for root certificates to be
+     suggested to peer clients that must supply certificates
+
+    `client-cert-file' - a PEM file for a client's certificate; #f means
+     no certificate (usually fine)
+    `client-key-file' - a private key PEM to go with `client-cert-file';
+     #f means no key (which is likely renders a certificate useless)
+    `client-root-cert-files' - a list of PEM files for trusted root
+     ceritifcates; #f disables verification of peer server certificates
 
 ==========================================================================
 _cookies_, HTTP _State Management_

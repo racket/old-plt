@@ -1,4 +1,10 @@
-#| TO DO:
+#| 
+
+This file gets REQUIREd by optionr.ss.
+
+To debug: edit out the setting of current-exception-handler in readr.ss.
+
+TO DO:
 
 - correct preferences:set-default's tester
   (currently assumes won't be invalid)
@@ -11,7 +17,10 @@
 
 (module pref mzscheme
 
-  (provide create-preferences lookup-pref/prefs sirmail-login-pref)
+  (provide create-preferences 
+	   lookup-pref/prefs
+	   lookup-pref/prefs/fail-false
+	   sirmail-login-pref)
 
   (require (lib "class.ss")
            (lib "unitsig.ss")

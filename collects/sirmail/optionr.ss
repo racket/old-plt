@@ -44,9 +44,11 @@
       (define (USERNAME) (lookup-pref/prefs 'username (pref-prefs)))
       (define (DEFAULT-DOMAIN) (lookup-pref/prefs 'default-to-domain (pref-prefs)))
       (define (IMAP-SERVER) (lookup-pref/prefs 'imap-server (pref-prefs)))
-      (define (LOCAL-DIR) (lookup-pref/prefs 'local-dir (pref-prefs)))
+      (define (LOCAL-DIR)
+	(or (lookup-pref/prefs/fail-false 'local-dir (pref-prefs))
+	    (build-path (find-system-path 'home-dir) "SirMail")))
       (define (SAVE-SENT)
-	(if (lookup-pref/prefs 'save-sent? (pref-prefs))
+	(if (lookup-pref/prefs/fail-false 'save-sent? (pref-prefs))
 	    (lookup-pref/prefs 'save-sent-dir (pref-prefs))
 	    #f))
 

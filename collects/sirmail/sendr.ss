@@ -224,9 +224,7 @@
 		       [(xemacs)
 			(string-append "gnuclient +5 " t)]
 		       [(emacs)
-			(string-append "emacsclient +5 " t)]
-		       [(vi)
-			(string-append "vi " t)]))
+			(string-append "emacsclient +5 " t)]))
 
 		    (send message-editor load-file t 'guess #t)
 
@@ -328,16 +326,13 @@
 				   ;; Disable others:
 				   (send xemacs check (eq? xemacs item))
 				   (send gnu-emacs check (eq? gnu-emacs item))
-				   (send vi check (eq? vi item))
 				   ;; Update flags
 				   (set! external-composer
 					 (cond
 					  [(send xemacs is-checked?)
 					   'xemacs]
 					  [(send gnu-emacs is-checked?)
-					   'gnu-emacs]
-					  [(send vi is-checked?)
-					   'vi]))
+					   'gnu-emacs]))
 				   (put-preferences
 				    (list sirmail:external-composer-pref)
 				    (list external-composer))
@@ -345,13 +340,11 @@
 				 ;; Turn it back on
 				 (send item check #t)))]
 		   [xemacs (make-object checkable-menu-item% "XEmacs" composer-menu switch)]
-		   [gnu-emacs (make-object checkable-menu-item% "GNU Emacs" composer-menu switch)]
-		   [vi (make-object checkable-menu-item% "vi" composer-menu switch)])
+		   [gnu-emacs (make-object checkable-menu-item% "GNU Emacs" composer-menu switch)])
 	    (send
 	     (case external-composer
 	       [(xemacs) xemacs]
-	       [(gnu-emacs) gnu-emacs]
-	       [(vi) vi])
+	       [(gnu-emacs) gnu-emacs])
 	     check #t)))
 
 	(make-object menu-item% "Save" file-menu 

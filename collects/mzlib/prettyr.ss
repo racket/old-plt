@@ -430,7 +430,7 @@
 						(out "#\\" col))))
 
 		   (else (out (let ([p (open-output-string)])
-				(display obj p)
+				((if display? display write) obj p)
 				(get-output-string p))
 			      col)))))
 

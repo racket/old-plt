@@ -8,9 +8,7 @@
 			("[" . "]")
 			("{" . "}")))
   
-  (define quote-pairs '(("\"" . "\"")
-			("#|" . "|#")
-			("|" . "|")))
+  (define quote-pairs '(("\"" . "\"")))
   
   (define comments '(";" "#!"))
 

@@ -278,6 +278,7 @@
 			  (zodiac:module-form-name ast)
 			  (zodiac:module-form-requires ast)
 			  (zodiac:module-form-for-syntax-requires ast)
+			  (zodiac:module-form-for-template-requires ast)
 			  (a-normalize (zodiac:module-form-body ast) identity)
 			  #f ; see split-module in driver.ss
 			  (zodiac:module-form-provides ast)

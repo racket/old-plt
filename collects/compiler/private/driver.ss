@@ -262,6 +262,7 @@
 			       (zodiac:module-form-name m)
 			       (zodiac:module-form-requires m)
 			       (zodiac:module-form-for-syntax-requires m)
+			       (zodiac:module-form-for-template-requires m)
 			       expr #f
 			       (zodiac:module-form-provides m)
 			       (zodiac:module-form-syntax-provides m)
@@ -300,6 +301,7 @@
 				(list (zodiac:module-form-name m)
 				      (zodiac:module-form-requires m)
 				      (zodiac:module-form-for-syntax-requires m)
+				      (zodiac:module-form-for-template-requires m)
 				      (filter (if (zodiac:module-form-kernel-reprovide-hint m)
 						  (lambda (x) (or (symbol? x)
 								  (not (eq? '#%kernel (car x)))))

@@ -317,6 +317,7 @@
              ;; No way to wrap
              [(require i ...) expr]
              [(require-for-syntax i ...) expr]
+             [(require-for-template i ...) expr]
              ;; No error possible (and no way to wrap)
              [(provide i ...) expr]
              

@@ -563,8 +563,6 @@
       
       (define known-single-result? #f)
 
-      (rename [super-simplify simplify]
-	      [super-valueable? valueable?])
       (inherit set-known-value)
       
       (define (known-single-result v)
@@ -595,7 +593,7 @@
              (send rator is-kernel?)
              (not (memq (send rator orig-name)
                         (non-valueable-prims)))
-             (super-valueable?)))
+             (super valueable?)))
 
       (define/override (get-result-arity)
         (if (or known-single-result? (no-side-effect?))
@@ -613,7 +611,7 @@
            (map (lambda (x) (send x escape)) rands))))
 
       (define/override (simplify ctx)
-        (super-simplify ctx)
+        (super simplify ctx)
         (cond
           ;; ((lambda (a ...) ...) v ...) => (let ([a v] ...) ...)
           [(and (is-a? rator lambda%)
@@ -861,7 +859,6 @@
       (define simplifying-body #f)
       
       
-      (rename [super-simplify simplify])
       (inherit drop-uses)
       
       
@@ -921,7 +918,7 @@
             (begin
               (set! simplifying-body #t)
               (begin0
-                (super-simplify ctx)
+                (super simplify ctx)
                 (set! simplifying-body #f)))))
       
       (define/override (clone env)
@@ -1084,12 +1081,11 @@
     (class local% 
       (init -varss -rhss -body -stx)
       (inherit get-varss get-rhss get-body)
-      (rename [super-set-known-values set-known-values])
       
       (define/override (set-known-values)
         (for-each (lambda (vars rhs) (install-values vars rhs))
                   (get-varss) (get-rhss))
-        (super-set-known-values))
+        (super set-known-values))
       
       (super-instantiate ((quote-syntax let-values) -varss -rhss -body -stx))))
 
@@ -1097,7 +1093,6 @@
     (class local% 
       (init -varss -rhss -body -stx) 
       (inherit get-varss get-rhss)
-      (rename [super-set-known-values set-known-values])
       
       (define/override (set-known-values)
         (let loop ([varss (get-varss)][rhss (get-rhss)])
@@ -1107,7 +1102,7 @@
                         (car varss))
               (loop (cdr varss) (cdr rhss)))))
         (for-each install-values (get-varss) (get-rhss))
-        (super-set-known-values))
+        (super set-known-values))
 
       (super-instantiate ((quote-syntax letrec-values) -varss -rhss -body -stx))))
 
@@ -1116,7 +1111,6 @@
       (init-field var val)
       (super-instantiate ())
       (inherit-field src-stx)
-      (rename (super-set-mutability set-mutability))
       
       (define/override (nonbind-sub-exprs) (list var val))
       (define/override (set-nonbind-sub-exprs s) 
@@ -1134,7 +1128,7 @@
 	
       (define/override (set-mutability)
         (send var set-mutated)
-	(super-set-mutability))
+	(super set-mutability))
 	
       (define/override (clone env)
         (make-object set!% 
@@ -1308,8 +1302,6 @@
       (super-instantiate ())
       (inherit-field src-stx)
       
-      (rename [super-deorganize deorganize])
-
       (define/override (reset-varflags)
         (for-each (lambda (e) (send e reset-varflags)) body)
         (for-each (lambda (e) (send e reset-varflags)) et-body))
@@ -1451,7 +1443,7 @@
                                 src-stx))
                             varss bodys)
                        (cdr body)))))))
-        (super-deorganize))
+        (super deorganize))
 
 	(define/override (sexpr)
           (with-syntax ([name name]
@@ -1711,6 +1703,7 @@
         
 	[(require . i) (make-object require/provide% stx)]
 	[(require-for-syntax . i) (make-object require/provide% stx)]
+	[(require-for-template . i) (make-object require/provide% stx)]
 	[(provide i ...) (make-object require/provide% stx)]
 
 	[else (error 'parse "unknown expression: ~a" (syntax-object->datum stx))])))

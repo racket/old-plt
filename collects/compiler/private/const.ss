@@ -112,7 +112,7 @@
 	(let ([def (zodiac:make-module-form
 		    (zodiac:zodiac-stx def)
 		    (make-empty-box)
-		    #f #f #f
+		    #f #f #f #f
 		    def #f
 		    #f #f #f #f #f)])
 	  (set-annotation! 

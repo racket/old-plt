@@ -23,14 +23,14 @@ static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
 #endif
 }
 
-#ifndef wxDIR
-# define wxDIR 0
+#ifndef wxGETDIR
+# define wxGETDIR 0
 #endif
 
 @BEGINSYMBOLS fileSelMode > ONE > PRED BUNDLE
 @SYM "get" : wxOPEN
 @SYM "put" : wxSAVE
-@SYM "dir" : wxDIR
+@SYM "dir" : wxGETDIR
 @SYM "multi" : wxMULTIOPEN
 @SYM "overwrite-prompt" : wxOVERWRITE_PROMPT
 @SYM "hide-readonly" : wxHIDE_READONLY

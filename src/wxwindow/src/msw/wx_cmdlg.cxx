@@ -11,8 +11,10 @@
  */
 
 #include "wx.h"
-
 #include "wx_pdf.h"
+#include <objbase.h>
+#include <objidl.h>
+#include <shlobj.h>
 
 #define wxDIALOG_DEFAULT_X 300
 #define wxDIALOG_DEFAULT_Y 300
@@ -172,6 +174,31 @@ static BOOL DoGetOpenFileName(OPENFILENAME *of, HWND parent)
   return GetOpenFileName(of);
 }
 
+static BOOL DoGetDir(BROWSEINFO *b, HWND parent)
+{
+  ITEMIDLIST *r;
+
+  if (!b->hwndOwner)
+    b->hwndOwner = parent;
+
+  CoInitialize(NULL);
+
+  r = SHBrowseForFolder(b);
+
+  if (r) {
+    IMalloc *mi;
+    int ok;
+
+    ok = SHGetPathFromIDList(r, b->pszDisplayName);
+
+    SHGetMalloc(&mi);
+    mi->Free(r);
+    mi->Release();
+    return ok;
+  } else
+    return 0;
+}
+
 static int set_init_dir;
 extern void MrEdSyncCurrentDir(void);
 
@@ -190,6 +217,31 @@ char *wxFileSelector(char *message,
     wnd = (wxWnd *)parent->handle;
     hwnd = wnd->handle;
   }
+
+  if (flags & wxGETDIR) {
+    BROWSEINFO *b;
+    char *result;
+
+    result = new char[MAX_PATH];
+
+    b = new BROWSEINFO;
+    memset(b, 0, sizeof(BROWSEINFO));
+
+#ifndef BIF_NEWDIALOGSTYLE
+# define BIF_NEWDIALOGSTYLE	0x0040
+#endif
+
+    b->pidlRoot = NULL;
+    b->pszDisplayName = result;
+    b->lpszTitle = message;
+    b->ulFlags = (BIF_NEWDIALOGSTYLE | BIF_RETURNONLYFSDIRS);
+
+    if (wxPrimitiveDialog((wxPDF)DoGetDir, b, 1))
+      return result;
+    else
+      return NULL;
+  }
+
   char *file_buffer;
 
   file_buffer = new WXGC_ATOMIC char[FILEBUF_SIZE];

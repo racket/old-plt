@@ -61,6 +61,7 @@
 (define *file-checked* #f)
 (define *file-opened* #f)
 (define *status-text-editor* #f)
+(define *range-text-editor* #f)
 
 (define (set-status! str)
   (send *status-text-editor* erase)
@@ -135,6 +136,7 @@
                 (parent assign-panel)
                 (enabled #f)
                 (callback (lambda (txg-fld cntrl-evnt) ()))))
+        (set! *range-text-editor* (send range-text get-editor))
         (set! units-text
               (instantiate text-field% ()
                 (label "      Cell(s) Units:")
@@ -161,11 +163,11 @@
                                      frame
                                      '(ok)))
                        ((empty? unit-list)
-                         (message-box "Invalid Input"
+                        (message-box "Invalid Input"
                                      "Improper unit format"
                                      assign-panel
                                      '(ok)))
-                      (else
+                       (else
                         (send range-editor erase)
                         (send units-editor erase)
                         (for-each (lambda (us)
@@ -276,7 +278,19 @@
 (define (load-xl-file filename)
   (com-set-property! xl "Visible" #t)
   (set! wb (open-xl-workbook xl filename))
-  (set! ws (com-get-property wb "ActiveSheet")))
+  (set! ws (com-get-property wb "ActiveSheet"))
+  (com-register-event-handler
+   ws "SelectionChange"
+   (lambda (rng)
+     (let* ([row (com-get-property rng "Row")]
+            [col (com-get-property rng "Column")]
+            [rows (com-get-property rng "Rows" "Count")]
+            [cols (com-get-property rng "Columns" "Count")]
+            [left-top (numbers->cellref (list (sub1 col) row))]
+            [right-bottom (numbers->cellref (list (- (+ col cols) 2) (sub1 (+ row rows))))])
+       (when *file-opened*
+         (send *range-text-editor* erase)
+         (send *range-text-editor* insert (format "~a:~a" left-top right-bottom)))))))
 
 (define (unit-check-xl-file)
   (preprocess)
@@ -1001,7 +1015,7 @@
 
 (define (get-ranges-from-txt str)
   (let* ([s (list->string (filter (lambda (c) (not (char-whitespace? c)))
-                                 (string->list str)))]
+                                  (string->list str)))]
          [ranges-txt (split-string s #\,)]
          [ranges (map (lambda (r) (split-string r #\:)) ranges-txt)]
          [valid-ranges (filter (lambda (r) (not (empty? r)))

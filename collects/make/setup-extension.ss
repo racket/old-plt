@@ -148,6 +148,9 @@
 		       
 		       (list file.o 
 			     (append (list file.c)
+				     (filter (lambda (x)
+					       (regexp-match #rx"mzdyn[a-z0-9]*[.]o" x))
+					     ((current-make-standard-link-libraries)))
 				     headers
 				     extra-depends)
 			     (lambda ()

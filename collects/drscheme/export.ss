@@ -20,29 +20,29 @@
 		interface
 		aries
 		print-convert
-		(mzlib pretty-print@)
-		(mzlib function@))]
+		(mzlib pretty-print)
+		(mzlib function))]
 	[rep : drscheme:rep^
 	     ((require-relative-library "rep.ss")
-	      wx mred mzlib print-convert zodiac
+	      mred mzlib print-convert zodiac
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
-		wx mred mzlib unit
+		mred mzlib unit
 		compound-unit* app zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
-	   wx mred mzlib app compound-unit* frame edit rep
+	   mred mzlib app compound-unit* frame edit rep
 	   language get/extend face)]
 	[compound-unit* : drscheme:compound-unit^
 	  ((require-relative-library "cunit.ss")
-	   wx mred mzlib unit frame face)]
+	   mred mzlib unit frame face)]
 	[signature : drscheme:signature^ ((require-relative-library "sig.ss")
 					  mred)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^
 		    ((require-relative-library "params.ss") 
-		     wx mred unit frame rep mzlib)])
+		     mred unit frame rep mzlib)])
   (export (unit basis)
 	  (unit frame)
 	  (unit unit)

@@ -1,6 +1,9 @@
 (unit/sig drscheme:init^
   (import [mred : mred^])
   
+  (define original-output-port (current-output-port))
+  (define original-error-port (current-error-port))
+
   (define primitive-eval (current-eval))
   (define primitive-load (current-load))
 

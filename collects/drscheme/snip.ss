@@ -3,7 +3,7 @@
 
   (define separator-snipclass
     (make-object
-	(class-asi wx:snip-class%
+	(class-asi mred:snip-class%
 	  (public
 	    [read (lambda (s) 
 		    (let ([size-box (box 0)])
@@ -12,14 +12,14 @@
   (send* separator-snipclass
 	 (set-version 1)
 	 (set-classname "drscheme:sepatator-snip%"))
-  (send (wx:get-the-snip-class-list) add separator-snipclass)
+  (send (mred:get-the-snip-class-list) add separator-snipclass)
 
 
   ;; the two numbers 1 and 2 which appear here are to line up this snip
   ;; with the embedded snips around it in the drscheme rep.
   ;; I have no idea where the extra pixels are going.
   (define separator-snip%
-    (class wx:snip% ()
+    (class mred:snip% ()
       (inherit get-style set-snipclass set-flags get-flags get-admin)
       (private [width 500]
 	       [height 1]
@@ -50,10 +50,10 @@
 	   (unless (null? h-box)
 	     (set-box! h-box (+ (* 2 white-around) height))))]
 	[draw
-	 (let* ([body-pen (send wx:the-pen-list find-or-create-pen
-				"BLACK" 0 wx:const-solid)]
-		[body-brush (send wx:the-brush-list find-or-create-brush
-				  "BLACK" wx:const-solid)])
+	 (let* ([body-pen (send mred:the-pen-list find-or-create-pen
+				"BLACK" 0 'solid)]
+		[body-brush (send mred:the-brush-list find-or-create-brush
+				  "BLACK" 'solid)])
 	   (lambda (dc x y left top right bottom dx dy drawCaret)
 	     (let ([orig-pen (send dc get-pen)]
 		   [orig-brush (send dc get-brush)])
@@ -67,13 +67,13 @@
 	       (send dc set-brush orig-brush))))])
       (sequence
 	(super-init)
-	(set-flags (bitwise-ior (get-flags) wx:const-snip-hard-newline))
+	(set-flags (cons 'hard-newline (get-flags)))
 	(set-snipclass separator-snipclass))))
 
   (define make-snip-class
     (lambda (name get-%)
       (let ([ans (make-object
-		     (class-asi wx:snip-class%
+		     (class-asi mred:snip-class%
 		       (public
 			 [read (lambda (s) 
 				 (let ([size-box (box 0)])
@@ -82,7 +82,7 @@
 	(send* ans 
 	       (set-version 1)
 	       (set-classname name))
-	(send (wx:get-the-snip-class-list) add ans)
+	(send (mred:get-the-snip-class-list) add ans)
 	ans)))
   
   (define prompt-snip-class
@@ -95,7 +95,7 @@
   
   (define make-snip%
     (lambda (snip-class draw-snip)
-      (class wx:snip% ([initial-size 12])
+      (class mred:snip% ([initial-size 12])
 	(inherit get-style set-snipclass set-style)
 	(private [allowed-size initial-size])
 	(public
@@ -116,35 +116,32 @@
 	       (set-box! h-box allowed-size)))]
 	  [draw
 	   (let*-values
-	       ([(bw?) (< (wx:display-depth) 3)]
-		[(body-pen) (send wx:the-pen-list find-or-create-pen
-				  "BLACK" 0 wx:const-solid)]
-		[(body-brush) (send wx:the-brush-list find-or-create-brush
-				    "BLACK" wx:const-solid)]
+	       ([(bw?) (< (mred:get-display-depth) 3)]
+		[(body-pen) (send mred:the-pen-list find-or-create-pen
+				  "BLACK" 0 'solid)]
+		[(body-brush) (send mred:the-brush-list find-or-create-brush
+				    "BLACK" 'solid)]
 		[(shadow-pen shadow-brush)
 		 (if bw?
-		     (let* ([pen (make-object wx:pen% "BLACK" 0
-					      wx:const-solid)]
-			    [brush (make-object wx:brush%)]
+		     (let* ([pen (make-object mred:pen% "BLACK" 0 'solid)]
+			    [brush (make-object mred:brush%)]
 			    [a (integer->char #b01010101)]
 			    [b (integer->char #b10101010)]
-			    [bitmap (make-object wx:bitmap%
+			    [bitmap (make-object mred:bitmap%
 				      (list a b a b a b a b)
 				      8 8 1)])
 		       (send* pen
 			      (set-colour "BLACK")
-			      (set-style wx:const-stipple)
 			      (set-stipple bitmap))
 		       (send* brush
 			      (set-colour "BLACK")
-			      (set-style wx:const-stipple)
 			      (set-stipple bitmap))
 		       (values pen brush))
 		     (values
-		      (send wx:the-pen-list find-or-create-pen
-			    "GRAY" 0 wx:const-solid)
-		      (send wx:the-brush-list find-or-create-brush
-			    "GRAY" wx:const-solid)))])
+		      (send mred:the-pen-list find-or-create-pen
+			    "GRAY" 0 'solid)
+		      (send mred:the-brush-list find-or-create-brush
+			    "GRAY" 'solid)))])
 	     (lambda (dc x y left top right bottom dx dy drawCaret)
 	       (let* ([shadow-size (max 1 (floor (/ allowed-size 10)))]
 		      [size (-  allowed-size shadow-size)]

@@ -933,13 +933,14 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x10;
     string x11;
 
-    SETUP_VAR_STACK_REMEMBERED(6);
+    SETUP_VAR_STACK_REMEMBERED(7);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x2);
-    VAR_STACK_PUSH(4, x8);
-    VAR_STACK_PUSH(5, x11);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x2);
+    VAR_STACK_PUSH(5, x8);
+    VAR_STACK_PUSH(6, x11);
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 8) ||(n > 11)) 
@@ -988,13 +989,14 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x10;
     string x11;
 
-    SETUP_VAR_STACK_REMEMBERED(6);
+    SETUP_VAR_STACK_REMEMBERED(7);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x2);
-    VAR_STACK_PUSH(4, x8);
-    VAR_STACK_PUSH(5, x11);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x2);
+    VAR_STACK_PUSH(5, x8);
+    VAR_STACK_PUSH(6, x11);
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 11)) 
@@ -1059,7 +1061,7 @@ void objscheme_setup_wxRadioBox(void *env)
 
   wxREGGLOB(os_wxRadioBox_class);
 
-  os_wxRadioBox_class = objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 15);
+  os_wxRadioBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 15));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "button-focus", os_wxRadioBoxButtonFocus, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxRadioBox_class, "enable", os_wxRadioBoxEnable, 1, 2));

@@ -358,9 +358,10 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x1;
     Bool x2;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if ((n < 2) ||(n > 3)) 
@@ -386,10 +387,11 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x1;
     int x2;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
 
     
     if (n != 3) 
@@ -411,10 +413,11 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     pathname x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
 
     
     if ((n < 1) ||(n > 2)) 
@@ -449,7 +452,7 @@ void objscheme_setup_wxBitmap(void *env)
 
   wxREGGLOB(os_wxBitmap_class);
 
-  os_wxBitmap_class = objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 7);
+  os_wxBitmap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "save-file", os_wxBitmapSaveFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBitmap_class, "load-file", os_wxBitmapLoadFile, 1, 2));

@@ -800,7 +800,7 @@ static int process_val(void *_p, Mark_Proc mark)
     {
       Scheme_Object **rs = p->runstack_start;
       gcMARK(p->runstack_start);
-      p->runstack = p->runstack_start + (rs - p->runstack);
+      p->runstack = p->runstack_start + (p->runstack - rs);
       gcMARK(p->runstack_saved);
     }
 

@@ -542,12 +542,13 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x7;
     string x8;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
+    SETUP_VAR_STACK_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x2);
-    VAR_STACK_PUSH(4, x8);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x2);
+    VAR_STACK_PUSH(5, x8);
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
@@ -600,12 +601,13 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x7;
     string x8;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
+    SETUP_VAR_STACK_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x2);
-    VAR_STACK_PUSH(4, x8);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x2);
+    VAR_STACK_PUSH(5, x8);
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
@@ -662,7 +664,7 @@ void objscheme_setup_wxButton(void *env)
 
   wxREGGLOB(os_wxButton_class);
 
-  os_wxButton_class = objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7);
+  os_wxButton_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "button%", "item%", os_wxButton_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "set-label", os_wxButtonSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxButton_class, "on-drop-file", os_wxButtonOnDropFile, 1, 1));

@@ -1114,11 +1114,12 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
   int x5;
   string x6;
 
-  SETUP_VAR_STACK_REMEMBERED(4);
+  SETUP_VAR_STACK_REMEMBERED(5);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x6);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(4, x6);
 
   
   if ((n < 1) ||(n > 7)) 
@@ -1171,7 +1172,7 @@ void objscheme_setup_wxCanvas(void *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 24);
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 24));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file", os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event", os_wxCanvasPreOnEvent, 2, 2));

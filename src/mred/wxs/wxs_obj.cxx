@@ -68,9 +68,10 @@ static Scheme_Object *os_wxObject_ConstructScheme(Scheme_Object *obj, int n,  Sc
   os_wxObject *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -98,7 +99,7 @@ void objscheme_setup_wxObject(void *env)
 
   wxREGGLOB(os_wxObject_class);
 
-  os_wxObject_class = objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 0);
+  os_wxObject_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "object%", NULL, os_wxObject_ConstructScheme, 0));
 
 
 

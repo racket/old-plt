@@ -142,7 +142,7 @@ void objscheme_setup_wxItem(void *env)
 
   wxREGGLOB(os_wxItem_class);
 
-  os_wxItem_class = objscheme_def_prim_class(env, "item%", "window%", NULL, 3);
+  os_wxItem_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "item%", "window%", NULL, 3));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "set-label", os_wxItemSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxItem_class, "get-label", os_wxItemGetLabel, 0, 0));
@@ -671,12 +671,13 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     int x4;
     string x5;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
+    SETUP_VAR_STACK_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x1);
-    VAR_STACK_PUSH(4, x5);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x1);
+    VAR_STACK_PUSH(5, x5);
 
     
     if ((n < 2) ||(n > 6)) 
@@ -717,12 +718,13 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     int x4;
     string x5;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
+    SETUP_VAR_STACK_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x1);
-    VAR_STACK_PUSH(4, x5);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x1);
+    VAR_STACK_PUSH(5, x5);
 
     
     if ((n < 2) ||(n > 6)) 
@@ -770,7 +772,7 @@ void objscheme_setup_wxMessage(void *env)
 
   wxREGGLOB(os_wxMessage_class);
 
-  os_wxMessage_class = objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7);
+  os_wxMessage_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "set-label", os_wxMessageSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file", os_wxMessageOnDropFile, 1, 1));

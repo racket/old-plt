@@ -229,7 +229,7 @@ void objscheme_setup_wxMultColour(void *env)
   wxREGGLOB(os_wxMultColour_class);
   wxREGGLOB(os_wxMultColour_interface);
 
-  os_wxMultColour_class = objscheme_def_prim_class(env, "mult-color%", "object%", NULL, 8);
+  os_wxMultColour_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "mult-color%", "object%", NULL, 8));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class, "set", os_wxMultColourSet, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMultColour_class, "get", os_wxMultColourGet, 3, 3));
@@ -505,7 +505,7 @@ void objscheme_setup_wxAddColour(void *env)
   wxREGGLOB(os_wxAddColour_class);
   wxREGGLOB(os_wxAddColour_interface);
 
-  os_wxAddColour_class = objscheme_def_prim_class(env, "add-color%", "object%", NULL, 8);
+  os_wxAddColour_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "add-color%", "object%", NULL, 8));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class, "set", os_wxAddColourSet, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxAddColour_class, "get", os_wxAddColourGet, 3, 3));
@@ -1909,9 +1909,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     int x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if (n != 2) 
@@ -1932,9 +1933,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     int x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if (n != 2) 
@@ -1955,9 +1957,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     int x0;
     Bool x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if (n != 2) 
@@ -1978,9 +1981,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     int x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if (n != 2) 
@@ -2001,9 +2005,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     int x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if (n != 2) 
@@ -2024,9 +2029,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     int x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if (n != 2) 
@@ -2047,9 +2053,10 @@ static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,
     int x0;
     int x1;
 
-    SETUP_VAR_STACK_REMEMBERED(2);
+    SETUP_VAR_STACK_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
+    VAR_STACK_PUSH(2, realobj);
 
     
     if ((n > 1)) 
@@ -2083,7 +2090,7 @@ void objscheme_setup_wxStyleDelta(void *env)
 
   wxREGGLOB(os_wxStyleDelta_class);
 
-  os_wxStyleDelta_class = objscheme_def_prim_class(env, "style-delta%", "object%", os_wxStyleDelta_ConstructScheme, 39);
+  os_wxStyleDelta_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-delta%", "object%", os_wxStyleDelta_ConstructScheme, 39));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "copy", os_wxStyleDeltaCopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleDelta_class, "collapse", os_wxStyleDeltaCollapse, 1, 1));
@@ -2785,7 +2792,7 @@ void objscheme_setup_wxStyle(void *env)
   wxREGGLOB(os_wxStyle_class);
   wxREGGLOB(os_wxStyle_interface);
 
-  os_wxStyle_class = objscheme_def_prim_class(env, "style%", "object%", NULL, 24);
+  os_wxStyle_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style%", "object%", NULL, 24));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "switch-to", os_wxStyleSwitchTo, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyle_class, "set-shift-style", os_wxStyleSetShiftStyle, 1, 1));
@@ -3240,9 +3247,10 @@ static Scheme_Object *os_wxStyleList_ConstructScheme(Scheme_Object *obj, int n, 
   os_wxStyleList *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -3270,7 +3278,7 @@ void objscheme_setup_wxStyleList(void *env)
 
   wxREGGLOB(os_wxStyleList_class);
 
-  os_wxStyleList_class = objscheme_def_prim_class(env, "style-list%", "object%", os_wxStyleList_ConstructScheme, 12);
+  os_wxStyleList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "style-list%", "object%", os_wxStyleList_ConstructScheme, 12));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "forget-notification", os_wxStyleListForgetNotification, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxStyleList_class, "notify-on-change", os_wxStyleListNotifyOnChange, 1, 1));

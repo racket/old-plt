@@ -4899,7 +4899,7 @@ void objscheme_setup_wxMediaBuffer(void *env)
   wxREGGLOB(os_wxMediaBuffer_class);
   wxREGGLOB(os_wxMediaBuffer_interface);
 
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 114);
+  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 114));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2));

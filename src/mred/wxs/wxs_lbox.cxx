@@ -1140,13 +1140,14 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   int x10;
   string x11;
 
-  SETUP_VAR_STACK_REMEMBERED(6);
+  SETUP_VAR_STACK_REMEMBERED(7);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x2);
-  VAR_STACK_PUSH(4, x9);
-  VAR_STACK_PUSH(5, x11);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(4, x2);
+  VAR_STACK_PUSH(5, x9);
+  VAR_STACK_PUSH(6, x11);
 
   Scheme_Object *tmp_callback = NULL;
   if ((n < 3) ||(n > 11)) 
@@ -1209,7 +1210,7 @@ void objscheme_setup_wxListBox(void *env)
 
   wxREGGLOB(os_wxListBox_class);
 
-  os_wxListBox_class = objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 26);
+  os_wxListBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 26));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "set-string", os_wxListBoxSetString, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxListBox_class, "get-string", os_wxListBoxGetString, 1, 1));

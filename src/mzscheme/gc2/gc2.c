@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#define USE_MMAP 1
+#define USE_MMAP 0
 #define GROW_FACTOR 1.5
 
 #if defined(sparc) || defined(__sparc) || defined(__sparc__)
@@ -483,12 +483,32 @@ void GC_init_type_tags(int count, int weakbox)
 
 #if SEARCH
 void *search_for;
+long search_size;
 int detail_cycle;
+int atomic_detail_cycle;
 #endif
 
 void stop()
 {
   printf("stopped\n");
+}
+
+/* for debugging: */
+
+void *GC_find_start(void *p)
+{
+  long diff = ((char *)p - (char *)GC_alloc_space) >> 2;
+
+  if (((long)p & 0x3) || !(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
+    while (!(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
+      diff--;
+    }
+      
+    diff <<= 2;
+
+    return (void *)((char *)GC_alloc_space + diff);
+  } else
+    return p;
 }
 
 static void *mark(void *p)
@@ -590,6 +610,12 @@ static void *mark(void *p)
 #if SEARCH
       if ((new_untagged_low + 1) == search_for) {
 	stop();
+      }
+#endif
+
+#ifdef SEARCH
+      if (atomic_detail_cycle == cycle_count) {
+	printf("%ld at %lx\n", size, new_untagged_low);
       }
 #endif
 	
@@ -1124,6 +1150,11 @@ static void *malloc_tagged(size_t size_in_bytes)
   }
 #endif
 
+#if SEARCH
+  if (size_in_bytes == search_size)
+    stop();
+#endif
+
   m = tagged_high;
   naya = tagged_high + (size_in_bytes >> 2);
   if (naya > untagged_low) {
@@ -1168,6 +1199,11 @@ static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
       ((long *)untagged_low)[0] = 0;
     }
   }
+#endif
+
+#if SEARCH
+  if (size_in_bytes == search_size)
+    stop();
 #endif
 
   naya = untagged_low - ((size_in_bytes >> 2) + 1);

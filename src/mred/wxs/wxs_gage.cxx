@@ -596,12 +596,13 @@ static Scheme_Object *os_wxsGauge_ConstructScheme(Scheme_Object *obj, int n,  Sc
   int x7;
   string x8;
 
-  SETUP_VAR_STACK_REMEMBERED(5);
+  SETUP_VAR_STACK_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
-  VAR_STACK_PUSH(4, x8);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(4, x1);
+  VAR_STACK_PUSH(5, x8);
 
   
   if ((n < 3) ||(n > 9)) 
@@ -656,7 +657,7 @@ void objscheme_setup_wxsGauge(void *env)
 
   wxREGGLOB(os_wxsGauge_class);
 
-  os_wxsGauge_class = objscheme_def_prim_class(env, "gauge%", "item%", os_wxsGauge_ConstructScheme, 10);
+  os_wxsGauge_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "gauge%", "item%", os_wxsGauge_ConstructScheme, 10));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "get-value", os_wxsGaugeGetValue, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxsGauge_class, "set-value", os_wxsGaugeSetValue, 1, 1));

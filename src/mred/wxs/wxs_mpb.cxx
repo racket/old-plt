@@ -5615,9 +5615,10 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
   os_wxMediaPasteboard *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -5645,7 +5646,7 @@ void objscheme_setup_wxMediaPasteboard(void *env)
 
   wxREGGLOB(os_wxMediaPasteboard_class);
 
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 104);
+  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", os_wxMediaPasteboard_ConstructScheme, 104));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step", os_wxMediaPasteboardSetScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step", os_wxMediaPasteboardGetScrollStep, 0, 0));

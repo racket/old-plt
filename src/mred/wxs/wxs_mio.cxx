@@ -487,9 +487,10 @@ static Scheme_Object *os_wxMediaStreamInBase_ConstructScheme(Scheme_Object *obj,
   os_wxMediaStreamInBase *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -517,7 +518,7 @@ void objscheme_setup_wxMediaStreamInBase(void *env)
 
   wxREGGLOB(os_wxMediaStreamInBase_class);
 
-  os_wxMediaStreamInBase_class = objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", os_wxMediaStreamInBase_ConstructScheme, 5);
+  os_wxMediaStreamInBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in-base%", "object%", os_wxMediaStreamInBase_ConstructScheme, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "read", os_wxMediaStreamInBaseRead, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamInBase_class, "bad?", os_wxMediaStreamInBaseBad, 0, 0));
@@ -842,9 +843,10 @@ static Scheme_Object *os_wxMediaStreamOutBase_ConstructScheme(Scheme_Object *obj
   os_wxMediaStreamOutBase *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -872,7 +874,7 @@ void objscheme_setup_wxMediaStreamOutBase(void *env)
 
   wxREGGLOB(os_wxMediaStreamOutBase_class);
 
-  os_wxMediaStreamOutBase_class = objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", os_wxMediaStreamOutBase_ConstructScheme, 4);
+  os_wxMediaStreamOutBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-base%", "object%", os_wxMediaStreamOutBase_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "write", os_wxMediaStreamOutBaseWrite, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutBase_class, "bad?", os_wxMediaStreamOutBaseBad, 0, 0));
@@ -984,10 +986,11 @@ static Scheme_Object *os_wxMediaStreamInStringBase_ConstructScheme(Scheme_Object
   string x0;
   long x1;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
 
   
   if (n != 1) 
@@ -1016,7 +1019,7 @@ void objscheme_setup_wxMediaStreamInStringBase(void *env)
 
   wxREGGLOB(os_wxMediaStreamInStringBase_class);
 
-  os_wxMediaStreamInStringBase_class = objscheme_def_prim_class(env, "editor-stream-in-string-base%", "editor-stream-in-base%", os_wxMediaStreamInStringBase_ConstructScheme, 0);
+  os_wxMediaStreamInStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in-string-base%", "editor-stream-in-base%", os_wxMediaStreamInStringBase_ConstructScheme, 0));
 
 
 
@@ -1146,9 +1149,10 @@ static Scheme_Object *os_wxMediaStreamOutStringBase_ConstructScheme(Scheme_Objec
   os_wxMediaStreamOutStringBase *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -1176,7 +1180,7 @@ void objscheme_setup_wxMediaStreamOutStringBase(void *env)
 
   wxREGGLOB(os_wxMediaStreamOutStringBase_class);
 
-  os_wxMediaStreamOutStringBase_class = objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 1);
+  os_wxMediaStreamOutStringBase_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out-string-base%", "editor-stream-out-base%", os_wxMediaStreamOutStringBase_ConstructScheme, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOutStringBase_class, "get-string", os_wxMediaStreamOutStringBaseGetString, 0, 0));
 
@@ -1593,10 +1597,11 @@ static Scheme_Object *os_wxMediaStreamIn_ConstructScheme(Scheme_Object *obj, int
   REMEMBER_VAR_STACK();
   class wxMediaStreamInBase* x0;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
 
   
   if (n != 1) 
@@ -1625,7 +1630,7 @@ void objscheme_setup_wxMediaStreamIn(void *env)
 
   wxREGGLOB(os_wxMediaStreamIn_class);
 
-  os_wxMediaStreamIn_class = objscheme_def_prim_class(env, "editor-stream-in%", "object%", os_wxMediaStreamIn_ConstructScheme, 11);
+  os_wxMediaStreamIn_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-in%", "object%", os_wxMediaStreamIn_ConstructScheme, 11));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "ok?", os_wxMediaStreamInOk, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamIn_class, "jump-to", os_wxMediaStreamInJumpTo, 1, 1));
@@ -1922,10 +1927,11 @@ static Scheme_Object *os_wxMediaStreamOut_ConstructScheme(Scheme_Object *obj, in
   REMEMBER_VAR_STACK();
   class wxMediaStreamOutBase* x0;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
 
   
   if (n != 1) 
@@ -1954,7 +1960,7 @@ void objscheme_setup_wxMediaStreamOut(void *env)
 
   wxREGGLOB(os_wxMediaStreamOut_class);
 
-  os_wxMediaStreamOut_class = objscheme_def_prim_class(env, "editor-stream-out%", "object%", os_wxMediaStreamOut_ConstructScheme, 5);
+  os_wxMediaStreamOut_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-stream-out%", "object%", os_wxMediaStreamOut_ConstructScheme, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "ok?", os_wxMediaStreamOutOk, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaStreamOut_class, "jump-to", os_wxMediaStreamOutJumpTo, 1, 1));

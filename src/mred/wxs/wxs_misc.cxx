@@ -207,9 +207,10 @@ static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Sch
   os_wxTimer *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -237,7 +238,7 @@ void objscheme_setup_wxTimer(void *env)
 
   wxREGGLOB(os_wxTimer_class);
 
-  os_wxTimer_class = objscheme_def_prim_class(env, "timer%", "object%", os_wxTimer_ConstructScheme, 4);
+  os_wxTimer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "timer%", "object%", os_wxTimer_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "stop", os_wxTimerStop, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTimer_class, "start", os_wxTimerStart, 1, 2));
@@ -501,7 +502,7 @@ void objscheme_setup_wxClipboard(void *env)
   wxREGGLOB(os_wxClipboard_class);
   wxREGGLOB(os_wxClipboard_interface);
 
-  os_wxClipboard_class = objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 5);
+  os_wxClipboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data", os_wxClipboardGetClipboardData, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string", os_wxClipboardGetClipboardString, 1, 1));
@@ -777,9 +778,10 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(Scheme_Object *obj, i
   os_wxClipboardClient *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -807,7 +809,7 @@ void objscheme_setup_wxClipboardClient(void *env)
 
   wxREGGLOB(os_wxClipboardClient_class);
 
-  os_wxClipboardClient_class = objscheme_def_prim_class(env, "clipboard-client%", "object%", os_wxClipboardClient_ConstructScheme, 4);
+  os_wxClipboardClient_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "clipboard-client%", "object%", os_wxClipboardClient_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "get-types", os_wxClipboardClientGetTypes, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxClipboardClient_class, "add-type", os_wxClipboardClientAddType, 1, 1));
@@ -1590,9 +1592,10 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, in
   os_wxPrintSetupData *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -1620,7 +1623,7 @@ void objscheme_setup_wxPrintSetupData(void *env)
 
   wxREGGLOB(os_wxPrintSetupData_class);
 
-  os_wxPrintSetupData_class = objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 25);
+  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 25));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from", os_wxPrintSetupDatacopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-editor-margin", os_wxPrintSetupDataSetEditorMargin, 2, 2));

@@ -793,11 +793,12 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     int x5;
     string x6;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x6);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x6);
 
     
     if ((n < 1) ||(n > 7)) 
@@ -846,11 +847,12 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     int x5;
     string x6;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x6);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x6);
 
     
     if ((n < 1) ||(n > 7)) 
@@ -899,11 +901,12 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     int x5;
     string x6;
 
-    SETUP_VAR_STACK_REMEMBERED(4);
+    SETUP_VAR_STACK_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x6);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x6);
 
     
     if ((n < 1) ||(n > 7)) 
@@ -958,7 +961,7 @@ void objscheme_setup_wxPanel(void *env)
 
   wxREGGLOB(os_wxPanel_class);
 
-  os_wxPanel_class = objscheme_def_prim_class(env, "panel%", "window%", os_wxPanel_ConstructScheme, 17);
+  os_wxPanel_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "panel%", "window%", os_wxPanel_ConstructScheme, 17));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "get-label-font", os_wxPanelGetLabelFont, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPanel_class, "set-label-font", os_wxPanelSetLabelFont, 1, 1));
@@ -1651,12 +1654,13 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
   int x7;
   string x8;
 
-  SETUP_VAR_STACK_REMEMBERED(5);
+  SETUP_VAR_STACK_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
-  VAR_STACK_PUSH(4, x8);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(4, x1);
+  VAR_STACK_PUSH(5, x8);
 
   
   if ((n < 2) ||(n > 9)) 
@@ -1714,7 +1718,7 @@ void objscheme_setup_wxDialogBox(void *env)
 
   wxREGGLOB(os_wxDialogBox_class);
 
-  os_wxDialogBox_class = objscheme_def_prim_class(env, "dialog%", "window%", os_wxDialogBox_ConstructScheme, 10);
+  os_wxDialogBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dialog%", "window%", os_wxDialogBox_ConstructScheme, 10));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "system-menu", os_wxDialogBoxdialogMenu, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDialogBox_class, "set-title", os_wxDialogBoxSetTitle, 1, 1));

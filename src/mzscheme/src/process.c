@@ -587,7 +587,11 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 #endif
 
 #ifdef MZ_PRECISE_GC
-    process->stack_start = (void *)GC_get_stack_base();
+    {
+      void *ss;
+      ss = (void *)GC_get_stack_base();
+      process->stack_start = ss;
+    }
     GC_get_thread_stack_base = get_current_stack_start;
 #endif
   } else {
@@ -684,7 +688,10 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
 #ifdef RUNSTACK_IS_GLOBAL
   if (!prefix) {
+# ifdef MZ_PRECISE_GC
+    /* Precise GC: we intentionally don't register MZ_RUNSTACK. See done_with_GC() */
     REGISTER_SO(MZ_RUNSTACK);
+# endif
     REGISTER_SO(MZ_RUNSTACK_START);
 
     MZ_RUNSTACK = process->runstack;
@@ -1892,6 +1899,11 @@ extern int GC_words_allocd;
 
 static void done_with_GC()
 {
+#ifdef RUNSTACK_IS_GLOBAL
+# ifdef MZ_PRECISE_GC
+  scheme_current_process->runstack = MZ_RUNSTACK;
+# endif
+#endif
 #ifdef WINDOWS_PROCESSES
   scheme_resume_remembered_threads();
 #endif

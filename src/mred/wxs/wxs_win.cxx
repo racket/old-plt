@@ -1156,7 +1156,7 @@ void objscheme_setup_wxWindow(void *env)
 
   wxREGGLOB(os_wxWindow_class);
 
-  os_wxWindow_class = objscheme_def_prim_class(env, "window%", "object%", NULL, 30);
+  os_wxWindow_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "window%", "object%", NULL, 30));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-drop-file", os_wxWindowOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "pre-on-event", os_wxWindowPreOnEvent, 2, 2));

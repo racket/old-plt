@@ -937,12 +937,13 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n
   int x7;
   class wxMediaBuffer* x8;
 
-  SETUP_VAR_STACK_REMEMBERED(5);
+  SETUP_VAR_STACK_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x5);
-  VAR_STACK_PUSH(4, x8);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(4, x5);
+  VAR_STACK_PUSH(5, x8);
 
   
   if ((n < 1) ||(n > 9)) 
@@ -1003,7 +1004,7 @@ void objscheme_setup_wxMediaCanvas(void *env)
 
   wxREGGLOB(os_wxMediaCanvas_class);
 
-  os_wxMediaCanvas_class = objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 18);
+  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 18));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char", os_wxMediaCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event", os_wxMediaCanvasOnEvent, 1, 1));
@@ -1766,9 +1767,10 @@ static Scheme_Object *os_wxMediaAdmin_ConstructScheme(Scheme_Object *obj, int n,
   os_wxMediaAdmin *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -1796,7 +1798,7 @@ void objscheme_setup_wxMediaAdmin(void *env)
 
   wxREGGLOB(os_wxMediaAdmin_class);
 
-  os_wxMediaAdmin_class = objscheme_def_prim_class(env, "editor-admin%", "object%", os_wxMediaAdmin_ConstructScheme, 9);
+  os_wxMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-admin%", "object%", os_wxMediaAdmin_ConstructScheme, 9));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "refresh-delayed?", os_wxMediaAdminDelayRefresh, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaAdmin_class, "update-cursor", os_wxMediaAdminUpdateCursor, 0, 0));
@@ -1930,7 +1932,7 @@ void objscheme_setup_wxMediaSnipMediaAdmin(void *env)
   wxREGGLOB(os_wxMediaSnipMediaAdmin_class);
   wxREGGLOB(os_wxMediaSnipMediaAdmin_interface);
 
-  os_wxMediaSnipMediaAdmin_class = objscheme_def_prim_class(env, "editor-snip-editor-admin%", "editor-admin%", NULL, 1);
+  os_wxMediaSnipMediaAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip-editor-admin%", "editor-admin%", NULL, 1));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnipMediaAdmin_class, "get-snip", os_wxMediaSnipMediaAdminGetSnip, 0, 0));
 
@@ -2755,9 +2757,10 @@ static Scheme_Object *os_wxSnipAdmin_ConstructScheme(Scheme_Object *obj, int n, 
   os_wxSnipAdmin *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -2785,7 +2788,7 @@ void objscheme_setup_wxSnipAdmin(void *env)
 
   wxREGGLOB(os_wxSnipAdmin_class);
 
-  os_wxSnipAdmin_class = objscheme_def_prim_class(env, "snip-admin%", "object%", os_wxSnipAdmin_ConstructScheme, 11);
+  os_wxSnipAdmin_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-admin%", "object%", os_wxSnipAdmin_ConstructScheme, 11));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "update-cursor", os_wxSnipAdminUpdateCursor, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipAdmin_class, "release-snip", os_wxSnipAdminReleaseSnip, 1, 1));
@@ -3245,9 +3248,10 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(Scheme_Object *obj, int n, 
   os_wxSnipClass *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -3275,7 +3279,7 @@ void objscheme_setup_wxSnipClass(void *env)
 
   wxREGGLOB(os_wxSnipClass_class);
 
-  os_wxSnipClass_class = objscheme_def_prim_class(env, "snip-class%", "object%", os_wxSnipClass_ConstructScheme, 9);
+  os_wxSnipClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class%", "object%", os_wxSnipClass_ConstructScheme, 9));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "write-done", os_wxSnipClassWriteDone, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClass_class, "write-header", os_wxSnipClassWriteHeader, 1, 1));
@@ -3533,7 +3537,7 @@ void objscheme_setup_wxSnipClassList(void *env)
   wxREGGLOB(os_wxSnipClassList_class);
   wxREGGLOB(os_wxSnipClassList_interface);
 
-  os_wxSnipClassList_class = objscheme_def_prim_class(env, "snip-class-list%", "object%", NULL, 6);
+  os_wxSnipClassList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip-class-list%", "object%", NULL, 6));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "reading-version", os_wxSnipClassListReadingVersion, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnipClassList_class, "nth", os_wxSnipClassListNth, 1, 1));
@@ -4115,9 +4119,10 @@ static Scheme_Object *os_wxKeymap_ConstructScheme(Scheme_Object *obj, int n,  Sc
   os_wxKeymap *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -4145,7 +4150,7 @@ void objscheme_setup_wxKeymap(void *env)
 
   wxREGGLOB(os_wxKeymap_class);
 
-  os_wxKeymap_class = objscheme_def_prim_class(env, "keymap%", "object%", os_wxKeymap_ConstructScheme, 15);
+  os_wxKeymap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "keymap%", "object%", os_wxKeymap_ConstructScheme, 15));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "remove-chained-keymap", os_wxKeymapRemoveChainedKeymap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxKeymap_class, "chain-to-keymap", os_wxKeymapChainToKeymap, 2, 2));
@@ -4441,9 +4446,10 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(Scheme_Object *obj,
   os_wxMediaWordbreakMap *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -4471,7 +4477,7 @@ void objscheme_setup_wxMediaWordbreakMap(void *env)
 
   wxREGGLOB(os_wxMediaWordbreakMap_class);
 
-  os_wxMediaWordbreakMap_class = objscheme_def_prim_class(env, "editor-wordbreak-map%", "object%", os_wxMediaWordbreakMap_ConstructScheme, 2);
+  os_wxMediaWordbreakMap_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-wordbreak-map%", "object%", os_wxMediaWordbreakMap_ConstructScheme, 2));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "get-map", os_wxMediaWordbreakMapGetMap, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaWordbreakMap_class, "set-map", os_wxMediaWordbreakMapSetMap, 2, 2));

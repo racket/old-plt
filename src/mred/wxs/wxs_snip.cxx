@@ -1940,9 +1940,10 @@ static Scheme_Object *os_wxSnip_ConstructScheme(Scheme_Object *obj, int n,  Sche
   os_wxSnip *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -1970,7 +1971,7 @@ void objscheme_setup_wxSnip(void *env)
 
   wxREGGLOB(os_wxSnip_class);
 
-  os_wxSnip_class = objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 34);
+  os_wxSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "snip%", "object%", os_wxSnip_ConstructScheme, 34));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "previous", os_wxSnipPrevious, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSnip_class, "next", os_wxSnipNext, 0, 0));
@@ -3568,9 +3569,10 @@ static Scheme_Object *os_wxTextSnip_ConstructScheme(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   nnlong x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if ((n > 1)) 
@@ -3602,7 +3604,7 @@ void objscheme_setup_wxTextSnip(void *env)
 
   wxREGGLOB(os_wxTextSnip_class);
 
-  os_wxTextSnip_class = objscheme_def_prim_class(env, "string-snip%", "snip%", os_wxTextSnip_ConstructScheme, 23);
+  os_wxTextSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "string-snip%", "snip%", os_wxTextSnip_ConstructScheme, 23));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "read", os_wxTextSnipRead, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTextSnip_class, "insert", os_wxTextSnipInsert, 2, 3));
@@ -5130,9 +5132,10 @@ static Scheme_Object *os_wxTabSnip_ConstructScheme(Scheme_Object *obj, int n,  S
   os_wxTabSnip *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -5160,7 +5163,7 @@ void objscheme_setup_wxTabSnip(void *env)
 
   wxREGGLOB(os_wxTabSnip_class);
 
-  os_wxTabSnip_class = objscheme_def_prim_class(env, "tab-snip%", "string-snip%", os_wxTabSnip_ConstructScheme, 21);
+  os_wxTabSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-snip%", "string-snip%", os_wxTabSnip_ConstructScheme, 21));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "get-scroll-step-offset", os_wxTabSnipGetScrollStepOffset, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabSnip_class, "find-scroll-step", os_wxTabSnipFindScrollStep, 1, 1));
@@ -6906,10 +6909,11 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[0], NULL, 0))) {
     class wxBitmap* x0;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
 
     
     if (n != 1) 
@@ -6931,10 +6935,11 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n, 
     Bool x2;
     Bool x3;
 
-    SETUP_VAR_STACK_REMEMBERED(3);
+    SETUP_VAR_STACK_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
 
     
     if ((n > 4)) 
@@ -6980,7 +6985,7 @@ void objscheme_setup_wxImageSnip(void *env)
 
   wxREGGLOB(os_wxImageSnip_class);
 
-  os_wxImageSnip_class = objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 26);
+  os_wxImageSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "image-snip%", "snip%", os_wxImageSnip_ConstructScheme, 26));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-offset", os_wxImageSnipSetOffset, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxImageSnip_class, "set-bitmap", os_wxImageSnipSetBitmap, 1, 1));
@@ -8985,10 +8990,11 @@ static Scheme_Object *os_wxMediaSnip_ConstructScheme(Scheme_Object *obj, int n, 
   float x12;
   float x13;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
 
   
   if ((n > 14)) 
@@ -9072,7 +9078,7 @@ void objscheme_setup_wxMediaSnip(void *env)
 
   wxREGGLOB(os_wxMediaSnip_class);
 
-  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 39);
+  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 39));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4));
@@ -9311,9 +9317,10 @@ static Scheme_Object *os_wxBufferDataClass_ConstructScheme(Scheme_Object *obj, i
   os_wxBufferDataClass *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -9341,7 +9348,7 @@ void objscheme_setup_wxBufferDataClass(void *env)
 
   wxREGGLOB(os_wxBufferDataClass_class);
 
-  os_wxBufferDataClass_class = objscheme_def_prim_class(env, "editor-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 3);
+  os_wxBufferDataClass_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data-class%", "object%", os_wxBufferDataClass_ConstructScheme, 3));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClass_class, "read", os_wxBufferDataClassRead, 1, 1));
 
@@ -9567,7 +9574,7 @@ void objscheme_setup_wxBufferDataClassList(void *env)
   wxREGGLOB(os_wxBufferDataClassList_class);
   wxREGGLOB(os_wxBufferDataClassList_interface);
 
-  os_wxBufferDataClassList_class = objscheme_def_prim_class(env, "editor-data-class-list%", "object%", NULL, 5);
+  os_wxBufferDataClassList_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data-class-list%", "object%", NULL, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "nth", os_wxBufferDataClassListNth, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferDataClassList_class, "number", os_wxBufferDataClassListNumber, 0, 0));
@@ -9828,9 +9835,10 @@ static Scheme_Object *os_wxBufferData_ConstructScheme(Scheme_Object *obj, int n,
   os_wxBufferData *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -9858,7 +9866,7 @@ void objscheme_setup_wxBufferData(void *env)
 
   wxREGGLOB(os_wxBufferData_class);
 
-  os_wxBufferData_class = objscheme_def_prim_class(env, "editor-data%", "object%", os_wxBufferData_ConstructScheme, 5);
+  os_wxBufferData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-data%", "object%", os_wxBufferData_ConstructScheme, 5));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "set-next", os_wxBufferDataSetNextNoCycle, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxBufferData_class, "write", os_wxBufferDataWrite, 1, 1));

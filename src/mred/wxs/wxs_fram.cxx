@@ -986,12 +986,13 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
   int x6;
   string x7;
 
-  SETUP_VAR_STACK_REMEMBERED(5);
+  SETUP_VAR_STACK_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x1);
-  VAR_STACK_PUSH(4, x7);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(4, x1);
+  VAR_STACK_PUSH(5, x7);
 
   
   if ((n < 2) ||(n > 8)) 
@@ -1045,7 +1046,7 @@ void objscheme_setup_wxFrame(void *env)
 
   wxREGGLOB(os_wxFrame_class);
 
-  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21);
+  os_wxFrame_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2));

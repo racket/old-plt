@@ -1500,7 +1500,7 @@ void objscheme_setup_wxDC(void *env)
   wxREGGLOB(os_wxDC_class);
   wxREGGLOB(os_wxDC_interface);
 
-  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 42);
+  os_wxDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc%", "object%", NULL, 42));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-page", os_wxDCEndPage, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "end-doc", os_wxDCEndDoc, 0, 0));
@@ -1756,9 +1756,10 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
   os_wxMemoryDC *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -1786,7 +1787,7 @@ void objscheme_setup_wxMemoryDC(void *env)
 
   wxREGGLOB(os_wxMemoryDC_class);
 
-  os_wxMemoryDC_class = objscheme_def_prim_class(env, "bitmap-dc%", "dc%", os_wxMemoryDC_ConstructScheme, 4);
+  os_wxMemoryDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "bitmap-dc%", "dc%", os_wxMemoryDC_ConstructScheme, 4));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "get-bitmap", os_wxMemoryDCGetObject, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMemoryDC_class, "set-bitmap", os_wxMemoryDCSelectObject, 1, 1));
@@ -1899,9 +1900,10 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int 
   REMEMBER_VAR_STACK();
   Bool x0;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if ((n > 1)) 
@@ -1933,7 +1935,7 @@ void objscheme_setup_wxPostScriptDC(void *env)
 
   wxREGGLOB(os_wxPostScriptDC_class);
 
-  os_wxPostScriptDC_class = objscheme_def_prim_class(env, "post-script-dc%", "dc%", os_wxPostScriptDC_ConstructScheme, 0);
+  os_wxPostScriptDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "post-script-dc%", "dc%", os_wxPostScriptDC_ConstructScheme, 0));
 
 
 
@@ -2077,9 +2079,10 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n
   os_basePrinterDC *realobj;
   REMEMBER_VAR_STACK();
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, realobj);
 
   
   if (n != 0) 
@@ -2107,7 +2110,7 @@ void objscheme_setup_basePrinterDC(void *env)
 
   wxREGGLOB(os_basePrinterDC_class);
 
-  os_basePrinterDC_class = objscheme_def_prim_class(env, "printer-dc%", "dc%", os_basePrinterDC_ConstructScheme, 0);
+  os_basePrinterDC_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "printer-dc%", "dc%", os_basePrinterDC_ConstructScheme, 0));
 
 
 

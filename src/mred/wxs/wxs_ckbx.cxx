@@ -570,12 +570,13 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x7;
     string x8;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
+    SETUP_VAR_STACK_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x2);
-    VAR_STACK_PUSH(4, x8);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x2);
+    VAR_STACK_PUSH(5, x8);
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
@@ -628,12 +629,13 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x7;
     string x8;
 
-    SETUP_VAR_STACK_REMEMBERED(5);
+    SETUP_VAR_STACK_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
     VAR_STACK_PUSH(1, obj);
-    VAR_STACK_PUSH(2, x0);
-    VAR_STACK_PUSH(3, x2);
-    VAR_STACK_PUSH(4, x8);
+    VAR_STACK_PUSH(2, realobj);
+    VAR_STACK_PUSH(3, x0);
+    VAR_STACK_PUSH(4, x2);
+    VAR_STACK_PUSH(5, x8);
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
@@ -690,7 +692,7 @@ void objscheme_setup_wxCheckBox(void *env)
 
   wxREGGLOB(os_wxCheckBox_class);
 
-  os_wxCheckBox_class = objscheme_def_prim_class(env, "check-box%", "item%", os_wxCheckBox_ConstructScheme, 9);
+  os_wxCheckBox_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "check-box%", "item%", os_wxCheckBox_ConstructScheme, 9));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-label", os_wxCheckBoxSetLabel, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCheckBox_class, "set-value", os_wxCheckBoxSetValue, 1, 1));

@@ -540,12 +540,13 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   int x9;
   string x10;
 
-  SETUP_VAR_STACK_REMEMBERED(5);
+  SETUP_VAR_STACK_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-  VAR_STACK_PUSH(3, x2);
-  VAR_STACK_PUSH(4, x10);
+  VAR_STACK_PUSH(2, realobj);
+  VAR_STACK_PUSH(3, x0);
+  VAR_STACK_PUSH(4, x2);
+  VAR_STACK_PUSH(5, x10);
 
   Scheme_Object *tmp_callback = NULL;
   if ((n < 7) ||(n > 11)) 
@@ -596,7 +597,7 @@ void objscheme_setup_wxSlider(void *env)
 
   wxREGGLOB(os_wxSlider_class);
 
-  os_wxSlider_class = objscheme_def_prim_class(env, "slider%", "item%", os_wxSlider_ConstructScheme, 8);
+  os_wxSlider_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "slider%", "item%", os_wxSlider_ConstructScheme, 8));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "set-value", os_wxSliderSetValue, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxSlider_class, "get-value", os_wxSliderGetValue, 0, 0));

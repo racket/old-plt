@@ -189,7 +189,7 @@ static int mark_cpp_array_object(void *p, Mark_Proc mark)
   size_t s;
 
   size = orig_size - 1;
-  s = size / (*(long *)p);
+  s = size / (*(long *)pp);
   
   // skip count
   pp++;

@@ -2,7 +2,7 @@
 (module option-unit mzscheme
   (import (lib "unitsig.ss"))
 
-  (import "sig.ss")
+  (import "option-sig.ss")
 
   (export setup:option@)
 

@@ -3,7 +3,7 @@
   (import (lib "cmdline.ss"))
   (import (lib "unitsig.ss"))
 
-  (import "sig.ss")
+  (import "option-sig.ss")
   (import "setup-unit.ss")
   (import "option-unit.ss")
 

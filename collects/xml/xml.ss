@@ -1,9 +1,10 @@
-(require-library "xmls.ss" "xml")
-(define-values/invoke-unit/sig
- xml^
- (compound-unit/sig
-   (import)
-   (link
-    (FUN : mzlib:function^ ((require-library "functior.ss")))
-    (X : xml^ ((require-library "xmlr.ss" "xml") FUN)))
-   (export (open X))))
+
+(module xml mzscheme
+  (import (lib "unitsig.ss"))
+
+  (import "xml-sig.ss"
+	  "xml-unit.ss")
+  
+  (define-values/invoke-unit/sig xml^ xml@)
+
+  (export-signature-elements xml^))

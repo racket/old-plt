@@ -8,7 +8,7 @@
   (import (lib "file.ss"))
   (import (lib "list.ss"))
 
-  (import "sig.ss")
+  (import "option-sig.ss")
   (import (lib "sig.ss" "compiler"))
   (import (lib "launcher-sig.ss" "launcher"))
 

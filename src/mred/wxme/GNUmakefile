@@ -15,10 +15,10 @@ OBJECTS = $(OBJDIR)/wx_style.o $(OBJDIR)/wx_keym.o $(OBJDIR)/wx_mbuf.o \
           $(OBJDIR)/wx_medad.o $(OBJDIR)/wx_snip.o $(OBJDIR)/wx_cgrec.o \
           $(OBJDIR)/wx_medio.o
 
-ALLHEADERS = wx_ptreq.h wx_mtype.h
+ALLHEADERS = wx_ptreq.h wx_mtype.h \
+             ../../wxxt/src/DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h
 HEADERS = wx_media.h wx_medad.h wx_cgrec.h wx_medio.h wx_style.h \
-          $(ALLHEADERS) ../../wxxt/src/Windows/Window.h ../../wxxt/src/DeviceContexts/DC.h \
-          ../../wxxt/src/DataStructures/Object.h ../../wxcommon/wx_list.h
+          $(ALLHEADERS) ../../wxxt/src/Windows/Window.h ../../wxxt/src/DeviceContexts/DC.h
 
 # Used only when bundling a distribution
 HIDEDIR = /home/mflatt/mredhide
@@ -73,7 +73,7 @@ $(OBJDIR)/wx_keym.o : wx_keym.cxx wx_keym.h $(ALLHEADERS)
 $(OBJDIR)/wx_medio.o : wx_medio.cxx wx_medio.h $(ALLHEADERS)
 	$(MCC) wx_medio.cxx -o $(OBJDIR)/wx_medio.o
 
-$(OBJDIR)/wx_style.o : wx_style.cxx wx_style.h wx_medio.h $(ALLHEADERS)
+$(OBJDIR)/wx_style.o : wx_style.cxx wx_style.h wx_medio.h $(ALLHEADERS) ../../wxxt/src/DeviceContexts/DC.h
 	$(MCC) wx_style.cxx -o $(OBJDIR)/wx_style.o 
 
 $(OBJDIR)/edjr.o : edjr.cxx edjr.h  wx_media.h wx_medad.h

@@ -23,7 +23,7 @@ WXMELDLIBS = -lwxme
 MREDLDFLAGS = $(LDFLAGS) $(MZSCHEMELDFLAGS) $(WXSCHEMELDFLAGS) $(WXMELDFLAGS)
 MREDLDLIBS = $(MZSCHEMELDLIBS) $(WXSCHEMELDLIBS) $(WXMELDLIBS) -lwx_xt -lXpm -limage_xt $(LDLIBS) $(LDNONSTATICLIBS)
 
-MREDOBJECTS = $(OBJDIR)/mred.o $(OBJDIR)/mredx.o
+MREDOBJECTS = $(OBJDIR)/mred.o $(OBJDIR)/mredx.o $(OBJDIR)/wxGC.o
 
 MRED = $(MRBUILDDIR)mred
 MZSCHEME = ../mzscheme/$(MZLIBDIR)/libmzscheme.a ../mzscheme/$(MZLIBDIR)/libgc.a
@@ -51,7 +51,7 @@ HIDEDIR = /home/mflatt/mredhide
 FTPDIR = /home/scheme/FTP/plt/staging
 
 all:  objects $(OBJDIR)
-	cd ../mzscheme; $(MAKE) $(EXPORT) mzschemelib++
+	cd ../mzscheme; $(MAKE) $(EXPORT) mzschemelib
 	$(MAKE) wx
 	if [ -f wrap/wrap.ss ] ; then $(MAKE) mred-wrap ; fi
 	cd wxs; $(MAKE)
@@ -98,7 +98,7 @@ wx:
 
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/cmdline.inc mred.h \
                    ../mzscheme/include/scheme.h ../mzscheme/src/schvers.h $(WXINCDEP) $(WXDIR)/src/Windows/Frame.h \
-                   $(WXDIR)/src/DataStructures/Object.h ../wxcommon/wx_list.h
+                   $(WXDIR)/src/DataStructures/Object.h ../wxcommon/wxGC.h ../wxcommon/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o
 
 $(OBJDIR)/mred_ee.o : $(OBJDIR)/mred.o
@@ -108,8 +108,11 @@ ee-main:
 	$(OBJDIR)/mred_ee.o
 
 $(OBJDIR)/mredx.o : mredx.cxx ../mzscheme/include/scheme.h mred.h $(WXDIR)/src/Windows/Frame.h \
-                    $(WXDIR)/src/DataStructures/Object.h ../wxcommon/wx_list.h
+                    $(WXDIR)/src/DataStructures/Object.h ../wxcommon/wxGC.h ../wxcommon/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mredx.cxx -o $(OBJDIR)/mredx.o
+
+$(OBJDIR)/wxGC.o : ../wxcommon/wxGC.cxx ../wxcommon/wxGC.h
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c ../wxcommon/wxGC.cxx -o $(OBJDIR)/wxGC.o
 
 $(OBJDIR)/dl_stub.o: misc/dl_stub.c
 	$(CC) $(CPPFLAGS) $(LOCALFLAGS) -c misc/dl_stub.c -o $(OBJDIR)/dl_stub.o

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Object.h,v 1.1.1.1 1997/12/22 17:28:45 mflatt Exp $
+ * $Id: Object.h,v 1.2 1999/11/04 17:25:32 mflatt Exp $
  *
  * Purpose: Top level object and memory debugging for wxWindows
  *
@@ -34,37 +34,28 @@
 // wxObject: top level object
 //-----------------------------------------------------------------------------
 
-#include "gc_cpp.h"
+#include "../../wxcommon/wxGC.h"
+
 #define WXGC_IGNORE(ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
 #define WXGC_ATOMIC (AtomicGC)
-#define WXGC_NOT (NoGC)
 #define WXGC_NO_CLEANUP FALSE
 
-class wxObject : public gc_cleanup
+class wxObject : public gc
 {
 public:
-    wxObject(void);
-    wxObject(Bool cleanup);
-    virtual ~wxObject(void);
-
-    WXTYPE __type;
-
+  wxObject(void);
+  wxObject(Bool cleanup);
+  virtual ~wxObject(void);
+  
+  WXTYPE __type;
+  
 #ifdef MEMORY_USE_METHOD
   virtual long MemoryUse(void);
 #endif
 };
 
 
-#ifdef DEBUG
-# define wxASSERT(expression, reason)\
-    ((void) ((expression) ? 0 :\
-	      __wxASSERT(__FILE__, __LINE__, reason)))
-    void __wxASSERT(char *file, unsigned lineno,
-		    char *reason="assert failed");
-#else
-# define wxASSERT(ignore1, ignore2) \
-    ((void) 0)
-#endif // DEBUG
+#define wxASSERT(ignore1, ignore2) ((void) 0)
 
 #define DEBUG_NEW new
 

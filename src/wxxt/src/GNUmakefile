@@ -16,7 +16,7 @@ include xtmake.env
 #
 # Motif Release 1.2
 #
-#   $RCSfile: GNUmakefile,v $ $Revision: 1.2 $ $Date: 1999/11/12 22:50:48 $
+#   $RCSfile: GNUmakefile,v $ $Revision: 1.3 $ $Date: 1999/11/13 02:33:39 $
 
 # -------------------------------------------------------------------------
 # Makefile generated from "Imake.tmpl" and </tmp/IIf.a07519>
@@ -47,7 +47,7 @@ include xtmake.env
 #
 # Motif Release 1.2.2
 #
-#   $RCSfile: GNUmakefile,v $ $Revision: 1.2 $ $Date: 1999/11/12 22:50:48 $
+#   $RCSfile: GNUmakefile,v $ $Revision: 1.3 $ $Date: 1999/11/13 02:33:39 $
 # platform:  $XConsortium: sun.cf,v 1.72.1.1 92/03/18 13:13:37 rws Exp $
 
 # operating system:  SunOS 4.1.3
@@ -286,7 +286,7 @@ clean::
 
 Application/$(OBJDIR)/AppMain.o:\
 	Application/AppMain.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	DataStructures/PrintSetup.h Application/AppMain.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
 	GDI-Classes/Font.h GDI-Classes/Pen+Brush.h \
@@ -294,35 +294,35 @@ Application/$(OBJDIR)/AppMain.o:\
 
 Application/$(OBJDIR)/GlobalData.o:\
 	Application/GlobalData.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	../../wxcommon/wx_hash.h DataStructures/TypeTree.h
 
 DataStructures/$(OBJDIR)/Object.o:\
 	DataStructures/Object.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	../../wxcommon/wx_hash.h
 
 DataStructures/$(OBJDIR)/TypeTree.o:\
 	DataStructures/TypeTree.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	../../wxcommon/wx_hash.h DataStructures/TypeTree.h
 
 DataStructures/$(OBJDIR)/wb_hash.o:\
 	DataStructures/wb_hash.cc ../../wxcommon/wb_hash.cxx \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	../../wxcommon/wx_hash.h
 
 DataStructures/$(OBJDIR)/wb_list.o:\
 	DataStructures/wb_list.cc ../../wxcommon/wb_list.cxx \
-	DataStructures/Object.h ../../wxcommon/wx_list.h
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h
 
 DeviceContexts/$(OBJDIR)/DC.o:\
-	DeviceContexts/DC.cc DataStructures/Object.h \
+	DeviceContexts/DC.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h DeviceContexts/DC.h
 
 DeviceContexts/$(OBJDIR)/MemoryDC.o:\
 	DeviceContexts/MemoryDC.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
 	GDI-Classes/Font.h GDI-Classes/Pen+Brush.h \
 	DeviceContexts/DC.h DeviceContexts/WindowDC.h \
@@ -330,7 +330,7 @@ DeviceContexts/$(OBJDIR)/MemoryDC.o:\
 
 DeviceContexts/$(OBJDIR)/PSDC.o:\
 	DeviceContexts/PSDC.cc ../../wxcommon/PSDC.cxx \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	DataStructures/PrintSetup.h GDI-Classes/Bitmap.h \
 	GDI-Classes/Colour.h GDI-Classes/Font.h \
 	GDI-Classes/FontDirectory.h ../../wxcommon/FontDirectory.h \
@@ -339,13 +339,13 @@ DeviceContexts/$(OBJDIR)/PSDC.o:\
 
 DeviceContexts/$(OBJDIR)/WindowDC.o:\
 	DeviceContexts/WindowDC.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
 	GDI-Classes/Font.h GDI-Classes/Pen+Brush.h \
 	DeviceContexts/DC.h DeviceContexts/WindowDC.h
 
 Dialogs/$(OBJDIR)/FileDialog.o:\
-	Dialogs/FileDialog.cc DataStructures/Object.h \
+	Dialogs/FileDialog.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h EventHandling/EvtHandler.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
@@ -356,7 +356,7 @@ Dialogs/$(OBJDIR)/FileDialog.o:\
 	Windows/Button.h Windows/ListBox.h Windows/Message.h
 
 Dialogs/$(OBJDIR)/MessageBox.o:\
-	Dialogs/MessageBox.cc DataStructures/Object.h \
+	Dialogs/MessageBox.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
 	GDI-Classes/Colour.h GDI-Classes/Font.h \
@@ -364,99 +364,112 @@ Dialogs/$(OBJDIR)/MessageBox.o:\
 	DeviceContexts/WindowDC.h Windows/Window.h \
 	Windows/Panel.h Windows/Frame.h Windows/DialogBox.h
 
-EventHandling/wb_$(OBJDIR)/stdev.o:\
-	EventHandling/wb_stdev.cc DataStructures/Object.h \
+EventHandling/$(OBJDIR)/wb_stdev.o:\
+	EventHandling/wb_stdev.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h
 
-EventHandling/wb_$(OBJDIR)/sysev.o:\
-	EventHandling/wb_sysev.cc DataStructures/Object.h \
+EventHandling/$(OBJDIR)/wb_sysev.o:\
+	EventHandling/wb_sysev.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h
 
 EventHandling/$(OBJDIR)/EvtHandler.o:\
 	EventHandling/EvtHandler.cc \
-	DataStructures/Object.h EventHandling/wx_sysev.h EventHandling/wx_stdev.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h EventHandling/wx_sysev.h EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h
 
 GDI-Classes/$(OBJDIR)/Bitmap.o:\
 	GDI-Classes/Bitmap.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h
 
 GDI-Classes/$(OBJDIR)/Colour.o:\
 	GDI-Classes/Colour.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	GDI-Classes/Colour.h
 
 GDI-Classes/$(OBJDIR)/Font.o:\
-	GDI-Classes/Font.cc DataStructures/Object.h \
+	GDI-Classes/Font.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h GDI-Classes/Font.h \
 	GDI-Classes/FontDirectory.h ../../wxcommon/FontDirectory.h
 
 GDI-Classes/$(OBJDIR)/FontDirectory.o:\
 	GDI-Classes/FontDirectory.cc ../../wxcommon/FontDirectory.cxx \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	GDI-Classes/FontDirectory.h ../../wxcommon/FontDirectory.h
 
 GDI-Classes/$(OBJDIR)/Pen+Brush.o:\
 	GDI-Classes/Pen+Brush.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	GDI-Classes/Colour.h GDI-Classes/Pen+Brush.h \
         ../../wxcommon/Region.h ../../wxcommon/Region.cxx
 
 Misc/$(OBJDIR)/Timer.o:\
-	Misc/Timer.cc DataStructures/Object.h \
+	Misc/Timer.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	Misc/Timer.h
 
 Misc/$(OBJDIR)/Clipboard.o:\
-	Misc/Clipboard.cc DataStructures/Object.h Application/GlobalData.h \
+	Misc/Clipboard.cc DataStructures/Object.h ../../wxcommon/wxGC.h Application/GlobalData.h \
 	Misc/Clipboard.h Windows/Frame.h Windows/Window.h
 
 Utilities/$(OBJDIR)/Application.o:\
 	Utilities/Application.cc \
-	DataStructures/Object.h Application/AppMain.h
+	DataStructures/Object.h ../../wxcommon/wxGC.h Application/AppMain.h
 
 Utilities/$(OBJDIR)/Assert.o:\
-	Utilities/Assert.cc
+	Utilities/Assert.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/BusyCursor.o:\
-	Utilities/BusyCursor.cc Application/GlobalData.h
+	Utilities/BusyCursor.cc Application/GlobalData.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
-Utilities/Date+$(OBJDIR)/Time.o:\
-	Utilities/Date+Time.cc
+Utilities/$(OBJDIR)/Date+Time.o:\
+	Utilities/Date+Time.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/Directory.o:\
-	Utilities/Directory.cc
+	Utilities/Directory.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/Error.o:\
-	Utilities/Error.cc
+	Utilities/Error.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/GDI.o:\
-	Utilities/GDI.cc
+	Utilities/GDI.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/Home.o:\
-	Utilities/Home.cc
+	Utilities/Home.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/Misc.o:\
-	Utilities/Misc.cc Application/GlobalData.h
+	Utilities/Misc.cc Application/GlobalData.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/Net.o:\
-	Utilities/Net.cc
+	Utilities/Net.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/Path.o:\
-	Utilities/Path.cc
+	Utilities/Path.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/Resources.o:\
 	Utilities/Resources.cc \
-	../../wxcommon/wx_list.h
+	../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/String.o:\
-	Utilities/String.cc
+	Utilities/String.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Utilities/$(OBJDIR)/TempFile.o:\
-	Utilities/TempFile.cc
+	Utilities/TempFile.cc \
+	DataStructures/Object.h ../../wxcommon/wxGC.h 
 
 Windows/$(OBJDIR)/Button.o:\
-	Windows/Button.cc DataStructures/Object.h \
+	Windows/Button.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -466,7 +479,7 @@ Windows/$(OBJDIR)/Button.o:\
 	Windows/Panel.h Windows/Item.h Windows/Button.h
 
 Windows/$(OBJDIR)/Canvas.o:\
-	Windows/Canvas.cc DataStructures/Object.h \
+	Windows/Canvas.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -477,7 +490,7 @@ Windows/$(OBJDIR)/Canvas.o:\
 
 Windows/$(OBJDIR)/CheckBox.o:\
 	Windows/CheckBox.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
@@ -487,7 +500,7 @@ Windows/$(OBJDIR)/CheckBox.o:\
 	Windows/CheckBox.h
 
 Windows/$(OBJDIR)/Choice.o:\
-	Windows/Choice.cc DataStructures/Object.h \
+	Windows/Choice.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -498,7 +511,7 @@ Windows/$(OBJDIR)/Choice.o:\
 
 Windows/$(OBJDIR)/DialogBox.o:\
 	Windows/DialogBox.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
@@ -508,7 +521,7 @@ Windows/$(OBJDIR)/DialogBox.o:\
 	Windows/DialogBox.h
 
 Windows/$(OBJDIR)/Frame.o:\
-	Windows/Frame.cc DataStructures/Object.h \
+	Windows/Frame.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h ../../wxcommon/wx_hash.h \
 	DataStructures/TypeTree.h Application/AppMain.h \
 	Application/GlobalData.h \
@@ -522,7 +535,7 @@ Windows/$(OBJDIR)/Frame.o:\
 	Windows/MenuBar.h Windows/Message.h
 
 Windows/$(OBJDIR)/Gauge.o:\
-	Windows/Gauge.cc DataStructures/Object.h \
+	Windows/Gauge.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -532,7 +545,7 @@ Windows/$(OBJDIR)/Gauge.o:\
 	Windows/Panel.h Windows/Item.h Windows/Gauge.h
 
 Windows/$(OBJDIR)/Item.o:\
-	Windows/Item.cc DataStructures/Object.h \
+	Windows/Item.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -542,7 +555,7 @@ Windows/$(OBJDIR)/Item.o:\
 	Windows/Panel.h Windows/Item.h
 
 Windows/$(OBJDIR)/Layout.o:\
-	Windows/Layout.cc DataStructures/Object.h \
+	Windows/Layout.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h ../../wxcommon/wx_hash.h \
 	DataStructures/TypeTree.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
@@ -553,7 +566,7 @@ Windows/$(OBJDIR)/Layout.o:\
 	Windows/Window.h Windows/Panel.h Windows/Frame.h
 
 Windows/$(OBJDIR)/ListBox.o:\
-	Windows/ListBox.cc DataStructures/Object.h \
+	Windows/ListBox.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h \
@@ -564,7 +577,7 @@ Windows/$(OBJDIR)/ListBox.o:\
 	Windows/ListBox.h
 
 Windows/$(OBJDIR)/Menu.o:\
-	Windows/Menu.cc DataStructures/Object.h \
+	Windows/Menu.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	Application/GlobalData.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
@@ -572,7 +585,7 @@ Windows/$(OBJDIR)/Menu.o:\
 	GDI-Classes/Font.h GDI-Classes/Pen+Brush.h Windows/Menu.h
 
 Windows/$(OBJDIR)/MenuBar.o:\
-	Windows/MenuBar.cc DataStructures/Object.h \
+	Windows/MenuBar.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -583,7 +596,7 @@ Windows/$(OBJDIR)/MenuBar.o:\
 	Windows/Menu.h Windows/MenuBar.h
 
 Windows/$(OBJDIR)/Message.o:\
-	Windows/Message.cc DataStructures/Object.h \
+	Windows/Message.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -593,7 +606,7 @@ Windows/$(OBJDIR)/Message.o:\
 	Windows/Panel.h Windows/Item.h Windows/Message.h
 
 Windows/$(OBJDIR)/Panel.o:\
-	Windows/Panel.cc DataStructures/Object.h \
+	Windows/Panel.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h ../../wxcommon/wx_hash.h \
 	DataStructures/TypeTree.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
@@ -605,7 +618,7 @@ Windows/$(OBJDIR)/Panel.o:\
 
 Windows/$(OBJDIR)/RadioBox.o:\
 	Windows/RadioBox.cc \
-	DataStructures/Object.h ../../wxcommon/wx_list.h \
+	DataStructures/Object.h ../../wxcommon/wxGC.h ../../wxcommon/wx_list.h \
 	EventHandling/wx_sysev.h EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h \
 	GDI-Classes/Bitmap.h GDI-Classes/Colour.h \
@@ -615,7 +628,7 @@ Windows/$(OBJDIR)/RadioBox.o:\
 	Windows/RadioBox.h
 
 Windows/$(OBJDIR)/Slider.o:\
-	Windows/Slider.cc DataStructures/Object.h \
+	Windows/Slider.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \
 	EventHandling/EvtHandler.h GDI-Classes/Bitmap.h \
@@ -625,7 +638,7 @@ Windows/$(OBJDIR)/Slider.o:\
 	Windows/Panel.h Windows/Item.h Windows/Slider.h
 
 Windows/$(OBJDIR)/Window.o:\
-	Windows/Window.cc DataStructures/Object.h \
+	Windows/Window.cc DataStructures/Object.h ../../wxcommon/wxGC.h \
 	../../wxcommon/wx_list.h ../../wxcommon/wx_hash.h \
 	DataStructures/TypeTree.h EventHandling/wx_sysev.h \
 	EventHandling/wx_stdev.h \

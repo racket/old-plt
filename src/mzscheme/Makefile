@@ -3,7 +3,6 @@
 #
 # 'make' or 'make bin' - makes mzscheme and mzdyn.o
 # 'make mzschemelib' - make libmzscheme.a and libgc.a
-# 'make mzschemelib++' - make libmzscheme.a and libgc.a with C++ GC tools
 # 'make libguile' - make libguile.a
 # 'make dynlib' - make mzdyn.o, for use in extending MzScheme
 # 'make g-c' - makes only libgc.a
@@ -111,14 +110,6 @@ mzschemelib:
 	./ifaix $(XMAKE) aixdl
 	$(XMAKE) g-c 
 	$(XMAKE) mzlibrary 
-
-mzschemelib++:
-	./ifaix $(XMAKE) aixdl
-	$(XMAKE) g-c 
-	cd $(GCDIR); $(XMAKE) $(OBJDIR)/gc_cpp.o 
-	$(XMAKE) $(GCDIR)/$(OBJDIR)/gc.a
-	$(XMAKE) $(LIBDIR)/libgc.a
-	$(XMAKE) mzlibrary
 
 libguile:
 	$(XMAKE) mzschemelib

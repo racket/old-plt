@@ -347,6 +347,7 @@ typedef struct Scheme_Struct_Property {
 } Scheme_Struct_Property;
 
 int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
+int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos);
 
 typedef struct Scheme_Struct_Type {
   Scheme_Type type;
@@ -391,6 +392,8 @@ Scheme_Object *scheme_make_struct_type_from_string(const char *base,
 						   int num_fields);
 
 int scheme_equal_structs(Scheme_Object *obj1, Scheme_Object *obj2);
+
+Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown_val, Scheme_Object *insp);
 
 #define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
 

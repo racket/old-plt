@@ -764,24 +764,17 @@ static Scheme_Object *struct_type_info(int argc, Scheme_Object *argv[])
   return scheme_values(6, a);
 }
 
-static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown_val, Scheme_Object *insp)
 {
   Scheme_Structure *s;
   Scheme_Struct_Type *stype;
-  Scheme_Object *v, **array, *insp, *unknown_val;
+  Scheme_Object *v, **array;
   int i, m, p, n, last_is_unknown;
 
-  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
-    scheme_wrong_type("struct->vector", "struct", 0, argc, argv);
-
-  if (argc > 1)
-    unknown_val = argv[1];
-  else
+  if (!unknown_val)
     unknown_val = ellipses_symbol;
 
-  insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
-
-  s = (Scheme_Structure *)argv[0];
+  s = (Scheme_Structure *)_s;
 
   stype = s->stype;
   p = stype->name_pos + 1;
@@ -833,6 +826,46 @@ static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
 
   return v;
 }
+
+static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
+{
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
+    scheme_wrong_type("struct->vector", "struct", 0, argc, argv);
+
+  return scheme_struct_to_vector(argv[0], 
+				 (argc > 1) ? argv[1] : NULL, 
+				 scheme_get_param(scheme_config, MZCONFIG_INSPECTOR));
+}
+
+int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos)
+{
+  Scheme_Struct_Type *stype = ((Scheme_Structure *)s)->stype;
+  int p;
+
+  p = stype->name_pos;  
+
+  if (pos == -1) {
+    /* Check for any visible field */
+    Scheme_Object *prev = NULL;
+    while (p > -1) {
+      if (!SAME_OBJ(stype->parent_types[p]->inspector, prev)) {
+	prev = stype->parent_types[p]->inspector;
+	if (scheme_is_subinspector(prev, insp))
+	  return 1;
+      }
+      p--;
+    }
+
+    return 0;
+  } else {
+    /* Find struct containing position. */
+    while (p && (stype->parent_types[p - 1]->num_slots > pos))
+      p--;
+
+    return scheme_is_subinspector(stype->parent_types[p]->inspector, insp);
+  }
+}
+
 
 #define STRUCT_PROCP(o, t) \
     (SCHEME_STRUCT_PROCP(o) && (((Scheme_Closed_Primitive_Proc *)o)->flags & t))
@@ -1407,10 +1440,15 @@ static Scheme_Object *make_struct_type(int argc, Scheme_Object **argv)
       }
 
       if (argc > 6) {
-	if (!SAME_TYPE(SCHEME_TYPE(argv[6]), scheme_inspector_type))
-	  scheme_wrong_type("make-struct-type", "inspector", 5, argc, argv);
+	if (SCHEME_FALSEP(argv[6]))
+	  inspector = NULL;
+	else {
+	  if (!SAME_TYPE(SCHEME_TYPE(argv[6]), scheme_inspector_type))
+	    scheme_wrong_type("make-struct-type", "inspector", 6, argc, argv);
+	  
+	  inspector = argv[6];
+	}
 
-	inspector = argv[6];
 	if (argc > 7)
 	  opaque = SCHEME_TRUEP(argv[7]);
       }

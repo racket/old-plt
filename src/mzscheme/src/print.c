@@ -74,7 +74,7 @@ static Scheme_Hash_Table *global_constants_ht;
 
 #define print_compact(p, v) print_this_string(p, &compacts[v], 1)
 
-#define PRINTABLE_STRUCT(obj, p) (scheme_is_subinspector(SCHEME_STRUCT_INSPECTOR(obj), p->quick_inspector))
+#define PRINTABLE_STRUCT(obj, p) (scheme_inspector_sees_part(obj, p->quick_inspector, -1))
 
 #define HAS_SUBSTRUCT(obj, qk) \
    (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) \
@@ -360,8 +360,10 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
-      if (check_cycles(((Scheme_Structure *)obj)->slots[i], p, ht)) {
-	return 1;
+      if (scheme_inspector_sees_part(obj, p->quick_inspector, i)) {
+	if (check_cycles(((Scheme_Structure *)obj)->slots[i], p, ht)) {
+	  return 1;
+	}
       }
     }
   }
@@ -423,9 +425,11 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Thread *p)
 
     obj->type = -t;
     while (i--) {
-      cycle = check_cycles_fast(((Scheme_Structure *)obj)->slots[i], p);
-      if (cycle)
-	break;
+      if (scheme_inspector_sees_part(obj, p->quick_inspector, i)) {
+	cycle = check_cycles_fast(((Scheme_Structure *)obj)->slots[i], p);
+	if (cycle)
+	  break;
+      }
     }
     obj->type = t;
   } else
@@ -513,7 +517,8 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
-      setup_graph_table(((Scheme_Structure *)obj)->slots[i], ht, counter, p);
+      if (scheme_inspector_sees_part(obj, p->quick_inspector, i))
+	setup_graph_table(((Scheme_Structure *)obj)->slots[i], ht, counter, p);
     }
   }
 }
@@ -873,21 +878,23 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 
   if (ht && HAS_SUBSTRUCT(obj, ssQUICK)) {
     Scheme_Bucket *b;
-    b = scheme_bucket_from_table(ht, (const char *)obj);
+    b = scheme_bucket_or_null_from_table(ht, (const char *)obj, 0);
     
-    if ((long)b->val != 1) {
-      if (compact) {
-	print_escaped(p, notdisplay, obj, ht);
-	return 1;
-      } else {
-	if ((long)b->val > 0) {
-	  sprintf(quick_buffer, "#%ld=", (((long)b->val) - 3) >> 1);
-	  print_this_string(p, quick_buffer, -1);
-	  b->val = (void *)(-(long)b->val);
+    if (b) {
+      if ((long)b->val != 1) {
+	if (compact) {
+	  print_escaped(p, notdisplay, obj, ht);
+	  return 1;
 	} else {
-	  sprintf(quick_buffer, "#%ld#", ((-(long)b->val) - 3) >> 1);
-	  print_this_string(p, quick_buffer, -1);
-	  return 0;
+	  if ((long)b->val > 0) {
+	    sprintf(quick_buffer, "#%ld=", (((long)b->val) - 3) >> 1);
+	    print_this_string(p, quick_buffer, -1);
+	    b->val = (void *)(-(long)b->val);
+	  } else {
+	    sprintf(quick_buffer, "#%ld#", ((-(long)b->val) - 3) >> 1);
+	    print_this_string(p, quick_buffer, -1);
+	    return 0;
+	  }
 	}
       }
     }
@@ -1039,33 +1046,23 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 
 	pb = p->quick_print_struct && PRINTABLE_STRUCT(obj, p);
 
-	print_this_string(p, pb ? "#(" : "#<", 2);
-	{
-	  int l;
-	  const char *s;
-
-	  s = scheme_symbol_name_and_size(name, &l, 
-					  (p->quick_print_struct
-					   ? SNF_FOR_TS
-					   : (p->quick_can_read_pipe_quote 
-					      ? SNF_PIPE_QUOTE
-					      : SNF_NO_PIPE_QUOTE)));
-	  print_this_string(p, s, l);
-	}
-
 	if (pb) {
-	  int i, count = SCHEME_STRUCT_NUM_SLOTS(obj), no_sp_ok;
-	  
-	  if (count)
-	    print_this_string(p, " ", 1);
-	  
-	  for (i = 0; i < count; i++) {
-	    no_sp_ok = print(((Scheme_Structure *)obj)->slots[i], notdisplay, compact, ht, symtab, rnht, p);
-	    if ((i < count - 1) && (!compact || !no_sp_ok))
-	      print_this_string(p, " ", 1);
-	  }
-	  print_this_string(p, ")", 1);
+	  obj = scheme_struct_to_vector(obj, NULL, p->quick_inspector);
+	  closed = print(obj, notdisplay, compact, ht, symtab, rnht, p);
 	} else {
+	  print_this_string(p, "#<", 2);
+	  {
+	    int l;
+	    const char *s;
+	    
+	    s = scheme_symbol_name_and_size(name, &l, 
+					    (p->quick_print_struct
+					     ? SNF_FOR_TS
+					     : (p->quick_can_read_pipe_quote 
+						? SNF_PIPE_QUOTE
+						: SNF_NO_PIPE_QUOTE)));
+	    print_this_string(p, s, l);
+	  }
 	  PRINTADDRESS(p, obj);
 	  print_this_string(p, ">", 1);
 	}

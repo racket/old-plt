@@ -1,5 +1,8 @@
 (unit/sig zodiac:scheme-mrspidey^
-  (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
+  (import zodiac:misc^ (z : zodiac:structures^)
+    (z : zodiac:scanner-parameters^)
+    (z : zodiac:reader-structs^)
+    (z : zodiac:reader-code^)
     zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
     zodiac:scheme-main^ zodiac:back-protocol^
     zodiac:expander^ zodiac:interface^)
@@ -183,6 +186,81 @@
 		  expr))))
 	  (else
 	    (static-error expr "Malformed define-constructor"))))))
+
+  (define reference-maker
+    (lambda (form-name library?)
+      (add-micro-form form-name mrspidey-vocabulary
+	(let* ((kwd (list form-name))
+		(in-pattern `(,form-name file))
+		(m&e (pat:make-match&env in-pattern kwd)))
+	  (lambda (expr env attributes vocab)
+	    (cond
+	      ((pat:match-against m&e expr env)
+		=>
+		(lambda (p-env)
+		  (let ((file (pat:pexpand 'file p-env kwd)))
+		    (let ((f (expand-expr file env attributes vocab)))
+		      (if (and (quote-form? f)
+			    (z:string? (quote-form-expr f)))
+			(let* ((raw (z:read-object (quote-form-expr f)))
+				(raw-filename
+				  (if library?
+				    (if (complete-path? raw)
+				      raw
+				      (build-path (current-library-path) raw))
+				    raw)))
+			  (let-values (((base name dir?)
+					 (split-path raw-filename)))
+			    (when dir?
+			      (static-error file
+				"Cannot include a directory"))
+			    (let ((original-directory (current-directory))
+				   (p (with-handlers
+					((exn:i/o:filesystem:filename?
+					   (lambda (exn)
+					     (static-error file
+					       "Unable to open file"))))
+					(open-input-file raw-filename))))
+			      (dynamic-wind
+				(lambda ()
+				  (when (string? base)
+				    (current-directory base)))
+				(lambda ()
+				  (let ((reader
+					  (z:read p
+					    (z:make-location
+					      (z:location-line
+						z:default-initial-location)
+					      (z:location-column
+						z:default-initial-location)
+					      (z:location-offset
+						z:default-initial-location)
+					      (build-path
+						(current-directory)
+						name)))))
+				    (let ((code
+					    (let loop ()
+					      (let ((input (reader)))
+						(if (z:eof? input)
+						  '()
+						  (cons input
+						    (loop)))))))
+				      (if (null? code)
+					(static-error expr "Empty file")
+					(expand-expr
+					  (structurize-syntax
+					    `(begin ,@code)
+					    expr)
+					  env attributes vocab)))))
+				(lambda ()
+				  (current-directory original-directory)
+				  (close-input-port p))))))
+			(static-error file "Does not yield a filename"))))))
+	      (else
+		(static-error expr "Malformed ~a" form-name))))))))
+
+  (reference-maker 'reference #f)
+  (reference-maker 'reference-library #t)
 
   (define reference-unit-maker
     (lambda (form-name signed? library?)

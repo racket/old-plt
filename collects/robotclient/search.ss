@@ -134,8 +134,8 @@
               (when w-weight (maker w-weight x (sub1 y) w-bid))))))
   
   (define (compute-move packages robots)
-    (display "calling compute-move") (newline)
     (display (get-player-x))(display " : ")(display (get-player-y))(newline)
+    (display (player-money))(newline)
     (queue-head null)
     (in-queue 0)
     (best-cmd null)
@@ -147,8 +147,7 @@
     (for-each enqueue 
               (generate-first-moves (get-player-x) (get-player-y) packages))
     (search-node (dequeue))
-    (printf "~a~n" (best-cmd))
-    (printf "~a~n" (player-money))
+    (display (best-cmd))
     (best-cmd)
     )
 

@@ -3594,9 +3594,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
   int exists;
 #else
   UNBUNDLE_TIME_TYPE mtime;
-# ifndef DOS_FILE_SYSTEM
   struct MSC_IZE(stat) buf;
-# endif
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -3659,7 +3657,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
     {
       while (1) {
 	if (set_time) {
-	  struct utimbuf ut;
+	  struct MSC_IZE(utimbuf) ut;
 	  ut.actime = mtime;
 	  ut.modtime = mtime;
 	  if (!MSC_IZE(utime)(file, &ut))

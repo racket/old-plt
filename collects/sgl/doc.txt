@@ -155,6 +155,15 @@ Notational Example:
 See gears.ss in the examples subdirectory of the sgl collection
 (${PLT-HOME}/collects/sgl/examples/gears.ss) for a working example.
 
+sgl provides the fullowing utility functions that have no OpenGL
+counterpart:
+
+process-selection: gl-uint-vector int -> (listof selection-record)
+where a selection-record is defined by this exported struct: 
+(define-struct selection-record (min-z max-z stack)).
+process-selection converts the contents of the array passed to select-buffer
+in selection rendering mode into a Scheme friendly structure.
+
 
 Notes:
 In the C language GL API values are often returned by reference parameters.

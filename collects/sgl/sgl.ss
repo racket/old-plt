@@ -894,5 +894,34 @@
       (if v
           (gluQuadricDrawStyle q v)
           (raise-type-error 'quadric-draw-style quadric-draw-style-syms 1 q e))))
+  
+  
+  ;; A selection-record is
+  ;; (make-selection-record number number (listof positive-int))
+  (define-struct selection-record (min-z max-z stack))  
+
+  ;; process-selection : gl-uint-vector int -> (listof selection-record)
+  (define (process-selection v hits)
+    (let ((index 0))
+      (let loop ((hit 0))
+        (cond
+          ((>= hit hits) null)
+          (else
+           (let ((stack-size (gl-uint-vector-ref v index)))
+             (cons (make-selection-record 
+                    (gl-uint-vector-ref v (add1 index))
+                    (gl-uint-vector-ref v (+ index 2))
+                    (begin
+                      (set! index (+ 3 index))
+                      (let loop ((j 0))
+                        (cond
+                          ((< j stack-size)
+                           (cons (gl-uint-vector-ref v index)
+                                 (begin
+                                   (set! index (add1 index))
+                                   (loop (add1 j)))))
+                          (else null)))))
+                   (loop (add1 hit)))))))))
+  (provide process-selection (struct selection-record (min-z max-z stack)))
     
   ) 

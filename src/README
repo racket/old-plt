@@ -10,9 +10,9 @@ available at
   http://www.plt-scheme.org/software/mred/
 
 The MzScheme source code should compile and execute on any Windows,
-Mac OS, Unix (Linux), or BeOS platform. The MrEd source code should
-compile and execute on any Windows, Mac OS, or Unix (Linux) platform,
-but not on BeOS and not using Cygwin with Windows.
+Mac OS, or Unix (Linux) platform. The MrEd source code should compile
+and execute on any Windows, Mac OS, or Unix (Linux) platform, but not
+using Cygwin or Borland with Windows.
 
 Per-platform instructions are below.
 
@@ -51,8 +51,8 @@ mkbordyn.bat script requires bcc23.exe.)
 Read the instructions in plt/src/mac/README.
 
 ========================================================================
- Compiling for supported Unix variants (including Linux), Cygwin, 
-               or BeOS (but not Mac OS X)
+ Compiling for supported Unix variants (including Linux, but not
+                         Mac OS X) and Cygwin
 ========================================================================
 
  0. If you have an old PLT installation in the target directory,
@@ -193,7 +193,6 @@ configurations for the following platforms:
               Mac OS (PPC and 68k) and Mac OS X
               Linux (x86, PPC, and 68k)
               Cygwin
-              BeOS
               Solaris (x86 and Sparc)    [see notes below]
               SunOS4 (Sparc)
               IBM AIX (RS6000)
@@ -207,7 +206,7 @@ configurations for the following platforms:
 
 If your platfrom is not supported by the Boehm garbage collector
 (distributed with PLT source), provide the `--enable-sgc' flag to
-`configure'. (For BeOS, this flag is added automatically.)
+`configure'.
 
 ========================================================================
  Additional Compilation Notes

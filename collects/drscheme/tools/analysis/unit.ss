@@ -6,8 +6,6 @@
             (drscheme : drscheme:export^)
 	    drscheme:zodiac^)
 
-    (mred:add-version-spec 's 2)
-
     (define invoke-spidey
       (lambda (frame)
 	(mred:show-busy-cursor

@@ -85,10 +85,26 @@
     (and (string? ekey)
 	 (not (string=? ekey ""))))
 
-  (define (pretty-label label keyword?) 
-    (if keyword?
-	`(FONT ((FACE "monospace"))
-	       ,label)
+  (define (pretty-label label ekey) 
+    (if (keyword-string? ekey)
+	`(FONT 
+	  ((FACE "monospace"))
+          ; boldface keyword occurrences
+          ; loop allows > 1 occurrence of the keyword, though
+          ;  probably not needed
+	  ,@(let loop ([curr-string label])
+	      (let ([mpos (regexp-match-positions ekey curr-string)])
+		(if mpos
+		    (let* ([item (car mpos)]
+			   [start (car item)]
+			   [stop (cdr item)])
+		      (cons
+		       (substring curr-string 0 start)
+		       (cons 
+			`(B ,(substring curr-string start stop))
+			(loop (substring curr-string stop
+					 (string-length curr-string))))))
+		    (list curr-string)))))
 	label))
 
   (define (maybe-extract-coll s)
@@ -118,7 +134,7 @@
 	     (CELLPADDING "0"))
 	    (TR 
 	     (TD 
-	      (A ((HREF ,href)) ,(pretty-label label (keyword-string? ekey)))
+	      (A ((HREF ,href)) ,(pretty-label label ekey))
 	      " in "
 	      "\"" ,src "\""))))
 

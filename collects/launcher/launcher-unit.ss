@@ -291,14 +291,14 @@
       ;; OS X launcher code:
      
       (define (make-starter-info-xml executable-name arg-list)
-        (make-xml (make-prolog (make-pi #f #f 'xml "version=\"1.0\" encoding=\"UTF-8\"") #f)
-                  (xexpr->xml `(plist ((version "0.9"))
-                                      (dict (key "executable name")
-                                            (string ,executable-name)
-                                            (key "stored arguments")
-                                            (array ,(map (lambda (arg)
-                                                           `(string ,arg))
-                                                         arg-list)))))))
+        (make-document (make-prolog (make-pi #f #f 'xml "version=\"1.0\" encoding=\"UTF-8\"") #f)
+		       (xexpr->xml `(plist ((version "0.9"))
+					   (dict (key "executable name")
+						 (string ,executable-name)
+						 (key "stored arguments")
+						 (array ,(map (lambda (arg)
+								`(string ,arg))
+							      arg-list)))))))
 
       ; make-macosx-launcher : symbol (listof str) pathname ->  
       (define (make-macosx-launcher kind flags dest)

@@ -37,10 +37,10 @@ wxScrollEvent_ext::wxScrollEvent_ext(int et, int d, int p, long ts)
 }
 
 class wxKeyEvent_ext : public wxKeyEvent {
- public: wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts);
+ public: wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, int xv, int yv, long ts);
 };
 
-wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts) 
+wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, int xv, int yv, long ts) 
 : wxKeyEvent(wxEVENT_TYPE_CHAR) 
 {
   keyCode = kc;
@@ -54,10 +54,10 @@ wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv,
 }
 
 class wxMouseEvent_ext : public wxMouseEvent {
- public: wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts);
+ public: wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int yv, int sd, int cd, int md, int ad, long ts);
 };
 
-wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts) 
+wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int yv, int sd, int cd, int md, int ad, long ts) 
 : wxMouseEvent(et)
 {
   leftDown = ld;
@@ -219,8 +219,8 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, fl
 
 @CLASSBASE wxKeyEvent=wxKeyEvent_ext "key-event":"event" / nofnl
 
-@CREATOR (SYM[keyCode]=0, bool=0, bool=0, bool=0, bool=0, float=0.0, float=0.0, ExactLong=0)
-@ARGNAMES [key-code #\nul] [shift-down #f] [control-down #f] [meta-down #f] [alt-down #f] [x 0.0] [y 0.0] [time-stamp 0]
+@CREATOR (SYM[keyCode]=0, bool=0, bool=0, bool=0, bool=0, int=0, int=0, ExactLong=0)
+@ARGNAMES [key-code #\nul] [shift-down #f] [control-down #f] [meta-down #f] [alt-down #f] [x 0] [y 0] [time-stamp 0]
 
 @IVAR "key-code" : SYM[keyCode] keyCode
 @IVAR "shift-down" : bool shiftDown
@@ -228,8 +228,8 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, fl
 @IVAR "meta-down" : bool metaDown
 @IVAR "alt-down" : bool altDown
 
-@IVAR "x" : float x
-@IVAR "y" : float y
+@IVAR "x" : int x
+@IVAR "y" : int y
 
 @END
 
@@ -255,8 +255,8 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, fl
 
 @CLASSBASE wxMouseEvent=wxMouseEvent_ext "mouse-event":"event" / nofnl
 
-@CREATOR (SYM[mouseEventType], bool=0, bool=0, bool=0, float=0.0, float=0.0, bool=0, bool=0, bool=0, bool=0, ExactLong=0)
-@ARGNAMES event-type [left-down #f] [middle-down #f] [right-down #f] [x 0.0] [y 0.0] [shift-down #f] [control-down #f] [meta-down #f] [alt-down #f] [time-stamp 0]
+@CREATOR (SYM[mouseEventType], bool=0, bool=0, bool=0, int=0, int=0, bool=0, bool=0, bool=0, bool=0, ExactLong=0)
+@ARGNAMES event-type [left-down #f] [middle-down #f] [right-down #f] [x 0] [y 0] [shift-down #f] [control-down #f] [meta-down #f] [alt-down #f] [time-stamp 0]
 
 @ "button-changed?" : bool Button(SYM[buttonId]=-1);
 @ "button-down?" : bool ButtonDown(SYM[buttonId]=-1);
@@ -274,7 +274,7 @@ wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, fl
 @IVAR "control-down" : bool controlDown
 @IVAR "meta-down" : bool metaDown
 @IVAR "alt-down" : bool altDown
-@IVAR "x" : float x
-@IVAR "y" : float y
+@IVAR "x" : int x
+@IVAR "y" : int y
 
 @END

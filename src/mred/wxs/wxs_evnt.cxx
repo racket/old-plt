@@ -42,10 +42,10 @@ wxScrollEvent_ext::wxScrollEvent_ext(int et, int d, int p, long ts)
 }
 
 class wxKeyEvent_ext : public wxKeyEvent {
- public: wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts);
+ public: wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, int xv, int yv, long ts);
 };
 
-wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv, float yv, long ts) 
+wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, int xv, int yv, long ts) 
 : wxKeyEvent(wxEVENT_TYPE_CHAR) 
 {
   keyCode = kc;
@@ -59,10 +59,10 @@ wxKeyEvent_ext::wxKeyEvent_ext(int kc, int sd, int cd, int md, int ad, float xv,
 }
 
 class wxMouseEvent_ext : public wxMouseEvent {
- public: wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts);
+ public: wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int yv, int sd, int cd, int md, int ad, long ts);
 };
 
-wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, float xv, float yv, int sd, int cd, int md, int ad, long ts) 
+wxMouseEvent_ext::wxMouseEvent_ext(int et, int ld, int mdd, int rd, int xv, int yv, int sd, int cd, int md, int ad, long ts) 
 : wxMouseEvent(et)
 {
   leftDown = ld;
@@ -1425,7 +1425,7 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
 class os_wxKeyEvent : public wxKeyEvent_ext {
  public:
 
-  os_wxKeyEvent CONSTRUCTOR_ARGS((int x0 = 0, Bool x1 = 0, Bool x2 = 0, Bool x3 = 0, Bool x4 = 0, float x5 = 0.0, float x6 = 0.0, ExactLong x7 = 0));
+  os_wxKeyEvent CONSTRUCTOR_ARGS((int x0 = 0, Bool x1 = 0, Bool x2 = 0, Bool x3 = 0, Bool x4 = 0, int x5 = 0, int x6 = 0, ExactLong x7 = 0));
   ~os_wxKeyEvent();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -1444,7 +1444,7 @@ void os_wxKeyEvent::gcFixup() {
 
 static Scheme_Object *os_wxKeyEvent_class;
 
-os_wxKeyEvent::os_wxKeyEvent CONSTRUCTOR_ARGS((int x0, Bool x1, Bool x2, Bool x3, Bool x4, float x5, float x6, ExactLong x7))
+os_wxKeyEvent::os_wxKeyEvent CONSTRUCTOR_ARGS((int x0, Bool x1, Bool x2, Bool x3, Bool x4, int x5, int x6, ExactLong x7))
 CONSTRUCTOR_INIT(: wxKeyEvent_ext(x0, x1, x2, x3, x4, x5, x6, x7))
 {
 }
@@ -1622,7 +1622,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetaltDown(int n,  Scheme_Object *p[]
 static Scheme_Object *objscheme_wxKeyEvent_Getx(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  int v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxKeyEvent_class, "get-x in key-event%", n, p);
@@ -1633,20 +1633,20 @@ static Scheme_Object *objscheme_wxKeyEvent_Getx(int n,  Scheme_Object *p[])
   else
     v = ((wxKeyEvent *)cobj->primdata)->x;
 
-  return WITH_REMEMBERED_STACK(scheme_make_double(v));
+  return scheme_make_integer(v);
 }
 
 static Scheme_Object *objscheme_wxKeyEvent_Setx(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxKeyEvent_class, "set-x in key-event%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-x in key-event%", POFFSET+1, POFFSET+1, n, p));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-x in key-event%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET], "set-x in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -1655,7 +1655,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Setx(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxKeyEvent_Gety(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  int v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxKeyEvent_class, "get-y in key-event%", n, p);
@@ -1666,20 +1666,20 @@ static Scheme_Object *objscheme_wxKeyEvent_Gety(int n,  Scheme_Object *p[])
   else
     v = ((wxKeyEvent *)cobj->primdata)->y;
 
-  return WITH_REMEMBERED_STACK(scheme_make_double(v));
+  return scheme_make_integer(v);
 }
 
 static Scheme_Object *objscheme_wxKeyEvent_Sety(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxKeyEvent_class, "set-y in key-event%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-y in key-event%", POFFSET+1, POFFSET+1, n, p));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-y in key-event%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET], "set-y in key-event%"));
   ((wxKeyEvent *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -1696,8 +1696,8 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(int n,  Scheme_Object *p[])
   Bool x2;
   Bool x3;
   Bool x4;
-  float x5;
-  float x6;
+  int x5;
+  int x6;
   ExactLong x7;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(2);
@@ -1728,13 +1728,13 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x4 = 0;
   if (n > (POFFSET+5)) {
-    x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "initialization in key-event%"));
+    x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+5], "initialization in key-event%"));
   } else
-    x5 = 0.0;
+    x5 = 0;
   if (n > (POFFSET+6)) {
-    x6 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+6], "initialization in key-event%"));
+    x6 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+6], "initialization in key-event%"));
   } else
-    x6 = 0.0;
+    x6 = 0;
   if (n > (POFFSET+7)) {
     x7 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+7], "initialization in key-event%"));
   } else
@@ -1944,7 +1944,7 @@ static int unbundle_symset_buttonId(Scheme_Object *v, const char *where) {
 class os_wxMouseEvent : public wxMouseEvent_ext {
  public:
 
-  os_wxMouseEvent CONSTRUCTOR_ARGS((int x0, Bool x1 = 0, Bool x2 = 0, Bool x3 = 0, float x4 = 0.0, float x5 = 0.0, Bool x6 = 0, Bool x7 = 0, Bool x8 = 0, Bool x9 = 0, ExactLong x10 = 0));
+  os_wxMouseEvent CONSTRUCTOR_ARGS((int x0, Bool x1 = 0, Bool x2 = 0, Bool x3 = 0, int x4 = 0, int x5 = 0, Bool x6 = 0, Bool x7 = 0, Bool x8 = 0, Bool x9 = 0, ExactLong x10 = 0));
   ~os_wxMouseEvent();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -1963,7 +1963,7 @@ void os_wxMouseEvent::gcFixup() {
 
 static Scheme_Object *os_wxMouseEvent_class;
 
-os_wxMouseEvent::os_wxMouseEvent CONSTRUCTOR_ARGS((int x0, Bool x1, Bool x2, Bool x3, float x4, float x5, Bool x6, Bool x7, Bool x8, Bool x9, ExactLong x10))
+os_wxMouseEvent::os_wxMouseEvent CONSTRUCTOR_ARGS((int x0, Bool x1, Bool x2, Bool x3, int x4, int x5, Bool x6, Bool x7, Bool x8, Bool x9, ExactLong x10))
 CONSTRUCTOR_INIT(: wxMouseEvent_ext(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10))
 {
 }
@@ -2395,7 +2395,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetaltDown(int n,  Scheme_Object *p
 static Scheme_Object *objscheme_wxMouseEvent_Getx(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  int v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMouseEvent_class, "get-x in mouse-event%", n, p);
@@ -2406,20 +2406,20 @@ static Scheme_Object *objscheme_wxMouseEvent_Getx(int n,  Scheme_Object *p[])
   else
     v = ((wxMouseEvent *)cobj->primdata)->x;
 
-  return WITH_REMEMBERED_STACK(scheme_make_double(v));
+  return scheme_make_integer(v);
 }
 
 static Scheme_Object *objscheme_wxMouseEvent_Setx(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMouseEvent_class, "set-x in mouse-event%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-x in mouse-event%", POFFSET+1, POFFSET+1, n, p));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-x in mouse-event%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET], "set-x in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->x = v;
 
   return scheme_void;
@@ -2428,7 +2428,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Setx(int n,  Scheme_Object *p[])
 static Scheme_Object *objscheme_wxMouseEvent_Gety(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj INIT_NULLED_OUT;
-  float v;
+  int v;
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxMouseEvent_class, "get-y in mouse-event%", n, p);
@@ -2439,20 +2439,20 @@ static Scheme_Object *objscheme_wxMouseEvent_Gety(int n,  Scheme_Object *p[])
   else
     v = ((wxMouseEvent *)cobj->primdata)->y;
 
-  return WITH_REMEMBERED_STACK(scheme_make_double(v));
+  return scheme_make_integer(v);
 }
 
 static Scheme_Object *objscheme_wxMouseEvent_Sety(int n,  Scheme_Object *p[])
 {
   Scheme_Class_Object *cobj = (Scheme_Class_Object *)p[0];
-  float v;
+  int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxMouseEvent_class, "set-y in mouse-event%", n, p));
   if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-y in mouse-event%", POFFSET+1, POFFSET+1, n, p));
 
-  v = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET], "set-y in mouse-event%"));
+  v = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET], "set-y in mouse-event%"));
   ((wxMouseEvent *)cobj->primdata)->y = v;
 
   return scheme_void;
@@ -2468,8 +2468,8 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(int n,  Scheme_Object *p[]
   Bool x1;
   Bool x2;
   Bool x3;
-  float x4;
-  float x5;
+  int x4;
+  int x5;
   Bool x6;
   Bool x7;
   Bool x8;
@@ -2497,13 +2497,13 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(int n,  Scheme_Object *p[]
   } else
     x3 = 0;
   if (n > (POFFSET+4)) {
-    x4 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+4], "initialization in mouse-event%"));
+    x4 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+4], "initialization in mouse-event%"));
   } else
-    x4 = 0.0;
+    x4 = 0;
   if (n > (POFFSET+5)) {
-    x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "initialization in mouse-event%"));
+    x5 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+5], "initialization in mouse-event%"));
   } else
-    x5 = 0.0;
+    x5 = 0;
   if (n > (POFFSET+6)) {
     x6 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+6], "initialization in mouse-event%"));
   } else

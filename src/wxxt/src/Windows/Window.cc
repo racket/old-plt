@@ -35,6 +35,7 @@
 #define  Uses_wxWindow
 #define  Uses_wxDialogBox
 #define  Uses_wxItem
+#define  Uses_wxCanvas
 #include "wx.h"
 #define  Uses_ScrollWinWidget
 #define  Uses_Scrollbar
@@ -1528,6 +1529,15 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->metaDown	= xev->xkey.state & Mod1Mask;
 	wxevent->shiftDown	= xev->xkey.state & ShiftMask;
 	wxevent->timeStamp      = xev->xkey.time; /* MATTHEW */
+
+	/* Reverse scroll effects: */
+	if (wxSubType(win->__type, wxTYPE_CANVAS)) {
+	  int dx, dy;
+	  ((wxCanvas *)win)->ViewStart(&dx, &dy);
+	  wxevent->x -= dx;
+	  wxevent->y -= dy;
+	}
+
 	*continue_to_dispatch_return = FALSE;
 	if (!win->CallPreOnChar(win, wxevent)) {
 	  /* hack: ignore SubWin for a choice item key event: */
@@ -1633,6 +1643,12 @@ void wxWindow::WindowEventHandler(Widget w,
 	    wxevent->x += (cx - wx);
 	    wxevent->y += (cy - wy);
 	  }
+	} else if (wxSubType(win->__type, wxTYPE_CANVAS)) {
+	  /* Reverse scroll effects: */
+	  int dx, dy;
+	  ((wxCanvas *)win)->ViewStart(&dx, &dy);
+	  wxevent->x -= dx;
+	  wxevent->y -= dy;
 	}
 
 	*continue_to_dispatch_return = FALSE;
@@ -1699,6 +1715,15 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->rightDown	= xev->xcrossing.state & Button3Mask;
 	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */ 
+
+	/* Reverse scroll effects: */
+	if (wxSubType(win->__type, wxTYPE_CANVAS)) {
+	  int dx, dy;
+	  ((wxCanvas *)win)->ViewStart(&dx, &dy);
+	  wxevent->x -= dx;
+	  wxevent->y -= dy;
+	}
+
 	if (!win->CallPreOnEvent(win, wxevent)) {
 	  if (!win->IsGray())
 	    win->OnEvent(wxevent);
@@ -1732,6 +1757,15 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxevent->rightDown	= xev->xmotion.state & Button3Mask;
 	wxevent->timeStamp       = xev->xbutton.time; /* MATTHEW */
 	*continue_to_dispatch_return = FALSE; /* Event was handled by OnEvent */
+
+	/* Reverse scroll effects: */
+	if (wxSubType(win->__type, wxTYPE_CANVAS)) {
+	  int dx, dy;
+	  ((wxCanvas *)win)->ViewStart(&dx, &dy);
+	  wxevent->x -= dx;
+	  wxevent->y -= dy;
+	}
+
 	if (!win->CallPreOnEvent(win, wxevent)) {
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;

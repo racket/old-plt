@@ -761,7 +761,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     need_layout = (!just_meas || need_size);
     if (need_layout) {
       if (!layout) {
-	ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)(unicode + delta),
+	ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)(unicode XFORM_OK_PLUS delta),
 					kATSUFromTextBeginning,
 					kATSUToTextEnd,
 					one_ulen,
@@ -818,7 +818,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	}
       } else {
 	ATSUSetTextPointerLocation(layout, 
-				   (UniCharArrayPtr)(unicode + delta),
+				   (UniCharArrayPtr)(unicode XFORM_OK_PLUS delta),
 				   kATSUFromTextBeginning,
 				   kATSUToTextEnd,
 				   one_ulen);

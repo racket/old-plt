@@ -281,6 +281,10 @@ zo:
 	cd dynsrc; $(XMAKE) LIBDIR='$(LIBDIR)' -e dynlib2k
 	cd gc2; $(XMAKE) ../$(MZBUILDDIR)mzscheme2k
 
+palmos:
+#	$(XMAKE) bin
+	cd palm; $(XMAKE) all
+
 depend:
 	cd src; $(XMAKE) -e depend 
 	cd dynsrc; $(XMAKE) -e depend 

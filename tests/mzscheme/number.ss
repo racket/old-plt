@@ -316,6 +316,8 @@
 (test #f zero? +inf.0)
 (test #f zero? -inf.0)
 (test #f zero? +nan.0)
+(test #f zero? (expt 2 37))
+(test #f zero? (expt -2 37))
 (test #t positive? 4)
 (test #f positive? -4)
 (test #f positive? 0)
@@ -330,6 +332,8 @@
 (test #f positive? +nan.0)
 (test #t positive? 5+0.0i)
 (test #f positive? -5+0.0i)
+(test #t positive? (expt 2 37))
+(test #f positive? (expt -2 37))
 (test #f negative? 4)
 (test #t negative? -4)
 (test #f negative? 0)
@@ -339,6 +343,8 @@
 (test #f negative? 2/4)
 (test #t negative? -2/4)
 (test #f negative? 0/4)
+(test #f negative? (expt 2 37))
+(test #t negative? (expt -2 37))
 (test #f negative? +inf.0)
 (test #t negative? -inf.0)
 (test #f negative? +nan.0)
@@ -352,6 +358,10 @@
 (test #t odd? -inf.0)
 (test #t odd? 5+0.0i)
 (test #f odd? 4+0.0i)
+(test #f odd? (expt 2 37))
+(test #f odd? (expt -2 37))
+(test #t odd? (add1 (expt 2 37)))
+(test #t odd? (sub1 (expt -2 37)))
 (test #f even? 3)
 (test #t even? 2)
 (test #t even? -4)
@@ -360,6 +370,10 @@
 (test #t even? -inf.0)
 (test #t even? 4+0.0i)
 (test #f even? 5+0.0i)
+(test #t even? (expt 2 37))
+(test #t even? (expt -2 37))
+(test #f even? (add1 (expt 2 37)))
+(test #f even? (sub1 (expt -2 37)))
 
 (arity-test zero? 1 1)
 (arity-test positive? 1 1)
@@ -409,6 +423,23 @@
 (test 100.0 max 100 9.0+0.0i)
 (test 9.0 max 8 9.0+0.0i)
 
+(test (expt 5 27) max 9 (expt 5 27))
+(test (expt 5 29) max (expt 5 29) (expt 5 27))
+(test (expt 5 29) max (expt 5 27) (expt 5 29))
+(test (expt 5 27) max (expt 5 27) 9)
+(test (expt 5 27) max (expt 5 27) (- (expt 5 29)))
+(test (expt 5 27) max (- (expt 5 29)) (expt 5 27))
+(test (- (expt 5 27)) max (- (expt 5 27)) (- (expt 5 29)))
+(test (- (expt 5 27)) max (- (expt 5 29)) (- (expt 5 27)))
+(test 9 min 9 (expt 5 27))
+(test (expt 5 27) min (expt 5 29) (expt 5 27))
+(test (expt 5 27) min (expt 5 27) (expt 5 29))
+(test 9 min (expt 5 27) 9)
+(test (- (expt 5 29)) min (expt 5 27) (- (expt 5 29)))
+(test (- (expt 5 29)) min (- (expt 5 29)) (expt 5 27))
+(test (- (expt 5 29)) min (- (expt 5 27)) (- (expt 5 29)))
+(test (- (expt 5 29)) min (- (expt 5 29)) (- (expt 5 27)))
+
 (error-test '(max 0 'a))
 (error-test '(min 0 'a))
 (error-test '(max 'a 0))
@@ -443,6 +474,8 @@
 (test 18805208620685182736256260714897 
       * (sub1 (expt 2 31))  
       8756857658476587568751)
+(test 1073741874 + (- (expt 2 30) 50) 100) ; fixnum -> bignum for 32 bits
+(test -1073741874 - (- 50 (expt 2 30)) 100) ; fixnum -> bignum for 32 bits
 (test 10.0+0.0i + 9.0+0.0i 1)
 (test 10.0+0.0i + 9.0+0.0i 1-0.0i)
 (test 9.0+0.0i * 9.0+0.0i 1)
@@ -478,6 +511,7 @@
 (test 0.0+i add1 -1.0+i)
 (test 0.0+0.0i add1 -1+0.0i)
 (test 0.0-0.0i add1 -1-0.0i)
+(test 1073741824 add1 #x3FFFFFFF) ; fixnum boundary case
 
 (error-test '(add1 "a"))
 (arity-test add1 1 1)
@@ -492,6 +526,7 @@
 (test -2.0+i sub1 -1.0+i)
 (test -2.0+0.0i sub1 -1+0.0i)
 (test -2.0-0.0i sub1 -1-0.0i)
+(test -1073741824 sub1 -1073741823) ; fixnum boundary case
 
 (error-test '(sub1 "a"))
 (arity-test sub1 1 1)
@@ -519,6 +554,7 @@
 (error-test '(exact->inexact 'a))
 (test 1.0+1.0i exact->inexact 1+1i)
 (test 1.0+0.0i exact->inexact 1+0.0i)
+(test (expt 7 30) inexact->exact (expt 7 30))
 
 (error-test '(inexact->exact +inf.0))
 (error-test '(inexact->exact -inf.0))
@@ -526,10 +562,16 @@
 
 (error-test '(* 'a 0))
 (error-test '(+ 'a 0))
+(error-test '(/ 'a 0))
+(error-test '(- 'a 0))
 (error-test '(+ 0 'a))
 (error-test '(* 0 'a))
+(error-test '(- 0 'a))
+(error-test '(/ 0 'a))
 (error-test '(+ 'a))
 (error-test '(* 'a))
+(error-test '(- 'a))
+(error-test '(/ 'a))
 
 (define (test-inf-plus-times v)
   (define (test+ +)
@@ -721,6 +763,16 @@
 
 (test 13.0 quotient 1324.0 100)
 
+(error-test '(quotient 6 0) exn:application:divide-by-zero?)
+(error-test '(modulo 6 0) exn:application:divide-by-zero?)
+(error-test '(remainder 6 0) exn:application:divide-by-zero?)
+(error-test '(quotient 6 0.0) exn:application:divide-by-zero?)
+(error-test '(modulo 6 0.0) exn:application:divide-by-zero?)
+(error-test '(remainder 6 0.0) exn:application:divide-by-zero?)
+(error-test '(quotient 6 -0.0) exn:application:divide-by-zero?)
+(error-test '(modulo 6 -0.0) exn:application:divide-by-zero?)
+(error-test '(remainder 6 -0.0) exn:application:divide-by-zero?)
+
 (define (test-qrm-inf v)
   (define iv (exact->inexact v))
 
@@ -851,6 +903,8 @@
 (test 0 arithmetic-shift 1024 -20)
 (test 0 arithmetic-shift 1024 -40)
 (test 0 arithmetic-shift 1024 -20000000000000000000)
+(test 0 arithmetic-shift 0 100)
+(test 0 arithmetic-shift 0 -100)
 
 (test (expt 2 40) arithmetic-shift (expt 2 40) 0)
 (test (expt 2 50) arithmetic-shift (expt 2 40) 10)
@@ -893,17 +947,32 @@
 (test 0 gcd)
 (test 5 gcd 5)
 (test 5.0 gcd 5.0 10)
+(test 5.0 gcd -5.0 10)
+(test 5.0 gcd 5.0 -10)
 (test 5.0 gcd 5.0+0.0i 10)
 (test 5.0 gcd 5.0 10+0.0i)
+(test (expt 3 37) gcd (expt 9 35) (expt 6 37))
+(test (expt 3 37) gcd (- (expt 9 35)) (expt 6 37))
+(test (expt 3 37) gcd (expt 9 35) (- (expt 6 37)))
+(test 201 gcd (* 67 (expt 3 20)) (* 67 3))
+(test 201 gcd (* 67 3) (* 67 (expt 3 20)))
+(test 201.0 gcd (* 67 (expt 3 20)) (* 67. 3))
+(test 201.0 gcd (* 67. 3) (* 67 (expt 3 20)))
 (test 9.0 gcd +inf.0 9)
 (test 9.0 gcd -inf.0 9)
 (test 288 lcm 32 -36)
 (test 12 lcm 2 3 4)
 (test 1 lcm)
 (test 5 lcm 5)
+(test 0 lcm 123 0)
 (test 30.0 lcm 5 6.0)
 (test 30.0 lcm 5 6.0+0.0i)
 (test 30.0 lcm 5+0.0i 6.0)
+(test 0.0 lcm 123 0.0)
+(test 0.0 lcm 123 -0.0)
+(test (* (expt 2 37) (expt 9 35)) lcm (expt 9 35) (expt 6 37))
+(test (* (expt 2 37) (expt 9 35)) lcm (- (expt 9 35)) (expt 6 37))
+(test (* (expt 2 37) (expt 9 35)) lcm (expt 9 35) (- (expt 6 37)))
 
 (error-test '(gcd +nan.0))
 (error-test '(gcd 'a))
@@ -923,6 +992,10 @@
 (error-test '(lcm 1+2i))
 (error-test '(gcd 1 1+2i))
 (error-test '(lcm 1 1+2i))
+(error-test '(gcd +nan.0 5.0))
+(error-test '(gcd 5.0 +nan.0))
+(error-test '(lcm +nan.0 5.0))
+(error-test '(lcm 5.0 +nan.0))
 
 (arity-test gcd 0 -1)
 (arity-test lcm 0 -1)
@@ -1121,8 +1194,11 @@
   (test pi angle (- big-num))
   (test pi angle -3/4)
   (test pi angle -3+0.0i))
+(test -inf.0 atan 0+i)
+(test -inf.0 atan 0-i)
 
 (error-test '(angle 'a))
+(error-test '(angle 0) exn:application:divide-by-zero?)
 (error-test '(magnitude 'a))
 (arity-test angle 1 1)
 (arity-test magnitude 1 1)
@@ -1187,6 +1263,8 @@
 (arity-test real-part 1 1)
 (arity-test imag-part 1 1)
 
+(define (z-round c) (make-rectangular (round (real-part c)) (round (imag-part c))))
+
 (test -1 * +i +i)
 (test 1 * +i -i)
 (test 2 * 1+i 1-i)
@@ -1210,10 +1288,13 @@
 (test (make-rectangular 0 +inf.0) sqrt -inf.0)
 (test-nan.0 sqrt +nan.0)
 
+(test (expt 5 13) sqrt (expt 5 26))
+(test 545915034.0 round (sqrt (expt 5 25)))
+(test (make-rectangular 0 (expt 5 13)) sqrt (- (expt 5 26)))
+(test (make-rectangular 0 545915034.0) z-round (sqrt (- (expt 5 25))))
+
 (error-test '(sqrt "a"))
 (arity-test sqrt 1 1)
-
-(define (z-round c) (make-rectangular (round (real-part c)) (round (imag-part c))))
 
 (test -13/64-21/16i expt -3/4+7/8i 2)
 (let ([v (expt -3/4+7/8i 2+3i)])
@@ -1282,6 +1363,13 @@
 (error-test '(expt 0 -1) exn:application:divide-by-zero?)
 (error-test '(expt 0 -1.0) exn:application:divide-by-zero?)
 (error-test '(expt 0 -inf.0) exn:application:divide-by-zero?)
+
+(error-test '(expt 'a 0))
+(error-test '(expt 'a 1))
+(error-test '(expt 'a 3))
+(error-test '(expt 0 'a))
+(error-test '(expt 1 'a))
+(error-test '(expt 3 'a))
 
 ;;;;From: fred@sce.carleton.ca (Fred J Kaudel)
 ;;; Modified by jaffer.
@@ -1386,6 +1474,8 @@
 (test-nan.0 atan +nan.0)
 (test-nan.0 atan 1 +nan.0)
 (test-nan.0 atan +nan.0 1)
+
+(test -1178.+173.i  z-round (* 1000 (atan -2+1i)))
 
 (map (lambda (f fname) 
        (error-test `(,fname "a"))

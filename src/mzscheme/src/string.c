@@ -1298,7 +1298,7 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
   SCHEME_RELEASE_LOCK();
 
 #ifdef GETENV_FUNCTION
-  return putenv(s) ? scheme_false : scheme_true;
+  return MSC_IZE(putenv)(s) ? scheme_false : scheme_true;
 #else
   return scheme_true;
 #endif

@@ -62,7 +62,7 @@ for creating MzScheme extensions (or using mzc):
    mkmzdyn.bat (requires cl.exe and lib.exe in your path)
 Then, set up all the other executables (besides mred.exe
 and mzscheme.exe) by running
-   mzscheme.exe -mvqL- setup.ss compiler
+   mzscheme.exe -mvqL- setup.ss setup
 (This makes the .zo files, too. To skip compiling .zos, 
 add -n to the end of the above command.)
 

@@ -1383,6 +1383,13 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	    snip->line->MarkRecalculate();
 	    if (maxWidth > 0)
 	      snip->line->MarkCheckFlow();
+	  } else {
+	    /* Carriage-return inserted at the end of a auto-wrapped line.
+	       Line lengths stay the same, but next line now starts
+	       a paragraph. */
+	    if (snip->line->next)
+	      if (!snip->line->next->StartsParagraph())
+		snip->line->next->SetStartsParagraph(TRUE);
 	  }
 	} else {
 	  tabsnip = OnNewTabSnip();

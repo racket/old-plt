@@ -4,6 +4,7 @@
 # Please ignore it.
 
 RDIST=rdist
+HOMESCHEME=/home/scheme
 
 if [ "-r" = "$1" ] ; then
   shift
@@ -14,6 +15,10 @@ fi
 if [ "-self" = "$1" ] ; then
   shift
   FARHOST=`hostname`
+elif [ "-utah" = "$1" ] ; then
+  shift
+  FARHOST=`hostname`
+  HOMESCHEME=/home/mflatt/proj
 elif [ "-local" = "$1" ] ; then
   shift
   FARHOST=localhost
@@ -21,9 +26,9 @@ else
   FARHOST=asia.cs.rice.edu
 fi
 
-MRSYS=`/home/scheme/plt/bin/archsys -`$1
+MRSYS=`${HOMESCHEME}/plt/bin/archsys -`$1
 
-MRDEST=/home/scheme/plt/.bin/${MRSYS}/mred
+MRDEST=${HOMESCHEME}/plt/.bin/${MRSYS}/mred
 
 echo ${MRBUILDDIR}mred to ${MRDEST}
 

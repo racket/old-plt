@@ -95,13 +95,6 @@ void wxNode::Kill(wxList *list)
     list->first_node = next;
 
   next = previous = NULL;
-  list = NULL;
-  
-#ifdef wx_mac
-  // Put this here since data may try to remove itself as a child: kludge
-  if (list && list->destroy_data)
-    delete data;
-#endif // wx_mac
 }
 
 #ifdef wx_mac
@@ -500,6 +493,10 @@ wxObject* wxChildNode::Data()
 #ifdef MZ_PRECISE_GC
     if (!gcOBJ_TO_PTR(v))
       return NULL;
+    if (v->__type == -1) {
+      /* Finalized! */
+      return NULL;
+    }
 #endif
     return v;
   } else
@@ -656,6 +653,9 @@ void wxChildList::Show(wxObject *object, int show)
 	  return;
 
 #ifdef MZ_PRECISE_GC
+	/* If show < 0, box should be weaker: it should go to NULL when
+	   object is finalized. But the GC doesn't do that, so instead we
+	   check for finalization in node->Data(). */
 	weak = GC_malloc_weak_box(gcOBJ_TO_PTR(object), NULL);
 #else
 	weak = new WXGC_ATOMIC wxObject*;

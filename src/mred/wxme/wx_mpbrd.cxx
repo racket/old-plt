@@ -80,6 +80,8 @@ class wxSnipLocation : public wxObject
 static wxBrush *blackBrush = NULL, *whiteBrush = NULL, *rbBrush = NULL;
 static wxPen *invisiPen = NULL, *rbPen = NULL;
 
+static wxMediaPasteboard *skipBox = NULL;
+
 extern void *wxMediaFileIOReady;
 
 #ifdef wx_mac
@@ -118,6 +120,12 @@ wxMediaPasteboard::wxMediaPasteboard()
   dragging = rubberband = FALSE;
 
   if (!blackBrush) {
+    wxREGGLOB(skipBox);
+    wxREGGLOB(blackBrush);
+    wxREGGLOB(whiteBrush);
+    wxREGGLOB(invisiPen);
+    wxREGGLOB(rbBrush);
+    wxREGGLOB(rbPen);
     blackBrush = wxTheBrushList->FindOrCreateBrush("BLACK", wxXOR);
     whiteBrush = wxTheBrushList->FindOrCreateBrush("WHITE", wxSOLID);
     invisiPen = wxThePenList->FindOrCreatePen("BLACK", 1, wxTRANSPARENT);
@@ -248,8 +256,10 @@ wxCursor *wxMediaPasteboard::AdjustCursor(wxMouseEvent *event)
   if (customCursor)
     return customCursor;
 
-  if (!arrow)
+  if (!arrow) {
+    wxREGGLOB(arrow);
     arrow = new wxCursor(wxCURSOR_ARROW);
+  }
 
   return arrow;
 }
@@ -1499,8 +1509,6 @@ wxSnip *wxMediaPasteboard::FindNextSelectedSnip(wxSnip *start)
 }
 
 /***************************************************************************/
-
-static wxMediaPasteboard *skipBox = NULL;
 
 void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy, 
 			     float cx, float cy, float cw, float ch, 

@@ -1259,40 +1259,48 @@ private:
   Bool fitToPage;
 
 public:
-  wxMediaPrintout(wxMediaBuffer *buffer, Bool fit) : wxPrintout()
-    {
-      b = buffer;
-      fitToPage = fit;
-    }
+  wxMediaPrintout(wxMediaBuffer *buffer, Bool fit);
 
-  Bool HasPage(int page)
-    {
-      return b->HasPrintPage(GetDC(), page);
-    }
-
-  Bool OnPrintPage(int page)
-    {
-      b->PrintToDC(GetDC(), page);
-
-      return TRUE;
-    }
-
-  Bool OnBeginDocument(int startPage, int endPage)
-    {
-      b->printing = GetDC();
-      data = b->BeginPrint(b->printing, fitToPage);
-      return wxPrintout::OnBeginDocument(startPage, endPage);
-    }
-
-  void OnEndDocument()
-    {
-      wxDC *pr = b->printing;
-      b->printing = NULL;
-      b->EndPrint(pr, data);
-      wxPrintout::OnEndDocument();
-      b->InvalidateBitmapCache(0, 0, -1, -1);
-    }
+  Bool HasPage(int page);
+  Bool OnPrintPage(int page);
+  Bool OnBeginDocument(int startPage, int endPage);
+  void OnEndDocument();
 };
+
+wxMediaPrintout::wxMediaPrintout(wxMediaBuffer *buffer, Bool fit)
+: wxPrintout()
+{
+  b = buffer;
+  fitToPage = fit;
+}
+
+Bool wxMediaPrintout::HasPage(int page)
+{
+  return b->HasPrintPage(GetDC(), page);
+}
+
+Bool wxMediaPrintout::OnPrintPage(int page)
+{
+  b->PrintToDC(GetDC(), page);
+  
+  return TRUE;
+}
+
+Bool wxMediaPrintout::OnBeginDocument(int startPage, int endPage)
+{
+  b->printing = GetDC();
+  data = b->BeginPrint(b->printing, fitToPage);
+  return wxPrintout::OnBeginDocument(startPage, endPage);
+}
+
+void wxMediaPrintout::OnEndDocument()
+{
+  wxDC *pr = b->printing;
+  b->printing = NULL;
+  b->EndPrint(pr, data);
+  wxPrintout::OnEndDocument();
+  b->InvalidateBitmapCache(0, 0, -1, -1);
+}
 #endif
 
 #ifdef wx_x

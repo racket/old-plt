@@ -131,7 +131,7 @@ wxObject *wxHashTable::Delete(long key)
     if (node) {
       wxObject *data;
       data = node->Data();
-      DELETE_OBJ node;
+      l->DeleteNode(node);
       return data;
     }
   }
@@ -150,7 +150,7 @@ wxObject *wxHashTable::Delete(const char *key)
     if (node) {
       wxObject *data;
       data = node->Data();
-      DELETE_OBJ node;
+      l->DeleteNode(node);
       return data;
     }
   }

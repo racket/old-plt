@@ -922,12 +922,13 @@ static void set_pattern(wxPostScriptDC *dc, PSStream *pstream, wxBitmap *bm, int
   pstream->Out(" matrix makepattern setpattern\n");
 }
 
+static char *dotted = "[2 5] 2";
+static char *short_dashed = "[4 4] 2";
+static char *long_dashed = "[4 8] 2";
+static char *dotted_dashed = "[6 6 2 6] 4";
+
 void wxPostScriptDC::SetPen (wxPen * pen)
 {
-  static char *dotted = "[2 5] 2";
-  static char *short_dashed = "[4 4] 2";
-  static char *long_dashed = "[4 8] 2";
-  static char *dotted_dashed = "[6 6 2 6] 4";
   wxPen *oldPen = current_pen;
   char *psdash = NULL;
   unsigned char red, blue, green;
@@ -1618,8 +1619,10 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
 {
   Bool v;
 
-  if (!temp_mdc)
+  if (!temp_mdc) {
+    wxREGGLOB(temp_mdc);
     temp_mdc = new wxMemoryDC(1);
+  }
   
   temp_mdc->SelectObject(bm);
   v = Blit(xdest, ydest, fwidth, fheight,
@@ -1643,19 +1646,19 @@ float wxPostScriptDC::GetCharWidth (void)
   return 0;
 }
 
+// these static vars are for storing the state between calls
+static int lastFamily= INT_MIN;
+static int lastSize= INT_MIN;
+static int lastStyle= INT_MIN;
+static int lastWeight= INT_MIN;
+static int lastDescender = INT_MIN;
+static int capHeight = -1;
+static int lastWidths[256]; // widths of the characters
+
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
 				    Bool WXUNUSED(use16))
 {
-  // these static vars are for storing the state between calls
-  static int lastFamily= INT_MIN;
-  static int lastSize= INT_MIN;
-  static int lastStyle= INT_MIN;
-  static int lastWeight= INT_MIN;
-  static int lastDescender = INT_MIN;
-  static int capHeight = -1;
-  static int lastWidths[256]; // widths of the characters
-
   wxFont *fontToUse = theFont;
   int Family;
   int Size;
@@ -2077,8 +2080,10 @@ void wxPrintSetupData::SetPrinterMode(int mode)
 
 void wxPrintSetupData::SetAFMPath(char *f)
 {
-    if (f && !default_afm_path)
+    if (f && !default_afm_path) {
+      wxREGGLOB(default_afm_path);
       default_afm_path = f;
+    }
   
     if (f == afm_path)
 	return;

@@ -64,7 +64,7 @@ public:
 };
 
 #ifdef MZ_PRECISE_GC
-# define GET_CANVAS(gcbm) ((wxCanvas *)SCHEME_BOX_VAL(gcbm->canvasptr))
+# define GET_CANVAS(gcbm) ((wxCanvas *)gcPTR_TO_OBJ(SCHEME_BOX_VAL(gcbm->canvasptr)))
 #else
 # define GET_CANVAS(gcbm) (*gcbm->canvasptr)
 #endif
@@ -252,6 +252,10 @@ static void draw_gc_bm(int on)
 
   while (gcbm) {
     wxCanvas *cnvs = GET_CANVAS(gcbm);
+#ifdef MZ_PRECISE_GC
+    if (!gcOBJ_TO_PTR(cnvs))
+      cnvs = NULL;
+#endif
     if (cnvs) {
       wxCanvasDC *dc;
       dc = (wxCanvasDC *)cnvs->GetDC();
@@ -340,7 +344,7 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 #ifdef MZ_PRECISE_GC
   {
     void *cp;
-    cp = GC_malloc_weak_box(cvs, NULL);
+    cp = GC_malloc_weak_box(gcOBJ_TO_PTR(cvs), NULL);
     gcbm->canvasptr = (Scheme_Object *)cp;
   }
 #else

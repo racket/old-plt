@@ -33,25 +33,29 @@ START_XFORM_SKIP;
 static void *wxbBufferToDC(wxMediaBuffer *b, float x, float y)
 {
   Scheme_Object *a[2];
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 2);
 
-  b->LocalToGlobal(&x, &y);
+  WITH_VAR_STACK(b->LocalToGlobal(&x, &y));
 
-  a[0] = objscheme_bundle_double(x);
-  a[1] = objscheme_bundle_double(y);
+  a[0] = WITH_VAR_STACK(objscheme_bundle_double(x));
+  a[1] = WITH_VAR_STACK(objscheme_bundle_double(y));
 
-  return scheme_values(2, a);
+  return WITH_VAR_STACK(scheme_values(2, a));
 }
 
 static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 {
   Scheme_Object *a[2];
+  SETUP_VAR_STACK(3);
+  VAR_STACK_PUSH_ARRAY(0, a, 2);
 
-  b->GlobalToLocal(&x, &y);
+  WITH_VAR_STACK(b->GlobalToLocal(&x, &y));
 
-  a[0] = objscheme_bundle_double(x);
-  a[1] = objscheme_bundle_double(y);
+  a[0] = WITH_VAR_STACK(objscheme_bundle_double(x));
+  a[1] = WITH_VAR_STACK(objscheme_bundle_double(y));
 
-  return scheme_values(2, a);
+  return WITH_VAR_STACK(scheme_values(2, a));
 }
 
 

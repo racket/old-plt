@@ -1,5 +1,4 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.37 1999/11/28 17:12:50 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)

@@ -4513,13 +4513,14 @@ static int unbundle_symset_breakType(Scheme_Object *v, const char *where) {
 }
 
 static Scheme_Object *bundle_symset_breakType(int v) {
+  REMEMBER_VAR_STACK();
   if (!breakType_wxBREAK_FOR_USER_2_sym) init_symset_breakType();
   Scheme_Object *l = scheme_null;
-  if (v & wxBREAK_FOR_CARET) l = scheme_make_pair(breakType_wxBREAK_FOR_CARET_sym, l);
-  if (v & wxBREAK_FOR_LINE) l = scheme_make_pair(breakType_wxBREAK_FOR_LINE_sym, l);
-  if (v & wxBREAK_FOR_SELECTION) l = scheme_make_pair(breakType_wxBREAK_FOR_SELECTION_sym, l);
-  if (v & wxBREAK_FOR_USER_1) l = scheme_make_pair(breakType_wxBREAK_FOR_USER_1_sym, l);
-  if (v & wxBREAK_FOR_USER_2) l = scheme_make_pair(breakType_wxBREAK_FOR_USER_2_sym, l);
+  if (v & wxBREAK_FOR_CARET) l = WITH_REMEMBERED_STACK(scheme_make_pair(breakType_wxBREAK_FOR_CARET_sym, l));
+  if (v & wxBREAK_FOR_LINE) l = WITH_REMEMBERED_STACK(scheme_make_pair(breakType_wxBREAK_FOR_LINE_sym, l));
+  if (v & wxBREAK_FOR_SELECTION) l = WITH_REMEMBERED_STACK(scheme_make_pair(breakType_wxBREAK_FOR_SELECTION_sym, l));
+  if (v & wxBREAK_FOR_USER_1) l = WITH_REMEMBERED_STACK(scheme_make_pair(breakType_wxBREAK_FOR_USER_1_sym, l));
+  if (v & wxBREAK_FOR_USER_2) l = WITH_REMEMBERED_STACK(scheme_make_pair(breakType_wxBREAK_FOR_USER_2_sym, l));
   return l;
 }
 

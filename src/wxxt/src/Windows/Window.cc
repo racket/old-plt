@@ -1808,6 +1808,12 @@ void wxWindow::GetTextExtent(const char *s, float *w, float *h, float *descent,
 void wxWindow::ForEach(void (*foreach)(wxWindow *w, void *data), void *data)
 {
   wxChildNode *node, *next;
+
+#ifdef MZ_PRECISE_GC
+  if (__type == wxTYPE_MENU_BAR)
+    return;
+#endif
+
   for (node = children->First(); node; node = next) {
     wxWindow *child;
     next = node->Next();

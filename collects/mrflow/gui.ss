@@ -272,7 +272,10 @@
                                          (sba:check-primitive-types sba-state)
                                          ;(printf "check time: ~a ms~n" (- (current-milliseconds) sba-end-time))
                                          )
-                                       (enable-evaluation) ; definition window has been locked until now
+                                       ; definition window has been locked until now, we need to
+                                       ; unlock to color (user modifications still won't be allowed
+                                       ; during coloring because of term-analysis-done?
+                                       (enable-evaluation)
                                        (send definitions-text color-all-labels)
                                        )
                                      (begin

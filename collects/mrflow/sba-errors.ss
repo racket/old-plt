@@ -48,11 +48,16 @@
           [error (make-sba-error labels gravity message)])
       (for-each (lambda (label)
                   (let ([term (lab:label-term label)])
-                    (assoc-set-set 
-                     assoc-set
-                     term
-                     (cons error (assoc-set-get assoc-set term cst:thunk-empty))
-                     #f)))
+                    (if (syntax-position term)
+                        (assoc-set-set 
+                         assoc-set
+                         term
+                         (cons error (assoc-set-get assoc-set term cst:thunk-empty))
+                         #f)
+                        (printf "~a error detected for term ~a: ~a~n"
+                                gravity
+                                (syntax-object->datum term)
+                                message))))
                 labels)))
   
   ; error-table label -> (listof sba-error)

@@ -380,8 +380,8 @@
                                                     term)]
                              [else
                               (begin
-                                (err:error-table-set (sba-state-errors sba-state)
-                                                     (list free-var-label-in)
+                                (set-error-for-label sba-state
+                                                     free-var-label-in
                                                      'red
                                                      ;(format "reference to undefined identifier: ~a in function ~a"
                                                      ;        free-var-name-in
@@ -591,8 +591,8 @@
                           (extend-edge-for-values sba-state simple-edge)))
                        ; (define-values (x) (... (values a b ...) ...))
                        (begin
-                         (err:error-table-set (sba-state-errors sba-state)
-                                              (list inflowing-label)
+                         (set-error-for-label sba-state
+                                              inflowing-label
                                               'red
                                               (format "context expected 1 value, received ~a values"
                                                       (label-list-length values-label)))
@@ -675,9 +675,9 @@
                                  (if (null? rest-arg?s-in)
                                      ; No match found.
                                      (begin
-                                       (err:error-table-set 
-                                        (sba-state-errors sba-state)
-                                        (list label)
+                                       (set-error-for-label
+                                        sba-state
+                                        label
                                         'red
                                         (format "procedure application: arity mismatch, given: ~a; ~a required arguments were given"
                                                 (if (label-prim? inflowing-case-lambda-label)
@@ -902,9 +902,9 @@
                                                                         splitting-rest-arg-edge)
                                                                        (inner-thunk))
                                                                      (begin
-                                                                       (err:error-table-set
-                                                                        (sba-state-errors sba-state)
-                                                                        (list inflowing-case-lambda-label)
+                                                                       (set-error-for-label
+                                                                        sba-state
+                                                                        inflowing-case-lambda-label
                                                                         'red
                                                                         (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
                                                                                 ; this would underline the primitive that generated the list
@@ -1026,9 +1026,9 @@
                                                                         splitting-rest-arg-edge)
                                                                        (inner-thunk))
                                                                      (begin
-                                                                       (err:error-table-set
-                                                                        (sba-state-errors sba-state)
-                                                                        (list inflowing-case-lambda-label)
+                                                                       (set-error-for-label
+                                                                        sba-state
+                                                                        inflowing-case-lambda-label
                                                                         'red
                                                                         (format "possible arity error (might be a side effect of generating an infinite list): function ~a expected ~a arguments, received ~a"
                                                                                 ; this would underline the primitive that generated the list
@@ -1143,8 +1143,8 @@
            ; trying to apply something not a function
            ; Note: nothing was done, so there's nothing to undo
            (begin
-             (err:error-table-set (sba-state-errors sba-state)
-                                  (list label)
+             (set-error-for-label sba-state
+                                  label
                                   'red
                                   (format "procedure application: expected procedure, given: ~a"
                                           (unexpand (syntax-object->datum
@@ -1308,8 +1308,8 @@
                                                   (label-cst-value inflowing-label))
                      #t)
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           "make-struct-type expected symbol")
                      (set-label-struct-type-error?! struct-type-label #t)
@@ -1331,8 +1331,8 @@
                                                       inflowing-label))
                      #t)
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           "make-struct-type expected structure type")
                      (set-label-struct-type-error?! struct-type-label #t)
@@ -1358,8 +1358,8 @@
                                                                    parent-fields-nbr)))
                      #t)
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           "make-struct-type expected number")
                      (set-label-struct-type-error?! struct-type-label #t)
@@ -1376,8 +1376,8 @@
                           (and (number? value) (zero? value))))
                    #t
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           "auto-initialized structure fields not yet supported: expected 0")
                      (set-label-struct-type-error?! struct-type-label #t)
@@ -1393,8 +1393,8 @@
                         (not (label-cst-value inflowing-label)))
                    #t
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           "auto-initialized structure fields not yet supported: expected #f")
                      (set-label-struct-type-error?! struct-type-label #t)
@@ -1410,8 +1410,8 @@
                         (null? (label-cst-value inflowing-label)))
                    #t
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           "structure properties not yet supported: expected ()")
                      (set-label-struct-type-error?! struct-type-label #t)
@@ -1553,8 +1553,8 @@
                           mutate-case-lambda-label mutate-edge)
                          #t))
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           "structure inspectors not yet supported: expected #f")
                      (set-label-struct-type-error?! struct-type-label #t)
@@ -1638,8 +1638,8 @@
                      (set! access inflowing-label)
                      #t)
                    (begin
-                     (err:error-table-set (sba-state-errors sba-state)
-                                          (list inflowing-label)
+                     (set-error-for-label sba-state
+                                          inflowing-label
                                           'red
                                           (format "make-struct-field-accessor: expects type <accessor procedure that requires a field index> as 1st argument, given: ~a"
                                                   (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label1)))
@@ -1665,9 +1665,9 @@
                                      (+ value (label-struct-type-parent-fields-nbr struct-type-label)))
                                #t)
                              (begin
-                               (err:error-table-set
-                                (sba-state-errors sba-state)
-                                (list inflowing-label)
+                               (set-error-for-label
+                                sba-state
+                                inflowing-label
                                 'red
                                 (format "make-struct-field-accessor: slot index for ~a not in [0, ~a]: ~a"
                                         (pp-type (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-accessor-label2)
@@ -1678,9 +1678,9 @@
                        (begin
                          (set! struct-type-label #f)
                          (set! access #f)
-                         (err:error-table-set
-                          (sba-state-errors sba-state)
-                          (list inflowing-label)
+                         (set-error-for-label
+                          sba-state
+                          inflowing-label
                           'red
                           (format "make-struct-field-accessor: expects type <non-negative exact integer> as 2nd argument, given: ~a"
                                   (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label4)))
@@ -1721,11 +1721,11 @@
                                          result-label accessor-body-edge)
                                         #t)
                                       (begin
-                                        (err:error-table-set
-                                         (sba-state-errors sba-state)
+                                        (set-error-for-label
+                                         sba-state
                                          ; we know we are inside a primitive, so we
                                          ; flag the entrance of the tunnel as the error.
-                                         (list tunnel-label)
+                                         tunnel-label
                                          'red
                                          (format "accessor expects type ~a as 1st argument, given: ~a"
                                                  (pp-type (get-type-from-label sba-state struct-type-label) 'create-make-struct-field-accessor-label5)
@@ -1758,9 +1758,9 @@
                          (set! struct-type-label #f)
                          (set! access #f)
                          (set! field-index #f)
-                         (err:error-table-set
-                          (sba-state-errors sba-state)
-                          (list inflowing-label)
+                         (set-error-for-label
+                          sba-state
+                          inflowing-label
                           'red
                           (format "make-struct-field-accessor: expects type <symbol> as 3rd argument, given: ~a"
                                   (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-accessor-label7)))
@@ -1821,9 +1821,9 @@
                      (set! mutate inflowing-label)
                      #t)
                    (begin
-                     (err:error-table-set
-                      (sba-state-errors sba-state)
-                      (list inflowing-label)
+                     (set-error-for-label
+                      sba-state
+                      inflowing-label
                       'red
                       (format "make-struct-field-mutator: expects type <mutator procedure that requires a field index> as 1st argument, given: ~a"
                               (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label1)))
@@ -1849,9 +1849,9 @@
                                      (+ value (label-struct-type-parent-fields-nbr struct-type-label)))
                                #t)
                              (begin
-                               (err:error-table-set
-                                (sba-state-errors sba-state)
-                                (list inflowing-label)
+                               (set-error-for-label
+                                sba-state
+                                inflowing-label
                                 'red
                                 (format "make-struct-field-mutator: slot index for ~a not in [0, ~a]: ~a"
                                         (pp-type (get-type-from-label sba-state (struct-type-label)) 'create-make-struct-field-mutator-label2)
@@ -1862,9 +1862,9 @@
                        (begin
                          (set! struct-type-label #f)
                          (set! mutate #f)
-                         (err:error-table-set
-                          (sba-state-errors sba-state)
-                          (list inflowing-label)
+                         (set-error-for-label
+                          sba-state
+                          inflowing-label
                           'red
                           (format "make-struct-field-mutator: expects type <non-negative exact integer> as 2nd argument, given: ~a"
                                   (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label4)))
@@ -1928,9 +1928,9 @@
                          (set! struct-type-label #f)
                          (set! mutate #f)
                          (set! field-index #f)
-                         (err:error-table-set
-                          (sba-state-errors sba-state)
-                          (list inflowing-label)
+                         (set-error-for-label
+                          sba-state
+                          inflowing-label
                           'red
                           (format "make-struct-field-mutator: expects type <symbol> as 3rd argument, given: ~a"
                                   (pp-type (get-type-from-label sba-state inflowing-label) 'create-make-struct-field-mutator-label7)))
@@ -1980,11 +1980,11 @@
                     state-label
                     (create-simple-edge (accessor-first-arg inflowing-label)))
                    (begin
-                     (err:error-table-set
-                      (sba-state-errors sba-state)
+                     (set-error-for-label
+                      sba-state
                       ; we know we are inside a primitive, so we
                       ; flag the entrance of the tunnel as the error.
-                      (list tunnel-label)
+                      tunnel-label
                       'red
                       (format "mutator expects type ~a as 1st argument, given: ~a"
                               error-first-arg
@@ -2000,11 +2000,11 @@
                     (accessor-second-arg inflowing-label)
                     state-edge)
                    (begin
-                     (err:error-table-set
-                      (sba-state-errors sba-state)
+                     (set-error-for-label
+                      sba-state
                       ; we know we are inside a primitive, so we
                       ; flag the entrance of the tunnel as the error.
-                      (list tunnel-label)
+                      tunnel-label
                       'red
                       (format "mutator expects type ~a as 2nd argument, given: ~a"
                               error-second-arg
@@ -2057,11 +2057,11 @@
                     state-label
                     (create-simple-edge (accessor-first-arg inflowing-label)))
                    (begin
-                     (err:error-table-set
-                      (sba-state-errors sba-state)
+                     (set-error-for-label
+                      sba-state
                       ; we know we are inside a primitive, so we
                       ; flag the entrance of the tunnel as the error.
-                      (list tunnel-label)
+                      tunnel-label
                       'red
                       (format "mutator expects type ~a as 1st argument, given: ~a"
                               error-first-arg
@@ -2075,11 +2075,11 @@
                (if (pred-second-arg inflowing-label)
                    #t
                    (begin
-                     (err:error-table-set
-                      (sba-state-errors sba-state)
+                     (set-error-for-label
+                      sba-state
                       ; we know we are inside a primitive, so we
                       ; flag the entrance of the tunnel as the error.
-                      (list tunnel-label)
+                      tunnel-label
                       'red
                       (format "mutator expects type ~a as 2nd argument, given: ~a"
                               error-second-arg
@@ -2095,11 +2095,11 @@
                     (accessor-third-arg inflowing-label)
                     state-edge)
                    (begin
-                     (err:error-table-set
-                      (sba-state-errors sba-state)
+                     (set-error-for-label
+                      sba-state
                       ; we know we are inside a primitive, so we
                       ; flag the entrance of the tunnel as the error.
-                      (list tunnel-label)
+                      tunnel-label
                       'red
                       (format "mutator expects type ~a as 3rd argument, given: ~a"
                               error-third-arg
@@ -2438,9 +2438,9 @@
                                        values-label vars-labels)
                                       ; (define-values (x y) (... (values a b c) ...))
                                       (begin
-                                        (err:error-table-set
-                                         (sba-state-errors sba-state)
-                                         (list inflowing-label)
+                                        (set-error-for-label
+                                         sba-state
+                                         inflowing-label
                                          'red
                                          (format "define-values: context expected ~a value, received ~a values"
                                                  vars-length (label-list-length values-label)))
@@ -2451,9 +2451,9 @@
                                             label-list))))
                           ; (define-values (x y) (... 1 ...))
                           (begin
-                            (err:error-table-set
-                             (sba-state-errors sba-state)
-                             (list define-label)
+                            (set-error-for-label
+                             sba-state
+                             define-label
                              'red
                              (format "define-values: context expected ~a values, received 1 non-multiple-values value"
                                      vars-length))
@@ -2547,9 +2547,9 @@
                                                  ; (let-values ([(x y) (... (values a b c ...) ...)]
                                                  ;             ...) ...)
                                                  (begin
-                                                   (err:error-table-get
-                                                    (sba-state-errors sba-state)
-                                                    (list inflowing-label)
+                                                   (set-error-for-label
+                                                    sba-state
+                                                    inflowing-label
                                                     'red
                                                     (format "let-values: context expected ~a value, received ~a values"
                                                             vars-length
@@ -2562,9 +2562,9 @@
                                                        label-list))))
                                      ; (let-values ([(x y) (... 1 ...)] ...) ...)
                                      (begin
-                                       (err:error-table-set
-                                        (sba-state-errors sba-state)
-                                        (list let-values-label)
+                                       (set-error-for-label
+                                        sba-state
+                                        let-values-label
                                         'red
                                         (format "let-values: context expected ~a values, received 1 non-multiple-values value"
                                                 vars-length))
@@ -2676,9 +2676,9 @@
                                                    values-label vars-stx)
                                                   ; [(x y) (... (values a b c) ...)]
                                                   (begin
-                                                    (err:error-table-set
-                                                     (sba-state-errors sba-state)
-                                                     (list inflowing-label)
+                                                    (set-error-for-label
+                                                     sba-state
+                                                     inflowing-label
                                                      'red
                                                      (format "letrec-values: context expected ~a value, received ~a values"
                                                              vars-length (label-list-length values-label)))
@@ -2690,9 +2690,9 @@
                                                         label-list))))
                                       ; [(x y) (... 1 ...))]
                                       (begin
-                                        (err:error-table-set
-                                         (sba-state-errors sba-state)
-                                         (list letrec-values-label)
+                                        (set-error-for-label
+                                         sba-state
+                                         letrec-values-label
                                          'red
                                          (format "letrec-values: context expected ~a values, received 1 non-multiple-values value"
                                                  vars-length))
@@ -2838,8 +2838,8 @@
                               var-label binding-edge)
                              (add-edge-and-propagate-set-through-edge
                               void-label set!-edge))
-                           (err:error-table-set (sba-state-errors sba-state)
-                                                (list set!-label)
+                           (set-error-for-label sba-state
+                                                set!-label
                                                 'red
                                                 (format "set!: cannot set undefined identifier: ~a" var-name)))))])
               (if enclosing-lambda-label
@@ -2853,57 +2853,57 @@
         set!-label)]
      [(quote-syntax foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "quote-syntax not yet implemented"))
         label)]
      [(with-continuation-mark foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "with-continuation-mark not yet implemented"))
         label)]
      [(define-syntaxes foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "define-syntaxes not yet implemented"))
         label)]
      [(module foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "module not yet implemented"))
         label)]
      [(require foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "require not yet implemented"))
         label)]
      [(require-for-syntax foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "require-for-syntax not yet implemented"))
         label)]
      [(provide foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "provide not yet implemented"))
         label)]
      [(#%plain-module-begin foo ...)
       (let ([label (create-simple-label sba-state term)])
-        (err:error-table-set (sba-state-errors sba-state)
-                             (list label)
+        (set-error-for-label sba-state
+                             label
                              'red
                              (format "#%plain-module-begin not yet implemented"))
         label)]
@@ -3727,8 +3727,8 @@
                               ; term anymore in check-primitive-types (yet)... See the commented call to
                               ; associate-label-with-type below.
                               (begin
-                                (err:error-table-set (sba-state-errors sba-state)
-                                                     (list label)
+                                (set-error-for-label sba-state
+                                                     label
                                                      'red
                                                      (format "primitive expects argument of type <pair>; given ~a"
                                                              (pp-type (get-type-from-label
@@ -3776,8 +3776,8 @@
                               ; term anymore in check-primitive-types (yet)... See the commented call to
                               ; associate-label-with-type below.
                               (begin
-                                (err:error-table-set (sba-state-errors sba-state)
-                                                     (list label)
+                                (set-error-for-label sba-state
+                                                     label
                                                      'red
                                                      (format "primitive expects argument of type <vector>; given ~a"
                                                              (pp-type (get-type-from-label
@@ -3822,8 +3822,8 @@
                               ; term anymore in check-primitive-types (yet)... See the commented call to
                               ; associate-label-with-type below.
                               (begin
-                                (err:error-table-set (sba-state-errors sba-state)
-                                                     (list label)
+                                (set-error-for-label sba-state
+                                                     label
                                                      'red
                                                      (format "primitive expects argument of type <promise>; given ~a"
                                                              (pp-type (get-type-from-label
@@ -3954,8 +3954,8 @@
                           (begin
                             #t)
                           (begin
-                            (err:error-table-set (sba-state-errors sba-state)
-                                                 (list label)
+                            (set-error-for-label sba-state
+                                                 label
                                                  'red
                                                  (format "value ~a not a subtype of union ~a inside application of ~a"
                                                          (pp-type (get-type-from-label
@@ -4298,8 +4298,8 @@
         #t
         (begin
           (when error?
-            (err:error-table-set (sba-state-errors sba-state)
-                                 (list label)
+            (set-error-for-label sba-state
+                                 label
                                  'red
                                  (format "~a not a subtype of ~a" 
                                          (pp-type t1 'subtype)
@@ -4332,7 +4332,14 @@
   (define (get-span-from-label label)
     (syntax-span (label-term label)))
   
-  ; label -> (listof sba-error)
+  ; sba-state label (union 'red 'green 'orange) string -> void
+  (define (set-error-for-label sba-state label gravity message)
+    (err:error-table-set (sba-state-errors sba-state)
+                         (list label)
+                         gravity
+                         message))
+
+  ; sba-state label -> (listof sba-error)
   ; extracts error messages.
   (define (get-errors-from-label sba-state label)
     (err:error-table-get (sba-state-errors sba-state) label))

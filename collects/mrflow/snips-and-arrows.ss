@@ -223,6 +223,18 @@
                         (is-action-allowed? gui-view-state this)))
                (super-can-delete? start len)))
         
+        (rename [super-can-save-file? can-save-file?])
+        ; exact-non-negative-integer exact-non-negative-integer -> boolean
+        (define/override (can-save-file? filename format)
+          (if (symbol? gui-state)
+              (super-can-save-file? filename format)
+              (if (and (gui-state-term-analysis-done? gui-state)
+                       (not (saav:analysis-currently-modifying? gui-view-state)))
+                  (begin
+                    (saav:after-user-action gui-view-state)
+                    (super-can-save-file? filename format))
+                  #f)))
+        
         (rename [super-after-insert after-insert])
         ; exact-non-negative-integer exact-non-negative-integer -> void
         (define/override (after-insert start len)
@@ -275,9 +287,13 @@
         
         ; -> void
         ; colors all registered labels
+        ; The analysis is only officially done after we've colored everything, otherwise user
+        ; insertions might occur before we have time to finish coloring and we will color the
+        ; wrong stuff...
         (define/public (color-all-labels)
-          (set-gui-state-term-analysis-done?! gui-state #t)
-          (saav:color-all-labels gui-view-state))
+          (unless (symbol? gui-view-state)
+            (saav:color-all-labels gui-view-state)
+            (set-gui-state-term-analysis-done?! gui-state #t)))
         
         ; -> void
         ; remove all snips and arrows, and resets text style in all editors

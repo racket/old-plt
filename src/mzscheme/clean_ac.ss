@@ -8,7 +8,7 @@
   (let ([l (read-line)])
     (unless (eof-object? l)
       (cond
-       [(regexp-match "^Directory and file names:" l)
+       [(regexp-match "^Installation directories:" l)
 	(printf "~a~n" l)
 	;; start skipping lines, except --prefix:
 	(loop 1)]
@@ -21,7 +21,7 @@
 	    (newline)
 	    (loop (sub1 n))))
 	(loop #f)]
-       [(and skip (regexp-match "--prefix" l))
+       [(and skip (regexp-match "^ *--prefix=" l))
 	(printf "  --prefix=TARGETDIR      install to TARGETDIR (usually ..../plt)~n")
 	(loop skip)]
        [skip

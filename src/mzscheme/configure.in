@@ -6,33 +6,33 @@
 
 AC_INIT(mzscheme/src/bignum.c)
 
-AC_ARG_ENABLE(mred, ""  feature: mred           compile MrEd as well as MzScheme (enabled by default), , enable_mred=yes )
+AC_ARG_ENABLE(mred, [  feature: mred           compile MrEd as well as MzScheme (enabled by default)], , enable_mred=yes )
 
-AC_ARG_ENABLE(gl, ""  feature: gl             include OpenGL support in MrEd (enabled by default), , enable_gl=yes )
+AC_ARG_ENABLE(gl, [  feature: gl             include OpenGL support in MrEd (enabled by default)], , enable_gl=yes )
 
-AC_ARG_ENABLE(dynlib, ""  feature: dynlib         create shared libraries)
+AC_ARG_ENABLE(dynlib, [  feature: dynlib         create shared libraries])
 
-AC_ARG_ENABLE(sgc, ""  feature: sgc            use Senora GC instead of the Boehm GC)
-AC_ARG_ENABLE(sgcdebug, ""  feature: sgcdebug       use Senora GC for debugging)
-AC_ARG_ENABLE(account, ""  feature: account        3m: use memory-accounting GC)
-AC_ARG_ENABLE(paccount, ""  feature: paccount       3m: use precise memory-accounting GC)
+AC_ARG_ENABLE(sgc, [  feature: sgc            use Senora GC instead of the Boehm GC])
+AC_ARG_ENABLE(sgcdebug, [  feature: sgcdebug       use Senora GC for debugging])
+AC_ARG_ENABLE(account, [  feature: account        3m: use memory-accounting GC])
+AC_ARG_ENABLE(paccount, [  feature: paccount       3m: use precise memory-accounting GC])
 
-AC_ARG_ENABLE(float, ""  feature: float          include support for single-precision floats)
-AC_ARG_ENABLE(floatinstead, ""  feature: floatinstead   compile to use single-precision by default)
+AC_ARG_ENABLE(float, [  feature: float          include support for single-precision floats])
+AC_ARG_ENABLE(floatinstead, [  feature: floatinstead   compile to use single-precision by default])
 
-AC_ARG_ENABLE(oskit, ""  feature: oskit          compile OSKit-based MzScheme kernel)
-AC_ARG_ENABLE(smalloskit, ""  feature: smalloskit     compile small OSKit-based MzScheme kernel)
+AC_ARG_ENABLE(oskit, [  feature: oskit          compile OSKit-based MzScheme kernel])
+AC_ARG_ENABLE(smalloskit, [  feature: smalloskit     compile small OSKit-based MzScheme kernel])
 
-AC_ARG_ENABLE(wbuild, ""  feature: wbuild         compile and use wbuild for .w sources)
-AC_ARG_ENABLE(perl, ""  feature: perl           use perl to regenerate sources)
+AC_ARG_ENABLE(wbuild, [  feature: wbuild         compile and use wbuild for .w sources])
+AC_ARG_ENABLE(perl, [  feature: perl           use perl to regenerate sources])
 
-AC_ARG_ENABLE(gprof, ""  feature: gprof          compile for profiling with gprof (gcc only))
-AC_ARG_ENABLE(gcov, ""  feature: gcov           compile to gather gcov statistics (gcc3 only))
+AC_ARG_ENABLE(gprof, [  feature: gprof          compile for profiling with gprof (gcc only)])
+AC_ARG_ENABLE(gcov, [  feature: gcov           compile to gather gcov statistics (gcc3 only)])
 
-AC_ARG_ENABLE(noopt, ""  feature: noopt          drop -O C flags)
+AC_ARG_ENABLE(noopt, [  feature: noopt          drop -O C flags])
 
-AC_ARG_ENABLE(xonx,""  feature: xonx           compile X11 (not Quartz) MrEd for Mac OS X)
-AC_ARG_ENABLE(libfw,""  feature: libfw          install Mac OS X frameworks to /Library/Frameworks)
+AC_ARG_ENABLE(xonx, [  feature: xonx           compile X11 (not Quartz) MrEd for Mac OS X])
+AC_ARG_ENABLE(libfw, [  feature: libfw          install Mac OS X frameworks to /Library/Frameworks])
 
 ###### Get OS Type #######
 

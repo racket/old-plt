@@ -321,7 +321,7 @@
 	  panel))])))
 
 (define drscheme:scheme-project-editor-frame%
-  (class-asi mred:frame%
+  (class-asi mred:editor-frame%
     (public
      [canvas% drscheme:scheme-project-editor-canvas%]
      project

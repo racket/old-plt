@@ -214,10 +214,10 @@
   ;; Just a few extra key bindings:
   (install-standard-text-bindings repl-buffer)
   (let ([console-keymap (make-object keymap%)])
-    (send console-keymap add-key-function
+    (send console-keymap add-function
 	  "previous-input"
 	  (lambda (value key-event) (previous-input)))
-    (send console-keymap add-key-function
+    (send console-keymap add-function
 	  "next-input"
 	  (lambda (value key-event) (next-input)))
     (send console-keymap map-function "m:p" "previous-input")

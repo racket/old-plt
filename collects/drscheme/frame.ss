@@ -5,6 +5,7 @@
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:app : drscheme:app^]
+	  [help : help:start-help-desk^]
 	  [zodiac : drscheme:zodiac^])
   
   (rename [-mixin mixin])
@@ -24,17 +25,7 @@
 	    "Help Desk"
 	    help-menu
 	    (lambda (item evt)
-	      (parameterize ([current-namespace (make-namespace)]
-			     [mred:current-eventspace (mred:make-eventspace)]
-			     [current-custodian (make-custodian)])
-		(let/ec k
-		  (for-each
-		   (lambda (filename) (require-library/proc filename "help"))
-		   ((require-library "info.ss" "help")
-		    'mred-libraries
-		    (lambda ()
-		      (mred:message-box "Help Desk"
-					"Cannot load help desk. info.ss format changed")))))))))]
+	      (help:start-help-desk))))]
        [make-root-area-container
 	(lambda (% parent)
 	  (let* ([s-root (super-make-root-area-container mred:vertical-panel% parent)]

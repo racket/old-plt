@@ -2,6 +2,16 @@
   (link [mred : mred-interfaces^ (mred-interfaces@)]
 	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	[init : drscheme:init^ ((require-relative-library "init.ss") mred)]
+
+	[url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]
+
+	[help : help:start-help-desk^ ((require-library "start-help-desk.ss" "help")
+				       (mzlib function)
+				       (mzlib string)
+				       (mzlib file)
+				       url
+				       (mred : mred^))]
+
 	[framework : framework^ ((require-library "frameworkr.ss" "framework") mzlib mred)]
 	[print-convert : mzlib:print-convert^
 		       ((require-library "pconverr.ss")
@@ -26,7 +36,7 @@
 				     mred mzlib framework print-convert app
 				     edit language snip
 				     init interface face graph
-				     aries zodiac)]
+				     help aries zodiac)]
 	[language : drscheme:language^
 		  ((require-relative-library "language.ss")
 		   mred framework

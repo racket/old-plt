@@ -10,6 +10,7 @@
 			   [interface : drscheme:interface^]
 			   [face : drscheme:face^]
 			   [graph : drscheme:graph^]
+			   [help-desk : help:start-help-desk^]
 			   [aries : plt:aries^]
 			   [zodiac : drscheme:zodiac^])
   (link [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
@@ -31,7 +32,8 @@
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
 		mred mzlib framework
-		unit compound-unit* app zodiac)]
+		unit compound-unit* app
+		help-desk zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
 	   mred mzlib framework app compound-unit* frame edit rep

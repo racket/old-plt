@@ -20,7 +20,7 @@
        (lambda ()
 	 (exit-handler (lambda (x) (exit-help)))
 	 (invoke-unit/sig
-	  (require-relative-library "helpr.ss")
+	  (require-library "helpr.ss" "help")
 	  help:option^
 	  mzlib:function^
 	  mzlib:string^

@@ -1,3 +1,5 @@
+(define-signature help:start-help-desk^
+  (start-help-desk))
 
 (begin-elaboration-time
  (require-relative-library "search-sig.ss"))
@@ -7,4 +9,3 @@
 
 (define-signature help:option^
   (startup-url))
-

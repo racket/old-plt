@@ -29,10 +29,8 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 	 search-path))
 
 (unless rl-path
-  (fprintf (current-error-port)
-	   "mzmake.ss: can't find readline include files and/or library;~
-	  ~n  try editing `search-path' in mzmake.ss~n")
-  (exit 1))
+  (error 'readline-installer
+	 "can't find readline include files and/or library; try editing `search-path' in mzmake.ss"))
 
 (require-library "make.ss" "make")
 (require-library "link.ss" "dynext")

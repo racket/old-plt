@@ -141,22 +141,22 @@
    (class arrow:edit% (margin arg-main arg-canvas)
      (inherit 
        edit-sequence 
-       editor-last-position 
-       editor-change-style 
-       editor-find-wordbreak 
-       editor-set-wordbreak-map
-       editor-last-line 
-       editor-position-line 
-       editor-line-start-position 
-       editor-get-keymap 
+       last-position 
+       change-style 
+       find-wordbreak 
+       set-wordbreak-map
+       last-line 
+       position-line 
+       line-start-position 
+       get-keymap 
        relocate-change-style
        real-start-position
        frame-pos->source-pos
        draw-arrows add-arrow delete-arrow
        margin-length
        relocate-set-position
-       editor-get-start-position 
-       editor-get-end-position)
+       get-start-position 
+       get-end-position)
 
      (public
 
@@ -180,9 +180,9 @@
 	 ;; input and output in terms of relocate positions
 	 ;; not absolute positions
 	 (lambda (posn)
-	   (let ([line (editor-position-line (real-start-position posn))])
+	   (let ([line (position-line (real-start-position posn))])
 	     (unless (vector? vec-free-jump-posns)
-	       (set! vec-free-jump-posns (make-vector (editor-last-line) #t)))
+	       (set! vec-free-jump-posns (make-vector (last-line) #t)))
 	     (let* ([free-line
 		      (recur loop ([i 0])
 			(cond
@@ -192,7 +192,7 @@
 			  [(jump-posn-free? (- line i)) (- line i)]
 			  [else (loop (add1 i))]))]
 		     [_ (vector-set! vec-free-jump-posns free-line #f)]
-		     [start (editor-line-start-position free-line)]
+		     [start (line-start-position free-line)]
 		     [src (frame-pos->source-pos (+ margin-length start))])
 	       (pretty-debug-gui 
 		 `(alloc-jump-posn ,posn ,line ,free-line ,start ,src))
@@ -336,19 +336,19 @@
 	     [(string=? name "(")
 	       (let* ( [real-start (real-start-position start-pos)]
 		       [rparen (scheme-paren:forward-match 
-				 this real-start (editor-last-position))])
-		 (editor-change-style delta real-start (add1 real-start))
+				 this real-start (last-position))])
+		 (change-style delta real-start (add1 real-start))
 		 (if (number? rparen)
-		   (editor-change-style delta (sub1 rparen) rparen)
+		   (change-style delta (sub1 rparen) rparen)
 		   (printf "Can't match paren from ~s ~s~n" start-pos rparen)))]
 	     [else
 	       (let* ([endbox (box (real-start-position start-pos))]
-		       [_ (editor-find-wordbreak #f endbox break-special)]
+		       [_ (find-wordbreak #f endbox break-special)]
 		       [startbox (box (unbox endbox))]
-		       [_ (editor-find-wordbreak startbox #f break-special)])
+		       [_ (find-wordbreak startbox #f break-special)])
 		 '(pretty-debug-gui `(highlight start-pos ,start-pos endbox ,endbox
 				       startbox ,startbox))
-		 (editor-change-style delta (unbox startbox) (unbox endbox)))]))]
+		 (change-style delta (unbox startbox) (unbox endbox)))]))]
 
        [add-check-annotation
 	 (match-lambda
@@ -365,13 +365,13 @@
        [next-check-annotation
 	 (lambda ()
 	   (next-check-annotation-list
-	     (editor-get-end-position) < list-check-annotations 0))]
+	     (get-end-position) < list-check-annotations 0))]
 
        [prev-check-annotation
 	 (lambda ()
 	   (next-check-annotation-list 
-	     (editor-get-start-position) > (reverse list-check-annotations) 
-	     (editor-last-position)))]
+	     (get-start-position) > (reverse list-check-annotations) 
+	     (last-position)))]
 
        [next-check-annotation-list
 	 (lambda (start cmp list-annotations wrap)
@@ -409,8 +409,8 @@
 			    (memq break-special currmap))
 			(send wb set-map currchar
 			      (cons break-special currmap)))))
-	 (editor-set-wordbreak-map wb))
-       (let ([keymap (editor-get-keymap)])
+	 (set-wordbreak-map wb))
+       (let ([keymap (get-keymap)])
 	 (send keymap add-function 
 	   "next-check-annotation"
 	   (lambda (edit event)
@@ -602,7 +602,7 @@
 	(lambda () 
 	  (set! te edit)
 	  (let* ([frame (send (ivar edit main) filename->frame
-			      (send edit editor-get-filename))])
+			      (send edit get-filename))])
 	    (assert (is-a? frame frame%) 'highlight frame)
 	    (send frame show #t)
 	    (send edit relocate-set-position start-pos)
@@ -615,7 +615,7 @@
 	(lambda ()
 	  (pretty-debug-gui `(move-before-snip))
 	  (send edit relocate-set-position start-pos)
-	  (send edit editor-set-caret-owner #f 'immediate))]
+	  (send edit set-caret-owner #f 'immediate))]
 
        [show-type
 	(lambda ()
@@ -738,17 +738,17 @@
 		  (new-menu-item "Close Menu" #f))
        
             ;; Get global location of expr
-            (send edit editor-position-location 
+            (send edit position-location 
               (send edit real-start-position where)
               xb yb)
             (pretty-debug-gui 
               `(source-pos ,where 
                  frame-pos ,(send edit real-start-position where)))
 
-            (pretty-debug-gui `(editor-position-location returns ,xb ,yb))
+            (pretty-debug-gui `(position-location returns ,xb ,yb))
             ;; Convert to local location
-            (send edit editor-local-to-global xb yb)
-            (pretty-debug-gui `(editor-local-to-global returns ,xb ,yb))
+            (send edit local-to-global xb yb)
+            (pretty-debug-gui `(local-to-global returns ,xb ,yb))
             (send (ivar edit canvas) popup-menu menu 
               (inexact->exact (unbox xb))
 	      (inexact->exact (+ (unbox yb) offset-menu)))))]
@@ -874,11 +874,11 @@
                 (file-name-from-path filename) direction))
        
             ;; Get global location of expr
-            (send edit editor-position-location 
+            (send edit position-location 
               (send edit real-start-position where)
               xb yb)
-            (send edit editor-local-to-global xb yb)
-            (pretty-debug-gui `(editor-local-to-global returns ,xb ,yb))
+            (send edit local-to-global xb yb)
+            (pretty-debug-gui `(local-to-global returns ,xb ,yb))
 
             (send (ivar edit canvas) popup-menu menu 
               (inexact->exact (+ (unbox xb) (car offsets)))
@@ -907,11 +907,11 @@
                   (send (ivar to edit) get-filename))))
        
             ;; Get global location of expr
-            (send edit editor-position-location 
+            (send edit position-location 
               (send edit real-start-position where)
               xb yb)
-            (send edit editor-local-to-global xb yb)
-            (pretty-debug-gui `(editor-local-to-global returns ,xb ,yb))
+            (send edit local-to-global xb yb)
+            (pretty-debug-gui `(local-to-global returns ,xb ,yb))
 
             (send (ivar edit canvas) popup-menu menu 
               (inexact->exact (+ (unbox xb) (car offsets)))

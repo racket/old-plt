@@ -44,6 +44,7 @@
     ;; ----------
 
     (override
+
       [on-close
         (lambda ignored
 	  (send main on-frame-close filename)
@@ -151,8 +152,7 @@
           ;; and to load and annotate file
           (set! program-edit 
             (send main annotated-edit display-mode filename program-canvas))
-          (send program-canvas set-editor 
-		(send program-edit get-editor)))]
+          (send program-canvas set-editor program-edit))]
 
       [focus-def
         (lambda (pos)
@@ -276,7 +276,8 @@
 
 	(set! filter-items (reverse filter-items))
 	(send (car filter-items) check #t)
-	(analysis-set-arrow-filter! #f)))
+	(analysis-set-arrow-filter! #f))
+        (frame:reorder-menus this))
 
     ;; ---------------------------------------------------------
 

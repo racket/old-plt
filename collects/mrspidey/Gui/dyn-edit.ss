@@ -27,16 +27,16 @@
   (class spidey:static-edit% (arg-margin . init-args)
     (inherit 
      edit-sequence
-     editor-position-line
-     editor-change-style
-     editor-set-clickback
-     editor-flash-on
-     editor-set-position
-     editor-scroll-to-position
-     editor-get-text
-     editor-insert
-     editor-delete
-     editor-set-tabs)
+     position-line
+     change-style
+     set-clickback
+     flash-on
+     set-position
+     scroll-to-position
+     get-text
+     insert
+     delete
+     set-tabs)
 
     (public
       ;; ----------
@@ -50,9 +50,9 @@
 
       [insert-line
         (lambda (s)
-          (editor-insert margin)
-          (editor-insert s)
-          (editor-insert (string #\newline)))]
+          (insert margin)
+          (insert s)
+          (insert (string #\newline)))]
 
       ;; ----------
 
@@ -62,7 +62,7 @@
             ;;(pretty-debug-gui `(accout-for-margin ,pos ,try))
             (let ([better
                     (+ pos 
-                      (* margin-length (add1 (editor-position-line (+ try 0)))))])
+                      (* margin-length (add1 (position-line (+ try 0)))))])
               (if (= better try)
                 try
                 (loop better)))))]
@@ -94,7 +94,7 @@
       [frame-pos->source-pos
         (lambda (pos)
           (assert (number? pos) 'frame-pos->source-pos)
-          (let ([pos (- pos (* margin-length (add1 (editor-position-line pos))))])
+          (let ([pos (- pos (* margin-length (add1 (position-line pos))))])
             (let loop ([l sniplist])
               (cond
                 [(null? l) pos]
@@ -109,31 +109,31 @@
           (let ([s (real-start-position src-start)]
                  [e (real-end-position src-end)])
             (pretty-debug-gui `(change-style ,src-start ,src-end ,s ,e))
-            (editor-change-style delta s e)))]
+            (change-style delta s e)))]
 			
       [relocate-set-clickback
         (lambda (src-start src-end . args)
-          (apply editor-set-clickback
+          (apply set-clickback
             (real-start-position src-start)
             (real-end-position src-end)
             args))]
       [relocate-flash-on
         (lambda (src-start src-end a b c)
-          (editor-flash-on (real-start-position src-start)
+          (flash-on (real-start-position src-start)
             (real-end-position src-end) a b c))]
       [relocate-scroll-to-position
         (lambda (pos)
           (let ([real-pos (real-start-position pos)])
             '(pretty-print `(scroll-to-position ,pos ,real-pos))
-            (editor-set-position real-pos)
-            (editor-scroll-to-position real-pos)))]
+            (set-position real-pos)
+            (scroll-to-position real-pos)))]
       ;;
       ;; watch this function......
       [relocate-set-position
         (opt-lambda
           (pos [end 'same][eol #f][scroll #t])
           (let ([end (if (eq? end 'same) 'same (real-end-position end))])
-            (editor-set-position (real-start-position pos) end
+            (set-position (real-start-position pos) end
               eol scroll)))]
 ;      [match-paren-forward
 ;        (lambda (source-start)
@@ -143,14 +143,14 @@
 	       
       [relocate-get-text
         (opt-lambda ([start -1][end -1][flat #f])
-          (editor-get-text (real-start-position start)
+          (get-text (real-start-position start)
             (real-end-position end) flat))]
       [select-snip
         (lambda (pos snip)
           (edit-sequence
             (lambda ()
               (send snip own-caret #f)
-              (editor-set-position 
+              (set-position 
                 (real-end-position pos) (real-start-position pos)))))]
       [relocate-insert-snip
         (lambda (snip pos)
@@ -159,7 +159,7 @@
             (error "Cannot put two snips in the same position~n"))
           (let ([real-pos (real-start-position pos)])
             (set! sniplist (cons pos sniplist))
-            (editor-insert snip real-pos))
+            (insert snip real-pos))
           ;;(lock #t)
           )]
       [relocate-delete-snip
@@ -168,7 +168,7 @@
             (error  "Cannot remove snip from ~s" pos))
           (set! sniplist (remv pos sniplist))
           (let ([pos (real-start-position pos)])
-            (editor-delete pos (add1 pos))))]
+            (delete pos (add1 pos))))]
       )
 
     (sequence
@@ -178,7 +178,7 @@
 
       ;; set-tabs doesn't work right past list of specified tabs
       ;; so specify all tabs to column 200
-      (editor-set-tabs 
+      (set-tabs 
         (recur loop ([p margin-length])
           (if (< p 200) 
             (cons p (loop (+ p 8)))

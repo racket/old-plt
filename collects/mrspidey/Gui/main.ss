@@ -386,7 +386,7 @@
 		     (mode-edit-class mode)
 		     (if (multiple-files) "  " "")
 		     this canvas)])
-                (send edit editor-set-filename filename)
+                (send edit set-filename filename)
                 (send edit edit-sequence
                   (lambda ()
                     (pretty-debug-gui "loading!")
@@ -406,13 +406,13 @@
                         (for i 0 NUM-EXTRA-LINES (send edit insert-line ""))))
                     (close-input-port port)
                     (pretty-debug-gui `(last-line ,(send edit last-line)))
-                    (send edit editor-change-style base-delta 
-                      0 (send edit editor-last-position))
+                    (send edit change-style base-delta 
+                      0 (send edit last-position))
 
                     (pretty-debug-gui "annotating!")
                     (annotate! filename edit mode annotations)
 
-                    (send edit editor-set-position 0)
+                    (send edit set-position 0)
                     (pretty-debug-gui `(annotate-buffer done))))
 
                 edit)]))]

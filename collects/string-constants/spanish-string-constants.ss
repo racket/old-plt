@@ -2,11 +2,15 @@
 
  ;;; when translating this constant, substitue name of actual langauge for `English'
  (is-this-your-native-language
-  "¿es español tu idioma materno?")
+  "¿Es español tu idioma materno?")
 
  (are-you-sure-you-want-to-switch-languages
   "Esto cambiará el idioma de la interfaz, lo que requiere que reinicies DrScheme. ¿Estas seguro(a)?")
  
+
+ (accept-and-quit "Aceptar y abandonar")
+ (accept-and-exit "Aceptar y salir")
+
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
  (drscheme "DrScheme")
  (ok "OK")
@@ -489,7 +493,9 @@
  (sharing-printing-label "Show sharing in values")
  (use-pretty-printer-label "Insertar caracteres de nueva línea en valores impresos")
  (input-syntax "Sintáxis de Entrada")
+ (dynamic-properties "Propiedades dinámicas")
  (output-syntax "Sintáxis de Salida")
+ (debugging "Depurando")
  (whole/fractional-exact-numbers-label "Imprimir números como fracciones")
  (booleans-as-true/false-label "Imprimir valores booleanos usando true y false")
  (show-details-button-label "Mostrar Detalles")
@@ -509,6 +515,9 @@
  (r5rs-lang-name "R5RS sin depuración (MzScheme)")
  (unknown-debug-frame "[desconocido]")
  
+ (bad-module-language-specs
+  "Las especificaciones de drscheme-language-position y drscheme-language-modules son incorrectas. Cuando las longitudes de drscheme-language-position y drscheme-language-module son iguales, se espara que sus valores sean (listof (cons string (listof string))) y (listof (listof string)) respectivamente.  Recibí ~e y ~e")
+
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")
  (files-interactions "Interacciones de ~a") ;; filled with a filename

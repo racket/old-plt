@@ -54,29 +54,23 @@
           (set-box/f! wb w)
           (set-box/f! hb h)))
       (define (get-max-view xb yb wb hb full?)
-	(printf "get-max-view~n")
 	(calc-view xb yb wb hb full?))
 
       (define (get-view xb yb wb hb full?)
-	(printf "get-view~n")
 	(calc-view xb yb wb hb full?))
 
       (define (grab-caret domain)
-	(printf "grab-caret ~s~n" domain)
 	(void))
-      (define (needs-update localx localy x y) 
-	(printf "needs-update~n"))
+      (define (needs-update localx localy x y)
+	(void))
       (define (refresh-delayed?)
-	(printf "refresh-delayed?~n")
 	delayed?)
       (define (resized refresh?) 
-	(printf "resized~n")
         (when refresh?
           (let-values ([(w h) (send dc get-size)])
             (send editor refresh 0 0 w h 'no-caret))))
       
       (define (scroll-to localx localy w h refresh? bias)
-	(printf "scroll-to~n")
         (when refresh?
           (let-values ([(w h) (send dc get-size)])
             (send editor refresh 0 0 w h 'no-caret))))
@@ -84,14 +78,15 @@
       
       (super-init)
 
+      (send dc start-doc (format "Creating ~a" filename))
+      (send dc start-page)
+
       (set! delayed? #t)
       (send editor set-admin #f)
       (send editor size-cache-invalid)
       (send editor set-admin this)
 
       (set! delayed? #f)
-      (send dc start-doc (format "Creating ~a" filename))
-      (send dc start-page)
       (let-values ([(w h) (send dc get-size)])
         (send editor refresh 0 0 w h 'no-caret))
       (send dc end-page)
@@ -179,8 +174,7 @@
 	  (when (box? h)
 	    (set! height (unbox h)))
 	  (when (box? w)
-	    (set! width (unbox w)))
-	  (printf "bracket get-extent: ~s~n" (list descent space lspace rspace)))])
+	    (set! width (unbox w))))])
       
       (inherit get-style)
       (inherit set-tight-text-fit)
@@ -324,9 +318,7 @@
 			(set-box/f! descentb (max 0 descent))
 			(set-box/f! spaceb (max 0 ascent))
 			(set-box/f! lspace 0)
-			(set-box/f! rspace 0)
-			(printf "greek get-extent ~s~n"
-				(list wb hb descentb spaceb lspace rspace))))]
+			(set-box/f! rspace 0)))]
 		   [draw
 		    (lambda (dc x y left top right bottom dx dy draw-caret)
 		      (let ([old-font (send dc get-font)])
@@ -402,10 +394,7 @@
 			(set-box/f! space-b space)
 			(set-box/f! lspace-b lspace)
 			(set-box/f! rspace-b rspace))
-		      (send dc set-font old-font)
-		      (printf
-		       "drawing get-extent: ~s~n"
-		       (list width-b height-b descent-b space-b lspace-b rspace-b))))])
+		      (send dc set-font old-font)))])
 		(inherit set-snipclass)
 		(sequence
 		  (super-init)
@@ -449,7 +438,6 @@
 	   [get-w/h/d/s/l/r
 	    (lambda (dc)
 	      (let-values ([(width height descent space) (send dc get-text-extent "a")])
-		(printf "get-text-extent.1: ~s~n" (list width height descent space))
 		(values (+ margin (* 2 width) margin) height descent space 0 0)))])
       (drawing "robby:ellipses"
 	       get-w/h/d/s/l/r
@@ -476,7 +464,6 @@
 			      [(arrow-space) (- (+ text-height arrow/letter-space)
 						(- (/ cap-size 2) (/ arrow-height 2)))]
 			      [(total-arrow-height) (+ cap-size arrow-space)])
-		  (printf "get-text-extent.2: ~s~n" (list width height descent space))
 		  (values (* width 2)
 			  total-arrow-height
 			  0
@@ -493,7 +480,6 @@
 					;(send dc draw-rectangle x y w h)
 					;(send dc draw-rectangle x (+ y s) w (- h d s))
 
-		(printf "get-text-extent.3: ~s~n" (list bgw bgh bgd bgs))
 		(let* ([x1 (+ x w)]
 		       [y1 (+ y (- h (/ cap-size 2)))]
 		       [x2 (- x1 4)]
@@ -511,7 +497,6 @@
 	    (lambda (dc x y text descender?)
 	      (let-values ([(w h d s _1 _2) ((get-w/h/d/s/l/r descender?) dc)]
 			   [(bw bh bd bs) (send dc get-text-extent text)])
-		(printf "get-text-extent.4: ~s~n" (list bw bh bd bs))
 		(send dc draw-text text (floor (+ x (- (/ w 2) (/ bw 2)))) y)))]
 	   
 	   [arrow
@@ -771,9 +756,7 @@
 	    (set-box/f! db (size-descent size))
 	    (set-box/f! sb (size-space size))
 	    (set-box/f! lb (size-left size))
-	    (set-box/f! rb (size-right size))
-	    (printf "position get-extent: ~s~n"
-		    (list wb hb db sb lb rb)))))
+	    (set-box/f! rb (size-right size)))))
       
       (define (draw dc x y left top right bottom dx dy draw-caret)
 	(let ([positions (calc-positions (send admin get-sizes))])

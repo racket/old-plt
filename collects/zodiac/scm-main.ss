@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.211 2000/06/08 19:52:28 mflatt Exp $
+; $Id: scm-main.ss,v 1.212 2000/06/08 22:35:32 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -199,105 +199,105 @@
   
   (define parse-expr
     (lambda (who-str kwd:who expr bodies env attributes vocab source
-	      internal-def-vocab implicit-begin?)
+		     internal-def-vocab implicit-begin?)
       ;; Do internal definition parsing
       (if implicit-begin?
-	(let*-values
-	  (((internal-define-vocab)
-	     (append-vocabulary internal-def-vocab
-	       vocab 'internal-define-vocab))
-	    ((definitions parsed-first-term rest-terms bindings)
-	      (let loop ((seen null) (rest bodies) (prev #f) (bindings null) (vars-seen null))
-		(if (null? rest)
-		  (static-error
-		    "internal definition" 'term:internal-def-not-foll-by-expr
-		    prev
-		    (if (null? seen)
+	  (let*-values
+	      ([(internal-define-vocab)
+		(append-vocabulary internal-def-vocab
+				   vocab 'internal-define-vocab)]
+	       [(definitions parsed-first-term rest-terms bindings)
+		(let loop ((seen null) (rest bodies) (prev #f) (bindings null) (vars-seen null))
+		  (if (null? rest)
 		      (static-error
-			who-str kwd:who
-			expr "malformed expression")
-		      (if (null? (cdr seen))
-			"internal definition not followed by expression"
-			"internal definitions not followed by expression")))
-		  (let ((first (car rest)))
-		    (let* ((internal? (get-internal-define-status attributes))
-			    (_ (set-internal-define-status attributes #t))
-			    (e-first (expand-expr first env
-				       attributes
-				       internal-define-vocab))
-			    (_ (set-internal-define-status attributes internal?)))
-		      (cond
-			[(internal-definition? e-first)
-			  (let ((def-vars (internal-definition-vars e-first)))
-			    (let* ((new-vars+marks
-				     (map create-lexical-binding+marks
-				       def-vars)))
-			      (for-each
-				(lambda (v)
-				  (when (memq (z:read-object v)
-					  vars-seen)
-				    (static-error
+		       "internal definition" 'term:internal-def-not-foll-by-expr
+		       prev
+		       (if (null? seen)
+			   (static-error
+			    who-str kwd:who
+			    expr "malformed expression")
+			   (if (null? (cdr seen))
+			       "internal definition not followed by expression"
+			       "internal definitions not followed by expression")))
+		      (let ([first (car rest)])
+			(let* ((internal? (get-internal-define-status attributes))
+			       (_ (set-internal-define-status attributes #t))
+			       (e-first (expand-expr first env
+						     attributes
+						     internal-define-vocab))
+			       (_ (set-internal-define-status attributes internal?)))
+			  (cond
+			   [(internal-definition? e-first)
+			    (let ((def-vars (internal-definition-vars e-first)))
+			      (let* ((new-vars+marks
+				      (map create-lexical-binding+marks
+					   def-vars)))
+				(for-each
+				 (lambda (v)
+				   (when (memq (z:read-object v)
+					       vars-seen)
+				     (static-error
 				      "internal definition"
 				      'term:duplicate-internal-def
 				      v
 				      "duplicate definition for identifier ~a"
 				      (z:read-object v))))
-				def-vars)
-			      (extend-env new-vars+marks env)
-			      (loop (cons e-first seen)
-				(cdr rest)
-				first
-				(cons new-vars+marks bindings)
-				(append vars-seen
-				  (map z:read-object def-vars)))))]
-			[(internal-begin? e-first)
-			  (loop seen 
-			    (append (internal-begin-exprs e-first) (cdr rest))
-			    first
-			    bindings vars-seen)]
-			[else
-			  (values (reverse seen)
-			    e-first
-			    (cdr rest)
-			    bindings)])))))))
-	  (if (null? definitions)
+				 def-vars)
+				(extend-env new-vars+marks env)
+				(loop (cons e-first seen)
+				      (cdr rest)
+				      first
+				      (cons new-vars+marks bindings)
+				      (append vars-seen
+					      (map z:read-object def-vars)))))]
+			   [(internal-begin? e-first)
+			    (loop seen 
+				  (append (internal-begin-exprs e-first) (cdr rest))
+				  first
+				  bindings vars-seen)]
+			   [else
+			    (values (reverse seen)
+				    e-first
+				    (cdr rest)
+				    bindings)])))))])
+	    (if (null? definitions)
 
-	    ;; No internal defines
-	    (if (null? rest-terms)
-	      parsed-first-term
-	      (create-begin-form
-		(cons parsed-first-term
-		  (map (lambda (e)
-			 (expand-expr e env attributes
-			   vocab))
-		    rest-terms))
-		expr))
-
-	    ;; Found internal defines
-	    (begin0
-	      (create-letrec-values-form
-		(reverse (map (lambda (vars+marks)
-				(map car vars+marks))
-			   bindings))
-		(map (lambda (def)
-		       (expand-expr (internal-definition-val def)
-			 env attributes vocab))
-		  definitions)
+		;; No internal defines
 		(if (null? rest-terms)
-		  parsed-first-term
-		  (create-begin-form
-		    (cons parsed-first-term
-		      (map (lambda (e)
-			     (expand-expr e env attributes vocab))
-			rest-terms))
-		    expr))
-		expr)
-	      (for-each (lambda (new-vars+marks)
-			  (retract-env (map car new-vars+marks) env))
-		bindings))))
-	(if (null? (cdr bodies))
-	  (expand-expr (car bodies) env attributes vocab)
-	  (internal-error bodies "Multiple bodies in lang w/out int'l def")))))
+		    parsed-first-term
+		    (create-begin-form
+		     (cons parsed-first-term
+			   (map (lambda (e)
+				  (expand-expr e env attributes
+					       vocab))
+				rest-terms))
+		     expr))
+		
+		;; Found internal defines
+		(begin0
+		 (create-letrec-values-form
+		  (reverse (map (lambda (vars+marks)
+				  (map car vars+marks))
+				bindings))
+		  (map (lambda (def)
+			 (expand-expr (internal-definition-val def)
+				      env attributes vocab))
+		       definitions)
+		  (if (null? rest-terms)
+		      parsed-first-term
+		      (create-begin-form
+		       (cons parsed-first-term
+			     (map (lambda (e)
+				    (expand-expr e env attributes vocab))
+				  rest-terms))
+		       expr))
+		  expr)
+		 (for-each (lambda (new-vars+marks)
+			     (retract-env (map car new-vars+marks) env))
+			   bindings))))
+	  (if (null? (cdr bodies))
+	      (expand-expr (car bodies) env attributes vocab)
+	      (internal-error bodies "Multiple bodies in lang w/out int'l def")))))
 
   ; ----------------------------------------------------------------------
 
@@ -2171,7 +2171,7 @@
 		      expr "expander is not a procedure"))
 		  (let ((extended-vocab
 			  (create-vocabulary 'user-macro-extended-vocab
-			    vocab)))
+			    vocab #f)))
 		    (add-user-macro-form real-name extended-vocab
 		      (lambda (m-expr m-env)
 			(structurize-syntax

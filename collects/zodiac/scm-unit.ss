@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.90 2000/06/08 19:52:30 mflatt Exp $
+; $Id: scm-unit.ss,v 1.91 2000/06/08 22:35:33 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -324,6 +324,7 @@
 					   (internal-error
 					    entry
 					    "Can't find box in get-unresolved-vars"))))])
+			(set-box! box (cons (unresolved-varref u) (unbox box)))
 			(set-top-level-varref/bind-slot!
 			 (unresolved-varref u)
 			 box)
@@ -568,13 +569,14 @@
 		      [old-delay (get-attribute attributes 'delay-sig-name-check?)]
 		      [unit-clauses-vocab
 		       (append-vocabulary unit-clauses-vocab-delta
-					  vocab 'unit-clauses-vocab)])
+					  vocab 'unit-clauses-vocab)]
+		      [this-top-level (make-hash-table)])
 		  (dynamic-wind
 		   void
 		   (lambda ()
 		     (set-top-level-status attributes #t)
 		     (set-internal-define-status attributes #f)
-		     (put-attribute attributes 'top-levels (make-hash-table))
+		     (put-attribute attributes 'top-levels this-top-level)
 		     (put-attribute attributes 'delay-sig-name-check? #t)
 		     (let ((in:imports (pat:pexpand '(imports ...) p-env kwd))
 			   (in:exports (pat:pexpand '(exports ...) p-env kwd))
@@ -591,12 +593,12 @@
 			      (_ (extend-env proc:imports env))
 			      (_ (put-attribute attributes 'exports-expand-vocab
 						unit-clauses-vocab))
-			      (_ (for-each (lambda (ex)
-					     (ensure-shadowable/s ex env vocab #t))
-					   in:exports))
 			      (_ (for-each (lambda (e)
 					     (expand-expr e env attributes
 							  unit-register-exports-vocab))
+					   in:exports))
+			      (_ (for-each (lambda (ex)
+					     (ensure-shadowable/s ex env vocab #t))
 					   in:exports))
 			      (proc:clauses (map (lambda (e)
 						   (expand-expr e env
@@ -633,6 +635,24 @@
 			 (set-top-level-status attributes top-level?)
 			 (set-internal-define-status attributes internal?)
 			 (put-attribute attributes 'exports-expand-vocab #f)
+
+			 ;; for all the unexported internal definitions,
+			 ;; gensym names to avoid collisions with
+			 ;; top-level syntactic forms that may have been shadowed.
+			 (let ([exs (map car proc:exports)])
+			   (hash-table-for-each
+			    this-top-level
+			    (lambda (k v)
+			      (let ([l (unbox v)])
+				(when (and (pair? l)
+					   (top-level-varref/bind/unit-unit? (car l))
+					   (not (memq (varref-var (car l)) exs)))
+				  (let ([new-name (string->uninterned-symbol
+						   (symbol->string (varref-var (car l))))])
+				    (for-each
+				     (lambda (tl)
+				       (set-varref-var! tl new-name))
+				     l)))))))
 
 			 (create-unit-form
 			  (map car proc:imports)
@@ -980,9 +1000,10 @@
 				   attributes))
 			      (vars (pat:pexpand '(var ...)
 				      p-env kwd))
-			      (_ (map valid-syntactic-id? vars))
+			      (_ (for-each valid-syntactic-id? vars))
 			      (_ (for-each
 				   (lambda (var)
+				     (ensure-not-keyword var)
 				     (let ((r (resolve var env vocab)))
 				       (when (or (micro-resolution? r)
 					       (macro-resolution? r))

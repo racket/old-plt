@@ -36,7 +36,7 @@
 	 (if w
 	     (linewidth w p2)
 	     p2)))]
-     [(p color) (color-frame p color)]))  
+     [(p color) (color-frame p color #f)]))
   
   (define color-round-frame
     (case-lambda
@@ -47,7 +47,7 @@
 	 (if w
 	     (linewidth w p2)
 	     p2)))]
-     [(p radius color) (color-frame p radius color)]))  
+     [(p radius color) (color-round-frame p radius color #f)]))  
 
   ;; Returns three values: pict dx dy
   (define (generic-arrow stem? solid? size angle)

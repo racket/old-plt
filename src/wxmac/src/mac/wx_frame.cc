@@ -46,7 +46,9 @@ wxFrame::wxFrame // Constructor (for frame window)
 		WXTYPE		objectType
 	) :
 		wxbFrame (windowName, wxScreen::gScreenWindow,
-				  x, y, width, height, style)
+				  x, y, 
+				  (width < 30) ? 30 : width, 
+				  (height < 40) ? 40 : height, style)
 {
 	InitDefaults();
 

@@ -56,16 +56,16 @@
        (identifier? (syntax name))
        (with-syntax ([pos-blame-stx (datum->syntax-object define-stx 'here)]
                      [contract-id (datum->syntax-object 
-                                   define-stx 
+                                   #f 
                                    (string->symbol
                                     (format
-                                     "ACK-define/contract-contract-id-~a"
+                                     "define/contract-contract-id-~a"
                                      (syntax-object->datum (syntax name)))))]
                      [id (datum->syntax-object 
                           define-stx
                           (string->symbol
                            (format
-                            "ACK-define/contract-id-~a"
+                            "define/contract-id-~a"
                             (syntax-object->datum (syntax name)))))])
          (syntax/loc define-stx 
           (begin
@@ -391,12 +391,12 @@
          ;; the name isn't fresh, so `id' combined with `ids' must already be unique.
          (define (mangle-id prefix id . ids)
            (datum->syntax-object
-            provide-stx
+            #f
             (string->symbol
              (string-append
               prefix
               (format 
-               "-~a~a-ACK-PLEASE_DONT_GUESS_THIS_ID"
+               "-~a~a"
                (syntax-object->datum id)
                (apply 
                 string-append 

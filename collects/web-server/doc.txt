@@ -16,10 +16,10 @@ from the "configuration-table" file of the web-server collection or from
 the specified configuration file.  If <ip-address> is provided, the server
 accepts connections only from <ip-address>.
 
-The Web server can also run using mzscheme instead of mred.  In this
-case the server uses less memory but can not load servlets written using
-DrScheme's graphical XML boxes.  To use mzscheme, execute the command line
-  mzscheme -mvL launch.ss web-server -- [usual web-server options]
+The launcher web-server-text is the same as the web-server launcher,
+except that it can not load servlets written using DrScheme's graphical XML
+boxes, but it uses less memory.  It also works with the mzscheme-only
+distribution of PLT-scheme.
 
 The command line
   web-server-monitor [-p <port>]

@@ -144,6 +144,9 @@
    make-console-edit%
    console-edit%
    
+   make-console-canvas%
+   console-canvas%
+
    make-console-frame%
    console-frame%))
 

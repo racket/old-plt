@@ -41,7 +41,7 @@ int wxGetHostName(char *buf, int sz)
   return (sysinfo(SI_HOSTNAME, buf, maxSize) != -1);
 #else /* BSD Sockets */
   char name[255];
-  // Get hostname
+  /* Get hostname */
   if ((gethostname(name, sizeof(name)/sizeof(char)-1)) == -1)
     return 0;
   strncpy(buf, name, sz-1);

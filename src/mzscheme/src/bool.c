@@ -281,7 +281,7 @@ int struct_equal(Scheme_Object *obj1, Scheme_Object *obj2)
   return 1;
 }
 
-// used by external programs that cannot link to variables.
+/* used by external programs that cannot link to variables */
 Scheme_Object * scheme_make_true (void)
 {
   return scheme_true;

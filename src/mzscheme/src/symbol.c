@@ -97,10 +97,9 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
     while (i < length) {
       int c = key[i++];
        h ^= (h << 5) + (h >> 2) + c;
-       // h += (h << 5) + h + c;
        h2 += c;
     }
-    // post hash mixing helps for short symbols
+    /* post hash mixing helps for short symbols */
     h ^= (h << 5) + (h >> 2) + 0xA0A0;
     h ^= (h << 5) + (h >> 2) + 0x0505;
 

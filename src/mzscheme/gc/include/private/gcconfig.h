@@ -224,8 +224,8 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-// PLTSCHEME: added MPW_C, and !MACH test to prevent this clause from being
-// evaluated when compiling using Metrowerks with OS X
+/* PLTSCHEME: added MPW_C, and !MACH test to prevent this clause from being
+   evaluated when compiling using Metrowerks with OS X */
 # if (defined(__MWERKS__) || defined(MPW_C)) && defined(__powerc) && !defined(__MACH__)
 #   define POWERPC
 #   define MACOS

@@ -1600,6 +1600,28 @@ MX_TYPEDESC *getMethodType(MX_COM_Object *obj,char *name,INVOKEKIND invKind) {
   return pTypeDesc;
 }
 
+int dispatchCmp(char *s1,char **s2) {
+  return strcmp(s1,*s2);
+}
+
+BOOL isDispatchName(char *s) {
+  static char *names[] = { // must be in alpha order
+    "AddRef",
+    "GetIDsOfNames",
+    "GetTypeInfo",
+    "GetTypeInfoCount",
+    "Invoke",
+    "QueryInterface",
+    "Release",
+  };
+  void *p;
+
+  p = bsearch(s,names,sizeray(names),sizeof(names[0]),
+	      (int (*)(const void *,const void *))dispatchCmp);
+
+  return p ? TRUE : FALSE;
+}
+
 Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKind) {
   ITypeInfo *pITypeInfo;
   BSTR bstr;
@@ -1647,7 +1669,10 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
 			  buff,sizeof(buff) - 1,
 			  NULL,NULL);
       buff[len] = '\0';
-      retval = scheme_make_pair(scheme_make_string(buff),retval);
+      // don't consider names inherited from IDispatch
+      if (invKind != INVOKE_FUNC || !isDispatchName(buff)) {
+	retval = scheme_make_pair(scheme_make_string(buff),retval);
+      }
       SysFreeString(bstr);
     }
     pITypeInfo->ReleaseFuncDesc(pFuncDesc);
@@ -1969,7 +1994,7 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   UINT i;
   
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-methods","com-object or com-type",0,argc,argv);
+    scheme_wrong_type("com-events","com-object or com-type",0,argc,argv);
   }
 
   if (MX_COM_OBJP(argv[0]) && MX_COM_OBJ_VAL(argv[0])== NULL) {
@@ -2205,6 +2230,10 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
     
     s = "user-defined";
     break;
+
+  case VT_VOID :
+    s = "void";
+    break;
     
   default :
     
@@ -2312,6 +2341,10 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   }
   
   name = SCHEME_STR_VAL(argv[1]);
+
+  if (invKind == INVOKE_FUNC && isDispatchName(name)) {
+    scheme_signal_error("com-method-type: IDispatch methods not available");
+  }
   
   if (MX_COM_OBJP(argv[0])) {
     pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
@@ -3364,8 +3397,12 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   if (pIDispatch == NULL) {
     scheme_signal_error("NULL COM object");
   }
-  
+
   name = SCHEME_STR_VAL(argv[1]);
+
+  if (invKind == INVOKE_FUNC && isDispatchName(name)) {
+    scheme_signal_error("com-invoke: IDispatch methods may not be called");
+  }
   
   // check arity, types of method arguments
   

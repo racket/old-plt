@@ -2034,7 +2034,7 @@ wxPrintSetupData::wxPrintSetupData(void)
     printer_translate_x = 0.0;
     printer_translate_y = 0.0;
 #ifdef wx_x
-    printer_mode = PS_PRINTER;
+    printer_mode = PS_PREVIEW;
 #else
     printer_mode = PS_FILE;
 #endif

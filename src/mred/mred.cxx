@@ -1929,7 +1929,11 @@ static void MrEdQueueWindowCallback(wxWindow *wx_window, Scheme_Closed_Prim *scp
   Q_Callback *cb;
   Scheme_Object *p;
 
-  c = MrEdGetContext(wx_window);
+#ifdef wx_mac
+  c = MrEdGetContext(wx_window->GetRootFrame());
+#else
+  c = MrEdGetContext();
+#endif
 
   /* Search for existing queued on-paint: */
   cb = q_callbacks[1].last;

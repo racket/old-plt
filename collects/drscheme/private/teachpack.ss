@@ -1,5 +1,10 @@
 (module teachpack mzscheme
   (require (lib "unitsig.ss")
+	   (lib "list.ss")
+	   (lib "framework.ss" "framework")
+	   (lib "mred.ss" "mred")
+	   "string-constant.ss"
+	   "reload.ss"
            "drsig.ss")
 
   (provide teachpack@)
@@ -8,11 +13,11 @@
     (unit/sig drscheme:teachpack^
       (import)
 
-      ;; type struct-teachpack-cache = (make-teachpack-cache (listof cache-entry))
+      ;; type teachpack-cache = (make-teachpack-cache (listof cache-entry))
       (define-struct teachpack-cache (tps))
       
-      ;; type cache-entry = (make-cache-entry string number symbol)
-      (define-struct cache-entry (filename timestamp module-name))
+      ;; type cache-entry = (make-cache-entry string number unit)
+      (define-struct cache-entry (filename timestamp unit))
       
       ;; new-teachpack-cache : -> teachpack-cache
       (define (new-teachpack-cache) (make-teachpack-cache null))
@@ -22,22 +27,23 @@
       ;; the user's namespace
       (define original-namespace (current-namespace))
       
-      ;; load-teachpacks : -> void
+      ;; load-teachpacks : teachpack-cache -> void
       ;; =Handler=, =Kernel=
       ;; loads the teachpacks from the disk
       ;; initializes teachpack-units, reloading the teachpacks from the disk if they have changed.
       (define (load-teachpacks cache)
-	(for-each load-teachpack/cache cache))
+	(let ([new-tps (map load-teachpack (teachpack-cache-tps cache))])
+	  (set-teachpack-cache-tps! cache (filter (lambda (x) x) new-tps))))
       
       ;; load-teachpack : string[filename] number[timestamp] -> (union #f cache-entry)
       ;; =Handler=, =Kernel=
       ;; loads the file and returns #f if the teachpack doesn't load properly.
       (define (load-teachpack tp-filename time-stamp)
 	(let/ec escape
-	  (let ([teachpack-module-name
+	  (let ([teachpack-unit
 		 (with-handlers ([not-break-exn?
 				  (lambda (x)
-				    (preferences:set 
+				    (preferences:set
 				     'drscheme:teachpack-file
 				     (remove
 				      tp-filename
@@ -52,48 +58,19 @@
 					  (exn-message x)
 					  (format "uncaught exception: ~s" x))))
 				    (escape #f))])
-                   ((current-module-name-resolver `(file ,tp-filename) #f #f)))])
+		   (reload `(file ,tp-filename))
+                   (dynamic-require `(file ,tp-filename) 'teachpack-unit@))])
 	    (make-cache-entry filename time-stamp teachpack-unit))))
-
-      ;; load-teachpack/cache : teachpack-cache string[filename] -> void
-      ;; =Handler=, =Kernel=
-      ;; may load a new teahpack file, if the cached value is out of date.
-      ;; updates teachpack-cache if the file needed to be reloaded.
-      ;; shows an error message to the user if the teachpack file doesn't exist.
-      (define (load-teachpack/cache teachpack-cache tp-filename)
-	(let/ec escape
-	  (let ([file-on-disk-stamp
-		 (with-handlers ([not-break-exn?
-				  (lambda (x)
-				    (preferences:set 
-				     'drscheme:teachpack-file
-				     (remove
-				      tp-filename
-				      (preferences:get 'drscheme:teachpack-file)))
-				    (message-box 
-				     (string-constant teachpack-error-label)
-				     (format (string-constant teachpack-dne/cant-read) tp-filename))
-				    (escape (void)))])
-		   (file-modify-seconds tp-filename))])
-	    (let ([cache-value (assoc tp-filename teachpack-units)])
-	      (when (and cache-value
-			 (file-on-disk-stamp . > . (second cache-value)))
-		(let ([new-one (load-teachpack tp-filename cache-value)]
-                      [removed (remove cache-value (teachpack-cache-tps teachpack-cache))])
-                  (set-teachpack-cache-tps!
-                   teachpack-cache
-                   (if new-one
-                       (cons new-one removed)
-                       removed))))))))
 
       ;; install-teachpacks : teqachpack-cache -> void
       ;; =Handler=, =User=
       ;; installs the loaded teachpacks
-      ;; expects teachpack-units to be initialized
+      ;; updates the cache, removing those teachpacks that failed to run
       (define (install-teachpacks cache)
-        (for-each invoke-teachpack (teachpack-cache-tps cache)))
+        (let ([new-ents (map invoke-teachpack (teachpack-cache-tps cache))])
+	  (set-teachpack-cahe-tps! cache (filter (lambda (x) x) new-ents))))
       
-      ;; install-teachpack : cache-entry -> void
+      ;; invoke-teachpack : cache-entry -> (union cache-entry #f)
       ;; =Handler=, =User=
       (define (invoke-teachpack cache-entry)
         (with-handlers ([not-break-exn?
@@ -111,7 +88,23 @@
                                   (if (exn? x)
                                       (exn-message x)
                                       (format "uncaught exception: ~s" x))))))))])
-          (namespace-attach-module original-namespace (cache-entry-module-name cache-entry))))
+	  (let ([export-signature
+		 (exploded->flattened-signature
+		  (unit-with-signature-exports (cache-entry-unit cache-entry)))])
+	    (eval `(global-define-value/invoke-unit/sig
+		    ,export-signature
+		    ,unit)))))
       
-      
-      )))
+      ;; exploded->flattened-signature : exploded-signature -> (listof symbol)
+      ;; flattens a signature according to the way mz does it (so we hope).
+      (define (exploded->flattened-signature signature)
+	(cond
+	  [(vector? signature)
+	   (apply append (map exploded->flattened-signature (vector->list signature)))]
+	  [(pair? signature)
+	   (map (lambda (x) (string->symbol
+			     (string-append
+			      (symbol->string (car signature))
+			      ":"
+			      x)))
+		(cdr signature))])))))

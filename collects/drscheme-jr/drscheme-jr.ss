@@ -59,28 +59,63 @@
   (printf "MzRice error: ~a~n" (apply format s args))
   (exit -1))
 
+(define language-levels
+  '(("Beginner" core)
+    ("Intermediate" structured)
+    ("Advanced" side-effecting)
+    ("R4RS+" advanced)))
+
+(define (choose-mode)
+  (printf "Choose a language level:~n")
+  (let loop ([n 1][l language-levels])
+    (if (null? l)
+	(printf "[~a]? " (sub1 n))
+	(begin
+	  (printf "  ~a - ~a~n" n (caar l))
+	  (loop (add1 n) (cdr l)))))
+  (flush-output)
+  (let ([r (read-line)]
+	[len (length language-levels)])
+    (let ([v (with-handlers ([void (lambda (x) #f)])
+		 (let* ([p (open-input-string r)]
+			[x (read p)])
+		   (and (eof-object? (read p)) x)))])
+      (if (or (eof-object? v) (and (number? v) (<= 1 v len)))
+	  (list '--level (string->symbol
+			  (car (list-ref language-levels
+					 (if (eof-object? v)
+					     (sub1 len)
+					     (sub1 v))))))
+	  (begin
+	    (printf "Please answer 1, 2, 3, or 4~n")
+	    (choose-mode))))))
+
 (define user-argv
   (let loop ([l (map string->symbol (vector->list argv-in))])
     (if (null? l)
 	#()
 	(case (car l)
+	  [(--choose) (set! no-arguments-given? #f)
+		      (loop (append (choose-mode) (cdr l)))]
 	  [(--level) (set! no-arguments-given? #f)
 		     (if (null? (cdr l))
 			 (bad-arguments "--level flag expects level name")
 			 (let ([level (cadr l)])
-			   (case level
-			     [(core structured  side-effecting advanced)
-			      (set! syntax-level level)
-			      (loop (cddr l))]
-			     [else
-			      (bad-arguments "bad level name: ~s" level)])))]
+			   (let ([p (assoc level (map (lambda (p)
+							(list (string->symbol (car p)) (cadr p)))
+						      language-levels))])
+			     (if p
+				 (begin
+				   (set! syntax-level (cadr p))
+				   (loop (cddr l)))
+				 (bad-arguments "bad level name: ~s" level)))))]
 	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a  --~n"
-			    '(core structured  side-effecting advanced)
+			    (map car language-levels)
 			    (let loop ([l simple-args])
 			      (if (null? l)
 				  ""
 				  (string-append
-				   (format "  ~s~n" (caar l))
+				   (format "  ~s~n" (cadr l))
 				   (loop (cdr l))))))
 		    (exit 0)]
 	  [(--) (list->vector (cdr l))]
@@ -394,7 +429,8 @@
   (printf "Welcome to MzRice version ~a, Copyright (c) 1995-97 PLT~n"
 	  (version))
   (printf "Language: ~a~nImproper lists: ~a~n"
-	  params:check-syntax-level
+	  (cadr (assoc params:check-syntax-level
+		       (map (lambda (p) (list (cadr p) (car p))) language-levels)))
 	  params:allow-improper-lists?)
   
   (current-parameterization parameterization)

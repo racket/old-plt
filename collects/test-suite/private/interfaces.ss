@@ -1,0 +1,83 @@
+(module interfaces mzscheme
+  
+  (require
+   (lib "class.ss")
+   (lib "aligned-pasteboard.ss" "mrlib"))
+  
+  (provide
+   test-suite:window<%>
+   test-suite:item<%>
+   test-suite:model<%>)
+  
+  ;; the interface that is implemented by a window that contains a test-suite:model<%>
+  (define test-suite:window<%>
+    (interface () ;frame<%>?
+      ;; update-modified (boolean? . -> . void?)
+      ;; called by the model when it has been modified
+      update-modified
+      
+      ;; update-executing (boolean? . -> . void?)
+      ;; called by the model when it is executing
+      update-executing
+      
+      ;; get-error-handler (-> (string? exn? . -> . void?))
+      ;; the error handler that is used to display errors to the window
+      get-error-handler
+      ))
+ 
+  ;; the interface that is implemented by item in a test-suite
+  (define test-suite:item<%>
+    (interface (aligned-snip<%>)
+      ;; show-test (boolean? . -> . void?)
+      ;; how/hide the test in the display
+      show-test
+
+      ;; reset (-> void?)
+      ;; resets the result of the test case
+      reset
+
+      ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
+      ;; execute the item
+      execute
+    ))
+  
+  ;; the interface of a model that may be contained in a test-suite:window<%>
+  (define test-suite:model<%>
+    (interface (aligned-pasteboard<%>)
+      ;; get-program (-> string?)
+      ;; the filename of the program to be tested by the test-suite
+      get-program
+      
+      ;; set-program (string? . -> . void?)
+      ;; set the program to the given filename
+      set-program
+      
+      ;; insert-case (-> void?)
+      ;; adds a new test case to the test-suite
+      insert-case
+      
+      ;; delete-case (-> void?)
+      ;; removes the case that currently has focus
+      delete-case
+      
+      ;; execute (-> void?)
+      ;; runs the test-suite by executing each test-case
+      execute
+      
+       ;; break (-> void?)
+      ;; stops execution of the test-suite
+      break
+      
+      ;; set-language (language? . -> . void?)
+      ;; set the language to use to execute the cases
+      set-language
+          
+      ;; get-language (-> language?)
+      ;; get the language currently set
+      get-language
+          
+      ;; show-tests (boolean? . -> . void?)
+      ;; show the tests in the display
+      show-tests
+      ))
+  )

@@ -49,32 +49,32 @@ PLaneT works.
 
 Parameters:
 
-> (planet-server-name) -> string
-> (planet-server-name string) -> void
+> (PLANET-SERVER-NAME) -> string
+> (PLANET-SERVER-NAME string) -> void
 
 The name of the PLaneT server to which the client should connect if it
 needs to fetch a package. The default value for this parameter is
 "planet.plt-scheme.org".
 
-> (planet-server-port) -> Nat
-> (planet-server-port Nat) -> void
+> (PLANET-SERVER-PORT) -> Nat
+> (PLANET-SERVER-PORT Nat) -> void
 
 The port on the server the client should connect to. The default value
 for this parameter is 270.
 
-> (planet-dir) -> directory-string
-> (planet-dir directory-string) -> void
+> (PLANET-DIR) -> directory-string
+> (PLANET-DIR directory-string) -> void
 
 The root PLaneT directory. Default is the directory in which config.ss
 is found.
 
-> (cache-dir) -> directory-string
-> (cache-dir directory-string) -> void
+> (CACHE-DIR) -> directory-string
+> (CACHE-DIR directory-string) -> void
 
 The root of the PLaneT client's cache directory.
 
-> (linkage-file) file-string
-> (linkage-file file-string) -> void
+> (LINKAGE-FILE) file-string
+> (LINKAGE-FILE file-string) -> void
 
 The file to use as the first place PLaneT looks to determine how a
 particular PLaneT dependence in a file should be satisfied. The
@@ -82,8 +82,8 @@ contents of this file are used to ensure that no "magic upgrades"
 occur after a package is installed. The default is the file "LINKAGE"
 in the root PLaneT directory.
 
-> (log-file) -> file-string or #f
-> (log-file [file-string or #f]) -> void
+> (LOG-FILE) -> file-string or #f
+> (LOG-FILE [file-string or #f]) -> void
 
 If #f, indicates that no logging should take place. Otherwise
 specifies the file into which logging should be written. The default

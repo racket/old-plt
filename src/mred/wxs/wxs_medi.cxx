@@ -2280,7 +2280,7 @@ static Scheme_Object *os_wxMediaBufferPrint(Scheme_Object *obj, int n,  Scheme_O
   if (n > 2) {
     x2 = objscheme_unbundle_bool(p[2], "print in editor<%>");
   } else
-    x2 = FALSE;
+    x2 = TRUE;
   if (n > 3) {
     x3 = unbundle_symset_printMethod(p[3], "print in editor<%>");
   } else

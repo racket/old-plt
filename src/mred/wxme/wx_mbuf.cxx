@@ -1222,6 +1222,7 @@ public:
       b->printing = NULL;
       b->EndPrint(pr, data);
       wxPrintout::OnEndDocument();
+      b->InvalidateBitmapCache(0, 0, -1, -1);
     }
 };
 #endif
@@ -1261,6 +1262,8 @@ void wxMediaBuffer::Print(char *filename, Bool interactive, Bool fitToPage,
       EndPrint(dc, data);
 
       dc->EndDoc();
+
+      InvalidateBitmapCache(0, 0, -1, -1);
     }
 
     delete dc;

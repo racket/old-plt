@@ -232,26 +232,7 @@ wxMediaBuffer *wxMediaEdit::CopySelf(void)
 
   m = new wxMediaEdit(lineSpacing);
 
-  /* Copy parameters, such as tab settings: */
-  if (tabs) {
-    float *t;
-
-    t = new float[tabcount];
-    memcpy(t, tabs, sizeof(float) * tabcount);
-    m->SetTabs(t, tabcount, tabSpace, tabSpaceInUnits);
-  }
-
   CopySelfTo(m);
-
-  m->SetFileFormat(GetFileFormat());
-
-  m->SetWordbreakFunc(wordBreak, wordBreakData);
-  m->SetWordbreakMap(GetWordbreakMap());
-  m->SetBetweenThreshold(GetBetweenThreshold());
-  m->HideCaret(CaretHidden());
-  m->SetOverwriteMode(GetOverwriteMode());
-
-  m->SetAutowrapBitmap(autoWrapBitmap);
 
   /* All done! */
   return m;
@@ -275,6 +256,16 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
   }
 
   wxMediaBuffer::CopySelfTo(m);
+
+  m->SetFileFormat(GetFileFormat());
+
+  m->SetWordbreakFunc(wordBreak, wordBreakData);
+  m->SetWordbreakMap(GetWordbreakMap());
+  m->SetBetweenThreshold(GetBetweenThreshold());
+  m->HideCaret(CaretHidden());
+  m->SetOverwriteMode(GetOverwriteMode());
+
+  m->SetAutowrapBitmap(autoWrapBitmap);
 }
 
 /******************************************************************/

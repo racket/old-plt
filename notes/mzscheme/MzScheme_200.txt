@@ -95,8 +95,8 @@ in several important ways:
    structure-based classes can be implemented more efficiently.)
 
  * The `process', `process*', `process/ports', `process*/ports',
-   `system', and `system*' functions have been moved to a new MzLib
-   library, "process.ss". 
+   `system', and `system*' procedures have been moved to a new MzLib
+   library, "process.ss".
 
    MzScheme's new built-in form is `subprocess', which takes the same
    arguments as `process*/ports'. It returns four values: a subprocess
@@ -106,7 +106,7 @@ in several important ways:
    `subprocess-status' procedure gets the status or return code of the
    subprocess, and `subprocess-pid' gets its process id.
    
-   The `process', etc. functions are implemented in terms of
+   The `process', etc. procedures are implemented in terms of
    `subprocess'. Consequently, old bugs and gaps in support
    (especially for Windows) have been eliminated.
 

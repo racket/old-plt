@@ -787,6 +787,10 @@
 
   ;; ;;;;;;;;;;;;;;;;;; macro mappings  ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  (try '(eval (list 'define-macro 'if 'void) (make-namespace)) 'void)
+  (try '(if #t 1 2) "1")
+  (try '(#%if #t 1 2) "1")
+
   (try '(#%define (cond-macro x) x) 'void)
   (try '(define-macro cond cond-macro) 'void)
   (try '(cond 12) "12")

@@ -46,10 +46,10 @@
 
 (reference
   (begin-elaboration-time
-    (build-path plt-dir "zodiac" "zsigs")))
+    (build-path plt-dir "zodiac" "zsigs.ss")))
 (reference
   (begin-elaboration-time
-    (build-path plt-dir "zodiac" "sigs")))
+    (build-path plt-dir "zodiac" "sigs.ss")))
 
 (reference-library (begin-elaboration-time
 		     (build-path plt-dir "lib" "require.ss")))
@@ -60,7 +60,7 @@
 (define zodiac:system@
   (reference-unit/sig
     (begin-elaboration-time
-      (build-path plt-dir "zodiac" "link"))))
+      (build-path plt-dir "zodiac" "link.ss"))))
 
 (invoke-open-unit/sig plt:mzscheme-parameters@ params)
 

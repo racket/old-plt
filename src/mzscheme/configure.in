@@ -201,6 +201,10 @@ case $OS in
       EXTRALIBS="sproc.o"
     fi
     STATICLINK="/usr/lib/libC.a /usr/lib/libmalloc.a"
+    if test "$X_PRE_LIBS" = " -lSM -lICE" ; then
+      # For some reason, works best to drop these
+      X_PRE_LIBS=""
+    fi
     ;;
   Linux)
     if test "${enable_osthreads}" = "yes" ; then

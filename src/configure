@@ -2124,6 +2124,10 @@ case $OS in
       EXTRALIBS="sproc.o"
     fi
     STATICLINK="/usr/lib/libC.a /usr/lib/libmalloc.a"
+    if test "$X_PRE_LIBS" = " -lSM -lICE" ; then
+      # For some reason, works best to drop these
+      X_PRE_LIBS=""
+    fi
     ;;
   Linux)
     if test "${enable_osthreads}" = "yes" ; then
@@ -2206,19 +2210,19 @@ cross_compiling=$ac_cv_prog_cc_cross
 
  msg="for inline keyword" 
 echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2210: checking $msg" >&5
+echo "configure:2214: checking $msg" >&5
 if test "$cross_compiling" = yes; then
   inline=no
 else
   cat > conftest.$ac_ext <<EOF
-#line 2215 "configure"
+#line 2219 "configure"
 #include "confdefs.h"
 static inline int foo() { return 0; }
    int main() {
       return foo();
    }
 EOF
-if { (eval echo configure:2222: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2226: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   inline=yes
 else
@@ -2251,12 +2255,12 @@ cross_compiling=$ac_cv_prog_cxx_cross
 
  msg="whether new and new[] are different"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2255: checking $msg" >&5
+echo "configure:2259: checking $msg" >&5
   if test "$cross_compiling" = yes; then
   different=yes
 else
   cat > conftest.$ac_ext <<EOF
-#line 2260 "configure"
+#line 2264 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2269,7 +2273,7 @@ extern "C" void exit(int);
     return (new C) == (new C[10]);       
    }
 EOF
-if { (eval echo configure:2273: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2277: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   different=yes
 else
@@ -2290,16 +2294,16 @@ fi
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
     echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
-echo "configure:2294: checking whether need to use -fpermissive" >&5
+echo "configure:2298: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2296 "configure"
+#line 2300 "configure"
 #include "confdefs.h"
 #include "X11/Intrinsic.h"
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2303: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2307: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   addperm=no
 else

@@ -1331,6 +1331,9 @@ wxMediaBuffer *wxMediaCanvas::GetMedia(void)
 
 void wxMediaCanvas::SetMedia(wxMediaBuffer *m, Bool update)
 {
+  if (media == m)
+    return;
+
   if (media) {
     if (PTREQ((wxCanvasMediaAdmin *)media->GetAdmin(), admin)) {
       if (admin->nextadmin)

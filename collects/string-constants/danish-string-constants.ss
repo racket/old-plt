@@ -672,4 +672,11 @@
  (insert-large-letters... "Indsæt store bogstaver...")
  (large-semicolon-letters "Store semikolon-bogstaver")
  (text-to-insert "Tekst til indsættelse")
+
+ (add-teachpack-menu-item-label "Tilføj undervisningspakke...")
+ (vc-current-format "~a v.~a (iteration ~a) er up-to-date")
+ (vc-details-format "~a~nDetaljer:~n~a")
+ (vc-details-text "Detaljer:~n")
+ (vc-error-format "Fejl: ~a")
+ 
  )

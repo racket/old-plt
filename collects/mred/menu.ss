@@ -177,13 +177,14 @@
 		 id-list))]
 	    [delete
 	     (lambda (id)
-	       (super-delete id)
-	       (set! submenus (mzlib:function:remove id submenus
-						     (lambda (id pair)
-						       (= (car pair) id))))
-	       (set! callbacks (mzlib:function:remove id callbacks
-						      (lambda (id pair)
-							(= (car pair) id)))))]
+	       (begin0
+		 (super-delete id)
+		 (set! submenus (mzlib:function:remove id submenus
+						       (lambda (id pair)
+							 (= (car pair) id))))
+		 (set! callbacks (mzlib:function:remove id callbacks
+							(lambda (id pair)
+							  (= (car pair) id))))))]
 	    [dispatch
 	     (lambda (id)
 	       (or (ormap (lambda (pair)

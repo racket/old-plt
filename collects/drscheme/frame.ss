@@ -38,13 +38,22 @@
 		  (send mb append show-menu "&View")
 		  mb))])
 	   
+	   (private
+	     [get-bitmap/string
+	      (lambda (icon string)
+		(let ([p (build-path (collection-path "icons") icon)])
+		  (if (file-exists? p)
+		      (make-object wx:bitmap% p wx:const-bitmap-type-gif)
+		      string)))]
+	     [sleepy-bitmap (get-bitmap/string "snoopy-sleepy.gif" "not running")]
+	     [active-bitmap (get-bitmap/string "snoopy-active.gif" "running")])
 	   (public
 	     [running
 	      (lambda ()
-		(send running-message set-label "running"))]
+		(send running-message set-label active-bitmap))]
 	     [not-running
 	      (lambda ()
-		(send running-message set-label "not running"))])
+		(send running-message set-label sleepy-bitmap))])
 	   
 	   (public
 	     ;[file-menu:new-string "Unit"]
@@ -67,4 +76,4 @@
 	   
 	   (private
 	     [running-message
-	      (make-object wx:message% info-panel "not running")])))))
+	      (make-object wx:message% info-panel sleepy-bitmap)])))))

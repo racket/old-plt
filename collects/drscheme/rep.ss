@@ -56,7 +56,6 @@
   (define user-exception-handler
     (rec drscheme-exception-handler
 	 (lambda (exn)
-	   (printf "exn-message: ~a~n" (exn-message exn))
 	   (let ([rep (exception-reporting-rep)])
 	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
@@ -191,7 +190,7 @@
 	   (lambda (grab-focus?)
 	     (begin-edit-sequence)
 	     (super-init-transparent-io grab-focus?)
-	     (when (eq? (current-thread) evaluation-thread)
+	     (when  #t ; (eq? (current-thread) evaluation-thread) ;; need a better test!
 	       (set-caret-owner transparent-snip wx:const-focus-display))
 	     (end-edit-sequence))]
 	  [init-transparent-io-do-work
@@ -273,12 +272,11 @@
 			 (lambda (annotated recur)
 			   (if (process-finish? annotated)
 			       (if (process-finish-error? annotated)
-				   (begin (printf "userspace-eval escaping~n") (escape))
+				   (escape)
 				   answer)
 			       (begin (set! answer
 					    (call-with-values
 					     (lambda ()
-					       (printf "wptest.1: user-param ~a~n" user-param)
 					       (if (drscheme:language:use-zodiac)
 						   (with-parameterization user-param
 						     (lambda ()
@@ -321,7 +319,6 @@
 	      annotate?))]
 	  [process-file/zodiac
 	   (lambda (filename f annotate?)
-	     (printf "wptest.2: user-param: ~a~n" user-param)
 	     (let ([port (with-parameterization user-param
 			   (lambda ()
 			     (open-input-file filename)))])
@@ -668,7 +665,6 @@
 	(public
 	  [escape
 	   (lambda ()
-	     (printf "wptest.3: user-param: ~a~n" user-param)
 	     (when user-param
 	       (with-parameterization user-param
 		 (lambda ()
@@ -688,7 +684,6 @@
 	       (fluid-let ([error-escape-k k])
 			  (call-with-values
 			   (lambda ()
-			     (printf "wptest.3': user-param: ~a~n" user-param)
 			     (if (drscheme:language:use-zodiac)
 				 (with-parameterization user-param
 				   (lambda ()
@@ -699,11 +694,17 @@
 			   (lambda anss
 			     (values anss #f))))))])
 	(public
-	  [evaluation-thread #f]
-	  [run-in-evaluation-thread void]
+	  [evaluation-thread (thread (rec f (lambda () (sleep 300) (f))))]
+	  [run-in-evaluation-thread 
+	   (lambda (thunk)
+	     (let ([s (make-semaphore 0)]
+		   [user-eventspace ((in-parameterization user-param wx:current-eventspace))])
+	       (parameterize ([wx:current-eventspace user-eventspace])
+		 (semaphore-callback s thunk))
+	       (semaphore-post s)))]
 	  [init-evaluation-thread
 	   (lambda ()
-	     (let ([run-function (lambda (f) (f))]
+	     '(let ([run-function (lambda (f) (f))]
 		   [init-eval-thread
 		    (lambda ()
 		      (current-parameterization drscheme:init:eval-thread-parameterization)
@@ -721,7 +722,6 @@
 	   (lambda (filename)
 	     (with-parameterization drscheme:init:system-parameterization
 	       (lambda ()
-		 (printf "wptest.5: user-param: ~a~n" user-param)
 		 (if (drscheme:language:use-zodiac)
 		     (let* ([p (with-parameterization user-param
 				 (lambda ()
@@ -736,7 +736,7 @@
 				 (cond
 				   [(process-finish? sexp)
 				    (if (process-finish-error? sexp)
-					(begin (printf "userspace-load escape~n") (escape))
+					(escape)
 					last)]
 				   [else
 				    (set! last
@@ -745,7 +745,6 @@
 					     (with-handlers ([(lambda (x) #t)
 							      (lambda (exn) 
 								(report-exception-error exn))])
-					       (printf "wptest.6: user-param: ~a~n" user-param)
 					       (if (drscheme:language:use-zodiac)
 						   (with-parameterization user-param
 						     (lambda ()
@@ -804,14 +803,37 @@
 		     (current-load userspace-load)
 		     (current-eval userspace-eval)
 
-		     (let ([dispatch-handler (wx:event-dispatch-handler)])
+		     (let ([dispatch-handler (wx:event-dispatch-handler)]
+			   [frame (get-frame)]
+			   [semaphore (make-semaphore 1)]
+			   [set-running-flag? #t]
+			   [running-flag-on? #f]
+			   [event-semaphore (make-semaphore 0)])
+		       (thread (rec f
+				    (lambda ()
+				      (semaphore-wait event-semaphore)
+				      (sleep 1/10)
+				      (semaphore-wait semaphore)
+				      (when (and set-running-flag?
+						 (not running-flag-on?))
+					(set! running-flag-on? #t)
+					(send frame running))
+				      (semaphore-post semaphore)
+				      (f))))
 		       (wx:event-dispatch-handler
 			(rec drscheme:event-dispatch-handler
-			     (lambda ()
-			       (dynamic-wind
-				(lambda () (send (get-frame) running))
-				(lambda () (dispatch-handler))
-				(lambda () (send (get-frame) not-running)))))))
+			     (lambda (eventspace)
+			       (semaphore-wait semaphore)
+			       (set! set-running-flag? #t)
+			       (semaphore-post semaphore)
+			       (semaphore-post event-semaphore)
+			       (dispatch-handler eventspace)
+			       (semaphore-wait semaphore)
+			       (set! set-running-flag? #f)
+			       (when running-flag-on?
+				 (set! running-flag-on? #f)
+				 (send frame not-running))
+			       (semaphore-post semaphore)))))
 		     
 		     (exit-handler (lambda (arg)
 				     (with-parameterization drscheme:init:system-parameterization

@@ -170,6 +170,12 @@ static void *mark_source;
 # define FROM_IMM ((void *)0xAAAA7)
 #endif
 
+static void CRASH()
+{
+  fprintf(stderr, "crash\n");
+  abort();
+}
+
 /******************************************************************************/
 
 #if USE_MMAP
@@ -607,7 +613,7 @@ void GC_finalization_weak_ptr(void **p)
 
 #ifdef SAFETY
   if (((void *)p < GC_alloc_space) || (p >= tagged_high)) {
-    *(int *)0x0 = 1;
+    CRASH();
   }
 #endif
 
@@ -727,7 +733,7 @@ void stop()
 
 /* These work only during GC */
 
-void *find_start(void *p)
+MPage *find_page(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;
@@ -738,21 +744,10 @@ void *find_start(void *p)
     MPage *page;
 
     page = map + addr;
-    if (page) {
-      if (page->type & MTYPE_BIGBLOCK)
-	/* FIXME */
-	return (void *)(((unsigned long)p >> MAP_SHIFT) << MAP_SHIFT);
-      else {
-	long offset = ((long)p & MPAGE_MASK) >> 2;
-	offset_t v;
-	
-	v = page->u.offsets[offset];
-	return p - (v & OFFSET_MASK);
-      }
-    }
+    return page;
   }
   
-  return p;  
+  return NULL;  
 }
 
 int is_marked(void *p)
@@ -816,6 +811,7 @@ static void init_tagged_mpage(void **p, MPage *page)
     if (tag == TAGGED_EOM) {
       /* Remember empty space for prop and compact:  */
       page->skip_end = MPAGE_WORDS - offset;
+      /* FIXME: mark/move pointer in skip_end region */
       break;
     }
 
@@ -830,7 +826,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 #if SAFETY
       if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 	fflush(NULL);
-	*(int *)0x0 = 1;
+	CRASH();
       }
       prev_ptr = p;
       prev_var_stack = GC_variable_stack;
@@ -843,7 +839,7 @@ static void init_tagged_mpage(void **p, MPage *page)
 
 #if SAFETY
       if (prev_var_stack != GC_variable_stack) {
-	*(int *)0x0 = 1;
+	CRASH();
       }
 #endif
       
@@ -976,7 +972,7 @@ static void init_all_mpages(int young)
 	&& ((page->refs_age <= young)
 	    || (page->type & MTYPE_MODIFIED))
 	&& !(page->type & MTYPE_ATOMIC)) {
-      /* Offsets inited; need to set gray flags */
+      /* Offsets inited; need to set gray flag */
       page->type |= GRAY_BIT;
       
       page->gray_next = gray_first;
@@ -986,13 +982,14 @@ static void init_all_mpages(int young)
       page->gray_end = MPAGE_WORDS - page->skip_end - 2;
       
       if (!(page->type & MTYPE_BIGBLOCK)) {
-	offset_t offset, *offsets;
-	
-	offsets = page->u.offsets;
-	offset = MPAGE_WORDS - page->skip_end;
-	while (offset) {
-	  offset -= offsets[offset - 1] + 1;
-	  offsets[offset] |= GRAY_BIT;
+	if (!(page->type & MTYPE_MODIFIED)) {
+	  mprotect((void *)p, MPAGE_SIZE, 1);
+	  page->type |= MTYPE_MODIFIED;
+	}
+      } else {
+	if (!(page->type & MTYPE_MODIFIED)) {
+	  protect_pages((void *)p, page->u.size, 1);
+	  page->type |= MTYPE_MODIFIED;
 	}
       }
 
@@ -1046,6 +1043,13 @@ static void *mark(void *p)
 	  inited_pages++;
 	}
 
+#if SAFETY
+	if (offset >= MPAGE_WORDS - page->skip_end) {
+	  CRASH();
+	  return p;
+	}
+#endif
+
 	v = page->u.offsets[offset];
 	offset -= (v & OFFSET_MASK);
 
@@ -1071,6 +1075,12 @@ static void *mark(void *p)
 		page->gray_end = offset;
 	    }
 	  }
+	} else {
+#if SAFETY
+	  if (!(type & COLOR_MASK)) {
+	    CRASH();
+	  }
+#endif
 	}
       }
     }
@@ -1116,7 +1126,7 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
 	  
 #if SAFETY
 	  if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
-	    *(int *)0x0 = 1;
+	    CRASH();
 	  }
 #endif
 	  
@@ -1130,6 +1140,38 @@ static void propagate_tagged_mpage(void **bottom, MPage *page)
       
     --p;
     --offset;
+  }
+}
+
+static void propagate_tagged_whole_mpage(void **p, MPage *page)
+{
+  void **top;
+
+  top = p + MPAGE_WORDS;
+  
+  while (p < top) {
+    Type_Tag tag;
+    long size;
+
+    tag = *(Type_Tag *)p;
+
+    if (tag == TAGGED_EOM) {
+      break;
+    }
+
+#if ALIGN_DOUBLES
+    if (tag == SKIP) {
+      p++;
+    } else {
+#endif
+
+      size = tag_table[tag](p, mark);
+
+      p += size;
+
+#if ALIGN_DOUBLES
+    }
+#endif
   }
 }
 
@@ -1168,6 +1210,28 @@ static void propagate_array_mpage(void **bottom, MPage *page)
     --p;
     --offset;
   }
+}
+
+static void propagate_array_whole_mpage(void **p, MPage *page)
+{
+  void **top;
+
+  top = p + MPAGE_WORDS;
+
+  while (p < top) {
+    long size, i;
+
+    size = *(long *)p + 1;
+
+    if (size == UNTAGGED_EOM) {
+      break;
+    }
+
+    for (i = 1; i < size; i++)
+      gcMARK(p[i]);
+
+    p += size;
+  } 
 }
 
 static void propagate_tagged_array_mpage(void **bottom, MPage *page)
@@ -1214,6 +1278,37 @@ static void propagate_tagged_array_mpage(void **bottom, MPage *page)
   }
 }
 
+static void propagate_tagged_array_whole_mpage(void **p, MPage *page)
+{
+  void **top;
+
+  top = p + MPAGE_WORDS;
+
+  while (p < top) {
+    int i, elem_size, size;
+    void **mp;
+    Type_Tag tag;
+    Traverse_Proc traverse;
+    
+    size = *(long *)p + 1;
+
+    if (size == UNTAGGED_EOM)
+      break;
+      
+    mp = p + 1;
+    p += size;
+    size--;
+
+    tag = *(Type_Tag *)mp;
+      
+    traverse = tag_table[tag];
+    elem_size = traverse(mp, mark);
+    mp += elem_size;
+    for (i = elem_size; i < size; i += elem_size, mp += elem_size)
+      traverse(mp, mark);
+  }
+}
+
 static void mark_bigblock(void **p, MPage *page, Mark_Proc mark)
 {
   if (page->type & MTYPE_ATOMIC)
@@ -1226,7 +1321,7 @@ static void mark_bigblock(void **p, MPage *page, Mark_Proc mark)
 
 #if SAFETY
     if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
-      *(int *)0x0 = 1;
+      CRASH();
     }
     prev_var_stack = GC_variable_stack;
 #endif
@@ -1235,7 +1330,7 @@ static void mark_bigblock(void **p, MPage *page, Mark_Proc mark)
 
 #if SAFETY
     if (prev_var_stack != GC_variable_stack) {
-      *(int *)0x0 = 1;
+      CRASH();
     }
 #endif
     
@@ -1289,12 +1384,22 @@ static int propagate_all_mpages()
 	if (page->type & MTYPE_BIGBLOCK) {
 	  if (!(page->type & MTYPE_CONTINUED))
 	    mark_bigblock((void **)p, page, mark);
-	} else if (page->type & MTYPE_TAGGED)
-	  propagate_tagged_mpage((void **)p, page);
-	else if (page->type & MTYPE_TAGGED_ARRAY)
-	  propagate_tagged_array_mpage((void **)p, page);
-	else 
-	  propagate_array_mpage((void **)p, page);
+	} else if (page->type & MTYPE_TAGGED) {
+	  if (page->type & MTYPE_OLD)
+	    propagate_tagged_whole_mpage((void **)p, page);
+	  else
+	    propagate_tagged_mpage((void **)p, page);
+	} else if (page->type & MTYPE_TAGGED_ARRAY) {
+	  if (page->type & MTYPE_OLD)
+	    propagate_tagged_array_whole_mpage((void **)p, page);
+	  else
+	    propagate_tagged_array_mpage((void **)p, page);
+	} else {
+	  if (page->type & MTYPE_OLD)
+	    propagate_array_whole_mpage((void **)p, page);
+	  else
+	    propagate_array_mpage((void **)p, page);
+	}
       }
     }
       
@@ -1447,7 +1552,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
 #if SAFETY
     if (size >= BIGBLOCK_MIN_SIZE) {
-      *(long *)0x0 = 1;
+      CRASH();
     }
 #endif
 
@@ -1548,6 +1653,10 @@ static void compact_all_mpages()
 	    compact_tagged_mpage((void **)p, page);
 	  else
 	    compact_untagged_mpage((void **)p, page);
+	} else {
+#if NOISY
+	  printf("x: %lx\n", (long)page->block_start);
+#endif
 	}
       }
     }
@@ -1601,6 +1710,12 @@ static void *move(void *p)
 	  stop();
 #endif
 
+#if SAFETY
+	if (!(find_page(r)->type & COLOR_MASK)) {
+	  CRASH();
+	}
+#endif
+
 	return r;
       }
     }
@@ -1637,7 +1752,7 @@ static void fixup_tagged_mpage(void **p, MPage *page)
 #if SAFETY
       if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
 	fflush(NULL);
-	*(int *)0x0 = 1;
+	CRASH();
       }
       prev_var_stack = prev_ptr;
       prev_ptr = p;
@@ -1669,7 +1784,7 @@ static void fixup_array_mpage(void **p, MPage *page)
 
 #if SAFETY
     if (size >= BIGBLOCK_MIN_SIZE) {
-      *(long *)0x0 = 1;
+      CRASH();
     }
 #endif
 
@@ -1722,6 +1837,10 @@ static void fixup_all_mpages()
 	scanned_pages++;
 	min_referenced_page_age = page->refs_age;
 	p = page->block_start;
+
+#if NOISY
+	fprintf(stderr, "Fixup %lx\n", (long)p);
+#endif
 
 	if (page->type & MTYPE_BIGBLOCK) {
 	  mark_bigblock((void **)p, page, move);
@@ -1942,7 +2061,7 @@ void GC_mark_variable_stack(void **var_stack,
 #if 0
     if (*var_stack && ((unsigned long)*var_stack < (unsigned long)var_stack)) {
       printf("bad %d\n", stack_depth);
-      *(int *)0x0 = 1;
+      CRASH();
     }
 #endif
 
@@ -1967,7 +2086,7 @@ void check_variable_stack()
       return;
 
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
-      *(int *)0x0 = 1;
+      CRASH();
 
     var_stack = *var_stack;
   }
@@ -2042,7 +2161,8 @@ static void gcollect(int full)
   GC_Weak_Array *wa;
 
   INITTIME();
-  PRINTTIME((STDERR, "gc: start [%d]: %ld\n", cycle_count + 1, GETTIMEREL()));
+  PRINTTIME((STDERR, "gc: start with %ld [%d]: %ld\n", 
+	     memory_in_use, cycle_count + 1, GETTIMEREL()));
 
   if (tagged_low < tagged_high)
     *(Type_Tag *)tagged_low = TAGGED_EOM;
@@ -2094,14 +2214,14 @@ static void gcollect(int full)
 
     if (full)
       young = 15;
-    else if (!(cycle_count & 0x1))
-      young = 1;
-    else if (!(cycle_count & 0x3))
-      young = 3;
-    else if (!(cycle_count & 0x7))
-      young = 7;
     else if (!(cycle_count & 0xF))
       young = 15;
+    else if (!(cycle_count & 0x7))
+      young = 7;
+    else if (!(cycle_count & 0x3))
+      young = 3;
+    else if (!(cycle_count & 0x1))
+      young = 1;
     else
       young = 0;
 
@@ -2207,7 +2327,7 @@ static void gcollect(int full)
 	      Type_Tag tag = *(Type_Tag *)f->p;
 #if SAFETY
 	      if ((tag < 0) || (tag >= _num_tags_) || !tag_table[tag]) {
-		*(int *)0x0 = 1;
+		CRASH();
 	      }
 #endif
 #if KEEP_FROM_PTR
@@ -2426,7 +2546,8 @@ static void gcollect(int full)
   if (tagged_array_compact_to_offset < MPAGE_WORDS)
     memset(tagged_array_low, 0, (tagged_array_high - tagged_array_low) << 2);
 
-  PRINTTIME((STDERR, "gc: done: %ld\n", GETTIMEREL()));
+  PRINTTIME((STDERR, "gc: done with %ld: %ld\n",
+	     memory_in_use, GETTIMEREL()));
 
   if (GC_collect_start_callback)
     GC_collect_end_callback();

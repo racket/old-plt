@@ -16,6 +16,13 @@
 
 @HEADER
 
+static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
+{
+#ifdef wx_x
+ ((wxWindowDC *)dc)->FillPrivateColor(c);
+#endif
+}
+
 @BEGINSYMBOLS fileSelMode > ONE
 @SYM "get" : wxOPEN
 @SYM "put" : wxSAVE
@@ -96,5 +103,7 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 
 @ "yield" : void wxSchemeYield(void[]=NULL//BundleVoidStar///spSema);
 @ "flush-display" : void wxFlushDisplay();
+
+@ "fill-private-color" : void wxsFillPrivateColor(wxDC!, wxColour!);
 
 @END

@@ -25,6 +25,13 @@
 #include "wxscomon.h"
 
 
+static void wxsFillPrivateColor(wxDC *dc, wxColour *c)
+{
+#ifdef wx_x
+ ((wxWindowDC *)dc)->FillPrivateColor(c);
+#endif
+}
+
 static Scheme_Object *fileSelMode_wxOPEN_sym = NULL;
 static Scheme_Object *fileSelMode_wxSAVE_sym = NULL;
 static Scheme_Object *fileSelMode_wxOVERWRITE_PROMPT_sym = NULL;
@@ -123,6 +130,26 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 
 
 
+
+
+#pragma argsused
+static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxDC* x0;
+  class wxColour* x1;
+
+  
+  x0 = objscheme_unbundle_wxDC(p[0], "fill-private-color", 0);
+  x1 = objscheme_unbundle_wxColour(p[1], "fill-private-color", 0);
+
+  
+  wxsFillPrivateColor(x0, x1);
+
+  
+  
+  return scheme_void;
+}
 
 #pragma argsused
 static Scheme_Object *wxsGlobalwxFlushDisplay(int n,  Scheme_Object *p[])
@@ -494,6 +521,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 
 void objscheme_setup_wxsGlobal(void *env)
 {
+  scheme_install_xc_global("fill-private-color", scheme_make_prim_w_arity(wxsGlobalwxsFillPrivateColor, "fill-private-color", 2, 2), env);
   scheme_install_xc_global("flush-display", scheme_make_prim_w_arity(wxsGlobalwxFlushDisplay, "flush-display", 0, 0), env);
   scheme_install_xc_global("yield", scheme_make_prim_w_arity(wxsGlobalwxSchemeYield, "yield", 0, 1), env);
   scheme_install_xc_global("write-resource", scheme_make_prim_w_arity(wxsGlobalwxWriteResource, "write-resource", 3, 4), env);

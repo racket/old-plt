@@ -39,4 +39,5 @@
  in-atomic-region
  set-editor-snip-maker
  set-text-editor-maker
- set-pasteboard-editor-maker)
+ set-pasteboard-editor-maker
+ fill-private-color)

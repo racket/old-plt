@@ -14,7 +14,9 @@
    (struct varref (var top-level?))
    expr-read
    set-expr-read!
-   flatten-take))
+   flatten-take
+   improper-map
+   improper-foreach))
 
 (define-signature stepper:annotate^
   (annotate))

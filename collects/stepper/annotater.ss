@@ -35,31 +35,18 @@
     (remove* a-set 
              b-set 
              (lambda (a-var b-var) 
-               (eq? (varref-var a-var)
-                    (varref-var b-var)))))
+               (eq? (z:varref-var a-var)
+                    (z:varref-var b-var)))))
     
-    (define (varref-elt-union a b-set)
-    (cond [(null? b-set)
-           (list a)]
-          [(eq? (varref-var a) (varref-var (car b-set)))
-           (cons
-            (if (varref-top-level? a)
-                (car b-set)
-                a)
-            (cdr b-set))]
-          [else
-           (cons (car b-set) (varref-elt-union a (cdr b-set)))]))
-  
   (define (varref-set-pair-union a-set b-set)
-    (foldl varref-elt-union b-set a-set))
-           
+    (append a-set (varref-remove* a-set b-set)))
+  
   (define var-set-union
     (lambda args
       (foldl varref-set-pair-union
 	     null
 	     args)))
-  
-    
+      
   #| .
      somehow, we need to translate zodiac structures back into scheme structures so that 
      we can hand them off to mzscheme.  By rights, that's an aries-like job.  So, there
@@ -74,20 +61,7 @@
      right here, but it means I have to COPY CODE from aries.  In particular, I need this
      arglist->ilist function. Ick.
      |#
-  
-  (define make-improper
-    (lambda (combine)
-      (rec improper ;; `rec' is for the name in error messages
-	   (lambda (f list)
-	     (let improper-loop ([list list])
-	       (cond
-		 ((null? list) list)
-		 ((pair? list) (combine (f (car list))
-					(improper-loop (cdr list))))
-		 (else (f list))))))))
-  (define improper-map (make-improper cons))
-  (define improper-foreach (make-improper (lambda (x y) y)))
-  
+    
   ; check-for-keyword/both : (bool -> (z:varref -> void))
   
   (define check-for-keyword/both
@@ -178,58 +152,27 @@
   
   (define debug-key (gensym "debug-key-"))
   
-  ; make-debug-info takes a list of variables and an expression and
-  ; creates a thunk closed over the expression and (if bindings-needed is true) 
-  ; the following information for each variable in kept-vars:
-  ; 1) the name of the variable (could actually be inferred)
-  ; 2) the value of the variable
-  ; 3) a mutator for the variable, if it appears in mutated-vars.
-  ; (The reason for the third of these is actually that it can be used
-  ;  in the stepper to determine which bindings refer to the same location,
-  ;  as per Matthew's suggestion.)
-  ; 
-  ; as an optimization:
-  ; note that the mutators are needed only for the bindings which appear in
-  ; closures; no location ambiguity can occur in the 'currently-live' bindings,
-  ; since at most one location can exist for any given stack binding.  That is,
-  ; using the source, I can tell whether variables referenced directly in the
-  ; continuation chain refer to the same location.
-  
-  ; okay, things have changed a bit.  For this iteration, I'm simply not going to 
-  ; store mutators.  later, I'll add them in.
-  
-  #| (define (make-debug-info vars bindings-needed expr)
-       (let* ([kept-vars (if bindings-needed vars null)]
-              [var-clauses (map (lambda (x) 
-                                  (let ([var (varref-var x)])
-                                    `(cons (#%quote ,var)
-                                           (cons ,var
-                                                 ,(if (varref-mutated? x)
-                                                      `(lambda (,mutator-gensym)
-                                                         (set! ,var ,mutator-gensym))
-                                                      `null)))))
-                                kept-vars)])
-         `(#%lambda () (list ,source ,@var-clauses)))) |#
-  
-  ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
-  ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
-  ; the varref contains a name and a boolean indicating whether the binding is 
-  ; top-level.  
-  
-  ; make-debug-info : ((list-of varref) bool z:zodiac (list-of varref) -> sexp)
-  
-  (define (make-debug-info vars bindings-needed source special-vars)
-    (let* ([kept-vars (append special-vars (if bindings-needed vars null))]
+  (define (make-debug-info source tail-bound top-env free-vars label)
+    (let* ([top-level-varrefs (filter z:top-level-varref free-vars)]
+           [lexical-varrefs (filter z:lexical-varref free-vars)]
+           [top-level-kept (if (eq? tail-bound 'all)
+                               (append top-level-varrefs top-env)
+                               null)]
+           [lexical-kept (if (eq? tail-bound 'all)
+                             lexical-varrefs
+                             (varref-intersect lexical-varrefs 
+                                               (var-set-union extra-tail-bound
+                                                              tail-bound)))];;; HERE
+           [kept-vars (append top-level-kept lexical-kept)]
            ; the reason I don't need var-set-union here is that these sets are guaranteed
            ; not to overlap.
            [var-clauses (map (lambda (x) 
                                (let ([var (varref-var x)])
-                                 `(cons ,var
+                                 `(cons (#%lambda () ,var)
                                         (cons ,x
                                               null))))
                              kept-vars)])
-      `(#%lambda () (list ,source ,@var-clauses))))
-  
+      `(#%lambda () (list ,source ,label ,@var-clauses))))
   
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
@@ -251,6 +194,8 @@
   (define (annotate text break)
     (local
 	(  
+
+         
          (define my-break
            `(#%lambda ()
               (,break (current-continuation-marks (#%quote ,debug-key))
@@ -260,11 +205,15 @@
          
   
          ; wrap creates the w-c-m expression.
-  
-         (define (wrap debug-info expr)
-           (let ([with-break `(#%begin (,my-break) ,expr)])
-             `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info ,with-break)))
-  
+         
+         (define (wcm-wrap debug-info expr)
+           `(#%with-continuation-mark (#%quote ,debug-key) ,debug-info))
+         
+         (define (break-wrap expr)
+           `(#%begin (,my-break) ,expr))
+         
+         (define (wcm-break-wrap debug-info expr)
+           (wcm-wrap debug-info (break-wrap expr)))
 
          (define exprs-read (read-exprs text))
          
@@ -283,7 +232,7 @@
                        ((z:scalar? expr) (e:static-error "starting offset inside scalar:" offset))
                        ((z:sequence? expr) 
                         (let ([object (z:read-object expr)])
-                          (cond
+                            (cond
                             ((z:list? expr) (search-exprs object))
                             ((z:vector? expr) 
                              (search-exprs (vector->list object))) ; can source exprs be here?
@@ -294,25 +243,33 @@
   
          (define parsed-exprs (map z:scheme-expand exprs-read))  
          
-	 ; annotate/inner takes an expression to annotate and a boolean
+	 ; annotate/inner takes an expression to annotate and (this is now wrong) a boolean
 	 ; indicating whether this expression lies on the evaluation spine.  It returns two things;
-	 ; an annotated expression, and a list of varref's.	 
+	 ; an annotated expression, and a list of zodiac varref's.	 
 	 
-	 ; annotate/inner: (z:zodiac bool (list-of sym) -> sexp (listof varref))
+	 ; annotate/inner: (z:zodiac (union (listof sym) 'all) -> sexp (listof varref))
 	 
-	 (define (annotate/inner expr on-spine? top-env)
+	 (define (annotate/inner expr tail-bound top-env)
 	   
-	   ; translate-varref: (bool bool -> sexp (listof varref))
+           
+           ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
+           ; a source expression (in the parsed zodiac format) and a set of varref/value pairs.
+           ; the varref contains a name and a boolean indicating whether the binding is 
+           ; top-level.  
+           
+           ; make-debug-info : ((list-of varref) bool z:zodiac (list-of varref) -> sexp)
+           
+           
 	   
-	   (let* ([tail-recur (lambda (expr) (annotate/inner expr on-spine? top-env))]
-                  [non-tail-recur (lambda (expr) (annotate/inner expr #f null))]
-                  [lambda-body-recur (lambda (expr) (annotate/inner expr #t null))]
-                  [make-debug-info-wrapper
-                   (lambda (vars bindings-needed source special-vars)
-                     (make-debug-info (var-set-union top-env vars)
-                                      bindings-needed
-                                      source
-                                      special-vars))]
+           ; translate-varref: (bool bool -> sexp (listof varref))
+	   
+	   (let* (
+                  [tail-recur (lambda (expr) (annotate/inner expr tail-bound top-env))]
+                  [non-tail-recur (lambda (expr) (annotate/inner expr null top-env))]
+                  [lambda-body-recur (lambda (expr) (annotate/inner expr 'all top-env))]
+                  [make-debug-info-normal (lambda (free-vars)
+                                            (make-debug-info expr free-vars null 'none))]
+                  
                   [translate-varref
                    (lambda (maybe-undef? top-level?)
                      (let* ([v (z:varref-var expr)]
@@ -320,8 +277,8 @@
                                         v
                                         (z:binding-orig-name
                                          (z:bound-varref-binding expr)))]
-                            [free-vars (list (make-varref real-v top-level?))]
-                            [debug-info (make-debug-info-wrapper free-vars on-spine? expr null)]
+                            [free-vars (list expr)]
+                            [debug-info (make-debug-info-normal free-vars)]
                             [annotated (if (and maybe-undef? (signal-undefined))
                                            `(#%if (#%eq? ,v ,the-undefined-value)
                                              (#%raise (,make-undefined
@@ -330,7 +287,7 @@
                                                        (#%quote ,v)))
                                              ,v)
                                            v)])
-                       (values (wrap debug-info annotated) free-vars)))])
+                       (values (wcm-break-wrap debug-info annotated) free-vars)))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -355,9 +312,9 @@
 	       [(z:app? expr)
 		(let+
 		 ([val sub-exprs (cons (z:app-fun expr) (z:app-args expr))]
-		  [val arg-sym-list (build-list (length sub-exprs) get-arg-symbol)]
-                  [val arg-varrefs (map (lambda (sym) (make-varref sym #f)) arg-sym-list)]
-		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
+		  [val arg-temps (build-list (length sub-exprs) get-arg-symbol)]
+                  [val arg-temp-syms (map z:varref-var arg-temps)] 
+		  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-temp-syms)]
 		  [val pile-of-values
 		       (map (lambda (expr) 
 			      (let-values ([(annotated free) (non-tail-recur expr)])
@@ -367,11 +324,14 @@
 		  [val free-vars (apply var-set-union (map cadr pile-of-values))]
 		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
 					`(#%set! ,arg-symbol ,annotated-sub-expr))
-				      arg-sym-list annotated-sub-exprs)]
-		  [val app-debug-info (make-debug-info-wrapper arg-varrefs on-spine? expr null)]
-		  [val final-app (wrap app-debug-info arg-sym-list)]
-		  [val debug-info (make-debug-info-wrapper free-vars on-spine? expr arg-varrefs)]
-		  [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
+				      arg-temp-syms annotated-sub-exprs)]
+		  [val app-debug-info (make-debug-info expr arg-temps arg-temps 'called)]
+		  [val final-app (break-wrap (wcm-wrap app-debug-info arg-sym-list))]
+		  [val debug-info (make-debug-info (var-set-union arg-temps free-vars)
+                                                   expr 
+                                                   arg-varrefs 
+                                                   'not-yet-called)]
+		  [val let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
 		 (values `(#%let ,let-clauses ,let-body) free-vars))]
 	       
 	       [(z:struct-form? expr)
@@ -385,12 +345,12 @@
 				  `(#%struct 
 				    ,(list raw-type annotated-super-expr)
 				    ,raw-fields)]
-                             [val debug-info (make-debug-info-wrapper free-vars-super-expr on-spine? expr null)])
-			    (values (wrap debug-info annotated) free-vars-super-expr))
-		      (values (wrap (make-debug-info-wrapper null on-spine? expr null)
-                                    `(#%struct ,raw-type ,raw-fields)) 
+                             [val debug-info (make-debug-info-normal free-vars-super-expr)])
+			    (values (wcm-wrap debug-info annotated) free-vars-super-expr))
+		      (values (wcm-wrap (make-debug-info-normal null)
+                                        `(#%struct ,raw-type ,raw-fields)) 
                               null)))]
-	       
+
 	       [(z:if-form? expr) 
 		(let+
 		 ([val (values annotated-test free-vars-test) 
@@ -402,22 +362,20 @@
 		  ; in beginner-mode, we must insert the boolean-test
 		  [val annotated `(#%let ((,if-temp ,annotated-test))
 				   (#%if (#%boolean? ,if-temp)
-				    (#%if ,if-temp
-				     ,annotated-then
-				     ,annotated-else)
+				    ,(break-wrap `(#%if ,if-temp
+                                                   ,annotated-then
+                                                   ,annotated-else))
 				    (#%raise (,make-not-boolean
 					      (#%format ,not-boolean-error-format
 					       ,if-temp)
 					      ((#%debug-info-handler))
 					      ,if-temp))))]
 		  [val free-vars (var-set-union free-vars-test free-vars-then free-vars-else)]
-		  [val debug-info (make-debug-info-wrapper free-vars on-spine? expr null)])
-		 (values (wrap debug-info annotated) free-vars))]
+		  [val debug-info (make-debug-info-normal free-vars)])
+		 (values (wcm-break-wrap debug-info annotated) free-vars))]
 	       
 	       [(z:quote-form? expr)
-		(values (wrap (make-debug-info-wrapper null on-spine? expr null) 
-			      `(#%quote ,(read->raw (z:quote-form-expr expr))))
-			null)]
+                (values `(#%quote ,(read->raw (z:quote-form-expr expr))) null)]
 	       
 	       ; there is no begin, begin0, or let in beginner. but can they be generated? 
 	       ; for instance by macros? Maybe.
@@ -434,7 +392,7 @@
 		       
                        [val (values annotated-val free-vars-val)
 			    (tail-recur (z:define-values-form-val expr))]
-		       [val free-vars (remq* var-names free-vars-val)]
+		       [val free-vars (varref-remove* vars free-vars-val)]
 		       [val annotated `(#%define-values ,var-names ,annotated-val)])
 		      (values annotated free-vars))]
 	       
@@ -443,9 +401,7 @@
 	       [(z:case-lambda-form? expr)
 		(let* ([annotate-case
 			(lambda (arglist body)
-			  (let ([var-list (map (lambda (var)
-                                                 (make-varref (z:binding-orig-name var) #f))
-                                               (z:arglist-vars arglist))])
+			  (let ([var-list (z:arglist-vars arglist)])
 			    (let-values ([(annotated free-vars)
 					  (lambda-body-recur body)])
                               (printf "var-list: ~a~n" (map varref-var var-list))
@@ -461,8 +417,7 @@
 		       [annotated-bodies (map car pile-of-results)]
 		       [annotated-case-lambda (cons '#%case-lambda annotated-bodies)] 
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
-		       [debug-info (make-debug-info-wrapper new-free-vars on-spine? expr null)]
-		       [closure-info (make-debug-info-wrapper new-free-vars #t expr null)]
+		       [closure-info (make-debug-info new-free-vars #t expr null)] ;;; FIX THIS
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
 				       ; that closure-table-put! thing needs to be protected
 				       (,closure-table-put! ,(closure-key-maker closure-temp) ,closure-info)
@@ -506,5 +461,4 @@
   )
     
   
-    
     

@@ -61,21 +61,23 @@
 
 (invoke-open-unit/sig stepper-test@)
 
-'(define lookup (stepper:stepper-start "((lambda (x) x) (let ([x 3] [y 3]) (+ x y)))"))
+;(define lookup (stepper:stepper-start "((lambda (x) x) (let ([x 3] [y 3]) (+ x y)))"))
 
 (define (s) (stepper:stepper-step))
 
-'(stepper:stepper-start 
-  (define a 3)
-  (define b 4)
-  (define c (+ 4 3))
-  3)
+;(stepper:stepper-start 
+;  "(define a 3)
+;  (define b 4)
+;  (define c (+ 4 3))
+;  3")
 
 (stepper:stepper-start
  "(define (fact n) (if (= n 0) 1 (* n (fact (- n 1)))))
  (fact 4)")
    
-             
+;(stepper:stepper-start
+; "(define (fact n) (if (= n 0) 1 (* n (- n 1))))
+; (fact 4)")  
              
                                    
                      

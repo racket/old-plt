@@ -22,8 +22,6 @@
 
 /* FIXME: syntax->list and resolve_env need stack checks. */
 
-#define STX_GRAPH_FLAG 0x1
-
 #define STX_DEBUG 0
 
 static Scheme_Object *syntax_p(int argc, Scheme_Object **argv);
@@ -260,6 +258,7 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 
   stx = MALLOC_ONE_TAGGED(Scheme_Stx);
   stx->type = scheme_stx_type;
+  stx->hash_code = HAS_SUBSTX(val) ? STX_SUBSTX_FLAG : 0;
   stx->val = val;
   stx->srcloc = srcloc;
   stx->wraps = scheme_null;
@@ -318,7 +317,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   Scheme_Stx *nstx = (Scheme_Stx *)naya;
   Scheme_Stx *ostx = (Scheme_Stx *)old;
   Scheme_Object *ne, *oe, *e1, *e2;
-  Scheme_Object *wraps;
+  Scheme_Object *wraps, *modinfo_cache;
   long lazy_prefix;
 
   if (nstx->props) {
@@ -460,12 +459,21 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   /* Clone nstx, keeping wraps, changing props to ne */
 
   wraps = nstx->wraps;
-  lazy_prefix = nstx->lazy_prefix;
+  if (nstx->hash_code & STX_SUBSTX_FLAG) {
+    modinfo_cache = NULL;
+    lazy_prefix = nstx->u.lazy_prefix;
+  } else {
+    modinfo_cache = nstx->u.modinfo_cache;
+    lazy_prefix = 0;
+  }
 
   nstx = (Scheme_Stx *)scheme_make_stx(nstx->val, nstx->srcloc, ne);
 
   nstx->wraps = wraps;
-  nstx->lazy_prefix = lazy_prefix;
+  if (modinfo_cache)
+    nstx->u.modinfo_cache = modinfo_cache;
+  else
+    nstx->u.lazy_prefix = lazy_prefix;
 
   return (Scheme_Object *)nstx;
 }
@@ -497,12 +505,19 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   Scheme_Object *wraps;
   long lp;
 
-  lp = stx->lazy_prefix;
+  if (stx->hash_code & STX_SUBSTX_FLAG)
+    lp = stx->u.lazy_prefix;
+  else
+    lp = 1;
+
   wraps = add_remove_mark(stx->wraps, m, &lp);
 
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
   stx->wraps = wraps;
-  stx->lazy_prefix = lp;
+
+  if (stx->hash_code & STX_SUBSTX_FLAG)
+    stx->u.lazy_prefix = lp;
+  /* else cache should stay zeroed */
 
   return (Scheme_Object *)stx;
 }
@@ -625,11 +640,15 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   long lp;
 
   wraps = scheme_make_pair(rename, stx->wraps);
-  lp = stx->lazy_prefix + 1;
+  if (stx->hash_code & STX_SUBSTX_FLAG)
+    lp = stx->u.lazy_prefix + 1;
+  else
+    lp = 0;
 
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
   stx->wraps = wraps;
-  stx->lazy_prefix = lp;
+
+  stx->u.lazy_prefix = lp; /* same as zeroing cache if no SUBSTX */
 
   return (Scheme_Object *)stx;
 }
@@ -641,17 +660,21 @@ Scheme_Object *scheme_add_mark_barrier(Scheme_Object *o)
 
 Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 				      Scheme_Object *old_midx, Scheme_Object *new_midx)
-/* Shifts the phase on a syntax object in a module. A 0 shift might be used
-   just to re-direct relative module paths. */
+/* Shifts the phase on a syntax object in a module. A 0 shift might be
+   used just to re-direct relative module paths. new_midx might be
+   NULL to shift without redirection. */
 {
-  Scheme_Object *vec;
+  if (shift || new_midx) {
+    Scheme_Object *vec;
   
-  vec = scheme_make_vector(3, NULL);
-  SCHEME_VEC_ELS(vec)[0] = scheme_make_integer(shift);
-  SCHEME_VEC_ELS(vec)[1] = (new_midx ? old_midx : scheme_false);
-  SCHEME_VEC_ELS(vec)[2] = (new_midx ? new_midx : scheme_false);
+    vec = scheme_make_vector(3, NULL);
+    SCHEME_VEC_ELS(vec)[0] = scheme_make_integer(shift);
+    SCHEME_VEC_ELS(vec)[1] = (new_midx ? old_midx : scheme_false);
+    SCHEME_VEC_ELS(vec)[2] = (new_midx ? new_midx : scheme_false);
 
-  return scheme_add_rename(stx, scheme_box(vec));
+    return scheme_add_rename(stx, scheme_box(vec));
+  } else
+    return (Scheme_Object *)stx;
 }
 
 static Scheme_Object *propagate_wraps(Scheme_Object *o, 
@@ -673,10 +696,17 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     /* p1 is the list after wl... */
     
     if (SAME_OBJ(stx->wraps, p1)) {
-      long lp = stx->lazy_prefix + len;
+      long lp;
+
+      if (stx->hash_code & STX_SUBSTX_FLAG)
+	lp = stx->u.lazy_prefix + len;
+      else
+	lp = 0;
+
       stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
       stx->wraps = owner_wraps;
-      stx->lazy_prefix = lp;
+      stx->u.lazy_prefix = lp; /* same as zeroing cache if no SUBSTX */
+
       return (Scheme_Object *)stx;
     }
   }
@@ -697,10 +727,18 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     if (SCHEME_NUMBERP(a)) {
       if (!i || !SAME_OBJ(a, SCHEME_VEC_ELS(wl)[i - 1])) {
 	if (mutable) {
-	  long lp = ((Scheme_Stx *)o)->lazy_prefix;
+	  long lp;
+	  if (((Scheme_Stx *)o)->hash_code & STX_SUBSTX_FLAG)
+	    lp = ((Scheme_Stx *)o)->u.lazy_prefix;
+	  else
+	    lp = 1;
+
 	  a = add_remove_mark(((Scheme_Stx *)o)->wraps, a, &lp);
+
 	  ((Scheme_Stx *)o)->wraps = a;
-	  ((Scheme_Stx *)o)->lazy_prefix = lp;
+	  if (((Scheme_Stx *)o)->hash_code & STX_SUBSTX_FLAG)
+	    ((Scheme_Stx *)o)->u.lazy_prefix = lp;
+	  /* else cache should stay zeroed */
 	} else {
 	  o = scheme_add_remove_mark(o, a);
 	  mutable = 1;
@@ -717,7 +755,8 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
       if (mutable) {
 	a = scheme_make_pair(a, ((Scheme_Stx *)o)->wraps);
 	((Scheme_Stx *)o)->wraps = a;
-	((Scheme_Stx *)o)->lazy_prefix += 1;
+	if (((Scheme_Stx *)o)->hash_code & STX_SUBSTX_FLAG)
+	  ((Scheme_Stx *)o)->u.lazy_prefix += 1;
       } else {
 	o = scheme_add_rename(o, a);
 	mutable = 1;
@@ -733,15 +772,15 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
 
-  if (HAS_SUBSTX(stx->val) && stx->lazy_prefix) {
+  if ((stx->hash_code & STX_SUBSTX_FLAG) && stx->u.lazy_prefix) {
     Scheme_Object *v = stx->val, *result;
     Scheme_Object *here_wraps;
     Scheme_Object *ml = NULL;
     int wl_count = 0;
     
     here_wraps = stx->wraps;
-    wl_count = stx->lazy_prefix;
-    stx->lazy_prefix = 0;
+    wl_count = stx->u.lazy_prefix;
+    stx->u.lazy_prefix = 0;
 
     if (SCHEME_PAIRP(v)) {
       Scheme_Object *last = NULL, *first = NULL;
@@ -935,15 +974,19 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
       src = SCHEME_VEC_ELS(vec)[1];
       dest = SCHEME_VEC_ELS(vec)[2];
 
-      if (!modidx_shift_to) {
-	modidx_shift_to = dest;
-      } else if (!SAME_OBJ(modidx_shift_from, dest)) {
-	modidx_shift_to = scheme_modidx_shift(dest,
-					      modidx_shift_from,
-					      modidx_shift_to);
-      }
+      /* If src is #f, shift is just for phase; no redirection */
 
-      modidx_shift_from = src;
+      if (!SCHEME_FALSEP(src)) {
+	if (!modidx_shift_to) {
+	  modidx_shift_to = dest;
+	} else if (!SAME_OBJ(modidx_shift_from, dest)) {
+	  modidx_shift_to = scheme_modidx_shift(dest,
+						modidx_shift_from,
+						modidx_shift_to);
+	}
+	
+	modidx_shift_from = src;
+      }
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))
 	       && !skip_remaining_lexes) {
       /* Lexical rename: */
@@ -1026,14 +1069,19 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
   Scheme_Object *result;
   int is_in_module = 0;
 
+  if (((Scheme_Stx *)a)->u.modinfo_cache)
+    return ((Scheme_Stx *)a)->u.modinfo_cache;
+
   result = NULL;
 
   while (1) {
     if (SCHEME_NULLP(wraps)) {
       if (!result)
-	return SCHEME_STX_VAL(a);
-      else
-	return result;
+	result = SCHEME_STX_VAL(a);
+
+      ((Scheme_Stx *)a)->u.modinfo_cache = result;
+      
+      return result;
     } else if (SCHEME_RENAMESP(SCHEME_CAR(wraps))) {
       Module_Renames *mrn = (Module_Renames *)SCHEME_CAR(wraps);
 
@@ -2659,18 +2707,27 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
     l = scheme_null;
 
   if (val) {
-    Scheme_Object *wraps;
+    Scheme_Object *wraps, *modinfo_cache;
     long lazy_prefix;
     
     l = scheme_make_pair(scheme_make_pair(key, val), l);
 
     wraps = stx->wraps;
-    lazy_prefix = stx->lazy_prefix;
+    if (stx->hash_code & STX_SUBSTX_FLAG) {
+      modinfo_cache = NULL;
+      lazy_prefix = stx->u.lazy_prefix;
+    } else {
+      modinfo_cache = stx->u.modinfo_cache;
+      lazy_prefix = 0;
+    }
 
     stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, l);
 
     stx->wraps = wraps;
-    stx->lazy_prefix = lazy_prefix;
+    if (modinfo_cache)
+      stx->u.modinfo_cache = modinfo_cache;
+    else
+      stx->u.lazy_prefix = lazy_prefix; /* same as NULL modinfo if no SUBSTX */
 
     return (Scheme_Object *)stx;
   } else

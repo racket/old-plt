@@ -636,6 +636,8 @@ stx_val {
   gcMARK(stx->srcloc);
   gcMARK(stx->wraps);
   gcMARK(stx->props);
+  if (!(stx->hash_code & STX_SUBSTX_FLAG))
+    gcMARK(stx->u.modinfo_cache);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Stx));
 }

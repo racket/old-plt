@@ -412,13 +412,19 @@ typedef struct Scheme_Stx_Srcloc {
   Scheme_Object *src;
 } Scheme_Stx_Srcloc;
 
+#define STX_GRAPH_FLAG 0x1
+#define STX_SUBSTX_FLAG 0x2
+
 typedef struct Scheme_Stx {
   Scheme_Type type;
-  short hash_code; /* Precise GC */
+  short hash_code; /* Precise GC; 0x1 and 0x2 used */
   Scheme_Object *val;
   Scheme_Stx_Srcloc *srcloc;
   Scheme_Object *wraps;
-  long lazy_prefix; /* # of initial items in wraps to propagate */
+  union {
+    long lazy_prefix; /* # of initial items in wraps to propagate */
+    Scheme_Object *modinfo_cache;
+  } u;
   Scheme_Object *props;
 } Scheme_Stx;
 

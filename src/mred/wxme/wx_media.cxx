@@ -2845,7 +2845,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   Scheme_Object *f;
   Bool fileerr;
 
-  if (writeLocked)
+  if (writeLocked || userLocked)
     return FALSE;
 
   if (!file || !*file) {
@@ -2914,12 +2914,20 @@ Bool wxMediaEdit::InsertFile(char *file, int format, Bool showErrors)
 {
   Scheme_Object *f;
 
-  if (writeLocked)
+  if (writeLocked || userLocked)
     return FALSE;
 
   f = scheme_open_input_file(file, "insert-file in text%");
   
   return InsertFile(f, file, &format, FALSE, showErrors);
+}
+
+Bool wxMediaEdit::InsertFile(Scheme_Object *f, int format, Bool showErrors)
+{
+  if (writeLocked || userLocked)
+    return FALSE;
+  
+  return InsertFile(f, NULL, &format, FALSE, showErrors);
 }
 
 Bool wxMediaEdit::InsertFile(Scheme_Object *f, char *WXUNUSED(file), int *format, Bool clearStyles, Bool showErrors)

@@ -64,6 +64,7 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 
 
 
+
 static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
 static Scheme_Object *bufferType_wxPASTEBOARD_BUFFER_sym = NULL;
 
@@ -3460,33 +3461,67 @@ static Scheme_Object *os_wxMediaBufferGetExtent(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaBufferInsertFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(os_wxMediaBuffer_class, "insert-file in editor<%>", n, p);
-  string x0 INIT_NULLED_OUT;
-  int x1;
-  Bool x2;
+  if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL))) {
+    string x0 INIT_NULLED_OUT;
+    int x1;
+    Bool x2;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
 
-  
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert-file in editor<%>"));
-  if (n > (POFFSET+1)) {
-    x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "insert-file in editor<%>"));
-  } else
-    x1 = wxMEDIA_FF_GUESS;
-  if (n > (POFFSET+2)) {
-    x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "insert-file in editor<%>"));
-  } else
-    x2 = TRUE;
+    
+    if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("insert-file in editor<%> (filename case)", POFFSET+1, POFFSET+3, n, p, 1));
+    x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert-file in editor<%> (filename case)"));
+    if (n > (POFFSET+1)) {
+      x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "insert-file in editor<%> (filename case)"));
+    } else
+      x1 = wxMEDIA_FF_GUESS;
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "insert-file in editor<%> (filename case)"));
+    } else
+      x2 = TRUE;
 
-  
-  r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->InsertFile(x0, x1, x2));
+    
+    r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->InsertFile(x0, x1, x2));
 
-  
-  
+    
+    
+  } else  {
+    Scheme_Object* x0 INIT_NULLED_OUT;
+    int x1;
+    Bool x2;
+
+    SETUP_VAR_STACK_PRE_REMEMBERED(2);
+    VAR_STACK_PUSH(0, p);
+    VAR_STACK_PUSH(1, x0);
+
+    
+    if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
+      WITH_VAR_STACK(scheme_wrong_count_m("insert-file in editor<%> (port case)", POFFSET+1, POFFSET+3, n, p, 1));
+    x0 = (SCHEME_INPORTP(p[POFFSET+0]) ? p[POFFSET+0] : (scheme_wrong_type(METHODNAME("editor<%>","insert-file"), "input port", -1, 1, &p[POFFSET+0]), (Scheme_Object *)NULL));
+    if (n > (POFFSET+1)) {
+      x1 = WITH_VAR_STACK(unbundle_symset_fileType(p[POFFSET+1], "insert-file in editor<%> (port case)"));
+    } else
+      x1 = wxMEDIA_FF_GUESS;
+    if (n > (POFFSET+2)) {
+      x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "insert-file in editor<%> (port case)"));
+    } else
+      x2 = TRUE;
+
+    
+    r = WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->InsertFile(x0, x1, x2));
+
+    
+    
+  }
+
   return (r ? scheme_true : scheme_false);
 }
 

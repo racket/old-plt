@@ -43,6 +43,9 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @MACRO rFALSE = return FALSE;
 @MACRO rZERO = return 0;
 
+@MACRO ubPort = (SCHEME_INPORTP({x}) ? {x} : (scheme_wrong_type(METHODNAME("editor<%>","insert-file"), "input port", -1, 1, &{x}), (Scheme_Object *)NULL))
+@MACRO cPort = SCHEME_INPORTP({x})
+
 @INCLUDE wxs_eds.xci
 
 @INCLUDE wxs_eop.xci
@@ -70,7 +73,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 // These don't use `pathname' because they expand internally
 @ X "load-file" : bool LoadFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
 @ X "save-file" : bool SaveFile(nstring=NULL,SYM[fileType]=wxMEDIA_FF_SAME,bool=TRUE);
-@ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE);
+@ X "insert-file" : bool InsertFile(string,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> filename
+@ X "insert-file" : bool InsertFile(Scheme_Object[]//ubPort/cPort///push,SYM[fileType]=wxMEDIA_FF_GUESS,bool=TRUE); <> port
 
 @ X "get-extent" : void GetExtent(nnfloat?,nnfloat?);
 @ X "get-descent" : float GetDescent(); : : : : XrZERO

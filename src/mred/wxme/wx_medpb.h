@@ -89,6 +89,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   Bool LoadFile(char *filename = NULL, int format = wxMEDIA_FF_STD, Bool showErrors = TRUE);
   Bool SaveFile(char *filename = NULL, int format = wxMEDIA_FF_STD, Bool showErrors = TRUE);
   Bool InsertFile(char *filename, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE);
+  Bool InsertFile(Scheme_Object *port, int format = wxMEDIA_FF_GUESS, Bool showErrors = TRUE);
 
   void StyleHasChanged(wxStyle *style);
 
@@ -228,7 +229,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   void _Delete(wxSnip *, wxDeleteSnipRecord *del);
 
-  Bool InsertFile(Scheme_Object *f, Bool clearStyles, Bool showErrors);
+  Bool InsertFile(Scheme_Object *f, const char *filename, Bool clearStyles, Bool showErrors);
 
   void Draw(wxDC *dc, float dx, float dy, 
 	    float cx, float cy, float cw, float ch, 

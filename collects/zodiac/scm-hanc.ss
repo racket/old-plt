@@ -327,7 +327,7 @@
 	      (valid-syntactic-id? id)
 	      (cons (z:read-object id)
 		(signature-exploded
-		  (lookup-signature sig attributes))))))
+		  (expand-expr sig env attributes sig-vocab))))))
 	(else
 	  (cons immediate-signature-name
 	    (explode-signature-elements
@@ -369,9 +369,8 @@
 
 (add-sym-micro u/s-sign-exports-vocab
   (lambda (expr env attributes vocab)
-    (cons (z:read-object expr)
-      (signature-exploded
-	(lookup-signature expr attributes)))))
+    (signature-exploded
+      (lookup-signature expr attributes))))
 
 (add-list-micro u/s-sign-exports-vocab
   (let* ((kwd '(:))
@@ -385,16 +384,14 @@
 	    (let ((id (pat:pexpand 'id p-env kwd))
 		   (sig (pat:pexpand 'sig p-env kwd)))
 	      (valid-syntactic-id? id)
-	      (cons (z:read-object id)
-		(signature-exploded
-		  (lookup-signature sig attributes))))))
+	      (signature-exploded
+		(expand-expr sig env attributes sig-vocab)))))
 	(else
-	  (cons immediate-signature-name
-	    (explode-signature-elements
-	      (apply append
-		(map (lambda (s)
-		       (expand-expr s env attributes sig-element-vocab))
-		  (expose-list expr))))))))))
+	  (explode-signature-elements
+	    (apply append
+	      (map (lambda (s)
+		     (expand-expr s env attributes sig-element-vocab))
+		(expose-list expr)))))))))
 
 ; --------------------------------------------------------------------
 

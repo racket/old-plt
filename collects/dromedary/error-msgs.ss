@@ -17,12 +17,12 @@
 	   ;; build-src-list src * (syntax name parameter) -> (U bool (list loc int int int int))
 	   (define (build-src-list src name)
 	     (cond
-	      [(syntax? src) (pretty-print "syntax in build-src-list")
+	      [(syntax? src) ;(pretty-print "syntax in build-src-list")
 	       (list (syntax-source src)
-				   (syntax-line src)
-				   (syntax-column src)
-				   (syntax-position src)
-				   (syntax-span src))]
+		     (syntax-line src)
+		     (syntax-column src)
+		     (syntax-position src)
+		     (syntax-span src))]
 	      [(ast:src? src) (if (and (= (ast:src-line src) 0)
 				       (= (ast:src-col src) 0)
 				       (= (ast:src-pos src) 0)

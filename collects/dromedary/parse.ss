@@ -6,6 +6,8 @@
 		    (lib "match.ss")
 		    (prefix ast: "ast.ss"))
 
+	   (define parse-offset (make-parameter 0))
+
 	   ;; Taken from the OCaml System release 3.04 Documentation and user's manual
 	   ;; Also converted from the parsing subdirectory of the Ocaml 3.04 distribution
 	   (define-lex-abbrevs [letter (: (- #\a #\z) (- #\A #\Z))]
@@ -1184,7 +1186,7 @@
 				(ast:make-src
 				 (position-line start-pos)
 					      (position-col start-pos)
-					      (position-offset start-pos)
+					      (+ (position-offset start-pos) (parse-offset))
 					      (- (position-offset end-pos)
 						 (position-offset start-pos))))))))
   
@@ -1193,12 +1195,12 @@
        (list #f
 	     (syntax-line syn)
 	     (syntax-column syn)
-	     (syntax-position syn)
+	     (+ (syntax-position syn) (parse-offset))
 	     (syntax-span syn))
        (list #f
 	     (syntax-line syn)
 	     (syntax-column syn)
-	     (syntax-position syn)
+	     (+ (syntax-position syn) (parse-offset))
 	     (- (car others)
 		(syntax-column syn)))))
 
@@ -1221,7 +1223,7 @@
 				(list #f
 				      (position-line start-pos)
 				      (position-col start-pos)
-				      (position-offset start-pos)
+				      (+ (position-offset start-pos) (parse-offset))
 				      (- (position-offset end-pos)
 					 (position-offset start-pos))))))))
   
@@ -1243,7 +1245,8 @@
 	 [else
 	  (pretty-print "no expression")]))
 
-  (define (parse-ml-port port file)
+  (define (parse-ml-port port file offset)
+    (parse-offset offset)
     (let ([lexer (lex file)])
       (port-count-lines! port)
       (parse
@@ -1258,6 +1261,7 @@
     (with-input-from-file file
       (lambda ()
 	(parse-ml-port (current-input-port)
-			(path->complete-path file)))))
+			(path->complete-path file)
+			0))))
   
   (provide parse-ml-file parse-ml-port test-func test-func2))

@@ -188,11 +188,18 @@
 	     [(x) (void)]))
           (define/public (default-settings) null)
           (define/public (default-settings? x) #t)
-          (define/public (front-end input settings)
+	  (define/public (front-end/complete-program input settings) (front-end input settings 0))
+          (define/public (front-end/interaction input settings) (front-end input settings (drscheme:language:text/pos-start input)))
+          (define/public (front-end input settings offset)
             (let-values ([(port name current-parse)
                           (if (string? input)
                               (values (open-input-file input) #f null);(path->complete-path input))
                               (let ([text (drscheme:language:text/pos-text input)])
+;				(parse-error-port (lambda ()
+;						    (open-input-string
+;						     (send text get-text
+;							   (drscheme:language:text/pos-start input)
+;							   (drscheme:language:text/pos-end input)))))
                                 (values
                                  (open-input-string
                                   (send text
@@ -213,7 +220,7 @@
 					    (if (list? (car ccomp))
 						(append (flatten (car ccomp)) (flatten (cdr ccomp)))
 						(cons (car ccomp) (flatten (cdr ccomp))))))]
-				     [cur-parse (parse-ml-port port name)]
+				     [cur-parse (parse-ml-port port name offset)]
 				     [syntaxify (lambda (stmt)
 						  (datum->syntax-object #f
 									stmt
@@ -235,8 +242,7 @@
 			    firstexp)))
 		    (read-syntax input port))
 		    )))
-          (define/public (front-end/complete-program input settings) (front-end input settings))
-          (define/public (front-end/interaction input settings) (front-end input settings))
+          
 	  (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list (string-constant experimental-languages) "Dromedary"))
           (define/public (get-language-name) "Dromedary")

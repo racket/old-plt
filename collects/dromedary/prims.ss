@@ -379,6 +379,7 @@
 	(hash-table-put! <constructors> "list" (cons (make-tlist (make-tvar "'a")) "some error"))
 	(hash-table-put! <constructors> "ref" (cons (make-ref (make-tvar "'a")) "some error"))
 	(hash-table-put! <constructors> "array" (cons (make-tarray (make-tvar "'a")) "some error"))
+	(hash-table-put! <constructors> "option" (cons (make-option (make-tvar "'a")) "some error"))
 	(hash-table-put! <constructors> "float" (cons "float" "some error"))
 	(hash-table-put! <constructors> "int" (cons "int" "some error"))
 	(hash-table-put! <constructors> "bool" (cons "bool" "some error"))

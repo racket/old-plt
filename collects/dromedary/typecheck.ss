@@ -8,7 +8,7 @@
 		    )
 	   (provide typecheck-all convert-tvars)
 
-	   (define cur-var #\a)
+	   (define cur-var (make-parameter #\a))
 
 	   (define (hash-table-put!print ht key val)
 	       (pretty-print (format "hash-table-put! ~a ~a ~a" ht key val))
@@ -33,7 +33,7 @@
 
 	   (define (typecheck-all stmt location)
 	     (begin	       
-	       (set! cur-var #\a)
+	       (cur-var #\a)
 	       (loc location)
 	       (let ([progtype (typecheck-ml stmt (empty-context))])
 		 (begin ;(pretty-print (format "initial progtype: ~a" progtype))
@@ -183,7 +183,8 @@
 		    [($ ast:pexp_apply proc lelist)
 		     (let ([funt (typecheck-ml proc context)]
 			   [argst (typecheck-lelist lelist context)])
-		       (typecheck-application funt argst (at proc (ast:expression-pexp_src proc)) (map at (map cdr lelist) (map ast:expression-pexp_src (map cdr lelist)))))]
+		       (typecheck-application funt argst (ast:expression-pexp_src proc) (map ast:expression-pexp_src (map cdr lelist))))]
+
 
 		     
 
@@ -391,7 +392,7 @@
 	     (let ([contextwithbindings (typecheck-bindings rec bindings context)])
 	       (begin 
 ;		 (pretty-print (format "contextwithbindings: ~a" contextwithbindings))
-		 (set! cur-var #\a)
+		 (cur-var #\a)
 		 (let ([definedtypes (reverse (map car (map unconvert-tvars (map car (map cdr contextwithbindings)) (repeat null (length contextwithbindings)))))])
 		   (begin
 		     (for-each (lambda (name type)
@@ -419,6 +420,13 @@
 						   [rpat (if constraint
 							     (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car cur-bind)))
 							     (car cur-bind))]
+						   [dummy (if (ast:ppat_var? rpat)
+							      #t
+							      (raise-error #f
+									   (loc)
+									   "Only variables are allowed as left-hand side of 'let rec'"
+									   (string->symbol "let rec")
+									   (ast:pattern-ppat_src (car cur-bind))))]
 						   [tf (if constraint
 							   (typecheck-type (car (convert-ttypes (ast:ppat_constraint-type (ast:pattern-ppat_desc (car cur-bind))))) null #f)
 							   (make-arrow (list (fresh-type-var)) (fresh-type-var)))])
@@ -441,7 +449,7 @@
 )))
 
 	   (define (typecheck-binding binding rec context)
-;	     (pretty-print (format "typecheck-binding"))
+;	     (pretty-print (format "typecheck-binding ~a" binding))
 	     (let* ([rpat (if (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
 			      (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding)))
 			      (car binding))])
@@ -544,6 +552,7 @@
 		       (if fconstructor
 			   (cond
 			    [(tconstructor? fconstructor)
+			     (pretty-print "fconstructor in typecheck-type is tconstructor - this case should never occur")
 			     (if (null? (tconstructor-argtype fconstructor))
 				 (if (null? ctlist)
 				     (tconstructor-result fconstructor)
@@ -556,62 +565,170 @@
 			     (if (null? (usertype-params fconstructor))
 				 (if (null? ctlist)
 				     fconstructor
-				     (raise-syntax-error #f (format "Constructor ~a(~a) expects no arguments but got:~a" (usertype-name fconstructor) (usertype-params fconstructor) ctlist) (at asttype (ast:core_type-src asttype))))
-				 (if (andmap unify (usertype-params fconstructor) (car (convert-list (map typecheck-type ctlist (repeat boundlist (length ctlist)) (repeat decl? (length ctlist))) null null)) (repeat (at (car ctlist) (ast:core_type-src (car ctlist))) (length ctlist)))
-				     fconstructor))]
-			    [(equal? (unlongident name) "list")
-			       
-			       (make-tlist (typecheck-type (car ctlist) boundlist decl?))]
-			    [(equal? (unlongident name) "ref")
-			     (make-ref (typecheck-type (car ctlist) boundlist decl?))]
-			    [(equal? (unlongident name) "array")
-			     (make-tarray (typecheck-type (car ctlist) boundlist decl?))]
-			    [(null? ctlist)
-			     fconstructor
-			       ]
-			    [else
-			     (raise-syntax-error #f (format "~a takes no arguments but was given ~a" fconstructor  ctlist) (at asttype (ast:core_type-src asttype)))])
-			   (raise-syntax-error #f (format "Unknown constructor: ~a. Boundlist: ~a" (unlongident name) boundlist) (at asttype (ast:core_type-src asttype)))))]
-		    [($ ast:ptyp_variant rfl abool ll)
-		     'comeslater
-		     ;; Need to implement this!!!
-]
-		    [else
-		     (raise-syntax-error #f (format "Cannot handle type: ~a" asttype) (at asttype (ast:core_type-src asttype)))]))
+				     (raise-error #f
+						  (loc)
+						  (format "The type constructor ~a expects 0 arguments but was given ~a" (usertype-name fconstructor) (let ([num (length ctlist)])
+																			(if (= 1 num)
+																			    "1 argument"
+																			    
+																			    (format "~a arguments" num))))
+						  (string->symbol (usertype-name fconstructor))
+						  (ast:core_type-src asttype)))
+				 (if (= (length (usertype-params fconstructor))
+					(length ctlist))
+				     (when (andmap 
+					    unify 
+					    (usertype-params fconstructor) 
+					    (car 
+					     (convert-list 
+					      (map 
+					       typecheck-type 
+					       ctlist 
+					       (repeat 
+						boundlist 
+						(length ctlist)) 
+					       (repeat decl? 
+						       (length ctlist))) 
+					      null 
+					      null)) 
+					    (repeat 
+					     (at 
+					      (car ctlist) 
+					      (ast:core_type-src (car ctlist))) 
+					     (length ctlist)))
+					   fconstructor)
+				     (raise-error #f
+						  (loc)
+						  (let ([cnum (length (usertype-params fconstructor))]
+							[unum (length ctlist)])
+						    (format "The type constructor ~a expects ~a argument~a but was given ~a argument~a"
+							    (usertype-name fconstructor)
+							    cnum
+							    (if (= 1 cnum)
+								""
+								"s")
+							    unum
+							    (if (= 1 unum)
+								""
+								"s")))
+						  (string->symbol (usertype-name fconstructor))
+						  (ast:core_type-src asttype)))
 
-		    
+				     )]
+			    [(equal? (unlongident name) "list")
+			     (one-argument? ctlist "list" make-tlist (ast:core_type-src asttype) boundlist decl?)]
+
+			    [(equal? (unlongident name) "ref")
+			     (one-argument? ctlist "ref" make-ref (ast:core_type-src asttype) boundlist decl?)]
+
+			    [(equal? (unlongident name) "array")
+			     (one-argument? ctlist "array" make-tarray (ast:core_type-src asttype) boundlist decl?)]
+
+			    [(string? fconstructor)
+			     (if (null? ctlist)
+				 fconstructor
+				 (raise-error #f
+					      (loc)
+					      (let ([cnum (length ctlist)])
+						(format "The type constructor ~a expects 0 arguments but was given ~a argument~a"
+							fconstructor
+							cnum
+							(if (= cnum 1)
+							    ""
+							    "s")))
+					      (string->symbol fconstructor)
+					      (ast:core_type-src asttype)))]
+			    [else
+			     (raise-error #f
+					  (loc)
+					  (format "I don't now how to handle this. fcsontructor: ~a ctlist: ~a"
+						  fconstructor ctlist)
+					  fconstructor
+					  (ast:core_type-src asttype))])
+			   (raise-error #f 
+					(loc)
+					(format "Unbound type constructor: ~a"
+						(unlongident name)) 
+					(string->symbol (unlongident name))
+					(ast:core_type-src asttype))))]
+;		    [($ ast:ptyp_variant rfl abool ll)
+;		     'comeslater
+		     ;; Need to implement this!!!
+;]
+		    [else
+		     (raise-error #f 
+				  (loc)
+				  (format "Cannot handle type: ~a" asttype) 
+				  asttype
+				  (ast:core_type-src asttype))]))
+
+	   (define (one-argument? alist name fun src boundlist decl?)
+	     (if (= 1 (length alist))
+		 (fun (typecheck-type (car alist) boundlist decl?))
+		 (raise-error #f
+			      (loc)
+			      (format "The type constructor ~a takes 1 argument but was given ~a arguments" name (length alist))
+			      (string->symbol name)
+			      src)))
 
 	   (define (typecheck-application funt argst funsyn argssyn)
 ;	     (pretty-print (format "typecheck-application ~a ~a" funt argst))
-	     (if (unify (make-arrow (list (fresh-type-var)) (fresh-type-var)) funt funsyn)
-		 (let ([arglist (get-arglist funt)])
-		   (if (= (length arglist) (length argst))
-		       (begin
-;			 (pretty-print (format "arglist: ~a argst: ~a" arglist argst))
-		       (if (andmap unify arglist argst argssyn)
-			   (get-result funt)
-			   (raise-syntax-error #f "Arguments do not match types" #f))
-		       )
-		       (if (> (length argst) (length arglist))
-			   (foldl uncurry (if (unify (car (get-arglist funt)) (car argst) (car argssyn))
-					      (get-result funt)) 
-				  (cdr argst)
-				  (cdr argssyn))
-			   (raise-syntax-error #f (format "Expected ~a arguments but found ~a" (length arglist) (length argst)) funsyn))))
-		 (raise-syntax-error #f "Failed to unify application" #f)) )
+	     (when (unify (make-arrow (list (fresh-type-var)) (fresh-type-var)) funt funsyn)
+		   (letrec ([numfunargs (lambda (f) (if (arrow? f)
+							(+ 1 (numfunargs (arrow-result f)))
+							0))])
+		     (if (= (length argst) (numfunargs funt))
+			 (let ([arglist (get-arglist funt)])
+			   (if (= (length arglist) (length argst))
+			       (begin
+;				 (pretty-print (format "arglist: ~a argst: ~a" arglist argst))
+				 (when (andmap unify arglist argst argssyn)
+				       (get-result funt))
+				 )
+			       (if (> (length argst) (length arglist))
+				   (foldl uncurry (if (unify (car (get-arglist funt)) (car argst) (car argssyn))
+						      (get-result funt)) 
+					  (cdr argst)
+					  (cdr argssyn))
+				   (raise-error #f 
+						(loc)
+						(format "Expected ~a argument~a but found ~a" (length arglist) (if (= 1 (length arglist))
+														   ""
+														   "s")
+							(length argst))
+						(void)
+						argssyn))))
+			 (letrec ([firstelemsrc (car argssyn)]
+				  [lastelem (lambda (v) (if (null? (cdr v))
+							    (car v)
+							    (lastelem (cdr v))))]
+				  [lastelemsrc (lastelem argssyn)]
+				  [argsrc
+				   (ast:make-src (ast:src-line firstelemsrc)
+						 (ast:src-col firstelemsrc)
+						 (ast:src-pos firstelemsrc)
+						 (+ (- (ast:src-pos lastelemsrc) (ast:src-pos firstelemsrc)) (ast:src-span lastelemsrc)))])
+			   (raise-error #f 
+					(loc)
+					(format "Expected ~a argument~a but found ~a" (numfunargs funt) (if (= 1 (numfunargs funt))
+													    ""
+													    "s")
+						(length argst))
+					(void)
+					argsrc))
+			 ) )))
 
 
 	   (define (uncurry nextt argsyn init)
 ;	     (pretty-print (format "uncurry: ~a ~a ~a" nextt argsyn init))
 	     (if (unify init (make-arrow (list nextt) (fresh-type-var)) argsyn)
 		 (let ([arglist (get-arglist init)])
-		   (if (> (length arglist) 1)
-		       (raise-syntax-error #f (format "This should never happen: uncurry") nextt)
-;		       (if (unify (car arglist) nextt)
+		   (unless (> (length arglist) 1)
 		       (get-result init)))))
 
 		    
 	   (define (funvarcheck context pat)
+;	     (pretty-print (format "funvarcheck: ~a" pat))
 	     (if (unique-var pat null)
 		 (let ([varenv (funenv pat)])
 		   (begin ;(pretty-print (format "var-env from funvarcheck: ~a" varenv))
@@ -624,14 +741,19 @@
 		 'fuzzle))
 
 	   (define (unique-var pat curvars)
-	     ;(pretty-print (format "unique-var: ~a" pat))
+;	     (pretty-print (format "unique-var: ~a" pat))
 	     (match (ast:pattern-ppat_desc pat)
 		    [($ ast:ppat_any dummy)
 		     curvars]
 		    [($ ast:ppat_var name)
-		     (if (present? name curvars)
-			 (raise-syntax-error #f (format "This variable is bound several times in this matching: ~a" name) (at pat (ast:pattern-ppat_src pat)))
-			 (cons name curvars))]
+;		     (pretty-print (format "varname: ~a" name))
+		     (if (present? (syntax-object->datum name) curvars)
+			 (raise-error #f
+				      (loc)
+				      (format "The variable ~a is bound several times in this matching" (syntax-object->datum name))
+				      (string->symbol (syntax-object->datum name))
+				      (ast:pattern-ppat_src pat))
+			 (cons (syntax-object->datum name) curvars))]
 		    [($ ast:ppat_constant const)
 		     curvars]
 		    [($ ast:ppat_tuple plist)
@@ -672,26 +794,73 @@
 				 (if (null? cpat)
 				     (if (null? (tconstructor-argtype cpat-type))
 					 (cons (tconstructor-result cpat-type) (empty-context))
-					 (raise-syntax-error #f "Constructor expects an argument" (at pat (ast:pattern-ppat_src pat))))
+					 (raise-error #f 
+						      (loc)
+						      (let ([nargs (if (<tuple>? (tconstructor-argtype cpat-type))
+								       (length (<tuple>-list) (tconstructor-argtype cpat-type))
+								       1)])
+							(format "The constructor ~a expects ~a argument~a but was given no arguments"
+								(unlongident longident)
+								nargs
+								(if (= 1 nargs)
+								  ""
+								  "s")))
+						      (string->symbol (unlongident longident))
+						      (ast:pattern-ppat_src pat)))
 				     (if (null? (tconstructor-argtype cpat-type))
-					 (raise-syntax-error #f "Constructor expects no arguments" (at pat (ast:pattern-ppat_src pat)))
+					 (raise-error #f 
+						      (loc)
+						      (let* ([ftype (car (funenv cpat))]
+							     [nargs (if (<tuple>? ftype)
+								       (length (<tuple>-list ftype))
+								       1)])
+							(format "The constructor ~a expects 0 arguments but was given ~a argument~a"
+								(unlongident longident)
+								nargs
+								(if (= 1 nargs)
+								    ""
+								    "s")))
+						      (string->symbol (unlongident longident))
+						      (ast:pattern-ppat_src pat))
 					 (cons (tconstructor-result cpat-type) (let ([fenvpat (funenv cpat)])
 										 (when (unify (tconstructor-argtype cpat-type) (car fenvpat) (at cpat (ast:pattern-ppat_src cpat)))
 										       (cdr fenvpat))))))
 				 (if (null? cpat)
 				     (cons cpat-type (empty-context))
-				     (raise-syntax-error #f "Constructor expects no arguments" (at pat (ast:pattern-ppat_src pat)))))
-			     (raise-syntax-error #f (format "No such constructor ~a" (unlongident longident)) (at pat (ast:pattern-ppat_src pat)))) )]
+				     (raise-error #f 
+						      (loc)
+						      (let* ([ftype (car (funenv cpat))]
+							     [nargs (if (<tuple>? ftype)
+								       (length (<tuple>-list ftype))
+								       1)])
+							(format "The constructor ~a expects 0 arguments but was given ~a argument~a"
+								(unlongident longident)
+								nargs
+								(if (= 1 nargs)
+								    ""
+								    "s")))
+						      (string->symbol (unlongident longident))
+						      (ast:pattern-ppat_src pat))
+				     ))
+			     (raise-error #f 
+					  (loc)
+					  (format "Unbound constructor ~a" (unlongident longident))
+					  (string->symbol (unlongident longident))
+					  (ast:pattern-ppat_src pat))) )]
 
 		    [($ ast:ppat_constraint pat ct)
 		     ;Assume a constraint must immediately follow a variable
-		     (let ([type (typecheck-type (car (convert-ttypes (cons ct null))) null)]
+		     (let ([type (typecheck-type (car (convert-ttypes (cons ct null))) null #f)]
 			   [varname (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc pat)))])
 		       (cons type (update varname (cons type null) (empty-context))))]
-		    [else (raise-syntax-error #f (format "No such pattern found: ~a" pat) (at pat (ast:pattern-ppat_src pat)))]))
+		    [else (raise-error #f 
+				       (loc)
+				       (format "No such pattern found: ~a" pat)
+				       pat
+				       (ast:pattern-ppat_src pat))]))
 		     
 	   (define (patenv pat type context)
-	     (let ([patsyn (at pat (ast:pattern-ppat_src pat))])
+	     (let ([patsyn (ast:pattern-ppat_src pat)])
 	     (match (ast:pattern-ppat_desc pat)
 		    [($ ast:ppat_any dummy)
 		     (empty-context)]
@@ -699,9 +868,9 @@
 		     (update (syntax-object->datum name) (schema type context) (empty-context))]
 		    [($ ast:ppat_constant const)
 		     (let ([t2 (constant-check const)])
-		       (if (unify type t2 patsyn)
+		       (when (unify type t2 patsyn)
 			   (empty-context)
-			   (raise-syntax-error #f (format "Expected ~a but found ~a (patenv)" type t2) patsyn))) ]
+			   ))]
 		    [($ ast:ppat_tuple plist)
 		     (begin ;(pretty-print (format "plist: ~a" plist))
 			    
@@ -720,7 +889,10 @@
 							    (get-list (unbox (tvar-tbox type)))]
 							   [(<tuple>? type)
 							    (<tuple>-list type)]
-							   [else (raise-syntax-error #f (format "Not a list: ~a" type) #f)]))]) (get-list type))]
+							   [else (raise-error 
+								  #f
+								  (loc)
+								  (format "Not a list: ~a" type) #f)]))]) (get-list type))]
 				       [nenvs (map patenv plist tlist (repeat context (length plist)))])
 				  (let ([res (foldl union-envs (car nenvs) (cdr nenvs))])
 				    (begin
@@ -737,20 +909,66 @@
 				   (if (null? cpat)
 				       (if (null? (tconstructor-argtype cpat-type))
 					   (empty-context)
-					   (raise-syntax-error #f "Constructor expects an argument" patsyn))
+					   (raise-error #f 
+							(loc) 
+							(let ([nargs (if (<tuple>? (tconstructor-argtype cpat-type))
+									 (length (<tuple>-list (tconstructor-argtype cpat-type)))
+									 1)])
+							  (format "The constructor ~a expects ~a argument~a but was given 0 arguments"
+								  (unlongident longident)
+								  nargs
+								  (if (= 1 nargs)
+								      ""
+								      "s")))
+							(string->symbol (unlongident longident))
+							patsyn))
 				       (if (null? (tconstructor-argtype cpat-type))
-					   (raise-syntax-error #f "Constructor expects no arguments" patsyn)
+					   (raise-error #f
+							(loc)
+							(let ([nargs (if (ast:ppat_tuple? (ast:pattern-ppat_desc cpat))
+									 (length (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc cpat)))
+									 1)])
+							  (format "The constructor ~a expects 0 arguments but was given ~a argument~a"
+								  (unlongident longident)
+								  nargs
+								  (if (= 1 nargs)
+								      ""
+								      "s")))
+							  (string->symbol (unlongident longident))
+							  patsyn)
 					   (patenv cpat (tconstructor-argtype cpat-type) context))))
 			       (if (unify type cpat-type patsyn)
 				   (if (null? cpat)
 				       (empty-context)
-				       (raise-syntax-error #f "Constructor expects no arguments" patsyn))))
-			   (raise-syntax-error #f (format "No such constructor ~a" (unlongident longident)) patsyn)) )]
+				       (raise-error #f
+							(loc)
+							(let ([nargs (if (ast:ppat_tuple? (ast:pattern-ppat_desc cpat))
+									 (length (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc cpat)))
+									 1)])
+							  (format "The constructor ~a expects 0 arguments but was given ~a argument~a"
+								  (unlongident longident)
+								  nargs
+								  (if (= 1 nargs)
+								      ""
+								      "s")))
+							  (string->symbol (unlongident longident))
+							  patsyn)
+				       )))
+			   (raise-error #f
+					(loc)
+					(format "Unbound constructor: ~a" (unlongident longident))
+					(string->symbol (unlongident longident))
+					patsyn)) )]
 		    [($ ast:ppat_constraint pat ct)
 		     (if (unify type (typecheck-type ct null) patsyn)
 			 (update (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc pat))) (schema type context) (empty-context)))]
 		    [else
-		     (raise-syntax-error #f "Pattern not recognized" patsyn)])))
+		     (raise-error 
+		      #f 
+		      (loc)
+		      (format "Pattern not recognized ~a" pat)
+		      pat
+		      patsyn)])))
 
 	     
 	   (define (same-types? tlist synlist)
@@ -791,7 +1009,10 @@
 				    null
 				    (foldl (lambda (ut sl)
 					     (union (unsolved ut) sl)) (unsolved (car (usertype-params type))) (cdr (usertype-params type))))]
-	      [else (raise-syntax-error #f (format "Bad type: ~a" type))]))
+	      [else (raise-error 
+		     #f 
+		     (loc)
+		     (format "Bad type: ~a" type))]))
 
 	   (define (env-unsolved r)
 ;	     (pretty-print (format "env-unsolved: ~a" r))
@@ -1031,8 +1252,8 @@
 				    (if res
 					  (cons (make-tvar res) mappings)
 					  (begin
-					    (set! cur-var (integer->char (+ 1 (char->integer cur-var))))
-					    (let ([old-var (format "'~a" (integer->char (- (char->integer cur-var) 1)))])
+					    (cur-var (integer->char (+ 1 (char->integer (cur-var)))))
+					    (let ([old-var (format "'~a" (integer->char (- (char->integer (cur-var)) 1)))])
 					      (cons (make-tvar old-var) (cons (cons dbox old-var) mappings)))))))]
 			       [else
 				  (unconvert-tvars (unbox dbox) mappings)]))]
@@ -1054,7 +1275,7 @@
 	   (define (fresh-type-var)
 	     (make-tvar (box null)))
 ;	     (begin
-;	       (set! cur-var (+ cur-var 1))
+;	       (set! cur-varc (+ cur-var 1))
 ;	       (format "<tvar~a>" (- cur-var 1))))
 
 	   (define (constant-check const)

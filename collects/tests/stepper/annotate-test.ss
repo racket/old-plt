@@ -1,7 +1,10 @@
 (current-library-collection-paths '("/Users/clements/hot/plt/collects"))
-
 (require (prefix annotate: (lib "annotate.ss" "stepper" "private")))
 (require (prefix kernel: (lib "kerncase.ss" "syntax")))
+
+(load "/Users/clements/plt/tests/mzscheme/testing.ss")
+
+(SECTION 'stepper-annotater)
 
 (define-syntax (tand stx)
   (syntax-case stx ()
@@ -27,7 +30,7 @@
 ; in excluded-ids must not appear in the list.  If binding-ids is 'all, then no symbols other than those
 ; in the binding-ids may appear.
 ; (syntax-object (listof symbol) (union (listof symbol) 'all) -> void)
-(define (check-mark mark-stx label binding-ids excluded-ids) 
+(define (check-mark mark-stx binding-ids excluded-ids) 
   (let* ([bindings (syntax-case mark-stx (lambda )
                      [(lambda ()
                         (mark-maker
@@ -44,29 +47,47 @@
                                                  [(quote-syntax stx)
                                                   (syntax stx)])))
                                  (error 'check-mark "binding pair does not match: ~a, ~a" (syntax-object->datum (car binding-list))
-                                        (syntax-ojbect->datum (cadr binding-list))))
+                                        (syntax-object->datum (cadr binding-list))))
                                (when (not (identifier? (car binding-list)))
                                  (error 'check-mark "syntax object is not an identifier: ~a" (syntax-object->datum (car bindings-list))))
                                (cons (syntax-e (car binding-list))
                                      (loop (cddr binding-list)))]))])])
+    (let loop ([remaining bindings])
+      (unless (null? remaining)
+        (when (memq (car remaining) (cdr remaining))
+          (error 'check-mark "binding ~a appears twice in binding-list: ~a" (car remaining) bindings))
+        (loop (cdr remaining))))
     (for-each (lambda (desired)
-                (when (not (memq desired bindings))
+                (unless (memq desired bindings)
                   (error 'check-mark "binding ~a not contained in binding-list: ~a" desired bindings)))
               binding-ids)
     (if (eq? excluded-ids 'all)
         (for-each (lambda (binding)
-                    (when (not (memq binding binding-ids))
+                    (unless (memq binding binding-ids)
                       (error 'check-mark "binding ~a does not appear in desired list: ~a" binding binding-ids)))
                   bindings)
         (for-each (lambda (not-desired)
                     (when (memq not-desired bindings)
                       (error 'check-mark "excluded binding ~a contained in binding-list: ~a" not-desired bindings)))
                   excluded-ids))))
-    
-                           
-                       
-  
-  
+
+; test cases
+
+(syntax-case (expand #'(let ([a 1] [b 2]) (begin a b))) (let-values begin)
+  [(let-values bindings a b)
+   (begin
+     (err/rt-test (check-mark (syntax (lambda ())) '() '()) exn:syntax?) ; badly formed mark
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b))) '() '()) exn:user?) ; mismatched bindings
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label (quote-syntax a) a))) '() '()) exn:syntax?) ; mismatched bindings
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) a (quote-syntax a)))) '() '()) exn:user?) ; binding appears twice
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax b)))) '() '()) exn:user?) ; mismatched bindings
+     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a b) 'all)
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a b c) 'all) exn:user?) ; c isn't there
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) 'all) exn:user?) ; bad 'all
+     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '(c))
+     (err/rt-test (check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '(b c)) exn:user?) ; b is there
+     (test (void) check-mark (syntax (lambda () ('mark-maker 'source 'label a (quote-syntax a) b (quote-syntax b)))) '(a) '()))])
+
 ; syntax-symbol=? : compares a list of symbols to a given symbol (or to each other if sym = #f)
 ; (union symbol #f) (listof syntax-object) -> boolean
 
@@ -84,8 +105,8 @@
     (with-syntax ([(module name lang (_ . exprs)) expanded])
       (syntax->list (syntax exprs)))))
 
-(equal? (map syntax-object->datum (wrap-expand-unwrap (list #'(if 3 4 5)) '(lib "htdp-beginner.ss" "lang")))
-        '((if (#%app verify-boolean (#%datum . 3) 'if) (#%datum . 4) (#%datum . 5))))
+(test '((if (#%app verify-boolean (#%datum . 3) 'if) (#%datum . 4) (#%datum . 5)))
+      map syntax-object->datum (wrap-expand-unwrap (list #'(if 3 4 5)) '(lib "htdp-beginner.ss" "lang")))
          
 (define (break) 3)
 
@@ -97,84 +118,65 @@
                        (annotate:annotate #f (car exprs) env break 'foot-wrap)])
           (cons annotated (loop new-env (cdr exprs)))))))
 
-; strip-outer-let takes off a let wrapped around a test expression.  For testing purposes,
+; strip-outer-lambda takes off a lambda wrapped around a test expression. For testing purposes,
 ; we often want to establish lexical bindings, then strip them off to check the test expr
 
-(define (strip-outer-let stx)
-  (syntax-case stx (let*-values begin with-continuation-mark)
-    [(let*-values bindings
-       (with-continuation-mark 
-        key
-        mark
-        (begin
-          break-proc-1
-          (begin
-            .
-            clauses))))
-     (syntax-case (car (reverse (syntax->list (syntax clauses)))) (begin)
-       [(begin
-          break-proc-2
-          inner-expr)
-        (syntax inner-expr)])]))
+(define (strip-outer-lambda stx)
+  (syntax-case stx (lambda begin with-continuation-mark)
+    [(with-continuation-mark
+      debug-key-1
+      debug-mark-1
+      (closure-storing-proc
+       (lambda args
+         content)
+       debug-mark-2))
+     (syntax content)]))
 
-(syntax-case (syntax-object->datum (strip-outer-let (cadr (annotate-expr #'(let ([a 9] [b 19] [c 193]) 3) 'mzscheme))))
-  (with-continuation-mark lambda quote-syntax #%datum)
-  [(with-continuation-mark 
-    key
-    (lambda () 
-      (mark-maker
-       (quote-syntax (#%datum . 3))
-       0))
-    (#%datum . 3))
-   #t])
+
+; test case:
+(test #t 
+      (lambda ()
+        (syntax-case (syntax-object->datum (strip-outer-lambda (cadr (annotate-expr #'(lambda (a b c) 3) 'mzscheme))))
+          (with-continuation-mark lambda quote-syntax #%datum)
+          [(with-continuation-mark 
+            key
+            (lambda () 
+              (mark-maker
+               (quote-syntax (#%datum . 3))
+               0))
+            (begin
+              break-proc-1
+              (#%datum . 3)))
+           #t])))
         
      
      
      
-     ; test notes to myself:
+; test notes to myself:
 ; the never-undefined property can only be tested in the non-foot-wrap modes
 ; hard to test 3D values like closure-capturing-proc
 
 (define test-cases
   ; lambda : general test
-  (list (list #'(let ([a 9] [b 12]) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme
+  (list (list #'(lambda (a b) (lambda (b c) (+ b c) (+ a b 4))) 'mzscheme
               (lambda (stx)
-                (syntax-case (strip-outer-let stx) (with-continuation-mark begin let*-values let-values lambda quote-syntax)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark begin let*-values let-values lambda quote-syntax)
                   [(with-continuation-mark
                     debug-key
                     debug-mark-1
-                    (lambda ()
-                      (make-full-mark-proc
-                       source
-                       label-num
-                       +-label
-                       (quote-syntax +-label_2)
-                       a-label
-                       (quote-syntax a-label_2)
-                       lifted-label
-                       (quote-syntax lifted-label_2)))
-                    (closure-capturing-proc
-                     (lambda (b c) (let-values arg-temp-bindings
-                                     (with-continuation-mark
-                                      debug-key_2
-                                      debug-mark_2
-                                      (begin
-                                        pre-break
-                                        _h))) _i)
-                     (lambda ()
-                       (make-full-mark-proc_2
-                        source_2
-                        label-num_2
-                        +-label_3
-                        (quote-syntax +-label_4)
-                        a-label_3
-                        (quote-syntax a-label_4)
-                        lifted-label_3
-                        (quote-syntax lifted-label_4)))))
-                    (printf "my-mark: ~a~n" (syntax-object->datum (syntax my-mark-2)))
-                    (tand (check-mark (syntax debug-mark-1) '(+ a) '(b c))
-                          (syntax-symbol=? 'a (syntax->list (syntax (a-label a-label_2 a-label_3 a-label_4))))
-                          (syntax-symbol=? #f (syntax->list (syntax (lifted-label lifted-label_2 lifted-label_3 lifted-label_4)))))])))
+                    (begin
+                      pre-break-1
+                      (closure-capturing-proc
+                       (lambda (b c) (let-values arg-temp-bindings
+                                       (with-continuation-mark
+                                        debug-key-2
+                                        debug-mark_2
+                                        (begin
+                                          pre-break-2
+                                          _h))) _i)
+                       debug-mark-3)))
+                    (begin (test (void) check-mark (syntax debug-mark-1) '(+ a) 'all)
+                           (test (void) check-mark (syntax debug-mark-3) '(+ a) 'all))])))
         ; test of lambda's one-label inferred-names :
         (list #'(define (a x) (+ x 1)) 'mzscheme
               (lambda (stx)
@@ -186,7 +188,7 @@
                        (closure-capturing-proc
                         lambda-exp
                         closure-info)))
-                    (eq? (syntax-property (syntax lambda-exp) 'inferred-name) 'a)])))
+                    (test 'a syntax-property (syntax lambda-exp) 'inferred-name)])))
         ; test of lambda's cons-pair inferred-names (that is, with lifting):
         (list #'(let ([a (lambda (x) (+ x 1))]) 3) 'mzscheme
               (lambda (stx)
@@ -205,43 +207,27 @@
                                                                     closure-info
                                                                     lifter-val)))
                                                    body))))
-                    (printf "inferred name: ~a~n" (syntax-property (syntax lambda-exp) 'inferred-name))
-                    (tand (eq? (syntax-property (syntax lambda-exp) 'inferred-name) 'a))])))
+                    (test 'a syntax-property (syntax lambda-exp) 'inferred-name)])))
         ; case-lambda
         (list #'(let ([d 1][e 2]) (case-lambda ((b) b d) ((c) c e))) 'mzscheme
               (lambda (stx)
-                (syntax-case (strip-outer-let stx) (with-continuation-mark lambda quote-syntax)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark lambda quote-syntax)
                   [(with-continuation-mark
                     debug-key
-                    (lambda ()
-                      (mark-maker
-                       source-loc
-                       label
-                       d-label_1
-                       (quote-syntax d-label_2)
-                       e-label_1
-                       (quote-syntax e-label_2)
-                       d-lifter_1
-                       (quote-syntax d-lifter_2)
-                       e-lifter_1
-                       (quote-syntax e-lifter_2)))
+                    debug-mark-1
                     (closure-storing-proc
                      (case-lambda ((b) . bodies_1)
                                   ((c) . bodies_2))
                      closure-info))
-                   (printf "d-label_1: ~a~n" (syntax-e (syntax d-label_1)))
-                   (tand (syntax-symbol=? 'd (syntax->list (syntax (d-label_1 d-label_2))))
-                         (syntax-symbol=? 'e (syntax->list (syntax (e-label_1 e-label_2))))
-                         (syntax-symbol=? #f (syntax->list (syntax (d-lifter_1 d-lifter_2))))
-                         (syntax-symbol=? #f (syntax->list (syntax (e-lifter_1 e-lifter_2)))))])))
+                   (check-mark (syntax debug-mark-1) '(d e) '(b c))])))
         
         ; if
         (list #'(let ([a 1] [b 2] [c 3] [d 4]) (if (a b) (a c) (a d))) 'mzscheme
               (lambda (stx)
-                (syntax-case (strip-outer-let stx) (with-continuation-mark lambda begin if let-values)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values)
                   [(with-continuation-mark
                     debug-key_1
-                    debug-mark_1
+                    debug-mark-1
                     (if (let-values temp-bindings
                           (with-continuation-mark
                            debug-key_2
@@ -250,12 +236,39 @@
                         (let-values temp-bindings_2
                           (with-continuation-mark
                            debug-key_3
-                           debug-mark_3
-                        then-expr
-                        else-expr))
+                           debug-mark-then
+                           . then-clauses))
+                        (let-values temp-bindings-3
+                          (with-continuation-mark
+                           debug-key-4
+                           debug-mark-else
+                           . else-clauses))))
                    (begin
-                     (printf " bindings : ~a~n" (syntax-object->datum (syntax bindings)))
-                     (printf " annotated: ~a~n" (syntax-object->datum (syntax annotated))))])))
+                     (test (void) check-mark (syntax debug-mark-1) '(a b c d) '())
+                     (test (void) check-mark (syntax debug-mark-test) '() '(a b c d))
+                     (test (void) check-mark (syntax debug-mark-then) '(a c) '(b d))
+                     (test (void) check-mark (syntax debug-mark-else) '(a d) '(b c)))])))
+        
+        ; one-armed if
+        (list #'(let ([a 1] [b 2] [c 3]) (if (a b) (a c))) 'mzscheme
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (with-continuation-mark if let-values)
+                  [(with-continuation-mark
+                    debug-key-1
+                    debug-mark-1
+                    (if (let-values temp-bindings
+                          (with-continuation-mark
+                           debug-key_2
+                           debug-mark-test
+                           . test-clauses))
+                        (let-values temp-bindings_2
+                          (with-continuation-mark
+                           debug-key_3
+                           debug-mark-then
+                           . then-clauses))))
+                   (begin
+                     (test (void) check-mark (syntax debug-mark-1) '(a b c) '())
+                    
         ; let 
 ;        (list #'( (let ([c 1] [d 2]) 
         
@@ -264,3 +277,5 @@
 (andmap (lambda (test-case)
             ((caddr test-case) (cadr (annotate-expr (car test-case) (cadr test-case)))))
           test-cases)
+
+(report-errs)

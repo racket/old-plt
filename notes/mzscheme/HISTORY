@@ -2,6 +2,9 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.10
+Changed the class system; see MzScheme_300.txt
+
 Version 299.9
 Changed convert-evt to wrap-evt, and finish-evt to handle-evt
 Added print-unreadable parameter

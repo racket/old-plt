@@ -266,8 +266,8 @@ Augment-Only Methods
 A `pubment' clause declares a method like `public', but the resulting
 method cannot be overridden. Instead, the `pubment' method can use
 `inner' to dispatch to an augmenting method declared in a
-subclass. The word "pubment" is a contraction of "public, but
-augment-only for subclasses".
+subclass. The word "pubment" is a contraction of "public, but merely
+augmentable in subclasses".
 
 The `inner' expression form includes an expression to evaluate when a
 subclass does not provide an augmenting method. A subclass augments a
@@ -384,13 +384,11 @@ In general:
 
 
 The `rename-inner' form is similar to `rename-super'. Like
-`rename-super', it is rarely useful compared to `inner'.Unlike a use
-of a binding introduced by `rename-super', a use of a binding
-introduced by `rename-inner' must include a `lambda' pattern after the
-identifier to provide the default expression (i.e., the expression to
-evaluate if no subclass augments the method); see the documentation
-for further information.
-
+`rename-super', it is rarely useful compared to `inner'. A use of a
+binding introduced by `rename-inner' must include a `lambda' pattern
+after the identifier to provide the default expression (i.e., the
+expression to evaluate if no subclass augments the method); see the
+documentation for further information.
 
 Keywords
 --------

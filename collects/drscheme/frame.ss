@@ -19,7 +19,7 @@
 					  "index.htm"))))
     
     (define frame%
-      (class (mred:make-searchable-frame% mred:simple-menu-frame%) (name snip)
+      (class mred:simple-menu-frame% (name snip)
 	(inherit panel)
 	(public
 	  [file-menu:new-string "Compound Unit"]
@@ -59,7 +59,7 @@
 	
 
     (define unit-frame%
-      (class frame% (filename frameset snip [show? #t])
+      (class (mred:make-searchable-frame% frame%) (filename frameset snip [show? #t])
 	(inherit canvas edit imports-panel
 		 set-title-prefix
 		 show menu-bar% make-menu

@@ -62,7 +62,7 @@
 			       ([wx:current-eventspace orig-eventspace])
 			       (wx:check-for-break))])
 		     (or one two))))
-		'(wx:current-eventspace bottom-eventspace)
+		(wx:current-eventspace bottom-eventspace)
 		(exit-handler (lambda (arg) (mred:exit)))
 		(read-curly-brace-as-paren #t)
 		(read-square-bracket-as-paren #t)
@@ -122,8 +122,14 @@
 	    [set-escape (lambda (x) (set! escape-fn x))]
 	    
 	    [param #f]
+	    [current-thread-desc #f]
+	    [break (lambda () 
+		     (when current-thread-desc
+		       (break-thread current-thread-desc)))]
 	    [send-scheme
-	     (let ([s (make-semaphore 1)])
+	     (let ([s (make-semaphore 1)]
+		   [size-hook (lambda (x _) (and (is-a? x wx:snip%) 1))]
+		   [print-hook (lambda (x _) (insert (send x copy) (last-position)))])
 	       (opt-lambda (expr [callback (lambda (error?) (void))])
 		 (let* ([user-code
 			 (lambda ()
@@ -135,29 +141,40 @@
 				(lambda ()
 				  (parameterize ([current-output-port this-out]
 						 [current-error-port this-err]
-						 [current-input-port this-in])
+						 [current-input-port this-in]
+						 [mzlib:pretty-print@:pretty-print-size-hook size-hook]
+						 [mzlib:pretty-print@:pretty-print-print-hook print-hook])
 						(eval expr)))))
 			    (lambda anss
 			      (for-each
 			       (lambda (ans)
 				 (unless (void? ans)
-				   (mzlib:pretty-print@:pretty-print
-				    (print-convert:print-convert ans)
-				    this-result)))
+				   (parameterize ([mzlib:pretty-print@:pretty-print-size-hook size-hook]
+						  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
+				     (mzlib:pretty-print@:pretty-print
+				      (print-convert:print-convert ans)
+				      this-result))))
 			       anss))))])
-		   (thread
-		    (lambda ()
-		      (let ([user-code-error? #t])
-			(dynamic-wind (lambda () (semaphore-wait s))
-				      (lambda ()
-					(set! user-code-error? (let/ec k 
-								 (set-escape (lambda () (k #t)))
-								 (user-code)
-								 #f)))
-				      (lambda () 
-					(set-escape #f)
-					(semaphore-post s)
-					(callback user-code-error?)))))))))]
+		   (set! current-thread-desc
+			 (thread
+			  (lambda ()
+			    (let ([user-code-error? #t])
+			      (mzlib:function@:dynamic-wind/protect-break
+			       (lambda () 
+				 (semaphore-wait s)
+				 (set! current-thread-desc (current-thread)))
+			       (lambda ()
+				 (set! user-code-error? (let/ec k 
+							  (mzlib:function@:dynamic-disable-break
+							   (lambda ()
+							     (set-escape (lambda () (k #t)))))
+							  (user-code)
+							  #f)))
+			       (lambda () 
+				 (set! current-thread-desc #f)
+				 (set-escape #f)
+				 (semaphore-post s)
+				 (callback user-code-error?))))))))))]
 	    [do-many-aries-evals
 	     (lambda (edit start end pre post)
 	       (let ([post-done? #f]

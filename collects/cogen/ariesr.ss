@@ -51,14 +51,40 @@
 		(cond
 		  ((z:binding? id) (z:binding-orig-name id))
 		  ((z:top-level-varref? id) (z:varref-var id))
-		  ((z:lexical-varref? id)
+		  ((z:bound-varref? id)
 		    (z:binding-orig-name
 		      (z:bound-varref-binding id)))
 		  (else
+		    (printf "~s~n" id)
 		    (z:interface:internal-error id
 		      "Given in check-for-keyword")))))
 	  (when (keyword-name? real-id)
 	    (z:interface:static-error id "Invalid use of keyword")))))
+
+    (define optarglist->ilist
+      (lambda (optarglist)
+	(let ((process-args
+		(lambda (element)
+		  (if (pair? element)
+		    (and (check-for-keyword (car element))
+		      (list (z:binding-var (car element))
+			(annotate (cdr element))))
+		    (and (check-for-keyword element)
+		      (z:binding-var element))))))
+	  (cond
+	    ((z:sym-optarglist? optarglist)
+	      (process-args (car (z:optarglist-vars optarglist))))
+	    ((z:list-optarglist? optarglist)
+	      (map process-args (z:optarglist-vars optarglist)))
+	    ((z:ilist-optarglist? optarglist)
+	      (let loop ((vars (map process-args 
+				 (z:optarglist-vars optarglist))))
+		(if (null? (cddr vars))
+		  (cons (car vars) (cadr vars))
+		  (cons (car vars) (loop (cdr vars))))))
+	    (else
+	      (z:interface:internal-error optarglist
+		"Given to optarglist->ilist"))))))
 
     (define arglist->ilist
       (lambda (arglist)
@@ -79,7 +105,7 @@
     (define annotate
       (lambda (expr)
 	(cond
-	  [(z:lexical-varref? expr)
+	  [(z:bound-varref? expr)
 	    (z:varref-var expr)]
 
 	  [(z:top-level-varref? expr)
@@ -240,11 +266,94 @@
 		  (z:interface:internal-error name-spec
 		    "given as name-spec for invoke-open-unit"))))]
 
-;	  [(z:class*-form? expr)
-;	    ]
-
-;	  [(z:ivar-form? expr)
-;	    ]
+	  [(z:class*-form? expr)
+	    `(#%class* ,(map (lambda (super-var super-val)
+			       (list (z:binding-var super-var)
+				 (annotate super-val)))
+			  (z:class*-form-super-names expr)
+			  (z:class*-form-super-exprs expr))
+	       ,(optarglist->ilist (z:class*-form-init-vars expr))
+	       ,@(map
+		   (lambda (clause)
+		     (cond
+		       ((z:public-clause? clause)
+			 `(public
+			    ,@(map (lambda (internal export expr)
+				     `((,(z:binding-var internal)
+					 ,(z:sexp->raw export))
+					,(annotate expr)))
+				(z:public-clause-internals clause)
+				(z:public-clause-exports clause)
+				(z:public-clause-exprs clause))))
+		       ((z:private-clause? clause)
+			 `(private
+			    ,@(map (lambda (internal expr)
+				     `(,(z:binding-var internal)
+					,(annotate expr)))
+				(z:private-clause-internals clause)
+				(z:private-clause-exprs clause))))
+		       ((z:local-clause? clause)
+			 `(local
+			    ,@(map (lambda (internal export expr)
+				     `((,(z:binding-var internal)
+					 ,(z:sexp->raw export))
+					,(annotate expr)))
+				(z:local-clause-internals clause)
+				(z:local-clause-exports clause)
+				(z:local-clause-exprs clause))))
+		       ((z:inherit-clause? clause)
+			 `(inherit
+			    ,@(map (lambda (inherited)
+				     (z:binding-var inherited))
+				(z:inherit-clause-inheriteds clause))))
+		       ((z:inherit-from-clause? clause)
+			 `(inherit-from
+			    ,(z:binding-var
+			       (z:inherit-from-clause-super clause))
+			    ,@(map (lambda (inherited)
+				     (z:binding-var inherited))
+				(z:inherit-from-clause-inheriteds clause))))
+		       ((z:rename-clause? clause)
+			 `(rename
+			    ,@(map (lambda (internal inherited)
+				     `(,(z:binding-var internal)
+					,(z:sexp->raw inherited)))
+				(z:rename-clause-internals clause)
+				(z:rename-clause-inheriteds clause))))
+		       ((z:rename-from-clause? clause)
+			 `(rename-from
+			    ,(z:binding-var
+			       (z:rename-from-clause-super clause))
+			    ,@(map (lambda (internal inherited)
+				     `(,(z:binding-var internal)
+					,(z:sexp->raw inherited)))
+				(z:rename-from-clause-internals clause)
+				(z:rename-from-clause-inheriteds clause))))
+		       ((z:share-clause? clause)
+			 `(share
+			    ,@(map (lambda (internal export inherited)
+				     `((,(z:binding-var internal)
+					 ,(z:sexp->raw export))
+					,(z:sexp->raw inherited)))
+				(z:share-clause-internals clause)
+				(z:share-clause-exports clause)
+				(z:share-clause-inheriteds clause))))
+		       ((z:share-from-clause? clause)
+			 `(share-from
+			    ,(z:binding-var
+			       (z:share-from-clause-super clause))
+			    ,@(map (lambda (internal export inherited)
+				     `((,(z:binding-var internal)
+					 ,(z:sexp->raw export))
+					,(z:sexp->raw inherited)))
+				(z:share-from-clause-internals clause)
+				(z:share-from-clause-exports clause)
+				(z:share-from-clause-inheriteds clause))))
+		       ((z:sequence-clause? clause)
+			 `(sequence
+			    ,@(map annotate
+				(z:sequence-clause-exprs clause))))))
+		   (z:class*-form-inst-clauses expr)))]
 
 	  [else
 	    (print-struct #t)

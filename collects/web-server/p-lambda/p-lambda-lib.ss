@@ -386,11 +386,11 @@
       [(if test-f-expr csq-f-expr)
        (normalize-name #'test-f-expr
                        (lambda (val)
-                         (k #`(if val #,(normalize-term #'csq-f-expr)))))]
+                         (k #`(if #,val #,(normalize-term #'csq-f-expr)))))]
       [(if test-f-expr csq-f-expr alt-f-expr)
        (normalize-name #'test-f-expr
                        (lambda (val)
-                         (k #`(if val
+                         (k #`(if #,val
                                   #,(normalize-term #'csq-f-expr)
                                   #,(normalize-term #'alt-f-expr)))))]
       [(begin f-exprs ...)
@@ -400,7 +400,8 @@
       [(begin0 f-exprs ...)
        (syntax-case #'(f-exprs ...) ()
          [(e) (normalize #'e k)]
-         [(e es ...) (normalize #'(let-values ([(x) e]) (begin es ... x)))])]
+         ; use of expand in the next line to put magic on x:
+         [(e es ...) (normalize (expand #'(let-values ([(x) e]) (begin es ... x))) k)])]
       [(let-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
        (normalize-let f-expr k)]
       [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
@@ -448,11 +449,6 @@
   ;; convert a let-values expresion into A-normal form
   (define (normalize-let l-expr k)
     (syntax-case l-expr (let-values)
-      ;; make the implicit begin explicit
-      [(let-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
-       (normalize-let
-        #'(let-values ([(varss ...) rhs-f-exprs] ...) (begin body-f-exprs ...))
-        k)]
       [(let-values ([(vars ...) rhs-f-expr]) body-f-expr)
        (normalize #'rhs-f-expr
                   (lambda (a-v-e)
@@ -465,9 +461,15 @@
                     [(rest-varss ...) rest-rhs-f-exprs] ...)
          body-f-expr)
        (normalize-let
-        #`(let-values ([(vars ...) rhs-f-expr])
+        #'(let-values ([(vars ...) rhs-f-expr])
             (let-values ([(rest-varss ...) rest-rhs-f-exprs] ...)
-              #'body-f-expr)))]))
+              body-f-expr))
+        k)]
+      ;; make the implicit begin explicit
+      [(let-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
+       (normalize-let
+        #'(let-values ([(varss ...) rhs-f-exprs] ...) (begin body-f-exprs ...))
+        k)]))
   
   ;; normalize-letrec: flat-expr (app-v-expr -> A-expr) -> A-expr
   ;; convert a letrec-values expression into A-normal form (sort of)
@@ -478,16 +480,17 @@
   ;;       if a stack serialization happens during a r.h.s.  
   (define (normalize-letrec l-expr k)
     (syntax-case l-expr (letrec-values)
+            [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-expr)
+       (normalize #'body-f-expr
+                  (lambda (new-body-expr)
+                    #`(letrec-values ([(varss ...) rhs-f-exprs] ...)
+                        #,(k new-body-expr))))]
+      
       ;; make the implicit begin explicit
       [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
        (normalize-letrec
         #'(letrec-values ([(varss ...) rhs-f-exprs] ...) (begin body-f-exprs ...))
-        k)]
-      [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-expr)
-       (normalize #'body-f-expr
-                  (lambda (new-body-expr)
-                    #`(letrec-values ([(varss ...) rhs-f-exprs] ...)
-                        #,(k new-body-expr))))]))
+        k)]))
   
   ;; primop?: x -> boolean
   (define (primop? x)

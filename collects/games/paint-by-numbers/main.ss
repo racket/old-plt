@@ -39,16 +39,26 @@
 		   top-panel
 		   (lambda (choice evt)
 		     (set-problem (list-ref problems (send choice get-selection))))))
+
+  (define button-panel (make-object vertical-panel% top-panel))
+  
   (define solve-button
     (make-object button%
       "Solve"
-      top-panel
+      button-panel
       (lambda (button evt)
 	(send canvas all-unknown)
 	(send canvas on-paint)
 	(SOLVE:solve
 	 (problem-rows problem)
 	 (problem-cols problem)))))
+
+  (define wrong-button
+    (make-object button%
+      "Show Mistakes"
+      button-panel
+      (lambda (button evt)
+	(show-wrong))))
   
   (define canvas #f)
   (define problem #f)
@@ -83,6 +93,7 @@
 	       (send canvas get-grid))
 	 port))
       'truncate))
+
   (define (save)
     (when filename
       (do-save filename)))
@@ -106,6 +117,7 @@
   (define (set-problem prlmb)
     (update-filename #f)
     (send save-item enable #f)
+    (send wrong-button enable (problem-solution prlmb))
     (send frame change-children (lambda (x) (list top-panel)))
     (send frame stretchable-width #f)
     (send frame stretchable-height #f)
@@ -152,6 +164,20 @@
 	  (collect-garbage)
 	  (send f show #f)]
 	 [else (send g set-value counter)]))))
+
+  (define (show-wrong)
+    (let loop ([i (length (problem-rows problem))])
+      (unless (zero? i)
+	(let loop ([j (length (problem-cols problem))])
+	  (unless (zero? j)
+	    (let ([m (- i 1)]
+		  [n (- j 1)])
+	      (when (and (not (eq? (get-entry m n)
+				   (vector-ref (vector-ref (problem-solution problem) m) n)))
+			 (not (eq? (get-entry m n) 'unknown)))
+		(set-entry m n 'wrong)))
+	    (loop (- j 1))))
+	(loop (- i 1)))))
 
   (send frame show #t)
   (yield semaphore))

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.8 1998/07/04 02:57:34 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.9 1998/07/18 01:16:15 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -288,12 +288,22 @@ wxWindow::~wxWindow(void)
 
 void wxWindow::SetFocus(void)
 {
+  wxWindow *p = GetParent();
+  while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
+		|| wxSubType(p->__type, wxTYPE_DIALOG_BOX)))
+    p = p->GetParent();
+  
+  // If the frame/dialog is not active, just set the focus
+  //  locally.
+  if (p && (GetActiveWindow() != p->GetHWND())) {
+    p->focusWindow = this;
+    return;
+  }
+
   HWND hWnd = GetHWND();
   if (hWnd)
-	 wxwmSetFocus(hWnd);
+    wxwmSetFocus(hWnd);
 }
-
-
 
 void wxWindow::ChangeToGray(Bool gray)
 {
@@ -733,25 +743,22 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
             HWND hwnd = (HWND)HIWORD(lParam);
 #endif
             wnd->OnActivate(state, minimized, hwnd);
-				retval = 0;
-//            if (!wnd->OnActivate(state, minimized, hwnd))
-//              return wnd->DefWindowProc(message, wParam, lParam );
+	    retval = 0;
             break;
         }
         case WM_SETFOCUS:
         {
             HWND hwnd = (HWND)wParam;
-//            return wnd->OnSetFocus(hwnd);
 
             if (wnd->OnSetFocus(hwnd))
               retval = 0;
-            else retval = wnd->DefWindowProc(message, wParam, lParam );
+            else 
+	      retval = wnd->DefWindowProc(message, wParam, lParam );
             break;
         }
         case WM_KILLFOCUS:
         {
             HWND hwnd = (HWND)lParam;
-//            return wnd->OnKillFocus(hwnd);
             if (wnd->OnKillFocus(hwnd))
               retval = 0;
             else
@@ -1217,8 +1224,6 @@ LONG APIENTRY _EXPORT
 #endif
             wnd->OnActivate(state, minimized, hwnd);
             return 0;
-//            if (!wnd->OnActivate(state, minimized, hwnd))
-//              return wnd->DefWindowProc(message, wParam, lParam );
             break;
 	 }
 
@@ -1226,16 +1231,12 @@ LONG APIENTRY _EXPORT
         {
             HWND hwnd = (HWND)wParam;
             return wnd->OnSetFocus(hwnd);
-//            if (!wnd->OnSetFocus(hwnd))
-//              return wnd->DefWindowProc(message, wParam, lParam );
             break;
         }
         case WM_KILLFOCUS:
         {
             HWND hwnd = (HWND)lParam;
             return wnd->OnKillFocus(hwnd);
-//            if (!wnd->OnKillFocus(hwnd))
-//              return wnd->DefWindowProc(message, wParam, lParam );
             break;
         }
         case WM_CREATE:
@@ -1676,7 +1677,7 @@ wxWnd::~wxWnd(void)
   if (wx_window) {
     wxWindow *p = wx_window->GetParent();
     while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
-	          || wxSubType(p->__type, wxTYPE_FRAME)))
+	          || wxSubType(p->__type, wxTYPE_DIALOG_BOX)))
 	p = p->GetParent();
     if (p)
       if (p->focusWindow == wx_window)
@@ -1709,9 +1710,6 @@ void wxWnd::ReleaseHDC(void)
 // (e.g. with MDI child windows)
 void wxWnd::DestroyWindow(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::DestroyWindow %d\n", handle);
-#endif
   DetachWindowMenu();
   SetWindowLong(handle, 0, (long)0);
   HWND oldHandle = handle;
@@ -1720,33 +1718,22 @@ void wxWnd::DestroyWindow(void)
   // For some reason, wxWindows can activate another task altogether
   // when a frame is destroyed after a modal dialog has been invoked.
   // Try to bring the parent or main frame to the top.
-  if (wx_window && (wxSubType(wx_window->__type, wxTYPE_FRAME) || wxSubType(wx_window->__type, wxTYPE_DIALOG_BOX)))
+  if (wx_window && (wxSubType(wx_window->__type, wxTYPE_FRAME) 
+		    || wxSubType(wx_window->__type, wxTYPE_DIALOG_BOX)))
   {
-	 HWND hWnd = 0;
-	 if (wx_window->GetParent())
-		hWnd = wx_window->GetParent()->GetHWND();
-//    else if (wxTheApp->wx_frame && (wxTheApp->wx_frame != wx_window))
-//      hWnd = wxTheApp->wx_frame->GetHWND();
+    HWND hWnd = 0;
+    if (wx_window->GetParent())
+      hWnd = wx_window->GetParent()->GetHWND();
     if (hWnd)
       ::BringWindowToTop(hWnd);
   }
   
   wxwmDestroyWindow(oldHandle);
-  // Menu is destroyed explicitly by wxMDIChild::DestroyWindow,
-  // or when Windows HWND is deleted if MDI parent or
-  // SDI frame.
-/*
-  if (hMenu)
-  {
-	 ::DestroyMenu(hMenu);
-	 hMenu = 0;
-  }
- */
 }
 
 void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
-						  int x, int y, int width, int height,
-						  DWORD style, char *dialog_template, DWORD extendedStyle)
+		   int x, int y, int width, int height,
+		   DWORD style, char *dialog_template, DWORD extendedStyle)
 {
   WXGC_IGNORE(wx_window);
 
@@ -1764,19 +1751,14 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
   else
     userColours = FALSE;
 
-
-
   if (!parent) {
-
-	  x1 = y1 = CW_USEDEFAULT;
-
+    x1 = y1 = CW_USEDEFAULT;
   }
 
   // Find parent's size, if it exists, to set up a possible default
   // panel size the size of the parent window
   RECT parent_rect;
-  if (parent)
-  {
+  if (parent) {
     // Was GetWindowRect: JACS 5/5/95
     GetClientRect(parent->handle, &parent_rect);
 
@@ -1847,10 +1829,6 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
   wxWndHook = NULL;
   wxWinHandleList->Append((long)handle, this);
 
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::Create %d\n", handle);
-#endif
-
   // Can't do this for dialogs!!!!
   if (!is_dialog) SetWindowLong(handle, 0, (long)this);
 }
@@ -1861,114 +1839,74 @@ void wxWnd::OnCreate(LPCREATESTRUCT WXUNUSED(cs))
 
 BOOL wxWnd::OnPaint(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnPaint %d\n", handle);
-#endif
   return 1;
 }
 
 BOOL wxWnd::OnClose(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnClose %d\n", handle);
-#endif
   return FALSE;
 }
 
 BOOL wxWnd::OnDestroy(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnDestroy %d\n", handle);
-#endif
   return TRUE;
 }
 
 void wxWnd::OnSize(int WXUNUSED(x), int WXUNUSED(y), UINT WXUNUSED(flag))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnSize %d\n", handle);
-#endif
 }
 
 // Deal with child commands from buttons etc.
 
 BOOL wxWnd::OnCommand(WORD WXUNUSED(id), WORD WXUNUSED(cmd), HWND WXUNUSED(control))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnCommand %d\n", handle);
-#endif
   return FALSE;
 }
 
 void wxWnd::OnMenuSelect(WORD WXUNUSED(item), WORD WXUNUSED(flags), HMENU WXUNUSED(sysmenu))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnMenuSelect %d\n", handle);
-#endif
 }
 
 BOOL wxWnd::OnActivate(BOOL state, BOOL WXUNUSED(minimized), HWND WXUNUSED(activate))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnActivate %d\n", handle);
-#endif
   if (wx_window)
   {
+    if ((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)) {
+      if (wx_window->focusWindow) {
+	wxWindow *win = wx_window->focusWindow;
+	wx_window->focusWindow = NULL;
+	win->SetFocus();
+      }
+    }
 
-	if ((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)) {
-
-		if (wx_window->focusWindow) {
-
-			wxWindow *win = wx_window->focusWindow;
-
-			wx_window->focusWindow = NULL;
-
-			win->SetFocus();
-
-		}
-
-	}
-
-
-    wx_window->GetEventHandler()->OnActivate(((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)));
+    wx_window->GetEventHandler()->OnActivate(((state == WA_ACTIVE) 
+					      || (state == WA_CLICKACTIVE)));
 
     // If this window is an MDI parent, we must also send an OnActivate message
     // to the current child.
-    if (wxSubType(wx_window->__type, wxTYPE_FRAME))
-    {
+    if (wxSubType(wx_window->__type, wxTYPE_FRAME)) {
       wxFrame *frame = (wxFrame *)wx_window;
-      if (frame->frame_type == wxMDI_PARENT)
-      {
+      if (frame->frame_type == wxMDI_PARENT) {
         wxMDIFrame *mdiFrame = (wxMDIFrame *)this;
         if ((mdiFrame->current_child) && ((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)))
           mdiFrame->current_child->wx_window->GetEventHandler()->OnActivate(TRUE);
       }
     }
     return 0;
-  }
-  else return TRUE;
+  } else 
+    return TRUE;
 }
 
 BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnSetFocus %d\n", handle);
-#endif
-  if (wx_window)
-  {
+  if (wx_window) {
+    wxWindow *p = wx_window->GetParent();
+    while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
+		  || wxSubType(p->__type, wxTYPE_DIALOG_BOX)))
+      p = p->GetParent();
 
-	wxWindow *p = wx_window->GetParent();
-
-	while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
-
-				  || wxSubType(p->__type, wxTYPE_FRAME)))
-
-	  p = p->GetParent();
-
-	if (p)
-
-	  p->focusWindow = wx_window;
-
+    if (p)
+      p->focusWindow = wx_window;
 
     // Deal with caret
     if (wx_window->caretEnabled && (wx_window->caretWidth > 0) && (wx_window->caretHeight > 0))
@@ -1979,37 +1917,27 @@ BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
     }
     
     wx_window->GetEventHandler()->OnSetFocus();
-//    return 0;
+
     return TRUE;
-  }
-  else return FALSE;
+  } else 
+    return FALSE;
 }
 
 BOOL wxWnd::OnKillFocus(HWND WXUNUSED(hwnd))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnKillFocus %d\n", handle);
-#endif
-  if (wx_window)
-  {
+  if (wx_window) {
     // Deal with caret
     if (wx_window->caretEnabled)
-    {
       ::DestroyCaret();
-    }
 
     wx_window->GetEventHandler()->OnKillFocus();
     return TRUE;
-  }
-  else return FALSE;
+  } else 
+    return FALSE;
 }
 
 void wxWnd::OnDropFiles(WPARAM wParam)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnDropFiles %d\n", handle);
-#endif
-
   HANDLE hFilesInfo = (HANDLE)wParam;
   POINT dropPoint;
   DragQueryPoint(hFilesInfo, (LPPOINT) &dropPoint);
@@ -2065,16 +1993,10 @@ BOOL wxWnd::OnMeasureItem(int id, MEASUREITEMSTRUCT *itemStruct)
 
 void wxWnd::OnVScroll(WORD WXUNUSED(code), WORD WXUNUSED(pos), HWND WXUNUSED(control))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnVScroll %d\n", handle);
-#endif
 }
 
 void wxWnd::OnHScroll(WORD WXUNUSED(code), WORD WXUNUSED(pos), HWND WXUNUSED(control))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxWnd::OnHScroll %d\n", handle);
-#endif
 }
 
 void wxWnd::CalcScrolledPosition(int x, int y, int *xx, int *yy)

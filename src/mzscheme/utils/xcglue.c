@@ -466,7 +466,7 @@ void objscheme_init(Scheme_Env *env)
 					  NULL);
   
 #ifdef MZ_PRECISE_GC
-  GC_register_traversers(objscheme_class_type, gc_class_size, gc_class_mark, gc_class_fixup);
+  GC_register_traversers(objscheme_class_type, gc_class_size, gc_class_mark, gc_class_fixup, 0, 0);
 #endif
 
   scheme_install_xc_global("initialize-primitive-object",

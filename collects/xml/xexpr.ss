@@ -1,4 +1,4 @@
-(unit/sig xexpr^
+(unit/sig extra-xexpr^
   (import reader^ mzlib:function^)
   ;; Xexpr ::= String
   ;;        |  ProcessingInstruction

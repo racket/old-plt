@@ -7,7 +7,7 @@
    [user-defined-doc-position (path? . -> . (union false? number?))]
    [known-docs (listof (cons/p path? string?))]
    [set-doc-position! (path? number? . -> . void?)]
-   [reset-doc-positions! (void? . -> . void?)])
+   [reset-doc-positions! (-> void?)])
   
   ;; Define an order on the standard docs.
   (define (standard-html-doc-position d)

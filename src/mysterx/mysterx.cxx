@@ -376,6 +376,9 @@ static MX_PRIM mxPrims[] = {
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
   { mx_process_win_events,"process-win-events",0,0},
+
+  // .NET hacks
+  { initialize_cor, "%initialize-cor", 0, 0},
 };
 
 BOOL isEmptyClsId(CLSID clsId) {
@@ -389,7 +392,11 @@ BOOL isEmptyClsId(CLSID clsId) {
 
 void scheme_release_typedesc(void *p,void *) {
   MX_TYPEDESC *pTypeDesc;
-  ITypeInfo *pITypeInfo;
+  ITypeInfo *pITypeInfo,*pITypeInfoImpl;
+  IDispatch *pInterface;  
+
+  /* NEED TO DO SOME NEW CLEANUP HERE */
+
 
   pTypeDesc = (MX_TYPEDESC *)p;
 
@@ -398,15 +405,27 @@ void scheme_release_typedesc(void *p,void *) {
   }
 
   pITypeInfo = pTypeDesc->pITypeInfo;
+  pITypeInfoImpl = pTypeDesc->pITypeInfoImpl;
+  pInterface = pTypeDesc->pInterface;
 
   if (pTypeDesc->descKind == funcDesc) {
-    pITypeInfo->ReleaseFuncDesc(pTypeDesc->pFuncDesc);
+    pITypeInfo->ReleaseFuncDesc(pTypeDesc->funcdescs.pFuncDesc);
+    if (pITypeInfoImpl) {
+      pITypeInfoImpl->ReleaseFuncDesc(pTypeDesc->funcdescs.pFuncDescImpl);
+    }
   }
   else if (pTypeDesc->descKind == varDesc) {
     pITypeInfo->ReleaseVarDesc(pTypeDesc->pVarDesc);
   }
 
   pITypeInfo->Release();
+  if (pITypeInfoImpl) {
+    pITypeInfoImpl->Release();
+  }
+
+  if (pInterface) {
+    pInterface->Release();
+  }
 
   MX_MANAGED_OBJ_RELEASED(pTypeDesc) = TRUE;
 }
@@ -1319,7 +1338,8 @@ void connectComObjectToEventSink(MX_COM_Object *obj) {
 			      "Unable to find sink interface",hr);
   }
 
-  pISink->set_extension_table((int)scheme_extension_table); // COM won't take a function ptr
+  // COM won't take a function ptr
+  pISink->set_extension_table((int)scheme_extension_table); 
 
   pISink->set_myssink_table((int)&myssink_table);
 
@@ -1488,7 +1508,9 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
   MX_TYPEDESC *pTypeDesc;
   BSTR bstr;
   UINT nameCount;
+  UINT funcDescIndex;
   BOOL foundDesc;
+  unsigned short dispFuncs,implFuncs;
   int i;
 
   hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
@@ -1499,7 +1521,9 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
 
   foundDesc = FALSE;
 
-  for (i = 0; i < pTypeAttr->cFuncs; i++) {
+  // can skip first 7, because those are IDispatch-specific
+  dispFuncs = pTypeAttr->cFuncs;
+  for (i = 7; i < dispFuncs; i++) {
 
     hr = pITypeInfo->GetFuncDesc(i,&pFuncDesc);
 
@@ -1518,6 +1542,7 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
       descKind = funcDesc;
       SysFreeString(bstr);
       memID = pFuncDesc->memid;
+      funcDescIndex = i;
 
       break;
     }
@@ -1612,8 +1637,47 @@ MX_TYPEDESC *doTypeDescFromTypeInfo(BSTR name,INVOKEKIND invKind,
 
   pTypeDesc->descKind = descKind;
 
+  pTypeDesc->funOffset = NO_FUNPTR; // assume for now
+
   if (descKind == funcDesc) {
-    pTypeDesc->pFuncDesc = pFuncDesc;
+    HREFTYPE refType;
+    ITypeInfo *pITypeInfoImpl;
+
+    pTypeDesc->funcdescs.pFuncDesc = pFuncDesc;
+    hr = pITypeInfo->GetRefTypeOfImplType(-1,&refType);
+    if (hr == S_OK) {
+      hr = pITypeInfo->GetRefTypeInfo(refType,&pITypeInfoImpl);
+      if (hr == S_OK) {
+	TYPEATTR *pTypeAttrImpl;
+	FUNCDESC *pFuncDescImpl;
+	hr = pITypeInfoImpl->GetTypeAttr(&pTypeAttrImpl);
+	if (hr == S_OK) {
+	  implFuncs = pTypeAttrImpl->cFuncs;
+	  // assumption: impl TypeInfo has FuncDescs in same order
+	  //             as the Dispatch TypeInfo
+	  // but dispFuncs has IDispatch methods
+	  funcDescIndex -= dispFuncs - implFuncs;
+	  hr = pITypeInfoImpl->GetFuncDesc(funcDescIndex,&pFuncDescImpl);
+	  if (hr == S_OK) {
+	    if (pFuncDescImpl->funckind == FUNC_VIRTUAL ||
+		pFuncDescImpl->funckind == FUNC_PUREVIRTUAL) {
+	      pTypeDesc->implGuid = pTypeAttrImpl->guid;
+	      pTypeDesc->funOffset = pFuncDescImpl->oVft/4;
+	      pTypeDesc->pITypeInfoImpl = pITypeInfoImpl;
+	      pITypeInfoImpl->AddRef();
+	      pTypeDesc->funcdescs.pFuncDescImpl = pFuncDescImpl;
+	    }
+	    else {
+	      pITypeInfoImpl->ReleaseFuncDesc(pFuncDescImpl);
+	    }
+	  }
+	  pITypeInfoImpl->ReleaseTypeAttr(pTypeAttrImpl);
+	}
+	else {
+	  pITypeInfoImpl->Release(); 
+	}
+      }
+    }
   }
   else {
     pTypeDesc->pVarDesc = pVarDesc;
@@ -1793,7 +1857,8 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   Scheme_Object *retval;
 
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-{methods,{get,set}-properties}","com-object or com-type",0,argc,argv);
+    scheme_wrong_type("com-{methods,{get,set}-properties}",
+		      "com-object or com-type",0,argc,argv);
   }
 
   if (MX_COM_OBJP(argv[0])) {
@@ -2459,7 +2524,6 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
   return scheme_intern_exact_symbol(buff,strlen(buff));
 }
 
-
 Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
 				     Scheme_Object *returnType) {
   Scheme_Object *arrow;
@@ -2508,6 +2572,16 @@ short getOptParamCount(FUNCDESC *pFuncDesc,short hi) {
   return numOptParams;
 }
 
+BOOL isLastParamRetval(short int numParams,
+		       INVOKEKIND invKind,FUNCDESC *pFuncDesc) {
+  return (numParams > 0 && 
+	  (invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC)
+	  &&
+	  (pFuncDesc->lprgelemdescParam[numParams-1].paramdesc.wParamFlags
+	  & PARAMFLAG_FRETVAL));
+}
+
+
 Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 				     INVOKEKIND invKind) {
   MX_TYPEDESC *pTypeDesc;
@@ -2554,11 +2628,14 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
   }
 
-  // pTypeDesc may be null if there is no type info.
-  if (pTypeDesc == NULL) return scheme_false;
+  // pTypeDesc may be NULL if there is no type info.
+
+  if (pTypeDesc == NULL) {
+    return scheme_false;
+  }
 
   if (pTypeDesc->descKind == funcDesc) {
-    pFuncDesc = pTypeDesc->pFuncDesc;
+    pFuncDesc = pTypeDesc->funcdescs.pFuncDesc;
 
     paramTypes = scheme_null;
 
@@ -2576,15 +2653,8 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
       }
     }
     else {
-
-      if (numActualParams > 0 &&
-	  (invKind == INVOKE_FUNC || invKind == INVOKE_PROPERTYGET)) {
-	lastParamIsRetval =
-	  (pFuncDesc->lprgelemdescParam[numActualParams-1].paramdesc.wParamFlags & PARAMFLAG_FRETVAL);
-      }
-      else {
-	lastParamIsRetval = FALSE;
-      }
+      lastParamIsRetval = 
+	isLastParamRetval(numActualParams,invKind,pFuncDesc);
 
       if (lastParamIsRetval) {
 	hiBound = numActualParams - 2;
@@ -3254,7 +3324,7 @@ void marshalSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     break;
 
   case VT_PTR:
-    scheme_signal_error ("unable to marshal VT_PTR");
+    scheme_signal_error("unable to marshal VT_PTR");
     break;
 
   default :
@@ -3285,7 +3355,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_I2 :
 
-    return scheme_make_integer(pVariantArg->iVal);
+    return scheme_make_integer_value(pVariantArg->iVal);
 
   case VT_I4 :
 
@@ -3314,7 +3384,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
     uli.QuadPart = pVariantArg->ullVal;
 
     return scheme_make_integer_value_from_unsigned_long_long (uli.u.LowPart, uli.u.HighPart);
-    
+     
   case VT_INT :
 
     return scheme_make_integer(pVariantArg->intVal);
@@ -3371,6 +3441,75 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   }
 
+  return NULL;
+}
+
+// we need this for direct calls, where the return value
+// is created by passing as a C pointer, which is stored in a VARIANTARG
+Scheme_Object *retvalVariantToSchemeObject(VARIANTARG *pVariantArg) {
+  switch(pVariantArg->vt) {
+  case VT_VOID :
+    return scheme_void;
+  case VT_BYREF|VT_UI1 :
+    return scheme_make_character(*pVariantArg->pcVal);
+  case VT_BYREF|VT_I2 :
+    return scheme_make_integer(*pVariantArg->piVal);
+  case VT_BYREF|VT_I4 :
+    return scheme_make_integer_value(*pVariantArg->plVal);
+  case VT_BYREF|VT_I8 :
+    LARGE_INTEGER li;
+    li.QuadPart = *pVariantArg->pllVal;
+    return 
+      scheme_make_integer_value_from_long_long(li.u.LowPart,li.u.HighPart);
+  case VT_BYREF|VT_R4 :
+#ifdef MZ_USE_SINGLE_FLOATS
+    return scheme_make_float(*pVariantArg->pfltVal);
+#else
+    return scheme_make_double((double)(*pVariantArg->pfltVal));
+#endif
+  case VT_BYREF|VT_R8 :
+    return scheme_make_double(*pVariantArg->pdblVal);
+  case VT_BYREF|VT_BOOL :
+    return mx_make_bool(*pVariantArg->pboolVal);
+  case VT_BYREF|VT_ERROR :
+    return mx_make_scode(*pVariantArg->pscode);
+  case VT_BYREF|VT_CY :
+    return mx_make_cy(pVariantArg->pcyVal);
+  case VT_BYREF|VT_DATE :
+    return mx_make_date(pVariantArg->pdate);
+  case VT_BYREF|VT_BSTR :
+    return BSTRToSchemeString(*pVariantArg->pbstrVal);
+  case VT_BYREF|VT_UNKNOWN :
+    return mx_make_iunknown (*pVariantArg->ppunkVal);
+  case VT_BYREF|VT_PTR :
+  case VT_BYREF|VT_DISPATCH :
+    return mx_make_idispatch(*pVariantArg->ppdispVal);
+  case VT_BYREF|VT_SAFEARRAY :
+  case VT_BYREF|VT_ARRAY :
+    return safeArrayToSchemeVector(*pVariantArg->pparray);
+  case VT_BYREF|VT_VARIANT :
+    return variantToSchemeObject(pVariantArg->pvarVal);
+  case VT_BYREF|VT_I1 :
+    return scheme_make_character(*pVariantArg->pcVal);
+  case VT_BYREF|VT_UI2 :
+    return scheme_make_integer_value_from_unsigned(*pVariantArg->puiVal);
+  case VT_BYREF|VT_UI4 :
+    return scheme_make_integer_value_from_unsigned(*pVariantArg->pulVal);
+  case VT_BYREF|VT_UI8 :
+    ULARGE_INTEGER uli;
+    uli.QuadPart = *pVariantArg->pullVal;
+    return 
+      scheme_make_integer_value_from_unsigned_long_long(uli.u.LowPart,
+							uli.u.HighPart);
+  case VT_BYREF|VT_INT :
+    return scheme_make_integer_value(*pVariantArg->pintVal);
+  case VT_BYREF|VT_UINT :
+    return scheme_make_integer_value_from_unsigned(*pVariantArg->puintVal);
+  default :
+    {char buff[128];
+    sprintf(buff,"Can't create return value for VARIANT 0x%X",pVariantArg->vt);
+    scheme_signal_error(buff); }
+  }
   return NULL;
 }
 
@@ -3579,38 +3718,58 @@ short int buildMethodArgumentsUsingDefaults (INVOKEKIND invKind,
   return numParamsPassed;
 }
 
-short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
-					    INVOKEKIND invKind,
-					    int argc,Scheme_Object **argv,
-					    DISPPARAMS *methodArguments) {
+short int getLcidParamIndex(FUNCDESC *pFuncDesc,short int numParams) {
+  ELEMDESC *pElemDescs;
+  int i;
+
+  pElemDescs = pFuncDesc->lprgelemdescParam;
+  for (i = 0; i < numParams; i++) {
+    if (pElemDescs[i].paramdesc.wParamFlags & PARAMFLAG_FLCID) {
+      return i;
+    }
+  }
+  return NO_LCID;
+}
+
+void checkArgTypesAndCounts(FUNCDESC *pFuncDesc,
+			    BOOL direct,
+			    INVOKEKIND invKind,
+			    int argc,Scheme_Object **argv,
+			    MX_ARGS_COUNT *argsCount) {
   char errBuff[256];
   short int numParamsPassed;
   short int numOptParams;
-  BOOL lastParamIsRetval;
+  short int lcidIndex;
   int i,j,k;
-  static DISPID dispidPropPut = DISPID_PROPERTYPUT;
 
   numParamsPassed = pFuncDesc->cParams;
 
-  if (pFuncDesc->cParams > 0 &&
-      ((invKind == INVOKE_PROPERTYGET || invKind == INVOKE_FUNC) &&
-       (pFuncDesc->lprgelemdescParam[numParamsPassed-1].paramdesc.wParamFlags
-	& PARAMFLAG_FRETVAL))) {
-    // last parameter is retval
+  argsCount->retvalInParams = 
+    isLastParamRetval(numParamsPassed,invKind,pFuncDesc);
+
+  if (argsCount->retvalInParams) {
     numParamsPassed--;
-    lastParamIsRetval = TRUE;
   }
-  else {
-    lastParamIsRetval = FALSE;
+
+  numOptParams = getOptParamCount(pFuncDesc,numParamsPassed - 1);
+
+  lcidIndex = NO_LCID;
+  if (direct) {
+    lcidIndex = getLcidParamIndex(pFuncDesc,numParamsPassed);
+    if (lcidIndex != NO_LCID) {
+      numParamsPassed--;
+    }
   }
+  argsCount->lcidIndex = lcidIndex;
+
+  argsCount->numParamsPassed = numParamsPassed;
+  argsCount->numOptParams = numOptParams;
 
   if (pFuncDesc->cParamsOpt == -1) {  // last args get packaged into SAFEARRAY
 
     // this branch is untested
 
     // optional parameters with default values not counted in pFuncDesc->cParamsOpt
-
-    numOptParams = getOptParamCount(pFuncDesc,numParamsPassed - 1);
 
     if (argc < numParamsPassed + 2 - 1) {
       sprintf(errBuff,"%s (%s \"%s\")",
@@ -3622,9 +3781,8 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
   }
   else {
 
-    // optional parameters with default values not counted in pFuncDesc->cParamsOpt
-
-    numOptParams = getOptParamCount(pFuncDesc,numParamsPassed - 1);
+    // optional parameters with default values 
+    // not counted in pFuncDesc->cParamsOpt
 
     if (argc < numParamsPassed - numOptParams + 2 ||  // too few
 	argc > numParamsPassed + 2) {  // too many
@@ -3638,19 +3796,39 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
 
   // compare types of actual arguments to prescribed types
 
-  for (i = 0,k = 2; i < argc - 2; i++,k++) {
+  for (i = 0,j = 2,k = 0; i < argc - 2; i++,j++,k++) {
 
     // i = index of ELEMDESC's
-    // k = index of actual args in argv
+    // j = index of actual args in argv
 
-    if (schemeValueFitsElemDesc(argv[k],&pFuncDesc->lprgelemdescParam[i]) == FALSE) {
+    if (direct && k == lcidIndex) { // skip an entry 
+      k++;
+    }
+
+    if (schemeValueFitsElemDesc(argv[j],&pFuncDesc->lprgelemdescParam[k]) == FALSE) {
       sprintf(errBuff,"%s (%s \"%s\")",mx_fun_string(invKind),
 	      inv_kind_string(invKind),SCHEME_STR_VAL(argv[1]));
       scheme_wrong_type(errBuff,
-			SCHEME_SYM_VAL(elemDescToSchemeType(&(pFuncDesc->lprgelemdescParam[i]),FALSE,FALSE)),
-			k,argc,argv);
+			SCHEME_SYM_VAL(elemDescToSchemeType(&(pFuncDesc->lprgelemdescParam[k]),FALSE,FALSE)),
+			j,argc,argv);
     }
   }
+}
+
+short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
+					    INVOKEKIND invKind,
+					    int argc,Scheme_Object **argv,
+					    DISPPARAMS *methodArguments) {
+  MX_ARGS_COUNT argsCount;
+  short int numParamsPassed;
+  short int numOptParams;
+  static DISPID dispidPropPut = DISPID_PROPERTYPUT;
+  int i,j,k;
+
+  checkArgTypesAndCounts(pFuncDesc,FALSE, // indirect
+			 invKind,argc,argv,&argsCount);
+  numParamsPassed = argsCount.numParamsPassed;
+  numOptParams = argsCount.numOptParams;
 
   switch(invKind) {
 
@@ -3806,13 +3984,12 @@ short int buildMethodArgumentsUsingVarDesc(VARDESC *pVarDesc,
 short int buildMethodArguments(MX_TYPEDESC *pTypeDesc,
 			       INVOKEKIND invKind,
 			       int argc, Scheme_Object **argv,
-			       DISPPARAMS *methodArguments) 
-{
+			       DISPPARAMS *methodArguments) {
     return (pTypeDesc == NULL)
         ? buildMethodArgumentsUsingDefaults (invKind, argc, argv, 
                                              methodArguments)
         : (pTypeDesc->descKind == funcDesc)
-        ? buildMethodArgumentsUsingFuncDesc (pTypeDesc->pFuncDesc,
+        ? buildMethodArgumentsUsingFuncDesc (pTypeDesc->funcdescs.pFuncDesc,
                                              invKind,argc,argv,
                                              methodArguments)
         : buildMethodArgumentsUsingVarDesc (pTypeDesc->pVarDesc,
@@ -3820,8 +3997,196 @@ short int buildMethodArguments(MX_TYPEDESC *pTypeDesc,
                                             methodArguments);
 }
 
+void allocateDirectRetval(VARIANT *va) {
+  switch(va->vt) {
+  case VT_BYREF|VT_UI1 :
+    va->pbVal = (BYTE *)allocParamMemory(sizeof(BYTE));
+    break;
+  case VT_BYREF|VT_I2 :
+    va->piVal = (SHORT *)allocParamMemory(sizeof(SHORT));
+    break;
+  case VT_BYREF|VT_I4 :
+    va->plVal = (LONG *)allocParamMemory(sizeof(LONG));
+    break;
+  case VT_BYREF|VT_I8 :
+    va->pllVal = (LONGLONG *)allocParamMemory(sizeof(LONGLONG));
+    break;
+  case VT_BYREF|VT_R4 :
+    va->pfltVal = (FLOAT *)allocParamMemory(sizeof(FLOAT));
+    break;
+  case VT_BYREF|VT_R8 :
+    va->pdblVal = (DOUBLE *)allocParamMemory(sizeof(DOUBLE));
+    break;
+  case VT_BYREF|VT_BOOL :
+    va->pboolVal = (VARIANT_BOOL *)allocParamMemory(sizeof(VARIANT_BOOL));
+    break;
+  case VT_BYREF|VT_ERROR :
+    va->pscode = (SCODE *)allocParamMemory(sizeof(SCODE));
+    break;
+  case VT_BYREF|VT_CY :
+    va->pcyVal = (CY *)allocParamMemory(sizeof(CY));
+    break;
+  case VT_BYREF|VT_DATE :
+    va->pdate = (DATE *)allocParamMemory(sizeof(DATE));
+    break;
+  case VT_BYREF|VT_BSTR :
+    va->pbstrVal = (BSTR *)allocParamMemory(sizeof(BSTR));
+    break;
+  case VT_BYREF|VT_UNKNOWN :
+    va->ppunkVal = (IUnknown **)allocParamMemory(sizeof(IUnknown *));
+    break;
+  case VT_BYREF|VT_PTR :
+  case VT_BYREF|VT_DISPATCH :
+    va->ppdispVal = (IDispatch **)allocParamMemory(sizeof(IDispatch *));
+    break;
+  case VT_BYREF|VT_ARRAY :
+  case VT_BYREF|VT_SAFEARRAY :
+    va->pparray = (SAFEARRAY **)allocParamMemory(sizeof(SAFEARRAY *));
+    break;
+  case VT_BYREF|VT_VARIANT :
+    va->pvarVal = (VARIANT *)allocParamMemory(sizeof(VARIANT));
+    break;
+  case VT_BYREF|VT_I1 :
+    va->pcVal = (CHAR *)allocParamMemory(sizeof(CHAR));
+    break;
+  case VT_BYREF|VT_UI2 :
+    va->puiVal = (USHORT *)allocParamMemory(sizeof(USHORT));
+    break;
+  case VT_BYREF|VT_UI4 :
+    va->pulVal = (ULONG *)allocParamMemory(sizeof(ULONG));
+    break;
+  case VT_BYREF|VT_UI8 :
+    va->pullVal = (ULONGLONG *)allocParamMemory(sizeof(ULONGLONG));
+    break;
+  case VT_BYREF|VT_INT :
+    va->pintVal = (INT *)allocParamMemory(sizeof(INT));
+    break;
+  case VT_BYREF|VT_UINT :
+    va->puintVal = (UINT *)allocParamMemory(sizeof(UINT));
+    break;
+  default :
+    {char buff[128];
+    sprintf(buff,"Can't allocate return value for VARIANT 0x%X",va->vt);
+    scheme_signal_error(buff); }
+  }
+}
+
+static Scheme_Object *mx_make_direct_call(int argc,Scheme_Object **argv,
+					  INVOKEKIND invKind,
+					  IDispatch *pIDispatch,
+					  char *name,
+					  MX_TYPEDESC *pTypeDesc) {
+  HRESULT hr;
+  Scheme_Object *retval;
+  MX_ARGS_COUNT argsCount;
+  IDispatch *pInterface;
+  COMPTR funPtr;
+  VARIANT retvalVa,va,*vaPtr;
+  static VARIANT argVas[MAXDIRECTARGS];
+  static VARIANT optArgVas[MAXDIRECTARGS];
+  FUNCDESC *pFuncDesc;
+  short numParamsPassed;
+  short numOptParams;
+  short lcidIndex;
+  char buff[128];
+  int i,j;
+
+  pFuncDesc = pTypeDesc->funcdescs.pFuncDescImpl;
+  checkArgTypesAndCounts(pFuncDesc,TRUE, // direct
+			 invKind,argc,argv,&argsCount);
+  numParamsPassed = argsCount.numParamsPassed;
+  numOptParams = argsCount.numOptParams;
+  lcidIndex = argsCount.lcidIndex;
+
+  if (pTypeDesc->pInterface == NULL) {
+    DWORD *vtbl;
+
+    hr = pIDispatch->QueryInterface(pTypeDesc->implGuid,(void **)&pInterface);
+
+    if (FAILED(hr) || pInterface == NULL) {
+      sprintf(buff,"Failed to get direct interface for call to `%s'",name);
+      codedComError(buff,hr);
+    }
+    vtbl = (DWORD *)reinterpret_cast<int *>(pInterface)[0];
+    pTypeDesc->pInterface = pInterface;
+    pTypeDesc->funPtr = funPtr = (COMPTR)(vtbl[pTypeDesc->funOffset]);
+  }
+  else {
+    pInterface = pTypeDesc->pInterface;
+    funPtr = pTypeDesc->funPtr;
+  }
+
+  // push return value ptr
+
+  VariantInit(&retvalVa);
+  if (argsCount.retvalInParams) { 
+    retvalVa.vt = getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[pFuncDesc->cParams-1]);
+  }
+  else {
+    retvalVa.vt = getVarTypeFromElemDesc(&pFuncDesc->elemdescFunc);
+  }
+
+  if (invKind != INVOKE_PROPERTYPUT && retvalVa.vt != VT_VOID) {
+    retvalVa.vt |= VT_BYREF;
+    allocateDirectRetval(&retvalVa);
+    pushOneArg(retvalVa,buff);
+  }
+
+  // these must be macros, not functions, so that stack is maintained
+
+  pushOptArgs(pFuncDesc,numParamsPassed,numOptParams,optArgVas,vaPtr,va,
+	      argc,i,j,lcidIndex,buff);
+
+  pushSuppliedArgs(pFuncDesc,numParamsPassed,argc,argv,argVas,vaPtr,va,
+		   i,j,lcidIndex,buff);
+
+  // push the "this" pointer before calling
+
+  __asm {
+    push pInterface;
+    call funPtr;
+    mov hr,eax;
+  }
+
+  if (FAILED(hr)) {
+     char buff[128];
+     sprintf(buff,"COM method `%s' failed",name);
+     codedComError(buff,hr);
+  } 
+
+  // unmarshal boxed values, cleanup
+  i = argc - 1;
+  j = argc - 3; 
+  if (lcidIndex != NO_LCID && lcidIndex <= j + 1) {
+    j++; 
+  } 
+  vaPtr = argVas + j;
+  for ( ; j >= 0; i--,j--,vaPtr--) {
+    if (j == lcidIndex) {
+      i++;
+    }
+    else {
+      unmarshalVariant(argv[i],vaPtr);
+    }
+  }
+
+  if (invKind == INVOKE_PROPERTYPUT) {
+    return scheme_void;
+  }
+
+  retval = retvalVariantToSchemeObject(&retvalVa);
+
+  // all pointers are 32 bits, choose arbitrary one
+  if (retvalVa.vt != VT_VOID) {
+    scheme_gc_ptr_ok(retvalVa.pullVal);
+  }
+
+  return retval;
+}
+
 static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 				   INVOKEKIND invKind) {
+  Scheme_Object *retval;
   MX_TYPEDESC *pTypeDesc;
   DISPID dispid = 0;
   DISPPARAMS methodArguments;
@@ -3833,6 +4198,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   short numParamsPassed;
   int i,j;
   HRESULT hr;
+  char buff[256];
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type(mx_fun_string(invKind),"com-object",0,argc,argv);
@@ -3851,48 +4217,67 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   name = SCHEME_STR_VAL(argv[1]);
 
   if (invKind == INVOKE_FUNC && isDispatchName(name)) {
-    scheme_signal_error("com-invoke: IDispatch methods may not be called");
+    sprintf(buff,"%s: IDispatch methods may not be called",
+	    mx_fun_string(invKind));
+    scheme_signal_error(buff);
   }
 
   // check arity, types of method arguments
 
   pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
 
-  // If there is no pTypeDesc, then we have to wing it.
-  // Look for a dispid for the method name.  If we find it, just push
-  // the arguments and let it figure it out.
+  // try direct call via function pointer
+  // otherwise, use COM Automation
 
-  if (pTypeDesc == NULL) {
-      // Translate the name to unicode.
-      OLECHAR namebuf[1024];
-      int len = strlen (name);
-      int count = MultiByteToWideChar (CP_ACP, (DWORD) 0, name, len, namebuf, sizeray (namebuf) -1);
-      namebuf[len] = '\0';
-      if (count < len) {
-	scheme_signal_error ("com-invoke:  Unable to translate name to Unicode.");
-      }      
+  if (pTypeDesc && 
+      (pTypeDesc->funOffset != NO_FUNPTR) &&
+      /* assignment */
+      (retval = mx_make_direct_call(argc,argv,invKind,
+				    pIDispatch,name,pTypeDesc))) {
+    return retval;
+  }
 
-      LPOLESTR namearray = (LPOLESTR)&namebuf;
-
-      hr = pIDispatch->GetIDsOfNames (IID_NULL, &namearray, 1, LOCALE_SYSTEM_DEFAULT, &dispid);
-      if (FAILED (hr)) {
-	switch (hr) {
-	case E_OUTOFMEMORY :
-	  scheme_signal_error ("com-invoke:  out of memory");
-	  break;
-	case DISP_E_UNKNOWNNAME :
-	  scheme_signal_error ("com-invoke:  unknown name");
-	  break;
-	case DISP_E_UNKNOWNLCID :
-	  scheme_signal_error ("com-invoke:  unknown LCID");
-	  break;
-	default :
-	  codedComError("com-invoke: ",hr);
-	}
-      }
+  if (pTypeDesc) {
+    dispid = pTypeDesc->memID;
   }
   else { 
-    dispid = pTypeDesc->memID;
+    // If there is no pTypeDesc, then we have to wing it.
+    // Look for a dispid for the method name.  If we find it, just push
+    // the arguments and let the COM object figure things out.
+
+    // Translate the name to Unicode.
+    OLECHAR namebuf[1024];
+    int len = strlen(name);
+    int count = MultiByteToWideChar(CP_ACP,(DWORD)0,name,len,
+				    namebuf,sizeray(namebuf)-1);
+    namebuf[len] = '\0';
+    if (count < len) {
+      sprintf(buff,"%s: Unable to translate name \"%s\" to Unicode",
+	      mx_fun_string(invKind),name);
+      scheme_signal_error(buff);
+    }      
+    
+    LPOLESTR namearray = (LPOLESTR)&namebuf;
+    
+    hr = pIDispatch->GetIDsOfNames (IID_NULL,&namearray,1, 
+				    LOCALE_SYSTEM_DEFAULT,&dispid); 
+    
+    if (FAILED (hr)) {
+      char *funString = mx_fun_string(invKind);
+      switch (hr) {
+      case E_OUTOFMEMORY :
+	sprintf(buff,"%s: out of memory",funString);
+	scheme_signal_error(buff);
+      case DISP_E_UNKNOWNNAME :
+	sprintf(buff,"%s: unknown name \"%s\"",funString,name);
+	scheme_signal_error(buff);
+      case DISP_E_UNKNOWNLCID :
+	sprintf(buff,"%s: unknown LCID",funString);
+	scheme_signal_error(buff);
+      default :
+	codedComError(funString,hr);
+      }
+    }
   }
 
   // Build the method arguments even if pTypeDesc is NULL.
@@ -3902,7 +4287,7 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 					 &methodArguments);
 
   if (invKind != INVOKE_PROPERTYPUT) {
-    VariantInit (&methodResult);
+    VariantInit(&methodResult);
   }
 
   // invoke requested method
@@ -3910,7 +4295,8 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
   hr = pIDispatch->Invoke(dispid,IID_NULL,LOCALE_SYSTEM_DEFAULT,
 			  invKind,
 			  &methodArguments,
-			  (invKind == INVOKE_PROPERTYPUT) ? NULL : &methodResult,
+			  (invKind == INVOKE_PROPERTYPUT) ? 
+			    NULL : &methodResult,
 			  &exnInfo,
 			  &errorIndex);
 
@@ -3976,10 +4362,6 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
   return variantToSchemeObject(&methodResult);
 
-}
-
-BOOL _stdcall drawContinue(DWORD data) {
-  return TRUE;
 }
 
 Scheme_Object *mx_com_invoke(int argc,Scheme_Object **argv) {
@@ -4843,20 +5225,6 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   int i;
 
   scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
-
-  HWND hwnd;
-  hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
-		      WS_VISIBLE,
-		      0,0,
-	       0,0,
-		      NULL,NULL,hInstance,NULL);
-
-
-  ShowWindow(hwnd,SW_SHOW);
-
-  char buff[256];
-
-  sprintf (buff,"%X",hwnd);
 
   // should not be necessary, but sometimes
   // this variable is not 0'd out - bug in VC++ or MzScheme?

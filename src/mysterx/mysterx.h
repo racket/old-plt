@@ -16,6 +16,8 @@
 #define MX_DEFAULT_WIDTH  (400)
 #define MX_DEFAULT_HEIGHT (400)
 
+#define MAXDIRECTARGS (256)
+
 #define DOCHWND_TRIES 40
 #define DOCDISPATCH_TRIES 60
 
@@ -30,7 +32,18 @@
 /* extends INVOKEKIND enum in OAIDL.H */
 #define INVOKE_EVENT 16
 
-typedef struct _MX_prim_ {
+#define NO_LCID (-1)
+
+typedef HRESULT (STDMETHODCALLTYPE *COMPTR)(IDispatch *);
+
+typedef struct _mx_args_ {
+  short int numParamsPassed;
+  short int numOptParams;
+  short int lcidIndex;
+  BOOL retvalInParams;
+} MX_ARGS_COUNT;
+
+typedef struct _mx_prim_ {
   Scheme_Object *(*c_fun)(int argc,Scheme_Object **);
   char *name;
   short minargs;
@@ -66,14 +79,26 @@ typedef enum _mx_desckind_ {
   funcDesc,varDesc
 } MX_DESCKIND;
 
+typedef  HRESULT (STDMETHODCALLTYPE *COMFUNPTR)(IDispatch *);
+
+#define NO_FUNPTR (-1)
+
 typedef struct _method_desc_ {
   Scheme_Type type;
   BOOL released;
   MEMBERID memID;
   ITypeInfo *pITypeInfo;
+  ITypeInfo *pITypeInfoImpl;
+  IDispatch *pInterface;
+  COMPTR funPtr;
+  short funOffset; // NO_FUNPTR means no direct call possible
+  GUID implGuid;
   MX_DESCKIND descKind;
   union {
-    FUNCDESC *pFuncDesc;
+    struct funcdescs {
+      FUNCDESC *pFuncDesc;
+      FUNCDESC *pFuncDescImpl;
+    } funcdescs;
     VARDESC *pVarDesc;
   };
 } MX_TYPEDESC;
@@ -557,6 +582,7 @@ MX_PRIM_DECL(mx_event_error_pred);
 MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_process_win_events);
 MX_PRIM_DECL(mx_release_type_table);
+MX_PRIM_DECL(initialize_cor);
 
 void browserHwndMsgLoop(LPVOID);
 void mx_register_com_object(Scheme_Object *,IDispatch *);
@@ -596,3 +622,259 @@ extern WCHAR *eventNames[11];
 // misc
 
 extern unsigned long browserCount;
+
+// inline assembly
+
+/* for 4-byte values */
+#define pusharg(v) \
+  __asm { \
+   push v \
+  }
+
+/* for single-byte values */
+#define pushByte(v)  \
+  __asm { \
+    mov al,v \
+  } \
+  pusharg(eax);
+
+/* for two-byte values */
+#define pushShort(v)  \
+  __asm { \
+    mov ax,v \
+  } \
+  pusharg(eax);
+
+/* for 8-byte values */
+#define pushWords(v) \
+      { ULONG loWord = (*(ULONG *)(&v)) & 0xFFFFFFFF; \
+        ULONG hiWord = (ULONG)((*(ULONGLONG *)(&v)) >> 32);  \
+        pusharg(hiWord); \
+        pusharg(loWord); \
+      } 
+
+// push right to left 
+// i indexes argv's, j indexes COM type info 
+#define pushSuppliedArgs(pFuncDesc,numParamsPassed,argc,argv, \
+                         argVas,vaPtr,va,i,j,lcidIndex,buff) \
+  /* j is index into COM type descriptions */ \
+  j = argc - 3; \
+  if (lcidIndex != NO_LCID && lcidIndex <= j + 1) { \
+    j++; \
+  } \
+  /* i is index into argv */ \
+  i = argc - 1; \
+  if (j > MAXDIRECTARGS - 1) { \
+    scheme_signal_error("Too many arguments to COM method or property"); \
+  } \
+  vaPtr = argVas + j; \
+  for ( ; j >= 0; i--,j--,vaPtr--) { \
+    VariantInit(vaPtr); \
+    if (j == lcidIndex) { \
+      vaPtr->vt = VT_UI4; \
+      vaPtr->ulVal = LOCALE_SYSTEM_DEFAULT; \
+      i++; \
+    } \
+    else if (argv[i] == mx_omit_obj) { \
+      vaPtr->vt = VT_ERROR; \
+      vaPtr->lVal = DISP_E_PARAMNOTFOUND; \
+      va = *vaPtr; \
+      pushVariant(va); \
+      continue; \
+    } \
+    else { \
+      vaPtr->vt = getVarTypeFromElemDesc(&pFuncDesc->lprgelemdescParam[j]); \
+      if (vaPtr->vt == VT_VARIANT) { \
+	marshalSchemeValueToVariant(argv[i],vaPtr); \
+        va = *vaPtr; \
+        pushVariant(va); \
+        continue; \
+      } \
+      marshalSchemeValue(argv[i],vaPtr); \
+    } \
+    va = *vaPtr; \
+    pushOneArg(va,buff); \
+  }
+
+// push right to left 
+#define pushOptArgs(pFuncDesc,numParamsPassed,numOptParams, \
+                    optArgVas,vaPtr,va,argc,i,j,lcidIndex,buff) \
+  if (numOptParams > 0) { \
+    /* i is index into param type descriptions */ \
+    i = numParamsPassed - 1; \
+    if (lcidIndex != NO_LCID) { \
+      i++; \
+    } \
+    /* j is size of VARIANT array */ \
+    j = i - argc + 3; \
+    /* lcid to be handled in supplied loop */ \
+    if (lcidIndex != NO_LCID && lcidIndex < argc - 3) { \
+      j--; \
+    } \
+    if (j > MAXDIRECTARGS) { \
+      scheme_signal_error("Too many arguments to COM method or property"); \
+    } \
+    vaPtr = optArgVas + (j - 1); \
+    for ( ; j > 0; i--,j--,vaPtr--) { \
+      VariantInit(vaPtr); \
+      if (isDefaultParam(pFuncDesc,i)) { \
+	vaPtr = &(pFuncDesc->lprgelemdescParam[i].paramdesc.pparamdescex->varDefaultValue); \
+      } \
+      else if (i == lcidIndex) { \
+        vaPtr->vt = VT_UI4; \
+        vaPtr->ulVal = LOCALE_SYSTEM_DEFAULT; \
+      } \
+      else { \
+	vaPtr->vt = VT_ERROR; \
+	vaPtr->lVal = DISP_E_PARAMNOTFOUND; \
+        va = *vaPtr; \
+        pushVariant(va); \
+        continue; \
+      } \
+      va = *vaPtr; \
+      pushOneArg(va,buff); \
+    } \
+  }
+
+/* VARIANT is 16 bytes */
+#define pushVariant(va) { \
+  ULONGLONG loDword,hiDword; \
+  loDword = *(ULONGLONG *)&va; \
+  hiDword = *((ULONGLONG *)&va + 1); \
+  pushWords(hiDword); \
+  pushWords(loDword); \
+}
+
+#define pushOneArg(va,buff) \
+    switch(va.vt) { \
+    case VT_I8 : \
+      pushWords(va.llVal); \
+      break; \
+    case  VT_I4 : \
+      pusharg(va.lVal); \
+      break; \
+    case VT_UI1 : \
+      pushByte(va.bVal); \
+      break; \
+    case VT_I2 : \
+      pushShort(va.iVal); \
+      break; \
+    case VT_R4 : \
+      pusharg(va.fltVal); \
+      break; \
+    case VT_R8 : \
+      pushWords(va.dblVal); \
+      break; \
+    case VT_BOOL : \
+      pushShort(va.boolVal); \
+      break; \
+    case VT_ERROR : \
+      pusharg(va.scode); \
+      break; \
+    case VT_CY : \
+      pusharg(va.cyVal); \
+      break; \
+   case VT_DATE : \
+      pushWords(va.date); \
+      break; \
+    case VT_BSTR : \
+      pusharg(va.bstrVal); \
+      break; \
+    case VT_UNKNOWN : \
+      pusharg(va.punkVal); \
+      break; \
+    case VT_DISPATCH : \
+      pusharg(va.pdispVal); \
+      break; \
+    case VT_ARRAY : \
+      pusharg(va.parray); \
+      break; \
+    case VT_BYREF|VT_UI1 : \
+      pusharg(va.pbVal); \
+      break; \
+    case VT_BYREF|VT_I2 : \
+      pusharg(va.piVal); \
+      break; \
+    case VT_BYREF|VT_I4 : \
+      pusharg(va.plVal); \
+      break; \
+    case VT_BYREF|VT_I8 : \
+      pusharg(va.pllVal); \
+      break; \
+    case VT_BYREF|VT_R4 : \
+      pusharg(va.pfltVal); \
+      break; \
+    case VT_BYREF|VT_R8 : \
+      pusharg(va.pdblVal); \
+      break; \
+    case VT_BYREF|VT_BOOL : \
+      pusharg(va.pboolVal); \
+      break; \
+    case VT_BYREF|VT_ERROR : \
+      pusharg(va.pscode); \
+      break; \
+    case VT_BYREF|VT_CY : \
+      pusharg(va.pcyVal); \
+      break; \
+    case VT_BYREF|VT_DATE : \
+      pusharg(va.pdate); \
+      break; \
+    case VT_BYREF|VT_BSTR : \
+      pusharg(va.pbstrVal); \
+      break; \
+    case VT_BYREF|VT_UNKNOWN : \
+      pusharg(va.ppunkVal); \
+      break; \
+    case VT_BYREF|VT_PTR : \
+    case VT_BYREF|VT_DISPATCH : \
+      pusharg(va.ppdispVal); \
+      break; \
+    case VT_BYREF|VT_SAFEARRAY : \
+    case VT_BYREF|VT_ARRAY : \
+      pusharg(va.pparray); \
+      break; \
+    case VT_BYREF|VT_VARIANT : \
+      pusharg(va.pvarVal); \
+      break; \
+    case VT_I1 : \
+      pushByte(va.cVal); \
+      break; \
+    case VT_UI2 : \
+      pushShort(va.uiVal); \
+      break; \
+    case VT_UI4 : \
+      pusharg(va.ulVal); \
+      break; \
+    case VT_UI8 : \
+      pushWords(va.ullVal); \
+      break; \
+    case VT_INT : \
+      pusharg(va.intVal); \
+      break; \
+    case VT_UINT : \
+      pusharg(va.uintVal); \
+      break; \
+    case VT_VOID : \
+      /* put property */ \
+      break; \
+    case VT_BYREF|VT_I1 : \
+      pusharg(va.puiVal); \
+      break; \
+    case VT_BYREF|VT_UI2 : \
+      pusharg(va.puiVal); \
+      break; \
+    case VT_BYREF|VT_UI4 : \
+      pusharg(va.pulVal); \
+      break; \
+    case VT_BYREF|VT_UI8 : \
+      pusharg(va.pullVal); \
+      break; \
+    case VT_BYREF|VT_INT : \
+      pusharg(va.pintVal); \
+      break; \
+    case VT_BYREF|VT_UINT : \
+      pusharg(va.puintVal); \
+      break; \
+   default : \
+      sprintf(buff,"Can't push argument with VARIANT tag = %X",va.vt); \
+      scheme_signal_error(buff); }

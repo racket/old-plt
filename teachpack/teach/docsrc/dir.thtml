@@ -1,0 +1,45 @@
+
+#define LIBNAME Directories
+#include head.tinc
+
+<<LIBDESC>>{dir-lib.ss}
+
+<p>The library <code>dir-lib.ss</code> provides two-structures and one
+operation: 
+<menu>
+  <li> <code> (define-struct dir (names dirs files)) </code>
+
+  <li> <code> (define-struct file (name size content)) </code>
+
+  <li> <code> create-dir<code> which consumes a directory path (a string) 
+       and produces a directory. 
+</menu>
+For data definitions, see section 15. 
+
+<p>The library relies on two data definitions: 
+<menu> 
+<li> 
+   A directory is 
+   <code> (make-dir string[path] (listof directory) (listof file)) </code>
+<li>
+   A file is <code> (make-fil string[file name]) </code>
+</menu>
+
+Sample: Set library to <code>dir-lib.ss</code> and execute. Then evaluate 
+<pre>
+> (create-dir ".")
+(make-dir
+  '|.|
+  empty
+  (cons (make-fil 'ball1.gif 1289 empty)
+        (cons (make-fil 'blueball.gif 205 empty)
+              (cons (make-fil 'greenbal.gif 204 empty)
+                    (cons (make-fil 'redball.gif 203 empty)
+                          (cons (make-fil 'ufo.gif 1044 empty)
+                                (cons (make-fil 'gif-test.ss 5811 empty)
+                                      empty)))))))
+</pre>
+
+<p>Note: Softlinks are always treated as if they were empty files. 
+
+#include foot.tinc

@@ -1,0 +1,84 @@
+
+#define LIBNAME Ping-Pong
+#include head.tinc
+
+<<LIBDESC>>{pingp-play-lib.ss}
+
+The library <code>pingp-play-lib.ss</code> implements a demonic ping-pong
+game. The goal is to keep the ball in play as long as possible. The ball
+bounces on the northern and southern walls but must be kept in play with
+the paddles at the eastern and western walls. The paddles can be moved
+with mouse clicks. Occasionally a demon blows the ball into a different
+direction so that the game becomes more interesting. Enjoy!
+
+<br>
+
+The library provides one major operation: 
+<menu>
+  <li><code>go</code> : symbol -> void <br>
+  opens a window with a "ping pong" playing field -- plays demonic game
+  <br>use first to demonstrate the game to students<br>
+</menu>
+It also provides four operations that change properties of the game: 
+<menu>
+ <li><code> change-speed </code> : number -> void  <br>
+ changes how quickly the game is displayed (not the speed of the ball)
+ <li><code> change-wind </code> : number -> void  <br>
+ changes how frequently a demon "blows" the ball into a different direction
+ <li><code> change-width </code> : number -> void  <br>
+ changes the width of the playing field
+ <li><code> change-height </code> : number -> void  <br>
+ changes the height of the playing field
+</menu>
+
+<br>
+
+Sample session: Set library to <code> pingp-play-lib.ss </code> execute and
+play: 
+<br> <code> > (go 'MyName) </code>
+<br> <code> > (change-speed 120)
+<br> <code> > (go 'MyName) </code> </code>
+<br> <code> > (change-wind 88) </code>
+<br> <code> > (go 'MyName) </code> </code>
+
+<<LIBDESC>>{pingp-lib.ss}
+
+The library <code>pingp-lib.ss</code> provides the graphical help
+functions for a student implementation of the demonic ping-pong game: 
+<menu>
+
+  <li><code>tracer : posn speed mover number -> true</code><br>
+  shows movement of a ball according to <code>mover</code>; for example, <br>
+
+  <code>(tracer (make-posn 10 10) (make-vec 1 2) mover 55)</code><br>
+
+  constructs a 55-unit trace of a ball that starts at (10,10) and moves (1,2)
+  each time unit. The program <code>mover</code> is ternary and consumes 
+  the current position, the current speed, and a time period (number). 
+  <br>
+
+  <li><code>trace-ball : a-ball ball-posn mover number -> true</code><br>
+  shows movement of a ball according to <code>mover</code>; for example, <br>
+
+  <code>(trace-ball (make-ball (make-posn 10 10) (make-posn 1 2)) ball-posn mover 55)</code><br>
+
+  constructs a 55-unit trace of a ball that starts at (10,10) and moves (1,2)
+  each time unit. The program <code>mover</code> is binary and consumes a ball
+  and a time period (number). 
+  <br>
+
+  <li><code>landed-on-paddle? : posn -> boolean </code><br>
+  tests whether the position is on the paddle in the current configuration
+
+  <li><code>play</code> : 
+  <code>make-ball</code>
+  <code>make-speed</code> 
+  <code>ball-posn</code>
+  <code>move -> boolean</code> 
+  <br>
+  opens a window and plays the game with programmer-defined functions
+
+</menu>
+The use of the operations is explained in detail in subsection 5.3. 
+
+#include foot.tinc

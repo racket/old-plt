@@ -1,0 +1,34 @@
+Testing in general: 
+-------------------
+
+Each file FF-lib.ss comes with the file FF-test.ss, which can test some
+part of the FF functionality. Someone needs to add error tests, i.e., 
+tests of what happens when the interface functions receive the wrong 
+kind of arguments or the wrong number of arguments. 
+
+Testing of PING and PROTECT: 
+----------------------------
+
+To test the trace* functions in the pingp-lib file, simulate by 
+  setting LIB to pingp-play-lib.ss
+  opening pingp-test-trace.ss
+  EXECUTE
+
+To test _play_ in the pingp-lib file, play the game by 
+  setting LIB to pingp-play-lib.ss
+  opening pingp-play-test.ss
+  EXECUTE
+
+Or test directly with code in pingp-test.ss; follow instructions at top.
+This test is useful if interface to play changes. 
+
+     ----------------------------------------------------------
+
+To test _protect_ in pingp-lib, play the game by 
+  setting LIB to protect-play-lib.ss
+  opening protect-play-test.ss
+  EXECUTE
+
+Or test directly with code in protect-test.ss; follow instructions at top.
+This test is useful if interface to protect changes. 
+

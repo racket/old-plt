@@ -4339,7 +4339,8 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
 static BOOL win_event_available(void *) {
   MSG msg;
 
-  return PeekMessage(&msg,NULL,0x400,0x400,PM_NOREMOVE);
+  return (PeekMessage(&msg,NULL,0x400,0x400,PM_NOREMOVE) ||
+	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
 }
 
 static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {

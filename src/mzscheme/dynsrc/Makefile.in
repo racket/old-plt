@@ -27,7 +27,8 @@ dynexample:
 oe:
 	$(MAKE) ../oe.so
 
-HEADERS = $(srcdir)/../include/scheme.h $(srcdir)/../src/schemef.h \
+HEADERS = -I$(builddir)/../mzconfig.h \
+          $(srcdir)/../include/scheme.h $(srcdir)/../src/schemef.h \
           $(srcdir)/../sconfig.h $(srcdir)/../uconfig.h
 
 MZDYNDEP = ../mzdyn.o $(srcdir)/../include/ext.exp $(srcdir)/../include/mzscheme.exp
@@ -54,7 +55,7 @@ ILIBDIR = $(prefix)/lib
 # have to go up and install things from there.
 
 cygwin-install:
-	gcc -c -O2 -I$(srcdir)/../include $(srcdir)/mzdyn.c
+	gcc -c -O2 -I$(builddir)/.. -I$(srcdir)/../include $(srcdir)/mzdyn.c
 	gcc -c $(srcdir)/init.cc
 	gcc -c $(srcdir)/fixup.c
 	cp $(srcdir)/mzdyn.def mzdynx.def

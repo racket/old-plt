@@ -157,7 +157,6 @@
 	 (lambda (prlmb)
 	   (update-filename #f)
 	   (send wrong-item enable (problem-solution prlmb))
-	   (send solve-item enable (problem-solution prlmb))
 	   (send editor-item enable (problem-solution prlmb))
 	   (change-children (lambda (x) (list top-panel)))
 	   (stretchable-width #f)

@@ -40,24 +40,6 @@
 // utility functions for get/write resources
 //-----------------------------------------------------------------------------
 
-static char *GetResourcePath(char *buf, char *name, Bool create = FALSE)
-{
-    if (create && FileExists(name)) {
-      strcpy(buf, name);
-      return buf; // Exists so ...
-    }
-    if (*name == '/')
-      strcpy(buf, name);
-    if (create) {
-      // Touch the file to create it
-      FILE *fd;
-      fd = fopen(buf, "w");
-      if (fd)
-	fclose(fd);
-    }
-    return buf;
-}
-
 static char *GetIniFile(char *dest, const char *filename)
 {
     char *home = NULL;

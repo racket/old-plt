@@ -76,25 +76,11 @@
                                 (and (list? x)
                                      (andmap string? x))))
   
+     
   (fw:preferences:add-callback
    'drscheme:teachpack-file
    (lambda (p v)
-     (let loop ([teachpacks v]
-		[thunk void]
-                [has-mred? #f])
-       (cond
-         [(null? teachpacks)
-          (set! invoke-teachpack thunk)]
-         [else
-          (let ([this-thunk (drscheme:teachpack:build-teachpack-thunk (car teachpacks))])
-            (if this-thunk
-                (loop (cdr teachpacks)
-                      (lambda ()
-                        (thunk)
-                        ((cadr this-thunk)))
-                      (or (eq? 'mr (car this-thunk))
-                          has-mred?))
-                #f))]))))
+     (drscheme:teachpack:build-teachpack-thunk v)))
   
   (define current-rep-text (make-parameter #f))
   

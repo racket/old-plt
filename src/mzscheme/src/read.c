@@ -441,20 +441,22 @@ void scheme_clean_list_stack(Scheme_Thread *p)
 
 static void track_indentation(Scheme_Object *indentation, int line, int col)
 {
-  Scheme_Indent *indt = (Scheme_Indent *)SCHEME_CAR(indentation);
-  /* Already checked this line? */
-  if (line > indt->last_line) {
-    indt->last_line = line;
-    indt->multiline = 1;
-    /* At least as indented as before? */
-    if (col >= indt->max_indent)
-      indt->max_indent = col;
-    else if (!indt->suspicious_line) {
-      /* Not as indented, and no suspicious line found
-	 already. Suspect that the closer should have
-	 appeared earlier. */
-      indt->suspicious_closer = indt->closer;
-      indt->suspicious_line = line;
+  if (!SCHEME_NULLP(indentation)) {
+    Scheme_Indent *indt = (Scheme_Indent *)SCHEME_CAR(indentation);
+    /* Already checked this line? */
+    if (line > indt->last_line) {
+      indt->last_line = line;
+      indt->multiline = 1;
+      /* At least as indented as before? */
+      if (col >= indt->max_indent)
+	indt->max_indent = col;
+      else if (!indt->suspicious_line) {
+	/* Not as indented, and no suspicious line found
+	   already. Suspect that the closer should have
+	   appeared earlier. */
+	indt->suspicious_closer = indt->closer;
+	indt->suspicious_line = line;
+      }
     }
   }
 }

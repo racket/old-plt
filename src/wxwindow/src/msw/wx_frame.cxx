@@ -841,6 +841,8 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
 
   if (style & wxSTAY_ON_TOP)
     extendedStyle |= WS_EX_TOPMOST;
+  if (style & wxFLOAT_FRAME)
+    extendedStyle |= WS_EX_PALETTEWINDOW;
 
   icon = NULL;
   iconized = FALSE;

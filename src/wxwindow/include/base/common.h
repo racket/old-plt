@@ -102,6 +102,7 @@ typedef short int WXTYPE;
 #define wxRESIZE_BOX         wxMAXIMIZE_BOX
 #define wxNO_RESIZE_BORDER   0x00800000
 #define wxNO_CAPTION         0x00000004
+#define wxFLOAT_FRAME        0x01000000
 
 /*
  * Subwindow style flags

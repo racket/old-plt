@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.61 2000/06/10 15:01:04 mflatt Exp $
+; $Id: x.ss,v 1.62 2000/06/23 00:48:44 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -20,14 +20,13 @@
   (define-struct z:syntax (name))
 
   (define (make-mz-binding s)
-    (parameterize ([current-namespace reference-namespace])
-      (let ([v (make-z:syntax s)])
-	(global-defined-value s v)
-	v)))
-  
+    (make-z:syntax s))
+
   (define (syntax-symbol->id s)
-    (with-handlers ([void (lambda (x) (make-mz-binding s))])
-      (parameterize ([current-namespace reference-namespace])
+    (parameterize ([current-namespace reference-namespace])
+      (with-handlers ([void (lambda (x) (let ([v (make-mz-binding s)])
+					  (global-defined-value s v)
+					  v))])
 	(global-defined-value s))))
 
   ; ----------------------------------------------------------------------
@@ -98,18 +97,26 @@
 	    #f))))))
 
   (define add-micro/macro-form
-    (lambda (constructor)
+    (lambda (constructor stdname?)
       (lambda (name/s vocab rewriter)
 	(let* ((v (vocabulary-record-this vocab))
 	       (names (if (symbol? name/s) (list name/s) name/s))
 	       (ids (if (vocabulary-record-namespace-based? vocab)
-			(map syntax-symbol->id names)
+			(map (if stdname? 
+				 syntax-symbol->id
+				 make-mz-binding)
+			     names)
 			names))
 	       (r (constructor rewriter)))
 	  (set-resolutions-name! r name/s)
 	  (map (lambda (n id)
 		 (hash-table-put! v id r))
-	       names ids)))))
+	       names ids)
+	  (unless stdname?
+	    (for-each
+	     (lambda (name id)
+	       (global-defined-value name id))
+	     names ids))))))
 
   (define vocab->list
     (lambda (vocab)
@@ -118,15 +125,18 @@
 
   (define add-micro-form
     (add-micro/macro-form (lambda (r)
-			    (make-micro-resolution 'dummy #f r))))
+			    (make-micro-resolution 'dummy #f r))
+			  #t))
 
   (define add-system-macro-form
     (add-micro/macro-form (lambda (r)
-			    (make-macro-resolution 'dummy #f r))))
+			    (make-macro-resolution 'dummy #f r))
+			  #t))
 
   (define add-user-macro-form
     (add-micro/macro-form (lambda (r)
-			    (make-macro-resolution 'dummy #t r))))
+			    (make-macro-resolution 'dummy #t r))
+			  #f))
 
   (define add-macro-form add-system-macro-form)
 

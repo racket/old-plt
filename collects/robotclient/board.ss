@@ -127,7 +127,7 @@
   ;; (make-command num `(s n e w p d) list-of-package)
   (define-struct command (bid command arg) (make-inspector))
   
-  (define-struct package (id weight x y))
+  (define-struct package (id weight x y) (make-inspector))
   
   (define player-id (make-parameter 0))
   (define player-money (make-parameter 0))
@@ -136,7 +136,7 @@
   (define packages-held (make-parameter null))
   
   (define-struct robot (id x y))
-  (define robot-table (make-parameter (make-hash-table)))
+  (define robot-table (make-parameter #f))
   (define robot-indexes (make-parameter null))
   
   (define (read-good-char in)
@@ -145,7 +145,7 @@
         ((#\. #\~ #\# #\@) c)
         (else (read-good-char in)))))
 
-  (define-struct response (id name arg))
+  (define-struct response (id name arg) (make-inspector))
   
   (define-tokens rt (NUM))
   (define-empty-tokens ert (^ X Y N S E W P D EOF))
@@ -242,6 +242,7 @@
            (dead-robots
             (find-dead alive-robots (robot-indexes)))
            (package-table (make-hash-table)))
+      ;(printf "~a~n" responses)
       (gui-update (map (lambda (r)
                          (let ((good-responses
                                 (filter (lambda (r)
@@ -344,6 +345,7 @@
   (define (read-board! input init-gui)
     (board-width (read input))
     (board-height (read input))
+    (robot-table (make-hash-table))
     (board (make-array2d (board-height) (board-width) 0))
     (let loop ((i 1)
                (j 1))

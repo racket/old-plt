@@ -11,7 +11,8 @@
       (parameterize ((current-custodian client-custodian))
         (with-handlers ((exn? (lambda (ex)
                                 (custodian-shutdown-all client-custodian)
-                                (printf "~a~n" (exn-message ex))
+                                ;(printf "~a~n" (exn-message ex))
+                                (printf "~a~n" (score))
                                 (score))))
           (let-values (((input output) (tcp-connect host-name port)))
             (display "Player" output)
@@ -26,13 +27,14 @@
   (define (read-packages in)
     (let* ((x (read-line in))
            (in (open-input-string x)))
+      ;((lambda (x) (printf "~a~n" x) x)
       (let loop ((id (read in)))
         (cond
           ((eof-object? id) null)
           (else
            (cons
             (make-package id (read in) (read in) (read in))
-            (loop (read in))))))))
+            (loop (read in))))))));)
   
   (define (send-command command out)
     (display (command-bid command) out)

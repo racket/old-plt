@@ -123,6 +123,9 @@
       [editor-set-caret-owner
        (lambda args (apply (ivar editor set-caret-owner)
 			   args))]
+      [editor-get-filename
+       (lambda args (apply (ivar editor get-filename)
+			   args))]
       
       ; initialize editor later		     
 

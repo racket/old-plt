@@ -50,7 +50,7 @@
      ;;(pretty-debug-gui `(highlight ,src-pos))
      (let* ([src-end (send edit match-paren-forward src-pos)])
        ;;(send edit set-position src-pos src-end)
-       (send (send edit get-frame) show #t)
+       (send edit show #t)
        (send edit relocate-set-position src-pos)
        (send edit relocate-flash-on src-pos src-end)
  )))
@@ -601,9 +601,8 @@
        [highlight
 	(lambda () 
 	  (set! te edit)
-	  (let* ( [frame (send edit get-frame)]
-		  [frame (send (ivar edit main) filename->frame
-			   (send edit get-filename))])
+	  (let* ([frame (send (ivar edit main) filename->frame
+			      (send edit editor-get-filename))])
 	    (assert (is-a? frame frame%) 'highlight frame)
 	    (send frame show #t)
 	    (send edit relocate-set-position start-pos)

@@ -52,6 +52,8 @@ static void **dgc_array;
 static int *dgc_count;
 static int dgc_size;
 
+extern int scheme_num_copied_stacks;
+
 extern void (*GC_out_of_memory)(void);
 extern void GC_register_late_disappearing_link(void **link, void *obj);
 
@@ -227,13 +229,15 @@ void *scheme_malloc_eternal(size_t n)
 
 #ifdef USE_TAGGED_ALLOCATION
 
-struct GC_Set *tagged, *real_tagged, *tagged_atomic, *tagged_eternal, *tagged_uncollectable, *envunbox;
+struct GC_Set *tagged, *real_tagged, *tagged_atomic, *tagged_eternal, *tagged_uncollectable, *stacks, *envunbox;
 struct GC_Set *tagged_while_counting;
 
 static void trace_count(void *, int);
 static void trace_path(void *, unsigned long, void *);
 static void trace_init(void);
 static void trace_done(void);
+static void trace_stack_count(void *, int);
+static void trace_stack_path(void *, unsigned long, void *);
 static void finalize_object(void *);
 
 #define TRACE_FUNCTIONS trace_init, trace_done, trace_count, trace_path
@@ -283,6 +287,17 @@ void *scheme_malloc_envunbox(size_t s)
 			  0);
 
   return GC_malloc_specific(s, envunbox);
+}
+
+void *scheme_malloc_stack(size_t s)
+{
+  if (!stacks)
+    stacks = GC_new_set("envunbox", 
+			trace_init, trace_done, trace_stack_count, trace_stack_path, 
+			NULL,
+			SGC_ATOMIC_SET);
+
+  return GC_malloc_specific(s, stacks);
 }
 
 void *scheme_malloc_eternal_tagged(size_t s)
@@ -599,10 +614,21 @@ static void trace_count(void *p, int size)
   }
 }
 
+static void trace_stack_count(void *p, int size)
+{
+  /* Do nothing */
+}
+
 static void trace_path(void *p, unsigned long src, void *path_data)
 {
   if ((trace_path_type > -1)
       && ((int)SCHEME_TYPE((Scheme_Object *)p) == trace_path_type))
+    GC_store_path(p, src, path_data);
+}
+
+static void trace_stack_path(void *p, unsigned long src, void *path_data)
+{
+  if (trace_path_type == -2)
     GC_store_path(p, src, path_data);
 }
 
@@ -676,6 +702,9 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 	trace_path_type = i;
 	break;
       }
+    }
+    if (SAME_OBJ(p[0], scheme_intern_symbol("stack"))) {
+      trace_path_type = -2;
     }
   }
 
@@ -787,8 +816,10 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
       count_managed(m, &c, &a, &u, &t, &ipt, &opt, &th);
 
       scheme_console_printf("custodians: %d  managed: actual: %d   breadth: %d   room: %d\n"
-			    "                        input-ports: %d  output-ports: %d  threads: %d\n", 
-			    t, u, c, a, ipt, opt, th);
+			    "                        input-ports: %d  output-ports: %d  threads: %d\n"
+			    "stacks: %d\n", 
+			    t, u, c, a, ipt, opt, th,
+			    scheme_num_copied_stacks);
     }
 
     if (bad_seeds)
@@ -845,6 +876,27 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 #else
 	  long len;
 	  type = scheme_write_to_string_w_max((Scheme_Object *)v, &len, max_w);
+	  if (!strncmp(type, "#<thread", 8)) {
+	    char buffer[256];
+	    char *run, *sus, *kill, *clean, *all, *t2;
+	    int state = ((Scheme_Process *)v)->running, len2;
+	    
+	    run = (state & MZTHREAD_RUNNING) ? "+run" : "";
+	    sus = (state & MZTHREAD_SUSPENDED) ? "+suspended" : "";
+	    kill = (state & MZTHREAD_KILLED) ? "+killed" : "";
+	    clean = (state & MZTHREAD_NEED_KILL_CLEANUP) ? "+cleanup" : "";
+	    all = !state ? "defunct" : "";
+
+	    sprintf(buffer, "[%d=%s%s%s%s%s]",
+		    state, run, sus, kill, clean, all);
+
+	    len2 = strlen(buffer);
+	    t2 = scheme_malloc_atomic(len + len2 + 1);
+	    memcpy(t2, type, len);
+	    memcpy(t2 + len, buffer, len2 + 1);
+	    len += len2;
+	    type = t2;
+	  }
 	  sep = "=";
 #endif
 	} else if (scheme_external_dump_type) {
@@ -1361,9 +1413,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_sema_type:
     s = sizeof(Scheme_Sema);
     break;
-  case scheme_channel_type:
-    s = sizeof(Scheme_Sema); /* BAD GUESS! */
-    break;
   case scheme_compilation_top_type:
     s = sizeof(Scheme_Compilation_Top);
     break;
@@ -1426,6 +1475,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_random_state_type:
     s = 130; /* wild guess */
     break;
+  case scheme_reserved_2_type:
   case scheme_reserved_3_type:
     s = 0; /* Not yet used */
     break;

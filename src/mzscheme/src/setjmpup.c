@@ -55,17 +55,23 @@ extern void (*GC_push_last_roots_again)(void);
    anything non-eagerly finalized.*/
 
 #ifdef USE_SENORA_GC
-#define GC_is_marked(p) GC_base(p)
+# define GC_is_marked(p) GC_base(p)
 #else
 extern int GC_is_marked(void *);
 #endif
 
-#define get_copy(s_c) (((CopiedStack *)s_c)->stack_copy)
+#define get_copy(s_c) (((CopiedStack *)s_c)->_stack_copy)
 
 #define MALLOC_LINK() MALLOC_ONE_ATOMIC(CopiedStack*)
+#ifdef USE_SENORA_GC
+extern void *scheme_malloc_stack(size_t);
+# define MALLOC_STACK(size) scheme_malloc_stack(size)
+#else
+# define MALLOC_STACK(size) scheme_malloc_atomic(size)
+#endif
 
 typedef struct CopiedStack {
-  void *stack_copy; /* The actual data */
+  void *_stack_copy; /* The actual data */
   long size;
   int pushed;
   struct CopiedStack **next, **prev;
@@ -138,11 +144,13 @@ static void remove_cs(void *_cs, void *unused)
   if (*cs->next)
     *(*cs->next)->prev = *cs->prev;
 
-  if (cs->stack_copy) {
+  if (cs->_stack_copy) {
 #ifndef SGC_STD_DEBUGGING
-    GC_free(cs->stack_copy);
+    GC_free(cs->_stack_copy);
+#else
+    memset(cs->_stack_copy, 0, cs->size);
 #endif
-    cs->stack_copy = NULL;
+    cs->_stack_copy = NULL;
   }
 
   --scheme_num_copied_stacks;
@@ -174,7 +182,7 @@ void set_copy(void *s_c, void *c)
 {
   CopiedStack *cs = (CopiedStack *)s_c;
 
-  cs->stack_copy = c;
+  cs->_stack_copy = c;
 }
 
 /**********************************************************************/
@@ -205,7 +213,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
   if (b->stack_max_size < size) {
     /* printf("Stack size: %d\n", size); */
     b->stack_copy = make_stack_copy_rec(size);
-    set_copy(b->stack_copy, scheme_malloc_atomic(size));
+    set_copy(b->stack_copy, MALLOC_STACK(size));
     b->stack_max_size = size;
   }
   b->stack_size = size;

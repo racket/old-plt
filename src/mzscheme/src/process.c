@@ -134,6 +134,9 @@ Scheme_Process *scheme_first_process = NULL;
 Scheme_Process **scheme_current_process_ptr;
 int *scheme_fuel_counter_ptr;
 #endif
+#ifndef MZ_REAL_THREADS
+static int swap_no_setjmp = 0;
+#endif
 
 #ifdef RUNSTACK_IS_GLOBAL
 Scheme_Object **scheme_current_runstack_start;
@@ -1042,7 +1045,7 @@ void scheme_swap_process(Scheme_Process *new_process)
 {
   scheme_zero_unneeded_rands(scheme_current_process);
 
-  if (SETJMP(scheme_current_process)) {
+  if (!swap_no_setjmp && SETJMP(scheme_current_process)) {
     /* We're back! */
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_process->runstack;
@@ -1052,6 +1055,8 @@ void scheme_swap_process(Scheme_Process *new_process)
 #endif
     RESETJMP(scheme_current_process);
   } else {
+    swap_no_setjmp = 0;
+
     /* We're leaving... */
 #ifdef RUNSTACK_IS_GLOBAL
     scheme_current_process->runstack = MZ_RUNSTACK;
@@ -1110,9 +1115,19 @@ static void remove_process(Scheme_Process *r)
     saved->runstack_start = NULL;
   }
 
+#ifndef SENORA_GC_NO_FREE
   if (r->list_stack)
     GC_free(r->list_stack);
+#endif
   r->list_stack = NULL;
+
+#ifndef MZ_REAL_THREADS
+  if (r == scheme_current_process) {
+    /* We're going to be swapped out immediately. */
+    swap_no_setjmp = 1;
+  } else
+    RESETJMP(r);
+#endif
 
   scheme_remove_managed(r->mref, (Scheme_Object *)r->mr_hop);
 }

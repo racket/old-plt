@@ -142,7 +142,7 @@
 #define ALLOW_TRACE_PATH 0
 /* Support collection-based trace path callbacks */
 
-#define KEEP_DETAIL_PATH 0
+#define KEEP_DETAIL_PATH 1
 /* Keep source offsets for path traces */
 
 #define ALLOW_SET_LOCKING 0
@@ -179,7 +179,7 @@
 /* GC_dump prints detail information about existing
    sectors. */
 
-#define DUMP_BLOCK_MAPS 0
+#define DUMP_BLOCK_MAPS 1 /* 0 */
 /* GC_dump prints detail information about block and
    set address contents. Automatically implies
    DUMP_BLOCK_COUNTS. */
@@ -3490,6 +3490,8 @@ static void prepare_stack_collect()
 #if !NO_STACK_OFFBYONE
   PUSH_COLLECT(s, e, source);
   semi_collect_stack(-PTR_ALIGNMENT);
+  /* Note: this nested-semi preparation can create trace paths of
+     the form X->X->Y->Z->... */
 #endif
 }
 
@@ -4398,6 +4400,11 @@ void do_GC_gcollect(void *stack_now)
   collect_trace_count = 0;
 # endif
 
+# if ALLOW_TRACE_PATH
+  /* External stacks may collect eagerly: */
+  current_trace_source = "xstack";
+# endif
+
   if (GC_push_last_roots) {
     PRINTTIME((STDERR, "gc: last roots push start: %ld\n", GETTIMEREL()));
     /*** ``Last'' roots external hook ***/
@@ -4657,6 +4664,8 @@ void GC_trace_path(void)
 
 void GC_store_path(void *v, unsigned long src, void *path_data)
 {
+  /* Note: a trace path of the form X->X->Y->Z->... (with two Xs)
+     indicates an off-by-one stack source. */
 #if ALLOW_TRACE_PATH
   TraceStack *s = (TraceStack *)path_data;
   int len, i;
@@ -4684,9 +4693,12 @@ void GC_store_path(void *v, unsigned long src, void *path_data)
     trace_path_buffer[trace_path_buffer_pos++] = 0;
     for (i = 1; len--; i += 3) {
       trace_path_buffer[trace_path_buffer_pos++] = (void *)s->stack[i];
-      trace_path_buffer[trace_path_buffer_pos++] = 0;
+      trace_path_buffer[trace_path_buffer_pos++] = 0; /* reset on next iteration */
 
       if (i > 1) {
+	/* See if we have offset information in the original trace info.
+	   (It might be missing because KEEP_DETAIL might be turned off, or
+            PUSH_COLLECT had 0 for its third argument.) */
 	unsigned long diff;
 	if (s->stack[i + 1])
 	  diff = ((unsigned long)s->stack[i + 1]) - prev;

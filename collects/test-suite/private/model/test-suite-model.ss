@@ -84,14 +84,16 @@
          (lambda (case)
            (send case reset))
          (find-first-snip)))
-        
+       
+      ;; eval-cases (-> void?)
+      ;; evaluate each case in the test-suite
       (define/private (eval-cases)
         (let ([case (find-first-snip)]
               [next (lambda ()
                       (send window update-executing false))])
           (if case
               (send case execute expander next)
-              next)))
+              (next))))
       
       ;; break (-> void?)
       ;; stops execution of the test-suite

@@ -1321,7 +1321,7 @@
 		    [etl (expander (stx-cdr p) proto-r local-top use-ellipses? use-tail-pos hash!)])
 		(if proto-r
 		    `(lambda (r)
-		       ,(apply-cons (apply-to-r ehd) (apply-to-r etl) p))
+		       ,(apply-cons p (apply-to-r ehd) (apply-to-r etl) p))
 		    ;; variables were hashed
 		    (void)))))]
        [(stx-vector? p #f)
@@ -1426,8 +1426,14 @@
   ;; a quoted as the "optimization" --- one that
   ;; is necessary to preserve the syntax wraps
   ;; associated with p.
-  (define (apply-cons h t p)
+  (define (apply-cons stx h t p)
     (cond
+     [(syntax? stx)
+      ;; Keep location information
+      (let ([ctx (datum->syntax-object stx 'ctx stx)])
+	`(datum->syntax-object (quote-syntax ,ctx)
+			       ,(apply-cons #f h t p) 
+			       (quote-syntax ,ctx)))]
      [(and (pair? h)
 	   (eq? (car h) 'quote-syntax)
 	   (eq? (cadr h) (stx-car p))

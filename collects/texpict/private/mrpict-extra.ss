@@ -68,7 +68,7 @@
       (define dc 
 	(case-lambda
 	 [(f w h a d)
-	  (make-pict `(prog ,f ,h) w h a d null)]
+	  (make-pict `(prog ,f ,h) w h a d null #f)]
 	 [(f w h)
 	  (dc f w h h 0)]))
       (define prog-picture dc)

@@ -13,13 +13,15 @@
       (define default-seg 5)
       (define recordseplinespace 4)
 
-      (define-struct pict (draw ; drawing instructions
-			   width ; total width
-			   height ; total height >= ascent + desecnt
-			   ascent ; portion of height above top baseline
-			   descent ; portion of height below bottom baseline
-			   children)) ; list of child records
+      (define-struct pict (draw     ; drawing instructions
+			   width    ; total width
+			   height   ; total height >= ascent + desecnt
+			   ascent   ; portion of height above top baseline
+			   descent  ; portion of height below bottom baseline
+			   children ; list of child records
+			   panbox)) ; panorama box
       (define-struct child (pict dx dy sx sy))
+      (define-struct bbox (x1 y1 x2 y2))
 
       (define (quotient* a b)
 	(if (integer? a)
@@ -31,7 +33,7 @@
 	 [() (blank 0 0 0)]
 	 [(s) (blank s s)]
 	 [(w h) (blank w h 0)]
-	 [(w a d) (make-pict `(picture ,w ,(+ a d)) w (+ a d) a d null)]))
+	 [(w a d) (make-pict `(picture ,w ,(+ a d)) w (+ a d) a d null #f)]))
 
       (define (extend-pict box dx dy dw da dd draw)
 	(let ([w (pict-width box)]
@@ -41,7 +43,8 @@
 	  (make-pict (if draw draw (pict-draw box))
 		     (+ w dw) (+ h da dd) 
 		     (max 0 (+ a da)) (max 0 (+ d dd))
-		     (list (make-child box dx dy 1 1)))))
+		     (list (make-child box dx dy 1 1))
+		     #f)))
 
       (define (single-pict-offset pict subbox)
 	(let floop ([box pict]
@@ -125,8 +128,11 @@
 		  (find rt bline))))
 
       (define (launder box)
+	(unless (pict-panbox box)
+	  (panorama-box! box))
 	(let ([b (extend-pict box 0 0 0 0 0 #f)])
 	  (set-pict-children! b null)
+	  (set-pict-panbox! b (pict-panbox box))
 	  b))
 
       (define (lift p n)
@@ -147,7 +153,8 @@
 			     (child-dx c)
 			     (+ dh (child-dy c))
 			     1 1))
-			  (pict-children p)))))
+			  (pict-children p))
+		     #f)))
 
       (define (drop p n)
 	(let* ([dh (- (max 0 (- n (pict-ascent p))))]
@@ -161,7 +168,8 @@
 		     (if do-d?
 			 (- h2 a2)
 			 (pict-descent p))
-		     (pict-children p))))
+		     (pict-children p)
+		     #f)))
 
       (define (baseless p)
 	(let ([p (lift p (pict-descent p))])
@@ -176,24 +184,30 @@
 	    (make-pict (pict-draw p)
 		       (pict-width c) (pict-height c)
 		       (pict-ascent c) (pict-descent c)
-		       (pict-children p)))))
+		       (pict-children p)
+		       #f))))
 
-      (define (panorama-box p)
-	(let loop ([x1 0][y1 0][x2 (pict-width p)][y2 (pict-height p)]
-		   [l (pict-children p)])
-	  (if (null? l)
-	      (values x1 y1 x2 y2)
-	      (let ([c (car l)])
-		(let-values ([(cx1 cy1 cx2 cy2) (panorama-box (child-pict c))])
-		  (loop (min x1 (* (+ cx1 (child-dx c)) (child-sx c)))
-			(min y1 (* (+ cy1 (child-dy c)) (child-sy c)))
-			(max x2 (* (+ cx2 (child-dx c)) (child-sx c)))
-			(max y2 (* (+ cy2 (child-dy c)) (child-sy c)))
-			(cdr l)))))))
+      (define (panorama-box! p)
+	(let ([bb (pict-panbox p)])
+	  (if bb
+	      (values (bbox-x1 bb) (bbox-y1 bb) (bbox-x2 bb) (bbox-y2 bb))
+	      (let loop ([x1 0][y1 0][x2 (pict-width p)][y2 (pict-height p)]
+			 [l (pict-children p)])
+		(if (null? l)
+		    (begin
+		      (set-pict-panbox! p (make-bbox x1 y1 x2 y2))
+		      (values x1 y1 x2 y2))
+		    (let ([c (car l)])
+		      (let-values ([(cx1 cy1 cx2 cy2) (panorama-box! (child-pict c))])
+			(loop (min x1 (* (+ cx1 (child-dx c)) (child-sx c)))
+			      (min y1 (* (+ cy1 (child-dy c)) (child-sy c)))
+			      (max x2 (* (+ cx2 (child-dx c)) (child-sx c)))
+			      (max y2 (* (+ cy2 (child-dy c)) (child-sy c)))
+			      (cdr l)))))))))
 
       (define (panorama p)
-	(let-values ([(x1 y1 x2 y2) (panorama-box p)])
-	  (inset p x1 (- y2 (pict-height p)) (- x2 (pict-width p)) y1)))
+	(let-values ([(x1 y1 x2 y2) (panorama-box! p)])
+	  (inset p (- x1) (- y2 (pict-height p)) (- x2 (pict-width p)) y1)))
 
       (define (clip-descent b)
 	(let* ([w (pict-width b)]
@@ -284,7 +298,8 @@
 	   (car (rotate width height))
 	   (cadr (rotate width height))
 	   (cadr (rotate 0 height)) 0
-	   null)))
+	   null
+	   #f)))
 
       (define (rlist b a) (list a b))
 
@@ -401,7 +416,8 @@
                              (combine-ascent fd1 rd1 fd2 rd2 fh rh h (+ dy1 fh) (+ dy2 rh))
                              (combine-descent fd2 rd2 fd1 rd1 fh rh h (- h dy1) (- h dy2))
                              (list (make-child first dx1 dy1 1 1)
-                                   (make-child rest dx2 dy2 1 1))))])))))]
+                                   (make-child rest dx2 dy2 1 1))
+			     #f))])))))]
 	      [2max (lambda (a b c . rest) (max a b))]
 	      [zero (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 . args) 0)]
 	      [fv (lambda (a b . args) a)]
@@ -520,7 +536,8 @@
 			   (make-pict (pict-draw p)
 				      (pict-width p) (pict-height p)
 				      min-a min-d
-				      (pict-children p))))))))]
+				      (pict-children p)
+				      #f)))))))]
 	      [norm (lambda (h a d ac dc) h)]
 	      [tbase (lambda (h a d ac dc) (+ a ac))] 
 	      [bbase (lambda (h a d ac dc) (+ d dc))] 
@@ -657,7 +674,8 @@
 	   totalheight 0
 	   (cons
 	    (make-child title 0 title-y 1 1)
-	    (map (lambda (child child-y) (make-child child 0 child-y 1 1)) fields field-ys)))))
+	    (map (lambda (child child-y) (make-child child 0 child-y 1 1)) fields field-ys))
+	   #f)))
 
       (define (picture* w h a d commands)
 	(let loop ([commands commands][translated null][children null])
@@ -666,7 +684,8 @@
 	       `(picture ,w ,h
 			 ,@(reverse translated))
 	       w h a d
-	       children)
+	       children
+	       #f)
 	      (let ([c (car commands)]
 		    [rest (cdr commands)])
 		(unless (and (pair? c) (symbol? (car c)))

@@ -226,19 +226,30 @@
              (let ([enabled?-box (box 0)]
                    [collapsed?-box (box 0)]
                    [error-box?-box (box 0)])
-               (send* to-test (erase) (read-from-file f))
-               (send* expected (erase) (read-from-file f))
-               (send* predicate (erase) (read-from-file f))
-               (send* should-raise (erase) (read-from-file f))
-               (send* error-message (erase) (read-from-file f))
-               (send f get enabled?-box)
-               (send f get collapsed?-box)
-               (send f get error-box?-box)
-               (enable (= (unbox enabled?-box) 1))
-               ;; Presently this is poking a bug in the embedded-gui.
-               ;; I'll leaving it commented til I reduce the bug.
-               #;(collapse (= (unbox collapsed?-box) 1))
-               (toggle-error-box (= (unbox error-box?-box) 1))))
+	       (let ([vers (send tcb-sc reading-version f)])
+		 (case vers
+		   [(1)
+		    ;; Discard comment:
+		    (send (new text%) read-from-file f)
+		    (send* to-test (erase) (read-from-file f))
+		    (send* expected (erase) (read-from-file f))
+		    ;; Nothing else is in the stream in version 1,
+		    ;;  so leave the defaults
+		    ]
+		   [(2)
+		    (send* to-test (erase) (read-from-file f))
+		    (send* expected (erase) (read-from-file f))
+		    (send* predicate (erase) (read-from-file f))
+		    (send* should-raise (erase) (read-from-file f))
+		    (send* error-message (erase) (read-from-file f))
+		    (send f get enabled?-box)
+		    (send f get collapsed?-box)
+		    (send f get error-box?-box)
+		    (enable (= (unbox enabled?-box) 1))
+		    ;; Presently this is poking a bug in the embedded-gui.
+		    ;; I'll leaving it commented til I reduce the bug.
+		    #;(collapse (= (unbox collapsed?-box) 1))
+		    (toggle-error-box (= (unbox error-box?-box) 1))]))))
            
            ;;;;;;;;;;
            ;; Layout
@@ -436,7 +447,8 @@
         (make-snipclass
          test-case-box%
          "test-case-box%"
-         #;(lambda (class% f)
+         #;
+	 (lambda (class% f)
            (let ([enabled?-box (box 0)]
                  [collapsed?-box (box 0)]
                  [error-box?-box (box 0)]

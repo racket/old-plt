@@ -24,7 +24,7 @@
                 (super-new))]
              [sc (new abstract-snip-class%)])
         (send sc set-classname classname)
-        (send sc set-version 1)
+        (send sc set-version 2)
         (send (get-the-snip-class-list) add sc)
         sc)))
   

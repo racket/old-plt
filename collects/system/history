@@ -1,6 +1,11 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- mred:editor-frames are shown by default (the documentation was wrong)
+
+- mred:pasteboard-frames initialization arguments have changed and
+  they are not shown by default
+
 - autosaving has been moved to new edit and pasteboard classes, 
   mred:backup-autosave-edit and  mred:backup-autosave-pasteboard.
 

@@ -1208,9 +1208,6 @@
 	[reset-console
 	 (lambda ()
 	   (clear-previous-expr-positions)
-	   (when (thread? thread-killed)
-	     (kill-thread thread-killed)
-	     (set! thread-killed #f))
 	   (shutdown-user-custodian)
 	   (cleanup-transparent-io)
 	   (set! should-collect-garbage? #t)

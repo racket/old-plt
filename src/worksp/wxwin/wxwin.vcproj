@@ -11,26 +11,20 @@
 	</Platforms>
 	<Configurations>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
+			Name="Debug|Win32"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxwindow\src\base,..\..\wxwindow\src\msw,..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib,..\..\wxWindow\contrib\fafa"
-				PreprocessorDefinitions="NDEBUG,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
-				StringPooling="TRUE"
-				RuntimeLibrary="0"
-				EnableFunctionLevelLinking="TRUE"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib,..\..\wxWindow\contrib\fafa,$(NOINHERIT)"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,__WINDOWS__,GC_DLL"
+				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="wx.h"
-				PrecompiledHeaderFile=".\Release/wxwin.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -39,7 +33,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\Release\wxwin.lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -56,24 +50,24 @@
 				Name="VCWebServiceProxyGeneratorTool"/>
 		</Configuration>
 		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			Name="Release|Win32"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxwindow\src\base,..\..\wxwindow\src\msw,..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib,..\..\wxWindow\contrib\fafa"
-				PreprocessorDefinitions="DEBUG,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
-				RuntimeLibrary="1"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxwindow\contrib\wxxpm\libxpm.34b\lib,..\..\wxWindow\contrib\fafa,$(NOINHERIT)"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,__WINDOWS__,GC_DLL"
+				StringPooling="TRUE"
+				RuntimeLibrary="0"
+				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="wx.h"
-				PrecompiledHeaderFile=".\Debug/wxwin.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -82,7 +76,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\Debug\wxwin.lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -242,13 +236,13 @@
 				RelativePath="..\..\Wxwindow\Src\Msw\WX_WIN.cxx">
 			</File>
 			<File
-				RelativePath="..\..\wxwindow\src\msw\wx_gbox.cxx">
+				RelativePath="..\..\Wxwindow\Src\Msw\wx_gbox.cxx">
 			</File>
 			<File
 				RelativePath="..\..\Wxwindow\Src\Msw\wx_pdf.cxx">
 			</File>
 			<File
-				RelativePath="..\..\WXWINDOW\SRC\MSW\wximgfil.cxx">
+				RelativePath="..\..\Wxwindow\Src\Msw\wximgfil.cxx">
 			</File>
 		</Filter>
 		<Filter

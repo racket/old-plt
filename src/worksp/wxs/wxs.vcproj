@@ -12,23 +12,19 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxwindow\contrib\fafa"
-				PreprocessorDefinitions="DEBUG,__STDC__,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
+				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\mzscheme\include,..\..\mred\wxme,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxWindow\contrib\fafa,$(NOINHERIT)"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,__WINDOWS__,GC_DLL,__STDC__"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="wx.h"
-				PrecompiledHeaderFile=".\Debug/wxs.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -37,7 +33,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\Debug\wxs.lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -55,25 +51,24 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\Release"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="4"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxwindow\contrib\fafa"
-				PreprocessorDefinitions="NDEBUG,__STDC__,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
+				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\mzscheme\include,..\..\mred\wxme,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\wxWindow\contrib\fafa,$(NOINHERIT)"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,__WINDOWS__,GC_DLL,__STDC__"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
 				PrecompiledHeaderThrough="wx.h"
-				PrecompiledHeaderFile=".\Release/wxs.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
@@ -82,7 +77,7 @@
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile=".\Release\wxs.lib"
+				OutputFile="$(OutDir)\$(ProjectName).lib"
 				SuppressStartupBanner="TRUE"/>
 			<Tool
 				Name="VCMIDLTool"/>

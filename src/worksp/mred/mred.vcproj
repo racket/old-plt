@@ -12,48 +12,48 @@
 	<Configurations>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory=".\..\..\..\..\plt"
-			IntermediateDirectory=".\Release"
+			OutputDirectory="Release"
+			IntermediateDirectory="Release"
 			ConfigurationType="1"
 			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			ATLMinimizesCRunTimeLibraryUsage="FALSE"
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				InlineFunctionExpansion="1"
+				GlobalOptimizations="TRUE"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="TRUE"
+				FavorSizeOrSpeed="1"
 				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxwindow\contrib\fafa"
-				PreprocessorDefinitions="NDEBUG,__STDC__,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,__WINDOWS__,GC_DLL,__STDC__"
 				StringPooling="TRUE"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="TRUE"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Release/mred.pch"
-				AssemblerListingLocation=".\Release/"
-				ObjectFile=".\Release/"
-				ProgramDataBaseFileName=".\Release/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+				Description="Copy files to final location"
+				CommandLine="copy /y $(OutDir)\$(ProjectName).exe ..\..\..\$(ProjectName).exe
+copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
+"
+				Outputs="..\..\..\$(ProjectName).exe"
+/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="unicows.lib ..\libmred\Release\libmredxxxxxxx.lib ..\libmzsch\Release\libmzschxxxxxxx.lib ..\libmzgc\Release\libmzgcxxxxxxx.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib $(NOINHERIT)"
-				OutputFile="..\..\..\MrEd.exe"
+				AdditionalDependencies="unicows.lib WSock32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libcd.lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\..\..\..\..\plt/MrEd.pdb"
 				SubSystem="2"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\..\..\..\..\plt/mred.tlb"/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool
@@ -72,8 +72,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory=".\Debug"
-			IntermediateDirectory=".\Debug"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
 			ConfigurationType="1"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE">
@@ -81,37 +81,33 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\mzscheme\gc,..\..\wxwindow\include\base,..\..\wxwindow\include\msw,..\..\mzscheme\include,..\..\mred\wxme,..\..\mzscheme\utils,..\..\wxwindow\contrib\fafa"
-				PreprocessorDefinitions="DEBUG,__STDC__,WIN32,_WINDOWS,__WINDOWS__,GC_DLL"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,__WINDOWS__,GC_DLL,__STDC__"
+				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="2"
-				PrecompiledHeaderFile=".\Debug/mred.pch"
-				AssemblerListingLocation=".\Debug/"
-				ObjectFile=".\Debug/"
-				ProgramDataBaseFileName=".\Debug/"
 				WarningLevel="3"
 				SuppressStartupBanner="TRUE"
 				DebugInformationFormat="3"
 				CompileAs="0"/>
 			<Tool
-				Name="VCCustomBuildTool"/>
+				Name="VCCustomBuildTool"
+				Description="Copy files to target directory"
+				CommandLine="copy /y $(OutDir)\$(ProjectName).pdb ..\..\..\$(ProjectName).pdb
+copy /y $(OutDir)\$(ProjectName).exe ..\..\..\
+"
+				Outputs="..\..\..\$(InputName).pdb,..\..\..\$(InputName).exe"
+/>
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="unicows.lib ..\libmred\Debug\libmredxxxxxxx.lib ..\libmzsch\Debug\libmzschxxxxxxx.lib ..\libmzgc\Debug\libmzgcxxxxxxx.lib User32.lib Shell32.lib Gdi32.lib ComDlg32.lib AdvAPI32.lib Ole32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib $(NOINHERIT)"
-				OutputFile="..\..\..\MrEd.exe"
-				LinkIncremental="1"
+				AdditionalDependencies="unicows.lib WSock32.lib"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
 				SuppressStartupBanner="TRUE"
 				IgnoreDefaultLibraryNames="libcd.lib"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile=".\Debug/MrEd.pdb"
 				SubSystem="2"/>
 			<Tool
-				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="TRUE"
-				SuppressStartupBanner="TRUE"
-				TargetEnvironment="1"
-				TypeLibraryName=".\Debug/mred.tlb"/>
+				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"/>
 			<Tool

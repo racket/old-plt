@@ -45,7 +45,7 @@
       (lambda (id)
 	(let ((id
 		(cond
-		  ((zodiac:bound? id) (zodiac:bound-var id))
+		  ((zodiac:bound? id) (zodiac:bound-orig-name id))
 		  ((zodiac:top-level-varref? id) (zodiac:id-var id))
 		  (else
 		    (error 'check-for-keyword "given ~s" id)))))

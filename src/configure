@@ -1324,9 +1324,9 @@ if test "${enable_xrender+set}" = set; then
   enableval="$enable_xrender"
 
 fi;
-# Check whether --enable-xrender or --disable-xrender was given.
-if test "${enable_xrender+set}" = set; then
-  enableval="$enable_xrender"
+# Check whether --enable-xft or --disable-xft was given.
+if test "${enable_xft+set}" = set; then
+  enableval="$enable_xft"
 
 fi;
 # Check whether --enable-libpng or --disable-libpng was given.
@@ -1463,6 +1463,7 @@ fi
 
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
+  enable_xrender=no
   enable_libpng=no
   enable_libjpeg=no
 fi
@@ -6682,6 +6683,7 @@ if test "${enable_shared}" = "yes" ; then
   MREDLINKER="${LTDIR}/libtool --mode=link $CXX"
   CC="${LTDIR}/libtool --mode=compile $CC"
   CXX="${LTDIR}/libtool --mode=compile $CXX"
+  AS="${LTDIR}/libtool --mode=compile $AS"
   LIBSFX=la
   WXLIBS=WXLIBSDYN
   ICP="${LTDIR}/libtool --mode=install cp"

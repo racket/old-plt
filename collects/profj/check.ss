@@ -423,9 +423,9 @@
   (define (check-throw exp-type src env type-recs)
     (cond
       ((or (not (ref-type? exp-type))
-           (not (is-subclass? exp-type throw-type type-recs)))
+           (not (is-eq-subclass? exp-type throw-type type-recs)))
        (throw-error 'not-throwable exp-type src))
-      ((not (is-subclass? exp-type runtime-exn-type type-recs))
+      ((not (is-eq-subclass? exp-type runtime-exn-type type-recs))
        (unless (lookup-exn exp-type env type-recs)
          (throw-error 'not-declared exp-type src)))
       (else
@@ -493,7 +493,7 @@
                  (let* ((catch (car catches))
                         (type (field-type (catch-cond catch))))
                    (unless (and (ref-type? type)
-                                (is-subclass? type throw-type type-recs))
+                                (is-eq-subclass? type throw-type type-recs))
                      (catch-error type (field-src (catch-cond catch))))
                    (loop (cdr catches) (add-exn-to-env type env)))))))
       (check-s body new-env)
@@ -1068,7 +1068,7 @@
              (mods (method-record-modifiers method-record)))
         (when (memq 'abstract mods) (call-access-error 'abs name exp-type src))
         (when (and (memq 'protected mods) (reference-type? exp-type) 
-                   (not (is-subclass? this exp-type)))
+                   (not (is-eq-subclass? this exp-type)))
           (call-access-error 'pro name exp-type src))
         (when (and (memq 'private mods)
                    (reference-type? exp-type)
@@ -1122,7 +1122,7 @@
                     (method-record-throws const)))
         (when (and (memq 'private mods) (not (eq? class-record this)))
           (class-access-error 'pri type src))
-        (when (and (memq 'protected mods) (not (is-subclass? this type)))
+        (when (and (memq 'protected mods) (not (is-eq-subclass? this type)))
           (class-access-error 'pro type src))
         type)))
 
@@ -1226,7 +1226,7 @@
       (unless (equal? (car current-class) (ref-type-class/iface type))
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (cond 
-        ((and (ref-type? exp-type) (ref-type? type) (is-subclass? exp-type type type-recs)) 'boolean)
+        ((and (ref-type? exp-type) (ref-type? type) (is-eq-subclass? exp-type type type-recs)) 'boolean)
         ((and (ref-type? exp-type) (ref-type? type))
          (instanceof-error 'not-subtype type exp-type src))
         ((ref-type? exp-type)

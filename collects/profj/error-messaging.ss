@@ -62,17 +62,17 @@
       ((not t) "this class")
       (else (type->ext-name exp))))
   
-  ;make-parm-string: (list field) -> string
+  ;make-parm-string: (list type) -> string
   (define (make-parm-string parms)
     (if (null? parms)
         ""
         (substring (apply string-append
                           (map 
-                           (lambda (p) (string-append (id-string (field-name p)) " "))
+                           (lambda (p) (string-append (type->ext-name p)) " ")
                            parms))
                    0 (sub1 (length parms)))))
   
-  ;method-name->ext-name: string (list field) -> string
+  ;method-name->ext-name: string (list type) -> string
   (define (method-name->ext-name name parms)
     (format "~a(~a)" name (make-parm-string parms)))
 

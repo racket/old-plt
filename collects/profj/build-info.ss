@@ -332,7 +332,8 @@
                                                        (make-name (make-id "Object" #f) null #f)
                                                        super)
                                                    (header-implements info))
-                                             level)
+                                             level
+                                             type-recs)
                    
                    (check-current-methods (cons super-record iface-records)
                                           m
@@ -401,7 +402,7 @@
                    
                    (valid-field-names? f members type-recs)
                    (valid-method-sigs? m members level type-recs)
-                   (valid-inherited-methods? super-records (header-extends info) level)
+                   (valid-inherited-methods? super-records (header-extends info) level type-recs)
                    (check-current-methods super-records m members level type-recs)
                    
                    (let ((record
@@ -483,7 +484,9 @@
              (let ((m (find-member (car methods) members type-recs)))
                (method-error 'repeated 
                              (method-name m)
-                             (method-parms m)
+                             (map (lambda (t)
+                                    (type-spec-to-type (field-type t) type-recs))
+                                  (method-parms m))
                              (method-record-class (car methods))
                              (method-src m))))
         (valid-method-sigs? (cdr methods) members level type-recs)))
@@ -499,25 +502,28 @@
                                    (method-record-atypes (car methods))))))
              (method-member? method (cdr methods) level))))                              
   
-  (define (valid-inherited-methods? records extends level)
+  (define (valid-inherited-methods? records extends level type-recs)
     (or (null? records)
         (and (check-inherited-method (class-record-methods (car records))
                                      (cdr records)
                                      (car extends)
-                                     level)
-             (valid-inherited-methods? (cdr records) (cdr extends) level))))
+                                     level
+                                     type-recs)
+             (valid-inherited-methods? (cdr records) (cdr extends) level type-recs))))
   
-  (define (check-inherited-method methods records from level)
+  (define (check-inherited-method methods records from level type-recs)
     (or (null? methods)
         (and (method-conflicts? (car methods) 
                                 (apply append (map class-record-methods records))
                                 level)
              (method-error 'inherit-conflict 
                            (method-name (car methods))
-                           (method-parms (car methods))
+                           (map (lambda (t) 
+                                  (type-spec-to-type (field-type t) type-recs))
+                                (method-parms (car methods)))
                            from
                            (method-src (car methods))))
-        (check-inherited-method (cdr methods) records from level)))
+        (check-inherited-method (cdr methods) records from level type-recs)))
   
   (define (method-conflicts? method methods level)
     (and (not (null? methods))
@@ -541,7 +547,9 @@
              (let ((method (find-member (car methods) members type-recs)))
                (method-error 'conflicts 
                              (method-name method)
-                             (method-parms method)
+                             (map (lambda (t)
+                                    (type-spec-to-type (field-type t) type-recs))
+                                  (method-parms method))
                              (car (class-record-name record))
                              (method-src method))))
         (check-for-conflicts (cdr methods) record members level type-recs)))
@@ -565,9 +573,7 @@
         (and (not (method-member? (car inherit-methods) methods level))
              (method-error 'not-implement 
                            (make-id (method-record-name (car inherit-methods)) #f)
-                           (map (lambda (parm)
-                                  (make-var-decl (make-id (type->ext-name parm #f) null #f #f)))
-                                (method-record-atypes (car inherit-methods)))
+                           (method-record-atypes (car inherit-methods))
                            (id-string name)
                            (id-src name)))
         (implements-all? (cdr inherit-methods) methods name level)))
@@ -578,7 +584,9 @@
              (let ((method (find-member (car methods) members type-recs)))
                (method-error 'illegal-abstract 
                              (method-name method) 
-                             (method-parms method) 
+                             (map (lambda (t)
+                                    (type-spec-to-type (field-type t) type-recs))
+                                  (method-parms method)) 
                              (method-record-class (car methods))
                              (method-src method))))
         (no-abstract-methods (cdr methods) members type-recs)))
@@ -631,12 +639,12 @@
            (mods (if (null? args) (method-modifiers method) (cons (car args) (method-modifiers method))))
            (ret (type-spec-to-type (method-type method) type-recs))
            (throws (filter (lambda (n)
-                             (not (or (is-subclass? n runtime-exn-type type-recs))))
-                           ;(is-subclass? n error-type type-recs))))
+                             (not (or (is-eq-subclass? n runtime-exn-type type-recs))))
+                           ;(is-eq-subclass? n error-type type-recs))))
                            (map (lambda (t)
                                   (let ((n (make-ref-type (id-string (name-id t))
                                                           (map id-string (name-path t)))))
-                                    (if (is-subclass? n throw-type type-recs)
+                                    (if (is-eq-subclass? n throw-type type-recs)
                                         n
                                         (throws-error (name-id t) (name-src t)))))
                                 (method-throws method))))
@@ -644,22 +652,24 @@
       
       (check-parm-names (method-parms method) name cname)
       
-      (when #f;over?
+      (when over?
         (when (memq level `(advanced full))
           (check-gtequal-access mods name parms cname over? (method-src method)))
         
-        (unless (is-subclass? ret (method-record-rtype over?) type-recs)
-          (return-error name parms cname ret 
+        (unless (is-eq-subclass? ret (method-record-rtype over?) type-recs)
+          (override-return-error name parms cname ret 
                         (method-record-rtype over?)
                         (type-spec-src (method-type method))))
         
         (when (memq 'final (method-record-modifiers over?))
-          (override-final-error name parms cname (method-record-class over?) 
+          (override-access-error 'final level 
+                                 name parms cname (method-record-class over?) 
                                 (id-src (method-name method))))
         
         (when (and (memq level '(advanced full))
                    (memq 'static (method-record-modifiers over?)))
-          (override-static-error name parms cname (method-record-class over?)
+          (override-access-error 'static level
+                                 name parms cname (method-record-class over?)
                                  (id-src (method-name method))))
         (when (memq level '(advanced full))
           (check-throws-same throws method cname over? type-recs)))
@@ -704,14 +714,14 @@
     (cond
       ((memq 'public old-mods) 
        (unless (memq 'public (map modifier-kind mods))
-         (override-access-error 'public name parms class (method-record-class over) src)))
+         (override-access-error 'public 'full name parms class (method-record-class over) src)))
       ((memq 'protected old-mods) 
        (unless (or (memq 'public (map modifier-kind mods))
                    (memq 'protected (map modifier-kind mods)))
-         (override-access-error 'protected name parms class (method-record-class over) src)))
+         (override-access-error 'protected 'full name parms class (method-record-class over) src)))
       (else 
        (unless (memq 'public (map modifier-kind mods))
-         (override-access-error 'package name parms class (method-record-class over) src))))))
+         (override-access-error 'package 'full name parms class (method-record-class over) src))))))
 
   ;check-throws-same: (list type) method (list string) method-record type-records -> void
   (define (check-throws-same throws method cname over type-recs)
@@ -733,7 +743,7 @@
   ;is-subclass-of1?: type (list type) -> bool
   (define (is-subclass-of1? throw thrown)
     (and (not (null? thrown))
-         (or (is-subclass? throw (car thrown))
+         (or (is-eq-subclass? throw (car thrown))
              (is-subclass-of1? throw (cdr thrown)))))
   
   ;find-type type (list name) -> src
@@ -744,21 +754,48 @@
         (find-type throw (cdr throws))))
                       
   ;return-error string (list type) (list string) type type src -> void
-  (define (return-error name parms class ret old-ret src)
-    (let ((name (string->symbol name)))
+  (define (override-return-error name parms class ret old-ret src)
+    (let ((name (string->symbol name))
+          (m-name (method-name->ext-name name parms)))
       (raise-error name
-                   (format "Method ~a of class ~a overrides a method: return has changed from ~a to ~a"
-                           name (car class) (type->ext-name old-ret) (type->ext-name ret))
+                   (format "Method ~a of class ~a overrides an inherited method, but return has changed from ~a to ~a"
+                          m-name (car class) (type->ext-name old-ret) (type->ext-name ret))
                    name src)))
   
-  ;override-final-error: string (list type) (list string) string src -> void
-  (define override-final-error (lambda () null))
-  ;override-static-error: string (list type) (list string) string src -> void
-  (define override-static-error (lambda () null))
+  ;override-access-error symbol symbol string (list type) (list string) string src -> void
+  (define (override-access-error kind level name parms class parent src)
+    (let ((name (string->symbol name))
+          (m-name (method-name->ext-name name parms)))
+      (raise-error name
+                   (case kind
+                     ((final) 
+                      (if (eq? level 'full)
+                          (format "Method ~a in ~a attempts to override final method from ~a"
+                                  m-name (car class) parent)
+                          (format "Method ~a from ~a cannot be overridden in ~a"
+                                  m-name parent (car class))))
+                     ((static)
+                      (format "Method ~a in ~a attempts to override static method from ~a"
+                              m-name (car class) parent))
+                     ((public) 
+                      (format "Method ~a in ~a must be public to override public method from ~a"
+                              m-name (car class) parent))
+                     ((protected) 
+                      (format "Method ~a in ~a must be public or protected to override protected method from ~a"
+                              m-name (car class) parent))
+                     ((package) 
+                      (format "Method ~a in ~a must be public, or have no access modifier, to override method from ~a"
+                              m-name (car class) parent)))
+                   name src)))
+  
   ;repeated-parm-error: field string (list string) -> void
-  (define repeated-parm-error (lambda () null))
-  ;override-access-error: symbol string (list type) (list string) string src -> void
-  (define override-access-error (lambda () null))
+  (define (repeated-parm-error parm meth class)
+    (let ((name (id->ext-name (field-name parm))))
+      (raise-error name
+                   (format "Method ~a in ~a has multiple parameters with the name ~a"
+                           meth (car class) name)
+                   name (id-src (field-name parm)))))
+  
   ;throw-over-error:symbol string (list type) (list string) string type src -> void
   (define throw-over-error (lambda () null))
   
@@ -779,10 +816,12 @@
       (map modifier-kind mods)))
 
   ;check-method-modifiers: symbol (list modifier) -> (list symbol)
-  (define (check-method-modifiers level mods)
+  (define (check-method-modifiers level mods ctor?)
     (when (and (not (duplicate-mods? mods))
                (one-of-access? mods)
-               (valid-method-mods? level mods)
+               (if ctor?
+                   (valid-method-mods? 'ctor mods)
+                   (valid-method-mods? level mods))
                (not (native-and-fp? mods))
                (or (not (memq 'abstract (map modifier-kind mods)))
                    (valid-method-mods? 'abstract mods)))
@@ -828,9 +867,13 @@
          ((beginner intermediate) '(public abstract))
          ((advanced) `(public protected private abstract static final))
          ((full) '(public protected private abstract static final synchronized native strictfp))
-         ((abstract) '(public protected))))
+         ((abstract) '(public protected))
+         ((ctor) '(public protected private))))
      (lambda (level)
-       (if (eq? level 'abstract) 'invalid-abstract 'invalid-method))))
+       (case level
+         ((abstract) 'invalid-abstract)
+         ((ctor) 'invalid-ctor)
+         (else 'invalid-method)))))
   
   ;one-access: symbol symbol symbol (list modifiers) -> bool
   (define (one-access is check1 check2 mods)
@@ -894,6 +937,8 @@
                       (format "Modifier ~a is not valid for fields" m))
                      ((invalid-method)
                       (format "Modifier ~a is not valid for methods" m))
+                     ((invalid-ctor)
+                      (format "Modifier ~a is not valid for constructors" m))
                      ((invalid-abstract)
                       (format "Modifier ~a is not valid for an abstract method" m))
                      ((final-abstract) "Class cannot be final and abstract")
@@ -925,7 +970,7 @@
                      ((implement-class) (format "Class ~a cannot implement class ~a" n s)))
                    s src)))
 
-  ;method-error: symbol id (list field) string src -> void
+  ;method-error: symbol id (list type) string src -> void
   (define (method-error kind name parms class src)
     (let ((m-name (method-name->ext-name (id-string name) parms)))
       (raise-error m-name

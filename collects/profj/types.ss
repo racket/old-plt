@@ -357,6 +357,10 @@
       (member (cons (ref-type-class/iface c2) (ref-type-path c2))
               (class-record-ifaces cr))))
 
+  ;is-eq-subclass: type type type-records -> boolean
+  (define (is-eq-subclass? class1 class2 type-recs)
+    (or (type=? class1 class2)
+        (is-subclass? class1 class2 type-recs)))
   
   ;; get-field-record: string class-record (-> 'a) -> field-record
   (define (get-field-record fname c fail)

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.196 1999/10/26 19:31:08 shriram Exp $
+; $Id: scm-main.ss,v 1.197 1999/10/27 17:31:50 robby Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -322,12 +322,26 @@
 		       beginner-vocabulary))
   (set-subexpr-vocab! beginner+lambda-vocabulary beginner-vocabulary)
 
-  (add-primitivized-micro-form 'case-lambda
-			       beginner+lambda-vocabulary (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
-  (add-primitivized-micro-form 'case-lambda beginner-vocabulary (make-lambda-error-micro 'case-lambda))
-  (add-primitivized-micro-form 'case-lambda intermediate-vocabulary (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
-  (add-primitivized-micro-form 'case-lambda advanced-vocabulary (make-case-lambda-micro #t full-arglist-decls-vocab))
-  (add-primitivized-micro-form 'case-lambda scheme-vocabulary (make-case-lambda-micro #t full-arglist-decls-vocab))
+  (add-primitivized-micro-form
+   'case-lambda
+   beginner+lambda-vocabulary
+   (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
+  (add-primitivized-micro-form
+   'case-lambda
+   beginner-vocabulary
+   (make-lambda-error-micro 'case-lambda))
+  (add-primitivized-micro-form
+   'case-lambda
+   intermediate-vocabulary
+   (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
+  (add-primitivized-micro-form
+   'case-lambda
+   advanced-vocabulary
+   (make-case-lambda-micro #f full-arglist-decls-vocab))
+  (add-primitivized-micro-form
+   'case-lambda
+   scheme-vocabulary
+   (make-case-lambda-micro #t full-arglist-decls-vocab))
 
   (define (make-lambda-macro begin?)
     (let* ((kwd '())
@@ -339,11 +353,26 @@
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed lambda")))))
 
-  (add-primitivized-macro-form 'lambda beginner+lambda-vocabulary (make-lambda-macro #f))
-  (add-primitivized-micro-form 'lambda beginner-vocabulary (make-lambda-error-micro 'lambda))
-  (add-primitivized-macro-form 'lambda intermediate-vocabulary (make-lambda-macro #f))
-  (add-primitivized-macro-form 'lambda advanced-vocabulary (make-lambda-macro #t))
-  (add-primitivized-macro-form 'lambda scheme-vocabulary (make-lambda-macro #t))
+  (add-primitivized-macro-form 
+   'lambda
+   beginner+lambda-vocabulary
+   (make-lambda-macro #f))
+  (add-primitivized-micro-form
+   'lambda
+   beginner-vocabulary
+   (make-lambda-error-micro 'lambda))
+  (add-primitivized-macro-form
+   'lambda
+   intermediate-vocabulary
+   (make-lambda-macro #f))
+  (add-primitivized-macro-form
+   'lambda
+   advanced-vocabulary
+   (make-lambda-macro #f))
+  (add-primitivized-macro-form
+   'lambda
+   scheme-vocabulary
+   (make-lambda-macro #t))
 
   (define-struct internal-definition (vars val))
   (define-struct internal-begin (exprs))
@@ -430,7 +459,7 @@
 	 (else
 	  (static-error expr "Malformed begin"))))))
 
-  (add-primitivized-micro-form 'begin advanced-vocabulary begin-micro)
+  (add-primitivized-micro-form 'begin full-vocabulary begin-micro)
   (add-primitivized-micro-form 'begin scheme-vocabulary begin-micro)
 
   (define begin0-micro
@@ -462,7 +491,7 @@
 	    (else
 	     (static-error expr "Malformed begin0"))))))
 
-  (add-primitivized-micro-form 'begin0 advanced-vocabulary begin0-micro)
+  (add-primitivized-micro-form 'begin0 full-vocabulary begin0-micro)
   (add-primitivized-micro-form 'begin0 scheme-vocabulary begin0-micro)
 
   (define (make-if-micro one-arm-ok?)
@@ -577,13 +606,13 @@
   (add-primitivized-micro-form 'quote intermediate-vocabulary (make-quote-micro #t))
   (add-primitivized-micro-form 'quote scheme-vocabulary (make-quote-micro #t))
 
-  (define set!-micro
-      (let* ((kwd '())
-	      (in-pattern `(_ var val))
-	      (m&e (pat:make-match&env in-pattern kwd)))
-	(lambda (expr env attributes vocab)
-	  (let ((p-env (pat:match-against m&e expr env)))
-	    (if p-env
+  (define (make-set!-micro dont-mutate-lexical-varrefs?)
+    (let* ((kwd '())
+	   (in-pattern `(_ var val))
+	   (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(let ((p-env (pat:match-against m&e expr env)))
+	  (if p-env
 	      (let* ((var-p (pat:pexpand 'var p-env kwd))
 		     (_ (valid-syntactic-id? var-p))
 		     (id-expr (expand-expr var-p env attributes
@@ -594,12 +623,22 @@
 				   (expand-expr
 				    (pat:pexpand 'val p-env kwd)
 				    env attributes vocab)))))
+		(when (and dont-mutate-lexical-varrefs?
+			   (lexical-varref? id-expr))
+		      (static-error
+		       expr
+		       "Cannot mutate the lexically-bound identifier ~s"
+		       (binding-orig-name (bound-varref-binding id-expr))))
 		(create-set!-form id-expr expr-expr expr))
 	      (static-error expr "Malformed set!"))))))
 
-  (add-primitivized-micro-form 'set! advanced-vocabulary set!-micro)
-  (add-primitivized-micro-form 'set! scheme-vocabulary set!-micro)
-
+  (add-primitivized-micro-form 'set! 
+			       advanced-vocabulary
+			       (make-set!-micro #t))
+  (add-primitivized-micro-form 'set!
+			       scheme-vocabulary
+			       (make-set!-micro #f))
+  
   (define set!-values-micro
       (let* ((kwd '())
 	      (in-pattern '(_ (vars ...) val))
@@ -681,13 +720,31 @@
 		    (set-internal-define-status attributes internal?))))
 	      (static-error expr "Malformed local"))))))
 
-  (add-primitivized-micro-form 'local intermediate-vocabulary (make-local-micro #f nobegin-local-extract-vocab))
-  (add-on-demand-form 'micro 'local intermediate-vocabulary (make-local-micro #f nobegin-local-extract-vocab))
+  (add-primitivized-micro-form
+   'local
+   intermediate-vocabulary
+   (make-local-micro #f nobegin-local-extract-vocab))
+  (add-on-demand-form
+   'micro
+   'local
+   intermediate-vocabulary
+   (make-local-micro #f nobegin-local-extract-vocab))
 
-  (add-primitivized-micro-form 'local advanced-vocabulary (make-local-micro #t full-local-extract-vocab))
-  (add-on-demand-form 'micro 'local advanced-vocabulary (make-local-micro #t full-local-extract-vocab))
+;  (add-primitivized-micro-form
+;   'local
+;   advanced-vocabulary
+;   (make-local-micro #t full-local-extract-vocab))
+;  (add-on-demand-form
+;   'micro
+;   'local
+;   advanced-vocabulary
+;   (make-local-micro #t full-local-extract-vocab))
 
-  (add-on-demand-form 'micro 'local scheme-vocabulary (make-local-micro #t full-local-extract-vocab))
+  (add-on-demand-form
+   'micro
+   'local
+   scheme-vocabulary
+   (make-local-micro #t full-local-extract-vocab))
 
   (define (make-define-forms begin?)
     (let* ((kwd '())
@@ -722,15 +779,21 @@
 	  (else
 	   (static-error expr "Malformed define in local clause")))))))
 
-  (define-values (nobegin-define-form nobegin-local-define-form) (make-define-forms #f))
-  (define-values (full-define-form full-local-define-form) (make-define-forms #t))
+  (define-values
+    (nobegin-define-form nobegin-local-define-form) (make-define-forms #f))
+  (define-values
+    (full-define-form full-local-define-form) (make-define-forms #t))
 
   (add-primitivized-macro-form 'define beginner-vocabulary nobegin-define-form)
-  (add-primitivized-macro-form 'define advanced-vocabulary full-define-form)
+;  (add-primitivized-macro-form 'define advanced-vocabulary full-define-form)
   (add-primitivized-macro-form 'define scheme-vocabulary full-define-form)
 
-  (add-primitivized-micro-form 'define full-local-extract-vocab full-local-define-form)
-  (add-primitivized-micro-form 'define nobegin-local-extract-vocab nobegin-local-define-form)
+  (add-primitivized-micro-form 'define
+			       full-local-extract-vocab
+			       full-local-define-form)
+  (add-primitivized-micro-form 'define
+			       nobegin-local-extract-vocab
+			       nobegin-local-define-form)
 
   (let* ((kwd '())
 	 (in-pattern-1 `(_ (var ...) val))
@@ -778,10 +841,18 @@
 							 vocab))))))
 		     (create-define-values-form id-exprs
 						expr-expr expr)))))])
-	(add-primitivized-micro-form 'define-values beginner-vocabulary (make-dv-micro #f #t))
-	(add-primitivized-micro-form 'define-values intermediate-vocabulary (make-dv-micro #f #f))
-	(add-primitivized-micro-form 'define-values advanced-vocabulary (make-dv-micro #t #f))
-	(add-primitivized-micro-form 'define-values scheme-vocabulary (make-dv-micro #t #f)))
+	(add-primitivized-micro-form 'define-values
+				     beginner-vocabulary
+				     (make-dv-micro #f #t))
+	(add-primitivized-micro-form 'define-values
+				     intermediate-vocabulary
+				     (make-dv-micro #f #f))
+	(add-primitivized-micro-form 'define-values
+				     advanced-vocabulary
+				     (make-dv-micro #f #f))
+	(add-primitivized-micro-form 'define-values 
+				     scheme-vocabulary
+				     (make-dv-micro #t #f)))
       (let ([int-dv-micro (define-values-helper
 			    #t
 			    (lambda (expr env attributes vocab vars val)
@@ -959,9 +1030,15 @@
 		   (make-origin 'micro expr))
 		  env attributes vocab))))))))
 
-    (add-primitivized-micro-form 'let-struct intermediate-vocabulary (make-let-struct-micro #f #f))
-    (add-primitivized-micro-form 'let-struct advanced-vocabulary (make-let-struct-micro #t #t))
-    (add-primitivized-micro-form 'let-struct scheme-vocabulary (make-let-struct-micro #t #t))
+    (add-primitivized-micro-form 'let-struct
+				 intermediate-vocabulary
+				 (make-let-struct-micro #f #f))
+;    (add-primitivized-micro-form 'let-struct
+;				 advanced-vocabulary
+;				 (make-let-struct-micro #t #t))
+    (add-primitivized-micro-form 'let-struct
+				 scheme-vocabulary
+				 (make-let-struct-micro #t #t))
     
   ; ----------------------------------------------------------------------
 
@@ -1005,8 +1082,12 @@
 		(or (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 		    (static-error expr "Malformed let")))))))
 
-  (add-primitivized-macro-form 'let intermediate-vocabulary (make-let-macro #f #f))
-  (add-primitivized-macro-form 'let advanced-vocabulary (make-let-macro #t #t))
+  (add-primitivized-macro-form 'let
+			       intermediate-vocabulary
+			       (make-let-macro #f #f))
+;  (add-primitivized-macro-form 'let
+;			       advanced-vocabulary
+;			       (make-let-macro #t #t))
   (add-primitivized-macro-form 'let scheme-vocabulary (make-let-macro #t #t))
 
   ; Turtle Macros for Robby
@@ -1044,9 +1125,15 @@
 	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	    (static-error expr "Malformed let*")))))
 
-  (add-primitivized-macro-form 'let* intermediate-vocabulary (make-let*-macro #f))
-  (add-primitivized-macro-form 'let* advanced-vocabulary (make-let*-macro #t))
-  (add-primitivized-macro-form 'let* scheme-vocabulary (make-let*-macro #t))
+  (add-primitivized-macro-form 'let*
+			       intermediate-vocabulary
+			       (make-let*-macro #f))
+;  (add-primitivized-macro-form 'let*
+;			       advanced-vocabulary
+;			       (make-let*-macro #t))
+  (add-primitivized-macro-form 'let*
+			       scheme-vocabulary
+			       (make-let*-macro #t))
 
   (define delay-macro
       (let* ((kwd '())
@@ -1135,9 +1222,15 @@
 	    (else
 	      (static-error expr "Malformed let-values"))))))
 
-  (add-primitivized-micro-form 'let-values intermediate-vocabulary (make-let-values-micro #f))
-  (add-primitivized-micro-form 'let-values advanced-vocabulary (make-let-values-micro #t))
-  (add-primitivized-micro-form 'let-values scheme-vocabulary (make-let-values-micro #t))
+  (add-primitivized-micro-form 'let-values
+			       intermediate-vocabulary
+			       (make-let-values-micro #f))
+;  (add-primitivized-micro-form 'let-values
+;			       advanced-vocabulary
+;			       (make-let-values-micro #t))
+  (add-primitivized-micro-form 'let-values
+			       scheme-vocabulary
+			       (make-let-values-micro #t))
 
   (define (make-let*-values-micro begin?)
       (let* ((kwd '())
@@ -1155,9 +1248,15 @@
 	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	    (static-error expr "Malformed let*-values")))))
 
-  (add-primitivized-macro-form 'let*-values intermediate-vocabulary (make-let*-values-micro #f))
-  (add-primitivized-macro-form 'let*-values advanced-vocabulary (make-let*-values-micro #t))
-  (add-primitivized-macro-form 'let*-values scheme-vocabulary (make-let*-values-micro #t))
+  (add-primitivized-macro-form 'let*-values
+			       intermediate-vocabulary
+			       (make-let*-values-micro #f))
+;  (add-primitivized-macro-form 'let*-values
+;			       advanced-vocabulary
+;			       (make-let*-values-micro #t))
+  (add-primitivized-macro-form 'let*-values
+			       scheme-vocabulary
+			       (make-let*-values-micro #t))
 
   (define (make-letrec-values-micro begin?)
       (let* ((kwd '())
@@ -1210,9 +1309,15 @@
 	    (else
 	      (static-error expr "Malformed letrec-values"))))))
 
-  (add-primitivized-micro-form 'letrec-values intermediate-vocabulary (make-letrec-values-micro #f))
-  (add-primitivized-micro-form 'letrec-values advanced-vocabulary (make-letrec-values-micro #t))
-  (add-primitivized-micro-form 'letrec-values scheme-vocabulary (make-letrec-values-micro #t))
+  (add-primitivized-micro-form 'letrec-values
+			       intermediate-vocabulary
+			       (make-letrec-values-micro #f))
+;  (add-primitivized-micro-form 'letrec-values
+;			       advanced-vocabulary
+;			       (make-letrec-values-micro #t))
+  (add-primitivized-micro-form 'letrec-values
+			       scheme-vocabulary
+			       (make-letrec-values-micro #t))
 
   (define (make-letrec-macro begin?)
       (let* ((kwd '())
@@ -1223,9 +1328,15 @@
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	    (static-error expr "Malformed letrec")))))
 
-  (add-primitivized-macro-form 'letrec intermediate-vocabulary (make-letrec-macro #f))
-  (add-primitivized-macro-form 'letrec advanced-vocabulary (make-letrec-macro #t))
-  (add-primitivized-macro-form 'letrec scheme-vocabulary (make-letrec-macro #t))
+  (add-primitivized-macro-form 'letrec
+			       intermediate-vocabulary
+			       (make-letrec-macro #f))
+;  (add-primitivized-macro-form 'letrec
+;			       advanced-vocabulary
+;			       (make-letrec-macro #t))
+  (add-primitivized-macro-form 'letrec
+			       scheme-vocabulary
+			       (make-letrec-macro #t))
 
   (define (make-or-macro boolean-result? one-or-zero-ok?)
     (let* ((kwd '())
@@ -1359,7 +1470,6 @@
 			 qa-error-msg))) ; ilist
 
   (define nobegin-cond-clause-vocab (make-cond-clause-vocab))
-  (define answered-cond-clause-vocab (make-cond-clause-vocab))
   (define full-cond-clause-vocab (make-cond-clause-vocab))
 
   (define (make-cond-list-micro begin? answerless?)
@@ -1417,7 +1527,6 @@
 	  (else (static-error expr "Clause is not in question-answer format"))))))
 
   (add-list-micro nobegin-cond-clause-vocab (make-cond-list-micro #f #f))
-  (add-list-micro answered-cond-clause-vocab (make-cond-list-micro #t #f))
   (add-list-micro full-cond-clause-vocab (make-cond-list-micro #t #t))
 
   (define (make-cond-micro cond-clause-vocab allow-empty?)
@@ -1479,7 +1588,6 @@
 	    (static-error expr "Malformed cond"))))))
 
   (add-primitivized-micro-form 'cond beginner-vocabulary (make-cond-micro nobegin-cond-clause-vocab #f))
-  (add-primitivized-micro-form 'cond advanced-vocabulary (make-cond-micro answered-cond-clause-vocab #f))
   (add-primitivized-micro-form 'cond scheme-vocabulary (make-cond-micro full-cond-clause-vocab #t))
 
   (define case-macro
@@ -1784,8 +1892,12 @@
 	    (pat:match-and-rewrite expr m&e-2 out-pattern-2 kwd env)
 	    (static-error expr "Malformed with-handlers")))))
 
-  (add-primitivized-macro-form 'with-handlers advanced-vocabulary (make-with-handlers-macro #t))
-  (add-primitivized-macro-form 'with-handlers scheme-vocabulary (make-with-handlers-macro #t))
+  (add-primitivized-macro-form 'with-handlers
+			       advanced-vocabulary
+			       (make-with-handlers-macro #f))
+  (add-primitivized-macro-form 'with-handlers 
+			       scheme-vocabulary
+			       (make-with-handlers-macro #t))
 
   (define (norm-path p) ; normalizes ending slash or not
     (and p

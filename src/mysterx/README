@@ -15,11 +15,15 @@ In the Makefile, there are several variables to set:
   o HTMLHELP - directory for MS Help Workshop
   o SHELL32 - directory containing LIB/SHELL32.LIB
      and related header files
+  o REGSVR32 - path to the REGSVR32 utility
   o NEWMSHTML - either 0 or 1, depending on
      on the version of MSHTML.H used (see below)
 
 You may need to change these according to your local
-installation before compiling.
+installation before compiling.  The REGSVR32 utility
+is ordinarily located in the Windows\SYSTEM directory
+under Windows 95/98, and in the WINNT\System32 directory
+under Windows NT/2000.
 
 If you get errors about a missing file atlbase.h,
 check the value of the environment variable INCLUDE.

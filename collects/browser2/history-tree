@@ -1,0 +1,37 @@
+(require-library "url.ss" "net")
+
+; A page is either
+; - (make-page url title #f)
+; - (make-page url title text%)
+(define-struct page (url title text))
+; where url is a url-struct
+;       title is a string
+;       text is a text%
+
+; A history-tree is either
+; - a page
+; - (make-node page (listof history-tree))
+(define-struct node (page aloht))
+
+; EXAMPLES, some URLs...
+(define plt (string->url "http://www.cs.rice.edu/CS/PLT"))
+(define robby-plt (string->url "http://www.cs.rice.edu/~robby"))
+(define aol (string->url "http://www.aol.com"))
+(define yahoo (string->url "http://www.yahoo.com"))
+(define rice (string->url "http://www.rice.edu"))
+
+; EXAMPLES, some pages...
+(define plt-page (make-page plt "PLT" (make-object text%)))
+(define robby-plt-page (make-page robby-plt "Robby @ PLT" (make-object text%)))
+(define aol-page (make-page aol "AOL" (make-object text%)))
+(define yahoo-page (make-page yahoo "YAHOO" (make-object text%)))
+(define rice-page (make-page rice "Rice University WWW" (make-object text%)))
+
+; EXAMPLES, some history-trees...
+(define one-node-tree (make-node plt-page empty))
+(define a-linear-tree (make-node plt-page (list (make-node robby-plt-page (list (make-node aol-page empty))))))
+(define a-binary-tree (make-node plt-page (list (make-node robby-plt-page empty)
+                                                (make-node aol-page empty))))
+(define a-multi-node-tree (make-node plt-page (list (make-node robby-plt-page (list (make-node aol-page empty)))
+                                                    (make-node yahoo-page empty)
+                                                    (make-node rice-page empty))))

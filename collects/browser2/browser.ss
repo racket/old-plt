@@ -70,38 +70,193 @@
              (set! base-path #f))])
         (sequence (super-init))))
     
+    ; A service is one of:
+    ; - 'get-history-size
+    ; - 'reset-history
+    ; - 'get-current-editor
+    ; - 'add-editor!
+    ; - 'print-history
+    ; - 'go-back
+    ; - 'go-forward
+    ; - 'retro-history?
+    ; - 'forward-history?
+    ; - 'move-current-editor-to-index
+    
+    ; shift-vector-left : vector object -> vector
+    ; Shifts contents of vector left one position and fills remainder with object.
+    (define (shift-vector-left a-vector an-object)
+      (local [(define length (vector-length a-vector))]
+        (build-vector length
+                      (lambda (index)
+                        (if (< (add1 index) length)
+                            (vector-ref a-vector (add1 index))
+                            an-object)))))
+    
+    ; shift-choices-left -> void
+    ; Shifts contents of choice% to the left one index.
+    (define (shift-choices-left)
+      (local [(define listof-choices empty)]
+        (do ((hi-index (sub1 (send history-choice-control get-number)) (sub1 hi-index)))
+          ((<= hi-index 1)
+           (begin
+             (send history-choice-control clear)
+             (for-each (lambda (a-selection) (send history-choice-control append a-selection)) listof-choices)
+             (send history-choice-control set-selection (sub1 (send history-choice-control get-number)))))
+          (set! listof-choices (cons (send history-choice-control get-string hi-index) listof-choices)))))
+      
+    ; browser-history-interface : symbol -> #f or browser-text% or void
+    ; Interface for the browser's history initialized at run-time.  Accepts commands
+    ; and returns void or a browser-text%.
+    (define browser-history-interface
+      (local [(define HISTORY_SIZE 5) ; must be greater than 0
+              (define ptr 0)
+              (define current-editor-ptr 0)
+              (define history-vector (make-vector HISTORY_SIZE #f))
+              (define (error.msg symbol) (error "Unknown command, given ~s" symbol))
+              
+              ; get-history-size : -> integer
+              (define (get-history-size) HISTORY_SIZE)
+              
+              ; get-current-editor-ptr : -> integer
+              (define (get-current-editor-ptr) current-editor-ptr)
+
+              ; get-ptr : -> integer
+              (define (get-ptr) ptr)
+              
+              ; reset.history! -> void
+              (define (reset.history!)
+                (set! history-vector (make-vector HISTORY_SIZE #f))
+                (set! ptr 0)
+                (send history-choice-control clear))
+              
+              ; get-current-editor -> #f or browser-text%
+              (define (get-current-editor)
+                (vector-ref history-vector current-editor-ptr))
+              
+              ; add-editor! : browser-text% -> void
+              (define (add-editor! a-browser-text)
+                (if (<= ptr (sub1 HISTORY_SIZE))
+                    (begin 
+                      (vector-set! history-vector ptr a-browser-text)
+                      (if (zero? ptr) (void) (set! current-editor-ptr ptr))
+                      (set! ptr (add1 ptr))
+                      (if (send a-browser-text get-base-path)
+                          (begin
+                            (send history-choice-control append (url->string (send a-browser-text get-base-path)))
+                            (send history-choice-control set-selection (sub1 (send history-choice-control get-number)))))
+                      (send editor-canvas set-editor a-browser-text))
+                    (begin
+                      (set! history-vector (shift-vector-left history-vector a-browser-text))
+                      (set! ptr HISTORY_SIZE)
+                      (set! current-editor-ptr (sub1 ptr))
+                      (shift-choices-left)
+                      (if (send a-browser-text get-base-path)
+                          (begin
+                            (send history-choice-control append (url->string (send a-browser-text get-base-path)))
+                            (send history-choice-control set-selection (sub1 (send history-choice-control get-number)))))
+                      (send editor-canvas set-editor a-browser-text))))
+              
+              ; print-history : -> void
+              (define (print-history)
+                (for-each (lambda (object)
+                            (printf "~v " object))
+                          (vector->list history-vector))
+                (printf "~n"))
+              
+              ; go-back : -> void or browser-text%
+              (define (go-back)
+                (if (and (> current-editor-ptr 0) (<= current-editor-ptr HISTORY_SIZE))
+                    (if (is-a? (vector-ref history-vector (sub1 current-editor-ptr)) browser-text%)
+                        (begin
+                          (set! current-editor-ptr (sub1 current-editor-ptr))
+                          (vector-ref history-vector current-editor-ptr))
+                        (void))
+                    (void)))
+              
+              ; go-forward : -> void or browser-text%
+              (define (go-forward)
+                (if (and (>= current-editor-ptr 0) (< current-editor-ptr (sub1 HISTORY_SIZE)))
+                    (if (is-a? (vector-ref history-vector (add1 current-editor-ptr)) browser-text%)
+                        (begin
+                          (set! current-editor-ptr (add1 current-editor-ptr))
+                          (vector-ref history-vector current-editor-ptr))
+                        (void))
+                    (void)))
+              
+              ; retro-history? : -> boolean
+              (define (retro-history?)
+                (if (zero? current-editor-ptr)
+                    #f
+                    #t))
+              
+              ; forward-history? : -> boolean
+              (define (forward-history?)
+                (if (and (< current-editor-ptr (sub1 ptr)) (< current-editor-ptr (sub1 HISTORY_SIZE)))
+                    #t
+                    #f))
+              
+              ; move-current-editor-to-index : integer -> browser-text% or #f
+              ;(define (move-current-editor-to-index index)
+              ;  (cond [(= index current-editor-ptr) (vector-ref history-vector current-editor-ptr)]
+              ;        [
+              ]
+        
+        (lambda (service)
+          (cond [(symbol=? service 'get-history-size) get-history-size]
+                [(symbol=? service 'get-current-editor-ptr) get-current-editor-ptr]
+                [(symbol=? service 'get-ptr) get-ptr]
+                [(symbol=? service 'reset-history) reset.history!]
+                [(symbol=? service 'get-current-editor) get-current-editor]
+                [(symbol=? service 'add-editor!) add-editor!]
+                [(symbol=? service 'print-history) print-history]
+                [(symbol=? service 'go-back) go-back]
+                [(symbol=? service 'go-forward) go-forward]
+                [(symbol=? service 'retro-history?) retro-history?]
+                [(symbol=? service 'forward-history?) forward-history?]
+                [(symbol=? service 'move-current-editor-to-index) move-current-editor-to-index]
+                [else (error.msg service)]))))
+    
+    ; A history-interface-command is one of:
+    
+    ; get-history-size : -> integer
+    (define get-history-size (browser-history-interface 'get-history-size))
+    
+    ; get-current-editor-ptr -> integer
+    (define get-current-editor-ptr (browser-history-interface 'get-current-editor-ptr))
+    
+    ; get-ptr -> integer
+    (define get-ptr (browser-history-interface 'get-ptr))
+    
+    ; reset-browser-history! -> void
+    (define reset-browser-history! (browser-history-interface 'reset-history))
+    
+    ; get-current-editor : -> browser-text% or #f
+    (define get-current-editor (browser-history-interface 'get-current-editor))
+    
+    ; add-editor! : -> void
+    (define add-editor! (browser-history-interface 'add-editor!))
+    
+    ; print-history : -> void or browser-text% or #f
+    (define print-history (browser-history-interface 'print-history))
+    
+    ; go-back -> void or browser-text%
+    (define go-back (browser-history-interface 'go-back))
+        
+    ; go-forward -> void or browser-text%
+    (define go-forward (browser-history-interface 'go-forward))
+    
+    ; retro-history? : -> boolean
+    (define retro-history? (browser-history-interface 'retro-history?))
+
+    ; forward-history? : -> boolean
+    (define forward-history? (browser-history-interface 'forward-history?))
+    
+    ; move-current-editor-to-index : integer -> browser-text% or #f
+    (define move-current-editor-to-index (browser-history-interface 'move-current-editor-to-index))
+
     ;; CONST DEFS
     (define WIDTH 800)
     (define HEIGHT 700)
-    (define MAX_BACK_HIST 5)
-    (define MAX_FORW_HIST 5)
-    
-    ;; VARIABLE DEFS
-    (define the-history (make-vector 10 #f))
-    (define history-index 0)
-    
-    ; slide-history-right! : browser-text% -> void
-    ; Makes new history, throwing away oldest element
-    ; and adding the newest.
-    (define (slide-history-right! a-browser-text)
-      (do ((vec (make-vector (vector-length the-history)))
-           (i 1 (+ i 1)))
-        ((= i (vector-length the-history)) vec)
-        (vector-set! vec i i)))
-      
-       
-    ; add-to-history : browser-text% -> void
-    (define (add-to-history a-browser-text)
-      (cond [(< history-index (sub1 (vector-length the-history)))
-             (vector-set! the-history history-index a-browser-text)
-             (set! history-index (add1 history-index))]
-            [else (slide-history-right! a-browser-text)]))
-             
-    
-    
-    (define back-list empty)
-    (define forward-list empty)
-    (define current-editor (make-object browser-text%)) ; holds state of browser's display.
     (define frame (make-object browser-frame% "" #f WIDTH HEIGHT #f #f null))
     (define top-hpane (make-object horizontal-pane% frame))
     (define btm-hpane (make-object horizontal-pane% frame))
@@ -114,39 +269,48 @@
                                "" '(single)))
     
     (define back-btn (make-object button% "Back" top-hpane 
-                       (lambda (a-btn a-control-event) 
-                         (cond [(empty? back-list) (void)]
-                               [else 
-                                (set! forward-list (cons current-editor forward-list))
-                                (set! current-editor (first back-list))
-                                (set! back-list (rest back-list))
-                                (send editor-canvas set-editor current-editor)
-                                (if (send current-editor get-base-path)
-                                    (begin
-                                      (send frame set-label (url->string (send current-editor get-base-path)))
-                                      (send open-url-textbox set-value (url->string (send current-editor get-base-path))))
-                                    (begin
-                                      (send frame set-label "")
-                                      (send open-url-textbox set-value "")))]))
-                       '(border)))
+                       (lambda (a-btn a-control-event)
+                         (local [(define prev (go-back))]
+                           (cond [(void? prev) 
+                                  (send back-btn enable #f)
+                                  (void)]
+                                 [else
+                                  (if (retro-history?) (send back-btn enable #t) (send back-btn enable #f))
+                                  (if (forward-history?) (send forward-btn enable #t) (send forward-btn enable #f))
+                                  (send editor-canvas set-editor prev)
+                                  (if (send prev get-base-path)
+                                      (begin
+                                        (send frame set-label (url->string (send prev get-base-path)))
+                                        (send open-url-textbox set-value (url->string (send prev get-base-path))))
+                                      (begin
+                                        (send frame set-label "")
+                                        (send open-url-textbox set-value "")))]))
+                         '(border))))
+    (send back-btn enable #f)
+    
     (define forward-btn (make-object button% "Forward" top-hpane 
                           (lambda (a-btn a-control-event) 
-                            (cond [(empty? forward-list) (void)]
-                                  [else 
-                                   (set! back-list (cons current-editor back-list))
-                                   (set! current-editor (first forward-list))
-                                   (set! forward-list (rest forward-list))
-                                   (send editor-canvas set-editor current-editor)
-                                   (if (send current-editor get-base-path)
-                                       (begin
-                                         (send frame set-label (url->string (send current-editor get-base-path)))
-                                         (send open-url-textbox set-value (url->string (send current-editor get-base-path))))
-                                       (begin
-                                         (send frame set-label "")
-                                         (send open-url-textbox set-value "")))]))
-                          '(border)))
+                            (local [(define next (go-forward))]
+                              (cond [(void? next) 
+                                     (void)
+                                     (send forward-btn enable #f)]
+                                    [else
+                                     (if (forward-history?) (send forward-btn enable #t) (send forward-btn enable #f))
+                                     (if (retro-history?) (send back-btn enable #t) (send back-btn enable #f))
+                                     (send editor-canvas set-editor next)
+                                     (if (send next get-base-path)
+                                         (begin
+                                           (send frame set-label (url->string (send next get-base-path)))
+                                           (send open-url-textbox set-value (url->string (send next get-base-path))))
+                                         (begin
+                                           (send frame set-label "")
+                                           (send open-url-textbox set-value "")))]))
+                            '(border))))
+    (send forward-btn enable #f)
+    
     (define reload-btn (make-object button% "Reload" top-hpane (lambda (x y)
-                                                                 (local [(define base-path (send current-editor get-base-path))]
+                                                                 (local [(define current-editor (get-current-editor))
+                                                                         (define base-path (send current-editor get-base-path))]
                                                                    (if base-path
                                                                        (begin
                                                                          (send current-editor erase)
@@ -156,13 +320,15 @@
 
     (define home-btn (make-object button% "Home" top-hpane (lambda (x y) (void)) '(border)))
     (define print-btn (make-object button% "Print" top-hpane (lambda (x y) (void)) '(border)))
-    (define history-choice-listbox (make-object choice% "History:" (list "http://www.cs.rice.edu" "http://www.rice.edu/") top-hpane 
+    (define history-choice-control (make-object choice% "History:" (list "http://") top-hpane 
                                      (lambda (a-choice a-control-event) 
                                        (local [(define index (send a-choice get-selection))
                                                (define selection (send a-choice get-string index))]
-                                         (browse-url (string->url selection))))))
+                                         (void)
+                                         ;(browse-url (return-page-at-index index))))
+                                     empty))))
 
-    (define editor-canvas (make-object browser-editor-canvas% frame current-editor))
+    (define editor-canvas (make-object browser-editor-canvas% frame (get-current-editor)))
         
     
     ;; set properties of containers
@@ -176,35 +342,29 @@
               (define fragment (url-fragment a-url))
               (define path (url-path a-url))
               (define file-suffix (get-file-suffix path))
-              (define text (make-object browser-text%))
-              (define (return-all-but-last a-list)
-                (cond [(empty? a-list) empty]
-                      [(empty? (rest a-list)) empty]
-                      [else (cons (first a-list) (return-all-but-last (rest a-list)))]))]
-        (if (< (length back-list) MAX_BACK_HIST)
-            (set! back-list (cons current-editor back-list))
-            (set! back-list (cons current-editor (return-all-but-last back-list))))
-        (set! current-editor text)
+              (define text (make-object browser-text%))]
         (send text set-base-path! a-url)
-        (send editor-canvas set-editor current-editor)
+        (add-editor! text) ; adds this editor to the browser-history
+        (if (retro-history?)
+            (send back-btn enable #t)
+            (send back-btn enable #f))
+        (if (forward-history?)
+            (send forward-btn enable #t)
+            (send forward-btn enable #f))
         (send frame show #t)
         (send frame set-label (url->string a-url))
         (send open-url-textbox set-value (url->string a-url))
-        (send current-editor set-styles-sticky #f)
-        (send current-editor auto-wrap #t)
-        (send current-editor begin-edit-sequence)
-        (render-html-page current-editor a-url (call/input-url a-url get-pure-port html:read-html))
-        (send current-editor end-edit-sequence)))
-    
-    ; get-current-editor : -> browser-text%
-    ; Returns the currently displayed editor.
-    (define (get-current-editor)
-      current-editor)
+        (send text set-styles-sticky #f)
+        (send text auto-wrap #t)
+        (send text begin-edit-sequence)
+        (render-html-page text a-url (call/input-url a-url get-pure-port html:read-html))
+        (send text end-edit-sequence)))
+
     
     ; get-base-path : -> url
     ; Returns the base-path of the currently displayed editor.
     (define (get-base-path)
-      (send current-editor get-base-path))
+      (send (get-current-editor) get-base-path))
     
     ; set-frame-label : string -> void
     ; Sets the frame's label.

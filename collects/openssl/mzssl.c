@@ -170,7 +170,9 @@ long ssl_get_string(Scheme_Input_Port *port, char *buffer, long offset,
 	  return bytes_read;
       } else if((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
         /* critical error */
-        errstr = ERR_reason_error_string(err); goto read_error;
+	const char *temperr = ERR_reason_error_string(err);
+	errstr = temperr ? temperr : errstr;
+        goto read_error;
       }
     } else bytes_read += status;
 
@@ -276,8 +278,10 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
       if(status < 1) {
         int err = SSL_get_error(ssl->ssl, status);
         if((err != SSL_ERROR_WANT_READ) && (err != SSL_ERROR_WANT_WRITE)) {
+          const char *temperr = ERR_reason_error_string(err);
           scheme_post_sema(ssl->lock);
-          errstr = ERR_reason_error_string(err); goto write_error;
+	  errstr = temperr ? temperr : errstr;
+	  goto write_error;
         }
         if(rarely_block == 2) break;
         scheme_thread_block((float)0.0);
@@ -292,7 +296,9 @@ long write_string(Scheme_Output_Port *port, const char *buffer, long offset,
     if(status < 1) {
       int err = SSL_get_error(ssl->ssl, status);
       if((status != SSL_ERROR_WANT_READ) && (status != SSL_ERROR_WANT_WRITE)) {
-        errstr = ERR_reason_error_string(status); goto write_error;
+        const char *temperr = ERR_reason_error_string(status);
+	errstr = temperr ? temperr : errstr;
+	goto write_error;
       }
     } else wrote_bytes += status;
 
@@ -610,13 +616,17 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
   /* set up the SSL context object */
   ctx = SSL_CTX_new(meth);
   if(!ctx) { 
-    errstr = ERR_reason_error_string(ERR_get_error()); goto clean_up_and_die; 
+    const char *temperr = ERR_reason_error_string(ERR_get_error()); 
+    errstr = temperr ? temperr : "Error setting up SSL context";
+    goto clean_up_and_die; 
   }
 
   /* set up the full SSL object */
   ssl = SSL_new(ctx);
   if(!ssl) {
-    errstr = ERR_reason_error_string(ERR_get_error()); goto clean_up_and_die; 
+    const char *temperr = ERR_reason_error_string(ERR_get_error()); 
+    errstr = temperr ? temperr : "Error in creation of SSL structure";
+    goto clean_up_and_die; 
   }
   SSL_set_bio(ssl, bio, bio);
 

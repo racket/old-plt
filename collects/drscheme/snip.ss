@@ -228,8 +228,8 @@
                    (number->string (ceiling number))]
                   [else
                    (number->string (floor number))])]
-        [nums (number->string (numerator (- number (floor number))))]
-        [dens (number->string (denominator (- number (floor number))))])
+        [nums (number->string (numerator (- (abs number) (floor (abs number)))))]
+        [dens (number->string (denominator (- (abs number) (floor (abs number)))))])
       (inherit get-style)
       (override
         [write

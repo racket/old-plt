@@ -57,15 +57,24 @@
     (set! current-kind
 	  (cadr (assoc s kind-types))))
 
-  (define web-root
-    (normalize-path (build-path (collection-path "mzlib") 'up)))
+  (define exp-web-root
+    (explode-path 
+     (normalize-path 
+      (build-path (collection-path "mzlib") 'up))))
+  (define web-root-len (length exp-web-root))
 
-  (define web-root-len (string-length web-root))
-
+  ; given a manual path, convert to absolute Web path
   ; manual path is an anchored path to a collects/doc manual, never a servlet
   (define (tidy-manual-path manual-path)
-    (substring manual-path web-root-len 
-	       (string-length manual-path)))
+    (let* ([exp-manual-path (explode-path manual-path)]
+	   [exp-tidy-path 
+	    (let loop ([path exp-manual-path]
+		       [n 0])
+	      (if (>= n web-root-len)
+		  path
+		  (loop (cdr path) (add1 n))))])
+      ; insert internal slashes, make absolute by prepending slash
+      (string-append "/" (fold-into-web-path exp-tidy-path))))
 
   (define (pretty-label label) ; TO DO, maybe
 	label)

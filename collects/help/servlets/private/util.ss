@@ -1,5 +1,6 @@
 (module util mzscheme
   (require (lib "file.ss")
+	   (lib "list.ss")
 	   (lib "etc.ss")
 	   (lib "xml.ss" "xml")
 	   (lib "url.ss" "net")
@@ -20,6 +21,7 @@
 	   hexify-string
 	   manual-entry
 	   collection-doc-link
+	   fold-into-web-path
 	   color-choices
 	   password-file
 	   home-page
@@ -108,6 +110,17 @@
 		  coll)))
 	      ,txt)
 	  "")))
+
+  ; (listof string) -> string
+  ; result is forward-slashed web path
+  ;  e.g. ("foo" "bar") -> "foo/bar"
+  (define (fold-into-web-path lst)
+      (foldr (lambda (s a)
+	       (if a
+		   (string-append s "/" a)
+		   s))
+	     #f
+	     lst))
 
   (define color-choices
     '("aliceblue" "antiquewhite" "aqua" "aquamarine" "azure"

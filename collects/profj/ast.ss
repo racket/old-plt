@@ -80,11 +80,12 @@
   (p-define-struct type-var (name bound src))
 
   ;;Code for accessing fields: var-decl and var-init
-  (provide field? field-name field-modifiers field-type)
+  (provide field? field-name field-modifiers field-type field-src)
   (define (field? v) (or (var-decl? v) (var-init? v)))
   (define (field-name v) (var-decl-name (if (var-init? v) (var-init-var-decl v) v)))
   (define (field-modifiers v) (var-decl-modifiers (if (var-init? v) (var-init-var-decl v) v)))
   (define (field-type v) (var-decl-type (if (var-init? v) (var-init-var-decl v) v)))
+  (define (field-src v) (var-decl-src (if (var-init? v) (var-init-var-decl v) v)))
   
   ;;(make-var-decl id (list modifier) type-spec src)
   (p-define-struct var-decl (name modifiers type src))

@@ -52,6 +52,9 @@ Using variable declarations in the interactions window causes errors.
 Fully qualified names will not be understood in interactions (anything
 that would require an implicit import).
 
+The switch statement does not type-check correctly (hopefully won't reject)
+AND isn't implemented correctly and should not be used yet.
+
 _full java_
 
 For Language definition see Java Language Spec Version 2

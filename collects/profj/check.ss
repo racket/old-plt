@@ -94,7 +94,11 @@
          (for-each (lambda (p)
                      (check-interactions-types p level loc type-recs)) prog))
         ((var-init? prog) 
-         (check-var-init (var-init-init prog) env type-recs current-class))
+         (check-var-init (var-init-init prog)
+                         (lambda (e) (check-expr e env level type-recs current-class #f #t))
+                         (field-type prog)
+                         (string->symbol (id-string (field-name prog)))
+                         type-recs))
         ((var-decl? prog) (void))
         ((statement? prog)
          (check-statement prog null env null level type-recs current-class #f #t))
@@ -149,7 +153,11 @@
                            (check-statement (initialize-block member) null field-env null 'full
                                             type-recs current-class #f #f)))
                       ((var-init? member)
-                       (check-var-init (var-init-init member) field-env type-recs current-class))
+                       (check-var-init (var-init-init member) 
+                                       (lambda (e) (check-expr e field-env 'full type-recs current-class #f #t))
+                                       (field-type member)
+                                       (string->symbol (id-string (field-name member)))
+                                       type-recs))
                       (else void)))
                   members))))
   
@@ -160,58 +168,7 @@
         void)))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
-  ;;Checks
-  
-           
-
-  
-
-              
-  
-  ;Performs no checks
-  ;check-for-vars: (list (U var-init var-decl)) env type-records (U (list string) #f)-> env
-  (define check-for-vars
-    (lambda (vars env type-recs current-class)
-      (if (null? vars)
-          env
-          (check-for-vars (cdr vars) (check-local-var (car vars) env type-recs current-class) type-recs current-class))))
-  
-  ;Performs no checks
-  ;check-local-var: (U var-init var-decl) env type-records (U #f (list string))-> env
-  (define check-local-var 
-    (lambda (local env type-recs current-class)
-      (let* ((is-var-init? (var-init? local))
-             (newEnv 
-              (add-var-to-env (id-string (field-name local))
-                              (type-spec-to-type (field-type local) type-recs)
-                              #t
-                              #f
-                              env)))
-        (if is-var-init?
-            (begin
-              (check-var-init (var-init-init local) newEnv type-recs current-class)
-              newEnv)
-            newEnv))))
-  
-  ;Performs no checks
-  ;check-var-init (U expression array-init) env type-records (U string #f) -> void
-  (define check-var-init
-    (lambda (init env type-recs current-class)
-      (if (array-init? init)
-          (check-array-init (array-init-vals init) env type-recs current-class)
-          (check-expr init env 'full type-recs current-class #t #f))))      
-  
-  ;Performs no checks
-  ;check-array-init (list (U expression array-init)) env type-records (U #f string)-> void
-  (define check-array-init
-    (lambda (inits env type-recs current-class)
-      (cond
-        ((null? inits) void)
-        ((array-init? (car inits))
-         (for-each (lambda (a) (check-array-init (array-init-vals a) env type-recs current-class))
-                   inits))
-        (else
-         (for-each (lambda (e) (check-expr e env 'full type-recs current-class #t #f)) inits)))))                   
+  ;;Checks      
 
   ;check-block: (list (U statement variable)) src type env type-records (U #f (list string))-> void
   (define check-block
@@ -287,10 +244,11 @@
             (check-e (lambda (exp env exn-env)
                        (check-expr exp env level type-recs current-class ctor? static?))))
       (cond
-        ((ifS? statement) (check-ifS (check-e (ifS-cond statement) env exn-env)
-                                     (check-s (ifS-then statement) env exn-env)
-                                     (check-s (ifS-else statement) env exn-env)
-                                     (expr-src (ifS-cond statement))))
+        ((ifS? statement) 
+         (check-ifS (check-e (ifS-cond statement) env exn-env)
+                    (expr-src (ifS-cond statement)))
+         (check-s (ifS-then statement) env exn-env)
+         (check-s (ifS-else statement) env exn-env))                                     
         ((throw? statement)
          (check-throw (check-e (throw-expr statement) env exn-env)
                       (expr-src (throw-expr statement))
@@ -302,26 +260,38 @@
                        (lambda (e) (check-e e env exn-env))
                        (return-src statement)
                        type-recs))
-        ((while? statement)
-         (check-e (while-cond statement) env exn-env)
+        ((while? statement) 
+         (check-while (check-e (while-cond statement) env exn-env)
+                      (expr-src (while-cond statement)))
          (check-s (while-loop statement) env exn-env))
-        ((doS? statement)
-         (check-e (doS-cond statement) env exn-env)
+        ((doS? statement) 
+         (check-do (check-e (doS-cond statement) env exn-env)
+                   (expr-src (doS-cond statement)))
          (check-s (doS-loop statement) env exn-env))
         ((for? statement)
-         (let ((newEnv (if (and (not (null? (for-init statement)))
-                                (or (var-init? (car (for-init statement)))
-                                    (var-decl? (car (for-init statement)))))
-                           (check-for-vars (for-init statement) env type-recs current-class)
-                           (begin (map (lambda (e) (check-e e env exn-env)) (for-init statement))
-                                  env))))
-           (check-e (for-cond statement) newEnv exn-env)
-           (map (lambda (e) (check-e e newEnv exn-env)) (for-incr statement))
-           (check-s (for-loop statement) newEnv exn-env)))
-        ((try? statement)
-         (check-s (try-body statement) env exn-env))
+         (check-for (for-init statement)
+                    (for-cond statement)
+                    (for-incr statement)
+                    (for-loop statement)
+                    (lambda (exp env) (check-e exp env exn-env))
+                    (lambda (stmt env) (check-s stmt env exn-env))
+                    env
+                    type-recs))
+        ((try? statement) 
+         (check-try (try-body statement)
+                    (try-catches statement)
+                    (try-finally statement)
+                    env
+                    exn-env
+                    check-s
+                    type-recs))
         ((switch? statement)
-         (check-e (switch-expr statement) env exn-env))
+         (check-switch (check-e (switch-expr statement) env exn-env)
+                       (expr-src (switch-expr statement))
+                       (switch-cases statement)
+                       env
+                       (lambda (e) (check-e e env exn-env))
+                       (lambda (s env) (check-s s env exn-env))))
         ((block? statement)
          (check-block (block-stmts statement)
                       (block-src statement)
@@ -340,10 +310,14 @@
         ((statement-expression? statement)
          (check-e statement env exn-env))))))
   
-  ;check-ifS: type type type src -> void
-  (define (check-ifS cond then else cond-src)
-    (unless (eq? 'boolean cond)
-      (raise-statement-error cond cond-src 'if if-cond-not-bool)))
+  ;check-cond: symbol -> (type src -> void)
+  (define (check-cond kind)
+    (lambda (cond cond-src)
+      (unless (eq? 'boolean cond)
+        (raise-statement-error cond cond-src kind (statement-cond-not-bool kind)))))
+        
+  ;check-ifS: type src -> void
+  (define check-ifS (check-cond 'if))
 
   ;check-throw: type src (list type) type-records -> void
   (define (check-throw exp-type src exn-env type-recs)
@@ -359,6 +333,7 @@
       (else
        (send type-recs add-req (make-req "Throwable" (list "java" "lang"))))))
 
+  ;check-return: expression type (expression -> type) src type-records -> void
   (define (check-return ret-expr return check src type-recs)
     (cond
       ((and ret-expr (not (eq? 'void return)))
@@ -370,10 +345,117 @@
       ((and (not ret-expr) (not (eq? 'void return)))
        (raise-statement-error return src 'return no-val-to-return))))
   
+  ;check-while: type src -> void
+  (define check-while (check-cond 'while))
+  
+  ;check-do: type src void -> void
+  (define check-do (check-cond 'do))
+  
+  ;check-for: forInit Expression (list Expression) Statement (Expression env -> type) (Statement env -> void) env 
+  ;           type-records -> void
+  (define (check-for init cond incr loop check-e check-s env type-recs)
+    (let ((newEnv (if (and (not (null? init))
+                           (field? (car init)))
+                      (check-for-vars init env (lambda (e) (check-e e env)) type-recs)
+                      (begin (for-each (lambda (e) (check-e e env)) init)
+                             env))))
+      ((check-cond 'for) (check-e cond newEnv) (expr-src cond))
+      (map (lambda (e) (check-e e newEnv)) incr)
+      (check-s loop newEnv)))
+
+  ;check-for-vars: (list field) env (expression -> type) type-records -> env
+  (define (check-for-vars vars env check-e types)
+    (if (null? vars)
+        env
+        (check-for-vars (cdr vars) 
+                        (check-local-var (car vars) env check-e types) types)))
+  
+  ;check-local-var: field env (expression -> type) type-records -> env
+  (define (check-local-var local env check-e type-recs)
+    (let* ((is-var-init? (var-init? local))
+           (name (id-string (field-name local)))
+           (sym-name (string->symbol name))
+           (type (type-spec-to-type (field-type local) type-recs)))
+      (when (lookup-var-in-env name env)
+        (raise-statement-error name (field-src local) sym-name name-already-defined))
+      (when is-var-init?
+        (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
+          (unless (assignment-conversion type new-type type-recs)
+            (raise-statement-error (list new-type type) (var-init-src local) sym-name incompatible-type))))
+      (add-var-to-env name type #t #f env)))
+  
+  
+  ;check-var-init: expression (expression -> type) type symbol type-records -> type
+  (define (check-var-init init check-e dec-type name type-recs)
+    (if (array-init? init)
+        (if (array-type? dec-type)
+            (check-array-init (array-init-vals init) check-e 
+                              (array-type-type dec-type) name type-recs)
+            (raise-statement-error dec-type (array-init-src init) name array-not-expected))
+        (check-e init)))
+  
+  ;check-array-init (U (list array-init) (list Expression)) (expression->type) type symbol type-records -> type
+  (define (check-array-init inits check-e dec-type name type-recs)
+    (cond
+      ((null? inits) (make-array-type dec-type 1))
+      ((array-init? (car inits))
+       (let ((array-types (map (lambda (a) 
+                                 (check-array-init (array-init-vals a) check-e dec-type name type-recs))
+                               inits)))
+         (make-array-type dec-type (add1 (array-type-dim (car array-types))))))
+      (else
+       (for-each (lambda (e) 
+                   (let ((new-type (check-e e)))
+                     (unless (assignment-conversion dec-type new-type type-recs)
+                       (raise-statement-error (list dec-type new-type) 
+                                              (expr-src e) name init-incompatible))))
+                 inits)
+       (make-array-type dec-type 1))))         
+
+  ;check-try: statement (list catch) (U #f statement) env (list type) 
+  ;           (statement env (list type) -> void) type-records -> void
+  (define (check-try body catches finally env exn-env check-s type-recs)
+    (let ((cought-types (map 
+                         (lambda (catch)
+                           (let ((type (field-type (catch-cond catch))))
+                             (unless (and (ref-type? type)
+                                          (is-subclass? type throw-type type-recs))
+                               (raise-statement-error type (field-src (catch-cond catch)) 'catch catch-throwable))
+                             type))
+                         catches)))
+      (check-s body env (append cought-types exn-env))
+      (for-each (lambda (catch)
+                  (let* ((field (catch-cond catch))
+                         (name (id-string (field-name field))))
+                    (if (lookup-var-in-env name env)
+                        (raise-statement-error name (field-src field) (string->symbol name) name-already-defined)
+                        (check-s (catch-body catch) 
+                                 (add-var-to-env name (field-type field) #t #f env)
+                                 exn-env))))
+                catches)
+      (when finally
+        (check-s finally env exn-env))))
+
+  ;Skipping proper checks of the statements + proper checking that constants aren't repeated
+  ;check-switch: type src (list caseS) (expression -> type) (statement env -> void) -> void
+  (define (check-switch expr-type expr-src cases env check-e check-s)
+    (when (or (eq? expr-type 'long)
+              (not (prim-integral-type? expr-type)))
+      (raise-statement-error expr-type expr-src 'switch wrong-switch-type))
+    (for-each (lambda (case)
+                (let* ((constant (caseS-constant))
+                       (cons-type (unless (eq? 'default constant) (check-e constant))))
+                  (if (or (eq? 'default constant)
+                          (type=? cons-type expr-type))
+                      void
+                      (raise-statement-error (list cons-type expr-type) (expr-src constant) 'switch incompatible-case))))
+              cases))
+    
   ;Statement error messages
   
-  (define (if-cond-not-bool given)
-    (format "condition for if must be boolean, given ~a" given))
+  (define (statement-cond-not-bool kind)
+    (lambda (given)
+      (format "condition for ~a must be boolean, given ~a" kind given)))
   
   (define (throw-not-throwable given)
     (format "throw expression must be a subtype of class Throwable: given ~a" given))
@@ -389,14 +471,37 @@
   (define (no-val-to-return expected)
     (format "Expected a return value of type ~a, no value was given" expected))
   
+  (define (name-already-defined given)
+    (format "Redefinition of ~a is not allowed. Another name must be chosen" given))
+  (define (incompatible-type given expected)
+    (format "Variable declared to be of type ~a, which is incompatible with given type ~a" expected given))
+  
+  (define (init-incompatible given expected)
+    (format "types of all expressions in array initialization must be compatible with declared type. 
+             ~a is not compatible with declared type ~a" given expected))
+  (define (array-not-expected expected)
+    (format "variable declared to be of type ~a, given an array" expected))
+
+  (define (catch-throwable given)
+    (format "catch clauses must be given an argument that is a subclass of Throwable. Given ~a" given))
+  
+  (define (wrong-switch-type given)
+    (format "Switch expression must be of type byte, short, int or char. Given: ~a" given))
+  (define (incompatible-case given expected)
+    (format "Each case of a switch statement must be of the type of the expression. Given ~a: expected ~a" given expected))
+  
   ;raise-statement-error: ast src symbol ( 'a -> string) -> void
   (define (raise-statement-error code src kind msg)
     (match code
-      ;Covers if-cond-not-bool throw-not-throwable thrown-not-declared
+      ;Covers statement-cond-not-bool throw-not-throwable thrown-not-declared
+      ;array-not-expected catch-throwable wrong-switch-type
       ((? type? c) (raise-syntax-error kind (msg (type->ext-name c)) (make-so kind src)))
-      ;Covers return-not-match
+      ;Covers return-not-match init-incompatible incompatibe-type incompatible-case
       (((? type? fst) (? type? snd)) 
        (raise-syntax-error kind (msg (type->ext-name fst) (type->ext-name snd)) (make-so kind src)))
+      ;name-already-defined
+      ((? string? name)
+       (raise-syntax-error kind (msg name) (make-so kind src)))
       (_ (error 'raise-statement-error "Given ~a" code)))) 
                                         
   

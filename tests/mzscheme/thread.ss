@@ -5,7 +5,7 @@
 
 (SECTION 'threads)
 
-(define SLEEP-TIME 0.6)
+(define SLEEP-TIME 0.1)
 
 (define t (thread (lambda () 8)))
 (test #t thread? t)

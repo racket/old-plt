@@ -1,0 +1,80 @@
+/*								-*- C++ -*-
+ * $Id: MenuBar.h,v 1.1 1996/01/10 14:57:18 markus Exp $
+ *
+ * Purpose: menu bar class
+ *
+ * Authors: Markus Holzem and Julian Smart
+ *
+ * Copyright: (C) 1995, AIAI, University of Edinburgh (Julian)
+ * Copyright: (C) 1995, GNU (Markus)
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
+#ifndef MenuBar_h
+#define MenuBar_h
+
+#ifdef __GNUG__
+#pragma interface
+#endif
+
+typedef void *wxMenuItem;
+
+class wxPanel;
+class wxMenu;
+
+class wxMenuBar : public wxItem {
+DECLARE_DYNAMIC_CLASS(wxMenuBar)
+public:
+    wxMenuBar(void);
+    wxMenuBar(int n, wxMenu *menus[], char *titles[]);
+    ~wxMenuBar(void);
+
+    Bool Create(wxPanel *panel);
+    void Destroy(void);
+
+    // add menu to menubar
+    void  Append(wxMenu *menu, char *title);
+    /* MATTHEW: */
+    void  Delete(wxMenu *menu, int pos = 0);
+    // modify items
+    void  Check(int id, Bool flag);
+    Bool  Checked(int id);
+    void  Enable(int id, Bool flag);
+    void  EnableTop(int pos, Bool flag);
+    char  *GetHelpString(int id);
+    char  *GetLabel(int id);
+    char  *GetLabelTop(int pos);
+    void  SetHelpString(int id, char *help);
+    void  SetLabel(int id, char *label);
+    void  SetLabelTop(int pos, char *label);
+    // search for item by label
+    int   FindMenuItem(char *menu, char *label);
+private:
+    // search for internal data by id
+    wxMenuItem  *FindItemForId(int id, wxMenu **menu=NULL);
+    // callback functions
+#   ifdef Have_Xt_Types
+    static void SelectEventCallback(Widget, XtPointer, XtPointer);
+    static void CommandEventCallback(Widget, XtPointer, XtPointer);
+#   endif
+    // internal representation
+    wxMenuItem	*top;		// first menu item
+    wxMenuItem	*last;		// last menu item for wxMenu::Append
+    wxMenuItem  *help;		// help menu pushed right
+    wxMenuItem  *topdummy;
+};
+
+#endif // MenuBar_h

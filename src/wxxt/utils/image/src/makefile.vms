@@ -1,0 +1,77 @@
+#************************************************************************
+# Makefile for toolbar library under VMS
+# by Stefan Hammes
+# (incomplete) update history:
+# 26.05.94
+# 28.08.94
+# 19.11.94
+# 11.04.95
+#************************************************************************
+
+#************************************************************************
+# Definition section
+# (cave: definitions and includes must begin with ',')
+#************************************************************************
+
+APPOPTS = 
+APPDEFS = 
+APPINCS = 
+
+#************************************************************************
+# Module section
+#************************************************************************
+
+# Name of main module
+MAIN = [-.lib]image
+
+# Object modules of the application.
+OBJS = wx_image.obj wx_img.obj wx_gif.obj \
+  wx_gifwr.obj wx_gam.obj wx_pbm.obj \
+  wx_24to8.obj wx_pm.obj wx_xbm.obj \
+  wx_bmp.obj wx_pcx.obj
+OBJLIST =wx_image.obj,wx_img.obj,wx_gif.obj,\
+wx_gifwr.obj,wx_gam.obj,wx_pbm.obj,\
+wx_24to8.obj,wx_pm.obj,wx_xbm.obj,\
+wx_bmp.obj,wx_pcx.obj
+
+.include [---.src]makevms.env
+
+# main dependency
+$(MAIN).olb : $(OBJS)
+	lib/create $(MAIN).olb $(OBJLIST)
+	- purge $(MAIN).olb
+
+# Warnings about multiply defined 'main' can be ignored
+test.exe : test.$(OBJ)
+    $(LINK) $(LINKFLAGS) /exec=test.exe test.$(OBJ),$(WXLIB)/lib,$(MAIN)/lib,$(OPTSFILE)/option
+    - purge *.exe
+
+#************************************************************************
+# Header file depedencies following
+#************************************************************************
+wx_image.obj :	wx_image.cc wx_image.h wx_imgx.h
+
+wx_img.obj :	wx_img.cc wx_image.h wx_imgx.h
+
+wx_gif.obj :	wx_gif.cc wx_image.h wx_imgx.h
+
+wx_gifwr.obj :	wx_gifwr.cc wx_image.h wx_imgx.h
+
+wx_gam.obj :	wx_gam.cc wx_image.h wx_imgx.h
+
+wx_pbm.obj :	wx_pbm.cc wx_image.h wx_imgx.h
+
+wx_bmp.obj :	wx_bmp.cc wx_image.h wx_imgx.h
+
+wx_pcx.obj :	wx_pcx.cc wx_image.h wx_imgx.h
+
+wx_xbm.obj :	wx_xbm.cc wx_image.h wx_imgx.h
+
+wx_pm.obj :	wx_pm.cc wx_image.h wx_imgx.h
+
+wx_24to8.obj :	wx_24to8.cc wx_image.h wx_imgx.h
+
+test.obj :		test.h test.cc wx_image.h wx_imgx.h
+
+tmp.obj :		tmp.cc
+

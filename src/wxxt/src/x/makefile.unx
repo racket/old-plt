@@ -1,0 +1,122 @@
+
+# This file simply provides some compatibility with wxWindows/Motif
+
+include ../make$(MZPLATFORMSUFFIX).env
+
+IMAGEBASEDIR = $(WXDIR)/utils/image
+IMAGELIBDIR = $(IMAGEBASEDIR)/lib/sys$(MZPLATFORMSUFFIX)
+IMAGEOBJMAINDIR = $(IMAGEBASEDIR)/src/objects
+IMAGEOBJDIR = $(IMAGEBASEDIR)/src/objects/sys$(MZPLATFORMSUFFIX)_xt
+
+XPMBASEDIR = $(WXDIR)/contrib/xpm/lib
+XPMLIBMAINDIR = $(XPMBASEDIR)/lib
+XPMLIBDIR = $(XPMBASEDIR)/lib/sys$(MZPLATFORMSUFFIX)
+XPMOBJMAINDIR = $(XPMBASEDIR)/objects
+XPMOBJDIR = $(XPMBASEDIR)/objects/sys$(MZPLATFORMSUFFIX)
+
+WXOBJS = objects/sys$(MZPLATFORMSUFFIX)
+
+all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
+     $(XPMOBJMAINDIR) $(XPMOBJDIR) $(XPMLIBMAINDIR) $(XPMLIBDIR) \
+     ../lib/sys$(MZPLATFORMSUFFIX) \
+     ../Application/objects \
+     ../DataStructures/objects \
+     ../Dialogs/objects \
+     ../DeviceContexts/objects \
+     ../DrawingClasses/objects \
+     ../EventHandling/objects \
+     ../IPC-Classes/objects \
+     ../GDI-Classes/objects \
+     ../Misc/objects \
+     ../Utilities/objects \
+     ../Windows/objects \
+     ../XWidgets/objects \
+     ../Application/$(WXOBJS) \
+     ../DataStructures/$(WXOBJS) \
+     ../Dialogs/$(WXOBJS) \
+     ../DeviceContexts/$(WXOBJS) \
+     ../DrawingClasses/$(WXOBJS) \
+     ../EventHandling/$(WXOBJS) \
+     ../IPC-Classes/$(WXOBJS) \
+     ../GDI-Classes/$(WXOBJS) \
+     ../Misc/$(WXOBJS) \
+     ../Utilities/$(WXOBJS) \
+     ../Windows/$(WXOBJS) \
+     ../XWidgets/$(WXOBJS)
+	cd ..; $(MAKE)
+	cd ../../utils/image/src/; $(MAKE) -f makefile.unx
+	cd ../../contrib/xpm/lib/; if [ -d unshared ]; then echo; else set -x; mkdir unshared; fi
+	cd ../../contrib/xpm/lib/unshared; if [ -d objects ]; then echo; else ln -s ../objects objects; fi
+	cd $(XPMLIBDIR); if [ -f libXpm.a ]; then mv libXpm.a $(XPMBASEDIR); fi
+	cd ../../contrib/xpm/lib/; xmkmf; $(MAKE) libXpm.a CC='$(XPMCC)'
+	mv $(XPMBASEDIR)/libXpm.a $(XPMLIBDIR)
+
+$(XPMOBJMAINDIR):
+	mkdir $(XPMOBJMAINDIR)
+$(XPMOBJDIR):
+	mkdir $(XPMOBJDIR)
+$(XPMLIBMAINDIR):
+	mkdir $(XPMLIBMAINDIR)
+$(XPMLIBDIR):
+	mkdir $(XPMLIBDIR)
+
+$(IMAGEOBJMAINDIR):
+	mkdir $(IMAGEOBJMAINDIR)
+$(IMAGEOBJDIR):
+	mkdir $(IMAGEOBJDIR)
+$(IMAGELIBDIR):
+	mkdir $(IMAGELIBDIR)
+
+../Application/objects:
+	mkdir $@
+../DataStructures/objects:
+	mkdir $@
+../Dialogs/objects :
+	mkdir $@
+../DrawingClasses/objects :
+	mkdir $@
+../DeviceContexts/objects :
+	mkdir $@
+../EventHandling/objects :
+	mkdir $@
+../IPC-Classes/objects :
+	mkdir $@
+../GDI-Classes/objects :
+	mkdir $@
+../Misc/objects :
+	mkdir $@
+../Utilities/objects :
+	mkdir $@
+../Windows/objects :
+	mkdir $@
+../XWidgets/objects:
+	mkdir $@
+
+../Application/$(WXOBJS):
+	mkdir $@
+../DataStructures/$(WXOBJS):
+	mkdir $@
+../Dialogs/$(WXOBJS) :
+	mkdir $@
+../DrawingClasses/$(WXOBJS) :
+	mkdir $@
+../DeviceContexts/$(WXOBJS) :
+	mkdir $@
+../EventHandling/$(WXOBJS) :
+	mkdir $@
+../IPC-Classes/$(WXOBJS) :
+	mkdir $@
+../GDI-Classes/$(WXOBJS) :
+	mkdir $@
+../Misc/$(WXOBJS) :
+	mkdir $@
+../Utilities/$(WXOBJS) :
+	mkdir $@
+../Windows/$(WXOBJS) :
+	mkdir $@
+../XWidgets/$(WXOBJS):
+	mkdir $@
+
+../lib/sys$(MZPLATFORMSUFFIX):
+	mkdir $@
+

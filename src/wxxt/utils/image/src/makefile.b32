@@ -1,0 +1,54 @@
+#
+# File:		makefile.b32
+# Author:	Patrick Halke
+# Created:	1995
+# Updated:	
+# Copyright:	(c) 1993, AIAI, University of Edinburgh
+#
+# "%W% %G%"
+#
+# Makefile : Builds 32bit image library for Windows 3.1
+# and Borland C++ 4.x
+
+WXDIR = $(WXWIN)
+WXLIB = $(WXDIR)\lib
+WXINC = $(WXDIR)\include\msw
+WXBASESRC = $(WXDIR)\src\base
+WXBASEINC = $(WXDIR)\include\base
+
+!ifndef DEBUG
+DEBUG=0
+!endif
+
+!if "$(FINAL)" == "0"
+OPT = -Od
+DEBUG_FLAGS= -v -DDEBUG=$(DEBUG)
+!else
+OPT = -O2
+DEBUG_FLAGS = -DDEBUG=$(DEBUG)
+!endif
+
+CPPFLAGS=$(DEBUG_FLAGS) $(OPT) @$(CFG)
+
+LIBTARGET= $(WXLIB)\image.lib
+
+.cc.obj:
+	bcc32 $(CPPFLAGS) -c {$< }
+
+.c.obj:
+	bcc32 $(CPPFLAGS) -P- -c {$< }
+
+OBJECTS = wx_image.obj
+
+all:    $(LIBTARGET)
+
+$(LIBTARGET):	$(OBJECTS)
+	erase $(LIBTARGET)
+	tlib $(LIBTARGET) /P32 @&&!
++$(OBJECTS:.obj =.obj +)
+!
+
+wx_image.obj:	wx_image.cc wx_image.h
+
+clean:
+        -erase *.obj $(LIBTARGET) *.exe *.res *.map *.rws

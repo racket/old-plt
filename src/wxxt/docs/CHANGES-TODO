@@ -1,0 +1,112 @@
+---------------------
+wxWINDOWS CHANGE LIST
+---------------------
+
+Version 1.65 December 1995
+--------------------------
+
+- Added wxChart library (directory utils/wxchart).
+- Added Dialog Editor (directory utils/dialoged).
+- Added wxProperty classes (directory utils/wxprop).
+- Added Pressup game sample (directory samples/pressup).
+- Some fixes and additions to Tex2RTF (see Tex2RTF manual).
+- *NOTE* changed wxScrollBar prototype: 'direction' is now passed
+  through the window style parameter.
+- Added some wxText/wxMultiText functionality under Windows and Motif.
+- Added Matthew's font scheme (mandatory under X, optional under
+  Windows).
+- Added Matthew's changes to support multiple displays under X.
+- Added font facename support under Windows.
+- Added dynamic menu deletion code from Matthew: Motif, XView, Windows.
+- Added wxItem::SetLabelFont, GetLabelFont for Windows.
+- Added more Set/Get functions for wxGauge, wxSlider.
+- Arguments to SetItem/Label/BackgroundColour now reference
+  to wxColour instead of pointer. A copy of the wxColour is
+  now stored, reducing memory management problems.
+- Fixed another memory bug in constraint system (added otherWin = NULL to
+  ResetIfWin in wx_lay.cc).
+- Fixed wxRadioBox::SetLabel/ButtonFont (Windows).
+- Fixed wxWindow::Refresh under X to clear background if requested.
+- Added contributed timeout code for IPC classes.
+- Untested wxFrame/wxDialogBox::OnChar/OnCharHook implementation for XView and
+  Motif.
+- Added wxDecToHex, wxHexToDec utility functions: used in resource system
+  and Dialog Editor.
+
+Version 1.64 October 1995
+-------------------------
+
+- Added wxRecordSet::GetPrimaryKeys.
+- Added Set/GetExitOnFrameDelete (Windows).
+- Added wxPoem to samples directory.
+
+Version 1.63 August 3rd 1995
+----------------------------
+
+- Changed wxRadioBox to take wxHORIZONTAL or wxVERTICAL style parameter:
+  doesn't make sense to use the label positioning to determine layout
+  style. ***This may break existing code*** so you may need to insert
+  wxHORIZONTAL or wxVERTICAL into your radiobox style parameter.
+- Added classes: wxDate, wxTime, wxFraction, wxColourDialog,
+  wxFontDialog. wxTime, wxFraction remain undocumented.
+- Added wxGetLocalTime, wxGetCurrentTime to help wxTime class.
+- Cured a constraint system bug that left a dangling pointer: sometimes caused a
+  crash on exiting print preview, for example. But there's *still* a bug
+  left :-( as identified by Purify.
+- Added Matthew Flatt's generic clipboard code to MS Windows platform
+  (written in terms of existing clipboard functions).
+
+Version 1.62 (e) June 28 1995
+------------------------------
+
+- Fixed layout demo crash (wxRowColSizer::Create called itself).
+- Fixed layout algorithm to accept width/height.AsIs() and
+  also added wxDebugMsg warnings on constraint failure.
+
+Version 1.62 (d) June 4th 1995
+------------------------------
+
+- wxTextWindow now inherits from streambuf, except under
+  BC++ (see comments in wb_text.h/cc).
+- Added samples/samples.txt, utils/utils.txt, contrib/contrib.txt.
+- Added contributed src/x/wx_ipc.cc fix.
+
+Version 1.62 (c) May 28th 1995
+-----------------------------
+
+- Added wxFileHistory class, small changes to doc/view API.
+- Promoted wxToolBar and wxButtonBar to the main wxWindows
+  library and documentation, so I'm afraid you'll need to
+  remove a few things from your application makefiles
+  if you use these classes.
+- Added Matthew's experimental garbage collection patch.
+
+Version 1.62 (b) May 25th 1995 (not publicly released)
+-----------------------------
+
+- Added document/view/command architecture and sample.
+- Print/preview architecture starting to work(?) under
+  UNIX using wxPostScriptDC, with simulated print and
+  print setup dialogs. wxPrintSetupData added to tidy
+  up the previously global print data.
+- Started wxSizer classes; unfinished and undocumented.
+
+Version 1.62 (a) May 8th 1995
+-----------------------------
+
+- Added wxScreenDC (undocumented)
+- Added Matthew Flatt's X wxClipboard class; not yet
+  documented or unified with the Windows functions.
+- Added wxApp/wxWindow::OnCharHook hook function (Windows
+  only). This means you can provide F1 and ESC functionality:
+  wxMessageBox and a few others now respond to ESC.
+
+Version 1.61 (e) May 1995
+-------------------------
+
+- Added wx_print.h, wx_print.cc to Windows code:
+  a printing and previewing framework.
+- Added printing sample (Windows only).
+- Added wxUpdateIterator code, to be called within
+  OnPaint to optimize repainting.
+

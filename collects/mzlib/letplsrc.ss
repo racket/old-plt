@@ -1,3 +1,4 @@
+(require-library "macro.ss")
 (require-library "match.ss")
 
 (define-macro rmatch 

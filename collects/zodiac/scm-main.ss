@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.182 1999/04/14 23:22:42 mflatt Exp $
+; $Id: scm-main.ss,v 1.183 1999/05/04 18:12:02 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1363,14 +1363,6 @@
   (add-list-micro answered-cond-clause-vocab (make-cond-list-micro #t #f))
   (add-list-micro full-cond-clause-vocab (make-cond-list-micro #t #t))
 
-  ; We need this at the core and structured levels since we are
-  ; disallowing procedure applications whose procedure position is not
-  ; a symbol (here, the inner expression of ((debug-info-handler))
-  ; violates that requirement).
-
-  (define debug-info-handler-expression
-    '(#%apply (#%debug-info-handler) (#%list)))
-
   (define (make-cond-micro cond-clause-vocab allow-empty?)
     (let* ((kwd '())
 	   (in-pattern '(_ bodies ...))
@@ -1401,7 +1393,7 @@
 				  ,(if (and had-no-clauses? (not allow-empty?))
 				       "cond must contain at least one clause"
 				       "no matching cond clause")
-				  ,debug-info-handler-expression)))
+				  (#%current-continuation-marks))))
 			    (let ((first (car exps))
 				   (rest (cdr exps)))
 			      (cond
@@ -1440,7 +1432,7 @@
 	     (out-pattern-2-signal-error
 	      `(#%raise (#%make-exn:else
 			 "no matching else clause"
-			 ,debug-info-handler-expression)))
+			 (#%current-continuation-marks))))
 	     (out-pattern-2-no-error
 	      '(begin val (#%void)))
 	     (in-pattern-3 `(_ val ((keys ...) ,@(get-expr-pattern #t)) rest ...))
@@ -1473,7 +1465,7 @@
 	     (out-pattern-2-signal-error
 	      `(#%raise (#%make-exn:else
 			 "no matching else clause"
-			 ,debug-info-handler-expression)))
+			 (#%current-continuation-marks))))
 	     (out-pattern-2-no-error
 	      '(begin val (#%void)))
 	     (kwd-3 '(else))

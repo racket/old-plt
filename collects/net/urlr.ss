@@ -35,7 +35,7 @@
 					  (url->string arg)
 					  arg))
 				   args))))
-	(raise (make-url-exception s ((debug-info-handler)))))))
+	(raise (make-url-exception s (current-continuation-marks))))))
 
   ;; if the path is absolute, it just arbitrarily picks the first
   ;; filesystem root.

@@ -203,7 +203,7 @@
 		`(#%if (#%eq? ,v ,the-undefined-value)
 		       (#%raise (,make-undefined
 				 ,(format undefined-error-format real-v)
-				 ((#%debug-info-handler))
+				 (#%current-continuation-marks)
 				 (#%quote ,v)))
 		       ,v))
 	  ; don't wrap lexical variables - nothing can go wrong
@@ -269,7 +269,7 @@
 			  (#%raise (,make-not-boolean
 				    (#%format ,not-boolean-error-format
 				     ,if-test-v)
-				    ((#%debug-info-handler))
+				    (#%current-continuation-marks)
 				    ,if-test-v))))))
 	       (wrap expr 
 		     `(#%if ,(annotate/inner (z:if-form-test expr))

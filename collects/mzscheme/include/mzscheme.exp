@@ -83,6 +83,7 @@ scheme_push_continuation_frame
 scheme_pop_continuation_frame
 scheme_temp_dec_mark_depth
 scheme_temp_inc_mark_depth
+scheme_current_continuation_marks
 scheme_do_eval
 GC_malloc
 GC_malloc_atomic
@@ -96,11 +97,13 @@ scheme_strdup_eternal
 scheme_malloc_fail_ok
 scheme_weak_reference
 scheme_weak_reference_indirect
+scheme_unweak_reference
 scheme_add_finalizer
 scheme_add_finalizer_once
 scheme_add_scheme_finalizer
 scheme_add_scheme_finalizer_once
 scheme_register_finalizer
+scheme_remove_all_finalization
 scheme_dont_gc_ptr
 scheme_gc_ptr_ok
 scheme_collect_garbage

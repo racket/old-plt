@@ -12,7 +12,7 @@
 	(if (null? paths)
 	  (raise (make-exn:misc:unsupported
 		   "unable to find sendmail on this Unix variant"
-		   ((debug-info-handler))))
+		   (current-continuation-marks)))
 	  (let ((p (build-path (car paths) "sendmail")))
 	    (if (and (file-exists? p)
 		  (memq 'execute (file-or-directory-permissions p)))
@@ -20,7 +20,7 @@
 	      (loop (cdr paths))))))
       (raise (make-exn:misc:unsupported
 	       "sendmail only available under Unix"
-	       ((debug-info-handler))))))
+	       (current-continuation-marks)))))
 
   ;; send-mail-message/port :
   ;; string x string x list (string) x list (string) x list (string) 
@@ -41,7 +41,7 @@
 	      (null? bcc-recipients))
 	(raise (make-no-mail-recipients
 		 "no mail recipients were specified"
-		 ((debug-info-handler)))))
+		 (current-continuation-marks))))
       (let ((return (apply process* sendmail-program-file "-i"
 		      (append to-recipients cc-recipients bcc-recipients))))
 	(let ((reader (car return))

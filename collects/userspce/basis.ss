@@ -379,16 +379,22 @@
 	      (zodiac:location-line end-location)
 	      (+ (zodiac:location-column end-location) 1))))
 
-  ;; (parameter (string debug-info exn -> void))
+  ;; (parameter (string mark-set exn -> void))
   (define error-display/debug-handler
     (make-parameter
-     (lambda (msg debug exn)
+     (lambda (msg marks exn)
        ((error-display-handler) 
-	(if (zodiac:zodiac? debug)
-	    (string-append (format-source-loc (zodiac:zodiac-start debug)
-					      (zodiac:zodiac-finish debug))
-			   msg)
-	    msg)))))
+	(let* ([m (if (continuation-mark-set? marks)
+		      (continuation-mark-set->list marks aries:w-c-m-key)
+		      null)]
+	       [debug (if (pair? m)
+			  (car m)
+			  #f)])
+	  (if (zodiac:zodiac? debug)
+	      (string-append (format-source-loc (zodiac:zodiac-start debug)
+						(zodiac:zodiac-finish debug))
+			     msg)
+	      msg))))))
 
   ;; bottom-escape-handler : (parameter ( -> A))
   ;; escapes
@@ -399,7 +405,7 @@
   (define (drscheme-exception-handler exn)
     (let ([dh (error-display/debug-handler)])
       (if (exn? exn)
-	  (dh (exn-message exn) (exn-debug-info exn) exn)
+	  (dh (exn-message exn) (exn-continuation-marks exn) exn)
 	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler didn't escape")
@@ -434,7 +440,7 @@
     (unless (string? filename)
       (raise (make-exn:application:arity
 	      (format "drscheme-load-handler: expects argument of type <string>; given: ~e" filename)
-	      ((debug-info-handler))
+	      (current-continuation-marks)
 	      filename
 	      'string)))
     (let ([zo-file?
@@ -536,18 +542,10 @@
 	(compile-allow-cond-fallthrough #f)
 	(current-custodian custodian)
 	(error-value->string-handler drscheme-error-value->string-handler)
-	(debug-info-handler (let ([drscheme-debug-info-handler
-				   (lambda () (let ([x (current-continuation-marks
-							aries:w-c-m-key)])
-						(if (null? x)
-						    #f ; no debugging info available
-						    (car x))))])
-			      drscheme-debug-info-handler))
 	(current-exception-handler drscheme-exception-handler)
 	(current-namespace n)
 	(current-zodiac-namespace n)
 	(break-enabled #t)
-	(current-will-executor (make-will-executor))
 	(read-curly-brace-as-paren #t)
 	(read-square-bracket-as-paren #t)
 	(print-struct (not (eq? 'r4rs-style (setting-printing setting))))

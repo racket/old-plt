@@ -33,7 +33,7 @@
       (lambda exn-args
 	(raise (apply constructor
 		 (apply format format-string args)
-		 ((debug-info-handler))
+		 (current-continuation-marks)
 		 exn-args)))))
 
   ;; signal-malformed-response-error :

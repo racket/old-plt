@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.82 1999/04/22 21:09:28 mflatt Exp $
+; $Id: scm-unit.ss,v 1.83 1999/04/22 22:13:17 mflatt Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -1138,7 +1138,7 @@
 					form-name
 					(sexp->raw (quote-form-expr f))
 					(if sig? "signed " ""))
-				      ((debug-info-handler)))))
+				      (#%current-continuation-marks))))
 				  result)
 			       expr '(-1))
 			      env attributes vocab)
@@ -1208,7 +1208,7 @@
 					  '"mzlib"
 					  raw-cs)
 				      (if sig? "signed " ""))
-				    ((#%debug-info-handler)))))
+				    (#%current-continuation-marks))))
 				result)
 			     expr '(-1))
 			    env attributes vocab))))))

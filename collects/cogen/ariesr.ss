@@ -48,7 +48,8 @@
 		  ((zodiac:bound? id) (zodiac:bound-orig-name id))
 		  ((zodiac:top-level-varref? id) (zodiac:id-var id))
 		  (else
-		    (error 'check-for-keyword "given ~s" id)))))
+		    (zodiac:interface:internal-error id
+		      "Given in check-for-keyword")))))
 	  (when (keyword-name? real-id)
 	    (zodiac:interface:static-error id "Invalid use of keyword")))))
 
@@ -59,6 +60,7 @@
 	    (zodiac:id-var expr)]
 
 	  [(zodiac:top-level-varref? expr)
+	    (check-for-keyword expr)
 	    (wrap expr (zodiac:id-var expr))]
 	 
 	  [(zodiac:app? expr)
@@ -90,6 +92,7 @@
 		 ,(annotate (zodiac:lambda-form-body expr))))]
 	 
 	  [(zodiac:set!-form? expr)
+	    (check-for-keyword (zodiac:set!-form-var expr))
 	    (let ([g (gensym "set!")])
 	      `(#%let ([,g ,(annotate (zodiac:set!-form-val expr))])
 		 ,(wrap expr 
@@ -107,6 +110,7 @@
 	       ,(annotate (zodiac:begin-form-rest expr)))]
 	 
 	  [(zodiac:letrec-form? expr)
+	    (map check-for-keyword (zodiac:letrec-form-vars expr))
 	    (let ([bindings
 		    (map (lambda (var val)
 			   `(,(zodiac:bound-var var) ,(annotate val)))
@@ -116,6 +120,7 @@
 		 ,(annotate (zodiac:letrec-form-body expr))))]
 	 
 	  [(zodiac:define-form? expr)
+	    (check-for-keyword (zodiac:define-form-var expr))
 	    `(#%define ,(zodiac:id-var (zodiac:define-form-var expr))
 	       ,(annotate (zodiac:define-form-val expr)))]
 

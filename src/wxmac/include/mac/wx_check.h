@@ -119,7 +119,7 @@ protected:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	virtual void Paint(void);
 	virtual void ShowAsActive(Bool flag);
-	virtual void OnEvent(wxMouseEvent& event); // mac platform only
+	virtual void OnEvent(wxMouseEvent *event); // mac platform only
 };
 
 #endif // IN_CPROTO

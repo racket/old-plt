@@ -46,7 +46,7 @@ public:
 	virtual void SetButtonColour(wxColour* col);
 	virtual void ChangeColour(void);
 
-	virtual void OnChar(wxKeyEvent& event); // mac platform only
+	virtual void OnChar(wxKeyEvent *event); // mac platform only
 };
 
 char *wxItemStripLabel(char *label);

@@ -90,7 +90,7 @@ public:
 	virtual void DoShow(Bool show);
 
 	virtual void ShowAsActive(Bool flag);
-	virtual void OnEvent(wxMouseEvent& event); // mac platform only
+	virtual void OnEvent(wxMouseEvent *event); // mac platform only
 	virtual void TrackAction(short part); // mac platform only
 
 	virtual void SetScrollData // adjust scrollBar to match scroll data setting

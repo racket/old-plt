@@ -120,8 +120,8 @@ class wxListBox: public wxbListBox
   
   // For the mac:
   virtual void Paint(void);
-  virtual void OnEvent(wxMouseEvent& event);
-  virtual void OnChar(wxKeyEvent& event); // mflatt
+  virtual void OnEvent(wxMouseEvent *event);
+  virtual void OnChar(wxKeyEvent *event); // mflatt
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
 
   char *GetLabel(void);

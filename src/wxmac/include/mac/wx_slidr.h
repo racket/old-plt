@@ -54,7 +54,7 @@ public:
   void SetButtonColour(wxColour*col) ;
   // For the mac:
   virtual void Paint(void);
-  virtual void OnEvent(wxMouseEvent& event);
+  virtual void OnEvent(wxMouseEvent *event);
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
   
   virtual void DoShow(Bool s);

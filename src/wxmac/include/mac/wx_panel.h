@@ -123,7 +123,7 @@ public:
 	void ChangeColour(void);
 	void DoShow(Bool show);
 	void Paint(void);
-	virtual void OnChar(wxKeyEvent& event); // mac platform only
+	virtual void OnChar(wxKeyEvent *event); // mac platform only
 
  	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  	// Tree methods

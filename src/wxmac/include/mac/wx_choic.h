@@ -80,7 +80,7 @@ class wxChoice: public wxbChoice
 	virtual void DoShow(Bool show);
 
 	virtual void ShowAsActive(Bool flag); // mac platform only
-	virtual void OnEvent(wxMouseEvent& event); // mac platform only
+	virtual void OnEvent(wxMouseEvent *event); // mac platform only
 	void DrawChoice(Bool flag);
 	void ReCalcRect(void);
 };

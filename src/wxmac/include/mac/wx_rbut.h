@@ -100,7 +100,7 @@ public:
 	virtual void DoShow(Bool show);
 
 	virtual void ShowAsActive(Bool flag);
-	virtual void OnEvent(wxMouseEvent& event); // mac platform only
+	virtual void OnEvent(wxMouseEvent *event); // mac platform only
 
 	virtual void Highlight(Bool flag);
 };

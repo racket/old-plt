@@ -265,6 +265,7 @@ typedef struct Scheme_Vector {
 #define SCHEME_MUTABLE_BOXP(obj)  (SCHEME_BOXP(obj) && SCHEME_MUTABLEP(obj))
 #define SCHEME_IMMUTABLE_BOXP(obj)  (SCHEME_BOXP(obj) && SCHEME_IMMUTABLEP(obj))
 
+#define SCHEME_BUCKTP(obj) SAME_TYPE(SCHEME_TYPE(obj),scheme_bucket_table_type)
 #define SCHEME_HASHTP(obj) SAME_TYPE(SCHEME_TYPE(obj),scheme_hash_table_type)
 
 #define SCHEME_VECTORP(obj)  SAME_TYPE(SCHEME_TYPE(obj), scheme_vector_type)
@@ -461,6 +462,21 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 /*                      hash tables and environments                      */
 /*========================================================================*/
 
+typedef struct Scheme_Hash_Table
+{
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  int size, count, step;
+  Scheme_Object **keys;
+  Scheme_Object **vals;
+  void (*make_hash_indices)(void *v, long *h1, long *h2);
+  int (*compare)(void *v1, void *v2);
+#ifdef MZ_REAL_THREADS
+  void *mutex;
+#endif
+} Scheme_Hash_Table;
+
+
 typedef struct Scheme_Bucket
 {
   Scheme_Type type;
@@ -469,19 +485,17 @@ typedef struct Scheme_Bucket
   char *key;
 } Scheme_Bucket;
 
-typedef struct Scheme_Hash_Table
+typedef struct Scheme_Bucket_Table
 {
   Scheme_Type type;
   MZ_HASH_KEY_EX
   int size, count, step;
   Scheme_Bucket **buckets;
   char weak, with_home;
-  void (*make_hash_indices)(void *v, long *h1, long *h2);
-  int (*compare)(void *v1, void *v2);
 #ifdef MZ_REAL_THREADS
   void *mutex;
 #endif
-} Scheme_Hash_Table;
+} Scheme_Bucket_Table;
 
 /* Hash tablekey types, used with scheme_hash_table */
 enum {
@@ -786,7 +800,7 @@ enum {
 typedef struct Scheme_Config {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  Scheme_Hash_Table *extensions;
+  Scheme_Bucket_Table *extensions;
   Scheme_Object *configs[1];
 } Scheme_Config;
 

@@ -1,6 +1,7 @@
 
 (module slatex mzscheme
-  (require (lib "file.ss"))
+  (require (lib "file.ss")
+	   (lib "process.ss"))
 
   (provide slatex)
 
@@ -20,23 +21,23 @@
 
 	 ;; boy, wouldn't it be great if the "actv" appleevent worked for OTEX?
 	 ;;(send-event "OTEX" "misc" "acvt")
-	 (let ([build-oztex-locations
-                (list
-                 (lambda (x)
-                   (build-path x
-                               "Applications"
-                               "OzTeX"
-                               "OzTeX"))
-                 (lambda (x)
-                   (build-path x
-                               "Applications (Mac OS 9)"
-                               "OzTeX"
-                               "OzTeX")))]
-               [oztex-locations
-                (apply
-                 append
-                 (map (lambda (f) (map f (filesystem-root-list))) build-oztex-locations))]
-               [oztex-location (ormap (lambda (x) (if (file-exists? x) x #f)) oztex-locations)])
+	 (let* ([build-oztex-locations
+		 (list
+		  (lambda (x)
+		    (build-path x
+				"Applications"
+				"OzTeX"
+				"OzTeX"))
+		  (lambda (x)
+		    (build-path x
+				"Applications (Mac OS 9)"
+				"OzTeX"
+				"OzTeX")))]
+		[oztex-locations
+		 (apply
+		  append
+		  (map (lambda (f) (map f (filesystem-root-list))) build-oztex-locations))]
+		[oztex-location (ormap (lambda (x) (if (file-exists? x) x #f)) oztex-locations)])
            (when oztex-location
 	     (with-handlers ([void void]) ;; mzscheme cannot handle result
 	       (send-event "MACS" "aevt" "odoc" (vector 'file oztex-location)))))

@@ -81,11 +81,12 @@ enum {
   scheme_random_state_type,
   scheme_regexp_type,
   scheme_bucket_type,
+  scheme_bucket_table_type, /* 70 */
+  scheme_subprocess_type,
 
   /* These reserved types will let us add types
      without forcing recompilation of compiled MzScheme code */
-  scheme_reserved_2_type,  /* 70 */
-  scheme_reserved_3_type,
+  /* (all reserved types used up! */
 
   /* more internal types: */
   scheme_compilation_top_type,

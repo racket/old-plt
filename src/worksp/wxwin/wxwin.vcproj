@@ -239,6 +239,9 @@
 				RelativePath="..\..\Wxwindow\Src\Msw\wx_gbox.cxx">
 			</File>
 			<File
+				RelativePath="..\..\wxwindow\src\msw\wx_graph_glue.cxx">
+			</File>
+			<File
 				RelativePath="..\..\Wxwindow\Src\Msw\wx_pdf.cxx">
 			</File>
 			<File

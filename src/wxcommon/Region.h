@@ -39,6 +39,10 @@ class wxRegion : public wxObject
   int npaths;
   CGMutablePathRef *paths;
 # endif
+# ifdef wx_msw
+  int npaths;
+  Gdiplus::GraphicsPath **paths;
+# endif
 #endif
   wxDC *dc;
   wxPSRgn *ps;

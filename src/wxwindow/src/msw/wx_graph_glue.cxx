@@ -17,6 +17,9 @@ typedef void (*p_wxGShutdown)();
 typedef Graphics *(*p_wxGMake)(HDC dc);
 typedef void (*p_wxGRelease)(Graphics *g);
 
+typedef void (*p_wxGResetClip)(Graphics *g);
+typedef void (*p_wxGSetClip)(Graphics *g, GraphicsPath *gp, CombineMode m);
+
 typedef GraphicsState (*p_wxGSave)(Graphics *g);
 typedef void (*p_wxGRestore)(Graphics *g, GraphicsState s);
 
@@ -44,13 +47,20 @@ typedef GraphicsPath *(*p_wxGPathNew)(FillMode m);
 typedef void (*p_wxGPathRelease)(GraphicsPath *gp);
 
 typedef void (*p_wxGPathAddArc)(GraphicsPath *gp, double x, double y, double w, double h, double start, double span);
+typedef void (*p_wxGPathAddPie)(GraphicsPath *gp, double x, double y, double w, double h, double start, double span);
 typedef void (*p_wxGPathAddLine)(GraphicsPath *gp, double x1, double y1, double x2, double y2);
 typedef void (*p_wxGPathCloseFigure)(GraphicsPath *gp);
+typedef void (*p_wxGPathTransform)(GraphicsPath *gp, Matrix *m);
+
+typedef Matrix *(*p_wxGMatrixNew)();
+typedef void (*p_wxGMatrixRelease)(Matrix *m);
+typedef void (*p_wxGMatrixTranslate)(Matrix *m, double x, double y);
+typedef void (*p_wxGMatrixScale)(Matrix *m, double x, double y);
 
 typedef Brush *(*p_wxGBrushNew)(COLORREF c);
 typedef void (*p_wxGBrushRelease)(Brush *b);
 
-typedef Pen *(*p_wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join);
+typedef Pen *(*p_wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join, int ndash, REAL *dashes, REAL offset);
 typedef void (*p_wxGPenRelease)(Pen *b);
 
 /* ********************************************************************** */
@@ -62,6 +72,9 @@ p_wxGShutdown wxGShutdown;
 
 p_wxGMake wxGMake;
 p_wxGRelease wxGRelease;
+
+p_wxGResetClip wxGResetClip;
+p_wxGSetClip wxGSetClip;
 
 p_wxGSave wxGSave;
 p_wxGRestore wxGRestore;
@@ -90,8 +103,15 @@ p_wxGPathNew wxGPathNew;
 p_wxGPathRelease wxGPathRelease;
 
 p_wxGPathAddArc wxGPathAddArc;
+p_wxGPathAddPie wxGPathAddPie;
 p_wxGPathAddLine wxGPathAddLine;
 p_wxGPathCloseFigure wxGPathCloseFigure;
+p_wxGPathTransform wxGPathTransform;
+
+p_wxGMatrixNew wxGMatrixNew;
+p_wxGMatrixRelease wxGMatrixRelease;
+p_wxGMatrixTranslate wxGMatrixTranslate;
+p_wxGMatrixScale wxGMatrixScale;
 
 p_wxGBrushNew wxGBrushNew;
 p_wxGBrushRelease wxGBrushRelease;
@@ -110,6 +130,9 @@ static void GetProcs(HMODULE m)
 
   wxGMake = (p_wxGMake)GetProcAddress(m, "wxGMake");
   wxGRelease = (p_wxGRelease)GetProcAddress(m, "wxGRelease");
+
+  wxGResetClip = (p_wxGResetClip)GetProcAddress(m, "wxGResetClip");
+  wxGSetClip = (p_wxGSetClip)GetProcAddress(m, "wxGSetClip");
 
   wxGSave = (p_wxGSave)GetProcAddress(m, "wxGSave");
   wxGRestore = (p_wxGRestore)GetProcAddress(m, "wxGRestore");
@@ -138,8 +161,15 @@ static void GetProcs(HMODULE m)
   wxGPathRelease = (p_wxGPathRelease)GetProcAddress(m, "wxGPathRelease");
 
   wxGPathAddArc = (p_wxGPathAddArc)GetProcAddress(m, "wxGPathAddArc");
+  wxGPathAddPie = (p_wxGPathAddPie)GetProcAddress(m, "wxGPathAddPie");
   wxGPathAddLine = (p_wxGPathAddLine)GetProcAddress(m, "wxGPathAddLine");
   wxGPathCloseFigure = (p_wxGPathCloseFigure)GetProcAddress(m, "wxGPathCloseFigure");
+  wxGPathTransform = (p_wxGPathTransform)GetProcAddress(m, "wxGPathTransform");
+
+  wxGMatrixNew = (p_wxGMatrixNew)GetProcAddress(m, "wxGMatrixNew");
+  wxGMatrixRelease = (p_wxGMatrixRelease)GetProcAddress(m, "wxGMatrixRelease");
+  wxGMatrixTranslate = (p_wxGMatrixTranslate)GetProcAddress(m, "wxGMatrixTranslate");
+  wxGMatrixScale = (p_wxGMatrixScale)GetProcAddress(m, "wxGMatrixScale");
 
   wxGBrushNew = (p_wxGBrushNew)GetProcAddress(m, "wxGBrushNew");
   wxGBrushRelease = (p_wxGBrushRelease)GetProcAddress(m, "wxGBrushRelease");

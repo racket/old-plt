@@ -479,6 +479,7 @@ wxPen::wxPen(wxColour *col, double Width, int Style)
   old_dash  = NULL;
   old_color  = 0;
   old_stipple = NULL;
+  g_p = NULL;
 
   ChangePen();
 }
@@ -509,6 +510,7 @@ wxPen::wxPen(const char *col, double Width, int Style)
   old_dash  = NULL;
   old_color  = 0;
   old_stipple = NULL;
+  g_p = NULL;
     
   ChangePen();
 }
@@ -516,13 +518,51 @@ wxPen::wxPen(const char *col, double Width, int Style)
 static LineCap graphics_caps[] = { LineCapRound, LineCapSquare, LineCapFlat };
 static LineJoin graphics_joins[] = { LineJoinBevel, LineJoinMiter, LineJoinRound };
 
+static REAL gp_dotted[] = {2, 5, /* offset */ 2};
+static REAL gp_short_dashed[] = {4, 4, /* offset */ 2};
+static REAL gp_long_dashed[] = {4, 8, /* offset */ 2};
+static REAL gp_dotted_dashed[] = {6, 6, 2, 6, /* offset */ 4};
+
 Pen *wxPen::GraphicsPen()
 {
   if (!g_p) {
     Pen *p;
+    REAL offset, *dashes;
+    int ndash;
+    
+    switch (style) {
+    case wxDOT:
+      dashes = gp_dotted;
+      ndash = (sizeof(gp_dotted) / sizeof(REAL)) - 1;
+      break;
+    case wxSHORT_DASH:
+      dashes = gp_short_dashed;
+      ndash = (sizeof(gp_short_dashed) / sizeof(REAL)) - 1;
+      break;
+    case wxLONG_DASH:
+      dashes = gp_long_dashed;
+      ndash = (sizeof(gp_long_dashed) / sizeof(REAL)) - 1;
+      break;
+    case wxDOT_DASH:
+      dashes = gp_dotted_dashed;
+      ndash = (sizeof(gp_dotted_dashed) / sizeof(REAL)) - 1;
+      break;
+    case wxSOLID:
+    case wxTRANSPARENT:
+    default:
+      dashes = NULL;
+      ndash = 0;
+      break;
+    }
+    if (ndash)
+      offset = dashes[ndash];
+    else
+      offset = 0;
+    
     p = wxGPenNew(colour->pixel, width, 
 		  graphics_caps[cap - wxCAP_ROUND],
-		  graphics_joins[cap - wxJOIN_BEVEL]);
+		  graphics_joins[join - wxJOIN_BEVEL],
+		  ndash, dashes, offset);
     g_p = p;
   }
   return g_p;

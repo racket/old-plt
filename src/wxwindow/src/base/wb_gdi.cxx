@@ -12,6 +12,8 @@
 
 #include "wx.h"
 
+#include "wx_graphics.h"
+
 #include "../../../wxcommon/Region.h"
 
 #include <stdio.h>

@@ -15,9 +15,19 @@ typedef struct {
   CGMutablePathRef *paths;
   int npaths, apaths;
 } PathTarget;
-# define CGCG ((PathTarget *)target)->path
 # define CGPATH ((PathTarget *)target)->path
 # define CGXFORM (&((PathTarget *)target)->xform)
+# define PathTargetPath_t CGMutablePathRef
+#endif
+
+#ifdef wx_msw
+typedef struct {
+  GraphicsPath *path;
+  GraphicsPath **paths;
+  int npaths, apaths;
+} PathTarget;
+# define GP ((PathTarget *)target)->path
+# define PathTargetPath_t GraphicsPath*
 #endif
 
 wxRegion::wxRegion(wxDC *_dc, wxRegion *r, Bool _no_prgn)
@@ -84,11 +94,16 @@ void wxRegion::Cleanup()
 #ifdef WX_USE_PATH_RGN
   if (!no_prgn) {
     prgn = NULL;
-# ifdef wx_mac
+# if defined(wx_mac) || defined(wx_msw)
     if (paths) {
       int i;
       for (i = 0; i < npaths; i++) {
+#  ifdef wx_mac
 	CGPathRelease(paths[i]);
+#  endif
+#  ifdef wx_msw
+	wxGPathRelease(paths[i]);
+#  endif
       }
       paths = NULL;
     }
@@ -885,6 +900,29 @@ void wxRegion::Install(long target)
     
     target = (long)t;
 #endif
+#ifdef wx_msw
+    Graphics *g = (Graphics *)target;
+    GraphicsPath *gp;
+    PathTarget *t;
+	int i;
+
+    if (paths) {
+      wxGSetClip(g, paths[0], CombineModeReplace);
+      for (i = 1; i < npaths; i++) {
+	wxGSetClip(g, paths[i], CombineModeIntersect);
+      }
+      return;
+    }
+    
+    gp = wxGPathNew(FillModeWinding);
+
+    t = (PathTarget *)malloc(sizeof(PathTarget));
+    t->path = gp;
+    t->npaths = 0;
+    t->apaths = 0;
+
+    target = (long)t;
+#endif
 
     prgn->Install(target, 0);
 
@@ -894,21 +932,37 @@ void wxRegion::Install(long target)
     cairo_set_matrix(CAIRO_DEV, m);
     cairo_matrix_destroy(m);
 #endif
-#ifdef wx_mac
+#if defined(wx_mac) || defined(wx_msw)
     npaths = t->npaths + 1;
-    paths = new WXGC_ATOMIC CGMutablePathRef[npaths];
+    paths = new WXGC_ATOMIC PathTargetPath_t[npaths];
     for (i = 0; i < npaths - 1; i++) {
       paths[i] = t->paths[i];
     }
     paths[npaths - 1] = t->path;
 
     free(t);
-
+# ifdef wx_mac
     for (i = 0; i < npaths; i++) {
       CGContextBeginPath(cg);
       CGContextAddPath(cg, paths[i]);
       CGContextClip(cg);
     }
+# endif
+# ifdef wx_msw
+    {
+      Matrix *m;
+      m = wxGMatrixNew();
+      wxGMatrixTranslate(m, geometry ? geometry[0] : 0, geometry ? geometry[1] : 0);
+      wxGMatrixScale(m, geometry ? geometry[2] : 1, geometry ? geometry[3] : 1);
+      wxGPathTransform(paths[0], m);
+      wxGSetClip(g, paths[0], CombineModeReplace);
+      for (i = 1; i < npaths; i++) {
+	wxGPathTransform(paths[i], m);
+	wxGSetClip(g, paths[i], CombineModeIntersect);
+      }
+      wxGMatrixRelease(m);
+    }
+# endif
 #endif
   }
 }
@@ -1129,6 +1183,18 @@ void wxRectanglePathRgn::Install(long target, Bool reverse)
   }
   CGPathCloseSubpath(CGPATH);
 #endif
+#ifdef wx_msw
+  if (reverse) {
+    wxGPathAddLine(GP, x, y, x, y + height);
+    wxGPathAddLine(GP, x, y + height, x + width, y + height);
+    wxGPathAddLine(GP, x + width, y + height, x + width, y);
+  } else {
+    wxGPathAddLine(GP, x, y, x + width, y);
+    wxGPathAddLine(GP, x + width, y, x + width, y + height);
+    wxGPathAddLine(GP, x + width, y + height, x, y + height);
+  }
+  wxGPathCloseFigure(GP);
+#endif
 }
 
 wxRoundedRectanglePathRgn::wxRoundedRectanglePathRgn(double _x, double _y, double _width, double _height, double _radius)
@@ -1198,6 +1264,26 @@ void wxRoundedRectanglePathRgn::Install(long target, Bool reverse)
   }
   CGPathCloseSubpath(CGPATH);
 #endif
+#ifdef wx_msw
+  if (reverse) {
+    wxGPathAddArc(GP, x, y, radius * 2, radius * 2, 270, -90);
+    wxGPathAddLine(GP, x, y + radius, x, y + height - radius);
+    wxGPathAddArc(GP, x, y + height - 2 * radius, 2 * radius, 2 * radius, 180, -90);
+    wxGPathAddLine(GP, x + radius, y + height, x + width - radius, y + height);
+    wxGPathAddArc(GP, x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius, 90, -90);
+    wxGPathAddLine(GP, x + width, y + height - radius, x + width, y + radius);
+    wxGPathAddArc(GP, x + width - 2 * radius, y, radius * 2, radius * 2, 360, -90);
+  } else {
+    wxGPathAddArc(GP, x, y, radius * 2, radius * 2, 180, 90);
+    wxGPathAddLine(GP, x + radius, y, x + width - radius, y);
+    wxGPathAddArc(GP, x + width - 2 * radius, y, radius * 2, radius * 2, 270, 90);
+    wxGPathAddLine(GP, x + width, y + radius, x + width, y + height - radius);
+    wxGPathAddArc(GP, x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius, 0, 90);
+    wxGPathAddLine(GP, x + width - radius, y + height, x + radius, y + height);
+    wxGPathAddArc(GP, x, y + height - 2 * radius, 2 * radius, 2 * radius, 90, 90);
+  }
+  wxGPathCloseFigure(GP);
+#endif
 }
 
 wxPolygonPathRgn::wxPolygonPathRgn(int _n, wxPoint _points[], double _xoffset, double _yoffset, int _fillStyle)
@@ -1241,6 +1327,23 @@ void wxPolygonPathRgn::Install(long target, Bool reverse)
   }
   CGPathCloseSubpath(CGPATH);
 #endif
+#ifdef wx_msw
+  int i;
+  if (reverse) {
+    for (i = n - 1; i--; ) {
+      wxGPathAddLine(GP,
+		     points[i+1].x + xoffset, points[i+1].y + yoffset,
+		     points[i].x + xoffset, points[i].y + yoffset);
+    }
+  } else {
+    for (i = 0; i < n - 1; i++) {
+      wxGPathAddLine(GP,
+		     points[i].x + xoffset, points[i].y + yoffset,
+		     points[i+1].x + xoffset, points[i+1].y + yoffset);
+    }
+  }
+  wxGPathCloseFigure(GP);
+#endif
 }
 
 wxArcPathRgn::wxArcPathRgn(double _x, double _y, double _w, double _h, double _start, double _end)
@@ -1283,6 +1386,32 @@ void wxArcPathRgn::Install(long target, Bool reverse)
     CGPathAddArc(CGPATH, &xform, 0.5, 0.5, 0.5, (2 * wxPI) - start, (2 * wxPI) - end, TRUE);
   CGPathCloseSubpath(CGPATH);
 #endif
+#ifdef wx_msw
+  double init, span;
+  if ((start == 0.0) && (end == 2 * wxPI)) {
+    if (reverse) {
+      wxGPathAddArc(GP, x, y, w, h, 360.0, -360.0);
+    } else {
+      wxGPathAddArc(GP, x, y, w, h, 0.0, 360.0);
+    }
+  } else {
+    init = (2 * wxPI - start) * 180 / wxPI;
+    init = fmod(init, 360.0);
+    if (init < 0.0)
+      init += 360.0;
+    
+    span = (start - end) * 180 / wxPI;
+    span = fmod(span, 360.0);
+    if (span > 0)
+      span -= 360.0;
+    if (reverse) {
+      wxGPathAddPie(GP, x, y, w, h, init + span, -span);
+    } else {
+      wxGPathAddPie(GP, x, y, w, h, init, span);
+    }
+  }
+  wxGPathCloseFigure(GP);
+#endif
 }
 
 wxUnionPathRgn::wxUnionPathRgn(wxPathRgn *_f, wxPathRgn *_s)
@@ -1314,17 +1443,17 @@ void wxIntersectPathRgn::Install(long target, Bool reverse)
   cairo_clip(CAIRO_DEV);
   cairo_new_path(CAIRO_DEV);
 #endif
-#ifdef wx_mac
+#if defined(wx_mac) || defined(wx_msw)
   {
     PathTarget *t = (PathTarget *)target;
-    CGMutablePathRef path;
+    PathTargetPath_t path;
     int i;
 
     if (t->npaths + 1 >= t->apaths) {
-      CGMutablePathRef *naya;
+      PathTargetPath_t *naya;
       int n = (t->apaths + 5) * 2;
       
-      naya = new WXGC_ATOMIC CGMutablePathRef[n];
+      naya = new WXGC_ATOMIC PathTargetPath_t[n];
       for (i = 0; i < t->npaths; i++) {
 	naya[i] = t->paths[i];
       }
@@ -1333,7 +1462,12 @@ void wxIntersectPathRgn::Install(long target, Bool reverse)
       t->apaths = n;
     }
     t->paths[t->npaths++] = t->path;
+# ifdef wx_mac
     path = CGPathCreateMutable();
+# endif
+# ifdef wx_msw
+    path = wxGPathNew(FillModeWinding);
+# endif
     t->path = path;
   }
 #endif

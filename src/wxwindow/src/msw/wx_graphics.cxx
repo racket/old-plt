@@ -11,7 +11,11 @@
 
 Graphics *wxGMake(HDC dc)
 {
-  return new Graphics(dc);
+  Graphics *g;
+  g = new Graphics(dc);
+  g->SetSmoothingMode(SmoothingModeHighQuality);
+  g->SetPixelOffsetMode(PixelOffsetModeHalf);
+  return g;
 }
 
 void wxGRelease(Graphics *g)
@@ -27,6 +31,16 @@ GraphicsState wxGSave(Graphics *g)
 void wxGRestore(Graphics *g, GraphicsState s)
 {
   g->Restore(s);
+}
+
+void wxGResetClip(Graphics *g)
+{
+  g->ResetClip();
+}
+
+void wxGSetClip(Graphics *g, GraphicsPath *gp, CombineMode m)
+{
+  g->SetClip(gp, m);
 }
 
 void wxGResetTransform(Graphics *g)
@@ -56,7 +70,7 @@ void wxGDrawLines(Graphics *g, Pen *p, PointF *pts, int n)
 
 void wxGFillRectangleColor(Graphics *g, COLORREF c, double x, double y, double w, double h)
 {
-  Color col(c);
+  Color col(255, GetRValue(c), GetGValue(c), GetBValue(c));
   SolidBrush b(col);
   g->FillRectangle(&b, (REAL)x, (REAL)y, (REAL)w, (REAL)h);
 }
@@ -116,6 +130,11 @@ void wxGPathAddArc(GraphicsPath *gp, double x, double y, double w, double h, dou
   gp->AddArc((REAL)x, (REAL)y, (REAL)w, (REAL)h, start, span);
 }
 
+void wxGPathAddPie(GraphicsPath *gp, double x, double y, double w, double h, double start, double span)
+{
+  gp->AddPie((REAL)x, (REAL)y, (REAL)w, (REAL)h, start, span);
+}
+
 void wxGPathAddLine(GraphicsPath *gp, double x1, double y1, double x2, double y2)
 {
   gp->AddLine((REAL)x1, (REAL)y1, (REAL)x2, (REAL)y2);
@@ -126,10 +145,34 @@ void wxGPathCloseFigure(GraphicsPath *gp)
   gp->CloseFigure();
 }
 
+void wxGPathTransform(GraphicsPath *gp, Matrix *m)
+{
+  gp->Transform(m);
+}
+
+Matrix *wxGMatrixNew()
+{
+  return new Matrix();
+}
+
+void wxGMatrixRelease(Matrix *m)
+{
+  delete m;
+}
+
+void wxGMatrixTranslate(Matrix *m, double x, double y)
+{
+  m->Translate((REAL)x, (REAL)y);
+}
+
+void wxGMatrixScale(Matrix *m, double x, double y)
+{
+  m->Scale((REAL)x, (REAL)y);
+}
 
 Brush *wxGBrushNew(COLORREF c)
 {
-  Color col(c);
+  Color col(255, GetRValue(c), GetGValue(c), GetBValue(c));
   return new SolidBrush(col);
 }
 
@@ -138,13 +181,15 @@ void wxGBrushRelease(Brush *b)
   delete b;
 }
 
-Pen *wxGPenNew(COLORREF c, double pw, LineCap cap, LineJoin join)
+Pen *wxGPenNew(COLORREF c, double pw, LineCap cap, LineJoin join, int ndash, REAL *dashes, REAL offset)
 {
   Pen *p;
-  Color col(c);
+  Color col(255, GetRValue(c), GetGValue(c), GetBValue(c));
   p = new Pen(col, pw);
   p->SetEndCap(cap);
   p->SetLineJoin(join);
+  p->SetDashOffset(offset);
+  p->SetDashPattern(dashes, ndash);
 
   return p;
 }

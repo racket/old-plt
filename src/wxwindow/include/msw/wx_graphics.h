@@ -19,6 +19,9 @@ WX_GRAPHICS_EXPORT void WX_GPROC(wxGRelease)(Graphics *g);
 WX_GRAPHICS_EXPORT GraphicsState WX_GPROC(wxGSave)(Graphics *g);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGRestore)(Graphics *g, GraphicsState s);
 
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGResetClip)(Graphics *g);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGSetClip)(Graphics *g, GraphicsPath *gp, CombineMode m);
+
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGResetTransform)(Graphics *g);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGTranslate)(Graphics *g, double x, double y);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGScale)(Graphics *g, double x, double y);
@@ -43,11 +46,19 @@ WX_GRAPHICS_EXPORT GraphicsPath *WX_GPROC(wxGPathNew)(FillMode m);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathRelease)(GraphicsPath *gp);
 
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddArc)(GraphicsPath *gp, double x, double y, double w, double h, double start, double span);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddPie)(GraphicsPath *gp, double x, double y, double w, double h, double start, double span);
+
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddLine)(GraphicsPath *gp, double x1, double y1, double x2, double y2);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathCloseFigure)(GraphicsPath *gp);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathTransform)(GraphicsPath *gp, Matrix *m);
+
+WX_GRAPHICS_EXPORT Matrix *WX_GPROC(wxGMatrixNew)();
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGMatrixRelease)(Matrix *m);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGMatrixTranslate)(Matrix *m, double x, double y);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGMatrixScale)(Matrix *m, double x, double y);
 
 WX_GRAPHICS_EXPORT Brush *WX_GPROC(wxGBrushNew)(COLORREF c);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGBrushRelease)(Brush *b);
 
-WX_GRAPHICS_EXPORT Pen *WX_GPROC(wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join);
+WX_GRAPHICS_EXPORT Pen *WX_GPROC(wxGPenNew)(COLORREF c, double pw, LineCap cap, LineJoin join, int ndash, REAL *dashes, REAL offset);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPenRelease)(Pen *b);

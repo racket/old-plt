@@ -151,7 +151,6 @@ class wxbDC: public wxObject
   inline virtual Bool Ok(void) {return ok;};
   virtual Bool CanGetTextExtent(void) = 0;
   virtual Bool CanDrawBitmap(void) = 0;
-  virtual void SetMapMode(int mode) = 0;
   inline virtual int  GetMapMode(void) {return mapping_mode;};
 
   // The following methods provide a cleaner interface

@@ -128,7 +128,7 @@ class wxDC: public wxbDC
   void EndDoc(void);
   void StartPage(void);
   void EndPage(void);
-  void SetMapMode(int mode);
+  void SetMapMode(int mode, HDC dc = 0);
   void SetUserScale(double x, double y);
   void SetSystemScale(double x, double y);
   void SetLogicalOrigin(double x, double y);
@@ -172,7 +172,9 @@ class wxDC: public wxbDC
   virtual wxGL *GetGL();
 
   void InitGraphics(HDC dc);
-  void ReleaseGraphics();
+  void ReleaseGraphics(HDC given_dc = 0);
+
+  void SetAntiAlias(Bool v);
 };
 
 // This class specific to Windows 3.1

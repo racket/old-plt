@@ -46,9 +46,9 @@ public class Canvas implements ICanvas {
      // call on keystroke event 
      public native Canvas onKeyEvent(String ke); 
 
-     // call on every tick
+     // end time 
      public native boolean endOfTime();
 
-     // call on every tick
+     // last world created 
      public native Canvas lastWorld();
 }    

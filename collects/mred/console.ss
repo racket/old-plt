@@ -426,7 +426,9 @@
 	      [this-result (make-output-port this-result-write generic-close)]
 	      [pretty-print-out
 	       (lambda (v)
-		 (mzlib:pretty-print:pretty-print v this-result))]
+		 (with-parameterization user-parameterization
+		   (lambda ()
+		     (mzlib:pretty-print:pretty-print v this-result))))]
 	      [display-result
 	       (lambda (v)
 		 (cond

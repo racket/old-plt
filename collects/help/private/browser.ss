@@ -101,7 +101,9 @@
     (let* ([mk-browser (hd-cookie->browser hd-cookie)]
 	   [browser-frame-maybe (send-help-desk-url mk-browser url)])
       (when (is-a? browser-frame-maybe frame%)
-	    (let ([browser-panel (send browser-frame-maybe get-hyper-panel)])
+	    (let* ([browser-panel (send browser-frame-maybe get-hyper-panel)]
+		   [browser-frame (send browser-panel get-parent)])
+	      (send browser-frame set-label "PLT Help Desk")
 	      (send browser-panel set-init-page 
 		    (format home-page-format
 			    (hd-cookie->port hd-cookie)))))))

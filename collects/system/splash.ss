@@ -13,12 +13,20 @@
 	    (lambda (name value)
 	      (wx:write-resource "mred" name value (wx:find-path 'setup-file)))]
 	   [(filename) (info 'splash-image-path)]
+	   [(_)
+	    (begin
+	      (unless filename
+		(no-splash))
+	      (unless (file-exists? filename)
+		(fprintf (current-error-port) "WARNING: bitmap path ~s not found~n" filename)
+		(no-splash)))]
+
 	   [(title) (info 'name)]
 
 	   [(splash-width-resource) "splash-max-width"]
 	   [(splash-depth-resource) "splash-max-depth"]
-	   [(splash-max-width) (get-resource splash-width-resource 100)]
-	   [(splash-max-depth) (get-resource splash-depth-resource 4)]
+	   [(splash-max-width) (get-resource splash-width-resource (info 'splash-max))]
+	   [(splash-max-depth) (get-resource splash-depth-resource (info 'splash-depth)]
 	   
 	   [(splash-sofar-depth) 0]
 	   [(splash-current-width) 0]
@@ -40,13 +48,6 @@
 
 	   [(frame) (parameterize ([wx:current-eventspace (wx:make-eventspace)])
 		      (make-object wx:dialog-box% '() title))]
-	   [(_)
-	    (begin
-	      (unless filename
-		(no-splash))
-	      (unless (file-exists? filename)
-		(fprintf (current-error-port) "WARNING: bitmap path ~s not found~n" filename)
-		(no-splash)))]
 	   [(bitmap-flag)
 	    (let ([len (string-length filename)])
 	      (if (<= len 4)

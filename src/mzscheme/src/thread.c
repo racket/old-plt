@@ -4510,6 +4510,15 @@ static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target,
       }
 
       waitable_set->argc += (wts->argc - 1);
+
+      /* scheme_channel_waiter_type needs to know its location, which
+	 might have changed: */
+      for (i = waitable_set->argc; i--; ) {
+	if (SAME_TYPE(SCHEME_TYPE(argv[i]), scheme_channel_waiter_type)) {
+	  ((Scheme_Channel_Waiter *)argv[i])->waiting_i = i;
+	}
+      }
+
     }
   } else {
     Waitable *ww;
@@ -4569,12 +4578,9 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
     w = waitable_set->ws[i];
     ready = w->ready;
 
-    if (SCHEME_CHANNELP(o) || SCHEME_CHANNEL_PUTP(o)) {
-      /* In case we're not in line, yet: */
-      scheme_get_into_line(o, waiting, i);
-      /* We don't bother getting out of line, because someone
-	 else will clean up if the channel is used more */
-    } else if (!SCHEME_SEMAP(o))
+    if (!SCHEME_SEMAP(o)
+	&& !SCHEME_CHANNELP(o) && !SCHEME_CHANNEL_PUTP(o)
+	&& !SAME_TYPE(SCHEME_TYPE(o), scheme_channel_waiter_type))
       all_semas = 0;
 
     if (ready) {
@@ -4757,14 +4763,17 @@ Scheme_Object *scheme_make_waitable_set(int argc, Scheme_Object **argv)
 }
 
 static void post_waiting_nacks(Waiting *waiting)
+     /* Also removes channel-waiters */
 {
   int i, c;
   Scheme_Object *l;
 
-  if (waiting->nackss) {
-    c = waiting->set->argc;
-
-    for (i = 0; i < c; i++) {
+  c = waiting->set->argc;
+  
+  for (i = 0; i < c; i++) {
+    if (SAME_TYPE(SCHEME_TYPE(waiting->set->argv[i]), scheme_channel_waiter_type))
+      scheme_get_outof_line((Scheme_Channel_Waiter *)waiting->set->argv[i]);
+    if (waiting->nackss) {
       if ((i + 1) != waiting->result) {
 	l = waiting->nackss[i];
 	if (l) {

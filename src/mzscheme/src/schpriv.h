@@ -893,28 +893,29 @@ extern unsigned long scheme_stack_boundary;
 /*                         semaphores and locks                           */
 /*========================================================================*/
 
-typedef struct Scheme_Sema_Waiter {
-  MZTAG_IF_REQUIRED
+typedef struct Scheme_Channel_Waiter {
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
   Scheme_Thread *p;
   char in_line, picked;
-  struct Scheme_Sema_Waiter *prev, *next;
+  struct Scheme_Channel_Waiter *prev, *next;
   struct Waiting *waiting;
-  Scheme_Object *sema;
+  Scheme_Object *obj;
   int waiting_i;
-} Scheme_Sema_Waiter;
+} Scheme_Channel_Waiter;
 
 typedef struct Scheme_Sema {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  Scheme_Sema_Waiter *first, *last;
+  Scheme_Channel_Waiter *first, *last;
   long value;
 } Scheme_Sema;
 
 typedef struct Scheme_Channel {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  Scheme_Sema_Waiter *put_first, *put_last;
-  Scheme_Sema_Waiter *get_first, *get_last;
+  Scheme_Channel_Waiter *put_first, *put_last;
+  Scheme_Channel_Waiter *get_first, *get_last;
 } Scheme_Channel;
 
 typedef struct Scheme_Channel_Put {
@@ -956,7 +957,7 @@ typedef struct Waiting {
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting);
 Scheme_Object *scheme_make_sema_repost(Scheme_Object *sema);
 
-void scheme_get_into_line(Scheme_Object *sema, Waiting *waiting, int i);
+void scheme_get_outof_line(Scheme_Channel_Waiter *ch_w);
 
 /*========================================================================*/
 /*                                 numbers                                */

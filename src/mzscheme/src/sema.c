@@ -37,7 +37,8 @@ static Scheme_Object *channel_p(int n, Scheme_Object **p);
 static Scheme_Object *make_alarm(int n, Scheme_Object **p);
 
 static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo);
-static int channel_put_ready(Scheme_Object *ch);
+static int channel_put_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo);
+static int channel_waiter_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo);
 static int alarm_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo);
 
 static int pending_break(Scheme_Thread *p);
@@ -134,7 +135,8 @@ void scheme_init_sema(Scheme_Env *env)
   scheme_add_waitable(scheme_sema_type, sema_ready, NULL, NULL, 0);
   scheme_add_waitable_through_sema(scheme_semaphore_repost_type, sema_for_repost, NULL);
   scheme_add_waitable(scheme_channel_type, (Scheme_Ready_Fun)channel_get_ready, NULL, NULL, 1);
-  scheme_add_waitable(scheme_channel_put_type, channel_put_ready, NULL, NULL, 0);
+  scheme_add_waitable(scheme_channel_put_type, (Scheme_Ready_Fun)channel_put_ready, NULL, NULL, 0);
+  scheme_add_waitable(scheme_channel_waiter_type, (Scheme_Ready_Fun)channel_waiter_ready, NULL, NULL, 0);
   scheme_add_waitable(scheme_alarm_type, (Scheme_Ready_Fun)alarm_ready, NULL, NULL, 0);
 }
 
@@ -208,7 +210,7 @@ void scheme_post_sema(Scheme_Object *o)
     t->value = v;
 
     while (t->first) {
-      Scheme_Sema_Waiter *w;
+      Scheme_Channel_Waiter *w;
 
       w = t->first;
 
@@ -282,12 +284,12 @@ static int out_of_line(Scheme_Object *a)
 {
   Scheme_Thread *p;
   int n, i;
-  Scheme_Sema_Waiter *w;
+  Scheme_Channel_Waiter *w;
 
   /* Out of one line? */
   n = SCHEME_INT_VAL(((Scheme_Object **)a)[0]);
   for (i = 0; i < n; i++) {
-    w = (((Scheme_Sema_Waiter ***)a)[1])[i];
+    w = (((Scheme_Channel_Waiter ***)a)[1])[i];
     if (w->picked)
       return 1;
   }
@@ -311,9 +313,9 @@ static int out_of_line(Scheme_Object *a)
   return 0;
 }
 
-static void get_into_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
+static void get_into_line(Scheme_Sema *sema, Scheme_Channel_Waiter *w)
 {
-  Scheme_Sema_Waiter *last, *first;
+  Scheme_Channel_Waiter *last, *first;
   
   if (SCHEME_SEMAP(sema)) {
     last = sema->last;
@@ -348,9 +350,9 @@ static void get_into_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
   }
 }
 
-static void get_outof_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
+static void get_outof_line(Scheme_Sema *sema, Scheme_Channel_Waiter *w)
 {
-  Scheme_Sema_Waiter *last, *first;
+  Scheme_Channel_Waiter *last, *first;
 
   if (SCHEME_SEMAP(sema)) {
     last = sema->last;
@@ -385,45 +387,26 @@ static void get_outof_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
   }
 }
 
-void scheme_get_into_line(Scheme_Object *sema, Waiting *waiting, int i)
+static void ext_get_into_line(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Sema_Waiter *w, *next;
+  Scheme_Channel_Waiter *w;
 
-  /* Check whether `waiting' is already in line: */
-  if (SCHEME_CHANNELP(sema)) {
-    Scheme_Channel *ch = (Scheme_Channel *)sema;
-    w = ch->put_first;
-  } else {
-    Scheme_Channel_Put *chp = (Scheme_Channel_Put *)sema;
-    w = chp->ch->get_first;
-  }
-  while (w) {
-    if (w->waiting == waiting) {
-      /* Already in line */
-      return;
-    } else {
-      next = w->next;
-      if (w->waiting->result) {
-	/* Clean-up - drop this one. This function doesn't
-	   have to clean up (and we're not checking for pending
-	   breaks), but it's easy and probably useful */
-	get_outof_line((Scheme_Sema *)sema, w);
-      }
-      w = next;
-    }
-  }
-  
-  /* Not in line, so get in. */
-  w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
-#ifdef MZTAG_REQUIRED
-  w->type = scheme_rt_sema_waiter;
-#endif
+  /* Get into line */
+  w = MALLOC_ONE_RT(Scheme_Channel_Waiter);
+  w->type = scheme_channel_waiter_type;
   w->p = scheme_current_thread;
-  w->waiting = waiting;
-  w->sema = sema;
-  w->waiting_i = i;
+  w->waiting = (Waiting *)sinfo->current_waiting;
+  w->obj = ch;
+  w->waiting_i = sinfo->w_i;
 
-  get_into_line((Scheme_Sema *)sema, w);
+  get_into_line((Scheme_Sema *)ch, w);
+
+  scheme_set_wait_target(sinfo, (Scheme_Object *)w, NULL, NULL, 0, 0);
+}
+
+void scheme_get_outof_line(Scheme_Channel_Waiter *ch_w)
+{
+  get_outof_line((Scheme_Sema *)ch_w->obj, ch_w);
 }
 
 static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Object **result)
@@ -431,7 +414,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
   if (SCHEME_CHANNELP(sema)) {
     /* GET mode */
     Scheme_Channel *ch = (Scheme_Channel *)sema;
-    Scheme_Sema_Waiter *w = ch->put_first, *next;
+    Scheme_Channel_Waiter *w = ch->put_first, *next;
     int picked = 0;
 
     while (w) {
@@ -439,7 +422,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	/* can't synchronize with self */
 	w = w->next;
       } else {
-	Scheme_Channel_Put *chp = (Scheme_Channel_Put *)w->sema;
+	Scheme_Channel_Put *chp = (Scheme_Channel_Put *)w->obj;
 	
 	if (!w->waiting->result && !pending_break(w->p)) {
 	  w->picked = 1;
@@ -471,7 +454,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
   } else {
     /* PUT mode */
     Scheme_Channel_Put *chp = (Scheme_Channel_Put *)sema;
-    Scheme_Sema_Waiter *w = chp->ch->get_first, *next;
+    Scheme_Channel_Waiter *w = chp->ch->get_first, *next;
     int picked = 0;
 
     while (w) {
@@ -508,6 +491,8 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 }
 
 int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiting)
+     /* When waiting is supplied, o can contain Scheme_Channel_Waiter values, and
+	just_try must be 0. */
 {
   Scheme_Sema **semas = (Scheme_Sema **)o;
   int v, i, ii;
@@ -572,24 +557,31 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	    --semas[i]->value;
 	  break;
 	}
+      } else if (semas[i]->type == scheme_channel_waiter_type) {
+	/* Probably no need to poll */
       } else if (try_channel(semas[i], waiting, i, NULL))
 	break;
     }
 
+    /* In the following, waiters get changed back to channels,
+       and channel puts */
     if (ii >= n) {
-      Scheme_Sema_Waiter **ws, *w;
+      Scheme_Channel_Waiter **ws, *w;
 
-      ws = MALLOC_N(Scheme_Sema_Waiter*, n);
+      ws = MALLOC_N(Scheme_Channel_Waiter*, n);
       for (i = 0; i < n; i++) {
-	w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
-	ws[i] = w;
-#ifdef MZTAG_REQUIRED
-	w->type = scheme_rt_sema_waiter;
-#endif
-	w->p = scheme_current_thread;
-	w->waiting = waiting;
-	w->sema = (Scheme_Object *)semas[i];
-	w->waiting_i = i;
+	if (semas[i]->type == scheme_channel_waiter_type) {
+	  ws[i] = (Scheme_Channel_Waiter *)semas[i];
+	  semas[i] = (Scheme_Sema *)ws[i]->obj;
+	} else {
+	  w = MALLOC_ONE_RT(Scheme_Channel_Waiter);
+	  ws[i] = w;
+	  w->type = scheme_channel_waiter_type;
+	  w->p = scheme_current_thread;
+	  w->waiting = waiting;
+	  w->obj = (Scheme_Object *)semas[i];
+	  w->waiting_i = i;
+	}
       }
       
       while (1) {
@@ -892,14 +884,31 @@ static int channel_get_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
     return 1;
   }
 
+  ext_get_into_line(ch, sinfo);
+  
   return 0;
 }
 
-static int channel_put_ready(Scheme_Object *ch)
+static int channel_put_ready(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
 {
   if (try_channel((Scheme_Sema *)ch, NULL, 0, NULL))
     return 1;
+
+  ext_get_into_line(ch, sinfo);
   
+  return 0;
+}
+
+static int channel_waiter_ready(Scheme_Object *ch_w, Scheme_Schedule_Info *sinfo)
+{
+  Scheme_Channel_Waiter *w = (Scheme_Channel_Waiter *)ch_w;
+
+  if (w->picked) {
+    /* The value, if any, should have been tranferred already (in which
+       case we would not have made it here, actually). */
+    return 1;
+  }
+
   return 0;
 }
 
@@ -953,7 +962,7 @@ START_XFORM_SKIP;
 static void register_traversers(void)
 {
   GC_REG_TRAV(scheme_alarm_type, mark_alarm);
-  GC_REG_TRAV(scheme_rt_sema_waiter, mark_sema_waiter);
+  GC_REG_TRAV(scheme_channel_waiter_type, mark_channel_waiter);
 }
 
 END_XFORM_SKIP;

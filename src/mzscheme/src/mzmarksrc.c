@@ -1445,18 +1445,18 @@ END salloc;
 
 START sema;
 
-mark_sema_waiter {
+mark_channel_waiter {
  mark:
-  Scheme_Sema_Waiter *w = (Scheme_Sema_Waiter *)p;
+  Scheme_Channel_Waiter *w = (Scheme_Channel_Waiter *)p;
 
   gcMARK(w->p);
   gcMARK(w->prev);
   gcMARK(w->next);
   gcMARK(w->waiting);
-  gcMARK(w->sema);
+  gcMARK(w->obj);
 
  size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
 }
 
 mark_alarm {

@@ -3613,39 +3613,39 @@ int mark_finalizations_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_SEMA_C
 
-int mark_sema_waiter_SIZE(void *p) {
+int mark_channel_waiter_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
 }
 
-int mark_sema_waiter_MARK(void *p) {
-  Scheme_Sema_Waiter *w = (Scheme_Sema_Waiter *)p;
+int mark_channel_waiter_MARK(void *p) {
+  Scheme_Channel_Waiter *w = (Scheme_Channel_Waiter *)p;
 
   gcMARK(w->p);
   gcMARK(w->prev);
   gcMARK(w->next);
   gcMARK(w->waiting);
-  gcMARK(w->sema);
+  gcMARK(w->obj);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
 }
 
-int mark_sema_waiter_FIXUP(void *p) {
-  Scheme_Sema_Waiter *w = (Scheme_Sema_Waiter *)p;
+int mark_channel_waiter_FIXUP(void *p) {
+  Scheme_Channel_Waiter *w = (Scheme_Channel_Waiter *)p;
 
   gcFIXUP(w->p);
   gcFIXUP(w->prev);
   gcFIXUP(w->next);
   gcFIXUP(w->waiting);
-  gcFIXUP(w->sema);
+  gcFIXUP(w->obj);
 
   return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Sema_Waiter));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Channel_Waiter));
 }
 
-#define mark_sema_waiter_IS_ATOMIC 0
-#define mark_sema_waiter_IS_CONST_SIZE 1
+#define mark_channel_waiter_IS_ATOMIC 0
+#define mark_channel_waiter_IS_CONST_SIZE 1
 
 
 int mark_alarm_SIZE(void *p) {

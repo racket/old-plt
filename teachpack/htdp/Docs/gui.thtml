@@ -21,7 +21,7 @@
 <li> <code>make-message : str -> gui-item</code> 
      <br>to create an item that displays a message
 
-<li> <code>draw-message : gui-item[message%] -> true</code> 
+<li> <code>draw-message : gui-item[message%] stri -> true</code> 
      <br>to display a message in a message item 
      <br>it earses the current message 
 
@@ -40,14 +40,41 @@
      <br>the result is the 0-based index in the choice menu 
 </menu>
 
-<p>Example: 
+<p>Example 1: 
 <pre>
-> (create-frame (list (list (make-button "QUIT" hide-window))))
+> (create-window (list (list (make-button "QUIT" hide-window))))
 </pre>
 A button appears on the screen. Click on the button and it will disappear. 
 <pre>
 > (show-window)
 </pre>
 The frame reappears. 
+
+<p>Example 2: 
+<pre>
+; text1 : GUI-ITEM
+(define text1
+  (make-text "Please enter your name"))
+
+; msg1 : GUI-ITEM
+(define msg1
+  (make-message (string-append "Hello, World" (make-string 33 #\SPACE))))
+
+; Event -> true
+; draws the current contents of text1 into msg1, prepended with "Hello, "
+(define (respond e)
+  (draw-message msg1 (string-append "Hello, " (text-contents text1))))
+
+; set up window with three "lines": a text field, a message, and two buttons
+; fill in text and click OKAY
+(create-window 
+ (list
+  (list text1)
+  (list msg1)
+  (list (make-button "OKAY" respond)
+        (make-button "QUIT" hide-window))))
+</pre>
+
+
 
 #include foot.tinc

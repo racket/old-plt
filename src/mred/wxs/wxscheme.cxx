@@ -1251,18 +1251,18 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
 #ifdef wx_x
   scheme_install_xc_global("wx:platform", 
 			   scheme_intern_symbol("unix"), global_env);
-#ifdef wx_motif
+# ifdef wx_motif
   scheme_install_xc_global("wx:window-system", 
 			   scheme_intern_symbol("motif"), global_env);
-#else
-#ifdef wx_xt
+# else
+#  ifdef wx_xt
   scheme_install_xc_global("wx:window-system", 
 			   scheme_intern_symbol("xt"), global_env);
-#else
+#  else
   scheme_install_xc_global("wx:window-system", 
 			   scheme_intern_symbol("xview"), global_env);
-#endif
-#endif  
+#  endif
+# endif  
 #endif
 #ifdef wx_msw
   scheme_install_xc_global("wx:platform", 

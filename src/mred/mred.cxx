@@ -1387,7 +1387,7 @@ Scheme_Object *OBJDump(int, Scheme_Object *[])
 }
 #endif
 
-#ifdef USE_SENORA_GC
+#ifdef SGC_STD_DEBUGGING
 extern "C" {
   void (*scheme_external_dump_info)(void);
   void (*scheme_external_dump_arg)(Scheme_Object *);
@@ -1685,7 +1685,7 @@ static int mred_init(int argc, char **argv)
 #endif
   GC_out_of_memory = MrEdOutOfMemory;
 
-#ifdef USE_SENORA_GC
+#ifdef SGC_STD_DEBUGGING
   scheme_external_dump_info = dump_cpp_info;
 # ifdef USE_WXOBJECT_TRACE_COUNTER
   scheme_external_dump_type = object_type_name;

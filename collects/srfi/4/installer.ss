@@ -56,6 +56,7 @@
              [dot-h (build-path source-dir (string-append name ".h"))]
              [dot-o (build-path source-dir (append-object-suffix name))]
              [shared-lib (build-path target-dir (append-extension-suffix name))])
+        (printf "glue-dot-c name: ~v\n" glue-dot-c)
         (list
          (list (list shared-lib                                     ; shared-library
                     (list dot-c dot-h)
@@ -80,13 +81,14 @@
                     (list "homo-vector-glue.c")
                     (lambda ()
                       (delete/continue glue-dot-c)
+                      (printf "generating glue-dot-c named: ~v\n" glue-dot-c)
                       (generate "homo-vector-glue.c" glue-dot-c replace-spec)))
               (list dot-h                                          ; generated header file
                     (list "homo-vector-prims.h")
                     (lambda ()
                       (delete/continue dot-h)
                       (generate "homo-vector-prims.h" dot-h replace-spec))))
-         (vector shared-lib dot-c)))))
+         (vector shared-lib dot-c glue-dot-c)))))
 
   (define (generate input-file output-file trans)
     (let* ([in-str (call-with-input-file input-file

@@ -277,12 +277,12 @@
 	      (lambda () (send snip gb-install this #f))
 	      (lambda () (set! pasting? #t))))
 	   (inner (void) after-insert snip behind x y))])
-      (override*
-        [do-paste
-	 (lambda (time)
+      (private*
+        [do-generic-paste
+	 (lambda (time super-call)
 	   (dynamic-wind
 	       (lambda () (set! pasting? #t))
-	       (lambda () (super do-paste time))
+	       (lambda () (super-call time))
 	       (lambda () (set! pasting? #f)))
 	   (let ([a-paste #f])
 	     (for-each-snip
@@ -300,6 +300,13 @@
 					a-paste)))])
 		 (send main-panel gb-add-child top-paste)
 		 (set-selected top-paste)))))])
+      (override*
+        [do-paste
+	 (lambda (time)
+	   (do-generic-paste time (lambda (time) (super do-paste time))))]
+	[do-paste-x-selection
+	 (lambda (time)
+	   (do-generic-paste time (lambda (time) (super do-paste-x-selection time))))])
       (public*
 	[handle-new-arrivals
 	 (lambda ()

@@ -17,7 +17,7 @@
 
 /**************** Configuration ****************/
 
-#define GROW_FACTOR 2.2
+#define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
 #define GENERATIONS 1

@@ -33,7 +33,7 @@
 			(list "ncurses")
 			(list "curses"))
 		    (case mach-id
-		      [(sparc-solaris i386-solaris) (list "-ltermcap")]
+		      [(sparc-solaris i386-solaris) (list "termcap")]
 		      [else null]))
 		   ;; Windows extra libs (assume always there)
 		   null

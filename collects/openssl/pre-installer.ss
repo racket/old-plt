@@ -46,7 +46,7 @@
 			    (lambda (x) x)
 			    (list->vector 
 			     (list
-			      "-r"
+			      "-qr"
 			      (build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
 			      (build-path 'up 'up "src" "mzscheme" "gc2" "ctok.ss")
 			      (format "gcc -E -DOS_X -I~s -I~s" 

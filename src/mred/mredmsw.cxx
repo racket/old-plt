@@ -20,7 +20,6 @@
 
 extern long last_msg_time;
 
-int mred_do_prepost_gm = 0;
 extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
 
@@ -313,9 +312,6 @@ static HANDLE wait_msg_thread = NULL;
 
 void MrEdMSWSleep(float secs, void *fds)
 {
-  if (mred_do_prepost_gm)
-    wxDoPreGM();
-
   win_extended_fd_set *r, *w, *e;
   
   if (fds) {
@@ -343,7 +339,7 @@ void MrEdMSWSleep(float secs, void *fds)
     }
 
   
-    HANDLE th1, th2;
+    HANDLE th2;
     DWORD result;
     DWORD id;
 
@@ -401,7 +397,4 @@ void MrEdMSWSleep(float secs, void *fds)
     if (secs)
       KillTimer(NULL, id);
   }
-  
-  if (mred_do_prepost_gm)
-    wxDoPostGM();
 }

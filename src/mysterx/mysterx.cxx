@@ -7,6 +7,7 @@
 #include <malloc.h>
 #include <float.h>
 #include <limits.h>
+#include <io.h>
 
 #include <objbase.h>
 #include <mshtml.h>
@@ -3932,8 +3933,10 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   
   initMysSinkTable();
 
-  puts("MysterX extension for MzScheme, "
-       "Copyright (c) 1999 Rice PLT (Paul Steckler)");
+  if (isatty(fileno(stdin))) {
+    fputs("MysterX extension for MzScheme, "
+	  "Copyright (c) 1999 Rice PLT (Paul Steckler)\n",stderr);
+  }
   
   return (Scheme_Object *)mx_unit;
 }

@@ -1140,6 +1140,8 @@
 		  (emit-indentation)
 		  (emit "  ~a.count = pr->ku.multiple.count;~n" var)
 		  (emit-indentation)
+		  (emit "  SCHEME_DETATCH_MV_BUFFER(~a.array, pr);~n" var)
+		  (emit-indentation)
 		  (emit "} else ~a.array = NULL" var))]
 	       [(vm:begin0-extract? ast)
 		(let ([var (vm->c:convert-symbol

@@ -59,6 +59,8 @@ static void closure_alloc_inc()
 								  (res == SCHEME_MULTIPLE_VALUES ? scheme_multiple_array : (Scheme_Object**)res), \
                                   NULL);
 
+#define SCHEME_DETATCH_MV_BUFFER(mv, pr) if (SAME_OBJ(mv, pr->values_buffer)) pr->values_buffer = NULL
+
 #define SCHEME_CURRENT_ENV(pr) ((Scheme_Env *)scheme_get_param(pr->config, MZCONFIG_ENV))
 
 typedef struct {

@@ -13,14 +13,15 @@
 	   (lib "etc.ss")
 	   (lib "list.ss"))
 
-  ;; Maximum number of times to inline while processing a call site
-  (define max-fuel 30)
-  (define fuel (make-parameter max-fuel))
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Optimizer
   ;; classes representing syntax with methods for optimization steps
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
+  ;; Maximum number of times to inline while processing a call site
+  (define max-fuel 0)
+  (define fuel (make-parameter max-fuel))
+
   (define foldable-prims '(void
 			   + - * / arithmetic-shift
 			   < <= = > >=

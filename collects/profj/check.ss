@@ -2398,7 +2398,9 @@
                                                           (apply string-append 
                                                                  (map (lambda (aI) 
                                                                         (format "~a, " (type->ext-name aI))) a))))
-                                                     (substring internal 0 (- (string-length internal) 2)))))
+                                                     (if (< (string-length internal) 2)
+                                                         internal
+                                                         (substring internal 0 (- (string-length internal) 2))))))
                                types)))))
       (substring out 0 (- (string-length out) 5))))                                                         
   
@@ -2475,7 +2477,8 @@
                               n (length atypes) awitht expecteds (length args) awitht givens))
                      ((type)
                       (format "Constructor for ~a expects ~a ~a, but given a ~a instead of ~a for one argument"
-                              n awitht (get-string-of-types (list (cdr atypes))) (car givens) (type->ext-name (car atypes)))))
+                              n awitht (get-string-of-types (list (cdr atypes))) (type->ext-name (car args))
+                              (type->ext-name (car atypes)))))
                    n src)))
 
   ;ctor-overload-error: symbol type (list type) src -> void

@@ -1,5 +1,3 @@
-(printf "pconverr.ss~n")
-
   (unit/sig
       mzlib:print-convert^
     (import (s : mzlib:string^)

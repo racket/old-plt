@@ -55,6 +55,28 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 {
 	wxTheApp = this;
 
+	OSErr myErr;
+	long quickdrawVersion;
+	long windowMgrAttributes;
+	
+	if (::Gestalt(gestaltQuickdrawVersion, &quickdrawVersion) != noErr) {
+		wxFatalError("Unable to invoke the Gestalt Manager.", "");
+	} else {
+		if ((quickdrawVersion >> 8) == 0) {
+			wxFatalError("Color QuickDraw is required, but not present.", "");
+		}
+	}
+	
+	if (::Gestalt(gestaltWindowMgrAttr, &windowMgrAttributes) != noErr) {
+		wxFatalError("Unable to invoke the Gestalt Manager.", "");
+	} else {
+		if (windowMgrAttributes & gestaltWindowMgrPresent) {
+			MacOS85WindowManagerPresent = TRUE;
+		} else {
+			MacOS85WindowManagerPresent = FALSE;
+		}
+	}
+	
 	::MaxApplZone();
 	for (long i = 1; i <= 4; i++) ::MoreMasters();
 	::FlushEvents(everyEvent, 0);
@@ -83,12 +105,6 @@ wxApp::wxApp(wxlanguage_t language):wxbApp(language)
 	wxSetLanguage(language);
 	cLastMousePos.v = cLastMousePos.h = -1;
 
-	SysEnvRec sysEnvRec;
-	::SysEnvirons(2, &sysEnvRec);
-	if (!sysEnvRec.hasColorQD)
-	{
-		wxFatalError("Color QuickDraw is required, but not present.", "");
-	}
 }
 
 //-----------------------------------------------------------------------------

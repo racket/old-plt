@@ -73,16 +73,10 @@ wxFrame::wxFrame // Constructor (for frame window)
     ::GetWMgrPort(&wPort);
 	::SetGWorld((CGrafPtr)wPort, wxGetGDHandle());
 	
-	long windowManagerGestaltResult;
-	OSStatus result = Gestalt('wind',&windowManagerGestaltResult);
-	
-	if (result != noErr) {
-		wxFatalError("wxFrame constructor: Call to Gestalt Manager failed.");
-	}
-	
-	if ((windowManagerGestaltResult & gestaltWindowMgrPresent) &&
-		(windowManagerGestaltResult & 0x04)) {
-		
+	OSErr result;
+
+	if (wxTheApp->MacOS85WindowManagerPresent) {
+			
 		// OS 8.5 window creation enabled
 		// (so we can get resizeable modal windows)
 		
@@ -94,6 +88,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 			if (cStyle & wxNO_RESIZE_BORDER) {
 				windowAttributes = kWindowNoAttributes;
 			} else {
+				cIsResizableDialog = TRUE;
 				windowAttributes = (kWindowResizableAttribute);
 			}
 		} else {
@@ -236,6 +231,7 @@ void wxFrame::InitDefaults(void)
   	cControlArea = new wxArea(this);
   	cContentArea = new wxArea(this);
   	cPlatformArea = new wxArea(this);
+  	cIsResizableDialog = FALSE;
 }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -285,16 +281,18 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
  	int oldWindowWidth = cWindowWidth;
  	int oldWindowHeight = cWindowHeight;
  
-	if (width > cWindowWidth || height > cWindowHeight)
- 	{
- 		// Invalidate grow box:
- 		int oldMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
- 		int oldMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
- 		Rect oldGrowRect = {oldMacHeight - 15, oldMacWidth - 15, oldMacHeight, oldMacWidth};
- 		SetCurrentMacDC();
- 		::InvalRect(&oldGrowRect);
- 		::EraseRect(&oldGrowRect); /* MATTHEW: [5] */
- 	}
+ 	if (! wxTheApp->MacOS85WindowManagerPresent) {
+		if (width > cWindowWidth || height > cWindowHeight)
+	 	{
+	 		// Invalidate grow box:
+	 		int oldMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
+	 		int oldMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
+	 		Rect oldGrowRect = {oldMacHeight - 15, oldMacWidth - 15, oldMacHeight, oldMacWidth};
+	 		SetCurrentMacDC();
+	 		::InvalRect(&oldGrowRect);
+	 		::EraseRect(&oldGrowRect); // MATTHEW: [5] 
+	 	}
+	 }
 
 	int dw, dh;
 
@@ -575,15 +573,17 @@ void wxFrame::NowFront(Bool flag) // mac platform only
 
 void wxFrame::ShowAsActive(Bool flag)
 {
-	// Invalidate grow box (appearance changes with window active/inactive)
- 	SetCurrentDC();
- 	int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
- 	int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
- 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
- 	// Erase it now if we're becoming inactive
- 	if (!flag)
- 		::EraseRect(&growRect);
- 	::InvalRect(&growRect);
+	if (! wxTheApp->MacOS85WindowManagerPresent) {
+		// Invalidate grow box (appearance changes with window active/inactive)
+	 	SetCurrentDC();
+	 	int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
+	 	int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
+	 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
+	 	// Erase it now if we're becoming inactive
+	 	if (!flag)
+	 		::EraseRect(&growRect);
+	 	::InvalRect(&growRect); 
+	 }
  	
  	if (!cFocusWindow && children) {
 		wxChildNode *node = children->First();
@@ -752,31 +752,33 @@ void wxFrame::MacUpdateWindow(void)
  //-----------------------------------------------------------------------------
  void wxFrame::MacDrawGrowIcon(void)
  {
- 	SetCurrentMacDCNoMargin();
- 	// Save the clipping region
- 	RgnHandle saveClip = NewRgn();
- 	CheckMemOK(saveClip);
-	::GetClip(saveClip);
- 	// Compute the bounding rect of the grow icon
- 	int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
- 	int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
- 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
- 	// Avoid drawing scrollbar outlines
- 	::ClipRect(&growRect);
- 	// Draw it
- 	WindowPtr theMacWindow = macWindow();
- 	RGBColor fore, back;
- 	::GetForeColor(&fore);
- 	::GetBackColor(&back);
- 	::ForeColor(blackColor);
- 	::BackColor(whiteColor);
- 	::EraseRect(&growRect);
- 	::DrawGrowIcon(theMacWindow);
- 	// Restore the clipping region
- 	::SetClip(saveClip);
- 	::DisposeRgn(saveClip);
- 	::RGBForeColor(&fore);
- 	::RGBBackColor(&back);
+ 	if (! wxTheApp->MacOS85WindowManagerPresent) {
+	 	SetCurrentMacDCNoMargin();
+	 	// Save the clipping region
+	 	RgnHandle saveClip = NewRgn();
+	 	CheckMemOK(saveClip);
+		::GetClip(saveClip);
+	 	// Compute the bounding rect of the grow icon
+	 	int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
+	 	int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
+	 	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
+	 	// Avoid drawing scrollbar outlines
+	 	::ClipRect(&growRect);
+	 	// Draw it
+	 	WindowPtr theMacWindow = macWindow();
+	 	RGBColor fore, back;
+	 	::GetForeColor(&fore);
+	 	::GetBackColor(&back);
+	 	::ForeColor(blackColor);
+	 	::BackColor(whiteColor);
+	 	::EraseRect(&growRect);
+	 	::DrawGrowIcon(theMacWindow);
+	 	// Restore the clipping region
+	 	::SetClip(saveClip);
+	 	::DisposeRgn(saveClip);
+	 	::RGBForeColor(&fore);
+	 	::RGBBackColor(&back);
+	 }
  }
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -948,9 +950,18 @@ RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
        	    || (theMacWidth >= x && theMacWidth <= x + w))
            && (theMacHeight-15 >= y && theMacHeight-15 <= y + h)
        	       || (theMacHeight >= y && theMacHeight <= y + h)) {
-       Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
-       RgnHandle rgn = NewRgn();
-       RectRgn(rgn, &growRect);
+       RgnHandle rgn = NewRgn();  // this can fail.  use MaxMem to determine validity?
+       if (FALSE) {  //(cIsResizableDialog) {
+         OpenRgn();
+         MoveTo(theMacHeight, theMacWidth - 15);
+         LineTo(theMacHeight, theMacWidth);
+         LineTo(theMacHeight - 15, theMacWidth);
+         LineTo(theMacHeight, theMacWidth - 15);
+         CloseRgn(rgn);
+       } else {
+         Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
+         RectRgn(rgn, &growRect);
+       }
        OffsetRgn(rgn, -x, -y);
        return rgn;
      } else

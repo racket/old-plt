@@ -72,7 +72,7 @@ INSTOBJEXT = @INSTOBJEXT@
 
 .po.pox:
 	$(MAKE) $(PACKAGE).pot
-	$(MSGMERGE) $< $(srcdir)/$(PACKAGE).pot -o $*.pox
+	$(MSGMERGE) $< $(PACKAGE).pot -o $*.pox
 
 .po.mo:
 	$(MSGFMT) -o $@ $<
@@ -96,17 +96,17 @@ $(PACKAGE).pot: $(POTFILES)
 	  --add-comments --keyword=_ --keyword=N_ \
 	  --files-from=$(srcdir)/POTFILES.in
 	if [ ! -s $(PACKAGE).po ] \
-	  || cmp -s $(PACKAGE).po $(srcdir)/$(PACKAGE).pot; then \
+	  || cmp -s $(PACKAGE).po $(PACKAGE).pot; then \
 	  rm -f $(PACKAGE).po; \
 	else \
-	  rm -f $(srcdir)/$(PACKAGE).pot \
-	    && mv $(PACKAGE).po $(srcdir)/$(PACKAGE).pot; \
+	  rm -f $(PACKAGE).pot \
+	    && mv $(PACKAGE).po $(PACKAGE).pot; \
 	fi
 
 cat-id-tbl.c: stamp-cat-id
 stamp-cat-id: $(PACKAGE).pot
 	rm -f cat-id-tbl.tmp
-	sed -f ../intl/po2tbl.sed $(srcdir)/$(PACKAGE).pot \
+	sed -f ../intl/po2tbl.sed $(PACKAGE).pot \
 		| sed -e "s/@PACKAGE NAME@/$(PACKAGE)/" > cat-id-tbl.tmp
 	if cmp -s cat-id-tbl.tmp cat-id-tbl.c; then \
 	  rm cat-id-tbl.tmp; \

@@ -49,7 +49,7 @@ CONFIG_CLEAN_FILES =
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
 
-default: all
+default: all-recursive
 
 mostlyclean-hdr:
 

@@ -22,7 +22,7 @@
 							 s)
 					  s)
 			       args)])
-	    (printf "error: ~a~n" string)
+	    (printf "error: ~s ~s~n" string s)
 	    (cond
 	     [(zodiac:zodiac? z) (dispatch-report type string (zodiac:zodiac-start z) (zodiac:zodiac-finish z))]
 	     [(zodiac:eof? z) (dispatch-report type string (zodiac:eof-location z) (zodiac:eof-location z))]

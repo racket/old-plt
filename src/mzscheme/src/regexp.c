@@ -112,8 +112,10 @@ static int regexec(regexp *, char *, int, char **, char **);
 #define	NOTHING	9	/* no	Match empty string. */
 #define	STAR	10	/* node	Match this (simple) thing 0 or more times. */
 #define	PLUS	11	/* node	Match this (simple) thing 1 or more times. */
-#define OPENN   12      /* like OPEN, but with an n >= 50 */
-#define CLOSEN  13      /* like CLOSE, but with an n >= 50 */
+#define	STAR2	12	/* non-greedy star. */
+#define	PLUS2	13	/* non-greedy plus. */
+#define OPENN   14      /* like OPEN, but with an n >= 50 */
+#define CLOSEN  15      /* like CLOSE, but with an n >= 50 */
 #define	OPEN	20	/* no	Mark this point in input as start of #n. */
 /*	OPEN+1 is number 1, etc. */
 #define	CLOSE	70	/* no	Analogous to OPEN. */
@@ -476,7 +478,7 @@ regpiece(int *flagp)
   MZREGISTER char *ret;
   MZREGISTER char op;
   MZREGISTER char *next;
-  int flags;
+  int flags, greedy;
 
   ret = regatom(&flags);
   if (ret == NULL)
@@ -492,29 +494,56 @@ regpiece(int *flagp)
     FAIL("* or + operand could be empty");
   *flagp = (op != '+') ? (WORST|SPSTART) : (WORST|HASWIDTH);
 
+  if (regpase[1] == '?') {
+    greedy = 0;
+    regparse++;
+  } else
+    greedy = 1;
+
   if (op == '*' && (flags&SIMPLE))
-    reginsert(STAR, ret);
-  else if (op == '*') {
+    reginsert(greedy ? STAR : STAR2, ret);
+  else if (op == '*' && greedy) {
     /* Emit x* as (x&|), where & means "self". */
     reginsert(BRANCH, ret);	/* Either x */
     regoptail(ret, regnode(BACK)); /* and loop */
     regoptail(ret, ret);	/* back */
     regtail(ret, regnode(BRANCH)); /* or */
     regtail(ret, regnode(NOTHING)); /* null. */
+  } else if (op == '*' && !greedy) {
+    /* Emit x* as (x|&), where & means "self". */
+    reginsert(BRANCH, ret);	/* Either x */
+    regoptail(ret, regnode(NOTHING)); /* and null */
+    regtail(ret, regnode(BRANCH)); /* or */
+    regtail(ret, regnode(BACK)); /* loop */
+    regtail(ret, ret);	/* back. */
   } else if (op == '+' && (flags&SIMPLE))
-    reginsert(PLUS, ret);
-  else if (op == '+') {
+    reginsert(greedy ? PLUS : PLUS2, ret);
+  else if (op == '+' && greedy) {
     /* Emit x+ as x(&|), where & means "self". */
     next = regnode(BRANCH);	/* Either */
     regtail(ret, next);
     regtail(regnode(BACK), ret); /* loop back */
     regtail(next, regnode(BRANCH)); /* or */
     regtail(ret, regnode(NOTHING)); /* null. */
-  } else if (op == '?') {
+  } else if (op == '+' && !greedy) {
+    /* Emit x+ as x(|&), where & means "self". */
+    next = regnode(BRANCH);	/* Either */
+    regtail(ret, next);
+    regtail(ret, regnode(NOTHING)); /* null */
+    regtail(next, regnode(BRANCH)); /* or */
+    regtail(regnode(BACK), ret); /* loop back. */
+  } else if (op == '?' && greedy) {
     /* Emit x? as (x|) */
     reginsert(BRANCH, ret);	/* Either x */
     regtail(ret, regnode(BRANCH)); /* or */
     next = regnode(NOTHING);	/* null. */
+    regtail(ret, next);
+    regoptail(ret, next);
+  } else if (op == '?' && !greedy) {
+    /* Emit x? as (|x) */
+    reginsert(BRANCH, regnode(NOTHING)); /* Either null */
+    regtail(ret, regnode(BRANCH)); /* or */
+    next = ret;	/* x. */
     regtail(ret, next);
     regoptail(ret, next);
   }
@@ -988,11 +1017,14 @@ regmatch(char *prog)
     }
       break;
     case STAR:
-    case PLUS: {
+    case PLUS:
+    case STAR2:
+    case PLUS2: {
       MZREGISTER char nextch;
       MZREGISTER int no;
       MZREGISTER char *save;
       MZREGISTER int min;
+      int greedy = (OP(scan) == STAR || OP(scan) == PLUS);
 
       /*
        * Lookahead to avoid useless match attempts
@@ -1004,14 +1036,25 @@ regmatch(char *prog)
       min = (OP(scan) == STAR) ? 0 : 1;
       save = reginput;
       no = regrepeat(OPERAND(scan));
-      while (no >= min) {
-	/* If it could work, try it. */
-	if (nextch == '\0' || *reginput == nextch)
-	  if (regmatch(next))
-	    return(1);
-	/* Couldn't or didn't -- back up. */
-	no--;
-	reginput = save + no;
+      if (greedy) {
+	while (no >= min) {
+	  /* If it could work, try it. */
+	  if (nextch == '\0' || *reginput == nextch)
+	    if (regmatch(next))
+	      return(1);
+	  /* Couldn't or didn't -- back up. */
+	  no--;
+	  reginput = save + no;
+	}
+      } else {
+	int i;
+	for (i = min; i <= no; i++) {
+	  reginput = save + i;
+	  /* If it could work, try it. */
+	  if (nextch == '\0' || *reginput == nextch)
+	    if (regmatch(next))
+	      return(1);
+	}
       }
       return(0);
     }

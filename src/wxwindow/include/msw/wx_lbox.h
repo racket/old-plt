@@ -48,7 +48,9 @@ class wxListBox: public wxbListBox
   void SetSelection(int N, Bool select = TRUE);
 
   virtual void ChangeToGray(Bool gray);
+
   
+
   void Deselect(int N);
 
   // For single choice list item only
@@ -83,6 +85,8 @@ class wxListBox: public wxbListBox
   // used to calculate the horizontal extent.
   // Otherwise, all strings are used.
   void SetHorizontalExtent(char *s = NULL);
+
+  int NumberOfVisibleItems(void);
 
   virtual Bool Show(Bool s);
 };

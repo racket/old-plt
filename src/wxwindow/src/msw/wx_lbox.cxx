@@ -257,6 +257,17 @@ void wxListBox::SetFirstItem(char *s)
     SetFirstItem(N) ;
 }
 
+int wxListBox::NumberOfVisibleItems(void)
+{
+  int h = SendMessage((HWND)ms_handle,LB_GETITEMHEIGHT,(WPARAM)0,(LPARAM)0);
+  int cw, ch;
+  
+  GetClientSize(&cw, &ch);
+  ch = ch / h;
+
+  return max(ch, 1);
+}
+
 void wxListBox::Delete(int N)
 {
   int i;
@@ -671,31 +682,54 @@ void wxListBox::SetString(int N, char *s)
     SetSelection(sel);
 }
 
+
 Bool wxListBox::Show(Bool show)
+
 {
+
   HWND wnd = (HWND)ms_handle;
+
   int cshow;
+
 
   SetShown(show);
 
   window_parent->GetChildren()->Show(this, show);
 
   if (show)
+
     cshow = SW_SHOW;
+
   else
+
     cshow = SW_HIDE;
+
  
+
   ShowWindow(wnd, cshow);
+
  
+
   if (static_label)
+
 	ShowWindow(static_label, cshow);
 
+
+
   return TRUE;
+
 }
 
+
 void wxListBox::ChangeToGray(Bool gray)
+
 {
+
   wxWindow::ChangeToGray(gray);
+
   if (static_label)
+
     ::EnableWindow(static_label, !gray);
+
 }
+

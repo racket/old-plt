@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.4 1994/08/14 22:59:35 edz Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.1.1.1 1997/12/22 16:11:55 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -777,45 +777,42 @@ wxGDIList::~wxGDIList (void)
 }
 
 // Pen and Brush lists
-wxPenList::~wxPenList (void)
+
+wxPenList::wxPenList(void)
+: wxObject(WXGC_NO_CLEANUP)
 {
-  wxNode *node = First ();
-  while (node)
-    {
-      wxPen *pen = (wxPen *) node->Data ();
-      wxNode *next = node->Next ();
-      delete pen;
-      node = next;
-    }
+  list = new wxChildList;
+}
+
+wxPenList::~wxPenList(void)
+{
 }
 
 void wxPenList::AddPen (wxPen * pen)
 {
-  Append (pen);
-}
-
-void wxPenList::RemovePen (wxPen * pen)
-{
-  DeleteObject (pen);
+  list->Append(pen); 
+  list->Show(pen, FALSE); /* so it can be collected */
 }
 
 wxPen *wxPenList::FindOrCreatePen (wxColour * colour, int width, int style)
 {
   wxPen *pen; /* MATTHEW: [8] */
+  int i = 0;
+  wxChildNode *node;
 
   if (!colour)
     return NULL;
-  for (wxNode * node = First (); node; node = node->Next ())
-    {
-      wxPen *each_pen = (wxPen *) node->Data ();
-      if (each_pen &&
-	  each_pen->GetWidth () == width &&
-	  each_pen->GetStyle () == style &&
-	  each_pen->GetColour ().Red () == colour->Red () &&
-	  each_pen->GetColour ().Green () == colour->Green () &&
-	  each_pen->GetColour ().Blue () == colour->Blue ())
-	return each_pen;
-    }
+
+  while (node = list->NextNode(i)) {
+    wxPen *each_pen = (wxPen *) node->Data ();
+    if (each_pen &&
+	each_pen->GetWidth () == width &&
+	each_pen->GetStyle () == style &&
+	each_pen->GetColour ().Red () == colour->Red () &&
+	each_pen->GetColour ().Green () == colour->Green () &&
+	each_pen->GetColour ().Blue () == colour->Blue ())
+      return each_pen;
+  }
   /* MATTHEW: [8] With GC, must explicitly add: */
   pen = new wxPen (*colour, width, style);
 
@@ -837,40 +834,41 @@ wxPen *wxPenList::FindOrCreatePen (char *colour, int width, int style)
     return NULL;
 }
 
-wxBrushList::~wxBrushList (void)
+wxBrushList::wxBrushList(void)
+: wxObject(WXGC_NO_CLEANUP)
 {
-  wxNode *node = First ();
-  while (node)
-    {
-      wxBrush *brush = (wxBrush *) node->Data ();
-      wxNode *next = node->Next ();
-      delete brush;
-      node = next;
-    }
+  list = new wxChildList;
 }
 
-void wxBrushList::AddBrush (wxBrush * brush)
+wxBrushList::~wxBrushList(void)
 {
-  Append (brush);
 }
+
+void wxBrushList::AddBrush(wxBrush *Brush) 
+{ 
+  list->Append(Brush); 
+  list->Show(Brush, FALSE); /* so it can be collected */
+} 
+
 
 wxBrush *wxBrushList::FindOrCreateBrush (wxColour * colour, int style)
 {
   wxBrush *brush; /* MATTTHEW: [8] */
+  int i;
+  wxChildNode *node;
 
   if (!colour)
     return NULL;
 
-  for (wxNode * node = First (); node; node = node->Next ())
-    {
-      wxBrush *each_brush = (wxBrush *) node->Data ();
-      if (each_brush &&
-	  each_brush->GetStyle () == style &&
-	  each_brush->GetColour ().Red () == colour->Red () &&
-	  each_brush->GetColour ().Green () == colour->Green () &&
-	  each_brush->GetColour ().Blue () == colour->Blue ())
-	return each_brush;
-    }
+  while (node = list->NextNode(i)) {
+    wxBrush *each_brush = (wxBrush *) node->Data ();
+    if (each_brush &&
+	each_brush->GetStyle () == style &&
+	each_brush->GetColour ().Red () == colour->Red () &&
+	each_brush->GetColour ().Green () == colour->Green () &&
+	each_brush->GetColour ().Blue () == colour->Blue ())
+      return each_brush;
+  }
 
   /* MATTHEW: [8] With GC, must explicitly add: */
   brush = new wxBrush (*colour, style);
@@ -894,49 +892,39 @@ wxBrush *wxBrushList::FindOrCreateBrush (char *colour, int style)
 }
 
 
-void wxBrushList::RemoveBrush (wxBrush * brush)
+wxFontList::wxFontList (void)
+: wxObject(WXGC_NO_CLEANUP)
 {
-  DeleteObject (brush);
+  list = new wxChildList;
 }
 
 wxFontList::~wxFontList (void)
 {
-  wxNode *node = First ();
-  while (node)
-    {
-      wxFont *font = (wxFont *) node->Data ();
-      wxNode *next = node->Next ();
-      delete font;
-      node = next;
-    }
 }
 
 void wxFontList::AddFont (wxFont * font)
 {
-  Append (font);
-}
-
-void wxFontList::RemoveFont (wxFont * font)
-{
-  DeleteObject (font);
+  list->Append(font);
+  list->Show(font, FALSE); /* so it can be collected */
 }
 
 wxFont *wxFontList::
 FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool underline)
 {
   wxFont *fnt; /* MATTTHEW: [8] */
+  int i = 0;
+  wxChildNode *node;
 
-  for (wxNode * node = First (); node; node = node->Next ())
-    {
-      wxFont *each_font = (wxFont *) node->Data ();
-      if (each_font &&
-	  each_font->GetPointSize () == PointSize &&
-	  each_font->GetStyle () == Style &&
-	  each_font->GetWeight () == Weight &&
-	  each_font->GetFontId () == FamilyOrFontId && /* MATTHEW: [4] New font system */
-	  each_font->GetUnderlined () == underline)
-	return each_font;
-    }
+  while (node = list->NextNode(i)) {
+    wxFont *each_font = (wxFont *) node->Data ();
+    if (each_font &&
+	each_font->GetPointSize () == PointSize &&
+	each_font->GetStyle () == Style &&
+	each_font->GetWeight () == Weight &&
+	each_font->GetFontId () == FamilyOrFontId && /* MATTHEW: [4] New font system */
+	each_font->GetUnderlined () == underline)
+      return each_font;
+  }
   /* MATTHEW: [8] With GC, must explicitly add: */
   fnt = new wxFont (PointSize, FamilyOrFontId, Style, Weight, underline);
 

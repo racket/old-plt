@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.1.1.1 1997/12/22 16:12:02 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -31,7 +31,9 @@
 
 #include <shellapi.h>
 
+
 #define SIGNED_WORD short
+
 
 /*
 #if HAVE_SOCKET
@@ -104,10 +106,15 @@ wxWindow *wxWindow::FindItem(int id)
         return wnd ;
     }
     else if (wxSubType(obj->__type, wxTYPE_CANVAS)
+
 		     || wxSubType(obj->__type, wxTYPE_TEXT_WINDOW))
+
 	{
+
 		// Do nothing
+
 	}
+
 	else
     {
       wxItem *item = (wxItem *)current->Data();
@@ -214,6 +221,7 @@ wxWindow::wxWindow(void)
   caretWidth = 0; caretHeight = 0;
   caretEnabled = FALSE;
   caretShown = FALSE;
+
   focusWindow = NULL;
 }
 
@@ -296,69 +304,133 @@ void wxWindow::SetFocus(void)
 }
 
 
+
 void wxWindow::ChangeToGray(Bool gray)
+
 {
+
   /* Nothing extra to do over enabling */
+
 }
+
+
 
 Bool wxWindow::IsGray(void)
+
 {
+
   return !winEnabled || internal_gray_disabled;
+
 }
+
+
 
 void wxWindow::InternalEnable(Bool enable, Bool gray)
+
 {
+
   Bool do_something;
+
   short start_igd = internal_gray_disabled;
+
   
+
   if (!enable) {
+
     do_something = !internal_disabled;
+
     internal_disabled++;
+
     if (gray)
+
       internal_gray_disabled++;
+
   } else { 
+
     --internal_disabled;
+
     do_something = !internal_disabled;
+
     if (gray)
+
       --internal_gray_disabled;
+
   }
+
+
 
   if (do_something && winEnabled) {
+
     HWND hWnd = GetHWND();
+
     if (hWnd)
+
       ::EnableWindow(hWnd, (BOOL)enable);
+
   }
+
+
 
   if ((!!internal_gray_disabled != !!start_igd) && winEnabled)
+
     ChangeToGray(!!internal_gray_disabled);
+
 }
+
+
 
 void wxWindow::Enable(Bool enable)
+
 {
+
   if (winEnabled == !!enable)
+
     return;
 
+
+
   winEnabled = enable;
+
   
+
   if (!internal_disabled) {
+
     HWND hWnd = GetHWND();
+
     if (hWnd)
+
       ::EnableWindow(hWnd, (BOOL)enable);
+
   }
+
+
 
   /* Doing handle sensitive makes it gray: */
+
   if (!internal_gray_disabled)
+
     ChangeToGray(!enable);
+
 }
 
+
+
 void wxWindow::InternalGrayChildren(Bool gray)
+
 {
+
   wxChildNode *cn;
+
   for (cn = GetChildren()->First(); cn; cn = cn->Next()) {
+
     wxWindow *w = (wxWindow *)cn->Data();
+
     w->InternalEnable(!gray, TRUE);
+
   }
+
 }
+
 
 void wxWindow::CaptureMouse(void)
 {
@@ -618,10 +690,15 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
   HFONT was = 0;
   if (fontToUse && (fnt=fontToUse->GetInternalFont(dc))) 
     was = SelectObject(dc,fnt) ; 
+
   else {
+
 	fnt = (HFONT)SendMessage(hWnd, WM_GETFONT, 0, 0L);
+
 	if (fnt)
+
 	 was = SelectObject(dc, fnt);
+
   }
 
   SIZE sizeRect;
@@ -696,6 +773,7 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
     wnd->last_lparam = lParam;
 
     if (message == WM_SETFONT)
+
 		return 0;
   else if (message == WM_INITDIALOG)
       return TRUE;
@@ -776,14 +854,23 @@ LRESULT APIENTRY _EXPORT wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARA
             {
               int width = LOWORD(lParam);
               int height = HIWORD(lParam);
+
 			  
+
               // Find the difference between the entire window (title bar and all)
+
               // and the client area; add this to the new client size
+
   			  RECT rect, rect2;
+
 			  GetClientRect(hWnd, &rect);
+
               GetWindowRect(hWnd, &rect2);
 
+
+
 			  int actual_width = rect2.right - rect2.left - rect.right + width;
+
               int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
               wnd->OnSize(actual_width, actual_height, wParam);
             }
@@ -1230,15 +1317,25 @@ LONG APIENTRY _EXPORT
               int width = LOWORD(lParam);
               int height = HIWORD(lParam);
 
+
               // Find the difference between the entire window (title bar and all)
+
               // and the client area; add this to the new client size
+
   			  RECT rect, rect2;
+
 			  GetClientRect(hWnd, &rect);
+
               GetWindowRect(hWnd, &rect2);
 
+
+
 			  int actual_width = rect2.right - rect2.left - rect.right + width;
+
               int actual_height = rect2.bottom - rect2.top - rect.bottom + height;
+
               wnd->OnSize(actual_width, actual_height, wParam);
+
             }
             else return FALSE;
             break;
@@ -1497,36 +1594,67 @@ LONG APIENTRY _EXPORT
             break;
 	}
       case WM_QUERYENDSESSION:
+
 	{
+
 	  // Same as WM_CLOSE, but inverted results. Thx Microsoft :-)
+
 	  /* MATTHEW: [11] */
+
 #if WXGARBAGE_COLLECTION_ON
+
 	  if (wnd->OnClose())
+
 	    {
+
 	      if (wnd->wx_window) wnd->wx_window->Show(FALSE);
+
 	    }
+
 	  return 0;
+
 #else
+
 	  retval = wnd->OnClose();
+
 #endif
+
 	  break;
+
 	}
+
       case WM_CLOSE:
+
 	{
+
 	  if (wnd->OnClose())
+
 	    /* MATTHEW: [11] */
+
 #if WXGARBAGE_COLLECTION_ON
+
 	    {
+
 	      if (wnd->wx_window) wnd->wx_window->Show(FALSE);
+
 	    }
+
 	  return 1;
+
 #else
+
 	  retval = 0L;
+
 	  else
+
 	    retval = 1L;
+
 #endif
+
 	  break;
+
         }
+
         default:
         {
           return FALSE;
@@ -1612,12 +1740,20 @@ wxWnd::~wxWnd(void)
     ::DeleteObject(background_brush) ;
 #endif
 
+
+
   wxWindow *p = wx_window->GetParent();
+
   while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
+
 			  || wxSubType(p->__type, wxTYPE_FRAME)))
+
 	p = p->GetParent();
+
   if (p)
+
 	if (p->focusWindow == wx_window)
+
 	  p->focusWindow = NULL;
 }
 
@@ -1701,8 +1837,12 @@ void wxWnd::Create(wxWnd *parent, char *wclass, wxWindow *wx_win, char *title,
   else
     userColours = FALSE;
 
+
+
   if (!parent) {
+
 	  x1 = y1 = CW_USEDEFAULT;
+
   }
 
   // Find parent's size, if it exists, to set up a possible default
@@ -1847,13 +1987,21 @@ BOOL wxWnd::OnActivate(BOOL state, BOOL WXUNUSED(minimized), HWND WXUNUSED(activ
 #endif
   if (wx_window)
   {
+
 	if ((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)) {
+
 		if (wx_window->focusWindow) {
+
 			wxWindow *win = wx_window->focusWindow;
+
 			wx_window->focusWindow = NULL;
+
 			win->SetFocus();
+
 		}
+
 	}
+
 
     wx_window->GetEventHandler()->OnActivate(((state == WA_ACTIVE) || (state == WA_CLICKACTIVE)));
 
@@ -1881,12 +2029,19 @@ BOOL wxWnd::OnSetFocus(HWND WXUNUSED(hwnd))
 #endif
   if (wx_window)
   {
+
 	wxWindow *p = wx_window->GetParent();
+
 	while (p && !(wxSubType(p->__type, wxTYPE_FRAME)
+
 				  || wxSubType(p->__type, wxTYPE_FRAME)))
+
 	  p = p->GetParent();
+
 	if (p)
+
 	  p->focusWindow = wx_window;
+
 
     // Deal with caret
     if (wx_window->caretEnabled && (wx_window->caretWidth > 0) && (wx_window->caretHeight > 0))
@@ -2288,17 +2443,30 @@ void wxSubWnd::OnSize(int w, int h, UINT WXUNUSED(flag))
     return;
 
 
+
+
   if (calcScrolledOffset)	{
+
     if ((xscroll_lines > 0) || (yscroll_lines > 0)) {
+
 		wxCanvas * c= (wxCanvas *)wx_window;
+
 		if (c) {
+
 		   c->SetScrollbars(c->horiz_units, c->vert_units,
+
 						    xscroll_lines, yscroll_lines,
+
 							xscroll_lines_per_page, yscroll_lines_per_page,
+
 							xscroll_position, yscroll_position, TRUE);
+
 		}
+
 	}
+
   }
+
 
   // Store DC for duration of size message
   // SEEMS TO CAUSE AN INVALID DC ERROR IN E.G. HELLO DEMO
@@ -2375,11 +2543,15 @@ void wxSubWnd::OnLButtonDown(int x, int y, UINT flags)
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+
 	  wx_window->CaptureMouse();
+
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DOWN;
   if (wx_window)
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2403,12 +2575,17 @@ void wxSubWnd::OnLButtonUp(int x, int y, UINT flags)
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+
 	  wx_window->ReleaseMouse();
+
+
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_UP;
 
   if (wx_window) 
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2438,6 +2615,7 @@ void wxSubWnd::OnLButtonDClick(int x, int y, UINT flags)
   /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2483,11 +2661,16 @@ void wxSubWnd::OnMButtonDown(int x, int y, UINT flags)
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+
 	  wx_window->CaptureMouse();
+
+
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_DOWN;
   if (wx_window) 
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2510,12 +2693,17 @@ void wxSubWnd::OnMButtonUp(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
+
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+
 	  wx_window->ReleaseMouse();
+
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_LEFT_UP;
   if (wx_window)
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2545,6 +2733,7 @@ void wxSubWnd::OnMButtonDClick(int x, int y, UINT flags)
   /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2588,12 +2777,17 @@ void wxSubWnd::OnRButtonDown(int x, int y, UINT flags)
   event.rightDown = (flags & MK_RBUTTON);
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
+
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+
 	  wx_window->CaptureMouse();
+
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_RIGHT_DOWN;
   if (wx_window) 
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2617,11 +2811,16 @@ void wxSubWnd::OnRButtonUp(int x, int y, UINT flags)
   event.SetTimestamp(last_msg_time); /* MATTHEW: timeStamp */
 
   if (wx_window && wxSubType(wx_window->__type, wxTYPE_CANVAS))
+
 	  wx_window->ReleaseMouse();
+
+
 
   last_x_pos = event.x; last_y_pos = event.y; last_event = wxEVENT_TYPE_RIGHT_UP;
   if (wx_window) 
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2651,6 +2850,7 @@ void wxSubWnd::OnRButtonDClick(int x, int y, UINT flags)
   /* MATTHEW: Always send event */
   if (wx_window /* && wx_window->doubleClickAllowed */)
     if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2759,7 +2959,9 @@ void wxSubWnd::OnMouseMove(int x, int y, UINT flags)
   last_event = wxEVENT_TYPE_MOTION;
   last_x_pos = event.x; last_y_pos = event.y;
   if (wx_window) 
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2790,7 +2992,9 @@ void wxSubWnd::OnMouseEnter(int x, int y, UINT flags)
   last_event = wxEVENT_TYPE_ENTER_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;
   if (wx_window) 
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2821,7 +3025,9 @@ void wxSubWnd::OnMouseLeave(int x, int y, UINT flags)
   last_event = wxEVENT_TYPE_LEAVE_WINDOW;
   last_x_pos = event.x; last_y_pos = event.y;
   if (wx_window) 
+
 	if (!wx_window->CallPreOnEvent(wx_window, &event))
+
 	  wx_window->GetEventHandler()->OnEvent(event);
 }
 
@@ -2891,6 +3097,7 @@ void wxSubWnd::OnChar(WORD wParam, LPARAM lParam, Bool isASCII)
     fy = (float)pt.y ;
     DeviceToLogical(&fx,&fy) ;
     CalcUnscrolledPosition((int)fx,(int)fy,&event.x,&event.y) ;
+
 
 	if (!wx_window->CallPreOnChar(wx_window, &event))
       wx_window->GetEventHandler()->OnChar(event);
@@ -3246,8 +3453,11 @@ void wxWindow::DoScroll(wxCommandEvent& event)
     wnd->yscroll_position = GetScrollPos(orient);
   }
 
+
   OnScroll(event);
+
 }
+
 
 int wxWindow::CalcScrollInc(wxCommandEvent& event)
 {
@@ -3407,6 +3617,7 @@ void wxWindow::OnScroll(wxCommandEvent& event)
   wxWnd *wnd = (wxWnd *)handle;
   HWND hWnd = GetHWND();
    
+
 #if 0
   if (orient == wxHORIZONTAL)
   {
@@ -3422,8 +3633,11 @@ void wxWindow::OnScroll(wxCommandEvent& event)
     else
       InvalidateRect(hWnd, NULL, FALSE);
   }
+
 #else
+
   InvalidateRect(hWnd, NULL, FALSE);
+
 #endif
 }
 
@@ -3439,17 +3653,20 @@ void wxWindow::SetScrollPos(int orient, int pos)
   if (hWnd)	{
     ::SetScrollPos(hWnd, wOrient, pos, TRUE);
 
+
 	wxWnd *wnd = (wxWnd *)handle;
     if (orient == wxHORIZONTAL)
       wnd->xscroll_position = GetScrollPos(orient);
     else
       wnd->yscroll_position = GetScrollPos(orient);
+
   }
 }
 
 void wxWindow::SetScrollRange(int orient, int range)
 {
   int wOrient, page;
+
 
   if (orient == wxHORIZONTAL)
     wOrient = SB_HORZ;
@@ -3458,69 +3675,126 @@ void wxWindow::SetScrollRange(int orient, int range)
     
   wxWnd *wnd = (wxWnd *)handle;
   if (orient == wxHORIZONTAL) {
+
 	page = wnd->xscroll_lines_per_page;
   } else {
 	page = wnd->yscroll_lines_per_page;
+
   }
+
+
 
   SCROLLINFO info;
+
   info.cbSize = sizeof(SCROLLINFO);
+
   info.nPage = page;
+
   info.nMin = 0;
+
   info.nMax = range + page - 1;
+
   info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
 
+
+
   HWND hWnd = GetHWND();
+
   if (hWnd)	{
+
 #if 0
+
 	if (!info.nMax) {
+
 	  /* Try to force a show: */
+
 	  info.nMax = 1;
+
 	  ::SetScrollInfo(hWnd, wOrient, &info, FALSE);
+
 	  info.nMax = 0;
+
 	}
+
 #endif
+
 	::SetScrollInfo(hWnd, wOrient, &info, TRUE);
+
   }
 
+
+
   if (orient == wxHORIZONTAL)
+
 	wnd->xscroll_lines = range;
+
   else
+
 	wnd->yscroll_lines = range;
+
 }
 
 void wxWindow::SetScrollPage(int orient, int page)
 {
+
   SCROLLINFO info;
+
   int dir, range;
   wxWnd *wnd = (wxWnd *)handle;
 
+
+
   if (orient == wxHORIZONTAL) {
+
 	dir = SB_HORZ;    
+
 	range = wnd->xscroll_lines;
+
 	if (page > range + 1)
+
 		page = range + 1;
+
 	wnd->xscroll_lines_per_page = page;
+
   } else {
+
 	dir = SB_VERT;
 	range = wnd->yscroll_lines;
+
 	if (page > range + 1)
+
 		page = range + 1;
+
     wnd->yscroll_lines_per_page = page;
+
   }
 
+
+
   if (wxGetOsVersion(NULL, NULL) == wxWIN32S)
+
 	return;
 
+
+
   info.cbSize = sizeof(SCROLLINFO);
+
   info.nPage = page;
+
   info.nMin = 0;
+
   info.nMax = range + page - 1;
+
   info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
+
   	
+
   HWND hWnd = GetHWND();
+
   if (hWnd)	{
+
     ::SetScrollInfo(hWnd, dir, &info, TRUE);
+
   }
 }
 
@@ -3541,10 +3815,15 @@ int wxWindow::GetScrollPos(int orient)
 int wxWindow::GetScrollRange(int orient)
 {
   wxWnd *wnd = (wxWnd *)handle;
+
   if (orient == wxHORIZONTAL)
+
     return max(0, wnd->xscroll_lines);
+
   else
+
     return max(0, wnd->yscroll_lines);
+
 }
 
 int wxWindow::GetScrollPage(int orient)
@@ -3564,49 +3843,87 @@ void wxWindow::OnSize(int w, int h)
     Layout();
 #endif
 
+
   if (wxWinType != wxTYPE_XWND)
     return;
   wxWnd *wnd = (wxWnd *)handle;
     
   if (wxSubType(__type, wxTYPE_DIALOG_BOX)) {
+
     wxChildNode* node = GetChildren()->First(); 
 
+
+
    if (node && !node->Next()) {
+
     wxWindow *win = (wxWindow *)node->Data();
+
     Bool hasSubPanel = (wxSubType(win->__type, wxTYPE_PANEL && !wxSubType(win->__type, wxTYPE_DIALOG_BOX)) ||
+
 			wxSubType(win->__type, wxTYPE_CANVAS) ||
+
 			wxSubType(win->__type, wxTYPE_TEXT_WINDOW));
+
     
+
     if (hasSubPanel) {
+
       int w, h;
+
       GetClientSize(&w, &h);
+
       win->SetSize(0, 0, w, h);
+
     }
+
    }
+
   }
 }
 
+
 Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *evt)
+
 {
+
 	wxWindow *p = win->GetParent();
+
 	return ((p && CallPreOnEvent(p, evt)) || win->PreOnEvent(this, evt));
+
 }
+
+
 
 Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *evt)
+
 {
+
 	wxWindow *p = win->GetParent();
+
 	return ((p && CallPreOnChar(p, evt)) || win->PreOnChar(this, evt));
+
 }
+
+
 
 Bool wxWindow::PreOnEvent(wxWindow *, wxMouseEvent *)
+
 {
+
 	return FALSE;
+
 }
 
+
+
 Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)
+
 {
+
 	return FALSE;
+
 }
+
 
 // Caret manipulation
 void wxWindow::CreateCaret(int w, int h)

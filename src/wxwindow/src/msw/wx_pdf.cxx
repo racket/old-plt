@@ -1,4 +1,51 @@
 
+/* Copyright (c) 1997-98 PLt (Matthew Flatt)
+
+  This file exists because of a problem in Windows: when
+  a built-in dialog is used (such as the FindFile dialog),
+  you have no control over the dispatching of events in
+  in that thread's event queue.
+
+  "Easy," you say, "Run it in it's own thread."
+
+  Yes, of course. But there's more: Window assigns working
+  directories BY PROCESS, not by thread! "Who could be so
+  stupid?" you wonder, knowing that the standard Windows
+  FindFile dialog changes the working directory. Unfortunately,
+  these two horrendous design choices don't cancel each other
+  out.
+
+  So we need to make sure that the real thread and the "primitive
+  dialog" thread don't run at the same time, and we'll manually
+  switch the current directory as the threads take turn. Yes,
+  we're trying to implement a mini operating system on top of
+  Windows. Again.
+
+  The basic idea is simple. Unfortunately, the thread switches
+  are not as isolated as we'd like. Mostly, the primitive dialogs
+  will run as the main thread sleeps, and this is handled by
+  DoPreGM and DoPostGM. But the main thread can take naps here
+  and there, so we create a low-priority thread that swaps in
+  the primitive thread and then swaps them back out when they
+  sleep (which we trust to be fairly soon).
+
+  Danger! In setting up for the switch, we have to call Windows
+  functions - GetCurrentDirectory and SetCurrentDirectory - that
+  have process-global locks. So there's yet another, even lower-
+  priority thread, that detects this and gives the old thread
+  a little more time. Presumably, in this case, the old thread
+  was waiting for something extenal to MrEd.
+
+  For the final bit of complication, recall that thread priorities
+  are global to the whole operating system. So if there were some
+  background process running continuously, our low-priority threads 
+  wouldn't get to run at all. So for the critical bits be bump
+  up the process's base priority.
+
+  Enjoy.
+
+  */
+
 #if defined(_MSC_VER)
 # include "wx.h"
 #else
@@ -97,12 +144,47 @@ static HANDLE main_thread_for_checker;
 static HANDLE deadlock_detector;
 static HANDLE deadlock_detector2;
 
+static int wait_at_pre = 0;
 static int undeadlock_via_prims;
+
+static int gear = 0;
+
+static void HighGear(void)
+{
+	if (!gear++) {
+	  /* It goes all the way to 11! */
+	  SetPriorityClass(GetCurrentProcess(), 11); 
+    }
+}
+
+static void LowGear(void)
+{
+	if (!--gear) {
+		SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
+	}
+}
+
+static void WaitHere(void)
+{
+  if (wait_at_pre) {
+    /* We were running to get a lock released. Now we should wait. */
+	/* We don't have to worry much about race conditions because
+	   the loop below can't lock anything */
+	SetThreadPriority(main_thread_for_checker, THREAD_PRIORITY_LOWEST);
+    do {
+		Sleep(10); /* deadlock detector should take back over */
+	} while (wait_at_pre);
+	SetThreadPriority(main_thread_for_checker, THREAD_PRIORITY_NORMAL);
+  }
+}
 
 void wxDoPreGM(void)
 {
+  WaitHere();
+
   ActiveThread *a;
 
+  LowGear();
   SuspendThread(checker);
 
   /* The checker can't have locked CWD, so no need for the deadlock checker */
@@ -124,12 +206,15 @@ void wxDoPostGM(void)
   /* Did we catch an active thread at a bad time? See
      "This is insane", below. */
   ResumeThread(deadlock_detector2);
+  HighGear();
   ff_dir = GetCWD(ff_dir, ff_dir_size, &ff_dir_size, &ff_drive);
+  LowGear();
   SuspendThread(deadlock_detector2);
   if (real_dir)
     SetCWD(real_dir, real_drive);
 
   ResumeThread(checker);
+  HighGear();
 }
 
 static long DeadlockChecker(void *data)
@@ -145,10 +230,16 @@ static long DeadlockChecker(void *data)
 		  for (a = active_threads; a; a = a->next)
             SuspendThread(a->th);
 	  } else {
+	      wait_at_pre = 1;
           ResumeThread(main_thread_for_checker);
           SuspendThread(main_thread_for_checker);
+		  /* in case it started waiting: */
+		  SetThreadPriority(main_thread_for_checker, THREAD_PRIORITY_NORMAL);
+	      wait_at_pre = 0;
 	  }
 	  ResumeThread(checker);
+
+	  Sleep(0);
     }
 
 	return 0;
@@ -170,6 +261,8 @@ static long DeadlockChecker2(void *data)
 	  for (a = active_threads; a; a = a->next)
          SuspendThread(a->th);
 	  ResumeThread(main_thread_for_checker);
+
+	  Sleep(0);
     }
 
 	return 0;
@@ -188,6 +281,8 @@ static long PrimtimeChecker(void *data)
        directory, first. */
     SuspendThread(main_thread_for_checker);
     
+	SetThreadPriority(checker, THREAD_PRIORITY_NORMAL);
+
 	/* This is insane. It's possible now to go into deadlock
 	   because the main thread may have a lock on getting/setting
 	   CWD. deadlock_detector detects this, and gives the main
@@ -199,14 +294,19 @@ static long PrimtimeChecker(void *data)
     SuspendThread(deadlock_detector);
     if (ff_dir)
       SetCWD(ff_dir, ff_drive);
-
+	
     for (a = active_threads; a; a = a->next)
       ResumeThread(a->th);
 
+	SetThreadPriority(checker, THREAD_PRIORITY_BELOW_NORMAL);
+
+	Sleep(0);
     /* Those threads have a higher priority than the checker, so they run
-       unilt they've done as much as they can for now. Then we suspend them
+       until they've done as much as they can for now. Then we suspend them
        again. Kinda dangerous because the main thread will be swapped
        out indefinitely, but we trust the primitive dialogs. */
+
+	SetThreadPriority(checker, THREAD_PRIORITY_NORMAL);
 
     for (a = active_threads; a; a = a->next)
       SuspendThread(a->th);
@@ -220,6 +320,9 @@ static long PrimtimeChecker(void *data)
       SetCWD(real_dir, real_drive);
 
     ResumeThread(main_thread_for_checker);
+
+	SetThreadPriority(checker, THREAD_PRIORITY_BELOW_NORMAL);
+	Sleep(0);
   }
 
   return 0;
@@ -332,8 +435,10 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 	 SetThreadPriority(deadlock_detector2, THREAD_PRIORITY_LOWEST);
        }
 
-	   if (!active_threads->next)
+	   if (!active_threads->next) {
          ResumeThread(checker);
+		 HighGear();
+	   }
      }
 
      wxDispatchEventsUntil(Check, (void *)_data);
@@ -356,8 +461,11 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 	   active_threads = a->next;
        }
 
-       if (!active_threads)
-	 SuspendThread(checker);
+       if (!active_threads) {
+		WaitHere();
+		LowGear();
+	    SuspendThread(checker);
+	   }
      }
 
      CloseHandle(th);

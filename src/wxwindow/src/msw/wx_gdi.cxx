@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.1.1.1 1997/12/22 16:12:03 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -41,6 +41,16 @@
 // #include "..\..\utils\rcparser\src\cric_prv.h"
 #endif
 
+// Resource counting
+#if 1
+int pen_count, brush_count, font_count, bitmap_count;
+# define COUNT_P(c) c++
+# define COUNT_M(c) --c
+#else
+# define COUNT_P(c) 
+# define COUNT_M(c) 
+#endif
+
 Bool wxMakeBitmapAndPalette(LPBITMAPINFOHEADER lpInfo,
 			HPALETTE * phPal, HBITMAP * phBitmap);
 
@@ -51,9 +61,12 @@ IMPLEMENT_DYNAMIC_CLASS(wxFont, wxObject)
 
 wxFont::wxFont(void)
 {
+
 #if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
   wxTheFontList->Append(this);
 #endif
+
+  COUNT_P(font_count);
 
   Create(12, wxDEFAULT, wxNORMAL, wxNORMAL, FALSE);
 }
@@ -68,6 +81,8 @@ wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined
   wxTheFontList->Append(this);
 #endif
 
+  COUNT_P(font_count);
+
   Create(PointSize, Family, Style, Weight, Underlined);
 }
 
@@ -78,6 +93,8 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 #if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
   wxTheFontList->Append(this);
 #endif
+
+  COUNT_P(font_count);
 
   Create(PointSize, 
 	 wxTheFontNameDirectory.FindOrCreateFontId(Face, Family), 
@@ -107,7 +124,12 @@ wxFont::~wxFont()
     DeleteObject(cfont);
   }
   cfont = NULL ;
+
+  COUNT_M(font_count);
+
+#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
   wxTheFontList->DeleteObject(this);
+#endif
 }
 
 /* MATTHEW: [4] Use wxTheFontNameDirectory */
@@ -281,6 +303,8 @@ IMPLEMENT_DYNAMIC_CLASS(wxPen, wxObject)
 
 wxPen::wxPen(void)
 {
+  COUNT_P(pen_count);
+
   stipple = NULL ;
   style = wxSOLID;
   width = 1;
@@ -306,11 +330,7 @@ wxPen::wxPen(void)
 
 wxPen::~wxPen()
 {
-  if (my_old_cpen)
-  {
-    DeleteObject(my_old_cpen);
-  }
-  my_old_cpen = NULL ;
+  COUNT_M(pen_count);
 
   if (cpen)
   {
@@ -318,11 +338,15 @@ wxPen::~wxPen()
   }
   cpen = NULL ;
 
+#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
   wxThePenList->RemovePen(this);
+#endif
 }
 
 wxPen::wxPen(wxColour& col, int Width, int Style)
 {
+  COUNT_P(pen_count);
+
   colour = col;
   stipple = NULL;
   width = Width;
@@ -374,6 +398,8 @@ wxPen::wxPen(wxColour& col, int Width, int Style)
 
 wxPen::wxPen(const char *col, int Width, int Style)
 {
+  COUNT_P(pen_count);
+
   colour = col;
   stipple = NULL ;
   width = Width;
@@ -383,7 +409,6 @@ wxPen::wxPen(const char *col, int Width, int Style)
   nb_dash = 0 ;
   dash = NULL ;
   cpen = NULL ;
-  my_old_cpen = NULL ;
   old_width = -1 ;
   old_style = -1 ;
   old_join  = -1 ;
@@ -440,22 +465,10 @@ void wxPen::ChangePen(void)
   old_stipple = stipple ;
   old_color = ms_colour ;
 
-/**
-No! if cpen is currently selected into some DC, this results into
-memory leakage with Win32s.
-Rather, defers Delete till next selection
-  if (cpen)
-    DeleteObject(cpen);
-  cpen = NULL ;
-***/
-  if (cpen)
-  {
-    if (my_old_cpen)
-    {
-      DeleteObject(my_old_cpen) ; // and hope that's ok...
-    }
-    my_old_cpen = cpen ;
-    cpen = NULL ;
+  /* Note: the pen can't be selected anywhere if we're changing it. */
+  if (cpen) {
+	DeleteObject(cpen);
+    cpen = NULL;
   }
 
   // Join style, Cap style, Pen Stippling only on Win32.
@@ -548,14 +561,18 @@ Rather, defers Delete till next selection
 
     if ((high&0x8000)==0)
 ***/
+
 #if 0
     if (wxGetOsVersion()==wxWINDOWS_NT)
+
 #endif
       cpen = ExtCreatePen(ms_style,width,&logb,
                           style==wxUSER_DASH?nb_dash:0,real_dash);
+
 #if 0
     else
       cpen = CreatePen(wx2msPenStyle(style), width, ms_colour);
+
 #endif
 
     if (real_dash)
@@ -573,24 +590,19 @@ Rather, defers Delete till next selection
 
 HPEN wxPen::SelectPen(HDC dc)
 {
-  HPEN prev_pen ;
+  HPEN prev_pen;
 
   if (cpen && style!=wxTRANSPARENT)
   {
-    prev_pen = ::SelectObject(dc,cpen) ;
+    prev_pen = ::SelectObject(dc,cpen);
   }
   else
   {
-    HPEN nullPen = ::GetStockObject(NULL_PEN) ;
+    HPEN nullPen = ::GetStockObject(NULL_PEN);
     prev_pen = ::SelectObject(dc , nullPen);
   }
-  if (my_old_cpen)
-  {
-    DeleteObject(my_old_cpen) ; // Now, we can "safely" delete old pen
-  }
-  my_old_cpen = NULL;           // (We assume that pen belongs to only one DC)
-  return prev_pen ;
- 
+  
+  return prev_pen;
 }
 
 int wx2msPenStyle(int wx_style)
@@ -643,10 +655,11 @@ IMPLEMENT_DYNAMIC_CLASS(wxBrush, wxObject)
 
 wxBrush::wxBrush(void)
 {
+  COUNT_P(brush_count);
+  
   style = wxSOLID;
   stipple = NULL ;
   cbrush = NULL;
-  my_old_cbrush = NULL ;
   old_color = 0 ;
   old_style = -1 ;
   old_stipple = NULL ;
@@ -658,11 +671,7 @@ wxBrush::wxBrush(void)
 
 wxBrush::~wxBrush()
 {
-  if (my_old_cbrush)
-  {
-    DeleteObject(my_old_cbrush);
-  }
-  my_old_cbrush = NULL ;
+  COUNT_M(brush_count);
 
   if (cbrush)
   {
@@ -670,16 +679,19 @@ wxBrush::~wxBrush()
   }
   cbrush = NULL ;
 
+#if !WXGARBAGE_COLLECTION_ON /* MATTHEW: GC */
   wxTheBrushList->RemoveBrush(this);
+#endif
 }
 
 wxBrush::wxBrush(wxColour& col, int Style)
 {
+  COUNT_P(brush_count);
+
   colour = col;
   style = Style;
   stipple = NULL ;
   cbrush = NULL;
-  my_old_cbrush = NULL;
   old_color = 0 ;
   old_style = -1 ;
   old_stipple = NULL ;
@@ -713,20 +725,10 @@ void wxBrush::ChangeBrush(void)
   if (!must_change)
     return ;
 
-/***
-No! (see ChangePen)
-  if (cbrush) DeleteObject(cbrush);
-  cbrush = NULL ;
-***/
-
-  if (cbrush)
-  {
-    if (my_old_cbrush)
-    {
-      DeleteObject(my_old_cbrush) ;
-    }
-    my_old_cbrush = cbrush ;
-    cbrush = NULL ;
+	/* Note: brush isn't selected anywhere if we can change it. */
+  if (cbrush) {
+	  DeleteObject(cbrush);
+      cbrush = NULL;
   }
 
   switch (style)
@@ -793,22 +795,18 @@ HBRUSH wxBrush::SelectBrush(HDC dc)
     HBRUSH nullBrush = ::GetStockObject(NULL_BRUSH);
     prev_brush = ::SelectObject(dc, nullBrush);
   }
-  if (my_old_cbrush)
-  {
-    DeleteObject(my_old_cbrush) ;
-  }
-  my_old_cbrush = NULL ;
-  return(prev_brush) ;
 
+  return prev_brush;
 }
 
 wxBrush::wxBrush(const char *col, int Style)
 {
+  COUNT_P(brush_count);
+
   colour = col;
   style = Style;
   stipple = NULL ;
   cbrush = NULL;
-  my_old_cbrush = NULL;
   old_color = 0 ;
   old_style = -1 ;
   old_stipple = NULL ;
@@ -1147,15 +1145,25 @@ int wxDisplayDepth(void)
 // Get size of display
 void wxDisplaySize(int *width, int *height)
 {
+
   RECT r;
 
+
+
   if (SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0)) {
+
 	*width = (r.right - r.left);
+
 	*height = (r.bottom - r.top);
+
   } else {
+
 	HDC dc = ::GetDC(NULL);
+
     *width = GetDeviceCaps(dc, HORZRES); *height = GetDeviceCaps(dc, VERTRES);
+
     ReleaseDC(NULL, dc);
+
   }
 }
 
@@ -1163,6 +1171,8 @@ IMPLEMENT_DYNAMIC_CLASS(wxBitmap, wxObject)
 
 wxBitmap::wxBitmap(void)
 {
+  COUNT_P(bitmap_count);
+
   __type = wxTYPE_BITMAP;
   ok = FALSE;
   width = 0;
@@ -1180,6 +1190,8 @@ wxBitmap::wxBitmap(void)
 
 wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
 {
+  COUNT_P(bitmap_count);
+
   __type = wxTYPE_BITMAP;
   width = the_width ;
   height = the_height ;
@@ -1203,6 +1215,8 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
 
 wxBitmap::wxBitmap(int w, int h, int d)
 {
+  COUNT_P(bitmap_count);
+
   __type = wxTYPE_BITMAP;
   ok = FALSE;
   width = w;
@@ -1221,6 +1235,8 @@ wxBitmap::wxBitmap(int w, int h, int d)
 
 wxBitmap::wxBitmap(char *bitmap_file, long flags)
 {
+  COUNT_P(bitmap_count);
+
   __type = wxTYPE_BITMAP;
   ok = FALSE;
   width = 0;
@@ -1241,6 +1257,8 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 // Create from data
 wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem))
 {
+  COUNT_P(bitmap_count);
+
   __type = wxTYPE_BITMAP;
   selectedInto = NULL;
   bitmapColourMap = NULL;
@@ -1474,6 +1492,8 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags)
 
 wxBitmap::~wxBitmap(void)
 {
+  COUNT_M(bitmap_count);
+
   if (selectedInto)
   {
 	  ((wxMemoryDC *)selectedInto)->SelectObject(NULL);

@@ -4,7 +4,7 @@
  * Author:		Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:	$Id: wb_list.cc,v 1.1 1996/01/10 23:46:29 markus Exp $
+ * RCS_ID:	$Id: wb_list.cxx,v 1.1.1.1 1997/12/22 16:11:54 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -771,18 +771,29 @@ wxChildNode *wxChildList::FindNode(wxChildNode *after)
     i++;
   } else
     i = 0;
-  for (; i < size; i++)
+
+  return NextNode(i);
+}
+
+wxChildNode *wxChildList::NextNode(int &pos)
+{
+  int i;
+
+  for (i = pos; i < size; i++) {
     if (nodes[i]) {
       wxChildNode *node = nodes[i];
-
-      if (node->Data())
+      
+      if (node->Data()) {
+	pos = i + 1;
 	return node;
+      }
       /* GC: */
       node->strong = NULL;
       node->weak = NULL;
       nodes[i] = NULL;
       n--;
     }
+  }
 
   return NULL;
 }

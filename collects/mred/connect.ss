@@ -1,4 +1,3 @@
-
   (unit/sig mred:connections^
     (import mred:wx^
 	    [mred:constants : mred:constants^]
@@ -79,12 +78,17 @@
 		 (send media add-canvas this)))]
 	    [on-set-focus
 	     (lambda ()
+	       (mred:debug:printf 'matthew "connect-canvas::on-set-focus~n")
 	       (when frame
 		 (send frame active-canvas this)
-		 (send frame on-frame-active))
+		 (mred:debug:printf 'matthew "connect-canvas::on-set-focus.2~n")
+		 (send frame on-frame-active)
+		 (mred:debug:printf 'matthew "connect-canvas::on-set-focus.3~n"))
 	       (let ([m (get-media)])
 		 (unless (null? m)
-		   (send m set-active-canvas this)))
+		   (mred:debug:printf 'matthew "connect-canvas::on-set-focus.4~n")
+		   (send m set-active-canvas this)
+		   (mred:debug:printf 'matthew "connect-canvas::on-set-focus.5~n")))
 	       (super-on-set-focus))])
 	  (sequence
 	    (super-init parent x y width height name style scrolls-per-page init-buffer)

@@ -18,7 +18,9 @@
     (define level-symbols (list 'core 'structured 'side-effecting 'advanced))
     (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS"))
     
-    (mred:set-preference-default 'drscheme:library-file #f)
+    (mred:set-preference-default 'drscheme:library-file #f (lambda (x)
+							     (or (not x)
+								 (eq? x #t))))
     (mred:add-preference-callback 
      'drscheme:library-file
      (lambda (p v)

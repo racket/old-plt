@@ -384,8 +384,11 @@
 		  [style-flags wx:const-mcanvas-hide-h-scroll]
 		  [on-set-focus
 		   (lambda ()
+		     (mred:debug:printf 'matthew "searching frame::on-set-focus.1~n")
 		     (send find-edit set-searching-frame frame)
-		     (super-on-set-focus))]))])
+		     (mred:debug:printf 'matthew "searching frame::on-set-focus.2~n")
+		     (super-on-set-focus)
+		     (mred:debug:printf 'matthew "searching frame::on-set-focus.3~n"))]))])
 	(lambda (super%)
 	  (class super% args
 	    (inherit active-edit active-canvas get-edit)

@@ -5,16 +5,21 @@
     
     (mred:debug:printf 'invoke "drscheme:setup@")
 
-    (mred:set-preference-default 'drscheme:wrap-program? #f)
-    (mred:set-preference-default 'drscheme:config #f)
-    (mred:set-preference-default 'drscheme:use-setup? (eq? (mred:get-preference 'drscheme:config) 'mzschemeowl))
-    (mred:set-preference-default 'drscheme:setup-dir "/home/comp210/")
-    (mred:set-preference-default 'drscheme:lab-dir "/home/comp210/Labs/")
-    (mred:set-preference-default 'drscheme:hw-dir "/home/comp210/Hw/")
-    (mred:set-preference-default 'drscheme:user-dir (expand-path "~/comp210/"))
-    (mred:set-preference-default 'drscheme:setup-file "setup.ss")
-
-    (mred:set-preference-default 'drscheme:use-setup? #f)
+    (let ([boolean?
+	   (lambda (x)
+	     (or (not x)
+		 (eq? x #t)))])
+      (mred:set-preference-default 'drscheme:wrap-program? #f boolean?)
+      (mred:set-preference-default 'drscheme:config #f boolean?)
+      (mred:set-preference-default 'drscheme:use-setup? 
+				   (eq? (mred:get-preference 'drscheme:config) 'mzschemeowl)
+				   boolean?)
+      (mred:set-preference-default 'drscheme:setup-dir "/home/comp210/" string?)
+      (mred:set-preference-default 'drscheme:lab-dir "/home/comp210/Labs/" string?)
+      (mred:set-preference-default 'drscheme:hw-dir "/home/comp210/Hw/" string?)
+      (mred:set-preference-default 'drscheme:user-dir (expand-path "~/comp210/") string?)
+      (mred:set-preference-default 'drscheme:setup-file "setup.ss" string?)
+      (mred:set-preference-default 'drscheme:use-setup? #f boolean?))
 
     (define setup-base-dir
       (lambda ()

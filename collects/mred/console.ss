@@ -185,7 +185,7 @@
 		   set-position set-caret-owner
 		   clear-undos insert delete
 		   change-style styles-fixed? split-snip
-		   scroll-to-position
+		   scroll-to-position locked? lock
 		   last-position get-start-position get-end-position
 		   get-text get-snip-position
 		   get-character find-snip find-string
@@ -718,7 +718,10 @@
 	       (lambda ()
 		 (when prompt-mode?
 		   (set! prompt-mode? #f)
-		   (insert #\newline (last-position))))]
+		   (let ([c-locked locked?])
+		     (lock #f)
+		     (insert #\newline (last-position))
+		     (lock c-locked))))]
 	      
 	      [initialize-console
 	       (lambda ()

@@ -1,6 +1,10 @@
 SYSTEM HISTORY
 --------------
 Version 49:
+- mred:add-preference-default now takes a function which determines if
+  preferences read from the disk are valid or not (if not, the default
+  is used)
+
 - the show method of mred:dialog-box% only takes one argument now. Use
   the centre method instead of the second argument
 

@@ -1,7 +1,10 @@
 (unit/sig drscheme:prefs^
   (import [mred : mred^])
   
-  (mred:set-preference-default 'drscheme:keep-interactions-history #f)
+  (mred:set-preference-default 'drscheme:keep-interactions-history #f
+			       (lambda (x)
+				 (or (not x)
+				     (eq? x #t))))
   (mred:add-preference-panel
    "Interactions"
    (lambda (panel)

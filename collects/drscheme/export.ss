@@ -1,13 +1,20 @@
 (compound-unit/sig (import [mred : mred^]
 			   [mzlib : mzlib:core^]
+			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
 			   [basis : drscheme:basis^]
 			   [edit : drscheme:edit^]
 			   [language : drscheme:language^]
-			   [rep : drscheme:rep^]
 			   [setup : drscheme:setup^]
+			   [snip : drscheme:snip^]
+			   [interface : drscheme:interface^]
+			   [aries : plt:aries^]
 			   [zodiac : zodiac:system^])
-  (link [frame : drscheme:frame^
+  (link [rep : drscheme:rep^
+	     ((reference-unit/sig "rep.ss")
+	      mred mzlib print-convert aries zodiac
+	      interface snip language app basis edit)]
+	[frame : drscheme:frame^
 	       ((reference-unit/sig "frame.ss")
 		mred mzlib basis
 		setup unit parameters
@@ -24,4 +31,5 @@
   (export (unit frame)
 	  (unit unit)
 	  (unit compound-unit)
-	  (unit parameters)))
+	  (unit parameters)
+	  (unit rep)))

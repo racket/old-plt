@@ -82,33 +82,41 @@
 			   unmarshall-style))
 	      delta-symbols)
 
-    (mred:set-preference-default 'mzprizm:primitive
-				 (let ([s (make-object wx:style-delta%
-						       wx:const-change-bold 1)])
-				   (send s set-delta-foreground "FIREBRICK")
-				   s))
-    (mred:set-preference-default 'mzprizm:syntax
-				 (let ([s (make-object wx:style-delta%
-						       wx:const-change-bold 1)])
-				   (send s set-delta-foreground "BLACK")
-				   s))
-    (mred:set-preference-default 'mzprizm:constant
-				 (let ([s (make-object wx:style-delta%
-						       wx:const-change-bold 1)])
-				   (send s set-delta-foreground "BLUE")
-				   s))
-    (mred:set-preference-default '|mzprizm:bound variable|
-				 (let ([s (make-object wx:style-delta%)])
-				   (if (< (wx:display-depth) 8)
-				       (send s set-delta wx:const-change-underline 1)
-				       (begin (send s set-delta-foreground "DARK GREEN")
-					      (send s set-delta wx:const-change-bold 1)))
-				   s))
-    (mred:set-preference-default '|mzprizm:unbound variable|
-				 (let ([s (make-object wx:style-delta%
-					    wx:const-change-style wx:const-slant)])
-				   (send s set-delta-foreground "RED")
-				   s))
+    (let ([style-delta?
+	   (lambda (x)
+	     (is-a? x wx:style-delta%))])
+      (mred:set-preference-default 'mzprizm:primitive
+				   (let ([s (make-object wx:style-delta%
+							 wx:const-change-bold 1)])
+				     (send s set-delta-foreground "FIREBRICK")
+				     s)
+				   style-delta?)
+      (mred:set-preference-default 'mzprizm:syntax
+				   (let ([s (make-object wx:style-delta%
+							 wx:const-change-bold 1)])
+				     (send s set-delta-foreground "BLACK")
+				     s)
+				   style-delta?)
+      (mred:set-preference-default 'mzprizm:constant
+				   (let ([s (make-object wx:style-delta%
+							 wx:const-change-bold 1)])
+				     (send s set-delta-foreground "BLUE")
+				     s)
+				   style-delta?)
+      (mred:set-preference-default '|mzprizm:bound variable|
+				   (let ([s (make-object wx:style-delta%)])
+				     (if (< (wx:display-depth) 8)
+					 (send s set-delta wx:const-change-underline 1)
+					 (begin (send s set-delta-foreground "DARK GREEN")
+						(send s set-delta wx:const-change-bold 1)))
+				     s)
+				   style-delta?)
+      (mred:set-preference-default '|mzprizm:unbound variable|
+				   (let ([s (make-object wx:style-delta%
+							 wx:const-change-style wx:const-slant)])
+				     (send s set-delta-foreground "RED")
+				     s)
+				   style-delta?))
 
     ; takes and edit to set the style in
     ; a symbol naming the style  and a delta to set it to
@@ -741,8 +749,9 @@
 			definitions-edit
 			(lambda (expr recur)
 			  (cond
-			    [(eq? expr #t) (send interactions-edit insert-prompt)]
-			    [(not expr) (void)]
+			    [(drscheme:rep:process/zodiac-finish? expr)
+			     (unless (drscheme:rep:process/zodiac-finish-error? expr)
+			       (send interactions-edit insert-prompt))]
 			    [else
 			     (color-loop expr)
 			     (recur)]))

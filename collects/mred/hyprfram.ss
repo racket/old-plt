@@ -18,7 +18,11 @@
 	    
     (mred:debug:printf 'invoke "mred:hyper-frame@")
 
-    (mred:preferences:set-preference-default 'mred:bookmarks null)
+    (mred:preferences:set-preference-default 'mred:bookmarks 
+					     null
+					     (lambda (x)
+					       (and (list? x)
+						    (andmap string? x))))
 
     (define hyper-frame-group (make-object mred:group:frame-group%))
 

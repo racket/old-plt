@@ -37,9 +37,13 @@
 		  (- v wx:const-break-for-line))))))
     (scheme-init-wordbreak-map scheme-media-wordbreak-map)
 
-    (mred:preferences:set-preference-default 'mred:highlight-parens #t)
-    (mred:preferences:set-preference-default 'mred:fixup-parens #t)
-    (mred:preferences:set-preference-default 'mred:paren-match #t)
+    (let ([boolean?
+	   (lambda (x)
+	     (or (not x)
+		 (eq? x #t)))])
+      (mred:preferences:set-preference-default 'mred:highlight-parens #t boolean?)
+      (mred:preferences:set-preference-default 'mred:fixup-parens #t boolean?)
+      (mred:preferences:set-preference-default 'mred:paren-match #t boolean?))
     (let ([hash-table (make-hash-table)])
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))
 			'(define defmacro define-macro
@@ -74,7 +78,7 @@
 	       (lambda (l) (let ([h (make-hash-table)])
 			     (for-each (lambda (x) (apply hash-table-put! h x)) l)
 			     h)))
-	      (mred:preferences:set-preference-default 'mred:tabify hash-table))
+	      (mred:preferences:set-preference-default 'mred:tabify hash-table hash-table?))
 
     (mred:preferences:add-preference-panel
      "Indenting"

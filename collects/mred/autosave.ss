@@ -7,8 +7,11 @@
 	    
     (mred:debug:printf 'invoke "mred:autosave@")
 
-    (mred:preferences:set-preference-default 'mred:autosave-delay 300)
-    (mred:preferences:set-preference-default 'mred:autosaving-on? #t)
+    (mred:preferences:set-preference-default 'mred:autosave-delay 300 number?)
+    (mred:preferences:set-preference-default 'mred:autosaving-on? #t 
+					     (lambda (x)
+					       (or (not x)
+						   (eq? x #t))))
 
     (define register-autosave
       (let* ([objects '()]

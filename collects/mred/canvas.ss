@@ -1,4 +1,3 @@
-
   (unit/sig mred:canvas^
     (import mred:wx^
 	    [mred:constants : mred:constants^]
@@ -79,7 +78,9 @@
 	    [set-frame-title
 	     (lambda ()
 	       (when frame
+		 (mred:debug:printf 'matthew "set-frame-title.1~n")
 		 (let* ([edit (get-media)]
+			[_ (mred:debug:printf 'matthew "set-frame-title.2~n")]
 			[title 
 			 (if (null? edit)
 			     ""
@@ -87,6 +88,7 @@
 			       (if (null? fullname)
 				   ""
 				   (trim-filename fullname))))])
+		   (mred:debug:printf 'matthew "set-frame-title.3~n")
 		   (send frame set-title title))))])
 	  (public
 	    [trim-filename
@@ -99,8 +101,11 @@
 	       (set-frame-title))]
 	    [on-set-focus
 	     (lambda ()
+	       (mred:debug:printf 'matthew "canvas:: on-set-focus~n")
 	       (set-frame-title)
-	       (super-on-set-focus))])
+	       (mred:debug:printf 'matthew "canvas::super-on-set-focus~n")
+	       (super-on-set-focus)	       
+	       (mred:debug:printf 'matthew "end canvas::on-set-focus~n"))])
 	  (public
 	    [set-media
 	     (opt-lambda (m [redraw? #t])
@@ -240,4 +245,3 @@
 	       (for-each update-snip-size snips))]))))
 			   
     (define wide-snip-canvas% (make-wide-snip-canvas% wrapping-canvas%)))
-		  

@@ -286,26 +286,33 @@
 	    [title ""]
 	    [do-title
 	     (lambda ()
+	       (mred:debug:printf 'matthew "do-title.1~n")
 	       (let ([t (if (or (string=? "" title)
 				(string=? "" title-prefix))
 			    (string-append title-prefix title)
 			    (string-append title " - " title-prefix))])
-		 (super-set-title t)))])
+		 (mred:debug:printf 'matthew "do-title.2~n")
+		 (super-set-title t)
+		 (mred:debug:printf 'matthew "super-set-title finished~n")))])
 	  
 	  (public
 	    [get-title (lambda () title)]
 	    [set-title
 	     (lambda (t)
+	       (mred:debug:printf 'matthew "set-title~n")
 	       (when (and (string? t)
 			  (not (string=? t title)))
 		 (set! title t)
-		 (do-title)))]
+		 (do-title))
+	       (mred:debug:printf 'matthew "end set-title~n"))]
 	    [set-title-prefix
 	     (lambda (s)
 	       (when (and (string? s)
 			  (not (string=? s title-prefix)))
 		 (set! title-prefix s)
-		 (do-title)))]
+		 (mred:debug:printf 'matthew "set-title-prefix calling do-title~n")
+		 (do-title)
+		 (mred:debug:printf 'matthew "set-title-prefix returned from do-title~n")))]
 	    [get-canvas% (lambda () mred:canvas:frame-title-canvas%)]
 	    [get-edit% (lambda () mred:edit:backup-autosave-edit%)]
 	    [make-edit (lambda () (make-object (get-edit%)))])
@@ -408,7 +415,13 @@
 	  (sequence
 	    (when (send mred:icon:icon ok?)
 	      (set-icon mred:icon:icon))
+	    (mred:debug:printf 'matthew "initial call to do-title~n")
 	    (do-title)
-	    '(send (get-canvas) set-focus)))))
+	    (mred:debug:printf 'matthew "finished initial call to do-title~n")
+	    (let ([canvas (get-canvas)])
+	      (mred:debug:printf 'matthew "got canvas.1 ~a~n" canvas)
+	      (mred:debug:printf 'matthew "got canvas.2 ~a~n" (ivar canvas set-focus))
+	      (send canvas set-focus))
+	    (mred:debug:printf 'matthew "after initial call to set-focus~n")))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%)))

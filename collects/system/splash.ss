@@ -1,7 +1,7 @@
 (define mred:splash-frame #f)
 (define mred:splash-message #f)
 
-(define mred:splash-max 93)
+(define mred:splash-max 98)
 (define mred:splash-counter 0)
 
 (define mred:close-splash
@@ -129,9 +129,9 @@
 			(let ([old-load (current-load)])
 			  (lambda (f)
 			    (let ([finalf (splitup-path f)])
+			      (set! mred:splash-counter (add1 mred:splash-counter))
 			      (when (and (mred:change-splash-message (format "Loading ~a..." finalf))
 					 (<= mred:splash-counter mred:splash-max))
-				(set! mred:splash-counter (add1 mred:splash-counter))
 				(send gauge set-value mred:splash-counter))
 			      (begin0
 			       (old-load f)

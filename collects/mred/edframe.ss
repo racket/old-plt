@@ -188,7 +188,7 @@
 		   (public
 		    [get-edit% (lambda () mred:edit:pasteboard%)]))))
 
-    (define pasteboard-frame% (make-pasteboard-frame% editor-frame%))
+    (define pasteboard-frame% (make-pasteboard-frame% mred:frame:simple-menu-frame%))
 
     (define make-status-frame%
       (lambda (super%)

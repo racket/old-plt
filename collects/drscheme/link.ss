@@ -29,14 +29,10 @@
 	[edit : drscheme:edit^ ((reference-unit/sig "edit.ss") mred aries zodiac)]
 	[setup : drscheme:setup^ ((reference-unit/sig "setup.ss") mred mzlib)]
 	[snip : drscheme:snip^ ((reference-unit/sig "snip.ss") mred)]
-	[rep : drscheme:rep^
-	     ((reference-unit/sig "rep.ss")
-	      mred mzlib print-convert aries zodiac
-	      interface snip language app basis edit)]
 	[export : drscheme:export^ ((reference-unit/sig "export.ss")
-				    mred mzlib app
-				    basis edit language rep setup
-				    zodiac)]
+				    mred mzlib print-convert app
+				    basis edit language setup snip interface
+				    aries zodiac)]
 	[tool : () 
 	      ((reference-unit/sig "tool.ss")
 	       mred mzlib print-convert zodiac (language : plt:parameters^)

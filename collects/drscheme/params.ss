@@ -4,7 +4,7 @@
 	  [drscheme:rep : drscheme:rep^])
 
   (define current-interactions-canvas%
-    (make-parameter mred:wide-snip-canvas%
+    (make-parameter drscheme:unit:interactions-canvas%
 		    (lambda (x)
 		      (if (subclass? x wx:media-canvas%)
 			  x

@@ -18,6 +18,8 @@ exit
 
 |#
 
+(use-compiled-file-kinds 'none)
+
 (unless (equal? #() argv)
   (error './install "no arguments allowed on the command line")
   (exit 1))

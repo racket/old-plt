@@ -57,7 +57,7 @@
   (begin-elaboration-time
     (build-path plt-dir "zodiac" "sigs")))
 
-(printf "Got here~n")
+(printf "Got here~n") (flush-output)
 
 (define zodiac:system@
   (reference-unit/sig

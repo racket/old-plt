@@ -90,7 +90,7 @@
  (goto-position "Goto Position")
  (no-full-name-since-not-saved
   "The file does not have a full name because it has not yet been saved.")
- (cannot-open-because-dne "Cannot open ~a becuase it does not exist")
+ (cannot-open-because-dne "Cannot open ~a because it does not exist")
  (interactions-out-of-sync
   "WARNING: Interactions window is out of sync with the definitions window. Click Execute.")
  (file-is-not-saved "The file \"~a\" is not saved.")
@@ -521,7 +521,8 @@
  (evaluation-terminated-explanation
   "The evaluation thread is no longer running, so no evaluation can take place until the next execution.")
  (last-stack-frame "show the last stack frame")
- (more-stack-frames "show the ~a ~a stack frames")
+ (last-stack-frames "show the last ~a stack frames")
+ (next-stack-frames "show the next ~a stack frames")
  
  ;;; welcoming message in repl
  (language "Language")

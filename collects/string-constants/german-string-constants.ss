@@ -124,7 +124,6 @@
  (evaluation-terminated-explanation
   "Der Ausführungsprozess wurde abgebrochen. Keine Ausführung ist möglich bis zum nächsten Programmstart.") ; checkme
  (last-stack-frame "Zeige den letzten Stackframe")
- (more-stack-frames "Zeige ~a von ~a Stackframes") ; checkme
  
  ;; welcoming message in repl
  (language "Sprache")

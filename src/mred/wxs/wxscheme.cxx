@@ -539,20 +539,44 @@ void wxAlphaBlit(wxBitmap *label_bm, wxBitmap *bm, wxBitmap *loaded_mask,
 {
   int i, j, w, h;
   wxMemoryDC *src, *mask, *dest;
+#ifdef wx_msw
+  int no_src_desel = 0, no_mask_desel = 0;
+#endif
 
   w = label_bm->GetWidth();
   h = label_bm->GetHeight();
 
   dest = new wxMemoryDC();
-  src = new wxMemoryDC(1);
-  mask = new wxMemoryDC(1);
-      
   dest->SelectObject(label_bm);
-  src->SelectObject(bm);
-  mask->SelectObject(loaded_mask);
-      
+
+#ifdef wx_msw
+  if (bm->selectedInto) {
+    src = (wxMemoryDC *)bm->selectedInto;
+    no_src_desel = 1;
+  } else
+#endif
+    {
+      src = new wxMemoryDC(1);
+      src->SelectObject(bm);
+    }
+
+#ifdef wx_msw
+  if (loaded_mask == bm) {
+    mask = src;
+    no_mask_desel = 1;
+  } else if (loaded_mask->selectedInto) {
+    mask = (wxMemoryDC *)loaded_mask->selectedInto;
+    no_mask_desel = 1;
+  } else
+#endif
+    {
+      mask = new wxMemoryDC(1);      
+      mask->SelectObject(loaded_mask);
+    }
+
   src->BeginGetPixelFast(0, 0, w, h);
-  mask->BeginGetPixelFast(0, 0, w, h);
+  if (src != mask)
+    mask->BeginGetPixelFast(0, 0, w, h);
   dest->BeginSetPixelFast(0, 0, w, h);
   for (i = 0; i < w; i++) {
     for (j = 0; j < h; j++) {
@@ -566,12 +590,19 @@ void wxAlphaBlit(wxBitmap *label_bm, wxBitmap *bm, wxBitmap *loaded_mask,
       dest->SetPixelFast(i, j, mr, mg, mb);
     }
   }
-  mask->EndGetPixelFast();
+  if (src != mask)
+    mask->EndGetPixelFast();
   src->EndGetPixelFast();
   dest->EndSetPixelFast();
 
-  src->SelectObject(NULL);
-  mask->SelectObject(NULL);
+#ifdef wx_msw
+  if (!no_src_desel)
+#endif
+    src->SelectObject(NULL);
+#ifdef wx_msw
+  if (!no_mask_desel)
+#endif
+    mask->SelectObject(NULL);
   dest->SelectObject(NULL);
 }
 

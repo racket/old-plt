@@ -18,6 +18,7 @@
   (define xexpr-drop-empty-attributes (make-parameter #f))
   
   ;; xml->xexpr : Content -> Xexpr
+  ;; The contract is loosely enforced.
   (define (xml->xexpr x)
     (let* ([non-dropping-combine
             (lambda (atts body)
@@ -37,7 +38,9 @@
              (cons (element-name x) (combine atts body)))]
           [(pcdata? x) (pcdata-string x)]
           [(entity? x) (entity-text x)]
-          [else x]))))
+          [(or (comment? x) (pi? x)) x]
+          [(document? x) (error 'xml->xexpr "Expected content, given ~a~nUse document-element to extract the content." x)]
+          [else (error 'xml->xexpr "Expected content, given ~a" x)]))))
   
   ;; attribute->srep : Attribute -> Attribute-srep
   (define (attribute->srep a)
@@ -50,6 +53,7 @@
     (make-attribute 'scheme 'scheme (car a) (cadr a)))
   
   ;; xexpr->xml : Xexpr -> Content
+  ;; The contract is enforced.
   (define (xexpr->xml x)
     (cond
       [(pair? x)

@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 100)
 
-(define mred:debug? #f)
+(define mred:debug? #t)
 
 (unless (defined? 'mred:startup-print-status)
    (define mred:startup-print-status 
@@ -211,7 +211,8 @@
 	 (mred:startup)
 	 (when mred:load-user-setup?
 	   (mred:user-setup))
-	 (for-each mred:edit-file files-to-open)]
+	 (for-each mred:edit-file files-to-open)
+	 mred:console-frame]
 	[else 
 	 (let ([arg (car args)]
 	       [rest (cdr args)])

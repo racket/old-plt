@@ -54,9 +54,6 @@
    never-undefined-getter
    never-undefined-setter))
 
-(define-signature stepper:error^
-  (static-error dynamic-error internal-error))
-
 (define-signature stepper:model-input^
   (text-stream settings image? receive-result))
 

@@ -6,21 +6,9 @@
           (print-convert : mzlib:print-convert^)
           (mred : mred^)
           (drscheme : drscheme:export^)
-          (zodiac : zodiac:system^))
+          (zodiac : zodiac:system^)
+          (error : zodiac:interface^))
   (link [pretty : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
-        [error : stepper:error^ ((unit/sig stepper:error^
-                                   (import)
-                                   (define default-error-handler
-                                     (lambda (keyword)
-                                       (lambda (where fmt-spec . args)
-                                         ; (printf "Error at: ~s~n" where)
-                                         (apply error keyword fmt-spec args))))
-                                   (define internal-error
-                                     (default-error-handler 'internal-error))
-                                   (define static-error
-                                     (default-error-handler 'syntax-error))
-                                   (define dynamic-error
-                                     (default-error-handler 'runtime-syntax-error))))]
         [client-procs : stepper:client-procs^
                       ((require-library-unit/sig "client-procs.ss" "stepper")
                        zodiac)]
@@ -32,7 +20,7 @@
         [utils : stepper:cogen-utils^ 
                ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
                 zodiac
-                (error : (internal-error static-error)))]        
+                error)]        
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
                                    error

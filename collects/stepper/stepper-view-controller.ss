@@ -1,6 +1,6 @@
 (unit/sig (stepper-go)
   (import [c : mzlib:core^]
-          [e : stepper:error^]
+          [e : zodiac:interface^]
           [z : zodiac:system^]
           [cp : stepper:client-procs^]
           mzlib:pretty-print^
@@ -354,7 +354,7 @@
               (invoke-unit/sig (require-library-unit/sig "stepper-instance.ss" "stepper")
                                stepper:model-input^
                                (c : mzlib:core^)
-                               (e : stepper:error^)
+                               (e : zodiac:interface^)
                                (p : mzlib:print-convert^)
                                (d : drscheme:export^)
                                (z : zodiac:system^)

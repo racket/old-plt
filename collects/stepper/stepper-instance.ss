@@ -3,7 +3,7 @@
 (compound-unit/sig 
   (import (model-input : stepper:model-input^)
           (core : mzlib:core^)
-          (error : stepper:error^)
+          (error : zodiac:interface^)
           (print-convert : mzlib:print-convert^)
           (drscheme : drscheme:export^)
           (zodiac : zodiac:system^)

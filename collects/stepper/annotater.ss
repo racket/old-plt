@@ -1,7 +1,7 @@
 (unit/sig stepper:annotate^
   (import [z : zodiac:system^]
 	  mzlib:function^
-	  [e : stepper:error^]
+	  [e : zodiac:interface^]
           [utils : stepper:cogen-utils^]
           stepper:marks^
           [s : stepper:model^]

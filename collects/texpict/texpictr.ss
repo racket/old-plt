@@ -261,15 +261,14 @@
 (define (right-brace h)
   (right-delimit "\\}" h))
 
-(define (make-h-brace kind h)
+(define (make-h-brace kind w)
   (tex (format "$\\~a{\\hbox{\\begin{picture}(~a,0)(0,0)\\end{picture}}}$"
-	       kind
-	       (pict-width h))))
+	       kind w)))
 
-(define (top-brace h)
-  (vc-append 0 (make-h-brace "overbrace" h) h))
-(define (bottom-brace h)
-  (vc-append 0 h (make-h-brace "underbrace" h)))
+(define (top-brace w)
+  (make-h-brace "overbrace" w))
+(define (bottom-brace w)
+  (make-h-brace "underbrace" w))
 
 (define inset
   (case-lambda

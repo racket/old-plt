@@ -234,7 +234,11 @@
                           (set! par-vocabulary (d:basis:current-vocabulary))
                           (let-values ([(annotated exprs)
                                         (a:annotate text break (make-exception-handler k))])
-                              (set! expr-list exprs)
+;                            (let ([output-port (open-output-file "annotated.ss")])
+;                              (parameterize ([current-output-port output-port])
+;                                (pretty-print annotated))
+;                              (close-output-port output-port))
+                            (set! expr-list exprs)
                             (current-exception-handler
                              (make-exception-handler k))
 ;                            (for-each (lambda (expr)

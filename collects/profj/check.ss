@@ -26,11 +26,11 @@
 
   ;; env => (list (list type-bound) (list var-type))
   ;; var-type => (make-var-type string type boolean boolean boolean)
-  (define-struct var-type (var type local? static? field?))
+  (define-struct var-type (var type local? static? field? final?))
   
-  ;; add-var-to-env: string type boolean boolean boolean env -> env
-  (define (add-var-to-env name type local? static? field? oldEnv)
-    (make-environment (cons (make-var-type name type local? static? field?)
+  ;; add-var-to-env: string type boolean boolean boolean boolean env -> env
+  (define (add-var-to-env name type local? static? field? final? oldEnv)
+    (make-environment (cons (make-var-type name type local? static? field? final?)
                             (environment-type-env oldEnv))
                       (environment-exn-env oldEnv)
                       (environment-label-env oldEnv)))
@@ -132,7 +132,7 @@
     (check-location loc)
     (send type-recs set-location! 'interactions)
     (send type-recs set-class-reqs null)
-    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f #f
+    (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f #f #f
                                (create-field-env (send type-recs get-interactions-fields)
                                                  empty-env)))
           (c-class (list "scheme-interactions")))
@@ -163,7 +163,7 @@
     (let ((this-ref (make-ref-type (id-string (header-id (class-def-info class)))
                                    package-name)))
       (check-members (class-def-members class)
-                     (add-var-to-env "this" this-ref #t #f #f empty-env)
+                     (add-var-to-env "this" this-ref #t #f #f #f empty-env)
                      level
                      type-recs 
                      (list (id-string (header-id (class-def-info class))))))
@@ -223,10 +223,10 @@
                        (set! setting-fields (cons member setting-fields))))
                  (if static?
                      (loop (cdr rest) 
-                           (add-var-to-env name type #f #t #t statics) 
-                           (add-var-to-env name type #f #t #t fields))
+                           (add-var-to-env name type #f #t #t #f statics) 
+                           (add-var-to-env name type #f #t #t #f fields))
                      (loop (cdr rest) statics 
-                           (add-var-to-env name type #t #f #t fields)))))))))
+                           (add-var-to-env name type #t #f #t #f fields)))))))))
       (let ((assigns (get-assigns members level (car c-class)))
             (static-assigns (get-static-assigns members level)))
         (for-each (lambda (field)
@@ -252,6 +252,7 @@
                                            (not static?)
                                            static?
                                            #t
+                                           #f
                                            env))))))
   
   ;get-constrcutors: (list method-record) -> (list method-record)
@@ -282,26 +283,23 @@
       ((memq 'final (map modifier-kind (field-modifiers field))) #t)
       (else #f)))
   
-  ;get-assigns: (list member) symbol -> (list (list assignment))
+  ;get-assigns: (list member) symbol string -> (list (list assignment))
   (define (get-assigns members level class)
     (if (eq? level 'beginner)
         (list (get-beginner-assigns members class))
-        (get-instance-assigns members)))
+        (get-instance-assigns members)))  
   
-  (define (get-instance-assigns m)
-    null)
-  
-  ;get-beginner-assigns: (list member) -> (list assignment)
-  (define (get-beginner-assigns members)
+  ;get-beginner-assigns: (list member) string-> (list assignment)
+  (define (get-beginner-assigns members class)
     (cond
       ((null? members) null)
-      ((field? (car members)) (get-beginner-assigns (cdr members)))
+      ((field? (car members)) (get-beginner-assigns (cdr members) class))
       ((method? (car members)) 
        (if (eq? (method-type (car members)) 'ctor)
            (if (block? (method-body (car members)))
-               (get-b-assigns (block-stmts (method-body (car members))))
+               (get-b-assigns (block-stmts (method-body (car members))) class)
                null)
-           (get-beginner-assigns (cdr members))))))
+           (get-beginner-assigns (cdr members) class)))))
   
   ;get-b-assigns: (list statement) string-> (list assignment)
   (define (get-b-assigns stmts class)
@@ -319,6 +317,82 @@
         body
         (beginner-ctor-error class body (expr-src body))))
 
+  ;get-instance-assigns: (list member) -> (list (list assignment))
+  (define (get-instance-assigns members)
+    (cond
+      ((null? members) null)
+      ((method? (car members))
+       (if (eq? 'ctor (method-type (car members)))
+           (cons (get-stmt-assigns (method-body (car members)))
+                 (get-instance-assigns members))))
+      (else (get-instance-assigns (cdr members)))))
+  
+  ;get-stmt-assigns: statement -> (list assign)
+  (define (get-stmt-assigns b)
+    (cond
+      ((or (not b) (switch? b) (break? b) (continue? b)) null)
+      ((ifS? b)
+       (append (get-assigns-exp (ifS-cond b))
+               (get-stmt-assigns (ifS-then b))
+               (get-stmt-assigns (ifS-else b))))
+      ((throw? b) (get-assigns-exp (throw-expr b)))
+      ((return? b) (get-assigns-exp (return-expr b)))
+      ((while? b) (append (get-assigns-exp (while-cond b))
+                          (get-stmt-assigns (while-loop b))))
+      ((doS? b) (append (get-assigns-exp (doS-cond b))
+                        (get-stmt-assigns (doS-loop b))))
+      ((for? b) (append (get-assigns-forInit (for-init b))
+                        (get-assigns-exp (for-cond b))
+                        (apply append (map get-assigns-exp (for-incr b)))
+                        (get-stmt-assigns (for-loop b))))
+      ((try? b) (get-stmt-assigns (try-body b)))
+      ((block? b) (get-assigns-body (block-stmts b)))
+      ((label? b) (get-stmt-assigns (label-stmt b)))
+      ((synchronized? b) (append (get-assigns-exp (synchronized-expr b))
+                                 (get-stmt-assigns (synchronized-stmt b))))
+      (else (get-assigns-exp b))))
+  
+  ;get-assigns-forInit: (list forInit) -> (list assignment)
+  (define (get-assigns-forInit b-list)
+    (cond
+      ((null? b-list) null)
+      ((field? (car b-list)) null)
+      (else (apply append (map get-assigns-exp b-list)))))
+  
+  ;get-assigns-body: (list statement) -> (list assignment)
+  (define (get-assigns-body b-list)
+    (cond
+      ((null? b-list) null)
+      ((field? (car b-list)) (get-assigns-body (cdr b-list)))
+      (else (append (get-stmt-assigns (car b-list))
+                    (get-assigns-body (cdr b-list))))))
+
+  ;get-assigns-exp: expression -> (list assignment) 
+  (define (get-assigns-exp exp)
+    (cond
+      ((or (not exp) (literal? exp) (special-name? exp)
+           (class-alloc? exp)) null)
+      ((bin-op? exp) (append (get-assigns-exp (bin-op-left exp))
+                             (get-assigns-exp (bin-op-right exp))))
+      ((access? exp) (if (field-access? (access-name exp))
+                         (get-assigns-exp (field-access-object (access-name exp)))
+                         null))
+      ((call? exp) (get-assigns-exp (call-expr exp)))
+      ((array-alloc? exp) (apply append (map get-assigns-exp (array-alloc-size exp))))
+      ((cond-expression? exp)
+       (append (get-assigns-exp (cond-expression-cond exp))
+               (get-assigns-exp (cond-expression-then exp))
+               (get-assigns-exp (cond-expression-else exp))))
+      ((array-access? exp)
+       (append (get-assigns-exp (array-access-name exp))
+               (get-assigns-exp (array-access-index exp))))
+      ((post-expr? exp) (get-assigns-exp (post-expr-expr exp)))
+      ((pre-expr? exp) (get-assigns-exp (pre-expr-expr exp)))
+      ((unary? exp) (get-assigns-exp (unary-expr exp)))
+      ((cast? exp) (get-assigns-exp (cast-expr exp)))
+      ((instanceof? exp) (get-assigns-exp (instanceof-expr exp)))
+      ((assignment? exp) (list exp))))
+  
   (define (get-static-assigns m l) null)
   
   ;field-set?: field (list assignment) string symbol bool -> bool
@@ -390,6 +464,7 @@
                          (add-var-to-env (id-string (field-name (car parms)))
                                          (type-spec-to-type (field-type (car parms)) type-recs)
                                          #t
+                                         #f
                                          #f
                                          #f
                                          env)
@@ -664,7 +739,7 @@
         (let ((new-type (check-var-init (var-init-init local) check-e type sym-name type-recs)))
           (unless (assignment-conversion type new-type type-recs)
             (variable-type-error (field-name local) new-type type (var-init-src local)))))
-      (add-var-to-env name type #t #f #f env)))
+      (add-var-to-env name type #t #f #f #f env)))
 
   ;check-try: statement (list catch) (U #f statement) env (statement env -> void) type-records -> void
   (define (check-try body catches finally env check-s type-recs)
@@ -686,7 +761,7 @@
                     (if (and in-env? (not (var-type-field? in-env?)))
                         (illegal-redefinition (field-name field) (field-src field))
                         (check-s (catch-body catch)
-                                 (add-var-to-env name (field-type field) #t #f #f env)))))
+                                 (add-var-to-env name (field-type field) #t #f #f #f env)))))
                 catches)
       (when finally (check-s finally env))))
 

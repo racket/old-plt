@@ -235,9 +235,9 @@
   ;; The `_fun' macro tears its input apart and reassemble it using pieces from
   ;; custom function types (macros).  This whole deal needs some work to make
   ;; it play nicely with code certificates, so Matthew wrote the following
-  ;; code.  The idea is to create a define-fun-syntax which is not really a new
-  ;; kind of a syntax transformer which should always be expanded with
-  ;; `expand-fun-syntax/fun'.
+  ;; code.  The idea is to create a define-fun-syntax which makes the new
+  ;; syntax transformer be an object that carries extra information, later used
+  ;; by `expand-fun-syntax/fun'.
 
   (define fun-cert-key (gensym))
 
@@ -956,6 +956,8 @@
                           [TAG->list    (make-TAG-id "" "->list")]
                           [TAG-ref      (make-TAG-id "" "-ref")]
                           [TAG-set!     (make-TAG-id "" "-set!")]
+                          [_TAG         (make-TAG-id "_" "")]
+                          [_TAG*        (make-TAG-id "_" "*")]
                           [TAGname      name])
               (set! bindings (list* #'TAG?
                                     #'TAG-length
@@ -965,6 +967,7 @@
                                     #'TAG-set!
                                     #'TAG->list
                                     #'list->TAG
+                                    #'_TAG
                                     bindings))
               #'(begin
                   (define-struct TAG (ptr length))
@@ -1002,7 +1005,29 @@
                       (cblock->list (TAG-ptr v) type (TAG-length v))
                       (raise-type-error 'TAG->list TAGname v)))
                   (define* (list->TAG l)
-                    (make-TAG (list->cblock l type) (length l))))))]))
+                    (make-TAG (list->cblock l type) (length l)))
+                  ;; same as the _cvector implementation
+                  (provide _TAG)
+                  (define _TAG*
+                    (make-ctype _pointer TAG-ptr
+                      (lambda (x)
+                        (error
+                         '_cvector
+                         "cannot automatically convert a C pointer to a ~a"
+                         TAGname))))
+                  (define-fun-syntax _TAG
+                    (syntax-id-rules (i o io)
+                      [(_ i   ) _TAG*]
+                      [(_ o  n) (type: _pointer
+                                       pre:  (malloc n type)
+                                       post: (x => (make-TAG x n)))]
+                      [(_ io  ) (type: _cvector*
+                                       bind: tmp
+                                       pre:  (x => (TAG-ptr x))
+                                       post: (x => tmp))]
+                      [(_ . xs)   (_TAG* . xs)]
+                      [_          _TAG*]))
+                  )))]))
      (lambda (stx)
        (syntax-case stx ()
          [(_ x) (with-syntax ([(binding ...) bindings])

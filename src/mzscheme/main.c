@@ -172,8 +172,10 @@ void Drop_Runtime(char **argv, int argc)
 {
   int i;
 	
-  for (i = 0; i < argc; i++)
-    scheme_load(argv[i]);
+  for (i = 0; i < argc; i++) {
+    printf("(load \"%s\") ", argv[i]);
+  }
+  if (argc) printf("\n");
 }
 
 void Drop_Quit()

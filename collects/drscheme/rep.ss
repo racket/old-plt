@@ -520,16 +520,15 @@
               
               (set! io-collected-texts null))))
         
-        (define wait-for-io-to-complete ; =Kernel=, =Handler=
-          (lambda ()
-            (unless (null? io-collected-thunks)
-              (let ([semaphore (make-semaphore 0)])
-                (mred:queue-callback
-                 (lambda () ; =Kernel=, =Handler=
-                   (run-io-collected-thunks)
-                   (semaphore-post semaphore))
-                 #f)
-                (mred:yield semaphore)))))
+        (define (wait-for-io-to-complete) ; =Kernel=, =Handler=
+	  (unless (null? io-collected-thunks)
+	    (let ([semaphore (make-semaphore 0)])
+	      (mred:queue-callback
+	       (lambda () ; =Kernel=, =Handler=
+		 (run-io-collected-thunks)
+		 (semaphore-post semaphore))
+	       #f)
+	      (mred:yield semaphore))))
         (define queue-output ; =User=
           (lambda (thunk)
             (protect
@@ -958,16 +957,15 @@
                   (insert-warning)))
               (do-many-text-evals this start end))))
         
-        (define cleanup
-          (lambda ()
-            (update-running #f)
-            (unless (and user-thread (thread-running? user-thread))
-              (lock #t)
-              (unless shutting-down?
-		(no-user-evaluation-message
-		 (let ([canvas (get-active-canvas)])
-		   (and canvas
-			(send canvas get-top-level-window))))))))
+        (define (cleanup)
+	  (update-running #f)
+	  (unless (and user-thread (thread-running? user-thread))
+	    (lock #t)
+	    (unless shutting-down?
+	      (no-user-evaluation-message
+	       (let ([canvas (get-active-canvas)])
+		 (and canvas
+		      (send canvas get-top-level-window)))))))
         (define need-interaction-cleanup? #f)
 
         (define saved-cursor #f)
@@ -980,7 +978,7 @@
             (wait-for-io-to-complete)
             (cleanup-transparent-io)
             (set-caret-owner #f 'display)
-            (when (thread-running? user-thread)
+            (when (and user-thread (thread-running? user-thread))
               (let ([c-locked? (locked?)])
                 (lock #f)
                 (insert-prompt)
@@ -1103,12 +1101,9 @@
 	(define kill-evaluation
 	  (lambda () ; =Kernel=, =Handler=
 	    (shutdown)
-	    (send context enable-evaluation)
-	    (lock #t)
-	    (no-user-evaluation-message
-	     (let ([canvas (get-active-canvas)])
-	       (and canvas
-		    (send canvas get-top-level-window))))))
+	    (if need-interaction-cleanup?
+		(cleanup-interaction)
+		(cleanup))))
 
         (define error-escape-k void)
         (define user-break-enabled #t)

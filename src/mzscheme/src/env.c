@@ -55,7 +55,7 @@ Scheme_Env *scheme_initial_env;
 static Scheme_Object *kernel_symbol;
 
 /* locals */
-static Scheme_Env *make_env(Scheme_Env *base, int semi);
+static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size);
 static void make_init_env(void);
 
 static Scheme_Object *namespace_variable_binding(int, Scheme_Object *[]);
@@ -278,7 +278,7 @@ static void make_init_env(void)
   long startt;
 #endif
 
-  env = make_env(NULL, 0);
+  env = make_env(NULL, 0, GLOBAL_TABLE_SIZE);
 
   scheme_set_param(scheme_current_thread->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env);
@@ -428,17 +428,17 @@ static void skip_certain_things(Scheme_Object *o, Scheme_Close_Custodian_Client 
 
 Scheme_Env *scheme_make_empty_env(void)
 {
-  return make_env(NULL, 0);
+  return make_env(NULL, 0, 7);
 }
 
-static Scheme_Env *make_env(Scheme_Env *base, int semi)
+static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
 {
   Scheme_Bucket_Table *toplevel, *syntax;
   Scheme_Hash_Table *module_registry;
   Scheme_Object *modchain;
   Scheme_Env *env;
 
-  toplevel = scheme_make_bucket_table(7, SCHEME_hash_ptr);
+  toplevel = scheme_make_bucket_table(toplevel_size, SCHEME_hash_ptr);
   toplevel->with_home = 1;
 
   if (semi > 0) {
@@ -498,7 +498,7 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree
 {
   Scheme_Env *menv;
 
-  menv = make_env(env, 0);
+  menv = make_env(env, 0, 7);
 
   menv->module = m;
   if (menv->init)
@@ -523,7 +523,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     Scheme_Env *eenv;
     Scheme_Object *modchain;
 
-    eenv = make_env(NULL, -1);
+    eenv = make_env(NULL, -1, 7);
     eenv->phase = env->phase + 1;
 
     eenv->module = env->module;

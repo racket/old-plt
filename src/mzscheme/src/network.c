@@ -1578,7 +1578,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #ifdef USE_UNIX_SOCKETS_TCP
 	    {
 	      int so_len = sizeof(status);
-	      if (getsockopt(s, SOL_SOCKET, SO_ERROR, &status, &so_len) != 0)
+	      if (getsockopt(s, SOL_SOCKET, SO_ERROR, (void *)&status, &so_len) != 0)
 		status = errno;
 	      errno = status; /* for error reporting, below */
 	    }

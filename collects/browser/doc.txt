@@ -42,10 +42,10 @@ document (and "Here" is boldfaced).
 
 > (hyper-text-mixin text%) - Extends the given text% class. The
    initializtion arguments are extended with a two new first
-   arguments: a url (string, url record, or port) to be loaded into
-   the text% object, and a top-level-window or #f to use as a parent
-   for status dialogs. Unless the url is a string/url reprsenting a
-   source file ending in ".txt", the loaded text is parsed as HTML.
+   arguments: a url or a port to be loaded into the text% object, and
+   a top-level-window or #f to use as a parent for status
+   dialogs. Unless the url is a string/url reprsenting a source file
+   ending in ".txt", the loaded text is parsed as HTML.
 
    An instance of a (hyper-text-mixin text%) class should be displayed
    only in an instance of a class created with `hyper-canvas-mixin'

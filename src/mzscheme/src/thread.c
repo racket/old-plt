@@ -896,10 +896,14 @@ Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent)
      directly after its parent, so families stay together, and
      the local list stays in the same order as the sibling list. */
   if (parent) {
-    CUSTODIAN_FAM(m->global_next) = CUSTODIAN_FAM(CUSTODIAN_FAM(m->parent)->global_next);
+    Scheme_Custodian *next;
+    next = CUSTODIAN_FAM(parent->global_next);
+    CUSTODIAN_FAM(m->global_next) = next;
     CUSTODIAN_FAM(m->global_prev) = parent;
-    CUSTODIAN_FAM(CUSTODIAN_FAM(m->parent)->global_next) = m;
-    if (!CUSTODIAN_FAM(m->global_next))
+    CUSTODIAN_FAM(parent->global_next) = m;
+    if (next)
+      CUSTODIAN_FAM(next->global_prev) = m;
+    else
       last_custodian = m;
   } else {
     CUSTODIAN_FAM(m->global_next) = NULL;

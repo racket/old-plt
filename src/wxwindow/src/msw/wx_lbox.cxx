@@ -298,7 +298,8 @@ void wxListBox::SetSelection(int N, Bool select)
   if (multiple != wxSINGLE) {
     SendMessage((HWND)ms_handle, LB_SETSEL, select, N);
   } else {
-    N = -1;
+    if (!select)
+      N = -1; /* -1 => deselect current */
     SendMessage((HWND)ms_handle, LB_SETCURSEL, N, 0);
   }
 }

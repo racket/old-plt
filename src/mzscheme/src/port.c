@@ -1958,6 +1958,7 @@ static void tested_file_close_input(Scheme_Input_Port *p)
 
   --scheme_file_open_count;
 
+  tip->eof = 1;
   RELEASE_SEMAPHORE(tip->try_sema);
 
   WAIT_THREAD(tip->th);
@@ -2033,15 +2034,17 @@ static long read_for_tested_file(void *data)
     for (i = tip->trying; !tip->eof && i--; ) {
       c = fgetc(tip->fp);
       tip->c[i] = c;
-      if (c == EOF)
+      if (!tip->eof && (c == EOF))
 	tip->eof = feof(tip->fp);
-      ACQUIRE_MUTEX(tip->lock_mutex);
-      tip->ready++;
-      if (tip->need_wait > 0) {
-	RELEASE_SEMAPHORE(tip->ready_sema);
-	tip->need_wait = -1;
+      if (!tip->eof) {
+	ACQUIRE_MUTEX(tip->lock_mutex);
+	tip->ready++;
+	if (tip->need_wait > 0) {
+	  RELEASE_SEMAPHORE(tip->ready_sema);
+	  tip->need_wait = -1;
+	}
+	RELEASE_MUTEX(tip->lock_mutex);
       }
-      RELEASE_MUTEX(tip->lock_mutex);
     }
   }
 

@@ -1851,6 +1851,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 
     dc->SetBrush(clearBrush);
     dc->SetPen(outlinePen);
+
     dc->DrawRectangle(leftx + dx, starty + dy, 
 		      rightx - leftx + GC_RECT_BRUSH_EXTEND,
 		      endy - starty + GC_RECT_BRUSH_EXTEND);

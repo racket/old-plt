@@ -24,7 +24,7 @@ extern Bool wxIsPrimEventspace();
 
 BOOL wxChoice::MSWCommand(UINT param, WORD id)
 {
-  if (param == CBN_SELCHANGE)
+  if (param == CBN_SELENDOK)
   {
    /* Callback possibly via popup window, which does not
       know its eventspace. If so, re-post the event to get

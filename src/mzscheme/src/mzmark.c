@@ -2666,6 +2666,7 @@ int mark_input_fd_MARK(void *p) {
   Scheme_FD *fd = (Scheme_FD *)p;
 
   gcMARK(fd->buffer);
+  gcMARK(fd->refcount);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));
@@ -2675,6 +2676,7 @@ int mark_input_fd_FIXUP(void *p) {
   Scheme_FD *fd = (Scheme_FD *)p;
 
   gcFIXUP(fd->buffer);
+  gcFIXUP(fd->refcount);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));

@@ -1687,7 +1687,7 @@ static void MrEdIgnoreWarnings(char *, GC_word)
 }
 #endif
 
-static void mred_init(int argc, char **argv)
+static int mred_init(int argc, char **argv)
 {
 #if 0
   /* Turns off GC: */
@@ -1771,6 +1771,11 @@ static void mred_init(int argc, char **argv)
 
       if (!scheme_setjmp(scheme_error_buf)) {
         scheme_eval_string_all(argv[2], global_env, 0);
+
+	for (int i = 3; i < argc; i++)
+	  argv[i - 2] = argv[i];
+
+	return argc - 2;
       } else {
 #ifndef wx_x      
 	wxMessageBox("Error evaluating --pre expression.", "Error");
@@ -1784,7 +1789,8 @@ static void mred_init(int argc, char **argv)
 #endif
       exit(-1);
     }
-  }
+  } else
+    return argc;
 }
 
 wxFrame *MrEdApp::OnInit(void)
@@ -1881,12 +1887,6 @@ wxFrame *MrEdApp::OnInit(void)
     /* Skip command name */
     xargv++;
     --xargc;
-  }
-
-  if (xargc >= 2 && !strcmp(xargv[0], "--pre")) {
-    /* Already done. */
-    xargc -= 2;
-    xargv += 2;
   }
 
   if (xargc >= 2 && !strcmp(xargv[0], "-s")) {
@@ -2085,7 +2085,7 @@ extern long wxMediaCreatorId;
 extern "C" {
 int actual_main(int argc, char **argv)
 {
-  mred_init(argc, argv);
+  argc = mred_init(argc, argv);
 
   TheMrEdApp = new MrEdApp;
 

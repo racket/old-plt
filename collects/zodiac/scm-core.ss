@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.32 1997/08/11 21:39:56 shriram Exp $
+; $Id: scm-core.ss,v 1.33 1997/08/13 15:40:35 shriram Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -177,7 +177,7 @@
 		      (null? (cdr bodies))
 		      (not (top-level-varref? (car bodies))))
 		(static-error (car bodies)
-		  "First term after parenthesis is illegal"))
+		  "First term after parenthesis is illegal in an application"))
 	      (set-top-level-status attributes top-level?)
 	      (create-app (car bodies) (cdr bodies) expr)))))))
 

@@ -67,7 +67,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzsch/release/libmzschxxxxxxx.lib ../libmzgc/release/libmzgcxxxxxxx.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
+LINK32_FLAGS=../libmzsch/release/libmzschxxxxxxx.lib ../libmzgc/release/libmzgcxxxxxxx.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \
@@ -123,7 +123,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
+LINK32_FLAGS=../libmzsch/debug/libmzschxxxxxxx.lib ../libmzgc/debug/libmzgcxxxxxxx.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib comctl32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmredxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmredxxxxxxx.dll" /implib:"$(OUTDIR)\libmredxxxxxxx.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \

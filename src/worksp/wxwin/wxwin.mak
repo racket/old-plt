@@ -85,6 +85,7 @@ CLEAN :
 	-@erase "$(INTDIR)\wx_pdf.obj"
 	-@erase "$(INTDIR)\WX_RBOX.obj"
 	-@erase "$(INTDIR)\WX_SLIDR.obj"
+	-@erase "$(INTDIR)\wx_tabc.obj"
 	-@erase "$(INTDIR)\WX_TIMER.obj"
 	-@erase "$(INTDIR)\WX_UTILS.obj"
 	-@erase "$(INTDIR)\WX_WIN.obj"
@@ -145,6 +146,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\wx_pdf.obj" \
 	"$(INTDIR)\WX_RBOX.obj" \
 	"$(INTDIR)\WX_SLIDR.obj" \
+	"$(INTDIR)\wx_tabc.obj" \
 	"$(INTDIR)\WX_TIMER.obj" \
 	"$(INTDIR)\WX_UTILS.obj" \
 	"$(INTDIR)\WX_WIN.obj" \
@@ -212,6 +214,7 @@ CLEAN :
 	-@erase "$(INTDIR)\wx_pdf.obj"
 	-@erase "$(INTDIR)\WX_RBOX.obj"
 	-@erase "$(INTDIR)\WX_SLIDR.obj"
+	-@erase "$(INTDIR)\wx_tabc.obj"
 	-@erase "$(INTDIR)\WX_TIMER.obj"
 	-@erase "$(INTDIR)\WX_UTILS.obj"
 	-@erase "$(INTDIR)\WX_WIN.obj"
@@ -272,6 +275,7 @@ LIB32_OBJS= \
 	"$(INTDIR)\wx_pdf.obj" \
 	"$(INTDIR)\WX_RBOX.obj" \
 	"$(INTDIR)\WX_SLIDR.obj" \
+	"$(INTDIR)\wx_tabc.obj" \
 	"$(INTDIR)\WX_TIMER.obj" \
 	"$(INTDIR)\WX_UTILS.obj" \
 	"$(INTDIR)\WX_WIN.obj" \
@@ -580,6 +584,12 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_RBOX.cxx
 SOURCE=..\..\Wxwindow\Src\Msw\WX_SLIDR.cxx
 
 "$(INTDIR)\WX_SLIDR.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\wxwindow\src\msw\wx_tabc.cxx
+
+"$(INTDIR)\wx_tabc.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 

@@ -189,6 +189,10 @@ SOURCE=..\..\mred\Wxs\WXS_STYL.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\mred\wxs\wxs_tabc.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\mred\Wxs\WXS_WIN.cxx
 # End Source File
 # Begin Source File

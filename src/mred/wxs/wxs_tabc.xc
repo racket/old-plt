@@ -56,6 +56,9 @@ void wxTabChoice::Enable(Bool enable) { }
 
 @ "enable" : void Enable(bool);
 
+@ "append" : void Append(string);
+@ "delete" : void Delete(int);
+
 @END
 
 @INCLUDE cb_end.xci

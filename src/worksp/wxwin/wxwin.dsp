@@ -257,6 +257,10 @@ SOURCE=..\..\Wxwindow\Src\Msw\WX_SLIDR.cxx
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\wxwindow\src\msw\wx_tabc.cxx
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Wxwindow\Src\Msw\WX_TIMER.cxx
 # End Source File
 # Begin Source File

@@ -37,6 +37,8 @@ public:
     int   Number(void);
     void  SetSelection(int n);
     void  Enable(Bool enable);
+    void  Append(char *);
+    void  Delete(int);
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -48,6 +50,8 @@ int wxTabChoice::GetSelection(void) { return 0; }
 int wxTabChoice::Number(void) { return 0; }
 void wxTabChoice::SetSelection(int n) { }
 void wxTabChoice::Enable(Bool enable) { }
+void wxTabChoice::Append(char *name) { }
+void wxTabChoice::Delete(int which) { }
 #endif
 
 #include "wxscheme.h"
@@ -187,6 +191,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   return f;
 }
+
 
 
 
@@ -438,6 +443,49 @@ void os_wxTabChoice::OnKillFocus()
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
+}
+
+static Scheme_Object *os_wxTabChoiceDelete(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxTabChoice_class, "delete in tab-group%", n, p);
+  int x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "delete in tab-group%"));
+
+  
+  WITH_VAR_STACK(((wxTabChoice *)((Scheme_Class_Object *)p[0])->primdata)->Delete(x0));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxTabChoiceAppend(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxTabChoice_class, "append in tab-group%", n, p);
+  string x0 INIT_NULLED_OUT;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x0);
+
+  
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "append in tab-group%"));
+
+  
+  WITH_VAR_STACK(((wxTabChoice *)((Scheme_Class_Object *)p[0])->primdata)->Append(x0));
+
+  
+  
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxTabChoiceEnable(int n,  Scheme_Object *p[])
@@ -726,8 +774,10 @@ void objscheme_setup_wxTabChoice(Scheme_Env *env)
 
   wxREGGLOB(os_wxTabChoice_class);
 
-  os_wxTabChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-group%", "item%", (Scheme_Method_Prim *)os_wxTabChoice_ConstructScheme, 10));
+  os_wxTabChoice_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "tab-group%", "item%", (Scheme_Method_Prim *)os_wxTabChoice_ConstructScheme, 12));
 
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "delete" " method", (Scheme_Method_Prim *)os_wxTabChoiceDelete, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "append" " method", (Scheme_Method_Prim *)os_wxTabChoiceAppend, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "enable" " method", (Scheme_Method_Prim *)os_wxTabChoiceEnable, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "set-selection" " method", (Scheme_Method_Prim *)os_wxTabChoiceSetSelection, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxTabChoice_class, "number" " method", (Scheme_Method_Prim *)os_wxTabChoiceNumber, 0, 0));

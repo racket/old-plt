@@ -178,7 +178,7 @@ long os_wxMediaStreamInBase::Read(char* x0, long x1)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -210,7 +210,7 @@ Bool os_wxMediaStreamInBase::Bad()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -241,7 +241,7 @@ void os_wxMediaStreamInBase::Skip(long x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -272,7 +272,7 @@ void os_wxMediaStreamInBase::Seek(long x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -303,7 +303,7 @@ long os_wxMediaStreamInBase::Tell()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -566,7 +566,7 @@ void os_wxMediaStreamOutBase::Write(char* x0, long x1)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -597,7 +597,7 @@ Bool os_wxMediaStreamOutBase::Bad()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -628,7 +628,7 @@ void os_wxMediaStreamOutBase::Seek(long x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -659,7 +659,7 @@ long os_wxMediaStreamOutBase::Tell()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;

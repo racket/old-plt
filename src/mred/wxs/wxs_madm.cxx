@@ -106,7 +106,7 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -137,7 +137,7 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -168,7 +168,7 @@ void os_wxMediaCanvas::OnPaint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -198,7 +198,7 @@ Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -231,7 +231,7 @@ Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -264,7 +264,7 @@ void os_wxMediaCanvas::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -296,7 +296,7 @@ void os_wxMediaCanvas::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -326,7 +326,7 @@ void os_wxMediaCanvas::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -942,7 +942,7 @@ Bool os_wxMediaAdmin::DelayRefresh()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -973,7 +973,7 @@ void os_wxMediaAdmin::UpdateCursor()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1003,7 +1003,7 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, float x2, float x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1037,7 +1037,7 @@ void os_wxMediaAdmin::Resized(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1068,7 +1068,7 @@ void os_wxMediaAdmin::GrabCaret(int x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1099,7 +1099,7 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, float x2, float x3, Bool x4, 
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1136,7 +1136,7 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, float* x2, float* x3, Boo
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1175,7 +1175,7 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, float* x2, float* x3, Bool x
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1214,7 +1214,7 @@ class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1927,7 +1927,7 @@ void os_wxSnipAdmin::UpdateCursor()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1957,7 +1957,7 @@ Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1989,7 +1989,7 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3,
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2024,7 +2024,7 @@ Bool os_wxSnipAdmin::Recounted(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2057,7 +2057,7 @@ void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2089,7 +2089,7 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2121,7 +2121,7 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, fl
 {
   Scheme_Object *p[7];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2159,7 +2159,7 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, float* x2, float* x3, class w
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2198,7 +2198,7 @@ void os_wxSnipAdmin::GetViewSize(float* x0, float* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2232,7 +2232,7 @@ class wxDC* os_wxSnipAdmin::GetDC()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2263,7 +2263,7 @@ class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2744,7 +2744,7 @@ void os_wxSnipClass::WriteDone()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2774,7 +2774,7 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2806,7 +2806,7 @@ void os_wxSnipClass::ReadDone()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2836,7 +2836,7 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2868,7 +2868,7 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3423,7 +3423,7 @@ Bool os_wxKeymap::HandleMouseEvent(class wxObject* x0, class wxMouseEvent& x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3456,7 +3456,7 @@ Bool os_wxKeymap::HandleKeyEvent(class wxObject* x0, class wxKeyEvent& x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;

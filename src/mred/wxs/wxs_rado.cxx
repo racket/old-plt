@@ -274,7 +274,7 @@ Bool os_wxRadioBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -307,7 +307,7 @@ Bool os_wxRadioBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -340,7 +340,7 @@ void os_wxRadioBox::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -372,7 +372,7 @@ void os_wxRadioBox::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -402,7 +402,7 @@ void os_wxRadioBox::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;

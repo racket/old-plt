@@ -179,7 +179,7 @@ Bool os_wxChoice::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -212,7 +212,7 @@ Bool os_wxChoice::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -245,7 +245,7 @@ void os_wxChoice::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -277,7 +277,7 @@ void os_wxChoice::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -307,7 +307,7 @@ void os_wxChoice::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;

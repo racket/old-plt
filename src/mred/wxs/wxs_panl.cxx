@@ -113,7 +113,7 @@ void os_wxPanel::OnChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -144,7 +144,7 @@ void os_wxPanel::OnEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -175,7 +175,7 @@ void os_wxPanel::OnPaint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -205,7 +205,7 @@ void os_wxPanel::OnDefaultAction(class wxItem* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -236,7 +236,7 @@ Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -269,7 +269,7 @@ Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -302,7 +302,7 @@ void os_wxPanel::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -334,7 +334,7 @@ void os_wxPanel::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -364,7 +364,7 @@ void os_wxPanel::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1310,7 +1310,7 @@ void os_wxDialogBox::OnDefaultAction(class wxItem* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1341,7 +1341,7 @@ void os_wxDialogBox::OnChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1372,7 +1372,7 @@ void os_wxDialogBox::OnEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1403,7 +1403,7 @@ void os_wxDialogBox::OnPaint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1433,7 +1433,7 @@ Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1466,7 +1466,7 @@ Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1499,7 +1499,7 @@ void os_wxDialogBox::OnSize(int x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1531,7 +1531,7 @@ void os_wxDialogBox::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1561,7 +1561,7 @@ void os_wxDialogBox::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1591,7 +1591,7 @@ Bool os_wxDialogBox::OnClose()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1622,7 +1622,7 @@ void os_wxDialogBox::OnActivate(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;

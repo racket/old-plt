@@ -400,7 +400,7 @@ class wxTabSnip* os_wxMediaEdit::OnNewTabSnip()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -431,7 +431,7 @@ class wxTextSnip* os_wxMediaEdit::OnNewTextSnip()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -462,7 +462,7 @@ void os_wxMediaEdit::SetRegionData(long x0, long x1, class wxBufferData* x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -495,7 +495,7 @@ class wxBufferData* os_wxMediaEdit::GetRegionData(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -528,7 +528,7 @@ void os_wxMediaEdit::AfterSetSizeConstraint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -558,7 +558,7 @@ Bool os_wxMediaEdit::OnSetSizeConstraint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -589,7 +589,7 @@ void os_wxMediaEdit::AfterSetPosition()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -619,7 +619,7 @@ void os_wxMediaEdit::AfterChangeStyle(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -651,7 +651,7 @@ Bool os_wxMediaEdit::OnChangeStyle(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -684,7 +684,7 @@ void os_wxMediaEdit::AfterDelete(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -716,7 +716,7 @@ Bool os_wxMediaEdit::OnDelete(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -749,7 +749,7 @@ void os_wxMediaEdit::AfterInsert(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -781,7 +781,7 @@ Bool os_wxMediaEdit::OnInsert(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -814,7 +814,7 @@ void os_wxMediaEdit::DoPaste(long x0, long x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -846,7 +846,7 @@ void os_wxMediaEdit::DoCopy(long x0, long x1, long x2, Bool x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -880,7 +880,7 @@ void os_wxMediaEdit::SetAnchor(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -911,7 +911,7 @@ nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -944,7 +944,7 @@ nstring os_wxMediaEdit::GetFile(nstring x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -976,7 +976,7 @@ void os_wxMediaEdit::AfterEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1006,7 +1006,7 @@ void os_wxMediaEdit::OnEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1036,7 +1036,7 @@ void os_wxMediaEdit::AfterLoadFile(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1067,7 +1067,7 @@ Bool os_wxMediaEdit::OnLoadFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1100,7 +1100,7 @@ void os_wxMediaEdit::AfterSaveFile(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1131,7 +1131,7 @@ Bool os_wxMediaEdit::OnSaveFile(string x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1164,7 +1164,7 @@ class wxSnip* os_wxMediaEdit::OnNewBox(int x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1196,7 +1196,7 @@ class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, long x1, Bool x2, 
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1231,7 +1231,7 @@ void os_wxMediaEdit::InvalidateBitmapCache(float x0, float x1, float x2, float x
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1265,7 +1265,7 @@ void os_wxMediaEdit::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float 
 {
   Scheme_Object *p[9];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1304,7 +1304,7 @@ Bool os_wxMediaEdit::WriteFootersToFile(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1336,7 +1336,7 @@ Bool os_wxMediaEdit::WriteHeadersToFile(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1368,7 +1368,7 @@ Bool os_wxMediaEdit::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1401,7 +1401,7 @@ Bool os_wxMediaEdit::ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1434,7 +1434,7 @@ void os_wxMediaEdit::SetFilename(string x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1466,7 +1466,7 @@ Bool os_wxMediaEdit::ReleaseSnip(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1498,7 +1498,7 @@ void os_wxMediaEdit::SetModified(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1529,7 +1529,7 @@ void os_wxMediaEdit::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1561,7 +1561,7 @@ class wxBufferData* os_wxMediaEdit::GetSnipData(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1593,7 +1593,7 @@ void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3,
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1628,7 +1628,7 @@ void os_wxMediaEdit::Resized(class wxSnip* x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1660,7 +1660,7 @@ void os_wxMediaEdit::SetCaretOwner(class wxSnip* x0, int x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1692,7 +1692,7 @@ Bool os_wxMediaEdit::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, fl
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1729,7 +1729,7 @@ void os_wxMediaEdit::OnChange()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1759,7 +1759,7 @@ void os_wxMediaEdit::OnFocus(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1790,7 +1790,7 @@ void os_wxMediaEdit::OnDefaultChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1821,7 +1821,7 @@ void os_wxMediaEdit::OnDefaultEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1852,7 +1852,7 @@ void os_wxMediaEdit::OnLocalChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1883,7 +1883,7 @@ void os_wxMediaEdit::OnLocalEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1914,7 +1914,7 @@ void os_wxMediaEdit::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1944,7 +1944,7 @@ void os_wxMediaEdit::OwnCaret(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1975,7 +1975,7 @@ void os_wxMediaEdit::Refresh(float x0, float x1, float x2, float x3, Bool x4)
 {
   Scheme_Object *p[5];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2010,7 +2010,7 @@ class wxCursor* os_wxMediaEdit::AdjustCursor(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2042,7 +2042,7 @@ void os_wxMediaEdit::OnChar(class wxKeyEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2073,7 +2073,7 @@ void os_wxMediaEdit::OnEvent(class wxMouseEvent& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2104,7 +2104,7 @@ void os_wxMediaEdit::CopySelfTo(class wxMediaBuffer* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;

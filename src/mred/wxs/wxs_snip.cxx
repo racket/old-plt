@@ -80,7 +80,7 @@ void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -111,7 +111,7 @@ Bool os_wxSnip::Resize(float x0, float x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -144,7 +144,7 @@ void os_wxSnip::Write(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -175,7 +175,7 @@ Bool os_wxSnip::Match(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -207,7 +207,7 @@ void os_wxSnip::DoFont(int x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -239,7 +239,7 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -272,7 +272,7 @@ void os_wxSnip::OwnCaret(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -303,7 +303,7 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -340,7 +340,7 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -376,7 +376,7 @@ void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, 
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -412,7 +412,7 @@ void os_wxSnip::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -442,7 +442,7 @@ class wxSnip* os_wxSnip::Copy()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -473,7 +473,7 @@ string os_wxSnip::GetText(long x0, long x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -507,7 +507,7 @@ class wxSnip* os_wxSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -539,7 +539,7 @@ void os_wxSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -574,7 +574,7 @@ void os_wxSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, flo
 {
   Scheme_Object *p[10];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -614,7 +614,7 @@ float os_wxSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -649,7 +649,7 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, float* 
 {
   Scheme_Object *p[9];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1649,7 +1649,7 @@ void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1680,7 +1680,7 @@ Bool os_wxTextSnip::Resize(float x0, float x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1713,7 +1713,7 @@ void os_wxTextSnip::Write(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1744,7 +1744,7 @@ Bool os_wxTextSnip::Match(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1776,7 +1776,7 @@ void os_wxTextSnip::DoFont(int x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1808,7 +1808,7 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1841,7 +1841,7 @@ void os_wxTextSnip::OwnCaret(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1872,7 +1872,7 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1909,7 +1909,7 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1945,7 +1945,7 @@ void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float 
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -1981,7 +1981,7 @@ void os_wxTextSnip::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2011,7 +2011,7 @@ class wxSnip* os_wxTextSnip::Copy()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2042,7 +2042,7 @@ string os_wxTextSnip::GetText(long x0, long x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2076,7 +2076,7 @@ class wxSnip* os_wxTextSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2108,7 +2108,7 @@ void os_wxTextSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2143,7 +2143,7 @@ void os_wxTextSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4,
 {
   Scheme_Object *p[10];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2183,7 +2183,7 @@ float os_wxTextSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -2218,7 +2218,7 @@ void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, flo
 {
   Scheme_Object *p[9];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3027,7 +3027,7 @@ void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3058,7 +3058,7 @@ Bool os_wxTabSnip::Resize(float x0, float x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3091,7 +3091,7 @@ void os_wxTabSnip::Write(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3122,7 +3122,7 @@ Bool os_wxTabSnip::Match(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3154,7 +3154,7 @@ void os_wxTabSnip::DoFont(int x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3186,7 +3186,7 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3219,7 +3219,7 @@ void os_wxTabSnip::OwnCaret(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3250,7 +3250,7 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3287,7 +3287,7 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3323,7 +3323,7 @@ void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3359,7 +3359,7 @@ void os_wxTabSnip::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3389,7 +3389,7 @@ class wxSnip* os_wxTabSnip::Copy()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3420,7 +3420,7 @@ string os_wxTabSnip::GetText(long x0, long x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3454,7 +3454,7 @@ class wxSnip* os_wxTabSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3486,7 +3486,7 @@ void os_wxTabSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3521,7 +3521,7 @@ void os_wxTabSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, 
 {
   Scheme_Object *p[10];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3561,7 +3561,7 @@ float os_wxTabSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -3596,7 +3596,7 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, floa
 {
   Scheme_Object *p[9];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4357,7 +4357,7 @@ void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4388,7 +4388,7 @@ Bool os_wxImageSnip::Resize(float x0, float x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4421,7 +4421,7 @@ void os_wxImageSnip::Write(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4452,7 +4452,7 @@ Bool os_wxImageSnip::Match(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4484,7 +4484,7 @@ void os_wxImageSnip::DoFont(int x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4516,7 +4516,7 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4549,7 +4549,7 @@ void os_wxImageSnip::OwnCaret(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4580,7 +4580,7 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4617,7 +4617,7 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4653,7 +4653,7 @@ void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4689,7 +4689,7 @@ void os_wxImageSnip::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4719,7 +4719,7 @@ class wxSnip* os_wxImageSnip::Copy()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4750,7 +4750,7 @@ string os_wxImageSnip::GetText(long x0, long x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4784,7 +4784,7 @@ class wxSnip* os_wxImageSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4816,7 +4816,7 @@ void os_wxImageSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4851,7 +4851,7 @@ void os_wxImageSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
 {
   Scheme_Object *p[10];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4891,7 +4891,7 @@ float os_wxImageSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -4926,7 +4926,7 @@ void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, fl
 {
   Scheme_Object *p[9];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -5825,7 +5825,7 @@ void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -5856,7 +5856,7 @@ Bool os_wxMediaSnip::Resize(float x0, float x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -5889,7 +5889,7 @@ void os_wxMediaSnip::Write(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -5920,7 +5920,7 @@ Bool os_wxMediaSnip::Match(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -5952,7 +5952,7 @@ void os_wxMediaSnip::DoFont(int x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -5984,7 +5984,7 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6017,7 +6017,7 @@ void os_wxMediaSnip::OwnCaret(Bool x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6048,7 +6048,7 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6085,7 +6085,7 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6121,7 +6121,7 @@ void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
 {
   Scheme_Object *p[6];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6157,7 +6157,7 @@ void os_wxMediaSnip::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6187,7 +6187,7 @@ class wxSnip* os_wxMediaSnip::Copy()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6218,7 +6218,7 @@ string os_wxMediaSnip::GetText(long x0, long x1, Bool x2, long* x3)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6252,7 +6252,7 @@ class wxSnip* os_wxMediaSnip::MergeWith(class wxSnip* x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6284,7 +6284,7 @@ void os_wxMediaSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
 {
   Scheme_Object *p[3];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6319,7 +6319,7 @@ void os_wxMediaSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
 {
   Scheme_Object *p[10];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6359,7 +6359,7 @@ float os_wxMediaSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
 {
   Scheme_Object *p[4];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -6394,7 +6394,7 @@ void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, fl
 {
   Scheme_Object *p[9];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -7589,7 +7589,7 @@ class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;
@@ -8047,7 +8047,7 @@ Bool os_wxBufferData::Write(class wxMediaStreamOut& x0)
 {
   Scheme_Object *p[1];
   Scheme_Object *v;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   Scheme_Object *method;
   int sj;
   static void *mcache = 0;

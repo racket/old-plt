@@ -1905,7 +1905,7 @@ void MrEdApp::RealInit(void)
 {
   const char *rl = "(require-library \"%s\" \"%s\")";
   char *s;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
 
   initialized = 1;
 
@@ -1914,7 +1914,7 @@ void MrEdApp::RealInit(void)
   s = (char *)scheme_malloc_atomic(strlen(rl) + strlen(file) + strlen(collection) + 3);
   sprintf(s, rl, file, collection);
   
-  memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf));
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
   if (scheme_setjmp(scheme_error_buf)) {
     /* give up */
     wxMessageBox("Error loading system.", "Error");
@@ -1967,7 +1967,7 @@ void MrEdApp::RealInit(void)
 
  done:
 
-  memcpy(&scheme_error_buf, &savebuf, sizeof(jmp_buf));
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 
   return;
 }
@@ -2020,9 +2020,9 @@ extern Scheme_Object *wxs_app_file_proc;
 void Drop_Runtime(char **argv, int argc)
 {
   int i;
-  jmp_buf savebuf;
+  mz_jmp_buf savebuf;
   
-  memcpy(&savebuf, &scheme_error_buf, sizeof(jmp_buf));
+  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
 
   if (scheme_setjmp(scheme_error_buf)) {
     /* give up on rest */
@@ -2034,7 +2034,7 @@ void Drop_Runtime(char **argv, int argc)
     }
   }
 
-  memcpy(&scheme_error_buf, &savebuf, sizeof(jmp_buf));
+  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
 }
 
 void Drop_Quit()

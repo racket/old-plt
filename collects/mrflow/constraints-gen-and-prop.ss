@@ -7,13 +7,14 @@
   (require (prefix kern: (lib "kerncase.ss" "syntax"))
            (prefix list: (lib "list.ss"))
            (prefix etc: (lib "etc.ss"))
-
+           
            (lib "match.ss")
            
            "labels.ss"
            "types.ss"
            "set-hash.ss"
            "dbg.ss"
+           (prefix util: "util.ss")
            (prefix hc: "hashcons.ss")
            (prefix cst: "constants.ss")
            ;(prefix types: "types.ss")
@@ -35,22 +36,22 @@
    get-arrows-from-labels
    )
   
-  ;(define-syntax debug1
-  ;  (let ([counter 1])
-  ;    (lambda (stx)
-  ;      (syntax-case stx ()
-  ;        [(_ args ...)
-  ;         (begin
-  ;           (printf "debug counter: ~a~n" counter)
-  ;           (let* ([stx-args (syntax (args ...))]
-  ;                  [stx-args-list (syntax-e stx-args)]
-  ;                  [stx-out (datum->syntax-object
-  ;                            stx-args
-  ;                            `(begin
-  ;                               (printf "debug: ~a~n" ,counter)
-  ;                               ,stx-args))])
-  ;             (set! counter (add1 counter))
-  ;             stx-out))]))))
+;  (define-syntax debug1
+;    (let ([counter 1])
+;      (lambda (stx)
+;        (syntax-case stx ()
+;          [(_ args ...)
+;           (begin
+;             (printf "debug counter: ~a~n" counter)
+;             (let* ([stx-args (syntax (args ...))]
+;                    [stx-args-list (syntax-e stx-args)]
+;                    [stx-out (datum->syntax-object
+;                              stx-args
+;                              `(begin
+;                                 (printf "debug: ~a~n" ,counter)
+;                                 ,stx-args))])
+;               (set! counter (add1 counter))
+;               stx-out))]))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; MISC
   
@@ -118,6 +119,19 @@
                         +inf.0)))])
       (count-length start-label 0)))
   
+  ; transform a label-based list into a cons-based list
+  ; sba-state (label-listof top)  -> (listof top)
+  (define (label-list->list sba-state start-label)
+    (letrec ([ll->l
+              (lambda (label)
+                (cond
+                  [(label-cons? label) (cons (label-cons-car label) (ll->l (label-cons-cdr label)))]
+                  [(and (label-cst? label) (null? (label-cst-value label))) '()]
+                  [else (error 'label-list->list
+                               "not a label list: ~a"
+                               (pp-type sba-state (get-type-from-label sba-state start-label) 'label-list->list))]))])
+      (ll->l start-label)))
+  
   ; like ormap, except that it continues processing the list even after the first non-#f
   ; is encountered
   (define ormap-strict
@@ -133,6 +147,19 @@
             #t
             (ormap-strict-1-acc f (cdr l) (f (car l)))))))
   
+  (define ormap2-strict
+    (letrec ([ormap-strict-1-acc
+              (lambda (f l1 l2 acc)
+                (if (null? l1)
+                    acc
+                    (if (f (car l1) (car l2))
+                        (ormap-strict-1-acc f (cdr l1) (cdr l2) #t)
+                        (ormap-strict-1-acc f (cdr l1) (cdr l2) acc))))])
+      (lambda (f l1 l2)
+        (if (null? l1)
+            #t
+            (ormap-strict-1-acc f (cdr l1) (cdr l2) (f (car l1) (car l2)))))))
+
   ; like ormap, except that it continues processing the list even after the first non-#f
   ; is encountered
   ; l1 is a label-cons based list, l1 and l2 have the same length
@@ -568,7 +595,12 @@
                                                label))])
              (if (= (length label-list) 1)
                  (let ([values-label (car label-list)])
-                   ; we do not expect an infinite list here
+                   ; we do not expect an infinite list here, and even if we receive one it's
+                   ; okay to flag an error and not propagate (even if originally the list
+                   ; was of length one and we lost that information through, say, using apply)
+                   ; because we try to prevent values from flowing in, not flowing out
+                   ; (unlike what happens when we check for the number of values in the case
+                   ; define-values, let-values, or letrec-values).
                    (if (= (label-list-length values-label) 1)
                        ; we have something like (define-values (x) (... (values a) ...)), so we add a
                        ; new direct edge from a to x. Of course this new edge has to be itself a recursive
@@ -592,10 +624,28 @@
                                               (format "context expected 1 value, received ~a values"
                                                       (label-list-length values-label)))
                          #f)))
-                 (error 'extend-edge-for-values "values didn't contain list: ~a"
-                        (map (lambda (label)
-                               (pp-type sba-state (get-type-from-label sba-state label) 'extend-edge-for-values))
-                             label-list))
+                 ; values contains more than one thing.  This is either an internal error,
+                 ; or we have somehow ended up with an infinite list.  Since we trust ourselves,
+                 ; we decide that it's an infinite list, and since we can't determine the
+                 ; original length of the list we have to signal an error.
+                 ; Question: do we still propagate or not?  After all, the length of the original
+                 ; list might have been 1, in which case it would be correct to propagate.  On
+                 ; the other hand most of the cases here can be expected to be error cases
+                 ; (things like (apply values (list 1)) are not very common...) so propagating
+                 ; would just trigger many more errors...  We flag an error anyway so we should
+                 ; be fine.
+                 (set-error-for-label sba-state
+                                      inflowing-label
+                                      'red
+                                      (format "context expected 1 value, can't determine how many received"))
+                 ;(error 'extend-edge-for-values "values didn't contain list: ~a"
+                 ;       (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'extend-edge-for-values)
+                 ;       ;(map (lambda (label)
+                 ;       ;       (list (pp-type sba-state (get-type-from-label sba-state label) 'extend-edge-for-values)
+                 ;       ;             (syntax-position (label-term label))
+                 ;       ;             (syntax-object->datum (label-term label))))
+                 ;       ;     label-list)
+                 ;       )
                  ))
            ; (define-values (x) a) or equivalent (e.g. the result of analysing something like
            ; (define-values (x) (values (values (values a)))), after three levels of recursion).
@@ -2296,6 +2346,116 @@
                 ((sba-state-register-label-with-gui sba-state) label)
                 label)])))
   
+  ; Builds a list of labels of length n, with all labels being the same.
+  ; This function should be seldom called, so it's not being made tail recursive...
+  (define (build-label-list label n)
+    (if (<= n 0)
+        '()
+        (cons label (build-label-list label (sub1 n)))))
+  
+  ; given a label representing multiple values, connect the label for the different
+  ; values to the different variables.  The tricky part is that the multiple values
+  ; are potentially infinite, because of approximations.  E.g.
+  ; (let-values ([(a b) (apply values (list 1 2))]) b)
+  ; Because of the "apply", we can't actually determine how many multiple values
+  ; we receive, so we have to try our best.
+  ; sba-state label (listof label) integer symbol -> void
+  (define (connect-value-labels-to-var-labels sba-state inflowing-label vars-labels vars-length term-name)
+    (let ([values-labels
+           (let* ([value-label-list (hash-table-map (label-set (label-values-label inflowing-label))
+                                                    (lambda (label arrows) label))]
+                  [value-label-list-length (length value-label-list)])
+             (cond
+               [(= value-label-list-length 1) (label-list->list sba-state (car value-label-list))]
+               ; check for infinite list.  If we have an infinite list, then it's something
+               ; like x = (union null (cons y x)) or x = (union (cons y x) null).  In either
+               ; case (this case and the one below), we find y and create a list (list y y ...)
+               ; with the right length so y (most likely a union of all the possible multiple
+               ; values that flowed together when we lost track of the exact length of the
+               ; list of multiple values) will flow in all vars-labels (therefore being *very*
+               ; conservative since all possible values will flow into all possible bindings).
+               ; Note that we don't actually check that the list is infinite (i.e. that the
+               ; cons labels form a loop).  We could check that the cdr of the cons is eq? to
+               ; (label-values-label inflowing-label) for example, but that doesn't always
+               ; work because of loop unfolding (we does occur in practice).  So we just check
+               ; that we have something vaguely resembling a loop at the outermost level and
+               ; then we trust that the rest of the analysis and the primitive type
+               ; descriptions are correct enough that we never end up here with something that
+               ; resembles a list without being one.  In fact if the analysis is correct we
+               ; should only ever see finite lists and infinite lists and nothing else, so
+               ; since the first case above takes care of finite lists we can normally
+               ; safely assume that in the two cases below we are dealing with infinite lists,
+               ; even though we have no simple way to check that.  The last case is for extra
+               ; checking so that if something goes really wrong we might at least learn about it...
+               ; One good question is: should we propagate at all when we don't know whether
+               ; we have an error or not?
+               ; Note that we also assume that the car we get from the infinite list is all
+               ; the possible cars we'll ever get, even in the presence of other cars in the
+               ; infinite list that might come from loop unrolling!
+               [(and (= value-label-list-length 2)
+                     (let ([first-value-label (car value-label-list)]
+                           [second-value-label (cadr value-label-list)])
+                       (and (label-cst? first-value-label)
+                            (null? (label-cst-value first-value-label))
+                            (label-cons? second-value-label))))
+                (set-error-for-label
+                 sba-state
+                 inflowing-label
+                 'red
+                 (format "~a: context expected ~a values, can't determine how many received"
+                         term-name
+                         vars-length))
+                (build-label-list (label-cons-car (cadr value-label-list)) vars-length)]
+               [(and (= value-label-list-length 2)
+                     (let ([first-value-label (car value-label-list)]
+                           [second-value-label (cadr value-label-list)])
+                       (and (label-cst? second-value-label)
+                            (null? (label-cst-value second-value-label))
+                            (label-cons? first-value-label))))
+                (set-error-for-label
+                 sba-state
+                 inflowing-label
+                 'red
+                 (format "~a: context expected ~a values, can't determine how many received"
+                         term-name
+                         vars-length))
+                (build-label-list (label-cons-car (car value-label-list)) vars-length)]
+               [else (error term-name "values didn't contain list: ~a"
+                            (pp-type sba-state (get-type-from-label sba-state inflowing-label) 'let-values)
+                            ;(map (lambda (label)
+                            ;       (pp-type sba-state (get-type-from-label sba-state label)
+                            ;                term-name))
+                            ;     label-list)
+                            )]))])
+      (if (= (length values-labels) vars-length)
+          ; we have something like
+          ; (let-values ([(x y) (... (values a b) ...)]...) ...),
+          ; so we add a new direct edge from a to x and b to y.
+          ; Of course these new edges have to be themselves
+          ; recursive unpacking edges, since some (values c)
+          ; could later flow into either a or b.
+          (ormap2-strict
+           (lambda (new-origin-label var-label)
+             (add-edge-and-propagate-set-through-edge
+              new-origin-label
+              (extend-edge-for-values
+               sba-state
+               (create-simple-edge var-label)))
+             #t)
+           values-labels vars-labels)
+          ; (let-values ([(x y) (... (values a b c ...) ...)]
+          ;             ...) ...)
+          (begin
+            (set-error-for-label
+             sba-state
+             inflowing-label
+             'red
+             (format "~a: context expected ~a values, received ~a values"
+                     term-name
+                     vars-length
+                     (length values-labels)))
+            #f))))
+  
   ; sba-state syntax-object (listof (cons symbol label)) label -> label
   ; gamma is the binding-variable-name-to-label environment
   ; enclosing-lambda-label is the label for the enclosing lambda, if any. We
@@ -2424,38 +2584,7 @@
                       ; the different variables. I.e. it's a sink for multiple values. So we
                       ; have no need for out-label here.
                       (if (label-values? inflowing-label)
-                          (let ([label-list (hash-table-map (label-set (label-values-label
-                                                                        inflowing-label))
-                                                            (lambda (label arrows)
-                                                              label))])
-                            (if (= (length label-list) 1)
-                                (let ([values-label (car label-list)])
-                                  ; we do not expect an infinite list here
-                                  (if (= (label-list-length values-label) vars-length)
-                                      ; we have something like
-                                      ; (define-values (x y) (... (values a b) ...)), so we add a
-                                      ; new direct edge from a to x and b to y. Of course these new
-                                      ; edges have to be themselves recursive unpacking edges, since
-                                      ; some (values c) could later flow into either a or b.
-                                      (label-ormap-strict
-                                       (lambda (new-origin-label var-label)
-                                         (add-edge-and-propagate-set-through-edge
-                                          new-origin-label
-                                          (extend-edge-for-values sba-state (create-simple-edge var-label))))
-                                       values-label vars-labels)
-                                      ; (define-values (x y) (... (values a b c) ...))
-                                      (begin
-                                        (set-error-for-label
-                                         sba-state
-                                         inflowing-label
-                                         'red
-                                         (format "define-values: context expected ~a value, received ~a values"
-                                                 vars-length (label-list-length values-label)))
-                                        #f)))
-                                (error 'define-values "values didn't contain list: ~a"
-                                       (map (lambda (label)
-                                              (pp-type sba-state (get-type-from-label sba-state label) 'define-values))
-                                            label-list))))
+                          (connect-value-labels-to-var-labels sba-state inflowing-label vars-labels vars-length 'define-values)
                           ; (define-values (x y) (... 1 ...))
                           (begin
                             (set-error-for-label
@@ -2528,45 +2657,7 @@
                                  ; are connected to the different variables. I.e. it's a sink for
                                  ; multiple values. So we have no need for out-label here.
                                  (if (label-values? inflowing-label)
-                                     (let ([label-list (hash-table-map
-                                                        (label-set (label-values-label
-                                                                    inflowing-label))
-                                                        (lambda (label arrows)
-                                                          label))])
-                                       (if (= (length label-list) 1)
-                                           (let ([values-label (car label-list)]) 
-                                             ; we do not expect an infinite list here
-                                             (if (= (label-list-length values-label) vars-length)
-                                                 ; we have something like
-                                                 ; (let-values ([(x y) (... (values a b) ...)]...) ...),
-                                                 ; so we add a new direct edge from a to x and b to y.
-                                                 ; Of course these new edges have to be themselves
-                                                 ; recursive unpacking edges, since some (values c)
-                                                 ; could later flow into either a or b.
-                                                 (label-ormap-strict
-                                                  (lambda (new-origin-label var-label)
-                                                    (add-edge-and-propagate-set-through-edge
-                                                     new-origin-label
-                                                     (extend-edge-for-values
-                                                      sba-state
-                                                      (create-simple-edge var-label))))
-                                                  values-label vars-labels)
-                                                 ; (let-values ([(x y) (... (values a b c ...) ...)]
-                                                 ;             ...) ...)
-                                                 (begin
-                                                   (set-error-for-label
-                                                    sba-state
-                                                    inflowing-label
-                                                    'red
-                                                    (format "let-values: context expected ~a value, received ~a values"
-                                                            vars-length
-                                                            (label-list-length values-label)))
-                                                   #f)))
-                                           (error 'let-values "values didn't contain list: ~a"
-                                                  (map (lambda (label)
-                                                         (pp-type sba-state (get-type-from-label sba-state label)
-                                                                  'let-values))
-                                                       label-list))))
+                                     (connect-value-labels-to-var-labels sba-state inflowing-label vars-labels vars-length 'let-values)
                                      ; (let-values ([(x y) (... 1 ...)] ...) ...)
                                      (begin
                                        (set-error-for-label
@@ -2660,41 +2751,11 @@
                                   ; the different variables. I.e. it's a sink for multiple values. So we
                                   ; have no need for out-label here.
                                   (if (label-values? inflowing-label)
-                                      (let ([label-list (hash-table-map (label-set (label-values-label
-                                                                                    inflowing-label))
-                                                                        (lambda (label arrows)
-                                                                          label))])
-                                        (if (= (length label-list) 1)
-                                            (let ([values-label (car label-list)])
-                                              ; we do not expect an infinite list here
-                                              (if (= (label-list-length values-label) vars-length)
-                                                  ; we have something like
-                                                  ; [(x y) (... (values a b) ...)], so we add a
-                                                  ; new direct edge from a to x and b to y. Of course these new
-                                                  ; edges have to be themselves recursive unpacking edges, since
-                                                  ; some (values c) could later flow into either a or b.
-                                                  (label-ormap-strict
-                                                   (lambda (new-origin-label var-stx)
-                                                     (let ([var-label (create-simple-label sba-state var-stx)])
-                                                       (add-edge-and-propagate-set-through-edge
-                                                        new-origin-label
-                                                        (extend-edge-for-values sba-state (create-simple-edge var-label)))
-                                                       (search-and-replace gamma-extended (syntax-e var-stx) var-label)))
-                                                   values-label vars-stx)
-                                                  ; [(x y) (... (values a b c) ...)]
-                                                  (begin
-                                                    (set-error-for-label
-                                                     sba-state
-                                                     inflowing-label
-                                                     'red
-                                                     (format "letrec-values: context expected ~a value, received ~a values"
-                                                             vars-length (label-list-length values-label)))
-                                                    #f)))
-                                            (error 'letrec-values "values didn't contain list: ~a"
-                                                   (map (lambda (label)
-                                                          (pp-type sba-state (get-type-from-label sba-state label)
-                                                                   'letrec-values))
-                                                        label-list))))
+                                      (let ([vars-labels (map (lambda (var-stx) (create-simple-label sba-state var-stx)) vars-stx)])
+                                        (connect-value-labels-to-var-labels sba-state inflowing-label vars-labels vars-length 'let-values)
+                                        (for-each (lambda (var-stx var-label)
+                                                    (search-and-replace gamma-extended (syntax-e var-stx) var-label))
+                                                  vars-stx vars-labels))
                                       ; [(x y) (... 1 ...))]
                                       (begin
                                         (set-error-for-label
@@ -2875,7 +2936,8 @@
                       (add-edge-and-propagate-set-through-edge
                        var-label binding-edge)
                       (add-edge-and-propagate-set-through-edge
-                       void-label set!-edge))])
+                       void-label set!-edge)
+                      )])
               (if enclosing-lambda-label
                   (let* ([enclosing-lambda-effects (label-case-lambda-effects enclosing-lambda-label)]
                          [current-thunk (car enclosing-lambda-effects)])
@@ -2913,7 +2975,8 @@
                              (add-edge-and-propagate-set-through-edge
                               var-label binding-edge)
                              (add-edge-and-propagate-set-through-edge
-                              void-label set!-edge))
+                              void-label set!-edge)
+                             )
                            (set-error-for-label sba-state
                                                 set!-label
                                                 'red
@@ -3774,7 +3837,7 @@
                                 (set-error-for-label sba-state
                                                      label
                                                      'red
-                                                     (format "primitive expects argument of type <pair>; given ~a"
+                                                     (format "X primitive expects argument of type <pair>; given ~a"
                                                              (pp-type sba-state (get-type-from-label
                                                                                  sba-state
                                                                                  inflowing-label)
@@ -4110,7 +4173,7 @@
             (car new-type-entry)))))
   
   (dbg-define/contract subt
-    (sba-state? hc:hashcons-table? hc:handle? hc:handle? any? set? ;(listof (cons/p handle? handle?))
+    (sba-state? hc:hashcons-table? handle? handle? any? set? ;(listof (cons/p handle? handle?))
                 . -> . boolean?)
     (let ([subtyping-table
            (let ([table (make-hash-table)])
@@ -4168,20 +4231,20 @@
                            (subt (type-vector-element t1) (type-vector-element t2)))
                       ; case-lambda
                       (and (type-case-lambda? t1) (type-case-lambda? t2)
-                           (ormap4-vector
+                           (util:ormap4-vector
                             (lambda (t1-rest-arg? t1-req-arg t1-args t1-exp)
                               (if t1-rest-arg?
-                                  (andmap4-vector
+                                  (util:andmap4-vector
                                    (lambda (t2-rest-arg? t2-req-arg t2-args t2-exp)
                                      (if t2-rest-arg?
                                          ; both t1 and t2 have rest args
                                          (or (and (< t1-req-arg t2-req-arg)
                                                   (subt t1-exp t2-exp)
                                                   ; contravariant
-                                                  (andmap2-vector-interval subt t2-args t1-args 0 t1-req-arg)
+                                                  (util:andmap2-vector-interval subt t2-args t1-args 0 t1-req-arg)
                                                   (let ([t1-rest-arg (vector-ref t1-args t1-req-arg)])
                                                     (and
-                                                     (andmap-vector-interval
+                                                     (util:andmap-vector-interval
                                                       (lambda (t2-arg)
                                                         ; contravariant
                                                         (subt (get-list-of-handle t2-arg) t1-rest-arg))
@@ -4191,14 +4254,14 @@
                                              (and (= t1-req-arg t2-req-arg)
                                                   (subt t1-exp t2-exp)
                                                   ; contravariant
-                                                  (andmap2-vector subt t2-args t1-args))
+                                                  (util:andmap2-vector subt t2-args t1-args))
                                              (and (> t1-req-arg t2-req-arg)
                                                   (subt t1-exp t2-exp)
                                                   ; contravariant
-                                                  (andmap2-vector-interval subt t2-args t1-args 0 t2-req-arg)
+                                                  (util:andmap2-vector-interval subt t2-args t1-args 0 t2-req-arg)
                                                   (let ([t2-rest-arg (vector-ref t2-args t2-req-arg)])
                                                     (and
-                                                     (andmap-vector-interval
+                                                     (util:andmap-vector-interval
                                                       (lambda (t1-arg)
                                                         (subt t2-rest-arg (get-list-of-handle t1-arg)))
                                                       t1-args t2-req-arg t1-req-arg)
@@ -4213,13 +4276,13 @@
                                               ; check the rest arg specially, since the rest arg
                                               ; of t1 is automatically wrapped inside a list.
                                               ; contravariant
-                                              (andmap2-vector-interval subt t2-args t1-args 0 t1-req-arg)
+                                              (util:andmap2-vector-interval subt t2-args t1-args 0 t1-req-arg)
                                               ; contravariant
                                               (subt (hc:hashcons-type hashcons-tbl
                                                                       (list:foldr make-type-cons
                                                                                   (make-type-cst '())
-                                                                                  (interval->list t2-args t1-req-arg
-                                                                                                  (vector-length t2-args))))
+                                                                                  (util:interval->list t2-args t1-req-arg
+                                                                                                       (vector-length t2-args))))
                                                     (vector-ref t1-args t1-req-arg) ; rest arg
                                                     ))))
                                    (type-case-lambda-rest-arg?s t2)
@@ -4227,7 +4290,7 @@
                                    (type-case-lambda-argss t2)
                                    (type-case-lambda-exps t2))
                                   ; t1 has no rest-args
-                                  (andmap4-vector
+                                  (util:andmap4-vector
                                    (lambda (t2-rest-arg? t2-req-arg t2-args t2-exp)
                                      (if t2-rest-arg?
                                          (and (>= t1-req-arg t2-req-arg)
@@ -4237,10 +4300,10 @@
                                               ; check the rest arg specially, since the rest arg
                                               ; of t2 is automatically wrapped inside a list.
                                               ; contravariant
-                                              (andmap2-vector-interval subt t2-args t1-args 0 t2-req-arg)
+                                              (util:andmap2-vector-interval subt t2-args t1-args 0 t2-req-arg)
                                               ; contravariant
                                               (let ([t2-rest-arg (vector-ref t2-args t2-req-arg)])
-                                                (andmap-vector-interval
+                                                (util:andmap-vector-interval
                                                  (lambda (t1-arg)
                                                    (subt t2-rest-arg (get-list-of-handle t1-arg)))
                                                  t1-args t2-req-arg (vector-length t1-args))))
@@ -4248,7 +4311,7 @@
                                          (and (= t1-req-arg t2-req-arg)
                                               (subt t1-exp t2-exp)
                                               ; contravariant
-                                              (andmap2-vector subt t2-args t1-args))))
+                                              (util:andmap2-vector subt t2-args t1-args))))
                                    (type-case-lambda-rest-arg?s t2)
                                    (type-case-lambda-req-args t2)
                                    (type-case-lambda-argss t2)
@@ -4298,14 +4361,14 @@
   
   ; called when t2 is a (flow var free) type instead of a handle
   (dbg-define/contract subtype-type
-    (sba-state? hc:handle? hc:hashcons-type? any? boolean? (union false? label?) . -> . boolean?)
+    (sba-state? handle? hc:hashcons-type? any? boolean? (union false? label?) . -> . boolean?)
     (lambda (sba-state t1-handle t2 delta-flow error? label)
       (subtype sba-state t1-handle
                (hc:hashcons-type (sba-state-hashcons-tbl sba-state) t2)
                delta-flow error? label)))
   
   (dbg-define/contract subtype
-    (sba-state? hc:handle? hc:handle? any? boolean? (union false? label?) . -> . boolean?)
+    (sba-state? handle? handle? any? boolean? (union false? label?) . -> . boolean?)
     (lambda (sba-state t1-handle t2-handle delta-flow error? label)
       (if (subt sba-state (sba-state-hashcons-tbl sba-state) t1-handle t2-handle delta-flow (set-make 'equal))
           #t
@@ -4473,206 +4536,205 @@
   ; computes type for label, computes the corresponding handle, and memoize it
   (define (get-type-from-label sba-state label)
     (add-type-var-to-label label sba-state)
-    (let ([handle (type-var-handle (label-type-var label))])
-      (if handle
-          handle
-          (let* (;[_ (begin (print-struct #t)(printf "T: ~a ~a ~a " (type-var-name (label-type-var label))
-                 ;                                   (syntax-position (label-term label))
-                 ;                                   (syntax-object->datum (label-term label))))]
-                 ;[start (current-milliseconds)]
-                 [reachable-labels (set-map (reachable-labels-from-label label)
-                                            (lambda (l) (add-type-var-to-label l sba-state) l))]
-                 ;[_ (begin (print-struct #t)(printf "R: ~a~n" (map (lambda (l) (type-var-name (label-type-var l))) reachable-labels)))]
-                 ;[_ (printf "~a " (- (current-milliseconds) start))]
-                 ;[start (current-milliseconds)]
-                 [reconstructed-type (typeL label reachable-labels)]
-                 ;[_ (begin (print-struct #t)(printf "T: ~a~n" (ppp-type reconstructed-type 'blah)))]
-                 ;[_ (printf " ~a~n" (- (current-milliseconds) start))]
-                 ;[start (current-milliseconds)]
-                 [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) reconstructed-type)]
-                 ;[_ (printf "HC-Time= ~a~n" (- (current-milliseconds) start))]
-                 )
-            ;XXX no memoization anymore (set-type-var-handle! (label-type-var label) handle)
-            handle))))
+    (or (type-var-handle (label-type-var label))
+        (let* (;[_ (begin (print-struct #t)(printf "T: ~a ~a ~a " (type-var-name (label-type-var label))
+               ;                                   (syntax-position (label-term label))
+               ;                                   (syntax-object->datum (label-term label))))]
+               ;[start (current-milliseconds)]
+               [reachable-labels (set-map (reachable-labels-from-label label)
+                                          (lambda (l) (add-type-var-to-label l sba-state) l))]
+               ;[_ (begin (print-struct #t)(printf "R: ~a~n" (map (lambda (l) (type-var-name (label-type-var l))) reachable-labels)))]
+               ;[_ (printf "~a " (- (current-milliseconds) start))]
+               ;[start (current-milliseconds)]
+               [reconstructed-type (typeL label reachable-labels)]
+               ;[_ (begin (print-struct #t)(printf "T: ~a~n" (ppp-type reconstructed-type 'blah)))]
+               ;[_ (printf " ~a~n" (- (current-milliseconds) start))]
+               ;[start (current-milliseconds)]
+               [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) reconstructed-type)]
+               ;[_ (printf "HC-Time= ~a~n" (- (current-milliseconds) start))]
+               )
+          ; XXX memoization
+          (set-type-var-handle! (label-type-var label) handle)
+          handle)))
   
   ; type (union (hash-table-of type-flow-var (cons label type)) symbol) -> string
   ; type pretty printer
   ; delta-flow is the flow variable environment, or a symbol if no flow environment
   ; was available at the time of the call.
   (define (pp-type sba-state type delta-flow)
-    (let ([foo (hc:handle->string (sba-state-hashcons-tbl sba-state) type
-                       (lambda (h1 h2)
-                         (subtype sba-state h1 h2 #f #f #f)))
-               ])
+    (let ([pretty-string (hc:handle->string (sba-state-hashcons-tbl sba-state) type
+                                            (lambda (h1 h2)
+                                              (subtype sba-state h1 h2 #f #f #f)))
+                         ])
       ;(printf "H: ~a~nP: ~a~n~n" type foo)
-      foo))
+      pretty-string))
   
-  (require (prefix string: (lib "string.ss")))
-  (define (ppp-type type delta-flow)
-      (cond
-        [(type-empty? type) "_"]
-        [(type-cst? type)
-         ; can be a complex sexp if (quote sexp) is in the input
-         (string:expr->string (type-cst-type type))]
-        ;      (let ([val (type-cst-type type)])
-        ;        (cond
-        ;          [(number? val) (number->string val)]
-        ;          [(symbol? val) (symbol->string val)]
-        ;          [(string? val) (string-append "\"" val "\"")]
-        ;          [(void? val) "void"]
-        ;          [else (error 'ppp-type "unknown datum: ~a" val)]))]
-        [(type-cons? type)
-         (string-append "(cons "
-                        (ppp-type (type-cons-car type) delta-flow) " "
-                        (ppp-type (type-cons-cdr type) delta-flow) ")")]
-        [(type-vector? type)
-         (string-append "(vector " (ppp-type (type-vector-element type) delta-flow) ")")]
-        [(type-promise? type)
-         (string-append "(promise "
-                        ; skipping the thunk inside the promise (we know it's always a
-                        ; thunk because delay is a macro...) Note that the promise might
-                        ; be empty, for now, so we have to test that...
-                        (let ([promise-value-type (type-promise-value type)])
-                          (if (type-case-lambda? promise-value-type)
-                              (ppp-type (car (type-case-lambda-exps promise-value-type)) delta-flow)
-                              (ppp-type promise-value-type delta-flow)))
-                        ")")]
-        [(type-case-lambda? type)
-         (string-append
-          "(case-lambda "
-          (list:foldr
-           (lambda (rest-arg? formal-args-types body-exp-type str)
-             (string-append
-              "["
-              (list:foldr
-               (lambda (formal-arg-type str)
-                 (string-append
-                  (ppp-type formal-arg-type delta-flow)
-                  " "
-                  str))
-               ""
-               formal-args-types)
-              (if rest-arg?
-                  "*-> "
-                  "-> ")
-              (ppp-type body-exp-type delta-flow)
-              "]"
-              ;(if (string=? str "")
-              ;  ""
-              ;  " ")
-              str))
-           ""
-           (type-case-lambda-rest-arg?s type)
-           (type-case-lambda-argss type)
-           (type-case-lambda-exps type))
-          ")")]
-        [(type-var? type)
-         (symbol->string (type-var-name type))]
-        [(type-flow-var? type)
-         (error 'ppp-type "flow var: ~a~n" (type-flow-var-name type))
-         (ppp-type (cdr (lookup-flow-var-in-env delta-flow type)) delta-flow)]
-        [(type-union? type)
-         (string-append
-          "(union "
-          (list:foldr
-           (lambda (union-element str)
-             (string-append
-              (ppp-type union-element delta-flow)
-              (if (string=? str ")")
-                  ""
-                  " ")
-              str))
-           ")"
-           (type-union-elements type)))]
-        [(type-values? type)
-         (let ([values-type (type-values-type type)])
-           (cond
-             [(type-empty? values-type)
-              (ppp-type values-type delta-flow)]
-             [(and (type-cst? values-type) (eq? (type-cst-type values-type) 'top))
-              (ppp-type values-type delta-flow)]
-             [else
-              (let* ([values-types-list (type-list-map cst:id (type-values-type type))]
-                     [values-types-list-length (length values-types-list)])
-                (cond
-                  [(zero? values-types-list-length)
-                   (ppp-type (make-type-empty) delta-flow)]
-                  [(= values-types-list-length 1)
-                   (ppp-type (car values-types-list) delta-flow)]
-                  [else (string-append
-                         "(values "
-                         (list:foldr
-                          (lambda (type str)
-                            (string-append (ppp-type type delta-flow)
-                                           (if (string=? str ")")
-                                               ""
-                                               " ")
-                                           str))
-                          ")"
-                          values-types-list))]))]))]
-        [(type-rec? type)
-         (string-append
-          "(rec-type ("
-          (list:foldr
-           (lambda (var type str)
-             (string-append
-              "["
-              (symbol->string (type-var-name var))
-              " "
-              ; poor man's type beautifier
-              (if (and (type-union? type)
-                       (= (length (type-union-elements type)) 2)
-                       (or (and (type-cst? (car (type-union-elements type)))
-                                (null? (type-cst-type (car (type-union-elements type))))
-                                (type-cons? (cadr (type-union-elements type)))
-                                (type-var? (type-cons-cdr (cadr (type-union-elements type))))
-                                (eq? (type-var-name (type-cons-cdr (cadr (type-union-elements type))))
-                                     (type-var-name var)))
-                           (and (type-cst? (cadr (type-union-elements type)))
-                                (null? (type-cst-type (cadr (type-union-elements type))))
-                                (type-cons? (car (type-union-elements type)))
-                                (type-var? (type-cons-cdr (car (type-union-elements type))))
-                                (eq? (type-var-name (type-cons-cdr (car (type-union-elements type))))
-                                     (type-var-name var)))))
-                  (string-append
-                   "(listof "
-                   (ppp-type (if (type-cst? (car (type-union-elements type)))
-                                (type-cons-car (cadr (type-union-elements type)))
-                                (type-cons-car (car (type-union-elements type))))
-                            delta-flow)
-                   ")")
-                  (ppp-type type delta-flow))
-              (if (string=? str ") ")
-                  "]"
-                  "] ")
-              str))
-           ") "
-           (type-rec-vars type)
-           (type-rec-types type))
-          (ppp-type (type-rec-body type) delta-flow)
-          ")")]
-        [(type-struct-value? type)
-         (string-append
-          "#(struct:"
-          (symbol->string (label-struct-type-name (type-struct-value-type-label type)))
-          " "
-          (list:foldr
-           (lambda (elt-type str)
-             (string-append
-              (ppp-type elt-type delta-flow)
-              (if (string=? str ")")
-                  ""
-                  " ")
-              str))
-           ")"
-           (type-struct-value-types type)))]
-        [(type-struct-type? type)
-         (string-append
-          "#<struct-type:"
-          (symbol->string (label-struct-type-name (type-struct-type-type-label type)))
-          ">")]
-        [else (error 'ppp-type "unknown type: ~a" type)]))
-
+  ;  (require (prefix string: (lib "string.ss")))
+  ;  (define (ppp-type type delta-flow)
+  ;      (cond
+  ;        [(type-empty? type) "_"]
+  ;        [(type-cst? type)
+  ;         ; can be a complex sexp if (quote sexp) is in the input
+  ;         (string:expr->string (type-cst-type type))]
+  ;        ;      (let ([val (type-cst-type type)])
+  ;        ;        (cond
+  ;        ;          [(number? val) (number->string val)]
+  ;        ;          [(symbol? val) (symbol->string val)]
+  ;        ;          [(string? val) (string-append "\"" val "\"")]
+  ;        ;          [(void? val) "void"]
+  ;        ;          [else (error 'ppp-type "unknown datum: ~a" val)]))]
+  ;        [(type-cons? type)
+  ;         (string-append "(cons "
+  ;                        (ppp-type (type-cons-car type) delta-flow) " "
+  ;                        (ppp-type (type-cons-cdr type) delta-flow) ")")]
+  ;        [(type-vector? type)
+  ;         (string-append "(vector " (ppp-type (type-vector-element type) delta-flow) ")")]
+  ;        [(type-promise? type)
+  ;         (string-append "(promise "
+  ;                        ; skipping the thunk inside the promise (we know it's always a
+  ;                        ; thunk because delay is a macro...) Note that the promise might
+  ;                        ; be empty, for now, so we have to test that...
+  ;                        (let ([promise-value-type (type-promise-value type)])
+  ;                          (if (type-case-lambda? promise-value-type)
+  ;                              (ppp-type (car (type-case-lambda-exps promise-value-type)) delta-flow)
+  ;                              (ppp-type promise-value-type delta-flow)))
+  ;                        ")")]
+  ;        [(type-case-lambda? type)
+  ;         (string-append
+  ;          "(case-lambda "
+  ;          (list:foldr
+  ;           (lambda (rest-arg? formal-args-types body-exp-type str)
+  ;             (string-append
+  ;              "["
+  ;              (list:foldr
+  ;               (lambda (formal-arg-type str)
+  ;                 (string-append
+  ;                  (ppp-type formal-arg-type delta-flow)
+  ;                  " "
+  ;                  str))
+  ;               ""
+  ;               formal-args-types)
+  ;              (if rest-arg?
+  ;                  "*-> "
+  ;                  "-> ")
+  ;              (ppp-type body-exp-type delta-flow)
+  ;              "]"
+  ;              ;(if (string=? str "")
+  ;              ;  ""
+  ;              ;  " ")
+  ;              str))
+  ;           ""
+  ;           (type-case-lambda-rest-arg?s type)
+  ;           (type-case-lambda-argss type)
+  ;           (type-case-lambda-exps type))
+  ;          ")")]
+  ;        [(type-var? type)
+  ;         (symbol->string (type-var-name type))]
+  ;        [(type-flow-var? type)
+  ;         (error 'ppp-type "flow var: ~a~n" (type-flow-var-name type))
+  ;         (ppp-type (cdr (lookup-flow-var-in-env delta-flow type)) delta-flow)]
+  ;        [(type-union? type)
+  ;         (string-append
+  ;          "(union "
+  ;          (list:foldr
+  ;           (lambda (union-element str)
+  ;             (string-append
+  ;              (ppp-type union-element delta-flow)
+  ;              (if (string=? str ")")
+  ;                  ""
+  ;                  " ")
+  ;              str))
+  ;           ")"
+  ;           (type-union-elements type)))]
+  ;        [(type-values? type)
+  ;         (let ([values-type (type-values-type type)])
+  ;           (cond
+  ;             [(type-empty? values-type)
+  ;              (ppp-type values-type delta-flow)]
+  ;             [(and (type-cst? values-type) (eq? (type-cst-type values-type) 'top))
+  ;              (ppp-type values-type delta-flow)]
+  ;             [else
+  ;              (let* ([values-types-list (type-list-map cst:id (type-values-type type))]
+  ;                     [values-types-list-length (length values-types-list)])
+  ;                (cond
+  ;                  [(zero? values-types-list-length)
+  ;                   (ppp-type (make-type-empty) delta-flow)]
+  ;                  [(= values-types-list-length 1)
+  ;                   (ppp-type (car values-types-list) delta-flow)]
+  ;                  [else (string-append
+  ;                         "(values "
+  ;                         (list:foldr
+  ;                          (lambda (type str)
+  ;                            (string-append (ppp-type type delta-flow)
+  ;                                           (if (string=? str ")")
+  ;                                               ""
+  ;                                               " ")
+  ;                                           str))
+  ;                          ")"
+  ;                          values-types-list))]))]))]
+  ;        [(type-rec? type)
+  ;         (string-append
+  ;          "(rec-type ("
+  ;          (list:foldr
+  ;           (lambda (var type str)
+  ;             (string-append
+  ;              "["
+  ;              (symbol->string (type-var-name var))
+  ;              " "
+  ;              ; poor man's type beautifier
+  ;              (if (and (type-union? type)
+  ;                       (= (length (type-union-elements type)) 2)
+  ;                       (or (and (type-cst? (car (type-union-elements type)))
+  ;                                (null? (type-cst-type (car (type-union-elements type))))
+  ;                                (type-cons? (cadr (type-union-elements type)))
+  ;                                (type-var? (type-cons-cdr (cadr (type-union-elements type))))
+  ;                                (eq? (type-var-name (type-cons-cdr (cadr (type-union-elements type))))
+  ;                                     (type-var-name var)))
+  ;                           (and (type-cst? (cadr (type-union-elements type)))
+  ;                                (null? (type-cst-type (cadr (type-union-elements type))))
+  ;                                (type-cons? (car (type-union-elements type)))
+  ;                                (type-var? (type-cons-cdr (car (type-union-elements type))))
+  ;                                (eq? (type-var-name (type-cons-cdr (car (type-union-elements type))))
+  ;                                     (type-var-name var)))))
+  ;                  (string-append
+  ;                   "(listof "
+  ;                   (ppp-type (if (type-cst? (car (type-union-elements type)))
+  ;                                (type-cons-car (cadr (type-union-elements type)))
+  ;                                (type-cons-car (car (type-union-elements type))))
+  ;                            delta-flow)
+  ;                   ")")
+  ;                  (ppp-type type delta-flow))
+  ;              (if (string=? str ") ")
+  ;                  "]"
+  ;                  "] ")
+  ;              str))
+  ;           ") "
+  ;           (type-rec-vars type)
+  ;           (type-rec-types type))
+  ;          (ppp-type (type-rec-body type) delta-flow)
+  ;          ")")]
+  ;        [(type-struct-value? type)
+  ;         (string-append
+  ;          "#(struct:"
+  ;          (symbol->string (label-struct-type-name (type-struct-value-type-label type)))
+  ;          " "
+  ;          (list:foldr
+  ;           (lambda (elt-type str)
+  ;             (string-append
+  ;              (ppp-type elt-type delta-flow)
+  ;              (if (string=? str ")")
+  ;                  ""
+  ;                  " ")
+  ;              str))
+  ;           ")"
+  ;           (type-struct-value-types type)))]
+  ;        [(type-struct-type? type)
+  ;         (string-append
+  ;          "#<struct-type:"
+  ;          (symbol->string (label-struct-type-name (type-struct-type-type-label type)))
+  ;          ">")]
+  ;        [else (error 'ppp-type "unknown type: ~a" type)]))
+  
   
   ; label (listof label) -> (listof label)
   ; returns list of labels from which labels in label's set went in
@@ -4845,18 +4907,14 @@
   ;                )
   ;              files))
   
-  (define printf-debug
-    (lambda (v fmt . args)
-      (apply printf (string-append "returning ~a:" fmt) (cons v args)) v))
-  
   (dbg-define/contract subst-vals/flow-vars (type? any? . -> . type?)
     (lambda (type delta-flow)
       (let subst ([type type])
         (match type
-          [(? hc:handle? type) type]
+          [(? handle? type) type]
           [($ type-case-lambda rest-arg?s req-args argss exps)
-           (let* ([argss ((if (list? argss) map2deep hc:for-each-vov!) subst argss)]
-                  [exps ((if (list? exps) map hc:for-each-vector!) subst exps)])
+           (let* ([argss ((if (list? argss) util:map2deep util:for-each-vov!) subst argss)]
+                  [exps ((if (list? exps) map util:for-each-vector!) subst exps)])
              (make-type-case-lambda rest-arg?s req-args argss exps))]
           [($ type-cons hd tl)
            (make-type-cons (subst hd) (subst tl))]
@@ -4878,52 +4936,5 @@
            (make-type-vector (subst element))]
           [($ type-flow-var name) (cdr (lookup-flow-var-in-env delta-flow type))]
           [_ (error 'subst-vals/flow-vars "Unmatched type ~a" type)]))))
-  
-  (define andmap4-vector
-    (lambda (f v0 v1 v2 v3)
-      (let loop ([i 0])
-        (if (= i (vector-length v0)) #t
-            (and (f (vector-ref v0 i) (vector-ref v1 i) (vector-ref v2 i) (vector-ref v3 i))
-                 (loop (add1 i)))))))
-  
-  (define andmap2-vector-interval
-    (lambda (f v0 v1 lo high)
-      (let loop ([i lo])
-        (if (= i high) #t
-            (and (f (vector-ref v0 i) (vector-ref v1 i))
-                 (loop (add1 i)))))))
-  
-  (define andmap2-vector
-    (lambda (f v0 v1)
-      (andmap2-vector-interval f v0 v1 0 (vector-length v0))))
-  
-  ; return #t if the p(i) = # for all i in the half-open interval lo <= i < hi 
-  (define andmap-vector-interval
-    (lambda (f v0 lo high)
-      (let loop ([i lo])
-        (if (= i high) #t
-            (and (f (vector-ref v0 i))
-                 (loop (add1 i)))))))
-  
-  (define andmap-vector
-    (lambda (f v0)
-      (andmap-vector-interval f v0 0 (vector-length v0))))
-  
-  (define ormap4-vector
-    (lambda (f v0 v1 v2 v3)
-      (let loop ([i 0])
-        (if (= i (vector-length v0)) #f
-            (or (f (vector-ref v0 i) (vector-ref v1 i) (vector-ref v2 i) (vector-ref v3 i))
-                (loop (add1 i)))))))
-  
-  (define interval->list
-    (lambda (v lo hi)
-      (let loop ([i lo])
-        (if (= i hi) '()
-            (cons (vector-ref v i) (loop (add1 i)))))))
-  
-  (define map2deep
-    (lambda (f xss)
-      (map (lambda (xs) (map f xs)) xss)))
   
   ) ; end module constraints-gen-and-prop

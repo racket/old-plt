@@ -770,6 +770,40 @@ static void finalize_object(void *p)
   ((Scheme_Object *)p)->type = _scheme_values_types_;
 }
 
+static Scheme_Object *local_thread;
+static size_t local_thread_size;
+
+static int skip_foreign_thread(void *p, size_t size)
+{
+  if (p == local_thread)
+    local_thread_size = size;
+  else if (size == local_thread_size) {
+    if ((*(Scheme_Type *)p) == scheme_thread_type) {
+      /* Has tag and right size; let's assume that it's really a thread. */
+      Scheme_Custodian *local, *here;
+      
+      local = *((Scheme_Thread *)local_thread)->mref;
+      here = *((Scheme_Thread *)p)->mref;
+
+      /* If p belongs to the local thread's custodian, we'll see the
+	 local thread's custodian while walking up from here: */
+      while (here) {
+	if (here == local)
+	  return 0;
+	if (here->parent)
+	  here = *here->parent;
+	else
+	  here = NULL;
+      }
+
+      /* Must be a foreign thread: */
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 #endif
 
 void (*scheme_external_dump_info)(void);
@@ -808,6 +842,12 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 {
   Scheme_Object *result = scheme_void;
+#ifdef USE_TAGGED_ALLOCATION
+  void *initial_trace_root = NULL;
+  int (*inital_root_skip)(void *, size_t) = NULL;
+#endif
+
+  scheme_start_atomic();
 
   scheme_console_printf("Begin Dump\n");
 
@@ -817,7 +857,6 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 #ifdef USE_TAGGED_ALLOCATION
   trace_path_type = -1;
   obj_type = -1;
-  GC_initial_trace_root = NULL;
   if (c && SCHEME_SYMBOLP(p[0])) {
     Scheme_Object *sym;
     char *s;
@@ -850,8 +889,14 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 
     if ((c > 2)
 	&& SCHEME_SYMBOLP(p[1])
-	&& !strcmp(SCHEME_SYM_VAL(p[1]), "from"))
-      GC_initial_trace_root = p[2];
+	&& !strcmp(SCHEME_SYM_VAL(p[1]), "from")) {
+      initial_trace_root = p[2];
+      if (SCHEME_THREADP(p[2])) {
+	local_thread = p[2];
+	local_thread_size = 0;
+	inital_root_skip = skip_foreign_thread;
+      }
+    }
   }
 
   {
@@ -973,6 +1018,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 
     smc_ht = NULL;
   }
+
 #else
   GC_dump();
 #endif
@@ -987,7 +1033,11 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     int max_w;
     Scheme_Object *w;
 
+    GC_inital_root_skip = inital_root_skip;
+    GC_initial_trace_root = initial_trace_root;
     GC_trace_path();
+    GC_inital_root_skip = NULL;
+    GC_initial_trace_root = NULL;
     
     w = scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_WIDTH);
     if (SCHEME_INTP(w))
@@ -1115,6 +1165,8 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 #endif
 
   scheme_console_printf("End Dump\n");
+
+  scheme_end_atomic();
 
   return result;
 }

@@ -2499,7 +2499,7 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
   if (r == scheme_current_thread) {
     /* NOTE: swap_to might not be a good choice, because it
        might be blocked. If it's a bad choice, we waste
-       time swapping in swap_to. */
+       time swapping in swap_to. Too bad. */
     select_thread(swap_to);
 
     /* Killed while suspended? */
@@ -3787,7 +3787,7 @@ static void get_ready_for_GC()
   if (scheme_fuel_counter) {
     for_each_managed(scheme_thread_type, main_custodian, prepare_thread_for_GC);
   }
-   
+
   scheme_fuel_counter = 0;
 
 #ifdef WINDOWS_PROCESSES

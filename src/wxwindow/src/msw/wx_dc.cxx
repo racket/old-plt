@@ -27,6 +27,8 @@ static wxMemoryDC *blit_dc;
 static HANDLE null_brush;
 static HANDLE null_pen;
 
+void RegisterGDIObject(HANDLE x);
+
 // Default constructor
 wxDC::wxDC(void)
 {
@@ -766,7 +768,8 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
     DoneBrush(dc);
   }
   if (StartPen(dc)) {
-    (void)Rectangle(dc, (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
+    (void)Rectangle(dc, 
+		    (int)XLOG2DEV(x1), (int)YLOG2DEV(y1),
 		    (int)XLOG2DEV(x2), (int)YLOG2DEV(y2));
     DonePen(dc);
   }
@@ -1026,6 +1029,7 @@ void wxDC::SetRop(HDC dc, int style)
   case wxXOR_LONG_DASH:
   case wxXOR_DOT_DASH:
   case wxXOR: 
+  case wxCOLOR: 
     c_rop = R2_NOTXORPEN;
     break;
   default:
@@ -1035,17 +1039,30 @@ void wxDC::SetRop(HDC dc, int style)
   SetROP2(dc, c_rop);
 }
 
+static HBRUSH hilite_brush;
+
 int wxDC::StartBrush(HDC dc, Bool no_stipple)
 {
   if (current_brush && current_brush->GetStyle() !=wxTRANSPARENT) {
-    if (no_stipple) {
-      wxBitmap *bm;
-      bm = current_brush->GetStipple();
-      if (bm && bm->Ok())
-	return FALSE;
+    int ps;
+    ps = current_brush->GetStyle();
+    if (Colour && (ps == wxCOLOR)) {
+      if (!hilite_brush) {
+	hilite_brush = CreateSolidBrush(GetSysColor(COLOR_HIGHLIGHT));
+	RegisterGDIObject(hilite_brush);
+      }
+      SelectObject(dc, hilite_brush);
+      SetROP2(dc, R2_MERGEPENNOT);
+    } else {
+      if (no_stipple) {
+	wxBitmap *bm;
+	bm = current_brush->GetStipple();
+	if (bm && bm->Ok())
+	  return FALSE;
+      }
+      current_brush->SelectBrush(dc);
+      SetRop(dc, current_brush->GetStyle());
     }
-    current_brush->SelectBrush(dc);
-    SetRop(dc, current_brush->GetStyle());
     return TRUE;
   } else
     return FALSE;
@@ -1056,11 +1073,28 @@ void wxDC::DoneBrush(HDC dc)
   ::SelectObject(dc, null_brush);
 }
 
+static HPEN hilite_pens[256];
+
 int wxDC::StartPen(HDC dc)
 {
   if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {
-    current_pen->SelectPen(dc);
-    SetRop(dc, current_pen->GetStyle());
+    int ps;
+    ps = current_pen->GetStyle();
+    if (Colour && (ps == wxCOLOR)) {
+      int size;
+      size = current_pen->GetWidth();
+      if (!hilite_pens[size]) {
+	HPEN p;
+	p = CreatePen(PS_SOLID, size, GetSysColor(COLOR_HIGHLIGHT));
+	hilite_pens[size] = p;
+	RegisterGDIObject(p);
+      }
+      SelectObject(dc, hilite_pens[size]);
+      SetROP2(dc, R2_MERGEPENNOT);
+    } else {
+      current_pen->SelectPen(dc);
+      SetRop(dc, current_pen->GetStyle());
+    }
     return TRUE;
   } else
     return FALSE;

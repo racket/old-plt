@@ -108,7 +108,7 @@ char *font_defaults[] = {
 #endif
 
 #ifdef wx_msw
-  "ScreenSystem__", "MS Sans Serif",
+  "ScreenSystem__", "Tahoma/MS Sans Serif",
   "ScreenDefault__", "MS/Microsoft Sans Serif",
   "ScreenRoman__", "Times New Roman",
   "ScreenDecorative__", "Arial",
@@ -333,6 +333,17 @@ static void SearchResource(const char *prefix, const char **names, int count, ch
 	}
 	if (present)
 	  internal = "Microsoft Sans Serif";
+	else
+	  internal = "MS Sans Serif";
+      }
+      if (internal && !strcmp(internal, "Tahoma/MS Sans Serif")) {
+	/* 2000 and XP use Tahoma by default for controls */
+	static int known = 0, present = 0;
+	if (!known) {
+	  present = check_avail("Tahoma");
+	}
+	if (present)
+	  internal = "Tahoma";
 	else
 	  internal = "MS Sans Serif";
       }

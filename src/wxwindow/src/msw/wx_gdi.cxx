@@ -119,7 +119,7 @@ HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
   if (screenFont) {
     int dpi;
     dpi = ::GetDeviceCaps(dc, LOGPIXELSY);
-    nHeight = point_size*dpi/72;
+    nHeight = MulDiv(point_size, dpi, 72);
   } else
     nHeight = point_size;
   

@@ -262,7 +262,10 @@
 	       (let loop ([menus menus]
 			  [titles titles])
 		 (cond
-		   [(null? titles) #f]
+		   [(and (null? menus) (null? titles)) #f]
+		   [(or (null? menus) (null? titles))
+		    (error 'get-menu-named "menus and titles not same length: ~e ~e~n"
+			   menus titles)]
 		   [(string=? (car titles) name) (car menus)]
 		   [else (loop (cdr menus)
 			       (cdr titles))])))]
@@ -274,7 +277,22 @@
 		   (when (member menu menus)
 		     (super-delete menu)
 		     (send menu set-menu-bar #f)
-		     (set! menus (mzlib:function:remove menu menus)))))]
+		     (let-values ([(new-menus new-titles)
+				   (let loop ([menus menus]
+					      [titles titles])
+				     (cond
+				       [(and (null? menus) (null? titles)) (values null null)]
+				       [(or (null? menus) (null? titles)) 
+					(error 'delete "menus and titles not same length: ~e ~e" menus titles)]
+				       [else
+					(let-values ([(o-menus o-titles) (loop (cdr menus) (cdr titles))]
+						     [(t-menu t-title) (values (car menus) (car titles))])
+					  (if (eq? menu t-menu)
+					      (values o-menus o-titles)
+					      (values (cons t-menu o-menus)
+						      (cons t-title o-titles))))]))])
+		       (set! menus new-menus)
+		       (set! titles new-titles)))))]
 	    [enable-all
 	     (lambda (on?)
 	       (let loop ([i (length menus)])

@@ -946,19 +946,30 @@
 
 	  (let ([map-meta
 		 (lambda (key func)
-		   (mred:keymap:send-map-function-meta keymap key func))])
+		   (mred:keymap:send-map-function-meta keymap key func))]
+		[map
+		 (lambda (key func)
+		   (send keymap map-function key func))])
 
 	    (map-meta "up" "up-sexp")
+	    (map "a:up" "up-sexp")
 	    (map-meta "s:up" "select-up-sexp")
+	    (map "a:s:up" "select-up-sexp")
 	    
 	    (map-meta "down" "down-sexp")
+	    (map "a:down" "down-sexp")
 	    (map-meta "s:down" "select-down-sexp")
+	    (map "a:s:down" "select-down-sexp")
 	    
 	    (map-meta "right" "forward-sexp")
+	    (map "a:right" "forward-sexp")
 	    (map-meta "s:right" "select-forward-sexp")
+	    (map "a:s:right" "select-forward-sexp")
 	    
 	    (map-meta "left" "backward-sexp")
+	    (map "a:left" "backward-sexp")
 	    (map-meta "s:left" "select-backward-sexp")
+	    (map "a:d:left" "select-backward-sexp")
 	    
 	    (map-meta "return" "do-return")
 	    (map-meta "s:return" "do-return")

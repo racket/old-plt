@@ -24,7 +24,10 @@
 	(send open set-open)
 	(send closed set-close))))
   
-  (define user-config-file "~/.countdownrc")
+  (define user-config-file (case (system-type)
+			     [(unix) "~/.countdownrc"]
+			     [(macos) (build-path (collection-path "mzlib") 'up 'up
+						  "Countdownrc.ss")]))
 
   (define show-error
     (let* ([error-frame #f]

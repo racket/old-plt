@@ -1,0 +1,2 @@
+- each expression in std begins at position 0 instead of the correct
+  position relative to the start of the session

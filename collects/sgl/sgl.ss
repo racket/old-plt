@@ -164,7 +164,7 @@
                       (map translate-cname
                            (syntax-object->datum #'(const ...)))))
          (cond
-           ((< (length (syntax->list #'(const ...))) 12)
+           ((< (length (syntax->list #'(const ...))) 8)
             (quasisyntax/loc stx
               (define name
                 (let ((l `((sym . ,const) ...)))

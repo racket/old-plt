@@ -198,7 +198,16 @@
                         "#%")]
    [identifier (@ identifier-start
                 (* (: identifier-escapes identifier-chars)))]
-   
+
+   [bad-id-start (: bad-id-escapes
+                    (^ (: identifier-delims "\\" "|" "#"))
+                    "#%")]
+   [bad-id-escapes (: identifier-escapes
+                      (@ "\\" (eof))
+                      (@ "|" (* (^ "|")) (eof)))]
+   [bad-id (@ bad-id-start
+            (* (: bad-id-escapes identifier-chars)))]
+  
    [reader-command (: (@ "#" c s) (@ "#" c i))]
    [sharing (: (@ "#" uinteger10 "=")
                (@ "#" uinteger10 "#"))])
@@ -258,7 +267,7 @@
      [(special-error)
       (ret 'white-space start-pos end-pos)]
      [(eof) (values 'eof #f #f #f)]
-     [(: bad-char bad-str) (ret 'error start-pos end-pos)]
+     [(: bad-char bad-str bad-id) (ret 'error start-pos end-pos)]
      [any (extend-error start-pos end-pos input-port)]))
   
   (define (extend-error start end in)

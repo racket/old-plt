@@ -1520,6 +1520,9 @@ static void remove_thread(Scheme_Thread *r)
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
 
+  memset(r->error_buf, 0, sizeof(mz_jmp_buf));
+  memset(r->overflow_buf, 0, sizeof(mz_jmp_buf));
+
   /* In case we kill a thread while in a bignum operation: */
   scheme_gmp_tls_restore_snapshot(r->gmp_tls, NULL, ((r == scheme_current_thread) ? 1 : 2));
 

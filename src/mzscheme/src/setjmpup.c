@@ -447,6 +447,8 @@ void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b)
 
     scheme_init_jmpup_buf(b);
   }
+
+  memset(&b->buf, 0, sizeof(mz_jmp_buf));
 }
 
 void scheme_ensure_stack_start(Scheme_Thread *p, void *d)

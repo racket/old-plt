@@ -2968,7 +2968,7 @@
     (unless (and (procedure? proc)
 		 (procedure-arity-includes? proc 0))
       (raise-type-error 'make-guard-waitable "procedure (arity 0)" proc))
-    (make-guard proc))
+    (make-guard (lambda (self) (proc))))
 
   (define (channel-get ch)
     (unless (channel? ch)

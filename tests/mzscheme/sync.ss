@@ -78,7 +78,18 @@
 	'broken
 	(with-handlers ([exn:break? (lambda (x) 99)])
 	  (object-wait-multiple #f c)))
-  (test 66 object-wait-multiple 0 c))
+  (test 66 object-wait-multiple 0 c)
+
+  ;;; Can't sync with self!
+  (test #f object-wait-multiple 0 c (make-channel-put-waitable c 100))
+  ;; Test cross sync:
+  (let ([c2 (make-channel)]
+	[ok-result? (lambda (r)
+		      (or (eq? r 100) (object-waitable? r)))])
+    (thread (lambda () (channel-put c2 (object-wait-multiple #f c (make-channel-put-waitable c 100)))))
+    (thread (lambda () (channel-put c2 (object-wait-multiple #f c (make-channel-put-waitable c 100)))))
+    (test #t ok-result? (channel-get c2))
+    (test #t ok-result? (channel-get c2))))
 
 ;; ----------------------------------------
 ;; Waitable sets
@@ -272,6 +283,9 @@
 				(make-semaphore))))
     (test '(#t #t) map semaphore-try-wait? v)))
 
+(let ([s (make-semaphore 1)])
+  (test s object-wait-multiple 0 (make-guard-waitable (lambda () s))))
+
 ;; ----------------------------------------
 ;; Structures as waitables
 
@@ -454,6 +468,41 @@
       (semaphore-post s20)
       (test (void) thread-wait t20))))
 
+
+;; ----------------------------------------
+;;  Garbage collection
+
+(define (check-threads-gcable label blocking-thunk)
+  (let ([l (let loop ([n 20][die? #f])
+	     (if (zero? n)
+		 null
+		 (cons (make-weak-box (thread (if die? void blocking-thunk)))
+		       (loop (if die? n (sub1 n)) (not die?)))))]
+	[sl (lambda ()
+	      (let loop ([n 20])
+		(unless (zero? n) (sleep) (loop (sub1 n)))))]
+	[ok-done? (lambda (r) (< (car r) 10))])
+    (test #t
+	  ok-done?
+	  (let loop ([tries 0][n 100])
+	    (if (or (= tries 3) (< n 10))
+		(list tries n)
+		(begin
+		  (sl) (collect-garbage)
+		  (loop (add1 tries)
+			(apply + (map (lambda (b) (if (weak-box-value b) 1 0)) l)))))))))
+
+(check-threads-gcable 'sema (lambda () (semaphore-wait (make-semaphore))))
+(define (check/combine c)
+  (check-threads-gcable 'semaw (lambda () (object-wait-multiple #f (c (make-semaphore)))))
+  (check-threads-gcable 'ch (lambda () (object-wait-multiple #f (c (make-channel)))))
+  (check-threads-gcable 'chput (lambda () (object-wait-multiple #f (c (make-channel-put-waitable (make-channel) 10)))))
+  (check-threads-gcable 'wrapped (lambda () (object-wait-multiple #f (c (make-wrapped-waitable (make-semaphore) void)))))
+  (check-threads-gcable 'guard (lambda () (object-wait-multiple #f (c (make-guard-waitable (lambda () (make-semaphore)))))))
+  (check-threads-gcable 'nack (lambda () (object-wait-multiple #f (c (make-nack-waitable (lambda (nack) (make-semaphore))))))))
+(check/combine values)
+(check/combine (lambda (x) (waitables->waitable-set x (make-semaphore))))
+(check/combine (lambda (x) (waitables->waitable-set (make-semaphore) x)))
 
 ;; ----------------------------------------
 

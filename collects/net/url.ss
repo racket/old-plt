@@ -1,5 +1,6 @@
 (module url mzscheme
   (require (lib "unitsig.ss")
+           (lib "contract.ss")
            "url-sig.ss"
            "url-unit.ss"
            "tcp-sig.ss"
@@ -26,24 +27,23 @@
                 [fragment (union false? string?)]))
    (string->url ((union bytes? string?) . -> . url?))
    (url->string (url? . -> . string?))
-   (url->bytes (url? . -> . bytes?))
-
+   
    (get-pure-port (opt-> (url?) ((listof string?)) input-port?))
    (get-impure-port (opt-> (url?) ((listof string?)) input-port?))
    (post-pure-port (opt-> (url?) ((listof string?)) input-port?))
    (post-impure-port (opt-> (url?) ((listof string?)) input-port?))
    (display-pure-port (input-port? . -> . void?))
-   (purify-port (input-port? . -> . (listof mime-header)))
+   (purify-port (input-port? . -> . (listof string?)))
    (netscape/string->url (string? . -> . url?))
    (decode-some-url-parts (url? . -> . url?))
-   (call/input-url (opt-> (url? 
-                           (url? . -> . input-port?)
-                           (input-port? . -> . any?))
-                          ((listof string?))
-                          any))
+   (call/input-url (opt->* (url? 
+                            (url? . -> . input-port?)
+                            (input-port? . -> . any))
+                           ((listof string?))
+                           any))
    (combine-url/relative (url? string? . -> . url?))
    (url-exception? (any? . -> . boolean?))
    (current-proxy-servers
-    (case-> ((union false? (listof (list string? string? number?))) . -> . void?)
-            (-> (union false? (listof (list string? string? number?))))))))
+    (case-> ((union false? (listof (list/p string? string? number?))) . -> . void?)
+            (-> (union false? (listof (list/p string? string? number?))))))))
 

@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.42 1997/09/17 13:47:14 mflatt Exp robby $
+;; $Id: contkids.ss,v 1.43 1997/10/09 21:42:24 robby Exp $
 ;;
 
 ; need to export:
@@ -520,18 +520,27 @@
 		     new-args)))))
       
       (define list-box%
-	(make-item% mred:testable-list-box% 
-		    const-default-x-margin const-default-y-margin 
-		    #t #t
-		    (opt-lambda (parent callback label
-					[multiple-selection wx:const-single]
-					[x const-default-posn]
-					[y const-default-posn]
-					[w const-default-size]
-					[h const-default-size] . args)
-		      (list* parent callback label multiple-selection x y
-			     const-default-size const-default-size args))))
-      
+	(let ([container-list-box%
+	       (make-item% mred:testable-list-box% 
+			   const-default-x-margin const-default-y-margin 
+			   #t #t
+			   (opt-lambda (parent callback label
+					       [multiple-selection wx:const-single]
+					       [x const-default-posn]
+					       [y const-default-posn]
+					       [w const-default-size]
+					       [h const-default-size] . args)
+			     (list* parent callback label multiple-selection x y
+				    const-default-size const-default-size args)))])
+	  (class container-list-box% (parent [func null] . args)
+	    (public
+	      [on-default-action
+	       (lambda ()
+		 (unless (null? func)
+		   (let ([evt (make-object wx:command-event% wx:const-event-type-listbox-command)])
+		     (send evt set-extra-long 2)
+		     (func this evt))))]))))
+	  
       (define message%
 	(make-item% mred:testable-message% 
 		    const-default-x-margin const-default-y-margin 

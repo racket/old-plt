@@ -197,6 +197,28 @@
 				     filename group))))))
 		 (slatex-buffer filename)))]
 
+	  [the-debugger-buffer
+	   (lambda (buffer)
+	     (send console the-debugger-buffer buffer group))]
+
+	  [the-debugger-file
+	   (lambda (filename)
+	     (if (string? filename)
+		 (begin
+		   (insure-console-ready)
+		   (let* ([len (string-length filename)]
+			  [ext (substring filename (- len 3) len)])
+		     (if (string=? ext ".ss")
+			 (let ([buffer (send (ivar group buffers)
+					     find-buffer-by-name
+					     'file
+					     filename)])
+			   (if buffer
+			       (the-debugger-buffer buffer)
+			       (send console the-debugger-file
+				     filename group))))))
+		 (the-debugger-buffer filename)))]
+
 	  [load-file-into-scheme
 	   (lambda (filename)
 	     (if (string? filename)
@@ -257,6 +279,12 @@
 		     (if (not (load-file-into-scheme filename))
 			 (escape #f))))))))]
 
+	  [the-debugger-one-file
+	   (lambda (file)
+	     (do-locking-thread
+	      (lambda ()
+		(the-debugger-file file))))]
+	  
 	  [slatex-one-file
 	   (lambda (file)
 	     (do-locking-thread
@@ -312,6 +340,12 @@
 			     (send (get-parent) load-frame-buffer-into-scheme
 				   (get-media)))
 			   "Execute"))
+	  (if drscheme:allow-the-debugger?
+	      (make-object wx:button% panel
+			   (lambda args
+			     (send (get-parent) the-debugger-frame-buffer
+				   (get-media)))
+			   "Debug"))
 	  (if drscheme:allow-mrslatex?
 	      (make-object wx:button% panel
 			   (lambda args
@@ -331,6 +365,11 @@
      [slatex-frame-buffer
        (lambda (buffer)
 	 (send project slatex-one-file buffer))]
+     
+     [the-debugger-frame-buffer
+      (lambda (buffer)
+	(send project the-debugger-one-file buffer))]
+     
      [load-frame-buffer-into-scheme
       (lambda (buffer)
 	(send project load-one-file-into-scheme buffer))])))

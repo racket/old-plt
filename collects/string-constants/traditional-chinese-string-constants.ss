@@ -38,7 +38,6 @@ Robby</fontfamily></excerpt>=
 (module traditional-chinese-string-constants "string-constant-lang.ss"
  (is-this-your-native-language "Is Chinese (in Traditional Characters) Your Native Language?")
  (interact-with-drscheme-in-language "Interact with DrScheme in Traditional Chinese")
- (welcome-to-drscheme-version/language "\xE6\xAD\xA1\xE8\xBF\x8E\xE4\xBD\xBF\xE7\x94\xA8 DrScheme, version ~a, ~a")
- (welcome-to-drscheme "\xE6\xAD\xA1\xE8\xBF\x8E\xE4\xBD\xBF\xE7\x94\xA8 DrScheme")
- (welcome-to "\xE6\xAD\xA1\xE8\xBF\x8E\xE4\xBD\xBF\xE7\x94\xA8"))
-
+ (welcome-to-drscheme-version/language "\u6b61\u8fce\u4f7f\u7528 DrScheme, version ~a, ~a")
+ (welcome-to-drscheme "\u6b61\u8fce\u4f7f\u7528 DrScheme")
+ (welcome-to "\u6b61\u8fce\u4f7f\u7528"))

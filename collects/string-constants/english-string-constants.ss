@@ -791,4 +791,7 @@
  (show-recent-items-window-menu-item "Show Recently Opened Files in Separate Window")
  (show-recent-items-window-label "Recently Opened Files")
  (switch-anyway "Switch File Anyway")
+
+ (stepper-program-has-changed "WARNING: The program has changed.")
+ (stepper-program-window-closed "WARNING: The program window is gone.")
  )

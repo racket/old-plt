@@ -518,10 +518,13 @@ static Scheme_Env *make_env (void)
 
   env->loaded_libraries = scheme_hash_table(3, SCHEME_hash_ptr, 0, 0);
 
-  env->init = (Scheme_Comp_Env *)MALLOC_ONE(Scheme_Full_Comp_Env);
-  env->init->basic.num_bindings = 0;
-  env->init->basic.next = NULL;
-  env->init->basic.genv = env;
+  env->init = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
+#ifdef MZTAG_REQUIRED
+  env->init->type = scheme_rt_env;
+#endif
+  env->init->num_bindings = 0;
+  env->init->next = NULL;
+  env->init->genv = env;
   init_compile_data(env->init);
 
   return env;
@@ -529,7 +532,7 @@ static Scheme_Env *make_env (void)
 
 Scheme_Env *scheme_min_env(Scheme_Comp_Env *env)
 {
-  return env->basic.genv;
+  return env->genv;
 }
 
 #define get_globals(env) (env->globals)
@@ -806,8 +809,7 @@ Scheme_Object **scheme_make_builtin_references_table(void)
   Scheme_Bucket **bs;
   long i;
 
-  t = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *)
-				      * (builtin_ref_counter + 1));
+  t = MALLOC_N(Scheme_Object *, (builtin_ref_counter + 1));
 #ifdef MEMORY_COUNTING_ON
   scheme_misc_count += sizeof(Scheme_Object *) * (builtin_ref_counter + 1);
 #endif
@@ -864,8 +866,8 @@ static void init_compile_data(Scheme_Comp_Env *env)
 
   data->stat_dists = NULL;
   data->sd_depths = NULL;
-  c = env->basic.num_bindings;
-  data->use = MALLOC_N(int, c);
+  c = env->num_bindings;
+  data->use = MALLOC_N_ATOMIC(int, c);
   for (i = 0; i < c; i++)
     data->use[i] = 0;
 
@@ -880,14 +882,17 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   
   count = num_bindings;
 
-  frame = (Scheme_Comp_Env *)MALLOC_ONE(Scheme_Full_Comp_Env);
+  frame = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
+#ifdef MZTAG_REQUIRED
+  frame->type = scheme_rt_full_env;
+#endif
 
   frame->values = MALLOC_N(Scheme_Object *, count);
 
-  frame->basic.num_bindings = num_bindings;
-  frame->basic.flags = flags | (base->basic.flags & SCHEME_PRIM_GLOBALS_ONLY);
-  frame->basic.next = base;
-  frame->basic.genv = base->basic.genv;
+  frame->num_bindings = num_bindings;
+  frame->flags = flags | (base->flags & SCHEME_PRIM_GLOBALS_ONLY);
+  frame->next = base;
+  frame->genv = base->genv;
 
   init_compile_data(frame);
 
@@ -928,7 +933,7 @@ void scheme_unsettable_variable(Scheme_Comp_Env *env, int which)
 void
 scheme_add_compilation_binding(int index, Scheme_Object *val, Scheme_Comp_Env *frame)
 {
-  if ((index >= frame->basic.num_bindings) || (index < 0))
+  if ((index >= frame->num_bindings) || (index < 0))
     scheme_signal_error("internal error: scheme_add_binding: "
 			"index out of range: %d", index);
   
@@ -941,12 +946,15 @@ void scheme_push_constant(Scheme_Object *name, Scheme_Object *val,
   Compile_Data *data = COMPILE_DATA(env);
   Constant_Binding *b;
   
-  b = (Constant_Binding *)scheme_malloc(sizeof(Constant_Binding));
+  b = MALLOC_ONE_RT(Constant_Binding);
+#ifdef MZTAG_REQUIRED
+  b->type = scheme_rt_constant_binding;
+#endif
 
   b->next = data->constants;
   b->name = name;
   b->val = val;
-  b->before = env->basic.num_bindings;
+  b->before = env->num_bindings;
 
   data->constants = b;
 }
@@ -995,7 +1003,7 @@ Scheme_Comp_Env *scheme_no_defines(Scheme_Comp_Env *env)
 
 int scheme_is_toplevel(Scheme_Comp_Env *env)
 {
-  return !env->basic.next || (env->basic.flags & SCHEME_TOPLEVEL_FRAME);
+  return !env->next || (env->flags & SCHEME_TOPLEVEL_FRAME);
 }
 
 Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
@@ -1041,8 +1049,8 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
 		      : 0));
   
   if (!data->stat_dists) {
-    data->stat_dists = MALLOC_N(char*, frame->basic.num_bindings);
-    data->sd_depths = MALLOC_N(int, frame->basic.num_bindings);
+    data->stat_dists = MALLOC_N_ATOMIC(char*, frame->num_bindings);
+    data->sd_depths = MALLOC_N_ATOMIC(int, frame->num_bindings);
     /* Rely on GC to zero-out array */
   }
   
@@ -1050,7 +1058,7 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
     char *naya, *a;
     int k;
     
-    naya = MALLOC_N(char, (j + 1));
+    naya = MALLOC_N_ATOMIC(char, (j + 1));
     a = data->stat_dists[i];
     for (k = data->sd_depths[i]; k--; )
       naya[k] = a[k];
@@ -1074,15 +1082,15 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   Scheme_Hash_Table *globals;
   
   frame = env;
-  for (frame = env; frame->basic.next != NULL; frame = frame->basic.next) {
+  for (frame = env; frame->next != NULL; frame = frame->next) {
     int i;
     Compile_Data *data = COMPILE_DATA(frame);
     Constant_Binding *c = data->constants;
     
-    if (frame->basic.flags & SCHEME_LAMBDA_FRAME)
+    if (frame->flags & SCHEME_LAMBDA_FRAME)
       j++;
 
-    for (i = frame->basic.num_bindings; i--; ) {
+    for (i = frame->num_bindings; i--; ) {
       while (c && (c->before > i)) {
 	if (SAME_OBJ(symbol, c->name)) {
 	  val = c->val;
@@ -1111,7 +1119,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       c = c->next;
     }
 
-    p += frame->basic.num_bindings;
+    p += frame->num_bindings;
   }
 
   globals = get_globals(scheme_min_env(env));
@@ -1152,18 +1160,18 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 
   /* Count vars used by this closure (skip args): */
   j = 1;
-  for (frame = env->basic.next; frame; frame = frame->basic.next) {
+  for (frame = env->next; frame; frame = frame->next) {
     data = COMPILE_DATA(frame);
 
-    if (frame->basic.flags & SCHEME_LAMBDA_FRAME)
+    if (frame->flags & SCHEME_LAMBDA_FRAME)
       j++;
 
     if (data->stat_dists) {
-      for (i = 0; i < frame->basic.num_bindings; i++) {
+      for (i = 0; i < frame->num_bindings; i++) {
 	if (data->sd_depths[i] > j) {
 	  if (data->stat_dists[i][j]) {
 	    pos++;
-	    if (frame->basic.flags & SCHEME_ANCHORED_FRAME)
+	    if (frame->flags & SCHEME_ANCHORED_FRAME)
 	      pos++;
 	  }
 	}
@@ -1173,23 +1181,23 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 
   size = pos;
   *_size = size;
-  map = MALLOC_N(short, size);
+  map = MALLOC_N_ATOMIC(short, size);
   *_map = map;
 
   /* Build map, unmarking locals and marking deeper in parent prame */
   j = 1; pos = 0;
-  for (frame = env->basic.next; frame; frame = frame->basic.next) {
+  for (frame = env->next; frame; frame = frame->next) {
     data = COMPILE_DATA(frame);
 
-    if (frame->basic.flags & SCHEME_LAMBDA_FRAME)
+    if (frame->flags & SCHEME_LAMBDA_FRAME)
       j++;
 
     if (data->stat_dists) {
-      for (i = 0; i < frame->basic.num_bindings; i++) {
+      for (i = 0; i < frame->num_bindings; i++) {
 	if (data->sd_depths[i] > j) {
 	  if (data->stat_dists[i][j]) {
 	    map[pos++] = lpos;
-	    if (frame->basic.flags & SCHEME_ANCHORED_FRAME)
+	    if (frame->flags & SCHEME_ANCHORED_FRAME)
 	      map[pos++] = -(lpos + 1);
 	    data->stat_dists[i][j] = 0; /* This closure's done with these vars... */
 	    data->stat_dists[i][j - 1] = 1; /* ... but insure previous keeps */
@@ -1198,7 +1206,7 @@ void scheme_env_make_closure_map(Scheme_Comp_Env *env, short *_size, short **_ma
 	lpos++;
       }
     } else
-      lpos += frame->basic.num_bindings;
+      lpos += frame->num_bindings;
   }
 }
 
@@ -1207,7 +1215,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count)
   Compile_Data *data = COMPILE_DATA(frame);
   int *v, i;
   
-  v = MALLOC_N(int, count);
+  v = MALLOC_N_ATOMIC(int, count);
   memcpy(v, data->use + start, sizeof(int) * count);
 
   for (i = count; i--; ) {
@@ -1227,7 +1235,10 @@ Link_Info *scheme_link_info_create(int can_opt)
 {
   Link_Info *naya;
 
-  naya = MALLOC_ONE(Link_Info);
+  naya = MALLOC_ONE_RT(Link_Info);
+#ifdef MZTAG_REQUIRED
+  naya->type = scheme_rt_link_info;
+#endif
   naya->count = 0;
   naya->next = NULL;
   naya->can_optimize_constants = can_opt;
@@ -1242,7 +1253,10 @@ Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int m
 {
   Link_Info *naya;
 
-  naya = MALLOC_ONE(Link_Info);
+  naya = MALLOC_ONE_RT(Link_Info);
+#ifdef MZTAG_REQUIRED
+  naya->type = scheme_rt_link_info;
+#endif
   naya->next = info;
   naya->size = size;
   naya->oldsize = oldsize;
@@ -1250,9 +1264,9 @@ Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int m
   naya->pos = 0;
   naya->anchor_offset = 0;
   if (mapc) {
-    naya->old_pos = MALLOC_N(short, mapc);
-    naya->new_pos = MALLOC_N(short, mapc);
-    naya->flags = MALLOC_N(int, mapc);
+    naya->old_pos = MALLOC_N_ATOMIC(short, mapc);
+    naya->new_pos = MALLOC_N_ATOMIC(short, mapc);
+    naya->flags = MALLOC_N_ATOMIC(int, mapc);
   }
 
   naya->can_optimize_constants = info->can_optimize_constants;

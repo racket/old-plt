@@ -1217,7 +1217,7 @@ char *regsub(regexp *prog, char *source, long *lenout)
 
   destalloc = 2 * strlen(source);
   destlen = 0;
-  dest = (char *)scheme_malloc(destalloc + 1);
+  dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	
 
   if (prog == NULL || source == NULL || dest == NULL) {
@@ -1251,7 +1251,7 @@ char *regsub(regexp *prog, char *source, long *lenout)
       if (destlen + 1 >= destalloc) {
 	char *old = dest;
 	destalloc *= 2;
-	dest = (char *)scheme_malloc(destalloc + 1);
+	dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	memcpy(dest, old, destlen);
 	dst = dest + destlen;
       }
@@ -1264,7 +1264,7 @@ char *regsub(regexp *prog, char *source, long *lenout)
       if (len + destlen >= destalloc) {
 	char *old = dest;
 	destalloc = 2 * destalloc + len + destlen;
-	dest = (char *)scheme_malloc(destalloc + 1);
+	dest = (char *)scheme_malloc_atomic(destalloc + 1);
 	memcpy(dest, old, destlen);
 	dst = dest + destlen;
       }

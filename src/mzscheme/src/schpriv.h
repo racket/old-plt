@@ -40,6 +40,12 @@ extern MZ_MARK_STACK_TYPE scheme_current_cont_mark_pos;
 # define MZ_CONT_MARK_POS (p->cont_mark_pos)
 #endif
 
+#ifdef MZTAG_REQUIRED
+# define MZTAG_IF_REQUIRED  Scheme_Type type;
+#else
+# define MZTAG_IF_REQUIRED /* empty */
+#endif
+
 #define GLOB_IS_CONST 1
 #define GLOB_IS_KEYWORD 2
 #define GLOB_IS_PRIMITIVE 4
@@ -56,17 +62,13 @@ typedef struct {
   short id;
 } Scheme_Bucket_With_Ref_Id;
 
-typedef struct Scheme_Basic_Env 
+typedef struct Scheme_Comp_Env
 {
+  MZTAG_IF_REQUIRED
   short num_bindings;
   short flags; /* used for expanding/compiling */
   Scheme_Env *genv;
   struct Scheme_Comp_Env *next;
-} Scheme_Basic_Env;
-
-typedef struct Scheme_Comp_Env
-{
-  struct Scheme_Basic_Env basic;
   struct Scheme_Object **values;
 } Scheme_Comp_Env;
 
@@ -316,6 +318,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb);
 #define scheme_top_level_do_w_process(k, eb, p) scheme_top_level_do(k, eb)
 
 typedef struct Scheme_Saved_Stack {
+  MZTAG_IF_REQUIRED
   Scheme_Object **runstack_start;
   Scheme_Object **runstack;
   long runstack_size;
@@ -324,6 +327,7 @@ typedef struct Scheme_Saved_Stack {
 } Scheme_Saved_Stack;
 
 typedef struct Scheme_Cont_Mark {
+  MZTAG_IF_REQUIRED
   Scheme_Object *key;
   Scheme_Object *val;
   struct Scheme_Cont_Mark_Chain *cached_chain;
@@ -331,6 +335,7 @@ typedef struct Scheme_Cont_Mark {
 } Scheme_Cont_Mark;
 
 typedef struct Scheme_Cont_Mark_Chain {
+  MZTAG_IF_REQUIRED
   Scheme_Object *key;
   Scheme_Object *val;
   struct Scheme_Cont_Mark_Chain *next;
@@ -355,6 +360,7 @@ typedef struct Scheme_Stack_State {
 } Scheme_Stack_State;
 
 typedef struct Scheme_Dynamic_Wind {
+  MZTAG_IF_REQUIRED
   void *data;
   void (*pre)(void *);
   void (*post)(void *);
@@ -407,6 +413,7 @@ typedef struct Scheme_Escaping_Cont {
 #ifndef MZ_REAL_THREADS
 # if SEMAPHORE_WAITING_IS_COLLECTABLE
 typedef struct Scheme_Sema_Waiter {
+  MZTAG_IF_REQUIRED
   Scheme_Process *p;
   int in_line;
   struct Scheme_Sema_Waiter *prev, *next;
@@ -631,6 +638,7 @@ int scheme_find_type(Scheme_Object *ts);
     scheme_restore_env_stack_w_process(ss, scheme_current_process)
 
 typedef struct Scheme_Overflow {
+  MZTAG_IF_REQUIRED
   Scheme_Jumpup_Buf cont; /* continuation after value obtained in overflowed */
   struct Scheme_Overflow *prev; /* old overflow info */
   mz_jmp_buf savebuf; /* save old error buffer here */
@@ -728,6 +736,7 @@ extern Scheme_Object *scheme_date;
 #endif
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Object **scheck_hash;
   long scheck_size, scheck_count, scheck_step;
 } DupCheckRecord;
@@ -802,10 +811,28 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 #define _MALLOC_N(x, n, malloc) ((x*)malloc(sizeof(x)*(n)))
 #define MALLOC_ONE(x) _MALLOC_N(x, 1, scheme_malloc)
 #define MALLOC_ONE_TAGGED(x) _MALLOC_N(x, 1, scheme_malloc_tagged)
+#ifdef MZTAG_REQUIRED
+# define scheme_malloc_rt(x) scheme_malloc_tagged(x)
+# define MALLOC_ONE_RT(x) MALLOC_ONE_TAGGED(x)
+# define MALLOC_N_RT(x,c) MALLOC_N_TAGGED(x,c)
+# define MALLOC_ONE_WEAK(x) MALLOC_ATOMIC(x)
+# define MALLOC_ONE_WEAK_RT(x) MALLOC_ATOMIC(x)
+# define MALLOC_ONE_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak)
+# define MALLOC_ONE_TAGGED_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak)
+# define MALLOC_ONE_WEAK_RT(x) MALLOC_ONE_TAGGED_WEAK(x)
+#else
+# define scheme_malloc_rt(x) scheme_malloc(x)
+# define MALLOC_ONE_RT(x) MALLOC_ONE(x)
+# define MALLOC_N_RT(x,c) MALLOC_N(x,c)
+# define MALLOC_ONE_WEAK(x) MALLOC_ONE_ATOMIC(x)
+# define MALLOC_ONE_WEAK_RT(x) MALLOC_ONE_WEAK(x)
+# define MALLOC_ONE_TAGGED_WEAK(x) MALLOC_ONE_WEAK(x)
+#endif
 #define MALLOC_N(x, n) _MALLOC_N(x, n, scheme_malloc)
 #define MALLOC_ONE_ATOMIC(x) _MALLOC_N(x, 1, scheme_malloc_atomic)
 #define MALLOC_N_ATOMIC(x, n) _MALLOC_N(x, n, scheme_malloc_atomic)
 #define MALLOC_SO_BOX() _MALLOC_ONE(Scheme_Object*, scheme_malloc)
+#define MALLOC_N_STUBBORN(x, n) _MALLOC_N(x, n, scheme_malloc_stubborn)
 
 #define CONFIG_DEFAULTING(c, f) (c->base && (c->base->f == c->f))
 
@@ -1001,7 +1028,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_TOPLEVEL_FRAME 64
 #define SCHEME_PRIM_GLOBALS_ONLY 128
 
-#define ENV_PRIM_GLOBALS_ONLY(env) ((env)->basic.flags & SCHEME_PRIM_GLOBALS_ONLY)
+#define ENV_PRIM_GLOBALS_ONLY(env) ((env)->flags & SCHEME_PRIM_GLOBALS_ONLY)
 
 /* Flags used with scheme_static_distance */
 #define SCHEME_ELIM_CONST 1

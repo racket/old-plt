@@ -114,6 +114,7 @@ enum {
 #define _IVAR_EXT_NAME(c) ((c)->name)
 
 typedef struct ClassVariable {
+  MZTAG_IF_REQUIRED
   Scheme_Object *name;
   short vartype;
   short index;
@@ -139,6 +140,7 @@ enum {
 };
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Closed_Prim *f;
   short mina, maxa;
   char *closed_name;
@@ -245,6 +247,7 @@ typedef struct {
 } Class_Data;
 
 typedef struct Scheme_Class_Assembly {
+  MZTAG_IF_REQUIRED
   Class_Data data;
   Scheme_Instance_Init_Proc *init;
   int mina, maxa;
@@ -265,11 +268,13 @@ typedef struct Internal_Object {
 } Internal_Object;
 
 typedef struct Init_Object_Rec {
+  MZTAG_IF_REQUIRED
   short init_level;
   Init_Frame frames[1];
 } Init_Object_Rec;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Internal_Object *o;
   Init_Object_Rec *irec;
   int level;
@@ -330,7 +335,10 @@ DupCheckRecord *scheme_begin_dup_symbol_check(DupCheckRecord *r)
   }
 
   if (!r) {
-    r = (DupCheckRecord *)scheme_malloc(sizeof(DupCheckRecord));
+    r = MALLOC_ONE_RT(DupCheckRecord);
+#ifdef MZTAG_REQUIRED
+    r->type = scheme_rt_dup_check;
+#endif
     r->scheck_size = 0;
   }
 
@@ -354,9 +362,8 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
     long oldsize = r->scheck_size, i;
 
     r->scheck_size = r->scheck_size ? 2 * r->scheck_size : 50;
-    r->scheck_hash = 
-      (Scheme_Object **)scheme_malloc(i = r->scheck_size 
-				      * sizeof(Scheme_Object *));
+    i = r->scheck_size;
+    r->scheck_hash = MALLOC_N(Scheme_Object *, i);
     memset(r->scheck_hash, 0, i);
 
     r->scheck_count = 0;
@@ -425,7 +432,7 @@ static Scheme_Object *NullClass(void)
     
     null_class->pos = 0;
     null_class->super_init_name = NULL;
-    null_class->heritage = MALLOC_ONE(Scheme_Class*);
+    null_class->heritage = MALLOC_N(Scheme_Class*,1);
     null_class->heritage[0] = null_class;
     null_class->superclass = NULL;
     
@@ -564,7 +571,10 @@ static ClassVariable *ReadItemList(char *what, Scheme_Object *vars,
     if (islast && !value)
       value = scheme_null;
 
-    classvar = (ClassVariable *)scheme_malloc(sizeof(ClassVariable));
+    classvar = MALLOC_ONE_RT(ClassVariable);
+#ifdef MZTAG_REQUIRED
+    classvar->type = scheme_rt_class_var;
+#endif
     classvar->name = var;
     classvar->vartype = vartype;
     
@@ -604,7 +614,7 @@ static void CompileItemList(Scheme_Object *form,
       count++;
   }
 
-  recs = MALLOC_N(Scheme_Compile_Info, count);
+  recs = MALLOC_N_RT(Scheme_Compile_Info, count);
   scheme_init_compile_recs(rec, recs, count);
 
   for (count = 0, classvar = cvars; classvar; classvar = classvar->next) {
@@ -890,7 +900,7 @@ static void InstallHeritage(Scheme_Class *sclass, Scheme_Class *superclass)
   int i;
 
   sclass->pos = superclass->pos + 1;
-  sclass->heritage = MALLOC_N_ATOMIC(Scheme_Class*, (sclass->pos + 1));
+  sclass->heritage = MALLOC_N(Scheme_Class*, (sclass->pos + 1));
   for (i = 0; i < sclass->pos; i++)
     sclass->heritage[i] = superclass->heritage[i];
   sclass->heritage[sclass->pos] = sclass;
@@ -972,8 +982,8 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     
     nbanka = MALLOC_N(Scheme_Object*, total);
     nbankb = MALLOC_N(Scheme_Object*, total);
-    mbanka = MALLOC_N(short, total);
-    mbankb = MALLOC_N(short, total);
+    mbanka = MALLOC_N_ATOMIC(short, total);
+    mbankb = MALLOC_N_ATOMIC(short, total);
 
     num_names = supers[num_supers - 1]->num_names;
     for (i = num_names; i--; ) {
@@ -1014,7 +1024,7 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
 		       NULL, NULL, 2); /* 2 => must be disjoint */
     newcount = total - num_names;
     
-    mbankb = MALLOC_N(short, data->num_names);
+    mbankb = MALLOC_N_ATOMIC(short, data->num_names);
     /* init to -1; we'll go back and set the numbers later */
     for (i = data->num_names; i--; )
       mbankb[i] = -1;
@@ -1024,7 +1034,7 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
 
     in->num_names = total;
     in->names = MALLOC_N(Scheme_Object*, total);
-    in->name_map = MALLOC_N(short, total);
+    in->name_map = MALLOC_N_ATOMIC(short, total);
 
     MergeArray(data->num_names, data->names, data->names, NULL,
 	       num_names, nbanka, nbanka, NULL,
@@ -1048,7 +1058,7 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
       total += supers[i]->num_supers + 1;
     in->num_supers = total;
     in->supers = MALLOC_N(Scheme_Interface*, total);
-    in->super_offsets = MALLOC_N(short, total);
+    in->super_offsets = MALLOC_N_ATOMIC(short, total);
     {
       int j;
       j = 0;
@@ -1070,7 +1080,7 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     num_names = data->num_names;
     in->num_names = num_names;
     in->names = data->names;
-    in->name_map = MALLOC_N(short, in->num_names);
+    in->name_map = MALLOC_N_ATOMIC(short, in->num_names);
     for (i = num_names; i--; )
       in->name_map[i] = i;
     in->num_supers = 0;
@@ -1180,7 +1190,7 @@ static Scheme_Object *Do_Interface(Scheme_Object *form, Scheme_Comp_Env *env,
 	  sizeof(Scheme_Object *), 
 	  (int (*)(const void *, const void *))CompareObjectPtrs); 
 
-    recs = MALLOC_N(Scheme_Compile_Info, num_supers);
+    recs = MALLOC_N_RT(Scheme_Compile_Info, num_supers);
     scheme_init_compile_recs(rec, recs, num_supers);
 
     for (i = 0; i < num_supers; i++)
@@ -1469,7 +1479,7 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
   for (i = 0; i < num_interfaces; i++) {
     int j, k = 0;
     Scheme_Interface *in = (Scheme_Interface *)interfaces[i];
-    imaps[i] = MALLOC_N(short, in->num_names);
+    imaps[i] = MALLOC_N_ATOMIC(short, in->num_names);
     for (j = 0; j < in->num_names; j++) {
       while ((k < num_public) && SLESSTHAN(public_names[k], in->names[j]))
 	k++;
@@ -1953,7 +1963,7 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
     data->defname = rec->value_name;
     scheme_compile_rec_done_local(rec);
 
-    recs = MALLOC_N(Scheme_Compile_Info, num_interfaces + 1);
+    recs = MALLOC_N_RT(Scheme_Compile_Info, num_interfaces + 1);
     scheme_init_compile_recs(rec, recs, num_interfaces + 1);
 
     data->super_init_name = superinitname;
@@ -2039,7 +2049,10 @@ static ClassVariable *CV_Unbundle(Scheme_Object *l)
 
   while (!SCHEME_NULLP(l)) {
     prev = cvar;
-    cvar = MALLOC_ONE(ClassVariable);
+    cvar = MALLOC_ONE_RT(ClassVariable);
+#ifdef MZTAG_REQUIRED
+    cvar->type = scheme_rt_class_var;
+#endif
     cvar->next = prev;
 
     cvar->name = SCHEME_CAR(l);
@@ -2226,6 +2239,8 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
 
   sclass = MALLOC_ONE_TAGGED(Scheme_Class);
 
+  sclass->type = scheme_class_type;
+
   if (!sup)
     sup = NullClass();
 
@@ -2256,8 +2271,6 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
   sclass->super_init_name = NULL;
 
   sclass->ivars = NULL;
-
-  sclass->type = scheme_class_type;
 
   sclass->priminit = pi_CPP;
   sclass->piu.initf = (Scheme_Closed_Prim *)initf;
@@ -2388,7 +2401,10 @@ void scheme_add_method_w_arity(Scheme_Object *c, const char *name,
   if (sclass->num_private >= sclass->num_public)
     scheme_signal_error("add-prim-method: added too many methods");
 
-  cmethod = MALLOC_ONE(CMethod);
+  cmethod = MALLOC_ONE_RT(CMethod);
+#ifdef MZTAG_REQUIRED
+  cmethod->type = scheme_rt_class_method;
+#endif
   cmethod->f = (Scheme_Closed_Prim *)f;
   cmethod->mina = mina;
   cmethod->maxa = maxa;
@@ -2457,7 +2473,7 @@ static void InstallInterface(Scheme_Class *sclass, Scheme_Interface *in)
   for (j = 0; j < c; j++)
     sclass->interfaces[j] = isave[j];
   sclass->interfaces[c] = in;
-  sclass->interface_maps[c] = imap = MALLOC_N(short, in->num_names);
+  sclass->interface_maps[c] = imap = MALLOC_N_ATOMIC(short, in->num_names);
 
   num_public = sclass->num_public;
 
@@ -2517,14 +2533,20 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
   int i;
   ClassVariable *v, *last = NULL;
 
-  a = MALLOC_ONE(Scheme_Class_Assembly);
+  a = MALLOC_ONE_RT(Scheme_Class_Assembly);
+#ifdef MZTAG_REQUIRED
+  a->type = scheme_rt_class_assembly;
+#endif
   
   a->mina = mina;
   a->maxa = maxa;
   a->init = initproc;
 
   for (i = 0; i < n_public; i++) {
-    v = MALLOC_ONE(ClassVariable);
+    v = MALLOC_ONE_RT(ClassVariable);
+#ifdef MZTAG_REQUIRED
+    v->type = scheme_rt_class_var;
+#endif
 
     v->vartype = varPUBLIC;
     v->name = publics[i];
@@ -2535,7 +2557,10 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
   }
 
   for (i = 0; i < n_override; i++) {
-    v = MALLOC_ONE(ClassVariable);
+    v = MALLOC_ONE_RT(ClassVariable);
+#ifdef MZTAG_REQUIRED
+    v->type = scheme_rt_class_var;
+#endif
 
     v->vartype = varOVERRIDE;
     v->name = overrides[i];
@@ -2546,7 +2571,10 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
   }
 
   for (i = 0; i < n_inh; i++) {
-    v = MALLOC_ONE(ClassVariable);
+    v = MALLOC_ONE_RT(ClassVariable);
+#ifdef MZTAG_REQUIRED
+    v->type = scheme_rt_class_var;
+#endif
 
     v->vartype = varINHERIT;
     
@@ -2558,7 +2586,10 @@ scheme_make_class_assembly(const char *name, int num_interfaces,
   }
 
   for (i = 0; i < n_ren; i++) {
-    v = MALLOC_ONE(ClassVariable);
+    v = MALLOC_ONE_RT(ClassVariable);
+#ifdef MZTAG_REQUIRED
+    v->type = scheme_rt_class_var;
+#endif
 
     v->vartype = varRENAME;
     
@@ -2620,8 +2651,12 @@ Scheme_Object *scheme_create_class(Scheme_Class_Assembly *a,
 Scheme_Interface_Assembly *
 scheme_make_interface_assembly(const char *name, int n_supers, int n_names, Scheme_Object **names)
 {
-  Scheme_Interface_Assembly *a = MALLOC_ONE(Scheme_Interface_Assembly);
+  Scheme_Interface_Assembly *a = MALLOC_ONE_RT(Scheme_Interface_Assembly);
   int i;
+
+#ifdef MZTAG_REQUIRED
+  a->type = scheme_rt_class_assembly;
+#endif
 
   a->data.num_names = n_names;
   a->data.names = MALLOC_N(Scheme_Object *, n_names);
@@ -2795,9 +2830,12 @@ static Init_Object_Rec *CreateObjectFrames(Internal_Object *obj, Scheme_Class *s
   int i;
 
   slots = obj->slots;
-  irec = (Init_Object_Rec *)scheme_malloc(sizeof(Init_Object_Rec)
-					  + (sclass->pos /* for +1 total */
-					     * sizeof(Init_Frame)));
+  irec = (Init_Object_Rec *)scheme_malloc_rt(sizeof(Init_Object_Rec)
+					     + (sclass->pos /* for +1 total */
+						* sizeof(Init_Frame)));
+#ifdef MZTAG_REQUIRED
+  irec->type = scheme_rt_init_obj_rec;
+#endif
   frames = irec->frames;
 
   irec->init_level = sclass->pos + 1;
@@ -3165,8 +3203,8 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
     frame = irec->frames + level;
 
     c = sclass->num_ivar + sclass->num_ref;
-    public_values = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
-    env_values = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
+    public_values = MALLOC_N(Scheme_Object *, c);
+    env_values = MALLOC_N(Scheme_Object *, c);
     for (cvar = sclass->ivars, i = c; i--; cvar = cvar->next) {
       if (ispublic(cvar)) {
 	env_values[i] = GetIvar(o, irec, o->slots, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
@@ -3270,7 +3308,10 @@ static Scheme_Object *MakeSuperInitPrim(Internal_Object *o, Init_Object_Rec *ire
 {
   SuperInitData *data;
 
-  data = MALLOC_ONE(SuperInitData);
+  data = MALLOC_ONE_RT(SuperInitData);
+#ifdef MZTAG_REQUIRED
+  data->type = scheme_rt_super_init_data;
+#endif
 
   data->o = o;
   data->irec = irec;
@@ -3382,7 +3423,7 @@ static Scheme_Object *DoGeneric(Generic_Data *data,
 {
   if (!SCHEME_OBJP(argv[0])) {
     char *s = (char *)scheme_symbol_name(data->ivar_name), *n;
-    n = scheme_malloc(strlen(s) + 20);
+    n = scheme_malloc_atomic(strlen(s) + 20);
     strcpy(n, "generic for ");
     strcat(n, s);
     scheme_wrong_type(n, "object", 0, argc, argv);

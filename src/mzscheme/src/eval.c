@@ -331,7 +331,7 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
     if (n <= 20)
       linked = tmp;
     else
-      linked = (Scheme_Object **)scheme_malloc(n * sizeof(Scheme_Object *));
+      linked = MALLOC_N(Scheme_Object *, n);
 
     for (i = 0; i < n; i++) {
       Scheme_Type type;
@@ -406,6 +406,8 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
 			   ? scheme_malloc_stubborn_tagged(size)
 			   : scheme_malloc_tagged(size));
 
+  app->type = scheme_application_type;
+
   app->num_args = n - 1;
 
   evals = (((char *)app) + sizeof(Scheme_App_Rec) 
@@ -418,8 +420,6 @@ static Scheme_Object *make_application(Scheme_Object *orig_app,
     for (i = 0; i < n; i++, v = SCHEME_CDR(v))
       app->args[i] = SCHEME_CAR(v);
   }
-
-  app->type = scheme_application_type;
 
   if (final) {
     for (i = 0; i < n; i++)
@@ -642,6 +642,9 @@ void scheme_init_compile_recs(Scheme_Compile_Info *src,
   int i;
 
   for (i = 0; i < n; i++) {
+#ifdef MZTAG_REQUIRED
+    dest[i].type = scheme_rt_compile_info;
+#endif
     dest[i].max_let_depth = 0;
     dest[i].can_optimize_constants = src->can_optimize_constants;
     dest[i].keep_unit_debug_info = src->keep_unit_debug_info;
@@ -1790,7 +1793,7 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
       /* Note: we perform allocations before changing p to avoid GC trouble,
 	 since MzScheme adjusts a thread's cont_mark_stack_segments on GC. */
       segs = MALLOC_N(Scheme_Cont_Mark *, c + 1);
-      seg = MALLOC_N(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
+      seg = MALLOC_N_RT(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
       segs[c] = seg;
 
       memcpy(segs, p->cont_mark_stack_segments, c * sizeof(Scheme_Cont_Mark *));
@@ -1804,6 +1807,9 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
     MZ_CONT_MARK_STACK++;
   }
 
+#ifdef MZTAG_REQUIRED
+  cm->type = scheme_rt_cont_mark;
+#endif
   cm->key = key;
   cm->val = val;
   cm->pos = MZ_CONT_MARK_POS;
@@ -1923,9 +1929,12 @@ int scheme_check_runstack(long size)
 void *scheme_enlarge_runstack(long size, void *(*k)())
 {
   Scheme_Process *p = scheme_current_process;
-  Scheme_Saved_Stack *saved = MALLOC_ONE(Scheme_Saved_Stack);
+  Scheme_Saved_Stack *saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
   void *v;
 
+#ifdef MZTAG_REQUIRED
+  saved->type = scheme_rt_saved_stack;
+#endif
   saved->prev = p->runstack_saved;
   saved->runstack = MZ_RUNSTACK;
   saved->runstack_start = MZ_RUNSTACK_START;
@@ -2071,8 +2080,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  p->tail_buffer = (Scheme_Object **)scheme_malloc(p->tail_buffer_size 
-							   * sizeof(Scheme_Object *));
+	  p->tail_buffer = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
 	}
 #ifdef AGRESSIVE_ZERO_TB
 	p->tail_buffer_set = 0;
@@ -2252,8 +2260,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  p->tail_buffer = (Scheme_Object **)scheme_malloc(p->tail_buffer_size 
-							   * sizeof(Scheme_Object *));
+	  p->tail_buffer = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
 	}
 #ifdef AGRESSIVE_ZERO_TB
 	p->tail_buffer_set = 0;
@@ -2925,6 +2932,7 @@ do_default_eval_handler(Scheme_Env *env, int argc, Scheme_Object **argv)
 /* local functions */
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Config *config;
   Scheme_Object *e;
   Scheme_Object *namespace;
@@ -2963,7 +2971,10 @@ eval(int argc, Scheme_Object *argv[])
     if (SCHEME_TYPE(argv[1]) != scheme_namespace_type)
       scheme_wrong_type("eval", "namespace", 1, argc, argv);
 
-    ee = MALLOC_ONE(Eval_In_Env);
+    ee = MALLOC_ONE_RT(Eval_In_Env);
+#ifdef MZTAG_REQUIRED
+    ee->type = scheme_rt_eval_in_env;
+#endif
     ee->e = argv[0];
     ee->config = scheme_config;
     ee->namespace = argv[1];

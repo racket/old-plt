@@ -79,16 +79,16 @@ Scheme_Object *scheme_make_sema(long v)
   Scheme_Sema *sema;
 
 #ifdef MZ_REAL_THREADS
-  sema = (Scheme_Sema *)scheme_malloc_tagged(sizeof(Scheme_Sema));
+  sema = MALLOC_ONE_TAGGED(Scheme_Sema);
   sema->sema = SCHEME_MAKE_SEMA(v);
   scheme_add_finalizer(sema, free_sema, NULL);
 #else
 # if SEMAPHORE_WAITING_IS_COLLECTABLE
-#  define MALLOC_SEMA scheme_malloc_tagged
+#  define MALLOC_SEMA MALLOC_ONE_TAGGED
 # else
-#  define MALLOC_SEMA scheme_malloc_atomic_tagged
+#  define MALLOC_SEMA MALLOC_ONE_TAGGED_WEAK
 # endif
-  sema = (Scheme_Sema *)MALLOC_SEMA(sizeof(Scheme_Sema));
+  sema = MALLOC_SEMA(Scheme_Sema);
   sema->value = v;
 #endif
 
@@ -175,6 +175,7 @@ static Scheme_Object *hit_sema(int n, Scheme_Object **p)
 }
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Config *config;
   Scheme_Object *orig_param_val;
   Scheme_Object *sema;
@@ -251,8 +252,11 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	v = 0;
 #endif
     } else {
-      BreakableWait *bw = MALLOC_ONE(BreakableWait);
+      BreakableWait *bw = MALLOC_ONE_RT(BreakableWait);
 
+#ifdef MZTAG_REQUIRED
+      bw->type = scheme_rt_breakable_wait;
+#endif
       bw->sema = o;
       bw->config = scheme_config;
 
@@ -271,7 +275,11 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       --sema->value;
     else {
 # if SEMAPHORE_WAITING_IS_COLLECTABLE
-      Scheme_Sema_Waiter *w = MALLOC_ONE(Scheme_Sema_Waiter);
+      Scheme_Sema_Waiter *w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
+
+#ifdef MZTAG_REQUIRED
+      wp->type = scheme_rt_sema_waiter;
+#endif
       
       w->p = scheme_current_process;
       

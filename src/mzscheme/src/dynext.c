@@ -421,7 +421,7 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
   if (ed) {
     init_f = ed->reload_f;
   } else {
-    ed = MALLOC_ONE(ExtensionData);
+    ed = MALLOC_ONE_ATOMIC(ExtensionData);
     ed->handle = handle;
     ed->init_f = init_f;
     ed->reload_f = reload_f;

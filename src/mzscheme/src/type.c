@@ -50,10 +50,9 @@ scheme_init_type (Scheme_Env *env)
   maxtype = _scheme_last_type_;
   allocmax = maxtype + 10;
 
-  type_names = (char **)scheme_malloc(allocmax * sizeof(char *));
-  scheme_type_readers = 
-    (Scheme_Type_Reader *)scheme_malloc_atomic(n = allocmax
-					       * sizeof(Scheme_Type_Reader));
+  type_names = MALLOC_N(char *, allocmax);
+  scheme_type_readers = MALLOC_N_ATOMIC(Scheme_Type_Reader, allocmax);
+  n = allocmax * sizeof(Scheme_Type_Reader);
   memset((char *)scheme_type_readers, 0, n);
 
 #ifdef MEMORY_COUNTING_ON
@@ -61,9 +60,8 @@ scheme_init_type (Scheme_Env *env)
   scheme_misc_count += (allocmax * sizeof(char *));
 #endif
 
-  scheme_type_writers = 
-    (Scheme_Type_Writer *)scheme_malloc_atomic(n = allocmax
-					       * sizeof(Scheme_Type_Writer));
+  scheme_type_writers = MALLOC_N_ATOMIC(Scheme_Type_Writer, allocmax);
+  n = allocmax * sizeof(Scheme_Type_Writer);
   memset((char *)scheme_type_writers, 0, n);
 
 #ifdef MEMORY_COUNTING_ON

@@ -3878,6 +3878,7 @@ static int escaped = 0;
 
 static int handlerInstalled = 0;
 typedef struct ReplyItem {
+  MZTAG_IF_REQUIRED
   long id;
   AppleEvent ae;
   struct ReplyItem *next;
@@ -3908,7 +3909,7 @@ static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *
 
 static pascal OSErr HandleAnswer(AppleEvent *evt, AppleEvent *rae, long k)
 {
-  ReplyItem *r = MALLOC_ONE(ReplyItem);
+  ReplyItem *r = MALLOC_ONE_RT(ReplyItem);
   DescType rtype;
   long id, sz;
   
@@ -3916,6 +3917,9 @@ static pascal OSErr HandleAnswer(AppleEvent *evt, AppleEvent *rae, long k)
   
   AEDuplicateDesc(evt, &r->ae);
 
+#ifdef MZTAG_REQUIRED
+  r->type = scheme_rt_reply_item;
+#endif
   r->next = reply_queue;
   reply_queue = r;
   

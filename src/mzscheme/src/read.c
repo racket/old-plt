@@ -210,8 +210,7 @@ void scheme_init_read(Scheme_Env *env)
 void scheme_alloc_list_stack(Scheme_Process *process)
 {
   process->list_stack_pos = 0;
-  process->list_stack = (Scheme_Object *)scheme_malloc(NUM_CELLS_PER_STACK
-						       * sizeof(Scheme_Object));
+  process->list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
 }
 
 #define DO_CHAR_PARAM(name, pos) \
@@ -754,8 +753,7 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
 	local_list_stack_pos = 0;
-	local_list_stack = (Scheme_Object *)scheme_malloc(NUM_CELLS_PER_STACK
-							  * sizeof(Scheme_Object));
+	local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
       }
 
       pair = local_list_stack + (local_list_stack_pos++);
@@ -1355,7 +1353,7 @@ static Scheme_Object *read_compact_svector(CPort *port, int l)
   o = scheme_alloc_object();
   SCHEME_SVEC_LEN(o) = l;
   if (l)
-    v = MALLOC_N(short, l);
+    v = MALLOC_N_ATOMIC(short, l);
   else
     v = NULL;
   SCHEME_SVEC_VEC(o) = v;
@@ -1645,8 +1643,7 @@ static Scheme_Object *read_compact(CPort *port,
 	if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	  /* Overflow */
 	  local_list_stack_pos = 0;
-	  local_list_stack = (Scheme_Object *)scheme_malloc(NUM_CELLS_PER_STACK
-							    * sizeof(Scheme_Object));
+	  local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
 	}
 	
 	pair = local_list_stack + (local_list_stack_pos++);
@@ -1686,8 +1683,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
     if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
       /* Overflow */
       local_list_stack_pos = 0;
-      local_list_stack = (Scheme_Object *)scheme_malloc(NUM_CELLS_PER_STACK
-							* sizeof(Scheme_Object));
+      local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
     }
     
     last = local_list_stack + (local_list_stack_pos++);
@@ -1706,8 +1702,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
 	local_list_stack_pos = 0;
-	local_list_stack = (Scheme_Object *)scheme_malloc(NUM_CELLS_PER_STACK
-							  * sizeof(Scheme_Object));
+	local_list_stack = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
       }
       
       pair = local_list_stack + (local_list_stack_pos++);

@@ -37,17 +37,11 @@ typedef enum {
 } Scheme_ProcT;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Struct_Type *struct_type;
   Scheme_Object *func_name;
   short field;
 } Struct_Proc_Info;
-
-typedef struct {
-  int num_levels;
-  int *levels;
-  Scheme_Hash_Table **tables;
-  Scheme_Object *elsep;
-} Struct_Case;
 
 /* globals */
 Scheme_Object *scheme_arity_at_least, *scheme_date;
@@ -499,7 +493,7 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
 
   struct_type = (Scheme_Struct_Type *)type;
 
-  values = (Scheme_Object **)scheme_malloc_stubborn(count * sizeof(Scheme_Object *));
+  values = MALLOC_N_STUBBORN(Scheme_Object *, count);
  
 #ifdef MEMORY_COUNTING_ON
   if (scheme_starting_up) {
@@ -578,7 +572,7 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
   if (!(flags & SCHEME_STRUCT_NO_SET))
     count += fcount;
 
-  names = (Scheme_Object **)scheme_malloc_stubborn(count * sizeof(Scheme_Object *));
+  names = MALLOC_N_STUBBORN(Scheme_Object *, count);
 
 #ifdef MEMORY_COUNTING_ON
   if (scheme_starting_up) {
@@ -780,7 +774,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     scheme_wrong_syntax("struct", base_symbol, form, "struct name must be an identifier");
   
   if (in_rec) {
-    info = (Struct_Info *)scheme_malloc_tagged(sizeof(Struct_Info));
+    info = MALLOC_ONE_TAGGED(Struct_Info);
     info->type = scheme_struct_info_type;
     
     info->name = base_symbol;
@@ -860,7 +854,10 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
   } else {
     Struct_Proc_Info *i;
 
-    i = (Struct_Proc_Info *)scheme_malloc(sizeof(Struct_Proc_Info));
+    i = MALLOC_ONE_RT(Struct_Proc_Info);
+#ifdef MZTAG_REQUIRED
+    i->type = scheme_rt_struct_proc_info;
+#endif
     i->struct_type = struct_type;
     i->func_name = func_name;
     i->field = field_num;

@@ -58,6 +58,7 @@ static Scheme_Object *unitsig_macros;
 /**********************************************************************/
 
 typedef struct UnitId {
+  MZTAG_IF_REQUIRED
   Scheme_Object *tag;
   Scheme_Object *int_id;
   Scheme_Object *ext_id;
@@ -74,12 +75,14 @@ enum {
 };
 
 typedef struct BodyVar {
+  MZTAG_IF_REQUIRED
   Scheme_Object *id;
   short pos;
   short exported;
 } BodyVar;
 
 typedef struct BodyExpr {
+  MZTAG_IF_REQUIRED
   short type;
   union {
     struct {
@@ -108,7 +111,10 @@ static void extend_ids(UnitIds *ids, Scheme_Object *tag,
 {
   UnitId *naya;
 
-  naya = (UnitId *)scheme_malloc(sizeof(UnitId));
+  naya = MALLOC_ONE_RT(UnitId);
+#ifdef MZTAG_REQUIRED
+  naya->type = scheme_rt_unit_id;
+#endif
 
   if (!ids->last)
     ids->first = naya;
@@ -464,7 +470,10 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   while (SCHEME_PAIRP(l)) {
     Scheme_Object *expr = SCHEME_CAR(l);
     
-    e = MALLOC_ONE(BodyExpr);
+    e = MALLOC_ONE_RT(BodyExpr);
+#ifdef MZTAG_REQUIRED
+    e->type = scheme_rt_body_expr;
+#endif
     expr_count++;
     
     if (!body->last)
@@ -525,9 +534,12 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 	    e->u.def.expr = value;
 	    e->u.def.count = count;
 
-	    vs = e->u.def.vars = MALLOC_N(BodyVar, count);
+	    vs = e->u.def.vars = MALLOC_N_RT(BodyVar, count);
 
 	    for (i = 0; i < count; i++, names = SCHEME_CDR(names)) {
+#ifdef MZTAG_REQUIRED
+	      vs[i].type = scheme_rt_body_var;
+#endif
 	      vs[i].id = SCHEME_CAR(names);
 	      scheme_check_identifier(MAKE_UNIT, vs[i].id, NULL, env, form);
 	      vs[i].exported = 0;
@@ -655,7 +667,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 				     | SCHEME_ANCHORED_FRAME);
 
   if (rec) {
-    recs = MALLOC_N(Scheme_Compile_Info, expr_count);
+    recs = MALLOC_N_RT(Scheme_Compile_Info, expr_count);
     scheme_init_compile_recs(rec, recs, expr_count);
     expr_count = 0;
   } else
@@ -710,7 +722,7 @@ static int check_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 
   if (rec) {
     scheme_merge_compile_recs(rec, recs, expr_count);
-    rec->max_let_depth += (indirect_env->basic.num_bindings + env->basic.num_bindings);
+    rec->max_let_depth += (indirect_env->num_bindings + env->num_bindings);
   }
 
   return count;
@@ -819,7 +831,7 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
   check_ext_ids_unique(&drec, exports, MAKE_COMPOUND_UNIT, form);
 
   if (rec) {
-    recs = MALLOC_N(Scheme_Compile_Info, num_withs);
+    recs = MALLOC_N_RT(Scheme_Compile_Info, num_withs);
     scheme_init_compile_recs(rec, recs, num_withs);
   } else
     recs = NULL;
@@ -885,7 +897,7 @@ static Scheme_Unit *InitCompiledUnitRec(UnitId *exports, int num_imports,
   UnitId *id;
   Scheme_Unit *m;
 
-  m = (Scheme_Unit *)scheme_malloc_tagged(sizeof(Scheme_Unit));
+  m = MALLOC_ONE_TAGGED(Scheme_Unit);
 
   m->type = scheme_compiled_unit_type;
 
@@ -895,14 +907,12 @@ static Scheme_Unit *InitCompiledUnitRec(UnitId *exports, int num_imports,
   m->num_exports = i;
 
   if (m->num_exports)
-    m->exports = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *)
-						 * m->num_exports);
+    m->exports = MALLOC_N(Scheme_Object *, m->num_exports);
   else
     m->exports = NULL;
 
   if (m->num_exports && debuggable)
-    m->export_debug_names = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *)
-							    * m->num_exports);
+    m->export_debug_names = MALLOC_N(Scheme_Object *, m->num_exports);
   else
     m->export_debug_names = NULL;
 
@@ -1065,11 +1075,13 @@ static Scheme_Object *make_unit_expand(Scheme_Object *form,
 /******* compound-unit ********/
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   int submod_index;
   Scheme_Object *ext_id;
 } ExportSource;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   short index; /* -1 => compound param */
   union {
     short pos;
@@ -1110,19 +1122,16 @@ make_compound_unit_record(int count, /* subunits */
   int i, j;
   ExportSource *export_srcs;
 
-  data = (CompoundData *)scheme_malloc_tagged(sizeof(CompoundData));
+  data = MALLOC_ONE_TAGGED(CompoundData);
 
   data->type = scheme_unit_compound_data_type;
   data->num_subunits = count;
-  data->subunit_exprs = 
-    (Scheme_Object **)scheme_malloc(count * sizeof(Scheme_Object *));
-  data->param_maps = param_maps = 
-    (ParamMap **)scheme_malloc(count * sizeof(ParamMap *));
-  data->param_counts = 
-    (short *)scheme_malloc(count * sizeof(short));
+  data->subunit_exprs = MALLOC_N(Scheme_Object *, count);
+  data->param_maps = param_maps = MALLOC_N(ParamMap *, count);
+  data->param_counts = MALLOC_N_ATOMIC(short, count);
   data->defname = defname;
   
-  tags = (Scheme_Object **)scheme_malloc(count * sizeof(Scheme_Object *));
+  tags = MALLOC_N(Scheme_Object *, count);
   data->tags = tags;
 
   for (i = 0, id = links; id; id = id->next, i++) {
@@ -1131,7 +1140,11 @@ make_compound_unit_record(int count, /* subunits */
 
     j = count_ids((UnitId *)id->ext_id);
     data->param_counts[i] = j;
-    param_maps[i] = (ParamMap *)scheme_malloc(j * sizeof(ParamMap));
+    param_maps[i] = MALLOC_N_RT(ParamMap, j);
+#ifdef MZTAG_REQUIRED
+    for (k = 0; k < j; k++)
+      param_maps[i][k].type = scheme_rt_param_map;
+#endif
   }
 
   /* Fill in param map: */
@@ -1174,7 +1187,7 @@ make_compound_unit_record(int count, /* subunits */
   /* Fill in export map: */
   i = count_ids(exports);
   data->num_exports = i;
-  data->exports = (ExportSource *)scheme_malloc(i * sizeof(ExportSource));
+  data->exports = MALLOC_N_RT(ExportSource, i);
   export_srcs = data->exports;
   for (i = 0, id = exports; id; id = id->next, i++) {
     Scheme_Object *tag = id->tag;
@@ -1185,6 +1198,9 @@ make_compound_unit_record(int count, /* subunits */
 	if (SAME_OBJ(tag, tags[j]))
 	  break;
     }
+#ifdef MZTAG_REQUIRED
+    export_srcs[i].type = scheme_rt_export_source;
+#endif
     export_srcs[i].submod_index = j;
     export_srcs[i].ext_id = id->int_id;
   }
@@ -1267,15 +1283,22 @@ Scheme_Object *scheme_assemble_compound_unit(Scheme_Object *imports,
     UnitId *id, *ilast, *first;
     Scheme_Object *l = SCHEME_CAR(m);
 
-    id = MALLOC_ONE(UnitId);
+    id = MALLOC_ONE_RT(UnitId);
+#ifdef MZTAG_REQUIRED
+    id->type = scheme_rt_unit_id;
+#endif
 
     id->tag = SCHEME_CAR(l);
     id->int_id = NULL;
     first = NULL;
     ilast = NULL;
     for (l = SCHEME_CDR(l); SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-      UnitId *id = MALLOC_ONE(UnitId);
+      UnitId *id = MALLOC_ONE_RT(UnitId);
       Scheme_Object *i = SCHEME_CAR(l);
+
+#ifdef MZTAG_REQUIRED
+      id->type = scheme_rt_unit_id;
+#endif
 
       if (ilast)
 	ilast->next = id;
@@ -1303,8 +1326,12 @@ Scheme_Object *scheme_assemble_compound_unit(Scheme_Object *imports,
   last = NULL;
   export_ids = NULL;
   for (m = exports; SCHEME_PAIRP(m); m = SCHEME_CDR(m)) {
-    UnitId *id = MALLOC_ONE(UnitId);
+    UnitId *id = MALLOC_ONE_RT(UnitId);
     Scheme_Object *l = SCHEME_CAR(m);
+
+#ifdef MZTAG_REQUIRED
+    id->type = scheme_rt_unit_id;
+#endif
 
     id->tag = SCHEME_CAR(l);
     l = SCHEME_CDR(l);
@@ -1392,7 +1419,7 @@ static Scheme_Object *link_invoke_unit(Scheme_Object *o, Link_Info *info)
 
   data->num_local_exports = num_local;
   if (num_local)
-    data->anchor_positions = MALLOC_N(short, num_local);
+    data->anchor_positions = MALLOC_N_ATOMIC(short, num_local);
 
   for (i = 0, j = 0; i < data->num_exports; i++) {
     if (SAME_TYPE(SCHEME_TYPE(data->exports[i]), scheme_local_type)) {
@@ -1439,7 +1466,7 @@ static Scheme_Object *do_invoke_unit_syntax(char *where,
   data->num_local_exports = 0;
   data->anchor_positions = NULL;
 
-  data->exports = (Scheme_Object **)scheme_malloc(c * sizeof(Scheme_Object *));
+  data->exports = MALLOC_N(Scheme_Object *, c);
   l = SCHEME_CDR(SCHEME_CDR(form));
 
   for (i = 0; i < c; i++, l = SCHEME_CDR(l)) {
@@ -1501,6 +1528,7 @@ static Scheme_Object *invoke_unit_expand(Scheme_Object *form,
 /**********************************************************************/
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Object *data;
   Scheme_Env *env;
   Scheme_Object **closure_saved;
@@ -1533,8 +1561,12 @@ static Scheme_Object *CloseUnit(Scheme_Object *data)
 
     data = (BodyData *)orig->data;
 
-    cl = MALLOC_ONE(UnitDataClosure);
+    cl = MALLOC_ONE_RT(UnitDataClosure);
     
+#ifdef MZTAG_REQUIRED
+    cl->type = scheme_rt_unit_data_closure;
+#endif
+
     cl->env = scheme_get_env(scheme_config);
     cl->data = (Scheme_Object *)data;
     cl->defname = data->defname;
@@ -1579,6 +1611,7 @@ typedef struct {
 } BoxMap;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   int num_submods;
   Scheme_Unit **subunits;
   BoxMap **boxMapsList;
@@ -1648,7 +1681,7 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
     int i;
 
     i = m->num_exports;
-    naya = (Scheme_Object **)scheme_malloc(i * sizeof(Scheme_Object *));
+    naya = MALLOC_N(Scheme_Object *, i);
     while (i--)
       naya[i] = orig[i];
 
@@ -1657,8 +1690,8 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 
   num_mods = data->num_subunits;
 
-  subunits = (Scheme_Unit **)scheme_malloc(num_mods * sizeof(Scheme_Unit *));
-  boxesList = (BoxMap **)scheme_malloc(num_mods * sizeof(BoxMap *));
+  subunits = MALLOC_N(Scheme_Unit *, num_mods);
+  boxesList = MALLOC_N(BoxMap *, num_mods);
 
   /* Evaluate units and create space for sub-exported box lists */
   for (i = 0; i < num_mods; i++) {
@@ -1689,8 +1722,7 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 		       data->param_counts[i]);
     }
 
-    boxes = (BoxMap *)scheme_malloc_atomic((sm->num_imports + sm->num_exports)
-					   * sizeof(BoxMap));
+    boxes = MALLOC_N_ATOMIC(BoxMap, (sm->num_imports + sm->num_exports));
     boxesList[i] = boxes;
 
     k = sm->num_imports;
@@ -1755,7 +1787,10 @@ do_close_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
   }
 
   /* All mappings are set up */
-  linked = (CompoundLinkedData *)scheme_malloc(sizeof(CompoundLinkedData));
+  linked = MALLOC_ONE_RT(CompoundLinkedData);
+#ifdef MZTAG_REQUIRED
+  linked->type = scheme_rt_compound_linked_data;
+#endif
   linked->num_submods = num_mods;
   linked->subunits = subunits;
   linked->boxMapsList = boxesList;
@@ -1781,6 +1816,7 @@ scheme_make_compound_unit(Scheme_Object *data_in, Scheme_Object **subs_in)
 }
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Object **boxes;
   Scheme_Object **anchors;
   Scheme_Unit *unit;
@@ -1872,9 +1908,12 @@ static Scheme_Object *InvokeUnit(Scheme_Object *data_in)
      starts with a minimal stack and reset the continuation marks
      counter: */
   {
-    Do_Invoke_Data *diu = MALLOC_ONE(Do_Invoke_Data);
+    Do_Invoke_Data *diu = MALLOC_ONE_RT(Do_Invoke_Data);
     Scheme_Object *invoke_unit_f;
 
+#ifdef MZTAG_REQUIRED
+    diu->type = scheme_rt_do_invoke_data;
+#endif
     diu->boxes = boxes;
     diu->anchors = anchors;
     diu->unit = unit;
@@ -2112,8 +2151,8 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
   num_mods = data->num_submods;
   subunits = data->subunits;
 
-  boxesList = (Scheme_Object ***)scheme_malloc(num_mods * sizeof(Scheme_Object **));
-  anchorsList = (Scheme_Object ***)scheme_malloc(num_mods * sizeof(Scheme_Object **));
+  boxesList = MALLOC_N(Scheme_Object **, num_mods);
+  anchorsList = MALLOC_N(Scheme_Object **, num_mods);
 
   boxMapsList = data->boxMapsList;
 
@@ -2124,8 +2163,8 @@ static Scheme_Object *do_compound_unit(Scheme_Object **boxes_in, Scheme_Object *
     sm = subunits[i];
 
     c = (sm->num_imports + sm->num_exports);
-    boxes = (Scheme_Object **)scheme_malloc(c * sizeof(Scheme_Object *));
-    anchors = (Scheme_Object **)scheme_malloc(c * sizeof(Scheme_Object *));
+    boxes = MALLOC_N(Scheme_Object *, c);
+    anchors = MALLOC_N(Scheme_Object *, c);
     boxesList[i] = boxes;
     anchorsList[i] = anchors;
 
@@ -2221,7 +2260,7 @@ static Scheme_Object **list_to_array(Scheme_Object *l, int c, Scheme_Object **l_
   if (!c)
     return NULL;
 
-  a = (Scheme_Object **)scheme_malloc(c * sizeof(Scheme_Object *));
+  a = MALLOC_N(Scheme_Object *, c);
   for (i = 0; i < c; i++, l = SCHEME_CDR(l))
     a[i] = SCHEME_CAR(l);
 
@@ -2254,7 +2293,7 @@ static Scheme_Object *read_compiled_unit(Scheme_Object *o)
   Scheme_Unit *m;
   int c;
 
-  m = (Scheme_Unit *)scheme_malloc_tagged(sizeof(Scheme_Unit));
+  m = MALLOC_ONE_TAGGED(Scheme_Unit);
   m->type = scheme_compiled_unit_type;
 
   m->num_imports = SCHEME_INT_VAL(SCHEME_CAR(o));
@@ -2336,7 +2375,7 @@ static Scheme_Object *read_body_data(Scheme_Object *o)
   Scheme_Object *v;
   int counter;
 
-  data = (BodyData *)scheme_malloc_tagged(sizeof(BodyData));
+  data = MALLOC_ONE_TAGGED(BodyData);
   data->type = scheme_unit_body_data_type;
   
   data->num_locals = SCHEME_INT_VAL(SCHEME_CAR(o));
@@ -2361,7 +2400,10 @@ static Scheme_Object *read_body_data(Scheme_Object *o)
 
   data->body = NULL;
   while (counter--) {
-    body = (BodyExpr *)scheme_malloc(sizeof(BodyExpr));
+    body = MALLOC_ONE_RT(BodyExpr);
+#ifdef MZTAG_REQUIRED
+    body->type = scheme_rt_body_expr;
+#endif
     body->next = data->body;
     data->body = body;
 
@@ -2380,10 +2422,13 @@ static Scheme_Object *read_body_data(Scheme_Object *o)
 	o = SCHEME_CDR(o);
 
 	c = body->u.def.count;
-	vs = (BodyVar *)scheme_malloc(c * sizeof(BodyVar));
+	vs = MALLOC_N_RT(BodyVar, c);
 	body->u.def.vars = vs;
 
 	for (i = 0; i < c; i++) {
+#ifdef MZTAG_REQUIRED
+	  vs[i].type = scheme_rt_body_var;
+#endif
 	  vs[i].id = SCHEME_CAR(o);
 	  o = SCHEME_CDR(o);
 	  vs[i].pos = SCHEME_INT_VAL(SCHEME_CAR(o));
@@ -2471,7 +2516,7 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
   ParamMap *map;
   int c, n, i, j, p = 0, d = 0;
 
-  data = (CompoundData *)scheme_malloc_tagged(sizeof(CompoundData));
+  data = MALLOC_ONE_TAGGED(CompoundData);
   data->type = scheme_unit_compound_data_type;
 
   c = data->num_exports = SCHEME_INT_VAL(SCHEME_CAR(o));
@@ -2493,9 +2538,11 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
   counts = SCHEME_CAR(o);
   maps = SCHEME_CDR(o);
 
-  data->exports = (ExportSource *)scheme_malloc(sizeof(ExportSource)
-						* data->num_exports);
+  data->exports = MALLOC_N_RT(ExportSource, data->num_exports);
   for (i = 0; i < c; i++) {
+#ifdef MZTAG_REQUIRED
+    data->exports[i].type = scheme_rt_export_source;
+#endif
     data->exports[i].submod_index = SCHEME_INT_VAL(SCHEME_CAR(exs));
     exs = SCHEME_CDR(exs);
     data->exports[i].ext_id = SCHEME_CAR(exs);
@@ -2505,14 +2552,14 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
   data->tags = list_to_array(tags, n, NULL);
   data->subunit_exprs = list_to_array(subs, n, NULL);
 
-  data->param_counts = (short *)scheme_malloc(n * sizeof(short));
+  data->param_counts = MALLOC_N_ATOMIC(short, n);
   for (i = 0; i < n; i++, counts = SCHEME_CDR(counts))
     data->param_counts[i] = SCHEME_INT_VAL(SCHEME_CAR(counts));
 
-  data->param_maps = (ParamMap **)scheme_malloc(n * sizeof(ParamMap *));
+  data->param_maps = MALLOC_N(ParamMap *, n);
   for (i = 0; i < n; i++) {
     c = data->param_counts[i];
-    map = data->param_maps[i] = (ParamMap *)scheme_malloc(c * sizeof(ParamMap));
+    map = data->param_maps[i] = MALLOC_N_RT(ParamMap, c);
     
     for (j = 0; j < c; j++) {
       if (d >= p) {
@@ -2524,6 +2571,9 @@ static Scheme_Object *read_compound_data(Scheme_Object *o)
 	d = 0;
       }
 
+#ifdef MZTAG_REQUIRED
+      map[j].type = scheme_rt_param_map;
+#endif
       map[j].index = SCHEME_INT_VAL(els[d++]);
       if (map[j].index < 0)
 	map[j].u.pos = SCHEME_INT_VAL(els[d++]);
@@ -2555,7 +2605,7 @@ static Scheme_Object *read_invoke_data(Scheme_Object *o)
   InvokeUnitData *data;
   Scheme_Object *v;
 
-  data = (InvokeUnitData *)scheme_malloc_tagged(sizeof(InvokeUnitData));
+  data = MALLOC_ONE_TAGGED(InvokeUnitData);
   data->type = scheme_invoke_unit_data_type;
 
   data->num_exports = SCHEME_INT_VAL(SCHEME_CAR(o));

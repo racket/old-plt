@@ -115,6 +115,7 @@ static time_t base_time;
 
 /* See call_cc: */
 typedef struct Scheme_Dynamic_Wind_List {
+  MZTAG_IF_REQUIRED
   Scheme_Dynamic_Wind *dw;
   struct Scheme_Dynamic_Wind_List *next;
 } Scheme_Dynamic_Wind_List;
@@ -563,6 +564,7 @@ scheme_make_linked_closure(Scheme_Process *p,
 }
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   int *local_flags;
   short *real_closure_map;
 } Closure_Info;
@@ -690,7 +692,10 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   scheme_merge_lambda_rec(rec, &lam);
 
-  cl = MALLOC_ONE(Closure_Info);
+  cl = MALLOC_ONE_RT(Closure_Info);
+#ifdef MZTAG_REQUIRED
+  cl->type = scheme_rt_closure_info;
+#endif
 
   cl->local_flags = scheme_env_get_flags(frame, 0, data->num_params);
 
@@ -757,7 +762,10 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	Scheme_Process *p = scheme_current_process;
 	Scheme_Overflow *overflow;
 
-	overflow = MALLOC_ONE(Scheme_Overflow);
+	overflow = MALLOC_ONE_RT(Scheme_Overflow);
+#ifdef MZTAG_REQUIRED
+	overflow->type = scheme_rt_overflow;
+#endif
       
 	memcpy(&overflow->cont, &scheme_overflow_cont, 
 	       sizeof(Scheme_Jumpup_Buf));
@@ -941,8 +949,7 @@ scheme_tail_apply (Scheme_Object *rator, int num_rands, Scheme_Object **rands)
     Scheme_Object **a;
     if (num_rands > p->tail_buffer_size) {
       p->tail_buffer_size = num_rands;
-      p->tail_buffer = 
-	(Scheme_Object **)scheme_malloc(num_rands * sizeof(Scheme_Object *));
+      p->tail_buffer = MALLOC_N(Scheme_Object *, num_rands);
     }
     a = p->tail_buffer;
     p->ku.apply.tail_rands = a;
@@ -980,8 +987,7 @@ X_scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *rands, int force,
   Scheme_Object **rands_vec;
 
   num_rands = scheme_list_length(rands);
-  rands_vec = (Scheme_Object **)scheme_malloc(num_rands 
-					      * sizeof(Scheme_Object *));
+  rands_vec = MALLOC_N(Scheme_Object *, num_rands);
 
   if (macro_apply) {
     /* Check arity now so we can give the right error message: */
@@ -1437,8 +1443,7 @@ apply(int argc, Scheme_Object *argv[])
     r = SCHEME_CDR(r);
     num_rands++;
   }
-  rand_vec = (Scheme_Object **)scheme_malloc(num_rands *
-					     sizeof(Scheme_Object *));
+  rand_vec = MALLOC_N(Scheme_Object *, num_rands);
 
   for (i = argc - 2; i--; )
     rand_vec[i] = argv[i + 1];
@@ -1502,8 +1507,8 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
     args = quick1;
     working = quick2;
   } else {
-    args = (Scheme_Object **)scheme_malloc((argc - 1) * sizeof(Scheme_Object *));
-    working = (Scheme_Object **)scheme_malloc((argc - 1) * sizeof(Scheme_Object *));
+    args = MALLOC_N(Scheme_Object *, argc - 1);
+    working = MALLOC_N(Scheme_Object *, argc - 1);
   }
 
   /* Copy argc into working array */
@@ -1618,7 +1623,7 @@ Scheme_Object *scheme_values(int argc, Scheme_Object *argv[])
   p = scheme_current_process;
   p->ku.multiple.count = argc;
   if (argc)
-    a = (Scheme_Object **)scheme_malloc(argc * sizeof(Scheme_Object *));
+    a = MALLOC_N(Scheme_Object *, argc);
   else
     a = NULL;
   p->ku.multiple.array = a;
@@ -1738,7 +1743,10 @@ call_cc (int argc, Scheme_Object *argv[])
   argv[0] = NULL;
 
   /* Copy out stack: */
-  cont->runstack_copied = saved = MALLOC_ONE(Scheme_Saved_Stack);
+  cont->runstack_copied = saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
+#ifdef MZTAG_REQUIRED
+  cont->runstack_copied->type = scheme_rt_saved_stack;
+#endif
   size = p->runstack_size - (MZ_RUNSTACK - MZ_RUNSTACK_START);
   saved->runstack_size = size;
   saved->runstack_start = MALLOC_N(Scheme_Object*, size);
@@ -1746,6 +1754,9 @@ call_cc (int argc, Scheme_Object *argv[])
   isaved = saved;
   for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
     isaved->prev = MALLOC_ONE(Scheme_Saved_Stack);
+#ifdef MZTAG_REQUIRED
+    isaved->type = scheme_rt_saved_stack;
+#endif
     isaved = isaved->prev;
     size = csaved->runstack_size - (csaved->runstack - csaved->runstack_start);
     isaved->runstack_size = size;
@@ -1756,7 +1767,7 @@ call_cc (int argc, Scheme_Object *argv[])
 
   /* Copy cont mark stack: */
   cmcount = (long)MZ_CONT_MARK_STACK;
-  cont->cont_mark_stack_copied = MALLOC_N(Scheme_Cont_Mark, cmcount);
+  cont->cont_mark_stack_copied = MALLOC_N_RT(Scheme_Cont_Mark, cmcount);
   while (cmcount--) {
     Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
     long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
@@ -1787,7 +1798,10 @@ call_cc (int argc, Scheme_Object *argv[])
       for (dw = cont->dw; dw != cont->common; dw = dw->prev) {
 	Scheme_Dynamic_Wind_List *cell;
 
-	cell = MALLOC_ONE(Scheme_Dynamic_Wind_List);
+	cell = MALLOC_ONE_RT(Scheme_Dynamic_Wind_List);
+#ifdef MZTAG_REQUIRED
+	cell->type = scheme_rt_dyn_wind_cell;
+#endif
 	cell->dw = dw;
 	cell->next = dwl;
 	dwl = cell;
@@ -1842,7 +1856,7 @@ call_cc (int argc, Scheme_Object *argv[])
 	    segs[needed] = NULL;
 
 	  if (!segs[needed])
-	    segs[needed] = MALLOC_N(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
+	    segs[needed] = MALLOC_N_RT(Scheme_Cont_Mark, SCHEME_MARK_SEGMENT_SIZE);
 	}
 
 	p->cont_mark_seg_count = newcount;
@@ -1898,7 +1912,10 @@ Scheme_Object *scheme_current_continuation_marks(void)
 
       break;
     } else {
-      Scheme_Cont_Mark_Chain *pr = MALLOC_ONE(Scheme_Cont_Mark_Chain);
+      Scheme_Cont_Mark_Chain *pr = MALLOC_ONE_RT(Scheme_Cont_Mark_Chain);
+#ifdef MZTAG_REQUIRED
+      pr->type = scheme_rt_cont_mark_chain;
+#endif      
       pr->key = find->key;
       pr->val = find->val;
       pr->next = NULL;
@@ -1963,6 +1980,7 @@ extract_cc_marks(int argc, Scheme_Object *argv[])
 }
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Object *pre, *act, *post;
 } Dyn_Wind;
 
@@ -2000,7 +2018,10 @@ static Scheme_Object *dynamic_wind(int c, Scheme_Object *p[])
 {
   Dyn_Wind *dw;
 
-  dw = MALLOC_ONE(Dyn_Wind);
+  dw = MALLOC_ONE_RT(Dyn_Wind);
+#ifdef MZTAG_REQUIRED
+  dw->type = scheme_rt_dyn_wind_info;
+#endif
 
   dw->pre = p[0];
   dw->act = p[1];
@@ -2022,7 +2043,10 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
   int save_count;
   Scheme_Process *p = scheme_current_process;
 
-  dw = MALLOC_ONE(Scheme_Dynamic_Wind);
+  dw = MALLOC_ONE_RT(Scheme_Dynamic_Wind);
+#ifdef MZTAG_REQUIRED
+  dw->type = scheme_rt_dyn_wind;
+#endif
 
   dw->data = data;
   dw->pre = pre;

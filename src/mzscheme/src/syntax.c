@@ -1100,7 +1100,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   cl->name = name;
 
   scheme_compile_rec_done_local(rec);
-  recs = MALLOC_N(Scheme_Compile_Info, count);
+  recs = MALLOC_N_RT(Scheme_Compile_Info, count);
   scheme_init_compile_recs(rec, recs, count);
 
   for (i = 0; i < count; i++, list = SCHEME_CDR(list))
@@ -1179,7 +1179,7 @@ bangboxvalue_execute(Scheme_Object *data)
       Scheme_Object **naya, **a;
       int i;
 
-      naya = (Scheme_Object **)scheme_malloc(p->ku.multiple.count * sizeof(Scheme_Object *));
+      naya = MALLOC_N(Scheme_Object *, p->ku.multiple.count);
       a = p->ku.multiple.array;
 
       for (i = p->ku.multiple.count; i--; )
@@ -1464,13 +1464,11 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
     num_bindings = num_clauses;
 
 
-  names = (Scheme_Object **)scheme_malloc_stubborn(num_bindings
-						   * sizeof(Scheme_Object*));
+  names = MALLOC_N_STUBBORN(Scheme_Object *, num_bindings);
 
   env = frame = scheme_new_compilation_frame(num_bindings, SCHEME_LET_FRAME, env);
 
-  recs = (Scheme_Compile_Info *)scheme_malloc((num_clauses + 1)
-					      * sizeof(Scheme_Compile_Info));
+  recs = MALLOC_N_RT(Scheme_Compile_Info, (num_clauses + 1));
 
   defname = rec->value_name;
   scheme_compile_rec_done_local(rec);
@@ -2438,9 +2436,7 @@ void scheme_register_syntax(const char *name,
     Linker_Name *old = linker_names;
 
     link_names_size += 20;
-    linker_names = 
-      (Linker_Name *)scheme_malloc(link_names_size
-				   * sizeof(Linker_Name));
+    linker_names = MALLOC_N_RT(Linker_Name, link_names_size);
 
     memcpy(linker_names, old, num_link_names * sizeof(Linker_Name));
 
@@ -2449,6 +2445,9 @@ void scheme_register_syntax(const char *name,
 #endif
   }
   
+#ifdef MZTAG_REQUIRED
+  linker_names[num_link_names].type = scheme_rt_linker_name;
+#endif
   linker_names[num_link_names].sym = scheme_intern_symbol(name);
   linker_names[num_link_names].f = f;
   num_link_names++;

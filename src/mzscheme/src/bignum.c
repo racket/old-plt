@@ -79,7 +79,7 @@ void scheme_register_bignum()
 Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 {
   if (!o)
-    o = (Small_Bignum *)scheme_malloc(sizeof(Small_Bignum));
+    o = MALLOC_ONE_TAGGED(Small_Bignum);
 
   o->o.type = scheme_bignum_type;
   SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
@@ -109,7 +109,7 @@ Scheme_Object *scheme_make_bignum(long v)
     if ((bad_neg = (v != -(-v))))
       v++;
 
-    o = (Small_Bignum *)scheme_malloc(sizeof(Small_Bignum) + sizeof(bigdig));
+    o = (Small_Bignum *)scheme_malloc_tagged(sizeof(Small_Bignum) + sizeof(bigdig));
     o->o.type = scheme_bignum_type;
 
     SCHEME_BIGDIG(&o->o) = o->v;
@@ -140,7 +140,7 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
   else {
     Small_Bignum *o;
 
-    o = (Small_Bignum *)scheme_malloc(sizeof(Small_Bignum) + sizeof(bigdig));
+    o = (Small_Bignum *)scheme_malloc_tagged(sizeof(Small_Bignum) + sizeof(bigdig));
     o->o.type = scheme_bignum_type;
 
     SCHEME_BIGDIG(&o->o) = o->v;
@@ -323,7 +323,7 @@ static Scheme_Object *bignum_copy(const Scheme_Object *n, int copy_array)
 
   c = SCHEME_BIGLEN(n);
 
-  o = (Scheme_Object *)scheme_malloc(sizeof(Scheme_Bignum));
+  o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
 
   o->type = scheme_bignum_type;
   SCHEME_BIGLEN(o) = c;
@@ -428,7 +428,7 @@ static Scheme_Object *bignum_add(Scheme_Object *o, bigdig **buffer, int *size,
   vp = ap;
   
   if (!o) {
-    o = (Scheme_Object *)scheme_malloc(sizeof(Scheme_Bignum));
+    o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
     o->type = scheme_bignum_type;
   }
   SCHEME_BIGPOS(o) = vp;
@@ -626,7 +626,7 @@ static Scheme_Object *bignum_multiply(Small_Bignum *rsmall,
   if (rsmall)
     r = (Scheme_Object *)rsmall;
   else
-    r = (Scheme_Object *)scheme_malloc(sizeof(Scheme_Bignum));
+    r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   r->type = scheme_bignum_type;
   SCHEME_BIGPOS(r) = ((SCHEME_BIGPOS(a) && SCHEME_BIGPOS(b))
 		      || (!SCHEME_BIGPOS(a) && !SCHEME_BIGPOS(b)));
@@ -920,7 +920,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     hishift = (LOG_BIG_RADIX - loshift);
 
     rl = nl - offset;
-    ra = MALLOC_N(bigdig, rl);
+    ra = MALLOC_N_ATOMIC(bigdig, rl);
     
     for (i = rl - 1; i--; )
       ra[i] = (na[i + offset] >> loshift) | ((na[i + offset + 1] << hishift) & BIG_MAX);
@@ -945,7 +945,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
     loshift = (LOG_BIG_RADIX - hishift);
 
     rl = nl + offset + 1;
-    ra = MALLOC_N(bigdig, rl);
+    ra = MALLOC_N_ATOMIC(bigdig, rl);
     
     top = rl - 1;
     for (i = 0; i < offset; i++)
@@ -959,7 +959,7 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
   while (rl && !ra[rl - 1])
     --rl;
 
-  r = (Scheme_Object *)scheme_malloc(sizeof(Scheme_Bignum));
+  r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
   r->type = scheme_bignum_type;
   SCHEME_BIGPOS(r) = SCHEME_BIGPOS(n);
   SCHEME_BIGLEN(r) = rl;

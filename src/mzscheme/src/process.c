@@ -119,6 +119,7 @@ static int swapping = 0;
 #endif
 
 typedef struct ActiveWill {
+  MZTAG_IF_REQUIRED
   Scheme_Object *o;
   Scheme_Object *proc;
   struct WillExecutor *w;  /* Set to will executor when executed */
@@ -132,6 +133,7 @@ typedef struct WillExecutor {
 } WillExecutor;
 
 typedef struct WillRegistration {
+  MZTAG_IF_REQUIRED
   Scheme_Object *proc;
   WillExecutor *w;
 } WillRegistration;
@@ -245,18 +247,21 @@ static Scheme_Config *initial_config;
 static Scheme_Object **config_map;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   unsigned long key;
   Scheme_Object *guard;
   Scheme_Object *defval;
 } ParamData;
 
 typedef struct ParamExtensionRecData {
+  MZTAG_IF_REQUIRED
   Scheme_Object *p;
   unsigned long key;
 } ParamExtensionRecData;
 
 typedef struct ParamExtensionRec {
-  ParamExtensionRecData *data; /* atomic */
+  MZTAG_IF_REQUIRED
+  ParamExtensionRecData *data; /* weak content */
   struct ParamExtensionRec *next;
 } ParamExtensionRec;
 
@@ -273,6 +278,7 @@ typedef struct Scheme_Process_Manager_Hop {
 } Scheme_Process_Manager_Hop;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Object *key;
   void (*f)(Scheme_Env *);
 } Scheme_NSO;
@@ -638,8 +644,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
   ATSTEP("initing tailbuf");
 
-  process->tail_buffer = (Scheme_Object **)scheme_malloc(buffer_init_size 
-							 * sizeof(Scheme_Object *));
+  process->tail_buffer = MALLOC_N(Scheme_Object *, buffer_init_size);
   process->tail_buffer_size = buffer_init_size;
 #ifdef AGRESSIVE_ZERO_TB
   process->tail_buffer_set = 0;
@@ -685,7 +690,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
      on it, which is what registering with a manager does. Instead, we
      register a weak indirection with the manager. That way, the thread
      (and anything it points to) can be collected one GC cycle earlier. */
-  process->mr_hop = MALLOC_ONE_ATOMIC(Scheme_Process_Manager_Hop);
+  process->mr_hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
   process->mr_hop->type = scheme_process_type;
   process->mr_hop->p = process;
 
@@ -860,9 +865,9 @@ Scheme_Manager *scheme_make_manager(Scheme_Manager *parent)
 
   m->alloc = m->count = 0;
 
-  m->parent = MALLOC_ONE_ATOMIC(Scheme_Manager*);
-  m->children = MALLOC_ONE_ATOMIC(Scheme_Manager*);
-  m->sibling = MALLOC_ONE_ATOMIC(Scheme_Manager*);
+  m->parent = MALLOC_ONE_WEAK(Scheme_Manager*);
+  m->children = MALLOC_ONE_WEAK(Scheme_Manager*);
+  m->sibling = MALLOC_ONE_WEAK(Scheme_Manager*);
 
   *(m->children) = NULL;
   *(m->sibling) = NULL;
@@ -917,10 +922,10 @@ Scheme_Manager_Reference *scheme_add_managed(Scheme_Manager *m, Scheme_Object *o
   Scheme_Object **b;
   Scheme_Manager_Reference *mr;
 
-  b = MALLOC_ONE_ATOMIC(Scheme_Object*);
+  b = MALLOC_ONE_WEAK(Scheme_Object*);
   *b = o;
 
-  mr = MALLOC_ONE_ATOMIC(Scheme_Manager_Reference);
+  mr = MALLOC_ONE_WEAK_RT(Scheme_Manager_Reference);
 
   if (!m)
     m = (Scheme_Manager *)scheme_get_param(scheme_config, MZCONFIG_MANAGER);
@@ -1037,8 +1042,7 @@ void scheme_set_tail_buffer_size(int s)
 
     for (p = scheme_first_process; p; p = p->next)
       if (p->tail_buffer_size < s) {
-	p->tail_buffer = (Scheme_Object **)scheme_malloc(buffer_init_size 
-							 * sizeof(Scheme_Object *));
+	p->tail_buffer = MALLOC_N(Scheme_Object *, buffer_init_size);
 	p->tail_buffer_size = buffer_init_size;
       }
   }
@@ -1273,7 +1277,7 @@ static void do_start_child(Scheme_Process *child, Scheme_Process *rtp,
   sc_eval = child_eval;
 
   {
-    ThreadStartData *th = scheme_malloc(sizeof(ThreadStartData));
+    ThreadStartData *th = MALLOC_ONE_RT(ThreadStartData);
     
     th->sc_child = sc_child;
     th->sc_rtp = sc_rtp;
@@ -1452,11 +1456,13 @@ void scheme_add_namespace_option(Scheme_Object *key, void (*f)(Scheme_Env *))
 {
   Scheme_NSO *old = namespace_options;
   
-  namespace_options = (Scheme_NSO *)scheme_malloc((num_nsos + 1) 
-						  * sizeof(Scheme_NSO));
+  namespace_options = MALLOC_N_RT(Scheme_NSO, (num_nsos + 1));
 
   memcpy(namespace_options, old, num_nsos * sizeof(Scheme_NSO));
 
+#ifdef MZTAG_REQUIRED
+  namespace_options[num_nsos].type = scheme_rt_namespace_option;
+#endif
   namespace_options[num_nsos].key = key;
   namespace_options[num_nsos].f = f;
   
@@ -2456,7 +2462,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
   SCHEME_USE_FUEL(25);
 
-  np = MALLOC_ONE(Scheme_Process);
+  np = MALLOC_ONE_TAGGED(Scheme_Process);
   np->type = scheme_process_type;
   np->running = MZTHREAD_RUNNING;
   np->ran_some = 1;
@@ -2516,7 +2522,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   np->nester = p;
   p->nestee = np;
 
-  np->mr_hop = MALLOC_ONE_ATOMIC(Scheme_Process_Manager_Hop);
+  np->mr_hop = MALLOC_ONE_WEAK_RT(Scheme_Process_Manager_Hop);
   np->mr_hop->type = scheme_process_type;
   np->mr_hop->p = np;
   np->mref = scheme_add_managed(mgr, (Scheme_Object *)np->mr_hop, NULL, NULL, 0);
@@ -2610,11 +2616,10 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
     guard = ((ParamData *)data)->guard;
     if (guard) {
       Scheme_Object *v;
-      long l;
       
       v = _scheme_apply(guard, 1, argv);
-      argv2 = (Scheme_Object **)scheme_malloc(l = (argc * sizeof(Scheme_Object **)));
-      memcpy(argv2, argv, l);
+      argv2 = MALLOC_N(Scheme_Object *, argc);
+      memcpy(argv2, argv, argc * sizeof(Scheme_Object **));
       argv2[0] = v;
     } else
       argv2 = argv;
@@ -2638,7 +2643,10 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
   if (argc > 1)
     scheme_check_proc_arity("make-parameter", 1, 1, argc, argv);
 
-  data = MALLOC_ONE(ParamData);
+  data = MALLOC_ONE_RT(ParamData);
+#ifdef MZTAG_REQUIRED
+  data->type = scheme_rt_param_data;
+#endif
   data->key = (unsigned long)k;
   data->defval = argv[0];
   data->guard = ((argc > 1) ? argv[1] : NULL);
@@ -2660,9 +2668,15 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
   }
 
   erec = MALLOC_ONE(ParamExtensionRec);
+#ifdef MZTAG_REQUIRED
+  erec->type = scheme_rt_param_ext_rec;
+#endif
   erec->next = param_ext_recs;
   param_ext_recs = erec;
-  erec->data = MALLOC_ONE_ATOMIC(ParamExtensionRecData);
+  erec->data = MALLOC_ONE_WEAK_RT(ParamExtensionRecData);
+#ifdef MZTAG_REQUIRED
+  erec->data->type = scheme_rt_param_ext_rec_data;
+#endif
   erec->data->p = p;
   erec->data->key = (unsigned long)k;
 
@@ -2908,7 +2922,10 @@ static void activate_will(void *o, void *data)
   ActiveWill *a;
   WillExecutor *w;
     
-  a = MALLOC_ONE(ActiveWill);
+  a = MALLOC_ONE_RT(ActiveWill);
+#ifdef MZTAG_REQUIRED
+  a->type = scheme_rt_will;
+#endif
   a->o = (Scheme_Object *)o;
   a->proc = r->proc;
   
@@ -2968,7 +2985,10 @@ static Scheme_Object *register_will(int argc, Scheme_Object **argv)
     scheme_wrong_type("will-register", "will-executor", 0, argc, argv);
   scheme_check_proc_arity("will-register", 1, 2, argc, argv);
 
-  r = MALLOC_ONE(WillRegistration);
+  r = MALLOC_ONE_RT(WillRegistration);
+#ifdef MZTAG_REQUIRED
+  r->type = scheme_rt_will_registration;
+#endif
   r->proc = argv[2];
   r->w = (WillExecutor *)argv[0];
 

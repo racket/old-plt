@@ -107,11 +107,13 @@ typedef struct Scheme_Indexed_String {
 } Scheme_Indexed_String;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   FILE *f;
   int regfile;
 } Scheme_Input_File;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   FILE *f;
 } Scheme_Output_File;
 
@@ -201,6 +203,7 @@ typedef struct {
 #endif
 
 typedef struct Scheme_Tcp {
+  MZTAG_IF_REQUIRED
   tcp_t tcp;
   int refcount;
   char buffer[TCP_BUFFER_SIZE];
@@ -216,6 +219,7 @@ typedef struct Scheme_Tcp {
 #if defined(UNIX_PROCESSES)
 /* For process & system: */
 typedef struct System_Child {
+  MZTAG_IF_REQUIRED
   pid_t id;
   short done;
   int status;
@@ -1099,6 +1103,7 @@ void scheme_add_fd_eventmask(void *fds, int mask)
 
 #ifdef WINDOWS_PROCESSES
 typedef struct Scheme_Thread_Memory {
+  MZTAG_IF_REQUIRED
   void *handle;
   void *subhandle;
   struct Scheme_Thread_Memory *prev;
@@ -1118,7 +1123,10 @@ static void init_thread_memory()
   /* We start with a pre-allocated tm because we
      want to register a thread before performing any
      allocations. */
-  tm_next = MALLOC_ONE(Scheme_Thread_Memory);
+  tm_next = MALLOC_ONE_RT(Scheme_Thread_Memory);
+#ifdef MZTAG_REQUIRED
+  tm_next->type = scheme_rt_thread_memory;
+#endif
 
   /* scheme_init_process() will replace these: */
   GC_collect_start_callback = scheme_suspend_remembered_threads;
@@ -1134,7 +1142,10 @@ struct Scheme_Thread_Memory *scheme_remember_thread(void *t)
     tm->next->prev = tm;
   tm_start = tm;
 
-  tm_next = MALLOC_ONE(Scheme_Thread_Memory);
+  tm_next = MALLOC_ONE_RT(Scheme_Thread_Memory);
+#ifdef MZTAG_REQUIRED
+  tm_next->type = scheme_rt_thread_memory;
+#endif
 
   return tm;
 }
@@ -1899,7 +1910,10 @@ _scheme_make_named_file_input_port(FILE *fp, const char *filename,
     scheme_signal_error("make-file-input-port(internal): "
 			"null file pointer");
   
-  fip = (Scheme_Input_File *)scheme_malloc(sizeof(Scheme_Input_File));
+  fip = MALLOC_ONE_RT(Scheme_Input_File);
+#ifdef MZTAG_REQUIRED
+  fip->type = scheme_rt_input_file;
+#endif
 
   fip->f = fp;
   fip->regfile = regfile;
@@ -2028,7 +2042,10 @@ make_fd_input_port(int fd, const char *filename)
   Scheme_Input_Port *ip;
   Scheme_FD *fip;
 
-  fip = MALLOC_ONE(Scheme_FD);
+  fip = MALLOC_ONE_RT(Scheme_FD);
+#ifdef MZTAG_REQUIRED
+  fip->type = scheme_rt_input_fd;
+#endif
 
   fip->fd = fd;
   fip->bufcount = 0;
@@ -2061,6 +2078,7 @@ static void direct_cons_putchar(int c) { }
 # endif
 
 typedef struct osk_console_input {
+  MZTAG_IF_REQUIRED
   int count, size, ready;
   unsigned char *buffer;
   struct osk_console_input *next; /* typeahead */
@@ -2079,6 +2097,9 @@ osk_char_ready (Scheme_Input_Port *port)
       osk = osk->next;
     else {
       osk->next = MALLOC_ONE(osk_console_input);
+#ifdef MZTAG_REQUIRED
+      osk->type = scheme_rt_osk_console_input;
+#endif
       osk = osk->next;
       osk->count = osk->size = osk->ready = 0;
       osk->buffer = NULL;
@@ -2189,7 +2210,10 @@ make_oskit_console_input_port()
   Scheme_Input_Port *ip;
   osk_console_input *osk;
   
-  osk = (osk_console_input *)scheme_malloc(sizeof(osk_console_input));
+  osk = MALLOC_ONE_RT(osk_console_input);
+#ifdef MZTAG_REQUIRED
+  osk->type = scheme_rt_oskit_console_input;
+#endif
 
   osk->count = osk->size = osk->ready = 0;
   osk->buffer = NULL;
@@ -2230,6 +2254,7 @@ void scheme_check_keyboard_input(void)
 #define TIF_BUFFER 500
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   FILE *fp;
   OS_THREAD_TYPE th;             /* worker thread */
   OS_SEMAPHORE_TYPE try_sema;    /* hit when a char is wanted */
@@ -2550,7 +2575,10 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
   if (!tested)
     return scheme_make_named_file_input_port(fp, name);
     
-  tip = (Tested_Input_File *)scheme_malloc(sizeof(Tested_Input_File));
+  tip = MALLOC_ONE_RT(Tested_Input_File);
+#ifdef MZTAG_REQUIRED
+  tip->type = scheme_rt_tested_input_file;
+#endif
 
   tip->fp = fp;
 
@@ -2673,7 +2701,10 @@ make_indexed_string (const char *str, long len)
 {
   Scheme_Indexed_String *is;
 
-  is = (Scheme_Indexed_String *)scheme_malloc(sizeof(Scheme_Indexed_String));
+  is = MALLOC_ONE_RT(Scheme_Indexed_String);
+#ifdef MZTAG_REQUIRED
+  is->type = scheme_rt_indexed_string;
+#endif
 
   if (str) {
     if (len < 0) {
@@ -2906,7 +2937,10 @@ scheme_make_file_output_port(FILE *fp)
     scheme_signal_error("make-file-out-port(internal): "
 			"null file pointer");
   
-  fop = (Scheme_Output_File *)scheme_malloc(sizeof(Scheme_Output_File));
+  fop = MALLOC_ONE_RT(Scheme_Output_File);
+#ifdef MZTAG_REQUIRED
+  fop->type = scheme_rt_output_file;
+#endif
 
   fop->f = fp;
 
@@ -2991,7 +3025,10 @@ make_fd_output_port(int fd)
 {
   Scheme_FD *fop;
 
-  fop = MALLOC_ONE(Scheme_FD);
+  fop = MALLOC_ONE_RT(Scheme_FD);
+#ifdef MZTAG_REQUIRED
+  fop->type = scheme_rt_input_fd;
+#endif
 
   fop->fd = fd;
   fop->bufcount = 0;
@@ -3074,7 +3111,7 @@ make_input_port(int argc, Scheme_Object *argv[])
   if (argc > 3)
     scheme_check_proc_arity("make-input-port", 0, 3, argc, argv);
   
-  copy = (Scheme_Object **)scheme_malloc_stubborn(argc * sizeof(Scheme_Object *));
+  copy = MALLOC_N_STUBBORN(Scheme_Object *, argc);
   memcpy(copy, argv, argc * sizeof(Scheme_Object *));
   scheme_end_stubborn_change((void *)copy);
 
@@ -3101,7 +3138,7 @@ make_output_port (int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-output-port", 1, 0, argc, argv);
   scheme_check_proc_arity("make-output-port", 0, 1, argc, argv);
 
-  copy = (Scheme_Object **)scheme_malloc_stubborn(2 * sizeof(Scheme_Object *));
+  copy = MALLOC_N_STUBBORN(Scheme_Object *, 2);
   memcpy(copy, argv, 2 * sizeof(Scheme_Object *));
   scheme_end_stubborn_change((void *)copy);
 
@@ -4057,6 +4094,7 @@ static Scheme_Object *global_port_print_handler(int argc, Scheme_Object *argv[])
 }
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   Scheme_Config *config;
   Scheme_Object *port;
   Scheme_Process *p;
@@ -4160,7 +4198,10 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   } else
     scheme_ungetc(ch, port);
 
-  lhd = MALLOC_ONE(LoadHandlerData);
+  lhd = MALLOC_ONE_RT(LoadHandlerData);
+#ifdef MZTAG_REQUIRED
+  ldh->type = scheme_rt_load_handler_data;
+#endif
   lhd->p = p;
   lhd->config = config;
   lhd->port = port;
@@ -4170,6 +4211,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
 }
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   int param;
   Scheme_Object *filename;
   Scheme_Config *config;
@@ -4219,7 +4261,10 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   /* Calculate load directory */
   load_dir = scheme_get_file_directory(filename);
 
-  ld = MALLOC_ONE(LoadData);
+  ld = MALLOC_ONE_RT(LoadData);
+#ifdef MZTAG_REQUIRED
+  ld->type = scheme_rt_load_data;
+#endif
   ld->param = handler_param;
   ld->filename = scheme_make_sized_string((char *)filename, -1, 0);
   ld->config = config;
@@ -4529,6 +4574,7 @@ void scheme_flush_output(Scheme_Object *port)
 }
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   unsigned char *buf;
   long buflen;
   int bufstart, bufend;
@@ -4751,7 +4797,10 @@ void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
   Scheme_Input_Port *readp;
   Scheme_Output_Port *writep;
 
-  pipe = (Scheme_Pipe *)scheme_malloc(sizeof(Scheme_Pipe));
+  pipe = MALLOC_ONE_RT(Scheme_Pipe);
+#ifdef MZTAG_REQUIRED
+  pipe->type = scheme_rt_pipe;
+#endif
   pipe->buflen = 100;
   pipe->buf = (unsigned char *)scheme_malloc_atomic(pipe->buflen);
   pipe->bufstart = pipe->bufend = 0;
@@ -4874,6 +4923,7 @@ static void child_done(int ingored)
 
 #ifdef BEOS_PROCESSES
 typedef struct {
+  MZTAG_IF_REQUIRED
   thread_id t;
   status_t result;
   int done;
@@ -4995,7 +5045,7 @@ static char *cmdline_protect(char *s)
     char *p;
     int wrote_slash = 0;
     
-    naya = malloc(strlen(s) + 3 + 3*has_quote);
+    naya = scheme_malloc_atomic(strlen(s) + 3 + 3*has_quote);
     naya[0] = '"';
     for (p = naya + 1; *s; s++) {
       if (*s == '"') {
@@ -5055,9 +5105,13 @@ static void delete_done_sem(void *_p)
 
 static long spawnv(int type, char *command, const char *  const *argv)
 {
-  BeOSProcess *p = MALLOC_ONE(BeOSProcess);
+  BeOSProcess *p = MALLOC_ONE_RT(BeOSProcess);
   sigset_t sigs;
   int i;
+
+#ifdef MZTAG_REQUIRED
+  p->type = scheme_rt_beos_process;
+#endif
 
   for (i = 0; argv[i]; i++);
 
@@ -5125,7 +5179,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
     argv = NULL;
     command = SCHEME_STR_VAL(args[0]);
   } else  {
-    argv = (char **)scheme_malloc((c + 1) * sizeof(char *));
+    argv = MALLOC_N(char *, c + 1);
     argv[0] = scheme_expand_filename(SCHEME_STR_VAL(args[0]),
 				     SCHEME_STRTAG_VAL(args[0]),
 				     name, NULL);
@@ -5274,7 +5328,10 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
       }
     }
 
-    sc = MALLOC_ONE(System_Child);
+    sc = MALLOC_ONE_RT(System_Child);
+#ifdef MZTAG_REQUIRED
+    sc->type = scheme_rt_system_child;
+#endif
     sc->id = 0;
     sc->done = 0;
 
@@ -5558,7 +5615,7 @@ static void winsock_remember(tcp_t s)
   } else
     new_size = 2 * wsr_size;
 
-  naya = MALLOC_N(tcp_t, new_size);
+  naya = MALLOC_N_ATOMIC(tcp_t, new_size);
   for (i = 0; i < wsr_size; i++)
     naya[i] = wsr_array[i];
 
@@ -5637,6 +5694,7 @@ typedef struct TCPiopbX {
 } TCPiopbX;
 
 typedef struct {
+  MZTAG_IF_REQUIRED
   wdsEntry e[2];
   TCPiopbX *xpb;
 } WriteData;
@@ -5848,6 +5906,7 @@ static TCPiopbX *mac_make_xpb(Scheme_Tcp *data)
 {
   TCPiopbX *xpb;
 
+  /* FIXME: no GC tag... */
   xpb = (TCPiopbX *)scheme_malloc(sizeof(TCPiopbX));
   
   memcpy(xpb, data->tcp.create_pb, sizeof(TCPiopb));
@@ -5868,6 +5927,7 @@ static int mac_tcp_make(TCPiopbX **_xpb, TCPiopb **_pb, Scheme_Tcp **_data)
 
   data = make_tcp_port_data(2);
   
+  /* FIXME: no GC tag... */
   xpb = (TCPiopbX *)scheme_malloc(sizeof(TCPiopbX));
   xpb->next = active_pbs;
   active_pbs = xpb;
@@ -6172,7 +6232,10 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
 {
   Scheme_Tcp *data;
   
-  data = (Scheme_Tcp *)scheme_malloc(sizeof(Scheme_Tcp));
+  data = MALLOC_ONE_RT(Scheme_Tcp);
+#ifdef MZTAG_REQUIRED
+  data->type = scheme_rt_tcp;
+#endif
 #ifdef USE_SOCKETS_TCP
   data->tcp = tcp;
 #endif
@@ -6496,10 +6559,13 @@ static void tcp_write_string(char *s, long len, Scheme_Output_Port *port)
 	int nayac;
 	
 	nayac = (2 * num_tcp_send_buffers) + 1;
-	naya = (void *)scheme_malloc(sizeof(void *) * nayac);
+	naya = MALLOC_N(void *, nayac);
 	memcpy(naya, tcp_send_buffers, sizeof(void *) * num_tcp_send_buffers);
 	for (i = num_tcp_send_buffers; i < nayac; i++) {
-	  wd = (WriteData *)scheme_malloc(sizeof(WriteData) * 2);
+	  wd = MALLOC_ONE_RT(WriteData);
+#ifdef MZTAG_REQUIRED
+	  wd->type = scheme_rt_write_data;
+#endif
 	  wd->xpb = NULL;
 	  e = wd->e;
 	  e[0].ptr = NULL;
@@ -6665,7 +6731,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     struct hostInfo *dest_host;
     Scheme_Object *v[2];
     
-    dest_host = MALLOC_ONE(struct hostInfo);
+    dest_host = MALLOC_ONE_ATOMIC(struct hostInfo);
     if ((errNo = tcp_addr(address, dest_host))) {
       errpart = 1;
       errmsg = " host not found";
@@ -6869,7 +6935,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     int i;
     Scheme_Tcp **datas, *data;
 
-    datas = (Scheme_Tcp **)scheme_malloc(sizeof(Scheme_Tcp *) * backlog);
+    datas = MALLOC_N(Scheme_Tcp *, backlog);
 
     for (i = 0; i < backlog; i++) {
       if ((errid = mac_tcp_listen(id, &data))) {
@@ -6883,7 +6949,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     }
 
     if (!errid) {
-      listener_t *l = MALLOC_ONE(listener_t);
+      listener_t *l = MALLOC_ONE_TAGGED(listener_t);
 
       l->type = scheme_listener_type;
       l->portid = id;
@@ -6924,7 +6990,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #endif
       if (!bind(s, (struct sockaddr *)&addr, sizeof(addr)))
 	if (!listen(s, backlog)) {
-	  listener_t *l = MALLOC_ONE(listener_t);
+	  listener_t *l = MALLOC_ONE_TAGGED(listener_t);
 
 	  l->type = scheme_listener_type;
 	  l->s = s;
@@ -7174,6 +7240,7 @@ static Scheme_Object *tcp_listener_p(int argc, Scheme_Object *argv[])
 #if defined(WIN32_FD_HANDLES) || defined(USE_BEOS_PORT_THREADS)
 typedef struct 
 {
+  MZTAG_IF_REQUIRED
   fd_set *rd, *wr, *ex;
 } Tcp_Select_Info;
 
@@ -7433,7 +7500,10 @@ static void default_sleep(float v, void *fds)
 	struct Scheme_Thread_Memory *thread_memory;
 #endif
 
-	info = MALLOC_ONE(Tcp_Select_Info);
+	info = MALLOC_ONE_RT(Tcp_Select_Info);
+#ifdef MZTAG_REQUIRED
+	info->type = scheme_rt_tcp_select_info;
+#endif
 
 	fake = socket(MZ_PF_INET, SOCK_STREAM, 0);
 	FD_SET(fake, ex);

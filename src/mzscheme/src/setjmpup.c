@@ -64,7 +64,7 @@ extern int GC_did_mark_stack_overflow(void);
 
 #define get_copy(s_c) (((CopiedStack *)s_c)->_stack_copy)
 
-#define MALLOC_LINK() MALLOC_ONE_ATOMIC(CopiedStack*)
+#define MALLOC_LINK() MALLOC_ONE_WEAK(CopiedStack*)
 #ifdef USE_TAGGED_ALLOCATION
 extern void *scheme_malloc_stack(size_t);
 # define MALLOC_STACK(size) scheme_malloc_stack(size)

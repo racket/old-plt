@@ -130,41 +130,42 @@
 			  (append find-unix-libs unix-libs))))
 	   
 	   ;; Add libs for Windows:
-	   (with-new-flags
-	    current-standard-link-libraries
-	    (if is-win?
-		(append (map 
-			 (lambda (l)
-			   (build-path sys-path "lib" (format "~a.lib" l)))
-			 find-windows-libs)
-			windows-libs)
-		null)
-	    
-	    ;; Extra stuff:
-	    (with-new-flags
-	     current-extension-linker-flags 
-	     (case mach-id
-	       [(rs6k-aix) (list "-lc")]
-	       [else null])
-	     
-	     (define (delete/continue x)
-	       (with-handlers ([(lambda (x) #t) void])
-		 (delete-file x)))
+	   (parameterize ([current-make-standard-link-libraries
+			   (let ([orig (current-make-standard-link-libraries)])
+			     (if is-win?
+				 (lambda ()
+				   (append (orig)
+					   (map 
+					    (lambda (l)
+					      (build-path sys-path "lib" (format "~a.lib" l)))
+					    find-windows-libs)
+					   windows-libs))
+				 orig))])
+	     ;; Extra stuff:
+	     (with-new-flags
+	      current-extension-linker-flags 
+	      (case mach-id
+		[(rs6k-aix) (list "-lc")]
+		[else null])
+	      
+	      (define (delete/continue x)
+		(with-handlers ([(lambda (x) #t) void])
+		  (delete-file x)))
 
-	     (make-directory* dir)
+	      (make-directory* dir)
 
-	     (last-chance-k
-	      (lambda ()
-		(make/proc
-		 (list (list file.so 
-			     (list file.o)
-			     (lambda ()
-			       (link-extension #f (list file.o) file.so)))
-		       
-		       (list file.o 
-			     (append (list file.c)
-				     headers
-				     extra-depends)
-			     (lambda ()
-			       (compile-extension #f file.c file.o ()))))
-		 #()))))))))))))
+	      (last-chance-k
+	       (lambda ()
+		 (make/proc
+		  (list (list file.so 
+			      (list file.o)
+			      (lambda ()
+				(link-extension #f (list file.o) file.so)))
+			
+			(list file.o 
+			      (append (list file.c)
+				      headers
+				      extra-depends)
+			      (lambda ()
+				(compile-extension #f file.c file.o ()))))
+		  #()))))))))))))

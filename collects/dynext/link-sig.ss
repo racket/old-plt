@@ -10,6 +10,6 @@
      current-extension-linker-flags
      current-make-link-input-strings
      current-make-link-output-strings
-     current-standard-link-libraries
+     current-make-standard-link-libraries
      use-standard-linker
      link-variant)))

@@ -90,24 +90,24 @@ Linking parameters:
      input file and returns a list of strings for the command line.
      The default is `list'.
 
-> current-make-link-output-strings - procedure that takes an output
-    file and returns a list of strings for the command line.  Windows:
-    "file" -> (list "/Fefile") for cl.exe, something like (list "-e"
-    "_dll_entry@12" "-o" "file") for ld.exe, something complex for
-    ilink32.exe; Unix: "file" -> (list "-o" "file")
+>  current-make-link-output-strings - procedure that takes an output
+     file and returns a list of strings for the command line.
+     Windows: "file" -> (list "/Fefile") for cl.exe, something like
+     (list "-e" "_dll_entry@12" "-o" "file") for ld.exe, something
+     complex for ilink32.exe; Unix: "file" -> (list "-o" "file")
 
->  current-standard-link-libraries - list of file paths; For
-    most platforms, the default is 
+>  current-make-standard-link-libraries - list of file paths; For
+     most platforms with the 'normal variant, the default is 
      (list (build-path (collection-path "mzscheme" "lib") 
                        (system-library-subpath)
                        "mzdyn.o"))
 
-> link-variant - a symbol, either 'normal or '3m
+>  link-variant - a symbol, either 'normal or '3m
 
 
-> (use-standard-linker name) sets the above parameters for a
-    particular known linker. The acceptable names are 
-    platforms-specific, the same as for use-standard-compiler.
+>  (use-standard-linker name) sets the above parameters for a
+     particular known linker. The acceptable names are
+     platforms-specific, the same as for use-standard-compiler.
 
 Under MacOS, none of these options are used. The linker always uses
 CodeWarrior if it can be found and the linking options cannot be

@@ -160,15 +160,16 @@
 								[(3m) "3m"])))))
 
       ;; See doc.txt:
-      (define current-standard-link-libraries
+      (define current-make-standard-link-libraries
 	(make-parameter
-	 (case (system-type)
-	   [(unix macos macosx) (get-unix/macos-link-libraries)]
-	   [(windows) (make-win-link-libraries win-gcc? win-borland?)])
-	 (lambda (l)
-	   (unless (and (list? l) (andmap string? l))
-	     (raise-type-error 'current-standard-link-libraries "list of strings" l))
-	   l)))
+	 (lambda ()
+	   (case (system-type)
+	     [(unix macos macosx) (get-unix/macos-link-libraries)]
+	     [(windows) (make-win-link-libraries win-gcc? win-borland?)]))
+	 (lambda (p)
+	   (unless (and (procedure? p) (procedure-arity-includes? p 0))
+	     (raise-type-error 'current-make-standard-link-libraries "procedure (arity 0)" p))
+	   p)))
       
       ;; ---- Function to install standard linker parameters --------------------
 
@@ -183,7 +184,7 @@
 	      (current-extension-linker-flags (get-unix-link-flags))
 	      (current-make-link-input-strings (lambda (s) (list s)))
 	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
-	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
+	      (current-make-standard-link-libraries (lambda () (get-unix/macos-link-libraries)))]
 	     [else (bad-name name)])]
 	  [(windows)
 	   (case name
@@ -194,7 +195,7 @@
 		      (current-extension-linker-flags win-gcc-linker-flags)
 		      (current-make-link-input-strings (lambda (s) (list s)))
 		      (current-make-link-output-strings win-gcc-link-output-strings)
-		      (current-standard-link-libraries (make-win-link-libraries #t #f)))]
+		      (current-make-standard-link-libraries (lambda () (make-win-link-libraries #t #f))))]
 	     [(borland) (let ([f (find-executable-path "ilink32.exe" #f)])
 			  (unless f
 			    (error 'use-standard-linker "cannot find ilink32.exe"))
@@ -202,7 +203,7 @@
 			  (current-extension-linker-flags borland-linker-flags)
 			  (current-make-link-input-strings (lambda (s) (list s)))
 			  (current-make-link-output-strings borland-link-output-strings)
-			  (current-standard-link-libraries (make-win-link-libraries #f #t)))]
+			  (current-make-standard-link-libraries (lambda () (make-win-link-libraries #f #t))))]
 	     [(msvc) (let ([f (find-executable-path "cl.exe" #f)])
 		       (unless f
 			 (error 'use-standard-linker "cannot find MSVC's cl.exe"))
@@ -210,7 +211,7 @@
 		       (current-extension-linker-flags msvc-linker-flags)
 		       (current-make-link-input-strings (lambda (s) (list s)))
 		       (current-make-link-output-strings msvc-link-output-strings)
-		       (current-standard-link-libraries (make-win-link-libraries #f)))]
+		       (current-make-standard-link-libraries (lambda () (make-win-link-libraries #f #f))))]
 	     [else (bad-name name)])]
 	  [(macos)
 	   (case name
@@ -218,7 +219,7 @@
 	      (current-extension-linker-flags null)
 	      (current-make-link-input-strings (lambda (s) (list s)))
 	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
-	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
+	      (current-make-standard-link-libraries (lambda () (get-unix/macos-link-libraries)))]
 	     [else (bad-name name)])]))
 
       ;; ---- The link driver for each platform --------------------
@@ -229,7 +230,7 @@
 	    (if c
 		(let* ([output-strings
 			((current-make-link-output-strings) out)]
-		       [libs (current-standard-link-libraries)]
+		       [libs ((current-make-standard-link-libraries))]
 		       [command 
 			(append 
 			 (list c)

@@ -56,7 +56,6 @@
 			      (build-path 3m-dir "mzssl.c")))
 			    void)
 	  (parameterize ([link-variant '3m])
-	    (use-standard-linker 'cc) ; reset library flags
 	    (go (build-path 3m-dir "mzssl.c")))))))
 
   (provide pre-installer))

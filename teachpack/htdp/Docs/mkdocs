@@ -1,5 +1,5 @@
 #!/bin/sh
-string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/x-mzscheme -r $0 "$@"
+string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/mzscheme -r $0 "$@"
 
 ; This list determines the order of libraries in the index file:
 
@@ -41,7 +41,7 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/x-mzscheme -r $0 "$@"
 			     'up ; plt dir
 			     "collects"
 			     "doc"
-			     "teach"))
+			     "teachpack"))
 
 (unless (directory-exists? dest-dir)
   (make-directory dest-dir))
@@ -96,7 +96,7 @@ string=? ; exec ${HOMESCHEME-/home/scheme}/Executables/x-mzscheme -r $0 "$@"
 
 (with-output-to-file "index.thtml"
   (lambda ()
-    (printf "#define LIBNAME teachpack~n")
+    (printf "#define LIBNAME Teachpack for How to Design Programs~n")
     (printf "#include head.tinc~n")
     (printf "<UL>~n")
     (for-each

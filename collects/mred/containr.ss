@@ -44,6 +44,10 @@
     ; default spacing between items.
     (define const-default-spacing 10)
     
+    ; minimum sizes for buttons.
+    (define min-button-height 20)
+    (define min-button-width 60)
+
     (define counter 0)
     
     ; this structure holds the information that a child will need to send
@@ -225,25 +229,23 @@
 		(list min-width min-height))])
 	  (sequence
 	    (apply super-init (apply make-default-size args))
-	    (let ([x (get-width)]
-		  [y (get-height)])
-	      (set! min-width x)
-	      (set! min-height y)
-
-	      (set! object-ID counter)
-	      (set! counter (add1 counter))
-	      (set-default-posn)
-	      (let ([parent (car args)])  ; this, at least, is consistent
-		(cond
-		  [(or (is-a? parent frame%)
-		       (is-a? parent dialog-box%))
-		   (send parent insert-panel this)]
-		  [(is-a? parent panel%)
-		   (send parent add-child this)]
-		  [else (error 'init
-			  "Expected a mred:frame%, mred:dialog-box%, ~s ~s"
-			  "or mred:panel% for parent.  Received"
-			  parent)])))))))
+	    (set! min-width (get-width))
+	    (set! min-height (get-height))
+	    
+	    (set! object-ID counter)
+	    (set! counter (add1 counter))
+	    (set-default-posn)
+	    (let ([parent (car args)])  ; this, at least, is consistent
+	      (cond
+		[(or (is-a? parent frame%)
+		     (is-a? parent dialog-box%))
+		 (send parent insert-panel this)]
+		[(is-a? parent panel%)
+		 (send parent add-child this)]
+		[else (error 'init
+			"Expected a mred:frame%, mred:dialog-box%, ~s ~s"
+			"or mred:panel% for parent.  Received"
+			parent)]))))))
     
     ; Justification for make-default-size, and (class item% args ..):
     ; The various classes that we pass through this function do not all
@@ -275,7 +277,21 @@
     ; these next definitions descend classes from the children of wx:item%
     ; which can be inserted into panel% objects.
     (define button%
-      (make-item% wx:button% #t #t standard-make-default-size))
+      (class (make-item% wx:button% #f #f standard-make-default-size) args
+	(inherit
+	  force-redraw
+	  min-width
+	  min-height)
+	(private
+	  [set-min-size
+	    (lambda ()
+	      (set! min-height (max min-button-height min-height))
+	      (set! min-width (max min-button-width min-width))
+	      (force-redraw))])
+	(sequence
+	  (apply super-init args)
+	  (set-min-size))))
+	
     
     (define check-box%
       (make-item% wx:check-box% #f #f standard-make-default-size))

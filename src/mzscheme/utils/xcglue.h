@@ -113,11 +113,7 @@ char objscheme_unbundle_char(Scheme_Object *, const char *);
 /* #define OBJSCHEME_PRIM_METHOD(m) SCHEME_CLSD_PRIMP(m) */
 #define OBJSCHEME_PRIM_METHOD(m) 0
 
-#ifndef WXS_CANT_ASSIGN_STRUCTURES
-#define COPY_JMPBUF(dest, src) (dest = src)
-#else
 #define COPY_JMPBUF(dest, src) memcpy(&dest, &src, sizeof(mz_jmp_buf));
-#endif
 
 typedef Scheme_Object *(*Objscheme_Bundler)(void *);
 void objscheme_install_bundler(Objscheme_Bundler f, long id);

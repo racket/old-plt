@@ -176,7 +176,7 @@ sgc/objects:
 	mkdir sgc/objects
 
 $(GCDIR)/$(OBJDIR)/gc.a: $(GCDIR)/$(OBJDIR)/*.o
-	$(AR) ruv $(GCDIR)/$(OBJDIR)/gc.a $(GCDIR)/$(OBJDIR)/*.o  
+	$(AR) $(ARFLAGS) $(GCDIR)/$(OBJDIR)/gc.a $(GCDIR)/$(OBJDIR)/*.o  
 
 mzlibrary: lib $(LIBDIR) 
 	cd src; $(XMAKE) -e all 

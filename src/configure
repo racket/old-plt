@@ -2388,7 +2388,7 @@ case $OS in
       LIBS="/sw/lib/libdl.a -framework Carbon"
     else
       CFLAGS="$CFLAGS -DXONX "
-      LIBS="-L/sw/lib/ $LIBS -ldl "
+      LIBS="/sw/lib/libdl.a $LIBS"
     fi
     ;;
   *)

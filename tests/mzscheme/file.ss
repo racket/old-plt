@@ -251,7 +251,16 @@
 
 (when (file-exists? "tmp4")
   (delete-file "tmp4"))
-(close-output-port (open-output-file "tmp4"))
+(let ([p (open-output-file "tmp4")])
+  (test #t integer? (port-file-identity p))
+  (let ([q (open-input-file "tmp4")])
+    (test (port-file-identity p) port-file-identity q)
+    (close-input-port q)
+    (err/rt-test (file-position q) exn:i/o:port:closed?)
+    (err/rt-test (port-file-identity q) exn:i/o:port:closed?))
+  (close-output-port p)
+  (err/rt-test (file-position p) exn:i/o:port:closed?)
+  (err/rt-test (port-file-identity p) exn:i/o:port:closed?))
 (err/rt-test (let ([c (make-custodian)])
 	       (let ([p (parameterize ([current-custodian c])
 				      (open-output-file "tmp4" 'replace))])
@@ -566,6 +575,12 @@
   (test (+ 7 4095 4096 4097) file-position test-file)
   (close-output-port test-file)
   (test (+ 7 4095 4096 4097) file-size "tmp2"))
+
+(let ([p (open-input-file "tmp1")]
+      [q (open-input-file "tmp2")])
+  (test #f = (port-file-identity p) (port-file-identity q))
+  (close-input-port p)
+  (close-input-port q))
 
 (define test-file 
   (open-output-file "tmp2" 'truncate))

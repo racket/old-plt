@@ -790,10 +790,13 @@ static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, i
   }
 
   if (!res_pos && carry_out_res == 1) {
-    /* Overflow => -1 */
-    res_digs = quick_digs;
-    res_digs[0] = 1;
-    res_alloc = 1;
+    /* Overflow => we need an extra digit */
+    res_digs = allocate_bigdig_array(res_alloc + 1);
+    for (i = 0; i < res_alloc; i++) {
+      res_digs[i] = 0;
+    }
+    res_digs[res_alloc] = 1;
+    res_alloc = res_alloc + 1;
   } else {
     res_alloc = bigdig_length(res_digs, res_alloc);
   }

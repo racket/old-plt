@@ -127,9 +127,15 @@ string=? ; exec mred -magqvf $0
 		interface-names)))
   'truncate)
 
-(call-with-output-file (build-path framework-dir "mred-interfaces.ss")
+(call-with-output-file (build-path framework-dir "mred-interfacess.ss")
   (lambda (port)
     (pretty-print new-signature-definition port)
+    (newline port))
+  'truncate)
+
+(call-with-output-file (build-path framework-dir "mred-interfaces.ss")
+  (lambda (port)
+    (pretty-print '(require-library "mred-interfacess.ss" "framework") port)
     (newline port)
     (pretty-print new-unit-definition port))
   'truncate)

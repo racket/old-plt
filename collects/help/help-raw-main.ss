@@ -1,28 +1,56 @@
 (unit/sig help:help^
-  (import help:search^)
+  (import (argv)
+	  mzlib:command-line^
+	  help:search^)
+  
+  (define html-prefix "http://www.cs.rice.edu/CS/PLT/unreleased/")
+  (define collects-prefix "http://www.cs.rice.edu/CS/PLT/unreleased/plt/collects/")
 
-  (define re:html (regexp "([.*]plt/collects/doc/)(.*)"))
+  (define re:html (regexp "^.*plt/collects/doc/(.*)$"))
+  (define re:collects (regexp "^.*plt/collects/(.*)$"))
+
+  (define found-something? #f)
 
   (define (add-doc-section name ckey)
-    (void))
+    (printf "<h3>~a</h3>~n" name))
   (define (add-kind-section name ckey)
     (void))
 
   (define (build-url page label)
-    (cond
-     [(regexp-match re:html page)
-      =>
-      (lambda (m)
-	(let ([fst (cadr m)]
-	      [snd (caddr m)])
-	  (format "http://www.cs.rice.edu/CS/PLT/unreleased/~a#~a" snd label)))]
-     [else (format "file:/~a" page)]))
+    (let ([join
+	   (lambda (prefix after)
+	     (if (and after
+		      (not (string=? after "")))
+		 (format "~a~a#~a" collects-prefix after label)
+		 (format "~a~a" collects-prefix after)))])
+      (cond
+	[(regexp-match re:html page) => (lambda (m) (join html-prefix (cadr m)))]
+	[(regexp-match re:collects page) => (lambda (m) (join collects-prefix (cadr m)))]
+	[else page])))
+
+  (define (find-start key name)
+    (let ([l (string-length key)])
+      (let loop ([n 0])
+	(if (string=? key (substring name n (+ n l)))
+	    n
+	    (loop (add1 n))))))
 
   (define (add-choice key name title page label ckey)
-    (printf "<a href=\"~a\">~a</a> in ~a~n"
-	    (build-url page label)
-	    name
-	    title))
+    (set! found-something? #t)
+    (let ([bold-name
+	   (if (string=? "" key)
+	       name
+	       (let* ([start (find-start key name)]
+		      [end (+ start (string-length key))])
+		 (format "~a<b>~a</b>~a"
+			 (substring name 0 start)
+			 key
+			 (substring name end (string-length name)))))])
+
+      (printf "<a href=\"~a\">~a</a> in ~a<br>~n"
+	      (build-url page label)
+	      bold-name
+	      title)))
 
   (define (output . x)
     (let ([s (apply format x)])
@@ -32,7 +60,31 @@
   (define regexp? #f)
   (define exact? #f)
   (define search-level 1)
-  (define given-find "set-alignment")
+  (define given-find (begin "set-alignment" "help desk"))
+
+  (define table
+    `((once-any
+       [("--regexp" "-r")
+	,(lambda (flg) (set! regexp? #t))
+	("Use regular expression matching")]
+       [("--exact" "-e")
+	,(lambda (flg) (set! exact? #t))
+	("Use exact matching")])
+      (once-each
+       [("--search-level" "-s")
+	,(lambda (flg x)
+	   (cond
+	     [(string->number x) => (lambda (n) (set! search-level n))]
+	     [else (error 'raw-help-desk "--search-level: not a number: ~a" x)]))
+	("Set the searching level to <level>" "level")])))
+
+  (parse-command-line
+   "raw-help-desk"
+   argv
+   table
+   (lambda (accum search-string)
+     (set! given-find search-string))
+   '("search string"))
 
   (let/ec k
     (do-search
@@ -43,4 +95,6 @@
      (gensym)
      (lambda ()
        (output "(maximum searches reached)")
-       (k (void))))))
+       (k (void))))
+    (unless found-something?
+      (printf "(nothing found)~n"))))

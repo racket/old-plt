@@ -971,14 +971,22 @@ void wxWindow::GetClipRect(wxArea* area, Rect* clipRect)
 
     parea = ParentArea();
     windowParent = parea->ParentWindow();
-    windowParent->GetClipRect(cParentArea, &parentClipRect);
-    wxMargin parentAreaMargin = area->Margin(cParentArea);
-    parentAreaX = parentAreaMargin.Offset(wxLeft);
-    parentAreaY = parentAreaMargin.Offset(wxTop);
-    ::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
-    ::SectRect(&parentClipRect, clipRect, clipRect);
-    if (clipRect->top < 0) clipRect->top = 0;
-    if (clipRect->left < 0) clipRect->left = 0;
+
+    /* We don't want to clip to the screen anymore, because windows
+       are buffered. Also, the "screen" includes only the main screen. */
+    if (windowParent != wxScreen::gScreenWindow) {
+      /* Ok, parent isn't the screen, so clip to parent: */
+      wxMargin parentAreaMargin;
+
+      windowParent->GetClipRect(cParentArea, &parentClipRect);
+      parentAreaMargin = area->Margin(cParentArea);
+      parentAreaX = parentAreaMargin.Offset(wxLeft);
+      parentAreaY = parentAreaMargin.Offset(wxTop);
+      ::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
+      ::SectRect(&parentClipRect, clipRect, clipRect);
+      if (clipRect->top < 0) clipRect->top = 0;
+      if (clipRect->left < 0) clipRect->left = 0;
+    }
   }
 }
 

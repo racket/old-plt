@@ -1030,17 +1030,11 @@ void MrEdDispatchEvent(EventRecord *e)
       contentRgn = NewRgn();
 
       GetWindowBounds(w, kWindowContentRgn, &windowBounds);
-      {
-	/* Avoid overflow from offset: */
-#       define vmax(a,b) ((a < b) ? b : a)
-	SetRectRgn(contentRgn, 
-		   -32768 + vmax(0, windowBounds.left),
-		   -32768 + vmax(0, windowBounds.top),
-		   32767 - vmax(0, -windowBounds.left),
-		   32767 - vmax(0, -windowBounds.top));
-#       undef vmax
-	SectRgn(contentRgn, rgn, rgn);
-      }
+
+      /* Avoid overflow in offset: */
+      GetWindowRegion(w, kWindowContentRgn, contentRgn);
+      SectRgn(contentRgn, rgn, rgn);
+
       OffsetRgn(rgn, -1 * windowBounds.left, -1 * windowBounds.top);
       InvalWindowRgn(w, rgn);
       DisposeRgn(rgn);

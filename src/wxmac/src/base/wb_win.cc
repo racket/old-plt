@@ -52,9 +52,9 @@ wxbWindow::wxbWindow // Constructor
 (
  char*		windowName
  ) :
- wxObject (),
- windowName(copystring(windowName))
+ wxObject ()
 {
+  windowName = copystring(windowName);
   InitDefaults();
 }
 

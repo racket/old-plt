@@ -15,14 +15,13 @@
   (define (build-lexer runtime wrap)
     (let ((code
            `(letrec ((match
-                      (lambda (lb first-pos longest-match-length longest-match-action length)
-                        (let ((match
-                               (push-back lb (- length longest-match-length)))
-                              (end-pos (get-position lb)))
+                      (lambda (lb first-pos longest-match-length longest-match-action)
+                        (let* ((match (get-match lb longest-match-length))
+			       (end-pos (get-position lb)))
                           (if (not longest-match-action)
                               (raise-read-error
                                (format "lexer: No match found in input starting with: ~a"
-                                       (list->string (filter char? (lex-buffer-from lb))))
+                                       match)
                                #f
                                (position-line first-pos)
                                (position-col first-pos)
@@ -31,14 +30,9 @@
                           (let/ec ret
                             (,wrap
                              (longest-match-action
-                              (lambda ()
-                                first-pos)
-                              (lambda ()
-                                end-pos)
-                              (lambda ()
-                                (if (char? (car match))
-                                    (list->string (reverse match))
-                                    (list->string (reverse (cdr match)))))
+                              (lambda () first-pos)
+                              (lambda () end-pos)
+                              (lambda () match)
                               ret
                               lb)))))))
               (lambda (lb)
@@ -74,14 +68,13 @@
                                             (arithmetic-shift state 8)))))))
                       (cond
                         ((not next-state)
-                         (match lb first-pos longest-match-length longest-match-action length))
+                         (match lb first-pos longest-match-length longest-match-action))
                         ((vector-ref no-lookahead next-state)
                          (let ((act (vector-ref actions next-state)))
                            (match lb 
                                   first-pos 
                                   (if act length longest-match-length)
-                                  (if act act longest-match-action)
-                                  length)))
+                                  (if act act longest-match-action))))
                         (else
                          (let ((act (vector-ref actions next-state)))
                            (lexer-loop next-state 

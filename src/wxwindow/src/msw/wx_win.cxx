@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.7 1998/04/23 20:40:07 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.8 1998/07/04 02:57:34 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -29,6 +29,7 @@
 
 #endif
 
+#include <math.h>
 #include <shellapi.h>
 
 
@@ -2368,41 +2369,20 @@ void wxSubWnd::OnSize(int w, int h, UINT WXUNUSED(flag))
   if (!handle)
     return;
 
-
-
-
-  if (calcScrolledOffset)	{
-
+  if (calcScrolledOffset) {
     if ((xscroll_lines > 0) || (yscroll_lines > 0)) {
-
-		wxCanvas * c= (wxCanvas *)wx_window;
-
-		if (c) {
-
-		   c->SetScrollbars(c->horiz_units, c->vert_units,
-
-						    xscroll_lines, yscroll_lines,
-
-							xscroll_lines_per_page, yscroll_lines_per_page,
-
-							xscroll_position, yscroll_position, TRUE);
-
-		}
-
-	}
-
+      wxCanvas * c= (wxCanvas *)wx_window;
+      if (c) {
+	c->SetScrollbars(c->horiz_units, c->vert_units,
+			 xscroll_lines, yscroll_lines,
+			 xscroll_lines_per_page, yscroll_lines_per_page,
+			 xscroll_position, yscroll_position, TRUE);
+      }
+    }
   }
-
-
-  // Store DC for duration of size message
-  // SEEMS TO CAUSE AN INVALID DC ERROR IN E.G. HELLO DEMO
-//  cdc = wxwmGetDC(handle);
 
   if (wx_window)
     wx_window->GetEventHandler()->OnSize(w, h);
-
-//  ReleaseDC(handle, cdc);
-//  cdc = NULL;
 }
 
 // Deal with child commands from buttons etc.
@@ -3338,23 +3318,17 @@ void wxWindow::DoScroll(wxCommandEvent& event)
   wxWnd *wnd = (wxWnd *)handle;
   HWND hWnd = GetHWND();
 
-  if (orient == wxHORIZONTAL)
-  {
+  if (orient == wxHORIZONTAL) {
     int newPos = wnd->xscroll_position + nScrollInc;
     ::SetScrollPos(hWnd, SB_HORZ, newPos, TRUE );
+    wnd->xscroll_position = ::GetScrollPos(hWnd, SB_HORZ);
   } else {
     int newPos = wnd->yscroll_position + nScrollInc;
     ::SetScrollPos(hWnd, SB_VERT, newPos, TRUE );
-  }
-
-  if (orient == wxHORIZONTAL) {
-    wnd->xscroll_position = GetScrollPos(orient);
-  } else {
-    wnd->yscroll_position = GetScrollPos(orient);
+    wnd->yscroll_position = ::GetScrollPos(hWnd, SB_VERT);
   }
 
   OnScroll(event);
-
 }
 
 
@@ -3424,36 +3398,23 @@ int wxWindow::CalcScrollInc(wxCommandEvent& event)
     }
   }
   HWND hWnd = GetHWND();
-  if (orient == wxHORIZONTAL)
-  {
-    // We're scrolling automatically
-    if (wnd->calcScrolledOffset)
-    {
-        int w;
-        RECT rect;
-        GetClientRect(hWnd, &rect);
-        w = rect.right - rect.left;
-        int nMaxWidth = wnd->xscroll_lines*wnd->xscroll_pixels_per_line;
+  if (orient == wxHORIZONTAL) {
+    if (wnd->calcScrolledOffset) {
+      // We're scrolling automatically
+      int w;
+      RECT rect;
+      GetClientRect(hWnd, &rect);
+      w = rect.right - rect.left;
+      int nMaxWidth = wnd->xscroll_lines*wnd->xscroll_pixels_per_line;
+      
+      int nHscrollMax = (int)ceil((nMaxWidth - w)/(float)wnd->xscroll_pixels_per_line);
+      nHscrollMax = max(0, nHscrollMax);
 
-        float noPositions = (float)((nMaxWidth - w)/(float)wnd->xscroll_pixels_per_line);
-
-        // Deal with situation where we need to scroll a fractional
-        // amount: scroll by 1 instead (ok, so we step slightly
-        // outside the scrollable area but tough.)
-        if (noPositions > 0 && noPositions < 1)
-          noPositions = 1;
-        else if (noPositions < 0)
-          noPositions = 0;
-
-        int nHscrollMax = max(0, (int)(0 + noPositions));
-        nScrollInc = max( -wnd->xscroll_position,
-                         min( nScrollInc, nHscrollMax - wnd->xscroll_position ) );
-        return nScrollInc;
-    }
-    else
-    {
+      nScrollInc = max(-wnd->xscroll_position,
+		       min(nScrollInc, nHscrollMax - wnd->xscroll_position));
+      return nScrollInc;
+    } else {
       // We're not scrolling automatically so we don't care about pixel-per-line
-      /* MATTHEW: Fix scrolling calculation */
       int newPosition = wnd->xscroll_position + nScrollInc;
       if (newPosition < 0)
 	return -wnd->xscroll_position;
@@ -3462,38 +3423,23 @@ int wxWindow::CalcScrollInc(wxCommandEvent& event)
       else
         return nScrollInc;
     }
-  }
-  else
-  {
-    // We're scrolling automatically
-    if (wnd->calcScrolledOffset)
-    {
-        RECT rect;
-        GetClientRect(hWnd, &rect);
-        int h = rect.bottom - rect.top;
-
-        int nMaxHeight = wnd->yscroll_lines*wnd->yscroll_pixels_per_line;
-
-        float noPositions = (float)((nMaxHeight - h)/(float)wnd->yscroll_pixels_per_line);
-
-        // Deal with situation where we need to scroll a fractional
-        // amount: scroll by 1 instead (ok, so we step slightly
-        // outside the scrollable area but tough.)
-        if (noPositions > 0 && noPositions < 1)
-          noPositions = 1;
-        else if (noPositions < 0)
-          noPositions = 0;
-
-        int nVscrollMax = max(0, (int)(0 + noPositions));
-
-        nScrollInc = max( -wnd->yscroll_position,
-                        min( nScrollInc, nVscrollMax - wnd->yscroll_position ) );
-        return nScrollInc;
-    }
-    else
-    {
+  } else {
+    if (wnd->calcScrolledOffset) {
+      // We're scrolling automatically
+      RECT rect;
+      GetClientRect(hWnd, &rect);
+      int h = rect.bottom - rect.top;
+      
+      int nMaxHeight = wnd->yscroll_lines*wnd->yscroll_pixels_per_line;
+      
+      int nVscrollMax = (int)ceil((nMaxHeight - h)/(float)wnd->yscroll_pixels_per_line);
+      nVscrollMax = max(0, nVscrollMax);
+      
+      nScrollInc = max(-wnd->yscroll_position,
+		       min(nScrollInc, nVscrollMax - wnd->yscroll_position));
+      return nScrollInc;
+    } else {
       // We're not scrolling automatically so we don't care about pixel-per-line
-      /* MATTHEW: Fix scrolling calculation */
       int newPosition = wnd->yscroll_position + nScrollInc;
       if (newPosition < 0)
 	return -wnd->yscroll_position;
@@ -3515,33 +3461,15 @@ void wxWindow::OnScroll(wxCommandEvent& event)
 
   wxWnd *wnd = (wxWnd *)handle;
   HWND hWnd = GetHWND();
-   
-
-#if 0
-  if (orient == wxHORIZONTAL)
-  {
-    if (wnd->x_scrolling_enabled)
-      ::ScrollWindow(hWnd, -wnd->xscroll_pixels_per_line * nScrollInc, 0, NULL, NULL );
-    else
-      InvalidateRect(hWnd, NULL, FALSE);
-  }
-  else
-  {
-    if (wnd->y_scrolling_enabled)
-      ::ScrollWindow(hWnd, 0, -wnd->yscroll_pixels_per_line * nScrollInc, NULL, NULL );
-    else
-      InvalidateRect(hWnd, NULL, FALSE);
-  }
-
-#else
 
   InvalidateRect(hWnd, NULL, FALSE);
-
-#endif
 }
 
 void wxWindow::SetScrollPos(int orient, int pos)
 {
+  wxWnd *wnd = (wxWnd *)handle;
+  if (wnd->calcScrolledOffset) return;
+
   int wOrient;
   if (orient == wxHORIZONTAL)
     wOrient = SB_HORZ;
@@ -3549,157 +3477,100 @@ void wxWindow::SetScrollPos(int orient, int pos)
     wOrient = SB_VERT;
     
   HWND hWnd = GetHWND();
-  if (hWnd)	{
+  if (hWnd) {
     ::SetScrollPos(hWnd, wOrient, pos, TRUE);
 
-
-	wxWnd *wnd = (wxWnd *)handle;
     if (orient == wxHORIZONTAL)
-      wnd->xscroll_position = GetScrollPos(orient);
+      wnd->xscroll_position = ::GetScrollPos(hWnd, SB_HORZ);
     else
-      wnd->yscroll_position = GetScrollPos(orient);
-
+      wnd->yscroll_position = ::GetScrollPos(hWnd, SB_VERT);
   }
 }
 
 void wxWindow::SetScrollRange(int orient, int range)
 {
-  int wOrient, page;
+  wxWnd *wnd = (wxWnd *)handle;
+  if (wnd->calcScrolledOffset) return;
 
+  int wOrient, page;
 
   if (orient == wxHORIZONTAL)
     wOrient = SB_HORZ;
   else
     wOrient = SB_VERT;
     
-  wxWnd *wnd = (wxWnd *)handle;
   if (orient == wxHORIZONTAL) {
-
-	page = wnd->xscroll_lines_per_page;
+    page = wnd->xscroll_lines_per_page;
   } else {
-	page = wnd->yscroll_lines_per_page;
-
+    page = wnd->yscroll_lines_per_page;
   }
 
-
-
   SCROLLINFO info;
-
   info.cbSize = sizeof(SCROLLINFO);
-
   info.nPage = page;
-
   info.nMin = 0;
-
   info.nMax = range + page - 1;
 
   info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
 
-
-
   HWND hWnd = GetHWND();
 
-  if (hWnd)	{
-
-#if 0
-
-	if (!info.nMax) {
-
-	  /* Try to force a show: */
-
-	  info.nMax = 1;
-
-	  ::SetScrollInfo(hWnd, wOrient, &info, FALSE);
-
-	  info.nMax = 0;
-
-	}
-
-#endif
-
-	::SetScrollInfo(hWnd, wOrient, &info, TRUE);
-
+  if (hWnd) {
+    ::SetScrollInfo(hWnd, wOrient, &info, TRUE);
   }
 
-
-
   if (orient == wxHORIZONTAL)
-
-	wnd->xscroll_lines = range;
-
+    wnd->xscroll_lines = range;
   else
-
-	wnd->yscroll_lines = range;
-
+    wnd->yscroll_lines = range;
 }
 
 void wxWindow::SetScrollPage(int orient, int page)
 {
+  wxWnd *wnd = (wxWnd *)handle;
+  if (wnd->calcScrolledOffset) return;
 
   SCROLLINFO info;
 
   int dir, range;
-  wxWnd *wnd = (wxWnd *)handle;
-
-
 
   if (orient == wxHORIZONTAL) {
-
-	dir = SB_HORZ;    
-
-	range = wnd->xscroll_lines;
-
-	if (page > range + 1)
-
-		page = range + 1;
-
-	wnd->xscroll_lines_per_page = page;
-
+    dir = SB_HORZ;    
+    range = wnd->xscroll_lines;
+    if (page > range + 1)
+      page = range + 1;
+    wnd->xscroll_lines_per_page = page;
   } else {
+    dir = SB_VERT;
+    range = wnd->yscroll_lines;
 
-	dir = SB_VERT;
-	range = wnd->yscroll_lines;
-
-	if (page > range + 1)
-
-		page = range + 1;
-
+    if (page > range + 1)
+      page = range + 1;
+    
     wnd->yscroll_lines_per_page = page;
-
   }
 
-
-
   if (wxGetOsVersion(NULL, NULL) == wxWIN32S)
-
-	return;
-
-
+    return;
 
   info.cbSize = sizeof(SCROLLINFO);
-
   info.nPage = page;
-
   info.nMin = 0;
-
   info.nMax = range + page - 1;
-
   info.fMask = SIF_PAGE | SIF_RANGE | SIF_DISABLENOSCROLL;
 
-  	
-
   HWND hWnd = GetHWND();
-
-  if (hWnd)	{
-
+  if (hWnd) {
     ::SetScrollInfo(hWnd, dir, &info, TRUE);
-
   }
 }
 
 int wxWindow::GetScrollPos(int orient)
 {
-  int wOrient ;
+  wxWnd *wnd = (wxWnd *)handle;
+  if (wnd->calcScrolledOffset) return 0;
+
+  int wOrient;
   if (orient == wxHORIZONTAL)
     wOrient = SB_HORZ;
   else
@@ -3714,24 +3585,30 @@ int wxWindow::GetScrollPos(int orient)
 int wxWindow::GetScrollRange(int orient)
 {
   wxWnd *wnd = (wxWnd *)handle;
+  if (wnd->calcScrolledOffset) return 0;
 
   if (orient == wxHORIZONTAL)
-
     return max(0, wnd->xscroll_lines);
-
   else
-
     return max(0, wnd->yscroll_lines);
-
 }
 
 int wxWindow::GetScrollPage(int orient)
 {
   wxWnd *wnd = (wxWnd *)handle;
-  if (orient == wxHORIZONTAL)
+  if (wnd->calcScrolledOffset) return 0;
+
+  wxCanvas *c = (wxCanvas *)this;
+
+  if (orient == wxHORIZONTAL) {
+    if (c->horiz_units <= 0)
+      return 0;
     return wnd->xscroll_lines_per_page;
-  else
+  } else {
+    if (c->vert_units <= 0)
+      return 0;
     return wnd->yscroll_lines_per_page;
+  }
 }
 
 // Default OnSize resets scrollbars, if any
@@ -3752,9 +3629,10 @@ void wxWindow::OnSize(int w, int h)
 
     if (node && !node->Next()) {
       wxWindow *win = (wxWindow *)node->Data();
-      Bool hasSubPanel = (wxSubType(win->__type, wxTYPE_PANEL && !wxSubType(win->__type, wxTYPE_DIALOG_BOX)) ||
-			  wxSubType(win->__type, wxTYPE_CANVAS) ||
-			  wxSubType(win->__type, wxTYPE_TEXT_WINDOW));
+      Bool hasSubPanel = ((wxSubType(win->__type, wxTYPE_PANEL)
+			   && !wxSubType(win->__type, wxTYPE_DIALOG_BOX))
+			  || wxSubType(win->__type, wxTYPE_CANVAS)
+			  || wxSubType(win->__type, wxTYPE_TEXT_WINDOW));
       
       if (hasSubPanel) {
 	int w, h;
@@ -3768,24 +3646,24 @@ void wxWindow::OnSize(int w, int h)
 
 Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *evt)
 {
-	wxWindow *p = win->GetParent();
-	return ((p && CallPreOnEvent(p, evt)) || win->PreOnEvent(this, evt));
+  wxWindow *p = win->GetParent();
+  return ((p && CallPreOnEvent(p, evt)) || win->PreOnEvent(this, evt));
 }
 
 Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *evt)
 {
-	wxWindow *p = win->GetParent();
-	return ((p && CallPreOnChar(p, evt)) || win->PreOnChar(this, evt));
+  wxWindow *p = win->GetParent();
+  return ((p && CallPreOnChar(p, evt)) || win->PreOnChar(this, evt));
 }
 
 Bool wxWindow::PreOnEvent(wxWindow *, wxMouseEvent *)
 {
-	return FALSE;
+  return FALSE;
 }
 
 Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)
 {
-	return FALSE;
+  return FALSE;
 }
 
 // Caret manipulation
@@ -3803,8 +3681,7 @@ void wxWindow::CreateCaret(wxBitmap *WXUNUSED(bitmap))
 
 void wxWindow::ShowCaret(Bool show)
 {
-  if (caretEnabled)
-  {
+  if (caretEnabled) {
     if (show)
       ::ShowCaret(GetHWND());
     else
@@ -3831,97 +3708,6 @@ void wxWindow::GetCaretPos(int *x, int *y)
   *y = point.y;
 }
 
-/*
- * Update iterator. Use from within OnPaint.
- */
- 
-wxUpdateIterator::wxUpdateIterator(wxWindow* wnd)
-{
-  current = 0;					//start somewhere...
-#ifdef WIN32
-#ifndef __win32s__
-  rlist = NULL;					//make sure I don't free randomly
-  int len = GetRegionData(wnd->updateRgn,0,NULL);	//Get buffer size
-  if (len)
-  {
-    rlist = (RGNDATA *)new char[len];
-    GetRegionData(wnd->updateRgn,len,rlist);
-    rp = (RECT*)rlist->Buffer;
-    rects = rlist->rdh.nCount;
-  }
-  else
-#endif
-  {
-    rects = 1;
-    rp = &wnd->updateRect;			//Only one available in Win16,32s
-  }
-#else
-  rects = 1;
-  rp = &wnd->updateRect;			//Only one available in Win16,32s
-#endif
-}
-
-wxUpdateIterator::~wxUpdateIterator(void)
-{
-#ifdef WIN32
-#ifndef __win32s__
-  if (rlist) delete rlist;
-#endif
-#endif
-}
-
-wxUpdateIterator::operator int (void)
-{
-  if (current < rects)
-  {
-    return TRUE;
-  }
-  else
-  {
-    return FALSE;
-  }
-}
-
-wxUpdateIterator* wxUpdateIterator::operator ++(int)
-{
-  current++;
-  return this;
-}
-
-RECT* wxUpdateIterator::GetMSWRect(void)
-{
-  return rp+current;	//ought to error check this...
-}
-
-void wxUpdateIterator::GetRect(wxRectangle *rect)
-{
-  RECT *mswRect = rp+current;	//ought to error check this...
-  rect->x = mswRect->left;
-  rect->y = mswRect->top;
-  rect->width = mswRect->right - mswRect->left;
-  rect->height = mswRect->bottom - mswRect->top;
-}
-
-int wxUpdateIterator::GetX()
-{
-  return rp[current].left;
-}
-
-int wxUpdateIterator::GetY()
-{
-  return rp[current].top;
-}
-
-int wxUpdateIterator::GetW()
-{
- return rp[current].right-GetX();
-}
-
-int wxUpdateIterator::GetH()
-{
-  return rp[current].bottom-GetY();
-}
-
 wxWindow *wxGetActiveWindow(void)
 {
   HWND hWnd = GetActiveWindow();
@@ -3946,19 +3732,11 @@ int APIENTRY _EXPORT
 
 void wxSetKeyboardHook(Bool doIt)
 {
-  if (doIt)
-  {
+  if (doIt) {
     wxTheKeyboardHookProc = MakeProcInstance((FARPROC) wxKeyboardHook, wxhInstance);
     wxTheKeyboardHook = SetWindowsHookEx(WH_KEYBOARD, wxTheKeyboardHookProc, wxhInstance,
-#ifdef WIN32
-      GetCurrentThreadId());
-//      (DWORD)GetCurrentProcess()); // This is another possibility. Which is right?
-#else
-      GetCurrentTask());
-#endif
-  }
-  else
-  {
+					 GetCurrentThreadId());
+  } else {
     UnhookWindowsHookEx(wxTheKeyboardHook);
     FreeProcInstance(wxTheKeyboardHookProc);
   }
@@ -3971,8 +3749,7 @@ int APIENTRY _EXPORT
   if (nCode != HC_NOREMOVE && ((hiWord & KF_UP) == 0))
   {
     int id;
-    if ((id = wxCharCodeMSWToWX(wParam)) != 0)
-    {
+    if ((id = wxCharCodeMSWToWX(wParam)) != 0) {
       wxKeyEvent *_event = new wxKeyEvent(wxEVENT_TYPE_CHAR);
       wxKeyEvent &event = *_event;
 

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cc,v 1.1 1994/08/14 21:59:17 edz Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.1.1.1 1997/12/22 16:12:00 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -94,8 +94,8 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
   vert_units = 0;
 
   if ((style & wxHSCROLL) || (style & wxVSCROLL))
-	  SetScrollbars(style & wxHSCROLL, style & wxVSCROLL,
-	                0, 0, 1, 1, 0, 0, FALSE);
+    SetScrollbars(style & wxHSCROLL, style & wxVSCROLL,
+		  0, 0, 1, 1, 0, 0, FALSE);
 
   wx_dc = new wxCanvasDC (this);
 
@@ -168,125 +168,129 @@ SetScrollbars (int horizontal, int vertical,
 	       int x_page, int y_page,
 	       int x_pos, int y_pos, Bool setVirtualSize)
 {
- if (!(GetWindowStyleFlag() & wxHSCROLL))
-   horizontal = -1;
- if (!(GetWindowStyleFlag() & wxVSCROLL))
-   vertical = -1;
-
- if (!horizontal) horizontal = -1;
- if (!vertical) vertical = -1;
- if (x_length < 1) horizontal = -1;
- if (y_length < 1) vertical = -1;
- if (x_page < 1) x_page = 1;
- if (y_page < 1) y_page = 1;
-
- if (x_pos < 0)
-	 x_pos = 0;
- if (x_pos > x_length)
-	 x_pos = x_length;
- if (y_pos < 0)
-	 y_pos = 0;
- if (y_pos > y_length)
-	y_pos = y_length;
-
- horiz_units = horizontal;
- vert_units = vertical;
-
+  if (!(GetWindowStyleFlag() & wxHSCROLL))
+    horizontal = -1;
+  if (!(GetWindowStyleFlag() & wxVSCROLL))
+    vertical = -1;
+  
+  if (!horizontal) horizontal = -1;
+  if (!vertical) vertical = -1;
+  if (x_length < 1) horizontal = -1;
+  if (y_length < 1) vertical = -1;
+  if (x_page < 1) x_page = 1;
+  if (y_page < 1) y_page = 1;
+  
+  if (x_pos < 0)
+    x_pos = 0;
+  if (x_pos > x_length)
+    x_pos = x_length;
+  if (y_pos < 0)
+    y_pos = 0;
+  if (y_pos > y_length)
+    y_pos = y_length;
+  
+  horiz_units = horizontal;
+  vert_units = vertical;
+  
   wxWnd *wnd = (wxWnd *) handle;
   if (wnd) {
-	  Bool h_is_on, v_is_on;
-
-      wnd->calcScrolledOffset = setVirtualSize;
-
-      int w, h;
-      RECT rect;
-      GetWindowRect (wnd->handle, &rect);
-      w = rect.right - rect.left;
-      h = rect.bottom - rect.top;
-
-	  SCROLLINFO hinfo, vinfo;
-      hinfo.cbSize = vinfo.cbSize = sizeof(SCROLLINFO);
-      hinfo.fMask = vinfo.fMask = SIF_PAGE | SIF_RANGE | SIF_POS | SIF_DISABLENOSCROLL;
-      hinfo.nMin = vinfo.nMin = 0;
-
-      // Recalculate scroll bar range and position
+    Bool h_is_on, v_is_on;
+    
+    wnd->calcScrolledOffset = setVirtualSize;
+    
+    int w, h;
+    RECT rect;
+    GetClientRect(wnd->handle, &rect);
+    w = rect.right - rect.left;
+    h = rect.bottom - rect.top;
+    
+    SCROLLINFO hinfo, vinfo;
+    hinfo.cbSize = vinfo.cbSize = sizeof(SCROLLINFO);
+    hinfo.fMask = vinfo.fMask = SIF_PAGE | SIF_RANGE | SIF_POS | SIF_DISABLENOSCROLL;
+    hinfo.nMin = vinfo.nMin = 0;
+    
+    // Recalculate scroll bar range and position
     // ShowScrollBar(handle, SB_HORZ, wnd->xscroll_lines > 0);
-	if (horizontal > 0)	{
-	  h_is_on = 1;
-
-	  wnd->xscroll_pixels_per_line = horizontal;
+    if (horizontal > 0)	{
+      h_is_on = 1;
+      
+      wnd->xscroll_pixels_per_line = horizontal;
       wnd->xscroll_lines = x_length;
       wnd->xscroll_lines_per_page = x_page;
       
-	  hinfo.fMask |= SIF_DISABLENOSCROLL;
+      hinfo.fMask |= SIF_DISABLENOSCROLL;
+      
+      int nHscrollMax;
+      if (setVirtualSize) {
+	int nMaxWidth = wnd->xscroll_lines * wnd->xscroll_pixels_per_line;
+	nHscrollMax = (int)ceil((double)(nMaxWidth - w) / wnd->xscroll_pixels_per_line);
+	nHscrollMax = max(0, nHscrollMax);
+      } else
+	nHscrollMax = wnd->xscroll_lines;
 
-	  int nHscrollMax;
-	  if (setVirtualSize) {
-	    int nMaxWidth = wnd->xscroll_lines * wnd->xscroll_pixels_per_line;
-	    nHscrollMax = max (0, (int) (2 + (nMaxWidth - w) / wnd->xscroll_pixels_per_line));
-	    wnd->xscroll_position = x_pos;
-	    wnd->xscroll_position = min (nHscrollMax, wnd->xscroll_position);
-	  } else
-		  nHscrollMax = wnd->xscroll_lines;
-
-	  hinfo.nPos = wnd->xscroll_position;
-	  hinfo.nPage = wnd->xscroll_lines_per_page;
-	  hinfo.nMax = nHscrollMax + hinfo.nPage - 1;
-	} else {
-	  h_is_on = 0;
-
-	  wnd->xscroll_pixels_per_line = -1;
+      wnd->xscroll_position = x_pos;
+      wnd->xscroll_position = min (nHscrollMax, wnd->xscroll_position);
+      
+      hinfo.nPos = wnd->xscroll_position;
+      hinfo.nPage = wnd->xscroll_lines_per_page;
+      hinfo.nMax = nHscrollMax + hinfo.nPage - 1;
+    } else {
+      h_is_on = 0;
+      
+      wnd->xscroll_pixels_per_line = -1;
       wnd->xscroll_lines = -1;
       wnd->xscroll_lines_per_page = 0;
       
-	  hinfo.nPos = 0;
-	  hinfo.nPage = 1;
-	  hinfo.nMax = 0;
-	}
-
-	
+      hinfo.nPos = 0;
+      hinfo.nPage = 1;
+      hinfo.nMax = 0;
+    }
+    
+    
     // ShowScrollBar(handle, SB_VERT, wnd->yscroll_lines > 0);
-	 if (vertical > 0) {
-	  v_is_on = 1;
-
-	  wnd->yscroll_pixels_per_line = vertical;
+    if (vertical > 0) {
+      v_is_on = 1;
+      
+      wnd->yscroll_pixels_per_line = vertical;
       wnd->yscroll_lines = y_length;
       wnd->yscroll_lines_per_page = y_page;
       
-	  vinfo.fMask |= SIF_DISABLENOSCROLL;
-	
-	  int nVscrollMax;
-	  if (setVirtualSize) {
-	    int nMaxHeight = wnd->yscroll_lines * wnd->yscroll_pixels_per_line;
-	    nVscrollMax = max (0, (int) (2 + (nMaxHeight - h) / wnd->yscroll_pixels_per_line));
-	    wnd->yscroll_position = y_pos;
-	    wnd->yscroll_position = min (nVscrollMax, wnd->yscroll_position);
-	  } else
-		  nVscrollMax  = wnd->yscroll_lines;
-
-	  vinfo.nPos = wnd->yscroll_position;
-	  vinfo.nPage = wnd->yscroll_lines_per_page;
-	  vinfo.nMax = nVscrollMax + vinfo.nPage - 1;
-	} else {
-	  v_is_on = 0;
-
-	  wnd->yscroll_pixels_per_line = -1;
+      vinfo.fMask |= SIF_DISABLENOSCROLL;
+      
+      int nVscrollMax;
+      if (setVirtualSize) {
+	int nMaxHeight = wnd->yscroll_lines * wnd->yscroll_pixels_per_line;
+	nVscrollMax = (int)ceil((double)(nMaxHeight - h) / wnd->yscroll_pixels_per_line);
+	nVscrollMax = max(nVscrollMax, 0);
+      } else
+	nVscrollMax  = wnd->yscroll_lines;
+      
+      wnd->yscroll_position = y_pos;
+      wnd->yscroll_position = min (nVscrollMax, wnd->yscroll_position);
+      
+      vinfo.nPos = wnd->yscroll_position;
+      vinfo.nPage = wnd->yscroll_lines_per_page;
+      vinfo.nMax = nVscrollMax + vinfo.nPage - 1;
+    } else {
+      v_is_on = 0;
+      
+      wnd->yscroll_pixels_per_line = -1;
       wnd->yscroll_lines = -1;
       wnd->yscroll_lines_per_page = 0;
       
-	  vinfo.nPos = 0;
-	  vinfo.nPage = 1;
-	  vinfo.nMax = 0;
-	}
-
-	if (GetWindowStyleFlag() & wxVSCROLL)
-	  ::SetScrollInfo(wnd->handle, SB_VERT, &vinfo, TRUE);
-	if (GetWindowStyleFlag() & wxHSCROLL)
-	  ::SetScrollInfo(wnd->handle, SB_HORZ, &hinfo, TRUE);
-
-      InvalidateRect (wnd->handle, NULL, TRUE);
-      UpdateWindow (wnd->handle);
+      vinfo.nPos = 0;
+      vinfo.nPage = 1;
+      vinfo.nMax = 0;
     }
+    
+    if (GetWindowStyleFlag() & wxVSCROLL)
+      ::SetScrollInfo(wnd->handle, SB_VERT, &vinfo, TRUE);
+    if (GetWindowStyleFlag() & wxHSCROLL)
+      ::SetScrollInfo(wnd->handle, SB_HORZ, &hinfo, TRUE);
+    
+    InvalidateRect (wnd->handle, NULL, TRUE);
+    UpdateWindow (wnd->handle);
+  }
 }
 
 void wxCanvas::GetScrollUnitsPerPage (int *x_page, int *y_page)

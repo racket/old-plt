@@ -119,6 +119,14 @@
  (close-anyway "Close Anyway")
  (clear-anyway "Clear Anyway")
 
+ ;; menu item title
+ (log-definitions-and-interactions "Log Definitions and Interactions...")
+ (stop-logging "Stop loggging")
+ (please-choose-a-log-directory "Please choose a log directory")
+ (logging-to "Logging to: ")
+ (erase-log-directory-contents "Erase contents of log directory: ~a?")
+ (error-erasing-log-directory "Error erasing log directory contents.\n\n~a\n")
+
  (url "URL")
  (url: "URL:")
  (open-url... "Open URL...")

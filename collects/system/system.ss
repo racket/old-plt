@@ -7,7 +7,7 @@
   (let* ([debug-env (getenv "MREDDEBUG")]
 	 [debug-on? (and debug-env (string=? debug-env "on"))])
     (unit (import)
-      (export (dprintf printf) turn-on turn-off
+      (export (dprintf printf) turn-on turn-off turned-on
 	      exit? new-console new-eval make-new-console)
 
       (define turned-on (list 'startup 'invoke))
@@ -31,7 +31,7 @@
 			  (lambda args (void))))
       (define exit? #t)
 	
-      (define new-console #f)
+      (define new-console (void))
       (define new-eval (void))
       (define make-new-console
 	(if debug-on? 
@@ -43,7 +43,7 @@
 				 (define q (lambda () (send mred:console-frame show #f)))
 				 (define mred:system-source-directory 
 				   ,(global-defined-value 'mred:system-source-directory))
-				 (invoke-open-unit/sig (,(global-defined-value 'mred:make-invokable-unit))
+				 (invoke-open-unit ,((global-defined-value 'mred:make-invokable-unit))
 						 mred)))))
 	    (lambda () (void)))))))
 
@@ -101,11 +101,16 @@
 	      mred:system-source-directory))))))
 (constant mred:plt-home-directory)
 
-(define-signature mred:debug^   (printf exit?))
-
 (for-each (lambda (x)
-	    (mred:debug:printf 'startup "Loading ~a..." x)
-	    (load/cd (string-append x ".ss")))
+	    (let* ([ss-file (string-append x ".ss")]
+		   [zo-file (string-append x ".zo")]
+		   [file (if (and (file-exists? zo-file)
+				  (<= (file-modify-seconds ss-file)
+				      (file-modify-seconds zo-file)))
+			     zo-file
+			     ss-file)])
+	      (mred:debug:printf 'startup "Loading ~a..." file)
+	      (load/cd file)))
 	  (list "sig" "prefs" "exn" "containr"
 		"autoload" "autosave" "canvas" "console" "edit" "exit" 
 		"fileutil" "finder" "findstr" "frame" "group" "guiutils" 
@@ -211,13 +216,14 @@
 (define mred:make-invokable-unit
   (lambda ()
     (let ([application (mred:make-application@)])
-      (compound-unit/sig (import ())
-			 (link [core : mzlib:core^ (mzlib:core@)]
-			       [trigger : mzlib:trigger^ (mzlib:trigger@)]
-			       [mred : mred^ (mred@ core trigger application)]
-			       [application : mred:application^
-					    (application mred core)])
-			 (export (open mred) (open application))))))
+      (unit/sig->unit
+       (compound-unit/sig (import ())
+	 (link [core : mzlib:core^ (mzlib:core@)]
+	       [trigger : mzlib:trigger^ (mzlib:trigger@)]
+	       [mred : mred^ (mred@ core trigger application)]
+	       [application : mred:application^
+			    (application mred core)])
+	 (export (open mred) (open application)))))))
 
 (define mred:non-unit-startup
   (lambda ()
@@ -229,7 +235,7 @@
 		       [unit core : mzlib:core^]))
 	      (define console-frame (make-object wx:frame% '() "hidden"))
 	      (define eval-string (lambda (string) (void))))))
-    (invoke-open-unit/sig (mred:make-invokable-unit) mred)
+    (invoke-open-unit (mred:make-invokable-unit) mred)
     (when mred:load-user-setup?
       (mred:user-setup))))
 
@@ -240,7 +246,7 @@
       (cond
 	[(null? args) 
 	 (unless mred:non-unit-startup?
-	   (invoke-open-unit/sig (mred:make-invokable-unit) mred)
+	   (invoke-open-unit (mred:make-invokable-unit) mred)
 	   (when mred:load-user-setup?
 	     (mred:user-setup)))
 	 (for-each mred:edit-file files-to-open)

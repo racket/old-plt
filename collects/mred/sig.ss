@@ -1,3 +1,5 @@
+(define-signature mred:debug^ (printf exit?))
+
 (define-signature mred:application^
   (console-frame
    eval-string))

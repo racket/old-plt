@@ -743,4 +743,28 @@
   (err/rt-test (generic c% priv) exn:object?)
   (err/rt-test (make-generic c% 'priv) exn:object?))
 
+;; ------------------------------------------------------------
+;; class*/names rebinds names
+
+(test #t class? (class*/names (thiss super-initt super-moo) object% ()
+                  (super-initt ())))
+
+(test #t object? (make-object (class*/names (thiss super-initt super-moo) object% ()
+                                (super-initt ()))))
+
+(test #t object? (make-object (class*/names (thiss super-initt super-moo) object% ()
+                                (apply super-moo '()))))
+
+(test #t object? (make-object (class*/names (thiss super-initt super-moo) object% ()
+                                thiss
+                                (super-initt ()))))
+
+(test #t boolean? 
+      (send (make-object (class*/names (thiss super-initt super-moo) object% ()
+                           (define/public (m x) x)
+                           (define/public (n x) (send thiss m x))
+                           (super-initt ())))
+            n #t))
+
+
 (report-errs)

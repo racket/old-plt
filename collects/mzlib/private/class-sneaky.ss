@@ -1,7 +1,7 @@
 #|
 
 This file provides all the same names as the class.ss module,
-plus one more:
+plus these:
 
   (class*/names-sneaky ...)
 
@@ -16,6 +16,16 @@ it behaves like its superclass, rather than being a new
 class. This is intended for the contract library only, since
 it needs to be able to create wrapper classes that act just
 like the original classes.
+
+  (make-object/sneaky obj class init-args ...)
+  
+This creates an object like make-object would with 
+the class and init-args. In addition, this object
+behaves as its first argument would to these
+primitives:
+
+  is-a?
+  object-interface
 
 |#
 (module class-sneaky mzscheme
@@ -1603,12 +1613,15 @@ like the original classes.
 		   #t)) ; no super-init
 
   (vector-set! (class-supers object%) 0 object%)
-  (let*-values ([(struct:obj make-obj obj? -get -set!)
-		 (make-struct-type 'object #f 0 0 #f null insp)]
-		[(struct:tagged-obj make-tagged-obj tagged-obj? -get -set!)
-		 (make-struct-type 'object struct:obj 0 0 #f (list (cons prop:object object%)) insp)])
-    (set-class-struct:object! object% struct:obj)
-    (set-class-make-object! object% make-tagged-obj))
+  (define-values (struct:object-predicate? struct:object-selector)
+    (let*-values ([(struct:obj make-obj obj? -get -set!)
+                   (make-struct-type 'object #f 1 0 #f null insp)]
+                  [(struct:tagged-obj make-tagged-obj tagged-obj? tagged-get tagged-set!)
+                   (make-struct-type 'object struct:obj 0 0 #f (list (cons prop:object object%)) insp)])
+      (set-class-struct:object! object% struct:obj)
+      (set-class-make-object! object% make-tagged-obj)
+      (values obj?
+              -get)))
   (set-class-object?! object% object?) ; don't use struct pred; it wouldn't work with prim classes
 
   (set-interface-class! object<%> object%)
@@ -1621,12 +1634,17 @@ like the original classes.
     (lambda (class . args)
       (do-make-object class args null)))
   
+  (define make-object/sneaky
+    (lambda (obj class . args)
+      (do-make-object class args null obj)))
+  
   (define-syntax instantiate
     (lambda (stx)
       (syntax-case stx ()
 	[(form class (arg ...) . x)
 	 (with-syntax ([orig-stx stx])
-	   (syntax/loc stx (-instantiate do-make-object orig-stx (class) (list arg ...) . x)))])))
+	   (syntax/loc stx 
+             (-instantiate do-make-object orig-stx (class) (list arg ...) . x)))])))
 
   ;; Helper; used by instantiate and super-instantiate
   (define-syntax -instantiate
@@ -1661,13 +1679,17 @@ like the original classes.
 			 kwarg)]))
 		   (syntax->list (syntax (kwarg ...))))])))
 
-  (define (do-make-object class by-pos-args named-args)
-    (unless (class? class)
-      (raise-type-error 'instantiate "class" class))
-    (let ([o ((class-make-object class))])
-      ;; Initialize it:
-      (continue-make-object o class by-pos-args named-args #t)
-      o))
+  (define do-make-object
+    (opt-lambda (class by-pos-args named-args [sneaky #f])
+      (unless (class? class)
+        (raise-type-error 'instantiate "class" class))
+      (let* ([maker (class-make-object class)]
+             [o (if (equal? 1 (procedure-arity maker))
+                    (maker sneaky)
+                    (maker))])
+        ;; Initialize it:
+        (continue-make-object o class by-pos-args named-args #t)
+        o)))
 
   (define (continue-make-object o c by-pos-args named-args explict-named-args?)
     (let ([by-pos-only? (not (class-init-args c))])
@@ -2058,7 +2080,7 @@ like the original classes.
   
   (define (is-a? v c)
     (cond
-     [(class? c) ((class-object? (unsneak-class c)) v)]
+     [(class? c) ((class-object? (unsneak-class c)) (unsneak-object v))]
      [(interface? c)
       (and (object? v)
 	   (implementation? (object-ref v) c))]
@@ -2074,6 +2096,8 @@ like the original classes.
 		(eq? c (vector-ref (class-supers v) p)))))))
 
   (define (object-interface o)
+    (unless (object? o)
+      (raise-type-error 'object-interface "object" o))
     (class-self-interface (object-ref o)))
   
   (define (implementation? v i)
@@ -2125,6 +2149,17 @@ like the original classes.
        (let ([v (class-supers c)])
          (unsneak-class (vector-ref v (- (vector-length v) 2))))]
       [else c]))
+  
+  ;; unsneak-object : object -> object
+  ;; returns the object that the sneaky
+  ;; object is masquerading as.
+  (define (unsneak-object o)
+    (let loop ([o o])
+      (let ([sneak (and (struct:object-predicate? o)
+                        (struct:object-selector o 0))])
+        (if sneak
+            (loop sneak)
+            o))))
   
   ;;--------------------------------------------------------------------
   ;;  primitive classes
@@ -2234,8 +2269,10 @@ like the original classes.
   (define (for-intf name)
     (if name (format " for interface: ~a" name) ""))
   
-  (provide (rename :class class)
-	   class* class*/names class*/names-sneaky
+  (provide class*/names-sneaky make-object/sneaky
+           
+           (rename :class class)
+	   class* class*/names
            class?
 	   (rename :interface interface) interface?
 	   object% object?

@@ -902,6 +902,47 @@
           (apply super-make-object x))
       1 2 3))
   
+  (test/spec-passed/result
+   'object-contract1
+   '(send
+     (contract (object-contract (m (integer? . -> . integer?)))
+               (make-object (class object% (define/public (m x) x) (super-instantiate ())))
+               'pos
+               'neg)
+     m
+     1)
+   1)
+  
+  (test/spec-failed
+   'object-contract2
+   '(contract (object-contract (m (integer? . -> . integer?)))
+              (make-object object%)
+              'pos
+              'neg)
+   "pos")
+  
+  (test/spec-failed
+   'object-contract3
+   '(send
+     (contract (object-contract (m (integer? . -> . integer?)))
+               (make-object (class object% (define/public (m x) x) (super-instantiate ())))
+               'pos
+               'neg)
+     m
+     'x)
+   "neg")
+  
+  (test/spec-failed
+   'object-contract4
+   '(send
+     (contract (object-contract (m (integer? . -> . integer?)))
+               (make-object (class object% (define/public (m x) 'x) (super-instantiate ())))
+               'pos
+               'neg)
+     m
+     1)
+   "pos")
+
   (test/spec-failed
    'class-contract=>1
    '(let* ([c% (contract (class-contract (public m ((>=/c 10) . -> . (>=/c 10))))
@@ -929,7 +970,7 @@
    "pos-d")  
   
   (test/spec-passed/result
-   'class-contract=>2
+   'class-contract=>3
    '(let* ([c% (class object% (super-instantiate ()))]
            [wc% (contract (class-contract) c% 'pos-c 'neg-c)]
            [d% (class c% (super-instantiate ()))]
@@ -940,7 +981,22 @@
             (is-a? (make-object wd%) (class->interface wc%))
             (is-a? (instantiate wd% ()) wc%)
             (is-a? (instantiate wd% ()) (class->interface wc%))))
-   (list #t #t #t #t #t #t))  
+   (list #t #t #t #t #t #t))
+  
+  (test/spec-passed/result
+   'object-contract=>1
+   '(let* ([c% (class object% (super-instantiate ()))]
+           [c (make-object c%)]
+           [wc (contract (object-contract) c 'pos-c 'neg-c)]
+           [d% (class c% (super-instantiate ()))]
+           [d (make-object d%)]
+           [wd (contract (object-contract) d 'pos-d 'neg-d)])
+      (list (is-a? c c%)
+            (is-a? wc c%)
+            (is-a? d c%)
+            (is-a? wd c%)
+            (interface-extension? (object-interface d) (object-interface c))))
+   (list #t #t #t #t #t))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;

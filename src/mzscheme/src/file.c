@@ -4201,6 +4201,7 @@ find_system_path(int argc, Scheme_Object **argv)
     case id_pref_file:
     case id_init_dir:
     case id_init_file:
+    case id_addon_dir:
       t = 'pref';
       break;
     case id_sys_dir:

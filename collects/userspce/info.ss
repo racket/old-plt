@@ -9,8 +9,7 @@
 	       (when (with-handlers ([void (lambda (x) #f)])
 		       (collection-path "mred"))
 		 (require-library "turtles.ss" "graphics")
-		 (require-library "sig.ss" "mred")
-		 (require-library "graphics.ss" "graphics"))
+		 (require-library "sig.ss" "mred"))
 	       (require-library "errors.ss" "userspce")
 	       (require-library "params.ss" "userspce")
 	       (require-library "sig.ss" "userspce"))]

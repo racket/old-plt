@@ -151,6 +151,13 @@
 	   (printf "  ~s,~n" (symbol->string s)))
 	 symbols)
         (printf "}; /* end of SYMBOL_STRS */~n~n")
+
+	(printf "static const char *SYMBOL_LENS[~a] = {~n" (length symbols))
+        (for-each
+	 (lambda (s)
+	   (printf "  ~s,~n" (string-length (symbol->string s))))
+	 symbols)
+        (printf "}; /* end of SYMBOL_LENS */~n~n")
       
 	(printf "static const int SYMBOL_DISPATCHES[~a] = {~n  " (length symbol-dispatches))
 	(let loop ([l symbol-dispatches][line 0])
@@ -173,7 +180,7 @@
 		     (caar l) (caar l))
 	     (loop (cdr l) (add1 p))))
 	(printf "  for (i = j = 0; i < ~a; i++) {~n" (length symbols))
-	(printf "    Scheme_Object * s = scheme_intern_symbol(SYMBOL_STRS[i]);~n")
+	(printf "    Scheme_Object * s = scheme_intern_exact_symbol(SYMBOL_STRS[i], SYMBOL_LENS[i]);~n")
 	(printf "    int c = SYMBOL_DISPATCHES[j++];~n")
 	(printf "    int k;~n")
 	(printf "    for (k = c; k--; j += 2)~n")
@@ -219,7 +226,7 @@
       (printf "  scheme_register_extension_global(&syms, sizeof(syms));~n")
       (for-each
        (lambda (suffix name)
-	 (printf "  syms.~a_symbol = scheme_intern_symbol(~s);~n" suffix name))
+	 (printf "  syms.~a_symbol = scheme_intern_exact_symbol(~s, ~a);~n" suffix name (string-length name)))
        suffixes names)
       (printf "  return scheme_reload(env);~n}~n"))
     'truncate)

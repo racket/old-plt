@@ -104,6 +104,11 @@ are documented in the next section.
          expressions (e.g., macros) that are not intended to be local
          to the file, then the file should be included in this list.
 
+       `compile-extension-omit-files' - a list of filenames to extend
+         the list returned for `compile-omit-files'. Unlike the list
+         returned for `compile-omit-files', this extension is not used
+         when compiling .zo files.
+
        `compile-subcollections' - a list of collection paths, where each
          path is a list of strings. `compile-collection-extension' is 
          applied to each of the collections.
@@ -123,8 +128,12 @@ are documented in the next section.
       The .zo files are placed into the collection's "compiled"
       directory.
 
-      The "info.ss" file is used as in `compile-collection-extension'.
-      In addition, the following two fields are used:
+      The "info.ss" file is used as in `compile-collection-extension',
+      except for `compile-extension-omit-files'. In addition, the
+      following two fields are used:
+
+       `compile-zo-omit-files' - a list of filenames to extend the
+         list returned for `compile-omit-files'.
 
        `compile-elaboration-zos' - a list of filenames (without paths);
          the Scheme files in this list are compiled with elaborations 

@@ -214,8 +214,6 @@
 				  (lambda (f . args) (apply f args))))))))))
 
   (define elaborate-namespace (make-namespace))
-  ; default is case-insensitive; a prefix file/expression can change this
-  (read-case-sensitive #f)
 
   (define (eval-compile-prefix prefix)
     (with-handlers ([void top-level-exn-handler])

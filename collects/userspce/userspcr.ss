@@ -7,7 +7,7 @@
   (compound-unit/sig
     (import [params : plt:parameters^])
     (link [core : mzlib:core^ (mzlib:core@)]
-	  [rice : ricedefs^ (ricedefs@ params)])
+	  [rice : ricedefs^ (ricedefs@)])
     (export (open (core pretty-print@))
 	    (open (core file@))
 	    (open (core function@))

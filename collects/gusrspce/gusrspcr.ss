@@ -22,7 +22,7 @@
 			 (send console show #t)
 			 (define eval-string void)))]
 	  [mred : mred^ (mred@ core trigger appliction)]
-	  [rice : ricedefs^ (ricedefs@ params)]
+	  [rice : ricedefs^ (ricedefs@)]
 	  [graphics : graphics^ (graphics@)]
 	  [turtle : turtle^ (turtle@ (core function@))])
     (export (open (core pretty-print@))

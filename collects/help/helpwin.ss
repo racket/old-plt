@@ -114,7 +114,7 @@
       (send t focus)
       (send d show #t)))
 
-  (define re:tools-notes (regexp "tools"))
+  (define re:tools-notes (regexp "Tools"))
   (define re:mzlib-notes (regexp "MzLib=(.*)"))
   (define re:teach-notes (regexp "teach=(.*)"))
 
@@ -431,15 +431,13 @@
 		    [filter-notes
 		     (lambda (l url)
 		       (let ([toollibs
-			      (filter
-			       values
-			       (map
-				(lambda (s)
-				  (let ([m (regexp-match re:tools-notes s)])
-				    (and m (cadr m))))
-				l))])
+			      (ormap
+			       (lambda (s)
+				 (let ([m (regexp-match re:tools-notes s)])
+				   (and m (cadr m))))
+			       l)])
 			 (if toollibs
-			     "Only available to tools"
+			     "This page describes functionality only available for tools"
 			     (let ([lib (ormap
 					 (lambda (s)
 					   (let ([m (regexp-match re:mzlib-notes s)])

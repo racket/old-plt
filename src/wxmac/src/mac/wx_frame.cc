@@ -86,7 +86,12 @@ wxFrame::wxFrame // Constructor (for frame window)
       windowClass = kSheetWindowClass;
     } else
 #endif
-      windowClass = kDocumentWindowClass;  /* kMovableModalWindowClass => OS X does modality, which we don't want */
+      {
+	if (cStyle & wxNO_CAPTION)
+	  windowClass = kPlainWindowClass;
+	else
+	  windowClass = kDocumentWindowClass;  /* kMovableModalWindowClass => OS X does modality, which we don't want */
+      }
     if (cStyle & wxNO_RESIZE_BORDER) {
       windowAttributes = kWindowNoAttributes;
     } else {
@@ -94,11 +99,18 @@ wxFrame::wxFrame // Constructor (for frame window)
       windowAttributes = kWindowResizableAttribute;
     }
   } else {
-    windowClass = kDocumentWindowClass;
-    if (cStyle & wxNO_RESIZE_BORDER) {
-      windowAttributes = kWindowStandardFloatingAttributes;
+    if (cStyle & wxNO_CAPTION) {
+      windowClass = kPlainWindowClass;
+      if (cStyle & wxNO_RESIZE_BORDER)
+	windowAttributes = kWindowNoAttributes;
+      else
+	windowClass = kWindowResizableAttribute;
     } else {
-      windowAttributes = kWindowStandardDocumentAttributes;
+      windowClass = kDocumentWindowClass;
+      if (cStyle & wxNO_RESIZE_BORDER)
+	windowAttributes = kWindowStandardFloatingAttributes;
+      else
+	windowAttributes = kWindowStandardDocumentAttributes;
     }
   }
 

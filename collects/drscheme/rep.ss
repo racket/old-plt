@@ -151,6 +151,7 @@
   (define context<%>
     (interface ()
       ensure-rep-shown
+      ensure-defs-shown
       needs-execution? 
       enable-evaluation
       disable-evaluation
@@ -790,12 +791,12 @@
         (define error-range #f)
         
         (define report-located-error ; =Kernel=, =Handler=
-          (lambda (message di exn)
-            (if (and di
-                     (zodiac:zodiac? di)
+          (lambda (message dis exn)
+            (if (and (not (null? dis))
+                     (andmap zodiac:zodiac? dis)
                      (basis:zodiac-vocabulary? user-setting))
-                (let* ([start (zodiac:zodiac-start di)]
-                       [finish (zodiac:zodiac-finish di)]
+                (let* ([start (zodiac:zodiac-start (car dis))]
+                       [finish (zodiac:zodiac-finish (car dis))]
 		       [error-filename (zodiac:location-file start)])
 		  (when (string? error-filename)
 		    (let ([open-callback
@@ -805,8 +806,8 @@
 				 (let ([definitions (ivar fr definitions-text)]
 				       [interactions (ivar fr interactions-text)])
 				   (send interactions highlight-error definitions
-					 (zodiac:location-offset (zodiac:zodiac-start di))
-					 (+ 1 (zodiac:location-offset (zodiac:zodiac-finish di))))))))]
+					 (zodiac:location-offset (zodiac:zodiac-start (car dis)))
+					 (+ 1 (zodiac:location-offset (zodiac:zodiac-finish (car dis)))))))))]
 			  [last-pos (last-position)]
 			  [old-locked? locked?])
 		      (begin-edit-sequence)
@@ -1308,11 +1309,11 @@
 	    
 	    
 	    (basis:error-display/debug-handler
-	     (lambda (msg zodiac exn)
+	     (lambda (msg zodiacs exn)
 	       (queue-system-callback/sync
 		user-thread
 		(lambda () 
-		  (report-located-error msg zodiac exn)))))
+		  (report-located-error msg zodiacs exn)))))
 	    
 	    (error-display-handler
 	     (rec drscheme-error-display-handler

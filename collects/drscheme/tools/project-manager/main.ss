@@ -1072,12 +1072,14 @@
 
       (define context%
         (class/d* object% (drscheme:rep:context<%>) ()
-          ((public ensure-rep-shown
+          ((public ensure-defs-shown
+		   ensure-rep-shown
                    needs-execution?
                    enable-evaluation disable-evaluation
                    running not-running
                    get-directory))
 
+	  (define (ensure-defs-shown) (void))
           (define (ensure-rep-shown)
 	    (show/hide-rep #t))
           (define (needs-execution?) #f)

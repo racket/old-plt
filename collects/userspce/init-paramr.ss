@@ -446,16 +446,17 @@
                       (+ 1 offset (zodiac:location-offset end-location))))))]))
                          
   
-  ;; (parameter (string zodiac:zodiac exn -> void))
+  ;; (parameter (string (list zodiac:zodiac) exn -> void))
   (define error-display/debug-handler
     (make-parameter
-     (lambda (msg debug exn)
+     (lambda (msg debugs exn)
        ((error-display-handler) 
-	(if (zodiac:zodiac? debug)
-	    (string-append (format-source-loc (zodiac:zodiac-start debug)
-					      (zodiac:zodiac-finish debug))
-			   msg)
-	    msg)))))
+	(let ([debug (and debugs (car debugs))])
+	  (if (zodiac:zodiac? debug)
+	      (string-append (format-source-loc (zodiac:zodiac-start debug)
+						(zodiac:zodiac-finish debug))
+			     msg)
+	      msg))))))
   
   ;; bottom-escape-handler : (parameter ( -> A))
   ;; escapes
@@ -467,11 +468,11 @@
     (let ([dh (error-display/debug-handler)])
       (if (exn? exn)
 	  (let* ([marks (exn-continuation-marks exn)]
-                 [debug (if (continuation-mark-set? marks)
-                            (aries:extract-zodiac-location marks)
-                            #f)])
-	    (dh (format "~a" (exn-message exn)) debug exn))
-	  (dh (format "uncaught exception: ~e" exn) #f #f)))
+                 [debugs (if (continuation-mark-set? marks)
+			     (aries:extract-zodiac-locations marks)
+			     null)])
+	    (dh (format "~a" (exn-message exn)) debugs exn))
+	  (dh (format "uncaught exception: ~e" exn) null #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler did not escape")
     ((bottom-escape-handler)))

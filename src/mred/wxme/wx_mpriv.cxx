@@ -2392,6 +2392,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     lastUsedOffscreen = this;
 #endif
   } else {
+	wxMediaEdit *savesb = skipBox;
     if (ps)
       skipBox = this;
 
@@ -2445,7 +2446,7 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
 #endif
 
     if (ps)
-      skipBox = NULL;
+      skipBox = savesb;
   }
 
   if (changed) {
@@ -2733,10 +2734,11 @@ void wxMediaEdit::PrintToDC(wxDC *dc, int page)
       dc->DrawLine(0, 0, 0, 0);
       dc->DrawLine(FW, FH, FW, FH);
       
+	  wxMediaEdit *savesb = skipBox;
       skipBox = this;
       Redraw(dc, y + (i ? 1 : 0), y + h, 0, W, -y + v_margin, h_margin, 
 	     wxSNIP_DRAW_NO_CARET, 0);
-      skipBox = NULL;
+      skipBox = savesb;
       
       if (page < 0)
 	dc->EndPage();

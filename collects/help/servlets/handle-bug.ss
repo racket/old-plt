@@ -1,6 +1,7 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
+	 (lib "xml.ss" "xml")
 	 (lib "head.ss" "net")
 	 (lib "smtp.ss" "net"))
 
@@ -26,12 +27,25 @@
 	     (TD ((ALIGN "right")) 
 		 ,home-page))))
 
+  (define (de-ms s) ; translates &apos; etc. in IE hidden fields
+    (car (cdaadr
+	  (xml->xexpr 
+	   (document-element 
+	    (read-xml 
+	     (open-input-string 
+	      (string-append "<xml value=\""
+			     s
+			     "\"/>"))))))))
+
   (let* ([bindings (request-bindings initial-request)]
 	 [raw-bug-report-data (extract-binding/single 'bug-report-data bindings)]
 	 [bug-report-data (read (open-input-string raw-bug-report-data))]
-	 [get-entry 
+	 [get-raw-entry 
 	  (lambda (s)
 	    (cadr (assoc s bug-report-data)))]
+	 [get-entry 
+	  (lambda (s)
+	    (de-ms (get-raw-entry s)))]
 	 [originator (get-entry 'originator)]
 	 [reply-to (get-entry 'reply-to)]
 	 [subject (get-entry 'subject)]
@@ -40,7 +54,7 @@
 	 [priority (get-entry 'priority)]
 	 [description (get-entry 'description)]
 	 [how-to-repeat (get-entry 'how-to-repeat)]
-	 [synth-info (get-entry 'synth-info)]
+	 [synth-info (get-raw-entry 'synth-info)]
 	 [get-synth-item
 	  (lambda (s)
 	    (cadr (assoc s synth-info)))]

@@ -129,15 +129,15 @@
 			(NAME "bug-report-data")
 			(VALUE  ; code everything into one big assoc list
 			 ,(format "~s"
-				  `((synth-info ,synth-info)
-				    (originator ,originator)
-				    (reply-to ,reply-to)
-				    (subject ,subject)
-				    (severity ,severity)
-				    (class ,bug-class)
-				    (priority ,priority)
-				    (description ,description)
-				    (how-to-repeat ,how-to-repeat)))))))
+				 `((synth-info ,synth-info)
+				   (originator ,originator)
+				   (reply-to ,reply-to)
+				   (subject ,subject)
+				   (severity ,severity)
+				   (class ,bug-class)
+				   (priority ,priority)
+				   (description ,description)
+				   (how-to-repeat ,how-to-repeat)))))))
 	  (P)
 	  (TABLE 
 	   ,@(map make-field-entry-from-pair

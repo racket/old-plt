@@ -62,7 +62,7 @@
 	 "all relevant items.")
       (LI  "Expert users can adjust the search with the "
 	   "popdown menus below the "
-	   (B "Search for") " field."))
+	   (TT "Search for") " field."))
      (P)
      "Help Desk sorts search results according to their source, "
      "and then according to their (apparent) relevance.")))

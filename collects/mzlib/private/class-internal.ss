@@ -1617,31 +1617,32 @@
 									     index))
 						  0)
 					      (if (vector-ref new-augonly index) 0 -1)))
-					 (define (check-depth depth mname)
-					   (when (negative? depth)
-					     (obj-error 'class* 
-							(string-append
-							 "superclass method for augride, augment, "
-							 "or rename-inner method is not augmentable: ~a~a")
-							mname
-							(for-class name))))
 					 ;; To compute `rename-inner' indices, we need to know which methods
 					 ;;  are augonly in this new class.
 					 (for-each (lambda (id)
 						     (vector-set! new-augonly (hash-table-get method-ht id) #t))
 						   (append pubment-names overment-names))
 					 (for-each (lambda (mname index)
-						     (check-depth (get-depth index) mname))
+						     (let ([depth (get-depth index)])
+						       (when (negative? depth)
+							 (obj-error 'class* 
+								    (string-append
+								     "superclass method for augride, augment, "
+								     "or rename-inner method is not augmentable: ~a~a")
+								    mname
+								    (for-class name)))))
 						   (append augride-normal-names
-							   augment-final-names)
+							   augment-final-names
+							   rename-inner-names)
 						   (append (get-indices method-ht "augride" augride-normal-names)
-							   refine-final-indices))
+							   refine-final-indices
+							   rename-inner-indices))
+					 ;; Now that checking is done, add `augment':
 					 (for-each (lambda (id)
 						     (vector-set! new-augonly (hash-table-get method-ht id) #t))
 						   augment-names)
 					 (map (lambda (mname index)
 						(let ([depth (get-depth index)])
-						  (check-depth depth mname)
 						  (lambda (obj default)
 						    (let* ([rename-inner (vector-ref (vector-ref (class-beta-methods (object-ref obj)) 
 												 index)

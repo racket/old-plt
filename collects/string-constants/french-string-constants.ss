@@ -999,6 +999,12 @@
   (test-coverage-clear-and-do-not-ask-again "Oui, et ne me demandez pas à nouveau")
   (test-coverage-ask? "Demander à propos de l'invalidation de l'information de couverture des tests ?")
   
+  ;; tracing
+  (tracing-enable-tracing "Traçage")
+  (tracing-show-tracing-window "Montrer le traçage")
+  (tracing-hide-tracing-window "Cacher le traçage")
+  (tracing-tracing-nothing-to-show "Aucun résultat de traçage n'est disponible. Assurez-vous que votre language supporte le traçage et que le traçage soit en place")
+
   ;;; repl stuff
   (evaluation-terminated "Evaluation terminée.")
   (evaluation-terminated-explanation

@@ -1798,7 +1798,7 @@ Scheme_Object *scheme_builtin_value(const char *name)
 
   /* Maybe in MzScheme? */
   a[0] = scheme_intern_symbol("mzscheme");
-  return _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0, -1);
+  return _dynamic_require(2, a, initial_modules_env, 0, 0, 0, 0, -1);
 }
 
 Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o)

@@ -2,7 +2,7 @@
 ;;
 ;; program-tests.ss
 ;; Richard Cobbe
-;; $Id: program-tests.ss,v 1.2 2004/08/10 15:57:02 cobbe Exp $
+;; $Id: program-tests.ss,v 1.3 2004/08/18 19:55:03 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -19,13 +19,14 @@
      '((class A Object ([int i] [bool b] [Object o] [B a-b])
          (int method-1 () 3)
          (Object method-2 ([int a] [bool c]) null))
-       (class C A ([B second-b])
+       (class C A ([B second-b] [D i])
          (int method-1 () 4)
          (int method-3 () 6))
        (class B Object ([int x] [int i] [Object o]))
        (class D B ())
        (class E B ())
        (class F Object ())
+       (class G C ([B b]))
        (+ 3 4))))
 
   (schemeunit-test
@@ -75,6 +76,30 @@
                                   (make-class-type 'a) 'i)))
 
      (make-test-case "find inherited field"
+       (assert-equal? (find-field (find-class test-program
+                                              (make-class-type 'c)) 'b)
+                      (make-field (make-ground-type 'bool)
+                                  (make-class-type 'a) 'b)))
+
+     (make-test-case "find shadowing field direct"
+       (assert-equal? (find-field (find-class test-program
+                                              (make-class-type 'c)) 'i)
+                      (make-field (make-class-type 'D)
+                                  (make-class-type 'c) 'i)))
+
+     (make-test-case "find shadowed field direct"
+       (assert-equal? (find-field (find-class test-program
+                                              (make-class-type 'a)) 'i)
+                      (make-field (make-ground-type 'int)
+                                  (make-class-type 'a) 'i)))
+
+     (make-test-case "find shadowing field inherited"
+       (assert-equal? (find-field (find-class test-program
+                                              (make-class-type 'g)) 'i)
+                      (make-field (make-class-type 'd)
+                                  (make-class-type 'c) 'i)))
+
+     (make-test-case "find shadowed field inherited"
        (assert-equal? (find-field (find-class test-program
                                               (make-class-type 'c)) 'b)
                       (make-field (make-ground-type 'bool)

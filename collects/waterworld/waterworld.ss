@@ -678,9 +678,10 @@
 		  (decrement-concealed!)
 		  (if (not actually-safe?)
 		      (decrement-pirates-left!)
-		      (when (eq? *current-autoclick* 'yes)
-			    (let* ([unsafe-count (sum-location-unsafe neighbors)])
-			      (send loc set-unsafe-count! unsafe-count)
+		      (let* ([unsafe-count 
+			      (sum-location-unsafe neighbors)])
+			(send loc set-unsafe-count! unsafe-count)
+			(when (eq? *current-autoclick* 'yes)
 			      (when (= 0 unsafe-count)
 				    (for-each
 				     (lambda (nloc)

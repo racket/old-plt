@@ -522,6 +522,7 @@
 # define WINDOWS_DYNAMIC_LOAD
 
 #ifdef _MSC_VER
+# define USE_MSVC_FP_PREDS
 # if _MSC_VER < 1300
 #  define NAN_EQUALS_ANYTHING
 # endif
@@ -1072,7 +1073,10 @@
  /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
     infinity and not-a-number. */
 
- /* USE_CARBOM_FP_PREDS uses __isnand() and __isfinited() to implement tests
+ /* USE_CARBON_FP_PREDS uses __isnand() and __isfinited() to implement tests
+    for infinity and not-a-number. */
+
+ /* USE_MSVC_FP_PREDS uses _fpclass() and _isnan() to implement tests
     for infinity and not-a-number. */
 
  /* DEFEAT_FP_COMP_OPTIMIZATION avoids a compiler optimization that

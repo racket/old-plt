@@ -1,13 +1,12 @@
 
-/* Optimization someimtes causes a problem: d is represented in an
-   extended format instead of a `double'. We don't want to turn off
-   floatng-point optimizations in the rest of the program, so we use a
-   little function to defeat the optimization: */
-
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
 
+/* Optimization someimtes causes a problem: d is represented in an
+   extended format instead of a `double'. We don't want to turn off
+   floatng-point optimizations in the rest of the program, so we use a
+   little function to defeat the optimization: */
 static int IS_FLOAT_INF(FP_TYPE d)
 {
   return MZ_IS_POS_INFINITY(d);

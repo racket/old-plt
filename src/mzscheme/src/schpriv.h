@@ -1202,10 +1202,16 @@ extern int scheme_is_nan(double);
 #     define MZ_IS_NEG_INFINITY(d) (!__isfinited(d) && (d < 0))
 #     define MZ_IS_NAN(d) __isnand(d)
 #    else
-      /* USE_IEEE_FP_PREDS */
-#     define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
-#     define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
-#     define MZ_IS_NAN(d) isnan(d)
+#     ifdef USE_MSVC_FP_PREDS
+#      define MZ_IS_POS_INFINITY(d) (_fpclass(d) == _FPCLASS_PINF)
+#      define MZ_IS_NEG_INFINITY(d) (_fpclass(d) == _FPCLASS_NINF)
+#      define MZ_IS_NAN(d) _isnan(d)
+#     else
+       /* USE_IEEE_FP_PREDS */
+#      define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
+#      define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
+#      define MZ_IS_NAN(d) isnan(d)
+#     endif
 #    endif
 #   endif
 #  endif

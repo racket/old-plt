@@ -354,9 +354,16 @@ void wxCanvas::ScrollPercent(double x, double y)
 
 void wxCanvas::EnableScrolling (Bool x_scroll, Bool y_scroll)
 {
-  wxWnd *wnd = (wxWnd *) handle;
-  wnd->x_scrolling_enabled = x_scroll;
-  wnd->y_scrolling_enabled = y_scroll;
+  wxWnd *wnd = (wxWnd *)handle;
+
+  if (x_scroll != wnd->x_scrolling_enabled) {
+    wnd->x_scrolling_enabled = x_scroll;
+    ShowScrollBar(wnd->handle, SB_HORZ, x_scroll);
+  }
+  if (y_scroll != wnd->x_scrolling_enabled) {
+    wnd->y_scrolling_enabled = y_scroll;
+    ShowScrollBar(wnd->handle, SB_VERT, x_scroll);
+  }
 }
 
 void wxCanvas::GetVirtualSize (int *x, int *y)

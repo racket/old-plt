@@ -108,10 +108,11 @@
     (atest '(#"lo") sync (regexp-match-evt #rx".." p)))
   (let ([p (mk-hello)])
     (atest #"hello" sync (read-bytes-line-evt p))
-    (atest eof sync (read-bytes-line-evt p) (eof-evt p)))
+    (atest eof sync (read-bytes-line-evt p))
+    (atest eof sync (eof-evt p)))
   (let ([p (mk-hello)])
     (atest "hello" sync (read-line-evt p))
-    (atest eof sync (read-line-evt p) (eof-evt p))))
+    (atest eof sync (read-line-evt p))))
 (go (lambda () (open-input-bytes #"hello")) sync test test)
 
 (define (sync/poll . args) (apply sync/timeout 0 args))
@@ -126,7 +127,10 @@
     r))
 (go delay-hello sync test test)
 
-(go delay-hello sync/poll 
+(go (lambda ()
+      (let-values ([(r w) (make-pipe)])
+	r))
+    sync/poll 
     (lambda args
       (apply test #f (cdr args)))
     (lambda args
@@ -140,27 +144,27 @@
 (let ([p (open-input-string "ab\nc")])
   (test "ab" sync (read-line-evt p))
   (test "c" sync (read-line-evt p))
-  (test #f sync/timeout 0 (read-line-evt p)))
+  (test eof sync (read-line-evt p)))
 (let ([p (open-input-string "ab\nc")])
   (test "ab\nc" sync (read-line-evt p 'return))
-  (test #f sync/timeout 0 (read-line-evt p 'return)))
+  (test eof sync (read-line-evt p 'return)))
 (let ([p (open-input-string "ab\r\nc\r")])
   (test "ab" sync (read-line-evt p 'return))
   (test "\nc" sync (read-line-evt p 'return))
-  (test #f sync/timeout 0 (read-line-evt p 'return)))
+  (test eof sync (read-line-evt p 'return)))
 (let ([p (open-input-string "ab\r\nc\r")])
   (test "ab" sync (read-line-evt p 'return-linefeed))
   (test "c\r" sync (read-line-evt p 'return-linefeed))
-  (test #f sync/timeout 0 (read-line-evt p 'return-linefeed)))
+  (test eof sync (read-line-evt p 'return-linefeed)))
 (let ([p (open-input-string "ab\r\nc\r")])
   (test "ab" sync (read-line-evt p 'any))
   (test "c" sync (read-line-evt p 'any))
-  (test #f sync/timeout 0 (read-line-evt p 'any)))
+  (test eof sync (read-line-evt p 'any)))
 (let ([p (open-input-string "ab\r\nc\r")])
   (test "ab" sync (read-line-evt p 'any-one))
   (test "" sync (read-line-evt p 'any-one))
   (test "c" sync (read-line-evt p 'any-one))
-  (test #f sync/timeout 0 (read-line-evt p 'any-one)))
+  (test eof sync (read-line-evt p 'any-one)))
 
 ;; input-port-append tests
 (let* ([do-test

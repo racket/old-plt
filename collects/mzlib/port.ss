@@ -615,7 +615,7 @@
       [(_ str) (datum->syntax-object #'here
 				     (byte-regexp 
 				      (string->bytes/latin-1
-				       (format "^(?:(.*?)~a)|(.+?$)"
+				       (format "^(?:(.*?)~a)|(.*?$)"
 					       (syntax-e #'str)))))]))
 
   (define read-bytes-line-evt
@@ -630,7 +630,10 @@
 			 input-port)
        (lambda (m)
 	 (or (cadr m)
-	     (caddr m))))))
+	     (let ([l (caddr m)])
+	       (if (and l (zero? (bytes-length l)))
+		   eof
+		   l)))))))
   
   (define read-line-evt
     (opt-lambda (input-port [mode 'linefeed])

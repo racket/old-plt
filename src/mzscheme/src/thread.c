@@ -731,12 +731,6 @@ static void remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o,
     }
   }
 
-  if (i < 0) {
-    scheme_console_printf("missing -- can't remove! %lx %d\n",
-			  o, SCHEME_TYPE(o));
-    *(long *)0x0 = 1;
-  }
-
   while (m->count && !m->boxes[m->count - 1]) {
     --m->count;
   }

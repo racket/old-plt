@@ -85,7 +85,70 @@
 	(set-snipclass separator-snipclass))))
 
   ;;;; end of copied region
-    
+
+  ;;;; duplicated for vertical-snip
+  
+  (define vertical-separator-snipclass
+    (make-object
+     (class-asi snip-class%
+       (override
+         [read (lambda (s) 
+                 (let ([size-box (box 0)])
+                   (send s get size-box)
+                   (make-object vertical-separator-snip%)))]))))
+  
+  (send* separator-snipclass
+    (set-version 1)
+    (set-classname "drscheme:vertical-separator-snip%"))
+  
+  (send (get-the-snip-class-list) add vertical-separator-snipclass)
+  
+  ;; the two numbers 1 and 2 which appear here are to line up this snip
+  ;; with the embedded snips around it in the drscheme rep.
+  ;; I have no idea where the extra pixels are going.
+  (define vertical-separator-snip%
+    (class snip% (height)
+      (inherit get-style set-snipclass set-flags get-flags get-admin)
+      (private [width 1]
+	       [white-around 2])
+      (public [set-height! 
+               (lambda (x) (set! height x))])
+      (override
+	[copy (lambda () 
+		(let ([s (make-object vertical-separator-snip% height)])
+		  (send s set-style (get-style))
+		  s))]
+	[get-extent
+	 (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
+	   (for-each (lambda (box) (unless (not box) (set-box! box 0)))
+		     (list descent-box space-box lspace-box rspace-box))
+	   (unless (not w-box)
+	     (set-box! w-box (+ (* 2 white-around) width)))
+	   (unless (not h-box)
+	     (set-box! h-box height)))]
+	[draw
+	 (let* ([body-pen (send the-pen-list find-or-create-pen
+				"BLUE" 0 'solid)]
+		[body-brush (send the-brush-list find-or-create-brush
+				  "BLUE" 'solid)])
+	   (lambda (dc x y left top right bottom dx dy draw-caret)
+	     (let ([orig-pen (send dc get-pen)]
+		   [orig-brush (send dc get-brush)])
+	       (send dc set-pen body-pen)
+	       (send dc set-brush body-brush)
+	       
+	       (send dc draw-rectangle (+ white-around x)
+		     0 width height)
+	       
+	       (send dc set-pen orig-pen)
+	       (send dc set-brush orig-brush))))])
+      (sequence
+	(super-init)
+	(set-snipclass vertical-separator-snipclass))))
+  
+  
+  ;;;; end of vertical snip-stuff
+  
   (define stepper-frame%
     (class (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)) (drscheme-frame)
       (rename [super-on-close on-close])
@@ -129,173 +192,174 @@
                                          error-msg after-exprs (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase auto-wrap
                begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
-      (public (pretty-printed-width -1)
-              (char-width 0)
-              (clear-highlight-thunks null)
-              [reset-style
-               (lambda ()
-                 (change-style (send (get-style-list) find-named-style "Standard")))]
-              (reset-pretty-print-width 
+      (public [reset-pretty-print-width 
                (lambda (canvas)
                  (begin-edit-sequence)
                  (let* ([style (send (get-style-list) find-named-style "Standard")]
-                        [_ (set! char-width (send style get-text-width (send canvas get-dc)))]
+                        [char-width (send style get-text-width (send canvas get-dc))]
                         [canvas-width (let-values ([(client-width client-height)
                                                     (send canvas get-client-size)])
-                                        (- client-width 18))] ; 12 border pixels + 6 for wrap char
-                        [min-columns 30]
-                        [new-columns (max min-columns 
-                                          (floor (/ canvas-width char-width)))])
-                   (pretty-print-columns new-columns)
-                   (reformat-sexp)
-                   (end-edit-sequence))))
-              
-              (reformat-sexp
-               (lambda ()
-                 (when (not (= pretty-printed-width (pretty-print-columns)))
-                   (set! pretty-printed-width (pretty-print-columns))
-                   (format-whole-step))))
-              [highlight-begin #f]
-              [highlight-color #f]
-              [remaining-highlights null]
-              [highlight-pop
-               (lambda ()
-                 (if (null? remaining-highlights)
-                     (error 'highlight-pop "no highlighted region to match placeholder")
-                     (begin0 (car remaining-highlights) 
-                             (set! remaining-highlights (cdr remaining-highlights))
-                             (stack-top-decide))))]
-              [next-is-placeholder? #f]
-              [stack-top-decide
-               (lambda ()
-                 (set! next-is-placeholder?
-                       (or (null? remaining-highlights)
-                           (confusable-value? (car remaining-highlights)))))]
-              [format-sexp
-               (lambda (sexp)
-                 (let ([real-print-hook (pretty-print-print-hook)])
-                   (parameterize ([pretty-print-size-hook
-                                   (lambda (value display? port)
-                                     (if (eq? value highlight-placeholder) ; must be a confusable value
-                                         (string-length (format "~s" (car remaining-highlights)))
-                                         (if (image? value)
-                                             1   ; if there was a good way to calculate a image widths ...
-                                             #f)))]
-                                  [pretty-print-print-hook
-                                   (lambda (value display? port)
-                                     (if (eq? value highlight-placeholder)
-                                         (insert (format "~s" (car remaining-highlights)))
-                                         ; next occurs if value is an image:
-                                         (insert (send value copy))))]
-                                  [pretty-print-display-string-handler
-                                   (lambda (string port)
-                                     (insert string))]
-                                  [pretty-print-print-line
-                                   (lambda (number port old-length dest-columns)
-                                     (when (not (eq? number 0))
-                                       (insert #\newline))
-                                     0)]
-                                  [pretty-print-pre-print-hook
-                                   (lambda (value p)
-                                     (when (or (and (not next-is-placeholder?)
-                                                    (not (null? remaining-highlights))
-                                                    (eq? value (car remaining-highlights)))
-                                               (eq? value highlight-placeholder))
-                                       (set! highlight-begin (get-start-position))))]
-                                  [pretty-print-post-print-hook
-                                   (lambda (value p)
-                                     (when (or (and (not next-is-placeholder?)
-                                                    (not (null? remaining-highlights))
-                                                    (eq? value (car remaining-highlights)))
-                                               (eq? value highlight-placeholder))
-                                       (highlight-pop)
-                                       (let ([highlight-end (get-start-position)])
-                                         (unless highlight-begin
-                                           (error 'format-whole-step "no highlight-begin to match highlight-end"))
-                                         (set! clear-highlight-thunks
-                                               (cons (highlight-range highlight-begin highlight-end highlight-color #f #f)
-                                                     clear-highlight-thunks))
-                                         (set! highlight-begin #f))))])
-                     (pretty-print sexp))))]
-              
-              [advance-substitute
-               (lambda (exp)
-                 (letrec ([stack-copy remaining-highlights]
-                          [stack-pop (lambda () 
-                                       (if (null? stack-copy)
-                                           (error 'advance-substitute "no highlighted region to fill placeholder")
-                                           (begin0 (car stack-copy) (set! stack-copy (cdr stack-copy)))))]
-                          [substitute
-                           (lambda (exp)
-                             (cond [(eq? exp highlight-placeholder)
-                                    (let ([popped (stack-pop)])
-                                      (if (confusable-value? popped)
-                                          highlight-placeholder
-                                          popped))]
-                                   [(pair? exp)
-                                    (cons (substitute (car exp)) (substitute (cdr exp)))]
-                                   [else
-                                    exp]))])
-                 (substitute exp)))]
-              
+                                        client-width)]
+                        [min-columns-main 40]
+                        [width-main (max min-columns-main (floor (/ (- canvas-width 18) char-width)))]
+                        [min-columns-narrow 20]
+                        [width-narrow (max min-columns-narrow 
+                                           (floor (/ (- (/ (- canvas-width separator-width) 2) 18) char-width)))])
+                   (reformat-sexp min-columns-main min-columns-narrow)
+                   (end-edit-sequence)))])
 
+      (private [pretty-printed-width-main #f]
+               [pretty-printed-width-narrow #f]
+               [clear-highlight-thunks null]               
+               [reset-style
+                (lambda ()
+                  (change-style (send (get-style-list) find-named-style "Standard")))]
+               
+               [reformat-sexp
+                (lambda (main narrow)
+                  (when (not (and (= pretty-printed-width-main main)
+                                  (= pretty-printed-width-narrow narrow)))
+                    (set! pretty-printed-width (pretty-print-columns))
+                    (format-whole-step)))]
+               [highlight-begin #f]
+               [highlight-color #f]
+               [remaining-highlights null]
+               [highlight-pop
+                (lambda ()
+                  (if (null? remaining-highlights)
+                      (error 'highlight-pop "no highlighted region to match placeholder")
+                      (begin0 (car remaining-highlights) 
+                              (set! remaining-highlights (cdr remaining-highlights))
+                              (stack-top-decide))))]
+               [next-is-placeholder? #f]
+               [stack-top-decide
+                (lambda ()
+                  (set! next-is-placeholder?
+                        (or (null? remaining-highlights)
+                            (confusable-value? (car remaining-highlights)))))]
+               [format-sexp
+                (lambda (sexp)
+                  (let ([real-print-hook (pretty-print-print-hook)])
+                    (parameterize ([pretty-print-size-hook
+                                    (lambda (value display? port)
+                                      (if (eq? value highlight-placeholder) ; must be a confusable value
+                                          (string-length (format "~s" (car remaining-highlights)))
+                                          (if (image? value)
+                                              1   ; if there was a good way to calculate a image widths ...
+                                              #f)))]
+                                   [pretty-print-print-hook
+                                    (lambda (value display? port)
+                                      (if (eq? value highlight-placeholder)
+                                          (insert (format "~s" (car remaining-highlights)))
+                                          ; next occurs if value is an image:
+                                          (insert (send value copy))))]
+                                   [pretty-print-display-string-handler
+                                    (lambda (string port)
+                                      (insert string))]
+                                   [pretty-print-print-line
+                                    (lambda (number port old-length dest-columns)
+                                      (when (not (eq? number 0))
+                                        (insert #\newline))
+                                      0)]
+                                   [pretty-print-pre-print-hook
+                                    (lambda (value p)
+                                      (when (or (and (not next-is-placeholder?)
+                                                     (not (null? remaining-highlights))
+                                                     (eq? value (car remaining-highlights)))
+                                                (eq? value highlight-placeholder))
+                                        (set! highlight-begin (get-start-position))))]
+                                   [pretty-print-post-print-hook
+                                    (lambda (value p)
+                                      (when (or (and (not next-is-placeholder?)
+                                                     (not (null? remaining-highlights))
+                                                     (eq? value (car remaining-highlights)))
+                                                (eq? value highlight-placeholder))
+                                        (highlight-pop)
+                                        (let ([highlight-end (get-start-position)])
+                                          (unless highlight-begin
+                                            (error 'format-whole-step "no highlight-begin to match highlight-end"))
+                                          (set! clear-highlight-thunks
+                                                (cons (highlight-range highlight-begin highlight-end highlight-color #f #f)
+                                                      clear-highlight-thunks))
+                                          (set! highlight-begin #f))))])
+                      (pretty-print sexp))))]
               
-              [format-whole-step
-               (lambda ()
-                 (lock #f)
-                 (begin-edit-sequence)
-                 (for-each (lambda (fun) (fun)) clear-highlight-thunks)
-                 (set! clear-highlight-thunks null)
-                 (erase)
-                 (for-each
-                  (lambda (expr)
-                    (format-sexp expr)
+               [advance-substitute
+                (lambda (exp)
+                  (letrec ([stack-copy remaining-highlights]
+                           [stack-pop (lambda () 
+                                        (if (null? stack-copy)
+                                            (error 'advance-substitute "no highlighted region to fill placeholder")
+                                            (begin0 (car stack-copy) (set! stack-copy (cdr stack-copy)))))]
+                           [substitute
+                            (lambda (exp)
+                              (cond [(eq? exp highlight-placeholder)
+                                     (let ([popped (stack-pop)])
+                                       (if (confusable-value? popped)
+                                           highlight-placeholder
+                                           popped))]
+                                    [(pair? exp)
+                                     (cons (substitute (car exp)) (substitute (cdr exp)))]
+                                    [else
+                                     exp]))])
+                    (substitute exp)))]
+              
+               [format-whole-step
+                (lambda ()
+                  (lock #f)
+                  (begin-edit-sequence)
+                  (for-each (lambda (fun) (fun)) clear-highlight-thunks)
+                  (set! clear-highlight-thunks null)
+                  (erase)
+                  (for-each
+                   (lambda (expr)
+                     (format-sexp expr)
+                     (insert #\newline))
+                   finished-exprs)
+                  (insert (make-object separator-snip%))
+                  (when (not (eq? redex-list no-sexp))
+                    (insert #\newline)
+                    (reset-style)
+                    (set! remaining-highlights redex-list)
+                    (stack-top-decide)
+                    (set! highlight-color redex-highlight-color)
+                    (unless (= (length exps) 1)
+                      (error 'format-sexp "wrong length exp list in pre-step: ~s" exps))
+                    (format-sexp (advance-substitute (car exps)))
+                    (unless (null? remaining-highlights)
+                      (error 'format-whole-step "left-over highlights in pre-step"))
+                    (insert #\newline)
+                    (insert (make-object separator-snip%))
                     (insert #\newline))
-                  finished-exprs)
-                 (insert (make-object separator-snip%))
-                 (when (not (eq? redex-list no-sexp))
-                   (insert #\newline)
-                   (reset-style)
-                   (set! remaining-highlights redex-list)
-                   (stack-top-decide)
-                   (set! highlight-color redex-highlight-color)
-                   (unless (= (length exps) 1)
-                     (error 'format-sexp "wrong length exp list in pre-step: ~s" exps))
-                   (format-sexp (advance-substitute (car exps)))
-                   (unless (null? remaining-highlights)
-                     (error 'format-whole-step "left-over highlights in pre-step"))
-                   (insert #\newline)
-                   (insert (make-object separator-snip%))
-                   (insert #\newline))
-                 (cond [(not (eq? reduct-list no-sexp))
-                        (reset-style)
-                        (set! remaining-highlights reduct-list)
-                        (stack-top-decide)
-                        (set! highlight-color reduct-highlight-color)
-                        (for-each
-                         (lambda (exp) (format-sexp (advance-substitute exp)))
-                         post-exps)
-                        (unless (null? remaining-highlights)
-                          (error 'format-whole-step "left-over highlights in post-step"))]
-                       [error-msg
-                        (let ([before-error-msg (last-position)])
-                          (reset-style)
-                          (auto-wrap #t)
-                          (insert error-msg)
-                          (change-style error-delta before-error-msg (last-position))
-                          (insert #\newline))])
-                 (unless (eq? after-exprs no-sexp)
-                   (insert #\newline)
-                   (insert (make-object separator-snip%))
-                   (insert #\newline)
-                   (reset-style)
-                   (for-each
-                    (lambda (expr)
-                      (format-sexp expr)
-                      (insert #\newline))
-                    after-exprs))
-                 (end-edit-sequence)
-                 (lock #t))])
+                  (cond [(not (eq? reduct-list no-sexp))
+                         (reset-style)
+                         (set! remaining-highlights reduct-list)
+                         (stack-top-decide)
+                         (set! highlight-color reduct-highlight-color)
+                         (for-each
+                          (lambda (exp) (format-sexp (advance-substitute exp)))
+                          post-exps)
+                         (unless (null? remaining-highlights)
+                           (error 'format-whole-step "left-over highlights in post-step"))]
+                        [error-msg
+                         (let ([before-error-msg (last-position)])
+                           (reset-style)
+                           (auto-wrap #t)
+                           (insert error-msg)
+                           (change-style error-delta before-error-msg (last-position))
+                           (insert #\newline))])
+                  (unless (eq? after-exprs no-sexp)
+                    (insert #\newline)
+                    (insert (make-object separator-snip%))
+                    (insert #\newline)
+                    (reset-style)
+                    (for-each
+                     (lambda (expr)
+                       (format-sexp expr)
+                       (insert #\newline))
+                     after-exprs))
+                  (end-edit-sequence)
+                  (lock #t))])
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (f:scheme:get-style-list)))))
 

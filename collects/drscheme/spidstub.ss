@@ -6,8 +6,9 @@
 	    [drscheme : drscheme:export^]
 	    [zodiac : zodiac:system^]
 	    [params : plt:parameters^])
-    (wx:message-box (format
-		     "The analyzer is not available in DrScheme version ~a."
-		     (mred:version))
-		    "Unavailable")))
+    (lambda (f)
+      (mred:message-box (format
+			 "The analyzer is not available in DrScheme version ~a."
+			 (mred:version))
+			"Unavailable"))))
 

@@ -5,23 +5,21 @@
 	    [mzlib : mzlib:core^]
 	    [print-convert : mzlib:print-convert^]
 	    [drscheme : drscheme:export^]
-	    [zodiac : zodiac:system^])
+	    [zodiac : zodiac:system^]
+	    plt:parameters^)
 
     (printf "invoking toy@~n")
     ;; get the frame group
-    (define group (ivar drscheme:console group))
+    (define group drscheme:frame-group)
 
     ;; this function will be applied to every frame in the project
     (define to-each-frame 
       (lambda (frame)
 	(let ([callback
 	       (lambda ()
-		 (let ([edit (send frame get-program-edit)]
-		       [console-edit (send frame get-console-edit)])
+		 (let ([edit (ivar frame definitions-edit)])
 		   ;; grab the current edit for this frame (it changes)
-		   (send edit insert "toy")
-		   (send console-edit insert "toy")
-		   (send console-edit send-scheme 'toy)
+		   (send edit insert "(define toy 1) ;; please execute me!")
 		   (wx:bell)))])
 	  
 	  ;; install a menu in each frame
@@ -50,6 +48,10 @@
 	      (list 'mred:make-child-info 'zodiac:make-parsed)
 	      (list mred:make-child-info zodiac:make-parsed))
 
-    (printf "invoked toy@~n")))
+    (printf "invoked toy@~n")
+
+    ;; the last value will be a functoin that's called by the menu
+    ;; selection from now on.
+    (lambda (f) (wx:bell))))
 
 (printf "loaded toy@~n")

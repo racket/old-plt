@@ -189,37 +189,34 @@
                 (top-margin 0)
                 (bottom-margin 0)
                 (left-margin 0)
-                  (right-margin 0))
+                (right-margin 0))
               false)
       (end-edit-sequence)
       ))
   
+  ;; label-box (string? (is-a?/c editor<%>) . -> . (is-a?/c aligned-editor-snip%))
   ;; a snip with a box to type in and a label
-  ;(define/contract label-box
-  ;  (string? (is-a?/c editor<%>) . -> . (is-a?/c editor-snip%))
-  ; status: hey robby, this gives me a <em>weird</em> error.
-  (define label-box
-    (lambda (label text)
-      (let ([sd (make-object style-delta% 'change-normal-color)]
-            [pb (instantiate vertical-pasteboard% ())]
-            [label-snip (make-object string-snip% label)])
-        (send sd set-delta-foreground "indigo")
-        (send sd set-delta 'change-weight 'bold)
-        (send* pb
-          (begin-edit-sequence)
-          (insert label-snip false)
-          (change-style sd label-snip)
-          (insert (instantiate test:editor-snip% ()
-                    (editor text)
-                    (stretchable-width true)
-                    (stretchable-height false))
-                  false)
-          (end-edit-sequence))
-        (instantiate aligned-editor-snip% ()
-          (with-border? false)
-          (top-margin 0)
-          (bottom-margin 0)
-          (left-margin 0)
-          (right-margin 0)
-          (editor pb)))))
+  (define (label-box label text)
+    (let ([sd (make-object style-delta% 'change-normal-color)]
+          [pb (instantiate vertical-pasteboard% ())]
+          [label-snip (make-object string-snip% label)])
+      (send sd set-delta-foreground "indigo")
+      (send sd set-delta 'change-weight 'bold)
+      (send* pb
+        (begin-edit-sequence)
+        (insert label-snip false)
+        (change-style sd label-snip)
+        (insert (instantiate test:editor-snip% ()
+                  (editor text)
+                  (stretchable-width true)
+                  (stretchable-height false))
+                false)
+        (end-edit-sequence))
+      (instantiate aligned-editor-snip% ()
+        (with-border? false)
+        (top-margin 0)
+        (bottom-margin 0)
+        (left-margin 0)
+        (right-margin 0)
+        (editor pb))))
   )

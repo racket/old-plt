@@ -65,11 +65,20 @@
       ;(when filename
       ;  (send model load-file filename))
       
-      (instantiate aligned-editor-canvas% ()
+      (instantiate test-suite-canvas% ()
         (parent (get-area-container))
         (editor model)
         (style '(no-hscroll)))
       ))
+  
+  (define test-suite-canvas%
+    (class aligned-editor-canvas%
+      (inherit get-editor)
+      (rename [super-on-size on-size])
+      (define/override (on-size x y)
+        (super-on-size x y)
+        (send (get-editor) set-modified false))
+      (super-instantiate ())))
      
   ;; a window class for displaying test-suites
   (define test-suite-window%

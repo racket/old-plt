@@ -185,8 +185,8 @@
         (let ([window
                (instantiate test-suite-window% ()
                  (tools tools))])
-          (when filename (send window load-file filename))
-          (send window show true)))
+          (send window show true)
+          (when filename (send window load-file filename))))
       
       ;; new-callback ((is-a?/c menu%) (is-a?/c control-event%) . -> . void?)
       ;; create a new test suite window

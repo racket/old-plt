@@ -16,7 +16,6 @@
   (define (callbacks-mixin super%)
     (class super%
       (super-instantiate ())
-      (inherit get-error-handler update-executing)
       (inherit-field model)
       
       (field
@@ -44,7 +43,7 @@
       
       (super-instantiate ())
       (inherit get-menu-bar)
-      (inherit-field new-callback delete-callback execute-callback break-callback save-callback model)
+      (inherit-field new-callback delete-callback execute-callback break-callback model)
       
       (let ([test-menu (instantiate menu% ()
                          (label "Test")
@@ -53,12 +52,14 @@
           (label "Add Test Case")
           (parent test-menu)
           (callback new-callback)
-          (shortcut #\a))
+          ;(shortcut ...)
+          )
         (instantiate menu-item% ()
           (label "Delete Test Case")
           (parent test-menu)
           (callback delete-callback)
-          (shortcut #\d))
+          ;(shortcut #\d)
+          )
         (instantiate menu-item% ()
           (label "Execute")
           (parent test-menu)

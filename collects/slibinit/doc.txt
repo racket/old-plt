@@ -3,15 +3,21 @@ _SLIB_ Initialization File
 --------------------------
 
 The "init.ss" file in the _slibinit_ collection is an SLIB (version
-2c5) initialization file. Thus, to configure MzScheme for SLIB, load:
+2c5) initialization file. To configure MzScheme for SLIB, load:
 
   (require-library "init.ss" "slibinit")
 
 That's enough if the SCHEME_LIBRARY_PATH environment variable is
-defined. Otherwise, MzScheme's initialization file assumes that SLIB
-is installed as an "slib" collection (i.e., an "slib" directory in the
+defined. Otherwise, the initialization file assumes that SLIB is
+installed as an "slib" collection (i.e., in an "slib" directory in the
 same location as the "mzlib" directory).
 
-There is one system dependency: `most-positive-fixnum' is bound to a
-32-bit-specific value. Nothing else should require changing, but send
-patches to scheme@cs.rice.edu.
+
+The initialization file contains one system-dependent setting:
+`most-positive-fixnum' is bound to a value that is precisely correct
+for 32-bit architectures. The precise value for a 64-bit architcture
+is in the file, but commented out. The only danger in using the 32-bit
+value is a decrease in performance.
+
+No other changes should be necessary. Send patches to
+scheme@cs.rice.edu.

@@ -199,7 +199,8 @@
 (define char-code-limit 256)
 
 ;;; MOST-POSITIVE-FIXNUM is used in modular.scm
-(define most-positive-fixnum #x3FFFFFFFF) ; 30 bits on 32-bit machines
+(define most-positive-fixnum #x3FFFFFFF) ; 30 bits on 32-bit machines
+; (define most-positive-fixnum #x3FFFFFFFFFFFFFFF) ; 62 bits on 64-bit machines
 
 ;;; Return argument
 (define (identity x) x)

@@ -339,11 +339,18 @@
     (when (language>=? 'side-effecting)
       (add-micro-form 'set!-values scheme-vocabulary
 	(let* ((kwd '(set!-values))
-		(in-pattern '(set!-values (vars ...) val))
-		(m&e (pat:make-match&env in-pattern kwd)))
+		(in-pattern-1 '(set!-values () val))
+		(in-pattern-2 '(set!-values (vars ...) val))
+		(m&e-1 (pat:make-match&env in-pattern-1 kwd))
+		(m&e-2 (pat:make-match&env in-pattern-2 kwd)))
 	  (lambda (expr env attributes vocab)
 	    (cond
-	      ((pat:match-against m&e expr env)
+	      ((pat:match-against m&e-1 expr env)
+		=>
+		(lambda (p-env)
+		  (let ((val (pat:pexpand 'val p-env kwd)))
+		    (expand-expr val env attributes vocab))))
+	      ((pat:match-against m&e-2 expr env)
 		=>
 		(lambda (p-env)
 		  (let* ((vars (pat:pexpand '(vars ...) p-env kwd))
@@ -1147,6 +1154,23 @@
 	  (rewriter 'letcc "letcc"))
 	(add-macro-form 'let/cc scheme-vocabulary
 	  (rewriter 'let/cc "let/cc"))))
+
+    (when (language>=? 'side-effecting)
+      (let
+	((rewriter
+	   (lambda (the-kwd kwd-text)
+	     (let* ((kwd (list the-kwd))
+		     (in-pattern (cons the-kwd `(var ,@expr-pattern)))
+		     (out-pattern `(#%call/ec (lambda (var) ,@expr-pattern)))
+		     (m&e (pat:make-match&env in-pattern kwd)))
+	       (lambda (expr env)
+		 (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
+		   (static-error expr
+		     (string-append "Malformed " kwd-text))))))))
+	(add-macro-form 'letec scheme-vocabulary
+	  (rewriter 'letec "letec"))
+	(add-macro-form 'let/ec scheme-vocabulary
+	  (rewriter 'let/ec "let/ec"))))
 
     ; (define-schema var exp)                                  [macro]
 

@@ -271,7 +271,7 @@ int wxImage::LoadGIF(char *fname,int nc)
     while (ch--) { *ptr1 = NEXTBYTE; ptr1++; }
     if ((ptr - RawGIF) > filesize) {
       fprintf(stderr,
-	      "This GIF file seems to be truncated.  Winging it.");
+	      "This GIF file seems to be truncated.  Winging it.\n");
       break;
     }
   } while(ch1);
@@ -395,7 +395,7 @@ int wxImage::LoadGIF(char *fname,int nc)
   free(Raster);  Raster = NULL;
   
   if (npixels != maxpixels) {
-    fprintf(stderr, "This GIF file seems to be truncated.  Winging it.");
+    fprintf(stderr, "This GIF file seems to be truncated.  Winging it.\n");
     memset(pic+npixels, 0, maxpixels-npixels);  /* clear to EOBuffer */
   }
 

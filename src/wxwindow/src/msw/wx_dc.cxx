@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.1.1.1 1997/12/22 16:12:02 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.2 1998/05/21 19:03:37 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1746,18 +1746,12 @@ void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
 
   HDC dc = ThisDC();
   if (!dc) {
-
-	  dest->Set(0, 0, 0);
-
-	  return;
-
+    dest->Set(0, 0, 0);
+    return;
   }
 
-
   result = GetNearestColor(dc, RGB(src->Red(), src->Blue(), src->Green()));
-
   dest->Set(GetRValue(result), GetGValue(result), GetBValue(result));
-  
   DoneDC(dc);
 }
 

@@ -636,7 +636,27 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 			    log = patXor;
 			    break;
 			}
-			if (thePenStyle == wxSOLID)
+			wxBitmap *bm = current_pen->GetStipple();
+			if (bm && bm->Ok() && (bm->GetDepth() == 1)
+			    && (bm->GetWidth() == 8) && (bm->GetHeight() == 8)) {
+			  GDHandle savegd; CGrafPtr saveport;
+			  char p[8]; int i, k;
+                          GetGWorld(&saveport, &savegd);
+                          SetGWorld(bm->x_pixmap, 0);
+			  for (i = 0; i < 8; i++) {
+			    p[i] = 0;
+			    for (int k = 0; k < 8; k++) {
+			      RGBColor cpix;
+			      ::GetCPixel(k, i, &cpix);
+			      p[i] = p[i] << 1;
+			      if (!cpix.red) {
+			        p[i] |= 1;
+			      }
+			    }
+			  }
+			  SetGWorld(saveport, savegd);
+			  PenPat((Pattern *)p);
+			} else if (thePenStyle == wxSOLID)
 				PenPat(&qd.black);
 			else if (thePenStyle == wxTRANSPARENT)
 				PenPat(&qd.white);

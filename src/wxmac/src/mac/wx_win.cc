@@ -23,6 +23,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_dialg.h"
 #include "wx_main.h"
 #include "wx_menu.h"
+#include "wxTimeScale.h"
 #include <QuickDraw.h>
 
 wxWindow* wxWindow::gMouseWindow = NULL; 
@@ -1015,8 +1016,107 @@ void wxWindow::ReleaseMouse(void)
 }
 
 //-----------------------------------------------------------------------------
-static Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt)
+static wxWindow *entered;
+
+/* Forward decl */
+Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
+
+static void SendEnterLeaveEvent(wxWindow *target, int eventtype, wxWindow *evtsrc, wxMouseEvent *evt)
 {
+    if (!target->IsHidden()) {
+	    wxMouseEvent *theMouseEvent = new wxMouseEvent(eventtype);
+	    theMouseEvent->leftDown = evt->leftDown;
+	    theMouseEvent->middleDown = evt->middleDown;
+	    theMouseEvent->rightDown = evt->rightDown;
+	    theMouseEvent->shiftDown = evt->shiftDown;
+	    theMouseEvent->controlDown = evt->controlDown;
+	    theMouseEvent->altDown = evt->altDown;
+	    theMouseEvent->metaDown = evt->metaDown;
+	    theMouseEvent->timeStamp = evt->timeStamp;
+	    
+	    int clientHitX = evt->x;
+	    int clientHitY = evt->y;
+	    evtsrc->ClientToScreen(&clientHitX, &clientHitY);
+	    target->ScreenToClient(&clientHitX, &clientHitY);
+	    theMouseEvent->x = clientHitX;
+	    theMouseEvent->y = clientHitY;
+
+	    if (!doCallPreMouseEvent(target, target, theMouseEvent))		  
+	      target->OnEvent(*theMouseEvent);
+   }
+}
+
+extern QueueMrEdEvent(EventRecord *e);
+
+static void QueueLeaveEvent(wxWindow *target, wxWindow *evtsrc, wxMouseEvent *evt)
+{
+   EventRecord e;
+   
+   int clientHitX = evt->x;
+   int clientHitY = evt->y;
+   evtsrc->ClientToScreen(&clientHitX, &clientHitY);
+   target->ScreenToClient(&clientHitX, &clientHitY);
+   e.message = (long)target;
+   e.where.h = clientHitX;
+   e.where.v = clientHitY;
+   e.what = 42;
+   e.when = UNSCALE_TIMESTAMP(evt->timeStamp);
+   e.modifiers = ((evt->shiftDown ? shiftKey : 0)
+                  + (evt->controlDown ? controlKey : 0)
+                  + (evt->altDown ? optionKey : 0)
+                  + ((evt->leftDown || evt->rightDown) ? btnState : 0)
+                  + (evt->rightDown ? cmdKey : 0));
+                  
+   QueueMrEdEvent(&e);
+}
+
+Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt)
+{
+	if (win == in_win 
+	    && (evt->eventType != wxEVENT_TYPE_ENTER_WINDOW)
+	    && (evt->eventType != wxEVENT_TYPE_LEAVE_WINDOW)) {
+	  /* Do enter/leave events */
+	  if (entered != win) {
+	    wxWindow *p;
+	    if (entered) {
+	      /* Leave in current eventspace? */
+	      int same = (((wxFrame *)win->GetRootFrame())->context
+	                  == ((wxFrame *)entered->GetRootFrame())->context);
+	    
+	      /* Send/queue leave events to non-common ancestors */
+	      p = entered;
+	      while (p) {
+	        wxWindow *winp = win;
+	        while (winp && (winp != p))
+	          winp = winp->GetParent();
+	        if (winp == p)
+	          break;
+	      
+	        if (same)
+	          SendEnterLeaveEvent(p, wxEVENT_TYPE_LEAVE_WINDOW, win, evt);
+	        else
+	          QueueLeaveEvent(p, win, evt);
+	        p = p->GetParent();
+	      }
+	    } else
+	      p = win->GetRootFrame()->GetParent();
+	    
+	    entered = win;
+	    
+	    while (1) {
+	      wxWindow *winp = win;
+	      while (winp && (winp->GetParent() != p))
+	        winp = winp->GetParent();
+	      if (!winp)
+	        break;
+	      SendEnterLeaveEvent(winp, wxEVENT_TYPE_ENTER_WINDOW, win, evt);
+	      if (winp == win)
+	        break;
+	      p = winp;
+	    }
+	  }
+	}
+
 	wxWindow *p = win->GetParent();
 	return ((p && doCallPreMouseEvent(in_win, p, evt)) || win->PreOnEvent(in_win, evt));
 }
@@ -1066,9 +1166,13 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
 		{
 			wxMouseEvent *areaMouseEvent = new wxMouseEvent(0);
 			*areaMouseEvent = mouseEvent;
-			wxMargin hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
-			int hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
-			int hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
+			int hitAreaX, hitAreaY;
+			if (hitArea) {
+			  wxMargin hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
+			  hitAreaX = hitAreaMargin.Offset(Direction::wxLeft);
+			  hitAreaY = hitAreaMargin.Offset(Direction::wxTop);
+			} else
+			  hitAreaX = hitAreaY = 0;
 			areaMouseEvent->x = hitX - hitAreaX; // hit area c.s.
 			areaMouseEvent->y = hitY - hitAreaY; // hit area c.s.
 			
@@ -1117,6 +1221,19 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent& mouseEvent)
 		  break;
 	}
 
+	/* Frame/dialog: hande all events, even outside the window */	
+	if (!result && (__type == wxTYPE_FRAME || __type == wxTYPE_DIALOG_BOX)) {
+	  wxMouseEvent *areaMouseEvent = new wxMouseEvent(0);
+	  *areaMouseEvent = mouseEvent;
+	  int clientHitX = areaMouseEvent->x;
+	  int clientHitY = areaMouseEvent->y;
+	  ClientToLogical(&clientHitX, &clientHitY); // mouseWindow logical c.s.
+	  areaMouseEvent->x = clientHitX; // mouseWindow logical c.s.
+	  areaMouseEvent->y = clientHitY; // mouseWindow logical c.s.
+	  if (!doCallPreMouseEvent(this, this, areaMouseEvent))
+	    OnEvent(*areaMouseEvent);
+	}
+	
 	return result;
 }
 

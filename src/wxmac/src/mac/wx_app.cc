@@ -43,6 +43,8 @@ extern CGrafPtr gMacFontGrafPort;
 
 extern int wxNumHelpItems;
 
+extern Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
+
 wxScreen *theScreen;
 #if 0
 extern wxList gTimerList;
@@ -219,6 +221,8 @@ void wxApp::doMacDispatch(EventRecord *e)
 			doMacOsEvt(); break;
 		case kHighLevelEvent:
 			doMacHighLevelEvent(); break;
+		case 42:
+			doMacMouseLeave(); break;
 		default:
 			break;
 	}
@@ -283,8 +287,9 @@ void wxApp::doMacMouseUp(void)
 		/* Grab is now only used for grabbing on mouse-down for canvases */
         if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS))
            mouseWindow->ReleaseMouse();
-						  
-		mouseWindow->OnEvent(theMouseEvent);
+				
+		if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))
+		  mouseWindow->OnEvent(theMouseEvent);
 	}
 	else
  	{
@@ -326,11 +331,7 @@ void wxApp::doMacMouseMotion(void)
 	Bool isRightButton = cCurrentEvent.modifiers & cmdKey;
 	// altKey is optionKey on the mac platform:
 	Bool isAltKey = cCurrentEvent.modifiers & optionKey;
-#if 0
-	Bool isMouseDown = !(cCurrentEvent.modifiers & btnState);
-#else
 	Bool isMouseDown = (cCurrentEvent.modifiers & btnState);
-#endif
 
 	wxMouseEvent *_theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 	wxMouseEvent &theMouseEvent = *_theMouseEvent;
@@ -354,10 +355,11 @@ void wxApp::doMacMouseMotion(void)
 		theMouseEvent.y = hitY;
 		
 		/* Grab is now only used for grabbing on mouse-down for canvases */
-        if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS))
+        if (wxSubType(mouseWindow->__type, wxTYPE_CANVAS) && !isMouseDown)
            mouseWindow->ReleaseMouse();
            
-		mouseWindow->OnEvent(theMouseEvent);
+		if (!doCallPreMouseEvent(mouseWindow, mouseWindow, &theMouseEvent))		  
+		  mouseWindow->OnEvent(theMouseEvent);
 	}
 	else
 	{
@@ -373,6 +375,36 @@ void wxApp::doMacMouseMotion(void)
 
 			macWxFrame->SeekMouseEventArea(theMouseEvent);
 		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+void wxApp::doMacMouseLeave(void)
+{
+	// RightButton is cmdKey click on the mac platform for one-button mouse
+	Bool isRightButton = cCurrentEvent.modifiers & cmdKey;
+	// altKey is optionKey on the mac platform:
+	Bool isAltKey = cCurrentEvent.modifiers & optionKey;
+	Bool isMouseDown = (cCurrentEvent.modifiers & btnState);
+
+	wxMouseEvent *_theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
+	wxMouseEvent &theMouseEvent = *_theMouseEvent;
+	theMouseEvent.leftDown = isMouseDown && !isRightButton;
+	theMouseEvent.middleDown = FALSE;
+	theMouseEvent.rightDown = isMouseDown && isRightButton;
+	theMouseEvent.shiftDown = cCurrentEvent.modifiers & shiftKey;
+	theMouseEvent.controlDown = cCurrentEvent.modifiers & controlKey;
+	theMouseEvent.altDown = isAltKey;
+	theMouseEvent.metaDown = FALSE;  // mflatt
+	theMouseEvent.timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
+		
+	wxWindow* win = (wxWindow*)cCurrentEvent.message;
+	if (win->IsShown()) {
+	  theMouseEvent.x = cCurrentEvent.where.h;
+	  theMouseEvent.y = cCurrentEvent.where.v;
+
+	  if (!doCallPreMouseEvent(win, win, &theMouseEvent))
+	    win->OnEvent(theMouseEvent);
 	}
 }
 

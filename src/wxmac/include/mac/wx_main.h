@@ -63,6 +63,7 @@ public:
 	void doMacMouseDown();
 	void doMacMouseUp();
 	void doMacMouseMotion();
+	void doMacMouseLeave();
 	void doMacKeyDown();
 	void doMacAutoKey();
 	void doMacKeyUp();

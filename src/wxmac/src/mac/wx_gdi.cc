@@ -657,7 +657,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   Create(the_width, the_height, 1);
   if (ok) {
   	SetGWorld(x_pixmap, 0);
-  	int i, j;
+  	int i, j, p = 0;
   	char byte;
   	int bit1;
 	RGBColor	cpix;
@@ -665,11 +665,11 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   	
 		GetForeColor(&cpix);
 		for (i = 0; i < the_height; i++) {
-			for (j = 0; j < the_width; i++) {
-				byte = bits[j,i];
+			for (j = 0; j < the_width; j += 8, p++) {
+				byte = bits[p];
 				for (int k = 0; k < 8; k++) {
 					if (byte & 1) {			
-						::SetCPixel(j, i, &cpix);
+						::SetCPixel(j + k, i, &cpix);
 					}
 					byte = byte >> 1;
 				}

@@ -6,7 +6,6 @@
  * Copyright:   (c) 1996, Matthew Flatt
  */
 
-// #define USE_OS_QUEUE
 #define SELF_SUSPEND_RESUME
 
 #ifdef SELF_SUSPEND_RESUME
@@ -96,35 +95,24 @@ static int QueueTransferredEvent(EventRecord *e)
   dispatched = 0;
   
   done = 0;
-#ifdef USE_OS_QUEUE
-  if ((e->what == mouseDown) 
-      || (e->what == mouseUp)
-      || (e->what == keyDown)
-      || (e->what == keyUp)
-      || (e->what == autoKey)) {
-    /* Throw it away and stop */
-    return 0;
-  } else 
-#endif
-    if (e->what == updateEvt) {
-      WindowPtr w = (WindowPtr)e->message;
-      for (q = first; q; q = q->next) {
-	if ((q->event.what == updateEvt)
-	    && (w == ((WindowPtr)q->event.message))) {
-	  UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
-	  BeginUpdate(w);
-	  EndUpdate(w);
-	  done = 1;
-	  // return 0;
-	}
+  if (e->what == updateEvt) {
+    WindowPtr w = (WindowPtr)e->message;
+    for (q = first; q; q = q->next) {
+      if ((q->event.what == updateEvt)
+	  && (w == ((WindowPtr)q->event.message))) {
+	UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
+	BeginUpdate(w);
+	EndUpdate(w);
+	done = 1;
       }
     }
+  }
     
-    if (e->what == kHighLevelEvent) {
-      /* We have to dispatch right away - oh no! */
-      AEProcessAppleEvent(e);
-      done = 1;
-    }
+  if (e->what == kHighLevelEvent) {
+    /* We have to dispatch the event immediately */
+    AEProcessAppleEvent(e);
+    done = 1;
+  }
 
   if (!done) {
     q = new MrQueueElem;
@@ -176,6 +164,12 @@ static int QueueTransferredEvent(EventRecord *e)
   return 1;
 }
 
+/* Called by wxWindows to queue leave events: */
+void QueueMrEdEvent(EventRecord *e)
+{
+  QueueTransferredEvent(e);
+}
+
 static GetSleepTime(int *sleep_time, int *delay_time)
 {
 #if FG_SLEEP_TIME
@@ -201,14 +195,7 @@ static void TransferQueue(int all)
   if (TickCount() <= lastTime + delay_time)
     return;
 
-#ifdef USE_OS_QUEUE
-   if (all)
-     mask = everyEvent;
-   else
-    mask = everyEvent - mDownMask - mUpMask - keyDownMask - keyUpMask - autoKeyMask;
-#else
   mask = everyEvent;
-#endif
   
   while (WaitNextEvent(mask, &e, dispatched ? sleep_time : 0, NULL)) {
     if (!QueueTransferredEvent(&e))
@@ -217,27 +204,6 @@ static void TransferQueue(int all)
   
   lastTime = TickCount();
 }
-
-#ifdef USE_OS_QUEUE
-static void DEQUEUE(QElemPtr q, QHdrPtr)
-{
-  while (1) {
-    QHdrPtr osqstart = GetEvQHdr();
-    EvQEl *osq = (EvQEl *)osqstart->qHead;
-    
-    while (osq) {
-      if (osq == (EvQEl *)q)
-        break;
-      osq = (EvQEl *)osq->qLink;
-    }
-    
-    if (osq) {
-      TransferQueue(1);
-    } else
-      break;
-  }
-}
-#endif
 
 static void MrDequeue(MrQueueElem *q)
 {
@@ -281,7 +247,7 @@ static int WindowStillHere(WindowPtr win)
   return FALSE;
 }
 
-#if defined(SELF_SUSPEND_RESUME) || defined(USE_OS_QUEUE)
+#if defined(SELF_SUSPEND_RESUME)
 static int WeAreFront()
 {
   static int inited;
@@ -303,22 +269,20 @@ static int WeAreFront()
 static MrEdContext *cont_event_context;
 static short cont_event_context_modifiers;
 static Point last_mouse;
+static WindowPtr last_front_window;
 
 #ifdef RECORD_HISTORY
 FILE *history;
 #endif
 
+#define leaveEvt 42
+
 int MrEdGetNextEvent(int check_only, int current_only,
-		             EventRecord *event, MrEdContext **which)
+		     EventRecord *event, MrEdContext **which)
 {
   /* Search for an event. Handle clicks in non-frontmost windows
      immediately. */
-#ifdef USE_OS_QUEUE
-  QHdrPtr osqstart;
-  EvQEl *osq, *next;
-#else
   MrQueueElem *osq, *next;
-#endif
   EventRecord *e, ebuf;
   MrQueueElem *q;
   MrEdContext *c, *keyOk, *fc, *foundc;
@@ -377,25 +341,43 @@ int MrEdGetNextEvent(int check_only, int current_only,
   }
 #endif
   
-  /* First service mouse & key events: */
-#ifdef USE_OS_QUEUE
-  osqstart = GetEvQHdr();
-  osq = (EvQEl *)osqstart->qHead;
-#else
+  /* First, service leave events: */
+  for (q = first; q; q = q->next) {
+    switch (q->event.what) {
+    case leaveEvt:
+      {
+        wxWindow *win = (wxWindow *)q->event.message;
+        if (win->IsShown()) {
+          fr = (wxFrame *)win->GetRootFrame();
+	  fc = fr ? (MrEdContext *)fr->context : NULL;
+	  if ((!c && !fr) || (!c && fc->ready) || (fc == c)) {
+	    if (which)
+	      *which = fc;
+
+#ifdef RECORD_HISTORY
+	    fprintf(history, "leave\n");
+	    fflush(history);
+#endif
+
+	    if (check_only)
+	      return TRUE;
+	
+	    MrDequeue(q);
+	    memcpy(event, &q->event, sizeof(EventRecord));
+	    return TRUE;
+	  }
+        } else {
+          MrDequeue(q);
+        }
+      }
+    }
+  }
+  
+  /* Next, service mouse & key events: */
   osq = first;
-#endif
-  while (osq 
-#ifdef USE_OS_QUEUE
-  	 && WeAreFront()
-#endif
-  	 ) {
-#ifdef USE_OS_QUEUE
-    next = (EvQEl *)osq->qLink;
-    e = (EventRecord *)&osq->evtQWhat;
-#else
+  while (osq) {
     next = osq->next;
     e = &osq->event;
-#endif
     switch (e->what) {
       case mouseDown:
       {
@@ -410,39 +392,22 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	  window = front;
 
 	if (!window) {
-#ifdef USE_OS_QUEUE
-	  DEQUEUE((QElemPtr)osq, (QHdrPtr)osqstart);
-	  osqstart = GetEvQHdr();
-	  next = (EvQEl *)osqstart->qHead;
-#else
 	  MrDequeue(osq);
-#endif
 	  found = 1;
 	  foundc = keyOk;
 	  cont_event_context = NULL;
         } else if (window != front) {
+          /* Handle bring-window-to-front click immediately */
 	  fr = wxWindowPtrToFrame(window, NULL);
 	  fc = fr ? (MrEdContext *)fr->context : NULL;
 	  if (!fc->modal_window || (fr == fc->modal_window)) {
 	    SelectWindow(window);
-#ifdef USE_OS_QUEUE
-	    DEQUEUE((QElemPtr)osq, (QHdrPtr)osqstart);
-	    osqstart = GetEvQHdr();
-	    next = (EvQEl *)osqstart->qHead;
-#else
 	    MrDequeue(osq);
-#endif
 	    cont_event_context = NULL;
 	  }
 	} else if (resume_ticks > e->when) {
-	    /* Clicked us into foreground - toss the event */
-#ifdef USE_OS_QUEUE
-	    DEQUEUE((QElemPtr)osq, (QHdrPtr)osqstart);
-	    osqstart = GetEvQHdr();
-	    next = (EvQEl *)osqstart->qHead;
-#else
-	    MrDequeue(osq);
-#endif
+	  /* Clicked MrEd into foreground - toss the event */
+	  MrDequeue(osq);
 	} else {
 	  foundc = keyOk;
 	  if (foundc) {
@@ -461,13 +426,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
     case mouseUp:
       if (!cont_event_context) {
       	if (!saw_mdown) {
-#ifdef USE_OS_QUEUE
-	  DEQUEUE((QElemPtr)osq, (QHdrPtr)osqstart);
-	  osqstart = GetEvQHdr();
-	  next = (EvQEl *)osqstart->qHead;
-#else
 	  MrDequeue(osq);
-#endif
         }
       } else if (keyOk == cont_event_context) {
 	foundc = keyOk;
@@ -482,23 +441,13 @@ int MrEdGetNextEvent(int check_only, int current_only,
     case autoKey:
       foundc = keyOk;
       if (foundc) {
-#if GETS_KEY_UP
-	if (!check_only)
-	  cont_event_context = foundc;
-#endif
 	found = 1;
       }
       break;
     case keyUp:
       if (!cont_event_context) {
         if (!saw_kdown) {
-#ifdef USE_OS_QUEUE
-	  DEQUEUE((QElemPtr)osq, (QHdrPtr)osqstart);
-	  osqstart = GetEvQHdr();
-	  next = (EvQEl *)osqstart->qHead;
-#else
 	  MrDequeue(osq);
-#endif
         }
       } else if (keyOk == cont_event_context) {
 	foundc = keyOk;
@@ -518,16 +467,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
   if (found) {
     /* Remove intervening mouse/key events: */
-#ifdef USE_OS_QUEUE
-#if 0
-    EvQEl *qq;
-    for (qq = (EvQEl *)osqstart->qHead; qq && (qq != osq); qq = next) {
-      next = (EvQEl *)qq->qLink;
-      Dequeue((QElemPtr)qq, (QHdrPtr)osqstart);
-    }
-    e = (EventRecord *)&osq->evtQWhat;
-#endif
-#else
     MrQueueElem *qq;
     for (qq = first; qq && (qq != osq); qq = next) {
       next = qq->next;
@@ -542,7 +481,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
       }
     }
     e = &osq->event;
-#endif
 
     if (which)
       *which = foundc;
@@ -556,11 +494,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
       return TRUE;
     
     memcpy(event, e, sizeof(EventRecord));
-#ifdef USE_OS_QUEUE
-    DEQUEUE((QElemPtr)osq, (QHdrPtr)osqstart);
-#else
     MrDequeue(osq);
-#endif
     
     return TRUE;
   }
@@ -643,12 +577,13 @@ int MrEdGetNextEvent(int check_only, int current_only,
   }
 
   /* Generate a motion event? */
-  if ((cont_event_context == c) || (cont_event_context == keyOk)) {      
+  if (keyOk) {
       GetMouse(&event->where);
       LocalToGlobal(&event->where);
       
       if ((event->where.v != last_mouse.v)
-          || (event->where.h != last_mouse.h)) {
+          || (event->where.h != last_mouse.h)
+          || last_front_window != FrontWindow()) {
           
         if (which)
 	  *which = (cont_event_context ? cont_event_context : keyOk);
@@ -662,6 +597,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
         last_mouse.v = event->where.v;
         last_mouse.h = event->where.h;
+        last_front_window = FrontWindow();
         
         event->what = nullEvent;
         event->when = TickCount();
@@ -735,33 +671,12 @@ void MrEdDispatchEvent(EventRecord *e)
 
 int MrEdCheckForBreak(void)
 {
-#ifdef USE_OS_QUEUE
-  QHdrPtr start;
-  EvQEl *q;
-#else
   MrQueueElem *q;
-#endif
   EventRecord event;
   
   if (!KeyOk(TRUE))
     return 0;
   
-#ifdef USE_OS_QUEUE
-  start = GetEvQHdr();
-  q = (EvQEl *)start->qHead;
-  while (q) {
-    if (q->evtQWhat == keyDown) {
-      if ((((q->evtQMessage & charCodeMask) == '.') 
-	   && (q->evtQModifiers & cmdKey))
-      	  || (((q->evtQMessage & charCodeMask) == 3) 
-	      && (q->evtQModifiers & controlKey))) {
-        DEQUEUE((QElemPtr)q, (QHdrPtr)start);
-        return TRUE;
-      }
-    }
-    q = (EvQEl *)q->qLink;
-  }
-#else
   TransferQueue(0);
 
   for (q = first; q; q = q->next) {
@@ -775,7 +690,6 @@ int MrEdCheckForBreak(void)
       }
     }
   }
-#endif
   
   return FALSE;
 }

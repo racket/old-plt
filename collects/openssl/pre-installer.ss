@@ -19,16 +19,17 @@
 		   ;; unix libs
 		   (list "ssl" "crypto")
 		   ;; windows libs
-		   (let ([libs
-			  (let ([v (getenv "PLT_EXTENSION_LIB_PATHS")])
-                            (if v
-                              (path-list-string->path-list
-                               v (list (build-path (collection-path "openssl") "openssl" "lib")))
-                              null))])
-		     (if (ormap (lambda (lib)
-				  (and (file-exists? (build-path lib "libeay32xxxxxxx.lib"))
-				       (file-exists? (build-path lib "ssleay32xxxxxxx.lib"))))
-				libs)
+		   (let* ([default-paths
+			    (list (build-path (collection-path "openssl") "openssl"))]
+			  [paths
+			   (let ([v (getenv "PLT_EXTENSION_LIB_PATHS")])
+			     (if v
+				 (path-list-string->path-list v default-paths)
+				 default-paths))])
+		     (if (ormap (lambda (path)
+				  (and (file-exists? (build-path path "lib" "libeay32xxxxxxx.lib"))
+				       (file-exists? (build-path path "lib" "ssleay32xxxxxxx.lib"))))
+				paths)
 			 ;; Use mangleable names:
 			 (list "libeay32xxxxxxx" "ssleay32xxxxxxx")
 			 ;; Use simple names:

@@ -216,11 +216,11 @@ Per-platform notes:
    haven't tried. Similar caveats apply to other build techniques that
    do not produce DLLs.
 
-   Bonus hack: If
-     plt/collects/openssl/openssl/lib/{lib,ssl}easy32xxxxxxx.lib
-   exist, they are used, with the expectation that the resulting
-   extension will link to "{lib,ssl}eay32xxxxxxx.dll". This enables
-   the name-mangling version hack for distributing DLLs.
+   Bonus hack: If "{lib,ssl}easy32xxxxxxx.lib" exist in the lib
+   directory, they are used (instead of "{liib,ssl}eay32.lib") with
+   the expectation that the resulting extension will link to
+   "{lib,ssl}eay32xxxxxxx.dll". This enables the name-mangling version
+   hack for distributing DLLs.
 
  * Mac OS
 

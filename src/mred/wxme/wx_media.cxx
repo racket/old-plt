@@ -488,7 +488,9 @@ void wxMediaEdit::OnDefaultEvent(wxMouseEvent *event)
 	  SetPositionBiasScroll(2, dragstart, now, ateol);
       }
     } else if (tracking) {
-      SetClickbackHilited(trackClickback, !!FindClickback(now, y));
+      wxClickback *cb;
+      cb = FindClickback(now, y);
+      SetClickbackHilited(trackClickback, cb == trackClickback);
     }
   } else if (event->ButtonUp()) {
     if (dragging)

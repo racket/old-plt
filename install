@@ -25,7 +25,7 @@ fi
 
 if [ -x "$pltdir/bin/mzscheme" ]; then
   mz="$pltdir/bin/mzscheme"
-elif [ -x "$pltdir/MzScheme.exe" ]; then
+elif [ -e "$pltdir/MzScheme.exe" ]; then
   mz="$pltdir/MzScheme.exe"
 else
   echo "install: cannot find the mzscheme executable"

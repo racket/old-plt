@@ -393,6 +393,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 	("_frame", xfwfEnforcerWidgetClass, self,
 	 XtNframeType, XfwfSunken, XtNframeWidth, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.shadowWidth,
 	 XtNborderWidth, 0, XtNhighlightThickness, 0,
+	 XtNtraversalOn, ((XfwfScrolledWindowWidget)self)->xfwfScrolledWindow.traverseToChild, 
 	 XtNbackground, bg,
          XtNtraversalTranslationDone, ((XfwfScrolledWindowWidget)self)->xfwfCommon.traversalTranslationDone, 
 	 NULL);

@@ -178,6 +178,7 @@ by the frame widget.
 	("_frame", xfwfEnforcerWidgetClass, $,
 	 XtNframeType, XfwfSunken, XtNframeWidth, $shadowWidth,
 	 XtNborderWidth, 0, XtNhighlightThickness, 0,
+	 XtNtraversalOn, $traverseToChild, 
 	 XtNbackground, bg,
          XtNtraversalTranslationDone, $traversalTranslationDone, 
 	 NULL);

@@ -155,6 +155,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
     misc_flags |= 8; /* Indicates no auto-scroll. */
 
     Set(n, choices);
+    // propagate key events from frame to scrollwin widget
+    XtVaSetValues(X->frame, XtNpropagateTarget, X->handle, NULL);
     // callback
     callback = func;
     XtAddCallback(X->handle, XtNcallback,

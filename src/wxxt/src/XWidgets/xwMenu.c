@@ -1097,7 +1097,11 @@ static void DrawToggleItem(MenuWidget mw, menu_state *ms, menu_item *item,
       h4 = h / 4;
       h34 = h - h4;
 
-      gc = item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC;
+      gc = (item->enabled 
+	    ? ((ms->selected==item)
+	       ? mw->menu.erase_GC 
+	       : mw->menu.normal_GC)
+	    : mw->menu.inactive_GC);
 
       XDrawLine(dpy, win, gc, x + h4, y + h34, x + h2, y + h);
       XDrawLine(dpy, win, gc, x + h2, y + h, x + h, y);

@@ -207,8 +207,8 @@
 		"edit" "exit" "exn" "fileutil" "finder" "findstr" "frame"
 		"group" "guiutils" "handler"
 		"html" "hypredit" "hyprfram" "hyprdial"
-		"icon" "keys" "mcache" "menu" "mode" "panel"
-		"paren" "prefs" "project" "sparen" "ssmode" "url"
+		"icon" "keys" "mcache" "menu" "mode" "panel" "paren"
+		"prefs" "project" "sparen" "ssmode" "url" "version"
 
 		;; linking code
 		"link"))

@@ -1,3 +1,4 @@
+
 (define drscheme:rep@
   (unit/sig drscheme:rep^
     (import [mred : mred^]
@@ -236,7 +237,7 @@
 		   (insert-delta "Welcome to " delta)
 		   (let-values ([(before after)
 				 (insert-delta "DrScheme" click-delta)])
-		     (insert-delta (format ", version ~a.~nLanguage: " (version))
+		     (insert-delta (format ", version ~a.~nLanguage: " (mred:version))
 				   delta)
 		     (insert-delta 
 		      (format "~a Scheme."

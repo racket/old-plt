@@ -11,6 +11,9 @@
 			       [application : mred:application^])
       (link [constants : mred:constants^ (constants@)]
 	    [debug : mred:debug^ (debug/s@)]
+	    [version : mred:version^ (mred:version@ 
+				      (core function@)
+				      (core string@))]
 	    [exn : mred:exn^ (mred:exn@ debug)]
 	    [container : mred:container^
 		       (mred:container@ debug (core function@))]
@@ -70,7 +73,8 @@
 	    [console : mred:console^ 
 		     (mred:console@ debug preferences edit frame canvas find-string
 				  exit finder handler gui-utils scheme-mode
-				  scheme-paren icon hyper-frame (core function@) 
+				  scheme-paren icon hyper-frame version
+				  (core function@) 
 				  (core string@) (core pretty-print@) trigger)]
 	    [scheme-mode : mred:scheme-mode^ 
 			 (mred:scheme-mode@ debug preferences application container
@@ -89,6 +93,7 @@
 					   (core file@) (core string@))])
       (export (unit debug)
 	      (open constants)
+	      (open version)
 	      (open (exn : mred:exn-external^))
 	      (open container) (open preferences)
 	      (open autoload) (open autosave) (open exit)

@@ -15,6 +15,7 @@
 	    [mred:scheme-paren : mred:scheme-paren^]
 	    [mred:icon : mred:icon^]
 	    [mred:hyper-frame : mred:hyper-frame^]
+	    [mred:version : mred:version^]
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:string : mzlib:string^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
@@ -27,7 +28,7 @@
     (define copyright-string
       (string-append
        "MrEd version "
-       (version)
+       (mred:version:version)
        ", Copyright (c) 1995-96 PLT, Rice University."))
 
     (define credits-proc

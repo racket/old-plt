@@ -68,6 +68,8 @@
 				       #f)))
 			    #f))))))))
     
+    (mred:add-version-spec 'd 1)
+    
     (define do-setup
       (lambda (type-str)
 	(when (and (mred:get-preference 'drscheme:use-setup?)

@@ -9,7 +9,7 @@ AC_INIT(mzscheme/src/bignum.c)
 AC_ARG_ENABLE(mred, ""  feature: mred           compile MrEd as well as MzScheme (enabled by default), , enable_mred=yes )
 
 AC_ARG_ENABLE(sgc, ""  feature: sgc            use Senora GC instead of the Boehm GC)
-AC_ARG_ENABLE(sgc-debug, ""  feature: sgc-debug      use Senora GC for debugging)
+AC_ARG_ENABLE(sgcdebug, ""  feature: sgcdebug       use Senora GC for debugging)
 AC_ARG_ENABLE(osthreads, ""  feature: osthreads      use OS threads to implement MzScheme threads)
 
 AC_ARG_ENABLE(oskit, ""  feature: oskit          compile OSKit-based MzScheme kernel)

@@ -11,7 +11,7 @@ MzScheme are at:
 ========================================================================
 
 To build the OSKit-based MzScheme kernel, run the configure script
-with the --enable-oskit or --enable-small-oskit flag. The result will
+with the --enable-oskit or --enable-smalloskit flag. The result will
 be `mzscheme.multiboot' in the `mzscheme' build directory. It is a
 kernel in multiboot format.
 

@@ -3388,7 +3388,7 @@ static void
 tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port)
 {
   long len = llen, d = dd;
-  Tested_Output_File *top;
+  Tested_Output_File * volatile top;
   mz_jmp_buf savebuf;
 
   if (!len)
@@ -3440,6 +3440,7 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
       top->inuse = 0;
       scheme_current_process->private_on_kill = NULL;
       scheme_longjmp(savebuf, 1);
+      return;
     } else {
       wait_until_file_done(port);
     }
@@ -3593,7 +3594,9 @@ static void flush_each_output_file(Scheme_Object *o, Scheme_Close_Manager_Client
 
 void force_exit(void)
 {
+#ifndef MZ_REAL_THREADS
   scheme_start_atomic();
+#endif
   scheme_do_close_managed(NULL, flush_each_output_file);
 
   _exit(scheme_exiting_result);
@@ -3914,8 +3917,6 @@ make_fd_output_port(int fd, int regfile)
 						  1);
 }
 
-extern void scheme_start_atomic(void);
-
 static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Manager_Client *f, void *data)
 {
   if (SCHEME_OUTPORTP(o)) {
@@ -3928,7 +3929,9 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Manager_Client *f
 
 static void flush_all_output_fds(void)
 {
+#ifndef MZ_REAL_THREADS
   scheme_start_atomic();
+#endif
   scheme_do_close_managed(NULL, flush_if_output_fds);
 }
 

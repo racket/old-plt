@@ -658,7 +658,9 @@ read_inner(Scheme_Object *port, Scheme_Hash_Table **ht CURRENTPROCPRM)
 #ifdef DO_STACK_CHECK
 static Scheme_Object *resolve_references(Scheme_Object *obj, 
 					 Scheme_Object *port,
-					 Scheme_Hash_Table *ht);
+					 Scheme_Hash_Table *ht
+					 CURRENTPROCPRM);
+
 static Scheme_Object *resolve_k(void)
 {
   Scheme_Process *p = scheme_current_process;
@@ -670,13 +672,14 @@ static Scheme_Object *resolve_k(void)
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
 
-  return resolve_references(o, port, ht);
+  return resolve_references(o, port, ht CURRENTPROCARG);
 }
 #endif
 
 static Scheme_Object *resolve_references(Scheme_Object *obj, 
 					 Scheme_Object *port,
-					 Scheme_Hash_Table *ht)
+					 Scheme_Hash_Table *ht
+					 CURRENTPROCPRM)
 {
   Scheme_Object *start = obj;
 
@@ -711,13 +714,13 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 
   if (SCHEME_PAIRP(obj)) {
     Scheme_Object *rr;
-    rr = resolve_references(SCHEME_CAR(obj), port, ht);
+    rr = resolve_references(SCHEME_CAR(obj), port, ht CURRENTPROCARG);
     SCHEME_CAR(obj) = rr;
-    rr = resolve_references(SCHEME_CDR(obj), port, ht);
+    rr = resolve_references(SCHEME_CDR(obj), port, ht CURRENTPROCARG);
     SCHEME_CDR(obj) = rr;
   } else if (SCHEME_BOXP(obj)) {
     Scheme_Object *rr;
-    rr = resolve_references(SCHEME_BOX_VAL(obj), port, ht);
+    rr = resolve_references(SCHEME_BOX_VAL(obj), port, ht CURRENTPROCARG);
     SCHEME_BOX_VAL(obj) = rr;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
@@ -731,7 +734,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 	rr = prev_rr;
       } else {
 	prev_v = SCHEME_VEC_ELS(obj)[i];
-	rr = resolve_references(prev_v, port, ht);
+	rr = resolve_references(prev_v, port, ht CURRENTPROCARG);
 	prev_rr = rr;
       }
       SCHEME_VEC_ELS(obj)[i] = rr;
@@ -766,7 +769,7 @@ scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *config CURRENT
 
   if (ht) {
     /* Resolve placeholders: */
-    v = resolve_references(v, port, ht);
+    v = resolve_references(v, port, ht CURRENTPROCARG);
   }
 
   return v;
@@ -1861,7 +1864,7 @@ static Scheme_Object *read_compact_quote(CPort *port,
   v = read_compact(port, &q_ht, 0 CURRENTPROCARG);
 
   if (q_ht)
-    resolve_references(v, NULL, q_ht);
+    resolve_references(v, NULL, q_ht CURRENTPROCARG);
   
   return v;
 }

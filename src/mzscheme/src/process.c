@@ -2241,7 +2241,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     
     if (p->block_descriptor == -1) {
       if (p->block_needs_wakeup) {
-	Block_Needs_Wakeup f = p->block_needs_wakeup;
+	Block_Needs_Wakeup_Procedure f = p->block_needs_wakeup;
 	f(p->blocker, fds);
       }
       sleep_time = p->sleep_time;

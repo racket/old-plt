@@ -74,6 +74,8 @@ class wxFrame: public wxbFrame
 
   void PositionStatusWindow(void);
   HMENU GetWinMenu(void);
+
+  void DrawMenuBar(void);
 };
 
 #endif // IN_CPROTO

@@ -513,6 +513,23 @@ int scheme_both_nan(double a, double b)
 }
 #endif
 
+#ifdef USE_PALM_INF_TESTS
+int scheme_is_pos_inf(double d)
+{
+  return (d == scheme_infinity_val);
+}
+
+int scheme_is_neg_inf(double d)
+{
+  return (d == scheme_minus_infinity_val);
+}
+
+int scheme_is_nan(double d)
+{
+  return (!(d == d));
+}
+#endif
+
 Scheme_Object *scheme_make_double(double d)
 {
   Scheme_Double *sd;

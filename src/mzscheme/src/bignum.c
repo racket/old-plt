@@ -188,7 +188,7 @@ int scheme_bignum_get_int_val(const Scheme_Object *o, long *v)
 	/* Special case: the one negative number whose negation
 	   doesn't fit in a long: */
 	unsigned long m;
-	m = 0x2 << LOG_BIG_RADIX;
+	m = (unsigned long)0x2 << LOG_BIG_RADIX;
 	*v = m;
 	return 1;
       }

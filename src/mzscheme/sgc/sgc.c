@@ -27,6 +27,7 @@
 
 #ifdef __palmos__
 # include <PalmOS.h>
+# define _LINUX_TYPES_H  /* Blocks types.h */
 #endif
 #include <stdlib.h>
 #include <setjmp.h>
@@ -37,6 +38,10 @@
 #include <string.h>
 #include "../sconfig.h"
 #include "sgc.h"
+
+#ifdef PALMOS_STUFF
+typedef jmpbuf jmp_buf[1];
+#endif
 
 /****************************************************************************/
 /* Option bundles                                                           */

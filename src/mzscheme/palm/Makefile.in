@@ -3,6 +3,9 @@ srcdir = @srcdir@
 
 PALMCPP = m68k-palmos-gcc -E
 PALMCC = m68k-palmos-gcc
+PALMAS = m68k-palmos-as -mno-68881 -m68000 -l
+MULTIGEN = multigen
+
 PALMINCS = -I/usr/local/palmdev/include/Core \
            -I/usr/local/palmdev/include/Core/Hardware \
            -I/usr/local/palmdev/include/Core/System \
@@ -55,7 +58,8 @@ OBJS =  salloc.o \
         unitsig.o \
 	vector.o \
 	main.o \
-	sgc.o
+	sgc.o \
+        mz-sections.o
 
 XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/bignum.c \
@@ -81,6 +85,7 @@ XSRCS = $(XSRCDIR)/salloc.c \
         $(XSRCDIR)/object.c \
 	$(XSRCDIR)/port.c \
 	$(XSRCDIR)/portfun.c \
+	$(XSRCDIR)/print.c \
 	$(XSRCDIR)/process.c \
 	$(XSRCDIR)/promise.c \
         $(XSRCDIR)/rational.c \
@@ -143,7 +148,7 @@ XMAPS = $(XSRCDIR)/salloc.map \
 	$(XSRCDIR)/sgc.map
 
 all: ../gc2/ctok xsrc
-	$(MAKE) xobjects
+	$(MAKE) mzscheme.prc
 
 xsrcs: $(XSRCS)
 
@@ -154,6 +159,12 @@ segmap.h: $(XSRCS) $(srcdir)/partition.ss
 	../mzscheme -qr $(srcdir)/partition.ss $(XMAPS)
 
 xobjects: $(OBJS)
+
+mzscheme.prc: xobjects mz-sections.ld
+	$(PALMCC) $(OBJS) mz-sections.ld -lm
+
+mz-sections.s: mz.def
+	$(MULTIGEN) mz.def
 
 XFORMDEP = $(srcdir)/../gc2/xform.ss
 
@@ -328,6 +339,8 @@ main.o: $(OBJDEP) $(XSRCDIR)/main.c
 	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/main.c -o main.o
 sgc.o: $(OBJDEP) $(XSRCDIR)/sgc.c
 	$(PALMCC) $(CFLAGS) -c $(XSRCDIR)/sgc.c -o sgc.o
+mz-sections.o: mz-sections.s
+	$(PALMAS) -o mz-sections.o mz-sections.s
 
 ../gc2/ctok: ../gc2/lex.yy.c
 	gcc -g -o ../gc2/ctok ../gc2/lex.yy.c

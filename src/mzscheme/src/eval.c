@@ -147,6 +147,7 @@ static Scheme_Object *compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *expand(int argc, Scheme_Object **argv);
 static Scheme_Object *local_expand(int argc, Scheme_Object **argv);
 static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
+static Scheme_Object *expand_to_top_form(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 
@@ -315,6 +316,11 @@ scheme_init_eval (Scheme_Env *env)
   scheme_add_global_constant("expand-once", 
 			     scheme_make_prim_w_arity(expand_once, 
 						      "expand-once", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("expand-to-top-form", 
+			     scheme_make_prim_w_arity(expand_to_top_form, 
+						      "expand-to-top-form", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("break-enabled", 
@@ -3525,12 +3531,13 @@ static void *expand_k(void)
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *obj;
   Scheme_Comp_Env *env;
-  int depth, rename;
+  int depth, rename, just_to_top;
 
   obj = (Scheme_Object *)p->ku.k.p1;
   env = (Scheme_Comp_Env *)p->ku.k.p2;
   depth = p->ku.k.i1;
   rename = p->ku.k.i2;
+  just_to_top = p->ku.k.i3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
@@ -3546,9 +3553,13 @@ static void *expand_k(void)
       obj = scheme_add_rename(obj, env->genv->exp_env->rename);
   }
 
-  obj = scheme_expand_expr(obj, env, depth, scheme_false);
+  if (just_to_top) {
+    Scheme_Object *gval;
+    obj = scheme_check_immediate_macro(obj, env, NULL, 0, depth, scheme_false, 1, &gval);
+  } else
+    obj = scheme_expand_expr(obj, env, depth, scheme_false);
 
-  if (rename) {
+  if (rename && !just_to_top) {
     obj = scheme_add_mark_barrier(obj);
     /* scheme_simplify_stx(obj, scheme_new_stx_simplify_cache()); */ /* too expensive */
   }
@@ -3557,7 +3568,7 @@ static void *expand_k(void)
 }
 
 static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env, 
-			      int depth, int rename, int eb)
+			      int depth, int rename, int just_to_top, int eb)
 {
   Scheme_Thread *p = scheme_current_thread;
 
@@ -3565,13 +3576,14 @@ static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env,
   p->ku.k.p2 = env;
   p->ku.k.i1 = depth;
   p->ku.k.i2 = rename;
+  p->ku.k.i3 = just_to_top;
 
   return (Scheme_Object *)scheme_top_level_do(expand_k, eb);
 }
 
 Scheme_Object *scheme_expand(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _expand(obj, scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, -1);
+  return _expand(obj, scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, 0, -1);
 }
 
 Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj)
@@ -3686,7 +3698,7 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(scheme_config);
 
-  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, 0, 0);
 }
 
 static Scheme_Object *stop_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -3782,7 +3794,7 @@ local_expand(int argc, Scheme_Object **argv)
 
   /* Expand the expression. depth = -2 means expand all the way, but
      preserve letrec-syntax. */
-  l = _expand(l, env, -2, 0, 0);
+  l = _expand(l, env, -2, 0, 0, 0);
 
   /* Put the temporary mark back: */
   return scheme_add_remove_mark(l, local_mark);
@@ -3795,7 +3807,17 @@ expand_once(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(scheme_config);
 
-  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, 1, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, 1, 0, 0);
+}
+
+static Scheme_Object *
+expand_to_top_form(int argc, Scheme_Object **argv)
+{
+  Scheme_Env *env;
+
+  env = scheme_get_env(scheme_config);
+
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, 1, 1, 0);
 }
 
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont)

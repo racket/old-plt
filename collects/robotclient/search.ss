@@ -17,7 +17,7 @@
   ;(make-move num num num cord num command)
   (define-struct move (weight x y back step orig))
   ;(make-cord num num)
-  (define-struct cord (x y))
+  (define-struct cord (x y) (make-inspector))
   
   (define current-player (make-parameter null))
   

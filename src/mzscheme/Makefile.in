@@ -220,13 +220,19 @@ normal-install:
 	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
 	echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
+WLIBIDIR=$(srcdir)/../../collects/mzscheme/lib/win32/i386
+WBUILDINFO=$(WLIBIDIR)/buildinfo
+
 cygwin-install:
 	rm -f $(srcdir)/../../mzscheme.exe
 	cp mzscheme.exe $(srcdir)/../../mzscheme.exe
-	cd $(srcdir)/dynsrc; command ./gmkmzdyn.bat
+	cd $(srcdir)/dynsrc/; ./gmkmzdyn.bat
 	cp mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
-	cp libgc.a $(srcdir)/../../collects/mzscheme/lib/win32/i386/libgc.a
-	cp libmzscheme.a $(srcdir)/../../collects/mzscheme/lib/win32/i386/libmzscheme.a
+	cp libgc.a $(WLIBDIR)/libgc.a
+	cp libmzscheme.a $(WLIBDIR)/libmzscheme.a
+	echo 'CC=gcc' > $(WBUILDINFO)
+	echo 'CFLAGS=-g -O2 -Wall ' >> $(WBUILDINFO)
+	echo 'LIBS=-lm  -lm  gmzwin.exp' >> $(WBUILDINFO)
 
 config:
 	autoconf $(srcdir)/configure.in | mzscheme -qr $(srcdir)/clean_ac.ss > $(srcdir)/../configure

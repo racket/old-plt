@@ -72,7 +72,7 @@ static char compacts[_CPT_COUNT_];
 
 static Scheme_Hash_Table *global_constants_ht;
 
-#define print_compact(p, v) print_this_string(p, &compacts[v], 1)
+#define print_compact(p, v) print_this_string(p, &compacts[v], 0, 1)
 
 #define PRINTABLE_STRUCT(obj, p) (scheme_inspector_sees_part(obj, p->quick_inspector, -1))
 
@@ -616,7 +616,7 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
   op->pos += len;
 }
 
-static void print_this_string(Scheme_Thread *p, const char *str, int autolen)
+static void print_this_string(Scheme_Thread *p, const char *str, int offset, int autolen)
 {
   long len;
   char *oldstr;
@@ -626,7 +626,7 @@ static void print_this_string(Scheme_Thread *p, const char *str, int autolen)
   else if (autolen > 0)
     len = autolen;
   else
-    len = strlen(str);
+    len = strlen(str + offset);
 
   if (!p->print_buffer) {
     /* Just getting the length */
@@ -650,7 +650,7 @@ static void print_this_string(Scheme_Thread *p, const char *str, int autolen)
     memcpy(p->print_buffer, oldstr, p->print_position);
   }
 
-  memcpy(p->print_buffer + p->print_position, str, len);
+  memcpy(p->print_buffer + p->print_position, str + offset, len);
   p->print_position += len;
 
   SCHEME_USE_FUEL(len);
@@ -692,7 +692,7 @@ static void print_compact_number(Scheme_Thread *p, long n)
     if (n > -256) {
       s[0] = 254;
       s[1] = -n;
-      print_this_string(p, (char *)s, 2);
+      print_this_string(p, (char *)s, 0, 2);
       return;
     } else {
       n = -n;
@@ -700,13 +700,13 @@ static void print_compact_number(Scheme_Thread *p, long n)
     }
   } else if (n < 252) {
     s[0] = n;
-    print_this_string(p, (char *)s, 1);
+    print_this_string(p, (char *)s, 0, 1);
     return;
   } else if (n < 0x10000) {
     s[0] = 252;
     s[1] = n & 0xFF;
     s[2] = (n >> 8) & 0xFF;
-    print_this_string(p, (char *)s, 3);
+    print_this_string(p, (char *)s, 0, 3);
     return;
   } else {
     s[0] = 253;
@@ -717,14 +717,14 @@ static void print_compact_number(Scheme_Thread *p, long n)
   s[3] = (n >> 16) & 0xFF;
   s[4] = (n >> 24) & 0xFF;  
   
-  print_this_string(p, (char *)s, 5);
+  print_this_string(p, (char *)s, 0, 5);
 }
 
 static void print_string_in_angle(Scheme_Thread *p, const char *start, const char *prefix, int slen)
 {
   /* Used to do something special for type symbols. No more. */
-  print_this_string(p, prefix, -1);
-  print_this_string(p, start, slen);
+  print_this_string(p, prefix, 0, -1);
+  print_this_string(p, start, 0, slen);
 }
 
 #ifdef DO_STACK_CHECK
@@ -806,7 +806,7 @@ static void print_escaped(Scheme_Thread *p, int notdisplay,
 
   print_compact(p, CPT_ESCAPE);
   print_compact_number(p, len);
-  print_this_string(p, r, len);
+  print_this_string(p, r, 0, len);
 }
 
 #ifdef SGC_STD_DEBUGGING
@@ -814,7 +814,7 @@ static void printaddress(Scheme_Thread *p, Scheme_Object *o)
 {
   char buf[40];
   sprintf(buf, ":%lx", (long)o);
-  print_this_string(p, buf, -1);
+  print_this_string(p, buf, 0, -1);
 }
 # define PRINTADDRESS(p, obj) printaddress(p, obj)
 #else
@@ -824,17 +824,17 @@ static void printaddress(Scheme_Thread *p, Scheme_Object *o)
 static void print_named(Scheme_Object *obj, const char *kind,
 			const char *s, int len, Scheme_Thread *p)
 {
-  print_this_string(p, "#<", 2);
-  print_this_string(p, kind, -1);
+  print_this_string(p, "#<", 0, 2);
+  print_this_string(p, kind, 0, -1);
 
   if (s) {
-    print_this_string(p, ":", 1);
+    print_this_string(p, ":", 0, 1);
 
-    print_this_string(p, s, len);
+    print_this_string(p, s, 0, len);
   }
    
   PRINTADDRESS(p, obj);
-  print_this_string(p, ">", 1);
+  print_this_string(p, ">", 0, 1);
 }
 
 static int
@@ -894,11 +894,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	} else {
 	  if (val > 0) {
 	    sprintf(quick_buffer, "#%ld=", (val - 3) >> 1);
-	    print_this_string(p, quick_buffer, -1);
+	    print_this_string(p, quick_buffer, 0, -1);
 	    scheme_hash_set(ht, obj, (Scheme_Object *)(-val));
 	  } else {
 	    sprintf(quick_buffer, "#%ld#", ((-val) - 3) >> 1);
-	    print_this_string(p, quick_buffer, -1);
+	    print_this_string(p, quick_buffer, 0, -1);
 	    return 0;
 	  }
 	}
@@ -925,12 +925,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	if (l < CPT_RANGE(SMALL_SYMBOL)) {
 	  unsigned char s[1];
 	  s[0] = l + CPT_SMALL_SYMBOL_START;
-	  print_this_string(p, (char *)s, 1);
+	  print_this_string(p, (char *)s, 0, 1);
 	} else {
 	  print_compact(p, CPT_SYMBOL);
 	  print_compact_number(p, l);
 	}
-	print_this_string(p, scheme_symbol_val(obj), l);
+	print_this_string(p, scheme_symbol_val(obj), 0, l);
 
 	idx = scheme_make_integer(symtab->count);
 	scheme_hash_set(symtab, obj, idx);
@@ -943,9 +943,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	s = scheme_symbol_name_and_size(obj, &l, (p->quick_can_read_pipe_quote 
 						  ? SNF_PIPE_QUOTE
 						  : SNF_NO_PIPE_QUOTE));
-	print_this_string(p, s, l);
+	print_this_string(p, s, 0, l);
       } else {
-	print_this_string(p, scheme_symbol_val(obj), SCHEME_SYM_LEN(obj));
+	print_this_string(p, (char *)obj, ((char *)(SCHEME_SYM_VAL(obj))) - ((char *)obj), 
+			  SCHEME_SYM_LEN(obj));
       }
     }
   else if (SCHEME_STRINGP(obj))
@@ -956,7 +957,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_compact(p, CPT_STRING);
 	l = SCHEME_STRTAG_VAL(obj);
 	print_compact_number(p, l);
-	print_this_string(p, SCHEME_STR_VAL(obj), l);
+	print_this_string(p, SCHEME_STR_VAL(obj), 0, l);
       } else {
 	print_string(obj, notdisplay, p);
 	closed = 1;
@@ -968,7 +969,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	char s[1];
 	print_compact(p, CPT_CHAR);
 	s[0] = SCHEME_CHAR_VAL(obj);
-	print_this_string(p, s, 1);
+	print_this_string(p, s, 0, 1);
       } else
 	print_char(obj, notdisplay, p);
     }
@@ -979,14 +980,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	if (v >= 0 && v < CPT_RANGE(SMALL_NUMBER)) {
 	  unsigned char s[1];
 	  s[0] = v + CPT_SMALL_NUMBER_START;
-	  print_this_string(p, (char *)s, 1);
+	  print_this_string(p, (char *)s, 0, 1);
 	} else {
 	  print_compact(p, CPT_INT);
 	  print_compact_number(p, v);
 	}
       } else {
 	sprintf(quick_buffer, "%ld", SCHEME_INT_VAL(obj));
-	print_this_string(p, quick_buffer, -1);
+	print_this_string(p, quick_buffer, 0, -1);
       }
     }
   else if (SCHEME_NUMBERP(obj))
@@ -995,14 +996,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_escaped(p, notdisplay, obj, ht);
 	closed = 1;
       } else
-	print_this_string(p, scheme_number_to_string(10, obj), -1);
+	print_this_string(p, scheme_number_to_string(10, obj), 0, -1);
     }
   else if (SCHEME_NULLP(obj))
     {
       if (compact) {
 	print_compact(p, CPT_NULL);
       } else {
-	print_this_string(p, "()", 2);
+	print_this_string(p, "()", 0, 2);
 	closed = 1;
       }
     }
@@ -1021,7 +1022,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact)
 	print_compact(p, CPT_BOX);
       else
-	print_this_string(p, "#&", 2);
+	print_this_string(p, "#&", 0, 2);
       closed = print(SCHEME_BOX_VAL(obj), notdisplay, compact, ht, symtab, rnht, p);
     }
   else if (SAME_OBJ(obj, scheme_true))
@@ -1029,14 +1030,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact)
 	print_compact(p, CPT_TRUE);
       else
-	print_this_string(p, "#t", 2);
+	print_this_string(p, "#t", 0, 2);
     }
   else if (SAME_OBJ(obj, scheme_false))
     {
       if (compact)
 	print_compact(p, CPT_FALSE);
       else
-	print_this_string(p, "#f", 2);
+	print_this_string(p, "#f", 0, 2);
     }
   else if (compact && SAME_OBJ(obj, scheme_void))
     {
@@ -1056,7 +1057,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  obj = scheme_struct_to_vector(obj, NULL, p->quick_inspector);
 	  closed = print(obj, notdisplay, compact, ht, symtab, rnht, p);
 	} else {
-	  print_this_string(p, "#<struct:", 9);
+	  print_this_string(p, "#<struct:", 0, 9);
 	  {
 	    int l;
 	    const char *s;
@@ -1067,10 +1068,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 					     : (p->quick_can_read_pipe_quote 
 						? SNF_PIPE_QUOTE
 						: SNF_NO_PIPE_QUOTE)));
-	    print_this_string(p, s, l);
+	    print_this_string(p, s, 0, l);
 	  }
 	  PRINTADDRESS(p, obj);
-	  print_this_string(p, ">", 1);
+	  print_this_string(p, ">", 0, 1);
 	}
       }
 
@@ -1081,10 +1082,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact) {
 	print_escaped(p, notdisplay, obj, ht);
       } else {
-	print_this_string(p, "#<", 2);
+	print_this_string(p, "#<", 0, 2);
 	print_string_in_angle(p, ((Scheme_Primitive_Proc *)obj)->name, "primitive:", -1);
 	PRINTADDRESS(p, obj);
-	print_this_string(p, ">", 1);
+	print_this_string(p, ">", 0, 1);
       }
       closed = 1;
     }
@@ -1098,11 +1099,11 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 		      ((Scheme_Closed_Primitive_Proc *)obj)->name, 
 		      -1, p);
 	} else {
-	  print_this_string(p, "#<", 2);
+	  print_this_string(p, "#<", 0, 2);
 	  print_string_in_angle(p, ((Scheme_Closed_Primitive_Proc *)obj)->name, 
 				SCHEME_GENERICP(obj) ? "" : "primitive:", -1);
 	  PRINTADDRESS(p, obj);
-	  print_this_string(p, ">", 1);
+	  print_this_string(p, ">", 0, 1);
 	}
       }
 
@@ -1128,35 +1129,35 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_type_type))
     {
-      print_this_string(p, "#<", 2);
+      print_this_string(p, "#<", 0, 2);
       print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Type *)obj)->name),
 			    "struct-type:",
 			    SCHEME_SYM_LEN(((Scheme_Struct_Type *)obj)->name));
       PRINTADDRESS(p, obj);
-      print_this_string(p, ">", 1);
+      print_this_string(p, ">", 0, 1);
     }
   else if (SAME_TYPE(SCHEME_TYPE(obj), scheme_struct_property_type))
     {
-      print_this_string(p, "#<", 2);
+      print_this_string(p, "#<", 0, 2);
       print_string_in_angle(p, scheme_symbol_val(((Scheme_Struct_Property *)obj)->name),
 			    "struct-type-property:", 
 			    SCHEME_SYM_LEN(((Scheme_Struct_Property *)obj)->name));
       PRINTADDRESS(p, obj);
-      print_this_string(p, ">", 1);
+      print_this_string(p, ">", 0, 1);
     }
   else if (SCHEME_INPORTP(obj))
     {
       Scheme_Input_Port *ip;
       ip = (Scheme_Input_Port *)obj;
-      print_this_string(p, "#", 1);
-      print_this_string(p, scheme_symbol_val(ip->sub_type), SCHEME_SYM_LEN(ip->sub_type));
+      print_this_string(p, "#", 0, 1);
+      print_this_string(p, scheme_symbol_val(ip->sub_type), 0, SCHEME_SYM_LEN(ip->sub_type));
     }
   else if (SCHEME_OUTPORTP(obj))
     {
       Scheme_Output_Port *op;
       op = (Scheme_Output_Port *)obj;
-      print_this_string(p, "#", 1);
-      print_this_string(p, scheme_symbol_val(op->sub_type), SCHEME_SYM_LEN(op->sub_type));
+      print_this_string(p, "#", 0, 1);
+      print_this_string(p, scheme_symbol_val(op->sub_type), 0, SCHEME_SYM_LEN(op->sub_type));
     }
   else if (SCHEME_STXP(obj))
     {
@@ -1171,16 +1172,16 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       } else {
 	Scheme_Stx *stx = (Scheme_Stx *)obj;
 	if (stx->line >= 0) {
-	  print_this_string(p, "#<syntax:", 9);
+	  print_this_string(p, "#<syntax:", 0, 9);
 	  if (stx->src && SCHEME_STRINGP(stx->src)) {
-	    print_this_string(p, SCHEME_STR_VAL(stx->src), SCHEME_STRLEN_VAL(stx->src));
-	    print_this_string(p, ":", 1);
+	    print_this_string(p, SCHEME_STR_VAL(stx->src), 0, SCHEME_STRLEN_VAL(stx->src));
+	    print_this_string(p, ":", 0, 1);
 	  }
 	  sprintf(quick_buffer, "%ld.%ld", stx->line, stx->col);
-	  print_this_string(p, quick_buffer, -1);
-	  print_this_string(p, ">", 1);
+	  print_this_string(p, quick_buffer, 0, -1);
+	  print_this_string(p, ">", 0, 1);
 	} else
-	  print_this_string(p, "#<syntax>", 9);
+	  print_this_string(p, "#<syntax>", 0, 9);
       }
     }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_module_index_type)) 
@@ -1244,7 +1245,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	s[0] = loc->position + (unbox 
 				? CPT_SMALL_LOCAL_UNBOX_START 
 				: CPT_SMALL_LOCAL_START);
-	print_this_string(p, (char *)s, 1);
+	print_this_string(p, (char *)s, 0, 1);
       } else {
 	print_compact(p, unbox ? CPT_LOCAL_UNBOX : CPT_LOCAL);
 	print_compact_number(p, loc->position);
@@ -1260,7 +1261,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (app->num_args < CPT_RANGE(SMALL_APPLICATION)) {
 	unsigned char s[1];
 	s[0] = CPT_SMALL_APPLICATION_START + app->num_args;
-	print_this_string(p, (char *)s, 1);
+	print_this_string(p, (char *)s, 0, 1);
       } else {
 	print_compact(p, CPT_APPLICATION);
 	print_compact_number(p, app->num_args);
@@ -1307,24 +1308,24 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       v = (short *)SCHEME_SVEC_VEC(obj);
       
 #if NO_COMPACT
-      print_this_string(p, "[", 1);
+      print_this_string(p, "[", 0, 1);
       {
 	int i; 
 	char s[10];
 
 	for (i = 0; i < l; i++) {
 	  if (i)
-	    print_this_string(p, " ", 1);
+	    print_this_string(p, " ", 0, 1);
 	  sprintf(s, "%d", (int)v[i]);
-	  print_this_string(p, s, -1);
+	  print_this_string(p, s, 0, -1);
 	}
       }
-      print_this_string(p, "]", 1);
+      print_this_string(p, "]", 0, 1);
 #else
       if (l < CPT_RANGE(SMALL_SVECTOR)) {
 	unsigned char s[1];
 	s[0] = l + CPT_SMALL_SVECTOR_START;
-	print_this_string(p, (char *)s, 1);
+	print_this_string(p, (char *)s, 0, 1);
       } else {
 	print_compact(p, CPT_SVECTOR);
 	print_compact_number(p, l);
@@ -1360,19 +1361,19 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	if (t < CPT_RANGE(SMALL_MARSHALLED)) {
 	  unsigned char s[1];
 	  s[0] = t + CPT_SMALL_MARSHALLED_START;
-	  print_this_string(p, (char *)s, 1);
+	  print_this_string(p, (char *)s, 0, 1);
 	} else {
 	  print_compact(p, CPT_MARSHALLED);
 	  print_compact_number(p, t);
 	}
       } else {
-	print_this_string(p, "#~", 2);
+	print_this_string(p, "#~", 0, 2);
 #if NO_COMPACT
 	if (t < _scheme_last_type_) {
 	  sprintf (quick_buffer, "%ld", (long)SCHEME_TYPE(obj));
-	  print_this_string(p, quick_buffer, -1);
+	  print_this_string(p, quick_buffer, 0, -1);
 	} else
-	  print_this_string(p, scheme_get_type_name(t), -1);
+	  print_this_string(p, scheme_get_type_name(t), 0, -1);
 #endif
       }
 
@@ -1394,7 +1395,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 
 	/* Remember version: */
 	print_compact_number(p, strlen(VERSION));
-	print_this_string(p, VERSION, -1);
+	print_this_string(p, VERSION, 0, -1);
 
 	print_compact_number(p, symtab->count);
 	print_compact_number(p, slen);
@@ -1414,14 +1415,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	char *s;
 	long len = -1;
 	s = scheme_get_type_name((SCHEME_TYPE(obj)));
-	print_this_string(p, "#", 1);
+	print_this_string(p, "#", 0, 1);
 #ifdef SGC_STD_DEBUGGING
 	len = strlen(s) - 1;
 #endif
-	print_this_string(p, s, len);
+	print_this_string(p, s, 0, len);
 #ifdef SGC_STD_DEBUGGING
 	PRINTADDRESS(p, obj);
-	print_this_string(p, ">", 1);
+	print_this_string(p, ">", 0, 1);
 #endif
       }
 
@@ -1434,44 +1435,50 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 static void
 print_string(Scheme_Object *string, int notdisplay, Scheme_Thread *p)
 {
-  char *str, minibuf[2];
-  int simple;
-  int len, i;
-
-  if (notdisplay)
-    print_this_string(p, "\"", 1);
-
-  simple = 1;
+  char *str, minibuf[10], *esc;
+  int len, a, i;
 
   len = SCHEME_STRTAG_VAL(string);
+  str = SCHEME_STR_VAL(string);
 
-  if (len) {
-    if (notdisplay) {
-      str = SCHEME_STR_VAL(string);
-      for (i = 0; i < len; i++) {
-	if ((str[i] == '"') || (str[i] == '\\')) {
-	  simple = 0;
-	  break;
+  if (notdisplay) {
+    print_this_string(p, "\"", 0, 1);
+
+    for (a = i = 0; i < len; i++) {
+      switch (((unsigned char *)str)[i]) {
+      case '\"': esc = "\\\""; break;
+      case '\\': esc = "\\\\"; break;
+      case '\a': esc = "\\a";  break;
+      case '\b': esc = "\\b";  break;
+      case '\e': esc = "\\e";  break;
+      case '\f': esc = "\\f";  break;
+      case '\n': esc = "\\n";  break;
+      case '\r': esc = "\\r";  break;
+      case '\t': esc = "\\t";  break;
+      default:
+	if (isprint(str[i])) {
+	  esc = NULL;
+	} else {
+	  sprintf(minibuf, "\\%03o", ((unsigned char *)str)[i]);
+	  esc = minibuf;
 	}
+	break;
       }
-    }
-    
-    if (simple)
-      print_this_string(p, SCHEME_STR_VAL(string), len);
-    else {
-      minibuf[1] = 0;
-      str = SCHEME_STR_VAL(string);
-      for (i = 0; i < len; i++) {
-	if ((str[i] == '"') || (str[i] == '\\'))
-	  print_this_string(p, "\\", 1);
-	minibuf[0] = str[i];
-	print_this_string(p, minibuf, 1);
-      }
-    }
-  }
 
-  if (notdisplay)
-    print_this_string(p, "\"", 1);
+      if (esc) {
+        if (a < i)
+	  print_this_string(p, str, a, i-a);
+        print_this_string(p, esc, 0, -1);
+        a = i+1;
+      }
+    }
+    if (a < i)
+      print_this_string(p, str, a, i-a);
+
+    print_this_string(p, "\"", 0, 1);
+  } else if (len) {
+    print_this_string(p, str, 0, len);
+  }
 }
 
 static void
@@ -1506,7 +1513,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
 	s[0] = c + (SCHEME_NULLP(pr) 
 		    ? CPT_SMALL_PROPER_LIST_START
 		    : CPT_SMALL_LIST_START);
-	print_this_string(p, (char *)s, 1);
+	print_this_string(p, (char *)s, 0, 1);
       } else {
 	print_compact(p, CPT_LIST);
 	print_compact_number(p, c);
@@ -1519,7 +1526,7 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
     if (!super_compact)
       print_compact(p, CPT_PAIR);
   } else
-    print_this_string(p, "(", 1);
+    print_this_string(p, "(", 0, 1);
 
   no_space_ok = print(SCHEME_CAR(pair), notdisplay, compact, ht, symtab, rnht, p);
 
@@ -1529,30 +1536,30 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
       if ((long)scheme_hash_get(ht, cdr) != 1) {
 	/* This needs a tag */
 	if (!compact)
-	  print_this_string(p, " . ", 3);
+	  print_this_string(p, " . ", 0, 3);
 	(void)print(cdr, notdisplay, compact, ht, symtab, rnht, p);
 	if (!compact)
-	  print_this_string(p, ")", 1);
+	  print_this_string(p, ")", 0, 1);
 	return;
       }
     }
     if (compact && !super_compact)
       print_compact(p, CPT_PAIR);
     if (!compact)
-      print_this_string(p, " ", 1);
+      print_this_string(p, " ", 0, 1);
     no_space_ok = print(SCHEME_CAR(cdr), notdisplay, compact, ht, symtab, rnht, p);
     cdr = SCHEME_CDR(cdr);
   }
 
   if (!SCHEME_NULLP(cdr)) {
     if (!compact)
-      print_this_string(p, " . ", 3);
+      print_this_string(p, " . ", 0, 3);
     print(cdr, notdisplay, compact, ht, symtab, rnht, p);
   } else if (compact && (super_compact < 1))
     print_compact(p, CPT_NULL);
 
   if (!compact)
-    print_this_string(p, ")", 1);
+    print_this_string(p, ")", 0, 1);
 }
 
 static void
@@ -1580,21 +1587,21 @@ print_vector(Scheme_Object *vec, int notdisplay, int compact,
     if (notdisplay && p->quick_print_vec_shorthand) {
       char buffer[100];
       sprintf(buffer, "#%d(", size);
-      print_this_string(p, buffer, -1);
+      print_this_string(p, buffer, 0, -1);
       size -= common;
     } else
-      print_this_string(p, "#(", 2);
+      print_this_string(p, "#(", 0, 2);
   }
 
   for (i = 0; i < size; i++) {
     no_space_ok = print(SCHEME_VEC_ELS(vec)[i], notdisplay, compact, ht, symtab, rnht, p);
     if (i < (size - 1))
       if (!compact)
-	print_this_string(p, " ", 1);
+	print_this_string(p, " ", 0, 1);
   }
 
   if (!compact)
-    print_this_string(p, ")", 1);
+    print_this_string(p, ")", 0, 1);
 }
 
 static void
@@ -1649,7 +1656,7 @@ print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
     len = 1;
   }
 
-  print_this_string(p, str, len);
+  print_this_string(p, str, 0, len);
 }
 
 /***************************************************/

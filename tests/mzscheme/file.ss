@@ -84,7 +84,7 @@
 	"tmp1" f 'truncate))
 (check-test-file "tmp1")
 
-(test (string #\null #\null #\" #\null #\")
+(test (string #\null #\null #\" #\\ #\0 #\0 #\0 #\")
       'write-null
       (let ([p (open-output-string)])
 	(write-char #\null p)

@@ -421,12 +421,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
       if (!local_square_brackets_are_parens) {
 	scheme_ungetc(ch, port);
 	return read_symbol(port, stxsrc, line, col CURRENTPROCARG);
-      }
+      } else
+        scheme_read_err(port, line, col, 0, "read: unexpected '%c'", ch);
     case '}': 
       if (!local_curly_braces_are_parens) {
 	scheme_ungetc(ch, port);
 	return read_symbol(port, stxsrc, line, col CURRENTPROCARG);
-      }
+      } else
+        scheme_read_err(port, line, col, 0, "read: unexpected '%c'", ch);
     case ')': 
       scheme_read_err(port, line, col, 0, "read: unexpected '%c'", ch);
     case '(': 
@@ -1068,7 +1070,7 @@ read_string(Scheme_Object *port,
 	    CURRENTPROCPRM)
 {
   char *buf, *oldbuf, onstack[32];
-  int i, ch;
+  int i, j, n, n1, ch;
   long start, startline;
   long size = 31, oldsize;
   Scheme_Object *result;
@@ -1081,18 +1083,79 @@ read_string(Scheme_Object *port,
     if (ch == EOF)
       scheme_read_err(port, startline, start, 1,
 		      "read: expected a '\"'; started");
-    if (ch == '\\')
-      ch = scheme_getc (port);
-
-    if (i >= size)
-      { 
-	oldsize = size;
-	oldbuf = buf;
-
-	size *= 2;
-	buf = (char *)scheme_malloc_atomic(size + 1);
-	memcpy(buf, oldbuf, oldsize);
+    /* Note: errors will leave junk on the port, with an open \". */
+    if (ch == '\\') {
+      ch = scheme_getc(port);
+      switch ( ch ) {
+      case '\\': case '\"': break;
+      case 'a': ch = '\a'; break;
+      case 'b': ch = '\b'; break;
+      case 'e': ch = 27; break; /* escape */
+      case 'f': ch = '\f'; break;
+      case 'n': ch = '\n'; break;
+      case 'r': ch = '\r'; break;
+      case 't': ch = '\t'; break;
+      case 'v': ch = '\v'; break;
+      case 'x':
+	ch = scheme_getc(port);
+	if (isxdigit(ch)) {
+	  n = ch<='9' ? ch-'0' : toupper(ch)-'A';
+	  ch = scheme_getc(port);
+	  if (isxdigit(ch)) {
+	    n = n*16 + (ch<='9' ? ch-'0' : toupper(ch)-'A');
+	  } else {
+	    scheme_ungetc(ch, port);
+	  }
+	  ch = n;
+	} else {
+#if 1
+	  scheme_read_err(port, startline, start, 1,
+			  "read: no hex digits following \\x in string");
+#else
+	  scheme_ungetc(ch, port);
+	  ch = 'x';
+#endif
+	}
+	break;
+      default:
+	if ((ch >= '0') && (ch <= '7')) {
+	  for (n = j = 0; j < 3; j++) {
+	    n1 = 8*n + ch - '0';
+	    if (n1 > 255) {
+#if 1
+	      scheme_read_err(port, startline, start, 1,
+			      "read: escape sequence \\%o out of range in string", n1);
+#else
+	      scheme_ungetc(ch, port);
+	      break;
+#endif
+	    }
+	    n = n1;
+	    if (j < 2) {
+	      ch = scheme_getc(port);
+	      if (!((ch >= '0') && (ch <= '7'))) {
+		scheme_ungetc(ch, port);
+		break;
+	      }
+	    }
+	  }
+	  ch = n;
+	} else {
+	  scheme_read_err(port, startline, start, 1,
+			  "read: unknown escape sequence \\%c in string", ch);
+	}
+	break;
       }
+    }
+
+    if (i >= size) { 
+      oldsize = size;
+      oldbuf = buf;
+      
+      size *= 2;
+      buf = (char *)scheme_malloc_atomic(size + 1);
+      memcpy(buf, oldbuf, oldsize);
+    }
     buf[i++] = ch;
   }
   buf[i] = '\0';
@@ -1347,14 +1410,9 @@ read_character(Scheme_Object *port, long line, long col CURRENTPROCPRM)
     last = (scheme_getc(port), scheme_getc(port));
 
     if (last < '0' || last > '7' || ch > '3') {
-      char buffer[4];
-      buffer[0] = ch;
-      buffer[1] = next;
-      buffer[2] = last;
-      buffer[3] = 0;
       scheme_read_err(port, line, col, 0,
 		      "read: bad character constant #\\%c%c%c",
-		      ch, next, last);
+		      ch, next, (last == EOF ? ' ' : last));
       return NULL;
     }
 

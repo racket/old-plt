@@ -112,6 +112,7 @@ void scheme_init_error_escape_proc(Scheme_Thread *p)
   %c = char
   %d = int
   %ld = long int
+  %o = int, octal
   %f = double
   %% = percent
 
@@ -154,6 +155,7 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	ints[ip++] = va_arg(args, int);
 	break;
       case 'd':	  
+      case 'o':
 	ints[ip++] = va_arg(args, int);
 	break;
       case 'l':
@@ -214,11 +216,20 @@ static long sch_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    tlen = 1;
 	  }
 	  break;
-	case 'd':	  
+	case 'd':
 	  {
 	    int d;
 	    d = ints[ip++];
 	    sprintf(buf, "%d", d);
+	    t = buf;
+	    tlen = strlen(t);
+	  }
+	  break;
+	case 'o':
+	  {
+	    int d;
+	    d = ints[ip++];
+	    sprintf(buf, "%o", d);
 	    t = buf;
 	    tlen = strlen(t);
 	  }

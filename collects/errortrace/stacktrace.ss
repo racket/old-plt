@@ -314,7 +314,11 @@
                        (lambda (annotateds)
                          (rebuild #`(lambda #,arglist #,@annotateds)))))]
             [(case-lambda . clauses)
-             (let-values ([(subexps-list arglist-list) (values-map lambda-clause-abstraction (syntax->list #`clauses))])
+             (let*-values ([(clauses-lst) (syntax->list #`clauses)]
+                           [(subexps-list arglist-list) 
+                            (if (null? clauses-lst)
+                                (values null null)
+                                (values-map lambda-clause-abstraction clauses-lst))])
                (values subexps-list 
                        (lambda (annotateds-list)
                          (with-syntax ([(arglist ...) arglist-list]
@@ -414,13 +418,15 @@
       
       (define (free-vars-of stx trans?)
         (kernel-syntax-case stx trans?
-          ;[(#%top . var) ; top-level vars commented out.  They cause problems, & you can look them up later.
-          ; (list #`var)]
+          [(#%top . var) ; top-level vars commented out.  They cause problems, & you can look them up later.
+           null]
           [var-stx
            (identifier? stx)
            (list stx)]
           [(set! v body)
-           (list #`v)]
+           (if (identifier-binding #`v)
+               (list #`v)
+               null)]
           [_
            null]))
       

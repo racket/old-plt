@@ -13,21 +13,22 @@ shapes across a canvass. It provides three operations:
 
   <br> It consumes a shape, a number, a <code>move</code> function and a
   <code>draw</code> function.  The
-  move function consumes a shape and a number and re-draws the shape on
+  move function consumes a number and a  shape and re-draws the shape on
   some canvas and produces a shape that is translated by N pixels left or
   right. 
   <br><br>
 
   <li> <code>control-up-down : shape number move -> true <code>:
 
-  <br> It is like <code>control-left-right</code> but controls movements by N pixels up or down.
+  <br> It is like <code>control-left-right</code> but controls movements by
+  N pixels up or down. 
   <br><br>
 
   <li> <code>control : shape number move-lr move-ud -> true <code>:
 
   <br> It consumes a shape, a number, two <code>move</code> functions, and a
-  draw function.  The <code>move</code> functions consume a shape and a
-  number and re-draw the shape on some canvas and produces a shape that is
+  draw function.  The <code>move</code> functions consume a number and a
+  shape and re-draw the shape on some canvas and produces a shape that is 
   translated by N pixels left or right and up or down, respectively. 
 
 </menu>
@@ -40,10 +41,10 @@ shapes across a canvass. It provides three operations:
 ;; RAD : the radius of the simple disk moving across a canvas
 (define RAD 10)
 
-;; move : shape number -> shape or false 
+;; move : number shape -> shape or false 
 ;; to move a shape by delta according to translate 
 ;; effect: to redraw it 
-(define (move sh delta)
+(define (move delta sh)
   (cond
     [(and (clear-solid-disk sh RAD)
           (draw-solid-disk (translate sh delta) RAD))

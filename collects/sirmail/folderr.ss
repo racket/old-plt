@@ -14,6 +14,14 @@
   
   (require (lib "hierlist-sig.ss" "hierlist"))
   
+  (define (xywh-okay? n)
+    (and (number? n)
+         (<= 0 n 32767)))
+  (preferences:set-default 'sirmail:folder-window-w 200 xywh-okay?)
+  (preferences:set-default 'sirmail:folder-window-h 400 xywh-okay?)
+  (preferences:set-default 'sirmail:folder-window-x 0 xywh-okay?)
+  (preferences:set-default 'sirmail:folder-window-y 0 xywh-okay?)
+  
   (provide folder@)
   (define folder@
     (unit/sig ()
@@ -212,6 +220,12 @@
       
       (define folders-frame%
         (class frame:basic%
+          (define/override (on-size w h)
+            (preferences:set 'sirmail:folder-window-w w)
+            (preferences:set 'sirmail:folder-window-h h))
+          (define/override (on-move x y)
+            (preferences:set 'sirmail:folder-window-x x)
+            (preferences:set 'sirmail:folder-window-y y))
           (define/override (on-close)
             (shutdown-folders-window))
           (define/override (on-message msg)
@@ -248,7 +262,11 @@
                                                     "postmark.bmp")))
       (define icon-mask (make-object bitmap% (build-path (collection-path "sirmail")
                                                          "postmark-mask.xbm")))
-      (define frame (make-object folders-frame% "Folders"))
+      (define frame (make-object folders-frame% "Folders" #f
+                      (preferences:get 'sirmail:folder-window-w)
+                      (preferences:get 'sirmail:folder-window-h)
+                      (preferences:get 'sirmail:folder-window-x)
+                      (preferences:get 'sirmail:folder-window-y)))
       (define top-panel (make-object horizontal-panel% (send frame get-area-container)))
       (send top-panel stretchable-height #f)
       

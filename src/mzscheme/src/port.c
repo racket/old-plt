@@ -3406,7 +3406,7 @@ static long read_for_tested_file(void *data)
 	  if (tip->primtype == FILE_TYPE_CHAR) {
 	    /* Console */
 	    /* Unreliabale hack: */
-	    Sleep(100); /* Give the break thread time, if it's there */
+	    Sleep(50); /* Give the break thread time, if it's there */
 	    if (was_break)
 	      goto try_again;
 	  }

@@ -1,4 +1,8 @@
 
+Version 203.4
+Fixed parse problems with # in numbers, as in `1#/2' and
+ `#e#x+e#s+e@-e#l-e'
+
 Version 203.3
 Added make-rename-transformer and rename-transformer?
 Changed syntax-local-value to cooperate specially with

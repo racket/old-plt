@@ -563,13 +563,42 @@
                     mark-0
                     (begin
                       pre-break-0
-                      (begin
-                        break-0
-                        sym-0)))
+                      sym-0))
                    (begin
                      (test (void) check-mark (syntax mark-0) '(a) 'all)
                      (test 'a syntax-e (syntax sym-0)))])))
-              
+        
+        ; correct labelling of variables:
+        (list #'(lambda (b) (let ([a 13]) (begin a b))) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark let*-values set!-values)
+                  [(let*-values bindings
+                     (with-continuation-mark
+                      key-0
+                      mark-0
+                      (begin
+                        pre-break-0
+                        (begin
+                          break-0
+                          (begin
+                            (set!-values (a-var-0) rest0)
+                            (begin 
+                              break-1
+                              (with-continuation-mark
+                               key-1
+                               mark-1
+                               (begin
+                                 (with-continuation-mark key-2 mark-2 (begin break-2 a-var-1))
+                                 (with-continuation-mark key-3 mark-3 (begin pre-break-1 (begin break-3 b-var-0)))))))))))
+                   (begin
+                     (test 'a syntax-e (syntax a-var-0))
+                     (test 'a syntax-e (syntax a-var-1))
+                     (test 'b syntax-e (syntax b-var-0))
+                     (test 'let-bound syntax-property (syntax a-var-0) 'stepper-binding-type)
+                     (test 'let-bound syntax-property (syntax a-var-1) 'stepper-binding-type)
+                     (test 'lambda-bound syntax-property (syntax b-var-0) 'stepper-binding-type)
+                     )])))
+                        
         
         ))
 

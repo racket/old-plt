@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.42 1997/10/28 17:49:10 shriram Exp $
+; $Id: scm-core.ss,v 1.43 1998/03/15 00:08:15 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -319,7 +319,10 @@
 	(let loop ((ids (valid-id/s? input-ids)) (index 0))
 	  (or (null? ids)
 	    (if (memq (car ids) (cdr ids))
-	      (static-error (list-ref input-ids index) "Repeated identifier")
+	      (let ((v (list-ref input-ids index)))
+		(static-error v
+		  "Repeated identifier ~e"
+		  (car ids)))
 	      (loop (cdr ids) (add1 index))))))))
 
   (define id/s->ids

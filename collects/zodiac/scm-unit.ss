@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.61 1998/03/18 22:06:24 shriram Exp $
+; $Id: scm-unit.ss,v 1.62 1998/04/21 02:59:57 robby Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -373,7 +373,33 @@
 	  (else
 	    (static-error expr "Malformed export declaration"))))))
 
-; ----------------------------------------------------------------------
+  ;; ----------------------------------------------------------------------
+
+  (define unit-generate-external-names-vocab
+    (create-vocabulary 'unit-generate-external-names-vocab #f
+      "Invalid export declaration"
+      "Invalid export declaration"
+      "Invalid export declaration"
+      "Invalid export declaration"))
+
+  (add-sym-micro unit-generate-external-names-vocab
+    (lambda (expr env attributes vocab)
+      expr))
+
+  (add-list-micro unit-generate-external-names-vocab
+    (let* ((kwd '())
+	    (in-pattern '(internal-id external-id))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (pat:pexpand 'external-id p-env kwd)))
+	  (else
+	    (static-error expr "Malformed export declaration"))))))
+
+  ;; --------------------------------------------------------------------
 
   (define unit-verify-exports-vocab
     (create-vocabulary 'unit-verify-exports-vocab #f
@@ -460,7 +486,13 @@
 					       attributes
 					       unit-verify-exports-vocab))
 					in:exports))
+			(proc:exports-externals
+			  (map (lambda (e)
+				 (expand-expr e env attributes
+				   unit-generate-external-names-vocab))
+			    in:exports))
 			(unresolveds (get-unresolved-vars attributes)))
+		      (distinct-valid-syntactic-id/s? proc:exports-externals)
 		      (remove-vars-attribute attributes)
 		      (remove/update-unresolved-attribute attributes
 			unresolveds)
@@ -752,6 +784,7 @@
 				   (expand-expr v env
 				     attributes vocab))
 			      vars)))
+		    (pretty-print vars)
 		    (set-top-level-status attributes top-level?)
 		    (create-invoke-open-unit-form
 		      expr-expr

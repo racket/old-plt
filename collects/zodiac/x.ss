@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.40 1998/03/13 21:20:45 shriram Exp $
+; $Id: x.ss,v 1.41 1998/05/11 18:59:21 shriram Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -128,6 +128,7 @@
   (define expand-expr
     (lambda (expr env attributes vocab)
       ; (printf "Expanding~n") (pretty-print (sexp->raw expr))
+      ; (printf "top-level-status: ~s~n" (get-top-level-status attributes))
       ; (printf "Expanding~n~s~n~n" (sexp->raw expr))
       ; (printf "Expanding~n") (pretty-print expr) (newline)
       ; (printf "Expanding~n") (display expr) (newline) (newline)

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.151 1998/05/08 22:15:22 mflatt Exp $
+; $Id: scm-main.ss,v 1.152 1998/05/10 19:16:59 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -482,14 +482,14 @@
 		      (test-exp (expand-expr
 				  (pat:pexpand 'test p-env kwd)
 				  env attributes vocab))
-		      (_ (set-top-level-status attributes
-			   top-level?))
 		      (then-exp (expand-expr
 				  (pat:pexpand 'then p-env kwd)
 				  env attributes vocab))
 		      (else-exp (expand-expr
 				  (pat:pexpand 'else p-env kwd)
-				  env attributes vocab)))
+				  env attributes vocab))
+		      (_ (set-top-level-status attributes
+			   top-level?)))
 		(create-if-form test-exp then-exp else-exp expr))))
 	  (else
 	    (static-error expr "Malformed if"))))))

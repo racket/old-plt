@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.34 1998/04/21 02:59:56 robby Exp $
+; $Id: scm-obj.ss,v 1.35 1998/05/08 22:15:23 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -570,6 +570,17 @@
 			  (distinct-valid-id/s? (append new-names
 						  (map car
 						    proc:initvars)))
+			  (let ((external-ivars
+				  (apply append
+				    (map
+				      (lambda (e)
+					(cond
+					  ((public-entry? e)
+					    (public-entry-exports e))
+					  (else null)))
+				      proc:ivar-info))))
+			    (distinct-valid-syntactic-id/s? external-ivars)
+			    (void))
 			  (extend-env extensions env)
 			  (let
 			    ((result
